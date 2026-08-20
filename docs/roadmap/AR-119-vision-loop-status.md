@@ -10,6 +10,7 @@ related:
   - docs/roadmap/AR-119-instrument-series-status.md
   - docs/roadmap/handoffs/issue-AR-119.md
   - docs/roadmap/AR-119-rule-host-evidence-matrix.md
+  - docs/roadmap/AR-119-39ff6dca-recruiter-diagnostic-evidence.md
   - docs/roadmap/AR-255-child-parity-design.md
 supersedes: []
 superseded_by: null
@@ -2336,3 +2337,41 @@ and live inference were not run.
    exact-candidate matrix cell, then prove Rule 9 from the complete five-host
    set. Hosted/release verification runs once at the end under fresh funding
    and publication authority.
+
+### NO-COST DIAGNOSTIC: parent pin worked; recruiter contract was unsafe
+
+PR #303 merged exact parent-pin head `dbfe2b0d` to main as `eff66c67` with
+skip instructions and no hosted run. A clean exact-main install refreshed the
+shared Claude, Codex, and ZCode projections before the single authorized Claude
+draw. The owner config then requested `claude -> codex-subscription` for the
+accepted-outcome parent recruiter while preserving the separate child pin.
+
+Pair `39ff6dca0e5885d132cefadecc3e1fdb` proves that route was honored: its
+Haiku planner applied, and both recruiter attempts actually reached
+`codex-subscription` / `gpt-5.6-terra`. Both were rejected
+`staff_without_safe_team` for `unit-parseport-impl-verified`. Attempt one
+ranked four real implementation candidates with no axis; the funded repair
+ranked two and left `capability` uncovered. Parent preflight therefore failed
+before any route, child judge, card delivery, outcome, attestation, or
+promotion. The authorized draw was not retried and **no matrix cell moved**.
+
+The read-only investigation and exact limits are in
+[`AR-119-39ff6dca-recruiter-diagnostic-evidence.md`](AR-119-39ff6dca-recruiter-diagnostic-evidence.md).
+The full 2,367-character parent prompt is exactly reconstructable, while the
+two raw recruiter bodies and byte-exact dynamic recruiter prompt are not: the
+Store retained only their allowlisted failure projections and did not retain
+the applied planner document or provider bodies. The source prompt nevertheless
+showed the defect directly. It never said `required` is mandatory selection,
+its machine response contract did not define how classifications derive the
+team, and repair feedback omitted the prior classifications, team-search
+counts, complement slots, and exact missing coverage.
+
+The local provider-free candidate repairs only that boundary. It makes
+`required`/`acceptable`/`forbidden` selection semantics explicit, supplies a
+bounded prompt-only safe-team repair contract without proposing a replacement
+team, excludes model-forbidden coverage from axis diagnosis, and persists only
+the three content-free team-search counts previously requested in AR-253.
+Provider routes, canary pins, owner config, and ordinary turns are unchanged.
+Focused recruiter/receipt/conformance verification passes 97/97; the production
+spine passes 797 with 20 skips and deterministic matrix regressions pass 695.
+No provider, host CLI, config write, install, publication, or live draw followed.

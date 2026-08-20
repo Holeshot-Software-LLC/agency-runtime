@@ -198,7 +198,19 @@ def _typed_shortlists(""",
             # The record is bounded at 8 for receipt size; scoring the prefix
             # would report an axis the ninth candidate covers as uncoverable,
             # which is the one direction this field must never be wrong in.
-            axis = _failure_axis(unit, ranking, contracts, context)
+            repair_contract = _safe_team_repair_contract(
+                unit,
+                proposal_row,
+                contracts,
+                maximum_selected_per_unit=maximum_selected_per_unit,
+            )
+            axis = _failure_axis(
+                unit,
+                ranking,
+                contracts,
+                context,
+                excluded=(semantic_forbidden or {}).get(unit.unit_id, ()),
+            )
             failures.append(
                 _NominationFailure(
                     unit.unit_id,
@@ -206,6 +218,10 @@ def _typed_shortlists(""",
                     axis,
                     ranked,
                     _top_ranked_ineligibility(unit, ranked, contracts, context),
+                    len(proposal_row.required),
+                    len(proposal_row.ranked_executable),
+                    maximum_selected_per_unit,
+                    repair_contract,
                 )
             )""",
         after="""        if decision == "staff" and not proposal_row.selected:

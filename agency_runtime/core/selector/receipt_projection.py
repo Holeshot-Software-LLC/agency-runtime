@@ -138,9 +138,10 @@ def _codes(value: object, *, limit: int = _MAX_CODES) -> list[str]:
 def _parse_nomination_detail(value: str) -> list[dict[str, Any]] | None:
     """Split the wire detail into rows, or None when it is malformed.
 
-    Each row is ``unit=code[:axis][~agent~agent]``. The axis is a closed
-    six-value vocabulary and the agents are roster identities, so neither
-    carries request content; ``~`` appears in no code, unit id or identity.
+    Each row is
+    ``unit=code[:axis][~agent~agent][!required:executable:max][|reason]``.
+    The axis, counts, and reason are closed content-free values and the agents
+    are roster identities, so none carries request or model-authored prose.
     """
 
     parsed: list[dict[str, Any]] = []
@@ -149,6 +150,7 @@ def _parse_nomination_detail(value: str) -> list[dict[str, Any]] | None:
         if not separator:
             return None
         remainder, _, ineligibility = remainder.partition("|")
+        remainder, counts_separator, counts_text = remainder.partition("!")
         remainder, _, ranked_text = remainder.partition("~")
         reason_code, _, axis = remainder.partition(":")
         row: dict[str, Any] = {"unit_id": unit_id, "reason_code": reason_code}
@@ -158,6 +160,20 @@ def _parse_nomination_detail(value: str) -> list[dict[str, Any]] | None:
             row["ranked_agent_ids"] = ranked_text
         if ineligibility:
             row["top_ranked_ineligibility"] = ineligibility
+        if counts_separator:
+            raw_counts = counts_text.split(":")
+            if len(raw_counts) != 3 or any(
+                not item.isascii() or not item.isdecimal() for item in raw_counts
+            ):
+                return None
+            required_count, executable_count, maximum_selected = map(int, raw_counts)
+            row.update(
+                {
+                    "required_agent_count": required_count,
+                    "ranked_executable_count": executable_count,
+                    "maximum_selected_per_unit": maximum_selected,
+                }
+            )
         parsed.append(row)
     return parsed
 
@@ -185,6 +201,28 @@ def _nomination_ranked_ids(value: object) -> list[str] | None:
     return ranked
 
 
+def _nomination_team_counts(item: Mapping[str, Any], reason_code: str) -> dict[str, int] | None:
+    """Return an atomic bounded count triple, or None when it is malformed."""
+
+    count_keys = {
+        "required_agent_count",
+        "ranked_executable_count",
+        "maximum_selected_per_unit",
+    }
+    present_count_keys = count_keys.intersection(item)
+    if not present_count_keys:
+        return {}
+    if present_count_keys != count_keys or reason_code != "staff_without_safe_team":
+        return None
+    counts: dict[str, int] = {}
+    for key in count_keys:
+        value = item[key]
+        if isinstance(value, bool) or not isinstance(value, int) or not 0 <= value <= 16:
+            return None
+        counts[key] = value
+    return counts
+
+
 def project_nomination_failures(value: object) -> list[dict[str, Any]]:
     """Project only the allowlisted, content-free recruiter failure contract.
 
@@ -205,7 +243,7 @@ def project_nomination_failures(value: object) -> list[dict[str, Any]]:
         raw = parsed
     if not isinstance(raw, (list, tuple)) or not 1 <= len(raw) <= _MAX_STAFFING_UNITS:
         return []
-    failures: list[dict[str, str]] = []
+    failures: list[dict[str, Any]] = []
     for item in raw:
         if not isinstance(item, Mapping) or not {"unit_id", "reason_code"} <= set(item) <= {
             "unit_id",
@@ -213,6 +251,9 @@ def project_nomination_failures(value: object) -> list[dict[str, Any]]:
             "requirement_axis",
             "ranked_agent_ids",
             "top_ranked_ineligibility",
+            "required_agent_count",
+            "ranked_executable_count",
+            "maximum_selected_per_unit",
         }:
             return []
         unit_id = str(item.get("unit_id") or "").strip().casefold()
@@ -241,6 +282,9 @@ def project_nomination_failures(value: object) -> list[dict[str, Any]]:
         )
         if "top_ranked_ineligibility" in item and not ineligibility:
             return []
+        counts = _nomination_team_counts(item, reason_code)
+        if counts is None:
+            return []
         if ranked:
             # Flat, not nested. A list here pushes the preflight-failure receipt
             # past its bounded-JSON depth of 4, and one over-deep row makes
@@ -249,6 +293,7 @@ def project_nomination_failures(value: object) -> list[dict[str, Any]]:
             failure["ranked_agent_ids"] = "~".join(ranked)
         if ineligibility:
             failure["top_ranked_ineligibility"] = ineligibility
+        failure.update(counts)
         if not projected_unit_id or failure in failures:
             return []
         failures.append(failure)
