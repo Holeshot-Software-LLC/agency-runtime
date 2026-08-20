@@ -29,8 +29,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-119
 branch: codex/ar119-hiring-failure-evidence
-evidence_commit: c279bca9fc0429b6c30a30c261b90b2668ea6b3b
-minimum_ledger_commit: 9cf288e1fb8f18efc578b5752ac4e3575e526169
+evidence_commit: de9ef543bcb8c11208f1f0ded3ebddf89157a438
+minimum_ledger_commit: 13413c532abab9c66199ab8464455697165bc1e1
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
@@ -51,7 +51,8 @@ sections. This is a recovery map, not evidence that an unproven cell moved.
 - Claude/Codex/ZCode were freshly installed from that merge. Bundle digests
   start `ed5441f0dd04`, `3e546e6e37b1`, and `34d211f366eb`; dashboard reachable.
 - This branch adds the local AR-259 terminal-hiring diagnostic. Focused tests
-  pass 103/103. Tracker creation still needs explicit owner authorization.
+  pass 103/103; all 12 proportional local gates pass in 1.3 minutes at ledger
+  head `13413c53`. Tracker creation still needs explicit owner authorization.
 - **Option A's three-host pin phase is complete.** OpenClaw/Hermes are deferred,
   not waived; Rule 9 stays five-host and never closes on three.
 ## completed-evidence
@@ -107,7 +108,8 @@ sections. This is a recovery map, not evidence that an unproven cell moved.
 
 Keep Option A frozen. Owner-authorized sequence:
 
-1. Finish formatting, docs, proportional gates, and the recovery/worklog pair.
+1. Reuse clean local recovery pair `de9ef543` / `13413c53`; all 12 proportional
+   gates and documentation validation are green.
 2. After explicit tracker authorization, create AR-259's GitHub issue and write
    its URL into the issue and registry.
 3. Publish a non-draft `[skip ci]` PR, verify CLEAN/no hosted run, merge, fetch

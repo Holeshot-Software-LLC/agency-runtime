@@ -4286,7 +4286,9 @@ AR-259 locally preserves only an allowlisted terminal hiring status and whether
 a positive inference-call count was consumed in the existing content-free
 failure receipt. It retains no identity, prompt, response, notification, or
 pending contract. Focused warning-strict preflight and dynamic-hiring
-verification passes 103/103. No retry followed and **no matrix cell moved**.
+verification passes 103/103. The local recovery pair is `de9ef543` /
+`13413c53`, and all 12 proportional local gates pass in 1.3 minutes. No retry
+followed and **no matrix cell moved**.
 
 ### Still required before AR-119 can close
 

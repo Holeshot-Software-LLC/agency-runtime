@@ -88,7 +88,8 @@ written.
       identity survives.
 - [x] Focused preflight and dynamic-hiring tests pass warning-strict.
 - [ ] Required tracker issue is created after explicit owner authorization.
-- [ ] The exact candidate passes the proportional local gate and is published
-      through a reviewed PR.
+- [x] The exact local candidate passes all 12 proportional gates in 1.3 minutes
+      at recovery pair `de9ef543` / `13413c53`.
+- [ ] The candidate is published through a reviewed PR.
 - [ ] A later authorized exact-main draw is decisive at the hiring boundary;
       this issue itself moves no AR-119 matrix cell.

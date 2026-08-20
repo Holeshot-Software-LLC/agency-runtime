@@ -2406,5 +2406,7 @@ only the closed hiring status and whether a positive inference-call count was
 consumed into the existing content-free failure receipt. It does not retain
 worker identity, notification, prompt, response, or pending contract, and it
 does not change provider routing or selection. Focused warning-strict
-preflight/dynamic-hiring verification passes 103/103. Publication, exact-main
-installation, and one decisive draw remain; **no matrix cell moved**.
+preflight/dynamic-hiring verification passes 103/103. Recovery pair
+`de9ef543` / `13413c53` passes all 12 proportional local gates in 1.3 minutes.
+Publication, exact-main installation, and one decisive draw remain; **no matrix
+cell moved**.
