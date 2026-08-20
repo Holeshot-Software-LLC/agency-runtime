@@ -27,32 +27,30 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-119
-branch: codex/ar119-main-rollout-evidence
-evidence_commit: f203dc665dcfd682ce6073126a65e79eac140562
-minimum_ledger_commit: cfdaacb62dc914400b790d95abc7976c283a612c
+branch: codex/ar119-claude-seal-outcomes
+evidence_commit: aa6439b1c84c4ef4c7b95d17c530a586bf4c08b4
+minimum_ledger_commit: f1f196bc983a1e55d8e5fb108117509a736a6c71
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
 
 # AR-119 active recovery capsule
 
-Current bootstrap projection for completing the owner-confirmed nine-rule
-vision. This file and the founding vision load first after any compaction
-or restart, then `AR-119-vision-loop-status.md` for current state.
+Current bootstrap projection for the owner-confirmed nine-rule vision. Load this
+file and the founding vision first, then the loop status for current state.
 
 ## checkpoint
 
 - **WORK ON the branch above IN `C:\Workspaces\Holeshot Software\agency-runtime-main-rollout`**.
-  It starts at exact main merge `f203dc66` / PR #299. The primary checkout's
+  It starts at exact main `b908b747` / PR #300. The primary checkout's
   named owner WIP remains untouched; never commit, revert, stash, or install there.
-  Hosted CI was technically skipped at PR head and merge; local gates govern.
-- **Machine**: Claude/Codex retain the PR #298 install (bundles `d701a815…` and
-  `2ad1a6b3…`). ZCode alone is reinstalled from `f203dc66`: install `c28d34aa…`,
-  bundle `749a449c…`. The canary map remains
+  Hosted CI was skipped at PR head and merge; local gates govern.
+- **Machine**: Claude/Codex retain the PR #298 install (`d701a815…` / `2ad1a6b3…`).
+  ZCode is installed from `f203dc66` (`c28d34aa…` / `749a449c…`). The map remains
   `claude/codex -> codex-subscription`, `zcode -> zcode-recruiter`; ordinary
   providers remain Codex then Claude and content capture remains enabled.
-- **Option A's local three-host provider-pin phase is complete.** OpenClaw and
-  Hermes are deferred, not waived. Rule 9 stays five-host and never closes on three.
+- **Option A's three-host pin phase is complete.** OpenClaw/Hermes are deferred,
+  not waived; Rule 9 stays five-host and never closes on three.
 ## completed-evidence
 
 Detail in `AR-119-vision-loop-status.md`, session 2026-08-19. **No matrix
@@ -64,12 +62,12 @@ four-layer rules on claude; R1, R4, R5, R6 stay RETRACTED
   trace `2a77824c` retains the 1,309-char steward-only delivered context and
   zero Store staffing rows. Claiming it still costs candidate advance
   `f7b84c8a40fa` plus re-anchoring R2/R3/R7 -- an owner decision.
-- **Codex parent works; child proof is blocked.** Merged-main parent routing and
-  header delivery pass. The authorized child rerun used the trust bypass and
-  requested `codex-subscription`, but no child judge answered: parent preflight
-  failed `workforce_inference_failed`, with spawn/start counts 1/0 and terminal
-  `codex_native_child_start_missing`. This exact-main shape differs from the old
-  1/1 opaque-projection series and is not Rule-4 proof.
+- **Codex parent works; child proof is blocked.** Parent routing/header pass.
+  The one authorized 0.148 falsification draw used the trust bypass and requested
+  `codex-subscription`, but parent preflight failed before spawn:
+  `workforce_inference_failed`, spawn/start 0/0, `codex_parent_spawn_missing`.
+  No child judge answered, so this neither proves nor falsifies the upstream
+  plaintext surface and is not Rule-4 proof.
 - **Claude reached verified delivery.** Decision `native-child-7624e16e…`
   delivered `minimal-change-engineer` pre-speech through answered
   `codex-subscription`; `14de2f74` repairs report correlation. Two later bounded
@@ -79,18 +77,17 @@ four-layer rules on claude; R1, R4, R5, R6 stay RETRACTED
   requested `glm-5.2`, actual response model `glm-5.3`, zero tools. Agency trace
   `498d64b3…` finalized `accept/completed` with the exact five fields and no
   delegation. This is parent proof, not a Rule-4 cell.
+- **PR #300 put ZCode CLI evidence on main** at `b908b747`, with no hosted run; this Claude outcome branch has no install/live authorization.
 ## traps (machine-specific; do not rediscover)
 
 - **`agency` on PATH is `~/.local/bin/agency.exe` and is SCHEMA 45** -- it
   refuses the schema-47 store. Run `python -m agency_runtime.cli ...` from
   a main-equal checkout instead. `C:\agency-cli` holds the HOST CLIs
   (`claude.CMD`, `codex.CMD`), not the Agency CLI.
-- Appending `; echo EXIT=$?` makes the harness see exit 0; judge by the
-  report. Installs need a clean main-equal checkout; sessions predating an
-  install keep the old launcher -- restart, never reinstall.
-- Canaries need `--timeout 420`; the gate suite ~14 min, run detached.
-  Eight preflight/litellm tests red on clean main and
-  `test_platform_wheel.py` collection failure are pre-existing noise.
+- Appending `; echo EXIT=$?` makes the harness see exit 0; judge the report.
+  Install only clean main-equal code; restart stale sessions, never reinstall.
+- Canaries need `--timeout 420`; the ~14-min gate suite runs detached. Eight
+  preflight/litellm reds and the platform-wheel collection red pre-exist.
 - ZCode installs no PATH command. Its real CLI is
   `C:\Users\lucas\AppData\Local\Programs\ZCode\resources\glm\zcode.cjs`.
   Version 0.16.3 advertises but rejects `--allowed-tools`, `--max-turns`, and
@@ -106,15 +103,18 @@ four-layer rules on claude; R1, R4, R5, R6 stay RETRACTED
    decision `5c963e09`). Reproduce with `python
    scripts/ar119_child_judge_probe.py --provider <name> --runs 3`. This retracts
    "7.1 settled"; policy interpretation belongs to AR-253.
-2. **The one-use capability seal** still gates Rule 4 Live and AR-252. Two
-   gates in `child_delivery_evidence.py`: the `expected` capability
-   (read-only paths hardcode `structural_hook_output=False`, lines
-   1151/1226) and the sealed atomic Store consumer.
+2. **The exactly-two capability decision is locally implemented.** The owner
+   authorized two consumptions only inside one atomic producer/verifier pairing.
+   Pair-scoped capabilities cannot enter the ordinary one-use consumer; exactly
+   two Store-verified Claude artifacts, one producer output, and one verifier-
+   artifact semantic line are required before the Store call.
    `native_child_delivery_verifications` now has **1 verified Claude row** from
    the pre-fix report above; it has not moved a matrix cell. Gate 1 exists
    because Claude Code tags no substring as hook-authored (1147-1150).
    **Neither option moves codex**: `_expected_v6_reason` returns
    `unsupported_opaque_interagent_channel` on its FIRST line.
+   Its isolated Claude canary is wired; 14/14 local gates, 151/151 mutations,
+   and 46/46 focused tests pass. No install/live; all live/matrix claims stand.
 3. **Option A is locally complete for the owner-scoped three-host pin phase.**
    Claude has an exact requested/answered `codex-subscription` route. Codex
    parent works and its child-proof exception remains explicit. Repaired ZCode
@@ -138,11 +138,11 @@ four-layer rules on claude; R1, R4, R5, R6 stay RETRACTED
 
 Keep Option A frozen. The full sequence requested at the 19 August review is:
 
-1. Claude: finish the one-use seal/atomic consumer, exact-candidate host proof,
-   AR-252 accepted outcomes and automatic promotion; separately decide the R8
-   candidate advance/re-anchor and re-run the 15,000 ms cold control.
-2. Codex: retain parent proof and wait for the upstream child-start/readable-
-   artifact surface; do not repeat the deterministic canary series meanwhile.
+1. Claude: obtain fresh push/PR/merge/install/live approval, publish the locally
+   green canary through a clean no-hosted-CI rollup, install exact main, then
+   prove outcomes/promotion. R8 and the 15,000 ms control stay separate.
+2. Codex: retain parent proof. The 0.148 draw stopped before spawn; do not
+   repeat until a new upstream surface or deterministic preflight fix exists.
 3. ZCode: retain this parent proof and existing one-card child proof, then close
    plural-card Rule 4, outcomes, promotion and latency on an exact merged install.
 4. Move to the owner's OpenClaw box for route implementation and live proof;
@@ -174,7 +174,7 @@ Judge each gate by its own summary; push hooks are not the production spine.
   candidate; provisional/branch evidence must say so.
 - Keep the 15,000 ms cold control fixed; automatic promotion stays on the
   critical path; no superiority claim without a matched corpus (AR-125).
-- The owner-authorized PR #299 merge, ZCode reinstall, and one CLI smoke are
-  consumed. Fresh authority is required for another push/PR/merge/install or
-  live provider draw, hosted CI, trackers, tags, re-auth, or config changes.
+- PR #300 push/merge, ZCode reinstall, and its CLI smoke are consumed. Fresh
+  authority is required for another push/PR/merge/install, provider draw,
+  hosted CI, tracker/tag/re-auth, or config change.
   OpenClaw and Hermes remain exempt for this session, not waived.

@@ -47,18 +47,34 @@ def _outcome(unit: str, *, verifier_child_id: str = "child-verifier") -> dict[st
     """One recorded acceptance for a distinct produced artifact."""
 
     digest = hashlib.sha256(unit.encode("utf-8")).hexdigest()
+    verifier_digest = hashlib.sha256(f"verifier:{unit}".encode()).hexdigest()
     outcome = evaluate_acceptance(
         {
             "schema": ACCEPTANCE_ENVELOPE_SCHEMA,
             "contractor_worker_id": "worker-contractor",
             "contractor_card": _CONTRACTOR_CARD,
             "producer": _proof(f"child-{unit}", "decision-producer", _CONTRACTOR_CARD, digest),
-            "verifier": _proof(verifier_child_id, "decision-verifier", _VERIFIER_CARD, ""),
+            "verifier": _proof(
+                verifier_child_id,
+                "decision-verifier",
+                _VERIFIER_CARD,
+                verifier_digest,
+            ),
             "verdict": {
                 "verdict_id": f"verdict-{unit}",
-                "decision": "accepted",
-                "artifact_digest": digest,
-                "verifier_child_id": verifier_child_id,
+                "semantic": {
+                    "authority": "verifier-host-artifact",
+                    "artifact_digest": verifier_digest,
+                    "record_index": 1,
+                    "pair_id": "1" * 32,
+                    "decision": "accepted",
+                },
+                "binding": {
+                    "authority": "collector",
+                    "producer_artifact_digest": digest,
+                    "verifier_child_id": verifier_child_id,
+                    "pair_id": "1" * 32,
+                },
             },
         }
     )

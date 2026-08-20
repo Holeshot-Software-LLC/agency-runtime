@@ -13,7 +13,10 @@ from typing import Any
 from agency_runtime.core.agent_activation import agent_is_enabled, normalize_agent_slug
 from agency_runtime.core.bounded_json import safe_load_bounded_json
 from agency_runtime.core.correlation import validate_correlation_id
-from agency_runtime.core.roster.revisions import serialized_revision_metadata
+from agency_runtime.core.roster.revisions import (
+    content_digest_identity,
+    serialized_revision_metadata,
+)
 from agency_runtime.core.store.schema import STORE_CLOCK_SQL
 from agency_runtime.core.workforce.acceptance import (
     ACCEPTANCE_ENVELOPE_SCHEMA,
@@ -2380,10 +2383,15 @@ class WorkforceStoreMixin:
             ).fetchone()
             if worker is None:
                 raise KeyError("workforce worker not found")
-            if str(worker["agent_slug"]) != manifest["contractor_specialist_slug"]:
+            if (
+                str(worker["agent_slug"]) != manifest["contractor_specialist_slug"]
+                or str(worker["current_version"]) != manifest["contractor_specialist_version"]
+                or content_digest_identity(worker["current_hash"])
+                != manifest["contractor_prompt_hash"]
+            ):
                 # The delivered card names a different specialist than the
-                # worker being credited, so this outcome is not attributable to
-                # that immutable identity.
+                # worker's exact current immutable revision, so this outcome is
+                # not attributable to that worker identity.
                 return {
                     "recorded": False,
                     "promoted": False,

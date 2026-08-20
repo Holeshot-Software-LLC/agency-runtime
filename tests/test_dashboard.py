@@ -34,6 +34,7 @@ from agency_runtime.core.dashboard_runtime import (
 from agency_runtime.core.installer_contracts import CODEX_ACTIVATION_CANARY_PROOF_CONTRACT
 from agency_runtime.core.roster.bundled import bundled_roster
 from agency_runtime.core.roster.ingress import MAX_LIST_ITEMS
+from agency_runtime.core.roster.revisions import content_digest_identity
 from agency_runtime.core.roster.sync import quarantine_candidate
 from agency_runtime.core.store.sqlite import Store
 from agency_runtime.core.store.workforce import (
@@ -66,6 +67,8 @@ def _acceptance_envelope(
     """One host-evidenced accepted outcome (AR-252) for the readiness projection."""
 
     def proof(worker: Mapping[str, object], child_id: str, decision_id: str) -> dict[str, object]:
+        prompt_hash = content_digest_identity(worker["current_hash"])
+        assert prompt_hash is not None
         return {
             "schema": HOST_CHILD_PROOF_SCHEMA,
             "verified_delivery": True,
@@ -77,29 +80,44 @@ def _acceptance_envelope(
                 {
                     "specialist_slug": str(worker["agent_slug"]),
                     "specialist_version": str(worker["current_version"]),
-                    "specialist_prompt_hash": str(worker["current_hash"]),
+                    "specialist_prompt_hash": prompt_hash,
                 }
             ],
         }
 
     digest = "9" * 64
+    verifier_digest = "8" * 64
+    contractor_prompt_hash = content_digest_identity(contractor["current_hash"])
+    assert contractor_prompt_hash is not None
     producer = proof(contractor, "dashboard-producer-child", "dashboard-producer-decision")
     producer["artifact_digest"] = digest
+    verifier_proof = proof(verifier, "dashboard-verifier-child", "dashboard-verifier-decision")
+    verifier_proof["artifact_digest"] = verifier_digest
     return {
         "schema": ACCEPTANCE_ENVELOPE_SCHEMA,
         "contractor_worker_id": str(contractor["worker_id"]),
         "contractor_card": {
             "specialist_slug": str(contractor["agent_slug"]),
             "specialist_version": str(contractor["current_version"]),
-            "specialist_prompt_hash": str(contractor["current_hash"]),
+            "specialist_prompt_hash": contractor_prompt_hash,
         },
         "producer": producer,
-        "verifier": proof(verifier, "dashboard-verifier-child", "dashboard-verifier-decision"),
+        "verifier": verifier_proof,
         "verdict": {
             "verdict_id": "dashboard-verdict",
-            "decision": "accepted",
-            "artifact_digest": digest,
-            "verifier_child_id": "dashboard-verifier-child",
+            "semantic": {
+                "authority": "verifier-host-artifact",
+                "artifact_digest": verifier_digest,
+                "record_index": 1,
+                "pair_id": "1" * 32,
+                "decision": "accepted",
+            },
+            "binding": {
+                "authority": "collector",
+                "producer_artifact_digest": digest,
+                "verifier_child_id": "dashboard-verifier-child",
+                "pair_id": "1" * 32,
+            },
         },
     }
 

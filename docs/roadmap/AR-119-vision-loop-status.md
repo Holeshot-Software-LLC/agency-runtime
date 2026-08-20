@@ -2120,6 +2120,38 @@ Rule-4 promotion, candidate advance, or matrix change. Option A remains complete
 for the owner-scoped Claude/Codex/ZCode phase; OpenClaw and Hermes remain
 deferred, not waived.
 
+### CODEX 0.148 FALSIFICATION DRAW: parent preflight stops before spawn
+
+One owner-authorized Codex child canary ran from clean detached `f203dc66`,
+whose code is byte-equivalent to current main `b908b747`; the intervening PR
+#300 commits are documentation-only. Readiness proved Codex CLI 0.148.0,
+install `aa095210-8721-4a5b-825d-75a4e6f71012`, bundle `2ad1a6b34b64…`,
+enabled master/runtime controls, current launcher artifacts, and zero unmet
+prerequisites. The exact 420-second invocation used the invocation-only trust
+bypass. The wrapper exited 1 because proof failed; the bounded Codex process
+exited 0 without timeout or output truncation.
+
+Store correlation is session `01a02050-07c6-73e0-ba0c-c66c571b4edf`, trace
+`01a02050-0812-7921-afce-37abef8fbfa5`, run
+`8a57c558-f612-458d-a6d5-eb0cfe722735`, and request/query hash
+`fe412425e693df0b60f1f7d5e03750b465d7dd2e98f78ad47fcf1af4405e933d`.
+Failure `8ec959bb-700e-41c1-9346-91f1722e74d4` closed the run
+`preflight_failed` / `workforce_inference_failed`. Parent planner and recruiter
+both answered through `codex-fast/gpt-5.6-terra` with
+`structured_response_applied`, but no route, specialist load, delegation,
+native-child route, delivery, worker run, or finalization was created.
+
+The invocation requested child-judge provider `codex-subscription`; no child
+judge answered because native collaboration was never reached. Its content-free
+diagnostic observed seven parent agent messages and zero spawns, child starts,
+waits, tool outputs, interactions, follow-ups, or unexpected items, yielding
+`parent_spawn_missing` / `codex_parent_spawn_missing`. This run therefore does
+not test, prove, or falsify Codex 0.148's conditional plaintext collaboration
+path. It does not supersede the older 0.147 1/1 opaque-projection series or the
+prior exact-main 1/0 run. Do not repeat it without a new upstream surface or a
+deterministic parent-preflight repair target. No rule was promoted, the
+candidate did not advance, and **no matrix cell moved**.
+
 ### CHECKPOINT PLAN: finish the 19 August review scope
 
 1. **Freeze Option A.** Preserve per-harness child-judge pins and the current
@@ -2134,9 +2166,9 @@ deferred, not waived.
    no new capture surface or live draw is needed. Re-run the fixed 15,000 ms cold
    control and proportional gates at that exact candidate.
 4. **Treat Codex as parent-solid and child-upstream-blocked.** Keep its passing
-   parent header proof. Do not repeat the byte-identical canary series; resume
-   Rule 4 only after an upstream Codex release exposes a started child and a
-   readable host-authored delivery artifact.
+   parent header proof. The 0.148 draw stopped before spawn; do not repeat it
+   until a new upstream surface or deterministic preflight repair exists. Rule
+   4 still requires a started child and readable host-authored delivery artifact.
 5. **Finish ZCode beyond Option A.** Retain this parent proof and the existing
    one-card child artifact, then prove the plural-card Rule-4 contract, accepted
    outcomes, promotion, and latency on an exact merged install.

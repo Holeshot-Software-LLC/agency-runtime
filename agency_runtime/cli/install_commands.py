@@ -2169,9 +2169,15 @@ def cmd_host_canary(
     dependencies: InstallDependencies = DEFAULT_DEPENDENCIES,
 ) -> int:
     """Inspect readiness or run an explicitly confirmed live host canary."""
-    from agency_runtime.core.canary import run_canary
+    accepted_outcome = bool(getattr(args, "accepted_outcome", False))
+    if accepted_outcome:
+        from agency_runtime.core.outcome_canary import (
+            run_accepted_outcome_canary as run_selected_canary,
+        )
+    else:
+        from agency_runtime.core.canary import run_canary as run_selected_canary
 
-    report = run_canary(
+    report = run_selected_canary(
         args.agent,
         execute=bool(args.execute),
         confirm=str(args.confirm or ""),
@@ -2180,7 +2186,8 @@ def cmd_host_canary(
         mode=str(args.mode),
         profile_scope=str(getattr(args, "profile_scope", "isolated-profile")),
         require_existing_store=(
-            args.agent == "codex"
+            not accepted_outcome
+            and args.agent == "codex"
             and bool(args.execute)
             and str(args.mode) == "agency"
             and str(getattr(args, "profile_scope", "isolated-profile")) == "current-profile"

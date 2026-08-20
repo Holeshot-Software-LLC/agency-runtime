@@ -16,8 +16,10 @@ from agency_runtime.core.bounded_io import FileSizeLimitError
 from agency_runtime.core.canary_judge_provider import CANARY_CHILD_JUDGE_PROVIDER_ENV
 from agency_runtime.core.child_delivery_evidence import (
     _begin_private_host_artifact_collection,
+    _collect_private_host_accepted_outcome,
     _collect_private_host_child_delivery,
     _finish_private_host_invocation,
+    _HostAcceptedOutcomeCollection,
     _start_private_host_invocation,
     _VerifiedHostChildDelivery,
 )
@@ -3214,10 +3216,20 @@ class SafeClaudeCanaryBackend:
         task: str,
         workdir: str,
         delivery_store: object | None,
-    ) -> tuple[dict[str, Any], _VerifiedHostChildDelivery | None]:
+        accepted_outcome: bool = False,
+    ) -> tuple[
+        dict[str, Any],
+        _VerifiedHostChildDelivery | _HostAcceptedOutcomeCollection | None,
+    ]:
+        if accepted_outcome and delivery_store is None:
+            raise ValueError("accepted-outcome collection requires the exact invocation Store")
+        if accepted_outcome and not self.child_judge_provider:
+            raise ValueError("accepted-outcome collection requires an explicit child judge pin")
         facade = _facade()
         deadline = facade.time.monotonic() + self.timeout
-        verified_delivery: _VerifiedHostChildDelivery | None = None
+        collected_evidence: _VerifiedHostChildDelivery | _HostAcceptedOutcomeCollection | None = (
+            None
+        )
         with _private_temporary_directory_lease(prefix="claude-home") as runtime_lease:
             runtime_home = runtime_lease.path
             claude_home = facade._prepare_private_host_home(
@@ -3270,7 +3282,7 @@ class SafeClaudeCanaryBackend:
                         # One bounded preamble turn before the final message; a
                         # hard 1-turn cap kills responses that open with text.
                         "--max-turns",
-                        "2",
+                        "4" if accepted_outcome else "2",
                         # Persist only inside the isolated, owner-private home so
                         # the host-authored child transcript can be collected
                         # before that home is deleted. The sole enabled tool is
@@ -3296,15 +3308,27 @@ class SafeClaudeCanaryBackend:
             collection_reason = "collected"
             if delivery_store is not None:
                 try:
-                    collected = _collect_private_host_child_delivery(
-                        collection,
-                        invocation=invocation,
-                        store=delivery_store,
+                    if accepted_outcome:
+                        collected_evidence = _collect_private_host_accepted_outcome(
+                            collection,
+                            invocation=invocation,
+                            store=delivery_store,
+                            expected_provider=self.child_judge_provider,
+                        )
+                    else:
+                        collected = _collect_private_host_child_delivery(
+                            collection,
+                            invocation=invocation,
+                            store=delivery_store,
+                        )
+                        collected_evidence = collected.proof
+                    collection_reason = (
+                        collected_evidence.reason
+                        if type(collected_evidence) is _HostAcceptedOutcomeCollection
+                        else collected.reason
                     )
-                    verified_delivery = collected.proof
-                    collection_reason = collected.reason
                 except (OSError, RuntimeError, TypeError, ValueError):
-                    verified_delivery = None
+                    collected_evidence = None
                     collection_reason = "collector_raised"
             record = facade._claude_canary_record(result)
             self._record_child_judge_provider(record)
@@ -3313,8 +3337,13 @@ class SafeClaudeCanaryBackend:
                 # a failed Rule 4 canary reports only that delivery "was not
                 # proven", which is true of a missing card, an unspawned child,
                 # and a permissions fault alike.
-                record["host_child_collection_reason"] = collection_reason
-        return record, verified_delivery
+                reason_field = (
+                    "host_accepted_outcome_reason"
+                    if accepted_outcome
+                    else "host_child_collection_reason"
+                )
+                record[reason_field] = collection_reason
+        return record, collected_evidence
 
     def execute(
         self,
@@ -3344,11 +3373,31 @@ class SafeClaudeCanaryBackend:
         """Execute and collect the host artifact before isolated-home cleanup."""
 
         del check
-        return self._execute(
+        record, delivery = self._execute(
             task=task,
             workdir=workdir,
             delivery_store=store,
         )
+        return record, delivery if type(delivery) is _VerifiedHostChildDelivery else None
+
+    def execute_with_accepted_outcome(
+        self,
+        *,
+        task: str,
+        workdir: str,
+        store: object,
+        check: bool = False,
+    ) -> tuple[dict[str, Any], _HostAcceptedOutcomeCollection | None]:
+        """Collect one exact producer/verifier transaction before home cleanup."""
+
+        del check
+        record, collection = self._execute(
+            task=task,
+            workdir=workdir,
+            delivery_store=store,
+            accepted_outcome=True,
+        )
+        return record, collection if type(collection) is _HostAcceptedOutcomeCollection else None
 
 
 def managed_target(native: Mapping[str, Any] | None, *, error: str) -> Path:

@@ -55,6 +55,12 @@ from agency_runtime.core.store.security import (
     storage_file_is_trusted,
     storage_parent_is_trusted,
 )
+from agency_runtime.core.workforce.acceptance import (
+    ACCEPTANCE_ENVELOPE_SCHEMA,
+    ACCEPTANCE_REASONS,
+    AcceptanceOutcome,
+    evaluate_acceptance,
+)
 
 # A launch record is small: Claude first lines measure 2-5 KB and the Codex
 # child's delivery lands within the first handful of records, behind a
@@ -75,6 +81,14 @@ _V6_TEAM_TOKENS: Final[tuple[str, ...]] = (
     "<!-- agency-native-child-team-end:v6:",
 )
 _CLAUDE_WORKFLOW_ID: Final[re.Pattern[str]] = re.compile(r"wf_[A-Za-z0-9_-]{1,124}\Z")
+_OUTCOME_PAIR_ID: Final[re.Pattern[str]] = re.compile(r"[0-9a-f]{32}\Z")
+_OUTCOME_PAIR_ROLE_MARKER: Final[re.Pattern[str]] = re.compile(
+    r"<!-- agency-accepted-outcome-pair:v1:"
+    r"(?P<pair_id>[0-9a-f]{32}):(?P<role>producer|verifier) -->"
+)
+_OUTCOME_PAIR_MARKER_TOKEN: Final[str] = "agency-accepted-outcome-pair:v1:"
+_VERIFIER_SEMANTIC_SCHEMA: Final[str] = "agency.verifier-semantic.v1"
+_VERIFIER_SEMANTIC_DECISIONS: Final[frozenset[str]] = frozenset({"accepted", "rejected"})
 
 
 @dataclass(frozen=True, slots=True)
@@ -236,6 +250,7 @@ HOST_CHILD_COLLECTION_REASONS: Final[frozenset[str]] = frozenset(
         "no_child_artifact",
         "multiple_child_artifacts",
         "artifact_unreadable",
+        "artifact_changed_after_verification",
         "artifact_outside_invocation_window",
         "artifact_not_trusted",
         "delivery_marker_absent",
@@ -267,6 +282,36 @@ _VERIFIED_DELIVERY_SEAL = object()
 _VERIFIED_DELIVERY_IDENTITIES: dict[int, object] = {}
 _HOST_INVOCATION_IDENTITIES: dict[int, object] = {}
 _VERIFIED_DELIVERY_LOCK = threading.RLock()
+
+
+def _outcome_pair_role_marker(*, pair_id: str, role: str) -> str:
+    """Render the exact host-child role marker used by the outcome canary."""
+
+    if not isinstance(pair_id, str) or _OUTCOME_PAIR_ID.fullmatch(pair_id) is None:
+        raise ValueError("accepted outcome pair id must be 32 lowercase hex characters")
+    if role not in {"producer", "verifier"}:
+        raise ValueError("accepted outcome pair role must be producer or verifier")
+    return f"<!-- agency-accepted-outcome-pair:v1:{pair_id}:{role} -->"
+
+
+def _verifier_semantic_marker(*, pair_id: str, decision: str) -> str:
+    """Render the one exact JSON line a verifier writes in its own artifact."""
+
+    if not isinstance(pair_id, str) or _OUTCOME_PAIR_ID.fullmatch(pair_id) is None:
+        raise ValueError("accepted outcome pair id must be 32 lowercase hex characters")
+    normalized = str(decision or "").strip().casefold()
+    if normalized not in _VERIFIER_SEMANTIC_DECISIONS:
+        raise ValueError("verifier semantic decision must be accepted or rejected")
+    return json.dumps(
+        {
+            "schema": _VERIFIER_SEMANTIC_SCHEMA,
+            "pair_id": pair_id,
+            "decision": normalized,
+        },
+        ensure_ascii=True,
+        separators=(",", ":"),
+        sort_keys=True,
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -355,6 +400,26 @@ def _uncollected(reason: str) -> HostChildCollection:
 
 
 @dataclass(frozen=True, slots=True)
+class _VerifierSemanticVerdict:
+    """One decision located in the verifier's own host-written artifact."""
+
+    pair_id: str
+    decision: str
+    artifact_digest: str
+    record_index: int
+
+    def __post_init__(self) -> None:
+        if (
+            _OUTCOME_PAIR_ID.fullmatch(self.pair_id) is None
+            or self.decision not in _VERIFIER_SEMANTIC_DECISIONS
+            or re.fullmatch(r"[0-9a-f]{64}", self.artifact_digest) is None
+            or isinstance(self.record_index, bool)
+            or not 1 <= self.record_index < MAX_LAUNCH_RECORDS
+        ):
+            raise TypeError("verifier semantic verdict is invalid")
+
+
+@dataclass(frozen=True, slots=True)
 class _VerifiedHostChildDelivery:
     """Sealed typed authority produced by the in-lifetime host collector.
 
@@ -365,11 +430,38 @@ class _VerifiedHostChildDelivery:
     """
 
     evidence: ChildDeliveryEvidence
+    _consumption_scope: str = field(repr=False, compare=False)
     _seal: object = field(repr=False, compare=False)
+    _pair_id: str = field(repr=False, compare=False, default="")
+    _pair_role: str = field(repr=False, compare=False, default="")
+    _semantic: _VerifierSemanticVerdict | None = field(
+        repr=False,
+        compare=False,
+        default=None,
+    )
 
     def __post_init__(self) -> None:
         if self._seal is not _VERIFIED_DELIVERY_SEAL or not self.evidence.staffed:
             raise TypeError("verified host child delivery must come from the trusted collector")
+        if self._consumption_scope == "single":
+            if self._pair_id or self._pair_role or self._semantic is not None:
+                raise TypeError("single-delivery capabilities cannot carry outcome pairing")
+            return
+        if self._consumption_scope != "pair":
+            raise TypeError("verified host child delivery scope is invalid")
+        if _OUTCOME_PAIR_ID.fullmatch(self._pair_id) is None or self._pair_role not in {
+            "producer",
+            "verifier",
+        }:
+            raise TypeError("paired delivery capability has an invalid role identity")
+        if self._pair_role == "producer" and self._semantic is not None:
+            raise TypeError("producer delivery capability cannot carry verifier semantics")
+        if self._pair_role == "verifier" and (
+            self._semantic is None
+            or self._semantic.pair_id != self._pair_id
+            or self._semantic.artifact_digest != self.evidence.artifact_digest
+        ):
+            raise TypeError("verifier delivery capability lacks bound host semantics")
 
 
 def _consume_verified_host_child_delivery(
@@ -381,6 +473,7 @@ def _consume_verified_host_child_delivery(
         if (
             type(value) is not _VerifiedHostChildDelivery
             or value._seal is not _VERIFIED_DELIVERY_SEAL
+            or value._consumption_scope != "single"
             or _VERIFIED_DELIVERY_IDENTITIES.get(id(value)) is not value
         ):
             return None
@@ -398,6 +491,69 @@ def _discard_verified_host_child_delivery(value: object) -> None:
             and _VERIFIED_DELIVERY_IDENTITIES.get(id(value)) is value
         ):
             _VERIFIED_DELIVERY_IDENTITIES.pop(id(value), None)
+
+
+HOST_ACCEPTED_OUTCOME_REASONS: Final[frozenset[str]] = frozenset(
+    ACCEPTANCE_REASONS
+    | {
+        "host_root_changed",
+        "artifact_scan_incomplete",
+        "expected_two_child_artifacts",
+        "artifact_unreadable",
+        "artifact_outside_invocation_window",
+        "artifact_not_trusted",
+        "delivery_marker_absent",
+        "legacy_delivery_not_authoritative",
+        "artifact_origin_not_canonical",
+        "child_event_timestamp_invalid",
+        "child_event_outside_invocation_window",
+        "artifact_not_in_bounded_host_scan",
+        "expected_decision_not_found_or_invalid",
+        "persisted_decision_invalid",
+        "verification_refused",
+        "pair_role_missing",
+        "pair_role_invalid",
+        "pair_role_ambiguous",
+        "pair_identity_mismatch",
+        "verifier_semantic_missing",
+        "verifier_semantic_invalid",
+        "verifier_semantic_ambiguous",
+        "verifier_semantic_outside_invocation_window",
+        "producer_semantic_present",
+        "producer_output_missing",
+        "producer_output_outside_invocation_window",
+        "producer_cardinality_invalid",
+        "provider_pin_mismatch",
+        "contractor_worker_missing",
+        "outcome_store_unavailable",
+        "outcome_store_failed",
+        "outcome_store_invalid",
+        "capability_pair_invalid",
+    }
+)
+
+
+@dataclass(frozen=True, slots=True)
+class _HostAcceptedOutcomeCollection:
+    """One bounded producer/verifier collection and Store outcome."""
+
+    result: Mapping[str, Any] | None
+    reason: str
+    pair_id: str = ""
+    producer_decision_id: str = ""
+    verifier_decision_id: str = ""
+
+    def __post_init__(self) -> None:
+        if self.reason not in HOST_ACCEPTED_OUTCOME_REASONS:
+            raise ValueError("host accepted outcome reason is outside the bounded vocabulary")
+        if self.pair_id and _OUTCOME_PAIR_ID.fullmatch(self.pair_id) is None:
+            raise ValueError("host accepted outcome pair identity is invalid")
+        if self.result is not None and self.result.get("reason") != self.reason:
+            raise ValueError("host accepted outcome result does not agree with its reason")
+
+
+def _uncollected_outcome(reason: str) -> _HostAcceptedOutcomeCollection:
+    return _HostAcceptedOutcomeCollection(result=None, reason=reason)
 
 
 def _trusted_launch_prefix_bytes(path: Path, *, label: str) -> bytes | None:
@@ -594,6 +750,176 @@ def _claude_message_text(message: object) -> str:
             if isinstance(value, str):
                 parts.append(value)
     return "\n".join(parts)
+
+
+@dataclass(frozen=True, slots=True)
+class _OutcomePairArtifact:
+    pair_id: str
+    role: str
+    semantic: _VerifierSemanticVerdict | None
+
+
+def _semantic_marker_payload(line: str) -> Mapping[str, Any] | None:
+    try:
+        payload = json.loads(line.strip())
+    except ValueError:
+        return None
+    if not isinstance(payload, Mapping) or payload.get("schema") != _VERIFIER_SEMANTIC_SCHEMA:
+        return None
+    return payload
+
+
+def _outcome_pair_role(launch_text: str) -> tuple[str, str, str]:
+    """Return one exact producer/verifier role marker from the launch text."""
+
+    role_matches = list(_OUTCOME_PAIR_ROLE_MARKER.finditer(launch_text))
+    marker_literals = launch_text.count(_OUTCOME_PAIR_MARKER_TOKEN)
+    if not role_matches:
+        reason = "pair_role_invalid" if marker_literals else "pair_role_missing"
+        return reason, "", ""
+    if len(role_matches) != 1 or marker_literals != 1:
+        return "pair_role_ambiguous", "", ""
+    return "", role_matches[0].group("pair_id"), role_matches[0].group("role")
+
+
+def _scan_verifier_semantics(
+    records: Sequence[Mapping[str, Any]],
+    *,
+    pair_id: str,
+    artifact_digest: str,
+    invocation: _HostInvocationWindow,
+) -> tuple[str, tuple[_VerifierSemanticVerdict, ...], int, bool]:
+    """Locate exact semantic JSON lines in assistant-authored records."""
+
+    markers: list[_VerifierSemanticVerdict] = []
+    literals = 0
+    invalid = False
+    for record_index, record in enumerate(records[1:], start=1):
+        record_message = record.get("message")
+        if (
+            record.get("type") != "assistant"
+            or not isinstance(record_message, Mapping)
+            or record_message.get("role") != "assistant"
+        ):
+            continue
+        record_text = _claude_message_text(record_message)
+        literals += record_text.count(_VERIFIER_SEMANTIC_SCHEMA)
+        for line in record_text.splitlines():
+            payload = _semantic_marker_payload(line)
+            if payload is None:
+                continue
+            decision = payload.get("decision")
+            if (
+                set(payload) != {"schema", "pair_id", "decision"}
+                or payload.get("pair_id") != pair_id
+                or not isinstance(decision, str)
+                or decision not in _VERIFIER_SEMANTIC_DECISIONS
+            ):
+                invalid = True
+                continue
+            observed = _utc_timestamp(str(record.get("timestamp") or ""))
+            if observed is None or not _within_invocation(
+                int(observed.timestamp() * 1_000_000_000),
+                invocation,
+            ):
+                return "verifier_semantic_outside_invocation_window", (), 0, False
+            markers.append(
+                _VerifierSemanticVerdict(
+                    pair_id=pair_id,
+                    decision=decision,
+                    artifact_digest=artifact_digest,
+                    record_index=record_index,
+                )
+            )
+    return "", tuple(markers), literals, invalid
+
+
+def _producer_output_reason(
+    records: Sequence[Mapping[str, Any]],
+    *,
+    invocation: _HostInvocationWindow,
+) -> str:
+    """Require at least one in-window assistant record in the producer artifact."""
+
+    output_found = False
+    for record in records[1:]:
+        record_message = record.get("message")
+        if (
+            record.get("type") != "assistant"
+            or not isinstance(record_message, Mapping)
+            or record_message.get("role") != "assistant"
+            or not _claude_message_text(record_message).strip()
+        ):
+            continue
+        observed = _utc_timestamp(str(record.get("timestamp") or ""))
+        if observed is None or not _within_invocation(
+            int(observed.timestamp() * 1_000_000_000),
+            invocation,
+        ):
+            return "producer_output_outside_invocation_window"
+        output_found = True
+    return "" if output_found else "producer_output_missing"
+
+
+def _outcome_pair_artifact(
+    path: Path,
+    *,
+    evidence: ChildDeliveryEvidence,
+    invocation: _HostInvocationWindow,
+) -> tuple[str, _OutcomePairArtifact | None]:
+    """Read role and verifier semantics from the same verified Claude artifact."""
+
+    material = _trusted_launch_material(path, label="Claude accepted outcome child transcript")
+    if material is None:
+        return "artifact_unreadable", None
+    text, artifact_digest = material
+    if artifact_digest != evidence.artifact_digest:
+        return "artifact_changed_after_verification", None
+    records = list(_records(text))
+    first = records[0] if records else None
+    message = first.get("message") if isinstance(first, Mapping) else None
+    if (
+        first is None
+        or first.get("type") != "user"
+        or first.get("isSidechain") is not True
+        or not isinstance(message, Mapping)
+        or message.get("role") != "user"
+    ):
+        return "pair_role_invalid", None
+    reason, pair_id, role = _outcome_pair_role(_claude_message_text(message))
+    if reason:
+        return reason, None
+
+    reason, semantic_markers, semantic_literals, invalid_semantic = _scan_verifier_semantics(
+        records,
+        pair_id=pair_id,
+        artifact_digest=artifact_digest,
+        invocation=invocation,
+    )
+    if reason:
+        return reason, None
+    if role == "producer":
+        if semantic_literals or semantic_markers or invalid_semantic:
+            return "producer_semantic_present", None
+        reason = _producer_output_reason(records, invocation=invocation)
+        if reason:
+            return reason, None
+        return "", _OutcomePairArtifact(pair_id=pair_id, role=role, semantic=None)
+    if len(semantic_markers) > 1 or (
+        semantic_markers and (invalid_semantic or semantic_literals > 1)
+    ):
+        return "verifier_semantic_ambiguous", None
+    if invalid_semantic:
+        return "verifier_semantic_invalid", None
+    if not semantic_markers:
+        return (
+            "verifier_semantic_invalid" if semantic_literals else "verifier_semantic_missing"
+        ), None
+    return "", _OutcomePairArtifact(
+        pair_id=pair_id,
+        role=role,
+        semantic=semantic_markers[0],
+    )
 
 
 def _v6_cards(delivery: Any) -> tuple[DeliveredCard, ...]:
@@ -1687,6 +2013,29 @@ def _sole_window_artifact(
     return "", artifact
 
 
+def _window_pair_artifacts(
+    collection: _PrivateHostArtifactCollection,
+    *,
+    invocation: _HostInvocationWindow,
+) -> tuple[str, tuple[Path, ...]]:
+    """Return exactly two artifacts created inside one host invocation."""
+
+    scan = scan_child_artifacts(collection.root, host=collection.host)
+    if not scan.root_present or scan.truncated:
+        return "artifact_scan_incomplete", ()
+    if scan.candidate_count != 2 or len(scan.artifacts) != 2:
+        return "expected_two_child_artifacts", ()
+    for artifact in scan.artifacts:
+        try:
+            metadata = artifact.lstat()
+        except OSError:
+            return "artifact_unreadable", ()
+        modified_ns = int(getattr(metadata, "st_mtime_ns", 0) or 0)
+        if not _within_invocation(modified_ns, invocation):
+            return "artifact_outside_invocation_window", ()
+    return "", scan.artifacts
+
+
 def _within_invocation(moment_ns: int, invocation: _HostInvocationWindow) -> bool:
     clock_skew_ns = 1_000_000_000
     return (
@@ -1732,6 +2081,326 @@ def _readable_v6_delivery(
     if not _within_invocation(int(observed.timestamp() * 1_000_000_000), invocation):
         return "child_event_outside_invocation_window", None
     return "", diagnostic
+
+
+_ACCEPTED_OUTCOME_RESULT_FIELDS: Final[frozenset[str]] = frozenset(
+    {
+        "recorded",
+        "promoted",
+        "reason",
+        "event_id",
+        "worker_id",
+        "accepted_outcome_key",
+        "artifact_digest",
+    }
+)
+
+
+def _accepted_outcome_result_is_valid(result: object) -> bool:
+    if not isinstance(result, Mapping) or set(result) != _ACCEPTED_OUTCOME_RESULT_FIELDS:
+        return False
+    reason = result.get("reason")
+    recorded = result.get("recorded")
+    promoted = result.get("promoted")
+    if (
+        reason not in ACCEPTANCE_REASONS
+        or type(recorded) is not bool
+        or type(promoted) is not bool
+        or any(
+            not isinstance(result.get(field), str)
+            for field in (
+                "event_id",
+                "worker_id",
+                "accepted_outcome_key",
+                "artifact_digest",
+            )
+        )
+    ):
+        return False
+    if reason in {"accepted", "replayed"}:
+        return bool(
+            recorded is (reason == "accepted")
+            and (reason == "accepted" or promoted is False)
+            and result.get("event_id")
+            and result.get("worker_id")
+            and re.fullmatch(r"[0-9a-f]{64}", result["accepted_outcome_key"])
+            and re.fullmatch(r"[0-9a-f]{64}", result["artifact_digest"])
+        )
+    return bool(
+        recorded is False
+        and promoted is False
+        and not result["event_id"]
+        and not result["accepted_outcome_key"]
+        and not result["artifact_digest"]
+    )
+
+
+def _accepted_outcome_result_matches_evaluation(
+    result: object,
+    evaluated: AcceptanceOutcome,
+) -> bool:
+    """Bind the Store's terminal projection back to this exact envelope."""
+
+    if not _accepted_outcome_result_is_valid(result) or not isinstance(result, Mapping):
+        return False
+    expected_reasons = (
+        {"accepted", "replayed", "contractor_identity_mismatch"}
+        if evaluated.accepted
+        else {evaluated.reason}
+    )
+    if result["reason"] not in expected_reasons:
+        return False
+    if result["reason"] == "contractor_identity_mismatch":
+        return result["worker_id"] == evaluated.contractor_worker_id
+    return not evaluated.accepted or (
+        result["worker_id"] == evaluated.contractor_worker_id
+        and result["accepted_outcome_key"] == evaluated.outcome_key
+        and result["artifact_digest"] == evaluated.artifact_digest
+    )
+
+
+def _verdict_identity(
+    *,
+    pair_id: str,
+    verifier: _VerifiedHostChildDelivery,
+) -> str:
+    semantic = verifier._semantic
+    if semantic is None:  # pragma: no cover - enforced by the sealed capability
+        return ""
+    material = "\0".join(
+        (
+            _VERIFIER_SEMANTIC_SCHEMA,
+            pair_id,
+            verifier.evidence.child_id,
+            semantic.artifact_digest,
+            str(semantic.record_index),
+            semantic.decision,
+        )
+    )
+    return sha256(material.encode("utf-8")).hexdigest()
+
+
+def _record_verified_host_child_pair_outcome(
+    capabilities: tuple[_VerifiedHostChildDelivery, _VerifiedHostChildDelivery],
+    *,
+    store: object,
+    auto_promote_successes: int | None,
+    disabled_agents: frozenset[str] | None,
+) -> _HostAcceptedOutcomeCollection:
+    """Consume exactly two pair-scoped capabilities around one Store call.
+
+    The shared lock is the in-memory transaction boundary: neither member can
+    be singly consumed, a concurrent pair consumer cannot split them, and both
+    identities are removed only after the Store returns its bounded terminal
+    result. No mapping or general callback can enter this path.
+    """
+
+    if type(capabilities) is not tuple or len(capabilities) != 2:
+        return _uncollected_outcome("capability_pair_invalid")
+    with _VERIFIED_DELIVERY_LOCK:
+        if capabilities[0] is capabilities[1] or any(
+            type(value) is not _VerifiedHostChildDelivery
+            or value._seal is not _VERIFIED_DELIVERY_SEAL
+            or value._consumption_scope != "pair"
+            or _VERIFIED_DELIVERY_IDENTITIES.get(id(value)) is not value
+            for value in capabilities
+        ):
+            return _uncollected_outcome("capability_pair_invalid")
+        by_role = {value._pair_role: value for value in capabilities}
+        if set(by_role) != {"producer", "verifier"}:
+            return _uncollected_outcome("capability_pair_invalid")
+        producer = by_role["producer"]
+        verifier = by_role["verifier"]
+        pair_id = producer._pair_id
+        if not pair_id or pair_id != verifier._pair_id:
+            return _uncollected_outcome("pair_identity_mismatch")
+        producer_proof = _host_child_delivery_projection(producer.evidence)
+        verifier_proof = _host_child_delivery_projection(verifier.evidence)
+        if producer_proof is None or verifier_proof is None:
+            return _uncollected_outcome("capability_pair_invalid")
+        cards = producer_proof.get("cards")
+        if not isinstance(cards, list) or len(cards) != 1 or not isinstance(cards[0], Mapping):
+            return _uncollected_outcome("producer_cardinality_invalid")
+        contractor_card = dict(cards[0])
+        contractor_slug = contractor_card.get("specialist_slug")
+        worker_getter = getattr(store, "get_workforce_worker", None)
+        recorder = getattr(store, "record_accepted_outcome", None)
+        if not callable(worker_getter) or not callable(recorder):
+            return _uncollected_outcome("outcome_store_unavailable")
+        try:
+            worker = worker_getter(contractor_slug, disabled_agents=disabled_agents)
+        except KeyError:
+            return _uncollected_outcome("contractor_worker_missing")
+        except Exception:
+            return _uncollected_outcome("outcome_store_failed")
+        if not isinstance(worker, Mapping) or not isinstance(worker.get("worker_id"), str):
+            return _uncollected_outcome("outcome_store_invalid")
+        semantic = verifier._semantic
+        if semantic is None:
+            return _uncollected_outcome("capability_pair_invalid")
+        envelope = {
+            "schema": ACCEPTANCE_ENVELOPE_SCHEMA,
+            "contractor_worker_id": worker["worker_id"],
+            "contractor_card": contractor_card,
+            "producer": producer_proof,
+            "verifier": verifier_proof,
+            "verdict": {
+                "verdict_id": _verdict_identity(pair_id=pair_id, verifier=verifier),
+                "semantic": {
+                    "authority": "verifier-host-artifact",
+                    "artifact_digest": semantic.artifact_digest,
+                    "record_index": semantic.record_index,
+                    "pair_id": pair_id,
+                    "decision": semantic.decision,
+                },
+                "binding": {
+                    "authority": "collector",
+                    "producer_artifact_digest": producer.evidence.artifact_digest,
+                    "verifier_child_id": verifier.evidence.child_id,
+                    "pair_id": pair_id,
+                },
+            },
+        }
+        evaluated = evaluate_acceptance(envelope)
+        try:
+            result = recorder(
+                envelope=envelope,
+                auto_promote_successes=auto_promote_successes,
+                disabled_agents=disabled_agents,
+            )
+        except Exception:
+            return _uncollected_outcome("outcome_store_failed")
+        if not _accepted_outcome_result_matches_evaluation(result, evaluated):
+            return _uncollected_outcome("outcome_store_invalid")
+        for value in capabilities:
+            _VERIFIED_DELIVERY_IDENTITIES.pop(id(value), None)
+        return _HostAcceptedOutcomeCollection(
+            result=dict(result),
+            reason=str(result["reason"]),
+            pair_id=pair_id,
+            producer_decision_id=producer.evidence.decision_id,
+            verifier_decision_id=verifier.evidence.decision_id,
+        )
+
+
+def _collect_private_host_accepted_outcome(  # noqa: C901 - one fail-closed evidence boundary
+    collection: _PrivateHostArtifactCollection,
+    *,
+    invocation: _HostInvocationWindow,
+    store: object,
+    auto_promote_successes: int | None = None,
+    disabled_agents: frozenset[str] | None = None,
+    expected_provider: str | None = None,
+) -> _HostAcceptedOutcomeCollection:
+    """Collect exactly one producer/verifier pair from an isolated Claude run."""
+
+    if not isinstance(collection, _PrivateHostArtifactCollection):
+        raise TypeError("private host artifact collection capability is required")
+    if collection._seal is not _PRIVATE_COLLECTION_SEAL:
+        raise TypeError("private host artifact collection capability is invalid")
+    if expected_provider is not None and (
+        type(expected_provider) is not str
+        or not expected_provider
+        or len(expected_provider) > 128
+        or any(ord(character) < 32 or ord(character) == 127 for character in expected_provider)
+    ):
+        raise ValueError("expected child judge provider is invalid")
+    if (
+        not isinstance(invocation, _HostInvocationWindow)
+        or invocation._seal is not _PRIVATE_COLLECTION_SEAL
+        or invocation.collection is not collection
+        or not _private_temporary_lease_is_current(collection.lease)
+    ):
+        raise TypeError("matching host invocation window is required")
+    reason = _collected_host_root(collection)
+    if reason:
+        return _uncollected_outcome(reason)
+    reason, artifacts = _window_pair_artifacts(collection, invocation=invocation)
+    if reason:
+        return _uncollected_outcome(reason)
+
+    pair_members: list[tuple[ChildDeliveryEvidence, _OutcomePairArtifact]] = []
+    for artifact in artifacts:
+        reason, diagnostic = _readable_v6_delivery(
+            artifact,
+            collection=collection,
+            invocation=invocation,
+        )
+        if diagnostic is None:
+            return _uncollected_outcome(reason)
+        verified = _verify_child_delivery_with_capability(
+            artifact,
+            collection=collection,
+            store=store,
+        )
+        if verified is None or not verified.staffed:
+            refusal = verified.verification_reason if verified is not None else ""
+            return _uncollected_outcome(
+                refusal if refusal in _PROMOTED_VERIFICATION_REASONS else "verification_refused"
+            )
+        reason, pair_artifact = _outcome_pair_artifact(
+            artifact,
+            evidence=verified,
+            invocation=invocation,
+        )
+        if pair_artifact is None:
+            return _uncollected_outcome(reason)
+        pair_members.append((verified, pair_artifact))
+
+    roles = {member.role for _evidence, member in pair_members}
+    pair_ids = {member.pair_id for _evidence, member in pair_members}
+    if roles != {"producer", "verifier"} or len(pair_ids) != 1:
+        return _uncollected_outcome("pair_identity_mismatch")
+    producer_evidence = next(
+        evidence for evidence, member in pair_members if member.role == "producer"
+    )
+    if len(producer_evidence.cards) != 1:
+        return _uncollected_outcome("producer_cardinality_invalid")
+    if expected_provider is not None:
+        getter = getattr(store, "get_native_child_staffing_decision", None)
+        if not callable(getter):
+            return _uncollected_outcome("provider_pin_mismatch")
+        for evidence, _member in pair_members:
+            route = getter(evidence.decision_id)
+            attempts = route.get("provider_attempts") if isinstance(route, Mapping) else None
+            applied = (
+                [
+                    attempt.get("provider_name")
+                    for attempt in attempts
+                    if isinstance(attempt, Mapping) and attempt.get("status") == "applied"
+                ]
+                if isinstance(attempts, list)
+                else []
+            )
+            if applied != [expected_provider]:
+                return _uncollected_outcome("provider_pin_mismatch")
+
+    capabilities = tuple(
+        _VerifiedHostChildDelivery(
+            evidence=evidence,
+            _consumption_scope="pair",
+            _seal=_VERIFIED_DELIVERY_SEAL,
+            _pair_id=member.pair_id,
+            _pair_role=member.role,
+            _semantic=member.semantic,
+        )
+        for evidence, member in pair_members
+    )
+    assert len(capabilities) == 2
+    typed_capabilities = (capabilities[0], capabilities[1])
+    with _VERIFIED_DELIVERY_LOCK:
+        for capability in typed_capabilities:
+            _VERIFIED_DELIVERY_IDENTITIES[id(capability)] = capability
+    try:
+        return _record_verified_host_child_pair_outcome(
+            typed_capabilities,
+            store=store,
+            auto_promote_successes=auto_promote_successes,
+            disabled_agents=disabled_agents,
+        )
+    finally:
+        for capability in typed_capabilities:
+            _discard_verified_host_child_delivery(capability)
 
 
 def _collect_private_host_child_delivery(
@@ -1787,6 +2456,7 @@ def _collect_private_host_child_delivery(
         )
     proof = _VerifiedHostChildDelivery(
         evidence=verified,
+        _consumption_scope="single",
         _seal=_VERIFIED_DELIVERY_SEAL,
     )
     with _VERIFIED_DELIVERY_LOCK:

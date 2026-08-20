@@ -394,6 +394,7 @@ def prepare_live_invocation(
     profile_scope: str = "isolated-profile",
     require_existing_store: bool = False,
     trust_mode: str = "attended",
+    base_prompt: str | None = None,
 ) -> LivePreparation:
     facade = _facade()
     try:
@@ -413,7 +414,10 @@ def prepare_live_invocation(
             error="runtime evidence store is unavailable",
         )
     nonce = facade.secrets.token_hex(16)
-    base_prompt = facade.CANARY_PROMPT if mode == "agency" else facade.NATIVE_ONLY_CANARY_PROMPT
+    if base_prompt is None:
+        base_prompt = facade.CANARY_PROMPT if mode == "agency" else facade.NATIVE_ONLY_CANARY_PROMPT
+    elif type(base_prompt) is not str or not base_prompt.strip():
+        raise ValueError("custom canary prompt must be a non-empty string")
     prompt = f"{base_prompt}\n\nCanary nonce: {nonce}"
     expected_query_hash = hashlib.sha256(prompt.encode("utf-8")).hexdigest()
     child_judge_provider = ""

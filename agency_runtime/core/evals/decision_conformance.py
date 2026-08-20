@@ -1410,9 +1410,7 @@ class _NominationSemantics:""",
         source_path="agency_runtime/adapters/hooks.py",
         before='            marker="INITIAL",',
         after='            marker="REMOVED",',
-        test_node=(
-            "tests/test_host_hooks.py::test_codex_stdio_preflight_header_is_accepted_first_pass"
-        ),
+        test_node=("tests/test_host_hooks.py::test_stdio_preflight_header_is_accepted_first_pass"),
     ),
     DecisionMutation(
         mutation_id="openclaw-finalize-restores-model-revision",

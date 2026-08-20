@@ -3,7 +3,7 @@ title: "AR-252: Record host-evidenced, independently verified outcomes for autom
 status: open
 category: roadmap
 created: 2026-08-05
-updated: 2026-08-18
+updated: 2026-08-20
 tags: [workforce, promotion, evidence, native-child, outcomes, critical-path]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
@@ -12,6 +12,9 @@ related:
   - docs/decisions/0118-require-inference-owned-staffing.md
   - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
   - docs/decisions/0157-automatically-promote-host-verified-contractors.md
+  - agency_runtime/core/accepted_outcome_canary_contract.py
+  - agency_runtime/core/outcome_canary.py
+  - agency_runtime/core/canary_backends.py
   - agency_runtime/core/child_delivery_evidence.py
   - agency_runtime/core/store/workforce.py
   - agency_runtime/core/store/native_child.py
@@ -43,9 +46,21 @@ current host-spawned, just-in-time architecture.
 ## Current state
 
 AR-242 set the three-success and seven-day review-window policy. Store code can
-validate acceptance evidence and perform automatic promotion atomically, but no
-current host-backed producer/verifier correlation emits the required event.
-Agency-authored assignment rows alone are not proof of successful work.
+validate acceptance evidence and perform automatic promotion atomically. The
+private Claude collector now pairs exactly two host-artifact delivery
+capabilities. An explicit isolated Claude canary mode now drives that exact
+serial pair and reports content-free provider, card, delivery, and Store-result
+evidence, but it has not been installed or exercised by a live host. Agency-
+authored assignment rows alone remain insufficient proof.
+
+The accepted-outcome v2 contract now enforces the 2026-08-18 joint-verdict
+ruling at its input and persisted-manifest boundaries. The semantic decision is
+identified by the verifier host artifact's digest and bounded record position;
+the collector-owned binding separately names the producer artifact digest and
+verifier child. Either half missing, misattributed, or edited after recording is
+refused. The owner authorized exactly two consumptions only inside the atomic
+producer/verifier transaction on 2026-08-20; no public or general-purpose
+capability widening followed.
 
 ## Approach
 
@@ -91,23 +106,27 @@ rows, or a shared producer/verifier identity.
 
 ## What the checked boxes do and do not mean
 
-The five checked items are the host-free half: the rule that decides what may
-count, the recorder that applies it, and the readiness migration. They are
-proven by source and simulation in `agency_runtime/core/workforce/acceptance.py`
-and `tests/test_accepted_outcomes.py`, which runs in CI.
+The five checked items cover the deciding rule, recorder, readiness migration,
+and the locally simulated pairing path. Synthetic Claude transcripts now cross
+the same private artifact verifier and sealed exactly-two transaction used by
+the pending live path; direct envelope tests still exercise the host-free core.
 
-They are not proof that the path runs. No host has yet produced a real envelope:
-the producer and verifier proofs come from the sealed
-`agency.host-child-delivery-proof.v1` projection, and in every case above they
-are constructed by the test rather than collected from a Claude transcript or a
-Codex rollout. The remaining two items are exactly that gap, and until they
-close, the runtime can accept an outcome that nothing yet offers it.
+They are not live proof. No real host has yet produced an accepted envelope;
+the collector cases use synthetic host-shaped transcripts in an allocator-owned
+temporary namespace. The remaining two acceptance items are exactly that gap.
 
-The collector seam is `agency_runtime/core/child_delivery_evidence.py`, whose
-`_host_child_delivery_projection` already emits the accepted proof shape for a
-verified delivery. What is missing is the step that pairs one producer proof
-with one verifier proof and that verifier's verdict, which is where the live
-work starts.
+The current accepted envelope is `agency.accepted-outcome.v2`. It deliberately
+refuses the former flat v1 verdict rather than silently treating collector-added
+artifact binding as verifier-authored semantics. No production collector ever
+emitted a v1 row, so there is no live acceptance history to migrate. The
+2026-08-20 affected acceptance, delivery, promotion, lifecycle, and dashboard
+checkpoint is **339 passed**, with Ruff check, Ruff format check, and
+`git diff --check` green.
+
+The remaining Claude step is operational rather than source wiring: publish and
+install an exact merged-main candidate, then run the explicitly confirmed live
+mode. Push, PR, merge, installation, and the first provider draw require fresh
+owner approval.
 
 ## Measured before building the collector (2026-08-14, `9e29aabe`)
 
@@ -144,11 +163,13 @@ them halfway through a build.
 The three above were found by reading the collector. This one falls out of the
 acceptance rule itself and is the sharpest of the four.
 
-`evaluate_acceptance` takes `artifact_digest` from `producer["artifact_digest"]`,
-and `_host_child_delivery_projection` sets that field from
-`evidence.artifact_digest` — the SHA-256 of the bounded trusted read window of
-**the producer child's own transcript**. It is not a digest of any work product.
-The verdict must then match it exactly (`verdict_artifact_mismatch`).
+At the time of this measurement, v1 took `artifact_digest` from
+`producer["artifact_digest"]`, and `_host_child_delivery_projection` set that
+field from `evidence.artifact_digest` — the SHA-256 of the bounded trusted read
+window of **the producer child's own transcript**. It was not a digest of any
+work product. The former flat verdict then had to match it exactly
+(`verdict_artifact_mismatch`). V2 retires that ambiguous shape in favor of the
+explicit semantic and binding halves below.
 
 So the thing a verifier must bind its verdict to is the hash of a file it cannot
 read: the producer's transcript lives in the host's namespace, and the verifier
@@ -207,6 +228,67 @@ named halves and re-derivable under the replacement rule; nothing in the
 envelope shape hides which author supplied which field. If a host contract
 later guarantees separable work artifacts, the produced-work binding
 supersedes this ruling for new envelopes.
+
+## V2 attribution boundary implemented (2026-08-20)
+
+`evaluate_acceptance` and `accepted_outcome_manifest` now require and recheck
+both named halves. The semantic half carries exact authority
+`verifier-host-artifact`, the verifier artifact digest, a bounded non-boolean
+record index, and the verifier's decision. The binding half carries exact
+authority `collector`, the producer artifact digest, and verifier child ID.
+The verifier artifact digest and semantic record position also participate in
+the replay identity, so two records in one verifier transcript cannot collapse
+silently. The stored manifest preserves every attribution field and stops
+counting if any one is edited.
+
+The owner authorized exactly two consumptions within one atomic pairing
+transaction on 2026-08-20. That ruling does not authorize a public multi-use
+capability, ordinary-turn outcome recording, installation, or a provider call.
+
+## Exactly-two pairing collector implemented (2026-08-20)
+
+`_collect_private_host_accepted_outcome` requires exactly two artifacts from one
+fresh isolated Claude invocation. Each artifact must independently pass the v6
+Store decision and host-delivery verifier. Exact launch markers bind a shared
+128-bit pair ID and producer/verifier roles; the producer must carry exactly one
+contractor card and in-window host-written output, while the verifier must write
+one exact semantic JSON line in its own artifact. Missing, extra, mismatched,
+ambiguous, stale, or rejected evidence lands on a closed refusal reason.
+
+The collector mints pair-scoped sealed capabilities together. The ordinary
+single consumer rejects them, and a shared lock permits only the exact two-member
+transaction to call `record_accepted_outcome`; both identities disappear after
+a validated terminal Store result and are discarded on every failure path. The
+Store result is re-bound to the locally evaluated envelope, exact worker, replay
+key, and producer digest. Synthetic tests prove recording, policy promotion,
+rejection, ambiguity, pair mismatch, exact-two cardinality, output presence,
+single-consumer refusal, replay, and non-public authority. No live or matrix
+claim follows from this checkpoint.
+
+## Isolated Claude accepted-outcome canary wired (2026-08-20)
+
+`host-canary claude --accepted-outcome` now has a distinct exact confirmation
+phrase and a fixed work shape: one TypeScript producer followed serially by one
+independent verifier in the same isolated Claude invocation. The backend raises
+its bounded turn allowance only for this mode, collects both artifacts before
+the private home is deleted, and never accepts an arbitrary callback or caller-
+supplied envelope. The collector compares both immutable routing decisions'
+actual applied provider against the configured child-judge pin before it can
+reach `record_accepted_outcome`; a mismatch returns `provider_pin_mismatch` and
+writes no acceptance row.
+
+The operator report excludes parent, child, and model prose. It names the
+requested pin, both actual answering providers, exact content-free card
+revisions, host-artifact digests, pair identity, fresh Store result, and whether
+promotion occurred. A replay is not a fresh canary pass. The widened local
+canary/outcome/CLI regression surface passes 273/273 warning-strict; the final
+focused surface passes 46/46 with Ruff lint/format green. The complete local
+harness passes 14/14 in 14.4 minutes (796 production-spine, 695 matrix-evidence,
+and 134 dashboard tests), and the separate decision-conformance evaluator kills
+151/151 mutations from a green baseline. A read-only source CLI smoke reached
+the new confirmation gate without `--execute`; its sandboxed host inventory was
+not readiness evidence. No host call, provider draw, acceptance, promotion,
+candidate advance, or matrix move occurred.
 
 ## Collector diagnosis shipped ahead of the collector (2026-08-14)
 

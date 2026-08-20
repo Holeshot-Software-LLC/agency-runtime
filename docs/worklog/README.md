@@ -1072,6 +1072,11 @@ This registry connects repository history to the roadmap and to optional detail 
 | `88fc1956` | 2026-08-19 | fix(zcode): deliver authoritative parent header snapshots | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | [detail](2026-08-19-88fc1956-zcode-authoritative-parent-headers.md) |
 | `f203dc66` | 2026-08-20 | Merge pull request #299 from Holeshot-Software-LLC/codex/ar119-main-rollout-evidence [skip ci] | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
 | `895b8c70` | 2026-08-20 | docs(ar119): record exact-main zcode cli proof | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
+| `b908b747` | 2026-08-20 | Merge pull request #300 from Holeshot-Software-LLC/codex/ar119-main-rollout-evidence [skip ci] | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
+| `8e87b7a7` | 2026-08-20 | feat(outcomes): bind verifier semantics to host artifacts | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-252](../roadmap/issue-AR-252-record-verified-acceptance-outcomes.md) | [detail](2026-08-20-8e87b7a7-bind-verifier-semantics-to-host-artifacts.md) |
+| `aa6439b1` | 2026-08-20 | feat(outcomes): collect atomic producer verifier pairs | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-252](../roadmap/issue-AR-252-record-verified-acceptance-outcomes.md) | [detail](2026-08-20-aa6439b1-collect-atomic-producer-verifier-pairs.md) |
+| `87d87b99` | 2026-08-20 | feat(outcomes): wire isolated Claude acceptance canary | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-252](../roadmap/issue-AR-252-record-verified-acceptance-outcomes.md) | [detail](2026-08-20-87d87b99-wire-isolated-claude-acceptance-canary.md) |
+| `6cc6601c` | 2026-08-20 | docs(ar119): record Codex 0.148 pre-spawn draw | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
