@@ -10,7 +10,7 @@ import os
 import re
 import secrets
 from collections.abc import Callable, Mapping, Sequence
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from typing import TYPE_CHECKING, Any, Final
 
 from agency_runtime.core.canary_parent_recruiter_provider import (
@@ -50,6 +50,7 @@ from agency_runtime.core.workforce.planning_contracts import (
     PLAN_SCHEMA_VERSION,
     RECRUITMENT_SCHEMA_VERSION,
     RecruiterProposal,
+    UnitRecruitment,
     WorkUnit,
     WorkUnitPlan,
 )
@@ -112,9 +113,12 @@ _NOMINATION_REPAIR_REQUIREMENTS = {
     ),
     "missing_work_unit": "Return the missing planned-unit row.",
     "staff_without_safe_team": (
-        "Rank at least one semantically faithful candidate for this unit so the staff decision "
-        "can select a team, adding the coverage complements a complete team needs within "
-        "maximum_selected_per_unit. Declare gap only when no supplied candidate is faithful."
+        "Return staff only when the classifications admit a safe team: every required candidate "
+        "plus zero or more acceptable candidates, no forbidden candidates, and no more than "
+        "maximum_selected_per_unit must cover every exact typed requirement. Required is a "
+        "mandatory-selection constraint, not an emphasis label. Reclassify nonessential "
+        "candidates as acceptable and add faithful coverage complements when needed. Declare gap "
+        "only when no supplied candidate or combination is semantically faithful."
     ),
 }
 
@@ -188,11 +192,15 @@ _RECRUITER_SYSTEM = (
     "unit, and gap only when no supplied specialist or combination is semantically appropriate "
     "— a gap hires a new contractor, so reserve it for genuinely missing specialties. Classify "
     "each candidate as required, acceptable, or forbidden:\n"
-    "- required: the specialist whose expertise is essential for this unit\n"
-    "- acceptable: a valid alternative or complement\n"
-    "- forbidden: unrelated, wrong specialty, or outside the unit's scope\n"
-    "A staff decision should include the coverage complements a complete team needs within "
-    "response_contract.maximum_selected_per_unit. Do not mark a necessary "
+    "- required: an essential specialist who must be in the derived selected team and consumes "
+    "one team slot\n"
+    "- acceptable: a valid alternative or complement that the runtime may add when needed\n"
+    "- forbidden: an excluded candidate that cannot enter the team\n"
+    "The runtime derives selected from these classifications. Before returning staff, verify that "
+    "some subset of required and acceptable candidates contains every required candidate, uses "
+    "no more than response_contract.maximum_selected_per_unit slots, and covers every exact "
+    "typed_recall requirement. Do not label every strong candidate required; use acceptable for "
+    "optional alternatives and complements. Do not mark a necessary "
     "coverage complement forbidden merely because it is secondary. A gap decision must not "
     "leave a semantically faithful candidate behind.\n"
     "Every required/acceptable candidate needs concise positive evidence (why they "
@@ -222,8 +230,11 @@ _RECRUITER_REPAIR_SYSTEM = (
     "only supplied candidates that faithfully match it in descending order. A repaired "
     "gap may use an empty ranked_semantic list when no supplied candidate is relevant. "
     "Never invent a roster identity. Then "
-    "classify each ranked candidate as required, acceptable, or forbidden. A staff decision "
-    "must leave a safe typed team; a gap decision must leave no safe team. Required and "
+    "classify each ranked candidate as required, acceptable, or forbidden. The runtime derives "
+    "selected: every required candidate is mandatory, acceptable candidates are optional team "
+    "members, and forbidden candidates are excluded. A staff decision must admit a subset that "
+    "contains every required candidate, stays within maximum_selected_per_unit, and covers every "
+    "exact requirement. A gap decision must leave no safe team. Required and "
     "acceptable candidates need concise positive evidence, and forbidden candidates need "
     "concise negative evidence. Return only one JSON object matching the supplied schema."
 )
@@ -442,6 +453,48 @@ MAX_RECORDED_RANKED_CANDIDATES: Final[int] = 8
 
 
 @dataclass(frozen=True, slots=True)
+class _SafeTeamRepairContract:
+    """Bounded deterministic facts needed to repair one unsafe team.
+
+    The recruiter already received every requirement and candidate coverage row
+    in ``typed_recall``. This projection reconnects those facts to the rejected
+    classifications without copying the provider's free-text evidence or
+    choosing a replacement team for it.
+    """
+
+    maximum_selected_per_unit: int
+    requirements: tuple[str, ...]
+    required_agent_ids: tuple[str, ...]
+    team_search_agent_ids: tuple[str, ...]
+    uncovered_requirement_ids: tuple[str, ...]
+    uncovered_after_required_ids: tuple[str, ...]
+    candidate_rows: tuple[tuple[str, str, tuple[str, ...]], ...]
+
+    def as_prompt_dict(self) -> dict[str, Any]:
+        required_count = len(self.required_agent_ids)
+        return {
+            "maximum_selected_per_unit": self.maximum_selected_per_unit,
+            "required_agent_count": required_count,
+            "ranked_team_search_count": len(self.team_search_agent_ids),
+            "available_complement_slots": max(0, self.maximum_selected_per_unit - required_count),
+            "required_agents_over_budget": required_count > self.maximum_selected_per_unit,
+            "requirements": list(self.requirements),
+            "required_agent_ids": list(self.required_agent_ids),
+            "ranked_team_search_agent_ids": list(self.team_search_agent_ids),
+            "uncovered_requirement_ids": list(self.uncovered_requirement_ids),
+            "uncovered_after_required_ids": list(self.uncovered_after_required_ids),
+            "ranked_candidates": [
+                {
+                    "agent_id": agent_id,
+                    "team_search_classification": classification,
+                    "covers": list(covers),
+                }
+                for agent_id, classification, covers in self.candidate_rows
+            ],
+        }
+
+
+@dataclass(frozen=True, slots=True)
 class _NominationFailure:
     unit_id: str
     code: str
@@ -460,6 +513,15 @@ class _NominationFailure:
     # candidate to forbidden", and those have opposite fixes. Empty means the
     # top-ranked candidate was executable.
     ineligibility: str = ""
+    # Three bounded counts separate an over-required team, complement-slot
+    # starvation, and an impossible required/executable relationship. They are
+    # absent on legacy/manual failures and always travel as one atomic triple.
+    required_count: int | None = None
+    ranked_executable_count: int | None = None
+    maximum_selected_per_unit: int | None = None
+    # Prompt-only repair evidence. It is never serialized into a receipt; only
+    # the three counts above cross the durable content-free boundary.
+    repair_contract: _SafeTeamRepairContract | None = field(default=None, compare=False, repr=False)
 
 
 class _NominationValidationError(ValueError):
@@ -469,6 +531,23 @@ class _NominationValidationError(ValueError):
         unique = tuple(dict.fromkeys(failures))
         if not unique:
             raise ValueError("nomination validation error requires at least one failure")
+
+        def invalid_counts(failure: _NominationFailure) -> bool:
+            counts = (
+                failure.required_count,
+                failure.ranked_executable_count,
+                failure.maximum_selected_per_unit,
+            )
+            present = tuple(item is not None for item in counts)
+            if any(present) and not all(present):
+                return True
+            if not any(present):
+                return False
+            return failure.code != "staff_without_safe_team" or any(
+                isinstance(item, bool) or not isinstance(item, int) or not 0 <= item <= 16
+                for item in counts
+            )
+
         if any(
             failure.code not in _NOMINATION_FAILURE_CODES
             or (failure.axis and failure.axis not in REQUIREMENT_AXES)
@@ -482,20 +561,50 @@ class _NominationValidationError(ValueError):
                 failure.ineligibility
                 and re.fullmatch(r"[a-z][a-z_]{0,63}", failure.ineligibility) is None
             )
+            or invalid_counts(failure)
             for failure in unique
         ):
             raise ValueError("nomination validation failure is not allowlisted")
         self.failures = unique
-        # "unit=code[:axis][~agent~agent][|reason]". Neither `~` nor `|` appears
-        # in any agent id, unit id or reason code, so the fields stay unambiguous.
+        # "unit=code[:axis][~agent~agent][!required:executable:max][|reason]".
+        # The delimiters appear in none of the closed identifiers, so the fields
+        # stay unambiguous and old details without counts remain readable.
         detail = ",".join(
             f"{failure.unit_id}={failure.code}"
             + (f":{failure.axis}" if failure.axis else "")
             + "".join(f"~{agent_id}" for agent_id in failure.ranked)
+            + (
+                "!"
+                f"{failure.required_count}:"
+                f"{failure.ranked_executable_count}:"
+                f"{failure.maximum_selected_per_unit}"
+                if failure.required_count is not None
+                else ""
+            )
             + (f"|{failure.ineligibility}" if failure.ineligibility else "")
             for failure in unique
         )
         super().__init__(f"workforce nomination failures: {detail}")
+
+
+def _nomination_repair_feedback_row(failure: _NominationFailure) -> dict[str, Any]:
+    correction = _NOMINATION_REPAIR_REQUIREMENTS[failure.code]
+    if failure.axis:
+        correction += (
+            " The prior team-search candidates leave the unit's "
+            f"{failure.axis} requirement uncovered. Add or reclassify a faithful "
+            "required/acceptable complement that covers the exact missing requirement; declare "
+            "gap only if no supplied candidate can do so."
+        )
+    row: dict[str, Any] = {
+        "unit_id": failure.unit_id,
+        "code": failure.code,
+        **({"uncoverable_requirement_axis": failure.axis} if failure.axis else {}),
+        "required_correction": correction,
+    }
+    if failure.repair_contract is not None:
+        row["safe_team_contract"] = failure.repair_contract.as_prompt_dict()
+    return row
 
 
 class _PlanPolicyValidationError(ValueError):
@@ -937,25 +1046,7 @@ def _invoke_stage(
                             + _json_prompt(
                                 {
                                     "failed_units": [
-                                        {
-                                            "unit_id": failure.unit_id,
-                                            "code": failure.code,
-                                            **(
-                                                {"uncoverable_requirement_axis": failure.axis}
-                                                if failure.axis
-                                                else {}
-                                            ),
-                                            "required_correction": (
-                                                _NOMINATION_REPAIR_REQUIREMENTS[failure.code]
-                                                + (
-                                                    " No worker in the whole workforce covers "
-                                                    f"this unit's {failure.axis} requirement, so "
-                                                    "a faithful team cannot exist: declare gap."
-                                                    if failure.axis
-                                                    else ""
-                                                )
-                                            ),
-                                        }
+                                        _nomination_repair_feedback_row(failure)
                                         for failure in exc.failures
                                     ],
                                     "prior_response_status": "rejected",
@@ -1372,29 +1463,30 @@ def _failure_axis(
     ranked: Sequence[str],
     contracts: Sequence[WorkforceContract],
     context: Any,
+    *,
+    excluded: Sequence[str] = (),
 ) -> str:
     """Return the axis the team search could not cover, over the set it searched.
 
-    `_minimum_team_with_required` searches the ranked candidates that survive
-    `_eligibility`, so an axis covered only by an ineligible ranked candidate is
-    not available to any team. Scoring every ranked contract therefore reports
-    "covered" for a set the verifier could not use -- which is what the
-    `76dd96b2cc50` canary produced: an absent axis on a failure whose ranked set
-    demonstrably could not be assembled.
-
-    Falling back widens rather than invents: an empty scope would score nothing
-    and report the first requirement as uncoverable, which is a false positive.
+    `_minimum_team_with_required` searches only ranked candidates that are not
+    semantically forbidden and that survive `_eligibility`. An axis covered by
+    a semantically excluded candidate is not available to the search. When all
+    remaining candidates fail eligibility, score their typed coverage rather
+    than an empty set; top-ranked ineligibility separately records why that
+    coverage was unavailable to execution.
     """
 
-    ranked_ids = set(ranked)
-    scope = [item for item in contracts if item.agent_id in ranked_ids] or list(contracts)
+    ranked_ids = set(ranked).difference(excluded)
+    scope = [item for item in contracts if item.agent_id in ranked_ids]
+    if not scope:
+        return ""
     if context is not None:
         try:
             executable = [
                 item for item in scope if not typed_staffing_ineligibility(unit, item, context)
             ]
         except Exception:
-            executable = []
+            return ""
         scope = executable or scope
     return _uncoverable_requirement_axis(unit, scope)
 
@@ -1428,6 +1520,63 @@ def _top_ranked_ineligibility(
     return str(reasons[0]) if reasons else ""
 
 
+def _missing_typed_requirements(
+    unit: WorkUnit,
+    agent_ids: Sequence[str],
+    contracts_by_id: Mapping[str, WorkforceContract],
+) -> tuple[str, ...]:
+    requirements = typed_staffing_requirements(unit)
+    covered: set[str] = set()
+    for agent_id in agent_ids:
+        contract = contracts_by_id.get(agent_id)
+        if contract is not None:
+            covered.update(typed_staffing_coverage(unit, contract))
+    return tuple(requirement for requirement in requirements if requirement not in covered)
+
+
+def _safe_team_repair_contract(
+    unit: WorkUnit,
+    proposal_row: UnitRecruitment,
+    contracts: Sequence[WorkforceContract],
+    *,
+    maximum_selected_per_unit: int,
+) -> _SafeTeamRepairContract:
+    contracts_by_id = {item.agent_id: item for item in contracts}
+    requirements = typed_staffing_requirements(unit)
+    required = tuple(proposal_row.required)
+    team_search = tuple(item.agent_id for item in proposal_row.ranked_executable)
+    required_set = set(required)
+    team_search_set = set(team_search)
+    candidate_rows: list[tuple[str, str, tuple[str, ...]]] = []
+    for rank in proposal_row.ranked_semantic:
+        agent_id = rank.agent_id
+        contract = contracts_by_id[agent_id]
+        covers = typed_staffing_coverage(unit, contract)
+        classification = (
+            "required"
+            if agent_id in required_set
+            else "acceptable"
+            if agent_id in team_search_set
+            else "excluded"
+        )
+        candidate_rows.append(
+            (
+                agent_id,
+                classification,
+                tuple(requirement for requirement in requirements if requirement in covers),
+            )
+        )
+    return _SafeTeamRepairContract(
+        maximum_selected_per_unit=maximum_selected_per_unit,
+        requirements=requirements,
+        required_agent_ids=required,
+        team_search_agent_ids=team_search,
+        uncovered_requirement_ids=_missing_typed_requirements(unit, team_search, contracts_by_id),
+        uncovered_after_required_ids=_missing_typed_requirements(unit, required, contracts_by_id),
+        candidate_rows=tuple(candidate_rows),
+    )
+
+
 def _validate_nomination_decisions(
     plan: WorkUnitPlan,
     proposal: RecruiterProposal,
@@ -1435,6 +1584,9 @@ def _validate_nomination_decisions(
     contracts: Sequence[WorkforceContract],
     rankings: Mapping[str, Sequence[tuple[str, float]]] | None = None,
     context: Any = None,
+    *,
+    maximum_selected_per_unit: int = 4,
+    semantic_forbidden: Mapping[str, Sequence[str]] | None = None,
 ) -> None:
     failures: list[_NominationFailure] = []
     for unit, proposal_row in zip(plan.units, proposal.units, strict=True):
@@ -1446,7 +1598,19 @@ def _validate_nomination_decisions(
             # The record is bounded at 8 for receipt size; scoring the prefix
             # would report an axis the ninth candidate covers as uncoverable,
             # which is the one direction this field must never be wrong in.
-            axis = _failure_axis(unit, ranking, contracts, context)
+            repair_contract = _safe_team_repair_contract(
+                unit,
+                proposal_row,
+                contracts,
+                maximum_selected_per_unit=maximum_selected_per_unit,
+            )
+            axis = _failure_axis(
+                unit,
+                ranking,
+                contracts,
+                context,
+                excluded=(semantic_forbidden or {}).get(unit.unit_id, ()),
+            )
             failures.append(
                 _NominationFailure(
                     unit.unit_id,
@@ -1454,6 +1618,10 @@ def _validate_nomination_decisions(
                     axis,
                     ranked,
                     _top_ranked_ineligibility(unit, ranked, contracts, context),
+                    len(proposal_row.required),
+                    len(proposal_row.ranked_executable),
+                    maximum_selected_per_unit,
+                    repair_contract,
                 )
             )
         if decision == "gap" and proposal_row.selected:
@@ -1468,6 +1636,7 @@ class _NominationSemantics:
     required: dict[str, frozenset[str]]
     acceptable: dict[str, frozenset[str]]
     forbidden: dict[str, frozenset[str]]
+    declared_forbidden: dict[str, frozenset[str]]
     decisions: dict[str, str]
     failures: tuple[_NominationFailure, ...]
 
@@ -1536,6 +1705,7 @@ def _collect_nomination_semantics(
     semantic_required: dict[str, frozenset[str]] = {}
     semantic_acceptable: dict[str, frozenset[str]] = {}
     semantic_forbidden: dict[str, frozenset[str]] = {}
+    declared_forbidden: dict[str, frozenset[str]] = {}
     decisions: dict[str, str] = {}
     failures: list[_NominationFailure] = []
     for expected_unit in plan.units:
@@ -1617,11 +1787,17 @@ def _collect_nomination_semantics(
         semantic_required[expected_unit.unit_id] = required
         semantic_acceptable[expected_unit.unit_id] = acceptable
         semantic_forbidden[expected_unit.unit_id] = forbidden
+        declared_forbidden[expected_unit.unit_id] = frozenset(
+            agent_id
+            for agent_id, classification in classifications.items()
+            if classification == "forbidden"
+        )
     return _NominationSemantics(
         rankings=rankings,
         required=semantic_required,
         acceptable=semantic_acceptable,
         forbidden=semantic_forbidden,
+        declared_forbidden=declared_forbidden,
         decisions=decisions,
         failures=tuple(failures),
     )
@@ -1679,7 +1855,14 @@ def _proposal_from_nominations(
         ),
     )
     _validate_nomination_decisions(
-        plan, proposal, semantics.decisions, snapshot.contracts, semantics.rankings, context
+        plan,
+        proposal,
+        semantics.decisions,
+        snapshot.contracts,
+        semantics.rankings,
+        context,
+        maximum_selected_per_unit=config.workforce.max_selected_per_unit,
+        semantic_forbidden=semantics.declared_forbidden,
     )
     # ADR-0087: inference explicitly decides whether each unit should be
     # staffed or is a real semantic gap. Deterministic policy verifies that the
@@ -1956,6 +2139,11 @@ def _recruit_ambiguous_plan(
                 "maximum_selected_total": config.workforce.max_selected_total,
                 "staff_decision_requires_safe_typed_coverage": True,
                 "gap_decision_requires_no_safe_team": True,
+                "selected_is_derived_from_classifications": True,
+                "required_candidates_are_mandatory": True,
+                "acceptable_candidates_are_optional": True,
+                "forbidden_candidates_are_excluded": True,
+                "safe_team_must_include_all_required_within_limit": True,
                 "candidate_ids_must_come_from_detail_cards": True,
                 "typed_recall_is_non_ranked_evidence": True,
                 "separate_independent_assurance_required": not explicit_indivisible_unit,

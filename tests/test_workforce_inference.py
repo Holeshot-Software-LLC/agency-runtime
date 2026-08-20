@@ -826,6 +826,11 @@ def test_inference_uses_semantic_order_without_trusting_uncalibrated_score_gaps(
     assert prompts[1]["response_contract"]["maximum_selected_per_unit"] == 4
     assert prompts[1]["response_contract"]["staff_decision_requires_safe_typed_coverage"]
     assert prompts[1]["response_contract"]["gap_decision_requires_no_safe_team"]
+    assert prompts[1]["response_contract"]["selected_is_derived_from_classifications"]
+    assert prompts[1]["response_contract"]["required_candidates_are_mandatory"]
+    assert prompts[1]["response_contract"]["acceptable_candidates_are_optional"]
+    assert prompts[1]["response_contract"]["forbidden_candidates_are_excluded"]
+    assert prompts[1]["response_contract"]["safe_team_must_include_all_required_within_limit"]
     assert outcome.proposal is not None
     row = outcome.proposal.units[0]
     assert [(item.agent_id, item.score) for item in row.ranked_semantic] == [
@@ -1110,7 +1115,21 @@ def test_the_recorded_ranking_is_bounded_but_the_axis_is_scored_on_all_of_it() -
     with pytest.raises(_NominationValidationError) as raised:
         _validate_nomination_decisions(
             plan,
-            SimpleNamespace(units=(SimpleNamespace(selected=()),)),
+            SimpleNamespace(
+                units=(
+                    SimpleNamespace(
+                        selected=(),
+                        required=(),
+                        forbidden=(),
+                        ranked_semantic=tuple(
+                            SimpleNamespace(agent_id=item.agent_id) for item in contracts
+                        ),
+                        ranked_executable=tuple(
+                            SimpleNamespace(agent_id=item.agent_id) for item in contracts
+                        ),
+                    ),
+                )
+            ),
             {unit.unit_id: "staff"},
             contracts,
             {unit.unit_id: ranking},
@@ -1164,6 +1183,50 @@ def test_a_staffing_failure_records_who_the_recruiter_actually_ranked() -> None:
     with pytest.raises(ValueError, match="not allowlisted"):
         _NominationValidationError(
             [_NominationFailure("unit-one", "staff_without_safe_team", "", ("Not A Slug",))]
+        )
+
+
+def test_a_staffing_failure_records_the_three_team_search_counts() -> None:
+    detail = str(
+        _NominationValidationError(
+            [
+                _NominationFailure(
+                    "unit-one",
+                    "staff_without_safe_team",
+                    "",
+                    ("primary-engineer", "coverage-complement"),
+                    "",
+                    4,
+                    5,
+                    4,
+                )
+            ]
+        )
+    )
+
+    assert detail == (
+        "workforce nomination failures: unit-one=staff_without_safe_team"
+        "~primary-engineer~coverage-complement!4:5:4"
+    )
+    assert project_nomination_failures(detail) == [
+        {
+            "unit_id": "unit-one",
+            "reason_code": "staff_without_safe_team",
+            "ranked_agent_ids": "primary-engineer~coverage-complement",
+            "required_agent_count": 4,
+            "ranked_executable_count": 5,
+            "maximum_selected_per_unit": 4,
+        }
+    ]
+    with pytest.raises(ValueError, match="not allowlisted"):
+        _NominationValidationError(
+            [
+                _NominationFailure(
+                    "unit-one",
+                    "staff_without_safe_team",
+                    required_count=4,
+                )
+            ]
         )
 
 
@@ -1536,7 +1599,6 @@ def test_default_fast_mode_funds_recruiter_contract_repair_after_planning() -> N
             _result(_nomination_document()),
         )
     )
-
     outcome = plan_and_staff_workforce(
         "Analyze this implementation safely.",
         snapshot,
@@ -1656,13 +1718,18 @@ def test_staff_decision_without_safe_team_gets_one_bounded_inference_repair() ->
             _result(repaired),
         )
     )
+    prompts: list[str] = []
+
+    def invoke(*args, **_kwargs):
+        prompts.append(args[1])
+        return next(responses)
 
     outcome = plan_and_staff_workforce(
         "Analyze this implementation safely.",
         snapshot,
         config=_config(balanced_call_budget=3),
         context=_context(),
-        invoker=lambda *_args, **_kwargs: next(responses),
+        invoker=invoke,
     )
 
     assert outcome.accepted
@@ -1676,16 +1743,123 @@ def test_staff_decision_without_safe_team_gets_one_bounded_inference_repair() ->
     # recruiter led with wrong-neighbor and buried the candidate that could
     # actually be staffed — the distinction that otherwise needs offline work.
     assert outcome.attempts[1].validation_detail == (
-        "workforce nomination failures: unit-analyze=staff_without_safe_team"
-        "~wrong-neighbor~technical-analyst~analysis-alternative"
+        "workforce nomination failures: unit-analyze=staff_without_safe_team:artifact"
+        "~wrong-neighbor~technical-analyst~analysis-alternative!1:1:4"
     )
     assert project_nomination_failures(outcome.attempts[1].validation_detail) == [
         {
             "unit_id": "unit-analyze",
             "reason_code": "staff_without_safe_team",
+            "requirement_axis": "artifact",
             "ranked_agent_ids": "wrong-neighbor~technical-analyst~analysis-alternative",
+            "required_agent_count": 1,
+            "ranked_executable_count": 1,
+            "maximum_selected_per_unit": 4,
         }
     ]
+    feedback = json.loads(prompts[2].partition("[RUNTIME VALIDATION FEEDBACK]\n")[2])
+    safe_team = feedback["failed_units"][0]["safe_team_contract"]
+    assert (
+        safe_team["required_agent_count"],
+        safe_team["ranked_team_search_count"],
+        safe_team["maximum_selected_per_unit"],
+        safe_team["available_complement_slots"],
+    ) == (1, 1, 4, 3)
+    assert safe_team["required_agent_ids"] == ["wrong-neighbor"]
+    assert safe_team["ranked_team_search_agent_ids"] == ["wrong-neighbor"]
+    assert safe_team["uncovered_requirement_ids"] == [
+        "artifact:analysis",
+        "lifecycle:discovery",
+    ]
+    candidates = {item["agent_id"]: item for item in safe_team["ranked_candidates"]}
+    assert candidates["wrong-neighbor"]["team_search_classification"] == "required"
+    assert candidates["technical-analyst"]["team_search_classification"] == "excluded"
+    assert candidates["analysis-alternative"]["team_search_classification"] == "excluded"
+    assert outcome.staffing.units[0].selected == ("technical-analyst",)
+
+
+def test_repair_exposes_required_budget_starvation_without_selecting_a_team() -> None:
+    analyst = _contract("technical-analyst")
+    partials = tuple(
+        replace(
+            analyst,
+            worker_id=f"worker:partial-{index}",
+            agent_id=f"partial-{index}",
+            artifact_kinds=("plan",),
+            lifecycle_phases=("planning",),
+        )
+        for index in range(1, 5)
+    )
+    snapshot = _snapshot(*partials, analyst)
+    unsafe = {
+        "units": [
+            {
+                "unit_id": "unit-analyze",
+                "decision": "staff",
+                "ranked_semantic": [
+                    *[
+                        _nominee(item.agent_id, 0.99 - index / 100, "required")
+                        for index, item in enumerate(partials)
+                    ],
+                    _nominee("technical-analyst", 0.90, "acceptable"),
+                ],
+            }
+        ]
+    }
+    repaired = {
+        "units": [
+            {
+                "unit_id": "unit-analyze",
+                "decision": "staff",
+                "ranked_semantic": [
+                    _nominee("technical-analyst", 0.99, "required"),
+                    *[
+                        _nominee(item.agent_id, 0.90 - index / 100, "acceptable")
+                        for index, item in enumerate(partials)
+                    ],
+                ],
+            }
+        ]
+    }
+    responses = iter(
+        (
+            _result(_compact_plan_document()),
+            _result(unsafe),
+            _result(repaired),
+        )
+    )
+    prompts: list[str] = []
+
+    def invoke(*args, **_kwargs):
+        prompts.append(args[1])
+        return next(responses)
+
+    outcome = plan_and_staff_workforce(
+        "Analyze this implementation safely.",
+        snapshot,
+        config=_config(balanced_call_budget=3),
+        context=_context(),
+        invoker=invoke,
+    )
+
+    assert outcome.accepted
+    assert outcome.attempts[1].validation_detail == (
+        "workforce nomination failures: unit-analyze=staff_without_safe_team"
+        "~partial-1~partial-2~partial-3~partial-4~technical-analyst!4:5:4"
+    )
+    feedback = json.loads(prompts[2].partition("[RUNTIME VALIDATION FEEDBACK]\n")[2])
+    safe_team = feedback["failed_units"][0]["safe_team_contract"]
+    assert safe_team["required_agent_count"] == 4
+    assert safe_team["ranked_team_search_count"] == 5
+    assert safe_team["maximum_selected_per_unit"] == 4
+    assert safe_team["available_complement_slots"] == 0
+    assert safe_team["required_agents_over_budget"] is False
+    assert safe_team["uncovered_requirement_ids"] == []
+    assert safe_team["uncovered_after_required_ids"] == [
+        "artifact:analysis",
+        "lifecycle:discovery",
+    ]
+    assert "selected_agent_ids" not in safe_team
     assert outcome.staffing.units[0].selected == ("technical-analyst",)
 
 
@@ -1937,21 +2111,23 @@ def test_recruiter_repair_declares_gap_when_typed_recall_proves_uncovered_requir
         # The roster cannot cover capability:automation at all, so the repair
         # names the axis and states the only honest answer instead of asking
         # for a better ranking that cannot exist.
-        assert feedback["failed_units"] == [
-            {
-                "unit_id": "unit-architecture",
-                "code": "staff_without_safe_team",
-                "uncoverable_requirement_axis": "capability",
-                "required_correction": (
-                    "Rank at least one semantically faithful candidate for this unit so the "
-                    "staff decision can select a team, adding the coverage complements a "
-                    "complete team needs within maximum_selected_per_unit. Declare gap only "
-                    "when no supplied candidate is faithful."
-                    " No worker in the whole workforce covers this unit's capability "
-                    "requirement, so a faithful team cannot exist: declare gap."
-                ),
-            }
-        ]
+        failure = feedback["failed_units"][0]
+        assert failure["unit_id"] == "unit-architecture"
+        assert failure["code"] == "staff_without_safe_team"
+        assert failure["uncoverable_requirement_axis"] == "capability"
+        assert "Required is a mandatory-selection constraint" in failure["required_correction"]
+        assert "capability requirement uncovered" in failure["required_correction"]
+        safe_team = failure["safe_team_contract"]
+        assert (
+            safe_team["required_agent_count"],
+            safe_team["ranked_team_search_count"],
+            safe_team["maximum_selected_per_unit"],
+        ) == (1, 1, 4)
+        assert safe_team["required_agent_ids"] == ["software-architect"]
+        assert safe_team["ranked_team_search_agent_ids"] == ["software-architect"]
+        assert safe_team["uncovered_requirement_ids"] == ["capability:automation"]
+        assert safe_team["uncovered_after_required_ids"] == ["capability:automation"]
+        assert safe_team["ranked_candidates"][0]["team_search_classification"] == "required"
         return _result(gap)
 
     outcome = plan_and_staff_workforce(

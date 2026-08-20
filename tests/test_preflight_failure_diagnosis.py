@@ -148,7 +148,10 @@ def test_the_durable_receipt_contract_carries_both_new_diagnostics() -> None:
         "exception_category": "runtime_error",
         "provider_attempts": [
             _attempt(
-                validation_detail=("workforce nomination failures: unit-1=staff_without_safe_team")
+                validation_detail=(
+                    "workforce nomination failures: "
+                    "unit-1=staff_without_safe_team~primary~complement!4:5:4"
+                )
             )
         ],
         "eligibility_reason_codes": ["execution_host_unproven"],
@@ -159,8 +162,30 @@ def test_the_durable_receipt_contract_carries_both_new_diagnostics() -> None:
     assert projected["schema_version"] == PREFLIGHT_FAILURE_RECEIPT_SCHEMA
     assert projected["eligibility_reason_codes"] == ["execution_host_unproven"]
     assert projected["provider_attempts"][0]["validation_failures"] == [
-        {"unit_id": "unit-1", "reason_code": "staff_without_safe_team"}
+        {
+            "unit_id": "unit-1",
+            "reason_code": "staff_without_safe_team",
+            "ranked_agent_ids": "primary~complement",
+            "required_agent_count": 4,
+            "ranked_executable_count": 5,
+            "maximum_selected_per_unit": 4,
+        }
     ]
+
+
+@pytest.mark.parametrize(
+    "detail",
+    [
+        "workforce nomination failures: unit-1=staff_without_safe_team!4:5",
+        "workforce nomination failures: unit-1=staff_without_safe_team!4:x:4",
+        "workforce nomination failures: unit-1=gap_with_safe_team!0:1:4",
+    ],
+)
+def test_team_search_counts_fail_the_receipt_projection_closed(detail: str) -> None:
+    projected = project_preflight_provider_attempts([_attempt(validation_detail=detail)])
+
+    assert projected is not None
+    assert "validation_failures" not in projected[0]
 
 
 def test_a_receipt_missing_the_new_field_is_rejected_by_the_contract() -> None:

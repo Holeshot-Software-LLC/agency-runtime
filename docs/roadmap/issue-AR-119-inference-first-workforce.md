@@ -24,6 +24,7 @@ related:
   - docs/roadmap/AR-119-founding-vision.md
   - docs/roadmap/AR-119-rule-host-evidence-matrix.md
   - docs/roadmap/AR-119-acceptance-evidence.md
+  - docs/roadmap/AR-119-39ff6dca-recruiter-diagnostic-evidence.md
   - docs/decisions/0102-defer-one-shot-application-evaluation.md
   - docs/decisions/0103-bind-named-regulated-assurance-to-typed-staffing.md
   - docs/roadmap/handoffs/issue-AR-119.md
@@ -4223,6 +4224,43 @@ noninterference tests, and the 797-test warning-strict production spine passed
 (20 spine skips). All 12 fast gates passed in 1.2 minutes and documentation
 validation passed for 713 files. The slow 14-gate harness and every outward or
 live boundary remain unrun.
+
+### Parent pin merged; draw exposes the recruiter output contract — 2026-08-20
+
+PR #303 merged exact head `dbfe2b0d` as main `eff66c67` with skip
+instructions and no hosted run. The exact-main install and owner config applied
+the canary-only Claude parent-recruiter pin. Pair
+`39ff6dca0e5885d132cefadecc3e1fdb` then proved the requested route actually
+reached `codex-subscription` / `gpt-5.6-terra` twice; this is not a provider-
+routing ambiguity.
+
+Both recruiter results were rejected `staff_without_safe_team` for
+`unit-parseport-impl-verified`. The first retained projection ranks
+`typescript-application-engineer`, `minimal-change-engineer`,
+`backend-service-engineer`, and `solidity-smart-contract-engineer` with no
+axis or top-ranked ineligibility. The repair ranks the first two and leaves
+`capability` uncovered. The run ended preflight before routing, child judging,
+delivery, outcome, attestation, or promotion, and it was not retried.
+
+The no-cost evidence package is
+[`AR-119-39ff6dca-recruiter-diagnostic-evidence.md`](AR-119-39ff6dca-recruiter-diagnostic-evidence.md).
+It records why the raw recruiter JSON and byte-exact dynamic prompt cannot be
+recovered, while the immutable parent prompt and exact source contract can be
+inspected. The source defect is an underspecified classification boundary:
+`required` was not stated as a mandatory selected member, and the repair call
+received no prior classification/count/coverage facts despite referring to a
+prior response.
+
+The local repair changes no provider route. It defines the three classification
+semantics in prose and the machine response contract, sends only bounded
+deterministic safe-team facts on the one funded repair, excludes declared-
+forbidden candidates from the diagnostic axis, and adds three content-free
+counts to future durable failure receipts. Deterministic code still never
+selects, adds, reorders, or invents a team. Provider-free verification is green:
+97 focused/conformance tests, the 797-test production spine with 20 skips, and
+695 deterministic matrix regressions; all 14 local gates pass in 13.9 minutes.
+Commits `e7e4e285` / `1dd70983` are local. No matrix cell moved and no further
+live draw is authorized or needed before publication and exact-main review.
 
 ### Still required before AR-119 can close
 
