@@ -113,9 +113,9 @@ four-layer rules on claude; R1, R4, R5, R6 stay RETRACTED
    because Claude Code tags no substring as hook-authored (1147-1150).
    **Neither option moves codex**: `_expected_v6_reason` returns
    `unsupported_opaque_interagent_channel` on its FIRST line.
-   Its isolated Claude canary is wired; 14/14 local gates, 151/151 mutations,
-   and 46/46 focused tests pass. Exact-main pair `5a1be926…` wrote no outcome:
-   both `claude-haiku` planner responses were contract-invalid before routing.
+   Local canary-only repair changes the exact prompt from 2,316/false to
+   2,367/true at the existing indivisible-unit detector; 11 direct, 102 widened,
+   and 12/12 fast gates pass. No provider/profile change or live rerun followed.
 3. **Option A is locally complete for the owner-scoped three-host pin phase.**
    Claude has an exact requested/answered `codex-subscription` route. Codex
    parent works and its child-proof exception remains explicit. Repaired ZCode
@@ -139,9 +139,9 @@ four-layer rules on claude; R1, R4, R5, R6 stay RETRACTED
 
 Keep Option A frozen. The full sequence requested at the 19 August review is:
 
-1. Claude: reproduce the exact `claude-haiku` parent planner contract failure;
-   repair only that isolated-canary boundary and pass proportional gates. Obtain
-   fresh authority before publish/install/draw, then prove outcomes/promotion.
+1. Claude: local canary-only repair now marks the exact parent work unit
+   indivisible; 11 direct, 102 widened and 12/12 fast gates pass. Obtain fresh
+   authority before publish/install/draw, then prove outcomes/promotion.
 2. Codex: retain parent proof. The 0.148 draw stopped before spawn; do not
    repeat until a new upstream surface or deterministic preflight fix exists.
 3. ZCode: retain this parent proof and existing one-card child proof, then close

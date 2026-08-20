@@ -2194,16 +2194,37 @@ child surface. Do not repeat the live draw until that contract failure is
 reproduced and repaired locally. No rule was promoted, the candidate did not
 advance, and **no matrix cell moved**.
 
+### LOCAL REPAIR CANDIDATE: accepted-outcome parent work is indivisible
+
+The exact merged-main canary prompt was 2,316 characters and returned false
+from the existing `_explicit_indivisible_unit_request` detector. It therefore
+did not give the parent planner the repository's durable one-work-unit signal
+before asking Claude for two serial children. The local canary-only candidate
+now says that the accepted-outcome canary is exactly one indivisible work unit
+and must not be split or decomposed. Its 2,367-character prompt returns true
+from the same production detector. No provider, model profile, ordinary-turn
+behavior, Store contract, or global configuration changed.
+
+The exact prompt contract passes 11/11 focused tests; the widened canary,
+collector, activation-contract, and workforce-inference surface passes 102/102.
+Ruff lint and format checks pass, and the local fast harness passes all 12
+gates in 1.3 minutes, including 161 workflow contracts, 151 mutation snippets,
+and 134 dashboard tests. This is a local repair candidate, not proof that a
+fresh Claude invocation will staff. No provider was called, no outcome or
+promotion was written, the candidate did not advance, and **no matrix cell
+moved**.
+
 ### CHECKPOINT PLAN: finish the 19 August review scope
 
 1. **Freeze Option A.** Preserve per-harness child-judge pins and the current
    Claude, Codex, and ZCode evidence; do not spend more provider calls re-proving
    the seal without a falsification target.
-2. **Repair the isolated Claude parent preflight.** Reproduce the two rejected
-   `claude-haiku` planner contracts locally, fix only that deterministic canary
-   boundary, and pass focused plus proportional gates. A fresh push, merge,
-   install, or provider draw needs new owner authority. Only then feed a verified
-   outcome through AR-252's three-success/seven-day promotion path.
+2. **Verify the isolated Claude parent-preflight repair.** The local canary-only
+   candidate now marks the exact parent work as indivisible and passes focused,
+   widened, and 12/12 fast gates. A fresh push, merge, install, or provider draw
+   needs new owner authority. Only then test whether one exact-main invocation
+   staffs and feed verified outcomes through AR-252's three-success/seven-day
+   promotion path.
 3. **Make the Rule-8 claim only after the owner accepts its cost.** Advance the
    candidate to the disk-proven `f7b84c8a40fa` boundary and re-anchor R2/R3/R7;
    no new capture surface or live draw is needed. Re-run the fixed 15,000 ms cold

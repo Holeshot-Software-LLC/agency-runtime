@@ -20,6 +20,7 @@ from agency_runtime.core.accepted_outcome_canary_contract import (
 )
 from agency_runtime.core.child_delivery_evidence import _HostAcceptedOutcomeCollection
 from agency_runtime.core.delegation.backends import BoundedProcessResult
+from agency_runtime.core.workforce.inference import _explicit_indivisible_unit_request
 
 PAIR_ID = "7" * 32
 PRODUCER_DECISION = "producer-decision"
@@ -185,6 +186,7 @@ def _prepare(
 def test_pair_prompt_is_exactly_two_serial_children_with_bound_roles() -> None:
     prompt = build_accepted_outcome_canary_prompt(PAIR_ID)
 
+    assert _explicit_indivisible_unit_request(prompt) is True
     assert "Agent tool exactly twice, serially" in prompt
     assert prompt.count(f"agency-accepted-outcome-pair:v1:{PAIR_ID}:producer") == 1
     assert prompt.count(f"agency-accepted-outcome-pair:v1:{PAIR_ID}:verifier") == 1

@@ -312,6 +312,21 @@ two host artifacts therefore could not carry Agency v6 delivery markers. This
 is a deterministic isolated-parent preflight repair target; it does not measure
 the requested `codex-subscription` child judge and moves no matrix cell.
 
+## Local indivisible-parent repair candidate (2026-08-20)
+
+The exact 2,316-character merged-main canary prompt did not satisfy the
+existing parent-planner indivisible-unit detector. The local canary-only
+candidate now explicitly declares one indivisible work unit and forbids
+splitting or decomposition; its 2,367-character prompt satisfies that same
+production detector. It changes no provider, model profile, ordinary-turn
+behavior, Store contract, or global configuration.
+
+The exact prompt contract passes 11/11 tests, the widened canary/collector/
+activation/inference surface passes 102/102, and Ruff plus all 12 fast local
+gates are green. No live rerun followed, so this does not yet prove staffing,
+accepted outcome recording, attestation, or promotion. Publication,
+installation, and one bounded provider draw require fresh owner authority.
+
 ## Collector diagnosis shipped ahead of the collector (2026-08-14)
 
 `_collect_private_host_child_delivery` answered eighteen distinct conditions
