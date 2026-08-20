@@ -62,12 +62,12 @@ four-layer rules on claude; R1, R4, R5, R6 stay RETRACTED
   trace `2a77824c` retains the 1,309-char steward-only delivered context and
   zero Store staffing rows. Claiming it still costs candidate advance
   `f7b84c8a40fa` plus re-anchoring R2/R3/R7 -- an owner decision.
-- **Codex parent works; child proof is blocked.** Merged-main parent routing and
-  header delivery pass. The authorized child rerun used the trust bypass and
-  requested `codex-subscription`, but no child judge answered: parent preflight
-  failed `workforce_inference_failed`, with spawn/start counts 1/0 and terminal
-  `codex_native_child_start_missing`. This exact-main shape differs from the old
-  1/1 opaque-projection series and is not Rule-4 proof.
+- **Codex parent works; child proof is blocked.** Parent routing/header pass.
+  The one authorized 0.148 falsification draw used the trust bypass and requested
+  `codex-subscription`, but parent preflight failed before spawn:
+  `workforce_inference_failed`, spawn/start 0/0, `codex_parent_spawn_missing`.
+  No child judge answered, so this neither proves nor falsifies the upstream
+  plaintext surface and is not Rule-4 proof.
 - **Claude reached verified delivery.** Decision `native-child-7624e16e…`
   delivered `minimal-change-engineer` pre-speech through answered
   `codex-subscription`; `14de2f74` repairs report correlation. Two later bounded
@@ -141,8 +141,8 @@ Keep Option A frozen. The full sequence requested at the 19 August review is:
 1. Claude: obtain fresh push/PR/merge/install/live approval, publish the locally
    green canary through a clean no-hosted-CI rollup, install exact main, then
    prove outcomes/promotion. R8 and the 15,000 ms control stay separate.
-2. Codex: retain parent proof and wait for the upstream child-start/readable-
-   artifact surface; do not repeat the deterministic canary series meanwhile.
+2. Codex: retain parent proof. The 0.148 draw stopped before spawn; do not
+   repeat until a new upstream surface or deterministic preflight fix exists.
 3. ZCode: retain this parent proof and existing one-card child proof, then close
    plural-card Rule 4, outcomes, promotion and latency on an exact merged install.
 4. Move to the owner's OpenClaw box for route implementation and live proof;
