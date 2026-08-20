@@ -17,6 +17,7 @@ def args(**changes):
         "all": False,
         "autonomous": False,
         "activation_timeout": 180.0,
+        "accepted_outcome": False,
         "backup": None,
         "confirm": "",
         "db": None,
@@ -1202,3 +1203,47 @@ def test_on_off_status_and_canary_wrappers(tmp_path, monkeypatch, capsys):
         == 1
     )
     assert canary_calls[-1][1]["require_existing_store"] is True
+
+
+def test_host_canary_cli_routes_explicit_accepted_outcome_mode(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from agency_runtime.core import outcome_canary
+
+    calls: list[tuple[tuple[object, ...], dict[str, object]]] = []
+    report = {"ready": True, "canary_passed": True}
+    monkeypatch.setattr(
+        outcome_canary,
+        "run_accepted_outcome_canary",
+        lambda *call_args, **call_kwargs: calls.append((call_args, call_kwargs)) or report,
+    )
+    deps, emitted = dependencies()
+
+    assert (
+        subject.cmd_host_canary(
+            args(
+                agent="claude",
+                accepted_outcome=True,
+                execute=True,
+                confirm="RUN LIVE claude ACCEPTED-OUTCOME CANARY",
+                timeout=420,
+            ),
+            dependencies=deps,
+        )
+        == 0
+    )
+    assert calls == [
+        (
+            ("claude",),
+            {
+                "execute": True,
+                "confirm": "RUN LIVE claude ACCEPTED-OUTCOME CANARY",
+                "db_path": None,
+                "timeout": 420.0,
+                "mode": "agency",
+                "profile_scope": "isolated-profile",
+                "require_existing_store": False,
+            },
+        )
+    ]
+    assert emitted == [report]

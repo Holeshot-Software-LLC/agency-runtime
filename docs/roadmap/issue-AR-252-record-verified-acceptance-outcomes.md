@@ -12,6 +12,9 @@ related:
   - docs/decisions/0118-require-inference-owned-staffing.md
   - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
   - docs/decisions/0157-automatically-promote-host-verified-contractors.md
+  - agency_runtime/core/accepted_outcome_canary_contract.py
+  - agency_runtime/core/outcome_canary.py
+  - agency_runtime/core/canary_backends.py
   - agency_runtime/core/child_delivery_evidence.py
   - agency_runtime/core/store/workforce.py
   - agency_runtime/core/store/native_child.py
@@ -45,8 +48,10 @@ current host-spawned, just-in-time architecture.
 AR-242 set the three-success and seven-day review-window policy. Store code can
 validate acceptance evidence and perform automatic promotion atomically. The
 private Claude collector now pairs exactly two host-artifact delivery
-capabilities, but it has not yet been wired into or exercised by a live host
-canary. Agency-authored assignment rows alone remain insufficient proof.
+capabilities. An explicit isolated Claude canary mode now drives that exact
+serial pair and reports content-free provider, card, delivery, and Store-result
+evidence, but it has not been installed or exercised by a live host. Agency-
+authored assignment rows alone remain insufficient proof.
 
 The accepted-outcome v2 contract now enforces the 2026-08-18 joint-verdict
 ruling at its input and persisted-manifest boundaries. The semantic decision is
@@ -118,9 +123,10 @@ emitted a v1 row, so there is no live acceptance history to migrate. The
 checkpoint is **339 passed**, with Ruff check, Ruff format check, and
 `git diff --check` green.
 
-The remaining Claude source step is to give the isolated canary backend one
-bounded two-child invocation mode and report the collector's closed result;
-installation and the first live provider draw require fresh owner approval.
+The remaining Claude step is operational rather than source wiring: publish and
+install an exact merged-main candidate, then run the explicitly confirmed live
+mode. Push, PR, merge, installation, and the first provider draw require fresh
+owner approval.
 
 ## Measured before building the collector (2026-08-14, `9e29aabe`)
 
@@ -258,6 +264,31 @@ key, and producer digest. Synthetic tests prove recording, policy promotion,
 rejection, ambiguity, pair mismatch, exact-two cardinality, output presence,
 single-consumer refusal, replay, and non-public authority. No live or matrix
 claim follows from this checkpoint.
+
+## Isolated Claude accepted-outcome canary wired (2026-08-20)
+
+`host-canary claude --accepted-outcome` now has a distinct exact confirmation
+phrase and a fixed work shape: one TypeScript producer followed serially by one
+independent verifier in the same isolated Claude invocation. The backend raises
+its bounded turn allowance only for this mode, collects both artifacts before
+the private home is deleted, and never accepts an arbitrary callback or caller-
+supplied envelope. The collector compares both immutable routing decisions'
+actual applied provider against the configured child-judge pin before it can
+reach `record_accepted_outcome`; a mismatch returns `provider_pin_mismatch` and
+writes no acceptance row.
+
+The operator report excludes parent, child, and model prose. It names the
+requested pin, both actual answering providers, exact content-free card
+revisions, host-artifact digests, pair identity, fresh Store result, and whether
+promotion occurred. A replay is not a fresh canary pass. The widened local
+canary/outcome/CLI regression surface passes 273/273 warning-strict; the final
+focused surface passes 46/46 with Ruff lint/format green. The complete local
+harness passes 14/14 in 14.4 minutes (796 production-spine, 695 matrix-evidence,
+and 134 dashboard tests), and the separate decision-conformance evaluator kills
+151/151 mutations from a green baseline. A read-only source CLI smoke reached
+the new confirmation gate without `--execute`; its sandboxed host inventory was
+not readiness evidence. No host call, provider draw, acceptance, promotion,
+candidate advance, or matrix move occurred.
 
 ## Collector diagnosis shipped ahead of the collector (2026-08-14)
 

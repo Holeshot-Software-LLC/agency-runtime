@@ -4120,6 +4120,21 @@ affected acceptance/delivery/promotion/lifecycle/dashboard surface passes with
 Ruff and diff checks green. This is source and synthetic-artifact evidence only:
 no install, provider draw, live outcome, candidate advance, or matrix cell moved.
 
+### Claude accepted-outcome canary source checkpoint — 2026-08-20
+
+The isolated Claude backend now has one explicit `--accepted-outcome` mode with
+an exact confirmation phrase. It asks the host for exactly two serial children,
+collects both artifacts before private-home cleanup, and rejects a child-judge
+provider mismatch before the atomic Store outcome call. Its content-free report
+joins the configured pin to both providers that actually answered, exact cards,
+artifact receipts, the Store result, and promotion status; model and child text
+never enter the report. The complete local harness passes 14/14 in 14.4 minutes
+(796 production-spine, 695 matrix-evidence, 134 dashboard), the separate full
+decision-conformance run kills 151/151 mutations, and 46/46 focused tests pass.
+A read-only source CLI smoke reached the new gate but sandboxed inventory was
+not host-readiness evidence. No install, live draw, acceptance, promotion,
+candidate advance, or matrix cell moved.
+
 ### Still required before AR-119 can close
 
 - Preserve the local repairs across AR-128 through AR-176 while completing their
@@ -4151,9 +4166,10 @@ no install, provider draw, live outcome, candidate advance, or matrix cell moved
 
 ### Next bounded work package
 
-Keep Option A frozen. Next, wire the isolated Claude canary to one bounded
-producer/verifier invocation and the private collector, verify that surface
-locally, then obtain fresh install/live approval before drawing provider evidence.
+Keep Option A frozen. The isolated Claude producer/verifier canary is locally
+wired and verified. Next obtain fresh push/PR/merge/install/live approval,
+publish it through a verified-clean no-hosted-CI rollup, install exact main, and
+draw the first bounded accepted-outcome evidence with `--timeout 420`.
 Formal R8 credit remains a separate owner decision because it advances the
 candidate and re-anchors R2/R3/R7. Codex child work waits for an upstream readable
 started-child surface; do not burn repeated canaries. After ZCode plural-card

@@ -28,8 +28,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-119
 branch: codex/ar119-claude-seal-outcomes
-evidence_commit: b908b74741aa76aa1ae24e301b9520dbc35cb282
-minimum_ledger_commit: e5abfb3cb62b947ed0821dde6f3c1af432861e9b
+evidence_commit: aa6439b1c84c4ef4c7b95d17c530a586bf4c08b4
+minimum_ledger_commit: f1f196bc983a1e55d8e5fb108117509a736a6c71
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
@@ -113,8 +113,8 @@ four-layer rules on claude; R1, R4, R5, R6 stay RETRACTED
    because Claude Code tags no substring as hook-authored (1147-1150).
    **Neither option moves codex**: `_expected_v6_reason` returns
    `unsupported_opaque_interagent_channel` on its FIRST line.
-   The 339-test affected surface passes. The collector is not wired to the live
-   canary yet, so every live/matrix claim remains unchanged.
+   Its isolated Claude canary is wired; 14/14 local gates, 151/151 mutations,
+   and 46/46 focused tests pass. No install/live; all live/matrix claims stand.
 3. **Option A is locally complete for the owner-scoped three-host pin phase.**
    Claude has an exact requested/answered `codex-subscription` route. Codex
    parent works and its child-proof exception remains explicit. Repaired ZCode
@@ -138,9 +138,9 @@ four-layer rules on claude; R1, R4, R5, R6 stay RETRACTED
 
 Keep Option A frozen. The full sequence requested at the 19 August review is:
 
-1. Claude: wire one bounded two-child canary mode to the private pairing
-   collector, verify locally, then obtain fresh install/live approval before
-   proving outcomes/promotion. R8 and the 15,000 ms control stay separate.
+1. Claude: obtain fresh push/PR/merge/install/live approval, publish the locally
+   green canary through a clean no-hosted-CI rollup, install exact main, then
+   prove outcomes/promotion. R8 and the 15,000 ms control stay separate.
 2. Codex: retain parent proof and wait for the upstream child-start/readable-
    artifact surface; do not repeat the deterministic canary series meanwhile.
 3. ZCode: retain this parent proof and existing one-card child proof, then close

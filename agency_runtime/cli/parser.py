@@ -375,6 +375,11 @@ def _register_host_control(sub: Subparsers, handlers: Handlers) -> None:
         help="Run the isolated live invocation after readiness inspection",
     )
     canary_p.add_argument(
+        "--accepted-outcome",
+        action="store_true",
+        help="Use Claude's exact serial producer/verifier accepted-outcome canary",
+    )
+    canary_p.add_argument(
         "--mode",
         choices=["agency", "native-only"],
         default="agency",

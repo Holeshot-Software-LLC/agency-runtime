@@ -268,6 +268,7 @@ def _collect_pair(
     inspect_capabilities: dict[str, object] | None = None,
     repeat: bool = False,
     extra_artifact: bool = False,
+    expected_provider: str | None = None,
 ) -> tuple[subject._HostAcceptedOutcomeCollection, Store, dict[str, Any]]:
     store = Store(tmp_path / "agency.db")
     install_known_contractors(store)
@@ -374,6 +375,7 @@ def _collect_pair(
                 store=store,
                 auto_promote_successes=auto_promote_successes,
                 disabled_agents=frozenset(),
+                expected_provider=expected_provider,
             )
         else:
             original = subject._record_verified_host_child_pair_outcome
@@ -393,6 +395,7 @@ def _collect_pair(
                     store=store,
                     auto_promote_successes=auto_promote_successes,
                     disabled_agents=frozenset(),
+                    expected_provider=expected_provider,
                 )
             finally:
                 subject._record_verified_host_child_pair_outcome = original
@@ -407,6 +410,7 @@ def _collect_pair(
                 store=store,
                 auto_promote_successes=auto_promote_successes,
                 disabled_agents=frozenset(),
+                expected_provider=expected_provider,
             )
         assert result.producer_decision_id in {"", producer_decision}
         assert result.verifier_decision_id in {"", verifier_decision}
@@ -422,6 +426,7 @@ def test_exact_pair_records_and_promotes_from_two_host_artifacts(
         tmp_path,
         auto_promote_successes=1,
         inspect_capabilities=inspected,
+        expected_provider="claude-subscription",
     )
 
     assert result.reason == "accepted", (
@@ -533,6 +538,20 @@ def test_more_than_exactly_two_child_artifacts_is_refused(
     result, store, worker = _collect_pair(tmp_path, extra_artifact=True)
 
     assert result.reason == "expected_two_child_artifacts"
+    assert result.result is None
+    assert _acceptance_rows(store, str(worker["worker_id"])) == []
+
+
+def test_expected_provider_mismatch_is_refused_before_outcome_recording(
+    tmp_path: Path,
+    private_root: None,
+) -> None:
+    result, store, worker = _collect_pair(
+        tmp_path,
+        expected_provider="not-the-answering-provider",
+    )
+
+    assert result.reason == "provider_pin_mismatch"
     assert result.result is None
     assert _acceptance_rows(store, str(worker["worker_id"])) == []
 

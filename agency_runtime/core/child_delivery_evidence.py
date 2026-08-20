@@ -523,6 +523,7 @@ HOST_ACCEPTED_OUTCOME_REASONS: Final[frozenset[str]] = frozenset(
         "producer_output_missing",
         "producer_output_outside_invocation_window",
         "producer_cardinality_invalid",
+        "provider_pin_mismatch",
         "contractor_worker_missing",
         "outcome_store_unavailable",
         "outcome_store_failed",
@@ -2282,13 +2283,14 @@ def _record_verified_host_child_pair_outcome(
         )
 
 
-def _collect_private_host_accepted_outcome(
+def _collect_private_host_accepted_outcome(  # noqa: C901 - one fail-closed evidence boundary
     collection: _PrivateHostArtifactCollection,
     *,
     invocation: _HostInvocationWindow,
     store: object,
     auto_promote_successes: int | None = None,
     disabled_agents: frozenset[str] | None = None,
+    expected_provider: str | None = None,
 ) -> _HostAcceptedOutcomeCollection:
     """Collect exactly one producer/verifier pair from an isolated Claude run."""
 
@@ -2296,6 +2298,13 @@ def _collect_private_host_accepted_outcome(
         raise TypeError("private host artifact collection capability is required")
     if collection._seal is not _PRIVATE_COLLECTION_SEAL:
         raise TypeError("private host artifact collection capability is invalid")
+    if expected_provider is not None and (
+        type(expected_provider) is not str
+        or not expected_provider
+        or len(expected_provider) > 128
+        or any(ord(character) < 32 or ord(character) == 127 for character in expected_provider)
+    ):
+        raise ValueError("expected child judge provider is invalid")
     if (
         not isinstance(invocation, _HostInvocationWindow)
         or invocation._seal is not _PRIVATE_COLLECTION_SEAL
@@ -2347,6 +2356,24 @@ def _collect_private_host_accepted_outcome(
     )
     if len(producer_evidence.cards) != 1:
         return _uncollected_outcome("producer_cardinality_invalid")
+    if expected_provider is not None:
+        getter = getattr(store, "get_native_child_staffing_decision", None)
+        if not callable(getter):
+            return _uncollected_outcome("provider_pin_mismatch")
+        for evidence, _member in pair_members:
+            route = getter(evidence.decision_id)
+            attempts = route.get("provider_attempts") if isinstance(route, Mapping) else None
+            applied = (
+                [
+                    attempt.get("provider_name")
+                    for attempt in attempts
+                    if isinstance(attempt, Mapping) and attempt.get("status") == "applied"
+                ]
+                if isinstance(attempts, list)
+                else []
+            )
+            if applied != [expected_provider]:
+                return _uncollected_outcome("provider_pin_mismatch")
 
     capabilities = tuple(
         _VerifiedHostChildDelivery(
