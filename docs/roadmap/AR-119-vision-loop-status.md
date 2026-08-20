@@ -3,7 +3,7 @@ title: "AR-119 vision-completion loop final status"
 status: active
 category: roadmap
 created: 2026-08-17
-updated: 2026-08-19
+updated: 2026-08-20
 tags: [roadmap, report, autonomous, loop, AR-119, AR-253, AR-255]
 related:
   - docs/roadmap/AR-119-vision-completion-autonomous-brief.md
@@ -2086,3 +2086,65 @@ passes 7 tests; focused Ruff and diff checks pass. The governing local fast
 harness passes all 12 gates in 1.3 minutes. This candidate is not yet merged,
 installed, or live-proven. No rule was promoted, the candidate did not advance,
 and **no matrix cell moved**.
+
+### LIVE MAIN: repaired ZCode parent header passes through the bundled CLI
+
+PR #299 merged exact head `cfdaacb6` to main as `f203dc66`; both commits carry
+the GitHub skip instruction and no hosted Actions run was created. The pre-push
+hook passed 12/12 local gates. ZCode alone was reinstalled from a clean detached
+checkout of that exact merge: install `c28d34aa-8ded-4740-90f1-b22b0af191db`,
+bundle `749a449cc6d6…`. Its deterministic source smoke passed 4/4.
+
+The desktop package does contain a headless runtime even though it installs no
+`zcode` command: `resources/glm/zcode.cjs`, version 0.16.3. Fresh one-shot
+session `sess_d4ac6d99-a8e6-4f43-ab81-c19902f23d86` ran the staffable
+text-normalization control with every model tool denied. ZCode model-I/O binds
+request `c59e7205-9138-4203-a1ab-3378e20316fb` to provider `zai`, requested
+model `glm-5.2`, and the provider's actual response model `glm-5.3`; it records
+one request, `finishReason=stop`, and zero tool calls. The host trace is
+`d3f6efd5-9e14-4e34-81c6-bb2fae78d9d9`.
+
+Agency independently correlated that session to trace
+`498d64b3-8643-4c38-8c0f-922e3837cf8d`. Its separate workforce inference
+answered through `claude-subscription/sonnet`, loaded `agency-steward` and
+`code-reviewer`, and delegated none. The response began with the exact five
+authoritative fields, then a correct boundary-whitespace risk. Stop committed
+authoritative finalization `65038045-64e3-41f2-88e5-32b0ce476b3e` as
+`accept/completed`; `missing` is null, and there are zero delegation or
+specialist-activation rows. Extra retired `Why`/`How` prose remains a bounded
+producer-prompt follow-up, not a header mismatch.
+
+This closes the merged/installed/live ZCode parent-header repair and completes
+the owner-authorized rollout package. It is parent proof, not a new child draw,
+Rule-4 promotion, candidate advance, or matrix change. Option A remains complete
+for the owner-scoped Claude/Codex/ZCode phase; OpenClaw and Hermes remain
+deferred, not waived.
+
+### CHECKPOINT PLAN: finish the 19 August review scope
+
+1. **Freeze Option A.** Preserve per-harness child-judge pins and the current
+   Claude, Codex, and ZCode evidence; do not spend more provider calls re-proving
+   the seal without a falsification target.
+2. **Close the primary-tool delivery mechanism.** On Claude, finish the one-use
+   capability seal and atomic Store consumer, prove the exact merged candidate
+   from a pre-speech host artifact, then feed that verified outcome through
+   AR-252's three-success/seven-day automatic-promotion path.
+3. **Make the Rule-8 claim only after the owner accepts its cost.** Advance the
+   candidate to the disk-proven `f7b84c8a40fa` boundary and re-anchor R2/R3/R7;
+   no new capture surface or live draw is needed. Re-run the fixed 15,000 ms cold
+   control and proportional gates at that exact candidate.
+4. **Treat Codex as parent-solid and child-upstream-blocked.** Keep its passing
+   parent header proof. Do not repeat the byte-identical canary series; resume
+   Rule 4 only after an upstream Codex release exposes a started child and a
+   readable host-authored delivery artifact.
+5. **Finish ZCode beyond Option A.** Retain this parent proof and the existing
+   one-card child artifact, then prove the plural-card Rule-4 contract, accepted
+   outcomes, promotion, and latency on an exact merged install.
+6. **Move to the OpenClaw box next.** Scope its missing Rule-4 route, implement
+   it through review/fast gates, install there, and collect host-written live
+   evidence. Hermes follows as the fifth host in a later authorized package.
+7. **Close the cross-host program last.** Run the matched Agency-on/off corpus,
+   complete benchmark validity and cold/warm/fan-out bounds, reconcile every
+   exact-candidate matrix cell, then prove Rule 9 from the complete five-host
+   set. Hosted/release verification runs once at the end under fresh funding
+   and publication authority.

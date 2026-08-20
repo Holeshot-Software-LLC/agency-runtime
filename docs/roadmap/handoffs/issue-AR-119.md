@@ -3,7 +3,7 @@ title: "AR-119 active recovery capsule"
 status: active
 category: roadmap
 created: 2026-07-23
-updated: 2026-08-19
+updated: 2026-08-20
 tags: [handoff, vision, inference, child-delivery, contractors, evaluation, recovery]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
@@ -28,8 +28,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-119
 branch: codex/ar119-main-rollout-evidence
-evidence_commit: ae1964fa21550a19a7bffeb16bd8b84df03717d1
-minimum_ledger_commit: 2f6ed88d811b42f38ce6053d34e24056cea500f9
+evidence_commit: f203dc665dcfd682ce6073126a65e79eac140562
+minimum_ledger_commit: cfdaacb62dc914400b790d95abc7976c283a612c
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
@@ -43,12 +43,12 @@ or restart, then `AR-119-vision-loop-status.md` for current state.
 ## checkpoint
 
 - **WORK ON the branch above IN `C:\Workspaces\Holeshot Software\agency-runtime-main-rollout`**.
-  It starts at exact main merge `ae1964fa` / PR #298. The primary checkout's
+  It starts at exact main merge `f203dc66` / PR #299. The primary checkout's
   named owner WIP remains untouched; never commit, revert, stash, or install there.
   Hosted CI was technically skipped at PR head and merge; local gates govern.
-- **Machine**: Claude/Codex/ZCode now share installed runtime `12ce2b614e35`.
-  Their current bundle digests begin `d701a815`, `2ad1a6b3`, and `f812867c`.
-  The canary map remains
+- **Machine**: Claude/Codex retain the PR #298 install (bundles `d701a815…` and
+  `2ad1a6b3…`). ZCode alone is reinstalled from `f203dc66`: install `c28d34aa…`,
+  bundle `749a449c…`. The canary map remains
   `claude/codex -> codex-subscription`, `zcode -> zcode-recruiter`; ordinary
   providers remain Codex then Claude and content capture remains enabled.
 - **Option A's local three-host provider-pin phase is complete.** OpenClaw and
@@ -60,28 +60,25 @@ cell moved.** Candidate is still `1bd7e37c`; R2, R3, R7 remain the only
 four-layer rules on claude; R1, R4, R5, R6 stay RETRACTED
 (`AR-119-99a7b3ac-live-evidence.md`) -- no quiet re-promotion.
 
-- **R8 claude is provable from disk, no new capture surface.** Run
-  `e9715480` / trace `2a77824c` (session `abaccac6`, real profile,
-  `preflight_failed`) retains the entire delivered context INLINE in the
-  host transcript: 1,309 chars, steward kernel only, no `[AGENCY LOADED]`.
-  The unstaffed negative is OBSERVED, not borrowed like R5's. Store: 0
-  specialists/routing/delegations on the trace. Claiming costs a
-  `candidate_commit` advance to `f7b84c8a40fa` + re-anchoring R2/R3/R7.
+- **R8 claude is provable from disk, no new capture surface.** Run `e9715480` /
+  trace `2a77824c` retains the 1,309-char steward-only delivered context and
+  zero Store staffing rows. Claiming it still costs candidate advance
+  `f7b84c8a40fa` plus re-anchoring R2/R3/R7 -- an owner decision.
 - **Codex parent works; child proof is blocked.** Merged-main parent routing and
   header delivery pass. The authorized child rerun used the trust bypass and
   requested `codex-subscription`, but no child judge answered: parent preflight
   failed `workforce_inference_failed`, with spawn/start counts 1/0 and terminal
   `codex_native_child_start_missing`. This exact-main shape differs from the old
   1/1 opaque-projection series and is not Rule-4 proof.
-- **Claude reached verified delivery.** Attempt 1 stopped at parent preflight.
-  Attempt 2 produced one pre-speech host artifact and the Store's first
-  `native_child_delivery_verifications` row: decision `native-child-7624e16e…`,
-  `minimal-change-engineer`, requested/answered `codex-subscription`, confidence
-  0.91, candidate `59580436f7f1`. The overall report stayed red only because it
-  compared that child team with the parent's `code-reviewer` team. `14de2f74`
-  fixes the correlation and provider projection; 134 affected tests pass.
-  After reinstall, two bounded refreshes stopped at parent preflight: oversized
-  teams (`3832e7aa…`), then no valid planner (`c7ae4580…`). Neither called a child.
+- **Claude reached verified delivery.** Decision `native-child-7624e16e…`
+  delivered `minimal-change-engineer` pre-speech through answered
+  `codex-subscription`; `14de2f74` repairs report correlation. Two later bounded
+  refreshes stopped at parent preflight and never called a child.
+- **ZCode parent header is exact-main live-proven.** PR #299 fixed the missing
+  initial snapshot. Bundled CLI session `sess_d4ac6d99…` reached Z.ai once;
+  requested `glm-5.2`, actual response model `glm-5.3`, zero tools. Agency trace
+  `498d64b3…` finalized `accept/completed` with the exact five fields and no
+  delegation. This is parent proof, not a Rule-4 cell.
 ## traps (machine-specific; do not rediscover)
 
 - **`agency` on PATH is `~/.local/bin/agency.exe` and is SCHEMA 45** -- it
@@ -94,23 +91,21 @@ four-layer rules on claude; R1, R4, R5, R6 stay RETRACTED
 - Canaries need `--timeout 420`; the gate suite ~14 min, run detached.
   Eight preflight/litellm tests red on clean main and
   `test_platform_wheel.py` collection failure are pre-existing noise.
+- ZCode installs no PATH command. Its real CLI is
+  `C:\Users\lucas\AppData\Local\Programs\ZCode\resources\glm\zcode.cjs`.
+  Version 0.16.3 advertises but rejects `--allowed-tools`, `--max-turns`, and
+  `--settings`; native `ZCODE_MODEL`, `ZCODE_BASE_URL`, and `ZCODE_API_KEY`
+  process overrides work while the permanent hook config remains unchanged.
 
 ## exact-blocker
 
-1. **CONFIRMED 2026-08-19: the child judge's decline is
-   provider-conditional.** `agency.yaml` lists `codex-subscription` first
-   with `judge.model` empty; the canary's restricted profile has no codex
-   transport and falls through to `claude-subscription`. Over a
-   digest-verified identical 71-agent universe with the byte-identical
-   138-char unit: `codex-subscription` **STAFFS** (`minimal-change-engineer`,
-   0.90/0.93) and `claude-subscription` **DECLINES** (0 staffed / 3, two
-   applied+inferred declines at confidence **0.75 -- the same confidence the
-   canary's own child decision `5c963e09` recorded**). Reproduce with
-   `python scripts/ar119_child_judge_probe.py --provider <name> --runs 3`.
-   **This retracted this session's own "7.1 settled" claim** and killed the
-   reading that the decline is a small-unit-policy property. Two
-   environments disagree about whether the same child needs a specialist --
-   an owner question, and AR-253's rather than AR-119's.
+1. **CONFIRMED 2026-08-19: the child judge's decline is provider-conditional.**
+   Over the digest-verified identical 71-agent universe and byte-identical
+   138-char unit, `codex-subscription` staffs `minimal-change-engineer`
+   (0.90/0.93), while `claude-subscription` declines 0/3 (two at 0.75, matching
+   decision `5c963e09`). Reproduce with `python
+   scripts/ar119_child_judge_probe.py --provider <name> --runs 3`. This retracts
+   "7.1 settled"; policy interpretation belongs to AR-253.
 2. **The one-use capability seal** still gates Rule 4 Live and AR-252. Two
    gates in `child_delivery_evidence.py`: the `expected` capability
    (read-only paths hardcode `structural_hook_output=False`, lines
@@ -133,22 +128,33 @@ four-layer rules on claude; R1, R4, R5, R6 stay RETRACTED
    (`hook_trust_status: unverified` = a missing `--verify-activation`
    receipt, NOT the owner's trust action). ZCode 3.8.1 is live-proven for this
    one-card bounded call; openclaw/hermes have no Rule 4 route.
-5. **Merged-main ZCode parent smoke found one blocker.** Session `sess_88f7185c…`
-   closed `response_invalid`: placeholders hid `agencies_loaded` and
-   `actual_model_selected`. The local fix is 12/12 fast but not merged/installed.
+5. **Merged-main ZCode parent blocker is closed.** PR #299 is merged, ZCode is
+   reinstalled from `f203dc66`, deterministic smoke is 4/4, and CLI session
+   `sess_d4ac6d99…` was accepted on the first real provider request. The host
+   answered through Z.ai/GLM-5.3 while Agency correctly reported its separate
+   Claude/Sonnet workforce receipt. Extra `Why`/`How` prose is follow-up debt.
 
 ## next-bounded-work-package
 
-Keep Option A frozen. Finish local fast gates and a clean recovery pair, then wait
-for push/PR/merge/reinstall authority. After merge, run one ZCode smoke; defer the rest.
+Keep Option A frozen. The full sequence requested at the 19 August review is:
+
+1. Claude: finish the one-use seal/atomic consumer, exact-candidate host proof,
+   AR-252 accepted outcomes and automatic promotion; separately decide the R8
+   candidate advance/re-anchor and re-run the 15,000 ms cold control.
+2. Codex: retain parent proof and wait for the upstream child-start/readable-
+   artifact surface; do not repeat the deterministic canary series meanwhile.
+3. ZCode: retain this parent proof and existing one-card child proof, then close
+   plural-card Rule 4, outcomes, promotion and latency on an exact merged install.
+4. Move to the owner's OpenClaw box for route implementation and live proof;
+   Hermes follows later. Both remain part of five-host completion.
+5. Finish matched Agency-on/off and upstream corpora, cold/warm/fan-out bounds,
+   matrix reconciliation and Rule 9; run hosted/release gates once at the end.
 
 ## same-task-continuity
 
-After restart or compaction: this file, `AR-119-founding-vision.md`, the
-brief (§6, §7), then `AR-119-vision-loop-status.md` (ledger, series results,
-corrections). The matrix and `AR-119-99a7b3ac-live-evidence.md` carry proof
-state. Do not reconstruct retired Job B, plan-row, work-unit, grant or
-consumed-receipt transport; do not re-chase the brief's REFUTED list.
+After restart: this file, founding vision, then the end of the loop status.
+The matrix and `AR-119-99a7b3ac-live-evidence.md` carry proof state. Never
+restore retired Job B or re-chase the brief's REFUTED list.
 
 ## verification
 
@@ -156,25 +162,19 @@ consumed-receipt transport; do not re-chase the brief's REFUTED list.
 python scripts/run_local_gates.py          # full, ~14.5 min, run detached
 python scripts/run_local_gates.py --fast   # skips the production spine
 python -m agency_runtime.cli eval routing --json --no-details
-python -m agency_runtime.cli host-canary claude --timeout 420   # readiness
-# execute: --execute --confirm "RUN LIVE claude CANARY" --timeout 420
 ~~~
 
-Judge every gate by its own summary; a push's hooks are not the spine.
-`agency evidence children --host claude --json` and `evidence rejections`
-read without touching the store.
+Judge each gate by its own summary; push hooks are not the production spine.
 
 ## constraints
 
-- Codex remains supported; never weaken evidence or parity to hide its
-  opaque channel. Inference alone chooses specialists and contractors, and
-  only a host-written artifact proves Rule 4; Agency rows correlate only.
+- Codex remains supported; never weaken evidence to hide its opaque channel.
+  Only host-written artifacts prove Rule 4; Agency rows correlate only.
 - Never mark a matrix cell without its named authority at the exact
   candidate; provisional/branch evidence must say so.
 - Keep the 15,000 ms cold control fixed; automatic promotion stays on the
   critical path; no superiority claim without a matched corpus (AR-125).
-- Owner authorization dated 2026-08-19 covers PR #298 update/merge, merged-main
-  install, Claude/ZCode parent smokes, and one Codex child canary with
-  `--dangerously-bypass-hook-trust`. It excludes hosted CI, OpenClaw/Hermes,
-  trackers, tags, force/direct main pushes, new capture, re-auth, config changes,
-  or a second PR/merge/install for the ZCode repair.
+- The owner-authorized PR #299 merge, ZCode reinstall, and one CLI smoke are
+  consumed. Fresh authority is required for another push/PR/merge/install or
+  live provider draw, hosted CI, trackers, tags, re-auth, or config changes.
+  OpenClaw and Hermes remain exempt for this session, not waived.
