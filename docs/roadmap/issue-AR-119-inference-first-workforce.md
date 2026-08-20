@@ -150,6 +150,16 @@ host-written delivery. It does not publish the unpushed commits, change
 ordinary staffing, re-promote a retracted Rule, move a matrix cell, or complete
 Rule 9 or AR-119.
 
+PR #301 subsequently merged the sealed accepted-outcome path to exact main
+`5a1d863c` and installed it for Claude. Its first live producer/verifier draw
+failed closed before staffing: both `claude-haiku` parent planner responses were
+rejected as `provider_response_contract_invalid`, leaving zero routing
+decisions, worker runs, or delivery verifications. The host process itself
+completed and wrote two candidate child artifacts, but neither could carry an
+Agency v6 delivery marker after the failed preflight. No outcome, promotion, or
+matrix movement followed. The next Claude package is therefore a deterministic
+isolated-parent preflight repair, not another unmodified provider draw.
+
 The owner separately confirmed the current Codex boundary on 2026-08-19.
 Codex parent operation is working: a live request-scoped parent turn identifies
 `host=codex`, carries Agency preflight inference, loads the selected specialist
