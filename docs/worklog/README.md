@@ -1079,6 +1079,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `6cc6601c` | 2026-08-20 | docs(ar119): record Codex 0.148 pre-spawn draw | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | null |
 | `5a1d863c` | 2026-08-20 | Merge pull request #301: bind accepted outcomes to host artifacts [skip ci] | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-252](../roadmap/issue-AR-252-record-verified-acceptance-outcomes.md) | null |
 | `3a3191da` | 2026-08-20 | docs(ar119): record Claude outcome preflight failure | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-252](../roadmap/issue-AR-252-record-verified-acceptance-outcomes.md) | null |
+| `3bad5302` | 2026-08-20 | fix(canary): keep Claude outcome preflight indivisible | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-252](../roadmap/issue-AR-252-record-verified-acceptance-outcomes.md) | [detail](2026-08-20-3bad5302-keep-claude-outcome-preflight-indivisible.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
