@@ -2374,4 +2374,5 @@ the three content-free team-search counts previously requested in AR-253.
 Provider routes, canary pins, owner config, and ordinary turns are unchanged.
 Focused recruiter/receipt/conformance verification passes 97/97; the production
 spine passes 797 with 20 skips and deterministic matrix regressions pass 695.
-No provider, host CLI, config write, install, publication, or live draw followed.
+All 14 local gates pass in 13.9 minutes. Commits `e7e4e285` / `1dd70983` are local;
+no provider, host CLI, config write, install, publication, or live draw followed.

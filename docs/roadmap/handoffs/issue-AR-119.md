@@ -28,8 +28,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-119
 branch: codex/ar119-recruiter-safe-team-contract
-evidence_commit: eff66c67a0ff0e23c0ed61d603fa51e8ca23183f
-minimum_ledger_commit: dbfe2b0dd74ed3423cb6fd33f8d49c37e30dd376
+evidence_commit: e7e4e2858f761fb898fce4b17a147c3655b0ec17
+minimum_ledger_commit: 1dd70983e0bd14a9e59fcba83918db53f8772b6b
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
@@ -134,14 +134,14 @@ four-layer rules on claude; R1, R4, R5, R6 stay RETRACTED
    prompt limits are in `AR-119-39ff6dca-recruiter-diagnostic-evidence.md`.
    The local candidate defines mandatory/optional/excluded classifications,
    sends bounded safe-team repair facts, and retains only three diagnostic
-   counts. Provider-free: 97 focused, 797/20 spine, 695 matrix; no provider call.
+   counts. Provider-free: 97 + 797/20 + 695; all 14 gates pass in 13.9 minutes.
 
 ## next-bounded-work-package
 
 Keep Option A frozen. The full sequence requested at the 19 August review is:
 
-1. Finish proportional local gates and the recovery/ledger pair for the
-   recruiter contract. Stop before push, PR, merge, install, config, or live draw.
+1. Seek fresh authority for push/PR/merge, then exact-main install, config, and
+   one bounded draw. Do none of those from this local checkpoint implicitly.
 2. Codex: retain parent proof. The 0.148 draw stopped before spawn; do not
    repeat until a new upstream surface or deterministic preflight fix exists.
 3. ZCode: retain this parent proof and existing one-card child proof, then close

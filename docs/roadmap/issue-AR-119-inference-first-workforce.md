@@ -4258,8 +4258,9 @@ forbidden candidates from the diagnostic axis, and adds three content-free
 counts to future durable failure receipts. Deterministic code still never
 selects, adds, reorders, or invents a team. Provider-free verification is green:
 97 focused/conformance tests, the 797-test production spine with 20 skips, and
-695 deterministic matrix regressions. No matrix cell moved and no further live
-draw is authorized or needed before exact-commit gates and publication review.
+695 deterministic matrix regressions; all 14 local gates pass in 13.9 minutes.
+Commits `e7e4e285` / `1dd70983` are local. No matrix cell moved and no further
+live draw is authorized or needed before publication and exact-main review.
 
 ### Still required before AR-119 can close
 

@@ -151,9 +151,10 @@ selected team. The warning-strict production spine also passes 797 tests with
 20 skips, and the deterministic AR-119 matrix regression suite passes 695/695.
 Those tests do not create live evidence or move a matrix cell.
 
-This is source/diagnostic evidence only. Before any further live draw, the
-candidate still needs its exact-commit local gate harness, recovery commits, review,
-authorized publication, exact-main installation, and a fresh explicit
-one-draw authorization. A future green draw would be new evidence; this package
-does not retroactively turn pair `39ff6dca…` green or move any rule or matrix
-cell.
+The full local harness passed all 14 gates in 13.9 minutes. Local substantive
+commit `e7e4e285` and ledger `1dd70983` preserve the implementation and evidence;
+they are not published or installed. Before any further live draw, the candidate
+still needs review, authorized publication, exact-main installation, and a fresh
+explicit one-draw authorization. A future green draw would be new evidence; this
+package does not retroactively turn pair `39ff6dca…` green or move any rule or
+matrix cell.
