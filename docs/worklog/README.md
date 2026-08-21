@@ -1106,6 +1106,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `0d8a2355` | 2026-08-21 | Merge pull request #312: preserve slow host inspection parity [skip ci] | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-236](../roadmap/issue-AR-236-achieve-full-cli-dashboard-parity.md), [AR-262](../roadmap/issue-AR-262-preserve-slow-host-dashboard-parity.md) | null |
 | `54b7143b` | 2026-08-21 | docs(ar264): define governed contractor execution profiles | [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md) | null |
 | `c4677a41` | 2026-08-21 | feat(workforce): compile actionable contractor profiles | [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md) | null |
+| `16b43b7c` | 2026-08-21 | fix(workforce): finalize contractor profile gates | [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
