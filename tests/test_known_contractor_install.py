@@ -22,8 +22,10 @@ from agency_runtime.core.workforce.known_contractors import KNOWN_CONTRACTORS_BY
 from agency_runtime.core.workforce.known_installer import (
     PACKAGED_CONTRACTOR_AUTHORITY,
     _legacy_known_contractor_package,
+    _malformed_legacy_known_contractor_package,
     install_known_contractors,
     known_contractor_package,
+    packaged_hiring_case_is_auditable,
     packaged_hiring_evidence,
 )
 
@@ -76,10 +78,20 @@ def test_known_contractors_install_atomically_with_truthful_package_evidence(
         }
 
 
-def test_exact_packaged_v1_contractors_advance_immutably_to_v2(tmp_path: Path) -> None:
+@pytest.mark.parametrize(
+    "predecessor_factory",
+    (
+        pytest.param(_legacy_known_contractor_package, id="canonical-v1"),
+        pytest.param(_malformed_legacy_known_contractor_package, id="malformed-v1"),
+    ),
+)
+def test_exact_packaged_v1_contractors_advance_immutably_to_v2(
+    tmp_path: Path,
+    predecessor_factory: Any,
+) -> None:
     store = Store(tmp_path / "agency.db")
     slug = "typescript-application-engineer"
-    legacy = _legacy_known_contractor_package(slug)
+    legacy = predecessor_factory(slug)
     current = known_contractor_package(slug)
     version_id = store.stage_agency_workforce_agent(legacy.agent)
     contract_document = legacy.workforce_contract.to_dict()
@@ -94,6 +106,12 @@ def test_exact_packaged_v1_contractors_advance_immutably_to_v2(tmp_path: Path) -
         **evidence,
     )
     case = store.transition_hiring_case(case["id"], status="audited")
+    with closing(store._connect()) as conn:
+        stored_case = conn.execute(
+            "SELECT * FROM agent_hiring_cases WHERE id = ?",
+            (case["id"],),
+        ).fetchone()
+    assert stored_case is not None and packaged_hiring_case_is_auditable(stored_case)
     store.register_workforce_worker(
         agent_slug=slug,
         display_name=legacy.employment_contract.role,
@@ -156,6 +174,92 @@ def test_exact_packaged_v1_contractors_advance_immutably_to_v2(tmp_path: Path) -
     repeated = install_known_contractors(store)
     assert repeated.upgraded == ()
     assert repeated.existing == tuple(sorted(KNOWN_CONTRACTORS_BY_SLUG))
+
+
+def test_package_advance_preserves_an_exact_prompt_with_amended_contract_metadata(
+    tmp_path: Path,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+    slug = "typescript-application-engineer"
+    legacy = _malformed_legacy_known_contractor_package(slug)
+    version_id = store.stage_agency_workforce_agent(legacy.agent)
+    contract_document = legacy.workforce_contract.to_dict()
+    evidence = packaged_hiring_evidence(legacy)
+    case = store.create_hiring_case(
+        case_type="hire",
+        proposed_slug=slug,
+        work_unit_id=f"known-{slug}",
+        request_hash=_contract_hash(legacy.employment_contract.to_dict()),
+        contract_evidence=contract_document,
+        contract_hash=_contract_hash(contract_document),
+        **evidence,
+    )
+    case = store.transition_hiring_case(case["id"], status="audited")
+    store.register_workforce_worker(
+        agent_slug=slug,
+        display_name=legacy.employment_contract.role,
+        origin="agency",
+        employment_class="contractor",
+        agent_version_id=version_id,
+        recruitment_contract=contract_document,
+        relation="generated",
+        hiring_case_id=case["id"],
+    )
+    amended = json.loads(
+        json.dumps(contract_document, ensure_ascii=False, separators=(",", ":"), sort_keys=True)
+    )
+    amended["outcomes"].append("owner-specific retained outcome")
+    amended_document = json.dumps(
+        amended,
+        ensure_ascii=False,
+        separators=(",", ":"),
+        sort_keys=True,
+    )
+    worker = store.get_workforce_worker(slug, disabled_agents=())
+    with closing(store._connect()) as conn, conn:
+        sequence = int(
+            conn.execute(
+                "SELECT COALESCE(MAX(projection_sequence), 0) "
+                "FROM agent_recruitment_contract_projections"
+            ).fetchone()[0]
+        )
+        conn.execute(
+            "INSERT INTO agent_recruitment_contract_projections "
+            "(id, projection_sequence, worker_id, agent_version_id, "
+            "parent_contract_hash, recruitment_contract, recruitment_contract_hash, "
+            "projection_authority, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, "
+            "'test-owner-amendment', strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))",
+            (
+                str(uuid.uuid4()),
+                sequence + 1,
+                worker["worker_id"],
+                version_id,
+                _contract_hash(contract_document),
+                amended_document,
+                hashlib.sha256(amended_document.encode("utf-8")).hexdigest(),
+            ),
+        )
+
+    with pytest.raises(ValueError, match="packaged workforce predecessor is not exact"):
+        store.stage_agency_packaged_workforce_revision(
+            known_contractor_package(slug).agent,
+            expected_revision=0,
+        )
+    result = install_known_contractors(store)
+    after = store.get_workforce_worker(slug, disabled_agents=())
+
+    assert slug in result.preserved
+    assert slug not in result.upgraded
+    assert after["revision"] == 0
+    assert after["current_version"] == legacy.agent["version"]
+
+
+def test_legacy_backend_snapshot_retains_the_package_v1_prompt_identity() -> None:
+    package = _legacy_known_contractor_package("backend-service-engineer")
+
+    assert package.compiled.prompt_hash == (
+        "sha256:725012e8efadfc90f1b87c141001e3cb6d52b6889aff828f792343a97dbd80f5"
+    )
 
 
 def test_workforce_slug_batch_is_bounded_canonical_and_rejects_duplicates(

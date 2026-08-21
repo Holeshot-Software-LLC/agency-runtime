@@ -1552,12 +1552,12 @@ class RosterStoreMixin:
             raise ValueError("expected_revision is invalid")
         prepared = _prepared_roster_agent(agent, require_exact_bundled=False)
         from agency_runtime.core.workforce.known_installer import (
-            _legacy_known_contractor_package,
+            _known_contractor_predecessor_packages,
             known_contractor_package,
         )
 
         current = known_contractor_package(prepared.slug)
-        legacy = _legacy_known_contractor_package(prepared.slug)
+        predecessors = _known_contractor_predecessor_packages(prepared.slug)
         if (
             prepared.workforce_origin != "agency"
             or prepared.workforce_employment != "contractor"
@@ -1571,10 +1571,24 @@ class RosterStoreMixin:
         try:
             conn.execute("BEGIN IMMEDIATE")
             worker = conn.execute(
-                "SELECT worker.revision, worker.standing, worker.origin, "
-                "version.version, version.hash, version.content, version.metadata "
+                "SELECT worker.worker_id, worker.revision, worker.standing, worker.origin, "
+                "version.version, version.hash, version.content, version.metadata, "
+                "COALESCE(projection.recruitment_contract, "
+                "lineage.recruitment_contract) AS recruitment_contract, "
+                "COALESCE(projection.recruitment_contract_hash, "
+                "lineage.recruitment_contract_hash) AS recruitment_contract_hash "
                 "FROM agent_workers AS worker JOIN agent_versions AS version "
-                "ON version.id = worker.current_agent_version_id WHERE worker.agent_slug = ?",
+                "ON version.id = worker.current_agent_version_id "
+                "JOIN agent_version_lineage AS lineage "
+                "ON lineage.worker_id = worker.worker_id "
+                "AND lineage.agent_version_id = worker.current_agent_version_id "
+                "LEFT JOIN agent_recruitment_contract_projections AS projection "
+                "ON projection.id = (SELECT candidate.id "
+                "FROM agent_recruitment_contract_projections AS candidate "
+                "WHERE candidate.worker_id = worker.worker_id "
+                "AND candidate.agent_version_id = worker.current_agent_version_id "
+                "ORDER BY candidate.projection_sequence DESC LIMIT 1) "
+                "WHERE worker.agent_slug = ?",
                 (prepared.slug,),
             ).fetchone()
             if worker is None:
@@ -1583,13 +1597,27 @@ class RosterStoreMixin:
                 raise RuntimeError("workforce revision conflict")
             if str(worker["standing"]) in {"retired", "merged"}:
                 raise ValueError("terminal workforce state cannot be amended")
-            if (
-                str(worker["origin"]) != "agency"
-                or str(worker["version"]) != legacy.agent["version"]
-                or str(worker["hash"]) != legacy.compiled.prompt_hash
-                or str(worker["content"]) != legacy.compiled.prompt
-                or str(worker["metadata"]) != serialized_revision_metadata(legacy.agent)
-            ):
+            exact_predecessor = False
+            for predecessor in predecessors:
+                contract_document = json.dumps(
+                    predecessor.workforce_contract.to_dict(),
+                    ensure_ascii=False,
+                    separators=(",", ":"),
+                    sort_keys=True,
+                )
+                contract_hash = hashlib.sha256(contract_document.encode("utf-8")).hexdigest()
+                if (
+                    str(worker["origin"]) == "agency"
+                    and str(worker["version"]) == predecessor.agent["version"]
+                    and str(worker["hash"]) == predecessor.compiled.prompt_hash
+                    and str(worker["content"]) == predecessor.compiled.prompt
+                    and str(worker["metadata"]) == serialized_revision_metadata(predecessor.agent)
+                    and str(worker["recruitment_contract"]) == contract_document
+                    and str(worker["recruitment_contract_hash"]) == contract_hash
+                ):
+                    exact_predecessor = True
+                    break
+            if not exact_predecessor:
                 raise ValueError("packaged workforce predecessor is not exact")
             existing = conn.execute(
                 "SELECT version.id FROM agent_versions AS version "

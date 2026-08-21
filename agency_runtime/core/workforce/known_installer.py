@@ -90,6 +90,36 @@ _LIFECYCLES: dict[str, str] = {
     "testing": "testing",
 }
 
+# These are the exact prompt identities emitted by the package-v1 definitions
+# that preceded executable contractor profiles. Reconstructing v1 only by
+# deleting today's execution profile is unsafe: a later edit to any other
+# contract field would silently redefine which stored worker is eligible for a
+# package-owned advance. The digest manifest makes that drift fail closed.
+_LEGACY_KNOWN_CONTRACTOR_PROMPT_HASHES: dict[str, str] = {
+    "ai-evaluation-engineer": "sha256:ccb4d23ca5be91e422f804dbf6871896d364d3344a59f5d03a7828d4e5d8ac2e",
+    "ai-governance-auditor": "sha256:2311a03f3050c1f0e4b999e9e14a573ea2bf24d53aa65e1c45506c5d0bb019f7",
+    "ai-observability-engineer": "sha256:52e7b9c5133eb1ef895f0278664e09b396393dda95758170ee73d5bdca8d67a2",
+    "application-integration-verifier": "sha256:37ce9785a65d96e6351b7004fb67460e31848d49811a620983d9bd4f37417f4f",
+    "application-observability-engineer": "sha256:2ab966106f90e29494b80471ae6885720abb5b40f111943434f8f04a00cbc4a6",
+    "backend-service-engineer": "sha256:725012e8efadfc90f1b87c141001e3cb6d52b6889aff828f792343a97dbd80f5",
+    "cross-platform-installer-engineer": "sha256:4c4121a5228884acf808960a914744cbe12b95c594aca7e6dccebc2fe9669d20",
+    "cross-platform-release-verifier": "sha256:5b41b516cc1bea8d2109c92649800e769f24058c44db1ae388243fc088596820",
+    "documentation-evidence-researcher": "sha256:68c8bcde8d696cca4175679029c2e2d4b05d73373bb56e1e2cf4d2b0db72adba",
+    "hallucination-root-cause-investigator": "sha256:ee6a95ad85cf8035970c560c50241b2756c1d923e2589dfa9b1899f6b98a99a0",
+    "policy-guardrail-architect": "sha256:41bb27e28ae72ed0144810b13d165d2915c1720f8233d5203a318085e6d59a7d",
+    "python-application-engineer": "sha256:27736661ee05c968bbfb41e782aed925b5c556c1d6baf83f624f8f7e50254308",
+    "selection-safety-critic": "sha256:5357971f306118e9b34efaefb6b4c0df8a0c369b2c0ac9ce371f42bcfef3669a",
+    "software-test-engineer": "sha256:2b141081edc3394581aa5cf2241c8a76c938f46253855b504216de80f3970c34",
+    "typescript-application-engineer": "sha256:5e6a02cdaaf0bfdea4dcb4e8ec9c5a493ada09258a47554a0f7aa917344cd412",
+}
+
+_LEGACY_BACKEND_CAPABILITIES = (
+    "api execution paths",
+    "persistence integration",
+    "concurrency and failure handling",
+)
+_LEGACY_BACKEND_EVIDENCE_REQUIREMENTS = ("changed artifacts and focused verification results",)
+
 
 @dataclass(frozen=True, slots=True)
 class KnownContractorPackage:
@@ -237,14 +267,63 @@ def known_contractor_package(slug: str) -> KnownContractorPackage:
 def _legacy_known_contractor_package(slug: str) -> KnownContractorPackage:
     """Reconstruct the exact v1 package predecessor eligible for a governed advance."""
 
-    current = KNOWN_CONTRACTORS_BY_SLUG.get(str(slug or "").strip().casefold())
+    normalized = str(slug or "").strip().casefold()
+    current = KNOWN_CONTRACTORS_BY_SLUG.get(normalized)
     if current is None:
         raise KeyError("known contractor is not packaged")
-    contract = replace(current, schema_version=1, execution_profile=None)
+    changes: dict[str, Any] = {"schema_version": 1, "execution_profile": None}
+    if normalized == "backend-service-engineer":
+        # This contract gained additional non-profile guidance before AR-264
+        # merged. Preserve the package-v1 fields instead of back-projecting
+        # those newer values into historical evidence.
+        changes.update(
+            capabilities=_LEGACY_BACKEND_CAPABILITIES,
+            evidence_requirements=_LEGACY_BACKEND_EVIDENCE_REQUIREMENTS,
+        )
+    contract = replace(current, **changes)
     compiled = compile_contractor(contract)
-    agent = _known_contractor_agent(contract)
+    expected_hash = _LEGACY_KNOWN_CONTRACTOR_PROMPT_HASHES.get(normalized)
+    if compiled.prompt_hash != expected_hash:
+        raise RuntimeError(f"legacy known contractor snapshot drifted: {normalized}")
+    # AR-264 normalized audit-revision spelling for new packages. The v1
+    # predecessor retained the template hash's ``sha256:`` prefix here.
+    agent = {
+        **_known_contractor_agent(contract),
+        "audit_revision": (f"package-v{compiled.template_version}-{compiled.template_hash[:16]}"),
+    }
     workforce = project_workforce_contract(agent, origin="agency")
     return KnownContractorPackage(contract, compiled, agent, workforce)
+
+
+def _malformed_legacy_known_contractor_package(slug: str) -> KnownContractorPackage:
+    """Reconstruct package v1 before the August 6 version-identity repair."""
+
+    package = _legacy_known_contractor_package(slug)
+    agent = {
+        **package.agent,
+        "version": (
+            f"contractor-{package.compiled.template_version}-{package.compiled.prompt_hash[:16]}"
+        ),
+    }
+    workforce = project_workforce_contract(agent, origin="agency")
+    return KnownContractorPackage(
+        package.employment_contract,
+        package.compiled,
+        agent,
+        workforce,
+    )
+
+
+def _known_contractor_predecessor_packages(slug: str) -> tuple[KnownContractorPackage, ...]:
+    """Return the two exact package-v1 identities that shipped before v2."""
+
+    normalized = str(slug or "").strip().casefold()
+    if normalized not in _LEGACY_KNOWN_CONTRACTOR_PROMPT_HASHES:
+        return ()
+    return (
+        _legacy_known_contractor_package(normalized),
+        _malformed_legacy_known_contractor_package(normalized),
+    )
 
 
 def known_contractor_revision_metadata_authorities(slug: str) -> tuple[str, ...]:
@@ -296,7 +375,10 @@ def packaged_hiring_case_is_auditable(row: Mapping[str, Any]) -> bool:
 
     try:
         slug = str(row["proposed_slug"])
-        packages = (known_contractor_package(slug), _legacy_known_contractor_package(slug))
+        packages = (
+            known_contractor_package(slug),
+            *_known_contractor_predecessor_packages(slug),
+        )
         contract = safe_load_bounded_json(
             str(row["contract_evidence"]),
             maximum_bytes=256 * 1024,
@@ -388,23 +470,45 @@ def install_known_contractors(store: Any) -> KnownContractorInstallResult:
             ):
                 existing.append(slug)
                 continue
-            legacy = _legacy_known_contractor_package(slug)
+            predecessors = _known_contractor_predecessor_packages(slug)
             prompt_reader = getattr(store, "get_specialist_prompt", None)
             prior_prompt = (
                 prompt_reader(slug, max_chars=262_144, disabled_agents=())
                 if callable(prompt_reader)
                 else None
             )
-            exact_legacy_package = bool(
-                worker.get("current_hash") == legacy.compiled.prompt_hash
-                and worker.get("current_version") == legacy.agent["version"]
-                and isinstance(prior_prompt, Mapping)
-                and prior_prompt.get("hash") == legacy.compiled.prompt_hash
-                and prior_prompt.get("version") == legacy.agent["version"]
-                and prior_prompt.get("prompt_body") == legacy.compiled.prompt
-                and prior_prompt.get("prompt_truncated") is False
+            detail_reader = getattr(store, "get_workforce_worker_detail", None)
+            prior_detail = (
+                detail_reader(
+                    slug,
+                    evidence_limit=1,
+                    disabled_agents=(),
+                    include_history_documents=False,
+                )
+                if callable(detail_reader)
+                else None
             )
-            if not exact_legacy_package:
+            exact_predecessor = any(
+                worker.get("current_hash") == candidate.compiled.prompt_hash
+                and worker.get("current_version") == candidate.agent["version"]
+                and isinstance(prior_prompt, Mapping)
+                and prior_prompt.get("hash") == candidate.compiled.prompt_hash
+                and prior_prompt.get("version") == candidate.agent["version"]
+                and prior_prompt.get("prompt_body") == candidate.compiled.prompt
+                and prior_prompt.get("prompt_truncated") is False
+                and isinstance(prior_detail, Mapping)
+                and prior_detail.get("recruitment_contract")
+                == json.loads(
+                    json.dumps(
+                        candidate.workforce_contract.to_dict(),
+                        ensure_ascii=False,
+                        separators=(",", ":"),
+                        sort_keys=True,
+                    )
+                )
+                for candidate in predecessors
+            )
+            if not exact_predecessor:
                 # Never overwrite an owner or inference-authored amendment just
                 # because its active identity differs from today's package.
                 preserved.append(slug)
