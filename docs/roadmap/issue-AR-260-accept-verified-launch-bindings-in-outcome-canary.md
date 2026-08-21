@@ -48,6 +48,8 @@ child ID separately after launch.
   every exact binding must be `child_id`.
 - Tracker [#307](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/307)
   is open with `epic:observability`.
+- Focused tests pass 14/14, widened outcome/delivery tests pass 84/84, and all
+  12 local fast gates pass in 1.3 minutes at ledger head `b2727ad8`.
 
 ## Approach
 
@@ -72,7 +74,7 @@ continue to fail closed.
 - [x] Historical exact `child_id` bindings still pass.
 - [x] Exact Claude `launch_id` bindings report the verified delivery child ID.
 - [x] Unknown binding kinds fail closed.
-- [ ] Focused and proportional local gates pass on a clean recovery pair.
+- [x] Focused and proportional local gates pass on a clean recovery pair.
 - [x] Required tracker issue is created after explicit owner authorization.
 - [ ] A reviewed PR reaches main and all three Windows harnesses are reinstalled.
 - [ ] One later authorized Claude draw passes the reporter without weakening
