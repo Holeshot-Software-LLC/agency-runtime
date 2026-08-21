@@ -1114,6 +1114,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `e796b56b` | 2026-08-21 | fix(workforce): migrate shipped package v1 identities | [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md) | null |
 | `b19b8495` | 2026-08-21 | docs(ar264): record historical package repair gates | [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md) | null |
 | `f76050d7` | 2026-08-21 | Merge pull request #315: migrate shipped package-v1 contractor identities [skip ci] | null | null |
+| `5ee15c5e` | 2026-08-21 | docs(ar264): checkpoint exact-main host smoke | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
