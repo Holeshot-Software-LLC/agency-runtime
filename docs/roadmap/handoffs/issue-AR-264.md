@@ -15,8 +15,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-264
 branch: codex/ar264-contractor-execution-profile
-evidence_commit: 3262858bd55e26cd0d938bc3298f04ed0694a70b
-minimum_ledger_commit: 3262858bd55e26cd0d938bc3298f04ed0694a70b
+evidence_commit: 220fa521e4028c3f88c17713a086839f3e46072b
+minimum_ledger_commit: 220fa521e4028c3f88c17713a086839f3e46072b
 hard_checkpoint_percent: 50
 tracker_url: null
 ---
@@ -26,11 +26,12 @@ tracker_url: null
 ## checkpoint
 
 - Worktree `C:\Workspaces\Holeshot Software\agency-runtime-ar264` is on branch
-  `codex/ar264-contractor-execution-profile`, two planning commits above exact
-  remote main `0d8a2355` before this implementation checkpoint.
+  `codex/ar264-contractor-execution-profile`, four clean checkpoint commits
+  above exact remote main `0d8a2355` before this final local-evidence delta.
 - The primary checkout has unrelated owner WIP and must not be touched.
-- Context telemetry reported 9.0 percent remaining after the focused
-  implementation slice, requiring this clean local recovery checkpoint.
+- Context telemetry required the clean implementation checkpoint at 9.0 percent
+  remaining. After normal compaction, the latest reading is 79.3 percent and
+  permits the same task to continue.
 
 ## completed-evidence
 
@@ -47,14 +48,23 @@ tracker_url: null
   rendered for that worker.
 - Focused contract/version/upgrade and hiring checks pass; widened startup,
   routing, CLI-config, and workforce lifecycle checks report 122 passed.
+- The governing named fast Python spine reports 806 passed and 20 skipped in
+  135.09 seconds. Full Ruff and format checks pass across 682 files.
+- Metadata checks cover 731 Markdown files, the policy projection and 1,079-row
+  worklog are current, documentation validation passes, `git diff --check`
+  passes, and the routing evaluation passes every correctness, safety,
+  performance, and scale gate.
 - A wider public/prompt compatibility diagnostic reported 124 passed, one
   expected skip, and one unrelated assertion that still expects the retired
   fallback pair even though the governed constant is empty.
 
 ## exact-blocker
 
-No implementation blocker. Publication, tracker creation, installation, and
-live inference are outside the current local authorization.
+No implementation blocker. The decision-conformance mutation phase cannot run
+locally according to `CONTRIBUTING.md`; this Codex Desktop session correctly
+refused it because the host did not attest a private scratch capability. Hosted
+CI was not dispatched. Publication, tracker creation, installation, and live
+inference remain outside the current local authorization.
 
 ## same-task-continuity
 
@@ -65,9 +75,10 @@ advance packaged contractors only through governed lineage.
 
 ## next-bounded-work-package
 
-Run the named fast Python spine, full Ruff/format, documentation validation,
-dashboard UI gate, and routing/conformance evaluations. Fix only findings that
-invalidate AR-264, then update evidence and create the substantive/ledger pair.
+Finish the local substantive/ledger checkpoint. Then obtain separate owner
+authorization before tracker creation, push, PR, merge, install, or live smoke
+testing. If hosted decision-conformance evidence is wanted, authorize that
+billable workflow separately.
 
 ## verification
 
@@ -79,12 +90,16 @@ python scripts/update_worklog.py --check
 python scripts/verify_docs.py
 ruff check agency_runtime tests scripts
 ruff format --check agency_runtime tests scripts
-python -m pytest tests/test_workforce_hiring_contract.py tests/test_contractor_version_identity.py tests/test_known_contractor_install.py -q -W error
-python -m pytest tests/test_workforce_dynamic_hiring.py tests/test_contractor_minting_host_parity.py -q -W error
-python -m pytest tests/test_dashboard.py::test_dashboard_workforce_and_hiring_apis_share_revision_bound_lifecycle -q -W error
+python -m pytest <named-fast-production-spine> -q -W error
 node --test tests/dashboard_ui.test.mjs
+python -m agency_runtime.cli eval routing --json --no-details
+python -m agency_runtime.cli eval decision-conformance --repository . --json
 git diff --check
 ~~~
+
+The decision-conformance command stopped before mutation execution with `Codex
+host scratch was not attested by the host`; the contributor guide classifies
+that mutation phase as hosted-only. All other commands above pass locally.
 
 ## constraints
 

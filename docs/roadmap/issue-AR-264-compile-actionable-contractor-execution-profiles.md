@@ -56,6 +56,9 @@ metadata and compiled prompt contain explicit evidence requirements.
   operator holds are preserved.
 - Specialist prompt reads now decode exact active revision metadata, and the
   dashboard overlays its real `evidence_requirements` into owner detail.
+- The named local fast spine reports 806 passed and 20 skipped; Ruff, format,
+  all 134 dashboard UI tests, documentation validation, and every routing gate
+  pass. The hosted-only decision-conformance mutation phase remains unrun.
 
 ## Approach
 
@@ -99,7 +102,7 @@ whole-workforce recruiter contract merely to repair an owner detail view.
       over v1 advances them through immutable, auditable, idempotent lineage.
 - [x] Workforce detail and the dashboard show the active revision's real
       evidence requirements; `none recorded` appears only when none exist.
-- [ ] Focused contract, hiring, Store, dashboard API, and dashboard UI tests
+- [x] Focused contract, hiring, Store, dashboard API, and dashboard UI tests
       pass with Ruff and documentation validation.
 - [ ] A tracker issue is created and linked after explicit authorization.
 - [ ] The reviewed candidate is merged, installed, and smoke-tested only after
