@@ -3,7 +3,7 @@ title: "AR-261: Disambiguate technical diagnosis from medical authority"
 status: in_progress
 category: roadmap
 created: 2026-08-20
-updated: 2026-08-20
+updated: 2026-08-21
 tags: [hiring, security, risk-classification, AR-119]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
@@ -20,7 +20,7 @@ type: issue
 epic: security
 issue_id: AR-261
 priority: p0
-tracker_url: null
+tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/309
 depends_on: [AR-259]
 blocks: [AR-119]
 ---
@@ -46,7 +46,8 @@ operator has no case to approve.
   diagnosis contract as `medical` with `human_approval_required=true`.
 - Raw hiring responses are intentionally not retained, so the exact generated
   contract and its triggering field cannot be claimed.
-- Tracker creation remains pending explicit outward-write authorization.
+- Tracker [#309](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/309)
+  is open with the required `epic:security` label.
 
 ## Approach
 
@@ -77,7 +78,7 @@ remain owner-gated. Explicit prohibitions continue to be ignored as grants.
       green.
 - [x] The focused hiring suite passes 88/88 and all 12 proportional local
       gates pass in 1.3 minutes on the exact candidate.
-- [ ] A tracker issue is created after explicit authorization.
+- [x] Tracker issue #309 is created after explicit authorization.
 - [ ] The candidate is published through a reviewed PR with no hosted work.
 - [ ] One later authorized exact-main draw proves a genuine hire; no retry of
       session `f4f3d45e-...` is permitted.

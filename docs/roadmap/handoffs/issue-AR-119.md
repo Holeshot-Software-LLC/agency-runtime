@@ -3,7 +3,7 @@ title: "AR-119 active recovery capsule"
 status: active
 category: roadmap
 created: 2026-07-23
-updated: 2026-08-20
+updated: 2026-08-21
 tags: [handoff, vision, inference, child-delivery, contractors, evaluation, recovery]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
@@ -63,7 +63,8 @@ sections. This is a recovery map, not evidence that an unproven cell moved.
   `diagnosis` -> `medical` false positive before any second draw.
 - AR-261 recovery pair `0b48bb51` / `f9a5e3f3` is clean. Focused hiring tests
   pass 88/88 and all 12 proportional local gates pass in 1.3 minutes. Its
-  tracker, publication, exact-main install, and post-fix draw remain pending.
+  tracker is #309; publication, exact-main install, and post-fix draw remain
+  pending. AR-259 tracker #305 is closed.
 - **Option A's three-host pin phase is complete.** OpenClaw/Hermes are deferred,
   not waived; Rule 9 stays five-host and never closes on three.
 ## completed-evidence
@@ -121,9 +122,9 @@ sections. This is a recovery map, not evidence that an unproven cell moved.
 Keep Option A frozen. Owner-authorized sequence:
 
 1. Commit this exact-main Claude proof and its ledger as a clean recovery pair.
-2. Finish AR-261's provider-free technical-diagnosis classifier repair, focused
-   review, tracker authorization, and clean PR merge. Its focused 88-test suite
-   and all 12 proportional local gates are green.
+2. Publish AR-261's provider-free technical-diagnosis classifier repair through
+   a clean no-hosted-work PR. Tracker #309, its focused 88-test suite, and all
+   12 proportional local gates are complete.
 3. Freshly install that exact main. Run telemetry before each bounded
    evaluation and never retry a failed draw.
    Smoke Codex once with its supported trust bypass and ZCode once through its

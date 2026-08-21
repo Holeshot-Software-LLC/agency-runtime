@@ -1,9 +1,9 @@
 ---
 title: "AR-259: Preserve terminal hiring state after atomic preflight failure"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-08-20
-updated: 2026-08-20
+updated: 2026-08-21
 tags: [observability, hiring, preflight, evidence, AR-119]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
@@ -53,7 +53,8 @@ provider calls to rediscover a state the runtime already computed.
 - Worker identity, notification text, prompts, response bodies, and pending
   contract content must remain outside the terminal failure receipt.
 - Tracker [#305](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/305)
-  is open with the required `epic:observability` label.
+  is closed with the required `epic:observability` label after the owner
+  authorized the exact terminal-evidence update.
 - Repository-wide `--require-tracker` and tracker-parity audits remain red on
   the pre-existing unauthorized tracker backlog and historical state/label
   mismatches. Neither audit reports an AR-259 mismatch.
@@ -98,4 +99,4 @@ written.
       `06f10171` with `[skip ci]` and no hosted workflow run.
 - [x] A later authorized exact-main draw is decisive at the hiring boundary;
       this issue itself moves no AR-119 matrix cell.
-- [ ] Tracker issue #305 is closed after explicit outward-write authorization.
+- [x] Tracker issue #305 is closed after explicit outward-write authorization.
