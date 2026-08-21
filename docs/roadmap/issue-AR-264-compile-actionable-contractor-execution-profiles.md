@@ -103,15 +103,32 @@ metadata and compiled prompt contain explicit evidence requirements.
 - The single exact-main Codex activation draw stopped at parent preflight
   `workforce_inference_failed` after valid planner and recruiter responses; it
   produced no routing decision, child, delegation, delivery, or final header.
-  The single ZCode draw exited 0 and started generic host child
-  `agent_469477bd-...`, but Agency trace `37bdf697-...` failed its ordinary
-  planner through the expired `claude-subscription` before staffing. Its host
-  artifacts contain zero Agency v6 delivery markers. Neither draw was retried.
-- Claude CLI remains logged out. That operator boundary blocks a fresh Claude
-  staffing/hiring draw and also blocks ZCode's ordinary parent planner before
-  the separately pinned GLM child judge can be reached. Provider routing was
-  not changed, no accepted outcome or hire was claimed, and no AR-119 matrix
-  cell moved.
+  The first ZCode draw exited 0 and started a generic host child, but Agency
+  failed its ordinary planner through the then-expired Claude subscription. It
+  was not retried.
+- Claude authentication was restored before one genuinely different COBOL/CICS
+  and VSAM hiring draw. Session `560e6da4-...`, trace `66dca68e-...`, received
+  a real installed Agency capsule; its accepted decision and applied standard-
+  risk hiring case added active contractor `cobol-cics-vsam-diagnostics-
+  specialist`, moving the contractor projection from 31 to 32. Native-child
+  inference actually used `codex-subscription`. Claude's progress response
+  omitted the required header, however, and its one child timed out before a
+  conclusion at 420 seconds with no delivery-verification row. The draw was not
+  retried.
+- One conditional ZCode plural attempt then ran with the existing GLM child-
+  judge pin and unchanged ordinary routing. Session `sess_524d8b86-...` exited
+  0 and spawned a generic child, while Agency trace `b08d8d79-...` failed
+  `workforce_inference_failed`: its Claude-backed planner applied, but both
+  recruiter responses were contract-invalid `staff_without_safe_team`. The
+  Store has no decision or card, the GLM child judge was never reached, and all
+  four host artifacts contain zero Agency markers. It was not retried.
+- The genuine hire is Store- and roster-backed; compliant Claude response
+  headers, completed contractor execution, ZCode plural-card delivery, and the
+  fresh Codex Desktop skill header remain unproven. Provider routing, Option A
+  pins, and AR-119 matrix cells did not change.
+- Post-recording documentation validation passes all 731 files, and 8 focused
+  warning-strict tests pass for the exact OpenClaw/Hermes canary, artifact-
+  reader, and native-child bridge boundaries used by the Linux handoff.
 - Tracker [#313](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313)
   remains open until the fresh-task and authenticated live boundaries above
   are completed.

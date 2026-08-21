@@ -60,21 +60,18 @@ moved.
 - Exact main is installed into Claude, Codex, ZCode, and the dashboard. The real
   Store advanced all 15 known packaged contractors to revision 1 / v2 while
   preserving lineage and TypeScript's two accepted outcomes.
-- Authenticated dashboard workforce and host projections converge exactly with
-  CLI: 31 contractors at digest `401e883532e9...`, five host rows at
-  `003caceee19d...`, and master generation 56. The stopped post-reboot dashboard
-  task was started without reinstalling or changing config.
-- The new Codex draw stopped at parent `workforce_inference_failed` before any
-  Agency decision or child. The ZCode draw started a generic host child but its
-  Agency parent planner failed through expired `claude-subscription`; its
-  artifacts have zero v6 card markers. Neither draw was retried.
-- Claude remains logged out. A completely new Codex Desktop task
-  `01a02587-...` again received no lifecycle snapshot or first-response header;
-  the hook log and Store have no task-correlated evidence. Its first user turn
-  was the continuation prompt rather than exact `agency status`, so the strict
-  prompt control remains unrun. No skill load was attempted without activation.
-- **Option A's three-host pin phase remains complete.** OpenClaw and Hermes are
-  deferred to Linux, not waived. Rule 9 remains five-host.
+- Before the new hire, authenticated dashboard and CLI converged at 31
+  contractors (`401e883532e9...`), five hosts (`003caceee19d...`), and master
+  generation 56. CLI now has 32 contractors; dashboard parity was not re-polled.
+- Fresh Codex Desktop task `01a02587-...` received no lifecycle snapshot,
+  first-response header, hook-log event, or Store row. Its first user turn was
+  not exact `agency status`; the strict control and skill capture remain unrun.
+- Claude login is restored. One new COBOL/CICS/VSAM unit produced an accepted
+  decision and applied hire, moving the contractor roster from 31 to 32, then
+  timed out at 420 seconds after one child start and before a conclusion.
+- The conditional ZCode recovery/security unit exited 0 with generic child prose, but
+  Agency failed before any decision/card. Both new units are consumed and not retried.
+- **Option A's three-host pin phase remains complete.** Linux hosts are deferred, not waived; Rule 9 still requires five hosts.
 
 ## completed-evidence
 
@@ -90,35 +87,50 @@ moved.
 - Codex parent routing and exact Store-backed header remain CLI-proven. Native
   child card delivery is still blocked by the upstream opaque collaboration
   surface; no Store projection may substitute for host-authored proof.
-- ZCode retains prior one-card GLM child evidence. The current draw additionally
-  proves its CLI and generic Agent child work, but not Agency staffing or the
-  required plural-card contract.
+- Claude session `560e6da4-...`, trace `66dca68e-...`, received a real 8,164-
+  character installed Agency capsule. Decision `2f589fa7-...`, hiring case
+  `35f59955-...`, and its specialist row agree with active contractor
+  `cobol-cics-vsam-diagnostics-specialist` / worker `7c7306dc-...`. Native-
+  child decision `native-child-cca0f...` used `codex-subscription`.
+- Claude's only progress sentence omitted the required header. Child
+  `aa0a0207e0caa208d` remained an open generic run with no delivery verification
+  or conclusion when the host timed out. This is parent/hire proof, not
+  completed execution or verified child delivery.
+- ZCode session `sess_524d8b86-...`, trace `b08d8d79-...`, applied its Claude-
+  backed planner, then rejected both recruiter responses as
+  `staff_without_safe_team` for a three-specialist unit. The GLM judge was not
+  reached; child `agent_ce74bc0f-...` and all four artifacts have zero Agency
+  markers. ZCode plural-card delivery remains unproven.
 - Provider-free exact-main hook tests pass for Claude, Codex, and ZCode skill
   tools, and the real Store holds 19 historical skill rows. A fresh installed
   task remains the live evidence boundary.
 - R1/R4/R5/R6 remain retracted. R8 still costs a candidate advance and
   R2/R3/R7 re-anchor. No rule was promoted and **no matrix cell moved**.
+- Post-recording documentation validation passes 731 files; Linux boundaries pass 8 tests.
 
 ## exact-blocker
 
-1. Restore Claude CLI login before any new Claude or ZCode Agency-parent draw.
-2. AR-263's Desktop hook-dispatch failure recurred in fresh task `01a02587-...`:
+1. AR-263's Desktop hook-dispatch failure recurred in fresh task `01a02587-...`:
    no header, current hook-log event, Store run, or resident binding exists.
    The intended exact-status first prompt was not sent, so do not describe that
    specific control as executed or publish `loaded: none` as evidence. Codex
    child visibility remains a separate upstream blocker.
-3. ZCode's ordinary parent planner reached Claude before the GLM child judge.
-   Do not widen Option A into general parent routing to bypass authentication.
-4. Genuine post-AR-261 hiring, ZCode plural-card proof, and fresh skill capture
-   remain unproven. Consumed SAP, Erlang, Codex, and ZCode work units stay
-   consumed.
-5. OpenClaw and Hermes wait for the owner's Linux box. Hosted Actions remain
+2. The genuine post-AR-261 hire is proven, but Claude response-header compliance,
+   verified child delivery, and completed contractor execution are not. Do not
+   retry its consumed COBOL/CICS/VSAM work unit.
+3. ZCode plural-card proof failed before the pinned GLM judge because both
+   ordinary recruiter responses were contract-invalid. Preserve the failure;
+   do not retry its consumed recovery/security unit or change routing.
+4. Fresh skill capture remains blocked on the Desktop lifecycle gap. Previously
+   consumed SAP, Erlang, Codex, and both ZCode units remain consumed.
+5. OpenClaw and Hermes move to the exact-main Linux packet. Hosted Actions remain
    forbidden and issue #132 stays open.
 
 ## traps (machine-specific; do not rediscover)
 
-- `agency` on PATH is schema 45. Run `python -m agency_runtime.cli` from this
-  checkout. `C:\agency-cli` contains host CLIs, not the Agency CLI.
+- PATH `agency` and the primary checkout venv reject the current owner config.
+  For owner-Store projections use the exact installed `_bootstrap.py` named by
+  the active launcher manifest; use the checkout interpreter only for gates.
 - Canaries require `--timeout 420` and immediately preceding telemetry. Never
   judge a gate through a pipe.
 - ZCode's real CLI is
@@ -128,16 +140,15 @@ moved.
 
 ## next-bounded-work-package
 
-1. Preserve the fresh Desktop failure under AR-263. If the exact prompt control
-   is repeated, start another new task and send exact `agency status` first.
-2. Load one skill without spawning a child only after a Store-backed header is
-   active; task `01a02587-...` was correctly left without a skill attempt.
-3. Owner restores Claude authentication. Then authorize one genuinely different
-   bounded Claude hiring draw; never replay SAP or Erlang.
-4. After the parent path is healthy, run one ZCode plural-card proof with the
-   existing GLM child pin and unchanged ordinary routing.
-5. Update AR-264 and this checkpoint, run proportional local gates, publish a
-   verified-clean `[skip ci]` PR, and prepare the exact-main Linux handoff.
+1. Run proportional documentation/local gates and create the recovery/ledger
+   pair for this exact evidence; do not perform another Windows live draw.
+2. Publish only the verified-clean branch through one `[skip ci]` PR, verify no
+   hosted workflow ran, and leave issues #132 and #313 open.
+3. On the owner's Linux box, follow
+   `AR-119-openclaw-hermes-verification-packet.md` from exact published main.
+   Treat unsupported canary/artifact surfaces as findings, not proof.
+4. A later explicit package may run the unsent Codex exact-status control or a
+   new ZCode falsification target. It must not replay any consumed unit.
 
 ## same-task-continuity
 

@@ -2653,3 +2653,71 @@ skill was deliberately not loaded without authoritative activation.
 No Codex canary, provider call, child, Store mutation, provider-route change,
 rule promotion, candidate advance, or matrix movement followed. Claude login
 remains the operator gate before any new Claude or ZCode Agency-parent draw.
+
+### EXACT-MAIN AUTHENTICATED CLAUDE HIRE: parent passes, child times out
+
+The owner restored Claude login and `claude auth status` reported first-party
+`claude.ai` authentication on the Max subscription. A provider-free baseline
+found no COBOL, CICS, VSAM, COMMAREA, or z/OS contractor among the existing 31.
+One genuinely different, telemetry-preceded draw then used Claude session
+`560e6da4-75b6-41c8-8733-5dc101d6a14b` and Agency trace
+`66dca68e-2d98-4ffd-abd9-44555bb875a5`.
+
+Agency's installed `UserPromptSubmit` hook injected an 8,164-character current-
+turn capsule at SHA-256 `b25aafcb92aaf7f2077f37b47d743d1e0a8944866e4356dc6d9c7a93fa063038`.
+Its exact header named `agency-steward` plus
+`cobol-cics-vsam-diagnostics-specialist`, `delegated: none`, `Skills loaded:
+none`, workforce inference through Sonnet, and `Recruited via:
+inferred+hiring`. The Store agrees: run `849ce231-...` reached preflight
+`ready`, decision `2f589fa7-...` was accepted at confidence 1.0, hiring case
+`35f59955-...` was applied as standard risk without owner approval, and one
+`specialists_loaded` row was written. Workforce projection now contains 32
+contractors, including active Agency contractor `cobol-cics-vsam-diagnostics-
+specialist` as worker `7c7306dc-...`.
+
+Claude then emitted one progress sentence without the required five-line
+header and called exactly one native `Agent`. Native-child decision
+`native-child-cca0f519569741f4f09095124af80a3b` selected the same specialist
+through actual provider `codex-subscription`, but child
+`aa0a0207e0caa208d` remained an open generic worker run. It produced only an
+incomplete thinking record before the parent hit the fixed 420-second ceiling.
+There is no child delivery-verification row, no child conclusion, and no final
+parent response; Store run `849ce231-...` remains active because termination
+precluded finalization. This proves a genuine post-AR-261 hire and a healthy
+Agency parent path, not compliant response-header emission, verified card
+delivery, or completed contractor execution. The draw is consumed and was not
+retried.
+
+### EXACT-MAIN ZCODE PLURAL ATTEMPT: recruiter rejects; child stays generic
+
+With the Claude parent path restored, one new ZCode recovery-and-security work
+unit ran from a clean 50.1-percent telemetry checkpoint. Host session
+`sess_524d8b86-4a46-4e09-99bf-5c1653e5d068` exited 0 and started exactly one
+native child, `agent_ce74bc0f-7091-4b61-aec7-91ffe90742c1`, which returned a
+substantive no-tool PostgreSQL recovery runbook and threat model.
+
+Agency evidence invalidates that prose as plural-card proof. Run
+`d8c3b9a5-...`, trace `b08d8d79-...`, ended `preflight_failed` /
+`workforce_inference_failed`. Its `claude-subscription` Sonnet planner applied,
+but both recruiter attempts were contract-invalid with
+`staff_without_safe_team`: the unit required three specialists, allowed four,
+and each response ranked six executable candidates without a safe team. The
+Store contains no routing decision, specialist, Agency worker run, delegation,
+captured assignment, or delivery verification, so the process-scoped
+`zcode-recruiter` / GLM child judge was never reached.
+
+All four host artifacts are retained. The 2,232-record child transcript and
+its metadata/output files contain zero `[AGENCY INFERENCE TEAM v6]`, native-
+child, or Agency-header markers, including record zero. The child is generic
+host work, not Agency staffing. The draw is consumed and was not retried;
+ordinary provider routing and all Option A pins remain unchanged. No rule was
+promoted and **no AR-119 matrix cell moved**.
+
+Post-recording governance passes metadata for 731 Markdown files, policy and
+worklog checks, documentation validation for all 731 files, and `git diff
+--check`. The focused exact-main Linux boundaries pass 8/8 warning-strict tests:
+unsupported host-canary execution, unsupported child-artifact reading, and the
+Hermes/OpenClaw native-child bridge cases. The first sandboxed invocation
+stopped before collection on the private-root trust guard; the identical run
+with its required owner-private test root passed in 2.56 seconds. No product
+code changed in this evidence slice.

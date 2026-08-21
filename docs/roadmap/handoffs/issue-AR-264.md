@@ -31,8 +31,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 - PR #315 merged the package-v1 migration repair with `[skip ci]`; GitHub ran no
   hosted workflow. The exact merge was installed before any host smoke.
 - This capsule records bounded installed-host evidence. It does not claim that
-  Claude authentication, Codex Desktop lifecycle delivery, ZCode Agency
-  staffing, genuine hiring, or AR-119 matrix acceptance passed.
+  Codex Desktop lifecycle delivery, completed Claude contractor execution,
+  ZCode Agency staffing, or AR-119 matrix acceptance passed.
 
 ## completed-evidence
 
@@ -51,10 +51,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 - The dashboard task survived as an owned, current registration but was stopped
   after reboot. `dashboard service start` restored authenticated health without
   reinstalling or changing config.
-- Authenticated dashboard `/api/workforce` and exact-main CLI return the same 31
-  contractors at SHA-256 `401e883532e9...`. A bounded host refresh converged in
-  two polls; all five host rows match CLI at `003caceee19d...`, and both surfaces
-  report master generation 56.
+- Before the new hire, authenticated dashboard `/api/workforce` and CLI returned
+  the same 31 contractors at `401e883532e9...`; five host rows matched at
+  `003caceee19d...` and master generation 56. CLI now returns 32 contractors;
+  post-hire dashboard parity was not re-polled.
 - Provider-free skills verification passes three exact hook cases: Claude
   `Skill`, Codex `skill_view`, and ZCode `Skill` each persist the skill and emit
   it in the updated first-pass header. The real Store has 19 historical
@@ -77,24 +77,40 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
   parent planner through expired `claude-subscription`; it made no decision,
   specialist, skill, or delegation row. The child artifacts contain zero
   `[AGENCY INFERENCE TEAM v6]` markers, so this is host-child proof only.
+- Claude authentication was restored. New session `560e6da4-...`, trace
+  `66dca68e-...`, received the exact installed Agency capsule, accepted
+  `cobol-cics-vsam-diagnostics-specialist`, and applied standard-risk hiring case
+  `35f59955-...`. Active contractor worker `7c7306dc-...` raises the roster to
+  32. Native-child inference used `codex-subscription` as pinned.
+- Claude's one progress line omitted the required five-line header. Its only
+  child `aa0a0207e0caa208d` remained open with no delivery verification or
+  conclusion when the fixed 420-second ceiling terminated the host. The run is
+  parent/hiring proof, not completed contractor execution.
+- Conditional ZCode session `sess_524d8b86-...`, trace `b08d8d79-...`, exited 0
+  with generic child `agent_ce74bc0f-...`. Agency's planner applied, but both
+  recruiters were contract-invalid `staff_without_safe_team`; no decision or
+  card exists and the GLM judge was never reached. All four artifacts contain
+  zero Agency markers.
 - No failed work unit was retried. No provider route, Option A pin, contractor
-  outcome, promotion, rule, or AR-119 matrix cell changed.
+  outcome, promotion, rule, or AR-119 matrix cell changed. The applied Claude
+  hire is the only workforce mutation in this slice.
+- Documentation validation passes 731 files; 8 warning-strict OpenClaw/Hermes
+  canary, artifact-reader, and native-child bridge boundary tests pass.
 
 ## exact-blocker
 
-1. Claude CLI reports `loggedIn=false`; the operator must restore Claude login.
-   Do not retry either consumed Claude work unit.
-2. A post-install Desktop task still dispatched no observable lifecycle hook
+1. A post-install Desktop task still dispatched no observable lifecycle hook
    and has no Store binding. Preserve that as AR-263 while keeping the unsent
    exact-status first-prompt control distinct. Do not load a skill or emit a
    fabricated empty header while activation is unavailable.
-3. ZCode's one draw proved its CLI and generic native child, but its ordinary
-   Agency parent planner reached `claude-subscription` and failed before the
-   separately pinned GLM child judge. Do not broaden Option A into ordinary
-   parent routing.
-4. A genuine post-AR-261 hire, ZCode plural-card delivery, Codex native child
-   proof, and fresh installed skill header remain open. Hosted Actions remain
-   forbidden.
+2. Genuine post-AR-261 hiring is proven, but Claude header compliance, verified
+   child delivery, and completed contractor work are not. The COBOL work unit
+   is consumed and must not be retried.
+3. ZCode plural-card delivery failed before the separately pinned GLM judge
+   because both ordinary recruiter responses violated the safe-team contract.
+   Preserve the consumed unit and keep routing unchanged.
+4. Codex native-child proof and fresh installed skill header remain open.
+   Hosted Actions remain forbidden.
 
 ## same-task-continuity
 
@@ -105,21 +121,13 @@ Agency staffing, and never infer a provider from the parent host.
 
 ## next-bounded-work-package
 
-1. Preserve fresh task `01a02587-...` as a repeated AR-263 lifecycle-dispatch
-   failure, not as an exact-status response. If repeating the strict control,
-   use another new task and send exact `agency status` first.
-2. Only if a Store-backed header appears, perform one provider-free skill load
-   and verify its updated `Skills loaded` line plus Store row. Do not launch a
-   child merely to test the header.
-3. Operator restores Claude authentication. Recheck it before authorizing one
-   genuinely different Claude hiring work unit. Never replay the consumed SAP
-   or Erlang units.
-4. Only after the Claude parent path is healthy, run one bounded ZCode
-   plural-card proof with its existing GLM child-judge pin. Keep ordinary parent
-   routing unchanged.
-5. Update this capsule and AR-119 status, run proportional local gates, publish
-   through a verified-clean PR with `[skip ci]`, then prepare the exact-main
-   Linux OpenClaw/Hermes handoff.
+1. Run proportional documentation/local gates and create the recovery/ledger
+   pair. Do not run another Windows provider or child draw in this package.
+2. Publish only through a verified-clean `[skip ci]` PR, verify zero hosted
+   workflows, and leave tracker #313 open because host smoke is incomplete.
+3. Hand exact published main to the owner's Linux box through
+   `AR-119-openclaw-hermes-verification-packet.md`; do not represent unsupported
+   canary or artifact surfaces as live proof.
 
 ## verification
 
@@ -142,16 +150,15 @@ git diff --check
 ~~~
 
 The 14-gate repair harness remains green from the exact merged candidate. This
-installed-smoke slice additionally passes the three focused skill-hook cases
-and authenticated dashboard/CLI comparisons. No exhaustive shard, Linux host,
-hosted workflow, or new provider draw followed.
+installed-smoke slice adds the three focused skill-hook cases and bounded live
+draw evidence above. No exhaustive shard, Linux host, or hosted workflow ran.
 
 ## constraints
 
 - The real Store migration already ran from exact merged main `f76050d7`; do
   not rerun or edit it manually. Preserve the named backup.
 - Hosted CI is not authorized or needed for this local gate package. Claude
-  authentication requires operator action before its live smoke.
+  authentication is restored; no further Windows draw belongs in this package.
 - OpenClaw and Hermes remain explicitly deferred to the later Linux handoff.
 - Do not mutate or clean the primary checkout or unrelated worktrees.
 - Do not change provider routing, Option A pins, AR-119 matrix cells, or

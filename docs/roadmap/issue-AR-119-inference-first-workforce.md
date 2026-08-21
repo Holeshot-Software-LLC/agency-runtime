@@ -4499,6 +4499,36 @@ artifact contains zero Agency v6 card markers. Neither result is staffing.
 Neither work unit was retried, provider routing stayed unchanged, Claude
 remains logged out, and no rule or matrix cell moved.
 
+### 2026-08-21 authenticated Claude hire and conditional ZCode proof
+
+After the owner restored first-party Claude authentication, one new COBOL/CICS
+COMMAREA and VSAM diagnosis unit exercised the repaired live hiring path.
+Claude session `560e6da4-...`, Agency trace `66dca68e-...`, received a real
+8,164-character current-turn Agency capsule naming the newly inferred
+`cobol-cics-vsam-diagnostics-specialist`. Decision `2f589fa7-...` was accepted,
+hiring case `35f59955-...` was applied at standard risk, and the active
+contractor roster advanced from 31 to 32 with worker `7c7306dc-...`. Native-
+child inference selected that contractor through actual provider
+`codex-subscription`.
+
+The host execution boundary did not complete. Claude's first progress sentence
+omitted the required five-line header, its one native Agent child remained a
+generic open worker run, and the host was terminated at the fixed 420-second
+ceiling before a child conclusion or final parent response. No native-child
+delivery-verification row exists. The draw proves genuine hiring plus a healthy
+parent path, not compliant response rendering or completed contractor work.
+
+That healthy parent path admitted one conditional ZCode recovery-and-security
+plural attempt. ZCode session `sess_524d8b86-...` exited 0 and its single
+generic child returned useful prose, but Agency trace `b08d8d79-...` failed
+closed before staffing. The Claude-backed planner applied; two recruiter
+responses were rejected as `staff_without_safe_team` for a unit requiring
+three specialists with a maximum of four. There is no routing decision, card,
+Agency worker run, or delivery verification, and all four child artifacts have
+zero Agency v6/native-child/header markers. The pinned `zcode-recruiter` / GLM
+child judge was never reached. Both draws are consumed, no provider route or
+pin changed, and no matrix cell moved.
+
 ## Acceptance
 
 Current acceptance is the
