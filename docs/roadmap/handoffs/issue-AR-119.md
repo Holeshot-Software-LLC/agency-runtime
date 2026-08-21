@@ -3,7 +3,7 @@ title: "AR-119 active recovery capsule"
 status: active
 category: roadmap
 created: 2026-07-23
-updated: 2026-08-20
+updated: 2026-08-21
 tags: [handoff, vision, inference, child-delivery, contractors, evaluation, recovery]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
@@ -14,11 +14,14 @@ related:
   - docs/roadmap/issue-AR-256-canonical-nine-rule-completion-contract.md
   - docs/roadmap/issue-AR-259-preserve-terminal-hiring-state.md
   - docs/roadmap/issue-AR-260-accept-verified-launch-bindings-in-outcome-canary.md
+  - docs/roadmap/issue-AR-261-disambiguate-technical-diagnosis-risk.md
   - docs/roadmap/AR-119-founding-vision.md
   - docs/roadmap/AR-119-vision-loop-status.md
   - docs/roadmap/AR-119-39ff6dca-recruiter-diagnostic-evidence.md
   - docs/roadmap/AR-119-fcffd96c-hiring-diagnostic-evidence.md
   - docs/roadmap/AR-119-9685a16d-accepted-outcome-evidence.md
+  - docs/roadmap/AR-119-2919802e-accepted-outcome-proof.md
+  - docs/roadmap/AR-119-f4f3d45e-hiring-risk-evidence.md
   - docs/roadmap/AR-119-rule-host-evidence-matrix.md
   - docs/decisions/0118-require-inference-owned-staffing.md
   - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
@@ -30,9 +33,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-119
-branch: codex/ar119-windows-harness-live-evidence
-evidence_commit: 95356cfa8b214d784e63c3d3da2ccd87e06fa5c5
-minimum_ledger_commit: b2727ad8f950bab85f3ff5e5f990137f95fca9d0
+branch: codex/ar119-claude-outcome-evidence
+evidence_commit: 0b48bb51b5f14802281ab53a3d82c0d587dacae6
+minimum_ledger_commit: f9a5e3f376fbc5d13cfefcbe0a8af089fc6d19c6
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
@@ -47,28 +50,33 @@ sections. This is a recovery map, not evidence that an unproven cell moved.
 - **WORK ONLY in `C:\Workspaces\Holeshot Software\agency-runtime-main-rollout`**.
   The primary checkout has owner WIP; never commit, revert, stash, install, or
   clean there.
-- PR #306 merged AR-259 to exact main `06f10171`; exact tree
-  `5090b4ab3234d4d31e0764b1c7e11b580e6b4e76`. `[skip ci]` was used and no
-  hosted run was observed.
+- PR #308 merged AR-260 to exact main `00c4dc7e`; exact tree
+  `e3c8dd03ff30db3041b3ba343ecdda16955a1349`. `[skip ci]` was used and GitHub
+  shows zero branch or merge workflow runs.
 - Claude/Codex/ZCode were freshly installed from that merge. All three launcher
-  manifests name runtime digest `3951cb369726...`; status reported zero drift.
-- This branch adds AR-260's reporter-only launch-binding repair. Focused tests
-  pass 14/14, widened outcome/delivery tests pass 84/84, and all 12 local fast
-  gates pass in 1.3 minutes at ledger head `b2727ad8`. Tracker #307 is open with
-  `epic:observability`.
+  manifests name runtime digest `75e998e4af26...`; status reported zero drift.
+- Claude pair `2919802e...` passes the exact-main accepted-outcome reporter.
+  AR-260 tracker #307 closed automatically with every acceptance item met.
+- Ordinary Claude session `f4f3d45e...` detected the missing SAP specialty and
+  attempted hiring, but terminal status was `pending_approval`; no case or
+  contractor survived atomic rollback. AR-261 owns the reproduced technical
+  `diagnosis` -> `medical` false positive before any second draw.
+- AR-261 recovery pair `0b48bb51` / `f9a5e3f3` is clean. Focused hiring tests
+  pass 88/88 and all 12 proportional local gates pass in 1.3 minutes. Its
+  tracker is #309; publication, exact-main install, and post-fix draw remain
+  pending. AR-259 tracker #305 is closed.
 - **Option A's three-host pin phase is complete.** OpenClaw/Hermes are deferred,
   not waived; Rule 9 stays five-host and never closes on three.
 ## completed-evidence
 
-- **Newest Claude draw:** pair `9685a16d…`, parent session `bf098816…`, trace
-  `35175ce8…`. Producer and verifier children completed through requested
-  `codex-subscription`; the Store recorded one accepted outcome for the existing
-  TypeScript contractor. The host collector returned `accepted`.
-- The wrapper rejected only the final projection because both supported Claude
-  routes were bound by `launch_id` while the reporter required `child_id`.
-  AR-260 admits only exact verified child-ID or launch-ID shapes. No retry ran.
-- Exact facts and limits: `AR-119-9685a16d-accepted-outcome-evidence.md`.
-  Disposable artifacts were cleaned, so Store correlation moves no matrix cell.
+- **Newest Claude draw:** pair `2919802e...`, parent session `e183f92c...`, trace
+  `0ce39143...`. Producer and verifier completed through actual
+  `codex-subscription`; acceptance event `0c2dc63a...` was recorded for the
+  existing TypeScript contractor. The final report is `canary_passed=true`.
+- Claude exited 0 without timeout/truncation; the reporter projected distinct
+  host-observed child IDs and had no unmet prerequisite. No retry followed.
+- Exact facts and limits: `AR-119-2919802e-accepted-outcome-proof.md`. The
+  isolated profile retained no artifact/attestation, so no matrix cell moved.
 - **Codex parent works; child proof is blocked.** Parent routing/header pass.
   Its 0.148 draw failed parent preflight before spawn; the upstream opaque child
   surface remains a distinct limitation, not proof that Codex itself fails.
@@ -100,30 +108,30 @@ sections. This is a recovery map, not evidence that an unproven cell moved.
    0/3. Option A stays frozen; do not remeasure without a falsification target.
 2. Pair `39ff6dca…` proved the parent recruiter pin reached Codex but returned
    two unsafe teams. PR #304 repaired that output contract, not routing.
-3. Pair `9685a16d…` reached an accepted host collection, but the old reporter
-   rejected Claude's exact launch-ID binding. AR-260 is locally green and must
-   be published, installed, and proven once without retry.
-4. The draw reused a contractor; genuine hiring remains unproven. Codex parent
-   is solid and its child proof is upstream-blocked. ZCode needs
+3. Pair `2919802e...` closes AR-260 on exact main. It proves reuse, not a new
+   hire or promotion, and the isolated profile retains no Rule-4 artifact.
+4. Genuine hiring remains unproven. Codex parent is solid and its child proof
+   is upstream-blocked. ZCode needs
    plural cards. OpenClaw/Hermes wait for the Linux box.
+5. The first ordinary Claude hiring smoke is consumed. It created an unstaffed
+   generic child only; do not repeat it. The no-cost evidence is
+   `AR-119-f4f3d45e-hiring-risk-evidence.md`.
 
 ## next-bounded-work-package
 
 Keep Option A frozen. Owner-authorized sequence:
 
-1. Reuse clean local recovery pair `95356cfa` / `b2727ad8`; focused 14/14,
-   widened 84/84, all 12 local gates, and documentation validation are green.
-2. Reuse the authorized AR-260 tracker
-   [#307](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/307).
-3. Publish a non-draft `[skip ci]` PR, verify CLEAN/no hosted run, merge, fetch
-   exact main, and install Claude/Codex/ZCode from that merge.
-4. Run one telemetry check before the bounded Claude evaluation; never retry.
-   The reporter must accept only the exact verified route/delivery projection.
-5. Once Claude is solid, smoke Codex once with its supported trust bypass and
-   ZCode once through its bundled Node CLI. Prove one genuine hire plus reuse,
-   not duplicate contractors per host.
-6. Compare Store-backed CLI views with the rendered authenticated dashboard.
-7. Publish the Linux OpenClaw/Hermes handoff on main for the next box.
+1. Commit this exact-main Claude proof and its ledger as a clean recovery pair.
+2. Publish AR-261's provider-free technical-diagnosis classifier repair through
+   a clean no-hosted-work PR. Tracker #309, its focused 88-test suite, and all
+   12 proportional local gates are complete.
+3. Freshly install that exact main. Run telemetry before each bounded
+   evaluation and never retry a failed draw.
+   Smoke Codex once with its supported trust bypass and ZCode once through its
+   bundled Node CLI; preserve upstream visibility limits exactly.
+4. Prove one genuine hire plus later reuse without duplicate contractors.
+5. Compare Store-backed CLI views with the authenticated rendered dashboard.
+6. Publish the Linux OpenClaw/Hermes handoff on main for the next box.
 
 ## same-task-continuity
 
@@ -149,4 +157,4 @@ Judge each gate by its own summary; push hooks are not the production spine.
 - Keep the 15,000 ms cold control fixed; automatic promotion stays on the
   critical path; no superiority claim without a matched corpus (AR-125).
 - Push/PR/merge/install/live-smoke/dashboard/handoff authority is current.
-  AR-260 tracker #307 is created. Hosted Actions stay forbidden.
+  AR-260 tracker #307 is closed. Hosted Actions stay forbidden.

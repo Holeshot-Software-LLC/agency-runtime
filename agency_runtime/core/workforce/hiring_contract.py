@@ -92,6 +92,44 @@ _HIGH_RISK_MARKERS: tuple[tuple[str, tuple[str, ...]], ...] = (
     ),
 )
 
+# ``diagnosis`` is overloaded in technical work (for example, a read-only
+# database diagnosis). Keep bare diagnosis owner-gated by default, but exempt a
+# contract that asserts technical context and no medical context. The other
+# medical markers are already unambiguous and remain direct matches.
+_MEDICAL_DIAGNOSIS_MARKER = "diagnosis"
+_MEDICAL_CONTEXT_MARKERS: tuple[str, ...] = (
+    "medical",
+    "clinical",
+    "patient",
+    "healthcare",
+    "health care",
+    "disease",
+    "symptom",
+    "treatment",
+)
+_TECHNICAL_DIAGNOSIS_CONTEXT_MARKERS: tuple[str, ...] = (
+    "software",
+    "application",
+    "database",
+    "code",
+    "runtime",
+    "system",
+    "network",
+    "api",
+    "compiler",
+    "build",
+    "test",
+    "error",
+    "defect",
+    "configuration",
+    "infrastructure",
+    "sap",
+    "abap",
+    "hana",
+    "cds",
+    "sql",
+)
+
 # Risk classes that require explicit owner approval before a hire is applied.
 # external_mutation is deliberately excluded: AR-238 made the isolated
 # security reviewer the gate for externally mutating scope, and unit binding
@@ -443,11 +481,33 @@ def classify_contractor_risk(contract: EmploymentContract) -> tuple[str, ...]:
         *contract.preferred_scenarios,
         *contract.requirements,
     )
-    classes = [
-        name
-        for name, markers in _HIGH_RISK_MARKERS
-        if any(_risk_marker_is_asserted(text, marker) for text in risk_scope for marker in markers)
-    ]
+    classes = []
+    for name, markers in _HIGH_RISK_MARKERS:
+        asserted = any(
+            _risk_marker_is_asserted(text, marker)
+            for text in risk_scope
+            for marker in markers
+            if not (name == "medical" and marker == _MEDICAL_DIAGNOSIS_MARKER)
+        )
+        if name == "medical" and not asserted:
+            diagnosis_asserted = any(
+                _risk_marker_is_asserted(text, _MEDICAL_DIAGNOSIS_MARKER) for text in risk_scope
+            )
+            medical_context_asserted = any(
+                _risk_marker_is_asserted(text, marker)
+                for text in risk_scope
+                for marker in _MEDICAL_CONTEXT_MARKERS
+            )
+            technical_context_asserted = any(
+                _risk_marker_is_asserted(text, marker)
+                for text in risk_scope
+                for marker in _TECHNICAL_DIAGNOSIS_CONTEXT_MARKERS
+            )
+            asserted = diagnosis_asserted and (
+                medical_context_asserted or not technical_context_asserted
+            )
+        if asserted:
+            classes.append(name)
     if contract.external_mutation:
         classes.append("external_mutation")
     return tuple(dict.fromkeys(classes))

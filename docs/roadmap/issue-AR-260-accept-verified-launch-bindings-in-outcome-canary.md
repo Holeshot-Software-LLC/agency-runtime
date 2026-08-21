@@ -1,6 +1,6 @@
 ---
 title: "AR-260: Accept verified launch bindings in the outcome canary"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-08-20
 updated: 2026-08-20
@@ -10,6 +10,7 @@ related:
   - docs/roadmap/issue-AR-252-record-verified-acceptance-outcomes.md
   - docs/roadmap/issue-AR-255-inference-owned-host-proven-child-staffing.md
   - docs/roadmap/AR-119-9685a16d-accepted-outcome-evidence.md
+  - docs/roadmap/AR-119-2919802e-accepted-outcome-proof.md
   - docs/roadmap/handoffs/issue-AR-119.md
   - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
   - agency_runtime/core/outcome_canary.py
@@ -47,7 +48,7 @@ child ID separately after launch.
 - The only rejecting condition is the canary reporter's local assumption that
   every exact binding must be `child_id`.
 - Tracker [#307](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/307)
-  is open with `epic:observability`.
+  closed automatically when PR #308 merged with `epic:observability` intact.
 - Focused tests pass 14/14, widened outcome/delivery tests pass 84/84, and all
   12 local fast gates pass in 1.3 minutes at ledger head `b2727ad8`.
 
@@ -76,6 +77,6 @@ continue to fail closed.
 - [x] Unknown binding kinds fail closed.
 - [x] Focused and proportional local gates pass on a clean recovery pair.
 - [x] Required tracker issue is created after explicit owner authorization.
-- [ ] A reviewed PR reaches main and all three Windows harnesses are reinstalled.
-- [ ] One later authorized Claude draw passes the reporter without weakening
+- [x] A reviewed PR reaches main and all three Windows harnesses are reinstalled.
+- [x] One later authorized Claude draw passes the reporter without weakening
       artifact verification; this issue itself moves no matrix cell.

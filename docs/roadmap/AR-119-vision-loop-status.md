@@ -14,7 +14,10 @@ related:
   - docs/roadmap/AR-119-fcffd96c-hiring-diagnostic-evidence.md
   - docs/roadmap/issue-AR-259-preserve-terminal-hiring-state.md
   - docs/roadmap/AR-119-9685a16d-accepted-outcome-evidence.md
+  - docs/roadmap/AR-119-2919802e-accepted-outcome-proof.md
   - docs/roadmap/issue-AR-260-accept-verified-launch-bindings-in-outcome-canary.md
+  - docs/roadmap/AR-119-f4f3d45e-hiring-risk-evidence.md
+  - docs/roadmap/issue-AR-261-disambiguate-technical-diagnosis-risk.md
   - docs/roadmap/AR-255-child-parity-design.md
 supersedes: []
 superseded_by: null
@@ -2437,4 +2440,55 @@ verified delivery and accepts only exact child-ID or exact launch-ID bindings;
 unknown and mismatched bindings stay rejected. The disposable host artifacts
 were removed with the isolated profile, so Store correlation is not promoted
 into retained Rule-4 proof. This draw proves reuse, not a new hire, and **no
+matrix cell moved**.
+
+### EXACT-MAIN PROOF: Claude outcome reporter passes
+
+PR #308 merged AR-260 as exact main `00c4dc7e` with `[skip ci]`; GitHub showed
+zero branch or merge workflow runs. Fresh Claude, Codex, and ZCode installs all
+name runtime digest `75e998e4af26...` and status reports no drift.
+
+The sole telemetry-preceded Claude draw for pair
+`2919802e595027a84c37f82a3bf59690` completed both native routes, and producer
+plus verifier actually answered through the requested `codex-subscription`.
+The reporter projected distinct host-observed child IDs and returned
+`canary_passed=true`; acceptance event `0c2dc63a...` was recorded for the
+existing TypeScript contractor. Claude exited 0 without timeout or truncation,
+and no retry followed.
+
+The exact report and limitations are in
+[`AR-119-2919802e-accepted-outcome-proof.md`](AR-119-2919802e-accepted-outcome-proof.md).
+AR-260 is complete. This is accepted-outcome reuse, not a new hire or promotion.
+The isolated profile retained no host artifact and no attestation, so **no
+formal Rule-4 matrix cell moved**.
+
+### ORDINARY CLAUDE DRAW: hiring reached approval, then rolled back
+
+One telemetry-preceded exact-main Claude turn requested a read-only SAP
+ABAP/CDS/HANA cardinality diagnosis through exactly one native child. Session
+`f4f3d45e-6c83-470e-9f9f-9eafb06c0651` exited 0 and the child produced a
+substantive answer without tools or file changes. It was nevertheless a generic
+native child, not an Agency-staffed specialist.
+
+AR-259 makes the preflight boundary decisive. Receipt `ab343cd9...` records an
+applied Haiku planner, applied Sonnet recruiter, staffing abstention, terminal
+`hiring_status_pending_approval`, and `hiring_inference_attempted`. The Store
+has no correlated hiring case after atomic rollback, and the workforce stayed
+at 31 contractors. The draw was not retried.
+
+Provider-free compilation reproduces the causal product defect: a contract
+whose narrow scope says "Read-only diagnosis of ABAP CDS association
+cardinality" is classified `medical` and owner-approval-required because the
+deterministic risk table treats bare `diagnosis` as medical authority without
+domain context. Raw hiring content is intentionally unavailable, so the exact
+generated field is not claimed. The exact facts and limits are in
+[`AR-119-f4f3d45e-hiring-risk-evidence.md`](AR-119-f4f3d45e-hiring-risk-evidence.md).
+
+AR-261 narrows only that overloaded marker: diagnosis is exempted only when
+technical context is asserted and medical context is absent; context-free,
+medical, clinical, or patient diagnosis remains owner-gated. The mandatory
+isolated security reviewer and all other risk classes remain unchanged.
+Focused hiring-contract and dynamic-hiring tests pass locally. Publication,
+All 12 proportional local gates also pass in 1.3 minutes. Publication,
+exact-main installation, and a genuinely different post-fix draw remain; **no
 matrix cell moved**.

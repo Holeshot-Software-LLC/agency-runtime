@@ -193,6 +193,57 @@ def test_high_risk_is_derived_and_requires_human_approval() -> None:
     assert compiled.human_approval_required is True
 
 
+def test_technical_diagnosis_does_not_claim_medical_authority() -> None:
+    raw = _raw()
+    raw["role"] = "SAP ABAP HANA Specialist"
+    raw["narrow_scope"] = (
+        "Read-only diagnosis of ABAP CDS association cardinality and HANA row duplication."
+    )
+    raw["capabilities"] = ["Diagnosis"]
+
+    compiled = compile_contractor(parse_employment_contract(raw))
+
+    assert compiled.risk_classes == ()
+    assert compiled.human_approval_required is False
+
+
+@pytest.mark.parametrize(
+    ("role", "capability"),
+    [
+        ("Medical Diagnosis Specialist", "Patient assessment"),
+        ("Clinical Support Specialist", "Diagnosis"),
+        ("Patient Care Specialist", "Diagnosis"),
+    ],
+)
+def test_medical_context_keeps_diagnosis_owner_gated(role: str, capability: str) -> None:
+    raw = _raw()
+    raw["role"] = role
+    raw["capabilities"] = [capability]
+
+    compiled = compile_contractor(parse_employment_contract(raw))
+
+    assert compiled.risk_classes == ("medical",)
+    assert compiled.human_approval_required is True
+
+
+def test_context_free_diagnosis_stays_owner_gated_by_default() -> None:
+    raw = _raw()
+    raw.update(
+        role="General Specialist",
+        narrow_scope="Diagnosis for one bounded case.",
+        outcomes_owned=["assessment"],
+        artifacts_produced=["report"],
+        capabilities=["Diagnosis"],
+        preferred_scenarios=["An unclassified case needs assessment."],
+        requirements=["Produce bounded evidence."],
+    )
+
+    compiled = compile_contractor(parse_employment_contract(raw))
+
+    assert compiled.risk_classes == ("medical",)
+    assert compiled.human_approval_required is True
+
+
 @pytest.mark.parametrize(
     "requirement",
     [

@@ -1,9 +1,9 @@
 ---
 title: "AR-259: Preserve terminal hiring state after atomic preflight failure"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-08-20
-updated: 2026-08-20
+updated: 2026-08-21
 tags: [observability, hiring, preflight, evidence, AR-119]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
@@ -24,7 +24,7 @@ issue_id: AR-259
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/305
 depends_on: []
-blocks: [AR-119]
+blocks: [AR-119, AR-261]
 ---
 
 # AR-259: Preserve terminal hiring state after atomic preflight failure
@@ -53,7 +53,8 @@ provider calls to rediscover a state the runtime already computed.
 - Worker identity, notification text, prompts, response bodies, and pending
   contract content must remain outside the terminal failure receipt.
 - Tracker [#305](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/305)
-  is open with the required `epic:observability` label.
+  is closed with the required `epic:observability` label after the owner
+  authorized the exact terminal-evidence update.
 - Repository-wide `--require-tracker` and tracker-parity audits remain red on
   the pre-existing unauthorized tracker backlog and historical state/label
   mismatches. Neither audit reports an AR-259 mismatch.
@@ -94,6 +95,8 @@ written.
 - [x] Required tracker issue #305 is created after explicit owner authorization.
 - [x] The exact local candidate passes all 12 proportional gates in 1.3 minutes
       at recovery pair `de9ef543` / `13413c53`.
-- [ ] The candidate is published through a reviewed PR.
-- [ ] A later authorized exact-main draw is decisive at the hiring boundary;
+- [x] The candidate is published through reviewed PR #306 as exact main
+      `06f10171` with `[skip ci]` and no hosted workflow run.
+- [x] A later authorized exact-main draw is decisive at the hiring boundary;
       this issue itself moves no AR-119 matrix cell.
+- [x] Tracker issue #305 is closed after explicit outward-write authorization.
