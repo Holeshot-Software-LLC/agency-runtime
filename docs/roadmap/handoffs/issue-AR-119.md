@@ -52,7 +52,8 @@ sections. This is a recovery map, not evidence that an unproven cell moved.
   start `ed5441f0dd04`, `3e546e6e37b1`, and `34d211f366eb`; dashboard reachable.
 - This branch adds the local AR-259 terminal-hiring diagnostic. Focused tests
   pass 103/103; all 12 proportional local gates pass in 1.3 minutes at ledger
-  head `13413c53`. Tracker creation still needs explicit owner authorization.
+  head `13413c53`. AR-259 tracker #305 is open with `epic:observability`; the
+  strict global tracker audit is red only on older recorded backlog items.
 - **Option A's three-host pin phase is complete.** OpenClaw/Hermes are deferred,
   not waived; Rule 9 stays five-host and never closes on three.
 ## completed-evidence
@@ -110,8 +111,8 @@ Keep Option A frozen. Owner-authorized sequence:
 
 1. Reuse clean local recovery pair `de9ef543` / `13413c53`; all 12 proportional
    gates and documentation validation are green.
-2. After explicit tracker authorization, create AR-259's GitHub issue and write
-   its URL into the issue and registry.
+2. Reuse the authorized AR-259 tracker
+   [#305](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/305).
 3. Publish a non-draft `[skip ci]` PR, verify CLEAN/no hosted run, merge, fetch
    exact main, and install Claude/Codex/ZCode from that merge.
 4. Run one telemetry check before each bounded live evaluation; never retry a
@@ -146,4 +147,4 @@ Judge each gate by its own summary; push hooks are not the production spine.
 - Keep the 15,000 ms cold control fixed; automatic promotion stays on the
   critical path; no superiority claim without a matched corpus (AR-125).
 - Push/PR/merge/install/live-smoke/dashboard/handoff authority is current.
-  Tracker creation needs explicit authority. Hosted Actions stay forbidden.
+  AR-259 tracker #305 is created. Hosted Actions stay forbidden.

@@ -272,7 +272,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-256` | [Establish the canonical nine-rule completion contract](issue-AR-256-canonical-nine-rule-completion-contract.md) | done | p0 | documentation | None (tracker creation pending authorization) |
 | `AR-257` | [Separate decision-conformance runner and trusted fixture launcher](issue-AR-257-separate-decision-conformance-fixture-launcher.md) | done | p0 | testing | None (tracker creation pending authorization) |
 | `AR-258` | [Reconcile the installed projection before any host proof](issue-AR-258-reconcile-the-installed-projection.md) | open | p0 | install | None (tracker creation pending authorization) |
-| `AR-259` | [Preserve terminal hiring state after atomic preflight failure](issue-AR-259-preserve-terminal-hiring-state.md) | in_progress | p0 | observability | None (tracker creation pending authorization) |
+| `AR-259` | [Preserve terminal hiring state after atomic preflight failure](issue-AR-259-preserve-terminal-hiring-state.md) | in_progress | p0 | observability | [#305](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/305) |
 
 ## Traceability
 

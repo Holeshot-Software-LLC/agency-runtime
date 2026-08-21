@@ -22,7 +22,7 @@ type: issue
 epic: observability
 issue_id: AR-259
 priority: p0
-tracker_url: null
+tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/305
 depends_on: []
 blocks: []
 ---
@@ -52,7 +52,11 @@ provider calls to rediscover a state the runtime already computed.
   fields from the same event.
 - Worker identity, notification text, prompts, response bodies, and pending
   contract content must remain outside the terminal failure receipt.
-- Tracker creation is authorization-pending and is not represented as present.
+- Tracker [#305](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/305)
+  is open with the required `epic:observability` label.
+- Repository-wide `--require-tracker` and tracker-parity audits remain red on
+  the pre-existing unauthorized tracker backlog and historical state/label
+  mismatches. Neither audit reports an AR-259 mismatch.
 
 ## Approach
 
@@ -87,7 +91,7 @@ written.
       and no prompt, response, notification, path, credential, or worker
       identity survives.
 - [x] Focused preflight and dynamic-hiring tests pass warning-strict.
-- [ ] Required tracker issue is created after explicit owner authorization.
+- [x] Required tracker issue #305 is created after explicit owner authorization.
 - [x] The exact local candidate passes all 12 proportional gates in 1.3 minutes
       at recovery pair `de9ef543` / `13413c53`.
 - [ ] The candidate is published through a reviewed PR.
