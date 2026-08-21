@@ -1094,6 +1094,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `06f10171` | 2026-08-20 | Merge pull request #306: preserve terminal hiring evidence [skip ci] | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-259](../roadmap/issue-AR-259-preserve-terminal-hiring-state.md) | null |
 | `95356cfa` | 2026-08-20 | fix(ar260): accept verified launch bindings in outcome canary | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-252](../roadmap/issue-AR-252-record-verified-acceptance-outcomes.md), [AR-260](../roadmap/issue-AR-260-accept-verified-launch-bindings-in-outcome-canary.md) | [detail](2026-08-20-95356cfa-accept-verified-launch-bindings.md) |
 | `817418d9` | 2026-08-20 | docs(ar119): checkpoint AR-260 reporter gates | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-260](../roadmap/issue-AR-260-accept-verified-launch-bindings-in-outcome-canary.md) | null |
+| `00c4dc7e` | 2026-08-20 | Merge pull request #308: accept verified launch bindings [skip ci] | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-252](../roadmap/issue-AR-252-record-verified-acceptance-outcomes.md), [AR-260](../roadmap/issue-AR-260-accept-verified-launch-bindings-in-outcome-canary.md) | null |
+| `3f20a761` | 2026-08-20 | docs(ar119): record exact-main Claude outcome proof | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-252](../roadmap/issue-AR-252-record-verified-acceptance-outcomes.md), [AR-260](../roadmap/issue-AR-260-accept-verified-launch-bindings-in-outcome-canary.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
