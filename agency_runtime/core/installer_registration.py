@@ -120,29 +120,45 @@ def openclaw_gateway_live(
         timeout=12,
     )
     payload = _json_output(probe)
-    if not probe.ok or not isinstance(payload, dict):
+    if not isinstance(payload, dict) or probe.stdout_truncated or probe.stderr_truncated:
         return None, probe
 
+    service = payload.get("service")
+    runtime = service.get("runtime") if isinstance(service, Mapping) else None
+    runtime = runtime if isinstance(runtime, Mapping) else {}
     status = str(payload.get("status", "")).strip().lower()
+    runtime_status = str(runtime.get("status", "")).strip().lower()
+    runtime_state = str(runtime.get("state", "")).strip().lower()
+    runtime_substate = str(runtime.get("subState", "")).strip().lower()
     signals = {
         key: _bool_field(payload, key)
         for key in ("running", "reachable", "healthy", "rpcHealthy", "active")
     }
-    if any(value is True for value in signals.values()) or status in {
-        "running",
-        "healthy",
-        "ready",
-        "online",
-    }:
+    if (
+        any(value is True for value in signals.values())
+        or status in {"running", "healthy", "ready", "online"}
+        or runtime_status in {"running", "healthy", "ready", "online"}
+        or runtime_state in {"active", "activating", "deactivating", "reloading"}
+        or runtime_substate == "running"
+    ):
         return True, probe
     # Only an explicit process-state signal can prove the gateway stopped.
     # An unreachable or unhealthy gateway may still be a live process that a
     # plugin install would reload.
-    if signals["running"] is False or status in {
-        "stopped",
-        "not-running",
-        "not_running",
-    }:
+    if probe.ok and (
+        signals["running"] is False or status in {"stopped", "not-running", "not_running"}
+    ):
+        return False, probe
+    # OpenClaw 2026.7 reports a stopped systemd service as complete JSON while
+    # --require-rpc exits 1 because no stopped process can answer RPC. Accept
+    # only that exact, internally consistent process-state triple; every other
+    # non-zero native status remains unproven.
+    if (
+        probe.returncode == 1
+        and runtime_status == "stopped"
+        and runtime_state == "inactive"
+        and runtime_substate == "dead"
+    ):
         return False, probe
     return None, probe
 

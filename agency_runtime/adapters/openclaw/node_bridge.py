@@ -1438,7 +1438,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         encoded = json.dumps(result, ensure_ascii=True, separators=(",", ":"))
     sys.stdout.write(encoded)
     sys.stdout.write("\n")
-    return 0 if "error" not in result else 2
+    return 2 if result.get("error") else 0
 
 
 if __name__ == "__main__":  # pragma: no cover - exercised by subprocess tests

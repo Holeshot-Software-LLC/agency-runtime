@@ -284,6 +284,38 @@ def restrict_permissions(
     return True
 
 
+def _ensure_private_config_parent(parent: Path) -> None:
+    """Create a missing product-owned config parent with private ancestors."""
+
+    from agency_runtime.core.private_paths import ensure_private_directory
+
+    try:
+        ensure_private_directory(parent)
+    except (OSError, PermissionError) as exc:
+        raise ConfigurationError(
+            "configuration parent permits cross-account path substitution"
+        ) from exc
+
+
+def _create_config_parent(parent: Path, *, windows: bool) -> bool:
+    """Create one absent config parent and report whether this call created it."""
+
+    if windows:
+        try:
+            parent.mkdir(parents=True, exist_ok=False, mode=0o700)
+        except FileExistsError:
+            return False
+        return True
+    try:
+        os.lstat(parent)
+    except FileNotFoundError:
+        _ensure_private_config_parent(parent)
+        return True
+    except OSError as exc:
+        raise ConfigurationError("configuration parent identity is unavailable") from exc
+    return False
+
+
 def ensure_config_parent(
     path: Path,
     *,
@@ -301,14 +333,7 @@ def ensure_config_parent(
         try:
             os.lstat(parent)
         except FileNotFoundError:
-            from agency_runtime.core.private_paths import ensure_private_directory
-
-            try:
-                ensure_private_directory(parent)
-            except (OSError, PermissionError) as exc:
-                raise ConfigurationError(
-                    "configuration parent permits cross-account path substitution"
-                ) from exc
+            _ensure_private_config_parent(parent)
         except OSError as exc:
             raise ConfigurationError("configuration parent identity is unavailable") from exc
     try:
@@ -321,21 +346,9 @@ def ensure_config_parent(
         # such authority and still fail closed.
         if not windows:
             raise
-        from agency_runtime.core.private_paths import ensure_private_directory
-
-        try:
-            ensure_private_directory(parent)
-        except (OSError, PermissionError) as exc:
-            raise ConfigurationError(
-                "configuration parent permits cross-account path substitution"
-            ) from exc
+        _ensure_private_config_parent(parent)
         assert_config_namespace(path, is_windows=windows)
-    try:
-        parent.mkdir(parents=True, exist_ok=False, mode=0o700)
-    except FileExistsError:
-        created = False
-    else:
-        created = True
+    created = _create_config_parent(parent, windows=windows)
     if path_check(parent):
         raise ConfigurationError("refusing configuration directory symlink or reparse point")
     default_parent = Path.home() / ".agency-runtime"

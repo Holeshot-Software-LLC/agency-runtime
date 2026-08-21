@@ -48,6 +48,12 @@ related:
   - docs/roadmap/issue-AR-262-preserve-slow-host-dashboard-parity.md
   - docs/roadmap/issue-AR-263-restore-codex-desktop-parent-hook-delivery.md
   - docs/roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md
+  - docs/roadmap/issue-AR-265-accept-openclaw-stopped-gateway-status.md
+  - docs/roadmap/issue-AR-266-accept-openclaw-numeric-package-revision.md
+  - docs/roadmap/issue-AR-267-create-nested-config-parents-privately.md
+  - docs/roadmap/issue-AR-268-accept-null-openclaw-control-errors.md
+  - docs/roadmap/issue-AR-269-bind-openclaw-installed-copy-provenance.md
+  - docs/roadmap/issue-AR-270-accept-stopped-openclaw-uninstall-status.md
   - docs/roadmap/issue-AR-255-inference-owned-host-proven-child-staffing.md
   - docs/roadmap/issue-AR-256-canonical-nine-rule-completion-contract.md
   - docs/roadmap/issue-AR-200-diagnosable-decision-conformance.md
@@ -312,6 +318,17 @@ The independent production-readiness review is now captured in
 Its reproduced remediation queue is AR-128 through AR-143. Those items are
 required corrective slices of this production push; the earlier untracked
 2026-07-25 working draft is not governing evidence.
+
+### 2026-08-21 Linux OpenClaw pre-live checkpoint
+
+- Dedicated Linux worktree `codex/ar119-openclaw-hermes-litellm` is based on fetched `origin/main` `4a326773`; `f76050d7` is an ancestor. Store schema is 47 and the pre-install online backup passes integrity with SHA-256 `4d979b8337b208cba8e223921b362839115fef9eeda641ce071189686d11db66`.
+- Both native hosts reuse the existing LiteLLM `/v1` endpoint and populated credential variable `LITELLM_API_KEY`. Harness-scoped Agency profile `linux-task-agency-router` requests exact alias/model-group `task-agency-router` for OpenClaw and Hermes only; global/Codex/Claude routes are unchanged.
+- The shared LiteLLM service cannot import this Agency checkout, so its callback was not added. Requested-alias proof remains possible; actual answering model remains unavailable unless a separate reconciled provider receipt supplies it.
+- OpenClaw `2026.7.1-2` installation exposed three fail-closed compatibility/security defects, tracked as AR-265 through AR-267 with failing-before/passing-after regressions. It later installed bundle `7faa371d6f02...`, but its first Telegram turn was accepted then blocked before reply queueing.
+- AR-268 preserves the exact cause: a healthy control result containing `error: null` exited 2 and was misclassified as runtime unavailable. Its pre-fix regression fails, the one-line truthy-error repair passes, and real errors still exit 2.
+- The plugin was natively removed while OpenClaw was stopped; all five retained streaming values were transactionally restored and verified, and the manually added native router model/alias were removed. AR-269 and AR-270 retain two fail-closed Agency uninstall compatibility findings.
+- Baseline OpenClaw is active on `litellm/task-general` with its original 12-plugin inventory, Slack connected, Telegram polling, and successful outbound message `30023`. An inbound reply and the telemetry-required clean checkpoint precede any repaired reinstall.
+- Hermes remains running and untouched as break glass. Agency's `task-agency-router` selection remains harness-scoped; no Codex OAuth/configuration change or Codex canary ran, and no AR-119 matrix cell moved.
 
 ## Approach
 

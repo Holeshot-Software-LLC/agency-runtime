@@ -1375,6 +1375,7 @@ def test_openclaw_refuses_install_that_would_silently_restart_live_gateway(
     ("version", "supported"),
     [
         ("OpenClaw 2026.7.1", True),
+        ("OpenClaw 2026.7.1-2 (0790d9f)", True),
         ("openclaw v2026.7.2+build.9", True),
         ("OpenClaw 2026.7.999", True),
         ("OpenClaw 2026.8.0", False),

@@ -761,6 +761,38 @@ def test_openclaw_gateway_gate_stops_before_any_mutating_command(
     assert runner.exhausted
 
 
+def test_openclaw_gateway_gate_accepts_explicit_nested_stopped_status() -> None:
+    runner = _SequenceRunner(
+        [
+            _json_result(
+                {
+                    "service": {
+                        "runtime": {
+                            "status": "stopped",
+                            "state": "inactive",
+                            "subState": "dead",
+                        }
+                    },
+                    "rpc": {"ok": False},
+                },
+                returncode=1,
+            )
+        ]
+    )
+
+    live, probe = registration.openclaw_gateway_live(
+        home_dir=Path("isolated-home"),
+        command_runner=runner,
+    )
+
+    assert live is False
+    assert probe.returncode == 1
+    assert runner.commands == [
+        ["openclaw", "gateway", "status", "--deep", "--require-rpc", "--json"]
+    ]
+    assert runner.exhausted
+
+
 @pytest.mark.parametrize(
     "case",
     [

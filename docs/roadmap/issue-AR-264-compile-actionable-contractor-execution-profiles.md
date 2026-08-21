@@ -10,6 +10,12 @@ related:
   - docs/roadmap/issue-AR-122-contractor-hiring-and-lifecycle.md
   - docs/roadmap/issue-AR-123-workforce-cli-and-dashboard.md
   - docs/roadmap/handoffs/issue-AR-264.md
+  - docs/roadmap/issue-AR-265-accept-openclaw-stopped-gateway-status.md
+  - docs/roadmap/issue-AR-266-accept-openclaw-numeric-package-revision.md
+  - docs/roadmap/issue-AR-267-create-nested-config-parents-privately.md
+  - docs/roadmap/issue-AR-268-accept-null-openclaw-control-errors.md
+  - docs/roadmap/issue-AR-269-bind-openclaw-installed-copy-provenance.md
+  - docs/roadmap/issue-AR-270-accept-stopped-openclaw-uninstall-status.md
   - docs/decisions/0081-compile-contractors-from-governed-structured-contracts.md
   - docs/decisions/0162-compile-structured-contractor-execution-guidance.md
   - docs/worklog/README.md
@@ -132,6 +138,18 @@ metadata and compiled prompt contain explicit evidence requirements.
 - Tracker [#313](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313)
   remains open until the fresh-task and authenticated live boundaries above
   are completed.
+
+### 2026-08-21 Linux OpenClaw pre-live checkpoint
+
+- The Linux package uses fetched `origin/main` `4a326773` with repaired anchor `f76050d7` in ancestry and checkout-module CLI identity throughout.
+- Before install, Store contractor count was zero. The first partial attempt seeded 263 roster entries and all 15 packaged contractors before stopping safely at launcher identity; later attempts reused them idempotently.
+- Existing LiteLLM configuration is preserved through populated `LITELLM_API_KEY` and exact alias `task-agency-router`. Agency routes only OpenClaw and Hermes through harness profile `linux-task-agency-router`.
+- OpenClaw install failures were preserved as AR-265 through AR-267. A later completed install accepted Telegram input but queued no reply because its healthy control payload with `error: null` exited 2; AR-268 has a failing-before/passing-after bounded bridge repair.
+- Focused sets pass 45 registration, 18 version/live-gateway, and 59 configuration/streaming tests.
+- The installed plugin was removed while stopped, all five native streaming values and the `task-general` host default/catalog were restored, and the 15-contractor Store state plus failed bundle evidence remain retained. AR-269 and AR-270 record two fail-closed uninstall compatibility defects.
+- Baseline OpenClaw is active with Slack connected, Telegram polling, and successful outbound message `30023`; an inbound reply and clean checkpoint precede repaired reinstall and fresh Agency proof.
+- Hermes remains running and untouched as break glass. Exact `task-agency-router` remains only in Agency's harness profile; no native host default uses it.
+- Codex OAuth/configuration and the consumed Codex canary remain untouched. This Linux package has not moved any AR-119 matrix cell.
 
 ## Approach
 

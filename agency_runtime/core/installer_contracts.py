@@ -118,10 +118,13 @@ _OPENCLAW_VERSION = re.compile(
 
 
 def parse_openclaw_version(value: object) -> tuple[int, int, int] | None:
-    """Parse one stable date-version without accepting prerelease capability drift."""
+    """Parse a stable date-version, including numeric distribution revisions."""
 
     match = _OPENCLAW_VERSION.search(str(value or ""))
-    if match is None or match.group("prerelease"):
+    if match is None:
+        return None
+    release_suffix = match.group("prerelease")
+    if release_suffix and re.fullmatch(r"-[0-9]+", release_suffix) is None:
         return None
     return tuple(int(match.group(name)) for name in ("year", "month", "patch"))
 

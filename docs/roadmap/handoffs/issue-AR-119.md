@@ -18,6 +18,12 @@ related:
   - docs/roadmap/issue-AR-262-preserve-slow-host-dashboard-parity.md
   - docs/roadmap/issue-AR-263-restore-codex-desktop-parent-hook-delivery.md
   - docs/roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md
+  - docs/roadmap/issue-AR-265-accept-openclaw-stopped-gateway-status.md
+  - docs/roadmap/issue-AR-266-accept-openclaw-numeric-package-revision.md
+  - docs/roadmap/issue-AR-267-create-nested-config-parents-privately.md
+  - docs/roadmap/issue-AR-268-accept-null-openclaw-control-errors.md
+  - docs/roadmap/issue-AR-269-bind-openclaw-installed-copy-provenance.md
+  - docs/roadmap/issue-AR-270-accept-stopped-openclaw-uninstall-status.md
   - docs/roadmap/AR-119-founding-vision.md
   - docs/roadmap/AR-119-vision-loop-status.md
   - docs/roadmap/AR-119-39ff6dca-recruiter-diagnostic-evidence.md
@@ -36,8 +42,8 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-119
-branch: codex/ar264-exact-main-smoke-evidence
-evidence_commit: f76050d786cda3a4bc545d3d506d8c1687ce3574
+branch: codex/ar119-openclaw-hermes-litellm
+evidence_commit: 4a3267738bb20519500513ea1498fc68f8ea9443
 minimum_ledger_commit: 1fd292b016f67429ca51289430974ffb2dd8382f
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
@@ -45,135 +51,76 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 
 # AR-119 active recovery capsule
 
-Load this file and the founding vision first, then the newest loop-status
-sections. This is a recovery map, not evidence that an unproven matrix cell
-moved.
+Load this file and the founding vision first, then the newest loop-status section.
+This is a recovery map, not evidence that an unproven matrix cell moved.
 
 ## checkpoint
 
-- Work only in `C:\Workspaces\Holeshot Software\agency-runtime-ar264-rollout`
-  on `codex/ar264-exact-main-smoke-evidence`. It is based exactly on merged
-  remote main `f76050d7`; the primary checkout has owner work and is untouched.
-- PR #312 merged the slow-host dashboard parity repair. PRs #314 and #315 merged
-  contractor execution-profile v2 plus both shipped package-v1 migrations. All
-  used `[skip ci]`; no hosted workflow ran.
-- Exact main is installed into Claude, Codex, ZCode, and the dashboard. The real
-  Store advanced all 15 known packaged contractors to revision 1 / v2 while
-  preserving lineage and TypeScript's two accepted outcomes.
-- Before the new hire, authenticated dashboard and CLI converged at 31
-  contractors (`401e883532e9...`), five hosts (`003caceee19d...`), and master
-  generation 56. CLI now has 32 contractors; dashboard parity was not re-polled.
-- Fresh Codex Desktop task `01a02587-...` received no lifecycle snapshot,
-  first-response header, hook-log event, or Store row. Its first user turn was
-  not exact `agency status`; the strict control and skill capture remain unrun.
-- Claude login is restored. One new COBOL/CICS/VSAM unit produced an accepted
-  decision and applied hire, moving the contractor roster from 31 to 32, then
-  timed out at 420 seconds after one child start and before a conclusion.
-- The conditional ZCode recovery/security unit exited 0 with generic child prose, but
-  Agency failed before any decision/card. Both new units are consumed and not retried.
-- **Option A's three-host pin phase remains complete.** Linux hosts are deferred, not waived; Rule 9 still requires five hosts.
+- Linux worktree `/home/holeshot/code/agency-runtime-ar119-openclaw-hermes-litellm` is on `codex/ar119-openclaw-hermes-litellm` from fetched `origin/main` `4a3267738bb20519500513ea1498fc68f8ea9443`; `f76050d7` is an ancestor. The primary checkout was clean and remains untouched.
+- Checkout module identity is the worktree `agency_runtime/__init__.py`; Agency is `0.1.0` and Store schema is 47. All Agency commands use `python -m agency_runtime.cli`.
+- Before mutation, both hosts were stopped. The live Store was backed up with SQLite backup semantics to `~/.agency-runtime/backups/ar119-openclaw-hermes-20260821T203410Z/agency.db`; live and backup integrity were `ok`, SHA-256 is `4d979b8337b208cba8e223921b362839115fef9eeda641ce071189686d11db66`, and the pre-install contractor count was zero.
+- Existing LiteLLM is active at the host-configured `/v1` endpoint. Client authentication uses populated `LITELLM_API_KEY`; authenticated model inventory contains exact alias `task-agency-router`. No secret value was printed or copied into host configuration.
+- Agency config adds only harness defaults `openclaw` and `hermes` to profile `linux-task-agency-router` (`litellm`, exact alias, discovered base URL, `LITELLM_API_KEY`, 120000 ms). Global default, bundled routes, Codex, and Claude routes were preserved.
+- The shared LiteLLM service cannot import this Agency installation, so its callback was not added or restarted. Requested-alias receipts remain available; actual answering model is a known telemetry limitation unless another provider receipt supplies it.
+- Native inference is restored to the pre-work defaults: OpenClaw and Hermes both select `task-general`. No OpenClaw `task-agency-router` model or alias remains. Both hosts retain the populated `LITELLM_API_KEY` indirection rather than re-embedding a credential; this is the only semantic redacted-config delta besides native touch metadata.
+- OpenClaw `2026.7.1-2 (0790d9f)` was stopped before installation. Three preserved fail-closed defects produced AR-265 through AR-267: nested stopped JSON on exit 1 was ignored, the stable numeric package revision was treated as prerelease, and nested Agency backup parents inherited `0775` under umask `0002`. Each has a pre-fix failing regression and a bounded repair.
+- Focused evidence is green: 45 installer-registration tests, 18 OpenClaw version/live-gateway tests, and 59 configuration-namespace/streaming tests. The original broader registration attempt failed only because the shell umask made pytest temp roots group-writable; the same suite passed under process-local `0022` without weakening trust checks.
+- The first OpenClaw install succeeded with bundle digest `7faa371d6f02f4684ef328529d437683e010969baf1b19078ab4cd25fb05bec4`, launcher SHA-256 `e48158abe08425068fa5f83be64f1fd05c248812023497ba973e7d8d3e8362b8`, and runtime digest `6ccbd9ab3a1ce2c160ad96b1a9df257db4ac4a50811bb8def7348da42c487ddc`. Its first Telegram turn was received but blocked before reply queueing.
+- AR-268 is the exact outage cause: bridge control returned `ok: true`, `runtime_enabled: true`, and `error: null` but exited 2. A pre-fix regression failed and the one-line truthy-error repair passes with real-error boundaries unchanged.
+- OpenClaw was rolled back while stopped. Native plugin removal succeeded, all five retained streaming values were transactionally restored and verified, and the two manually added model entries were removed. AR-269 and AR-270 preserve two write-free Agency uninstall compatibility failures; managed bundle and rollback evidence remain retained.
+- Restored OpenClaw now runs `litellm/task-general`, has the original 12-plugin inventory, connects Slack, and starts Telegram polling. A bounded outbound Telegram message has receipt `30023`; an inbound baseline reply is still pending. Hermes gateway/dashboard remain running as the operator's break-glass host and must not be mutated during the OpenClaw package.
+- Telemetry reached 33.3 percent before this recovery, so a clean substantive/worklog checkpoint remains required before the next Agency live evaluation. No AR-119 matrix cell moved.
 
 ## completed-evidence
 
-- The child-judge decline is provider-conditional over the digest-verified
-  71-agent universe. Claude declined the 138-character control 0/3; Codex
-  staffed it. Do not remeasure except with a falsification target.
-- Canary child pins stay Claude -> `codex-subscription`, Codex ->
-  `codex-subscription`, and ZCode -> `zcode-recruiter` / GLM. The separate
-  Claude accepted-outcome parent recruiter pin remains `codex-subscription`.
-- Claude pair `2919802e...` remains the exact-main accepted-outcome proof:
-  producer and verifier answered through `codex-subscription`, and the reporter
-  accepted one existing TypeScript outcome. It is reuse, not hiring/promotion.
-- Codex parent routing and exact Store-backed header remain CLI-proven. Native
-  child card delivery is still blocked by the upstream opaque collaboration
-  surface; no Store projection may substitute for host-authored proof.
-- Claude session `560e6da4-...`, trace `66dca68e-...`, received a real 8,164-
-  character installed Agency capsule. Decision `2f589fa7-...`, hiring case
-  `35f59955-...`, and its specialist row agree with active contractor
-  `cobol-cics-vsam-diagnostics-specialist` / worker `7c7306dc-...`. Native-
-  child decision `native-child-cca0f...` used `codex-subscription`.
-- Claude's only progress sentence omitted the required header. Child
-  `aa0a0207e0caa208d` remained an open generic run with no delivery verification
-  or conclusion when the host timed out. This is parent/hire proof, not
-  completed execution or verified child delivery.
-- ZCode session `sess_524d8b86-...`, trace `b08d8d79-...`, applied its Claude-
-  backed planner, then rejected both recruiter responses as
-  `staff_without_safe_team` for a three-specialist unit. The GLM judge was not
-  reached; child `agent_ce74bc0f-...` and all four artifacts have zero Agency
-  markers. ZCode plural-card delivery remains unproven.
-- Provider-free exact-main hook tests pass for Claude, Codex, and ZCode skill
-  tools, and the real Store holds 19 historical skill rows. A fresh installed
-  task remains the live evidence boundary.
-- R1/R4/R5/R6 remain retracted. R8 still costs a candidate advance and
-  R2/R3/R7 re-anchor. No rule was promoted and **no matrix cell moved**.
-- Post-recording documentation validation passes 731 files; Linux boundaries pass 8 tests.
+- Origin/main preparation, exact checkout identity, schema/version capture, online Store backup, redacted host/config inventories, LiteLLM alias reachability, credential-name presence, and callback import limitation are retained in the active Codex session.
+- OpenClaw and Hermes native defaults are restored and schema/CLI validated without touching Codex OAuth, Codex configuration, Claude configuration, or the consumed Codex canary.
+- OpenClaw executable, package namespace, and shared local launcher namespace were tightened only enough to satisfy existing cross-account substitution checks. Failed attempts were not repeated unchanged.
+- The failed OpenClaw installed stage, Telegram block, native rollback, and successful baseline channel send are preserved. Header delivery, skill persistence, and substantive LiteLLM routing still require a repaired reinstall and fresh-session proof.
 
 ## exact-blocker
 
-1. AR-263's Desktop hook-dispatch failure recurred in fresh task `01a02587-...`:
-   no header, current hook-log event, Store run, or resident binding exists.
-   The intended exact-status first prompt was not sent, so do not describe that
-   specific control as executed or publish `loaded: none` as evidence. Codex
-   child visibility remains a separate upstream blocker.
-2. The genuine post-AR-261 hire is proven, but Claude response-header compliance,
-   verified child delivery, and completed contractor execution are not. Do not
-   retry its consumed COBOL/CICS/VSAM work unit.
-3. ZCode plural-card proof failed before the pinned GLM judge because both
-   ordinary recruiter responses were contract-invalid. Preserve the failure;
-   do not retry its consumed recovery/security unit or change routing.
-4. Fresh skill capture remains blocked on the Desktop lifecycle gap. Previously
-   consumed SAP, Erlang, Codex, and both ZCode units remain consumed.
-5. OpenClaw and Hermes move to the exact-main Linux packet. Hosted Actions remain
-   forbidden and issue #132 stays open.
+1. The restored OpenClaw baseline has proven outbound Telegram delivery but still needs one inbound message and queued reply before Agency is reinstalled.
+2. Context telemetry requires this repaired source/documentation state to become a clean substantive/worklog pair before the next Agency live evaluation.
+3. Reinstallation must not change the OpenClaw model catalog or primary. Current main's plugin registration and final-only streaming enforcement remain mandatory safety controls; do not omit them or weaken evidence/finalization to satisfy a no-native-write interpretation.
+4. After reinstall, OpenClaw needs a completely fresh session whose first text is exact `agency status`, then Store correlation, one harmless skill load, and one genuinely new nondelegating substantive request.
+5. Hermes remains the operator's running break-glass host and is excluded from this bounded OpenClaw package. Do not mutate or restart it.
+6. The LiteLLM callback cannot import Agency, so requested-alias evidence is available but actual answering model may remain unavailable. Tracker creation for AR-265 through AR-270 remains explicitly unauthorized.
 
 ## traps (machine-specific; do not rediscover)
 
-- PATH `agency` and the primary checkout venv reject the current owner config.
-  For owner-Store projections use the exact installed `_bootstrap.py` named by
-  the active launcher manifest; use the checkout interpreter only for gates.
-- Canaries require `--timeout 420` and immediately preceding telemetry. Never
-  judge a gate through a pipe.
-- ZCode's real CLI is
-  `C:\Users\lucas\AppData\Local\Programs\ZCode\resources\glm\zcode.cjs`.
-- Never infer the provider from the parent host. Preserve the recorded provider
-  receipt, exact host artifact, and no-result boundary independently.
+- Shell umask is `0002`. Security-sensitive tests that create trusted temp namespaces need a process-local `0022`; production fixes must still work under `0002`.
+- OpenClaw service is `openclaw-gateway.service`. Hermes services are `hermes-gateway-nexus.service` and `hermes-dashboard-nexus.service`; effective Hermes home is `/home/holeshot/.hermes-nexus`.
+- The shared client credential indirection lives in `~/.config/ai-secrets/common.env`. Record only variable names and populated booleans.
+- Do not run `host-canary --execute` for OpenClaw or Hermes. This package cannot prove Rule 4 native-child delivery and must not move a matrix cell.
+- Do not reconfigure or re-prove Codex.
 
 ## next-bounded-work-package
 
-1. Run proportional documentation/local gates and create the recovery/ledger
-   pair for this exact evidence; do not perform another Windows live draw.
-2. Publish only the verified-clean branch through one `[skip ci]` PR, verify no
-   hosted workflow ran, and leave issues #132 and #313 open.
-3. On the owner's Linux box, follow
-   `AR-119-openclaw-hermes-verification-packet.md` from exact published main.
-   Treat unsupported canary/artifact surfaces as findings, not proof.
-4. A later explicit package may run the unsent Codex exact-status control or a
-   new ZCode falsification target. It must not replay any consumed unit.
+1. Capture one baseline inbound Telegram reply and complete the clean substantive/worklog checkpoint.
+2. Reinstall only OpenClaw from this repaired checkout without modifying its model catalog or primary, then restart natively.
+3. Run the fresh OpenClaw control, skill, and substantive turns; correlate Store and provider receipts without delegation.
+4. Update the verification packet and loop status with exact evidence. Keep Hermes untouched until a later explicitly resumed package.
 
 ## same-task-continuity
 
-After restart: this file, founding vision, then the end of loop status. The
-matrix and linked evidence carry proof state. Never restore retired Job B or
-re-chase the brief's refuted list.
+Continue in this task after the checkpoint. Preserve every failed receipt and use a genuinely changed input or work unit for any retry.
 
 ## verification
 
 ~~~text
 python scripts/context_handoff_status.py --json --threshold 50
+python -m pytest tests/test_installer_registration.py -q -W error
+python -m pytest tests/test_config_policy_namespace_runtime.py tests/test_openclaw_streaming_policy.py -q -W error
 python scripts/verify_docs.py
-python -m pytest tests/test_host_hooks.py::test_successful_tool_use_injects_updated_first_pass_header \
-  tests/test_host_hooks.py::test_agency_hook_claude_records_real_tool_evidence_from_stdin \
-  -q -W error
-python -m agency_runtime.cli dashboard service status --json
-python -m agency_runtime.cli status --json
+ruff check agency_runtime tests scripts
+ruff format --check agency_runtime tests scripts
 git diff --check
 ~~~
 
 ## constraints
 
-- Push/PR/merge/install/live-smoke/dashboard/handoff authority is current.
-  Hosted Actions stay forbidden.
-- Do not change provider routing, Option A pins, matrix cells, candidate commit,
-  or accepted evidence without new proof and owner scope.
-- Do not mutate the real Store manually or delete its pre-AR-264 backup.
-- Do not clean, stash, reset, install from, or commit in the primary checkout.
+- Local host/config/store/install/restart/smoke and local commit authority is current. Push, PR, tracker mutation, and hosted Actions are forbidden.
+- Never expose credential values. Preserve hashes, environment-variable names, and populated booleans only.
+- Do not weaken executable trust, final-only delivery, Store correlation, inference evidence, or child-delivery checks.
+- No Codex OAuth/configuration change and no Codex canary belongs in this Linux package.
