@@ -14,6 +14,8 @@ where hiring minted "contractor-1-e70b4c2badd48f1f" for identical content.
 
 from __future__ import annotations
 
+from dataclasses import replace
+
 import pytest
 
 from agency_runtime.core.workforce.hiring import _agent_document
@@ -86,6 +88,20 @@ def test_compiled_contractor_hash_round_trips_through_the_helper() -> None:
 
     assert compiled.prompt_hash.startswith("sha256:")
     assert (
-        contractor_prompt_version(compiled.prompt_hash)
+        contractor_prompt_version(
+            compiled.prompt_hash,
+            template_version=compiled.template_version,
+        )
         == known_contractor_agent(contract)["version"]
     )
+
+
+def test_legacy_prompt_identity_requires_its_recorded_template_version() -> None:
+    current = KNOWN_CONTRACTORS_BY_SLUG["typescript-application-engineer"]
+    legacy = replace(current, schema_version=1, execution_profile=None)
+    compiled = compile_contractor(legacy)
+
+    assert contractor_prompt_version(
+        compiled.prompt_hash,
+        template_version=compiled.template_version,
+    ).startswith("contractor-1-")

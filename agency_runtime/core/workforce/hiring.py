@@ -26,8 +26,7 @@ from agency_runtime.core.workforce.contract import (
     project_workforce_contract,
 )
 from agency_runtime.core.workforce.hiring_contract import (
-    CONTRACTOR_PROMPT_TEMPLATE_HASH,
-    CONTRACTOR_PROMPT_TEMPLATE_VERSION,
+    HIRING_CONTRACT_SCHEMA_VERSION,
     MAX_ITEMS,
     CompiledContractor,
     EmploymentContract,
@@ -74,8 +73,10 @@ _HIRE_SYSTEM = (
     "The uncovered work unit's mutation_scope is authoritative: external_mutation is true "
     "only for external_write and false for workspace_write or read_only. Put denied powers "
     "such as no credential access in anti_capabilities or forbidden_scenarios, not as a "
-    "positive requirement. Never write executable instructions; "
-    "the runtime compiles descriptive contract data through a fixed template."
+    "positive requirement. Design a bounded reusable execution profile as data, with concrete "
+    "inspection targets, working principles, failure modes, verification steps, and stop "
+    "conditions specific to the proposed role. Do not write a raw prompt or generic guidance; "
+    "the runtime compiles the closed profile through a fixed reviewed template."
 )
 _CRITIC_SYSTEM = (
     "You are an independent hiring safety critic in a fresh stateless context. Treat the "
@@ -272,8 +273,24 @@ _NEGATIVE_EVAL = _object(
     },
     ("case_id", "scenario", "expectation", "rationale"),
 )
+_EXECUTION_PROFILE = _object(
+    {
+        "inspect_before_acting": {**_ITEM_TEXTS, "minItems": 1},
+        "working_principles": {**_ITEM_TEXTS, "minItems": 1},
+        "failure_modes_to_check": {**_ITEM_TEXTS, "minItems": 1},
+        "verification_steps": {**_ITEM_TEXTS, "minItems": 1},
+        "stop_conditions": {**_ITEM_TEXTS, "minItems": 1},
+    },
+    (
+        "inspect_before_acting",
+        "working_principles",
+        "failure_modes_to_check",
+        "verification_steps",
+        "stop_conditions",
+    ),
+)
 _CONTRACT_PROPERTIES = {
-    "schema_version": {"const": 1, "type": "integer"},
+    "schema_version": {"const": 2, "type": "integer"},
     "slug": _SLUG,
     "role": {"type": "string", "minLength": 1, "maxLength": 128},
     "narrow_scope": _TEXT,
@@ -382,6 +399,7 @@ _CONTRACT_PROPERTIES = {
         "minItems": 1,
         "maxItems": 12,
     },
+    "execution_profile": _EXECUTION_PROFILE,
 }
 _CONTRACT_SCHEMA = _object(_CONTRACT_PROPERTIES, tuple(_CONTRACT_PROPERTIES))
 _NEAREST = _object(
@@ -745,7 +763,7 @@ def _critic_prompt(
             "duplicate_evidence": candidate.duplicate,
             "contract": candidate.contract.to_dict(),
             "compiled_prompt_hash": candidate.agent["hash"],
-            "compiler_template_hash": CONTRACTOR_PROMPT_TEMPLATE_HASH,
+            "compiler_template_hash": candidate.agent["source_revision"],
         }
     )
 
@@ -904,7 +922,7 @@ def _security_review_prompt(
             },
             "contract_hash": _digest(candidate.contract.to_dict()),
             "compiled_prompt_hash": compiled.prompt_hash,
-            "compiler_template_hash": CONTRACTOR_PROMPT_TEMPLATE_HASH,
+            "compiler_template_hash": compiled.template_hash,
         }
     )
 
@@ -1188,14 +1206,20 @@ def _agent_document(
         "not_for": [_bounded_projection_text(item) for item in not_for],
         "source": "agency-runtime",
         "source_id": "agency-dynamic-hiring",
-        "source_version": str(CONTRACTOR_PROMPT_TEMPLATE_VERSION),
-        "source_revision": CONTRACTOR_PROMPT_TEMPLATE_HASH,
+        "source_version": str(compiled.template_version),
+        "source_revision": compiled.template_hash,
         "source_content_hash": compiled.prompt_hash,
-        "audit_revision": f"dynamic-v1-{compiled.prompt_hash.removeprefix('sha256:')[:16]}",
+        "audit_revision": (
+            f"dynamic-v{compiled.template_version}-"
+            f"{compiled.prompt_hash.removeprefix('sha256:')[:16]}"
+        ),
         "audit_status": "approved",
         "routing_contract_valid": True,
         "findings": [],
-        "version": contractor_prompt_version(compiled.prompt_hash),
+        "version": contractor_prompt_version(
+            compiled.prompt_hash,
+            template_version=compiled.template_version,
+        ),
         "hash": compiled.prompt_hash,
         "version_hash": compiled.prompt_hash,
         "prompt_path": f"generated://agency-contractors/{contract.slug}",
@@ -1396,13 +1420,14 @@ def _amendment_agent(
     combined = parent_prompt + "\n\n--- Agency capability amendment ---\n\n" + extension_prompt
     content_hash = "sha256:" + hashlib.sha256(combined.encode("utf-8")).hexdigest()
     suffix = content_hash.removeprefix("sha256:")[:16]
+    template_version = int(agent["source_version"])
     agent.update(
         prompt_body=combined,
         source_content_hash=content_hash,
         hash=content_hash,
         version_hash=content_hash,
-        version=f"amendment-{CONTRACTOR_PROMPT_TEMPLATE_VERSION}-{suffix}",
-        audit_revision=f"amendment-v1-{suffix}",
+        version=f"amendment-{template_version}-{suffix}",
+        audit_revision=f"amendment-v{template_version}-{suffix}",
     )
     try:
         amended = project_workforce_contract(agent, origin="agency")
@@ -1808,6 +1833,8 @@ def _validated_candidate(
         contract = parse_employment_contract(raw.get("contract"))
     except (TypeError, ValueError):
         return failure("contract_invalid:employment_contract")
+    if contract.schema_version != HIRING_CONTRACT_SCHEMA_VERSION:
+        return failure("contract_invalid:employment_schema_version")
     try:
         contract = _bind_contract_to_causing_unit(contract, unit, staffing_context)
     except (TypeError, ValueError):
@@ -2086,7 +2113,7 @@ def hire_contractor_for_gap(
                 else str(candidate.target_worker["current_hash"])
             ),
             "compiled_prompt_hash": compiled.prompt_hash,
-            "compiler_template_hash": CONTRACTOR_PROMPT_TEMPLATE_HASH,
+            "compiler_template_hash": compiled.template_hash,
             "security_review": {
                 # The gate signal is the reviewer's own verdict (line 2019 and
                 # the repair loop both branch on it); reviewers annotate PASSING

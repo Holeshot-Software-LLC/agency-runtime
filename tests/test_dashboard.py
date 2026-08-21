@@ -912,6 +912,10 @@ def test_dashboard_workforce_and_hiring_apis_share_revision_bound_lifecycle(
         "typescript",
         "javascript",
     ]
+    assert detail["detail"]["recruitment_contract"]["evidence_requirements"] == [
+        "changed artifacts and focused verification results"
+    ]
+    assert "Inspect before acting" in detail["detail"]["compiled_prompt"]["preview"]
     assert len(detail["detail"]["closest_workers"]) == min(10, workforce["total"] - 1)
     assert detail["detail"]["promotion_readiness"] == {
         "state": "contractor",

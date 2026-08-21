@@ -73,7 +73,7 @@ def _result(value: dict[str, Any]) -> StructuredProviderResult:
 
 def _employment_contract() -> dict[str, Any]:
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "slug": _CONTRACTOR,
         "role": "Quantum Build Engineer",
         "narrow_scope": "Portable TypeScript build plugins for quantum compiler toolchains.",
@@ -119,6 +119,23 @@ def _employment_contract() -> dict[str, Any]:
                 "rationale": "A general code reviewer is the safer specialist.",
             }
         ],
+        "execution_profile": {
+            "inspect_before_acting": [
+                "Inspect package metadata, compiler interfaces, supported platforms, and repository policy."
+            ],
+            "working_principles": [
+                "Keep build integration deterministic, typed, portable, and bounded to the assigned plugin."
+            ],
+            "failure_modes_to_check": [
+                "Check module drift, invalid compiler input, partial output, and platform path differences."
+            ],
+            "verification_steps": [
+                "Run focused build success and failure tests on the declared Windows and Linux boundaries."
+            ],
+            "stop_conditions": [
+                "Stop when the compiler contract or supported platform behavior cannot be established."
+            ],
+        },
     }
 
 

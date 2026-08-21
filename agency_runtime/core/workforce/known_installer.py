@@ -6,7 +6,7 @@ import hashlib
 import json
 from collections.abc import Mapping
 from contextlib import suppress
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any
 
 from agency_runtime.core.bounded_json import safe_load_bounded_json
@@ -16,8 +16,6 @@ from agency_runtime.core.workforce.contract import (
     project_workforce_contract,
 )
 from agency_runtime.core.workforce.hiring_contract import (
-    CONTRACTOR_PROMPT_TEMPLATE_HASH,
-    CONTRACTOR_PROMPT_TEMPLATE_VERSION,
     CompiledContractor,
     EmploymentContract,
     compile_contractor,
@@ -104,7 +102,9 @@ class KnownContractorPackage:
 @dataclass(frozen=True, slots=True)
 class KnownContractorInstallResult:
     installed: tuple[str, ...]
+    upgraded: tuple[str, ...]
     existing: tuple[str, ...]
+    preserved: tuple[str, ...]
 
 
 def _composition(contract: EmploymentContract) -> dict[str, Any]:
@@ -140,12 +140,7 @@ def _required_tools(contract: EmploymentContract) -> list[str]:
     return [tool for tool in contract.tools if tool not in optional]
 
 
-def known_contractor_agent(contract: EmploymentContract) -> dict[str, Any]:
-    """Compile one exact package-owned agent record from a closed contract."""
-
-    canonical = KNOWN_CONTRACTORS_BY_SLUG.get(contract.slug)
-    if canonical is None or canonical != contract:
-        raise ValueError("known contractor is not an exact packaged definition")
+def _known_contractor_agent(contract: EmploymentContract) -> dict[str, Any]:
     compiled = compile_contractor(contract)
     artifacts = _ARTIFACTS.get(contract.slug, ("implementation-change",))
     domains = _DOMAINS.get(contract.slug, ("software-engineering",))
@@ -162,7 +157,10 @@ def known_contractor_agent(contract: EmploymentContract) -> dict[str, Any]:
         if contract.authority == "review"
         else "implementer"
     )
-    version = contractor_prompt_version(compiled.prompt_hash)
+    version = contractor_prompt_version(
+        compiled.prompt_hash,
+        template_version=compiled.template_version,
+    )
     return {
         "slug": contract.slug,
         "name": contract.role,
@@ -198,10 +196,10 @@ def known_contractor_agent(contract: EmploymentContract) -> dict[str, Any]:
         "not_for": [*contract.avoided_scenarios, *contract.forbidden_scenarios],
         "source": "agency-runtime",
         "source_id": "agency-known-contractors",
-        "source_version": CONTRACTOR_PROMPT_TEMPLATE_VERSION,
-        "source_revision": CONTRACTOR_PROMPT_TEMPLATE_HASH,
+        "source_version": compiled.template_version,
+        "source_revision": compiled.template_hash,
         "source_content_hash": compiled.prompt_hash,
-        "audit_revision": f"package-v1-{CONTRACTOR_PROMPT_TEMPLATE_HASH[:16]}",
+        "audit_revision": f"package-v{compiled.template_version}-{compiled.template_hash[7:23]}",
         "audit_status": "approved",
         "routing_contract_valid": True,
         "findings": [],
@@ -217,12 +215,34 @@ def known_contractor_agent(contract: EmploymentContract) -> dict[str, Any]:
     }
 
 
+def known_contractor_agent(contract: EmploymentContract) -> dict[str, Any]:
+    """Compile one exact current package-owned agent record from a closed contract."""
+
+    canonical = KNOWN_CONTRACTORS_BY_SLUG.get(contract.slug)
+    if canonical is None or canonical != contract:
+        raise ValueError("known contractor is not an exact packaged definition")
+    return _known_contractor_agent(contract)
+
+
 def known_contractor_package(slug: str) -> KnownContractorPackage:
     contract = KNOWN_CONTRACTORS_BY_SLUG.get(str(slug or "").strip().casefold())
     if contract is None:
         raise KeyError("known contractor is not packaged")
     compiled = compile_contractor(contract)
     agent = known_contractor_agent(contract)
+    workforce = project_workforce_contract(agent, origin="agency")
+    return KnownContractorPackage(contract, compiled, agent, workforce)
+
+
+def _legacy_known_contractor_package(slug: str) -> KnownContractorPackage:
+    """Reconstruct the exact v1 package predecessor eligible for a governed advance."""
+
+    current = KNOWN_CONTRACTORS_BY_SLUG.get(str(slug or "").strip().casefold())
+    if current is None:
+        raise KeyError("known contractor is not packaged")
+    contract = replace(current, schema_version=1, execution_profile=None)
+    compiled = compile_contractor(contract)
+    agent = _known_contractor_agent(contract)
     workforce = project_workforce_contract(agent, origin="agency")
     return KnownContractorPackage(contract, compiled, agent, workforce)
 
@@ -259,7 +279,7 @@ def packaged_hiring_evidence(package: KnownContractorPackage) -> dict[str, dict[
             "approved": True,
             "authority": PACKAGED_CONTRACTOR_AUTHORITY,
             "employment_contract_schema": contract.schema_version,
-            "compiler_template_hash": CONTRACTOR_PROMPT_TEMPLATE_HASH,
+            "compiler_template_hash": package.compiled.template_hash,
             "compiled_prompt_hash": package.compiled.prompt_hash,
         },
         "model_evidence": {
@@ -275,8 +295,8 @@ def packaged_hiring_case_is_auditable(row: Mapping[str, Any]) -> bool:
     """Verify exact package authority without inventing a model receipt."""
 
     try:
-        package = known_contractor_package(str(row["proposed_slug"]))
-        expected = packaged_hiring_evidence(package)
+        slug = str(row["proposed_slug"])
+        packages = (known_contractor_package(slug), _legacy_known_contractor_package(slug))
         contract = safe_load_bounded_json(
             str(row["contract_evidence"]),
             maximum_bytes=256 * 1024,
@@ -295,28 +315,32 @@ def packaged_hiring_case_is_auditable(row: Mapping[str, Any]) -> bool:
             maximum_depth=16,
             maximum_nodes=10_000,
         )
-        expected_contract = safe_load_bounded_json(
+    except (KeyError, TypeError, ValueError):
+        return False
+    case_type = str(row.get("case_type") if hasattr(row, "get") else row["case_type"])
+    for index, package in enumerate(packages):
+        allowed_types = {"hire", "amend"} if index == 0 else {"hire"}
+        expected_target = None if case_type == "hire" else package.compiled.worker_id
+        expected = packaged_hiring_evidence(package)
+        expected_contract = json.loads(
             json.dumps(
                 package.workforce_contract.to_dict(),
                 ensure_ascii=False,
                 separators=(",", ":"),
                 sort_keys=True,
-            ),
-            maximum_bytes=256 * 1024,
-            maximum_depth=16,
-            maximum_nodes=10_000,
+            )
         )
-    except (KeyError, TypeError, ValueError):
-        return False
-    return bool(
-        str(row.get("case_type") if hasattr(row, "get") else row["case_type"]) == "hire"
-        and row["target_worker_id"] is None
-        and contract == expected_contract
-        and critic == expected["critic_evidence"]
-        and model == expected["model_evidence"]
-        and str(row["risk_tier"]) == "standard"
-        and not bool(row["human_approval_required"])
-    )
+        if bool(
+            case_type in allowed_types
+            and row["target_worker_id"] == expected_target
+            and contract == expected_contract
+            and critic == expected["critic_evidence"]
+            and model == expected["model_evidence"]
+            and str(row["risk_tier"]) == "standard"
+            and not bool(row["human_approval_required"])
+        ):
+            return True
+    return False
 
 
 def _request_hash(package: KnownContractorPackage) -> str:
@@ -333,7 +357,9 @@ def install_known_contractors(store: Any) -> KnownContractorInstallResult:
     """Idempotently stage, audit, register, and enable every packaged contractor."""
 
     installed: list[str] = []
+    upgraded: list[str] = []
     existing: list[str] = []
+    preserved: list[str] = []
     slugs = tuple(sorted(KNOWN_CONTRACTORS_BY_SLUG))
     batch_reader = getattr(store, "get_workforce_workers_by_slugs", None)
     if callable(batch_reader):
@@ -356,11 +382,71 @@ def install_known_contractors(store: Any) -> KnownContractorInstallResult:
                 raise RuntimeError(
                     f"known contractor identity conflicts with active worker: {slug}"
                 )
-            # A hash mismatch means the packaged contractor's compiled prompt
-            # changed after a code update. The existing worker is still
-            # Agency-owned; accept it as current rather than blocking the
-            # install. A proper version-advance path can refresh it later.
-            existing.append(slug)
+            if (
+                worker["current_hash"] == package.compiled.prompt_hash
+                and worker.get("current_version") == package.agent["version"]
+            ):
+                existing.append(slug)
+                continue
+            legacy = _legacy_known_contractor_package(slug)
+            prompt_reader = getattr(store, "get_specialist_prompt", None)
+            prior_prompt = (
+                prompt_reader(slug, max_chars=262_144, disabled_agents=())
+                if callable(prompt_reader)
+                else None
+            )
+            exact_legacy_package = bool(
+                worker.get("current_hash") == legacy.compiled.prompt_hash
+                and worker.get("current_version") == legacy.agent["version"]
+                and isinstance(prior_prompt, Mapping)
+                and prior_prompt.get("hash") == legacy.compiled.prompt_hash
+                and prior_prompt.get("version") == legacy.agent["version"]
+                and prior_prompt.get("prompt_body") == legacy.compiled.prompt
+                and prior_prompt.get("prompt_truncated") is False
+            )
+            if not exact_legacy_package:
+                # Never overwrite an owner or inference-authored amendment just
+                # because its active identity differs from today's package.
+                preserved.append(slug)
+                continue
+            version_id = store.stage_agency_packaged_workforce_revision(
+                package.agent,
+                expected_revision=int(worker["revision"]),
+            )
+            evidence = packaged_hiring_evidence(package)
+            contract_document = package.workforce_contract.to_dict()
+            case = store.create_hiring_case(
+                case_type="amend",
+                proposed_slug=slug,
+                target_worker_id=str(worker["worker_id"]),
+                work_unit_id=f"known-{slug}-package-v{package.compiled.template_version}",
+                request_hash=_request_hash(package),
+                contract_evidence=contract_document,
+                contract_hash=hashlib.sha256(
+                    json.dumps(
+                        contract_document,
+                        ensure_ascii=False,
+                        separators=(",", ":"),
+                        sort_keys=True,
+                    ).encode("utf-8")
+                ).hexdigest(),
+                **evidence,
+            )
+            if case["status"] == "proposed":
+                case = store.transition_hiring_case(case["id"], status="audited")
+            if case["status"] != "audited":
+                raise RuntimeError(f"known contractor amendment case is not usable: {slug}")
+            store.apply_workforce_amendment(
+                slug,
+                expected_revision=int(worker["revision"]),
+                agent_version_id=version_id,
+                recruitment_contract=contract_document,
+                hiring_case_id=case["id"],
+                event_actor="agency-runtime",
+                event_surface="package-upgrade",
+                event_reason="exact packaged contractor revision advance",
+            )
+            upgraded.append(slug)
             continue
         version_id = store.stage_agency_workforce_agent(package.agent)
         evidence = packaged_hiring_evidence(package)
@@ -395,7 +481,12 @@ def install_known_contractors(store: Any) -> KnownContractorInstallResult:
             hiring_case_id=case["id"],
         )
         installed.append(slug)
-    return KnownContractorInstallResult(tuple(installed), tuple(existing))
+    return KnownContractorInstallResult(
+        tuple(installed),
+        tuple(upgraded),
+        tuple(existing),
+        tuple(preserved),
+    )
 
 
 __all__ = [

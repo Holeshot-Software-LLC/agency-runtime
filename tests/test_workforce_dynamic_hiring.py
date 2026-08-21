@@ -143,7 +143,7 @@ def _unit() -> WorkUnit:
 
 def _contract(*, external_mutation: bool = False) -> dict[str, Any]:
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "slug": "quantum-build-engineer",
         "role": "Quantum Build Engineer",
         "narrow_scope": "Portable TypeScript build plugins for quantum compiler toolchains.",
@@ -187,6 +187,23 @@ def _contract(*, external_mutation: bool = False) -> dict[str, Any]:
                 "rationale": "A general build reviewer is the safer specialist.",
             }
         ],
+        "execution_profile": {
+            "inspect_before_acting": [
+                "Inspect package metadata, compiler interfaces, supported platforms, and repository policy."
+            ],
+            "working_principles": [
+                "Keep build integration deterministic, typed, portable, and bounded to the assigned plugin."
+            ],
+            "failure_modes_to_check": [
+                "Check module drift, invalid compiler input, partial output, and platform path differences."
+            ],
+            "verification_steps": [
+                "Run focused build success and failure tests on the declared Windows and Linux boundaries."
+            ],
+            "stop_conditions": [
+                "Stop when the compiler contract or supported platform behavior cannot be established."
+            ],
+        },
     }
 
 
@@ -438,9 +455,48 @@ def test_hiring_prompts_preserve_instruction_and_mutation_boundaries(tmp_path: P
     )
 
     assert outcome.hired is True
-    assert "Never write executable instructions" in calls[0]["system_prompt"]
+    assert "Design a bounded reusable execution profile as data" in calls[0]["system_prompt"]
+    assert "Do not write a raw prompt or generic guidance" in calls[0]["system_prompt"]
     assert "external_mutation is true only for external_write" in calls[0]["system_prompt"]
     assert "explicit prohibitions are not granted authority" in calls[1]["system_prompt"]
+
+
+def test_hiring_schema_requires_closed_v2_execution_guidance() -> None:
+    contract = hiring_module.HIRING_RESPONSE_SCHEMA["properties"]["contract"]["anyOf"][0]
+    profile = contract["properties"]["execution_profile"]
+
+    assert contract["properties"]["schema_version"]["const"] == 2
+    assert "execution_profile" in contract["required"]
+    assert profile["additionalProperties"] is False
+    assert profile["required"] == [
+        "inspect_before_acting",
+        "working_principles",
+        "failure_modes_to_check",
+        "verification_steps",
+        "stop_conditions",
+    ]
+
+
+def test_live_hiring_rejects_legacy_contracts_while_replay_remains_supported(
+    tmp_path: Path,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+    response = deepcopy(_hiring_response())
+    response["contract"]["schema_version"] = 1
+    response["contract"].pop("execution_profile")
+
+    outcome = hire_contractor_for_gap(
+        "Implement the missing quantum compiler build integration.",
+        _unit(),
+        (_existing(),),
+        store=store,
+        config=_config(),
+        invoker=_recording_invoker(response, calls=[]),
+    )
+
+    assert outcome.status == "abstained"
+    assert outcome.reason_codes == ("contract_invalid:employment_schema_version",)
+    assert store.list_hiring_cases(limit=10) == []
 
 
 def test_critic_can_independently_validate_runtime_gap_evidence(tmp_path: Path) -> None:

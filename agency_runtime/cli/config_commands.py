@@ -187,7 +187,9 @@ def cmd_configure(
     print(
         "✅ Governed contractors: "
         f"{int(getattr(count, 'contractors_installed', 0))} installed, "
-        f"{int(getattr(count, 'contractors_existing', 0))} already current"
+        f"{int(getattr(count, 'contractors_upgraded', 0))} upgraded, "
+        f"{int(getattr(count, 'contractors_existing', 0))} already current, "
+        f"{int(getattr(count, 'contractors_preserved', 0))} preserved"
     )
     print(f"✅ SQLite database initialized: {cfg.store.resolved_path()}")
     print("\nNext steps:")

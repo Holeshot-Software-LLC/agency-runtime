@@ -7,6 +7,7 @@ updated: 2026-08-12
 tags: [contractors, hiring, lifecycle, governance]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
+  - docs/roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md
   - docs/decisions/0081-compile-contractors-from-governed-structured-contracts.md
 supersedes: []
 superseded_by: null
@@ -16,7 +17,7 @@ issue_id: AR-122
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/135
 depends_on: [AR-120, AR-121]
-blocks: [AR-123, AR-125]
+blocks: [AR-123, AR-125, AR-264]
 ---
 
 # AR-122: Implement governed contractor hiring and workforce lifecycle

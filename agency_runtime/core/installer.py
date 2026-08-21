@@ -185,7 +185,9 @@ class _StarterRosterSeedCount(int):
 
     upgraded: int
     contractors_installed: int
+    contractors_upgraded: int
     contractors_existing: int
+    contractors_preserved: int
 
     def __new__(
         cls,
@@ -193,12 +195,40 @@ class _StarterRosterSeedCount(int):
         *,
         upgraded: int,
         contractors_installed: int = 0,
+        contractors_upgraded: int = 0,
         contractors_existing: int = 0,
+        contractors_preserved: int = 0,
     ) -> _StarterRosterSeedCount:
         value = super().__new__(cls, added)
         value.upgraded = upgraded
         value.contractors_installed = contractors_installed
+        value.contractors_upgraded = contractors_upgraded
         value.contractors_existing = contractors_existing
+        value.contractors_preserved = contractors_preserved
+        return value
+
+
+class _PackagedContractorReconciliation(tuple[int, int]):
+    """Two-value compatible result with exact package reconciliation counts."""
+
+    installed: int
+    upgraded: int
+    existing: int
+    preserved: int
+
+    def __new__(
+        cls,
+        *,
+        installed: int = 0,
+        upgraded: int = 0,
+        existing: int = 0,
+        preserved: int = 0,
+    ) -> _PackagedContractorReconciliation:
+        value = super().__new__(cls, (installed + upgraded, existing + preserved))
+        value.installed = installed
+        value.upgraded = upgraded
+        value.existing = existing
+        value.preserved = preserved
         return value
 
 
@@ -207,32 +237,42 @@ def reconcile_packaged_contractors(store: Store) -> tuple[int, int]:
 
     required = (
         "create_hiring_case",
+        "apply_workforce_amendment",
         "get_workforce_worker",
         "register_workforce_worker",
+        "stage_agency_packaged_workforce_revision",
         "stage_agency_workforce_agent",
         "transition_hiring_case",
     )
     if not all(callable(getattr(store, name, None)) for name in required):
-        return 0, 0
+        return _PackagedContractorReconciliation()
     from agency_runtime.core.workforce.known_installer import install_known_contractors
 
     result = install_known_contractors(store)
     reconcile_contracts = getattr(store, "reconcile_packaged_workforce_contracts", None)
     if callable(reconcile_contracts):
         reconcile_contracts()
-    return len(result.installed), len(result.existing)
+    return _PackagedContractorReconciliation(
+        installed=len(result.installed),
+        upgraded=len(result.upgraded),
+        existing=len(result.existing),
+        preserved=len(result.preserved),
+    )
 
 
 def seed_starter_roster(store: Store) -> int:
     """Reconcile built-ins and governed contractors behind the compatible integer API."""
 
     result = reconcile_starter_roster(store)
-    contractors_installed, contractors_existing = reconcile_packaged_contractors(store)
+    contractors = reconcile_packaged_contractors(store)
+    contractors_changed, contractors_current = contractors
     return _StarterRosterSeedCount(
         result.added,
         upgraded=result.upgraded,
-        contractors_installed=contractors_installed,
-        contractors_existing=contractors_existing,
+        contractors_installed=int(getattr(contractors, "installed", contractors_changed)),
+        contractors_upgraded=int(getattr(contractors, "upgraded", 0)),
+        contractors_existing=int(getattr(contractors, "existing", contractors_current)),
+        contractors_preserved=int(getattr(contractors, "preserved", 0)),
     )
 
 

@@ -142,6 +142,7 @@ Status meanings:
 | [ADR-0081](0081-compile-contractors-from-governed-structured-contracts.md) | Compile contractors from governed structured contracts | Accepted |
 | [ADR-0134](0134-bind-contractor-risk-to-validated-authority.md) | Bind contractor risk to validated authority | Accepted |
 | [ADR-0157](0157-automatically-promote-host-verified-contractors.md) | Automatically promote contractors from host-evidenced, independently verified outcomes | Accepted |
+| [ADR-0162](0162-compile-structured-contractor-execution-guidance.md) | Compile structured contractor execution guidance | Accepted |
 
 ## Operations and engineering
 

@@ -1124,7 +1124,7 @@ test("workforce detail renders comparison, promotion, prompt, history, and state
       archetype: "implementer",
       authority: "modify",
       domains: ["software-engineering"],
-      evidence_requirements: ["tests"],
+      evidence_requirements: ["changed artifacts and focused verification results"],
       outcomes: ["production TypeScript"],
       scope: "Production TypeScript applications",
       stacks: ["typescript"],
@@ -1199,6 +1199,9 @@ test("workforce detail renders comparison, promotion, prompt, history, and state
   assert.match(text, /python-application-engineer/);
   assert.match(text, /42% overlap/);
   assert.match(text, /Use the governed TypeScript contract/);
+  assert.match(text, /Evidence required/);
+  assert.match(text, /changed artifacts and focused verification results/);
+  assert.doesNotMatch(text, /Evidence required none recorded/);
   assert.match(text, /Owner-only governed specialist definition/);
   assert.match(text, /separate from runtime observation capture/);
   assert.match(text, /Reason recorded/);

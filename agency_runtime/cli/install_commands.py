@@ -427,7 +427,9 @@ def _render_install_summary(
     dashboard_result: dict[str, Any],
     dashboard_opted_out: bool,
     contractors_installed: int = 0,
+    contractors_upgraded: int = 0,
     contractors_existing: int = 0,
+    contractors_preserved: int = 0,
 ) -> None:
     """Render profile, provider, roster, and dashboard setup results."""
     print(f"✅ Agency Runtime profile: {profile_name}")
@@ -435,7 +437,8 @@ def _render_install_summary(
     print(f"✅ Legacy bundled contracts upgraded: {roster_upgraded} agents")
     print(
         "✅ Governed contractors: "
-        f"{contractors_installed} installed, {contractors_existing} already current"
+        f"{contractors_installed} installed, {contractors_upgraded} upgraded, "
+        f"{contractors_existing} already current, {contractors_preserved} preserved"
     )
     print(f"   Config: {cfg.config_path or '(defaults only)'}")
     print(
@@ -710,6 +713,18 @@ def _seed_starter_roster(store: Store) -> int:
             "packaged_contractors_installed",
             "",
             f"count={result.contractors_installed}",
+        )
+    if result.contractors_upgraded:
+        store.record_import_event(
+            "packaged_contractors_upgraded",
+            "",
+            f"count={result.contractors_upgraded}",
+        )
+    if result.contractors_preserved:
+        store.record_import_event(
+            "packaged_contractors_preserved",
+            "",
+            f"count={result.contractors_preserved}",
         )
     return result
 
@@ -1406,7 +1421,9 @@ def cmd_install(
         roster_added = seed_starter_roster(runtime_store)
         roster_upgraded = int(getattr(roster_added, "upgraded", 0))
         contractors_installed = int(getattr(roster_added, "contractors_installed", 0))
+        contractors_upgraded = int(getattr(roster_added, "contractors_upgraded", 0))
         contractors_existing = int(getattr(roster_added, "contractors_existing", 0))
+        contractors_preserved = int(getattr(roster_added, "contractors_preserved", 0))
     except Exception as exc:
         return _restricted_install_failure(
             exc,
@@ -1465,7 +1482,9 @@ def cmd_install(
             roster_added=int(roster_added),
             roster_upgraded=roster_upgraded,
             contractors_installed=contractors_installed,
+            contractors_upgraded=contractors_upgraded,
             contractors_existing=contractors_existing,
+            contractors_preserved=contractors_preserved,
             dashboard_result=dashboard_result,
             dashboard_opted_out=dashboard_opted_out,
         )
@@ -1493,7 +1512,9 @@ def cmd_install(
                 "roster_added": int(roster_added),
                 "roster_upgraded": roster_upgraded,
                 "contractors_installed": contractors_installed,
+                "contractors_upgraded": contractors_upgraded,
                 "contractors_existing": contractors_existing,
+                "contractors_preserved": contractors_preserved,
                 "selected_hosts": "all_detected" if all_hosts else "explicit",
                 "hosts": host_results,
                 "dashboard": dashboard_result,
