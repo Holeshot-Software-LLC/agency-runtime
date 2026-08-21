@@ -34,8 +34,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-119
 branch: codex/ar119-claude-outcome-evidence
-evidence_commit: 00c4dc7ea901102ff4eab68b7973153e17da46ce
-minimum_ledger_commit: ae8fc7c05dc7b3952f4936fa6d5e63150e08a0e2
+evidence_commit: 0b48bb51b5f14802281ab53a3d82c0d587dacae6
+minimum_ledger_commit: f9a5e3f376fbc5d13cfefcbe0a8af089fc6d19c6
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
@@ -61,6 +61,9 @@ sections. This is a recovery map, not evidence that an unproven cell moved.
   attempted hiring, but terminal status was `pending_approval`; no case or
   contractor survived atomic rollback. AR-261 owns the reproduced technical
   `diagnosis` -> `medical` false positive before any second draw.
+- AR-261 recovery pair `0b48bb51` / `f9a5e3f3` is clean. Focused hiring tests
+  pass 88/88 and all 12 proportional local gates pass in 1.3 minutes. Its
+  tracker, publication, exact-main install, and post-fix draw remain pending.
 - **Option A's three-host pin phase is complete.** OpenClaw/Hermes are deferred,
   not waived; Rule 9 stays five-host and never closes on three.
 ## completed-evidence
