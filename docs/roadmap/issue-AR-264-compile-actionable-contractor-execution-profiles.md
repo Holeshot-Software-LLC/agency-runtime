@@ -60,8 +60,10 @@ metadata and compiled prompt contain explicit evidence requirements.
   all 134 dashboard UI tests, documentation validation, and every routing gate
   pass. The hosted-only decision-conformance mutation phase remains unrun.
 - Tracker [#313](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313)
-  is linked under explicit owner authorization; branch publication through a
-  non-draft pull request is the next bounded step.
+  is linked under explicit owner authorization. Non-draft pull request
+  [#314](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/314)
+  publishes the clean candidate to `main`; merge and installation remain
+  separately authorized steps.
 
 ## Approach
 
