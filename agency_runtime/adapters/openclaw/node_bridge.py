@@ -1137,20 +1137,21 @@ def _handle_finalize_tool(
             "runtimeDisabled": True,
             "bypassed": True,
         }
-    from agency_runtime.server.mcp_tools import dispatch_tool_call
+    from agency_runtime.core.header.finalize import finalize_response
 
-    result = dispatch_tool_call(
-        "agency.finalize",
-        {
-            "draft_text": draft_text,
-            "session_id": session_id,
+    result = finalize_response(
+        draft_text,
+        trace_metadata={
             "trace_id": trace_id,
+            "session_id": session_id,
+            "host": "openclaw",
         },
-        adapter.store,
+        store=adapter.store,
+        model="",
     )
     if not isinstance(result, dict):
         return {"error": "finalization returned an invalid result"}
-    return {**result, "runtimeEnabled": True}
+    return {**dict(result), "runtimeEnabled": True}
 
 
 def _runtime_disabled_result(payload: dict[str, Any], action: str) -> dict[str, Any]:

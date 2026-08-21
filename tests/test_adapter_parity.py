@@ -1417,6 +1417,13 @@ def test_openclaw_accepts_exact_first_visible_response_constructed_by_finalize_t
     )
 
     assert finalized["action"] == "accept"
+    finalization = store.get_authoritative_finalization(
+        "first-pass-session",
+        "first-pass-turn",
+        action="accept",
+    )
+    assert finalization is not None
+    assert finalization["host"] == "openclaw"
     assert (
         handle(
             {
