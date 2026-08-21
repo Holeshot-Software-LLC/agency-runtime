@@ -1097,6 +1097,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `00c4dc7e` | 2026-08-20 | Merge pull request #308: accept verified launch bindings [skip ci] | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-252](../roadmap/issue-AR-252-record-verified-acceptance-outcomes.md), [AR-260](../roadmap/issue-AR-260-accept-verified-launch-bindings-in-outcome-canary.md) | null |
 | `3f20a761` | 2026-08-20 | docs(ar119): record exact-main Claude outcome proof | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-252](../roadmap/issue-AR-252-record-verified-acceptance-outcomes.md), [AR-260](../roadmap/issue-AR-260-accept-verified-launch-bindings-in-outcome-canary.md) | null |
 | `0b48bb51` | 2026-08-20 | fix(ar261): disambiguate technical diagnosis risk | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-261](../roadmap/issue-AR-261-disambiguate-technical-diagnosis-risk.md) | [detail](2026-08-20-0b48bb51-disambiguate-technical-diagnosis-risk.md) |
+| `44596e90` | 2026-08-20 | docs(ar119): bind technical diagnosis recovery pair | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-261](../roadmap/issue-AR-261-disambiguate-technical-diagnosis-risk.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
