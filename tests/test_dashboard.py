@@ -4484,6 +4484,65 @@ def test_expired_host_evidence_is_not_actionable_while_refresh_is_pending():
         executor.shutdown(wait=True)
 
 
+def test_completed_host_inspection_survives_refresh_ttl_until_stale_horizon():
+    release = threading.Event()
+    calls = 0
+    calls_lock = threading.Lock()
+
+    def inspect(host: str) -> dict:
+        nonlocal calls
+        with calls_lock:
+            calls += 1
+            call_number = calls
+        if call_number > 1:
+            release.wait(timeout=1)
+        return {
+            "host": host,
+            "registered": True,
+            "enabled": True,
+            "maturity": "enabled-runtime-unverified",
+        }
+
+    executor = ThreadPoolExecutor(max_workers=1)
+    coordinator = _HostInspectionCoordinator(
+        inspect_one=inspect,
+        hosts=("claude",),
+        deadline_seconds=0.02,
+        cache_seconds=0.01,
+        stale_seconds=1,
+        executor=executor,
+    )
+    try:
+        current = coordinator.inspect()[0]
+        assert current["inspection_status"] == "complete"
+        coordinator._cache["claude"] = (time.monotonic() - 1, current)
+
+        refreshing = coordinator.inspect()[0]
+
+        assert refreshing["inspection_status"] == "complete"
+        assert refreshing["registered"] is True
+        assert refreshing["enabled"] is True
+        assert calls == 2
+
+        coordinator._stale_after["claude"] = time.monotonic() - 1
+        stale = coordinator.inspect()[0]
+        assert stale["inspection_status"] == "stale"
+        assert stale["registered"] is None
+        assert stale["enabled"] is None
+        assert stale["maturity"] == "inspection-stale"
+    finally:
+        release.set()
+        executor.shutdown(wait=True)
+
+
+def test_default_host_inspection_stale_horizon_bridges_control_poll():
+    assert dashboard_module._HOST_INSPECTION_STALE_SECONDS >= 30
+    assert (
+        dashboard_module._HOST_INSPECTIONS.stale_seconds
+        == dashboard_module._HOST_INSPECTION_STALE_SECONDS
+    )
+
+
 def test_provider_health_is_explicitly_receipt_based():
     health = _provider_health(
         [

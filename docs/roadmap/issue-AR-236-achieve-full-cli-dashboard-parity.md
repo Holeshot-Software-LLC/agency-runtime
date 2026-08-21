@@ -3,7 +3,7 @@ title: "AR-236: Achieve full CLI and dashboard functional and presentational par
 status: open
 category: roadmap
 created: 2026-08-04
-updated: 2026-08-11
+updated: 2026-08-21
 tags: [cli, dashboard, parity, ops, observability, analysis]
 related:
   - docs/analysis/2026-08-04-cli-dashboard-parity.md
@@ -15,6 +15,7 @@ related:
   - docs/roadmap/issue-AR-155-bound-dashboard-hiring-evidence.md
   - docs/roadmap/issue-AR-235-autonomous-gap-hiring-with-isolated-security-review.md
   - docs/roadmap/issue-AR-237-hiring-list-and-show-parity.md
+  - docs/roadmap/issue-AR-262-preserve-slow-host-dashboard-parity.md
   - agency_runtime/cli/parser.py
   - agency_runtime/cli/main.py
   - agency_runtime/cli/_render.py
@@ -31,7 +32,7 @@ priority: p0
 tracker_url: "https://github.com/Holeshot-Software-LLC/agency-runtime/issues/245"
 depends_on:
   - AR-254
-blocks: []
+blocks: [AR-262]
 ---
 
 # AR-236: Achieve full CLI and dashboard functional and presentational parity

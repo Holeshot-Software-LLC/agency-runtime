@@ -45,6 +45,7 @@ related:
   - docs/roadmap/issue-AR-259-preserve-terminal-hiring-state.md
   - docs/roadmap/issue-AR-260-accept-verified-launch-bindings-in-outcome-canary.md
   - docs/roadmap/issue-AR-261-disambiguate-technical-diagnosis-risk.md
+  - docs/roadmap/issue-AR-262-preserve-slow-host-dashboard-parity.md
   - docs/roadmap/issue-AR-255-inference-owned-host-proven-child-staffing.md
   - docs/roadmap/issue-AR-256-canonical-nine-rule-completion-contract.md
   - docs/roadmap/issue-AR-200-diagnosable-decision-conformance.md
@@ -64,7 +65,7 @@ epic: routing
 issue_id: AR-119
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
-depends_on: [AR-115, AR-116, AR-118, AR-125, AR-179, AR-180, AR-185, AR-190, AR-228, AR-252, AR-253, AR-255, AR-256, AR-259, AR-260, AR-261]
+depends_on: [AR-115, AR-116, AR-118, AR-125, AR-179, AR-180, AR-185, AR-190, AR-228, AR-252, AR-253, AR-255, AR-256, AR-259, AR-260, AR-261, AR-262]
 blocks: [AR-178, AR-200, AR-201]
 ---
 
@@ -4437,6 +4438,28 @@ decision, hiring case, or child launch exists, and the roster stayed 31. This
 does not exercise the AR-261 classifier through live hiring. Do not retry the
 session or task; a restored Claude login and a newly authorized, genuinely
 different draw are required. No matrix cell moved.
+
+### Dashboard host parity repair is locally live-proven — 2026-08-21
+
+The durable dashboard was refreshed from exact main `692a9257` and was active,
+reachable, manifest-current, and definition-current. Its workforce view exactly
+matched CLI: 294 active workers, 263 employees, 31 contractors, and 32 hiring
+records. The host view did not: CLI status and authenticated `/api/hosts`
+reported Claude `enabled-runtime-unverified`, while the rendered control view
+remained `inspection-stale`.
+
+AR-262 identifies a cache-observation defect, not provider routing or Claude
+authentication. Slow inspection finishes after the two-second dashboard
+deadline; its successful result was refreshable for three seconds, but the UI
+polls every 15 seconds. The local candidate retains the three-second refresh
+horizon and adds a 30-second last-good stale horizon. Past that horizon it
+still clears actionable fields and fails closed. A normal rendered refresh,
+without prewarming `/api/hosts`, now matches all five CLI host states and keeps
+the workforce counts exact. Affected verification passes 189 Python/hardening
+tests and 134 UI tests; the warning-strict production spine passes 802 with 20
+skips, all 12 proportional local gates pass in 1.6 minutes, and focused Ruff
+checks are green. Tracker and publication authority remain pending; no hosted
+work or live provider call followed, and no matrix cell moved.
 
 ## Acceptance
 

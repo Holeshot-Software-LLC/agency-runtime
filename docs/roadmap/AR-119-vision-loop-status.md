@@ -18,6 +18,7 @@ related:
   - docs/roadmap/issue-AR-260-accept-verified-launch-bindings-in-outcome-canary.md
   - docs/roadmap/AR-119-f4f3d45e-hiring-risk-evidence.md
   - docs/roadmap/issue-AR-261-disambiguate-technical-diagnosis-risk.md
+  - docs/roadmap/issue-AR-262-preserve-slow-host-dashboard-parity.md
   - docs/roadmap/AR-255-child-parity-design.md
 supersedes: []
 superseded_by: null
@@ -2521,3 +2522,30 @@ post-start child-launch projections are empty; the contractor count remains
 reuse, or an AR-261 behavioral result. Do not retry this session or work unit.
 A fresh Claude login and explicit authorization for a genuinely different draw
 are required. **No matrix cell moved.**
+
+### LOCAL DASHBOARD PARITY REPAIR: slow host evidence becomes observable
+
+The durable service was refreshed from exact main `692a9257` and proved active,
+reachable, manifest-current, and definition-current. The authenticated
+workforce surface exactly matched CLI at 294 workers, 263 employees, 31
+contractors, and 32 hiring cases. Host parity exposed one independent defect:
+CLI and authenticated `/api/hosts` reported current Claude installation state,
+but the rendered panel remained `inspection-stale`.
+
+AR-262 separates refresh cadence from the bounded actionability horizon. A
+host inspection still refreshes after three seconds and each request still has
+a two-second deadline. A completed last-good result may now remain actionable
+for at most 30 seconds while its refresh runs; after that it is sanitized and
+reported stale exactly as before. This bridges the dashboard's 15-second poll
+without weakening fail-closed expiry or generation-bound host mutations.
+
+The local candidate passes 189 affected Python/hardening tests and 134 dashboard
+UI tests; the warning-strict production spine passes 802 with 20 skips, all 12
+proportional local gates pass in 1.6 minutes, and focused Ruff checks are green.
+Installed as owner-private runtime digest `9e0a85aa...`, it renders Claude as
+registered, native enabled, runtime on, and
+`enabled-runtime-unverified` after a normal refresh without `/api/hosts`
+prewarming. Codex, ZCode, OpenClaw, Hermes, and all workforce counts match the
+CLI projections. Tracker creation was refused at the outward approval boundary
+and remains explicitly authorization-pending. No provider call, host draw,
+candidate promotion, rule promotion, or matrix movement followed.
