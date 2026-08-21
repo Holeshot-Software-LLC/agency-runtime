@@ -19,7 +19,7 @@ type: issue
 epic: roster-governance
 issue_id: AR-264
 priority: p0
-tracker_url: null
+tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 depends_on: [AR-122, AR-123]
 blocks: [AR-119]
 ---
@@ -59,6 +59,9 @@ metadata and compiled prompt contain explicit evidence requirements.
 - The named local fast spine reports 806 passed and 20 skipped; Ruff, format,
   all 134 dashboard UI tests, documentation validation, and every routing gate
   pass. The hosted-only decision-conformance mutation phase remains unrun.
+- Tracker [#313](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313)
+  is linked under explicit owner authorization; branch publication through a
+  non-draft pull request is the next bounded step.
 
 ## Approach
 
@@ -104,6 +107,6 @@ whole-workforce recruiter contract merely to repair an owner detail view.
       evidence requirements; `none recorded` appears only when none exist.
 - [x] Focused contract, hiring, Store, dashboard API, and dashboard UI tests
       pass with Ruff and documentation validation.
-- [ ] A tracker issue is created and linked after explicit authorization.
+- [x] Tracker issue #313 is created and linked after explicit authorization.
 - [ ] The reviewed candidate is merged, installed, and smoke-tested only after
       separate publication and live-operation authorization.
