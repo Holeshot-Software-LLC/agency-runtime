@@ -96,8 +96,10 @@ metadata and compiled prompt contain explicit evidence requirements.
 - Skill capture is provider-free proven on this exact tree: three focused hook
   cases pass for Claude, Codex, and ZCode, each injecting its loaded skill into
   the first-pass header. The owner Store contains 19 historical skill-load
-  rows. A fresh post-install Codex Desktop skill header remains a new-task
-  lifecycle check, not evidence available from this already-running task.
+  rows. Fresh post-install Desktop task `01a02587-...` received no Agency header,
+  hook-log event, Store run, or resident binding, so no skill was loaded and the
+  historical rows were not projected as current evidence. Its first user turn
+  was not the intended exact `agency status` control.
 - The single exact-main Codex activation draw stopped at parent preflight
   `workforce_inference_failed` after valid planner and recruiter responses; it
   produced no routing decision, child, delegation, delivery, or final header.

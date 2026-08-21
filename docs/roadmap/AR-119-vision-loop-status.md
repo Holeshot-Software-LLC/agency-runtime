@@ -2631,3 +2631,25 @@ Desktop task received the new install's lifecycle hooks. A completely new
 Codex task must show the fresh header and skill line; if it does not, AR-263
 remains the exact boundary. Claude authentication is still expired. No hire,
 accepted outcome, promotion, rule promotion, or matrix movement followed.
+
+### FRESH DESKTOP RECHECK: lifecycle dispatch remains absent
+
+Completely new Codex Desktop task
+`01a02587-1489-7e13-834e-3299ae05fb43` began at
+`2026-08-21T18:13:24Z`, after the exact-main installation. Its persisted task
+record has one user turn and no prior turn: the first user message was the
+AR-119/AR-264 recovery prompt, not the intended exact `agency status` control.
+The first assistant response at `18:13:38Z` contains no `Agency/Agencies
+loaded` or `Skills loaded` header and no v6 marker.
+
+The independent lifecycle sources agree. `hooks.log` last changed at
+`2026-08-21T17:52:11Z` and contains no task or turn ID. Read-only Store queries
+return zero runs, resident-manager bindings, and skill rows for task
+`01a02587-...` and turn `01a02587-1dd6-...`; the Store still contains 19 total
+historical skill rows. Therefore this is another AR-263 Desktop hook-dispatch
+observation, not a valid empty selection and not exact-status prompt proof. A
+skill was deliberately not loaded without authoritative activation.
+
+No Codex canary, provider call, child, Store mutation, provider-route change,
+rule promotion, candidate advance, or matrix movement followed. Claude login
+remains the operator gate before any new Claude or ZCode Agency-parent draw.

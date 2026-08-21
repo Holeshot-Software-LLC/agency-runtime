@@ -60,6 +60,12 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
   it in the updated first-pass header. The real Store has 19 historical
   `skills_loaded` rows, including Codex `openai-docs`. Fresh installed-session
   evidence is still required.
+- Fresh Desktop task `01a02587-1489-7e13-834e-3299ae05fb43` began after the
+  install but received no first-response Agency header. Its task and turn IDs
+  join to zero Store runs, resident bindings, and skill rows; the hook log did
+  not advance past `2026-08-21T17:52:11Z`. The first user turn was the recovery
+  prompt rather than exact `agency status`, so the exact prompt control remains
+  unrun. No skill was loaded without authoritative activation.
 - Codex activation draw session `01a0255a-b6ba-7880-a427-982c4397c8fd`, trace
   `01a0255a-c4b2-7472-8617-6534e9a8fa21`, stopped at
   `workforce_inference_failed`. Planner and recruiter responses were applied;
@@ -78,10 +84,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 
 1. Claude CLI reports `loggedIn=false`; the operator must restore Claude login.
    Do not retry either consumed Claude work unit.
-2. The current Codex Desktop task began before the exact installed lifecycle
-   could inject its SessionStart snapshot. It cannot gain that header
-   retroactively. A completely new task is required; if it still has no header,
-   preserve that as the AR-263 Desktop dispatch gap.
+2. A post-install Desktop task still dispatched no observable lifecycle hook
+   and has no Store binding. Preserve that as AR-263 while keeping the unsent
+   exact-status first-prompt control distinct. Do not load a skill or emit a
+   fabricated empty header while activation is unavailable.
 3. ZCode's one draw proved its CLI and generic native child, but its ordinary
    Agency parent planner reached `claude-subscription` and failed before the
    separately pinned GLM child judge. Do not broaden Option A into ordinary
@@ -99,13 +105,12 @@ Agency staffing, and never infer a provider from the parent host.
 
 ## next-bounded-work-package
 
-1. Start a completely new Codex Desktop task in this repository. Send exact
-   `agency status` first. Preserve the first response and verify that its Agency
-   header is present and that any loaded skill is Store-backed; do not invent a
-   `none` result if lifecycle evidence is unavailable.
-2. If the header appears, perform one provider-free skill load and verify the
-   updated `Skills loaded` line plus its Store row. Do not launch a child merely
-   to test the header.
+1. Preserve fresh task `01a02587-...` as a repeated AR-263 lifecycle-dispatch
+   failure, not as an exact-status response. If repeating the strict control,
+   use another new task and send exact `agency status` first.
+2. Only if a Store-backed header appears, perform one provider-free skill load
+   and verify its updated `Skills loaded` line plus Store row. Do not launch a
+   child merely to test the header.
 3. Operator restores Claude authentication. Recheck it before authorizing one
    genuinely different Claude hiring work unit. Never replay the consumed SAP
    or Erlang units.

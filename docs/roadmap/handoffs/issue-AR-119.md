@@ -68,9 +68,11 @@ moved.
   Agency decision or child. The ZCode draw started a generic host child but its
   Agency parent planner failed through expired `claude-subscription`; its
   artifacts have zero v6 card markers. Neither draw was retried.
-- Claude remains logged out. The current Codex Desktop task cannot retroactively
-  receive SessionStart evidence, so its fresh installed header and skill line
-  require a completely new task.
+- Claude remains logged out. A completely new Codex Desktop task
+  `01a02587-...` again received no lifecycle snapshot or first-response header;
+  the hook log and Store have no task-correlated evidence. Its first user turn
+  was the continuation prompt rather than exact `agency status`, so the strict
+  prompt control remains unrun. No skill load was attempted without activation.
 - **Option A's three-host pin phase remains complete.** OpenClaw and Hermes are
   deferred to Linux, not waived. Rule 9 remains five-host.
 
@@ -100,9 +102,11 @@ moved.
 ## exact-blocker
 
 1. Restore Claude CLI login before any new Claude or ZCode Agency-parent draw.
-2. Start a new Codex Desktop task. If it still lacks the Agency header, record
-   the AR-263 Desktop hook-dispatch failure; do not publish `loaded: none` as
-   evidence. Codex child visibility remains a separate upstream blocker.
+2. AR-263's Desktop hook-dispatch failure recurred in fresh task `01a02587-...`:
+   no header, current hook-log event, Store run, or resident binding exists.
+   The intended exact-status first prompt was not sent, so do not describe that
+   specific control as executed or publish `loaded: none` as evidence. Codex
+   child visibility remains a separate upstream blocker.
 3. ZCode's ordinary parent planner reached Claude before the GLM child judge.
    Do not widen Option A into general parent routing to bypass authentication.
 4. Genuine post-AR-261 hiring, ZCode plural-card proof, and fresh skill capture
@@ -124,10 +128,10 @@ moved.
 
 ## next-bounded-work-package
 
-1. In a completely new Codex Desktop task, send exact `agency status` first.
-   Preserve the first header and verify its Store correlation.
-2. If active, load one skill without spawning a child and prove the updated
-   `Skills loaded` line plus the corresponding Store row.
+1. Preserve the fresh Desktop failure under AR-263. If the exact prompt control
+   is repeated, start another new task and send exact `agency status` first.
+2. Load one skill without spawning a child only after a Store-backed header is
+   active; task `01a02587-...` was correctly left without a skill attempt.
 3. Owner restores Claude authentication. Then authorize one genuinely different
    bounded Claude hiring draw; never replay SAP or Erlang.
 4. After the parent path is healthy, run one ZCode plural-card proof with the

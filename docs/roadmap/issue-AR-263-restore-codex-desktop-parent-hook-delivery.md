@@ -42,6 +42,14 @@ an activation failure as a legitimate empty staffing result.
   delegation plan. The hook log contains no current-task `SessionStart` or
   `UserPromptSubmit`, and the Store has no current run or resident-manager
   binding for this task.
+- A second completely new Desktop task,
+  `01a02587-1489-7e13-834e-3299ae05fb43`, began at `2026-08-21T18:13:24Z`
+  after the exact-main install. Its first assistant response again contained no
+  Agency or skill header. The hook log had not advanced since
+  `2026-08-21T17:52:11Z`, and the Store contained zero runs, resident-manager
+  bindings, or skill rows for either the task or turn ID. The intended exact
+  `agency status` control was not actually the first user turn, so this is a
+  repeated lifecycle-dispatch observation rather than that exact prompt proof.
 - A fresh Codex CLI control already proved the parent path: it loaded
   `agency-steward` and emitted the exact Store-backed header. That evidence is
   retained and is not generalized to the Desktop frontend.
