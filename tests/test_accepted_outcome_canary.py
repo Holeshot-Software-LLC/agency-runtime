@@ -68,8 +68,16 @@ def _card(slug: str) -> dict[str, object]:
 
 
 class _Store:
-    def __init__(self, *, provider: str = PROVIDER) -> None:
+    def __init__(
+        self,
+        *,
+        provider: str = PROVIDER,
+        binding_kind: str = "child_id",
+        missing_launch: bool = False,
+    ) -> None:
         self.provider = provider
+        self.binding_kind = binding_kind
+        self.missing_launch = missing_launch
 
     def get_workforce_worker(self, slug: str) -> dict[str, object]:
         assert slug == ACCEPTED_OUTCOME_CONTRACTOR_SLUG
@@ -83,14 +91,17 @@ class _Store:
     def get_native_child_staffing_decision(self, decision_id: str) -> dict[str, object]:
         producer = decision_id == PRODUCER_DECISION
         child_id = "producer-child" if producer else "verifier-child"
+        launch_id = (
+            None if self.missing_launch else ("producer-launch" if producer else "verifier-launch")
+        )
         return {
             "decision_id": decision_id,
             "host": "claude",
             "parent_session_id": "parent-session",
             "parent_trace_id": "parent-trace",
-            "launch_id": "producer-launch" if producer else "verifier-launch",
-            "binding_kind": "child_id",
-            "binding_id": child_id,
+            "launch_id": launch_id,
+            "binding_kind": self.binding_kind,
+            "binding_id": child_id if self.binding_kind == "child_id" else launch_id,
             "nonce": "producer-nonce" if producer else "verifier-nonce",
             "provider_receipt_digest": "d" * 64,
             "provider_attempts": [
@@ -105,14 +116,17 @@ class _Store:
     def get_native_child_delivery_verification(self, decision_id: str) -> dict[str, object]:
         producer = decision_id == PRODUCER_DECISION
         child_id = "producer-child" if producer else "verifier-child"
+        launch_id = (
+            None if self.missing_launch else ("producer-launch" if producer else "verifier-launch")
+        )
         return {
             "decision_id": decision_id,
             "host": "claude",
             "parent_session_id": "parent-session",
             "parent_trace_id": "parent-trace",
-            "launch_id": "producer-launch" if producer else "verifier-launch",
-            "binding_kind": "child_id",
-            "binding_id": child_id,
+            "launch_id": launch_id,
+            "binding_kind": self.binding_kind,
+            "binding_id": child_id if self.binding_kind == "child_id" else launch_id,
             "child_id": child_id,
             "nonce": "producer-nonce" if producer else "verifier-nonce",
             "artifact_digest": PRODUCER_DIGEST if producer else "e" * 64,
@@ -259,13 +273,15 @@ def test_readiness_and_wrong_confirmation_never_prepare_or_execute(
     assert ACCEPTED_OUTCOME_CONFIRMATION in refused["unmet_prerequisites"][-1]
 
 
+@pytest.mark.parametrize("binding_kind", ["child_id", "launch_id"])
 def test_success_reports_both_actual_providers_and_no_model_text(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
+    binding_kind: str,
 ) -> None:
     _set_master(monkeypatch)
     backend = _Backend(_accepted_collection(promoted=True))
-    _prepare(monkeypatch, store=_Store(), backend=backend)
+    _prepare(monkeypatch, store=_Store(binding_kind=binding_kind), backend=backend)
 
     report = subject.run_accepted_outcome_canary(
         "claude",
@@ -287,12 +303,64 @@ def test_success_reports_both_actual_providers_and_no_model_text(
     }
     assert report["producer"]["cards"][0]["specialist_slug"] == (ACCEPTED_OUTCOME_CONTRACTOR_SLUG)
     assert report["verifier"]["cards"][0]["specialist_slug"] == "code-reviewer"
+    assert report["producer"]["child_id"] == "producer-child"
+    assert report["verifier"]["child_id"] == "verifier-child"
     assert report["accepted_outcome"]["recorded"] is True
     assert report["invocation"]["host_accepted_outcome_reason"] == "accepted"
     assert report["invocation"]["parent_recruiter_provider_requested"] == PROVIDER
     assert "output" not in report["invocation"]
     assert "secret child" not in json.dumps(report)
     assert backend.calls == 1
+
+
+def test_unrecognized_route_binding_cannot_pass(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _set_master(monkeypatch)
+    backend = _Backend(_accepted_collection())
+    _prepare(monkeypatch, store=_Store(binding_kind="task_id"), backend=backend)
+
+    report = subject.run_accepted_outcome_canary(
+        "claude",
+        execute=True,
+        confirm=ACCEPTED_OUTCOME_CONFIRMATION,
+        db_path=tmp_path / "agency.db",
+        inspector=_native,
+        backend_factory=lambda *_args, **_kwargs: backend,
+    )
+
+    assert report["canary_passed"] is False
+    assert report["unmet_prerequisites"][-1] == (
+        "accepted-outcome route, delivery, or Store result projection was invalid"
+    )
+
+
+def test_launch_binding_without_a_bounded_launch_id_cannot_pass(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _set_master(monkeypatch)
+    backend = _Backend(_accepted_collection())
+    _prepare(
+        monkeypatch,
+        store=_Store(binding_kind="launch_id", missing_launch=True),
+        backend=backend,
+    )
+
+    report = subject.run_accepted_outcome_canary(
+        "claude",
+        execute=True,
+        confirm=ACCEPTED_OUTCOME_CONFIRMATION,
+        db_path=tmp_path / "agency.db",
+        inspector=_native,
+        backend_factory=lambda *_args, **_kwargs: backend,
+    )
+
+    assert report["canary_passed"] is False
+    assert report["unmet_prerequisites"][-1] == (
+        "accepted-outcome route, delivery, or Store result projection was invalid"
+    )
 
 
 def test_collector_refusal_is_named_and_cannot_pass(

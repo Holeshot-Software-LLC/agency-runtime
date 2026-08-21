@@ -26,6 +26,7 @@ related:
   - docs/roadmap/AR-119-acceptance-evidence.md
   - docs/roadmap/AR-119-39ff6dca-recruiter-diagnostic-evidence.md
   - docs/roadmap/AR-119-fcffd96c-hiring-diagnostic-evidence.md
+  - docs/roadmap/AR-119-9685a16d-accepted-outcome-evidence.md
   - docs/decisions/0102-defer-one-shot-application-evaluation.md
   - docs/decisions/0103-bind-named-regulated-assurance-to-typed-staffing.md
   - docs/roadmap/handoffs/issue-AR-119.md
@@ -40,6 +41,7 @@ related:
   - docs/roadmap/issue-AR-252-record-verified-acceptance-outcomes.md
   - docs/roadmap/issue-AR-253-dynamic-team-dispatch-on-every-harness.md
   - docs/roadmap/issue-AR-259-preserve-terminal-hiring-state.md
+  - docs/roadmap/issue-AR-260-accept-verified-launch-bindings-in-outcome-canary.md
   - docs/roadmap/issue-AR-255-inference-owned-host-proven-child-staffing.md
   - docs/roadmap/issue-AR-256-canonical-nine-rule-completion-contract.md
   - docs/roadmap/issue-AR-200-diagnosable-decision-conformance.md
@@ -59,7 +61,7 @@ epic: routing
 issue_id: AR-119
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
-depends_on: [AR-115, AR-116, AR-118, AR-125, AR-179, AR-180, AR-185, AR-190, AR-228, AR-252, AR-253, AR-255, AR-256]
+depends_on: [AR-115, AR-116, AR-118, AR-125, AR-179, AR-180, AR-185, AR-190, AR-228, AR-252, AR-253, AR-255, AR-256, AR-259, AR-260]
 blocks: [AR-178, AR-200, AR-201]
 ---
 
@@ -4290,6 +4292,28 @@ verification passes 103/103. The local recovery pair is `de9ef543` /
 `13413c53`, and all 12 proportional local gates pass in 1.3 minutes. No retry
 followed and **no matrix cell moved**.
 
+### AR-259 merged; accepted outcome exposes a reporter-only binding defect — 2026-08-20
+
+PR #306 merged the terminal-hiring diagnostic as exact main `06f10171` with
+`[skip ci]` and no hosted run. Claude, Codex, and ZCode were reinstalled from
+that merge. One telemetry-preceded Claude draw for pair `9685a16d...` then
+completed both native producer and verifier children and recorded one accepted
+outcome for the existing `typescript-application-engineer` contractor.
+
+The host collector returned `accepted`, but the top-level report failed closed.
+Claude bound each prelaunch route by exact `launch_id`, while the reporter
+treated every route binding ID as a child ID and required `binding_kind` to be
+`child_id`. The verified delivery rows independently recorded the real child
+IDs and otherwise matched the route on decision, host, parent, launch, binding,
+nonce, cards, digests, and requested `codex-subscription` provider.
+
+The exact content-free correlation and evidence limits are in
+[`AR-119-9685a16d-accepted-outcome-evidence.md`](AR-119-9685a16d-accepted-outcome-evidence.md).
+AR-260 changes only the reporter projection: exact child-ID and exact launch-ID
+bindings may pass; every unknown or mismatched shape still fails closed. This
+draw reused an existing contractor, did not exercise a genuine hire, retained
+no disposable host artifact after cleanup, and moves no matrix cell.
+
 ### Still required before AR-119 can close
 
 - Preserve the local repairs across AR-128 through AR-176 while completing their
@@ -4321,16 +4345,15 @@ followed and **no matrix cell moved**.
 
 ### Next bounded work package
 
-Keep Option A frozen. Finish AR-259's proportional local gates and recovery
-pair, create its required tracker only with explicit owner authority, and
-publish it through a reviewed `[skip ci]` PR. Reinstall all three supported
-Windows harnesses from the exact merge. Then run one telemetry-preceded Claude
-draw: its receipt must decisively distinguish a skipped hire from a consumed
-hiring attempt before any further selection repair or retry is considered.
-After that boundary is understood, prove bounded staffing and one genuine hire
-plus reuse across Claude, Codex, and ZCode; compare authenticated dashboard
-views with the Store-backed CLI; and publish the exact-main Linux OpenClaw and
-Hermes handoff. Hosted Actions remain forbidden.
+Keep Option A frozen. Finish AR-260's provider-free local gates and recovery
+pair, create its owner-authorized tracker, and publish it through a reviewed
+`[skip ci]` PR. Reinstall all three supported Windows harnesses from the exact
+merge. Then run one telemetry-preceded Claude draw without retry; require the
+reporter to accept only the independently verified route/delivery projection.
+After that, prove bounded staffing and one genuine hire plus reuse across
+Claude, Codex, and ZCode; compare authenticated dashboard views with the
+Store-backed CLI; and publish the exact-main Linux OpenClaw and Hermes handoff.
+Hosted Actions remain forbidden.
 Formal R8 credit remains a separate owner decision because it advances the
 candidate and re-anchors R2/R3/R7. Codex child work waits for an upstream readable
 started-child surface; do not burn repeated canaries. After ZCode plural-card

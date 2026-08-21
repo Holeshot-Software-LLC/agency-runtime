@@ -10,6 +10,7 @@ related:
   - docs/roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md
   - docs/roadmap/issue-AR-209-bind-opaque-codex-child-launches.md
   - docs/roadmap/issue-AR-252-record-verified-acceptance-outcomes.md
+  - docs/roadmap/issue-AR-260-accept-verified-launch-bindings-in-outcome-canary.md
   - docs/roadmap/issue-AR-253-dynamic-team-dispatch-on-every-harness.md
   - docs/decisions/0118-require-inference-owned-staffing.md
   - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
@@ -27,7 +28,7 @@ issue_id: AR-255
 priority: p0
 tracker_url: null
 depends_on: []
-blocks: [AR-119, AR-180, AR-252, AR-253]
+blocks: [AR-119, AR-180, AR-252, AR-253, AR-260]
 ---
 
 # AR-255: Make native child staffing inference-owned and host-proven
