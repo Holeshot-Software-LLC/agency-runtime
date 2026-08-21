@@ -3,7 +3,7 @@ title: "AR-119: Implement inference-first real-time workforce and contractor lif
 status: in_progress
 category: roadmap
 created: 2026-07-21
-updated: 2026-08-20
+updated: 2026-08-21
 tags: [routing, workforce, contractors, delegation, participation, evaluation, performance, multi-harness]
 related:
   - docs/decisions/0080-plan-before-recruiting-from-the-whole-workforce.md
@@ -45,6 +45,8 @@ related:
   - docs/roadmap/issue-AR-259-preserve-terminal-hiring-state.md
   - docs/roadmap/issue-AR-260-accept-verified-launch-bindings-in-outcome-canary.md
   - docs/roadmap/issue-AR-261-disambiguate-technical-diagnosis-risk.md
+  - docs/roadmap/issue-AR-262-preserve-slow-host-dashboard-parity.md
+  - docs/roadmap/issue-AR-263-restore-codex-desktop-parent-hook-delivery.md
   - docs/roadmap/issue-AR-255-inference-owned-host-proven-child-staffing.md
   - docs/roadmap/issue-AR-256-canonical-nine-rule-completion-contract.md
   - docs/roadmap/issue-AR-200-diagnosable-decision-conformance.md
@@ -64,7 +66,7 @@ epic: routing
 issue_id: AR-119
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
-depends_on: [AR-115, AR-116, AR-118, AR-125, AR-179, AR-180, AR-185, AR-190, AR-228, AR-252, AR-253, AR-255, AR-256, AR-259, AR-260, AR-261]
+depends_on: [AR-115, AR-116, AR-118, AR-125, AR-179, AR-180, AR-185, AR-190, AR-228, AR-252, AR-253, AR-255, AR-256, AR-259, AR-260, AR-261, AR-262, AR-263]
 blocks: [AR-178, AR-200, AR-201]
 ---
 
@@ -4370,13 +4372,16 @@ formal Rule-4 matrix cell moved.
 
 ### Next bounded work package
 
-Keep Option A and the now-passing Claude outcome reporter frozen. Prove bounded
-staffing and one genuine hire plus reuse across Claude, Codex, and ZCode using
-each host's supported CLI surface; do not repeat the accepted-outcome draw.
-Treat Codex's upstream child visibility limit faithfully and stop at a named
-host boundary rather than weakening proof. Then compare authenticated dashboard
-views with the Store-backed CLI and publish the exact-main Linux OpenClaw and
-Hermes handoff. Hosted Actions remain forbidden.
+Keep Option A and the now-passing Claude outcome reporter frozen. The first
+post-AR-261 draw stopped before staffing because the owner's Claude OAuth
+session was expired; do not retry that session or work unit. After the owner
+restores Claude login and explicitly authorizes a genuinely different draw,
+prove bounded staffing and one genuine hire plus reuse across Claude, Codex,
+and ZCode using each host's supported CLI surface. Treat Codex's upstream child
+visibility limit faithfully and stop at a named host boundary rather than
+weakening proof. Independently compare authenticated dashboard views with the
+Store-backed CLI and publish the exact-main Linux OpenClaw and Hermes handoff.
+Hosted Actions remain forbidden.
 Formal R8 credit remains a separate owner decision because it advances the
 candidate and re-anchors R2/R3/R7. Codex child work waits for an upstream readable
 started-child surface; do not burn repeated canaries. After ZCode plural-card
@@ -4385,7 +4390,7 @@ Rule 9 remain later authorized packages.
 
 ### Context checkpoint constraints
 
-- Continue on `codex/ar119-claude-outcome-evidence` from the current local
+- Continue on `codex/ar119-three-host-live-evidence` from the current local
   recovery checkpoint; do not reset, discard, or silently rewrite the
   accumulated AR-119 work.
 - Keep tracker issue #132 open and do not claim the north-star goal complete.
@@ -4415,6 +4420,59 @@ medical, clinical, or patient context is present; the mandatory isolated
 security reviewer and all other risk markers remain unchanged. Exact evidence
 and limitations are in
 [`AR-119-f4f3d45e-hiring-risk-evidence.md`](AR-119-f4f3d45e-hiring-risk-evidence.md).
+
+### Post-AR-261 Claude draw stops at expired authentication — 2026-08-21
+
+PR #310 merged AR-261 to exact main `692a9257` with zero hosted workflow runs;
+Claude, Codex, and ZCode were freshly installed from that merge and reported no
+runtime drift. The proposed Erlang/OTP BEAM scheduler specialty was absent from
+the 31-contractor roster, and provider-free compilation classified its
+technical diagnosis contract as standard risk without owner approval.
+
+The single telemetry-preceded Claude attempt used session `9b7c38b0-...` and
+trace `2f3a63c8-...`. Installed SessionStart and UserPromptSubmit hooks ran, but
+Claude authentication was already expired. Failure receipt `93f0adfd-...`
+records `workforce_provider_unavailable`, a failed `claude-haiku` planner with
+`provider_no_valid_response`, `inference_unavailable`, and no hiring reason
+codes. Claude itself recorded zero model tokens and zero cost; no Agent call,
+decision, hiring case, or child launch exists, and the roster stayed 31. This
+does not exercise the AR-261 classifier through live hiring. Do not retry the
+session or task; a restored Claude login and a newly authorized, genuinely
+different draw are required. No matrix cell moved.
+
+### Dashboard host parity repair is locally live-proven — 2026-08-21
+
+The durable dashboard was refreshed from exact main `692a9257` and was active,
+reachable, manifest-current, and definition-current. Its workforce view exactly
+matched CLI: 294 active workers, 263 employees, 31 contractors, and 32 hiring
+records. The host view did not: CLI status and authenticated `/api/hosts`
+reported Claude `enabled-runtime-unverified`, while the rendered control view
+remained `inspection-stale`.
+
+AR-262 identifies a cache-observation defect, not provider routing or Claude
+authentication. Slow inspection finishes after the two-second dashboard
+deadline; its successful result was refreshable for three seconds, but the UI
+polls every 15 seconds. The local candidate retains the three-second refresh
+horizon and adds a 30-second last-good stale horizon. Past that horizon it
+still clears actionable fields and fails closed. A normal rendered refresh,
+without prewarming `/api/hosts`, now matches all five CLI host states and keeps
+the workforce counts exact. Affected verification passes 189 Python/hardening
+tests and 134 UI tests; the warning-strict production spine passes 802 with 20
+skips, all 12 proportional local gates pass in 1.6 minutes, and focused Ruff
+checks are green. Tracker #311 is linked and the no-Actions publication sequence
+is owner-authorized; no hosted work or live provider call followed, and no
+matrix cell moved.
+
+### 2026-08-21 Codex Desktop parent activation gap
+
+Codex CLI parent activation remains proven: the fresh control loaded
+`agency-steward` and emitted the exact Store-backed header. The current Codex
+Desktop task is a separate failure. Although Desktop reports the Agency plugin
+enabled and its hook state trusted, the task has no current lifecycle hook
+entries, injected snapshot, Store run, or resident-manager binding. Its
+`Agency/Agencies loaded: none` output is not staffing evidence; AR-263 records
+the host-lifecycle defect. No provider call or child draw was used to diagnose
+it, and no matrix cell moved.
 
 ## Acceptance
 

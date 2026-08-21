@@ -48,6 +48,12 @@ operator has no case to approve.
   contract and its triggering field cannot be claimed.
 - Tracker [#309](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/309)
   is open with the required `epic:security` label.
+- PR #310 merged exact candidate `717be676` to main `692a9257` with `[skip ci]`
+  and zero hosted workflow runs. Claude, Codex, and ZCode were freshly
+  installed from that merge with no runtime drift.
+- Post-fix Claude session `9b7c38b0-...` stopped before staffing because the
+  owner profile was logged out. Receipt `93f0adfd-...` has no hiring reason
+  codes, and the workforce stayed at 31; it is not AR-261 behavioral evidence.
 
 ## Approach
 
@@ -79,6 +85,6 @@ remain owner-gated. Explicit prohibitions continue to be ignored as grants.
 - [x] The focused hiring suite passes 88/88 and all 12 proportional local
       gates pass in 1.3 minutes on the exact candidate.
 - [x] Tracker issue #309 is created after explicit authorization.
-- [ ] The candidate is published through a reviewed PR with no hosted work.
+- [x] The candidate is published through reviewed PR #310 with no hosted work.
 - [ ] One later authorized exact-main draw proves a genuine hire; no retry of
-      session `f4f3d45e-...` is permitted.
+      sessions `f4f3d45e-...` or `9b7c38b0-...` is permitted.

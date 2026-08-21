@@ -153,6 +153,12 @@ _ASSETS: dict[str, tuple[str, str]] = {
 
 _HOST_INSPECTION_CACHE_SECONDS = 3.0
 _HOST_INSPECTION_DEADLINE_SECONDS = 2.0
+# A completed inspection can arrive after the bounded HTTP request that started
+# it.  Keep that last-good evidence actionable long enough for the dashboard's
+# 15-second control poll to observe it while still refreshing after three
+# seconds.  Without the separate stale horizon, a routinely slow host can
+# finish every inspection successfully yet appear permanently stale in the UI.
+_HOST_INSPECTION_STALE_SECONDS = 30.0
 _ACTIVITY_NAMES = (
     "runs",
     "preflight_failures",
@@ -611,6 +617,7 @@ class _HostInspectionCoordinator:
         hosts: tuple[str, ...] | None = None,
         cache_seconds: float = _HOST_INSPECTION_CACHE_SECONDS,
         deadline_seconds: float = _HOST_INSPECTION_DEADLINE_SECONDS,
+        stale_seconds: float | None = None,
         executor: ThreadPoolExecutor | None = None,
     ) -> None:
         if hosts is None:
@@ -621,6 +628,10 @@ class _HostInspectionCoordinator:
         self.inspect_one = inspect_one
         self.cache_seconds = max(0.0, cache_seconds)
         self.deadline_seconds = max(0.0, deadline_seconds)
+        self.stale_seconds = max(
+            self.cache_seconds,
+            self.cache_seconds if stale_seconds is None else max(0.0, stale_seconds),
+        )
         self.executor = executor or ThreadPoolExecutor(
             max_workers=max(1, len(hosts)),
             thread_name_prefix="agency-host-inspection",
@@ -630,6 +641,7 @@ class _HostInspectionCoordinator:
         # lock, so re-entrancy is intentional here.
         self._lock = RLock()
         self._cache: dict[str, tuple[float, dict[str, Any]]] = {}
+        self._stale_after: dict[str, float] = {}
         self._in_flight: dict[str, Future[dict[str, Any]]] = {}
         self._invalidated: set[str] = set()
 
@@ -660,7 +672,9 @@ class _HostInspectionCoordinator:
             if host in self._invalidated:
                 self._invalidated.discard(host)
                 return
-            self._cache[host] = (monotonic() + self.cache_seconds, value)
+            completed_at = monotonic()
+            self._cache[host] = (completed_at + self.cache_seconds, value)
+            self._stale_after[host] = completed_at + self.stale_seconds
 
     def invalidate(self, host: str | None = None) -> None:
         """Discard cached and in-flight evidence after a native state change."""
@@ -668,6 +682,7 @@ class _HostInspectionCoordinator:
         with self._lock:
             for target in targets:
                 self._cache.pop(target, None)
+                self._stale_after.pop(target, None)
                 future = self._in_flight.get(target)
                 if future is not None:
                     self._invalidated.add(target)
@@ -709,7 +724,8 @@ class _HostInspectionCoordinator:
                     continue
                 expires_at, value = cached
                 item = dict(value)
-                if expires_at <= now:
+                stale_after = self._stale_after.get(host, expires_at)
+                if stale_after <= now:
                     item["inspection_status"] = "stale"
                     item["registered"] = None
                     item["enabled"] = None
@@ -732,7 +748,9 @@ class _HostInspectionCoordinator:
         return rendered
 
 
-_HOST_INSPECTIONS = _HostInspectionCoordinator()
+_HOST_INSPECTIONS = _HostInspectionCoordinator(
+    stale_seconds=_HOST_INSPECTION_STALE_SECONDS,
+)
 
 
 def _route_lab_native_records(

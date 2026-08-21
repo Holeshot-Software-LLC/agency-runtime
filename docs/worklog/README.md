@@ -3,7 +3,7 @@ title: Worklog
 status: active
 category: worklog
 created: 2026-07-10
-updated: 2026-08-20
+updated: 2026-08-21
 tags: []
 related: []
 supersedes: []
@@ -1099,6 +1099,10 @@ This registry connects repository history to the roadmap and to optional detail 
 | `0b48bb51` | 2026-08-20 | fix(ar261): disambiguate technical diagnosis risk | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-261](../roadmap/issue-AR-261-disambiguate-technical-diagnosis-risk.md) | [detail](2026-08-20-0b48bb51-disambiguate-technical-diagnosis-risk.md) |
 | `44596e90` | 2026-08-20 | docs(ar119): bind technical diagnosis recovery pair | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-261](../roadmap/issue-AR-261-disambiguate-technical-diagnosis-risk.md) | null |
 | `2a5feaa5` | 2026-08-21 | docs(ar261): link authorized tracker records | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-259](../roadmap/issue-AR-259-preserve-terminal-hiring-state.md), [AR-261](../roadmap/issue-AR-261-disambiguate-technical-diagnosis-risk.md) | null |
+| `692a9257` | 2026-08-21 | Merge pull request #310: fix technical diagnosis hiring risk [skip ci] | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-261](../roadmap/issue-AR-261-disambiguate-technical-diagnosis-risk.md) | null |
+| `3752ef99` | 2026-08-21 | docs(ar119): record expired Claude auth boundary | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-261](../roadmap/issue-AR-261-disambiguate-technical-diagnosis-risk.md) | null |
+| `1a8071ca` | 2026-08-21 | fix(dashboard): preserve slow host inspection parity | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-236](../roadmap/issue-AR-236-achieve-full-cli-dashboard-parity.md), [AR-262](../roadmap/issue-AR-262-preserve-slow-host-dashboard-parity.md) | null |
+| `204ca567` | 2026-08-21 | docs(ar119): record Codex Desktop activation gap | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-262](../roadmap/issue-AR-262-preserve-slow-host-dashboard-parity.md), [AR-263](../roadmap/issue-AR-263-restore-codex-desktop-parent-hook-delivery.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
