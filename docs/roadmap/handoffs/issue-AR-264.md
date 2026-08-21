@@ -14,9 +14,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-264
-branch: codex/ar264-exact-main-live-evidence
-evidence_commit: e796b56b441c9906b9997188362951d9ba1fd73f
-minimum_ledger_commit: 9f44c14209f9fcfc72c1338448027d8710c2990e
+branch: codex/ar264-exact-main-smoke-evidence
+evidence_commit: f76050d786cda3a4bc545d3d506d8c1687ce3574
+minimum_ledger_commit: 1fd292b016f67429ca51289430974ffb2dd8382f
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 ---
@@ -26,74 +26,108 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 ## checkpoint
 
 - Worktree `C:\Workspaces\Holeshot Software\agency-runtime-ar264-rollout` is on
-  `codex/ar264-exact-main-live-evidence`, based exactly on merged remote main
-  `da851c65`. The primary checkout has unrelated owner WIP and is untouched.
-- Context telemetry reads 23.9 percent remaining. The repair and its ledger are
-  clean at `9f44c142`; this gate receipt now forms the next recovery checkpoint.
+  `codex/ar264-exact-main-smoke-evidence`, based exactly on merged remote main
+  `f76050d7`. The primary checkout and every unrelated worktree are untouched.
+- PR #315 merged the package-v1 migration repair with `[skip ci]`; GitHub ran no
+  hosted workflow. The exact merge was installed before any host smoke.
+- This capsule records bounded installed-host evidence. It does not claim that
+  Codex Desktop lifecycle delivery, completed Claude contractor execution,
+  ZCode Agency staffing, or AR-119 matrix acceptance passed.
 
 ## completed-evidence
 
-- PR #314 merged as `da851c65` with `[skip ci]`; `origin/main` has that exact
-  merge and GitHub reports no run for it.
-- Exact-main Claude bundle installation succeeded, but the Store correctly
-  preserved all 15 workers because the v2 migration recognized only a
-  synthetic canonical v1 predecessor. Codex, ZCode, dashboard installation,
-  and all provider draws stopped at that evidence boundary.
-- Real Store inspection proved 15 revision-zero malformed package versions.
-  Fourteen matched the original contract projection; backend-service-engineer
-  additionally required its earlier capability and evidence fields.
-- The repair pins all 15 historical prompt hashes and reconstructs both the
-  pre- and post-August-6 v1 identities. The Store transaction rechecks exact
-  content, metadata, recruitment-contract bytes, and hash before staging v2.
-- A disposable SQLite backup advanced 15/15 workers, was idempotent on pass two,
-  retained two-version lineage throughout, and kept TypeScript at two accepted
-  artifacts with one remaining for promotion. The real Store was byte-for-byte
-  unchanged by the diagnostic.
-- Dashboard API test projects `changed artifacts and focused verification
-  results`; all 134 dashboard UI tests pass and no false evidence fallback is
-  rendered for that worker.
-- Focused predecessor tests cover both shipped v1 identities, backend replay,
-  auditable historical hiring evidence, and fail-safe preservation of an exact
-  prompt with amended recruitment metadata.
-- The widened contractor, Store, installer, lifecycle, hiring, and selection
-  suite reports 332 passed and one skipped in 247.07 seconds.
-- All 14 governing local gates pass in 16.5 minutes: 806 passed and 20 skipped
-  in the production spine, 695 matrix-evidence tests, 161 workflow-contract
-  tests, 151 current mutation snippets, and 134 dashboard UI tests above the
-  configured line, branch, and function coverage floors.
-- Metadata covers 731 Markdown files, the policy projection and 1,085-row
-  worklog are current, documentation validation and `git diff --check` pass,
-  and deterministic routing passes every correctness, safety, performance,
-  scale, and CLI-startup gate.
-- GitHub issue #313 is open with the exact AR-264 title, canonical body, URL,
-  and `epic:roster-governance` label. Repository-wide strict tracker checks
-  still fail on pre-existing missing trackers and historical state/label debt;
-  neither strict failure reports AR-264.
-- Claude CLI remains logged out. That blocks paid Claude live smoke but not
-  local repair verification or managed bundle installation.
+- Owner Store backup
+  `pre-ar264-f76050d7-20260821T171621.410934Z.db` is 21,999,616 bytes, passes
+  SQLite integrity, and has SHA-256
+  `9b9936456e90313b76920a4dfd3890c7c44b0243d4a2781592182325aa2bcdaa`.
+- Exact-main installation advanced all 15 known package contractors to revision
+  1, contract v2, and two-version lineage. TypeScript remains worker
+  `54cb1db1-...`, version `contractor-2-6b0d5cae3b65a44d`, with two accepted
+  outcomes and 2/3 promotion readiness.
+- Installed bundle digests are Claude `2eaa89cc75f8...`, Codex
+  `75f6519c74ba...`, and ZCode `2f1bb95ba204...`. Native roots, staged payloads,
+  launchers, registration, and configuration are current. OpenClaw and Hermes
+  are absent here by explicit deferral.
+- The dashboard task survived as an owned, current registration but was stopped
+  after reboot. `dashboard service start` restored authenticated health without
+  reinstalling or changing config.
+- Before the new hire, authenticated dashboard `/api/workforce` and CLI returned
+  the same 31 contractors at `401e883532e9...`; five host rows matched at
+  `003caceee19d...` and master generation 56. CLI now returns 32 contractors;
+  post-hire dashboard parity was not re-polled.
+- Provider-free skills verification passes three exact hook cases: Claude
+  `Skill`, Codex `skill_view`, and ZCode `Skill` each persist the skill and emit
+  it in the updated first-pass header. The real Store has 19 historical
+  `skills_loaded` rows, including Codex `openai-docs`. Fresh installed-session
+  evidence is still required.
+- Fresh Desktop task `01a02587-1489-7e13-834e-3299ae05fb43` began after the
+  install but received no first-response Agency header. Its task and turn IDs
+  join to zero Store runs, resident bindings, and skill rows; the hook log did
+  not advance past `2026-08-21T17:52:11Z`. The first user turn was the recovery
+  prompt rather than exact `agency status`, so the exact prompt control remains
+  unrun. No skill was loaded without authoritative activation.
+- Codex activation draw session `01a0255a-b6ba-7880-a427-982c4397c8fd`, trace
+  `01a0255a-c4b2-7472-8617-6534e9a8fa21`, stopped at
+  `workforce_inference_failed`. Planner and recruiter responses were applied;
+  no routing decision, specialist, child start, delegation, delivery, skill, or
+  final header followed. The isolated host artifact did load `agency-steward`.
+- ZCode host session `sess_57b47433-ac40-4dcf-b9c8-ca9ec9784320` exited 0 and
+  started generic child `agent_469477bd-183d-4725-9209-541c79802cd4`.
+  Agency run `62345127-...`, trace `37bdf697-...`, instead failed its ordinary
+  parent planner through expired `claude-subscription`; it made no decision,
+  specialist, skill, or delegation row. The child artifacts contain zero
+  `[AGENCY INFERENCE TEAM v6]` markers, so this is host-child proof only.
+- Claude authentication was restored. New session `560e6da4-...`, trace
+  `66dca68e-...`, received the exact installed Agency capsule, accepted
+  `cobol-cics-vsam-diagnostics-specialist`, and applied standard-risk hiring case
+  `35f59955-...`. Active contractor worker `7c7306dc-...` raises the roster to
+  32. Native-child inference used `codex-subscription` as pinned.
+- Claude's one progress line omitted the required five-line header. Its only
+  child `aa0a0207e0caa208d` remained open with no delivery verification or
+  conclusion when the fixed 420-second ceiling terminated the host. The run is
+  parent/hiring proof, not completed contractor execution.
+- Conditional ZCode session `sess_524d8b86-...`, trace `b08d8d79-...`, exited 0
+  with generic child `agent_ce74bc0f-...`. Agency's planner applied, but both
+  recruiters were contract-invalid `staff_without_safe_team`; no decision or
+  card exists and the GLM judge was never reached. All four artifacts contain
+  zero Agency markers.
+- No failed work unit was retried. No provider route, Option A pin, contractor
+  outcome, promotion, rule, or AR-119 matrix cell changed. The applied Claude
+  hire is the only workforce mutation in this slice.
+- Documentation validation passes 731 files; 8 warning-strict OpenClaw/Hermes
+  canary, artifact-reader, and native-child bridge boundary tests pass.
 
 ## exact-blocker
 
-The exact-main acceptance claim is not complete until this repair reaches main
-and the real Store advances from package v1. Claude authentication is an
-operator blocker for its later live smoke; no provider draw has been attempted
-in this package. Hosted decision conformance remains unavailable locally and
-was not dispatched.
+1. A post-install Desktop task still dispatched no observable lifecycle hook
+   and has no Store binding. Preserve that as AR-263 while keeping the unsent
+   exact-status first-prompt control distinct. Do not load a skill or emit a
+   fabricated empty header while activation is unavailable.
+2. Genuine post-AR-261 hiring is proven, but Claude header compliance, verified
+   child delivery, and completed contractor work are not. The COBOL work unit
+   is consumed and must not be retried.
+3. ZCode plural-card delivery failed before the separately pinned GLM judge
+   because both ordinary recruiter responses violated the safe-team contract.
+   Preserve the consumed unit and keep routing unchanged.
+4. Codex native-child proof and fresh installed skill header remain open.
+   Hosted Actions remain forbidden.
 
 ## same-task-continuity
 
-Keep inference as the sole staffing and hiring authority. The repair recognizes
-only closed package history and performs no inference. Never rewrite the
-malformed historical version in place: advance it through new immutable v2
-lineage while preserving its evidence and accepted outcomes.
+Keep inference as the sole staffing and hiring authority. Option A applies only
+to each canary's child judge plus the separately authorized Claude
+accepted-outcome parent recruiter. Never reinterpret a generic host child as
+Agency staffing, and never infer a provider from the parent host.
 
 ## next-bounded-work-package
 
-Publish the clean repair branch, open a non-draft follow-up PR to exact main,
-verify the remote head and `CLEAN` rollup, and merge with `[skip ci]` without
-dispatching Actions. Then install only the resulting exact main into Claude,
-Codex, ZCode, and the dashboard. Run provider smoke only after installation and
-authentication boundaries are rechecked.
+1. Run proportional documentation/local gates and create the recovery/ledger
+   pair. Do not run another Windows provider or child draw in this package.
+2. Publish only through a verified-clean `[skip ci]` PR, verify zero hosted
+   workflows, and leave tracker #313 open because host smoke is incomplete.
+3. Hand exact published main to the owner's Linux box through
+   `AR-119-openclaw-hermes-verification-packet.md`; do not represent unsupported
+   canary or artifact surfaces as live proof.
 
 ## verification
 
@@ -105,31 +139,26 @@ python scripts/update_worklog.py --check
 python scripts/verify_docs.py
 ruff check agency_runtime tests scripts
 ruff format --check agency_runtime tests scripts
-python -m pytest <named-fast-production-spine> -q -W error
-python -m pytest tests/test_known_contractor_install.py \
-  tests/test_contractor_version_identity.py tests/test_native_installer.py \
-  tests/test_roster_bulk_seed.py tests/test_workforce_lifecycle.py \
-  tests/test_workforce_hiring_contract.py tests/test_workforce_dynamic_hiring.py \
-  tests/test_workforce_selection_safety.py -q -W error
+python -m pytest tests/test_host_hooks.py::test_successful_tool_use_injects_updated_first_pass_header \
+  tests/test_host_hooks.py::test_agency_hook_claude_records_real_tool_evidence_from_stdin \
+  -q -W error
 node --test tests/dashboard_ui.test.mjs
-python -m agency_runtime.cli eval routing --json --no-details
-python -m agency_runtime.cli eval decision-conformance --repository . --json
+python -m agency_runtime.cli dashboard service status --json
+python -m agency_runtime.cli status --json
+python -m agency_runtime.cli workforce list --state contractor --limit 100 --json
 git diff --check
 ~~~
 
-The complete 14-gate local harness and routing evaluation pass. Linux-only
-behavior, integration coverage shards, and the decision-conformance mutation
-phase remain unrun; no hosted workflow was dispatched.
+The 14-gate repair harness remains green from the exact merged candidate. This
+installed-smoke slice adds the three focused skill-hook cases and bounded live
+draw evidence above. No exhaustive shard, Linux host, or hosted workflow ran.
 
 ## constraints
 
-- Do not run the real Store migration from this unmerged evidence branch. It
-  was proven only on a disposable transactionally backed-up copy.
-- Claude's managed bundle is at exact main `da851c65`; Codex, ZCode, and the
-  dashboard still point at the previous installed source until repaired main
-  exists. The Store remains package v1.
+- The real Store migration already ran from exact merged main `f76050d7`; do
+  not rerun or edit it manually. Preserve the named backup.
 - Hosted CI is not authorized or needed for this local gate package. Claude
-  authentication requires operator action before its live smoke.
+  authentication is restored; no further Windows draw belongs in this package.
 - OpenClaw and Hermes remain explicitly deferred to the later Linux handoff.
 - Do not mutate or clean the primary checkout or unrelated worktrees.
 - Do not change provider routing, Option A pins, AR-119 matrix cells, or

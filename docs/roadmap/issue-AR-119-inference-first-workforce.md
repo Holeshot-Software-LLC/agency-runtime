@@ -4373,16 +4373,17 @@ formal Rule-4 matrix cell moved.
 
 ### Next bounded work package
 
-Keep Option A and the now-passing Claude outcome reporter frozen. The first
-post-AR-261 draw stopped before staffing because the owner's Claude OAuth
-session was expired; do not retry that session or work unit. After the owner
-restores Claude login and explicitly authorizes a genuinely different draw,
-prove bounded staffing and one genuine hire plus reuse across Claude, Codex,
-and ZCode using each host's supported CLI surface. Treat Codex's upstream child
-visibility limit faithfully and stop at a named host boundary rather than
-weakening proof. Independently compare authenticated dashboard views with the
-Store-backed CLI and publish the exact-main Linux OpenClaw and Hermes handoff.
-Hosted Actions remain forbidden.
+Keep Option A and the passing Claude outcome reporter frozen. Exact main
+`f76050d7` is installed into Claude, Codex, ZCode, and the dashboard; the real
+Store migration and dashboard/CLI parity are proven. Start a completely new
+Codex Desktop task to test current SessionStart and skill-header delivery; the
+existing task cannot acquire either retroactively. If that fails, preserve the
+AR-263 Desktop boundary rather than publishing an invented empty header.
+After the owner restores Claude login, authorize one genuinely different
+hiring unit, then run ZCode's plural-card proof through its existing GLM child
+pin without changing ordinary parent routing. Treat Codex's upstream child
+visibility limit faithfully. Publish the Linux OpenClaw/Hermes handoff only
+after that bounded three-host checkpoint. Hosted Actions remain forbidden.
 Formal R8 credit remains a separate owner decision because it advances the
 candidate and re-anchors R2/R3/R7. Codex child work waits for an upstream readable
 started-child surface; do not burn repeated canaries. After ZCode plural-card
@@ -4474,6 +4475,59 @@ entries, injected snapshot, Store run, or resident-manager binding. Its
 `Agency/Agencies loaded: none` output is not staffing evidence; AR-263 records
 the host-lifecycle defect. No provider call or child draw was used to diagnose
 it, and no matrix cell moved.
+
+### 2026-08-21 AR-264 exact-main installation and bounded smoke
+
+PR #315 merged the package-v1 migration repair as exact main `f76050d7` with no
+hosted run. A verified backup preceded installation. All 15 packaged
+contractors advanced to revision 1 / employment-contract v2 with immutable
+two-version lineage; TypeScript retained its two accepted outcomes and 2/3
+promotion readiness. Claude, Codex, ZCode, and the dashboard were freshly
+installed from that merge.
+
+Authenticated dashboard workforce and host projections converge exactly with
+CLI: 31 contractors at digest `401e883532e9...`, five host rows at
+`003caceee19d...`, and master generation 56. Three focused exact-main hook tests
+prove skill persistence and updated header projection on Claude, Codex, and
+ZCode; the real Store contains 19 historical skill rows. A fresh installed
+Codex Desktop skill header is still unproven until a new task starts.
+
+The new Codex activation draw stopped at applied parent inference but before an
+Agency decision or child. ZCode exited 0 and spawned a generic host child, but
+its Agency parent planner failed through expired `claude-subscription`; the
+artifact contains zero Agency v6 card markers. Neither result is staffing.
+Neither work unit was retried, provider routing stayed unchanged, Claude
+remains logged out, and no rule or matrix cell moved.
+
+### 2026-08-21 authenticated Claude hire and conditional ZCode proof
+
+After the owner restored first-party Claude authentication, one new COBOL/CICS
+COMMAREA and VSAM diagnosis unit exercised the repaired live hiring path.
+Claude session `560e6da4-...`, Agency trace `66dca68e-...`, received a real
+8,164-character current-turn Agency capsule naming the newly inferred
+`cobol-cics-vsam-diagnostics-specialist`. Decision `2f589fa7-...` was accepted,
+hiring case `35f59955-...` was applied at standard risk, and the active
+contractor roster advanced from 31 to 32 with worker `7c7306dc-...`. Native-
+child inference selected that contractor through actual provider
+`codex-subscription`.
+
+The host execution boundary did not complete. Claude's first progress sentence
+omitted the required five-line header, its one native Agent child remained a
+generic open worker run, and the host was terminated at the fixed 420-second
+ceiling before a child conclusion or final parent response. No native-child
+delivery-verification row exists. The draw proves genuine hiring plus a healthy
+parent path, not compliant response rendering or completed contractor work.
+
+That healthy parent path admitted one conditional ZCode recovery-and-security
+plural attempt. ZCode session `sess_524d8b86-...` exited 0 and its single
+generic child returned useful prose, but Agency trace `b08d8d79-...` failed
+closed before staffing. The Claude-backed planner applied; two recruiter
+responses were rejected as `staff_without_safe_team` for a unit requiring
+three specialists with a maximum of four. There is no routing decision, card,
+Agency worker run, or delivery verification, and all four child artifacts have
+zero Agency v6/native-child/header markers. The pinned `zcode-recruiter` / GLM
+child judge was never reached. Both draws are consumed, no provider route or
+pin changed, and no matrix cell moved.
 
 ## Acceptance
 

@@ -2567,3 +2567,157 @@ failure to the Desktop frontend/task lifecycle. Open upstream Codex reports
 21639 and 33413 describe the same class of frontend hook-dispatch gap; AR-263
 owns the self-contained local product record. No provider call, child draw,
 candidate promotion, rule promotion, or matrix movement followed.
+
+### EXACT-MAIN AR-264 INSTALL: shipped contractors advance to v2
+
+PR #315 merged the shipped package-v1 migration repair as exact main
+`f76050d7` with `[skip ci]`; no hosted workflow ran. Before installation, the
+owner Store was copied to
+`pre-ar264-f76050d7-20260821T171621.410934Z.db`. The 21,999,616-byte backup
+passes SQLite integrity and has SHA-256
+`9b9936456e90313b76920a4dfd3890c7c44b0243d4a2781592182325aa2bcdaa`.
+
+Installing that exact merge advanced all 15 known packaged contractors from
+either shipped package-v1 identity to revision 1, employment contract v2, and
+two-version lineage. TypeScript remains worker `54cb1db1-...`, version
+`contractor-2-6b0d5cae3b65a44d`, with its two accepted outcomes and 2/3
+promotion readiness intact. Claude, Codex, and ZCode were freshly installed at
+bundle digests `2eaa89cc75f8...`, `75f6519c74ba...`, and
+`2f1bb95ba204...`; their native projections and launchers are current. This is
+merged migration and installation proof, not live contractor execution proof.
+
+### EXACT-MAIN SMOKE: Codex and ZCode stop before Agency child proof
+
+The single Codex activation draw used session
+`01a0255a-b6ba-7880-a427-982c4397c8fd` and trace
+`01a0255a-c4b2-7472-8617-6534e9a8fa21`. Its `codex-fast` planner and recruiter
+responses were applied, but preflight ended `workforce_inference_failed` with
+no routing decision, specialist, spawn, delegation, delivery, skill, or final
+header. The isolated host artifact did load the `agency-steward` parent frame;
+it then truthfully reported that no accepted plan row supplied a native task.
+This is parent hook delivery inside the isolated CLI canary, not a Codex child
+measurement and not retroactive evidence for the already-running Desktop task.
+
+The single ZCode draw exited 0 in host session
+`sess_57b47433-ac40-4dcf-b9c8-ca9ec9784320` and started generic child
+`agent_469477bd-183d-4725-9209-541c79802cd4`. Agency run
+`62345127-0dd0-439a-9baa-1e32a485d9fa`, trace
+`37bdf697-e521-452c-8c44-c594a8fa2caf`, stopped earlier:
+`workforce_provider_unavailable` after its ordinary parent planner reached the
+expired `claude-subscription`. It wrote no decision, specialist, skill,
+delegation, worker run, or model receipt. The host artifacts contain zero
+`[AGENCY INFERENCE TEAM v6]` markers, so the process-scoped GLM child-judge pin
+was never exercised. The generic child is not Agency staffing. Neither draw was
+retried, provider routing stayed unchanged, and no matrix cell moved.
+
+### EXACT-MAIN OBSERVABILITY: dashboard parity and skill capture
+
+After reboot, the dashboard registration and exact-main manifest remained
+owned and current, but its scheduled worker was stopped. Starting the existing
+service restored authenticated health without reinstalling or changing config.
+Dashboard `/api/workforce` and exact-main CLI then returned the same 31
+contractor rows at digest `401e883532e9...`. The host surface initially exposed
+Claude as truthfully stale while its bounded background inspection ran; the
+second poll completed all five inspections. Dashboard and CLI host projections
+then matched exactly at digest `003caceee19d...`, with identical master
+generation 56.
+
+Skill capture is provider-free proven on this exact tree. Three focused hook
+cases pass: Claude `Skill`, Codex `skill_view`, and ZCode `Skill` persist the
+loaded skill and inject it into the updated first-pass header. The owner Store
+contains 19 historical `skills_loaded` rows, including Codex `openai-docs`.
+Those rows prove the capture path has operated, not that this already-running
+Desktop task received the new install's lifecycle hooks. A completely new
+Codex task must show the fresh header and skill line; if it does not, AR-263
+remains the exact boundary. Claude authentication is still expired. No hire,
+accepted outcome, promotion, rule promotion, or matrix movement followed.
+
+### FRESH DESKTOP RECHECK: lifecycle dispatch remains absent
+
+Completely new Codex Desktop task
+`01a02587-1489-7e13-834e-3299ae05fb43` began at
+`2026-08-21T18:13:24Z`, after the exact-main installation. Its persisted task
+record has one user turn and no prior turn: the first user message was the
+AR-119/AR-264 recovery prompt, not the intended exact `agency status` control.
+The first assistant response at `18:13:38Z` contains no `Agency/Agencies
+loaded` or `Skills loaded` header and no v6 marker.
+
+The independent lifecycle sources agree. `hooks.log` last changed at
+`2026-08-21T17:52:11Z` and contains no task or turn ID. Read-only Store queries
+return zero runs, resident-manager bindings, and skill rows for task
+`01a02587-...` and turn `01a02587-1dd6-...`; the Store still contains 19 total
+historical skill rows. Therefore this is another AR-263 Desktop hook-dispatch
+observation, not a valid empty selection and not exact-status prompt proof. A
+skill was deliberately not loaded without authoritative activation.
+
+No Codex canary, provider call, child, Store mutation, provider-route change,
+rule promotion, candidate advance, or matrix movement followed. Claude login
+remains the operator gate before any new Claude or ZCode Agency-parent draw.
+
+### EXACT-MAIN AUTHENTICATED CLAUDE HIRE: parent passes, child times out
+
+The owner restored Claude login and `claude auth status` reported first-party
+`claude.ai` authentication on the Max subscription. A provider-free baseline
+found no COBOL, CICS, VSAM, COMMAREA, or z/OS contractor among the existing 31.
+One genuinely different, telemetry-preceded draw then used Claude session
+`560e6da4-75b6-41c8-8733-5dc101d6a14b` and Agency trace
+`66dca68e-2d98-4ffd-abd9-44555bb875a5`.
+
+Agency's installed `UserPromptSubmit` hook injected an 8,164-character current-
+turn capsule at SHA-256 `b25aafcb92aaf7f2077f37b47d743d1e0a8944866e4356dc6d9c7a93fa063038`.
+Its exact header named `agency-steward` plus
+`cobol-cics-vsam-diagnostics-specialist`, `delegated: none`, `Skills loaded:
+none`, workforce inference through Sonnet, and `Recruited via:
+inferred+hiring`. The Store agrees: run `849ce231-...` reached preflight
+`ready`, decision `2f589fa7-...` was accepted at confidence 1.0, hiring case
+`35f59955-...` was applied as standard risk without owner approval, and one
+`specialists_loaded` row was written. Workforce projection now contains 32
+contractors, including active Agency contractor `cobol-cics-vsam-diagnostics-
+specialist` as worker `7c7306dc-...`.
+
+Claude then emitted one progress sentence without the required five-line
+header and called exactly one native `Agent`. Native-child decision
+`native-child-cca0f519569741f4f09095124af80a3b` selected the same specialist
+through actual provider `codex-subscription`, but child
+`aa0a0207e0caa208d` remained an open generic worker run. It produced only an
+incomplete thinking record before the parent hit the fixed 420-second ceiling.
+There is no child delivery-verification row, no child conclusion, and no final
+parent response; Store run `849ce231-...` remains active because termination
+precluded finalization. This proves a genuine post-AR-261 hire and a healthy
+Agency parent path, not compliant response-header emission, verified card
+delivery, or completed contractor execution. The draw is consumed and was not
+retried.
+
+### EXACT-MAIN ZCODE PLURAL ATTEMPT: recruiter rejects; child stays generic
+
+With the Claude parent path restored, one new ZCode recovery-and-security work
+unit ran from a clean 50.1-percent telemetry checkpoint. Host session
+`sess_524d8b86-4a46-4e09-99bf-5c1653e5d068` exited 0 and started exactly one
+native child, `agent_ce74bc0f-7091-4b61-aec7-91ffe90742c1`, which returned a
+substantive no-tool PostgreSQL recovery runbook and threat model.
+
+Agency evidence invalidates that prose as plural-card proof. Run
+`d8c3b9a5-...`, trace `b08d8d79-...`, ended `preflight_failed` /
+`workforce_inference_failed`. Its `claude-subscription` Sonnet planner applied,
+but both recruiter attempts were contract-invalid with
+`staff_without_safe_team`: the unit required three specialists, allowed four,
+and each response ranked six executable candidates without a safe team. The
+Store contains no routing decision, specialist, Agency worker run, delegation,
+captured assignment, or delivery verification, so the process-scoped
+`zcode-recruiter` / GLM child judge was never reached.
+
+All four host artifacts are retained. The 2,232-record child transcript and
+its metadata/output files contain zero `[AGENCY INFERENCE TEAM v6]`, native-
+child, or Agency-header markers, including record zero. The child is generic
+host work, not Agency staffing. The draw is consumed and was not retried;
+ordinary provider routing and all Option A pins remain unchanged. No rule was
+promoted and **no AR-119 matrix cell moved**.
+
+Post-recording governance passes metadata for 731 Markdown files, policy and
+worklog checks, documentation validation for all 731 files, and `git diff
+--check`. The focused exact-main Linux boundaries pass 8/8 warning-strict tests:
+unsupported host-canary execution, unsupported child-artifact reading, and the
+Hermes/OpenClaw native-child bridge cases. The first sandboxed invocation
+stopped before collection on the private-root trust guard; the identical run
+with its required owner-private test root passed in 2.56 seconds. No product
+code changed in this evidence slice.
