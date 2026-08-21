@@ -33,9 +33,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-119
-branch: codex/ar119-claude-outcome-evidence
-evidence_commit: 0b48bb51b5f14802281ab53a3d82c0d587dacae6
-minimum_ledger_commit: f9a5e3f376fbc5d13cfefcbe0a8af089fc6d19c6
+branch: codex/ar119-three-host-live-evidence
+evidence_commit: 692a92577da5ca34dc15fb31f103f2a88b58427f
+minimum_ledger_commit: 717be676056e19b47dfd18db1c46e63f60e31e5c
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
@@ -50,21 +50,25 @@ sections. This is a recovery map, not evidence that an unproven cell moved.
 - **WORK ONLY in `C:\Workspaces\Holeshot Software\agency-runtime-main-rollout`**.
   The primary checkout has owner WIP; never commit, revert, stash, install, or
   clean there.
-- PR #308 merged AR-260 to exact main `00c4dc7e`; exact tree
-  `e3c8dd03ff30db3041b3ba343ecdda16955a1349`. `[skip ci]` was used and GitHub
-  shows zero branch or merge workflow runs.
-- Claude/Codex/ZCode were freshly installed from that merge. All three launcher
-  manifests name runtime digest `75e998e4af26...`; status reported zero drift.
+- PR #310 merged AR-261 to exact main `692a9257`; reviewed head `717be676` has
+  the same tree. `[skip ci]` was used and GitHub shows zero branch or merge
+  workflow runs.
+- Claude/Codex/ZCode were freshly installed from that merge. Current bundles
+  are `1aa8ed45...`, `990e83d4...`, and `47e7bb7e...`; status reports zero
+  runtime drift.
 - Claude pair `2919802e...` passes the exact-main accepted-outcome reporter.
   AR-260 tracker #307 closed automatically with every acceptance item met.
 - Ordinary Claude session `f4f3d45e...` detected the missing SAP specialty and
   attempted hiring, but terminal status was `pending_approval`; no case or
   contractor survived atomic rollback. AR-261 owns the reproduced technical
   `diagnosis` -> `medical` false positive before any second draw.
-- AR-261 recovery pair `0b48bb51` / `f9a5e3f3` is clean. Focused hiring tests
-  pass 88/88 and all 12 proportional local gates pass in 1.3 minutes. Its
-  tracker is #309; publication, exact-main install, and post-fix draw remain
-  pending. AR-259 tracker #305 is closed.
+- AR-261 is merged and installed. Focused hiring tests pass 88/88 and all 12
+  proportional local gates pass in 1.3 minutes. Tracker #309 remains open until
+  a real post-fix hire is proven; AR-259 tracker #305 is closed.
+- Post-fix Claude session `9b7c38b0...` loaded the exact installed hooks but
+  stopped before staffing because Claude OAuth was expired. Receipt
+  `93f0adfd...` records `workforce_provider_unavailable`, one failed Haiku
+  planner attempt, and no hiring codes. Roster 31 -> 31; no child launched.
 - **Option A's three-host pin phase is complete.** OpenClaw/Hermes are deferred,
   not waived; Rule 9 stays five-host and never closes on three.
 ## completed-evidence
@@ -116,22 +120,25 @@ sections. This is a recovery map, not evidence that an unproven cell moved.
 5. The first ordinary Claude hiring smoke is consumed. It created an unstaffed
    generic child only; do not repeat it. The no-cost evidence is
    `AR-119-f4f3d45e-hiring-risk-evidence.md`.
+6. The first post-fix work unit is also consumed, but did not reach staffing:
+   session `9b7c38b0...` failed on expired Claude OAuth with zero model tokens
+   and zero cost. Do not retry it. The owner must restore Claude login and
+   explicitly authorize a genuinely different draw.
 
 ## next-bounded-work-package
 
 Keep Option A frozen. Owner-authorized sequence:
 
-1. Commit this exact-main Claude proof and its ledger as a clean recovery pair.
-2. Publish AR-261's provider-free technical-diagnosis classifier repair through
-   a clean no-hosted-work PR. Tracker #309, its focused 88-test suite, and all
-   12 proportional local gates are complete.
-3. Freshly install that exact main. Run telemetry before each bounded
-   evaluation and never retry a failed draw.
-   Smoke Codex once with its supported trust bypass and ZCode once through its
-   bundled Node CLI; preserve upstream visibility limits exactly.
-4. Prove one genuine hire plus later reuse without duplicate contractors.
-5. Compare Store-backed CLI views with the authenticated rendered dashboard.
-6. Publish the Linux OpenClaw/Hermes handoff on main for the next box.
+1. Commit the exact-main install/authentication boundary and ledger as a clean
+   recovery pair.
+2. Independently compare Store-backed CLI views with the authenticated rendered
+   dashboard while no live provider retry is allowed.
+3. Owner action: restore Claude subscription login. Then obtain explicit
+   authorization for one genuinely different, telemetry-preceded hiring draw.
+4. If that draw hires, smoke Codex once with its supported trust bypass and
+   ZCode once through its bundled Node CLI to prove reuse without a duplicate;
+   preserve upstream visibility limits exactly.
+5. Publish the Linux OpenClaw/Hermes handoff on main for the next box.
 
 ## same-task-continuity
 

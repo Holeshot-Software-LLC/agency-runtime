@@ -3,7 +3,7 @@ title: "AR-119 vision-completion loop final status"
 status: active
 category: roadmap
 created: 2026-08-17
-updated: 2026-08-20
+updated: 2026-08-21
 tags: [roadmap, report, autonomous, loop, AR-119, AR-253, AR-255]
 related:
   - docs/roadmap/AR-119-vision-completion-autonomous-brief.md
@@ -2488,7 +2488,36 @@ AR-261 narrows only that overloaded marker: diagnosis is exempted only when
 technical context is asserted and medical context is absent; context-free,
 medical, clinical, or patient diagnosis remains owner-gated. The mandatory
 isolated security reviewer and all other risk classes remain unchanged.
-Focused hiring-contract and dynamic-hiring tests pass locally. Publication,
-All 12 proportional local gates also pass in 1.3 minutes. Publication,
-exact-main installation, and a genuinely different post-fix draw remain; **no
-matrix cell moved**.
+Focused hiring-contract and dynamic-hiring tests pass 88/88, and all 12
+proportional local gates pass in 1.3 minutes. PR #310 merged the repair to exact
+main `692a9257` with `[skip ci]`; GitHub recorded zero branch or merge workflow
+runs. Claude, Codex, and ZCode were freshly installed from that merge with no
+reported runtime drift.
+
+### EXACT-MAIN CLAUDE DRAW: authentication stopped before staffing
+
+Before the draw, the complete contractor roster contained 31 workers and exact
+searches for `erlang`, `beam`, and `nif` returned zero matches. Provider-free
+compilation of the proposed Erlang/OTP BEAM scheduler contract returned no risk
+classes, `human_approval_required=false`, and `enabled=true`. Telemetry then
+reported 35.8 percent remaining against the 50-percent checkpoint; the clean
+merged-main commit above satisfied that checkpoint.
+
+The single post-fix attempt used fresh Claude session
+`9b7c38b0-2a51-4ab1-b9af-8d6f67e6c4c2`. Claude's host-written transcript
+proves the exact installed SessionStart and UserPromptSubmit hooks ran, the
+plugin instruction and resident-steward frame loaded, and no Agent call or
+child launch followed. The parent stopped with `OAuth session expired and
+could not be refreshed`, zero input/output tokens, and zero cost. `claude auth
+status` then reported `loggedIn=false`, `authMethod=none`.
+
+Agency trace `2f3a63c8-cc2f-42c6-984b-6b4be2d49e09` and immutable failure
+receipt `93f0adfd-4005-4785-983f-25077da1b0b9` close the other side of the
+boundary: stage `routing`, reason `workforce_provider_unavailable`, one failed
+`claude-haiku` planner attempt with `provider_no_valid_response`, staffing
+reason `inference_unavailable`, and no hiring reason codes. Recent intent and
+post-start child-launch projections are empty; the contractor count remains
+31. This is installed-hook and authentication evidence, not staffing, hiring,
+reuse, or an AR-261 behavioral result. Do not retry this session or work unit.
+A fresh Claude login and explicit authorization for a genuinely different draw
+are required. **No matrix cell moved.**

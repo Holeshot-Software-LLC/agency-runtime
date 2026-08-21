@@ -3,7 +3,7 @@ title: "AR-119: Implement inference-first real-time workforce and contractor lif
 status: in_progress
 category: roadmap
 created: 2026-07-21
-updated: 2026-08-20
+updated: 2026-08-21
 tags: [routing, workforce, contractors, delegation, participation, evaluation, performance, multi-harness]
 related:
   - docs/decisions/0080-plan-before-recruiting-from-the-whole-workforce.md
@@ -4370,13 +4370,16 @@ formal Rule-4 matrix cell moved.
 
 ### Next bounded work package
 
-Keep Option A and the now-passing Claude outcome reporter frozen. Prove bounded
-staffing and one genuine hire plus reuse across Claude, Codex, and ZCode using
-each host's supported CLI surface; do not repeat the accepted-outcome draw.
-Treat Codex's upstream child visibility limit faithfully and stop at a named
-host boundary rather than weakening proof. Then compare authenticated dashboard
-views with the Store-backed CLI and publish the exact-main Linux OpenClaw and
-Hermes handoff. Hosted Actions remain forbidden.
+Keep Option A and the now-passing Claude outcome reporter frozen. The first
+post-AR-261 draw stopped before staffing because the owner's Claude OAuth
+session was expired; do not retry that session or work unit. After the owner
+restores Claude login and explicitly authorizes a genuinely different draw,
+prove bounded staffing and one genuine hire plus reuse across Claude, Codex,
+and ZCode using each host's supported CLI surface. Treat Codex's upstream child
+visibility limit faithfully and stop at a named host boundary rather than
+weakening proof. Independently compare authenticated dashboard views with the
+Store-backed CLI and publish the exact-main Linux OpenClaw and Hermes handoff.
+Hosted Actions remain forbidden.
 Formal R8 credit remains a separate owner decision because it advances the
 candidate and re-anchors R2/R3/R7. Codex child work waits for an upstream readable
 started-child surface; do not burn repeated canaries. After ZCode plural-card
@@ -4385,7 +4388,7 @@ Rule 9 remain later authorized packages.
 
 ### Context checkpoint constraints
 
-- Continue on `codex/ar119-claude-outcome-evidence` from the current local
+- Continue on `codex/ar119-three-host-live-evidence` from the current local
   recovery checkpoint; do not reset, discard, or silently rewrite the
   accumulated AR-119 work.
 - Keep tracker issue #132 open and do not claim the north-star goal complete.
@@ -4415,6 +4418,25 @@ medical, clinical, or patient context is present; the mandatory isolated
 security reviewer and all other risk markers remain unchanged. Exact evidence
 and limitations are in
 [`AR-119-f4f3d45e-hiring-risk-evidence.md`](AR-119-f4f3d45e-hiring-risk-evidence.md).
+
+### Post-AR-261 Claude draw stops at expired authentication — 2026-08-21
+
+PR #310 merged AR-261 to exact main `692a9257` with zero hosted workflow runs;
+Claude, Codex, and ZCode were freshly installed from that merge and reported no
+runtime drift. The proposed Erlang/OTP BEAM scheduler specialty was absent from
+the 31-contractor roster, and provider-free compilation classified its
+technical diagnosis contract as standard risk without owner approval.
+
+The single telemetry-preceded Claude attempt used session `9b7c38b0-...` and
+trace `2f3a63c8-...`. Installed SessionStart and UserPromptSubmit hooks ran, but
+Claude authentication was already expired. Failure receipt `93f0adfd-...`
+records `workforce_provider_unavailable`, a failed `claude-haiku` planner with
+`provider_no_valid_response`, `inference_unavailable`, and no hiring reason
+codes. Claude itself recorded zero model tokens and zero cost; no Agent call,
+decision, hiring case, or child launch exists, and the roster stayed 31. This
+does not exercise the AR-261 classifier through live hiring. Do not retry the
+session or task; a restored Claude login and a newly authorized, genuinely
+different draw are required. No matrix cell moved.
 
 ## Acceptance
 
