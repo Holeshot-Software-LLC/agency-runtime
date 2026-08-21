@@ -50,10 +50,8 @@ metadata and compiled prompt contain explicit evidence requirements.
   worker and evaluation material. The TypeScript capsule is 2,710 bytes at
   `contractor-2-6b0d5cae3b65a44d`.
 - Pull request [#314](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/314)
-  merged as exact main `da851c65`; no hosted run was dispatched. Installing
-  that revision into Claude exposed that all 15 real package-v1 workers were
-  preserved instead of advanced, so live completion stopped before Codex,
-  ZCode, dashboard, or provider draws.
+  merged as exact main `da851c65`; installing it exposed that all 15 real
+  package-v1 workers were preserved instead of advanced.
 - The exact-main defect was a synthetic predecessor: the migration test minted
   the post-August-6 canonical version, while the real Store retained the older
   `contractor-1-sha256:<9 hex>` package identity. The backend contract also had
@@ -67,7 +65,16 @@ metadata and compiled prompt contain explicit evidence requirements.
 - A transactionally backed-up disposable copy of the owner Store advanced
   15/15 workers, advanced none on its second pass, retained two-version lineage
   for every worker, and preserved TypeScript's two accepted outcomes and 2/3
-  promotion readiness. The real Store's size, mtime, and SHA-256 were unchanged.
+  promotion readiness. Pull request
+  [#315](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/315)
+  merged that repair as exact main `f76050d7`; both PRs used `[skip ci]` and
+  no hosted workflow ran.
+- Before exact-main installation, the owner Store was copied to
+  `pre-ar264-f76050d7-20260821T171621.410934Z.db` with SHA-256
+  `9b9936456e90313b76920a4dfd3890c7c44b0243d4a2781592182325aa2bcdaa`.
+  The real installation then upgraded all 15 known packaged contractors to
+  revision 1 / contract v2 / two-version lineage. TypeScript retained its two
+  accepted outcomes and 2/3 promotion readiness.
 - Specialist prompt reads now decode exact active revision metadata, and the
   dashboard overlays its real `evidence_requirements` into owner detail.
 - The repaired candidate passes all 14 governing local gates in 16.5 minutes:
@@ -77,11 +84,35 @@ metadata and compiled prompt contain explicit evidence requirements.
   evaluation passes every correctness, safety, performance, and scale gate.
   Linux behavior, integration coverage shards, and the hosted-only mutation
   phase remain outside this local package.
+- Exact main `f76050d7` is freshly installed for Claude, Codex, ZCode, and the
+  dashboard. Their current bundle digests are `2eaa89cc75f8...`,
+  `75f6519c74ba...`, and `2f1bb95ba204...`; all three native projections are
+  current and report no configuration drift.
+- After the reboot, the existing dashboard task was registered and current but
+  stopped. Starting that owned task restored authenticated health. Dashboard
+  and CLI then returned the same 31 contractor rows at digest
+  `401e883532e9...`; after one bounded background host refresh, all five host
+  rows matched at digest `003caceee19d...`, and master generation 56 matched.
+- Skill capture is provider-free proven on this exact tree: three focused hook
+  cases pass for Claude, Codex, and ZCode, each injecting its loaded skill into
+  the first-pass header. The owner Store contains 19 historical skill-load
+  rows. A fresh post-install Codex Desktop skill header remains a new-task
+  lifecycle check, not evidence available from this already-running task.
+- The single exact-main Codex activation draw stopped at parent preflight
+  `workforce_inference_failed` after valid planner and recruiter responses; it
+  produced no routing decision, child, delegation, delivery, or final header.
+  The single ZCode draw exited 0 and started generic host child
+  `agent_469477bd-...`, but Agency trace `37bdf697-...` failed its ordinary
+  planner through the expired `claude-subscription` before staffing. Its host
+  artifacts contain zero Agency v6 delivery markers. Neither draw was retried.
+- Claude CLI remains logged out. That operator boundary blocks a fresh Claude
+  staffing/hiring draw and also blocks ZCode's ordinary parent planner before
+  the separately pinned GLM child judge can be reached. Provider routing was
+  not changed, no accepted outcome or hire was claimed, and no AR-119 matrix
+  cell moved.
 - Tracker [#313](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313)
-  is linked under explicit owner authorization. Non-draft pull request
-  [#314](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/314)
-  publishes the clean candidate to `main` and is explicitly authorized to
-  merge; installation and live smoke testing remain separately authorized.
+  remains open until the fresh-task and authenticated live boundaries above
+  are completed.
 
 ## Approach
 
@@ -130,6 +161,9 @@ whole-workforce recruiter contract merely to repair an owner detail view.
 - [x] Focused contract, hiring, Store, dashboard API, and dashboard UI tests
       pass with Ruff and documentation validation.
 - [x] Tracker issue #313 is created and linked after explicit authorization.
-- [ ] The repaired candidate is merged to main, installed into Claude, Codex,
-      ZCode, and the dashboard, and smoke-tested under the current live-operation
-      boundary. OpenClaw and Hermes remain deferred to the Linux handoff.
+- [x] The repaired candidate is merged to main, migrates the owner Store from
+      both shipped package-v1 identities, is freshly installed into Claude,
+      Codex, ZCode, and the dashboard, and has exact dashboard/CLI parity.
+- [ ] Fresh authenticated Claude, Codex, and ZCode tasks produce Store-backed
+      parent headers and complete the bounded staffing, skill, hiring, and reuse
+      smoke. OpenClaw and Hermes remain deferred to the Linux handoff.

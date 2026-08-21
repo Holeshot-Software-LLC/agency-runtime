@@ -2567,3 +2567,67 @@ failure to the Desktop frontend/task lifecycle. Open upstream Codex reports
 21639 and 33413 describe the same class of frontend hook-dispatch gap; AR-263
 owns the self-contained local product record. No provider call, child draw,
 candidate promotion, rule promotion, or matrix movement followed.
+
+### EXACT-MAIN AR-264 INSTALL: shipped contractors advance to v2
+
+PR #315 merged the shipped package-v1 migration repair as exact main
+`f76050d7` with `[skip ci]`; no hosted workflow ran. Before installation, the
+owner Store was copied to
+`pre-ar264-f76050d7-20260821T171621.410934Z.db`. The 21,999,616-byte backup
+passes SQLite integrity and has SHA-256
+`9b9936456e90313b76920a4dfd3890c7c44b0243d4a2781592182325aa2bcdaa`.
+
+Installing that exact merge advanced all 15 known packaged contractors from
+either shipped package-v1 identity to revision 1, employment contract v2, and
+two-version lineage. TypeScript remains worker `54cb1db1-...`, version
+`contractor-2-6b0d5cae3b65a44d`, with its two accepted outcomes and 2/3
+promotion readiness intact. Claude, Codex, and ZCode were freshly installed at
+bundle digests `2eaa89cc75f8...`, `75f6519c74ba...`, and
+`2f1bb95ba204...`; their native projections and launchers are current. This is
+merged migration and installation proof, not live contractor execution proof.
+
+### EXACT-MAIN SMOKE: Codex and ZCode stop before Agency child proof
+
+The single Codex activation draw used session
+`01a0255a-b6ba-7880-a427-982c4397c8fd` and trace
+`01a0255a-c4b2-7472-8617-6534e9a8fa21`. Its `codex-fast` planner and recruiter
+responses were applied, but preflight ended `workforce_inference_failed` with
+no routing decision, specialist, spawn, delegation, delivery, skill, or final
+header. The isolated host artifact did load the `agency-steward` parent frame;
+it then truthfully reported that no accepted plan row supplied a native task.
+This is parent hook delivery inside the isolated CLI canary, not a Codex child
+measurement and not retroactive evidence for the already-running Desktop task.
+
+The single ZCode draw exited 0 in host session
+`sess_57b47433-ac40-4dcf-b9c8-ca9ec9784320` and started generic child
+`agent_469477bd-183d-4725-9209-541c79802cd4`. Agency run
+`62345127-0dd0-439a-9baa-1e32a485d9fa`, trace
+`37bdf697-e521-452c-8c44-c594a8fa2caf`, stopped earlier:
+`workforce_provider_unavailable` after its ordinary parent planner reached the
+expired `claude-subscription`. It wrote no decision, specialist, skill,
+delegation, worker run, or model receipt. The host artifacts contain zero
+`[AGENCY INFERENCE TEAM v6]` markers, so the process-scoped GLM child-judge pin
+was never exercised. The generic child is not Agency staffing. Neither draw was
+retried, provider routing stayed unchanged, and no matrix cell moved.
+
+### EXACT-MAIN OBSERVABILITY: dashboard parity and skill capture
+
+After reboot, the dashboard registration and exact-main manifest remained
+owned and current, but its scheduled worker was stopped. Starting the existing
+service restored authenticated health without reinstalling or changing config.
+Dashboard `/api/workforce` and exact-main CLI then returned the same 31
+contractor rows at digest `401e883532e9...`. The host surface initially exposed
+Claude as truthfully stale while its bounded background inspection ran; the
+second poll completed all five inspections. Dashboard and CLI host projections
+then matched exactly at digest `003caceee19d...`, with identical master
+generation 56.
+
+Skill capture is provider-free proven on this exact tree. Three focused hook
+cases pass: Claude `Skill`, Codex `skill_view`, and ZCode `Skill` persist the
+loaded skill and inject it into the updated first-pass header. The owner Store
+contains 19 historical `skills_loaded` rows, including Codex `openai-docs`.
+Those rows prove the capture path has operated, not that this already-running
+Desktop task received the new install's lifecycle hooks. A completely new
+Codex task must show the fresh header and skill line; if it does not, AR-263
+remains the exact boundary. Claude authentication is still expired. No hire,
+accepted outcome, promotion, rule promotion, or matrix movement followed.
