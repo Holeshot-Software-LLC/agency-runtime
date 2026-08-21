@@ -46,6 +46,7 @@ related:
   - docs/roadmap/issue-AR-260-accept-verified-launch-bindings-in-outcome-canary.md
   - docs/roadmap/issue-AR-261-disambiguate-technical-diagnosis-risk.md
   - docs/roadmap/issue-AR-262-preserve-slow-host-dashboard-parity.md
+  - docs/roadmap/issue-AR-263-restore-codex-desktop-parent-hook-delivery.md
   - docs/roadmap/issue-AR-255-inference-owned-host-proven-child-staffing.md
   - docs/roadmap/issue-AR-256-canonical-nine-rule-completion-contract.md
   - docs/roadmap/issue-AR-200-diagnosable-decision-conformance.md
@@ -65,7 +66,7 @@ epic: routing
 issue_id: AR-119
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
-depends_on: [AR-115, AR-116, AR-118, AR-125, AR-179, AR-180, AR-185, AR-190, AR-228, AR-252, AR-253, AR-255, AR-256, AR-259, AR-260, AR-261, AR-262]
+depends_on: [AR-115, AR-116, AR-118, AR-125, AR-179, AR-180, AR-185, AR-190, AR-228, AR-252, AR-253, AR-255, AR-256, AR-259, AR-260, AR-261, AR-262, AR-263]
 blocks: [AR-178, AR-200, AR-201]
 ---
 
@@ -4458,8 +4459,20 @@ without prewarming `/api/hosts`, now matches all five CLI host states and keeps
 the workforce counts exact. Affected verification passes 189 Python/hardening
 tests and 134 UI tests; the warning-strict production spine passes 802 with 20
 skips, all 12 proportional local gates pass in 1.6 minutes, and focused Ruff
-checks are green. Tracker and publication authority remain pending; no hosted
-work or live provider call followed, and no matrix cell moved.
+checks are green. Tracker #311 is linked and the no-Actions publication sequence
+is owner-authorized; no hosted work or live provider call followed, and no
+matrix cell moved.
+
+### 2026-08-21 Codex Desktop parent activation gap
+
+Codex CLI parent activation remains proven: the fresh control loaded
+`agency-steward` and emitted the exact Store-backed header. The current Codex
+Desktop task is a separate failure. Although Desktop reports the Agency plugin
+enabled and its hook state trusted, the task has no current lifecycle hook
+entries, injected snapshot, Store run, or resident-manager binding. Its
+`Agency/Agencies loaded: none` output is not staffing evidence; AR-263 records
+the host-lifecycle defect. No provider call or child draw was used to diagnose
+it, and no matrix cell moved.
 
 ## Acceptance
 

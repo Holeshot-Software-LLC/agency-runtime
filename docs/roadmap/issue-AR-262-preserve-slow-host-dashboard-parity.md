@@ -19,7 +19,7 @@ type: issue
 epic: operations
 issue_id: AR-262
 priority: p0
-tracker_url: null
+tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/311
 depends_on: [AR-236]
 blocks: [AR-119]
 ---
@@ -49,8 +49,9 @@ every 15 seconds, so no ordinary UI poll could observe the completed value.
 - The local candidate separates the three-second refresh horizon from a
   30-second last-good stale horizon. A normal rendered refresh now reports the
   same five host states as the CLI while background inspection remains bounded.
-- Tracker creation is pending explicit authorization after the outward write
-  was refused at the approval boundary; no tracker mutation occurred.
+- Tracker [#311](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/311)
+  was created and linked under explicit owner authorization. The clean reviewed
+  candidate has not yet been pushed or merged.
 
 ## Approach
 
@@ -86,8 +87,8 @@ longer actionability contract.
 - [x] Affected tests pass: 189 Python/hardening tests and 134 dashboard UI
       tests; the 802-test warning-strict production spine (20 skips), all 12
       proportional local gates, and focused Ruff checks are green.
-- [ ] After explicit authorization, the tracker issue is linked and the
-      candidate is merged through a non-draft pull request without hosted
+- [x] Tracker issue #311 is linked in the canonical roadmap records.
+- [ ] The candidate is merged through a non-draft pull request without hosted
       Actions.
 - [ ] The merged exact-main dashboard is reinstalled and the same rendered
       parity check passes.

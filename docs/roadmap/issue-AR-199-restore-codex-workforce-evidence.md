@@ -24,7 +24,7 @@ issue_id: AR-199
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/161
 depends_on: []
-blocks: [AR-200]
+blocks: [AR-200, AR-263]
 ---
 
 # AR-199: Restore Codex workforce selection and evidence

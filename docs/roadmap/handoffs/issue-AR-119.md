@@ -16,6 +16,7 @@ related:
   - docs/roadmap/issue-AR-260-accept-verified-launch-bindings-in-outcome-canary.md
   - docs/roadmap/issue-AR-261-disambiguate-technical-diagnosis-risk.md
   - docs/roadmap/issue-AR-262-preserve-slow-host-dashboard-parity.md
+  - docs/roadmap/issue-AR-263-restore-codex-desktop-parent-hook-delivery.md
   - docs/roadmap/AR-119-founding-vision.md
   - docs/roadmap/AR-119-vision-loop-status.md
   - docs/roadmap/AR-119-39ff6dca-recruiter-diagnostic-evidence.md
@@ -35,8 +36,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-119
 branch: codex/ar119-three-host-live-evidence
-evidence_commit: 692a92577da5ca34dc15fb31f103f2a88b58427f
-minimum_ledger_commit: 717be676056e19b47dfd18db1c46e63f60e31e5c
+evidence_commit: 1a8071caf9a594d5b1330f1acc6ef1b9c3c6884b
+minimum_ledger_commit: 38a734cb4cd0fb2d11eeee025904e5632a0559c7
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
@@ -119,9 +120,10 @@ sections. This is a recovery map, not evidence that an unproven cell moved.
    two unsafe teams. PR #304 repaired that output contract, not routing.
 3. Pair `2919802e...` closes AR-260 on exact main. It proves reuse, not a new
    hire or promotion, and the isolated profile retains no Rule-4 artifact.
-4. Genuine hiring remains unproven. Codex parent is solid and its child proof
-   is upstream-blocked. ZCode needs
-   plural cards. OpenClaw/Hermes wait for the Linux box.
+4. Genuine hiring remains unproven. Codex CLI parent is proven, but this
+   Desktop task has no current hook snapshot or Store binding; `loaded: none`
+   is invalid fallback evidence. AR-263 owns that lifecycle defect. Codex child
+   proof remains upstream-blocked; ZCode needs plural cards.
 5. The first ordinary Claude hiring smoke is consumed. It created an unstaffed
    generic child only; do not repeat it. The no-cost evidence is
    `AR-119-f4f3d45e-hiring-risk-evidence.md`.
@@ -129,20 +131,24 @@ sections. This is a recovery map, not evidence that an unproven cell moved.
    session `9b7c38b0...` failed on expired Claude OAuth with zero model tokens
    and zero cost. Do not retry it. The owner must restore Claude login and
    explicitly authorize a genuinely different draw.
-7. AR-262 is locally live-proven but uncommitted. Its tracker, publication,
-   exact-main reinstall, and final rendered parity proof remain open.
+7. AR-262 is locally live-proven and committed as `1a8071ca` / `38a734cb`.
+   Tracker #311 is linked; publication, exact-main reinstall, and the final
+   rendered parity proof remain open.
+8. No provider draw followed the Desktop diagnosis, and no matrix cell moved.
 
 ## next-bounded-work-package
 
 Keep Option A frozen. Owner-authorized sequence:
 
-1. Commit AR-262 and its ledger as the next clean local recovery pair.
-2. Obtain explicit authority for AR-262 tracker creation, push, non-draft PR,
-   merge with `[skip ci]`, and exact-main dashboard reinstall; run no Actions.
-3. Re-prove rendered CLI parity from that exact merge.
+1. Push the clean AR-262 branch and open its non-draft PR; run no Actions.
+2. Verify a clean rollup, merge with `[skip ci]`, and reinstall the dashboard
+   from the exact main merge.
+3. Re-prove rendered CLI parity from that exact merge and close tracker #311.
 4. Owner action: restore Claude login, then authorize one genuinely different,
    telemetry-preceded hiring draw. If it hires, smoke Codex and ZCode for reuse.
-5. Publish the Linux OpenClaw/Hermes handoff on main for the next box.
+5. Keep AR-263 separate and draw-free; use the proven CLI parent path until
+   Desktop dispatches current hooks. Then publish the Linux OpenClaw/Hermes
+   handoff on main for the next box.
 
 ## same-task-continuity
 

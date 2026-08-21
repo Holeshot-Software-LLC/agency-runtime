@@ -19,6 +19,7 @@ related:
   - docs/roadmap/AR-119-f4f3d45e-hiring-risk-evidence.md
   - docs/roadmap/issue-AR-261-disambiguate-technical-diagnosis-risk.md
   - docs/roadmap/issue-AR-262-preserve-slow-host-dashboard-parity.md
+  - docs/roadmap/issue-AR-263-restore-codex-desktop-parent-hook-delivery.md
   - docs/roadmap/AR-255-child-parity-design.md
 supersedes: []
 superseded_by: null
@@ -2546,6 +2547,23 @@ Installed as owner-private runtime digest `9e0a85aa...`, it renders Claude as
 registered, native enabled, runtime on, and
 `enabled-runtime-unverified` after a normal refresh without `/api/hosts`
 prewarming. Codex, ZCode, OpenClaw, Hermes, and all workforce counts match the
-CLI projections. Tracker creation was refused at the outward approval boundary
-and remains explicitly authorization-pending. No provider call, host draw,
+CLI projections. Tracker #311 is now linked under explicit owner authorization,
+and the no-Actions publication sequence is active. No provider call, host draw,
+candidate promotion, rule promotion, or matrix movement followed.
+
+### CODEX DESKTOP REGRESSION: current parent task has no hook snapshot
+
+The current Codex Desktop package `26.818.3698.0` uses embedded CLI
+`0.149.0-alpha.4` and reports hooks stable, the Agency plugin enabled, and its
+current hook states trusted. Nevertheless, the active task has no current
+`SessionStart` or `UserPromptSubmit` hook-log entry, no injected Agency
+snapshot, and no current Store run or resident-manager binding. Its rendered
+`Agency/Agencies loaded: none` is therefore invalid fallback evidence: it hides
+activation unavailability rather than proving an empty Agency selection.
+
+This does not retract the fresh Codex CLI parent control, which loaded
+`agency-steward` and emitted the exact Store-backed header. It scopes the new
+failure to the Desktop frontend/task lifecycle. Open upstream Codex reports
+21639 and 33413 describe the same class of frontend hook-dispatch gap; AR-263
+owns the self-contained local product record. No provider call, child draw,
 candidate promotion, rule promotion, or matrix movement followed.
