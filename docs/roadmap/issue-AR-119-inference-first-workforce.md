@@ -25,6 +25,7 @@ related:
   - docs/roadmap/AR-119-rule-host-evidence-matrix.md
   - docs/roadmap/AR-119-acceptance-evidence.md
   - docs/roadmap/AR-119-39ff6dca-recruiter-diagnostic-evidence.md
+  - docs/roadmap/AR-119-fcffd96c-hiring-diagnostic-evidence.md
   - docs/decisions/0102-defer-one-shot-application-evaluation.md
   - docs/decisions/0103-bind-named-regulated-assurance-to-typed-staffing.md
   - docs/roadmap/handoffs/issue-AR-119.md
@@ -38,6 +39,7 @@ related:
   - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
   - docs/roadmap/issue-AR-252-record-verified-acceptance-outcomes.md
   - docs/roadmap/issue-AR-253-dynamic-team-dispatch-on-every-harness.md
+  - docs/roadmap/issue-AR-259-preserve-terminal-hiring-state.md
   - docs/roadmap/issue-AR-255-inference-owned-host-proven-child-staffing.md
   - docs/roadmap/issue-AR-256-canonical-nine-rule-completion-contract.md
   - docs/roadmap/issue-AR-200-diagnosable-decision-conformance.md
@@ -4262,6 +4264,32 @@ selects, adds, reorders, or invents a team. Provider-free verification is green:
 Commits `e7e4e285` / `1dd70983` are local. No matrix cell moved and no further
 live draw is authorized or needed before publication and exact-main review.
 
+### Recruiter repair merged; first valid draw exposes hiring ambiguity — 2026-08-20
+
+PR #304 merged the recruiter safe-team repair to main as `c279bca9` with
+`[skip ci]` and no hosted run. Exact-main installs refreshed Claude, Codex, and
+ZCode before the single Claude draw for pair `fcffd96c0e7e2ef01ad7a3e030c8a9`.
+Its Haiku planner and pinned `codex-subscription` / `gpt-5.6-terra` recruiter
+both returned applied structured responses. The run then ended safely as
+`no_safe_sufficient_team` / `recruiter_abstained` before routing, child
+judging, delivery, outcome, attestation, or promotion.
+
+The result proves the repaired recruiter output contract is accepted, but the
+selection is poor: the active `typescript-application-engineer` contractor is
+an exact host-eligible implementation and runtime-validation match. The empty
+durable hiring reason list cannot show whether hiring never ran or reached a
+terminal deferred status before atomic preflight rolled the pending mutation
+back. The read-only evidence and prompt hashes are recorded in
+[`AR-119-fcffd96c-hiring-diagnostic-evidence.md`](AR-119-fcffd96c-hiring-diagnostic-evidence.md).
+
+AR-259 locally preserves only an allowlisted terminal hiring status and whether
+a positive inference-call count was consumed in the existing content-free
+failure receipt. It retains no identity, prompt, response, notification, or
+pending contract. Focused warning-strict preflight and dynamic-hiring
+verification passes 103/103. The local recovery pair is `de9ef543` /
+`13413c53`, and all 12 proportional local gates pass in 1.3 minutes. No retry
+followed and **no matrix cell moved**.
+
 ### Still required before AR-119 can close
 
 - Preserve the local repairs across AR-128 through AR-176 while completing their
@@ -4293,11 +4321,16 @@ live draw is authorized or needed before publication and exact-main review.
 
 ### Next bounded work package
 
-Keep Option A frozen. The owner chose the local canary-only
-`claude -> codex-subscription` parent-recruiter pin. Finish its local gates and
-recovery pair, then obtain fresh authority for publication, owner-config update,
-exact-main installation, and one bounded falsification draw; no general-turn
-route change or unapproved retry is authorized.
+Keep Option A frozen. Finish AR-259's proportional local gates and recovery
+pair, create its required tracker only with explicit owner authority, and
+publish it through a reviewed `[skip ci]` PR. Reinstall all three supported
+Windows harnesses from the exact merge. Then run one telemetry-preceded Claude
+draw: its receipt must decisively distinguish a skipped hire from a consumed
+hiring attempt before any further selection repair or retry is considered.
+After that boundary is understood, prove bounded staffing and one genuine hire
+plus reuse across Claude, Codex, and ZCode; compare authenticated dashboard
+views with the Store-backed CLI; and publish the exact-main Linux OpenClaw and
+Hermes handoff. Hosted Actions remain forbidden.
 Formal R8 credit remains a separate owner decision because it advances the
 candidate and re-anchors R2/R3/R7. Codex child work waits for an upstream readable
 started-child surface; do not burn repeated canaries. After ZCode plural-card
@@ -4306,7 +4339,7 @@ Rule 9 remain later authorized packages.
 
 ### Context checkpoint constraints
 
-- Continue on `codex/ar119-claude-outcome-live-evidence` from the current local
+- Continue on `codex/ar119-hiring-failure-evidence` from the current local
   recovery checkpoint; do not reset, discard, or silently rewrite the
   accumulated AR-119 work.
 - Keep tracker issue #132 open and do not claim the north-star goal complete.

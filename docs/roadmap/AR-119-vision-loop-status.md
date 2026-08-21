@@ -11,6 +11,8 @@ related:
   - docs/roadmap/handoffs/issue-AR-119.md
   - docs/roadmap/AR-119-rule-host-evidence-matrix.md
   - docs/roadmap/AR-119-39ff6dca-recruiter-diagnostic-evidence.md
+  - docs/roadmap/AR-119-fcffd96c-hiring-diagnostic-evidence.md
+  - docs/roadmap/issue-AR-259-preserve-terminal-hiring-state.md
   - docs/roadmap/AR-255-child-parity-design.md
 supersedes: []
 superseded_by: null
@@ -2376,3 +2378,35 @@ Focused recruiter/receipt/conformance verification passes 97/97; the production
 spine passes 797 with 20 skips and deterministic matrix regressions pass 695.
 All 14 local gates pass in 13.9 minutes. Commits `e7e4e285` / `1dd70983` are local;
 no provider, host CLI, config write, install, publication, or live draw followed.
+
+### EXACT-MAIN DRAW: recruiter output is valid; hiring state is ambiguous
+
+PR #304 merged the recruiter safe-team repair as `c279bca9` with `[skip ci]`
+and no hosted run. Claude, Codex, and ZCode were reinstalled from that exact
+main tree before one Claude accepted-outcome draw. Pair
+`fcffd96cf0fe7e2ef01ad7a3e030c8a9` reached an applied Haiku planner and an
+applied pinned `codex-subscription` / `gpt-5.6-terra` recruiter. It then failed
+closed as `no_safe_sufficient_team` / `recruiter_abstained`, before any routing
+decision, child judge, card delivery, outcome, attestation, or promotion.
+
+This is safe behavior and proves the repaired recruiter output contract was
+accepted. It is not good selection: the active and host-eligible
+`typescript-application-engineer` contract is an exact TypeScript,
+implementation, and runtime-validation match. The draw was not retried.
+
+The empty durable `hiring_reason_codes` field cannot distinguish no hiring
+event from a deferred terminal hire or approval event that was later rolled
+back with failed atomic preflight. The Store correctly has no pending hiring
+mutation in either case. The exact read-only evidence, Store limits, and parent
+prompt hashes are recorded in
+[`AR-119-fcffd96c-hiring-diagnostic-evidence.md`](AR-119-fcffd96c-hiring-diagnostic-evidence.md).
+
+AR-259 is the bounded no-cost diagnostic repair. Its local candidate projects
+only the closed hiring status and whether a positive inference-call count was
+consumed into the existing content-free failure receipt. It does not retain
+worker identity, notification, prompt, response, or pending contract, and it
+does not change provider routing or selection. Focused warning-strict
+preflight/dynamic-hiring verification passes 103/103. Recovery pair
+`de9ef543` / `13413c53` passes all 12 proportional local gates in 1.3 minutes.
+Publication, exact-main installation, and one decisive draw remain; **no matrix
+cell moved**.
