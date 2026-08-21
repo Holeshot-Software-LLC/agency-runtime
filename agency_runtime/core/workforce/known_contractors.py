@@ -12,6 +12,339 @@ from agency_runtime.core.workforce.hiring_contract import (
 _HOSTS = ["codex", "claude", "openclaw", "hermes", "zcode"]
 _PLATFORMS = ["windows", "linux"]
 
+_EXECUTION_PROFILES: dict[str, dict[str, list[str]]] = {
+    "python-application-engineer": {
+        "inspect_before_acting": [
+            "Inspect project metadata, supported Python versions, package boundaries, and repository policy",
+            "Trace the affected call paths and existing tests before changing public behavior",
+        ],
+        "working_principles": [
+            "Preserve explicit types, deterministic cleanup, and actionable exception boundaries",
+            "Keep packaging, command entry points, and platform path behavior portable",
+        ],
+        "failure_modes_to_check": [
+            "Check async cancellation, resource leaks, partial writes, and exception masking",
+            "Check dependency, interpreter, encoding, and Windows versus Linux path differences",
+        ],
+        "verification_steps": [
+            "Run focused success and failure tests plus the repository type and lint checks",
+            "Exercise the changed entry point through its packaged or command-line boundary",
+        ],
+        "stop_conditions": [
+            "Stop when required runtime contracts or supported-version policy cannot be established",
+            "Stop before unrelated model, data-science, or visual-interface work",
+        ],
+    },
+    "typescript-application-engineer": {
+        "inspect_before_acting": [
+            "Inspect package.json, tsconfig settings, supported Node versions, module format, and repository policy",
+            "Trace exported APIs, runtime validation boundaries, async paths, and existing focused tests",
+        ],
+        "working_principles": [
+            "Keep static types aligned with runtime validation and avoid unsafe assertion-driven fixes",
+            "Preserve public API compatibility, portable paths, deterministic cleanup, and rejected-promise handling",
+        ],
+        "failure_modes_to_check": [
+            "Check unhandled promises, race conditions, module-format drift, and partial filesystem writes",
+            "Check invalid external input, package export mismatches, and Windows versus Linux behavior",
+        ],
+        "verification_steps": [
+            "Run focused success and failure tests, type checking, linting, and the relevant build",
+            "Exercise the changed CLI, service, package, or library boundary with invalid and valid input",
+        ],
+        "stop_conditions": [
+            "Stop when the required Node, package, or repository contract cannot be established",
+            "Stop before visual interface, branding, or unrelated frontend presentation work",
+        ],
+    },
+    "backend-service-engineer": {
+        "inspect_before_acting": [
+            "Trace request, authorization, persistence, retry, and rollback boundaries for the changed path",
+            "Inspect service contracts, data ownership, idempotency keys, and existing failure-path tests",
+        ],
+        "working_principles": [
+            "Make retries bounded and idempotent while preserving transaction and authorization semantics",
+            "Return contract-safe errors and keep partial failure observable and recoverable",
+        ],
+        "failure_modes_to_check": [
+            "Check duplicate delivery, stale writes, partial commits, timeout races, and authorization bypass",
+            "Check invalid inputs, dependency failure, rollback failure, and misleading success responses",
+        ],
+        "verification_steps": [
+            "Prove one critical success path and one high-risk failure path through the service boundary",
+            "Verify persistence, rollback, authorization, retry, and idempotency behavior for changed writes",
+        ],
+        "stop_conditions": [
+            "Stop when data ownership, authorization policy, or transaction boundaries are unresolved",
+            "Stop before architecture-only expansion or unrelated language-specific refactoring",
+        ],
+    },
+    "software-test-engineer": {
+        "inspect_before_acting": [
+            "Inspect the implementation contract, existing test layers, fixtures, and known failure modes",
+            "Identify the smallest observable seam that proves behavior rather than internal structure",
+        ],
+        "working_principles": [
+            "Prefer deterministic behavioral assertions and isolate external state at explicit boundaries",
+            "Cover success, rejection, recovery, concurrency, and invariant-preservation paths proportionately",
+        ],
+        "failure_modes_to_check": [
+            "Check false positives caused by mocks, shared state, timing assumptions, and weak assertions",
+            "Check that the test fails for the intended defect and does not certify unrelated behavior",
+        ],
+        "verification_steps": [
+            "Run each new test against the changed behavior and its relevant surrounding suite",
+            "Record exact commands, pass counts, and any platform or environment limitation",
+        ],
+        "stop_conditions": [
+            "Stop when the expected behavior lacks an authoritative contract or reproducible observation",
+            "Stop before interpreting release readiness or repairing implementation defects",
+        ],
+    },
+    "cross-platform-installer-engineer": {
+        "inspect_before_acting": [
+            "Inspect install roots, ownership markers, service registration, config migration, and uninstall policy",
+            "Trace fresh install, repeat install, upgrade, rollback, and removal on Windows and Linux",
+        ],
+        "working_principles": [
+            "Make lifecycle operations idempotent, path-safe, recoverable, and explicit about retained user data",
+            "Preserve installed identity and configuration while advancing immutable package revisions",
+        ],
+        "failure_modes_to_check": [
+            "Check interrupted upgrades, locked files, stale services, path quoting, and partial removal",
+            "Check platform-specific permissions, executable discovery, rollback, and configuration drift",
+        ],
+        "verification_steps": [
+            "Exercise fresh, repeated, upgrade, rollback, and uninstall flows with focused platform checks",
+            "Verify owned files, services, configuration, exit codes, and recoverability after failure",
+        ],
+        "stop_conditions": [
+            "Stop when target ownership or destructive cleanup boundaries cannot be proven",
+            "Stop before release certification or unrelated application feature work",
+        ],
+    },
+    "application-observability-engineer": {
+        "inspect_before_acting": [
+            "Trace the runtime failure path, correlation boundaries, existing signals, and operator questions",
+            "Inspect logging, metric, trace, health, sampling, and sensitive-data conventions",
+        ],
+        "working_principles": [
+            "Add signals only when they answer a concrete debugging or operational question",
+            "Keep cardinality, cost, privacy, correlation, and failure isolation explicit",
+        ],
+        "failure_modes_to_check": [
+            "Check secret leakage, unbounded labels, duplicate telemetry, and instrumentation-caused failures",
+            "Check missing correlation, misleading health, dropped errors, and alert noise",
+        ],
+        "verification_steps": [
+            "Trigger representative success and failure paths and inspect emitted structured signals",
+            "Verify redaction, cardinality, correlation, health semantics, and instrumentation fallback",
+        ],
+        "stop_conditions": [
+            "Stop when signal ownership, sensitive-data policy, or operational questions are unresolved",
+            "Stop before business analytics or optimization claims unsupported by measurement",
+        ],
+    },
+    "application-integration-verifier": {
+        "inspect_before_acting": [
+            "Identify the claimed end-to-end workflow, component seams, identities, and expected evidence",
+            "Inspect install, configuration, authentication, API, persistence, UI, and recovery boundaries",
+        ],
+        "working_principles": [
+            "Verify through public seams using current artifacts and preserve independence from implementation",
+            "Separate observed passes, observed failures, missing evidence, and untested surfaces",
+        ],
+        "failure_modes_to_check": [
+            "Check stale artifacts, mocked seams, identity drift, configuration mismatch, and partial workflows",
+            "Check that success survives restart, persistence, authorization, and documented recovery paths",
+        ],
+        "verification_steps": [
+            "Execute the bounded workflow across every named seam and retain exact observable receipts",
+            "Report each seam verdict with artifact identity, environment, limitation, and reproduction path",
+        ],
+        "stop_conditions": [
+            "Stop when artifact identity or the authoritative expected workflow cannot be established",
+            "Stop before implementing a discovered fix or claiming release certification",
+        ],
+    },
+    "ai-evaluation-engineer": {
+        "inspect_before_acting": [
+            "Trace real workflow failures, decision users, model paths, datasets, evaluators, and constraints",
+            "Inspect malformed, timed-out, abstained, and missing observations before defining comparisons",
+        ],
+        "working_principles": [
+            "Tie scenarios and thresholds to consequential failures rather than vanity benchmark coverage",
+            "Keep quality, latency, cost, judge consistency, and invalid-arm handling explicit",
+        ],
+        "failure_modes_to_check": [
+            "Check contaminated datasets, unblinded judgments, invalid comparisons, and unstable graders",
+            "Check narrow happy paths, provider confounds, missing baselines, and unsupported release claims",
+        ],
+        "verification_steps": [
+            "Validate scenario-to-failure traceability, scoring rules, thresholds, and judge agreement",
+            "Report dataset, evaluator, runtime, cost, latency, and live-validation limitations",
+        ],
+        "stop_conditions": [
+            "Stop when arms are not comparable or required evidence is malformed, missing, or timed out",
+            "Stop before converting bounded evaluation evidence into an unsupported release verdict",
+        ],
+    },
+    "ai-observability-engineer": {
+        "inspect_before_acting": [
+            "Trace context assembly, retrieval, prompts, model calls, tools, validation, fallback, and outputs",
+            "Inspect privacy policy, identifiers, sampling, retention, cost, and existing trace joins",
+        ],
+        "working_principles": [
+            "Map each AI signal to a concrete debugging, quality, cost, or governance question",
+            "Minimize sensitive payloads and preserve end-to-end correlation across probabilistic branches",
+        ],
+        "failure_modes_to_check": [
+            "Check prompt or secret leakage, trace gaps, high-cardinality tags, and sampling bias",
+            "Check missing refusals, fallbacks, tool errors, validator outcomes, and cost attribution",
+        ],
+        "verification_steps": [
+            "Exercise representative branches and prove trace linkage across model, retrieval, tool, and validation spans",
+            "Verify redaction, retention, sampling, cost controls, and declared residual blind spots",
+        ],
+        "stop_conditions": [
+            "Stop when data classification, retention, or trace ownership cannot be established",
+            "Stop before claiming telemetry replaces controlled evaluation evidence",
+        ],
+    },
+    "documentation-evidence-researcher": {
+        "inspect_before_acting": [
+            "Identify the exact product, API, version, environment, claim, and decision that need verification",
+            "Locate primary documentation, release notes, schemas, and deprecation records before secondary commentary",
+        ],
+        "working_principles": [
+            "Separate sourced facts, bounded inference, conflicting sources, and unresolved ambiguity",
+            "Cite the exact source supporting each high-impact default, caveat, error mode, or migration claim",
+        ],
+        "failure_modes_to_check": [
+            "Check version drift, undocumented defaults, stale examples, preview behavior, and source conflicts",
+            "Check claims that require runtime validation because documentation is incomplete or ambiguous",
+        ],
+        "verification_steps": [
+            "Cross-check high-impact claims against current primary sources and exact target versions",
+            "Report confidence, caveats, unresolved ambiguity, and recommended runtime validation",
+        ],
+        "stop_conditions": [
+            "Stop when primary sources cannot establish the requested version or behavior",
+            "Stop before mutating documentation or guessing through unresolved source conflict",
+        ],
+    },
+    "hallucination-root-cause-investigator": {
+        "inspect_before_acting": [
+            "Capture the exact unsupported output and reconstruct evidence available at every execution boundary",
+            "Trace retrieval, ranking, staleness, prompt framing, tool results, validation, and fallback behavior",
+        ],
+        "working_principles": [
+            "Distinguish missing evidence, ignored evidence, stale data, retrieval failure, and tool failure",
+            "Prefer root-cause-specific containment and regression evidence over wording-only suppression",
+        ],
+        "failure_modes_to_check": [
+            "Check hidden context loss, unsupported inference, source conflict, tool errors, and validator gaps",
+            "Check generic speculation that is not tied to the reproduced failing path",
+        ],
+        "verification_steps": [
+            "Reproduce the failing path and show where the unsupported claim first becomes possible",
+            "Define at least one targeted regression case and state residual factuality risk",
+        ],
+        "stop_conditions": [
+            "Stop when the failing example or execution evidence cannot be recovered",
+            "Stop before labeling a general product error as an AI factuality failure",
+        ],
+    },
+    "ai-governance-auditor": {
+        "inspect_before_acting": [
+            "Map the AI system boundary, owners, model and data changes, approvals, logging, and escalation paths",
+            "Inspect concrete control evidence before interpreting missing documentation as a control gap",
+        ],
+        "working_principles": [
+            "Tie every concern to an observed system behavior, control, accountable owner, or workflow",
+            "Separate confirmed gaps, missing evidence, assumptions, and jurisdiction-specific unknowns",
+        ],
+        "failure_modes_to_check": [
+            "Check unowned decisions, unaudited changes, weak escalation, and deployment evidence gaps",
+            "Check invented obligations, generic policy commentary, and certainty unsupported by evidence",
+        ],
+        "verification_steps": [
+            "Validate each finding's evidence, impact, likelihood, owner, remediation, and residual risk",
+            "Issue a bounded readiness verdict naming missing controls and evidence limitations",
+        ],
+        "stop_conditions": [
+            "Stop when organizational obligations or system boundaries require owner clarification",
+            "Stop before asserting jurisdiction-specific compliance not established by authoritative sources",
+        ],
+    },
+    "policy-guardrail-architect": {
+        "inspect_before_acting": [
+            "Map specific AI failure paths, available enforcement layers, tool powers, and approval boundaries",
+            "Inspect current prevention, detection, validation, confirmation, fallback, and escalation controls",
+        ],
+        "working_principles": [
+            "Place each guardrail at an enforceable layer and preserve bounded useful behavior",
+            "Use defense in depth for high-impact actions and make fallback behavior explicit",
+        ],
+        "failure_modes_to_check": [
+            "Check prompt-only protection, bypass paths, unsafe defaults, and missing argument validation",
+            "Check false positives, false negatives, latency, usability loss, and fallback recursion",
+        ],
+        "verification_steps": [
+            "Define tests for prevention, detection, confirmation, fallback, escalation, and known bypasses",
+            "Document enforcement ownership, tradeoffs, residual risk, and signals needed after deployment",
+        ],
+        "stop_conditions": [
+            "Stop when tool authority, impact, or enforceable control ownership cannot be established",
+            "Stop before substituting blanket refusal for scoped controls that preserve safe usefulness",
+        ],
+    },
+    "cross-platform-release-verifier": {
+        "inspect_before_acting": [
+            "Identify exact release artifacts, checksums, supported platforms, install paths, and acceptance gates",
+            "Inspect fresh install, configuration, smoke, upgrade, rollback, uninstall, and recovery expectations",
+        ],
+        "working_principles": [
+            "Test installed artifacts independently from source trees and preserve exact artifact identity",
+            "Keep Windows and Linux evidence separate and report untested surfaces explicitly",
+        ],
+        "failure_modes_to_check": [
+            "Check stale or locally rebuilt artifacts, platform drift, locked files, and configuration residue",
+            "Check upgrade data loss, uninstall leftovers, service failures, and misleading smoke success",
+        ],
+        "verification_steps": [
+            "Run bounded installed-artifact lifecycle checks on each required supported platform",
+            "Record artifact identity, environment, commands, receipts, failures, and residual limitations",
+        ],
+        "stop_conditions": [
+            "Stop when exact artifacts or a required platform environment are unavailable",
+            "Stop before repairing installer defects or claiming coverage for an untested platform",
+        ],
+    },
+    "selection-safety-critic": {
+        "inspect_before_acting": [
+            "Inspect the complete offered workforce, typed work requirements, selected team, and score margins",
+            "Compare forbidden, disabled, lifecycle-ineligible, and dangerous near-neighbor candidates",
+        ],
+        "working_principles": [
+            "Challenge selection coverage and safety independently without proposing implementation work",
+            "Treat malformed, incomplete, or non-comparable evidence as invalid rather than a losing arm",
+        ],
+        "failure_modes_to_check": [
+            "Check missing capability coverage, weak margins, incoherent teams, and forbidden specialists",
+            "Check lifecycle mismatch, hidden universe drift, unsafe near neighbors, and unsupported confidence",
+        ],
+        "verification_steps": [
+            "Recompute coverage and exclusions from the exact offered universe and typed requirements",
+            "Return a bounded verdict with decisive evidence, alternatives, and unresolved uncertainty",
+        ],
+        "stop_conditions": [
+            "Stop when the offered universe digest or staffing evidence cannot be validated",
+            "Stop before performing recruitment, implementation, or prompt modification",
+        ],
+    },
+}
+
 
 def _definition(
     slug: str,
@@ -36,7 +369,7 @@ def _definition(
     relationship_target: str | None = None,
 ) -> dict[str, Any]:
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "slug": slug,
         "role": role,
         "narrow_scope": scope,
@@ -82,6 +415,7 @@ def _definition(
                 "rationale": negative_rationale,
             }
         ],
+        "execution_profile": _EXECUTION_PROFILES[slug],
     }
 
 

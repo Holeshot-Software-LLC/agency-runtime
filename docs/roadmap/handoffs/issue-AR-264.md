@@ -15,8 +15,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-264
 branch: codex/ar264-contractor-execution-profile
-evidence_commit: 0d8a23551b6e562a71fca0a3c8f67d29c92da3ce
-minimum_ledger_commit: 0d8a23551b6e562a71fca0a3c8f67d29c92da3ce
+evidence_commit: 3262858bd55e26cd0d938bc3298f04ed0694a70b
+minimum_ledger_commit: 3262858bd55e26cd0d938bc3298f04ed0694a70b
 hard_checkpoint_percent: 50
 tracker_url: null
 ---
@@ -25,25 +25,31 @@ tracker_url: null
 
 ## checkpoint
 
-- Worktree `C:\Workspaces\Holeshot Software\agency-runtime-ar264` is on clean
-  branch `codex/ar264-contractor-execution-profile` from exact remote main
-  `0d8a2355`.
+- Worktree `C:\Workspaces\Holeshot Software\agency-runtime-ar264` is on branch
+  `codex/ar264-contractor-execution-profile`, two planning commits above exact
+  remote main `0d8a2355` before this implementation checkpoint.
 - The primary checkout has unrelated owner WIP and must not be touched.
-- Context telemetry reported 38.2 percent remaining. Exact main is the reused
-  clean checkpoint before this bounded planning slice.
+- Context telemetry reported 9.0 percent remaining after the focused
+  implementation slice, requiring this clean local recovery checkpoint.
 
 ## completed-evidence
 
-- Source inspection proves the native child receives the exact work unit and
-  immutable specialist prompt as separate integrity-bound inputs.
-- Hiring inference already returns closed structured data and is explicitly
-  forbidden from writing executable instructions.
-- Contractor template v1 embeds dense contract JSON, including recruiter-only
-  comparisons and evaluations, and has no role-specific execution method.
-- Packaged revision metadata contains `evidence_requirements`; workforce
-  contract v2 does not, but the dashboard reads the missing workforce field.
-- ADR-0162 fixes the boundary: structured execution data, compiler-owned prompt
-  syntax, exact v1 replay, immutable packaged revision advance.
+- Employment-contract v2 and compiler v2 render five closed execution sections;
+  live hiring refuses v1 while historical parser/compiler replay remains.
+- All 15 known contractors carry reviewed profiles. TypeScript v2 is
+  `contractor-2-6b0d5cae3b65a44d`; exact v1 remains
+  `contractor-1-5e6a02cdaaf0bfde` with its prior full SHA-256 identity.
+- Exact package-v1 -> package-v2 Store test preserves worker identity, advances
+  revision 0 -> 1, retains the parent-linked v1 prompt, records package—not
+  inference—event authority, and is idempotent.
+- Dashboard API test projects `changed artifacts and focused verification
+  results`; all 134 dashboard UI tests pass and no false evidence fallback is
+  rendered for that worker.
+- Focused contract/version/upgrade and hiring checks pass; widened startup,
+  routing, CLI-config, and workforce lifecycle checks report 122 passed.
+- A wider public/prompt compatibility diagnostic reported 124 passed, one
+  expected skip, and one unrelated assertion that still expects the retired
+  fallback pair even though the governed constant is empty.
 
 ## exact-blocker
 
@@ -59,9 +65,9 @@ advance packaged contractors only through governed lineage.
 
 ## next-bounded-work-package
 
-Implement the closed v2 execution profile and compiler with exact v1
-compatibility. Add package-owned immutable version advance. Then repair the
-dashboard evidence projection from revision metadata and run focused tests.
+Run the named fast Python spine, full Ruff/format, documentation validation,
+dashboard UI gate, and routing/conformance evaluations. Fix only findings that
+invalidate AR-264, then update evidence and create the substantive/ledger pair.
 
 ## verification
 
@@ -73,9 +79,9 @@ python scripts/update_worklog.py --check
 python scripts/verify_docs.py
 ruff check agency_runtime tests scripts
 ruff format --check agency_runtime tests scripts
-python -m pytest tests/test_workforce_hiring_contract.py tests/test_contractor_version_identity.py -q -W error
-python -m pytest tests/test_workforce_dynamic_hiring.py tests/test_workforce_hiring.py -q -W error
-python -m pytest tests/test_dashboard.py -q -W error
+python -m pytest tests/test_workforce_hiring_contract.py tests/test_contractor_version_identity.py tests/test_known_contractor_install.py -q -W error
+python -m pytest tests/test_workforce_dynamic_hiring.py tests/test_contractor_minting_host_parity.py -q -W error
+python -m pytest tests/test_dashboard.py::test_dashboard_workforce_and_hiring_apis_share_revision_bound_lifecycle -q -W error
 node --test tests/dashboard_ui.test.mjs
 git diff --check
 ~~~

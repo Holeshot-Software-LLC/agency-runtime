@@ -1731,6 +1731,9 @@ class WorkforceStoreMixin:
         agent_version_id: str,
         recruitment_contract: Mapping[str, Any],
         hiring_case_id: str,
+        event_actor: str = "hiring-pipeline",
+        event_surface: str = "inference",
+        event_reason: str = "validated capability amendment",
     ) -> dict[str, Any]:
         """Apply one audited Agency amendment without rewriting upstream history."""
 
@@ -1741,6 +1744,9 @@ class WorkforceStoreMixin:
             raise ValueError("expected_revision is invalid")
         version_id = _identity(agent_version_id, field="agent_version_id")
         case_id = _identity(hiring_case_id, field="hiring_case_id")
+        actor = _bounded_text(event_actor, field="event_actor", maximum=64)
+        surface = _bounded_text(event_surface, field="event_surface", maximum=64)
+        reason = _bounded_text(event_reason, field="event_reason", maximum=256)
         contract = _document(recruitment_contract, field="recruitment_contract", allow_empty=False)
         contract_hash = _document_hash(contract)
         with closing(self._connect()) as conn, conn:
@@ -1828,9 +1834,9 @@ class WorkforceStoreMixin:
                 to_standing=str(worker["standing"]),
                 version=str(version["version"]),
                 hiring_case_id=case_id,
-                actor="hiring-pipeline",
-                surface="inference",
-                reason="validated capability amendment",
+                actor=actor,
+                surface=surface,
+                reason=reason,
             )
             conn.execute(
                 "UPDATE store_counters SET value = value + 1 WHERE name = 'roster-generation'"

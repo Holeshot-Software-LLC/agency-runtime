@@ -543,3 +543,31 @@ def test_cli_seed_records_legacy_upgrades_without_reporting_them_as_added() -> N
         ("starter_roster_installed", "", "count=0"),
         ("starter_roster_upgraded", "", "count=3"),
     ]
+
+
+def test_cli_seed_records_exact_packaged_contractor_reconciliation(monkeypatch) -> None:
+    class EventStore:
+        def __init__(self) -> None:
+            self.events: list[tuple[str, str, str]] = []
+
+        def record_import_event(self, event: str, source: str, detail: str) -> None:
+            self.events.append((event, source, detail))
+
+    result = installer._StarterRosterSeedCount(
+        0,
+        upgraded=0,
+        contractors_installed=1,
+        contractors_upgraded=2,
+        contractors_existing=3,
+        contractors_preserved=4,
+    )
+    monkeypatch.setattr(installer, "seed_starter_roster", lambda _store: result)
+    store = EventStore()
+
+    assert install_commands._seed_starter_roster(store) is result  # type: ignore[arg-type]
+    assert store.events == [
+        ("starter_roster_installed", "", "count=0"),
+        ("packaged_contractors_installed", "", "count=1"),
+        ("packaged_contractors_upgraded", "", "count=2"),
+        ("packaged_contractors_preserved", "", "count=4"),
+    ]

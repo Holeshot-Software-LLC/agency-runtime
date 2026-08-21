@@ -21,6 +21,7 @@ from agency_runtime.core.workforce.identity import stable_worker_id
 from agency_runtime.core.workforce.known_contractors import KNOWN_CONTRACTORS_BY_SLUG
 from agency_runtime.core.workforce.known_installer import (
     PACKAGED_CONTRACTOR_AUTHORITY,
+    _legacy_known_contractor_package,
     install_known_contractors,
     known_contractor_package,
     packaged_hiring_evidence,
@@ -42,9 +43,13 @@ def test_known_contractors_install_atomically_with_truthful_package_evidence(
 
     expected = tuple(sorted(KNOWN_CONTRACTORS_BY_SLUG))
     assert first.installed == expected
+    assert first.upgraded == ()
     assert first.existing == ()
+    assert first.preserved == ()
     assert second.installed == ()
+    assert second.upgraded == ()
     assert second.existing == expected
+    assert second.preserved == ()
     assert store.count_enabled_roster(disabled_agents=()) == len(expected)
     workers = store.list_workforce_workers(state="contractor", limit=20, disabled_agents=())
     assert {item["agent_slug"] for item in workers} == set(expected)
@@ -69,6 +74,88 @@ def test_known_contractors_install_atomically_with_truthful_package_evidence(
             "reason": "maintainer-reviewed packaged contractor; no inference call was made",
             "receipts": [],
         }
+
+
+def test_exact_packaged_v1_contractors_advance_immutably_to_v2(tmp_path: Path) -> None:
+    store = Store(tmp_path / "agency.db")
+    slug = "typescript-application-engineer"
+    legacy = _legacy_known_contractor_package(slug)
+    current = known_contractor_package(slug)
+    version_id = store.stage_agency_workforce_agent(legacy.agent)
+    contract_document = legacy.workforce_contract.to_dict()
+    evidence = packaged_hiring_evidence(legacy)
+    case = store.create_hiring_case(
+        case_type="hire",
+        proposed_slug=slug,
+        work_unit_id=f"known-{slug}",
+        request_hash=_contract_hash(legacy.employment_contract.to_dict()),
+        contract_evidence=contract_document,
+        contract_hash=_contract_hash(contract_document),
+        **evidence,
+    )
+    case = store.transition_hiring_case(case["id"], status="audited")
+    store.register_workforce_worker(
+        agent_slug=slug,
+        display_name=legacy.employment_contract.role,
+        origin="agency",
+        employment_class="contractor",
+        agent_version_id=version_id,
+        recruitment_contract=contract_document,
+        relation="generated",
+        hiring_case_id=case["id"],
+    )
+
+    before = store.get_workforce_worker(slug, disabled_agents=())
+    result = install_known_contractors(store)
+    after = store.get_workforce_worker(slug, disabled_agents=())
+    active = store.get_specialist_prompt(slug, disabled_agents=())
+    historical = store.get_versioned_specialist_prompt(
+        slug,
+        legacy.agent["version"],
+        legacy.compiled.prompt_hash,
+        max_chars=262_144,
+        disabled_agents=(),
+    )
+
+    assert before["revision"] == 0
+    assert result.upgraded == (slug,)
+    assert slug not in result.installed
+    assert result.preserved == ()
+    assert after["worker_id"] == before["worker_id"]
+    assert after["revision"] == 1
+    assert after["current_hash"] == current.compiled.prompt_hash
+    assert active is not None and active["prompt_body"] == current.compiled.prompt
+    assert historical is not None and historical["prompt_body"] == legacy.compiled.prompt
+    with closing(store._connect()) as conn:
+        amendment = conn.execute(
+            "SELECT * FROM agent_hiring_cases WHERE proposed_slug = ? AND case_type = 'amend'",
+            (slug,),
+        ).fetchone()
+        lineage = conn.execute(
+            "SELECT parent_version_id, relation FROM agent_version_lineage "
+            "WHERE worker_id = ? ORDER BY created_at, rowid",
+            (after["worker_id"],),
+        ).fetchall()
+        upgrade_event = conn.execute(
+            "SELECT actor, surface, reason FROM agent_worker_events "
+            "WHERE worker_id = ? AND event_type = 'amended'",
+            (after["worker_id"],),
+        ).fetchone()
+    assert amendment is not None
+    assert amendment["status"] == "applied"
+    assert json.loads(amendment["model_evidence"])["receipts"] == []
+    assert upgrade_event is not None
+    assert dict(upgrade_event) == {
+        "actor": "agency-runtime",
+        "surface": "package-upgrade",
+        "reason": "exact packaged contractor revision advance",
+    }
+    assert [row["relation"] for row in lineage] == ["generated", "agency_amendment"]
+    assert lineage[1]["parent_version_id"] == version_id
+
+    repeated = install_known_contractors(store)
+    assert repeated.upgraded == ()
+    assert repeated.existing == tuple(sorted(KNOWN_CONTRACTORS_BY_SLUG))
 
 
 def test_workforce_slug_batch_is_bounded_canonical_and_rejects_duplicates(
@@ -193,16 +280,7 @@ def test_noop_known_contractor_install_uses_one_connection_and_one_lookup(
     assert lookups[0].count(",") == len(expected) - 1
 
 
-@pytest.mark.parametrize(
-    "worker",
-    (
-        {"origin": "upstream", "current_hash": "a" * 64},
-        {"origin": "agency", "current_hash": "b" * 64},
-    ),
-)
-def test_known_contractor_batch_snapshot_preserves_identity_conflict_failure(
-    worker: dict[str, str],
-) -> None:
+def test_known_contractor_batch_snapshot_preserves_upstream_identity_conflict_failure() -> None:
     slug = next(iter(sorted(KNOWN_CONTRACTORS_BY_SLUG)))
 
     class ConflictStore:
@@ -213,7 +291,13 @@ def test_known_contractor_batch_snapshot_preserves_identity_conflict_failure(
             disabled_agents: tuple[()],
         ) -> dict[str, dict[str, str]]:
             assert disabled_agents == ()
-            return {slug: {"agent_slug": slug, **worker}}
+            return {
+                slug: {
+                    "agent_slug": slug,
+                    "origin": "upstream",
+                    "current_hash": "a" * 64,
+                }
+            }
 
         @staticmethod
         def stage_agency_workforce_agent(_agent: object) -> str:
@@ -224,6 +308,40 @@ def test_known_contractor_batch_snapshot_preserves_identity_conflict_failure(
         match=f"known contractor identity conflicts with active worker: {slug}",
     ):
         install_known_contractors(ConflictStore())
+
+
+def test_unknown_agency_amendments_are_preserved_instead_of_replaced() -> None:
+    slugs = tuple(sorted(KNOWN_CONTRACTORS_BY_SLUG))
+
+    class AmendedStore:
+        @staticmethod
+        def get_workforce_workers_by_slugs(
+            requested: tuple[str, ...],
+            *,
+            disabled_agents: tuple[()],
+        ) -> dict[str, dict[str, str]]:
+            assert requested == slugs
+            assert disabled_agents == ()
+            return {
+                slug: {
+                    "agent_slug": slug,
+                    "origin": "agency",
+                    "current_hash": "b" * 64,
+                    "current_version": "owner-amendment-v1",
+                }
+                for slug in slugs
+            }
+
+        @staticmethod
+        def stage_agency_workforce_agent(_agent: object) -> str:
+            raise AssertionError("unknown Agency amendments must not be replaced")
+
+    result = install_known_contractors(AmendedStore())
+
+    assert result.installed == ()
+    assert result.upgraded == ()
+    assert result.existing == ()
+    assert result.preserved == slugs
 
 
 @pytest.mark.parametrize(
@@ -276,6 +394,7 @@ def test_known_contractor_install_retains_legacy_single_worker_reader() -> None:
                 "agent_slug": slug,
                 "origin": "agency",
                 "current_hash": package.compiled.prompt_hash,
+                "current_version": package.agent["version"],
             }
 
     store = LegacyStore()
@@ -342,6 +461,9 @@ def test_packaged_contractor_prompt_and_workforce_contract_are_exact_and_routabl
         assert prompt is not None
         assert prompt["prompt_body"] == package.compiled.prompt
         assert prompt["hash"] == package.compiled.prompt_hash
+        assert prompt["evidence_requirements"] == list(
+            package.employment_contract.evidence_requirements
+        )
         assert worker["current_hash"] == package.compiled.prompt_hash
         assert worker["worker_id"] == package.compiled.worker_id
 

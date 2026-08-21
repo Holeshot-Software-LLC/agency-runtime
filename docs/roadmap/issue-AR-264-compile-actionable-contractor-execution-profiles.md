@@ -41,22 +41,21 @@ metadata and compiled prompt contain explicit evidence requirements.
 
 ## Current state
 
-- Hiring inference is correctly forbidden from authoring executable prompt
-  prose. It returns a closed structured employment contract that an independent
-  critic and safety reviewer inspect.
-- Contractor prompt template v1 embeds the complete contract JSON beneath six
-  generic operating rules. The exact assigned work unit is delivered separately
-  by the native host.
-- The known TypeScript contractor names type-system design, async Node.js,
-  runtime validation, and build/test tooling, but supplies no inspect-first
-  method, failure-mode checklist, or concrete execution sequence.
-- Packaged contractors already persist `evidence_requirements` in immutable
-  revision metadata. Workforce contract v2 intentionally omits that
-  execution-only field, while the dashboard incorrectly reads it from the
-  workforce projection.
-- Existing installations retain immutable contractor prompt v1 revisions. A
-  package change cannot rewrite those rows and the current installer does not
-  advance a known contractor whose packaged prompt changed.
+- Employment-contract and prompt-template v2 are implemented. New live hiring
+  requires the closed profile while parser/compiler v1 remains replay-only.
+- All 15 packaged contractors carry reviewed role-specific inspect, principle,
+  failure, verification, and stop guidance. The exact assigned work unit still
+  arrives separately from the native host.
+- Compiler v2 emits a readable worker capsule and omits recruiter-only nearest
+  worker and evaluation material. The TypeScript capsule is 2,710 bytes at
+  `contractor-2-6b0d5cae3b65a44d`.
+- The exact historical TypeScript v1 prompt still compiles to
+  `sha256:5e6a02cdaaf0bfdea4dcb4e8ec9c5a493ada09258a47554a0f7aa917344cd412`.
+- A Store-enforced package staging seam advances only an exact packaged v1
+  predecessor through audited amendment lineage. Unknown Agency amendments and
+  operator holds are preserved.
+- Specialist prompt reads now decode exact active revision metadata, and the
+  dashboard overlays its real `evidence_requirements` into owner detail.
 
 ## Approach
 
@@ -87,18 +86,18 @@ whole-workforce recruiter contract merely to repair an owner detail view.
 
 ## Acceptance
 
-- [ ] Employment-contract v2 requires a closed, bounded execution profile and
+- [x] Employment-contract v2 requires a closed, bounded execution profile and
       rejects control-channel prose, hidden controls, unknown fields, and
       generic empty guidance.
-- [ ] The current hiring inference asks for reusable role-specific execution
+- [x] The current hiring inference asks for reusable role-specific execution
       data without adding another provider call or allowing raw prompt output.
-- [ ] Compiler v2 renders readable inspect, working-method, failure, evidence,
+- [x] Compiler v2 renders readable inspect, working-method, failure, evidence,
       and stop sections while excluding recruiter-only comparison/eval fields.
-- [ ] Historical employment-contract v1 evidence still parses and compiles to
+- [x] Historical employment-contract v1 evidence still parses and compiles to
       the exact prior prompt bytes, hash, and version identity.
-- [ ] Packaged contractors carry reviewed execution profiles, and reinstalling
+- [x] Packaged contractors carry reviewed execution profiles, and reinstalling
       over v1 advances them through immutable, auditable, idempotent lineage.
-- [ ] Workforce detail and the dashboard show the active revision's real
+- [x] Workforce detail and the dashboard show the active revision's real
       evidence requirements; `none recorded` appears only when none exist.
 - [ ] Focused contract, hiring, Store, dashboard API, and dashboard UI tests
       pass with Ruff and documentation validation.

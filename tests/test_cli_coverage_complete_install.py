@@ -427,10 +427,16 @@ def test_no_hosts_dashboard_install_and_summary(monkeypatch, capsys):
             cfg=config(),
             roster_added=2,
             roster_upgraded=1,
+            contractors_installed=1,
+            contractors_upgraded=2,
+            contractors_existing=3,
+            contractors_preserved=4,
             dashboard_result=result,
             dashboard_opted_out=opted_out,
         )
-        assert expected in capsys.readouterr().out
+        output = capsys.readouterr().out
+        assert expected in output
+        assert "1 installed, 2 upgraded, 3 already current, 4 preserved" in output
 
 
 def test_host_completion_install_aggregation_and_seed(capsys, monkeypatch):

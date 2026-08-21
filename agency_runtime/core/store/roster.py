@@ -1538,6 +1538,84 @@ class RosterStoreMixin:
         finally:
             conn.close()
 
+    def stage_agency_packaged_workforce_revision(
+        self,
+        agent: Mapping[str, Any],
+        *,
+        expected_revision: int,
+    ) -> str:
+        """Stage one exact package revision over its exact packaged predecessor."""
+
+        if isinstance(expected_revision, bool) or not isinstance(expected_revision, int):
+            raise TypeError("expected_revision must be an integer")
+        if expected_revision < 0:
+            raise ValueError("expected_revision is invalid")
+        prepared = _prepared_roster_agent(agent, require_exact_bundled=False)
+        from agency_runtime.core.workforce.known_installer import (
+            _legacy_known_contractor_package,
+            known_contractor_package,
+        )
+
+        current = known_contractor_package(prepared.slug)
+        legacy = _legacy_known_contractor_package(prepared.slug)
+        if (
+            prepared.workforce_origin != "agency"
+            or prepared.workforce_employment != "contractor"
+            or prepared.version != current.agent["version"]
+            or prepared.content_hash != current.compiled.prompt_hash
+            or prepared.content != current.compiled.prompt
+            or prepared.metadata != serialized_revision_metadata(current.agent)
+        ):
+            raise ValueError("packaged workforce revision is not current package authority")
+        conn = self._connect()
+        try:
+            conn.execute("BEGIN IMMEDIATE")
+            worker = conn.execute(
+                "SELECT worker.revision, worker.standing, worker.origin, "
+                "version.version, version.hash, version.content, version.metadata "
+                "FROM agent_workers AS worker JOIN agent_versions AS version "
+                "ON version.id = worker.current_agent_version_id WHERE worker.agent_slug = ?",
+                (prepared.slug,),
+            ).fetchone()
+            if worker is None:
+                raise KeyError("workforce worker not found")
+            if int(worker["revision"]) != expected_revision:
+                raise RuntimeError("workforce revision conflict")
+            if str(worker["standing"]) in {"retired", "merged"}:
+                raise ValueError("terminal workforce state cannot be amended")
+            if (
+                str(worker["origin"]) != "agency"
+                or str(worker["version"]) != legacy.agent["version"]
+                or str(worker["hash"]) != legacy.compiled.prompt_hash
+                or str(worker["content"]) != legacy.compiled.prompt
+                or str(worker["metadata"]) != serialized_revision_metadata(legacy.agent)
+            ):
+                raise ValueError("packaged workforce predecessor is not exact")
+            existing = conn.execute(
+                "SELECT version.id FROM agent_versions AS version "
+                "LEFT JOIN agent_version_lineage AS lineage "
+                "ON lineage.agent_version_id = version.id "
+                "WHERE version.agent_slug = ? AND version.version = ? AND version.hash = ? "
+                "AND lineage.agent_version_id IS NULL ORDER BY version.created_at LIMIT 1",
+                (prepared.slug, prepared.version, prepared.content_hash),
+            ).fetchone()
+            if existing is not None:
+                conn.commit()
+                return str(existing["id"])
+            version_id = _stage_workforce_version(
+                conn,
+                prepared,
+                version_id=self._uuid(),
+                created_at=self._now(),
+            )
+            conn.commit()
+            return version_id
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
+
     def _activate_prepared_agent(
         self,
         conn: Any,
@@ -2109,7 +2187,8 @@ class RosterStoreMixin:
         conn = self._connect()
         try:
             row = conn.execute(
-                "SELECT a.*, v.content AS prompt_body, v.hash AS prompt_hash "
+                "SELECT a.*, v.content AS prompt_body, v.hash AS prompt_hash, "
+                "v.metadata AS revision_metadata "
                 "FROM agent_active AS a "
                 "JOIN agent_versions AS v "
                 "ON v.agent_slug = a.agent_slug AND v.version = a.version "
@@ -2123,6 +2202,10 @@ class RosterStoreMixin:
             result = dict(row)
             for field in _JSON_LIST_FIELDS:
                 result[field] = _decode_json_list(result.get(field))
+            metadata = decode_revision_metadata(result.pop("revision_metadata", None))
+            if metadata is None:
+                return None
+            result["evidence_requirements"] = list(metadata["evidence_requirements"])
             content = str(result.get("prompt_body") or "")
             prompt_hash = str(result.get("prompt_hash") or "")
             if (

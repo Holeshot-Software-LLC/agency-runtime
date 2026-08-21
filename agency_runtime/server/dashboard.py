@@ -2215,6 +2215,10 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
                 ]
             )
             prompt = self.store.get_specialist_prompt(slug, disabled_agents=())
+            if prompt is not None:
+                contract = dict(detail["recruitment_contract"])
+                contract["evidence_requirements"] = list(prompt.get("evidence_requirements") or ())
+                detail["recruitment_contract"] = contract
             config = load_config(self.config_path)
             detail["closest_workers"] = comparisons
             detail["outcomes"], detail["promotion_readiness"] = _dashboard_promotion_projection(
