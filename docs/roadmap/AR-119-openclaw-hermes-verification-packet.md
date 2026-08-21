@@ -11,6 +11,7 @@ related:
   - docs/roadmap/AR-119-founding-vision.md
   - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
   - docs/decisions/0158-collect-child-canary-proof-inside-disposable-host-profiles.md
+  - docs/roadmap/issue-AR-272-expose-openclaw-native-finalizer-tool.md
 supersedes: []
 superseded_by: null
 type: reference
@@ -191,33 +192,55 @@ result.
 
 ## 7. Current Linux OpenClaw checkpoint — 2026-08-21
 
-OpenClaw is the only active package. Hermes is the running break-glass host and
-must not be installed, stopped, restarted, or otherwise mutated. OpenClaw
-`2026.7.1-2` runs native primary `litellm/task-general`; Agency separately maps
-its harness to `linux-task-agency-router` with exact requested LiteLLM alias
-`task-agency-router`. Native model and alias catalogs contain no Agency-router
-override.
+OpenClaw is the only Agency-install target in this package. Hermes is the running
+break-glass host and must not be installed, stopped, restarted, or otherwise
+mutated. Claude, ZCode, and Codex are proven hosts outside the mutation boundary;
+no installer, configuration, launcher, authentication, session, or canary action
+may target them.
 
-Installation and channel startup pass, and exact bridge status returns exit 0.
-Do not reuse the first local control as acceptance: session
+The existing OpenClaw host package remains `2026.7.1-2` with native primary
+`litellm/task-general` and its existing model and alias catalogs. Agency
+separately maps only the OpenClaw harness to profile
+`linux-task-agency-router`, which requests exact LiteLLM alias
+`task-agency-router`. Do not reinstall OpenClaw or modify its native inference
+configuration.
+
+Two local controls are retained as failed evidence. Session
 `57f19f38-338d-4d93-9c46-eac7b6a4831a` / trace
-`4959bd8c-a0bc-4e3d-bcb9-8cbcc1441547` ended `response_invalid` with missing
-`actual_model_selected`. AR-271 repairs the dropped `model_call_ended` receipt
-fields and is reinstalled, but a fresh post-fix session is still required.
+`4959bd8c-a0bc-4e3d-bcb9-8cbcc1441547` ended `response_invalid` before AR-271
+preserved native model receipt fields. Session
+`264a65e9-7462-4ea7-9b40-9b38206f1b35` / trace
+`94f32f04-3b72-4ffa-8801-953b320e657f` then preserved four `task-general`
+request receipts but still ended `response_invalid`: the generated native
+Agency plugin exposed zero tools and could not call its Store-backed finalizer.
+This is the concrete dead-air cause, not evidence of a Telegram transport loss.
+
+AR-272 declares and registers OpenClaw-native `agency_finalize`, dispatching its
+bounded arguments to canonical `agency.finalize` without adding a correction
+pass or weakening finalization or outbound delivery. The executable regression
+failed before repair with Node exit 91; 65 focused OpenClaw security, adapter,
+and installer tests pass under the required test umask.
 
 After the mandatory clean checkpoint, run serially:
 
-1. A new local OpenClaw session whose first message is exact `agency status`;
-   preserve native transcript and require terminal Store success.
-2. Operator Telegram `/new`, then exact `agency status`; preserve the first
-   response before any other message and require a queued delivery receipt.
-3. One harmless Agency skill load without a child, then the specified genuinely
-   new restart-safety review without delegation.
-4. Correlate runs, resident binding, routing decision, specialist, skill, model,
-   provider-attempt, and finalization receipts. Requested alias evidence may be
-   reported; actual model remains unavailable unless authoritative telemetry
-   supplies it.
+1. Stop the existing OpenClaw gateway through its native procedure. Run only
+   `python -m agency_runtime.cli install --agent openclaw --no-dashboard --json`
+   from the checkpointed checkout, inspect the installed Agency tool, and
+   restart the same gateway. The installer must not restart the gateway.
+2. Prove the OpenClaw package version, native model configuration, aliases, and
+   channel configuration did not drift. Prove Claude, ZCode, Codex, and Hermes
+   were not mutated.
+3. In a new local OpenClaw session, send exact `agency status` first; preserve
+   the native transcript and require one native finalizer call plus terminal
+   Store-backed response success.
+4. Only after local proof, obtain operator Telegram `/new`, then exact
+   `agency status`; preserve the first response and queued delivery receipt.
+5. Load one harmless Agency skill without a child, then run the specified new
+   non-delegating restart-safety review. Correlate Store and provider evidence
+   to profile `linux-task-agency-router` and requested alias
+   `task-agency-router`.
 
-The direct CLI Telegram send suppression is an expected uncorrelated-outbound
-gate receipt and does not prove channel failure or success. No host canary is
-authorized for this package, and no Rule-4 or matrix claim follows.
+The LiteLLM callback cannot import this Agency checkout, so the actual answering
+model remains unavailable unless another authoritative provider receipt supplies
+it. Never promote the requested alias into an actual-model claim. No host canary
+is authorized, and no Rule-4 or matrix claim follows.

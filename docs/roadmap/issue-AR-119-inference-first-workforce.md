@@ -55,6 +55,7 @@ related:
   - docs/roadmap/issue-AR-269-bind-openclaw-installed-copy-provenance.md
   - docs/roadmap/issue-AR-270-accept-stopped-openclaw-uninstall-status.md
   - docs/roadmap/issue-AR-271-preserve-openclaw-model-receipt-fields.md
+  - docs/roadmap/issue-AR-272-expose-openclaw-native-finalizer-tool.md
   - docs/roadmap/issue-AR-255-inference-owned-host-proven-child-staffing.md
   - docs/roadmap/issue-AR-256-canonical-nine-rule-completion-contract.md
   - docs/roadmap/issue-AR-200-diagnosable-decision-conformance.md
@@ -74,7 +75,7 @@ epic: routing
 issue_id: AR-119
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
-depends_on: [AR-115, AR-116, AR-118, AR-125, AR-179, AR-180, AR-185, AR-190, AR-228, AR-252, AR-253, AR-255, AR-256, AR-259, AR-260, AR-261, AR-262, AR-263, AR-264, AR-271]
+depends_on: [AR-115, AR-116, AR-118, AR-125, AR-179, AR-180, AR-185, AR-190, AR-228, AR-252, AR-253, AR-255, AR-256, AR-259, AR-260, AR-261, AR-262, AR-263, AR-264, AR-271, AR-272]
 blocks: [AR-178, AR-200, AR-201]
 ---
 
@@ -328,7 +329,7 @@ required corrective slices of this production push; the earlier untracked
 - OpenClaw `2026.7.1-2` installation exposed three fail-closed compatibility/security defects, tracked as AR-265 through AR-267 with failing-before/passing-after regressions. It later installed bundle `7faa371d6f02...`, but its first Telegram turn was accepted then blocked before reply queueing.
 - AR-268 preserves the exact cause: a healthy control result containing `error: null` exited 2 and was misclassified as runtime unavailable. Its pre-fix regression fails, the one-line truthy-error repair passes, and real errors still exit 2.
 - The plugin was natively removed while OpenClaw was stopped; all five retained streaming values were transactionally restored and verified, and the manually added native router model/alias were removed. AR-269 and AR-270 retain two fail-closed Agency uninstall compatibility findings.
-- Baseline OpenClaw is active on `litellm/task-general` with its original 12-plugin inventory, Slack connected, Telegram polling, and successful outbound message `30023`. An inbound reply and the telemetry-required clean checkpoint precede any repaired reinstall.
+- Baseline OpenClaw is active on `litellm/task-general` with its original 12-plugin inventory, Slack connected, Telegram polling, and successful outbound message `30023`. An inbound reply and the telemetry-required clean checkpoint precede any repaired Agency integration install.
 - Hermes remains running and untouched as break glass. Agency's `task-agency-router` selection remains harness-scoped; no Codex OAuth/configuration change or Codex canary ran, and no AR-119 matrix cell moved.
 
 ## Approach
@@ -4549,7 +4550,7 @@ pin changed, and no matrix cell moved.
 
 ## Linux OpenClaw parent activation checkpoint — 2026-08-21
 
-OpenClaw `2026.7.1-2` is installed from the dedicated branch while its native
+The Agency integration for OpenClaw `2026.7.1-2` is installed from the dedicated branch while the host native
 primary remains `litellm/task-general`. Agency alone maps the OpenClaw harness
 to LiteLLM profile `linux-task-agency-router` and exact requested alias
 `task-agency-router`; Hermes remains running and untouched as break glass.
@@ -4563,6 +4564,35 @@ contains the red regression and bounded event-model plus serializer repair; the
 repaired plugin is reinstalled and OpenClaw is healthy, but post-fix live and
 Telegram evidence remain pending the mandatory clean checkpoint. No matrix cell
 moved, and requested router aliases remain distinct from actual answering models.
+
+## 2026-08-21 OpenClaw native finalizer gap and bounded repair
+
+The first post-AR-271 fresh local control used session
+`264a65e9-7462-4ea7-9b40-9b38206f1b35` and trace
+`94f32f04-3b72-4ffa-8801-953b320e657f`. Four requested-model receipts now
+correctly preserve native `task-general` without inventing a resolved provider or
+actual model, proving the receipt repair reached the installed host. The turn is
+still failed evidence: run `2bf6cbd5-d7c9-417a-b423-eeb52b4646de` ended
+`response_invalid`, finalization
+`a5b24d7f-933c-4aa3-8171-3d6ad0547cac` records all five header fields
+missing, and OpenClaw delivered no Store-backed final response.
+
+AR-272 preserves the newly concrete cause. Agency preflight instructed the model
+to call `agency.finalize`, but native OpenClaw inspection reported zero tools
+and zero MCP servers; the retained `.mcp.json` is not a native OpenClaw agent
+tool surface. The model called six unrelated native tools and could not construct
+the required first visible response. Strict finalization then correctly suppressed
+the draft, reproducing channel dead air without a Telegram transport failure.
+
+A generated-plugin regression failed pre-fix with Node exit 91. The bounded
+repair declares provider-safe native tool `agency_finalize`, registers it through
+the audited OpenClaw plugin API, and dispatches to the existing Store-backed
+`agency.finalize` operation. It does not add a correction pass or relax the
+outbound gate. The focused OpenClaw security, adapter, and installer selection
+passes 65/65; changed-file Ruff and formatting checks pass. Telemetry is 22.5
+percent, so the exact Agency integration install and live proof follow the required local
+substantive/worklog checkpoint. Hermes remains untouched and no matrix cell
+moved.
 
 ## Acceptance
 

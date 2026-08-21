@@ -390,11 +390,13 @@ def _openclaw_plugin_harness_source() -> str:
         (
             "const registeredHooks = new Map();\n"
             "const registeredHookOptions = new Map();\n"
+            "const registeredTools = new Map();\n"
             "let registeredCommand;\n"
             "function definePluginEntry(definition) {\n"
             "  definition.register({\n"
             "    config: { agents: { defaults: { blockStreamingDefault: 'off' } }, channels: {} },\n"
             "    registerCommand(command) { registeredCommand = command; },\n"
+            "    registerTool(tool) { registeredTools.set(tool.name, tool); },\n"
             "    on(name, handler, options = {}) {\n"
             "      registeredHooks.set(name, handler);\n"
             "      registeredHookOptions.set(name, options);\n"
@@ -466,6 +468,8 @@ def _openclaw_plugin_harness_source() -> str:
             "          turnId: payload.traceId,\n"
             "          responseHash: createHash('sha256').update(payload.finalResponse).digest('hex'),\n"
             "        };\n"
+            "      } else if (payload.action === 'finalize') {\n"
+            "        result = { action: 'accept', text: 'Agency final response' };\n"
             "      } else if (payload.action === 'control') {\n"
             "        const denied = payload.command === 'off' || payload.command === 'on';\n"
             "        result = {\n"
@@ -544,6 +548,43 @@ if (receipt.modelGroup !== "task-general") process.exit(84);
 if (receipt.resolvedProvider !== "" || receipt.resolvedModel !== "") process.exit(85);
 """
     script = tmp_path / "openclaw-model-receipt.mjs"
+    script.write_text(source, encoding="utf-8")
+
+    completed = subprocess.run(
+        [str(shutil.which("node")), str(script)],
+        capture_output=True,
+        text=True,
+        timeout=10,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is not installed")
+def test_generated_openclaw_registers_store_backed_native_finalize_tool(
+    tmp_path: Path,
+) -> None:
+    source = _openclaw_plugin_harness_source()
+    source += """
+const finalizeTool = registeredTools.get("agency_finalize");
+if (!finalizeTool || typeof finalizeTool.execute !== "function") process.exit(91);
+const result = await finalizeTool.execute(
+  "call-finalize",
+  {
+    draft_text: "First visible response.",
+    session_id: "session-finalize",
+    trace_id: "trace-finalize",
+  },
+);
+const call = bridgeCalls.find((payload) => payload.action === "finalize");
+if (!call) process.exit(92);
+if (call.draftText !== "First visible response.") process.exit(93);
+if (call.sessionId !== "session-finalize" || call.traceId !== "trace-finalize") process.exit(94);
+if (result?.content?.[0]?.type !== "text") process.exit(95);
+if (result.content[0].text !== "Agency final response") process.exit(96);
+"""
+    script = tmp_path / "openclaw-native-finalize.mjs"
     script.write_text(source, encoding="utf-8")
 
     completed = subprocess.run(

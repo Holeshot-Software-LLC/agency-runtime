@@ -957,7 +957,8 @@ def test_openclaw_bridge_routes_user_prompts_and_terminalizes_first_invalid_resp
 
     assert "managers=agency-steward" in routed["context"]
     assert "[AGENCY INITIAL HEADER SNAPSHOT v1]" in routed["context"]
-    assert "call `agency.finalize` exactly once" in routed["context"]
+    assert "call the OpenClaw-native `agency_finalize` tool" in routed["context"]
+    assert "backed by Agency `agency.finalize`" in routed["context"]
     assert correlated["context"]
     assert ordinary["context"]
     assert recorded == {}
@@ -1397,7 +1398,6 @@ def test_openclaw_accepts_exact_first_visible_response_constructed_by_finalize_t
     tmp_path: Path,
 ) -> None:
     from agency_runtime.adapters.openclaw.node_bridge import handle
-    from agency_runtime.server.mcp_tools import dispatch_tool_call
 
     store = Store(tmp_path / "openclaw-first-pass.db")
     store.create_run(
@@ -1406,14 +1406,14 @@ def test_openclaw_accepts_exact_first_visible_response_constructed_by_finalize_t
         host="openclaw",
         metadata={"request_kind": "trivial"},
     )
-    finalized = dispatch_tool_call(
-        "agency.finalize",
+    finalized = handle(
         {
-            "draft_text": "First visible response.",
-            "session_id": "first-pass-session",
-            "trace_id": "first-pass-turn",
+            "action": "finalize",
+            "draftText": "First visible response.",
+            "sessionId": "first-pass-session",
+            "traceId": "first-pass-turn",
         },
-        store,
+        adapter=OpenClawAdapter(store=store),
     )
 
     assert finalized["action"] == "accept"
@@ -1789,7 +1789,9 @@ def test_generated_openclaw_plugin_is_native_openclaw_package(
 
     assert manifest["id"] == "agency-preflight"
     assert manifest["activation"]["onStartup"] is True
+    assert manifest["contracts"]["tools"] == ["agency_finalize"]
     assert package["openclaw"]["extensions"] == ["./index.js"]
+    assert "api.registerTool" in code
     assert "before_prompt_build" in code
     assert "before_agent_finalize" in code
     assert "reply_payload_sending" in code

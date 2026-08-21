@@ -227,6 +227,7 @@ function serializeBridgePayload(payload) {{
     outcome: boundedUtf8(payload?.outcome, 32),
     userMessage: boundedUtf8(payload?.userMessage, MAX_BRIDGE_TEXT_BYTES),
     finalResponse: boundedUtf8(payload?.finalResponse, MAX_BRIDGE_TEXT_BYTES),
+    draftText: boundedUtf8(payload?.draftText, MAX_BRIDGE_TEXT_BYTES),
     outboundPayload: boundedUtf8(payload?.outboundPayload, MAX_OUTBOUND_PAYLOAD_BYTES),
     model: boundedUtf8(payload?.model, 1024),
     requestedModel: boundedUtf8(payload?.requestedModel, 1024),
@@ -749,6 +750,56 @@ export default definePluginEntry({{
   description: "Agency Runtime routing, evidence, and final-response enforcement.",
   register(api) {{
     deliveryCompatibility = inspectFinalOnlyDelivery(api?.config);
+    api.registerTool({{
+      name: "agency_finalize",
+      label: "Agency Finalize",
+      hideFromChannelProgress: true,
+      description: "Construct and commit the exact first visible Agency response from the current draft.",
+      promptSnippet: "agency_finalize — construct and commit the exact first visible Agency response",
+      promptGuidelines: [
+        "Call agency_finalize only when Agency preflight supplied session_id and trace_id for the current turn.",
+        "Call agency_finalize exactly once immediately before natural final output, then emit its returned text byte-for-byte.",
+      ],
+      parameters: {{
+        type: "object",
+        additionalProperties: false,
+        required: ["draft_text", "session_id", "trace_id"],
+        properties: {{
+          draft_text: {{ type: "string", minLength: 1, maxLength: MAX_BRIDGE_TEXT_BYTES }},
+          session_id: {{ type: "string", minLength: 1, maxLength: 512 }},
+          trace_id: {{ type: "string", minLength: 1, maxLength: 512 }},
+        }},
+      }},
+      async execute(_toolCallId, params) {{
+        const draftText = typeof params?.draft_text === "string" ? params.draft_text : "";
+        const currentSession = typeof params?.session_id === "string" ? params.session_id : "";
+        const currentTrace = typeof params?.trace_id === "string" ? params.trace_id : "";
+        if (
+          !draftText
+          || Buffer.byteLength(draftText, "utf8") > MAX_BRIDGE_TEXT_BYTES
+          || !currentSession
+          || Buffer.byteLength(currentSession, "utf8") > 512
+          || !currentTrace
+          || Buffer.byteLength(currentTrace, "utf8") > 512
+        ) {{
+          throw new Error("Agency Runtime finalization arguments are invalid");
+        }}
+        const stateEpoch = ++runtimeStateEpoch;
+        const result = await invokeAgency({{
+          action: "finalize",
+          sessionId: currentSession,
+          traceId: currentTrace,
+          draftText,
+        }});
+        if (!observeRuntimeState(result, stateEpoch)) throw new Error(FINALIZATION_UNAVAILABLE);
+        const action = String(result?.action || "");
+        const text = typeof result?.text === "string" ? result.text : "";
+        if (!text || (action !== "accept" && action !== "bypass")) {{
+          throw new Error(FINALIZATION_UNAVAILABLE);
+        }}
+        return {{ content: [{{ type: "text", text }}] }};
+      }},
+    }});
     api.on("gateway_start", (_event, ctx) => {{
       deliveryCompatibility = inspectFinalOnlyDelivery(ctx?.config);
     }});

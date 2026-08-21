@@ -98,6 +98,7 @@ def build_openclaw_bundle(
                 "name": "Agency Preflight",
                 "description": _DESCRIPTION,
                 "activation": {"onStartup": True, "onCapabilities": ["hook"]},
+                "contracts": {"tools": ["agency_finalize"]},
                 "mcpServers": "./.mcp.json",
                 "configSchema": {
                     "type": "object",

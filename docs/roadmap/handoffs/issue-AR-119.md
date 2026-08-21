@@ -25,6 +25,7 @@ related:
   - docs/roadmap/issue-AR-269-bind-openclaw-installed-copy-provenance.md
   - docs/roadmap/issue-AR-270-accept-stopped-openclaw-uninstall-status.md
   - docs/roadmap/issue-AR-271-preserve-openclaw-model-receipt-fields.md
+  - docs/roadmap/issue-AR-272-expose-openclaw-native-finalizer-tool.md
   - docs/roadmap/AR-119-founding-vision.md
   - docs/roadmap/AR-119-vision-loop-status.md
   - docs/roadmap/AR-119-39ff6dca-recruiter-diagnostic-evidence.md
@@ -44,8 +45,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-119
 branch: codex/ar119-openclaw-hermes-litellm
-evidence_commit: 85ad8d885ca8f29be938ba8c0078cf208e5d9e31
-minimum_ledger_commit: a06d53c35a8402bf63841ff511ce83fcf7be4a39
+evidence_commit: 0c5b2b2a4d8829345bb97c85ea97d4d45fab3280
+minimum_ledger_commit: 8a515e60a6967ec6e93fe2aee426373912cec10f
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
@@ -57,7 +58,7 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 
 ## checkpoint
 
-- Dedicated worktree `/home/holeshot/code/agency-runtime-ar119-openclaw-hermes-litellm` remains on `codex/ar119-openclaw-hermes-litellm`, based on fetched `origin/main` `4a3267738bb20519500513ea1498fc68f8ea9443`; `f76050d7` is an ancestor. Prior clean local recovery is substantive `85ad8d88` plus ledger `a06d53c3`.
+- Dedicated worktree `/home/holeshot/code/agency-runtime-ar119-openclaw-hermes-litellm` remains on `codex/ar119-openclaw-hermes-litellm`, based on fetched `origin/main` `4a3267738bb20519500513ea1498fc68f8ea9443`; `f76050d7` is an ancestor. Current clean local recovery is substantive `0c5b2b2a` plus ledger `8a515e60`; AR-272 is the only uncheckpointed slice.
 - Checkout module identity is this worktree, Agency is `0.1.0`, Store schema is 47, and every command uses `python -m agency_runtime.cli`.
 - Pre-mutation SQLite backup `~/.agency-runtime/backups/ar119-openclaw-hermes-20260821T203410Z/agency.db` has integrity `ok` and SHA-256 `4d979b8337b208cba8e223921b362839115fef9eeda641ce071189686d11db66`; pre-install contractor count was zero.
 - Agency profile `linux-task-agency-router` uses adapter `litellm`, exact requested alias `task-agency-router`, discovered `/v1` base URL, populated `LITELLM_API_KEY`, and 120000 ms. Only OpenClaw and Hermes harness defaults select it; global, Codex, and Claude routes are unchanged.
@@ -67,26 +68,27 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 - OpenClaw restarted with 13 plugins, native `litellm/task-general`, connected Slack, and active Telegram polling. Direct unauthenticated CLI send was deliberately suppressed by the Agency outbound gate and is retained as a control-boundary receipt, not a Telegram availability claim.
 - Fresh local session `57f19f38-338d-4d93-9c46-eac7b6a4831a`, trace `4959bd8c-a0bc-4e3d-bcb9-8cbcc1441547`, produced a visible Agency-shaped header but is a failed attempt: run `61254d1f-80ca-48e0-846d-3c43428d0f72` ended `response_invalid`; finalization event `01af794d-fb97-41c5-8920-2a8bfc2a3558` records missing `actual_model_selected`.
 - AR-271 captures the cause. OpenClaw puts the requested model on `model_call_ended.event.model` when `ctx.modelId` is absent, and the generated bridge serializer discarded all receipt fields. The executable Node regression failed pre-fix with exit 83 and passes after the bounded event fallback and serializer allowlist repair.
-- Only OpenClaw was stopped and reinstalled from the changed checkout. Bundle digest is `38dadb1a1a14d5f95319dcc401883a54e6415cf9392803e1b81906ceff718107`; launcher runtime digest is `f7741ed6bfde2844a18151fa43f6536761ba1b6a97a35bdc524d770447309a62`; launcher SHA-256 is `bb033f9b4facce1d78b42b246e0087f8ef6862d825ddcc48cad73b74dc4c5608`.
-- The receipt-fix reinstall changed zero managed streaming values. Redacted native-config comparison shows only `meta.lastTouchedAt`; model, provider, and authentication settings did not drift. Four exact raw CLI backups created by these installs were removed; redacted copies and hashes remain.
+- Only the OpenClaw gateway was stopped while the Agency integration was reinstalled from the changed checkout; the OpenClaw host package was not reinstalled. Bundle digest is `38dadb1a1a14d5f95319dcc401883a54e6415cf9392803e1b81906ceff718107`; launcher runtime digest is `f7741ed6bfde2844a18151fa43f6536761ba1b6a97a35bdc524d770447309a62`; launcher SHA-256 is `bb033f9b4facce1d78b42b246e0087f8ef6862d825ddcc48cad73b74dc4c5608`.
+- The Agency receipt-fix install changed zero managed OpenClaw streaming values. Redacted native-config comparison shows only `meta.lastTouchedAt`; model, provider, and authentication settings did not drift. Four exact raw CLI backups created by these installs were removed; redacted copies and hashes remain.
 - OpenClaw is running, RPC/config checks pass, Telegram polling and Slack are connected, and no Telegram inbound has yet been observed. Shared LiteLLM cannot import Agency, so requested alias evidence is available but actual answering model may remain unavailable.
-- Telemetry reached 43.1 percent before the post-fix evaluation. This source, regression, issue record, and recovery projection therefore require a clean substantive/worklog pair before live work resumes. No AR-119 matrix cell moved.
+- The first post-AR-271 session is retained as failed: session `264a65e9-7462-4ea7-9b40-9b38206f1b35`, trace `94f32f04-3b72-4ffa-8801-953b320e657f`, preserved four `task-general` request receipts but ended `response_invalid` with no Store-backed header. Native plugin inspection reported zero tools and zero MCP servers. AR-272 adds provider-safe native tool `agency_finalize`, backed by canonical `agency.finalize`; its pre-fix regression exited 91 and 65 focused OpenClaw tests now pass. Telemetry reached 22.5 percent, so this bounded Agency-only fix requires a clean substantive/worklog pair before live work resumes. No AR-119 matrix cell moved.
 
 ## completed-evidence
 
 - Starting-point identity, online Store backup, redacted host inventories, LiteLLM reachability, credential-name presence, and callback limitation are preserved.
-- The original Telegram-blocking exit-2 receipt, rollback, successful repaired install, first response-invalid session, Store correlations, red regression, bounded fix, and second install are all retained.
-- Focused new regression and rendered-hook contract pass. One existing Store test stopped in fixture setup on an untrusted temporary config parent; it did not exercise the changed product behavior and is not reported green.
+- The original Telegram-blocking exit-2 receipt, rollback, successful Agency integration installs, both failed response-invalid sessions, Store correlations, red regressions, and bounded fixes are all retained.
+- The AR-272 generated-plugin regression failed before repair with Node exit 91. Under the required process-local `0022` test umask, 65 focused OpenClaw security, adapter, and installer tests pass; the earlier fixture trust-guard stop is retained and is not reported as product success.
 - Codex OAuth, Codex configuration, Claude configuration, and the consumed Codex canary remain untouched.
 
 ## exact-blocker
 
-1. Create the required clean substantive/worklog checkpoint for AR-271 before another live evaluation.
-2. Run a new OpenClaw session whose first text is exact `agency status`; require terminal Store success and a verified model-receipt-backed header.
-3. Then obtain the operator Telegram `/new` followed by exact `agency status`, preserving the first response and delivery receipt before any further message.
-4. After control proof, load one harmless skill without delegation and run a genuinely new non-mutating restart-safety review. Correlate Store and provider attempts to `linux-task-agency-router` and exact alias `task-agency-router`.
-5. Hermes remains the running break-glass host and must not be mutated or restarted in this package.
-6. Tracker creation for AR-265 through AR-271 remains unauthorized. AR-269 and AR-270 remain open. The LiteLLM callback import gap remains an explicit actual-model telemetry limit.
+1. Create the required clean substantive/worklog checkpoint for the AR-272 Agency/OpenClaw adapter fix before another live evaluation.
+2. Stop the existing gateway, install only the Agency integration with `--agent openclaw`, inspect it, and restart the same gateway without OpenClaw native-config drift.
+3. Run a new OpenClaw session whose first text is exact `agency status`; require terminal Store success and a verified model-receipt-backed header.
+4. Then obtain the operator Telegram `/new` followed by exact `agency status`, preserving the first response and delivery receipt before any further message.
+5. After control proof, load one harmless skill without delegation and run a genuinely new non-mutating restart-safety review. Correlate Store and provider attempts to `linux-task-agency-router` and exact alias `task-agency-router`.
+6. Hermes remains the running break-glass host and must not be mutated or restarted in this package.
+7. Tracker creation for AR-265 through AR-272 remains unauthorized. AR-269 and AR-270 remain open. The LiteLLM callback import gap remains an explicit actual-model telemetry limit.
 
 ## traps (machine-specific; do not rediscover)
 
@@ -98,10 +100,10 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 
 ## next-bounded-work-package
 
-1. Finish focused AR-271 checks and create the local substantive plus ledger commits.
-2. Run the post-fix fresh local OpenClaw control and exact Store correlation.
-3. Run the fresh Telegram control, then one skill load and one different substantive parent-routing request without delegation.
-4. Update the verification packet, loop status, AR-119/AR-264 capsules, contractor count, Store integrity, and final evidence bundle. Keep Hermes untouched.
+1. Create the local AR-272 substantive and ledger checkpoint.
+2. Stop the existing OpenClaw gateway, install only the Agency integration with `--agent openclaw`, inspect it, and restart the same gateway; do not reinstall or reconfigure OpenClaw.
+3. Run a fresh local exact-status proof, then Telegram exact status, one harmless skill load, and one new non-delegating restart-safety request.
+4. Update both capsules, the loop status, verification packet, contractor count, Store integrity, and final evidence bundle. Keep Hermes untouched.
 
 ## same-task-continuity
 

@@ -2744,7 +2744,8 @@ AR-271 records the exact cause: installed OpenClaw supplies the model through
 `model_call_ended.event.model` when hook context omits `modelId`, and Agency
 serialization dropped all receipt fields. The new executable Node regression
 failed pre-fix with exit 83 and passes after the bounded fallback and serializer
-allowlist repair. Only OpenClaw was reinstalled. Its new bundle digest is
+allowlist repair. Only the Agency integration in OpenClaw was reinstalled; the OpenClaw host
+package was not. Its new bundle digest is
 `38dadb1a1a14d5f95319dcc401883a54e6415cf9392803e1b81906ceff718107`; launcher
 runtime digest is `f7741ed6bfde2844a18151fa43f6536761ba1b6a97a35bdc524d770447309a62`;
 launcher SHA-256 is `bb033f9b4facce1d78b42b246e0087f8ef6862d825ddcc48cad73b74dc4c5608`.
@@ -2755,3 +2756,33 @@ substantive/worklog checkpoint required by repository policy. Telegram has no
 post-restart inbound receipt yet. The LiteLLM callback cannot import Agency on
 this shared proxy, so actual model may remain unavailable; the requested alias
 must not be promoted. No AR-119 matrix cell moved.
+
+
+
+
+## 2026-08-21 — OpenClaw native Agency finalizer repair pending checkpoint
+
+The first post-AR-271 local control is retained as failed evidence. OpenClaw
+session `264a65e9-7462-4ea7-9b40-9b38206f1b35`, Agency trace
+`94f32f04-3b72-4ffa-8801-953b320e657f`, preserved four native `task-general`
+request receipts but delivered no Store-backed header. Run
+`2bf6cbd5-d7c9-417a-b423-eeb52b4646de` ended `response_invalid`; finalization
+`a5b24d7f-933c-4aa3-8171-3d6ad0547cac` records all five required fields
+missing. Native plugin inspection reported zero tools and zero MCP servers even
+though the managed bundle retained `.mcp.json`.
+
+AR-272 isolates the defect to the Agency-generated OpenClaw plugin: preflight
+required canonical `agency.finalize`, but OpenClaw had no native callable tool
+backing it. The new provider-safe `agency_finalize` wrapper delegates bounded
+arguments to the unchanged canonical Store finalizer. It introduces no correction
+pass and preserves strict finalization and outbound delivery. The executable
+regression failed before repair with Node exit 91, and 65 focused OpenClaw
+security, adapter, and installer tests pass under process-local umask `0022`.
+
+The next mutation is not an OpenClaw reinstall. After the required clean local
+commit pair, stop the existing gateway, run the Agency installer only for target
+`openclaw`, inspect the resulting Agency tool, and restart the same gateway.
+OpenClaw remains `2026.7.1-2` on native `litellm/task-general`; Agency alone
+requests `task-agency-router` through harness profile
+`linux-task-agency-router`. Claude, ZCode, Codex, and Hermes remain outside the
+mutation boundary. No matrix cell moved.

@@ -202,8 +202,9 @@ def _header_snapshot_context(
     return (
         "[AGENCY INITIAL HEADER SNAPSHOT v1]\n"
         "Use these exact seven lines for substantive progress until Agency evidence "
-        "changes. Immediately before the natural final response, call `agency.finalize` "
-        f"exactly once with session_id `{session_id}`, trace_id `{trace_id}`, and the "
+        "changes. Immediately before the natural final response, call the OpenClaw-native "
+        "`agency_finalize` tool (backed by Agency `agency.finalize`) exactly once with "
+        f"session_id `{session_id}`, trace_id `{trace_id}`, and the "
         "response body as draft_text; emit its returned text byte-for-byte. That local "
         "tool constructs the first visible header from current Store evidence. Never "
         "guess changed values and never wait for a host correction.\n"
@@ -1116,10 +1117,54 @@ def _handle_pre_verify(
     )
 
 
+def _handle_finalize_tool(
+    adapter: Any,
+    payload: dict[str, Any],
+    *,
+    session_id: str,
+    trace_id: str,
+) -> dict[str, Any]:
+    """Dispatch the OpenClaw-native tool through the canonical Agency finalizer."""
+
+    draft_text = _bounded_string(payload, "draftText", limit=MAX_INPUT_BYTES)
+    if not session_id or not trace_id or not draft_text:
+        return {"error": "finalization requires draftText, sessionId, and traceId"}
+    if not adapter.runtime_enabled():
+        return {
+            "action": "bypass",
+            "text": draft_text,
+            "runtimeEnabled": False,
+            "runtimeDisabled": True,
+            "bypassed": True,
+        }
+    from agency_runtime.server.mcp_tools import dispatch_tool_call
+
+    result = dispatch_tool_call(
+        "agency.finalize",
+        {
+            "draft_text": draft_text,
+            "session_id": session_id,
+            "trace_id": trace_id,
+        },
+        adapter.store,
+    )
+    if not isinstance(result, dict):
+        return {"error": "finalization returned an invalid result"}
+    return {**result, "runtimeEnabled": True}
+
+
 def _runtime_disabled_result(payload: dict[str, Any], action: str) -> dict[str, Any]:
     """Return the exact no-side-effect contract for one disabled host action."""
 
     disabled = {"runtimeEnabled": False, "runtimeDisabled": True, "bypassed": True}
+    if action == "finalize":
+        return {
+            "action": "bypass",
+            "text": _bounded_string(payload, "draftText", limit=MAX_INPUT_BYTES),
+            "runtimeEnabled": False,
+            "runtimeDisabled": True,
+            "bypassed": True,
+        }
     if action == "outbound_gate":
         binding = _bounded_string(payload, "outboundPayload", limit=MAX_INPUT_BYTES)
         if not binding:
@@ -1325,6 +1370,14 @@ def handle(
             model=model,
         )
         return {**result, "runtimeEnabled": True}
+
+    if action == "finalize":
+        return _handle_finalize_tool(
+            adapter,
+            payload,
+            session_id=session_id,
+            trace_id=trace_id,
+        )
 
     if action == "pre_verify":
         return _handle_pre_verify(
