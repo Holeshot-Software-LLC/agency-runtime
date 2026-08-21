@@ -1115,6 +1115,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `b19b8495` | 2026-08-21 | docs(ar264): record historical package repair gates | [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md) | null |
 | `f76050d7` | 2026-08-21 | Merge pull request #315: migrate shipped package-v1 contractor identities [skip ci] | null | null |
 | `5ee15c5e` | 2026-08-21 | docs(ar264): checkpoint exact-main host smoke | null | null |
+| `0599959b` | 2026-08-21 | docs(ar263): record fresh Desktop hook gap [skip ci] | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-263](../roadmap/issue-AR-263-restore-codex-desktop-parent-hook-delivery.md), [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
