@@ -15,8 +15,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-264
 branch: codex/ar264-exact-main-live-evidence
-evidence_commit: da851c65f13accdc0ed6db19e81a74560c5fd1a6
-minimum_ledger_commit: da851c65f13accdc0ed6db19e81a74560c5fd1a6
+evidence_commit: e796b56b441c9906b9997188362951d9ba1fd73f
+minimum_ledger_commit: 9f44c14209f9fcfc72c1338448027d8710c2990e
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 ---
@@ -28,8 +28,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 - Worktree `C:\Workspaces\Holeshot Software\agency-runtime-ar264-rollout` is on
   `codex/ar264-exact-main-live-evidence`, based exactly on merged remote main
   `da851c65`. The primary checkout has unrelated owner WIP and is untouched.
-- Context telemetry reads 39.3 percent remaining, so this bounded repair must
-  reach a clean substantive and ledger checkpoint before live work resumes.
+- Context telemetry reads 23.9 percent remaining. The repair and its ledger are
+  clean at `9f44c142`; this gate receipt now forms the next recovery checkpoint.
 
 ## completed-evidence
 
@@ -56,13 +56,15 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
   auditable historical hiring evidence, and fail-safe preservation of an exact
   prompt with amended recruitment metadata.
 - The widened contractor, Store, installer, lifecycle, hiring, and selection
-  suite reports 332 passed and one skipped in 247.07 seconds. Focused Ruff and
-  `git diff --check` pass. The original main candidate's named spine remains
-  806 passed and 20 skipped; the repaired spine has not yet run.
-- Metadata checks cover 731 Markdown files, the policy projection and 1,079-row
-  worklog are current, documentation validation passes, `git diff --check`
-  passes, and the routing evaluation passes every correctness, safety,
-  performance, and scale gate.
+  suite reports 332 passed and one skipped in 247.07 seconds.
+- All 14 governing local gates pass in 16.5 minutes: 806 passed and 20 skipped
+  in the production spine, 695 matrix-evidence tests, 161 workflow-contract
+  tests, 151 current mutation snippets, and 134 dashboard UI tests above the
+  configured line, branch, and function coverage floors.
+- Metadata covers 731 Markdown files, the policy projection and 1,085-row
+  worklog are current, documentation validation and `git diff --check` pass,
+  and deterministic routing passes every correctness, safety, performance,
+  scale, and CLI-startup gate.
 - GitHub issue #313 is open with the exact AR-264 title, canonical body, URL,
   and `epic:roster-governance` label. Repository-wide strict tracker checks
   still fail on pre-existing missing trackers and historical state/label debt;
@@ -87,10 +89,11 @@ lineage while preserving its evidence and accepted outcomes.
 
 ## next-bounded-work-package
 
-Create the clean repair and ledger checkpoint, run the full named local gates,
-then publish and merge the repair before any real Store migration. Install only
-the resulting exact main into Claude, Codex, ZCode, and the dashboard. Run
-provider smoke only after the installation and auth boundaries are rechecked.
+Publish the clean repair branch, open a non-draft follow-up PR to exact main,
+verify the remote head and `CLEAN` rollup, and merge with `[skip ci]` without
+dispatching Actions. Then install only the resulting exact main into Claude,
+Codex, ZCode, and the dashboard. Run provider smoke only after installation and
+authentication boundaries are rechecked.
 
 ## verification
 
@@ -114,9 +117,9 @@ python -m agency_runtime.cli eval decision-conformance --repository . --json
 git diff --check
 ~~~
 
-The widened repair suite passes. The complete post-repair gate block remains
-pending. The decision-conformance mutation phase is hosted-only and stays
-undispatched.
+The complete 14-gate local harness and routing evaluation pass. Linux-only
+behavior, integration coverage shards, and the decision-conformance mutation
+phase remain unrun; no hosted workflow was dispatched.
 
 ## constraints
 

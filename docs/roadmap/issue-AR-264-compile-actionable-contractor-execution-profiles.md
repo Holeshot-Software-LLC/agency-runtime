@@ -70,10 +70,13 @@ metadata and compiled prompt contain explicit evidence requirements.
   promotion readiness. The real Store's size, mtime, and SHA-256 were unchanged.
 - Specialist prompt reads now decode exact active revision metadata, and the
   dashboard overlays its real `evidence_requirements` into owner detail.
-- The original named local fast spine reports 806 passed and 20 skipped. The
-  repair's widened contractor, Store, installer, hiring, and selection suite
-  reports 332 passed and one skipped; focused Ruff and diff checks pass. The
-  full post-repair local spine remains the next checkpoint.
+- The repaired candidate passes all 14 governing local gates in 16.5 minutes:
+  806 passed and 20 skipped in the production spine, 695 passed in AR-119
+  matrix evidence, 161 passed in workflow contracts, and all 134 dashboard UI
+  tests meet the configured coverage thresholds. The deterministic routing
+  evaluation passes every correctness, safety, performance, and scale gate.
+  Linux behavior, integration coverage shards, and the hosted-only mutation
+  phase remain outside this local package.
 - Tracker [#313](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313)
   is linked under explicit owner authorization. Non-draft pull request
   [#314](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/314)
