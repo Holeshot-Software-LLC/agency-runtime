@@ -15,8 +15,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-264
 branch: codex/ar264-contractor-execution-profile
-evidence_commit: 9b19bc1872431133d94c2810548fb1280a6445b9
-minimum_ledger_commit: 9b19bc1872431133d94c2810548fb1280a6445b9
+evidence_commit: 271138d3fff4ccd351e7ba354c3da99ada01f9bd
+minimum_ledger_commit: 271138d3fff4ccd351e7ba354c3da99ada01f9bd
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 ---
@@ -26,8 +26,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 ## checkpoint
 
 - Worktree `C:\Workspaces\Holeshot Software\agency-runtime-ar264` is on branch
-  `codex/ar264-contractor-execution-profile`, eight clean published commits
-  above exact remote main `0d8a2355` before this PR-receipt delta.
+  `codex/ar264-contractor-execution-profile`, ten clean published commits above
+  exact remote main `0d8a2355` before this merge-authorization delta.
 - The primary checkout has unrelated owner WIP and must not be touched.
 - Context telemetry required the clean implementation checkpoint at 9.0 percent
   remaining. After normal compaction, the latest reading is 79.3 percent and
@@ -58,8 +58,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
   and `epic:roster-governance` label. Repository-wide strict tracker checks
   still fail on pre-existing missing trackers and historical state/label debt;
   neither strict failure reports AR-264.
-- GitHub PR #314 is open, non-draft, mergeable, targets `main`, has zero hosted
-  status checks, and its remote head exactly matches the clean local branch.
+- GitHub PR #314 is open, non-draft, `CLEAN` and mergeable, targets `main`, has
+  no reviews or hosted status checks, and its remote head exactly matches the
+  clean local branch.
 - A wider public/prompt compatibility diagnostic reported 124 passed, one
   expected skip, and one unrelated assertion that still expects the retired
   fallback pair even though the governed constant is empty.
@@ -70,7 +71,8 @@ No implementation blocker. The decision-conformance mutation phase cannot run
 locally according to `CONTRIBUTING.md`; this Codex Desktop session correctly
 refused it because the host did not attest a private scratch capability. Hosted
 CI was not dispatched. Tracker #313 and non-draft PR #314 are linked and
-directly verified. Merge, installation, and live inference remain unauthorized.
+directly verified. PR #314 is explicitly authorized to merge with `[skip ci]`;
+installation and live inference remain unauthorized.
 
 ## same-task-continuity
 
@@ -81,9 +83,9 @@ advance packaged contractors only through governed lineage.
 
 ## next-bounded-work-package
 
-Record and push the PR publication receipt, then stop for owner review and
-explicit merge authorization. Installation, live smoke testing, and hosted
-decision conformance remain separately authorized operations.
+Commit and push the merge-authorization receipt, merge PR #314 with `[skip ci]`,
+then fetch and verify exact `main`. Stop before installation or live smoke
+testing. Hosted decision conformance remains separately authorized.
 
 ## verification
 
@@ -108,8 +110,9 @@ that mutation phase as hosted-only. All other commands above pass locally.
 
 ## constraints
 
-- Tracker creation, branch push, and non-draft PR publication are complete.
-  Merge, installation, hosted CI, and live inference remain unauthorized.
+- Tracker creation, branch push, and non-draft PR publication are complete;
+  PR #314 merge is authorized. Installation, hosted CI, and live inference
+  remain unauthorized.
 - Do not mutate or clean the primary checkout or unrelated worktrees.
 - Do not change provider routing, Option A pins, AR-119 matrix cells, or
   previously consumed live evidence.

@@ -62,8 +62,8 @@ metadata and compiled prompt contain explicit evidence requirements.
 - Tracker [#313](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313)
   is linked under explicit owner authorization. Non-draft pull request
   [#314](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/314)
-  publishes the clean candidate to `main`; merge and installation remain
-  separately authorized steps.
+  publishes the clean candidate to `main` and is explicitly authorized to
+  merge; installation and live smoke testing remain separately authorized.
 
 ## Approach
 
