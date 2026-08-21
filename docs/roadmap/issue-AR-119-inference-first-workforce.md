@@ -27,6 +27,7 @@ related:
   - docs/roadmap/AR-119-39ff6dca-recruiter-diagnostic-evidence.md
   - docs/roadmap/AR-119-fcffd96c-hiring-diagnostic-evidence.md
   - docs/roadmap/AR-119-9685a16d-accepted-outcome-evidence.md
+  - docs/roadmap/AR-119-2919802e-accepted-outcome-proof.md
   - docs/decisions/0102-defer-one-shot-application-evaluation.md
   - docs/decisions/0103-bind-named-regulated-assurance-to-typed-staffing.md
   - docs/roadmap/handoffs/issue-AR-119.md
@@ -4314,6 +4315,28 @@ bindings may pass; every unknown or mismatched shape still fails closed. This
 draw reused an existing contractor, did not exercise a genuine hire, retained
 no disposable host artifact after cleanup, and moves no matrix cell.
 
+### AR-260 merged; exact-main Claude outcome report passes — 2026-08-20
+
+PR #308 merged the reporter-only repair as exact main `00c4dc7e`, tree
+`e3c8dd03ff30db3041b3ba343ecdda16955a1349`, with `[skip ci]` and zero hosted
+runs. Claude, Codex, and ZCode were freshly installed from that merge and all
+three launcher manifests name runtime digest `75e998e4af26...`.
+
+One readiness- and telemetry-preceded Claude draw for pair `2919802e...` passed
+the whole canary. Producer and independent verifier routes both actually
+answered through the requested `codex-subscription`; the reporter projected
+the two distinct host-observed child IDs; and acceptance event `0c2dc63a...`
+was recorded for the existing TypeScript contractor. Claude exited 0 without
+timeout or truncation, and the final report has `canary_passed=true` with no
+unmet prerequisite. No retry followed.
+
+The exact content-free report and proof limits are in
+[`AR-119-2919802e-accepted-outcome-proof.md`](AR-119-2919802e-accepted-outcome-proof.md).
+This completes AR-260 and proves accepted-outcome reuse on the exact Claude
+canary. It does not prove a new hire or automatic promotion. The isolated
+profile retained no host artifact and `attestation_persisted=false`, so no
+formal Rule-4 matrix cell moved.
+
 ### Still required before AR-119 can close
 
 - Preserve the local repairs across AR-128 through AR-176 while completing their
@@ -4345,15 +4368,13 @@ no disposable host artifact after cleanup, and moves no matrix cell.
 
 ### Next bounded work package
 
-Keep Option A frozen. Finish AR-260's provider-free local gates and recovery
-pair, create its owner-authorized tracker, and publish it through a reviewed
-`[skip ci]` PR. Reinstall all three supported Windows harnesses from the exact
-merge. Then run one telemetry-preceded Claude draw without retry; require the
-reporter to accept only the independently verified route/delivery projection.
-After that, prove bounded staffing and one genuine hire plus reuse across
-Claude, Codex, and ZCode; compare authenticated dashboard views with the
-Store-backed CLI; and publish the exact-main Linux OpenClaw and Hermes handoff.
-Hosted Actions remain forbidden.
+Keep Option A and the now-passing Claude outcome reporter frozen. Prove bounded
+staffing and one genuine hire plus reuse across Claude, Codex, and ZCode using
+each host's supported CLI surface; do not repeat the accepted-outcome draw.
+Treat Codex's upstream child visibility limit faithfully and stop at a named
+host boundary rather than weakening proof. Then compare authenticated dashboard
+views with the Store-backed CLI and publish the exact-main Linux OpenClaw and
+Hermes handoff. Hosted Actions remain forbidden.
 Formal R8 credit remains a separate owner decision because it advances the
 candidate and re-anchors R2/R3/R7. Codex child work waits for an upstream readable
 started-child surface; do not burn repeated canaries. After ZCode plural-card
@@ -4362,7 +4383,7 @@ Rule 9 remain later authorized packages.
 
 ### Context checkpoint constraints
 
-- Continue on `codex/ar119-hiring-failure-evidence` from the current local
+- Continue on `codex/ar119-claude-outcome-evidence` from the current local
   recovery checkpoint; do not reset, discard, or silently rewrite the
   accumulated AR-119 work.
 - Keep tracker issue #132 open and do not claim the north-star goal complete.

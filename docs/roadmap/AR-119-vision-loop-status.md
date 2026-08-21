@@ -14,6 +14,7 @@ related:
   - docs/roadmap/AR-119-fcffd96c-hiring-diagnostic-evidence.md
   - docs/roadmap/issue-AR-259-preserve-terminal-hiring-state.md
   - docs/roadmap/AR-119-9685a16d-accepted-outcome-evidence.md
+  - docs/roadmap/AR-119-2919802e-accepted-outcome-proof.md
   - docs/roadmap/issue-AR-260-accept-verified-launch-bindings-in-outcome-canary.md
   - docs/roadmap/AR-255-child-parity-design.md
 supersedes: []
@@ -2438,3 +2439,23 @@ unknown and mismatched bindings stay rejected. The disposable host artifacts
 were removed with the isolated profile, so Store correlation is not promoted
 into retained Rule-4 proof. This draw proves reuse, not a new hire, and **no
 matrix cell moved**.
+
+### EXACT-MAIN PROOF: Claude outcome reporter passes
+
+PR #308 merged AR-260 as exact main `00c4dc7e` with `[skip ci]`; GitHub showed
+zero branch or merge workflow runs. Fresh Claude, Codex, and ZCode installs all
+name runtime digest `75e998e4af26...` and status reports no drift.
+
+The sole telemetry-preceded Claude draw for pair
+`2919802e595027a84c37f82a3bf59690` completed both native routes, and producer
+plus verifier actually answered through the requested `codex-subscription`.
+The reporter projected distinct host-observed child IDs and returned
+`canary_passed=true`; acceptance event `0c2dc63a...` was recorded for the
+existing TypeScript contractor. Claude exited 0 without timeout or truncation,
+and no retry followed.
+
+The exact report and limitations are in
+[`AR-119-2919802e-accepted-outcome-proof.md`](AR-119-2919802e-accepted-outcome-proof.md).
+AR-260 is complete. This is accepted-outcome reuse, not a new hire or promotion.
+The isolated profile retained no host artifact and no attestation, so **no
+formal Rule-4 matrix cell moved**.
