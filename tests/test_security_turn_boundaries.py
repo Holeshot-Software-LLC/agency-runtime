@@ -518,6 +518,46 @@ def _openclaw_plugin_harness_source() -> str:
 
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is not installed")
+def test_generated_openclaw_model_receipt_uses_event_model_when_context_omits_it(
+    tmp_path: Path,
+) -> None:
+    source = _openclaw_plugin_harness_source()
+    source += """
+const modelEnded = registeredHooks.get("model_call_ended");
+if (typeof modelEnded !== "function") process.exit(81);
+await modelEnded(
+  {
+    runId: "run-event-model",
+    callId: "call-event-model",
+    sessionKey: "session-event-model",
+    provider: "litellm",
+    model: "task-general",
+    durationMs: 5,
+    outcome: "completed",
+  },
+  { sessionKey: "session-event-model", runId: "run-event-model" },
+);
+const receipt = bridgeCalls.find((payload) => payload.action === "post_api_request");
+if (!receipt) process.exit(82);
+if (receipt.requestedModel !== "task-general") process.exit(83);
+if (receipt.modelGroup !== "task-general") process.exit(84);
+if (receipt.resolvedProvider !== "" || receipt.resolvedModel !== "") process.exit(85);
+"""
+    script = tmp_path / "openclaw-model-receipt.mjs"
+    script.write_text(source, encoding="utf-8")
+
+    completed = subprocess.run(
+        [str(shutil.which("node")), str(script)],
+        capture_output=True,
+        text=True,
+        timeout=10,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is not installed")
 def test_generated_openclaw_transport_bounds_oversized_results_and_handles_epipe(
     tmp_path: Path,
 ) -> None:

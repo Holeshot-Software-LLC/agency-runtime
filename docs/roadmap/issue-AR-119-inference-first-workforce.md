@@ -54,6 +54,7 @@ related:
   - docs/roadmap/issue-AR-268-accept-null-openclaw-control-errors.md
   - docs/roadmap/issue-AR-269-bind-openclaw-installed-copy-provenance.md
   - docs/roadmap/issue-AR-270-accept-stopped-openclaw-uninstall-status.md
+  - docs/roadmap/issue-AR-271-preserve-openclaw-model-receipt-fields.md
   - docs/roadmap/issue-AR-255-inference-owned-host-proven-child-staffing.md
   - docs/roadmap/issue-AR-256-canonical-nine-rule-completion-contract.md
   - docs/roadmap/issue-AR-200-diagnosable-decision-conformance.md
@@ -73,7 +74,7 @@ epic: routing
 issue_id: AR-119
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
-depends_on: [AR-115, AR-116, AR-118, AR-125, AR-179, AR-180, AR-185, AR-190, AR-228, AR-252, AR-253, AR-255, AR-256, AR-259, AR-260, AR-261, AR-262, AR-263, AR-264]
+depends_on: [AR-115, AR-116, AR-118, AR-125, AR-179, AR-180, AR-185, AR-190, AR-228, AR-252, AR-253, AR-255, AR-256, AR-259, AR-260, AR-261, AR-262, AR-263, AR-264, AR-271]
 blocks: [AR-178, AR-200, AR-201]
 ---
 
@@ -4545,6 +4546,23 @@ Agency worker run, or delivery verification, and all four child artifacts have
 zero Agency v6/native-child/header markers. The pinned `zcode-recruiter` / GLM
 child judge was never reached. Both draws are consumed, no provider route or
 pin changed, and no matrix cell moved.
+
+## Linux OpenClaw parent activation checkpoint — 2026-08-21
+
+OpenClaw `2026.7.1-2` is installed from the dedicated branch while its native
+primary remains `litellm/task-general`. Agency alone maps the OpenClaw harness
+to LiteLLM profile `linux-task-agency-router` and exact requested alias
+`task-agency-router`; Hermes remains running and untouched as break glass.
+
+The original Telegram outage is preserved under AR-268: a successful control
+envelope with `error: null` exited 2 and blocked `before_agent_run`. That repair
+is installed and the exact bridge control now exits 0. A later fresh local
+control produced visible output but failed Store finalization as
+`response_invalid` because OpenClaw model receipt fields were discarded. AR-271
+contains the red regression and bounded event-model plus serializer repair; the
+repaired plugin is reinstalled and OpenClaw is healthy, but post-fix live and
+Telegram evidence remain pending the mandatory clean checkpoint. No matrix cell
+moved, and requested router aliases remain distinct from actual answering models.
 
 ## Acceptance
 

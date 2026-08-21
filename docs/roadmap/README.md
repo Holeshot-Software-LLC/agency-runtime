@@ -284,6 +284,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-268` | [Accept null OpenClaw control errors](issue-AR-268-accept-null-openclaw-control-errors.md) | in_progress | p0 | reliability | None (tracker creation pending explicit authorization) |
 | `AR-269` | [Bind OpenClaw installed-copy provenance](issue-AR-269-bind-openclaw-installed-copy-provenance.md) | open | p0 | install | None (tracker creation pending explicit authorization) |
 | `AR-270` | [Accept stopped OpenClaw uninstall status](issue-AR-270-accept-stopped-openclaw-uninstall-status.md) | open | p0 | install | None (tracker creation pending explicit authorization) |
+| `AR-271` | [Preserve OpenClaw model receipt fields](issue-AR-271-preserve-openclaw-model-receipt-fields.md) | in_progress | p0 | reliability | None (tracker creation pending explicit authorization) |
 
 ## Traceability
 
@@ -553,6 +554,7 @@ not stable internal identifiers.
 | [AR-268](issue-AR-268-accept-null-openclaw-control-errors.md) | `85ad8d88`; exact live bridge success returned `error: null` with exit 2 and blocked Telegram before reply queueing; regression-first exit predicate repair is green; reinstall proof pending; tracker creation pending explicit authorization | None; one-line bridge boundary correction leaves routing, evidence, and finalization policy unchanged |
 | [AR-269](issue-AR-269-bind-openclaw-installed-copy-provenance.md) | `85ad8d88`; native inspect proves the managed source and installed-copy paths, but Agency uninstall rejects the two-path receipt; native rollback preserved; tracker creation pending explicit authorization | None; fail-closed provenance compatibility remains open |
 | [AR-270](issue-AR-270-accept-stopped-openclaw-uninstall-status.md) | `85ad8d88`; uninstall rejects OpenClaw's complete nested stopped exit-1 receipt even though systemd proves inactive; transactional streaming restore succeeded after separate inactivity/plugin-absence proof; tracker creation pending explicit authorization | None; share the AR-265 bounded stopped-state contract without weakening live-state rejection |
+| [AR-271](issue-AR-271-preserve-openclaw-model-receipt-fields.md) | pending local checkpoint; regression-first bounded receipt repair installed; fresh Store-backed finalization proof pending; tracker creation pending explicit authorization | None; retain LiteLLM resolved-model limits and existing fail-closed finalization |
 | [AR-117](issue-AR-117-parallelize-pr-verification.md) | `49e8f99`, `e0870fa`, `1b28e89`, `e2cb50d`, `6f97dcc`, `aefeb28`, `afd7199`, `dca7af5`, `f64ba1e` | [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md), [ADR-0097](../decisions/0097-gate-expensive-ci-fanout-behind-quality-contracts.md) |
 | [AR-118](issue-AR-118-reconcile-native-child-activation-evidence.md) | `795deef`, `78afe96` | [ADR-0079](../decisions/0079-route-native-children-once-and-bound-unplanned-reroutes.md) |
 

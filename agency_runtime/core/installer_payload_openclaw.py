@@ -229,6 +229,13 @@ function serializeBridgePayload(payload) {{
     finalResponse: boundedUtf8(payload?.finalResponse, MAX_BRIDGE_TEXT_BYTES),
     outboundPayload: boundedUtf8(payload?.outboundPayload, MAX_OUTBOUND_PAYLOAD_BYTES),
     model: boundedUtf8(payload?.model, 1024),
+    requestedModel: boundedUtf8(payload?.requestedModel, 1024),
+    modelGroup: boundedUtf8(payload?.modelGroup, 1024),
+    resolvedProvider: boundedUtf8(payload?.resolvedProvider, 1024),
+    resolvedModel: boundedUtf8(payload?.resolvedModel, 1024),
+    modelId: boundedUtf8(payload?.modelId, 1024),
+    source: boundedUtf8(payload?.source, 256),
+    status: boundedUtf8(payload?.status, 64),
     attempt: Number.isSafeInteger(payload?.attempt) ? payload.attempt : 0,
     toolName: boundedUtf8(payload?.toolName, 1024),
     error: boundedUtf8(payload?.error, 32 * 1024),
@@ -355,7 +362,7 @@ function modelProviderId(ctx) {{
 
 function modelCallReceipt(event, ctx) {{
   const provider = String(event?.provider || modelProviderId(ctx));
-  const requestedModel = modelId(ctx);
+  const requestedModel = modelId(ctx) || String(event?.model || "");
   const observedModel = String(event?.model || requestedModel);
   const routerBacked = provider.toLowerCase().includes("litellm");
   return {{

@@ -187,3 +187,37 @@ Prompt and response bodies need not enter the durable roadmap; content-free IDs,
 hashes, provider receipts, exact headers, and host artifact paths are enough.
 Cells that this packet cannot reach remain unproven, which is the correct
 result.
+
+
+## 7. Current Linux OpenClaw checkpoint — 2026-08-21
+
+OpenClaw is the only active package. Hermes is the running break-glass host and
+must not be installed, stopped, restarted, or otherwise mutated. OpenClaw
+`2026.7.1-2` runs native primary `litellm/task-general`; Agency separately maps
+its harness to `linux-task-agency-router` with exact requested LiteLLM alias
+`task-agency-router`. Native model and alias catalogs contain no Agency-router
+override.
+
+Installation and channel startup pass, and exact bridge status returns exit 0.
+Do not reuse the first local control as acceptance: session
+`57f19f38-338d-4d93-9c46-eac7b6a4831a` / trace
+`4959bd8c-a0bc-4e3d-bcb9-8cbcc1441547` ended `response_invalid` with missing
+`actual_model_selected`. AR-271 repairs the dropped `model_call_ended` receipt
+fields and is reinstalled, but a fresh post-fix session is still required.
+
+After the mandatory clean checkpoint, run serially:
+
+1. A new local OpenClaw session whose first message is exact `agency status`;
+   preserve native transcript and require terminal Store success.
+2. Operator Telegram `/new`, then exact `agency status`; preserve the first
+   response before any other message and require a queued delivery receipt.
+3. One harmless Agency skill load without a child, then the specified genuinely
+   new restart-safety review without delegation.
+4. Correlate runs, resident binding, routing decision, specialist, skill, model,
+   provider-attempt, and finalization receipts. Requested alias evidence may be
+   reported; actual model remains unavailable unless authoritative telemetry
+   supplies it.
+
+The direct CLI Telegram send suppression is an expected uncorrelated-outbound
+gate receipt and does not prove channel failure or success. No host canary is
+authorized for this package, and no Rule-4 or matrix claim follows.

@@ -2721,3 +2721,37 @@ Hermes/OpenClaw native-child bridge cases. The first sandboxed invocation
 stopped before collection on the private-root trust guard; the identical run
 with its required owner-private test root passed in 2.56 seconds. No product
 code changed in this evidence slice.
+
+
+## 2026-08-21 — OpenClaw parent receipt repair installed; post-fix proof pending
+
+The Linux package uses branch `codex/ar119-openclaw-hermes-litellm` from fetched
+main `4a3267738bb20519500513ea1498fc68f8ea9443`. Native OpenClaw remains
+`litellm/task-general`; only Agency profile `linux-task-agency-router` requests
+LiteLLM alias `task-agency-router`. Hermes remains running and untouched.
+
+OpenClaw `2026.7.1-2` now installs and starts with 13 plugins, connected Slack,
+and active Telegram polling. AR-268 repaired the concrete outage where a valid
+control envelope with `error: null` exited 2. Exact installed bridge status now
+exits 0. The first fresh local control after that repair is retained as failed,
+not promoted: session `57f19f38-338d-4d93-9c46-eac7b6a4831a`, trace
+`4959bd8c-a0bc-4e3d-bcb9-8cbcc1441547`, ended `response_invalid`; finalization
+event `01af794d-fb97-41c5-8920-2a8bfc2a3558` names missing field
+`actual_model_selected`. The visible Agency-shaped header is therefore not
+Store-backed acceptance evidence.
+
+AR-271 records the exact cause: installed OpenClaw supplies the model through
+`model_call_ended.event.model` when hook context omits `modelId`, and Agency
+serialization dropped all receipt fields. The new executable Node regression
+failed pre-fix with exit 83 and passes after the bounded fallback and serializer
+allowlist repair. Only OpenClaw was reinstalled. Its new bundle digest is
+`38dadb1a1a14d5f95319dcc401883a54e6415cf9392803e1b81906ceff718107`; launcher
+runtime digest is `f7741ed6bfde2844a18151fa43f6536761ba1b6a97a35bdc524d770447309a62`;
+launcher SHA-256 is `bb033f9b4facce1d78b42b246e0087f8ef6862d825ddcc48cad73b74dc4c5608`.
+Redacted native-config comparison shows only the OpenClaw touch timestamp.
+
+Telemetry reached 43.1 percent, so the post-fix live control waits for the clean
+substantive/worklog checkpoint required by repository policy. Telegram has no
+post-restart inbound receipt yet. The LiteLLM callback cannot import Agency on
+this shared proxy, so actual model may remain unavailable; the requested alias
+must not be promoted. No AR-119 matrix cell moved.
