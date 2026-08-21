@@ -13,6 +13,8 @@ related:
   - docs/roadmap/AR-119-39ff6dca-recruiter-diagnostic-evidence.md
   - docs/roadmap/AR-119-fcffd96c-hiring-diagnostic-evidence.md
   - docs/roadmap/issue-AR-259-preserve-terminal-hiring-state.md
+  - docs/roadmap/AR-119-9685a16d-accepted-outcome-evidence.md
+  - docs/roadmap/issue-AR-260-accept-verified-launch-bindings-in-outcome-canary.md
   - docs/roadmap/AR-255-child-parity-design.md
 supersedes: []
 superseded_by: null
@@ -2410,3 +2412,29 @@ preflight/dynamic-hiring verification passes 103/103. Recovery pair
 `de9ef543` / `13413c53` passes all 12 proportional local gates in 1.3 minutes.
 Publication, exact-main installation, and one decisive draw remain; **no matrix
 cell moved**.
+
+### EXACT-MAIN DRAW: accepted host outcome; reporter rejects launch binding
+
+PR #306 merged AR-259 as exact main `06f10171` with `[skip ci]` and no
+hosted run. Exact-main installs refreshed Claude, Codex, and ZCode. The single
+telemetry-preceded Claude draw for pair
+`9685a16db43269c171c6c702aa9322c9` then completed producer and verifier native
+children through the requested `codex-subscription` provider and recorded one
+accepted outcome for the existing TypeScript contractor. The private host
+collector returned `accepted`; no timeout, truncation, preflight-failure
+receipt, second draw, or retry followed.
+
+The top-level canary still failed closed because its reporter admitted only
+`child_id` route bindings. Both verified Claude deliveries use the supported
+prelaunch shape `binding_kind = launch_id` and `binding_id = launch_id`; each
+delivery separately records the actual child ID learned from the host artifact.
+All other route/delivery parent, launch, nonce, decision, digest, card, and
+provider facts correlate. The exact Store rows and evidence limits are in
+[`AR-119-9685a16d-accepted-outcome-evidence.md`](AR-119-9685a16d-accepted-outcome-evidence.md).
+
+AR-260 is a provider-free reporter repair. It projects child identity from the
+verified delivery and accepts only exact child-ID or exact launch-ID bindings;
+unknown and mismatched bindings stay rejected. The disposable host artifacts
+were removed with the isolated profile, so Store correlation is not promoted
+into retained Rule-4 proof. This draw proves reuse, not a new hire, and **no
+matrix cell moved**.

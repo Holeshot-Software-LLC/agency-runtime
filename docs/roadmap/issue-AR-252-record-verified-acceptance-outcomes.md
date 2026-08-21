@@ -9,6 +9,8 @@ related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-242-autonomous-promotion-review-window.md
   - docs/roadmap/issue-AR-255-inference-owned-host-proven-child-staffing.md
+  - docs/roadmap/issue-AR-260-accept-verified-launch-bindings-in-outcome-canary.md
+  - docs/roadmap/AR-119-9685a16d-accepted-outcome-evidence.md
   - docs/decisions/0118-require-inference-owned-staffing.md
   - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
   - docs/decisions/0157-automatically-promote-host-verified-contractors.md
@@ -28,7 +30,7 @@ issue_id: AR-252
 priority: p0
 tracker_url: null
 depends_on: [AR-180, AR-242, AR-255]
-blocks: [AR-119, AR-253]
+blocks: [AR-119, AR-253, AR-260]
 ---
 
 # AR-252: Record host-evidenced, independently verified outcomes for automatic promotion

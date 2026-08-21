@@ -126,7 +126,10 @@ def _route_projection(
     delivery = get_delivery(decision_id)
     if not isinstance(route, Mapping) or not isinstance(delivery, Mapping):
         return None
-    child_id = _bounded_identity(route.get("binding_id"))
+    binding_kind = _bounded_identity(route.get("binding_kind"), maximum=32)
+    binding_id = _bounded_identity(route.get("binding_id"), maximum=512)
+    launch_id = _bounded_identity(route.get("launch_id"), maximum=512)
+    child_id = _bounded_identity(delivery.get("child_id"), maximum=512)
     provider = _applied_provider(route)
     receipt_digest = route.get("provider_receipt_digest")
     artifact_digest = delivery.get("artifact_digest")
@@ -144,13 +147,18 @@ def _route_projection(
             "nonce",
         )
     )
+    binding_is_exact = (binding_kind == "child_id" and binding_id == child_id) or (
+        binding_kind == "launch_id"
+        and binding_id is not None
+        and launch_id is not None
+        and binding_id == launch_id
+    )
     if (
         route.get("decision_id") != decision_id
         or delivery.get("decision_id") != decision_id
         or route.get("host") != "claude"
-        or route.get("binding_kind") != "child_id"
+        or not binding_is_exact
         or child_id is None
-        or delivery.get("child_id") != child_id
         or delivery.get("verified_delivery") is not True
         or provider != expected_provider
         or not isinstance(receipt_digest, str)

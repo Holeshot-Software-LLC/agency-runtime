@@ -24,7 +24,7 @@ issue_id: AR-259
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/305
 depends_on: []
-blocks: []
+blocks: [AR-119]
 ---
 
 # AR-259: Preserve terminal hiring state after atomic preflight failure
