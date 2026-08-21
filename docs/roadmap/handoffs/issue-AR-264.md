@@ -14,9 +14,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-264
-branch: codex/ar264-contractor-execution-profile
-evidence_commit: 271138d3fff4ccd351e7ba354c3da99ada01f9bd
-minimum_ledger_commit: 271138d3fff4ccd351e7ba354c3da99ada01f9bd
+branch: codex/ar264-exact-main-live-evidence
+evidence_commit: da851c65f13accdc0ed6db19e81a74560c5fd1a6
+minimum_ledger_commit: da851c65f13accdc0ed6db19e81a74560c5fd1a6
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 ---
@@ -25,31 +25,40 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 
 ## checkpoint
 
-- Worktree `C:\Workspaces\Holeshot Software\agency-runtime-ar264` is on branch
-  `codex/ar264-contractor-execution-profile`, ten clean published commits above
-  exact remote main `0d8a2355` before this merge-authorization delta.
-- The primary checkout has unrelated owner WIP and must not be touched.
-- Context telemetry required the clean implementation checkpoint at 9.0 percent
-  remaining. After normal compaction, the latest reading is 79.3 percent and
-  permits the same task to continue.
+- Worktree `C:\Workspaces\Holeshot Software\agency-runtime-ar264-rollout` is on
+  `codex/ar264-exact-main-live-evidence`, based exactly on merged remote main
+  `da851c65`. The primary checkout has unrelated owner WIP and is untouched.
+- Context telemetry reads 39.3 percent remaining, so this bounded repair must
+  reach a clean substantive and ledger checkpoint before live work resumes.
 
 ## completed-evidence
 
-- Employment-contract v2 and compiler v2 render five closed execution sections;
-  live hiring refuses v1 while historical parser/compiler replay remains.
-- All 15 known contractors carry reviewed profiles. TypeScript v2 is
-  `contractor-2-6b0d5cae3b65a44d`; exact v1 remains
-  `contractor-1-5e6a02cdaaf0bfde` with its prior full SHA-256 identity.
-- Exact package-v1 -> package-v2 Store test preserves worker identity, advances
-  revision 0 -> 1, retains the parent-linked v1 prompt, records package—not
-  inference—event authority, and is idempotent.
+- PR #314 merged as `da851c65` with `[skip ci]`; `origin/main` has that exact
+  merge and GitHub reports no run for it.
+- Exact-main Claude bundle installation succeeded, but the Store correctly
+  preserved all 15 workers because the v2 migration recognized only a
+  synthetic canonical v1 predecessor. Codex, ZCode, dashboard installation,
+  and all provider draws stopped at that evidence boundary.
+- Real Store inspection proved 15 revision-zero malformed package versions.
+  Fourteen matched the original contract projection; backend-service-engineer
+  additionally required its earlier capability and evidence fields.
+- The repair pins all 15 historical prompt hashes and reconstructs both the
+  pre- and post-August-6 v1 identities. The Store transaction rechecks exact
+  content, metadata, recruitment-contract bytes, and hash before staging v2.
+- A disposable SQLite backup advanced 15/15 workers, was idempotent on pass two,
+  retained two-version lineage throughout, and kept TypeScript at two accepted
+  artifacts with one remaining for promotion. The real Store was byte-for-byte
+  unchanged by the diagnostic.
 - Dashboard API test projects `changed artifacts and focused verification
   results`; all 134 dashboard UI tests pass and no false evidence fallback is
   rendered for that worker.
-- Focused contract/version/upgrade and hiring checks pass; widened startup,
-  routing, CLI-config, and workforce lifecycle checks report 122 passed.
-- The governing named fast Python spine reports 806 passed and 20 skipped in
-  135.09 seconds. Full Ruff and format checks pass across 682 files.
+- Focused predecessor tests cover both shipped v1 identities, backend replay,
+  auditable historical hiring evidence, and fail-safe preservation of an exact
+  prompt with amended recruitment metadata.
+- The widened contractor, Store, installer, lifecycle, hiring, and selection
+  suite reports 332 passed and one skipped in 247.07 seconds. Focused Ruff and
+  `git diff --check` pass. The original main candidate's named spine remains
+  806 passed and 20 skipped; the repaired spine has not yet run.
 - Metadata checks cover 731 Markdown files, the policy projection and 1,079-row
   worklog are current, documentation validation passes, `git diff --check`
   passes, and the routing evaluation passes every correctness, safety,
@@ -58,34 +67,30 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
   and `epic:roster-governance` label. Repository-wide strict tracker checks
   still fail on pre-existing missing trackers and historical state/label debt;
   neither strict failure reports AR-264.
-- GitHub PR #314 is open, non-draft, `CLEAN` and mergeable, targets `main`, has
-  no reviews or hosted status checks, and its remote head exactly matches the
-  clean local branch.
-- A wider public/prompt compatibility diagnostic reported 124 passed, one
-  expected skip, and one unrelated assertion that still expects the retired
-  fallback pair even though the governed constant is empty.
+- Claude CLI remains logged out. That blocks paid Claude live smoke but not
+  local repair verification or managed bundle installation.
 
 ## exact-blocker
 
-No implementation blocker. The decision-conformance mutation phase cannot run
-locally according to `CONTRIBUTING.md`; this Codex Desktop session correctly
-refused it because the host did not attest a private scratch capability. Hosted
-CI was not dispatched. Tracker #313 and non-draft PR #314 are linked and
-directly verified. PR #314 is explicitly authorized to merge with `[skip ci]`;
-installation and live inference remain unauthorized.
+The exact-main acceptance claim is not complete until this repair reaches main
+and the real Store advances from package v1. Claude authentication is an
+operator blocker for its later live smoke; no provider draw has been attempted
+in this package. Hosted decision conformance remains unavailable locally and
+was not dispatched.
 
 ## same-task-continuity
 
-Keep inference as the sole staffing and hiring authority. Do not add a raw
-prompt field, another provider call, deterministic worker selection, or a
-silent rewrite of historical prompt bytes. Preserve v1 evidence exactly and
-advance packaged contractors only through governed lineage.
+Keep inference as the sole staffing and hiring authority. The repair recognizes
+only closed package history and performs no inference. Never rewrite the
+malformed historical version in place: advance it through new immutable v2
+lineage while preserving its evidence and accepted outcomes.
 
 ## next-bounded-work-package
 
-Commit and push the merge-authorization receipt, merge PR #314 with `[skip ci]`,
-then fetch and verify exact `main`. Stop before installation or live smoke
-testing. Hosted decision conformance remains separately authorized.
+Create the clean repair and ledger checkpoint, run the full named local gates,
+then publish and merge the repair before any real Store migration. Install only
+the resulting exact main into Claude, Codex, ZCode, and the dashboard. Run
+provider smoke only after the installation and auth boundaries are rechecked.
 
 ## verification
 
@@ -98,21 +103,31 @@ python scripts/verify_docs.py
 ruff check agency_runtime tests scripts
 ruff format --check agency_runtime tests scripts
 python -m pytest <named-fast-production-spine> -q -W error
+python -m pytest tests/test_known_contractor_install.py \
+  tests/test_contractor_version_identity.py tests/test_native_installer.py \
+  tests/test_roster_bulk_seed.py tests/test_workforce_lifecycle.py \
+  tests/test_workforce_hiring_contract.py tests/test_workforce_dynamic_hiring.py \
+  tests/test_workforce_selection_safety.py -q -W error
 node --test tests/dashboard_ui.test.mjs
 python -m agency_runtime.cli eval routing --json --no-details
 python -m agency_runtime.cli eval decision-conformance --repository . --json
 git diff --check
 ~~~
 
-The decision-conformance command stopped before mutation execution with `Codex
-host scratch was not attested by the host`; the contributor guide classifies
-that mutation phase as hosted-only. All other commands above pass locally.
+The widened repair suite passes. The complete post-repair gate block remains
+pending. The decision-conformance mutation phase is hosted-only and stays
+undispatched.
 
 ## constraints
 
-- Tracker creation, branch push, and non-draft PR publication are complete;
-  PR #314 merge is authorized. Installation, hosted CI, and live inference
-  remain unauthorized.
+- Do not run the real Store migration from this unmerged evidence branch. It
+  was proven only on a disposable transactionally backed-up copy.
+- Claude's managed bundle is at exact main `da851c65`; Codex, ZCode, and the
+  dashboard still point at the previous installed source until repaired main
+  exists. The Store remains package v1.
+- Hosted CI is not authorized or needed for this local gate package. Claude
+  authentication requires operator action before its live smoke.
+- OpenClaw and Hermes remain explicitly deferred to the later Linux handoff.
 - Do not mutate or clean the primary checkout or unrelated worktrees.
 - Do not change provider routing, Option A pins, AR-119 matrix cells, or
   previously consumed live evidence.

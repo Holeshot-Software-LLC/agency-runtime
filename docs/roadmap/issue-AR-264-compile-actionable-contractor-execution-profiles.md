@@ -49,16 +49,31 @@ metadata and compiled prompt contain explicit evidence requirements.
 - Compiler v2 emits a readable worker capsule and omits recruiter-only nearest
   worker and evaluation material. The TypeScript capsule is 2,710 bytes at
   `contractor-2-6b0d5cae3b65a44d`.
-- The exact historical TypeScript v1 prompt still compiles to
-  `sha256:5e6a02cdaaf0bfdea4dcb4e8ec9c5a493ada09258a47554a0f7aa917344cd412`.
-- A Store-enforced package staging seam advances only an exact packaged v1
-  predecessor through audited amendment lineage. Unknown Agency amendments and
-  operator holds are preserved.
+- Pull request [#314](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/314)
+  merged as exact main `da851c65`; no hosted run was dispatched. Installing
+  that revision into Claude exposed that all 15 real package-v1 workers were
+  preserved instead of advanced, so live completion stopped before Codex,
+  ZCode, dashboard, or provider draws.
+- The exact-main defect was a synthetic predecessor: the migration test minted
+  the post-August-6 canonical version, while the real Store retained the older
+  `contractor-1-sha256:<9 hex>` package identity. The backend contract also had
+  pre-v2 capability and evidence fields that could not be reconstructed by
+  merely deleting its execution profile.
+- The repair pins all 15 historical v1 prompt hashes, reconstructs the two
+  version identities that actually shipped, and revalidates prompt bytes,
+  immutable revision metadata, and the current recruitment contract inside the
+  Store transaction. Unknown Agency amendments and operator projections remain
+  preserved.
+- A transactionally backed-up disposable copy of the owner Store advanced
+  15/15 workers, advanced none on its second pass, retained two-version lineage
+  for every worker, and preserved TypeScript's two accepted outcomes and 2/3
+  promotion readiness. The real Store's size, mtime, and SHA-256 were unchanged.
 - Specialist prompt reads now decode exact active revision metadata, and the
   dashboard overlays its real `evidence_requirements` into owner detail.
-- The named local fast spine reports 806 passed and 20 skipped; Ruff, format,
-  all 134 dashboard UI tests, documentation validation, and every routing gate
-  pass. The hosted-only decision-conformance mutation phase remains unrun.
+- The original named local fast spine reports 806 passed and 20 skipped. The
+  repair's widened contractor, Store, installer, hiring, and selection suite
+  reports 332 passed and one skipped; focused Ruff and diff checks pass. The
+  full post-repair local spine remains the next checkpoint.
 - Tracker [#313](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313)
   is linked under explicit owner authorization. Non-draft pull request
   [#314](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/314)
@@ -102,13 +117,16 @@ whole-workforce recruiter contract merely to repair an owner detail view.
 - [x] Compiler v2 renders readable inspect, working-method, failure, evidence,
       and stop sections while excluding recruiter-only comparison/eval fields.
 - [x] Historical employment-contract v1 evidence still parses and compiles to
-      the exact prior prompt bytes, hash, and version identity.
+      the exact prior prompt bytes and hashes, including both package version
+      identities that shipped.
 - [x] Packaged contractors carry reviewed execution profiles, and reinstalling
-      over v1 advances them through immutable, auditable, idempotent lineage.
+      over either exact v1 package identity advances them through immutable,
+      auditable, idempotent lineage while preserving amended contract metadata.
 - [x] Workforce detail and the dashboard show the active revision's real
       evidence requirements; `none recorded` appears only when none exist.
 - [x] Focused contract, hiring, Store, dashboard API, and dashboard UI tests
       pass with Ruff and documentation validation.
 - [x] Tracker issue #313 is created and linked after explicit authorization.
-- [ ] The reviewed candidate is merged, installed, and smoke-tested only after
-      separate publication and live-operation authorization.
+- [ ] The repaired candidate is merged to main, installed into Claude, Codex,
+      ZCode, and the dashboard, and smoke-tested under the current live-operation
+      boundary. OpenClaw and Hermes remain deferred to the Linux handoff.
