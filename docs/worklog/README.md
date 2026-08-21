@@ -1108,6 +1108,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `c4677a41` | 2026-08-21 | feat(workforce): compile actionable contractor profiles | [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md) | null |
 | `16b43b7c` | 2026-08-21 | fix(workforce): finalize contractor profile gates | [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md) | null |
 | `c563587c` | 2026-08-21 | docs(ar264): link tracker issue 313 | [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md) | null |
+| `d5eec96b` | 2026-08-21 | docs(ar264): record pull request 314 | [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
