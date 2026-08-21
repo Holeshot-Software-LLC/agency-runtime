@@ -1103,6 +1103,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `3752ef99` | 2026-08-21 | docs(ar119): record expired Claude auth boundary | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-261](../roadmap/issue-AR-261-disambiguate-technical-diagnosis-risk.md) | null |
 | `1a8071ca` | 2026-08-21 | fix(dashboard): preserve slow host inspection parity | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-236](../roadmap/issue-AR-236-achieve-full-cli-dashboard-parity.md), [AR-262](../roadmap/issue-AR-262-preserve-slow-host-dashboard-parity.md) | null |
 | `204ca567` | 2026-08-21 | docs(ar119): record Codex Desktop activation gap | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-262](../roadmap/issue-AR-262-preserve-slow-host-dashboard-parity.md), [AR-263](../roadmap/issue-AR-263-restore-codex-desktop-parent-hook-delivery.md) | null |
+| `0d8a2355` | 2026-08-21 | Merge pull request #312: preserve slow host inspection parity [skip ci] | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-236](../roadmap/issue-AR-236-achieve-full-cli-dashboard-parity.md), [AR-262](../roadmap/issue-AR-262-preserve-slow-host-dashboard-parity.md) | null |
+| `54b7143b` | 2026-08-21 | docs(ar264): define governed contractor execution profiles | [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
