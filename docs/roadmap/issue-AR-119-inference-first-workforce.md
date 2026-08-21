@@ -28,6 +28,7 @@ related:
   - docs/roadmap/AR-119-fcffd96c-hiring-diagnostic-evidence.md
   - docs/roadmap/AR-119-9685a16d-accepted-outcome-evidence.md
   - docs/roadmap/AR-119-2919802e-accepted-outcome-proof.md
+  - docs/roadmap/AR-119-f4f3d45e-hiring-risk-evidence.md
   - docs/decisions/0102-defer-one-shot-application-evaluation.md
   - docs/decisions/0103-bind-named-regulated-assurance-to-typed-staffing.md
   - docs/roadmap/handoffs/issue-AR-119.md
@@ -43,6 +44,7 @@ related:
   - docs/roadmap/issue-AR-253-dynamic-team-dispatch-on-every-harness.md
   - docs/roadmap/issue-AR-259-preserve-terminal-hiring-state.md
   - docs/roadmap/issue-AR-260-accept-verified-launch-bindings-in-outcome-canary.md
+  - docs/roadmap/issue-AR-261-disambiguate-technical-diagnosis-risk.md
   - docs/roadmap/issue-AR-255-inference-owned-host-proven-child-staffing.md
   - docs/roadmap/issue-AR-256-canonical-nine-rule-completion-contract.md
   - docs/roadmap/issue-AR-200-diagnosable-decision-conformance.md
@@ -62,7 +64,7 @@ epic: routing
 issue_id: AR-119
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
-depends_on: [AR-115, AR-116, AR-118, AR-125, AR-179, AR-180, AR-185, AR-190, AR-228, AR-252, AR-253, AR-255, AR-256, AR-259, AR-260]
+depends_on: [AR-115, AR-116, AR-118, AR-125, AR-179, AR-180, AR-185, AR-190, AR-228, AR-252, AR-253, AR-255, AR-256, AR-259, AR-260, AR-261]
 blocks: [AR-178, AR-200, AR-201]
 ---
 
@@ -4393,6 +4395,26 @@ Rule 9 remain later authorized packages.
   ledger commits, and apply the same-task clean-checkpoint protocol in
   `AGENTS.md`. Telemetry never blocks live work and never creates, forks,
   dispatches, or waits for another task.
+
+### Ordinary Claude hiring draw exposes technical-diagnosis approval false positive — 2026-08-20
+
+Exact-main Claude session `f4f3d45e-...` requested a read-only SAP
+ABAP/CDS/HANA diagnosis through exactly one child. The planner and recruiter
+applied, then AR-259's terminal receipt recorded
+`hiring_status_pending_approval` plus `hiring_inference_attempted`. Atomic
+preflight left no hiring case or new contractor, so the native child that did
+answer was correctly identified as generic and unstaffed. The workforce stayed
+at 31, the draw was not retried, and no matrix cell moved.
+
+Provider-free compilation reproduces the boundary: the deterministic contract
+classifier maps a technical narrow scope containing bare `diagnosis` to the
+`medical` owner-approval class. The exact generated contract was not retained,
+so its field and prose are not claimed. AR-261 makes the overloaded word
+context-sensitive while retaining owner approval by default and whenever
+medical, clinical, or patient context is present; the mandatory isolated
+security reviewer and all other risk markers remain unchanged. Exact evidence
+and limitations are in
+[`AR-119-f4f3d45e-hiring-risk-evidence.md`](AR-119-f4f3d45e-hiring-risk-evidence.md).
 
 ## Acceptance
 

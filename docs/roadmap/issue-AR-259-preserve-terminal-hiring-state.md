@@ -24,7 +24,7 @@ issue_id: AR-259
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/305
 depends_on: []
-blocks: [AR-119]
+blocks: [AR-119, AR-261]
 ---
 
 # AR-259: Preserve terminal hiring state after atomic preflight failure
@@ -94,6 +94,8 @@ written.
 - [x] Required tracker issue #305 is created after explicit owner authorization.
 - [x] The exact local candidate passes all 12 proportional gates in 1.3 minutes
       at recovery pair `de9ef543` / `13413c53`.
-- [ ] The candidate is published through a reviewed PR.
-- [ ] A later authorized exact-main draw is decisive at the hiring boundary;
+- [x] The candidate is published through reviewed PR #306 as exact main
+      `06f10171` with `[skip ci]` and no hosted workflow run.
+- [x] A later authorized exact-main draw is decisive at the hiring boundary;
       this issue itself moves no AR-119 matrix cell.
+- [ ] Tracker issue #305 is closed after explicit outward-write authorization.

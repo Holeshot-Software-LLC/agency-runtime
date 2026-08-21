@@ -14,12 +14,14 @@ related:
   - docs/roadmap/issue-AR-256-canonical-nine-rule-completion-contract.md
   - docs/roadmap/issue-AR-259-preserve-terminal-hiring-state.md
   - docs/roadmap/issue-AR-260-accept-verified-launch-bindings-in-outcome-canary.md
+  - docs/roadmap/issue-AR-261-disambiguate-technical-diagnosis-risk.md
   - docs/roadmap/AR-119-founding-vision.md
   - docs/roadmap/AR-119-vision-loop-status.md
   - docs/roadmap/AR-119-39ff6dca-recruiter-diagnostic-evidence.md
   - docs/roadmap/AR-119-fcffd96c-hiring-diagnostic-evidence.md
   - docs/roadmap/AR-119-9685a16d-accepted-outcome-evidence.md
   - docs/roadmap/AR-119-2919802e-accepted-outcome-proof.md
+  - docs/roadmap/AR-119-f4f3d45e-hiring-risk-evidence.md
   - docs/roadmap/AR-119-rule-host-evidence-matrix.md
   - docs/decisions/0118-require-inference-owned-staffing.md
   - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
@@ -55,6 +57,10 @@ sections. This is a recovery map, not evidence that an unproven cell moved.
   manifests name runtime digest `75e998e4af26...`; status reported zero drift.
 - Claude pair `2919802e...` passes the exact-main accepted-outcome reporter.
   AR-260 tracker #307 closed automatically with every acceptance item met.
+- Ordinary Claude session `f4f3d45e...` detected the missing SAP specialty and
+  attempted hiring, but terminal status was `pending_approval`; no case or
+  contractor survived atomic rollback. AR-261 owns the reproduced technical
+  `diagnosis` -> `medical` false positive before any second draw.
 - **Option A's three-host pin phase is complete.** OpenClaw/Hermes are deferred,
   not waived; Rule 9 stays five-host and never closes on three.
 ## completed-evidence
@@ -103,15 +109,20 @@ sections. This is a recovery map, not evidence that an unproven cell moved.
 4. Genuine hiring remains unproven. Codex parent is solid and its child proof
    is upstream-blocked. ZCode needs
    plural cards. OpenClaw/Hermes wait for the Linux box.
+5. The first ordinary Claude hiring smoke is consumed. It created an unstaffed
+   generic child only; do not repeat it. The no-cost evidence is
+   `AR-119-f4f3d45e-hiring-risk-evidence.md`.
 
 ## next-bounded-work-package
 
 Keep Option A frozen. Owner-authorized sequence:
 
 1. Commit this exact-main Claude proof and its ledger as a clean recovery pair.
-2. Use provider-free CLI/source inspection to bind the next proof to each host's
-   supported surface and a genuine-hiring outcome; do not improvise live prompts.
-3. Run telemetry before each bounded evaluation and never retry a failed draw.
+2. Finish AR-261's provider-free technical-diagnosis classifier repair, focused
+   review, tracker authorization, and clean PR merge. Its focused 88-test suite
+   and all 12 proportional local gates are green.
+3. Freshly install that exact main. Run telemetry before each bounded
+   evaluation and never retry a failed draw.
    Smoke Codex once with its supported trust bypass and ZCode once through its
    bundled Node CLI; preserve upstream visibility limits exactly.
 4. Prove one genuine hire plus later reuse without duplicate contractors.
