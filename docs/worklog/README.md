@@ -1135,6 +1135,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `c812d80e` | 2026-08-22 | docs(ar119): checkpoint OpenClaw finalization evidence | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-274](../roadmap/issue-AR-274-record-openclaw-native-skill-reads.md) | null |
 | `7919f3fa` | 2026-08-22 | docs(ar119): retain OpenClaw restart review timeout | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-273](../roadmap/issue-AR-273-model-agnostic-structured-inference-profiles.md) | null |
 | `d469d099` | 2026-08-22 | docs(ar119): record OpenClaw alias blocker | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md), [AR-273](../roadmap/issue-AR-273-model-agnostic-structured-inference-profiles.md), [AR-274](../roadmap/issue-AR-274-record-openclaw-native-skill-reads.md) | null |
+| `4bd18867` | 2026-08-22 | fix(inference): preserve planner repair diagnostics | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md), [AR-273](../roadmap/issue-AR-273-model-agnostic-structured-inference-profiles.md), [AR-275](../roadmap/issue-AR-275-preserve-planner-repair-diagnostics.md) | [detail](2026-08-22-4bd18867-preserve-planner-repair-diagnostics.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
