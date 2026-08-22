@@ -26,8 +26,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-264
 branch: codex/ar119-openclaw-hermes-litellm
-evidence_commit: 1b789ac3b66c8e3e3e74e3a16bc66667c07cd517
-minimum_ledger_commit: 6d6ea5718aea2698916149467e96fa934adbd457
+evidence_commit: fba12371f4bf004ffadd9356bb00787b00e6194f
+minimum_ledger_commit: 6ad46fb4a1309b3b52396055a73274d2d5d670b9
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 ---
@@ -36,29 +36,29 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 
 ## checkpoint
 
-- Clean dedicated worktree `codex/ar119-openclaw-hermes-litellm` is at AR-273 ledger `6d6ea571`; repaired AR-264 anchor `f76050d7` is an ancestor.
-- Latest online pre-install Store backup has integrity `ok` and SHA-256 `d0098af5056bdc54055f20b1fb3e59f2efdc1111c9abb6215c2b78d8104f1300`. The bounded Agency install retained 15 contractors.
+- Clean dedicated worktree is at repair `fba12371` plus ledger `6ad46fb4`; repaired AR-264 anchor `f76050d7` is an ancestor.
+- Fresh online Store backup has integrity `ok`, schema 47, and SHA `731934b20258feacf7d8835a9ba8e32d41844cd5685eef8ca65ad3dc1d51734f`. Contractor count stayed 15.
 - OpenClaw stayed on audited `2026.7.1-2`, native primary `litellm/task-general`, six fallbacks, 21 LiteLLM models, and its existing channel configuration. The host package and native inference configuration were not reinstalled or changed.
-- Agency-only install `4dd7ee41-121f-4cde-a391-9cecd0665d72` installed AR-273 bundle `51320b45f63cc68db52b267928c1939ab908052f623900a51786228c5b978419`. Launcher SHA-256 is `755ec953638d85b175f1b4aa705e9cc388cde3d5011520a6bfc7f2986528a78c`; runtime digest is `c71fbb41ca8780b5e5a5424ef240dbf92bdf56a36dbc9d2caac70dcfa22d3497`.
+- Agency-only install `b526ecdc-a538-4797-a8e8-656ecb3b315b` installed bundle `94d87723b900387f9dbad0dda73613b449332c34683a4fd68674c0e354314a22`. Launcher SHA is `fe71017957b7060d7480fa80b222455b2cc69fe42d2f7b9c71e98ba65573b01b`; runtime digest is `71c917a91ed3527065447e6aa5ec4e36466d1710f7f5d0a41411a5ac585decda`.
 - New first-message control session `b610efe7-4e71-43c7-8011-fb13f2736f2b`, trace `de166bdc-d649-462d-996b-b2b030a34a8e`, and run `c5e8d0bd-99b5-431c-9bb3-6bead5d2eeef` completed with accepted finalization `cbc9107f-a34a-4fad-b919-17f3e1ae1d44`. Deterministic abstention proves control activation/final delivery, not workforce inference.
 - The next harmless skill work unit was retained as failed: trace `9384d3a3-0a28-4150-a8fa-ab493efda7bf`, run `a5504721-0aa9-4fa3-98df-f5667c933b5b`, failure receipt `3193483a-712b-4c1d-8f13-ccb6799433a1`, reason `workforce_inference_failed`. It created no skill, specialist, routing, finalization, or model-receipt row and was not retried.
 - Both inference attempts automatically selected harness `openclaw`, profile/provider name `linux-task-agency-router`, provider type `litellm`, and exact requested model/model-group `task-agency-router`. Both failed `provider_response_contract_invalid`; no Codex, Claude, or other fallback occurred.
 - AR-273 proves the contract failure is in Agency's structured request, not the operator-owned alias: the approved content-free probe returned HTTP 200, a normal envelope, and braced JSON, but four keys violated a closed two-key schema. The alias echo remains distinct from actual-model telemetry.
 - Six focused red assertions preserve the missing schema/reasoning behavior. The minimal model-agnostic repair delivers the deterministic bounded schema in the trusted system instruction and sends LiteLLM `reasoning_effort`; exact regressions pass 7/7 and the affected warning-strict inference slice passes 134/134. No validator, retry, fallback, host, alias, or proxy configuration changed.
-- One new expected-red payload assertion preserves the remaining `json_object` defect. The LiteLLM-only repair sends the exact schema through standardized `json_schema`, leaving provider translation to LiteLLM and strict validation to Agency; the focused repair passes 6/6.
+- One expected-red assertion preserves the `json_object` defect. Installed repair sends exact `json_schema`, leaving translation to LiteLLM and strict validation to Agency; repair passes 6/6.
 - Slack and Telegram report configured/running with no current error, but no new Telegram Store run has arrived since the local proof. Hermes stayed running and untouched as break glass. Codex OAuth/config/canary, Claude, and ZCode were untouched.
 
 ## completed-evidence
 
 - Repository/bootstrap identity, online Store backups, redacted host inventories, Agency install provenance, config invariants, control response delivery, failed provider attempts, and protected-host hashes are retained.
 - AR-272 native finalization is proven. Successful skill loading and substantive Agency workforce inference remain unproven because the exact alias response fails the strict planner contract.
-- The initial AR-273 repair is installed; its fresh substantive trace `517c2c78-95e6-4dea-bfd7-b43f6d48671a`, run `c080b393-72fd-4133-9485-d3e786e6c90a`, and receipt `de5f98bc-ca21-4b9b-b881-d862bf5b4da8` retain one HTTP-200 `provider_no_valid_response` attempt through the exact profile/alias with zero fallback. The exact-schema follow-up is tested but not installed.
+- Prior trace `517c2c78-95e6-4dea-bfd7-b43f6d48671a`, run `c080b393-72fd-4133-9485-d3e786e6c90a`, and receipt `de5f98bc-ca21-4b9b-b881-d862bf5b4da8` retain the HTTP-200 failure through the exact profile/alias with zero fallback. Exact-schema follow-up is installed and awaits fresh live proof.
 - Focused inference and OpenClaw slices pass 134/134 and 104/104; the earlier production spine passed 827 with three skips. No hosted workflow, push, PR, tracker mutation, host canary, or matrix movement occurred.
 
 ## exact-blocker
 
 1. Do not remap the proxy, inspect its target for dispatch, retry unchanged input, or weaken Agency validation.
-2. Commit the tested LiteLLM schema repair, reinstall only Agency, and use fresh status plus a genuinely new work unit. Telegram `/new` remains operator proof; Hermes remains outside this package.
+2. Use fresh status, conditional skill, and genuinely new substantive sessions. Telegram `/new` remains operator proof; Hermes remains outside this package.
 3. AR-265 through AR-273 tracker creation remains pending separate outward-write authorization.
 
 ## same-task-continuity
@@ -67,8 +67,8 @@ Continue with OpenClaw only after the clean commit pair. Hermes is running break
 
 ## next-bounded-work-package
 
-1. Finish focused/provider tests and the clean substantive/worklog pair.
-2. Reinstall Agency's OpenClaw integration and run fresh status, conditional harmless-skill proof, and a different non-mutating work unit.
+1. Run fresh status, conditional harmless-skill proof, and a different non-mutating work unit.
+2. Correlate Store/provider/header proof without actual-model invention.
 3. Preserve operator Telegram evidence when supplied. Keep the alias, Hermes, Claude, ZCode, Codex OAuth/model settings, and OpenClaw native inference configuration untouched.
 
 ## verification

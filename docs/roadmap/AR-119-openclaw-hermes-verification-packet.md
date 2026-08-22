@@ -374,7 +374,36 @@ The focused test failed before repair only on `json_object` versus exact
 `/tmp/ar273-litellm-native-schema-red.xml`. The repair plus unchanged
 OpenAI-compatible and reasoning behavior passes 6/6 at
 `/tmp/ar273-litellm-native-schema-green.xml`. This is local code evidence;
-the repair is not yet installed or live-proven.
+the repair is installed but not yet live-proven.
+
+### Exact-schema install and restart receipt
+
+Local commits `fba12371` plus `6ad46fb4` were clean before mutation. Fresh
+online backup
+`~/.agency-runtime/backups/ar273-exact-schema-preinstall.TuZp2cjN/agency.db`
+has schema 47, integrity `ok`, and SHA-256
+`731934b20258feacf7d8835a9ba8e32d41844cd5685eef8ca65ad3dc1d51734f`.
+Installer contractor count was 15 before and after.
+
+Only `openclaw-gateway.service` was stopped. Agency install
+`b526ecdc-a538-4797-a8e8-656ecb3b315b` completed with bundle
+`94d87723b900387f9dbad0dda73613b449332c34683a4fd68674c0e354314a22`
+and left the gateway inactive. The installed launcher references this checkout
+and runtime digest
+`71c917a91ed3527065447e6aa5ec4e36466d1710f7f5d0a41411a5ac585decda`;
+launcher SHA is
+`fe71017957b7060d7480fa80b222455b2cc69fe42d2f7b9c71e98ba65573b01b`;
+install-manifest SHA is
+`4760bbee202e904a81e54e8e41723bd52d18840906da409c9d4cb97d26624503`.
+
+The same gateway service restarted RPC-green. The plugin is enabled,
+activated, loaded, and imported with ten typed hooks, `agency_finalize`, and
+zero diagnostics. Telegram and Slack are both running, connected, and
+probe-green. OpenClaw config changed only at `/meta/lastTouchedAt`; native
+primary remains `litellm/task-general`. Agency, Hermes, Codex, and Claude
+hashes remain respectively `43367ec9`, `a984d934`, `8f375701`, and
+`27dafb27`. Hermes gateway/dashboard and LiteLLM stayed active. Post-install
+Store integrity is `ok`; fresh live turns remain pending.
 
 ### Deferred Hermes bundle
 

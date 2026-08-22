@@ -48,8 +48,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-119
 branch: codex/ar119-openclaw-hermes-litellm
-evidence_commit: 1b789ac3b66c8e3e3e74e3a16bc66667c07cd517
-minimum_ledger_commit: 6d6ea5718aea2698916149467e96fa934adbd457
+evidence_commit: fba12371f4bf004ffadd9356bb00787b00e6194f
+minimum_ledger_commit: 6ad46fb4a1309b3b52396055a73274d2d5d670b9
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
@@ -61,34 +61,34 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 
 ## checkpoint
 
-- Dedicated branch `codex/ar119-openclaw-hermes-litellm` began this repair from clean failure ledger `00bddc49`; `f76050d7` is an ancestor.
+- Dedicated branch `codex/ar119-openclaw-hermes-litellm` is clean at exact-schema repair `fba12371` plus ledger `6ad46fb4`; `f76050d7` is an ancestor.
 - Checkout module identity is this worktree, Agency is `0.1.0`, Store schema is 47, and every Agency command used `python -m agency_runtime.cli`.
-- Latest pre-install online backup is `~/.agency-runtime/backups/ar273-openclaw-preinstall.egB2rWdT/agency.db`; integrity is `ok`, SHA-256 is `d0098af5056bdc54055f20b1fb3e59f2efdc1111c9abb6215c2b78d8104f1300`, and contractor count stayed 15.
-- OpenClaw remains audited `2026.7.1-2 (0790d9f)` on native primary `litellm/task-general`, six fallbacks, and 21 LiteLLM model entries. Exact comparison with pre-install config SHA `d4fb6c53a2fa3675d2ffafe5a2fd18d8b64a8b423c9638a21b018234eed62ef5` finds only `meta.lastTouchedAt`; current SHA is `806404abcff7be7e46875ca8ab5294e582b93d38c55210fb8bc84359c9a14885`. OpenClaw itself was not reinstalled.
-- Agency-only install `4dd7ee41-121f-4cde-a391-9cecd0665d72` completed with bundle `51320b45f63cc68db52b267928c1939ab908052f623900a51786228c5b978419`. Launcher runtime digest is `c71fbb41ca8780b5e5a5424ef240dbf92bdf56a36dbc9d2caac70dcfa22d3497`; launcher SHA-256 is `755ec953638d85b175f1b4aa705e9cc388cde3d5011520a6bfc7f2986528a78c`; install-manifest SHA-256 is `dfd5be49fd4354090b97fa49f76aab5abaea17396c2e9f6ea05726d0f0330d8c`.
+- Fresh online backup `~/.agency-runtime/backups/ar273-exact-schema-preinstall.TuZp2cjN/agency.db` has integrity `ok`, schema 47, and SHA-256 `731934b20258feacf7d8835a9ba8e32d41844cd5685eef8ca65ad3dc1d51734f`. Installer contractor count stayed 15.
+- OpenClaw remains audited `2026.7.1-2 (0790d9f)` on native `litellm/task-general`, six fallbacks, and 21 LiteLLM entries. Pre/current config SHAs are `806404abcff7be7e46875ca8ab5294e582b93d38c55210fb8bc84359c9a14885` and `800f2e664781e7c4cb104d07aa65569dcbdc488e4bbcad80df0876160528a04b`; changed path is only `/meta/lastTouchedAt`. OpenClaw itself was not reinstalled.
+- Agency-only install `b526ecdc-a538-4797-a8e8-656ecb3b315b` completed with bundle `94d87723b900387f9dbad0dda73613b449332c34683a4fd68674c0e354314a22`. Runtime digest is `71c917a91ed3527065447e6aa5ec4e36466d1710f7f5d0a41411a5ac585decda`; launcher SHA is `fe71017957b7060d7480fa80b222455b2cc69fe42d2f7b9c71e98ba65573b01b`; manifest SHA is `4760bbee202e904a81e54e8e41723bd52d18840906da409c9d4cb97d26624503`.
 - Agency config hash stayed `43367ec9aa05a66fc2a60bb254f270836fb3616753769115fabb253a04d5d9f8`. Harness profile `linux-task-agency-router` uses `litellm`, alias `task-agency-router`, `http://127.0.0.1:4000/v1`, populated `LITELLM_API_KEY`, and 120000 ms; global/Codex/Claude routes are unchanged.
 - Hermes stayed active at config hash `a984d9343cbd56b7ac3bb70586ce4db90a739d6a063a530b9183c5baca1e170d`. Separately authorized Codex MCP flags `cloudflare-api`, `codegraph_brainlens`, and `robinhood-trading` are false; final Codex hash is `8f375701f072916af504c5ff6bc3d01bd4ec49c2a3ad31477676fbf5f068828b`. Codex OAuth/model/other MCPs, Claude hash `27dafb2742d0da69a49cc8d206fc9cc429feff09cc3738addcf590d9c4358f97`, and ZCode are otherwise untouched.
-- Restarted OpenClaw is gateway/RPC health-green. Slack and Telegram are configured, running, connected, and probe-green; `agency-preflight` is activated with ten hooks, `agency_finalize`, and zero diagnostics. Hermes gateway/dashboard remain active.
+- Installer left OpenClaw stopped; the same service then restarted gateway/RPC-green. Slack and Telegram are connected/probe-green; `agency-preflight` is enabled, activated, loaded with ten hooks, `agency_finalize`, and zero diagnostics. Hermes and `litellm-gateway` stayed active.
 - Fresh exact first-message control session `b610efe7-4e71-43c7-8011-fb13f2736f2b`, trace `de166bdc-d649-462d-996b-b2b030a34a8e`, run `c5e8d0bd-99b5-431c-9bb3-6bead5d2eeef`, routing decision `bf93dd03-9d01-4043-a779-49ddee0adff8`, and finalization `cbc9107f-a34a-4fad-b919-17f3e1ae1d44` completed. Store response hash is `1baaf852ced654e3b5a499153716ae3125c4c07b84756adc6c2b1cf64f7d6b95`; native transcript SHA-256 is `2eeec604f55265e6c245944c2b7fa840c530efc50abb4ea37ac3cdab889049a3`. Request-scoped binding `rmb-5ccde2d9de6ac9c0ca8f254cb45e9a85` is correctly non-durable; native `task-general` receipt `002926dd-b041-40c5-9947-14b37f7b4687` records zero fallback and unavailable actual model. This proves status control/final delivery, not Agency inference.
 - Required new substantive session `31f52706-f329-4640-a012-c9540e283770` is retained as an OpenClaw 180-second provider-phase timeout; native transcript SHA-256 is `07257c4875c2526cbb7447be73ff74f2ea7333efd74b67925356dad812a70289`. Agency trace `517c2c78-95e6-4dea-bfd7-b43f6d48671a`, run `c080b393-72fd-4133-9485-d3e786e6c90a`, and receipt `de5f98bc-ca21-4b9b-b881-d862bf5b4da8` ended `workforce_provider_unavailable` / `provider_no_valid_response`.
 - That one provider attempt automatically selected OpenClaw profile `linux-task-agency-router`, provider `litellm`, and exact alias/model-group `task-agency-router`; fallback count is zero. The OpenClaw process has `LITELLM_API_KEY`, and the local proxy returned HTTP 200 at the attempt boundary. No routing, skill, specialist, finalization, or model row exists. Codex, Claude, and other providers were not attempted.
 - The approved one-request diagnostic used the existing credential only in memory and exposed no value or content. HTTP 200 returned a normal envelope and braced JSON, but four keys violated its closed two-key schema. This isolates prompt-only schema enforcement; actual model remains unavailable because the proxy has no Agency callback.
-- New expected-red evidence is one exact payload assertion: LiteLLM still sent `json_object`. The LiteLLM-only repair now sends the exact closed schema as standardized `json_schema`; LiteLLM owns target translation and Agency retains strict local validation. Focused repair evidence is 6/6 green; alias, target, host, proxy, retry, and fallback configuration are unchanged.
+- Expected-red proved LiteLLM still sent `json_object`; repaired payload sends the exact closed `json_schema` while retaining strict validation. The 6/6 repair, 134/134 inference, and 104/104 OpenClaw slices are green and the repair is installed. Alias, target, host inference, proxy, retry, and fallback configuration are unchanged.
 - No Telegram-scoped user turn has been submitted after restart. No OpenClaw/Hermes host canary ran, no Rule-4 claim or matrix cell moved, and Hermes remains untouched break glass.
 
 ## completed-evidence
 
 - Starting identity, Store backup, redacted inventories, credential-name presence, install/launcher provenance, invariants, and every failed turn are retained.
 - AR-272 is live-proven for native finalization and response delivery. Exact-status is deterministic control proof only; the failed skill turn is the first strict evidence of correct Agency harness/profile/alias selection.
-- AR-273 has retained red/green evidence for prompt schema, reasoning translation, and exact LiteLLM JSON-schema delivery. The prior installed bundle still lacks a valid live response; the new repair is tested but not yet installed.
+- AR-273 has retained red/green evidence for prompt schema, reasoning translation, and exact LiteLLM JSON-schema delivery. The new bundle is installed; fresh live control, skill, and substantive proof remain.
 - Focused inference and OpenClaw slices pass 134/134 and 104/104. The earlier full production spine passed 827 with three skips; no exhaustive workflow was dispatched.
 - Codex OAuth/config/canary, Claude, ZCode, and Hermes were untouched.
 
 ## exact-blocker
 
-1. Commit the tested LiteLLM-only repair behind its clean worklog checkpoint; do not change the alias, proxy, host-native model, validator, retry, or fallback policy.
-2. Reinstall only Agency into stopped OpenClaw, restart the same gateway, and use fresh sessions plus a genuinely different work unit.
-3. Telegram `/new` plus exact `agency status` remains operator-delivery proof. Hermes stays active and untouched; tracker writes remain unauthorized.
+1. Run fresh exact-status, conditional harmless-skill, and genuinely different substantive sessions; correlate Store/provider/header evidence.
+2. Do not change the alias, proxy, host-native model, validator, retry, or fallback policy.
+3. Telegram `/new` remains operator-delivery proof. Hermes stays active and untouched; tracker writes remain unauthorized.
 
 ## traps (machine-specific; do not rediscover)
 
@@ -100,9 +100,9 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 
 ## next-bounded-work-package
 
-1. Finish focused/provider tests, documentation gates, and the required local substantive/worklog pair.
-2. Reinstall only the tested Agency repair, then run fresh exact-status, conditional harmless-skill, and different non-mutating substantive work.
-3. Correlate Store/provider/header proof without actual-model invention. Keep Hermes, Claude, ZCode, Codex OAuth/model settings, and OpenClaw native inference untouched.
+1. In fresh sessions, run exact first-message status, conditional harmless-skill proof, then a different non-mutating substantive work unit.
+2. Correlate Store/provider/header proof without actual-model invention.
+3. Keep Hermes, Claude, ZCode, Codex OAuth/model settings, and OpenClaw native inference untouched.
 
 ## same-task-continuity
 

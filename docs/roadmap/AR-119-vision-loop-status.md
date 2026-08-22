@@ -2924,3 +2924,33 @@ The new regression failed exactly because the payload still contained
 live work wait for the required clean local commit pair. OpenClaw native
 `litellm/task-general`, Hermes, Claude, ZCode, Codex, and the shared alias
 mapping remain untouched; **no AR-119 matrix cell moved**.
+
+
+## 2026-08-22 — Exact-schema Agency bundle installed; channels restored
+
+Clean repair `fba12371` plus ledger `6ad46fb4` was installed into the
+existing stopped OpenClaw host. Agency install
+`b526ecdc-a538-4797-a8e8-656ecb3b315b` retained all 15 contractors and
+published bundle
+`94d87723b900387f9dbad0dda73613b449332c34683a4fd68674c0e354314a22`,
+runtime digest
+`71c917a91ed3527065447e6aa5ec4e36466d1710f7f5d0a41411a5ac585decda`,
+and launcher SHA
+`fe71017957b7060d7480fa80b222455b2cc69fe42d2f7b9c71e98ba65573b01b`.
+The installer did not restart OpenClaw. The same native service was restarted
+after its stopped state and current launcher were recorded.
+
+Gateway RPC is green. `agency-preflight` is enabled, activated, and loaded
+with ten hooks, native `agency_finalize`, and no diagnostics. Telegram and
+Slack are configured, running, connected, and probe-green. OpenClaw remains
+`2026.7.1-2` on native `litellm/task-general`; semantic comparison with the
+immediate pre-install config finds only `/meta/lastTouchedAt`. Agency, Hermes,
+Codex, and Claude configuration hashes are unchanged. Hermes gateway/dashboard
+and `litellm-gateway` remained active throughout.
+
+The fresh online Store backup has schema 47, integrity `ok`, and SHA
+`731934b20258feacf7d8835a9ba8e32d41844cd5685eef8ca65ad3dc1d51734f`;
+post-install integrity is also `ok`. Telemetry reached 41.0 percent, so this
+installed state is checkpointed before the first new live session. No new
+status, skill, substantive, Telegram delivery, actual-model, host-canary, or
+matrix claim is made yet.

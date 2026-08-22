@@ -60,18 +60,26 @@ LiteLLM or generic OpenAI-compatible path. It also omits the profile's
 reasoning effort for LiteLLM even though the receipt reports the level as
 consumed.
 
-The repair is installed in OpenClaw as bundle
-`51320b45f63cc68db52b267928c1939ab908052f623900a51786228c5b978419`.
-Fresh trace `517c2c78-95e6-4dea-bfd7-b43f6d48671a` selected the intended
-OpenClaw profile, LiteLLM provider, and exact alias/model-group with zero
-fallback. LiteLLM returned HTTP 200, but Agency recorded
-`provider_no_valid_response`; no valid planner object or finalization exists.
-The consumed turn is retained as an OpenClaw 180-second provider-phase timeout.
+The initial repair's trace `517c2c78-95e6-4dea-bfd7-b43f6d48671a`
+selected the intended OpenClaw profile, LiteLLM provider, and exact
+alias/model-group with zero fallback. Its HTTP-200
+`provider_no_valid_response` turn remains an OpenClaw 180-second timeout.
 The owner-approved content-free diagnostic reused the populated credential only
 in process memory and emitted no content or secret. It returned HTTP 200 with a
 normal OpenAI response envelope and braced JSON content, but that content had
 four keys where the closed two-key diagnostic schema allowed no extras. This
 isolates the remaining defect to prompt-only schema enforcement.
+
+Exact-schema commit `fba12371` and ledger `6ad46fb4` are installed into the
+existing stopped OpenClaw host as Agency install
+`b526ecdc-a538-4797-a8e8-656ecb3b315b`, bundle
+`94d87723b900387f9dbad0dda73613b449332c34683a4fd68674c0e354314a22`,
+and runtime digest
+`71c917a91ed3527065447e6aa5ec4e36466d1710f7f5d0a41411a5ac585decda`.
+The installer left the gateway stopped; the same native service restarted
+RPC-green with the plugin loaded and Telegram/Slack probe-green. OpenClaw's
+only semantic config delta is `/meta/lastTouchedAt`; protected configuration
+hashes remain unchanged. Fresh live response proof remains open.
 
 ## Approach
 
@@ -107,7 +115,7 @@ separate.
 - [x] Codex OAuth/model/inference, Claude, ZCode, Anthropic, Ollama, and host-native inference configurations are unchanged; three separately authorized Codex MCP enablement flags are disabled.
 - [x] Focused tests and proportionate local gates pass.
 - [x] The repaired Agency integration is installed into the existing OpenClaw host.
-- [ ] The LiteLLM JSON-schema repair is installed into the existing OpenClaw host.
+- [x] The LiteLLM JSON-schema repair is installed into the existing OpenClaw host.
 - [x] A fresh live attempt proves the required OpenClaw profile, LiteLLM provider, exact alias/model-group, and zero protected-provider fallback.
 - [ ] A fresh live turn returns a valid planner object and reaches strict finalization.
 - [ ] Tracker creation remains pending separate authorization.
