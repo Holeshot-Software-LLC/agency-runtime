@@ -2892,3 +2892,35 @@ claimed. A direct content-free response-shape diagnostic was blocked before
 execution because reading the OpenClaw process credential requires explicit
 owner approval. It sent no request and exposed no value. No consumed input will
 be retried unchanged, no host canary ran, and **no AR-119 matrix cell moved**.
+
+
+## 2026-08-22 — LiteLLM envelope healthy; exact-schema repair locally green
+
+Lucas approved exactly one local response-shape request using the populated
+`LITELLM_API_KEY` from OpenClaw process memory. The value was never printed,
+written, or retained, and response content was not emitted. The exact alias
+`task-agency-router` returned HTTP 200, a normal OpenAI choices/message
+envelope, no error, and 157 characters of braced JSON. That JSON parsed as an
+object but contained four keys where the closed diagnostic schema allowed
+exactly two. Transport, authentication, alias resolution, and envelope parsing
+are therefore healthy; prompt-only schema enforcement is not sufficient for
+this routed model. The response's model field was deliberately not retained or
+promoted into an actual-model claim.
+
+The installed LiteLLM 1.94.0 adapter declares `response_format` support and
+maps the standard `json_schema` payload to the current routed provider's
+native schema format. ADR-0164 therefore supersedes ADR-0163's JSON-object-mode
+choice while retaining its opaque-alias and standardized-reasoning rules.
+Agency now sends the exact closed schema through LiteLLM's standard request and
+continues to include the schema in the trusted prompt and validate it locally.
+It does not identify the target, change the alias, relax the validator, add a
+retry, or enable protected-provider fallback. Direct OpenAI-compatible and all
+other adapters are unchanged.
+
+The new regression failed exactly because the payload still contained
+`json_object`; its JUnit receipt is
+`/tmp/ar273-litellm-native-schema-red.xml`. The exact repaired slice passes
+6/6 in `/tmp/ar273-litellm-native-schema-green.xml`. Installation and fresh
+live work wait for the required clean local commit pair. OpenClaw native
+`litellm/task-general`, Hermes, Claude, ZCode, Codex, and the shared alias
+mapping remain untouched; **no AR-119 matrix cell moved**.

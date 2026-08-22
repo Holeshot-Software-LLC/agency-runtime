@@ -344,6 +344,38 @@ credential only in memory and emits only field types, lengths, and parse
 booleans. The rejected permission attempt sent no request and exposed no value.
 The consumed substantive input will not be retried unchanged.
 
+### Approved envelope classification and exact-schema repair
+
+Lucas approved one content-free local diagnostic against the existing
+`task-agency-router` alias. It read the populated `LITELLM_API_KEY` only
+from OpenClaw process memory and never printed, wrote, or retained the value.
+Only types, lengths, and parse booleans were emitted. The response was HTTP 200
+and 477 bytes with a normal OpenAI choices/message envelope, no error, no tool
+calls, and no separate reasoning content. Its 157-character content was braced
+JSON and parsed as an object, but its four keys did not match the exact
+two-property closed schema. The model field was present but its value was not
+retained and is not actual-model evidence.
+
+This proves endpoint reachability, authentication, alias acceptance, and
+response-envelope compatibility. It also proves the remaining failure is not
+an OpenClaw channel or LiteLLM transport defect: prompt-only schema delivery
+does not enforce `additionalProperties: false` for the current routed model.
+
+The installed LiteLLM 1.94.0 implementation maps the OpenAI-standard
+`json_schema` response format to the routed provider's native schema format.
+The focused repair therefore changes only LiteLLM Agency payloads to send the
+exact bounded schema with `strict: true`; schema prompt delivery and strict
+local validation remain. No target inspection, alias remap, retry, fallback,
+proxy callback, host model, or credential configuration is added. Direct
+OpenAI-compatible and other adapters remain unchanged.
+
+The focused test failed before repair only on `json_object` versus exact
+`json_schema` and is retained at
+`/tmp/ar273-litellm-native-schema-red.xml`. The repair plus unchanged
+OpenAI-compatible and reasoning behavior passes 6/6 at
+`/tmp/ar273-litellm-native-schema-green.xml`. This is local code evidence;
+the repair is not yet installed or live-proven.
+
 ### Deferred Hermes bundle
 
 Hermes effective home remains `/home/holeshot/.hermes-nexus`; its gateway and

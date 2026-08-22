@@ -12,6 +12,7 @@ related:
   - docs/roadmap/reference-workforce-inference-stages.md
   - docs/decisions/0153-adopt-per-stage-inference-profile-routes.md
   - docs/decisions/0163-keep-litellm-inference-profiles-model-agnostic.md
+  - docs/decisions/0164-delegate-exact-schema-translation-to-litellm.md
   - agency_runtime/core/structured_provider.py
   - agency_runtime/core/inference_profiles.py
   - tests/test_roster_inference_adapter.py
@@ -66,16 +67,19 @@ OpenClaw profile, LiteLLM provider, and exact alias/model-group with zero
 fallback. LiteLLM returned HTTP 200, but Agency recorded
 `provider_no_valid_response`; no valid planner object or finalization exists.
 The consumed turn is retained as an OpenClaw 180-second provider-phase timeout.
-Exact content-free response-envelope classification awaits explicit permission
-to reuse the existing OpenClaw credential in memory; no alias or host
-configuration change is authorized.
+The owner-approved content-free diagnostic reused the populated credential only
+in process memory and emitted no content or secret. It returned HTTP 200 with a
+normal OpenAI response envelope and braced JSON content, but that content had
+four keys where the closed two-key diagnostic schema allowed no extras. This
+isolates the remaining defect to prompt-only schema enforcement.
 
 ## Approach
 
 Append the already bounded, deterministic JSON schema to the system
-instruction for HTTP adapters that otherwise receive only JSON mode. Keep the
-strict local validator authoritative and preserve response_format json_object
-for compatibility with aliases whose eventual targets are unknown.
+instruction for HTTP adapters that otherwise receive only JSON mode. For the
+LiteLLM adapter, also send the exact schema through the standard JSON-schema
+response format and let LiteLLM translate it for the opaque routed target.
+Keep the strict local validator authoritative.
 
 For LiteLLM chat-completions profiles, forward the configured thinking level
 as the standardized reasoning_effort parameter and let LiteLLM translate it
@@ -87,7 +91,8 @@ separate.
 ## Dependencies
 
 - ADR-0153 named inference profiles and harness-scoped routing.
-- ADR-0163 model-agnostic LiteLLM parameter translation.
+- ADR-0163 model-agnostic LiteLLM parameter translation, as superseded by
+  ADR-0164 for exact schema delivery.
 - Existing bounded schema serialization and strict response validation.
 - Existing OpenClaw live failure receipt retained as the regression evidence.
 
@@ -97,9 +102,12 @@ separate.
 - [x] A focused regression fails before repair because LiteLLM omits a configured reasoning effort.
 - [x] The repaired payload includes the exact bounded schema instruction without weakening strict local validation.
 - [x] LiteLLM receives reasoning_effort from thinking_level while the alias remains opaque and unchanged.
+- [x] A content-free live diagnostic proves endpoint, credential, alias, and response envelope are healthy while prompt-only output violates a closed schema.
+- [x] LiteLLM receives the exact closed schema through its standardized JSON-schema request without target inspection or alias changes.
 - [x] Codex OAuth/model/inference, Claude, ZCode, Anthropic, Ollama, and host-native inference configurations are unchanged; three separately authorized Codex MCP enablement flags are disabled.
 - [x] Focused tests and proportionate local gates pass.
 - [x] The repaired Agency integration is installed into the existing OpenClaw host.
+- [ ] The LiteLLM JSON-schema repair is installed into the existing OpenClaw host.
 - [x] A fresh live attempt proves the required OpenClaw profile, LiteLLM provider, exact alias/model-group, and zero protected-provider fallback.
 - [ ] A fresh live turn returns a valid planner object and reaches strict finalization.
 - [ ] Tracker creation remains pending separate authorization.

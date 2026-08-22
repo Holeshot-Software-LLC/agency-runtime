@@ -389,6 +389,15 @@ def _http_payload(
         "stream": False,
         "temperature": 0,
     }
+    if provider_type == "litellm":
+        payload["response_format"] = {
+            "json_schema": {
+                "name": "agency_structured_response",
+                "schema": dict(schema),
+                "strict": True,
+            },
+            "type": "json_schema",
+        }
     if requires_completion_token_parameter(provider.model, declared=provider.token_parameter):
         payload["max_completion_tokens"] = 2048
         payload.pop("temperature", None)

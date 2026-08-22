@@ -967,10 +967,7 @@ def test_structured_response_extractors_paths_payloads_and_headers() -> None:
     assert other_payload["max_tokens"] == 2048
 
 
-@pytest.mark.parametrize("provider_type", ["openai-compatible", "litellm"])
-def test_structured_http_payload_delivers_exact_schema_instruction(
-    provider_type: str,
-) -> None:
+def test_openai_compatible_http_payload_delivers_exact_schema_instruction() -> None:
     schema = {
         "additionalProperties": False,
         "properties": {"status": {"enum": ["passed", "failed"]}},
@@ -979,7 +976,7 @@ def test_structured_http_payload_delivers_exact_schema_instruction(
     }
 
     payload, path = structured_provider._http_payload(
-        _provider("router", provider_type=provider_type),
+        _provider("router", provider_type="openai-compatible"),
         "prompt",
         schema,
         system_prompt="trusted system",
@@ -987,6 +984,37 @@ def test_structured_http_payload_delivers_exact_schema_instruction(
 
     assert path == "/v1/chat/completions"
     assert payload["response_format"] == {"type": "json_object"}
+    system_message = payload["messages"][0]
+    assert system_message["role"] == "system"
+    assert system_message["content"].startswith("trusted system\n\nReturn ONLY")
+    delivered_schema = system_message["content"].rsplit("\n", 1)[1]
+    assert json.loads(delivered_schema) == schema
+
+
+def test_litellm_http_payload_delegates_exact_json_schema_translation() -> None:
+    schema = {
+        "additionalProperties": False,
+        "properties": {"status": {"enum": ["passed", "failed"]}},
+        "required": ["status"],
+        "type": "object",
+    }
+
+    payload, path = structured_provider._http_payload(
+        _provider("router", provider_type="litellm"),
+        "prompt",
+        schema,
+        system_prompt="trusted system",
+    )
+
+    assert path == "/v1/chat/completions"
+    assert payload["response_format"] == {
+        "json_schema": {
+            "name": "agency_structured_response",
+            "schema": schema,
+            "strict": True,
+        },
+        "type": "json_schema",
+    }
     system_message = payload["messages"][0]
     assert system_message["role"] == "system"
     assert system_message["content"].startswith("trusted system\n\nReturn ONLY")

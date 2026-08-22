@@ -51,6 +51,7 @@ Status meanings:
 - ADR-0065 Keep a compact resident manager kernel at the parent boundary → ADR-0122 Use one Agency-native resident steward
 - ADR-0127 Bind opaque Codex children through exact plan labels → ADR-0128 Persist exact Codex plan authority and serialize opaque launches
 - ADR-0124 Grade product trials against the inferred unit graph → ADR-0133 Treat product specialist loads as turn-scoped
+- ADR-0163 Keep LiteLLM inference profiles model-agnostic → ADR-0164 Delegate exact schema translation to LiteLLM
 
 ## Architecture and integrations
 
@@ -231,7 +232,8 @@ Status meanings:
 | [ADR-0152](0152-fail-open-with-honest-header-when-no-specialist.md) | Fail open with an honest header when no specialist is selected | Accepted |
 | [ADR-0153](0153-adopt-per-stage-inference-profile-routes.md) | Adopt per-stage inference profile routes | Accepted |
 | [ADR-0154](0154-plain-text-cli-cards-over-rich-dependency.md) | Plain-text CLI cards over a rich dependency | Accepted |
-| [ADR-0163](0163-keep-litellm-inference-profiles-model-agnostic.md) | Keep LiteLLM inference profiles model-agnostic | Accepted |
+| [ADR-0163](0163-keep-litellm-inference-profiles-model-agnostic.md) | Keep LiteLLM inference profiles model-agnostic | Superseded |
+| [ADR-0164](0164-delegate-exact-schema-translation-to-litellm.md) | Delegate exact schema translation to LiteLLM | Accepted |
 
 ## Documentation governance
 
