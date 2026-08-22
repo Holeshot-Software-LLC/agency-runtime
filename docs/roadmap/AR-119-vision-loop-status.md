@@ -3190,3 +3190,22 @@ expected-red registration test is retained. The minimal repair adds that one
 supported permission, includes it in the dry-run plan, and rolls back safely
 if it fails. Registration is 46/46 green; the focused OpenClaw slice is 127
 passed/1 skipped under umask `0077`. The candidate has not yet been installed.
+
+
+## 2026-08-22 — OpenClaw lifecycle order corrected after permission-enabled proof
+
+Agency-only install `18b2d5f7-a931-4606-8d6f-9e30937cfbcc` proved the native
+prompt-injection permission. OpenClaw remained on `litellm/task-general`, the
+Agency config remained byte-identical, and Telegram/Slack plus Hermes/LiteLLM
+stayed healthy. Fresh run `d343b0c0-68a9-4857-b8d3-41cd3125cd3a` nevertheless
+reported zero runtime-context characters and delivered no Agency header.
+
+Installed OpenClaw 2026.7.1-2 source proves it executes
+`before_prompt_build` before the fail-closed `before_agent_run` gate. Agency's
+generated-plugin test had modeled the reverse. Expected-red exit 204 is
+retained. The corrected candidate performs and caches preflight during prompt
+build; the later gate requires the exact cached context, so prompt-hook failure
+still blocks before any model call. The security-boundary file passes 46/46;
+focused native-installer, adapter-parity, host-boundary, and registration slices
+pass 36, 24, 1, and 46 cases. This candidate is not installed yet; no matrix
+cell or host-delivery claim moved.

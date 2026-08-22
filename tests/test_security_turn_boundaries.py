@@ -525,7 +525,7 @@ def _openclaw_plugin_harness_source() -> str:
 
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is not installed")
-def test_generated_openclaw_input_gate_owns_preflight_and_blocks_before_model(
+def test_generated_openclaw_prompt_build_preflights_before_input_gate(
     tmp_path: Path,
 ) -> None:
     source = _openclaw_plugin_harness_source()
@@ -535,18 +535,20 @@ const promptBuild = registeredHooks.get("before_prompt_build");
 if (typeof beforeRun !== "function" || typeof promptBuild !== "function") process.exit(201);
 const event = { prompt: "inspect safely", messages: [] };
 const context = { sessionKey: "gate-session", runId: "gate-run", modelId: "task-general" };
-const passed = await beforeRun(event, context);
-if (passed?.outcome !== "pass") process.exit(202);
-if (bridgeCalls.filter((item) => item.action === "preflight").length !== 1) process.exit(203);
 const injection = await promptBuild(event, context);
 if (injection?.appendContext !== "Agency preflight context") process.exit(204);
+if (bridgeCalls.filter((item) => item.action === "preflight").length !== 1) process.exit(203);
+const passed = await beforeRun(event, context);
+if (passed?.outcome !== "pass") process.exit(202);
 if (bridgeCalls.filter((item) => item.action === "preflight").length !== 1) process.exit(205);
 
 preflightContext = "";
-const blocked = await beforeRun(
-  { prompt: "second request", messages: [] },
-  { sessionKey: "blocked-session", runId: "blocked-run", modelId: "task-general" },
-);
+const blockedEvent = { prompt: "second request", messages: [] };
+const blockedContext = {
+  sessionKey: "blocked-session", runId: "blocked-run", modelId: "task-general",
+};
+if (await promptBuild(blockedEvent, blockedContext) !== undefined) process.exit(207);
+const blocked = await beforeRun(blockedEvent, blockedContext);
 if (blocked?.outcome !== "block" || blocked?.reason !== "agency_preflight_failed") process.exit(206);
 """
     script = tmp_path / "openclaw-input-gate.mjs"
@@ -832,6 +834,7 @@ const gateEvent = { prompt: "gate check", messages: [] };
 const gateContext = {
   sessionKey: "gate-check-session", runId: "gate-check-run", modelId: "task-general",
 };
+if ((await preflight(gateEvent, gateContext))?.appendContext !== "Agency preflight context") process.exit(71);
 if ((await beforeRun(gateEvent, gateContext))?.outcome !== "pass") process.exit(72);
 failControl = true;
 if ((await beforeRun(gateEvent, gateContext))?.outcome !== "block") process.exit(73);
@@ -842,6 +845,7 @@ runtimeControlEnabled = false;
 if ((await beforeRun(gateEvent, gateContext))?.outcome !== "pass") process.exit(75);
 runtimeControlEnabled = true;
 gatewayStart({}, { config: { agents: { defaults: { blockStreamingDefault: "off" } }, channels: {} } });
+if ((await preflight(gateEvent, gateContext))?.appendContext !== "Agency preflight context") process.exit(82);
 if ((await beforeRun(gateEvent, gateContext))?.outcome !== "pass") process.exit(83);
 
 const natural = "still invalid";
@@ -1006,11 +1010,9 @@ const skippedEvent = { prompt: "review", messages: [] };
 const skippedContext = {
   sessionKey: "skipped-session", runId: "skipped-run", modelId: "task-general",
 };
+const skippedInjection = await preflight(skippedEvent, skippedContext);
+if (skippedInjection?.appendContext !== "Agency preflight context") process.exit(123);
 if ((await beforeRun(skippedEvent, skippedContext))?.outcome !== "pass") process.exit(122);
-await preflight(
-  { prompt: "review", sessionKey: "skipped-session", runId: "skipped-run" },
-  { sessionKey: "skipped-session", runId: "skipped-run" },
-);
 const skippedReply = await messageSeal(
   { content: "unverified final", sessionKey: "skipped-session" },
   { sessionKey: "skipped-session" },
@@ -1023,16 +1025,18 @@ const secondSkippedReply = await messageSeal(
 if (secondSkippedReply?.cancel !== true || !secondSkippedReply?.cancelReason) process.exit(64);
 
 failPreflight = true;
-const failedPreflight = await beforeRun(
-  { prompt: "review", messages: [] },
-  { sessionKey: "failed-session", runId: "failed-run", modelId: "task-general" },
-);
+const failedEvent = { prompt: "review", messages: [] };
+const failedContext = {
+  sessionKey: "failed-session", runId: "failed-run", modelId: "task-general",
+};
+const failedInjection = await preflight(failedEvent, failedContext);
+const failedPreflight = await beforeRun(failedEvent, failedContext);
 failPreflight = false;
 const failedPreflightMessage = await messageSeal(
   { content: "unverified after preflight failure", sessionKey: "failed-session" },
   { sessionKey: "failed-session" },
 );
-if (failedPreflight?.outcome !== "block" || failedPreflightMessage?.cancel !== true) process.exit(71);
+if (failedInjection !== undefined || failedPreflight?.outcome !== "block" || failedPreflightMessage?.cancel !== true) process.exit(71);
 
 // A synchronous bridge timeout/error returns a cancellation before OpenClaw can
 // advance its event loop, and no unmarked payload receives a dispatch grant.
@@ -1123,14 +1127,14 @@ bridgeCalls.length = 0;
 const splitContext = {
   sessionKey: "split-session", runId: "stable-run", turnId: "different-turn",
 };
-if ((await beforeRun(
-  { prompt: "review", messages: [] },
-  splitContext,
-))?.outcome !== "pass") process.exit(123);
 await preflight(
   { prompt: "review", sessionKey: "split-session", runId: "stable-run", turnId: "different-turn" },
   splitContext,
 );
+if ((await beforeRun(
+  { prompt: "review", messages: [] },
+  splitContext,
+))?.outcome !== "pass") process.exit(123);
 await finalize(
   { lastAssistantMessage: "invalid", runId: "stable-run", turnId: "different-turn" },
   splitContext,
@@ -1147,22 +1151,18 @@ const correlatedCalls = bridgeCalls.filter((call) =>
 );
 if (correlatedCalls.length !== 3 || correlatedCalls.some((call) => call.traceId !== "stable-run")) process.exit(67);
 
-if ((await beforeRun(
-  { prompt: "first", messages: [] },
-  { sessionKey: "concurrent-session", runId: "concurrent-a", modelId: "task-general" },
-))?.outcome !== "pass") process.exit(124);
-await preflight(
-  { prompt: "first", sessionKey: "concurrent-session", runId: "concurrent-a" },
-  { sessionKey: "concurrent-session", runId: "concurrent-a" },
-);
-if ((await beforeRun(
-  { prompt: "second", messages: [] },
-  { sessionKey: "concurrent-session", runId: "concurrent-b", modelId: "task-general" },
-))?.outcome !== "pass") process.exit(125);
-await preflight(
-  { prompt: "second", sessionKey: "concurrent-session", runId: "concurrent-b" },
-  { sessionKey: "concurrent-session", runId: "concurrent-b" },
-);
+const concurrentEventA = { prompt: "first", messages: [] };
+const concurrentContextA = {
+  sessionKey: "concurrent-session", runId: "concurrent-a", modelId: "task-general",
+};
+await preflight(concurrentEventA, concurrentContextA);
+if ((await beforeRun(concurrentEventA, concurrentContextA))?.outcome !== "pass") process.exit(124);
+const concurrentEventB = { prompt: "second", messages: [] };
+const concurrentContextB = {
+  sessionKey: "concurrent-session", runId: "concurrent-b", modelId: "task-general",
+};
+await preflight(concurrentEventB, concurrentContextB);
+if ((await beforeRun(concurrentEventB, concurrentContextB))?.outcome !== "pass") process.exit(125);
 const firstConcurrentReply = await outbound(
   {
     payload: { text: "first validated" }, kind: "final",

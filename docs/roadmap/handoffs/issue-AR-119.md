@@ -67,14 +67,15 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 - Clean branch pair `a0ff74d4` / `77bfd2ae` is based on fetched `origin/main` `4a326773`; `f76050d7` is an ancestor. Agency 0.1.0 imports from this checkout.
 - Agency profile `linux-task-agency-router` uses `litellm`, exact alias/model-group `task-agency-router`, `http://127.0.0.1:4000/v1`, populated `LITELLM_API_KEY`, and 120000 ms. No protected-host route changed.
 - SQLite-consistent pre/post Store backups have integrity `ok`, schema 47, 15/15 contractors, and SHAs `468b4754...` / `64c65d70...`.
-- Agency-only install `ba074210-c785-4d61-a014-c2f86dfdb571` completed with bundle `3139ec9c...`, launcher SHA `b67bb589...`, and runtime digest `facf8047...`. OpenClaw itself was not reinstalled.
-- OpenClaw remains audited 2026.7.1-2 on native `litellm/task-general`. Pre/post config SHAs `d30386ac...` / `97b18a21...` differ only at `/meta/lastTouchedAt`. Agency and Codex config hashes remain unchanged; Hermes, Claude, ZCode, and Codex OAuth/model/canary were untouched.
-- OpenClaw is RPC-green. `agency-preflight` is enabled, activated, loaded with ten hooks and no diagnostics; preflight runs in priority-1000 `before_agent_run`. Telegram/Slack are connected and probe-green; Hermes/LiteLLM stayed active.
+- Latest Agency-only install `18b2d5f7-a931-4606-8d6f-9e30937cfbcc` completed with bundle `e882b139...`, launcher SHA `8c7f9d36...`, and runtime digest `6837a9d8...`. OpenClaw itself was not reinstalled.
+- OpenClaw remains audited 2026.7.1-2 on native `litellm/task-general`. Pre/post config SHAs `97b18a21...` / `55ca44fc...` differ only at `/meta/lastTouchedAt` and Agency's supported `/plugins/entries/agency-preflight/hooks/allowPromptInjection`. Agency config remained byte-identical; Hermes, Claude, ZCode, and Codex OAuth/model/canary were untouched.
+- OpenClaw is RPC-green. `agency-preflight` is enabled, activated, loaded with ten hooks and no diagnostics; prompt injection and conversation access are both granted. Telegram/Slack are connected and probe-green; Hermes/LiteLLM stayed active.
 - The retained pre-repair trace `8b9b539d...` proves why AR-276 was required: failed preflight still started native `task-general`, made 58 tool calls, and timed out. The new 154 focused, 65 affected, 828 spine, 134 UI, docs, ruff, routing, and diff checks are green.
 - Owner-authorized LiteLLM control-plane updates changed only deployment `task-agency-router`; raw DB-row hashes prove 0 unrelated changes across 103 deployments. The alias moved from configured target `ollama/qwen3.5:2b` to `ollama/qwen3.5:9b`, then to `ollama/qwen3-coder-30b-a3b-128k-rocm`. Host-native OpenClaw remains `litellm/task-general`.
 - The 9B target produced schema-valid stages but was not reliable: traces `23da5198...` and `a4121506...` ended in critic veto and recruiter no-valid-response. With the 30B target, exact required request trace `7a094495-edbc-471d-8c9d-9a557f3c7ac6` was accepted across planner/recruiter/critic, exact profile/provider/alias, and zero fallback. `response.body.model` still repeats the alias; actual answering model is not claimed.
 - Fresh native session `ar276-openclaw-nexus-status-20260822-160727`, run/trace `341ec5f5-9343-499f-8a73-d0c6cb08426c`, and Store run `7daf7c70-c87b-4ed7-bf31-3e093bab73b5` retained a new failure: preflight reached `ready`, but OpenClaw injected 0 runtime-context characters, normal `task-general` answered, and `agency_finalize` failed with invented correlation IDs. Store status is `response_invalid`; no Agency header was delivered.
-- Installed OpenClaw 2026.7.1-2 requires non-bundled plugins to opt into prompt mutation. Agency registration grants `allowConversationAccess` but omitted `allowPromptInjection`. Expected-red is retained; the minimal registration/rollback/plan repair is green at 46/46 and the focused OpenClaw slice is 127 passed/1 skipped under umask `0077`. Candidate is not installed yet.
+- Fresh permission-enabled session `ar276-openclaw-nexus-status-promptfix-20260822-a`, run `d343b0c0-68a9-4857-b8d3-41cd3125cd3a`, retained a distinct failure: native status was `ok`, but runtime context remained 0, normal `task-general` answered, and finalization failed. Response/transcript SHAs are `d3fd3a01...` / `470ab1e2...`; no Agency header was delivered.
+- Installed OpenClaw source proves `before_prompt_build` runs before `before_agent_run`; Agency's test modeled the reverse. Expected-red exit 204 is retained. The minimal candidate now performs preflight during prompt build and keeps `before_agent_run` fail-closed by requiring the exact cached session/run context. Security boundaries pass 46/46; focused installer/adapter slices pass 36, 24, 1, and 46 cases. This second candidate is not installed yet.
 
 ## completed-evidence
 
@@ -87,8 +88,8 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 
 ## exact-blocker
 
-1. Finish the clean checkpoint, stop OpenClaw natively, and reinstall Agency only from this candidate so registration sets `plugins.entries.agency-preflight.hooks.allowPromptInjection=true`.
-2. Restart OpenClaw and use a completely new session. The failed sessions and prompts remain immutable evidence and must not be retried unchanged.
+1. Finish the clean checkpoint, stop OpenClaw natively, and reinstall Agency only from the prompt-build-order candidate.
+2. Restart OpenClaw and use a completely new session/work unit. The failed sessions and prompts remain immutable evidence and must not be retried unchanged.
 3. Require a real five-line header and Store-backed finalization before any Telegram success claim. Hermes remains untouched break glass.
 
 ## traps (machine-specific; do not rediscover)
@@ -101,8 +102,8 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 
 ## next-bounded-work-package
 
-1. Commit this prompt-injection permission repair and its ledger row.
-2. Stop OpenClaw, reinstall Agency only, restart natively, and confirm the permission plus plugin runtime inventory.
+1. Commit this prompt-build-order repair and its ledger row.
+2. Stop OpenClaw, reinstall Agency only, restart natively, and confirm the new runtime digest plus plugin inventory.
 3. Run a fresh exact-status session, then a genuinely new substantive turn only after header/Store proof. Keep Hermes and all proven hosts untouched.
 
 ## same-task-continuity

@@ -878,31 +878,7 @@ export default definePluginEntry({{
           message: "Agency Runtime requires OpenClaw preview and block streaming to be disabled. Stop the gateway and rerun the Agency installer.",
         }};
       }}
-      const childParent = nativeChildParents.get(sessionId(event, ctx));
-      let result;
-      try {{
-        result = await invokeAgency({{
-          action: "preflight",
-          sessionId: sessionId(event, ctx),
-          traceId: traceId(event, ctx),
-          userMessage: String(event?.prompt || ""),
-          model: modelId(ctx),
-          parentSessionId: String(childParent?.sessionId || ""),
-          parentTraceId: String(childParent?.traceId || ""),
-          workerId: String(childParent?.workerId || ""),
-          nativeRunId: String(childParent?.nativeRunId || ""),
-        }});
-      }} catch {{
-        return {{
-          outcome: "block",
-          reason: "agency_preflight_failed",
-          category: "runtime_unavailable",
-          message: "Agency Runtime could not complete preflight. Restore the local runtime and retry.",
-        }};
-      }}
-      const stateApplied = observeRuntimeState(result, stateEpoch);
-      if (!runtimeEnabled) return {{ outcome: "pass" }};
-      if (!stateApplied || !rememberPreflightContext(result, event, ctx)) {{
+      if (!readPreflightContext(event, ctx)) {{
         return {{
           outcome: "block",
           reason: "agency_preflight_failed",
@@ -939,7 +915,33 @@ export default definePluginEntry({{
     }});
 
     api.on("before_prompt_build", async (event, ctx) => {{
+      const stateEpoch = ++runtimeStateEpoch;
+      try {{
+        const state = await invokeAgency({{ action: "control", command: "status" }});
+        if (!observeRuntimeState(state, stateEpoch) || !runtimeEnabled) return undefined;
+      }} catch {{
+        return undefined;
+      }}
+      const childParent = nativeChildParents.get(sessionId(event, ctx));
+      let result;
+      try {{
+        result = await invokeAgency({{
+          action: "preflight",
+          sessionId: sessionId(event, ctx),
+          traceId: traceId(event, ctx),
+          userMessage: String(event?.prompt || ""),
+          model: modelId(ctx),
+          parentSessionId: String(childParent?.sessionId || ""),
+          parentTraceId: String(childParent?.traceId || ""),
+          workerId: String(childParent?.workerId || ""),
+          nativeRunId: String(childParent?.nativeRunId || ""),
+        }});
+      }} catch {{
+        return undefined;
+      }}
+      const stateApplied = observeRuntimeState(result, stateEpoch);
       if (!runtimeEnabled) return undefined;
+      if (!stateApplied || !rememberPreflightContext(result, event, ctx)) return undefined;
       const context = readPreflightContext(event, ctx);
       return context ? {{ appendContext: context }} : undefined;
     }}, {{ priority: 100, timeoutMs: {host_timeout_ms} }});

@@ -712,3 +712,33 @@ otherwise contradictory evidence: Agency preflight created and stored the
 exact run, but its finalization instructions never entered the model prompt.
 The repair changes only Agency's OpenClaw registration command plan and tests;
 it does not alter OpenClaw's primary/fallback models or any protected host.
+
+
+### Permission-enabled failure and prompt-build-order candidate
+
+~~~yaml
+agency_install_id: 18b2d5f7-a931-4606-8d6f-9e30937cfbcc
+bundle_digest: e882b13971f5449e2ee150fe78aee5077b3b533c710704deec0d6847611ab065
+runtime_digest: 6837a9d8e16fe191618b9376268f3c39cd4e859f1f8fe09d498a80a9673beed1
+launcher_sha256: 8c7f9d36e1d0fadc63c80c2c6281f12a5f58d05122d2fbb9a2b453a3fcf30769
+openclaw_config_changed_pointers:
+  - /meta/lastTouchedAt
+  - /plugins/entries/agency-preflight/hooks/allowPromptInjection
+agency_config_sha256: 43367ec9aa05a66fc2a60bb254f270836fb3616753769115fabb253a04d5d9f8
+fresh_session_id: ar276-openclaw-nexus-status-promptfix-20260822-a
+native_run_id: d343b0c0-68a9-4857-b8d3-41cd3125cd3a
+native_status: ok
+runtime_context_chars: 0
+header_exact: none
+response_artifact_sha256: d3fd3a019a41716ef53607b8e4e19e1fb98836044d907906a043e51a9fb132b6
+transcript_sha256: 470ab1e23c02a8d5bdce58633763071f4596c2938849686beaf7affb272330b4
+failure: installed host runs before_prompt_build before before_agent_run
+expected_red: generated plugin exited 204 before repair
+focused_green: 46 security-boundary; 36 native-installer; 24 adapter-parity; 1 host-boundary; 46 registration
+known_limit: corrected prompt-build-order candidate not installed yet
+~~~
+
+The failure is independent of the Agency inference model. The native host used
+its unchanged `task-general` route only because Agency context was absent. The
+corrected candidate moves no LiteLLM alias, OpenClaw provider/model, channel,
+Hermes, Codex, Claude, or ZCode setting.

@@ -55,8 +55,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 - OpenClaw is RPC-green and the plugin is loaded with its priority-1000 input gate. Telegram and Slack are connected/probe-green; Hermes and LiteLLM stayed active.
 - Owner-authorized alias-target comparison kept all 103 other LiteLLM deployment rows unchanged. The 9B target remained unreliable; the installed free 30B coder target accepted exact OpenClaw review trace `7a094495...` across all three stages with zero fallback. The provider receipt exposes only the alias, so no actual answering-model claim is made.
 - Fresh native status run `341ec5f5...` proves the next defect: Store preflight was `ready`, but OpenClaw injected zero Agency context, normal `task-general` ran, and finalization failed. Store run `7daf7c70...` is `response_invalid`; no header is claimed.
-- OpenClaw 2026.7.1-2 requires `hooks.allowPromptInjection=true`. The minimal installer candidate adds that permission after conversation access and fails/rolls back at the exact step. Expected-red is retained; 46 registration tests and 127 focused OpenClaw tests pass, with one skip.
-- Post-install Store backup integrity remains `ok`, schema 47, SHA `64c65d70...`. Hermes and proven hosts remain untouched.
+- Agency-only install `18b2d5f7-a931-4606-8d6f-9e30937cfbcc` proved `hooks.allowPromptInjection=true`; only that pointer and OpenClaw timestamp changed. Bundle `e882b139...`, launcher `8c7f9d36...`, and runtime `6837a9d8...` point to this checkout. Store backup integrity is `ok`, schema 47, SHA `b9998a91...`; Hermes and proven hosts remain untouched.
+- Permission-enabled native session `ar276-openclaw-nexus-status-promptfix-20260822-a` / run `d343b0c0...` still delivered 0 runtime-context characters and no header. Installed OpenClaw source proves prompt build precedes the input gate. Expected-red exit 204 is retained; the repaired order passes 46 security-boundary cases and focused slices of 36, 24, 1, and 46 cases. The corrected candidate is not installed yet.
 
 ## completed-evidence
 
@@ -66,7 +66,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 
 ## exact-blocker
 
-1. Commit and install the OpenClaw-only prompt-injection permission repair while the gateway is stopped.
+1. Commit and install the OpenClaw-only prompt-build-order repair while the gateway is stopped.
 2. Use a new session; require header, binding, routing, and finalization evidence before native or Telegram success.
 3. Preserve the accepted alias trace and failed native run; do not retry either unchanged. Hermes remains untouched.
 
@@ -77,7 +77,7 @@ Continue with OpenClaw only after the clean commit pair. Hermes is running break
 ## next-bounded-work-package
 
 1. Create the required clean substantive/ledger checkpoint.
-2. Reinstall Agency only into stopped OpenClaw, restart, and verify prompt-injection permission plus runtime hooks.
+2. Reinstall Agency only into stopped OpenClaw, restart, and verify the changed runtime digest plus runtime hooks.
 3. Run fresh status then new substantive proof; correlate Store/header/finalization and keep Hermes/protected hosts untouched.
 
 ## verification

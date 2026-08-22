@@ -81,20 +81,26 @@ closed Store run `7daf7c70-c87b-4ed7-bf31-3e093bab73b5` as
 Installed OpenClaw 2026.7.1-2 requires non-bundled plugins to grant
 `hooks.allowPromptInjection=true` before accepting `before_prompt_build`
 prompt-mutation fields. Agency registration granted conversation access only.
-The expected-red registration receipt is retained; the minimal registration
-candidate is green but not yet installed.
+The expected-red registration receipt is retained. Agency-only install
+`18b2d5f7-a931-4606-8d6f-9e30937cfbcc` proved the permission without changing
+native inference or channel configuration.
+
+Fresh permission-enabled run `d343b0c0-68a9-4857-b8d3-41cd3125cd3a` still
+reported zero runtime-context characters and delivered no Agency header.
+Installed OpenClaw source then proved the lifecycle order is
+`before_prompt_build` followed by `before_agent_run`, while Agency and its test
+modeled the reverse. The corrected expected-red failed at exit 204 before the
+implementation change and now passes with the full 46-test security-boundary
+file plus focused installer/adapter slices of 36, 24, 1, and 46 cases.
 
 ## Approach
 
-Run the existing exact Agency preflight call inside OpenClaw's
-`before_agent_run` gate after runtime-control and final-only delivery checks.
-Block with a bounded user-facing error when the bridge fails or does not return
-a complete context.
-
-Cache only the successful bounded context, keyed by exact session and run, for
-the immediately following `before_prompt_build` injection. Bound the cache by
-count and TTL, clear it when Agency is disabled, and remove its entry during
-finalization. The prompt hook performs no second provider-backed preflight.
+Run runtime control and the existing exact Agency preflight during
+`before_prompt_build`, cache the successful bounded context by exact session
+and run, and return it as `appendContext`. The later `before_agent_run` gate
+rechecks runtime control and final-only delivery, then passes only when that
+exact cached context exists. OpenClaw may ignore a prompt-hook exception, but
+the input gate therefore still blocks before the model call.
 
 This changes the generated Agency plugin payload and its plugin-owned native
 registration permission only. Registration grants
@@ -112,8 +118,8 @@ changes.
 ## Acceptance
 
 - [x] Exact failed live turn and native provider-start receipt are retained.
-- [x] Expected-red proves preflight did not run in the blocking input gate.
-- [x] Successful preflight runs once, then its bounded exact context reaches prompt build.
+- [x] Expected-red proves the installed host calls prompt build before the input gate.
+- [x] Successful preflight runs once during prompt build and its bounded exact context is returned there.
 - [x] Missing or failed preflight returns an input-gate block before model execution.
 - [x] Cache is exact-session/run scoped, bounded, expiring, and cleared on disable/finalization.
 - [x] Focused and affected local tests pass.
@@ -123,5 +129,6 @@ changes.
 - [x] Expected-red and focused tests cover the required prompt-injection permission and exact-step rollback.
 - [ ] Fresh changed turn proves no native provider starts after preflight rejection.
 - [ ] Fresh accepted turn proves Store routing, header delivery, and finalization.
-- [ ] Candidate is reinstalled Agency-only into stopped OpenClaw and the permission is proven from native config.
+- [x] Permission candidate was reinstalled Agency-only and proven from native config.
+- [ ] Prompt-build-order candidate is reinstalled Agency-only into stopped OpenClaw.
 - [ ] Tracker creation remains pending separate authorization.
