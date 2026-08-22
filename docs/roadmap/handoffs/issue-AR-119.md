@@ -76,7 +76,7 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 - Fresh healthcheck trace `11707056-a490-4cbc-97b6-9a8e621caa79` completed Store run `585f2dce-a867-4b83-9395-4b877718a22e`, routing `132ee9fa-5cb6-409b-9668-dea79014eac2`, specialists `27d8c6f4-f276-4605-a489-1bb848902ee0` and `4c787672-45d4-4ba9-bb99-2c01a4ce2851`, skill row `3dd34973-d2f5-4b38-adcf-51191f374214`, and finalization `47c0a487-916a-42cb-9d97-54ee205a0a7f`. Its exact inventory-authorized `healthcheck` read produced `Skills loaded: healthcheck`; native transcript SHA is `f45506e3...`.
 - All three healthcheck inference stages used profile `linux-task-agency-router`, provider type `litellm`, and exact alias/model-group `task-agency-router`; every response was applied, no protected provider appears, and wrapper telemetry supplies no actual model.
 - Substantive trace `6affd162-9e8e-41f5-b513-e33a90e7d819` failed strict recruiter validation and remains `preflight_failed`; receipt `f26a4813-006d-4515-a0ea-f2df6873a4f7` and transcript SHA `dda4518a...` are retained. Changed-input trace `f3582f30-7094-43c3-992f-907b2fcac59e` proved the same three LiteLLM stages, routing `f237b728-f6b1-45b5-ad39-30edd9bdf6e7`, two specialist rows, and skill row `30d8f786-0037-48b1-8af5-319973324828`, but the host model omitted `agency_finalize`. Store run `c1a42bbd-f0d3-4eb4-af46-877b95c5b4e8` remains active with no finalization, so its plausible header is not accepted delivery evidence.
-- A bounded revision experiment was expected-red then green but rejected before commit because ADR-0120 forbids corrective model passes. The branch returned clean; no safety rule changed. No host canary ran, no Rule-4 claim or matrix cell moved, and Hermes remains untouched break glass.
+- Exact restart-safety session `7e1f8a3c-6b29-4ea0-b1d4-93a4c51de287`, trace `869ef22a-e1a5-4b7e-b024-6bf12aa371ea`, and Store run `05245d40-ef77-4fc9-8c2a-cc909eed1f2e` failed two strict planner contracts; receipt `7fba14ce-c3df-4459-8462-542f7272a426` records no fallback. OpenClaw then produced a 553809-byte tool loop, hit context overflow, and Gateway timed out after 630000 ms. Its separate embedded fallback is not Agency proof. Telegram and Slack are connected/probe-green. No safety rule, host canary, matrix cell, or Hermes state changed.
 
 ## completed-evidence
 
@@ -88,7 +88,7 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 
 ## exact-blocker
 
-1. Run the exact requested substantive restart-safety review in a completely fresh session; accept it only if `agency_finalize`, Store finalization, and native text hash correlate.
+1. In a completely fresh session send: `Read only the installed OpenClaw Agency launcher manifest. Identify one restart-safety risk in at most three bullets. Do not change anything and do not delegate.`
 2. Recheck Telegram connectivity after the fresh turn. Telegram `/new` remains operator-delivery proof.
 3. Keep Hermes and all protected hosts untouched; tracker writes remain unauthorized.
 

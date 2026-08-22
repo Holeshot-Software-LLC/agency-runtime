@@ -106,6 +106,15 @@ not prove skill loading: OpenClaw used native `read` for the bundled Weather
 `SKILL.md`, while Agency recorded no skill row and honestly finalized
 `Skills loaded: none`. AR-274 owns that separate bridge-normalization defect.
 
+A later exact restart-safety review in fresh session
+`7e1f8a3c-6b29-4ea0-b1d4-93a4c51de287` retained the opposite eval outcome:
+trace `869ef22a-e1a5-4b7e-b024-6bf12aa371ea` rejected two planner responses as
+`provider_response_contract_invalid` with no fallback. OpenClaw then entered a
+553809-byte tool loop, hit native context overflow, and the Gateway timed out
+after 630000 ms. The CLI's separately identified embedded fallback is not
+Agency evidence. This retained failure does not change the earlier live pass,
+the opaque alias target, strict validator, or protected-host configuration.
+
 ## Approach
 
 Append the already bounded, deterministic JSON schema to the system
