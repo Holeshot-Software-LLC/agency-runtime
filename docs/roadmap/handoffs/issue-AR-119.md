@@ -3,7 +3,7 @@ title: "AR-119 active recovery capsule"
 status: active
 category: roadmap
 created: 2026-07-23
-updated: 2026-08-21
+updated: 2026-08-22
 tags: [handoff, vision, inference, child-delivery, contractors, evaluation, recovery]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
@@ -43,14 +43,15 @@ related:
   - docs/decisions/0160-pin-child-judge-providers-per-canary-harness.md
   - docs/decisions/0163-keep-litellm-inference-profiles-model-agnostic.md
   - docs/decisions/0164-delegate-exact-schema-translation-to-litellm.md
+  - docs/decisions/0165-authorize-openclaw-native-skill-reads-from-inventory.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-119
 branch: codex/ar119-openclaw-hermes-litellm
-evidence_commit: fba12371f4bf004ffadd9356bb00787b00e6194f
-minimum_ledger_commit: 6ad46fb4a1309b3b52396055a73274d2d5d670b9
+evidence_commit: 7fcd828d2a20d85562bee73cbea9f538985107ac
+minimum_ledger_commit: 7d0460a317c3f2528ebaceb5284b8020b63aa431
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
@@ -62,35 +63,35 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 
 ## checkpoint
 
-- Dedicated branch `codex/ar119-openclaw-hermes-litellm` is clean at exact-schema repair `fba12371` plus ledger `6ad46fb4`; `f76050d7` is an ancestor.
-- Checkout module identity is this worktree, Agency is `0.1.0`, Store schema is 47, and every Agency command used `python -m agency_runtime.cli`.
-- Fresh online backup `~/.agency-runtime/backups/ar273-exact-schema-preinstall.TuZp2cjN/agency.db` has integrity `ok`, schema 47, and SHA-256 `731934b20258feacf7d8835a9ba8e32d41844cd5685eef8ca65ad3dc1d51734f`. Installer contractor count stayed 15.
-- OpenClaw remains audited `2026.7.1-2 (0790d9f)` on native `litellm/task-general`, six fallbacks, and 21 LiteLLM entries. Pre/current config SHAs are `806404abcff7be7e46875ca8ab5294e582b93d38c55210fb8bc84359c9a14885` and `800f2e664781e7c4cb104d07aa65569dcbdc488e4bbcad80df0876160528a04b`; changed path is only `/meta/lastTouchedAt`. OpenClaw itself was not reinstalled.
-- Agency-only install `b526ecdc-a538-4797-a8e8-656ecb3b315b` completed with bundle `94d87723b900387f9dbad0dda73613b449332c34683a4fd68674c0e354314a22`. Runtime digest is `71c917a91ed3527065447e6aa5ec4e36466d1710f7f5d0a41411a5ac585decda`; launcher SHA is `fe71017957b7060d7480fa80b222455b2cc69fe42d2f7b9c71e98ba65573b01b`; manifest SHA is `4760bbee202e904a81e54e8e41723bd52d18840906da409c9d4cb97d26624503`.
-- Agency config hash stayed `43367ec9aa05a66fc2a60bb254f270836fb3616753769115fabb253a04d5d9f8`. Harness profile `linux-task-agency-router` uses `litellm`, alias `task-agency-router`, `http://127.0.0.1:4000/v1`, populated `LITELLM_API_KEY`, and 120000 ms; global/Codex/Claude routes are unchanged.
-- Hermes stayed active at config hash `a984d9343cbd56b7ac3bb70586ce4db90a739d6a063a530b9183c5baca1e170d`. Separately authorized Codex MCP flags `cloudflare-api`, `codegraph_brainlens`, and `robinhood-trading` are false; final Codex hash is `8f375701f072916af504c5ff6bc3d01bd4ec49c2a3ad31477676fbf5f068828b`. Codex OAuth/model/other MCPs, Claude hash `27dafb2742d0da69a49cc8d206fc9cc429feff09cc3738addcf590d9c4358f97`, and ZCode are otherwise untouched.
-- Installer left OpenClaw stopped; the same service then restarted gateway/RPC-green. Slack and Telegram are connected/probe-green; `agency-preflight` is enabled, activated, loaded with ten hooks, `agency_finalize`, and zero diagnostics. Hermes and `litellm-gateway` stayed active.
+- Durable branch is clean through repair `7fcd828d`, ledger `7d0460a3`, ADR `60c72239`, and ledger `5d6e1207`; fetched `origin/main` is `4a326773`, and `f76050d7` is an ancestor.
+- Agency `0.1.0` imports from this checkout. The first install failed pre-mutation because its user-writable virtualenv was not a trusted persistent launcher; the changed `/usr/bin/python3 -m agency_runtime.cli` input imported this checkout and passed without weakening trust.
+- Online backup `~/.agency-runtime/backups/ar274-openclaw-preinstall.bHHyj4vX/agency.db` has integrity `ok`, schema 47, 15 active contractors, and SHA-256 `bdf3c4d6bfedf74251319a9c587b0b64815d35b6a74b15c9f2b65aa18cedb5ff`.
+- OpenClaw remains audited `2026.7.1-2 (0790d9f)` on native `litellm/task-general`, six fallbacks, and 21 LiteLLM entries. Pre/current config SHAs are `800f2e664781e7c4cb104d07aa65569dcbdc488e4bbcad80df0876160528a04b` and `341edbcb310b4f51600af6c3452da4a2259b30237d779e940eac85a0ba7c2ff2`; only `/meta/lastTouchedAt` changed. OpenClaw itself was not reinstalled.
+- Agency-only install `3aac2a46-e638-46d6-812d-d2df2ea3aa0b` completed with bundle `69783cf41a5e68a25b650aaaf2869ca370b1aefa3123d918e612d6910c376f72`. Launcher runtime digest is `6afbaf655371ae1007d3817baebb188f379c10f4b45ff8c8fe0c67503335adcb`; launcher SHA is `f6962d190ee366d44724691fb01204c79bed3217ee615e83da6be7022845eb36`; install-manifest SHA is `c79882349d19e7995eadbfc85d5dc4d930caef55b74e65346f457129b1ff72ec`.
+- Agency config hash remains `43367ec9...`. OpenClaw's harness profile uses `litellm`, exact alias/model-group `task-agency-router`, `http://127.0.0.1:4000/v1`, `LITELLM_API_KEY`, and 120000 ms. The key is present in OpenClaw's declared common environment and absent from the operator shell; the authenticated model inventory advertises the alias. No global or protected-host route changed.
+- Hermes stayed active at config hash `a984d934...`; Codex remains `8f375701...`, Claude `27dafb27...`, and the authorized three Codex MCP flags remain disabled. Codex OAuth/model/canary, ZCode, and all other protected configuration remain untouched.
+- Installer left OpenClaw stopped. Native restart is RPC-green; `agency-preflight` is enabled, activated, loaded with ten hooks, `agency_finalize`, and zero diagnostics. Slack is connected/probe-green; Telegram is configured/running and probe-green, with its immediate post-restart connected flag still false. Hermes and LiteLLM remained active.
 - Fresh exact first-message session `fe3ab39c-fea0-4974-82b2-c85478b10b8a`, trace `3b26c907-2c9d-4240-8160-8c6d7cce6a08`, run `7d9e7bc3-3268-419e-8358-a3ef2ccf93c7`, routing `19de0955-1cb8-40b0-a307-69cf3e001242`, and finalization `97eaacb8-9dcf-4431-8150-0e1d702e8ce3` completed. Response hash `a1d0eba85a66bfa728275ce62f16e0566b7d5be563333ba4fc66303fadcc6ba6` matches transcript SHA `9f37ed86db9cd7ff600955a706c0d0e328ce6e79e85113bb5b8f649b503ba922`. Binding `rmb-1d107f497436b916ad7b32775b1a630d` is correctly non-durable; model receipt `25199eb6-6e9e-4b7b-a2d4-b365a9400053` records native `task-general`, zero fallback, actual unavailable. This proves control/final delivery, not Agency inference.
 - The consumed session `31f52706-f329-4640-a012-c9540e283770` remains retained as the pre-exact-schema 180-second timeout; it was not retried. The approved content-free diagnostic and expected-red/green receipts remain the repair evidence.
 - A genuinely new work unit in session `fe3ab39c-fea0-4974-82b2-c85478b10b8a` completed trace `402e37f5-f38e-425b-95c6-62e911be2566` and Store run `4963f31f-e114-4fa0-b051-8ded1ded51a1`. All three structured stages automatically used profile `linux-task-agency-router`, provider type `litellm`, and exact alias/model-group `task-agency-router` with applied responses; no protected provider identity appears.
 - Routing `982f6c68-ac38-41a3-a84a-b7b60bee39cb` accepted; specialist rows `80c52f54-3390-4f06-81e1-0ddca89ebe27` and `866003fb-e74a-491c-a422-1ea64dd4c677` loaded; finalization `cfb2e3de-9a2b-4fda-9194-6edcb52ca3a5` accepted. Response SHA `7c785b301b68e65a42c6a69f01537821a398bca2d7a238c598a75890f2b8c2f5` matches native transcript SHA `0ebf3b397080865fd6ffad8e289bd9558e8b646ff35a37c465ebd46b87f3560b`. Wrapper telemetry supplies no actual model, so none is claimed.
 - OpenClaw's native `read` accessed the exact bundled Weather `SKILL.md` reported by `openclaw skills info weather --json`, but Agency recorded no `skills_loaded` row and honestly delivered `Skills loaded: none`. AR-274 owns this native-tool normalization gap; the prose claim that Weather loaded is not accepted evidence.
-- The installed bridge drops `path` from bounded tool arguments and the adapter recognizes only generic `skill_view`; current OpenClaw exposes native `read`, not `skill_view`. Any repair must authorize the exact read against native inventory and fail closed for arbitrary paths without weakening existing trust checks.
-- No Telegram-scoped user turn has been submitted after restart. No OpenClaw/Hermes host canary ran, no Rule-4 claim or matrix cell moved, and Hermes remains untouched break glass.
+- AR-274 now carries bounded `path` and normalizes a native read only after exact eligible/model-visible inventory authorization. Focused tests pass 22/1 skipped and the affected slice 453/1 skipped; ADR-0165 records the fail-closed boundary. The installed runtime is current; fresh live skill proof is next.
+- No new status, skill, substantive, or Telegram-scoped turn has been submitted after this restart. No host canary ran, no Rule-4 claim or matrix cell moved, and Hermes remains untouched break glass.
 
 ## completed-evidence
 
 - Starting identity, Store backup, redacted inventories, credential-name presence, install/launcher provenance, invariants, and every failed turn are retained.
 - AR-272 remains live-proven for native finalization and response delivery. Exact-status is deterministic control proof; the subsequent non-control turn now proves Agency harness/profile/alias selection and strict finalization.
 - AR-273 is live-proven for a valid structured planner and completed workforce turn. Skill evidence is separately blocked by AR-274; the required distinct substantive risk-review prompt remains.
-- AR-274 expected-red is 2/2 exact failures; focused repair is 22 passed/1 skipped and the affected installer/dispatch/inference/header/Store slice is 453 passed/1 skipped. Earlier AR-273 slices and the 827-test spine remain green; no exhaustive workflow was dispatched.
+- AR-274 expected-red is 2/2 exact failures; focused repair is 22 passed/1 skipped, the affected slice is 453 passed/1 skipped, and the Agency-only install is current. Fresh skill/header/Store proof remains; no exhaustive workflow was dispatched.
 - Codex OAuth/config/canary, Claude, ZCode, and Hermes were untouched.
 
 ## exact-blocker
 
-1. Local AR-274 repair is regression-first and green; commit it, reinstall only Agency, and never accept arbitrary `read` paths as skill evidence.
-2. Reinstall only Agency, then use completely fresh sessions and genuinely different skill/substantive work units. Do not change the alias, proxy, host-native model, validator, retry, or fallback policy.
-3. Telegram `/new` remains operator-delivery proof. Hermes stays active and untouched; tracker writes remain unauthorized.
+1. In a completely fresh session, send exact first message `agency status` and preserve its native response/transcript before anything else.
+2. Use a genuinely different harmless skill, then a different non-mutating substantive work unit; correlate Store/header/profile/provider/alias evidence without actual-model invention.
+3. Telegram `/new` remains operator-delivery proof. Keep Hermes and all protected hosts untouched; tracker writes remain unauthorized.
 
 ## traps (machine-specific; do not rediscover)
 
@@ -102,9 +103,9 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 
 ## next-bounded-work-package
 
-1. Commit the green inventory-authorized bridge repair, then reinstall only Agency into OpenClaw.
-2. Reinstall Agency only; run fresh exact-status, a different harmless skill, and a different non-mutating substantive work unit with Store/header correlation.
-3. Keep Hermes, Claude, ZCode, Codex OAuth/model settings, the shared alias target, and OpenClaw native inference untouched.
+1. Run fresh exact-status control and retain the first native artifact.
+2. Run a different harmless skill and a distinct substantive work unit with Store/header/provider correlation.
+3. Recheck Telegram connectivity, protected hashes, Store integrity, and local gates; keep every protected host and alias target untouched.
 
 ## same-task-continuity
 

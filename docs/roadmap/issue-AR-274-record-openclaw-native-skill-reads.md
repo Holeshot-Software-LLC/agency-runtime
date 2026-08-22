@@ -32,11 +32,11 @@ blocks: [AR-119]
 ## Problem
 
 OpenClaw `2026.7.1-2` loads a bundled native skill by reading its `SKILL.md`
-with the host's supported `read` tool. The generated Agency bridge preserves
-only a bounded allowlist of tool arguments and currently drops `path`; the
-OpenClaw adapter also recognizes only the generic `skill_view` tool name.
-Consequently, a genuine native skill read cannot create the Store-backed
-`skills_loaded` evidence required for the five-line Agency header.
+with the host's supported `read` tool. Before this repair, the generated bridge
+dropped `path` and the adapter recognized only generic `skill_view`. A genuine
+native skill read therefore could not create the Store-backed `skills_loaded`
+evidence required for the five-line Agency header without a bounded,
+host-authorized normalization.
 
 ## Current state
 
@@ -68,8 +68,14 @@ environment. It requires exact name, key, file path, base directory, eligibility
 model visibility, and every disable/block flag before normalizing to canonical
 `skill_view`. The focused receipt passes 22 with one skip; the affected
 installer/dispatch/inference/header/Store slice passes 453 with one skip. A
-read-only live helper smoke authorized only `weather`. Host installation and a
-fresh different skill turn remain pending.
+read-only live helper smoke authorized only `weather`. Commits `7fcd828d` and
+`7d0460a3` carry the repair and ledger; ADR-0165 records the boundary.
+
+The first Agency-only install attempt failed before mutation because the
+checkout virtualenv was not a trusted persistent launcher. With the changed,
+verified `/usr/bin/python3` input importing this checkout, install
+`3aac2a46-e638-46d6-812d-d2df2ea3aa0b` completed with bundle `69783cf4...`,
+runtime digest `6afbaf65...`, 15 unchanged contractors, and no runtime drift.
 
 ## Approach
 
