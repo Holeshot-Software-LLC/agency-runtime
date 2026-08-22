@@ -74,6 +74,17 @@ the same canonical finalizer with native host identity; the MCP surface and all
 other harnesses remain unchanged. The focused regression and the complete
 65-test OpenClaw slice pass under an owner-private `0022` test namespace.
 
+After installing the native-host repair, fresh OpenClaw session
+`ba9ea05a-3694-4725-b2ea-0357bd16a112` and trace
+`c2574ce1-b81b-4e29-b66a-06293c6dde85` completed exact first-message control
+`agency status`. Run `aedb79d3-79d9-428c-9eb3-90dbc8aac8c9` is completed;
+finalization `b0f9a0f4-8da2-4b54-b678-826b3a5b61bc` accepted once with
+`host=openclaw`, and response SHA-256
+`bcba81da99187df1157a81e813538251e6108a853b2fb3265a21c9585a3794ca`
+exactly matches the 680-byte native response. The later skill work unit reached
+Agency inference but failed the strict provider response contract before
+finalization; that retained failure is not an AR-272 regression.
+
 ## Approach
 
 Declare the provider-safe OpenClaw-native `agency_finalize` tool in the plugin
@@ -97,6 +108,6 @@ correction or allow an invalid draft.
 - [x] A fresh Agency integration install reports the native tool; a new exact-status turn calls it once, completes first-pass finalization, and delivers the hash-bound Store response.
 - [x] A focused Store assertion preserves the live native-host mismatch as red (`mcp != openclaw`).
 - [x] The OpenClaw wrapper supplies `host=openclaw`; focused OpenClaw security-boundary, adapter, and installer tests pass 65/65.
-- [ ] Reinstall the repaired Agency integration and require a genuinely new exact-status receipt whose accepted finalization is labeled `openclaw`.
-- [ ] Documentation and local verification gates pass.
+- [x] Install the repaired Agency integration into the existing OpenClaw host and require a genuinely new exact-status receipt whose accepted finalization is labeled `openclaw`.
+- [x] Documentation and local verification gates pass.
 - [ ] Tracker creation remains pending separate authorization.

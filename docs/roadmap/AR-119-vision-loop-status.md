@@ -2786,3 +2786,42 @@ OpenClaw remains `2026.7.1-2` on native `litellm/task-general`; Agency alone
 requests `task-agency-router` through harness profile
 `linux-task-agency-router`. Claude, ZCode, Codex, and Hermes remain outside the
 mutation boundary. No matrix cell moved.
+
+
+## 2026-08-21 — OpenClaw control green; Agency router contract blocked
+
+Only the Agency integration was installed into the existing OpenClaw
+`2026.7.1-2` host. OpenClaw itself was not reinstalled. Its native primary
+remains `litellm/task-general`, with six fallbacks and the same 21 LiteLLM / 27
+total model entries. Slack and Telegram both report configured and running with
+empty current errors. Hermes stayed active and untouched as break glass; Claude,
+ZCode, Codex, Codex OAuth, and the consumed Codex canary were untouched.
+
+Agency install `479c1a47-7e89-4091-a0f4-548f6913db58` completed with 15
+contractors before and after and installed the native `agency_finalize` tool.
+Fresh exact first-message session `ba9ea05a-3694-4725-b2ea-0357bd16a112`, trace
+`c2574ce1-b81b-4e29-b66a-06293c6dde85`, completed Store run
+`aedb79d3-79d9-428c-9eb3-90dbc8aac8c9`. Finalization
+`b0f9a0f4-8da2-4b54-b678-826b3a5b61bc` accepted once as `host=openclaw`; its
+response hash exactly matches the native transcript. Deterministic abstention
+and native `task-general` receipts prove control activation, finalization, and
+delivery only, not Agency workforce inference.
+
+One harmless skill work unit was then consumed and retained as failed. Trace
+`9384d3a3-0a28-4150-a8fa-ab493efda7bf`, run
+`a5504721-0aa9-4fa3-98df-f5667c933b5b`, and failure receipt
+`3193483a-712b-4c1d-8f13-ccb6799433a1` record
+`workforce_inference_failed`. Both planner attempts automatically selected
+OpenClaw profile `linux-task-agency-router`, provider type `litellm`, and exact
+requested alias/model-group `task-agency-router`; both ended
+`provider_response_contract_invalid`, with no Codex, Claude, or other fallback.
+No Store-backed header, skill row, specialist, finalization, or model receipt was
+created, so the bare native response is not successful skill proof.
+
+Authenticated proxy metadata maps the shared alias to `ollama/qwen3.5:2b`,
+whose metadata advertises no function-calling or structured-response support.
+Strict validation remains fail-closed. The proxy has no Agency callback, so its
+alias echo is not an actual-answering-model receipt. Remapping this shared alias
+requires Lucas authorization and an approved structured-output-capable target;
+the existing input was not retried. No new Telegram-scoped Store run arrived
+after local proof, no host canary ran, and **no AR-119 matrix cell moved**.

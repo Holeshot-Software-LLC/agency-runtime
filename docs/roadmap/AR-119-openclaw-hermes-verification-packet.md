@@ -192,55 +192,111 @@ result.
 
 ## 7. Current Linux OpenClaw checkpoint — 2026-08-21
 
-OpenClaw is the only Agency-install target in this package. Hermes is the running
-break-glass host and must not be installed, stopped, restarted, or otherwise
-mutated. Claude, ZCode, and Codex are proven hosts outside the mutation boundary;
-no installer, configuration, launcher, authentication, session, or canary action
-may target them.
+OpenClaw was the only Agency-install target. Hermes remained the active
+break-glass host and was not installed, stopped, restarted, or reconfigured.
+Claude, ZCode, Codex, Codex OAuth, and the consumed Codex canary remained
+outside the mutation boundary.
 
-The existing OpenClaw host package remains `2026.7.1-2` with native primary
-`litellm/task-general` and its existing model and alias catalogs. Agency
-separately maps only the OpenClaw harness to profile
-`linux-task-agency-router`, which requests exact LiteLLM alias
-`task-agency-router`. Do not reinstall OpenClaw or modify its native inference
-configuration.
+### Installation and invariants
 
-Two local controls are retained as failed evidence. Session
-`57f19f38-338d-4d93-9c46-eac7b6a4831a` / trace
-`4959bd8c-a0bc-4e3d-bcb9-8cbcc1441547` ended `response_invalid` before AR-271
-preserved native model receipt fields. Session
-`264a65e9-7462-4ea7-9b40-9b38206f1b35` / trace
-`94f32f04-3b72-4ffa-8801-953b320e657f` then preserved four `task-general`
-request receipts but still ended `response_invalid`: the generated native
-Agency plugin exposed zero tools and could not call its Store-backed finalizer.
-This is the concrete dead-air cause, not evidence of a Telegram transport loss.
+The install checkout was clean at `a70131d63c511e418edcda2ccae1f8e45866a95a`.
+OpenClaw remains the existing audited `2026.7.1-2 (0790d9f)` package with native
+primary `litellm/task-general`, six fallbacks, 21 LiteLLM models, and 27 total
+model entries. Only the existing gateway was stopped and restarted. Agency-only
+install `479c1a47-7e89-4091-a0f4-548f6913db58` completed without restarting it
+or changing contractors. The installer reported registered, enabled, and
+runtime-verified Agency integration; dashboard installation was opted out.
 
-AR-272 declares and registers OpenClaw-native `agency_finalize`, dispatching its
-bounded arguments to canonical `agency.finalize` without adding a correction
-pass or weakening finalization or outbound delivery. The executable regression
-failed before repair with Node exit 91; 65 focused OpenClaw security, adapter,
-and installer tests pass under the required test umask.
+The installed launcher resolves to this checkout. Bundle digest is
+`475e56274dec5f7eb61b54a469489274247caa60a18910ff200ec7757bed59a4`, runtime
+digest is `52724f5a8803d1662228a67c03c9a986a5eeebc2289ddb68cdad0306272de066`,
+launcher SHA-256 is
+`5539744ef47aa464921887ee067e3f3c54c9caeacac252259f5a5bb008d462cb`, and
+install-manifest SHA-256 is
+`8d25e7420dc7e8614e3981df0b20274d72add6617b7f899112c925287b82e8b6`.
+The installed native plugin reports ten typed hooks, provider-safe tool
+`agency_finalize`, conversation access enabled, zero diagnostics, and zero MCP
+servers.
 
-After the mandatory clean checkpoint, run serially:
+Latest pre-install online Store backup is
+`~/.agency-runtime/backups/ar272-openclaw-nativehost-preinstall-Ah1yzQNU/agency.db`;
+live and backup integrity are `ok`, and backup SHA-256 is
+`64421c3fc50623940930d757f15f7cd5930537ea9f8d9dd682a5ca771c8ea66d`. Store
+schema is 47 and contractor count is 15 before / 15 after. Redacted config
+comparison proves native model, provider, credential, channel, and plugin-policy
+semantics did not drift. Slack and Telegram report configured/running with an
+empty current error.
 
-1. Stop the existing OpenClaw gateway through its native procedure. Run only
-   `python -m agency_runtime.cli install --agent openclaw --no-dashboard --json`
-   from the checkpointed checkout, inspect the installed Agency tool, and
-   restart the same gateway. The installer must not restart the gateway.
-2. Prove the OpenClaw package version, native model configuration, aliases, and
-   channel configuration did not drift. Prove Claude, ZCode, Codex, and Hermes
-   were not mutated.
-3. In a new local OpenClaw session, send exact `agency status` first; preserve
-   the native transcript and require one native finalizer call plus terminal
-   Store-backed response success.
-4. Only after local proof, obtain operator Telegram `/new`, then exact
-   `agency status`; preserve the first response and queued delivery receipt.
-5. Load one harmless Agency skill without a child, then run the specified new
-   non-delegating restart-safety review. Correlate Store and provider evidence
-   to profile `linux-task-agency-router` and requested alias
-   `task-agency-router`.
+Agency profile `linux-task-agency-router` uses provider type `litellm`, exact
+requested alias/model-group `task-agency-router`, base
+`http://127.0.0.1:4000/v1`, populated credential variable `LITELLM_API_KEY`, and
+120000 ms. It is selected by the OpenClaw harness without changing the global,
+Codex, or Claude routes. The OpenClaw gateway process has the credential
+variable populated; no credential value is recorded.
 
-The LiteLLM callback cannot import this Agency checkout, so the actual answering
-model remains unavailable unless another authoritative provider receipt supplies
-it. Never promote the requested alias into an actual-model claim. No host canary
-is authorized, and no Rule-4 or matrix claim follows.
+### Exact-status control evidence
+
+Fresh session `ba9ea05a-3694-4725-b2ea-0357bd16a112` began with exact first
+message `agency status`. Native/Agency trace is
+`c2574ce1-b81b-4e29-b66a-06293c6dde85`; Store run
+`aedb79d3-79d9-428c-9eb3-90dbc8aac8c9` completed. The exact header was:
+
+~~~text
+Agency/Agencies loaded: agency-steward
+Agency/Agencies delegated: none
+Skills loaded: none
+Actual Model selected: observed execution receipt: [general] task-general -> completed
+Recruited via: deterministic
+~~~
+
+Accepted finalization `b0f9a0f4-8da2-4b54-b678-826b3a5b61bc` is labeled
+`host=openclaw`. Response SHA-256
+`bcba81da99187df1157a81e813538251e6108a853b2fb3265a21c9585a3794ca` exactly
+matches the 680-byte assistant text in native transcript
+`~/.openclaw/agents/nexus/sessions/ba9ea05a-3694-4725-b2ea-0357bd16a112.jsonl`,
+whose SHA-256 is
+`182788c62ac9dd84cd2c73390f10bbb0e4868826cdb0d9df67bbd7c7b1b980da`.
+Routing decision `ea8821a5-b220-474b-9713-0fbb1e8d0498` abstained
+deterministically. Request-scoped binding
+`rmb-aa818901a43ad2bacee6d93edd010488` correctly has no durable resident row.
+There are no specialist or skill rows. Native parent receipts used
+`task-general` with zero fallback. This is status-control, finalization, and
+delivery proof only.
+
+### Agency inference failure and external prerequisite
+
+The only harmless skill attempt used genuinely new text and was not retried.
+Trace `9384d3a3-0a28-4150-a8fa-ab493efda7bf`, run
+`a5504721-0aa9-4fa3-98df-f5667c933b5b`, and failure receipt
+`3193483a-712b-4c1d-8f13-ccb6799433a1` record `preflight_failed` /
+`workforce_inference_failed`. Both planner attempts automatically selected
+harness `openclaw`, profile/provider name `linux-task-agency-router`, provider
+type `litellm`, and exact requested model/model-group `task-agency-router`. Both
+were rejected as `provider_response_contract_invalid`; no fallback to Codex,
+Claude, or any other provider occurred. No Store-backed header, finalization,
+skill row, routing decision, specialist, or model receipt was written. The bare
+native word `Loaded.` is therefore not successful Agency skill evidence.
+
+Authenticated proxy metadata maps shared alias `task-agency-router` to
+`ollama/qwen3.5:2b`. Its model metadata advertises function calling as false and
+no structured-response support. The proxy has no Agency callback and cannot
+import this checkout. Its response alias echo must not be promoted to the actual
+answering model; actual model remains unavailable. Lucas must authorize an
+approved structured-output-capable target for the shared alias, or approve a
+contract-compatible strategy for the current target, before another inference
+proof. Strict Agency validation must not be weakened.
+
+No post-proof Telegram-scoped Store run has arrived. Operator `/new` plus exact
+`agency status` is still required for Telegram delivery proof. No OpenClaw or
+Hermes host canary ran, Rule 4 remains outside this package, and no AR-119 matrix
+cell moved.
+
+### Deferred Hermes bundle
+
+Hermes effective home remains `/home/holeshot/.hermes-nexus`; its gateway and
+dashboard stayed active. Redacted config SHA-256 remained
+`a984d9343cbd56b7ac3bb70586ce4db90a739d6a063a530b9183c5baca1e170d`, and no
+Agency launcher was created or changed for Hermes in this package. Install,
+fresh session, Store, skill, provider, and child fields are deliberately
+`not run — owner-directed break-glass preservation`, not failed or successful
+evidence.
