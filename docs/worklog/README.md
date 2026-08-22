@@ -1122,6 +1122,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `0c5b2b2a` | 2026-08-21 | fix(openclaw): preserve model receipt fields | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-271](../roadmap/issue-AR-271-preserve-openclaw-model-receipt-fields.md) | null |
 | `33d2f4ab` | 2026-08-21 | fix(openclaw): expose native Agency finalizer | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md), [AR-272](../roadmap/issue-AR-272-expose-openclaw-native-finalizer-tool.md) | null |
 | `2d7c055a` | 2026-08-21 | fix(openclaw): preserve native finalizer host | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md), [AR-272](../roadmap/issue-AR-272-expose-openclaw-native-finalizer-tool.md) | null |
+| `c860e958` | 2026-08-21 | docs(ar119): record OpenClaw router evidence | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md), [AR-272](../roadmap/issue-AR-272-expose-openclaw-native-finalizer-tool.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
