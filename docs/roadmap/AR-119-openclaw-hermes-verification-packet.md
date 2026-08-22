@@ -490,3 +490,26 @@ therefore proves exact-schema LiteLLM workforce inference and final delivery,
 not skill loading. AR-274 owns the bridge defect: bounded serialization drops
 `path`, and the adapter does not inventory-authorize native `read` as a
 canonical skill event. No host canary ran and no AR-119 matrix cell moved.
+
+### Pre-live AR-274 repair receipt
+
+Expected-red JUnit `/tmp/ar274-openclaw-native-skill-read-red.xml` contains
+exactly two failures: the adapter authorizer was never consulted and the
+generated transport exited 37 because `path` was absent. The fixed focused
+receipt `/tmp/ar274-openclaw-native-skill-read-green-v3.xml` passes 22 tests
+with one skip. The affected warning-strict slice at
+`/tmp/ar274-openclaw-skill-read-affected-slice.xml` passes 453 with one skip.
+
+The repaired boundary is deliberately narrow:
+
+- generated OpenClaw transport preserves only bounded `path` in addition to its existing allowlist;
+- traversal, relative, hidden-key, and non-`SKILL.md` candidates are rejected before inventory dispatch;
+- inventory uses fixed argv `openclaw skills info <key> --json`, bounded output, five seconds, owned-process containment, and the OpenClaw-only least-privilege environment;
+- name, `skillKey`, `filePath`, `baseDir`, `eligible`, `modelVisible`, and all disable/block flags must match exactly;
+- mismatch, malformed/truncated/failed inventory, and failed native reads create no Store skill row.
+
+A read-only helper smoke matched the installed Weather inventory and returned
+only `weather`. This is not a host skill proof. The next accepted evidence must
+come from an Agency-only reinstall and a completely fresh OpenClaw session
+using a genuinely different harmless skill. No host canary or protected-host
+change occurred.

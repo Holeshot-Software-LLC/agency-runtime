@@ -2,12 +2,17 @@
 
 from __future__ import annotations
 
+import json
+import os
 from pathlib import Path
 
 import pytest
 
 from agency_runtime.adapters.openclaw import node_bridge
-from agency_runtime.adapters.openclaw.plugin import OpenClawAdapter
+from agency_runtime.adapters.openclaw.plugin import (
+    OpenClawAdapter,
+    _authorized_native_skill_read,
+)
 from agency_runtime.core.installer_contracts import OPENCLAW_REQUIRED_HOOKS
 from agency_runtime.core.installer_payload_openclaw import render_openclaw_index
 from agency_runtime.core.selector.delegation_detection import detect_work_units
@@ -181,3 +186,186 @@ def test_sessions_spawn_uses_child_session_as_worker_not_runtime_agent(tmp_path:
     )
     assert child is not None
     assert child["delegation_event_id"] == event["id"]
+
+
+def test_openclaw_inventory_authorized_native_read_records_skill(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    from agency_runtime.adapters.openclaw import plugin as openclaw_plugin
+
+    skill_path = "/opt/openclaw/skills/weather/SKILL.md"
+    observed: list[dict[str, object]] = []
+
+    def authorize(args: dict[str, object]) -> str:
+        observed.append(dict(args))
+        return "weather"
+
+    monkeypatch.setattr(
+        openclaw_plugin,
+        "_authorized_native_skill_read",
+        authorize,
+        raising=False,
+    )
+    store = Store(tmp_path / "agency.db")
+    adapter = OpenClawAdapter(store=store)
+    adapter.post_tool_call_handler(
+        tool_name="read",
+        args={"path": skill_path},
+        result={"ok": True},
+        session_id="openclaw-session",
+        trace_id="openclaw-trace",
+    )
+
+    assert observed == [{"path": skill_path}]
+    assert store.get_skills_for_session("openclaw-session") == ["weather"]
+
+
+def _native_skill_inventory(path: str, **overrides: object) -> dict[str, object]:
+    payload: dict[str, object] = {
+        "name": "weather",
+        "skillKey": "weather",
+        "filePath": path,
+        "baseDir": os.path.dirname(path),
+        "eligible": True,
+        "modelVisible": True,
+        "disabled": False,
+        "blockedByAllowlist": False,
+        "blockedByAgentFilter": False,
+        "platformIncompatible": False,
+    }
+    payload.update(overrides)
+    return payload
+
+
+def test_openclaw_native_skill_read_requires_exact_native_inventory() -> None:
+    skill_path = "/opt/openclaw/skills/weather/SKILL.md"
+    calls: list[tuple[list[str], dict[str, object]]] = []
+
+    def runner(command: list[str], **kwargs: object) -> dict[str, object]:
+        calls.append((list(command), dict(kwargs)))
+        return {
+            "returncode": 0,
+            "stdout": json.dumps(_native_skill_inventory(skill_path)),
+        }
+
+    assert (
+        _authorized_native_skill_read(
+            {"path": skill_path},
+            command_runner=runner,
+        )
+        == "weather"
+    )
+    assert [command for command, _kwargs in calls] == [
+        ["openclaw", "skills", "info", "weather", "--json"]
+    ]
+    environment = calls[0][1]["env"]
+    assert isinstance(environment, dict)
+    assert "OPENCLAW_HOME" in environment
+    assert "CODEX_HOME" not in environment
+    assert "CLAUDE_CONFIG_DIR" not in environment
+    assert "HERMES_HOME" not in environment
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("eligible", False),
+        ("modelVisible", False),
+        ("disabled", True),
+        ("blockedByAllowlist", True),
+        ("blockedByAgentFilter", True),
+        ("platformIncompatible", True),
+    ],
+)
+def test_openclaw_native_skill_read_rejects_ineligible_inventory(
+    field: str,
+    value: object,
+) -> None:
+    skill_path = "/opt/openclaw/skills/weather/SKILL.md"
+
+    def runner(_command: list[str], **_kwargs: object) -> dict[str, object]:
+        return {
+            "returncode": 0,
+            "stdout": json.dumps(_native_skill_inventory(skill_path, **{field: value})),
+        }
+
+    assert not _authorized_native_skill_read(
+        {"path": skill_path},
+        command_runner=runner,
+    )
+
+
+@pytest.mark.parametrize(
+    "receipt",
+    [
+        {"returncode": 1, "stdout": ""},
+        {"returncode": 0, "stdout": "{"},
+        {
+            "returncode": 0,
+            "stdout": json.dumps(
+                _native_skill_inventory(
+                    "/opt/openclaw/skills/other/SKILL.md",
+                )
+            ),
+        },
+        {
+            "returncode": 0,
+            "stdout": json.dumps(
+                _native_skill_inventory(
+                    "/opt/openclaw/skills/weather/SKILL.md",
+                    name="other",
+                )
+            ),
+        },
+    ],
+)
+def test_openclaw_native_skill_read_rejects_unproven_inventory(
+    receipt: dict[str, object],
+) -> None:
+    assert not _authorized_native_skill_read(
+        {"path": "/opt/openclaw/skills/weather/SKILL.md"},
+        command_runner=lambda _command, **_kwargs: receipt,
+    )
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "/opt/openclaw/skills/weather/README.md",
+        "/opt/openclaw/skills/../SKILL.md",
+        "skills/weather/SKILL.md",
+        "/opt/openclaw/skills/.hidden/SKILL.md",
+    ],
+)
+def test_openclaw_native_skill_read_rejects_non_skill_paths(path: str) -> None:
+    def unexpected_runner(_command: list[str], **_kwargs: object) -> object:
+        raise AssertionError("non-skill paths must not invoke OpenClaw")
+
+    assert not _authorized_native_skill_read(
+        {"path": path},
+        command_runner=unexpected_runner,
+    )
+
+
+def test_openclaw_native_skill_read_failure_is_not_recorded(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    from agency_runtime.adapters.openclaw import plugin as openclaw_plugin
+
+    monkeypatch.setattr(
+        openclaw_plugin,
+        "_authorized_native_skill_read",
+        lambda _args: "weather",
+    )
+    store = Store(tmp_path / "agency.db")
+    OpenClawAdapter(store=store).post_tool_call_handler(
+        tool_name="read",
+        args={"path": "/opt/openclaw/skills/weather/SKILL.md"},
+        result={"ok": False},
+        session_id="openclaw-session",
+        trace_id="openclaw-trace",
+    )
+
+    assert store.get_skills_for_session("openclaw-session") == []

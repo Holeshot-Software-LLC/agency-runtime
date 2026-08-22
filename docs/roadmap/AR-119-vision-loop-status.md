@@ -3013,3 +3013,29 @@ filesystem, executable, finalization, and Store trust checks stay unchanged.
 The shared alias and target, OpenClaw native primary `litellm/task-general`,
 Hermes, Claude, ZCode, and Codex OAuth/model configuration remain untouched.
 No host canary ran and **no AR-119 matrix cell moved**.
+
+
+## 2026-08-22 — AR-274 native skill bridge is locally green
+
+Two focused regressions preserve the exact pre-repair failure. The generated
+OpenClaw transport discarded `path` and its executable test exited 37; the
+adapter ignored the inventory-authorized native `read` and created no skill
+row. Both failures are retained in
+`/tmp/ar274-openclaw-native-skill-read-red.xml`.
+
+The minimal repair adds only bounded `path` to the generated projection. The
+OpenClaw adapter rejects traversal, relative, non-`SKILL.md`, and malformed
+candidates before dispatch; then uses the supported
+`openclaw skills info <key> --json` command in the existing least-privilege
+OpenClaw-only environment. It requires exact name, skill key, file path, base
+directory, eligibility, model visibility, and every disable/block flag before
+normalizing the observation to canonical `skill_view`. Failed native reads and
+unproven inventory write nothing.
+
+The focused receipt passes 22 with one skip. The proportionate
+installer/dispatch/inference-profile/final-header/Store slice passes 453 with
+one skip, warning-strict. A read-only helper smoke against the installed
+inventory returned only `weather`. This is local repair evidence: Agency has
+not yet been reinstalled and no fresh skill/header turn is claimed. OpenClaw
+native inference, the shared alias and target, Hermes, Claude, ZCode, and Codex
+OAuth/model configuration remain untouched.

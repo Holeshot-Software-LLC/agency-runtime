@@ -83,12 +83,12 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 - Starting identity, Store backup, redacted inventories, credential-name presence, install/launcher provenance, invariants, and every failed turn are retained.
 - AR-272 remains live-proven for native finalization and response delivery. Exact-status is deterministic control proof; the subsequent non-control turn now proves Agency harness/profile/alias selection and strict finalization.
 - AR-273 is live-proven for a valid structured planner and completed workforce turn. Skill evidence is separately blocked by AR-274; the required distinct substantive risk-review prompt remains.
-- Focused inference and OpenClaw slices pass 134/134 and 104/104. The earlier full production spine passed 827 with three skips; no exhaustive workflow was dispatched.
+- AR-274 expected-red is 2/2 exact failures; focused repair is 22 passed/1 skipped and the affected installer/dispatch/inference/header/Store slice is 453 passed/1 skipped. Earlier AR-273 slices and the 827-test spine remain green; no exhaustive workflow was dispatched.
 - Codex OAuth/config/canary, Claude, ZCode, and Hermes were untouched.
 
 ## exact-blocker
 
-1. Add a regression-first, inventory-authorized normalization for OpenClaw native skill reads; never accept arbitrary `read` paths as skill evidence.
+1. Local AR-274 repair is regression-first and green; commit it, reinstall only Agency, and never accept arbitrary `read` paths as skill evidence.
 2. Reinstall only Agency, then use completely fresh sessions and genuinely different skill/substantive work units. Do not change the alias, proxy, host-native model, validator, retry, or fallback policy.
 3. Telegram `/new` remains operator-delivery proof. Hermes stays active and untouched; tracker writes remain unauthorized.
 
@@ -102,7 +102,7 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 
 ## next-bounded-work-package
 
-1. Preserve path safely, validate candidate skill reads against OpenClaw's authoritative inventory, and add positive/negative regressions.
+1. Commit the green inventory-authorized bridge repair, then reinstall only Agency into OpenClaw.
 2. Reinstall Agency only; run fresh exact-status, a different harmless skill, and a different non-mutating substantive work unit with Store/header correlation.
 3. Keep Hermes, Claude, ZCode, Codex OAuth/model settings, the shared alias target, and OpenClaw native inference untouched.
 

@@ -54,11 +54,11 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 - Repository/bootstrap identity, online Store backups, redacted host inventories, Agency install provenance, config invariants, control response delivery, failed provider attempts, and protected-host hashes are retained.
 - AR-272 native finalization and AR-273 live structured workforce inference are proven. The accepted specialist roster is Store-backed; successful skill loading remains unproven because the native read was not normalized.
 - Prior HTTP-200 failures remain preserved beside the completed exact-schema follow-up. AR-274 is the only current code blocker before a fresh different skill proof and the distinct substantive risk-review turn.
-- Focused inference and OpenClaw slices pass 134/134 and 104/104; the earlier production spine passed 827 with three skips. No hosted workflow, push, PR, tracker mutation, host canary, or matrix movement occurred.
+- AR-274 expected-red is 2/2 exact failures; focused repair is 22 passed/1 skipped and the affected installer/dispatch/inference/header/Store slice is 453 passed/1 skipped. Earlier slices and the 827-test spine remain green. No hosted workflow, push, PR, tracker mutation, host canary, or matrix movement occurred.
 
 ## exact-blocker
 
-1. Normalize only an inventory-authorized OpenClaw native skill read; do not accept arbitrary paths, remap the proxy, inspect its target for dispatch, retry unchanged input, or weaken Agency validation.
+1. Commit the green inventory-authorized native-read repair; do not accept arbitrary paths, remap the proxy, inspect its target for dispatch, retry unchanged input, or weaken Agency validation.
 2. Reinstall Agency only, then use completely fresh sessions and genuinely different skill/substantive work units. Telegram `/new` remains operator proof; Hermes remains outside this package.
 3. AR-265 through AR-274 tracker creation remains pending separate outward-write authorization.
 
@@ -68,7 +68,7 @@ Continue with OpenClaw only after the clean commit pair. Hermes is running break
 
 ## next-bounded-work-package
 
-1. Add positive and fail-closed regressions for inventory-authorized OpenClaw native skill reads.
+1. Reinstall only Agency into OpenClaw from the committed inventory-authorized repair.
 2. Reinstall Agency only and correlate fresh status, different skill, and different substantive Store/provider/header proof without actual-model invention.
 3. Preserve operator Telegram evidence when supplied. Keep the alias target, Hermes, Claude, ZCode, Codex OAuth/model settings, and OpenClaw native inference configuration untouched.
 

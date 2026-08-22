@@ -55,6 +55,21 @@ header says `Skills loaded: none` and the Store contains no `skills_loaded`
 row. This is failed skill evidence, not a successful skill-load claim. Current
 OpenClaw exposes no `skill_view` tool.
 
+Two focused regressions failed before repair: the generated JavaScript dropped
+`path` and exited 37, while the OpenClaw adapter never consulted the injected
+inventory authorizer or wrote a skill row. The retained JUnit receipt is
+`/tmp/ar274-openclaw-native-skill-read-red.xml`.
+
+The minimal repair carries only bounded `path`, rejects traversal-shaped and
+non-skill paths before subprocess launch, and queries the supported native
+`openclaw skills info <skill> --json` surface in a least-privilege OpenClaw-only
+environment. It requires exact name, key, file path, base directory, eligibility,
+model visibility, and every disable/block flag before normalizing to canonical
+`skill_view`. The focused receipt passes 22 with one skip; the affected
+installer/dispatch/inference/header/Store slice passes 453 with one skip. A
+read-only live helper smoke authorized only `weather`. Host installation and a
+fresh different skill turn remain pending.
+
 ## Approach
 
 Preserve the bounded native path field through the generated bridge. Normalize
@@ -74,10 +89,10 @@ or executable-namespace trust rules.
 
 ## Acceptance
 
-- [ ] A focused regression fails before repair because the generated bridge drops the native `read` path and the adapter creates no skill row.
-- [ ] The generated bridge preserves only bounded path fields needed for OpenClaw skill evidence.
-- [ ] An inventory-authorized exact `SKILL.md` read normalizes to one canonical skill event and produces the matching Store row/header entry.
-- [ ] Arbitrary reads, lookalike paths, inventory mismatch/failure, disabled skills, and malformed receipts remain unrecorded.
+- [x] A focused regression fails before repair because the generated bridge drops the native `read` path and the adapter creates no skill row.
+- [x] The generated bridge preserves only bounded path fields needed for OpenClaw skill evidence.
+- [x] An inventory-authorized exact `SKILL.md` read normalizes to one canonical skill event and produces the matching Store row/header entry.
+- [x] Arbitrary reads, lookalike paths, inventory mismatch/failure, disabled skills, and malformed receipts remain unrecorded.
 - [ ] Reinstall only Agency into OpenClaw and prove a genuinely different bundled skill in a completely fresh host session without delegation or child spawn.
 - [ ] Focused OpenClaw adapter, installer, final-header, and Store tests plus proportionate local gates pass.
 - [ ] Tracker creation remains pending separate authorization.

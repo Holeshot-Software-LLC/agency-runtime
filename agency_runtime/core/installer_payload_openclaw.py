@@ -59,7 +59,7 @@ const PREVIEW_STREAMING_CHANNELS = new Set([
   "discord", "feishu", "matrix", "mattermost", "msteams", "slack", "telegram",
 ]);
 const TOOL_PAYLOAD_KEYS = [
-  "name", "skill", "skill_name", "command", "slug", "agent_slug",
+  "name", "skill", "skill_name", "command", "path", "slug", "agent_slug",
   "agent", "agentId", "agent_id", "recommended_agent", "subagent_type",
   "task_name", "target", "goal", "task", "prompt", "description", "message",
   "work_unit_id", "workUnitId", "unit_id", "task_id", "taskId", "run_id",
