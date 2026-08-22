@@ -440,3 +440,53 @@ Agency launcher was created or changed for Hermes in this package. Install,
 fresh session, Store, skill, provider, and child fields are deliberately
 `not run — owner-directed break-glass preservation`, not failed or successful
 evidence.
+
+### Exact-schema workforce inference and native skill-evidence gap
+
+The next genuinely new work unit remained in post-install OpenClaw session
+`fe3ab39c-fea0-4974-82b2-c85478b10b8a` and produced Agency trace
+`402e37f5-f38e-425b-95c6-62e911be2566`, completed Store run
+`4963f31f-e114-4fa0-b051-8ded1ded51a1`, routing decision
+`982f6c68-ac38-41a3-a84a-b7b60bee39cb`, and accepted finalization
+`cfb2e3de-9a2b-4fda-9194-6edcb52ca3a5`.
+
+The routing receipt records three applied structured provider stages. Each
+selected harness `openclaw`, profile/provider `linux-task-agency-router`,
+provider type `litellm`, and requested model/model-group
+`task-agency-router`. Neither Codex, Claude, nor any alternate provider
+identity appears. Wrapper receipts carry the requested alias but no
+authoritative actual answering model, so actual model remains unavailable.
+Specialist rows are:
+
+- `80c52f54-3390-4f06-81e1-0ddca89ebe27` — `cms-developer`
+- `866003fb-e74a-491c-a422-1ea64dd4c677` — `web-gis-developer`
+
+Store response SHA-256
+`7c785b301b68e65a42c6a69f01537821a398bca2d7a238c598a75890f2b8c2f5`
+matches the 475-character native assistant response. The extended transcript
+is
+`~/.openclaw/agents/nexus/sessions/fe3ab39c-fea0-4974-82b2-c85478b10b8a.jsonl`,
+SHA-256
+`0ebf3b397080865fd6ffad8e289bd9558e8b646ff35a37c465ebd46b87f3560b`.
+The delivered five-line header was:
+
+~~~text
+Agency/Agencies loaded: agency-steward, cms-developer, web-gis-developer
+Agency/Agencies delegated: none
+Skills loaded: none
+Actual Model selected: workforce inference: [router] task-agency-router -> linux-task-agency-router/task-agency-router (wrapper)
+Recruited via: inference
+~~~
+
+The transcript records native tool `read` with exact path
+`/home/holeshot/.npm-global/lib/node_modules/openclaw/skills/weather/SKILL.md`,
+which exactly matches the bundled, eligible, model-visible Weather inventory
+entry returned by `openclaw skills info weather --json`. It then records
+`agency_finalize`; no child or delegation tool ran.
+
+The visible prose says Weather was loaded, but there is no `skills_loaded`
+Store row and the authoritative header says `Skills loaded: none`. This turn
+therefore proves exact-schema LiteLLM workforce inference and final delivery,
+not skill loading. AR-274 owns the bridge defect: bounded serialization drops
+`path`, and the adapter does not inventory-authorize native `read` as a
+canonical skill event. No host canary ran and no AR-119 matrix cell moved.

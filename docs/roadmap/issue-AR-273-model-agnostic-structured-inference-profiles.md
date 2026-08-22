@@ -88,6 +88,24 @@ Post-install exact first-message status session
 Its deterministic abstention proves activation and delivery only; exact-schema
 workforce inference remains for a non-control turn.
 
+The next genuinely new work unit produced completed trace
+`402e37f5-f38e-425b-95c6-62e911be2566` and Store run
+`4963f31f-e114-4fa0-b051-8ded1ded51a1`. All three structured provider stages
+automatically selected OpenClaw profile `linux-task-agency-router`, provider
+type `litellm`, and exact requested alias/model-group `task-agency-router`;
+each was applied with a valid structured response. Routing decision
+`982f6c68-ac38-41a3-a84a-b7b60bee39cb` accepted and finalization
+`cfb2e3de-9a2b-4fda-9194-6edcb52ca3a5` delivered a response whose SHA-256
+`7c785b301b68e65a42c6a69f01537821a398bca2d7a238c598a75890f2b8c2f5`
+matches the native transcript. No Codex, Claude, or alternate provider identity
+appears; wrapper receipts do not supply an actual answering model, so none is
+claimed.
+
+This proves the exact-schema LiteLLM repair for a live workforce turn. It does
+not prove skill loading: OpenClaw used native `read` for the bundled Weather
+`SKILL.md`, while Agency recorded no skill row and honestly finalized
+`Skills loaded: none`. AR-274 owns that separate bridge-normalization defect.
+
 ## Approach
 
 Append the already bounded, deterministic JSON schema to the system
@@ -125,5 +143,5 @@ separate.
 - [x] The LiteLLM JSON-schema repair is installed into the existing OpenClaw host.
 - [x] A fresh exact-status control reaches Store-backed finalization and native response delivery after installation.
 - [x] A fresh live attempt proves the required OpenClaw profile, LiteLLM provider, exact alias/model-group, and zero protected-provider fallback.
-- [ ] A fresh live turn returns a valid planner object and reaches strict finalization.
+- [x] A fresh live turn returns a valid planner object and reaches strict finalization.
 - [ ] Tracker creation remains pending separate authorization.

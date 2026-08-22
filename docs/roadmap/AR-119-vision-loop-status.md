@@ -2975,3 +2975,41 @@ resident row. Model receipt `25199eb6-6e9e-4b7b-a2d4-b365a9400053` has zero
 fallback and unavailable actual model. This proves control activation,
 finalization, and delivery only; LiteLLM workforce inference, skill loading,
 and substantive response remain open. No matrix cell moved.
+
+
+## 2026-08-22 — Exact-schema workforce inference passes; native skill evidence gap isolated
+
+A genuinely new work unit in fresh post-install OpenClaw session
+`fe3ab39c-fea0-4974-82b2-c85478b10b8a` completed Agency trace
+`402e37f5-f38e-425b-95c6-62e911be2566` and Store run
+`4963f31f-e114-4fa0-b051-8ded1ded51a1`. All three structured provider stages
+automatically selected harness `openclaw`, profile
+`linux-task-agency-router`, provider type `litellm`, and exact requested alias
+and model-group `task-agency-router`. Every stage applied a valid structured
+response. No Codex, Claude, or alternate provider identity appears.
+
+Routing decision `982f6c68-ac38-41a3-a84a-b7b60bee39cb` accepted and loaded
+specialists `80c52f54-3390-4f06-81e1-0ddca89ebe27` (`cms-developer`)
+and `866003fb-e74a-491c-a422-1ea64dd4c677` (`web-gis-developer`). Accepted
+finalization `cfb2e3de-9a2b-4fda-9194-6edcb52ca3a5` persisted response
+hash `7c785b301b68e65a42c6a69f01537821a398bca2d7a238c598a75890f2b8c2f5`,
+which exactly matches the native assistant response in transcript SHA
+`0ebf3b397080865fd6ffad8e289bd9558e8b646ff35a37c465ebd46b87f3560b`.
+LiteLLM wrapper receipts preserve the requested alias but provide no actual
+answering model; none is claimed.
+
+The same transcript proves OpenClaw successfully used its native `read` tool
+on the exact bundled Weather `SKILL.md` path returned by
+`openclaw skills info weather --json`, then called `agency_finalize`. The
+visible prose said Weather was loaded, but the Store has no `skills_loaded`
+row and the honest five-line header says `Skills loaded: none`. This is not
+successful skill evidence. Current OpenClaw exposes no `skill_view`; the
+generated bridge drops `path`, and the adapter normalizes no native `read`.
+
+AR-274 records the regression-first repair boundary: preserve a bounded path,
+authorize it against the exact eligible/model-visible native inventory entry,
+and fail closed for arbitrary or lookalike reads and inventory failure. Existing
+filesystem, executable, finalization, and Store trust checks stay unchanged.
+The shared alias and target, OpenClaw native primary `litellm/task-general`,
+Hermes, Claude, ZCode, and Codex OAuth/model configuration remain untouched.
+No host canary ran and **no AR-119 matrix cell moved**.

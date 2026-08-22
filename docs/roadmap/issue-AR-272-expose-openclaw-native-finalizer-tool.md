@@ -22,7 +22,7 @@ issue_id: AR-272
 priority: p0
 tracker_url: null
 depends_on: []
-blocks: [AR-119]
+blocks: [AR-119, AR-274]
 ---
 
 # AR-272: Expose OpenClaw native finalizer tool

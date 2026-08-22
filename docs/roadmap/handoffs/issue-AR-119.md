@@ -27,6 +27,7 @@ related:
   - docs/roadmap/issue-AR-271-preserve-openclaw-model-receipt-fields.md
   - docs/roadmap/issue-AR-272-expose-openclaw-native-finalizer-tool.md
   - docs/roadmap/issue-AR-273-model-agnostic-structured-inference-profiles.md
+  - docs/roadmap/issue-AR-274-record-openclaw-native-skill-reads.md
   - docs/roadmap/AR-119-founding-vision.md
   - docs/roadmap/AR-119-vision-loop-status.md
   - docs/roadmap/AR-119-39ff6dca-recruiter-diagnostic-evidence.md
@@ -70,24 +71,25 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 - Hermes stayed active at config hash `a984d9343cbd56b7ac3bb70586ce4db90a739d6a063a530b9183c5baca1e170d`. Separately authorized Codex MCP flags `cloudflare-api`, `codegraph_brainlens`, and `robinhood-trading` are false; final Codex hash is `8f375701f072916af504c5ff6bc3d01bd4ec49c2a3ad31477676fbf5f068828b`. Codex OAuth/model/other MCPs, Claude hash `27dafb2742d0da69a49cc8d206fc9cc429feff09cc3738addcf590d9c4358f97`, and ZCode are otherwise untouched.
 - Installer left OpenClaw stopped; the same service then restarted gateway/RPC-green. Slack and Telegram are connected/probe-green; `agency-preflight` is enabled, activated, loaded with ten hooks, `agency_finalize`, and zero diagnostics. Hermes and `litellm-gateway` stayed active.
 - Fresh exact first-message session `fe3ab39c-fea0-4974-82b2-c85478b10b8a`, trace `3b26c907-2c9d-4240-8160-8c6d7cce6a08`, run `7d9e7bc3-3268-419e-8358-a3ef2ccf93c7`, routing `19de0955-1cb8-40b0-a307-69cf3e001242`, and finalization `97eaacb8-9dcf-4431-8150-0e1d702e8ce3` completed. Response hash `a1d0eba85a66bfa728275ce62f16e0566b7d5be563333ba4fc66303fadcc6ba6` matches transcript SHA `9f37ed86db9cd7ff600955a706c0d0e328ce6e79e85113bb5b8f649b503ba922`. Binding `rmb-1d107f497436b916ad7b32775b1a630d` is correctly non-durable; model receipt `25199eb6-6e9e-4b7b-a2d4-b365a9400053` records native `task-general`, zero fallback, actual unavailable. This proves control/final delivery, not Agency inference.
-- Required new substantive session `31f52706-f329-4640-a012-c9540e283770` is retained as an OpenClaw 180-second provider-phase timeout; native transcript SHA-256 is `07257c4875c2526cbb7447be73ff74f2ea7333efd74b67925356dad812a70289`. Agency trace `517c2c78-95e6-4dea-bfd7-b43f6d48671a`, run `c080b393-72fd-4133-9485-d3e786e6c90a`, and receipt `de5f98bc-ca21-4b9b-b881-d862bf5b4da8` ended `workforce_provider_unavailable` / `provider_no_valid_response`.
-- That one provider attempt automatically selected OpenClaw profile `linux-task-agency-router`, provider `litellm`, and exact alias/model-group `task-agency-router`; fallback count is zero. The OpenClaw process has `LITELLM_API_KEY`, and the local proxy returned HTTP 200 at the attempt boundary. No routing, skill, specialist, finalization, or model row exists. Codex, Claude, and other providers were not attempted.
-- The approved one-request diagnostic used the existing credential only in memory and exposed no value or content. HTTP 200 returned a normal envelope and braced JSON, but four keys violated its closed two-key schema. This isolates prompt-only schema enforcement; actual model remains unavailable because the proxy has no Agency callback.
-- Expected-red proved LiteLLM still sent `json_object`; repaired payload sends the exact closed `json_schema` while retaining strict validation. The 6/6 repair, 134/134 inference, and 104/104 OpenClaw slices are green and the repair is installed. Alias, target, host inference, proxy, retry, and fallback configuration are unchanged.
+- The consumed session `31f52706-f329-4640-a012-c9540e283770` remains retained as the pre-exact-schema 180-second timeout; it was not retried. The approved content-free diagnostic and expected-red/green receipts remain the repair evidence.
+- A genuinely new work unit in session `fe3ab39c-fea0-4974-82b2-c85478b10b8a` completed trace `402e37f5-f38e-425b-95c6-62e911be2566` and Store run `4963f31f-e114-4fa0-b051-8ded1ded51a1`. All three structured stages automatically used profile `linux-task-agency-router`, provider type `litellm`, and exact alias/model-group `task-agency-router` with applied responses; no protected provider identity appears.
+- Routing `982f6c68-ac38-41a3-a84a-b7b60bee39cb` accepted; specialist rows `80c52f54-3390-4f06-81e1-0ddca89ebe27` and `866003fb-e74a-491c-a422-1ea64dd4c677` loaded; finalization `cfb2e3de-9a2b-4fda-9194-6edcb52ca3a5` accepted. Response SHA `7c785b301b68e65a42c6a69f01537821a398bca2d7a238c598a75890f2b8c2f5` matches native transcript SHA `0ebf3b397080865fd6ffad8e289bd9558e8b646ff35a37c465ebd46b87f3560b`. Wrapper telemetry supplies no actual model, so none is claimed.
+- OpenClaw's native `read` accessed the exact bundled Weather `SKILL.md` reported by `openclaw skills info weather --json`, but Agency recorded no `skills_loaded` row and honestly delivered `Skills loaded: none`. AR-274 owns this native-tool normalization gap; the prose claim that Weather loaded is not accepted evidence.
+- The installed bridge drops `path` from bounded tool arguments and the adapter recognizes only generic `skill_view`; current OpenClaw exposes native `read`, not `skill_view`. Any repair must authorize the exact read against native inventory and fail closed for arbitrary paths without weakening existing trust checks.
 - No Telegram-scoped user turn has been submitted after restart. No OpenClaw/Hermes host canary ran, no Rule-4 claim or matrix cell moved, and Hermes remains untouched break glass.
 
 ## completed-evidence
 
 - Starting identity, Store backup, redacted inventories, credential-name presence, install/launcher provenance, invariants, and every failed turn are retained.
-- AR-272 is live-proven for native finalization and response delivery. Exact-status is deterministic control proof only; the failed skill turn is the first strict evidence of correct Agency harness/profile/alias selection.
-- AR-273 has retained red/green evidence for prompt schema, reasoning translation, and exact LiteLLM JSON-schema delivery. The new bundle is installed; fresh live control, skill, and substantive proof remain.
+- AR-272 remains live-proven for native finalization and response delivery. Exact-status is deterministic control proof; the subsequent non-control turn now proves Agency harness/profile/alias selection and strict finalization.
+- AR-273 is live-proven for a valid structured planner and completed workforce turn. Skill evidence is separately blocked by AR-274; the required distinct substantive risk-review prompt remains.
 - Focused inference and OpenClaw slices pass 134/134 and 104/104. The earlier full production spine passed 827 with three skips; no exhaustive workflow was dispatched.
 - Codex OAuth/config/canary, Claude, ZCode, and Hermes were untouched.
 
 ## exact-blocker
 
-1. Run fresh exact-status, conditional harmless-skill, and genuinely different substantive sessions; correlate Store/provider/header evidence.
-2. Do not change the alias, proxy, host-native model, validator, retry, or fallback policy.
+1. Add a regression-first, inventory-authorized normalization for OpenClaw native skill reads; never accept arbitrary `read` paths as skill evidence.
+2. Reinstall only Agency, then use completely fresh sessions and genuinely different skill/substantive work units. Do not change the alias, proxy, host-native model, validator, retry, or fallback policy.
 3. Telegram `/new` remains operator-delivery proof. Hermes stays active and untouched; tracker writes remain unauthorized.
 
 ## traps (machine-specific; do not rediscover)
@@ -100,9 +102,9 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 
 ## next-bounded-work-package
 
-1. In fresh sessions, run exact first-message status, conditional harmless-skill proof, then a different non-mutating substantive work unit.
-2. Correlate Store/provider/header proof without actual-model invention.
-3. Keep Hermes, Claude, ZCode, Codex OAuth/model settings, and OpenClaw native inference untouched.
+1. Preserve path safely, validate candidate skill reads against OpenClaw's authoritative inventory, and add positive/negative regressions.
+2. Reinstall Agency only; run fresh exact-status, a different harmless skill, and a different non-mutating substantive work unit with Store/header correlation.
+3. Keep Hermes, Claude, ZCode, Codex OAuth/model settings, the shared alias target, and OpenClaw native inference untouched.
 
 ## same-task-continuity
 
