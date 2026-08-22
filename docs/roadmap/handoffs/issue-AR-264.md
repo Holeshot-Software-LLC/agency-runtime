@@ -43,25 +43,22 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 - OpenClaw remains audited `2026.7.1-2` on native `litellm/task-general`, six fallbacks, and 21 LiteLLM models. Only `/meta/lastTouchedAt` changed; the host package, native model routing, channels, and alias target were not changed.
 - The first install refused the untrusted virtualenv before mutation. A changed trusted `/usr/bin/python3` input imported this checkout and completed without weakening safety.
 - Agency-only install `3aac2a46-e638-46d6-812d-d2df2ea3aa0b` installed bundle `69783cf41a5e68a25b650aaaf2869ca370b1aefa3123d918e612d6910c376f72`. Launcher SHA is `f6962d190ee366d44724691fb01204c79bed3217ee615e83da6be7022845eb36`; runtime digest is `6afbaf655371ae1007d3817baebb188f379c10f4b45ff8c8fe0c67503335adcb`.
-- Fresh exact-status session `fe3ab39c-fea0-4974-82b2-c85478b10b8a`, trace `3b26c907-2c9d-4240-8160-8c6d7cce6a08`, run `7d9e7bc3-3268-419e-8358-a3ef2ccf93c7`, and accepted finalization `97eaacb8-9dcf-4431-8150-0e1d702e8ce3` are hash-matched to the native transcript. Deterministic abstention proves control/final delivery, not workforce inference.
-- The consumed pre-repair skill and substantive failures remain retained and were not retried. Their exact harness/profile/alias selection plus the content-free diagnostic, expected-red, and green slices preserve the AR-273 repair chain.
-- New trace `402e37f5-f38e-425b-95c6-62e911be2566` and run `4963f31f-e114-4fa0-b051-8ded1ded51a1` completed. All three structured stages automatically selected harness `openclaw`, profile `linux-task-agency-router`, provider type `litellm`, and exact alias/model-group `task-agency-router`; no protected provider identity appears.
-- Routing `982f6c68-ac38-41a3-a84a-b7b60bee39cb` accepted and specialist rows `80c52f54-3390-4f06-81e1-0ddca89ebe27` plus `866003fb-e74a-491c-a422-1ea64dd4c677` loaded. Finalization `cfb2e3de-9a2b-4fda-9194-6edcb52ca3a5` delivered a native response whose hash matches the Store. Alias wrapper receipts provide no actual answering model, so none is claimed.
-- AR-274 now authorizes native reads only against exact eligible/model-visible inventory and is installed. Focused tests pass 22/1 skipped and the affected slice 453/1 skipped; fresh different skill evidence remains pending.
-- Gateway/RPC and the plugin are green. Slack is connected/probe-green; Telegram is configured/running and probe-green but reported connected=false immediately after restart. Hermes and LiteLLM stayed active; protected hosts were untouched.
+- Fresh exact-status session `94f92dc5-a0c5-44a7-bfa0-1663d948025e`, trace `e5b43276-ff90-43a7-923e-9956ac278816`, Store run `31a11c4d-7dff-4c6a-a643-ef082cdea36d`, and finalization `30625a68-a8a5-479f-8cae-07396eec05d8` prove activation and native final delivery. This deterministic control does not prove workforce inference.
+- Fresh `healthcheck` trace `11707056-a490-4cbc-97b6-9a8e621caa79` completed routing `132ee9fa-5cb6-409b-9668-dea79014eac2`, skill row `3dd34973-d2f5-4b38-adcf-51191f374214`, and finalization `47c0a487-916a-42cb-9d97-54ee205a0a7f`. All three stages used OpenClaw profile `linux-task-agency-router`, provider type `litellm`, and exact alias/model-group `task-agency-router`; no protected fallback or actual-model claim exists.
+- Exact restart review trace `869ef22a-e1a5-4b7e-b024-6bf12aa371ea` and smaller trace `b325368f-22e2-4815-8d01-2e9d1c22c543` each rejected two strict planner contracts from the same alias with zero fallback. Receipts `7fba14ce-c3df-4459-8462-542f7272a426` and `fe0c2f6b-e9be-45a6-b15a-f450c7e8a154` are terminal evidence. The first Gateway timed out after native context overflow; the second unheaded answer is not Agency delivery.
+- Store integrity remains `ok`, schema 47, and the install preserved all 15 contractors. Agency config, launcher, OpenClaw, Hermes, Codex, and Claude hashes remain unchanged from the checkpoint. Telegram and Slack are connected/probe-green; Hermes remains untouched break glass.
 
 ## completed-evidence
 
-- Repository/bootstrap identity, online Store backups, redacted host inventories, Agency install provenance, config invariants, control response delivery, failed provider attempts, and protected-host hashes are retained.
-- AR-272 finalization and AR-273 structured workforce inference remain proven. The accepted roster is Store-backed; the newly installed AR-274 bridge still needs fresh skill evidence.
-- Every failed provider and installer attempt remains retained. The distinct status, skill, and substantive turns are next.
-- No hosted workflow, push, PR, tracker mutation, host canary, or matrix movement occurred.
+- Agency-only install, OpenClaw activation, exact-status finalization, native `healthcheck` evidence, and harness-scoped LiteLLM alias selection are proven.
+- Substantive acceptance is blocked at the configured alias target's strict planner contract; invalid native answers remain unaccepted and unqueued.
+- No hosted workflow, push, PR, tracker mutation, host canary, alias-target change, protected-host change, or matrix movement occurred.
 
 ## exact-blocker
 
-1. Run exact-status as the first message of a completely fresh session and retain its native artifact.
-2. Run a genuinely different harmless skill and substantive work unit; correlate Store/header/profile/provider/alias evidence without invention.
-3. Telegram `/new` remains operator proof; AR-265 through AR-274 tracker creation remains pending authorization.
+1. The existing `task-agency-router` target must produce a schema- and semantic-valid planner response.
+2. Neither consumed prompt may be retried unchanged; strict validation and zero protected fallback remain mandatory.
+3. Any alias-target change requires Lucas. Tracker creation remains separately unauthorized.
 
 ## same-task-continuity
 
@@ -69,9 +66,9 @@ Continue with OpenClaw only after the clean commit pair. Hermes is running break
 
 ## next-bounded-work-package
 
-1. Preserve the fresh exact-status response and transcript.
-2. Correlate a different skill and substantive work unit through Store/header/provider evidence.
-3. Recheck Telegram and protected hashes; keep the alias target and all break-glass/proven hosts untouched.
+1. Wait for the alias prerequisite, then use a genuinely new substantive work unit.
+2. Correlate Store finalization, native response hash, harness/profile/alias, and fallback evidence.
+3. Keep Hermes and every proven host/configuration untouched.
 
 ## verification
 

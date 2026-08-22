@@ -3039,3 +3039,29 @@ inventory returned only `weather`. This is local repair evidence: Agency has
 not yet been reinstalled and no fresh skill/header turn is claimed. OpenClaw
 native inference, the shared alias and target, Hermes, Claude, ZCode, and Codex
 OAuth/model configuration remain untouched.
+
+
+## 2026-08-22 — OpenClaw status and skill pass; substantive alias contract blocked
+
+Agency-only install `3aac2a46-e638-46d6-812d-d2df2ea3aa0b` remains bound to
+this checkout with launcher SHA `f6962d19...` and runtime digest `6afbaf65...`.
+OpenClaw remains `2026.7.1-2` on native `litellm/task-general`; its config and
+alias target were not changed. Hermes and every proven host stayed untouched.
+
+Fresh exact-status trace `e5b43276-ff90-43a7-923e-9956ac278816` completed
+canonical finalization. Fresh skill trace
+`11707056-a490-4cbc-97b6-9a8e621caa79` recorded `healthcheck`, two specialists,
+and three applied LiteLLM stages through profile `linux-task-agency-router` and
+exact alias/model-group `task-agency-router`, with no protected fallback.
+
+Two genuinely different substantive sessions then failed the same strict
+planner boundary. Traces `869ef22a-e1a5-4b7e-b024-6bf12aa371ea` and
+`b325368f-22e2-4815-8d01-2e9d1c22c543` each rejected two alias responses as
+`provider_response_contract_invalid`. The first native run reached context
+overflow and a 630000 ms Gateway timeout; the second returned an unheaded
+answer. Neither has routing/finalization evidence, so neither is delivery.
+
+Telegram and Slack are running, connected, and probe-green. The external
+prerequisite is a schema- and semantic-valid planner response from the existing
+alias target. No retry, validator weakening, actual-model invention, host
+canary, or AR-119 matrix movement is authorized.

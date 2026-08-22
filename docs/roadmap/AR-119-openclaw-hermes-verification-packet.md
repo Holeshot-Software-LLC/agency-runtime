@@ -513,3 +513,49 @@ only `weather`. This is not a host skill proof. The next accepted evidence must
 come from an Agency-only reinstall and a completely fresh OpenClaw session
 using a genuinely different harmless skill. No host canary or protected-host
 change occurred.
+
+
+### Final OpenClaw-only result — blocked at alias planner contract
+
+~~~yaml
+host: openclaw
+checkout_sha_at_final_live_turn: 5651d063
+host_version: OpenClaw 2026.7.1-2 (0790d9f)
+profile_identity: linux-task-agency-router
+native_litellm_config_source_redacted: ~/.openclaw/openclaw.json; primary litellm/task-general unchanged
+litellm_base_url_source: ~/.agency-runtime/agency.yaml
+credential_env_name: LITELLM_API_KEY
+credential_present_boolean: true in the OpenClaw service environment
+agency_inference_profile: linux-task-agency-router
+requested_alias: task-agency-router
+model_group: task-agency-router
+actual_model_and_receipt_source: unavailable; LiteLLM wrapper returned the alias and the shared proxy cannot load the Agency callback
+runtime_digest: 6afbaf655371ae1007d3817baebb188f379c10f4b45ff8c8fe0c67503335adcb
+store_schema: 47
+install_result: 3aac2a46-e638-46d6-812d-d2df2ea3aa0b completed; OpenClaw package not reinstalled
+launcher_manifest_sha256: f6962d190ee366d44724691fb01204c79bed3217ee615e83da6be7022845eb36
+status_session_id: 94f92dc5-a0c5-44a7-bfa0-1663d948025e
+status_trace_id: e5b43276-ff90-43a7-923e-9956ac278816
+status_finalization_id: 30625a68-a8a5-479f-8cae-07396eec05d8
+skill_name_and_store_row_id: healthcheck / 3dd34973-d2f5-4b38-adcf-51191f374214
+skill_trace_id: 11707056-a490-4cbc-97b6-9a8e621caa79
+skill_finalization_id: 47c0a487-916a-42cb-9d97-54ee205a0a7f
+provider_attempt_status: three applied stages on the accepted skill turn; two rejected planner stages on each final substantive attempt
+fallback_count: 0 for Agency inference attempts
+timeout_or_failure_receipt: 7fba14ce-c3df-4459-8462-542f7272a426; fe0c2f6b-e9be-45a6-b15a-f450c7e8a154
+known_limit: substantive acceptance blocked until the existing alias target returns a schema- and semantic-valid planner object
+~~~
+
+The status header delivered `agency-steward`, no delegation, no skill, native
+`task-general`, and deterministic recruitment. The accepted skill header added
+two specialists, `Skills loaded: healthcheck`, exact wrapper alias/profile, and
+inference recruitment. The two substantive native answers are deliberately not
+reproduced as headers because neither has a Store finalization row.
+
+Before/after contractor count is 15/15. Store integrity is `ok` before and
+after. Agency config SHA remains `43367ec9...`; OpenClaw `341edbcb...`, Hermes
+`a984d934...`, Codex `8f375701...`, and Claude `27dafb27...` are unchanged.
+Telegram and Slack are running, connected, and probe-green. Hermes remains
+deferred and untouched as owner-directed break glass. Codex OAuth/model and the
+consumed Codex canary were not touched; no host canary, push, PR, tracker write,
+hosted workflow, alias-target change, or matrix movement occurred.

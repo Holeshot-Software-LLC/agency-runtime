@@ -115,6 +115,16 @@ after 630000 ms. The CLI's separately identified embedded fallback is not
 Agency evidence. This retained failure does not change the earlier live pass,
 the opaque alias target, strict validator, or protected-host configuration.
 
+
+Smaller changed-input session `9a61c4e7-2fd8-40bc-a5f0-3e71b2c94d66`
+confirmed the same blocker without timing out: trace
+`b325368f-22e2-4815-8d01-2e9d1c22c543` rejected two planner responses from
+the exact profile and alias with zero fallback; receipt
+`fe0c2f6b-e9be-45a6-b15a-f450c7e8a154` records `inference_invalid`. Its
+unheaded native answer has no routing or finalization row and is not Agency
+delivery. This is a retained eval failure, not authority to change the alias
+target or weaken the strict validator.
+
 ## Approach
 
 Append the already bounded, deterministic JSON schema to the system
