@@ -3,7 +3,7 @@ title: Decision registry
 status: active
 category: decisions
 created: 2026-07-10
-updated: 2026-08-12
+updated: 2026-08-22
 tags: [architecture, adr, governance]
 related:
   - docs/roadmap/README.md
@@ -129,6 +129,7 @@ Status meanings:
 | [ADR-0158](0158-collect-child-canary-proof-inside-disposable-host-profiles.md) | Collect child-canary proof inside disposable host profiles | Accepted |
 | [ADR-0159](0159-authenticate-codex-plaintext-spawns-from-host-transcripts.md) | Authenticate Codex plaintext spawns from host transcripts | Accepted |
 | [ADR-0160](0160-pin-child-judge-providers-per-canary-harness.md) | Pin child-judge providers per canary harness | Accepted |
+| [ADR-0165](0165-authorize-openclaw-native-skill-reads-from-inventory.md) | Authorize OpenClaw native skill reads from inventory | Accepted |
 
 ## State and roster governance
 

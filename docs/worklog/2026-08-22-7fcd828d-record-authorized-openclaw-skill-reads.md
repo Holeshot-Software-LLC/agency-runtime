@@ -6,6 +6,7 @@ created: 2026-08-22
 updated: 2026-08-22
 tags: [openclaw, skills, evidence, security]
 related:
+  - docs/decisions/0165-authorize-openclaw-native-skill-reads-from-inventory.md
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md
   - docs/roadmap/issue-AR-273-model-agnostic-structured-inference-profiles.md
