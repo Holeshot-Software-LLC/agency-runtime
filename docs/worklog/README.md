@@ -1141,6 +1141,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `b4c27089` | 2026-08-22 | fix(openclaw): grant agency prompt injection | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md), [AR-276](../roadmap/issue-AR-276-gate-openclaw-provider-calls-on-agency-preflight.md) | [detail](2026-08-22-b4c27089-grant-openclaw-prompt-injection.md) |
 | `d9a1a7ce` | 2026-08-22 | fix(openclaw): preflight during prompt build | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md), [AR-276](../roadmap/issue-AR-276-gate-openclaw-provider-calls-on-agency-preflight.md) | [detail](2026-08-22-d9a1a7ce-preflight-openclaw-during-prompt-build.md) |
 | `dbf0a673` | 2026-08-22 | docs(roadmap): checkpoint OpenClaw prompt delivery | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md), [AR-276](../roadmap/issue-AR-276-gate-openclaw-provider-calls-on-agency-preflight.md) | null |
+| `4d2a75ab` | 2026-08-22 | docs(roadmap): checkpoint OpenClaw native skill proof | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md), [AR-276](../roadmap/issue-AR-276-gate-openclaw-provider-calls-on-agency-preflight.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
