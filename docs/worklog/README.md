@@ -1132,6 +1132,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `7fcd828d` | 2026-08-22 | fix(openclaw): record authorized native skill reads | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md), [AR-273](../roadmap/issue-AR-273-model-agnostic-structured-inference-profiles.md), [AR-274](../roadmap/issue-AR-274-record-openclaw-native-skill-reads.md) | [detail](2026-08-22-7fcd828d-record-authorized-openclaw-skill-reads.md) |
 | `60c72239` | 2026-08-22 | docs(decisions): authorize OpenClaw skill evidence | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-274](../roadmap/issue-AR-274-record-openclaw-native-skill-reads.md) | null |
 | `74cc11fb` | 2026-08-22 | docs(ar119): checkpoint OpenClaw skill install | null | null |
+| `c812d80e` | 2026-08-22 | docs(ar119): checkpoint OpenClaw finalization evidence | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-274](../roadmap/issue-AR-274-record-openclaw-native-skill-reads.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
