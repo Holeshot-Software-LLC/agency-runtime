@@ -2851,3 +2851,44 @@ Telemetry is 31.8 percent remaining, so live OpenClaw work waits for the clean
 substantive/worklog checkpoint. Hermes remains active and untouched as break
 glass. No fresh provider turn, skill row, Telegram receipt, actual-model claim,
 host canary, or AR-119 matrix movement is claimed.
+
+
+## 2026-08-22 — AR-273 installed; control green, substantive response invalid
+
+The clean AR-273 pair is `1b789ac3` plus ledger `6d6ea571`. Agency-only
+install `4dd7ee41-121f-4cde-a391-9cecd0665d72` projected bundle
+`51320b45f63cc68db52b267928c1939ab908052f623900a51786228c5b978419`
+into the existing OpenClaw `2026.7.1-2` host. OpenClaw itself was not
+reinstalled. Its primary remains `litellm/task-general`; exact pre/current
+config comparison changes only `meta.lastTouchedAt`. Telegram and Slack are
+connected and native probes pass. Hermes gateway/dashboard remain active with
+the same config hash.
+
+Fresh exact first-message session
+`b610efe7-4e71-43c7-8011-fb13f2736f2b`, trace
+`de166bdc-d649-462d-996b-b2b030a34a8e`, and run
+`c5e8d0bd-99b5-431c-9bb3-6bead5d2eeef` completed. Deterministic routing
+decision `bf93dd03-9d01-4043-a779-49ddee0adff8` abstained and finalization
+`cbc9107f-a34a-4fad-b919-17f3e1ae1d44` accepted the delivered five-line
+header. Its request-scoped binding is correctly non-durable. Native
+`task-general` receipt `002926dd-b041-40c5-9947-14b37f7b4687` records zero
+fallback and unavailable actual model. This is control/final-delivery proof
+only.
+
+The required distinct substantive session
+`31f52706-f329-4640-a012-c9540e283770` is retained as an OpenClaw
+provider-phase timeout at 180 seconds. Agency trace
+`517c2c78-95e6-4dea-bfd7-b43f6d48671a`, run
+`c080b393-72fd-4133-9485-d3e786e6c90a`, and failure receipt
+`de5f98bc-ca21-4b9b-b881-d862bf5b4da8` record one
+`provider_no_valid_response` attempt. It automatically selected OpenClaw
+profile `linux-task-agency-router`, LiteLLM, and exact alias/model-group
+`task-agency-router` with no fallback. The credential variable is populated
+and the proxy returned HTTP 200, but Agency obtained no valid planner object;
+no routing, finalization, skill, specialist, model row, or header exists.
+
+The shared proxy has no Agency callback, so no actual answering model is
+claimed. A direct content-free response-shape diagnostic was blocked before
+execution because reading the OpenClaw process credential requires explicit
+owner approval. It sent no request and exposed no value. No consumed input will
+be retried unchanged, no host canary ran, and **no AR-119 matrix cell moved**.

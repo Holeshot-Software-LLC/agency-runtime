@@ -300,6 +300,50 @@ No post-proof Telegram-scoped Store run has arrived. Operator `/new` plus exact
 Hermes host canary ran, Rule 4 remains outside this package, and no AR-119 matrix
 cell moved.
 
+### Post-AR-273 install and retained live result — 2026-08-22
+
+Agency-only install `4dd7ee41-121f-4cde-a391-9cecd0665d72` projected the
+AR-273 repair into the existing OpenClaw host. Bundle digest is
+`51320b45f63cc68db52b267928c1939ab908052f623900a51786228c5b978419`;
+runtime digest is
+`c71fbb41ca8780b5e5a5424ef240dbf92bdf56a36dbc9d2caac70dcfa22d3497`;
+launcher SHA-256 is
+`755ec953638d85b175f1b4aa705e9cc388cde3d5011520a6bfc7f2986528a78c`.
+OpenClaw itself was not reinstalled. Its pre/current config comparison changes
+only `meta.lastTouchedAt`; primary remains `litellm/task-general`.
+
+Fresh exact first-message control session
+`b610efe7-4e71-43c7-8011-fb13f2736f2b`, trace
+`de166bdc-d649-462d-996b-b2b030a34a8e`, and run
+`c5e8d0bd-99b5-431c-9bb3-6bead5d2eeef` completed. Routing decision
+`bf93dd03-9d01-4043-a779-49ddee0adff8` abstained deterministically;
+finalization `cbc9107f-a34a-4fad-b919-17f3e1ae1d44` accepted. The exact header
+remains the five lines above with request-scoped binding
+`rmb-5ccde2d9de6ac9c0ca8f254cb45e9a85`, which is correctly non-durable.
+Transcript SHA-256 is
+`2eeec604f55265e6c245944c2b7fa840c530efc50abb4ea37ac3cdab889049a3`.
+
+The required distinct substantive session
+`31f52706-f329-4640-a012-c9540e283770` reached the OpenClaw 180-second
+provider-phase ceiling and is retained as a timeout, not a pass. Its transcript
+SHA-256 is
+`07257c4875c2526cbb7447be73ff74f2ea7333efd74b67925356dad812a70289`.
+Agency trace `517c2c78-95e6-4dea-bfd7-b43f6d48671a`, run
+`c080b393-72fd-4133-9485-d3e786e6c90a`, and failure receipt
+`de5f98bc-ca21-4b9b-b881-d862bf5b4da8` record one
+`provider_no_valid_response` attempt. It automatically selected harness
+`openclaw`, profile/provider `linux-task-agency-router`, type `litellm`,
+and exact requested alias/model-group `task-agency-router`, with zero
+fallback. The OpenClaw process has `LITELLM_API_KEY`; LiteLLM returned HTTP
+200 at the attempt boundary. No routing, finalization, skill, specialist, or
+model row was created, and no actual answering model is available.
+
+The proxy has no Agency callback. Exact response-envelope classification now
+waits on explicit permission for one local diagnostic that uses the existing
+credential only in memory and emits only field types, lengths, and parse
+booleans. The rejected permission attempt sent no request and exposed no value.
+The consumed substantive input will not be retried unchanged.
+
 ### Deferred Hermes bundle
 
 Hermes effective home remains `/home/holeshot/.hermes-nexus`; its gateway and

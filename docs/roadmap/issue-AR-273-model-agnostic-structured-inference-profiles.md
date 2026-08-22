@@ -3,7 +3,7 @@ title: "Make structured inference profiles model-agnostic"
 status: in_progress
 category: roadmap
 created: 2026-08-21
-updated: 2026-08-21
+updated: 2026-08-22
 tags: [inference, litellm, structured-output, routing]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
@@ -59,6 +59,17 @@ LiteLLM or generic OpenAI-compatible path. It also omits the profile's
 reasoning effort for LiteLLM even though the receipt reports the level as
 consumed.
 
+The repair is installed in OpenClaw as bundle
+`51320b45f63cc68db52b267928c1939ab908052f623900a51786228c5b978419`.
+Fresh trace `517c2c78-95e6-4dea-bfd7-b43f6d48671a` selected the intended
+OpenClaw profile, LiteLLM provider, and exact alias/model-group with zero
+fallback. LiteLLM returned HTTP 200, but Agency recorded
+`provider_no_valid_response`; no valid planner object or finalization exists.
+The consumed turn is retained as an OpenClaw 180-second provider-phase timeout.
+Exact content-free response-envelope classification awaits explicit permission
+to reuse the existing OpenClaw credential in memory; no alias or host
+configuration change is authorized.
+
 ## Approach
 
 Append the already bounded, deterministic JSON schema to the system
@@ -88,5 +99,7 @@ separate.
 - [x] LiteLLM receives reasoning_effort from thinking_level while the alias remains opaque and unchanged.
 - [x] Codex OAuth/model/inference, Claude, ZCode, Anthropic, Ollama, and host-native inference configurations are unchanged; three separately authorized Codex MCP enablement flags are disabled.
 - [x] Focused tests and proportionate local gates pass.
-- [ ] The repaired Agency integration is installed into the existing OpenClaw host and a fresh live turn proves the required profile and alias.
+- [x] The repaired Agency integration is installed into the existing OpenClaw host.
+- [x] A fresh live attempt proves the required OpenClaw profile, LiteLLM provider, exact alias/model-group, and zero protected-provider fallback.
+- [ ] A fresh live turn returns a valid planner object and reaches strict finalization.
 - [ ] Tracker creation remains pending separate authorization.
