@@ -6,6 +6,8 @@ import re
 from collections.abc import Mapping
 from typing import Any
 
+from agency_runtime.core.workforce.plan_policy import PLAN_VALIDATION_REASON_CODES
+
 PREFLIGHT_FAILURE_RECEIPT_SCHEMA = "agency.preflight.failure.v3"
 MAX_PREFLIGHT_FAILURE_PROVIDER_ATTEMPTS_BYTES = 32 * 1024
 MAX_PREFLIGHT_FAILURE_REASON_CODES = 32
@@ -169,6 +171,23 @@ def preflight_routing_failure_reason(routing: Mapping[str, Any]) -> str:
     return "routing_failed"
 
 
+def _project_plan_validation_reason_codes(value: object) -> list[str]:
+    """Project only bounded, runtime-owned planner validation codes."""
+
+    if not isinstance(value, (list, tuple)) or len(value) > MAX_PREFLIGHT_FAILURE_REASON_CODES:
+        return []
+    result: list[str] = []
+    for item in value:
+        if not isinstance(item, str):
+            return []
+        code = item.strip().casefold()
+        if code not in PLAN_VALIDATION_REASON_CODES:
+            return []
+        if code not in result:
+            result.append(code)
+    return result
+
+
 def project_preflight_provider_attempts(value: object) -> list[dict[str, Any]] | None:
     """Project model attempts while preserving only their allowlisted stage."""
 
@@ -201,6 +220,12 @@ def project_preflight_provider_attempts(value: object) -> list[dict[str, Any]] |
         )
         if nomination_failures:
             entry["validation_failures"] = nomination_failures
+        if stage in {"combined", "planner"}:
+            validation_reason_codes = _project_plan_validation_reason_codes(
+                source.get("validation_reason_codes")
+            )
+            if validation_reason_codes:
+                entry["validation_reason_codes"] = validation_reason_codes
         result.append(entry)
     return result
 

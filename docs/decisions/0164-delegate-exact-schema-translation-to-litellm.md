@@ -3,12 +3,13 @@ title: "Delegate exact schema translation to LiteLLM"
 status: accepted
 category: decisions
 created: 2026-08-21
-updated: 2026-08-21
+updated: 2026-08-22
 tags: [inference, litellm, routing, structured-output]
 related:
   - docs/decisions/0153-adopt-per-stage-inference-profile-routes.md
   - docs/decisions/0163-keep-litellm-inference-profiles-model-agnostic.md
   - docs/roadmap/issue-AR-273-model-agnostic-structured-inference-profiles.md
+  - docs/roadmap/issue-AR-275-preserve-planner-repair-diagnostics.md
   - agency_runtime/core/structured_provider.py
   - tests/test_roster_inference_adapter.py
 supersedes:

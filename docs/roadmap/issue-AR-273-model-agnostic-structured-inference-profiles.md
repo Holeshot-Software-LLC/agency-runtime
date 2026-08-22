@@ -9,6 +9,7 @@ related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/handoffs/issue-AR-119.md
   - docs/roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md
+  - docs/roadmap/issue-AR-275-preserve-planner-repair-diagnostics.md
   - docs/roadmap/reference-workforce-inference-stages.md
   - docs/decisions/0153-adopt-per-stage-inference-profile-routes.md
   - docs/decisions/0163-keep-litellm-inference-profiles-model-agnostic.md
@@ -25,7 +26,7 @@ issue_id: AR-273
 priority: p0
 tracker_url: null
 depends_on: []
-blocks: [AR-119]
+blocks: [AR-119, AR-275]
 ---
 
 # AR-273: Make structured inference profiles model-agnostic

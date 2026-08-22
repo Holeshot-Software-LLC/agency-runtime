@@ -28,6 +28,7 @@ related:
   - docs/roadmap/issue-AR-272-expose-openclaw-native-finalizer-tool.md
   - docs/roadmap/issue-AR-273-model-agnostic-structured-inference-profiles.md
   - docs/roadmap/issue-AR-274-record-openclaw-native-skill-reads.md
+  - docs/roadmap/issue-AR-275-preserve-planner-repair-diagnostics.md
   - docs/roadmap/AR-119-founding-vision.md
   - docs/roadmap/AR-119-vision-loop-status.md
   - docs/roadmap/AR-119-39ff6dca-recruiter-diagnostic-evidence.md
@@ -75,8 +76,9 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 - The consumed session `31f52706-f329-4640-a012-c9540e283770` remains retained as the pre-exact-schema 180-second timeout; it was not retried. The approved content-free diagnostic and expected-red/green receipts remain the repair evidence.
 - Fresh healthcheck trace `11707056-a490-4cbc-97b6-9a8e621caa79` completed Store run `585f2dce-a867-4b83-9395-4b877718a22e`, routing `132ee9fa-5cb6-409b-9668-dea79014eac2`, specialists `27d8c6f4-f276-4605-a489-1bb848902ee0` and `4c787672-45d4-4ba9-bb99-2c01a4ce2851`, skill row `3dd34973-d2f5-4b38-adcf-51191f374214`, and finalization `47c0a487-916a-42cb-9d97-54ee205a0a7f`. Its exact inventory-authorized `healthcheck` read produced `Skills loaded: healthcheck`; native transcript SHA is `f45506e3...`.
 - All three healthcheck inference stages used profile `linux-task-agency-router`, provider type `litellm`, and exact alias/model-group `task-agency-router`; every response was applied, no protected provider appears, and wrapper telemetry supplies no actual model.
-- Substantive trace `6affd162-9e8e-41f5-b513-e33a90e7d819` failed strict recruiter validation and remains `preflight_failed`; receipt `f26a4813-006d-4515-a0ea-f2df6873a4f7` and transcript SHA `dda4518a...` are retained. Changed-input trace `f3582f30-7094-43c3-992f-907b2fcac59e` proved the same three LiteLLM stages, routing `f237b728-f6b1-45b5-ad39-30edd9bdf6e7`, two specialist rows, and skill row `30d8f786-0037-48b1-8af5-319973324828`, but the host model omitted `agency_finalize`. Store run `c1a42bbd-f0d3-4eb4-af46-877b95c5b4e8` remains active with no finalization, so its plausible header is not accepted delivery evidence.
 - Exact restart-safety session `7e1f8a3c-6b29-4ea0-b1d4-93a4c51de287` / trace `869ef22a-e1a5-4b7e-b024-6bf12aa371ea` and smaller fresh session `9a61c4e7-2fd8-40bc-a5f0-3e71b2c94d66` / trace `b325368f-22e2-4815-8d01-2e9d1c22c543` each rejected two strict planner contracts from `task-agency-router` with zero fallback. Receipts `7fba14ce-c3df-4459-8462-542f7272a426` and `fe0c2f6b-e9be-45a6-b15a-f450c7e8a154` are retained. The first native run reached 553809 bytes, context overflow, and a 630000 ms Gateway timeout; the second returned an unheaded native answer. Neither is accepted Agency delivery. Channels remain green; no safety, alias, protected-host, canary, or matrix change.
+
+- AR-275 expected-red is 4 failures/4 passes; bounded planner codes, focused 8/8, and affected 178 passed/1 skipped are green. No live host has used this candidate.
 
 ## completed-evidence
 
@@ -84,13 +86,14 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 - AR-272 remains live-proven for native finalization and response delivery. Exact-status is deterministic control proof; the subsequent non-control turn now proves Agency harness/profile/alias selection and strict finalization.
 - AR-273 is live-proven for structured OpenClaw workforce routing through the exact LiteLLM profile and alias. A distinct substantive turn still needs canonical finalization.
 - AR-274 expected-red is 2/2 exact failures; repair is 22 passed/1 skipped plus 453 passed/1 skipped, and fresh `healthcheck` header/Store proof now passes. Proportionate final gates remain; no exhaustive workflow was dispatched.
+- AR-275 locally preserves exact planner policy codes and one bounded generic semantic code without exposing model content. Agency-only reinstall and fresh OpenClaw proof remain pending.
 - Codex OAuth/config/canary, Claude, ZCode, and Hermes were untouched.
 
 ## exact-blocker
 
-1. Prerequisite: `task-agency-router` must return a planner object satisfying the exact schema and semantic invariants.
-2. Do not retry either consumed prompt or weaken validation. Changing the alias target requires Lucas; Agency remains agnostic to that target.
-3. Telegram and Slack transports are healthy. Telegram `/new` remains operator delivery proof; Hermes remains untouched break glass.
+1. Commit the AR-275 repair and ledger locally, then reinstall Agency into stopped OpenClaw from that exact checkout. Do not reinstall or reconfigure OpenClaw.
+2. Use one genuinely new substantive prompt. Acceptance still requires strict Store routing/finalization; a failure is useful only when its new receipt carries exact bounded planner codes.
+3. Keep the alias target, native host model, protected providers, and Hermes break glass unchanged. Telegram and Slack remain healthy.
 
 ## traps (machine-specific; do not rediscover)
 
@@ -102,9 +105,9 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 
 ## next-bounded-work-package
 
-1. After the alias prerequisite changes, run one genuinely new substantive OpenClaw turn.
-2. Require canonical finalization, native hash match, exact harness/profile/alias, and zero protected-provider fallback.
-3. Keep Hermes and all proven hosts untouched; no child-canary or matrix claim belongs here.
+1. Finish proportionate gates and create the clean AR-275 substantive/ledger pair.
+2. Reinstall Agency only, restart OpenClaw natively, and run one genuinely new substantive turn.
+3. Require canonical finalization or an exact diagnostic receipt, plus exact harness/profile/alias and zero protected fallback. Keep Hermes and all proven hosts untouched.
 
 ## same-task-continuity
 

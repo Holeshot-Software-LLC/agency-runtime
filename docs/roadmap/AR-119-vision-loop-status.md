@@ -3065,3 +3065,42 @@ Telegram and Slack are running, connected, and probe-green. The external
 prerequisite is a schema- and semantic-valid planner response from the existing
 alias target. No retry, validator weakening, actual-model invention, host
 canary, or AR-119 matrix movement is authorized.
+
+
+## 2026-08-22 — AR-275 planner repair diagnostics are locally green
+
+The two terminal OpenClaw planner failures already had deterministic semantic
+detail inside each `WorkforceInferenceAttempt`, including exact local policy
+codes when completeness validation rejected a plan. The preflight failure
+projector retained recruiter failure rows but discarded planner detail, so both
+receipts exposed only `provider_response_contract_invalid`. The single repair
+attempt also reused the ordinary intent-planner system instruction instead of
+a concise complete-replacement contract.
+
+AR-275 preserves the regression first. Four focused cases failed while four
+controls passed: planner codes were absent from terminal projection and from
+attempt/routing serialization, and the repair prompt lacked structured codes.
+The minimal repair records exact closed-vocabulary policy codes, uses one fixed
+`plan_response_semantic_invalid` code for other deterministic planner
+failures, bounds and allowlists terminal projection, and supplies a compact
+provider-agnostic repair system instruction. It does not inspect the alias
+target, branch by model, relax the validator, add retries, or enable fallback.
+
+All eight focused cases now pass. The affected planner, intent, preflight
+bounds, and routing/header slice passes 178 with one skip under process-local
+umask `0077`. The earlier broad attempt is retained: 29 Store cases failed
+under inherited umask `0002`, and one existing assertion still required the
+old system prompt. The corrected environment and assertion are green without
+any production trust relaxation.
+
+No live host has consumed this candidate. OpenClaw native
+`litellm/task-general`, Agency alias/model-group `task-agency-router`, the
+alias target, Hermes break glass, and Codex/Claude/ZCode configuration remain
+unchanged. Agency-only reinstall and a genuinely new OpenClaw turn follow only
+after a clean local substantive/ledger checkpoint. No matrix cell moved.
+
+Docs, ruff, the 827-test production spine, 134 UI tests, and routing evaluation
+pass. Decision conformance remains unavailable because its trusted isolated
+fixture resolves to `/usr/bin/python3.12`, which lacks pytest; the default and
+changed `/usr/bin/python3` command receipts are both retained. No mutation
+execution or conformance pass is claimed.

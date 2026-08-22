@@ -268,6 +268,12 @@ _PLAN_REPAIR_REQUIREMENTS = {
     ),
 }
 
+PLAN_RESPONSE_SEMANTIC_INVALID = "plan_response_semantic_invalid"
+PLAN_POLICY_VIOLATION_CODES = frozenset(_PLAN_REPAIR_REQUIREMENTS)
+PLAN_VALIDATION_REASON_CODES = frozenset(
+    (*PLAN_POLICY_VIOLATION_CODES, PLAN_RESPONSE_SEMANTIC_INVALID)
+)
+
 
 def planner_acceptance_contract() -> dict[str, object]:
     """Describe deterministic plan vetoes without creating a plan for inference."""
@@ -595,6 +601,9 @@ def plan_policy_violations(
 
 
 __all__ = [
+    "PLAN_POLICY_VIOLATION_CODES",
+    "PLAN_RESPONSE_SEMANTIC_INVALID",
+    "PLAN_VALIDATION_REASON_CODES",
     "plan_policy_repair_guidance",
     "plan_policy_violations",
     "planner_acceptance_contract",

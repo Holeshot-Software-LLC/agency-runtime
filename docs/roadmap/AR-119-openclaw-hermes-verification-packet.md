@@ -559,3 +559,36 @@ Telegram and Slack are running, connected, and probe-green. Hermes remains
 deferred and untouched as owner-directed break glass. Codex OAuth/model and the
 consumed Codex canary were not touched; no host canary, push, PR, tracker write,
 hosted workflow, alias-target change, or matrix movement occurred.
+
+
+### Pre-live AR-275 planner diagnostic and repair receipt
+
+The terminal receipts above are immutable and remain intentionally generic;
+they were written before AR-275 and cannot be enriched after the fact. The new
+expected-red slice retained four failures/four passes showing that exact local
+planner codes stopped at the workforce attempt boundary. The repaired slice is
+8/8 green, and the affected planner/intent/preflight/routing slice is 178
+passed/1 skipped with process-local umask `0077`.
+
+The candidate adds no provider, model, host, or alias specialization:
+
+- plan-policy rejection records its exact closed-vocabulary violation codes;
+- any other deterministic planner semantic rejection records only fixed code
+  `plan_response_semantic_invalid` in the durable receipt;
+- terminal projection rejects any unknown, malformed, or over-bound code list;
+- the one existing repair call receives a complete-replacement compact-plan
+  instruction that requires schema-only fields, all listed corrections,
+  earlier-only dependencies, and unchanged assurance policy;
+- strict local parsing remains authoritative and zero protected-provider
+  fallback remains unchanged.
+
+No Agency install or OpenClaw turn has used this candidate yet. The next proof
+must come from this exact checkout after a clean local commit pair, an
+Agency-only install while OpenClaw is stopped, native restart, and a genuinely
+new substantive prompt. Hermes remains running and untouched break glass.
+
+Pre-live gates are green for docs, full ruff, the 827-test production spine,
+134 UI tests, and routing evaluation. Decision conformance did not execute its
+mutations: the trusted isolated fixture selected `/usr/bin/python3.12`, which
+lacks pytest, for both the default and changed system-Python invocations. That
+platform limitation is retained and is not reported as a conformance pass.

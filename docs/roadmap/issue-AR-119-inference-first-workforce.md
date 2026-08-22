@@ -3,7 +3,7 @@ title: "AR-119: Implement inference-first real-time workforce and contractor lif
 status: in_progress
 category: roadmap
 created: 2026-07-21
-updated: 2026-08-21
+updated: 2026-08-22
 tags: [routing, workforce, contractors, delegation, participation, evaluation, performance, multi-harness]
 related:
   - docs/decisions/0080-plan-before-recruiting-from-the-whole-workforce.md
@@ -58,6 +58,7 @@ related:
   - docs/roadmap/issue-AR-272-expose-openclaw-native-finalizer-tool.md
   - docs/roadmap/issue-AR-273-model-agnostic-structured-inference-profiles.md
   - docs/roadmap/issue-AR-274-record-openclaw-native-skill-reads.md
+  - docs/roadmap/issue-AR-275-preserve-planner-repair-diagnostics.md
   - docs/roadmap/issue-AR-255-inference-owned-host-proven-child-staffing.md
   - docs/roadmap/issue-AR-256-canonical-nine-rule-completion-contract.md
   - docs/roadmap/issue-AR-200-diagnosable-decision-conformance.md
@@ -77,7 +78,7 @@ epic: routing
 issue_id: AR-119
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
-depends_on: [AR-115, AR-116, AR-118, AR-125, AR-179, AR-180, AR-185, AR-190, AR-228, AR-252, AR-253, AR-255, AR-256, AR-259, AR-260, AR-261, AR-262, AR-263, AR-264, AR-271, AR-272, AR-273, AR-274]
+depends_on: [AR-115, AR-116, AR-118, AR-125, AR-179, AR-180, AR-185, AR-190, AR-228, AR-252, AR-253, AR-255, AR-256, AR-259, AR-260, AR-261, AR-262, AR-263, AR-264, AR-271, AR-272, AR-273, AR-274, AR-275]
 blocks: [AR-178, AR-200, AR-201]
 ---
 

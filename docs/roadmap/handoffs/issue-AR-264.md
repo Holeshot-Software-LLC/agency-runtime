@@ -18,6 +18,7 @@ related:
   - docs/roadmap/issue-AR-272-expose-openclaw-native-finalizer-tool.md
   - docs/roadmap/issue-AR-273-model-agnostic-structured-inference-profiles.md
   - docs/roadmap/issue-AR-274-record-openclaw-native-skill-reads.md
+  - docs/roadmap/issue-AR-275-preserve-planner-repair-diagnostics.md
   - docs/decisions/0162-compile-structured-contractor-execution-guidance.md
   - docs/decisions/0163-keep-litellm-inference-profiles-model-agnostic.md
   - docs/decisions/0164-delegate-exact-schema-translation-to-litellm.md
@@ -48,6 +49,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 - Exact restart review trace `869ef22a-e1a5-4b7e-b024-6bf12aa371ea` and smaller trace `b325368f-22e2-4815-8d01-2e9d1c22c543` each rejected two strict planner contracts from the same alias with zero fallback. Receipts `7fba14ce-c3df-4459-8462-542f7272a426` and `fe0c2f6b-e9be-45a6-b15a-f450c7e8a154` are terminal evidence. The first Gateway timed out after native context overflow; the second unheaded answer is not Agency delivery.
 - Store integrity remains `ok`, schema 47, and the install preserved all 15 contractors. Agency config, launcher, OpenClaw, Hermes, Codex, and Claude hashes remain unchanged from the checkpoint. Telegram and Slack are connected/probe-green; Hermes remains untouched break glass.
 
+- AR-275 now retains exact allowlisted planner policy codes and one generic semantic code through routing/preflight receipts and switches the one existing repair attempt to a concise complete-plan system contract. Expected-red is 4 failures/4 passes; repair is 8/8 focused and 178 passed/1 skipped affected. Installation/live proof remain pending.
+
 ## completed-evidence
 
 - Agency-only install, OpenClaw activation, exact-status finalization, native `healthcheck` evidence, and harness-scoped LiteLLM alias selection are proven.
@@ -56,9 +59,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 
 ## exact-blocker
 
-1. The existing `task-agency-router` target must produce a schema- and semantic-valid planner response.
-2. Neither consumed prompt may be retried unchanged; strict validation and zero protected fallback remain mandatory.
-3. Any alias-target change requires Lucas. Tracker creation remains separately unauthorized.
+1. Finish a clean local AR-275 commit pair and reinstall Agency only into stopped OpenClaw.
+2. A genuinely new prompt must either pass strict planner/finalization or retain exact bounded planner codes; consumed prompts remain forbidden.
+3. Alias-target, host-native, Hermes, and protected-provider configuration remain unchanged. Tracker creation remains separately unauthorized.
 
 ## same-task-continuity
 
@@ -66,9 +69,9 @@ Continue with OpenClaw only after the clean commit pair. Hermes is running break
 
 ## next-bounded-work-package
 
-1. Wait for the alias prerequisite, then use a genuinely new substantive work unit.
-2. Correlate Store finalization, native response hash, harness/profile/alias, and fallback evidence.
-3. Keep Hermes and every proven host/configuration untouched.
+1. Run proportionate gates and commit the AR-275 repair/ledger locally.
+2. Reinstall Agency only and use a genuinely new OpenClaw substantive work unit.
+3. Correlate Store finalization or the exact failure receipt with harness/profile/alias and fallback evidence; keep Hermes untouched.
 
 ## verification
 

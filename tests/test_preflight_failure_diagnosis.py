@@ -71,6 +71,46 @@ def test_an_attempt_without_nomination_detail_carries_no_empty_key() -> None:
     assert projected[0]["stage"] == "planner"
 
 
+def test_rejected_planner_attempt_preserves_allowlisted_validation_codes() -> None:
+    projected = project_preflight_provider_attempts(
+        [
+            _attempt(
+                stage="planner",
+                validation_reason_codes=[
+                    "plan_missing_test_evidence_review",
+                    "plan_tests_not_ordered_after_implementation",
+                ],
+            )
+        ]
+    )
+
+    assert projected is not None
+    assert projected[0]["validation_reason_codes"] == [
+        "plan_missing_test_evidence_review",
+        "plan_tests_not_ordered_after_implementation",
+    ]
+
+
+@pytest.mark.parametrize(
+    "codes",
+    [
+        ["plan_provider_authored_private_reason"],
+        ["plan_missing_test_evidence_review", "unknown_code"],
+        "plan_missing_test_evidence_review",
+        ["plan_missing_test_evidence_review"] * 33,
+    ],
+)
+def test_planner_validation_receipt_rejects_non_allowlisted_or_unbounded_codes(
+    codes: object,
+) -> None:
+    projected = project_preflight_provider_attempts(
+        [_attempt(stage="planner", validation_reason_codes=codes)]
+    )
+
+    assert projected is not None
+    assert "validation_reason_codes" not in projected[0]
+
+
 @pytest.mark.parametrize(
     "detail",
     [
