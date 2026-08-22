@@ -3250,3 +3250,29 @@ delivered five-line inference header: `code-reviewer`, `tmux`, no delegation.
 Native `task-general` then supplied the host answer after accepted preflight.
 The wrapper still reports only `task-agency-router`; no backing-model claim is
 made. The exact substantive restart-safety turn remains next.
+
+
+## 2026-08-22 — Exact substantive turn exposes first-pass finalizer adherence gap
+
+The exact restart-safety work unit ran once in fresh session
+`ar276-openclaw-nexus-restart-qwen14b-20260822-a`. Agency trace
+`35efa94c-d8d9-4354-863f-d22ad852ca22` accepted planner, recruiter, and critic
+through the exact OpenClaw LiteLLM profile and alias with zero fallback. It
+selected two specialists and recorded `openclaw-operations`.
+
+The unchanged native `task-general` model then used read-only host tools but
+stopped on an unheaded preliminary sentence without calling
+`agency_finalize`. Store run `e2e9e65d-540c-4aa7-86c5-b945cbc6ac62` closed
+`response_invalid`; finalization `7d5428e7-469f-45cd-9920-da553e4cfa7e`
+records every required header field missing. Response/transcript SHAs are
+`f4f6d7b7...` / `f0f9e359...`. This proves accepted Agency inference and a
+native first-pass finalizer failure, not response delivery.
+
+AR-277 records the defect. A bounded host revision candidate passed local
+tests but was rejected before commit or installation because ADR-0120 makes
+the first invalid natural response terminal. The replacement strengthens only
+persistent native-tool and per-turn first-pass instructions, explicitly says
+there is no correction pass, and leaves verification and outbound rejection
+unchanged. Expected-red exit 219 is retained; affected suites pass 47 security,
+36 installer, and 24 adapter-parity cases. Live installation and a genuinely
+changed work unit remain pending.

@@ -956,9 +956,11 @@ def test_openclaw_bridge_routes_user_prompts_and_terminalizes_first_invalid_resp
     enabled_status = handle({"action": "control", "command": "status"})
 
     assert "managers=agency-steward" in routed["context"]
+    assert "[AGENCY FIRST-PASS FINALIZATION CONTRACT]\n" in routed["context"]
     assert "[AGENCY INITIAL HEADER SNAPSHOT v1]" in routed["context"]
     assert "call the OpenClaw-native `agency_finalize` tool" in routed["context"]
     assert "backed by Agency `agency.finalize`" in routed["context"]
+    assert routed["context"].endswith("There is no correction pass.")
     assert correlated["context"]
     assert ordinary["context"]
     assert recorded == {}

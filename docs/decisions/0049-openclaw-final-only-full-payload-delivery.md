@@ -3,10 +3,11 @@ title: "Require final-only full-payload delivery on OpenClaw"
 status: accepted
 category: decisions
 created: 2026-07-15
-updated: 2026-07-15
+updated: 2026-08-22
 tags: [openclaw, finalization, streaming, security, host-integration]
 related:
   - docs/roadmap/issue-AR-33-openclaw-final-outbound-seal.md
+  - docs/roadmap/issue-AR-277-keep-openclaw-finalization-first-pass.md
   - docs/decisions/0024-native-host-packages-and-minimal-bridges.md
   - docs/decisions/0027-authoritative-runtime-evidence-traces.md
   - docs/decisions/0034-persistent-soft-host-control.md

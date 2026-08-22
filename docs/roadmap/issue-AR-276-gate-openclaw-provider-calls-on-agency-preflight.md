@@ -8,6 +8,7 @@ tags: [openclaw, preflight, safety, reliability]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-275-preserve-planner-repair-diagnostics.md
+  - docs/roadmap/issue-AR-277-keep-openclaw-finalization-first-pass.md
   - docs/roadmap/handoffs/issue-AR-119.md
   - docs/roadmap/AR-119-openclaw-hermes-verification-packet.md
   - agency_runtime/core/installer_payload_openclaw.py
@@ -20,7 +21,7 @@ issue_id: AR-276
 priority: p0
 tracker_url: null
 depends_on: [AR-275]
-blocks: [AR-119]
+blocks: [AR-119, AR-277]
 ---
 
 # AR-276: Gate OpenClaw provider calls on Agency preflight
@@ -111,6 +112,14 @@ delivered the authoritative five-line inference header in 45.085 seconds.
 No preflight bypass occurred: native `task-general` answered only after the
 accepted preflight; no child, mutation, network action, or delegation ran.
 
+The exact restart-safety request next accepted all three Agency inference
+stages with zero fallback, selected two specialists, and recorded
+`openclaw-operations`. The native model performed read-only inspection but did
+not call `agency_finalize`; Store run `e2e9e65d-540c-4aa7-86c5-b945cbc6ac62`
+closed `response_invalid`, and no header or Telegram delivery is claimed.
+AR-277 owns the first-pass instruction repair; a second model pass remains
+forbidden.
+
 ## Approach
 
 Run runtime control and the existing exact Agency preflight during
@@ -150,4 +159,5 @@ changes.
 - [x] Permission candidate was reinstalled Agency-only and proven from native config.
 - [x] Prompt-build-order candidate is reinstalled Agency-only into stopped OpenClaw.
 - [x] Fresh accepted nontrivial turn proves workforce routing without exceeding the native hook budget.
+- [ ] Fresh changed substantive turn proves first-pass finalization after AR-277 installation.
 - [ ] Tracker creation remains pending separate authorization.

@@ -200,6 +200,9 @@ def _header_snapshot_context(
     except (EvidenceCorrelationError, KeyError, RuntimeError, TypeError, ValueError):
         return ""
     return (
+        "[AGENCY FIRST-PASS FINALIZATION CONTRACT]\n"
+        "MANDATORY: this turn remains incomplete until the Store-backed native "
+        "finalizer has constructed the first visible response.\n"
         "[AGENCY INITIAL HEADER SNAPSHOT v1]\n"
         "Use these exact seven lines for substantive progress until Agency evidence "
         "changes. Immediately before the natural final response, call the OpenClaw-native "
@@ -208,7 +211,10 @@ def _header_snapshot_context(
         "response body as draft_text; emit its returned text byte-for-byte. That local "
         "tool constructs the first visible header from current Store evidence. Never "
         "guess changed values and never wait for a host correction.\n"
-        f"{header}"
+        f"{header}\n"
+        "[AGENCY FINALIZATION GATE]\n"
+        "After every other tool call, call `agency_finalize` exactly once as the final "
+        "tool before emitting any natural final response. There is no correction pass."
     )
 
 

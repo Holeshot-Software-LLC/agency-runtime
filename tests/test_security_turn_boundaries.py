@@ -606,6 +606,33 @@ if (receipt.resolvedProvider !== "" || receipt.resolvedModel !== "") process.exi
 
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is not installed")
+def test_generated_openclaw_keeps_first_pass_finalization_mandatory_after_tools(
+    tmp_path: Path,
+) -> None:
+    source = _openclaw_plugin_harness_source()
+    source += """
+const finalizeTool = registeredTools.get("agency_finalize");
+const guidance = String(finalizeTool?.promptGuidelines?.join("\\n") || "");
+if (!guidance.includes("MANDATORY FIRST-PASS FINALIZATION")) process.exit(219);
+if (!guidance.includes("After every other tool call")) process.exit(220);
+if (!guidance.includes("There is no correction pass")) process.exit(221);
+if (guidance.includes("request another model pass")) process.exit(222);
+"""
+    script = tmp_path / "openclaw-first-pass-finalization-guidance.mjs"
+    script.write_text(source, encoding="utf-8")
+
+    completed = subprocess.run(
+        [str(shutil.which("node")), str(script)],
+        capture_output=True,
+        text=True,
+        timeout=10,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is not installed")
 def test_generated_openclaw_registers_store_backed_native_finalize_tool(
     tmp_path: Path,
 ) -> None:

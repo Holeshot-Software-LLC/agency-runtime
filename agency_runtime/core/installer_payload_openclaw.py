@@ -805,11 +805,12 @@ export default definePluginEntry({{
       name: "agency_finalize",
       label: "Agency Finalize",
       hideFromChannelProgress: true,
-      description: "Construct and commit the exact first visible Agency response from the current draft.",
-      promptSnippet: "agency_finalize — construct and commit the exact first visible Agency response",
+      description: "Mandatory first-pass tool that constructs and commits the exact first visible Agency response from the current draft.",
+      promptSnippet: "agency_finalize — mandatory first-pass construction of the exact visible Agency response",
       promptGuidelines: [
-        "Call agency_finalize only when Agency preflight supplied session_id and trace_id for the current turn.",
-        "Call agency_finalize exactly once immediately before natural final output, then emit its returned text byte-for-byte.",
+        "MANDATORY FIRST-PASS FINALIZATION: when Agency preflight supplies session_id and trace_id, the turn is incomplete until agency_finalize has been called exactly once.",
+        "After every other tool call, call agency_finalize as the final tool with the complete draft_text before emitting any natural final output; then emit its returned text byte-for-byte.",
+        "There is no correction pass: never stop on or emit an unfinalized natural response.",
       ],
       parameters: {{
         type: "object",

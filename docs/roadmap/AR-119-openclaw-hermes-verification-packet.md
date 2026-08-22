@@ -798,3 +798,32 @@ The subsequent timeout proves fail-closed behavior and the practical native
 latency limit; it does not prove LiteLLM workforce success. OpenClaw native
 model configuration, Hermes, Codex OAuth/model/canary, Claude, and ZCode were
 not changed.
+
+
+### Exact substantive failure and AR-277 pre-install checkpoint
+
+~~~yaml
+host: openclaw
+fresh_session_id: ar276-openclaw-nexus-restart-qwen14b-20260822-a
+agency_trace_id: 35efa94c-d8d9-4354-863f-d22ad852ca22
+store_run_id: e2e9e65d-540c-4aa7-86c5-b945cbc6ac62
+routing_decision_id: c6e5e20a-af1c-454b-8344-cc66b2b9f187
+routing_result: accepted; three LiteLLM stages; exact profile/alias; fallback_applied false
+specialists_loaded_ids:
+  - 264de90e-98d6-4c0f-8d8d-a715a3d2d64b
+  - eb405fb2-4a10-48b2-acba-68743ae39c61
+skill_name_and_store_row_id: openclaw-operations / 050e585d-f042-46f8-8b24-95b656e605b2
+finalization_id: 7d5428e7-469f-45cd-9920-da553e4cfa7e
+finalization_status: response_invalid; all required header fields missing
+native_failure: task-general omitted agency_finalize after read-only tools
+response_sha256: f4f6d7b7fb311119ce53ca9e58a87e3c83e450ca184eb8f335f255aaf834e256
+transcript_sha256: f0f9e3596666c779c7a555368f1b1c3971323800cbe41c67e5b7011c86639f04
+telegram_delivery: none claimed; invalid response is blocked before queueing
+rejected_candidate: one host revision; never committed or installed; conflicts with ADR-0120
+replacement_expected_red: exit 219; sha256 1c2f962e1c1e9d1bb412a79a064cfc90659e8f9d14d477c5ad5c5e986e17a05d
+replacement_focused_green: 2 passed
+affected_green: 47 security-boundary; 36 OpenClaw installer; 24 OpenClaw adapter-parity
+candidate_install: pending clean local checkpoint
+actual_model_and_receipt_source: unavailable; alias is not promoted to actual model
+known_limit: fresh changed substantive first-pass delivery and post-live Store backup remain pending
+~~~

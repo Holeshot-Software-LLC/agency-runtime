@@ -29,6 +29,8 @@ related:
   - docs/roadmap/issue-AR-273-model-agnostic-structured-inference-profiles.md
   - docs/roadmap/issue-AR-274-record-openclaw-native-skill-reads.md
   - docs/roadmap/issue-AR-275-preserve-planner-repair-diagnostics.md
+  - docs/roadmap/issue-AR-276-gate-openclaw-provider-calls-on-agency-preflight.md
+  - docs/roadmap/issue-AR-277-keep-openclaw-finalization-first-pass.md
   - docs/roadmap/AR-119-founding-vision.md
   - docs/roadmap/AR-119-vision-loop-status.md
   - docs/roadmap/AR-119-39ff6dca-recruiter-diagnostic-evidence.md
@@ -51,8 +53,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-119
 branch: codex/ar119-openclaw-hermes-litellm
-evidence_commit: d9a1a7ce727fe45d7a0ea0826e75a2eb460c83b7
-minimum_ledger_commit: 1a737ef8c02323b49dd3f21562910b5327243b88
+evidence_commit: 4d2a75ab19b1844f28ad7e27cd2462f93dfc5ec9
+minimum_ledger_commit: 00b6b24bf04a8bb6d76f82a766a9d7fe2c03e027
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
@@ -74,6 +76,8 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 - First 14B CLI diagnostic `6a761259-b7e1-49fc-b4c9-ecaa18cd6da7` made zero calls because its process lacked the service-only credential. Artifact SHA `a6ee6023...` is retained as an operator-input failure and is not a model verdict. Actual answering model remains unavailable unless authoritative telemetry supplies it.
 - Credential-correct 14B trace `2317d975-c960-4020-8755-f32308ffe94b` accepted planner, recruiter, and critic in 37.768 seconds through OpenClaw profile `linux-task-agency-router`, exact LiteLLM alias/model-group, and no provider fallback. Artifact SHA is `673c5ae7...`.
 - Fresh native `tmux` session `ar276-openclaw-nexus-tmux-qwen14b-20260822-a`, trace `79abdac7-42f1-44e9-afad-bf5556df62aa`, Store run `6b7651b6...`, routing `1908650f...`, request binding `rmb-19107899...`, specialist `5f11b004...`, skill row `b54c5916...`, and finalization `64a97d43...` completed in 45.085 seconds. The exact five-line header records inference, `code-reviewer`, `tmux`, no delegation, and wrapper alias only. Response/transcript SHAs are `7f9a4674...` / `499187e8...`.
+- Exact substantive session `ar276-openclaw-nexus-restart-qwen14b-20260822-a` accepted all Agency stages under trace `35efa94c...` with zero fallback, but native `task-general` omitted `agency_finalize` after read-only tools. Store run `e2e9e65d...` and finalization `7d5428e7...` are `response_invalid`; response/transcript SHAs `f4f6d7b7...` / `f0f9e359...` prove no valid header or Telegram delivery.
+- AR-277 rejected an uninstalled second-pass candidate as contrary to ADR-0120. Its first-pass-only replacement makes finalization mandatory in persistent tool guidance and repeats the no-correction gate after per-turn context. Expected-red exit 219 SHA `1c2f962e...`; affected green suites are 47 security, 36 installer, and 24 adapter-parity tests. Candidate installation remains pending.
 
 ## completed-evidence
 
@@ -81,14 +85,14 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 - AR-272 remains live-proven for native finalization and response delivery. Exact-status is deterministic control proof; the subsequent non-control turn now proves Agency harness/profile/alias selection and strict finalization.
 - AR-273 now has fast accepted Agency-only and native skill routing through the exact LiteLLM profile/alias on free 14B; actual backing model telemetry remains unavailable.
 - AR-274 expected-red is 2/2 exact failures; repair is 22 passed/1 skipped plus 453 passed/1 skipped, and fresh `healthcheck` header/Store proof now passes. Proportionate final gates remain; no exhaustive workflow was dispatched.
-- AR-275 preserves bounded codes without model coupling. AR-276 prompt-build preflight is installed and exact-status header/finalization now pass; substantive LiteLLM-backed native acceptance remains open.
+- AR-275 preserves bounded codes without model coupling. AR-276 prompt-build preflight and native skill proof pass. The exact substantive attempt is a retained AR-277 finalizer failure, so substantive native acceptance remains open.
 - Codex OAuth/config/canary, Claude, ZCode, and Hermes were untouched.
 
 ## exact-blocker
 
-1. Run the exact required restart-safety request in a completely new OpenClaw session through the accepted 14B alias target.
-2. Correlate Store routing, binding, specialist, model, header, and finalization evidence; do not infer the backing model from the alias.
-3. Preserve the 30B timeout and zero-attempt diagnostic; leave Hermes untouched break glass.
+1. Create the clean AR-277 substantive/ledger checkpoint without the rejected revision candidate.
+2. Install Agency only into stopped OpenClaw; preserve native model/channel configuration and Hermes.
+3. Run one genuinely changed substantive work unit in a fresh session and correlate first-pass finalization, header, Store, and provider evidence.
 
 ## traps (machine-specific; do not rediscover)
 
@@ -100,8 +104,8 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 
 ## next-bounded-work-package
 
-1. Commit this native-skill evidence checkpoint and ledger row.
-2. Run the exact substantive OpenClaw request in a new session and correlate Store/header/finalization.
+1. Commit AR-277's first-pass-only repair and ledger row.
+2. Reinstall Agency into OpenClaw only and run a fresh changed substantive proof.
 3. Take the post-live online Store backup, run proportionate gates, and keep Hermes/proven hosts untouched.
 
 ## same-task-continuity
