@@ -2954,3 +2954,24 @@ post-install integrity is also `ok`. Telemetry reached 41.0 percent, so this
 installed state is checkpointed before the first new live session. No new
 status, skill, substantive, Telegram delivery, actual-model, host-canary, or
 matrix claim is made yet.
+
+
+## 2026-08-22 — Post-install exact-status control is Store-backed
+
+Fresh session `fe3ab39c-fea0-4974-82b2-c85478b10b8a` began with exact
+`agency status`. OpenClaw run/Agency trace
+`3b26c907-2c9d-4240-8160-8c6d7cce6a08` and Store run
+`7d9e7bc3-3268-419e-8358-a3ef2ccf93c7` completed. Routing decision
+`19de0955-1cb8-40b0-a307-69cf3e001242` abstained deterministically and
+finalization `97eaacb8-9dcf-4431-8150-0e1d702e8ce3` accepted. Store response
+hash `a1d0eba85a66bfa728275ce62f16e0566b7d5be563333ba4fc66303fadcc6ba6`
+exactly matches the sole native assistant response; transcript SHA is
+`9f37ed86db9cd7ff600955a706c0d0e328ce6e79e85113bb5b8f649b503ba922`.
+
+The delivered five-line header names `agency-steward`, no delegation, no
+skill, native `task-general`, and deterministic recruitment. Request-scoped
+binding `rmb-1d107f497436b916ad7b32775b1a630d` correctly produced no durable
+resident row. Model receipt `25199eb6-6e9e-4b7b-a2d4-b365a9400053` has zero
+fallback and unavailable actual model. This proves control activation,
+finalization, and delivery only; LiteLLM workforce inference, skill loading,
+and substantive response remain open. No matrix cell moved.

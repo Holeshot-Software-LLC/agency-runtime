@@ -81,6 +81,13 @@ RPC-green with the plugin loaded and Telegram/Slack probe-green. OpenClaw's
 only semantic config delta is `/meta/lastTouchedAt`; protected configuration
 hashes remain unchanged. Fresh live response proof remains open.
 
+Post-install exact first-message status session
+`fe3ab39c-fea0-4974-82b2-c85478b10b8a` completed with Store trace
+`3b26c907-2c9d-4240-8160-8c6d7cce6a08`, accepted finalization
+`97eaacb8-9dcf-4431-8150-0e1d702e8ce3`, and a hash-matched native response.
+Its deterministic abstention proves activation and delivery only; exact-schema
+workforce inference remains for a non-control turn.
+
 ## Approach
 
 Append the already bounded, deterministic JSON schema to the system
@@ -116,6 +123,7 @@ separate.
 - [x] Focused tests and proportionate local gates pass.
 - [x] The repaired Agency integration is installed into the existing OpenClaw host.
 - [x] The LiteLLM JSON-schema repair is installed into the existing OpenClaw host.
+- [x] A fresh exact-status control reaches Store-backed finalization and native response delivery after installation.
 - [x] A fresh live attempt proves the required OpenClaw profile, LiteLLM provider, exact alias/model-group, and zero protected-provider fallback.
 - [ ] A fresh live turn returns a valid planner object and reaches strict finalization.
 - [ ] Tracker creation remains pending separate authorization.
