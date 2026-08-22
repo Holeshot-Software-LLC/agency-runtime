@@ -3209,3 +3209,32 @@ still blocks before any model call. The security-boundary file passes 46/46;
 focused native-installer, adapter-parity, host-boundary, and registration slices
 pass 36, 24, 1, and 46 cases. This candidate is not installed yet; no matrix
 cell or host-delivery claim moved.
+
+
+## 2026-08-22 — Prompt-build delivery passes; 30B exceeds native hook budget
+
+Clean pair `d9a1a7ce` / `1a737ef8` was installed into stopped OpenClaw as
+Agency-only install `1eeba99b-49a1-4db5-b561-9d985c30d29e`. OpenClaw itself
+was not reinstalled. Its native `litellm/task-general` primary and channels
+were preserved; Hermes and every proven host remained untouched.
+
+Fresh status trace `bf21e9a8-a9f0-442b-9d75-78dab94687d6` completed Store run
+`c571cf9b-a990-4551-ba76-f0cb27e137ce`, deterministic routing
+`e2a41ef8-15cd-4242-8b6d-11a720227728`, and finalization
+`dec9e3fb-c8fc-4b14-a072-794171263f8b`. OpenClaw delivered the exact
+five-line header. This closes the prompt-build delivery defect for the control
+path but does not prove workforce inference.
+
+A changed `loop-library` request was blocked after 80.744 seconds before
+native reply generation. Store run `eeb31163-27d8-4091-986f-35d03a8e64b2`
+remains `active` with preflight `in_progress` and no failure receipt. The free
+30B target therefore remains contract-capable but is too slow for this native
+hook budget; the timeout is not staffing success or provider loss.
+
+Only deployment `task-agency-router` was changed to already-installed free
+`ollama/qwen3-14b-abliterated`, preserving reasoning level `none`. The 102
+unrelated deployment identity hash remained `ca74e597...` and the count stayed
+103. First standalone diagnostic trace `6a761259...` lacked the service-only
+credential, made zero provider calls, and is retained as an operator-input
+failure rather than a model verdict. A credential-correct, genuinely new 14B
+evaluation follows after this required recovery checkpoint.

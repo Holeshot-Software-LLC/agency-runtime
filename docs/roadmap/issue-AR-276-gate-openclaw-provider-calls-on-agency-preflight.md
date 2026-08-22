@@ -93,6 +93,16 @@ modeled the reverse. The corrected expected-red failed at exit 204 before the
 implementation change and now passes with the full 46-test security-boundary
 file plus focused installer/adapter slices of 36, 24, 1, and 46 cases.
 
+Commits `d9a1a7ce` / `1a737ef8` implement and record the corrected order.
+Agency-only install `1eeba99b-49a1-4db5-b561-9d985c30d29e` loaded that exact
+checkout without reinstalling OpenClaw. Fresh status trace
+`bf21e9a8-a9f0-442b-9d75-78dab94687d6` completed Store routing and accepted
+finalization, and the native response delivered the exact five-line Agency
+header. A changed nontrivial skill turn then hit the native hook budget and
+returned `hook_block` before reply generation; it did not fall through to the
+normal host model. The timeout and still-active Store run are retained and are
+not promoted into successful inference evidence.
+
 ## Approach
 
 Run runtime control and the existing exact Agency preflight during
@@ -123,12 +133,13 @@ changes.
 - [x] Missing or failed preflight returns an input-gate block before model execution.
 - [x] Cache is exact-session/run scoped, bounded, expiring, and cleared on disable/finalization.
 - [x] Focused and affected local tests pass.
-- [x] Clean local substantive/ledger commits are `a0ff74d4` / `77bfd2ae`.
+- [x] Clean local prompt-order substantive/ledger commits are `d9a1a7ce` / `1a737ef8`.
 - [x] Agency-only reinstall preserves native OpenClaw configuration except its timestamp metadata.
 - [x] Exact native failure proves Store preflight context was created but prompt mutation was not authorized.
 - [x] Expected-red and focused tests cover the required prompt-injection permission and exact-step rollback.
 - [ ] Fresh changed turn proves no native provider starts after preflight rejection.
-- [ ] Fresh accepted turn proves Store routing, header delivery, and finalization.
+- [x] Fresh accepted status turn proves Store routing, header delivery, and finalization.
 - [x] Permission candidate was reinstalled Agency-only and proven from native config.
-- [ ] Prompt-build-order candidate is reinstalled Agency-only into stopped OpenClaw.
+- [x] Prompt-build-order candidate is reinstalled Agency-only into stopped OpenClaw.
+- [ ] Fresh accepted nontrivial turn proves workforce routing without exceeding the native hook budget.
 - [ ] Tracker creation remains pending separate authorization.

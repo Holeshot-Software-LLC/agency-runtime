@@ -742,3 +742,45 @@ The failure is independent of the Agency inference model. The native host used
 its unchanged `task-general` route only because Agency context was absent. The
 corrected candidate moves no LiteLLM alias, OpenClaw provider/model, channel,
 Hermes, Codex, Claude, or ZCode setting.
+
+
+### Prompt-build-order live proof and native-budget model pivot
+
+~~~yaml
+host: openclaw
+checkout_sha: 1a737ef8c02323b49dd3f21562910b5327243b88
+host_version: OpenClaw 2026.7.1-2
+install_result: 1eeba99b-49a1-4db5-b561-9d985c30d29e complete; Agency plugin only
+launcher_manifest_sha256: 391a57596565b3682aa7250b0af1ff4594aed1aea914b3df47a3636e7242d0de
+runtime_digest: 5b67d882db947e9b29c62e1cde0b7f15c5202cac009c4ff4168d511fb3ffe0b3
+contractors_before_after: 15/15
+fresh_session_id: ar276-openclaw-nexus-status-promptorder-20260822-a
+status_trace_id: bf21e9a8-a9f0-442b-9d75-78dab94687d6
+status_store_run_id: c571cf9b-a990-4551-ba76-f0cb27e137ce
+status_routing_id: e2a41ef8-15cd-4242-8b6d-11a720227728
+status_finalization_id: dec9e3fb-c8fc-4b14-a072-794171263f8b
+status_response_sha256: b02a2f18dc4fa8c1a87cb42197cf2016d4136e8776f4b19fce214101269f3e5d
+status_transcript_sha256: e009951b3824ba0df128c493c1063c6fb2dd278bf9984a7d3e7fab7d245a8331
+header_exact: five lines; agency-steward, no delegation, no skill, task-general control receipt, deterministic
+skill_request: loop-library; read-only, no execution/network/delegation
+skill_trace_id: 2c4e81be-05b7-41a0-a570-34a1ae639a70
+skill_store_run_id: eeb31163-27d8-4091-986f-35d03a8e64b2
+skill_result: hook_block after 80744 ms; no skill row or success claim
+skill_response_sha256: d8e84b4ada75d6dded2993c84679a5c44a1faa26e6928c99f3f2e83c8c358e58
+alias_deployment_id: d594b69b-26f8-4bec-8531-e6c191ab6f6c
+alias_current_configured_target: ollama/qwen3-14b-abliterated
+alias_reasoning_effort: none
+unrelated_deployment_identity_hash_before_after: ca74e5979051b908bf1e8f42529a5595b2155750dc63c602777191bb5d2d6b42 / same
+litellm_deployment_count_before_after: 103/103
+first_14b_diagnostic_trace: 6a761259-b7e1-49fc-b4c9-ecaa18cd6da7
+first_14b_diagnostic_result: zero attempts because credential absent in diagnostic process; not a model verdict
+telegram_slack: running, connected, probe-green
+actual_model_and_receipt_source: unavailable; never inferred from alias
+known_limit: credential-correct 14B Agency-only and native substantive acceptance remain pending
+~~~
+
+The successful control header is real host delivery but deterministic routing.
+The subsequent timeout proves fail-closed behavior and the practical native
+latency limit; it does not prove LiteLLM workforce success. OpenClaw native
+model configuration, Hermes, Codex OAuth/model/canary, Claude, and ZCode were
+not changed.

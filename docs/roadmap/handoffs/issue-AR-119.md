@@ -51,8 +51,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-119
 branch: codex/ar119-openclaw-hermes-litellm
-evidence_commit: a0ff74d4e9b4cfe85b2b4fc30b595556e5331708
-minimum_ledger_commit: 77bfd2aed518bef194e1074d432749ae86b0dd28
+evidence_commit: d9a1a7ce727fe45d7a0ea0826e75a2eb460c83b7
+minimum_ledger_commit: 1a737ef8c02323b49dd3f21562910b5327243b88
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
@@ -64,33 +64,29 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 
 ## checkpoint
 
-- Clean branch pair `a0ff74d4` / `77bfd2ae` is based on fetched `origin/main` `4a326773`; `f76050d7` is an ancestor. Agency 0.1.0 imports from this checkout.
-- Agency profile `linux-task-agency-router` uses `litellm`, exact alias/model-group `task-agency-router`, `http://127.0.0.1:4000/v1`, populated `LITELLM_API_KEY`, and 120000 ms. No protected-host route changed.
-- SQLite-consistent pre/post Store backups have integrity `ok`, schema 47, 15/15 contractors, and SHAs `468b4754...` / `64c65d70...`.
-- Latest Agency-only install `18b2d5f7-a931-4606-8d6f-9e30937cfbcc` completed with bundle `e882b139...`, launcher SHA `8c7f9d36...`, and runtime digest `6837a9d8...`. OpenClaw itself was not reinstalled.
-- OpenClaw remains audited 2026.7.1-2 on native `litellm/task-general`. Pre/post config SHAs `97b18a21...` / `55ca44fc...` differ only at `/meta/lastTouchedAt` and Agency's supported `/plugins/entries/agency-preflight/hooks/allowPromptInjection`. Agency config remained byte-identical; Hermes, Claude, ZCode, and Codex OAuth/model/canary were untouched.
-- OpenClaw is RPC-green. `agency-preflight` is enabled, activated, loaded with ten hooks and no diagnostics; prompt injection and conversation access are both granted. Telegram/Slack are connected and probe-green; Hermes/LiteLLM stayed active.
-- The retained pre-repair trace `8b9b539d...` proves why AR-276 was required: failed preflight still started native `task-general`, made 58 tool calls, and timed out. The new 154 focused, 65 affected, 828 spine, 134 UI, docs, ruff, routing, and diff checks are green.
-- Owner-authorized LiteLLM control-plane updates changed only deployment `task-agency-router`; raw DB-row hashes prove 0 unrelated changes across 103 deployments. The alias moved from configured target `ollama/qwen3.5:2b` to `ollama/qwen3.5:9b`, then to `ollama/qwen3-coder-30b-a3b-128k-rocm`. Host-native OpenClaw remains `litellm/task-general`.
-- The 9B target produced schema-valid stages but was not reliable: traces `23da5198...` and `a4121506...` ended in critic veto and recruiter no-valid-response. With the 30B target, exact required request trace `7a094495-edbc-471d-8c9d-9a557f3c7ac6` was accepted across planner/recruiter/critic, exact profile/provider/alias, and zero fallback. `response.body.model` still repeats the alias; actual answering model is not claimed.
-- Fresh native session `ar276-openclaw-nexus-status-20260822-160727`, run/trace `341ec5f5-9343-499f-8a73-d0c6cb08426c`, and Store run `7daf7c70-c87b-4ed7-bf31-3e093bab73b5` retained a new failure: preflight reached `ready`, but OpenClaw injected 0 runtime-context characters, normal `task-general` answered, and `agency_finalize` failed with invented correlation IDs. Store status is `response_invalid`; no Agency header was delivered.
-- Fresh permission-enabled session `ar276-openclaw-nexus-status-promptfix-20260822-a`, run `d343b0c0-68a9-4857-b8d3-41cd3125cd3a`, retained a distinct failure: native status was `ok`, but runtime context remained 0, normal `task-general` answered, and finalization failed. Response/transcript SHAs are `d3fd3a01...` / `470ab1e2...`; no Agency header was delivered.
-- Installed OpenClaw source proves `before_prompt_build` runs before `before_agent_run`; Agency's test modeled the reverse. Expected-red exit 204 is retained. The minimal candidate now performs preflight during prompt build and keeps `before_agent_run` fail-closed by requiring the exact cached session/run context. Security boundaries pass 46/46; focused installer/adapter slices pass 36, 24, 1, and 46 cases. This second candidate is not installed yet.
+- Clean branch pair `d9a1a7ce` / `1a737ef8` contains the prompt-build-order repair and ledger; fetched `origin/main` is `4a326773`, `f76050d7` is an ancestor, and Agency 0.1.0 imports from this checkout.
+- Agency profile `linux-task-agency-router` remains harness-scoped to OpenClaw, using `litellm`, exact alias/model-group `task-agency-router`, `http://127.0.0.1:4000/v1`, populated `LITELLM_API_KEY`, and 120000 ms. No protected-host route changed.
+- Prompt-order Agency-only install `1eeba99b-49a1-4db5-b561-9d985c30d29e` completed with bundle `d6b7acf4...`, launcher SHA `391a5759...`, runtime digest `5b67d882...`, and 15/15 contractors. OpenClaw itself was not reinstalled; Agency config stayed byte-identical and only `/meta/lastTouchedAt` changed in OpenClaw.
+- OpenClaw remains audited 2026.7.1-2 on native `litellm/task-general`, enabled/loaded with ten Agency hooks, and RPC-green. Telegram and Slack are running, connected, zero-reconnect, and probe-green. Hermes/LiteLLM stayed active; Hermes, Claude, ZCode, and Codex OAuth/model/canary were untouched.
+- Fresh exact-status session `ar276-openclaw-nexus-status-promptorder-20260822-a`, trace `bf21e9a8-a9f0-442b-9d75-78dab94687d6`, Store run `c571cf9b-a990-4551-ba76-f0cb27e137ce`, routing `e2a41ef8-15cd-4242-8b6d-11a720227728`, and finalization `dec9e3fb-c8fc-4b14-a072-794171263f8b` completed. The exact five-line Agency header delivered `agency-steward`; deterministic abstention is control proof, not workforce-inference proof. Response/transcript SHAs are `b02a2f18...` / `e009951b...`.
+- A changed same-session `loop-library` skill request was blocked after 80.744 seconds before native reply generation. Response SHA is `d8e84b4a...`; Store run `eeb31163-27d8-4091-986f-35d03a8e64b2` remains `active`/`in_progress` with no fabricated failure receipt. The free 30B target exceeded the native hook budget; this is a timeout, not successful staffing or a contract rejection.
+- Only LiteLLM deployment `d594b69b-26f8-4bec-8531-e6c191ab6f6c` (`task-agency-router`) now targets installed free `ollama/qwen3-14b-abliterated`. All 102 unrelated deployment identity hashes remain `ca74e597...`, count remains 103, and target reasoning level `none` plus boolean settings were restored/preserved. OpenClaw native routing remains unchanged.
+- First 14B CLI diagnostic `6a761259-b7e1-49fc-b4c9-ecaa18cd6da7` made zero calls because its process lacked the service-only credential. Artifact SHA `a6ee6023...` is retained as an operator-input failure and is not a model verdict. Actual answering model remains unavailable unless authoritative telemetry supplies it.
 
 ## completed-evidence
 
 - Starting identity, Store backup, redacted inventories, credential-name presence, install/launcher provenance, invariants, and every failed turn are retained.
 - AR-272 remains live-proven for native finalization and response delivery. Exact-status is deterministic control proof; the subsequent non-control turn now proves Agency harness/profile/alias selection and strict finalization.
-- AR-273 now has an accepted exact substantive Agency-only route through the exact LiteLLM profile and alias. Canonical native header/finalization remains open.
+- AR-273 has accepted exact substantive Agency-only routing through the exact LiteLLM profile and alias; the free 30B target is valid but too slow for the native hook budget.
 - AR-274 expected-red is 2/2 exact failures; repair is 22 passed/1 skipped plus 453 passed/1 skipped, and fresh `healthcheck` header/Store proof now passes. Proportionate final gates remain; no exhaustive workflow was dispatched.
-- AR-275 preserves bounded codes without model coupling. AR-276's input gate is installed; the next candidate adds only the OpenClaw prompt-injection permission required to deliver its already-created preflight context.
+- AR-275 preserves bounded codes without model coupling. AR-276 prompt-build preflight is installed and exact-status header/finalization now pass; substantive LiteLLM-backed native acceptance remains open.
 - Codex OAuth/config/canary, Claude, ZCode, and Hermes were untouched.
 
 ## exact-blocker
 
-1. Finish the clean checkpoint, stop OpenClaw natively, and reinstall Agency only from the prompt-build-order candidate.
-2. Restart OpenClaw and use a completely new session/work unit. The failed sessions and prompts remain immutable evidence and must not be retried unchanged.
-3. Require a real five-line header and Store-backed finalization before any Telegram success claim. Hermes remains untouched break glass.
+1. Run a credential-correct, genuinely new Agency-only 14B route; retain the zero-attempt diagnostic separately.
+2. If accepted within the hook budget, use a completely new OpenClaw session for a different harmless skill and then the exact substantive restart-safety request.
+3. Require Store routing, skill/finalization rows, and exact headers; preserve the 30B timeout and leave Hermes untouched break glass.
 
 ## traps (machine-specific; do not rediscover)
 
@@ -102,9 +98,9 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 
 ## next-bounded-work-package
 
-1. Commit this prompt-build-order repair and its ledger row.
-2. Stop OpenClaw, reinstall Agency only, restart natively, and confirm the new runtime digest plus plugin inventory.
-3. Run a fresh exact-status session, then a genuinely new substantive turn only after header/Store proof. Keep Hermes and all proven hosts untouched.
+1. Commit this live-evidence recovery checkpoint and ledger row.
+2. Evaluate the installed free 14B target with the existing service credential indirection and a genuinely new Agency-only work unit.
+3. Only after acceptance, run fresh native skill and exact substantive proofs; keep Hermes and all proven hosts untouched.
 
 ## same-task-continuity
 
