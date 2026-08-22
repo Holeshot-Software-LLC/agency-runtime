@@ -827,3 +827,54 @@ candidate_install: pending clean local checkpoint
 actual_model_and_receipt_source: unavailable; alias is not promoted to actual model
 known_limit: fresh changed substantive first-pass delivery and post-live Store backup remain pending
 ~~~
+
+
+### First-pass installation and changed native timeout
+
+~~~yaml
+host: openclaw
+checkout_sha: 7be371d28ea4c16cc9b30c87df4a2336dd56eb50
+clean_tree_at_install: true
+host_version: OpenClaw 2026.7.1-2 (0790d9f)
+profile_identity: linux-task-agency-router
+native_litellm_config_source_redacted: ~/.openclaw/openclaw.json; primary litellm/task-general and six fallbacks unchanged
+litellm_base_url_source: ~/.agency-runtime/agency.yaml
+credential_env_name: LITELLM_API_KEY
+credential_present_boolean: true in the OpenClaw process; value never emitted
+agency_inference_profile: linux-task-agency-router
+requested_alias: task-agency-router
+model_group: task-agency-router
+actual_model_and_receipt_source: unavailable; alias is not promoted to actual model
+bundle_digest: 521b1480e190a1d0219c5ac5c691d4bf7ed32be609c61ec7f4ef495fb59ae78d
+runtime_digest: b5d546a66231123190d8830737aa371d9ef6e3388ce92ea0e44195d5c87c4d17
+store_schema: 47
+install_result: e834190a-0dfe-4fba-a0cd-df2d7d75e250 complete; Agency plugin only
+launcher_manifest_sha256: 41415e79f5ef50c817b56d09b3917c0ceceb681bed320347dbe5ba107d92c368
+fresh_session_id: ar277-openclaw-nexus-recovery-qwen14b-20260822-a
+agency_trace_id: 07e5ec33-7f33-4a0f-966e-d93ff4361b68
+store_run_id: 6726b5ce-c632-4af4-8f37-5a99301835d0
+first_response_artifact: /tmp/ar277-openclaw-live-recovery.json
+header_exact: none
+resident_binding_id: rmb-b4e69972cc5b6a018df30f58d2895df9; request-scoped
+routing_decision_ids:
+  - f609772b-7536-4eef-8af8-e510cefe20a0
+specialists_loaded_ids:
+  - 2a883959-9995-4ca7-aede-82c7a9d2aec9
+  - 88aeef59-5462-400f-b491-23352d359091
+skill_name_and_store_row_id: openclaw-operations / 3a57642c-907c-4350-b681-9665ac1ac718
+provider_attempt_status: planner, recruiter, and critic applied through exact profile/provider/alias
+fallback_count: 0
+native_provider: litellm/task-general; unchanged host primary
+native_tool_calls: 31 successful read-only calls; 0 agency_finalize calls
+timeout_or_failure_receipt: /tmp/ar277-openclaw-live-recovery.json sha256 493a60291e32e487b47fc7ccd99625d8c8aff5a6412982dcc24f86e2fb256ec4
+native_transcript_sha256: 40fac07879e601e2be0cabc2d85b64f9e3c528d96f14badd5ad6efd2819117f0
+store_terminal_state: none; active/ready retained as timeout evidence
+telegram_delivery: none claimed
+known_limit: native host provider timed out before first-pass finalization; tighter changed proof and post-live backup remain pending
+~~~
+
+The process exited normally with a structured `timeout` result after 240.461
+seconds. Agency preflight had already completed, so this does not implicate the
+14B alias target. It also cannot prove delivery: no five-line header was
+written and the Store has no terminal finalization for this run. The exact
+input will not be retried unchanged.

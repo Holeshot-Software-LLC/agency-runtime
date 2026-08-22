@@ -120,6 +120,14 @@ closed `response_invalid`, and no header or Telegram delivery is claimed.
 AR-277 owns the first-pass instruction repair; a second model pass remains
 forbidden.
 
+AR-277's first-pass-only repair was then installed from clean pair
+`0833884a` / `7be371d2` without changing native OpenClaw inference. A fresh,
+changed request again completed all three exact Agency LiteLLM stages with no
+fallback, but native `task-general` made 31 successful read-only tool calls and
+timed out at 240.461 seconds before calling `agency_finalize`. Store run
+`6726b5ce-c632-4af4-8f37-5a99301835d0` remains active/ready. The timeout is
+preserved without a header, finalization, or Telegram-delivery claim.
+
 ## Approach
 
 Run runtime control and the existing exact Agency preflight during
@@ -159,5 +167,6 @@ changes.
 - [x] Permission candidate was reinstalled Agency-only and proven from native config.
 - [x] Prompt-build-order candidate is reinstalled Agency-only into stopped OpenClaw.
 - [x] Fresh accepted nontrivial turn proves workforce routing without exceeding the native hook budget.
+- [x] First changed AR-277 turn is preserved as a native provider timeout after successful Agency preflight.
 - [ ] Fresh changed substantive turn proves first-pass finalization after AR-277 installation.
 - [ ] Tracker creation remains pending separate authorization.

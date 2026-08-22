@@ -3276,3 +3276,31 @@ there is no correction pass, and leaves verification and outbound rejection
 unchanged. Expected-red exit 219 is retained; affected suites pass 47 security,
 36 installer, and 24 adapter-parity cases. Live installation and a genuinely
 changed work unit remain pending.
+
+
+## 2026-08-22 — First-pass repair installed; changed native turn times out
+
+Clean pair `0833884a` / `7be371d2` was installed into stopped OpenClaw as
+Agency-only install `e834190a-0dfe-4fba-a0cd-df2d7d75e250`. The installer did
+not restart the host. Bundle `521b1480...`, runtime `b5d546a6...`, and launcher
+`41415e79...` resolve to the same dedicated checkout. OpenClaw remained
+2026.7.1-2 with native primary `litellm/task-general` and all six fallbacks
+unchanged; the Agency config remained byte-identical. Telegram and Slack were
+connected and probe-green after native restart. Hermes and all proven hosts
+were untouched.
+
+A genuinely changed recovery-risk request ran in fresh session
+`ar277-openclaw-nexus-recovery-qwen14b-20260822-a`. Agency trace
+`07e5ec33-7f33-4a0f-966e-d93ff4361b68` accepted planner, recruiter, and critic
+through profile `linux-task-agency-router`, provider type `litellm`, and exact
+alias/model-group `task-agency-router`, with zero fallback. It selected two
+specialists and recorded `openclaw-operations`.
+
+The unchanged native `task-general` turn then made 31 successful read-only
+host tool calls and reached the 240-second provider timeout before calling
+`agency_finalize`. Store run `6726b5ce-c632-4af4-8f37-5a99301835d0` remains
+`active` with preflight `ready`; no terminal finalization, exact header, or
+Telegram delivery is claimed. This is a retained native host timeout after
+successful Agency inference, not an Agency-router timeout or a backing-model
+receipt. The next proof uses a genuinely changed, tightly bounded prompt that
+permits only the required finalizer tool.

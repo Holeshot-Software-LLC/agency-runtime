@@ -77,7 +77,7 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 - Credential-correct 14B trace `2317d975-c960-4020-8755-f32308ffe94b` accepted planner, recruiter, and critic in 37.768 seconds through OpenClaw profile `linux-task-agency-router`, exact LiteLLM alias/model-group, and no provider fallback. Artifact SHA is `673c5ae7...`.
 - Fresh native `tmux` session `ar276-openclaw-nexus-tmux-qwen14b-20260822-a`, trace `79abdac7-42f1-44e9-afad-bf5556df62aa`, Store run `6b7651b6...`, routing `1908650f...`, request binding `rmb-19107899...`, specialist `5f11b004...`, skill row `b54c5916...`, and finalization `64a97d43...` completed in 45.085 seconds. The exact five-line header records inference, `code-reviewer`, `tmux`, no delegation, and wrapper alias only. Response/transcript SHAs are `7f9a4674...` / `499187e8...`.
 - Exact substantive session `ar276-openclaw-nexus-restart-qwen14b-20260822-a` accepted all Agency stages under trace `35efa94c...` with zero fallback, but native `task-general` omitted `agency_finalize` after read-only tools. Store run `e2e9e65d...` and finalization `7d5428e7...` are `response_invalid`; response/transcript SHAs `f4f6d7b7...` / `f0f9e359...` prove no valid header or Telegram delivery.
-- AR-277 rejected an uninstalled second-pass candidate as contrary to ADR-0120. Its first-pass-only replacement makes finalization mandatory in persistent tool guidance and repeats the no-correction gate after per-turn context. Expected-red exit 219 SHA `1c2f962e...`; affected green suites are 47 security, 36 installer, and 24 adapter-parity tests. Candidate installation remains pending.
+- AR-277 rejected the second-pass candidate, then installed the first-pass-only repair as Agency install `e834190a...`, bundle `521b1480...`, runtime `b5d546a6...`, launcher `41415e79...`. Changed trace `07e5ec33...` accepted all exact Agency LiteLLM stages with no fallback, but native `task-general` made 31 read-only tool calls and timed out at 240.461 seconds before `agency_finalize`; Store run `6726b5ce...` remains active/ready with no header or finalization claim.
 
 ## completed-evidence
 
@@ -90,9 +90,9 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 
 ## exact-blocker
 
-1. Create the clean AR-277 substantive/ledger checkpoint without the rejected revision candidate.
-2. Install Agency only into stopped OpenClaw; preserve native model/channel configuration and Hermes.
-3. Run one genuinely changed substantive work unit in a fresh session and correlate first-pass finalization, header, Store, and provider evidence.
+1. Checkpoint the exact changed-work-unit timeout without promoting it to delivery.
+2. Run one tighter fresh work unit that permits no host tool except `agency_finalize`.
+3. Correlate first-pass header/Store/provider evidence, then take the post-live backup.
 
 ## traps (machine-specific; do not rediscover)
 
@@ -104,9 +104,9 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 
 ## next-bounded-work-package
 
-1. Commit AR-277's first-pass-only repair and ledger row.
-2. Reinstall Agency into OpenClaw only and run a fresh changed substantive proof.
-3. Take the post-live online Store backup, run proportionate gates, and keep Hermes/proven hosts untouched.
+1. Commit the timeout checkpoint and ledger row.
+2. Run the tighter changed native proof after an immediate telemetry check.
+3. Take the post-live online Store backup and keep Hermes/proven hosts untouched.
 
 ## same-task-continuity
 

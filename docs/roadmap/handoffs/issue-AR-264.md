@@ -49,7 +49,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 - Only `task-agency-router` now targets installed free `ollama/qwen3-14b-abliterated`, with reasoning level `none`; all 102 unrelated deployment identity hashes and the 103 deployment count are unchanged. A zero-credential diagnostic trace `6a761259...` made no call and is not a model verdict.
 - Credential-correct 14B trace `2317d975...` accepted all three stages in 37.768 seconds, exact OpenClaw profile/provider/alias, and no provider fallback. Fresh native `tmux` trace `79abdac7...` completed Store run `6b7651b6...`, routing `1908650f...`, binding `rmb-19107899...`, specialist `5f11b004...`, skill row `b54c5916...`, and finalization `64a97d43...`; the exact five-line header records inference and no delegation.
 - Store schema remains 47; pre-install online backup integrity is `ok` and SHA is `11e0ddc4...`. Fresh post-live backup remains pending. Actual backing-model identity remains unavailable because LiteLLM reports the alias only.
-- Exact substantive trace `35efa94c...` accepted all Agency stages and recorded two specialists plus `openclaw-operations`, but native `task-general` omitted `agency_finalize`; Store run `e2e9e65d...` closed `response_invalid` and no Telegram reply is claimed. AR-277's first-pass-only guidance repair is focused-green but not installed.
+- Exact substantive trace `35efa94c...` remains `response_invalid`. AR-277 first-pass repair is now Agency-only install `e834190a...`; changed trace `07e5ec33...` accepted all Agency stages but native `task-general` used 31 read-only tools and timed out at 240.461 seconds before `agency_finalize`. Store run `6726b5ce...` remains active/ready; no header or Telegram delivery is claimed.
 
 ## completed-evidence
 
@@ -59,8 +59,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 
 ## exact-blocker
 
-1. Checkpoint AR-277 without its rejected second-pass candidate.
-2. Install Agency only into stopped OpenClaw and run a genuinely changed substantive work unit.
+1. Checkpoint the installed-candidate timeout.
+2. Run one tighter changed work unit permitting only the required finalizer tool.
 3. Require exact first-pass header/Store/provider correlation; preserve failures and keep Hermes untouched.
 
 ## same-task-continuity
@@ -69,8 +69,8 @@ Continue with OpenClaw only after the clean commit pair. Hermes is running break
 
 ## next-bounded-work-package
 
-1. Commit the first-pass-only repair and ledger row.
-2. Reinstall Agency into OpenClaw only and run the changed native proof.
+1. Commit the timeout checkpoint and ledger row.
+2. Run the tighter changed native proof.
 3. Take the post-live online Store backup and run proportionate final gates.
 
 ## verification
