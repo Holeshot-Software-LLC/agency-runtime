@@ -71,27 +71,26 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 - Agency config hash remains `43367ec9...`. OpenClaw's harness profile uses `litellm`, exact alias/model-group `task-agency-router`, `http://127.0.0.1:4000/v1`, `LITELLM_API_KEY`, and 120000 ms. The key is present in OpenClaw's declared common environment and absent from the operator shell; the authenticated model inventory advertises the alias. No global or protected-host route changed.
 - Hermes stayed active at config hash `a984d934...`; Codex remains `8f375701...`, Claude `27dafb27...`, and the authorized three Codex MCP flags remain disabled. Codex OAuth/model/canary, ZCode, and all other protected configuration remain untouched.
 - Installer left OpenClaw stopped. Native restart is RPC-green; `agency-preflight` is enabled, activated, loaded with ten hooks, `agency_finalize`, and zero diagnostics. Slack is connected/probe-green; Telegram is configured/running and probe-green, with its immediate post-restart connected flag still false. Hermes and LiteLLM remained active.
-- Fresh exact first-message session `fe3ab39c-fea0-4974-82b2-c85478b10b8a`, trace `3b26c907-2c9d-4240-8160-8c6d7cce6a08`, run `7d9e7bc3-3268-419e-8358-a3ef2ccf93c7`, routing `19de0955-1cb8-40b0-a307-69cf3e001242`, and finalization `97eaacb8-9dcf-4431-8150-0e1d702e8ce3` completed. Response hash `a1d0eba85a66bfa728275ce62f16e0566b7d5be563333ba4fc66303fadcc6ba6` matches transcript SHA `9f37ed86db9cd7ff600955a706c0d0e328ce6e79e85113bb5b8f649b503ba922`. Binding `rmb-1d107f497436b916ad7b32775b1a630d` is correctly non-durable; model receipt `25199eb6-6e9e-4b7b-a2d4-b365a9400053` records native `task-general`, zero fallback, actual unavailable. This proves control/final delivery, not Agency inference.
+- Fresh exact first-message session `94f92dc5-a0c5-44a7-bfa0-1663d948025e`, trace `e5b43276-ff90-43a7-923e-9956ac278816`, Store run `31a11c4d-7dff-4c6a-a643-ef082cdea36d`, routing `8ea188b5-1eea-4c05-baea-b712852b78f2`, and finalization `30625a68-a8a5-479f-8cae-07396eec05d8` completed. Binding `rmb-38e874cfe5853841a9cfc14ce50ee651` is request-scoped; native `task-general` recorded zero fallback and actual unavailable. This proves control/final delivery, not Agency inference.
 - The consumed session `31f52706-f329-4640-a012-c9540e283770` remains retained as the pre-exact-schema 180-second timeout; it was not retried. The approved content-free diagnostic and expected-red/green receipts remain the repair evidence.
-- A genuinely new work unit in session `fe3ab39c-fea0-4974-82b2-c85478b10b8a` completed trace `402e37f5-f38e-425b-95c6-62e911be2566` and Store run `4963f31f-e114-4fa0-b051-8ded1ded51a1`. All three structured stages automatically used profile `linux-task-agency-router`, provider type `litellm`, and exact alias/model-group `task-agency-router` with applied responses; no protected provider identity appears.
-- Routing `982f6c68-ac38-41a3-a84a-b7b60bee39cb` accepted; specialist rows `80c52f54-3390-4f06-81e1-0ddca89ebe27` and `866003fb-e74a-491c-a422-1ea64dd4c677` loaded; finalization `cfb2e3de-9a2b-4fda-9194-6edcb52ca3a5` accepted. Response SHA `7c785b301b68e65a42c6a69f01537821a398bca2d7a238c598a75890f2b8c2f5` matches native transcript SHA `0ebf3b397080865fd6ffad8e289bd9558e8b646ff35a37c465ebd46b87f3560b`. Wrapper telemetry supplies no actual model, so none is claimed.
-- OpenClaw's native `read` accessed the exact bundled Weather `SKILL.md` reported by `openclaw skills info weather --json`, but Agency recorded no `skills_loaded` row and honestly delivered `Skills loaded: none`. AR-274 owns this native-tool normalization gap; the prose claim that Weather loaded is not accepted evidence.
-- AR-274 now carries bounded `path` and normalizes a native read only after exact eligible/model-visible inventory authorization. Focused tests pass 22/1 skipped and the affected slice 453/1 skipped; ADR-0165 records the fail-closed boundary. The installed runtime is current; fresh live skill proof is next.
-- No new status, skill, substantive, or Telegram-scoped turn has been submitted after this restart. No host canary ran, no Rule-4 claim or matrix cell moved, and Hermes remains untouched break glass.
+- Fresh healthcheck trace `11707056-a490-4cbc-97b6-9a8e621caa79` completed Store run `585f2dce-a867-4b83-9395-4b877718a22e`, routing `132ee9fa-5cb6-409b-9668-dea79014eac2`, specialists `27d8c6f4-f276-4605-a489-1bb848902ee0` and `4c787672-45d4-4ba9-bb99-2c01a4ce2851`, skill row `3dd34973-d2f5-4b38-adcf-51191f374214`, and finalization `47c0a487-916a-42cb-9d97-54ee205a0a7f`. Its exact inventory-authorized `healthcheck` read produced `Skills loaded: healthcheck`; native transcript SHA is `f45506e3...`.
+- All three healthcheck inference stages used profile `linux-task-agency-router`, provider type `litellm`, and exact alias/model-group `task-agency-router`; every response was applied, no protected provider appears, and wrapper telemetry supplies no actual model.
+- Substantive trace `6affd162-9e8e-41f5-b513-e33a90e7d819` failed strict recruiter validation and remains `preflight_failed`; receipt `f26a4813-006d-4515-a0ea-f2df6873a4f7` and transcript SHA `dda4518a...` are retained. Changed-input trace `f3582f30-7094-43c3-992f-907b2fcac59e` proved the same three LiteLLM stages, routing `f237b728-f6b1-45b5-ad39-30edd9bdf6e7`, two specialist rows, and skill row `30d8f786-0037-48b1-8af5-319973324828`, but the host model omitted `agency_finalize`. Store run `c1a42bbd-f0d3-4eb4-af46-877b95c5b4e8` remains active with no finalization, so its plausible header is not accepted delivery evidence.
+- A bounded revision experiment was expected-red then green but rejected before commit because ADR-0120 forbids corrective model passes. The branch returned clean; no safety rule changed. No host canary ran, no Rule-4 claim or matrix cell moved, and Hermes remains untouched break glass.
 
 ## completed-evidence
 
 - Starting identity, Store backup, redacted inventories, credential-name presence, install/launcher provenance, invariants, and every failed turn are retained.
 - AR-272 remains live-proven for native finalization and response delivery. Exact-status is deterministic control proof; the subsequent non-control turn now proves Agency harness/profile/alias selection and strict finalization.
-- AR-273 is live-proven for a valid structured planner and completed workforce turn. Skill evidence is separately blocked by AR-274; the required distinct substantive risk-review prompt remains.
-- AR-274 expected-red is 2/2 exact failures; focused repair is 22 passed/1 skipped, the affected slice is 453 passed/1 skipped, and the Agency-only install is current. Fresh skill/header/Store proof remains; no exhaustive workflow was dispatched.
+- AR-273 is live-proven for structured OpenClaw workforce routing through the exact LiteLLM profile and alias. A distinct substantive turn still needs canonical finalization.
+- AR-274 expected-red is 2/2 exact failures; repair is 22 passed/1 skipped plus 453 passed/1 skipped, and fresh `healthcheck` header/Store proof now passes. Proportionate final gates remain; no exhaustive workflow was dispatched.
 - Codex OAuth/config/canary, Claude, ZCode, and Hermes were untouched.
 
 ## exact-blocker
 
-1. In a completely fresh session, send exact first message `agency status` and preserve its native response/transcript before anything else.
-2. Use a genuinely different harmless skill, then a different non-mutating substantive work unit; correlate Store/header/profile/provider/alias evidence without actual-model invention.
-3. Telegram `/new` remains operator-delivery proof. Keep Hermes and all protected hosts untouched; tracker writes remain unauthorized.
+1. Run the exact requested substantive restart-safety review in a completely fresh session; accept it only if `agency_finalize`, Store finalization, and native text hash correlate.
+2. Recheck Telegram connectivity after the fresh turn. Telegram `/new` remains operator-delivery proof.
+3. Keep Hermes and all protected hosts untouched; tracker writes remain unauthorized.
 
 ## traps (machine-specific; do not rediscover)
 
@@ -103,9 +102,9 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 
 ## next-bounded-work-package
 
-1. Run fresh exact-status control and retain the first native artifact.
-2. Run a different harmless skill and a distinct substantive work unit with Store/header/provider correlation.
-3. Recheck Telegram connectivity, protected hashes, Store integrity, and local gates; keep every protected host and alias target untouched.
+1. Run one fresh exact substantive work unit and correlate finalization plus LiteLLM routing.
+2. Recheck Telegram, protected hashes, Store integrity, and contractor count.
+3. Update final evidence records and run proportionate local gates.
 
 ## same-task-continuity
 

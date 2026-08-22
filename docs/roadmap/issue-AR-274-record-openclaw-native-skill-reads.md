@@ -77,6 +77,15 @@ verified `/usr/bin/python3` input importing this checkout, install
 `3aac2a46-e638-46d6-812d-d2df2ea3aa0b` completed with bundle `69783cf4...`,
 runtime digest `6afbaf65...`, 15 unchanged contractors, and no runtime drift.
 
+Fresh OpenClaw trace `11707056-a490-4cbc-97b6-9a8e621caa79` then read the exact
+eligible bundled `healthcheck` path authorized by native inventory. Store run
+`585f2dce-a867-4b83-9395-4b877718a22e`, skill row
+`3dd34973-d2f5-4b38-adcf-51191f374214`, and finalization
+`47c0a487-916a-42cb-9d97-54ee205a0a7f` completed; the native five-line header
+records `Skills loaded: healthcheck`. All three workforce stages used the
+OpenClaw-scoped LiteLLM profile and exact `task-agency-router` alias/model-group
+without a protected-provider fallback. No actual answering model is claimed.
+
 ## Approach
 
 Preserve the bounded native path field through the generated bridge. Normalize
@@ -100,6 +109,6 @@ or executable-namespace trust rules.
 - [x] The generated bridge preserves only bounded path fields needed for OpenClaw skill evidence.
 - [x] An inventory-authorized exact `SKILL.md` read normalizes to one canonical skill event and produces the matching Store row/header entry.
 - [x] Arbitrary reads, lookalike paths, inventory mismatch/failure, disabled skills, and malformed receipts remain unrecorded.
-- [ ] Reinstall only Agency into OpenClaw and prove a genuinely different bundled skill in a completely fresh host session without delegation or child spawn.
+- [x] Reinstall only Agency into OpenClaw and prove a genuinely different bundled skill in a completely fresh host session without delegation or child spawn.
 - [ ] Focused OpenClaw adapter, installer, final-header, and Store tests plus proportionate local gates pass.
 - [ ] Tracker creation remains pending separate authorization.
