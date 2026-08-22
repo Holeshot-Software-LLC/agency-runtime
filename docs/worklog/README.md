@@ -1126,6 +1126,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `1b789ac3` | 2026-08-21 | fix(inference): keep LiteLLM profiles model-agnostic | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md), [AR-273](../roadmap/issue-AR-273-model-agnostic-structured-inference-profiles.md) | null |
 | `62759fd6` | 2026-08-21 | docs(roadmap): checkpoint OpenClaw live inference failure | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md), [AR-273](../roadmap/issue-AR-273-model-agnostic-structured-inference-profiles.md) | null |
 | `fba12371` | 2026-08-21 | fix(inference): delegate exact schemas through LiteLLM | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md), [AR-273](../roadmap/issue-AR-273-model-agnostic-structured-inference-profiles.md) | null |
+| `68f8074c` | 2026-08-21 | docs(ar119): checkpoint exact-schema OpenClaw install | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md), [AR-273](../roadmap/issue-AR-273-model-agnostic-structured-inference-profiles.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
