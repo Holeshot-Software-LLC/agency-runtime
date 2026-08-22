@@ -303,6 +303,7 @@ def test_openclaw_policy_rollback_retains_final_only_when_disable_is_unproven(
                 _result(),
                 _result(),
                 _result(),
+                _result(),
                 _json_result(_openclaw_runtime_payload()),
             ],
             commands=[
@@ -338,6 +339,13 @@ def test_openclaw_policy_rollback_retains_final_only_when_disable_is_unproven(
                 ],
                 [
                     "openclaw",
+                    "config",
+                    "set",
+                    "plugins.entries.agency-preflight.hooks.allowPromptInjection",
+                    "true",
+                ],
+                [
+                    "openclaw",
                     "plugins",
                     "inspect",
                     "agency-preflight",
@@ -352,6 +360,7 @@ def test_openclaw_policy_rollback_retains_final_only_when_disable_is_unproven(
                 "install",
                 "enable",
                 "conversation_access",
+                "prompt_injection",
                 "runtime_inspect",
             ],
         ),
@@ -706,6 +715,7 @@ def test_openclaw_existing_plugin_install_condition_is_exact(
         [
             _result(),
             _result(),
+            _result(),
             _json_result(_openclaw_runtime_payload()),
         ]
     )
@@ -875,6 +885,29 @@ def test_openclaw_gateway_gate_accepts_explicit_nested_stopped_status() -> None:
                 _json_result({"id": "agency-preflight"}),
                 _result(),
                 _result(),
+                _result(returncode=1),
+                *_OPENCLAW_POLICY_RESTORE_RESPONSES,
+            ],
+            steps=[
+                "gateway_status",
+                *_OPENCLAW_POLICY_STEPS,
+                "inspect_existing",
+                "enable",
+                "conversation_access",
+                "prompt_injection",
+                *_OPENCLAW_POLICY_RESTORE_STEPS,
+            ],
+            failed_step="prompt_injection",
+        ),
+        _FailureCase(
+            host="openclaw",
+            responses=[
+                _json_result({"running": False}),
+                *_OPENCLAW_POLICY_RESPONSES,
+                _json_result({"id": "agency-preflight"}),
+                _result(),
+                _result(),
+                _result(),
                 _json_result({"id": "agency-preflight"}),
                 *_OPENCLAW_POLICY_RESTORE_RESPONSES,
             ],
@@ -884,6 +917,7 @@ def test_openclaw_gateway_gate_accepts_explicit_nested_stopped_status() -> None:
                 "inspect_existing",
                 "enable",
                 "conversation_access",
+                "prompt_injection",
                 "runtime_inspect",
                 *_OPENCLAW_POLICY_RESTORE_STEPS,
             ],

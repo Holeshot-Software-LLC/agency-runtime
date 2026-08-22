@@ -53,20 +53,22 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 - Recovery pair `a0ff74d4` / `77bfd2ae` adds ontology-bound schemas and the OpenClaw fail-closed input gate. Focused/affected suites pass 154 plus 65 cases; the 828-test spine, 134 UI tests, docs, ruff, routing evaluation, and diff checks pass.
 - Agency-only install `ba074210-c785-4d61-a014-c2f86dfdb571` completed with bundle `3139ec9c...`, launcher SHA `b67bb589...`, runtime digest `facf8047...`, and 15/15 contractors. Only OpenClaw metadata timestamp changed; native model/provider/channel/alias configuration did not.
 - OpenClaw is RPC-green and the plugin is loaded with its priority-1000 input gate. Telegram and Slack are connected/probe-green; Hermes and LiteLLM stayed active.
-- Three changed Agency-only routes proved automatic OpenClaw harness selection and exact profile/provider/alias with zero fallback, but produced no accepted team: traces `52223cc2...`, `bd2feabc...`, and `71c4ad65...`. No post-reinstall native turn ran.
-- Post-install Store backup integrity is `ok`, schema 47, SHA `64c65d70...`. The host-scoped Agency soft-off was not applied because it requires explicit approval to bypass enforcement.
+- Owner-authorized alias-target comparison kept all 103 other LiteLLM deployment rows unchanged. The 9B target remained unreliable; the installed free 30B coder target accepted exact OpenClaw review trace `7a094495...` across all three stages with zero fallback. The provider receipt exposes only the alias, so no actual answering-model claim is made.
+- Fresh native status run `341ec5f5...` proves the next defect: Store preflight was `ready`, but OpenClaw injected zero Agency context, normal `task-general` ran, and finalization failed. Store run `7daf7c70...` is `response_invalid`; no header is claimed.
+- OpenClaw 2026.7.1-2 requires `hooks.allowPromptInjection=true`. The minimal installer candidate adds that permission after conversation access and fails/rolls back at the exact step. Expected-red is retained; 46 registration tests and 127 focused OpenClaw tests pass, with one skip.
+- Post-install Store backup integrity remains `ok`, schema 47, SHA `64c65d70...`. Hermes and proven hosts remain untouched.
 
 ## completed-evidence
 
 - Agency-only install, OpenClaw activation, exact-status finalization, native `healthcheck` evidence, and harness-scoped LiteLLM alias selection are proven.
-- Substantive acceptance is blocked at the configured alias target's strict planner contract; invalid native answers remain unaccepted and unqueued.
+- Exact substantive Agency-only acceptance is proven with the free 30B alias target. Native acceptance remains blocked at OpenClaw prompt-context permission and is not weakened.
 - No hosted workflow, push, PR, tracker mutation, host canary, alias-target change, protected-host change, or matrix movement occurred.
 
 ## exact-blocker
 
-1. The unchanged alias target must satisfy strict planner and recruiter contracts within the fixed call/repair budget; endpoint, credential, profile, and alias selection are already proven.
-2. No native substantive turn is allowed until a changed Agency-only route accepts. Consumed prompts remain forbidden.
-3. Restoring native OpenClaw replies while blocked requires explicit approval for the reversible OpenClaw-only Agency soft bypass. Hermes and protected-provider configuration remain unchanged.
+1. Commit and install the OpenClaw-only prompt-injection permission repair while the gateway is stopped.
+2. Use a new session; require header, binding, routing, and finalization evidence before native or Telegram success.
+3. Preserve the accepted alias trace and failed native run; do not retry either unchanged. Hermes remains untouched.
 
 ## same-task-continuity
 
@@ -74,9 +76,9 @@ Continue with OpenClaw only after the clean commit pair. Hermes is running break
 
 ## next-bounded-work-package
 
-1. Await the owner's keep-enforcement versus host-scoped-soft-off decision.
-2. After the alias target produces an accepted changed Agency-only route, use one fresh native OpenClaw session.
-3. Correlate Store/header/finalization evidence; keep Hermes and protected hosts untouched.
+1. Create the required clean substantive/ledger checkpoint.
+2. Reinstall Agency only into stopped OpenClaw, restart, and verify prompt-injection permission plus runtime hooks.
+3. Run fresh status then new substantive proof; correlate Store/header/finalization and keep Hermes/protected hosts untouched.
 
 ## verification
 

@@ -664,3 +664,51 @@ the post-install online-backup SHA is `64c65d70...`. Codex OAuth/model/canary,
 Claude, ZCode, Hermes, and their native configurations were untouched. No host
 canary, push, PR, tracker mutation, hosted workflow, alias-target change, or
 matrix movement occurred.
+
+
+### Authorized free-model comparison and first native permission failure
+
+~~~yaml
+alias: task-agency-router
+alias_deployment_id: d594b69b-26f8-4bec-8531-e6c191ab6f6c
+litellm_deployment_count_before_after: 103/103
+unrelated_db_rows_changed: 0
+configured_target_sequence:
+  - ollama/qwen3.5:2b
+  - ollama/qwen3.5:9b
+  - ollama/qwen3-coder-30b-a3b-128k-rocm
+qwen35_9b_trace_ids:
+  - 23da5198-3cbc-4771-9c8e-a2b144b2d2fe
+  - a4121506-ec2a-4917-8cd8-dde045c555c4
+qwen35_9b_results: critic veto; recruiter no-valid-response
+qwen3_coder_exact_trace_id: 7a094495-edbc-471d-8c9d-9a557f3c7ac6
+qwen3_coder_exact_result: accepted; planner/recruiter/critic applied
+agency_profile: linux-task-agency-router
+provider_type: litellm
+requested_alias_and_model_group: task-agency-router
+fallback_count: 0
+actual_model_and_receipt_source: unavailable; response.body.model repeated alias
+native_session_id: ar276-openclaw-nexus-status-20260822-160727
+native_trace_id: 341ec5f5-9343-499f-8a73-d0c6cb08426c
+native_store_run_id: 7daf7c70-c87b-4ed7-bf31-3e093bab73b5
+native_store_status: response_invalid
+native_runtime_context_chars: 0
+native_model: litellm/task-general
+header_exact: none
+native_response_artifact_sha256: 32626d10a9ef3168b72832aa00dcb36302ba2670c04b90795e10aa4a9ee42247
+native_transcript_sha256: e93fc7ec50f00828ec48aef60145b3c6fc0db7ee4fb088daae5e827597c1615b
+known_limit: candidate prompt-injection permission repair not installed yet
+~~~
+
+The first CLI attempt is separately preserved as an OpenClaw-native failure:
+the obsolete default agent `main` was rejected before Agency with artifact SHA
+`8fb7be77...`. A changed command discovered and used configured default agent
+`nexus`; it is not an unchanged retry.
+
+The installed plugin entry currently grants only `allowConversationAccess`.
+OpenClaw's installed 2026.7.1-2 type/schema contract says prompt mutation from
+`before_prompt_build` requires `allowPromptInjection`. This accounts for the
+otherwise contradictory evidence: Agency preflight created and stored the
+exact run, but its finalization instructions never entered the model prompt.
+The repair changes only Agency's OpenClaw registration command plan and tests;
+it does not alter OpenClaw's primary/fallback models or any protected host.

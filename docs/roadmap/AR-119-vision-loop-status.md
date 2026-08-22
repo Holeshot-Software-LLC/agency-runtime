@@ -3156,3 +3156,37 @@ Pre/post contractor count is 15/15. Pre/post SQLite-consistent Store backups
 both have integrity `ok`; the post-install SHA is `64c65d70...`. No host
 canary, alias-target change, push, PR, tracker write, hosted workflow, or
 AR-119 matrix movement occurred.
+
+
+## 2026-08-22 — Free alias target accepted; OpenClaw prompt permission isolated
+
+The owner authorized changing only LiteLLM deployment `task-agency-router`.
+Raw database-row hashes prove every other one of 103 deployments stayed
+unchanged. `qwen3.5:9b` improved structured output but remained unreliable:
+one three-stage result was vetoed by its critic and a distinct result returned
+no valid recruiter response. The alias was then pointed to the already-installed
+free `qwen3-coder-30b-a3b-128k-rocm` target.
+
+The exact required restart-safety request then passed Agency-only admission.
+Trace `7a094495-edbc-471d-8c9d-9a557f3c7ac6` applied planner, recruiter, and
+critic through OpenClaw profile `linux-task-agency-router`, provider type
+`litellm`, and exact requested alias/model-group `task-agency-router`, with
+zero fallback. LiteLLM's response still named only the alias, so the configured
+control-plane target is recorded separately from the unavailable actual-model
+receipt.
+
+A completely new native `agency status` session exposed a second independent
+defect. Store run `7daf7c70-c87b-4ed7-bf31-3e093bab73b5`, trace
+`341ec5f5-9343-499f-8a73-d0c6cb08426c`, reached preflight `ready`, but the
+OpenClaw transcript reported zero runtime-context characters. Native
+`litellm/task-general` answered and called `agency_finalize` with invented
+correlation IDs; finalization failed and the Store closed `response_invalid`.
+No Agency header or Telegram delivery is claimed.
+
+Installed OpenClaw 2026.7.1-2 requires a non-bundled plugin to set
+`hooks.allowPromptInjection=true` before `before_prompt_build` results can
+mutate the prompt. Agency registration set only conversation access. The
+expected-red registration test is retained. The minimal repair adds that one
+supported permission, includes it in the dry-run plan, and rolls back safely
+if it fails. Registration is 46/46 green; the focused OpenClaw slice is 127
+passed/1 skipped under umask `0077`. The candidate has not yet been installed.

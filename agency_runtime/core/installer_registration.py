@@ -473,6 +473,18 @@ def _register_openclaw(
     )
     if not access.ok:
         return _rollback_openclaw_policy(session, "conversation_access")
+    prompt_injection = session.run(
+        "prompt_injection",
+        [
+            session.binary,
+            "config",
+            "set",
+            f"plugins.entries.{PLUGIN_ID}.hooks.allowPromptInjection",
+            "true",
+        ],
+    )
+    if not prompt_injection.ok:
+        return _rollback_openclaw_policy(session, "prompt_injection")
     result = _verify_openclaw_runtime(session)
     return result if result[1] else _rollback_openclaw_policy(session, str(result[2]))
 
@@ -777,6 +789,16 @@ def native_command_plan(host: str, target: Path) -> list[dict[str, Any]]:
                     "config",
                     "set",
                     f"plugins.entries.{PLUGIN_ID}.hooks.allowConversationAccess",
+                    "true",
+                ],
+            },
+            {
+                "name": "prompt_injection",
+                "argv": [
+                    binary,
+                    "config",
+                    "set",
+                    f"plugins.entries.{PLUGIN_ID}.hooks.allowPromptInjection",
                     "true",
                 ],
             },

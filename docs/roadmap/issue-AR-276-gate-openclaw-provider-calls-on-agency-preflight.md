@@ -69,6 +69,21 @@ The OpenClaw-only soft bypass dry run passed; applying it was rejected pending
 explicit owner approval because it disables Agency enforcement for that host.
 Telegram and Slack themselves remain connected and probe-green.
 
+The owner later authorized changing only the LiteLLM alias target. A free local
+30B coder target accepted the exact required substantive Agency-only route
+across planner, recruiter, and critic with zero fallback. Fresh native status
+run `341ec5f5-9343-499f-8a73-d0c6cb08426c` then reached Store preflight
+`ready`, but OpenClaw injected zero runtime-context characters. Its normal
+`task-general` model ran, used invented finalization correlation IDs, and
+closed Store run `7daf7c70-c87b-4ed7-bf31-3e093bab73b5` as
+`response_invalid`; no Agency header was delivered.
+
+Installed OpenClaw 2026.7.1-2 requires non-bundled plugins to grant
+`hooks.allowPromptInjection=true` before accepting `before_prompt_build`
+prompt-mutation fields. Agency registration granted conversation access only.
+The expected-red registration receipt is retained; the minimal registration
+candidate is green but not yet installed.
+
 ## Approach
 
 Run the existing exact Agency preflight call inside OpenClaw's
@@ -81,8 +96,12 @@ the immediately following `before_prompt_build` injection. Bound the cache by
 count and TTL, clear it when Agency is disabled, and remove its entry during
 finalization. The prompt hook performs no second provider-backed preflight.
 
-This changes only the generated Agency plugin payload. It does not modify
-OpenClaw's native model, provider list, channels, aliases, or configuration.
+This changes the generated Agency plugin payload and its plugin-owned native
+registration permission only. Registration grants
+`hooks.allowPromptInjection` with OpenClaw's supported config command.
+Failure at that exact step rolls back through the existing final-only delivery
+transaction. No native model, provider, fallback, channel, or alias setting
+changes.
 
 ## Dependencies
 
@@ -100,6 +119,9 @@ OpenClaw's native model, provider list, channels, aliases, or configuration.
 - [x] Focused and affected local tests pass.
 - [x] Clean local substantive/ledger commits are `a0ff74d4` / `77bfd2ae`.
 - [x] Agency-only reinstall preserves native OpenClaw configuration except its timestamp metadata.
+- [x] Exact native failure proves Store preflight context was created but prompt mutation was not authorized.
+- [x] Expected-red and focused tests cover the required prompt-injection permission and exact-step rollback.
 - [ ] Fresh changed turn proves no native provider starts after preflight rejection.
 - [ ] Fresh accepted turn proves Store routing, header delivery, and finalization.
+- [ ] Candidate is reinstalled Agency-only into stopped OpenClaw and the permission is proven from native config.
 - [ ] Tracker creation remains pending separate authorization.
