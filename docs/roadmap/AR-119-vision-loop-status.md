@@ -3238,3 +3238,15 @@ unrelated deployment identity hash remained `ca74e597...` and the count stayed
 credential, made zero provider calls, and is retained as an operator-input
 failure rather than a model verdict. A credential-correct, genuinely new 14B
 evaluation follows after this required recovery checkpoint.
+
+Credential-correct trace `2317d975-c960-4020-8755-f32308ffe94b` then accepted
+planner, recruiter, and critic in 37.768 seconds through the exact OpenClaw
+profile, LiteLLM provider, and alias/model-group, with no provider fallback.
+Fresh native session `ar276-openclaw-nexus-tmux-qwen14b-20260822-a` completed
+trace `79abdac7-42f1-44e9-afad-bf5556df62aa` in 45.085 seconds. Store routing
+`1908650f...`, request binding `rmb-19107899...`, specialist `5f11b004...`,
+skill row `b54c5916...`, and finalization `64a97d43...` correlate with the
+delivered five-line inference header: `code-reviewer`, `tmux`, no delegation.
+Native `task-general` then supplied the host answer after accepted preflight.
+The wrapper still reports only `task-agency-router`; no backing-model claim is
+made. The exact substantive restart-safety turn remains next.

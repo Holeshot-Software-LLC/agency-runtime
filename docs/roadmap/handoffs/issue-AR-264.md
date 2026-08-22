@@ -45,19 +45,20 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 - Fresh exact-status trace `bf21e9a8...`, Store run `c571cf9b...`, routing `e2a41ef8...`, and finalization `dec9e3fb...` delivered the exact five-line header. Deterministic abstention proves control activation/final delivery, not LiteLLM workforce inference.
 - Changed `loop-library` request trace `2c4e81be...` hit the 80.744-second OpenClaw hook budget before native reply generation. Store run `eeb31163...` remains `active`/`in_progress`; no failure receipt, skill row, or success is claimed. The free 30B target is contract-capable but too slow for this native path.
 - Only `task-agency-router` now targets installed free `ollama/qwen3-14b-abliterated`, with reasoning level `none`; all 102 unrelated deployment identity hashes and the 103 deployment count are unchanged. A zero-credential diagnostic trace `6a761259...` made no call and is not a model verdict.
+- Credential-correct 14B trace `2317d975...` accepted all three stages in 37.768 seconds, exact OpenClaw profile/provider/alias, and no provider fallback. Fresh native `tmux` trace `79abdac7...` completed Store run `6b7651b6...`, routing `1908650f...`, binding `rmb-19107899...`, specialist `5f11b004...`, skill row `b54c5916...`, and finalization `64a97d43...`; the exact five-line header records inference and no delegation.
 - Store schema remains 47; pre-install online backup integrity is `ok` and SHA is `11e0ddc4...`. Fresh post-live backup remains pending. Actual backing-model identity remains unavailable because LiteLLM reports the alias only.
 
 ## completed-evidence
 
 - Agency-only install, OpenClaw activation, exact-status finalization, native `healthcheck` evidence, and harness-scoped LiteLLM alias selection are proven.
 - Exact substantive Agency-only acceptance is proven with the free 30B target; exact-status native header/finalization now pass with the installed prompt-order repair.
-- Skill and substantive native acceptance remain open. No hosted workflow, push, PR, tracker mutation, host canary, protected-host change, or matrix movement occurred.
+- Native skill acceptance now passes; exact substantive native acceptance remains open. No hosted workflow, push, PR, tracker mutation, host canary, protected-host change, or matrix movement occurred.
 
 ## exact-blocker
 
-1. Evaluate 14B with the existing credential indirection and a genuinely new Agency-only work unit.
-2. If accepted within budget, use a new native session for a different harmless skill and the exact restart-safety request.
-3. Preserve the 30B timeout and zero-attempt receipt; require Store/header/finalization evidence and keep Hermes untouched.
+1. Run the exact restart-safety request in a new native OpenClaw session through the accepted 14B target.
+2. Require Store routing/binding/model/finalization and exact-header correlation without promoting alias to actual model.
+3. Preserve all failed receipts and keep Hermes untouched.
 
 ## same-task-continuity
 
@@ -65,9 +66,9 @@ Continue with OpenClaw only after the clean commit pair. Hermes is running break
 
 ## next-bounded-work-package
 
-1. Commit this live-evidence checkpoint and ledger row.
-2. Run the credential-correct 14B Agency-only test.
-3. If green, run fresh skill/substantive native proofs and a post-live online Store backup.
+1. Commit this native-skill evidence checkpoint and ledger row.
+2. Run and correlate the exact substantive native proof.
+3. Take the post-live online Store backup and run proportionate final gates.
 
 ## verification
 

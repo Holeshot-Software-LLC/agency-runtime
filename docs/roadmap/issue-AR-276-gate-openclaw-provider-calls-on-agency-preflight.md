@@ -103,6 +103,14 @@ returned `hook_block` before reply generation; it did not fall through to the
 normal host model. The timeout and still-active Store run are retained and are
 not promoted into successful inference evidence.
 
+Credential-correct free-14B trace `2317d975-c960-4020-8755-f32308ffe94b`
+then accepted all three inference stages within 37.768 seconds. Fresh native
+trace `79abdac7-42f1-44e9-afad-bf5556df62aa` completed the exact Store route,
+loaded `code-reviewer`, recorded skill `tmux`, accepted finalization, and
+delivered the authoritative five-line inference header in 45.085 seconds.
+No preflight bypass occurred: native `task-general` answered only after the
+accepted preflight; no child, mutation, network action, or delegation ran.
+
 ## Approach
 
 Run runtime control and the existing exact Agency preflight during
@@ -141,5 +149,5 @@ changes.
 - [x] Fresh accepted status turn proves Store routing, header delivery, and finalization.
 - [x] Permission candidate was reinstalled Agency-only and proven from native config.
 - [x] Prompt-build-order candidate is reinstalled Agency-only into stopped OpenClaw.
-- [ ] Fresh accepted nontrivial turn proves workforce routing without exceeding the native hook budget.
+- [x] Fresh accepted nontrivial turn proves workforce routing without exceeding the native hook budget.
 - [ ] Tracker creation remains pending separate authorization.

@@ -774,9 +774,23 @@ unrelated_deployment_identity_hash_before_after: ca74e5979051b908bf1e8f42529a559
 litellm_deployment_count_before_after: 103/103
 first_14b_diagnostic_trace: 6a761259-b7e1-49fc-b4c9-ecaa18cd6da7
 first_14b_diagnostic_result: zero attempts because credential absent in diagnostic process; not a model verdict
+accepted_14b_diagnostic_trace: 2317d975-c960-4020-8755-f32308ffe94b
+accepted_14b_diagnostic_result: planner/recruiter/critic applied in 37768 ms; exact profile/provider/alias; no provider fallback
+accepted_14b_diagnostic_sha256: 673c5ae7bb36047ea08f1ab672ee674007060c190e8d0e4e9aa02c1170eb6f61
+native_skill_session_id: ar276-openclaw-nexus-tmux-qwen14b-20260822-a
+native_skill_trace_id: 79abdac7-42f1-44e9-afad-bf5556df62aa
+native_skill_store_run_id: 6b7651b6-7d9d-472f-a900-6bf16f8b7b2f
+native_skill_routing_id: 1908650f-a11f-4fbb-ba87-5759c530fc66
+native_skill_binding_id: rmb-1910789900fdbb5e90e52eed3f4c3874
+native_skill_specialist_id: 5f11b004-926f-450b-8561-c8e9aca643a4
+native_skill_name_and_row_id: tmux / b54c5916-f86d-450f-b2e8-b9007137b489
+native_skill_finalization_id: 64a97d43-d992-44eb-8912-de164a1dc923
+native_skill_header: five lines; code-reviewer, tmux, no delegation, wrapper alias, inference
+native_skill_response_sha256: 7f9a4674fce7de9ecacb339b12377769c494bb782e302d155715d1782c73696e
+native_skill_transcript_sha256: 499187e8d776a117bfe374d8951c1dabead7a62d8266360547afabd2fd774afa
 telegram_slack: running, connected, probe-green
 actual_model_and_receipt_source: unavailable; never inferred from alias
-known_limit: credential-correct 14B Agency-only and native substantive acceptance remain pending
+known_limit: exact substantive native acceptance and post-live Store backup remain pending
 ~~~
 
 The successful control header is real host delivery but deterministic routing.

@@ -72,21 +72,23 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 - A changed same-session `loop-library` skill request was blocked after 80.744 seconds before native reply generation. Response SHA is `d8e84b4a...`; Store run `eeb31163-27d8-4091-986f-35d03a8e64b2` remains `active`/`in_progress` with no fabricated failure receipt. The free 30B target exceeded the native hook budget; this is a timeout, not successful staffing or a contract rejection.
 - Only LiteLLM deployment `d594b69b-26f8-4bec-8531-e6c191ab6f6c` (`task-agency-router`) now targets installed free `ollama/qwen3-14b-abliterated`. All 102 unrelated deployment identity hashes remain `ca74e597...`, count remains 103, and target reasoning level `none` plus boolean settings were restored/preserved. OpenClaw native routing remains unchanged.
 - First 14B CLI diagnostic `6a761259-b7e1-49fc-b4c9-ecaa18cd6da7` made zero calls because its process lacked the service-only credential. Artifact SHA `a6ee6023...` is retained as an operator-input failure and is not a model verdict. Actual answering model remains unavailable unless authoritative telemetry supplies it.
+- Credential-correct 14B trace `2317d975-c960-4020-8755-f32308ffe94b` accepted planner, recruiter, and critic in 37.768 seconds through OpenClaw profile `linux-task-agency-router`, exact LiteLLM alias/model-group, and no provider fallback. Artifact SHA is `673c5ae7...`.
+- Fresh native `tmux` session `ar276-openclaw-nexus-tmux-qwen14b-20260822-a`, trace `79abdac7-42f1-44e9-afad-bf5556df62aa`, Store run `6b7651b6...`, routing `1908650f...`, request binding `rmb-19107899...`, specialist `5f11b004...`, skill row `b54c5916...`, and finalization `64a97d43...` completed in 45.085 seconds. The exact five-line header records inference, `code-reviewer`, `tmux`, no delegation, and wrapper alias only. Response/transcript SHAs are `7f9a4674...` / `499187e8...`.
 
 ## completed-evidence
 
 - Starting identity, Store backup, redacted inventories, credential-name presence, install/launcher provenance, invariants, and every failed turn are retained.
 - AR-272 remains live-proven for native finalization and response delivery. Exact-status is deterministic control proof; the subsequent non-control turn now proves Agency harness/profile/alias selection and strict finalization.
-- AR-273 has accepted exact substantive Agency-only routing through the exact LiteLLM profile and alias; the free 30B target is valid but too slow for the native hook budget.
+- AR-273 now has fast accepted Agency-only and native skill routing through the exact LiteLLM profile/alias on free 14B; actual backing model telemetry remains unavailable.
 - AR-274 expected-red is 2/2 exact failures; repair is 22 passed/1 skipped plus 453 passed/1 skipped, and fresh `healthcheck` header/Store proof now passes. Proportionate final gates remain; no exhaustive workflow was dispatched.
 - AR-275 preserves bounded codes without model coupling. AR-276 prompt-build preflight is installed and exact-status header/finalization now pass; substantive LiteLLM-backed native acceptance remains open.
 - Codex OAuth/config/canary, Claude, ZCode, and Hermes were untouched.
 
 ## exact-blocker
 
-1. Run a credential-correct, genuinely new Agency-only 14B route; retain the zero-attempt diagnostic separately.
-2. If accepted within the hook budget, use a completely new OpenClaw session for a different harmless skill and then the exact substantive restart-safety request.
-3. Require Store routing, skill/finalization rows, and exact headers; preserve the 30B timeout and leave Hermes untouched break glass.
+1. Run the exact required restart-safety request in a completely new OpenClaw session through the accepted 14B alias target.
+2. Correlate Store routing, binding, specialist, model, header, and finalization evidence; do not infer the backing model from the alias.
+3. Preserve the 30B timeout and zero-attempt diagnostic; leave Hermes untouched break glass.
 
 ## traps (machine-specific; do not rediscover)
 
@@ -98,9 +100,9 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 
 ## next-bounded-work-package
 
-1. Commit this live-evidence recovery checkpoint and ledger row.
-2. Evaluate the installed free 14B target with the existing service credential indirection and a genuinely new Agency-only work unit.
-3. Only after acceptance, run fresh native skill and exact substantive proofs; keep Hermes and all proven hosts untouched.
+1. Commit this native-skill evidence checkpoint and ledger row.
+2. Run the exact substantive OpenClaw request in a new session and correlate Store/header/finalization.
+3. Take the post-live online Store backup, run proportionate gates, and keep Hermes/proven hosts untouched.
 
 ## same-task-continuity
 
