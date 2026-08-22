@@ -1801,6 +1801,9 @@ def test_generated_openclaw_plugin_is_native_openclaw_package(
     assert manifest["contracts"]["tools"] == ["agency_finalize"]
     assert package["openclaw"]["extensions"] == ["./index.js"]
     assert "api.registerTool" in code
+    assert "does not send the response to any channel" in code
+    assert "not delivered to the user" in code
+    assert "Never emit NO_REPLY" in code
     assert "before_prompt_build" in code
     assert "before_agent_finalize" in code
     assert "reply_payload_sending" in code

@@ -10,6 +10,7 @@ related:
   - docs/roadmap/handoffs/issue-AR-119.md
   - docs/roadmap/issue-AR-271-preserve-openclaw-model-receipt-fields.md
   - docs/roadmap/issue-AR-277-keep-openclaw-finalization-first-pass.md
+  - docs/roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md
   - docs/decisions/0120-construct-first-pass-evidence-headers.md
   - agency_runtime/core/installer_payload_manifests.py
   - agency_runtime/core/installer_payload_openclaw.py
@@ -23,7 +24,7 @@ issue_id: AR-272
 priority: p0
 tracker_url: null
 depends_on: []
-blocks: [AR-119, AR-274, AR-277]
+blocks: [AR-119, AR-274, AR-277, AR-278]
 ---
 
 # AR-272: Expose OpenClaw native finalizer tool

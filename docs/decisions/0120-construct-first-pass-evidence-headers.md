@@ -9,6 +9,7 @@ related:
   - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
   - docs/roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md
   - docs/roadmap/issue-AR-277-keep-openclaw-finalization-first-pass.md
+  - docs/roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md
   - docs/roadmap/issue-AR-27-authoritative-delegation-stop-enforcement.md
   - docs/decisions/0045-turn-scoped-specialist-activation.md
   - docs/decisions/0049-openclaw-final-only-full-payload-delivery.md
@@ -50,7 +51,9 @@ evidence before the first visible response:
 - Hermes and OpenClaw preflight instruct the model to call the local
   `agency.finalize` tool exactly once immediately before its natural final
   response and emit the returned text byte-for-byte. The tool constructs and
-  commits the response; it is not a post-response correction.
+  commits the response to Agency's Store; it does not send a channel message
+  and is not a post-response correction. The host must emit the returned text
+  as its natural final response, never a silent-reply sentinel.
 - Every snapshot and finalizer result comes from the correlated Store. Failure
   to produce an exact snapshot supplies no guessed header.
 

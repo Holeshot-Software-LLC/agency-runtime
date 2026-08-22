@@ -3332,3 +3332,26 @@ authorization boundary, so no automated Telegram round trip is claimed.
 Hermes, Codex OAuth/config/canary, Claude, and ZCode remained untouched. No
 host canary, child-delivery claim, matrix movement, push, PR, tracker mutation,
 or hosted workflow occurred.
+
+
+## 2026-08-22 — Telegram round trip exposes post-finalizer silent suppression
+
+The operator sent exact `agency status` as the first message in a new Telegram
+session. Opaque native session `6d16c446-4d60-460d-b1ad-d534c72327db` reached
+Agency trace `9ac12abc-211d-4d4d-9bd1-036b67bda388`. Store run
+`669d28d1-8ec1-4a2d-a7fa-4c6e195d1da7`, binding `rmb-fef54dcc...`,
+deterministic routing `3c9e6fd8...`, and finalization `63140215...` completed.
+The native `agency_finalize` tool returned the exact five-line status header
+and body. The next assistant event was exact `NO_REPLY`; OpenClaw suppressed
+that sentinel before reply-payload or message-sending hooks and queued nothing.
+Transcript SHA is `fd8dc854...`. No channel/user numeric identifier is retained.
+
+This is not a Telegram-ingress, LiteLLM, preflight, or Store failure. It is a
+post-finalizer host-delivery failure, and the earlier CLI bundle does not prove
+channel delivery. OpenClaw 2026.7.1-2 exposes no supported post-suppression
+hook that can recover the accepted payload without bypassing host delivery
+controls. AR-278 therefore changes only the generated finalizer metadata: the
+tool validates and returns but does not send, its result is not user-visible by
+itself, the next/final assistant output must copy it, and `NO_REPLY` is
+forbidden. Expected-red exit 223 is retained; three focused finalizer checks
+and generated-installer parity pass. No host has received the candidate yet.

@@ -805,11 +805,12 @@ export default definePluginEntry({{
       name: "agency_finalize",
       label: "Agency Finalize",
       hideFromChannelProgress: true,
-      description: "Mandatory first-pass tool that constructs and commits the exact first visible Agency response from the current draft.",
-      promptSnippet: "agency_finalize — mandatory first-pass construction of the exact visible Agency response",
+      description: "Mandatory first-pass tool that validates and returns the exact visible Agency response; it does not send the response to any channel.",
+      promptSnippet: "agency_finalize — mandatory first-pass validation and return of the exact visible Agency response; this tool does not send it",
       promptGuidelines: [
         "MANDATORY FIRST-PASS FINALIZATION: when Agency preflight supplies session_id and trace_id, the turn is incomplete until agency_finalize has been called exactly once.",
-        "After every other tool call, call agency_finalize as the final tool with the complete draft_text before emitting any natural final output; then emit its returned text byte-for-byte.",
+        "After every other tool call, call agency_finalize as the final tool with the complete draft_text before emitting any natural final output. Its tool result is not delivered to the user.",
+        "When agency_finalize returns, your next and final assistant output MUST be exactly its returned text byte-for-byte. Never emit NO_REPLY or any other silence sentinel after agency_finalize.",
         "There is no correction pass: never stop on or emit an unfinalized natural response.",
       ],
       parameters: {{

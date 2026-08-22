@@ -955,3 +955,46 @@ is intentionally unset. Native runtime inspection independently reports the
 plugin loaded with zero diagnostics, and the live Store routing rows prove the
 harness-scoped profile was operational. No global default was added to silence
 the cold diagnostic.
+
+
+### Telegram post-finalizer suppression bundle (supersedes channel-success claim)
+
+~~~yaml
+host: openclaw
+installed_checkout_sha: 7be371d28ea4c16cc9b30c87df4a2336dd56eb50
+candidate_base_sha: ce3cfc01e65b48f7333a5f4ce53d75aa67317d1b
+host_version: OpenClaw 2026.7.1-2 (0790d9f)
+native_primary: litellm/task-general; unchanged
+agency_inference_profile: linux-task-agency-router; unchanged
+requested_alias: task-agency-router; unchanged
+fresh_session_id: 6d16c446-4d60-460d-b1ad-d534c72327db
+agency_trace_id: 9ac12abc-211d-4d4d-9bd1-036b67bda388
+store_run_id: 669d28d1-8ec1-4a2d-a7fa-4c6e195d1da7
+resident_binding_id: rmb-fef54dccff0a71da62d23ec36ae83a1b
+routing_decision_ids:
+  - 3c9e6fd8-3fce-4d49-92de-d465c30cf238
+finalization_id: 63140215-61d6-45ee-9d5a-7f92955569d8
+finalization_status: accept; Store run completed
+header_exact: |-
+  Agency/Agencies loaded: agency-steward
+  Agency/Agencies delegated: none
+  Skills loaded: none
+  Actual Model selected: none observed
+  Recruited via: deterministic
+provider_attempt_status: deterministic control; no LiteLLM inference claim
+fallback_count: 0
+native_tool_summary: one successful agency_finalize call
+native_terminal_text: NO_REPLY
+delivery_result: suppressed before reply_payload_sending/message_sending; nothing queued
+native_transcript_sha256: fd8dc85493720c24d6a233a1b7e0449d88a1f5fa4b0f1c5e73236bc2238e7321
+expected_red: focused regression exit 223
+candidate_focused_green: three finalizer checks; generated-installer parity
+timeout_or_failure_receipt: accepted Store result plus suppressed native terminal event; retained as delivery failure
+known_limit: candidate not installed; fresh changed Telegram proof pending
+hermes_and_protected_hosts: untouched
+~~~
+
+The prior final evidence bundle remains valid for CLI-only host/Store
+correlation and exact Agency LiteLLM routing. It does not prove Telegram
+delivery. No direct send, second model pass, invalid-draft rewrite, host config
+change, or safety relaxation is part of the AR-278 candidate.

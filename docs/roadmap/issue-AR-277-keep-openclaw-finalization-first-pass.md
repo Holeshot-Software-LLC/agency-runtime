@@ -9,6 +9,7 @@ related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-272-expose-openclaw-native-finalizer-tool.md
   - docs/roadmap/issue-AR-276-gate-openclaw-provider-calls-on-agency-preflight.md
+  - docs/roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md
   - docs/roadmap/handoffs/issue-AR-119.md
   - docs/roadmap/AR-119-openclaw-hermes-verification-packet.md
   - docs/decisions/0049-openclaw-final-only-full-payload-delivery.md
@@ -25,7 +26,7 @@ issue_id: AR-277
 priority: p0
 tracker_url: null
 depends_on: [AR-272, AR-276]
-blocks: [AR-119]
+blocks: [AR-119, AR-278]
 ---
 
 # AR-277: Keep OpenClaw finalization first-pass after tool use
@@ -98,6 +99,11 @@ Native Telegram and Slack probes are green with no reported error. An
 operator-initiated Telegram send was rejected before execution by the
 external-message authorization boundary, so no automated Telegram round trip
 is claimed.
+
+A later user-initiated Telegram status turn proved that this CLI success did
+not establish channel delivery: `agency_finalize` succeeded, but the native
+model emitted exact `NO_REPLY` and OpenClaw suppressed it before outbound
+hooks. AR-278 owns that distinct post-finalizer delivery defect.
 
 ## Approach
 

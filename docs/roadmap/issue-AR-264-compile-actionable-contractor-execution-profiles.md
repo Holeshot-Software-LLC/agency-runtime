@@ -18,6 +18,7 @@ related:
   - docs/roadmap/issue-AR-270-accept-stopped-openclaw-uninstall-status.md
   - docs/roadmap/issue-AR-271-preserve-openclaw-model-receipt-fields.md
   - docs/roadmap/issue-AR-272-expose-openclaw-native-finalizer-tool.md
+  - docs/roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md
   - docs/decisions/0081-compile-contractors-from-governed-structured-contracts.md
   - docs/decisions/0162-compile-structured-contractor-execution-guidance.md
   - docs/worklog/README.md
@@ -28,7 +29,7 @@ epic: roster-governance
 issue_id: AR-264
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
-depends_on: [AR-122, AR-123]
+depends_on: [AR-122, AR-123, AR-278]
 blocks: [AR-119]
 ---
 

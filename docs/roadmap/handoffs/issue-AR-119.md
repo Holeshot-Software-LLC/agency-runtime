@@ -31,6 +31,7 @@ related:
   - docs/roadmap/issue-AR-275-preserve-planner-repair-diagnostics.md
   - docs/roadmap/issue-AR-276-gate-openclaw-provider-calls-on-agency-preflight.md
   - docs/roadmap/issue-AR-277-keep-openclaw-finalization-first-pass.md
+  - docs/roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md
   - docs/roadmap/AR-119-founding-vision.md
   - docs/roadmap/AR-119-vision-loop-status.md
   - docs/roadmap/AR-119-39ff6dca-recruiter-diagnostic-evidence.md
@@ -71,28 +72,26 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 - Prompt-order Agency-only install `1eeba99b-49a1-4db5-b561-9d985c30d29e` completed with bundle `d6b7acf4...`, launcher SHA `391a5759...`, runtime digest `5b67d882...`, and 15/15 contractors. OpenClaw itself was not reinstalled; Agency config stayed byte-identical and only `/meta/lastTouchedAt` changed in OpenClaw.
 - OpenClaw remains audited 2026.7.1-2 on native `litellm/task-general`, enabled/loaded with ten Agency hooks, and RPC-green. Telegram and Slack are running, connected, zero-reconnect, and probe-green. Hermes/LiteLLM stayed active; Hermes, Claude, ZCode, and Codex OAuth/model/canary were untouched.
 - Fresh exact-status session `ar276-openclaw-nexus-status-promptorder-20260822-a`, trace `bf21e9a8-a9f0-442b-9d75-78dab94687d6`, Store run `c571cf9b-a990-4551-ba76-f0cb27e137ce`, routing `e2a41ef8-15cd-4242-8b6d-11a720227728`, and finalization `dec9e3fb-c8fc-4b14-a072-794171263f8b` completed. The exact five-line Agency header delivered `agency-steward`; deterministic abstention is control proof, not workforce-inference proof. Response/transcript SHAs are `b02a2f18...` / `e009951b...`.
-- A changed same-session `loop-library` skill request was blocked after 80.744 seconds before native reply generation. Response SHA is `d8e84b4a...`; Store run `eeb31163-27d8-4091-986f-35d03a8e64b2` remains `active`/`in_progress` with no fabricated failure receipt. The free 30B target exceeded the native hook budget; this is a timeout, not successful staffing or a contract rejection.
-- Only LiteLLM deployment `d594b69b-26f8-4bec-8531-e6c191ab6f6c` (`task-agency-router`) now targets installed free `ollama/qwen3-14b-abliterated`. All 102 unrelated deployment identity hashes remain `ca74e597...`, count remains 103, and target reasoning level `none` plus boolean settings were restored/preserved. OpenClaw native routing remains unchanged.
-- First 14B CLI diagnostic `6a761259-b7e1-49fc-b4c9-ecaa18cd6da7` made zero calls because its process lacked the service-only credential. Artifact SHA `a6ee6023...` is retained as an operator-input failure and is not a model verdict. Actual answering model remains unavailable unless authoritative telemetry supplies it.
-- Credential-correct 14B trace `2317d975-c960-4020-8755-f32308ffe94b` accepted planner, recruiter, and critic in 37.768 seconds through OpenClaw profile `linux-task-agency-router`, exact LiteLLM alias/model-group, and no provider fallback. Artifact SHA is `673c5ae7...`.
+- Only `task-agency-router` targets installed free `ollama/qwen3-14b-abliterated`; 102 unrelated deployment identities and the 103-count remain unchanged. Credential-correct trace `2317d975...` accepted all Agency stages through the exact profile/alias with no fallback. Native OpenClaw routing remains unchanged, and actual answering-model telemetry remains unavailable.
 - Fresh native `tmux` session `ar276-openclaw-nexus-tmux-qwen14b-20260822-a`, trace `79abdac7-42f1-44e9-afad-bf5556df62aa`, Store run `6b7651b6...`, routing `1908650f...`, request binding `rmb-19107899...`, specialist `5f11b004...`, skill row `b54c5916...`, and finalization `64a97d43...` completed in 45.085 seconds. The exact five-line header records inference, `code-reviewer`, `tmux`, no delegation, and wrapper alias only. Response/transcript SHAs are `7f9a4674...` / `499187e8...`.
 - Exact substantive session `ar276-openclaw-nexus-restart-qwen14b-20260822-a` accepted all Agency stages under trace `35efa94c...` with zero fallback, but native `task-general` omitted `agency_finalize` after read-only tools. Store run `e2e9e65d...` and finalization `7d5428e7...` are `response_invalid`; response/transcript SHAs `f4f6d7b7...` / `f0f9e359...` prove no valid header or Telegram delivery.
 - AR-277 installed the first-pass-only repair as Agency install `e834190a...`, bundle `521b1480...`, runtime `b5d546a6...`, launcher `41415e79...`. After retained timeout `07e5ec33...`, fresh changed trace `9bea1a3f...` applied all exact Agency LiteLLM stages with no fallback, called only `agency_finalize`, delivered the exact header, and completed Store run `c24afc99...` plus finalization `07759321...`. Response/transcript SHAs are `e53fdf95...` / `5251eec0...`; post-live backup is integrity `ok`, schema 47, SHA `47d868f5...`.
+- User-initiated Telegram session `6d16c446...` reached trace `9ac12abc...`; finalization `63140215...` accepted the Store-backed exact status response, then native `task-general` emitted `NO_REPLY`. OpenClaw suppressed it before outbound hooks, so no reply was queued. AR-278 retains transcript SHA `fd8dc854...`; expected-red exit 223 and the minimal non-delivery/sentinel prompt candidate are focused-green but not yet installed.
 
 ## completed-evidence
 
 - Starting identity, Store backup, redacted inventories, credential-name presence, install/launcher provenance, invariants, and every failed turn are retained.
-- AR-272 remains live-proven for native finalization and response delivery. Exact-status is deterministic control proof; the subsequent non-control turn now proves Agency harness/profile/alias selection and strict finalization.
+- AR-272 remains proven for native finalization; CLI response delivery and exact substantive routing pass. AR-278 proves Telegram channel delivery is still blocked after accepted finalization.
 - AR-273 now has fast accepted Agency-only and native skill routing through the exact LiteLLM profile/alias on free 14B; actual backing model telemetry remains unavailable.
 - AR-274 expected-red is 2/2 exact failures; repair is 22 passed/1 skipped plus 453 passed/1 skipped, and fresh `healthcheck` header/Store proof now passes. Proportionate final gates remain; no exhaustive workflow was dispatched.
-- AR-275 preserves bounded codes without model coupling. AR-276 prompt-build preflight, native skill proof, and AR-277 first-pass substantive finalization now pass. No child-delivery or matrix-cell claim moves.
+- AR-275 preserves bounded codes without model coupling. AR-276 preflight, native skill proof, and AR-277 first-pass finalization pass; AR-278 channel delivery is the current blocker. No child-delivery or matrix-cell claim moves.
 - Codex OAuth/config/canary, Claude, ZCode, and Hermes were untouched.
 
 ## exact-blocker
 
-1. OpenClaw's scoped parent-runtime acceptance set passes.
-2. Telegram/Slack connector probes pass; automated Telegram message egress remains unexecuted pending explicit destination authorization or a user-initiated round trip.
-3. Hermes remains break glass and outside this completed OpenClaw package.
+1. Telegram ingress and Agency finalization pass, but exact `NO_REPLY` suppresses the accepted payload before outbound hooks; channel acceptance does not pass.
+2. AR-278's regression-first prompt correction is local and focused-green; clean checkpoint, Agency-only reinstall, and a genuinely changed Telegram proof remain.
+3. Hermes remains untouched break glass; protected hosts and native OpenClaw routing remain unchanged.
 
 ## traps (machine-specific; do not rediscover)
 
@@ -104,9 +103,9 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 
 ## next-bounded-work-package
 
-1. Retain the final OpenClaw evidence and local recovery pair.
-2. Accept a user-initiated Telegram round trip if the owner wants transport-delivery evidence.
-3. Start Hermes only as a separately authorized package; keep proven hosts untouched.
+1. Commit the AR-278 regression-first correction and evidence as a clean local pair.
+2. Back up the Store, stop OpenClaw natively, install Agency only, restart natively, and verify invariants.
+3. Run a genuinely changed user-initiated Telegram turn and correlate host delivery with Store evidence.
 
 ## same-task-continuity
 

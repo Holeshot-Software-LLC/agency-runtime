@@ -8,6 +8,7 @@ tags: [openclaw, finalization, streaming, security, host-integration]
 related:
   - docs/roadmap/issue-AR-33-openclaw-final-outbound-seal.md
   - docs/roadmap/issue-AR-277-keep-openclaw-finalization-first-pass.md
+  - docs/roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md
   - docs/decisions/0024-native-host-packages-and-minimal-bridges.md
   - docs/decisions/0027-authoritative-runtime-evidence-traces.md
   - docs/decisions/0034-persistent-soft-host-control.md
@@ -63,6 +64,11 @@ marker, expires quickly, and cannot authorize a concurrent same-text response.
 An enabled payload without policy text is denied. Explicit runtime disablement
 passes through truthfully using the same dispatch carrier where the host needs
 one to reach the stripping hook.
+
+An accepted finalizer tool result is not channel delivery. A silent sentinel
+emitted after that result is a failed delivery outcome even when the Store turn
+is complete; it cannot substitute for the exact authorized payload reaching
+the host-owned outbound path.
 
 Use the lowest JavaScript priority value for both modifying hooks and treat
 other same-process plugins as trusted code. The installer proves registration
