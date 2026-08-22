@@ -1308,6 +1308,56 @@ def test_semantically_invalid_provider_output_gets_one_bounded_repair_attempt() 
     assert "bounded work-plan repairer" in systems[1]
 
 
+def test_forward_dependency_rejection_supplies_closed_repair_guidance() -> None:
+    snapshot = _snapshot(_contract("technical-analyst"))
+    invalid = _compact_plan_document()
+    invalid["units"][0]["depends_on"] = ["unit-review"]
+    invalid["units"].append(
+        {
+            **invalid["units"][0],
+            "unit_id": "unit-review",
+            "outcome": "Review the analysis evidence",
+            "artifact_kind": "review-report",
+            "capability_ids": ["review"],
+            "depends_on": [],
+        }
+    )
+    responses = iter(
+        (
+            _result(invalid),
+            _result(_compact_plan_document()),
+            _result(_nomination_document()),
+        )
+    )
+    prompts: list[str] = []
+
+    def invoke(*args, **kwargs):
+        prompts.append(args[1])
+        return next(responses)
+
+    outcome = plan_and_staff_workforce(
+        "Analyze this implementation safely.",
+        snapshot,
+        config=_config(balanced_call_budget=3),
+        context=_context(),
+        invoker=invoke,
+    )
+
+    assert outcome.accepted
+    assert outcome.attempts[0].validation_reason_codes == ("plan_dependency_not_earlier",)
+    feedback = json.loads(prompts[1].partition("[RUNTIME VALIDATION FEEDBACK]\n")[2])
+    assert feedback["validation_reason_codes"] == ["plan_dependency_not_earlier"]
+    assert feedback["violations"] == [
+        {
+            "code": "plan_dependency_not_earlier",
+            "required_correction": (
+                "Topologically order the complete plan and allow each depends_on entry to "
+                "reference only an exact unit ID that appears earlier."
+            ),
+        }
+    ]
+
+
 def test_planner_repair_enforces_configured_work_unit_limit_before_recruitment() -> None:
     snapshot = _snapshot(_contract("technical-analyst"))
     oversized = _compact_plan_document()

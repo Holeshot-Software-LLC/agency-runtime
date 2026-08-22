@@ -41,9 +41,9 @@ from agency_runtime.core.workforce.intent import (
     compile_intent_plan,
 )
 from agency_runtime.core.workforce.plan_policy import (
-    PLAN_RESPONSE_SEMANTIC_INVALID,
     plan_policy_repair_guidance,
     plan_policy_violations,
+    plan_semantic_validation_reason_codes,
     planner_acceptance_contract,
 )
 from agency_runtime.core.workforce.planning_contracts import (
@@ -994,7 +994,7 @@ def _validation_reason_codes(stage: str, error: BaseException) -> tuple[str, ...
     if isinstance(error, _PlanPolicyValidationError):
         return error.violations
     if stage == "planner":
-        return (PLAN_RESPONSE_SEMANTIC_INVALID,)
+        return plan_semantic_validation_reason_codes(error)
     return ()
 
 
@@ -1126,6 +1126,9 @@ def _invoke_stage(
                                     "prior_plan_status": "rejected",
                                     "validation_reason_codes": list(validation_reason_codes),
                                     "deterministic_validation_detail": detail,
+                                    "violations": list(
+                                        plan_policy_repair_guidance(validation_reason_codes)
+                                    ),
                                     "required_action": (
                                         "Return one complete replacement compact plan authored by "
                                         "inference. Use only supplied-schema fields and correct the "
@@ -2428,9 +2431,11 @@ def plan_and_staff_workforce(
         requested_limit=max_planned_units,
         explicit_indivisible_unit=explicit_indivisible_unit,
     )
+    _, _, planner_capability_ids = _known_intent_vocabulary(snapshot)
     planner_schema = compact_intent_response_schema(
         max_work_units=planning_unit_limit,
         required_artifact_kind=required_planned_artifact_kind,
+        known_capability_ids=planner_capability_ids,
     )
 
     # Every inferred mode spends its first call on a compact intent plan. Full

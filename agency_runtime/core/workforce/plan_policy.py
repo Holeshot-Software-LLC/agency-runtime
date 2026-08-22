@@ -266,6 +266,14 @@ _PLAN_REPAIR_REQUIREMENTS = {
     "plan_external_write_requires_separate_authorization": (
         "Remove external-write authority from this plan; it requires a separate authorized turn."
     ),
+    "plan_capability_ids_outside_ontology": (
+        "Replace every capability_ids entry with an exact identifier from "
+        "planning_taxonomy.known_capability_ids."
+    ),
+    "plan_dependency_not_earlier": (
+        "Topologically order the complete plan and allow each depends_on entry to reference "
+        "only an exact unit ID that appears earlier."
+    ),
 }
 
 PLAN_RESPONSE_SEMANTIC_INVALID = "plan_response_semantic_invalid"
@@ -310,6 +318,18 @@ def planner_acceptance_contract() -> dict[str, object]:
         },
         "ordering": "Every depends_on ID must name an earlier unit in the same response.",
     }
+
+
+def plan_semantic_validation_reason_codes(error: BaseException) -> tuple[str, ...]:
+    """Map stable compact-plan parser failures onto the closed receipt vocabulary."""
+
+    code = {
+        "capability_ids must use the current workforce ontology": (
+            "plan_capability_ids_outside_ontology"
+        ),
+        "work-unit dependencies must reference earlier units": ("plan_dependency_not_earlier"),
+    }.get(str(error))
+    return (code or PLAN_RESPONSE_SEMANTIC_INVALID,)
 
 
 def plan_policy_repair_guidance(violations: Sequence[str]) -> tuple[dict[str, str], ...]:
@@ -606,6 +626,7 @@ __all__ = [
     "PLAN_VALIDATION_REASON_CODES",
     "plan_policy_repair_guidance",
     "plan_policy_violations",
+    "plan_semantic_validation_reason_codes",
     "planner_acceptance_contract",
     "regulated_assurance_requirements",
 ]

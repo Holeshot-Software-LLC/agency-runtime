@@ -242,6 +242,7 @@ def compact_intent_response_schema(
     *,
     max_work_units: int,
     required_artifact_kind: str | None = None,
+    known_capability_ids: Sequence[str] = (),
 ) -> dict[str, Any]:
     """Return the compact planner schema with an explicit per-request unit limit."""
 
@@ -255,13 +256,24 @@ def compact_intent_response_schema(
         raise ValueError("required_artifact_kind is not supported")
     properties = dict(COMPACT_INTENT_RESPONSE_SCHEMA["properties"])
     unit_schema = dict(_COMPACT_UNIT_SCHEMA)
+    unit_properties = dict(unit_schema["properties"])
     if required_artifact_kind is not None:
-        unit_properties = dict(unit_schema["properties"])
         unit_properties["artifact_kind"] = {
             "enum": [required_artifact_kind],
             "type": "string",
         }
-        unit_schema["properties"] = unit_properties
+    capabilities = tuple(
+        sorted({str(item).strip().casefold() for item in known_capability_ids if str(item).strip()})
+    )
+    if any(_IDENTIFIER.fullmatch(item) is None for item in capabilities):
+        raise ValueError("known_capability_ids contains an invalid identifier")
+    if capabilities:
+        capability_schema = dict(unit_properties["capability_ids"])
+        capability_items = dict(capability_schema["items"])
+        capability_items["enum"] = list(capabilities)
+        capability_schema["items"] = capability_items
+        unit_properties["capability_ids"] = capability_schema
+    unit_schema["properties"] = unit_properties
     properties["units"] = {
         **properties["units"],
         "items": unit_schema,

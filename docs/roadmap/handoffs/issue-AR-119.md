@@ -72,13 +72,10 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 - Agency config hash remains `43367ec9...`. OpenClaw's harness profile uses `litellm`, exact alias/model-group `task-agency-router`, `http://127.0.0.1:4000/v1`, `LITELLM_API_KEY`, and 120000 ms. The key is present in OpenClaw's declared common environment and absent from the operator shell; the authenticated model inventory advertises the alias. No global or protected-host route changed.
 - Hermes stayed active at config hash `a984d934...`; Codex remains `8f375701...`, Claude `27dafb27...`, and the authorized three Codex MCP flags remain disabled. Codex OAuth/model/canary, ZCode, and all other protected configuration remain untouched.
 - Installer left OpenClaw stopped. Native restart is RPC-green; `agency-preflight` is enabled, activated, loaded with ten hooks, `agency_finalize`, and zero diagnostics. Slack is connected/probe-green; Telegram is configured/running and probe-green, with its immediate post-restart connected flag still false. Hermes and LiteLLM remained active.
-- Fresh exact first-message session `94f92dc5-a0c5-44a7-bfa0-1663d948025e`, trace `e5b43276-ff90-43a7-923e-9956ac278816`, Store run `31a11c4d-7dff-4c6a-a643-ef082cdea36d`, routing `8ea188b5-1eea-4c05-baea-b712852b78f2`, and finalization `30625a68-a8a5-479f-8cae-07396eec05d8` completed. Binding `rmb-38e874cfe5853841a9cfc14ce50ee651` is request-scoped; native `task-general` recorded zero fallback and actual unavailable. This proves control/final delivery, not Agency inference.
-- The consumed session `31f52706-f329-4640-a012-c9540e283770` remains retained as the pre-exact-schema 180-second timeout; it was not retried. The approved content-free diagnostic and expected-red/green receipts remain the repair evidence.
-- Fresh healthcheck trace `11707056-a490-4cbc-97b6-9a8e621caa79` completed Store run `585f2dce-a867-4b83-9395-4b877718a22e`, routing `132ee9fa-5cb6-409b-9668-dea79014eac2`, specialists `27d8c6f4-f276-4605-a489-1bb848902ee0` and `4c787672-45d4-4ba9-bb99-2c01a4ce2851`, skill row `3dd34973-d2f5-4b38-adcf-51191f374214`, and finalization `47c0a487-916a-42cb-9d97-54ee205a0a7f`. Its exact inventory-authorized `healthcheck` read produced `Skills loaded: healthcheck`; native transcript SHA is `f45506e3...`.
-- All three healthcheck inference stages used profile `linux-task-agency-router`, provider type `litellm`, and exact alias/model-group `task-agency-router`; every response was applied, no protected provider appears, and wrapper telemetry supplies no actual model.
-- Exact restart-safety session `7e1f8a3c-6b29-4ea0-b1d4-93a4c51de287` / trace `869ef22a-e1a5-4b7e-b024-6bf12aa371ea` and smaller fresh session `9a61c4e7-2fd8-40bc-a5f0-3e71b2c94d66` / trace `b325368f-22e2-4815-8d01-2e9d1c22c543` each rejected two strict planner contracts from `task-agency-router` with zero fallback. Receipts `7fba14ce-c3df-4459-8462-542f7272a426` and `fe0c2f6b-e9be-45a6-b15a-f450c7e8a154` are retained. The first native run reached 553809 bytes, context overflow, and a 630000 ms Gateway timeout; the second returned an unheaded native answer. Neither is accepted Agency delivery. Channels remain green; no safety, alias, protected-host, canary, or matrix change.
-
-- AR-275 expected-red is 4 failures/4 passes; bounded planner codes, focused 8/8, and affected 178 passed/1 skipped are green. No live host has used this candidate.
+- Prior exact-status/finalization and `healthcheck` skill proofs remain retained in the verification packet; the healthcheck three inference stages used only `linux-task-agency-router` / `litellm` / `task-agency-router`.
+- New status session `99328018-82bb-4986-8dd3-dab322d15322` / trace `946b7a94-2fe3-4f2f-958c-473f66314b9a` completed with routing `cd7313a4-dee3-408d-86a5-249f3b395e7c` and finalization `1da816e8-190c-4f3f-9df8-ebb5272d2788`; deterministic control made no inference attempt.
+- New substantive session `44c5c168-b8db-4a3e-8a31-131251199b27` / trace `8b9b539d-2005-42fe-b38a-9598ade34367` failed preflight receipt `b46c36d8-7cd3-418c-bc32-495e72ce5d98`. Two zero-fallback attempts used the exact Agency profile/provider/alias and failed ontology then earlier-dependency validation. Native `task-general` still started, ran 58 tools, and timed out at 300 seconds: AR-276 owns this fail-open hook defect.
+- AR-275/AR-276 expected-red and repaired focused suites pass 154 planner/OpenClaw cases plus 65 affected installer/adapter cases. The follow-up code binds capability enums, preserves closed dependency guidance, and moves preflight into the OpenClaw blocking input gate; reinstall is pending.
 
 ## completed-evidence
 
@@ -86,13 +83,13 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 - AR-272 remains live-proven for native finalization and response delivery. Exact-status is deterministic control proof; the subsequent non-control turn now proves Agency harness/profile/alias selection and strict finalization.
 - AR-273 is live-proven for structured OpenClaw workforce routing through the exact LiteLLM profile and alias. A distinct substantive turn still needs canonical finalization.
 - AR-274 expected-red is 2/2 exact failures; repair is 22 passed/1 skipped plus 453 passed/1 skipped, and fresh `healthcheck` header/Store proof now passes. Proportionate final gates remain; no exhaustive workflow was dispatched.
-- AR-275 locally preserves exact planner policy codes and one bounded generic semantic code without exposing model content. Agency-only reinstall and fresh OpenClaw proof remain pending.
+- AR-275 preserves bounded codes and now constrains ontology output without model coupling. AR-276 makes preflight failure block before the native provider. Follow-up reinstall and fresh proof remain pending.
 - Codex OAuth/config/canary, Claude, ZCode, and Hermes were untouched.
 
 ## exact-blocker
 
-1. Commit the AR-275 repair and ledger locally, then reinstall Agency into stopped OpenClaw from that exact checkout. Do not reinstall or reconfigure OpenClaw.
-2. Use one genuinely new substantive prompt. Acceptance still requires strict Store routing/finalization; a failure is useful only when its new receipt carries exact bounded planner codes.
+1. Commit the AR-275/AR-276 recovery pair, then reinstall Agency only into stopped OpenClaw. Do not reinstall or reconfigure OpenClaw.
+2. Use one genuinely new substantive prompt and require preflight acceptance before any native provider start.
 3. Keep the alias target, native host model, protected providers, and Hermes break glass unchanged. Telegram and Slack remain healthy.
 
 ## traps (machine-specific; do not rediscover)
@@ -105,8 +102,8 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 
 ## next-bounded-work-package
 
-1. Finish proportionate gates and create the clean AR-275 substantive/ledger pair.
-2. Reinstall Agency only, restart OpenClaw natively, and run one genuinely new substantive turn.
+1. Finish proportionate gates and create the clean AR-275/AR-276 substantive/ledger pair.
+2. Reinstall Agency only, restart OpenClaw natively, and run one changed bounded turn.
 3. Require canonical finalization or an exact diagnostic receipt, plus exact harness/profile/alias and zero protected fallback. Keep Hermes and all proven hosts untouched.
 
 ## same-task-continuity

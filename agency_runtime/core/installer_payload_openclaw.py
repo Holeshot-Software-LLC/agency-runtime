@@ -38,9 +38,12 @@ const MAX_TOOL_PROJECTION_BYTES = MAX_TOOL_PAYLOAD_BYTES;
 const TOOL_TRUNCATED = "[truncated]";
 const TERMINAL_REJECTION_TTL_MS = 10 * 60 * 1000;
 const MAX_TERMINAL_REJECTIONS = 128;
+const PREFLIGHT_CONTEXT_TTL_MS = 10 * 60 * 1000;
+const MAX_PREFLIGHT_CONTEXTS = 128;
 const OUTBOUND_AUTHORIZATION_TTL_MS = 30 * 1000;
 const MAX_OUTBOUND_AUTHORIZATIONS = 128;
 const CONTROL_AUTHORIZATION_FIELD = "agencyRuntimeControlAuthorization";
+const preflightContexts = new Map();
 const terminalRejections = new Map();
 const outboundAuthorizations = new Map();
 const controlAuthorizations = new Map();
@@ -717,6 +720,53 @@ function blockedReplyResult(session, run, message = TERMINAL_REJECTION_MESSAGE) 
   return {{ cancel: true, reason: String(message || TERMINAL_REJECTION_MESSAGE) }};
 }}
 
+function preflightContextKey(event, ctx) {{
+  const session = sessionId(event, ctx);
+  const run = traceId(event, ctx);
+  return session && run ? `${{session}}\\0${{run}}` : "";
+}}
+
+function prunePreflightContexts(now = Date.now()) {{
+  for (const [key, state] of preflightContexts) {{
+    if (Number(state?.expiresAt || 0) <= now) preflightContexts.delete(key);
+  }}
+  while (preflightContexts.size >= MAX_PREFLIGHT_CONTEXTS) {{
+    preflightContexts.delete(preflightContexts.keys().next().value);
+  }}
+}}
+
+function rememberPreflightContext(result, event, ctx) {{
+  const key = preflightContextKey(event, ctx);
+  const context = typeof result?.context === "string" ? result.context : "";
+  if (
+    !key
+    || !context
+    || Buffer.byteLength(context, "utf8") > MAX_BRIDGE_TEXT_BYTES
+  ) return false;
+  const now = Date.now();
+  prunePreflightContexts(now);
+  preflightContexts.set(key, {{
+    context,
+    expiresAt: now + PREFLIGHT_CONTEXT_TTL_MS,
+  }});
+  return true;
+}}
+
+function readPreflightContext(event, ctx) {{
+  const key = preflightContextKey(event, ctx);
+  const state = key ? preflightContexts.get(key) : undefined;
+  if (Number(state?.expiresAt || 0) <= Date.now()) {{
+    if (key) preflightContexts.delete(key);
+    return "";
+  }}
+  return String(state?.context || "");
+}}
+
+function forgetPreflightContext(event, ctx) {{
+  const key = preflightContextKey(event, ctx);
+  if (key) preflightContexts.delete(key);
+}}
+
 function observeRuntimeState(result, epoch = runtimeStateEpoch) {{
   if (epoch !== runtimeStateEpoch) return false;
   if (
@@ -727,6 +777,7 @@ function observeRuntimeState(result, epoch = runtimeStateEpoch) {{
     runtimeEnabled = false;
     outboundAuthorizations.clear();
     controlAuthorizations.clear();
+    preflightContexts.clear();
   }} else if (result?.runtime_enabled === true || result?.runtimeEnabled === true) {{
     runtimeEnabled = true;
   }}
@@ -804,7 +855,7 @@ export default definePluginEntry({{
       deliveryCompatibility = inspectFinalOnlyDelivery(ctx?.config);
     }});
 
-    api.on("before_agent_run", async () => {{
+    api.on("before_agent_run", async (event, ctx) => {{
       const stateEpoch = ++runtimeStateEpoch;
       try {{
         const state = await invokeAgency({{ action: "control", command: "status" }});
@@ -819,15 +870,47 @@ export default definePluginEntry({{
         }};
       }}
       if (!runtimeEnabled) return {{ outcome: "pass" }};
-      if (deliveryCompatibility.verified && deliveryCompatibility.unsafe.length === 0) {{
-        return {{ outcome: "pass" }};
+      if (!(deliveryCompatibility.verified && deliveryCompatibility.unsafe.length === 0)) {{
+        return {{
+          outcome: "block",
+          reason: "agency_final_only_delivery_required",
+          category: "runtime_configuration",
+          message: "Agency Runtime requires OpenClaw preview and block streaming to be disabled. Stop the gateway and rerun the Agency installer.",
+        }};
       }}
-      return {{
-        outcome: "block",
-        reason: "agency_final_only_delivery_required",
-        category: "runtime_configuration",
-        message: "Agency Runtime requires OpenClaw preview and block streaming to be disabled. Stop the gateway and rerun the Agency installer.",
-      }};
+      const childParent = nativeChildParents.get(sessionId(event, ctx));
+      let result;
+      try {{
+        result = await invokeAgency({{
+          action: "preflight",
+          sessionId: sessionId(event, ctx),
+          traceId: traceId(event, ctx),
+          userMessage: String(event?.prompt || ""),
+          model: modelId(ctx),
+          parentSessionId: String(childParent?.sessionId || ""),
+          parentTraceId: String(childParent?.traceId || ""),
+          workerId: String(childParent?.workerId || ""),
+          nativeRunId: String(childParent?.nativeRunId || ""),
+        }});
+      }} catch {{
+        return {{
+          outcome: "block",
+          reason: "agency_preflight_failed",
+          category: "runtime_unavailable",
+          message: "Agency Runtime could not complete preflight. Restore the local runtime and retry.",
+        }};
+      }}
+      const stateApplied = observeRuntimeState(result, stateEpoch);
+      if (!runtimeEnabled) return {{ outcome: "pass" }};
+      if (!stateApplied || !rememberPreflightContext(result, event, ctx)) {{
+        return {{
+          outcome: "block",
+          reason: "agency_preflight_failed",
+          category: "runtime_unavailable",
+          message: "Agency Runtime could not complete preflight. Restore the local runtime and retry.",
+        }};
+      }}
+      return {{ outcome: "pass" }};
     }}, {{ priority: 1000, timeoutMs: {host_timeout_ms} }});
 
     api.registerCommand({{
@@ -856,22 +939,9 @@ export default definePluginEntry({{
     }});
 
     api.on("before_prompt_build", async (event, ctx) => {{
-      const stateEpoch = ++runtimeStateEpoch;
-      const childParent = nativeChildParents.get(sessionId(event, ctx));
-      const result = await invokeAgency({{
-        action: "preflight",
-        sessionId: sessionId(event, ctx),
-        traceId: traceId(event, ctx),
-        userMessage: String(event?.prompt || ""),
-        model: modelId(ctx),
-        parentSessionId: String(childParent?.sessionId || ""),
-        parentTraceId: String(childParent?.traceId || ""),
-        workerId: String(childParent?.workerId || ""),
-        nativeRunId: String(childParent?.nativeRunId || ""),
-      }});
-      const stateApplied = observeRuntimeState(result, stateEpoch);
-      if (!stateApplied && !runtimeEnabled) return undefined;
-      return result.context ? {{ appendContext: result.context }} : undefined;
+      if (!runtimeEnabled) return undefined;
+      const context = readPreflightContext(event, ctx);
+      return context ? {{ appendContext: context }} : undefined;
     }}, {{ priority: 100, timeoutMs: {host_timeout_ms} }});
 
     api.on("model_call_ended", async (event, ctx) => {{
@@ -939,6 +1009,7 @@ export default definePluginEntry({{
 
     api.on("before_agent_finalize", async (event, ctx) => {{
       const stateEpoch = ++runtimeStateEpoch;
+      forgetPreflightContext(event, ctx);
       let decision;
       const finalText = finalAssistantText(event);
       const verificationFailure = {{
