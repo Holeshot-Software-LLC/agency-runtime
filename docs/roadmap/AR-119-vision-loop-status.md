@@ -2825,3 +2825,29 @@ alias echo is not an actual-answering-model receipt. Remapping this shared alias
 requires Lucas authorization and an approved structured-output-capable target;
 the existing input was not retried. No new Telegram-scoped Store run arrived
 after local proof, no host canary ran, and **no AR-119 matrix cell moved**.
+
+
+## 2026-08-21 — AR-273 model-agnostic LiteLLM repair reaches clean-test checkpoint
+
+The prior alias-remapping conclusion is superseded by code-path evidence, not
+by a proxy change. Agency's generic OpenAI-compatible/LiteLLM request selected
+the correct OpenClaw harness, profile, provider, and exact alias, but sent only
+`response_format: json_object`; it never included the supplied bounded planner
+schema. The same path could record a configured LiteLLM thinking level without
+forwarding it. The alias and its target remain unchanged.
+
+AR-273 and ADR-0163 retain LiteLLM as the model-agnostic boundary. Agency now
+places the exact deterministic schema in the trusted system instruction and
+forwards a configured level as standardized `reasoning_effort`, which LiteLLM
+translates for the routed provider/model. Agency does not construct a native
+`thinking` object, assume native JSON-schema support, change the alias, add a
+fallback, or weaken strict response validation.
+
+The pre-fix receipt is six focused failures: two absent schema instructions and
+four absent reasoning levels. The exact repaired regression passes 7/7. The
+complete affected warning-strict inference slice passes 134/134 under a
+process-local private umask; Ruff lint/format and `git diff --check` pass.
+Telemetry is 31.8 percent remaining, so live OpenClaw work waits for the clean
+substantive/worklog checkpoint. Hermes remains active and untouched as break
+glass. No fresh provider turn, skill row, Telegram receipt, actual-model claim,
+host canary, or AR-119 matrix movement is claimed.

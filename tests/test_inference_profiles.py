@@ -548,6 +548,24 @@ def test_profile_projects_to_provider_with_timeout_in_seconds() -> None:
     assert resolution.provider.ollama_mode is False
 
 
+def test_litellm_profile_projects_opaque_alias_and_reasoning_effort() -> None:
+    profile = _profile(
+        "router",
+        adapter="litellm",
+        model="task-agency-router",
+        thinking_level="high",
+        base_url="http://127.0.0.1:4000/v1",
+    )
+    config = _config(profiles={"router": profile}, routes={"workforce.planner": "router"})
+
+    resolution = resolve(config, "workforce.planner")
+
+    assert resolution.provider.type == "litellm"
+    assert resolution.provider.model == "task-agency-router"
+    assert resolution.provider.reasoning_effort == "high"
+    assert resolution.thinking_level_consumed == "high"
+
+
 def test_ollama_profile_sets_ollama_mode() -> None:
     profile = _profile(
         "p",

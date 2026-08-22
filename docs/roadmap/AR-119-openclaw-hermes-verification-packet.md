@@ -12,6 +12,8 @@ related:
   - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
   - docs/decisions/0158-collect-child-canary-proof-inside-disposable-host-profiles.md
   - docs/roadmap/issue-AR-272-expose-openclaw-native-finalizer-tool.md
+  - docs/roadmap/issue-AR-273-model-agnostic-structured-inference-profiles.md
+  - docs/decisions/0163-keep-litellm-inference-profiles-model-agnostic.md
 supersedes: []
 superseded_by: null
 type: reference
@@ -263,7 +265,7 @@ There are no specialist or skill rows. Native parent receipts used
 `task-general` with zero fallback. This is status-control, finalization, and
 delivery proof only.
 
-### Agency inference failure and external prerequisite
+### Agency inference failure and AR-273 repair checkpoint
 
 The only harmless skill attempt used genuinely new text and was not retried.
 Trace `9384d3a3-0a28-4150-a8fa-ab493efda7bf`, run
@@ -277,14 +279,21 @@ Claude, or any other provider occurred. No Store-backed header, finalization,
 skill row, routing decision, specialist, or model receipt was written. The bare
 native word `Loaded.` is therefore not successful Agency skill evidence.
 
-Authenticated proxy metadata maps shared alias `task-agency-router` to
-`ollama/qwen3.5:2b`. Its model metadata advertises function calling as false and
-no structured-response support. The proxy has no Agency callback and cannot
-import this checkout. Its response alias echo must not be promoted to the actual
-answering model; actual model remains unavailable. Lucas must authorize an
-approved structured-output-capable target for the shared alias, or approve a
-contract-compatible strategy for the current target, before another inference
-proof. Strict Agency validation must not be weakened.
+AR-273 traced the strict rejection to Agency's generic HTTP payload. The
+LiteLLM/OpenAI-compatible path requested JSON-object mode but never supplied
+the already bounded Agency schema to the model. It also recorded a configured
+LiteLLM thinking level without forwarding it. The alias mapping was not the
+defect and remains operator-owned and unchanged.
+
+The retained pre-fix regression has six failures: two absent schema
+instructions and four absent LiteLLM reasoning levels. The smallest repair
+adds one deterministic schema instruction shared by compatible HTTP paths and
+forwards `thinking_level` as LiteLLM's standardized `reasoning_effort`.
+Strict local validation, bounded retries, fallback behavior, requested-alias
+evidence, and actual-model reconciliation are unchanged. Exact regressions
+pass 7/7; the affected warning-strict inference slice passes 134/134. No
+shared-proxy, alias, host, credential, or host-native model configuration
+changed. Live proof waits for the repository-required clean checkpoint.
 
 No post-proof Telegram-scoped Store run has arrived. Operator `/new` plus exact
 `agency status` is still required for Telegram delivery proof. No OpenClaw or

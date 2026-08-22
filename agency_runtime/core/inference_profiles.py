@@ -167,7 +167,8 @@ def translate_thinking_level(
       claude CLI has no per-call thinking control, so a configured level is
       never forwarded.
     - ``ollama``: recorded and ignored at call time.
-    - ``litellm``: passed through as the native ``thinking`` parameter; the
+    - ``litellm``: forwarded as the standardized ``reasoning_effort``
+      parameter so LiteLLM can translate it for the routed provider/model; the
       consumed value matches the configured value.
     """
     if not profile.thinking_level:

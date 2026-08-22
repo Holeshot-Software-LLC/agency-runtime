@@ -16,7 +16,9 @@ related:
   - docs/roadmap/issue-AR-270-accept-stopped-openclaw-uninstall-status.md
   - docs/roadmap/issue-AR-271-preserve-openclaw-model-receipt-fields.md
   - docs/roadmap/issue-AR-272-expose-openclaw-native-finalizer-tool.md
+  - docs/roadmap/issue-AR-273-model-agnostic-structured-inference-profiles.md
   - docs/decisions/0162-compile-structured-contractor-execution-guidance.md
+  - docs/decisions/0163-keep-litellm-inference-profiles-model-agnostic.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
@@ -40,21 +42,23 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 - Exact first-message local control completed in session `ba9ea05a-3694-4725-b2ea-0357bd16a112`, trace `c2574ce1-b81b-4e29-b66a-06293c6dde85`, run `aedb79d3-79d9-428c-9eb3-90dbc8aac8c9`. Finalization `b0f9a0f4-8da2-4b54-b678-826b3a5b61bc` is labeled `host=openclaw`, and its response hash matches the native transcript. Deterministic abstention proves control activation, not workforce inference.
 - The next harmless skill work unit was retained as failed: trace `9384d3a3-0a28-4150-a8fa-ab493efda7bf`, run `a5504721-0aa9-4fa3-98df-f5667c933b5b`, failure receipt `3193483a-712b-4c1d-8f13-ccb6799433a1`, reason `workforce_inference_failed`. It created no skill, specialist, routing, finalization, or model-receipt row and was not retried.
 - Both inference attempts automatically selected harness `openclaw`, profile/provider name `linux-task-agency-router`, provider type `litellm`, and exact requested model/model-group `task-agency-router`. Both failed `provider_response_contract_invalid`; no Codex, Claude, or other fallback occurred.
-- Authenticated proxy metadata maps the shared alias to `ollama/qwen3.5:2b`, which advertises no function-calling or structured-response support. The alias echo is not an actual answering-model receipt. The proxy cannot import this Agency checkout and has no Agency callback.
+- AR-273 proves the contract failure is in Agency's generic HTTP payload, not the operator-owned alias mapping: LiteLLM/OpenAI-compatible calls omitted the supplied closed schema and LiteLLM omitted configured reasoning effort. The alias echo remains distinct from an actual answering-model receipt, and the proxy still has no Agency callback.
+- Six focused red assertions preserve the missing schema/reasoning behavior. The minimal model-agnostic repair delivers the deterministic bounded schema in the trusted system instruction and sends LiteLLM `reasoning_effort`; exact regressions pass 7/7 and the affected warning-strict inference slice passes 134/134. No validator, retry, fallback, host, alias, or proxy configuration changed.
 - Slack and Telegram report configured/running with no current error, but no new Telegram Store run has arrived since the local proof. Hermes stayed running and untouched as break glass. Codex OAuth/config/canary, Claude, and ZCode were untouched.
 
 ## completed-evidence
 
 - Repository/bootstrap identity, online Store backups, redacted host inventories, Agency install provenance, config invariants, control response delivery, failed provider attempts, and protected-host hashes are retained.
 - AR-272 native finalization is proven. Successful skill loading and substantive Agency workforce inference remain unproven because the exact alias response fails the strict planner contract.
+- AR-273 is locally green and awaits its below-threshold clean commit pair plus a fresh OpenClaw install/proof.
 - Focused OpenClaw tests pass 65/65; the earlier production spine passed 827 with three skips. No hosted workflow, push, PR, tracker mutation, host canary, or matrix movement occurred.
 
 ## exact-blocker
 
-1. Lucas must authorize an approved structured-output-capable backend for the shared `task-agency-router` alias, or approve a contract-compatible strategy for its current `ollama/qwen3.5:2b` target.
-2. Do not remap a shared proxy, guess a target, retry unchanged input, or weaken Agency validation without that authority.
-3. Telegram `/new` plus exact `agency status` remains an operator-delivery prerequisite. Hermes remains outside this package.
-4. AR-265 through AR-272 tracker creation remains pending separate outward-write authorization.
+1. Context telemetry is 31.8 percent remaining, so the AR-273 substantive/worklog checkpoint must be clean before live work.
+2. Do not remap the shared proxy, inspect or guess a target-specific request shape, retry unchanged input, or weaken Agency validation.
+3. After the checkpoint, install only Agency into the existing OpenClaw host and use a genuinely new work unit. Telegram `/new` plus exact `agency status` remains an operator-delivery prerequisite; Hermes remains outside this package.
+4. AR-265 through AR-273 tracker creation remains pending separate outward-write authorization.
 
 ## same-task-continuity
 
@@ -62,14 +66,15 @@ After the recovery pair, continue with OpenClaw only. Hermes is a running break-
 
 ## next-bounded-work-package
 
-1. Obtain explicit shared-proxy authority and the approved target for exact alias `task-agency-router`.
-2. After a real prerequisite change, run one fresh OpenClaw non-mutating work unit and one harmless skill proof; correlate strict Store/provider evidence.
-3. Preserve operator Telegram evidence when supplied. Keep Hermes, Claude, ZCode, Codex, and OpenClaw native inference configuration untouched.
+1. Commit the AR-273 local repair and ledger, then fast-forward the persistent OpenClaw worktree.
+2. Reinstall only Agency's OpenClaw integration and run one fresh non-mutating work unit plus conditional harmless-skill proof; correlate strict Store/provider evidence.
+3. Preserve operator Telegram evidence when supplied. Keep the alias, Hermes, Claude, ZCode, Codex OAuth/model settings, and OpenClaw native inference configuration untouched.
 
 ## verification
 
 ~~~text
 python scripts/context_handoff_status.py --json --threshold 50
+python -m pytest tests/test_roster_inference_adapter.py tests/test_inference_profiles.py -q -W error
 python -m pytest tests/test_installer_registration.py -q -W error
 python -m pytest tests/test_config_policy_namespace_runtime.py tests/test_openclaw_streaming_policy.py -q -W error
 python scripts/verify_docs.py
