@@ -29,8 +29,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-264
 branch: codex/ar119-openclaw-hermes-litellm
-evidence_commit: 7fcd828d2a20d85562bee73cbea9f538985107ac
-minimum_ledger_commit: 7d0460a317c3f2528ebaceb5284b8020b63aa431
+evidence_commit: a0ff74d4e9b4cfe85b2b4fc30b595556e5331708
+minimum_ledger_commit: 77bfd2aed518bef194e1074d432749ae86b0dd28
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 ---
@@ -49,7 +49,12 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 - Exact restart review trace `869ef22a-e1a5-4b7e-b024-6bf12aa371ea` and smaller trace `b325368f-22e2-4815-8d01-2e9d1c22c543` each rejected two strict planner contracts from the same alias with zero fallback. Receipts `7fba14ce-c3df-4459-8462-542f7272a426` and `fe0c2f6b-e9be-45a6-b15a-f450c7e8a154` are terminal evidence. The first Gateway timed out after native context overflow; the second unheaded answer is not Agency delivery.
 - Store integrity remains `ok`, schema 47, and the install preserved all 15 contractors. Agency config, launcher, OpenClaw, Hermes, Codex, and Claude hashes remain unchanged from the checkpoint. Telegram and Slack are connected/probe-green; Hermes remains untouched break glass.
 
-- AR-275 now retains exact allowlisted planner policy codes and one generic semantic code through routing/preflight receipts and switches the one existing repair attempt to a concise complete-plan system contract. Expected-red is 4 failures/4 passes; repair is 8/8 focused and 178 passed/1 skipped affected. Installation/live proof remain pending.
+- AR-275 now retains exact allowlisted planner policy codes and one generic semantic code through routing/preflight receipts and switches the one existing repair attempt to a concise complete-plan system contract. Expected-red is retained and the repair is green.
+- Recovery pair `a0ff74d4` / `77bfd2ae` adds ontology-bound schemas and the OpenClaw fail-closed input gate. Focused/affected suites pass 154 plus 65 cases; the 828-test spine, 134 UI tests, docs, ruff, routing evaluation, and diff checks pass.
+- Agency-only install `ba074210-c785-4d61-a014-c2f86dfdb571` completed with bundle `3139ec9c...`, launcher SHA `b67bb589...`, runtime digest `facf8047...`, and 15/15 contractors. Only OpenClaw metadata timestamp changed; native model/provider/channel/alias configuration did not.
+- OpenClaw is RPC-green and the plugin is loaded with its priority-1000 input gate. Telegram and Slack are connected/probe-green; Hermes and LiteLLM stayed active.
+- Three changed Agency-only routes proved automatic OpenClaw harness selection and exact profile/provider/alias with zero fallback, but produced no accepted team: traces `52223cc2...`, `bd2feabc...`, and `71c4ad65...`. No post-reinstall native turn ran.
+- Post-install Store backup integrity is `ok`, schema 47, SHA `64c65d70...`. The host-scoped Agency soft-off was not applied because it requires explicit approval to bypass enforcement.
 
 ## completed-evidence
 
@@ -59,9 +64,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 
 ## exact-blocker
 
-1. Finish a clean local AR-275 commit pair and reinstall Agency only into stopped OpenClaw.
-2. A genuinely new prompt must either pass strict planner/finalization or retain exact bounded planner codes; consumed prompts remain forbidden.
-3. Alias-target, host-native, Hermes, and protected-provider configuration remain unchanged. Tracker creation remains separately unauthorized.
+1. The unchanged alias target must satisfy strict planner and recruiter contracts within the fixed call/repair budget; endpoint, credential, profile, and alias selection are already proven.
+2. No native substantive turn is allowed until a changed Agency-only route accepts. Consumed prompts remain forbidden.
+3. Restoring native OpenClaw replies while blocked requires explicit approval for the reversible OpenClaw-only Agency soft bypass. Hermes and protected-provider configuration remain unchanged.
 
 ## same-task-continuity
 
@@ -69,9 +74,9 @@ Continue with OpenClaw only after the clean commit pair. Hermes is running break
 
 ## next-bounded-work-package
 
-1. Run proportionate gates and commit the AR-275 repair/ledger locally.
-2. Reinstall Agency only and use a genuinely new OpenClaw substantive work unit.
-3. Correlate Store finalization or the exact failure receipt with harness/profile/alias and fallback evidence; keep Hermes untouched.
+1. Await the owner's keep-enforcement versus host-scoped-soft-off decision.
+2. After the alias target produces an accepted changed Agency-only route, use one fresh native OpenClaw session.
+3. Correlate Store/header/finalization evidence; keep Hermes and protected hosts untouched.
 
 ## verification
 

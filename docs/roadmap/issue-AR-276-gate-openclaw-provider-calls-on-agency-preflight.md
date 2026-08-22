@@ -56,6 +56,19 @@ The focused generated-plugin regression failed before repair at exit 203:
 planner and input-gate slice (154 tests) and the affected installer/adapter
 slice (65 tests).
 
+Commits `a0ff74d4` / `77bfd2ae` are installed as Agency-only install
+`ba074210-c785-4d61-a014-c2f86dfdb571`. OpenClaw is RPC-green and the plugin
+is enabled, activated, loaded with ten hooks, and exposes preflight in
+`before_agent_run` at priority 1000. Native model/provider/channel/alias
+configuration is unchanged; only `/meta/lastTouchedAt` differs.
+
+Three distinct Agency-only routes did not reach admission, so no native turn
+was sent after reinstall. This prevents another token-heavy host fallback but
+leaves live input-gate blocking and accepted header/finalization unproven.
+The OpenClaw-only soft bypass dry run passed; applying it was rejected pending
+explicit owner approval because it disables Agency enforcement for that host.
+Telegram and Slack themselves remain connected and probe-green.
+
 ## Approach
 
 Run the existing exact Agency preflight call inside OpenClaw's
@@ -85,8 +98,8 @@ OpenClaw's native model, provider list, channels, aliases, or configuration.
 - [x] Missing or failed preflight returns an input-gate block before model execution.
 - [x] Cache is exact-session/run scoped, bounded, expiring, and cleared on disable/finalization.
 - [x] Focused and affected local tests pass.
-- [ ] Clean local substantive/ledger commit pair exists.
-- [ ] Agency-only reinstall preserves native OpenClaw configuration.
+- [x] Clean local substantive/ledger commits are `a0ff74d4` / `77bfd2ae`.
+- [x] Agency-only reinstall preserves native OpenClaw configuration except its timestamp metadata.
 - [ ] Fresh changed turn proves no native provider starts after preflight rejection.
 - [ ] Fresh accepted turn proves Store routing, header delivery, and finalization.
 - [ ] Tracker creation remains pending separate authorization.

@@ -592,3 +592,75 @@ Pre-live gates are green for docs, full ruff, the 827-test production spine,
 mutations: the trusted isolated fixture selected `/usr/bin/python3.12`, which
 lacks pytest, for both the default and changed system-Python invocations. That
 platform limitation is retained and is not reported as a conformance pass.
+
+
+### Post-repair OpenClaw input-gate installation and bounded result
+
+~~~yaml
+host: openclaw
+checkout_sha: 77bfd2aed518bef194e1074d432749ae86b0dd28
+clean_tree_at_install: true
+host_version: OpenClaw 2026.7.1-2 (0790d9f)
+profile_identity: linux-task-agency-router
+native_litellm_config_source_redacted: ~/.openclaw/openclaw.json; primary litellm/task-general unchanged
+litellm_base_url_source: ~/.agency-runtime/agency.yaml
+credential_env_name: LITELLM_API_KEY
+credential_present_boolean: true in the OpenClaw process; value never emitted
+agency_inference_profile: linux-task-agency-router
+requested_alias: task-agency-router
+model_group: task-agency-router
+actual_model_and_receipt_source: unavailable; response.body.model repeated the alias only
+bundle_digest: 3139ec9cd2ea922efc17322bf065b94975fcbbbd5bd215d7b96fcd63fbcbbeac
+runtime_digest: facf804723021f33d5f7443cb4741c12bf6476e5f262e23cc6133d257ae5515f
+store_schema: 47
+install_result: ba074210-c785-4d61-a014-c2f86dfdb571 complete; Agency plugin only
+launcher_manifest_sha256: b67bb58962df97d83ce82aee4b52d046f48ed4ffb3cb6d4e62930a5ec20ba860
+fresh_session_id: none; native turn withheld after failed Agency-only admission
+agency_trace_ids:
+  - 52223cc2-3249-42af-ba44-9d2dfb612a01
+  - bd2feabc-98a4-48d5-a113-d9c8efd2f7c9
+  - 71c4ad65-806e-4d36-87b7-91be135a3988
+first_response_artifact: none
+header_exact: none
+resident_binding_id: none
+routing_decision_ids: none; CLI diagnostic routing uses no Store writer
+specialists_loaded_ids: none
+skill_name_and_store_row_id: no new skill turn; prior healthcheck proof retained separately
+provider_attempt_status:
+  - planner applied; recruiter rejected then repair applied; safe abstention
+  - planner dependency repair applied; recruiter returned no valid response
+  - planner dependency rejection; repair rejected for missing codebase discovery
+fallback_count: 0
+timeout_or_failure_receipt:
+  - /tmp/ar276-openclaw-agency-route-repository-map.json sha256 5ce8cbad926c8f98cc5a90671c73897529b73c0eb324f0f33dbff0d57f73b027
+  - /tmp/ar276-openclaw-agency-route-onboarding.json sha256 35736b6a8de265dc5d72fbcc37dd02f9491b872bc6f77e4da0fb93a72bd92e88
+known_limit: existing alias target did not produce an accepted strict team within fixed repair budgets
+runtime_control: enabled; host-only soft-off was not authorized or applied
+~~~
+
+The post-install OpenClaw config SHA changed from `d30386ac...` to
+`97b18a21...`; a comparator that emitted only JSON pointers found exactly
+`/meta/lastTouchedAt`. Native providers, 21 LiteLLM aliases, primary, six
+fallbacks, Telegram, Slack, and Agency's alias target were unchanged. Agency
+config SHA remains `43367ec9...`; Codex remains `8f375701...`, including its
+previously authorized disabled MCP flags. Hermes remained active break glass.
+
+The first Agency-only trace was retained in the operator transcript. The two
+file artifacts retain the later complete CLI results. All three automatically
+selected OpenClaw and the exact Agency profile/provider/alias; none silently
+fell back to Codex OAuth, Claude, Ollama, or another provider. Because these
+diagnostic routes do not write the Store, they cannot prove a host header,
+resident binding, routing row, skill row, or finalization.
+
+Telegram and Slack transport probes are green, but Agency remains fail-closed
+for substantive OpenClaw turns while the alias target cannot satisfy the
+strict contracts. The exact reversible availability command is
+`/usr/bin/python3 -m agency_runtime.cli off --agent openclaw --json`. Its dry
+run passed; applying it was rejected because disabling enforcement requires
+fresh explicit owner approval. No workaround was attempted.
+
+Before/after contractors are 15/15. Store integrity is `ok` before and after;
+the post-install online-backup SHA is `64c65d70...`. Codex OAuth/model/canary,
+Claude, ZCode, Hermes, and their native configurations were untouched. No host
+canary, push, PR, tracker mutation, hosted workflow, alias-target change, or
+matrix movement occurred.

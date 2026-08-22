@@ -83,6 +83,17 @@ not a code verdict: both the default checkout invocation and a changed trusted
 `/usr/bin/python3.12`, where pytest is unavailable. Both failed receipts are
 retained; neither mutation execution nor a pass is claimed.
 
+Follow-up commits `a0ff74d4` / `77bfd2ae` are clean and Agency-only install
+`ba074210-c785-4d61-a014-c2f86dfdb571` is live. Three distinct Agency-only
+routes selected the OpenClaw harness, `linux-task-agency-router`, `litellm`,
+and exact alias/model-group `task-agency-router`, with zero fallback. Planner
+repair now applies closed dependency guidance, but the unchanged alias target
+still produced safe abstention, recruiter no-valid-response, or a second
+strict plan-policy failure. No native turn was allowed after reinstall.
+Artifacts `/tmp/ar276-openclaw-agency-route-repository-map.json` and
+`/tmp/ar276-openclaw-agency-route-onboarding.json` have SHAs `5ce8cbad...`
+and `35736b6a...`. The CLI diagnostic path does not persist Store rows.
+
 ## Approach
 
 Attach a tuple of content-free validation reason codes to every rejected
@@ -125,7 +136,7 @@ that the runtime cannot resolve.
 - [x] Installed candidate retained exact OpenClaw status and failed-substantive evidence.
 - [x] Live diagnostic identified ontology then dependency-order rejection without response content.
 - [x] Follow-up expected-red is three failures; focused planner/OpenClaw suites pass 154 plus 65 affected tests.
-- [ ] Follow-up repair has a clean local substantive/ledger commit pair.
-- [ ] Agency alone is reinstalled into stopped OpenClaw from the follow-up checkout.
+- [x] Follow-up repair has clean local commits `a0ff74d4` / `77bfd2ae`.
+- [x] Agency alone was reinstalled into stopped OpenClaw as install `ba074210-c785-4d61-a014-c2f86dfdb571`.
 - [ ] One genuinely new OpenClaw turn proves strict acceptance and no post-failure provider start.
 - [ ] Tracker creation remains pending separate authorization.

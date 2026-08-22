@@ -3104,3 +3104,55 @@ pass. Decision conformance remains unavailable because its trusted isolated
 fixture resolves to `/usr/bin/python3.12`, which lacks pytest; the default and
 changed `/usr/bin/python3` command receipts are both retained. No mutation
 execution or conformance pass is claimed.
+
+
+## 2026-08-22 — OpenClaw input gate installed; alias admission remains blocked
+
+Clean commits `a0ff74d4` / `77bfd2ae` bind planner capability IDs to the
+current ontology, preserve closed dependency repair guidance, and move the
+existing Agency preflight call into OpenClaw's fail-closed
+`before_agent_run` input gate. Expected-red retained three failures. The
+repaired planner/OpenClaw slice passes 154 tests; the affected
+installer/adapter slice passes 65 with 131 deselected. The 828-test production
+spine, 134 UI tests, docs, ruff, routing evaluation, and diff checks pass.
+
+OpenClaw was stopped natively. Agency-only install
+`ba074210-c785-4d61-a014-c2f86dfdb571` completed with bundle
+`3139ec9cd2ea922efc17322bf065b94975fcbbbd5bd215d7b96fcd63fbcbbeac`,
+launcher SHA `b67bb58962df97d83ce82aee4b52d046f48ed4ffb3cb6d4e62930a5ec20ba860`,
+and runtime digest
+`facf804723021f33d5f7443cb4741c12bf6476e5f262e23cc6133d257ae5515f`.
+OpenClaw itself was not reinstalled. Its native primary remains
+`litellm/task-general`; a value-free pre/post JSON comparison reports only
+`/meta/lastTouchedAt`. Agency, Codex, Hermes, Claude, and ZCode configuration
+remained untouched.
+
+After native restart, OpenClaw 2026.7.1-2 is RPC-green. `agency-preflight` is
+enabled, activated, loaded with ten hooks and no diagnostics; the input gate
+has priority 1000. Telegram and Slack are configured, running, connected, and
+probe-green. Hermes and LiteLLM remained active.
+
+Three genuinely distinct Agency-only work units selected harness `openclaw`,
+profile `linux-task-agency-router`, provider type `litellm`, and exact
+requested alias/model-group `task-agency-router`. Trace
+`52223cc2-3249-42af-ba44-9d2dfb612a01` applied its planner, rejected one
+recruiter response, applied the repair, then safely abstained. Trace
+`bd2feabc-98a4-48d5-a113-d9c8efd2f7c9` repaired an earlier-dependency
+violation, then the recruiter returned no valid response. Trace
+`71c4ad65-806e-4d36-87b7-91be135a3988` rejected an earlier-dependency plan
+and its repair for missing codebase discovery. All attempts used zero
+protected fallback. `response.body.model` repeated the alias, not an
+authoritative backing-model identity; actual model remains unavailable.
+
+No native OpenClaw turn ran after this install because no Agency-only route
+was accepted. Therefore the candidate has no fresh native session, header,
+resident binding, Store routing row, or finalization claim. This avoided
+another native token/tool loop but leaves live fail-closed delivery and
+accepted substantive delivery open. The host-scoped soft-off dry run passed;
+the mutation command was rejected pending explicit owner approval because it
+would bypass Agency enforcement for OpenClaw. It was not circumvented.
+
+Pre/post contractor count is 15/15. Pre/post SQLite-consistent Store backups
+both have integrity `ok`; the post-install SHA is `64c65d70...`. No host
+canary, alias-target change, push, PR, tracker write, hosted workflow, or
+AR-119 matrix movement occurred.
