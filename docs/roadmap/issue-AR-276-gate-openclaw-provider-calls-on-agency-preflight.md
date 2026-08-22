@@ -128,6 +128,15 @@ timed out at 240.461 seconds before calling `agency_finalize`. Store run
 `6726b5ce-c632-4af4-8f37-5a99301835d0` remains active/ready. The timeout is
 preserved without a header, finalization, or Telegram-delivery claim.
 
+A tighter changed request then completed in 46.635 seconds. Trace
+`9bea1a3f-67cc-4add-971f-d61aa23dcdea` applied all three exact Agency LiteLLM
+stages with no fallback; the unchanged native host called only
+`agency_finalize`. Finalization `07759321-7b9f-42b9-bb4f-4086d3ecd167`
+accepted the exact five-line inference header and completed Store run
+`c24afc99-8508-47b8-b09e-79fb9b317cea`. Post-live Store integrity and native
+Telegram/Slack probes pass. This closes AR-276's substantive parent-delivery
+dependency without claiming a child canary or AR-119 matrix movement.
+
 ## Approach
 
 Run runtime control and the existing exact Agency preflight during
@@ -168,5 +177,5 @@ changes.
 - [x] Prompt-build-order candidate is reinstalled Agency-only into stopped OpenClaw.
 - [x] Fresh accepted nontrivial turn proves workforce routing without exceeding the native hook budget.
 - [x] First changed AR-277 turn is preserved as a native provider timeout after successful Agency preflight.
-- [ ] Fresh changed substantive turn proves first-pass finalization after AR-277 installation.
+- [x] Fresh changed substantive turn proves first-pass finalization after AR-277 installation.
 - [ ] Tracker creation remains pending separate authorization.

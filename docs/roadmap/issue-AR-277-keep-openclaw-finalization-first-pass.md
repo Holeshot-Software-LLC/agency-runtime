@@ -79,6 +79,26 @@ Store run `6726b5ce-c632-4af4-8f37-5a99301835d0` remains `active`/`ready` with
 no terminal finalization or `agency_finalize` call. This is a retained host
 timeout, not successful delivery or an Agency-router failure.
 
+A tighter, genuinely changed request then completed in fresh session
+`ar277-openclaw-nexus-finalizer-bounded-20260822-a` in 46.635 seconds. Trace
+`9bea1a3f-67cc-4add-971f-d61aa23dcdea` automatically selected OpenClaw,
+profile `linux-task-agency-router`, provider type `litellm`, and exact requested
+alias/model-group `task-agency-router`. All three structured stages applied,
+routing `ec9366fd-8a95-46c8-951f-069204d3d453` records no fallback, and
+specialist row `21a36c8a-f5d0-4018-b6d8-83fb7ef1dce2` records `code-reviewer`.
+
+The native host called only `agency_finalize`, exactly once. Finalization
+`07759321-7b9f-42b9-bb4f-4086d3ecd167` accepted the exact five-line inference
+header and completed Store run `c24afc99-8508-47b8-b09e-79fb9b317cea`.
+Response/transcript SHAs are `e53fdf95...` / `5251eec0...`. Store model
+receipts identify only the wrapper alias, so actual backing-model identity
+remains unavailable. Post-live online backup integrity is `ok`, schema is 47,
+and SHA is `47d868f5...`; all 15 packaged contractors remain exact-current.
+Native Telegram and Slack probes are green with no reported error. An
+operator-initiated Telegram send was rejected before execution by the
+external-message authorization boundary, so no automated Telegram round trip
+is claimed.
+
 ## Approach
 
 Strengthen only the registered native tool metadata and Store-backed preflight
@@ -107,6 +127,6 @@ decision: it conforms to ADR-0049 and ADR-0120 rather than superseding them.
 - [x] Affected focused OpenClaw tests and lint checks pass.
 - [x] Install Agency only into stopped OpenClaw from a clean local checkpoint.
 - [x] Preserve the first changed live work unit as a native provider timeout with no finalization claim.
-- [ ] A genuinely changed fresh substantive work unit calls `agency_finalize`, delivers the exact header, and correlates Store/provider evidence.
-- [ ] Post-live Store backup, host health, documentation gates, and local recovery pair pass.
+- [x] A genuinely changed fresh substantive work unit calls `agency_finalize`, delivers the exact header, and correlates Store/provider evidence.
+- [x] Post-live Store backup, host health, documentation gates, and local recovery pair pass.
 - [ ] Tracker creation remains pending separate authorization.

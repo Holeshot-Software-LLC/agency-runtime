@@ -77,7 +77,7 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 - Credential-correct 14B trace `2317d975-c960-4020-8755-f32308ffe94b` accepted planner, recruiter, and critic in 37.768 seconds through OpenClaw profile `linux-task-agency-router`, exact LiteLLM alias/model-group, and no provider fallback. Artifact SHA is `673c5ae7...`.
 - Fresh native `tmux` session `ar276-openclaw-nexus-tmux-qwen14b-20260822-a`, trace `79abdac7-42f1-44e9-afad-bf5556df62aa`, Store run `6b7651b6...`, routing `1908650f...`, request binding `rmb-19107899...`, specialist `5f11b004...`, skill row `b54c5916...`, and finalization `64a97d43...` completed in 45.085 seconds. The exact five-line header records inference, `code-reviewer`, `tmux`, no delegation, and wrapper alias only. Response/transcript SHAs are `7f9a4674...` / `499187e8...`.
 - Exact substantive session `ar276-openclaw-nexus-restart-qwen14b-20260822-a` accepted all Agency stages under trace `35efa94c...` with zero fallback, but native `task-general` omitted `agency_finalize` after read-only tools. Store run `e2e9e65d...` and finalization `7d5428e7...` are `response_invalid`; response/transcript SHAs `f4f6d7b7...` / `f0f9e359...` prove no valid header or Telegram delivery.
-- AR-277 rejected the second-pass candidate, then installed the first-pass-only repair as Agency install `e834190a...`, bundle `521b1480...`, runtime `b5d546a6...`, launcher `41415e79...`. Changed trace `07e5ec33...` accepted all exact Agency LiteLLM stages with no fallback, but native `task-general` made 31 read-only tool calls and timed out at 240.461 seconds before `agency_finalize`; Store run `6726b5ce...` remains active/ready with no header or finalization claim.
+- AR-277 installed the first-pass-only repair as Agency install `e834190a...`, bundle `521b1480...`, runtime `b5d546a6...`, launcher `41415e79...`. After retained timeout `07e5ec33...`, fresh changed trace `9bea1a3f...` applied all exact Agency LiteLLM stages with no fallback, called only `agency_finalize`, delivered the exact header, and completed Store run `c24afc99...` plus finalization `07759321...`. Response/transcript SHAs are `e53fdf95...` / `5251eec0...`; post-live backup is integrity `ok`, schema 47, SHA `47d868f5...`.
 
 ## completed-evidence
 
@@ -85,14 +85,14 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 - AR-272 remains live-proven for native finalization and response delivery. Exact-status is deterministic control proof; the subsequent non-control turn now proves Agency harness/profile/alias selection and strict finalization.
 - AR-273 now has fast accepted Agency-only and native skill routing through the exact LiteLLM profile/alias on free 14B; actual backing model telemetry remains unavailable.
 - AR-274 expected-red is 2/2 exact failures; repair is 22 passed/1 skipped plus 453 passed/1 skipped, and fresh `healthcheck` header/Store proof now passes. Proportionate final gates remain; no exhaustive workflow was dispatched.
-- AR-275 preserves bounded codes without model coupling. AR-276 prompt-build preflight and native skill proof pass. The exact substantive attempt is a retained AR-277 finalizer failure, so substantive native acceptance remains open.
+- AR-275 preserves bounded codes without model coupling. AR-276 prompt-build preflight, native skill proof, and AR-277 first-pass substantive finalization now pass. No child-delivery or matrix-cell claim moves.
 - Codex OAuth/config/canary, Claude, ZCode, and Hermes were untouched.
 
 ## exact-blocker
 
-1. Checkpoint the exact changed-work-unit timeout without promoting it to delivery.
-2. Run one tighter fresh work unit that permits no host tool except `agency_finalize`.
-3. Correlate first-pass header/Store/provider evidence, then take the post-live backup.
+1. OpenClaw's scoped parent-runtime acceptance set passes.
+2. Telegram/Slack connector probes pass; automated Telegram message egress remains unexecuted pending explicit destination authorization or a user-initiated round trip.
+3. Hermes remains break glass and outside this completed OpenClaw package.
 
 ## traps (machine-specific; do not rediscover)
 
@@ -104,9 +104,9 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 
 ## next-bounded-work-package
 
-1. Commit the timeout checkpoint and ledger row.
-2. Run the tighter changed native proof after an immediate telemetry check.
-3. Take the post-live online Store backup and keep Hermes/proven hosts untouched.
+1. Retain the final OpenClaw evidence and local recovery pair.
+2. Accept a user-initiated Telegram round trip if the owner wants transport-delivery evidence.
+3. Start Hermes only as a separately authorized package; keep proven hosts untouched.
 
 ## same-task-continuity
 

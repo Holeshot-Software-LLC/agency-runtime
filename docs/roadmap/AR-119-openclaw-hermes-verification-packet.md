@@ -878,3 +878,80 @@ seconds. Agency preflight had already completed, so this does not implicate the
 14B alias target. It also cannot prove delivery: no five-line header was
 written and the Store has no terminal finalization for this run. The exact
 input will not be retried unchanged.
+
+
+### Final OpenClaw first-pass evidence bundle
+
+~~~yaml
+host: openclaw
+checkout_sha: 7be371d28ea4c16cc9b30c87df4a2336dd56eb50
+clean_tree: true at install and before live proof
+host_version: OpenClaw 2026.7.1-2 (0790d9f)
+profile_identity: linux-task-agency-router
+native_litellm_config_source_redacted: ~/.openclaw/openclaw.json; primary litellm/task-general and six fallbacks unchanged
+litellm_base_url_source: ~/.agency-runtime/agency.yaml
+credential_env_name: LITELLM_API_KEY
+credential_present_boolean: true in the OpenClaw service; value never emitted
+agency_inference_profile: linux-task-agency-router
+requested_alias: task-agency-router
+model_group: task-agency-router
+actual_model_and_receipt_source: unavailable; three Store model receipts are source=wrapper and resolved_model=task-agency-router alias only
+runtime_digest: b5d546a66231123190d8830737aa371d9ef6e3388ce92ea0e44195d5c87c4d17
+store_schema: 47
+install_result: e834190a-0dfe-4fba-a0cd-df2d7d75e250 complete; Agency plugin only; OpenClaw not reinstalled
+launcher_manifest_sha256: 41415e79f5ef50c817b56d09b3917c0ceceb681bed320347dbe5ba107d92c368
+fresh_session_id: ar277-openclaw-nexus-finalizer-bounded-20260822-a
+agency_trace_id: 9bea1a3f-67cc-4add-971f-d61aa23dcdea
+store_run_id: c24afc99-8508-47b8-b09e-79fb9b317cea
+first_response_artifact: ~/.agency-runtime/backups/ar277-openclaw-final-postlive-20260822T1922Z/openclaw-live-finalizer-redacted.json
+first_response_artifact_sha256: 9ac29dd1543f3cbfa54b3a40d414e708024fc206bc008948bfff269f6cc4c2ac
+full_cli_artifact_sha256: e53fdf956a44c697872549736044814f2ddb68bda1394ea662bd5eb71c2d905f
+native_transcript_sha256: 5251eec00be78ab3ca5d7e0c81477c278f6673961f7322102b00effcbfbc4a43
+header_exact: |-
+  Agency/Agencies loaded: agency-steward, code-reviewer
+  Agency/Agencies delegated: none
+  Skills loaded: none
+  Actual Model selected: workforce inference: [router] task-agency-router -> linux-task-agency-router/task-agency-router (wrapper)
+  Recruited via: inference
+resident_binding_id: rmb-7c2121c70d27094b999d6f95ab5b9ce8; request-scoped; no persistent row expected
+routing_decision_ids:
+  - ec9366fd-8a95-46c8-951f-069204d3d453
+specialists_loaded_ids:
+  - 21a36c8a-f5d0-4018-b6d8-83fb7ef1dce2 # code-reviewer
+skill_name_and_store_row_id: current trace intentionally none; prior accepted skill proof is tmux / b54c5916-f86d-450f-b2e8-b9007137b489
+provider_attempt_status:
+  - ordinal 1; linux-task-agency-router; litellm; task-agency-router; task-agency-router; applied
+  - ordinal 2; linux-task-agency-router; litellm; task-agency-router; task-agency-router; applied
+  - ordinal 3; linux-task-agency-router; litellm; task-agency-router; task-agency-router; applied
+fallback_count: 0; routing fallback_applied=false
+finalization_id: 07759321-7b9f-42b9-bb4f-4086d3ecd167
+finalization_status: accept; completed
+native_host_provider_model: litellm/task-general; unchanged; fallbackUsed=false
+native_tool_summary: one agency_finalize call; zero other tools; zero failures
+duration_ms: 46635
+timeout_or_failure_receipt: none for final proof; earlier response_invalid and timeout receipts retained separately
+contractors_before_after: 15/15 exact-current packaged contractors
+store_integrity_before_after: ok/ok
+post_live_store_backup_sha256: 47d868f5db1350abafb8c2a4d45c56e697b83c3759e86ce2aa8169e40ce474ec
+agency_config_sha256: 43367ec9aa05a66fc2a60bb254f270836fb3616753769115fabb253a04d5d9f8
+openclaw_config_sha256: 8f5896749b17a7a49bbf36a8b18607c4b510cbb608627507b5068d2034c7581b
+native_plugin: loaded, enabled, activated, imported; ten hooks; agency_finalize; zero diagnostics
+telegram_slack: configured, running, probe-green, no reported error; event loop not degraded
+channel_receipt_sha256: fef5bb702de127ef4a6291298f3b2288a0187ddedf098007261c2b4dc29a9996
+telegram_delivery: automated control rejected before execution by external-message authorization boundary; user-initiated round trip remains optional
+known_limit: actual backing model is unavailable; no Rule 4 child canary or matrix-cell claim; config validate/doctor remain cold-inventory degraded while live exact evidence passes
+~~~
+
+OpenClaw's scoped parent-runtime acceptance set now passes. The final proof is
+both host-written and Store-terminal: one native finalizer result matches the
+visible response and the Store completion. The three Agency stages used no
+Codex OAuth, Claude, native Ollama bypass, or other protected fallback.
+`task-agency-router` remains an opaque alias; its configured free target is a
+control-plane fact, not an actual answering-model receipt.
+
+The checkout-module `config validate` returns degraded exit 2 because cold
+inventory cannot prove live plugin loading and the global legacy provider list
+is intentionally unset. Native runtime inspection independently reports the
+plugin loaded with zero diagnostics, and the live Store routing rows prove the
+harness-scoped profile was operational. No global default was added to silence
+the cold diagnostic.

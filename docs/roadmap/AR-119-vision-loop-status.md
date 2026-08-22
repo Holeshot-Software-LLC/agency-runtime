@@ -3304,3 +3304,31 @@ Telegram delivery is claimed. This is a retained native host timeout after
 successful Agency inference, not an Agency-router timeout or a backing-model
 receipt. The next proof uses a genuinely changed, tightly bounded prompt that
 permits only the required finalizer tool.
+
+
+## 2026-08-22 — Bounded first-pass OpenClaw proof passes
+
+Fresh session `ar277-openclaw-nexus-finalizer-bounded-20260822-a` completed in
+46.635 seconds. Trace `9bea1a3f-67cc-4add-971f-d61aa23dcdea` automatically
+selected OpenClaw, profile `linux-task-agency-router`, provider type `litellm`,
+and exact requested alias/model-group `task-agency-router`. Planner, recruiter,
+and critic applied; routing `ec9366fd-8a95-46c8-951f-069204d3d453` records no
+fallback and selected `code-reviewer`.
+
+The unchanged native `task-general` host called only `agency_finalize`, once,
+with no failure. Finalization `07759321-7b9f-42b9-bb4f-4086d3ecd167`
+accepted the exact five-line inference header and completed Store run
+`c24afc99-8508-47b8-b09e-79fb9b317cea`. Response/transcript SHAs are
+`e53fdf95...` / `5251eec0...`. Model receipts remain wrapper-only, so the
+configured alias target is not promoted into an actual-model claim.
+
+The post-live online Store backup has integrity `ok`, schema 47, and SHA
+`47d868f5...`; the packaged contractor count remains 15/15. Native Agency
+plugin inspection reports loaded/enabled/activated/imported, ten hooks, one
+`agency_finalize` tool, and zero diagnostics. Telegram and Slack are running
+and probe-green with no reported error. The attempted operator-initiated
+Telegram control was rejected before process execution by the external-message
+authorization boundary, so no automated Telegram round trip is claimed.
+Hermes, Codex OAuth/config/canary, Claude, and ZCode remained untouched. No
+host canary, child-delivery claim, matrix movement, push, PR, tracker mutation,
+or hosted workflow occurred.
