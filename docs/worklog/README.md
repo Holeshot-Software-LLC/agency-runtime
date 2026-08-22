@@ -3,7 +3,7 @@ title: Worklog
 status: active
 category: worklog
 created: 2026-07-10
-updated: 2026-08-21
+updated: 2026-08-22
 tags: []
 related: []
 supersedes: []
@@ -1131,6 +1131,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `610f2691` | 2026-08-21 | docs(ar119): record OpenClaw inference and skill gap | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md), [AR-273](../roadmap/issue-AR-273-model-agnostic-structured-inference-profiles.md), [AR-274](../roadmap/issue-AR-274-record-openclaw-native-skill-reads.md) | null |
 | `7fcd828d` | 2026-08-22 | fix(openclaw): record authorized native skill reads | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md), [AR-273](../roadmap/issue-AR-273-model-agnostic-structured-inference-profiles.md), [AR-274](../roadmap/issue-AR-274-record-openclaw-native-skill-reads.md) | [detail](2026-08-22-7fcd828d-record-authorized-openclaw-skill-reads.md) |
 | `60c72239` | 2026-08-22 | docs(decisions): authorize OpenClaw skill evidence | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-274](../roadmap/issue-AR-274-record-openclaw-native-skill-reads.md) | null |
+| `74cc11fb` | 2026-08-22 | docs(ar119): checkpoint OpenClaw skill install | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
