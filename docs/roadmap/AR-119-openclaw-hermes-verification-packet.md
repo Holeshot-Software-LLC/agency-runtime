@@ -1123,7 +1123,12 @@ follow_up_issue: AR-269
 recovery_action: stopped openclaw-gateway; native plugins disable agency-preflight; native restart
 agency_native_state: registered=true; staged=true; enabled=false; effective_enabled=false; hook_count=0
 gateway_state: active/running; RPC probe ok
-channels: Telegram and Slack configured/running/probe-ok; ordinary reply proof pending
+channels: Telegram and Slack configured/running/probe-ok; Telegram inbound/outbound observed
+recovery_request: exact reply with pong
+recovery_response: exact pong
+native_transcript_session_id: redacted by policy
+native_transcript_sha256: 0420d72c8b151f3d2fb09ce0cae219b100de100db447b717089157b77386417e
+native_transcript_checks: exact user request=true; exact assistant pong=true
 native_primary: litellm/task-general
 native_fallbacks: six original fallbacks unchanged
 config_sha256_before: 1c86bf6dd5db71e49b93cc70a5e1844e03bcddeb1280f36d5bccd9d0c5c52291
@@ -1133,6 +1138,6 @@ normalized_exclusions: meta.lastTouchedAt; plugins.entries.agency-preflight.enab
 launcher_manifest_sha256: c34c66be747a72ccdbf2a5af8df57f47957ea79c6f4128a7f46bd3deb65c166c
 post_disable_store_integrity: ok
 post_disable_store_backup_sha256: 9c193d2ed5ba8f6af266d5a72eb14ba4e6aaff25abd05478a25d95157fd2943a
-known_limit: Agency acceptance remains blocked; ordinary Telegram reply awaits operator proof
+known_limit: ordinary OpenClaw Telegram recovery passes; Agency acceptance remains blocked
 hermes_and_protected_hosts: untouched
 ~~~

@@ -32,8 +32,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-264
 branch: codex/ar119-openclaw-hermes-litellm
-evidence_commit: b1bd07c6f6d78116753f3aeb3898e13a32ff7d2f
-minimum_ledger_commit: 0ca308d63d0e95dec7fcc6894c235d0f72702371
+evidence_commit: 620b8f19f2ccacf686bac0a252b6772ea470dabd
+minimum_ledger_commit: 2fd2aede12f4c8f74b780f562a8b2792c9829bf4
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 ---
@@ -58,6 +58,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 - Reset expected-red exit 227 now passes through `before_reset` with an exact bounded race wait; all 218 affected OpenClaw tests pass. The candidate is not installed.
 - OpenClaw 2026.7.1-2 has no supported tool return-direct or post-model replacement surface. Its public finalizer hook cannot supply a reply, its dispatcher drops exact `NO_REPLY` before Agency's payload hook, and the public plugin SDK cannot register terminal tool presentation.
 - Lucas selected reversible recovery. The Agency uninstaller's write-free ownership check refused the installed-copy shape without mutation (AR-269). With the gateway stopped, the native host disabled only `agency-preflight`; OpenClaw restarted RPC/channel-probe green with native models unchanged. Agency is registered-disabled; Hermes and all proven hosts remain untouched.
+- Exact ordinary Telegram request `reply with pong` received exact `pong`; redacted inbound/outbound facts and role-aware native transcript checks pass at SHA `0420d72c...`. This proves ordinary OpenClaw recovery only, not Agency acceptance.
 
 ## completed-evidence
 
@@ -77,9 +78,9 @@ Continue with OpenClaw only after the clean commit pair. Hermes is running break
 
 ## next-bounded-work-package
 
-1. Preserve the operator's ordinary Telegram recovery result.
-2. Keep Agency disabled until the missing OpenClaw delivery capability exists.
-3. Repair AR-269 separately; leave Hermes untouched.
+1. Keep Agency disabled until the missing OpenClaw delivery capability exists.
+2. Repair AR-269 separately.
+3. Use new Agency inputs only after those prerequisites; leave Hermes untouched.
 
 ## verification
 

@@ -3448,4 +3448,8 @@ fallbacks are unchanged; the launcher SHA remains `c34c66be...`. Pre/post
 normalized config SHA is identical after excluding only timestamp metadata and
 the authorized Agency enabled flag. Post-disable Store backup integrity is
 `ok`, SHA `9c193d2e...`. Hermes and every protected host remain untouched;
-operator-originated ordinary Telegram acknowledgment/reply proof is pending.
+operator-originated exact `reply with pong` then received exact `pong`.
+Redacted channel state records both inbound and outbound activity; role-aware
+native transcript verification passes at SHA-256 `0420d72c...`. Ordinary
+OpenClaw delivery is restored, while Agency acceptance remains blocked and no
+Agency trace/header claim applies during disablement.

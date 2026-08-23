@@ -49,6 +49,10 @@ made and the unchanged plan was not retried. For immediate service recovery,
 the stopped gateway used OpenClaw's reversible native disable. Agency remains
 registered/staged but inactive; OpenClaw restarted RPC-green with Telegram and
 Slack probes green and native model routing unchanged.
+The operator then sent exact `reply with pong` through Telegram and received
+exact `pong`. Redacted channel status records both inbound and outbound
+activity, and the native transcript SHA-256 is `0420d72c...`; role-aware parsing
+confirmed the exact request and assistant response without exposing identifiers.
 
 ## Approach
 
@@ -67,6 +71,7 @@ Keep ambiguous or partial records fail-closed.
 - [x] Preserve both exact owned installed-copy refusal receipts.
 - [x] Prove the current refusal made no mutation.
 - [x] Restore ordinary OpenClaw mode through a reversible native disable.
+- [x] Prove an ordinary Telegram request and exact response with Agency disabled.
 - [ ] Add an expected-red for the exact installed-copy/native-source shape.
 - [ ] Accept only the complete dual-path binding and retain conflicting-shape rejection.
 - [ ] Run focused uninstall, registration, and host-boundary tests.

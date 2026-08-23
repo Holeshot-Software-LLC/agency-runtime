@@ -140,8 +140,10 @@ is retained under AR-269. With the gateway stopped, OpenClaw's native plugin
 command disabled only `agency-preflight`, then the native service restarted.
 Agency is registered/staged but inactive, RPC and both channel probes are green,
 native `litellm/task-general` plus all six fallbacks are unchanged, and Hermes
-and protected hosts remain untouched. Ordinary Telegram response proof is
-operator-pending.
+and protected hosts remain untouched. The operator sent exact `reply with pong`
+and received exact `pong`; redacted native channel state records inbound and
+outbound activity, and role-aware transcript verification passes at SHA-256
+`0420d72c...`. This proves ordinary OpenClaw recovery, not Agency acceptance.
 
 ## Approach
 
@@ -184,6 +186,7 @@ This conforms to ADR-0049 and ADR-0120 and requires no new durable decision.
 - [x] Prove the native `/reset` hook race and keep its acknowledgement exception fail-closed.
 - [x] Run affected reset-correlation suites: 218 passed.
 - [x] Restore ordinary OpenClaw mode through a reversible native Agency disable.
+- [x] Prove exact ordinary Telegram request/response delivery with Agency disabled.
 - [ ] Obtain a supported OpenClaw return-direct or post-model replacement capability.
 - [ ] Deliver a genuinely changed fresh Telegram response with matching Store evidence.
 - [ ] Preserve post-live Store integrity, launcher provenance, and config hashes.
