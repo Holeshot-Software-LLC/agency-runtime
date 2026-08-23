@@ -3643,3 +3643,26 @@ affected installer, dispatch, inference, final-header, and Store slice is 374
 passed with 1 skipped. Clean implementation/ledger pair `e5ae8de1` /
 `7abf9b13` checkpoints the candidate. It is not installed. OpenClaw
 source/config, Hermes, Codex, Claude, and ZCode remain untouched.
+
+## 2026-08-23 - Tool-correlation repair installed; fresh ingress pending
+
+Agency-only install `251c4349-f7e3-4640-980d-055b857c0abe` installed the
+correlation repair from clean checkout `c0426ab9` while OpenClaw was natively
+stopped, and the installer left it stopped. Bundle `ba344b92...`, runtime
+`70239e65...`, and launcher SHA `3090708c...` bind to that checkout. Native
+restart is RPC-green and loaded 11 hooks including `before_tool_call`, the
+awaited middleware, no Agency tool, and zero diagnostics.
+
+OpenClaw remains 2026.7.1-2 on native `litellm/task-general` plus the original
+six fallbacks. Its only semantic config delta is `meta.lastTouchedAt`; Agency
+config SHA remains `43367ec9...`. Agency remains harness-scoped through
+`linux-task-agency-router`, LiteLLM, and exact `task-agency-router`. Pre-install
+online Store backup SHA `3cdf39fc...` has integrity `ok`, schema 47, and
+contractors remain 15. Hermes and protected hosts remain untouched.
+
+The first operator send after restart was not observed at the native Telegram
+inbound edge. Gateway RPC, native channel probe, and Telegram credential/API
+health are green with zero queued updates, but no Agency trace exists. This is
+retained as pending ingress, not an Agency failure or delivery claim. The next
+bounded proof remains a fresh session, exact `agency status`, a genuinely new
+eligible `tmux` skill read, and the exact restart-safety review.

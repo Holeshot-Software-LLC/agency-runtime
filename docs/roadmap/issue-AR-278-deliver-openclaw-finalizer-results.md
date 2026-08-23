@@ -303,12 +303,22 @@ generated Agency test had incorrectly invented that context, so the live bridge
 failed closed with empty identities.
 
 Expected-red exit 245 now matches the installed callback. The OpenClaw-only
-candidate records bounded, expiring, one-use correlation by `toolCallId` in
+repair records bounded, expiring, one-use correlation by `toolCallId` in
 `before_tool_call`, consumes it in the awaited result middleware, rejects
 ambiguous collisions, and clears state when Agency is disabled. The affected
 installer, dispatch, inference, final-header, and Store slice is 374 passed with
-1 skipped. Nothing is installed from this candidate yet; OpenClaw source/config
-and Hermes, Codex, Claude, and ZCode remain untouched.
+1 skipped.
+
+Agency-only install `251c4349-f7e3-4640-980d-055b857c0abe` installed that
+repair from clean checkout `c0426ab9` while OpenClaw was natively stopped, and
+the installer left it stopped. Native restart is RPC-green and loaded 11 hooks,
+including `before_tool_call`, with no Agency tool or plugin diagnostic. Runtime
+digest `70239e65...` and launcher SHA `3090708c...` bind to this checkout.
+OpenClaw's native `litellm/task-general` primary and six fallbacks are unchanged;
+its only semantic config delta is `meta.lastTouchedAt`, and Agency config SHA
+`43367ec9...` is unchanged. The first operator send after restart was not seen
+at the Telegram inbound edge and created no Agency trace, so no delivery or
+skill claim is made. Hermes, Codex, Claude, and ZCode remain untouched.
 
 ## Approach
 
@@ -371,5 +381,6 @@ remain outside the mutation boundary.
 - [x] Preserve post-live Store integrity, launcher provenance, and config hashes.
 - [x] Preserve the delivered post-status workforce turn and its failed native-skill evidence without claiming success.
 - [x] Add installed-contract expected-red coverage for absent middleware correlation and a bounded collision-safe repair.
-- [ ] Install the correlation candidate and prove a genuinely different native skill plus the exact substantive restart-safety review.
+- [x] Install the correlation candidate through Agency-only install while OpenClaw is natively stopped.
+- [ ] Prove a genuinely different native skill plus the exact substantive restart-safety review.
 - [ ] Tracker creation remains pending separate authorization.

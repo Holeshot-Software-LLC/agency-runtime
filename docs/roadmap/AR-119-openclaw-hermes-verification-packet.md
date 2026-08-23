@@ -1386,3 +1386,43 @@ focused_green: 374 passed, 1 skipped
 known_limit: candidate not installed; skill Store/header proof and exact substantive restart-safety request pending
 hermes_and_protected_hosts: untouched
 ~~~
+
+### OpenClaw tool-correlation install readiness bundle
+
+~~~yaml
+host: openclaw
+checkout_sha: c0426ab967c102f25fb530bf6355f7f6ff11b45b
+implementation_commit: e5ae8de1e278e2f6fcb40af818663c42186f7b42
+host_version: OpenClaw 2026.7.1-2 (0790d9f)
+install_result: 251c4349-f7e3-4640-980d-055b857c0abe; complete; Agency plugin only
+bundle_digest: ba344b92ad80265a6807a6fda278c1c803af20d2b9767416d41a98901b2bae84
+runtime_digest: 70239e65528b4828a3a992a0a857b0684976ec50d36c80c8d89bd0e4c0740d9d
+launcher_manifest_sha256: 3090708c390ecb5c6619137e328bae076f7372cc114d4b55b230e27555472250
+installer_restarted_gateway: false
+native_restart_result: active; RPC green; OpenClaw 2026.7.1-2
+plugin_contract: loaded/imported/activated; 11 hooks including before_tool_call; middleware=[openclaw]; no tools; zero diagnostics
+native_config_before_sha256: 17784e2e1dc7a55530cb3853bb2b6eed2339c7d2a7928fa987026b4dfbec0b65
+native_config_after_sha256: 3060c3ee95c193780eae92199516abf53525664b8d111c893cc349d4ca71d24b
+native_config_delta: meta.lastTouchedAt only
+native_primary: litellm/task-general
+native_fallback_count: 6
+agency_config_sha256_before_after: 43367ec9aa05a66fc2a60bb254f270836fb3616753769115fabb253a04d5d9f8 / unchanged
+agency_inference_profile: linux-task-agency-router
+agency_requested_alias: task-agency-router
+agency_model_group: task-agency-router
+credential_env_name: LITELLM_API_KEY
+credential_present_in_gateway: true
+contractors_before_after_install: 15/15
+pre_install_store_integrity: ok
+pre_install_store_schema: 47
+pre_install_store_backup_sha256: 3cdf39fc6518bb2b70c1ed009dc5877648dce5c62a3676edbf6ae73cc785ba77
+install_artifact: /tmp/ar278-openclaw-seventh-preinstall/install-summary-redacted.json
+install_artifact_sha256: 0c7698b5e398ee8bc18e068d473901b0aa3ce1dfef5dd44d28c58e9a1cc1969d
+readiness_artifact: /tmp/ar278-openclaw-seventh-preinstall/readiness-redacted.json
+readiness_artifact_sha256: fa3e089dfb6f627434889367a0773bfefa0be2a960bd4fa6e05ef9b03c0157ca
+first_post_restart_send: not observed at native Telegram inbound edge; no Agency trace
+telegram_probe: configured/running/probe-green; API credential valid; zero queued updates
+next_skill: tmux; native inventory eligible and model-visible
+known_limit: fresh status, skill Store/header, and exact substantive restart-safety proofs pending
+hermes_and_protected_hosts: untouched
+~~~

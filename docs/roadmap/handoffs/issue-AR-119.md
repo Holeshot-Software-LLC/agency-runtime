@@ -68,10 +68,10 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 
 ## checkpoint
 
-- Branch `codex/ar278-openclaw-one-pass` has clean implementation/ledger pair `e5ae8de1` / `7abf9b13`; `origin/main` is `4a326773`, `f76050d7` is an ancestor, and Agency 0.1.0 imports from this checkout.
-- Agency-only install `c3b124d6-6a88-46b4-8c5a-706c5187457b` completed from clean checkout `a518ed23` while OpenClaw was stopped. Bundle `fcc48773...`, runtime `0b05a499...`, and launcher SHA `317045e7...` bind to that checkout. The installer did not restart the host.
+- Branch `codex/ar278-openclaw-one-pass` is clean at checkpoint/ledger pair `f96065e6` / `c0426ab9`; implementation/ledger pair `e5ae8de1` / `7abf9b13` contains the OpenClaw correlation repair. `origin/main` is `4a326773`, `f76050d7` is an ancestor, and Agency 0.1.0 imports from this checkout.
+- Agency-only install `251c4349-f7e3-4640-980d-055b857c0abe` completed from clean checkout `c0426ab9` while OpenClaw was stopped. Bundle `ba344b92...`, runtime `70239e65...`, and launcher SHA `3090708c...` bind to that checkout. The installer did not restart the host.
 - OpenClaw remains audited 2026.7.1-2 on native `litellm/task-general` plus six original fallbacks. Its current config differs from exact pre-install SHA `0f30f12d...` only at `meta.lastTouchedAt`; models, providers, channels, and credential indirection are identical.
-- Native restart is RPC-green. Agency is enabled, loaded, imported, and activated with ten hooks, `agentToolResultMiddleware=[openclaw]`, no tool, and zero diagnostics. Telegram and Slack are configured/running/probe-green. The gateway has populated `LITELLM_API_KEY`; its value was never emitted.
+- Native restart is RPC-green. Agency is enabled, loaded, imported, and activated with 11 hooks including `before_tool_call`, `agentToolResultMiddleware=[openclaw]`, no tool, and zero diagnostics. Telegram and Slack are configured/running/probe-green. The gateway has populated `LITELLM_API_KEY`; its value was never emitted.
 - Agency remains harness-scoped to `linux-task-agency-router`, adapter `litellm`, exact alias/model-group `task-agency-router`, `http://127.0.0.1:4000/v1`, and 120000 ms. The existing global default is `agency-default`; Codex/Claude/ZCode have no new harness override. Hermes remains uninstalled break glass.
 - Five no-outbound Telegram failures remain retained. The installed correlation repair then passed a sixth fresh exact `agency status` turn in native session `5570abb9-eecc-4d77-be4b-bb9636bdf886`.
 - Store trace `78a68fdc-e192-4098-b8c7-58d20cf3bd8a`, run `6f446944-da85-4eda-8049-227bf268775e`, routing `da98bac1-c78a-4be7-9a6b-a121386fdaf7`, and terminal `9398965e-550c-452d-9f85-3e59f2ecd029` correlate. The run completed; finalization accepted with no missing fields; Telegram outbound followed inbound.
@@ -80,8 +80,9 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 - A new read-only skill turn then completed and delivered under trace `6b18f9f0-a8bb-4a68-b70b-45ec7cdfe454`, run `afc905ca-f68b-40c7-b694-b1842e7277c7`, routing `26492374-3d54-4da2-8bc6-0381e83813f4`, specialist `5b2f0fbd-445d-41f5-9d4c-1e2a99f3ff09`, and terminal `d6ae9ade-b124-46b5-8822-7457a177f526`.
 - Its three Agency receipts prove OpenClaw profile `linux-task-agency-router`, provider type `litellm`, exact alias/model-group `task-agency-router`, and zero fallback. Actual answering model remains unavailable. Native parent routing separately remained `task-general`.
 - OpenClaw read the exact inventory-authorized `healthcheck` path, but Store skill count stayed zero and the honest header said `Skills loaded: none`. Installed source proves the awaited middleware omits session/run context; Agency's prior generated test invented it, so the bridge failed closed. Failure artifact SHA is `c742cbe4...`.
-- Expected-red exit 245 now matches the host contract. The OpenClaw-only candidate carries bounded one-use correlation from `before_tool_call`, rejects collisions, and passes 374 affected tests with 1 skip. It is not installed.
-- Pre-install Store backup SHA `d00c86f9...` and post-status backup SHA `470aa2fd...` both have integrity `ok`, schema 47; contractors remain 15. Hermes, Codex OAuth/config/canary, Claude, and ZCode remain untouched.
+- Expected-red exit 245 now matches the host contract. The installed OpenClaw-only repair carries bounded one-use correlation from `before_tool_call`, rejects collisions, and passes 374 affected tests with 1 skip.
+- Current pre-install online Store backup SHA `3cdf39fc...` has integrity `ok`, schema 47; contractors remain 15. Agency config SHA is unchanged at `43367ec9...`; OpenClaw config changed from `17784e2e...` to `3060c3ee...` only at `meta.lastTouchedAt`.
+- The first operator send after the current restart was not observed at OpenClaw's Telegram inbound edge. Native probe and Telegram API credential health are green with zero queued updates, but no Agency trace exists; this is pending ingress, not an Agency turn or delivery success. Hermes, Codex OAuth/config/canary, Claude, and ZCode remain untouched.
 
 ## completed-evidence
 
@@ -92,8 +93,8 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 
 ## exact-blocker
 
-1. Checkpoint and install the OpenClaw-only tool-correlation candidate into natively stopped OpenClaw; do not reinstall OpenClaw.
-2. In a fresh session, prove a genuinely different eligible native skill and matching Store/header evidence without delegation.
+1. Restore observable Telegram inbound without changing native host configuration, then establish a fresh session.
+2. Prove the eligible `tmux` skill and matching Store/header evidence without delegation.
 3. Run the exact substantive OpenClaw review, preserve final integrity, and checkpoint before starting Hermes.
 
 ## traps (machine-specific; do not rediscover)

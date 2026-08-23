@@ -106,13 +106,24 @@ session/run fields. The earlier generated test incorrectly supplied those
 fields. Agency therefore invoked its bridge with empty correlation and failed
 closed before recording the skill or returning an updated snapshot.
 
-Expected-red exit 245 now models the installed contract. The bounded candidate
+Expected-red exit 245 now models the installed contract. The bounded repair
 captures session/run correlation from OpenClaw's supported `before_tool_call`
 hook by `toolCallId`, consumes it once in the awaited middleware, expires and
 caps the map, clears it when Agency is disabled, and rejects ambiguous ID
 collisions. The affected OpenClaw installer, dispatch, inference, final-header,
-and Store slice is 374 passed with 1 skipped. The candidate is not yet installed;
-Hermes and protected hosts remain untouched.
+and Store slice is 374 passed with 1 skipped.
+
+Agency-only install `251c4349-f7e3-4640-980d-055b857c0abe` then installed the
+repair from clean checkout `c0426ab9` while the native gateway was stopped. The
+installer left it stopped; native restart loaded all 11 hooks, including
+`before_tool_call`, with no exposed Agency tool or plugin diagnostic. Runtime
+digest `70239e65...` and launcher SHA `3090708c...` bind to this checkout.
+OpenClaw remains 2026.7.1-2 on `litellm/task-general` plus six fallbacks, and
+its only semantic config delta is `meta.lastTouchedAt`. Agency config SHA
+`43367ec9...` is unchanged. The first operator send after restart had not
+reached the native Telegram inbound edge at observation time; no Agency trace
+exists for it, so skill evidence remains pending rather than failed. Hermes and
+protected hosts remain untouched.
 
 ## Approach
 
@@ -141,6 +152,7 @@ or executable-namespace trust rules.
 - [x] Reinstall only Agency into OpenClaw and prove a genuinely different bundled skill in a completely fresh host session without delegation or child spawn.
 - [x] Retain the later awaited-middleware skill-evidence regression with exact Store, header, delivery, and alias receipts.
 - [x] Match the installed no-correlation middleware context in an expected-red regression and reject ambiguous tool-call correlation.
-- [ ] Reinstall only Agency from the correlation candidate and prove a genuinely different eligible skill without delegation or child spawn.
-- [ ] Focused OpenClaw adapter, installer, final-header, and Store tests plus proportionate local gates pass.
+- [x] Reinstall only Agency from the correlation candidate while OpenClaw is natively stopped.
+- [ ] Prove a genuinely different eligible skill without delegation or child spawn.
+- [x] Focused OpenClaw adapter, installer, final-header, and Store tests plus proportionate local gates pass.
 - [ ] Tracker creation remains pending separate authorization.
