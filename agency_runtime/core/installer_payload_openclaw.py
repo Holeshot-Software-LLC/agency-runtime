@@ -40,6 +40,8 @@ const TERMINAL_REJECTION_TTL_MS = 10 * 60 * 1000;
 const MAX_TERMINAL_REJECTIONS = 128;
 const PREFLIGHT_CONTEXT_TTL_MS = 10 * 60 * 1000;
 const MAX_PREFLIGHT_CONTEXTS = 128;
+const TOOL_CORRELATION_TTL_MS = 10 * 60 * 1000;
+const MAX_TOOL_CORRELATIONS = 128;
 const OUTBOUND_AUTHORIZATION_TTL_MS = 30 * 1000;
 const NATIVE_CONTROL_ACK_TTL_MS = 10 * 1000;
 const NATIVE_CONTROL_ACK_WAIT_MS = 1_000;
@@ -47,6 +49,7 @@ const NATIVE_CONTROL_ACK_POLL_MS = 10;
 const MAX_OUTBOUND_AUTHORIZATIONS = 128;
 const CONTROL_AUTHORIZATION_FIELD = "agencyRuntimeControlAuthorization";
 const preflightContexts = new Map();
+const toolCorrelations = new Map();
 const terminalRejections = new Map();
 const outboundAuthorizations = new Map();
 const controlAuthorizations = new Map();
@@ -827,6 +830,59 @@ function forgetPreflightContext(event, ctx) {{
   if (key) preflightContexts.delete(key);
 }}
 
+function pruneToolCorrelations(now = Date.now()) {{
+  for (const [key, state] of toolCorrelations) {{
+    if (Number(state?.expiresAt || 0) <= now) toolCorrelations.delete(key);
+  }}
+  while (toolCorrelations.size >= MAX_TOOL_CORRELATIONS) {{
+    toolCorrelations.delete(toolCorrelations.keys().next().value);
+  }}
+}}
+
+function toolCorrelationIdentity(value) {{
+  const identity = boundedCorrelation(value);
+  return identity && Buffer.byteLength(identity, "utf8") <= 512 ? identity : "";
+}}
+
+function rememberToolCorrelation(event, ctx) {{
+  const toolCallId = toolCorrelationIdentity(event?.toolCallId || ctx?.toolCallId);
+  const session = toolCorrelationIdentity(sessionId(event, ctx));
+  const run = toolCorrelationIdentity(traceId(event, ctx));
+  if (!toolCallId || !session || !run) return false;
+  const now = Date.now();
+  pruneToolCorrelations(now);
+  const previous = toolCorrelations.get(toolCallId);
+  const previousActive = Number(previous?.expiresAt || 0) > now;
+  const ambiguous = previousActive && (
+    previous?.ambiguous === true
+    || previous?.sessionId !== session
+    || previous?.traceId !== run
+  );
+  toolCorrelations.set(toolCallId, {{
+    sessionId: session,
+    traceId: run,
+    ambiguous,
+    expiresAt: now + TOOL_CORRELATION_TTL_MS,
+  }});
+  return !ambiguous;
+}}
+
+function consumeToolCorrelation(event, ctx) {{
+  const toolCallId = toolCorrelationIdentity(event?.toolCallId || ctx?.toolCallId);
+  if (!toolCallId) return null;
+  const state = toolCorrelations.get(toolCallId);
+  toolCorrelations.delete(toolCallId);
+  if (
+    !state
+    || state.ambiguous === true
+    || Number(state.expiresAt || 0) <= Date.now()
+  ) return null;
+  return {{
+    sessionId: String(state.sessionId || ""),
+    traceId: String(state.traceId || ""),
+  }};
+}}
+
 function observeRuntimeState(result, epoch = runtimeStateEpoch) {{
   if (epoch !== runtimeStateEpoch) return false;
   if (
@@ -839,6 +895,7 @@ function observeRuntimeState(result, epoch = runtimeStateEpoch) {{
     controlAuthorizations.clear();
     nativeControlAuthorizations.clear();
     preflightContexts.clear();
+    toolCorrelations.clear();
   }} else if (result?.runtime_enabled === true || result?.runtimeEnabled === true) {{
     runtimeEnabled = true;
   }}
@@ -862,15 +919,25 @@ export default definePluginEntry({{
   description: "Agency Runtime routing, evidence, and final-response enforcement.",
   register(api) {{
     deliveryCompatibility = inspectFinalOnlyDelivery(api?.config);
+    api.on("before_tool_call", (event, ctx) => {{
+      if (!runtimeEnabled) return undefined;
+      rememberToolCorrelation(event, ctx);
+      return undefined;
+    }});
+
     api.registerAgentToolResultMiddleware(async (event, ctx) => {{
       if (!runtimeEnabled) return undefined;
+      const correlation = consumeToolCorrelation(event, ctx);
+      const correlatedSession = correlation?.sessionId || sessionId(event, ctx);
+      const correlatedTrace = correlation?.traceId || traceId(event, ctx);
+      if (!correlatedSession || !correlatedTrace) return undefined;
       const stateEpoch = ++runtimeStateEpoch;
       let result;
       try {{
         result = await invokeAgency({{
           action: "post_tool_call",
-          sessionId: sessionId(event, ctx),
-          traceId: traceId(event, ctx),
+          sessionId: correlatedSession,
+          traceId: correlatedTrace,
           toolName: String(event?.toolName || ""),
           toolInput: event?.args || {{}},
           toolResult: event?.result,

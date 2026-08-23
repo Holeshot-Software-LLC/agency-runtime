@@ -1340,3 +1340,47 @@ store_schema: 47
 known_limit: control path only; skill and substantive task-agency-router proof pending
 hermes_and_protected_hosts: untouched
 ~~~
+
+### OpenClaw delivered skill-correlation failure bundle
+
+~~~yaml
+host: openclaw
+installed_checkout_sha: a518ed236b71774f218b6dff92222d9e4c53144c
+host_version: OpenClaw 2026.7.1-2 (0790d9f)
+native_session_id: 5570abb9-eecc-4d77-be4b-bb9636bdf886
+agency_trace_id: 6b18f9f0-a8bb-4a68-b70b-45ec7cdfe454
+store_run_id: afc905ca-f68b-40c7-b694-b1842e7277c7
+routing_decision_ids:
+  - 26492374-3d54-4da2-8bc6-0381e83813f4
+specialists_loaded_ids:
+  - 5b2f0fbd-445d-41f5-9d4c-1e2a99f3ff09
+model_receipt_ids:
+  - db7c5f8d-43f3-48af-b185-30dd6d37eeac
+  - b1b6381a-ddb5-4e93-9445-9e15ca1fa475
+  - e4f42453-3ef8-41c7-9653-899dc7a0aa5d
+agency_inference_profile: linux-task-agency-router
+provider_type: litellm
+requested_alias: task-agency-router
+model_group: task-agency-router
+fallback_count: 0
+native_parent_provider: litellm
+native_parent_requested_alias: task-general
+actual_model_and_receipt_source: unavailable; wrapper receipts report requested Agency alias only
+skill_read: exact native-inventory-authorized healthcheck SKILL.md
+skill_path_sha256: 51ba91eb9d45fed765b8f3aca056e9f38886ca5702d3bfab41e69ba958608834
+skill_name_and_store_row_id: none; failed evidence retained
+header_exact: agency-steward, code-reviewer / none / none / workforce inference task-agency-router to linux-task-agency-router/task-agency-router wrapper / inference
+finalization_id: d6ae9ade-b124-46b5-8822-7457a177f526
+finalization_status: accept; completed; no missing fields
+response_sha256: e98c6c18abdb11cf957eb2ad88b3f7d9e7913daf1bfb63fd4ba3f686ca787763
+native_transcript_sha256: 76826043528f53ce1b791202c3dbdbd63a6a07d440e7e0b6baccdb090b8a1d39
+delivery_result: Telegram outbound followed inbound
+failure_artifact: /tmp/ar278-openclaw-sixth-live/healthcheck-correlation-diagnosis-redacted.json
+failure_artifact_sha256: c742cbe4cd24c713fdbb29f25fc2ecef1221664d28bf019ac6d935be3283db05
+root_cause: installed awaited middleware callback has tool args but no session/run correlation; prior Agency test invented those context fields
+expected_red: generated-plugin exit 245
+candidate_scope: bounded one-use before_tool_call correlation inside generated Agency OpenClaw plugin only
+focused_green: 374 passed, 1 skipped
+known_limit: candidate not installed; skill Store/header proof and exact substantive restart-safety request pending
+hermes_and_protected_hosts: untouched
+~~~

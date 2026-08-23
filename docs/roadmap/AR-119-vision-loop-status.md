@@ -3607,3 +3607,38 @@ receipts prove deterministic status did not invoke or prove
 are integrity `ok`, schema 47, SHAs `d00c86f9...` / `470aa2fd...`; contractors
 remain 15. AR-278 delivery passes. Harmless skill and substantive workforce
 proof remain pending.
+
+## 2026-08-23 - Delivered skill turn isolates missing middleware correlation
+
+A genuinely new read-only `healthcheck` request in the same native session was
+delivered through Telegram. Store trace
+`6b18f9f0-a8bb-4a68-b70b-45ec7cdfe454`, completed run
+`afc905ca-f68b-40c7-b694-b1842e7277c7`, accepted routing
+`26492374-3d54-4da2-8bc6-0381e83813f4`, specialist
+`5b2f0fbd-445d-41f5-9d4c-1e2a99f3ff09`, and accepted terminal
+`d6ae9ade-b124-46b5-8822-7457a177f526` correlate. Response SHA is
+`e98c6c18...`; transcript SHA is `76826043...`.
+
+All three Agency wrapper receipts requested exact alias/model-group
+`task-agency-router` through automatically selected OpenClaw profile
+`linux-task-agency-router` and provider type `litellm`; routing records zero
+fallback. OpenClaw's native parent remained LiteLLM `task-general`. No provider
+telemetry supplied an actual answering model, so neither alias is promoted into
+that claim.
+
+OpenClaw's native `read` used the exact eligible `healthcheck` path reported by
+`openclaw skills info`, but the Store contains zero skill rows and the honest
+five-line header says `Skills loaded: none`. The failure is retained at
+`/tmp/ar278-openclaw-sixth-live/healthcheck-correlation-diagnosis-redacted.json`
+with SHA `c742cbe4...`.
+
+Installed 2026.7.1 source supplies tool arguments to the awaited middleware but
+does not populate its optional session/run event or context fields. The prior
+Agency unit harness incorrectly supplied those identities. Expected-red exit
+245 now matches the real callback. The OpenClaw-only candidate captures bounded
+session/run correlation from the supported `before_tool_call` hook by
+`toolCallId`, consumes it once in the awaited middleware, rejects ambiguous
+collisions, expires and caps state, and clears it when Agency is disabled. The
+affected installer, dispatch, inference, final-header, and Store slice is 374
+passed with 1 skipped. The candidate is not installed. OpenClaw source/config,
+Hermes, Codex, Claude, and ZCode remain untouched.

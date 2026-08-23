@@ -50,6 +50,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 - Sixth fresh exact status turn passed in native session `5570abb9-eecc-4d77-be4b-bb9636bdf886`. Trace `78a68fdc-e192-4098-b8c7-58d20cf3bd8a`, run `6f446944-da85-4eda-8049-227bf268775e`, routing `da98bac1-c78a-4be7-9a6b-a121386fdaf7`, and terminal `9398965e-550c-452d-9f85-3e59f2ecd029` correlate.
 - Finalization accepted with no missing fields, the run completed, and Telegram outbound followed inbound. Response SHA is `1e8c1df5...`; transcript SHA is `593ddef8...`.
 - The header's `task-general` value is OpenClaw's parent request alias. Deterministic status created zero Agency model receipts, specialists, skills, or binding, so it does not prove `task-agency-router` or an answering model.
+- A subsequent delivered read-only turn produced trace `6b18f9f0-a8bb-4a68-b70b-45ec7cdfe454`, completed run `afc905ca-f68b-40c7-b694-b1842e7277c7`, accepted routing `26492374-3d54-4da2-8bc6-0381e83813f4`, and terminal `d6ae9ade-b124-46b5-8822-7457a177f526`.
+- Three Agency receipts prove profile `linux-task-agency-router`, LiteLLM, exact `task-agency-router`, and zero fallback. Actual answering model is unavailable; native parent `task-general` remains separate.
+- The exact native-inventory-authorized `healthcheck` read produced no Store skill row and the header honestly stayed `none`. OpenClaw's middleware supplies arguments but no session/run callback context; the bridge failed closed. Expected-red exit 245 now models this exact gap.
+- The bounded OpenClaw-only candidate carries one-use correlation from `before_tool_call`, rejects collisions, and passes 374 affected tests with 1 skip. It is not installed; all protected hosts remain untouched.
 - Pre/post Store backups are integrity `ok`, schema 47, SHAs `d00c86f9...` / `470aa2fd...`; contractor count remains 15. Hermes remains break glass; Codex OAuth/config/canary, Claude, and ZCode remain untouched.
 
 ## completed-evidence
@@ -57,12 +61,13 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 - Self-contained OpenClaw Agency activation, final-only delivery, Store terminal correlation, and host-owned Telegram outbound now pass.
 - Install/launcher provenance, contractor preservation, config invariants, and before/after Store integrity are current.
 - AR-273 remains the prior workforce-alias proof; the new status control is not misreported as inference.
+- The delivered second turn independently proves exact Agency alias routing with zero fallback while retaining skill capture as a failure.
 
 ## exact-blocker
 
-1. Prove one harmless eligible skill read and matching Store row without delegation.
-2. Prove the exact substantive review through `linux-task-agency-router` and `task-agency-router` with zero protected fallback.
-3. Preserve final integrity/config evidence before beginning Hermes.
+1. Checkpoint and install the OpenClaw-only tool-correlation candidate through Agency install only.
+2. Prove a different eligible skill read and matching Store/header evidence without delegation.
+3. Prove the exact substantive review and preserve final integrity/config evidence before Hermes.
 
 ## same-task-continuity
 
@@ -70,9 +75,9 @@ Continue with OpenClaw only from this checkpoint. Hermes remains outside the cur
 
 ## next-bounded-work-package
 
-1. Send the harmless `healthcheck` skill-read request in the current fresh session.
-2. If delivery and Store skill evidence pass, send the exact OpenClaw restart-safety review.
-3. Correlate provider receipts and checkpoint the completed OpenClaw bundle.
+1. Finish the clean implementation/ledger checkpoint.
+2. Reinstall Agency only into natively stopped OpenClaw, restart natively, and use a fresh session plus a different harmless skill.
+3. If skill proof passes, send the exact restart-safety review and checkpoint the completed OpenClaw bundle.
 
 ## verification
 

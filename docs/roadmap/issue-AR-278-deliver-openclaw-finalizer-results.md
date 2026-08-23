@@ -279,6 +279,37 @@ both have integrity `ok`, schema 47; contractors remain 15. The AR-278
 delivery defect now passes in its exact scope. Skill loading and substantive
 Agency workforce inference remain separate pending proofs.
 
+### Post-status skill turn: alias passes, middleware correlation fails
+
+A genuinely new read-only request in the same native session produced trace
+`6b18f9f0-a8bb-4a68-b70b-45ec7cdfe454`, completed run
+`afc905ca-f68b-40c7-b694-b1842e7277c7`, accepted routing
+`26492374-3d54-4da2-8bc6-0381e83813f4`, specialist
+`5b2f0fbd-445d-41f5-9d4c-1e2a99f3ff09`, and accepted terminal
+`d6ae9ade-b124-46b5-8822-7457a177f526`. Telegram outbound followed inbound.
+
+Three wrapper receipts requested exact alias/model-group
+`task-agency-router` through OpenClaw profile `linux-task-agency-router` and
+provider type `litellm`; routing records `fallback_applied=false`. The native
+parent separately remained LiteLLM `task-general`. No provider telemetry named
+an actual answering model, so neither alias is promoted into that claim.
+
+OpenClaw read the exact eligible `healthcheck` `SKILL.md` reported by native
+inventory, but Store skill count remained zero and the exact final header said
+`Skills loaded: none`. This is retained failed skill evidence. Installed source
+shows why: OpenClaw's awaited middleware supplies tool arguments but its runtime
+factory supplies no session/run correlation to the middleware callback. The
+generated Agency test had incorrectly invented that context, so the live bridge
+failed closed with empty identities.
+
+Expected-red exit 245 now matches the installed callback. The OpenClaw-only
+candidate records bounded, expiring, one-use correlation by `toolCallId` in
+`before_tool_call`, consumes it in the awaited result middleware, rejects
+ambiguous collisions, and clears state when Agency is disabled. The affected
+installer, dispatch, inference, final-header, and Store slice is 374 passed with
+1 skipped. Nothing is installed from this candidate yet; OpenClaw source/config
+and Hermes, Codex, Claude, and ZCode remain untouched.
+
 ## Approach
 
 Change only Agency's OpenClaw adapter as specified by ADR-0166. Do not expose
@@ -338,4 +369,7 @@ remain outside the mutation boundary.
 - [x] Carry bounded preflight model identity through both OpenClaw final gates.
 - [x] Deliver a genuinely changed fresh Telegram response with matching Store evidence.
 - [x] Preserve post-live Store integrity, launcher provenance, and config hashes.
+- [x] Preserve the delivered post-status workforce turn and its failed native-skill evidence without claiming success.
+- [x] Add installed-contract expected-red coverage for absent middleware correlation and a bounded collision-safe repair.
+- [ ] Install the correlation candidate and prove a genuinely different native skill plus the exact substantive restart-safety review.
 - [ ] Tracker creation remains pending separate authorization.

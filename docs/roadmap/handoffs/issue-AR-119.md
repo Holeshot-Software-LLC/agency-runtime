@@ -77,6 +77,10 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 - Store trace `78a68fdc-e192-4098-b8c7-58d20cf3bd8a`, run `6f446944-da85-4eda-8049-227bf268775e`, routing `da98bac1-c78a-4be7-9a6b-a121386fdaf7`, and terminal `9398965e-550c-452d-9f85-3e59f2ecd029` correlate. The run completed; finalization accepted with no missing fields; Telegram outbound followed inbound.
 - The exact 489-character response has SHA `1e8c1df5...`; transcript SHA is `593ddef8...`. Its five-line header records `agency-steward`, no delegation, no skill, `requested execution alias: task-general`, and deterministic recruitment.
 - `task-general` is the OpenClaw parent request alias for this control response. The trace has zero Agency model receipts, specialists, skills, or resident binding. Deterministic status did not invoke or prove `task-agency-router`; no answering model is claimed.
+- A new read-only skill turn then completed and delivered under trace `6b18f9f0-a8bb-4a68-b70b-45ec7cdfe454`, run `afc905ca-f68b-40c7-b694-b1842e7277c7`, routing `26492374-3d54-4da2-8bc6-0381e83813f4`, specialist `5b2f0fbd-445d-41f5-9d4c-1e2a99f3ff09`, and terminal `d6ae9ade-b124-46b5-8822-7457a177f526`.
+- Its three Agency receipts prove OpenClaw profile `linux-task-agency-router`, provider type `litellm`, exact alias/model-group `task-agency-router`, and zero fallback. Actual answering model remains unavailable. Native parent routing separately remained `task-general`.
+- OpenClaw read the exact inventory-authorized `healthcheck` path, but Store skill count stayed zero and the honest header said `Skills loaded: none`. Installed source proves the awaited middleware omits session/run context; Agency's prior generated test invented it, so the bridge failed closed. Failure artifact SHA is `c742cbe4...`.
+- Expected-red exit 245 now matches the host contract. The OpenClaw-only candidate carries bounded one-use correlation from `before_tool_call`, rejects collisions, and passes 374 affected tests with 1 skip. It is not installed.
 - Pre-install Store backup SHA `d00c86f9...` and post-status backup SHA `470aa2fd...` both have integrity `ok`, schema 47; contractors remain 15. Hermes, Codex OAuth/config/canary, Claude, and ZCode remain untouched.
 
 ## completed-evidence
@@ -84,12 +88,13 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 - AR-278 status delivery now passes end to end: self-contained Agency middleware, natural parent response, both final gates, completed Store terminal, and host-owned Telegram outbound.
 - Install provenance, exact config-path-only drift, plugin/middleware activation, credential-name presence, contractor preservation, and before/after Store integrity are retained.
 - The requested `task-agency-router` alias remains configured only for Agency workforce inference. This deterministic control is deliberately not used as inference evidence.
+- The delivered second turn now proves automatic OpenClaw workforce routing through that exact Agency profile and alias with zero protected fallback; skill evidence remains failed, not waived.
 
 ## exact-blocker
 
-1. Load one harmless eligible native skill in this same fresh session without delegation and preserve its updated header plus `skills_loaded` row.
-2. Run the exact changed substantive OpenClaw review and prove automatic OpenClaw harness/profile/LiteLLM/alias selection with zero protected fallback.
-3. Preserve post-live integrity and checkpoint the evidence before starting Hermes.
+1. Checkpoint and install the OpenClaw-only tool-correlation candidate into natively stopped OpenClaw; do not reinstall OpenClaw.
+2. In a fresh session, prove a genuinely different eligible native skill and matching Store/header evidence without delegation.
+3. Run the exact substantive OpenClaw review, preserve final integrity, and checkpoint before starting Hermes.
 
 ## traps (machine-specific; do not rediscover)
 
@@ -101,9 +106,9 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 
 ## next-bounded-work-package
 
-1. From this clean checkpoint, send the harmless `healthcheck` skill-read request without delegation.
-2. If its host-written header and Store skill row pass, send the exact non-mutating restart-safety review.
-3. Correlate Agency inference receipts, Telegram delivery, config/launcher hashes, and final Store backup; then checkpoint before Hermes.
+1. Finish the clean implementation/ledger checkpoint for bounded native tool correlation.
+2. Stop OpenClaw natively, reinstall Agency only, restart natively, and use a fresh session plus a different harmless skill.
+3. If Store/header skill evidence passes, send the exact restart-safety review and finalize the OpenClaw evidence bundle.
 
 ## same-task-continuity
 

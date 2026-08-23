@@ -86,6 +86,34 @@ records `Skills loaded: healthcheck`. All three workforce stages used the
 OpenClaw-scoped LiteLLM profile and exact `task-agency-router` alias/model-group
 without a protected-provider fallback. No actual answering model is claimed.
 
+The later AR-278 awaited-middleware delivery repair regressed that evidence
+path. In native session `5570abb9-eecc-4d77-be4b-bb9636bdf886`, trace
+`6b18f9f0-a8bb-4a68-b70b-45ec7cdfe454` completed a new read-only `healthcheck`
+request and delivered its response. Routing decision
+`26492374-3d54-4da2-8bc6-0381e83813f4` accepted `code-reviewer`; all three
+Agency inference receipts used OpenClaw profile `linux-task-agency-router`,
+provider type `litellm`, and exact requested alias/model-group
+`task-agency-router` with `fallback_applied=false`. The exact native inventory
+still authorizes the read path, but the Store has zero skill rows and the honest
+header says `Skills loaded: none`. Artifact
+`/tmp/ar278-openclaw-sixth-live/healthcheck-correlation-diagnosis-redacted.json`
+retains the failure without credential or channel identity values.
+
+Installed OpenClaw 2026.7.1 source identifies the regression precisely. Its
+tool-result middleware supplies `args`, but its OpenClaw runtime factory passes
+only `runtime=openclaw` in middleware context and does not populate optional
+session/run fields. The earlier generated test incorrectly supplied those
+fields. Agency therefore invoked its bridge with empty correlation and failed
+closed before recording the skill or returning an updated snapshot.
+
+Expected-red exit 245 now models the installed contract. The bounded candidate
+captures session/run correlation from OpenClaw's supported `before_tool_call`
+hook by `toolCallId`, consumes it once in the awaited middleware, expires and
+caps the map, clears it when Agency is disabled, and rejects ambiguous ID
+collisions. The affected OpenClaw installer, dispatch, inference, final-header,
+and Store slice is 374 passed with 1 skipped. The candidate is not yet installed;
+Hermes and protected hosts remain untouched.
+
 ## Approach
 
 Preserve the bounded native path field through the generated bridge. Normalize
@@ -99,7 +127,8 @@ or executable-namespace trust rules.
 
 ## Dependencies
 
-- OpenClaw `2026.7.1-2` native `skills info --json` and `after_tool_call` contracts.
+- OpenClaw `2026.7.1-2` native `skills info --json`, `before_tool_call`, and
+  awaited tool-result middleware contracts.
 - Existing Agency skill evidence, Store correlation, and first-pass finalization.
 - AR-272 native finalizer and AR-273 LiteLLM structured-inference repair.
 
@@ -110,5 +139,8 @@ or executable-namespace trust rules.
 - [x] An inventory-authorized exact `SKILL.md` read normalizes to one canonical skill event and produces the matching Store row/header entry.
 - [x] Arbitrary reads, lookalike paths, inventory mismatch/failure, disabled skills, and malformed receipts remain unrecorded.
 - [x] Reinstall only Agency into OpenClaw and prove a genuinely different bundled skill in a completely fresh host session without delegation or child spawn.
+- [x] Retain the later awaited-middleware skill-evidence regression with exact Store, header, delivery, and alias receipts.
+- [x] Match the installed no-correlation middleware context in an expected-red regression and reject ambiguous tool-call correlation.
+- [ ] Reinstall only Agency from the correlation candidate and prove a genuinely different eligible skill without delegation or child spawn.
 - [ ] Focused OpenClaw adapter, installer, final-header, and Store tests plus proportionate local gates pass.
 - [ ] Tracker creation remains pending separate authorization.

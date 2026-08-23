@@ -760,6 +760,106 @@ if (call.toolName !== "read" || call.toolInput?.path !== "/opt/openclaw/skills/w
 
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is not installed")
+def test_generated_openclaw_correlates_native_tool_result_without_middleware_context(
+    tmp_path: Path,
+) -> None:
+    source = _openclaw_plugin_harness_source()
+    source += """
+const beforeToolCall = registeredHooks.get("before_tool_call");
+if (typeof beforeToolCall !== "function") process.exit(245);
+await beforeToolCall(
+  {
+    toolCallId: "call-native-context",
+    toolName: "read",
+    params: { path: "/opt/openclaw/skills/weather/SKILL.md" },
+    runId: "native-run",
+  },
+  {
+    toolCallId: "call-native-context",
+    toolName: "read",
+    sessionKey: "native-session",
+    runId: "native-run",
+  },
+);
+const registration = registeredToolResultMiddlewares[0];
+if (!registration) process.exit(246);
+await registration.handler(
+  {
+    toolCallId: "call-native-context",
+    toolName: "read",
+    args: { path: "/opt/openclaw/skills/weather/SKILL.md" },
+    result: { content: [{ type: "text", text: "native tool output" }] },
+  },
+  { runtime: "openclaw" },
+);
+const call = bridgeCalls.find((payload) => payload.action === "post_tool_call");
+if (!call) process.exit(247);
+if (call.sessionId !== "native-session" || call.traceId !== "native-run") process.exit(248);
+"""
+    script = tmp_path / "openclaw-native-tool-result-correlation.mjs"
+    script.write_text(source, encoding="utf-8")
+
+    completed = subprocess.run(
+        [str(shutil.which("node")), str(script)],
+        capture_output=True,
+        text=True,
+        timeout=10,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is not installed")
+def test_generated_openclaw_rejects_ambiguous_native_tool_result_correlation(
+    tmp_path: Path,
+) -> None:
+    source = _openclaw_plugin_harness_source()
+    source += """
+const beforeToolCall = registeredHooks.get("before_tool_call");
+const registration = registeredToolResultMiddlewares[0];
+if (typeof beforeToolCall !== "function" || !registration) process.exit(249);
+for (const [sessionKey, runId] of [["session-a", "run-a"], ["session-b", "run-b"]]) {
+  await beforeToolCall(
+    { toolCallId: "call-collision", toolName: "read", runId },
+    { toolCallId: "call-collision", toolName: "read", sessionKey, runId },
+  );
+}
+await beforeToolCall(
+  { toolCallId: "call-collision", toolName: "read", runId: "run-b" },
+  {
+    toolCallId: "call-collision",
+    toolName: "read",
+    sessionKey: "session-b",
+    runId: "run-b",
+  },
+);
+await registration.handler(
+  {
+    toolCallId: "call-collision",
+    toolName: "read",
+    args: { path: "/opt/openclaw/skills/weather/SKILL.md" },
+    result: { content: [{ type: "text", text: "native tool output" }] },
+  },
+  { runtime: "openclaw" },
+);
+if (bridgeCalls.some((payload) => payload.action === "post_tool_call")) process.exit(250);
+"""
+    script = tmp_path / "openclaw-ambiguous-tool-result-correlation.mjs"
+    script.write_text(source, encoding="utf-8")
+
+    completed = subprocess.run(
+        [str(shutil.which("node")), str(script)],
+        capture_output=True,
+        text=True,
+        timeout=10,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is not installed")
 def test_generated_openclaw_allows_one_exact_native_reset_acknowledgement(
     tmp_path: Path,
 ) -> None:
