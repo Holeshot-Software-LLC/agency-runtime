@@ -1161,6 +1161,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `79c4fdf9` | 2026-08-23 | docs(roadmap): record fresh OpenClaw status proof | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md), [AR-274](../roadmap/issue-AR-274-record-openclaw-native-skill-reads.md), [AR-278](../roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md) | null |
 | `c315551a` | 2026-08-23 | docs(roadmap): record OpenClaw tmux skill proof | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md), [AR-274](../roadmap/issue-AR-274-record-openclaw-native-skill-reads.md), [AR-278](../roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md) | null |
 | `00f06644` | 2026-08-23 | docs(roadmap): finalize OpenClaw live evidence | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md), [AR-274](../roadmap/issue-AR-274-record-openclaw-native-skill-reads.md), [AR-278](../roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md) | null |
+| `ef79579c` | 2026-08-23 | docs(roadmap): checkpoint Hermes Agency install | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
