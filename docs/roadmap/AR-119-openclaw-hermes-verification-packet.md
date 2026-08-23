@@ -1426,3 +1426,38 @@ next_skill: tmux; native inventory eligible and model-visible
 known_limit: fresh status, skill Store/header, and exact substantive restart-safety proofs pending
 hermes_and_protected_hosts: untouched
 ~~~
+
+### OpenClaw installed-repair fresh status bundle
+
+~~~yaml
+host: openclaw
+checkout_sha: ab2862623f12fba9cf74634e637aed97a63b90bd
+installed_checkout_sha: c0426ab967c102f25fb530bf6355f7f6ff11b45b
+host_version: OpenClaw 2026.7.1-2 (0790d9f)
+fresh_session_id: b815780c-23fb-4fdb-8731-aed6d162b769
+agency_trace_id: 7f4aa31c-9d93-4199-bac0-b5818cea91de
+store_run_id: 526c86bd-ddca-4878-93a4-8bd09ca029a6
+store_session_key_sha256: d20c5bfbc17fd25b46d36898bccf90b16e7e54c7dc256dc9cce351542590e299
+routing_decision_ids: [d8130eb2-d1fa-478e-84e3-bcff1dc6e0ed]
+routing_result: abstained; deterministic control
+resident_binding_id: none
+specialists_loaded_ids: []
+skill_name_and_store_row_id: none
+model_receipts: []
+native_parent_provider: litellm
+native_parent_requested_alias: task-general
+agency_requested_alias_used_this_turn: false
+actual_model_and_receipt_source: unavailable; deterministic control has no Agency model receipt
+finalization_id: 6ce7c157-98fd-4ab7-aabc-d4722e02a43b
+finalization_status: accept; completed; no missing fields
+response_chars: 476
+response_sha256: a4c784dc9bf1025893bd04464da5c01ac7598b05a3a6fce480a74cd90577262c
+native_transcript_sha256: a2ec1af7e3bbe02d7c3a21d92ea38787a21116ae8cea4ff1d69aa9a3eeff38f4
+header_exact: agency-steward / none / none / requested execution alias task-general / deterministic
+telegram_delivery: outbound followed inbound; owner pasted exact response
+first_response_artifact: /tmp/ar278-openclaw-eighth-live/status-evidence-redacted.json
+first_response_artifact_sha256: 0524fac40ff365aa48dca844f54489f3199468cfdb2e42714bd8a84e3408adf2
+native_redacted_trajectory: /tmp/ar278-openclaw-eighth-status-b815780c
+known_limit: control path only; changed skill and substantive task-agency-router proofs pending
+hermes_and_protected_hosts: untouched
+~~~

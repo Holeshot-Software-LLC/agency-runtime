@@ -120,10 +120,14 @@ installer left it stopped; native restart loaded all 11 hooks, including
 digest `70239e65...` and launcher SHA `3090708c...` bind to this checkout.
 OpenClaw remains 2026.7.1-2 on `litellm/task-general` plus six fallbacks, and
 its only semantic config delta is `meta.lastTouchedAt`. Agency config SHA
-`43367ec9...` is unchanged. The first operator send after restart had not
-reached the native Telegram inbound edge at observation time; no Agency trace
-exists for it, so skill evidence remains pending rather than failed. Hermes and
-protected hosts remain untouched.
+`43367ec9...` is unchanged. A later `/new` established native session
+`b815780c-23fb-4fdb-8731-aed6d162b769`; its exact first `agency status` turn
+completed as trace `7f4aa31c-9d93-4199-bac0-b5818cea91de` and delivered through
+Telegram. Finalization accepted with no missing fields. The deterministic
+control correctly created no skill, specialist, resident binding, or Agency
+model receipt; response SHA is `a4c784dc...` and preserved transcript SHA is
+`a2ec1af7...`. The genuinely changed `tmux` skill proof remains pending. Hermes
+and protected hosts remain untouched.
 
 ## Approach
 

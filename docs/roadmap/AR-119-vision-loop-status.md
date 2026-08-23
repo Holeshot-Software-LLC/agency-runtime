@@ -3666,3 +3666,20 @@ health are green with zero queued updates, but no Agency trace exists. This is
 retained as pending ingress, not an Agency failure or delivery claim. The next
 bounded proof remains a fresh session, exact `agency status`, a genuinely new
 eligible `tmux` skill read, and the exact restart-safety review.
+
+## 2026-08-23 - Fresh installed-repair status control passes
+
+Native `/new` established fresh session
+`b815780c-23fb-4fdb-8731-aed6d162b769`. Exact first message `agency status`
+produced completed trace `7f4aa31c-9d93-4199-bac0-b5818cea91de`, run
+`526c86bd-ddca-4878-93a4-8bd09ca029a6`, abstained routing
+`d8130eb2-d1fa-478e-84e3-bcff1dc6e0ed`, and accepted terminal
+`6ce7c157-98fd-4ab7-aabc-d4722e02a43b`; Telegram outbound followed inbound.
+
+The exact 476-character response SHA is `a4c784dc...`; preserved transcript SHA
+is `a2ec1af7...`. Its five-line header records only `agency-steward`, no
+delegation or skill, native requested alias `task-general`, and deterministic
+recruitment. Zero Agency model receipts, specialists, skills, or resident
+binding correctly keep this a status-control proof rather than
+`task-agency-router` inference evidence. Changed `tmux` skill and exact
+restart-safety proofs remain next; protected hosts remain untouched.

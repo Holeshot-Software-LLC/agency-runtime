@@ -68,7 +68,7 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 
 ## checkpoint
 
-- Branch `codex/ar278-openclaw-one-pass` is clean at checkpoint/ledger pair `f96065e6` / `c0426ab9`; implementation/ledger pair `e5ae8de1` / `7abf9b13` contains the OpenClaw correlation repair. `origin/main` is `4a326773`, `f76050d7` is an ancestor, and Agency 0.1.0 imports from this checkout.
+- Branch `codex/ar278-openclaw-one-pass` is clean at install-record/ledger pair `8043ab43` / `ab286262`; implementation/ledger pair `e5ae8de1` / `7abf9b13` contains the OpenClaw correlation repair. `origin/main` is `4a326773`, `f76050d7` is an ancestor, and Agency 0.1.0 imports from this checkout.
 - Agency-only install `251c4349-f7e3-4640-980d-055b857c0abe` completed from clean checkout `c0426ab9` while OpenClaw was stopped. Bundle `ba344b92...`, runtime `70239e65...`, and launcher SHA `3090708c...` bind to that checkout. The installer did not restart the host.
 - OpenClaw remains audited 2026.7.1-2 on native `litellm/task-general` plus six original fallbacks. Its current config differs from exact pre-install SHA `0f30f12d...` only at `meta.lastTouchedAt`; models, providers, channels, and credential indirection are identical.
 - Native restart is RPC-green. Agency is enabled, loaded, imported, and activated with 11 hooks including `before_tool_call`, `agentToolResultMiddleware=[openclaw]`, no tool, and zero diagnostics. Telegram and Slack are configured/running/probe-green. The gateway has populated `LITELLM_API_KEY`; its value was never emitted.
@@ -82,7 +82,9 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 - OpenClaw read the exact inventory-authorized `healthcheck` path, but Store skill count stayed zero and the honest header said `Skills loaded: none`. Installed source proves the awaited middleware omits session/run context; Agency's prior generated test invented it, so the bridge failed closed. Failure artifact SHA is `c742cbe4...`.
 - Expected-red exit 245 now matches the host contract. The installed OpenClaw-only repair carries bounded one-use correlation from `before_tool_call`, rejects collisions, and passes 374 affected tests with 1 skip.
 - Current pre-install online Store backup SHA `3cdf39fc...` has integrity `ok`, schema 47; contractors remain 15. Agency config SHA is unchanged at `43367ec9...`; OpenClaw config changed from `17784e2e...` to `3060c3ee...` only at `meta.lastTouchedAt`.
-- The first operator send after the current restart was not observed at OpenClaw's Telegram inbound edge. Native probe and Telegram API credential health are green with zero queued updates, but no Agency trace exists; this is pending ingress, not an Agency turn or delivery success. Hermes, Codex OAuth/config/canary, Claude, and ZCode remain untouched.
+- A later `/new` established fresh native session `b815780c-23fb-4fdb-8731-aed6d162b769`. Its exact first `agency status` turn produced completed trace `7f4aa31c-9d93-4199-bac0-b5818cea91de`, run `526c86bd-ddca-4878-93a4-8bd09ca029a6`, abstained routing `d8130eb2-d1fa-478e-84e3-bcff1dc6e0ed`, and accepted terminal `6ce7c157-98fd-4ab7-aabc-d4722e02a43b`; Telegram outbound followed inbound.
+- The exact 476-character response SHA is `a4c784dc...`; preserved transcript SHA is `a2ec1af7...`. Its header records `agency-steward`, no delegation or skill, native requested alias `task-general`, and deterministic recruitment. Zero Agency receipts, specialists, skills, or binding correctly keep this a control-only proof.
+- Redacted status artifact `/tmp/ar278-openclaw-eighth-live/status-evidence-redacted.json` has SHA `0524fac4...`; native redacted trajectory is retained at `/tmp/ar278-openclaw-eighth-status-b815780c`. Hermes, Codex OAuth/config/canary, Claude, and ZCode remain untouched.
 
 ## completed-evidence
 
@@ -93,9 +95,9 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 
 ## exact-blocker
 
-1. Restore observable Telegram inbound without changing native host configuration, then establish a fresh session.
-2. Prove the eligible `tmux` skill and matching Store/header evidence without delegation.
-3. Run the exact substantive OpenClaw review, preserve final integrity, and checkpoint before starting Hermes.
+1. Prove the eligible `tmux` skill and matching Store/header evidence without delegation.
+2. Run the exact substantive OpenClaw review through `task-agency-router` with zero protected fallback.
+3. Preserve final integrity/config evidence and checkpoint before starting Hermes.
 
 ## traps (machine-specific; do not rediscover)
 
@@ -107,7 +109,8 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 
 ## next-bounded-work-package
 
-1. Finish the clean implementation/ledger checkpoint for bounded native tool correlation.
+1. Complete the changed `tmux` skill proof in the current fresh session.
+2. Complete the exact substantive restart-safety review and final evidence bundle.
 2. Stop OpenClaw natively, reinstall Agency only, restart natively, and use a fresh session plus a different harmless skill.
 3. If Store/header skill evidence passes, send the exact restart-safety review and finalize the OpenClaw evidence bundle.
 

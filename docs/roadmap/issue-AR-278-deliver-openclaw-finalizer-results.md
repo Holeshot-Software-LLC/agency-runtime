@@ -316,9 +316,14 @@ including `before_tool_call`, with no Agency tool or plugin diagnostic. Runtime
 digest `70239e65...` and launcher SHA `3090708c...` bind to this checkout.
 OpenClaw's native `litellm/task-general` primary and six fallbacks are unchanged;
 its only semantic config delta is `meta.lastTouchedAt`, and Agency config SHA
-`43367ec9...` is unchanged. The first operator send after restart was not seen
-at the Telegram inbound edge and created no Agency trace, so no delivery or
-skill claim is made. Hermes, Codex, Claude, and ZCode remain untouched.
+`43367ec9...` is unchanged. A later `/new` established native session
+`b815780c-23fb-4fdb-8731-aed6d162b769`; its exact first `agency status` turn
+completed as trace `7f4aa31c-9d93-4199-bac0-b5818cea91de`, finalization
+`6ce7c157-98fd-4ab7-aabc-d4722e02a43b` accepted with no missing fields, and
+Telegram outbound followed inbound. The response SHA is `a4c784dc...` and the
+preserved transcript SHA is `a2ec1af7...`. Deterministic control correctly made
+no Agency inference claim. Changed skill and substantive proofs remain pending;
+Hermes, Codex, Claude, and ZCode remain untouched.
 
 ## Approach
 

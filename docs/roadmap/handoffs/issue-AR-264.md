@@ -43,7 +43,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 
 ## checkpoint
 
-- Branch `codex/ar278-openclaw-one-pass` is clean at checkpoint/ledger pair `f96065e6` / `c0426ab9`; implementation/ledger pair `e5ae8de1` / `7abf9b13` contains the correlation repair and `f76050d7` remains an ancestor.
+- Branch `codex/ar278-openclaw-one-pass` is clean at install-record/ledger pair `8043ab43` / `ab286262`; implementation/ledger pair `e5ae8de1` / `7abf9b13` contains the correlation repair and `f76050d7` remains an ancestor.
 - Agency-only install `251c4349-f7e3-4640-980d-055b857c0abe` completed with 15 unchanged contractors, bundle `ba344b92...`, runtime `70239e65...`, and launcher `3090708c...`; the installer left OpenClaw stopped.
 - OpenClaw 2026.7.1-2 remains on native `litellm/task-general` plus six fallbacks. Agency remains scoped to `linux-task-agency-router`, LiteLLM, and exact alias/model-group `task-agency-router`. OpenClaw config changed only its timestamp; protected-host routing is unchanged.
 - Native restart loaded 11 hooks including `before_tool_call`, awaited OpenClaw middleware, no Agency tool, and zero diagnostics. RPC, Telegram, and Slack probes are green; the gateway credential variable is populated without its value being emitted.
@@ -55,7 +55,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 - The exact native-inventory-authorized `healthcheck` read produced no Store skill row and the header honestly stayed `none`. OpenClaw's middleware supplies arguments but no session/run callback context; the bridge failed closed. Expected-red exit 245 now models this exact gap.
 - The installed OpenClaw-only repair carries one-use correlation from `before_tool_call`, rejects collisions, and passes 374 affected tests with 1 skip.
 - Current pre-install online Store backup is integrity `ok`, schema 47, SHA `3cdf39fc...`; contractor count remains 15. Agency config SHA is unchanged at `43367ec9...`; OpenClaw's only semantic config delta is its timestamp.
-- The first operator send after the current restart was not observed at OpenClaw's Telegram inbound edge and created no Agency trace. Native and Telegram API probes are healthy with zero queued updates; live skill proof therefore remains pending. Hermes remains break glass; Codex OAuth/config/canary, Claude, and ZCode remain untouched.
+- A later `/new` established fresh native session `b815780c-23fb-4fdb-8731-aed6d162b769`. Exact first `agency status` produced completed trace `7f4aa31c-9d93-4199-bac0-b5818cea91de`, run `526c86bd-ddca-4878-93a4-8bd09ca029a6`, abstained routing `d8130eb2-d1fa-478e-84e3-bcff1dc6e0ed`, and accepted terminal `6ce7c157-98fd-4ab7-aabc-d4722e02a43b`; Telegram outbound followed inbound.
+- Response SHA `a4c784dc...` and preserved transcript SHA `a2ec1af7...` bind the exact deterministic header. Zero Agency receipts, specialists, skills, or binding correctly keep status a control-only proof. Hermes remains break glass; Codex OAuth/config/canary, Claude, and ZCode remain untouched.
 
 ## completed-evidence
 
@@ -66,9 +67,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 
 ## exact-blocker
 
-1. Restore observable Telegram inbound without changing native host configuration and establish a fresh session.
-2. Prove the eligible `tmux` read and matching Store/header evidence without delegation.
-3. Prove the exact substantive review and preserve final integrity/config evidence before Hermes.
+1. Prove the eligible `tmux` read and matching Store/header evidence without delegation.
+2. Prove the exact substantive review through `task-agency-router` with zero protected fallback.
+3. Preserve final integrity/config evidence before Hermes.
 
 ## same-task-continuity
 
@@ -76,8 +77,8 @@ Continue with OpenClaw only from this checkpoint. Hermes remains outside the cur
 
 ## next-bounded-work-package
 
-1. Finish the clean implementation/ledger checkpoint.
-2. Reinstall Agency only into natively stopped OpenClaw, restart natively, and use a fresh session plus a different harmless skill.
+1. Complete the changed `tmux` skill proof in the current fresh session.
+2. Complete the exact substantive restart-safety review and final evidence bundle.
 3. If skill proof passes, send the exact restart-safety review and checkpoint the completed OpenClaw bundle.
 
 ## verification
