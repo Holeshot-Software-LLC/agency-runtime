@@ -33,8 +33,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-264
 branch: codex/ar278-openclaw-one-pass
-evidence_commit: a9276e00d1dc6862fb0f93085069c4fd5ff27ce9
-minimum_ledger_commit: 4b1172be4a0912eb5d12ba7bb27cf6faf95fc5d8
+evidence_commit: 71cb09751bc3b1f81cf4e0312765c616c305780c
+minimum_ledger_commit: a518ed236b71774f218b6dff92222d9e4c53144c
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 ---
@@ -43,42 +43,41 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 
 ## checkpoint
 
-- Branch `codex/ar278-openclaw-one-pass` has installed clean pair `a9276e00` / `4b1172be`; `f76050d7` remains an ancestor.
-- OpenClaw 2026.7.1-2 remains on native `litellm/task-general` plus six fallbacks. Agency remains scoped to `linux-task-agency-router`, adapter `litellm`, exact alias/model-group `task-agency-router`, and the free target. No protected-harness route changed.
-- Agency-only install `175adc13-ef5f-4286-ac39-0a7584e9a982` is active with bundle `7a36d4df...`, runtime `8ec95839...`, and launcher `30c5760b...`. Ten hooks, awaited OpenClaw middleware, no tool, zero diagnostics, RPC, Telegram, and Slack are green. OpenClaw config changed only its timestamp.
-- Fifth fresh Telegram attempt: `/new` acknowledgement absent; exact `agency status` entered a new session; six native `task-general` calls and tools authored a 1274-character status response; no reply was queued.
-- Trace `f946f532-4b53-4695-b660-36be48500dc3`, run `79a11206-3c58-4ed0-b2b8-121bf3d0fdb9`, routing `50c37f62-8278-4e35-99a2-7985b97cb4f9`, terminal `ae002770-f47f-4c84-890f-9ccfd37fd06b`, and transcript SHA `deeb9040...` correlate. Status was deterministic; no workforce inference, specialist, skill, binding, or model receipt was expected.
-- The exact five-line requested-alias/deterministic header proves the alias-only receipt fix worked. Finalization still rejected only `actual_model_selected` because OpenClaw omitted `modelId` from final hooks even though it supplied `task-general` during preflight.
-- Expected-red exit 17 captures the missing identity. The generated OpenClaw plugin now carries the bounded preflight model through pre-verify and outbound revalidation, then deletes it at the final gate under existing TTL/size/count/runtime controls. Focused tests pass 90 with 1 skip.
-- Store integrity is `ok`, schema 47, contractor count 15, snapshot SHA `93dc0be2...`. Hermes remains break glass; Codex OAuth/config/canary, Claude, and ZCode remain untouched.
+- Branch `codex/ar278-openclaw-one-pass` has clean pair `71cb0975` / `a518ed23`; `f76050d7` remains an ancestor.
+- Agency-only install `c3b124d6-6a88-46b4-8c5a-706c5187457b` completed with 15 unchanged contractors, bundle `fcc48773...`, runtime `0b05a499...`, and launcher `317045e7...`; the installer left OpenClaw stopped.
+- OpenClaw 2026.7.1-2 remains on native `litellm/task-general` plus six fallbacks. Agency remains scoped to `linux-task-agency-router`, LiteLLM, and exact alias/model-group `task-agency-router`. OpenClaw config changed only its timestamp; protected-host routing is unchanged.
+- Native restart loaded ten hooks, awaited OpenClaw middleware, no Agency tool, and zero diagnostics. RPC, Telegram, and Slack are green; the gateway credential variable is populated without its value being emitted.
+- Sixth fresh exact status turn passed in native session `5570abb9-eecc-4d77-be4b-bb9636bdf886`. Trace `78a68fdc-e192-4098-b8c7-58d20cf3bd8a`, run `6f446944-da85-4eda-8049-227bf268775e`, routing `da98bac1-c78a-4be7-9a6b-a121386fdaf7`, and terminal `9398965e-550c-452d-9f85-3e59f2ecd029` correlate.
+- Finalization accepted with no missing fields, the run completed, and Telegram outbound followed inbound. Response SHA is `1e8c1df5...`; transcript SHA is `593ddef8...`.
+- The header's `task-general` value is OpenClaw's parent request alias. Deterministic status created zero Agency model receipts, specialists, skills, or binding, so it does not prove `task-agency-router` or an answering model.
+- Pre/post Store backups are integrity `ok`, schema 47, SHAs `d00c86f9...` / `470aa2fd...`; contractor count remains 15. Hermes remains break glass; Codex OAuth/config/canary, Claude, and ZCode remain untouched.
 
 ## completed-evidence
 
-- Awaited middleware, natural first-pass authorship, alias-only evidence filtering, install provenance, channel health, and fail-closed finalization are live-proven in their exact scopes.
-- AR-273 remains the substantive proof for Agency profile/provider/alias selection and zero protected fallback; deterministic status does not re-prove inference.
-- The new change is generated OpenClaw plugin correlation only. Shared policy, other adapters, host source/config, routing, and safety gates are unchanged.
+- Self-contained OpenClaw Agency activation, final-only delivery, Store terminal correlation, and host-owned Telegram outbound now pass.
+- Install/launcher provenance, contractor preservation, config invariants, and before/after Store integrity are current.
+- AR-273 remains the prior workforce-alias proof; the new status control is not misreported as inference.
 
 ## exact-blocker
 
-1. Checkpoint and install the preflight-model correlation fix.
-2. Re-prove fresh host-written status delivery before skill or substantive inference.
-3. Keep Hermes and protected hosts untouched.
+1. Prove one harmless eligible skill read and matching Store row without delegation.
+2. Prove the exact substantive review through `linux-task-agency-router` and `task-agency-router` with zero protected fallback.
+3. Preserve final integrity/config evidence before beginning Hermes.
 
 ## same-task-continuity
 
-Continue with OpenClaw only after the clean commit pair. Do not retry unchanged code/state.
+Continue with OpenClaw only from this checkpoint. Hermes remains outside the current mutation boundary.
 
 ## next-bounded-work-package
 
-1. Complete focused/docs/lint gates and create the substantive/ledger pair.
-2. Stop OpenClaw natively, reinstall Agency only, restart it, and recheck invariants.
-3. Collect a fresh Telegram status response, then skill and substantive proof only after delivery passes.
+1. Send the harmless `healthcheck` skill-read request in the current fresh session.
+2. If delivery and Store skill evidence pass, send the exact OpenClaw restart-safety review.
+3. Correlate provider receipts and checkpoint the completed OpenClaw bundle.
 
 ## verification
 
 ~~~text
 python scripts/context_handoff_status.py --json --threshold 50
-python -m pytest tests/test_openclaw_adapter.py tests/test_security_turn_boundaries.py tests/test_installer_registration.py tests/test_native_installer.py -k openclaw -q
 python scripts/docs_metadata.py --check
 python scripts/update_policy_availability.py --check
 python scripts/update_worklog.py --check

@@ -3575,3 +3575,35 @@ No shared policy, other adapter, OpenClaw source/configuration, model route,
 direct send, rewrite, or correction pass changed. Post-failure Store integrity
 is `ok`, schema 47, and read-only snapshot SHA is `93dc0be2...`. The candidate
 is not installed; Hermes and all protected hosts remain untouched.
+
+## 2026-08-23 - Sixth Telegram status delivery passes
+
+Clean pair `71cb0975` / `a518ed23` was installed into natively stopped
+OpenClaw as Agency-only operation
+`c3b124d6-6a88-46b4-8c5a-706c5187457b`. Bundle `fcc48773...`, runtime
+`0b05a499...`, and launcher SHA `317045e7...` bind to the checkout. The
+installer did not restart the host. Native restart loaded ten hooks, the
+awaited middleware, no Agency tool, and zero diagnostics; RPC and both channel
+probes were green.
+
+OpenClaw stays 2026.7.1-2 on `litellm/task-general` plus all six fallbacks.
+The config changed only `meta.lastTouchedAt`; models, providers, channels, and
+credential indirection are identical. Agency stays harness-scoped to
+`linux-task-agency-router` and exact `task-agency-router`. Hermes and protected
+hosts remain untouched.
+
+Fresh exact `agency status` in native session
+`5570abb9-eecc-4d77-be4b-bb9636bdf886` produced trace
+`78a68fdc-e192-4098-b8c7-58d20cf3bd8a`, run
+`6f446944-da85-4eda-8049-227bf268775e`, routing
+`da98bac1-c78a-4be7-9a6b-a121386fdaf7`, and completed terminal
+`9398965e-550c-452d-9f85-3e59f2ecd029`. Finalization accepted with no missing
+fields, and Telegram outbound followed inbound.
+
+Response SHA is `1e8c1df5...`; transcript SHA is `593ddef8...`. The header's
+`task-general` value is the OpenClaw parent request alias. Zero Agency model
+receipts prove deterministic status did not invoke or prove
+`task-agency-router`; no answering model is claimed. Pre/post Store backups
+are integrity `ok`, schema 47, SHAs `d00c86f9...` / `470aa2fd...`; contractors
+remain 15. AR-278 delivery passes. Harmless skill and substantive workforce
+proof remain pending.

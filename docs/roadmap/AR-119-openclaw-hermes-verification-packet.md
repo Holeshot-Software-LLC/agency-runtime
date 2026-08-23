@@ -1282,3 +1282,61 @@ post_failure_store_snapshot_sha256: 93dc0be2c55af0930e5c54753adc70aec76eaaf57974
 known_limit: fix not installed; genuinely changed fresh Telegram delivery proof pending
 hermes_and_protected_hosts: untouched
 ~~~
+
+### OpenClaw installed-correlation status success bundle
+
+~~~yaml
+host: openclaw
+checkout_sha: a518ed236b71774f218b6dff92222d9e4c53144c
+clean_tree_at_install: true
+implementation_commit: 71cb09751bc3b1f81cf4e0312765c616c305780c
+host_version: OpenClaw 2026.7.1-2 (0790d9f)
+install_result: c3b124d6-6a88-46b4-8c5a-706c5187457b; complete; Agency plugin only
+bundle_digest: fcc48773100e557596bb449cde9a51e1e345586d4ef8813023d72db7ba74ad00
+runtime_digest: 0b05a4995291b06bad15a401f68213629dbc17c7cf6fc323a302c05807866166
+launcher_manifest_sha256: 317045e7e508b5577aa3b2e0e01f995d8fa630d011a1172dcb0b1de92a6be72b
+plugin_contract: loaded/imported/activated; ten hooks; agentToolResultMiddleware=[openclaw]; no tools; zero diagnostics
+gateway_channels: RPC green; Telegram and Slack configured/running/probe-green
+native_config_before_sha256: 0f30f12d9f789da20f2e19fe92c3d3825bb93f2eb4cf707b179ee85c0f4ee8d1
+native_config_after_sha256: 17784e2e1dc7a55530cb3853bb2b6eed2339c7d2a7928fa987026b4dfbec0b65
+native_config_delta: meta.lastTouchedAt only
+native_primary: litellm/task-general
+native_fallbacks: six original fallbacks unchanged
+agency_inference_profile: linux-task-agency-router
+agency_requested_alias: task-agency-router
+agency_model_group: task-agency-router
+credential_env_name: LITELLM_API_KEY
+credential_present_in_gateway: true
+fresh_session_id: 5570abb9-eecc-4d77-be4b-bb9636bdf886
+agency_trace_id: 78a68fdc-e192-4098-b8c7-58d20cf3bd8a
+store_run_id: 6f446944-da85-4eda-8049-227bf268775e
+store_session_key: retained by SHA only
+store_session_key_sha256: d20c5bfbc17fd25b46d36898bccf90b16e7e54c7dc256dc9cce351542590e299
+resident_binding_id: none
+routing_decision_ids:
+  - da98bac1-c78a-4be7-9a6b-a121386fdaf7
+specialists_loaded_ids: []
+skill_name_and_store_row_id: none
+routing_mode: deterministic control; abstained; workforce inference not attempted
+model_receipts: []
+native_parent_provider: litellm
+native_parent_requested_alias: task-general
+agency_requested_alias_used_this_turn: false
+actual_model_and_receipt_source: unavailable; no answering-model claim
+first_response_artifact: /tmp/ar278-openclaw-sixth-live/status-evidence-redacted.json
+first_response_chars: 489
+first_response_sha256: 1e8c1df550fad3f42c8b859028de9890bbb54dc4fd8ee6526822ae9f8a1c2123
+header_exact: agency-steward / none / none / requested execution alias task-general / deterministic
+native_transcript_sha256: 593ddef8bbaaaa6a56e9fd4dad96ba4e0c21c3e3872584d91058641613838f70
+finalization_id: 9398965e-550c-452d-9f85-3e59f2ecd029
+finalization_status: accept; completed; no missing fields
+telegram_delivery: outbound timestamp follows inbound; owner confirmed response
+contractors_before_after_install: 15/15
+pre_install_store_integrity: ok
+pre_install_store_backup_sha256: d00c86f94db1910a27da13a8bece9c14c0d94f1c558354376e67653ac8f7bc7d
+post_status_store_integrity: ok
+post_status_store_backup_sha256: 470aa2fd018dc96ea750a953a792d7490d2e760788d8b6714dcd6d883554aeec
+store_schema: 47
+known_limit: control path only; skill and substantive task-agency-router proof pending
+hermes_and_protected_hosts: untouched
+~~~

@@ -242,6 +242,43 @@ adapter, security, registration, and native-installer slice is 90 passed and 1
 skipped. No shared policy, other adapter, OpenClaw source/configuration, model
 routing, direct send, rewrite, or correction pass changed.
 
+
+### Sixth Telegram turn: installed correlation repair delivers
+
+Clean pair `71cb0975` / `a518ed23` was installed as Agency-only operation
+`c3b124d6-6a88-46b4-8c5a-706c5187457b` while OpenClaw was natively stopped.
+The installer left it stopped. Bundle `fcc48773...`, runtime `0b05a499...`,
+and launcher SHA `317045e7...` bind to that checkout. Native restart loaded
+ten hooks, the awaited middleware, no Agency tool, and zero diagnostics.
+Gateway RPC plus Telegram/Slack probes were green.
+
+The current OpenClaw config differs from exact pre-install SHA `0f30f12d...`
+only at `meta.lastTouchedAt`; native `litellm/task-general`, all six
+fallbacks, providers, channels, and credential indirection remain identical.
+The gateway process has populated `LITELLM_API_KEY`; no value was emitted.
+
+A sixth fresh exact `agency status` turn entered native session
+`5570abb9-eecc-4d77-be4b-bb9636bdf886`. Trace
+`78a68fdc-e192-4098-b8c7-58d20cf3bd8a`, run
+`6f446944-da85-4eda-8049-227bf268775e`, deterministic routing
+`da98bac1-c78a-4be7-9a6b-a121386fdaf7`, and terminal
+`9398965e-550c-452d-9f85-3e59f2ecd029` correlate. The run completed,
+finalization accepted with no missing fields, and Telegram recorded outbound
+after inbound.
+
+The 489-character first response has SHA `1e8c1df5...`; native transcript SHA
+is `593ddef8...`. Its exact header records `agency-steward`, no delegation, no
+skill, `requested execution alias: task-general`, and deterministic
+recruitment. `task-general` is the OpenClaw parent request alias for this
+control turn. Zero Agency model receipts, specialists, skills, and resident
+bindings prove deterministic status did not invoke `task-agency-router`.
+Neither requested alias is promoted into an answering-model claim.
+
+Pre-install Store backup SHA `d00c86f9...` and post-status SHA `470aa2fd...`
+both have integrity `ok`, schema 47; contractors remain 15. The AR-278
+delivery defect now passes in its exact scope. Skill loading and substantive
+Agency workforce inference remain separate pending proofs.
+
 ## Approach
 
 Change only Agency's OpenClaw adapter as specified by ADR-0166. Do not expose
@@ -299,6 +336,6 @@ remain outside the mutation boundary.
 - [x] Preserve the fifth no-outbound transcript and zero-model-receipt correlation.
 - [x] Add expected-red coverage for final-hook model identity loss.
 - [x] Carry bounded preflight model identity through both OpenClaw final gates.
-- [ ] Deliver a genuinely changed fresh Telegram response with matching Store evidence.
-- [ ] Preserve post-live Store integrity, launcher provenance, and config hashes.
+- [x] Deliver a genuinely changed fresh Telegram response with matching Store evidence.
+- [x] Preserve post-live Store integrity, launcher provenance, and config hashes.
 - [ ] Tracker creation remains pending separate authorization.
