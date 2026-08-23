@@ -54,6 +54,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 - User-initiated Telegram trace `9ac12abc...` accepted deterministic status finalization `63140215...`, but native `task-general` emitted `NO_REPLY`; the first AR-278 failure remains retained.
 - Clean pair `1ca46cc9` / `320dc7cf` installed the prompt repair as Agency-only install `74b4c0bc...`. Fresh trace `2eaaf8e9...` then accepted all three exact Agency LiteLLM receipts with no cross-provider fallback, selected two specialists, recorded `openclaw-operations`, and returned exact finalizer text. The text hash `202f0d58...` was prematurely terminal, so the canonical full-payload gate failed closed and Telegram queued no reply.
 - Clean pair `a8022a92` / `4fab954b` defers only OpenClaw terminal commit to the audited full-payload gate and permits one exact, session-bound, expiring native reset acknowledgement. Agency-only install `87b518e8...` completed with bundle `7f94acf0...`, runtime `1816b6ad...`, launcher `c34c66be...`, 15 contractors, and no installer restart. Native restart is RPC/probe-green with 11 hooks and zero diagnostics. OpenClaw remains on `litellm/task-general` plus six original fallbacks; Agency config, Hermes, and all proven hosts remain untouched.
+- Third Telegram trace `4552b87d...` proves exact harness/profile/alias routing, accepted decision `bbf1d404...`, and `code-reviewer` load, then ends `response_invalid` because native `task-general` emits exact `NO_REPLY` after accepted finalizer event `f9138f55...`. Terminal `9599d181...` and transcript/trajectory SHAs `81b54934...` / `38f1e716...` are retained; no Telegram outbound exists.
+- Reset expected-red exit 227 now passes through `before_reset` with an exact bounded race wait; all 218 affected OpenClaw tests pass. The candidate is not installed.
+- OpenClaw 2026.7.1-2 has no supported tool return-direct or post-model replacement surface. Its public finalizer hook cannot supply a reply, its dispatcher drops exact `NO_REPLY` before Agency's payload hook, and the public plugin SDK cannot register terminal tool presentation.
 
 ## completed-evidence
 
@@ -63,8 +66,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 
 ## exact-blocker
 
-1. Telegram ingress and exact final text pass, but a premature text-hash terminal conflicts with the canonical outbound-payload hash and prevents channel delivery.
-2. The full-payload candidate is checkpointed and installed; prove a genuinely changed Telegram turn under AR-278.
+1. Agency inference/finalizer construction passes, but OpenClaw suppresses the model's post-tool `NO_REPLY` before the host-owned payload gate.
+2. A supported OpenClaw return-direct/terminal-presentation or post-model replacement seam is required; direct send, rewrite, retry, or native config change is forbidden.
 3. Preserve all failures and keep Hermes untouched.
 
 ## same-task-continuity
@@ -73,9 +76,9 @@ Continue with OpenClaw only after the clean commit pair. Hermes is running break
 
 ## next-bounded-work-package
 
-1. Require the exact native `/reset` acknowledgement.
-2. Correlate a genuinely changed Telegram response with Store full-payload evidence.
-3. Preserve post-live Store integrity and leave Hermes untouched until OpenClaw closes.
+1. Commit the reset regression/fix and exact blocker evidence.
+2. Obtain or authorize the missing OpenClaw delivery capability before another live attempt.
+3. Reinstall Agency and use new inputs only after that prerequisite; leave Hermes untouched.
 
 ## verification
 

@@ -101,13 +101,46 @@ exact static acknowledgement for exact `/new` or `/reset`, bound to the
 session and a ten-second lifetime; replay, tailed commands, and arbitrary
 unmarked messages remain blocked.
 
+Agency-only install `87b518e8-dfee-4759-af7d-565705d09afa` then produced a
+third retained Telegram failure in fresh session
+`ac750af6-7adf-41b9-ba8a-9feee76539e4`. Trace
+`4552b87d-5ee3-45a3-ba61-6629bbb20e99`, run
+`86d3c0a2-79f0-4ea6-aa0a-adcb4056d25b`, routing
+`bbf1d404-bb7b-4eb6-be3d-3b27aaf00786`, and specialist row
+`37ad1cc1-72c3-4d9d-b824-0b6eecd482ca` correlate. Three provider-stage
+receipts selected the OpenClaw harness, profile `linux-task-agency-router`,
+LiteLLM, and exact alias/model-group `task-agency-router` with no protected-host
+fallback. The pending finalizer was accepted, but the native terminal was exact
+`NO_REPLY` (SHA-256 `b07800ad...`), producing terminal
+`9599d181-a104-42a1-b166-8412add9c1d0` with `response_invalid`; Telegram
+queued nothing. This proves Agency routing and the alias are healthy and places
+the remaining failure after model inference.
+
+The same session exposed a reset race: native reset commands bypass
+`message_received`, and OpenClaw starts `before_reset` asynchronously while its
+acknowledgement can reach `message_sending` first. The focused regression first
+failed, then passed after the generated bridge moved correlation to
+`before_reset` and waits up to one second only for either exact native
+acknowledgement. Replay, unknown reasons, other text, and cross-session use
+remain blocked; the affected security, adapter-parity, and installer suites are
+218 passed. This candidate is not installed.
+
+The substantive delivery path is now blocked on an installed-host capability,
+not another Agency inference change. OpenClaw 2026.7.1-2 exposes only
+action/reason/retry from `before_agent_finalize`; a terminating tool result is
+not promoted to final output, and terminal-presentation support is internal and
+not exported to plugins. A supported return-direct/terminal-presentation API or
+post-model payload replacement hook is required. Qualifying another OpenClaw
+build or changing OpenClaw source requires separate Lucas authorization.
+
 ## Approach
 
 Keep the prompt correction and change only Agency's OpenClaw finalization
 boundary: construction validates policy text without committing an
 OpenClaw-terminal response; the existing last reply-payload gate commits the
-canonical envelope and policy-text hashes atomically. Permit only the exact,
-one-use native reset acknowledgement outside an Agency turn. Do not add a model
+canonical envelope and policy-text hashes atomically. Correlate native controls
+at `before_reset` and permit only the exact, one-use acknowledgement outside an
+Agency turn, with a bounded wait for OpenClaw's asynchronous hook race. Do not add a model
 revision, rewrite an invalid natural response, send directly from the tool,
 alter OpenClaw configuration, or weaken the Store-backed outbound seal. Install
 Agency only into a natively stopped OpenClaw gateway from a clean checkpoint,
@@ -137,6 +170,10 @@ This conforms to ADR-0049 and ADR-0120 and requires no new durable decision.
 - [x] Run affected focused tests and local documentation/lint gates.
 - [x] Commit a clean substantive/ledger checkpoint before host mutation.
 - [x] Install Agency only into stopped OpenClaw and restart it natively.
+- [x] Preserve the third `NO_REPLY`/no-outbound transcript and exact Store/provider correlation.
+- [x] Prove the native `/reset` hook race and keep its acknowledgement exception fail-closed.
+- [x] Run affected reset-correlation suites: 218 passed.
+- [ ] Obtain a supported OpenClaw return-direct or post-model replacement capability.
 - [ ] Deliver a genuinely changed fresh Telegram response with matching Store evidence.
 - [ ] Preserve post-live Store integrity, launcher provenance, and config hashes.
 - [ ] Tracker creation remains pending separate authorization.

@@ -3409,3 +3409,26 @@ OpenClaw config differs from `last-good` only at `/meta/lastTouchedAt`, and
 native `litellm/task-general` plus all six fallbacks are unchanged. Pre-live
 Store backup SHA is `6b3b8794...`, integrity `ok`, schema 47. Fresh `/reset`
 acknowledgement and changed Telegram substantive delivery remain pending.
+
+### Third Telegram turn isolates the OpenClaw host prerequisite
+
+Fresh session `ac750af6-7adf-41b9-ba8a-9feee76539e4` retained a third
+no-outbound result. Store trace `4552b87d-5ee3-45a3-ba61-6629bbb20e99`, run
+`86d3c0a2-79f0-4ea6-aa0a-adcb4056d25b`, routing
+`bbf1d404-bb7b-4eb6-be3d-3b27aaf00786`, and specialist
+`37ad1cc1-72c3-4d9d-b824-0b6eecd482ca` prove automatic OpenClaw selection and
+three successful LiteLLM wrapper stages through `linux-task-agency-router` and
+exact alias/model-group `task-agency-router`, with no protected-host fallback.
+The accepted pending finalizer was followed by exact `NO_REPLY`; terminal
+`9599d181-a104-42a1-b166-8412add9c1d0` recorded `response_invalid`, and no
+Telegram outbound existed. The remaining substantive blocker is OpenClaw
+2026.7.1-2's lack of a supported plugin return-direct/terminal-presentation or
+post-model replacement seam. Direct send, invalid-draft rewrite, and another
+model pass remain prohibited.
+
+The same attempt proved native reset commands bypass `message_received` and
+race the asynchronously started `before_reset` hook. The local bridge candidate
+now correlates only exact `new`/`reset` reasons at `before_reset` and waits up to
+one second only for the two exact native acknowledgement texts. Affected suites
+are 218 passed. The candidate is checkpointed but not installed; Hermes and all
+protected hosts remain untouched pending Lucas's OpenClaw capability decision.

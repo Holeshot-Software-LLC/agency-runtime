@@ -666,27 +666,36 @@ def test_generated_openclaw_allows_one_exact_native_reset_acknowledgement(
 ) -> None:
     source = _openclaw_plugin_harness_source()
     source += """
-const messageReceived = registeredHooks.get("message_received");
+const beforeReset = registeredHooks.get("before_reset");
 const messageSeal = registeredHooks.get("message_sending");
-if (typeof messageReceived !== "function" || typeof messageSeal !== "function") process.exit(227);
+if (typeof beforeReset !== "function" || typeof messageSeal !== "function") process.exit(227);
 const context = { sessionKey: "native-reset-session" };
-messageReceived({ content: "/new", sessionKey: "native-reset-session" }, context);
-const allowed = messageSeal(
+// OpenClaw 2026.7.1 starts before_reset from an unawaited async transcript-read
+// task, so its native acknowledgement can reach message_sending first.
+const raced = messageSeal(
   { content: "✅ New session started.", sessionKey: "native-reset-session" },
   context,
 );
+setTimeout(() => beforeReset({ reason: "new" }, context), 20);
+const allowed = await raced;
 if (allowed?.content !== "✅ New session started." || allowed?.cancel === true) process.exit(228);
-const replay = messageSeal(
+const replay = await messageSeal(
   { content: "✅ New session started.", sessionKey: "native-reset-session" },
   context,
 );
 if (replay?.cancel !== true) process.exit(229);
-messageReceived({ content: "/new with-tail", sessionKey: "native-reset-session" }, context);
-const tailed = messageSeal(
+beforeReset({ reason: "new-with-tail" }, context);
+const tailed = await messageSeal(
   { content: "✅ New session started.", sessionKey: "native-reset-session" },
   context,
 );
 if (tailed?.cancel !== true) process.exit(230);
+beforeReset({ reason: "reset" }, context);
+const reset = await messageSeal(
+  { content: "✅ Session reset.", sessionKey: "native-reset-session" },
+  context,
+);
+if (reset?.content !== "✅ Session reset." || reset?.cancel === true) process.exit(231);
 """
     script = tmp_path / "openclaw-native-reset-ack.mjs"
     script.write_text(source, encoding="utf-8")

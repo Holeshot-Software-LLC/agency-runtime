@@ -42,6 +42,8 @@ const PREFLIGHT_CONTEXT_TTL_MS = 10 * 60 * 1000;
 const MAX_PREFLIGHT_CONTEXTS = 128;
 const OUTBOUND_AUTHORIZATION_TTL_MS = 30 * 1000;
 const NATIVE_CONTROL_ACK_TTL_MS = 10 * 1000;
+const NATIVE_CONTROL_ACK_WAIT_MS = 1_000;
+const NATIVE_CONTROL_ACK_POLL_MS = 10;
 const MAX_OUTBOUND_AUTHORIZATIONS = 128;
 const CONTROL_AUTHORIZATION_FIELD = "agencyRuntimeControlAuthorization";
 const preflightContexts = new Map();
@@ -54,6 +56,7 @@ const NATIVE_CONTROL_ACKS = new Map([
   ["/new", "✅ New session started."],
   ["/reset", "✅ Session reset."],
 ]);
+const NATIVE_CONTROL_ACK_TEXTS = new Set(NATIVE_CONTROL_ACKS.values());
 const DISPATCH_MARKER_START = "\u2063";
 const DISPATCH_MARKER_ZERO = "\u200b";
 const DISPATCH_MARKER_ONE = "\u200c";
@@ -645,6 +648,16 @@ function consumeNativeControlAcknowledgement(session, text) {{
   return true;
 }}
 
+async function waitForNativeControlAcknowledgement(session, text) {{
+  if (!session || !NATIVE_CONTROL_ACK_TEXTS.has(text)) return false;
+  const deadline = Date.now() + NATIVE_CONTROL_ACK_WAIT_MS;
+  while (Date.now() < deadline) {{
+    await new Promise((resolve) => setTimeout(resolve, NATIVE_CONTROL_ACK_POLL_MS));
+    if (consumeNativeControlAcknowledgement(session, text)) return true;
+  }}
+  return false;
+}}
+
 function authorizeOutbound(session, text, kind = "final", run = "") {{
   const key = outboundAuthorizationKey(session, text, kind);
   if (!key) return false;
@@ -893,10 +906,11 @@ export default definePluginEntry({{
       deliveryCompatibility = inspectFinalOnlyDelivery(ctx?.config);
     }});
 
-    api.on("message_received", (event, ctx) => {{
+    api.on("before_reset", (event, ctx) => {{
+      const reason = String(event?.reason || "").trim().toLowerCase();
       authorizeNativeControlAcknowledgement(
         String(event?.sessionKey || ctx?.sessionKey || ""),
-        String(event?.content || ""),
+        reason === "new" || reason === "reset" ? `/${{reason}}` : "",
       );
     }});
 
@@ -1210,6 +1224,16 @@ export default definePluginEntry({{
         : null;
       if (authorized) return {{ content: unmarked.content }};
       if (consumeNativeControlAcknowledgement(session, content)) return {{ content }};
+      if (NATIVE_CONTROL_ACK_TEXTS.has(content)) {{
+        return waitForNativeControlAcknowledgement(session, content).then((allowed) => (
+          allowed
+            ? {{ content }}
+            : {{
+              cancel: true,
+              cancelReason: "Agency Runtime cancelled an uncorrelated native control acknowledgement.",
+            }}
+        ));
+      }}
       return {{
         cancel: true,
         cancelReason: "Agency Runtime cancelled an outbound message that did not match final validation.",

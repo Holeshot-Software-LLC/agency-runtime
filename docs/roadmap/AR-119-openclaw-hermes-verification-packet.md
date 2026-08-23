@@ -994,6 +994,48 @@ known_limit: candidate not installed; fresh changed Telegram proof pending
 hermes_and_protected_hosts: untouched
 ~~~
 
+### Third Telegram failure and host-capability boundary
+
+~~~yaml
+host: openclaw
+installed_checkout_sha: a8022a92ed303c6dbd41fdfa2a0f652239070a99
+host_version: OpenClaw 2026.7.1-2 (0790d9f)
+native_primary: litellm/task-general; six original fallbacks unchanged
+agency_inference_profile: linux-task-agency-router
+requested_alias: task-agency-router
+model_group: task-agency-router
+fresh_session_id: ac750af6-7adf-41b9-ba8a-9feee76539e4
+agency_trace_id: 4552b87d-5ee3-45a3-ba61-6629bbb20e99
+store_run_id: 86d3c0a2-79f0-4ea6-aa0a-adcb4056d25b
+resident_binding_id: none persisted for this trace
+routing_decision_ids:
+  - bbf1d404-bb7b-4eb6-be3d-3b27aaf00786
+specialists_loaded_ids:
+  - 37ad1cc1-72c3-4d9d-b824-0b6eecd482ca # code-reviewer
+provider_attempt_status: three Agency wrapper-stage receipts succeeded
+profile_resolution: automatic OpenClaw harness; linux-task-agency-router; litellm
+fallback_count: zero protected-host fallback; routing fallback_applied=false
+actual_model_and_receipt_source: unavailable; provider telemetry reports alias only
+pending_finalizer_id: f9138f55-baca-4982-9070-09dd94bb4121
+terminal_finalization_id: 9599d181-a104-42a1-b166-8412add9c1d0
+terminal_status: response_invalid
+native_terminal_text_sha256: b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89
+native_transcript_sha256: 81b54934daed9e1e4fc9c85d9f93dcea876328afade7c0de1f624f090982731e
+native_trajectory_sha256: 38f1e716c9518deb439509a8377ef7f83157ca29e92e18649b9ee8fc2579b750
+delivery_result: exact NO_REPLY normalized before reply_payload_sending; no Telegram outbound
+reset_result: no acknowledgement; native command bypassed message_received and raced before_reset
+reset_candidate: before_reset correlation plus bounded wait for exact native acknowledgement
+focused_green: 218 passed
+installed_contract_artifacts:
+  hook_types_sha256: fbb4cd0a6254050fa377d4aa97b2d8176caeddea7fead3dbcfba35a987aa10c0
+  agent_tool_types_sha256: 5c8487f8478b9d7aad744c0cb74ad85b445e567197591dfb4e53b2f35b44aceb
+  selection_runtime_sha256: ccff13111aa60369ac9d88b526a58a7df1f733f1d99d205c01c6186036957e66
+  reply_dispatcher_sha256: 5d8286ffa192f4558153b92474a53927fc190d9b2dcf780fc83a8ff0e89b487a
+missing_prerequisite: supported plugin return-direct/terminal-presentation or post-model payload replacement
+known_limit: reset fix not installed; substantive Telegram proof blocked on host capability
+hermes_and_protected_hosts: untouched
+~~~
+
 
 ### Full-payload repair pre-live installation bundle
 
