@@ -875,6 +875,17 @@ def test_generated_codex_and_claude_bundles_use_native_hooks_and_mcp(
     assert result["maturity"] == "staged-not-registered"
 
 
+def test_openclaw_disabled_tool_refresh_reports_runtime_state() -> None:
+    from agency_runtime.adapters.openclaw.node_bridge import _runtime_disabled_result
+
+    assert _runtime_disabled_result({"includeHeaderContext": True}, "post_tool_call") == {
+        "runtimeEnabled": False,
+        "runtimeDisabled": True,
+        "bypassed": True,
+    }
+    assert _runtime_disabled_result({}, "post_tool_call") == {}
+
+
 def test_openclaw_bridge_routes_user_prompts_and_terminalizes_first_invalid_response(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -926,9 +937,11 @@ def test_openclaw_bridge_routes_user_prompts_and_terminalizes_first_invalid_resp
         {
             "action": "post_tool_call",
             "sessionId": "bridge",
+            "traceId": "bridge-turn",
             "toolName": "agency_agents_load",
-            "toolInput": {"agent": "chief-of-staff"},
+            "toolInput": {"agent": "technical-writer"},
             "toolResult": {"ok": True},
+            "includeHeaderContext": True,
         }
     )
     verified = handle(
@@ -957,13 +970,19 @@ def test_openclaw_bridge_routes_user_prompts_and_terminalizes_first_invalid_resp
 
     assert "managers=agency-steward" in routed["context"]
     assert "[AGENCY FIRST-PASS FINALIZATION CONTRACT]\n" in routed["context"]
-    assert "[AGENCY INITIAL HEADER SNAPSHOT v1]" in routed["context"]
-    assert "call the OpenClaw-native `agency_finalize` tool" in routed["context"]
-    assert "backed by Agency `agency.finalize`" in routed["context"]
+    assert "[AGENCY INITIAL HEADER SNAPSHOT v2]" in routed["context"]
+    assert "first and only natural final response" in routed["context"]
+    assert "Do not call a finalizer tool" in routed["context"]
+    assert "do not emit NO_REPLY" in routed["context"]
     assert routed["context"].endswith("There is no correction pass.")
     assert correlated["context"]
     assert ordinary["context"]
-    assert recorded == {}
+    assert recorded["runtimeEnabled"] is True
+    assert "[AGENCY UPDATED HEADER SNAPSHOT v2]" in recorded["context"]
+    assert (
+        "Agency/Agencies loaded: agency-steward, code-reviewer, technical-writer"
+        in recorded["context"]
+    )
     assert verified["action"] == "terminal"
     assert verified["terminalRejected"] is True
     assert verified["terminalStatus"] == "response_invalid"
@@ -1013,10 +1032,9 @@ def test_openclaw_bridge_routes_user_prompts_and_terminalizes_first_invalid_resp
         "updated_at": None,
         "source": "default",
     }
-    # Plural by design: a turn may load more than one card, so this records the
-    # inference-selected specialist alongside the resident manager rather than
-    # truncating to one.
-    assert store.get_specialists_for_session("bridge") == ["code-reviewer", "chief-of-staff"]
+    # Plural by design: this records the inference-selected specialist and the
+    # later native-tool-loaded specialist rather than truncating to one.
+    assert store.get_specialists_for_session("bridge") == ["code-reviewer", "technical-writer"]
 
 
 def test_hermes_preflight_appends_exact_first_pass_header_snapshot(
@@ -1874,12 +1892,12 @@ def test_generated_openclaw_plugin_is_native_openclaw_package(
 
     assert manifest["id"] == "agency-preflight"
     assert manifest["activation"]["onStartup"] is True
-    assert manifest["contracts"]["tools"] == ["agency_finalize"]
+    assert manifest["contracts"] == {"agentToolResultMiddleware": ["openclaw"]}
     assert package["openclaw"]["extensions"] == ["./index.js"]
-    assert "api.registerTool" in code
-    assert "does not send the response to any channel" in code
-    assert "not delivered to the user" in code
-    assert "Never emit NO_REPLY" in code
+    assert "api.registerAgentToolResultMiddleware" in code
+    assert "api.registerTool" not in code
+    assert "agency_finalize" not in code
+    assert 'api.on("after_tool_call"' not in code
     assert "before_prompt_build" in code
     assert "before_agent_finalize" in code
     assert "reply_payload_sending" in code

@@ -20,6 +20,8 @@ related:
   - docs/roadmap/issue-AR-261-disambiguate-technical-diagnosis-risk.md
   - docs/roadmap/issue-AR-262-preserve-slow-host-dashboard-parity.md
   - docs/roadmap/issue-AR-263-restore-codex-desktop-parent-hook-delivery.md
+  - docs/roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md
+  - docs/decisions/0166-refresh-openclaw-headers-through-awaited-tool-results.md
   - docs/roadmap/AR-255-child-parity-design.md
 supersedes: []
 superseded_by: null
@@ -3453,3 +3455,33 @@ Redacted channel state records both inbound and outbound activity; role-aware
 native transcript verification passes at SHA-256 `0420d72c...`. Ordinary
 OpenClaw delivery is restored, while Agency acceptance remains blocked and no
 Agency trace/header claim applies during disablement.
+
+
+## 2026-08-23 - Awaited tool-result path replaces disproven host prerequisite
+
+The earlier conclusion that OpenClaw needed a new return-direct or post-model
+replacement API was too strong. Inspection of the installed 2026.7.1-2 agent
+loop confirms that terminating after a tool call is classified
+`non_deliverable_terminal_turn` unless the host records explicit terminal
+delivery, so a terminal `agency_finalize` handshake cannot work. The supported
+plugin SDK nevertheless exposes awaited
+`registerAgentToolResultMiddleware`, which runs after a native tool result and
+before the model continues.
+
+ADR-0166 therefore changes Agency's OpenClaw adapter only. Preflight supplies
+the initial exact five-line Store snapshot. One middleware scoped to runtime
+`openclaw` records each tool observation synchronously, preserves the native
+result, and appends the updated exact snapshot. The model emits one natural
+first response; `before_agent_finalize` still validates it and the existing
+full-payload gate still commits and authorizes the outbound envelope. The
+generated plugin no longer exposes `agency_finalize`; there is no direct send,
+rewrite, correction pass, host source/config change, or inference change.
+
+Expected-red exit 232 is retained. The final focused OpenClaw slice is 72 passed
+across security, adapter, and installer coverage, including absent-refresh
+non-fabrication, disabled-runtime truth, native-result preservation, and
+installer refusal when the middleware contract is missing. The proportionate
+header, Store, inference, registration, and policy gate is 289 passed, 2 skipped.
+The candidate is not installed. Agency remains registered-disabled, ordinary Telegram recovery
+remains green, and Hermes, Codex OAuth/config/canary, Claude, and ZCode remain
+untouched. A clean local checkpoint precedes any live mutation.

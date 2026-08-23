@@ -201,20 +201,18 @@ def _header_snapshot_context(
         return ""
     return (
         "[AGENCY FIRST-PASS FINALIZATION CONTRACT]\n"
-        "MANDATORY: this turn remains incomplete until the Store-backed native "
-        "finalizer has constructed the first visible response.\n"
-        "[AGENCY INITIAL HEADER SNAPSHOT v1]\n"
-        "Use these exact seven lines for substantive progress until Agency evidence "
-        "changes. Immediately before the natural final response, call the OpenClaw-native "
-        "`agency_finalize` tool (backed by Agency `agency.finalize`) exactly once with "
-        f"session_id `{session_id}`, trace_id `{trace_id}`, and the "
-        "response body as draft_text; emit its returned text byte-for-byte. That local "
-        "tool constructs the first visible header from current Store evidence. Never "
-        "guess changed values and never wait for a host correction.\n"
+        "MANDATORY: the first and only natural final response must begin with the "
+        "latest exact Store-backed header snapshot for this turn.\n"
+        "[AGENCY INITIAL HEADER SNAPSHOT v2]\n"
+        "Copy the exact five header lines below byte-for-byte as the first lines of "
+        "your natural final response. The newest snapshot for this turn supersedes "
+        "every earlier snapshot. After any tool call, use the latest "
+        "[AGENCY UPDATED HEADER SNAPSHOT v2] appended to that tool result. Do not call "
+        "a finalizer tool, do not emit NO_REPLY, and never guess changed values.\n"
         f"{header}\n"
         "[AGENCY FINALIZATION GATE]\n"
-        "After every other tool call, call `agency_finalize` exactly once as the final "
-        "tool before emitting any natural final response. There is no correction pass."
+        "Emit one natural final response from the latest snapshot. There is no "
+        "correction pass."
     )
 
 
@@ -1183,6 +1181,8 @@ def _runtime_disabled_result(payload: dict[str, Any], action: str) -> dict[str, 
         }
     if action in {"preflight", "pre_verify"}:
         return disabled
+    if action == "post_tool_call" and payload.get("includeHeaderContext") is True:
+        return disabled
     if action in {
         "post_tool_call",
         "post_api_request",
@@ -1219,6 +1219,20 @@ def _handle_observation_action(
             session_id=session_id,
             trace_id=effective_trace,
         )
+        if payload.get("includeHeaderContext") is True:
+            context = _header_snapshot_context(
+                adapter,
+                session_id=session_id,
+                trace_id=effective_trace,
+                model="",
+            )
+            if context:
+                context = context.replace(
+                    "[AGENCY INITIAL HEADER SNAPSHOT v2]",
+                    "[AGENCY UPDATED HEADER SNAPSHOT v2]",
+                    1,
+                )
+                return {"context": context, "runtimeEnabled": True}
         return {}
 
     if action == "post_api_request":

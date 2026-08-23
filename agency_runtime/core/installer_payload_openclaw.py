@@ -250,6 +250,7 @@ function serializeBridgePayload(payload) {{
     source: boundedUtf8(payload?.source, 256),
     status: boundedUtf8(payload?.status, 64),
     attempt: Number.isSafeInteger(payload?.attempt) ? payload.attempt : 0,
+    includeHeaderContext: payload?.includeHeaderContext === true,
     toolName: boundedUtf8(payload?.toolName, 1024),
     error: boundedUtf8(payload?.error, 32 * 1024),
   }};
@@ -850,58 +851,43 @@ export default definePluginEntry({{
   description: "Agency Runtime routing, evidence, and final-response enforcement.",
   register(api) {{
     deliveryCompatibility = inspectFinalOnlyDelivery(api?.config);
-    api.registerTool({{
-      name: "agency_finalize",
-      label: "Agency Finalize",
-      hideFromChannelProgress: true,
-      description: "Mandatory first-pass tool that validates and returns the exact visible Agency response; it does not send the response to any channel.",
-      promptSnippet: "agency_finalize — mandatory first-pass validation and return of the exact visible Agency response; this tool does not send it",
-      promptGuidelines: [
-        "MANDATORY FIRST-PASS FINALIZATION: when Agency preflight supplies session_id and trace_id, the turn is incomplete until agency_finalize has been called exactly once.",
-        "After every other tool call, call agency_finalize as the final tool with the complete draft_text before emitting any natural final output. Its tool result is not delivered to the user.",
-        "When agency_finalize returns, your next and final assistant output MUST be exactly its returned text byte-for-byte. Never emit NO_REPLY or any other silence sentinel after agency_finalize.",
-        "There is no correction pass: never stop on or emit an unfinalized natural response.",
-      ],
-      parameters: {{
-        type: "object",
-        additionalProperties: false,
-        required: ["draft_text", "session_id", "trace_id"],
-        properties: {{
-          draft_text: {{ type: "string", minLength: 1, maxLength: MAX_BRIDGE_TEXT_BYTES }},
-          session_id: {{ type: "string", minLength: 1, maxLength: 512 }},
-          trace_id: {{ type: "string", minLength: 1, maxLength: 512 }},
-        }},
-      }},
-      async execute(_toolCallId, params) {{
-        const draftText = typeof params?.draft_text === "string" ? params.draft_text : "";
-        const currentSession = typeof params?.session_id === "string" ? params.session_id : "";
-        const currentTrace = typeof params?.trace_id === "string" ? params.trace_id : "";
-        if (
-          !draftText
-          || Buffer.byteLength(draftText, "utf8") > MAX_BRIDGE_TEXT_BYTES
-          || !currentSession
-          || Buffer.byteLength(currentSession, "utf8") > 512
-          || !currentTrace
-          || Buffer.byteLength(currentTrace, "utf8") > 512
-        ) {{
-          throw new Error("Agency Runtime finalization arguments are invalid");
-        }}
-        const stateEpoch = ++runtimeStateEpoch;
-        const result = await invokeAgency({{
-          action: "finalize",
-          sessionId: currentSession,
-          traceId: currentTrace,
-          draftText,
+    api.registerAgentToolResultMiddleware(async (event, ctx) => {{
+      if (!runtimeEnabled) return undefined;
+      const stateEpoch = ++runtimeStateEpoch;
+      let result;
+      try {{
+        result = await invokeAgency({{
+          action: "post_tool_call",
+          sessionId: sessionId(event, ctx),
+          traceId: traceId(event, ctx),
+          toolName: String(event?.toolName || ""),
+          toolInput: event?.args || {{}},
+          toolResult: event?.result,
+          error: event?.isError === true ? "tool_result_error" : "",
+          includeHeaderContext: true,
         }});
-        if (!observeRuntimeState(result, stateEpoch)) throw new Error(FINALIZATION_UNAVAILABLE);
-        const action = String(result?.action || "");
-        const text = typeof result?.text === "string" ? result.text : "";
-        if (!text || (action !== "accept" && action !== "bypass")) {{
-          throw new Error(FINALIZATION_UNAVAILABLE);
-        }}
-        return {{ content: [{{ type: "text", text }}] }};
-      }},
-    }});
+      }} catch {{
+        return undefined;
+      }}
+      if (!observeRuntimeState(result, stateEpoch) || !runtimeEnabled) return undefined;
+      const context = typeof result?.context === "string" ? result.context : "";
+      if (!context || Buffer.byteLength(context, "utf8") > MAX_BRIDGE_TEXT_BYTES) {{
+        return undefined;
+      }}
+      const original = (
+        event?.result
+        && typeof event.result === "object"
+        && !Array.isArray(event.result)
+      ) ? event.result : {{}};
+      const content = Array.isArray(original.content) ? original.content : [];
+      return {{
+        result: {{
+          ...original,
+          content: [...content, {{ type: "text", text: context }}],
+        }},
+      }};
+    }}, {{ runtimes: ["openclaw"] }});
+
     api.on("gateway_start", (_event, ctx) => {{
       deliveryCompatibility = inspectFinalOnlyDelivery(ctx?.config);
     }});
@@ -1052,19 +1038,6 @@ export default definePluginEntry({{
         nativeRunId: String(event?.runId || ""),
         outcome: String(event?.outcome || "unknown"),
         error: String(event?.error || event?.reason || ""),
-      }});
-    }}, {{ timeoutMs: {host_timeout_ms} }});
-
-    api.on("after_tool_call", async (event, ctx) => {{
-      if (!runtimeEnabled) return;
-      await invokeAgency({{
-        action: "post_tool_call",
-        sessionId: sessionId(event, ctx),
-        traceId: traceId(event, ctx),
-        toolName: String(event?.toolName || ""),
-        toolInput: event?.params || {{}},
-        toolResult: event?.result,
-        error: String(event?.error?.message || event?.error || ""),
       }});
     }}, {{ timeoutMs: {host_timeout_ms} }});
 

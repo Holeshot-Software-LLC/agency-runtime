@@ -14,6 +14,8 @@ related:
   - docs/roadmap/issue-AR-272-expose-openclaw-native-finalizer-tool.md
   - docs/roadmap/issue-AR-273-model-agnostic-structured-inference-profiles.md
   - docs/decisions/0163-keep-litellm-inference-profiles-model-agnostic.md
+  - docs/roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md
+  - docs/decisions/0166-refresh-openclaw-headers-through-awaited-tool-results.md
 supersedes: []
 superseded_by: null
 type: reference
@@ -1139,5 +1141,42 @@ launcher_manifest_sha256: c34c66be747a72ccdbf2a5af8df57f47957ea79c6f4128a7f46bd3
 post_disable_store_integrity: ok
 post_disable_store_backup_sha256: 9c193d2ed5ba8f6af266d5a72eb14ba4e6aaff25abd05478a25d95157fd2943a
 known_limit: ordinary OpenClaw Telegram recovery passes; Agency acceptance remains blocked
+hermes_and_protected_hosts: untouched
+~~~
+
+
+### OpenClaw awaited tool-result candidate - pre-live bundle
+
+~~~yaml
+host: openclaw
+candidate_branch: codex/ar278-openclaw-one-pass
+baseline_checkout_sha: 8d707a2b4417d42b8236c358080f92be90711c06
+origin_main_sha: 4a3267738bb20519500513ea1498fc68f8ea9443
+implementation_anchor_ancestor: true
+host_version: OpenClaw 2026.7.1-2 (0790d9f)
+current_host_state: active/RPC-green; Telegram and Slack probe-green
+current_agency_state: registered/staged; natively disabled
+native_primary: litellm/task-general
+native_fallbacks: six original fallbacks unchanged
+agency_inference_profile: linux-task-agency-router
+provider_type: litellm
+requested_alias: task-agency-router
+model_group: task-agency-router
+credential_env_name: LITELLM_API_KEY
+credential_present: true
+actual_model_claim: unavailable from provider telemetry
+disproved_path: terminal agency_finalize tool result is non-deliverable without host terminal delivery
+selected_path: awaited registerAgentToolResultMiddleware scoped to openclaw
+initial_header_source: exact correlated Store snapshot at preflight
+updated_header_source: exact correlated Store snapshot after awaited post_tool_call recording
+natural_finalization: one first response; no finalizer tool; no NO_REPLY; no correction
+final_validation: existing before_agent_finalize first-pass check
+outbound_authorization: existing full-payload Store-backed reply gate
+manifest_contract: agentToolResultMiddleware=[openclaw]
+expected_red: exit 232 retained
+focused_tests: 72 passed, 148 deselected
+proportionate_tests: 289 passed, 2 skipped
+install_state: candidate not installed
+known_limit: live Telegram response and post-live Store/config receipts remain pending
 hermes_and_protected_hosts: untouched
 ~~~

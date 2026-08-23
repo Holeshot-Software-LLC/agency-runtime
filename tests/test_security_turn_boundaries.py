@@ -391,12 +391,16 @@ def _openclaw_plugin_harness_source() -> str:
             "const registeredHooks = new Map();\n"
             "const registeredHookOptions = new Map();\n"
             "const registeredTools = new Map();\n"
+            "const registeredToolResultMiddlewares = [];\n"
             "let registeredCommand;\n"
             "function definePluginEntry(definition) {\n"
             "  definition.register({\n"
             "    config: { agents: { defaults: { blockStreamingDefault: 'off' } }, channels: {} },\n"
             "    registerCommand(command) { registeredCommand = command; },\n"
             "    registerTool(tool) { registeredTools.set(tool.name, tool); },\n"
+            "    registerAgentToolResultMiddleware(handler, options = {}) {\n"
+            "      registeredToolResultMiddlewares.push({ handler, options });\n"
+            "    },\n"
             "    on(name, handler, options = {}) {\n"
             "      registeredHooks.set(name, handler);\n"
             "      registeredHookOptions.set(name, options);\n"
@@ -414,6 +418,7 @@ def _openclaw_plugin_harness_source() -> str:
             "let failOutboundSync = false;\n"
             "let failPreflight = false;\n"
             "let preflightContext = 'Agency preflight context';\n"
+            "let toolHeaderContext = '[AGENCY UPDATED HEADER SNAPSHOT v2]\\nAgency header';\n"
             "let failControl = false;\n"
             "let runtimeControlEnabled = true;\n"
             "const bridgeCalls = [];\n"
@@ -464,6 +469,8 @@ def _openclaw_plugin_harness_source() -> str:
             "      let result = {};\n"
             "      if (payload.action === 'preflight') {\n"
             "        result = { runtimeEnabled: true, context: preflightContext };\n"
+            "      } else if (payload.action === 'post_tool_call' && payload.includeHeaderContext === true) {\n"
+            "        result = { runtimeEnabled: true, context: toolHeaderContext };\n"
             "      } else if (payload.action === 'pre_verify') {\n"
             "        result = {\n"
             "          action: 'terminal', message: 'first-pass response invalid',\n"
@@ -605,20 +612,40 @@ if (receipt.resolvedProvider !== "" || receipt.resolvedModel !== "") process.exi
     assert completed.returncode == 0, completed.stderr
 
 
+def test_generated_openclaw_uses_natural_first_pass_without_finalize_tool() -> None:
+    code = openclaw_index(5)
+
+    assert "api.registerAgentToolResultMiddleware" in code
+    assert "api.registerTool" not in code
+    assert "agency_finalize" not in code
+    assert 'api.on("after_tool_call"' not in code
+    assert "before_agent_finalize" in code
+    assert 'action: "revise"' not in code
+
+
 @pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is not installed")
-def test_generated_openclaw_keeps_first_pass_finalization_mandatory_after_tools(
+def test_generated_openclaw_never_fabricates_header_when_refresh_is_unavailable(
     tmp_path: Path,
 ) -> None:
     source = _openclaw_plugin_harness_source()
     source += """
-const finalizeTool = registeredTools.get("agency_finalize");
-const guidance = String(finalizeTool?.promptGuidelines?.join("\\n") || "");
-if (!guidance.includes("MANDATORY FIRST-PASS FINALIZATION")) process.exit(219);
-if (!guidance.includes("After every other tool call")) process.exit(220);
-if (!guidance.includes("There is no correction pass")) process.exit(221);
-if (guidance.includes("request another model pass")) process.exit(222);
+toolHeaderContext = "";
+const registration = registeredToolResultMiddlewares[0];
+if (!registration) process.exit(242);
+const adjusted = await registration.handler(
+  {
+    toolCallId: "call-no-refresh",
+    toolName: "read",
+    args: { path: "/opt/openclaw/skills/weather/SKILL.md" },
+    result: { content: [{ type: "text", text: "native tool output" }] },
+  },
+  { runtime: "openclaw", sessionKey: "no-refresh-session", runId: "no-refresh-run" },
+);
+if (adjusted !== undefined) process.exit(243);
+const call = bridgeCalls.find((payload) => payload.action === "post_tool_call");
+if (!call || call.includeHeaderContext !== true) process.exit(244);
 """
-    script = tmp_path / "openclaw-first-pass-finalization-guidance.mjs"
+    script = tmp_path / "openclaw-no-fabricated-header.mjs"
     script.write_text(source, encoding="utf-8")
 
     completed = subprocess.run(
@@ -633,20 +660,38 @@ if (guidance.includes("request another model pass")) process.exit(222);
 
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is not installed")
-def test_generated_openclaw_finalizer_cannot_be_mistaken_for_channel_delivery(
+def test_generated_openclaw_refreshes_header_in_awaited_tool_result_middleware(
     tmp_path: Path,
 ) -> None:
     source = _openclaw_plugin_harness_source()
     source += """
-const finalizeTool = registeredTools.get("agency_finalize");
-const description = String(finalizeTool?.description || "");
-const guidance = String(finalizeTool?.promptGuidelines?.join("\\n") || "");
-if (!description.includes("does not send")) process.exit(223);
-if (!guidance.includes("not delivered to the user")) process.exit(224);
-if (!guidance.includes("NO_REPLY")) process.exit(225);
-if (!guidance.includes("next and final assistant output")) process.exit(226);
+if (registeredTools.has("agency_finalize")) process.exit(232);
+if (registeredHooks.has("after_tool_call")) process.exit(233);
+if (registeredToolResultMiddlewares.length !== 1) process.exit(234);
+const registration = registeredToolResultMiddlewares[0];
+if (JSON.stringify(registration.options?.runtimes) !== JSON.stringify(["openclaw"])) process.exit(235);
+const originalResult = {
+  content: [{ type: "text", text: "native tool output" }],
+  details: { ok: true },
+};
+const adjusted = await registration.handler(
+  {
+    toolCallId: "call-refresh",
+    toolName: "read",
+    args: { path: "/opt/openclaw/skills/weather/SKILL.md" },
+    result: originalResult,
+  },
+  { runtime: "openclaw", sessionKey: "refresh-session", runId: "refresh-run" },
+);
+if (adjusted?.result?.content?.[0]?.text !== "native tool output") process.exit(236);
+if (adjusted.result.content[1]?.text !== toolHeaderContext) process.exit(237);
+if (adjusted.result.details?.ok !== true) process.exit(238);
+const call = bridgeCalls.find((payload) => payload.action === "post_tool_call");
+if (!call || call.includeHeaderContext !== true) process.exit(239);
+if (call.sessionId !== "refresh-session" || call.traceId !== "refresh-run") process.exit(240);
+if (call.toolName !== "read" || call.toolInput?.path !== "/opt/openclaw/skills/weather/SKILL.md") process.exit(241);
 """
-    script = tmp_path / "openclaw-finalizer-visible-delivery-contract.mjs"
+    script = tmp_path / "openclaw-tool-result-header-refresh.mjs"
     script.write_text(source, encoding="utf-8")
 
     completed = subprocess.run(
@@ -698,43 +743,6 @@ const reset = await messageSeal(
 if (reset?.content !== "✅ Session reset." || reset?.cancel === true) process.exit(231);
 """
     script = tmp_path / "openclaw-native-reset-ack.mjs"
-    script.write_text(source, encoding="utf-8")
-
-    completed = subprocess.run(
-        [str(shutil.which("node")), str(script)],
-        capture_output=True,
-        text=True,
-        timeout=10,
-        check=False,
-    )
-
-    assert completed.returncode == 0, completed.stderr
-
-
-@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is not installed")
-def test_generated_openclaw_registers_store_backed_native_finalize_tool(
-    tmp_path: Path,
-) -> None:
-    source = _openclaw_plugin_harness_source()
-    source += """
-const finalizeTool = registeredTools.get("agency_finalize");
-if (!finalizeTool || typeof finalizeTool.execute !== "function") process.exit(91);
-const result = await finalizeTool.execute(
-  "call-finalize",
-  {
-    draft_text: "First visible response.",
-    session_id: "session-finalize",
-    trace_id: "trace-finalize",
-  },
-);
-const call = bridgeCalls.find((payload) => payload.action === "finalize");
-if (!call) process.exit(92);
-if (call.draftText !== "First visible response.") process.exit(93);
-if (call.sessionId !== "session-finalize" || call.traceId !== "trace-finalize") process.exit(94);
-if (result?.content?.[0]?.type !== "text") process.exit(95);
-if (result.content[0].text !== "Agency final response") process.exit(96);
-"""
-    script = tmp_path / "openclaw-native-finalize.mjs"
     script.write_text(source, encoding="utf-8")
 
     completed = subprocess.run(

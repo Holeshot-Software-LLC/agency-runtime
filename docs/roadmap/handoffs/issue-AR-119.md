@@ -48,12 +48,13 @@ related:
   - docs/decisions/0163-keep-litellm-inference-profiles-model-agnostic.md
   - docs/decisions/0164-delegate-exact-schema-translation-to-litellm.md
   - docs/decisions/0165-authorize-openclaw-native-skill-reads-from-inventory.md
+  - docs/decisions/0166-refresh-openclaw-headers-through-awaited-tool-results.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-119
-branch: codex/ar119-openclaw-hermes-litellm
+branch: codex/ar278-openclaw-one-pass
 evidence_commit: 620b8f19f2ccacf686bac0a252b6772ea470dabd
 minimum_ledger_commit: 2fd2aede12f4c8f74b780f562a8b2792c9829bf4
 hard_checkpoint_percent: 50
@@ -67,32 +68,29 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 
 ## checkpoint
 
-- Clean pair `b1bd07c6` / `0ca308d6` contains the reset-race repair, third failure evidence, and ledger; `f76050d7` remains an ancestor and Agency 0.1.0 imports from this checkout.
-- Agency profile `linux-task-agency-router` remains harness-scoped to OpenClaw, using `litellm`, exact alias/model-group `task-agency-router`, `http://127.0.0.1:4000/v1`, populated `LITELLM_API_KEY`, and 120000 ms. No protected-host route changed.
-- Earlier AR-276/AR-277 control, native skill, LiteLLM-routing, first-pass finalization, timeout, and Store-backup evidence remains in the canonical loop status and verification packet. It established audited OpenClaw 2026.7.1-2, free alias target `ollama/qwen3-14b-abliterated`, exact profile/alias routing without fallback, schema 47, 15 contractors, and unchanged native/protected-host configuration; actual backing-model telemetry remains unavailable.
-- Clean pair `1ca46cc9` / `320dc7cf` installed that prompt repair as Agency-only install `74b4c0bc...`; native routing and both configs stayed unchanged. Fresh opaque session `80c9c847...`, trace `2eaaf8e9...`, run `27faf92b...`, routing `9528aa21...`, specialists `f7ac8ffb...` / `68d0a65b...`, skill row `0f548ebf...`, and terminal `9b2d4c3a...` produced exact non-silent final text SHA `202f0d58...`, but no Telegram outbound was queued.
-- The text terminal conflicted with the canonical payload hash and the gate failed closed. Pair `a8022a92` / `4fab954b` defers that commit and adds exact one-use reset acknowledgement; 386 tests pass, 1 skips, and three unrelated legacy assertions remain red.
-- Agency-only install `87b518e8...` completed: bundle `7f94acf0...`, runtime `1816b6ad...`, launcher `c34c66be...`, 15 contractors, no installer restart. Native restart is RPC/channel-green with 11 hooks and zero diagnostics. Agency config is unchanged; OpenClaw has only a timestamp diff and retains `litellm/task-general` plus six fallbacks.
-- Third fresh Telegram trace `4552b87d...` completed all three Agency inference stages through `linux-task-agency-router` and exact `task-agency-router`, accepted routing `bbf1d404...`, and loaded `code-reviewer`. Pending finalization `f9138f55...` returned the Store-backed response, but native `task-general` then emitted exact `NO_REPLY`; terminal `9599d181...` correctly closed run `86d3c0a2...` as `response_invalid`. Transcript/trajectory SHAs are `81b54934...` / `38f1e716...`; Telegram queued nothing.
-- Native `/reset` bypasses `message_received`; OpenClaw starts `before_reset` from an unawaited transcript-read task, so its acknowledgement can race the hook. Expected-red exit 227 is retained. The candidate uses exact `before_reset` reasons plus a bounded wait only for the two static acknowledgements; replay and invalid reasons stay blocked. The affected OpenClaw suites pass 218.
-- Audited OpenClaw 2026.7.1-2 exposes no supported post-model response replacement: `before_agent_finalize` cannot return a payload, exact `NO_REPLY` is normalized away before `reply_payload_sending`, and terminating tools have no public terminal-presentation setter. Direct send, draft rewrite, or a second model pass would violate ADR-0049/ADR-0120 and remain rejected.
-- Lucas selected reversible recovery. Agency uninstall dry-run operation `952ff8f6...`, digest `a497a256...`, failed before mutation because installed-copy provenance is not recognized; AR-269 owns it. The stopped gateway then natively disabled only `agency-preflight`. OpenClaw is active/RPC-green, Telegram and Slack probes are green, Agency is registered-disabled, and normalized config hashes prove only timestamp plus the Agency flag changed. Native models and launcher `c34c66be...` are unchanged. Post-disable Store backup is integrity `ok`, SHA `9c193d2e...`.
-- Ordinary recovery now passes: exact Telegram request `reply with pong` received exact assistant `pong`. Redacted channel facts show inbound/outbound, role-aware transcript checks pass, and native artifact SHA is `0420d72c...`. This is ordinary-host proof only; no Agency trace/header claim applies while the plugin is disabled.
+- The active branch is `codex/ar278-openclaw-one-pass`, based on clean AR-119 checkpoint `8d707a2b`; current `origin/main` is `4a326773` and `f76050d7` remains an ancestor. Agency 0.1.0 imports from this checkout.
+- OpenClaw remains audited 2026.7.1-2 with native primary `litellm/task-general` and its six original fallbacks. Agency's harness-scoped profile remains `linux-task-agency-router`, adapter `litellm`, exact alias/model-group `task-agency-router`, base `http://127.0.0.1:4000/v1`, populated `LITELLM_API_KEY`, and 120000 ms. No native or protected-host route changed.
+- Three Telegram failures remain retained. Traces `9ac12abc...`, `2eaaf8e9...`, and `4552b87d...` prove respectively silent suppression, a premature text-hash/full-envelope conflict, and successful exact Agency LiteLLM routing followed by native `NO_REPLY`. None queued a Telegram response.
+- The latest Agency-only install is `87b518e8...`, bundle `7f94acf0...`, runtime `1816b6ad...`, launcher `c34c66be...`, schema 47, and 15 contractors. The plugin is currently registered/staged but natively disabled. Gateway RPC and Telegram/Slack probes are green.
+- Ordinary recovery passes: exact Telegram request `reply with pong` received exact `pong`; redacted inbound/outbound facts and native artifact SHA `0420d72c...` are retained. This is not Agency acceptance.
+- The earlier claim that OpenClaw needs a new return-direct API is corrected. A terminal tool-use event is classified `non_deliverable_terminal_turn`, but the supported awaited `registerAgentToolResultMiddleware` surface can refresh Store evidence before the next model step.
+- ADR-0166 selects an OpenClaw-only path: preflight supplies the initial exact five-line snapshot; one awaited tool-result middleware records native tool evidence and appends the updated exact snapshot while preserving the tool result; the model emits one natural first response; existing final validation and full-payload authorization remain unchanged. The generated OpenClaw plugin no longer exposes `agency_finalize`.
+- Expected-red exit 232 is retained. The focused security, adapter, and installer slice passes 72 tests, including no fabricated refresh, honest disabled state, and installer refusal without the middleware contract. The proportionate header, Store, inference, registration, and policy gate is 289 passed, 2 skipped. The candidate is not installed.
+- Hermes remains the running break-glass host. Codex OAuth/config/canary, Claude, and ZCode remain untouched. No host canary, child-delivery claim, matrix movement, push, PR, tracker mutation, or hosted workflow occurred.
 
 ## completed-evidence
 
-- Starting identity, Store backup, redacted inventories, credential-name presence, install/launcher provenance, invariants, and every failed turn are retained.
-- AR-272 remains proven for native finalization; CLI response delivery and exact substantive routing pass. AR-278 now preserves both independent Telegram failures: silent sentinel and full-envelope terminal conflict.
-- AR-273 now has fast accepted Agency-only and native skill routing through the exact LiteLLM profile/alias on free 14B; actual backing model telemetry remains unavailable.
-- AR-274 expected-red is 2/2 exact failures; repair is 22 passed/1 skipped plus 453 passed/1 skipped, and fresh `healthcheck` header/Store proof now passes. Proportionate final gates remain; no exhaustive workflow was dispatched.
-- AR-275 preserves bounded codes without model coupling. AR-276 preflight, native skill proof, and AR-277 first-pass finalization pass; AR-278 channel delivery is the current blocker. No child-delivery or matrix-cell claim moves.
+- Starting identity, Store backups, redacted inventories, credential-name presence, install/launcher provenance, config invariants, and every failed live turn are retained.
+- AR-273 proves exact OpenClaw harness/profile/provider/alias selection on the free 14B target without protected-host fallback; actual backing-model telemetry remains unavailable.
+- AR-274 native skill evidence, AR-276 preflight gating, AR-277 first-pass terminal behavior, reset correlation, and ordinary Agency-disabled delivery remain proven within their exact scopes.
+- ADR-0166 and 72 focused tests now establish the local OpenClaw natural-first-pass candidate. They do not establish live Telegram delivery or Rule 4 child delivery.
 - Codex OAuth/config/canary, Claude, ZCode, and Hermes were untouched.
 
 ## exact-blocker
 
-1. Telegram ingress, LiteLLM staffing, native tools, and Store-backed finalizer construction pass; the current native model emits `NO_REPLY` after the tool, and OpenClaw suppresses it before the payload gate.
-2. OpenClaw must expose a supported return-direct/terminal-presentation or post-model payload-replacement contract, or Lucas must separately authorize qualifying a host version/source change. Agency cannot repair this by direct send, rewrite, retry, or native configuration change.
-3. Ordinary Telegram recovery passes with Agency disabled. Hermes and protected hosts remain untouched.
+1. The OpenClaw-only candidate is locally green but not installed. Fresh host-written Telegram delivery with correlated Store evidence remains the AR-278 acceptance gate.
+2. Repository policy requires the substantive/ledger checkpoint before live mutation. Then Agency Runtime, not OpenClaw, must be installed into the natively stopped gateway without changing either native models or Agency inference routing.
+3. Hermes remains break glass and outside this package.
 
 ## traps (machine-specific; do not rediscover)
 
@@ -104,9 +102,9 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 
 ## next-bounded-work-package
 
-1. Keep Agency disabled until OpenClaw exposes the supported result-delivery seam.
-2. Repair AR-269 separately before relying on ownership-bound OpenClaw uninstall.
-3. Use a genuinely new Agency work unit only after that prerequisite; keep Hermes untouched.
+1. Finish local documentation/lint checks and create the clean substantive/ledger checkpoint.
+2. Reconfirm backups and invariants, stop OpenClaw natively, install Agency Runtime only from this checkout, and restart OpenClaw natively.
+3. Use a completely fresh Telegram session and genuinely new inputs; preserve the first response before skill and substantive proof. Keep Hermes and every protected host untouched.
 
 ## same-task-continuity
 

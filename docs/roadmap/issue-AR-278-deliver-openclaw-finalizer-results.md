@@ -16,6 +16,7 @@ related:
   - docs/roadmap/AR-119-openclaw-hermes-verification-packet.md
   - docs/decisions/0049-openclaw-final-only-full-payload-delivery.md
   - docs/decisions/0120-construct-first-pass-evidence-headers.md
+  - docs/decisions/0166-refresh-openclaw-headers-through-awaited-tool-results.md
   - agency_runtime/core/installer_payload_openclaw.py
   - tests/test_security_turn_boundaries.py
   - tests/test_adapter_parity.py
@@ -125,13 +126,14 @@ acknowledgement. Replay, unknown reasons, other text, and cross-session use
 remain blocked; the affected security, adapter-parity, and installer suites are
 218 passed. This candidate is not installed.
 
-The substantive delivery path is now blocked on an installed-host capability,
-not another Agency inference change. OpenClaw 2026.7.1-2 exposes only
-action/reason/retry from `before_agent_finalize`; a terminating tool result is
-not promoted to final output, and terminal-presentation support is internal and
-not exported to plugins. A supported return-direct/terminal-presentation API or
-post-model payload replacement hook is required. Qualifying another OpenClaw
-build or changing OpenClaw source requires separate Lucas authorization.
+The former return-direct prerequisite is disproven. OpenClaw's terminal
+classifier marks a final assistant event ending in tool use as
+`non_deliverable_terminal_turn` unless the host records explicit terminal
+delivery, so marking `agency_finalize` terminal cannot solve the defect.
+However, the supported plugin SDK exposes an awaited
+`registerAgentToolResultMiddleware` surface before the model continues. That
+is sufficient to persist a native tool observation and refresh exact Store
+evidence without changing OpenClaw source, configuration, or model routing.
 
 Lucas selected temporary recovery instead. The ownership-bound Agency uninstall
 dry-run failed before mutation because OpenClaw reports its native installed
@@ -145,27 +147,44 @@ and received exact `pong`; redacted native channel state records inbound and
 outbound activity, and role-aware transcript verification passes at SHA-256
 `0420d72c...`. This proves ordinary OpenClaw recovery, not Agency acceptance.
 
+The OpenClaw-only candidate now removes the exposed finalizer tool, supplies an
+initial exact five-line Store snapshot at preflight, and registers one awaited
+tool-result middleware scoped to runtime `openclaw`. The middleware records the
+tool result before appending an updated exact snapshot while preserving the
+native result. Missing or disabled refresh returns the host result unchanged.
+`before_agent_finalize` still validates the first natural response and the
+existing full-payload gate remains authoritative. Expected-red exit 232 is
+retained. The affected security, adapter, and installer slice passes 72 tests,
+including installer refusal when the middleware contract is absent. ADR-0166
+records the host-specific decision. The candidate is not installed; Agency
+remains natively disabled and ordinary OpenClaw remains available.
+
 ## Approach
 
-Keep the prompt correction and change only Agency's OpenClaw finalization
-boundary: construction validates policy text without committing an
-OpenClaw-terminal response; the existing last reply-payload gate commits the
-canonical envelope and policy-text hashes atomically. Correlate native controls
-at `before_reset` and permit only the exact, one-use acknowledgement outside an
-Agency turn, with a bounded wait for OpenClaw's asynchronous hook race. Do not add a model
-revision, rewrite an invalid natural response, send directly from the tool,
-alter OpenClaw configuration, or weaken the Store-backed outbound seal. Install
-Agency only into a natively stopped OpenClaw gateway from a clean checkpoint,
-restart natively, and use a genuinely changed user-initiated Telegram input.
+Change only Agency's OpenClaw adapter as specified by ADR-0166. Do not expose
+the finalizer tool. Supply the initial exact Store-backed header at preflight,
+record native tool evidence through OpenClaw's awaited tool-result middleware,
+and append the updated exact snapshot before the model continues. Keep
+`before_agent_finalize` as the first-pass validator and the last reply-payload
+gate as the complete-envelope commit and authorization boundary.
 
-This conforms to ADR-0049 and ADR-0120 and requires no new durable decision.
+Retain the exact reset acknowledgement correlation. Do not add a model revision,
+rewrite an invalid natural response, send directly, alter OpenClaw source or
+configuration, change native or Agency inference routing, or weaken the
+Store-backed outbound seal. From a clean checkpoint, install Agency Runtime only
+into a natively stopped OpenClaw gateway, restart it natively, and use a
+genuinely changed user-initiated Telegram input. Hermes and all protected hosts
+remain outside the mutation boundary.
 
 ## Dependencies
 
-- AR-272 provides the Store-backed native finalizer.
-- AR-277 makes that finalizer mandatory as the last first-pass tool.
-- OpenClaw 2026.7.1-2 supplies the audited prompt-guideline and final-payload
-  suppression contracts.
+- AR-272 provides the Store-backed finalization service retained behind the
+  adapter compatibility boundary.
+- AR-277 provides the no-correction first-pass and terminal-rejection contract.
+- ADR-0166 selects OpenClaw's awaited tool-result middleware for exact snapshot
+  refresh while leaving Hermes and protected hosts unchanged.
+- OpenClaw 2026.7.1-2 supplies the audited middleware, finalization, and
+  full-payload hook contracts.
 
 ## Acceptance
 
@@ -187,7 +206,10 @@ This conforms to ADR-0049 and ADR-0120 and requires no new durable decision.
 - [x] Run affected reset-correlation suites: 218 passed.
 - [x] Restore ordinary OpenClaw mode through a reversible native Agency disable.
 - [x] Prove exact ordinary Telegram request/response delivery with Agency disabled.
-- [ ] Obtain a supported OpenClaw return-direct or post-model replacement capability.
+- [x] Disprove terminal-tool delivery and identify the supported awaited tool-result seam.
+- [x] Retain expected-red exit 232 and pass 72 focused OpenClaw tests.
+- [x] Pass the proportionate header, Store, inference, registration, and policy gate: 289 passed, 2 skipped.
+- [ ] Install the OpenClaw-only snapshot candidate from a clean local checkpoint.
 - [ ] Deliver a genuinely changed fresh Telegram response with matching Store evidence.
 - [ ] Preserve post-live Store integrity, launcher provenance, and config hashes.
 - [ ] Tracker creation remains pending separate authorization.

@@ -32,7 +32,11 @@ def _json_result(value: Any, *, returncode: int = 0) -> dict[str, Any]:
 
 def _openclaw_runtime_payload() -> dict[str, Any]:
     return {
-        "plugin": {"id": "agency-preflight", "status": "loaded"},
+        "plugin": {
+            "id": "agency-preflight",
+            "status": "loaded",
+            "contracts": {"agentToolResultMiddleware": ["openclaw"]},
+        },
         "typedHooks": [
             {
                 "name": name,

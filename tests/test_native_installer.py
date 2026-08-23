@@ -166,6 +166,7 @@ class FakeNativeRunner:
                     "enabled": True,
                     "loaded": True,
                     "hooks": sorted(OPENCLAW_REQUIRED_HOOKS),
+                    "contracts": {"agentToolResultMiddleware": ["openclaw"]},
                 }
             return {
                 "returncode": 0,
@@ -1517,7 +1518,11 @@ def test_openclaw_runtime_metadata_without_loaded_fact_stays_unverified(
 def test_openclaw_runtime_contract_accepts_official_typed_hook_report(tmp_path: Path) -> None:
     runner = FakeNativeRunner(
         runtime_payload={
-            "plugin": {"id": "agency-preflight", "status": "loaded"},
+            "plugin": {
+                "id": "agency-preflight",
+                "status": "loaded",
+                "contracts": {"agentToolResultMiddleware": ["openclaw"]},
+            },
             "typedHooks": [{"name": name} for name in sorted(OPENCLAW_REQUIRED_HOOKS)],
         }
     )
@@ -1535,6 +1540,8 @@ def test_openclaw_runtime_contract_accepts_official_typed_hook_report(tmp_path: 
     )
     assert runtime_step["loaded"] is True
     assert runtime_step["missing_required_hooks"] == []
+    assert runtime_step["tool_result_middleware_runtimes"] == ["openclaw"]
+    assert runtime_step["tool_result_middleware_contract_proven"] is True
     assert runtime_step["registration_contract_proven"] is True
     assert runtime_step["delivery_behavior_proven"] is False
     assert runtime_step["runtime_contract_scope"] == "registration_only"
@@ -1544,13 +1551,49 @@ def test_openclaw_runtime_contract_accepts_official_typed_hook_report(tmp_path: 
     }
 
 
+def test_openclaw_runtime_contract_fails_closed_without_tool_result_middleware(
+    tmp_path: Path,
+) -> None:
+    runner = FakeNativeRunner(
+        runtime_payload={
+            "plugin": {
+                "id": "agency-preflight",
+                "status": "loaded",
+            },
+            "typedHooks": [{"name": name} for name in sorted(OPENCLAW_REQUIRED_HOOKS)],
+        }
+    )
+
+    result = install_agent_adapter(
+        "openclaw",
+        home_dir=tmp_path,
+        binary_resolver=_resolver("openclaw"),
+        command_runner=runner,
+    )
+
+    assert result["ok"] is False
+    assert result["failed_step"] == "runtime_inspect_unproven"
+    runtime_step = next(
+        step for step in result["native_steps"] if step["name"] == "runtime_inspect"
+    )
+    assert runtime_step["missing_required_hooks"] == []
+    assert runtime_step["tool_result_middleware_runtimes"] == []
+    assert runtime_step["tool_result_middleware_contract_proven"] is False
+    assert runtime_step["registration_contract_proven"] is False
+    assert "agency-preflight" in runner.openclaw_disabled
+
+
 def test_openclaw_runtime_contract_fails_closed_when_one_hook_is_missing(
     tmp_path: Path,
 ) -> None:
     hooks = sorted(OPENCLAW_REQUIRED_HOOKS - {"message_sending"})
     runner = FakeNativeRunner(
         runtime_payload={
-            "plugin": {"id": "agency-preflight", "status": "loaded"},
+            "plugin": {
+                "id": "agency-preflight",
+                "status": "loaded",
+                "contracts": {"agentToolResultMiddleware": ["openclaw"]},
+            },
             "typedHooks": [{"name": name} for name in hooks],
         }
     )
@@ -1580,7 +1623,11 @@ def test_openclaw_runtime_contract_rejects_explicit_nonterminal_priority(
             hook["priority"] = -1000
     runner = FakeNativeRunner(
         runtime_payload={
-            "plugin": {"id": "agency-preflight", "status": "loaded"},
+            "plugin": {
+                "id": "agency-preflight",
+                "status": "loaded",
+                "contracts": {"agentToolResultMiddleware": ["openclaw"]},
+            },
             "typedHooks": typed_hooks,
         }
     )
@@ -1623,7 +1670,11 @@ def test_openclaw_runtime_priority_metadata_is_not_guessed(
             hook["priority"] = priority
     runner = FakeNativeRunner(
         runtime_payload={
-            "plugin": {"id": "agency-preflight", "status": "loaded"},
+            "plugin": {
+                "id": "agency-preflight",
+                "status": "loaded",
+                "contracts": {"agentToolResultMiddleware": ["openclaw"]},
+            },
             "typedHooks": typed_hooks,
         }
     )
