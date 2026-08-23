@@ -1148,6 +1148,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `1ca46cc9` | 2026-08-22 | fix(openclaw): prevent silent finalizer delivery | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md), [AR-278](../roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md) | null |
 | `a8022a92` | 2026-08-22 | fix(openclaw): bind finalized outbound payloads | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md), [AR-278](../roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md) | null |
 | `13d80bd4` | 2026-08-22 | docs(roadmap): record OpenClaw payload repair install | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md), [AR-278](../roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md) | null |
+| `b1bd07c6` | 2026-08-22 | fix(openclaw): correlate native reset acknowledgements | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md), [AR-278](../roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
