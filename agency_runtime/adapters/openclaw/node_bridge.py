@@ -1244,6 +1244,13 @@ def _handle_observation_action(
             limit=MAX_MODEL_CHARS,
         )
         resolved_model = _bounded_string(payload, "resolvedModel", limit=MAX_MODEL_CHARS)
+        source = _bounded_string(payload, "source", limit=128)
+        if source == "openclaw-litellm-router" and not resolved_provider and not resolved_model:
+            # OpenClaw exposes the requested LiteLLM alias, not the router
+            # answering model. Persisting that alias-only event would create a
+            # new evidence revision after the model authored its header, while
+            # still providing no actual-model evidence.
+            return {}
         adapter.post_api_request_handler(
             requested_model=requested_model,
             model=requested_model,
@@ -1252,7 +1259,7 @@ def _handle_observation_action(
             resolved_model=resolved_model,
             resolved_provider=resolved_provider,
             model_id=_bounded_string(payload, "modelId", limit=MAX_MODEL_CHARS),
-            source=_bounded_string(payload, "source", limit=128) or "openclaw-model-call",
+            source=source or "openclaw-model-call",
             status=_bounded_string(payload, "status", limit=64) or "success",
             session_id=session_id,
             trace_id=trace_id,

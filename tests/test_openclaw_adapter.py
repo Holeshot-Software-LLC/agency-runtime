@@ -13,6 +13,7 @@ from agency_runtime.adapters.openclaw.plugin import (
     OpenClawAdapter,
     _authorized_native_skill_read,
 )
+from agency_runtime.core.header.contract import fill_header_fields
 from agency_runtime.core.installer_contracts import OPENCLAW_REQUIRED_HOOKS
 from agency_runtime.core.installer_payload_openclaw import render_openclaw_index
 from agency_runtime.core.selector.delegation_detection import detect_work_units
@@ -121,6 +122,53 @@ def test_openclaw_model_call_receipt_is_bound_to_exact_child_trace(tmp_path: Pat
     # Generic host telemetry is deliberately normalized to the bounded host
     # provenance class; it cannot forge LiteLLM callback authority.
     assert receipt["source"] == "host"
+
+
+def test_openclaw_alias_only_router_hook_does_not_mutate_header_evidence(
+    tmp_path: Path,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+    adapter = OpenClawAdapter(store=store)
+    store.create_run(
+        trace_id="router-turn",
+        session_id="router-session",
+        host="openclaw",
+        metadata={"request_kind": "trivial"},
+    )
+    before = fill_header_fields(
+        {},
+        "router-session",
+        store,
+        "task-general",
+        "router-turn",
+    )["actual_model_selected"]
+
+    result = node_bridge.handle(
+        {
+            "action": "post_api_request",
+            "sessionId": "router-session",
+            "traceId": "router-turn",
+            "requestedModel": "task-general",
+            "modelGroup": "task-general",
+            "resolvedProvider": "",
+            "resolvedModel": "",
+            "modelId": "call-alias-only",
+            "source": "openclaw-litellm-router",
+            "status": "completed",
+        },
+        adapter=adapter,
+    )
+
+    after = fill_header_fields(
+        {},
+        "router-session",
+        store,
+        "task-general",
+        "router-turn",
+    )["actual_model_selected"]
+    assert result == {}
+    assert store.get_model_receipt("router-turn") is None
+    assert before == after == "requested execution alias: task-general"
 
 
 def test_openclaw_generated_plugin_records_terminal_model_calls() -> None:

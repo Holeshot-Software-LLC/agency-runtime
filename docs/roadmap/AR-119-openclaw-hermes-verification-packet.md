@@ -1180,3 +1180,54 @@ install_state: candidate not installed
 known_limit: live Telegram response and post-live Store/config receipts remain pending
 hermes_and_protected_hosts: untouched
 ~~~
+
+### OpenClaw awaited-middleware fourth failure bundle
+
+~~~yaml
+host: openclaw
+candidate_branch: codex/ar278-openclaw-one-pass
+installed_checkpoint: da184b4fc6170ff1bffcff8d827910e09b848f6a
+ledger_checkpoint: 773d90807ce17378753af834ce93b1882f31de68
+host_version: OpenClaw 2026.7.1-2 (0790d9f)
+install_result: 514528d9-e373-4f87-b1c0-9d53edb9401b; complete; Agency plugin only
+bundle_digest: 07189d93a9be9ea85ddd7ad396b0dacef8de6af8d6aa5904318efc35bcc442d0
+runtime_digest: f0a563d9cfdc40499975c1556d25ae1e62dfc298022a2d670444646917811bad
+launcher_manifest_sha256: 668ff55d04608fd599de4a81c27cee0a2af6a0d6cacb925d78bd07dc75018c99
+plugin_contract: loaded; ten hooks; agentToolResultMiddleware=[openclaw]; no tools; zero diagnostics
+gateway_channels: RPC green; Telegram and Slack configured/running/probe-green
+native_config_delta: meta.lastTouchedAt; plugins.entries.agency-preflight.enabled only
+native_primary: litellm/task-general
+native_fallbacks: six original fallbacks unchanged
+agency_inference_profile: linux-task-agency-router
+agency_requested_alias: task-agency-router
+credential_env_name: LITELLM_API_KEY
+credential_present: true
+reset_acknowledgement: absent; failure retained
+fresh_session_id: 8936e747-e420-4801-9c0c-6d85fc9fe41a
+agency_trace_id: a9afc0e8-c998-4bff-9c9e-6dce27628bb2
+store_run_id: 24104a10-ad68-43a3-9a79-92603687cd1b
+resident_binding_id: none
+routing_decision_ids:
+  - 30f6b37b-610e-4f4c-8fce-593fe4cd6d8f
+specialists_loaded_ids: []
+skill_name_and_store_row_id: none
+routing_mode: deterministic control; abstained; workforce inference not attempted
+native_parent_model_calls: three task-general calls; HTTP 200
+actual_model_and_receipt_source: unavailable; sanitized OpenClaw hook reports requested alias only
+native_response_chars: 665
+header_exact: agency-steward / none / none / requested execution alias task-general / deterministic
+finalization_id: 625e3e8c-e82c-4918-a23e-5c180760676b
+finalization_status: response_invalid
+finalization_missing: actual_model_selected
+native_transcript_sha256: 13300aefd4fc61cefb9f789d255a0f98b376ec5c0864761cbfbc549c93c1b0a5
+delivery_result: no queued reply payloads; no Telegram response
+root_cause: alias-only model receipt arrived after header authorship and changed authoritative evidence
+expected_red: focused regression failed on persisted alias-only receipt
+focused_green: 31 passed, 1 skipped
+fix_scope: Agency OpenClaw bridge only; no shared policy or other-harness change
+store_schema: 47
+post_failure_store_integrity: ok
+post_failure_store_snapshot_sha256: df57b6a323a42dfd7e2cfa4cf97906f7960442781716c8e70ba832b778fb1509
+known_limit: fix not installed; fresh changed Telegram proof pending
+hermes_and_protected_hosts: untouched
+~~~

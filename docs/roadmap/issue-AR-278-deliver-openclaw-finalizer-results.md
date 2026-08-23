@@ -159,6 +159,48 @@ including installer refusal when the middleware contract is absent. ADR-0166
 records the host-specific decision. The candidate is not installed; Agency
 remains natively disabled and ordinary OpenClaw remains available.
 
+### Fourth Telegram failure: alias-only evidence arrives after authorship
+
+Clean pair `da184b4f` / `773d9080` was installed as Agency-only operation
+`514528d9-e373-4f87-b1c0-9d53edb9401b` while OpenClaw was natively stopped.
+The installer did not restart it. Native restart loaded ten required hooks, the
+awaited middleware scoped to OpenClaw, no exposed tool, and zero diagnostics.
+Gateway RPC and Telegram/Slack probes were green. The native config differed
+from its exact pre-install backup only at `meta.lastTouchedAt` and
+`plugins.entries.agency-preflight.enabled`; primary
+`litellm/task-general`, six fallbacks, channels, providers, and credential
+indirection remained unchanged.
+
+A fresh reset acknowledgement was absent, but exact `agency status` reached a
+new native session. OpenClaw completed three `task-general` requests with HTTP
+200, ran native tools, and authored one natural 665-character response beginning
+with the exact Store-backed five-line header. The turn kernel nevertheless
+reported `no queued reply payloads`. Transcript SHA-256 is `13300aefd4...`.
+
+Agency trace `a9afc0e8-c998-4bff-9c9e-6dce27628bb2`, run
+`24104a10-ad68-43a3-9a79-92603687cd1b`, routing
+`30f6b37b-610e-4f4c-8fce-593fe4cd6d8f`, and terminal
+`625e3e8c-e82c-4918-a23e-5c180760676b` correlate. Control routing correctly
+abstained through the deterministic path; no specialist, skill, resident
+binding, or Agency workforce inference was expected. Finalization failed closed
+with only `actual_model_selected` missing.
+
+The installed OpenClaw hook contract explains the mismatch. Its sanitized
+`model_call_ended` event supplies provider `litellm` and requested alias
+`task-general`, not LiteLLM's answering model. Agency correctly refuses to
+promote that alias into actual-model evidence, but each alias-only completion
+had still created an unavailable receipt. The final receipt arrived after the
+model authored its requested-alias header, changed the evidence revision, and
+made the exact response stale before final validation.
+
+A focused regression first failed by showing that header mutation. The minimal
+OpenClaw bridge fix does not persist a LiteLLM hook event when both resolved
+provider and resolved model are absent; genuine resolved-model receipts remain
+unchanged. The focused OpenClaw adapter, middleware, and finalization slice is
+31 passed and 1 skipped. Shared header policy, OpenClaw source/configuration,
+native and Agency model routing, outbound gates, and every other harness remain
+unchanged.
+
 ## Approach
 
 Change only Agency's OpenClaw adapter as specified by ADR-0166. Do not expose
@@ -209,7 +251,10 @@ remain outside the mutation boundary.
 - [x] Disprove terminal-tool delivery and identify the supported awaited tool-result seam.
 - [x] Retain expected-red exit 232 and pass 72 focused OpenClaw tests.
 - [x] Pass the proportionate header, Store, inference, registration, and policy gate: 289 passed, 2 skipped.
-- [ ] Install the OpenClaw-only snapshot candidate from a clean local checkpoint.
+- [x] Install the OpenClaw-only snapshot candidate from a clean local checkpoint.
+- [x] Preserve the fourth no-outbound transcript and exact finalization/model-receipt correlation.
+- [x] Add expected-red coverage for post-authoring alias-only evidence mutation.
+- [x] Keep the fix OpenClaw-only and preserve genuine resolved-model receipts.
 - [ ] Deliver a genuinely changed fresh Telegram response with matching Store evidence.
 - [ ] Preserve post-live Store integrity, launcher provenance, and config hashes.
 - [ ] Tracker creation remains pending separate authorization.

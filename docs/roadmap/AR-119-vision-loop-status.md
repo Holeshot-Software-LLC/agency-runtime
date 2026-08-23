@@ -3485,3 +3485,48 @@ header, Store, inference, registration, and policy gate is 289 passed, 2 skipped
 The candidate is not installed. Agency remains registered-disabled, ordinary Telegram recovery
 remains green, and Hermes, Codex OAuth/config/canary, Claude, and ZCode remain
 untouched. A clean local checkpoint precedes any live mutation.
+
+## 2026-08-23 - Fourth Telegram failure isolates alias-only evidence mutation
+
+The awaited tool-result candidate was checkpointed at `da184b4f` /
+`773d9080` and installed into natively stopped OpenClaw as Agency-only
+operation `514528d9-e373-4f87-b1c0-9d53edb9401b`. Bundle `07189d93...`,
+runtime `f0a563d9...`, and launcher SHA `668ff55d...` all bind to the same
+checkout. The installer did not restart OpenClaw. Native restart loaded ten
+hooks plus the OpenClaw-scoped awaited middleware, exposed no tool, and reported
+zero diagnostics. RPC and channel probes were green. Only the timestamp and
+Agency enabled flag changed in OpenClaw config; `litellm/task-general`, all
+six fallbacks, channels, providers, and credential indirection remained exact.
+
+The fresh reset acknowledgement did not arrive. Exact `agency status` still
+entered a new native session. Three `task-general` calls returned HTTP 200,
+native tools completed, and the transcript contains a 665-character natural
+response with the exact five-line requested-alias/deterministic header. The
+turn kernel then recorded `no queued reply payloads`; transcript SHA is
+`13300aef...`.
+
+Store trace `a9afc0e8-c998-4bff-9c9e-6dce27628bb2`, run
+`24104a10-ad68-43a3-9a79-92603687cd1b`, routing
+`30f6b37b-610e-4f4c-8fce-593fe4cd6d8f`, and terminal
+`625e3e8c-e82c-4918-a23e-5c180760676b` correlate. Deterministic control
+routing correctly abstained with no specialist, skill, resident binding, or
+workforce inference. Finalization rejected only `actual_model_selected`.
+Three correctly correlated host model receipts requested `task-general` but
+reported resolved model unavailable.
+
+The installed OpenClaw 2026.7.1-2 hook exposes provider and requested model
+metadata, not the LiteLLM answering model. Agency correctly does not promote
+`task-general` into an actual-model claim. The defect was persisting that
+alias-only event after response authorship: it changed the authoritative header
+from the requested-alias line to an unavailable-receipt line before validation.
+This is neither a LiteLLM reachability/authentication problem nor a middleware,
+Telegram, or native model-routing failure.
+
+The focused expected-red now proves the mutation. The OpenClaw bridge omits
+only LiteLLM hook events with no resolved provider and no resolved model from
+actual-model completion evidence. Genuine resolved telemetry remains recorded,
+and shared policy plus every other harness remain unchanged. The focused
+OpenClaw adapter, middleware, and finalization slice passes 31 tests with 1
+skip. Post-failure Store integrity is `ok`, schema 47, and read-only snapshot
+SHA is `df57b6a3...`. The fix is not yet installed; Hermes and protected hosts
+remain untouched.
