@@ -661,6 +661,48 @@ if (!guidance.includes("next and final assistant output")) process.exit(226);
 
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is not installed")
+def test_generated_openclaw_allows_one_exact_native_reset_acknowledgement(
+    tmp_path: Path,
+) -> None:
+    source = _openclaw_plugin_harness_source()
+    source += """
+const messageReceived = registeredHooks.get("message_received");
+const messageSeal = registeredHooks.get("message_sending");
+if (typeof messageReceived !== "function" || typeof messageSeal !== "function") process.exit(227);
+const context = { sessionKey: "native-reset-session" };
+messageReceived({ content: "/new", sessionKey: "native-reset-session" }, context);
+const allowed = messageSeal(
+  { content: "✅ New session started.", sessionKey: "native-reset-session" },
+  context,
+);
+if (allowed?.content !== "✅ New session started." || allowed?.cancel === true) process.exit(228);
+const replay = messageSeal(
+  { content: "✅ New session started.", sessionKey: "native-reset-session" },
+  context,
+);
+if (replay?.cancel !== true) process.exit(229);
+messageReceived({ content: "/new with-tail", sessionKey: "native-reset-session" }, context);
+const tailed = messageSeal(
+  { content: "✅ New session started.", sessionKey: "native-reset-session" },
+  context,
+);
+if (tailed?.cancel !== true) process.exit(230);
+"""
+    script = tmp_path / "openclaw-native-reset-ack.mjs"
+    script.write_text(source, encoding="utf-8")
+
+    completed = subprocess.run(
+        [str(shutil.which("node")), str(script)],
+        capture_output=True,
+        text=True,
+        timeout=10,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is not installed")
 def test_generated_openclaw_registers_store_backed_native_finalize_tool(
     tmp_path: Path,
 ) -> None:

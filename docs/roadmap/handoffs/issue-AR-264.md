@@ -51,18 +51,20 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 - Credential-correct 14B trace `2317d975...` accepted all three stages in 37.768 seconds, exact OpenClaw profile/provider/alias, and no provider fallback. Fresh native `tmux` trace `79abdac7...` completed Store run `6b7651b6...`, routing `1908650f...`, binding `rmb-19107899...`, specialist `5f11b004...`, skill row `b54c5916...`, and finalization `64a97d43...`; the exact five-line header records inference and no delegation.
 - Store schema remains 47. Post-live online backup integrity is `ok` and SHA is `47d868f5...`; all 15 packaged contractors remain exact-current. Actual backing-model identity remains unavailable because LiteLLM reports the alias only.
 - Exact trace `35efa94c...` remains `response_invalid`, and changed trace `07e5ec33...` remains a native timeout. Tighter fresh trace `9bea1a3f...` applied all Agency stages with no fallback, called only `agency_finalize`, delivered the exact five-line header, and completed Store run `c24afc99...` plus finalization `07759321...` in 46.635 seconds.
-- User-initiated Telegram trace `9ac12abc...` then accepted deterministic status finalization `63140215...`, but native `task-general` emitted `NO_REPLY`; OpenClaw suppressed it before outbound hooks and queued no reply. AR-278's expected-red exit 223 and minimal generated-prompt candidate are focused-green but not installed.
+- User-initiated Telegram trace `9ac12abc...` accepted deterministic status finalization `63140215...`, but native `task-general` emitted `NO_REPLY`; the first AR-278 failure remains retained.
+- Clean pair `1ca46cc9` / `320dc7cf` installed the prompt repair as Agency-only install `74b4c0bc...`. Fresh trace `2eaaf8e9...` then accepted all three exact Agency LiteLLM receipts with no cross-provider fallback, selected two specialists, recorded `openclaw-operations`, and returned exact finalizer text. The text hash `202f0d58...` was prematurely terminal, so the canonical full-payload gate failed closed and Telegram queued no reply.
+- The regression-first candidate defers only OpenClaw terminal commit to the audited full-payload gate and permits one exact, session-bound, expiring native reset acknowledgement. Affected suites are 386 passed/1 skipped; native OpenClaw routing, Agency inference configuration, Hermes, and all proven hosts remain untouched.
 
 ## completed-evidence
 
 - Agency-only install, OpenClaw activation, exact-status finalization, native `healthcheck` evidence, and harness-scoped LiteLLM alias selection are proven.
 - Exact substantive Agency-only acceptance is proven with the free 30B target; exact-status native header/finalization now pass with the installed prompt-order repair.
-- Native skill and changed substantive CLI acceptance pass; Telegram channel acceptance is blocked by AR-278. No hosted workflow, push, PR, tracker mutation, host canary, protected-host change, or matrix movement occurred.
+- Native skill and changed substantive CLI acceptance pass; Telegram channel acceptance remains blocked by AR-278's full-envelope conflict. No hosted workflow, push, PR, tracker mutation, host canary, protected-host change, or matrix movement occurred.
 
 ## exact-blocker
 
-1. Telegram ingress and Agency finalization pass, but post-finalizer `NO_REPLY` suppression prevents channel delivery.
-2. Commit, install Agency only, and prove a genuinely changed Telegram turn under AR-278.
+1. Telegram ingress and exact final text pass, but a premature text-hash terminal conflicts with the canonical outbound-payload hash and prevents channel delivery.
+2. Commit the full-payload candidate, install Agency only, and prove a genuinely changed Telegram turn under AR-278.
 3. Preserve all failures and keep Hermes untouched.
 
 ## same-task-continuity
@@ -71,7 +73,7 @@ Continue with OpenClaw only after the clean commit pair. Hermes is running break
 
 ## next-bounded-work-package
 
-1. Create the clean AR-278 substantive/ledger checkpoint.
+1. Create the clean AR-278 full-payload substantive/ledger checkpoint.
 2. Back up the Store, reinstall Agency only into stopped OpenClaw, and restart natively.
 3. Correlate a genuinely changed Telegram response with Store evidence; leave Hermes untouched.
 

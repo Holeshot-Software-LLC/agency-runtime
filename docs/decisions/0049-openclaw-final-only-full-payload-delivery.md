@@ -57,6 +57,13 @@ separately from the policy-text hash committed with the terminal turn. Missing
 trace recovery may select the latest exact accepted terminal turn only when no
 open turn or retirement barrier makes that recovery unsafe.
 
+OpenClaw's native finalizer tool constructs and validates the policy text but
+does not terminally accept the turn by hashing that text alone. The turn stays
+pending through `before_agent_finalize`; the last reply-payload gate atomically
+commits the canonical complete-payload hash and its separate policy-text hash.
+A pre-existing terminal for a different hash remains a conflict and fails
+closed.
+
 After exact authorization, add a random one-use invisible marker to visible
 text or a marker-only carrier for spoken/media delivery. The last message hook
 consumes and removes it. A grant is bound to session, turn, payload, kind, and
@@ -64,6 +71,11 @@ marker, expires quickly, and cannot authorize a concurrent same-text response.
 An enabled payload without policy text is denied. Explicit runtime disablement
 passes through truthfully using the same dispatch carrier where the host needs
 one to reach the stripping hook.
+
+Native `/new` and `/reset` acknowledgements are outside an Agency work turn.
+The inbound command may authorize only its exact static native acknowledgement,
+once, for the same session, with a short expiry. Command tails, replay, and all
+other unmarked output remain denied.
 
 An accepted finalizer tool result is not channel delivery. A silent sentinel
 emitted after that result is a failed delivery outcome even when the Store turn
@@ -84,6 +96,10 @@ compatibility from a version comparison.
   integration is installed.
 - Text, speech, TTS, media metadata, and channel data are bound as one payload;
   one string cannot stand in for a different outward response.
+- Finalizer construction cannot prematurely close an OpenClaw turn against a
+  text hash that differs from the later canonical payload hash.
+- Native reset controls remain usable without creating a general unmarked-message
+  bypass.
 - Configuration changes are reversible without copying credentials or unrelated
   OpenClaw settings into Agency state.
 - Soft disablement does not silently re-enable streaming and does not invent

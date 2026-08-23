@@ -34,6 +34,7 @@ OPENCLAW_REQUIRED_HOOKS = frozenset(
         "subagent_spawned",
         "subagent_ended",
         "before_agent_finalize",
+        "message_received",
         "reply_payload_sending",
         "message_sending",
     }

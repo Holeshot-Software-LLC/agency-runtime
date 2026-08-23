@@ -50,10 +50,13 @@ evidence before the first visible response:
   wait. Later snapshots supersede earlier snapshots for the same turn.
 - Hermes and OpenClaw preflight instruct the model to call the local
   `agency.finalize` tool exactly once immediately before its natural final
-  response and emit the returned text byte-for-byte. The tool constructs and
-  commits the response to Agency's Store; it does not send a channel message
-  and is not a post-response correction. The host must emit the returned text
-  as its natural final response, never a silent-reply sentinel.
+  response and emit the returned text byte-for-byte. The tool constructs the
+  response from Agency's Store; it does not send a channel message and is not a
+  post-response correction. Hermes may commit its text response at that
+  boundary. OpenClaw leaves the constructed text pending until its final-only
+  reply-payload gate atomically commits the complete outbound-envelope hash and
+  separate policy-text hash. The host must emit the returned text as its
+  natural final response, never a silent-reply sentinel.
 - Every snapshot and finalizer result comes from the correlated Store. Failure
   to produce an exact snapshot supplies no guessed header.
 

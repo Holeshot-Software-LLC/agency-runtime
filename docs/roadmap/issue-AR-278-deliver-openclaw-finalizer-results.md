@@ -44,6 +44,13 @@ This is a post-finalizer host-delivery defect. It is not Telegram ingress,
 LiteLLM inference, Agency preflight, or Store finalization success. A Store row
 without the host-written response remains insufficient delivery evidence.
 
+The first prompt correction exposed a second independent delivery defect. The
+model copied the finalizer result exactly, but the finalizer had already
+committed a terminal hash of the policy text. OpenClaw's last reply-payload
+hook correctly canonicalized the richer outbound envelope and required its
+different full-payload hash. The conflicting prior terminal caused the
+fail-closed gate to cancel the otherwise valid reply before Telegram queueing.
+
 ## Current state
 
 Opaque native session `6d16c446-4d60-460d-b1ad-d534c72327db` began with exact
@@ -70,9 +77,37 @@ to copy the result byte-for-byte, and forbids `NO_REPLY`. Three finalizer tests
 and generated-installer parity pass. An ambient-umask parity failure is retained;
 the documented private-umask run passes.
 
+That prompt candidate was checkpointed as `1ca46cc9` / `320dc7cf` and
+installed into natively stopped OpenClaw as Agency-only install
+`74b4c0bc-8da5-4bfb-ac91-08c6e770c7ea`. OpenClaw stayed 2026.7.1-2 on
+`litellm/task-general`; its primary, six fallbacks, and Agency configuration
+were unchanged. Opaque fresh session
+`80c9c847-ff6d-4d16-b913-50e96b981a42` then produced exact finalizer text,
+not `NO_REPLY`. Trace `2eaaf8e9-07f0-475c-89dc-f811553339ed`, run
+`27faf92b-4c60-430d-8401-358831c60f29`, routing
+`9528aa21-6cce-4a2c-87d8-1e4ba7722b00`, skill row
+`0f548ebf-c080-4733-b981-5b21481fd7eb`, and terminal
+`9b2d4c3a-121e-4043-8c72-640ebde48e74` correlate. The final text and tool
+result match at SHA-256 `202f0d58...`; no Telegram outbound timestamp or
+queued response exists.
+
+The retained full-payload expected-red proves the terminal existed immediately
+after the tool call with the text hash. The repair leaves OpenClaw finalizer
+text pending, lets `before_agent_finalize` validate that exact text, and
+atomically commits the canonical outbound-payload hash plus the separate policy
+text hash only in the last reply-payload gate. A second expected-red captures
+the blocked native `/new` acknowledgement. The narrow repair authorizes one
+exact static acknowledgement for exact `/new` or `/reset`, bound to the
+session and a ten-second lifetime; replay, tailed commands, and arbitrary
+unmarked messages remain blocked.
+
 ## Approach
 
-Change only Agency's generated OpenClaw tool metadata. Do not add a model
+Keep the prompt correction and change only Agency's OpenClaw finalization
+boundary: construction validates policy text without committing an
+OpenClaw-terminal response; the existing last reply-payload gate commits the
+canonical envelope and policy-text hashes atomically. Permit only the exact,
+one-use native reset acknowledgement outside an Agency turn. Do not add a model
 revision, rewrite an invalid natural response, send directly from the tool,
 alter OpenClaw configuration, or weaken the Store-backed outbound seal. Install
 Agency only into a natively stopped OpenClaw gateway from a clean checkpoint,
@@ -94,6 +129,11 @@ This conforms to ADR-0049 and ADR-0120 and requires no new durable decision.
 - [x] Add an expected-red for non-delivery and silent-sentinel guidance.
 - [x] Make the smallest generated-prompt correction with no second model pass.
 - [x] Keep OpenClaw native routing and all protected-host configuration untouched.
+- [x] Preserve the second exact-text/no-outbound transcript and Store correlation.
+- [x] Add expected-red coverage for full-envelope binding and native reset acknowledgement.
+- [x] Defer only OpenClaw terminal commit until the complete outbound payload is bound.
+- [x] Keep the native acknowledgement exception exact, one-use, session-bound, and expiring.
+- [x] Run affected focused tests: 386 passed and 1 skipped.
 - [ ] Run affected focused tests and local documentation/lint gates.
 - [ ] Commit a clean substantive/ledger checkpoint before host mutation.
 - [ ] Install Agency only into stopped OpenClaw and restart it natively.

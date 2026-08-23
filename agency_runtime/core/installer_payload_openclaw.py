@@ -41,13 +41,19 @@ const MAX_TERMINAL_REJECTIONS = 128;
 const PREFLIGHT_CONTEXT_TTL_MS = 10 * 60 * 1000;
 const MAX_PREFLIGHT_CONTEXTS = 128;
 const OUTBOUND_AUTHORIZATION_TTL_MS = 30 * 1000;
+const NATIVE_CONTROL_ACK_TTL_MS = 10 * 1000;
 const MAX_OUTBOUND_AUTHORIZATIONS = 128;
 const CONTROL_AUTHORIZATION_FIELD = "agencyRuntimeControlAuthorization";
 const preflightContexts = new Map();
 const terminalRejections = new Map();
 const outboundAuthorizations = new Map();
 const controlAuthorizations = new Map();
+const nativeControlAuthorizations = new Map();
 const nativeChildParents = new Map();
+const NATIVE_CONTROL_ACKS = new Map([
+  ["/new", "✅ New session started."],
+  ["/reset", "✅ Session reset."],
+]);
 const DISPATCH_MARKER_START = "\u2063";
 const DISPATCH_MARKER_ZERO = "\u200b";
 const DISPATCH_MARKER_ONE = "\u200c";
@@ -608,6 +614,35 @@ function pruneOutboundAuthorizations(now = Date.now()) {{
   while (controlAuthorizations.size >= MAX_OUTBOUND_AUTHORIZATIONS) {{
     controlAuthorizations.delete(controlAuthorizations.keys().next().value);
   }}
+  for (const [key, state] of nativeControlAuthorizations) {{
+    if (Number(state?.expiresAt || 0) <= now) nativeControlAuthorizations.delete(key);
+  }}
+  while (nativeControlAuthorizations.size >= MAX_OUTBOUND_AUTHORIZATIONS) {{
+    nativeControlAuthorizations.delete(nativeControlAuthorizations.keys().next().value);
+  }}
+}}
+
+function nativeControlAuthorizationKey(session, text) {{
+  if (!session || !text) return "";
+  return `${{responseDigest(session)}}\\0${{responseDigest(text)}}`;
+}}
+
+function authorizeNativeControlAcknowledgement(session, command) {{
+  const expected = NATIVE_CONTROL_ACKS.get(String(command || "").trim().toLowerCase());
+  const key = expected ? nativeControlAuthorizationKey(session, expected) : "";
+  if (!key) return false;
+  const now = Date.now();
+  pruneOutboundAuthorizations(now);
+  nativeControlAuthorizations.set(key, {{ expiresAt: now + NATIVE_CONTROL_ACK_TTL_MS }});
+  return true;
+}}
+
+function consumeNativeControlAcknowledgement(session, text) {{
+  const key = nativeControlAuthorizationKey(session, text);
+  const state = key ? nativeControlAuthorizations.get(key) : undefined;
+  if (Number(state?.expiresAt || 0) <= Date.now()) return false;
+  nativeControlAuthorizations.delete(key);
+  return true;
 }}
 
 function authorizeOutbound(session, text, kind = "final", run = "") {{
@@ -777,6 +812,7 @@ function observeRuntimeState(result, epoch = runtimeStateEpoch) {{
     runtimeEnabled = false;
     outboundAuthorizations.clear();
     controlAuthorizations.clear();
+    nativeControlAuthorizations.clear();
     preflightContexts.clear();
   }} else if (result?.runtime_enabled === true || result?.runtimeEnabled === true) {{
     runtimeEnabled = true;
@@ -855,6 +891,13 @@ export default definePluginEntry({{
     }});
     api.on("gateway_start", (_event, ctx) => {{
       deliveryCompatibility = inspectFinalOnlyDelivery(ctx?.config);
+    }});
+
+    api.on("message_received", (event, ctx) => {{
+      authorizeNativeControlAcknowledgement(
+        String(event?.sessionKey || ctx?.sessionKey || ""),
+        String(event?.content || ""),
+      );
     }});
 
     api.on("before_agent_run", async (event, ctx) => {{
@@ -1166,6 +1209,7 @@ export default definePluginEntry({{
         ? consumeOutboundAuthorization(session, unmarked.markedText)
         : null;
       if (authorized) return {{ content: unmarked.content }};
+      if (consumeNativeControlAcknowledgement(session, content)) return {{ content }};
       return {{
         cancel: true,
         cancelReason: "Agency Runtime cancelled an outbound message that did not match final validation.",

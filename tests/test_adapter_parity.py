@@ -1424,20 +1424,17 @@ def test_openclaw_accepts_exact_first_visible_response_constructed_by_finalize_t
         "first-pass-turn",
         action="accept",
     )
-    assert finalization is not None
-    assert finalization["host"] == "openclaw"
-    assert (
-        handle(
-            {
-                "action": "pre_verify",
-                "sessionId": "first-pass-session",
-                "traceId": "first-pass-turn",
-                "finalResponse": finalized["text"],
-            },
-            adapter=OpenClawAdapter(store=store),
-        )
-        == {}
+    assert finalization is None
+    pending = handle(
+        {
+            "action": "pre_verify",
+            "sessionId": "first-pass-session",
+            "traceId": "first-pass-turn",
+            "finalResponse": finalized["text"],
+        },
+        adapter=OpenClawAdapter(store=store),
     )
+    assert pending["action"] == "allow_pending"
     allowed = handle(
         {
             "action": "outbound_gate",
@@ -1449,6 +1446,85 @@ def test_openclaw_accepts_exact_first_visible_response_constructed_by_finalize_t
     )
     assert allowed["action"] == "allow"
     assert allowed["turnId"] == "first-pass-turn"
+    finalization = store.get_authoritative_finalization(
+        "first-pass-session",
+        "first-pass-turn",
+        action="accept",
+    )
+    assert finalization is not None
+    assert finalization["host"] == "openclaw"
+
+
+def test_openclaw_finalize_tool_defers_terminal_until_full_outbound_payload_is_bound(
+    tmp_path: Path,
+) -> None:
+    from agency_runtime.adapters.openclaw.node_bridge import handle
+
+    store = Store(tmp_path / "openclaw-full-payload-finalization.db")
+    store.create_run(
+        trace_id="full-payload-turn",
+        session_id="full-payload-session",
+        host="openclaw",
+        metadata={"request_kind": "trivial"},
+    )
+    adapter = OpenClawAdapter(store=store)
+    finalized = handle(
+        {
+            "action": "finalize",
+            "draftText": "First visible response.",
+            "sessionId": "full-payload-session",
+            "traceId": "full-payload-turn",
+        },
+        adapter=adapter,
+    )
+
+    assert finalized["action"] == "accept"
+    assert (
+        store.get_authoritative_finalization(
+            "full-payload-session",
+            "full-payload-turn",
+        )
+        is None
+    )
+    pending = handle(
+        {
+            "action": "pre_verify",
+            "sessionId": "full-payload-session",
+            "traceId": "full-payload-turn",
+            "finalResponse": finalized["text"],
+        },
+        adapter=adapter,
+    )
+    assert pending["action"] == "allow_pending"
+
+    outbound_payload = json.dumps(
+        {"mediaUrls": [], "text": finalized["text"]},
+        separators=(",", ":"),
+        sort_keys=True,
+    )
+    allowed = handle(
+        {
+            "action": "outbound_gate",
+            "sessionId": "full-payload-session",
+            "traceId": "full-payload-turn",
+            "finalResponse": finalized["text"],
+            "outboundPayload": outbound_payload,
+        },
+        adapter=adapter,
+    )
+    payload_digest = hashlib.sha256(outbound_payload.encode()).hexdigest()
+    policy_digest = hashlib.sha256(finalized["text"].encode()).hexdigest()
+    assert allowed["action"] == "allow"
+    assert allowed["responseHash"] == payload_digest
+    terminal = store.get_authoritative_finalization(
+        "full-payload-session",
+        "full-payload-turn",
+        action="accept",
+        response_hash=payload_digest,
+    )
+    assert terminal is not None
+    assert terminal["response_hash"] == payload_digest
+    assert terminal["policy_response_hash"] == policy_digest
 
 
 def test_openclaw_strong_delegation_decline_is_terminal_and_exactly_replayed(

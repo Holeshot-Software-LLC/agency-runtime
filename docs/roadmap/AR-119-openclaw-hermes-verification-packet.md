@@ -998,3 +998,42 @@ The prior final evidence bundle remains valid for CLI-only host/Store
 correlation and exact Agency LiteLLM routing. It does not prove Telegram
 delivery. No direct send, second model pass, invalid-draft rewrite, host config
 change, or safety relaxation is part of the AR-278 candidate.
+
+
+### Telegram exact-text/full-payload conflict bundle
+
+~~~yaml
+host: openclaw
+installed_checkout_sha: 320dc7cf99c977edf45a3e7ad68b3c7f4d9b6f93
+host_version: OpenClaw 2026.7.1-2 (0790d9f)
+install_result: 74b4c0bc-8da5-4bfb-ac91-08c6e770c7ea complete; Agency plugin only
+native_primary: litellm/task-general; six fallbacks unchanged
+agency_inference_profile: linux-task-agency-router
+requested_alias: task-agency-router
+model_group: task-agency-router
+fresh_session_id: 80c9c847-ff6d-4d16-b913-50e96b981a42
+agency_trace_id: 2eaaf8e9-07f0-475c-89dc-f811553339ed
+store_run_id: 27faf92b-4c60-430d-8401-358831c60f29
+resident_binding_id: none persisted for this trace
+routing_decision_ids:
+  - 9528aa21-6cce-4a2c-87d8-1e4ba7722b00
+specialists_loaded_ids:
+  - f7ac8ffb-33af-4d93-8e54-d39471463ad1 # ai-data-remediation-engineer
+  - 68d0a65b-c1da-4beb-b071-0fc7695a15b3 # technical-writer
+skill_name_and_store_row_id: openclaw-operations / 0f548ebf-c080-4733-b981-5b21481fd7eb
+provider_attempt_status: three wrapper receipts; linux-task-agency-router; exact task-agency-router requested/resolved; success
+fallback_count: zero cross-provider or protected-host fallback; routing fallback_applied=false
+actual_model_and_receipt_source: unavailable; wrapper reports alias only
+finalization_id: 9b2d4c3a-121e-4043-8c72-640ebde48e74
+finalization_status: accept/completed at policy-text boundary
+final_text_sha256: 202f0d5817642ebd8db337179a003898474593014b54145d44b32eb918400dc6
+native_transcript_sha256: e4c2d1bd606190ed5c0d06db2de3cd6ed91a52a2d381270a37047cbabd91e34a
+native_trajectory_sha256: 86adbcc0ffcfe276026a94fab494758424c6abd1a46cf69821da09d1554f4976
+native_terminal_text: exact finalizer result; not NO_REPLY
+delivery_result: canonical outbound payload conflicted with premature text-hash terminal; fail-closed cancellation; no Telegram outbound
+reset_control_result: exact /new ingress observed; acknowledgement blocked as unmarked output
+candidate_behavior: defer only OpenClaw terminal commit to full-payload gate; exact one-use reset acknowledgement
+focused_green: 386 passed, 1 skipped
+known_limit: candidate not installed; fresh /reset acknowledgement and changed substantive Telegram delivery pending
+hermes_and_protected_hosts: untouched
+~~~

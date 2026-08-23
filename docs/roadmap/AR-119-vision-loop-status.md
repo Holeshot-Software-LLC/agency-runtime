@@ -3355,3 +3355,45 @@ tool validates and returns but does not send, its result is not user-visible by
 itself, the next/final assistant output must copy it, and `NO_REPLY` is
 forbidden. Expected-red exit 223 is retained; three focused finalizer checks
 and generated-installer parity pass. No host has received the candidate yet.
+
+
+## 2026-08-22 — Exact final text exposes full-payload terminal conflict
+
+Clean pair `1ca46cc9` / `320dc7cf` was installed into natively stopped
+OpenClaw as Agency-only install `74b4c0bc-8da5-4bfb-ac91-08c6e770c7ea`.
+OpenClaw itself was not reinstalled. Version 2026.7.1-2, native primary
+`litellm/task-general`, all six native fallbacks, and the Agency inference
+configuration remained unchanged. Telegram ingress and the gateway stayed
+healthy.
+
+Fresh opaque session `80c9c847-ff6d-4d16-b913-50e96b981a42` produced exact
+non-silent final text after the model called `agency_finalize` once. Agency
+trace `2eaaf8e9-07f0-475c-89dc-f811553339ed`, Store run
+`27faf92b-4c60-430d-8401-358831c60f29`, routing
+`9528aa21-6cce-4a2c-87d8-1e4ba7722b00`, specialists
+`f7ac8ffb-33af-4d93-8e54-d39471463ad1` and
+`68d0a65b-c1da-4beb-b071-0fc7695a15b3`, skill row
+`0f548ebf-c080-4733-b981-5b21481fd7eb`, and terminal
+`9b2d4c3a-121e-4043-8c72-640ebde48e74` correlate. Three wrapper receipts
+request exact alias/model-group `task-agency-router` through profile
+`linux-task-agency-router`; backing-model identity remains unavailable. The
+final text and tool result match at SHA-256 `202f0d58...`, but Telegram
+recorded no outbound event.
+
+The terminal finalization had already committed that policy-text hash.
+OpenClaw's audited reply-payload hook canonicalized the complete envelope and
+required its different hash, detected the conflicting prior terminal, and
+correctly failed closed. The expected-red preserves this boundary defect. The
+minimal candidate validates and returns OpenClaw finalizer text without closing
+the turn; `before_agent_finalize` keeps it pending, and the last payload gate
+atomically commits both complete-payload and policy-text hashes. An independent
+expected-red preserves the missing native `/new` acknowledgement; the candidate
+permits only one exact acknowledgement for exact `/new` or `/reset`, bound to
+the same session and a ten-second expiry.
+
+The affected OpenClaw/header/Store suites are 386 passed and 1 skipped. Three
+unchanged legacy assertions in `test_turn_scoped_evidence.py` remain red
+because they expect the removed public `agency.delegate` tool and historical
+Codex/Claude Stop response shapes; they are retained and were not retried
+again. No host has received the new candidate. Hermes and all protected hosts
+remain untouched.

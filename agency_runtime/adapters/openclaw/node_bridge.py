@@ -1154,6 +1154,7 @@ def _handle_finalize_tool(
         },
         store=adapter.store,
         model="",
+        commit_terminal=False,
     )
     if not isinstance(result, dict):
         return {"error": "finalization returned an invalid result"}
