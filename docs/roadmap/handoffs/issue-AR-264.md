@@ -33,8 +33,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-264
 branch: codex/ar278-openclaw-one-pass
-evidence_commit: 71cb09751bc3b1f81cf4e0312765c616c305780c
-minimum_ledger_commit: a518ed236b71774f218b6dff92222d9e4c53144c
+evidence_commit: e5ae8de1e278e2f6fcb40af818663c42186f7b42
+minimum_ledger_commit: 7abf9b139bacac76dd56f7559c2e76ea70d45077
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 ---
@@ -43,7 +43,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 
 ## checkpoint
 
-- Branch `codex/ar278-openclaw-one-pass` has clean pair `71cb0975` / `a518ed23`; `f76050d7` remains an ancestor.
+- Branch `codex/ar278-openclaw-one-pass` has clean implementation/ledger pair `e5ae8de1` / `7abf9b13`; `f76050d7` remains an ancestor.
 - Agency-only install `c3b124d6-6a88-46b4-8c5a-706c5187457b` completed with 15 unchanged contractors, bundle `fcc48773...`, runtime `0b05a499...`, and launcher `317045e7...`; the installer left OpenClaw stopped.
 - OpenClaw 2026.7.1-2 remains on native `litellm/task-general` plus six fallbacks. Agency remains scoped to `linux-task-agency-router`, LiteLLM, and exact alias/model-group `task-agency-router`. OpenClaw config changed only its timestamp; protected-host routing is unchanged.
 - Native restart loaded ten hooks, awaited OpenClaw middleware, no Agency tool, and zero diagnostics. RPC, Telegram, and Slack are green; the gateway credential variable is populated without its value being emitted.

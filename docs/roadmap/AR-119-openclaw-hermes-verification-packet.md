@@ -1346,6 +1346,8 @@ hermes_and_protected_hosts: untouched
 ~~~yaml
 host: openclaw
 installed_checkout_sha: a518ed236b71774f218b6dff92222d9e4c53144c
+candidate_implementation_commit: e5ae8de1e278e2f6fcb40af818663c42186f7b42
+candidate_ledger_commit: 7abf9b139bacac76dd56f7559c2e76ea70d45077
 host_version: OpenClaw 2026.7.1-2 (0790d9f)
 native_session_id: 5570abb9-eecc-4d77-be4b-bb9636bdf886
 agency_trace_id: 6b18f9f0-a8bb-4a68-b70b-45ec7cdfe454

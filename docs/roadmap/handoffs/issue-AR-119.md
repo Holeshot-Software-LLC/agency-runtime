@@ -55,8 +55,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-119
 branch: codex/ar278-openclaw-one-pass
-evidence_commit: 71cb09751bc3b1f81cf4e0312765c616c305780c
-minimum_ledger_commit: a518ed236b71774f218b6dff92222d9e4c53144c
+evidence_commit: e5ae8de1e278e2f6fcb40af818663c42186f7b42
+minimum_ledger_commit: 7abf9b139bacac76dd56f7559c2e76ea70d45077
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
@@ -68,7 +68,7 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 
 ## checkpoint
 
-- Branch `codex/ar278-openclaw-one-pass` has clean pair `71cb0975` / `a518ed23`; `origin/main` is `4a326773`, `f76050d7` is an ancestor, and Agency 0.1.0 imports from this checkout.
+- Branch `codex/ar278-openclaw-one-pass` has clean implementation/ledger pair `e5ae8de1` / `7abf9b13`; `origin/main` is `4a326773`, `f76050d7` is an ancestor, and Agency 0.1.0 imports from this checkout.
 - Agency-only install `c3b124d6-6a88-46b4-8c5a-706c5187457b` completed from clean checkout `a518ed23` while OpenClaw was stopped. Bundle `fcc48773...`, runtime `0b05a499...`, and launcher SHA `317045e7...` bind to that checkout. The installer did not restart the host.
 - OpenClaw remains audited 2026.7.1-2 on native `litellm/task-general` plus six original fallbacks. Its current config differs from exact pre-install SHA `0f30f12d...` only at `meta.lastTouchedAt`; models, providers, channels, and credential indirection are identical.
 - Native restart is RPC-green. Agency is enabled, loaded, imported, and activated with ten hooks, `agentToolResultMiddleware=[openclaw]`, no tool, and zero diagnostics. Telegram and Slack are configured/running/probe-green. The gateway has populated `LITELLM_API_KEY`; its value was never emitted.

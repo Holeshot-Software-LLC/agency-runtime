@@ -3640,5 +3640,6 @@ session/run correlation from the supported `before_tool_call` hook by
 `toolCallId`, consumes it once in the awaited middleware, rejects ambiguous
 collisions, expires and caps state, and clears it when Agency is disabled. The
 affected installer, dispatch, inference, final-header, and Store slice is 374
-passed with 1 skipped. The candidate is not installed. OpenClaw source/config,
-Hermes, Codex, Claude, and ZCode remain untouched.
+passed with 1 skipped. Clean implementation/ledger pair `e5ae8de1` /
+`7abf9b13` checkpoints the candidate. It is not installed. OpenClaw
+source/config, Hermes, Codex, Claude, and ZCode remain untouched.
