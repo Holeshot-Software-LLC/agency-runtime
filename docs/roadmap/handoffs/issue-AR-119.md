@@ -3,7 +3,7 @@ title: "AR-119 active recovery capsule"
 status: active
 category: roadmap
 created: 2026-07-23
-updated: 2026-08-22
+updated: 2026-08-23
 tags: [handoff, vision, inference, child-delivery, contractors, evaluation, recovery]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
@@ -54,8 +54,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-119
 branch: codex/ar119-openclaw-hermes-litellm
-evidence_commit: a8022a92ed303c6dbd41fdfa2a0f652239070a99
-minimum_ledger_commit: 4fab954b0224883439b978adccf95d515f753b3b
+evidence_commit: b1bd07c6f6d78116753f3aeb3898e13a32ff7d2f
+minimum_ledger_commit: 0ca308d63d0e95dec7fcc6894c235d0f72702371
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
@@ -67,16 +67,16 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 
 ## checkpoint
 
-- Clean branch pair `d9a1a7ce` / `1a737ef8` contains the prompt-build-order repair and ledger; fetched `origin/main` is `4a326773`, `f76050d7` is an ancestor, and Agency 0.1.0 imports from this checkout.
+- Clean pair `b1bd07c6` / `0ca308d6` contains the reset-race repair, third failure evidence, and ledger; `f76050d7` remains an ancestor and Agency 0.1.0 imports from this checkout.
 - Agency profile `linux-task-agency-router` remains harness-scoped to OpenClaw, using `litellm`, exact alias/model-group `task-agency-router`, `http://127.0.0.1:4000/v1`, populated `LITELLM_API_KEY`, and 120000 ms. No protected-host route changed.
 - Earlier AR-276/AR-277 control, native skill, LiteLLM-routing, first-pass finalization, timeout, and Store-backup evidence remains in the canonical loop status and verification packet. It established audited OpenClaw 2026.7.1-2, free alias target `ollama/qwen3-14b-abliterated`, exact profile/alias routing without fallback, schema 47, 15 contractors, and unchanged native/protected-host configuration; actual backing-model telemetry remains unavailable.
-- User-initiated Telegram session `6d16c446...` reached trace `9ac12abc...`; finalization `63140215...` accepted the exact status result, then native `task-general` emitted `NO_REPLY`. AR-278 retains transcript SHA `fd8dc854...`.
 - Clean pair `1ca46cc9` / `320dc7cf` installed that prompt repair as Agency-only install `74b4c0bc...`; native routing and both configs stayed unchanged. Fresh opaque session `80c9c847...`, trace `2eaaf8e9...`, run `27faf92b...`, routing `9528aa21...`, specialists `f7ac8ffb...` / `68d0a65b...`, skill row `0f548ebf...`, and terminal `9b2d4c3a...` produced exact non-silent final text SHA `202f0d58...`, but no Telegram outbound was queued.
 - The text terminal conflicted with the canonical payload hash and the gate failed closed. Pair `a8022a92` / `4fab954b` defers that commit and adds exact one-use reset acknowledgement; 386 tests pass, 1 skips, and three unrelated legacy assertions remain red.
 - Agency-only install `87b518e8...` completed: bundle `7f94acf0...`, runtime `1816b6ad...`, launcher `c34c66be...`, 15 contractors, no installer restart. Native restart is RPC/channel-green with 11 hooks and zero diagnostics. Agency config is unchanged; OpenClaw has only a timestamp diff and retains `litellm/task-general` plus six fallbacks.
 - Third fresh Telegram trace `4552b87d...` completed all three Agency inference stages through `linux-task-agency-router` and exact `task-agency-router`, accepted routing `bbf1d404...`, and loaded `code-reviewer`. Pending finalization `f9138f55...` returned the Store-backed response, but native `task-general` then emitted exact `NO_REPLY`; terminal `9599d181...` correctly closed run `86d3c0a2...` as `response_invalid`. Transcript/trajectory SHAs are `81b54934...` / `38f1e716...`; Telegram queued nothing.
 - Native `/reset` bypasses `message_received`; OpenClaw starts `before_reset` from an unawaited transcript-read task, so its acknowledgement can race the hook. Expected-red exit 227 is retained. The candidate uses exact `before_reset` reasons plus a bounded wait only for the two static acknowledgements; replay and invalid reasons stay blocked. The affected OpenClaw suites pass 218.
 - Audited OpenClaw 2026.7.1-2 exposes no supported post-model response replacement: `before_agent_finalize` cannot return a payload, exact `NO_REPLY` is normalized away before `reply_payload_sending`, and terminating tools have no public terminal-presentation setter. Direct send, draft rewrite, or a second model pass would violate ADR-0049/ADR-0120 and remain rejected.
+- Lucas selected reversible recovery. Agency uninstall dry-run operation `952ff8f6...`, digest `a497a256...`, failed before mutation because installed-copy provenance is not recognized; AR-269 owns it. The stopped gateway then natively disabled only `agency-preflight`. OpenClaw is active/RPC-green, Telegram and Slack probes are green, Agency is registered-disabled, and normalized config hashes prove only timestamp plus the Agency flag changed. Native models and launcher `c34c66be...` are unchanged. Post-disable Store backup is integrity `ok`, SHA `9c193d2e...`.
 
 ## completed-evidence
 
@@ -91,7 +91,7 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 
 1. Telegram ingress, LiteLLM staffing, native tools, and Store-backed finalizer construction pass; the current native model emits `NO_REPLY` after the tool, and OpenClaw suppresses it before the payload gate.
 2. OpenClaw must expose a supported return-direct/terminal-presentation or post-model payload-replacement contract, or Lucas must separately authorize qualifying a host version/source change. Agency cannot repair this by direct send, rewrite, retry, or native configuration change.
-3. The reset race repair is locally green but not installed. Hermes remains untouched break glass; protected hosts and native OpenClaw routing remain unchanged.
+3. Agency is temporarily disabled in OpenClaw; ordinary Telegram acknowledgment/reply proof is operator-pending. Hermes and protected hosts remain untouched.
 
 ## traps (machine-specific; do not rediscover)
 
@@ -103,9 +103,9 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 
 ## next-bounded-work-package
 
-1. Create the clean reset/evidence checkpoint and do not run another live prompt unchanged.
-2. Obtain the exact OpenClaw prerequisite: a supported accepted-tool-result delivery seam, or explicit authority to qualify a different host build.
-3. Only then reinstall Agency into stopped OpenClaw and use new reset/substantive inputs; keep Hermes untouched.
+1. Preserve the operator's fresh ordinary `/reset` and reply result with Agency disabled.
+2. Keep Agency disabled until OpenClaw exposes the supported result-delivery seam.
+3. Repair AR-269 separately before relying on ownership-bound OpenClaw uninstall; keep Hermes untouched.
 
 ## same-task-continuity
 

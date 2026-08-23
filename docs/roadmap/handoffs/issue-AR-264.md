@@ -3,7 +3,7 @@ title: "AR-264 active recovery capsule"
 status: active
 category: roadmap
 created: 2026-08-21
-updated: 2026-08-22
+updated: 2026-08-23
 tags: [handoff, contractors, hiring, prompts, workforce]
 related:
   - docs/roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md
@@ -32,8 +32,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-264
 branch: codex/ar119-openclaw-hermes-litellm
-evidence_commit: a8022a92ed303c6dbd41fdfa2a0f652239070a99
-minimum_ledger_commit: 4fab954b0224883439b978adccf95d515f753b3b
+evidence_commit: b1bd07c6f6d78116753f3aeb3898e13a32ff7d2f
+minimum_ledger_commit: 0ca308d63d0e95dec7fcc6894c235d0f72702371
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 ---
@@ -57,6 +57,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 - Third Telegram trace `4552b87d...` proves exact harness/profile/alias routing, accepted decision `bbf1d404...`, and `code-reviewer` load, then ends `response_invalid` because native `task-general` emits exact `NO_REPLY` after accepted finalizer event `f9138f55...`. Terminal `9599d181...` and transcript/trajectory SHAs `81b54934...` / `38f1e716...` are retained; no Telegram outbound exists.
 - Reset expected-red exit 227 now passes through `before_reset` with an exact bounded race wait; all 218 affected OpenClaw tests pass. The candidate is not installed.
 - OpenClaw 2026.7.1-2 has no supported tool return-direct or post-model replacement surface. Its public finalizer hook cannot supply a reply, its dispatcher drops exact `NO_REPLY` before Agency's payload hook, and the public plugin SDK cannot register terminal tool presentation.
+- Lucas selected reversible recovery. The Agency uninstaller's write-free ownership check refused the installed-copy shape without mutation (AR-269). With the gateway stopped, the native host disabled only `agency-preflight`; OpenClaw restarted RPC/channel-probe green with native models unchanged. Agency is registered-disabled; Hermes and all proven hosts remain untouched.
 
 ## completed-evidence
 
@@ -68,7 +69,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 
 1. Agency inference/finalizer construction passes, but OpenClaw suppresses the model's post-tool `NO_REPLY` before the host-owned payload gate.
 2. A supported OpenClaw return-direct/terminal-presentation or post-model replacement seam is required; direct send, rewrite, retry, or native config change is forbidden.
-3. Preserve all failures and keep Hermes untouched.
+3. Agency remains temporarily disabled; preserve all failures and keep Hermes untouched.
 
 ## same-task-continuity
 
@@ -76,9 +77,9 @@ Continue with OpenClaw only after the clean commit pair. Hermes is running break
 
 ## next-bounded-work-package
 
-1. Commit the reset regression/fix and exact blocker evidence.
-2. Obtain or authorize the missing OpenClaw delivery capability before another live attempt.
-3. Reinstall Agency and use new inputs only after that prerequisite; leave Hermes untouched.
+1. Preserve the operator's ordinary Telegram recovery result.
+2. Keep Agency disabled until the missing OpenClaw delivery capability exists.
+3. Repair AR-269 separately; leave Hermes untouched.
 
 ## verification
 

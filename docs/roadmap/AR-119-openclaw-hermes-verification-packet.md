@@ -3,7 +3,7 @@ title: "Exact-main Linux handoff for OpenClaw and Hermes"
 status: active
 category: roadmap
 created: 2026-08-16
-updated: 2026-08-21
+updated: 2026-08-23
 tags: [roadmap, verification, hosts, openclaw, hermes, linux, AR-119]
 related:
   - docs/roadmap/handoffs/issue-AR-119.md
@@ -1106,5 +1106,33 @@ reset_control_result: exact /new ingress observed; acknowledgement blocked as un
 candidate_behavior: defer only OpenClaw terminal commit to full-payload gate; exact one-use reset acknowledgement
 focused_green: 386 passed, 1 skipped
 known_limit: candidate not installed; fresh /reset acknowledgement and changed substantive Telegram delivery pending
+hermes_and_protected_hosts: untouched
+~~~
+
+### Temporary OpenClaw Agency-disable recovery bundle
+
+~~~yaml
+host: openclaw
+host_version: OpenClaw 2026.7.1-2 (0790d9f)
+recovery_authority: Lucas selected temporary remove/disable option
+agency_uninstall_dry_run: blocked before mutation
+uninstall_operation_id: 952ff8f6-a660-4309-ac54-191481944440
+uninstall_plan_digest: a497a256064f2ececd2f27d11993cb681628e4094d2309b398c039d89ec7e2aa
+uninstall_error: Native plugin identity is not bound to the managed target
+follow_up_issue: AR-269
+recovery_action: stopped openclaw-gateway; native plugins disable agency-preflight; native restart
+agency_native_state: registered=true; staged=true; enabled=false; effective_enabled=false; hook_count=0
+gateway_state: active/running; RPC probe ok
+channels: Telegram and Slack configured/running/probe-ok; ordinary reply proof pending
+native_primary: litellm/task-general
+native_fallbacks: six original fallbacks unchanged
+config_sha256_before: 1c86bf6dd5db71e49b93cc70a5e1844e03bcddeb1280f36d5bccd9d0c5c52291
+config_sha256_after: b2d644ddba5c3f0eccd86eb4fa777bbb134fd2ed5e598ae892cdaa9d279c8d3c
+normalized_config_sha256: 0a054704b3c999d8f220477a56764f15eb4a44aec1c9df1d82dec6a3da5ca86b
+normalized_exclusions: meta.lastTouchedAt; plugins.entries.agency-preflight.enabled
+launcher_manifest_sha256: c34c66be747a72ccdbf2a5af8df57f47957ea79c6f4128a7f46bd3deb65c166c
+post_disable_store_integrity: ok
+post_disable_store_backup_sha256: 9c193d2ed5ba8f6af266d5a72eb14ba4e6aaff25abd05478a25d95157fd2943a
+known_limit: Agency acceptance remains blocked; ordinary Telegram reply awaits operator proof
 hermes_and_protected_hosts: untouched
 ~~~

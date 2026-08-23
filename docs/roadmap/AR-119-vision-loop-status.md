@@ -3,7 +3,7 @@ title: "AR-119 vision-completion loop final status"
 status: active
 category: roadmap
 created: 2026-08-17
-updated: 2026-08-21
+updated: 2026-08-23
 tags: [roadmap, report, autonomous, loop, AR-119, AR-253, AR-255]
 related:
   - docs/roadmap/AR-119-vision-completion-autonomous-brief.md
@@ -3432,3 +3432,20 @@ now correlates only exact `new`/`reset` reasons at `before_reset` and waits up t
 one second only for the two exact native acknowledgement texts. Affected suites
 are 218 passed. The candidate is checkpointed but not installed; Hermes and all
 protected hosts remain untouched pending Lucas's OpenClaw capability decision.
+
+### OpenClaw ordinary mode restored by reversible Agency disable
+
+Lucas selected temporary recovery. Ownership-bound uninstall dry-run operation
+`952ff8f6-a660-4309-ac54-191481944440` retained plan digest `a497a256...` and
+failed before mutation because native installed-copy provenance is not bound to
+the Agency target; AR-269 owns that defect. The gateway was stopped natively,
+and OpenClaw's supported plugin command disabled only `agency-preflight`.
+
+OpenClaw restarted active/RPC-green on 2026.7.1-2. Agency remains staged and
+registered but is inactive with zero loaded hooks. Telegram and Slack are
+configured, running, and probe-green. Native `litellm/task-general` and all six
+fallbacks are unchanged; the launcher SHA remains `c34c66be...`. Pre/post
+normalized config SHA is identical after excluding only timestamp metadata and
+the authorized Agency enabled flag. Post-disable Store backup integrity is
+`ok`, SHA `9c193d2e...`. Hermes and every protected host remain untouched;
+operator-originated ordinary Telegram acknowledgment/reply proof is pending.

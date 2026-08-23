@@ -3,7 +3,7 @@ title: "Deliver accepted OpenClaw finalizer results instead of silent replies"
 status: in_progress
 category: roadmap
 created: 2026-08-22
-updated: 2026-08-22
+updated: 2026-08-23
 tags: [openclaw, finalization, telegram, delivery, reliability]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
@@ -133,6 +133,16 @@ not exported to plugins. A supported return-direct/terminal-presentation API or
 post-model payload replacement hook is required. Qualifying another OpenClaw
 build or changing OpenClaw source requires separate Lucas authorization.
 
+Lucas selected temporary recovery instead. The ownership-bound Agency uninstall
+dry-run failed before mutation because OpenClaw reports its native installed
+copy at top level and the managed source only in nested install provenance; this
+is retained under AR-269. With the gateway stopped, OpenClaw's native plugin
+command disabled only `agency-preflight`, then the native service restarted.
+Agency is registered/staged but inactive, RPC and both channel probes are green,
+native `litellm/task-general` plus all six fallbacks are unchanged, and Hermes
+and protected hosts remain untouched. Ordinary Telegram response proof is
+operator-pending.
+
 ## Approach
 
 Keep the prompt correction and change only Agency's OpenClaw finalization
@@ -173,6 +183,7 @@ This conforms to ADR-0049 and ADR-0120 and requires no new durable decision.
 - [x] Preserve the third `NO_REPLY`/no-outbound transcript and exact Store/provider correlation.
 - [x] Prove the native `/reset` hook race and keep its acknowledgement exception fail-closed.
 - [x] Run affected reset-correlation suites: 218 passed.
+- [x] Restore ordinary OpenClaw mode through a reversible native Agency disable.
 - [ ] Obtain a supported OpenClaw return-direct or post-model replacement capability.
 - [ ] Deliver a genuinely changed fresh Telegram response with matching Store evidence.
 - [ ] Preserve post-live Store integrity, launcher provenance, and config hashes.
