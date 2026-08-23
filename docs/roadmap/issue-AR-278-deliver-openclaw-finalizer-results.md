@@ -134,9 +134,9 @@ This conforms to ADR-0049 and ADR-0120 and requires no new durable decision.
 - [x] Defer only OpenClaw terminal commit until the complete outbound payload is bound.
 - [x] Keep the native acknowledgement exception exact, one-use, session-bound, and expiring.
 - [x] Run affected focused tests: 386 passed and 1 skipped.
-- [ ] Run affected focused tests and local documentation/lint gates.
-- [ ] Commit a clean substantive/ledger checkpoint before host mutation.
-- [ ] Install Agency only into stopped OpenClaw and restart it natively.
+- [x] Run affected focused tests and local documentation/lint gates.
+- [x] Commit a clean substantive/ledger checkpoint before host mutation.
+- [x] Install Agency only into stopped OpenClaw and restart it natively.
 - [ ] Deliver a genuinely changed fresh Telegram response with matching Store evidence.
 - [ ] Preserve post-live Store integrity, launcher provenance, and config hashes.
 - [ ] Tracker creation remains pending separate authorization.

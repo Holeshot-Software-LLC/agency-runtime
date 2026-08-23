@@ -32,8 +32,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-264
 branch: codex/ar119-openclaw-hermes-litellm
-evidence_commit: 4d2a75ab19b1844f28ad7e27cd2462f93dfc5ec9
-minimum_ledger_commit: 00b6b24bf04a8bb6d76f82a766a9d7fe2c03e027
+evidence_commit: a8022a92ed303c6dbd41fdfa2a0f652239070a99
+minimum_ledger_commit: 4fab954b0224883439b978adccf95d515f753b3b
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 ---
@@ -53,7 +53,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 - Exact trace `35efa94c...` remains `response_invalid`, and changed trace `07e5ec33...` remains a native timeout. Tighter fresh trace `9bea1a3f...` applied all Agency stages with no fallback, called only `agency_finalize`, delivered the exact five-line header, and completed Store run `c24afc99...` plus finalization `07759321...` in 46.635 seconds.
 - User-initiated Telegram trace `9ac12abc...` accepted deterministic status finalization `63140215...`, but native `task-general` emitted `NO_REPLY`; the first AR-278 failure remains retained.
 - Clean pair `1ca46cc9` / `320dc7cf` installed the prompt repair as Agency-only install `74b4c0bc...`. Fresh trace `2eaaf8e9...` then accepted all three exact Agency LiteLLM receipts with no cross-provider fallback, selected two specialists, recorded `openclaw-operations`, and returned exact finalizer text. The text hash `202f0d58...` was prematurely terminal, so the canonical full-payload gate failed closed and Telegram queued no reply.
-- The regression-first candidate defers only OpenClaw terminal commit to the audited full-payload gate and permits one exact, session-bound, expiring native reset acknowledgement. Affected suites are 386 passed/1 skipped; native OpenClaw routing, Agency inference configuration, Hermes, and all proven hosts remain untouched.
+- Clean pair `a8022a92` / `4fab954b` defers only OpenClaw terminal commit to the audited full-payload gate and permits one exact, session-bound, expiring native reset acknowledgement. Agency-only install `87b518e8...` completed with bundle `7f94acf0...`, runtime `1816b6ad...`, launcher `c34c66be...`, 15 contractors, and no installer restart. Native restart is RPC/probe-green with 11 hooks and zero diagnostics. OpenClaw remains on `litellm/task-general` plus six original fallbacks; Agency config, Hermes, and all proven hosts remain untouched.
 
 ## completed-evidence
 
@@ -64,7 +64,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 ## exact-blocker
 
 1. Telegram ingress and exact final text pass, but a premature text-hash terminal conflicts with the canonical outbound-payload hash and prevents channel delivery.
-2. Commit the full-payload candidate, install Agency only, and prove a genuinely changed Telegram turn under AR-278.
+2. The full-payload candidate is checkpointed and installed; prove a genuinely changed Telegram turn under AR-278.
 3. Preserve all failures and keep Hermes untouched.
 
 ## same-task-continuity
@@ -73,9 +73,9 @@ Continue with OpenClaw only after the clean commit pair. Hermes is running break
 
 ## next-bounded-work-package
 
-1. Create the clean AR-278 full-payload substantive/ledger checkpoint.
-2. Back up the Store, reinstall Agency only into stopped OpenClaw, and restart natively.
-3. Correlate a genuinely changed Telegram response with Store evidence; leave Hermes untouched.
+1. Require the exact native `/reset` acknowledgement.
+2. Correlate a genuinely changed Telegram response with Store full-payload evidence.
+3. Preserve post-live Store integrity and leave Hermes untouched until OpenClaw closes.
 
 ## verification
 

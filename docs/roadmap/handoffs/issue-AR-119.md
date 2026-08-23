@@ -54,8 +54,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-119
 branch: codex/ar119-openclaw-hermes-litellm
-evidence_commit: 4d2a75ab19b1844f28ad7e27cd2462f93dfc5ec9
-minimum_ledger_commit: 00b6b24bf04a8bb6d76f82a766a9d7fe2c03e027
+evidence_commit: a8022a92ed303c6dbd41fdfa2a0f652239070a99
+minimum_ledger_commit: 4fab954b0224883439b978adccf95d515f753b3b
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
@@ -78,7 +78,8 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 - AR-277 installed the first-pass-only repair as Agency install `e834190a...`, bundle `521b1480...`, runtime `b5d546a6...`, launcher `41415e79...`. After retained timeout `07e5ec33...`, fresh changed trace `9bea1a3f...` applied all exact Agency LiteLLM stages with no fallback, called only `agency_finalize`, delivered the exact header, and completed Store run `c24afc99...` plus finalization `07759321...`. Response/transcript SHAs are `e53fdf95...` / `5251eec0...`; post-live backup is integrity `ok`, schema 47, SHA `47d868f5...`.
 - User-initiated Telegram session `6d16c446...` reached trace `9ac12abc...`; finalization `63140215...` accepted the exact status result, then native `task-general` emitted `NO_REPLY`. AR-278 retains transcript SHA `fd8dc854...`.
 - Clean pair `1ca46cc9` / `320dc7cf` installed that prompt repair as Agency-only install `74b4c0bc...`; native routing and both configs stayed unchanged. Fresh opaque session `80c9c847...`, trace `2eaaf8e9...`, run `27faf92b...`, routing `9528aa21...`, specialists `f7ac8ffb...` / `68d0a65b...`, skill row `0f548ebf...`, and terminal `9b2d4c3a...` produced exact non-silent final text SHA `202f0d58...`, but no Telegram outbound was queued.
-- The second blocker is exact: the finalizer prematurely committed the policy-text hash, while the audited outbound gate required the different canonical full-payload hash and failed closed on the conflict. The regression-first candidate defers only OpenClaw terminal commit to the outbound gate and adds an exact one-use, session-bound, expiring `/new`/`/reset` acknowledgement authorization. Affected suites are 386 passed/1 skipped; three unchanged legacy turn-scoped expectations remain separately red.
+- The text terminal conflicted with the canonical payload hash and the gate failed closed. Pair `a8022a92` / `4fab954b` defers that commit and adds exact one-use reset acknowledgement; 386 tests pass, 1 skips, and three unrelated legacy assertions remain red.
+- Agency-only install `87b518e8...` completed: bundle `7f94acf0...`, runtime `1816b6ad...`, launcher `c34c66be...`, 15 contractors, no installer restart. Native restart is RPC/channel-green with 11 hooks and zero diagnostics. Agency config is unchanged; OpenClaw has only a timestamp diff and retains `litellm/task-general` plus six fallbacks.
 
 ## completed-evidence
 
@@ -92,7 +93,7 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 ## exact-blocker
 
 1. Telegram ingress, LiteLLM staffing, native tools, and exact final text pass, but the Store text terminal conflicts with the canonical outbound-envelope hash; the safety gate correctly cancels delivery.
-2. AR-278's full-payload and native reset-ack repairs are local and focused-green; clean checkpoint, Agency-only reinstall, and a genuinely changed Telegram proof remain.
+2. AR-278's full-payload and native reset-ack repairs are checkpointed and installed; only a genuinely changed Telegram proof remains.
 3. Hermes remains untouched break glass; protected hosts and native OpenClaw routing remain unchanged.
 
 ## traps (machine-specific; do not rediscover)
@@ -105,9 +106,9 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 
 ## next-bounded-work-package
 
-1. Commit the AR-278 full-payload/ack regression-first correction and evidence as a clean local pair.
-2. Back up the Store, stop OpenClaw natively, install Agency only, restart natively, and verify invariants.
-3. Run a genuinely changed user-initiated Telegram turn and correlate host delivery with Store evidence.
+1. Ask the operator for exact `/reset` and require its native acknowledgement.
+2. Run a genuinely changed user-initiated Telegram turn and correlate full-payload delivery with Store evidence.
+3. Create the post-live Store backup and close the OpenClaw evidence bundle.
 
 ## same-task-continuity
 

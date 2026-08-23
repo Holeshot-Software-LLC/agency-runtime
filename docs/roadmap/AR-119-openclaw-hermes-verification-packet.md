@@ -994,6 +994,35 @@ known_limit: candidate not installed; fresh changed Telegram proof pending
 hermes_and_protected_hosts: untouched
 ~~~
 
+
+### Full-payload repair pre-live installation bundle
+
+~~~yaml
+host: openclaw
+checkout_sha: 4fab954b0224883439b978adccf95d515f753b3b
+clean_tree_at_install: true
+host_version: OpenClaw 2026.7.1-2 (0790d9f)
+install_result: 87b518e8-dfee-4759-af7d-565705d09afa complete; Agency plugin only; installer left gateway stopped
+bundle_digest: 7f94acf0178a3f4bcd5c516ec6e9e1a451e7b6222dd5006d011bc2691b834e3d
+runtime_digest: 1816b6ad4bddb584a1daee6920a05fe19e7d5bbe7fcb3486fed379b5db862b55
+launcher_manifest_sha256: c34c66be747a72ccdbf2a5af8df57f47957ea79c6f4128a7f46bd3deb65c166c
+agency_config_sha256: 43367ec9aa05a66fc2a60bb254f270836fb3616753769115fabb253a04d5d9f8
+openclaw_config_semantic_diff: /meta/lastTouchedAt only versus last-good
+native_primary: litellm/task-general; six original fallbacks unchanged
+agency_profile: linux-task-agency-router; litellm; task-agency-router; 120000 ms
+credential_env_name: LITELLM_API_KEY
+credential_present_boolean: true in restarted OpenClaw process; value never emitted
+contractors_before_after_install: 15/15
+store_schema: 47
+pre_install_store_integrity: ok
+pre_install_store_backup_sha256: 6b3b8794ccbda7f6e5777186ca88a4cd78f97a630b884b503733438eb91d3c6a
+native_restart: running; RPC probe ok
+plugin_inventory: enabled/loaded; 11 hooks; agency_finalize; zero diagnostics
+telegram_slack: configured, running, probe-green
+known_limit: fresh /reset acknowledgement and changed substantive Telegram delivery pending
+hermes_and_protected_hosts: untouched
+~~~
+
 The prior final evidence bundle remains valid for CLI-only host/Store
 correlation and exact Agency LiteLLM routing. It does not prove Telegram
 delivery. No direct send, second model pass, invalid-draft rewrite, host config

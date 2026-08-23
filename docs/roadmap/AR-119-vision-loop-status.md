@@ -3397,3 +3397,15 @@ because they expect the removed public `agency.delegate` tool and historical
 Codex/Claude Stop response shapes; they are retained and were not retried
 again. No host has received the new candidate. Hermes and all protected hosts
 remain untouched.
+
+Clean pair `a8022a92` / `4fab954b` was then installed into natively stopped
+OpenClaw as Agency-only install `87b518e8-dfee-4759-af7d-565705d09afa`.
+The installer reported complete with bundle `7f94acf0...`, runtime
+`1816b6ad...`, launcher SHA `c34c66be...`, and 15 existing contractors; it
+did not restart the gateway. Native restart is RPC-green, with 11 required
+hooks including `message_received`, one finalizer tool, zero diagnostics, and
+Telegram/Slack probes green. Agency config SHA remains `43367ec9...`; the
+OpenClaw config differs from `last-good` only at `/meta/lastTouchedAt`, and
+native `litellm/task-general` plus all six fallbacks are unchanged. Pre-live
+Store backup SHA is `6b3b8794...`, integrity `ok`, schema 47. Fresh `/reset`
+acknowledgement and changed Telegram substantive delivery remain pending.
