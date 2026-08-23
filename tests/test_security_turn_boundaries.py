@@ -573,6 +573,60 @@ if (blocked?.outcome !== "block" || blocked?.reason !== "agency_preflight_failed
 
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is not installed")
+def test_generated_openclaw_reuses_preflight_model_through_final_delivery(
+    tmp_path: Path,
+) -> None:
+    source = _openclaw_plugin_harness_source()
+    source += """
+const promptBuild = registeredHooks.get("before_prompt_build");
+const finalize = registeredHooks.get("before_agent_finalize");
+const outbound = registeredHooks.get("reply_payload_sending");
+if (typeof promptBuild !== "function" || typeof finalize !== "function"
+    || typeof outbound !== "function") process.exit(271);
+const context = {
+  sessionKey: "model-correlation-session",
+  runId: "model-correlation-run",
+  modelId: "task-general",
+};
+if ((await promptBuild({ prompt: "agency status" }, context))?.appendContext
+    !== "Agency preflight context") process.exit(272);
+const terminalContext = {
+  sessionKey: "model-correlation-session",
+  runId: "model-correlation-run",
+};
+await finalize(
+  { lastAssistantMessage: "candidate", stopHookActive: false },
+  terminalContext,
+);
+const verify = bridgeCalls.find((payload) => payload.action === "pre_verify");
+if (!verify || verify.model !== "task-general") process.exit(273);
+await outbound(
+  {
+    payload: { text: "different candidate" },
+    kind: "final",
+    sessionKey: "model-correlation-session",
+    runId: "model-correlation-run",
+  },
+  terminalContext,
+);
+const gate = bridgeCalls.find((payload) => payload.action === "outbound_gate");
+if (!gate || gate.model !== "task-general") process.exit(274);
+"""
+    script = tmp_path / "openclaw-model-correlation.mjs"
+    script.write_text(source, encoding="utf-8")
+
+    completed = subprocess.run(
+        [str(shutil.which("node")), str(script)],
+        capture_output=True,
+        text=True,
+        timeout=10,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is not installed")
 def test_generated_openclaw_model_receipt_uses_event_model_when_context_omits_it(
     tmp_path: Path,
 ) -> None:

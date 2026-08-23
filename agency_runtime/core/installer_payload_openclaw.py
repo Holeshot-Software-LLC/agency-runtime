@@ -796,6 +796,7 @@ function rememberPreflightContext(result, event, ctx) {{
   prunePreflightContexts(now);
   preflightContexts.set(key, {{
     context,
+    model: boundedUtf8(modelId(ctx), 1024),
     expiresAt: now + PREFLIGHT_CONTEXT_TTL_MS,
   }});
   return true;
@@ -809,6 +810,16 @@ function readPreflightContext(event, ctx) {{
     return "";
   }}
   return String(state?.context || "");
+}}
+
+function readPreflightModel(event, ctx) {{
+  const key = preflightContextKey(event, ctx);
+  const state = key ? preflightContexts.get(key) : undefined;
+  if (Number(state?.expiresAt || 0) <= Date.now()) {{
+    if (key) preflightContexts.delete(key);
+    return "";
+  }}
+  return String(state?.model || "");
 }}
 
 function forgetPreflightContext(event, ctx) {{
@@ -1043,7 +1054,7 @@ export default definePluginEntry({{
 
     api.on("before_agent_finalize", async (event, ctx) => {{
       const stateEpoch = ++runtimeStateEpoch;
-      forgetPreflightContext(event, ctx);
+      const correlatedModel = modelId(ctx) || readPreflightModel(event, ctx);
       let decision;
       const finalText = finalAssistantText(event);
       const verificationFailure = {{
@@ -1060,7 +1071,7 @@ export default definePluginEntry({{
           sessionId: sessionId(event, ctx),
           traceId: traceId(event, ctx),
           finalResponse: finalText,
-          model: modelId(ctx),
+          model: correlatedModel,
           attempt: 0,
         }});
       }} catch {{
@@ -1114,6 +1125,8 @@ export default definePluginEntry({{
         }};
       }}
       const run = String(event?.runId || ctx?.runId || "");
+      const correlatedModel = modelId(ctx) || readPreflightModel(event, ctx);
+      forgetPreflightContext(event, ctx);
       let text;
       let outboundPayload;
       try {{
@@ -1152,7 +1165,7 @@ export default definePluginEntry({{
           traceId: run,
           finalResponse: text,
           outboundPayload,
-          model: modelId(ctx),
+          model: correlatedModel,
         }}, {outbound_timeout_ms});
       }} catch {{
         return blockedReplyResult(session, run, FINALIZATION_UNAVAILABLE);

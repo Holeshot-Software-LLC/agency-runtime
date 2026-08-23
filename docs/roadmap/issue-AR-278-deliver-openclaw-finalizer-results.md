@@ -201,6 +201,47 @@ unchanged. The focused OpenClaw adapter, middleware, and finalization slice is
 native and Agency model routing, outbound gates, and every other harness remain
 unchanged.
 
+### Fifth Telegram failure: final hooks lose the preflight model identity
+
+Clean pair `a9276e00` / `4b1172be` was installed as Agency-only operation
+`175adc13-ef5f-4286-ac39-0a7584e9a982`. The gateway was natively stopped and
+the installer did not restart it. Bundle `7a36d4df...`, runtime
+`8ec95839...`, and launcher SHA `30c5760b...` bind to the checkout.
+OpenClaw config changed only `meta.lastTouchedAt`; native model/provider,
+channel, and credential configuration remained exact. Native restart loaded
+ten hooks, the awaited middleware, no tool, and zero diagnostics; RPC plus
+Telegram/Slack probes were green.
+
+The new `/new` acknowledgement did not arrive. Exact `agency status`
+nevertheless entered a new native session. Six `task-general` calls returned
+HTTP 200, native tools completed, and the transcript contains one natural
+1274-character response with the exact requested-alias/deterministic five-line
+header. The kernel recorded `no queued reply payloads`; transcript SHA is
+`deeb9040...`.
+
+Trace `f946f532-4b53-4695-b660-36be48500dc3`, run
+`79a11206-3c58-4ed0-b2b8-121bf3d0fdb9`, routing
+`50c37f62-8278-4e35-99a2-7985b97cb4f9`, and terminal
+`ae002770-f47f-4c84-890f-9ccfd37fd06b` correlate. Deterministic status
+correctly used no workforce inference, specialist, skill, or resident binding.
+The trace also has zero model receipts, proving the alias-only filter behaved as
+designed. Finalization still rejected only `actual_model_selected`.
+
+Installed-hook inspection then isolated the second causal mismatch. OpenClaw
+supplies `modelId=task-general` in `before_prompt_build`, which Agency used
+to author the header, but omits `modelId` in `before_agent_finalize` and
+final payload context. Final validation therefore compared the requested-alias
+header against `none observed`.
+
+Expected-red exit 17 models that exact context loss. The generated OpenClaw
+plugin now stores the bounded preflight model beside its existing session/run
+context, reuses it for pre-verify and outbound revalidation, and deletes it at
+the final payload gate. Existing TTL, maximum-entry, byte-bound, and
+runtime-disable clearing controls remain authoritative. The focused OpenClaw
+adapter, security, registration, and native-installer slice is 90 passed and 1
+skipped. No shared policy, other adapter, OpenClaw source/configuration, model
+routing, direct send, rewrite, or correction pass changed.
+
 ## Approach
 
 Change only Agency's OpenClaw adapter as specified by ADR-0166. Do not expose
@@ -255,6 +296,9 @@ remain outside the mutation boundary.
 - [x] Preserve the fourth no-outbound transcript and exact finalization/model-receipt correlation.
 - [x] Add expected-red coverage for post-authoring alias-only evidence mutation.
 - [x] Keep the fix OpenClaw-only and preserve genuine resolved-model receipts.
+- [x] Preserve the fifth no-outbound transcript and zero-model-receipt correlation.
+- [x] Add expected-red coverage for final-hook model identity loss.
+- [x] Carry bounded preflight model identity through both OpenClaw final gates.
 - [ ] Deliver a genuinely changed fresh Telegram response with matching Store evidence.
 - [ ] Preserve post-live Store integrity, launcher provenance, and config hashes.
 - [ ] Tracker creation remains pending separate authorization.

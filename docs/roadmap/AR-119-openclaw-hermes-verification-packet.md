@@ -1231,3 +1231,54 @@ post_failure_store_snapshot_sha256: df57b6a323a42dfd7e2cfa4cf97906f7960442781716
 known_limit: fix not installed; fresh changed Telegram proof pending
 hermes_and_protected_hosts: untouched
 ~~~
+
+### OpenClaw final-hook model-context fifth failure bundle
+
+~~~yaml
+host: openclaw
+candidate_branch: codex/ar278-openclaw-one-pass
+installed_checkpoint: a9276e00d1dc6862fb0f93085069c4fd5ff27ce9
+ledger_checkpoint: 4b1172be4a0912eb5d12ba7bb27cf6faf95fc5d8
+host_version: OpenClaw 2026.7.1-2 (0790d9f)
+install_result: 175adc13-ef5f-4286-ac39-0a7584e9a982; complete; Agency plugin only
+bundle_digest: 7a36d4df440e4639c8ded06664a33ba971d3be9aea5cc0e3c5bdb8c195f33e3f
+runtime_digest: 8ec9583967d5d239318808b263c6236511728c67051114d34bc85a530dde9ba3
+launcher_manifest_sha256: 30c5760b7032cf949b944f335f082679247e6160bd539531ef7c898ff5701a8d
+plugin_contract: loaded; ten hooks; agentToolResultMiddleware=[openclaw]; no tools; zero diagnostics
+gateway_channels: RPC green; Telegram and Slack configured/running/probe-green
+native_config_delta: meta.lastTouchedAt only versus exact pre-install backup
+native_primary: litellm/task-general
+native_fallbacks: six original fallbacks unchanged
+agency_inference_profile: linux-task-agency-router
+agency_requested_alias: task-agency-router
+credential_env_name: LITELLM_API_KEY
+credential_present: true
+reset_acknowledgement: absent; failure retained
+fresh_session_id: cdc3a36b-e683-4c8e-bace-2545f01bd2c0
+agency_trace_id: f946f532-4b53-4695-b660-36be48500dc3
+store_run_id: 79a11206-3c58-4ed0-b2b8-121bf3d0fdb9
+resident_binding_id: none
+routing_decision_ids:
+  - 50c37f62-8278-4e35-99a2-7985b97cb4f9
+specialists_loaded_ids: []
+skill_name_and_store_row_id: none
+routing_mode: deterministic control; abstained; workforce inference not attempted
+native_parent_model_calls: six task-general calls; HTTP 200
+actual_model_and_receipt_source: no receipt; preflight requested alias only
+native_response_chars: 1274
+header_exact: agency-steward / none / none / requested execution alias task-general / deterministic
+finalization_id: ae002770-f47f-4c84-890f-9ccfd37fd06b
+finalization_status: response_invalid
+finalization_missing: actual_model_selected
+native_transcript_sha256: deeb9040a5d5036d816794ba7ba5581fb834f4948f64adee3a8d45fcdd0b6aa1
+delivery_result: no queued reply payloads; no Telegram response
+root_cause: OpenClaw supplies modelId at preflight but omits it from both final-hook contexts
+expected_red: exit 17 retained for final-hook identity loss
+focused_green: 90 passed, 1 skipped, 148 deselected
+fix_scope: bounded preflight model correlation inside generated Agency OpenClaw plugin only
+store_schema: 47
+post_failure_store_integrity: ok
+post_failure_store_snapshot_sha256: 93dc0be2c55af0930e5c54753adc70aec76eaaf57974f60a516a66820e4a7c47
+known_limit: fix not installed; genuinely changed fresh Telegram delivery proof pending
+hermes_and_protected_hosts: untouched
+~~~

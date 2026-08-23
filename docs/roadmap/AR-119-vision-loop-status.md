@@ -3530,3 +3530,48 @@ OpenClaw adapter, middleware, and finalization slice passes 31 tests with 1
 skip. Post-failure Store integrity is `ok`, schema 47, and read-only snapshot
 SHA is `df57b6a3...`. The fix is not yet installed; Hermes and protected hosts
 remain untouched.
+
+## 2026-08-23 - Fifth Telegram failure isolates final-hook model context loss
+
+Clean pair `a9276e00` / `4b1172be` was installed into natively stopped
+OpenClaw as Agency-only operation
+`175adc13-ef5f-4286-ac39-0a7584e9a982`. Bundle `7a36d4df...`, runtime
+`8ec95839...`, and launcher SHA `30c5760b...` bind to the same checkout. The
+installer left the gateway stopped. Native restart loaded ten hooks plus the
+OpenClaw-scoped awaited middleware, exposed no Agency tool, and reported zero
+diagnostics. RPC and both channel probes were green. OpenClaw configuration
+changed only at `meta.lastTouchedAt`; native `litellm/task-general`, all six
+fallbacks, channels, providers, and credential indirection remained exact.
+
+The fresh `/new` acknowledgement again did not arrive. Exact `agency status`
+entered native session `cdc3a36b-e683-4c8e-bace-2545f01bd2c0`; six native
+`task-general` requests returned HTTP 200 and the transcript contains one
+natural 1274-character response with the exact requested-alias/deterministic
+five-line header. The turn kernel nevertheless recorded no queued reply
+payload. Transcript SHA-256 is `deeb9040...`.
+
+Store trace `f946f532-4b53-4695-b660-36be48500dc3`, run
+`79a11206-3c58-4ed0-b2b8-121bf3d0fdb9`, routing
+`50c37f62-8278-4e35-99a2-7985b97cb4f9`, and terminal
+`ae002770-f47f-4c84-890f-9ccfd37fd06b` correlate. Deterministic status
+correctly abstained with no workforce inference, specialist, skill, resident
+binding, or protected-host fallback. Zero model receipts prove the alias-only
+filter behaved as intended. Finalization still rejected only
+`actual_model_selected`.
+
+Installed-hook inspection isolated the mismatch: OpenClaw 2026.7.1-2 supplies
+`modelId=task-general` during `before_prompt_build`, but omits `modelId` from
+`before_agent_finalize` and final `reply_payload_sending` context. Agency
+authored the requested-alias header from preflight and then compared it against
+`none observed` at the final gates.
+
+Expected-red exit 17 retains that exact lifecycle loss. The generated plugin
+now keeps the bounded preflight model beside the existing session/run
+correlation, reuses it at both final gates, and deletes it at outbound
+completion. Existing ten-minute expiry, 128-entry cap, byte bound, and
+runtime-disable clearing remain intact. The focused OpenClaw security,
+adapter, registration, and native-installer slice is 90 passed and 1 skipped.
+No shared policy, other adapter, OpenClaw source/configuration, model route,
+direct send, rewrite, or correction pass changed. Post-failure Store integrity
+is `ok`, schema 47, and read-only snapshot SHA is `93dc0be2...`. The candidate
+is not installed; Hermes and all protected hosts remain untouched.
