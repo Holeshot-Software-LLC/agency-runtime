@@ -3683,3 +3683,22 @@ recruitment. Zero Agency model receipts, specialists, skills, or resident
 binding correctly keep this a status-control proof rather than
 `task-agency-router` inference evidence. Changed `tmux` skill and exact
 restart-safety proofs remain next; protected hosts remain untouched.
+
+## 2026-08-23 - Installed-repair tmux skill proof passes
+
+After the operator delay, OpenClaw rolled native session
+`31983848-8d75-4e8f-ae11-8b8087d8c429`; the Store channel-session SHA remained
+`d20c5bfb...`. The genuinely changed read-only `tmux` request completed as
+trace `adff32ff-bbd0-4afd-befd-e5c647ac76fc`, run
+`bcbbebd5-b35e-445f-a066-0298c0f27d44`, accepted routing
+`dce3ca84-d8be-4f29-8636-2beb2abc32e0`, specialist
+`a3c9d9ef-fdfe-4d02-b4f7-d0e7469f8ff2`, and accepted terminal
+`3d5bdb26-881d-4759-9ded-2ae2ac167a44`; Telegram outbound followed inbound.
+
+The exact five-line header says `Skills loaded: tmux`, matching Store row
+`937189d5-d27c-4fea-8829-91e7995f2252`. Three wrapper receipts requested exact
+alias/model-group `task-agency-router` through automatically selected OpenClaw
+profile `linux-task-agency-router` and provider type `litellm`; routing records
+zero fallback. Actual answering model remains unavailable. Response SHA is
+`74038284...`; preserved transcript SHA is `da55b13b...`. The exact substantive
+restart-safety review and final integrity bundle remain next.

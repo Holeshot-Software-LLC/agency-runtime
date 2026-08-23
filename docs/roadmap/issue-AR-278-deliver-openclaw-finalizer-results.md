@@ -322,8 +322,17 @@ completed as trace `7f4aa31c-9d93-4199-bac0-b5818cea91de`, finalization
 `6ce7c157-98fd-4ab7-aabc-d4722e02a43b` accepted with no missing fields, and
 Telegram outbound followed inbound. The response SHA is `a4c784dc...` and the
 preserved transcript SHA is `a2ec1af7...`. Deterministic control correctly made
-no Agency inference claim. Changed skill and substantive proofs remain pending;
-Hermes, Codex, Claude, and ZCode remain untouched.
+no Agency inference claim.
+
+OpenClaw later rolled native session `31983848-8d75-4e8f-ae11-8b8087d8c429`.
+Its genuinely changed `tmux` request completed as trace
+`adff32ff-bbd0-4afd-befd-e5c647ac76fc`, finalization
+`3d5bdb26-881d-4759-9ded-2ae2ac167a44` accepted, and Telegram delivered. The
+exact header and Store row both name `tmux`. All three wrapper receipts used
+profile `linux-task-agency-router`, provider type `litellm`, and exact
+alias/model-group `task-agency-router` with zero fallback. Actual answering
+model telemetry remains unavailable. The exact substantive proof remains
+pending; Hermes, Codex, Claude, and ZCode remain untouched.
 
 ## Approach
 

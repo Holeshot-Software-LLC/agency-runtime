@@ -1461,3 +1461,42 @@ native_redacted_trajectory: /tmp/ar278-openclaw-eighth-status-b815780c
 known_limit: control path only; changed skill and substantive task-agency-router proofs pending
 hermes_and_protected_hosts: untouched
 ~~~
+
+### OpenClaw installed-repair tmux skill bundle
+
+~~~yaml
+host: openclaw
+checkout_sha: 891510f0
+installed_checkout_sha: c0426ab967c102f25fb530bf6355f7f6ff11b45b
+host_version: OpenClaw 2026.7.1-2 (0790d9f)
+native_session_id: 31983848-8d75-4e8f-ae11-8b8087d8c429
+native_session_note: OpenClaw rolled after the operator delay; Store channel-session SHA remained unchanged
+agency_trace_id: adff32ff-bbd0-4afd-befd-e5c647ac76fc
+store_run_id: bcbbebd5-b35e-445f-a066-0298c0f27d44
+store_session_key_sha256: d20c5bfbc17fd25b46d36898bccf90b16e7e54c7dc256dc9cce351542590e299
+routing_decision_ids: [dce3ca84-d8be-4f29-8636-2beb2abc32e0]
+routing_result: accepted code-reviewer; confidence 1.0; zero fallback
+resident_binding_id: none
+specialists_loaded_ids: [a3c9d9ef-fdfe-4d02-b4f7-d0e7469f8ff2]
+skill_name_and_store_row_id: tmux / 937189d5-d27c-4fea-8829-91e7995f2252
+agency_inference_profile: linux-task-agency-router
+provider_type: litellm
+requested_alias: task-agency-router
+model_group: task-agency-router
+model_receipt_ids: [10dcc23f-7cb6-4bb1-a1e1-6eaffad3cb5d, e9fd64c1-7bf3-410c-b06b-b718ad159496, 492a3fd7-e841-4dec-ae0b-a1be846d6f80]
+model_receipt_source: wrapper
+actual_model_and_receipt_source: unavailable; wrapper receipts report requested Agency alias only
+fallback_count: 0
+native_parent_provider: litellm
+native_parent_requested_alias: task-general
+finalization_id: 3d5bdb26-881d-4759-9ded-2ae2ac167a44
+finalization_status: accept; completed; no missing fields
+response_sha256: 740382841b3f75bdc4e33324844ee98f95c333ea3c6b1bbb6854aaab9ba9a3de
+native_transcript_sha256: da55b13b94b72d277b42150607980c7d4e7009cff76bff12b86f7d641e7b5f69
+header_exact: agency-steward, code-reviewer / none / tmux / workforce inference task-agency-router to linux-task-agency-router/task-agency-router wrapper / inference
+telegram_delivery: outbound followed inbound
+evidence_artifact: /tmp/ar278-openclaw-eighth-live/tmux-skill-evidence-redacted.json
+evidence_artifact_sha256: 005630dc6fb457d7635a4e262a912b4e23581d011f125fc898f7df55c20d6776
+known_limit: exact substantive restart-safety proof and final integrity bundle pending
+hermes_and_protected_hosts: untouched
+~~~

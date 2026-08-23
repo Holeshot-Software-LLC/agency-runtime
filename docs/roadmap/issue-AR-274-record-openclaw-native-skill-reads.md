@@ -126,8 +126,17 @@ completed as trace `7f4aa31c-9d93-4199-bac0-b5818cea91de` and delivered through
 Telegram. Finalization accepted with no missing fields. The deterministic
 control correctly created no skill, specialist, resident binding, or Agency
 model receipt; response SHA is `a4c784dc...` and preserved transcript SHA is
-`a2ec1af7...`. The genuinely changed `tmux` skill proof remains pending. Hermes
-and protected hosts remain untouched.
+`a2ec1af7...`.
+
+After OpenClaw rolled native session `31983848-8d75-4e8f-ae11-8b8087d8c429`,
+the genuinely changed read-only `tmux` request completed as trace
+`adff32ff-bbd0-4afd-befd-e5c647ac76fc`. The exact header says
+`Skills loaded: tmux`, matching Store row
+`937189d5-d27c-4fea-8829-91e7995f2252`; finalization accepted and Telegram
+delivered. All three wrapper receipts requested exact alias/model-group
+`task-agency-router` through profile `linux-task-agency-router` and provider type
+`litellm`, with zero fallback. No actual answering model is claimed. Hermes and
+protected hosts remain untouched.
 
 ## Approach
 
@@ -157,6 +166,6 @@ or executable-namespace trust rules.
 - [x] Retain the later awaited-middleware skill-evidence regression with exact Store, header, delivery, and alias receipts.
 - [x] Match the installed no-correlation middleware context in an expected-red regression and reject ambiguous tool-call correlation.
 - [x] Reinstall only Agency from the correlation candidate while OpenClaw is natively stopped.
-- [ ] Prove a genuinely different eligible skill without delegation or child spawn.
+- [x] Prove a genuinely different eligible skill without delegation or child spawn.
 - [x] Focused OpenClaw adapter, installer, final-header, and Store tests plus proportionate local gates pass.
 - [ ] Tracker creation remains pending separate authorization.

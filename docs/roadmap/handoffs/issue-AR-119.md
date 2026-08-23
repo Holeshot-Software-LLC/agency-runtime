@@ -85,6 +85,9 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 - A later `/new` established fresh native session `b815780c-23fb-4fdb-8731-aed6d162b769`. Its exact first `agency status` turn produced completed trace `7f4aa31c-9d93-4199-bac0-b5818cea91de`, run `526c86bd-ddca-4878-93a4-8bd09ca029a6`, abstained routing `d8130eb2-d1fa-478e-84e3-bcff1dc6e0ed`, and accepted terminal `6ce7c157-98fd-4ab7-aabc-d4722e02a43b`; Telegram outbound followed inbound.
 - The exact 476-character response SHA is `a4c784dc...`; preserved transcript SHA is `a2ec1af7...`. Its header records `agency-steward`, no delegation or skill, native requested alias `task-general`, and deterministic recruitment. Zero Agency receipts, specialists, skills, or binding correctly keep this a control-only proof.
 - Redacted status artifact `/tmp/ar278-openclaw-eighth-live/status-evidence-redacted.json` has SHA `0524fac4...`; native redacted trajectory is retained at `/tmp/ar278-openclaw-eighth-status-b815780c`. Hermes, Codex OAuth/config/canary, Claude, and ZCode remain untouched.
+- After the operator delay OpenClaw rolled native session `31983848-8d75-4e8f-ae11-8b8087d8c429`. Changed `tmux` trace `adff32ff-bbd0-4afd-befd-e5c647ac76fc`, run `bcbbebd5-b35e-445f-a066-0298c0f27d44`, routing `dce3ca84-d8be-4f29-8636-2beb2abc32e0`, specialist `a3c9d9ef-fdfe-4d02-b4f7-d0e7469f8ff2`, and terminal `3d5bdb26-881d-4759-9ded-2ae2ac167a44` completed; Telegram delivered.
+- Header `Skills loaded: tmux` matches Store row `937189d5-d27c-4fea-8829-91e7995f2252`. Three wrapper receipts used profile `linux-task-agency-router`, provider type `litellm`, exact alias/model-group `task-agency-router`, and zero fallback. Actual model is unavailable.
+- Response/transcript SHAs are `74038284...` / `da55b13b...`; artifact SHA is `005630dc...`. Store channel-session SHA stayed `d20c5bfb...` across the native roll.
 
 ## completed-evidence
 
@@ -95,9 +98,8 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 
 ## exact-blocker
 
-1. Prove the eligible `tmux` skill and matching Store/header evidence without delegation.
-2. Run the exact substantive OpenClaw review through `task-agency-router` with zero protected fallback.
-3. Preserve final integrity/config evidence and checkpoint before starting Hermes.
+1. Run the exact substantive OpenClaw review through `task-agency-router` with zero protected fallback.
+2. Preserve final integrity/config evidence and checkpoint before starting Hermes.
 
 ## traps (machine-specific; do not rediscover)
 
@@ -109,8 +111,7 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 
 ## next-bounded-work-package
 
-1. Complete the changed `tmux` skill proof in the current fresh session.
-2. Complete the exact substantive restart-safety review and final evidence bundle.
+1. Complete the exact substantive restart-safety review and final evidence bundle.
 2. Stop OpenClaw natively, reinstall Agency only, restart natively, and use a fresh session plus a different harmless skill.
 3. If Store/header skill evidence passes, send the exact restart-safety review and finalize the OpenClaw evidence bundle.
 
