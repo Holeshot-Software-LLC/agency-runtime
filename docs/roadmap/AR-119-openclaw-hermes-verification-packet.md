@@ -1588,3 +1588,54 @@ gateway_channels: RPC green; Telegram and Slack configured/enabled/connected/run
 known_limit: actual answering model unavailable; no Rule 4 native-child proof; no AR-119 matrix-cell movement
 hermes_and_protected_hosts: untouched
 ~~~
+
+### Hermes install-readiness bundle
+
+~~~yaml
+host: hermes
+checkout_sha: f027dd44a1db17627d7cc51c3bd00150f25e7700
+clean_tree_at_install: true
+host_version: Hermes Agent v0.20.4 (2026.8.18)
+effective_home: /home/holeshot/.hermes-nexus
+native_litellm_config_source_redacted: /home/holeshot/.hermes-nexus/config.yaml and .env; values excluded
+native_primary: task-general
+native_provider: litellm
+native_fallback_count: 5
+native_plugins_before: 9
+credential_env_names: [LITELLM_API_KEY, LITELLM_BASE_URL]
+credential_present_boolean: true
+agency_inference_profile: linux-task-agency-router
+requested_alias: task-agency-router
+model_group: task-agency-router
+store_schema: 47
+contractors_before_after_install: 15/15
+pre_install_store_integrity: ok
+pre_install_store_backup_sha256: affd8f8ea4a5f8636e7a657b6314497267ff7d105fd1571e12dfa10bea836cdf
+agency_config_sha256: 43367ec9aa05a66fc2a60bb254f270836fb3616753769115fabb253a04d5d9f8
+hermes_config_before_sha256: a984d9343cbd56b7ac3bb70586ce4db90a739d6a063a530b9183c5baca1e170d
+hermes_env_before_after_sha256: 792fd43a5312d1c1d69f6afbeef3bbdd1a8198ee03ac06b4b3b6dfa20ec2f324 / unchanged
+first_install_result: failed before plugin staging; private plugin parent not trusted
+first_install_artifact: /tmp/ar278-hermes-preinstall.MZtRGk/install-result.json
+first_install_artifact_sha256: 72c3a7acd361d03418fbd4a2f262b4cad90ce420c442821793234f6596bed3f0
+failed_attempt_launcher_sha256: 7c033c97e7f4ce2108efcccfadc4f1c9e4511dc98afa11085adfd898f27585c3
+failed_attempt_config_changed: false
+changed_prerequisite: plugin parent mode 0775 -> 0700; process umask 0077
+install_result: 06bd5aa2-c8c3-4321-90b2-e413a142c4a7; complete; Agency plugin only; installer did not restart Hermes
+install_artifact: /tmp/ar278-hermes-preinstall.MZtRGk/install-result-private-parent.json
+install_artifact_sha256: 93857d15f8009f38059d0b5137c8b58c8ab7da8f662b69e5e4fca4c162fab517
+bundle_digest: 351a7108bfc4a8ffdd933261f9fe5bfe451886f88272b7bbaa8d4a2fa5377127
+runtime_digest: 70239e65528b4828a3a992a0a857b0684976ec50d36c80c8d89bd0e4c0740d9d
+launcher_manifest_sha256: 7c033c97e7f4ce2108efcccfadc4f1c9e4511dc98afa11085adfd898f27585c3
+hermes_config_after_sha256: 95b87b7fc0427ad4e3da4f5f468054cf9f7ddba679d1bb606b782a13e1a0172d
+hermes_config_semantic_delta: enable agency-preflight with allow_tool_override false only
+native_model_provider_fallbacks_changed: false
+prior_native_plugins_changed: false
+plugin_contract: enabled; standalone discovery/import/registration pass; eight hooks; zero tools
+gateway_restart: exact hermes-gateway-nexus.service active/running; successful service receipt
+openclaw_status: active
+fresh_session_id: pending
+agency_trace_id: pending
+actual_model_and_receipt_source: pending live turn; never infer from alias
+known_limit: fresh status, Store-backed skill, substantive LiteLLM routing, and Telegram delivery pending
+protected_hosts: Codex OAuth/config/canary, Claude, and ZCode untouched
+~~~

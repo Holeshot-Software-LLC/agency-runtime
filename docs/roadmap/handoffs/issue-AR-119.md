@@ -72,7 +72,7 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 - Agency-only install `251c4349-f7e3-4640-980d-055b857c0abe` completed from clean checkout `c0426ab9` while OpenClaw was stopped. Bundle `ba344b92...`, runtime `70239e65...`, and launcher SHA `3090708c...` bind to that checkout; the installer did not restart the host.
 - OpenClaw remains audited 2026.7.1-2 on native `litellm/task-general` plus six original fallbacks. Its config changed from SHA `17784e2e...` to `3060c3ee...` only at `meta.lastTouchedAt`; models, providers, channels, and credential indirection are unchanged.
 - Native restart is RPC-green. The live gateway loaded Agency and `agency-preflight`; Telegram and Slack are configured, connected, running, and probe-green. `LITELLM_API_KEY` is populated without its value being emitted.
-- Agency remains harness-scoped to `linux-task-agency-router`, adapter `litellm`, exact alias/model-group `task-agency-router`, `http://127.0.0.1:4000/v1`, and 120000 ms. The global default remains `agency-default`; Codex/Claude/ZCode have no new harness override. Hermes remains untouched break glass.
+- Agency remains harness-scoped to `linux-task-agency-router`, adapter `litellm`, exact alias/model-group `task-agency-router`, `http://127.0.0.1:4000/v1`, and 120000 ms. The global default remains `agency-default`; Codex/Claude/ZCode have no new harness override.
 - Fresh native session `b815780c-23fb-4fdb-8731-aed6d162b769` received exact first message `agency status`. Trace `7f4aa31c-9d93-4199-bac0-b5818cea91de`, run `526c86bd-ddca-4878-93a4-8bd09ca029a6`, routing `d8130eb2-d1fa-478e-84e3-bcff1dc6e0ed`, and terminal `6ce7c157-98fd-4ab7-aabc-d4722e02a43b` completed and delivered through Telegram. Zero Agency receipts correctly keep it a deterministic control-only proof.
 - A genuinely changed `tmux` read completed under trace `adff32ff-bbd0-4afd-befd-e5c647ac76fc`; header `Skills loaded: tmux` matches Store row `937189d5-d27c-4fea-8829-91e7995f2252`. Three wrapper receipts used automatically selected OpenClaw profile `linux-task-agency-router`, provider type `litellm`, exact alias/model-group `task-agency-router`, and zero fallback.
 - The exact restart-safety review completed in native session `84deda15-df94-4aa8-8ed4-853ecd56ff99` under trace `5ba0b638-9db8-4144-8be0-2d9b17f6b51d`, run `ad2b1238-dd8f-49c9-9b30-2107baf7b499`, routing `b5f22f42-4ddf-4a8b-85ed-8fb56c13e7b1`, and terminal `5eb2e7fa-ff50-4728-b7d2-d6a497ff57b5`. Telegram delivered both response chunks.
@@ -81,6 +81,11 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 - No resident binding, delegation event, child usage, child scope, or child verification row exists. Native tool evidence is read-only and no mutation or delegation command was detected.
 - Final Store online backup SHA `affd8f8e...` has source/backup integrity `ok`, schema 47. Contractors remain 15; Agency config SHA `43367ec9...`, OpenClaw config SHA `3060c3ee...`, and launcher SHA `3090708c...` are unchanged from the install checkpoint.
 - Redacted status, skill, and substantive artifacts have SHAs `0524fac4...`, `005630dc...`, and `acf1461b...`; response/transcript SHAs are retained in the verification packet. Earlier failed attempts remain preserved there and are not rewritten as successes.
+- Hermes preflight used effective home `/home/holeshot/.hermes-nexus`: v0.20.4, native `litellm/task-general`, five fallbacks, nine enabled plugins, populated `LITELLM_API_KEY`/`LITELLM_BASE_URL`, and Agency unregistered. No credential value or channel/user identifier is retained. Online Store backup SHA `affd8f8e...` has integrity `ok`, schema 47; contractors were 15.
+- The first stopped-gateway install failed before staging because Hermes's plugin parent was mode `0775`; artifact SHA `72c3a7ac...` and prepared launcher SHA `7c033c97...` are retained. Config SHA stayed `a984d934...` and the plugin target remained absent.
+- Tightening only the plugin directory to `0700` and using process umask `0077` changed the prerequisite. Agency-only retry completed as install `06bd5aa2-c8c3-4321-90b2-e413a142c4a7`, bundle `351a7108...`, runtime `70239e65...`, launcher `7c033c97...`; artifact SHA is `93857d15...`. The installer did not restart Hermes.
+- Hermes's native model, provider, five fallbacks, environment-file hash, and nine prior plugins remain unchanged. Its only config semantic delta is enabling `agency-preflight` with tool override false. Native plugin doctor passes import/registration with eight hooks and zero tools.
+- The existing Nexus gateway was restarted through its exact systemd unit and is active/running with a successful service receipt. OpenClaw remains active. Fresh Hermes Telegram activation and routing proof have not yet run.
 
 ## completed-evidence
 
@@ -88,25 +93,28 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 - `task-agency-router` remains confined to Agency workforce inference; OpenClaw's native parent stays `task-general`. No Codex, Claude, ZCode, or Hermes route changed.
 - Install provenance, config invariants, credential-name presence, contractor preservation, final Store integrity, and zero fallback are retained.
 - This package does not prove Rule 4 native-child delivery and does not move an AR-119 matrix cell.
+- Hermes installation/registration now passes; live activation, header, skill, and substantive routing remain pending.
 
 ## exact-blocker
 
-None for the scoped OpenClaw package. Hermes now requires its own read-only
-preflight, backup, Agency-only install, and fresh-session evidence.
+Hermes requires a completely fresh Telegram session whose exact first message
+is `agency status`, followed by one harmless skill load and the exact
+configuration-drift review.
 
 ## traps (machine-specific; do not rediscover)
 
 - Shell umask is `0002`; security-sensitive tests need process-local `0077`.
 - OpenClaw service is `openclaw-gateway.service`; effective Hermes home is `/home/holeshot/.hermes-nexus`.
+- Hermes service is `hermes-gateway-nexus.service`; its plugin parent was safely tightened from `0775` to `0700` after the installer correctly refused the shared-write boundary.
 - Never emit credential values or numeric channel/user identifiers. The Store channel session key is retained only by SHA.
 - OpenClaw `model_call_ended` proves requested metadata, not the LiteLLM answering model. Never promote an alias into an actual-model claim.
 - Do not run unsupported host canaries or reconfigure/re-prove Codex.
 
 ## next-bounded-work-package
 
-1. Checkpoint the complete OpenClaw evidence bundle locally.
-2. Preserve Hermes's effective home, native aliases/plugins, and Store/config backups without changing its native inference configuration.
-3. Install Agency only into Hermes, restart it natively, and prove fresh status, skill, and exact configuration-drift review serially.
+1. In a completely fresh Hermes Telegram session, send exact first message `agency status` and preserve the response before any other message.
+2. Load one harmless available skill without delegation and correlate the exact header/Store row.
+3. Send the exact configuration-drift review and prove automatic Hermes profile selection, LiteLLM `task-agency-router`, zero fallback, and terminal delivery.
 
 ## same-task-continuity
 

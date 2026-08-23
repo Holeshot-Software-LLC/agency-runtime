@@ -154,6 +154,31 @@ metadata and compiled prompt contain explicit evidence requirements.
 - Hermes remains running and untouched as break glass. Exact `task-agency-router` remains only in Agency's harness profile; no native host default uses it.
 - Codex OAuth/configuration and the consumed Codex canary remain untouched. This Linux package has not moved any AR-119 matrix cell.
 
+### 2026-08-23 Hermes install checkpoint
+
+- Read-only preflight found Hermes Agent v0.20.4 at effective home
+  `/home/holeshot/.hermes-nexus`, natively using `litellm/task-general` plus
+  five fallbacks and nine enabled plugins. Agency was unregistered. Store
+  backup SHA `affd8f8e...` has source/backup integrity `ok`, schema 47; all 15
+  contractors remain present.
+- The first stopped-gateway Agency install failed closed before plugin staging
+  because the Hermes plugin parent was group-writable mode `0775`. Artifact SHA
+  `72c3a7ac...` and the prepared launcher SHA `7c033c97...` are retained; the
+  native config SHA remained `a984d934...`.
+- Changing only that parent to owner-private `0700` and using process umask
+  `0077` satisfied the existing trust boundary. Agency-only install
+  `06bd5aa2-c8c3-4321-90b2-e413a142c4a7` completed with bundle `351a7108...`,
+  runtime `70239e65...`, launcher `7c033c97...`, and artifact `93857d15...`.
+  The installer did not restart Hermes.
+- Hermes's native model/provider, five fallbacks, environment-file hash, and
+  nine prior plugins remain unchanged. Config SHA `95b87b7f...` represents
+  only native enablement of `agency-preflight` with tool override false. Plugin
+  doctor proves import/registration, eight hooks, and zero tools.
+- The exact Nexus gateway service is active/running after native restart.
+  Fresh status, harmless skill, and exact substantive configuration-drift
+  Telegram evidence remain pending. Codex OAuth/config/canary, Claude, and
+  ZCode remain untouched; no matrix cell moved.
+
 ## Approach
 
 Add a closed, bounded employment-contract v2 `execution_profile` containing

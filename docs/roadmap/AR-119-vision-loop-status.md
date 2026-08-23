@@ -3743,3 +3743,33 @@ skill loading, and LiteLLM-backed parent-routing scope. Earlier failures remain
 preserved. This does not prove Rule 4 native-child delivery and does not move an
 AR-119 matrix cell. Hermes and Codex OAuth/config/canary, Claude, and ZCode
 remain untouched; Hermes is the next independent host.
+
+## 2026-08-23 - Hermes Agency-only install passes
+
+Hermes preflight used effective home `/home/holeshot/.hermes-nexus` and proved
+v0.20.4, native `litellm/task-general`, five fallbacks, nine enabled plugins,
+and an unregistered Agency state. `LITELLM_API_KEY` and `LITELLM_BASE_URL` are
+populated by name only; values are excluded. The Agency harness profile was
+already `linux-task-agency-router` with exact alias/model-group
+`task-agency-router`; no native model route changed. Online Store backup SHA
+`affd8f8e...` has integrity `ok`, schema 47, and contractor count 15.
+
+The first stopped-gateway install failed closed before staging because the
+Hermes plugin parent was mode `0775`. Failure artifact SHA is `72c3a7ac...`;
+the prepared launcher was preserved at SHA `7c033c97...`; native config SHA
+remained `a984d934...`. Tightening only that parent to owner-private `0700` and
+using process umask `0077` changed the prerequisite without weakening trust.
+
+Agency-only retry completed as install
+`06bd5aa2-c8c3-4321-90b2-e413a142c4a7`. Bundle `351a7108...`, runtime
+`70239e65...`, launcher `7c033c97...`, and install artifact `93857d15...` bind
+to the clean checkout. The installer did not restart Hermes. Native
+`task-general`, all five fallbacks, the environment-file hash, and all nine
+prior plugins remain unchanged; config SHA `95b87b7f...` reflects only
+`agency-preflight` enablement with tool override false.
+
+Hermes plugin doctor passes standalone runtime discovery, manifest parsing,
+import, and registration with eight hooks and zero tools. The exact Nexus
+gateway service is active/running after native restart; OpenClaw remains
+active. Fresh Telegram status, skill, and substantive routing proof remain
+pending. Protected hosts and the AR-119 matrix remain untouched.

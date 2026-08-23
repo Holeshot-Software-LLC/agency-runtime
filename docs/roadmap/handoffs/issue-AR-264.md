@@ -50,7 +50,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 - Exact substantive restart-safety trace `5ba0b638-9db8-4144-8be0-2d9b17f6b51d` completed run `ad2b1238-dd8f-49c9-9b30-2107baf7b499`, accepted routing `b5f22f42-4ddf-4a8b-85ed-8fb56c13e7b1`, and accepted terminal `5eb2e7fa-ff50-4728-b7d2-d6a497ff57b5`. Telegram delivered both response chunks.
 - The substantive header and Store correlate `openclaw-operations` row `a0b9a4ea-2a0c-441d-ae39-a946ff149c6f` plus two specialist rows. Three successful wrapper receipts use `linux-task-agency-router`, `litellm`, exact alias/model-group `task-agency-router`, and zero fallback. Actual answering model remains unavailable.
 - No resident binding, delegation, or native-child rows exist. Final Store backup SHA `affd8f8e...` has integrity `ok`, schema 47. Contractors remain 15; Agency config, OpenClaw config, and launcher hashes remain unchanged from the install checkpoint.
-- Earlier failed skill/finalization attempts remain retained in the verification packet. Hermes, Codex OAuth/config/canary, Claude, and ZCode remain untouched.
+- Earlier failed OpenClaw attempts remain retained in the verification packet. Codex OAuth/config/canary, Claude, and ZCode remain untouched.
+- Hermes v0.20.4 preflight recorded effective home `/home/holeshot/.hermes-nexus`, native `litellm/task-general`, five fallbacks, nine enabled plugins, config SHA `a984d934...`, and 15 contractors. Online Store backup SHA `affd8f8e...` has integrity `ok`, schema 47.
+- First install artifact SHA `72c3a7ac...` retained the fail-closed `0775` plugin-parent refusal before staging. After tightening only that parent to `0700` and using umask `0077`, Agency-only install `06bd5aa2-c8c3-4321-90b2-e413a142c4a7` completed; bundle `351a7108...`, runtime `70239e65...`, launcher `7c033c97...`, install artifact `93857d15...`.
+- Hermes native model/provider/fallbacks, environment hash, and nine prior plugins remain unchanged. Config SHA `95b87b7f...` reflects only `agency-preflight` enablement with tool override false. Plugin doctor proves eight hooks and zero tools. The installer did not restart Hermes; the exact Nexus service is now active/running after native restart.
 
 ## completed-evidence
 
@@ -58,21 +61,22 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 - Install/launcher provenance, contractor preservation, config invariants, final Store integrity, exact alias, and zero fallback are current.
 - Native `task-general` and Agency `task-agency-router` remain separate; no actual answering model is invented from wrapper receipts.
 - The package proves parent routing only, not Rule 4 native-child delivery or a matrix-cell transition.
+- Hermes installation/registration is current; live activation and routing evidence remain pending.
 
 ## exact-blocker
 
-None for the scoped OpenClaw package. Hermes remains the next independent host.
+Hermes needs fresh Telegram status, harmless skill, and exact substantive
+configuration-drift evidence.
 
 ## same-task-continuity
 
-Checkpoint OpenClaw locally, then begin Hermes from a read-only preflight and
-backup boundary.
+Continue from the clean Hermes install checkpoint into fresh live evidence.
 
 ## next-bounded-work-package
 
-1. Commit the complete OpenClaw evidence and worklog ledger locally.
-2. Preserve Hermes's effective home, config hash, aliases, plugin inventory, and online Store backup.
-3. Install Agency only into Hermes and prove fresh status, skill, and exact configuration-drift review without changing native model configuration.
+1. Send exact first message `agency status` in a fresh Hermes Telegram session.
+2. Load one harmless skill without delegation and correlate Store/header evidence.
+3. Send the exact configuration-drift review and prove Hermes-scoped `task-agency-router` with zero fallback.
 
 ## verification
 
