@@ -43,43 +43,36 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 
 ## checkpoint
 
-- Branch `codex/ar278-openclaw-one-pass` is clean at install-record/ledger pair `8043ab43` / `ab286262`; implementation/ledger pair `e5ae8de1` / `7abf9b13` contains the correlation repair and `f76050d7` remains an ancestor.
-- Agency-only install `251c4349-f7e3-4640-980d-055b857c0abe` completed with 15 unchanged contractors, bundle `ba344b92...`, runtime `70239e65...`, and launcher `3090708c...`; the installer left OpenClaw stopped.
-- OpenClaw 2026.7.1-2 remains on native `litellm/task-general` plus six fallbacks. Agency remains scoped to `linux-task-agency-router`, LiteLLM, and exact alias/model-group `task-agency-router`. OpenClaw config changed only its timestamp; protected-host routing is unchanged.
-- Native restart loaded 11 hooks including `before_tool_call`, awaited OpenClaw middleware, no Agency tool, and zero diagnostics. RPC, Telegram, and Slack probes are green; the gateway credential variable is populated without its value being emitted.
-- Sixth fresh exact status turn passed in native session `5570abb9-eecc-4d77-be4b-bb9636bdf886`. Trace `78a68fdc-e192-4098-b8c7-58d20cf3bd8a`, run `6f446944-da85-4eda-8049-227bf268775e`, routing `da98bac1-c78a-4be7-9a6b-a121386fdaf7`, and terminal `9398965e-550c-452d-9f85-3e59f2ecd029` correlate.
-- Finalization accepted with no missing fields, the run completed, and Telegram outbound followed inbound. Response SHA is `1e8c1df5...`; transcript SHA is `593ddef8...`.
-- The header's `task-general` value is OpenClaw's parent request alias. Deterministic status created zero Agency model receipts, specialists, skills, or binding, so it does not prove `task-agency-router` or an answering model.
-- A subsequent delivered read-only turn produced trace `6b18f9f0-a8bb-4a68-b70b-45ec7cdfe454`, completed run `afc905ca-f68b-40c7-b694-b1842e7277c7`, accepted routing `26492374-3d54-4da2-8bc6-0381e83813f4`, and terminal `d6ae9ade-b124-46b5-8822-7457a177f526`.
-- Three Agency receipts prove profile `linux-task-agency-router`, LiteLLM, exact `task-agency-router`, and zero fallback. Actual answering model is unavailable; native parent `task-general` remains separate.
-- The exact native-inventory-authorized `healthcheck` read produced no Store skill row and the header honestly stayed `none`. OpenClaw's middleware supplies arguments but no session/run callback context; the bridge failed closed. Expected-red exit 245 now models this exact gap.
-- The installed OpenClaw-only repair carries one-use correlation from `before_tool_call`, rejects collisions, and passes 374 affected tests with 1 skip.
-- Current pre-install online Store backup is integrity `ok`, schema 47, SHA `3cdf39fc...`; contractor count remains 15. Agency config SHA is unchanged at `43367ec9...`; OpenClaw's only semantic config delta is its timestamp.
-- A later `/new` established fresh native session `b815780c-23fb-4fdb-8731-aed6d162b769`. Exact first `agency status` produced completed trace `7f4aa31c-9d93-4199-bac0-b5818cea91de`, run `526c86bd-ddca-4878-93a4-8bd09ca029a6`, abstained routing `d8130eb2-d1fa-478e-84e3-bcff1dc6e0ed`, and accepted terminal `6ce7c157-98fd-4ab7-aabc-d4722e02a43b`; Telegram outbound followed inbound.
-- Response SHA `a4c784dc...` and preserved transcript SHA `a2ec1af7...` bind the exact deterministic header. Zero Agency receipts, specialists, skills, or binding correctly keep status a control-only proof. Hermes remains break glass; Codex OAuth/config/canary, Claude, and ZCode remain untouched.
-- OpenClaw later rolled native session `31983848-8d75-4e8f-ae11-8b8087d8c429`. The changed `tmux` request completed as trace `adff32ff-bbd0-4afd-befd-e5c647ac76fc`, run `bcbbebd5-b35e-445f-a066-0298c0f27d44`, accepted routing `dce3ca84-d8be-4f29-8636-2beb2abc32e0`, specialist `a3c9d9ef-fdfe-4d02-b4f7-d0e7469f8ff2`, and accepted terminal `3d5bdb26-881d-4759-9ded-2ae2ac167a44`; Telegram delivered.
-- Header and Store row `937189d5-d27c-4fea-8829-91e7995f2252` both name `tmux`. Three wrapper receipts prove profile `linux-task-agency-router`, provider type `litellm`, exact alias/model-group `task-agency-router`, and zero fallback. Actual answering model remains unavailable.
+- Agency-only install `251c4349-f7e3-4640-980d-055b857c0abe` completed from clean checkout `c0426ab9` with 15 unchanged contractors; bundle `ba344b92...`, runtime `70239e65...`, and launcher `3090708c...` bind to that checkout. The installer left OpenClaw stopped.
+- OpenClaw 2026.7.1-2 remains on native `litellm/task-general` plus six unchanged fallbacks. Agency alone is scoped to `linux-task-agency-router`, provider type `litellm`, and exact alias/model-group `task-agency-router`. The native config changed only its timestamp.
+- Fresh exact status in session `b815780c-23fb-4fdb-8731-aed6d162b769` completed trace `7f4aa31c-9d93-4199-bac0-b5818cea91de` and delivered through Telegram. Zero model receipts correctly preserve its deterministic control-only meaning.
+- Changed `tmux` trace `adff32ff-bbd0-4afd-befd-e5c647ac76fc` delivered an exact header and matching Store skill row `937189d5-d27c-4fea-8829-91e7995f2252`. Three successful wrapper receipts prove automatic OpenClaw profile selection, LiteLLM, exact `task-agency-router`, and zero fallback.
+- Exact substantive restart-safety trace `5ba0b638-9db8-4144-8be0-2d9b17f6b51d` completed run `ad2b1238-dd8f-49c9-9b30-2107baf7b499`, accepted routing `b5f22f42-4ddf-4a8b-85ed-8fb56c13e7b1`, and accepted terminal `5eb2e7fa-ff50-4728-b7d2-d6a497ff57b5`. Telegram delivered both response chunks.
+- The substantive header and Store correlate `openclaw-operations` row `a0b9a4ea-2a0c-441d-ae39-a946ff149c6f` plus two specialist rows. Three successful wrapper receipts use `linux-task-agency-router`, `litellm`, exact alias/model-group `task-agency-router`, and zero fallback. Actual answering model remains unavailable.
+- No resident binding, delegation, or native-child rows exist. Final Store backup SHA `affd8f8e...` has integrity `ok`, schema 47. Contractors remain 15; Agency config, OpenClaw config, and launcher hashes remain unchanged from the install checkpoint.
+- Earlier failed skill/finalization attempts remain retained in the verification packet. Hermes, Codex OAuth/config/canary, Claude, and ZCode remain untouched.
 
 ## completed-evidence
 
-- Self-contained OpenClaw Agency activation, final-only delivery, Store terminal correlation, and host-owned Telegram outbound now pass.
-- Install/launcher provenance, contractor preservation, config invariants, and before/after Store integrity are current.
-- AR-273 remains the prior workforce-alias proof; the new status control is not misreported as inference.
-- The delivered second turn independently proves exact Agency alias routing with zero fallback while retaining skill capture as a failure.
+- OpenClaw installation, activation, final-only delivery, Store-backed skill loading, and exact substantive LiteLLM parent routing now pass.
+- Install/launcher provenance, contractor preservation, config invariants, final Store integrity, exact alias, and zero fallback are current.
+- Native `task-general` and Agency `task-agency-router` remain separate; no actual answering model is invented from wrapper receipts.
+- The package proves parent routing only, not Rule 4 native-child delivery or a matrix-cell transition.
 
 ## exact-blocker
 
-1. Prove the exact substantive review through `task-agency-router` with zero protected fallback.
-2. Preserve final integrity/config evidence before Hermes.
+None for the scoped OpenClaw package. Hermes remains the next independent host.
 
 ## same-task-continuity
 
-Continue with OpenClaw only from this checkpoint. Hermes remains outside the current mutation boundary.
+Checkpoint OpenClaw locally, then begin Hermes from a read-only preflight and
+backup boundary.
 
 ## next-bounded-work-package
 
-1. Complete the exact substantive restart-safety review and final evidence bundle.
-3. If skill proof passes, send the exact restart-safety review and checkpoint the completed OpenClaw bundle.
+1. Commit the complete OpenClaw evidence and worklog ledger locally.
+2. Preserve Hermes's effective home, config hash, aliases, plugin inventory, and online Store backup.
+3. Install Agency only into Hermes and prove fresh status, skill, and exact configuration-drift review without changing native model configuration.
 
 ## verification
 

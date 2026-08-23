@@ -138,6 +138,14 @@ delivered. All three wrapper receipts requested exact alias/model-group
 `litellm`, with zero fallback. No actual answering model is claimed. Hermes and
 protected hosts remain untouched.
 
+The exact substantive restart-safety review independently loaded
+`openclaw-operations`, matching Store row
+`a0b9a4ea-2a0c-441d-ae39-a946ff149c6f`, while its header remained exact and
+Telegram delivered. Trace `5ba0b638-9db8-4144-8be0-2d9b17f6b51d` completed
+with no delegation or child rows. Final online Store backup SHA `affd8f8e...`
+has integrity `ok`, schema 47; contractors remain 15 and config/launcher hashes
+are unchanged.
+
 ## Approach
 
 Preserve the bounded native path field through the generated bridge. Normalize

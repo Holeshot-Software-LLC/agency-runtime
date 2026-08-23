@@ -334,6 +334,18 @@ alias/model-group `task-agency-router` with zero fallback. Actual answering
 model telemetry remains unavailable. The exact substantive proof remains
 pending; Hermes, Codex, Claude, and ZCode remain untouched.
 
+The exact substantive restart-safety request then completed as trace
+`5ba0b638-9db8-4144-8be0-2d9b17f6b51d`, run
+`ad2b1238-dd8f-49c9-9b30-2107baf7b499`, accepted routing
+`b5f22f42-4ddf-4a8b-85ed-8fb56c13e7b1`, and accepted terminal
+`5eb2e7fa-ff50-4728-b7d2-d6a497ff57b5`. All three provider attempts used
+OpenClaw profile `linux-task-agency-router`, provider type `litellm`, and exact
+alias/model-group `task-agency-router`; fallback count is zero. The exact header
+records two loaded specialists, no delegation, and `openclaw-operations` with
+matching Store row. No delegation or native-child rows exist. Telegram
+delivered two chunks. Final Store integrity is `ok`, schema 47; contractor,
+config, and launcher invariants hold. Actual answering model remains unavailable.
+
 ## Approach
 
 Change only Agency's OpenClaw adapter as specified by ADR-0166. Do not expose
@@ -396,5 +408,5 @@ remain outside the mutation boundary.
 - [x] Preserve the delivered post-status workforce turn and its failed native-skill evidence without claiming success.
 - [x] Add installed-contract expected-red coverage for absent middleware correlation and a bounded collision-safe repair.
 - [x] Install the correlation candidate through Agency-only install while OpenClaw is natively stopped.
-- [ ] Prove a genuinely different native skill plus the exact substantive restart-safety review.
+- [x] Prove a genuinely different native skill plus the exact substantive restart-safety review.
 - [ ] Tracker creation remains pending separate authorization.

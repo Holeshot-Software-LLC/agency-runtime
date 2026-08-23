@@ -3702,3 +3702,44 @@ profile `linux-task-agency-router` and provider type `litellm`; routing records
 zero fallback. Actual answering model remains unavailable. Response SHA is
 `74038284...`; preserved transcript SHA is `da55b13b...`. The exact substantive
 restart-safety review and final integrity bundle remain next.
+
+## 2026-08-23 - OpenClaw scoped acceptance set passes
+
+The exact substantive prompt, `Review the installed OpenClaw Agency integration
+for restart-safety risks. Do not change anything and do not delegate.`,
+completed in native session `84deda15-df94-4aa8-8ed4-853ecd56ff99`. Store trace
+`5ba0b638-9db8-4144-8be0-2d9b17f6b51d`, run
+`ad2b1238-dd8f-49c9-9b30-2107baf7b499`, accepted routing
+`b5f22f42-4ddf-4a8b-85ed-8fb56c13e7b1`, and accepted terminal
+`5eb2e7fa-ff50-4728-b7d2-d6a497ff57b5` correlate. Telegram delivered both
+response chunks. Response SHA is `1bf6f61e...`; transcript SHA is
+`176811b4...`.
+
+The exact five-line header names `agency-steward`, `ai-evaluation-engineer`,
+and `ai-data-remediation-engineer`; no delegation; skill
+`openclaw-operations`; workforce inference through exact alias
+`task-agency-router` and profile `linux-task-agency-router`; and inference
+recruitment. Store skill row `a0b9a4ea-2a0c-441d-ae39-a946ff149c6f` and
+specialist rows `2762c670-30bb-4b9b-b3ad-4de5e87ed0f4` /
+`8367ed56-a2f2-43db-972f-423219b751e5` match the response.
+
+All three wrapper receipts used automatically selected OpenClaw profile
+`linux-task-agency-router`, provider type `litellm`, and exact requested
+alias/model-group `task-agency-router`; every provider attempt was applied and
+fallback count is zero. OpenClaw's separate native parent route remains
+`litellm/task-general` plus six unchanged fallbacks. Wrapper telemetry did not
+supply the actual answering model, so the alias is not promoted into that
+claim.
+
+No resident binding, delegation, or native-child evidence exists. Native tool
+evidence remained read-only. Final online Store backup SHA is `affd8f8e...`,
+with source and backup integrity `ok` and schema 47. Contractors remain 15;
+Agency config SHA `43367ec9...`, OpenClaw config SHA `3060c3ee...`, and launcher
+SHA `3090708c...` are unchanged from the install checkpoint. The redacted
+substantive artifact SHA is `acf1461b...`.
+
+OpenClaw now passes this package's installation, activation, header delivery,
+skill loading, and LiteLLM-backed parent-routing scope. Earlier failures remain
+preserved. This does not prove Rule 4 native-child delivery and does not move an
+AR-119 matrix cell. Hermes and Codex OAuth/config/canary, Claude, and ZCode
+remain untouched; Hermes is the next independent host.

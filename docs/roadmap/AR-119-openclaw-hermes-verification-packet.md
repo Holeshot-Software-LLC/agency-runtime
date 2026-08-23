@@ -1500,3 +1500,91 @@ evidence_artifact_sha256: 005630dc6fb457d7635a4e262a912b4e23581d011f125fc898f7df
 known_limit: exact substantive restart-safety proof and final integrity bundle pending
 hermes_and_protected_hosts: untouched
 ~~~
+
+### OpenClaw final scoped acceptance bundle
+
+~~~yaml
+host: openclaw
+checkout_sha: 8357df3cc572c629975dd7f3f9e171408928c799
+installed_checkout_sha: c0426ab967c102f25fb530bf6355f7f6ff11b45b
+clean_tree_at_live_evidence_checkpoint: true
+host_version: OpenClaw 2026.7.1-2 (0790d9f)
+profile_identity: openclaw -> linux-task-agency-router
+native_litellm_config_source_redacted: ~/.openclaw/openclaw.json; native provider and credential indirection retained; values excluded
+native_primary: litellm/task-general
+native_fallbacks: six original fallbacks unchanged
+litellm_base_url_source: effective Agency config profile linux-task-agency-router
+litellm_base_url: http://127.0.0.1:4000/v1
+credential_env_name: LITELLM_API_KEY
+credential_present_boolean: true
+agency_inference_profile: linux-task-agency-router
+agency_provider_type: litellm
+requested_alias: task-agency-router
+model_group: task-agency-router
+actual_model_and_receipt_source: unavailable; wrapper receipts report the requested alias only; no answering-model claim
+runtime_digest: 70239e65528b4828a3a992a0a857b0684976ec50d36c80c8d89bd0e4c0740d9d
+store_schema: 47
+install_result: 251c4349-f7e3-4640-980d-055b857c0abe; complete; Agency plugin only; installer did not restart gateway
+bundle_digest: ba344b92ad80265a6807a6fda278c1c803af20d2b9767416d41a98901b2bae84
+launcher_manifest_sha256: 3090708c390ecb5c6619137e328bae076f7372cc114d4b55b230e27555472250
+fresh_session_id: b815780c-23fb-4fdb-8731-aed6d162b769
+fresh_status_trace_id: 7f4aa31c-9d93-4199-bac0-b5818cea91de
+fresh_status_run_id: 526c86bd-ddca-4878-93a4-8bd09ca029a6
+first_response_artifact: /tmp/ar278-openclaw-eighth-live/status-evidence-redacted.json
+first_response_artifact_sha256: 0524fac40ff365aa48dca844f54489f3199468cfdb2e42714bd8a84e3408adf2
+first_response_sha256: a4c784dc9bf1025893bd04464da5c01ac7598b05a3a6fce480a74cd90577262c
+first_response_transcript_sha256: a2ec1af7e3bbe02d7c3a21d92ea38787a21116ae8cea4ff1d69aa9a3eeff38f4
+first_response_header_exact: agency-steward / none / none / requested execution alias task-general / deterministic
+skill_native_session_id: 31983848-8d75-4e8f-ae11-8b8087d8c429
+skill_trace_id: adff32ff-bbd0-4afd-befd-e5c647ac76fc
+skill_run_id: bcbbebd5-b35e-445f-a066-0298c0f27d44
+skill_name_and_store_row_id: tmux / 937189d5-d27c-4fea-8829-91e7995f2252
+skill_response_artifact: /tmp/ar278-openclaw-eighth-live/tmux-skill-evidence-redacted.json
+skill_response_artifact_sha256: 005630dc6fb457d7635a4e262a912b4e23581d011f125fc898f7df55c20d6776
+skill_header_exact: agency-steward, code-reviewer / none / tmux / workforce inference task-agency-router to linux-task-agency-router/task-agency-router wrapper / inference
+substantive_native_session_id: 84deda15-df94-4aa8-8ed4-853ecd56ff99
+agency_trace_id: 5ba0b638-9db8-4144-8be0-2d9b17f6b51d
+substantive_run_id: ad2b1238-dd8f-49c9-9b30-2107baf7b499
+substantive_response_artifact: /tmp/ar278-openclaw-eighth-live/restart-safety-evidence-redacted.json
+substantive_response_artifact_sha256: acf1461b2cc0f6e525378fecb8f3c281d2f9b0f2c8a82a139888cd9da4ef3c1b
+substantive_response_sha256: 1bf6f61e571b74d1a6e5b42dddcc92f2341cba41b48ba7840800a8eda3522fb3
+substantive_transcript_sha256: 176811b46e81eb7902c916bc837221ab4e0ebbac220e6fec328035833e46c379
+header_exact: |-
+  Agency/Agencies loaded: agency-steward, ai-evaluation-engineer, ai-data-remediation-engineer
+  Agency/Agencies delegated: none
+  Skills loaded: openclaw-operations
+  Actual Model selected: workforce inference: [router] task-agency-router -> linux-task-agency-router/task-agency-router (wrapper)
+  Recruited via: inference
+resident_binding_id: none
+routing_decision_ids:
+  - d8130eb2-d1fa-478e-84e3-bcff1dc6e0ed
+  - dce3ca84-d8be-4f29-8636-2beb2abc32e0
+  - b5f22f42-4ddf-4a8b-85ed-8fb56c13e7b1
+specialists_loaded_ids:
+  - a3c9d9ef-fdfe-4d02-b4f7-d0e7469f8ff2
+  - 2762c670-30bb-4b9b-b3ad-4de5e87ed0f4
+  - 8367ed56-a2f2-43db-972f-423219b751e5
+substantive_skill_name_and_store_row_id: openclaw-operations / a0b9a4ea-2a0c-441d-ae39-a946ff149c6f
+provider_receipt_ids:
+  - 10dcc23f-7cb6-4bb1-a1e1-6eaffad3cb5d
+  - e9fd64c1-7bf3-410c-b06b-b718ad159496
+  - 492a3fd7-e841-4dec-ae0b-a1be846d6f80
+  - 2f56154a-1fbc-4c6d-a4dd-b3a7c4ba66df
+  - bd407d85-5877-4400-8eee-4653728bf4a4
+  - 5a85f98a-dbb7-40bf-9b90-06bd86e66d51
+provider_attempt_status: applied; wrapper success; OpenClaw harness selected automatically
+fallback_count: 0
+delegation_rows: 0
+native_child_rows: 0
+timeout_or_failure_receipt: none for accepted proofs; earlier failures retained separately and not rewritten
+contractors_before_after: 15/15
+store_integrity_before_after: ok / ok
+pre_install_store_backup_sha256: 3cdf39fc6518bb2b70c1ed009dc5877648dce5c62a3676edbf6ae73cc785ba77
+final_store_backup_sha256: affd8f8ea4a5f8636e7a657b6314497267ff7d105fd1571e12dfa10bea836cdf
+agency_config_sha256: 43367ec9aa05a66fc2a60bb254f270836fb3616753769115fabb253a04d5d9f8
+openclaw_config_before_after_sha256: 17784e2e1dc7a55530cb3853bb2b6eed2339c7d2a7928fa987026b4dfbec0b65 / 3060c3ee95c193780eae92199516abf53525664b8d111c893cc349d4ca71d24b
+openclaw_config_semantic_delta: meta.lastTouchedAt only
+gateway_channels: RPC green; Telegram and Slack configured/enabled/connected/running/probe-green
+known_limit: actual answering model unavailable; no Rule 4 native-child proof; no AR-119 matrix-cell movement
+hermes_and_protected_hosts: untouched
+~~~
