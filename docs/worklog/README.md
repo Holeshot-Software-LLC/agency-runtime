@@ -1171,6 +1171,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `cab9cf33` | 2026-08-23 | docs(roadmap): checkpoint OpenClaw reset lifecycle install | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md), [AR-278](../roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md) | null |
 | `4a0248cf` | 2026-08-24 | docs(roadmap): record OpenClaw reset and status delivery | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md), [AR-278](../roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md) | null |
 | `1d0026fd` | 2026-08-24 | docs(openclaw): retain native context overflow failure | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md), [AR-278](../roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md) | null |
+| `630fc148` | 2026-08-24 | fix(openclaw): deliver correlated native errors | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md), [AR-278](../roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md) | [detail](2026-08-24-630fc148-deliver-correlated-openclaw-native-errors.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
