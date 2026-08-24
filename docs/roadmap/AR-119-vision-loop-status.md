@@ -4065,3 +4065,33 @@ candidate must improve the supported post-tool context's salience while
 retaining first-pass/no-rewrite, terminal evidence, full-payload binding, and
 all child-delivery checks. No live activation, substantive completion,
 delegation, Rule 4, or matrix-cell claim moves.
+
+## 2026-08-24 - OpenClaw refreshed-header truncation repair is locally ready
+
+Installed-host inspection proved the preceding failure was not native model
+disobedience. The awaited middleware returned a 100,000-character native read
+block and a separate 878-character Agency update block. OpenClaw's live
+4,000-character recovery projection uses proportional allocation with a zero
+minimum, leaving too little of the small block for the exact five-line header.
+The parent therefore authored from the only complete snapshot it received,
+and Agency correctly rejected that now-stale response.
+
+The first regression failed at exit 236. An initial same-block framing draft
+was then rejected in review because it exceeded OpenClaw's 100,000-character
+post-middleware text limit. The revised Agency-only implementation prefixes
+the refreshed context into the dominant first text block and splits the cloned
+model-visible result at UTF-16-safe host boundaries. The observed result is two
+validator-safe blocks, all native text and details are preserved, and the
+4,000-character zero-minimum projection retains every updated header line. If
+the host's 200-block ceiling leaves no space for a safe split, middleware
+framing returns no replacement and the existing finalization contract remains
+fail-closed; native evidence is never silently trimmed.
+
+Tests cover realistic five-line context, the observed 100,000-character shape,
+mixed valid blocks, 199-to-200 and exhausted-200 boundaries, original-object
+preservation, and a surrogate-pair split. The final focused slice passes 251
+with 1 intentional skip. Targeted Ruff and diff checks pass, and independent
+review against the installed validator and recovery projection reports no
+blocker. The candidate is not installed. Native `task-general`, Agency's exact
+`task-agency-router` profile, Hermes, and all protected hosts remain unchanged;
+no live delivery, delegation, Rule 4, or matrix-cell claim follows yet.

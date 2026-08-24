@@ -179,6 +179,25 @@ metadata and compiled prompt contain explicit evidence requirements.
   Telegram evidence remain pending. Codex OAuth/config/canary, Claude, and
   ZCode remain untouched; no matrix cell moved.
 
+### 2026-08-24 OpenClaw refreshed-header candidate checkpoint
+
+- Fresh OpenClaw status is retained as failed run `a4b27543...`, trace
+  `7e7a6318...`: Store row `3b9037a9...` recorded `openclaw-operations`, but
+  the native final copied the stale `Skills loaded: none` snapshot and terminal
+  `25cf1630...` correctly rejected it before Telegram delivery.
+- Installed-host inspection proves OpenClaw's 4,000-character,
+  zero-minimum proportional recovery projection truncated the separate
+  878-character updated context beside a 100,000-character native read result.
+  This is not a LiteLLM alias, Telegram ingress, or Store-attribution failure.
+- The reviewed Agency-only candidate prefixes the refreshed context into the
+  dominant first text block, uses UTF-16-safe 100,000-character splitting,
+  preserves observed native content/details, and fails closed if the native
+  200-block ceiling cannot admit the split.
+- Expected-red and the rejected over-limit draft remain preserved. The final
+  focused slice passes 251 tests with 1 intentional skip; targeted Ruff/diff
+  and installed-contract review pass. The candidate is not installed, Hermes
+  remains active and untouched, and no protected-host or model route changed.
+
 ## Approach
 
 Add a closed, bounded employment-contract v2 `execution_profile` containing

@@ -944,8 +944,22 @@ if (registeredHooks.has("after_tool_call")) process.exit(233);
 if (registeredToolResultMiddlewares.length !== 1) process.exit(234);
 const registration = registeredToolResultMiddlewares[0];
 if (JSON.stringify(registration.options?.runtimes) !== JSON.stringify(["openclaw"])) process.exit(235);
+toolHeaderContext = [
+  "[AGENCY FIRST-PASS FINALIZATION CONTRACT]",
+  "MANDATORY: the first and only natural final response must begin with the latest exact Store-backed header snapshot for this turn.",
+  "[AGENCY UPDATED HEADER SNAPSHOT v2]",
+  "Copy the exact five header lines below byte-for-byte as the first lines of your natural final response. The newest snapshot for this turn supersedes every earlier snapshot. After any tool call, use the latest [AGENCY UPDATED HEADER SNAPSHOT v2] appended to that tool result. Do not call a finalizer tool, do not emit NO_REPLY, and never guess changed values.",
+  "Agency/Agencies loaded: agency-steward",
+  "Agency/Agencies delegated: none",
+  "Skills loaded: openclaw-operations",
+  "Actual Model selected: requested execution alias: task-general",
+  "Recruited via: deterministic",
+  "[AGENCY FINALIZATION GATE]",
+  "Emit one natural final response from the latest snapshot. There is no correction pass.",
+].join("\\n");
+const nativeText = "x".repeat(100000);
 const originalResult = {
-  content: [{ type: "text", text: "native tool output" }],
+  content: [{ type: "text", text: nativeText }],
   details: { ok: true },
 };
 const adjusted = await registration.handler(
@@ -957,9 +971,124 @@ const adjusted = await registration.handler(
   },
   { runtime: "openclaw", sessionKey: "refresh-session", runId: "refresh-run" },
 );
-if (adjusted?.result?.content?.[0]?.text !== "native tool output") process.exit(236);
-if (adjusted.result.content[1]?.text !== toolHeaderContext) process.exit(237);
+if (adjusted?.result?.content?.length !== 2) process.exit(236);
+if (adjusted.result.content.some((block) => block.type === "text" && block.text.length > 100000)) process.exit(237);
+const framedText = adjusted.result.content.map((block) => block.text || "").join("");
+const expectedPrefix = `${toolHeaderContext}\n\n`;
+if (!framedText.startsWith(expectedPrefix)) process.exit(242);
+if (framedText.slice(expectedPrefix.length) !== nativeText) process.exit(243);
+if (originalResult.content.length !== 1 || originalResult.content[0].text !== nativeText) process.exit(252);
 if (adjusted.result.details?.ok !== true) process.exit(238);
+if (adjusted.result.details !== originalResult.details) process.exit(263);
+const projectedTextBlocks = adjusted.result.content.filter((block) => block.type === "text");
+const projectedTotal = projectedTextBlocks.reduce((total, block) => total + block.text.length, 0);
+const recoveryProjection = projectedTextBlocks.map((block) => {
+  const proportionalBudget = Math.max(1, Math.floor(4000 * (block.text.length / projectedTotal)));
+  return block.text.slice(0, Math.max(1, proportionalBudget - 128));
+}).join("\\n");
+if (!recoveryProjection.includes(toolHeaderContext)) process.exit(261);
+const mixedOriginal = {
+  content: [
+    { type: "image", data: "native-image", mimeType: "image/png" },
+    { type: "text", text: "first native text", citation: "keep-first" },
+    { type: "text", text: "last native text", citation: "keep-last" },
+    { type: "image", data: "native-image-tail", mimeType: "image/png" },
+  ],
+  details: { mixed: true },
+};
+const mixedAdjusted = await registration.handler(
+  {
+    toolCallId: "call-refresh-mixed",
+    toolName: "read",
+    args: { path: "/opt/openclaw/skills/mixed/SKILL.md" },
+    result: mixedOriginal,
+  },
+  { runtime: "openclaw", sessionKey: "refresh-mixed-session", runId: "refresh-mixed-run" },
+);
+if (mixedAdjusted?.result?.content?.length !== 4) process.exit(244);
+if (JSON.stringify(mixedAdjusted.result.content[0]) !== JSON.stringify(mixedOriginal.content[0])) process.exit(245);
+if (JSON.stringify(mixedAdjusted.result.content[3]) !== JSON.stringify(mixedOriginal.content[3])) process.exit(246);
+if (mixedAdjusted.result.content[1]?.text !== `${toolHeaderContext}\n\nfirst native text`) process.exit(247);
+if (mixedAdjusted.result.content[1]?.citation !== "keep-first") process.exit(248);
+if (mixedAdjusted.result.content[2]?.text !== "last native text") process.exit(249);
+if (mixedAdjusted.result.content[2]?.citation !== "keep-last") process.exit(250);
+if (mixedAdjusted.result.details?.mixed !== true) process.exit(251);
+const nativeResultIsValid = (result) => (
+  Array.isArray(result?.content)
+  && result.content.length <= 200
+  && result.content.every((block) => (
+    block?.type === "text"
+      ? typeof block.text === "string" && block.text.length <= 100000
+      : block?.type === "image"
+        && typeof block.mimeType === "string"
+        && typeof block.data === "string"
+  ))
+);
+if (!nativeResultIsValid(adjusted.result) || !nativeResultIsValid(mixedAdjusted.result)) process.exit(253);
+const boundaryImages = Array.from(
+  { length: 198 },
+  (_value, index) => ({ type: "image", data: `image-${index}`, mimeType: "image/png" }),
+);
+const boundaryOriginal = {
+  content: [{ type: "text", text: nativeText }, ...boundaryImages],
+  details: { boundary: true },
+};
+const boundaryAdjusted = await registration.handler(
+  {
+    toolCallId: "call-refresh-boundary",
+    toolName: "read",
+    args: { path: "/opt/openclaw/skills/boundary/SKILL.md" },
+    result: boundaryOriginal,
+  },
+  { runtime: "openclaw", sessionKey: "refresh-boundary-session", runId: "refresh-boundary-run" },
+);
+if (!nativeResultIsValid(boundaryAdjusted?.result)) process.exit(254);
+if (boundaryAdjusted.result.content.length !== 200) process.exit(255);
+if (!boundaryAdjusted.result.content[0].text.startsWith(expectedPrefix)) process.exit(256);
+if (boundaryAdjusted.result.content[0].text.length !== 100000) process.exit(257);
+if (JSON.stringify(boundaryAdjusted.result.content.slice(2)) !== JSON.stringify(boundaryImages)) process.exit(258);
+if (boundaryAdjusted.result.content.slice(0, 2).map((block) => block.text).join("").slice(expectedPrefix.length) !== nativeText) process.exit(262);
+if (boundaryOriginal.content[0].text !== nativeText) process.exit(259);
+const overflowBoundary = await registration.handler(
+  {
+    toolCallId: "call-refresh-overflow-boundary",
+    toolName: "read",
+    args: { path: "/opt/openclaw/skills/overflow/SKILL.md" },
+    result: {
+      content: [
+        { type: "text", text: nativeText },
+        ...Array.from({ length: 199 }, () => ({ type: "image", data: "i", mimeType: "image/png" })),
+      ],
+    },
+  },
+  { runtime: "openclaw", sessionKey: "refresh-overflow-session", runId: "refresh-overflow-run" },
+);
+if (overflowBoundary !== undefined) process.exit(264);
+const emojiPrefixCount = 99999 - expectedPrefix.length;
+const unicodeNative = `${"u".repeat(emojiPrefixCount)}😀tail`;
+const unicodeAdjusted = await registration.handler(
+  {
+    toolCallId: "call-refresh-unicode",
+    toolName: "read",
+    args: { path: "/opt/openclaw/skills/unicode/SKILL.md" },
+    result: { content: [{ type: "text", text: unicodeNative }] },
+  },
+  { runtime: "openclaw", sessionKey: "refresh-unicode-session", runId: "refresh-unicode-run" },
+);
+if (!nativeResultIsValid(unicodeAdjusted?.result)) process.exit(265);
+if (unicodeAdjusted.result.content.length !== 2) process.exit(266);
+if (!unicodeAdjusted.result.content[1].text.startsWith("😀")) process.exit(267);
+if (unicodeAdjusted.result.content.map((block) => block.text).join("") !== `${expectedPrefix}${unicodeNative}`) process.exit(268);
+const noTextBoundary = await registration.handler(
+  {
+    toolCallId: "call-refresh-no-text-boundary",
+    toolName: "read",
+    args: { path: "/opt/openclaw/skills/no-text/SKILL.md" },
+    result: { content: Array.from({ length: 200 }, () => ({ type: "image", data: "i", mimeType: "image/png" })) },
+  },
+  { runtime: "openclaw", sessionKey: "refresh-no-text-session", runId: "refresh-no-text-run" },
+);
+if (noTextBoundary !== undefined) process.exit(260);
 const call = bridgeCalls.find((payload) => payload.action === "post_tool_call");
 if (!call || call.includeHeaderContext !== true) process.exit(239);
 if (call.sessionId !== "refresh-session" || call.traceId !== "refresh-run") process.exit(240);

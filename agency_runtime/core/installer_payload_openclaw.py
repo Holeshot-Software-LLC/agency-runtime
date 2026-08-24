@@ -35,6 +35,8 @@ const MAX_OUTBOUND_PAYLOAD_DEPTH = 20;
 const MAX_TOOL_PAYLOAD_BYTES = 96 * 1024;
 const MAX_TOOL_PROJECTION_NODES = 2048;
 const MAX_TOOL_PROJECTION_BYTES = MAX_TOOL_PAYLOAD_BYTES;
+const MAX_OPENCLAW_MIDDLEWARE_CONTENT_BLOCKS = 200;
+const MAX_OPENCLAW_MIDDLEWARE_TEXT_CHARS = 100000;
 const TOOL_TRUNCATED = "[truncated]";
 const TERMINAL_REJECTION_TTL_MS = 10 * 60 * 1000;
 const MAX_TERMINAL_REJECTIONS = 128;
@@ -929,6 +931,52 @@ function readPreflightModel(event, ctx) {{
   return String(state?.model || "");
 }}
 
+function splitOpenClawMiddlewareText(text) {{
+  const chunks = [];
+  let offset = 0;
+  while (offset < text.length) {{
+    let end = Math.min(offset + MAX_OPENCLAW_MIDDLEWARE_TEXT_CHARS, text.length);
+    if (
+      end < text.length
+      && end > offset
+      && text.charCodeAt(end - 1) >= 0xd800
+      && text.charCodeAt(end - 1) <= 0xdbff
+      && text.charCodeAt(end) >= 0xdc00
+      && text.charCodeAt(end) <= 0xdfff
+    ) {{
+      end -= 1;
+    }}
+    chunks.push(text.slice(offset, end));
+    offset = end;
+  }}
+  return chunks;
+}}
+
+function frameToolResultWithHeader(content, context) {{
+  const prefix = `${{context}}\n\n`;
+  const firstTextIndex = content.findIndex(
+    (item) => item?.type === "text" && typeof item.text === "string",
+  );
+  if (firstTextIndex < 0) {{
+    if (content.length >= MAX_OPENCLAW_MIDDLEWARE_CONTENT_BLOCKS) return null;
+    return [...content, {{ type: "text", text: context }}];
+  }}
+  const first = content[firstTextIndex];
+  const chunks = splitOpenClawMiddlewareText(`${{prefix}}${{first.text}}`);
+  const additionalBlocks = chunks.length - 1;
+  if (content.length + additionalBlocks <= MAX_OPENCLAW_MIDDLEWARE_CONTENT_BLOCKS) {{
+    const replacements = chunks.map((text, index) => (
+      index === 0 ? {{ ...first, text }} : {{ type: "text", text }}
+    ));
+    return [
+      ...content.slice(0, firstTextIndex),
+      ...replacements,
+      ...content.slice(firstTextIndex + 1),
+    ];
+  }}
+  return null;
+}}
+
 function forgetPreflightContext(event, ctx) {{
   const key = preflightContextKey(event, ctx);
   if (key) preflightContexts.delete(key);
@@ -1067,10 +1115,12 @@ export default definePluginEntry({{
         && !Array.isArray(event.result)
       ) ? event.result : {{}};
       const content = Array.isArray(original.content) ? original.content : [];
+      const framedContent = frameToolResultWithHeader(content, context);
+      if (!framedContent) return undefined;
       return {{
         result: {{
           ...original,
-          content: [...content, {{ type: "text", text: context }}],
+          content: framedContent,
         }},
       }};
     }}, {{ runtimes: ["openclaw"] }});

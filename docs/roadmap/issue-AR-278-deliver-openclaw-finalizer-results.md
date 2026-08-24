@@ -568,6 +568,34 @@ Native transcript SHA is `78d096d5...`; trace artifact SHA is `6c9bc3bc...`;
 redacted correlated artifact SHA is `9a9e2a35...`. Do not retry this exact
 input against unchanged code/state.
 
+Installed-host inspection resolves the apparent model-compliance failure.
+OpenClaw admitted a 100,000-character native read result plus Agency's separate
+878-character refreshed-context block, then its 4,000-character recovery
+projection used proportional allocation with a zero minimum. Only a fragment
+of the separate block survived, so the native parent never received the five
+updated header lines. This is an Agency middleware-framing defect, not a
+Telegram, model-route, Store, or finalization defect.
+
+The expected-red first failed at exit 236 because the refreshed context was a
+second block. An initial in-block candidate was rejected during independent
+review because it exceeded OpenClaw's 100,000-character post-middleware block
+limit. The revised Agency-only candidate prefixes the refreshed context into
+the first native text block and splits that cloned model-visible result at
+UTF-16-safe host boundaries. The observed case becomes two valid blocks while
+preserving all native text; the dominant first block begins with the complete
+updated contract, so the zero-minimum recovery projection retains every exact
+header line. Native text/image order and result details remain unchanged. A
+result already at OpenClaw's 200-block ceiling fails closed when framing would
+require another block; Agency does not silently trim native evidence.
+
+Regression coverage includes the exact 100,000-character shape, realistic
+five-line updated context, 4,000-character zero-minimum projection, mixed valid
+text/image results, the 199-to-200 block boundary, 200-block refusal, original
+object preservation, and a surrogate-pair split boundary. The final focused
+OpenClaw slice passes 251 tests with 1 intentional skip; targeted Ruff and diff
+checks pass. The candidate is not installed, and no host or inference
+configuration changed.
+
 ## Approach
 
 Change only Agency's OpenClaw adapter as specified by ADR-0166 and ADR-0167. Do not expose

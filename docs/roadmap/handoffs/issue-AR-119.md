@@ -68,7 +68,7 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 
 ## checkpoint
 
-- Branch `codex/ar278-openclaw-one-pass` is at clean failure-evidence ledger checkpoint `bdc3025f`; `origin/main` is `4a326773`, `f76050d7` is an ancestor, and Agency 0.1.0 imports from this checkout.
+- Branch `codex/ar278-openclaw-one-pass` is based on clean failure-evidence ledger checkpoint `01a8ad24`; `origin/main` is `4a326773`, `f76050d7` is an ancestor, and Agency 0.1.0 imports from this checkout.
 - Agency-only OpenClaw install `97fd0d49-e833-458a-a4b6-fb818761f212` binds bundle `97f95751...`, runtime `145ac94d...`, and launcher SHA `9adc2a85...`. The installer left the gateway stopped; native restart is RPC- and Telegram-probe-green with zero restarts.
 - OpenClaw remains audited 2026.7.1-2 on native `litellm/task-general` plus six unchanged fallbacks. Agency alone uses `linux-task-agency-router`, provider type `litellm`, and exact alias/model-group `task-agency-router`; no protected-host route changed.
 - The differing reset-session repair delivered `/new` with one-use consumption. Fresh session `130e58cd...` completed exact status as trace `58bce9a1...`, terminal `9d7d7372...`, and `openclaw-operations` row `b2d2f4b8...`; its deterministic header and Telegram delivery pass.
@@ -85,6 +85,8 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 - Exact first `agency status` created run `a4b27543...`, trace `7e7a6318...`, and abstained routing `f7bc2f7e...`. Agency recorded `openclaw-operations` row `3b9037a9...` and appended the updated header to the awaited tool result, but native `task-general` authored the stale initial header with `Skills loaded: none`.
 - Finalization `25cf1630...` correctly closed `response_invalid` with `skills_loaded` missing; Telegram queued no reply. There are zero Agency model receipts, specialists, resident bindings, workers, native-child rows, or delegation rows. Transcript / trace / redacted artifact SHAs are `78d096d5...` / `6c9bc3bc...` / `9a9e2a35...`.
 - Store integrity remains `ok`, schema 47, contractors remain 15, and launcher SHA remains `9adc2a85...`. OpenClaw and Hermes services remain active; Hermes stays untouched as break-glass.
+- Root cause is OpenClaw's zero-minimum 4,000-character projection truncating the separate 878-character update beside a 100,000-character read. The reviewed Agency-only candidate prefixes it into the dominant text, splits safely at host limits, and fails closed at block-cap overflow.
+- Expected-red and an over-limit draft are retained. Focused tests pass 251 / 1 skip; Ruff/diff and installed-contract review pass. Nothing is installed or reconfigured.
 - Hermes install/activation evidence and its retained `mcp` host-attribution defect remain unchanged in the verification packet. Correct Hermes attribution and substantive Agency routing are pending until OpenClaw passes.
 
 ## completed-evidence
@@ -97,7 +99,7 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 
 ## exact-blocker
 
-Both the original restart-safety input and fresh status input are terminally retained and cannot be retried unchanged. Repair updated-header salience through an Agency-only supported seam before another fresh session; do not touch Hermes.
+Both the original restart-safety input and fresh status input are terminally retained and cannot be retried against unchanged code/state. Install the reviewed Agency-only framing candidate into natively stopped OpenClaw before another fresh session; do not touch Hermes.
 
 ## traps (machine-specific; do not rediscover)
 
@@ -110,9 +112,9 @@ Both the original restart-safety input and fresh status input are terminally ret
 
 ## next-bounded-work-package
 
-1. Add expected-red coverage for an OpenClaw parent that ignores the updated post-tool header, then make the smallest Agency-only supported-context repair without rewriting or a second model pass.
-2. Install the candidate into stopped OpenClaw and use another fresh session with a genuinely changed status/control work unit.
-3. Prove the changed three-read substantive turn; only after OpenClaw passes, continue Hermes.
+1. Commit the reviewed refreshed-header framing candidate and its worklog ledger.
+2. Back up state, install Agency only into natively stopped OpenClaw, restart natively, and recheck all native-route and protected-host invariants.
+3. Use a fresh session to prove status, harmless skill loading, and the changed three-read substantive turn; only after OpenClaw passes, continue Hermes.
 
 ## same-task-continuity
 

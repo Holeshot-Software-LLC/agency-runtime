@@ -2103,3 +2103,51 @@ delegation_proven: false
 matrix_cell_moved: false
 protected_hosts: Codex OAuth/config/canary, Claude, ZCode, and Hermes untouched
 ~~~
+
+### OpenClaw refreshed-header truncation candidate
+
+The retained fresh-status failure is now isolated to OpenClaw's model-visible
+tool-result projection. A 100,000-character native read result and separate
+878-character Agency update entered the host's 4,000-character,
+`minKeepChars=0` recovery path. The smaller block lost the exact five header
+lines before the parent model ran; Store mutation and fail-closed finalization
+were correct.
+
+The reviewed Agency-only candidate prefixes the update into the first native
+text block and splits only a cloned result at UTF-16-safe 100,000-character
+boundaries. Against installed OpenClaw 2026.7.1-2, the observed shape validates
+as blocks of 100,000 and 880 characters. All native text remains reconstructable
+after removing the prefix. The exact recovery projection yields 3,965 and 71
+model-visible characters, with every exact updated header line in the dominant
+first block. At an exhausted 200-block boundary the candidate returns no
+replacement and preserves fail-closed finalization instead of trimming native
+evidence.
+
+~~~yaml
+host: openclaw
+candidate_base_checkout: 01a8ad240267
+host_version_contract: OpenClaw 2026.7.1-2
+failure_run_id: a4b27543-7644-4cad-bd0d-2ef9ec9f7581
+failure_trace_id: 7e7a6318-5b6a-4afc-b8a1-0ec57103bd1f
+failure_skill_row_id: 3b9037a9-6ea8-48e1-a9cf-39aeb520b744
+failure_terminal_id: 25cf1630-de51-4f21-9050-9da41e01c0ae
+root_cause: separate refreshed context lost to zero-minimum proportional recovery projection
+expected_red: exit 236; separate block did not satisfy dominant-block framing contract
+rejected_draft: exceeded native 100000-character post-middleware text-block limit
+candidate_behavior: prefix first text; UTF-16-safe split; preserve native content/details; fail closed at exhausted 200-block cap
+installed_validator_blocks: [100000, 880]
+recovery_projection_cap: 4000
+recovery_projection_minimum: 0
+recovery_projection_blocks: [3965, 71]
+updated_five_line_header_survived: true
+focused_tests: 251 passed; 1 intentional skip
+targeted_ruff_and_diff: pass
+independent_review: no blocker
+candidate_installed: false
+native_primary: litellm/task-general; unchanged
+agency_profile_alias: linux-task-agency-router / task-agency-router; unchanged
+hermes_break_glass: active and untouched
+delegation_proven: false
+matrix_cell_moved: false
+protected_hosts: Codex OAuth/config/canary, Claude, ZCode, and Hermes untouched
+~~~
