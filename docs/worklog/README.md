@@ -1176,6 +1176,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `a5a697bd` | 2026-08-24 | docs(roadmap): record fresh OpenClaw reset | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md), [AR-278](../roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md) | null |
 | `efe00ae9` | 2026-08-24 | docs(openclaw): retain stale skill header failure | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md), [AR-278](../roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md) | null |
 | `d7187e80` | 2026-08-24 | fix(openclaw): preserve refreshed headers through truncation | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md), [AR-278](../roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md) | [detail](2026-08-24-d7187e80-preserve-openclaw-refreshed-headers-through-truncation.md) |
+| `00d5ac27` | 2026-08-24 | docs(roadmap): checkpoint OpenClaw header framing install | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md), [AR-278](../roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md) | [detail](2026-08-24-00d5ac27-checkpoint-openclaw-header-framing-install.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
