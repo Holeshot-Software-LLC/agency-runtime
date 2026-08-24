@@ -4207,3 +4207,37 @@ can import this checkout, so the actual answering model remains unavailable;
 the wrapper alias is not promoted into that claim. No resident binding,
 delegation, child, Rule 4, or AR-119 matrix-cell proof exists. Every earlier
 failed attempt remains recorded and was not retried unchanged.
+
+## 2026-08-24 - Hermes Agency-only install is restart-ready on the current checkout
+
+Hermes Agent v0.20.4 uses effective home `/home/holeshot/.hermes-nexus` and
+the owning custom service `hermes-gateway-nexus.service`. Before mutation, the
+service was stopped normally. Native `task-general`, its exact five fallbacks,
+config SHA `95b87b7f...`, and environment SHA `792fd43a...` remained unchanged.
+The native plugin inventory also remained byte-identical at SHA
+`a675e845...`: 59 plugins discovered and the same six enabled before and after.
+
+Source and online-backup Store images are byte-identical at SHA
+`02a76504f72946b7181619642e5b454ee49d0b9f9421632e1fe6f24a1b8ffbba`;
+both integrity checks are `ok`, schema remains 47, and contractors remain 15.
+Agency-only install `0a3d141a-4e32-40d2-8c3d-6a7e296eb55f` completed from
+current checkout `80d686a27f9955e1d2c9aa5f454947c45145b052` with bundle
+`45b76c0e45cddaa0f0d6caec1855db93013bdf0fb78ec6616827abde8d7322c7`,
+runtime `573a6a140cb23a60b48ba4b6ce638cccba6854fa11acd701aa05c9cc47ce1ab4`,
+and launcher SHA
+`e65a078479cc4f6196b3b5b61f15c15ffd36bf9cda0f5082b8bc844b7a4ed9e7`.
+The install excluded the dashboard and did not restart Hermes.
+
+Post-install plugin doctor reports eight registered hooks, zero tools, and no
+inventory drift. The same owning service was restarted natively and is
+`active/running`, with zero restarts and result `success`. The configured
+credential environment name is `LITELLM_API_KEY`; it is populated in the live
+service, and its value was never read or retained. Agency config remains
+unchanged and retains the Hermes harness route to `linux-task-agency-router`,
+provider type `litellm`, and exact alias/model-group `task-agency-router`.
+
+Fresh reset, exact first status, harmless skill, substantive parent routing,
+Store/header correlation, and Telegram delivery are pending. This install
+checkpoint makes no activation, inference-attribution, delegation, child,
+Rule 4, or matrix-cell claim. OpenClaw's accepted proof and every earlier
+failure remain unchanged.

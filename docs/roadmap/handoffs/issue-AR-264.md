@@ -64,6 +64,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 - Changed substantive run `72314429...`, trace `50c11095...`, routing `21b8b545...`, specialist rows `4bb8ce63...` / `1707c674...`, and terminal `803465de...` delivered `agency-steward, section-508-accessibility-specialist, ai-evaluation-engineer / none / none / workforce inference task-agency-router -> linux-task-agency-router/task-agency-router wrapper / inference`.
 - Its four provider attempts comprise three applied and one contract-invalid on the same profile; cross-provider fallback is zero. No delegation or native child exists. Actual answering model is unavailable because the LiteLLM callback is absent. Transcript SHA is `93dcbc...`.
 - Final Store backup `02a76504...` has integrity `ok`, schema 47; contractors remain 15. Config, runtime `573a6a14...`, launcher `d65af026...`, and protected hosts are unchanged. OpenClaw acceptance passes; Rule 4/delegation is unproven and no matrix cell moved.
+- Hermes reinstall preflight `/tmp/ar119-hermes-final-preinstall.Mr95N6` found no active turn (last activity 13 hours earlier), Hermes v0.20.4, effective home `.hermes-nexus`, native `litellm/task-general` plus the exact five unchanged fallbacks, config SHA `95b87b7f...`, environment SHA `792fd43a...`, launcher `7c033c97...`, and runtime `70239e65...`.
+- Store pre/post install backup SHA is `02a76504...`, integrity `ok`, schema 47; contractors remain 15. Plugin inventory stayed 59 total / 6 enabled with SHA `a675e845...`. The owning `hermes-gateway-nexus` service was stopped and the gateway was down; systemd recorded a failed unit exit during stop.
+- Agency-only install `0a3d141a...` completed without dashboard or restart: bundle `45b76c0e...`, runtime `573a6a14...`, launcher `e65a0784...`. Hermes config/environment and Agency config hashes are unchanged; plugin doctor reports eight hooks and zero tools.
+- The same Hermes service restarted active/running with zero restarts and result `success`. Fresh live-session status, corrected attribution, skill, substantive routing, and delivery are pending; the earlier attribution failure remains retained.
 
 ## completed-evidence
 
@@ -71,20 +75,20 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 - Install/launcher provenance, contractor preservation, config invariants, final Store integrity, exact alias, and zero fallback are current.
 - Native `task-general` and Agency `task-agency-router` remain separate; no actual answering model is invented from wrapper receipts.
 - The package proves parent routing only, not Rule 4 native-child delivery or a matrix-cell transition.
-- Hermes install, activation, header, and skill evidence pass; corrected native-host attribution and substantive Agency routing remain pending.
+- Hermes is reinstalled and activated from the current runtime; fresh live evidence remains pending.
 
 ## exact-blocker
 
-OpenClaw has no remaining host-scoped blocker. Hermes still needs corrected native-host attribution and substantive Agency routing; preserve all failed history.
+OpenClaw has no remaining blocker. Hermes needs a fresh session proving corrected attribution, skill, substantive routing, Store correlation, and delivery.
 
 ## same-task-continuity
 
-Continue from the clean OpenClaw acceptance checkpoint into Hermes only.
+Continue from the clean Hermes reinstall checkpoint into fresh live proof.
 
 ## next-bounded-work-package
 
-1. Preserve Hermes effective home, native routes, plugin inventory, and installed Agency bridge.
-2. Prove corrected Hermes attribution, exact Agency routing, Store correlation, and Telegram delivery.
+1. Create one completely fresh Hermes session without changing native routes.
+2. Prove status, corrected attribution, skill, exact Agency routing, Store correlation, and delivery.
 3. Do not claim Rule 4 or move the matrix without native-child delivery evidence.
 
 ## verification

@@ -253,6 +253,24 @@ metadata and compiled prompt contain explicit evidence requirements.
   a child, so contractor execution, native-child delivery, Rule 4, and an
   AR-119 matrix cell remain unproven.
 
+### 2026-08-24 Hermes same-checkout reinstall checkpoint
+
+- Hermes Agent v0.20.4 remains at effective home
+  `/home/holeshot/.hermes-nexus`. Its native model and fallback configuration,
+  native config hash, environment-file hash, and pre-existing plugin inventory
+  remain unchanged at 59 discovered / 6 enabled. No protected-host
+  configuration changed.
+- WAL-consistent pre/post Store backups are byte-identical at SHA
+  `02a76504...`; source and backup integrity are `ok`, schema is 47, and all 15
+  packaged contractors remain present.
+- Agency-only install `0a3d141a...` completed from the same checkout with
+  bundle `45b76c0e...`, runtime `573a6a14...`, and launcher SHA `e65a0784...`.
+  Plugin doctor reports eight hooks, zero tools, and no registration failure.
+  The native Hermes service restarted active/running with zero restarts.
+- Fresh Hermes status, skill, workforce inference, final-header, and transport
+  proof remain pending. No actual answering model, delegation, native-child,
+  Rule 4, or AR-119 matrix claim is made from this reinstall checkpoint.
+
 ## Approach
 
 Add a closed, bounded employment-contract v2 `execution_profile` containing

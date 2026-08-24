@@ -2300,3 +2300,44 @@ type `litellm`, and exact alias/model-group `task-agency-router`; cross-provider
 fallback was zero. The proxy callback is absent, so no actual answering model
 is claimed. No delegation, native child, Rule 4 delivery, or matrix-cell proof
 exists. Hermes is the only next host package; protected hosts remain untouched.
+
+### Hermes current-checkout Agency install checkpoint
+
+~~~yaml
+host: hermes
+checkout_sha: 80d686a27f9955e1d2c9aa5f454947c45145b052
+host_version: Hermes Agent v0.20.4 (2026.8.18)
+effective_home: /home/holeshot/.hermes-nexus
+owning_service: hermes-gateway-nexus.service
+native_primary: task-general
+native_fallback_count: 5; exact prior list unchanged
+native_config_sha256: 95b87b7fc0427ad4e3da4f5f468054cf9f7ddba679d1bb606b782a13e1a0172d; unchanged
+native_environment_sha256: 792fd43a5312d1c1d69f6afbeef3bbdd1a8198ee03ac06b4b3b6dfa20ec2f324; unchanged
+plugin_inventory_before_after: 59 discovered / 6 enabled; unchanged
+plugin_inventory_before_after_sha256: a675e84579e0b48097e0ea2d3a3df7f5532615f79a47af7e0bfce70c11b0e9b1 / same
+store_backup_before_after_sha256: 02a76504f72946b7181619642e5b454ee49d0b9f9421632e1fe6f24a1b8ffbba / same
+store_integrity_before_after: ok / ok
+store_schema: 47
+contractors_before_after: 15 / 15
+service_before_install: owning custom service stopped; gateway exited, while systemd retained failed/exit-code for the stop receipt
+install_id: 0a3d141a-4e32-40d2-8c3d-6a7e296eb55f
+install_result: complete; Agency only; --no-dashboard; installer did not restart Hermes
+bundle_digest: 45b76c0e45cddaa0f0d6caec1855db93013bdf0fb78ec6616827abde8d7322c7
+runtime_digest: 573a6a140cb23a60b48ba4b6ce638cccba6854fa11acd701aa05c9cc47ce1ab4
+launcher_manifest_sha256: e65a078479cc4f6196b3b5b61f15c15ffd36bf9cda0f5082b8bc844b7a4ed9e7
+launcher_source_root: current checkout agency_runtime package
+plugin_doctor: 8 hooks; 0 tools; installed inventory recognized
+service_after_restart: same owning service active/running; NRestarts=0; Result=success
+credential_env_name: LITELLM_API_KEY
+credential_present_boolean: true in live Hermes service; value never read or emitted
+agency_inference_profile: linux-task-agency-router
+agency_provider_type: litellm
+requested_alias_model_group: task-agency-router
+fresh_reset_status_skill_substantive_proof: pending
+attribution_proven: false
+delegation_proven: false
+rule4_proven: false
+matrix_cell_moved: false
+known_limit: installation and restart only; no live Hermes header, Store routing, skill, substantive response, or transport-delivery proof yet
+protected_evidence: OpenClaw accepted proof and all earlier failures preserved; Codex OAuth/config/canary, Claude, and ZCode untouched
+~~~
