@@ -56,10 +56,11 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 - Hermes native model/provider/fallbacks, environment hash, and nine prior plugins remain unchanged. Config SHA `95b87b7f...` reflects only `agency-preflight` enablement with tool override false. Plugin doctor proves eight hooks and zero tools. The installer did not restart Hermes; the exact Nexus service is now active/running after native restart.
 - Fresh Hermes status still has the retained `mcp` attribution defect. OpenClaw two-gate repair `3e71247a` / `ff1e9594` installed as `711f3174-88b1-4b9a-948d-a47f316e6744`; native routes stayed exact and Hermes remained active.
 - Diagnostic install `2949e798-5500-45c9-956b-4b5a97aa802b` traced differing lifecycle sessions; artifact SHA `0fe6ae7a...`. Repair `c671dd35` / `278705da` installed Agency-only as `97fd0d49-e833-458a-a4b6-fb818761f212`; bundle `97f95751...`, runtime `145ac94d...`, launcher `9adc2a85...`. RPC/Telegram green, zero restarts; Hermes active.
+- Repaired `/new` delivered and consumed one authorization. Fresh status session `130e58cd...`, trace `58bce9a1...`, accepted finalization `9d7d7372...`, `openclaw-operations` row `b2d2f4b8...`, and native Telegram outbound pass. Deterministic control correctly has zero Agency model receipts.
 
 ## completed-evidence
 
-- Prior OpenClaw evidence remains valid; current acceptance awaits one content-free phase trace and exact repair.
+- OpenClaw reset, activation, exact header, skill row, and native Telegram delivery pass; substantive Agency inference remains pending.
 - Install/launcher provenance, contractor preservation, config invariants, final Store integrity, exact alias, and zero fallback are current.
 - Native `task-general` and Agency `task-agency-router` remain separate; no actual answering model is invented from wrapper receipts.
 - The package proves parent routing only, not Rule 4 native-child delivery or a matrix-cell transition.
@@ -67,8 +68,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 
 ## exact-blocker
 
-Prove one changed OpenClaw `/new` acknowledgement, then continue Hermes
-separately.
+Prove the exact OpenClaw restart-safety review through `task-agency-router`,
+then continue Hermes separately.
 
 ## same-task-continuity
 
@@ -76,7 +77,7 @@ Continue from the clean Hermes install checkpoint into fresh live evidence.
 
 ## next-bounded-work-package
 
-1. Prove `/new` through the installed traced OpenClaw repair.
+1. Prove the exact substantive OpenClaw request and provider receipts.
 2. Reinstall Hermes only after OpenClaw passes; prove native-host attribution.
 3. Run Hermes's exact configuration-drift review through `task-agency-router` with zero fallback.
 

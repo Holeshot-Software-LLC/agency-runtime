@@ -460,6 +460,22 @@ restart is RPC-green with zero restarts and Telegram configured, running, and
 probe-green. OpenClaw retains `litellm/task-general` plus the same six
 fallbacks; Hermes remains active and unmodified. One changed `/new` is pending.
 
+The repaired `/new` then delivered. The content-free trace proves
+reply-payload observation, later authorization, reply acceptance, sessionless
+final-message acceptance, and one-use consumption to authorization count zero.
+Fresh native session `130e58cd-38c3-48de-baae-d124b4689ec2` then completed
+exact `agency status` as Store run `7e907028-5ffb-4639-8b89-08f1c96001ab`,
+trace `58bce9a1-0272-4076-a640-652f633e6e37`, abstained routing
+`92befae5-f8e5-41ca-9442-d4ab9cd1534c`, `openclaw-operations` skill row
+`b2d2f4b8-dcce-443b-9678-0a1af706b75d`, and accepted finalization
+`9d7d7372-c0ce-4125-bd4f-7c93fae2458a`. The exact header names native
+`task-general` and deterministic recruitment; zero Agency model receipts and
+zero delegation/native-child rows preserve that control-only meaning. Native
+Telegram outbound followed completion with no channel error. Response and
+transcript SHAs are `ecac2803...` / `4c1cc3f7...`; Store integrity remains
+`ok`. No resident binding exists for this control turn. Substantive
+`task-agency-router` proof remains pending.
+
 ## Approach
 
 Change only Agency's OpenClaw adapter as specified by ADR-0166. Do not expose
@@ -533,6 +549,7 @@ Hermes and all protected hosts remain outside the mutation boundary.
 - [x] Preserve the fourth non-delivery and its content-free live phase trace.
 - [x] Add expected-red coverage for differing reset-lifecycle sessions and a bounded repair.
 - [x] Install the exact traced repair with Store/config/launcher provenance.
-- [ ] Prove one fresh `/new` acknowledgement through the installed repair.
-- [ ] Apply the exact traced repair and prove a fresh `/new` acknowledgement.
+- [x] Prove one fresh `/new` acknowledgement through the installed repair.
+- [x] Deliver fresh exact status with matching Store skill/finalization and native Telegram receipts.
+- [ ] Prove the exact substantive restart-safety request through `task-agency-router`.
 - [ ] Tracker creation remains pending separate authorization.

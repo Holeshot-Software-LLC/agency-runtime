@@ -1752,7 +1752,24 @@ registered_hooks: 11; required set complete
 gateway_restart: active/running; RPC green; zero restarts
 telegram_probe: configured; running; credential probe ok
 hermes_break_glass: active and unchanged
-fresh_changed_new: waiting_on_operator
+fresh_changed_new: delivered; content-free trace proves reply verify plus one-use final consume
+fresh_session_id: 130e58cd-38c3-48de-baae-d124b4689ec2
+agency_status_run_id: 7e907028-5ffb-4639-8b89-08f1c96001ab
+agency_trace_id: 58bce9a1-0272-4076-a640-652f633e6e37
+routing_decision_ids: [92befae5-f8e5-41ca-9442-d4ab9cd1534c]
+routing_status: abstained; deterministic control
+resident_binding_id: none
+specialists_loaded_ids: []
+skill_name_and_store_row_id: openclaw-operations / b2d2f4b8-dcce-443b-9678-0a1af706b75d
+finalization_id_status: 9d7d7372-c0ce-4125-bd4f-7c93fae2458a / accept completed
+header_exact: agency-steward / none / openclaw-operations / requested execution alias task-general / deterministic
+agency_model_receipts: 0; expected for deterministic status control
+native_telegram_delivery: outbound timestamp followed completion; no channel error
+first_response_artifact: /tmp/ar119-openclaw-session-lifecycle-preinstall.jOnDJ8/openclaw-fresh-status-response.txt
+first_response_sha256: ecac2803012cd780e3a00aee2e81d9f82bdcc47bc0aa6d78288b4902b01fc17d
+native_transcript_sha256: 4c1cc3f7913c49ec497e29f41d2f39273ba4ebf72be1eb1d37d8f7a25b1e6e57
+store_integrity_after_status: ok
+substantive_task_agency_router_proof: pending
 delegation_proven: false
 matrix_cell_moved: false
 protected_hosts: Codex OAuth/config/canary, Claude, ZCode, and Hermes untouched

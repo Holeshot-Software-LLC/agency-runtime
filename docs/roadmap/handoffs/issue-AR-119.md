@@ -89,10 +89,11 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 - Changed `/new` created session `25ed26a0-8dc8-433d-9bc1-3afdbe503ffd`; ingress/reset completed, but no acknowledgement, outbound receipt, or Agency run exists and the operator confirmed no delivery. Log/command/artifact SHAs: `716f2bd1...` / `c8b214cf...` / `ea9d4c9e...`.
 - Diagnostic install `2949e798-5500-45c9-956b-4b5a97aa802b` traced reply-payload before reset authorization; both sessions were present but differed, so the exact-key-only branch timed out. No ack/run/routing; redacted artifact SHA `0fe6ae7a...`.
 - Repair `c671dd35` / `278705da` installed Agency-only as `97fd0d49-e833-458a-a4b6-fb818761f212`; bundle `97f95751...`, runtime `145ac94d...`, launcher `9adc2a85...`. RPC/Telegram probe green, zero restarts; native routes exact and Hermes active.
+- Repaired `/new` delivered with one-use consumption. Fresh status session `130e58cd...`, trace `58bce9a1...`, terminal `9d7d7372...`, skill `b2d2f4b8...`, and Telegram outbound pass; deterministic header names native `task-general`.
 
 ## completed-evidence
 
-- OpenClaw's prior scoped acceptance evidence remains valid; current acceptance is blocked on one content-free live phase trace.
+- OpenClaw reset, activation, exact header, skill row, and native Telegram delivery now pass; exact substantive Agency inference remains pending.
 - `task-agency-router` remains confined to Agency workforce inference; OpenClaw's native parent stays `task-general`. No Codex, Claude, ZCode, or Hermes route changed.
 - Install provenance, config invariants, credential-name presence, contractor preservation, final Store integrity, and zero fallback are retained.
 - This package does not prove Rule 4 native-child delivery and does not move an AR-119 matrix cell.
@@ -100,8 +101,8 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 
 ## exact-blocker
 
-Send one changed OpenClaw `/new` and prove its acknowledgement before touching
-Hermes.
+Send the exact OpenClaw restart-safety review and prove `task-agency-router`
+before touching Hermes.
 
 ## traps (machine-specific; do not rediscover)
 
@@ -114,7 +115,7 @@ Hermes.
 
 ## next-bounded-work-package
 
-1. Prove `/new` acknowledgement plus changed status/tool delivery.
+1. Prove the exact substantive OpenClaw request through `task-agency-router`.
 2. Preserve Store/provider and native Telegram receipts.
 3. Only then reinstall Hermes and prove native-host attribution plus exact `task-agency-router` substantive routing.
 

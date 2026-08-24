@@ -3928,5 +3928,16 @@ stopped. Bundle `97f95751...`, runtime `145ac94d...`, and launcher SHA
 `9adc2a85...` bind to the checkout. Store backup SHA `5ca1ffbe...` has
 source/backup integrity `ok`, schema 47; contractors remain 15. Native restart
 is RPC-green, Telegram probe-green, and zero-restart. Native routes remain
-exact and Hermes stays active. One changed `/new` is pending; no matrix cell
-moves.
+exact and Hermes stays active.
+
+The repaired `/new` delivered. Its trace proves the earlier reply gate waited,
+accepted the later unique authorization, and the sessionless final message
+consumed it once to count zero. Fresh session `130e58cd...` then completed
+exact status as run `7e907028...`, trace `58bce9a1...`, abstained routing
+`92befae5...`, `openclaw-operations` row `b2d2f4b8...`, and accepted terminal
+`9d7d7372...`. The exact deterministic header names native `task-general`;
+zero Agency model receipts and zero delegation/native-child rows preserve its
+control-only scope. Native Telegram outbound followed completion. Response /
+transcript SHAs are `ecac2803...` / `4c1cc3f7...`; Store integrity is `ok`.
+No resident binding exists for this control turn. Substantive
+`task-agency-router` proof remains pending; no matrix cell moves.
