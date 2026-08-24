@@ -3848,3 +3848,30 @@ skip. This candidate is not installed yet.
 No host-native route, LiteLLM alias, Codex OAuth/config/canary, Claude, ZCode,
 or Hermes state changed. No delegation or Rule 4 evidence was produced, and no
 AR-119 matrix cell moves.
+
+## 2026-08-23 - OpenClaw reset reply exposes the earlier outbound gate
+
+Clean pair `d4d4b829` / `99b1380d` was installed into stopped OpenClaw only
+as Agency install `5e1a074e-81a6-4fdf-a464-937c66d9b400`. Bundle
+`b0010f67...`, runtime `ebbf13cd...`, and launcher SHA `7f393f2a...` bind to
+the checkout. The installer left the gateway stopped. Native restart became
+RPC-green after one retained warm-up miss, with zero restarts. OpenClaw remains
+on `litellm/task-general` plus the exact six fallbacks; Hermes stayed active.
+
+The changed `/new` created native session
+`1b4c7016-cac1-4aca-8639-075038d5b982`, but no acknowledgement was delivered
+and no Agency run followed. Native log SHA `e66fb292...` and redacted artifact
+SHA `22f88b59...` preserve the failure. Installed flow inspection then showed
+that the native reset reply traverses `reply_payload_sending` before
+`message_sending`. The first repair covered only the latter, so the earlier
+final-only gate canceled the acknowledgement.
+
+The complete two-gate regression failed at exit 30 before implementation. The
+bounded repair makes the reply-payload gate verify but not consume the same
+exact reset authorization; the final message gate remains the one-use
+consumer. Concurrent ambiguity and replay remain blocked. The OpenClaw slice
+is 246 passed / 1 intentional skip. This candidate is not installed.
+
+Agency configuration, LiteLLM alias routing, Codex OAuth/config/canary,
+Claude, ZCode, and Hermes remain untouched. This produces no delegation or
+Rule 4 evidence and moves no AR-119 matrix cell.

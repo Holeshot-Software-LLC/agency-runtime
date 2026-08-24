@@ -1726,3 +1726,46 @@ delegation_proven: false
 matrix_cell_moved: false
 protected_hosts: Codex OAuth/config/canary, Claude, ZCode, and Hermes untouched
 ~~~
+
+### OpenClaw sessionless repair install and earlier-gate failure bundle
+
+~~~yaml
+host: openclaw
+checkout_sha: 99b1380d445aac111bef5c477f2850b320bfdf8d
+repair_commit: d4d4b8294346df8d063703bd27d27e394fa81d24
+host_version: OpenClaw 2026.7.1-2
+pre_install_store_backup: /tmp/ar119-openclaw-sessionless-preinstall.CObn63/agency-store.before.db
+pre_install_store_backup_sha256: 5ca1ffbefdea30f8882445d448dee518ca0b6dc68d23b57adb5b64f5b74dcd75
+store_integrity_source_backup: ok / ok
+store_schema: 47
+contractors_before_after_install: 15 / 15
+install_id: 5e1a074e-81a6-4fdf-a464-937c66d9b400
+install_result: complete; Agency only; installer left gateway stopped
+bundle_digest: b0010f677c300fc43b86819d3b3d199065f49d65f067caaa10895d358e1098c8
+runtime_digest: ebbf13cdf5827160d2e6daf314c79e3b2e07b030c792ff81e244ab72cc04bc59
+launcher_manifest_sha256: 7f393f2acbd61db5e293dffa45b6ed73ad22218d158e76be85cb353223ec41d9
+agency_config_sha256: 43367ec9aa05a66fc2a60bb254f270836fb3616753769115fabb253a04d5d9f8
+openclaw_config_before_after_sha256: 205465ad1ffeff70cee246a4a6001533fc063e88485ae0d81a090143634539b6 / 049aacc863b99343abc4bed221213ba185fee472be9e292783c779cfcbab8a76
+native_primary: litellm/task-general
+native_fallback_count: 6; exact prior list unchanged
+gateway_restart: first warm-up RPC miss retained; second RPC green; zero restarts
+telegram_probe: configured; running; credential probe ok
+hermes_break_glass: active and unchanged
+fresh_native_session_id: 1b4c7016-cac1-4aca-8639-075038d5b982
+operator_command: /new
+native_reset_applied: true
+acknowledgement_delivered: false
+post_send_agency_runs: 0
+native_log_event_sha256: e66fb2926e04a48840632eff96aa3469b4a4f4d3d592292fe2f35fa662d30dfb
+failure_artifact: /tmp/ar119-openclaw-sessionless-preinstall.CObn63/openclaw-reset-ack-second-failure-redacted.json
+failure_artifact_sha256: 22f88b593872ecac16718454f75947d639b00601beae67b4019c42ded684ff93
+root_cause: native acknowledgement crosses reply_payload_sending before message_sending; only the latter had the exact reset exception
+expected_red: complete two-gate flow failed at exit 30 before implementation
+candidate_rule: first gate verifies without consuming; final message gate remains the one-use consumer
+ambiguity_replay_wrong_text_expiry: fail closed
+focused_tests: 246 passed; 1 intentional skip
+candidate_installed: false
+delegation_proven: false
+matrix_cell_moved: false
+protected_hosts: Codex OAuth/config/canary, Claude, ZCode, and Hermes untouched
+~~~

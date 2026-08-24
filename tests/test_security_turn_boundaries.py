@@ -1174,6 +1174,79 @@ if (firstExact?.cancel === true || secondExact?.cancel === true) process.exit(28
 
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is not installed")
+def test_generated_openclaw_allows_reset_ack_through_both_outbound_gates(
+    tmp_path: Path,
+) -> None:
+    source = _openclaw_plugin_harness_source()
+    source += """
+const beforeReset = registeredHooks.get("before_reset");
+const replySeal = registeredHooks.get("reply_payload_sending");
+const messageSeal = registeredHooks.get("message_sending");
+if (
+  typeof beforeReset !== "function"
+  || typeof replySeal !== "function"
+  || typeof messageSeal !== "function"
+) process.exit(285);
+const context = { sessionKey: "native-reset-session", channelId: "telegram" };
+const payloadEvent = {
+  kind: "final",
+  payload: { text: "✅ New session started." },
+  sessionKey: "native-reset-session",
+};
+const raced = replySeal(payloadEvent, context);
+setTimeout(() => beforeReset({ reason: "new" }, context), 20);
+const payloadAllowed = await raced;
+if (
+  payloadAllowed?.cancel === true
+  || payloadAllowed?.payload?.text !== "✅ New session started."
+) process.exit(286);
+const messageAllowed = await messageSeal(
+  { content: payloadAllowed.payload.text, sessionKey: "native-reset-session" },
+  context,
+);
+if (
+  messageAllowed?.cancel === true
+  || messageAllowed?.content !== "✅ New session started."
+) process.exit(287);
+const replayPayload = await replySeal(payloadEvent, context);
+if (replayPayload?.cancel !== true) process.exit(288);
+
+beforeReset({ reason: "reset" }, { sessionKey: "reset-session-a" });
+beforeReset({ reason: "reset" }, { sessionKey: "reset-session-b" });
+const ambiguousPayload = await replySeal(
+  { kind: "final", payload: { text: "✅ Session reset." } },
+  { channelId: "telegram" },
+);
+if (ambiguousPayload?.cancel !== true) process.exit(289);
+for (const sessionKey of ["reset-session-a", "reset-session-b"]) {
+  const exactContext = { sessionKey, channelId: "telegram" };
+  const exactPayload = await replySeal(
+    { kind: "final", payload: { text: "✅ Session reset." }, sessionKey },
+    exactContext,
+  );
+  if (exactPayload?.payload?.text !== "✅ Session reset.") process.exit(290);
+  const exactMessage = await messageSeal(
+    { content: exactPayload.payload.text, sessionKey },
+    exactContext,
+  );
+  if (exactMessage?.content !== "✅ Session reset.") process.exit(291);
+}
+"""
+    script = tmp_path / "openclaw-two-gate-native-reset-ack.mjs"
+    script.write_text(source, encoding="utf-8")
+
+    completed = subprocess.run(
+        [str(shutil.which("node")), str(script)],
+        capture_output=True,
+        text=True,
+        timeout=10,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is not installed")
 def test_generated_openclaw_outbound_gate_blocks_first_pass_rejection(
     tmp_path: Path,
 ) -> None:

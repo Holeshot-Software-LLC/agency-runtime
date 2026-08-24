@@ -366,8 +366,29 @@ The bounded repair retains the hashed-session path when context exists. Without
 session context it can consume only one recent authorization whose fixed
 expected text exactly matches; zero or multiple candidates fail closed. Replay,
 wrong text, missing reset, and expiry remain rejected. The OpenClaw security,
-adapter, streaming, and installer slice passes 245 tests with 1 intentional
-skip. The candidate is checkpointed but not installed.
+adapter, streaming, and installer slice passed 245 tests with 1 intentional
+skip. Clean pair `d4d4b829` / `99b1380d` was then installed Agency-only as
+`5e1a074e-81a6-4fdf-a464-937c66d9b400`; bundle `b0010f67...`, runtime
+`ebbf13cd...`, and launcher SHA `7f393f2a...` bind to the checkout. The
+installer left OpenClaw stopped. Native restart became RPC-green with zero
+restarts; native `litellm/task-general`, all six fallbacks, and Agency routing
+remained unchanged. Hermes stayed active and unmodified.
+
+The operator sent a changed exact `/new`. OpenClaw reset native state into
+session `1b4c7016-cac1-4aca-8639-075038d5b982`, but again no acknowledgement
+was delivered and no Agency run followed. Native log event SHA `e66fb292...`
+records the caught Codex harness reset warning; redacted failure artifact SHA
+is `22f88b59...`. The first repair was therefore necessary but insufficient.
+
+Installed flow inspection isolated the missed layer: OpenClaw sends the native
+reply through `reply_payload_sending` before `message_sending`. Agency had
+added correlation only to the latter, so the earlier final-only gate canceled
+the exact acknowledgement before it could be consumed. A two-gate regression
+failed before implementation at exit 30. The smallest repair makes the
+reply-payload gate wait for and verify—but not consume—the same exact bounded
+authorization; the message gate remains the one-use consumer. Replay and
+concurrent ambiguity still fail closed. The affected slice is 246 passed with
+1 intentional skip. This two-gate candidate is not installed.
 
 ## Approach
 
@@ -434,5 +455,7 @@ Hermes and all protected hosts remain outside the mutation boundary.
 - [x] Install the correlation candidate through Agency-only install while OpenClaw is natively stopped.
 - [x] Prove a genuinely different native skill plus the exact substantive restart-safety review.
 - [x] Preserve the sessionless post-reset acknowledgement failure and add exact ambiguity/replay regression coverage.
-- [ ] Install the sessionless acknowledgement repair and prove a fresh `/new` acknowledgement.
+- [x] Install the sessionless acknowledgement repair and preserve the independent earlier-gate failure.
+- [x] Add expected-red coverage for the complete reply-payload/message-sending path.
+- [ ] Install the two-gate acknowledgement repair and prove a fresh `/new` acknowledgement.
 - [ ] Tracker creation remains pending separate authorization.

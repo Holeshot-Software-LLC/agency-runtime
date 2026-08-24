@@ -647,26 +647,43 @@ function authorizeNativeControlAcknowledgement(session, command) {{
   return true;
 }}
 
-function consumeNativeControlAcknowledgement(session, text) {{
+function nativeControlAcknowledgementAuthorization(session, text) {{
   if (!NATIVE_CONTROL_ACK_TEXTS.has(text)) return false;
   const now = Date.now();
   pruneOutboundAuthorizations(now);
   if (session) {{
     const key = nativeControlAuthorizationKey(session, text);
     const state = key ? nativeControlAuthorizations.get(key) : undefined;
-    if (Number(state?.expiresAt || 0) <= now) return false;
-    nativeControlAuthorizations.delete(key);
-    return true;
+    return Number(state?.expiresAt || 0) > now ? key : "";
   }}
   let candidate = "";
   for (const [key, state] of nativeControlAuthorizations) {{
     if (state?.expected !== text || Number(state?.expiresAt || 0) <= now) continue;
-    if (candidate) return false;
+    if (candidate) return "";
     candidate = key;
   }}
+  return candidate;
+}}
+
+function hasNativeControlAcknowledgementAuthorization(session, text) {{
+  return Boolean(nativeControlAcknowledgementAuthorization(session, text));
+}}
+
+function consumeNativeControlAcknowledgement(session, text) {{
+  const candidate = nativeControlAcknowledgementAuthorization(session, text);
   if (!candidate) return false;
   nativeControlAuthorizations.delete(candidate);
   return true;
+}}
+
+async function waitForNativeControlAcknowledgementAuthorization(session, text) {{
+  if (!NATIVE_CONTROL_ACK_TEXTS.has(text)) return false;
+  const deadline = Date.now() + NATIVE_CONTROL_ACK_WAIT_MS;
+  while (Date.now() < deadline) {{
+    await new Promise((resolve) => setTimeout(resolve, NATIVE_CONTROL_ACK_POLL_MS));
+    if (hasNativeControlAcknowledgementAuthorization(session, text)) return true;
+  }}
+  return false;
 }}
 
 async function waitForNativeControlAcknowledgement(session, text) {{
@@ -1187,6 +1204,24 @@ export default definePluginEntry({{
       try {{
       const session = String(event?.sessionKey || ctx?.sessionKey || "");
       const kind = String(event?.kind || "");
+      const nativeControlText = kind === "final" ? outboundPolicyText(event?.payload) : "";
+      if (NATIVE_CONTROL_ACK_TEXTS.has(nativeControlText)) {{
+        const allowNativeControl = () => ({{ payload: event.payload }});
+        if (hasNativeControlAcknowledgementAuthorization(session, nativeControlText)) {{
+          return allowNativeControl();
+        }}
+        return waitForNativeControlAcknowledgementAuthorization(
+          session,
+          nativeControlText,
+        ).then((allowed) => (
+          allowed
+            ? allowNativeControl()
+            : {{
+              cancel: true,
+              reason: "Agency Runtime cancelled an uncorrelated native control acknowledgement.",
+            }}
+        ));
+      }}
       if (kind !== "final") {{
         refreshRuntimeStateSync();
         if (!runtimeEnabled) {{
