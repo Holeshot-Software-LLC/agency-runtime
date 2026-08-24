@@ -57,10 +57,12 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 - Fresh Hermes status still has the retained `mcp` attribution defect. OpenClaw two-gate repair `3e71247a` / `ff1e9594` installed as `711f3174-88b1-4b9a-948d-a47f316e6744`; native routes stayed exact and Hermes remained active.
 - Diagnostic install `2949e798-5500-45c9-956b-4b5a97aa802b` traced differing lifecycle sessions; artifact SHA `0fe6ae7a...`. Repair `c671dd35` / `278705da` installed Agency-only as `97fd0d49-e833-458a-a4b6-fb818761f212`; bundle `97f95751...`, runtime `145ac94d...`, launcher `9adc2a85...`. RPC/Telegram green, zero restarts; Hermes active.
 - Repaired `/new` delivered and consumed one authorization. Fresh status session `130e58cd...`, trace `58bce9a1...`, accepted finalization `9d7d7372...`, `openclaw-operations` row `b2d2f4b8...`, and native Telegram outbound pass. Deterministic control correctly has zero Agency model receipts.
+- The following exact restart-safety turn is retained as failed run `324dcb7c...`, trace `755985e5...`. Routing `436eaef9...`, two specialist rows, skill row `ef7b8440...`, and three successful wrapper receipts prove automatic OpenClaw selection of `linux-task-agency-router` and exact alias/model-group `task-agency-router`; actual answering model remains unavailable.
+- OpenClaw's native `task-general` parent accumulated about 395 KB across 108 distinct read-only tool results and hit its context-overflow guard without authoring a header. Agency terminal `fba6d9db...` correctly closed it `response_invalid`; Telegram queued nothing. Zero resident binding, delegation, worker, or native-child evidence exists. Artifacts `d4e177d8...` / `31f86489...` and transcript `7a6addc6...` preserve the failure.
 
 ## completed-evidence
 
-- OpenClaw reset, activation, exact header, skill row, and native Telegram delivery pass; substantive Agency inference remains pending.
+- OpenClaw reset, activation, exact status header, skill row, and Telegram delivery pass. Substantive Agency inference now passes, but native completion/header/delivery failed and remains pending.
 - Install/launcher provenance, contractor preservation, config invariants, final Store integrity, exact alias, and zero fallback are current.
 - Native `task-general` and Agency `task-agency-router` remain separate; no actual answering model is invented from wrapper receipts.
 - The package proves parent routing only, not Rule 4 native-child delivery or a matrix-cell transition.
@@ -68,8 +70,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 
 ## exact-blocker
 
-Prove the exact OpenClaw restart-safety review through `task-agency-router`,
-then continue Hermes separately.
+Do not retry the terminally failed restart-safety input unchanged. Repair the bounded native-error delivery path, then prove a fresh changed, tightly scoped substantive OpenClaw turn before continuing Hermes.
 
 ## same-task-continuity
 
@@ -77,9 +78,9 @@ Continue from the clean Hermes install checkpoint into fresh live evidence.
 
 ## next-bounded-work-package
 
-1. Prove the exact substantive OpenClaw request and provider receipts.
-2. Reinstall Hermes only after OpenClaw passes; prove native-host attribution.
-3. Run Hermes's exact configuration-drift review through `task-agency-router` with zero fallback.
+1. Add a fail-closed, exact-run OpenClaw native-error delivery regression and Agency-only repair.
+2. Reinstall Agency into stopped OpenClaw, then prove fresh status and a changed three-read substantive turn.
+3. Reinstall Hermes only after OpenClaw passes; prove native attribution and exact Agency routing.
 
 ## verification
 

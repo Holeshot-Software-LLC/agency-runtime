@@ -3941,3 +3941,37 @@ control-only scope. Native Telegram outbound followed completion. Response /
 transcript SHAs are `ecac2803...` / `4c1cc3f7...`; Store integrity is `ok`.
 No resident binding exists for this control turn. Substantive
 `task-agency-router` proof remains pending; no matrix cell moves.
+
+## 2026-08-24 - OpenClaw substantive routing passes before native context overflow
+
+The operator sent the exact restart-safety request in fresh native session
+`130e58cd...`. Agency run `324dcb7c...`, trace `755985e5...`, and accepted
+routing `436eaef9...` correlate. Three successful wrapper receipts selected
+the OpenClaw harness, profile `linux-task-agency-router`, provider type
+`litellm`, and exact requested alias/model-group `task-agency-router`.
+Workforce inference loaded two specialists and `openclaw-operations` row
+`ef7b8440...`. Wrapper ordinals are not provider fallback; every attempt stayed
+on the same profile and alias. Actual answering-model telemetry is absent.
+
+The native `task-general` parent produced no prose while making 30 tool-only
+model calls and 108 distinct read-only tool calls. About 395 KiB of tool
+results grew native context from roughly 34k to 147k tokens, where OpenClaw
+stopped the loop for context overflow. No five-line header was authored and no
+Telegram response was queued. Telegram remained connected and reported no
+channel error.
+
+Agency finalization `fba6d9db...` atomically closed the turn
+`response_invalid` with all five required header fields missing. No resident
+binding, delegation, worker, activation, native-child, or delivery-verification
+row exists. Redacted artifacts are `d4e177d8...` / `31f86489...`; final native
+transcript SHA is `7a6addc6...`. Store integrity is `ok`, schema 47, contractors
+remain 15, and launcher SHA is unchanged at `9adc2a85...`.
+
+The native warning carries `isError`, but the installed Agency bridge routes
+it through ordinary answer finalization and therefore cancels it as headerless.
+The next bounded candidate will authorize only a matching, one-use,
+short-lived exact session/run native-error payload after failed `agent_end`
+evidence and terminal Store closure. It will persist no raw error text and will
+not change normal answer, control, child, host configuration, or model-routing
+boundaries. The failed input is retained and will not be retried unchanged.
+No delegation or Rule 4 proof exists and no AR-119 matrix cell moves.

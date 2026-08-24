@@ -3,7 +3,7 @@ title: "Deliver accepted OpenClaw finalizer results instead of silent replies"
 status: in_progress
 category: roadmap
 created: 2026-08-22
-updated: 2026-08-23
+updated: 2026-08-24
 tags: [openclaw, finalization, telegram, delivery, reliability]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
@@ -17,6 +17,7 @@ related:
   - docs/decisions/0049-openclaw-final-only-full-payload-delivery.md
   - docs/decisions/0120-construct-first-pass-evidence-headers.md
   - docs/decisions/0166-refresh-openclaw-headers-through-awaited-tool-results.md
+  - docs/decisions/0167-deliver-openclaw-native-errors-through-exact-terminal-evidence.md
   - agency_runtime/core/installer_payload_openclaw.py
   - tests/test_security_turn_boundaries.py
   - tests/test_adapter_parity.py
@@ -476,6 +477,44 @@ transcript SHAs are `ecac2803...` / `4c1cc3f7...`; Store integrity remains
 `ok`. No resident binding exists for this control turn. Substantive
 `task-agency-router` proof remains pending.
 
+### First post-reset substantive failure: native error is suppressed
+
+The operator then sent the required exact restart-safety request in the same
+fresh session. Agency run `324dcb7c-be31-4a84-abd2-cb111b4c6e8e`, trace
+`755985e5-1fff-456c-ba2f-d55c30b87173`, and accepted routing
+`436eaef9-80ef-40ad-859a-eb44843c919d` correlate. Workforce inference selected
+`ai-evaluation-engineer` and `ai-data-remediation-engineer`, recorded two
+specialist rows plus `openclaw-operations` row `ef7b8440...`, and produced
+three successful wrapper receipts through OpenClaw profile
+`linux-task-agency-router` with exact requested alias/model-group
+`task-agency-router`. Receipt `attempted_fallbacks` values `2/1/0` are attempt
+ordinals, not provider fallback. Every attempt used the same profile and alias;
+provider telemetry supplied no actual answering model.
+
+The native `task-general` parent then made 30 tool-only model calls and 108
+distinct read-only tool calls, including 40 searches. Tool results accumulated
+about 395 KiB and native context rose from about 34k to 147k tokens. OpenClaw
+stopped the turn for context overflow. No natural response or five-line Agency
+header was authored. Telegram remained connected and error-free but queued no
+outbound message.
+
+Agency correctly failed closed: finalization `fba6d9db...` atomically closed
+the run as `response_invalid` with all five header fields missing. No resident
+binding, delegation, worker, activation, native-child, or delivery-verification
+row exists. Store integrity is `ok`, schema 47, contractors remain 15, and
+launcher SHA remains `9adc2a85...`. Redacted capture and terminal artifact SHAs
+are `d4e177d8...` / `31f86489...`; final native transcript SHA is
+`7a6addc6...`. The failure is retained and cannot be retried unchanged.
+
+OpenClaw 2026.7.1-2 labels this final native warning with `isError`, but the
+installed Agency bridge treats every final payload as an authored answer. The
+full-payload gate therefore rejects the headerless error and cancels it before
+Telegram delivery. The next candidate is an Agency-only, exact-session/run,
+short-lived, one-use native-error exception backed by failed `agent_end`
+observation and terminal Store evidence. It must persist no raw error text,
+clear on a later successful fallback, and leave ordinary answer, header,
+finalization, control-acknowledgement, and child-delivery gates intact.
+
 ## Approach
 
 Change only Agency's OpenClaw adapter as specified by ADR-0166. Do not expose
@@ -551,5 +590,7 @@ Hermes and all protected hosts remain outside the mutation boundary.
 - [x] Install the exact traced repair with Store/config/launcher provenance.
 - [x] Prove one fresh `/new` acknowledgement through the installed repair.
 - [x] Deliver fresh exact status with matching Store skill/finalization and native Telegram receipts.
-- [ ] Prove the exact substantive restart-safety request through `task-agency-router`.
+- [x] Preserve the failed exact substantive request with Store, provider, native-error, and no-delivery evidence.
+- [ ] Deliver exact native OpenClaw error notices through a bounded Agency-only exception without weakening answer finalization.
+- [ ] Prove a fresh changed substantive request through `task-agency-router`, exact header finalization, and Telegram delivery.
 - [ ] Tracker creation remains pending separate authorization.

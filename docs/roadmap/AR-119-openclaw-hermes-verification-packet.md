@@ -1727,6 +1727,55 @@ matrix_cell_moved: false
 protected_hosts: Codex OAuth/config/canary, Claude, ZCode, and Hermes untouched
 ~~~
 
+### OpenClaw first post-reset substantive failure bundle
+
+~~~yaml
+host: openclaw
+checkout_sha: 9c7c52c7608b25c4d3e8cd6767c13ebe1c725b9f
+clean_tree_before_turn: true
+host_version: OpenClaw 2026.7.1-2
+profile_identity: OpenClaw native parent task-general; Agency workforce linux-task-agency-router
+native_litellm_config_source_redacted: existing OpenClaw config; native primary and six fallbacks unchanged
+litellm_base_url_source: effective Agency profile; loopback /v1 endpoint
+credential_env_name: LITELLM_API_KEY
+credential_present_boolean: true; value excluded
+agency_inference_profile: linux-task-agency-router
+requested_alias: task-agency-router
+model_group: task-agency-router
+actual_model_and_receipt_source: unavailable; wrapper alias is not actual-model telemetry
+runtime_digest: 145ac94df2b3d4d2d0b356e0d6beb134a67ff3d956afb41926e6418ed53f9345
+store_schema: 47
+install_result: prior Agency-only install 97fd0d49-e833-458a-a4b6-fb818761f212 remains current
+launcher_manifest_sha256: 9adc2a85f16f721aab0cdb6bd98ac1cc8544cc1c738b0e771dfa74c03e7b5051
+fresh_session_id: 130e58cd-38c3-48de-baae-d124b4689ec2
+agency_run_id: 324dcb7c-be31-4a84-abd2-cb111b4c6e8e
+agency_trace_id: 755985e5-1fff-456c-ba2f-d55c30b87173
+first_response_artifact: none; native parent produced no final response
+header_exact: absent; all five required fields missing
+resident_binding_id: none
+routing_decision_ids: [436eaef9-80ef-40ad-859a-eb44843c919d]
+specialists_loaded_ids: [e75c8757-214a-4e61-a2cf-6c77e4cec6cf, ade10b59-f68f-45be-9d61-55109ad84d53]
+skill_name_and_store_row_id: openclaw-operations / ef7b8440-b476-4fed-ac9b-8af3b56a2e12
+provider_attempt_status: 3 successful wrapper attempts; same profile and alias
+fallback_count: 0 cross-provider; attempted_fallbacks 2/1/0 are ordinals
+native_parent_error: context overflow during tool loop after 30 model calls and 108 distinct read-only tools
+terminal_finalization: fba6d9db-cd7b-4a95-8666-9222ba12a6c7 / response_invalid
+telegram_delivery: no outbound queued; channel connected and error-free
+failure_capture_artifact: /tmp/ar119-openclaw-session-lifecycle-preinstall.jOnDJ8/openclaw-substantive-first-failure-redacted.json
+failure_capture_sha256: d4e177d8d4e31bb9d23d9bcf6bc42e77b53d03fc36469ab3930ccf3d497c2924
+failure_terminal_artifact: /tmp/ar119-openclaw-session-lifecycle-preinstall.jOnDJ8/openclaw-substantive-first-failure-terminal-redacted.json
+failure_terminal_sha256: 31f864893a66f04d5f5342191425fe43f2ba5f5f9d496abff824d81615fa722f
+native_transcript_sha256: 7a6addc653ec8e9ebd461a082c9398336d31ccc0fa691e39b7d68334818d780c
+contractors_before_after: 15 / 15
+store_integrity_before_after: ok / ok
+delegation_events: 0
+native_child_rows: 0
+known_limit: Agency inference passed; parent completion, five-line header, and Telegram delivery did not
+retry_rule: preserve this failure; do not retry the same input unchanged
+protected_hosts: Codex OAuth/config/canary, Claude, ZCode, and Hermes untouched
+matrix_cell_moved: false
+~~~
+
 ### OpenClaw reset-lifecycle repair install-readiness bundle
 
 ~~~yaml
