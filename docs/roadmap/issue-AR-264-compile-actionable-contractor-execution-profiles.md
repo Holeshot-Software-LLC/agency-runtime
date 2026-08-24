@@ -20,6 +20,7 @@ related:
   - docs/roadmap/issue-AR-272-expose-openclaw-native-finalizer-tool.md
   - docs/roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md
   - docs/roadmap/issue-AR-279-exclude-hermes-internal-post-response-preflight.md
+  - docs/roadmap/issue-AR-280-route-native-children-through-host-profiles.md
   - docs/decisions/0081-compile-contractors-from-governed-structured-contracts.md
   - docs/decisions/0162-compile-structured-contractor-execution-guidance.md
   - docs/worklog/README.md

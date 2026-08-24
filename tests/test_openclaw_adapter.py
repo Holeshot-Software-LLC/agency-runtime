@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -236,6 +237,128 @@ def test_sessions_spawn_uses_child_session_as_worker_not_runtime_agent(tmp_path:
     )
     assert child is not None
     assert child["delegation_event_id"] == event["id"]
+
+
+def test_openclaw_bridge_prepares_sessions_spawn_against_exact_parent_launch(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    from agency_runtime.core import native_child_install_identity, native_child_staffing
+
+    store = Store(tmp_path / "agency.db")
+    store.create_run(
+        trace_id="parent-run",
+        session_id="parent-session",
+        host="openclaw",
+        user_message="Review restart safety",
+    )
+    adapter = OpenClawAdapter(store=store)
+    install = object()
+    observed: dict[str, object] = {}
+
+    monkeypatch.setattr(
+        native_child_install_identity,
+        "current_managed_host_install_identity",
+        lambda host: install if host == "openclaw" else None,
+    )
+
+    def staff(_store: object, **kwargs: object) -> SimpleNamespace:
+        observed.update(kwargs)
+        return SimpleNamespace(
+            staffed=True,
+            rewritten_task="Review restart safety\n\n[AGENCY INFERENCE TEAM v6]\ncard",
+            decision_id="native-child-decision-one",
+        )
+
+    monkeypatch.setattr(native_child_staffing, "staff_native_child", staff)
+
+    result = node_bridge.handle(
+        {
+            "action": "native_child_prepare",
+            "sessionId": "parent-session",
+            "traceId": "parent-run",
+            "launchId": "spawn-call-one",
+            "goal": "Review restart safety",
+        },
+        adapter=adapter,
+    )
+
+    assert result == {
+        "staffed": True,
+        "rewrittenTask": "Review restart safety\n\n[AGENCY INFERENCE TEAM v6]\ncard",
+        "decisionId": "native-child-decision-one",
+        "runtimeEnabled": True,
+    }
+    delivery_validator = observed.pop("delivery_validator")
+    assert callable(delivery_validator)
+    assert delivery_validator("ascii delivery") is True
+    assert delivery_validator("😀" * node_bridge.MAX_PREFLIGHT_CONTEXT_CHARS) is False
+    assert observed == {
+        "host": "openclaw",
+        "task": "Review restart safety",
+        "parent_session_id": "parent-session",
+        "parent_trace_id": "parent-run",
+        "launch_id": "spawn-call-one",
+        "binding_kind": "launch_id",
+        "binding_id": "spawn-call-one",
+        "install_identity": install,
+        "install_identity_reader": native_child_install_identity.current_managed_host_install_identity,
+        "maximum_delivery_bytes": node_bridge.MAX_PREFLIGHT_CONTEXT_CHARS,
+    }
+
+
+def test_openclaw_bridge_binds_real_sessions_spawn_result_to_launch(
+    tmp_path: Path,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+    store.create_run(
+        trace_id="parent-run",
+        session_id="parent-session",
+        host="openclaw",
+        user_message="Review restart safety",
+    )
+    adapter = OpenClawAdapter(store=store)
+
+    result = node_bridge.handle(
+        {
+            "action": "native_child_started",
+            "sessionId": "parent-session",
+            "traceId": "parent-run",
+            "launchId": "spawn-call-one",
+            "workUnitId": "restart-review",
+            "workerId": "agent:main:subagent:child-one",
+            "nativeRunId": "child-run-one",
+            "goal": "Review restart safety",
+        },
+        adapter=adapter,
+    )
+
+    assert result == {"recorded": True, "launchBound": True}
+    child = store.get_native_child_run(
+        host="openclaw",
+        session_id="parent-session",
+        trace_id="parent-run",
+        work_unit_id="restart-review",
+        worker_id="agent:main:subagent:child-one",
+        native_run_id="child-run-one",
+    )
+    assert child is not None
+    assert child["execution_tool_use_id"] == "spawn-call-one"
+    assert child["execution_dispatched_at"] is not None
+
+    ended = node_bridge.handle(
+        {
+            "action": "native_child_ended",
+            "sessionId": "parent-session",
+            "traceId": "parent-run",
+            "workUnitId": "restart-review",
+            "workerId": "agent:main:subagent:child-one",
+            "nativeRunId": "child-run-one",
+            "outcome": "ok",
+        },
+        adapter=adapter,
+    )
+    assert ended == {"recorded": True}
 
 
 def test_openclaw_inventory_authorized_native_read_records_skill(

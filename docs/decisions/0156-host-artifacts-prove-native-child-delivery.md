@@ -15,6 +15,7 @@ related:
   - docs/roadmap/issue-AR-255-inference-owned-host-proven-child-staffing.md
   - docs/roadmap/issue-AR-256-canonical-nine-rule-completion-contract.md
   - docs/roadmap/issue-AR-260-accept-verified-launch-bindings-in-outcome-canary.md
+  - docs/roadmap/issue-AR-280-route-native-children-through-host-profiles.md
   - docs/decisions/0157-automatically-promote-host-verified-contractors.md
   - docs/decisions/0158-collect-child-canary-proof-inside-disposable-host-profiles.md
   - agency_runtime/core/child_delivery_evidence.py

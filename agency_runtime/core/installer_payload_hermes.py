@@ -32,6 +32,7 @@ _MAX_ACTIVE_TURNS = 1024
 _ACTIVE_TURN_TRACES = OrderedDict()
 _ACTIVE_TURN_LOCK = threading.RLock()
 _ACTIVE_CHILD_TRACES = OrderedDict()
+_AMBIGUOUS_CHILD_BINDING = object()
 _FINALIZATION_BLOCK_RESPONSE = (
     "Agency Runtime blocked an unverified draft because turn-scoped finalization "
     "did not accept it. Restore correlation and evidence, then start a new turn."
@@ -204,11 +205,12 @@ def _remember_preflight_result(session_id, result):
 
 def _pre_llm_call(**kwargs):
     session_id, trace_id = _correlation(kwargs, include_active=False)
-    worker_id, parent_session_id, parent_trace_id = _child_binding(
+    worker_id, _child_session_id, parent_session_id, parent_trace_id = _child_binding(
         worker_id=_bounded_text(
             kwargs.get("child_subagent_id") or kwargs.get("subagent_id"), 256
         ),
-        session_id=_bounded_text(kwargs.get("parent_session_id"), 512),
+        child_session_id=session_id,
+        parent_session_id=_bounded_text(kwargs.get("parent_session_id"), 512),
         child_role=_bounded_text(kwargs.get("child_role"), 256),
     )
     native_run_id = "hermes-subagent:" + worker_id if worker_id else ""
@@ -306,46 +308,100 @@ def _hermes_child_outcome(value):
     return "unknown"
 
 
-def _remember_child_trace(worker_id, session_id, trace_id, child_role=""):
-    if not worker_id or not session_id or not trace_id:
+def _remember_child_trace(
+    worker_id,
+    child_session_id,
+    parent_session_id,
+    trace_id,
+    child_role="",
+):
+    normalized_worker = _bounded_text(worker_id, 256)
+    normalized_child_session = _bounded_text(child_session_id, 512)
+    normalized_parent_session = _bounded_text(parent_session_id, 512)
+    if (
+        not normalized_worker
+        or not normalized_child_session
+        or not normalized_parent_session
+        or not trace_id
+    ):
         return
+    correlation = (
+        normalized_worker,
+        normalized_parent_session,
+        trace_id,
+        _bounded_text(child_role, 256),
+    )
     with _ACTIVE_TURN_LOCK:
-        _ACTIVE_CHILD_TRACES[worker_id] = (
-            session_id,
-            trace_id,
-            _bounded_text(child_role, 256),
-        )
-        _ACTIVE_CHILD_TRACES.move_to_end(worker_id)
+        existing = _ACTIVE_CHILD_TRACES.get(normalized_child_session)
+        if existing is None or existing == correlation:
+            _ACTIVE_CHILD_TRACES[normalized_child_session] = correlation
+        else:
+            _ACTIVE_CHILD_TRACES[normalized_child_session] = _AMBIGUOUS_CHILD_BINDING
+        _ACTIVE_CHILD_TRACES.move_to_end(normalized_child_session)
         while len(_ACTIVE_CHILD_TRACES) > _MAX_ACTIVE_TURNS:
             _ACTIVE_CHILD_TRACES.popitem(last=False)
 
 
-def _child_binding(worker_id="", session_id="", child_role=""):
-    normalized_session = _bounded_text(session_id, 512)
+def _child_binding(
+    worker_id="",
+    child_session_id="",
+    parent_session_id="",
+    parent_trace_id="",
+    child_role="",
+):
+    normalized_worker = _bounded_text(worker_id, 256)
+    normalized_child_session = _bounded_text(child_session_id, 512)
+    normalized_parent_session = _bounded_text(parent_session_id, 512)
+    normalized_parent_trace = _bounded_text(parent_trace_id, 512)
     normalized_role = _bounded_text(child_role, 256)
     with _ACTIVE_TURN_LOCK:
-        if worker_id:
-            correlation = _ACTIVE_CHILD_TRACES.get(worker_id, ("", "", ""))
-            bound_session, trace_id, _bound_role = correlation
-            if normalized_session and bound_session and normalized_session != bound_session:
-                return "", "", ""
-            return worker_id, bound_session or normalized_session, trace_id
-        if not normalized_session or not normalized_role:
-            return "", "", ""
-        matches = [
-            (candidate, values)
-            for candidate, values in _ACTIVE_CHILD_TRACES.items()
-            if values[0] == normalized_session and values[2] == normalized_role
-        ]
-    if len(matches) != 1:
-        return "", "", ""
-    resolved_worker, values = matches[0]
-    return resolved_worker, values[0], values[1]
+        if normalized_child_session:
+            correlation = _ACTIVE_CHILD_TRACES.get(normalized_child_session)
+            if correlation is None or correlation is _AMBIGUOUS_CHILD_BINDING:
+                return "", "", "", ""
+            matches = [(normalized_child_session, correlation)]
+        elif normalized_worker:
+            matches = [
+                (candidate_session, values)
+                for candidate_session, values in _ACTIVE_CHILD_TRACES.items()
+                if values is not _AMBIGUOUS_CHILD_BINDING
+                and values[0] == normalized_worker
+            ]
+        elif normalized_parent_session and normalized_role:
+            matches = [
+                (candidate_session, values)
+                for candidate_session, values in _ACTIVE_CHILD_TRACES.items()
+                if values is not _AMBIGUOUS_CHILD_BINDING
+                and values[1] == normalized_parent_session
+                and values[3] == normalized_role
+            ]
+        else:
+            return "", "", "", ""
+        if len(matches) != 1:
+            return "", "", "", ""
+        resolved_child_session, values = matches[0]
+        resolved_worker, bound_parent_session, trace_id, _bound_role = values
+        if normalized_worker and normalized_worker != resolved_worker:
+            return "", "", "", ""
+        if normalized_parent_session and normalized_parent_session != bound_parent_session:
+            return "", "", "", ""
+        if normalized_parent_trace and normalized_parent_trace != trace_id:
+            return "", "", "", ""
+        _ACTIVE_CHILD_TRACES.move_to_end(resolved_child_session)
+        return resolved_worker, resolved_child_session, bound_parent_session, trace_id
 
 
-def _forget_child_trace(worker_id):
+def _forget_child_trace(worker_id, child_session_id):
+    normalized_worker = _bounded_text(worker_id, 256)
+    normalized_child_session = _bounded_text(child_session_id, 512)
     with _ACTIVE_TURN_LOCK:
-        _ACTIVE_CHILD_TRACES.pop(worker_id, None)
+        correlation = _ACTIVE_CHILD_TRACES.get(normalized_child_session)
+        if (
+            correlation is not None
+            and correlation is not _AMBIGUOUS_CHILD_BINDING
+            and correlation[0] == normalized_worker
+        ):
+            _ACTIVE_CHILD_TRACES.pop(normalized_child_session, None)
 
 
 def _subagent_start(
@@ -364,8 +420,15 @@ def _subagent_start(
     )
     session_id = _bounded_text(parent_session_id, 512)
     trace_id = _bounded_text(parent_turn_id, 512)
+    normalized_child_session_id = _bounded_text(child_session_id, 512)
     goal = _bounded_text(child_goal)
-    if not session_id or not trace_id or not worker_id or not goal:
+    if (
+        not session_id
+        or not trace_id
+        or not normalized_child_session_id
+        or not worker_id
+        or not goal
+    ):
         return None
     try:
         _invoke(
@@ -375,7 +438,7 @@ def _subagent_start(
                 "trace_id": trace_id,
                 "worker_id": worker_id,
                 "native_run_id": native_run_id,
-                "child_session_id": _bounded_text(child_session_id, 512),
+                "child_session_id": normalized_child_session_id,
                 "goal": goal,
                 "work_unit_id": _bounded_text(
                     kwargs.get("work_unit_id") or kwargs.get("task_id"),
@@ -383,7 +446,13 @@ def _subagent_start(
                 ),
             },
         )
-        _remember_child_trace(worker_id, session_id, trace_id, child_role)
+        _remember_child_trace(
+            worker_id,
+            normalized_child_session_id,
+            session_id,
+            trace_id,
+            child_role,
+        )
     except Exception:
         pass
     return None
@@ -391,6 +460,8 @@ def _subagent_start(
 
 def _subagent_stop(
     parent_session_id="",
+    parent_turn_id="",
+    child_session_id="",
     child_role="",
     child_status="",
     child_subagent_id="",
@@ -399,13 +470,15 @@ def _subagent_stop(
 ):
     """Close a Hermes child only when the stop hook carries exact identity."""
 
-    worker_id, _native_run_id = _hermes_child_identity(
+    provided_worker_id, _native_run_id = _hermes_child_identity(
         child_subagent_id or subagent_id or kwargs.get("child_subagent_id")
     )
-    worker_id, session_id, trace_id = _child_binding(
-        worker_id,
-        _bounded_text(parent_session_id, 512),
-        child_role,
+    worker_id, resolved_child_session_id, session_id, trace_id = _child_binding(
+        worker_id=provided_worker_id,
+        child_session_id=_bounded_text(child_session_id, 512),
+        parent_session_id=_bounded_text(parent_session_id, 512),
+        parent_trace_id=_bounded_text(parent_turn_id, 512),
+        child_role=child_role,
     )
     if not worker_id:
         return None
@@ -425,7 +498,8 @@ def _subagent_stop(
     except Exception:
         pass
     finally:
-        _forget_child_trace(worker_id)
+        _forget_child_trace(worker_id, resolved_child_session_id)
+        _forget_turn(resolved_child_session_id)
     return None
 
 

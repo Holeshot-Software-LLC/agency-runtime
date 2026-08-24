@@ -16,6 +16,7 @@ related:
   - docs/decisions/0163-keep-litellm-inference-profiles-model-agnostic.md
   - docs/roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md
   - docs/roadmap/issue-AR-279-exclude-hermes-internal-post-response-preflight.md
+  - docs/roadmap/issue-AR-280-route-native-children-through-host-profiles.md
   - docs/decisions/0166-refresh-openclaw-headers-through-awaited-tool-results.md
 supersedes: []
 superseded_by: null
@@ -2464,3 +2465,21 @@ new private temporary root, and set the CI-only fixture launcher to root-owned
 `/usr/bin/python3.12`; it passed 304 tests with one intentional skip. No runtime,
 host, Agency, LiteLLM, Codex, Claude, or ZCode configuration changed between
 these validation attempts.
+
+### Native-child implementation checkpoint (AR-280)
+
+Before any live child launch, inspection found two proof-invalidating defects:
+the native-child judge received the unprojected provider chain, and the
+generated plugins inferred child identities from fields absent in OpenClaw
+2026.7.1-2 and Hermes v0.20.4. The repair resolves each child judge through its
+owning harness profile, staffs OpenClaw before `sessions_spawn`, reconciles
+spawn/end/result races with durable receipts, and resolves Hermes child
+preflight/stop through the host-issued child session.
+
+The focused profile, adapter, boundary, and security suites pass 213 tests with
+one existing skip; both review scopes are green. No host install or native
+configuration/model-route mutation occurred before this checkpoint. Live work
+must proceed OpenClaw first and Hermes second. A successful operational spawn,
+completion, parent return, Store correlation, and Telegram delivery still does
+not satisfy Rule 4 without an ADR-0156 host-artifact collector and immutable
+`native_child_delivery_verifications` receipt.

@@ -14,6 +14,7 @@ related:
   - docs/roadmap/issue-AR-252-record-verified-acceptance-outcomes.md
   - docs/roadmap/issue-AR-253-dynamic-team-dispatch-on-every-harness.md
   - docs/roadmap/issue-AR-255-inference-owned-host-proven-child-staffing.md
+  - docs/roadmap/issue-AR-280-route-native-children-through-host-profiles.md
   - docs/decisions/0067-require-configured-inference-for-selection.md
   - docs/decisions/0087-inference-decides-from-a-relevance-shortlist.md
   - README.md

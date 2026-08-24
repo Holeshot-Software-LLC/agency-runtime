@@ -1294,7 +1294,7 @@ def _runtime_disabled_result(payload: dict[str, Any], action: str) -> dict[str, 
             "runtimeDisabled": True,
             "bypassed": True,
         }
-    if action in {"preflight", "pre_verify"}:
+    if action in {"preflight", "pre_verify", "native_child_prepare"}:
         return disabled
     if action == "post_tool_call" and payload.get("includeHeaderContext") is True:
         return disabled
@@ -1309,6 +1309,74 @@ def _runtime_disabled_result(payload: dict[str, Any], action: str) -> dict[str, 
     return {"error": f"unknown action: {action}"}
 
 
+def _handle_native_child_prepare(
+    adapter: OpenClawAdapter,
+    payload: dict[str, Any],
+    *,
+    session_id: str,
+    trace_id: str,
+) -> dict[str, Any]:
+    """Staff one exact host-authenticated ``sessions_spawn`` launch."""
+
+    task = _bounded_string(payload, "goal", limit=MAX_INPUT_BYTES)
+    launch_id = validate_correlation_id(
+        payload.get("launchId"),
+        field="launch_id",
+        required=False,
+    )
+    if not session_id or not trace_id or not launch_id or not task:
+        return {"staffed": False, "runtimeEnabled": True}
+    from agency_runtime.core.native_child_install_identity import (
+        current_managed_host_install_identity,
+    )
+    from agency_runtime.core.native_child_staffing import staff_native_child
+
+    def delivery_fits(rewritten_task: str) -> bool:
+        try:
+            prospective = json.dumps(
+                {
+                    "staffed": True,
+                    "rewrittenTask": rewritten_task,
+                    "decisionId": "x" * 128,
+                    "runtimeEnabled": True,
+                },
+                allow_nan=False,
+                separators=(",", ":"),
+            )
+            return len(prospective.encode("ascii")) <= MAX_BRIDGE_OUTPUT_BYTES
+        except (TypeError, UnicodeError, ValueError):
+            return False
+
+    try:
+        result = staff_native_child(
+            adapter.store,
+            host="openclaw",
+            task=task,
+            parent_session_id=session_id,
+            parent_trace_id=trace_id,
+            launch_id=launch_id,
+            binding_kind="launch_id",
+            binding_id=launch_id,
+            install_identity=current_managed_host_install_identity("openclaw"),
+            install_identity_reader=current_managed_host_install_identity,
+            maximum_delivery_bytes=MAX_PREFLIGHT_CONTEXT_CHARS,
+            delivery_validator=delivery_fits,
+        )
+    except Exception:
+        return {"staffed": False, "runtimeEnabled": True}
+    if not result.staffed:
+        return {"staffed": False, "runtimeEnabled": True}
+    rewritten_task = str(result.rewritten_task or "")
+    if not rewritten_task or not delivery_fits(rewritten_task):
+        return {"staffed": False, "runtimeEnabled": True}
+    return {
+        "staffed": True,
+        "rewrittenTask": rewritten_task,
+        "decisionId": str(result.decision_id or ""),
+        "runtimeEnabled": True,
+    }
+
+
 def _handle_delivery_action(
     adapter: Any,
     payload: dict[str, Any],
@@ -1320,6 +1388,13 @@ def _handle_delivery_action(
 ) -> dict[str, Any] | None:
     """Dispatch one exact final-delivery action, or decline the action."""
 
+    if action == "native_child_prepare":
+        return _handle_native_child_prepare(
+            adapter,
+            payload,
+            session_id=session_id,
+            trace_id=trace_id,
+        )
     if action == "outbound_gate":
         return _handle_outbound_gate(
             adapter,
@@ -1424,6 +1499,7 @@ def _handle_observation_action(
             return {}
         worker_id = _bounded_string(payload, "workerId", limit=256)
         native_run_id = _bounded_string(payload, "nativeRunId", limit=256)
+        launch_id = _bounded_string(payload, "launchId", limit=512)
         work_unit_id = _bounded_string(payload, "workUnitId", limit=160)
         goal = _bounded_string(payload, "goal", limit=MAX_INPUT_BYTES)
         if not worker_id or not native_run_id:
@@ -1431,25 +1507,36 @@ def _handle_observation_action(
         if work_unit_id or goal:
             adapter.post_tool_call_handler(
                 tool_name="sessions_spawn",
-                args={"prompt": goal, "work_unit_id": work_unit_id},
+                args={"task": goal, "taskName": work_unit_id},
                 result={
                     "childSessionKey": worker_id,
-                    "native_run_id": native_run_id,
+                    "runId": native_run_id,
                 },
                 session_id=session_id,
                 trace_id=trace_id,
             )
-            return {}
-        adapter.store.record_native_child_started(
-            host="openclaw",
-            backend="sessions_spawn",
-            session_id=session_id,
-            trace_id=trace_id,
-            work_unit_id=work_unit_id,
-            worker_id=worker_id,
-            native_run_id=native_run_id,
+        else:
+            adapter.store.record_native_child_started(
+                host="openclaw",
+                backend="sessions_spawn",
+                session_id=session_id,
+                trace_id=trace_id,
+                work_unit_id=work_unit_id,
+                worker_id=worker_id,
+                native_run_id=native_run_id,
+            )
+        launch_bound = bool(
+            launch_id
+            and adapter.store.bind_native_child_launch(
+                host="openclaw",
+                session_id=session_id,
+                trace_id=trace_id,
+                worker_id=worker_id,
+                native_run_id=native_run_id,
+                launch_id=launch_id,
+            )
         )
-        return {}
+        return {"recorded": True, "launchBound": launch_bound}
 
     if action == "native_child_ended":
         if not session_id or not trace_id:
@@ -1465,7 +1552,7 @@ def _handle_observation_action(
             outcome=_bounded_string(payload, "outcome", limit=32) or "unknown",
             error=payload.get("error"),
         )
-        return {}
+        return {"recorded": True}
 
     return None
 

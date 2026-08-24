@@ -10,6 +10,7 @@ related:
   - docs/roadmap/issue-AR-235-autonomous-gap-hiring-with-isolated-security-review.md
   - docs/roadmap/issue-AR-253-dynamic-team-dispatch-on-every-harness.md
   - docs/roadmap/issue-AR-273-model-agnostic-structured-inference-profiles.md
+  - docs/roadmap/issue-AR-280-route-native-children-through-host-profiles.md
   - docs/decisions/0163-keep-litellm-inference-profiles-model-agnostic.md
   - docs/roadmap/reference-workforce-inference-stages.md
   - docs/roadmap/handoffs/issue-AR-235.md

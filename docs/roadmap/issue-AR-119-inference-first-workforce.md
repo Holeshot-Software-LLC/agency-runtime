@@ -3,7 +3,7 @@ title: "AR-119: Implement inference-first real-time workforce and contractor lif
 status: in_progress
 category: roadmap
 created: 2026-07-21
-updated: 2026-08-22
+updated: 2026-08-24
 tags: [routing, workforce, contractors, delegation, participation, evaluation, performance, multi-harness]
 related:
   - docs/decisions/0080-plan-before-recruiting-from-the-whole-workforce.md
@@ -42,6 +42,7 @@ related:
   - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
   - docs/roadmap/issue-AR-252-record-verified-acceptance-outcomes.md
   - docs/roadmap/issue-AR-253-dynamic-team-dispatch-on-every-harness.md
+  - docs/roadmap/issue-AR-280-route-native-children-through-host-profiles.md
   - docs/roadmap/issue-AR-259-preserve-terminal-hiring-state.md
   - docs/roadmap/issue-AR-260-accept-verified-launch-bindings-in-outcome-canary.md
   - docs/roadmap/issue-AR-261-disambiguate-technical-diagnosis-risk.md
@@ -79,7 +80,7 @@ epic: routing
 issue_id: AR-119
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
-depends_on: [AR-115, AR-116, AR-118, AR-125, AR-179, AR-180, AR-185, AR-190, AR-228, AR-252, AR-253, AR-255, AR-256, AR-259, AR-260, AR-261, AR-262, AR-263, AR-264, AR-271, AR-272, AR-273, AR-274, AR-275, AR-276, AR-277, AR-278]
+depends_on: [AR-115, AR-116, AR-118, AR-125, AR-179, AR-180, AR-185, AR-190, AR-228, AR-252, AR-253, AR-255, AR-256, AR-259, AR-260, AR-261, AR-262, AR-263, AR-264, AR-271, AR-272, AR-273, AR-274, AR-275, AR-276, AR-277, AR-278, AR-280]
 blocks: [AR-178, AR-200, AR-201]
 ---
 

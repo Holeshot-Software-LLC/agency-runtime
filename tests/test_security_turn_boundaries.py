@@ -421,6 +421,8 @@ def _openclaw_plugin_harness_source() -> str:
             "let failPreflight = false;\n"
             "let preflightContext = 'Agency preflight context';\n"
             "let toolHeaderContext = '[AGENCY UPDATED HEADER SNAPSHOT v2]\\nAgency header';\n"
+            "let nativeChildRewrittenTask = '';\n"
+            "let failNativeChildEnded = false;\n"
             "let failControl = false;\n"
             "let runtimeControlEnabled = true;\n"
             "let nativeErrorReceiptMode = 'valid';\n"
@@ -493,9 +495,21 @@ def _openclaw_plugin_harness_source() -> str:
             "        setImmediate(() => { callback(new Error('control unavailable'), '', 'control unavailable'); done?.(); });\n"
             "        return;\n"
             "      }\n"
+            "      if (failNativeChildEnded && payload.action === 'native_child_ended') {\n"
+            "        setImmediate(() => { callback(new Error('native child end unavailable'), '', 'native child end unavailable'); done?.(); });\n"
+            "        return;\n"
+            "      }\n"
             "      let result = {};\n"
             "      if (payload.action === 'preflight') {\n"
             "        result = { runtimeEnabled: true, context: preflightContext };\n"
+            "      } else if (payload.action === 'native_child_prepare') {\n"
+            "        result = {\n"
+            "          runtimeEnabled: true, staffed: Boolean(nativeChildRewrittenTask),\n"
+            "          rewrittenTask: nativeChildRewrittenTask,\n"
+            "        };\n"
+            "      } else if (payload.action === 'native_child_started'\n"
+            "          || payload.action === 'native_child_ended') {\n"
+            "        result = { recorded: true };\n"
             "      } else if (payload.action === 'post_tool_call' && payload.includeHeaderContext === true) {\n"
             "        result = { runtimeEnabled: true, context: toolHeaderContext };\n"
             "      } else if (payload.action === 'pre_verify') {\n"
@@ -1146,6 +1160,515 @@ if (!call) process.exit(247);
 if (call.sessionId !== "native-session" || call.traceId !== "native-run") process.exit(248);
 """
     script = tmp_path / "openclaw-native-tool-result-correlation.mjs"
+    script.write_text(source, encoding="utf-8")
+
+    completed = subprocess.run(
+        [str(shutil.which("node")), str(script)],
+        capture_output=True,
+        text=True,
+        timeout=10,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is not installed")
+def test_generated_openclaw_staffs_real_sessions_spawn_shape_and_binds_child_lifecycle(
+    tmp_path: Path,
+) -> None:
+    source = _openclaw_plugin_harness_source()
+    source += r"""
+const beforeToolCall = registeredHooks.get("before_tool_call");
+const spawned = registeredHooks.get("subagent_spawned");
+const ended = registeredHooks.get("subagent_ended");
+const promptBuild = registeredHooks.get("before_prompt_build");
+const beforeRun = registeredHooks.get("before_agent_run");
+const finalize = registeredHooks.get("before_agent_finalize");
+const modelEnded = registeredHooks.get("model_call_ended");
+const agentEnd = registeredHooks.get("agent_end");
+const replyPayload = registeredHooks.get("reply_payload_sending");
+const messageSending = registeredHooks.get("message_sending");
+const registration = registeredToolResultMiddlewares[0];
+if (typeof beforeToolCall !== "function" || typeof spawned !== "function"
+    || typeof ended !== "function" || typeof promptBuild !== "function"
+    || typeof beforeRun !== "function" || typeof finalize !== "function"
+    || typeof modelEnded !== "function" || typeof agentEnd !== "function"
+    || typeof replyPayload !== "function" || typeof messageSending !== "function"
+    || !registration) process.exit(320);
+
+const originalTask = "Review the restart boundary and report one risk.";
+nativeChildRewrittenTask = `${originalTask}\n\n[AGENCY INFERENCE TEAM v6]\nexact-card`;
+const originalParams = {
+  task: originalTask,
+  taskName: "restart-review",
+  mode: "run",
+  cleanup: "keep",
+  model: "litellm/task-general",
+  thinking: "low",
+};
+const parentContext = {
+  toolName: "sessions_spawn",
+  toolCallId: "spawn-call-one",
+  sessionKey: "parent-session-one",
+  runId: "parent-run-one",
+};
+const adjusted = await beforeToolCall(
+  {
+    toolName: "sessions_spawn",
+    toolCallId: "spawn-call-one",
+    runId: "parent-run-one",
+    params: originalParams,
+  },
+  parentContext,
+);
+if (!adjusted?.params) process.exit(321);
+if (adjusted.params === originalParams) process.exit(322);
+if (adjusted.params.task !== nativeChildRewrittenTask) process.exit(323);
+for (const key of ["taskName", "mode", "cleanup", "model", "thinking"]) {
+  if (adjusted.params[key] !== originalParams[key]) process.exit(324);
+}
+if (originalParams.task !== originalTask) process.exit(325);
+const preparation = bridgeCalls.find((payload) => payload.action === "native_child_prepare");
+if (!preparation) process.exit(326);
+if (preparation.sessionId !== "parent-session-one"
+    || preparation.traceId !== "parent-run-one"
+    || preparation.launchId !== "spawn-call-one"
+    || preparation.goal !== originalTask) process.exit(327);
+
+// OpenClaw 2026.7.1-2 emits this child-only observation before the tool result.
+await spawned(
+  {
+    childSessionKey: "agent:main:subagent:child-one",
+    agentId: "main",
+    mode: "run",
+    threadRequested: false,
+    runId: "child-run-one",
+  },
+  {
+    runId: "child-run-one",
+    childSessionKey: "agent:main:subagent:child-one",
+    requesterSessionKey: "parent-session-one",
+  },
+);
+if (bridgeCalls.some((payload) => payload.action === "native_child_started")) {
+  process.exit(328);
+}
+
+const hostResult = {
+  content: [{ type: "text", text: "accepted" }],
+  details: {
+    status: "accepted",
+    childSessionKey: "agent:main:subagent:child-one",
+    runId: "child-run-one",
+    mode: "run",
+    taskName: "restart-review",
+  },
+};
+const refreshed = await registration.handler(
+  {
+    toolCallId: "spawn-call-one",
+    toolName: "sessions_spawn",
+    args: adjusted.params,
+    result: hostResult,
+  },
+  { runtime: "openclaw" },
+);
+if (refreshed?.result?.details !== hostResult.details) process.exit(329);
+const started = bridgeCalls.find((payload) => payload.action === "native_child_started");
+if (!started) process.exit(330);
+if (started.sessionId !== "parent-session-one"
+    || started.traceId !== "parent-run-one"
+    || started.launchId !== "spawn-call-one"
+    || started.workerId !== "agent:main:subagent:child-one"
+    || started.nativeRunId !== "child-run-one"
+    || started.workUnitId !== "restart-review"
+    || started.goal !== originalTask) process.exit(331);
+
+const childContext = {
+  sessionKey: "agent:main:subagent:child-one",
+  runId: "child-run-one",
+  modelId: "litellm/task-general",
+};
+const childBridgeCallCount = bridgeCalls.length;
+if (await promptBuild({ prompt: nativeChildRewrittenTask }, childContext) !== undefined) {
+  process.exit(335);
+}
+if ((await beforeRun({ prompt: nativeChildRewrittenTask }, childContext))?.outcome !== "pass") {
+  process.exit(336);
+}
+if (await finalize({ lastAssistantMessage: "child answer" }, childContext) !== undefined) {
+  process.exit(337);
+}
+await modelEnded(
+  { runId: "child-run-one", provider: "litellm", model: "task-general" },
+  childContext,
+);
+agentEnd({ runId: "child-run-one", success: true, messages: [] }, childContext);
+const childPayload = { text: "child answer" };
+const childReply = await replyPayload(
+  {
+    payload: childPayload,
+    kind: "final",
+    sessionKey: "agent:main:subagent:child-one",
+    runId: "child-run-one",
+  },
+  childContext,
+);
+if (childReply?.payload !== childPayload) process.exit(338);
+const childMessage = await messageSending(
+  { content: "child answer", sessionKey: "agent:main:subagent:child-one" },
+  childContext,
+);
+if (childMessage?.content !== "child answer" || childMessage?.cancel === true) process.exit(339);
+if (bridgeCalls.length !== childBridgeCallCount) process.exit(340);
+
+await ended(
+  {
+    targetSessionKey: "agent:main:subagent:child-one",
+    targetKind: "subagent",
+    reason: "completed",
+    runId: "child-run-one",
+    outcome: "ok",
+  },
+  {
+    runId: "child-run-one",
+    childSessionKey: "agent:main:subagent:child-one",
+    requesterSessionKey: "parent-session-one",
+  },
+);
+const endedCalls = bridgeCalls.filter((payload) => payload.action === "native_child_ended");
+if (endedCalls.length !== 1) process.exit(332);
+if (endedCalls[0].sessionId !== "parent-session-one"
+    || endedCalls[0].traceId !== "parent-run-one"
+    || endedCalls[0].workerId !== "agent:main:subagent:child-one"
+    || endedCalls[0].nativeRunId !== "child-run-one"
+    || endedCalls[0].workUnitId !== "restart-review"
+    || endedCalls[0].outcome !== "ok") process.exit(333);
+
+// Cleanup is consume-once: a duplicate terminal hook cannot be re-correlated.
+await ended(
+  {
+    targetSessionKey: "agent:main:subagent:child-one",
+    targetKind: "subagent",
+    reason: "duplicate",
+    runId: "child-run-one",
+    outcome: "ok",
+  },
+  {
+    runId: "child-run-one",
+    childSessionKey: "agent:main:subagent:child-one",
+    requesterSessionKey: "parent-session-one",
+  },
+);
+if (bridgeCalls.filter((payload) => payload.action === "native_child_ended").length !== 1) {
+  process.exit(334);
+}
+"""
+    script = tmp_path / "openclaw-native-child-launch-correlation.mjs"
+    script.write_text(source, encoding="utf-8")
+
+    completed = subprocess.run(
+        [str(shutil.which("node")), str(script)],
+        capture_output=True,
+        text=True,
+        timeout=10,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is not installed")
+def test_generated_openclaw_reconciles_early_end_and_retries_end_receipt(
+    tmp_path: Path,
+) -> None:
+    source = _openclaw_plugin_harness_source()
+    source += r"""
+const beforeToolCall = registeredHooks.get("before_tool_call");
+const spawned = registeredHooks.get("subagent_spawned");
+const ended = registeredHooks.get("subagent_ended");
+const registration = registeredToolResultMiddlewares[0];
+if (typeof beforeToolCall !== "function" || typeof spawned !== "function"
+    || typeof ended !== "function" || !registration) process.exit(341);
+
+async function prepareParentSpawn(parentSession, parentRun, callId, taskName, task) {
+  nativeChildRewrittenTask = `${task}\n\n[AGENCY INFERENCE TEAM v6]\nexact-card`;
+  const adjusted = await beforeToolCall(
+    {
+      toolName: "sessions_spawn", toolCallId: callId, runId: parentRun,
+      params: { task, taskName, mode: "run" },
+    },
+    {
+      toolName: "sessions_spawn", toolCallId: callId,
+      sessionKey: parentSession, runId: parentRun,
+    },
+  );
+  if (!adjusted?.params || adjusted.params.task !== nativeChildRewrittenTask) {
+    process.exit(342);
+  }
+  return adjusted.params;
+}
+
+async function acceptSpawn(callId, args, childSession, childRun, taskName) {
+  return registration.handler(
+    {
+      toolCallId: callId,
+      toolName: "sessions_spawn",
+      args,
+      result: {
+        content: [{ type: "text", text: "accepted" }],
+        details: {
+          status: "accepted", childSessionKey: childSession,
+          runId: childRun, mode: "run", taskName,
+        },
+      },
+    },
+    { runtime: "openclaw" },
+  );
+}
+
+const raceArgs = await prepareParentSpawn(
+  "race-parent-session", "race-parent-run", "race-call", "race-task",
+  "Return one short read-only finding.",
+);
+const raceChild = "agent:main:subagent:race-child";
+await spawned(
+  {
+    childSessionKey: raceChild, agentId: "main", mode: "run",
+    threadRequested: false, runId: "race-child-run",
+  },
+  {
+    childSessionKey: raceChild, requesterSessionKey: "race-parent-session",
+    runId: "race-child-run",
+  },
+);
+await ended(
+  {
+    targetSessionKey: raceChild, targetKind: "subagent", reason: "completed",
+    runId: "race-child-run", outcome: "ok",
+  },
+  {
+    childSessionKey: raceChild, requesterSessionKey: "race-parent-session",
+    runId: "race-child-run",
+  },
+);
+if (bridgeCalls.some((call) => call.action === "native_child_ended"
+    && call.nativeRunId === "race-child-run")) process.exit(343);
+
+await acceptSpawn("race-call", raceArgs, raceChild, "race-child-run", "race-task");
+const raceStartIndex = bridgeCalls.findIndex((call) =>
+  call.action === "native_child_started" && call.nativeRunId === "race-child-run");
+const raceEndIndex = bridgeCalls.findIndex((call) =>
+  call.action === "native_child_ended" && call.nativeRunId === "race-child-run");
+if (raceStartIndex < 0 || raceEndIndex <= raceStartIndex) process.exit(344);
+
+// The early end was consumed exactly once after the accepted result arrived.
+await ended(
+  {
+    targetSessionKey: raceChild, targetKind: "subagent", reason: "duplicate",
+    runId: "race-child-run", outcome: "ok",
+  },
+  {
+    childSessionKey: raceChild, requesterSessionKey: "race-parent-session",
+    runId: "race-child-run",
+  },
+);
+if (bridgeCalls.filter((call) => call.action === "native_child_ended"
+    && call.nativeRunId === "race-child-run").length !== 1) process.exit(345);
+
+const retryArgs = await prepareParentSpawn(
+  "retry-parent-session", "retry-parent-run", "retry-call", "retry-task",
+  "Return one different read-only finding.",
+);
+const retryChild = "agent:main:subagent:retry-child";
+await spawned(
+  {
+    childSessionKey: retryChild, agentId: "main", mode: "run",
+    threadRequested: false, runId: "retry-child-run",
+  },
+  {
+    childSessionKey: retryChild, requesterSessionKey: "retry-parent-session",
+    runId: "retry-child-run",
+  },
+);
+await acceptSpawn("retry-call", retryArgs, retryChild, "retry-child-run", "retry-task");
+
+failNativeChildEnded = true;
+await ended(
+  {
+    targetSessionKey: retryChild, targetKind: "subagent", reason: "completed",
+    runId: "retry-child-run", outcome: "ok",
+  },
+  {
+    childSessionKey: retryChild, requesterSessionKey: "retry-parent-session",
+    runId: "retry-child-run",
+  },
+);
+failNativeChildEnded = false;
+if (bridgeCalls.filter((call) => call.action === "native_child_ended"
+    && call.nativeRunId === "retry-child-run").length !== 1) process.exit(346);
+
+// The first bridge failure must retain correlation for the host's duplicate hook.
+await ended(
+  {
+    targetSessionKey: retryChild, targetKind: "subagent", reason: "completed",
+    runId: "retry-child-run", outcome: "ok",
+  },
+  {
+    childSessionKey: retryChild, requesterSessionKey: "retry-parent-session",
+    runId: "retry-child-run",
+  },
+);
+await ended(
+  {
+    targetSessionKey: retryChild, targetKind: "subagent", reason: "duplicate",
+    runId: "retry-child-run", outcome: "ok",
+  },
+  {
+    childSessionKey: retryChild, requesterSessionKey: "retry-parent-session",
+    runId: "retry-child-run",
+  },
+);
+if (bridgeCalls.filter((call) => call.action === "native_child_ended"
+    && call.nativeRunId === "retry-child-run").length !== 2) process.exit(347);
+"""
+    script = tmp_path / "openclaw-native-child-race-and-retry.mjs"
+    script.write_text(source, encoding="utf-8")
+
+    completed = subprocess.run(
+        [str(shutil.which("node")), str(script)],
+        capture_output=True,
+        text=True,
+        timeout=10,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is not installed")
+def test_generated_openclaw_authenticates_nested_sessions_spawn_from_accepted_child(
+    tmp_path: Path,
+) -> None:
+    source = _openclaw_plugin_harness_source()
+    source += r"""
+const beforeToolCall = registeredHooks.get("before_tool_call");
+const spawned = registeredHooks.get("subagent_spawned");
+const registration = registeredToolResultMiddlewares[0];
+if (typeof beforeToolCall !== "function" || typeof spawned !== "function"
+    || !registration) process.exit(351);
+
+const rootTask = "Review one bounded root concern.";
+nativeChildRewrittenTask = `${rootTask}\n\n[AGENCY INFERENCE TEAM v6]\nroot-card`;
+const rootAdjusted = await beforeToolCall(
+  {
+    toolName: "sessions_spawn", toolCallId: "root-call", runId: "root-run",
+    params: { task: rootTask, taskName: "root-task", mode: "run" },
+  },
+  {
+    toolName: "sessions_spawn", toolCallId: "root-call",
+    sessionKey: "root-session", runId: "root-run",
+  },
+);
+const childSession = "agent:main:subagent:known-child";
+await spawned(
+  {
+    childSessionKey: childSession, agentId: "main", mode: "run",
+    threadRequested: false, runId: "known-child-run",
+  },
+  {
+    childSessionKey: childSession, requesterSessionKey: "root-session",
+    runId: "known-child-run",
+  },
+);
+await registration.handler(
+  {
+    toolCallId: "root-call", toolName: "sessions_spawn", args: rootAdjusted.params,
+    result: {
+      content: [{ type: "text", text: "accepted" }],
+      details: {
+        status: "accepted", childSessionKey: childSession,
+        runId: "known-child-run", mode: "run", taskName: "root-task",
+      },
+    },
+  },
+  { runtime: "openclaw" },
+);
+
+const callsBeforeForgery = bridgeCalls.length;
+const forged = await beforeToolCall(
+  {
+    toolName: "sessions_spawn", toolCallId: "forged-call", runId: "forged-run",
+    params: { task: "Uncorrelated nested task", taskName: "forged-task" },
+  },
+  {
+    toolName: "sessions_spawn", toolCallId: "forged-call",
+    sessionKey: "agent:main:subagent:forged-child", runId: "forged-run",
+  },
+);
+if (forged !== undefined || bridgeCalls.length !== callsBeforeForgery) process.exit(352);
+
+const nestedTask = "Review one bounded nested concern.";
+nativeChildRewrittenTask = `${nestedTask}\n\n[AGENCY INFERENCE TEAM v6]\nnested-card`;
+const nestedAdjusted = await beforeToolCall(
+  {
+    toolName: "sessions_spawn", toolCallId: "nested-call", runId: "known-child-run",
+    params: {
+      task: nestedTask, taskName: "nested-task", mode: "run",
+      cleanup: "keep", thinking: "low",
+    },
+  },
+  {
+    toolName: "sessions_spawn", toolCallId: "nested-call",
+    sessionKey: childSession, runId: "known-child-run",
+  },
+);
+if (!nestedAdjusted?.params || nestedAdjusted.params.task !== nativeChildRewrittenTask
+    || nestedAdjusted.params.cleanup !== "keep"
+    || nestedAdjusted.params.thinking !== "low") process.exit(353);
+const nestedPreparation = bridgeCalls.filter((call) =>
+  call.action === "native_child_prepare").at(-1);
+if (!nestedPreparation
+    || nestedPreparation.sessionId !== "root-session"
+    || nestedPreparation.traceId !== "root-run"
+    || nestedPreparation.launchId !== "nested-call"
+    || nestedPreparation.goal !== nestedTask) process.exit(354);
+
+const grandchildSession = "agent:main:subagent:known-grandchild";
+await spawned(
+  {
+    childSessionKey: grandchildSession, agentId: "main", mode: "run",
+    threadRequested: false, runId: "known-grandchild-run",
+  },
+  {
+    childSessionKey: grandchildSession, requesterSessionKey: childSession,
+    runId: "known-grandchild-run",
+  },
+);
+const nestedMiddlewareResult = await registration.handler(
+  {
+    toolCallId: "nested-call", toolName: "sessions_spawn", args: nestedAdjusted.params,
+    result: {
+      content: [{ type: "text", text: "accepted" }],
+      details: {
+        status: "accepted", childSessionKey: grandchildSession,
+        runId: "known-grandchild-run", mode: "run", taskName: "nested-task",
+      },
+    },
+  },
+  { runtime: "openclaw" },
+);
+if (nestedMiddlewareResult !== undefined) process.exit(355);
+const grandchildStart = bridgeCalls.find((call) =>
+  call.action === "native_child_started" && call.nativeRunId === "known-grandchild-run");
+if (!grandchildStart
+    || grandchildStart.sessionId !== "root-session"
+    || grandchildStart.traceId !== "root-run"
+    || grandchildStart.launchId !== "nested-call"
+    || grandchildStart.workerId !== grandchildSession) process.exit(356);
+"""
+    script = tmp_path / "openclaw-native-child-nested-auth.mjs"
     script.write_text(source, encoding="utf-8")
 
     completed = subprocess.run(

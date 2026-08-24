@@ -22,6 +22,7 @@ related:
   - docs/roadmap/issue-AR-263-restore-codex-desktop-parent-hook-delivery.md
   - docs/roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md
   - docs/roadmap/issue-AR-279-exclude-hermes-internal-post-response-preflight.md
+  - docs/roadmap/issue-AR-280-route-native-children-through-host-profiles.md
   - docs/decisions/0166-refresh-openclaw-headers-through-awaited-tool-results.md
   - docs/roadmap/AR-255-child-parity-design.md
 supersedes: []
@@ -4333,3 +4334,20 @@ Telegram delivery now pass. The proxy callback is absent, so the actual
 upstream answering model remains unavailable and neither alias is promoted to
 that claim. No delegation, Rule 4, or AR-119 matrix cell moves; OpenClaw and
 all protected configuration remain unchanged.
+
+## 2026-08-24 - native-child implementation checkpoint
+
+Read-only inspection found that native-child staffing still received the
+unprojected provider chain and both generated plugins assumed child fields
+their installed host versions do not emit. AR-280 now resolves the owning
+harness profile, staffs OpenClaw before `sessions_spawn`, reconciles its real
+spawn/end/result ordering, and keys Hermes lifecycle state by child session.
+The consolidated profile, adapter, boundary, and security gate passes 213 tests
+with one existing skip; both independent review scopes are green.
+
+No host was reinstalled and no native configuration or model route changed at
+this checkpoint. The next bounded step is an Agency-only OpenClaw install and
+fresh Telegram child proof, followed by Hermes only after OpenClaw passes.
+Operational spawn/return evidence cannot promote Rule 4: neither host has the
+ADR-0156 artifact collector required for a
+`native_child_delivery_verifications` receipt.

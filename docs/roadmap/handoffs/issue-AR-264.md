@@ -23,6 +23,7 @@ related:
   - docs/roadmap/issue-AR-277-keep-openclaw-finalization-first-pass.md
   - docs/roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md
   - docs/roadmap/issue-AR-279-exclude-hermes-internal-post-response-preflight.md
+  - docs/roadmap/issue-AR-280-route-native-children-through-host-profiles.md
   - docs/decisions/0162-compile-structured-contractor-execution-guidance.md
   - docs/decisions/0163-keep-litellm-inference-profiles-model-agnostic.md
   - docs/decisions/0164-delegate-exact-schema-translation-to-litellm.md
@@ -63,6 +64,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 - Exact substantive prompt SHA `d79ece62...` produced run `d29c4652...`, trace suffix `b2e909cf`, routing `1bc084f2...`, specialist row `b952d046...`, and skill rows `2e62f150...` (`agent-runtime-operations`), `6cac7dc0...` (`pr-review-workflow`), `0bde577c...` (`hermes-agent`). Applied receipts `72c45dae...` / `5c096da9...` / `6286cc80...` all used `linux-task-agency-router` / LiteLLM / exact alias-group with zero cross-provider fallback; terminal `543adf12...` accepted.
 - Telegram delivered exact header `agency-steward, ai-evaluation-engineer / none / agent-runtime-operations, pr-review-workflow, hermes-agent / native task-general host receipt / inference` and 5,274 characters in 263.9 seconds. Response/manifest SHAs are `1381e301...` / `12637e2a...`; no binding, delegation, worker, activation, or child exists.
 - Post-response internal non-user preflights `a9874148...` / `2934adb1...`, `e38ecc07...` / `60547574...`, and `3608e1d2...` / `3f54ebbc...` failed strict planning on the same profile without blocking replies. Bare doctor cwd failure is retained; explicit `hermes plugins doctor agency-preflight --ci` passes eight hooks/zero tools. Config hashes and launcher `e65a0784...` remain unchanged; final backup `bdf1a6e6...` is `ok`/`ok`, schema 47, contractors 15. Actual upstream model remains unavailable.
+- AR-280 now projects native-child staffing through each owning host profile and correlates the installed hosts' real child identities. The consolidated focused gate is 213 passed/1 existing skip and both review scopes are green; no host install or config mutation has occurred for this package yet.
 
 ## completed-evidence
 
@@ -74,17 +76,17 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 
 ## exact-blocker
 
-Both host-scoped acceptance sets pass. Actual upstream Hermes model telemetry and post-response internal strict-planner failures remain known limitations; Rule 4/delegation is unproven.
+Parent acceptance passes. Operational native-child proof is pending; strict Rule 4 remains unproven because these hosts lack ADR-0156 artifact collectors.
 
 ## same-task-continuity
 
-Continue from the clean dual-host acceptance checkpoint into final records.
+Continue from the clean dual-host parent checkpoint into AR-280 live child proof.
 
 ## next-bounded-work-package
 
-1. Finalize the current evidence records and local commit/ledger pair.
-2. Preserve internal-lifecycle planner failures as a follow-up limitation.
-3. Do not claim Rule 4 or move the matrix without native-child delivery evidence.
+1. Create the implementation/ledger checkpoint.
+2. Reinstall Agency only and prove OpenClaw first, then Hermes.
+3. Preserve Rule 4 as unproven without a host-artifact receipt.
 
 ## verification
 

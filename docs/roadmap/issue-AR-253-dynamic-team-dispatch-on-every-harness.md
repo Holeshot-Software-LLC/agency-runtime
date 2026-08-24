@@ -3,7 +3,7 @@ title: "AR-253: Prove staffing latency, rate, and cross-host parity"
 status: open
 category: roadmap
 created: 2026-08-05
-updated: 2026-08-18
+updated: 2026-08-24
 tags: [workforce, staffing, latency, harnesses, eval, host-evidence]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
@@ -11,6 +11,7 @@ related:
   - docs/roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md
   - docs/roadmap/issue-AR-252-record-verified-acceptance-outcomes.md
   - docs/roadmap/issue-AR-255-inference-owned-host-proven-child-staffing.md
+  - docs/roadmap/issue-AR-280-route-native-children-through-host-profiles.md
   - docs/decisions/0118-require-inference-owned-staffing.md
   - docs/decisions/0132-fund-one-repair-per-workforce-inference-stage.md
   - docs/decisions/0153-adopt-per-stage-inference-profile-routes.md

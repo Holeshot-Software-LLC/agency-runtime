@@ -19,6 +19,7 @@ from agency_runtime.core.config import (
     AgencyConfig,
     AgentActivationConfig,
     CanaryConfig,
+    HarnessInferenceConfig,
     InferenceConfig,
     InferenceProfile,
     OllamaConfig,
@@ -405,6 +406,72 @@ def test_canary_pin_constrains_initial_and_abstention_repair_calls(
     assert observed_providers == [("codex-subscription",), ("codex-subscription",)]
     assert store.decisions[-1]["decision"]["requested_provider"] == "codex-subscription"
     assert store.decisions[-1]["decision"]["provider"] == "codex-subscription"
+
+
+def test_non_canary_native_child_uses_host_scoped_workforce_profile_without_provider_fallback(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    prompt = "Alpha exact specialist prompt."
+    agent = _agent("alpha-reviewer", prompt)
+    agent["supported_execution_hosts"] = ["openclaw"]
+    store = _Store([agent], {"alpha-reviewer": prompt})
+    assert store.run is not None
+    store.run["host"] = "openclaw"
+    observed: list[tuple[tuple[str, str, str], ...]] = []
+
+    def judge(task: str, _catalog: list[dict[str, Any]], **kwargs: Any) -> dict[str, Any]:
+        observed.append(
+            tuple(
+                (provider.name, provider.type, provider.model)
+                for provider in kwargs["config"].providers
+            )
+        )
+        selected = ["alpha-reviewer"] if task.startswith("A previous evaluation") else []
+        result = _judge_result(selected)
+        result["provider_name"] = "linux-task-agency-router"
+        attempt = _attempt(name="linux-task-agency-router")
+        attempt["requested_model"] = "task-agency-router"
+        attempt["model_group"] = "task-agency-router"
+        result["provider_attempts"] = [attempt]
+        return result
+
+    config = AgencyConfig(
+        providers=(ProviderEntry(name="legacy-chain", type="cli", transport="codex"),),
+        inference=InferenceConfig(
+            profiles={
+                "linux-task-agency-router": InferenceProfile(
+                    name="linux-task-agency-router",
+                    adapter="litellm",
+                    model="task-agency-router",
+                    base_url="http://127.0.0.1:4000/v1",
+                    api_key="bounded-test-key",
+                )
+            },
+            harnesses={
+                "openclaw": HarnessInferenceConfig(
+                    default_profile="linux-task-agency-router",
+                )
+            },
+        ),
+        ollama=OllamaConfig(enabled=False),
+    )
+    monkeypatch.delenv("AGENCY_CANARY_MODE", raising=False)
+    openclaw_install = replace(_install(), host="openclaw")
+
+    result = _invoke(
+        monkeypatch,
+        store,
+        judge,
+        config=config,
+        host="openclaw",
+        install_identity=openclaw_install,
+        install_identity_reader=lambda _host: openclaw_install,
+    )
+
+    expected = (("linux-task-agency-router", "litellm", "task-agency-router"),)
+    assert result.staffed is True
+    assert observed == [expected, expected]
+    assert config.providers[0].name == "legacy-chain"
 
 
 def test_canary_pin_projection_mismatch_fails_before_judge(

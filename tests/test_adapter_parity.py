@@ -477,6 +477,7 @@ def test_generated_hermes_plugin_imports_and_registers_native_hooks(
         module._subagent_start(
             parent_session_id="hermes-session",
             parent_turn_id="hermes-turn",
+            child_session_id=f"{child_id}-session",
             child_subagent_id=child_id,
             child_role="ambiguous-reviewer",
             child_goal=f"Review as {child_id}",
@@ -487,6 +488,169 @@ def test_generated_hermes_plugin_imports_and_registers_native_hooks(
         child_status="completed",
     )
     assert "native_child_ended" not in dict(calls)
+
+
+def test_generated_hermes_plugin_correlates_v0204_child_session_fields(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    private_installer_launcher: tuple[Path, Path],
+) -> None:
+    """Hermes v0.20.4 identifies child turns and stops by child session."""
+
+    monkeypatch.setenv("AGENCY_DB_PATH", str(tmp_path / "hermes-child.db"))
+    ensure_private_test_directory(tmp_path / ".hermes" / "plugins", parents=True)
+    result = install_agent_adapter("hermes", home_dir=tmp_path)
+    plugin_path = Path(result["plugin_path"])
+    spec = importlib.util.spec_from_file_location(
+        "agency_runtime_generated_hermes_child_session",
+        plugin_path,
+    )
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    calls: list[tuple[str, dict[str, Any]]] = []
+
+    def invoke(action: str, payload: dict[str, Any] | None = None) -> Any:
+        calls.append((action, dict(payload or {})))
+        return {"context": "routed"} if action == "pre_llm_call" else None
+
+    module._invoke = invoke
+    module._subagent_start(
+        parent_session_id="parent-session",
+        parent_turn_id="parent-turn",
+        child_session_id="host-child-session",
+        child_subagent_id="host-child-worker",
+        child_goal="Review the Hermes bridge",
+    )
+
+    # The real child pre-LLM hook carries its current session and parent
+    # session, but no child_subagent_id or child_role.
+    assert module._pre_llm_call(
+        session_id="host-child-session",
+        parent_session_id="parent-session",
+        user_message="Review the Hermes bridge",
+    ) == {"context": "routed"}
+    child_preflight = calls[-1][1]
+    assert child_preflight["parent_session_id"] == "parent-session"
+    assert child_preflight["parent_trace_id"] == "parent-turn"
+    assert child_preflight["native_worker_id"] == "host-child-worker"
+    assert child_preflight["native_run_id"] == "hermes-subagent:host-child-worker"
+
+    # The real stop hook also omits the subagent id and resolves the exact
+    # host-issued child_session_id instead.
+    module._subagent_stop(
+        parent_session_id="parent-session",
+        parent_turn_id="parent-turn",
+        child_session_id="host-child-session",
+        child_status="completed",
+    )
+    ended = calls[-1]
+    assert ended[0] == "native_child_ended"
+    assert ended[1]["worker_id"] == "host-child-worker"
+    assert ended[1]["native_run_id"] == "hermes-subagent:host-child-worker"
+
+    # Successful stop cleanup prevents a later unrelated turn that reuses the
+    # child session from inheriting stale native-child authority.
+    module._pre_llm_call(
+        session_id="host-child-session",
+        parent_session_id="parent-session",
+        user_message="Unrelated later turn",
+    )
+    cleaned_preflight = calls[-1][1]
+    assert cleaned_preflight["native_worker_id"] == ""
+    assert cleaned_preflight["native_run_id"] == ""
+
+
+def test_generated_hermes_plugin_fails_closed_on_child_session_conflict(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    private_installer_launcher: tuple[Path, Path],
+) -> None:
+    monkeypatch.setenv("AGENCY_DB_PATH", str(tmp_path / "hermes-conflict.db"))
+    ensure_private_test_directory(tmp_path / ".hermes" / "plugins", parents=True)
+    result = install_agent_adapter("hermes", home_dir=tmp_path)
+    plugin_path = Path(result["plugin_path"])
+    spec = importlib.util.spec_from_file_location(
+        "agency_runtime_generated_hermes_child_conflict",
+        plugin_path,
+    )
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    calls: list[tuple[str, dict[str, Any]]] = []
+
+    def invoke(action: str, payload: dict[str, Any] | None = None) -> Any:
+        calls.append((action, dict(payload or {})))
+        return {"context": "routed"} if action == "pre_llm_call" else None
+
+    module._invoke = invoke
+    for worker_id in ("worker-a", "worker-b"):
+        module._subagent_start(
+            parent_session_id="parent-session",
+            parent_turn_id="parent-turn",
+            child_session_id="conflicted-child-session",
+            child_subagent_id=worker_id,
+            child_goal=f"Review as {worker_id}",
+        )
+
+    calls.clear()
+    module._pre_llm_call(
+        session_id="conflicted-child-session",
+        parent_session_id="parent-session",
+        user_message="Ambiguous child turn",
+    )
+    ambiguous_preflight = calls[-1][1]
+    assert ambiguous_preflight["native_worker_id"] == ""
+    assert ambiguous_preflight["native_run_id"] == ""
+    module._subagent_stop(
+        parent_session_id="parent-session",
+        child_session_id="conflicted-child-session",
+        child_status="completed",
+    )
+    assert "native_child_ended" not in dict(calls)
+
+    calls.clear()
+    module._subagent_start(
+        parent_session_id="correct-parent",
+        parent_turn_id="correct-turn",
+        child_session_id="consistent-child-session",
+        child_subagent_id="consistent-worker",
+        child_goal="Check parent consistency",
+    )
+    calls.clear()
+    module._pre_llm_call(
+        session_id="consistent-child-session",
+        parent_session_id="wrong-parent",
+        user_message="Wrong parent",
+    )
+    mismatched_preflight = calls[-1][1]
+    assert mismatched_preflight["native_worker_id"] == ""
+    module._subagent_stop(
+        parent_session_id="wrong-parent",
+        child_session_id="consistent-child-session",
+        child_status="completed",
+    )
+    assert "native_child_ended" not in dict(calls)
+
+    calls.clear()
+    module._subagent_stop(
+        parent_session_id="correct-parent",
+        parent_turn_id="wrong-turn",
+        child_session_id="consistent-child-session",
+        child_status="completed",
+    )
+    assert "native_child_ended" not in dict(calls)
+
+    calls.clear()
+    module._subagent_stop(
+        parent_session_id="correct-parent",
+        parent_turn_id="correct-turn",
+        child_session_id="consistent-child-session",
+        child_status="completed",
+    )
+    assert dict(calls)["native_child_ended"]["worker_id"] == "consistent-worker"
 
 
 def test_generated_hermes_plugin_loads_in_isolated_interpreter_without_agency_on_path(

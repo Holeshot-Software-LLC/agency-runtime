@@ -33,6 +33,7 @@ related:
   - docs/roadmap/issue-AR-277-keep-openclaw-finalization-first-pass.md
   - docs/roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md
   - docs/roadmap/issue-AR-279-exclude-hermes-internal-post-response-preflight.md
+  - docs/roadmap/issue-AR-280-route-native-children-through-host-profiles.md
   - docs/roadmap/AR-119-founding-vision.md
   - docs/roadmap/AR-119-vision-loop-status.md
   - docs/roadmap/AR-119-39ff6dca-recruiter-diagnostic-evidence.md
@@ -71,7 +72,6 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 
 - Branch `codex/ar278-openclaw-one-pass` is based on clean failure-evidence ledger checkpoint `01a8ad24`; `origin/main` is `4a326773`, `f76050d7` is an ancestor, and Agency 0.1.0 imports from this checkout.
 - OpenClaw remains audited 2026.7.1-2 on native `litellm/task-general` plus six unchanged fallbacks. Agency alone uses `linux-task-agency-router`, provider type `litellm`, and exact alias/model-group `task-agency-router`; no protected-host route changed.
-- Retained OpenClaw failures include context-overflow run `324dcb7c...` / terminal `fba6d9db...` with artifacts `d4e177d8...` / `31f86489...` / transcript `7a6addc6...`, and stale-skill trace `7e7a6318...` / terminal `25cf1630...` with evidence `78d096d5...` / `6c9bc3bc...` / `9a9e2a35...`. Both failed closed without Telegram reply or child/delegation evidence.
 - Final Agency-only repair `d7187e80` installed as `fa68e6a4...`, runtime `573a6a14...`, launcher `d65af026...`; native routes/hashes stayed unchanged and RPC, 12 hooks, and both channels were green.
 - Fresh session `6360c186...` passed exact status (`86f838f0...` / `ad834646...` / `a67e66ad...` / `d84fc7d8...`) and Telegram delivered `agency-steward / none / none / requested execution alias task-general / deterministic`.
 - `node-connect` run `25fa081a...`, trace `c1bbbdc7...`, routing `3548700e...`, specialist `8e538079...`, skill `d02c71ae...`, and terminal `6907ed38...` delivered the exact inference header. Three applied receipts prove automatic OpenClaw/LiteLLM profile and exact `task-agency-router` alias/group with zero fallback.
@@ -81,10 +81,10 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 - The owning service was stopped (systemd retained failed/exit-code), then Agency-only install `0a3d141a...` completed without dashboard/restart: bundle `45b76c0e...`, runtime `573a6a14...`, launcher `e65a0784...`. Doctor passed eight hooks/zero tools; the same service restarted active/running, zero restarts, result `success`.
 - Fresh redacted Hermes session `...65697a38` acknowledged reset at 09:58:54. Exact first status run `116caa4a...`, trace `...65697a38:...65697a38:b446051a`, routing `b6ace409...` abstained, terminal `dee42fb2...` completed, and `hermes-agent` row `e6157654...`; Telegram delivered `agency-steward / none / hermes-agent / observed native task-general host receipt / deterministic` (1,140 characters, 223.6 seconds). Response/manifest SHAs are `5b9fd3f2...` / `886d32ac...`.
 - Skill run `e328626d...`, trace suffix `432b78d6`, routing `d1da7fd7...`, specialist `b2385c80...`, `codebase-inspection` rows `a070accc...` / `8218bddf...`, and terminal `53a5245b...` delivered `agency-steward, technical-writer / none / codebase-inspection / observed native task-general host receipt / inference`. Three applied same-profile LiteLLM receipts used exact alias/group `task-agency-router`, zero cross-provider fallback; Telegram delivered 427 characters in 58.2 seconds, response SHA `25b5be68...`.
-- A retained typo input missing its leading `R` produced read-only, non-delegating run `dedbed83...`, trace suffix `40284fac`, selected `senior-secops-engineer`, terminal `d010887b...`, and delivered 4,928 characters in 676.1 seconds.
 - Exact substantive prompt SHA `d79ece62...` produced run `d29c4652...`, trace suffix `b2e909cf`, routing `1bc084f2...`, `ai-evaluation-engineer` row `b952d046...`, and skill rows `2e62f150...` (`agent-runtime-operations`), `6cac7dc0...` (`pr-review-workflow`), `0bde577c...` (`hermes-agent`). Receipts `72c45dae...` / `5c096da9...` / `6286cc80...` all applied on `linux-task-agency-router` / LiteLLM / exact alias-group, with zero cross-provider fallback; terminal `543adf12...` accepted.
 - Telegram delivered the exact substantive header `agency-steward, ai-evaluation-engineer / none / agent-runtime-operations, pr-review-workflow, hermes-agent / native task-general host receipt / inference` and 5,274-character response in 263.9 seconds. Response/manifest SHAs are `1381e301...` / `12637e2a...`; no binding, delegation, worker, activation, or child exists.
 - Post-response internal non-user preflights `a9874148...` / `2934adb1...`, `e38ecc07...` / `60547574...`, and `3608e1d2...` / `3f54ebbc...` failed strict planning on the same profile without blocking replies. Bare doctor cwd failure is retained; explicit `hermes plugins doctor agency-preflight --ci` passes eight hooks/zero tools. Config hashes and launcher `e65a0784...` remain unchanged; final backup `bdf1a6e6...` is `ok`/`ok`, schema 47, contractors 15. Actual upstream model remains unavailable.
+- AR-280 now routes native-child staffing through the owning host profile and uses real OpenClaw/Hermes child identities. Race, durable-receipt, and nested-spawn regressions pass; the consolidated focused gate is 213 passed/1 existing skip and both review scopes are green. No host install or config mutation has occurred for this package yet.
 
 ## completed-evidence
 
@@ -96,7 +96,7 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 
 ## exact-blocker
 
-Both host-scoped acceptance sets pass. Actual upstream Hermes model telemetry and post-response internal strict-planner failures remain known limitations; Rule 4/delegation is unproven.
+Parent acceptance passes. Operational native-child proof is pending one host at a time; strict Rule 4 remains unproven because OpenClaw/Hermes lack ADR-0156 artifact collectors.
 
 ## traps (machine-specific; do not rediscover)
 
@@ -109,9 +109,9 @@ Both host-scoped acceptance sets pass. Actual upstream Hermes model telemetry an
 
 ## next-bounded-work-package
 
-1. Finalize the current evidence records and local commit/ledger pair.
-2. Preserve internal-lifecycle planner failures as a follow-up limitation.
-3. Do not claim Rule 4 or move the matrix without native-child delivery evidence.
+1. Create the required clean implementation/ledger checkpoint.
+2. Reinstall Agency only into OpenClaw and prove one fresh native child over Telegram.
+3. Only after OpenClaw passes, repeat for Hermes; do not move Rule 4 without an artifact receipt.
 
 ## same-task-continuity
 

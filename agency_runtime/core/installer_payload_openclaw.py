@@ -44,6 +44,8 @@ const PREFLIGHT_CONTEXT_TTL_MS = 10 * 60 * 1000;
 const MAX_PREFLIGHT_CONTEXTS = 128;
 const TOOL_CORRELATION_TTL_MS = 10 * 60 * 1000;
 const MAX_TOOL_CORRELATIONS = 128;
+const NATIVE_CHILD_OBSERVATION_TTL_MS = 10 * 60 * 1000;
+const MAX_NATIVE_CHILD_STATES = 512;
 const OUTBOUND_AUTHORIZATION_TTL_MS = 30 * 1000;
 const NATIVE_ERROR_TTL_MS = 30 * 1000;
 const NATIVE_CONTROL_ACK_TTL_MS = 10 * 1000;
@@ -61,6 +63,7 @@ const nativeControlAuthorizations = new Map();
 const nativeErrorMarkers = new Map();
 let nativeControlDiagnosticBudget = 64;
 const nativeChildParents = new Map();
+const nativeChildObservations = new Map();
 const NATIVE_CONTROL_ACKS = new Map([
   ["/new", "✅ New session started."],
   ["/reset", "✅ Session reset."],
@@ -240,6 +243,7 @@ function serializeBridgePayload(payload) {{
     traceId: boundedCorrelation(payload?.traceId),
     parentSessionId: boundedCorrelation(payload?.parentSessionId),
     parentTraceId: boundedCorrelation(payload?.parentTraceId),
+    launchId: boundedCorrelation(payload?.launchId),
     workUnitId: boundedUtf8(payload?.workUnitId, 160),
     workerId: boundedUtf8(payload?.workerId, 256),
     nativeRunId: boundedUtf8(payload?.nativeRunId, 256),
@@ -365,6 +369,24 @@ function invokeAgency(payload, processTimeoutMs = {timeout_ms}) {{
 
 function sessionId(event, ctx) {{
   return String(ctx?.sessionKey || ctx?.sessionId || event?.sessionKey || event?.sessionId || "");
+}}
+
+function isNativeSubagentSession(event, ctx) {{
+  return sessionId(event, ctx).includes(":subagent:");
+}}
+
+function nativeChildIdentityKey(childSession, nativeRunId) {{
+  const boundedSession = boundedNativeChildIdentity(childSession);
+  const boundedRun = boundedNativeChildIdentity(nativeRunId);
+  return boundedSession && boundedRun
+    ? JSON.stringify([boundedSession, boundedRun])
+    : "";
+}}
+
+function authenticatedNativeChildState(event, ctx) {{
+  const key = nativeChildIdentityKey(sessionId(event, ctx), traceId(event, ctx));
+  const state = key ? nativeChildParents.get(key) : undefined;
+  return state?.startedRecorded === true ? state : undefined;
 }}
 
 function traceId(event, ctx) {{
@@ -996,11 +1018,138 @@ function toolCorrelationIdentity(value) {{
   return identity && Buffer.byteLength(identity, "utf8") <= 512 ? identity : "";
 }}
 
-function rememberToolCorrelation(event, ctx) {{
+function boundedNativeChildIdentity(value, maximumBytes = 256) {{
+  let identity;
+  try {{ identity = String(value ?? ""); }}
+  catch {{ return ""; }}
+  if (!identity || identity.includes("\\0")) return "";
+  return Buffer.byteLength(identity, "utf8") <= maximumBytes ? identity : "";
+}}
+
+function acceptedSessionsSpawnResult(result) {{
+  try {{
+    const details = result?.details;
+    if (!details || typeof details !== "object" || details.status !== "accepted") return null;
+    const childSessionKey = boundedNativeChildIdentity(details.childSessionKey);
+    const runId = boundedNativeChildIdentity(details.runId);
+    return childSessionKey && runId ? {{ childSessionKey, runId }} : null;
+  }} catch {{
+    return null;
+  }}
+}}
+
+function pruneNativeChildState(now = Date.now()) {{
+  for (const [key, observation] of nativeChildObservations) {{
+    if (Number(observation?.expiresAt || 0) <= now) nativeChildObservations.delete(key);
+  }}
+  while (nativeChildObservations.size >= MAX_NATIVE_CHILD_STATES) {{
+    nativeChildObservations.delete(nativeChildObservations.keys().next().value);
+  }}
+  while (nativeChildParents.size >= MAX_NATIVE_CHILD_STATES) {{
+    nativeChildParents.delete(nativeChildParents.keys().next().value);
+  }}
+}}
+
+function nativeChildRequester(event, ctx) {{
+  return toolCorrelationIdentity(ctx?.requesterSessionKey || event?.requesterSessionKey);
+}}
+
+function rememberNativeChildSpawn(event, ctx) {{
+  const childSession = boundedNativeChildIdentity(event?.childSessionKey || ctx?.childSessionKey);
+  const nativeRunId = boundedNativeChildIdentity(event?.runId || ctx?.runId);
+  const requesterSessionId = nativeChildRequester(event, ctx);
+  const key = nativeChildIdentityKey(childSession, nativeRunId);
+  if (!key || !requesterSessionId) return null;
+  const now = Date.now();
+  pruneNativeChildState(now);
+  const previous = nativeChildObservations.get(key);
+  const previousActive = Number(previous?.expiresAt || 0) > now;
+  const ambiguous = previousActive && (
+    previous?.ambiguous === true
+    || previous?.requesterSessionId !== requesterSessionId
+  );
+  const observation = {{
+    childSession,
+    nativeRunId,
+    requesterSessionId,
+    pendingEnd: previousActive ? previous?.pendingEnd : undefined,
+    ambiguous,
+    expiresAt: now + NATIVE_CHILD_OBSERVATION_TTL_MS,
+  }};
+  nativeChildObservations.set(key, observation);
+  return ambiguous ? null : observation;
+}}
+
+function pendingNativeChildEnd(event, ctx) {{
+  const childSession = boundedNativeChildIdentity(event?.targetSessionKey || ctx?.childSessionKey);
+  const nativeRunId = boundedNativeChildIdentity(event?.runId || ctx?.runId);
+  const requesterSessionId = nativeChildRequester(event, ctx);
+  const key = nativeChildIdentityKey(childSession, nativeRunId);
+  if (!key || !requesterSessionId) return null;
+  const outcome = boundedUtf8(event?.outcome || "unknown", 32);
+  const error = boundedUtf8(event?.error || event?.reason || "", 32 * 1024);
+  const existing = nativeChildParents.get(key);
+  if (existing) {{
+    if (existing.requesterSessionId !== requesterSessionId) return null;
+    existing.pendingEnd = {{ outcome, error }};
+    return existing;
+  }}
+  const observation = nativeChildObservations.get(key);
+  if (
+    !observation
+    || observation.ambiguous === true
+    || Number(observation.expiresAt || 0) <= Date.now()
+    || observation.requesterSessionId !== requesterSessionId
+  ) return null;
+  observation.pendingEnd = {{ outcome, error }};
+  return null;
+}}
+
+async function persistNativeChildEnd(key, childState) {{
+  if (!childState?.startedRecorded || !childState?.pendingEnd || childState?.endInFlight) {{
+    return false;
+  }}
+  childState.endInFlight = true;
+  try {{
+    const receipt = await invokeAgency({{
+      action: "native_child_ended",
+      sessionId: String(childState.sessionId || ""),
+      traceId: String(childState.traceId || ""),
+      workUnitId: String(childState.workUnitId || ""),
+      workerId: String(childState.workerId || ""),
+      nativeRunId: String(childState.nativeRunId || ""),
+      outcome: String(childState.pendingEnd.outcome || "unknown"),
+      error: String(childState.pendingEnd.error || ""),
+    }});
+    if (receipt?.recorded !== true) throw new Error("native child end was not recorded");
+  }} catch {{
+    childState.endInFlight = false;
+    return false;
+  }}
+  if (nativeChildParents.get(key) === childState) nativeChildParents.delete(key);
+  nativeChildObservations.delete(key);
+  return true;
+}}
+
+function rememberToolCorrelation(event, ctx, parentScope = undefined) {{
   const toolCallId = toolCorrelationIdentity(event?.toolCallId || ctx?.toolCallId);
-  const session = toolCorrelationIdentity(sessionId(event, ctx));
-  const run = toolCorrelationIdentity(traceId(event, ctx));
+  const sourceSessionId = toolCorrelationIdentity(sessionId(event, ctx));
+  const sourceTraceId = toolCorrelationIdentity(traceId(event, ctx));
+  const session = toolCorrelationIdentity(parentScope?.sessionId || sourceSessionId);
+  const run = toolCorrelationIdentity(parentScope?.traceId || sourceTraceId);
   const model = boundedUtf8(modelId(ctx) || readPreflightModel(event, ctx), 1024);
+  const toolName = boundedUtf8(event?.toolName || ctx?.toolName, 512);
+  const params = (
+    event?.params
+    && typeof event.params === "object"
+    && !Array.isArray(event.params)
+  ) ? event.params : {{}};
+  const task = toolName === "sessions_spawn"
+    ? boundedUtf8(typeof params.task === "string" ? params.task : "", MAX_BRIDGE_TEXT_BYTES)
+    : "";
+  const workUnitId = toolName === "sessions_spawn"
+    ? boundedUtf8(typeof params.taskName === "string" ? params.taskName : "", 160)
+    : "";
   if (!toolCallId || !session || !run) return false;
   const now = Date.now();
   pruneToolCorrelations(now);
@@ -1010,11 +1159,23 @@ function rememberToolCorrelation(event, ctx) {{
     previous?.ambiguous === true
     || previous?.sessionId !== session
     || previous?.traceId !== run
+    || previous?.toolName !== toolName
+    || previous?.task !== task
+    || previous?.workUnitId !== workUnitId
+    || previous?.sourceSessionId !== sourceSessionId
+    || previous?.sourceTraceId !== sourceTraceId
   );
   toolCorrelations.set(toolCallId, {{
     sessionId: session,
     traceId: run,
     model,
+    toolName,
+    task,
+    workUnitId,
+    launchId: toolCallId,
+    sourceSessionId,
+    sourceTraceId,
+    nativeParent: Boolean(parentScope),
     ambiguous,
     expiresAt: now + TOOL_CORRELATION_TTL_MS,
   }});
@@ -1035,6 +1196,13 @@ function consumeToolCorrelation(event, ctx) {{
     sessionId: String(state.sessionId || ""),
     traceId: String(state.traceId || ""),
     model: String(state.model || ""),
+    toolName: String(state.toolName || ""),
+    task: String(state.task || ""),
+    workUnitId: String(state.workUnitId || ""),
+    launchId: String(state.launchId || ""),
+    sourceSessionId: String(state.sourceSessionId || ""),
+    sourceTraceId: String(state.sourceTraceId || ""),
+    nativeParent: state.nativeParent === true,
   }};
 }}
 
@@ -1052,6 +1220,8 @@ function observeRuntimeState(result, epoch = runtimeStateEpoch) {{
     nativeErrorMarkers.clear();
     preflightContexts.clear();
     toolCorrelations.clear();
+    nativeChildParents.clear();
+    nativeChildObservations.clear();
   }} else if (result?.runtime_enabled === true || result?.runtimeEnabled === true) {{
     runtimeEnabled = true;
   }}
@@ -1075,10 +1245,57 @@ export default definePluginEntry({{
   description: "Agency Runtime routing, evidence, and final-response enforcement.",
   register(api) {{
     deliveryCompatibility = inspectFinalOnlyDelivery(api?.config);
-    api.on("before_tool_call", (event, ctx) => {{
+    api.on("before_tool_call", async (event, ctx) => {{
       if (!runtimeEnabled) return undefined;
-      rememberToolCorrelation(event, ctx);
-      return undefined;
+      const toolName = String(event?.toolName || ctx?.toolName || "");
+      const nativeSubagent = isNativeSubagentSession(event, ctx);
+      const nativeParent = nativeSubagent
+        ? authenticatedNativeChildState(event, ctx)
+        : undefined;
+      if (nativeSubagent && (!nativeParent || toolName !== "sessions_spawn")) {{
+        return undefined;
+      }}
+      if (!rememberToolCorrelation(event, ctx, nativeParent)) return undefined;
+      if (toolName !== "sessions_spawn") return undefined;
+      const params = (
+        event?.params
+        && typeof event.params === "object"
+        && !Array.isArray(event.params)
+      ) ? event.params : null;
+      const task = typeof params?.task === "string" ? params.task : "";
+      const launchId = toolCorrelationIdentity(event?.toolCallId || ctx?.toolCallId);
+      let taskBytes;
+      try {{ taskBytes = Buffer.byteLength(task, "utf8"); }}
+      catch {{ return undefined; }}
+      if (
+        !params
+        || !task
+        || !launchId
+        || taskBytes > MAX_BRIDGE_TEXT_BYTES
+      ) return undefined;
+      const stateEpoch = ++runtimeStateEpoch;
+      let preparation;
+      try {{
+        preparation = await invokeAgency({{
+          action: "native_child_prepare",
+          sessionId: String(nativeParent?.sessionId || sessionId(event, ctx)),
+          traceId: String(nativeParent?.traceId || traceId(event, ctx)),
+          launchId,
+          goal: task,
+        }});
+      }} catch {{
+        return undefined;
+      }}
+      if (!observeRuntimeState(preparation, stateEpoch) || !runtimeEnabled) return undefined;
+      const rewrittenTask = typeof preparation?.rewrittenTask === "string"
+        ? preparation.rewrittenTask
+        : "";
+      if (
+        preparation?.staffed !== true
+        || !rewrittenTask
+        || Buffer.byteLength(rewrittenTask, "utf8") > MAX_BRIDGE_TEXT_BYTES
+      ) return undefined;
+      return {{ params: {{ ...params, task: rewrittenTask }} }};
     }});
 
     api.registerAgentToolResultMiddleware(async (event, ctx) => {{
@@ -1088,6 +1305,58 @@ export default definePluginEntry({{
       const correlatedTrace = correlation?.traceId || traceId(event, ctx);
       if (!correlatedSession || !correlatedTrace) return undefined;
       const stateEpoch = ++runtimeStateEpoch;
+      const acceptedChild = correlation?.toolName === "sessions_spawn"
+        ? acceptedSessionsSpawnResult(event?.result)
+        : null;
+      if (acceptedChild) {{
+        const childKey = nativeChildIdentityKey(
+          acceptedChild.childSessionKey,
+          acceptedChild.runId,
+        );
+        const observation = nativeChildObservations.get(childKey);
+        const observedRequesterMatches = Boolean(
+          observation
+          && observation.ambiguous !== true
+          && Number(observation.expiresAt || 0) > Date.now()
+          && observation.requesterSessionId === correlation?.sourceSessionId
+        );
+        const childState = {{
+          sessionId: correlatedSession,
+          traceId: correlatedTrace,
+          workerId: acceptedChild.childSessionKey,
+          nativeRunId: acceptedChild.runId,
+          workUnitId: correlation?.workUnitId || "",
+          launchId: correlation?.launchId || "",
+          requesterSessionId: correlation?.sourceSessionId || "",
+          pendingEnd: observedRequesterMatches ? observation?.pendingEnd : undefined,
+          startedRecorded: false,
+          endInFlight: false,
+        }};
+        pruneNativeChildState();
+        nativeChildParents.set(childKey, childState);
+        nativeChildObservations.delete(childKey);
+        try {{
+          const startedReceipt = await invokeAgency({{
+            action: "native_child_started",
+            sessionId: childState.sessionId,
+            traceId: childState.traceId,
+            launchId: childState.launchId,
+            workUnitId: childState.workUnitId,
+            workerId: childState.workerId,
+            nativeRunId: childState.nativeRunId,
+            childSessionId: childState.workerId,
+            goal: correlation?.task || "",
+          }});
+          if (startedReceipt?.recorded !== true) {{
+            throw new Error("native child start was not recorded");
+          }}
+          childState.startedRecorded = true;
+        }} catch {{
+          // Host execution already succeeded; lifecycle evidence remains partial.
+        }}
+        if (childState.pendingEnd) await persistNativeChildEnd(childKey, childState);
+        if (correlation?.nativeParent === true) return undefined;
+      }}
       let result;
       try {{
         result = await invokeAgency({{
@@ -1144,6 +1413,7 @@ export default definePluginEntry({{
     }});
 
     api.on("before_agent_run", async (event, ctx) => {{
+      if (isNativeSubagentSession(event, ctx)) return {{ outcome: "pass" }};
       const stateEpoch = ++runtimeStateEpoch;
       try {{
         const state = await invokeAgency({{ action: "control", command: "status" }});
@@ -1203,6 +1473,7 @@ export default definePluginEntry({{
     }});
 
     api.on("before_prompt_build", async (event, ctx) => {{
+      if (isNativeSubagentSession(event, ctx)) return undefined;
       const stateEpoch = ++runtimeStateEpoch;
       try {{
         const state = await invokeAgency({{ action: "control", command: "status" }});
@@ -1210,7 +1481,7 @@ export default definePluginEntry({{
       }} catch {{
         return undefined;
       }}
-      const childParent = nativeChildParents.get(sessionId(event, ctx));
+      const childParent = authenticatedNativeChildState(event, ctx);
       let result;
       try {{
         result = await invokeAgency({{
@@ -1236,60 +1507,31 @@ export default definePluginEntry({{
 
     api.on("model_call_ended", async (event, ctx) => {{
       if (!runtimeEnabled) return;
+      if (isNativeSubagentSession(event, ctx)) return;
       await invokeAgency(modelCallReceipt(event, ctx));
     }}, {{ timeoutMs: {host_timeout_ms} }});
 
     api.on("agent_end", (event, ctx) => {{
       if (!runtimeEnabled) return;
+      if (isNativeSubagentSession(event, ctx)) return;
       observeAgentEnd(event, ctx);
     }});
 
     api.on("subagent_spawned", async (event, ctx) => {{
       if (!runtimeEnabled) return;
-      const childSession = String(event?.childSessionKey || "");
-      const parentSession = sessionId(event, ctx);
-      const parentTrace = String(ctx?.runId || ctx?.turnId || event?.parentRunId || event?.parentTurnId || "");
-      const nativeRunId = String(event?.runId || (childSession ? `openclaw-subagent:${{childSession}}` : ""));
-      const workUnitId = String(event?.workUnitId || event?.taskName || "");
-      const goal = String(event?.goal || event?.task || event?.prompt || "");
-      if (childSession && parentSession && parentTrace) {{
-        nativeChildParents.set(childSession, {{
-          sessionId: parentSession,
-          traceId: parentTrace,
-          workerId: childSession,
-          nativeRunId,
-          workUnitId,
-        }});
-        if (nativeChildParents.size > 512) nativeChildParents.delete(nativeChildParents.keys().next().value);
-      }}
-      await invokeAgency({{
-        action: "native_child_started",
-        sessionId: sessionId(event, ctx),
-        traceId: String(ctx?.runId || ctx?.turnId || event?.parentRunId || event?.parentTurnId || ""),
-        workUnitId,
-        workerId: String(event?.childSessionKey || ""),
-        nativeRunId,
-        childSessionId: childSession,
-        goal,
-      }});
+      rememberNativeChildSpawn(event, ctx);
     }}, {{ timeoutMs: {host_timeout_ms} }});
 
     api.on("subagent_ended", async (event, ctx) => {{
       if (!runtimeEnabled) return;
-      nativeChildParents.delete(String(event?.targetSessionKey || ""));
-      await invokeAgency({{
-        action: "native_child_ended",
-        sessionId: sessionId(event, ctx),
-        traceId: String(ctx?.runId || ctx?.turnId || event?.parentRunId || event?.parentTurnId || ""),
-        workUnitId: String(event?.workUnitId || event?.taskName || ""),
-        workerId: String(event?.targetSessionKey || ""),
-        nativeRunId: String(event?.runId || ""),
-        outcome: String(event?.outcome || "unknown"),
-        error: String(event?.error || event?.reason || ""),
-      }});
+      const childState = pendingNativeChildEnd(event, ctx);
+      if (!childState) return;
+      const childKey = nativeChildIdentityKey(childState.workerId, childState.nativeRunId);
+      await persistNativeChildEnd(childKey, childState);
     }}, {{ timeoutMs: {host_timeout_ms} }});
 
     api.on("before_agent_finalize", async (event, ctx) => {{
+      if (isNativeSubagentSession(event, ctx)) return undefined;
       const stateEpoch = ++runtimeStateEpoch;
       const correlatedModel = modelId(ctx) || readPreflightModel(event, ctx);
       let decision;
@@ -1335,6 +1577,7 @@ export default definePluginEntry({{
     api.on("reply_payload_sending", (event, ctx) => {{
       try {{
       const session = String(event?.sessionKey || ctx?.sessionKey || "");
+      if (isNativeSubagentSession(event, ctx)) return {{ payload: event?.payload }};
       const kind = String(event?.kind || "");
       const run = String(event?.runId || ctx?.runId || "");
       const nativeTextSurfaces = outboundTextSurfaces(event?.payload);
@@ -1553,6 +1796,7 @@ export default definePluginEntry({{
       try {{
       const session = String(event?.sessionKey || ctx?.sessionKey || "");
       const content = typeof event?.content === "string" ? event.content : "";
+      if (isNativeSubagentSession(event, ctx)) return {{ content }};
       if (
         NATIVE_CONTROL_ACK_TEXTS.has(content)
       ) {{
