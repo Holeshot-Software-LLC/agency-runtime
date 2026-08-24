@@ -76,6 +76,10 @@ from agency_runtime.core.turn_intent import (
     authoritative_turn_classification,
     classify_turn_intent,
 )
+from agency_runtime.core.turn_routing_context import (
+    project_turn_routing_context,
+    turn_routing_context_revision,
+)
 
 logger = logging.getLogger("agency_runtime.selector.pipeline")
 
@@ -357,6 +361,8 @@ class _RouteRequest:
     eligibility_rejections: tuple[dict[str, str], ...] = ()
     semantic_root_ids: frozenset[str] | None = None
     workforce_snapshot: WorkforceIndexSnapshot | None = None
+    turn_routing_context: dict[str, Any] = field(default_factory=dict)
+    turn_routing_context_revision: str = ""
 
 
 @dataclass(frozen=True, slots=True)
@@ -388,8 +394,13 @@ def _route_request(
     allow_installation_diagnostic: bool = False,
     semantic_root_ids: tuple[str, ...] | None = None,
     workforce_snapshot: WorkforceIndexSnapshot | None = None,
+    turn_routing_context: Mapping[str, Any] | None = None,
 ) -> _RouteRequest:
     user_message = _bounded_signal_text(user_message)
+    projected_turn_context = project_turn_routing_context(turn_routing_context)
+    if projected_turn_context is None:
+        raise ValueError("turn_routing_context is malformed or unbounded")
+    turn_context_revision = turn_routing_context_revision(projected_turn_context)
     capabilities = current_host_capability_receipt(
         capability_receipt,
         surface=host,
@@ -457,6 +468,21 @@ def _route_request(
         ).encode("utf-8")
     ).hexdigest()
     refined = refine_query(user_message, config)
+    if projected_turn_context:
+        subject = projected_turn_context.get("workforce_subject_hints", {})
+        subject_tokens = [
+            str(item)
+            for field in ("domains", "languages", "frameworks", "capability_ids", "platforms")
+            for item in subject.get(field, [])
+        ]
+        specialist_tokens = [
+            str(item.get("slug") or "")
+            for item in projected_turn_context.get("specialists", [])
+            if isinstance(item, Mapping)
+        ]
+        context_tokens = " ".join((*subject_tokens, *specialist_tokens))
+        if context_tokens:
+            refined = f"{refined} {context_tokens}"[:MAX_ROUTING_SIGNAL_CHARS]
     routing_query = expand_query(affirmative_intent(refined))
     return _RouteRequest(
         session_id=session_id,
@@ -482,6 +508,8 @@ def _route_request(
         eligibility_rejections=eligibility.rejected,
         semantic_root_ids=bounded_semantic_roots,
         workforce_snapshot=workforce_snapshot,
+        turn_routing_context=projected_turn_context,
+        turn_routing_context_revision=turn_context_revision,
     )
 
 
@@ -529,6 +557,7 @@ def build_route_request(
     allow_installation_diagnostic: bool = False,
     semantic_root_ids: tuple[str, ...] | None = None,
     workforce_snapshot: WorkforceIndexSnapshot | None = None,
+    turn_routing_context: Mapping[str, Any] | None = None,
 ) -> _RouteRequest:
     """Build a ``_RouteRequest`` for reuse across one routing turn.
 
@@ -555,6 +584,7 @@ def build_route_request(
         allow_installation_diagnostic=allow_installation_diagnostic,
         semantic_root_ids=semantic_root_ids,
         workforce_snapshot=workforce_snapshot,
+        turn_routing_context=turn_routing_context,
     )
 
 
@@ -635,6 +665,15 @@ def _finalize_classified_request(
             provider_attempts=[],
             inference_failures=[],
         )
+    turn_context_applied = bool(
+        request.turn_routing_context
+        and classification.selection_required
+        and classification.reroute_required
+        and (
+            not classification.execution_decision_required
+            or classification.turn_kind in {"continuation", "revision"}
+        )
+    )
     classified.update(
         turn_kind=classification.turn_kind,
         selection_required=classification.selection_required,
@@ -643,7 +682,13 @@ def _finalize_classified_request(
         continuation_of=classification.continuation_of,
         classifier_version=classification.classifier_version,
         state_revision=classification.state_revision,
+        turn_context_applied=turn_context_applied,
     )
+    if turn_context_applied:
+        classified.update(
+            turn_context_source_trace_id=request.turn_routing_context["source_trace_id"],
+            turn_context_revision=request.turn_routing_context_revision,
+        )
     return _finalize_request(classified, request, store=store, trace_id=trace_id)
 
 
@@ -1004,6 +1049,103 @@ def _activation_canary_projection(
     }
     projected.pop("workforce_unit_descriptors", None)
     return projected
+
+
+def _advisory_projection(
+    routing: dict[str, Any],
+    classification: TurnClassification,
+) -> dict[str, Any]:
+    """Reject any executable authority inferred for a parent-only advisory turn."""
+
+    if classification.execution_decision_required or routing.get("status") != "accepted":
+        return routing
+    descriptors = routing.get("workforce_unit_descriptors")
+    bindings = routing.get("workforce_unit_bindings")
+    assignments = routing.get("unit_assignment_agents")
+    selected = routing.get("selected_ids")
+    work_units = routing.get("work_units")
+    violations: list[str] = []
+    checks = (
+        (isinstance(selected, list) and bool(selected), "selected"),
+        (isinstance(descriptors, list) and len(descriptors) == 1, "descriptor_count"),
+        (isinstance(bindings, list) and len(bindings) == 1, "binding_count"),
+        (isinstance(assignments, list), "assignments"),
+        (isinstance(work_units, Mapping), "work_units"),
+    )
+    violations.extend(code for passed, code in checks if not passed)
+    descriptor = (
+        dict(descriptors[0]) if not violations and isinstance(descriptors[0], Mapping) else {}
+    )
+    binding = dict(bindings[0]) if not violations and isinstance(bindings[0], Mapping) else {}
+    if not violations:
+        assignment_slugs = {
+            str(item.get("slug") or "").strip().casefold()
+            for item in assignments
+            if isinstance(item, Mapping)
+        }
+        checks = (
+            (descriptor.get("ordinal") == 1, "descriptor_ordinal"),
+            (descriptor.get("artifact_kind") == "analysis", "descriptor_artifact"),
+            (descriptor.get("lifecycle_phase") == "discovery", "descriptor_lifecycle"),
+            (descriptor.get("authority") == "advise", "descriptor_authority"),
+            (descriptor.get("mutation_scope") == "read_only", "descriptor_mutation"),
+            (binding.get("selected") == selected, "binding_selection"),
+            (binding.get("delivery") == "load", "binding_delivery"),
+            (binding.get("depends_on") == [], "binding_dependencies"),
+            (binding.get("mutation_scope") == "read_only", "binding_mutation"),
+            (binding.get("artifact_kind") == "analysis", "binding_artifact"),
+            (assignment_slugs == set(selected), "assignment_selection"),
+            (work_units.get("count") == 1, "work_unit_count"),
+            (
+                isinstance(work_units.get("units"), list) and len(work_units["units"]) == 1,
+                "work_unit_payload",
+            ),
+            (work_units.get("delegate") is False, "work_unit_delegation"),
+        )
+        violations.extend(code for passed, code in checks if not passed)
+    if not violations:
+        return routing
+    return {
+        **routing,
+        "selected_ids": [],
+        "semantic_ids": [],
+        "status": "inference_invalid",
+        "source": "workforce_inference_failure",
+        "error": "advisory_contract_invalid:" + ",".join(violations),
+        "work_units": {
+            "count": 0,
+            "confidence": "none",
+            "source": "advisory-contract",
+            "units": [],
+            "delegate": False,
+        },
+        "workforce_unit_bindings": [],
+        "workforce_unit_descriptors": [],
+        "unit_assignment_agents": [],
+    }
+
+
+def _workforce_planning_options(
+    classification: TurnClassification,
+    *,
+    activation_canary: bool,
+) -> dict[str, object]:
+    """Return bounded planner constraints for special turn contracts."""
+
+    if activation_canary:
+        return {
+            "max_planned_units": 1,
+            "required_planned_artifact_kind": "review-report",
+        }
+    if not classification.execution_decision_required:
+        # Contextual work inquiries need fresh expertise in the parent, not an
+        # inferred action plan. The analysis artifact deterministically maps to
+        # advise authority and read_only mutation scope.
+        return {
+            "max_planned_units": 1,
+            "required_planned_artifact_kind": "analysis",
+        }
+    return {}
 
 
 def _conflict_provider(config: Any) -> Any:
@@ -1541,6 +1683,7 @@ def route(
     allow_installation_diagnostic: bool = False,
     semantic_root_ids: tuple[str, ...] | None = None,
     workforce_snapshot: WorkforceIndexSnapshot | None = None,
+    turn_routing_context: Mapping[str, Any] | None = None,
     request: _RouteRequest | None = None,
     preflight_atomic: bool = False,
 ) -> dict[str, Any]:
@@ -1592,6 +1735,7 @@ def route(
             allow_installation_diagnostic=allow_installation_diagnostic,
             semantic_root_ids=semantic_root_ids,
             workforce_snapshot=workforce_snapshot,
+            turn_routing_context=turn_routing_context,
         )
     )
     if not classification.selection_required:
@@ -1713,13 +1857,9 @@ def route(
             host=request.host,
             capability_status=request.capability_status,
         )
-        planning_options = (
-            {
-                "max_planned_units": 1,
-                "required_planned_artifact_kind": "review-report",
-            }
-            if activation_canary
-            else {}
+        planning_options = _workforce_planning_options(
+            classification,
+            activation_canary=activation_canary,
         )
         outcome = plan_and_staff_workforce(
             request.user_message,
@@ -1727,6 +1867,16 @@ def route(
             config=cfg,
             context=staffing_context,
             routing_context_fingerprint=request.context_fingerprint,
+            turn_routing_context=(
+                request.turn_routing_context
+                if request.turn_routing_context
+                and classification.reroute_required
+                and (
+                    not classification.execution_decision_required
+                    or classification.turn_kind in {"continuation", "revision"}
+                )
+                else None
+            ),
             **planning_options,
         )
         _record_workforce_model_receipts(
@@ -1741,6 +1891,11 @@ def route(
         if activation_canary:
             hiring_events = []
         else:
+            # Advisory turns may found an internal specialist when the verified
+            # roster has a real capability gap. That workforce mutation does
+            # not widen the turn's authority: the projection below still
+            # enforces one read-only parent analysis unit, load delivery, and
+            # no native child/workspace/external execution.
             outcome, active_snapshot, active_catalog, hiring_events = _run_gap_hiring(
                 outcome,
                 request,
@@ -1758,6 +1913,7 @@ def route(
             contract_fingerprint=active_snapshot.contract_fingerprint,
         )
         routing = _activation_canary_projection(routing, request)
+        routing = _advisory_projection(routing, classification)
         if hiring_events:
             pending_commits = [
                 event.pop("_pending_commit")
@@ -1850,6 +2006,16 @@ def build_routing_context(routing: dict[str, Any], config: AgencyConfig | None =
         parts.append(
             f"[AGENCY PREFLIGHT] Specialist routing suggestion "
             f"(confidence={confidence:.1f}, source={source}): {agents_list}"
+        )
+
+    if (
+        routing.get("selection_required") is True
+        and routing.get("execution_decision_required") is False
+    ):
+        parts.append(
+            "[AGENCY ADVISORY TURN] Use the selected specialist context only for a "
+            "read-only parent assessment. Do not infer workspace mutation, external action, "
+            "or native-child delegation from this turn."
         )
 
     # No delegation nudge. Agency does not tell the host what to spawn or how

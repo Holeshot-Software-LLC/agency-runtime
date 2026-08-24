@@ -115,6 +115,40 @@ def _workforce_unit_descriptors(value: Any) -> list[dict[str, Any]]:
     return result
 
 
+def _workforce_routing_recipe_fields(routing: Mapping[str, Any]) -> dict[str, Any]:
+    """Project bounded workforce fields without widening routing retention."""
+
+    from agency_runtime.core.activation_canary_contract import (
+        CODEX_ACTIVATION_CANARY_ROUTE_SOURCE,
+    )
+    from agency_runtime.core.turn_routing_context import (
+        workforce_subject_hints_from_plan,
+    )
+    from agency_runtime.core.workforce.routing_projection import (
+        project_workforce_unit_bindings,
+    )
+
+    descriptors = _workforce_unit_descriptors(routing.get("workforce_unit_descriptors"))
+    source = str(routing.get("source") or "")
+    activation_canary = source == CODEX_ACTIVATION_CANARY_ROUTE_SOURCE
+    if not (descriptors or source.startswith("workforce_") or activation_canary):
+        return {}
+
+    projected: dict[str, Any] = {}
+    if not activation_canary:
+        projected["workforce_unit_descriptors"] = descriptors
+        subject_hints = workforce_subject_hints_from_plan(routing.get("workforce_plan"))
+        if subject_hints is None:
+            raise RuntimeError("workforce subject hints are malformed")
+        if subject_hints:
+            projected["workforce_subject_hints"] = subject_hints
+    bindings = project_workforce_unit_bindings(routing.get("workforce_unit_bindings"))
+    if bindings is None:
+        raise RuntimeError("workforce unit bindings are malformed")
+    projected["workforce_unit_bindings"] = bindings
+    return projected
+
+
 def _content_free_routing_recipe(
     routing: dict[str, Any],
     *,
@@ -175,24 +209,7 @@ def _content_free_routing_recipe(
             raise RuntimeError("pending hiring commits are malformed or unbounded")
         if pending_hiring:
             projected["_pending_hiring_commits"] = list(pending_hiring)
-    descriptors = _workforce_unit_descriptors(routing.get("workforce_unit_descriptors"))
-    source = str(routing.get("source") or "")
-    from agency_runtime.core.activation_canary_contract import (
-        CODEX_ACTIVATION_CANARY_ROUTE_SOURCE,
-    )
-
-    activation_canary = source == CODEX_ACTIVATION_CANARY_ROUTE_SOURCE
-    if descriptors or source.startswith("workforce_") or activation_canary:
-        if not activation_canary:
-            projected["workforce_unit_descriptors"] = descriptors
-        from agency_runtime.core.workforce.routing_projection import (
-            project_workforce_unit_bindings,
-        )
-
-        bindings = project_workforce_unit_bindings(routing.get("workforce_unit_bindings"))
-        if bindings is None:
-            raise RuntimeError("workforce unit bindings are malformed")
-        projected["workforce_unit_bindings"] = bindings
+    projected.update(_workforce_routing_recipe_fields(routing))
     raw_execution_context = routing.get("execution_context")
     if raw_execution_context is not None:
         execution_context = project_host_capability_receipt(raw_execution_context)
@@ -205,6 +222,7 @@ def _content_free_routing_recipe(
         "source_message_hash",
         "origin_query_hash",
         "origin_context_fingerprint",
+        "turn_context_revision",
     ):
         digest = _digest(routing.get(field))
         if digest:
@@ -212,6 +230,10 @@ def _content_free_routing_recipe(
     origin_trace_id = str(routing.get("origin_trace_id") or "").strip()[:128]
     if origin_trace_id:
         projected["origin_trace_id"] = origin_trace_id
+    turn_context_source = str(routing.get("turn_context_source_trace_id") or "").strip()[:128]
+    if turn_context_source:
+        projected["turn_context_source_trace_id"] = turn_context_source
+    projected["turn_context_applied"] = routing.get("turn_context_applied") is True
     return projected
 
 

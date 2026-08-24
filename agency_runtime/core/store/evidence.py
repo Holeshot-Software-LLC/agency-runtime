@@ -78,6 +78,13 @@ from agency_runtime.core.store.projections import (
 from agency_runtime.core.store.queries import _ROUTING_DECISION_FIELDS
 from agency_runtime.core.store.receipt_authority import MODEL_RECEIPT_AUTHORITY_ORDER_SQL
 from agency_runtime.core.store.schema import STORE_CLOCK_SQL, store_clock_value_is_canonical
+from agency_runtime.core.turn_routing_context import (
+    TURN_ROUTING_CONTEXT_GUARD_VERSION,
+    project_turn_routing_context_guard,
+    terminal_turn_context_passthrough,
+    turn_routing_context_from_recipe,
+    turn_routing_context_revision,
+)
 
 MAX_HOST_CONTROL_GENERATION = (2**63) - 1
 # A routing payload is ids, hashes, flags and small numbers; anything larger is
@@ -3013,6 +3020,7 @@ class EvidenceStoreMixin(PreflightStoreMixin):
         session_id: str,
         *,
         before_trace_id: str = "",
+        host: str = "",
     ) -> dict[str, Any]:
         """Return bounded state that can disambiguate the next external turn."""
 
@@ -3022,16 +3030,55 @@ class EvidenceStoreMixin(PreflightStoreMixin):
             field="trace_id",
             required=False,
         )
+        normalized_host = str(host or "").strip().casefold()[:64]
         conn = self._connect()
         try:
             conn.execute("BEGIN")
             previous = conn.execute(
-                "SELECT trace_id, status, metadata, preflight_result "
+                "SELECT trace_id, status, metadata, preflight_result, "
+                "evidence_revision, turn_sequence "
                 "FROM runs WHERE session_id = ? "
                 "AND (? = '' OR trace_id <> ?) "
+                "AND (? = '' OR LOWER(TRIM(host)) = ?) "
                 "ORDER BY turn_sequence DESC LIMIT 1",
-                (normalized_session, normalized_trace, normalized_trace),
+                (
+                    normalized_session,
+                    normalized_trace,
+                    normalized_trace,
+                    normalized_host,
+                    normalized_host,
+                ),
             ).fetchone()
+            # Terminal acknowledgement, control, social, and parent-only
+            # advisory projections must not hide older work from the next
+            # contextual inquiry. Follow a bounded chain while preserving any
+            # turn that is still active or carries a pending interaction.
+            excluded_traces = [normalized_trace] if normalized_trace else []
+            for _ in range(32):
+                if previous is None:
+                    break
+                previous_metadata = _bounded_metadata(previous["metadata"])
+                if not terminal_turn_context_passthrough(
+                    str(previous["status"] or ""),
+                    previous_metadata,
+                ):
+                    break
+                excluded_traces.append(str(previous["trace_id"] or ""))
+                placeholders = ", ".join("?" for _item in excluded_traces)
+                previous = conn.execute(
+                    "SELECT trace_id, status, metadata, preflight_result, "
+                    "evidence_revision, turn_sequence "
+                    "FROM runs WHERE session_id = ? "
+                    "AND (? = '' OR LOWER(TRIM(host)) = ?) "
+                    f"AND trace_id NOT IN ({placeholders}) "
+                    "ORDER BY turn_sequence DESC LIMIT 1",
+                    (
+                        normalized_session,
+                        normalized_host,
+                        normalized_host,
+                        *excluded_traces,
+                    ),
+                ).fetchone()
             generation_row = conn.execute(
                 "SELECT value FROM store_counters WHERE name = 'roster-generation'"
             ).fetchone()
@@ -3043,9 +3090,10 @@ class EvidenceStoreMixin(PreflightStoreMixin):
             previous_trace = str(previous["trace_id"] or "")
             previous_status = str(previous["status"] or "")
             metadata = _bounded_metadata(previous["metadata"])
+            raw_recipe = str(previous["preflight_result"] or "")
             try:
                 recipe = _decode_preflight_recipe(
-                    previous["preflight_result"],
+                    raw_recipe,
                     session_id=normalized_session,
                     trace_id=previous_trace,
                 )
@@ -3104,6 +3152,23 @@ class EvidenceStoreMixin(PreflightStoreMixin):
                 if str(metadata.get("request_kind") or "") == "trivial"
                 else "new_intent"
             )
+        routing_context = turn_routing_context_from_recipe(
+            recipe,
+            source_trace_id=previous_trace,
+            source_status=previous_status,
+            source_turn_kind=previous_turn_kind,
+        )
+        routing_context_guard = project_turn_routing_context_guard(
+            {
+                "guard_version": TURN_ROUTING_CONTEXT_GUARD_VERSION,
+                "source_trace_id": previous_trace,
+                "source_turn_sequence": int(previous["turn_sequence"]),
+                "source_evidence_revision": int(previous["evidence_revision"]),
+                "source_roster_generation": int(roster_revision),
+                "source_recipe_digest": sha256(raw_recipe.encode("utf-8")).hexdigest(),
+                "source_context_revision": turn_routing_context_revision(routing_context),
+            }
+        )
         return {
             "state_known": True,
             "previous_trace_id": previous_trace,
@@ -3118,6 +3183,8 @@ class EvidenceStoreMixin(PreflightStoreMixin):
             "roster_revision": roster_revision,
             "specialist_revision": _projection_digest(references) if references else "",
             "delegation_revision": (_projection_digest(delegation_rows) if delegation_rows else ""),
+            "turn_routing_context": routing_context,
+            "turn_routing_context_guard": routing_context_guard or {},
         }
 
     def is_nontrivial_turn(self, session_id: str, trace_id: str) -> bool | None:

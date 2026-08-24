@@ -132,8 +132,8 @@ def _typed_shortlists(""",
             "authors a plan."
         ),
         source_path="agency_runtime/core/workforce/inference.py",
-        before='                "plan_acceptance_contract": planner_acceptance_contract(),',
-        after='                "plan_acceptance_contract": {},',
+        before='            "plan_acceptance_contract": planner_acceptance_contract(),',
+        after='            "plan_acceptance_contract": {},',
         test_node=(
             "tests/test_workforce_inference.py::"
             "test_planner_repair_receives_exact_assurance_graph_and_remains_inference_owned"
@@ -288,8 +288,8 @@ class _NominationSemantics:""",
             "evidence for every planned unit."
         ),
         source_path="agency_runtime/core/workforce/inference.py",
-        before='            "typed_recall": typed_recall,',
-        after='            "typed_recall": [],',
+        before='        "typed_recall": typed_recall,',
+        after='        "typed_recall": [],',
         test_node=(
             "tests/test_workforce_inference.py::"
             "test_recruiter_repair_declares_gap_when_typed_recall_proves_uncovered_requirements"
@@ -589,8 +589,14 @@ class _NominationSemantics:""",
             "work unit."
         ),
         source_path="agency_runtime/core/selector/pipeline.py",
-        before='                "max_planned_units": 1,',
-        after='                "max_planned_units": 2,',
+        before="""        return {
+            "max_planned_units": 1,
+            "required_planned_artifact_kind": "review-report",
+        }""",
+        after="""        return {
+            "max_planned_units": 2,
+            "required_planned_artifact_kind": "review-report",
+        }""",
         test_node=(
             "tests/test_activation_canary_contract.py::"
             "test_activation_canary_uses_inference_owned_selection"
@@ -603,8 +609,8 @@ class _NominationSemantics:""",
             "artifact."
         ),
         source_path="agency_runtime/core/selector/pipeline.py",
-        before='                "required_planned_artifact_kind": "review-report",',
-        after='                "required_planned_artifact_kind": "analysis",',
+        before='            "required_planned_artifact_kind": "review-report",',
+        after='            "required_planned_artifact_kind": "analysis",',
         test_node=(
             "tests/test_activation_canary_contract.py::"
             "test_activation_canary_uses_inference_owned_selection"
