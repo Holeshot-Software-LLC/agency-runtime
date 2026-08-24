@@ -54,19 +54,21 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 - Hermes v0.20.4 preflight recorded effective home `/home/holeshot/.hermes-nexus`, native `litellm/task-general`, five fallbacks, nine enabled plugins, config SHA `a984d934...`, and 15 contractors. Online Store backup SHA `affd8f8e...` has integrity `ok`, schema 47.
 - First install artifact SHA `72c3a7ac...` retained the fail-closed `0775` plugin-parent refusal before staging. After tightening only that parent to `0700` and using umask `0077`, Agency-only install `06bd5aa2-c8c3-4321-90b2-e413a142c4a7` completed; bundle `351a7108...`, runtime `70239e65...`, launcher `7c033c97...`, install artifact `93857d15...`.
 - Hermes native model/provider/fallbacks, environment hash, and nine prior plugins remain unchanged. Config SHA `95b87b7f...` reflects only `agency-preflight` enablement with tool override false. Plugin doctor proves eight hooks and zero tools. The installer did not restart Hermes; the exact Nexus service is now active/running after native restart.
+- Fresh Hermes exact status completed Store-backed parent activation and `hermes-agent` skill evidence, but generic `agency.finalize` mislabeled its receipt `mcp`. Fresh OpenClaw exact status loaded `openclaw-operations` but was rejected after its tool-result header lost the preflight model; no delivery is claimed.
+- Expected-red regressions now pass with bounded OpenClaw model correlation and Store-authoritative finalization attribution. Focused slice: 232 passed / 6 skipped under umask `0077`; candidate not installed.
 
 ## completed-evidence
 
-- OpenClaw installation, activation, final-only delivery, Store-backed skill loading, and exact substantive LiteLLM parent routing now pass.
+- Prior OpenClaw acceptance evidence remains valid; the newest tool-using status regression must pass after Agency reinstall.
 - Install/launcher provenance, contractor preservation, config invariants, final Store integrity, exact alias, and zero fallback are current.
 - Native `task-general` and Agency `task-agency-router` remain separate; no actual answering model is invented from wrapper receipts.
 - The package proves parent routing only, not Rule 4 native-child delivery or a matrix-cell transition.
-- Hermes installation/registration is current; live activation and routing evidence remain pending.
+- Hermes install, activation, header, and skill evidence pass; corrected native-host attribution and substantive Agency routing remain pending.
 
 ## exact-blocker
 
-Hermes needs fresh Telegram status, harmless skill, and exact substantive
-configuration-drift evidence.
+Checkpoint and install the regression-first repairs, then collect changed fresh
+delivery and substantive routing evidence.
 
 ## same-task-continuity
 
@@ -74,9 +76,9 @@ Continue from the clean Hermes install checkpoint into fresh live evidence.
 
 ## next-bounded-work-package
 
-1. Send exact first message `agency status` in a fresh Hermes Telegram session.
-2. Load one harmless skill without delegation and correlate Store/header evidence.
-3. Send the exact configuration-drift review and prove Hermes-scoped `task-agency-router` with zero fallback.
+1. Commit the repair/ledger pair and reinstall Agency only into both affected hosts serially.
+2. Prove changed OpenClaw delivery and Hermes finalization host attribution.
+3. Run Hermes's exact configuration-drift review through `task-agency-router` with zero fallback.
 
 ## verification
 

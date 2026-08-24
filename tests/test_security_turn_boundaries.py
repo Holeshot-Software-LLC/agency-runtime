@@ -811,6 +811,58 @@ if (call.sessionId !== "native-session" || call.traceId !== "native-run") proces
 
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is not installed")
+def test_generated_openclaw_preserves_preflight_model_for_tool_result_header_refresh(
+    tmp_path: Path,
+) -> None:
+    source = _openclaw_plugin_harness_source()
+    source += """
+const promptBuild = registeredHooks.get("before_prompt_build");
+const beforeToolCall = registeredHooks.get("before_tool_call");
+const registration = registeredToolResultMiddlewares[0];
+if (typeof promptBuild !== "function" || typeof beforeToolCall !== "function"
+    || !registration) process.exit(275);
+const turnContext = {
+  sessionKey: "tool-model-session",
+  runId: "tool-model-run",
+  modelId: "task-general",
+};
+if ((await promptBuild({ prompt: "agency status" }, turnContext))?.appendContext
+    !== "Agency preflight context") process.exit(276);
+await beforeToolCall(
+  { toolCallId: "call-tool-model", toolName: "read", runId: "tool-model-run" },
+  turnContext,
+);
+await registration.handler(
+  {
+    toolCallId: "call-tool-model",
+    toolName: "read",
+    args: { path: "/opt/openclaw/skills/weather/SKILL.md" },
+    result: { content: [{ type: "text", text: "native tool output" }] },
+  },
+  { runtime: "openclaw" },
+);
+const call = bridgeCalls.find((payload) => payload.action === "post_tool_call");
+if (!call) process.exit(277);
+if (call.sessionId !== "tool-model-session" || call.traceId !== "tool-model-run") {
+  process.exit(278);
+}
+if (call.model !== "task-general") process.exit(279);
+"""
+    script = tmp_path / "openclaw-tool-result-model-correlation.mjs"
+    script.write_text(source, encoding="utf-8")
+
+    completed = subprocess.run(
+        [str(shutil.which("node")), str(script)],
+        capture_output=True,
+        text=True,
+        timeout=10,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is not installed")
 def test_generated_openclaw_rejects_ambiguous_native_tool_result_correlation(
     tmp_path: Path,
 ) -> None:

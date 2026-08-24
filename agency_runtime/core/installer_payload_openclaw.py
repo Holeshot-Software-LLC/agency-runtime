@@ -848,6 +848,7 @@ function rememberToolCorrelation(event, ctx) {{
   const toolCallId = toolCorrelationIdentity(event?.toolCallId || ctx?.toolCallId);
   const session = toolCorrelationIdentity(sessionId(event, ctx));
   const run = toolCorrelationIdentity(traceId(event, ctx));
+  const model = boundedUtf8(modelId(ctx) || readPreflightModel(event, ctx), 1024);
   if (!toolCallId || !session || !run) return false;
   const now = Date.now();
   pruneToolCorrelations(now);
@@ -861,6 +862,7 @@ function rememberToolCorrelation(event, ctx) {{
   toolCorrelations.set(toolCallId, {{
     sessionId: session,
     traceId: run,
+    model,
     ambiguous,
     expiresAt: now + TOOL_CORRELATION_TTL_MS,
   }});
@@ -880,6 +882,7 @@ function consumeToolCorrelation(event, ctx) {{
   return {{
     sessionId: String(state.sessionId || ""),
     traceId: String(state.traceId || ""),
+    model: String(state.model || ""),
   }};
 }}
 
@@ -938,6 +941,7 @@ export default definePluginEntry({{
           action: "post_tool_call",
           sessionId: correlatedSession,
           traceId: correlatedTrace,
+          model: correlation?.model || modelId(ctx) || readPreflightModel(event, ctx),
           toolName: String(event?.toolName || ""),
           toolInput: event?.args || {{}},
           toolResult: event?.result,

@@ -3773,3 +3773,43 @@ import, and registration with eight hooks and zero tools. The exact Nexus
 gateway service is active/running after native restart; OpenClaw remains
 active. Fresh Telegram status, skill, and substantive routing proof remain
 pending. Protected hosts and the AR-119 matrix remain untouched.
+
+## 2026-08-23 - Fresh dual-host status isolates two runtime attribution defects
+
+The operator sent fresh-session control commands to both hosts. Hermes exact
+`agency status` completed trace
+`20260823_195135_48369ae1:20260823_195135_48369ae1:301cda8d`, run
+`1015aba7-172f-4a53-b88e-584846ea7ce5`, abstained routing
+`fe3a549f-51e2-4b70-969e-a4c6c35d55eb`, `hermes-agent` skill row
+`e3805f74-b628-4346-b5d1-cb3f072a32d5`, and accepted finalization
+`3cc70f32-e5e7-4069-8faf-ccc327bc3677`. Response SHA is `da7f3f0c...`;
+transcript SHA is `8bce3dbe...`. Its header honestly reports native
+`task-general` and deterministic recruitment. Twelve host receipts are native
+parent calls, not Agency workforce inference. No specialist, delegation, or
+native-child row exists. Generic `agency.finalize` incorrectly persisted host
+`mcp` instead of the Store-owned run host `hermes`; Telegram delivery is not
+independently claimed yet.
+
+OpenClaw exact `agency status` reached trace
+`889fd156-fbf9-4842-a43b-9c730abd919e`, run
+`1a6634ce-3987-407f-b10f-1097cf2e0a6b`, abstained routing
+`6d9689d8-be86-4223-a441-cd5be621b85a`, and `openclaw-operations` skill row
+`0a06b265-7895-4854-9362-338dd1fd33af`. Response SHA is `46c65863...`;
+transcript SHA is `939c2d14...`. The updated header said `none observed`, so
+finalization `01376e98-984d-4fb3-8430-c7e7530ed69b` correctly rejected it as
+`response_invalid` with missing `actual_model_selected`; no delivery is
+claimed. The one-use tool correlation preserved session/trace but omitted the
+preflight model needed to render the refreshed header.
+
+Both regressions failed before implementation. The smallest repair carries the
+bounded preflight model through OpenClaw's existing collision-safe, expiring,
+one-use correlation. Generic MCP finalization now derives host from the exact
+Store run only when session/trace match, retaining `mcp` otherwise; callers
+cannot spoof it. The focused slice is 232 passed / 6 intentional skips under
+umask `0077`; lint, format, documentation, and diff checks pass. Neither
+candidate is installed yet.
+
+These status turns prove no live delegation. Both have zero delegation and
+native-child evidence, and `agency status` cannot satisfy Rule 4. No AR-119
+matrix cell moves. Host-native models and routes, Codex OAuth/config and
+canary, Claude, and ZCode remain untouched.

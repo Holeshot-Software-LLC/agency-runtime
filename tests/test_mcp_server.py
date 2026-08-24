@@ -663,6 +663,38 @@ def test_mcp_finalize_returns_header_text(tmp_path: Path) -> None:
     assert store.get_run("turn-finalize")["status"] == "completed"
 
 
+def test_mcp_finalize_uses_authoritative_originating_run_host(tmp_path: Path) -> None:
+    store = _seed_store(tmp_path)
+    store.create_run(
+        trace_id="hermes-turn-finalize",
+        session_id="hermes-session",
+        host="hermes",
+        metadata={"request_kind": "nontrivial"},
+    )
+
+    result = handle_tool_call(
+        "agency.finalize",
+        {
+            "session_id": "hermes-session",
+            "trace_id": "hermes-turn-finalize",
+            "draft_text": "Done.",
+        },
+        store=store,
+    )
+
+    assert result["action"] == "accept"
+    conn = store._connect()
+    try:
+        event = conn.execute(
+            "SELECT host, action FROM finalization_events WHERE trace_id = ?",
+            ("hermes-turn-finalize",),
+        ).fetchone()
+    finally:
+        conn.close()
+    assert event is not None
+    assert dict(event) == {"host": "hermes", "action": "accept"}
+
+
 def _transcript() -> str:
     messages = [
         "{not-json",

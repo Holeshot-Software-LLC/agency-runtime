@@ -85,21 +85,23 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 - The first stopped-gateway install failed before staging because Hermes's plugin parent was mode `0775`; artifact SHA `72c3a7ac...` and prepared launcher SHA `7c033c97...` are retained. Config SHA stayed `a984d934...` and the plugin target remained absent.
 - Tightening only the plugin directory to `0700` and using process umask `0077` changed the prerequisite. Agency-only retry completed as install `06bd5aa2-c8c3-4321-90b2-e413a142c4a7`, bundle `351a7108...`, runtime `70239e65...`, launcher `7c033c97...`; artifact SHA is `93857d15...`. The installer did not restart Hermes.
 - Hermes's native model, provider, five fallbacks, environment-file hash, and nine prior plugins remain unchanged. Its only config semantic delta is enabling `agency-preflight` with tool override false. Native plugin doctor passes import/registration with eight hooks and zero tools.
-- The existing Nexus gateway was restarted through its exact systemd unit and is active/running with a successful service receipt. OpenClaw remains active. Fresh Hermes Telegram activation and routing proof have not yet run.
+- The Nexus gateway was restarted through its exact systemd unit and is active/running; OpenClaw remains active.
+- Fresh Hermes exact status completed parent activation and a `hermes-agent` skill row, but generic finalization mislabeled the host `mcp`; zero workforce/delegation rows remain.
+- Fresh OpenClaw exact status loaded `openclaw-operations`, but finalization rejected its tool-refreshed header after the preflight model was lost; no delivery is claimed. Exact IDs and hashes are in the verification packet.
+- Expected-red regressions now pass with bounded OpenClaw model correlation and Store-authoritative finalization host attribution: 232 passed / 6 skipped; not installed.
 
 ## completed-evidence
 
-- OpenClaw's scoped acceptance set passes: Agency-only installation, fresh status activation, exact five-line Telegram delivery, Store-backed skill loading, and substantive LiteLLM-backed parent routing.
+- OpenClaw's prior scoped acceptance evidence remains valid, but its newest tool-using status turn exposed a current final-header regression that must pass after reinstall.
 - `task-agency-router` remains confined to Agency workforce inference; OpenClaw's native parent stays `task-general`. No Codex, Claude, ZCode, or Hermes route changed.
 - Install provenance, config invariants, credential-name presence, contractor preservation, final Store integrity, and zero fallback are retained.
 - This package does not prove Rule 4 native-child delivery and does not move an AR-119 matrix cell.
-- Hermes installation/registration now passes; live activation, header, skill, and substantive routing remain pending.
+- Hermes installation, parent activation, header, and skill evidence pass; correct native-host attribution and substantive Agency routing remain pending.
 
 ## exact-blocker
 
-Hermes requires a completely fresh Telegram session whose exact first message
-is `agency status`, followed by one harmless skill load and the exact
-configuration-drift review.
+Checkpoint and install the regression-first repair into each affected Agency
+plugin, then prove changed fresh turns without native model changes.
 
 ## traps (machine-specific; do not rediscover)
 
@@ -112,9 +114,9 @@ configuration-drift review.
 
 ## next-bounded-work-package
 
-1. In a completely fresh Hermes Telegram session, send exact first message `agency status` and preserve the response before any other message.
-2. Load one harmless available skill without delegation and correlate the exact header/Store row.
-3. Send the exact configuration-drift review and prove automatic Hermes profile selection, LiteLLM `task-agency-router`, zero fallback, and terminal delivery.
+1. Commit the repair/ledger pair, then reinstall Agency only into OpenClaw and Hermes serially.
+2. Prove changed OpenClaw status/tool delivery and Hermes native-host finalization attribution.
+3. Run Hermes's exact configuration-drift review through Agency `task-agency-router` with zero fallback.
 
 ## same-task-continuity
 

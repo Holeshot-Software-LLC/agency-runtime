@@ -1224,7 +1224,7 @@ def _handle_observation_action(
                 adapter,
                 session_id=session_id,
                 trace_id=effective_trace,
-                model="",
+                model=_bounded_string(payload, "model", limit=MAX_MODEL_CHARS),
             )
             if context:
                 context = context.replace(

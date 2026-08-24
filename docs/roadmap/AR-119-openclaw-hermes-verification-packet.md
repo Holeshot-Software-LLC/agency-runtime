@@ -1639,3 +1639,51 @@ actual_model_and_receipt_source: pending live turn; never infer from alias
 known_limit: fresh status, Store-backed skill, substantive LiteLLM routing, and Telegram delivery pending
 protected_hosts: Codex OAuth/config/canary, Claude, and ZCode untouched
 ~~~
+
+### Fresh dual-host status and regression-repair bundle
+
+~~~yaml
+openclaw:
+  native_transcript_sha256: 939c2d147945ba8ba0658e02f2399068ca30e15f6c148c238cd3bbfd25593380
+  exact_prompt_sha256: 8511ac8d8a7e05dc3769006189f14416e415315647551074844528fcdb17cb8c
+  response_artifact: /tmp/ar278-hermes-preinstall.MZtRGk/openclaw-fresh-status-response.txt
+  response_sha256: 46c65863d3ca933acadb3dab120cc023de378b03d1d3007ccf9ef9f8e7a68d3b
+  trace_id: 889fd156-fbf9-4842-a43b-9c730abd919e
+  run_id: 1a6634ce-3987-407f-b10f-1097cf2e0a6b
+  routing_decision_ids: [6d9689d8-be86-4223-a441-cd5be621b85a]
+  skill_name_and_store_row_id: openclaw-operations / 0a06b265-7895-4854-9362-338dd1fd33af
+  finalization_id: 01376e98-984d-4fb3-8430-c7e7530ed69b
+  finalization_status: response_invalid; missing actual_model_selected
+  header_exact: agency-steward / none / openclaw-operations / none observed / deterministic
+  telegram_delivery: unproven; final-only gate rejected the response
+  root_cause: tool-result correlation omitted the preflight model used by the refreshed header
+hermes:
+  native_session_id: 20260823_195135_48369ae1
+  exact_prompt_sha256: 8511ac8d8a7e05dc3769006189f14416e415315647551074844528fcdb17cb8c
+  native_transcript_artifact: /tmp/ar278-hermes-preinstall.MZtRGk/hermes-fresh-status-native-transcript.json
+  native_transcript_sha256: 8bce3dbed99950e98c6fb79726d70ffb8c50edd5f3d43ef75d68f2878b928522
+  response_sha256: da7f3f0c63d48cc05e4b6f8558753126e7be48e3ef33fa0eaa83b1ba70ca25ad
+  trace_id: 20260823_195135_48369ae1:20260823_195135_48369ae1:301cda8d
+  run_id: 1015aba7-172f-4a53-b88e-584846ea7ce5
+  routing_decision_ids: [fe3a549f-51e2-4b70-969e-a4c6c35d55eb]
+  skill_name_and_store_row_id: hermes-agent / e3805f74-b628-4346-b5d1-cb3f072a32d5
+  finalization_id: 3cc70f32-e5e7-4069-8faf-ccc327bc3677
+  finalization_status: accept; completed; incorrectly attributed to mcp
+  header_exact: agency-steward / none / hermes-agent / observed native task-general host receipt / deterministic
+  agency_workforce_receipts: 0
+  native_parent_receipts: 12; task-general; zero fallback; not Agency workforce evidence
+  delegation_rows: 0
+  native_child_rows: 0
+  telegram_delivery: not independently confirmed
+  root_cause: generic agency.finalize hard-coded mcp instead of the Store-owned originating host
+candidate:
+  expected_red: both focused regressions failed before implementation
+  repair: bounded OpenClaw model correlation plus Store-authoritative MCP finalization host
+  focused_tests: 232 passed; 6 intentional skips; process umask 0077
+  static_gates: focused ruff check and format, docs validation, git diff check pass
+  installed: false
+  host_native_configuration_changed: false
+  delegation_proven: false
+  matrix_cell_moved: false
+protected_hosts: Codex OAuth/config/canary, Claude, and ZCode untouched
+~~~
