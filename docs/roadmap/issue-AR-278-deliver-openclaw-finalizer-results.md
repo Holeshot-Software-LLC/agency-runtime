@@ -412,7 +412,25 @@ asserts those exclusions. The affected slice remains 246 passed with 1
 intentional skip. An initial ambient-umask run retained 66 namespace-trust
 failures, 180 passes, and 1 skip; changing only the documented test-process
 umask to `0077` produced the green result. This diagnostic candidate is not
-installed.
+installed in that evidence state.
+
+Clean diagnostic pair `675fb22a` / `b8c3b155` was subsequently installed
+Agency-only into natively stopped OpenClaw as
+`2949e798-5500-45c9-956b-4b5a97aa802b`; the installer left the gateway
+stopped. Bundle `72c40ad4...`, runtime `fb719841...`, and launcher SHA
+`859139b0...` bind to the checkout. Native restart is RPC-green with zero
+restarts, all 11 required hooks registered, and Telegram configured, running,
+and probe-green. OpenClaw retains `litellm/task-general` plus the same six
+fallbacks; Hermes remains active and unmodified. Online Store backup SHA
+`5ca1ffbe...` has source/backup integrity `ok`, schema 47, and contractors
+remain 15.
+
+The unavailable system `sqlite3` binary and a mistaken SQL table name are
+retained as failed backup attempts; neither mutated the Store. Python's SQLite
+backup API then completed the required WAL-consistent backup, and contractor
+count came from the checkout CLI. A literal `~/` config-path hash failure is
+also retained; normalizing that native path produced pre/post OpenClaw config
+SHAs `562c0c4e...` / `cfdacc1d...`. No credential value was emitted.
 
 ## Approach
 
@@ -483,6 +501,7 @@ Hermes and all protected hosts remain outside the mutation boundary.
 - [x] Add expected-red coverage for the complete reply-payload/message-sending path.
 - [x] Install the two-gate acknowledgement repair and preserve its independent live non-delivery.
 - [x] Add bounded content-free phase diagnostics with explicit sensitive-content exclusions.
-- [ ] Install the diagnostic checkpoint and trace one changed `/new`.
+- [x] Install the diagnostic checkpoint with Store/config/launcher provenance.
+- [ ] Trace one changed `/new` through the installed diagnostic.
 - [ ] Apply the exact traced repair and prove a fresh `/new` acknowledgement.
 - [ ] Tracker creation remains pending separate authorization.

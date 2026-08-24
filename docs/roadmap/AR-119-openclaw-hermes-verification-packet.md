@@ -1771,6 +1771,43 @@ matrix_cell_moved: false
 protected_hosts: Codex OAuth/config/canary, Claude, ZCode, and Hermes untouched
 ~~~
 
+### OpenClaw content-free reset diagnostic install-readiness bundle
+
+~~~yaml
+host: openclaw
+checkout_sha: b8c3b155f1585d34dae0a7a6575237e54600b5a4
+diagnostic_commit: 675fb22a03b9d6e10462a4d1ada688b018ac8f4f
+host_version: OpenClaw 2026.7.1-2
+pre_install_store_backup: /tmp/ar119-openclaw-phase-trace-preinstall.VGtfCi/agency-store.before.db
+pre_install_store_backup_sha256: 5ca1ffbefdea30f8882445d448dee518ca0b6dc68d23b57adb5b64f5b74dcd75
+store_integrity_source_backup: ok / ok
+store_schema: 47
+contractors_before_after_install: 15 / 15
+install_id: 2949e798-5500-45c9-956b-4b5a97aa802b
+install_result: complete; Agency only; installer left gateway stopped
+bundle_digest: 72c40ad41bb5663419b97d846ccb745f5c82965b743a561c351f2bc33317e388
+runtime_digest: fb71984154500cd456b9bf2a99e133bbdd18a8f1f512e5a2066aa572389762bc
+launcher_manifest_sha256: 859139b015d687b0c85457ebcdc6a3461cb811fefac21d2fec526ed9b762aedb
+agency_config_sha256: 43367ec9aa05a66fc2a60bb254f270836fb3616753769115fabb253a04d5d9f8
+openclaw_config_before_after_sha256: 562c0c4e2f09844afb0ffa7858f413d8b478f698340a3dda7c7b88e89ee9949e / cfdacc1dff2ffb403b5bdce8af5c1934f19186b5cd0d85d446b73f4497cb7889
+native_primary: litellm/task-general
+native_fallback_count: 6; exact prior list unchanged
+registered_hooks: 11; required set complete
+gateway_restart: active/running; RPC green; zero restarts
+telegram_probe: configured; running; credential probe ok
+credential_env_name: LITELLM_API_KEY
+credential_present_source: configured env reference plus populated service environment file; value excluded
+hermes_break_glass: active and unchanged
+diagnostic_content: phase, booleans, surface count, content length, authorization count only
+diagnostic_exclusions: message text, identifiers, credentials, and payloads
+failed_backup_attempts: system sqlite3 unavailable; nonexistent contractor SQL table; literal tilde path hash
+backup_recovery: Python SQLite backup API; checkout contractor CLI; normalized native config path
+fresh_changed_new: waiting_on_operator
+delegation_proven: false
+matrix_cell_moved: false
+protected_hosts: Codex OAuth/config/canary, Claude, ZCode, and Hermes untouched
+~~~
+
 ### OpenClaw sessionless repair install and earlier-gate failure bundle
 
 ~~~yaml

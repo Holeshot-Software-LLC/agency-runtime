@@ -3897,6 +3897,14 @@ The next candidate adds a bounded, content-free live phase trace. It records
 only hook phase, boolean state, text-surface count, content length, and active
 authorization count; tests exclude message text, identifiers, credentials,
 and payloads. The affected OpenClaw slice remains 246 passed / 1 intentional
-skip. The diagnostic is not installed yet. No routing, protected-host, or
-Hermes state changed. No delegation or Rule 4 evidence was produced, and no
-AR-119 matrix cell moves.
+skip.
+
+Clean diagnostic pair `675fb22a` / `b8c3b155` was installed Agency-only into
+stopped OpenClaw as `2949e798-5500-45c9-956b-4b5a97aa802b`; the installer
+left it stopped. Bundle `72c40ad4...`, runtime `fb719841...`, and launcher SHA
+`859139b0...` bind to the checkout. Native restart is RPC-green with zero
+restarts, all 11 hooks registered, and Telegram configured/running/probe-green.
+Store backup SHA `5ca1ffbe...` has source/backup integrity `ok`, schema 47;
+contractors remain 15. Native routes remain exact and Hermes stays active and
+unmodified. No delegation or Rule 4 evidence was produced, and no AR-119
+matrix cell moves. One changed `/new` is waiting on the operator.
