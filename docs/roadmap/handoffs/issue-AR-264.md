@@ -67,6 +67,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 - Exact first `agency status` failed closed after native `task-general` ignored the updated post-tool header. Store skill row `3b9037a9...` names `openclaw-operations`, while the authored header said `none`; terminal `25cf1630...` is `response_invalid` with `skills_loaded` missing and Telegram queued no reply. Correlated transcript / trace / artifact SHAs are `78d096d5...` / `6c9bc3bc...` / `9a9e2a35...`.
 - Installed OpenClaw inspection proves the separate refreshed header was truncated by the live 4,000-character, zero-minimum proportional projection beside a 100,000-character read result. The reviewed Agency-only candidate prefixes the update into the dominant text block, uses UTF-16-safe host-limit splitting, preserves observed native content/details, and fails closed at an exhausted 200-block boundary.
 - Expected-red and the rejected over-limit draft are retained. The final focused slice passes 251 / 1 intentional skip; targeted Ruff/diff gates and independent installed-contract review pass. Nothing is installed and Hermes remains untouched.
+- Clean repair/ledger `d7187e80` / `456a75b7` was installed into stopped OpenClaw as operation `fa68e6a4...`: bundle `36619063...`, runtime `573a6a14...`, launcher SHA `d65af026...`. Native restart is RPC-green with zero restarts; 12 hooks and Telegram/Slack are loaded/connected.
+- Store backups are byte-identical at `abcc1396...`, integrity `ok`, schema 47, contractors 15. OpenClaw changed only `meta.lastTouchedAt`; native routes remain exact. Agency and Hermes hashes are unchanged; Hermes remains active.
 
 ## completed-evidence
 
@@ -78,7 +80,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 
 ## exact-blocker
 
-Do not retry either terminally failed OpenClaw input against unchanged code/state. Install the reviewed Agency-only header-framing candidate, then prove a fresh status, skill load, and substantive turn before continuing Hermes.
+The failed inputs remain retained. Installed code/state is now changed; prove a fresh OpenClaw status, skill load, and substantive turn before continuing Hermes.
 
 ## same-task-continuity
 
@@ -86,8 +88,8 @@ Continue from the clean Hermes install checkpoint into fresh live evidence.
 
 ## next-bounded-work-package
 
-1. Commit the reviewed OpenClaw framing repair and worklog ledger.
-2. Install Agency into stopped OpenClaw, then correlate a fresh status, skill-load, and changed substantive turn before touching Hermes.
+1. Verify a fresh `/new` acknowledgement and empty OpenClaw session.
+2. Correlate fresh status, skill-load, and changed substantive evidence before touching Hermes.
 3. Reinstall Hermes only after OpenClaw passes; prove native attribution and exact Agency routing.
 
 ## verification

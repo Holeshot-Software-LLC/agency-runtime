@@ -194,9 +194,14 @@ metadata and compiled prompt contain explicit evidence requirements.
   preserves observed native content/details, and fails closed if the native
   200-block ceiling cannot admit the split.
 - Expected-red and the rejected over-limit draft remain preserved. The final
-  focused slice passes 251 tests with 1 intentional skip; targeted Ruff/diff
-  and installed-contract review pass. The candidate is not installed, Hermes
-  remains active and untouched, and no protected-host or model route changed.
+  focused slice passes 251 tests with 1 intentional skip; the fast spine passes
+  840 / 3 skips, and installed-contract review passes.
+- Clean repair/ledger `d7187e80` / `456a75b7` is installed into stopped
+  OpenClaw as operation `fa68e6a4...`; bundle `36619063...`, runtime
+  `573a6a14...`, launcher SHA `d65af026...`. Store backups remain identical,
+  integrity `ok`, schema 47, contractors 15. Native restart, 12 hooks, and both
+  channels are green; OpenClaw changed only `meta.lastTouchedAt`. Hermes and
+  protected hosts remain untouched. Fresh live response evidence is pending.
 
 ## Approach
 

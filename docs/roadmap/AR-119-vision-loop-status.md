@@ -4095,3 +4095,27 @@ review against the installed validator and recovery projection reports no
 blocker. The candidate is not installed. Native `task-general`, Agency's exact
 `task-agency-router` profile, Hermes, and all protected hosts remain unchanged;
 no live delivery, delegation, Rule 4, or matrix-cell claim follows yet.
+
+## 2026-08-24 - Refreshed-header repair installed into OpenClaw only
+
+From clean repair/ledger `d7187e80` / `456a75b7`, the operator confirmed zero
+active or queued OpenClaw tasks and took an online SQLite backup. Source and
+backup integrity are `ok`, schema is 47, contractors remain 15, and the backup
+SHA is `abcc1396...`. OpenClaw 2026.7.1-2 was stopped natively before
+Agency-only install `fa68e6a4...`; the installer left it stopped. Bundle
+`36619063...`, runtime `573a6a14...`, and launcher SHA `d65af026...` bind the
+same checkout.
+
+Native restart is RPC-green with zero restarts. `agency-preflight` is loaded
+with all 12 required hooks and its awaited middleware; Telegram and Slack are
+configured, running, connected, and report no current error. The live process
+has the configured LiteLLM credential environment name populated; no value was
+read or retained.
+
+The only OpenClaw config-leaf change is `meta.lastTouchedAt`; native
+`litellm/task-general` and its exact six fallbacks remain unchanged. Agency's
+OpenClaw harness still selects `linux-task-agency-router`, LiteLLM, and exact
+alias/model-group `task-agency-router`. Agency config and Hermes
+config/environment/launcher hashes are unchanged; Hermes remains active as
+break glass. Fresh status, skill, substantive response, Store, and Telegram
+proof are pending, so no delegation, Rule 4, or matrix-cell claim moves.

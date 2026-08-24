@@ -85,8 +85,8 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 - Exact first `agency status` created run `a4b27543...`, trace `7e7a6318...`, and abstained routing `f7bc2f7e...`. Agency recorded `openclaw-operations` row `3b9037a9...` and appended the updated header to the awaited tool result, but native `task-general` authored the stale initial header with `Skills loaded: none`.
 - Finalization `25cf1630...` correctly closed `response_invalid` with `skills_loaded` missing; Telegram queued no reply. There are zero Agency model receipts, specialists, resident bindings, workers, native-child rows, or delegation rows. Transcript / trace / redacted artifact SHAs are `78d096d5...` / `6c9bc3bc...` / `9a9e2a35...`.
 - Store integrity remains `ok`, schema 47, contractors remain 15, and launcher SHA remains `9adc2a85...`. OpenClaw and Hermes services remain active; Hermes stays untouched as break-glass.
-- Root cause is OpenClaw's zero-minimum 4,000-character projection truncating the separate 878-character update beside a 100,000-character read. The reviewed Agency-only candidate prefixes it into the dominant text, splits safely at host limits, and fails closed at block-cap overflow.
-- Expected-red and an over-limit draft are retained. Focused tests pass 251 / 1 skip; Ruff/diff and installed-contract review pass. Nothing is installed or reconfigured.
+- Repair `d7187e80` was installed from clean ledger `456a75b7` as Agency-only operation `fa68e6a4...`: bundle `36619063...`, runtime `573a6a14...`, launcher SHA `d65af026...`. The installer left OpenClaw stopped; native restart is RPC-green with zero restarts, 12 hooks, and both channels connected.
+- Store backups are identical at `abcc1396...`, integrity `ok`, schema 47, contractors 15. OpenClaw changed only `meta.lastTouchedAt`; native routes are exact. Agency config and all Hermes config/environment/launcher hashes are unchanged; Hermes is active. Fresh live proof is pending.
 - Hermes install/activation evidence and its retained `mcp` host-attribution defect remain unchanged in the verification packet. Correct Hermes attribution and substantive Agency routing are pending until OpenClaw passes.
 
 ## completed-evidence
@@ -99,7 +99,7 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 
 ## exact-blocker
 
-Both the original restart-safety input and fresh status input are terminally retained and cannot be retried against unchanged code/state. Install the reviewed Agency-only framing candidate into natively stopped OpenClaw before another fresh session; do not touch Hermes.
+Both failed inputs remain retained. The installed code/state is now genuinely changed; begin a fresh session and collect status, skill, substantive, Store, and Telegram proof. Do not touch Hermes.
 
 ## traps (machine-specific; do not rediscover)
 
@@ -112,9 +112,9 @@ Both the original restart-safety input and fresh status input are terminally ret
 
 ## next-bounded-work-package
 
-1. Commit the reviewed refreshed-header framing candidate and its worklog ledger.
-2. Back up state, install Agency only into natively stopped OpenClaw, restart natively, and recheck all native-route and protected-host invariants.
-3. Use a fresh session to prove status, harmless skill loading, and the changed three-read substantive turn; only after OpenClaw passes, continue Hermes.
+1. Send `/new` and verify its native acknowledgement and empty fresh session.
+2. Prove exact status, harmless skill loading, and the changed three-read substantive turn.
+3. Only after OpenClaw passes, continue Hermes.
 
 ## same-task-continuity
 

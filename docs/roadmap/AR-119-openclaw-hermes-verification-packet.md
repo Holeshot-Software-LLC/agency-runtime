@@ -2151,3 +2151,46 @@ delegation_proven: false
 matrix_cell_moved: false
 protected_hosts: Codex OAuth/config/canary, Claude, ZCode, and Hermes untouched
 ~~~
+
+### OpenClaw refreshed-header repair install bundle
+
+~~~yaml
+host: openclaw
+checkout_sha: 456a75b7e984c905c2331a7b938e10de67a4a2e5
+repair_commit: d7187e809523503b5d8162d3334afc497fe1d3f6
+clean_tree_before_install: true
+host_version: OpenClaw 2026.7.1-2
+active_queued_tasks_before_stop: 0 / 0
+preinstall_artifact_root: /tmp/ar119-openclaw-header-preinstall.DV7PrH
+store_backup_sha256_before_after_install: abcc1396b46f7dd087f034f42b520d40fee9873b72e314d78621cdced0e470d2 / same
+store_integrity_before_after: ok / ok
+store_schema: 47
+contractors_before_after: 15 / 15
+install_id: fa68e6a4-75d9-4a47-8358-20b4e654b10e
+install_result: complete; Agency only; installer left gateway stopped
+bundle_digest: 36619063a5483f258abd55abc97e516d37870b921878bc12c32c5c7bd0212e07
+runtime_digest: 573a6a140cb23a60b48ba4b6ce638cccba6854fa11acd701aa05c9cc47ce1ab4
+launcher_manifest_sha256: d65af026617abe5d836b9ba9ec3b6efe63d0815ef971c2b8f93bf7007e7771ef
+launcher_source_root: checkout agency_runtime package
+agency_config_sha256: 43367ec9aa05a66fc2a60bb254f270836fb3616753769115fabb253a04d5d9f8
+openclaw_config_before_after_sha256: b54228aeaede1ae13722abba21879bfd7f256d79dacee368d95323d7785b9810 / 1c6f74936984f8c137c0d79016547a01e3bead7f6a9747ada4aa3b04c766f134
+openclaw_config_changed_leaf: meta.lastTouchedAt only
+native_primary: litellm/task-general
+native_fallback_count: 6; exact prior list unchanged
+agency_profile: linux-task-agency-router
+requested_alias_model_group: task-agency-router
+credential_env_name: LITELLM_API_KEY
+credential_present_in_live_process: true
+gateway_restart: native start; active/running; RPC health ok; zero restarts
+plugin_runtime: enabled, activated, loaded; version 0.1.0; zero diagnostics
+registered_hooks: 12; required set complete; awaited tool-result middleware present
+slack_telegram: configured, enabled, running, connected; token indirection available; no current error
+hermes_service: active and untouched
+hermes_config_sha256: 95b87b7fc0427ad4e3da4f5f468054cf9f7ddba679d1bb606b782a13e1a0172d
+hermes_environment_sha256: 792fd43a5312d1c1d69f6afbeef3bbdd1a8198ee03ac06b4b3b6dfa20ec2f324
+hermes_launcher_sha256: 7c033c97e7f4ce2108efcccfadc4f1c9e4511dc98afa11085adfd898f27585c3
+fresh_session_status_skill_substantive_proof: pending
+delegation_proven: false
+matrix_cell_moved: false
+protected_hosts: Codex OAuth/config/canary, Claude, ZCode, and Hermes untouched
+~~~

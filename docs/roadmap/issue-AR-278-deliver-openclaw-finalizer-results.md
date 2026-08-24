@@ -593,8 +593,20 @@ five-line updated context, 4,000-character zero-minimum projection, mixed valid
 text/image results, the 199-to-200 block boundary, 200-block refusal, original
 object preservation, and a surrogate-pair split boundary. The final focused
 OpenClaw slice passes 251 tests with 1 intentional skip; targeted Ruff and diff
-checks pass. The candidate is not installed, and no host or inference
-configuration changed.
+checks pass. Full fast-spine validation passes 840 tests with 3 skips; the
+repository-prescribed 151-snippet substitute covers the unavailable local
+mutation phase.
+
+Clean repair/ledger `d7187e80` / `456a75b7` was then installed as Agency-only
+operation `fa68e6a4...` while OpenClaw was natively stopped. Bundle
+`36619063...`, runtime `573a6a14...`, and launcher SHA `d65af026...` bind this
+checkout; the installer left the gateway stopped. Native restart is RPC-green
+with zero restarts, all 12 hooks loaded, and Telegram/Slack connected without a
+current error. Store backups are byte-identical at `abcc1396...`, integrity
+`ok`, schema 47, and contractors remain 15. OpenClaw's only config-leaf change
+is `meta.lastTouchedAt`; native `task-general` plus all six fallbacks are exact.
+Agency configuration and Hermes config/environment/launcher hashes are
+unchanged, and Hermes remains active. Fresh live response proof is pending.
 
 ## Approach
 
