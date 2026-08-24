@@ -4424,8 +4424,43 @@ the changed `.venv` attempt then failed the trusted persistent-interpreter
 boundary; an owner-private evaluation venv based on `/usr/bin/python3` passed.
 The exhaustive workflow-dispatch corpus was not run.
 
-The correction is ready for a clean checkpoint and Agency-only reinstall, but
-is still uninstalled and unproven live. Hermes and all protected hosts remain
-untouched. Operational proof is not green, and ADR-0156 Rule 4 remains
-unproven regardless of a later operational pass because there is still no
-immutable host-authored child-delivery artifact.
+At that pre-install checkpoint, the correction was locally green but unproven
+live. Hermes and all protected hosts remained untouched. Operational proof was
+not green, and ADR-0156 Rule 4 remained unproven because there was no immutable
+host-authored child-delivery artifact. The following checkpoint records the
+subsequent Agency-only installation.
+
+## 2026-08-24 - Ready-receipt correction installed; fresh draw not started
+
+Clean implementation/ledger commits
+`c7520586143d9a497dce37f32cad994de66ffb00` /
+`2bf42059cb1e46fa2e25f2d7847c85b9cf1b9b84` were installed from a clean
+worktree. Evidence is rooted at
+`/home/holeshot/.agency-runtime/evidence/ar281-openclaw-c7520586-4ceF3vbq`.
+The pre-install online SQLite backup SHA is
+`736434a7dffd310592661edf07af41ae2a62f347c1174e527ff34d3cdcdecd81`;
+source and backup integrity are `ok`, and schema is 47. Agency config remains
+`43367ec9...` with credential material represented only through `api_key_env`.
+
+OpenClaw 2026.7.1-2 was stopped natively while Hermes remained active. The
+Agency-only no-dashboard install completed, wrote the OpenClaw backup under
+`~/.agency-runtime/backups/openclaw/20260824T195320.228690Z`, and did not
+restart the gateway. Bundle
+`ae5b0a3ed2b7d6f7a2a6e516a2a6f1e20bc2144a8fb560a61f0f1705bbece9bb`,
+runtime
+`46ed926c5fac5066838ff6eea56d1cc866a3e9b2f99f474bfcd45d2ccfc99788`,
+install `ed2572b6-4d6b-4699-8e77-e82c49e4e48d`, and launcher
+`46c4fd6e67ceb3bfb36027c3e6f5183842f6cbaa01b1f25c31169e4554ace15d`
+bind to the exact correction checkout. Native restart restored an active
+service, RPC health, and all 12 loaded/enabled/activated Agency hooks.
+
+The live process has `LITELLM_API_KEY` populated without exposing its value.
+OpenClaw semantic config `5f806455...`, native `litellm/task-general`, and the
+exact six fallbacks remain unchanged. Contractors are 15/15; post-install Store
+integrity is `ok` at schema 47. Hermes remained active with config
+`95b87b7f...`, environment `792fd43a...`, and launcher `e65a0784...` unchanged;
+no Hermes install occurred. `config validate` remains expected-degraded because
+of cold inventory, protected hosts, and the legacy-provider warning, not a new
+failure. The correction is installed but unproven live. No fresh Telegram draw
+has started; the next operator action is `/new`. Operational child delivery and
+ADR-0156 Rule 4 remain unproven.

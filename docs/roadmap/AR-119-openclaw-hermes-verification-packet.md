@@ -1644,6 +1644,84 @@ known_limit: fresh status, Store-backed skill, substantive LiteLLM routing, and 
 protected_hosts: Codex OAuth/config/canary, Claude, and ZCode untouched
 ~~~
 
+### Clean correction install checkpoint
+
+Clean implementation/ledger commits
+`c7520586143d9a497dce37f32cad994de66ffb00` and
+`2bf42059cb1e46fa2e25f2d7847c85b9cf1b9b84` were installed from the exact
+checkout recorded by the launcher. Before mutation, the live Store was backed
+up with SQLite's online backup mechanism; source and backup integrity were
+`ok`, schema was 47, and backup SHA-256 was
+`736434a7dffd310592661edf07af41ae2a62f347c1174e527ff34d3cdcdecd81`.
+OpenClaw 2026.7.1-2 was stopped natively while Hermes remained active. The
+Agency-only, no-dashboard install completed, created its native backup under
+`~/.agency-runtime/backups/openclaw/20260824T195320.228690Z`, and did not
+restart the gateway.
+
+The installed bundle is
+`ae5b0a3ed2b7d6f7a2a6e516a2a6f1e20bc2144a8fb560a61f0f1705bbece9bb`;
+runtime digest is
+`46ed926c5fac5066838ff6eea56d1cc866a3e9b2f99f474bfcd45d2ccfc99788`;
+install ID is `ed2572b6-4d6b-4699-8e77-e82c49e4e48d`; and launcher SHA-256 is
+`46c4fd6e67ceb3bfb36027c3e6f5183842f6cbaa01b1f25c31169e4554ace15d`.
+The launcher source root is the exact correction checkout. Native restart then
+restored an active service, RPC health, and a loaded, enabled, activated Agency
+plugin with all 12 hooks.
+
+Agency config SHA remains `43367ec9...`; authentication remains only the
+`api_key_env` indirection, and `LITELLM_API_KEY` is present in the live process
+without reading its value. OpenClaw semantic config SHA remains `5f806455...`;
+native `litellm/task-general` and the exact six prior fallbacks are unchanged.
+Contractors remain 15/15. Post-install Store integrity is `ok` at schema 47.
+Hermes remained active with config `95b87b7f...`, environment `792fd43a...`, and
+launcher `e65a0784...` unchanged; no Hermes install occurred. The clean install
+checkout remained clean. `config validate` retains its expected degraded result
+from cold inventory, protected hosts, and the legacy-provider warning; it is not
+a new failure. No fresh Telegram draw has started. The next operator action is
+`/new`.
+
+~~~yaml
+host: openclaw
+implementation_commit: c7520586143d9a497dce37f32cad994de66ffb00
+ledger_commit: 2bf42059cb1e46fa2e25f2d7847c85b9cf1b9b84
+worktree_clean_at_install: true
+evidence_dir: /home/holeshot/.agency-runtime/evidence/ar281-openclaw-c7520586-4ceF3vbq
+preinstall_store_backup_sha256: 736434a7dffd310592661edf07af41ae2a62f347c1174e527ff34d3cdcdecd81
+preinstall_store_source_integrity: ok
+preinstall_store_backup_integrity: ok
+preinstall_store_schema: 47
+agency_config_sha256: 43367ec9...
+agency_credential_storage: api_key_env indirection only
+host_version: OpenClaw 2026.7.1-2
+preinstall_host_state: OpenClaw stopped natively; Hermes active
+install_result: complete; Agency only; no dashboard; installer did not restart gateway
+native_backup_path: ~/.agency-runtime/backups/openclaw/20260824T195320.228690Z
+bundle_digest: ae5b0a3ed2b7d6f7a2a6e516a2a6f1e20bc2144a8fb560a61f0f1705bbece9bb
+runtime_digest: 46ed926c5fac5066838ff6eea56d1cc866a3e9b2f99f474bfcd45d2ccfc99788
+install_id: ed2572b6-4d6b-4699-8e77-e82c49e4e48d
+launcher_manifest_sha256: 46c4fd6e67ceb3bfb36027c3e6f5183842f6cbaa01b1f25c31169e4554ace15d
+launcher_source_root: /tmp/agency-runtime-ar278.WpEBq4
+gateway_restart: native; service active; RPC true
+plugin_runtime: loaded, enabled, activated; 12 hooks
+credential_env_name: LITELLM_API_KEY
+credential_present_boolean: true in live process; value not read
+openclaw_semantic_config_sha256: 5f806455...; unchanged
+native_primary: litellm/task-general; unchanged
+native_fallback_count: 6; exact prior list unchanged
+contractors_before_after: 15 / 15
+postinstall_store_integrity: ok
+postinstall_store_schema: 47
+hermes_state: active; no install
+hermes_config_sha256: 95b87b7f...; unchanged
+hermes_environment_sha256: 792fd43a...; unchanged
+hermes_launcher_sha256: e65a0784...; unchanged
+config_validate: expected degraded; cold inventory, protected hosts, legacy provider warning
+fresh_telegram_draw: not started
+next_operator_action: /new
+operational_acceptance_green: false
+rule4_proven: false
+~~~
+
 ### OpenClaw native-error repair install bundle
 
 ~~~yaml
@@ -2555,10 +2633,11 @@ The first full-evaluation attempt used a private default home without `pytest`.
 The changed `.venv` retry correctly failed the trusted persistent-interpreter
 boundary. The final changed-input owner-private evaluation environment based on
 `/usr/bin/python3` passed. These failed attempts remain part of the record. The
-exhaustive workflow-dispatch corpus was not run. The candidate is locally green
-and ready for a clean checkpoint, but remains uninstalled and unproven live.
-Even a later operational completion and Telegram delivery cannot satisfy
-ADR-0156 Rule 4 without an immutable host-authored
+exhaustive workflow-dispatch corpus was not run. That locally green candidate
+was then recorded in clean implementation/ledger commits and installed through
+Agency only; the exact install checkpoint is retained separately in this
+packet. It is still unproven live. Even a later operational completion and Telegram delivery
+cannot satisfy ADR-0156 Rule 4 without an immutable host-authored
 `native_child_delivery_verifications` receipt.
 
 ~~~yaml
@@ -2605,7 +2684,7 @@ native_child_provider_attempt: applied; linux-task-agency-router; litellm; task-
 native_child_fallback_count: 0
 actual_model_and_receipt_source: unavailable; provider telemetry supplied none
 failure_cause: ready-routing receipt required one total route after valid native_child_inference route append
-candidate_state: locally green; ready for clean checkpoint and Agency-only reinstall; unproven live
+candidate_validation_state: locally green
 independent_review: GREEN; no Critical or High findings open
 focused_tests: 113 passed; 1 skipped
 named_fast_spine: 848 passed; 3 skipped

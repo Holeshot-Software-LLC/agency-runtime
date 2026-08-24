@@ -109,8 +109,24 @@ Telegram-ingress, native-model, or OpenClaw configuration failure.
 - The default private-HOME full eval lacked `pytest`; the changed `.venv` retry
   failed the trusted persistent-interpreter boundary; the owner-private eval
   venv based on `/usr/bin/python3` passed. No exhaustive workflow corpus ran.
-  The candidate is ready for a clean checkpoint and Agency-only reinstall, but
-  remains uninstalled and unproven live.
+- Clean correction/ledger `c7520586` / `2bf42059` is installed from the exact
+  checkout; evidence root is
+  `/home/holeshot/.agency-runtime/evidence/ar281-openclaw-c7520586-4ceF3vbq`.
+  Pre-install online Store backup `736434a7...`, source, and backup are `ok` at
+  schema 47. OpenClaw 2026.7.1-2 was stopped natively while Hermes stayed active.
+- Agency-only/no-dashboard install completed without restarting the gateway;
+  backup path is `~/.agency-runtime/backups/openclaw/20260824T195320.228690Z`.
+  Bundle `ae5b0a3e...`, runtime `46ed926c...`, install `ed2572b6...`, and
+  launcher `46c4fd6e...` bind to the correction checkout. Native restart restored
+  service/RPC and 12 loaded/enabled/activated hooks.
+- Agency config `43367ec9...` retains only `api_key_env`; credential presence is
+  true without value access. OpenClaw semantic config `5f806455...`, native
+  `task-general`, and six fallbacks are unchanged; contractors are 15/15 and
+  post-install Store is `ok`/47. Hermes config/env/launcher remain unchanged and
+  no Hermes install occurred. Expected config-validation degradation is from
+  cold inventory, protected hosts, and the legacy-provider warning.
+- The clean install worktree remains clean. No fresh Telegram draw has started;
+  next operator action is `/new`. The installed correction is unproven live.
 - Strict Rule 4 remains unproven because a delivered announcement is not a
   host-authored pre-speech child-artifact receipt.
 
@@ -165,8 +181,8 @@ Telegram-ingress, native-model, or OpenClaw configuration failure.
       but ready-routing receipt integrity blocked completion before Telegram.
 - [x] Independent Critical/High review and the focused, fast-spine, docs, Ruff,
       dashboard, routing-eval, and 160-mutation conformance gates pass.
-- [ ] Checkpoint the locally green routing receipt correction and reinstall
-      Agency only while OpenClaw is natively stopped.
+- [x] Checkpoint the locally green correction as `c7520586` / `2bf42059` and
+      install it through Agency only while OpenClaw is natively stopped.
 - [ ] A fresh OpenClaw native child returns one finalized Telegram response with
       correlated Store lifecycle evidence.
 - [x] No OpenClaw source/configuration, native model routing, Agency inference

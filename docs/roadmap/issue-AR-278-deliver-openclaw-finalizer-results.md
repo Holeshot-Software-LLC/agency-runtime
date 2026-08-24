@@ -744,10 +744,26 @@ unchanged; diff check passes. The default private-HOME full eval lacked
 boundary; the owner-private eval venv based on `/usr/bin/python3` passed. No
 exhaustive workflow corpus ran.
 
-The correction is ready for a clean checkpoint and Agency-only reinstall but
-remains uninstalled and unproven live. Operational child delivery is not green.
-Even a future pass will not prove ADR-0156 Rule 4 without a host-authored
-artifact.
+Clean correction/ledger `c7520586` / `2bf42059` was installed from the exact
+checkout; evidence root is
+`/home/holeshot/.agency-runtime/evidence/ar281-openclaw-c7520586-4ceF3vbq`.
+Pre-install online Store backup `736434a7...`, source, and backup are `ok` at
+schema 47. OpenClaw 2026.7.1-2 stopped natively while Hermes stayed active.
+The Agency-only/no-dashboard install completed without gateway restart and
+wrote `~/.agency-runtime/backups/openclaw/20260824T195320.228690Z`. Bundle
+`ae5b0a3e...`, runtime `46ed926c...`, install `ed2572b6...`, and launcher
+`46c4fd6e...` bind to the exact correction checkout. Native restart restored
+service/RPC and all 12 loaded/enabled/activated hooks.
+
+Agency config `43367ec9...` remains `api_key_env`-only, with process credential
+presence true and no value access. OpenClaw semantic config `5f806455...`,
+native `task-general`, and six fallbacks are unchanged; contractors are 15/15
+and post-install Store is `ok`/47. Hermes config/env/launcher are unchanged and
+no Hermes install occurred. The clean install worktree remained clean. Config
+validation remains expected-degraded for cold inventory, protected hosts, and
+the legacy-provider warning. No fresh Telegram draw has started; next operator
+action is `/new`. Operational child delivery is not green. Even a future pass
+will not prove ADR-0156 Rule 4 without a host-authored artifact.
 
 ## Approach
 
@@ -843,7 +859,7 @@ Hermes and all protected hosts remain outside the mutation boundary.
       ready-routing receipt integrity blocked completion before Telegram.
 - [x] Pass independent Critical/High review and the focused, fast-spine, docs,
       Ruff, dashboard, routing-eval, and 160-mutation conformance gates.
-- [ ] Checkpoint and install the locally green fail-closed auxiliary-route
-      receipt correction without changing host configuration.
+- [x] Checkpoint the correction as `c7520586` / `2bf42059` and install it through
+      Agency only without changing host configuration.
 - [ ] Prove a changed OpenClaw child turn through Telegram.
 - [ ] Tracker creation remains pending separate authorization.

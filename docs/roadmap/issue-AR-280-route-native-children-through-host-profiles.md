@@ -93,8 +93,23 @@ the selected cards reached that child.
   160/160 mutations killed with zero survived/invalid and source unchanged, and
   diff check all pass. Private-HOME/no-`pytest` and trusted-interpreter eval
   failures are retained; the owner-private `/usr/bin/python3` eval environment
-  passes. No exhaustive workflow corpus ran. The candidate is uninstalled and
-  unproven live pending a clean checkpoint and Agency-only reinstall.
+  passes. No exhaustive workflow corpus ran.
+- Clean correction/ledger `c7520586` / `2bf42059` was installed from the exact
+  checkout; evidence root is
+  `/home/holeshot/.agency-runtime/evidence/ar281-openclaw-c7520586-4ceF3vbq`.
+  Pre-install online Store backup `736434a7...`, source, and backup are `ok` at
+  schema 47. OpenClaw 2026.7.1-2 stopped natively while Hermes stayed active.
+- Agency-only/no-dashboard install completed without gateway restart; native
+  backup is `~/.agency-runtime/backups/openclaw/20260824T195320.228690Z`.
+  Bundle `ae5b0a3e...`, runtime `46ed926c...`, install `ed2572b6...`, launcher
+  `46c4fd6e...`; native restart restored service/RPC and all 12 Agency hooks.
+- Agency config `43367ec9...` remains `api_key_env`-only. OpenClaw semantic
+  config `5f806455...`, native `task-general`, and six fallbacks are unchanged;
+  contractors 15/15 and post-install Store `ok`/47. Hermes config/env/launcher
+  are unchanged; no Hermes install. Config validation remains expected-degraded
+  for cold inventory, protected hosts, and the legacy-provider warning.
+- The clean install worktree remained clean. No fresh Telegram draw has started;
+  next operator action is `/new`. The installed correction is unproven live.
 
 ## Approach
 
@@ -147,8 +162,8 @@ the selected cards reached that child.
 - [x] The ready-receipt correction passes independent Critical/High review and
       the focused, fast-spine, docs, Ruff, dashboard, routing, and full
       decision-conformance gates.
-- [ ] Checkpoint the locally green correction and reinstall it through Agency
-      only while OpenClaw is natively stopped.
+- [x] Checkpoint the correction as `c7520586` / `2bf42059` and install it through
+      Agency only while OpenClaw is natively stopped.
 - [ ] Fresh live OpenClaw and Hermes native children spawn, complete, and return
       to their parents with correlated Store lifecycle evidence.
 - [x] Rule 4 remains `unproven` unless an ADR-0156-compliant host-authored
