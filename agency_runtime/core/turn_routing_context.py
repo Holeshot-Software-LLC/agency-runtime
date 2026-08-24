@@ -14,6 +14,7 @@ from hashlib import sha256
 from typing import Any
 
 from agency_runtime.core.correlation import validate_correlation_id
+from agency_runtime.core.turn_intent import TURN_KINDS
 
 TURN_ROUTING_CONTEXT_VERSION = 1
 TURN_ROUTING_CONTEXT_GUARD_VERSION = 1
@@ -28,6 +29,29 @@ _SUBJECT_FIELDS = (
     "capability_ids",
     "platforms",
 )
+_TURN_ROUTING_CONTEXT_FIELDS = frozenset(
+    {
+        "context_version",
+        "source_trace_id",
+        "source_status",
+        "source_turn_kind",
+        "specialists",
+        "workforce_unit_descriptors",
+        "workforce_subject_hints",
+    }
+)
+_TURN_ROUTING_CONTEXT_GUARD_FIELDS = frozenset(
+    {
+        "guard_version",
+        "source_trace_id",
+        "source_turn_sequence",
+        "source_evidence_revision",
+        "source_roster_generation",
+        "source_recipe_digest",
+        "source_context_revision",
+    }
+)
+_RUN_STATUS_IDENTIFIER = re.compile(r"^[a-z][a-z0-9_]{0,63}$")
 
 
 def _text(value: object, maximum: int) -> str:
@@ -136,9 +160,13 @@ def project_turn_routing_context(value: object) -> dict[str, Any] | None:
 
     if value in (None, {}):
         return {}
+    context_version = value.get("context_version") if isinstance(value, Mapping) else None
     if (
         not isinstance(value, Mapping)
-        or value.get("context_version") != TURN_ROUTING_CONTEXT_VERSION
+        or set(value) != _TURN_ROUTING_CONTEXT_FIELDS
+        or isinstance(context_version, bool)
+        or not isinstance(context_version, int)
+        or context_version != TURN_ROUTING_CONTEXT_VERSION
     ):
         return None
     try:
@@ -157,8 +185,8 @@ def project_turn_routing_context(value: object) -> dict[str, Any] | None:
         specialists is None
         or descriptors is None
         or subject_hints is None
-        or not source_status
-        or not source_turn_kind
+        or _RUN_STATUS_IDENTIFIER.fullmatch(source_status) is None
+        or source_turn_kind not in TURN_KINDS
     ):
         return None
     return {
@@ -219,9 +247,13 @@ def project_turn_routing_context_guard(value: object) -> dict[str, Any] | None:
 
     if value in (None, {}):
         return {}
+    guard_version = value.get("guard_version") if isinstance(value, Mapping) else None
     if (
         not isinstance(value, Mapping)
-        or value.get("guard_version") != TURN_ROUTING_CONTEXT_GUARD_VERSION
+        or set(value) != _TURN_ROUTING_CONTEXT_GUARD_FIELDS
+        or isinstance(guard_version, bool)
+        or not isinstance(guard_version, int)
+        or guard_version != TURN_ROUTING_CONTEXT_GUARD_VERSION
     ):
         return None
     try:

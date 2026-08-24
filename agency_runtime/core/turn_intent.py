@@ -72,24 +72,165 @@ _CONTEXTUAL_CONTINUATION = re.compile(
 # therefore select and reroute expertise for a read-only parent analysis while
 # explicitly declining an execution-topology decision.
 #
-# Deliberately bounded: an optional discourse lead-in and one recognized
-# status or prospective-advice form, with no object to mutate. Anything
-# carrying a concrete action target falls through to new_intent so real work
-# cannot lose its execution decision.
-_CONTEXTUAL_WORK_INQUIRY = re.compile(
-    r"^(?:(?:yeah|yes|ok(?:ay)?|so|and|but|hmm|huh|well|right)[,\s]+){0,3}"
-    r"(?:so\s+)?"
-    r"(?:what(?:'?s|\s+is|\s+was)?\s+(?:next|now|up|happening|going\s+on|the\s+status)|"
-    r"what\s+(?:now|next)|"
-    r"what\s+should\s+(?:i|we|you)\s+(?:do|focus\s+on|tackle|work\s+on)\s+next|"
-    r"what\s+should\s+happen\s+next|"
-    r"what\s+do\s+you\s+recommend\s+next|"
-    r"what(?:'?s|\s+is|\s+would\s+be)\s+the\s+next\s+(?:best\s+)?steps?|"
-    r"how(?:'s|\s+is)\s+(?:it|that|this)\s+(?:going|looking)|"
-    r"where\s+(?:are\s+we|do\s+we\s+stand|(?:do|should)\s+we\s+go\s+from\s+here)|"
-    r"any(?:thing)?\s+(?:else|updates?)|"
-    r"status)"
-    r"\s*\??\s*[!.]*$",
+# Deliberately bounded: discourse lead-ins are removed, explicit action
+# requests are rejected, and every remaining token must belong to a closed
+# advisory vocabulary. This recognizes structural families instead of one
+# exact phrase list while ensuring a concrete task cannot lose its execution
+# decision merely because it also says "next" or "plan".
+_CONTEXTUAL_INQUIRY_LEAD_IN = re.compile(
+    r"^(?:(?:yeah|yes|ok(?:ay)?|so|and|but|hmm|huh|well|right)[,\s]+){0,3}",
+    re.IGNORECASE,
+)
+_CONTEXTUAL_INQUIRY_OPENINGS: Final[frozenset[str]] = frozenset(
+    {
+        "any",
+        "anything",
+        "are",
+        "can",
+        "could",
+        "do",
+        "does",
+        "how",
+        "is",
+        "next",
+        "option",
+        "options",
+        "priorities",
+        "priority",
+        "progress",
+        "recommendation",
+        "recommendations",
+        "should",
+        "status",
+        "suggestion",
+        "suggestions",
+        "thoughts",
+        "update",
+        "updates",
+        "what",
+        "where",
+        "which",
+        "would",
+    }
+)
+_CONTEXTUAL_INQUIRY_SIGNALS: Final[frozenset[str]] = frozenset(
+    {
+        "approach",
+        "best",
+        "blocked",
+        "blocker",
+        "blockers",
+        "done",
+        "else",
+        "focus",
+        "go",
+        "going",
+        "happen",
+        "happening",
+        "left",
+        "looking",
+        "missing",
+        "next",
+        "now",
+        "option",
+        "options",
+        "plan",
+        "plans",
+        "priority",
+        "priorities",
+        "proceed",
+        "progress",
+        "recommend",
+        "recommendation",
+        "recommendations",
+        "remaining",
+        "remains",
+        "risk",
+        "risks",
+        "stand",
+        "status",
+        "step",
+        "steps",
+        "suggest",
+        "suggestion",
+        "suggestions",
+        "tackle",
+        "think",
+        "thought",
+        "thoughts",
+        "up",
+        "update",
+        "updates",
+        "where",
+        "work",
+    }
+)
+_CONTEXTUAL_INQUIRY_VOCABULARY: Final[frozenset[str]] = frozenset(
+    _CONTEXTUAL_INQUIRY_OPENINGS
+    | _CONTEXTUAL_INQUIRY_SIGNALS
+    | {
+        "a",
+        "about",
+        "am",
+        "at",
+        "be",
+        "current",
+        "do",
+        "does",
+        "for",
+        "from",
+        "have",
+        "here",
+        "i",
+        "is",
+        "it",
+        "my",
+        "of",
+        "on",
+        "our",
+        "project",
+        "that",
+        "the",
+        "there",
+        "thing",
+        "things",
+        "this",
+        "to",
+        "was",
+        "we",
+        "what",
+        "with",
+        "you",
+        "your",
+    }
+)
+_EXPLICIT_ACTION_VERB = (
+    r"(?:add|apply|build|change|check|commit|configure|create|delete|deploy|edit|"
+    r"execute|fix|implement|inspect|install|launch|merge|modify|move|open|publish|"
+    r"push|remove|rename|replace|rerun|review|run|send|start|test|update|write)"
+)
+_EXPLICIT_ACTION_REQUEST = re.compile(
+    rf"^(?:(?:please|kindly)\s+)?{_EXPLICIT_ACTION_VERB}\b|"
+    rf"^(?:can|could|would|will|shall|should)\s+(?:you|we|i)\s+"
+    rf"(?:please\s+)?{_EXPLICIT_ACTION_VERB}\b|"
+    rf"^(?:i\s+(?:need|want)|i\s+would\s+like)\s+you\s+to\s+"
+    rf"{_EXPLICIT_ACTION_VERB}\b|"
+    rf"^(?:go\s+ahead\s+and|let'?s)\s+{_EXPLICIT_ACTION_VERB}\b",
+    re.IGNORECASE,
+)
+_DIRECT_CONTEXTUAL_ACTION_REQUEST = re.compile(
+    r"^do\s+(?:it|that|this|the\s+(?:next\s+)?steps?)(?:\s+next)?\b|"
+    r"^(?:can|could|would|will|shall|should)\s+(?:you|we|i)\s+(?:please\s+)?"
+    r"(?:do|focus|go|proceed|tackle|work)\b|"
+    r"^(?:(?:please|kindly)\s+)?(?:focus|go|proceed|tackle|work)\b",
+    re.IGNORECASE,
+)
+_EMBEDDED_ACTION_OBLIGATION = re.compile(
+    r"\b(?:needs?|requires?|must)\s+(?:(?:to\s+)?be\s+)?"
+    r"(?:added|applied|built|changed|changing|checked|committed|configured|created|"
+    r"deleted|deployed|edited|executed|fixed|implemented|inspected|installed|"
+    r"launched|merged|modified|moved|opened|published|pushed|removed|renamed|"
+    r"replaced|rerun|reviewed|run|sent|started|tested|updated|written)\b",
     re.IGNORECASE,
 )
 _REVISION_PREFIX = re.compile(
@@ -125,6 +266,28 @@ _STATE_LABEL_FIELDS = (
     "specialist_revision",
     "delegation_revision",
 )
+
+
+def _is_contextual_work_inquiry(value: str) -> bool:
+    """Return whether ``value`` is a bounded, non-executable work inquiry."""
+
+    text = _CONTEXTUAL_INQUIRY_LEAD_IN.sub("", str(value or "").strip())
+    text = text.rstrip("!?., ").casefold()
+    text = text.replace("what's", "what is").replace("how's", "how is")
+    if (
+        not text
+        or _EXPLICIT_ACTION_REQUEST.search(text) is not None
+        or _DIRECT_CONTEXTUAL_ACTION_REQUEST.search(text) is not None
+        or _EMBEDDED_ACTION_OBLIGATION.search(text) is not None
+    ):
+        return False
+    tokens = re.findall(r"[a-z]+", text)
+    return bool(
+        1 <= len(tokens) <= 18
+        and tokens[0] in _CONTEXTUAL_INQUIRY_OPENINGS
+        and any(token in _CONTEXTUAL_INQUIRY_SIGNALS for token in tokens)
+        and all(token in _CONTEXTUAL_INQUIRY_VOCABULARY for token in tokens)
+    )
 
 
 def _bounded_label(value: Any, maximum: int = 128) -> str:
@@ -655,7 +818,7 @@ def _untrusted_state_decision(
         kind = "conversation"
         signal_reason = "conversation_state_untrusted"
         confidence = 0.5
-    elif _CONTEXTUAL_WORK_INQUIRY.fullmatch(text):
+    elif _is_contextual_work_inquiry(text):
         # The surface form proves that execution was not requested even when
         # durable correlation is unavailable. Missing state forces fresh
         # expertise selection but must not manufacture write authority.
@@ -729,7 +892,7 @@ def classify_turn_intent(
                 reroute_required=True,
                 execution_decision_required=True,
             )
-        if _CONTEXTUAL_WORK_INQUIRY.fullmatch(text):
+        if _is_contextual_work_inquiry(text):
             return _decision(
                 "continuation",
                 current_state,
@@ -821,7 +984,7 @@ def classify_turn_intent(
             execution_decision_required=False,
         )
 
-    if _CONTEXTUAL_WORK_INQUIRY.fullmatch(text):
+    if _is_contextual_work_inquiry(text):
         return _decision(
             "conversation",
             current_state,

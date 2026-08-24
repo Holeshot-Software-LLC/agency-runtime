@@ -75,6 +75,11 @@ advisory conversations or correlated continuations with
 `execution_decision_required=false`. Keep pure social conversation and exact
 runtime controls on their existing bypasses. Keep object-bearing requests to
 change, fix, or implement work on the executable new-intent or revision path.
+Use a bounded structural grammar rather than a finite phrase list: every
+advisory token belongs to a closed vocabulary, while explicit imperatives,
+second-person action requests, and embedded mutation obligations take the
+executable path. Common subjectless plan, options, priority, suggestion, and
+status idioms are covered across current, active, and unavailable state.
 
 Make the third boolean operational. An advisory workforce route may plan at
 most one `analysis` unit, which deterministically compiles to `advise`
@@ -106,6 +111,11 @@ transaction. A source race fails before publishing a stale route. Each external
 turn refreshes classification and its routing receipt before the header is
 rendered.
 
+Validate the v1 context and source guard as exact-key schemas with exact
+non-boolean integer versions. Turn kinds remain allowlisted, source lifecycle
+labels use a bounded identifier compatible with legacy terminal Store rows,
+and prose or unknown fields fail closed rather than being silently projected.
+
 Retain inference-owned gap hiring for advisory turns so a real missing
 assessment capability may found a specialist. Treat that as internal workforce
 mutation only: the resulting advisory unit remains parent-only, load-delivered,
@@ -132,6 +142,12 @@ non-delegated, and read-only.
       authority.
 - [x] Concrete action-bearing requests remain executable new intent or
       revision.
+- [x] Direct `do`, `proceed`, `work`, `go`, `tackle`, and `focus` requests stay
+      executable even when they also contain advisory words such as `next` or
+      `plan`.
+- [x] Subjectless plan, options, priority, progress, recommendation, and
+      suggestion shorthand remains read-only across current, active, and
+      missing state.
 - [x] Classifier v5 and persisted replay accept the advisory tuples while v4
       remains unchanged.
 - [x] Advisory workforce planning is bounded to one read-only analysis unit,
@@ -143,6 +159,9 @@ non-delegated, and read-only.
       have distinct planner inputs and cache identities.
 - [x] Prior transcript text and prose-bearing plan fields remain excluded even
       when observability content capture is enabled.
+- [x] Context and guard projections reject unknown fields, prose lifecycle
+      labels, invalid turn kinds, and boolean or floating-point schema
+      versions while preserving bounded legacy terminal identifiers.
 - [x] Recipe v15 persists the context source and receipt revision, and the ready
       transaction rejects a changed source or roster before publication.
 - [x] The response header remains a current-turn receipt; every external turn
@@ -152,7 +171,7 @@ non-delegated, and read-only.
 - [x] Fail-open results preserve continuation/advisory classification, and
       legacy header explanation lines do not mask authorization questions.
 - [x] Focused classifier, selector, Store, and workforce-inference tests pass:
-      `226 passed`.
+      `268 passed` after independent-review repairs.
 - [x] The named fast production spine passes: `806 passed, 20 skipped` in
       `135.02s`.
 - [x] The curated decision-conformance evaluation passes with all `151`

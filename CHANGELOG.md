@@ -62,7 +62,10 @@ changes rather than duplicating every commit.
   Advisory gap hiring may add missing assessment expertise without granting
   native-child, workspace-write, or external-write authority. Fail-open results
   preserve the current turn classification, and legacy explanatory header
-  lines no longer mask a terminal authorization question.
+  lines no longer mask a terminal authorization question. A closed structural
+  advisory grammar recognizes common plan, options, priority, and suggestion
+  shorthand while explicit action requests remain executable; exact context
+  schemas reject extra prose and malformed version values.
 
 - The Claude accepted-outcome canary now requires a separate, per-host parent-
   recruiter provider pin. Only its recruiter and bounded repair use that exact

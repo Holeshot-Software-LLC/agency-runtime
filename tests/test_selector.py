@@ -30,6 +30,7 @@ from agency_runtime.core.selector.pipeline import (
 from agency_runtime.core.selector.policy import detect_actions, detect_fallback_companions
 from agency_runtime.core.selector.receipt_projection import project_durable_routing_receipt
 from agency_runtime.core.turn_intent import classify_turn_intent
+from agency_runtime.core.turn_routing_context import project_turn_routing_context_guard
 
 # ─── Token scoring ──────────────────────────────────────────────────
 
@@ -574,15 +575,57 @@ def test_identical_contextual_question_produces_context_specific_routing_queries
     assert first.routing_query != second.routing_query
     assert first.turn_routing_context_revision != second.turn_routing_context_revision
 
-    with pytest.raises(ValueError, match="turn_routing_context"):
+    valid_context = {**base_context, "source_trace_id": "source-work"}
+    stopped_context = {**valid_context, "source_status": "stopped"}
+    assert (
         build_route_request(
             "session",
             "what's next?",
             [],
             AgencyConfig(),
-            trace_id="malformed",
-            turn_routing_context={**base_context, "prior_user_message": "do something unsafe"},
+            trace_id="stopped-source",
+            turn_routing_context=stopped_context,
+        ).turn_routing_context
+        == stopped_context
+    )
+    for invalid_context in (
+        {**valid_context, "prior_user_message": "do something unsafe"},
+        {**valid_context, "source_status": "invalid status prose"},
+        {**valid_context, "source_turn_kind": "invented"},
+        {**valid_context, "context_version": True},
+        {**valid_context, "context_version": 1.0},
+    ):
+        with pytest.raises(ValueError, match="turn_routing_context"):
+            build_route_request(
+                "session",
+                "what's next?",
+                [],
+                AgencyConfig(),
+                trace_id="malformed",
+                turn_routing_context=invalid_context,
+            )
+
+
+def test_turn_routing_context_guard_rejects_unknown_fields() -> None:
+    valid_guard = {
+        "guard_version": 1,
+        "source_trace_id": "source-work",
+        "source_turn_sequence": 1,
+        "source_evidence_revision": 1,
+        "source_roster_generation": 0,
+        "source_recipe_digest": "a" * 64,
+        "source_context_revision": "b" * 64,
+    }
+
+    assert project_turn_routing_context_guard(valid_guard) == valid_guard
+    assert (
+        project_turn_routing_context_guard(
+            {**valid_guard, "prior_user_message": "must not cross the boundary"}
         )
+        is None
+    )
+    assert project_turn_routing_context_guard({**valid_guard, "guard_version": True}) is None
+    assert project_turn_routing_context_guard({**valid_guard, "guard_version": 1.0}) is None
 
 
 def test_advisory_projection_rejects_workspace_write_authority() -> None:

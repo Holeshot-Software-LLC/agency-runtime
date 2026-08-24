@@ -158,6 +158,19 @@ def test_social_conversation_is_distinct_from_acknowledgement_and_real_questions
         "what do you recommend next?",
         "what is the next best step?",
         "where should we go from here?",
+        "what is the plan?",
+        "what remains?",
+        "what are our options?",
+        "how should we proceed?",
+        "what do you think?",
+        "any recommendations?",
+        "next steps?",
+        "options?",
+        "priorities?",
+        "where are we at?",
+        "where do things stand?",
+        "what do you suggest?",
+        "any suggestions?",
     ),
 )
 def test_contextual_work_inquiries_select_fresh_read_only_expertise(message: str) -> None:
@@ -212,16 +225,86 @@ def test_contextual_work_inquiry_without_trusted_state_stays_read_only() -> None
     assert "contextual_work_inquiry_state_untrusted" in decision.reason_codes
 
 
-def test_action_bearing_next_step_request_keeps_execution_authority() -> None:
-    decision = classify_turn_intent(
+@pytest.mark.parametrize(
+    "message",
+    (
+        "what is the plan?",
+        "what remains?",
+        "what are our options?",
+        "how should we proceed?",
+        "what do you think?",
+        "any recommendations?",
+        "next steps?",
+        "options?",
+        "priorities?",
+        "where are we at?",
+        "where do things stand?",
+        "what do you suggest?",
+        "any suggestions?",
+    ),
+)
+def test_structural_advisory_forms_stay_read_only_in_every_state(message: str) -> None:
+    current = classify_turn_intent(message, _empty_state())
+    active = classify_turn_intent(message, _active_state())
+    missing = classify_turn_intent(message, TurnState(state_known=False))
+
+    assert current.turn_kind == "conversation"
+    assert current.selection_required is True
+    assert current.reroute_required is True
+    assert current.execution_decision_required is False
+    assert active.turn_kind == "continuation"
+    assert active.continuation_of == "turn-42"
+    assert active.selection_required is True
+    assert active.reroute_required is True
+    assert active.execution_decision_required is False
+    assert missing.turn_kind == "conversation"
+    assert missing.selection_required is True
+    assert missing.reroute_required is True
+    assert missing.execution_decision_required is False
+
+
+@pytest.mark.parametrize(
+    "message",
+    (
         "what's next in pipeline.py that needs changing?",
-        _empty_state(),
-    )
+        "can you fix pipeline.py?",
+        "please change the configuration",
+        "run the tests now",
+        "could you deploy the service?",
+        "review this diff",
+        "do that next",
+        "do the next step",
+        "would you do that next?",
+        "could you work on that next?",
+        "can you proceed with the plan?",
+        "can you go on?",
+    ),
+)
+def test_action_bearing_requests_keep_execution_authority(message: str) -> None:
+    decision = classify_turn_intent(message, _empty_state())
 
     assert decision.turn_kind == "new_intent"
     assert decision.selection_required is True
     assert decision.reroute_required is True
     assert decision.execution_decision_required is True
+
+
+@pytest.mark.parametrize(
+    "message",
+    (
+        "do that next",
+        "would you do that next?",
+        "could you work on that next?",
+        "can you proceed with the plan?",
+        "can you go on?",
+    ),
+)
+def test_contextual_action_requests_stay_executable_in_every_state(message: str) -> None:
+    for state in (_empty_state(), _active_state(), TurnState(state_known=False)):
+        decision = classify_turn_intent(message, state)
+        assert decision.selection_required is True
+        assert decision.reroute_required is True
+        assert decision.execution_decision_required is True
 
 
 def test_exact_runtime_control_is_not_confused_with_general_control_language() -> None:
