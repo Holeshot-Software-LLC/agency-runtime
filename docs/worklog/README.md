@@ -3,7 +3,7 @@ title: Worklog
 status: active
 category: worklog
 created: 2026-07-10
-updated: 2026-08-21
+updated: 2026-08-24
 tags: []
 related: []
 supersedes: []
@@ -1117,6 +1117,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `5ee15c5e` | 2026-08-21 | docs(ar264): checkpoint exact-main host smoke | null | null |
 | `0599959b` | 2026-08-21 | docs(ar263): record fresh Desktop hook gap [skip ci] | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-263](../roadmap/issue-AR-263-restore-codex-desktop-parent-hook-delivery.md), [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md) | null |
 | `4e5f0ca2` | 2026-08-21 | docs(ar264): record authenticated host evidence [skip ci] | null | null |
+| `4a326773` | 2026-08-21 | Merge pull request #316: record authenticated exact-main host evidence [skip ci] | null | null |
+| `faba05bb` | 2026-08-24 | fix(routing): specialize contextual advisory turns | [AR-265](../roadmap/issue-AR-265-contextual-turn-classification.md) | [detail](2026-08-24-faba05bb-specialize-contextual-advisory-turns.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
