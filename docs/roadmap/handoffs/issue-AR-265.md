@@ -16,8 +16,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-265
 branch: codex/ar265-contextual-turn-classification
-evidence_commit: faba05bbb97f91a87730e3b1e223cf156432d9c2
-minimum_ledger_commit: a19098a9978ec2e43c0e24256b69caeab717fa50
+evidence_commit: ca517872a3b55fa21a4350c841f35c6cba44ac9d
+minimum_ledger_commit: e48777e8e2a1668c84cce343eee24fdde1a61bd8
 hard_checkpoint_percent: 50
 tracker_url: null
 ---
@@ -36,6 +36,9 @@ tracker_url: null
   `a19098a9978ec2e43c0e24256b69caeab717fa50`.
 - End-of-package telemetry reported 61.1 percent remaining and
   `continue_same_task`; no new hard checkpoint was required.
+- Post-review telemetry reported 38.8 percent remaining, requiring another
+  clean checkpoint. The review repair and its ledger now exist at
+  `ca517872a3b55fa21a4350c841f35c6cba44ac9d` and `e48777e8`.
 
 ## completed-evidence
 
@@ -52,15 +55,22 @@ tracker_url: null
   prose-bearing plan fields are excluded; content capture does not widen use.
 - Advisory gap hiring is retained as internal staffing while native-child,
   workspace-write, and external-write authority remain forbidden.
-- The expanded focused classifier, selector, Store, and workforce-inference
-  slice is green: `226 passed`.
-- The corrected named fast production spine is green: `806 passed, 20 skipped`
-  in `135.02s`. The dashboard UI gate passes `134/134`, and the routing
-  evaluation passes every accuracy, latency, and scale gate.
-- The decision-conformance evaluator passes its baseline and kills all `151`
-  curated mutations with `0` survivors, `0` invalid cases, and unchanged
-  source. Its first restricted attempt could not attest disposable Windows
-  scratch; the normal-host retry passed the complete evaluator.
+- Two bounded independent review passes found finite-phrase advisory gaps,
+  direct-action false advisories, permissive context fields and versions, and
+  an overly narrow lifecycle enum. The repair uses a closed structural grammar,
+  targeted action guards, exact-key schemas, exact integer versions, and a
+  bounded legacy-compatible status identifier; every finding has a regression.
+- The final focused classifier, selector, Store, and workforce-inference slice
+  is green: `268 passed`.
+- The final named fast production spine is green: `806 passed, 20 skipped` in
+  `145.76s`. The unchanged dashboard UI gate remains `134/134`, and the final
+  worktree-local routing evaluation passes every accuracy, latency, scale, and
+  startup gate.
+- The final worktree-local decision-conformance evaluator passes its baseline
+  in `227.796s` and kills all `151` curated mutations with `0` survivors, `0`
+  invalid cases, and unchanged source. One earlier post-review invocation used
+  the shared editable console executable, stopped at a stale baseline test node
+  with zero mutations executed, and is not counted as evidence.
 - Documentation metadata (`734` files), policy availability, Ruff check, Ruff
   format (`683` files), and diff hygiene pass. Worklog and aggregate docs parity
   also pass after recording the substantive commit; metadata validation now
@@ -82,10 +92,11 @@ reinterpret unrelated OpenClaw evidence as AR-265 verification.
 
 ## next-bounded-work-package
 
-1. Independently review the committed implementation, tests, and governance
-   records without editing or performing an outward-facing action.
-2. Repair any material local finding with its own substantive and ledger pair;
-   otherwise stop at the clean reviewed checkpoint.
+1. Preserve this clean reviewed checkpoint while tracker creation, push, pull
+   request, hosted checks, and merge remain unauthorized.
+2. If the owner authorizes publication, refresh remote state before performing
+   the repository's tracker and pull-request sequence. A live installed-host
+   header canary remains separate evidence and is not implied by this capsule.
 
 ## verification
 
