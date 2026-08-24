@@ -1688,6 +1688,30 @@ matrix_cell_moved: false
 protected_hosts: Codex OAuth/config/canary, Claude, and ZCode untouched
 ~~~
 
+### OpenClaw post-install fresh reset bundle
+
+~~~yaml
+host: openclaw
+checkout_sha: d348f7decf9eba12bab25399fc704b101bc14440
+command: /new
+acknowledgement_exact: ✅ New session started.
+fresh_session_id: 447738d1-1871-411d-87b1-073387fb5560
+fresh_session_total_tokens: 0
+reply_payload_observed_before_authorization: true
+before_reset_authorized: true
+reply_payload_authorized: true
+message_authorization_consumed: true
+telegram_send_ok: true
+first_response_artifact: /tmp/ar119-openclaw-native-error-preinstall.iFUzG5/openclaw-new-ack-redacted.json
+first_response_artifact_sha256: 8fea7044d590067aa32f2e52b54f16cc5bf26b154c184e68f51aaf19e0b4bcce
+agency_runs_created: 0
+fresh_status_sent: false
+telegram_identifiers: excluded
+credential_values: excluded
+delegation_proven: false
+matrix_cell_moved: false
+~~~
+
 ### Fresh dual-host status and regression-repair bundle
 
 ~~~yaml

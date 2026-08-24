@@ -81,6 +81,7 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 - Focused OpenClaw repair tests pass 251 / 1 intentional skip; full repository Ruff check/format, docs checks, and diff check pass. Independent security review found no blocker. No host or config was mutated by this candidate package.
 - Clean checkout `484fe2de` installed Agency only as `6ede7fad...`: bundle `6f7e47bd...`, runtime `a3b8894f...`, launcher SHA `0fd98d4d...`. The installer left OpenClaw stopped. Native restart is RPC-green with zero restarts and the loaded plugin registers all 12 required hooks, including `agent_end`.
 - Store integrity is `ok`, schema 47, contractors remain 15, and pre/post install Store backups share SHA `07dbad1e...`. OpenClaw config changed only `meta.lastTouchedAt`; native `task-general` and the exact six fallbacks remain unchanged. Telegram/Slack are running without current error; Hermes remains active and untouched.
+- Post-install `/new` delivered exact acknowledgement `✅ New session started.` through both native gates. Fresh native session `447738d1...` has zero tokens; redacted artifact SHA is `8fea7044...`. No Agency turn has yet entered this session.
 - Store integrity remains `ok`, schema 47, contractors remain 15, and launcher SHA remains `9adc2a85...`. OpenClaw and Hermes services remain active; Hermes stays untouched as break-glass.
 - Hermes install/activation evidence and its retained `mcp` host-attribution defect remain unchanged in the verification packet. Correct Hermes attribution and substantive Agency routing are pending until OpenClaw passes.
 
@@ -107,8 +108,8 @@ The exact restart-safety input is terminally retained and cannot be retried unch
 
 ## next-bounded-work-package
 
-1. Have the operator send `/new`; preserve its acknowledgement and fresh native session before any Agency turn.
-2. Send exact `agency status` first, preserve its response/Store evidence, then send the changed three-read substantive request excluding the broad native skill.
+1. Have the operator send exact `agency status` as the first message in fresh session `447738d1...`; preserve its response and Store evidence before anything else.
+2. Then send the changed three-read substantive request excluding the broad native skill.
 3. Preserve Store/provider/header/Telegram evidence; only after OpenClaw passes, reinstall Hermes and prove native attribution plus `task-agency-router` routing.
 
 ## same-task-continuity

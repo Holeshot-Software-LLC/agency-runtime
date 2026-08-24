@@ -543,7 +543,12 @@ without a current error. Contractors remain 15 and pre/post online Store
 backups are identical at SHA `07dbad1e...`, integrity `ok`, schema 47.
 OpenClaw's config changed only `meta.lastTouchedAt`; native `task-general` and
 all six exact fallbacks are unchanged. Hermes remains active and untouched.
-No new live success or error-delivery claim is made yet.
+The operator then sent `/new`. Reply-payload authorization waited for the
+later reset event, the final message gate consumed the exact one-use grant,
+and Telegram accepted `✅ New session started.`. Fresh native session
+`447738d1...` has zero tokens. Redacted acknowledgement artifact SHA is
+`8fea7044...`. Exact first-message status, substantive completion, and live
+error-delivery proof remain pending.
 
 ## Approach
 

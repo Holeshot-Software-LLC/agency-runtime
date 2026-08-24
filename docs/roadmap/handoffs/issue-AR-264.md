@@ -63,6 +63,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 - Focused tests pass 251 / 1 intentional skip, repository Ruff/docs/diff gates pass, and independent security review found no blocker. OpenClaw, Hermes, and all host-native configuration remain unmodified during this candidate package.
 - Agency-only install `6ede7fad...` from clean checkout `484fe2de` published bundle `6f7e47bd...`, runtime `a3b8894f...`, launcher `0fd98d4d...`, and 12 required hooks including `agent_end`. The installer left OpenClaw stopped; native restart is RPC-green with zero restarts.
 - Contractors remain 15; pre/post Store backups are identical at `07dbad1e...`, integrity `ok`, schema 47. OpenClaw's sole config delta is `meta.lastTouchedAt`; native primary/six fallbacks are unchanged. Telegram/Slack are running and Hermes stays active untouched.
+- Fresh `/new` acknowledgement delivered through the installed two-gate authorization. Native session `447738d1...` is empty and redacted acknowledgement artifact SHA is `8fea7044...`; exact first status remains pending.
 
 ## completed-evidence
 
@@ -82,7 +83,7 @@ Continue from the clean Hermes install checkpoint into fresh live evidence.
 
 ## next-bounded-work-package
 
-1. Preserve a new native reset acknowledgement, then prove fresh exact status and a changed three-read substantive OpenClaw turn.
+1. Send exact first-message `agency status` in fresh native session `447738d1...`, then prove a changed three-read substantive OpenClaw turn.
 2. Correlate Store/provider/header/channel evidence and checkpoint OpenClaw only.
 3. Reinstall Hermes only after OpenClaw passes; prove native attribution and exact Agency routing.
 

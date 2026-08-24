@@ -4026,3 +4026,18 @@ diagnostics. Telegram and Slack are configured/running without a current
 error; Hermes remains active and untouched. A fresh `/new`, exact first status,
 and changed bounded substantive turn remain pending, so no live error delivery,
 parent acceptance, delegation, Rule 4, or matrix-cell claim is made.
+
+## 2026-08-24 - Fresh OpenClaw reset acknowledgement delivered post-install
+
+The operator sent only `/new`. The installed plugin observed the final native
+acknowledgement before the reset authorization existed, waited for
+`before_reset`, then allowed the reply-payload gate. The final message gate
+consumed the exact authorization and Telegram accepted
+`✅ New session started.` without a channel error. Fresh native session
+`447738d1...` reports zero tokens. Redacted acknowledgement artifact SHA is
+`8fea7044...`; all Telegram identifiers and credential values are excluded.
+
+No Agency run was created by the native reset. Exact `agency status` remains
+the required first message in this new session. No substantive completion,
+live native-error delivery, delegation, Rule 4, or matrix-cell proof follows
+from the reset acknowledgement alone.
