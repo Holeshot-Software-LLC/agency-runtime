@@ -59,8 +59,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 - Repaired `/new` delivered and consumed one authorization. Fresh status session `130e58cd...`, trace `58bce9a1...`, accepted finalization `9d7d7372...`, `openclaw-operations` row `b2d2f4b8...`, and native Telegram outbound pass. Deterministic control correctly has zero Agency model receipts.
 - The following exact restart-safety turn is retained as failed run `324dcb7c...`, trace `755985e5...`. Routing `436eaef9...`, two specialist rows, skill row `ef7b8440...`, and three successful wrapper receipts prove automatic OpenClaw selection of `linux-task-agency-router` and exact alias/model-group `task-agency-router`; actual answering model remains unavailable.
 - OpenClaw's native `task-general` parent accumulated about 395 KB across 108 distinct read-only tool results and hit its context-overflow guard without authoring a header. Agency terminal `fba6d9db...` correctly closed it `response_invalid`; Telegram queued nothing. Zero resident binding, delegation, worker, or native-child evidence exists. Artifacts `d4e177d8...` / `31f86489...` and transcript `7a6addc6...` preserve the failure.
-- The Agency-only native-error candidate is locally verified and not installed. It binds failed `agent_end` to one exact final `isError` payload with a 30-second, one-use, hashed session/run marker and authoritative Store failure receipt; no raw error content persists. All malformed, stale, replayed, wrong-correlation, and bridge-failure cases remain blocked.
+- The Agency-only native-error repair binds failed `agent_end` to one exact final `isError` payload with a 30-second, one-use, hashed session/run marker and authoritative Store failure receipt; no raw error content persists. All malformed, stale, replayed, wrong-correlation, and bridge-failure cases remain blocked.
 - Focused tests pass 251 / 1 intentional skip, repository Ruff/docs/diff gates pass, and independent security review found no blocker. OpenClaw, Hermes, and all host-native configuration remain unmodified during this candidate package.
+- Agency-only install `6ede7fad...` from clean checkout `484fe2de` published bundle `6f7e47bd...`, runtime `a3b8894f...`, launcher `0fd98d4d...`, and 12 required hooks including `agent_end`. The installer left OpenClaw stopped; native restart is RPC-green with zero restarts.
+- Contractors remain 15; pre/post Store backups are identical at `07dbad1e...`, integrity `ok`, schema 47. OpenClaw's sole config delta is `meta.lastTouchedAt`; native primary/six fallbacks are unchanged. Telegram/Slack are running and Hermes stays active untouched.
 
 ## completed-evidence
 
@@ -72,7 +74,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 
 ## exact-blocker
 
-Do not retry the terminally failed restart-safety input unchanged. Install the locally verified bounded native-error repair into stopped OpenClaw, then prove a fresh changed, tightly scoped substantive turn before continuing Hermes.
+Do not retry the terminally failed restart-safety input unchanged. The bounded native-error repair is installed; prove a fresh changed, tightly scoped substantive OpenClaw turn before continuing Hermes.
 
 ## same-task-continuity
 
@@ -80,8 +82,8 @@ Continue from the clean Hermes install checkpoint into fresh live evidence.
 
 ## next-bounded-work-package
 
-1. Commit the fail-closed exact-run repair and its recovery ledger, then install Agency into stopped OpenClaw.
-2. Prove fresh status and a changed three-read substantive turn.
+1. Preserve a new native reset acknowledgement, then prove fresh exact status and a changed three-read substantive OpenClaw turn.
+2. Correlate Store/provider/header/channel evidence and checkpoint OpenClaw only.
 3. Reinstall Hermes only after OpenClaw passes; prove native attribution and exact Agency routing.
 
 ## verification

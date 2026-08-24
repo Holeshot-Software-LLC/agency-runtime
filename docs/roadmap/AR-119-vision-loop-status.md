@@ -4000,3 +4000,29 @@ native `litellm/task-general`; Agency remains scoped to
 `linux-task-agency-router` / exact `task-agency-router`. Hermes and all
 protected harnesses remain untouched. No live error delivery, substantive
 completion, delegation, Rule 4, or matrix-cell claim is made.
+
+## 2026-08-24 - Native-error repair installed into stopped OpenClaw only
+
+From clean recovery ledger `484fe2de`, the operator took a SQLite online backup
+with source and backup integrity `ok`, recorded schema 47 and 15 contractors,
+and preserved Agency config and launcher hashes. OpenClaw reported zero active
+or queued native tasks; Hermes remained active as break glass. OpenClaw was
+then stopped natively before Agency-only install `6ede7fad...` published bundle
+`6f7e47bd...`, runtime `a3b8894f...`, and launcher SHA `0fd98d4d...`. The
+installer did not restart the gateway.
+
+The before/after Store backups are identical at SHA `07dbad1e...`; contractor
+count remains 15. OpenClaw's pre/post config comparison has one changed leaf,
+`meta.lastTouchedAt`. Native `litellm/task-general` and its exact six fallbacks
+are unchanged. Agency config SHA remains `43367ec9...`; its OpenClaw harness
+still selects `linux-task-agency-router`, provider `litellm`, exact alias/model
+group `task-agency-router`, and the loopback `/v1` endpoint. The credential
+environment name is populated in the live OpenClaw process; its value is
+excluded.
+
+Native restart is RPC-green with zero restarts. `agency-preflight` is loaded
+and registers all 12 required hooks, including `agent_end`, with no plugin
+diagnostics. Telegram and Slack are configured/running without a current
+error; Hermes remains active and untouched. A fresh `/new`, exact first status,
+and changed bounded substantive turn remain pending, so no live error delivery,
+parent acceptance, delegation, Rule 4, or matrix-cell claim is made.

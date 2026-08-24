@@ -532,8 +532,18 @@ bridge did not recognize `native_error`; a first integration pass then exposed
 the missing serialized response hash before that correlation was repaired.
 The final affected suite is 251 passed / 1 intentional skip. Repository Ruff
 check and format check, documentation checks, and `git diff --check` pass. An
-independent security review found no blocking issue. This candidate has not
-yet been installed, and no new live success or error-delivery claim is made.
+independent security review found no blocking issue.
+
+Agency-only install `6ede7fad...` then published bundle `6f7e47bd...`, runtime
+`a3b8894f...`, and launcher SHA `0fd98d4d...` from clean checkout `484fe2de`.
+The installer observed the gateway stopped and left it stopped. Native restart
+is RPC-green with zero restarts; the loaded plugin registers all 12 required
+hooks including `agent_end`, and Telegram/Slack are configured and running
+without a current error. Contractors remain 15 and pre/post online Store
+backups are identical at SHA `07dbad1e...`, integrity `ok`, schema 47.
+OpenClaw's config changed only `meta.lastTouchedAt`; native `task-general` and
+all six exact fallbacks are unchanged. Hermes remains active and untouched.
+No new live success or error-delivery claim is made yet.
 
 ## Approach
 
@@ -612,6 +622,7 @@ Hermes and all protected hosts remain outside the mutation boundary.
 - [x] Deliver fresh exact status with matching Store skill/finalization and native Telegram receipts.
 - [x] Preserve the failed exact substantive request with Store, provider, native-error, and no-delivery evidence.
 - [x] Implement and locally verify exact one-use native-error correlation and terminal Store evidence.
+- [x] Install the native-error candidate through Agency-only install with native routes and protected hosts unchanged.
 - [ ] Deliver exact native OpenClaw error notices through a bounded Agency-only exception without weakening answer finalization.
 - [ ] Prove a fresh changed substantive request through `task-agency-router`, exact header finalization, and Telegram delivery.
 - [ ] Tracker creation remains pending separate authorization.

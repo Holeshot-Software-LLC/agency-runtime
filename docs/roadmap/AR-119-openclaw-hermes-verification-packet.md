@@ -1640,6 +1640,54 @@ known_limit: fresh status, Store-backed skill, substantive LiteLLM routing, and 
 protected_hosts: Codex OAuth/config/canary, Claude, and ZCode untouched
 ~~~
 
+### OpenClaw native-error repair install bundle
+
+~~~yaml
+host: openclaw
+checkout_sha: 484fe2ded93f235c396ecf82afdc14e8329b9d52
+clean_tree_before_install: true
+host_version: OpenClaw 2026.7.1-2
+profile_identity: OpenClaw native task-general; Agency linux-task-agency-router
+agency_inference_profile: linux-task-agency-router
+requested_alias: task-agency-router
+model_group: task-agency-router
+provider_type: litellm
+credential_env_name: LITELLM_API_KEY
+credential_present_boolean: true in live OpenClaw process; value excluded
+agency_config_sha256: 43367ec9aa05a66fc2a60bb254f270836fb3616753769115fabb253a04d5d9f8
+store_backup_before_path: /tmp/ar119-openclaw-native-error-preinstall.iFUzG5/agency-store.before.db
+store_backup_before_sha256: 07dbad1e3c310caa83da4f3504a3f5426bc5f7578373d411dd3fd5ecfe6dce2d
+store_backup_after_install_sha256: 07dbad1e3c310caa83da4f3504a3f5426bc5f7578373d411dd3fd5ecfe6dce2d
+store_integrity_before_after: ok / ok
+store_schema: 47
+contractors_before_after: 15 / 15
+install_id: 6ede7fad-27bc-4b14-bb8c-595a01db2ec3
+install_result: complete; Agency only; installer left gateway stopped
+bundle_digest: 6f7e47bdb8a2396fc59d73344bcc60c88a90d78fc69a5e12d60fa94f2795e20a
+runtime_digest: a3b8894f356e2af722f01e0d8bcba2882921df9a9729cd22d02e25c8feb3c459
+launcher_manifest_sha256: 0fd98d4d0be402f85c0a474094ba51d7c5f351292aff1efd5a0d59ab4272d4cf
+openclaw_config_before_sha256: ffce9d780a31c8ce2ff103398a40ddc2f2a8340b99f4fa4fdbe48bb61f0cb3ee
+openclaw_config_after_sha256: b54228aeaede1ae13722abba21879bfd7f256d79dacee368d95323d7785b9810
+openclaw_config_changed_leaf_count: 1
+openclaw_config_changed_path: meta.lastTouchedAt
+native_primary: litellm/task-general
+native_fallback_count: 6; exact prior list unchanged
+plugin_inventory_before_after: 75 / 75
+agency_plugin: enabled, loaded, version 0.1.0
+registered_hooks: 12; required set complete; agent_end present
+plugin_diagnostics: none
+gateway_restart: native start; RPC green; zero restarts
+telegram: configured; running; no current error
+slack: configured; running; no current error
+hermes_break_glass: active and unchanged
+live_error_delivery_proven: false
+fresh_status_proven: false
+substantive_openclaw_acceptance_proven: false
+delegation_proven: false
+matrix_cell_moved: false
+protected_hosts: Codex OAuth/config/canary, Claude, and ZCode untouched
+~~~
+
 ### Fresh dual-host status and regression-repair bundle
 
 ~~~yaml
