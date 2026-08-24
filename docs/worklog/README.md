@@ -3,7 +3,7 @@ title: Worklog
 status: active
 category: worklog
 created: 2026-07-10
-updated: 2026-08-23
+updated: 2026-08-24
 tags: []
 related: []
 supersedes: []
@@ -1169,6 +1169,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `efcd1e0f` | 2026-08-23 | docs(roadmap): checkpoint OpenClaw reset diagnostic install | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md), [AR-278](../roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md) | null |
 | `c671dd35` | 2026-08-23 | fix(openclaw): correlate reset lifecycle sessions | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md), [AR-278](../roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md) | [detail](2026-08-23-c671dd35-correlate-openclaw-reset-lifecycle-sessions.md) |
 | `cab9cf33` | 2026-08-23 | docs(roadmap): checkpoint OpenClaw reset lifecycle install | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md), [AR-278](../roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md) | null |
+| `4a0248cf` | 2026-08-24 | docs(roadmap): record OpenClaw reset and status delivery | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md), [AR-278](../roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
