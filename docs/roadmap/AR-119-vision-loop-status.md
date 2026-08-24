@@ -3907,4 +3907,18 @@ restarts, all 11 hooks registered, and Telegram configured/running/probe-green.
 Store backup SHA `5ca1ffbe...` has source/backup integrity `ok`, schema 47;
 contractors remain 15. Native routes remain exact and Hermes stays active and
 unmodified. No delegation or Rule 4 evidence was produced, and no AR-119
-matrix cell moves. One changed `/new` is waiting on the operator.
+matrix cell moves.
+
+The operator's changed `/new` again produced no acknowledgement, Agency run,
+or routing decision. The content-free trace proved reply-payload observation
+preceded reset authorization by 2 ms; both callbacks had sessions, but the
+reset lifecycle supplied different identities, so the exact-key-only lookup
+timed out after one second. Redacted artifact SHA is `0fe6ae7a...`.
+
+A live-shaped distinct-session regression failed before implementation at exit
+30. The bounded repair keeps exact-session priority, then accepts only one
+recent exact-text authorization when a supplied lifecycle session differs.
+Two candidates remain ambiguous; replay, wrong text, and expiry remain closed.
+The affected slice passes 246 / 1 intentional skip. The candidate is not
+installed. Hermes and all protected hosts remain untouched; no matrix cell
+moves.

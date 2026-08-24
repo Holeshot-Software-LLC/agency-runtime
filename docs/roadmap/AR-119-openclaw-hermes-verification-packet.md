@@ -1802,7 +1802,18 @@ diagnostic_content: phase, booleans, surface count, content length, authorizatio
 diagnostic_exclusions: message text, identifiers, credentials, and payloads
 failed_backup_attempts: system sqlite3 unavailable; nonexistent contractor SQL table; literal tilde path hash
 backup_recovery: Python SQLite backup API; checkout contractor CLI; normalized native config path
-fresh_changed_new: waiting_on_operator
+fresh_changed_new: failed; operator received no acknowledgement
+openclaw_runs_since_send: 0
+routing_decisions_since_send: 0
+phase_sequence: reply_payload observed without authorization; before_reset authorized 2 ms later; reply_payload timed out after 1 second
+session_shape: both callbacks supplied a session; lifecycle identities differed; identifiers excluded
+failure_artifact: /tmp/ar119-openclaw-phase-trace-preinstall.VGtfCi/openclaw-native-control-fourth-failure-redacted.json
+failure_artifact_sha256: 0fe6ae7a54ea0047422d0a4560b71027e18f2cc3b95ac27f3be281bf6cc16ed1
+expected_red: distinct pre-reset/post-reset/delivery session regression failed at exit 30
+candidate_rule: exact session first; otherwise require one recent exact unambiguous authorization
+ambiguity_replay_wrong_text_expiry: fail closed
+focused_tests: 246 passed; 1 intentional skip
+candidate_installed: false
 delegation_proven: false
 matrix_cell_moved: false
 protected_hosts: Codex OAuth/config/canary, Claude, ZCode, and Hermes untouched

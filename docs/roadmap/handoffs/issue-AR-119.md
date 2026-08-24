@@ -87,7 +87,8 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 - Fresh Hermes exact status completed parent activation and a `hermes-agent` skill row, but generic finalization mislabeled the host `mcp`; zero workforce/delegation rows remain.
 - Two-gate repair `3e71247a` / `ff1e9594` installed Agency-only as `711f3174-88b1-4b9a-948d-a47f316e6744`; bundle `d1a5ef80...`, runtime `70328489...`, launcher `ae41c0be...`. Native routes stayed exact, RPC was green, and Hermes stayed active.
 - Changed `/new` created session `25ed26a0-8dc8-433d-9bc1-3afdbe503ffd`; ingress/reset completed, but no acknowledgement, outbound receipt, or Agency run exists and the operator confirmed no delivery. Log/command/artifact SHAs: `716f2bd1...` / `c8b214cf...` / `ea9d4c9e...`.
-- Content-free diagnostic `675fb22a` / `b8c3b155` installed Agency-only as `2949e798-5500-45c9-956b-4b5a97aa802b`; bundle `72c40ad4...`, runtime `fb719841...`, launcher `859139b0...`. Eleven hooks registered; RPC and Telegram probe are green; native routes stayed exact and Hermes stayed active.
+- Diagnostic install `2949e798-5500-45c9-956b-4b5a97aa802b` traced reply-payload before reset authorization; both sessions were present but differed, so the exact-key-only branch timed out. No ack/run/routing; redacted artifact SHA `0fe6ae7a...`.
+- Expected-red exit 30 now models old/new/delivery session identities. Unique exact fallback with any session passes 246 / 1 skipped; exact matches win and concurrent ambiguity remains closed. Candidate not installed.
 
 ## completed-evidence
 
@@ -99,8 +100,8 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 
 ## exact-blocker
 
-Send one changed OpenClaw `/new` and capture the content-free phase trace,
-then repair the exact live mismatch before touching Hermes.
+Checkpoint/install the exact session-lifecycle repair, then prove one changed
+OpenClaw `/new` before touching Hermes.
 
 ## traps (machine-specific; do not rediscover)
 
@@ -113,8 +114,8 @@ then repair the exact live mismatch before touching Hermes.
 
 ## next-bounded-work-package
 
-1. Capture one changed `/new` phase trace from the installed diagnostic.
-2. Apply the exact traced repair, then prove acknowledgement plus changed status/tool delivery.
+1. Checkpoint/install the exact traced repair into stopped OpenClaw.
+2. Prove acknowledgement plus changed status/tool delivery.
 3. Only then reinstall Hermes and prove native-host attribution plus exact `task-agency-router` substantive routing.
 
 ## same-task-continuity

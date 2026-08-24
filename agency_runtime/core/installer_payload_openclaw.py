@@ -46,7 +46,6 @@ const OUTBOUND_AUTHORIZATION_TTL_MS = 30 * 1000;
 const NATIVE_CONTROL_ACK_TTL_MS = 10 * 1000;
 const NATIVE_CONTROL_ACK_WAIT_MS = 1_000;
 const NATIVE_CONTROL_ACK_POLL_MS = 10;
-const NATIVE_CONTROL_DIAGNOSTIC_WINDOW_MS = 15 * 1000;
 const MAX_OUTBOUND_AUTHORIZATIONS = 128;
 const CONTROL_AUTHORIZATION_FIELD = "agencyRuntimeControlAuthorization";
 const preflightContexts = new Map();
@@ -55,7 +54,6 @@ const terminalRejections = new Map();
 const outboundAuthorizations = new Map();
 const controlAuthorizations = new Map();
 const nativeControlAuthorizations = new Map();
-let nativeControlDiagnosticUntil = 0;
 let nativeControlDiagnosticBudget = 64;
 const nativeChildParents = new Map();
 const NATIVE_CONTROL_ACKS = new Map([
@@ -673,7 +671,7 @@ function nativeControlAcknowledgementAuthorization(session, text) {{
   if (session) {{
     const key = nativeControlAuthorizationKey(session, text);
     const state = key ? nativeControlAuthorizations.get(key) : undefined;
-    return Number(state?.expiresAt || 0) > now ? key : "";
+    if (Number(state?.expiresAt || 0) > now) return key;
   }}
   let candidate = "";
   for (const [key, state] of nativeControlAuthorizations) {{
@@ -1030,7 +1028,6 @@ export default definePluginEntry({{
     api.on("before_reset", (event, ctx) => {{
       const reason = String(event?.reason || "").trim().toLowerCase();
       const session = String(event?.sessionKey || ctx?.sessionKey || "");
-      nativeControlDiagnosticUntil = Date.now() + NATIVE_CONTROL_DIAGNOSTIC_WINDOW_MS;
       const authorized = authorizeNativeControlAcknowledgement(
         session,
         reason === "new" || reason === "reset" ? `/${{reason}}` : "",
@@ -1243,8 +1240,6 @@ export default definePluginEntry({{
       );
       if (
         NATIVE_CONTROL_ACK_TEXTS.has(nativeControlText)
-        || Date.now() <= nativeControlDiagnosticUntil
-        || nativeControlDiagnosticBudget > 0
       ) {{
         logNativeControlDiagnostic(api, "reply_payload_observed", {{
           sessionPresent: Boolean(session),
@@ -1392,8 +1387,6 @@ export default definePluginEntry({{
       const content = typeof event?.content === "string" ? event.content : "";
       if (
         NATIVE_CONTROL_ACK_TEXTS.has(content)
-        || Date.now() <= nativeControlDiagnosticUntil
-        || nativeControlDiagnosticBudget > 0
       ) {{
         logNativeControlDiagnostic(api, "message_observed", {{
           sessionPresent: Boolean(session),

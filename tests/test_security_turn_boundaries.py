@@ -1189,32 +1189,43 @@ if (
   || typeof replySeal !== "function"
   || typeof messageSeal !== "function"
 ) process.exit(285);
-const context = { sessionKey: "native-reset-session", channelId: "telegram" };
+const replyContext = { sessionKey: "pre-reset-session", channelId: "telegram" };
+const resetContext = { sessionKey: "post-reset-session", channelId: "telegram" };
+const messageContext = { sessionKey: "delivery-reset-session", channelId: "telegram" };
 const payloadEvent = {
   kind: "final",
   payload: { text: "✅ New session started." },
-  sessionKey: "native-reset-session",
+  sessionKey: "pre-reset-session",
 };
-const raced = replySeal(payloadEvent, context);
-setTimeout(() => beforeReset({ reason: "new" }, context), 20);
+const raced = replySeal(payloadEvent, replyContext);
+setTimeout(() => beforeReset({ reason: "new" }, resetContext), 20);
 const payloadAllowed = await raced;
 if (
   payloadAllowed?.cancel === true
   || payloadAllowed?.payload?.text !== "✅ New session started."
 ) process.exit(286);
 const messageAllowed = await messageSeal(
-  { content: payloadAllowed.payload.text, sessionKey: "native-reset-session" },
-  context,
+  { content: payloadAllowed.payload.text, sessionKey: "delivery-reset-session" },
+  messageContext,
 );
 if (
   messageAllowed?.cancel === true
   || messageAllowed?.content !== "✅ New session started."
 ) process.exit(287);
-const replayPayload = await replySeal(payloadEvent, context);
+const replayPayload = await replySeal(payloadEvent, replyContext);
 if (replayPayload?.cancel !== true) process.exit(288);
 
 beforeReset({ reason: "reset" }, { sessionKey: "reset-session-a" });
 beforeReset({ reason: "reset" }, { sessionKey: "reset-session-b" });
+const mismatchedAmbiguousPayload = await replySeal(
+  {
+    kind: "final",
+    payload: { text: "✅ Session reset." },
+    sessionKey: "unrelated-reset-session",
+  },
+  { sessionKey: "unrelated-reset-session", channelId: "telegram" },
+);
+if (mismatchedAmbiguousPayload?.cancel !== true) process.exit(294);
 const ambiguousPayload = await replySeal(
   { kind: "final", payload: { text: "✅ Session reset." } },
   { channelId: "telegram" },
@@ -1236,7 +1247,10 @@ for (const sessionKey of ["reset-session-a", "reset-session-b"]) {
 const diagnosticText = pluginLogs.join("\\n");
 if (!diagnosticText.includes("native-control")) process.exit(292);
 if (
-  diagnosticText.includes("native-reset-session")
+  diagnosticText.includes("pre-reset-session")
+  || diagnosticText.includes("post-reset-session")
+  || diagnosticText.includes("delivery-reset-session")
+  || diagnosticText.includes("unrelated-reset-session")
   || diagnosticText.includes("reset-session-a")
   || diagnosticText.includes("✅")
 ) process.exit(293);

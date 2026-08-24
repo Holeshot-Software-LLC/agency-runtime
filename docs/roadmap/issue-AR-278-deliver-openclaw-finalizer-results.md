@@ -432,6 +432,24 @@ count came from the checkout CLI. A literal `~/` config-path hash failure is
 also retained; normalizing that native path produced pre/post OpenClaw config
 SHAs `562c0c4e...` / `cfdacc1d...`. No credential value was emitted.
 
+The operator then sent the changed `/new` and again received no
+acknowledgement. The diagnostic proved the exact live sequence without
+retaining content or identifiers: `reply_payload_sending` observed the exact
+final acknowledgement with a session but no authorization; 2 ms later
+`before_reset` created one authorization under another present lifecycle
+session; the waiting reply gate still found no exact-key authorization after
+one second and canceled. No OpenClaw Agency run or routing decision followed.
+Redacted artifact SHA is `0fe6ae7a...`.
+
+The new live-shaped regression uses distinct pre-reset, post-reset, and final
+delivery sessions and failed before implementation at exit 30. The smallest
+repair preserves exact-session priority, then permits the already-established
+unique recent exact-text fallback when a supplied lifecycle session does not
+match. Zero or multiple candidates, wrong text, expiry, and replay still fail
+closed; a new mismatched-session ambiguity assertion proves the two-candidate
+case. The affected slice is 246 passed / 1 intentional skip. The candidate is
+not installed.
+
 ## Approach
 
 Change only Agency's OpenClaw adapter as specified by ADR-0166. Do not expose
@@ -502,6 +520,8 @@ Hermes and all protected hosts remain outside the mutation boundary.
 - [x] Install the two-gate acknowledgement repair and preserve its independent live non-delivery.
 - [x] Add bounded content-free phase diagnostics with explicit sensitive-content exclusions.
 - [x] Install the diagnostic checkpoint with Store/config/launcher provenance.
-- [ ] Trace one changed `/new` through the installed diagnostic.
+- [x] Preserve the fourth non-delivery and its content-free live phase trace.
+- [x] Add expected-red coverage for differing reset-lifecycle sessions and a bounded repair.
+- [ ] Install the exact traced repair and prove one fresh `/new` acknowledgement.
 - [ ] Apply the exact traced repair and prove a fresh `/new` acknowledgement.
 - [ ] Tracker creation remains pending separate authorization.
