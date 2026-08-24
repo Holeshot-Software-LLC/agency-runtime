@@ -68,7 +68,7 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 
 ## checkpoint
 
-- Branch `codex/ar278-openclaw-one-pass` is at clean ledger checkpoint `9c7c52c7`; `origin/main` is `4a326773`, `f76050d7` is an ancestor, and Agency 0.1.0 imports from this checkout.
+- Branch `codex/ar278-openclaw-one-pass` is at clean failure-evidence ledger checkpoint `bdc3025f`; `origin/main` is `4a326773`, `f76050d7` is an ancestor, and Agency 0.1.0 imports from this checkout.
 - Agency-only OpenClaw install `97fd0d49-e833-458a-a4b6-fb818761f212` binds bundle `97f95751...`, runtime `145ac94d...`, and launcher SHA `9adc2a85...`. The installer left the gateway stopped; native restart is RPC- and Telegram-probe-green with zero restarts.
 - OpenClaw remains audited 2026.7.1-2 on native `litellm/task-general` plus six unchanged fallbacks. Agency alone uses `linux-task-agency-router`, provider type `litellm`, and exact alias/model-group `task-agency-router`; no protected-host route changed.
 - The differing reset-session repair delivered `/new` with one-use consumption. Fresh session `130e58cd...` completed exact status as trace `58bce9a1...`, terminal `9d7d7372...`, and `openclaw-operations` row `b2d2f4b8...`; its deterministic header and Telegram delivery pass.
@@ -77,6 +77,8 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 - The native `task-general` parent made 30 tool-only model calls and 108 distinct read-only tool calls, accumulating about 395 KB of results before OpenClaw stopped it for context overflow. No natural response or Agency header was authored; Telegram queued no reply and reported no channel error.
 - Agency failed closed: finalization `fba6d9db...` atomically closed the run `response_invalid` with all five header fields missing. There is no resident binding, delegation, worker, activation, native-child, or delivery-verification row.
 - Redacted failure artifacts have SHAs `d4e177d8...` and `31f86489...`; final native transcript SHA is `7a6addc6...`. The attempt is retained and must not be retried unchanged.
+- The Agency-only ADR-0167 candidate is locally complete but not installed. It correlates failed `agent_end` to one exact final `isError` payload for 30 seconds, persists only terminal category/hash evidence, and leaves normal answer/header/child gates unchanged. Wrong identity, stale marker, replay, malformed receipt, and bridge failure remain blocked; a later success clears an earlier failure marker.
+- Focused OpenClaw repair tests pass 251 / 1 intentional skip; full repository Ruff check/format, docs checks, and diff check pass. Independent security review found no blocker. No host or config was mutated by this candidate package.
 - Store integrity remains `ok`, schema 47, contractors remain 15, and launcher SHA remains `9adc2a85...`. OpenClaw and Hermes services remain active; Hermes stays untouched as break-glass.
 - Hermes install/activation evidence and its retained `mcp` host-attribution defect remain unchanged in the verification packet. Correct Hermes attribution and substantive Agency routing are pending until OpenClaw passes.
 
@@ -90,7 +92,7 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 
 ## exact-blocker
 
-The exact restart-safety input is terminally retained and cannot be retried unchanged. Use a fresh session and a genuinely new bounded read-only work unit to prove parent completion, exact header, and Telegram delivery before touching Hermes.
+The exact restart-safety input is terminally retained and cannot be retried unchanged. Commit and install the locally verified Agency-only candidate into natively stopped OpenClaw, then use a fresh session and a genuinely new bounded read-only work unit before touching Hermes.
 
 ## traps (machine-specific; do not rediscover)
 
@@ -103,9 +105,9 @@ The exact restart-safety input is terminally retained and cannot be retried unch
 
 ## next-bounded-work-package
 
-1. Start one fresh OpenClaw session and re-prove exact status as its first message.
-2. Send a changed substantive request capped at three read-only calls and excluding the broad native skill; preserve Store/provider/header/Telegram evidence.
-3. Only after OpenClaw passes, reinstall Hermes and prove native attribution plus `task-agency-router` routing.
+1. Commit the repair/recovery pair, back up live state, and install Agency only into natively stopped OpenClaw.
+2. Start one fresh OpenClaw session, re-prove exact status first, then send a changed substantive request capped at three read-only calls and excluding the broad native skill.
+3. Preserve Store/provider/header/Telegram evidence; only after OpenClaw passes, reinstall Hermes and prove native attribution plus `task-agency-router` routing.
 
 ## same-task-continuity
 

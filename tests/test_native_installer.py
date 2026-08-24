@@ -1583,10 +1583,12 @@ def test_openclaw_runtime_contract_fails_closed_without_tool_result_middleware(
     assert "agency-preflight" in runner.openclaw_disabled
 
 
+@pytest.mark.parametrize("missing_hook", ["message_sending", "agent_end"])
 def test_openclaw_runtime_contract_fails_closed_when_one_hook_is_missing(
+    missing_hook: str,
     tmp_path: Path,
 ) -> None:
-    hooks = sorted(OPENCLAW_REQUIRED_HOOKS - {"message_sending"})
+    hooks = sorted(OPENCLAW_REQUIRED_HOOKS - {missing_hook})
     runner = FakeNativeRunner(
         runtime_payload={
             "plugin": {
@@ -1610,7 +1612,7 @@ def test_openclaw_runtime_contract_fails_closed_when_one_hook_is_missing(
     runtime_step = next(
         step for step in result["native_steps"] if step["name"] == "runtime_inspect"
     )
-    assert runtime_step["missing_required_hooks"] == ["message_sending"]
+    assert runtime_step["missing_required_hooks"] == [missing_hook]
     assert "agency-preflight" in runner.openclaw_disabled
 
 

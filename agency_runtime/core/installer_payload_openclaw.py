@@ -43,10 +43,12 @@ const MAX_PREFLIGHT_CONTEXTS = 128;
 const TOOL_CORRELATION_TTL_MS = 10 * 60 * 1000;
 const MAX_TOOL_CORRELATIONS = 128;
 const OUTBOUND_AUTHORIZATION_TTL_MS = 30 * 1000;
+const NATIVE_ERROR_TTL_MS = 30 * 1000;
 const NATIVE_CONTROL_ACK_TTL_MS = 10 * 1000;
 const NATIVE_CONTROL_ACK_WAIT_MS = 1_000;
 const NATIVE_CONTROL_ACK_POLL_MS = 10;
 const MAX_OUTBOUND_AUTHORIZATIONS = 128;
+const MAX_NATIVE_ERROR_MARKERS = 128;
 const CONTROL_AUTHORIZATION_FIELD = "agencyRuntimeControlAuthorization";
 const preflightContexts = new Map();
 const toolCorrelations = new Map();
@@ -54,6 +56,7 @@ const terminalRejections = new Map();
 const outboundAuthorizations = new Map();
 const controlAuthorizations = new Map();
 const nativeControlAuthorizations = new Map();
+const nativeErrorMarkers = new Map();
 let nativeControlDiagnosticBudget = 64;
 const nativeChildParents = new Map();
 const NATIVE_CONTROL_ACKS = new Map([
@@ -245,6 +248,7 @@ function serializeBridgePayload(payload) {{
     finalResponse: boundedUtf8(payload?.finalResponse, MAX_BRIDGE_TEXT_BYTES),
     draftText: boundedUtf8(payload?.draftText, MAX_BRIDGE_TEXT_BYTES),
     outboundPayload: boundedUtf8(payload?.outboundPayload, MAX_OUTBOUND_PAYLOAD_BYTES),
+    responseHash: boundedUtf8(payload?.responseHash, 65),
     model: boundedUtf8(payload?.model, 1024),
     requestedModel: boundedUtf8(payload?.requestedModel, 1024),
     modelGroup: boundedUtf8(payload?.modelGroup, 1024),
@@ -760,7 +764,7 @@ function consumeOutboundAuthorization(session, text) {{
   if (!session) return null;
   const now = Date.now();
   pruneOutboundAuthorizations(now);
-  for (const kind of ["final", "tool", "control", "disabled"]) {{
+  for (const kind of ["final", "error", "tool", "control", "disabled"]) {{
     const exact = outboundAuthorizationKey(session, text, kind);
     const exactState = outboundAuthorizations.get(exact);
     if (
@@ -782,6 +786,55 @@ function consumeOutboundAuthorization(session, text) {{
     }}
   }}
   return null;
+}}
+
+function nativeErrorMarkerKey(session, run) {{
+  const exactSession = boundedCorrelation(session);
+  const exactRun = boundedCorrelation(run);
+  if (
+    !exactSession
+    || !exactRun
+    || Buffer.byteLength(exactSession, "utf8") > 512
+    || Buffer.byteLength(exactRun, "utf8") > 512
+  ) return "";
+  return `${{responseDigest(exactSession)}}\\0${{responseDigest(exactRun)}}`;
+}}
+
+function pruneNativeErrorMarkers(now = Date.now()) {{
+  for (const [key, state] of nativeErrorMarkers) {{
+    if (Number(state?.expiresAt || 0) <= now) nativeErrorMarkers.delete(key);
+  }}
+  while (nativeErrorMarkers.size >= MAX_NATIVE_ERROR_MARKERS) {{
+    nativeErrorMarkers.delete(nativeErrorMarkers.keys().next().value);
+  }}
+}}
+
+function observeAgentEnd(event, ctx) {{
+  const session = sessionId(event, ctx);
+  const run = String(event?.runId || ctx?.runId || "");
+  const key = nativeErrorMarkerKey(session, run);
+  if (!key) return false;
+  const now = Date.now();
+  pruneNativeErrorMarkers(now);
+  if (event?.success === false) {{
+    nativeErrorMarkers.set(key, {{ expiresAt: now + NATIVE_ERROR_TTL_MS }});
+    return true;
+  }}
+  if (event?.success === true) nativeErrorMarkers.delete(key);
+  return false;
+}}
+
+function clearNativeErrorMarker(session, run) {{
+  const key = nativeErrorMarkerKey(session, run);
+  if (key) nativeErrorMarkers.delete(key);
+}}
+
+function consumeNativeErrorMarker(session, run) {{
+  const key = nativeErrorMarkerKey(session, run);
+  if (!key) return false;
+  const state = nativeErrorMarkers.get(key);
+  nativeErrorMarkers.delete(key);
+  return Number(state?.expiresAt || 0) > Date.now();
 }}
 
 function terminalRejectionKey(session, run, text) {{
@@ -948,6 +1001,7 @@ function observeRuntimeState(result, epoch = runtimeStateEpoch) {{
     outboundAuthorizations.clear();
     controlAuthorizations.clear();
     nativeControlAuthorizations.clear();
+    nativeErrorMarkers.clear();
     preflightContexts.clear();
     toolCorrelations.clear();
   }} else if (result?.runtime_enabled === true || result?.runtimeEnabled === true) {{
@@ -1135,6 +1189,11 @@ export default definePluginEntry({{
       await invokeAgency(modelCallReceipt(event, ctx));
     }}, {{ timeoutMs: {host_timeout_ms} }});
 
+    api.on("agent_end", (event, ctx) => {{
+      if (!runtimeEnabled) return;
+      observeAgentEnd(event, ctx);
+    }});
+
     api.on("subagent_spawned", async (event, ctx) => {{
       if (!runtimeEnabled) return;
       const childSession = String(event?.childSessionKey || "");
@@ -1227,6 +1286,7 @@ export default definePluginEntry({{
       try {{
       const session = String(event?.sessionKey || ctx?.sessionKey || "");
       const kind = String(event?.kind || "");
+      const run = String(event?.runId || ctx?.runId || "");
       const nativeTextSurfaces = outboundTextSurfaces(event?.payload);
       const nativeTextSurfaceCount = nativeTextSurfaces.length;
       const nativeControlText = kind === "final"
@@ -1280,6 +1340,65 @@ export default definePluginEntry({{
             }};
         }});
       }}
+      if (kind === "final" && event?.payload?.isError === true) {{
+        if (!consumeNativeErrorMarker(session, run)) {{
+          refreshRuntimeStateSync();
+          if (!runtimeEnabled) {{
+            const marked = authorizeMarkedPayload(session, event.payload, "disabled");
+            if (marked) return {{ payload: marked }};
+          }}
+          return blockedReplyResult(session, run, FINALIZATION_UNAVAILABLE);
+        }}
+        forgetPreflightContext(event, ctx);
+        let outboundPayload;
+        try {{
+          outboundPayload = canonicalOutboundPayload(event.payload);
+        }} catch {{
+          return blockedReplyResult(session, run, FINALIZATION_UNAVAILABLE);
+        }}
+        const digest = responseDigest(outboundPayload);
+        const stateEpoch = ++runtimeStateEpoch;
+        let nativeError;
+        try {{
+          nativeError = invokeAgencySync({{
+            action: "native_error",
+            sessionId: session,
+            traceId: run,
+            responseHash: digest,
+          }}, {outbound_timeout_ms});
+        }} catch {{
+          return blockedReplyResult(session, run, FINALIZATION_UNAVAILABLE);
+        }}
+        const exactReceipt = (
+          String(nativeError?.responseHash || "") === digest
+          && String(nativeError?.turnId || "") === run
+        );
+        const stateApplied = observeRuntimeState(nativeError, stateEpoch);
+        if (!stateApplied) return blockedReplyResult(session, run, FINALIZATION_UNAVAILABLE);
+        if (!runtimeEnabled) {{
+          const marked = exactReceipt && nativeError?.action === "bypass_error"
+            ? authorizeMarkedPayload(session, event.payload, "disabled")
+            : null;
+          return marked
+            ? {{ payload: marked }}
+            : blockedReplyResult(session, run, FINALIZATION_UNAVAILABLE);
+        }}
+        const authoritative = (
+          nativeError?.action === "allow_error"
+          && nativeError?.authoritative === true
+          && nativeError?.terminalStatus === "response_invalid"
+          && typeof nativeError?.finalizationId === "string"
+          && nativeError.finalizationId.length > 0
+          && exactReceipt
+        );
+        const marked = authoritative
+          ? authorizeMarkedPayload(session, event.payload, "error", run)
+          : null;
+        return marked
+          ? {{ payload: marked }}
+          : blockedReplyResult(session, run, FINALIZATION_UNAVAILABLE);
+      }}
+      if (kind === "final") clearNativeErrorMarker(session, run);
       if (kind !== "final") {{
         refreshRuntimeStateSync();
         if (!runtimeEnabled) {{
@@ -1305,7 +1424,6 @@ export default definePluginEntry({{
           reason: "Agency Runtime rejected an unsupported OpenClaw reply payload kind.",
         }};
       }}
-      const run = String(event?.runId || ctx?.runId || "");
       const correlatedModel = modelId(ctx) || readPreflightModel(event, ctx);
       forgetPreflightContext(event, ctx);
       let text;

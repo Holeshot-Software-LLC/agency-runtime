@@ -1159,6 +1159,112 @@ def _handle_finalize_tool(
     return {**dict(result), "runtimeEnabled": True}
 
 
+def _native_error_denial(response_digest: str = "", trace_id: str = "") -> dict[str, Any]:
+    """Return a content-free denial for an unproven native host failure."""
+
+    return {
+        "action": "deny_error",
+        "responseHash": response_digest,
+        "turnId": trace_id,
+        "runtimeEnabled": True,
+    }
+
+
+def _handle_native_error(
+    adapter: Any,
+    payload: dict[str, Any],
+    *,
+    session_id: str,
+    trace_id: str,
+) -> dict[str, Any]:
+    """Bind one exact OpenClaw native error without persisting its content."""
+
+    response_digest = _bounded_string(payload, "responseHash", limit=65)
+    denial = _native_error_denial(response_digest, trace_id)
+    if (
+        not session_id
+        or not trace_id
+        or len(response_digest) != 64
+        or any(character not in "0123456789abcdef" for character in response_digest)
+    ):
+        return denial
+    snapshot_reader = getattr(adapter.store, "get_completion_evidence_snapshot", None)
+    committer = getattr(adapter.store, "commit_terminal_finalization", None)
+    terminal_reader = getattr(adapter.store, "get_authoritative_finalization", None)
+    if not all(callable(value) for value in (snapshot_reader, committer, terminal_reader)):
+        return denial
+    try:
+        snapshot = snapshot_reader(session_id, trace_id)
+        run = snapshot.get("run") if isinstance(snapshot, dict) else None
+        revision = snapshot.get("evidence_revision") if isinstance(snapshot, dict) else None
+        if (
+            not isinstance(run, dict)
+            or str(run.get("session_id") or "") != session_id
+            or str(run.get("trace_id") or "") != trace_id
+            or str(run.get("host") or "").casefold() != "openclaw"
+            or str(run.get("status") or "") not in {"active", "evidence_only", "response_invalid"}
+            or isinstance(revision, bool)
+            or not isinstance(revision, int)
+            or revision <= 0
+        ):
+            return denial
+        committed = committer(
+            session_id=session_id,
+            trace_id=trace_id,
+            host="openclaw",
+            action="response_invalid",
+            response_hash=response_digest,
+            status="response_invalid",
+            expected_evidence_revision=revision,
+            missing=["native_host_error"],
+        )
+        if (
+            not isinstance(committed, dict)
+            or committed.get("authoritative") is not True
+            or committed.get("outcome") not in {"committed", "replay"}
+            or str(committed.get("action") or "") != "response_invalid"
+            or str(committed.get("response_hash") or "") != response_digest
+            or str(committed.get("status") or "") != "response_invalid"
+        ):
+            return denial
+        terminal = terminal_reader(
+            session_id,
+            trace_id,
+            action="response_invalid",
+            response_hash=response_digest,
+        )
+        if not isinstance(terminal, dict):
+            return denial
+        missing = json.loads(str(terminal.get("missing") or "null"))
+        event_id = str(terminal.get("id") or "")
+        if (
+            terminal.get("authoritative") is not True
+            or str(terminal.get("session_id") or "") != session_id
+            or str(terminal.get("trace_id") or "") != trace_id
+            or str(terminal.get("host") or "").casefold() != "openclaw"
+            or str(terminal.get("action") or "") != "response_invalid"
+            or str(terminal.get("response_hash") or "") != response_digest
+            or terminal.get("policy_response_hash") not in {None, ""}
+            or str(terminal.get("terminal_status") or "") != "response_invalid"
+            or str(terminal.get("status") or "") != "response_invalid"
+            or missing != ["native_host_error"]
+            or not event_id
+        ):
+            return denial
+    except Exception:
+        return denial
+    return {
+        "action": "allow_error",
+        "authoritative": True,
+        "outcome": "committed",
+        "terminalStatus": "response_invalid",
+        "turnId": trace_id,
+        "responseHash": response_digest,
+        "finalizationId": event_id,
+        "runtimeEnabled": True,
+    }
+
+
 def _runtime_disabled_result(payload: dict[str, Any], action: str) -> dict[str, Any]:
     """Return the exact no-side-effect contract for one disabled host action."""
 
@@ -1179,6 +1285,15 @@ def _runtime_disabled_result(payload: dict[str, Any], action: str) -> dict[str, 
             **_outbound_allowance(response_hash(binding), runtime_disabled=True),
             "bypassed": True,
         }
+    if action == "native_error":
+        return {
+            "action": "bypass_error",
+            "responseHash": _bounded_string(payload, "responseHash", limit=65),
+            "turnId": _bounded_string(payload, "traceId", limit=512),
+            "runtimeEnabled": False,
+            "runtimeDisabled": True,
+            "bypassed": True,
+        }
     if action in {"preflight", "pre_verify"}:
         return disabled
     if action == "post_tool_call" and payload.get("includeHeaderContext") is True:
@@ -1192,6 +1307,44 @@ def _runtime_disabled_result(payload: dict[str, Any], action: str) -> dict[str, 
     }:
         return {}
     return {"error": f"unknown action: {action}"}
+
+
+def _handle_delivery_action(
+    adapter: Any,
+    payload: dict[str, Any],
+    *,
+    action: str,
+    session_id: str,
+    trace_id: str,
+    model: str,
+) -> dict[str, Any] | None:
+    """Dispatch one exact final-delivery action, or decline the action."""
+
+    if action == "outbound_gate":
+        return _handle_outbound_gate(
+            adapter,
+            session_id=session_id,
+            trace_id=trace_id,
+            final_response=_bounded_string(
+                payload,
+                "finalResponse",
+                limit=MAX_INPUT_BYTES,
+            ),
+            outbound_payload=_bounded_string(
+                payload,
+                "outboundPayload",
+                limit=MAX_INPUT_BYTES,
+            ),
+            model=model,
+        )
+    if action == "native_error":
+        return _handle_native_error(
+            adapter,
+            payload,
+            session_id=session_id,
+            trace_id=trace_id,
+        )
+    return None
 
 
 def _handle_observation_action(
@@ -1417,23 +1570,16 @@ def handle(
             model=model,
         )
 
-    if action == "outbound_gate":
-        return _handle_outbound_gate(
-            adapter,
-            session_id=session_id,
-            trace_id=trace_id,
-            final_response=_bounded_string(
-                payload,
-                "finalResponse",
-                limit=MAX_INPUT_BYTES,
-            ),
-            outbound_payload=_bounded_string(
-                payload,
-                "outboundPayload",
-                limit=MAX_INPUT_BYTES,
-            ),
-            model=model,
-        )
+    delivery = _handle_delivery_action(
+        adapter,
+        payload,
+        action=action,
+        session_id=session_id,
+        trace_id=trace_id,
+        model=model,
+    )
+    if delivery is not None:
+        return delivery
 
     observation = _handle_observation_action(
         adapter,

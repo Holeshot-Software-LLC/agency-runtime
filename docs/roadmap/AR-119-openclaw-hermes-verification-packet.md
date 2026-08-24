@@ -1727,6 +1727,45 @@ matrix_cell_moved: false
 protected_hosts: Codex OAuth/config/canary, Claude, ZCode, and Hermes untouched
 ~~~
 
+### OpenClaw native-error candidate install-readiness bundle
+
+~~~yaml
+host: openclaw
+candidate_scope: Agency adapter/plugin/installer only; not installed
+host_version: OpenClaw 2026.7.1-2
+native_primary: litellm/task-general
+native_fallback_count: 6; unchanged
+agency_profile: linux-task-agency-router
+requested_alias: task-agency-router
+provider_type: litellm
+native_error_contract: failed agent_end plus exact final isError payload
+marker_contract: SHA-256 session/run keys; 30-second TTL; one use; maximum 128
+store_terminal: response_invalid
+store_missing_reason: native_host_error
+raw_native_error_persisted: false
+ordinary_answer_header_gate_changed: false
+child_delivery_gate_changed: false
+runtime_disabled_store_mutation: false
+expected_red_1: agent_end registration absent; Node exit 45
+expected_red_2: native_error bridge action absent
+expected_red_3: response hash omitted from bridge serializer; Node exit 46
+focused_tests: 251 passed; 1 intentional skip
+focused_security_cases: exact correlation, replay, expiry, fallback clearing, malformed receipts, bridge failure, runtime-disable race
+ruff_repository_check: passed
+ruff_repository_format_check: passed
+docs_metadata_check: passed
+policy_worklog_docs_checks: passed with checkout import path supplied after retained initial module-import failure
+git_diff_check: passed
+independent_security_review: no blocking findings
+installed: false
+live_error_delivery_proven: false
+substantive_openclaw_acceptance_proven: false
+delegation_proven: false
+matrix_cell_moved: false
+hermes_break_glass: untouched
+protected_hosts: Codex OAuth/config/canary, Claude, and ZCode untouched
+~~~
+
 ### OpenClaw first post-reset substantive failure bundle
 
 ~~~yaml

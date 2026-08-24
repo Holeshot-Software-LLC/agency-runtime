@@ -423,6 +423,7 @@ def _openclaw_plugin_harness_source() -> str:
             "let toolHeaderContext = '[AGENCY UPDATED HEADER SNAPSHOT v2]\\nAgency header';\n"
             "let failControl = false;\n"
             "let runtimeControlEnabled = true;\n"
+            "let nativeErrorReceiptMode = 'valid';\n"
             "const bridgeCalls = [];\n"
             "function syncBridgeResult(payload) {\n"
             "  bridgeCalls.push(payload);\n"
@@ -435,6 +436,30 @@ def _openclaw_plugin_harness_source() -> str:
             "      runtime_enabled: runtimeControlEnabled,\n"
             "      message: denied ? 'control denied; runtime remains unchanged' : 'control status',\n"
             "    };\n"
+            "  }\n"
+            "  if (payload.action === 'native_error') {\n"
+            "    if (nativeErrorReceiptMode === 'throw') {\n"
+            "      throw new Error('native error receipt unavailable');\n"
+            "    }\n"
+            "    if (!runtimeControlEnabled) {\n"
+            "      return {\n"
+            "        action: 'bypass_error', turnId: payload.traceId,\n"
+            "        responseHash: payload.responseHash, runtimeEnabled: false,\n"
+            "        runtimeDisabled: true, bypassed: true,\n"
+            "      };\n"
+            "    }\n"
+            "    const receipt = {\n"
+            "      action: 'allow_error', authoritative: true, outcome: 'committed',\n"
+            "      terminalStatus: 'response_invalid', turnId: payload.traceId,\n"
+            "      responseHash: payload.responseHash, finalizationId: 'native-error-event',\n"
+            "      runtimeEnabled: true,\n"
+            "    };\n"
+            "    if (nativeErrorReceiptMode === 'wrong_hash') receipt.responseHash = '0'.repeat(64);\n"
+            "    if (nativeErrorReceiptMode === 'wrong_turn') receipt.turnId = 'other-run';\n"
+            "    if (nativeErrorReceiptMode === 'non_authoritative') receipt.authoritative = false;\n"
+            "    if (nativeErrorReceiptMode === 'missing_finalization') delete receipt.finalizationId;\n"
+            "    if (nativeErrorReceiptMode === 'wrong_terminal') receipt.terminalStatus = 'completed';\n"
+            "    return receipt;\n"
             "  }\n"
             "  if (payload.action !== 'outbound_gate') return {};\n"
             "  if (failOutboundSync) throw new Error('outbound unavailable');\n"
@@ -531,6 +556,199 @@ def _openclaw_plugin_harness_source() -> str:
         ),
     )
     return source.replace("export default definePluginEntry", "const plugin = definePluginEntry")
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is not installed")
+def test_generated_openclaw_native_error_requires_exact_agent_end_marker(
+    tmp_path: Path,
+) -> None:
+    source = _openclaw_plugin_harness_source()
+    source += r"""
+const agentEnd = registeredHooks.get("agent_end");
+const outbound = registeredHooks.get("reply_payload_sending");
+const messageSeal = registeredHooks.get("message_sending");
+if (typeof agentEnd !== "function" || typeof outbound !== "function"
+    || typeof messageSeal !== "function") process.exit(301);
+
+let clock = 1_000_000;
+Date.now = () => clock;
+const errorPayload = { text: "Native provider failed.", isError: true };
+
+agentEnd(
+  {
+    runId: "native-error-run", messages: [{ role: "assistant", content: "private" }],
+    success: false, error: "private provider error", durationMs: 17,
+  },
+  { sessionKey: "native-error-session" },
+);
+const allowed = outbound(
+  {
+    payload: errorPayload, kind: "final",
+    sessionKey: "native-error-session", runId: "native-error-run",
+  },
+  { sessionKey: "native-error-session", runId: "native-error-run" },
+);
+if (allowed?.then || allowed?.cancel || !allowed?.payload?.text
+    || allowed.payload.text === errorPayload.text) process.exit(302);
+const nativeCall = bridgeCalls.find((call) => call.action === "native_error");
+if (!nativeCall
+    || nativeCall.sessionId !== "native-error-session"
+    || nativeCall.traceId !== "native-error-run"
+    || !/^[0-9a-f]{64}$/.test(nativeCall.responseHash)) process.exit(303);
+if (Object.hasOwn(nativeCall, "messages")
+    || nativeCall.error !== ""
+    || nativeCall.outboundPayload !== ""
+    || nativeCall.finalResponse !== "") process.exit(304);
+const delivered = messageSeal(
+  { content: allowed.payload.text, sessionKey: "native-error-session" },
+  { sessionKey: "native-error-session" },
+);
+if (delivered?.content !== errorPayload.text) process.exit(305);
+
+const replay = outbound(
+  {
+    payload: errorPayload, kind: "final",
+    sessionKey: "native-error-session", runId: "native-error-run",
+  },
+  { sessionKey: "native-error-session", runId: "native-error-run" },
+);
+if (replay?.cancel !== true) process.exit(306);
+
+for (const mode of [
+  "wrong_hash", "wrong_turn", "non_authoritative", "missing_finalization",
+  "wrong_terminal", "throw",
+]) {
+  nativeErrorReceiptMode = mode;
+  const receiptRun = `receipt-${mode}`;
+  agentEnd(
+    { runId: receiptRun, messages: [], success: false, error: "private", durationMs: 1 },
+    { sessionKey: "receipt-session" },
+  );
+  const malformed = outbound(
+    {
+      payload: errorPayload, kind: "final",
+      sessionKey: "receipt-session", runId: receiptRun,
+    },
+    { sessionKey: "receipt-session", runId: receiptRun },
+  );
+  if (malformed?.cancel !== true) process.exit(313);
+}
+nativeErrorReceiptMode = "valid";
+
+agentEnd(
+  { runId: "exact-run", messages: [], success: false, error: "private", durationMs: 1 },
+  { sessionKey: "exact-session" },
+);
+const wrongSession = outbound(
+  {
+    payload: errorPayload, kind: "final",
+    sessionKey: "wrong-session", runId: "exact-run",
+  },
+  { sessionKey: "wrong-session", runId: "exact-run" },
+);
+const wrongRun = outbound(
+  {
+    payload: errorPayload, kind: "final",
+    sessionKey: "exact-session", runId: "wrong-run",
+  },
+  { sessionKey: "exact-session", runId: "wrong-run" },
+);
+const missing = outbound(
+  {
+    payload: errorPayload, kind: "final",
+    sessionKey: "missing-session", runId: "missing-run",
+  },
+  { sessionKey: "missing-session", runId: "missing-run" },
+);
+if (wrongSession?.cancel !== true || wrongRun?.cancel !== true || missing?.cancel !== true) {
+  process.exit(307);
+}
+
+agentEnd(
+  { runId: "fallback-run", messages: [], success: false, error: "private", durationMs: 1 },
+  { sessionKey: "fallback-session" },
+);
+agentEnd(
+  { runId: "fallback-run", messages: [], success: true, durationMs: 2 },
+  { sessionKey: "fallback-session" },
+);
+const cleared = outbound(
+  {
+    payload: errorPayload, kind: "final",
+    sessionKey: "fallback-session", runId: "fallback-run",
+  },
+  { sessionKey: "fallback-session", runId: "fallback-run" },
+);
+if (cleared?.cancel !== true) process.exit(308);
+
+agentEnd(
+  { runId: "stale-run", messages: [], success: false, error: "private", durationMs: 1 },
+  { sessionKey: "stale-session" },
+);
+clock += 60 * 60 * 1000;
+const stale = outbound(
+  {
+    payload: errorPayload, kind: "final",
+    sessionKey: "stale-session", runId: "stale-run",
+  },
+  { sessionKey: "stale-session", runId: "stale-run" },
+);
+if (stale?.cancel !== true) process.exit(309);
+const nativeErrorCallsBeforeDisable = bridgeCalls.filter(
+  (call) => call.action === "native_error",
+).length;
+
+agentEnd(
+  {
+    runId: "disable-race-run", messages: [], success: false,
+    error: "private", durationMs: 1,
+  },
+  { sessionKey: "disable-race-session" },
+);
+runtimeControlEnabled = false;
+const disabledRace = outbound(
+  {
+    payload: errorPayload, kind: "final",
+    sessionKey: "disable-race-session", runId: "disable-race-run",
+  },
+  { sessionKey: "disable-race-session", runId: "disable-race-run" },
+);
+const deliveredDisabledRace = messageSeal(
+  { content: disabledRace?.payload?.text, sessionKey: "disable-race-session" },
+  { sessionKey: "disable-race-session" },
+);
+if (deliveredDisabledRace?.content !== errorPayload.text) process.exit(310);
+if (bridgeCalls.filter((call) => call.action === "native_error").length
+    !== nativeErrorCallsBeforeDisable + 1) process.exit(314);
+
+await registeredCommand.handler({ args: "status", sessionKey: "disabled-error-session" });
+const disabledError = outbound(
+  {
+    payload: errorPayload, kind: "final",
+    sessionKey: "disabled-error-session", runId: "disabled-error-run",
+  },
+  { sessionKey: "disabled-error-session", runId: "disabled-error-run" },
+);
+const deliveredDisabledError = messageSeal(
+  { content: disabledError?.payload?.text, sessionKey: "disabled-error-session" },
+  { sessionKey: "disabled-error-session" },
+);
+if (deliveredDisabledError?.content !== errorPayload.text) process.exit(311);
+if (bridgeCalls.filter((call) => call.action === "native_error").length
+    !== nativeErrorCallsBeforeDisable + 1) process.exit(312);
+"""
+    script = tmp_path / "openclaw-native-error-correlation.mjs"
+    script.write_text(source, encoding="utf-8")
+
+    completed = subprocess.run(
+        [str(shutil.which("node")), str(script)],
+        capture_output=True,
+        text=True,
+        timeout=10,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
 
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is not installed")

@@ -515,9 +515,29 @@ observation and terminal Store evidence. It must persist no raw error text,
 clear on a later successful fallback, and leave ordinary answer, header,
 finalization, control-acknowledgement, and child-delivery gates intact.
 
+### Native-error candidate is locally verified and not installed
+
+The Agency-only candidate now registers audited OpenClaw `agent_end`, retains
+only SHA-256 correlation keys in a bounded 30-second one-use map, and admits a
+final `isError` payload only after exact session/run correlation and an
+authoritative Store `response_invalid` receipt with `native_host_error`. Raw
+native error text and `agent_end` messages never cross the Python bridge or
+enter the Store. Success after an earlier failed attempt clears the marker;
+wrong identity, expiry, replay, malformed receipt, bridge failure, and
+ordinary headerless output remain fail-closed. Runtime-disable races preserve
+the existing exact pass-through contract without Store mutation.
+
+The expected-red exercise first failed because `agent_end` was absent and the
+bridge did not recognize `native_error`; a first integration pass then exposed
+the missing serialized response hash before that correlation was repaired.
+The final affected suite is 251 passed / 1 intentional skip. Repository Ruff
+check and format check, documentation checks, and `git diff --check` pass. An
+independent security review found no blocking issue. This candidate has not
+yet been installed, and no new live success or error-delivery claim is made.
+
 ## Approach
 
-Change only Agency's OpenClaw adapter as specified by ADR-0166. Do not expose
+Change only Agency's OpenClaw adapter as specified by ADR-0166 and ADR-0167. Do not expose
 the finalizer tool. Supply the initial exact Store-backed header at preflight,
 record native tool evidence through OpenClaw's awaited tool-result middleware,
 and append the updated exact snapshot before the model continues. Keep
@@ -591,6 +611,7 @@ Hermes and all protected hosts remain outside the mutation boundary.
 - [x] Prove one fresh `/new` acknowledgement through the installed repair.
 - [x] Deliver fresh exact status with matching Store skill/finalization and native Telegram receipts.
 - [x] Preserve the failed exact substantive request with Store, provider, native-error, and no-delivery evidence.
+- [x] Implement and locally verify exact one-use native-error correlation and terminal Store evidence.
 - [ ] Deliver exact native OpenClaw error notices through a bounded Agency-only exception without weakening answer finalization.
 - [ ] Prove a fresh changed substantive request through `task-agency-router`, exact header finalization, and Telegram delivery.
 - [ ] Tracker creation remains pending separate authorization.

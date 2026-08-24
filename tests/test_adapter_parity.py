@@ -1783,6 +1783,99 @@ def test_openclaw_bridge_acceptance_closes_exact_turn(
     assert store.recent_runtime_activity(limit=10)["finalizations"][0]["action"] == "accept"
 
 
+def test_openclaw_native_error_finalizes_only_the_exact_active_turn(
+    tmp_path: Path,
+) -> None:
+    from agency_runtime.adapters.openclaw.node_bridge import handle
+    from agency_runtime.core.header.finalize import response_hash
+
+    store = Store(tmp_path / "native-error.db")
+    store.create_run(
+        trace_id="native-error-turn",
+        session_id="native-error-session",
+        host="openclaw",
+        metadata={"request_kind": "nontrivial"},
+    )
+    store.record_specialist_loaded(
+        "native-error-session",
+        "code-reviewer",
+        trace_id="native-error-turn",
+    )
+    digest = response_hash('{"isError":true,"text":"Native provider failed."}')
+    payload = {
+        "action": "native_error",
+        "sessionId": "native-error-session",
+        "traceId": "native-error-turn",
+        "responseHash": digest,
+    }
+
+    wrong_session = handle(
+        {**payload, "sessionId": "other-session"}, adapter=OpenClawAdapter(store=store)
+    )
+    first = handle(payload, adapter=OpenClawAdapter(store=store))
+    replay = handle(payload, adapter=OpenClawAdapter(store=store))
+
+    assert wrong_session["action"] == "deny_error"
+    assert first == replay
+    assert first == {
+        "action": "allow_error",
+        "authoritative": True,
+        "outcome": "committed",
+        "terminalStatus": "response_invalid",
+        "turnId": "native-error-turn",
+        "responseHash": digest,
+        "finalizationId": first["finalizationId"],
+        "runtimeEnabled": True,
+    }
+    assert first["finalizationId"]
+    assert store.get_run("native-error-turn")["status"] == "response_invalid"
+    assert store.get_active_specialists_for_trace("native-error-session", "native-error-turn") == []
+    terminal = store.get_authoritative_finalization(
+        "native-error-session",
+        "native-error-turn",
+        action="response_invalid",
+        response_hash=digest,
+    )
+    assert terminal is not None
+    assert json.loads(terminal["missing"]) == ["native_host_error"]
+    assert terminal["policy_response_hash"] is None
+    activity = store.recent_runtime_activity(limit=10)
+    assert [row["action"] for row in activity["finalizations"]] == ["response_invalid"]
+
+    store.create_run(
+        trace_id="policy-rejection-turn",
+        session_id="policy-rejection-session",
+        host="openclaw",
+    )
+    snapshot = store.get_completion_evidence_snapshot(
+        "policy-rejection-session", "policy-rejection-turn"
+    )
+    store.commit_terminal_finalization(
+        session_id="policy-rejection-session",
+        trace_id="policy-rejection-turn",
+        host="openclaw",
+        action="response_invalid",
+        response_hash=digest,
+        status="response_invalid",
+        expected_evidence_revision=snapshot["evidence_revision"],
+        missing=["completion_policy"],
+    )
+    ordinary_rejection = handle(
+        {
+            **payload,
+            "sessionId": "policy-rejection-session",
+            "traceId": "policy-rejection-turn",
+        },
+        adapter=OpenClawAdapter(store=store),
+    )
+    assert ordinary_rejection["action"] == "deny_error"
+    overlong = handle(
+        {**payload, "responseHash": f"{digest}0"},
+        adapter=OpenClawAdapter(store=store),
+    )
+    assert overlong["action"] == "deny_error"
+
+
 @pytest.mark.parametrize(
     "normalization",
     [

@@ -3975,3 +3975,28 @@ evidence and terminal Store closure. It will persist no raw error text and will
 not change normal answer, control, child, host configuration, or model-routing
 boundaries. The failed input is retained and will not be retried unchanged.
 No delegation or Rule 4 proof exists and no AR-119 matrix cell moves.
+
+## 2026-08-24 - OpenClaw native-error candidate passes local security gates
+
+The Agency-only ADR-0167 candidate now registers OpenClaw `agent_end` and arms
+one 30-second, one-use marker keyed only by hashes of the exact session and run
+after a failed native end event. A later successful end clears it. Only a final
+payload explicitly marked `isError` may consume the marker, and only an exact
+authoritative Store `response_invalid` receipt with `native_host_error`
+authorizes the existing outbound seal. Raw native errors and native messages
+never cross the bridge or persist.
+
+Expected-red evidence first proved absent `agent_end` registration and an
+unknown bridge action; the initial repair then exposed an omitted serialized
+response hash before exact correlation passed. Tests cover wrong session/run,
+absence, expiry, replay, successful-fallback clearing, runtime-disable races,
+malformed receipts, bridge failure, exact Store closure, specialist expiry,
+and installer capability negotiation. The final focused slice passes 251 with
+1 intentional skip. Repository Ruff check/format, documentation checks, and
+diff check pass; an independent security review found no blocking issue.
+
+The candidate is not installed. OpenClaw remains on its prior Agency bundle and
+native `litellm/task-general`; Agency remains scoped to
+`linux-task-agency-router` / exact `task-agency-router`. Hermes and all
+protected harnesses remain untouched. No live error delivery, substantive
+completion, delegation, Rule 4, or matrix-cell claim is made.

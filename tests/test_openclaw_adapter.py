@@ -179,7 +179,9 @@ def test_openclaw_generated_plugin_records_terminal_model_calls() -> None:
     )
 
     assert "model_call_ended" in OPENCLAW_REQUIRED_HOOKS
+    assert "agent_end" in OPENCLAW_REQUIRED_HOOKS
     assert 'api.on("model_call_ended"' in source
+    assert 'api.on("agent_end"' in source
     assert 'api.on("subagent_spawned"' in source
     assert 'api.on("subagent_ended"' in source
     assert 'action: "post_api_request"' in source

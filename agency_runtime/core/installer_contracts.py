@@ -29,6 +29,7 @@ OPENCLAW_REQUIRED_HOOKS = frozenset(
         "gateway_start",
         "before_agent_run",
         "before_prompt_build",
+        "agent_end",
         "model_call_ended",
         "subagent_spawned",
         "subagent_ended",
