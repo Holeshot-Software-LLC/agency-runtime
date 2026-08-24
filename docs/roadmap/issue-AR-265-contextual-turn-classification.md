@@ -159,7 +159,8 @@ non-delegated, and read-only.
       mutations killed, `0` surviving, `0` invalid, and source unchanged.
 - [x] The dashboard UI gate passes `134/134`, and the routing evaluation passes
       all accuracy, latency, and scale gates.
-- [ ] Documentation and worklog parity gates pass after the local substantive
+- [x] Documentation metadata, policy availability, worklog parity, and
+      aggregate documentation validation pass after the local substantive
       commit is recorded in the required ledger commit.
 - [ ] A same-repository tracker issue titled `[AR-265] Separate contextual
       inquiry from execution authority` with label `epic:routing` is created

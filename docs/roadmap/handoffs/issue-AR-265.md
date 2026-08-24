@@ -16,8 +16,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-265
 branch: codex/ar265-contextual-turn-classification
-evidence_commit: 4a3267738bb20519500513ea1498fc68f8ea9443
-minimum_ledger_commit: 4a3267738bb20519500513ea1498fc68f8ea9443
+evidence_commit: faba05bbb97f91a87730e3b1e223cf156432d9c2
+minimum_ledger_commit: a19098a9978ec2e43c0e24256b69caeab717fa50
 hard_checkpoint_percent: 50
 tracker_url: null
 ---
@@ -31,7 +31,11 @@ tracker_url: null
 - The shared main checkout remains untouched with another worker's OpenClaw
   changes preserved in place.
 - Telemetry reported 20.8 percent remaining after bootstrap, so this package
-  must reach a clean substantive and ledger checkpoint before further work.
+  required a clean substantive and ledger checkpoint. That pair now exists at
+  `faba05bbb97f91a87730e3b1e223cf156432d9c2` and
+  `a19098a9978ec2e43c0e24256b69caeab717fa50`.
+- End-of-package telemetry reported 61.1 percent remaining and
+  `continue_same_task`; no new hard checkpoint was required.
 
 ## completed-evidence
 
@@ -59,12 +63,14 @@ tracker_url: null
   scratch; the normal-host retry passed the complete evaluator.
 - Documentation metadata (`734` files), policy availability, Ruff check, Ruff
   format (`683` files), and diff hygiene pass. Worklog and aggregate docs parity
-  remain pending only because the substantive commit has not yet been recorded.
+  also pass after recording the substantive commit; metadata validation now
+  covers `735` Markdown files.
 
 ## exact-blocker
 
-The code and canonical issue are not yet at a local recovery pair. GitHub issue,
-push, pull request, merge, and hosted workflow actions remain unauthorized.
+GitHub issue, push, pull request, merge, and hosted workflow actions remain
+unauthorized. Local source and documentation gates are complete; this capsule
+does not claim installed-host or reviewed-pull-request evidence.
 
 ## same-task-continuity
 
@@ -76,9 +82,10 @@ reinterpret unrelated OpenClaw evidence as AR-265 verification.
 
 ## next-bounded-work-package
 
-1. Create the local substantive commit and exact worklog ledger commit.
-2. Refresh this capsule to those commits, independently review the resulting
-   diff, and stop before any outward-facing action.
+1. Independently review the committed implementation, tests, and governance
+   records without editing or performing an outward-facing action.
+2. Repair any material local finding with its own substantive and ledger pair;
+   otherwise stop at the clean reviewed checkpoint.
 
 ## verification
 
