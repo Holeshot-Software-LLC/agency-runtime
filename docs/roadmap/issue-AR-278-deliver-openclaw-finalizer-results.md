@@ -608,6 +608,66 @@ is `meta.lastTouchedAt`; native `task-general` plus all six fallbacks are exact.
 Agency configuration and Hermes config/environment/launcher hashes are
 unchanged, and Hermes remains active. Fresh live response proof is pending.
 
+### Refreshed-header installation passes live status, skill, and substantive delivery
+
+The installed `d7187e80` candidate retained bundle `36619063...`, runtime
+`573a6a14...`, launcher SHA `d65af026...`, unchanged Agency configuration,
+Store integrity `ok`, schema 47, and contractor count 15. OpenClaw's only
+native configuration delta remains `meta.lastTouchedAt`; native
+`litellm/task-general` and all six fallbacks are unchanged. Hermes remained
+active as break glass with config, environment, and launcher untouched. Codex
+OAuth/configuration/canary, Claude, and ZCode were not changed.
+
+Fresh deterministic status completed as run
+`86f838f0-aeca-4565-9474-7913b68f9d61`, trace
+`ad834646-724f-4ea7-bce7-b13011c735e1`, abstained routing
+`a67e66ad-1aa2-471f-aabb-da75a3674867`, and accepted terminal
+`d84fc7d8-6f00-4daa-aeb9-3a99c96be8bb`. It correctly recorded no workforce
+model receipt, specialist, skill, resident binding, delegation, worker, or
+native child.
+
+The changed `node-connect` request completed as run
+`25fa081a-1ce6-4397-a234-9fc4283e6e74`, trace
+`c1bbbdc7-c203-4ba2-942f-3c262bcf88f4`, accepted routing
+`3548700e-a512-4cd1-8f3f-793b0061173d`, specialist row
+`8e538079-1bb2-4178-8eae-b1929873d13b`, exact skill row
+`d02c71ae-e69b-412b-97a6-bde4e31d50f0`, and accepted terminal
+`6907ed38-2fb8-4e87-ae53-22c2d6cb21c6`. All three applied workforce receipts
+`68dd9d20-898e-490b-8de3-db1f0d6fa559`,
+`891ea869-fad6-49e6-9fba-aa58b6fa6659`, and
+`d1848be3-4a98-498e-9249-0bc0c23165c1` used OpenClaw profile
+`linux-task-agency-router`, provider type `litellm`, and exact requested
+alias/model-group `task-agency-router`; cross-provider fallback was zero. The
+exact Store-backed five-line header and body were delivered to Telegram in one
+chunk.
+
+A genuinely different request constrained the native parent to three named,
+read-only artifacts. It completed as run
+`72314429-1c90-4ef2-b087-18a7be37606e`, trace
+`50c11095-843d-4c2d-a6f4-dd140eb4a1bf`, accepted routing
+`21b8b545-05bc-4e8f-85b3-bc3a8738aa34`, specialist rows
+`4bb8ce63-7868-4f4d-9dfd-145132e94745` and
+`1707c674-e2af-4392-af18-ca22590bd006`, and accepted terminal
+`803465de-335f-42d8-9877-98a85eaab743`. Three workforce provider entries
+applied and one same-profile entry was retained as
+`provider_response_contract_invalid`; all four used profile
+`linux-task-agency-router`, provider type `litellm`, requested alias
+`task-agency-router`, and model-group `task-agency-router`. Receipt IDs are
+`301f3cef-8480-449a-b800-920f93732b02`,
+`3c3e955f-f502-425a-9a60-43b630f0987f`,
+`dd3c7a9f-90aa-4992-8504-a61d4179edcc`, and
+`e0ac9e5a-2961-4eaa-bb57-980922b37af4`; cross-provider fallback remained
+zero. The exact finalized response was delivered to Telegram in one chunk.
+
+Provider telemetry did not supply an actual answering model; neither
+`task-agency-router` nor native `task-general` is promoted into that claim.
+Neither live turn delegated or created a worker/native child, so Rule 4,
+native-child delivery, and an AR-119 matrix cell remain unproven. The earlier
+status, context-overflow, stale-header, and non-delivery failures remain
+preserved. A live native-error delivery draw was not performed, so the bounded
+native-error acceptance item remains open even though ordinary status, skill,
+substantive finalization, and one-chunk Telegram delivery now pass.
+
 ## Approach
 
 Change only Agency's OpenClaw adapter as specified by ADR-0166 and ADR-0167. Do not expose
@@ -687,5 +747,10 @@ Hermes and all protected hosts remain outside the mutation boundary.
 - [x] Implement and locally verify exact one-use native-error correlation and terminal Store evidence.
 - [x] Install the native-error candidate through Agency-only install with native routes and protected hosts unchanged.
 - [ ] Deliver exact native OpenClaw error notices through a bounded Agency-only exception without weakening answer finalization.
-- [ ] Prove a fresh changed substantive request through `task-agency-router`, exact header finalization, and Telegram delivery.
+- [x] Prove a fresh changed `node-connect` skill request through
+      `task-agency-router`, exact header finalization, and one-chunk Telegram
+      delivery.
+- [x] Prove a genuinely different bounded three-read substantive request
+      through `task-agency-router`, exact header finalization, and one-chunk
+      Telegram delivery without delegation or native children.
 - [ ] Tracker creation remains pending separate authorization.

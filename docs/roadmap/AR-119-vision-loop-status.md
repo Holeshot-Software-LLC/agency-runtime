@@ -3,7 +3,7 @@ title: "AR-119 vision-completion loop final status"
 status: active
 category: roadmap
 created: 2026-08-17
-updated: 2026-08-23
+updated: 2026-08-24
 tags: [roadmap, report, autonomous, loop, AR-119, AR-253, AR-255]
 related:
   - docs/roadmap/AR-119-vision-completion-autonomous-brief.md
@@ -4119,3 +4119,91 @@ alias/model-group `task-agency-router`. Agency config and Hermes
 config/environment/launcher hashes are unchanged; Hermes remains active as
 break glass. Fresh status, skill, substantive response, Store, and Telegram
 proof are pending, so no delegation, Rule 4, or matrix-cell claim moves.
+
+## 2026-08-24 - OpenClaw refreshed-header repair passes scoped live parent acceptance
+
+The live proof followed repair `d7187e80`, install checkpoint `00d5ac27`, and
+its ledger on the same Agency-only runtime. OpenClaw itself was not
+reinstalled. Native `/new` delivered `✅ New session started.` and created fresh
+Nexus session `6360c186-7834-473e-9cb7-70e181581493`. The exact first user
+message was then `agency status`. Store run
+`86f838f0-aeca-4565-9474-7913b68f9d61`, trace
+`ad834646-724f-4ea7-bce7-b13011c735e1`, abstained decision
+`a67e66ad-1aa2-471f-aabb-da75a3674867`, and accepted terminal event
+`d84fc7d8-6f00-4daa-aeb9-3a99c96be8bb` correlate. The deterministic control
+response carried the exact five lines `agency-steward` / `none` / `none` /
+`requested execution alias: task-general` / `deterministic`, followed by an
+explicit staffing abstention. Telegram accepted the one-chunk response. The
+transcript SHA at this first-response checkpoint is
+`ee310dc47082f0e310797ec44d3363157f43b34269a9ce6a981110c0ffb21ced`.
+No model receipt is expected for this control route.
+
+The changed skill-only request read the installed `node-connect` `SKILL.md`
+once and performed no other tool work. Run
+`25fa081a-1ce6-4397-a234-9fc4283e6e74`, trace
+`c1bbbdc7-c203-4ba2-942f-3c262bcf88f4`, accepted routing
+`3548700e-a512-4cd1-8f3f-793b0061173d`, specialist row
+`8e538079-1bb2-4178-8eae-b1929873d13b`, skill row
+`d02c71ae-e69b-412b-97a6-bde4e31d50f0`, and accepted terminal event
+`6907ed38-2fb8-4e87-ae53-22c2d6cb21c6` correlate. Three wrapper receipts
+applied through the OpenClaw harness, profile `linux-task-agency-router`,
+provider type `litellm`, and exact alias/model-group `task-agency-router`.
+The delivered header was exactly `agency-steward, code-reviewer` / `none` /
+`node-connect` / `workforce inference: [router] task-agency-router ->
+linux-task-agency-router/task-agency-router (wrapper)` / `inference`; its body
+reported only title `Node Connect` and the requested purpose. Telegram accepted
+one text chunk. The transcript SHA is
+`92698a17450388c4a0d2de50ba5b967ff8ecdfff70bcfa0b037cd6b9d70c6c08`.
+
+The substantive request constrained the native parent to exactly three
+read-only artifacts: `current-openclaw.json`, `openclaw.plugin.json`, and the
+installed `agency-preflight/index.js`. The transcript contains one batched
+native `read` call for each path, each exactly once, and no other tool or
+delegation call. Run `72314429-1c90-4ef2-b087-18a7be37606e`, trace
+`50c11095-843d-4c2d-a6f4-dd140eb4a1bf`, accepted routing
+`21b8b545-05bc-4e8f-85b3-bc3a8738aa34`, specialist rows
+`4bb8ce63-7868-4f4d-9dfd-145132e94745` and
+`1707c674-e2af-4392-af18-ca22590bd006`, and accepted terminal event
+`803465de-335f-42d8-9877-98a85eaab743` correlate. The delivered five-line
+header was exactly `agency-steward, section-508-accessibility-specialist,
+ai-evaluation-engineer` / `none` / `none` / the same exact
+`task-agency-router` workforce route / `inference`. The body reported at most
+three evidence-backed risks: process-local state loss on restart, hard-coded
+version-specific absolute paths, and conditional recovery dependence on a
+temporary `source_root`. It also explicitly limited the result because the
+single permitted `index.js` read was tool-truncated and no restart or path
+validation was performed.
+
+Receipts `dd3c7a9f-90aa-4992-8504-a61d4179edcc`,
+`3c3e955f-f502-425a-9a60-43b630f0987f`, and
+`301f3cef-8480-449a-b800-920f93732b02` succeeded. Receipt
+`e0ac9e5a-2961-4eaa-bb57-980922b37af4` faithfully retains one rejected
+contract-invalid response. All four stayed on the same OpenClaw harness,
+`linux-task-agency-router` LiteLLM profile, and exact `task-agency-router`
+alias/model-group; there was no cross-provider fallback. Telegram accepted the
+final response in one chunk with no send failure. Final transcript and
+trajectory SHAs are
+`93dcbc7659dde73cb3d9c49b79917fb7ba3a96a84e4eed93896973ca009de88c`
+and `0e4b57bb9f0cb199e608ff9cfdad1013421f26e069de3845127f508ba7da6821`.
+
+The post-live SQLite backup SHA is
+`02a76504f72946b7181619642e5b454ee49d0b9f9421632e1fe6f24a1b8ffbba`;
+source and backup integrity are `ok`, schema remains 47, and contractors remain
+15 before and after. Runtime
+`573a6a140cb23a60b48ba4b6ce638cccba6854fa11acd701aa05c9cc47ce1ab4`,
+launcher `d65af026617abe5d836b9ba9ec3b6efe63d0815ef971c2b8f93bf7007e7771ef`,
+and install `fa68e6a4-75d9-4a47-8358-20b4e654b10e` remain authoritative.
+Agency config SHA is unchanged at `43367ec9...`; native
+`litellm/task-general` and all six configured fallbacks are unchanged. Hermes
+config, environment, and launcher remain at `95b87b7f...`, `792fd43a...`, and
+`7c033c97...`; Hermes and the Codex OAuth/config/canary, Claude, and ZCode
+surfaces were not touched.
+
+This passes the scoped OpenClaw parent acceptance set: fresh activation,
+Store-backed header delivery, harmless skill loading, substantive parent
+routing through the exact Agency LiteLLM alias, terminal Store correlation,
+and Telegram delivery. The LiteLLM callback is absent even though the proxy
+can import this checkout, so the actual answering model remains unavailable;
+the wrapper alias is not promoted into that claim. No resident binding,
+delegation, child, Rule 4, or AR-119 matrix-cell proof exists. Every earlier
+failed attempt remains recorded and was not retried unchanged.

@@ -3,7 +3,7 @@ title: "Exact-main Linux handoff for OpenClaw and Hermes"
 status: active
 category: roadmap
 created: 2026-08-16
-updated: 2026-08-23
+updated: 2026-08-24
 tags: [roadmap, verification, hosts, openclaw, hermes, linux, AR-119]
 related:
   - docs/roadmap/handoffs/issue-AR-119.md
@@ -1833,6 +1833,100 @@ matrix_cell_moved: false
 protected_hosts: Codex OAuth/config/canary, Claude, ZCode, and Hermes untouched
 ~~~
 
+### OpenClaw refreshed-header final live acceptance bundle
+
+This bundle records fresh native proof after repair `d7187e80` and install
+checkpoint `00d5ac27`. It supersedes only the preceding install bundle's
+`pending` live-proof field; all earlier failed attempts remain evidence.
+
+~~~yaml
+host: openclaw
+checkout_sha: ae2213a0266f4fc591ad77dd877210bc02c54699
+installed_source_checkout_sha: 456a75b7e984c905c2331a7b938e10de67a4a2e5
+repair_commit: d7187e809523503b5d8162d3334afc497fe1d3f6
+install_checkpoint_commit: 00d5ac27
+clean_tree: true for installed source checkout; runtime code unchanged during proof; documentation-only changes present while recording evidence
+host_version: OpenClaw 2026.7.1-2 (0790d9f)
+profile_identity: openclaw -> linux-task-agency-router
+native_litellm_config_source_redacted: ~/.openclaw/openclaw.json; litellm/task-general primary and exact six prior fallbacks unchanged; credential values excluded
+litellm_base_url_source: effective ~/.agency-runtime/agency.yaml profile linux-task-agency-router
+litellm_base_url: http://127.0.0.1:4000/v1
+credential_env_name: LITELLM_API_KEY
+credential_present_boolean: true in live OpenClaw service; value never read or emitted
+agency_inference_profile: linux-task-agency-router
+agency_provider_type: litellm
+requested_alias: task-agency-router
+model_group: task-agency-router
+actual_model_and_receipt_source: unavailable; wrapper receipts repeat requested alias, not backing model; LiteLLM callback absent although proxy can import checkout
+runtime_digest: 573a6a140cb23a60b48ba4b6ce638cccba6854fa11acd701aa05c9cc47ce1ab4
+store_schema: 47
+install_result: fa68e6a4-75d9-4a47-8358-20b4e654b10e; complete; Agency only; installer left gateway stopped; OpenClaw not reinstalled
+launcher_manifest_sha256: d65af026617abe5d836b9ba9ec3b6efe63d0815ef971c2b8f93bf7007e7771ef
+fresh_session_id: 6360c186-7834-473e-9cb7-70e181581493
+fresh_reset_result: /new -> ✅ New session started.; Telegram success in one chunk
+first_response_artifact: native Nexus transcript at exact first agency status response
+first_response_artifact_sha256: ee310dc47082f0e310797ec44d3363157f43b34269a9ce6a981110c0ffb21ced
+first_response_header_exact: |-
+  Agency/Agencies loaded: agency-steward
+  Agency/Agencies delegated: none
+  Skills loaded: none
+  Actual Model selected: requested execution alias: task-general
+  Recruited via: deterministic
+status_run_trace_route_final: 86f838f0-aeca-4565-9474-7913b68f9d61 / ad834646-724f-4ea7-bce7-b13011c735e1 / a67e66ad-1aa2-471f-aabb-da75a3674867 / d84fc7d8-6f00-4daa-aeb9-3a99c96be8bb
+skill_run_trace_route_final: 25fa081a-1ce6-4397-a234-9fc4283e6e74 / c1bbbdc7-c203-4ba2-942f-3c262bcf88f4 / 3548700e-a512-4cd1-8f3f-793b0061173d / 6907ed38-2fb8-4e87-ae53-22c2d6cb21c6
+skill_name_and_store_row_id: node-connect / d02c71ae-e69b-412b-97a6-bde4e31d50f0
+skill_specialist_id: 8e538079-1bb2-4178-8eae-b1929873d13b # code-reviewer
+skill_read_exact: installed node-connect/SKILL.md; one native read; non-error
+skill_provider_receipt_ids: [d1848be3-4a98-498e-9249-0bc0c23165c1, 891ea869-fad6-49e6-9fba-aa58b6fa6659, 68dd9d20-898e-490b-8de3-db1f0d6fa559]
+skill_header_exact: agency-steward, code-reviewer / none / node-connect / workforce inference task-agency-router to linux-task-agency-router/task-agency-router wrapper / inference
+skill_body_exact_summary: "Title: Node Connect; purpose limited to diagnosing OpenClaw mobile/macOS node pairing, setup-code, route, authentication, and connection failures"
+skill_transcript_sha256: 92698a17450388c4a0d2de50ba5b967ff8ecdfff70bcfa0b037cd6b9d70c6c08
+agency_trace_id: 50c11095-843d-4c2d-a6f4-dd140eb4a1bf
+substantive_run_id: 72314429-1c90-4ef2-b087-18a7be37606e
+substantive_finalization_id: 803465de-335f-42d8-9877-98a85eaab743
+substantive_reads_exact: current-openclaw.json, openclaw.plugin.json, and agency-preflight/index.js; each read exactly once; no other tool or delegation call
+header_exact: |-
+  Agency/Agencies loaded: agency-steward, section-508-accessibility-specialist, ai-evaluation-engineer
+  Agency/Agencies delegated: none
+  Skills loaded: none
+  Actual Model selected: workforce inference: [router] task-agency-router -> linux-task-agency-router/task-agency-router (wrapper)
+  Recruited via: inference
+substantive_body_exact_summary: three risks were process-local state loss, hard-coded version-specific paths, and conditional temporary-source recovery; response disclosed the truncated index.js read and absence of restart/path validation
+resident_binding_id: none; request-scoped steward only; no persistent row
+routing_decision_ids:
+  - a67e66ad-1aa2-471f-aabb-da75a3674867 # deterministic status
+  - 3548700e-a512-4cd1-8f3f-793b0061173d # skill
+  - 21b8b545-05bc-4e8f-85b3-bc3a8738aa34 # substantive
+specialists_loaded_ids:
+  - 8e538079-1bb2-4178-8eae-b1929873d13b # code-reviewer
+  - 4bb8ce63-7868-4f4d-9dfd-145132e94745 # section-508-accessibility-specialist
+  - 1707c674-e2af-4392-af18-ca22590bd006 # ai-evaluation-engineer
+provider_receipt_ids:
+  - dd3c7a9f-90aa-4992-8504-a61d4179edcc # ordinal 1; applied
+  - e0ac9e5a-2961-4eaa-bb57-980922b37af4 # ordinal 2; contract-invalid
+  - 3c3e955f-f502-425a-9a60-43b630f0987f # ordinal 3; applied
+  - 301f3cef-8480-449a-b800-920f93732b02 # ordinal 4; applied
+provider_attempt_status: status deterministic/no receipt; skill 3/3 applied; substantive 3 applied and 1 retained contract-invalid; every inference attempt automatically selected OpenClaw, linux-task-agency-router, litellm, and task-agency-router
+fallback_count: 0 cross-provider; wrapper ordinals stayed on one profile; native task-general plus six configured fallbacks unchanged
+substantive_transcript_sha256: 93dcbc7659dde73cb3d9c49b79917fb7ba3a96a84e4eed93896973ca009de88c
+substantive_trajectory_sha256: 0e4b57bb9f0cb199e608ff9cfdad1013421f26e069de3845127f508ba7da6821
+telegram_delivery: reset, status, skill, and substantive responses each succeeded in one text chunk; no send failure in bounded journal windows
+timeout_or_failure_receipt: e0ac9e5a-2961-4eaa-bb57-980922b37af4 retained contract-invalid on same profile; no final timeout or transport failure; earlier failures retained above
+contractors_before_after: 15 / 15
+store_integrity_before_after: ok / ok
+pre_install_store_backup_sha256: abcc1396b46f7dd087f034f42b520d40fee9873b72e314d78621cdced0e470d2
+post_live_store_backup_sha256: 02a76504f72946b7181619642e5b454ee49d0b9f9421632e1fe6f24a1b8ffbba
+agency_config_sha256: 43367ec9aa05a66fc2a60bb254f270836fb3616753769115fabb253a04d5d9f8
+openclaw_config_before_after_sha256: b54228aeaede1ae13722abba21879bfd7f256d79dacee368d95323d7785b9810 / 1c6f74936984f8c137c0d79016547a01e3bead7f6a9747ada4aa3b04c766f134
+openclaw_config_semantic_delta: meta.lastTouchedAt only; native model/provider/fallback configuration unchanged
+hermes_config_sha256: 95b87b7fc0427ad4e3da4f5f468054cf9f7ddba679d1bb606b782a13e1a0172d
+hermes_environment_sha256: 792fd43a5312d1c1d69f6afbeef3bbdd1a8198ee03ac06b4b3b6dfa20ec2f324
+hermes_launcher_sha256: 7c033c97e7f4ce2108efcccfadc4f1c9e4511dc98afa11085adfd898f27585c3
+delegation_rows: 0
+native_child_rows: 0
+known_limit: actual answering model unavailable without callback telemetry; no delegation, native child, Rule 4 delivery, or AR-119 matrix-cell proof; Hermes and Codex OAuth/config/canary, Claude, and ZCode untouched
+~~~
+
 ### OpenClaw native-error candidate install-readiness bundle
 
 ~~~yaml
@@ -2189,8 +2283,20 @@ hermes_service: active and untouched
 hermes_config_sha256: 95b87b7fc0427ad4e3da4f5f468054cf9f7ddba679d1bb606b782a13e1a0172d
 hermes_environment_sha256: 792fd43a5312d1c1d69f6afbeef3bbdd1a8198ee03ac06b4b3b6dfa20ec2f324
 hermes_launcher_sha256: 7c033c97e7f4ce2108efcccfadc4f1c9e4511dc98afa11085adfd898f27585c3
-fresh_session_status_skill_substantive_proof: pending
+fresh_session_status_skill_substantive_proof: passed; see refreshed-header final live acceptance bundle above
 delegation_proven: false
 matrix_cell_moved: false
 protected_hosts: Codex OAuth/config/canary, Claude, ZCode, and Hermes untouched
 ~~~
+
+### Current scoped verdict after refreshed-header live proof
+
+The authoritative OpenClaw bundle is
+`OpenClaw refreshed-header final live acceptance bundle` above. Fresh reset,
+status, native skill loading, bounded substantive parent routing, Store-backed
+first-pass headers, and Telegram delivery pass on installed repair `d7187e80`.
+Every Agency inference attempt stayed on `linux-task-agency-router`, provider
+type `litellm`, and exact alias/model-group `task-agency-router`; cross-provider
+fallback was zero. The proxy callback is absent, so no actual answering model
+is claimed. No delegation, native child, Rule 4 delivery, or matrix-cell proof
+exists. Hermes is the only next host package; protected hosts remain untouched.
