@@ -21,6 +21,7 @@ related:
   - docs/roadmap/issue-AR-262-preserve-slow-host-dashboard-parity.md
   - docs/roadmap/issue-AR-263-restore-codex-desktop-parent-hook-delivery.md
   - docs/roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md
+  - docs/roadmap/issue-AR-279-exclude-hermes-internal-post-response-preflight.md
   - docs/decisions/0166-refresh-openclaw-headers-through-awaited-tool-results.md
   - docs/roadmap/AR-255-child-parity-design.md
 supersedes: []
@@ -3778,7 +3779,7 @@ pending. Protected hosts and the AR-119 matrix remain untouched.
 
 The operator sent fresh-session control commands to both hosts. Hermes exact
 `agency status` completed trace
-`20260823_195135_48369ae1:20260823_195135_48369ae1:301cda8d`, run
+`...65697a38:...65697a38:301cda8d`, run
 `1015aba7-172f-4a53-b88e-584846ea7ce5`, abstained routing
 `fe3a549f-51e2-4b70-969e-a4c6c35d55eb`, `hermes-agent` skill row
 `e3805f74-b628-4346-b5d1-cb3f072a32d5`, and accepted finalization
@@ -4241,3 +4242,94 @@ Store/header correlation, and Telegram delivery are pending. This install
 checkpoint makes no activation, inference-attribution, delegation, child,
 Rule 4, or matrix-cell claim. OpenClaw's accepted proof and every earlier
 failure remain unchanged.
+
+## 2026-08-24 - Hermes passes scoped live parent acceptance
+
+Native reset acknowledged fresh session `...65697a38`. Exact
+first status run `116caa4a-d364-4269-9903-ca49d8de90f5`, trace suffix
+`b446051a`, abstained routing `b6ace409-07e7-4d91-af26-c21480b197a4`,
+`hermes-agent` skill row `e6157654-bec8-448c-b217-79d1431fcd41`, and accepted
+terminal `dee42fb2-8877-4dc6-ad22-f50d16fbac2b` correlate. Telegram delivered
+1,140 characters in 223.6 seconds with this exact header:
+
+~~~text
+Agency/Agencies loaded: agency-steward
+Agency/Agencies delegated: none
+Skills loaded: hermes-agent
+Actual Model selected: observed execution receipt: [general] task-general -> task-general (host)
+Recruited via: deterministic
+~~~
+
+Response and transcript-manifest SHAs are
+`5b9fd3f22718ac6ab1ffa8efc1b646320b3225af1715067d302f696a4e6ba3c3`
+and `886d32acd851d450f1f3aa5a1e0075598a7387706d44207048138f7a00889bc7`.
+The deterministic control route is not Agency LiteLLM-inference proof.
+
+Changed skill run `e328626d-011a-4cb2-a797-ea6ff7499897`, trace suffix
+`432b78d6`, accepted routing `d1da7fd7-b4a2-4df3-b056-d6cd866c6789`,
+`technical-writer` row `b2385c80-6267-41d9-81f0-78fc8dce7787`, two retained
+`codebase-inspection` rows `a070accc-2c7e-45c8-aac8-cb680896c935` and
+`8218bddf-acc1-426e-8b11-94d5c51eed9c`, and terminal
+`53a5245b-2146-480e-a51e-f58dcd470d6c` correlate. Three applied wrapper
+receipts stayed on Hermes profile `linux-task-agency-router`, provider type
+`litellm`, and exact alias/model-group `task-agency-router`; cross-provider
+fallback was zero. The exact header was `agency-steward, technical-writer` /
+`none` / `codebase-inspection` / `observed execution receipt: [general]
+task-general -> task-general (host)` / `inference`. Telegram delivered 427
+characters in 58.2 seconds; response SHA is
+`25b5be683b454d7e221701d944b8a9ed138fbd9acdc5a2c1b859117d78d1c09d`.
+
+A separate operator input missing its leading `R` is retained rather than
+silently substituted for the exact substantive draw. It produced read-only,
+non-delegating run `dedbed83-db25-4813-bb50-627328d27409`, selected
+`senior-secops-engineer`, and accepted terminal
+`d010887b-0794-4d3a-9579-7f279d11d142`. Telegram delivered its 4,928-character
+response in 676.1 seconds. It is successful typo evidence, not the required
+substantive proof.
+
+The exact substantive prompt at SHA
+`d79ece6296b0a792ee4ff6d9bad6fb655fe610812a111cc74ccff599d5c12fb1`
+produced run `d29c4652-46a9-41db-938c-d3b3bfdf3726`, trace suffix
+`b2e909cf`, accepted routing `1bc084f2-5fc4-4832-b77b-f82352b4840f`,
+`ai-evaluation-engineer` row `b952d046-e5c8-4a30-9e60-bcce44db252b`, and
+skill rows `2e62f150-cda0-490e-952a-2feb6d410bb6`
+(`agent-runtime-operations`), `6cac7dc0-7228-42e8-841f-4d239a4712ba`
+(`pr-review-workflow`), and `0bde577c-803d-4ff2-bdf8-86b68350f280`
+(`hermes-agent`). Applied wrapper receipts
+`72c45dae-ae57-482c-a41f-85ad3ef5009b`,
+`5c096da9-6a82-415c-855e-87a1f5fd9948`, and
+`6286cc80-d5ea-49e1-9d47-f0af4d89f096` all used the same exact Hermes Agency
+profile, LiteLLM provider, and alias/model-group, with zero cross-provider
+fallback. Terminal `543adf12-bac1-4588-8f00-a53c54b305f3` accepted.
+
+Telegram delivered 5,274 characters in 263.9 seconds with the exact header
+`agency-steward, ai-evaluation-engineer` / `none` /
+`agent-runtime-operations, pr-review-workflow, hermes-agent` / the observed
+native `task-general` host receipt / `inference`. Response and transcript-
+manifest SHAs are
+`1381e301f248417c4480ce4da51af35fc8c1b001443b0514a37e55df2532b7fc`
+and `12637e2a6c30718c62a8234a6f13632cc124aa16007e690e8c2eb85eb0ab9a25`.
+There is no resident binding, delegation, worker, activation, or child row.
+
+Three post-response internal, non-user preflights remain failed lifecycle
+evidence: run/receipt pairs `a9874148-d04a-440c-a964-a7ed39572c31` /
+`2934adb1-bc02-4001-abf9-87863b006006`,
+`e38ecc07-9698-4144-91c1-2a0b01d2c1e3` /
+`60547574-02a1-4b2e-928c-4c23f8a5ae72`, and
+`3608e1d2-dfbf-4884-b6fa-0edefc16a895` /
+`3f54ebbc-86b8-4ad7-be2b-2ecd704fccd9`. Each contains two strict planner
+contract rejections on the same Agency profile and did not block or alter a
+user reply. The failed bare plugin-doctor working-directory attempt is also
+retained; the corrected explicit-home command passes eight hooks and zero
+tools.
+
+Native config `95b87b7f...`, environment `792fd43a...`, Agency config
+`43367ec9...`, launcher `e65a0784...`, and plugin inventory 59 discovered / 6
+enabled / 4 non-bundled remain unchanged. Final online Store backup SHA is
+`bdf1a6e66136b80cfa7ea736c81cceaee45a53aa6951388869d32087515b2654`;
+source and backup integrity are `ok`, schema is 47, and contractors remain 15.
+Hermes host-scoped status, skill, workforce inference, finalization, and
+Telegram delivery now pass. The proxy callback is absent, so the actual
+upstream answering model remains unavailable and neither alias is promoted to
+that claim. No delegation, Rule 4, or AR-119 matrix cell moves; OpenClaw and
+all protected configuration remain unchanged.

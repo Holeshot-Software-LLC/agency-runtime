@@ -19,6 +19,7 @@ related:
   - docs/roadmap/issue-AR-271-preserve-openclaw-model-receipt-fields.md
   - docs/roadmap/issue-AR-272-expose-openclaw-native-finalizer-tool.md
   - docs/roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md
+  - docs/roadmap/issue-AR-279-exclude-hermes-internal-post-response-preflight.md
   - docs/decisions/0081-compile-contractors-from-governed-structured-contracts.md
   - docs/decisions/0162-compile-structured-contractor-execution-guidance.md
   - docs/worklog/README.md
@@ -271,6 +272,49 @@ metadata and compiled prompt contain explicit evidence requirements.
   proof remain pending. No actual answering model, delegation, native-child,
   Rule 4, or AR-119 matrix claim is made from this reinstall checkpoint.
 
+### 2026-08-24 Hermes host-scoped parent acceptance
+
+- Fresh native session suffix `65697a38` completed deterministic status with
+  matching Store/header evidence and Telegram delivery. A deliberate
+  `codebase-inspection` skill turn also completed with matching Store/header
+  rows and Hermes workforce inference through exact profile
+  `linux-task-agency-router`, provider type `litellm`, and requested
+  alias/model-group `task-agency-router`. A separate green turn whose operator
+  prompt accidentally omitted its leading `R` is retained as typo evidence and
+  is not substituted for the exact substantive draw.
+- The exact substantive prompt at SHA `d79ece62...` completed as run
+  `d29c4652-46a9-41db-938c-d3b3bfdf3726`, trace
+  `...65697a38:...65697a38:b2e909cf`, accepted
+  routing `1bc084f2-5fc4-4832-b77b-f82352b4840f`, selected
+  `ai-evaluation-engineer` in specialist row
+  `b952d046-e5c8-4a30-9e60-bcce44db252b`, and accepted terminal
+  `543adf12-bac1-4588-8f00-a53c54b305f3`. Applied wrapper receipts
+  `72c45dae-ae57-482c-a41f-85ad3ef5009b`,
+  `5c096da9-6a82-415c-855e-87a1f5fd9948`, and
+  `6286cc80-d5ea-49e1-9d47-f0af4d89f096` all used
+  `linux-task-agency-router` / `litellm` / `task-agency-router` with exact
+  model-group `task-agency-router` and zero cross-provider fallback.
+- The exact five-line header and substantive body reached Telegram as one
+  5,274-character response after 263.9 seconds. Response SHA is `1381e301...`;
+  transcript-manifest SHA is `12637e2a...`. No resident binding, delegation,
+  worker, activation, or native-child row exists. Provider telemetry did not
+  supply an actual upstream answering model; neither the workforce wrapper
+  alias nor Hermes's native alias is promoted into that claim.
+- A bare doctor invocation from the wrong working directory remains retained
+  as failed environment evidence. The corrected explicit-home/plugin-target
+  doctor reports eight hooks and zero tools. Three post-response, internal
+  non-user preflight failures—runs `a9874148-d04a-440c-a964-a7ed39572c31`,
+  `e38ecc07-9698-4144-91c1-2a0b01d2c1e3`, and
+  `3608e1d2-dfbf-4884-b6fa-0edefc16a895`—remain a known lifecycle limitation;
+  they did not block any user reply.
+- Native model/fallback configuration, native config and environment hashes,
+  plugin inventory, Agency configuration, and all protected-host hashes remain
+  unchanged. Final WAL-consistent Store backup SHA is `bdf1a6e6...`, integrity
+  is `ok`, schema is 47, and contractors remain 15. Hermes host-scoped parent
+  status, skill, workforce inference, finalization, and Telegram delivery now
+  pass. No delegation/native-child delivery, Rule 4, or AR-119 matrix claim is
+  made; OpenClaw acceptance remains unchanged.
+
 ## Approach
 
 Add a closed, bounded employment-contract v2 `execution_profile` containing
@@ -325,4 +369,6 @@ whole-workforce recruiter contract merely to repair an owner detail view.
       parent headers and complete the bounded staffing, skill, hiring, and reuse
       smoke. OpenClaw parent staffing, skill, inference, finalization, and
       Telegram delivery are now proven in the Linux handoff, but no OpenClaw
-      contractor child executed; Hermes live acceptance remains pending.
+      contractor child executed. Hermes parent status, skill, inference,
+      finalization, and Telegram delivery are also proven, but no Hermes
+      contractor child executed.

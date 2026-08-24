@@ -15,6 +15,7 @@ related:
   - docs/roadmap/issue-AR-273-model-agnostic-structured-inference-profiles.md
   - docs/decisions/0163-keep-litellm-inference-profiles-model-agnostic.md
   - docs/roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md
+  - docs/roadmap/issue-AR-279-exclude-hermes-internal-post-response-preflight.md
   - docs/decisions/0166-refresh-openclaw-headers-through-awaited-tool-results.md
 supersedes: []
 superseded_by: null
@@ -1764,12 +1765,12 @@ openclaw:
   telegram_delivery: unproven; final-only gate rejected the response
   root_cause: tool-result correlation omitted the preflight model used by the refreshed header
 hermes:
-  native_session_id: 20260823_195135_48369ae1
+  native_session_id: ...65697a38
   exact_prompt_sha256: 8511ac8d8a7e05dc3769006189f14416e415315647551074844528fcdb17cb8c
   native_transcript_artifact: /tmp/ar278-hermes-preinstall.MZtRGk/hermes-fresh-status-native-transcript.json
   native_transcript_sha256: 8bce3dbed99950e98c6fb79726d70ffb8c50edd5f3d43ef75d68f2878b928522
   response_sha256: da7f3f0c63d48cc05e4b6f8558753126e7be48e3ef33fa0eaa83b1ba70ca25ad
-  trace_id: 20260823_195135_48369ae1:20260823_195135_48369ae1:301cda8d
+  trace_id: ...65697a38:...65697a38:301cda8d
   run_id: 1015aba7-172f-4a53-b88e-584846ea7ce5
   routing_decision_ids: [fe3a549f-51e2-4b70-969e-a4c6c35d55eb]
   skill_name_and_store_row_id: hermes-agent / e3805f74-b628-4346-b5d1-cb3f072a32d5
@@ -2341,3 +2342,125 @@ matrix_cell_moved: false
 known_limit: installation and restart only; no live Hermes header, Store routing, skill, substantive response, or transport-delivery proof yet
 protected_evidence: OpenClaw accepted proof and all earlier failures preserved; Codex OAuth/config/canary, Claude, and ZCode untouched
 ~~~
+
+### Hermes final host-scoped parent acceptance bundle
+
+~~~yaml
+host: hermes
+checkout_sha: a6a45d91c1a3ef21c4aa857c3f11c09b497bce90
+installed_source_checkout_sha: 80d686a27f9955e1d2c9aa5f454947c45145b052
+clean_tree: true at Agency install; runtime code unchanged during live proof; evidence-document changes present while recording
+host_version: Hermes Agent v0.20.4 (2026.8.18)
+profile_identity: hermes -> linux-task-agency-router
+native_litellm_config_source_redacted: /home/holeshot/.hermes-nexus/config.yaml and .env; native task-general plus five exact prior fallbacks unchanged; values excluded
+litellm_base_url_source: effective ~/.agency-runtime/agency.yaml profile linux-task-agency-router
+litellm_base_url: http://127.0.0.1:4000/v1
+credential_env_name: LITELLM_API_KEY
+credential_present_boolean: true in live Hermes service; value never read or emitted
+agency_inference_profile: linux-task-agency-router
+agency_provider_type: litellm
+requested_alias: task-agency-router
+model_group: task-agency-router
+actual_model_and_receipt_source: Hermes host receipts observe native task-general alias; Agency wrapper receipts repeat task-agency-router alias; actual upstream model unavailable because proxy callback is absent; neither alias is promoted
+runtime_digest: 573a6a140cb23a60b48ba4b6ce638cccba6854fa11acd701aa05c9cc47ce1ab4
+store_schema: 47
+install_result: 0a3d141a-4e32-40d2-8c3d-6a7e296eb55f; complete; Agency only; no dashboard; installer did not restart Hermes
+launcher_manifest_sha256: e65a078479cc4f6196b3b5b61f15c15ffd36bf9cda0f5082b8bc844b7a4ed9e7
+fresh_session_id: ...65697a38
+fresh_reset_result: acknowledged; fresh session created
+status_run_id: 116caa4a-d364-4269-9903-ca49d8de90f5
+status_trace_id: ...65697a38:...65697a38:b446051a
+status_routing_decision_id: b6ace409-07e7-4d91-af26-c21480b197a4
+status_finalization_id: dee42fb2-8877-4dc6-ad22-f50d16fbac2b
+first_response_artifact: Hermes native response plus transcript manifest; exact header embedded below
+first_response_artifact_sha256: 5b9fd3f22718ac6ab1ffa8efc1b646320b3225af1715067d302f696a4e6ba3c3
+first_response_manifest_sha256: 886d32acd851d450f1f3aa5a1e0075598a7387706d44207048138f7a00889bc7
+first_response_header_exact: |-
+  Agency/Agencies loaded: agency-steward
+  Agency/Agencies delegated: none
+  Skills loaded: hermes-agent
+  Actual Model selected: observed execution receipt: [general] task-general -> task-general (host)
+  Recruited via: deterministic
+first_response_delivery: Telegram; 1,140 characters; 223.6 seconds
+skill_run_id: e328626d-011a-4cb2-a797-ea6ff7499897
+skill_trace_suffix: 432b78d6
+skill_routing_decision_id: d1da7fd7-b4a2-4df3-b056-d6cd866c6789
+skill_specialist_id: b2385c80-6267-41d9-81f0-78fc8dce7787 # technical-writer
+skill_name_and_store_row_id: codebase-inspection / [a070accc-2c7e-45c8-aac8-cb680896c935, 8218bddf-acc1-426e-8b11-94d5c51eed9c]
+skill_finalization_id: 53a5245b-2146-480e-a51e-f58dcd470d6c
+skill_provider_receipt_ids: [35eaf475-0ccd-4a22-a614-5c76ee99d0b0, 26280cdc-5ecc-48f0-8deb-c391d9ebdfdb, d712bd47-5f32-42d6-97f0-e662107b147a]
+skill_header_exact: |-
+  Agency/Agencies loaded: agency-steward, technical-writer
+  Agency/Agencies delegated: none
+  Skills loaded: codebase-inspection
+  Actual Model selected: observed execution receipt: [general] task-general -> task-general (host)
+  Recruited via: inference
+skill_delivery: Telegram; 427 characters; 58.2 seconds; response SHA-256 25b5be683b454d7e221701d944b8a9ed138fbd9acdc5a2c1b859117d78d1c09d
+retained_typo_evidence: run dedbed83-db25-4813-bb50-627328d27409; input missing leading R; selected senior-secops-engineer; read-only; no delegation; terminal d010887b-0794-4d3a-9579-7f279d11d142; Telegram 4,928 characters / 676.1 seconds; response SHA-256 6026fbe062248f69cba73112eda70655d28ba28b1fd59bc72a5e7d071276a06e; not substituted for exact draw
+agency_trace_id: ...65697a38:...65697a38:b2e909cf
+substantive_prompt_sha256: d79ece6296b0a792ee4ff6d9bad6fb655fe610812a111cc74ccff599d5c12fb1
+substantive_run_id: d29c4652-46a9-41db-938c-d3b3bfdf3726
+substantive_finalization_id: 543adf12-bac1-4588-8f00-a53c54b305f3
+header_exact: |-
+  Agency/Agencies loaded: agency-steward, ai-evaluation-engineer
+  Agency/Agencies delegated: none
+  Skills loaded: agent-runtime-operations, pr-review-workflow, hermes-agent
+  Actual Model selected: observed execution receipt: [general] task-general -> task-general (host)
+  Recruited via: inference
+resident_binding_id: none
+routing_decision_ids:
+  - b6ace409-07e7-4d91-af26-c21480b197a4 # deterministic status abstention
+  - d1da7fd7-b4a2-4df3-b056-d6cd866c6789 # codebase-inspection skill turn
+  - 1bc084f2-5fc4-4832-b77b-f82352b4840f # exact substantive turn
+specialists_loaded_ids:
+  - b2385c80-6267-41d9-81f0-78fc8dce7787 # technical-writer; skill turn
+  - b952d046-e5c8-4a30-9e60-bcce44db252b # ai-evaluation-engineer; substantive
+substantive_skills_loaded_ids:
+  - 2e62f150-cda0-490e-952a-2feb6d410bb6 # agent-runtime-operations
+  - 6cac7dc0-7228-42e8-841f-4d239a4712ba # pr-review-workflow
+  - 0bde577c-803d-4ff2-bdf8-86b68350f280 # hermes-agent
+provider_receipt_ids:
+  - 72c45dae-ae57-482c-a41f-85ad3ef5009b # ordinal 1; applied
+  - 5c096da9-6a82-415c-855e-87a1f5fd9948 # ordinal 2; applied
+  - 6286cc80-d5ea-49e1-9d47-f0af4d89f096 # ordinal 3; applied
+provider_attempt_status: all three applied; Hermes selected automatically; exact linux-task-agency-router / litellm / task-agency-router alias and model-group
+fallback_count: 0 cross-provider; every Agency wrapper attempt stayed on the same profile
+substantive_response_sha256: 1381e301f248417c4480ce4da51af35fc8c1b001443b0514a37e55df2532b7fc
+substantive_transcript_manifest_sha256: 12637e2a6c30718c62a8234a6f13632cc124aa16007e690e8c2eb85eb0ab9a25
+substantive_delivery: Telegram; 5,274 characters; 263.9 seconds
+delegation_worker_activation_child_rows: 0 / 0 / 0 / 0
+timeout_or_failure_receipt:
+  - a9874148-d04a-440c-a964-a7ed39572c31 / 2934adb1-bc02-4001-abf9-87863b006006
+  - e38ecc07-9698-4144-91c1-2a0b01d2c1e3 / 60547574-02a1-4b2e-928c-4c23f8a5ae72
+  - 3608e1d2-dfbf-4884-b6fa-0edefc16a895 / 3f54ebbc-86b8-4ad7-be2b-2ecd704fccd9
+post_response_failure_scope: internal non-user preflights; two strict contract-invalid planner attempts each; same Agency profile; delivered replies unaffected; no accepted user turn timed out
+plugin_doctor_failed_attempt: bare cwd-sensitive invocation retained as failed environment evidence
+plugin_doctor_corrected: HERMES_HOME=/home/holeshot/.hermes-nexus hermes plugins doctor agency-preflight --ci; 8 hooks; 0 tools; pass
+plugin_inventory: 59 discovered / 6 enabled / 4 non-bundled; unchanged
+contractors_before_after: 15 / 15
+store_integrity_before_after: ok / ok
+post_live_store_backup_sha256: bdf1a6e66136b80cfa7ea736c81cceaee45a53aa6951388869d32087515b2654
+agency_config_sha256: 43367ec9aa05a66fc2a60bb254f270836fb3616753769115fabb253a04d5d9f8
+native_config_sha256: 95b87b7fc0427ad4e3da4f5f468054cf9f7ddba679d1bb606b782a13e1a0172d
+native_environment_sha256: 792fd43a5312d1c1d69f6afbeef3bbdd1a8198ee03ac06b4b3b6dfa20ec2f324
+known_limit: actual upstream model unavailable without callback telemetry; post-response internal strict-planner failures remain lifecycle debt; no delegation, native child, Rule 4 delivery, or AR-119 matrix-cell proof
+protected_evidence: OpenClaw acceptance and all retained failures unchanged; Codex OAuth/config/canary, Claude, and ZCode untouched
+~~~
+
+### Final evidence-record validation receipts
+
+The first final policy-availability check lacked the checkout on
+`PYTHONPATH` and failed import before evaluation; the corrected checkout-bound
+invocation passed. Bare `ruff` was unavailable in the ambient shell (exit 127);
+the checkout's `.venv/bin/ruff` passed both lint and format checks.
+
+The first post-live focused pytest rerun inherited a shared temporary namespace
+whose generated configuration parent was `0775`; 118 tests failed the intended
+cross-account substitution guard. A changed-input rerun used an owner-private
+temporary root, reducing the result to 50 failures because the virtual
+environment resolved its fixture launcher through an untrusted group-writable
+UV interpreter identity. The final changed-input run kept umask `0077`, used a
+new private temporary root, and set the CI-only fixture launcher to root-owned
+`/usr/bin/python3.12`; it passed 304 tests with one intentional skip. No runtime,
+host, Agency, LiteLLM, Codex, Claude, or ZCode configuration changed between
+these validation attempts.
