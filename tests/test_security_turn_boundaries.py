@@ -424,7 +424,8 @@ def _openclaw_plugin_harness_source() -> str:
             "let toolHeaderContext = '[AGENCY UPDATED HEADER SNAPSHOT v2]\\nAgency header';\n"
             "let nativeChildRewrittenTask = '';\n"
             "let nativeChildCompletionContext = '[AGENCY NATIVE CHILD COMPLETION CONTRACT]\\nmessage(action=\\\"send\\\", message=<header+body>)\\nAgency/Agencies loaded: agency-steward\\nAgency/Agencies delegated: code-reviewer\\nSkills loaded: none\\nActual Model selected: workforce inference: task-agency-router\\nRecruited via: inference\\nDo not emit a natural visible final response or NO_REPLY.';\n"
-            "let failNativeChildEnded = false;\n"
+            "let nativeChildEndFailuresRemaining = 0;\n"
+            "const nativeChildEndRecordedResults = [];\n"
             "let failControl = false;\n"
             "let runtimeControlEnabled = true;\n"
             "let nativeErrorReceiptMode = 'valid';\n"
@@ -500,7 +501,8 @@ def _openclaw_plugin_harness_source() -> str:
             "        setImmediate(() => { callback(new Error('control unavailable'), '', 'control unavailable'); done?.(); });\n"
             "        return;\n"
             "      }\n"
-            "      if (failNativeChildEnded && payload.action === 'native_child_ended') {\n"
+            "      if (nativeChildEndFailuresRemaining > 0 && payload.action === 'native_child_ended') {\n"
+            "        nativeChildEndFailuresRemaining -= 1;\n"
             "        setImmediate(() => { callback(new Error('native child end unavailable'), '', 'native child end unavailable'); done?.(); });\n"
             "        return;\n"
             "      }\n"
@@ -518,7 +520,10 @@ def _openclaw_plugin_harness_source() -> str:
             "          workUnitId: payload.workUnitId || 'derived-work-unit',\n"
             "        };\n"
             "      } else if (payload.action === 'native_child_ended') {\n"
-            "        result = { recorded: true };\n"
+            "        result = {\n"
+            "          recorded: nativeChildEndRecordedResults.length\n"
+            "            ? nativeChildEndRecordedResults.shift() : true,\n"
+            "        };\n"
             "      } else if (payload.action === 'native_child_completion_prepare') {\n"
             "        result = {\n"
             "          prepared: true, completion: true, runtimeEnabled: true,\n"
@@ -1988,6 +1993,64 @@ if (bridgeCalls.filter((call) => call.action === "native_child_ended").length !=
 
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is not installed")
+def test_generated_openclaw_reconciles_observed_end_from_persisted_launch(
+    tmp_path: Path,
+) -> None:
+    source = _openclaw_plugin_harness_source()
+    source += r"""
+const spawned = registeredHooks.get("subagent_spawned");
+const ended = registeredHooks.get("subagent_ended");
+if (typeof spawned !== "function" || typeof ended !== "function") process.exit(421);
+
+const childSession = "agent:main:subagent:split-instance-child";
+await spawned(
+  {
+    childSessionKey: childSession, agentId: "main", mode: "run",
+    threadRequested: false, runId: "split-instance-run",
+  },
+  {
+    childSessionKey: childSession, requesterSessionKey: "split-instance-parent",
+    runId: "split-instance-run",
+  },
+);
+
+// The accepted sessions_spawn receipt was persisted by a different plugin
+// instance, so this instance has only the gateway observation. Its sole end
+// hook must still attempt the Store's exact launch-bound reconciliation path.
+await ended(
+  {
+    targetSessionKey: childSession, targetKind: "subagent", reason: "completed",
+    runId: "split-instance-run", outcome: "ok",
+  },
+  {
+    childSessionKey: childSession, requesterSessionKey: "split-instance-parent",
+    runId: "split-instance-run",
+  },
+);
+
+const durable = bridgeCalls.filter((call) => call.action === "native_child_ended");
+if (durable.length !== 1) process.exit(422);
+if (durable[0].sessionId !== "split-instance-parent"
+    || durable[0].traceId
+    || durable[0].workerId !== childSession
+    || durable[0].nativeRunId !== "split-instance-run"
+    || durable[0].outcome !== "ok") process.exit(423);
+"""
+    script = tmp_path / "openclaw-native-child-split-instance-end.mjs"
+    script.write_text(source, encoding="utf-8")
+
+    completed = subprocess.run(
+        [str(shutil.which("node")), str(script)],
+        capture_output=True,
+        text=True,
+        timeout=10,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is not installed")
 def test_generated_openclaw_reconciles_early_end_and_retries_end_receipt(
     tmp_path: Path,
 ) -> None:
@@ -2051,6 +2114,7 @@ await spawned(
     runId: "race-child-run",
   },
 );
+nativeChildEndRecordedResults.push(false);
 await ended(
   {
     targetSessionKey: raceChild, targetKind: "subagent", reason: "completed",
@@ -2061,15 +2125,20 @@ await ended(
     runId: "race-child-run",
   },
 );
-if (bridgeCalls.some((call) => call.action === "native_child_ended"
-    && call.nativeRunId === "race-child-run")) process.exit(343);
+const earlyRaceEnds = bridgeCalls.filter((call) =>
+  call.action === "native_child_ended" && call.nativeRunId === "race-child-run");
+if (earlyRaceEnds.length !== 1 || earlyRaceEnds[0].traceId) process.exit(343);
 
+nativeChildEndFailuresRemaining = 1;
 await acceptSpawn("race-call", raceArgs, raceChild, "race-child-run", "race-task");
 const raceStartIndex = bridgeCalls.findIndex((call) =>
   call.action === "native_child_started" && call.nativeRunId === "race-child-run");
-const raceEndIndex = bridgeCalls.findIndex((call) =>
+const raceEnds = bridgeCalls.filter((call) =>
   call.action === "native_child_ended" && call.nativeRunId === "race-child-run");
-if (raceStartIndex < 0 || raceEndIndex <= raceStartIndex) process.exit(344);
+if (raceStartIndex < 0 || raceEnds.length !== 3
+    || raceEnds[0].traceId
+    || raceEnds[1].traceId !== "race-parent-run"
+    || raceEnds[2].traceId) process.exit(344);
 
 // The early end was consumed exactly once after the accepted result arrived.
 await ended(
@@ -2083,7 +2152,7 @@ await ended(
   },
 );
 if (bridgeCalls.filter((call) => call.action === "native_child_ended"
-    && call.nativeRunId === "race-child-run").length !== 1) process.exit(345);
+    && call.nativeRunId === "race-child-run").length !== 3) process.exit(345);
 
 const retryArgs = await prepareParentSpawn(
   "retry-parent-session", "retry-parent-run", "retry-call", "retry-task",
@@ -2102,7 +2171,7 @@ await spawned(
 );
 await acceptSpawn("retry-call", retryArgs, retryChild, "retry-child-run", "retry-task");
 
-failNativeChildEnded = true;
+nativeChildEndFailuresRemaining = 1;
 await ended(
   {
     targetSessionKey: retryChild, targetKind: "subagent", reason: "completed",
@@ -2113,11 +2182,14 @@ await ended(
     runId: "retry-child-run",
   },
 );
-failNativeChildEnded = false;
-if (bridgeCalls.filter((call) => call.action === "native_child_ended"
-    && call.nativeRunId === "retry-child-run").length !== 1) process.exit(346);
+const retriedEnds = bridgeCalls.filter((call) => call.action === "native_child_ended"
+  && call.nativeRunId === "retry-child-run");
+if (retriedEnds.length !== 2
+    || retriedEnds[0].traceId !== "retry-parent-run"
+    || retriedEnds[1].traceId) process.exit(346);
 
-// The first bridge failure must retain correlation for the host's duplicate hook.
+// The one-shot host callback performed its own durable fallback. Later duplicate
+// hooks must not generate another terminal transition.
 await ended(
   {
     targetSessionKey: retryChild, targetKind: "subagent", reason: "completed",
@@ -2149,6 +2221,7 @@ const resetArgs = await prepareParentSpawn(
 );
 const resetChild = "agent:main:subagent:reset-child";
 await acceptSpawn("reset-call", resetArgs, resetChild, "reset-child-run", "reset-task");
+nativeChildEndFailuresRemaining = 1;
 await ended(
   {
     targetSessionKey: resetChild, targetKind: "subagent",
@@ -2156,13 +2229,17 @@ await ended(
   },
   { childSessionKey: resetChild },
 );
-const resetEnd = bridgeCalls.find((call) =>
+const resetEnds = bridgeCalls.filter((call) =>
   call.action === "native_child_ended" && call.nativeRunId === "reset-child-run");
-if (!resetEnd) process.exit(348);
-if (resetEnd.sessionId !== "reset-parent-session"
-    || resetEnd.traceId !== "reset-parent-run"
-    || resetEnd.workerId !== resetChild
-    || resetEnd.outcome !== "reset") process.exit(349);
+if (resetEnds.length !== 2) process.exit(348);
+if (resetEnds[0].sessionId !== "reset-parent-session"
+    || resetEnds[0].traceId !== "reset-parent-run"
+    || resetEnds[0].workerId !== resetChild
+    || resetEnds[0].outcome !== "reset"
+    || resetEnds[1].sessionId !== "reset-parent-session"
+    || resetEnds[1].traceId
+    || resetEnds[1].workerId !== resetChild
+    || resetEnds[1].outcome !== "reset") process.exit(349);
 """
     script = tmp_path / "openclaw-native-child-race-and-retry.mjs"
     script.write_text(source, encoding="utf-8")

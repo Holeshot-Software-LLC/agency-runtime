@@ -188,3 +188,24 @@ the selected cards reached that child.
       pre-speech artifact produces a `native_child_delivery_verifications` row.
 - [x] Codex OAuth/configuration and canary, Claude, ZCode, native host configs,
       and host-native model routes remain untouched.
+
+## 2026-08-24 OpenClaw delivery and lifecycle gap
+
+Installed `10ba4c84` / `8a2bf9b7` produced one fresh OpenClaw child whose
+native task ledger says `succeeded` / `delivered` and whose final Agency header
+and result reached Telegram. Canonical route `99f1388a...` and child route
+`native-child-4ef0e65f...` both prove automatic
+`linux-task-agency-router` / `litellm` / exact `task-agency-router`, zero
+cross-provider fallback, and no provider-supplied actual model. OpenClaw native
+execution remained on `task-general`; host-profile routing is green for the
+draw.
+
+The parent finalized while Agency's delegation `79049f17...` and worker
+`native-child:9ea15e2f...` stayed open even though exact isolated Store replay
+closed them. The generated plugin swallowed observation-only ends and lacked a
+same-callback durable fallback for trace-bound failure, early-end, and sparse
+reset/delete forms. Expected-red coverage preceded an exact accepted-state
+fallback. Focused 146/1, fast spine 849/3, all local gates, and 160/160
+conformance mutations pass; independent re-review is clean. The candidate is uninstalled. The combined
+OpenClaw/Hermes acceptance remains open until OpenClaw is re-proven and the
+equivalent Agency-only Hermes draw passes; Rule 4 remains unproven.

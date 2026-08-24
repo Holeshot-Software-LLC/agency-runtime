@@ -208,3 +208,29 @@ Telegram-ingress, native-model, or OpenClaw configuration failure.
       are authorized by this issue.
 - [x] Rule 4 remains unproven without an ADR-0156 host artifact receipt.
 - [ ] Tracker creation remains pending separate authorization.
+
+## 2026-08-24 operational delivery passed; Agency terminal receipt missed
+
+Installed `10ba4c84` / `8a2bf9b7` produced the first fresh changed draw in this
+package whose exact inference header and child result reached Telegram. Parent
+run `5529c6cf...` / trace `a5f6f53b...` spawned one child, and OpenClaw's task
+ledger records `succeeded` / `delivered`. Canonical route `99f1388a...` and
+child route `native-child-4ef0e65f...` used
+`linux-task-agency-router` / `litellm` / exact `task-agency-router` with zero
+cross-provider fallback. Native OpenClaw execution stayed separately on
+`task-general`; actual answering model remains unavailable.
+
+The Store parent completed, but delegation `79049f17...` and worker
+`native-child:9ea15e2f...` stayed nonterminal. Exact isolated replay closes both,
+so the defect is the generated plugin's one-shot callback handling, not Store
+identity or LiteLLM routing. Observation-only end state was swallowed, while a
+failed trace-bound terminal receipt depended on a duplicate end hook. A first
+partial repair was kept out after review found unhandled early-end and sparse
+reset/delete forms. The final exact-state durable fallback was preceded by
+expected-red coverage, passes focused 146/1, fast spine 849/3, all local gates,
+and 160/160 conformance mutations, with no Critical/High/Medium re-review finding.
+
+The candidate is not installed. Operational transport succeeded once, but the
+acceptance item remains unchecked until a changed installed draw also closes
+the delegation and worker. No `native_child_delivery_verifications` row was
+fabricated; ADR-0156 Rule 4 and the AR-119 matrix remain unchanged.

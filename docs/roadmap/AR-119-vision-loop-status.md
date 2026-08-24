@@ -4503,3 +4503,68 @@ cleanly after the failed draw; Hermes remained active and untouched. Codex
 OAuth/configuration/canary, Claude, ZCode, native host routes, and host configs
 were not changed. Operational child completion remains unproven, ADR-0156 Rule
 4 remains unproven, and no AR-119 matrix cell moves.
+
+## 2026-08-24 - Third OpenClaw child delivers but misses Store terminalization
+
+Correction/ledger `10ba4c84` / `8a2bf9b7` was installed through Agency only
+while OpenClaw 2026.7.1-2 was stopped natively. Evidence is rooted at
+`/home/holeshot/.agency-runtime/evidence/ar281-openclaw-10ba4c84-hSltm1Sn`.
+Install `f361ae58...`, bundle `a12bdf34...`, runtime `77e00aa2...`, and launcher
+`3fc5e135...` bind to that checkout. Native restart restored service/RPC and 12
+loaded/enabled/activated hooks. OpenClaw semantic config `e42bf218...`, native
+`litellm/task-general`, and all six fallbacks remained unchanged. Hermes stayed
+active and untouched. Contractors remained 15; before/after Store backups
+`6aeaaad4...` / `0a65fa88...` have integrity `ok`, schema 47.
+
+Fresh parent run `5529c6cf-8020-4bc5-a94f-b4731a70a838`, trace
+`a5f6f53b-4d8f-446b-af98-049e5031599a`, and parent transcript
+`7c3bacfd-6f05-4b0d-982c-5c3575bd8110` spawned exactly one child transcript
+`7d1c9571-c20d-4039-968a-ff31ae1e4e29`, native run
+`06fb1c56-6d3b-4a46-b720-1c8d45428ac5`, delegation
+`79049f17-7858-454a-a73c-91a4d7c1f4b0`, and worker row
+`native-child:9ea15e2fd27853ff4cac294c99e3a37f514884f411481c77b9e99a8fa2cdb34e`.
+OpenClaw's native task ledger records the child `succeeded` and its completion
+`delivered`. Telegram delivered one final parent response with the exact
+five-line Agency inference header and the child's one-sentence read-only result.
+
+Canonical route `99f1388a-17eb-46e9-ab36-d9426fd05f24` and native-child route
+`native-child-4ef0e65f64b0725eac80bd3d644a7d0a` both automatically used profile
+`linux-task-agency-router`, provider type `litellm`, and exact requested
+alias/model-group `task-agency-router`. Cross-provider fallback is zero;
+provider telemetry supplied no actual answering model. OpenClaw's separate
+native parent and child execution remained on `task-general`.
+
+Operational delivery passed, but Agency evidence did not. Parent finalization
+`6621d580-8fef-4471-81f5-cb41a3529916` is completed while the delegation stays
+`delegated` and the worker has no end or exit receipt. A copied-Store replay of
+the exact authoritative `record_native_child_ended(..., outcome="ok")` closes
+both rows, so Store identity mapping is sound; the live bridge callback was
+missed.
+
+The defect has two one-shot forms. An instance with only the gateway spawn
+observation stored `pendingEnd` and treated correlation as handled instead of
+trying durable launch-bound reconciliation. A trace-bound terminal write that
+failed or lost its receipt retained state but relied on a duplicate end hook,
+although OpenClaw emits that hook once. Sparse reset/delete shapes also cannot
+reconstruct requester/run identity from the raw event even though accepted
+child state retains it.
+
+Expected-red coverage first reproduced the split-instance swallow and missing
+same-callback retry, then reproduced early-end and sparse-reset loss after
+independent review found the incomplete edge. The smallest fix falls through to
+durable reconciliation for observation-only ends and uses exact accepted child
+state for same-callback fallback from both the end hook and accepted-tool-result
+race. It deletes only the matching in-memory state after a recorded receipt and
+suppresses duplicates. Focused tests pass 146 with 1 existing skip and the
+named fast spine passes 849/3 under `umask 077`. Docs 783/worklog 1,158, full
+Ruff 682, dashboard 134, routing eval, and 160/160 conformance mutations pass;
+source is unchanged. The unisolated evaluator lacked `pytest`, then the private
+evaluator inherited unsafe `0002`; both failures are retained before the
+owner-private `0077` pass. Independent re-review found no Critical, High, or
+Medium issue.
+
+The candidate is not installed and has no live-fix claim. OpenClaw remains the
+only host in scope until a changed draw closes parent, delegation, and worker
+while delivering through Telegram. Hermes remains break glass and untouched.
+Even a green operational retest will not prove ADR-0156 Rule 4 without an
+immutable host-authored delivery artifact; no matrix cell moves.

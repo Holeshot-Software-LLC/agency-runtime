@@ -421,7 +421,7 @@ def test_openclaw_completion_rejects_nonready_terminal_or_ended_state(
     assert ended.resolve_openclaw_native_child_completion(**common) is None
 
 
-def test_openclaw_child_end_preserves_parent_terminal_receipt(
+def test_openclaw_reconciled_child_end_preserves_parent_terminal_receipt(
     tmp_path: Path,
 ) -> None:
     store = Store(tmp_path / "agency.db")
@@ -464,22 +464,28 @@ def test_openclaw_child_end_preserves_parent_terminal_receipt(
     assert committed["authoritative"] is True
     terminal_id = committed["event_id"]
 
-    ended = store.record_native_child_ended(
+    open_child = store.get_native_child_run(
         host="openclaw",
-        backend="sessions_spawn",
         session_id="terminal-parent-session",
         trace_id="terminal-parent-trace",
         work_unit_id="terminal-unit",
         worker_id="terminal-child",
         native_run_id="terminal-child-run",
-        outcome="ok",
     )
-    replay = store.record_native_child_ended(
+    assert open_child is not None and open_child["ended_at"] is None
+
+    ended = store.reconcile_native_child_ended(
         host="openclaw",
         backend="sessions_spawn",
-        session_id="terminal-parent-session",
-        trace_id="terminal-parent-trace",
-        work_unit_id="terminal-unit",
+        requester_session_id="terminal-parent-session",
+        worker_id="terminal-child",
+        native_run_id="terminal-child-run",
+        outcome="ok",
+    )
+    replay = store.reconcile_native_child_ended(
+        host="openclaw",
+        backend="sessions_spawn",
+        requester_session_id="terminal-parent-session",
         worker_id="terminal-child",
         native_run_id="terminal-child-run",
         outcome="ok",
@@ -501,6 +507,8 @@ def test_openclaw_child_end_preserves_parent_terminal_receipt(
     finally:
         conn.close()
 
+    assert ended is not None
+    assert replay is not None
     assert ended["id"] == replay["id"]
     assert store.get_delegations("terminal-parent-trace")[0]["status"] == "completed"
     assert authoritative is not None

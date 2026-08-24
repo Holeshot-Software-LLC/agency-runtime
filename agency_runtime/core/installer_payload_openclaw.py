@@ -1309,7 +1309,7 @@ function pendingNativeChildEnd(event, ctx) {{
   ) return observation ? {{ correlationHandled: true }} : null;
   if (observation.terminal === true) return {{ correlationHandled: true }};
   observation.pendingEnd = {{ outcome, error }};
-  return {{ correlationHandled: true }};
+  return null;
 }}
 
 async function persistNativeChildEnd(key, childState) {{
@@ -1345,10 +1345,16 @@ async function persistNativeChildEnd(key, childState) {{
   return true;
 }}
 
-async function reconcilePersistedNativeChildEnd(event, ctx) {{
-  const childSession = boundedNativeChildIdentity(event?.targetSessionKey || ctx?.childSessionKey);
-  const nativeRunId = boundedNativeChildIdentity(event?.runId || ctx?.runId);
-  const requesterSessionId = nativeChildRequester(event, ctx);
+async function reconcileNativeChildEnd({{
+  childSession: rawChildSession,
+  nativeRunId: rawNativeRunId,
+  requesterSessionId: rawRequesterSessionId,
+  outcome: rawOutcome,
+  error: rawError,
+}}) {{
+  const childSession = boundedNativeChildIdentity(rawChildSession);
+  const nativeRunId = boundedNativeChildIdentity(rawNativeRunId);
+  const requesterSessionId = toolCorrelationIdentity(rawRequesterSessionId);
   if (!childSession || !requesterSessionId) return false;
   let receipt;
   try {{
@@ -1357,8 +1363,8 @@ async function reconcilePersistedNativeChildEnd(event, ctx) {{
       sessionId: requesterSessionId,
       workerId: childSession,
       nativeRunId,
-      outcome: boundedUtf8(event?.outcome || "unknown", 32),
-      error: boundedUtf8(event?.error || event?.reason || "", 32 * 1024),
+      outcome: boundedUtf8(rawOutcome || "unknown", 32),
+      error: boundedUtf8(rawError || "", 32 * 1024),
     }});
   }} catch {{
     return false;
@@ -1376,6 +1382,31 @@ async function reconcilePersistedNativeChildEnd(event, ctx) {{
     }});
   }}
   return true;
+}}
+
+async function reconcilePersistedNativeChildEnd(event, ctx) {{
+  return reconcileNativeChildEnd({{
+    childSession: event?.targetSessionKey || ctx?.childSessionKey,
+    nativeRunId: event?.runId || ctx?.runId,
+    requesterSessionId: nativeChildRequester(event, ctx),
+    outcome: event?.outcome || "unknown",
+    error: event?.error || event?.reason || "",
+  }});
+}}
+
+async function reconcileNativeChildStateEnd(key, childState) {{
+  if (!childState?.pendingEnd) return false;
+  const reconciled = await reconcileNativeChildEnd({{
+    childSession: childState.workerId,
+    nativeRunId: childState.nativeRunId,
+    requesterSessionId: childState.requesterSessionId,
+    outcome: childState.pendingEnd.outcome,
+    error: childState.pendingEnd.error,
+  }});
+  if (reconciled && nativeChildParents.get(key) === childState) {{
+    nativeChildParents.delete(key);
+  }}
+  return reconciled;
 }}
 
 function rememberToolCorrelation(event, ctx, parentScope = undefined) {{
@@ -1637,7 +1668,12 @@ export default definePluginEntry({{
         }} catch {{
           // Host execution already succeeded; lifecycle evidence remains partial.
         }}
-        if (childState.pendingEnd) await persistNativeChildEnd(childKey, childState);
+        if (
+          childState.pendingEnd
+          && !(await persistNativeChildEnd(childKey, childState))
+        ) {{
+          await reconcileNativeChildStateEnd(childKey, childState);
+        }}
         if (correlation?.nativeParent === true) return undefined;
       }}
       let result;
@@ -1880,7 +1916,8 @@ export default definePluginEntry({{
         return;
       }}
       const childKey = nativeChildIdentityKey(childState.workerId, childState.nativeRunId);
-      await persistNativeChildEnd(childKey, childState);
+      if (await persistNativeChildEnd(childKey, childState)) return;
+      await reconcileNativeChildStateEnd(childKey, childState);
     }}, {{ timeoutMs: {host_timeout_ms} }});
 
     api.on("before_agent_finalize", async (event, ctx) => {{

@@ -894,3 +894,26 @@ Hermes and all protected hosts remain outside the mutation boundary.
       Agency only without changing host configuration.
 - [ ] Prove a changed OpenClaw child turn through Telegram.
 - [ ] Tracker creation remains pending separate authorization.
+
+## 2026-08-24 third native-child draw and terminalization candidate
+
+Installed correction/ledger `10ba4c84` / `8a2bf9b7` delivered the fresh
+changed child result through Telegram with the exact five-line inference header.
+Parent run `5529c6cf...` / trace `a5f6f53b...`, canonical route `99f1388a...`,
+child route `native-child-4ef0e65f...`, delegation `79049f17...`, and worker
+`native-child:9ea15e2f...` correlate. Both routes used
+`linux-task-agency-router` / `litellm` / exact `task-agency-router` with zero
+cross-provider fallback and no actual-model telemetry; native execution stayed
+on `task-general`. OpenClaw's task ledger records `succeeded` / `delivered`.
+
+Agency nevertheless finalized the parent while leaving delegation and worker
+open. Isolated Store replay closes the exact row, identifying a generated-plugin
+one-shot lifecycle defect: observation-only ends were swallowed, and failed
+trace-bound persistence relied on a duplicate callback that OpenClaw does not
+guarantee. A partial fix was rejected during independent review because it did
+not cover early-end or sparse reset/delete identity. Expected-red coverage now
+locks all forms. The smallest exact-state durable fallback passes the four-file
+suite at 146/1, fast spine 849/3, all local gates, and 160/160 conformance
+mutations under `umask 077`; re-review has no Critical/High/Medium issue. It is not installed; the
+acceptance checkbox remains open until a changed draw also closes Store child
+lifecycle. Rule 4 remains separately unproven.

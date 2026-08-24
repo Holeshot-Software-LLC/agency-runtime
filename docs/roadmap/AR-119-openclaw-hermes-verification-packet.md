@@ -1644,6 +1644,87 @@ known_limit: fresh status, Store-backed skill, substantive LiteLLM routing, and 
 protected_hosts: Codex OAuth/config/canary, Claude, and ZCode untouched
 ~~~
 
+## 2026-08-24 - OpenClaw operational child delivery with missed Agency end receipt
+
+The `headerContextHash` correction/ledger `10ba4c84` / `8a2bf9b7` was
+installed through Agency only while OpenClaw was natively stopped. Evidence is
+owner-private under
+`/home/holeshot/.agency-runtime/evidence/ar281-openclaw-10ba4c84-hSltm1Sn`.
+No native host model or fallback configuration changed, Hermes remained active
+and untouched, and protected hosts were not inspected or modified.
+
+The fresh changed draw delivered successfully to Telegram. The exact response
+header was:
+
+~~~text
+Agency/Agencies loaded: agency-steward, code-reviewer
+Agency/Agencies delegated: none - executed worker has no validated Agency specialist
+Skills loaded: none
+Actual Model selected: workforce inference: [router] task-agency-router -> linux-task-agency-router/task-agency-router (wrapper)
+Recruited via: inference
+~~~
+
+The body was the child's one-sentence finding that the generated plugin forwards
+bounded `headerContextHash` into the Python bridge. OpenClaw's native task ledger
+records the one child `succeeded` and its return `delivered`, and the Telegram
+outbound receipt exists. Parent finalization completed, but Agency's delegation
+and worker rows remained open. An isolated copy of the Store accepts the exact
+terminal transition and closes both rows, ruling out Store identity mismatch.
+
+The missed callback is an Agency plugin lifecycle defect. Observation-only
+child ends were retained locally and swallowed instead of trying durable
+launch-bound reconciliation. Failed trace-bound terminal persistence relied on
+a duplicate host hook, including early-end and sparse reset/delete cases, but
+OpenClaw provides only a one-shot callback. The new state-bound fallback was
+covered by expected-red tests before completion, preserves exact accepted
+requester/worker/native-run identity, and does not write a Rule-4 delivery row.
+Focused 146/1, fast spine 849/3, docs 783/worklog 1,158, full Ruff 682,
+dashboard 134, routing eval, and 160/160 conformance mutations pass under the
+required private `0077` environment; source is unchanged. Independent re-review
+found no Critical, High, or Medium issue.
+The candidate is not installed and therefore has no live-fix claim.
+
+~~~yaml
+host: openclaw
+checkout_sha: 10ba4c84dda32d74bf5fb2ac4358fc54768dd1e8
+clean_tree_before_install: true
+host_version: OpenClaw 2026.7.1-2
+profile_identity: linux-task-agency-router
+native_litellm_config_source_redacted: existing OpenClaw config; native primary litellm/task-general plus six unchanged fallbacks
+litellm_base_url_source: effective Agency profile; loopback LiteLLM endpoint
+credential_env_name: LITELLM_API_KEY
+credential_present_boolean: true; value never read or retained
+agency_inference_profile: linux-task-agency-router
+requested_alias: task-agency-router
+model_group: task-agency-router
+actual_model_and_receipt_source: unavailable; provider telemetry supplied none
+runtime_digest: 77e00aa229b9948a6e918bbcb546e9feaa25ac5cbdfa98b469e0ab40852cebf9
+store_schema: 47
+install_result: complete; Agency only; no dashboard; installer did not restart gateway
+launcher_manifest_sha256: 3fc5e135131879fad712b4c067aae1dce018a96e41f8d14aa2929f1c484ec1b9
+fresh_session_id: 7c3bacfd-6f05-4b0d-982c-5c3575bd8110
+agency_trace_id: a5f6f53b-4d8f-446b-af98-049e5031599a
+first_response_artifact: parent transcript sha256 97142fdba7619c662e10ffc37dab156ae6bbb982dec5642ec4d5b8e1eeb43aec
+header_exact: agency-steward + code-reviewer / no validated Agency specialist delegation / no skills / workforce inference task-agency-router wrapper / inference
+resident_binding_id: rmb-fef54dccff0a71da62d23ec36ae83a1b; validated preflight recipe projection
+routing_decision_ids: 99f1388a-17eb-46e9-ab36-d9426fd05f24; native-child-4ef0e65f64b0725eac80bd3d644a7d0a
+skill_name_and_store_row_id: none requested
+provider_attempt_status: canonical three applied structured attempts; child one applied attempt
+fallback_count: 0 cross-provider
+timeout_or_failure_receipt: no timeout; OpenClaw succeeded/delivered but Agency delegation and worker remained open
+before_after_contractor_count: 15 / 15
+before_store_integrity_sha256: ok; 6aeaaad464d082dd1483891c0d3d4db64bc5334cace42f36252fa6876b4ebcc1
+after_store_integrity_sha256: ok; 0a65fa88b08bfa297f2ed772dd3c36f08e82bcb1c17d49e7fab236da7f51d8bf
+native_config_semantic_sha256_before_after: e42bf2181ef9c8d0639b281bfd9cbd27978c9b83ed607b8e660fc42eadf3add1 / same
+hermes_state: active and untouched; no install or config mutation
+candidate_state: locally green; not installed
+local_gates: focused 146/1; fast spine 849/3; docs 783/worklog 1158; Ruff 682; dashboard 134; routing passed; conformance 160/160 killed
+retained_eval_failures: isolated launcher lacked pytest; first private evaluator inherited unsafe umask 0002
+known_limit: operational delivery passed but Agency child terminalization and ADR-0156 Rule 4 are unproven
+matrix_cell_moved: false
+protected_hosts: Codex OAuth/config/canary, Claude, and ZCode untouched
+~~~
+
 ## Second changed OpenClaw native-child draw: completion hash omitted
 
 After the installed ready-receipt correction, the operator submitted a
@@ -2775,3 +2856,15 @@ rule4_proven: false
 matrix_cell_moved: false
 protected_hosts: Codex OAuth/config/canary, Claude, and ZCode untouched
 ~~~
+
+## 2026-08-24 - Latest bounded checkpoint
+
+The full third-draw evidence bundle is recorded above under “OpenClaw
+operational child delivery with missed Agency end receipt.” This is the newest
+state: operational Telegram return passed, installed Agency child
+terminalization failed, and the exact-state reconciliation candidate is locally
+green but uninstalled. Focused 146/1, fast spine 849/3, docs 783/worklog 1,158,
+full Ruff 682, dashboard 134, routing eval, and decision conformance 160/160 all
+pass; the two changed evaluation-environment failures remain retained. OpenClaw
+alone proceeds to Agency-only reinstall and changed live proof. Hermes remains
+active break glass until OpenClaw passes. Rule 4 and the matrix are unchanged.
