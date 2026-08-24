@@ -1168,6 +1168,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `675fb22a` | 2026-08-23 | diagnose(openclaw): trace native reset acknowledgement phases | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md), [AR-278](../roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md) | [detail](2026-08-23-675fb22a-trace-openclaw-native-reset-acknowledgement-phases.md) |
 | `efcd1e0f` | 2026-08-23 | docs(roadmap): checkpoint OpenClaw reset diagnostic install | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md), [AR-278](../roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md) | null |
 | `c671dd35` | 2026-08-23 | fix(openclaw): correlate reset lifecycle sessions | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md), [AR-278](../roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md) | [detail](2026-08-23-c671dd35-correlate-openclaw-reset-lifecycle-sessions.md) |
+| `cab9cf33` | 2026-08-23 | docs(roadmap): checkpoint OpenClaw reset lifecycle install | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md), [AR-278](../roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
