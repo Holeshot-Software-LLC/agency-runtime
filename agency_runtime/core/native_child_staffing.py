@@ -1061,14 +1061,22 @@ def staff_native_child(  # noqa: C901 - one ordered fail-open native-child bound
             os.environ,
         )
         if not requested_provider:
+            projected_providers = configured_workforce_providers(
+                snapshot.config,
+                stage="recruiter",
+                route_key="workforce.recruiter",
+                harness=normalized_host,
+            )
+            projected_judge = judge_config.judge
+            if normalized_host == "openclaw" and len(projected_providers) == 1:
+                projected_judge = replace(
+                    projected_judge,
+                    timeout=projected_providers[0].timeout,
+                )
             judge_config = replace(
                 judge_config,
-                providers=configured_workforce_providers(
-                    snapshot.config,
-                    stage="recruiter",
-                    route_key="workforce.recruiter",
-                    harness=normalized_host,
-                ),
+                judge=projected_judge,
+                providers=projected_providers,
             )
     except CanaryChildJudgeProviderError:
         return _unstaffed(

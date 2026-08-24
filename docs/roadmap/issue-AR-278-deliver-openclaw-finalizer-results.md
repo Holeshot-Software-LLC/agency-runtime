@@ -10,6 +10,8 @@ related:
   - docs/roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md
   - docs/roadmap/issue-AR-272-expose-openclaw-native-finalizer-tool.md
   - docs/roadmap/issue-AR-277-keep-openclaw-finalization-first-pass.md
+  - docs/roadmap/issue-AR-281-deliver-finalized-openclaw-child-announcements.md
+  - docs/decisions/0168-authorize-finalized-openclaw-child-announcements.md
   - docs/roadmap/handoffs/issue-AR-119.md
   - docs/roadmap/handoffs/issue-AR-264.md
   - docs/roadmap/AR-119-vision-loop-status.md
@@ -29,7 +31,7 @@ issue_id: AR-278
 priority: p0
 tracker_url: null
 depends_on: [AR-272, AR-277]
-blocks: [AR-119, AR-264]
+blocks: [AR-119, AR-264, AR-281]
 ---
 
 # AR-278: Deliver accepted OpenClaw finalizer results instead of silent replies
@@ -668,6 +670,31 @@ preserved. A live native-error delivery draw was not performed, so the bounded
 native-error acceptance item remains open even though ordinary status, skill,
 substantive finalization, and one-chunk Telegram delivery now pass.
 
+### Native-child completion-delivery follow-on is locally green and pre-live
+
+The first later OpenClaw native-child attempt is retained in full. A genuine
+`sessions_spawn` child completed its bounded read-only task, but the completion
+was treated as a synthetic `announce:v1:...` run and attempted a targeted
+message send. Agency suppressed that send before Telegram queueing. The same
+attempt exposed an unprojected OpenClaw host-profile timeout and child-end
+correlation that depended on process memory. It proves worker execution, not
+completion delivery.
+
+AR-280/AR-281 implement the repair in Agency Runtime only. Native-child
+staffing receives the owning OpenClaw profile timeout; durable Store bindings
+recover the exact parent/worker/run/launch lifecycle; and dedicated completion
+prepare/finalize calls revalidate the original parent trace. The generated
+bridge permits exactly one implicit-target, one-use `message(action=send)` with
+the finalized parent header and body. It creates no synthetic announcement run
+or Agency inference receipt, and mismatched or replayed completion evidence
+fails closed.
+
+The current focused gate passes 299 tests with 1 existing skip. This candidate
+has not been installed into OpenClaw and has no changed live Telegram child
+receipt yet. Hermes remains untouched as break glass, and Codex OAuth/config/
+canary, Claude, and ZCode are untouched. Operational child delivery, if it
+passes, will still not prove ADR-0156 Rule 4 without a host-authored artifact.
+
 ## Approach
 
 Change only Agency's OpenClaw adapter as specified by ADR-0166 and ADR-0167. Do not expose
@@ -753,4 +780,8 @@ Hermes and all protected hosts remain outside the mutation boundary.
 - [x] Prove a genuinely different bounded three-read substantive request
       through `task-agency-router`, exact header finalization, and one-chunk
       Telegram delivery without delegation or native children.
+- [x] Preserve the failed native-child execution/completion-delivery attempt
+      and add exact durable parent-trace completion regressions.
+- [ ] Install the Agency-only native-child repair and prove a changed
+      OpenClaw child turn through Telegram.
 - [ ] Tracker creation remains pending separate authorization.

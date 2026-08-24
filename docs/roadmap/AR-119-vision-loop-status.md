@@ -23,7 +23,9 @@ related:
   - docs/roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md
   - docs/roadmap/issue-AR-279-exclude-hermes-internal-post-response-preflight.md
   - docs/roadmap/issue-AR-280-route-native-children-through-host-profiles.md
+  - docs/roadmap/issue-AR-281-deliver-finalized-openclaw-child-announcements.md
   - docs/decisions/0166-refresh-openclaw-headers-through-awaited-tool-results.md
+  - docs/decisions/0168-authorize-finalized-openclaw-child-announcements.md
   - docs/roadmap/AR-255-child-parity-design.md
 supersedes: []
 superseded_by: null
@@ -4335,19 +4337,29 @@ upstream answering model remains unavailable and neither alias is promoted to
 that claim. No delegation, Rule 4, or AR-119 matrix cell moves; OpenClaw and
 all protected configuration remain unchanged.
 
-## 2026-08-24 - native-child implementation checkpoint
+## 2026-08-24 - OpenClaw native-child completion repair is pre-live
 
-Read-only inspection found that native-child staffing still received the
-unprojected provider chain and both generated plugins assumed child fields
-their installed host versions do not emit. AR-280 now resolves the owning
-harness profile, staffs OpenClaw before `sessions_spawn`, reconciles its real
-spawn/end/result ordering, and keys Hermes lifecycle state by child session.
-The consolidated profile, adapter, boundary, and security gate passes 213 tests
-with one existing skip; both independent review scopes are green.
+The retained first OpenClaw draw created a real `sessions_spawn` child. That
+child completed its bounded read-only review, but the parent completion was
+represented as a synthetic `announce:v1:...` run and attempted a targeted
+`message(action=send)`. Agency correctly suppressed the send before Telegram
+queueing, so execution occurred but operational completion delivery failed.
+The same evidence exposed an unprojected host-profile timeout and lifecycle
+correlation that depended on process memory.
 
-No host was reinstalled and no native configuration or model route changed at
-this checkpoint. The next bounded step is an Agency-only OpenClaw install and
-fresh Telegram child proof, followed by Hermes only after OpenClaw passes.
-Operational spawn/return evidence cannot promote Rule 4: neither host has the
-ADR-0156 artifact collector required for a
-`native_child_delivery_verifications` receipt.
+AR-280/AR-281 keep the repair inside Agency Runtime. OpenClaw child staffing
+now inherits the owning `linux-task-agency-router` timeout, lifecycle recovery
+revalidates exact durable parent/worker/run/launch bindings, and a dedicated
+prepare/finalize path authorizes completion on the exact parent trace. The
+completion model may issue only one exact implicit-target
+`message(action=send, message=<finalized parent header and body>)`; a one-use
+authorization is consumed at send time. The path creates neither a synthetic
+announcement run nor an Agency inference receipt.
+
+The current focused profile, installer, adapter, lifecycle, and security gate
+passes 299 tests with 1 existing skip. No host has been reinstalled for this
+candidate and no changed Telegram child proof exists yet. Hermes remains
+untouched as break glass, and Codex OAuth/config/canary, Claude, and ZCode are
+untouched. An operational OpenClaw spawn/return/Telegram pass will still not
+satisfy ADR-0156 Rule 4 without an immutable host-authored child-delivery
+artifact.

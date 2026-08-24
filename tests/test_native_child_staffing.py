@@ -408,22 +408,31 @@ def test_canary_pin_constrains_initial_and_abstention_repair_calls(
     assert store.decisions[-1]["decision"]["provider"] == "codex-subscription"
 
 
+@pytest.mark.parametrize(
+    ("host", "expected_judge_timeout"),
+    (("openclaw", 120.0), ("hermes", 15.0)),
+)
 def test_non_canary_native_child_uses_host_scoped_workforce_profile_without_provider_fallback(
     monkeypatch: pytest.MonkeyPatch,
+    host: str,
+    expected_judge_timeout: float,
 ) -> None:
     prompt = "Alpha exact specialist prompt."
     agent = _agent("alpha-reviewer", prompt)
-    agent["supported_execution_hosts"] = ["openclaw"]
+    agent["supported_execution_hosts"] = [host]
     store = _Store([agent], {"alpha-reviewer": prompt})
     assert store.run is not None
-    store.run["host"] = "openclaw"
-    observed: list[tuple[tuple[str, str, str], ...]] = []
+    store.run["host"] = host
+    observed: list[tuple[tuple[tuple[str, str, str], ...], float]] = []
 
     def judge(task: str, _catalog: list[dict[str, Any]], **kwargs: Any) -> dict[str, Any]:
         observed.append(
-            tuple(
-                (provider.name, provider.type, provider.model)
-                for provider in kwargs["config"].providers
+            (
+                tuple(
+                    (provider.name, provider.type, provider.model)
+                    for provider in kwargs["config"].providers
+                ),
+                kwargs["config"].judge.timeout,
             )
         )
         selected = ["alpha-reviewer"] if task.startswith("A previous evaluation") else []
@@ -445,10 +454,11 @@ def test_non_canary_native_child_uses_host_scoped_workforce_profile_without_prov
                     model="task-agency-router",
                     base_url="http://127.0.0.1:4000/v1",
                     api_key="bounded-test-key",
+                    timeout_ms=120_000,
                 )
             },
             harnesses={
-                "openclaw": HarnessInferenceConfig(
+                host: HarnessInferenceConfig(
                     default_profile="linux-task-agency-router",
                 )
             },
@@ -456,22 +466,26 @@ def test_non_canary_native_child_uses_host_scoped_workforce_profile_without_prov
         ollama=OllamaConfig(enabled=False),
     )
     monkeypatch.delenv("AGENCY_CANARY_MODE", raising=False)
-    openclaw_install = replace(_install(), host="openclaw")
+    host_install = replace(_install(), host=host)
 
     result = _invoke(
         monkeypatch,
         store,
         judge,
         config=config,
-        host="openclaw",
-        install_identity=openclaw_install,
-        install_identity_reader=lambda _host: openclaw_install,
+        host=host,
+        install_identity=host_install,
+        install_identity_reader=lambda _host: host_install,
     )
 
-    expected = (("linux-task-agency-router", "litellm", "task-agency-router"),)
+    expected = (
+        (("linux-task-agency-router", "litellm", "task-agency-router"),),
+        expected_judge_timeout,
+    )
     assert result.staffed is True
     assert observed == [expected, expected]
     assert config.providers[0].name == "legacy-chain"
+    assert config.judge.timeout == 15.0
 
 
 def test_canary_pin_projection_mismatch_fails_before_judge(

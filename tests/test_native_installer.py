@@ -16,6 +16,9 @@ import pytest
 from agency_runtime.core import installer_payloads, process_argv
 from agency_runtime.core.config import (
     AgencyConfig,
+    HarnessInferenceConfig,
+    InferenceConfig,
+    InferenceProfile,
     JudgeConfig,
     OllamaConfig,
     ProviderEntry,
@@ -603,6 +606,52 @@ def test_generated_hook_timeout_covers_default_fast_stage_repair_budget() -> Non
     codex_hooks = json.loads(codex_files["plugins/agency-preflight/hooks/hooks.json"])
     handler = codex_hooks["hooks"]["UserPromptSubmit"][0]["hooks"][0]
     assert handler["timeout"] == 125
+
+
+def test_openclaw_native_child_timeout_uses_static_harness_profile() -> None:
+    cfg = AgencyConfig(
+        inference=InferenceConfig(
+            profiles={
+                "openclaw-router": InferenceProfile(
+                    name="openclaw-router",
+                    adapter="litellm",
+                    model="task-agency-router",
+                    base_url="http://proxy.invalid/v1",
+                    api_key_env="LITELLM_TEST_KEY",
+                    timeout_ms=120_000,
+                ),
+                "hermes-router": InferenceProfile(
+                    name="hermes-router",
+                    adapter="litellm",
+                    model="hermes-test-router",
+                    base_url="http://proxy.invalid/v1",
+                    api_key_env="LITELLM_TEST_KEY",
+                    timeout_ms=30_000,
+                ),
+            },
+            harnesses={
+                "openclaw": HarnessInferenceConfig(default_profile="openclaw-router"),
+                "hermes": HarnessInferenceConfig(default_profile="hermes-router"),
+            },
+        )
+    )
+
+    openclaw_files, _ = _bundle_files("openclaw", cfg)
+    bridge = openclaw_files["index.js"]
+    before_tool_call = bridge.split('api.on("before_tool_call"', 1)[1].split(
+        "api.registerAgentToolResultMiddleware", 1
+    )[0]
+
+    assert "function invokeAgency(payload, processTimeoutMs = 125000)" in bridge
+    assert before_tool_call.rstrip().endswith("}, { timeoutMs: 127000 });")
+
+    # The native-child extension is OpenClaw-only. It must not change the
+    # generated timeout for the Hermes bridge or other host hook bundles.
+    hermes_files, _ = _bundle_files("hermes", cfg)
+    assert "_TIMEOUT_SECONDS = 80" in hermes_files["__init__.py"]
+    codex_files, _ = _bundle_files("codex", cfg)
+    codex_hooks = json.loads(codex_files["plugins/agency-preflight/hooks/hooks.json"])
+    assert codex_hooks["hooks"]["UserPromptSubmit"][0]["hooks"][0]["timeout"] == 80
 
 
 def test_codex_windows_hook_command_is_inert_powershell_argv(

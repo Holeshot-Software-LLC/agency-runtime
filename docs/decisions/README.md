@@ -68,6 +68,7 @@ Status meanings:
 | [ADR-0108](0108-retire-only-owned-host-integrations.md) | Retire only ownership-proven host integrations | Accepted |
 | [ADR-0155](0155-defer-agent-plugins-conformance-to-client-adoption.md) | Defer Agent Plugins conformance to client adoption | Accepted |
 | [ADR-0167](0167-deliver-openclaw-native-errors-through-exact-terminal-evidence.md) | Deliver OpenClaw native errors through exact terminal evidence | Accepted |
+| [ADR-0168](0168-authorize-finalized-openclaw-child-announcements.md) | Authorize finalized OpenClaw child announcements | Accepted |
 
 ## Routing, policy, and providers
 

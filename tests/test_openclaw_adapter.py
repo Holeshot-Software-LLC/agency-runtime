@@ -192,6 +192,101 @@ def test_openclaw_generated_plugin_records_terminal_model_calls() -> None:
     assert 'resolvedModel: routerBacked ? "" : observedModel' in source
 
 
+def test_openclaw_generated_plugin_seals_exact_native_child_completion() -> None:
+    source = render_openclaw_index(
+        5,
+        python_executable="/usr/bin/python3",
+        bootstrap_path="/opt/agency/bootstrap.py",
+    )
+
+    assert "function nativeChildCompletionRunId" in source
+    assert "`announce:v1:${boundedSession}:${boundedRun}`" in source
+    assert "function resolveNativeChildCompletionState" in source
+    assert 'match.state?.completionDeliveryState !== "pending"' in source
+    assert "async function authorizeNativeChildCompletionMessage" in source
+    assert 'action: "native_child_completion_prepare"' in source
+    assert 'action: "native_child_completion_finalize"' in source
+    assert "canonicalOutboundPayload({ text })" in source
+    assert "gate?.terminalBound === true" in source
+    assert '"child_completion"' in source
+    assert "markNativeChildCompletionConsumed(session, authorized.runId)" in source
+
+
+def test_openclaw_outbound_gate_marks_only_exact_terminal_allowance_authoritative(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    adapter = SimpleNamespace(runtime_enabled=lambda: True, store=object())
+    payload = json.dumps({"text": "bounded completion"}, separators=(",", ":"))
+    common = {
+        "adapter": adapter,
+        "session_id": "completion-session",
+        "trace_id": "completion-run",
+        "final_response": "bounded completion",
+        "outbound_payload": payload,
+        "model": "litellm/task-general",
+    }
+
+    monkeypatch.setattr(
+        node_bridge,
+        "_exact_outbound_terminal_state",
+        lambda *_args, **_kwargs: "completed",
+    )
+    authoritative = node_bridge._handle_outbound_gate(**common)
+    monkeypatch.setattr(
+        node_bridge,
+        "_exact_outbound_terminal_state",
+        lambda *_args, **_kwargs: "unavailable",
+    )
+    blind = node_bridge._handle_outbound_gate(**common)
+
+    assert authoritative["action"] == "allow"
+    assert authoritative["turnId"] == "completion-run"
+    assert authoritative["authoritative"] is True
+    assert authoritative["terminalBound"] is True
+    assert authoritative["terminalStatus"] == "completed"
+    assert blind["action"] == "allow"
+    assert blind["turnId"] == "completion-run"
+    assert "authoritative" not in blind
+    assert "terminalBound" not in blind
+    assert "terminalStatus" not in blind
+
+
+def test_openclaw_outbound_gate_marks_only_committed_accept_authoritative(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    adapter = SimpleNamespace(store=object())
+    common = {
+        "adapter": adapter,
+        "decision": {"action": "accept"},
+        "digest": "a" * 64,
+        "session_id": "completion-session",
+        "effective_trace": "completion-run",
+        "final_response": "bounded completion",
+        "binding": json.dumps({"text": "bounded completion"}),
+        "revision": 1,
+    }
+
+    monkeypatch.setattr(
+        node_bridge,
+        "_commit_terminal_outcome",
+        lambda *_args, **_kwargs: "committed",
+    )
+    committed = node_bridge._outbound_evaluated_decision(**common)
+    monkeypatch.setattr(
+        node_bridge,
+        "_commit_terminal_outcome",
+        lambda *_args, **_kwargs: "unavailable",
+    )
+    unavailable = node_bridge._outbound_evaluated_decision(**common)
+
+    assert committed["authoritative"] is True
+    assert committed["terminalBound"] is True
+    assert committed["terminalStatus"] == "completed"
+    assert "authoritative" not in unavailable
+    assert "terminalBound" not in unavailable
+    assert "terminalStatus" not in unavailable
+
+
 def test_sessions_spawn_uses_child_session_as_worker_not_runtime_agent(tmp_path: Path) -> None:
     store = Store(tmp_path / "agency.db")
     adapter = OpenClawAdapter(store=store)
@@ -333,7 +428,11 @@ def test_openclaw_bridge_binds_real_sessions_spawn_result_to_launch(
         adapter=adapter,
     )
 
-    assert result == {"recorded": True, "launchBound": True}
+    assert result == {
+        "recorded": True,
+        "launchBound": True,
+        "workUnitId": "restart-review",
+    }
     child = store.get_native_child_run(
         host="openclaw",
         session_id="parent-session",
@@ -359,6 +458,222 @@ def test_openclaw_bridge_binds_real_sessions_spawn_result_to_launch(
         adapter=adapter,
     )
     assert ended == {"recorded": True}
+
+
+def test_openclaw_bridge_prepares_and_finalizes_completion_against_parent_only(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+    store.create_run(
+        trace_id="completion-parent-run",
+        session_id="completion-parent-session",
+        host="openclaw",
+    )
+    store.record_delegation(
+        trace_id="completion-parent-run",
+        session_id="completion-parent-session",
+        host="openclaw",
+        work_unit_id="completion-unit",
+        recommended_agent="code-reviewer",
+        status="delegated",
+        backend="sessions_spawn",
+        executed_worker_kind="generic-worker",
+        executed_worker_id="completion-child",
+        native_run_id="completion-child-run",
+    )
+    store.record_native_child_started(
+        host="openclaw",
+        backend="sessions_spawn",
+        session_id="completion-parent-session",
+        trace_id="completion-parent-run",
+        work_unit_id="completion-unit",
+        worker_id="completion-child",
+        native_run_id="completion-child-run",
+    )
+    assert store.bind_native_child_launch(
+        host="openclaw",
+        session_id="completion-parent-session",
+        trace_id="completion-parent-run",
+        worker_id="completion-child",
+        native_run_id="completion-child-run",
+        launch_id="completion-launch",
+    )
+    conn = store._connect()
+    try:
+        conn.execute(
+            "UPDATE runs SET preflight_state = 'ready' WHERE trace_id = 'completion-parent-run'"
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    adapter = OpenClawAdapter(store=store)
+    completion_run = "announce:v1:completion-child:completion-child-run"
+    context = (
+        "[AGENCY NATIVE CHILD COMPLETION CONTRACT]\n"
+        'message(action="send", message=<header+body>)\n'
+        "Agency/Agencies loaded: agency-steward\n"
+        "Agency/Agencies delegated: code-reviewer\n"
+        "Skills loaded: none\n"
+        "Actual Model selected: workforce inference: task-agency-router\n"
+        "Recruited via: inference\n"
+        "Do not emit a natural visible final response or NO_REPLY."
+    )
+    monkeypatch.setattr(
+        node_bridge,
+        "_native_child_completion_context",
+        lambda *_args, **_kwargs: context,
+    )
+    common = {
+        "sessionId": "completion-parent-session",
+        "traceId": completion_run,
+        "parentSessionId": "completion-parent-session",
+        "parentTraceId": "completion-parent-run",
+        "workerId": "completion-child",
+        "nativeRunId": "completion-child-run",
+        "launchId": "completion-launch",
+        "workUnitId": "completion-unit",
+        "model": "litellm/task-general",
+    }
+
+    prepared = node_bridge.handle(
+        {"action": "native_child_completion_prepare", **common},
+        adapter=adapter,
+    )
+
+    assert prepared["prepared"] is True
+    assert prepared["context"] == context
+    assert prepared["headerContextHash"] == node_bridge.response_hash(context)
+    assert prepared["parentTraceId"] == "completion-parent-run"
+    assert store.get_run(completion_run) is None
+
+    observed: dict[str, object] = {}
+
+    def gate(_adapter: object, **kwargs: object) -> dict[str, object]:
+        observed.update(kwargs)
+        return {
+            "action": "allow",
+            "authoritative": True,
+            "terminalBound": True,
+            "terminalStatus": "completed",
+            "responseHash": node_bridge.response_hash(str(kwargs["outbound_payload"])),
+            "turnId": str(kwargs["trace_id"]),
+        }
+
+    monkeypatch.setattr(node_bridge, "_handle_outbound_gate", gate)
+    final_text = (
+        "Agency/Agencies loaded: agency-steward\n"
+        "Agency/Agencies delegated: code-reviewer\n"
+        "Skills loaded: none\n"
+        "Actual Model selected: workforce inference: task-agency-router\n"
+        "Recruited via: inference\n\nBounded child result."
+    )
+    outbound = json.dumps({"text": final_text}, separators=(",", ":"))
+    finalized = node_bridge.handle(
+        {
+            "action": "native_child_completion_finalize",
+            **common,
+            "headerContextHash": prepared["headerContextHash"],
+            "finalResponse": final_text,
+            "outboundPayload": outbound,
+        },
+        adapter=adapter,
+    )
+
+    assert finalized["authoritative"] is True
+    assert finalized["turnId"] == "completion-parent-run"
+    assert finalized["completionRunId"] == completion_run
+    assert observed["session_id"] == "completion-parent-session"
+    assert observed["trace_id"] == "completion-parent-run"
+    assert store.get_run(completion_run) is None
+
+    rejected = node_bridge.handle(
+        {
+            "action": "native_child_completion_finalize",
+            **common,
+            "headerContextHash": "0" * 64,
+            "finalResponse": final_text,
+            "outboundPayload": outbound,
+        },
+        adapter=adapter,
+    )
+    assert rejected["action"] == "replace"
+
+
+def test_openclaw_bridge_reconciles_native_child_end_after_plugin_restart(
+    tmp_path: Path,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+    store.create_run(
+        trace_id="restart-parent-run",
+        session_id="restart-parent-session",
+        host="openclaw",
+    )
+    store.record_delegation(
+        trace_id="restart-parent-run",
+        session_id="restart-parent-session",
+        host="openclaw",
+        work_unit_id="restart-review",
+        recommended_agent="code-reviewer",
+        status="delegated",
+        backend="sessions_spawn",
+        executed_worker_kind="generic-worker",
+        executed_worker_id="restart-child-session",
+        native_run_id="restart-child-run",
+    )
+    store.record_native_child_started(
+        host="openclaw",
+        backend="sessions_spawn",
+        session_id="restart-parent-session",
+        trace_id="restart-parent-run",
+        work_unit_id="restart-review",
+        worker_id="restart-child-session",
+        native_run_id="restart-child-run",
+    )
+    assert store.bind_native_child_launch(
+        host="openclaw",
+        session_id="restart-parent-session",
+        trace_id="restart-parent-run",
+        worker_id="restart-child-session",
+        native_run_id="restart-child-run",
+        launch_id="restart-launch",
+    )
+    adapter = OpenClawAdapter(store=store)
+
+    missing = node_bridge.handle(
+        {
+            "action": "native_child_ended",
+            "sessionId": "wrong-parent-session",
+            "workerId": "restart-child-session",
+            "nativeRunId": "restart-child-run",
+            "outcome": "ok",
+        },
+        adapter=adapter,
+    )
+    reconciled = node_bridge.handle(
+        {
+            "action": "native_child_ended",
+            "sessionId": "restart-parent-session",
+            "workerId": "restart-child-session",
+            "nativeRunId": "restart-child-run",
+            "outcome": "ok",
+        },
+        adapter=adapter,
+    )
+
+    assert missing == {"recorded": False}
+    assert reconciled == {"recorded": True}
+    child = store.get_native_child_run(
+        host="openclaw",
+        session_id="restart-parent-session",
+        trace_id="restart-parent-run",
+        work_unit_id="restart-review",
+        worker_id="restart-child-session",
+        native_run_id="restart-child-run",
+    )
+    assert child is not None
+    assert child["exit_code"] == 0
+    assert child["ended_at"]
 
 
 def test_openclaw_inventory_authorized_native_read_records_skill(

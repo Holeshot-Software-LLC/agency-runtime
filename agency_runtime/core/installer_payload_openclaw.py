@@ -788,7 +788,9 @@ function consumeOutboundAuthorization(session, text) {{
   if (!session) return null;
   const now = Date.now();
   pruneOutboundAuthorizations(now);
-  for (const kind of ["final", "error", "tool", "control", "disabled"]) {{
+  for (const kind of [
+    "final", "error", "tool", "control", "disabled", "child_completion",
+  ]) {{
     const exact = outboundAuthorizationKey(session, text, kind);
     const exactState = outboundAuthorizations.get(exact);
     if (
@@ -918,39 +920,61 @@ function prunePreflightContexts(now = Date.now()) {{
 function rememberPreflightContext(result, event, ctx) {{
   const key = preflightContextKey(event, ctx);
   const context = typeof result?.context === "string" ? result.context : "";
+  const completion = result?.completion === true;
+  const headerContextHash = String(result?.headerContextHash || "");
   if (
     !key
     || !context
     || Buffer.byteLength(context, "utf8") > MAX_BRIDGE_TEXT_BYTES
+    || (
+      completion
+      && (
+        !/^[0-9a-f]{{64}}$/.test(headerContextHash)
+        || headerContextHash !== responseDigest(context)
+      )
+    )
   ) return false;
   const now = Date.now();
   prunePreflightContexts(now);
   preflightContexts.set(key, {{
     context,
     model: boundedUtf8(modelId(ctx), 1024),
+    kind: completion ? "native_child_completion" : "ordinary",
+    headerContextHash: completion ? headerContextHash : "",
+    completionRunId: completion ? toolCorrelationIdentity(result?.completionRunId) : "",
+    parentSessionId: completion ? toolCorrelationIdentity(result?.parentSessionId) : "",
+    parentTraceId: completion ? toolCorrelationIdentity(result?.parentTraceId) : "",
+    workerId: completion ? boundedNativeChildIdentity(result?.workerId) : "",
+    nativeRunId: completion ? boundedNativeChildIdentity(result?.nativeRunId) : "",
+    launchId: completion ? toolCorrelationIdentity(result?.launchId) : "",
+    workUnitId: completion ? boundedUtf8(result?.workUnitId, 160) : "",
     expiresAt: now + PREFLIGHT_CONTEXT_TTL_MS,
   }});
   return true;
 }}
 
-function readPreflightContext(event, ctx) {{
+function readPreflightState(event, ctx) {{
   const key = preflightContextKey(event, ctx);
   const state = key ? preflightContexts.get(key) : undefined;
   if (Number(state?.expiresAt || 0) <= Date.now()) {{
     if (key) preflightContexts.delete(key);
-    return "";
+    return undefined;
   }}
+  return state;
+}}
+
+function readPreflightContext(event, ctx) {{
+  const state = readPreflightState(event, ctx);
   return String(state?.context || "");
 }}
 
 function readPreflightModel(event, ctx) {{
-  const key = preflightContextKey(event, ctx);
-  const state = key ? preflightContexts.get(key) : undefined;
-  if (Number(state?.expiresAt || 0) <= Date.now()) {{
-    if (key) preflightContexts.delete(key);
-    return "";
-  }}
+  const state = readPreflightState(event, ctx);
   return String(state?.model || "");
+}}
+
+function isNativeChildCompletionContext(event, ctx) {{
+  return readPreflightState(event, ctx)?.kind === "native_child_completion";
 }}
 
 function splitOpenClawMiddlewareText(text) {{
@@ -1038,6 +1062,169 @@ function acceptedSessionsSpawnResult(result) {{
   }}
 }}
 
+function nativeChildCompletionRunId(childSession, nativeRunId) {{
+  const boundedSession = boundedNativeChildIdentity(childSession);
+  const boundedRun = boundedNativeChildIdentity(nativeRunId);
+  if (!boundedSession || !boundedRun) return "";
+  return toolCorrelationIdentity(`announce:v1:${{boundedSession}}:${{boundedRun}}`);
+}}
+
+function hostAuthenticatedNativeChildCompletionRun(event, ctx) {{
+  // OpenClaw owns the hook event/context run identity for its internal announce
+  // agent. The prefix is sufficient to classify the run for fail-closed
+  // handling, but never to recover or split child identities: both identities
+  // may themselves contain colons. Rehydration therefore remains
+  // exact-identity-only.
+  const contextRun = toolCorrelationIdentity(ctx?.runId);
+  const eventRun = toolCorrelationIdentity(event?.runId);
+  if (contextRun.startsWith("announce:v1:")) return contextRun;
+  return eventRun.startsWith("announce:v1:") ? eventRun : "";
+}}
+
+function resolveNativeChildCompletionState(event, ctx) {{
+  const contextRun = toolCorrelationIdentity(ctx?.runId);
+  const eventRun = toolCorrelationIdentity(event?.runId);
+  if (contextRun && eventRun && eventRun !== contextRun) return {{ matched: true }};
+  const run = hostAuthenticatedNativeChildCompletionRun(event, ctx);
+  const requesterSessionId = toolCorrelationIdentity(sessionId(event, ctx));
+  if (!run || !requesterSessionId) return null;
+  const matches = [];
+  for (const [key, state] of nativeChildParents) {{
+    if (state?.completionRunId !== run) continue;
+    matches.push({{ key, state }});
+    if (matches.length > 1) break;
+  }}
+  if (matches.length === 0) return null;
+  if (matches.length !== 1) return {{ matched: true }};
+  const match = matches[0];
+  if (
+    match.state?.requesterSessionId !== requesterSessionId
+    || match.state?.startedRecorded !== true
+    || match.state?.completionDeliveryState !== "pending"
+  ) return {{ matched: true }};
+  return {{
+    matched: true,
+    key: match.key,
+    state: match.state,
+    requesterSessionId,
+    completionRunId: run,
+  }};
+}}
+
+function markNativeChildCompletionConsumed(session, run) {{
+  const requesterSessionId = toolCorrelationIdentity(session);
+  const completionRunId = toolCorrelationIdentity(run);
+  if (!requesterSessionId || !completionRunId) return false;
+  const matches = [];
+  for (const state of nativeChildParents.values()) {{
+    if (
+      state?.requesterSessionId === requesterSessionId
+      && state?.completionRunId === completionRunId
+      && state?.completionDeliveryState === "authorized"
+    ) matches.push(state);
+    if (matches.length > 1) break;
+  }}
+  if (matches.length !== 1) return false;
+  matches[0].completionDeliveryState = "consumed";
+  return true;
+}}
+
+async function authorizeNativeChildCompletionMessage(event, ctx, completion) {{
+  const childState = completion?.state;
+  const prepared = readPreflightState(event, ctx);
+  const exactPreparedState = Boolean(
+    prepared?.kind === "native_child_completion"
+    && prepared?.completionRunId === completion?.completionRunId
+    && prepared?.parentSessionId === childState?.sessionId
+    && prepared?.parentTraceId === childState?.traceId
+    && prepared?.workerId === childState?.workerId
+    && prepared?.nativeRunId === childState?.nativeRunId
+    && prepared?.launchId === childState?.launchId
+    && prepared?.workUnitId === childState?.workUnitId
+    && /^[0-9a-f]{{64}}$/.test(String(prepared?.headerContextHash || ""))
+  );
+  if (!childState || !exactPreparedState) return {{
+    block: true,
+    blockReason: "Agency Runtime rejected an uncorrelated native child completion.",
+  }};
+  // A correlated completion gets one first-pass delivery attempt. Invalid
+  // envelopes and failed receipts remain durable failures rather than opening
+  // a second message-tool path in the same host run.
+  childState.completionDeliveryState = "attempted";
+  const params = (
+    event?.params
+    && typeof event.params === "object"
+    && !Array.isArray(event.params)
+  ) ? event.params : null;
+  const exactEnvelope = Boolean(
+    params
+    && Object.keys(params).length === 2
+    && Object.prototype.hasOwnProperty.call(params, "action")
+    && Object.prototype.hasOwnProperty.call(params, "message")
+    && params.action === "send"
+    && typeof params.message === "string"
+    && params.message.trim()
+  );
+  let messageBytes = 0;
+  try {{ messageBytes = exactEnvelope ? Buffer.byteLength(params.message, "utf8") : 0; }}
+  catch {{ messageBytes = 0; }}
+  if (!exactEnvelope || messageBytes > MAX_BRIDGE_TEXT_BYTES) return {{
+    block: true,
+    blockReason: "Agency Runtime requires one text-only implicit-target child completion.",
+  }};
+  const text = params.message;
+  let outboundPayload;
+  try {{ outboundPayload = canonicalOutboundPayload({{ text }}); }}
+  catch {{ return {{ block: true, blockReason: FINALIZATION_UNAVAILABLE }}; }}
+  const stateEpoch = ++runtimeStateEpoch;
+  let gate;
+  try {{
+    gate = await invokeAgency({{
+      action: "native_child_completion_finalize",
+      sessionId: completion.requesterSessionId,
+      traceId: completion.completionRunId,
+      parentSessionId: childState.sessionId,
+      parentTraceId: childState.traceId,
+      workerId: childState.workerId,
+      nativeRunId: childState.nativeRunId,
+      launchId: childState.launchId,
+      workUnitId: childState.workUnitId,
+      headerContextHash: prepared.headerContextHash,
+      finalResponse: text,
+      outboundPayload,
+      model: modelId(ctx) || readPreflightModel(event, ctx),
+    }});
+  }} catch {{
+    return {{ block: true, blockReason: FINALIZATION_UNAVAILABLE }};
+  }}
+  const exactReceipt = Boolean(
+    gate?.action === "allow"
+    && gate?.authoritative === true
+    && gate?.terminalBound === true
+    && gate?.terminalStatus === "completed"
+    && String(gate?.responseHash || "") === responseDigest(outboundPayload)
+    && String(gate?.turnId || "") === childState.traceId
+    && String(gate?.parentSessionId || "") === childState.sessionId
+    && String(gate?.parentTraceId || "") === childState.traceId
+    && String(gate?.completionRunId || "") === completion.completionRunId
+  );
+  if (
+    !observeRuntimeState(gate, stateEpoch)
+    || !runtimeEnabled
+    || !exactReceipt
+    || nativeChildParents.get(completion.key) !== childState
+  ) return {{ block: true, blockReason: FINALIZATION_UNAVAILABLE }};
+  const marked = authorizeMarkedPayload(
+    completion.requesterSessionId,
+    {{ text }},
+    "child_completion",
+    completion.completionRunId,
+  );
+  if (!marked?.text) return {{ block: true, blockReason: FINALIZATION_UNAVAILABLE }};
+  childState.completionDeliveryState = "authorized";
+  return {{ params: {{ ...params, message: marked.text }} }};
+}}
+
 function pruneNativeChildState(now = Date.now()) {{
   for (const [key, observation] of nativeChildObservations) {{
     if (Number(observation?.expiresAt || 0) <= now) nativeChildObservations.delete(key);
@@ -1084,25 +1271,44 @@ function pendingNativeChildEnd(event, ctx) {{
   const childSession = boundedNativeChildIdentity(event?.targetSessionKey || ctx?.childSessionKey);
   const nativeRunId = boundedNativeChildIdentity(event?.runId || ctx?.runId);
   const requesterSessionId = nativeChildRequester(event, ctx);
-  const key = nativeChildIdentityKey(childSession, nativeRunId);
-  if (!key || !requesterSessionId) return null;
+  if (!childSession) return {{ correlationHandled: true }};
   const outcome = boundedUtf8(event?.outcome || "unknown", 32);
   const error = boundedUtf8(event?.error || event?.reason || "", 32 * 1024);
-  const existing = nativeChildParents.get(key);
+  const key = nativeChildIdentityKey(childSession, nativeRunId);
+  let existing = key ? nativeChildParents.get(key) : undefined;
+  let ambiguous = false;
+  if (!existing && (!nativeRunId || !requesterSessionId)) {{
+    const matches = [];
+    for (const state of nativeChildParents.values()) {{
+      if (state?.workerId !== childSession) continue;
+      if (nativeRunId && state?.nativeRunId !== nativeRunId) continue;
+      if (requesterSessionId && state?.requesterSessionId !== requesterSessionId) continue;
+      matches.push(state);
+      if (matches.length > 1) break;
+    }}
+    ambiguous = matches.length > 1;
+    existing = matches.length === 1 ? matches[0] : undefined;
+  }}
   if (existing) {{
-    if (existing.requesterSessionId !== requesterSessionId) return null;
+    if (
+      (requesterSessionId && existing.requesterSessionId !== requesterSessionId)
+      || (nativeRunId && existing.nativeRunId !== nativeRunId)
+    ) return {{ correlationHandled: true }};
     existing.pendingEnd = {{ outcome, error }};
     return existing;
   }}
+  if (ambiguous || !requesterSessionId) return {{ correlationHandled: true }};
+  if (!key) return null;
   const observation = nativeChildObservations.get(key);
   if (
     !observation
     || observation.ambiguous === true
     || Number(observation.expiresAt || 0) <= Date.now()
     || observation.requesterSessionId !== requesterSessionId
-  ) return null;
+  ) return observation ? {{ correlationHandled: true }} : null;
+  if (observation.terminal === true) return {{ correlationHandled: true }};
   observation.pendingEnd = {{ outcome, error }};
-  return null;
+  return {{ correlationHandled: true }};
 }}
 
 async function persistNativeChildEnd(key, childState) {{
@@ -1127,7 +1333,47 @@ async function persistNativeChildEnd(key, childState) {{
     return false;
   }}
   if (nativeChildParents.get(key) === childState) nativeChildParents.delete(key);
-  nativeChildObservations.delete(key);
+  pruneNativeChildState();
+  nativeChildObservations.set(key, {{
+    childSession: String(childState.workerId || ""),
+    nativeRunId: String(childState.nativeRunId || ""),
+    requesterSessionId: String(childState.requesterSessionId || ""),
+    terminal: true,
+    expiresAt: Date.now() + NATIVE_CHILD_OBSERVATION_TTL_MS,
+  }});
+  return true;
+}}
+
+async function reconcilePersistedNativeChildEnd(event, ctx) {{
+  const childSession = boundedNativeChildIdentity(event?.targetSessionKey || ctx?.childSessionKey);
+  const nativeRunId = boundedNativeChildIdentity(event?.runId || ctx?.runId);
+  const requesterSessionId = nativeChildRequester(event, ctx);
+  if (!childSession || !requesterSessionId) return false;
+  let receipt;
+  try {{
+    receipt = await invokeAgency({{
+      action: "native_child_ended",
+      sessionId: requesterSessionId,
+      workerId: childSession,
+      nativeRunId,
+      outcome: boundedUtf8(event?.outcome || "unknown", 32),
+      error: boundedUtf8(event?.error || event?.reason || "", 32 * 1024),
+    }});
+  }} catch {{
+    return false;
+  }}
+  if (receipt?.recorded !== true) return false;
+  const key = nativeChildIdentityKey(childSession, nativeRunId);
+  if (key) {{
+    pruneNativeChildState();
+    nativeChildObservations.set(key, {{
+      childSession,
+      nativeRunId,
+      requesterSessionId,
+      terminal: true,
+      expiresAt: Date.now() + NATIVE_CHILD_OBSERVATION_TTL_MS,
+    }});
+  }}
   return true;
 }}
 
@@ -1248,6 +1494,30 @@ export default definePluginEntry({{
     api.on("before_tool_call", async (event, ctx) => {{
       if (!runtimeEnabled) return undefined;
       const toolName = String(event?.toolName || ctx?.toolName || "");
+      const completionRun = hostAuthenticatedNativeChildCompletionRun(event, ctx);
+      const completion = resolveNativeChildCompletionState(event, ctx);
+      if (completion?.matched === true) {{
+        if (toolName === "message") {{
+          return authorizeNativeChildCompletionMessage(event, ctx, completion);
+        }}
+        if (completion?.state) completion.state.completionDeliveryState = "attempted";
+        return {{
+          block: true,
+          blockReason: "Agency Runtime permits only the bound child-completion message.",
+        }};
+      }}
+      if (completionRun) {{
+        return {{
+          block: true,
+          blockReason: "Agency Runtime rejected an uncorrelated native child completion.",
+        }};
+      }}
+      if (isNativeChildCompletionContext(event, ctx)) {{
+        return {{
+          block: true,
+          blockReason: "Agency Runtime permits only the bound child-completion message.",
+        }};
+      }}
       const nativeSubagent = isNativeSubagentSession(event, ctx);
       const nativeParent = nativeSubagent
         ? authenticatedNativeChildState(event, ctx)
@@ -1296,7 +1566,7 @@ export default definePluginEntry({{
         || Buffer.byteLength(rewrittenTask, "utf8") > MAX_BRIDGE_TEXT_BYTES
       ) return undefined;
       return {{ params: {{ ...params, task: rewrittenTask }} }};
-    }});
+    }}, {{ timeoutMs: {host_timeout_ms} }});
 
     api.registerAgentToolResultMiddleware(async (event, ctx) => {{
       if (!runtimeEnabled) return undefined;
@@ -1328,6 +1598,11 @@ export default definePluginEntry({{
           workUnitId: correlation?.workUnitId || "",
           launchId: correlation?.launchId || "",
           requesterSessionId: correlation?.sourceSessionId || "",
+          completionRunId: nativeChildCompletionRunId(
+            acceptedChild.childSessionKey,
+            acceptedChild.runId,
+          ),
+          completionDeliveryState: "pending",
           pendingEnd: observedRequesterMatches ? observation?.pendingEnd : undefined,
           startedRecorded: false,
           endInFlight: false,
@@ -1347,9 +1622,16 @@ export default definePluginEntry({{
             childSessionId: childState.workerId,
             goal: correlation?.task || "",
           }});
-          if (startedReceipt?.recorded !== true) {{
-            throw new Error("native child start was not recorded");
+          const recordedWorkUnit = boundedUtf8(startedReceipt?.workUnitId, 160);
+          if (
+            startedReceipt?.recorded !== true
+            || startedReceipt?.launchBound !== true
+            || !recordedWorkUnit
+            || (childState.workUnitId && childState.workUnitId !== recordedWorkUnit)
+          ) {{
+            throw new Error("native child start was not launch-bound exactly");
           }}
+          childState.workUnitId = recordedWorkUnit;
           childState.startedRecorded = true;
         }} catch {{
           // Host execution already succeeded; lifecycle evidence remains partial.
@@ -1413,6 +1695,17 @@ export default definePluginEntry({{
     }});
 
     api.on("before_agent_run", async (event, ctx) => {{
+      if (
+        hostAuthenticatedNativeChildCompletionRun(event, ctx)
+        && !isNativeChildCompletionContext(event, ctx)
+      ) {{
+        return {{
+          outcome: "block",
+          reason: "agency_native_child_completion_uncorrelated",
+          category: "runtime_unavailable",
+          message: "Agency Runtime could not correlate this native child completion.",
+        }};
+      }}
       if (isNativeSubagentSession(event, ctx)) return {{ outcome: "pass" }};
       const stateEpoch = ++runtimeStateEpoch;
       try {{
@@ -1473,6 +1766,52 @@ export default definePluginEntry({{
     }});
 
     api.on("before_prompt_build", async (event, ctx) => {{
+      const completionRun = hostAuthenticatedNativeChildCompletionRun(event, ctx);
+      const completion = resolveNativeChildCompletionState(event, ctx);
+      if (completion?.matched === true) {{
+        const childState = completion?.state;
+        if (!childState) return undefined;
+        const stateEpoch = ++runtimeStateEpoch;
+        let result;
+        try {{
+          result = await invokeAgency({{
+            action: "native_child_completion_prepare",
+            sessionId: completion.requesterSessionId,
+            traceId: completion.completionRunId,
+            parentSessionId: childState.sessionId,
+            parentTraceId: childState.traceId,
+            workerId: childState.workerId,
+            nativeRunId: childState.nativeRunId,
+            launchId: childState.launchId,
+            workUnitId: childState.workUnitId,
+            model: modelId(ctx),
+          }});
+        }} catch {{
+          return undefined;
+        }}
+        const exactReceipt = Boolean(
+          result?.prepared === true
+          && result?.completion === true
+          && String(result?.completionRunId || "") === completion.completionRunId
+          && String(result?.parentSessionId || "") === childState.sessionId
+          && String(result?.parentTraceId || "") === childState.traceId
+          && String(result?.workerId || "") === childState.workerId
+          && String(result?.nativeRunId || "") === childState.nativeRunId
+          && String(result?.launchId || "") === childState.launchId
+          && String(result?.workUnitId || "") === childState.workUnitId
+        );
+        const stateApplied = observeRuntimeState(result, stateEpoch);
+        if (!runtimeEnabled) return undefined;
+        if (
+          !stateApplied
+          || !exactReceipt
+          || nativeChildParents.get(completion.key) !== childState
+          || !rememberPreflightContext(result, event, ctx)
+        ) return undefined;
+        const context = readPreflightContext(event, ctx);
+        return context ? {{ appendContext: context }} : undefined;
+      }}
+      if (completionRun) return undefined;
       if (isNativeSubagentSession(event, ctx)) return undefined;
       const stateEpoch = ++runtimeStateEpoch;
       try {{
@@ -1507,12 +1846,21 @@ export default definePluginEntry({{
 
     api.on("model_call_ended", async (event, ctx) => {{
       if (!runtimeEnabled) return;
+      if (hostAuthenticatedNativeChildCompletionRun(event, ctx)) return;
       if (isNativeSubagentSession(event, ctx)) return;
+      if (isNativeChildCompletionContext(event, ctx)) return;
       await invokeAgency(modelCallReceipt(event, ctx));
     }}, {{ timeoutMs: {host_timeout_ms} }});
 
     api.on("agent_end", (event, ctx) => {{
       if (!runtimeEnabled) return;
+      if (
+        hostAuthenticatedNativeChildCompletionRun(event, ctx)
+        || isNativeChildCompletionContext(event, ctx)
+      ) {{
+        forgetPreflightContext(event, ctx);
+        return;
+      }}
       if (isNativeSubagentSession(event, ctx)) return;
       observeAgentEnd(event, ctx);
     }});
@@ -1525,13 +1873,19 @@ export default definePluginEntry({{
     api.on("subagent_ended", async (event, ctx) => {{
       if (!runtimeEnabled) return;
       const childState = pendingNativeChildEnd(event, ctx);
-      if (!childState) return;
+      if (childState?.correlationHandled === true) return;
+      if (!childState) {{
+        await reconcilePersistedNativeChildEnd(event, ctx);
+        return;
+      }}
       const childKey = nativeChildIdentityKey(childState.workerId, childState.nativeRunId);
       await persistNativeChildEnd(childKey, childState);
     }}, {{ timeoutMs: {host_timeout_ms} }});
 
     api.on("before_agent_finalize", async (event, ctx) => {{
+      if (hostAuthenticatedNativeChildCompletionRun(event, ctx)) return undefined;
       if (isNativeSubagentSession(event, ctx)) return undefined;
+      if (isNativeChildCompletionContext(event, ctx)) return undefined;
       const stateEpoch = ++runtimeStateEpoch;
       const correlatedModel = modelId(ctx) || readPreflightModel(event, ctx);
       let decision;
@@ -1577,6 +1931,15 @@ export default definePluginEntry({{
     api.on("reply_payload_sending", (event, ctx) => {{
       try {{
       const session = String(event?.sessionKey || ctx?.sessionKey || "");
+      if (
+        hostAuthenticatedNativeChildCompletionRun(event, ctx)
+        || isNativeChildCompletionContext(event, ctx)
+      ) {{
+        return {{
+          cancel: true,
+          reason: "Agency Runtime requires message-tool-only native child completion delivery.",
+        }};
+      }}
       if (isNativeSubagentSession(event, ctx)) return {{ payload: event?.payload }};
       const kind = String(event?.kind || "");
       const run = String(event?.runId || ctx?.runId || "");
@@ -1796,7 +2159,8 @@ export default definePluginEntry({{
       try {{
       const session = String(event?.sessionKey || ctx?.sessionKey || "");
       const content = typeof event?.content === "string" ? event.content : "";
-      if (isNativeSubagentSession(event, ctx)) return {{ content }};
+      const completionRun = hostAuthenticatedNativeChildCompletionRun(event, ctx);
+      if (!completionRun && isNativeSubagentSession(event, ctx)) return {{ content }};
       if (
         NATIVE_CONTROL_ACK_TEXTS.has(content)
       ) {{
@@ -1811,7 +2175,18 @@ export default definePluginEntry({{
       const authorized = unmarked
         ? consumeOutboundAuthorization(session, unmarked.markedText)
         : null;
-      if (authorized) return {{ content: unmarked.content }};
+      if (authorized) {{
+        if (authorized.kind === "child_completion") {{
+          markNativeChildCompletionConsumed(session, authorized.runId);
+        }}
+        return {{ content: unmarked.content }};
+      }}
+      if (completionRun) {{
+        return {{
+          cancel: true,
+          cancelReason: "Agency Runtime rejected an uncorrelated native child completion.",
+        }};
+      }}
       if (consumeNativeControlAcknowledgement(session, content)) {{
         logNativeControlDiagnostic(api, "message_result", {{
           sessionPresent: Boolean(session),

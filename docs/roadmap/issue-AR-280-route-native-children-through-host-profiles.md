@@ -14,6 +14,7 @@ related:
   - docs/decisions/0118-require-inference-owned-staffing.md
   - docs/decisions/0153-adopt-per-stage-inference-profile-routes.md
   - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
+  - docs/roadmap/issue-AR-281-deliver-finalized-openclaw-child-announcements.md
   - agency_runtime/core/native_child_staffing.py
   - agency_runtime/core/installer_payload_openclaw.py
   - agency_runtime/core/installer_payload_hermes.py
@@ -25,7 +26,7 @@ issue_id: AR-280
 priority: p0
 tracker_url: null
 depends_on: []
-blocks: [AR-119]
+blocks: [AR-119, AR-281]
 ---
 
 # AR-280: Route native children through host-scoped inference
@@ -61,9 +62,14 @@ the selected cards reached that child.
   operational native-child proof.
 - Focused implementation now projects the owning host profile, staffs and
   binds OpenClaw's real `sessions_spawn` boundary, and keys Hermes lifecycle
-  correlation by its real child session. The consolidated focused gate passes
-  213 tests with one existing skip and both review scopes are green; live
-  installation remains pending.
+  correlation by its real child session. It also gives OpenClaw's outer child
+  process the selected host profile's bounded deadline while leaving Hermes's
+  existing judge and hook deadlines unchanged, and can reconcile a child end
+  from durable Store joins when process-local correlation is gone.
+- AR-281 separately finalizes OpenClaw's authenticated completion send against
+  the original parent trace. The combined focused gate passes 299 tests with
+  one existing skip; live installation and fresh host evidence remain pending.
+  No host source/configuration or native model route changed.
 
 ## Approach
 
@@ -103,6 +109,11 @@ the selected cards reached that child.
 - [x] Both native-child judge attempts resolve the owning host automatically to
       profile `linux-task-agency-router`, provider type `litellm`, and requested
       alias/model group `task-agency-router`, with zero cross-provider fallback.
+- [x] OpenClaw's generated bridge derives its bounded outer child deadline from
+      the selected host profile and can close lifecycle evidence through exact
+      durable Store correlation after process-local state loss.
+- [x] The combined focused implementation gate passes 299 tests with one
+      existing skip and does not modify any host configuration.
 - [ ] Fresh live OpenClaw and Hermes native children spawn, complete, and return
       to their parents with correlated Store lifecycle evidence.
 - [x] Rule 4 remains `unproven` unless an ADR-0156-compliant host-authored
