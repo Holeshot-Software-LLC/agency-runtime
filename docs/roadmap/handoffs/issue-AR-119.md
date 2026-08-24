@@ -85,13 +85,13 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 - Hermes's native model, provider, five fallbacks, environment-file hash, and nine prior plugins remain unchanged. Its only config semantic delta is enabling `agency-preflight` with tool override false. Native plugin doctor passes import/registration with eight hooks and zero tools.
 - The Nexus gateway was restarted through its exact systemd unit and is active/running; OpenClaw remains active.
 - Fresh Hermes exact status completed parent activation and a `hermes-agent` skill row, but generic finalization mislabeled the host `mcp`; zero workforce/delegation rows remain.
-- First reset repair `d4d4b829` / `99b1380d` was installed Agency-only as `5e1a074e-81a6-4fdf-a464-937c66d9b400`; bundle `b0010f67...`, runtime `ebbf13cd...`, launcher `7f393f2a...`. Native `task-general` plus six fallbacks stayed exact, RPC became green, and Hermes stayed active.
-- The changed `/new` created session `1b4c7016-cac1-4aca-8639-075038d5b982` but again delivered no acknowledgement and created no Agency run. Log SHA `e66fb292...`; redacted artifact SHA `22f88b59...`.
-- Installed-flow inspection proved the missed earlier `reply_payload_sending` gate. Its exact two-gate expected-red failed at exit 30, then passed with an authorize-first/consume-last repair; replay and ambiguity stay closed. OpenClaw slice: 246 passed / 1 skipped. Candidate not installed.
+- Two-gate repair `3e71247a` / `ff1e9594` installed Agency-only as `711f3174-88b1-4b9a-948d-a47f316e6744`; bundle `d1a5ef80...`, runtime `70328489...`, launcher `ae41c0be...`. Native routes stayed exact, RPC was green, and Hermes stayed active.
+- Changed `/new` created session `25ed26a0-8dc8-433d-9bc1-3afdbe503ffd`; ingress/reset completed, but no acknowledgement, outbound receipt, or Agency run exists and the operator confirmed no delivery. Log/command/artifact SHAs: `716f2bd1...` / `c8b214cf...` / `ea9d4c9e...`.
+- Static two-gate flow passes but live ordering still differs. A bounded diagnostic records only hook phase, booleans, lengths, and authorization count—no text or IDs. OpenClaw slice: 246 passed / 1 skipped. Diagnostic candidate not installed.
 
 ## completed-evidence
 
-- OpenClaw's prior scoped acceptance evidence remains valid; current acceptance is blocked on installing and proving the two-gate reset-ack repair.
+- OpenClaw's prior scoped acceptance evidence remains valid; current acceptance is blocked on one content-free live phase trace.
 - `task-agency-router` remains confined to Agency workforce inference; OpenClaw's native parent stays `task-general`. No Codex, Claude, ZCode, or Hermes route changed.
 - Install provenance, config invariants, credential-name presence, contractor preservation, final Store integrity, and zero fallback are retained.
 - This package does not prove Rule 4 native-child delivery and does not move an AR-119 matrix cell.
@@ -99,8 +99,8 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 
 ## exact-blocker
 
-Checkpoint and install the OpenClaw two-gate reset-ack repair, then prove
-`/new` and a changed fresh turn before touching Hermes.
+Checkpoint/install the content-free OpenClaw phase diagnostic, then use one
+changed `/new` to identify the live mismatch before touching Hermes.
 
 ## traps (machine-specific; do not rediscover)
 
@@ -113,8 +113,8 @@ Checkpoint and install the OpenClaw two-gate reset-ack repair, then prove
 
 ## next-bounded-work-package
 
-1. Commit the two-gate repair/ledger pair and reinstall Agency only into stopped OpenClaw.
-2. Prove `/new` acknowledgement plus changed OpenClaw status/tool delivery.
+1. Commit/install the diagnostic into stopped OpenClaw and capture one changed `/new` phase trace.
+2. Apply the exact traced repair, then prove acknowledgement plus changed status/tool delivery.
 3. Only then reinstall Hermes and prove native-host attribution plus exact `task-agency-router` substantive routing.
 
 ## same-task-continuity

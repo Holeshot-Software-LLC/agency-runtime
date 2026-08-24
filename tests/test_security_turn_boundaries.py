@@ -392,10 +392,12 @@ def _openclaw_plugin_harness_source() -> str:
             "const registeredHookOptions = new Map();\n"
             "const registeredTools = new Map();\n"
             "const registeredToolResultMiddlewares = [];\n"
+            "const pluginLogs = [];\n"
             "let registeredCommand;\n"
             "function definePluginEntry(definition) {\n"
             "  definition.register({\n"
             "    config: { agents: { defaults: { blockStreamingDefault: 'off' } }, channels: {} },\n"
+            "    logger: { info(message) { pluginLogs.push(String(message)); } },\n"
             "    registerCommand(command) { registeredCommand = command; },\n"
             "    registerTool(tool) { registeredTools.set(tool.name, tool); },\n"
             "    registerAgentToolResultMiddleware(handler, options = {}) {\n"
@@ -1231,6 +1233,13 @@ for (const sessionKey of ["reset-session-a", "reset-session-b"]) {
   );
   if (exactMessage?.content !== "✅ Session reset.") process.exit(291);
 }
+const diagnosticText = pluginLogs.join("\\n");
+if (!diagnosticText.includes("native-control")) process.exit(292);
+if (
+  diagnosticText.includes("native-reset-session")
+  || diagnosticText.includes("reset-session-a")
+  || diagnosticText.includes("✅")
+) process.exit(293);
 """
     script = tmp_path / "openclaw-two-gate-native-reset-ack.mjs"
     script.write_text(source, encoding="utf-8")

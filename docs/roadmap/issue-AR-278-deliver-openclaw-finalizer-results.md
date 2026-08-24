@@ -388,7 +388,31 @@ failed before implementation at exit 30. The smallest repair makes the
 reply-payload gate wait for and verify—but not consume—the same exact bounded
 authorization; the message gate remains the one-use consumer. Replay and
 concurrent ambiguity still fail closed. The affected slice is 246 passed with
-1 intentional skip. This two-gate candidate is not installed.
+1 intentional skip.
+
+Clean two-gate pair `3e71247a` / `ff1e9594` was then installed Agency-only
+into natively stopped OpenClaw as
+`711f3174-88b1-4b9a-948d-a47f316e6744`; the installer left it stopped.
+Bundle `d1a5ef80...`, runtime `70328489...`, and launcher SHA `ae41c0be...`
+bind to that checkout. Native restart became RPC-green, Telegram's credential
+probe passed, OpenClaw retained `litellm/task-general` plus all six fallbacks,
+and Hermes remained active and unmodified.
+
+The changed `/new` completed native ingress and reset into session
+`25ed26a0-8dc8-433d-9bc1-3afdbe503ffd`, but again produced no acknowledgement,
+outbound receipt, or Agency run; the operator confirmed non-delivery. Native
+log/command event SHAs are `716f2bd1...` / `c8b214cf...`; redacted failure
+artifact SHA is `ea9d4c9e...`. The static two-gate flow therefore remains
+necessary but is not a complete model of live callback ordering.
+
+The next bounded diagnostic records only hook phase, boolean state, text-surface
+count, content length, and authorization count. It never records message text,
+session or channel identifiers, credentials, or payloads. Its regression also
+asserts those exclusions. The affected slice remains 246 passed with 1
+intentional skip. An initial ambient-umask run retained 66 namespace-trust
+failures, 180 passes, and 1 skip; changing only the documented test-process
+umask to `0077` produced the green result. This diagnostic candidate is not
+installed.
 
 ## Approach
 
@@ -457,5 +481,8 @@ Hermes and all protected hosts remain outside the mutation boundary.
 - [x] Preserve the sessionless post-reset acknowledgement failure and add exact ambiguity/replay regression coverage.
 - [x] Install the sessionless acknowledgement repair and preserve the independent earlier-gate failure.
 - [x] Add expected-red coverage for the complete reply-payload/message-sending path.
-- [ ] Install the two-gate acknowledgement repair and prove a fresh `/new` acknowledgement.
+- [x] Install the two-gate acknowledgement repair and preserve its independent live non-delivery.
+- [x] Add bounded content-free phase diagnostics with explicit sensitive-content exclusions.
+- [ ] Install the diagnostic checkpoint and trace one changed `/new`.
+- [ ] Apply the exact traced repair and prove a fresh `/new` acknowledgement.
 - [ ] Tracker creation remains pending separate authorization.

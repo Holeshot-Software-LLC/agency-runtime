@@ -3875,3 +3875,28 @@ is 246 passed / 1 intentional skip. This candidate is not installed.
 Agency configuration, LiteLLM alias routing, Codex OAuth/config/canary,
 Claude, ZCode, and Hermes remain untouched. This produces no delegation or
 Rule 4 evidence and moves no AR-119 matrix cell.
+
+## 2026-08-23 - Two-gate reset repair still misses the live callback sequence
+
+Clean pair `3e71247a` / `ff1e9594` was installed Agency-only into stopped
+OpenClaw as install `711f3174-88b1-4b9a-948d-a47f316e6744`. Bundle
+`d1a5ef80...`, runtime `70328489...`, and launcher SHA `ae41c0be...` bind to
+the checkout. The installer left OpenClaw stopped. Native restart became
+RPC-green with Agency loaded and Telegram's credential probe passing.
+OpenClaw remains on `litellm/task-general` plus the same six fallbacks; Hermes
+stayed active and unmodified.
+
+The changed `/new` completed native ingress and reset into session
+`25ed26a0-8dc8-433d-9bc1-3afdbe503ffd`, but no acknowledgement, outbound
+receipt, or Agency run followed; the operator confirmed non-delivery. Native
+log/command event SHAs are `716f2bd1...` / `c8b214cf...`; redacted failure
+artifact SHA is `ea9d4c9e...`. The passing two-gate static regression is thus
+not sufficient evidence of the exact live hook sequence.
+
+The next candidate adds a bounded, content-free live phase trace. It records
+only hook phase, boolean state, text-surface count, content length, and active
+authorization count; tests exclude message text, identifiers, credentials,
+and payloads. The affected OpenClaw slice remains 246 passed / 1 intentional
+skip. The diagnostic is not installed yet. No routing, protected-host, or
+Hermes state changed. No delegation or Rule 4 evidence was produced, and no
+AR-119 matrix cell moves.

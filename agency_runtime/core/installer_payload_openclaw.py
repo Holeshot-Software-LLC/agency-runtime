@@ -46,6 +46,7 @@ const OUTBOUND_AUTHORIZATION_TTL_MS = 30 * 1000;
 const NATIVE_CONTROL_ACK_TTL_MS = 10 * 1000;
 const NATIVE_CONTROL_ACK_WAIT_MS = 1_000;
 const NATIVE_CONTROL_ACK_POLL_MS = 10;
+const NATIVE_CONTROL_DIAGNOSTIC_WINDOW_MS = 15 * 1000;
 const MAX_OUTBOUND_AUTHORIZATIONS = 128;
 const CONTROL_AUTHORIZATION_FIELD = "agencyRuntimeControlAuthorization";
 const preflightContexts = new Map();
@@ -54,6 +55,8 @@ const terminalRejections = new Map();
 const outboundAuthorizations = new Map();
 const controlAuthorizations = new Map();
 const nativeControlAuthorizations = new Map();
+let nativeControlDiagnosticUntil = 0;
+let nativeControlDiagnosticBudget = 64;
 const nativeChildParents = new Map();
 const NATIVE_CONTROL_ACKS = new Map([
   ["/new", "✅ New session started."],
@@ -647,6 +650,22 @@ function authorizeNativeControlAcknowledgement(session, command) {{
   return true;
 }}
 
+function logNativeControlDiagnostic(api, phase, details = {{}}) {{
+  if (nativeControlDiagnosticBudget <= 0) return;
+  nativeControlDiagnosticBudget -= 1;
+  api?.logger?.info?.(`agency-preflight native-control ${{JSON.stringify({{
+    phase,
+    sessionPresent: details.sessionPresent === true,
+    exactText: details.exactText === true,
+    kindFinal: details.kindFinal === true,
+    authorizationPresent: details.authorizationPresent === true,
+    allowed: details.allowed === true,
+    textSurfaceCount: Number(details.textSurfaceCount || 0),
+    contentLength: Number(details.contentLength || 0),
+    authorizationCount: nativeControlAuthorizations.size,
+  }})}}`);
+}}
+
 function nativeControlAcknowledgementAuthorization(session, text) {{
   if (!NATIVE_CONTROL_ACK_TEXTS.has(text)) return false;
   const now = Date.now();
@@ -1010,10 +1029,17 @@ export default definePluginEntry({{
 
     api.on("before_reset", (event, ctx) => {{
       const reason = String(event?.reason || "").trim().toLowerCase();
-      authorizeNativeControlAcknowledgement(
-        String(event?.sessionKey || ctx?.sessionKey || ""),
+      const session = String(event?.sessionKey || ctx?.sessionKey || "");
+      nativeControlDiagnosticUntil = Date.now() + NATIVE_CONTROL_DIAGNOSTIC_WINDOW_MS;
+      const authorized = authorizeNativeControlAcknowledgement(
+        session,
         reason === "new" || reason === "reset" ? `/${{reason}}` : "",
       );
+      logNativeControlDiagnostic(api, "before_reset", {{
+        sessionPresent: Boolean(session),
+        authorizationPresent: authorized,
+        allowed: authorized,
+      }});
     }});
 
     api.on("before_agent_run", async (event, ctx) => {{
@@ -1204,23 +1230,60 @@ export default definePluginEntry({{
       try {{
       const session = String(event?.sessionKey || ctx?.sessionKey || "");
       const kind = String(event?.kind || "");
-      const nativeControlText = kind === "final" ? outboundPolicyText(event?.payload) : "";
+      const nativeTextSurfaces = outboundTextSurfaces(event?.payload);
+      const nativeTextSurfaceCount = nativeTextSurfaces.length;
+      const nativeControlText = kind === "final"
+        && nativeTextSurfaceCount > 0
+        && nativeTextSurfaces.every((value) => value === nativeTextSurfaces[0])
+        ? nativeTextSurfaces[0]
+        : "";
+      const nativeControlAuthorized = hasNativeControlAcknowledgementAuthorization(
+        session,
+        nativeControlText,
+      );
+      if (
+        NATIVE_CONTROL_ACK_TEXTS.has(nativeControlText)
+        || Date.now() <= nativeControlDiagnosticUntil
+        || nativeControlDiagnosticBudget > 0
+      ) {{
+        logNativeControlDiagnostic(api, "reply_payload_observed", {{
+          sessionPresent: Boolean(session),
+          exactText: NATIVE_CONTROL_ACK_TEXTS.has(nativeControlText),
+          kindFinal: kind === "final",
+          authorizationPresent: nativeControlAuthorized,
+          textSurfaceCount: nativeTextSurfaceCount,
+        }});
+      }}
       if (NATIVE_CONTROL_ACK_TEXTS.has(nativeControlText)) {{
         const allowNativeControl = () => ({{ payload: event.payload }});
-        if (hasNativeControlAcknowledgementAuthorization(session, nativeControlText)) {{
+        if (nativeControlAuthorized) {{
+          logNativeControlDiagnostic(api, "reply_payload_result", {{
+            sessionPresent: Boolean(session),
+            exactText: true,
+            kindFinal: true,
+            authorizationPresent: true,
+            allowed: true,
+          }});
           return allowNativeControl();
         }}
         return waitForNativeControlAcknowledgementAuthorization(
           session,
           nativeControlText,
-        ).then((allowed) => (
-          allowed
+        ).then((allowed) => {{
+          logNativeControlDiagnostic(api, "reply_payload_result", {{
+            sessionPresent: Boolean(session),
+            exactText: true,
+            kindFinal: true,
+            authorizationPresent: allowed,
+            allowed,
+          }});
+          return allowed
             ? allowNativeControl()
             : {{
               cancel: true,
               reason: "Agency Runtime cancelled an uncorrelated native control acknowledgement.",
-            }}
-        ));
+            }};
+        }});
       }}
       if (kind !== "final") {{
         refreshRuntimeStateSync();
@@ -1327,21 +1390,48 @@ export default definePluginEntry({{
       try {{
       const session = String(event?.sessionKey || ctx?.sessionKey || "");
       const content = typeof event?.content === "string" ? event.content : "";
+      if (
+        NATIVE_CONTROL_ACK_TEXTS.has(content)
+        || Date.now() <= nativeControlDiagnosticUntil
+        || nativeControlDiagnosticBudget > 0
+      ) {{
+        logNativeControlDiagnostic(api, "message_observed", {{
+          sessionPresent: Boolean(session),
+          exactText: NATIVE_CONTROL_ACK_TEXTS.has(content),
+          authorizationPresent: hasNativeControlAcknowledgementAuthorization(session, content),
+          contentLength: content.length,
+        }});
+      }}
       const unmarked = unmarkOutboundText(content);
       const authorized = unmarked
         ? consumeOutboundAuthorization(session, unmarked.markedText)
         : null;
       if (authorized) return {{ content: unmarked.content }};
-      if (consumeNativeControlAcknowledgement(session, content)) return {{ content }};
+      if (consumeNativeControlAcknowledgement(session, content)) {{
+        logNativeControlDiagnostic(api, "message_result", {{
+          sessionPresent: Boolean(session),
+          exactText: true,
+          authorizationPresent: true,
+          allowed: true,
+          contentLength: content.length,
+        }});
+        return {{ content }};
+      }}
       if (NATIVE_CONTROL_ACK_TEXTS.has(content)) {{
-        return waitForNativeControlAcknowledgement(session, content).then((allowed) => (
-          allowed
+        return waitForNativeControlAcknowledgement(session, content).then((allowed) => {{
+          logNativeControlDiagnostic(api, "message_result", {{
+            sessionPresent: Boolean(session),
+            exactText: true,
+            authorizationPresent: allowed,
+            allowed,
+          }});
+          return allowed
             ? {{ content }}
             : {{
               cancel: true,
               cancelReason: "Agency Runtime cancelled an uncorrelated native control acknowledgement.",
-            }}
-        ));
+            }};
+        }});
       }}
       return {{
         cancel: true,

@@ -1727,6 +1727,50 @@ matrix_cell_moved: false
 protected_hosts: Codex OAuth/config/canary, Claude, ZCode, and Hermes untouched
 ~~~
 
+### OpenClaw two-gate repair install and third reset failure bundle
+
+~~~yaml
+host: openclaw
+checkout_sha: ff1e9594a91a8e2dd9d57e5df6db53b59b58d6f5
+repair_commit: 3e71247a660ade4322af52b1446dc6fe99581db9
+host_version: OpenClaw 2026.7.1-2
+pre_install_store_backup: /tmp/ar119-openclaw-two-gate-preinstall.DBTHn0/agency-store.before.db
+pre_install_store_backup_sha256: 5ca1ffbefdea30f8882445d448dee518ca0b6dc68d23b57adb5b64f5b74dcd75
+store_integrity_source_backup: ok / ok
+store_schema: 47
+contractors_before_after_install: 15 / 15
+install_id: 711f3174-88b1-4b9a-948d-a47f316e6744
+install_result: complete; Agency only; installer left gateway stopped
+bundle_digest: d1a5ef80b00c53ff6db9b01e20aaa5378f29a19b570f9f11ee9c257efe578091
+runtime_digest: 70328489d4a8d8a2e508f17ceb5eaaccca09be5e79b0c1d9777d0c95c5a6ccf1
+launcher_manifest_sha256: ae41c0be1390432c3d3853c2bd593ace907cc25290327575eba8c4fbb17d7987
+agency_config_sha256: 43367ec9aa05a66fc2a60bb254f270836fb3616753769115fabb253a04d5d9f8
+openclaw_config_before_after_sha256: 049aacc863b99343abc4bed221213ba185fee472be9e292783c779cfcbab8a76 / 562c0c4e2f09844afb0ffa7858f413d8b478f698340a3dda7c7b88e89ee9949e
+native_primary: litellm/task-general
+native_fallback_count: 6; exact prior list unchanged
+gateway_restart: active/running; RPC green; zero restarts
+telegram_probe: configured; running; credential probe ok
+hermes_break_glass: active and unchanged
+fresh_native_session_id: 25ed26a0-8dc8-433d-9bc1-3afdbe503ffd
+operator_command: /new
+native_ingress_and_reset_applied: true
+acknowledgement_delivered: false; operator confirmed
+outbound_receipts: 0
+post_send_agency_runs: 0
+native_log_event_sha256: 716f2bd1be880c670f169e8e55a2e97285923d441e91a6fb6ab6dafdb0a00a5e
+command_log_event_sha256: c8b214cf5e39a112238a5076a59ca6655bdf0c511c429748dd624fdc8a36d3ce
+failure_artifact: /tmp/ar119-openclaw-two-gate-preinstall.DBTHn0/openclaw-two-gate-third-failure-redacted.json
+failure_artifact_sha256: ea9d4c9e8b4483339d309ab61ee918df819d465a80cfd05888d25bdb13405ed8
+known_fact: static two-gate flow passes but live callback sequence still differs
+diagnostic_candidate: bounded content-free hook phase and state counters only
+diagnostic_exclusions: message text, identifiers, credentials, and payloads
+focused_tests: 246 passed; 1 intentional skip
+diagnostic_installed: false
+delegation_proven: false
+matrix_cell_moved: false
+protected_hosts: Codex OAuth/config/canary, Claude, ZCode, and Hermes untouched
+~~~
+
 ### OpenClaw sessionless repair install and earlier-gate failure bundle
 
 ~~~yaml
