@@ -19,7 +19,7 @@ branch: codex/ar265-contextual-turn-classification
 evidence_commit: ca517872a3b55fa21a4350c841f35c6cba44ac9d
 minimum_ledger_commit: e48777e8e2a1668c84cce343eee24fdde1a61bd8
 hard_checkpoint_percent: 50
-tracker_url: null
+tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/317
 ---
 
 # AR-265 active recovery capsule
@@ -78,9 +78,11 @@ tracker_url: null
 
 ## exact-blocker
 
-GitHub issue, push, pull request, merge, and hosted workflow actions remain
-unauthorized. Local source and documentation gates are complete; this capsule
-does not claim installed-host or reviewed-pull-request evidence.
+Tracker [#317](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/317)
+now exists. The owner authorized the previously listed branch push, pull
+request, merge, exact-main installation, and bounded live contextual-routing
+canary on 2026-08-24. None is complete yet, and this capsule still does not
+claim installed-host or reviewed-pull-request evidence.
 
 ## same-task-continuity
 
@@ -92,11 +94,11 @@ reinterpret unrelated OpenClaw evidence as AR-265 verification.
 
 ## next-bounded-work-package
 
-1. Preserve this clean reviewed checkpoint while tracker creation, push, pull
-   request, hosted checks, and merge remain unauthorized.
-2. If the owner authorizes publication, refresh remote state before performing
-   the repository's tracker and pull-request sequence. A live installed-host
-   header canary remains separate evidence and is not implied by this capsule.
+1. Commit tracker #317 linkage and its exact worklog ledger, then push the clean
+   branch and open the governed pull request.
+2. Observe required checks and review state before merge. After a verified
+   merge, refresh exact main, install it, and run the bounded live header plus
+   correlated Store canary without reusing local source evidence as host proof.
 
 ## verification
 
@@ -117,8 +119,9 @@ git diff --check
 
 ## constraints
 
-- Do not create a tracker issue, push, open a pull request, merge, or dispatch a
-  hosted workflow without explicit authorization.
+- Outward authorization is limited to tracker #317 linkage, this branch push,
+  its pull request and merge, exact-main installation, and the bounded live
+  contextual-routing canary. Do not dispatch unrelated hosted workflows.
 - Do not mutate, clean, switch, or commit the shared main checkout or any other
   worker's files.
 - Do not weaken advisory planning to permit workspace or external writes.

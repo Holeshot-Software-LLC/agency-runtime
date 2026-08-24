@@ -278,7 +278,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-262` | [Preserve slow host inspection parity in the dashboard](issue-AR-262-preserve-slow-host-dashboard-parity.md) | in_progress | p0 | operations | [#311](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/311) |
 | `AR-263` | [Restore Codex Desktop parent hook delivery](issue-AR-263-restore-codex-desktop-parent-hook-delivery.md) | open | p0 | observability | None (tracker creation pending explicit authorization) |
 | `AR-264` | [Compile actionable contractor execution profiles](issue-AR-264-compile-actionable-contractor-execution-profiles.md) | in_progress | p0 | roster-governance | [#313](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313) |
-| `AR-265` | [Separate contextual inquiry from execution authority](issue-AR-265-contextual-turn-classification.md) | in_progress | p0 | routing | None (tracker creation pending explicit authorization) |
+| `AR-265` | [Separate contextual inquiry from execution authority](issue-AR-265-contextual-turn-classification.md) | in_progress | p0 | routing | [#317](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/317) |
 
 ## Traceability
 

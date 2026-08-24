@@ -17,7 +17,7 @@ type: issue
 epic: routing
 issue_id: AR-265
 priority: p0
-tracker_url: null
+tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/317
 depends_on: [AR-85]
 blocks: []
 ---
@@ -64,7 +64,8 @@ delegation, or mutation authority.
   no bounded semantic subject into planner or recruiter inference.
 - The five-field response header is rendered from routing evidence after
   preflight; it is a receipt, not the event that triggers routing.
-- GitHub tracker creation is pending explicit authorization.
+- GitHub tracker [#317](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/317)
+  is open with the required `epic:routing` label.
 
 ## Approach
 
@@ -181,8 +182,8 @@ non-delegated, and read-only.
 - [x] Documentation metadata, policy availability, worklog parity, and
       aggregate documentation validation pass after the local substantive
       commit is recorded in the required ledger commit.
-- [ ] A same-repository tracker issue titled `[AR-265] Separate contextual
-      inquiry from execution authority` with label `epic:routing` is created
-      after explicit authorization.
+- [x] Same-repository tracker
+      [#317](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/317)
+      has the exact `[AR-265]` title and `epic:routing` label.
 - [ ] The change is published through an authorized reviewed pull request and
       merged without disturbing concurrent OpenClaw work.
