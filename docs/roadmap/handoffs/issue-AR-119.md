@@ -88,7 +88,7 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 - Two-gate repair `3e71247a` / `ff1e9594` installed Agency-only as `711f3174-88b1-4b9a-948d-a47f316e6744`; bundle `d1a5ef80...`, runtime `70328489...`, launcher `ae41c0be...`. Native routes stayed exact, RPC was green, and Hermes stayed active.
 - Changed `/new` created session `25ed26a0-8dc8-433d-9bc1-3afdbe503ffd`; ingress/reset completed, but no acknowledgement, outbound receipt, or Agency run exists and the operator confirmed no delivery. Log/command/artifact SHAs: `716f2bd1...` / `c8b214cf...` / `ea9d4c9e...`.
 - Diagnostic install `2949e798-5500-45c9-956b-4b5a97aa802b` traced reply-payload before reset authorization; both sessions were present but differed, so the exact-key-only branch timed out. No ack/run/routing; redacted artifact SHA `0fe6ae7a...`.
-- Expected-red exit 30 now models old/new/delivery session identities. Unique exact fallback with any session passes 246 / 1 skipped; exact matches win and concurrent ambiguity remains closed. Candidate not installed.
+- Repair `c671dd35` / `278705da` installed Agency-only as `97fd0d49-e833-458a-a4b6-fb818761f212`; bundle `97f95751...`, runtime `145ac94d...`, launcher `9adc2a85...`. RPC/Telegram probe green, zero restarts; native routes exact and Hermes active.
 
 ## completed-evidence
 
@@ -100,8 +100,8 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 
 ## exact-blocker
 
-Checkpoint/install the exact session-lifecycle repair, then prove one changed
-OpenClaw `/new` before touching Hermes.
+Send one changed OpenClaw `/new` and prove its acknowledgement before touching
+Hermes.
 
 ## traps (machine-specific; do not rediscover)
 
@@ -114,8 +114,8 @@ OpenClaw `/new` before touching Hermes.
 
 ## next-bounded-work-package
 
-1. Checkpoint/install the exact traced repair into stopped OpenClaw.
-2. Prove acknowledgement plus changed status/tool delivery.
+1. Prove `/new` acknowledgement plus changed status/tool delivery.
+2. Preserve Store/provider and native Telegram receipts.
 3. Only then reinstall Hermes and prove native-host attribution plus exact `task-agency-router` substantive routing.
 
 ## same-task-continuity

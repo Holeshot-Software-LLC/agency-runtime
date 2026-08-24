@@ -3920,5 +3920,13 @@ A live-shaped distinct-session regression failed before implementation at exit
 recent exact-text authorization when a supplied lifecycle session differs.
 Two candidates remain ambiguous; replay, wrong text, and expiry remain closed.
 The affected slice passes 246 / 1 intentional skip. The candidate is not
-installed. Hermes and all protected hosts remain untouched; no matrix cell
+installed in that evidence state.
+
+Clean pair `c671dd35` / `278705da` was installed Agency-only into stopped
+OpenClaw as `97fd0d49-e833-458a-a4b6-fb818761f212`; the installer left it
+stopped. Bundle `97f95751...`, runtime `145ac94d...`, and launcher SHA
+`9adc2a85...` bind to the checkout. Store backup SHA `5ca1ffbe...` has
+source/backup integrity `ok`, schema 47; contractors remain 15. Native restart
+is RPC-green, Telegram probe-green, and zero-restart. Native routes remain
+exact and Hermes stays active. One changed `/new` is pending; no matrix cell
 moves.

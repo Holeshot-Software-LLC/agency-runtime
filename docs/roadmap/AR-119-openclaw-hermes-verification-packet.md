@@ -1727,6 +1727,37 @@ matrix_cell_moved: false
 protected_hosts: Codex OAuth/config/canary, Claude, ZCode, and Hermes untouched
 ~~~
 
+### OpenClaw reset-lifecycle repair install-readiness bundle
+
+~~~yaml
+host: openclaw
+checkout_sha: 278705da
+repair_commit: c671dd35159adebb4899447a59e8aa52c6c24191
+host_version: OpenClaw 2026.7.1-2
+pre_install_store_backup: /tmp/ar119-openclaw-session-lifecycle-preinstall.jOnDJ8/agency-store.before.db
+pre_install_store_backup_sha256: 5ca1ffbefdea30f8882445d448dee518ca0b6dc68d23b57adb5b64f5b74dcd75
+store_integrity_source_backup: ok / ok
+store_schema: 47
+contractors_before_after_install: 15 / 15
+install_id: 97fd0d49-e833-458a-a4b6-fb818761f212
+install_result: complete; Agency only; installer left gateway stopped
+bundle_digest: 97f95751e11c7f7b58e892d2a7eeb79479bbf2142056ba5ae104ce3929d288d8
+runtime_digest: 145ac94df2b3d4d2d0b356e0d6beb134a67ff3d956afb41926e6418ed53f9345
+launcher_manifest_sha256: 9adc2a85f16f721aab0cdb6bd98ac1cc8544cc1c738b0e771dfa74c03e7b5051
+agency_config_sha256: 43367ec9aa05a66fc2a60bb254f270836fb3616753769115fabb253a04d5d9f8
+openclaw_config_before_after_sha256: cfdacc1dff2ffb403b5bdce8af5c1934f19186b5cd0d85d446b73f4497cb7889 / ffce9d780a31c8ce2ff103398a40ddc2f2a8340b99f4fa4fdbe48bb61f0cb3ee
+native_primary: litellm/task-general
+native_fallback_count: 6; exact prior list unchanged
+registered_hooks: 11; required set complete
+gateway_restart: active/running; RPC green; zero restarts
+telegram_probe: configured; running; credential probe ok
+hermes_break_glass: active and unchanged
+fresh_changed_new: waiting_on_operator
+delegation_proven: false
+matrix_cell_moved: false
+protected_hosts: Codex OAuth/config/canary, Claude, ZCode, and Hermes untouched
+~~~
+
 ### OpenClaw two-gate repair install and third reset failure bundle
 
 ~~~yaml

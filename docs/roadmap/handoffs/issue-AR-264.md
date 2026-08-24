@@ -55,7 +55,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 - First install artifact SHA `72c3a7ac...` retained the fail-closed `0775` plugin-parent refusal before staging. After tightening only that parent to `0700` and using umask `0077`, Agency-only install `06bd5aa2-c8c3-4321-90b2-e413a142c4a7` completed; bundle `351a7108...`, runtime `70239e65...`, launcher `7c033c97...`, install artifact `93857d15...`.
 - Hermes native model/provider/fallbacks, environment hash, and nine prior plugins remain unchanged. Config SHA `95b87b7f...` reflects only `agency-preflight` enablement with tool override false. Plugin doctor proves eight hooks and zero tools. The installer did not restart Hermes; the exact Nexus service is now active/running after native restart.
 - Fresh Hermes status still has the retained `mcp` attribution defect. OpenClaw two-gate repair `3e71247a` / `ff1e9594` installed as `711f3174-88b1-4b9a-948d-a47f316e6744`; native routes stayed exact and Hermes remained active.
-- Diagnostic install `2949e798-5500-45c9-956b-4b5a97aa802b` traced reply-payload before reset authorization with two present but different lifecycle sessions; it timed out with no ack/run/routing. Artifact SHA `0fe6ae7a...`. Expected-red exit 30 now passes 246 / 1 skipped with unique exact fallback; ambiguity remains closed. Candidate not installed; Hermes active.
+- Diagnostic install `2949e798-5500-45c9-956b-4b5a97aa802b` traced differing lifecycle sessions; artifact SHA `0fe6ae7a...`. Repair `c671dd35` / `278705da` installed Agency-only as `97fd0d49-e833-458a-a4b6-fb818761f212`; bundle `97f95751...`, runtime `145ac94d...`, launcher `9adc2a85...`. RPC/Telegram green, zero restarts; Hermes active.
 
 ## completed-evidence
 
@@ -67,8 +67,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 
 ## exact-blocker
 
-Checkpoint/install the exact OpenClaw session-lifecycle repair, prove one
-changed `/new`, then continue Hermes separately.
+Prove one changed OpenClaw `/new` acknowledgement, then continue Hermes
+separately.
 
 ## same-task-continuity
 
@@ -76,7 +76,7 @@ Continue from the clean Hermes install checkpoint into fresh live evidence.
 
 ## next-bounded-work-package
 
-1. Checkpoint/install the exact traced OpenClaw repair and prove `/new`.
+1. Prove `/new` through the installed traced OpenClaw repair.
 2. Reinstall Hermes only after OpenClaw passes; prove native-host attribution.
 3. Run Hermes's exact configuration-drift review through `task-agency-router` with zero fallback.
 

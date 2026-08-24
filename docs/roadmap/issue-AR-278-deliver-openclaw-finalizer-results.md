@@ -448,7 +448,17 @@ unique recent exact-text fallback when a supplied lifecycle session does not
 match. Zero or multiple candidates, wrong text, expiry, and replay still fail
 closed; a new mismatched-session ambiguity assertion proves the two-candidate
 case. The affected slice is 246 passed / 1 intentional skip. The candidate is
-not installed.
+not installed in that evidence state.
+
+Clean repair/ledger pair `c671dd35` / `278705da` was then installed
+Agency-only into natively stopped OpenClaw as
+`97fd0d49-e833-458a-a4b6-fb818761f212`; the installer left it stopped.
+Bundle `97f95751...`, runtime `145ac94d...`, and launcher SHA `9adc2a85...`
+bind to the checkout. Pre-install Store backup SHA `5ca1ffbe...` has
+source/backup integrity `ok`, schema 47, and contractors remain 15. Native
+restart is RPC-green with zero restarts and Telegram configured, running, and
+probe-green. OpenClaw retains `litellm/task-general` plus the same six
+fallbacks; Hermes remains active and unmodified. One changed `/new` is pending.
 
 ## Approach
 
@@ -522,6 +532,7 @@ Hermes and all protected hosts remain outside the mutation boundary.
 - [x] Install the diagnostic checkpoint with Store/config/launcher provenance.
 - [x] Preserve the fourth non-delivery and its content-free live phase trace.
 - [x] Add expected-red coverage for differing reset-lifecycle sessions and a bounded repair.
-- [ ] Install the exact traced repair and prove one fresh `/new` acknowledgement.
+- [x] Install the exact traced repair with Store/config/launcher provenance.
+- [ ] Prove one fresh `/new` acknowledgement through the installed repair.
 - [ ] Apply the exact traced repair and prove a fresh `/new` acknowledgement.
 - [ ] Tracker creation remains pending separate authorization.
