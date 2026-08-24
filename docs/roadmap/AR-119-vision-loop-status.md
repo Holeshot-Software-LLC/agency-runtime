@@ -3813,3 +3813,38 @@ These status turns prove no live delegation. Both have zero delegation and
 native-child evidence, and `agency status` cannot satisfy Rule 4. No AR-119
 matrix cell moves. Host-native models and routes, Codex OAuth/config and
 canary, Claude, and ZCode remain untouched.
+
+## 2026-08-23 - OpenClaw reinstall exposes sessionless reset acknowledgement
+
+Clean repair/ledger pair `21f2519d` / `f86bedb4` was installed into stopped
+OpenClaw only as install `776616e9-c086-4078-a9c3-b0875a5e6ebc`. Bundle
+`dd5707e6...`, runtime `0480db84...`, and launcher SHA `72420e54...` bind to
+the checkout. Pre-install online Store backup SHA is `5ca1ffbe...`, source and
+backup integrity are `ok`, schema is 47, and contractors remain 15. The
+installer left OpenClaw stopped; native restart became RPC-green with zero
+restarts. Native primary `litellm/task-general` and all six fallbacks remain
+unchanged. Hermes remained active and unmodified.
+
+The operator then sent `/new`. OpenClaw accepted the reset and wrote fresh
+native session `241cbd97-ff10-49b8-b4bb-2458cb9c8937`, but no acknowledgement
+was delivered and no Agency turn followed. Native log event SHA
+`01b6f0cb...` records `Codex agent harness session reset hook failed`; redacted
+artifact SHA is `06342838...`. Installed OpenClaw types explain the delivery
+failure: supported outbound `message_sending` context omits `sessionKey` when
+no outbound session object is attached. Agency's exact acknowledgement gate
+required that optional field, waited one second, and canceled the otherwise
+valid native acknowledgement.
+
+The expected-red live-shaped regression reproduced an acknowledgement racing
+`before_reset` with no outbound session context. The smallest Agency-only
+repair stores the fixed expected text alongside the existing hashed-session,
+expiring authorization. A sessionless acknowledgement can consume it only
+when exactly one active authorization matches the exact native text. Multiple
+sessions remain ambiguous and fail closed; replay, wrong text, missing reset,
+and expiry also fail. The existing session-bound path is unchanged. The
+OpenClaw safety/finalization/installer slice is 245 passed / 1 intentional
+skip. This candidate is not installed yet.
+
+No host-native route, LiteLLM alias, Codex OAuth/config/canary, Claude, ZCode,
+or Hermes state changed. No delegation or Rule 4 evidence was produced, and no
+AR-119 matrix cell moves.

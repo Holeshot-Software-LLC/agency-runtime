@@ -640,20 +640,37 @@ function authorizeNativeControlAcknowledgement(session, command) {{
   if (!key) return false;
   const now = Date.now();
   pruneOutboundAuthorizations(now);
-  nativeControlAuthorizations.set(key, {{ expiresAt: now + NATIVE_CONTROL_ACK_TTL_MS }});
+  nativeControlAuthorizations.set(key, {{
+    expected,
+    expiresAt: now + NATIVE_CONTROL_ACK_TTL_MS,
+  }});
   return true;
 }}
 
 function consumeNativeControlAcknowledgement(session, text) {{
-  const key = nativeControlAuthorizationKey(session, text);
-  const state = key ? nativeControlAuthorizations.get(key) : undefined;
-  if (Number(state?.expiresAt || 0) <= Date.now()) return false;
-  nativeControlAuthorizations.delete(key);
+  if (!NATIVE_CONTROL_ACK_TEXTS.has(text)) return false;
+  const now = Date.now();
+  pruneOutboundAuthorizations(now);
+  if (session) {{
+    const key = nativeControlAuthorizationKey(session, text);
+    const state = key ? nativeControlAuthorizations.get(key) : undefined;
+    if (Number(state?.expiresAt || 0) <= now) return false;
+    nativeControlAuthorizations.delete(key);
+    return true;
+  }}
+  let candidate = "";
+  for (const [key, state] of nativeControlAuthorizations) {{
+    if (state?.expected !== text || Number(state?.expiresAt || 0) <= now) continue;
+    if (candidate) return false;
+    candidate = key;
+  }}
+  if (!candidate) return false;
+  nativeControlAuthorizations.delete(candidate);
   return true;
 }}
 
 async function waitForNativeControlAcknowledgement(session, text) {{
-  if (!session || !NATIVE_CONTROL_ACK_TEXTS.has(text)) return false;
+  if (!NATIVE_CONTROL_ACK_TEXTS.has(text)) return false;
   const deadline = Date.now() + NATIVE_CONTROL_ACK_WAIT_MS;
   while (Date.now() < deadline) {{
     await new Promise((resolve) => setTimeout(resolve, NATIVE_CONTROL_ACK_POLL_MS));

@@ -346,6 +346,29 @@ matching Store row. No delegation or native-child rows exist. Telegram
 delivered two chunks. Final Store integrity is `ok`, schema 47; contractor,
 config, and launcher invariants hold. Actual answering model remains unavailable.
 
+### Seventh Telegram failure: native reset acknowledgement omits session context
+
+Clean repair/ledger pair `21f2519d` / `f86bedb4` was installed into natively
+stopped OpenClaw as Agency-only install
+`776616e9-c086-4078-a9c3-b0875a5e6ebc`; the installer left the gateway
+stopped. Native restart was RPC-green, native `litellm/task-general` plus all
+six fallbacks remained unchanged, and Hermes stayed active and unmodified.
+
+The next exact `/new` reset created fresh native session
+`241cbd97-ff10-49b8-b4bb-2458cb9c8937`, but no acknowledgement was delivered
+and no Agency run followed. OpenClaw's supported `message_sending` callback can
+omit its optional `sessionKey` when the native acknowledgement has no attached
+outbound session. Agency's installed acknowledgement gate required that field,
+so it timed out and canceled the valid exact acknowledgement.
+
+The live-shaped regression first failed with that installed callback shape.
+The bounded repair retains the hashed-session path when context exists. Without
+session context it can consume only one recent authorization whose fixed
+expected text exactly matches; zero or multiple candidates fail closed. Replay,
+wrong text, missing reset, and expiry remain rejected. The OpenClaw security,
+adapter, streaming, and installer slice passes 245 tests with 1 intentional
+skip. The candidate is checkpointed but not installed.
+
 ## Approach
 
 Change only Agency's OpenClaw adapter as specified by ADR-0166. Do not expose
@@ -355,13 +378,14 @@ and append the updated exact snapshot before the model continues. Keep
 `before_agent_finalize` as the first-pass validator and the last reply-payload
 gate as the complete-envelope commit and authorization boundary.
 
-Retain the exact reset acknowledgement correlation. Do not add a model revision,
-rewrite an invalid natural response, send directly, alter OpenClaw source or
-configuration, change native or Agency inference routing, or weaken the
-Store-backed outbound seal. From a clean checkpoint, install Agency Runtime only
-into a natively stopped OpenClaw gateway, restart it natively, and use a
-genuinely changed user-initiated Telegram input. Hermes and all protected hosts
-remain outside the mutation boundary.
+Retain exact reset acknowledgement correlation: bind to the session when the
+supported callback supplies it, otherwise require one recent exact unambiguous
+authorization. Do not add a model revision, rewrite an invalid natural response,
+send directly, alter OpenClaw source or configuration, change native or Agency
+inference routing, or weaken the Store-backed outbound seal. From a clean
+checkpoint, install Agency Runtime only into a natively stopped OpenClaw gateway,
+restart it natively, and use a genuinely changed user-initiated Telegram input.
+Hermes and all protected hosts remain outside the mutation boundary.
 
 ## Dependencies
 
@@ -409,4 +433,6 @@ remain outside the mutation boundary.
 - [x] Add installed-contract expected-red coverage for absent middleware correlation and a bounded collision-safe repair.
 - [x] Install the correlation candidate through Agency-only install while OpenClaw is natively stopped.
 - [x] Prove a genuinely different native skill plus the exact substantive restart-safety review.
+- [x] Preserve the sessionless post-reset acknowledgement failure and add exact ambiguity/replay regression coverage.
+- [ ] Install the sessionless acknowledgement repair and prove a fresh `/new` acknowledgement.
 - [ ] Tracker creation remains pending separate authorization.

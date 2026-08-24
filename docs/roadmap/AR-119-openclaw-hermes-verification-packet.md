@@ -1687,3 +1687,42 @@ candidate:
   matrix_cell_moved: false
 protected_hosts: Codex OAuth/config/canary, Claude, and ZCode untouched
 ~~~
+
+### OpenClaw attribution-repair install and reset-ack failure bundle
+
+~~~yaml
+host: openclaw
+checkout_sha: f86bedb4da9734120c2a6b3fcb2fb3ce4e51c308
+repair_commit: 21f2519d357b0f40892aba2d567fd97fccb23d8d
+install_result: 776616e9-c086-4078-a9c3-b0875a5e6ebc; complete; Agency only; installer left gateway stopped
+bundle_digest: dd5707e677057f707d896a964f2fc2bdf7855ed0f19387f9f1039dde78776dd5
+runtime_digest: 0480db84301847c5a23064910deeaf089b8328cc4d6b83811cada870df43828c
+launcher_manifest_sha256: 72420e546fb89b51d72e402ebf509beb0ca8fa5862ce979d90dfaadaa53c7d55
+pre_install_store_backup: /tmp/ar119-openclaw-attribution.YImprt/agency-store.before.db
+pre_install_store_backup_sha256: 5ca1ffbefdea30f8882445d448dee518ca0b6dc68d23b57adb5b64f5b74dcd75
+store_integrity_source_backup: ok / ok
+store_schema: 47
+contractors_before_after_install: 15 / 15
+agency_config_sha256: 43367ec9aa05a66fc2a60bb254f270836fb3616753769115fabb253a04d5d9f8
+native_primary: litellm/task-general
+native_fallback_count: 6; exact prior list unchanged
+gateway_restart: active/running; RPC green; zero restarts
+hermes_break_glass: active and unchanged
+fresh_native_session_id: 241cbd97-ff10-49b8-b4bb-2458cb9c8937
+operator_command: /new
+native_reset_applied: true
+acknowledgement_delivered: false
+post_install_agency_turns: 0
+native_log_event_sha256: 01b6f0cb7eec7ec610ef4f570a9edddb4e188be91b7f211d6e618c14f35c9032
+failure_artifact: /tmp/ar119-openclaw-attribution.YImprt/openclaw-reset-ack-failure-redacted.json
+failure_artifact_sha256: 063428388fb6f9436be5a3fbdd10bc7910fb6380312f390eef47c1d0a01a9761
+root_cause: supported message_sending callback omitted optional sessionKey; exact Agency native-ack authorization required it
+expected_red: sessionless acknowledgement race failed before implementation
+candidate_rule: consume only one active exact unambiguous reset authorization when session context is absent
+ambiguity_replay_wrong_text_expiry: fail closed
+focused_tests: 245 passed; 1 intentional skip
+candidate_installed: false
+delegation_proven: false
+matrix_cell_moved: false
+protected_hosts: Codex OAuth/config/canary, Claude, ZCode, and Hermes untouched
+~~~

@@ -73,9 +73,7 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 - OpenClaw remains audited 2026.7.1-2 on native `litellm/task-general` plus six original fallbacks. Its config changed from SHA `17784e2e...` to `3060c3ee...` only at `meta.lastTouchedAt`; models, providers, channels, and credential indirection are unchanged.
 - Native restart is RPC-green. The live gateway loaded Agency and `agency-preflight`; Telegram and Slack are configured, connected, running, and probe-green. `LITELLM_API_KEY` is populated without its value being emitted.
 - Agency remains harness-scoped to `linux-task-agency-router`, adapter `litellm`, exact alias/model-group `task-agency-router`, `http://127.0.0.1:4000/v1`, and 120000 ms. The global default remains `agency-default`; Codex/Claude/ZCode have no new harness override.
-- Fresh native session `b815780c-23fb-4fdb-8731-aed6d162b769` received exact first message `agency status`. Trace `7f4aa31c-9d93-4199-bac0-b5818cea91de`, run `526c86bd-ddca-4878-93a4-8bd09ca029a6`, routing `d8130eb2-d1fa-478e-84e3-bcff1dc6e0ed`, and terminal `6ce7c157-98fd-4ab7-aabc-d4722e02a43b` completed and delivered through Telegram. Zero Agency receipts correctly keep it a deterministic control-only proof.
-- A genuinely changed `tmux` read completed under trace `adff32ff-bbd0-4afd-befd-e5c647ac76fc`; header `Skills loaded: tmux` matches Store row `937189d5-d27c-4fea-8829-91e7995f2252`. Three wrapper receipts used automatically selected OpenClaw profile `linux-task-agency-router`, provider type `litellm`, exact alias/model-group `task-agency-router`, and zero fallback.
-- The exact restart-safety review completed in native session `84deda15-df94-4aa8-8ed4-853ecd56ff99` under trace `5ba0b638-9db8-4144-8be0-2d9b17f6b51d`, run `ad2b1238-dd8f-49c9-9b30-2107baf7b499`, routing `b5f22f42-4ddf-4a8b-85ed-8fb56c13e7b1`, and terminal `5eb2e7fa-ff50-4728-b7d2-d6a497ff57b5`. Telegram delivered both response chunks.
+- Prior exact status, changed `tmux`, and restart-safety turns delivered with accepted terminals. Their Store/header/artifact IDs remain in the verification packet; deterministic status had zero Agency receipts, while substantive turns selected `linux-task-agency-router`, LiteLLM, exact `task-agency-router`, and zero fallback.
 - The substantive header names `agency-steward`, `ai-evaluation-engineer`, and `ai-data-remediation-engineer`; no delegation; skill `openclaw-operations`; workforce inference through `task-agency-router`; and inference recruitment. Store skill row `a0b9a4ea-2a0c-441d-ae39-a946ff149c6f` and specialist rows `2762c670...` / `8367ed56...` correlate.
 - Its three successful wrapper receipts requested exact alias/model-group `task-agency-router` through provider type `litellm` and profile `linux-task-agency-router`; provider attempts were applied and fallback count is zero. Provider telemetry did not supply the actual answering model, so no actual-model claim is made.
 - No resident binding, delegation event, child usage, child scope, or child verification row exists. Native tool evidence is read-only and no mutation or delegation command was detected.
@@ -87,12 +85,13 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 - Hermes's native model, provider, five fallbacks, environment-file hash, and nine prior plugins remain unchanged. Its only config semantic delta is enabling `agency-preflight` with tool override false. Native plugin doctor passes import/registration with eight hooks and zero tools.
 - The Nexus gateway was restarted through its exact systemd unit and is active/running; OpenClaw remains active.
 - Fresh Hermes exact status completed parent activation and a `hermes-agent` skill row, but generic finalization mislabeled the host `mcp`; zero workforce/delegation rows remain.
-- Fresh OpenClaw exact status loaded `openclaw-operations`, but finalization rejected its tool-refreshed header after the preflight model was lost; no delivery is claimed. Exact IDs and hashes are in the verification packet.
-- Expected-red regressions now pass with bounded OpenClaw model correlation and Store-authoritative finalization host attribution: 232 passed / 6 skipped; not installed.
+- Repair pair `21f2519d` / `f86bedb4` is Agency-only installed into OpenClaw as `776616e9-c086-4078-a9c3-b0875a5e6ebc`; bundle `dd5707e6...`, runtime `0480db84...`, launcher `72420e54...`. Native `task-general` plus six fallbacks are unchanged; RPC is green; Hermes stayed active.
+- Post-install `/new` created fresh native session `241cbd97-ff10-49b8-b4bb-2458cb9c8937` but no acknowledgement. Log receipt SHA `01b6f0cb...` records native reset-hook failure; zero Agency turns followed. The exact defect is a supported outbound `message_sending` callback without `sessionKey`.
+- A new expected-red regression now passes by accepting only one recent, exact, unambiguous native acknowledgement without session context; ambiguity, replay, wrong text, and expiry fail closed. OpenClaw slice: 245 passed / 1 skipped. Candidate not installed.
 
 ## completed-evidence
 
-- OpenClaw's prior scoped acceptance evidence remains valid, but its newest tool-using status turn exposed a current final-header regression that must pass after reinstall.
+- OpenClaw's prior scoped acceptance evidence remains valid; current acceptance is blocked on installing and proving the reset-ack repair.
 - `task-agency-router` remains confined to Agency workforce inference; OpenClaw's native parent stays `task-general`. No Codex, Claude, ZCode, or Hermes route changed.
 - Install provenance, config invariants, credential-name presence, contractor preservation, final Store integrity, and zero fallback are retained.
 - This package does not prove Rule 4 native-child delivery and does not move an AR-119 matrix cell.
@@ -100,8 +99,8 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 
 ## exact-blocker
 
-Checkpoint and install the regression-first repair into each affected Agency
-plugin, then prove changed fresh turns without native model changes.
+Checkpoint and install the OpenClaw reset-ack repair, then prove `/new` and a
+changed fresh turn before touching Hermes.
 
 ## traps (machine-specific; do not rediscover)
 
@@ -114,9 +113,9 @@ plugin, then prove changed fresh turns without native model changes.
 
 ## next-bounded-work-package
 
-1. Commit the repair/ledger pair, then reinstall Agency only into OpenClaw and Hermes serially.
-2. Prove changed OpenClaw status/tool delivery and Hermes native-host finalization attribution.
-3. Run Hermes's exact configuration-drift review through Agency `task-agency-router` with zero fallback.
+1. Commit the reset-ack repair/ledger pair and reinstall Agency only into stopped OpenClaw.
+2. Prove `/new` acknowledgement plus changed OpenClaw status/tool delivery.
+3. Only then reinstall Hermes and prove native-host attribution plus exact `task-agency-router` substantive routing.
 
 ## same-task-continuity
 

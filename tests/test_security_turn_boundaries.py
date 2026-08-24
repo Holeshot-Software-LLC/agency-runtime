@@ -1116,6 +1116,64 @@ if (uncaught !== 0) process.exit(33);
 
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is not installed")
+def test_generated_openclaw_correlates_unambiguous_reset_ack_without_session_context(
+    tmp_path: Path,
+) -> None:
+    source = _openclaw_plugin_harness_source()
+    source += """
+const beforeReset = registeredHooks.get("before_reset");
+const messageSeal = registeredHooks.get("message_sending");
+if (typeof beforeReset !== "function" || typeof messageSeal !== "function") {
+  process.exit(280);
+}
+const raced = messageSeal(
+  { content: "✅ New session started." },
+  { channelId: "telegram" },
+);
+setTimeout(
+  () => beforeReset({ reason: "new" }, { sessionKey: "native-reset-session" }),
+  20,
+);
+const allowed = await raced;
+if (allowed?.content !== "✅ New session started." || allowed?.cancel === true) {
+  process.exit(281);
+}
+const replay = await messageSeal(
+  { content: "✅ New session started." },
+  { channelId: "telegram" },
+);
+if (replay?.cancel !== true) process.exit(282);
+
+beforeReset({ reason: "reset" }, { sessionKey: "reset-session-a" });
+beforeReset({ reason: "reset" }, { sessionKey: "reset-session-b" });
+if (consumeNativeControlAcknowledgement("", "✅ Session reset.") !== false) {
+  process.exit(283);
+}
+const firstExact = await messageSeal(
+  { content: "✅ Session reset." },
+  { sessionKey: "reset-session-a" },
+);
+const secondExact = await messageSeal(
+  { content: "✅ Session reset." },
+  { sessionKey: "reset-session-b" },
+);
+if (firstExact?.cancel === true || secondExact?.cancel === true) process.exit(284);
+"""
+    script = tmp_path / "openclaw-sessionless-native-reset-ack.mjs"
+    script.write_text(source, encoding="utf-8")
+
+    completed = subprocess.run(
+        [str(shutil.which("node")), str(script)],
+        capture_output=True,
+        text=True,
+        timeout=10,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is not installed")
 def test_generated_openclaw_outbound_gate_blocks_first_pass_rejection(
     tmp_path: Path,
 ) -> None:
