@@ -37,8 +37,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-264
 branch: codex/ar278-openclaw-one-pass
-evidence_commit: e5ae8de1e278e2f6fcb40af818663c42186f7b42
-minimum_ledger_commit: 7abf9b139bacac76dd56f7559c2e76ea70d45077
+evidence_commit: d04d1d6bdd2884b20ed9298a9fb6e8f05c8db257
+minimum_ledger_commit: 27e9ec6267522f7ad2d23695737c6a69b9d052f1
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 ---
@@ -58,20 +58,24 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 - Final Store backup `02a76504...` has integrity `ok`, schema 47; contractors remain 15. Config, runtime `573a6a14...`, launcher `d65af026...`, and protected hosts are unchanged. OpenClaw acceptance passes; Rule 4/delegation is unproven and no matrix cell moved.
 - Hermes v0.20.4 parent acceptance remains retained: Agency-only install `0a3d141a...`, bundle `45b76c0e...`, launcher `e65a0784...`, exact status/skill/substantive Telegram delivery, and same-profile LiteLLM receipts on `linux-task-agency-router` / `task-agency-router` with zero cross-provider fallback. Its final Store backup `bdf1a6e6...` is `ok`/`ok`, schema 47, contractors 15.
 - The retained first OpenClaw native-child draw executed a real `sessions_spawn` worker and completed its read-only task, but completion was represented by a synthetic `announce:v1:...` run and its targeted send was suppressed before Telegram queueing. The draw also exposed unprojected host timeout and process-local lifecycle correlation; it is failed delivery evidence, not acceptance.
-- AR-280/AR-281 now project the OpenClaw host-profile timeout, reconcile child lifecycle from durable exact parent/worker/run/launch bindings, and prepare/finalize completion on the parent trace. A single exact implicit-target, one-use message carries the finalized parent header/body; no synthetic completion run or inference receipt is created. Orphan and ambiguous completion identities fail closed before ordinary preflight, while Hermes retains its prior timeout. Focused validation passes 299 tests with 1 existing skip.
-- The repair has not been installed or live-proven. Hermes remains untouched as break glass during OpenClaw-first work, and Codex OAuth/config/canary, Claude, and ZCode remain untouched.
+- AR-280/AR-281 project the OpenClaw host-profile timeout, reconcile child lifecycle from durable exact parent/worker/run/launch bindings, and prepare/finalize completion on the parent trace. A single exact implicit-target, one-use message carries the finalized parent header/body; no synthetic completion run or inference receipt is created. Focused validation passes 299 tests with 1 existing skip.
+- Clean implementation/ledger `d04d1d6b` / `27e9ec62` is installed through Agency only while OpenClaw 2026.7.1-2 was natively stopped. Bundle/runtime digest `0c2bb3fc...`, launcher `e9169d04...`, native restart, RPC, and all 12 loaded/enabled/activated hooks pass; `LITELLM_API_KEY` is populated in the process without reading its value.
+- Native `litellm/task-general` plus six fallbacks and the semantic native config remain unchanged. Contractors are 15 before/after; pre-install Store integrity is `ok`, schema 47. Hermes remained active with config `95b87b7f...`, environment `792fd43a...`, and launcher `e65a0784...` unchanged and received no install/change.
+- Fresh Telegram `/new` was acknowledged. Parent `a0f349c8...` / trace `856341f9...` spawned native worker `e0ee5df5...` / run `b182db5c...`; the read-only child completed but its completion was blocked before Telegram queueing. Child staffing has one applied OpenClaw `linux-task-agency-router` / `litellm` / exact `task-agency-router` receipt, zero fallback, and no actual-model telemetry.
+- Ready-receipt integrity required one total route after valid `native_child_inference` appended another. The one-canonical-plus-unique-child-route correction is independently Critical/High GREEN after duplicate/timestamp/numeric/JSON/context/route-ID gaps closed. Focused 113/1, spine 848/3, docs 780/worklog 1155, Ruff 682, UI 134, routing eval, decision conformance baseline plus 160/160 killed, and diff check pass. Private-HOME/no-`pytest` and trusted-interpreter failures precede the owner-private `/usr/bin/python3` eval pass; no exhaustive workflow corpus ran. Candidate is locally green but uninstalled/live-unproven; Rule 4 and matrix remain unchanged.
 
 ## completed-evidence
 
 - OpenClaw reset, activation, exact status, changed skill, substantive inference, first-pass headers, Store correlation, and Telegram delivery pass on the installed repair.
 - Install/launcher provenance, contractor preservation, config invariants, final Store integrity, exact alias, and zero fallback are current.
 - Native `task-general` and Agency `task-agency-router` remain separate; no actual answering model is invented from wrapper receipts.
-- The package proves parent routing only, not Rule 4 native-child delivery or a matrix-cell transition.
+- The latest draw additionally proves OpenClaw native-child inference and child
+  execution, but not completion delivery, Rule 4, or a matrix-cell transition.
 - Hermes reinstall, exact status, corrected attribution, skill, substantive routing, Store correlation, headers, and Telegram delivery pass.
 
 ## exact-blocker
 
-OpenClaw's Agency-only repair is locally green but awaits reinstall and a changed Telegram child turn. Strict Rule 4 remains unproven without ADR-0156 host-artifact receipts.
+OpenClaw child execution completes, but the installed build rejects its valid auxiliary route before delivery. The locally green correction awaits checkpoint, Agency-only reinstall, and a changed live retest. Rule 4 remains unproven without ADR-0156 host-artifact receipts.
 
 ## same-task-continuity
 
@@ -79,8 +83,8 @@ Continue from the clean parent checkpoint into OpenClaw-only live child proof; k
 
 ## next-bounded-work-package
 
-1. Create the clean implementation/ledger checkpoint.
-2. Reinstall Agency Runtime only into OpenClaw and prove one changed child turn over Telegram.
+1. Create the clean correction/ledger checkpoint and reinstall Agency only into stopped OpenClaw.
+2. Prove a genuinely changed OpenClaw child turn and Telegram delivery.
 3. Touch Hermes only after OpenClaw passes; preserve Rule 4 as unproven.
 
 ## verification

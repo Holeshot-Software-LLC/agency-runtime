@@ -533,46 +533,18 @@ class _NominationSemantics:""",
             "the durable preflight recipe."
         ),
         source_path="agency_runtime/core/store/preflight.py",
-        before="""def _routing_component_matches(
-    conn: Any,
-    *,
-    session_id: str,
-    trace_id: str,
-    routing: dict[str, Any],
-) -> bool:
-    rows = conn.execute(
-        "SELECT query_hash, context_fingerprint, source, decision "
-        "FROM routing_decisions WHERE session_id = ? AND trace_id = ? ORDER BY id",
-        (session_id, trace_id),
-    ).fetchall()
-    if len(rows) != 1:
-        return False
-    row = rows[0]
+        before="""def _decode_routing_component_document(value: object) -> dict[str, Any] | None:
     try:
         decision = safe_load_bounded_json(
-            str(row["decision"] or ""),
+            str(value or ""),
             maximum_bytes=64_000,
             maximum_depth=8,
             maximum_nodes=_MAX_RECIPE_NODES,
         )""",
-        after="""def _routing_component_matches(
-    conn: Any,
-    *,
-    session_id: str,
-    trace_id: str,
-    routing: dict[str, Any],
-) -> bool:
-    rows = conn.execute(
-        "SELECT query_hash, context_fingerprint, source, decision "
-        "FROM routing_decisions WHERE session_id = ? AND trace_id = ? ORDER BY id",
-        (session_id, trace_id),
-    ).fetchall()
-    if len(rows) != 1:
-        return False
-    row = rows[0]
+        after="""def _decode_routing_component_document(value: object) -> dict[str, Any] | None:
     try:
         decision = safe_load_bounded_json(
-            str(row["decision"] or ""),
+            str(value or ""),
             maximum_bytes=64_000,
             maximum_depth=8,
             maximum_nodes=256,
@@ -580,6 +552,176 @@ class _NominationSemantics:""",
         test_node=(
             "tests/test_routing_receipt_header.py::"
             "test_ready_receipt_accepts_valid_routing_above_legacy_node_limit"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="ready-routing-receipt-allows-unvalidated-auxiliary-route",
+        invariant=(
+            "Only a fully validated native-child success route may coexist with the one "
+            "canonical ready-preflight routing component."
+        ),
+        source_path="agency_runtime/core/store/preflight.py",
+        before="""        if auxiliary_identity is None or auxiliary_identity in auxiliary_identities:
+            return False
+        auxiliary_identities.add(auxiliary_identity)
+    return canonical_count == 1""",
+        after="""        if auxiliary_identity is None or auxiliary_identity in auxiliary_identities:
+            continue
+        auxiliary_identities.add(auxiliary_identity)
+    return canonical_count == 1""",
+        test_node=(
+            "tests/test_routing_receipt_header.py::"
+            "test_ready_receipt_rejects_unrecognized_or_malformed_auxiliary_routes"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="ready-routing-receipt-allows-duplicate-native-child-launch",
+        invariant=(
+            "A successful native-child launch contributes at most one auxiliary routing "
+            "component to a ready parent receipt."
+        ),
+        source_path="agency_runtime/core/store/preflight.py",
+        before="""        if auxiliary_identity is None or auxiliary_identity in auxiliary_identities:
+            return False
+        auxiliary_identities.add(auxiliary_identity)
+    return canonical_count == 1""",
+        after="""        if auxiliary_identity is None:
+            return False
+        auxiliary_identities.add(auxiliary_identity)
+    return canonical_count == 1""",
+        test_node=(
+            "tests/test_routing_receipt_header.py::"
+            "test_ready_receipt_rejects_duplicate_valid_native_child_launch_route"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="ready-routing-receipt-rejects-distinct-native-child-launch",
+        invariant=(
+            "Auxiliary routing uniqueness is scoped to host and launch identity rather than "
+            "limiting a parent turn to one legitimate child."
+        ),
+        source_path="agency_runtime/core/store/preflight.py",
+        before=(
+            "        if auxiliary_identity is None or auxiliary_identity in auxiliary_identities:"
+        ),
+        after="        if auxiliary_identity is None or auxiliary_identities:",
+        test_node=(
+            "tests/test_routing_receipt_header.py::"
+            "test_ready_receipt_accepts_distinct_native_child_launch_routes"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="ready-routing-receipt-allows-noncanonical-auxiliary-timestamp",
+        invariant=(
+            "Every accepted auxiliary native-child route retains the canonical Store clock "
+            "timestamp written with its immutable projection."
+        ),
+        source_path="agency_runtime/core/store/preflight.py",
+        before='        and store_clock_value_is_canonical(row.get("created_at"))',
+        after='        and row.get("created_at") is not None',
+        test_node=(
+            "tests/test_routing_receipt_header.py::"
+            "test_ready_receipt_rejects_noncanonical_native_child_route_timestamp"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="ready-routing-receipt-coerces-auxiliary-route-id",
+        invariant=(
+            "An auxiliary routing row ID remains an exact canonical correlation string, "
+            "without whitespace or storage-class coercion."
+        ),
+        source_path="agency_runtime/core/store/preflight.py",
+        before="""    raw_route_id = row.get("id")
+    try:
+        route_id = validate_correlation_id(raw_route_id, field="routing_decision_id")
+    except (TypeError, ValueError):
+        return None
+    if route_id != raw_route_id:
+        return None""",
+        after="""    raw_route_id = row.get("id")
+    route_id = str(raw_route_id or "")
+    if not route_id:
+        return None""",
+        test_node=(
+            "tests/test_routing_receipt_header.py::"
+            "test_ready_receipt_rejects_noncanonical_native_child_route_id"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="ready-routing-receipt-allows-opaque-auxiliary-context",
+        invariant=(
+            "The auxiliary routing context fingerprint remains an exact canonical content "
+            "digest identity."
+        ),
+        source_path="agency_runtime/core/store/preflight.py",
+        before=("        and content_digest_identity(context_fingerprint) == context_fingerprint"),
+        after="        and bool(context_fingerprint)",
+        test_node=(
+            "tests/test_routing_receipt_header.py::"
+            "test_ready_receipt_rejects_non_digest_native_child_context_projection"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="ready-routing-receipt-normalizes-auxiliary-json-projections",
+        invariant=(
+            "Auxiliary selected, semantic, companion, and work-unit columns retain the exact "
+            "canonical JSON serialization committed by the Store writer."
+        ),
+        source_path="agency_runtime/core/store/preflight.py",
+        before=(
+            '        and row.get("selected_ids") == json.dumps(expected_slugs)\n'
+            '        and row.get("semantic_ids") == json.dumps(expected_slugs)\n'
+            '        and row.get("companion_ids") == "[]"\n'
+            "        and type(stored_confidence) is float\n"
+            "        and stored_confidence == decision_confidence\n"
+            "        and type(stored_latency) is int\n"
+            "        and stored_latency == decision_latency\n"
+            '        and str(row.get("provider") or "") == '
+            'str(decision.get("provider") or "")\n'
+            '        and row.get("work_units") == "{}"'
+        ),
+        after="""        and json.loads(str(row.get("selected_ids"))) == expected_slugs
+        and json.loads(str(row.get("semantic_ids"))) == expected_slugs
+        and json.loads(str(row.get("companion_ids"))) == []
+        and type(stored_confidence) is float
+        and stored_confidence == decision_confidence
+        and type(stored_latency) is int
+        and stored_latency == decision_latency
+        and str(row.get("provider") or "") == str(decision.get("provider") or "")
+        and json.loads(str(row.get("work_units"))) == {}""",
+        test_node=(
+            "tests/test_routing_receipt_header.py::"
+            "test_ready_receipt_rejects_noncanonical_native_child_json_projection"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="ready-routing-receipt-coerces-auxiliary-confidence",
+        invariant=(
+            "Auxiliary route confidence must retain the Store's canonical REAL type instead "
+            "of passing through numeric coercion."
+        ),
+        source_path="agency_runtime/core/store/preflight.py",
+        before="""        and type(stored_confidence) is float
+        and stored_confidence == decision_confidence""",
+        after=("        and float(stored_confidence) == float(decision_confidence)"),
+        test_node=(
+            "tests/test_routing_receipt_header.py::"
+            "test_ready_receipt_rejects_coercible_native_child_numeric_columns"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="ready-routing-receipt-coerces-auxiliary-latency",
+        invariant=(
+            "Auxiliary route latency must retain the Store's canonical INTEGER type instead "
+            "of truncating through numeric coercion."
+        ),
+        source_path="agency_runtime/core/store/preflight.py",
+        before="""        and type(stored_latency) is int
+        and stored_latency == decision_latency""",
+        after="        and int(stored_latency) == int(decision_latency)",
+        test_node=(
+            "tests/test_routing_receipt_header.py::"
+            "test_ready_receipt_rejects_coercible_native_child_numeric_columns"
         ),
     ),
     DecisionMutation(

@@ -4337,7 +4337,7 @@ upstream answering model remains unavailable and neither alias is promoted to
 that claim. No delegation, Rule 4, or AR-119 matrix cell moves; OpenClaw and
 all protected configuration remain unchanged.
 
-## 2026-08-24 - OpenClaw native-child completion repair is pre-live
+## 2026-08-24 - OpenClaw child executes but ready-receipt integrity blocks delivery
 
 The retained first OpenClaw draw created a real `sessions_spawn` child. That
 child completed its bounded read-only review, but the parent completion was
@@ -4356,10 +4356,76 @@ completion model may issue only one exact implicit-target
 authorization is consumed at send time. The path creates neither a synthetic
 announcement run nor an Agency inference receipt.
 
-The current focused profile, installer, adapter, lifecycle, and security gate
-passes 299 tests with 1 existing skip. No host has been reinstalled for this
-candidate and no changed Telegram child proof exists yet. Hermes remains
-untouched as break glass, and Codex OAuth/config/canary, Claude, and ZCode are
-untouched. An operational OpenClaw spawn/return/Telegram pass will still not
-satisfy ADR-0156 Rule 4 without an immutable host-authored child-delivery
-artifact.
+The focused profile, installer, adapter, lifecycle, and security gate passes
+299 tests with 1 existing skip. Clean implementation/ledger checkout
+`27e9ec6267522f7ad2d23695737c6a69b9d052f1` was installed through Agency's
+installer only while OpenClaw 2026.7.1-2 was natively stopped. The installed
+bundle/runtime digest is
+`0c2bb3fc55ac94a79fc88db76549a5aef3d76124f85ef347e9fb023e01bf8999`;
+launcher SHA-256 is
+`e9169d044ba88a28a23b51b342d14e2031864a4e5ccdc7afa3d30386fbfa8cdc`.
+The gateway restarted natively with RPC healthy and the plugin loaded,
+enabled, and activated with all 12 hooks. `LITELLM_API_KEY` is populated in the
+live process; its value was not read or retained.
+
+Native `litellm/task-general` and all six fallbacks are exact, and the semantic
+native-config diff after excluding the host-managed timestamp is empty.
+Contractors remain 15 before and after; pre-install Store integrity is `ok` at
+schema 47. Hermes remained active and untouched: config
+`95b87b7fc0427ad4e3da4f5f468054cf9f7ddba679d1bb606b782a13e1a0172d`,
+environment
+`792fd43a5312d1c1d69f6afbeef3bbdd1a8198ee03ac06b4b3b6dfa20ec2f324`,
+and launcher
+`e65a078479cc4f6196b3b5b61f15c15ffd36bf9cda0f5082b8bc844b7a4ed9e7`
+remain unchanged; no Hermes install occurred.
+
+The operator's fresh Telegram `/new` was acknowledged. Changed parent run
+`a0f349c8-712d-4702-bc14-ac2e8e0e4ee1`, trace
+`856341f9-40f0-49f7-99fd-ba39a4a4a6c8`, and transcript
+`4ad38fad-d167-4310-a4e7-2a0c8f189646` then launched one native child. Worker
+`agent:nexus:subagent:e0ee5df5-a66e-4085-b7e1-19bb41dbfed5`, native run
+`b182db5c-1764-4d83-a0be-c5a0575ac828`, and child transcript
+`bf9127d3-6436-49a6-bf28-9af373ab371e` show that the read-only child ran and
+completed. Completion nevertheless failed closed before Telegram queueing, and
+the operator received nothing. The parent and child lifecycle remain open.
+
+This draw did prove the intended Agency child-routing boundary. Canonical route
+`ba9e00d0-b2ac-4ffb-a1ce-7b2c27a53d4c` and native-child route
+`native-child-eaa40e37d3a5dad02a475e9a38fca63d` coexist on the parent trace.
+The child route has one applied `litellm` attempt through
+`linux-task-agency-router` for exact alias/model-group `task-agency-router`, no
+cross-provider fallback, and no provider-supplied actual model. It does not
+prove parent return or delivery.
+
+The cause is deterministic: the ready-receipt checker required exactly one
+total routing row, but successful child staffing validly appended the second
+`native_child_inference` row. The otherwise-valid canonical receipt therefore
+failed integrity, completion preparation returned empty, and the bridge issued
+its generic uncorrelated denial. Durable identity joins all passed. Cleanup was
+later than the denial, and restart/reload, timeout, TTL expiry, and identity
+mismatch are ruled out.
+
+The Agency-only correction is now locally green. It requires exactly one
+canonical route and permits only unique auxiliary rows that strictly re-project
+as complete native-child successes. Exact route IDs, canonical timestamps and
+context digests, exact numeric types, canonical JSON fields, and unique
+host/launch identities are validated; duplicate, unrecognized, malformed, or
+type-shifted evidence fails closed. Independent Critical/High review is green
+after those integrity gaps were closed.
+
+Focused validation passes 113 tests with 1 skip and the named fast Python spine
+passes 848 with 3 skips. Metadata, policy, worklog, and documentation checks
+pass for 780 Markdown files and a current 1,155-commit worklog. Full Ruff check
+and format pass across 682 files; dashboard UI passes 134 tests; routing eval
+passes; and full decision conformance passes baseline and kills 160/160
+mutations with zero survived or invalid while restoring the source unchanged.
+`git diff --check` passes. The default private-HOME evaluation lacked `pytest`;
+the changed `.venv` attempt then failed the trusted persistent-interpreter
+boundary; an owner-private evaluation venv based on `/usr/bin/python3` passed.
+The exhaustive workflow-dispatch corpus was not run.
+
+The correction is ready for a clean checkpoint and Agency-only reinstall, but
+is still uninstalled and unproven live. Hermes and all protected hosts remain
+untouched. Operational proof is not green, and ADR-0156 Rule 4 remains
+unproven regardless of a later operational pass because there is still no
+immutable host-authored child-delivery artifact.

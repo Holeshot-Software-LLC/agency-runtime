@@ -46,6 +46,7 @@ from agency_runtime.core.resident_managers import (
     is_current_resident_manager_kernel_reference,
     is_resident_manager_slug,
 )
+from agency_runtime.core.roster.revisions import content_digest_identity
 from agency_runtime.core.specialist_contracts import MAX_DURABLE_SPECIALIST_REFERENCES
 from agency_runtime.core.store.projections import (
     RUN_CONTENT_LIMIT as _RUN_CONTENT_LIMIT,
@@ -56,7 +57,10 @@ from agency_runtime.core.store.projections import (
 )
 from agency_runtime.core.store.queries import project_routing_decision
 from agency_runtime.core.store.resident_binding import ResidentManagerBindingStoreMixin
-from agency_runtime.core.store.schema import STORE_CLOCK_SQL
+from agency_runtime.core.store.schema import (
+    STORE_CLOCK_SQL,
+    store_clock_value_is_canonical,
+)
 from agency_runtime.core.store.version_identity import (
     MAX_VERSION_IDENTITY_BYTES,
     is_valid_version_identity,
@@ -1093,6 +1097,83 @@ def _selection_refs_match_active(
     )
 
 
+def _decode_routing_component_document(value: object) -> dict[str, Any] | None:
+    try:
+        decision = safe_load_bounded_json(
+            str(value or ""),
+            maximum_bytes=64_000,
+            maximum_depth=8,
+            maximum_nodes=_MAX_RECIPE_NODES,
+        )
+    except (TypeError, ValueError):
+        return None
+    return decision if isinstance(decision, dict) else None
+
+
+def _project_native_child_routing_component(
+    row: Mapping[str, Any],
+    decision: dict[str, Any],
+    *,
+    session_id: str,
+    trace_id: str,
+) -> tuple[str, str] | None:
+    """Project one exact auxiliary route to its unique launch identity.
+
+    Native-child staffing appends its own successful inference route to the
+    still-open parent turn.  That route is legitimate auxiliary evidence, but
+    only its complete success projection may coexist with the canonical route
+    embedded in the ready preflight recipe.  Malformed rows and every other
+    source remain integrity failures.  Parent session and trace are fixed by
+    the caller, so host plus launch ID is the remaining successful-route replay
+    identity enforced by the routing writer.
+    """
+
+    raw_route_id = row.get("id")
+    try:
+        route_id = validate_correlation_id(raw_route_id, field="routing_decision_id")
+    except (TypeError, ValueError):
+        return None
+    if route_id != raw_route_id:
+        return None
+    if str(row.get("source") or "") != "native_child_inference":
+        return None
+    from agency_runtime.core.native_child_decision import project_native_child_success_route
+
+    delivery = project_native_child_success_route(
+        decision,
+        session_id=session_id,
+        trace_id=trace_id,
+        query_hash=str(row.get("query_hash") or ""),
+        context_fingerprint=str(row.get("context_fingerprint") or ""),
+        host=str(row.get("run_host") or "").strip().casefold(),
+    )
+    expected_slugs = (
+        [] if delivery is None else [str(card["specialist_slug"]) for card in delivery["cards"]]
+    )
+    decision_confidence = decision.get("confidence")
+    decision_latency = decision.get("latency_ms")
+    stored_confidence = row.get("confidence")
+    stored_latency = row.get("latency_ms")
+    context_fingerprint = str(row.get("context_fingerprint") or "")
+    if not (
+        delivery is not None
+        and str(row.get("status") or "") == "applied"
+        and store_clock_value_is_canonical(row.get("created_at"))
+        and content_digest_identity(context_fingerprint) == context_fingerprint
+        and row.get("selected_ids") == json.dumps(expected_slugs)
+        and row.get("semantic_ids") == json.dumps(expected_slugs)
+        and row.get("companion_ids") == "[]"
+        and type(stored_confidence) is float
+        and stored_confidence == decision_confidence
+        and type(stored_latency) is int
+        and stored_latency == decision_latency
+        and str(row.get("provider") or "") == str(decision.get("provider") or "")
+        and row.get("work_units") == "{}"
+    ):
+        return None
+    return str(delivery["host"]), str(delivery["launch_id"])
+
+
 def _routing_component_matches(
     conn: Any,
     *,
@@ -1101,37 +1182,49 @@ def _routing_component_matches(
     routing: dict[str, Any],
 ) -> bool:
     rows = conn.execute(
-        "SELECT query_hash, context_fingerprint, source, decision "
-        "FROM routing_decisions WHERE session_id = ? AND trace_id = ? ORDER BY id",
+        "SELECT route.id, route.query_hash, route.context_fingerprint, route.status, "
+        "route.source, route.selected_ids, route.semantic_ids, route.companion_ids, "
+        "route.confidence, route.latency_ms, route.provider, route.work_units, "
+        "route.decision, route.created_at, run.host AS run_host "
+        "FROM routing_decisions AS route JOIN runs AS run "
+        "ON run.trace_id = route.trace_id AND run.session_id = route.session_id "
+        "WHERE route.session_id = ? AND route.trace_id = ? ORDER BY route.id",
         (session_id, trace_id),
     ).fetchall()
-    if len(rows) != 1:
+    if not rows:
         return False
-    row = rows[0]
-    try:
-        decision = safe_load_bounded_json(
-            str(row["decision"] or ""),
-            maximum_bytes=64_000,
-            maximum_depth=8,
-            maximum_nodes=_MAX_RECIPE_NODES,
+    canonical_count = 0
+    auxiliary_identities: set[tuple[str, str]] = set()
+    for stored in rows:
+        row = dict(stored)
+        decision = _decode_routing_component_document(row.get("decision"))
+        if decision is None:
+            return False
+        projected = _project_routing_evidence(
+            {
+                **decision,
+                "query_hash": str(row.get("query_hash") or ""),
+                "context_fingerprint": str(row.get("context_fingerprint") or ""),
+            },
+            trace_id=trace_id,
         )
-    except (TypeError, ValueError):
-        return False
-    if not isinstance(decision, dict):
-        return False
-    projected = _project_routing_evidence(
-        {
-            **decision,
-            "query_hash": str(row["query_hash"] or ""),
-            "context_fingerprint": str(row["context_fingerprint"] or ""),
-        },
-        trace_id=trace_id,
-    )
-    return bool(
-        projected is not None
-        and projected["decision"] == routing
-        and projected["source"] == str(row["source"] or "")
-    )
+        if (
+            projected is not None
+            and projected["decision"] == routing
+            and projected["source"] == str(row.get("source") or "")
+        ):
+            canonical_count += 1
+            continue
+        auxiliary_identity = _project_native_child_routing_component(
+            row,
+            decision,
+            session_id=session_id,
+            trace_id=trace_id,
+        )
+        if auxiliary_identity is None or auxiliary_identity in auxiliary_identities:
+            return False
+        auxiliary_identities.add(auxiliary_identity)
+    return canonical_count == 1
 
 
 def _continuation_source_snapshot(

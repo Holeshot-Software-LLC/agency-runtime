@@ -68,8 +68,33 @@ the selected cards reached that child.
   from durable Store joins when process-local correlation is gone.
 - AR-281 separately finalizes OpenClaw's authenticated completion send against
   the original parent trace. The combined focused gate passes 299 tests with
-  one existing skip; live installation and fresh host evidence remain pending.
-  No host source/configuration or native model route changed.
+  one existing skip. Clean checkout `27e9ec62` was installed through Agency's
+  OpenClaw installer only while the gateway was natively stopped, then the
+  gateway restarted natively with RPC healthy and all 12 hooks loaded.
+- The installed bundle/runtime digest is `0c2bb3fc...`; launcher SHA-256 is
+  `e9169d04...`. Native `litellm/task-general` plus six fallbacks and every
+  semantic native-config leaf are unchanged. Hermes remains active with its
+  config, environment, and launcher hashes unchanged.
+- Fresh OpenClaw parent `a0f349c8...` / trace `856341f9...` spawned native
+  worker `e0ee5df5...` / run `b182db5c...`, which executed and completed its
+  read-only task. Native-child route `native-child-eaa40...` proves one applied
+  `linux-task-agency-router` / `litellm` / exact `task-agency-router` attempt,
+  zero cross-provider fallback, and no actual-model telemetry.
+- Parent return did not pass. Ready-receipt integrity assumed one total routing
+  row and rejected the valid auxiliary `native_child_inference` row before
+  completion could queue to Telegram. Identity resolution passed; cleanup,
+  restart/reload, timeout, TTL, and mismatch are ruled out. The locally green
+  fail-closed correction admits exactly one canonical route plus only unique,
+  strictly re-projected child-success routes while validating exact route IDs,
+  canonical timestamps/context digests, exact numeric types, and canonical JSON.
+  Independent Critical/High review is green after closing those gaps.
+- Focused 113/1, named spine 848/3, docs 780/worklog 1,155, Ruff 682,
+  dashboard UI 134, routing eval, full decision-conformance baseline plus
+  160/160 mutations killed with zero survived/invalid and source unchanged, and
+  diff check all pass. Private-HOME/no-`pytest` and trusted-interpreter eval
+  failures are retained; the owner-private `/usr/bin/python3` eval environment
+  passes. No exhaustive workflow corpus ran. The candidate is uninstalled and
+  unproven live pending a clean checkpoint and Agency-only reinstall.
 
 ## Approach
 
@@ -114,6 +139,16 @@ the selected cards reached that child.
       durable Store correlation after process-local state loss.
 - [x] The combined focused implementation gate passes 299 tests with one
       existing skip and does not modify any host configuration.
+- [x] Agency-only OpenClaw installation from clean checkout `27e9ec62` passes
+      stopped-gateway, launcher-provenance, native restart, RPC, and 12-hook
+      activation checks without native-route or semantic-config drift.
+- [x] A fresh OpenClaw native child uses the host-scoped LiteLLM profile with
+      exact alias/model-group and zero fallback, then executes and completes.
+- [x] The ready-receipt correction passes independent Critical/High review and
+      the focused, fast-spine, docs, Ruff, dashboard, routing, and full
+      decision-conformance gates.
+- [ ] Checkpoint the locally green correction and reinstall it through Agency
+      only while OpenClaw is natively stopped.
 - [ ] Fresh live OpenClaw and Hermes native children spawn, complete, and return
       to their parents with correlated Store lifecycle evidence.
 - [x] Rule 4 remains `unproven` unless an ADR-0156-compliant host-authored

@@ -63,9 +63,54 @@ Telegram-ingress, native-model, or OpenClaw configuration failure.
 - The Store resolver requires the exact requester, parent trace and work unit,
   child session and run, accepted launch binding, reciprocal delegation/run
   joins, and one unique ready nonterminal OpenClaw parent with an open child.
-- The consolidated focused gate passes 299 tests with one existing skip. Live
-  Agency installation and a genuinely fresh Telegram child response remain
-  pending; no host source, configuration, or native model route was changed.
+- The consolidated focused gate passes 299 tests with one existing skip. The
+  clean implementation/ledger checkout `27e9ec62` is now installed through
+  Agency's installer only while OpenClaw was natively stopped. The gateway was
+  restarted natively; RPC is healthy and the Agency plugin is loaded, enabled,
+  and activated with all 12 hooks.
+- The installed bundle/runtime digest is `0c2bb3fc...` and the launcher SHA-256
+  is `e9169d04...`. Native `litellm/task-general` plus all six fallbacks remain
+  exact, and the semantic config diff excluding its native timestamp is empty.
+  The live service has `LITELLM_API_KEY` populated; its value was not read.
+- Hermes remained active and its config, environment, and launcher hashes are
+  unchanged.
+- The fresh Telegram `/new` was acknowledged. Parent run
+  `a0f349c8-712d-4702-bc14-ac2e8e0e4ee1`, trace
+  `856341f9-40f0-49f7-99fd-ba39a4a4a6c8`, and transcript
+  `4ad38fad-d167-4310-a4e7-2a0c8f189646` launched one native worker. Worker
+  `agent:nexus:subagent:e0ee5df5-a66e-4085-b7e1-19bb41dbfed5`, native run
+  `b182db5c-1764-4d83-a0be-c5a0575ac828`, and child transcript
+  `bf9127d3-6436-49a6-bf28-9af373ab371e` prove execution and successful
+  completion of the read-only child task. Agency then blocked completion as
+  uncorrelated before Telegram queueing; no completion reached the operator.
+- Canonical route `ba9e00d0-b2ac-4ffb-a1ce-7b2c27a53d4c` and native-child
+  route `native-child-eaa40e37d3a5dad02a475e9a38fca63d` are both valid. The
+  child route contains one applied `litellm` attempt on profile
+  `linux-task-agency-router` for exact alias/model-group `task-agency-router`,
+  zero fallback, and no provider-supplied actual-model receipt.
+- Ready-receipt integrity incorrectly required one total routing row. The valid
+  `native_child_inference` row appended after canonical preflight therefore
+  made completion preparation return empty. Every durable identity predicate
+  passed; cleanup occurred after denial, and restart/reload, timeout, TTL, and
+  identity mismatch are ruled out.
+- The locally green Agency-only candidate accepts exactly one canonical route
+  plus only unique auxiliary rows that strictly re-project as complete
+  native-child success routes. It validates exact route IDs, canonical Store
+  timestamps and context digests, exact numeric types, canonical JSON fields,
+  and unique host/launch identities. Duplicate, unrecognized, malformed, or
+  type-shifted evidence fails closed.
+- Independent Critical/High review is green after the duplicate, timestamp,
+  numeric, JSON, context-digest, and route-ID gaps were closed. Focused tests
+  pass 113 with 1 skip; the named fast spine passes 848 with 3 skips. Docs
+  metadata/policy/worklog/verification pass for 780 files and 1,155 commits;
+  full Ruff check/format pass 682 files; dashboard UI passes 134; routing eval
+  passes; full decision conformance passes baseline and kills 160/160 with zero
+  survived/invalid and source unchanged; diff check passes.
+- The default private-HOME full eval lacked `pytest`; the changed `.venv` retry
+  failed the trusted persistent-interpreter boundary; the owner-private eval
+  venv based on `/usr/bin/python3` passed. No exhaustive workflow corpus ran.
+  The candidate is ready for a clean checkpoint and Agency-only reinstall, but
+  remains uninstalled and unproven live.
 - Strict Rule 4 remains unproven because a delivered announcement is not a
   host-authored pre-speech child-artifact receipt.
 
@@ -113,6 +158,15 @@ Telegram-ingress, native-model, or OpenClaw configuration failure.
       creates no synthetic announcement run or inference receipt, and remains
       stable when the later child-end receipt closes lifecycle evidence.
 - [x] The focused implementation gate passes 299 tests with one existing skip.
+- [x] Install the clean `27e9ec62` Agency-only candidate while OpenClaw is
+      natively stopped, then restart it natively with RPC and all 12 Agency
+      hooks healthy and no semantic native-config drift.
+- [x] Preserve the changed live draw in which one child executed and completed,
+      but ready-routing receipt integrity blocked completion before Telegram.
+- [x] Independent Critical/High review and the focused, fast-spine, docs, Ruff,
+      dashboard, routing-eval, and 160-mutation conformance gates pass.
+- [ ] Checkpoint the locally green routing receipt correction and reinstall
+      Agency only while OpenClaw is natively stopped.
 - [ ] A fresh OpenClaw native child returns one finalized Telegram response with
       correlated Store lifecycle evidence.
 - [x] No OpenClaw source/configuration, native model routing, Agency inference
