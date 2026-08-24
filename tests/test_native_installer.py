@@ -1632,7 +1632,10 @@ def test_openclaw_runtime_contract_fails_closed_without_tool_result_middleware(
     assert "agency-preflight" in runner.openclaw_disabled
 
 
-@pytest.mark.parametrize("missing_hook", ["message_sending", "agent_end"])
+@pytest.mark.parametrize(
+    "missing_hook",
+    ["message_sending", "message_sent", "agent_end"],
+)
 def test_openclaw_runtime_contract_fails_closed_when_one_hook_is_missing(
     missing_hook: str,
     tmp_path: Path,

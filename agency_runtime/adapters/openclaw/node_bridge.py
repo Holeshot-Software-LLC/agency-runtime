@@ -1377,6 +1377,9 @@ def _runtime_disabled_result(payload: dict[str, Any], action: str) -> dict[str, 
         "post_tool_call",
         "post_api_request",
         "native_child_started",
+        "native_child_terminal_observed",
+        "native_child_delivery_observed",
+        "native_child_pending_reconcile",
         "native_child_ended",
         "on_session_end",
     }:
@@ -1667,6 +1670,71 @@ def _handle_delivery_action(
     return None
 
 
+def _handle_native_child_receipt_action(
+    adapter: OpenClawAdapter,
+    payload: dict[str, Any],
+    *,
+    action: str,
+    session_id: str,
+    trace_id: str,
+) -> dict[str, Any] | None:
+    """Persist one OpenClaw child receipt, or decline the action."""
+
+    if action == "native_child_terminal_observed":
+        if not session_id:
+            return {}
+        worker_id = _bounded_string(payload, "workerId", limit=256)
+        if not worker_id:
+            return {}
+        outcome = _bounded_string(payload, "outcome", limit=32) or "unknown"
+        receipt = adapter.store.record_native_child_terminal_observed(
+            host="openclaw",
+            backend="sessions_spawn",
+            requester_session_id=session_id,
+            parent_trace_id=trace_id,
+            work_unit_id=_bounded_string(payload, "workUnitId", limit=160),
+            worker_id=worker_id,
+            native_run_id=_bounded_string(payload, "nativeRunId", limit=256),
+            launch_id=_bounded_string(payload, "launchId", limit=512),
+            outcome=outcome,
+        )
+        return {
+            "recorded": receipt is not None,
+            "outcome": str(receipt.get("outcome") or "") if receipt else "",
+        }
+
+    if action == "native_child_delivery_observed":
+        if not session_id:
+            return {}
+        worker_id = _bounded_string(payload, "workerId", limit=256)
+        response_digest = _bounded_string(payload, "responseHash", limit=65)
+        delivery_success = payload.get("success")
+        if not worker_id or not response_digest or not isinstance(delivery_success, bool):
+            return {}
+        receipt = adapter.store.record_openclaw_native_child_delivery(
+            requester_session_id=session_id,
+            parent_trace_id=trace_id,
+            work_unit_id=_bounded_string(payload, "workUnitId", limit=160),
+            worker_id=worker_id,
+            native_run_id=_bounded_string(payload, "nativeRunId", limit=256),
+            launch_id=_bounded_string(payload, "launchId", limit=512),
+            response_hash=response_digest,
+            success=delivery_success,
+        )
+        return {
+            "recorded": receipt is not None,
+            "deliveryStatus": (str(receipt.get("native_delivery_status") or "") if receipt else ""),
+        }
+
+    if action == "native_child_pending_reconcile":
+        return {
+            "reconciled": adapter.store.reconcile_openclaw_pending_native_child_deliveries(),
+            "runtimeEnabled": True,
+        }
+
+    return None
+
+
 def _handle_observation_action(
     adapter: OpenClawAdapter,
     payload: dict[str, Any],
@@ -1676,6 +1744,16 @@ def _handle_observation_action(
     trace_id: str,
 ) -> dict[str, Any] | None:
     """Persist one fail-open host observation, or decline the action."""
+
+    native_child = _handle_native_child_receipt_action(
+        adapter,
+        payload,
+        action=action,
+        session_id=session_id,
+        trace_id=trace_id,
+    )
+    if native_child is not None:
+        return native_child
 
     if action == "post_tool_call":
         tool_input = payload.get("toolInput")

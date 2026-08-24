@@ -24,6 +24,7 @@ related:
   - docs/roadmap/issue-AR-279-exclude-hermes-internal-post-response-preflight.md
   - docs/roadmap/issue-AR-280-route-native-children-through-host-profiles.md
   - docs/roadmap/issue-AR-281-deliver-finalized-openclaw-child-announcements.md
+  - docs/roadmap/issue-AR-282-persist-openclaw-child-terminals-after-delivery.md
   - docs/decisions/0166-refresh-openclaw-headers-through-awaited-tool-results.md
   - docs/decisions/0168-authorize-finalized-openclaw-child-announcements.md
   - docs/roadmap/AR-255-child-parity-design.md
@@ -4568,3 +4569,47 @@ only host in scope until a changed draw closes parent, delegation, and worker
 while delivering through Telegram. Hermes remains break glass and untouched.
 Even a green operational retest will not prove ADR-0156 Rule 4 without an
 immutable host-authored delivery artifact; no matrix cell moves.
+
+## 2026-08-24 - Post-cleanup child-end receipt remains unavailable
+
+The next installed correction, `933d9f4a` with ledger `84e85a4c`, preserved a
+new operational child return but did not close Agency lifecycle. Parent run
+`0191a16c-d5cf-485b-bfa0-70199097ef95`, trace
+`29e96603-cfdc-4ec4-8c86-993b6c9179b7`, native run
+`368bcc67-c1ef-43a7-bf3e-28bd751e8648`, and delegation
+`d6ceb33a-cf76-4c23-aee5-4d221f35255b` correlate the retained failure.
+OpenClaw delivered the child response through Telegram, then `cleanup: delete`
+removed the host registry entry before the deferred `subagent_ended` callback
+could provide Agency's terminal receipt. The Agency worker and delegation
+therefore remained open.
+
+The routing boundary stayed correct: workforce inference automatically used
+OpenClaw profile `linux-task-agency-router`, provider type `litellm`, and exact
+requested alias/model-group `task-agency-router` with zero cross-provider
+fallback. Provider telemetry supplied no actual answering model. OpenClaw's
+separate native execution remained on `task-general`; no native host config or
+protected-host route changed.
+
+AR-282 replaces callback timing with a durable post-transport state machine.
+The uninstalled schema-48 candidate records the first immutable child outcome
+as delivery `pending` without closing the worker. `message_sending` retains the
+finalized response hash in a bounded all-outbound attempt ledger but proves no
+transport. Only OpenClaw 2026.7.1-2's post-adapter
+`message_sent(success=true)` with one unique active attempt may atomically mark
+`delivered` and close the worker and delegation. Explicit send failure records
+`failed` and stays open. At `gateway_start`, only receipt-backed pending/failed
+rows become `interrupted` lifecycle failures while preserving the separately
+observed execution outcome; generic child-end/stop handling cannot bypass the
+delivery gate.
+
+The audited host exposes no shared immutable send identifier. Every supplied
+target/channel/account/conversation/session/run field and the response hash
+must match, with active attempts retained at least one hour and consumed
+ambiguity tombstones for 24 hours. Zero, stale, delayed, ordinary-identical,
+multiple, or conflicting matches fail closed. A crash after platform
+acceptance but before the Store commit remains irreducibly ambiguous and is
+recorded interrupted, never delivered. Focused validation is 294 passed with
+one unrelated skip and independent review is GO; the
+candidate is uninstalled, the live Store remains schema 47, operational Agency
+terminalization remains unproven, and ADR-0156 Rule 4 and the matrix do not
+move.

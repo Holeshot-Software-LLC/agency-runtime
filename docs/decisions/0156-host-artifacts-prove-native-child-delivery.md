@@ -7,6 +7,7 @@ updated: 2026-08-12
 tags: [evidence, native-child, hosts, routing, correlation]
 related:
   - docs/roadmap/issue-AR-281-deliver-finalized-openclaw-child-announcements.md
+  - docs/roadmap/issue-AR-282-persist-openclaw-child-terminals-after-delivery.md
   - docs/decisions/0168-authorize-finalized-openclaw-child-announcements.md
   - docs/decisions/0027-authoritative-runtime-evidence-traces.md
   - docs/decisions/0118-require-inference-owned-staffing.md

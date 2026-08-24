@@ -209,7 +209,10 @@ def test_openclaw_generated_plugin_seals_exact_native_child_completion() -> None
     assert "canonicalOutboundPayload({ text })" in source
     assert "gate?.terminalBound === true" in source
     assert '"child_completion"' in source
-    assert "markNativeChildCompletionConsumed(session, authorized.runId)" in source
+    assert "markNativeChildCompletionSending(" in source
+    assert 'api.on("message_sent"' in source
+    assert 'action: "native_child_delivery_observed"' in source
+    assert 'completion.state.completionDeliveryState = success ? "delivered" : "failed"' in source
 
 
 def test_openclaw_outbound_gate_marks_only_exact_terminal_allowance_authoritative(
@@ -458,6 +461,120 @@ def test_openclaw_bridge_binds_real_sessions_spawn_result_to_launch(
         adapter=adapter,
     )
     assert ended == {"recorded": True}
+
+
+def test_openclaw_bridge_requires_post_send_receipt_before_child_terminal(
+    tmp_path: Path,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+    session_id = "receipt-parent-session"
+    trace_id = "receipt-parent-run"
+    work_unit_id = "receipt-review"
+    worker_id = "receipt-child"
+    native_run_id = "receipt-child-run"
+    launch_id = "receipt-spawn-call"
+    store.create_run(trace_id=trace_id, session_id=session_id, host="openclaw")
+    store.record_delegation(
+        trace_id=trace_id,
+        session_id=session_id,
+        host="openclaw",
+        work_unit_id=work_unit_id,
+        recommended_agent="code-reviewer",
+        status="delegated",
+        backend="sessions_spawn",
+        executed_worker_kind="generic-worker",
+        executed_worker_id=worker_id,
+        native_run_id=native_run_id,
+    )
+    store.record_native_child_started(
+        host="openclaw",
+        backend="sessions_spawn",
+        session_id=session_id,
+        trace_id=trace_id,
+        work_unit_id=work_unit_id,
+        worker_id=worker_id,
+        native_run_id=native_run_id,
+    )
+    assert store.bind_native_child_launch(
+        host="openclaw",
+        session_id=session_id,
+        trace_id=trace_id,
+        worker_id=worker_id,
+        native_run_id=native_run_id,
+        launch_id=launch_id,
+    )
+    adapter = OpenClawAdapter(store=store)
+    common = {
+        "sessionId": session_id,
+        "traceId": trace_id,
+        "launchId": launch_id,
+        "workUnitId": work_unit_id,
+        "workerId": worker_id,
+        "nativeRunId": native_run_id,
+    }
+
+    observed = node_bridge.handle(
+        {"action": "native_child_terminal_observed", **common, "outcome": "ok"},
+        adapter=adapter,
+    )
+    child = store.get_native_child_run(
+        host="openclaw",
+        session_id=session_id,
+        trace_id=trace_id,
+        work_unit_id=work_unit_id,
+        worker_id=worker_id,
+        native_run_id=native_run_id,
+    )
+    assert observed == {"recorded": True, "outcome": "ok"}
+    assert child is not None
+    assert child["native_delivery_status"] == "pending"
+    assert child["ended_at"] is None
+
+    response_digest = "e" * 64
+    conn = store._connect()
+    try:
+        conn.execute(
+            "UPDATE runs SET preflight_state = 'ready' WHERE trace_id = ?",
+            (trace_id,),
+        )
+        revision = conn.execute(
+            "SELECT evidence_revision FROM runs WHERE trace_id = ?",
+            (trace_id,),
+        ).fetchone()
+        conn.commit()
+    finally:
+        conn.close()
+    assert revision is not None
+    store.commit_terminal_finalization(
+        session_id=session_id,
+        trace_id=trace_id,
+        host="openclaw",
+        action="accept",
+        response_hash=response_digest,
+        status="completed",
+        expected_evidence_revision=int(revision[0]),
+    )
+    delivered = node_bridge.handle(
+        {
+            "action": "native_child_delivery_observed",
+            **common,
+            "responseHash": response_digest,
+            "success": True,
+        },
+        adapter=adapter,
+    )
+    child = store.get_native_child_run(
+        host="openclaw",
+        session_id=session_id,
+        trace_id=trace_id,
+        work_unit_id=work_unit_id,
+        worker_id=worker_id,
+        native_run_id=native_run_id,
+    )
+    assert delivered == {"recorded": True, "deliveryStatus": "delivered"}
+    assert child is not None
+    assert child["native_delivery_status"] == "delivered"
+    assert child["ended_at"] is not None
 
 
 def test_openclaw_bridge_prepares_and_finalizes_completion_against_parent_only(

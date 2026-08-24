@@ -110,6 +110,52 @@ def _bound_openclaw_child(
     return event_id
 
 
+def _mark_openclaw_parent_ready(store: Store, trace_id: str) -> int:
+    with closing(store._connect()) as conn, conn:
+        conn.execute(
+            "UPDATE runs SET preflight_state = 'ready' WHERE trace_id = ?",
+            (trace_id,),
+        )
+        row = conn.execute(
+            "SELECT evidence_revision FROM runs WHERE trace_id = ?",
+            (trace_id,),
+        ).fetchone()
+    assert row is not None
+    return int(row[0])
+
+
+def _finalize_openclaw_parent(
+    store: Store,
+    *,
+    session_id: str,
+    trace_id: str,
+    response_hash: str,
+) -> None:
+    revision = _mark_openclaw_parent_ready(store, trace_id)
+    committed = store.commit_terminal_finalization(
+        session_id=session_id,
+        trace_id=trace_id,
+        host="openclaw",
+        action="accept",
+        response_hash=response_hash,
+        status="completed",
+        expected_evidence_revision=revision,
+    )
+    assert committed["authoritative"] is True
+
+
+def _openclaw_child_terminal_state(store: Store, trace_id: str) -> dict[str, object]:
+    with closing(store._connect()) as conn:
+        row = conn.execute(
+            "SELECT native_terminal_outcome, native_delivery_status, "
+            "native_terminal_observed_at, native_delivery_observed_at, "
+            "exit_code, ended_at FROM worker_runs WHERE trace_id = ?",
+            (trace_id,),
+        ).fetchone()
+    assert row is not None
+    return dict(row)
+
+
 def test_native_child_start_and_end_update_reciprocal_delegation(tmp_path: Path) -> None:
     store = Store(tmp_path / "agency.db")
     event_id = _delegation(store)
@@ -419,6 +465,336 @@ def test_openclaw_completion_rejects_nonready_terminal_or_ended_state(
         outcome="ok",
     )
     assert ended.resolve_openclaw_native_child_completion(**common) is None
+
+
+def test_openclaw_terminal_observation_keeps_completion_resolvable_and_is_immutable(
+    tmp_path: Path,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+    session_id = "observed-parent-session"
+    trace_id = "observed-parent-trace"
+    work_unit_id = "observed-unit"
+    worker_id = "agent:main:subagent:observed-child"
+    native_run_id = "observed-child-run"
+    launch_id = "observed-launch"
+    event_id = _bound_openclaw_child(
+        store,
+        session_id=session_id,
+        trace_id=trace_id,
+        work_unit_id=work_unit_id,
+        worker_id=worker_id,
+        native_run_id=native_run_id,
+        launch_id=launch_id,
+    )
+    _mark_openclaw_parent_ready(store, trace_id)
+
+    common = {
+        "host": "openclaw",
+        "backend": "sessions_spawn",
+        "requester_session_id": session_id,
+        "parent_trace_id": trace_id,
+        "work_unit_id": work_unit_id,
+        "worker_id": worker_id,
+        "native_run_id": native_run_id,
+        "launch_id": launch_id,
+        "outcome": "ok",
+    }
+    observed = store.record_native_child_terminal_observed(**common)
+    replay = store.record_native_child_terminal_observed(**common)
+    state = _openclaw_child_terminal_state(store, trace_id)
+
+    assert observed is not None
+    assert replay == observed
+    assert state == {
+        "native_terminal_outcome": "ok",
+        "native_delivery_status": "pending",
+        "native_terminal_observed_at": observed["observed_at"],
+        "native_delivery_observed_at": None,
+        "exit_code": None,
+        "ended_at": None,
+    }
+    assert store.get_delegations(trace_id)[0]["status"] == "delegated"
+
+    completion_run_id = f"announce:v1:{worker_id}:{native_run_id}"
+    resolved = store.resolve_openclaw_native_child_completion(
+        requester_session_id=session_id,
+        completion_run_id=completion_run_id,
+        parent_session_id=session_id,
+        parent_trace_id=trace_id,
+        worker_id=worker_id,
+        native_run_id=native_run_id,
+        launch_id=launch_id,
+        work_unit_id=work_unit_id,
+    )
+    assert resolved is not None
+    assert resolved["delegation_event_id"] == event_id
+    assert store.get_run(completion_run_id) is None
+
+    with pytest.raises(ValueError, match="conflicts with existing evidence"):
+        store.record_native_child_terminal_observed(**{**common, "outcome": "error"})
+    assert _openclaw_child_terminal_state(store, trace_id) == state
+
+
+def test_openclaw_successful_post_send_atomically_closes_observed_child(
+    tmp_path: Path,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+    session_id = "delivered-parent-session"
+    trace_id = "delivered-parent-trace"
+    work_unit_id = "delivered-unit"
+    worker_id = "delivered-child"
+    native_run_id = "delivered-child-run"
+    launch_id = "delivered-launch"
+    _bound_openclaw_child(
+        store,
+        session_id=session_id,
+        trace_id=trace_id,
+        work_unit_id=work_unit_id,
+        worker_id=worker_id,
+        native_run_id=native_run_id,
+        launch_id=launch_id,
+    )
+    observed = store.record_native_child_terminal_observed(
+        host="openclaw",
+        backend="sessions_spawn",
+        requester_session_id=session_id,
+        parent_trace_id=trace_id,
+        work_unit_id=work_unit_id,
+        worker_id=worker_id,
+        native_run_id=native_run_id,
+        launch_id=launch_id,
+        outcome="ok",
+    )
+    assert observed is not None
+    response_hash = "b" * 64
+    _finalize_openclaw_parent(
+        store,
+        session_id=session_id,
+        trace_id=trace_id,
+        response_hash=response_hash,
+    )
+
+    common = {
+        "requester_session_id": session_id,
+        "parent_trace_id": trace_id,
+        "work_unit_id": work_unit_id,
+        "worker_id": worker_id,
+        "native_run_id": native_run_id,
+        "launch_id": launch_id,
+        "response_hash": response_hash,
+        "success": True,
+    }
+    delivered = store.record_openclaw_native_child_delivery(**common)
+    replay = store.record_openclaw_native_child_delivery(**common)
+    state = _openclaw_child_terminal_state(store, trace_id)
+
+    assert delivered is not None
+    assert replay == delivered
+    assert state["native_terminal_outcome"] == "ok"
+    assert state["native_delivery_status"] == "delivered"
+    assert state["native_terminal_observed_at"] == observed["observed_at"]
+    assert state["native_delivery_observed_at"]
+    assert state["exit_code"] == 0
+    assert state["ended_at"]
+    assert store.get_delegations(trace_id)[0]["status"] == "completed"
+
+    with pytest.raises(ValueError, match="conflicts with existing evidence"):
+        store.record_openclaw_native_child_delivery(**{**common, "success": False})
+
+
+def test_openclaw_failed_post_send_stays_open_and_generic_end_cannot_bypass(
+    tmp_path: Path,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+    session_id = "failed-send-parent-session"
+    trace_id = "failed-send-parent-trace"
+    work_unit_id = "failed-send-unit"
+    worker_id = "failed-send-child"
+    native_run_id = "failed-send-child-run"
+    launch_id = "failed-send-launch"
+    _bound_openclaw_child(
+        store,
+        session_id=session_id,
+        trace_id=trace_id,
+        work_unit_id=work_unit_id,
+        worker_id=worker_id,
+        native_run_id=native_run_id,
+        launch_id=launch_id,
+    )
+    store.record_native_child_terminal_observed(
+        host="openclaw",
+        backend="sessions_spawn",
+        requester_session_id=session_id,
+        parent_trace_id=trace_id,
+        work_unit_id=work_unit_id,
+        worker_id=worker_id,
+        native_run_id=native_run_id,
+        launch_id=launch_id,
+        outcome="ok",
+    )
+    response_hash = "c" * 64
+    _finalize_openclaw_parent(
+        store,
+        session_id=session_id,
+        trace_id=trace_id,
+        response_hash=response_hash,
+    )
+
+    common = {
+        "requester_session_id": session_id,
+        "parent_trace_id": trace_id,
+        "work_unit_id": work_unit_id,
+        "worker_id": worker_id,
+        "native_run_id": native_run_id,
+        "launch_id": launch_id,
+        "response_hash": response_hash,
+        "success": False,
+    }
+    failed = store.record_openclaw_native_child_delivery(**common)
+    replay = store.record_openclaw_native_child_delivery(**common)
+    state = _openclaw_child_terminal_state(store, trace_id)
+
+    assert failed is not None
+    assert replay == failed
+    assert state["native_delivery_status"] == "failed"
+    assert state["native_delivery_observed_at"]
+    assert state["exit_code"] is None
+    assert state["ended_at"] is None
+    assert store.get_delegations(trace_id)[0]["status"] == "delegated"
+
+    with pytest.raises(RuntimeError, match="awaits delivery evidence"):
+        store.record_native_child_ended(
+            host="openclaw",
+            backend="sessions_spawn",
+            session_id=session_id,
+            trace_id=trace_id,
+            work_unit_id=work_unit_id,
+            worker_id=worker_id,
+            native_run_id=native_run_id,
+            outcome="ok",
+        )
+    with pytest.raises(RuntimeError, match="awaits delivery evidence"):
+        store.reconcile_native_child_ended(
+            host="openclaw",
+            backend="sessions_spawn",
+            requester_session_id=session_id,
+            worker_id=worker_id,
+            native_run_id=native_run_id,
+            outcome="ok",
+        )
+    with pytest.raises(RuntimeError, match="awaits delivery evidence"):
+        store.record_native_child_stopped(
+            host="openclaw",
+            backend="sessions_spawn",
+            session_id=session_id,
+            trace_id=trace_id,
+            work_unit_id=work_unit_id,
+            worker_id=worker_id,
+            native_run_id=native_run_id,
+        )
+    assert _openclaw_child_terminal_state(store, trace_id) == state
+
+
+def test_openclaw_gateway_reconcile_closes_only_observed_pending_or_failed_children(
+    tmp_path: Path,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+    session_id = "gateway-parent-session"
+
+    _bound_openclaw_child(
+        store,
+        session_id=session_id,
+        trace_id="gateway-pending-trace",
+        work_unit_id="gateway-pending-unit",
+        worker_id="gateway-pending-child",
+        native_run_id="gateway-pending-run",
+        launch_id="gateway-pending-launch",
+    )
+    store.record_native_child_terminal_observed(
+        host="openclaw",
+        backend="sessions_spawn",
+        requester_session_id=session_id,
+        parent_trace_id="gateway-pending-trace",
+        work_unit_id="gateway-pending-unit",
+        worker_id="gateway-pending-child",
+        native_run_id="gateway-pending-run",
+        launch_id="gateway-pending-launch",
+        outcome="ok",
+    )
+
+    _bound_openclaw_child(
+        store,
+        session_id=session_id,
+        trace_id="gateway-failed-trace",
+        work_unit_id="gateway-failed-unit",
+        worker_id="gateway-failed-child",
+        native_run_id="gateway-failed-run",
+        launch_id="gateway-failed-launch",
+    )
+    store.record_native_child_terminal_observed(
+        host="openclaw",
+        backend="sessions_spawn",
+        requester_session_id=session_id,
+        parent_trace_id="gateway-failed-trace",
+        work_unit_id="gateway-failed-unit",
+        worker_id="gateway-failed-child",
+        native_run_id="gateway-failed-run",
+        launch_id="gateway-failed-launch",
+        outcome="error",
+    )
+    failed_hash = "d" * 64
+    _finalize_openclaw_parent(
+        store,
+        session_id=session_id,
+        trace_id="gateway-failed-trace",
+        response_hash=failed_hash,
+    )
+    store.record_openclaw_native_child_delivery(
+        requester_session_id=session_id,
+        parent_trace_id="gateway-failed-trace",
+        work_unit_id="gateway-failed-unit",
+        worker_id="gateway-failed-child",
+        native_run_id="gateway-failed-run",
+        launch_id="gateway-failed-launch",
+        response_hash=failed_hash,
+        success=False,
+    )
+
+    _bound_openclaw_child(
+        store,
+        session_id=session_id,
+        trace_id="gateway-resumable-trace",
+        work_unit_id="gateway-resumable-unit",
+        worker_id="gateway-resumable-child",
+        native_run_id="gateway-resumable-run",
+        launch_id="gateway-resumable-launch",
+    )
+
+    assert store.reconcile_openclaw_pending_native_child_deliveries() == 2
+
+    for trace_id in ("gateway-pending-trace", "gateway-failed-trace"):
+        state = _openclaw_child_terminal_state(store, trace_id)
+        assert state["native_delivery_status"] == "interrupted"
+        assert state["native_terminal_observed_at"]
+        assert state["native_delivery_observed_at"]
+        assert state["exit_code"] == 1
+        assert state["ended_at"]
+        assert store.get_delegations(trace_id)[0]["status"] == "failed"
+    assert (
+        _openclaw_child_terminal_state(store, "gateway-pending-trace")["native_terminal_outcome"]
+        == "ok"
+    )
+
+    resumable = _openclaw_child_terminal_state(store, "gateway-resumable-trace")
+    assert resumable == {
+        "native_terminal_outcome": "",
+        "native_delivery_status": "",
+        "native_terminal_observed_at": None,
+        "native_delivery_observed_at": None,
+        "exit_code": None,
+        "ended_at": None,
+    }
+    assert store.get_delegations("gateway-resumable-trace")[0]["status"] == "delegated"
 
 
 def test_openclaw_reconciled_child_end_preserves_parent_terminal_receipt(
@@ -1150,7 +1526,9 @@ def test_v27_worker_runs_migrate_to_scoped_native_identity(tmp_path: Path) -> No
         columns = {row[1] for row in conn.execute("PRAGMA table_info(worker_runs)")}
         indexes = {row[1] for row in conn.execute("PRAGMA index_list(worker_runs)")}
         legacy = conn.execute(
-            "SELECT session_id, trace_id, work_unit_id, host, worker_id, native_run_id "
+            "SELECT session_id, trace_id, work_unit_id, host, worker_id, native_run_id, "
+            "native_terminal_outcome, native_delivery_status, "
+            "native_terminal_observed_at, native_delivery_observed_at "
             "FROM worker_runs WHERE id = 'legacy-run'"
         ).fetchone()
         version = int(conn.execute("SELECT MAX(version) FROM schema_version").fetchone()[0])
@@ -1165,9 +1543,13 @@ def test_v27_worker_runs_migrate_to_scoped_native_identity(tmp_path: Path) -> No
         "host",
         "worker_id",
         "native_run_id",
+        "native_terminal_outcome",
+        "native_delivery_status",
+        "native_terminal_observed_at",
+        "native_delivery_observed_at",
     }.issubset(columns)
     assert {"idx_worker_runs_trace", "idx_worker_runs_native_scope"}.issubset(indexes)
-    assert tuple(legacy) == ("", "", "", "", "", "")
+    assert tuple(legacy) == ("", "", "", "", "", "", "", "", None, None)
 
     created = migrated.record_native_child_started(
         host="codex",

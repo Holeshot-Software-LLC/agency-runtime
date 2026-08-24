@@ -37,6 +37,7 @@ OPENCLAW_REQUIRED_HOOKS = frozenset(
         "before_reset",
         "reply_payload_sending",
         "message_sending",
+        "message_sent",
     }
 )
 HOOK_TIMEOUT_BUFFER_SECONDS = 5.0

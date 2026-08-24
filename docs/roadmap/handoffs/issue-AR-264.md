@@ -25,6 +25,7 @@ related:
   - docs/roadmap/issue-AR-279-exclude-hermes-internal-post-response-preflight.md
   - docs/roadmap/issue-AR-280-route-native-children-through-host-profiles.md
   - docs/roadmap/issue-AR-281-deliver-finalized-openclaw-child-announcements.md
+  - docs/roadmap/issue-AR-282-persist-openclaw-child-terminals-after-delivery.md
   - docs/decisions/0162-compile-structured-contractor-execution-guidance.md
   - docs/decisions/0163-keep-litellm-inference-profiles-model-agnostic.md
   - docs/decisions/0164-delegate-exact-schema-translation-to-litellm.md
@@ -37,8 +38,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-264
 branch: codex/ar278-openclaw-one-pass
-evidence_commit: 10ba4c84dda32d74bf5fb2ac4358fc54768dd1e8
-minimum_ledger_commit: 8a2bf9b768fd875c4d16756fa588852831d96bc2
+evidence_commit: 933d9f4a5bb3dcade7ad6dc726b0d267f0582cde
+minimum_ledger_commit: 84e85a4ca681394416ac3c0a1b23e73e707f32f3
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 ---
@@ -64,7 +65,24 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 - Third draw parent `5529c6cf...` / trace `a5f6f53b...` spawned exactly one child `7d1c9571...`, native run `06fb1c56...`, delegation `79049f17...`, worker `native-child:9ea15e2f...`, and route `native-child-4ef0e65f...`. Telegram delivered the exact inference header and result; OpenClaw's task ledger says `succeeded` / `delivered`.
 - Canonical `99f1388a...` and child routing prove automatic `linux-task-agency-router` / `litellm` / exact `task-agency-router`, zero cross-provider fallback, and no actual-model telemetry. Native execution stayed separately on `task-general`.
 - Agency finalized the parent but left the delegation and worker open. Isolated Store replay closes the exact row; the live one-shot hook was swallowed by observation-only and failed-persistence paths that incorrectly relied on a duplicate callback.
-- Expected-red coverage captured split-instance, early-end, trace-failure, sparse-reset, and duplicate cases. The state-bound fallback passes focused 146/1, fast spine 849/3, all local gates, and 160/160 conformance mutations; independent re-review is clean. Candidate is uninstalled; Rule 4/matrix remain unchanged.
+- Installed correction/ledger `933d9f4a` / `84e85a4c` still relied on a
+  post-cleanup child-end callback. Parent run `0191a16c...`, trace
+  `29e96603...`, native run `368bcc67...`, and delegation `d6ceb33a...`
+  retain the changed failure: OpenClaw delivered the child response, but
+  `cleanup: delete` removed the host registry entry before Agency terminalized
+  the worker and delegation.
+- AR-282's uninstalled schema-48 candidate records the immutable child outcome
+  separately from delivery. Only `message_sent(success=true)` atomically marks
+  `delivered` and closes lifecycle; explicit failure stays open, and startup
+  reconciles only receipt-backed pending/failed rows as interrupted lifecycle
+  failures while preserving the observed child outcome. Generic end/stop
+  cannot bypass the gate.
+- The host has no shared immutable send identifier. One unique active attempt
+  must match every supplied target/channel/account/conversation/session/run
+  field and the exact response hash; stale, delayed, replayed, or
+  ordinary-identical ambiguity fails closed. Focused validation is 294 passed
+  with one unrelated skip and independent review is GO; the installed Store
+  remains schema 47 and Rule 4/matrix remain unchanged.
 
 ## completed-evidence
 
@@ -77,7 +95,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 
 ## exact-blocker
 
-The locally green one-shot terminal-reconciliation candidate is not installed. A changed OpenClaw retest follows its clean Agency-only checkpoint; Rule 4 still requires an ADR-0156 host-artifact receipt.
+The schema-48 post-transport candidate is uninstalled and still needs focused
+validation, independent review, a clean local checkpoint, and a changed
+OpenClaw retest. Rule 4 separately requires an ADR-0156 host-artifact receipt.
 
 ## same-task-continuity
 
@@ -85,7 +105,7 @@ Continue from the clean candidate checkpoint into OpenClaw-only live child proof
 
 ## next-bounded-work-package
 
-1. Checkpoint and install only the reviewed terminal-reconciliation fix into natively stopped OpenClaw.
+1. Finish focused validation and review, then checkpoint and install only the post-transport terminal-reconciliation fix into natively stopped OpenClaw.
 2. Prove a changed child closes parent, delegation, and worker while delivering through Telegram.
 3. Then perform the equivalent Agency-only Hermes proof; preserve Rule 4 as unproven.
 

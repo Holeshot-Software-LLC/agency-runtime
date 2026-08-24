@@ -9,6 +9,7 @@ related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md
   - docs/roadmap/issue-AR-280-route-native-children-through-host-profiles.md
+  - docs/roadmap/issue-AR-282-persist-openclaw-child-terminals-after-delivery.md
   - docs/decisions/0049-openclaw-final-only-full-payload-delivery.md
   - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
   - docs/decisions/0168-authorize-finalized-openclaw-child-announcements.md
@@ -234,3 +235,32 @@ The candidate is not installed. Operational transport succeeded once, but the
 acceptance item remains unchecked until a changed installed draw also closes
 the delegation and worker. No `native_child_delivery_verifications` row was
 fabricated; ADR-0156 Rule 4 and the AR-119 matrix remain unchanged.
+
+## AR-282 post-transport lifecycle correction
+
+The subsequently installed `933d9f4a` one-shot terminal-reconciliation build
+preserved another operational delivery but did not close Agency lifecycle.
+Parent run `0191a16c-d5cf-485b-bfa0-70199097ef95`, trace
+`29e96603-cfdc-4ec4-8c86-993b6c9179b7`, native run
+`368bcc67-c1ef-43a7-bf3e-28bd751e8648`, and delegation
+`d6ceb33a-cf76-4c23-aee5-4d221f35255b` correlate the retained failure.
+OpenClaw delivered the child response, then `cleanup: delete` removed the host
+registry entry before the expected `subagent_ended` receipt could close the
+worker and delegation.
+
+AR-282 owns the replacement. Its uninstalled schema-48 candidate separates an
+immutable child-terminal observation from delivery status. `message_sending`
+records all allowed text sends in a bounded attempt ledger but does not prove
+transport. Only OpenClaw's post-adapter `message_sent(success=true)` with one
+unique active attempt may atomically mark the response delivered and close
+lifecycle. Explicit send failure remains open; startup reconciles only
+receipt-backed pending or failed rows as interrupted lifecycle failures while
+preserving observed execution outcome; and generic end/stop handling cannot
+bypass the delivery gate. Every supplied target/channel/account/conversation/
+session/run field and exact response hash must match. Stale, delayed,
+ordinary-identical, replayed, and ambiguous callbacks fail closed.
+
+The candidate passes 294 focused tests with one unrelated skip and independent
+review is GO, but it has not been installed.
+The retained draw proves operational transport, not correlated Agency
+terminalization or ADR-0156 Rule 4.

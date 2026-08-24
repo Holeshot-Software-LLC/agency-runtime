@@ -67,6 +67,7 @@ from agency_runtime.core.store.schema import (
     NATIVE_CHILD_PARENT_SCOPE_TABLE_SQL,
     NATIVE_CHILD_PARENT_SCOPE_TRIGGER_NAME,
     NATIVE_CHILD_PARENT_SCOPE_TRIGGER_SQL,
+    NATIVE_CHILD_TERMINAL_MIGRATED_COLUMNS,
     NATIVE_WORKER_SCOPE_INDEX_SQL,
     REMEDIATION_AUTHORITY_KEY_NAME,
     RUNTIME_DELETE_ORDER,
@@ -586,7 +587,8 @@ def _v20_receipt_schema_is_current(conn: sqlite3.Connection) -> bool:
             "tool_evidence",
             "tool_evidence_source",
             "tool_evidence_recorded_at",
-        },
+        }
+        | {name for name, _ in NATIVE_CHILD_TERMINAL_MIGRATED_COLUMNS},
     }
     for table, expected in required_columns.items():
         table_row = conn.execute(

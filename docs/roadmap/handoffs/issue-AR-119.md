@@ -35,6 +35,7 @@ related:
   - docs/roadmap/issue-AR-279-exclude-hermes-internal-post-response-preflight.md
   - docs/roadmap/issue-AR-280-route-native-children-through-host-profiles.md
   - docs/roadmap/issue-AR-281-deliver-finalized-openclaw-child-announcements.md
+  - docs/roadmap/issue-AR-282-persist-openclaw-child-terminals-after-delivery.md
   - docs/roadmap/AR-119-founding-vision.md
   - docs/roadmap/AR-119-vision-loop-status.md
   - docs/roadmap/AR-119-39ff6dca-recruiter-diagnostic-evidence.md
@@ -59,8 +60,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-119
 branch: codex/ar278-openclaw-one-pass
-evidence_commit: 10ba4c84dda32d74bf5fb2ac4358fc54768dd1e8
-minimum_ledger_commit: 8a2bf9b768fd875c4d16756fa588852831d96bc2
+evidence_commit: 933d9f4a5bb3dcade7ad6dc726b0d267f0582cde
+minimum_ledger_commit: 84e85a4ca681394416ac3c0a1b23e73e707f32f3
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
@@ -72,13 +73,14 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 
 ## checkpoint
 
-- Branch `codex/ar278-openclaw-one-pass` installed ledger checkpoint `8a2bf9b`; `origin/main` is `4a326773`, `f76050d7` is an ancestor, and Agency 0.1.0 imports from this checkout.
+- Branch `codex/ar278-openclaw-one-pass` installed ledger checkpoint `84e85a4c`; `origin/main` is `4a326773`, `f76050d7` is an ancestor, and Agency 0.1.0 imports from this checkout.
 - OpenClaw remains audited 2026.7.1-2 on native `litellm/task-general` plus six unchanged fallbacks. Agency alone uses `linux-task-agency-router`, provider type `litellm`, and alias/model-group `task-agency-router`; no protected-host route changed.
-- Retained parent repair `d7187e80` installed as `fa68e6a4...`, runtime `573a6a14...`, launcher `d65af026...`; native routes/hashes stayed unchanged and RPC, 12 hooks, and both channels were green.
-- Fresh session `6360c186...` passed exact status (`86f838f0...` / `ad834646...` / `a67e66ad...` / `d84fc7d8...`) and Telegram delivered `agency-steward / none / none / requested execution alias task-general / deterministic`.
-- `node-connect` run `25fa081a...`, trace `c1bbbdc7...`, routing `3548700e...`, specialist `8e538079...`, skill `d02c71ae...`, and terminal `6907ed38...` delivered the exact inference header. Three applied receipts prove automatic OpenClaw/LiteLLM profile and exact `task-agency-router` alias/group with zero fallback.
-- Substantive run `72314429...`, trace `50c11095...`, routing `21b8b545...`, specialists `4bb8ce63...` / `1707c674...`, and terminal `803465de...` delivered the exact inference header. Three applied plus one contract-invalid attempt stayed on the same profile; zero cross-provider fallback, no child/delegation, actual model unavailable, transcript `93dcbc...`.
-- Store backup `02a76504...` is `ok`, schema 47, contractors 15. OpenClaw host-scoped acceptance passes; Rule 4/delegation is unproven and the matrix is unchanged.
+- Retained OpenClaw parent acceptance covers fresh status, skill, and substantive
+  Telegram responses with exact Store-backed headers. All Agency attempts stayed
+  on `linux-task-agency-router` / `litellm` / `task-agency-router` with zero
+  cross-provider fallback; actual model telemetry is unavailable.
+- Store backup `02a76504...` is `ok`, schema 47, with 15 contractors. Parent
+  acceptance passes; Rule 4/delegation remains unproven and the matrix unchanged.
 - Hermes v0.20.4 parent acceptance remains retained: Agency-only install `0a3d141a...`, bundle `45b76c0e...`, launcher `e65a0784...`, exact status/skill/substantive Telegram delivery, and Agency LiteLLM receipts on `linux-task-agency-router` / `task-agency-router` with zero cross-provider fallback. Final backup `bdf1a6e6...` is `ok`/`ok`, schema 47, contractors 15; actual upstream model is unavailable.
 - The first OpenClaw native-child draw is preserved as a failure: a real `sessions_spawn` child completed its read-only work, but the completion entered a synthetic `announce:v1:...` run and Agency suppressed its targeted send before Telegram queueing. Staffing still used the unprojected timeout and terminal correlation depended on process memory; execution alone does not prove delivery.
 - AR-280/AR-281 retain exact durable completion finalization: one implicit-target, one-use send on the parent trace, with no synthetic completion run or inference receipt.
@@ -87,21 +89,41 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 - Third changed draw parent `5529c6cf...` / trace `a5f6f53b...` spawned exactly one child `7d1c9571...`, native run `06fb1c56...`, delegation `79049f17...`, worker `native-child:9ea15e2f...`, and route `native-child-4ef0e65f...`. Telegram delivered the exact inference header and one-sentence result; OpenClaw's task ledger says `succeeded` / `delivered`.
 - Both canonical route `99f1388a...` and child route used automatic OpenClaw profile `linux-task-agency-router`, `litellm`, and exact alias/model-group `task-agency-router`; cross-provider fallback is zero, actual model unavailable, and native parent/child execution stayed separately on `task-general`.
 - Agency finalized the parent but left the delegation `delegated` and worker open. Isolated Store replay closes the exact row, proving the live one-shot hook was swallowed: an observation-only end skipped durable reconciliation, and failed trace-bound persistence relied on a duplicate hook OpenClaw does not guarantee.
-- Two expected-red passes captured split-instance and one-shot/early/sparse-reset failures. The state-bound fallback passes focused 146/1, fast spine 849/3, all local gates, and 160/160 conformance mutations; re-review found no Critical/High/Medium issue. Candidate is uninstalled; Rule 4 remains unproven.
+- Installed correction/ledger `933d9f4a` / `84e85a4c` still relied on a
+  post-cleanup child-end callback. Parent run `0191a16c...`, trace
+  `29e96603...`, native run `368bcc67...`, and delegation `d6ceb33a...`
+  retain the changed failure: OpenClaw delivered the child response, but
+  `cleanup: delete` removed the host registry entry before Agency closed the
+  worker and delegation.
+- AR-282's uninstalled schema-48 candidate persists the immutable child outcome
+  as delivery `pending`; only OpenClaw 2026.7.1-2's post-adapter
+  `message_sent(success=true)` atomically marks it `delivered` and closes
+  lifecycle. Explicit failure remains open. `gateway_start` reconciles only
+  receipt-backed pending/failed rows as interrupted lifecycle failures while
+  preserving the observed execution outcome, and generic end/stop handling
+  cannot bypass the gate.
+- The host exposes no shared immutable send ID. Correlation requires one active
+  ledger match across every supplied delivery scope and finalized response
+  hash. Active attempts remain at least one hour and consumed tombstones 24
+  hours; exhaustion, stale/delayed identical callbacks, and replays fail
+  closed. Validation is 294 passed with one unrelated skip; review is GO and
+  the installed Store remains schema 47.
 
 ## completed-evidence
 
 - OpenClaw reset, activation, exact status, changed skill, substantive Agency inference, first-pass headers, Store correlation, and Telegram delivery all pass on the installed repair.
 - `task-agency-router` remains confined to Agency workforce inference; OpenClaw's native parent stays `task-general`. No Codex, Claude, ZCode, or Hermes route changed.
 - Install provenance, config invariants, credential-name presence, contractor preservation, final Store integrity, and zero fallback are retained.
-- All failed draws remain retained. The third proves operational parent return
+- All failed draws remain retained. The latest proves operational parent return
   and Telegram delivery, but Agency child terminalization is still unproven on
   the installed build. Strict ADR-0156 Rule 4 is unproven; no matrix cell moved.
 - Hermes reinstall, exact status, corrected attribution, skill, substantive routing, Store correlation, headers, and Telegram delivery pass.
 
 ## exact-blocker
 
-The locally green one-shot terminal-reconciliation candidate is not installed. A fresh changed OpenClaw child retest follows its clean Agency-only checkpoint; Rule 4 still requires an ADR-0156 artifact receipt.
+The schema-48 post-transport candidate is uninstalled and still needs focused
+validation, independent review, a clean local checkpoint, and a changed
+OpenClaw child retest. Rule 4 separately requires an ADR-0156 artifact receipt.
 
 ## traps (machine-specific; do not rediscover)
 
@@ -114,7 +136,7 @@ The locally green one-shot terminal-reconciliation candidate is not installed. A
 
 ## next-bounded-work-package
 
-1. Checkpoint and install only the reviewed terminal-reconciliation fix into natively stopped OpenClaw.
+1. Finish focused validation and review, then checkpoint and install only the post-transport terminal-reconciliation fix into natively stopped OpenClaw.
 2. Restart natively and prove a changed child closes parent, delegation, and worker while delivering through Telegram.
 3. After OpenClaw passes, perform the equivalent Agency-only Hermes proof; never promote operational return into Rule 4.
 

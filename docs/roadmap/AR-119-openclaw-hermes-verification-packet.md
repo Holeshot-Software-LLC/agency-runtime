@@ -16,6 +16,7 @@ related:
   - docs/decisions/0163-keep-litellm-inference-profiles-model-agnostic.md
   - docs/roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md
   - docs/roadmap/issue-AR-279-exclude-hermes-internal-post-response-preflight.md
+  - docs/roadmap/issue-AR-282-persist-openclaw-child-terminals-after-delivery.md
   - docs/roadmap/issue-AR-280-route-native-children-through-host-profiles.md
   - docs/roadmap/issue-AR-281-deliver-finalized-openclaw-child-announcements.md
   - docs/decisions/0166-refresh-openclaw-headers-through-awaited-tool-results.md
@@ -2859,12 +2860,77 @@ protected_hosts: Codex OAuth/config/canary, Claude, and ZCode untouched
 
 ## 2026-08-24 - Latest bounded checkpoint
 
-The full third-draw evidence bundle is recorded above under “OpenClaw
-operational child delivery with missed Agency end receipt.” This is the newest
-state: operational Telegram return passed, installed Agency child
-terminalization failed, and the exact-state reconciliation candidate is locally
-green but uninstalled. Focused 146/1, fast spine 849/3, docs 783/worklog 1,158,
-full Ruff 682, dashboard 134, routing eval, and decision conformance 160/160 all
-pass; the two changed evaluation-environment failures remain retained. OpenClaw
-alone proceeds to Agency-only reinstall and changed live proof. Hermes remains
-active break glass until OpenClaw passes. Rule 4 and the matrix are unchanged.
+Installed correction/ledger `933d9f4a` / `84e85a4c` produced another changed
+OpenClaw child whose response reached Telegram, but Agency lifecycle remained
+open. Parent run `0191a16c-d5cf-485b-bfa0-70199097ef95`, trace
+`29e96603-cfdc-4ec4-8c86-993b6c9179b7`, native run
+`368bcc67-c1ef-43a7-bf3e-28bd751e8648`, and delegation
+`d6ceb33a-cf76-4c23-aee5-4d221f35255b` are the retained correlation. With
+`cleanup: delete`, OpenClaw removed the host registry entry before its deferred
+`subagent_ended` check could emit the receipt Agency expected. This is a failed
+Agency-terminalization draw, not acceptance.
+
+Workforce inference still selected the OpenClaw harness automatically and used
+`linux-task-agency-router` / `litellm` / exact requested alias/model-group
+`task-agency-router` with zero cross-provider fallback. OpenClaw's distinct
+native execution stayed on `task-general`; provider telemetry supplied no
+actual answering model.
+
+AR-282's uninstalled candidate advances the Store from schema 47 to 48. Child
+`agent_end` records the first immutable outcome and delivery `pending` without
+closing lifecycle. `message_sending` records every allowed text send in a
+bounded attempt ledger but is pre-transport. Only OpenClaw 2026.7.1-2's
+post-adapter `message_sent(success=true)` with one unique active attempt
+atomically records `delivered` and closes worker and delegation. Explicit
+failure records `failed` and remains open. `gateway_start` reconciles only
+durable receipt-backed pending/failed rows as `interrupted` lifecycle failures
+while preserving observed execution outcome; it does not sweep unobserved open
+work. Generic end/stop handling cannot bypass the delivery gate.
+
+The host exposes no shared immutable send identifier. Correlation therefore
+requires every supplied target/channel/account/conversation/session/run field
+and the finalized response hash to match one active ledger attempt. Active
+attempts remain at least one hour and consumed ambiguity tombstones 24 hours;
+stale, delayed, replayed, ordinary-identical, zero, multiple, or conflicting
+matches fail closed. A crash after platform acceptance but before the Store
+success commit remains irreducibly ambiguous and resolves as interrupted,
+never delivered.
+
+~~~yaml
+host: openclaw
+installed_checkout_sha: 933d9f4a5bb3dcade7ad6dc726b0d267f0582cde
+installed_ledger_sha: 84e85a4ca681394416ac3c0a1b23e73e707f32f3
+host_version: OpenClaw 2026.7.1-2
+installed_store_schema: 47
+candidate_store_schema: 48
+parent_run_id: 0191a16c-d5cf-485b-bfa0-70199097ef95
+parent_trace_id: 29e96603-cfdc-4ec4-8c86-993b6c9179b7
+child_native_run_id: 368bcc67-c1ef-43a7-bf3e-28bd751e8648
+delegation_id: d6ceb33a-cf76-4c23-aee5-4d221f35255b
+host_delivery: child response reached Telegram
+agency_terminalization: failed; worker and delegation remained open
+failure_cause: cleanup delete removed registry before deferred child-end receipt
+agency_profile: linux-task-agency-router
+provider_type: litellm
+requested_alias_model_group: task-agency-router
+native_execution_alias: task-general
+fallback_count: 0 cross-provider
+actual_model_and_receipt_source: unavailable; provider telemetry supplied none
+candidate_state: uninstalled; 294 focused tests passed, 1 unrelated skip; independent review GO
+candidate_delivery_success_gate: message_sent success only
+candidate_explicit_failure: failed; lifecycle remains open
+candidate_restart_reconciliation: receipt-backed pending/failed become interrupted lifecycle failures; observed child outcome preserved separately
+candidate_attempt_correlation: one active match across supplied target/channel/account/conversation/session/run plus exact response hash; active >=1h; consumed tombstone 24h; capacity fail closed
+crash_after_platform_acceptance_before_store_commit: interrupted; never delivered
+hermes: active break glass; untouched in this package
+operational_agency_terminalization_proven: false
+rule4_proven: false
+matrix_cell_moved: false
+tracker_state: AR-282 creation pending separate authorization
+protected_hosts: Codex OAuth/config/canary, Claude, and ZCode untouched
+~~~
+
+The schema-48 candidate still requires a clean local substantive/ledger
+checkpoint, Agency-only installation while
+OpenClaw is natively stopped, and one genuinely changed live draw. Hermes stays
+break glass until OpenClaw passes. No Rule 4 or matrix claim moves.

@@ -7,6 +7,7 @@ updated: 2026-08-24
 tags: [openclaw, native-child, delivery, finalization, security]
 related:
   - docs/roadmap/issue-AR-281-deliver-finalized-openclaw-child-announcements.md
+  - docs/roadmap/issue-AR-282-persist-openclaw-child-terminals-after-delivery.md
   - docs/roadmap/issue-AR-280-route-native-children-through-host-profiles.md
   - docs/roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md
   - docs/decisions/0049-openclaw-final-only-full-payload-delivery.md
@@ -74,10 +75,30 @@ terminal `message_sending` hook consumes and strips it. Mutation, replay,
 ambiguity, a second send, and uncorrelated message-tool calls remain blocked.
 No unmarked-message exception is added.
 
-The later child-end callback closes lifecycle evidence independently and
-idempotently; it must not replace or invalidate the already committed parent
-terminal response. Neither the launch binding, terminal child row, nor
-delivered parent announcement is a Rule 4 child-card-delivery receipt.
+The child-end callback records the first immutable child outcome but does not
+close lifecycle evidence. OpenClaw 2026.7.1-2's `message_sent` hook is the
+post-adapter result: only its explicit success may atomically mark the
+announcement delivered and close the worker and delegation. Explicit send
+failure remains open. Generic child-end handling cannot bypass that delivery
+gate.
+
+The audited host exposes no immutable attempt identifier shared by every
+`message_sending` and `message_sent` path. Record every allowed textual send in
+a bounded attempt ledger and require one unique active match across every
+supplied target, channel, account, conversation, session, run, and canonical
+content field. Retain active attempts beyond the transport/recovery horizon
+and consumed ambiguity tombstones beyond plausible delayed callbacks. Stale,
+replayed, delayed, or ordinary-identical receipts cannot prove delivery;
+capacity exhaustion fails closed instead of evicting evidence.
+
+If the gateway restarts with a durable child outcome whose delivery is still
+`pending` or explicitly `failed`, mark only that receipt-backed lifecycle
+`interrupted`, preserve the observed execution outcome separately, and close
+the lifecycle as failure atomically. Do not sweep unobserved open workers. A
+crash after platform acceptance but before the Store commit is irreducibly
+ambiguous and must resolve as `interrupted`, never as delivered. Neither this
+operational receipt, the launch binding, nor a terminal child row is a Rule 4
+child-card-delivery receipt.
 
 ## Consequences
 
@@ -90,9 +111,9 @@ delivered parent announcement is a Rule 4 child-card-delivery receipt.
   guarantees without inventing an announcement run or receipt.
 - Orphan and ambiguous completion runs cannot become ordinary Agency turns or
   create synthetic preflight, inference, model-receipt, or finalization rows.
-- A gateway restart can still lose OpenClaw's best-effort pending announcement;
-  durable child lifecycle reconciliation does not invent delivery.
-- The focused implementation gate passes 299 tests with one existing skip;
+- A gateway restart reconciles only receipt-backed pending or failed child
+  outcomes as interrupted; it never invents delivery or sweeps unobserved work.
+- The focused implementation gate passes 294 tests with one existing skip;
   live OpenClaw installation and Telegram delivery evidence remain pending.
 - No OpenClaw source/configuration or native model route changed, and the
   decision does not modify Hermes, Codex, Claude, or ZCode.

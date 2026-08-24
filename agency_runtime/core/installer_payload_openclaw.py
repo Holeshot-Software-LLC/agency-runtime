@@ -47,17 +47,28 @@ const MAX_TOOL_CORRELATIONS = 128;
 const NATIVE_CHILD_OBSERVATION_TTL_MS = 10 * 60 * 1000;
 const MAX_NATIVE_CHILD_STATES = 512;
 const OUTBOUND_AUTHORIZATION_TTL_MS = 30 * 1000;
+// OpenClaw 2026.7.1-2 does not expose one shared per-send identifier across
+// message_sending and every message_sent transport path. Keep active attempts
+// beyond the host/recovery horizon and consumed ambiguity tombstones for a day;
+// capacity exhaustion cancels new sends instead of evicting safety evidence.
+const OUTBOUND_SEND_ACTIVE_TTL_MS = Math.max(
+  60 * 60 * 1000,
+  NATIVE_CHILD_OBSERVATION_TTL_MS + {host_timeout_ms},
+);
+const OUTBOUND_SEND_TOMBSTONE_TTL_MS = 24 * 60 * 60 * 1000;
 const NATIVE_ERROR_TTL_MS = 30 * 1000;
 const NATIVE_CONTROL_ACK_TTL_MS = 10 * 1000;
 const NATIVE_CONTROL_ACK_WAIT_MS = 1_000;
 const NATIVE_CONTROL_ACK_POLL_MS = 10;
 const MAX_OUTBOUND_AUTHORIZATIONS = 128;
+const MAX_OUTBOUND_SEND_ATTEMPTS = 32 * 1024;
 const MAX_NATIVE_ERROR_MARKERS = 128;
 const CONTROL_AUTHORIZATION_FIELD = "agencyRuntimeControlAuthorization";
 const preflightContexts = new Map();
 const toolCorrelations = new Map();
 const terminalRejections = new Map();
 const outboundAuthorizations = new Map();
+const outboundSendAttempts = new Map();
 const controlAuthorizations = new Map();
 const nativeControlAuthorizations = new Map();
 const nativeErrorMarkers = new Map();
@@ -264,6 +275,7 @@ function serializeBridgePayload(payload) {{
     modelId: boundedUtf8(payload?.modelId, 1024),
     source: boundedUtf8(payload?.source, 256),
     status: boundedUtf8(payload?.status, 64),
+    success: payload?.success === true,
     attempt: Number.isSafeInteger(payload?.attempt) ? payload.attempt : 0,
     includeHeaderContext: payload?.includeHeaderContext === true,
     toolName: boundedUtf8(payload?.toolName, 1024),
@@ -1112,22 +1124,124 @@ function resolveNativeChildCompletionState(event, ctx) {{
   }};
 }}
 
-function markNativeChildCompletionConsumed(session, run) {{
+function nativeChildCompletionContentDigest(content) {{
+  if (typeof content !== "string" || !content) return "";
+  try {{ return responseDigest(canonicalOutboundPayload({{ text: content }})); }}
+  catch {{ return ""; }}
+}}
+
+function pruneOutboundSendAttempts(now = Date.now()) {{
+  for (const [key, state] of outboundSendAttempts) {{
+    if (Number(state?.expiresAt || 0) <= now) outboundSendAttempts.delete(key);
+  }}
+}}
+
+function outboundSendScope(event, ctx, sessionOverride = "", runOverride = "") {{
+  return {{
+    sessionId: toolCorrelationIdentity(
+      sessionOverride || event?.sessionKey || ctx?.sessionKey,
+    ),
+    runId: toolCorrelationIdentity(runOverride || event?.runId || ctx?.runId),
+    target: boundedUtf8(event?.to || ctx?.to, 2048),
+    channelId: boundedUtf8(event?.channelId || ctx?.channelId, 512),
+    accountId: boundedUtf8(event?.accountId || ctx?.accountId, 512),
+    conversationId: boundedUtf8(event?.conversationId || ctx?.conversationId, 512),
+  }};
+}}
+
+function rememberOutboundSendAttempt(
+  event,
+  ctx,
+  content,
+  kind,
+  childKey = "",
+  sessionOverride = "",
+  runOverride = "",
+) {{
+  if (typeof content !== "string") return false;
+  if (!content) return true;
+  const responseHash = nativeChildCompletionContentDigest(content);
+  if (!responseHash) return false;
+  const scope = outboundSendScope(event, ctx, sessionOverride, runOverride);
+  pruneOutboundSendAttempts();
+  if (outboundSendAttempts.size >= MAX_OUTBOUND_SEND_ATTEMPTS) return false;
+  outboundSendAttempts.set(randomUUID(), {{
+    ...scope,
+    responseHash,
+    kind: String(kind || "ordinary"),
+    childKey: String(childKey || ""),
+    consumed: false,
+    expiresAt: Date.now() + OUTBOUND_SEND_ACTIVE_TTL_MS,
+  }});
+  return true;
+}}
+
+function consumeOutboundSendAttempt(event, ctx) {{
+  const scope = outboundSendScope(event, ctx);
+  const responseHash = nativeChildCompletionContentDigest(event?.content);
+  if (!responseHash) return null;
+  pruneOutboundSendAttempts();
+  const matches = [];
+  for (const [key, state] of outboundSendAttempts) {{
+    if (
+      state?.responseHash !== responseHash
+      || (scope.sessionId && state?.sessionId !== scope.sessionId)
+      || (scope.runId && state?.runId !== scope.runId)
+      || (scope.target && state?.target !== scope.target)
+      || (scope.channelId && state?.channelId !== scope.channelId)
+      || (scope.accountId && state?.accountId !== scope.accountId)
+      || (scope.conversationId && state?.conversationId !== scope.conversationId)
+    ) continue;
+    matches.push({{ key, state }});
+    if (matches.length > 1) return null;
+  }}
+  if (matches.length !== 1) return null;
+  if (matches[0].state?.consumed === true) return null;
+  matches[0].state.consumed = true;
+  matches[0].state.expiresAt = Date.now() + OUTBOUND_SEND_TOMBSTONE_TTL_MS;
+  return matches[0].state;
+}}
+
+function markNativeChildCompletionSending(session, run, content) {{
   const requesterSessionId = toolCorrelationIdentity(session);
   const completionRunId = toolCorrelationIdentity(run);
-  if (!requesterSessionId || !completionRunId) return false;
+  const completionResponseHash = nativeChildCompletionContentDigest(content);
+  if (!requesterSessionId || !completionRunId || !completionResponseHash) return false;
   const matches = [];
-  for (const state of nativeChildParents.values()) {{
+  for (const [key, state] of nativeChildParents) {{
     if (
       state?.requesterSessionId === requesterSessionId
       && state?.completionRunId === completionRunId
       && state?.completionDeliveryState === "authorized"
-    ) matches.push(state);
+    ) matches.push({{ key, state }});
     if (matches.length > 1) break;
   }}
-  if (matches.length !== 1) return false;
-  matches[0].completionDeliveryState = "consumed";
-  return true;
+  if (matches.length !== 1) return "";
+  const selected = matches[0];
+  for (const [key, state] of nativeChildParents) {{
+    if (
+      key !== selected.key
+      && state?.completionDeliveryState === "sending"
+      && state?.completionResponseHash === completionResponseHash
+    ) return "";
+  }}
+  selected.state.completionDeliveryState = "sending";
+  selected.state.completionResponseHash = completionResponseHash;
+  return selected.key;
+}}
+
+function resolveNativeChildMessageSent(event, ctx) {{
+  const attempt = consumeOutboundSendAttempt(event, ctx);
+  if (attempt?.kind !== "child_completion" || !attempt?.childKey) return null;
+  const state = nativeChildParents.get(attempt.childKey);
+  if (
+    !state
+    || state?.completionDeliveryState !== "sending"
+    || state?.completionResponseHash !== attempt.responseHash
+    || state?.requesterSessionId !== attempt.sessionId
+    || state?.completionRunId !== attempt.runId
+  ) return null;
+  return {{ key: attempt.childKey, state }};
 }}
 
 async function authorizeNativeChildCompletionMessage(event, ctx, completion) {{
@@ -1268,13 +1382,57 @@ function rememberNativeChildSpawn(event, ctx) {{
   return ambiguous ? null : observation;
 }}
 
+function rememberNativeChildPendingEnd(target, outcome, error) {{
+  if (!target) return false;
+  const existing = target?.pendingEnd;
+  if (existing) {{
+    return existing.outcome === outcome && existing.error === error;
+  }}
+  target.pendingEnd = {{ outcome, error }};
+  return true;
+}}
+
+async function persistNativeChildPendingEnd(childState) {{
+  if (
+    !childState?.startedRecorded
+    || !childState?.pendingEnd
+    || childState?.pendingEndRecorded === true
+    || childState?.pendingEndInFlight === true
+  ) return childState?.pendingEndRecorded === true;
+  childState.pendingEndInFlight = true;
+  try {{
+    const receipt = await invokeAgency({{
+      action: "native_child_terminal_observed",
+      sessionId: String(childState.sessionId || ""),
+      traceId: String(childState.traceId || ""),
+      launchId: String(childState.launchId || ""),
+      workUnitId: String(childState.workUnitId || ""),
+      workerId: String(childState.workerId || ""),
+      nativeRunId: String(childState.nativeRunId || ""),
+      outcome: String(childState.pendingEnd.outcome || "unknown"),
+    }});
+    if (
+      receipt?.recorded !== true
+      || String(receipt?.outcome || "") !== String(childState.pendingEnd.outcome || "unknown")
+    ) throw new Error("native child terminal observation was not recorded");
+    childState.pendingEndRecorded = true;
+    return true;
+  }} catch {{
+    return false;
+  }} finally {{
+    childState.pendingEndInFlight = false;
+  }}
+}}
+
 function pendingNativeChildEnd(event, ctx) {{
   const childSession = boundedNativeChildIdentity(event?.targetSessionKey || ctx?.childSessionKey);
   const nativeRunId = boundedNativeChildIdentity(event?.runId || ctx?.runId);
   const requesterSessionId = nativeChildRequester(event, ctx);
   if (!childSession) return {{ correlationHandled: true }};
   const outcome = boundedUtf8(event?.outcome || "unknown", 32);
-  const error = boundedUtf8(event?.error || event?.reason || "", 32 * 1024);
+  const error = outcome === "ok"
+    ? ""
+    : boundedUtf8(event?.error || event?.reason || "", 32 * 1024);
   const key = nativeChildIdentityKey(childSession, nativeRunId);
   let existing = key ? nativeChildParents.get(key) : undefined;
   let ambiguous = false;
@@ -1295,7 +1453,9 @@ function pendingNativeChildEnd(event, ctx) {{
       (requesterSessionId && existing.requesterSessionId !== requesterSessionId)
       || (nativeRunId && existing.nativeRunId !== nativeRunId)
     ) return {{ correlationHandled: true }};
-    existing.pendingEnd = {{ outcome, error }};
+    if (!rememberNativeChildPendingEnd(existing, outcome, error)) {{
+      return {{ correlationHandled: true }};
+    }}
     return existing;
   }}
   if (ambiguous || !requesterSessionId) return {{ correlationHandled: true }};
@@ -1308,32 +1468,16 @@ function pendingNativeChildEnd(event, ctx) {{
     || observation.requesterSessionId !== requesterSessionId
   ) return observation ? {{ correlationHandled: true }} : null;
   if (observation.terminal === true) return {{ correlationHandled: true }};
-  observation.pendingEnd = {{ outcome, error }};
+  if (!rememberNativeChildPendingEnd(observation, outcome, error)) {{
+    return {{ correlationHandled: true }};
+  }}
   return null;
 }}
 
-async function persistNativeChildEnd(key, childState) {{
-  if (!childState?.startedRecorded || !childState?.pendingEnd || childState?.endInFlight) {{
-    return false;
+function finishNativeChildEndPersistence(key, childState) {{
+  if (nativeChildParents.get(key) === childState) {{
+    nativeChildParents.delete(key);
   }}
-  childState.endInFlight = true;
-  try {{
-    const receipt = await invokeAgency({{
-      action: "native_child_ended",
-      sessionId: String(childState.sessionId || ""),
-      traceId: String(childState.traceId || ""),
-      workUnitId: String(childState.workUnitId || ""),
-      workerId: String(childState.workerId || ""),
-      nativeRunId: String(childState.nativeRunId || ""),
-      outcome: String(childState.pendingEnd.outcome || "unknown"),
-      error: String(childState.pendingEnd.error || ""),
-    }});
-    if (receipt?.recorded !== true) throw new Error("native child end was not recorded");
-  }} catch {{
-    childState.endInFlight = false;
-    return false;
-  }}
-  if (nativeChildParents.get(key) === childState) nativeChildParents.delete(key);
   pruneNativeChildState();
   nativeChildObservations.set(key, {{
     childSession: String(childState.workerId || ""),
@@ -1345,68 +1489,185 @@ async function persistNativeChildEnd(key, childState) {{
   return true;
 }}
 
-async function reconcileNativeChildEnd({{
-  childSession: rawChildSession,
-  nativeRunId: rawNativeRunId,
-  requesterSessionId: rawRequesterSessionId,
-  outcome: rawOutcome,
-  error: rawError,
-}}) {{
-  const childSession = boundedNativeChildIdentity(rawChildSession);
-  const nativeRunId = boundedNativeChildIdentity(rawNativeRunId);
-  const requesterSessionId = toolCorrelationIdentity(rawRequesterSessionId);
-  if (!childSession || !requesterSessionId) return false;
-  let receipt;
+function nativeChildDeliveryPayload(childState, includeTrace, success) {{
+  const payload = {{
+    action: "native_child_delivery_observed",
+    sessionId: String(childState?.sessionId || ""),
+    launchId: String(childState?.launchId || ""),
+    workUnitId: String(childState?.workUnitId || ""),
+    workerId: String(childState?.workerId || ""),
+    nativeRunId: String(childState?.nativeRunId || ""),
+    responseHash: String(childState?.completionResponseHash || ""),
+    success: success === true,
+  }};
+  if (includeTrace) payload.traceId = String(childState?.traceId || "");
+  return payload;
+}}
+
+function exactNativeChildDeliveryReceipt(receipt, success) {{
+  const expected = success === true ? "delivered" : "failed";
+  return receipt?.recorded === true && receipt?.deliveryStatus === expected;
+}}
+
+async function persistNativeChildDelivery(key, childState) {{
+  if (
+    !childState?.startedRecorded
+    || childState?.pendingEndRecorded !== true
+    || !childState?.pendingEnd
+    || childState?.completionDeliveryState !== "delivered"
+    || !/^[0-9a-f]{{64}}$/.test(String(childState?.completionResponseHash || ""))
+    || childState?.endInFlight
+  ) {{
+    return false;
+  }}
+  childState.endInFlight = true;
   try {{
-    receipt = await invokeAgency({{
-      action: "native_child_ended",
+    const receipt = await invokeAgency(nativeChildDeliveryPayload(childState, true, true));
+    if (!exactNativeChildDeliveryReceipt(receipt, true)) {{
+      throw new Error("native child delivery was not recorded");
+    }}
+  }} catch {{
+    try {{
+      const reconciled = await invokeAgency(
+        nativeChildDeliveryPayload(childState, false, true),
+      );
+      if (!exactNativeChildDeliveryReceipt(reconciled, true)) {{
+        throw new Error("native child delivery was not reconciled");
+      }}
+    }} catch {{
+      childState.endInFlight = false;
+      return false;
+    }}
+  }}
+  return finishNativeChildEndPersistence(key, childState);
+}}
+
+function persistNativeChildDeliverySync(key, childState, success) {{
+  if (
+    !childState?.startedRecorded
+    || childState?.pendingEndRecorded !== true
+    || !childState?.pendingEnd
+    || !["delivered", "failed"].includes(childState?.completionDeliveryState)
+    || !/^[0-9a-f]{{64}}$/.test(String(childState?.completionResponseHash || ""))
+    || childState?.endInFlight
+  ) {{
+    return false;
+  }}
+  childState.endInFlight = true;
+  try {{
+    const traceBound = invokeAgencySync(
+      nativeChildDeliveryPayload(childState, true, success),
+      {outbound_timeout_ms},
+    );
+    if (exactNativeChildDeliveryReceipt(traceBound, success)) {{
+      if (success === true) return finishNativeChildEndPersistence(key, childState);
+      childState.deliveryResultRecorded = true;
+      childState.endInFlight = false;
+      return true;
+    }}
+  }} catch {{
+    // The exact persisted-launch fallback below is intentionally trace-less.
+  }}
+  try {{
+    const reconciled = invokeAgencySync(
+      nativeChildDeliveryPayload(childState, false, success),
+      {outbound_timeout_ms},
+    );
+    if (exactNativeChildDeliveryReceipt(reconciled, success)) {{
+      if (success === true) return finishNativeChildEndPersistence(key, childState);
+      childState.deliveryResultRecorded = true;
+      childState.endInFlight = false;
+      return true;
+    }}
+  }} catch {{
+    // A later host callback or gateway-start reconciliation remains available.
+  }}
+  childState.endInFlight = false;
+  return false;
+}}
+
+async function observePersistedNativeChildEnd(event, ctx) {{
+  const childSession = boundedNativeChildIdentity(
+    event?.targetSessionKey || ctx?.childSessionKey,
+  );
+  const nativeRunId = boundedNativeChildIdentity(event?.runId || ctx?.runId);
+  const requesterSessionId = nativeChildRequester(event, ctx);
+  if (!childSession || !requesterSessionId) return false;
+  try {{
+    const receipt = await invokeAgency({{
+      action: "native_child_terminal_observed",
       sessionId: requesterSessionId,
       workerId: childSession,
       nativeRunId,
-      outcome: boundedUtf8(rawOutcome || "unknown", 32),
-      error: boundedUtf8(rawError || "", 32 * 1024),
+      outcome: boundedUtf8(event?.outcome || "unknown", 32),
     }});
+    return receipt?.recorded === true;
   }} catch {{
     return false;
   }}
-  if (receipt?.recorded !== true) return false;
+}}
+
+
+async function recordNativeChildAgentEnd(event, ctx) {{
+  const childSession = boundedNativeChildIdentity(sessionId(event, ctx));
+  const nativeRunId = boundedNativeChildIdentity(traceId(event, ctx));
   const key = nativeChildIdentityKey(childSession, nativeRunId);
-  if (key) {{
-    pruneNativeChildState();
-    nativeChildObservations.set(key, {{
-      childSession,
-      nativeRunId,
-      requesterSessionId,
-      terminal: true,
-      expiresAt: Date.now() + NATIVE_CHILD_OBSERVATION_TTL_MS,
-    }});
+  if (!key) return false;
+  const childState = nativeChildParents.get(key);
+  const observation = nativeChildObservations.get(key);
+  const validObservation = Boolean(
+    observation
+    && observation.ambiguous !== true
+    && Number(observation.expiresAt || 0) > Date.now()
+  );
+  if (!childState && !validObservation) return false;
+  if (observation?.terminal === true) return true;
+  const outcome = event?.success === true ? "ok" : "error";
+  const error = event?.success === true
+    ? ""
+    : boundedUtf8(event?.error || "native child agent run failed", 32 * 1024);
+  if (childState) {{
+    if (
+      childState.workerId !== childSession
+      || childState.nativeRunId !== nativeRunId
+      || !toolCorrelationIdentity(childState.requesterSessionId)
+    ) return false;
+    if (!rememberNativeChildPendingEnd(childState, outcome, error)) return false;
+    return persistNativeChildPendingEnd(childState);
   }}
-  return true;
+  if (
+    observation.childSession !== childSession
+    || observation.nativeRunId !== nativeRunId
+    || !toolCorrelationIdentity(observation.requesterSessionId)
+  ) return false;
+  return rememberNativeChildPendingEnd(observation, outcome, error);
 }}
 
-async function reconcilePersistedNativeChildEnd(event, ctx) {{
-  return reconcileNativeChildEnd({{
-    childSession: event?.targetSessionKey || ctx?.childSessionKey,
-    nativeRunId: event?.runId || ctx?.runId,
-    requesterSessionId: nativeChildRequester(event, ctx),
-    outcome: event?.outcome || "unknown",
-    error: event?.error || event?.reason || "",
-  }});
-}}
-
-async function reconcileNativeChildStateEnd(key, childState) {{
-  if (!childState?.pendingEnd) return false;
-  const reconciled = await reconcileNativeChildEnd({{
-    childSession: childState.workerId,
-    nativeRunId: childState.nativeRunId,
-    requesterSessionId: childState.requesterSessionId,
-    outcome: childState.pendingEnd.outcome,
-    error: childState.pendingEnd.error,
-  }});
-  if (reconciled && nativeChildParents.get(key) === childState) {{
-    nativeChildParents.delete(key);
+async function persistCompletedNativeChildEnd(event, ctx) {{
+  const contextRun = toolCorrelationIdentity(ctx?.runId);
+  const eventRun = toolCorrelationIdentity(event?.runId);
+  if (contextRun && eventRun && contextRun !== eventRun) return false;
+  const completionRunId = hostAuthenticatedNativeChildCompletionRun(event, ctx);
+  const requesterSessionId = toolCorrelationIdentity(sessionId(event, ctx));
+  if (!completionRunId || !requesterSessionId) return false;
+  const matches = [];
+  for (const [key, state] of nativeChildParents) {{
+    if (state?.completionRunId !== completionRunId) continue;
+    matches.push({{ key, state }});
+    if (matches.length > 1) return false;
   }}
-  return reconciled;
+  const match = matches[0];
+  if (
+    !match
+    || match.state?.requesterSessionId !== requesterSessionId
+    || match.state?.startedRecorded !== true
+    || !match.state?.pendingEnd
+    || match.state?.pendingEndRecorded !== true
+    || match.state?.endInFlight === true
+    || match.state?.completionDeliveryState !== "delivered"
+  ) return false;
+  if (nativeChildParents.get(match.key) !== match.state) return false;
+  return persistNativeChildDelivery(match.key, match.state);
 }}
 
 function rememberToolCorrelation(event, ctx, parentScope = undefined) {{
@@ -1493,6 +1754,7 @@ function observeRuntimeState(result, epoch = runtimeStateEpoch) {{
   ) {{
     runtimeEnabled = false;
     outboundAuthorizations.clear();
+    outboundSendAttempts.clear();
     controlAuthorizations.clear();
     nativeControlAuthorizations.clear();
     nativeErrorMarkers.clear();
@@ -1636,6 +1898,8 @@ export default definePluginEntry({{
           ),
           completionDeliveryState: "pending",
           pendingEnd: observedRequesterMatches ? observation?.pendingEnd : undefined,
+          pendingEndRecorded: false,
+          pendingEndInFlight: false,
           startedRecorded: false,
           endInFlight: false,
         }};
@@ -1665,14 +1929,9 @@ export default definePluginEntry({{
           }}
           childState.workUnitId = recordedWorkUnit;
           childState.startedRecorded = true;
+          await persistNativeChildPendingEnd(childState);
         }} catch {{
           // Host execution already succeeded; lifecycle evidence remains partial.
-        }}
-        if (
-          childState.pendingEnd
-          && !(await persistNativeChildEnd(childKey, childState))
-        ) {{
-          await reconcileNativeChildStateEnd(childKey, childState);
         }}
         if (correlation?.nativeParent === true) return undefined;
       }}
@@ -1713,9 +1972,15 @@ export default definePluginEntry({{
       }};
     }}, {{ runtimes: ["openclaw"] }});
 
-    api.on("gateway_start", (_event, ctx) => {{
+    api.on("gateway_start", async (_event, ctx) => {{
       deliveryCompatibility = inspectFinalOnlyDelivery(ctx?.config);
-    }});
+      if (!runtimeEnabled) return;
+      try {{
+        await invokeAgency({{ action: "native_child_pending_reconcile" }});
+      }} catch {{
+        // Receipt-backed pending children remain visible for the next startup.
+      }}
+    }}, {{ timeoutMs: {host_timeout_ms} }});
 
     api.on("before_reset", (event, ctx) => {{
       const reason = String(event?.reason || "").trim().toLowerCase();
@@ -1808,6 +2073,7 @@ export default definePluginEntry({{
       if (completion?.matched === true) {{
         const childState = completion?.state;
         if (!childState) return undefined;
+        if (!(await persistNativeChildPendingEnd(childState))) return undefined;
         const stateEpoch = ++runtimeStateEpoch;
         let result;
         try {{
@@ -1889,18 +2155,22 @@ export default definePluginEntry({{
       await invokeAgency(modelCallReceipt(event, ctx));
     }}, {{ timeoutMs: {host_timeout_ms} }});
 
-    api.on("agent_end", (event, ctx) => {{
+    api.on("agent_end", async (event, ctx) => {{
       if (!runtimeEnabled) return;
       if (
         hostAuthenticatedNativeChildCompletionRun(event, ctx)
         || isNativeChildCompletionContext(event, ctx)
       ) {{
+        await persistCompletedNativeChildEnd(event, ctx);
         forgetPreflightContext(event, ctx);
         return;
       }}
-      if (isNativeSubagentSession(event, ctx)) return;
+      if (isNativeSubagentSession(event, ctx)) {{
+        await recordNativeChildAgentEnd(event, ctx);
+        return;
+      }}
       observeAgentEnd(event, ctx);
-    }});
+    }}, {{ timeoutMs: {host_timeout_ms} }});
 
     api.on("subagent_spawned", async (event, ctx) => {{
       if (!runtimeEnabled) return;
@@ -1912,12 +2182,10 @@ export default definePluginEntry({{
       const childState = pendingNativeChildEnd(event, ctx);
       if (childState?.correlationHandled === true) return;
       if (!childState) {{
-        await reconcilePersistedNativeChildEnd(event, ctx);
+        await observePersistedNativeChildEnd(event, ctx);
         return;
       }}
-      const childKey = nativeChildIdentityKey(childState.workerId, childState.nativeRunId);
-      if (await persistNativeChildEnd(childKey, childState)) return;
-      await reconcileNativeChildStateEnd(childKey, childState);
+      await persistNativeChildPendingEnd(childState);
     }}, {{ timeoutMs: {host_timeout_ms} }});
 
     api.on("before_agent_finalize", async (event, ctx) => {{
@@ -2197,8 +2465,21 @@ export default definePluginEntry({{
       try {{
       const session = String(event?.sessionKey || ctx?.sessionKey || "");
       const content = typeof event?.content === "string" ? event.content : "";
+      const run = String(event?.runId || ctx?.runId || "");
       const completionRun = hostAuthenticatedNativeChildCompletionRun(event, ctx);
-      if (!completionRun && isNativeSubagentSession(event, ctx)) return {{ content }};
+      if (!completionRun && isNativeSubagentSession(event, ctx)) {{
+        return rememberOutboundSendAttempt(
+          event,
+          ctx,
+          content,
+          "native_subagent",
+          "",
+          session,
+          run,
+        )
+          ? {{ content }}
+          : {{ cancel: true, cancelReason: FINALIZATION_UNAVAILABLE }};
+      }}
       if (
         NATIVE_CONTROL_ACK_TEXTS.has(content)
       ) {{
@@ -2215,7 +2496,40 @@ export default definePluginEntry({{
         : null;
       if (authorized) {{
         if (authorized.kind === "child_completion") {{
-          markNativeChildCompletionConsumed(session, authorized.runId);
+          const childKey = markNativeChildCompletionSending(
+            session,
+            authorized.runId,
+            unmarked.content,
+          );
+          if (
+            !childKey
+            || !rememberOutboundSendAttempt(
+              event,
+              ctx,
+              unmarked.content,
+              authorized.kind,
+              childKey,
+              session,
+              authorized.runId,
+            )
+          ) {{
+            const state = childKey ? nativeChildParents.get(childKey) : null;
+            if (state) state.completionDeliveryState = "attempted";
+            return {{
+              cancel: true,
+              cancelReason: "Agency Runtime rejected an uncorrelated native child completion.",
+            }};
+          }}
+        }} else if (!rememberOutboundSendAttempt(
+          event,
+          ctx,
+          unmarked.content,
+          authorized.kind,
+          "",
+          session,
+          authorized.runId,
+        )) {{
+          return {{ cancel: true, cancelReason: FINALIZATION_UNAVAILABLE }};
         }}
         return {{ content: unmarked.content }};
       }}
@@ -2233,7 +2547,17 @@ export default definePluginEntry({{
           allowed: true,
           contentLength: content.length,
         }});
-        return {{ content }};
+        return rememberOutboundSendAttempt(
+          event,
+          ctx,
+          content,
+          "native_control",
+          "",
+          session,
+          run,
+        )
+          ? {{ content }}
+          : {{ cancel: true, cancelReason: FINALIZATION_UNAVAILABLE }};
       }}
       if (NATIVE_CONTROL_ACK_TEXTS.has(content)) {{
         return waitForNativeControlAcknowledgement(session, content).then((allowed) => {{
@@ -2243,7 +2567,15 @@ export default definePluginEntry({{
             authorizationPresent: allowed,
             allowed,
           }});
-          return allowed
+          return allowed && rememberOutboundSendAttempt(
+            event,
+            ctx,
+            content,
+            "native_control",
+            "",
+            session,
+            run,
+          )
             ? {{ content }}
             : {{
               cancel: true,
@@ -2262,6 +2594,15 @@ export default definePluginEntry({{
         }};
       }}
     }}, {{ priority: Number.NEGATIVE_INFINITY, timeoutMs: {outbound_timeout_ms + 1_000} }});
+
+    api.on("message_sent", (event, ctx) => {{
+      if (!runtimeEnabled) return;
+      const completion = resolveNativeChildMessageSent(event, ctx);
+      if (!completion?.state) return;
+      const success = event?.success === true;
+      completion.state.completionDeliveryState = success ? "delivered" : "failed";
+      persistNativeChildDeliverySync(completion.key, completion.state, success);
+    }}, {{ timeoutMs: {outbound_timeout_ms + 1_000} }});
   }},
 }});
 """
