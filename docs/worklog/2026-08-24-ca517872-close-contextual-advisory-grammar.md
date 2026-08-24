@@ -15,7 +15,7 @@ type: worklog
 commit: ca517872a3b55fa21a4350c841f35c6cba44ac9d
 short: ca517872
 date: 2026-08-24
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/318
 related_issues:
   - docs/roadmap/issue-AR-265-contextual-turn-classification.md
 ---
@@ -73,6 +73,7 @@ assessment while `can you proceed?` does not suppress execution authority.
 
 ## Follow-ups
 
-Tracker creation, pull-request publication, hosted checks, and merge remain
-pending explicit authorization under AR-265. No live installed-host header
-canary was run or claimed.
+Tracker #317 and pull request #318 are published under the owner's explicit
+authorization. Hosted checks, merge, exact-main installation, and the bounded
+installed-host canary remain the next evidence gates. No live installed-host
+header canary was run or claimed.

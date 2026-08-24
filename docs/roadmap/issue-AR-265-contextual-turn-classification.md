@@ -66,6 +66,9 @@ delegation, or mutation authority.
   preflight; it is a receipt, not the event that triggers routing.
 - GitHub tracker [#317](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/317)
   is open with the required `epic:routing` label.
+- Pull request [#318](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/318)
+  is open from the isolated AR-265 branch; its final hosted checks and merge
+  state remain evidence gates.
 
 ## Approach
 
@@ -185,5 +188,7 @@ non-delegated, and read-only.
 - [x] Same-repository tracker
       [#317](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/317)
       has the exact `[AR-265]` title and `epic:routing` label.
-- [ ] The change is published through an authorized reviewed pull request and
-      merged without disturbing concurrent OpenClaw work.
+- [ ] Authorized pull request
+      [#318](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/318)
+      passes its final hosted checks and is merged without disturbing
+      concurrent OpenClaw work.

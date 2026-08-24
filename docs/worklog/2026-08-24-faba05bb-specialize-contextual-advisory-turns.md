@@ -15,7 +15,7 @@ type: worklog
 commit: faba05bbb97f91a87730e3b1e223cf156432d9c2
 short: faba05bb
 date: 2026-08-24
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/318
 related_issues:
   - docs/roadmap/issue-AR-265-contextual-turn-classification.md
 ---
@@ -71,5 +71,6 @@ authority.
 
 ## Follow-ups
 
-Tracker creation, pull-request publication, hosted checks, and merge remain
-pending explicit authorization under AR-265.
+Tracker #317 and pull request #318 are published under the owner's explicit
+authorization. Hosted checks, merge, exact-main installation, and the bounded
+installed-host canary remain the next evidence gates.

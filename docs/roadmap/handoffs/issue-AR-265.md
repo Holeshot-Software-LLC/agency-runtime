@@ -28,6 +28,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/317
 
 - Isolated worktree branch `codex/ar265-contextual-turn-classification` starts
   at exact fetched `origin/main` `4a3267738bb20519500513ea1498fc68f8ea9443`.
+- The clean branch is published at exact remote head
+  `0346dc58bedc2ffe1761ecadcbd74cb566c4346a`, and pull request
+  [#318](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/318)
+  is open against `main`.
 - The shared main checkout remains untouched with another worker's OpenClaw
   changes preserved in place.
 - Telemetry reported 20.8 percent remaining after bootstrap, so this package
@@ -71,18 +75,18 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/317
   invalid cases, and unchanged source. One earlier post-review invocation used
   the shared editable console executable, stopped at a stale baseline test node
   with zero mutations executed, and is not counted as evidence.
-- Documentation metadata (`734` files), policy availability, Ruff check, Ruff
+- Documentation metadata (`736` files), policy availability, Ruff check, Ruff
   format (`683` files), and diff hygiene pass. Worklog and aggregate docs parity
-  also pass after recording the substantive commit; metadata validation now
-  covers `735` Markdown files.
+  also pass after recording the substantive and tracker-linkage commits.
 
 ## exact-blocker
 
 Tracker [#317](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/317)
-now exists. The owner authorized the previously listed branch push, pull
+and pull request [#318](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/318)
+now exist, and the clean branch is pushed. The owner authorized the pull
 request, merge, exact-main installation, and bounded live contextual-routing
-canary on 2026-08-24. None is complete yet, and this capsule still does not
-claim installed-host or reviewed-pull-request evidence.
+canary on 2026-08-24. Hosted checks, merge, installation, and live canary remain
+incomplete; this capsule does not claim installed-host evidence.
 
 ## same-task-continuity
 
@@ -94,11 +98,11 @@ reinterpret unrelated OpenClaw evidence as AR-265 verification.
 
 ## next-bounded-work-package
 
-1. Commit tracker #317 linkage and its exact worklog ledger, then push the clean
-   branch and open the governed pull request.
-2. Observe required checks and review state before merge. After a verified
-   merge, refresh exact main, install it, and run the bounded live header plus
-   correlated Store canary without reusing local source evidence as host proof.
+1. Commit and push the pull-request linkage, then observe the final required
+   checks and review state before merge.
+2. After a verified merge, refresh exact main, install it for Codex only, and
+   run the bounded live header plus correlated Store canary without reusing
+   local source evidence as host proof.
 
 ## verification
 
