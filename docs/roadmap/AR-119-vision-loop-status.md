@@ -4464,3 +4464,42 @@ of cold inventory, protected hosts, and the legacy-provider warning, not a new
 failure. The correction is installed but unproven live. No fresh Telegram draw
 has started; the next operator action is `/new`. Operational child delivery and
 ADR-0156 Rule 4 remain unproven.
+
+## 2026-08-24 - Second OpenClaw child exposes omitted completion-context hash
+
+The genuinely changed OpenClaw draw is preserved as a second failed delivery.
+Parent run `db9fb4f4-5eb1-40b4-a5e2-3ad2015835e1`, trace
+`1dc07325-047e-471e-b7f6-5830b651463f`, and parent transcript
+`ba29f451-b36e-4e71-bc8b-2c7fb241dfbe` spawned exactly one child session
+`82abcc6d-3131-49f9-88f4-f911296e3750`. Native run
+`cf704bcb-d0b0-4d89-9c85-3770f011adc6`, delegation
+`0f2ea05c-4736-4e34-9f29-eed90d48b85c`, worker row
+`native-child:0b0cf13329292b13ea2d4386a0c591e2ed60bc16b3dc4b218f7d3ab673289da0`,
+and route `native-child-c8e004f5b93a1decf22bb9d9840ef0a9` correlate.
+
+The native child completed at `20:18:26Z`. Its first completion message failed
+closed as `FINALIZATION_UNAVAILABLE`; 12 later completion attempts were
+uncorrelated. No Telegram send was queued, no finalization or delivery row was
+created, and the Store parent/delegation/worker lifecycle remains
+active/delegated/open. This is a retained timeout-free completion-delivery
+failure, not acceptance.
+
+The native-child route contains one applied attempt through automatically
+selected OpenClaw profile `linux-task-agency-router`, provider type `litellm`,
+and exact requested alias/model-group `task-agency-router`. Cross-provider
+fallback is zero and provider telemetry supplied no actual answering model.
+OpenClaw's separate native execution remained on `task-general`; neither alias
+is promoted into an actual-model claim.
+
+The new cause is exact. OpenClaw authorization supplied `headerContextHash`,
+but `serializeBridgePayload` omitted it before the Python completion finalizer,
+which requires that hash. A focused regression failed first. The smallest fix
+forwards that one bounded field; the four-file focused suite passes 145 tests
+with 1 existing skip under `umask 077`, targeted Ruff check and format plus
+`git diff --check` pass, and independent Critical/High review is GREEN.
+
+That candidate is not installed and has no live-fix claim. OpenClaw was stopped
+cleanly after the failed draw; Hermes remained active and untouched. Codex
+OAuth/configuration/canary, Claude, ZCode, native host routes, and host configs
+were not changed. Operational child completion remains unproven, ADR-0156 Rule
+4 remains unproven, and no AR-119 matrix cell moves.

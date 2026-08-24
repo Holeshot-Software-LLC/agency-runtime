@@ -1528,6 +1528,8 @@ if (gates[0].sessionId !== parentSession || gates[0].traceId !== completionRun
     || gates[0].parentSessionId !== parentSession
     || gates[0].parentTraceId !== parentRun
     || gates[0].workerId !== childSession || gates[0].nativeRunId !== childRun
+    || gates[0].headerContextHash
+      !== createHash("sha256").update(nativeChildCompletionContext).digest("hex")
     || gates[0].finalResponse !== rawText
     || gates[0].outboundPayload !== JSON.stringify({ text: rawText })) process.exit(457);
 

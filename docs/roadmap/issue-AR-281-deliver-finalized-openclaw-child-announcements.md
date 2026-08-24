@@ -125,8 +125,23 @@ Telegram-ingress, native-model, or OpenClaw configuration failure.
   post-install Store is `ok`/47. Hermes config/env/launcher remain unchanged and
   no Hermes install occurred. Expected config-validation degradation is from
   cold inventory, protected hosts, and the legacy-provider warning.
-- The clean install worktree remains clean. No fresh Telegram draw has started;
-  next operator action is `/new`. The installed correction is unproven live.
+- The changed second draw is now retained. Parent `db9fb4f4...` / trace
+  `1dc07325...` / transcript `ba29f451...` spawned exactly one child session
+  `82abcc6d...`, native run `cf704bcb...`, delegation `0f2ea05c...`, worker row
+  `native-child:0b0cf133...`, and route `native-child-c8e004f5...`. The child
+  completed at `20:18:26Z`, but its first completion failed
+  `FINALIZATION_UNAVAILABLE`; 12 further attempts were uncorrelated. No
+  Telegram send or finalization/delivery row exists, and Store lifecycle stays
+  active/delegated/open.
+- The child route again used `linux-task-agency-router` / `litellm` / exact
+  `task-agency-router` with zero cross-provider fallback and no actual-model
+  telemetry; native OpenClaw stayed on `task-general`.
+- Authorization supplied `headerContextHash`, but `serializeBridgePayload`
+  omitted it before Python finalization. The expected-red preceded the
+  one-line bounded-field forwarding fix. The four-file suite passes 145/1
+  under `umask 077`; targeted Ruff/format/diff pass and independent review is
+  GREEN. Candidate is not installed; OpenClaw stopped cleanly, Hermes remained
+  active/untouched, and there is no live-fix claim.
 - Strict Rule 4 remains unproven because a delivered announcement is not a
   host-authored pre-speech child-artifact receipt.
 
@@ -183,6 +198,9 @@ Telegram-ingress, native-model, or OpenClaw configuration failure.
       dashboard, routing-eval, and 160-mutation conformance gates pass.
 - [x] Checkpoint the locally green correction as `c7520586` / `2bf42059` and
       install it through Agency only while OpenClaw is natively stopped.
+- [x] Preserve the second changed draw's exact `headerContextHash`
+      serialization failure, add an expected-red first, and pass the focused
+      four-file and targeted static gates with independent review GREEN.
 - [ ] A fresh OpenClaw native child returns one finalized Telegram response with
       correlated Store lifecycle evidence.
 - [x] No OpenClaw source/configuration, native model routing, Agency inference

@@ -765,6 +765,37 @@ the legacy-provider warning. No fresh Telegram draw has started; next operator
 action is `/new`. Operational child delivery is not green. Even a future pass
 will not prove ADR-0156 Rule 4 without a host-authored artifact.
 
+### Second changed child draw reaches finalization with a missing context hash
+
+The fresh changed draw is retained as another failed completion-delivery
+attempt. Parent run `db9fb4f4-5eb1-40b4-a5e2-3ad2015835e1`, trace
+`1dc07325-047e-471e-b7f6-5830b651463f`, and transcript
+`ba29f451-b36e-4e71-bc8b-2c7fb241dfbe` spawned exactly one child session
+`82abcc6d-3131-49f9-88f4-f911296e3750`. Native run
+`cf704bcb-d0b0-4d89-9c85-3770f011adc6`, delegation
+`0f2ea05c-4736-4e34-9f29-eed90d48b85c`, worker row
+`native-child:0b0cf13329292b13ea2d4386a0c591e2ed60bc16b3dc4b218f7d3ab673289da0`,
+and route `native-child-c8e004f5b93a1decf22bb9d9840ef0a9` correlate.
+
+The child completed at `20:18:26Z`. The first completion message failed
+`FINALIZATION_UNAVAILABLE`; 12 later attempts were uncorrelated. No Telegram
+send was queued, no finalization or delivery row was written, and the Store
+parent/delegation/worker lifecycle remains active/delegated/open. The child
+route nevertheless proves one applied `linux-task-agency-router` / `litellm` /
+exact `task-agency-router` attempt with zero cross-provider fallback and no
+provider-supplied actual-model receipt. Native OpenClaw execution remained
+separately on `task-general`.
+
+Authorization carried the required `headerContextHash`, but the generated
+bridge's `serializeBridgePayload` omitted it before calling the Python
+finalizer. A focused regression reproduced that omission before the smallest
+fix forwarded the one bounded field. The focused four-file suite now passes
+145 tests with 1 existing skip under `umask 077`; targeted Ruff check/format
+and `git diff --check` pass, and independent Critical/High review is GREEN.
+This candidate is not installed and has no live-fix claim. OpenClaw stopped
+cleanly after capture; Hermes remained active and untouched. Operational child
+delivery and ADR-0156 Rule 4 remain unproven, and no matrix cell moves.
+
 ## Approach
 
 Change only Agency's OpenClaw adapter as specified by ADR-0166 and ADR-0167. Do not expose

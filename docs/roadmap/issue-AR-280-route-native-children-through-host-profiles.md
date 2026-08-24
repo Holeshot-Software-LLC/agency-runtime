@@ -108,8 +108,23 @@ the selected cards reached that child.
   contractors 15/15 and post-install Store `ok`/47. Hermes config/env/launcher
   are unchanged; no Hermes install. Config validation remains expected-degraded
   for cold inventory, protected hosts, and the legacy-provider warning.
-- The clean install worktree remained clean. No fresh Telegram draw has started;
-  next operator action is `/new`. The installed correction is unproven live.
+- The changed second draw used parent `db9fb4f4...` / trace `1dc07325...` /
+  transcript `ba29f451...` and exactly one child session `82abcc6d...`, native
+  run `cf704bcb...`, delegation `0f2ea05c...`, worker row
+  `native-child:0b0cf133...`, and route `native-child-c8e004f5...`. The child
+  completed at `20:18:26Z`; its first completion failed
+  `FINALIZATION_UNAVAILABLE`, 12 later attempts were uncorrelated, no Telegram
+  send or finalization/delivery row exists, and Store lifecycle remains open.
+- The second route again proves automatic OpenClaw selection of
+  `linux-task-agency-router` / `litellm` / exact `task-agency-router`, zero
+  cross-provider fallback, and no actual-model telemetry. Native OpenClaw
+  remained on `task-general`; AR-280's host-profile routing is not the new
+  failure.
+- The new defect is AR-281 bridge serialization omitting authorized
+  `headerContextHash`. Its expected-red preceded a one-line forwarding fix;
+  the four-file suite passes 145/1 under `umask 077`, targeted Ruff/format/diff
+  pass, and independent review is GREEN. Candidate is not installed; OpenClaw
+  stopped cleanly and Hermes remained active/untouched.
 
 ## Approach
 
@@ -164,6 +179,9 @@ the selected cards reached that child.
       decision-conformance gates.
 - [x] Checkpoint the correction as `c7520586` / `2bf42059` and install it through
       Agency only while OpenClaw is natively stopped.
+- [x] Preserve the second changed child execution and its exact
+      `headerContextHash` serialization failure without misclassifying the
+      already-correct host profile, provider, alias, or native parent route.
 - [ ] Fresh live OpenClaw and Hermes native children spawn, complete, and return
       to their parents with correlated Store lifecycle evidence.
 - [x] Rule 4 remains `unproven` unless an ADR-0156-compliant host-authored

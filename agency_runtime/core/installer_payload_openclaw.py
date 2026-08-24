@@ -255,6 +255,7 @@ function serializeBridgePayload(payload) {{
     draftText: boundedUtf8(payload?.draftText, MAX_BRIDGE_TEXT_BYTES),
     outboundPayload: boundedUtf8(payload?.outboundPayload, MAX_OUTBOUND_PAYLOAD_BYTES),
     responseHash: boundedUtf8(payload?.responseHash, 65),
+    headerContextHash: boundedUtf8(payload?.headerContextHash, 65),
     model: boundedUtf8(payload?.model, 1024),
     requestedModel: boundedUtf8(payload?.requestedModel, 1024),
     modelGroup: boundedUtf8(payload?.modelGroup, 1024),

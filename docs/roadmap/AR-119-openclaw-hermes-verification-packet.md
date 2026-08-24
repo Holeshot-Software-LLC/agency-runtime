@@ -1644,6 +1644,78 @@ known_limit: fresh status, Store-backed skill, substantive LiteLLM routing, and 
 protected_hosts: Codex OAuth/config/canary, Claude, and ZCode untouched
 ~~~
 
+## Second changed OpenClaw native-child draw: completion hash omitted
+
+After the installed ready-receipt correction, the operator submitted a
+genuinely changed, bounded, one-child request. Parent run
+`db9fb4f4-5eb1-40b4-a5e2-3ad2015835e1`, trace
+`1dc07325-047e-471e-b7f6-5830b651463f`, and transcript
+`ba29f451-b36e-4e71-bc8b-2c7fb241dfbe` spawned exactly one native child.
+Session `82abcc6d-3131-49f9-88f4-f911296e3750`, native run
+`cf704bcb-d0b0-4d89-9c85-3770f011adc6`, delegation
+`0f2ea05c-4736-4e34-9f29-eed90d48b85c`, worker row
+`native-child:0b0cf13329292b13ea2d4386a0c591e2ed60bc16b3dc4b218f7d3ab673289da0`,
+and route `native-child-c8e004f5b93a1decf22bb9d9840ef0a9` correlate.
+
+The child completed at `20:18:26Z`. Its first completion message failed
+`FINALIZATION_UNAVAILABLE`; 12 further attempts were uncorrelated. No Telegram
+send was queued and no finalization or delivery row exists. The Store parent,
+delegation, and worker remain active/delegated/open, so the failed evidence is
+not rewritten as a successful timeout, finalization, or delivery.
+
+The child route records one applied attempt on automatically selected OpenClaw
+profile `linux-task-agency-router`, provider type `litellm`, and exact requested
+alias/model-group `task-agency-router`. Cross-provider fallback is zero;
+provider telemetry supplied no actual answering model. Native OpenClaw
+execution separately remained on `task-general`.
+
+The exact bridge defect is that authorization supplied `headerContextHash`,
+but `serializeBridgePayload` omitted the field before the Python finalizer that
+requires it. A focused regression first reproduced that omission. A one-line
+bounded-field forwarding change now passes the four-file focused suite at 145
+passed and 1 existing skip under `umask 077`; targeted Ruff check, Ruff format,
+and `git diff --check` pass, and independent Critical/High review is GREEN.
+The candidate is not installed and has no live proof. The gateway stopped
+cleanly after evidence capture; Hermes remained active and untouched.
+
+~~~yaml
+host: openclaw
+attempt: second changed native-child draw
+parent_run_id: db9fb4f4-5eb1-40b4-a5e2-3ad2015835e1
+parent_trace_id: 1dc07325-047e-471e-b7f6-5830b651463f
+parent_transcript_id: ba29f451-b36e-4e71-bc8b-2c7fb241dfbe
+child_session_id: 82abcc6d-3131-49f9-88f4-f911296e3750
+child_native_run_id: cf704bcb-d0b0-4d89-9c85-3770f011adc6
+delegation_id: 0f2ea05c-4736-4e34-9f29-eed90d48b85c
+worker_row_id: native-child:0b0cf13329292b13ea2d4386a0c591e2ed60bc16b3dc4b218f7d3ab673289da0
+native_child_routing_decision_id: native-child-c8e004f5b93a1decf22bb9d9840ef0a9
+child_completed_at: 20:18:26Z
+first_completion_status: FINALIZATION_UNAVAILABLE
+subsequent_completion_attempts: 12; uncorrelated
+telegram_send: none
+finalization_or_delivery_row: none
+store_lifecycle: active / delegated / open
+agency_inference_profile: linux-task-agency-router
+provider_type: litellm
+requested_alias_model_group: task-agency-router
+cross_provider_fallback_count: 0
+actual_model_and_receipt_source: unavailable; provider telemetry supplied none
+native_openclaw_execution_alias: task-general
+root_cause: serializeBridgePayload omitted authorized headerContextHash
+candidate_change: forward one bounded headerContextHash field
+focused_regression_order: failed before fix; passed after fix
+focused_tests: 145 passed; 1 existing skip; umask 077
+targeted_gates: Ruff check passed; Ruff format passed; git diff --check passed
+independent_review: GREEN; no Critical or High finding
+candidate_installed: false
+gateway_state_after_capture: stopped cleanly
+hermes_state: active; untouched
+completion_delivery_proven: false
+rule4_proven: false
+matrix_cell_moved: false
+protected_hosts: Codex OAuth/config/canary, Claude, and ZCode untouched
+~~~
+
 ### Clean correction install checkpoint
 
 Clean implementation/ledger commits
