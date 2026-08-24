@@ -1121,6 +1121,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `faba05bb` | 2026-08-24 | fix(routing): specialize contextual advisory turns | [AR-265](../roadmap/issue-AR-265-contextual-turn-classification.md) | [detail](2026-08-24-faba05bb-specialize-contextual-advisory-turns.md) |
 | `f6da8cf9` | 2026-08-24 | docs(ar265): checkpoint contextual routing gates | [AR-265](../roadmap/issue-AR-265-contextual-turn-classification.md) | null |
 | `ca517872` | 2026-08-24 | fix(routing): close contextual advisory grammar | [AR-265](../roadmap/issue-AR-265-contextual-turn-classification.md) | [detail](2026-08-24-ca517872-close-contextual-advisory-grammar.md) |
+| `b2c34a6d` | 2026-08-24 | docs(ar265): checkpoint reviewed routing repair | [AR-265](../roadmap/issue-AR-265-contextual-turn-classification.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
