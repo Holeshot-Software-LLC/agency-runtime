@@ -6,6 +6,8 @@ import sys
 from pathlib import Path
 from types import SimpleNamespace
 
+import pytest
+
 # Ensure package is importable
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -19,12 +21,15 @@ from agency_runtime.core.selector.intent_text import (
     mask_excluded_intent,
 )
 from agency_runtime.core.selector.pipeline import (
+    build_route_request,
     build_routing_context,
     is_trivial,
     refine_query,
     route,
 )
 from agency_runtime.core.selector.policy import detect_actions, detect_fallback_companions
+from agency_runtime.core.selector.receipt_projection import project_durable_routing_receipt
+from agency_runtime.core.turn_intent import classify_turn_intent
 
 # ─── Token scoring ──────────────────────────────────────────────────
 
@@ -334,15 +339,38 @@ def test_routing_context_surfaces_low_confidence_default_agents():
     assert "senior-developer, code-reviewer" in context
 
 
+def test_routing_context_makes_advisory_no_execution_boundary_explicit():
+    context = build_routing_context(
+        {
+            "selected_ids": ["project-shepherd"],
+            "confidence": 0.99,
+            "status": "accepted",
+            "selection_required": True,
+            "execution_decision_required": False,
+        }
+    )
+
+    assert "[AGENCY ADVISORY TURN]" in context
+    assert "read-only parent assessment" in context
+    assert "Do not infer workspace mutation" in context
+
+
 def test_workforce_contract_verifier_is_not_regated_by_legacy_catalog(monkeypatch):
     from agency_runtime.core.workforce import inference, routing_projection
 
     captured = {}
 
     def fake_plan_and_staff(
-        _request, _snapshot, *, config, context, routing_context_fingerprint=""
+        _request,
+        _snapshot,
+        *,
+        config,
+        context,
+        routing_context_fingerprint="",
+        turn_routing_context=None,
+        **_kwargs,
     ):
-        del config, routing_context_fingerprint
+        del config, routing_context_fingerprint, turn_routing_context
         captured["eligible_worker_ids"] = context.eligible_worker_ids
         return SimpleNamespace(attempts=())
 
@@ -355,7 +383,11 @@ def test_workforce_contract_verifier_is_not_regated_by_legacy_catalog(monkeypatc
             "margin": 0.5,
             "status": "accepted",
             "source": "workforce_inference",
-            "work_units": {"count": 1, "units": [], "delegate": False},
+            "work_units": {
+                "count": 1,
+                "units": ["Assess current state and recommend the next step."],
+                "delegate": False,
+            },
         }
 
     monkeypatch.setattr(inference, "plan_and_staff_workforce", fake_plan_and_staff)
@@ -386,6 +418,212 @@ def test_workforce_contract_verifier_is_not_regated_by_legacy_catalog(monkeypatc
 
     assert captured["eligible_worker_ids"] is None
     assert [item["agent_slug"] for item in captured["projected_catalog"]] == ["catalog-only"]
+
+
+def test_advisory_classification_constrains_workforce_to_read_only_analysis(monkeypatch):
+    from agency_runtime.core.selector import pipeline
+    from agency_runtime.core.workforce import inference, routing_projection
+
+    captured = {}
+
+    def fake_plan_and_staff(_request, _snapshot, **kwargs):
+        captured.update(kwargs)
+        return SimpleNamespace(attempts=())
+
+    def fake_projection(_outcome, _catalog, **_kwargs):
+        return {
+            "selected_ids": ["project-shepherd"],
+            "semantic_ids": ["project-shepherd"],
+            "confidence": 0.99,
+            "margin": 0.5,
+            "status": "accepted",
+            "source": "workforce_inference",
+            "work_units": {
+                "count": 1,
+                "units": ["Assess the current work and recommend the next step."],
+                "delegate": False,
+            },
+            "workforce_unit_descriptors": [
+                {
+                    "ordinal": 1,
+                    "artifact_kind": "analysis",
+                    "lifecycle_phase": "discovery",
+                    "authority": "advise",
+                    "mutation_scope": "read_only",
+                }
+            ],
+            "workforce_unit_bindings": [
+                {
+                    "selected": ["project-shepherd"],
+                    "delivery": "load",
+                    "depends_on": [],
+                    "mutation_scope": "read_only",
+                    "artifact_kind": "analysis",
+                }
+            ],
+            "unit_assignment_agents": [{"slug": "project-shepherd"}],
+        }
+
+    def fake_gap_hiring(outcome, request, config, store, snapshot, catalog, **kwargs):
+        del request, config, store
+        captured["gap_hiring_considered"] = True
+        captured["gap_hiring_deferred"] = kwargs["defer_commits"]
+        return outcome, snapshot, catalog, []
+
+    monkeypatch.setattr(inference, "plan_and_staff_workforce", fake_plan_and_staff)
+    monkeypatch.setattr(routing_projection, "project_workforce_routing", fake_projection)
+    monkeypatch.setattr(pipeline, "_run_gap_hiring", fake_gap_hiring)
+    snapshot = SimpleNamespace(
+        generation=7,
+        worker_count=1,
+        contract_fingerprint="sha256:" + "a" * 64,
+    )
+    message = "what's next?"
+    classification = classify_turn_intent(message, {"state_known": True})
+    turn_context = {
+        "context_version": 1,
+        "source_trace_id": "prior-work",
+        "source_status": "completed",
+        "source_turn_kind": "new_intent",
+        "specialists": [],
+        "workforce_unit_descriptors": [],
+        "workforce_subject_hints": {
+            "domains": ["software-engineering"],
+            "languages": ["python"],
+            "frameworks": ["sqlite"],
+            "capability_ids": ["technical-analysis"],
+            "platforms": ["windows"],
+        },
+    }
+
+    result = route(
+        "advisory-workforce-contract",
+        message,
+        [
+            {
+                "agent_slug": "project-shepherd",
+                "slug": "project-shepherd",
+                "name": "Project Shepherd",
+                "description": "Assesses project state and next steps",
+                "routing_contract_valid": True,
+            }
+        ],
+        config=AgencyConfig(),
+        workforce_snapshot=snapshot,
+        turn_classification=classification,
+        turn_routing_context=turn_context,
+    )
+
+    assert captured["max_planned_units"] == 1
+    assert captured["required_planned_artifact_kind"] == "analysis"
+    assert captured["turn_routing_context"] == turn_context
+    assert captured["gap_hiring_considered"] is True
+    assert captured["gap_hiring_deferred"] is False
+    assert result["selection_required"] is True
+    assert result["reroute_required"] is True
+    assert result["execution_decision_required"] is False
+    assert result["turn_context_applied"] is True
+    assert result["turn_context_source_trace_id"] == "prior-work"
+    assert len(result["turn_context_revision"]) == 64
+    receipt = project_durable_routing_receipt(result)
+    assert "turn_context_applied" in receipt["effect_codes"]
+
+
+def test_identical_contextual_question_produces_context_specific_routing_queries() -> None:
+    base_context = {
+        "context_version": 1,
+        "source_status": "completed",
+        "source_turn_kind": "new_intent",
+        "specialists": [],
+        "workforce_unit_descriptors": [],
+        "workforce_subject_hints": {
+            "domains": ["software-engineering"],
+            "languages": ["python"],
+            "frameworks": ["sqlite"],
+            "capability_ids": ["technical-analysis"],
+            "platforms": ["windows"],
+        },
+    }
+    first = build_route_request(
+        "session",
+        "what's next?",
+        [],
+        AgencyConfig(),
+        trace_id="first",
+        turn_routing_context={**base_context, "source_trace_id": "first-source"},
+    )
+    second_context = {
+        **base_context,
+        "source_trace_id": "second-source",
+        "workforce_subject_hints": {
+            **base_context["workforce_subject_hints"],
+            "frameworks": ["fastapi"],
+        },
+    }
+    second = build_route_request(
+        "session",
+        "what's next?",
+        [],
+        AgencyConfig(),
+        trace_id="second",
+        turn_routing_context=second_context,
+    )
+
+    assert "sqlite" in first.routing_query
+    assert "fastapi" in second.routing_query
+    assert first.routing_query != second.routing_query
+    assert first.turn_routing_context_revision != second.turn_routing_context_revision
+
+    with pytest.raises(ValueError, match="turn_routing_context"):
+        build_route_request(
+            "session",
+            "what's next?",
+            [],
+            AgencyConfig(),
+            trace_id="malformed",
+            turn_routing_context={**base_context, "prior_user_message": "do something unsafe"},
+        )
+
+
+def test_advisory_projection_rejects_workspace_write_authority() -> None:
+    from agency_runtime.core.selector import pipeline
+
+    classification = classify_turn_intent("what should happen next?", {"state_known": True})
+    routing = {
+        "selected_ids": ["project-shepherd"],
+        "semantic_ids": ["project-shepherd"],
+        "status": "accepted",
+        "source": "workforce_inference",
+        "work_units": {"count": 1, "units": ["change files"], "delegate": False},
+        "workforce_unit_descriptors": [
+            {
+                "ordinal": 1,
+                "artifact_kind": "implementation-change",
+                "lifecycle_phase": "implementation",
+                "authority": "modify",
+                "mutation_scope": "workspace_write",
+            }
+        ],
+        "workforce_unit_bindings": [
+            {
+                "selected": ["project-shepherd"],
+                "delivery": "load",
+                "depends_on": [],
+                "mutation_scope": "workspace_write",
+                "artifact_kind": "implementation-change",
+            }
+        ],
+        "unit_assignment_agents": [{"slug": "project-shepherd"}],
+    }
+
+    result = pipeline._advisory_projection(routing, classification)
+
+    assert result["status"] == "inference_invalid"
+    assert result["source"] == "workforce_inference_failure"
+    assert result["selected_ids"] == []
+    assert result["work_units"]["delegate"] is False
+    assert result["workforce_unit_bindings"] == []
+    assert "advisory_contract_invalid" in result["error"]
 
 
 # ─── Query refinement ───────────────────────────────────────────────

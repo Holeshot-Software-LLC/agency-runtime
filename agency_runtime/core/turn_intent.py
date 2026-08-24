@@ -30,8 +30,8 @@ TurnKind = Literal[
 ]
 TurnStateStatus = Literal["current", "missing", "stale", "ambiguous", "corrupt"]
 
-TURN_CLASSIFIER_VERSION = 4
-SUPPORTED_TURN_CLASSIFIER_VERSIONS: Final[frozenset[int]] = frozenset({1, 2, 3, 4})
+TURN_CLASSIFIER_VERSION = 5
+SUPPORTED_TURN_CLASSIFIER_VERSIONS: Final[frozenset[int]] = frozenset({1, 2, 3, 4, 5})
 MAX_TURN_SIGNAL_CHARS = 16_384
 MAX_REASON_CODES = 8
 MAX_REASON_CODE_CHARS = 64
@@ -64,25 +64,29 @@ _CONTEXTUAL_CONTINUATION = re.compile(
     r"retry|ship\s+it|skip|stop|sure|wait|yes|yep)\s*[!.]*$",
     re.IGNORECASE,
 )
-# A short question *about* the work rather than a request to perform it.
+# A contextual inquiry *about* the work rather than a request to perform it.
 #
-# Staffing these produced work units nobody asked for -- including
-# workspace_write rows on turns that requested no change at all, which can
-# mutate a repository while another run is live. The parent answers these
-# directly, so no specialist identity is required.
+# Treating these as executable new intent produced work units nobody asked for
+# -- including workspace_write rows on turns that requested no change at all.
+# Treating them as pure conversation also suppresses useful expertise. They
+# therefore select and reroute expertise for a read-only parent analysis while
+# explicitly declining an execution-topology decision.
 #
-# Deliberately narrow: an optional discourse lead-in, one recognized
-# interrogative opener, no imperative verb, and a question mark. Anything
-# carrying an object to act on falls through to new_intent, because a missed
-# conversational turn only costs an unnecessary plan while a missed work
-# request would strand real work unstaffed.
-_META_CONVERSATION = re.compile(
+# Deliberately bounded: an optional discourse lead-in and one recognized
+# status or prospective-advice form, with no object to mutate. Anything
+# carrying a concrete action target falls through to new_intent so real work
+# cannot lose its execution decision.
+_CONTEXTUAL_WORK_INQUIRY = re.compile(
     r"^(?:(?:yeah|yes|ok(?:ay)?|so|and|but|hmm|huh|well|right)[,\s]+){0,3}"
     r"(?:so\s+)?"
     r"(?:what(?:'?s|\s+is|\s+was)?\s+(?:next|now|up|happening|going\s+on|the\s+status)|"
     r"what\s+(?:now|next)|"
+    r"what\s+should\s+(?:i|we|you)\s+(?:do|focus\s+on|tackle|work\s+on)\s+next|"
+    r"what\s+should\s+happen\s+next|"
+    r"what\s+do\s+you\s+recommend\s+next|"
+    r"what(?:'?s|\s+is|\s+would\s+be)\s+the\s+next\s+(?:best\s+)?steps?|"
     r"how(?:'s|\s+is)\s+(?:it|that|this)\s+(?:going|looking)|"
-    r"where\s+(?:are\s+we|do\s+we\s+stand)|"
+    r"where\s+(?:are\s+we|do\s+we\s+stand|(?:do|should)\s+we\s+go\s+from\s+here)|"
     r"any(?:thing)?\s+(?:else|updates?)|"
     r"status)"
     r"\s*\??\s*[!.]*$",
@@ -395,15 +399,19 @@ class TurnClassification:
             self.reroute_required,
             self.execution_decision_required,
         )
+        conversation_decisions = {(True, True, True)}
+        if self.classifier_version >= 4:
+            conversation_decisions.add((False, False, False))
+        if self.classifier_version >= 5:
+            conversation_decisions.add((True, True, False))
+        continuation_decisions = {(True, False, True), (True, True, True)}
+        if self.classifier_version >= 5:
+            continuation_decisions.add((True, True, False))
         allowed = {
             "acknowledgement": {(False, False, False), (True, True, True)},
-            "conversation": (
-                {(True, True, True), (False, False, False)}
-                if self.classifier_version >= 4
-                else {(True, True, True)}
-            ),
+            "conversation": conversation_decisions,
             "control": {(False, False, False)},
-            "continuation": {(True, False, True), (True, True, True)},
+            "continuation": continuation_decisions,
             "new_intent": {(True, True, True)},
             "revision": {(True, True, True)},
         }
@@ -484,6 +492,12 @@ def _response_body(response_text: str) -> str:
         labels = tuple(line.split(":", 1)[0].strip() for line in lines[:field_count])
         if labels == tuple(label for _key, label in HEADER_FIELDS):
             lines = lines[field_count:]
+            # Older host guidance appended these two explanatory fields after
+            # the canonical five-field receipt. They are still header material,
+            # not the assistant's terminal question.
+            for legacy_label in ("Why:", "How it shaped outcome:"):
+                if lines and lines[0].strip().casefold().startswith(legacy_label.casefold()):
+                    lines = lines[1:]
     return "\n".join(lines).strip()
 
 
@@ -603,14 +617,18 @@ def force_fresh_turn_reroute(
         raise ValueError("turn classification is not authoritative")
     kind: TurnKind = value.turn_kind
     continuation_of = value.continuation_of
+    execution_decision_required = not (
+        value.selection_required and not value.execution_decision_required
+    )
     if kind == "control":
         kind = "new_intent"
         continuation_of = ""
+        execution_decision_required = True
     updated = TurnClassification(
         turn_kind=kind,
         selection_required=True,
         reroute_required=True,
-        execution_decision_required=True,
+        execution_decision_required=execution_decision_required,
         continuation_of=continuation_of,
         confidence=min(value.confidence, 0.5) if untrusted_origin else value.confidence,
         reason_codes=(*value.reason_codes, reason),
@@ -637,12 +655,12 @@ def _untrusted_state_decision(
         kind = "conversation"
         signal_reason = "conversation_state_untrusted"
         confidence = 0.5
-    elif _META_CONVERSATION.fullmatch(text):
-        # A status question needs no specialist whether or not turn state is
-        # trustworthy: the surface form alone proves no work was requested, so
-        # honouring it here is not a selection bypass.
+    elif _CONTEXTUAL_WORK_INQUIRY.fullmatch(text):
+        # The surface form proves that execution was not requested even when
+        # durable correlation is unavailable. Missing state forces fresh
+        # expertise selection but must not manufacture write authority.
         kind = "conversation"
-        signal_reason = "status_question_state_untrusted"
+        signal_reason = "contextual_work_inquiry_state_untrusted"
         confidence = 0.5
     elif _REVISION_PREFIX.match(text):
         kind = "new_intent"
@@ -656,6 +674,7 @@ def _untrusted_state_decision(
         kind = "new_intent"
         signal_reason = "requested_question_task_or_output"
         confidence = 0.85
+    advisory_inquiry = signal_reason == "contextual_work_inquiry_state_untrusted"
     return _decision(
         kind,
         state,
@@ -665,7 +684,7 @@ def _untrusted_state_decision(
         confidence=confidence,
         selection_required=True,
         reroute_required=True,
-        execution_decision_required=True,
+        execution_decision_required=not advisory_inquiry,
         correlate=False,
     )
 
@@ -709,6 +728,19 @@ def classify_turn_intent(
                 selection_required=True,
                 reroute_required=True,
                 execution_decision_required=True,
+            )
+        if _CONTEXTUAL_WORK_INQUIRY.fullmatch(text):
+            return _decision(
+                "continuation",
+                current_state,
+                raw_message,
+                "active_state",
+                "contextual_work_inquiry",
+                "fresh_read_only_expertise",
+                confidence=0.96,
+                selection_required=True,
+                reroute_required=True,
+                execution_decision_required=False,
             )
         if current_state.pending_authorization:
             return _decision(
@@ -789,16 +821,16 @@ def classify_turn_intent(
             execution_decision_required=False,
         )
 
-    if _META_CONVERSATION.fullmatch(text):
+    if _CONTEXTUAL_WORK_INQUIRY.fullmatch(text):
         return _decision(
             "conversation",
             current_state,
             raw_message,
-            "status_question_without_work_request",
-            "no_pending_state",
+            "contextual_work_inquiry",
+            "fresh_read_only_expertise",
             confidence=0.9,
-            selection_required=False,
-            reroute_required=False,
+            selection_required=True,
+            reroute_required=True,
             execution_decision_required=False,
         )
 

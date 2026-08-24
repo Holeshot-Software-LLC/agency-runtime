@@ -7,6 +7,8 @@ updated: 2026-07-18
 tags: [routing, lifecycle, correlation, inference]
 related:
   - docs/roadmap/issue-AR-85-state-aware-turn-classification.md
+  - docs/roadmap/issue-AR-265-contextual-turn-classification.md
+  - docs/decisions/0163-resolve-contextual-turns-from-transcript-free-subjects.md
   - docs/roadmap/issue-AR-25-turn-scoped-specialist-evidence.md
   - docs/decisions/0045-turn-scoped-specialist-activation.md
   - docs/worklog/README.md
@@ -72,6 +74,10 @@ stale, or changed correlation, configuration, roster, specialist, delegation,
 or work-unit guard causes one bounded fresh route. The ready transaction checks
 the source guard again; a commit-time race discards the reuse and reroutes once
 rather than publishing manager-only abstention evidence.
+
+ADR-0163 extends this lifecycle state with a transcript-free, same-session
+subject capsule for fresh context-dependent routing. It does not change the
+six turn kinds or permit historical context to grant execution authority.
 
 Owned adapter boundaries process-seal one exact origin value:
 `external_user`, `internal_retry`, `stop_revalidation`,

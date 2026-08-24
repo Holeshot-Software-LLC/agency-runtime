@@ -39,6 +39,7 @@ from agency_runtime.core.workforce.inference import (
     WorkforceInferenceAttempt,
     WorkforceRoutingOutcome,
     _CallBudget,
+    _compact_planner_prompt,
     _explicit_indivisible_unit_request,
     _invoke_stage,
     _NominationAccumulator,
@@ -272,6 +273,54 @@ def _result(value: dict[str, Any], *, actual: str = "gpt-5.6-mini") -> Structure
         model_receipt_source="response.body.model" if actual else "unavailable",
         latency_ms=17,
     )
+
+
+def _turn_context(*, framework: str, trace_id: str) -> dict[str, Any]:
+    return {
+        "context_version": 1,
+        "source_trace_id": trace_id,
+        "source_status": "completed",
+        "source_turn_kind": "new_intent",
+        "specialists": [],
+        "workforce_unit_descriptors": [],
+        "workforce_subject_hints": {
+            "domains": ["software-engineering"],
+            "languages": ["python"],
+            "frameworks": [framework],
+            "capability_ids": ["technical-analysis"],
+            "platforms": ["windows"],
+        },
+    }
+
+
+def test_planner_keeps_correlated_context_separate_and_context_specific() -> None:
+    snapshot = _snapshot(_contract("technical-analyst"))
+    sqlite_context = _turn_context(framework="sqlite", trace_id="sqlite-turn")
+    fastapi_context = _turn_context(framework="fastapi", trace_id="fastapi-turn")
+
+    sqlite_prompt = _compact_planner_prompt(
+        "what's next?",
+        snapshot,
+        _context(),
+        max_work_units=1,
+        required_artifact_kind="analysis",
+        turn_routing_context=sqlite_context,
+    )
+    fastapi_prompt = _compact_planner_prompt(
+        "what's next?",
+        snapshot,
+        _context(),
+        max_work_units=1,
+        required_artifact_kind="analysis",
+        turn_routing_context=fastapi_context,
+    )
+
+    sqlite_payload = json.loads(sqlite_prompt)
+    assert sqlite_payload["request"] == "what's next?"
+    assert sqlite_payload["correlated_turn_context"] == sqlite_context
+    assert sqlite_payload["constraints"]["required_artifact_kind"] == "analysis"
+    assert "prior user request" not in sqlite_prompt
+    assert sqlite_prompt != fastapi_prompt
 
 
 def test_balanced_mode_always_uses_inference_for_planning_and_selection() -> None:

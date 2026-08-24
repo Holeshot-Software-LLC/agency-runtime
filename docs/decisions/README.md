@@ -3,7 +3,7 @@ title: Decision registry
 status: active
 category: decisions
 created: 2026-07-10
-updated: 2026-08-12
+updated: 2026-08-24
 tags: [architecture, adr, governance]
 related:
   - docs/roadmap/README.md
@@ -107,6 +107,7 @@ Status meanings:
 | [ADR-0122](0122-use-one-agency-native-resident-steward.md) | Use one Agency-native resident steward | Accepted |
 | [ADR-0123](0123-use-general-preflight-ceiling-for-persistent-parents.md) | Use the general preflight ceiling for persistent native parents | Accepted |
 | [ADR-0161](0161-pin-accepted-outcome-parent-recruiter-separately.md) | Pin the accepted-outcome parent recruiter separately | Accepted |
+| [ADR-0163](0163-resolve-contextual-turns-from-transcript-free-subjects.md) | Resolve contextual turns from transcript-free same-session subjects | Accepted |
 
 ## Evidence and observability
 
