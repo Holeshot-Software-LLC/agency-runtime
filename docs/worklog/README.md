@@ -3,7 +3,7 @@ title: Worklog
 status: active
 category: worklog
 created: 2026-07-10
-updated: 2026-08-22
+updated: 2026-08-23
 tags: []
 related: []
 supersedes: []
@@ -1165,6 +1165,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `21f2519d` | 2026-08-23 | fix(runtime): preserve native finalization attribution | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md), [AR-274](../roadmap/issue-AR-274-record-openclaw-native-skill-reads.md), [AR-278](../roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md) | [detail](2026-08-23-21f2519d-preserve-native-finalization-attribution.md) |
 | `d4d4b829` | 2026-08-23 | fix(openclaw): correlate sessionless reset acknowledgements | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md), [AR-278](../roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md) | [detail](2026-08-23-d4d4b829-correlate-sessionless-openclaw-reset-acknowledgements.md) |
 | `3e71247a` | 2026-08-23 | fix(openclaw): pass reset acknowledgements through both gates | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md), [AR-278](../roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md) | [detail](2026-08-23-3e71247a-pass-openclaw-reset-acknowledgements-through-both-gates.md) |
+| `675fb22a` | 2026-08-23 | diagnose(openclaw): trace native reset acknowledgement phases | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md), [AR-278](../roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md) | [detail](2026-08-23-675fb22a-trace-openclaw-native-reset-acknowledgement-phases.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
