@@ -1119,6 +1119,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `4e5f0ca2` | 2026-08-21 | docs(ar264): record authenticated host evidence [skip ci] | null | null |
 | `4a326773` | 2026-08-21 | Merge pull request #316: record authenticated exact-main host evidence [skip ci] | null | null |
 | `faba05bb` | 2026-08-24 | fix(routing): specialize contextual advisory turns | [AR-265](../roadmap/issue-AR-265-contextual-turn-classification.md) | [detail](2026-08-24-faba05bb-specialize-contextual-advisory-turns.md) |
+| `f6da8cf9` | 2026-08-24 | docs(ar265): checkpoint contextual routing gates | [AR-265](../roadmap/issue-AR-265-contextual-turn-classification.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
