@@ -64,6 +64,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 - Agency-only install `6ede7fad...` from clean checkout `484fe2de` published bundle `6f7e47bd...`, runtime `a3b8894f...`, launcher `0fd98d4d...`, and 12 required hooks including `agent_end`. The installer left OpenClaw stopped; native restart is RPC-green with zero restarts.
 - Contractors remain 15; pre/post Store backups are identical at `07dbad1e...`, integrity `ok`, schema 47. OpenClaw's sole config delta is `meta.lastTouchedAt`; native primary/six fallbacks are unchanged. Telegram/Slack are running and Hermes stays active untouched.
 - Fresh `/new` acknowledgement delivered through the installed two-gate authorization. Native session `447738d1...` is empty and redacted acknowledgement artifact SHA is `8fea7044...`; exact first status remains pending.
+- Exact first `agency status` failed closed after native `task-general` ignored the updated post-tool header. Store skill row `3b9037a9...` names `openclaw-operations`, while the authored header said `none`; terminal `25cf1630...` is `response_invalid` with `skills_loaded` missing and Telegram queued no reply. Correlated transcript / trace / artifact SHAs are `78d096d5...` / `6c9bc3bc...` / `9a9e2a35...`.
 
 ## completed-evidence
 
@@ -75,7 +76,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 
 ## exact-blocker
 
-Do not retry the terminally failed restart-safety input unchanged. The bounded native-error repair is installed; prove a fresh changed, tightly scoped substantive OpenClaw turn before continuing Hermes.
+Do not retry either terminally failed OpenClaw input unchanged. Repair the stale post-tool header compliance path through Agency only, then prove a fresh changed status and substantive turn before continuing Hermes.
 
 ## same-task-continuity
 
@@ -83,8 +84,8 @@ Continue from the clean Hermes install checkpoint into fresh live evidence.
 
 ## next-bounded-work-package
 
-1. Send exact first-message `agency status` in fresh native session `447738d1...`, then prove a changed three-read substantive OpenClaw turn.
-2. Correlate Store/provider/header/channel evidence and checkpoint OpenClaw only.
+1. Add a fail-closed regression and smallest Agency-only repair for stale post-tool header use.
+2. Reinstall into stopped OpenClaw, then correlate a fresh changed status and substantive turn before touching Hermes.
 3. Reinstall Hermes only after OpenClaw passes; prove native attribution and exact Agency routing.
 
 ## verification

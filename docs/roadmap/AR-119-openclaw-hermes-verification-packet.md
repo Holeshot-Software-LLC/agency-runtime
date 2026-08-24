@@ -1712,6 +1712,40 @@ delegation_proven: false
 matrix_cell_moved: false
 ~~~
 
+### OpenClaw fresh status stale-skill-header failure bundle
+
+~~~yaml
+host: openclaw
+checkout_sha: 3d5b024f0d85355e7ce505ca1a1d9baf27d30907
+fresh_session_id: 447738d1-1871-411d-87b1-073387fb5560
+input_exact: agency status
+run_id: a4b27543-7644-4cad-bd0d-2ef9ec9f7581
+agency_trace_id: 7e7a6318-5b6a-4afc-b8a1-0ec57103bd1f
+routing_decision_ids: [f7bc2f7e-555c-47d7-8f74-5a9c37b7f41e]
+routing_status: abstained; deterministic control
+specialists_loaded_ids: []
+skill_name_and_store_row_id: openclaw-operations / 3b9037a9-6ea8-48e1-a9cf-39aeb520b744
+updated_header_skills_loaded: openclaw-operations
+authored_header_skills_loaded: none
+header_exact: invalid; stale initial snapshot used after Store skill mutation
+terminal_finalization_id: 25cf1630-de51-4f21-9050-9da41e01c0ae
+terminal_status: response_invalid
+terminal_missing: [skills_loaded]
+resident_binding_id: none; authored prose claim is not Store evidence
+provider_attempt_status: deterministic control; zero Agency model receipts
+fallback_count: 0
+worker_rows: 0
+native_child_rows: 0
+telegram_outbound_queued: false
+native_transcript_sha256: 78d096d5d3def3d2ed779a72929078eb8932cef740f67d111bf8bdcc71c902b7
+trace_artifact_sha256: 6c9bc3bc52933cd629285976007c95b909c6181ca13db59958dd933f9005d130
+failure_artifact: /tmp/ar119-openclaw-native-error-preinstall.iFUzG5/openclaw-fresh-status-stale-skill-header-redacted.json
+failure_artifact_sha256: 9a9e2a352dc203a152392961714049d60c42b9eef2d1c721160779cacf98bad7
+retry_rule: preserve; do not retry exact input on unchanged code/state
+delegation_proven: false
+matrix_cell_moved: false
+~~~
+
 ### Fresh dual-host status and regression-repair bundle
 
 ~~~yaml

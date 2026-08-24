@@ -550,6 +550,24 @@ and Telegram accepted `✅ New session started.`. Fresh native session
 `8fea7044...`. Exact first-message status, substantive completion, and live
 error-delivery proof remain pending.
 
+### Fresh first status fails closed on stale post-skill header
+
+The operator sent exact `agency status` as the first message in session
+`447738d1...`. Run `a4b27543...`, trace `7e7a6318...`, and abstained routing
+`f7bc2f7e...` correlate. The native parent read `openclaw-operations`; Agency
+recorded skill row `3b9037a9...` and appended a current header naming that
+skill to the awaited tool result. The parent nevertheless copied the initial
+header with `Skills loaded: none` into its natural final response.
+
+Agency did not weaken the contract: finalization `25cf1630...` closed the turn
+`response_invalid` with missing field `skills_loaded`, and Telegram queued no
+reply. Zero Agency model receipts correctly preserve deterministic control
+routing; zero specialist, binding, worker, child-delivery, or delegation rows
+exist. The prose's claimed binding is therefore not accepted as evidence.
+Native transcript SHA is `78d096d5...`; trace artifact SHA is `6c9bc3bc...`;
+redacted correlated artifact SHA is `9a9e2a35...`. Do not retry this exact
+input against unchanged code/state.
+
 ## Approach
 
 Change only Agency's OpenClaw adapter as specified by ADR-0166 and ADR-0167. Do not expose

@@ -4041,3 +4041,27 @@ No Agency run was created by the native reset. Exact `agency status` remains
 the required first message in this new session. No substantive completion,
 live native-error delivery, delegation, Rule 4, or matrix-cell proof follows
 from the reset acknowledgement alone.
+
+## 2026-08-24 - Fresh OpenClaw status rejects a stale skill header
+
+The operator sent exact `agency status` first in fresh native session
+`447738d1...`. Agency run `a4b27543...`, trace `7e7a6318...`, and abstained
+routing `f7bc2f7e...` correlate. OpenClaw's native `task-general` parent read
+the harmless `openclaw-operations` skill. Agency recorded Store skill row
+`3b9037a9...`; the awaited tool result carried a newer exact header with
+`Skills loaded: openclaw-operations`.
+
+The parent ignored that update and authored the initial header with
+`Skills loaded: none`. Agency correctly rejected it: terminal
+`25cf1630...` is `response_invalid`, missing `skills_loaded`, and Telegram
+queued no outbound response. No Agency model receipt exists because this was
+deterministic control routing. No specialist, resident binding, worker,
+native-child, or delegation row exists; the prose's claimed binding is not
+evidence. Transcript / trace / redacted artifact SHAs are `78d096d5...` /
+`6c9bc3bc...` / `9a9e2a35...`.
+
+The exact input is retained and cannot be retried unchanged. The next bounded
+candidate must improve the supported post-tool context's salience while
+retaining first-pass/no-rewrite, terminal evidence, full-payload binding, and
+all child-delivery checks. No live activation, substantive completion,
+delegation, Rule 4, or matrix-cell claim moves.
