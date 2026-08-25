@@ -3,7 +3,7 @@ title: Make configuration the primary source of runtime truth
 status: accepted
 category: decisions
 created: 2026-07-10
-updated: 2026-07-16
+updated: 2026-08-25
 tags: [configuration, security, portability]
 related:
   - docs/roadmap/issue-AR-53-bind-host-processes-to-install-config.md
@@ -23,6 +23,7 @@ related:
   - docs/roadmap/issue-AR-40-dashboard-config-identity-binding.md
   - docs/roadmap/issue-AR-68-require-trusted-config-and-policy-namespaces.md
   - docs/roadmap/issue-AR-73-require-private-custom-policy-files.md
+  - docs/roadmap/issue-AR-293-safe-inference-profile-config-operations.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null

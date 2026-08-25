@@ -11,6 +11,7 @@ related:
   - THIRD_PARTY_NOTICES.md
   - docs/TROUBLESHOOTING.md
   - docs/roadmap/issue-AR-290-end-to-end-guided-setup.md
+  - docs/roadmap/issue-AR-293-safe-inference-profile-config-operations.md
   - docs/decisions/0172-compose-first-run-setup-from-guarded-owner-operations.md
   - docs/roadmap/issue-AR-189-add-owned-host-integration-uninstall.md
   - docs/decisions/0108-retire-only-owned-host-integrations.md
@@ -689,6 +690,23 @@ The `jina` adapter is valid only on `workforce.recall.reranker`; it cannot be a
 default or serve a generative inference stage. Existing `text` rerankers remain
 supported for Ollama/local chat models, LiteLLM, direct chat API keys, and
 Codex or Claude subscription CLIs.
+
+Setup agents can apply those non-secret mappings through the guarded CLI:
+
+```text
+agency config set inference.profiles.jina-embedding --stdin
+agency config set inference.profiles.jina-reranker --stdin
+agency config set inference.routes --stdin
+agency config set workforce.dense_recall_mode additive
+agency config validate
+```
+
+For each `--stdin` command, send one YAML or JSON mapping and then end standard
+input. Dotted route names belong inside the complete `inference.routes` map.
+Put only an environment-variable name such as `JINA_API_KEY` in a profile. If
+a direct profile key is unavoidable, use
+`agency config set inference.profiles.<name>.api_key --prompt`; direct keys are
+write-only and never accepted as positional values or profile-map fields.
 
 Cold turns send one bounded batch containing the positive-only roster cards
 and current work-unit queries. Warm turns reuse the exact model-bound roster

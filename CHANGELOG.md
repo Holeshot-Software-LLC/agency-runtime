@@ -118,6 +118,11 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
+- `agency config set` can now create validated named inference profiles and
+  publish the complete dotted route map used by embedding and reranker stages.
+  Direct profile credentials use the same hidden-input, write-only, redacted
+  secret contract as other provider keys; inline profile-map secrets fail
+  closed.
 - Guided setup now distinguishes a successfully registered Codex integration
   that awaits attended hook trust from a hard installation failure. The
   setup-only degraded path remains fail-closed for incomplete host registration,
