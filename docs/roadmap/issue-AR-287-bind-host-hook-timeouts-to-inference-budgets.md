@@ -48,8 +48,21 @@ process still owned.
 - Bundle generation and `run_preflight` now call the same host-aware helper.
   Environment overrides and live-provider probes do not influence installed
   timeout values.
-- 160 focused installer and preflight tests pass with warnings as errors. A
-  fresh Hermes install and native turn remain pending.
+- 160 focused installer and preflight tests pass with warnings as errors.
+  Agency was reinstalled into Hermes from the current checkout; the generated
+  plugin uses 595 seconds and Hermes's native config remained byte-identical.
+- Fresh Hermes trace
+  `20260825_100145_81c6d2:1ebe5369-b94a-4df6-8cc8-7ec6875e66f9:5dc384f7`
+  crossed the former 80-second boundary and reached `ready` preflight. It
+  recorded successful parent workforce calls through
+  `linux-task-agency-router` / `task-agency-router` plus applied local
+  embedding and reranker receipts. This proves the repaired timeout path.
+- That attempt was intentionally retained as a finalization failure: the
+  operator-only CLI bound Hermes to eight tool-calling iterations, then Hermes
+  injected its synthetic maximum-iteration summary instruction without tool
+  access. The stale draft header was correctly rejected. A changed native turn
+  using Hermes's normal budget remains pending; the failed input will not be
+  retried unchanged.
 - Independent review returned GO with no Critical, High, or Medium findings.
 - Tracker creation is pending explicit authorization.
 
@@ -92,7 +105,7 @@ host's profile must not expand another host or a host with no matching profile.
 - [x] Inverse OpenClaw/Hermes tests prove cross-host isolation, and a host with
       no matching profile keeps its independent legacy budget.
 - [x] Focused installer and preflight tests pass with warnings as errors.
-- [ ] Agency is reinstalled into Hermes only and the generated plugin records
+- [x] Agency is reinstalled into Hermes only and the generated plugin records
       the capped 595-second timeout without changing Hermes native config.
 - [ ] One genuinely new Hermes turn returns a Store-backed Agency result after
       the original timeout failure is preserved.

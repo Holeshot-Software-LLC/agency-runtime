@@ -174,7 +174,13 @@ eligibility constraints.
   but exposed an 80-second generated bridge and Store lease against a
   120-second harness profile; finalization correctly blocked the unverified
   draft. AR-287 now budgets the parent, recall, hiring, and lease paths from
-  static host-scoped profiles; reinstall and a new live turn remain pending.
+  static host-scoped profiles. Agency alone was reinstalled into Hermes with a
+  595-second hook, without changing Hermes native config. A third fresh trace
+  crossed the old timeout and recorded successful exact-alias workforce,
+  embedding, and reranker receipts. Its operator-only eight-iteration CLI cap
+  then forced a no-tool summary before `agency.finalize`; finalization correctly
+  rejected the stale header. That failed attempt is preserved, and a changed
+  native turn using Hermes's normal iteration budget remains pending.
 
 ## Dependencies
 

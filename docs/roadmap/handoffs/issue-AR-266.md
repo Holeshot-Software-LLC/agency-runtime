@@ -17,8 +17,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-266
 branch: codex/ar266-local-retrieval-smoke
-evidence_commit: 2bea0c763243757895032d8552da988368a64ecb
-minimum_ledger_commit: 9adee235d74d0302e1afe090e26064a24d66d471
+evidence_commit: 3cb2da6cfd60a5debd5ef8ad47730922d52bbdb2
+minimum_ledger_commit: dfcb005c2605101a3c03418c0a3c6aacc16a8c1a
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/320
 ---
@@ -30,10 +30,11 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/320
 - Worktree `/tmp/agency-runtime-ar266-retrieval.nVONyD` is on branch
   `codex/ar266-local-retrieval-smoke`, based on exact fetched `origin/main`
   `4d2f88895f8fb8e3234ff4d8dbef47108c830476`.
-- Current clean implementation/ledger head is `f9860466`; substantive commits
-  `382fb4d9` and `2bea0c76` integrate the current host runtime and add bounded
-  embedding dimensions. The local retrieval checkpoint is `fc5847e6`, with
-  ledger commits `04cef50f`, `9adee235`, and `f9860466`.
+- Current clean implementation/ledger head is `dfcb005c`; substantive commits
+  `382fb4d9`, `2bea0c76`, and `3cb2da6c` integrate the current host runtime, add
+  bounded embedding dimensions, and bind host hook timeouts to the complete
+  inference budget. Ledger commits are `04cef50f`, `9adee235`, `f9860466`, and
+  `dfcb005c`.
 - Store schema is 48, integrity is `ok`, and the enabled roster has 278 workers.
   The pre-mutation SQLite online backup also passed integrity check.
 - Effective Agency config SHA-256 after the atomic retrieval-only update is
@@ -41,7 +42,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/320
 - Both gateways are active. Current launcher-manifest SHA-256 values are
   `ace4ad8d3014216ff176018353e8ea7909377c82998c34892c8241a78b707b64`
   for OpenClaw and
-  `75f44200e7b052e33f2b691e8337a6172970174785bb8fb3edad57057c7dbfe6`
+  `006594b31d139f97bd706085fd2b50e7f306b7353ea1d5b35dd00da49ecd862b`
   for Hermes.
 
 ## completed-evidence
@@ -75,21 +76,33 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/320
   not cover its 120-second harness profile, and finalization correctly blocked
   the unverified draft. AR-287 preserves both failures and repairs the shared
   bridge/Store-lease budget; 160 focused tests pass.
+- Agency alone was reinstalled into Hermes from this checkout. The installed
+  plugin records 595 seconds, its launcher runtime digest is
+  `6b87ffe9e589c5acc09a0f4795e7265a6e360116bab364ea034cf86624bb2c21`,
+  and Hermes's native config hash remained byte-identical.
+- Fresh trace
+  `20260825_100145_81c6d2:1ebe5369-b94a-4df6-8cc8-7ec6875e66f9:5dc384f7`
+  crossed the old 80-second boundary, reached ready preflight, and recorded
+  successful exact-alias workforce plus applied local embedding and reranker
+  receipts. Its operator-only `--max-turns 8` cap then injected a synthetic
+  no-tool summary before `agency.finalize`; the stale header was correctly
+  rejected and that distinct failure is preserved.
 
 ## current-state
 
 The local Agency-only config is validated and active in `shadow` mode. Explicit
 global capability routes use free local Ollama models and do not replace the
-OpenClaw/Hermes host defaults. Both installed host projections come from this
-same checkout and accept the new dimensions field. The forced four-host path
-passes; OpenClaw native parent integration passes through Store-backed routing.
-Hermes native retrieval proof remains the next bounded live step after the
-AR-287 repair is checkpointed and Agency alone is reinstalled into Hermes.
+OpenClaw/Hermes host defaults. Hermes now runs the AR-287 repair from this
+checkout; OpenClaw remains active and untouched as break-glass. Forced
+four-host retrieval and OpenClaw native parent integration pass. Hermes has
+current provider and timeout evidence but still needs one normally budgeted,
+Store-backed response that finalizes successfully.
 
 ## unresolved-gates
 
-- Checkpoint AR-287, reinstall Agency into Hermes only, and complete one fresh
-  native Hermes retrieval turn with exact Store correlation.
+- Complete one changed native Hermes retrieval turn with its normal iteration
+  budget and exact Store correlation; do not retry any of the three failed
+  inputs unchanged.
 - Run the remaining proportionate gates and record final before/after Store and
   host evidence. The complete warning-strict corpus and hosted workflow remain
   intentionally undispatched.
@@ -103,18 +116,18 @@ AR-287 repair is checkpointed and Agency alone is reinstalled into Hermes.
 
 ## exact-blocker
 
-There is no external blocker. The prior Hermes bridge timeout is fixed locally
-but not yet installed. OpenClaw's non-delivered CLI run remains active in Store
-and must not be promoted into outbound-delivery or terminal-finalization proof.
+There is no external blocker. The Hermes timeout is fixed and installed. The
+latest turn's artificial eight-iteration cap—not a missing live embedding URL—
+forced a no-tool summary before finalization. OpenClaw's non-delivered CLI run
+remains active in Store and must not be promoted into outbound-delivery proof.
 
 ## next-bounded-work-package
 
-1. Commit the AR-287 implementation/recovery and ledger pair, then reinstall
-   Agency into Hermes only without changing Hermes config.
-2. Correlate the Hermes Store trace and retain any failure without unchanged
-   retry.
-3. Run proportionate repository gates, update this capsule and both issue
-   records with final evidence, and create the final local recovery/ledger pair.
+1. Checkpoint the installed timeout and retained capped-turn evidence.
+2. Run one genuinely changed Hermes request at the native iteration budget and
+   correlate its response, header, routing, recall, and finalization evidence.
+3. Run proportionate gates, record final evidence, and create the final local
+   recovery/ledger pair before moving to any other host.
 
 ## same-task-continuity
 
@@ -151,6 +164,8 @@ git diff --check
   queries, or vectors.
 - Do not treat an absent embedding route as permission to use the default
   inference profile.
+- The preserved missing embedding-stub URL belongs only to an isolated test
+  launcher; never export or require that fixture URL for a live host.
 - Preserve malformed/timed-out provider evidence as unavailable, not as an
   upstream loss or proof that baseline recall failed.
 - Do not raise embedding safety bounds or slice/pad provider vectors; rejected,
