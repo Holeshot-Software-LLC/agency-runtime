@@ -12,6 +12,7 @@ related:
   - docs/roadmap/issue-AR-112-public-user-readme.md
   - docs/roadmap/issue-AR-291-isolate-smoke-runtime-pointers.md
   - docs/roadmap/issue-AR-292-classify-setup-activation-pending.md
+  - docs/roadmap/issue-AR-295-audit-guided-dashboard-asset-budget.md
   - docs/decisions/0172-compose-first-run-setup-from-guarded-owner-operations.md
   - docs/RELEASE_CHECKLIST.md
   - docs/worklog/README.md
@@ -23,7 +24,7 @@ issue_id: AR-290
 priority: p1
 tracker_url: null
 depends_on: [AR-05, AR-291, AR-292]
-blocks: []
+blocks: [AR-295]
 ---
 
 # AR-290: Add end-to-end guided setup
@@ -133,8 +134,9 @@ both full Ruff gates, all four documentation gates, every deterministic routing
 evaluation threshold, and the eight-check network-free five-host source smoke.
 Decision conformance passed its green baseline, killed all 160 curated
 mutations with zero survived or invalid results, and proved its selected source
-inputs unchanged. Final metadata/documentation/diff checks are repeated at the
-clean implementation checkpoint.
+inputs unchanged. All 161 workflow contracts pass after AR-295 retained a
+narrow audited byte ceiling above the required setup UI. Final metadata,
+documentation, and diff checks are repeated at the clean checkpoint.
 
 Read-only GitHub checks on 2026-08-25 found no release, tag, AR-290 tracker
 issue, or AR-289/AR-290 pull request. Those absences are current remote state,

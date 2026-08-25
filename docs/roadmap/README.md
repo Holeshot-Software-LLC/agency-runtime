@@ -308,6 +308,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-292` | [Classify setup activation pending as degraded](issue-AR-292-classify-setup-activation-pending.md) | done | p0 | install | None (tracker creation pending explicit authorization) |
 | `AR-293` | [Allow safe inference profile config operations](issue-AR-293-safe-inference-profile-config-operations.md) | done | p0 | provider-configuration | None (tracker creation pending explicit tracker authorization) |
 | `AR-294` | [Restore expanded configuration regressions](issue-AR-294-restore-expanded-configuration-regressions.md) | done | p0 | testing | None (tracker creation pending explicit tracker authorization) |
+| `AR-295` | [Audit guided dashboard asset budget](issue-AR-295-audit-guided-dashboard-asset-budget.md) | done | p0 | testing | None (tracker creation pending explicit tracker authorization) |
 
 ## Traceability
 

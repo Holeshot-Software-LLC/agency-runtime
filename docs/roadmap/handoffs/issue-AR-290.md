@@ -8,6 +8,7 @@ tags: [handoff, onboarding, install, configuration, dashboard, release]
 related:
   - docs/roadmap/issue-AR-290-end-to-end-guided-setup.md
   - docs/roadmap/issue-AR-293-safe-inference-profile-config-operations.md
+  - docs/roadmap/issue-AR-295-audit-guided-dashboard-asset-budget.md
   - docs/decisions/0172-compose-first-run-setup-from-guarded-owner-operations.md
   - README.md
   - docs/RELEASE_CHECKLIST.md
@@ -18,8 +19,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-290
 branch: codex/ar290-guided-setup-readme
-evidence_commit: 257fe30fe7325485dcbef30195451309bdba63af
-minimum_ledger_commit: aa2830d0247489b8da3f0ef882c762955ea5d0fd
+evidence_commit: 80a3095eaf7fd68f543fa6277da5bacd7029642e
+minimum_ledger_commit: ca25f93c02bdcca43dbea7ffd877996a879a1005
 hard_checkpoint_percent: 50
 tracker_url: null
 ---
@@ -34,7 +35,7 @@ tracker_url: null
 - The branch contains AR-289 native Jina reranking, AR-290 guided setup and
   consumer documentation, AR-291 pointer isolation, AR-292 truthful degraded
   setup classification, AR-293 safe inference-profile config operations, and
-  AR-294 expanded-regression fixture repair.
+  AR-294/AR-295 expanded-regression and dashboard-budget repairs.
 - Remote `main` at `a19a1669` was merged without rewriting history in
   `7487b31b`; current verification completed at the `aa2830d0` ledger. Re-fetch
   before publication and merge again without rewriting only if remote advanced.
@@ -48,8 +49,8 @@ tracker_url: null
 
 - Current merged source passed the 1,127-test expanded configuration/security
   run with 21 skips, all 136 dashboard UI tests, full Ruff and documentation
-  gates, every routing threshold, and all 160 decision-conformance mutations
-  with a green baseline, zero survivors/invalid results, and unchanged source.
+  gates, 161 workflow contracts, every routing threshold, and all 160 decision-
+  conformance mutations with a green baseline and unchanged source.
 - Installed all-detected Windows setup registered Codex, Claude, ZCode, and the
   dashboard, reported no runtime drift, and passed deterministic smoke 8/8.
   Its exact exit 2 means attended activation remains, not mutation failure.
@@ -81,7 +82,7 @@ tracker_url: null
   release gates.
 - AR-119 still lacks exact-candidate Rule-4 proof for all claimed hosts,
   benchmark-valid completed outcomes, and current-artifact host/OS evidence.
-- AR-289 through AR-294 tracker mapping is blocked on explicit authorization.
+- AR-289 through AR-295 tracker mapping is blocked on explicit authorization.
   A tag or release is not authorized and would still be premature.
 
 ## same-task-continuity

@@ -308,9 +308,10 @@ def test_release_resources_are_addressable() -> None:
     # AR-188 adds the authenticated update projection and attended-command banner;
     # the later README-reality work adds traceable product proof projections. AR-236
     # adds source-separated selection, latency, child-delivery, Rule-8, and wiring
-    # evidence. Keep that production behavior readable and branch-testable while
-    # retaining a narrow ceiling above the audited 355,184-byte payload.
-    assert dashboard_bytes < 360 * 1024, "dashboard assets exceeded the 360 KiB budget"
+    # evidence. AR-290 adds the four-stage guided setup journey. Keep that
+    # production behavior readable and branch-testable while retaining a narrow
+    # ceiling above the audited 374,372-byte payload.
+    assert dashboard_bytes < 368 * 1024, "dashboard assets exceeded the 368 KiB budget"
 
 
 def test_release_metadata_is_single_source_and_cross_platform() -> None:
