@@ -3,7 +3,7 @@ title: Worklog
 status: active
 category: worklog
 created: 2026-07-10
-updated: 2026-08-24
+updated: 2026-08-25
 tags: []
 related: []
 supersedes: []
@@ -1196,19 +1196,21 @@ This registry connects repository history to the roadmap and to optional detail 
 | `90b852bd` | 2026-08-24 | Merge pull request #318 from Holeshot-Software-LLC/codex/ar265-contextual-turn-classification | null | null |
 | `dfe8cb26` | 2026-08-24 | docs(ar265): record merged contextual routing canary | [AR-265](../roadmap/issue-AR-265-contextual-turn-classification.md) | null |
 | `fc077039` | 2026-08-24 | Merge pull request #319 from Holeshot-Software-LLC/codex/ar265-live-evidence | [AR-265](../roadmap/issue-AR-265-contextual-turn-classification.md) | null |
-| `9629cc8e` | 2026-08-24 | docs(ar266): plan dense hybrid workforce recall | [AR-266](../roadmap/issue-AR-266-dense-hybrid-workforce-recall.md) | null |
-| `51c7a8ec` | 2026-08-24 | feat(workforce): add dense hybrid candidate recall | [AR-266](../roadmap/issue-AR-266-dense-hybrid-workforce-recall.md) | null |
-| `fee0a116` | 2026-08-24 | docs(ar266): checkpoint verified hybrid recall | [AR-266](../roadmap/issue-AR-266-dense-hybrid-workforce-recall.md) | null |
-| `c42018e1` | 2026-08-25 | docs(ar266): link tracker and pull request | [AR-266](../roadmap/issue-AR-266-dense-hybrid-workforce-recall.md) | null |
-| `042b5ed9` | 2026-08-25 | Merge pull request #321 from Holeshot-Software-LLC/codex/ar266-dense-hybrid-workforce-recall | [AR-266](../roadmap/issue-AR-266-dense-hybrid-workforce-recall.md) | null |
-| `0ac2089e` | 2026-08-25 | docs(ar266): record merged hybrid recall | [AR-266](../roadmap/issue-AR-266-dense-hybrid-workforce-recall.md) | null |
 | `5511300e` | 2026-08-24 | merge: integrate contextual routing with OpenClaw delivery | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md), [AR-265](../roadmap/issue-AR-265-contextual-turn-classification.md), [AR-283](../roadmap/issue-AR-283-persist-openclaw-child-terminals-after-delivery.md) | [detail](2026-08-24-5511300e-integrate-contextual-routing-with-openclaw-delivery.md) |
 | `bb048696` | 2026-08-24 | docs(openclaw): record post-send child acceptance | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md), [AR-283](../roadmap/issue-AR-283-persist-openclaw-child-terminals-after-delivery.md) | null |
+| `9629cc8e` | 2026-08-24 | docs(ar266): plan dense hybrid workforce recall | [AR-266](../roadmap/issue-AR-266-dense-hybrid-workforce-recall.md) | null |
 | `3b1f9783` | 2026-08-24 | docs(roadmap): record provider fallback receipt ambiguity | [AR-284](../roadmap/issue-AR-284-disambiguate-provider-fallback-receipts.md) | null |
+| `51c7a8ec` | 2026-08-24 | feat(workforce): add dense hybrid candidate recall | [AR-266](../roadmap/issue-AR-266-dense-hybrid-workforce-recall.md) | null |
+| `fee0a116` | 2026-08-24 | docs(ar266): checkpoint verified hybrid recall | [AR-266](../roadmap/issue-AR-266-dense-hybrid-workforce-recall.md) | null |
 | `9b51aa18` | 2026-08-24 | docs(openclaw): close merged install acceptance | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md), [AR-283](../roadmap/issue-AR-283-persist-openclaw-child-terminals-after-delivery.md) | null |
 | `f2c472b5` | 2026-08-25 | docs(hermes): checkpoint current install and status | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md) | null |
+| `c42018e1` | 2026-08-25 | docs(ar266): link tracker and pull request | [AR-266](../roadmap/issue-AR-266-dense-hybrid-workforce-recall.md) | null |
 | `ddea73fb` | 2026-08-25 | docs(hermes): record substantive router acceptance | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md) | null |
+| `042b5ed9` | 2026-08-25 | Merge pull request #321 from Holeshot-Software-LLC/codex/ar266-dense-hybrid-workforce-recall | [AR-266](../roadmap/issue-AR-266-dense-hybrid-workforce-recall.md) | null |
+| `0ac2089e` | 2026-08-25 | docs(ar266): record merged hybrid recall | [AR-266](../roadmap/issue-AR-266-dense-hybrid-workforce-recall.md) | null |
+| `4d2f8889` | 2026-08-25 | Merge pull request #322 from Holeshot-Software-LLC/codex/ar266-merge-ledger | [AR-266](../roadmap/issue-AR-266-dense-hybrid-workforce-recall.md) | null |
 | `14ee6074` | 2026-08-25 | docs(hermes): preserve failed native-child proof | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md) | null |
+| `382fb4d9` | 2026-08-25 | merge: integrate dense recall with current host runtime | [AR-266](../roadmap/issue-AR-266-dense-hybrid-workforce-recall.md), [AR-285](../roadmap/issue-AR-285-accept-openclaw-stopped-gateway-status.md) | [detail](2026-08-25-382fb4d9-integrate-dense-recall-with-current-host-runtime.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
