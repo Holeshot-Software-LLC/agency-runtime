@@ -1200,6 +1200,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `bb048696` | 2026-08-24 | docs(openclaw): record post-send child acceptance | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md), [AR-283](../roadmap/issue-AR-283-persist-openclaw-child-terminals-after-delivery.md) | null |
 | `3b1f9783` | 2026-08-24 | docs(roadmap): record provider fallback receipt ambiguity | [AR-284](../roadmap/issue-AR-284-disambiguate-provider-fallback-receipts.md) | null |
 | `9b51aa18` | 2026-08-24 | docs(openclaw): close merged install acceptance | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md), [AR-283](../roadmap/issue-AR-283-persist-openclaw-child-terminals-after-delivery.md) | null |
+| `f2c472b5` | 2026-08-25 | docs(hermes): checkpoint current install and status | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
