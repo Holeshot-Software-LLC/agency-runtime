@@ -3,7 +3,7 @@ title: "AR-266: Recall the complete workforce with dense hybrid retrieval"
 status: in_progress
 category: roadmap
 created: 2026-08-24
-updated: 2026-08-24
+updated: 2026-08-25
 tags: [workforce, routing, embeddings, retrieval, inference]
 related:
   - docs/roadmap/handoffs/issue-AR-266.md
@@ -20,7 +20,7 @@ type: issue
 epic: workforce
 issue_id: AR-266
 priority: p0
-tracker_url: null
+tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/320
 depends_on: []
 blocks: []
 ---
@@ -61,7 +61,10 @@ specialists before inference decides the final staffing plan.
 - Focused and production-spine verification is green. No live embedding or
   reranker provider was called, so cross-provider quality and shadow value
   evidence remain open.
-- Tracker creation is pending explicit outward authorization.
+- Tracker [#320](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/320)
+  and publication [PR #321](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/321)
+  are linked. The issue remains in progress until the live shadow-value gate is
+  proven; this PR does not recommend additive production activation.
 
 ## Approach
 
@@ -122,6 +125,10 @@ eligibility constraints.
 - Two independent High findings were repaired and re-reviewed GO: shadow uses
   an independent evidence budget, and absent actual-model identity cannot seed
   or reuse the cache.
+- Tracker [#320](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/320)
+  carries the remaining live shadow gate, and
+  [PR #321](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/321)
+  publishes the safe shadow-default implementation.
 - The full `tests/test_configuration.py` file retains one inherited mainline
   mismatch: it expects the default workforce mode `fast`, while fetched
   `origin/main` config declares `strict`. All AR-266 configuration tests pass.
@@ -163,5 +170,6 @@ eligibility constraints.
 - [x] Focused tests, the named fast production spine, routing and decision
       conformance evaluations, documentation gates, and `git diff --check`
       pass before handoff.
-- [ ] A same-repository tracker issue titled `[AR-266]` with label
-      `epic:workforce` is created only after explicit authorization.
+- [x] A same-repository tracker issue titled `[AR-266]` with label
+      `epic:workforce` is linked as
+      [#320](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/320).

@@ -3,7 +3,7 @@ title: "AR-266 active recovery capsule"
 status: active
 category: roadmap
 created: 2026-08-24
-updated: 2026-08-24
+updated: 2026-08-25
 tags: [handoff, workforce, embeddings, retrieval, inference]
 related:
   - docs/roadmap/issue-AR-266-dense-hybrid-workforce-recall.md
@@ -18,7 +18,7 @@ branch: codex/ar266-dense-hybrid-workforce-recall
 evidence_commit: 51c7a8ec952e62528f60c7e35702223d036a3915
 minimum_ledger_commit: fc0770392b5a2cc38c589d2411698d0a0ac602ae
 hard_checkpoint_percent: 50
-tracker_url: null
+tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/320
 ---
 
 # AR-266 active recovery capsule
@@ -35,9 +35,13 @@ tracker_url: null
 - AR-266 and ADR-0164 preserve the existing 24 typed candidates as a guaranteed
   lane while searching the complete roster through additive lexical and
   learned-dense recall. Inference remains the sole final selector.
-- No tracker, push, pull request, provider call, installation, or live canary is
-  authorized by this handoff. The attempted stale-hook refresh failed because
-  the installed config contains unsupported top-level fields.
+- Tracker [#320](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/320)
+  exists with `epic:workforce`; the owner authorized publication and
+  [PR #321](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/321)
+  carries the branch. No provider call, model installation, config mutation,
+  or live canary occurred on this box. The official Ollama installer was only
+  downloaded to a temporary folder and signature-verified before the owner
+  redirected model smoke testing to another machine.
 
 ## completed-evidence
 
@@ -55,45 +59,53 @@ tracker_url: null
   full Ruff checks, every routing-eval threshold, and 151/151 decision
   conformance mutations pass.
 - Independent security re-review reports GO on both High repairs. No live
-  provider call, installation, tracker mutation, push, or PR occurred.
+  provider call, model installation, config mutation, or live canary occurred.
+- Verified checkpoint `fee0a116` and ledger commit `b5fe8cb9` complete the
+  original implementation bookkeeping. Tracker #320 and PR #321 now provide
+  the outward publication records.
+- Direct tracker verification confirms issue #320 is open with the exact
+  `[AR-266]` title, URL, and `epic:workforce` label. The repository-wide strict
+  tracker gates remain red on pre-existing historical missing-issue and state
+  mismatches outside AR-266; ordinary documentation validation passes all 739
+  files.
 
 ## current-state
 
-Implementation commit `51c7a8ec` is verified in the isolated worktree. It
-supports explicitly configured embedding and recall-reranker models, safe
-current-turn subject queries, shadow/additive modes, complete roster search,
-and bounded typed fallback. Its exact ledger row and this handoff checkpoint
-are the remaining local bookkeeping; additive production value remains
-unproven until a configured shadow evaluation uses a real provider.
+Implementation commit `51c7a8ec` is verified, ledgered, and published from the
+isolated worktree in PR #321. It supports explicitly configured embedding and
+recall-reranker models, safe current-turn subject queries, shadow/additive
+modes, complete roster search, and bounded typed fallback. Additive production
+value remains unproven until a configured shadow evaluation uses real
+providers on the owner's model-capable machine.
 
 ## unresolved-gates
 
-- Commit the verified implementation and exact worklog/roadmap ledger rows.
+- Merge PR #321 only after its final branch records and required checks pass.
 - Run a predeclared live shadow evaluation against explicitly configured
   embedding and reranker models before recommending additive production use.
 - Resolve the inherited `test_configuration.py` default-mode expectation
   separately from AR-266; fetched main declares `strict`, while that test still
   expects `fast`.
 - Repair the unsupported installed config before any host refresh or canary.
-- Obtain explicit authorization before tracker creation, push, or PR work.
+- Keep tracker #320 open while the live shadow-value gate remains unresolved.
 
 ## exact-blocker
 
-There is no local implementation blocker. Production-quality lift is not yet
-proven because no live embedding/reranker shadow evaluation was authorized or
-run. The installed hook refresh remains blocked by unsupported top-level config
-fields, and tracker, push, PR, installation, and live-canary actions remain
-authorization boundaries.
+There is no implementation or publication blocker beyond PR #321 checks.
+Production-quality lift is not yet proven because no live embedding/reranker
+shadow evaluation ran. The installed hook refresh on this box remains blocked
+by unsupported top-level config fields; model configuration and live evidence
+have moved to the owner's model-capable machine.
 
 ## next-bounded-work-package
 
-1. Record implementation commit `51c7a8ec` and this final handoff checkpoint in
-   exact worklog/roadmap ledger rows.
-2. After explicit authorization, configure a learned embedding model and a
+1. Finish the tracker/PR record commit and its exact worklog ledger row, push
+   them to PR #321, wait for required checks, and merge the PR.
+2. On the model-capable machine, configure a learned embedding model and a
    bounded text reranker, then run the predeclared shadow matrix without
    enabling additive production behavior.
-3. Create/link the tracker and publish a PR only after separate outward-action
-   authorization.
+3. Keep AR-266 and tracker #320 in progress until the live acceptance evidence
+   is durable; do not present the merge itself as additive-value proof.
 
 ## same-task-continuity
 
