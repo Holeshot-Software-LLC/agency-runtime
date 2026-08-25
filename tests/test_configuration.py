@@ -104,8 +104,10 @@ def test_state_accepts_only_empty_or_whitespace_yaml_document(
 def test_default_workforce_mode_funds_one_repair_per_inference_stage(tmp_path: Path) -> None:
     workforce = load_config(tmp_path / "missing.yaml", reload=True).workforce
 
-    assert workforce.mode == "fast"
+    assert workforce.mode == "strict"
     assert workforce.fast_call_budget == 4
+    assert workforce.balanced_call_budget == 4
+    assert workforce.strict_call_budget == 5
 
 
 def test_default_dense_recall_mode_is_evidence_only(tmp_path: Path) -> None:

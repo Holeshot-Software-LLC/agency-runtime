@@ -807,6 +807,7 @@ def test_configuration_transactions_cover_conflict_and_contract_errors() -> None
             validate=lambda value: dict(value),
             apply=lambda document, _operations: (document, set(), False),
             complete=lambda *_args, **_kwargs: object(),  # type: ignore[arg-type]
+            narrow=lambda pristine, _patched, _changed: pristine,
         )
 
     common = {
