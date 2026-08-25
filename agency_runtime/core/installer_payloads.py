@@ -15,7 +15,12 @@ from typing import Any
 from agency_runtime.core.config import AgencyConfig
 from agency_runtime.core.configuration_contracts import ConfigValidationError
 from agency_runtime.core.configuration_persistence import resolve_config_path
-from agency_runtime.core.inference_profiles import resolve as resolve_inference_route
+from agency_runtime.core.inference_profiles import (
+    resolve as resolve_inference_route,
+)
+from agency_runtime.core.inference_profiles import (
+    resolve_explicit_capability_route,
+)
 from agency_runtime.core.installer_contracts import (
     CODEX_HOOK_EVENTS,
     CODEX_NATIVE_CHILD_HOOK_MATCHER,
@@ -37,6 +42,7 @@ from agency_runtime.core.process_argv import (
     absolute_executable_path,
     agency_bootstrap_path,
 )
+from agency_runtime.core.workforce.planning_contracts import MAX_WORK_UNITS
 
 _BOUND_LAUNCHER_ARTIFACTS: ContextVar[tuple[str, str] | None] = ContextVar(
     "agency_bound_launcher_artifacts",
@@ -45,6 +51,15 @@ _BOUND_LAUNCHER_ARTIFACTS: ContextVar[tuple[str, str] | None] = ContextVar(
 
 _OPENCLAW_NATIVE_CHILD_JUDGE_CALLS = 2
 _SELECTOR_MAX_JUDGE_DEADLINE_SECONDS = 60.0
+_WORKFORCE_ROUTE_KEYS = (
+    "workforce.planner",
+    "workforce.recruiter",
+)
+_HIRING_ROUTE_KEYS = (
+    "workforce.hiring",
+    "workforce.hiring.critic",
+    "workforce.hiring.security_review",
+)
 
 
 def _facade():
@@ -209,12 +224,131 @@ def effective_judge_budget_seconds(cfg: AgencyConfig) -> float:
     return max(selector_budget, workforce_budget)
 
 
-def hook_timeout_seconds(cfg: AgencyConfig) -> int:
-    requested = math.ceil(_effective_judge_budget_seconds(cfg) + HOOK_TIMEOUT_BUFFER_SECONDS)
+def _legacy_workforce_timeout_seconds(cfg: AgencyConfig) -> float:
+    """Return the longest static timeout in the runtime fallback chain."""
+
+    providers = [
+        provider
+        for provider in cfg.providers
+        if (
+            (provider.model and provider.base_url)
+            or (
+                provider.type.strip().lower() == "cli"
+                and provider.transport.strip().lower() in {"codex", "claude"}
+            )
+        )
+    ]
+    preferred = cfg.workforce.provider.strip().casefold()
+    if preferred:
+        providers = [provider for provider in providers if provider.name.casefold() == preferred]
+    timeouts = [max(0.0, float(provider.timeout)) for provider in providers]
+    if not timeouts and (
+        cfg.judge.model and cfg.judge.base_url and (cfg.judge.api_key or cfg.judge.api_key_env)
+    ):
+        timeouts.append(max(0.0, float(cfg.judge.timeout)))
+    return max(timeouts, default=0.0)
+
+
+def _host_inference_budget_seconds(cfg: AgencyConfig, harness: str) -> float:
+    """Bound static host-scoped workforce and optional recall inference.
+
+    One workforce call budget is shared by planner, recruiter, repair, and
+    critic stages. Each call may consume the longest profile reachable by the
+    owning harness. Dense recall owns a separate fixed two-call budget, and
+    every inferred gap may enter its own bounded hiring call budget. Resolution
+    is config-only: environment overrides and live providers must not mutate an
+    installed launcher budget.
+    """
+
+    normalized_harness = str(harness or "").strip().casefold()
+    profile_timeouts: list[float] = []
+    route_keys = _WORKFORCE_ROUTE_KEYS + (
+        ("workforce.recruiter.critic",) if cfg.workforce.mode == "strict" else ()
+    )
+    for route_key in route_keys:
+        try:
+            resolution = resolve_inference_route(
+                cfg,
+                route_key,
+                harness=normalized_harness,
+            )
+        except ConfigValidationError:
+            continue
+        profile_timeouts.append(max(0.0, float(resolution.provider.timeout)))
+
+    workforce_calls = {
+        "fast": cfg.workforce.fast_call_budget,
+        "balanced": cfg.workforce.balanced_call_budget,
+        "strict": cfg.workforce.strict_call_budget,
+    }[cfg.workforce.mode]
+    workforce_budget = workforce_calls * max(profile_timeouts, default=0.0)
+
+    hiring_timeouts: list[float] = []
+    hiring_fallback_reachable = False
+    for route_key in _HIRING_ROUTE_KEYS:
+        try:
+            resolution = resolve_inference_route(
+                cfg,
+                route_key,
+                harness=normalized_harness,
+            )
+        except ConfigValidationError:
+            hiring_fallback_reachable = True
+            continue
+        hiring_timeouts.append(max(0.0, float(resolution.provider.timeout)))
+    if hiring_fallback_reachable:
+        fallback_timeout = _legacy_workforce_timeout_seconds(cfg)
+        if fallback_timeout:
+            hiring_timeouts.append(fallback_timeout)
+    maximum_gap_attempts = min(cfg.workforce.max_work_units, MAX_WORK_UNITS)
+    hiring_budget = (
+        maximum_gap_attempts * cfg.workforce.hiring_call_budget * max(hiring_timeouts, default=0.0)
+    )
+
+    recall_budget = 0.0
+    if cfg.workforce.dense_recall_mode != "off":
+        try:
+            embedding = resolve_explicit_capability_route(
+                cfg,
+                "workforce.recall.embedding",
+                capability_class="embeddings",
+                harness=normalized_harness,
+            )
+            reranker = resolve_explicit_capability_route(
+                cfg,
+                "workforce.recall.reranker",
+                capability_class="text",
+                harness=normalized_harness,
+            )
+        except ConfigValidationError:
+            embedding = None
+            reranker = None
+        if embedding is not None and reranker is not None:
+            recall_budget = max(0.0, float(embedding.provider.timeout)) + max(
+                0.0,
+                float(reranker.provider.timeout),
+            )
+
+    # Keep the legacy/provider-chain calculation as a floor for stages that
+    # have no explicit profile. Recall is a separate path and therefore sits
+    # outside that maximum rather than disappearing when the legacy floor is
+    # longer than the host profile budget.
+    return (
+        max(_effective_judge_budget_seconds(cfg), workforce_budget) + recall_budget + hiring_budget
+    )
+
+
+def hook_timeout_seconds(cfg: AgencyConfig, *, harness: str = "") -> int:
+    inference_budget = (
+        _host_inference_budget_seconds(cfg, harness)
+        if harness
+        else _effective_judge_budget_seconds(cfg)
+    )
+    requested = math.ceil(inference_budget + HOOK_TIMEOUT_BUFFER_SECONDS)
     # OpenClaw permits at most 600 seconds and the generated bridge reserves a
-    # two-second host margin. Normal schema-validated configs remain well below
-    # this cap; it protects programmatic callers that construct AgencyConfig
-    # directly without passing through the config validator.
+    # two-second host margin. Complete workforce and hiring envelopes may reach
+    # this ceiling; it also protects programmatic callers that construct
+    # AgencyConfig directly without passing through the config validator.
     return min(MAX_HOOK_TIMEOUT_SECONDS, max(1, requested))
 
 
@@ -555,7 +689,7 @@ def bundle_files(
     config_path = _bound_config_path(effective_cfg)
     if config_path and effective_cfg.config_path != config_path:
         effective_cfg = replace(effective_cfg, config_path=config_path)
-    timeout_seconds = _hook_timeout_seconds(effective_cfg)
+    timeout_seconds = _hook_timeout_seconds(effective_cfg, harness=host)
     if host == "hermes":
         return build_hermes_bundle(
             hermes_plugin(timeout_seconds, effective_cfg),

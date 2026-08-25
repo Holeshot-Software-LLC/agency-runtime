@@ -220,8 +220,15 @@ def test_bundle_files_rebinds_a_normalized_config_path(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     cfg = AgencyConfig(config_path="relative.yaml")
+    observed: dict[str, str] = {}
+
+    def hook_timeout(config: AgencyConfig, *, harness: str = "") -> int:
+        observed["config_path"] = config.config_path
+        observed["harness"] = harness
+        return 7
+
     monkeypatch.setattr(installer_payloads, "_bound_config_path", lambda _cfg: "absolute.yaml")
-    monkeypatch.setattr(installer_payloads, "_hook_timeout_seconds", lambda observed: 7)
+    monkeypatch.setattr(installer_payloads, "_hook_timeout_seconds", hook_timeout)
     monkeypatch.setattr(
         installer_payloads,
         "_codex_hooks",
@@ -237,6 +244,7 @@ def test_bundle_files_rebinds_a_normalized_config_path(
 
     files, digest = installer_payloads.bundle_files("codex", cfg)
 
+    assert observed == {"config_path": "absolute.yaml", "harness": "codex"}
     assert "absolute.yaml" in files["hooks"]
     assert digest == "digest"
 

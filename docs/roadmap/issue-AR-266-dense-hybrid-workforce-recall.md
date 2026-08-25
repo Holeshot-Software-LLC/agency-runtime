@@ -8,6 +8,7 @@ tags: [workforce, routing, embeddings, retrieval, inference]
 related:
   - docs/roadmap/handoffs/issue-AR-266.md
   - docs/roadmap/issue-AR-286-configure-bounded-embedding-dimensions.md
+  - docs/roadmap/issue-AR-287-bind-host-hook-timeouts-to-inference-budgets.md
   - docs/roadmap/issue-AR-265-contextual-turn-classification.md
   - docs/decisions/0083-use-capability-indexed-recall-and-bounded-inference.md
   - docs/decisions/0118-require-inference-owned-staffing.md
@@ -23,7 +24,7 @@ issue_id: AR-266
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/320
 depends_on: []
-blocks: [AR-286]
+blocks: [AR-286, AR-287]
 ---
 
 # AR-266: Recall the complete workforce with dense hybrid retrieval
@@ -167,6 +168,13 @@ eligibility constraints.
   configuration was changed. Hermes shutdown also returned exit 1 after
   honoring SIGTERM; that failed stop receipt is preserved, and the refreshed
   service subsequently started normally.
+- Two distinct fresh Hermes CLI turns preserve the next native-host boundary.
+  The first lacked the gateway's credential environment indirection and made
+  no provider attempt. The second securely reused that populated indirection
+  but exposed an 80-second generated bridge and Store lease against a
+  120-second harness profile; finalization correctly blocked the unverified
+  draft. AR-287 now budgets the parent, recall, hiring, and lease paths from
+  static host-scoped profiles; reinstall and a new live turn remain pending.
 
 ## Dependencies
 
@@ -174,6 +182,8 @@ eligibility constraints.
   replaying the session transcript.
 - AR-286 provides bounded provider-native dimensions without changing AR-266's
   per-vector or aggregate safety limits.
+- AR-287 binds generated host and Store-lease timeouts to the complete bounded
+  host-scoped inference path before Hermes native proof resumes.
 - ADR-0083 governs capability-indexed bounded recall.
 - ADR-0118 keeps substantive staffing inference-owned.
 - ADR-0121 forbids promoting deterministic recall metrics to selection proof.

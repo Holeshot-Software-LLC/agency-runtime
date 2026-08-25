@@ -1440,7 +1440,7 @@ def run_preflight(
         persisted_message = (
             redact_content(persisted_source) if cfg.observability.capture_content else ""
         )
-        lease_seconds = hook_timeout_seconds(cfg)
+        lease_seconds = hook_timeout_seconds(cfg, harness=normalized_host)
         diagnostics.enter("lifecycle")
         lifecycle = store.begin_preflight_attempt(
             trace_id=turn_trace_id,

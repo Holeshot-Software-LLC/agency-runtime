@@ -8,6 +8,7 @@ tags: [handoff, workforce, embeddings, retrieval, inference]
 related:
   - docs/roadmap/issue-AR-266-dense-hybrid-workforce-recall.md
   - docs/roadmap/issue-AR-286-configure-bounded-embedding-dimensions.md
+  - docs/roadmap/issue-AR-287-bind-host-hook-timeouts-to-inference-budgets.md
   - docs/decisions/0164-use-dense-embeddings-only-for-workforce-recall.md
   - docs/roadmap/issue-AR-265-contextual-turn-classification.md
   - docs/worklog/README.md
@@ -29,9 +30,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/320
 - Worktree `/tmp/agency-runtime-ar266-retrieval.nVONyD` is on branch
   `codex/ar266-local-retrieval-smoke`, based on exact fetched `origin/main`
   `4d2f88895f8fb8e3234ff4d8dbef47108c830476`.
-- Current clean implementation/ledger head is `9adee235`; substantive commits
+- Current clean implementation/ledger head is `f9860466`; substantive commits
   `382fb4d9` and `2bea0c76` integrate the current host runtime and add bounded
-  embedding dimensions, with ledger commits `04cef50f` and `9adee235`.
+  embedding dimensions. The local retrieval checkpoint is `fc5847e6`, with
+  ledger commits `04cef50f`, `9adee235`, and `f9860466`.
 - Store schema is 48, integrity is `ok`, and the enabled roster has 278 workers.
   The pre-mutation SQLite online backup also passed integrity check.
 - Effective Agency config SHA-256 after the atomic retrieval-only update is
@@ -66,6 +68,13 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/320
   was rejected before allocation; Hermes honored SIGTERM but its process
   returned exit 1 during stop; an earlier isolated test launcher correctly
   refused before allocation when its explicit embedding-stub URL was absent.
+- Hermes session `20260825_092554_bd5aef` failed before provider attempt because
+  the fresh CLI shell lacked the credential indirection that is populated in
+  the gateway. A distinct securely bound session, `20260825_092951_6ab6b9`,
+  reached the installed bridge but timed out: the 80-second generated hook did
+  not cover its 120-second harness profile, and finalization correctly blocked
+  the unverified draft. AR-287 preserves both failures and repairs the shared
+  bridge/Store-lease budget; 160 focused tests pass.
 
 ## current-state
 
@@ -74,11 +83,13 @@ global capability routes use free local Ollama models and do not replace the
 OpenClaw/Hermes host defaults. Both installed host projections come from this
 same checkout and accept the new dimensions field. The forced four-host path
 passes; OpenClaw native parent integration passes through Store-backed routing.
-Hermes native retrieval proof is the next bounded live step.
+Hermes native retrieval proof remains the next bounded live step after the
+AR-287 repair is checkpointed and Agency alone is reinstalled into Hermes.
 
 ## unresolved-gates
 
-- Complete the fresh native Hermes retrieval turn and exact Store correlation.
+- Checkpoint AR-287, reinstall Agency into Hermes only, and complete one fresh
+  native Hermes retrieval turn with exact Store correlation.
 - Run the remaining proportionate gates and record final before/after Store and
   host evidence. The complete warning-strict corpus and hosted workflow remain
   intentionally undispatched.
@@ -92,15 +103,14 @@ Hermes native retrieval proof is the next bounded live step.
 
 ## exact-blocker
 
-There is no external blocker. The only current incomplete live step is the
-fresh Hermes bridge turn. OpenClaw's non-delivered CLI run remains active in
-Store and must not be promoted into outbound-delivery or terminal-finalization
-proof.
+There is no external blocker. The prior Hermes bridge timeout is fixed locally
+but not yet installed. OpenClaw's non-delivered CLI run remains active in Store
+and must not be promoted into outbound-delivery or terminal-finalization proof.
 
 ## next-bounded-work-package
 
-1. Create this local recovery/ledger pair, then run one fresh Hermes native
-   turn without changing Hermes config.
+1. Commit the AR-287 implementation/recovery and ledger pair, then reinstall
+   Agency into Hermes only without changing Hermes config.
 2. Correlate the Hermes Store trace and retain any failure without unchanged
    retry.
 3. Run proportionate repository gates, update this capsule and both issue
