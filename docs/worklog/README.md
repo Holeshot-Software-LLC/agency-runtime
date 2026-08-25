@@ -1226,6 +1226,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `cc41b21f` | 2026-08-25 | fix(codex): keep 0.149 opaque children unstaffed | [AR-180](../roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md), [AR-255](../roadmap/issue-AR-255-inference-owned-host-proven-child-staffing.md) | [detail](2026-08-25-cc41b21f-codex-0149-opaque-compatibility.md) |
 | `f6969862` | 2026-08-25 | docs(codex): record 0.149 hook activation gap | [AR-180](../roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md), [AR-255](../roadmap/issue-AR-255-inference-owned-host-proven-child-staffing.md) | [detail](2026-08-25-f6969862-codex-hook-activation-gap.md) |
 | `04a23ebe` | 2026-08-25 | docs(codex): isolate 0.149 spawn hook gap | [AR-180](../roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md), [AR-255](../roadmap/issue-AR-255-inference-owned-host-proven-child-staffing.md) | [detail](2026-08-25-04a23ebe-isolate-codex-spawn-hook-gap.md) |
+| `53350797` | 2026-08-25 | docs(codex): close 0.149 hook compatibility probe | [AR-180](../roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md), [AR-255](../roadmap/issue-AR-255-inference-owned-host-proven-child-staffing.md) | [detail](2026-08-25-53350797-close-codex-hook-compatibility-probe.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
