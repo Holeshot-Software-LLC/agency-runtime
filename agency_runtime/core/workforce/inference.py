@@ -965,6 +965,7 @@ def _provider_cache_document(provider: ProviderEntry) -> dict[str, Any]:
         "ollama_mode": provider.ollama_mode,
         "timeout": provider.timeout,
         "reasoning_effort": provider.reasoning_effort,
+        "dimensions": provider.dimensions,
     }
 
 
@@ -1693,6 +1694,7 @@ def _run_hybrid_recall(
                 "type": provider.type,
                 "model": provider.model,
                 "base_url": provider.base_url,
+                "dimensions": provider.dimensions,
             },
             "invoker": invoker_identity,
             "normalization": EMBEDDING_NORMALIZATION_IDENTITY,
@@ -1714,6 +1716,7 @@ def _run_hybrid_recall(
             embedding_invoker=active_embedding_invoker,
             provider_name=provider.name,
             requested_model=provider.model,
+            embedding_dimensions=provider.dimensions,
             per_unit_limit=16,
             per_plan_limit=64,
         )

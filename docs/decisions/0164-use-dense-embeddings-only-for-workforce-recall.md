@@ -3,10 +3,11 @@ title: "Use learned embeddings only for additive workforce recall"
 status: accepted
 category: decisions
 created: 2026-08-24
-updated: 2026-08-24
+updated: 2026-08-25
 tags: [workforce, embeddings, retrieval, inference, privacy]
 related:
   - docs/roadmap/issue-AR-266-dense-hybrid-workforce-recall.md
+  - docs/roadmap/issue-AR-286-configure-bounded-embedding-dimensions.md
   - docs/roadmap/handoffs/issue-AR-266.md
   - docs/decisions/0083-use-capability-indexed-recall-and-bounded-inference.md
   - docs/decisions/0118-require-inference-owned-staffing.md
@@ -58,6 +59,15 @@ default. Recall uses an independent fixed two-call evidence budget, so shadow
 cannot consume planner, recruiter, repair, or critic capacity. Provider
 failure or invalid evidence degrades to the existing typed behavior and cannot
 generate a hiring gap.
+
+Embedding profiles may request a provider-native output projection through a
+bounded `dimensions` value. Zero omits the request field. A nonzero value is
+valid only for an `embeddings` profile using Ollama, OpenAI-compatible, or
+LiteLLM transport, and the returned vectors must match it exactly. The requested
+dimension is part of catalog identity. A rejected, unsupported, stripped, or
+mismatched request degrades to typed-only recall; Agency never slices, pads, or
+otherwise reshapes vectors. Existing per-vector and aggregate scalar bounds
+remain unchanged.
 
 Embed only a versioned allowlist of positive governed card fields. Keep
 negative suitability, authority, host, platform, tool, audit, employment,

@@ -481,6 +481,7 @@ inference:
       adapter: litellm
       model: text-embedding-3-large
       capability_class: embeddings
+      dimensions: 1024
       base_url: http://127.0.0.1:4000/v1
       api_key_env: LITELLM_API_KEY
     workforce-recall-reranker:
@@ -498,6 +499,13 @@ vectors and send only the queries. A second bounded call reranks every recalled
 ID without dropping or inventing candidates. Missing routes, provider failures,
 malformed vectors, absent actual-model receipts, or cache-identity mismatches
 fall back to the unchanged typed candidate lane.
+
+`dimensions` is optional: zero (the default) omits the provider field. A
+nonzero value is valid only on an `embeddings` profile using `ollama`,
+`openai-compatible`, or `litellm`. Agency requires the provider to return that
+exact width and includes it in catalog identity. A rejected or stripped option,
+or a mismatched response, falls back to typed-only recall. Safety bounds remain
+unchanged, and Agency never slices or pads vectors client-side.
 
 Default files: config `~/.agency-runtime/agency.yaml`, database
 `~/.agency-runtime/agency.db`, global switch `~/.agency-runtime/run/control.json`.

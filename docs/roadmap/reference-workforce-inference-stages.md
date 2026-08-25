@@ -3,10 +3,13 @@ title: "Workforce inference stages and profile routes"
 status: active
 category: roadmap
 created: 2026-08-04
-updated: 2026-08-04
+updated: 2026-08-25
 tags: [workforce, inference, configuration, reference]
 related:
   - docs/roadmap/issue-AR-235-autonomous-gap-hiring-with-isolated-security-review.md
+  - docs/roadmap/issue-AR-266-dense-hybrid-workforce-recall.md
+  - docs/roadmap/issue-AR-286-configure-bounded-embedding-dimensions.md
+  - docs/decisions/0164-use-dense-embeddings-only-for-workforce-recall.md
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-122-contractor-hiring-and-lifecycle.md
   - agency_runtime/core/workforce/inference.py
@@ -43,6 +46,8 @@ project's per-stage `(model, thinking_level)` profile pattern.
 | `hiring-critic` | Every gap hire (in `strict` mode) | `_CRITIC_SYSTEM` (`hiring.py:74`) | `HIRIC_CRITIC_SCHEMA` | `workforce.critic_model` |
 | `hiring-repair` | When the first hire attempt returns malformed JSON | `_HIRE_REPAIR_SYSTEM` (`hiring.py:91`) | `HIRING_RESPONSE_SCHEMA` | (uses hiring model) |
 | `hiring-repair-critic` | When the hire repair is in strict mode | `_CRITIC_SYSTEM` (`hiring.py:74`) | `HIRING_CRITIC_SCHEMA` | (uses critic model) |
+| `recall-embedding` | Learned recall in `shadow` or `additive` mode | Positive-only roster cards plus current work-unit queries | Bounded embedding vectors | `workforce.recall.embedding` explicit route |
+| `recall-reranker` | After lexical/dense discovery has produced its complete offered set | Closed candidate IDs and bounded recall evidence | Exact permutation of every offered ID | `workforce.recall.reranker` explicit route |
 
 **Where it lives in code**: every stage resolves through
 `configured_workforce_providers(config, stage=...)`. Call sites in
@@ -343,11 +348,20 @@ inference:
       model: "<model-or-alias>"
       thinking_level: "low" | "medium" | "high" | "xhigh" | null
       capability_class: "text" | "embeddings" | "code" | null   # optional
+      dimensions: 0                    # embedding profiles only; 0 omits field
       base_url: "<url>"                # adapter-specific
       api_key_env: "<env-var-name>"    # preferred over api_key
       api_key: "<literal>"             # last resort; redacted in receipts
       timeout_ms: 30000
 ```
+
+A nonzero `dimensions` value is accepted only when `capability_class` is
+`embeddings` and the adapter is `ollama`, `openai-compatible`, or `litellm`.
+The provider must return that exact width. The value participates in the dense
+catalog identity, so projection changes invalidate reuse. A provider that
+rejects or strips the option, or returns a different width, leaves learned
+recall unavailable and preserves the typed-only lane. Existing vector and
+aggregate scalar bounds are unchanged; Agency never slices or pads vectors.
 
 **`thinking_level` adapter mapping** (the
 `structured_provider` translates per-adapter):

@@ -416,6 +416,40 @@ def test_provider_failure_returns_unchanged_baseline_and_content_free_evidence()
     assert "PRIVATE PROVIDER FAILURE" not in repr(result.receipt)
 
 
+def test_configured_dimension_mismatch_stays_typed_only_and_uncached() -> None:
+    plan = _plan()
+    contracts = (
+        _contract("baseline-primary", outcome="Existing primary baseline"),
+        _contract("dense-primary", outcome="Novel primary semantic expertise"),
+    )
+    baseline = {"unit-primary": ("baseline-primary",)}
+
+    def mismatched(texts: tuple[str, ...]) -> EmbeddingProviderResponse:
+        return EmbeddingProviderResponse(
+            tuple((1.0, 0.0) for _text in texts),
+            provider_name="fixture-provider",
+            requested_model="fixture-model",
+            actual_model="fixture-model-v1",
+        )
+
+    result = discover_hybrid_recall(
+        plan,
+        contracts,
+        typed_candidate_ids=baseline,
+        catalog_identity="fixture-catalog-dimension-mismatch",
+        embedding_invoker=mismatched,
+        provider_name="fixture-provider",
+        requested_model="fixture-model",
+        embedding_dimensions=3,
+    )
+
+    assert result.receipt.status == "typed_only"
+    assert result.receipt.reason_code == "embedding_response_invalid"
+    assert result.units[0].baseline_ids == baseline["unit-primary"]
+    assert result.units[0].additions == ()
+    assert hybrid_recall_cache_size() == 0
+
+
 def test_missing_actual_model_identity_never_populates_or_reuses_catalog_cache() -> None:
     plan = _plan()
     contracts = (

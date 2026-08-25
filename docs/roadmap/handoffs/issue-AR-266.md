@@ -7,6 +7,7 @@ updated: 2026-08-25
 tags: [handoff, workforce, embeddings, retrieval, inference]
 related:
   - docs/roadmap/issue-AR-266-dense-hybrid-workforce-recall.md
+  - docs/roadmap/issue-AR-286-configure-bounded-embedding-dimensions.md
   - docs/decisions/0164-use-dense-embeddings-only-for-workforce-recall.md
   - docs/roadmap/issue-AR-265-contextual-turn-classification.md
   - docs/worklog/README.md
@@ -88,12 +89,17 @@ embedding and recall-reranker models, safe current-turn subject queries,
 shadow/additive modes, complete roster search, and bounded typed fallback.
 Additive production value remains unproven until a configured shadow
 evaluation uses real providers on the owner's model-capable machine.
+Local preparation found a provider-native 1,024-dimension projection is needed
+to keep the complete-roster batch under the unchanged scalar bound. AR-286 owns
+that configuration path; no vector slicing or bound increase is authorized.
 
 ## unresolved-gates
 
 - Publish this exact-main merge record through the required docs-only PR.
 - Run a predeclared live shadow evaluation against explicitly configured
   embedding and reranker models before recommending additive production use.
+- Complete AR-286 so an exact requested dimension is sent, verified, and bound
+  into catalog identity before the local shadow evaluation.
 - Resolve the inherited `test_configuration.py` default-mode expectation
   separately from AR-266; fetched main declares `strict`, while that test still
   expects `fast`.
@@ -113,9 +119,9 @@ and live evidence have moved to the owner's model-capable machine.
 1. Commit and publish this exact-main merge checkpoint with its reciprocal
    worklog ledger row through the required docs-only PR.
 2. On the model-capable machine, start from the resulting exact `main`,
-   configure a learned embedding model and a
-   bounded text reranker, then run the predeclared shadow matrix without
-   enabling additive production behavior.
+   complete AR-286, configure a learned embedding model with a provider-native
+   bounded dimension and a bounded text reranker, then run the predeclared
+   shadow matrix without enabling additive production behavior.
 3. Keep AR-266 and tracker #320 in progress until the live acceptance evidence
    is durable; do not present the merge itself as additive-value proof.
 
@@ -156,3 +162,5 @@ git diff --check
   inference profile.
 - Preserve malformed/timed-out provider evidence as unavailable, not as an
   upstream loss or proof that baseline recall failed.
+- Do not raise embedding safety bounds or slice/pad provider vectors; rejected,
+  stripped, or mismatched dimension requests retain typed-only behavior.

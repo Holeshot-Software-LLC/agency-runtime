@@ -7,6 +7,7 @@ updated: 2026-08-25
 tags: [workforce, routing, embeddings, retrieval, inference]
 related:
   - docs/roadmap/handoffs/issue-AR-266.md
+  - docs/roadmap/issue-AR-286-configure-bounded-embedding-dimensions.md
   - docs/roadmap/issue-AR-265-contextual-turn-classification.md
   - docs/decisions/0083-use-capability-indexed-recall-and-bounded-inference.md
   - docs/decisions/0118-require-inference-owned-staffing.md
@@ -22,7 +23,7 @@ issue_id: AR-266
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/320
 depends_on: []
-blocks: []
+blocks: [AR-286]
 ---
 
 # AR-266: Recall the complete workforce with dense hybrid retrieval
@@ -61,6 +62,10 @@ specialists before inference decides the final staffing plan.
 - Focused and production-spine verification is green. No live embedding or
   reranker provider was called, so cross-provider quality and shadow value
   evidence remain open.
+- Local shadow preparation found that a provider's valid 4,096-dimension
+  default can exceed the unchanged aggregate scalar bound for the complete
+  roster. AR-286 owns a provider-native bounded-dimension request; no client-side
+  slicing or safety-bound increase is permitted.
 - Tracker [#320](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/320)
   is linked, and [PR #321](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/321)
   merged the shadow-default implementation to `main` as `042b5ed9`. The issue
@@ -89,6 +94,11 @@ Require explicit `workforce.recall.embedding` and
 `workforce.recall.reranker` inference routes. The embedding profile must use
 `capability_class = "embeddings"`, while the reranker uses `text`; missing
 routes disable learned recall rather than falling through to a default model.
+An embedding profile may request a bounded provider-native projection through
+`dimensions`: zero omits the field, while a nonzero value is accepted only for
+embedding-capable Ollama, OpenAI-compatible, and LiteLLM profiles. The returned
+dimension must match exactly and participates in catalog identity; rejection,
+stripping, or mismatch preserves typed-only recall without slicing vectors.
 The recall reranker must return every offered discovery exactly once and may
 only order them. The existing `workforce.recruiter` remains the sole staffing
 selector. Support `off`, `shadow`, and `additive` modes. Shadow is the safe
@@ -140,6 +150,8 @@ eligibility constraints.
 
 - AR-265 and ADR-0163 provide bounded current-turn subject context without
   replaying the session transcript.
+- AR-286 provides bounded provider-native dimensions without changing AR-266's
+  per-vector or aggregate safety limits.
 - ADR-0083 governs capability-indexed bounded recall.
 - ADR-0118 keeps substantive staffing inference-owned.
 - ADR-0121 forbids promoting deterministic recall metrics to selection proof.

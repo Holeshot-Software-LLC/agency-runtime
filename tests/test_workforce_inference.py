@@ -244,7 +244,11 @@ def _config(mode: str = "balanced", **workforce: object) -> AgencyConfig:
     return AgencyConfig(providers=(_provider(),), workforce=policy)
 
 
-def _hybrid_config(*, dense_recall_mode: str = "additive") -> AgencyConfig:
+def _hybrid_config(
+    *,
+    dense_recall_mode: str = "additive",
+    embedding_dimensions: int = 0,
+) -> AgencyConfig:
     embedding = InferenceProfile(
         name="recall-embedding",
         adapter="litellm",
@@ -252,6 +256,7 @@ def _hybrid_config(*, dense_recall_mode: str = "additive") -> AgencyConfig:
         capability_class="embeddings",
         base_url="https://router.example.test/v1",
         api_key="secret",
+        dimensions=embedding_dimensions,
     )
     reranker = InferenceProfile(
         name="recall-reranker",
@@ -1039,6 +1044,64 @@ def test_additive_hybrid_recall_expands_beyond_typed_24_before_inference_selects
     ]
     assert "zz-vector-specialist" in typed_ids[24:]
     assert outcome.staffing.units[0].selected == ("zz-vector-specialist",)
+
+
+def test_embedding_dimensions_change_catalog_identity_and_force_a_cold_catalog() -> None:
+    clear_hybrid_recall_cache()
+    snapshot = _hybrid_recall_snapshot()
+    current_dimensions = 2
+    embedding_input_counts: list[int] = []
+
+    def embed(texts: tuple[str, ...]) -> EmbeddingProviderResponse:
+        embedding_input_counts.append(len(texts))
+        vectors = [
+            ([1.0] + [0.0] * (current_dimensions - 1))
+            if "zz-vector-specialist" in text or text.startswith("unit identity:")
+            else ([0.0, 1.0] + [0.0] * (current_dimensions - 2))
+            for text in texts
+        ]
+        return EmbeddingProviderResponse(
+            vectors=vectors,
+            provider_name="recall-embedding",
+            requested_model="embedding-model-v1",
+            actual_model="embedding-model-v1",
+        )
+
+    def invoke(_provider, prompt, _schema, **_kwargs):
+        payload = json.loads(prompt)
+        if "planning_taxonomy" in payload:
+            return _result(_compact_plan_document())
+        if payload.get("recall_policy") == "deterministic_candidate_recall_only":
+            return _result(
+                {
+                    "units": [
+                        {
+                            "unit_id": row["unit_id"],
+                            "ranked_candidate_ids": [
+                                candidate["agent_id"] for candidate in row["candidates"]
+                            ],
+                        }
+                        for row in payload["units"]
+                    ]
+                }
+            )
+        return _result(_nomination_document("generic-000"))
+
+    identities: list[str] = []
+    for dimensions in (2, 3):
+        current_dimensions = dimensions
+        outcome = plan_and_staff_workforce(
+            "Analyze the workforce retrieval vocabulary gap.",
+            snapshot,
+            config=_hybrid_config(embedding_dimensions=dimensions),
+            context=_context(),
+            invoker=invoke,
+            embedding_invoker=embed,
+        )
+        identities.append(outcome.attempts[1].catalog_identity)
+
+    assert identities[0] != identities[1]
+    assert embedding_input_counts == [snapshot.worker_count + 1, snapshot.worker_count + 1]
 
 
 def test_invalid_recall_reranker_falls_back_to_unchanged_typed_cards() -> None:

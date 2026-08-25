@@ -85,6 +85,7 @@ def provider_from_profile(profile: InferenceProfile) -> ProviderEntry:
         ollama_mode=adapter == "ollama",
         timeout=timeout_seconds,
         reasoning_effort=reasoning_effort,
+        dimensions=profile.dimensions,
     )
 
 

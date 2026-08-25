@@ -19,6 +19,7 @@ from agency_runtime.core.config import (
     INFERENCE_PROFILE_NAME_PATTERN,
     INFERENCE_ROUTE_KEY_PATTERN,
     INFERENCE_THINKING_LEVELS,
+    MAX_INFERENCE_EMBEDDING_DIMENSIONS,
     MAX_PROVIDER_CHAIN_ENTRIES,
     is_safe_cli_model_id,
     is_safe_credential_url,
@@ -702,6 +703,7 @@ def _validate_inference_profile(name: str, value: Any) -> dict[str, Any]:
         "api_key_env",
         "timeout_ms",
         "transport",
+        "dimensions",
     }
     if set(section) - allowed:
         raise _error(path, "contains unsupported fields")
@@ -746,6 +748,22 @@ def _validate_inference_profile(name: str, value: Any) -> dict[str, Any]:
         raise _error(
             f"{path}.capability_class",
             "must be one of " + ", ".join(sorted(INFERENCE_CAPABILITY_CLASSES)),
+        )
+    dimensions = _integer(
+        section.get("dimensions", 0),
+        f"{path}.dimensions",
+        minimum=0,
+        maximum=MAX_INFERENCE_EMBEDDING_DIMENSIONS,
+    )
+    if dimensions and capability_class != "embeddings":
+        raise _error(
+            f"{path}.dimensions",
+            "nonzero dimensions require capability_class embeddings",
+        )
+    if dimensions and adapter not in {"ollama", "openai-compatible", "litellm"}:
+        raise _error(
+            f"{path}.dimensions",
+            "this adapter does not support configurable embedding dimensions",
         )
     base_url = _url(
         section.get("base_url", ""),
@@ -808,6 +826,7 @@ def _validate_inference_profile(name: str, value: Any) -> dict[str, Any]:
         "api_key_env": api_key_env,
         "timeout_ms": timeout_ms,
         "transport": transport,
+        "dimensions": dimensions,
     }
 
 

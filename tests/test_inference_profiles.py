@@ -250,6 +250,92 @@ def test_schema_requires_capability_classes_for_recall_routes() -> None:
         validate_config_document(document)
 
 
+def _ar286_embedding_profile_document(*, dimensions: object | None) -> dict[str, Any]:
+    profile: dict[str, object] = {
+        "adapter": "ollama",
+        "model": "qwen3-embedding:latest",
+        "capability_class": "embeddings",
+        "base_url": "http://127.0.0.1:11434",
+    }
+    if dimensions is not None:
+        profile["dimensions"] = dimensions
+    return {
+        "inference": {
+            "routes": {"workforce.recall.embedding": "local-embedding"},
+            "profiles": {"local-embedding": profile},
+        }
+    }
+
+
+@pytest.mark.parametrize(
+    ("configured", "expected"),
+    [(None, 0), (0, 0), (1_024, 1_024)],
+    ids=("default", "explicit-zero", "explicit-1024"),
+)
+def test_ar286_schema_accepts_bounded_embedding_dimensions(
+    configured: object | None,
+    expected: int,
+) -> None:
+    validated = validate_config_document(_ar286_embedding_profile_document(dimensions=configured))
+
+    assert validated["inference"]["profiles"]["local-embedding"]["dimensions"] == expected
+
+
+@pytest.mark.parametrize(
+    "dimensions",
+    [True, -1, 4_097],
+    ids=("boolean", "negative", "above-maximum"),
+)
+def test_ar286_schema_rejects_invalid_embedding_dimensions(dimensions: object) -> None:
+    with pytest.raises(ConfigValidationError):
+        validate_config_document(_ar286_embedding_profile_document(dimensions=dimensions))
+
+
+@pytest.mark.parametrize(
+    ("adapter", "capability_class", "extra"),
+    [
+        ("litellm", "text", {}),
+        ("anthropic", "embeddings", {}),
+        ("cli", "embeddings", {"base_url": "", "model": "", "transport": "codex"}),
+    ],
+    ids=("non-embedding", "anthropic", "cli"),
+)
+def test_ar286_schema_rejects_dimensions_on_unsupported_profiles(
+    adapter: str,
+    capability_class: str,
+    extra: dict[str, object],
+) -> None:
+    document = _ar286_embedding_profile_document(dimensions=1_024)
+    profile = document["inference"]["profiles"]["local-embedding"]
+    profile.update(
+        {
+            "adapter": adapter,
+            "capability_class": capability_class,
+            **extra,
+        }
+    )
+
+    with pytest.raises(ConfigValidationError):
+        validate_config_document(document)
+
+
+def test_ar286_profile_provider_and_yaml_projection_preserve_dimensions() -> None:
+    import yaml
+
+    from agency_runtime.core.config import _dict_to_config, config_to_yaml
+    from agency_runtime.core.inference_profiles import provider_from_profile
+
+    validated = validate_config_document(_ar286_embedding_profile_document(dimensions=1_024))
+    config = _dict_to_config(validated)
+    profile = config.inference.profiles["local-embedding"]
+    provider = provider_from_profile(profile)
+    rendered = yaml.safe_load(config_to_yaml(config, redact=False))
+
+    assert profile.dimensions == 1_024
+    assert provider.dimensions == 1_024
+    assert rendered["inference"]["profiles"]["local-embedding"]["dimensions"] == 1_024
+
+
 # ── Route resolution ────────────────────────────────────────────────
 
 
