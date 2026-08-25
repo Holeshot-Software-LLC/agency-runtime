@@ -1,9 +1,10 @@
 """Host-boundary contracts for inference-owned native-child staffing.
 
 Claude and ZCode expose a synchronous plaintext ``Agent`` launch and can carry
-one atomic v6 inference team. Codex 0.147 exposes only an encrypted initial
-inter-agent assignment at its spawn hook, so it must fail open unstaffed until
-the host supplies a trusted plaintext or authenticated-decision surface.
+one atomic v6 inference team. Measured Codex profiles expose only an encrypted
+initial inter-agent assignment at the spawn hook, so they must fail open
+unstaffed until the host supplies a trusted plaintext or authenticated-decision
+surface.
 
 These tests cover adapter wiring. The selector, atomic envelope, Store decision,
 and host-artifact authority each have their own adversarial suites.

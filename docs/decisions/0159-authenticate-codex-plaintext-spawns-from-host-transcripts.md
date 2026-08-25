@@ -3,7 +3,7 @@ title: "Authenticate Codex plaintext spawns from host transcripts"
 status: accepted
 category: decisions
 created: 2026-08-12
-updated: 2026-08-13
+updated: 2026-08-25
 tags: [codex, native-child, hooks, transcripts, security, evidence]
 related:
   - docs/decisions/0118-require-inference-owned-staffing.md
@@ -11,6 +11,7 @@ related:
   - docs/decisions/0158-collect-child-canary-proof-inside-disposable-host-profiles.md
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md
+  - docs/roadmap/AR-180-codex-0149-compatibility-evidence.md
   - docs/roadmap/issue-AR-255-inference-owned-host-proven-child-staffing.md
   - docs/roadmap/AR-119-rule-host-evidence-matrix.md
   - docs/roadmap/handoffs/issue-AR-119.md
@@ -197,3 +198,13 @@ ancestry: one real depth-two chain exists at CLI `0.145.0` only and exact
 `0.147.0` exec has none, so the same-version sample this decision requires
 cannot come from history. Exec depth-two/deeper ancestry and all Installed and
 Live proof remain unproven.
+
+On 2026-08-25, a content-safe recheck of exact Codex CLI `0.149.1` completed
+four fresh depth-one native children. Every parent call retained only the
+plaintext task label and fork mode beside a Fernet-shaped encrypted message;
+none carried `encrypted_function_args`. The current official hook schema still
+exposes no decrypted assignment or exact parent call identity at
+`SubagentStart`. This confirms rather than supersedes the decision: the 0.147
+profiles stay exact, 0.149.1 remains unsupported and unstaffed, and no
+installation or Rule-4 claim advances. The bounded projection is retained in
+`docs/roadmap/AR-180-codex-0149-compatibility-evidence.md`.

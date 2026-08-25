@@ -3433,6 +3433,7 @@ def test_attestation_requires_exact_codex_turn_and_call_identity_formats(
     "mutation",
     [
         {"cli_version": "0.147.0-alpha.6.6"},
+        {"cli_version": "0.149.1"},
         {"call_id": "call_AAAAAAAAAAAAAAAAAAAAAAAA"},
         {"turn_id": "019ff8ef-c6e1-7961-a682-d8aa9f11f465"},
     ],

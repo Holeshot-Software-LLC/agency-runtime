@@ -3,7 +3,7 @@ title: "AR-180: Prove Codex specialist activation in the live canary"
 status: open
 category: roadmap
 created: 2026-07-27
-updated: 2026-08-13
+updated: 2026-08-25
 tags: [codex, canary, activation, delegation, production-readiness]
 related:
   - docs/roadmap/issue-AR-195-separate-codex-canary-parent-and-child-goals.md
@@ -11,6 +11,7 @@ related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
   - docs/roadmap/issue-AR-255-inference-owned-host-proven-child-staffing.md
+  - docs/roadmap/AR-180-codex-0149-compatibility-evidence.md
   - docs/roadmap/issue-AR-143-require-operator-presence-for-controls.md
   - docs/roadmap/issue-AR-182-bind-codex-hook-trust-inventory.md
   - docs/roadmap/issue-AR-185-bind-codex-activation-verification.md
@@ -337,6 +338,26 @@ generated real exec depth-two spawn on `0.147.0`, which is a live host action
 needing explicit authorization, or an owner decision that exec depth-two/deeper
 stays permanently unsupported. Both remain open; exec depth-two/deeper therefore
 remains unsupported and unstaffed, and no acceptance item below advances.
+
+### 2026-08-25 Codex 0.149.1 compatibility recheck
+
+Four bounded, content-safe `codex exec` sessions each completed one real
+depth-one native child. Every persisted `spawn_agent` call contained exactly
+`fork_turns`, `message`, and `task_name`; the message remained a 164- or
+184-character `gAAAA`-prefixed ciphertext, and
+`encrypted_function_args` was absent. Child metadata exposed a plaintext agent
+path but no role or decrypted assignment. Three changed disposable-hook capture
+attempts emitted no redacted hook log and remain retained setup failures rather
+than evidence about undocumented fields.
+
+The current official hook contract still gives `SubagentStart` only
+`agent_id` and `agent_type`, while `PreToolUse` receives the already-encrypted
+local function arguments. It supplies no documented call identity at child
+start that could authenticate injected specialist context. The exact 0.147
+profiles remain unchanged; 0.149.1 fails open unstaffed, no Agency installation
+or canary was run, and no Installed, Live, or Rule-4 claim advances. The bounded
+evidence is retained in
+`docs/roadmap/AR-180-codex-0149-compatibility-evidence.md`.
 
 ## Approach
 

@@ -3,11 +3,12 @@ title: "AR-255: Make native child staffing inference-owned and host-proven"
 status: open
 category: roadmap
 created: 2026-08-12
-updated: 2026-08-18
+updated: 2026-08-25
 tags: [routing, inference, native-child, codex, evidence, critical-path]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md
+  - docs/roadmap/AR-180-codex-0149-compatibility-evidence.md
   - docs/roadmap/issue-AR-209-bind-opaque-codex-child-launches.md
   - docs/roadmap/issue-AR-252-record-verified-acceptance-outcomes.md
   - docs/roadmap/issue-AR-260-accept-verified-launch-bindings-in-outcome-canary.md
@@ -67,6 +68,13 @@ ancestry. Scoped tests, mutations, authentic probes, and independent reattack
 pass, so Codex Rule-4 Implementation and Simulation are proven. Exec depth-two/
 deeper is unobserved and must remain fail open. Exact-install and live proof
 remain open.
+
+The 2026-08-25 Codex CLI `0.149.1` compatibility recheck does not change that
+boundary. Four fresh native spawns all persisted a Fernet-shaped encrypted
+message with no `encrypted_function_args` marker. The documented
+`SubagentStart` event still lacks the assignment and exact parent call identity.
+Agency therefore keeps 0.149.1 unstaffed and does not restore AR-209's retired
+plan-row transport. No install, canary, or matrix movement resulted.
 
 ## Approach
 
