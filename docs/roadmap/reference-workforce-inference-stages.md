@@ -357,7 +357,7 @@ inference:
 | `openai-compatible` | `reasoning_effort: "low"` | `"medium"` | `"high"` | omitted (provider may reject) |
 | `anthropic` | `thinking.budget_tokens: 1024` | `4096` | `16384` | `32768` |
 | `ollama` | n/a — recorded in receipt, ignored | | | |
-| `litellm` | passed through as `thinking={"type": "...", ...}` per model | | | |
+| `litellm` | standardized `reasoning_effort: "low"`; LiteLLM translates for the routed model | `"medium"` | `"high"` | `"xhigh"` |
 | `cli` | n/a — recorded in receipt, ignored | | | |
 
 When the adapter does not support thinking, the field is recorded in

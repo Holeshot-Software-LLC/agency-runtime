@@ -13,7 +13,9 @@ from pathlib import Path
 from typing import Any
 
 from agency_runtime.core.config import AgencyConfig
+from agency_runtime.core.configuration_contracts import ConfigValidationError
 from agency_runtime.core.configuration_persistence import resolve_config_path
+from agency_runtime.core.inference_profiles import resolve as resolve_inference_route
 from agency_runtime.core.installer_contracts import (
     CODEX_HOOK_EVENTS,
     CODEX_NATIVE_CHILD_HOOK_MATCHER,
@@ -40,6 +42,9 @@ _BOUND_LAUNCHER_ARTIFACTS: ContextVar[tuple[str, str] | None] = ContextVar(
     "agency_bound_launcher_artifacts",
     default=None,
 )
+
+_OPENCLAW_NATIVE_CHILD_JUDGE_CALLS = 2
+_SELECTOR_MAX_JUDGE_DEADLINE_SECONDS = 60.0
 
 
 def _facade():
@@ -210,6 +215,34 @@ def hook_timeout_seconds(cfg: AgencyConfig) -> int:
     # two-second host margin. Normal schema-validated configs remain well below
     # this cap; it protects programmatic callers that construct AgencyConfig
     # directly without passing through the config validator.
+    return min(MAX_HOOK_TIMEOUT_SECONDS, max(1, requested))
+
+
+def openclaw_native_child_timeout_seconds(cfg: AgencyConfig) -> int:
+    """Return the process budget for OpenClaw's native-child staffing hook.
+
+    Native-child staffing can make one selection request and one abstention
+    repair request.  Each selector invocation has a 60-second aggregate
+    deadline even when its harness-scoped inference profile permits a longer
+    provider timeout.  Resolve only the static OpenClaw route here: environment
+    overrides and live canary providers must not change an installed bundle.
+    """
+
+    try:
+        resolution = resolve_inference_route(
+            cfg,
+            "workforce.recruiter",
+            harness="openclaw",
+        )
+    except ConfigValidationError:
+        return 0
+    per_call = min(
+        max(0.0, float(resolution.provider.timeout)),
+        _SELECTOR_MAX_JUDGE_DEADLINE_SECONDS,
+    )
+    requested = math.ceil(
+        (_OPENCLAW_NATIVE_CHILD_JUDGE_CALLS * per_call) + HOOK_TIMEOUT_BUFFER_SECONDS
+    )
     return min(MAX_HOOK_TIMEOUT_SECONDS, max(1, requested))
 
 
@@ -530,6 +563,10 @@ def bundle_files(
         )
 
     if host == "openclaw":
+        timeout_seconds = max(
+            timeout_seconds,
+            openclaw_native_child_timeout_seconds(effective_cfg),
+        )
         index = (
             _openclaw_index(timeout_seconds, config_path)
             if config_path

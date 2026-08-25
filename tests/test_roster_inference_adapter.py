@@ -955,7 +955,8 @@ def test_structured_response_extractors_paths_payloads_and_headers() -> None:
         system_prompt="system",
     )
     assert anthropic_path == "/v1/messages"
-    assert anthropic_payload["system"] == "system"
+    assert anthropic_payload["system"].startswith("system\n\nReturn ONLY")
+    assert json.loads(anthropic_payload["system"].rsplit("\n", 1)[1]) == schema
     gpt_payload, _ = structured_provider._http_payload(
         _provider("gpt", model="gpt-5.6"), "prompt", schema, system_prompt="system"
     )
@@ -964,6 +965,80 @@ def test_structured_response_extractors_paths_payloads_and_headers() -> None:
         _provider("other"), "prompt", schema, system_prompt="system"
     )
     assert other_payload["max_tokens"] == 2048
+
+
+def test_openai_compatible_http_payload_delivers_exact_schema_instruction() -> None:
+    schema = {
+        "additionalProperties": False,
+        "properties": {"status": {"enum": ["passed", "failed"]}},
+        "required": ["status"],
+        "type": "object",
+    }
+
+    payload, path = structured_provider._http_payload(
+        _provider("router", provider_type="openai-compatible"),
+        "prompt",
+        schema,
+        system_prompt="trusted system",
+    )
+
+    assert path == "/v1/chat/completions"
+    assert payload["response_format"] == {"type": "json_object"}
+    system_message = payload["messages"][0]
+    assert system_message["role"] == "system"
+    assert system_message["content"].startswith("trusted system\n\nReturn ONLY")
+    delivered_schema = system_message["content"].rsplit("\n", 1)[1]
+    assert json.loads(delivered_schema) == schema
+
+
+def test_litellm_http_payload_delegates_exact_json_schema_translation() -> None:
+    schema = {
+        "additionalProperties": False,
+        "properties": {"status": {"enum": ["passed", "failed"]}},
+        "required": ["status"],
+        "type": "object",
+    }
+
+    payload, path = structured_provider._http_payload(
+        _provider("router", provider_type="litellm"),
+        "prompt",
+        schema,
+        system_prompt="trusted system",
+    )
+
+    assert path == "/v1/chat/completions"
+    assert payload["response_format"] == {
+        "json_schema": {
+            "name": "agency_structured_response",
+            "schema": schema,
+            "strict": True,
+        },
+        "type": "json_schema",
+    }
+    system_message = payload["messages"][0]
+    assert system_message["role"] == "system"
+    assert system_message["content"].startswith("trusted system\n\nReturn ONLY")
+    delivered_schema = system_message["content"].rsplit("\n", 1)[1]
+    assert json.loads(delivered_schema) == schema
+
+
+@pytest.mark.parametrize("level", ["low", "medium", "high", "xhigh"])
+def test_litellm_payload_forwards_standardized_reasoning_effort(level: str) -> None:
+    payload, path = structured_provider._http_payload(
+        _provider(
+            "router",
+            provider_type="litellm",
+            model="task-agency-router",
+            reasoning_effort=level,
+        ),
+        "prompt",
+        {"type": "object"},
+        system_prompt="trusted system",
+    )
+
+    assert path == "/v1/chat/completions"
+    assert payload["reasoning_effort"] == level
+    assert "thinking" not in payload
 
 
 def test_structured_provider_safety_and_cli_dispatch(monkeypatch: pytest.MonkeyPatch) -> None:

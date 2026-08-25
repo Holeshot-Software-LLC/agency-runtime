@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from typing import Any
 from uuid import uuid4
 
@@ -260,6 +260,22 @@ def _record_skill_loaded(arguments: dict[str, Any], store: Any) -> dict[str, Any
     return {"status": "recorded"}
 
 
+def _authoritative_finalization_host(store: Any, session_id: str, trace_id: str) -> str:
+    """Resolve finalization attribution from the Store-owned originating run."""
+
+    get_run = getattr(store, "get_run", None)
+    if not callable(get_run):
+        return "mcp"
+    try:
+        run = get_run(trace_id)
+    except Exception:
+        return "mcp"
+    if not isinstance(run, Mapping) or run.get("session_id") != session_id:
+        return "mcp"
+    host = str(run.get("host") or "").strip().casefold()
+    return host if host in {*EXECUTION_HOSTS, "mcp"} else "mcp"
+
+
 def _finalize(arguments: dict[str, Any], store: Any) -> dict[str, Any]:
     from agency_runtime.core.header.finalize import finalize_response
 
@@ -275,12 +291,13 @@ def _finalize(arguments: dict[str, Any], store: Any) -> dict[str, Any]:
             ],
         }
     session_id, trace_id = correlation
+    host = _authoritative_finalization_host(store, session_id, trace_id)
     result = finalize_response(
         arguments["draft_text"],
         trace_metadata={
             "trace_id": trace_id,
             "session_id": session_id,
-            "host": "mcp",
+            "host": host,
         },
         store=store,
         model="",

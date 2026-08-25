@@ -3,7 +3,7 @@ title: "AR-119 vision-completion loop final status"
 status: active
 category: roadmap
 created: 2026-08-17
-updated: 2026-08-21
+updated: 2026-08-25
 tags: [roadmap, report, autonomous, loop, AR-119, AR-253, AR-255]
 related:
   - docs/roadmap/AR-119-vision-completion-autonomous-brief.md
@@ -20,6 +20,13 @@ related:
   - docs/roadmap/issue-AR-261-disambiguate-technical-diagnosis-risk.md
   - docs/roadmap/issue-AR-262-preserve-slow-host-dashboard-parity.md
   - docs/roadmap/issue-AR-263-restore-codex-desktop-parent-hook-delivery.md
+  - docs/roadmap/issue-AR-279-deliver-openclaw-finalizer-results.md
+  - docs/roadmap/issue-AR-280-exclude-hermes-internal-post-response-preflight.md
+  - docs/roadmap/issue-AR-281-route-native-children-through-host-profiles.md
+  - docs/roadmap/issue-AR-282-deliver-finalized-openclaw-child-announcements.md
+  - docs/roadmap/issue-AR-283-persist-openclaw-child-terminals-after-delivery.md
+  - docs/decisions/0168-refresh-openclaw-headers-through-awaited-tool-results.md
+  - docs/decisions/0170-authorize-finalized-openclaw-child-announcements.md
   - docs/roadmap/AR-255-child-parity-design.md
 supersedes: []
 superseded_by: null
@@ -2721,3 +2728,2154 @@ Hermes/OpenClaw native-child bridge cases. The first sandboxed invocation
 stopped before collection on the private-root trust guard; the identical run
 with its required owner-private test root passed in 2.56 seconds. No product
 code changed in this evidence slice.
+
+
+## 2026-08-21 — OpenClaw parent receipt repair installed; post-fix proof pending
+
+The Linux package uses branch `codex/ar119-openclaw-hermes-litellm` from fetched
+main `4a3267738bb20519500513ea1498fc68f8ea9443`. Native OpenClaw remains
+`litellm/task-general`; only Agency profile `linux-task-agency-router` requests
+LiteLLM alias `task-agency-router`. Hermes remains running and untouched.
+
+OpenClaw `2026.7.1-2` now installs and starts with 13 plugins, connected Slack,
+and active Telegram polling. AR-269 repaired the concrete outage where a valid
+control envelope with `error: null` exited 2. Exact installed bridge status now
+exits 0. The first fresh local control after that repair is retained as failed,
+not promoted: session `57f19f38-338d-4d93-9c46-eac7b6a4831a`, trace
+`4959bd8c-a0bc-4e3d-bcb9-8cbcc1441547`, ended `response_invalid`; finalization
+event `01af794d-fb97-41c5-8920-2a8bfc2a3558` names missing field
+`actual_model_selected`. The visible Agency-shaped header is therefore not
+Store-backed acceptance evidence.
+
+AR-272 records the exact cause: installed OpenClaw supplies the model through
+`model_call_ended.event.model` when hook context omits `modelId`, and Agency
+serialization dropped all receipt fields. The new executable Node regression
+failed pre-fix with exit 83 and passes after the bounded fallback and serializer
+allowlist repair. Only the Agency integration in OpenClaw was reinstalled; the OpenClaw host
+package was not. Its new bundle digest is
+`38dadb1a1a14d5f95319dcc401883a54e6415cf9392803e1b81906ceff718107`; launcher
+runtime digest is `f7741ed6bfde2844a18151fa43f6536761ba1b6a97a35bdc524d770447309a62`;
+launcher SHA-256 is `bb033f9b4facce1d78b42b246e0087f8ef6862d825ddcc48cad73b74dc4c5608`.
+Redacted native-config comparison shows only the OpenClaw touch timestamp.
+
+Telemetry reached 43.1 percent, so the post-fix live control waits for the clean
+substantive/worklog checkpoint required by repository policy. Telegram has no
+post-restart inbound receipt yet. The LiteLLM callback cannot import Agency on
+this shared proxy, so actual model may remain unavailable; the requested alias
+must not be promoted. No AR-119 matrix cell moved.
+
+
+
+
+## 2026-08-21 — OpenClaw native Agency finalizer repair pending checkpoint
+
+The first post-AR-272 local control is retained as failed evidence. OpenClaw
+session `264a65e9-7462-4ea7-9b40-9b38206f1b35`, Agency trace
+`94f32f04-3b72-4ffa-8801-953b320e657f`, preserved four native `task-general`
+request receipts but delivered no Store-backed header. Run
+`2bf6cbd5-d7c9-417a-b423-eeb52b4646de` ended `response_invalid`; finalization
+`a5b24d7f-933c-4aa3-8171-3d6ad0547cac` records all five required fields
+missing. Native plugin inspection reported zero tools and zero MCP servers even
+though the managed bundle retained `.mcp.json`.
+
+AR-273 isolates the defect to the Agency-generated OpenClaw plugin: preflight
+required canonical `agency.finalize`, but OpenClaw had no native callable tool
+backing it. The new provider-safe `agency_finalize` wrapper delegates bounded
+arguments to the unchanged canonical Store finalizer. It introduces no correction
+pass and preserves strict finalization and outbound delivery. The executable
+regression failed before repair with Node exit 91, and 65 focused OpenClaw
+security, adapter, and installer tests pass under process-local umask `0022`.
+
+The next mutation is not an OpenClaw reinstall. After the required clean local
+commit pair, stop the existing gateway, run the Agency installer only for target
+`openclaw`, inspect the resulting Agency tool, and restart the same gateway.
+OpenClaw remains `2026.7.1-2` on native `litellm/task-general`; Agency alone
+requests `task-agency-router` through harness profile
+`linux-task-agency-router`. Claude, ZCode, Codex, and Hermes remain outside the
+mutation boundary. No matrix cell moved.
+
+
+## 2026-08-21 — OpenClaw control green; Agency router contract blocked
+
+Only the Agency integration was installed into the existing OpenClaw
+`2026.7.1-2` host. OpenClaw itself was not reinstalled. Its native primary
+remains `litellm/task-general`, with six fallbacks and the same 21 LiteLLM / 27
+total model entries. Slack and Telegram both report configured and running with
+empty current errors. Hermes stayed active and untouched as break glass; Claude,
+ZCode, Codex, Codex OAuth, and the consumed Codex canary were untouched.
+
+Agency install `479c1a47-7e89-4091-a0f4-548f6913db58` completed with 15
+contractors before and after and installed the native `agency_finalize` tool.
+Fresh exact first-message session `ba9ea05a-3694-4725-b2ea-0357bd16a112`, trace
+`c2574ce1-b81b-4e29-b66a-06293c6dde85`, completed Store run
+`aedb79d3-79d9-428c-9eb3-90dbc8aac8c9`. Finalization
+`b0f9a0f4-8da2-4b54-b678-826b3a5b61bc` accepted once as `host=openclaw`; its
+response hash exactly matches the native transcript. Deterministic abstention
+and native `task-general` receipts prove control activation, finalization, and
+delivery only, not Agency workforce inference.
+
+One harmless skill work unit was then consumed and retained as failed. Trace
+`9384d3a3-0a28-4150-a8fa-ab493efda7bf`, run
+`a5504721-0aa9-4fa3-98df-f5667c933b5b`, and failure receipt
+`3193483a-712b-4c1d-8f13-ccb6799433a1` record
+`workforce_inference_failed`. Both planner attempts automatically selected
+OpenClaw profile `linux-task-agency-router`, provider type `litellm`, and exact
+requested alias/model-group `task-agency-router`; both ended
+`provider_response_contract_invalid`, with no Codex, Claude, or other fallback.
+No Store-backed header, skill row, specialist, finalization, or model receipt was
+created, so the bare native response is not successful skill proof.
+
+Authenticated proxy metadata maps the shared alias to `ollama/qwen3.5:2b`,
+whose metadata advertises no function-calling or structured-response support.
+Strict validation remains fail-closed. The proxy has no Agency callback, so its
+alias echo is not an actual-answering-model receipt. Remapping this shared alias
+requires Lucas authorization and an approved structured-output-capable target;
+the existing input was not retried. No new Telegram-scoped Store run arrived
+after local proof, no host canary ran, and **no AR-119 matrix cell moved**.
+
+
+## 2026-08-21 — AR-274 model-agnostic LiteLLM repair reaches clean-test checkpoint
+
+The prior alias-remapping conclusion is superseded by code-path evidence, not
+by a proxy change. Agency's generic OpenAI-compatible/LiteLLM request selected
+the correct OpenClaw harness, profile, provider, and exact alias, but sent only
+`response_format: json_object`; it never included the supplied bounded planner
+schema. The same path could record a configured LiteLLM thinking level without
+forwarding it. The alias and its target remain unchanged.
+
+AR-274 and ADR-0165 retain LiteLLM as the model-agnostic boundary. Agency now
+places the exact deterministic schema in the trusted system instruction and
+forwards a configured level as standardized `reasoning_effort`, which LiteLLM
+translates for the routed provider/model. Agency does not construct a native
+`thinking` object, assume native JSON-schema support, change the alias, add a
+fallback, or weaken strict response validation.
+
+The pre-fix receipt is six focused failures: two absent schema instructions and
+four absent reasoning levels. The exact repaired regression passes 7/7. The
+complete affected warning-strict inference slice passes 134/134 under a
+process-local private umask; Ruff lint/format and `git diff --check` pass.
+Telemetry is 31.8 percent remaining, so live OpenClaw work waits for the clean
+substantive/worklog checkpoint. Hermes remains active and untouched as break
+glass. No fresh provider turn, skill row, Telegram receipt, actual-model claim,
+host canary, or AR-119 matrix movement is claimed.
+
+
+## 2026-08-22 — AR-274 installed; control green, substantive response invalid
+
+The clean AR-274 pair is `1b789ac3` plus ledger `6d6ea571`. Agency-only
+install `4dd7ee41-121f-4cde-a391-9cecd0665d72` projected bundle
+`51320b45f63cc68db52b267928c1939ab908052f623900a51786228c5b978419`
+into the existing OpenClaw `2026.7.1-2` host. OpenClaw itself was not
+reinstalled. Its primary remains `litellm/task-general`; exact pre/current
+config comparison changes only `meta.lastTouchedAt`. Telegram and Slack are
+connected and native probes pass. Hermes gateway/dashboard remain active with
+the same config hash.
+
+Fresh exact first-message session
+`b610efe7-4e71-43c7-8011-fb13f2736f2b`, trace
+`de166bdc-d649-462d-996b-b2b030a34a8e`, and run
+`c5e8d0bd-99b5-431c-9bb3-6bead5d2eeef` completed. Deterministic routing
+decision `bf93dd03-9d01-4043-a779-49ddee0adff8` abstained and finalization
+`cbc9107f-a34a-4fad-b919-17f3e1ae1d44` accepted the delivered five-line
+header. Its request-scoped binding is correctly non-durable. Native
+`task-general` receipt `002926dd-b041-40c5-9947-14b37f7b4687` records zero
+fallback and unavailable actual model. This is control/final-delivery proof
+only.
+
+The required distinct substantive session
+`31f52706-f329-4640-a012-c9540e283770` is retained as an OpenClaw
+provider-phase timeout at 180 seconds. Agency trace
+`517c2c78-95e6-4dea-bfd7-b43f6d48671a`, run
+`c080b393-72fd-4133-9485-d3e786e6c90a`, and failure receipt
+`de5f98bc-ca21-4b9b-b881-d862bf5b4da8` record one
+`provider_no_valid_response` attempt. It automatically selected OpenClaw
+profile `linux-task-agency-router`, LiteLLM, and exact alias/model-group
+`task-agency-router` with no fallback. The credential variable is populated
+and the proxy returned HTTP 200, but Agency obtained no valid planner object;
+no routing, finalization, skill, specialist, model row, or header exists.
+
+The shared proxy has no Agency callback, so no actual answering model is
+claimed. A direct content-free response-shape diagnostic was blocked before
+execution because reading the OpenClaw process credential requires explicit
+owner approval. It sent no request and exposed no value. No consumed input will
+be retried unchanged, no host canary ran, and **no AR-119 matrix cell moved**.
+
+
+## 2026-08-22 — LiteLLM envelope healthy; exact-schema repair locally green
+
+Lucas approved exactly one local response-shape request using the populated
+`LITELLM_API_KEY` from OpenClaw process memory. The value was never printed,
+written, or retained, and response content was not emitted. The exact alias
+`task-agency-router` returned HTTP 200, a normal OpenAI choices/message
+envelope, no error, and 157 characters of braced JSON. That JSON parsed as an
+object but contained four keys where the closed diagnostic schema allowed
+exactly two. Transport, authentication, alias resolution, and envelope parsing
+are therefore healthy; prompt-only schema enforcement is not sufficient for
+this routed model. The response's model field was deliberately not retained or
+promoted into an actual-model claim.
+
+The installed LiteLLM 1.94.0 adapter declares `response_format` support and
+maps the standard `json_schema` payload to the current routed provider's
+native schema format. ADR-0166 therefore supersedes ADR-0165's JSON-object-mode
+choice while retaining its opaque-alias and standardized-reasoning rules.
+Agency now sends the exact closed schema through LiteLLM's standard request and
+continues to include the schema in the trusted prompt and validate it locally.
+It does not identify the target, change the alias, relax the validator, add a
+retry, or enable protected-provider fallback. Direct OpenAI-compatible and all
+other adapters are unchanged.
+
+The new regression failed exactly because the payload still contained
+`json_object`; its JUnit receipt is
+`/tmp/ar273-litellm-native-schema-red.xml`. The exact repaired slice passes
+6/6 in `/tmp/ar273-litellm-native-schema-green.xml`. Installation and fresh
+live work wait for the required clean local commit pair. OpenClaw native
+`litellm/task-general`, Hermes, Claude, ZCode, Codex, and the shared alias
+mapping remain untouched; **no AR-119 matrix cell moved**.
+
+
+## 2026-08-22 — Exact-schema Agency bundle installed; channels restored
+
+Clean repair `fba12371` plus ledger `6ad46fb4` was installed into the
+existing stopped OpenClaw host. Agency install
+`b526ecdc-a538-4797-a8e8-656ecb3b315b` retained all 15 contractors and
+published bundle
+`94d87723b900387f9dbad0dda73613b449332c34683a4fd68674c0e354314a22`,
+runtime digest
+`71c917a91ed3527065447e6aa5ec4e36466d1710f7f5d0a41411a5ac585decda`,
+and launcher SHA
+`fe71017957b7060d7480fa80b222455b2cc69fe42d2f7b9c71e98ba65573b01b`.
+The installer did not restart OpenClaw. The same native service was restarted
+after its stopped state and current launcher were recorded.
+
+Gateway RPC is green. `agency-preflight` is enabled, activated, and loaded
+with ten hooks, native `agency_finalize`, and no diagnostics. Telegram and
+Slack are configured, running, connected, and probe-green. OpenClaw remains
+`2026.7.1-2` on native `litellm/task-general`; semantic comparison with the
+immediate pre-install config finds only `/meta/lastTouchedAt`. Agency, Hermes,
+Codex, and Claude configuration hashes are unchanged. Hermes gateway/dashboard
+and `litellm-gateway` remained active throughout.
+
+The fresh online Store backup has schema 47, integrity `ok`, and SHA
+`731934b20258feacf7d8835a9ba8e32d41844cd5685eef8ca65ad3dc1d51734f`;
+post-install integrity is also `ok`. Telemetry reached 41.0 percent, so this
+installed state is checkpointed before the first new live session. No new
+status, skill, substantive, Telegram delivery, actual-model, host-canary, or
+matrix claim is made yet.
+
+
+## 2026-08-22 — Post-install exact-status control is Store-backed
+
+Fresh session `fe3ab39c-fea0-4974-82b2-c85478b10b8a` began with exact
+`agency status`. OpenClaw run/Agency trace
+`3b26c907-2c9d-4240-8160-8c6d7cce6a08` and Store run
+`7d9e7bc3-3268-419e-8358-a3ef2ccf93c7` completed. Routing decision
+`19de0955-1cb8-40b0-a307-69cf3e001242` abstained deterministically and
+finalization `97eaacb8-9dcf-4431-8150-0e1d702e8ce3` accepted. Store response
+hash `a1d0eba85a66bfa728275ce62f16e0566b7d5be563333ba4fc66303fadcc6ba6`
+exactly matches the sole native assistant response; transcript SHA is
+`9f37ed86db9cd7ff600955a706c0d0e328ce6e79e85113bb5b8f649b503ba922`.
+
+The delivered five-line header names `agency-steward`, no delegation, no
+skill, native `task-general`, and deterministic recruitment. Request-scoped
+binding `rmb-1d107f497436b916ad7b32775b1a630d` correctly produced no durable
+resident row. Model receipt `25199eb6-6e9e-4b7b-a2d4-b365a9400053` has zero
+fallback and unavailable actual model. This proves control activation,
+finalization, and delivery only; LiteLLM workforce inference, skill loading,
+and substantive response remain open. No matrix cell moved.
+
+
+## 2026-08-22 — Exact-schema workforce inference passes; native skill evidence gap isolated
+
+A genuinely new work unit in fresh post-install OpenClaw session
+`fe3ab39c-fea0-4974-82b2-c85478b10b8a` completed Agency trace
+`402e37f5-f38e-425b-95c6-62e911be2566` and Store run
+`4963f31f-e114-4fa0-b051-8ded1ded51a1`. All three structured provider stages
+automatically selected harness `openclaw`, profile
+`linux-task-agency-router`, provider type `litellm`, and exact requested alias
+and model-group `task-agency-router`. Every stage applied a valid structured
+response. No Codex, Claude, or alternate provider identity appears.
+
+Routing decision `982f6c68-ac38-41a3-a84a-b7b60bee39cb` accepted and loaded
+specialists `80c52f54-3390-4f06-81e1-0ddca89ebe27` (`cms-developer`)
+and `866003fb-e74a-491c-a422-1ea64dd4c677` (`web-gis-developer`). Accepted
+finalization `cfb2e3de-9a2b-4fda-9194-6edcb52ca3a5` persisted response
+hash `7c785b301b68e65a42c6a69f01537821a398bca2d7a238c598a75890f2b8c2f5`,
+which exactly matches the native assistant response in transcript SHA
+`0ebf3b397080865fd6ffad8e289bd9558e8b646ff35a37c465ebd46b87f3560b`.
+LiteLLM wrapper receipts preserve the requested alias but provide no actual
+answering model; none is claimed.
+
+The same transcript proves OpenClaw successfully used its native `read` tool
+on the exact bundled Weather `SKILL.md` path returned by
+`openclaw skills info weather --json`, then called `agency_finalize`. The
+visible prose said Weather was loaded, but the Store has no `skills_loaded`
+row and the honest five-line header says `Skills loaded: none`. This is not
+successful skill evidence. Current OpenClaw exposes no `skill_view`; the
+generated bridge drops `path`, and the adapter normalizes no native `read`.
+
+AR-275 records the regression-first repair boundary: preserve a bounded path,
+authorize it against the exact eligible/model-visible native inventory entry,
+and fail closed for arbitrary or lookalike reads and inventory failure. Existing
+filesystem, executable, finalization, and Store trust checks stay unchanged.
+The shared alias and target, OpenClaw native primary `litellm/task-general`,
+Hermes, Claude, ZCode, and Codex OAuth/model configuration remain untouched.
+No host canary ran and **no AR-119 matrix cell moved**.
+
+
+## 2026-08-22 — AR-275 native skill bridge is locally green
+
+Two focused regressions preserve the exact pre-repair failure. The generated
+OpenClaw transport discarded `path` and its executable test exited 37; the
+adapter ignored the inventory-authorized native `read` and created no skill
+row. Both failures are retained in
+`/tmp/ar274-openclaw-native-skill-read-red.xml`.
+
+The minimal repair adds only bounded `path` to the generated projection. The
+OpenClaw adapter rejects traversal, relative, non-`SKILL.md`, and malformed
+candidates before dispatch; then uses the supported
+`openclaw skills info <key> --json` command in the existing least-privilege
+OpenClaw-only environment. It requires exact name, skill key, file path, base
+directory, eligibility, model visibility, and every disable/block flag before
+normalizing the observation to canonical `skill_view`. Failed native reads and
+unproven inventory write nothing.
+
+The focused receipt passes 22 with one skip. The proportionate
+installer/dispatch/inference-profile/final-header/Store slice passes 453 with
+one skip, warning-strict. A read-only helper smoke against the installed
+inventory returned only `weather`. This is local repair evidence: Agency has
+not yet been reinstalled and no fresh skill/header turn is claimed. OpenClaw
+native inference, the shared alias and target, Hermes, Claude, ZCode, and Codex
+OAuth/model configuration remain untouched.
+
+
+## 2026-08-22 — OpenClaw status and skill pass; substantive alias contract blocked
+
+Agency-only install `3aac2a46-e638-46d6-812d-d2df2ea3aa0b` remains bound to
+this checkout with launcher SHA `f6962d19...` and runtime digest `6afbaf65...`.
+OpenClaw remains `2026.7.1-2` on native `litellm/task-general`; its config and
+alias target were not changed. Hermes and every proven host stayed untouched.
+
+Fresh exact-status trace `e5b43276-ff90-43a7-923e-9956ac278816` completed
+canonical finalization. Fresh skill trace
+`11707056-a490-4cbc-97b6-9a8e621caa79` recorded `healthcheck`, two specialists,
+and three applied LiteLLM stages through profile `linux-task-agency-router` and
+exact alias/model-group `task-agency-router`, with no protected fallback.
+
+Two genuinely different substantive sessions then failed the same strict
+planner boundary. Traces `869ef22a-e1a5-4b7e-b024-6bf12aa371ea` and
+`b325368f-22e2-4815-8d01-2e9d1c22c543` each rejected two alias responses as
+`provider_response_contract_invalid`. The first native run reached context
+overflow and a 630000 ms Gateway timeout; the second returned an unheaded
+answer. Neither has routing/finalization evidence, so neither is delivery.
+
+Telegram and Slack are running, connected, and probe-green. The external
+prerequisite is a schema- and semantic-valid planner response from the existing
+alias target. No retry, validator weakening, actual-model invention, host
+canary, or AR-119 matrix movement is authorized.
+
+
+## 2026-08-22 — AR-276 planner repair diagnostics are locally green
+
+The two terminal OpenClaw planner failures already had deterministic semantic
+detail inside each `WorkforceInferenceAttempt`, including exact local policy
+codes when completeness validation rejected a plan. The preflight failure
+projector retained recruiter failure rows but discarded planner detail, so both
+receipts exposed only `provider_response_contract_invalid`. The single repair
+attempt also reused the ordinary intent-planner system instruction instead of
+a concise complete-replacement contract.
+
+AR-276 preserves the regression first. Four focused cases failed while four
+controls passed: planner codes were absent from terminal projection and from
+attempt/routing serialization, and the repair prompt lacked structured codes.
+The minimal repair records exact closed-vocabulary policy codes, uses one fixed
+`plan_response_semantic_invalid` code for other deterministic planner
+failures, bounds and allowlists terminal projection, and supplies a compact
+provider-agnostic repair system instruction. It does not inspect the alias
+target, branch by model, relax the validator, add retries, or enable fallback.
+
+All eight focused cases now pass. The affected planner, intent, preflight
+bounds, and routing/header slice passes 178 with one skip under process-local
+umask `0077`. The earlier broad attempt is retained: 29 Store cases failed
+under inherited umask `0002`, and one existing assertion still required the
+old system prompt. The corrected environment and assertion are green without
+any production trust relaxation.
+
+No live host has consumed this candidate. OpenClaw native
+`litellm/task-general`, Agency alias/model-group `task-agency-router`, the
+alias target, Hermes break glass, and Codex/Claude/ZCode configuration remain
+unchanged. Agency-only reinstall and a genuinely new OpenClaw turn follow only
+after a clean local substantive/ledger checkpoint. No matrix cell moved.
+
+Docs, ruff, the 827-test production spine, 134 UI tests, and routing evaluation
+pass. Decision conformance remains unavailable because its trusted isolated
+fixture resolves to `/usr/bin/python3.12`, which lacks pytest; the default and
+changed `/usr/bin/python3` command receipts are both retained. No mutation
+execution or conformance pass is claimed.
+
+
+## 2026-08-22 — OpenClaw input gate installed; alias admission remains blocked
+
+Clean commits `a0ff74d4` / `77bfd2ae` bind planner capability IDs to the
+current ontology, preserve closed dependency repair guidance, and move the
+existing Agency preflight call into OpenClaw's fail-closed
+`before_agent_run` input gate. Expected-red retained three failures. The
+repaired planner/OpenClaw slice passes 154 tests; the affected
+installer/adapter slice passes 65 with 131 deselected. The 828-test production
+spine, 134 UI tests, docs, ruff, routing evaluation, and diff checks pass.
+
+OpenClaw was stopped natively. Agency-only install
+`ba074210-c785-4d61-a014-c2f86dfdb571` completed with bundle
+`3139ec9cd2ea922efc17322bf065b94975fcbbbd5bd215d7b96fcd63fbcbbeac`,
+launcher SHA `b67bb58962df97d83ce82aee4b52d046f48ed4ffb3cb6d4e62930a5ec20ba860`,
+and runtime digest
+`facf804723021f33d5f7443cb4741c12bf6476e5f262e23cc6133d257ae5515f`.
+OpenClaw itself was not reinstalled. Its native primary remains
+`litellm/task-general`; a value-free pre/post JSON comparison reports only
+`/meta/lastTouchedAt`. Agency, Codex, Hermes, Claude, and ZCode configuration
+remained untouched.
+
+After native restart, OpenClaw 2026.7.1-2 is RPC-green. `agency-preflight` is
+enabled, activated, loaded with ten hooks and no diagnostics; the input gate
+has priority 1000. Telegram and Slack are configured, running, connected, and
+probe-green. Hermes and LiteLLM remained active.
+
+Three genuinely distinct Agency-only work units selected harness `openclaw`,
+profile `linux-task-agency-router`, provider type `litellm`, and exact
+requested alias/model-group `task-agency-router`. Trace
+`52223cc2-3249-42af-ba44-9d2dfb612a01` applied its planner, rejected one
+recruiter response, applied the repair, then safely abstained. Trace
+`bd2feabc-98a4-48d5-a113-d9c8efd2f7c9` repaired an earlier-dependency
+violation, then the recruiter returned no valid response. Trace
+`71c4ad65-806e-4d36-87b7-91be135a3988` rejected an earlier-dependency plan
+and its repair for missing codebase discovery. All attempts used zero
+protected fallback. `response.body.model` repeated the alias, not an
+authoritative backing-model identity; actual model remains unavailable.
+
+No native OpenClaw turn ran after this install because no Agency-only route
+was accepted. Therefore the candidate has no fresh native session, header,
+resident binding, Store routing row, or finalization claim. This avoided
+another native token/tool loop but leaves live fail-closed delivery and
+accepted substantive delivery open. The host-scoped soft-off dry run passed;
+the mutation command was rejected pending explicit owner approval because it
+would bypass Agency enforcement for OpenClaw. It was not circumvented.
+
+Pre/post contractor count is 15/15. Pre/post SQLite-consistent Store backups
+both have integrity `ok`; the post-install SHA is `64c65d70...`. No host
+canary, alias-target change, push, PR, tracker write, hosted workflow, or
+AR-119 matrix movement occurred.
+
+
+## 2026-08-22 — Free alias target accepted; OpenClaw prompt permission isolated
+
+The owner authorized changing only LiteLLM deployment `task-agency-router`.
+Raw database-row hashes prove every other one of 103 deployments stayed
+unchanged. `qwen3.5:9b` improved structured output but remained unreliable:
+one three-stage result was vetoed by its critic and a distinct result returned
+no valid recruiter response. The alias was then pointed to the already-installed
+free `qwen3-coder-30b-a3b-128k-rocm` target.
+
+The exact required restart-safety request then passed Agency-only admission.
+Trace `7a094495-edbc-471d-8c9d-9a557f3c7ac6` applied planner, recruiter, and
+critic through OpenClaw profile `linux-task-agency-router`, provider type
+`litellm`, and exact requested alias/model-group `task-agency-router`, with
+zero fallback. LiteLLM's response still named only the alias, so the configured
+control-plane target is recorded separately from the unavailable actual-model
+receipt.
+
+A completely new native `agency status` session exposed a second independent
+defect. Store run `7daf7c70-c87b-4ed7-bf31-3e093bab73b5`, trace
+`341ec5f5-9343-499f-8a73-d0c6cb08426c`, reached preflight `ready`, but the
+OpenClaw transcript reported zero runtime-context characters. Native
+`litellm/task-general` answered and called `agency_finalize` with invented
+correlation IDs; finalization failed and the Store closed `response_invalid`.
+No Agency header or Telegram delivery is claimed.
+
+Installed OpenClaw 2026.7.1-2 requires a non-bundled plugin to set
+`hooks.allowPromptInjection=true` before `before_prompt_build` results can
+mutate the prompt. Agency registration set only conversation access. The
+expected-red registration test is retained. The minimal repair adds that one
+supported permission, includes it in the dry-run plan, and rolls back safely
+if it fails. Registration is 46/46 green; the focused OpenClaw slice is 127
+passed/1 skipped under umask `0077`. The candidate has not yet been installed.
+
+
+## 2026-08-22 — OpenClaw lifecycle order corrected after permission-enabled proof
+
+Agency-only install `18b2d5f7-a931-4606-8d6f-9e30937cfbcc` proved the native
+prompt-injection permission. OpenClaw remained on `litellm/task-general`, the
+Agency config remained byte-identical, and Telegram/Slack plus Hermes/LiteLLM
+stayed healthy. Fresh run `d343b0c0-68a9-4857-b8d3-41cd3125cd3a` nevertheless
+reported zero runtime-context characters and delivered no Agency header.
+
+Installed OpenClaw 2026.7.1-2 source proves it executes
+`before_prompt_build` before the fail-closed `before_agent_run` gate. Agency's
+generated-plugin test had modeled the reverse. Expected-red exit 204 is
+retained. The corrected candidate performs and caches preflight during prompt
+build; the later gate requires the exact cached context, so prompt-hook failure
+still blocks before any model call. The security-boundary file passes 46/46;
+focused native-installer, adapter-parity, host-boundary, and registration slices
+pass 36, 24, 1, and 46 cases. This candidate is not installed yet; no matrix
+cell or host-delivery claim moved.
+
+
+## 2026-08-22 — Prompt-build delivery passes; 30B exceeds native hook budget
+
+Clean pair `d9a1a7ce` / `1a737ef8` was installed into stopped OpenClaw as
+Agency-only install `1eeba99b-49a1-4db5-b561-9d985c30d29e`. OpenClaw itself
+was not reinstalled. Its native `litellm/task-general` primary and channels
+were preserved; Hermes and every proven host remained untouched.
+
+Fresh status trace `bf21e9a8-a9f0-442b-9d75-78dab94687d6` completed Store run
+`c571cf9b-a990-4551-ba76-f0cb27e137ce`, deterministic routing
+`e2a41ef8-15cd-4242-8b6d-11a720227728`, and finalization
+`dec9e3fb-c8fc-4b14-a072-794171263f8b`. OpenClaw delivered the exact
+five-line header. This closes the prompt-build delivery defect for the control
+path but does not prove workforce inference.
+
+A changed `loop-library` request was blocked after 80.744 seconds before
+native reply generation. Store run `eeb31163-27d8-4091-986f-35d03a8e64b2`
+remains `active` with preflight `in_progress` and no failure receipt. The free
+30B target therefore remains contract-capable but is too slow for this native
+hook budget; the timeout is not staffing success or provider loss.
+
+Only deployment `task-agency-router` was changed to already-installed free
+`ollama/qwen3-14b-abliterated`, preserving reasoning level `none`. The 102
+unrelated deployment identity hash remained `ca74e597...` and the count stayed
+103. First standalone diagnostic trace `6a761259...` lacked the service-only
+credential, made zero provider calls, and is retained as an operator-input
+failure rather than a model verdict. A credential-correct, genuinely new 14B
+evaluation follows after this required recovery checkpoint.
+
+Credential-correct trace `2317d975-c960-4020-8755-f32308ffe94b` then accepted
+planner, recruiter, and critic in 37.768 seconds through the exact OpenClaw
+profile, LiteLLM provider, and alias/model-group, with no provider fallback.
+Fresh native session `ar276-openclaw-nexus-tmux-qwen14b-20260822-a` completed
+trace `79abdac7-42f1-44e9-afad-bf5556df62aa` in 45.085 seconds. Store routing
+`1908650f...`, request binding `rmb-19107899...`, specialist `5f11b004...`,
+skill row `b54c5916...`, and finalization `64a97d43...` correlate with the
+delivered five-line inference header: `code-reviewer`, `tmux`, no delegation.
+Native `task-general` then supplied the host answer after accepted preflight.
+The wrapper still reports only `task-agency-router`; no backing-model claim is
+made. The exact substantive restart-safety turn remains next.
+
+
+## 2026-08-22 — Exact substantive turn exposes first-pass finalizer adherence gap
+
+The exact restart-safety work unit ran once in fresh session
+`ar276-openclaw-nexus-restart-qwen14b-20260822-a`. Agency trace
+`35efa94c-d8d9-4354-863f-d22ad852ca22` accepted planner, recruiter, and critic
+through the exact OpenClaw LiteLLM profile and alias with zero fallback. It
+selected two specialists and recorded `openclaw-operations`.
+
+The unchanged native `task-general` model then used read-only host tools but
+stopped on an unheaded preliminary sentence without calling
+`agency_finalize`. Store run `e2e9e65d-540c-4aa7-86c5-b945cbc6ac62` closed
+`response_invalid`; finalization `7d5428e7-469f-45cd-9920-da553e4cfa7e`
+records every required header field missing. Response/transcript SHAs are
+`f4f6d7b7...` / `f0f9e359...`. This proves accepted Agency inference and a
+native first-pass finalizer failure, not response delivery.
+
+AR-278 records the defect. A bounded host revision candidate passed local
+tests but was rejected before commit or installation because ADR-0120 makes
+the first invalid natural response terminal. The replacement strengthens only
+persistent native-tool and per-turn first-pass instructions, explicitly says
+there is no correction pass, and leaves verification and outbound rejection
+unchanged. Expected-red exit 219 is retained; affected suites pass 47 security,
+36 installer, and 24 adapter-parity cases. Live installation and a genuinely
+changed work unit remain pending.
+
+
+## 2026-08-22 — First-pass repair installed; changed native turn times out
+
+Clean pair `0833884a` / `7be371d2` was installed into stopped OpenClaw as
+Agency-only install `e834190a-0dfe-4fba-a0cd-df2d7d75e250`. The installer did
+not restart the host. Bundle `521b1480...`, runtime `b5d546a6...`, and launcher
+`41415e79...` resolve to the same dedicated checkout. OpenClaw remained
+2026.7.1-2 with native primary `litellm/task-general` and all six fallbacks
+unchanged; the Agency config remained byte-identical. Telegram and Slack were
+connected and probe-green after native restart. Hermes and all proven hosts
+were untouched.
+
+A genuinely changed recovery-risk request ran in fresh session
+`ar277-openclaw-nexus-recovery-qwen14b-20260822-a`. Agency trace
+`07e5ec33-7f33-4a0f-966e-d93ff4361b68` accepted planner, recruiter, and critic
+through profile `linux-task-agency-router`, provider type `litellm`, and exact
+alias/model-group `task-agency-router`, with zero fallback. It selected two
+specialists and recorded `openclaw-operations`.
+
+The unchanged native `task-general` turn then made 31 successful read-only
+host tool calls and reached the 240-second provider timeout before calling
+`agency_finalize`. Store run `6726b5ce-c632-4af4-8f37-5a99301835d0` remains
+`active` with preflight `ready`; no terminal finalization, exact header, or
+Telegram delivery is claimed. This is a retained native host timeout after
+successful Agency inference, not an Agency-router timeout or a backing-model
+receipt. The next proof uses a genuinely changed, tightly bounded prompt that
+permits only the required finalizer tool.
+
+
+## 2026-08-22 — Bounded first-pass OpenClaw proof passes
+
+Fresh session `ar277-openclaw-nexus-finalizer-bounded-20260822-a` completed in
+46.635 seconds. Trace `9bea1a3f-67cc-4add-971f-d61aa23dcdea` automatically
+selected OpenClaw, profile `linux-task-agency-router`, provider type `litellm`,
+and exact requested alias/model-group `task-agency-router`. Planner, recruiter,
+and critic applied; routing `ec9366fd-8a95-46c8-951f-069204d3d453` records no
+fallback and selected `code-reviewer`.
+
+The unchanged native `task-general` host called only `agency_finalize`, once,
+with no failure. Finalization `07759321-7b9f-42b9-bb4f-4086d3ecd167`
+accepted the exact five-line inference header and completed Store run
+`c24afc99-8508-47b8-b09e-79fb9b317cea`. Response/transcript SHAs are
+`e53fdf95...` / `5251eec0...`. Model receipts remain wrapper-only, so the
+configured alias target is not promoted into an actual-model claim.
+
+The post-live online Store backup has integrity `ok`, schema 47, and SHA
+`47d868f5...`; the packaged contractor count remains 15/15. Native Agency
+plugin inspection reports loaded/enabled/activated/imported, ten hooks, one
+`agency_finalize` tool, and zero diagnostics. Telegram and Slack are running
+and probe-green with no reported error. The attempted operator-initiated
+Telegram control was rejected before process execution by the external-message
+authorization boundary, so no automated Telegram round trip is claimed.
+Hermes, Codex OAuth/config/canary, Claude, and ZCode remained untouched. No
+host canary, child-delivery claim, matrix movement, push, PR, tracker mutation,
+or hosted workflow occurred.
+
+
+## 2026-08-22 — Telegram round trip exposes post-finalizer silent suppression
+
+The operator sent exact `agency status` as the first message in a new Telegram
+session. Opaque native session `6d16c446-4d60-460d-b1ad-d534c72327db` reached
+Agency trace `9ac12abc-211d-4d4d-9bd1-036b67bda388`. Store run
+`669d28d1-8ec1-4a2d-a7fa-4c6e195d1da7`, binding `rmb-fef54dcc...`,
+deterministic routing `3c9e6fd8...`, and finalization `63140215...` completed.
+The native `agency_finalize` tool returned the exact five-line status header
+and body. The next assistant event was exact `NO_REPLY`; OpenClaw suppressed
+that sentinel before reply-payload or message-sending hooks and queued nothing.
+Transcript SHA is `fd8dc854...`. No channel/user numeric identifier is retained.
+
+This is not a Telegram-ingress, LiteLLM, preflight, or Store failure. It is a
+post-finalizer host-delivery failure, and the earlier CLI bundle does not prove
+channel delivery. OpenClaw 2026.7.1-2 exposes no supported post-suppression
+hook that can recover the accepted payload without bypassing host delivery
+controls. AR-279 therefore changes only the generated finalizer metadata: the
+tool validates and returns but does not send, its result is not user-visible by
+itself, the next/final assistant output must copy it, and `NO_REPLY` is
+forbidden. Expected-red exit 223 is retained; three focused finalizer checks
+and generated-installer parity pass. No host has received the candidate yet.
+
+
+## 2026-08-22 — Exact final text exposes full-payload terminal conflict
+
+Clean pair `1ca46cc9` / `320dc7cf` was installed into natively stopped
+OpenClaw as Agency-only install `74b4c0bc-8da5-4bfb-ac91-08c6e770c7ea`.
+OpenClaw itself was not reinstalled. Version 2026.7.1-2, native primary
+`litellm/task-general`, all six native fallbacks, and the Agency inference
+configuration remained unchanged. Telegram ingress and the gateway stayed
+healthy.
+
+Fresh opaque session `80c9c847-ff6d-4d16-b913-50e96b981a42` produced exact
+non-silent final text after the model called `agency_finalize` once. Agency
+trace `2eaaf8e9-07f0-475c-89dc-f811553339ed`, Store run
+`27faf92b-4c60-430d-8401-358831c60f29`, routing
+`9528aa21-6cce-4a2c-87d8-1e4ba7722b00`, specialists
+`f7ac8ffb-33af-4d93-8e54-d39471463ad1` and
+`68d0a65b-c1da-4beb-b071-0fc7695a15b3`, skill row
+`0f548ebf-c080-4733-b981-5b21481fd7eb`, and terminal
+`9b2d4c3a-121e-4043-8c72-640ebde48e74` correlate. Three wrapper receipts
+request exact alias/model-group `task-agency-router` through profile
+`linux-task-agency-router`; backing-model identity remains unavailable. The
+final text and tool result match at SHA-256 `202f0d58...`, but Telegram
+recorded no outbound event.
+
+The terminal finalization had already committed that policy-text hash.
+OpenClaw's audited reply-payload hook canonicalized the complete envelope and
+required its different hash, detected the conflicting prior terminal, and
+correctly failed closed. The expected-red preserves this boundary defect. The
+minimal candidate validates and returns OpenClaw finalizer text without closing
+the turn; `before_agent_finalize` keeps it pending, and the last payload gate
+atomically commits both complete-payload and policy-text hashes. An independent
+expected-red preserves the missing native `/new` acknowledgement; the candidate
+permits only one exact acknowledgement for exact `/new` or `/reset`, bound to
+the same session and a ten-second expiry.
+
+The affected OpenClaw/header/Store suites are 386 passed and 1 skipped. Three
+unchanged legacy assertions in `test_turn_scoped_evidence.py` remain red
+because they expect the removed public `agency.delegate` tool and historical
+Codex/Claude Stop response shapes; they are retained and were not retried
+again. No host has received the new candidate. Hermes and all protected hosts
+remain untouched.
+
+Clean pair `a8022a92` / `4fab954b` was then installed into natively stopped
+OpenClaw as Agency-only install `87b518e8-dfee-4759-af7d-565705d09afa`.
+The installer reported complete with bundle `7f94acf0...`, runtime
+`1816b6ad...`, launcher SHA `c34c66be...`, and 15 existing contractors; it
+did not restart the gateway. Native restart is RPC-green, with 11 required
+hooks including `message_received`, one finalizer tool, zero diagnostics, and
+Telegram/Slack probes green. Agency config SHA remains `43367ec9...`; the
+OpenClaw config differs from `last-good` only at `/meta/lastTouchedAt`, and
+native `litellm/task-general` plus all six fallbacks are unchanged. Pre-live
+Store backup SHA is `6b3b8794...`, integrity `ok`, schema 47. Fresh `/reset`
+acknowledgement and changed Telegram substantive delivery remain pending.
+
+### Third Telegram turn isolates the OpenClaw host prerequisite
+
+Fresh session `ac750af6-7adf-41b9-ba8a-9feee76539e4` retained a third
+no-outbound result. Store trace `4552b87d-5ee3-45a3-ba61-6629bbb20e99`, run
+`86d3c0a2-79f0-4ea6-aa0a-adcb4056d25b`, routing
+`bbf1d404-bb7b-4eb6-be3d-3b27aaf00786`, and specialist
+`37ad1cc1-72c3-4d9d-b824-0b6eecd482ca` prove automatic OpenClaw selection and
+three successful LiteLLM wrapper stages through `linux-task-agency-router` and
+exact alias/model-group `task-agency-router`, with no protected-host fallback.
+The accepted pending finalizer was followed by exact `NO_REPLY`; terminal
+`9599d181-a104-42a1-b166-8412add9c1d0` recorded `response_invalid`, and no
+Telegram outbound existed. The remaining substantive blocker is OpenClaw
+2026.7.1-2's lack of a supported plugin return-direct/terminal-presentation or
+post-model replacement seam. Direct send, invalid-draft rewrite, and another
+model pass remain prohibited.
+
+The same attempt proved native reset commands bypass `message_received` and
+race the asynchronously started `before_reset` hook. The local bridge candidate
+now correlates only exact `new`/`reset` reasons at `before_reset` and waits up to
+one second only for the two exact native acknowledgement texts. Affected suites
+are 218 passed. The candidate is checkpointed but not installed; Hermes and all
+protected hosts remain untouched pending Lucas's OpenClaw capability decision.
+
+### OpenClaw ordinary mode restored by reversible Agency disable
+
+Lucas selected temporary recovery. Ownership-bound uninstall dry-run operation
+`952ff8f6-a660-4309-ac54-191481944440` retained plan digest `a497a256...` and
+failed before mutation because native installed-copy provenance is not bound to
+the Agency target; AR-270 owns that defect. The gateway was stopped natively,
+and OpenClaw's supported plugin command disabled only `agency-preflight`.
+
+OpenClaw restarted active/RPC-green on 2026.7.1-2. Agency remains staged and
+registered but is inactive with zero loaded hooks. Telegram and Slack are
+configured, running, and probe-green. Native `litellm/task-general` and all six
+fallbacks are unchanged; the launcher SHA remains `c34c66be...`. Pre/post
+normalized config SHA is identical after excluding only timestamp metadata and
+the authorized Agency enabled flag. Post-disable Store backup integrity is
+`ok`, SHA `9c193d2e...`. Hermes and every protected host remain untouched;
+operator-originated exact `reply with pong` then received exact `pong`.
+Redacted channel state records both inbound and outbound activity; role-aware
+native transcript verification passes at SHA-256 `0420d72c...`. Ordinary
+OpenClaw delivery is restored, while Agency acceptance remains blocked and no
+Agency trace/header claim applies during disablement.
+
+
+## 2026-08-23 - Awaited tool-result path replaces disproven host prerequisite
+
+The earlier conclusion that OpenClaw needed a new return-direct or post-model
+replacement API was too strong. Inspection of the installed 2026.7.1-2 agent
+loop confirms that terminating after a tool call is classified
+`non_deliverable_terminal_turn` unless the host records explicit terminal
+delivery, so a terminal `agency_finalize` handshake cannot work. The supported
+plugin SDK nevertheless exposes awaited
+`registerAgentToolResultMiddleware`, which runs after a native tool result and
+before the model continues.
+
+ADR-0168 therefore changes Agency's OpenClaw adapter only. Preflight supplies
+the initial exact five-line Store snapshot. One middleware scoped to runtime
+`openclaw` records each tool observation synchronously, preserves the native
+result, and appends the updated exact snapshot. The model emits one natural
+first response; `before_agent_finalize` still validates it and the existing
+full-payload gate still commits and authorizes the outbound envelope. The
+generated plugin no longer exposes `agency_finalize`; there is no direct send,
+rewrite, correction pass, host source/config change, or inference change.
+
+Expected-red exit 232 is retained. The final focused OpenClaw slice is 72 passed
+across security, adapter, and installer coverage, including absent-refresh
+non-fabrication, disabled-runtime truth, native-result preservation, and
+installer refusal when the middleware contract is missing. The proportionate
+header, Store, inference, registration, and policy gate is 289 passed, 2 skipped.
+The candidate is not installed. Agency remains registered-disabled, ordinary Telegram recovery
+remains green, and Hermes, Codex OAuth/config/canary, Claude, and ZCode remain
+untouched. A clean local checkpoint precedes any live mutation.
+
+## 2026-08-23 - Fourth Telegram failure isolates alias-only evidence mutation
+
+The awaited tool-result candidate was checkpointed at `da184b4f` /
+`773d9080` and installed into natively stopped OpenClaw as Agency-only
+operation `514528d9-e373-4f87-b1c0-9d53edb9401b`. Bundle `07189d93...`,
+runtime `f0a563d9...`, and launcher SHA `668ff55d...` all bind to the same
+checkout. The installer did not restart OpenClaw. Native restart loaded ten
+hooks plus the OpenClaw-scoped awaited middleware, exposed no tool, and reported
+zero diagnostics. RPC and channel probes were green. Only the timestamp and
+Agency enabled flag changed in OpenClaw config; `litellm/task-general`, all
+six fallbacks, channels, providers, and credential indirection remained exact.
+
+The fresh reset acknowledgement did not arrive. Exact `agency status` still
+entered a new native session. Three `task-general` calls returned HTTP 200,
+native tools completed, and the transcript contains a 665-character natural
+response with the exact five-line requested-alias/deterministic header. The
+turn kernel then recorded `no queued reply payloads`; transcript SHA is
+`13300aef...`.
+
+Store trace `a9afc0e8-c998-4bff-9c9e-6dce27628bb2`, run
+`24104a10-ad68-43a3-9a79-92603687cd1b`, routing
+`30f6b37b-610e-4f4c-8fce-593fe4cd6d8f`, and terminal
+`625e3e8c-e82c-4918-a23e-5c180760676b` correlate. Deterministic control
+routing correctly abstained with no specialist, skill, resident binding, or
+workforce inference. Finalization rejected only `actual_model_selected`.
+Three correctly correlated host model receipts requested `task-general` but
+reported resolved model unavailable.
+
+The installed OpenClaw 2026.7.1-2 hook exposes provider and requested model
+metadata, not the LiteLLM answering model. Agency correctly does not promote
+`task-general` into an actual-model claim. The defect was persisting that
+alias-only event after response authorship: it changed the authoritative header
+from the requested-alias line to an unavailable-receipt line before validation.
+This is neither a LiteLLM reachability/authentication problem nor a middleware,
+Telegram, or native model-routing failure.
+
+The focused expected-red now proves the mutation. The OpenClaw bridge omits
+only LiteLLM hook events with no resolved provider and no resolved model from
+actual-model completion evidence. Genuine resolved telemetry remains recorded,
+and shared policy plus every other harness remain unchanged. The focused
+OpenClaw adapter, middleware, and finalization slice passes 31 tests with 1
+skip. Post-failure Store integrity is `ok`, schema 47, and read-only snapshot
+SHA is `df57b6a3...`. The fix is not yet installed; Hermes and protected hosts
+remain untouched.
+
+## 2026-08-23 - Fifth Telegram failure isolates final-hook model context loss
+
+Clean pair `a9276e00` / `4b1172be` was installed into natively stopped
+OpenClaw as Agency-only operation
+`175adc13-ef5f-4286-ac39-0a7584e9a982`. Bundle `7a36d4df...`, runtime
+`8ec95839...`, and launcher SHA `30c5760b...` bind to the same checkout. The
+installer left the gateway stopped. Native restart loaded ten hooks plus the
+OpenClaw-scoped awaited middleware, exposed no Agency tool, and reported zero
+diagnostics. RPC and both channel probes were green. OpenClaw configuration
+changed only at `meta.lastTouchedAt`; native `litellm/task-general`, all six
+fallbacks, channels, providers, and credential indirection remained exact.
+
+The fresh `/new` acknowledgement again did not arrive. Exact `agency status`
+entered native session `cdc3a36b-e683-4c8e-bace-2545f01bd2c0`; six native
+`task-general` requests returned HTTP 200 and the transcript contains one
+natural 1274-character response with the exact requested-alias/deterministic
+five-line header. The turn kernel nevertheless recorded no queued reply
+payload. Transcript SHA-256 is `deeb9040...`.
+
+Store trace `f946f532-4b53-4695-b660-36be48500dc3`, run
+`79a11206-3c58-4ed0-b2b8-121bf3d0fdb9`, routing
+`50c37f62-8278-4e35-99a2-7985b97cb4f9`, and terminal
+`ae002770-f47f-4c84-890f-9ccfd37fd06b` correlate. Deterministic status
+correctly abstained with no workforce inference, specialist, skill, resident
+binding, or protected-host fallback. Zero model receipts prove the alias-only
+filter behaved as intended. Finalization still rejected only
+`actual_model_selected`.
+
+Installed-hook inspection isolated the mismatch: OpenClaw 2026.7.1-2 supplies
+`modelId=task-general` during `before_prompt_build`, but omits `modelId` from
+`before_agent_finalize` and final `reply_payload_sending` context. Agency
+authored the requested-alias header from preflight and then compared it against
+`none observed` at the final gates.
+
+Expected-red exit 17 retains that exact lifecycle loss. The generated plugin
+now keeps the bounded preflight model beside the existing session/run
+correlation, reuses it at both final gates, and deletes it at outbound
+completion. Existing ten-minute expiry, 128-entry cap, byte bound, and
+runtime-disable clearing remain intact. The focused OpenClaw security,
+adapter, registration, and native-installer slice is 90 passed and 1 skipped.
+No shared policy, other adapter, OpenClaw source/configuration, model route,
+direct send, rewrite, or correction pass changed. Post-failure Store integrity
+is `ok`, schema 47, and read-only snapshot SHA is `93dc0be2...`. The candidate
+is not installed; Hermes and all protected hosts remain untouched.
+
+## 2026-08-23 - Sixth Telegram status delivery passes
+
+Clean pair `71cb0975` / `a518ed23` was installed into natively stopped
+OpenClaw as Agency-only operation
+`c3b124d6-6a88-46b4-8c5a-706c5187457b`. Bundle `fcc48773...`, runtime
+`0b05a499...`, and launcher SHA `317045e7...` bind to the checkout. The
+installer did not restart the host. Native restart loaded ten hooks, the
+awaited middleware, no Agency tool, and zero diagnostics; RPC and both channel
+probes were green.
+
+OpenClaw stays 2026.7.1-2 on `litellm/task-general` plus all six fallbacks.
+The config changed only `meta.lastTouchedAt`; models, providers, channels, and
+credential indirection are identical. Agency stays harness-scoped to
+`linux-task-agency-router` and exact `task-agency-router`. Hermes and protected
+hosts remain untouched.
+
+Fresh exact `agency status` in native session
+`5570abb9-eecc-4d77-be4b-bb9636bdf886` produced trace
+`78a68fdc-e192-4098-b8c7-58d20cf3bd8a`, run
+`6f446944-da85-4eda-8049-227bf268775e`, routing
+`da98bac1-c78a-4be7-9a6b-a121386fdaf7`, and completed terminal
+`9398965e-550c-452d-9f85-3e59f2ecd029`. Finalization accepted with no missing
+fields, and Telegram outbound followed inbound.
+
+Response SHA is `1e8c1df5...`; transcript SHA is `593ddef8...`. The header's
+`task-general` value is the OpenClaw parent request alias. Zero Agency model
+receipts prove deterministic status did not invoke or prove
+`task-agency-router`; no answering model is claimed. Pre/post Store backups
+are integrity `ok`, schema 47, SHAs `d00c86f9...` / `470aa2fd...`; contractors
+remain 15. AR-279 delivery passes. Harmless skill and substantive workforce
+proof remain pending.
+
+## 2026-08-23 - Delivered skill turn isolates missing middleware correlation
+
+A genuinely new read-only `healthcheck` request in the same native session was
+delivered through Telegram. Store trace
+`6b18f9f0-a8bb-4a68-b70b-45ec7cdfe454`, completed run
+`afc905ca-f68b-40c7-b694-b1842e7277c7`, accepted routing
+`26492374-3d54-4da2-8bc6-0381e83813f4`, specialist
+`5b2f0fbd-445d-41f5-9d4c-1e2a99f3ff09`, and accepted terminal
+`d6ae9ade-b124-46b5-8822-7457a177f526` correlate. Response SHA is
+`e98c6c18...`; transcript SHA is `76826043...`.
+
+All three Agency wrapper receipts requested exact alias/model-group
+`task-agency-router` through automatically selected OpenClaw profile
+`linux-task-agency-router` and provider type `litellm`; routing records zero
+fallback. OpenClaw's native parent remained LiteLLM `task-general`. No provider
+telemetry supplied an actual answering model, so neither alias is promoted into
+that claim.
+
+OpenClaw's native `read` used the exact eligible `healthcheck` path reported by
+`openclaw skills info`, but the Store contains zero skill rows and the honest
+five-line header says `Skills loaded: none`. The failure is retained at
+`/tmp/ar278-openclaw-sixth-live/healthcheck-correlation-diagnosis-redacted.json`
+with SHA `c742cbe4...`.
+
+Installed 2026.7.1 source supplies tool arguments to the awaited middleware but
+does not populate its optional session/run event or context fields. The prior
+Agency unit harness incorrectly supplied those identities. Expected-red exit
+245 now matches the real callback. The OpenClaw-only candidate captures bounded
+session/run correlation from the supported `before_tool_call` hook by
+`toolCallId`, consumes it once in the awaited middleware, rejects ambiguous
+collisions, expires and caps state, and clears it when Agency is disabled. The
+affected installer, dispatch, inference, final-header, and Store slice is 374
+passed with 1 skipped. Clean implementation/ledger pair `e5ae8de1` /
+`7abf9b13` checkpoints the candidate. It is not installed. OpenClaw
+source/config, Hermes, Codex, Claude, and ZCode remain untouched.
+
+## 2026-08-23 - Tool-correlation repair installed; fresh ingress pending
+
+Agency-only install `251c4349-f7e3-4640-980d-055b857c0abe` installed the
+correlation repair from clean checkout `c0426ab9` while OpenClaw was natively
+stopped, and the installer left it stopped. Bundle `ba344b92...`, runtime
+`70239e65...`, and launcher SHA `3090708c...` bind to that checkout. Native
+restart is RPC-green and loaded 11 hooks including `before_tool_call`, the
+awaited middleware, no Agency tool, and zero diagnostics.
+
+OpenClaw remains 2026.7.1-2 on native `litellm/task-general` plus the original
+six fallbacks. Its only semantic config delta is `meta.lastTouchedAt`; Agency
+config SHA remains `43367ec9...`. Agency remains harness-scoped through
+`linux-task-agency-router`, LiteLLM, and exact `task-agency-router`. Pre-install
+online Store backup SHA `3cdf39fc...` has integrity `ok`, schema 47, and
+contractors remain 15. Hermes and protected hosts remain untouched.
+
+The first operator send after restart was not observed at the native Telegram
+inbound edge. Gateway RPC, native channel probe, and Telegram credential/API
+health are green with zero queued updates, but no Agency trace exists. This is
+retained as pending ingress, not an Agency failure or delivery claim. The next
+bounded proof remains a fresh session, exact `agency status`, a genuinely new
+eligible `tmux` skill read, and the exact restart-safety review.
+
+## 2026-08-23 - Fresh installed-repair status control passes
+
+Native `/new` established fresh session
+`b815780c-23fb-4fdb-8731-aed6d162b769`. Exact first message `agency status`
+produced completed trace `7f4aa31c-9d93-4199-bac0-b5818cea91de`, run
+`526c86bd-ddca-4878-93a4-8bd09ca029a6`, abstained routing
+`d8130eb2-d1fa-478e-84e3-bcff1dc6e0ed`, and accepted terminal
+`6ce7c157-98fd-4ab7-aabc-d4722e02a43b`; Telegram outbound followed inbound.
+
+The exact 476-character response SHA is `a4c784dc...`; preserved transcript SHA
+is `a2ec1af7...`. Its five-line header records only `agency-steward`, no
+delegation or skill, native requested alias `task-general`, and deterministic
+recruitment. Zero Agency model receipts, specialists, skills, or resident
+binding correctly keep this a status-control proof rather than
+`task-agency-router` inference evidence. Changed `tmux` skill and exact
+restart-safety proofs remain next; protected hosts remain untouched.
+
+## 2026-08-23 - Installed-repair tmux skill proof passes
+
+After the operator delay, OpenClaw rolled native session
+`31983848-8d75-4e8f-ae11-8b8087d8c429`; the Store channel-session SHA remained
+`d20c5bfb...`. The genuinely changed read-only `tmux` request completed as
+trace `adff32ff-bbd0-4afd-befd-e5c647ac76fc`, run
+`bcbbebd5-b35e-445f-a066-0298c0f27d44`, accepted routing
+`dce3ca84-d8be-4f29-8636-2beb2abc32e0`, specialist
+`a3c9d9ef-fdfe-4d02-b4f7-d0e7469f8ff2`, and accepted terminal
+`3d5bdb26-881d-4759-9ded-2ae2ac167a44`; Telegram outbound followed inbound.
+
+The exact five-line header says `Skills loaded: tmux`, matching Store row
+`937189d5-d27c-4fea-8829-91e7995f2252`. Three wrapper receipts requested exact
+alias/model-group `task-agency-router` through automatically selected OpenClaw
+profile `linux-task-agency-router` and provider type `litellm`; routing records
+zero fallback. Actual answering model remains unavailable. Response SHA is
+`74038284...`; preserved transcript SHA is `da55b13b...`. The exact substantive
+restart-safety review and final integrity bundle remain next.
+
+## 2026-08-23 - OpenClaw scoped acceptance set passes
+
+The exact substantive prompt, `Review the installed OpenClaw Agency integration
+for restart-safety risks. Do not change anything and do not delegate.`,
+completed in native session `84deda15-df94-4aa8-8ed4-853ecd56ff99`. Store trace
+`5ba0b638-9db8-4144-8be0-2d9b17f6b51d`, run
+`ad2b1238-dd8f-49c9-9b30-2107baf7b499`, accepted routing
+`b5f22f42-4ddf-4a8b-85ed-8fb56c13e7b1`, and accepted terminal
+`5eb2e7fa-ff50-4728-b7d2-d6a497ff57b5` correlate. Telegram delivered both
+response chunks. Response SHA is `1bf6f61e...`; transcript SHA is
+`176811b4...`.
+
+The exact five-line header names `agency-steward`, `ai-evaluation-engineer`,
+and `ai-data-remediation-engineer`; no delegation; skill
+`openclaw-operations`; workforce inference through exact alias
+`task-agency-router` and profile `linux-task-agency-router`; and inference
+recruitment. Store skill row `a0b9a4ea-2a0c-441d-ae39-a946ff149c6f` and
+specialist rows `2762c670-30bb-4b9b-b3ad-4de5e87ed0f4` /
+`8367ed56-a2f2-43db-972f-423219b751e5` match the response.
+
+All three wrapper receipts used automatically selected OpenClaw profile
+`linux-task-agency-router`, provider type `litellm`, and exact requested
+alias/model-group `task-agency-router`; every provider attempt was applied and
+fallback count is zero. OpenClaw's separate native parent route remains
+`litellm/task-general` plus six unchanged fallbacks. Wrapper telemetry did not
+supply the actual answering model, so the alias is not promoted into that
+claim.
+
+No resident binding, delegation, or native-child evidence exists. Native tool
+evidence remained read-only. Final online Store backup SHA is `affd8f8e...`,
+with source and backup integrity `ok` and schema 47. Contractors remain 15;
+Agency config SHA `43367ec9...`, OpenClaw config SHA `3060c3ee...`, and launcher
+SHA `3090708c...` are unchanged from the install checkpoint. The redacted
+substantive artifact SHA is `acf1461b...`.
+
+OpenClaw now passes this package's installation, activation, header delivery,
+skill loading, and LiteLLM-backed parent-routing scope. Earlier failures remain
+preserved. This does not prove Rule 4 native-child delivery and does not move an
+AR-119 matrix cell. Hermes and Codex OAuth/config/canary, Claude, and ZCode
+remain untouched; Hermes is the next independent host.
+
+## 2026-08-23 - Hermes Agency-only install passes
+
+Hermes preflight used effective home `/home/holeshot/.hermes-nexus` and proved
+v0.20.4, native `litellm/task-general`, five fallbacks, nine enabled plugins,
+and an unregistered Agency state. `LITELLM_API_KEY` and `LITELLM_BASE_URL` are
+populated by name only; values are excluded. The Agency harness profile was
+already `linux-task-agency-router` with exact alias/model-group
+`task-agency-router`; no native model route changed. Online Store backup SHA
+`affd8f8e...` has integrity `ok`, schema 47, and contractor count 15.
+
+The first stopped-gateway install failed closed before staging because the
+Hermes plugin parent was mode `0775`. Failure artifact SHA is `72c3a7ac...`;
+the prepared launcher was preserved at SHA `7c033c97...`; native config SHA
+remained `a984d934...`. Tightening only that parent to owner-private `0700` and
+using process umask `0077` changed the prerequisite without weakening trust.
+
+Agency-only retry completed as install
+`06bd5aa2-c8c3-4321-90b2-e413a142c4a7`. Bundle `351a7108...`, runtime
+`70239e65...`, launcher `7c033c97...`, and install artifact `93857d15...` bind
+to the clean checkout. The installer did not restart Hermes. Native
+`task-general`, all five fallbacks, the environment-file hash, and all nine
+prior plugins remain unchanged; config SHA `95b87b7f...` reflects only
+`agency-preflight` enablement with tool override false.
+
+Hermes plugin doctor passes standalone runtime discovery, manifest parsing,
+import, and registration with eight hooks and zero tools. The exact Nexus
+gateway service is active/running after native restart; OpenClaw remains
+active. Fresh Telegram status, skill, and substantive routing proof remain
+pending. Protected hosts and the AR-119 matrix remain untouched.
+
+## 2026-08-23 - Fresh dual-host status isolates two runtime attribution defects
+
+The operator sent fresh-session control commands to both hosts. Hermes exact
+`agency status` completed trace
+`...65697a38:...65697a38:301cda8d`, run
+`1015aba7-172f-4a53-b88e-584846ea7ce5`, abstained routing
+`fe3a549f-51e2-4b70-969e-a4c6c35d55eb`, `hermes-agent` skill row
+`e3805f74-b628-4346-b5d1-cb3f072a32d5`, and accepted finalization
+`3cc70f32-e5e7-4069-8faf-ccc327bc3677`. Response SHA is `da7f3f0c...`;
+transcript SHA is `8bce3dbe...`. Its header honestly reports native
+`task-general` and deterministic recruitment. Twelve host receipts are native
+parent calls, not Agency workforce inference. No specialist, delegation, or
+native-child row exists. Generic `agency.finalize` incorrectly persisted host
+`mcp` instead of the Store-owned run host `hermes`; Telegram delivery is not
+independently claimed yet.
+
+OpenClaw exact `agency status` reached trace
+`889fd156-fbf9-4842-a43b-9c730abd919e`, run
+`1a6634ce-3987-407f-b10f-1097cf2e0a6b`, abstained routing
+`6d9689d8-be86-4223-a441-cd5be621b85a`, and `openclaw-operations` skill row
+`0a06b265-7895-4854-9362-338dd1fd33af`. Response SHA is `46c65863...`;
+transcript SHA is `939c2d14...`. The updated header said `none observed`, so
+finalization `01376e98-984d-4fb3-8430-c7e7530ed69b` correctly rejected it as
+`response_invalid` with missing `actual_model_selected`; no delivery is
+claimed. The one-use tool correlation preserved session/trace but omitted the
+preflight model needed to render the refreshed header.
+
+Both regressions failed before implementation. The smallest repair carries the
+bounded preflight model through OpenClaw's existing collision-safe, expiring,
+one-use correlation. Generic MCP finalization now derives host from the exact
+Store run only when session/trace match, retaining `mcp` otherwise; callers
+cannot spoof it. The focused slice is 232 passed / 6 intentional skips under
+umask `0077`; lint, format, documentation, and diff checks pass. Neither
+candidate is installed yet.
+
+These status turns prove no live delegation. Both have zero delegation and
+native-child evidence, and `agency status` cannot satisfy Rule 4. No AR-119
+matrix cell moves. Host-native models and routes, Codex OAuth/config and
+canary, Claude, and ZCode remain untouched.
+
+## 2026-08-23 - OpenClaw reinstall exposes sessionless reset acknowledgement
+
+Clean repair/ledger pair `21f2519d` / `f86bedb4` was installed into stopped
+OpenClaw only as install `776616e9-c086-4078-a9c3-b0875a5e6ebc`. Bundle
+`dd5707e6...`, runtime `0480db84...`, and launcher SHA `72420e54...` bind to
+the checkout. Pre-install online Store backup SHA is `5ca1ffbe...`, source and
+backup integrity are `ok`, schema is 47, and contractors remain 15. The
+installer left OpenClaw stopped; native restart became RPC-green with zero
+restarts. Native primary `litellm/task-general` and all six fallbacks remain
+unchanged. Hermes remained active and unmodified.
+
+The operator then sent `/new`. OpenClaw accepted the reset and wrote fresh
+native session `241cbd97-ff10-49b8-b4bb-2458cb9c8937`, but no acknowledgement
+was delivered and no Agency turn followed. Native log event SHA
+`01b6f0cb...` records `Codex agent harness session reset hook failed`; redacted
+artifact SHA is `06342838...`. Installed OpenClaw types explain the delivery
+failure: supported outbound `message_sending` context omits `sessionKey` when
+no outbound session object is attached. Agency's exact acknowledgement gate
+required that optional field, waited one second, and canceled the otherwise
+valid native acknowledgement.
+
+The expected-red live-shaped regression reproduced an acknowledgement racing
+`before_reset` with no outbound session context. The smallest Agency-only
+repair stores the fixed expected text alongside the existing hashed-session,
+expiring authorization. A sessionless acknowledgement can consume it only
+when exactly one active authorization matches the exact native text. Multiple
+sessions remain ambiguous and fail closed; replay, wrong text, missing reset,
+and expiry also fail. The existing session-bound path is unchanged. The
+OpenClaw safety/finalization/installer slice is 245 passed / 1 intentional
+skip. This candidate is not installed yet.
+
+No host-native route, LiteLLM alias, Codex OAuth/config/canary, Claude, ZCode,
+or Hermes state changed. No delegation or Rule 4 evidence was produced, and no
+AR-119 matrix cell moves.
+
+## 2026-08-23 - OpenClaw reset reply exposes the earlier outbound gate
+
+Clean pair `d4d4b829` / `99b1380d` was installed into stopped OpenClaw only
+as Agency install `5e1a074e-81a6-4fdf-a464-937c66d9b400`. Bundle
+`b0010f67...`, runtime `ebbf13cd...`, and launcher SHA `7f393f2a...` bind to
+the checkout. The installer left the gateway stopped. Native restart became
+RPC-green after one retained warm-up miss, with zero restarts. OpenClaw remains
+on `litellm/task-general` plus the exact six fallbacks; Hermes stayed active.
+
+The changed `/new` created native session
+`1b4c7016-cac1-4aca-8639-075038d5b982`, but no acknowledgement was delivered
+and no Agency run followed. Native log SHA `e66fb292...` and redacted artifact
+SHA `22f88b59...` preserve the failure. Installed flow inspection then showed
+that the native reset reply traverses `reply_payload_sending` before
+`message_sending`. The first repair covered only the latter, so the earlier
+final-only gate canceled the acknowledgement.
+
+The complete two-gate regression failed at exit 30 before implementation. The
+bounded repair makes the reply-payload gate verify but not consume the same
+exact reset authorization; the final message gate remains the one-use
+consumer. Concurrent ambiguity and replay remain blocked. The OpenClaw slice
+is 246 passed / 1 intentional skip. This candidate is not installed.
+
+Agency configuration, LiteLLM alias routing, Codex OAuth/config/canary,
+Claude, ZCode, and Hermes remain untouched. This produces no delegation or
+Rule 4 evidence and moves no AR-119 matrix cell.
+
+## 2026-08-23 - Two-gate reset repair still misses the live callback sequence
+
+Clean pair `3e71247a` / `ff1e9594` was installed Agency-only into stopped
+OpenClaw as install `711f3174-88b1-4b9a-948d-a47f316e6744`. Bundle
+`d1a5ef80...`, runtime `70328489...`, and launcher SHA `ae41c0be...` bind to
+the checkout. The installer left OpenClaw stopped. Native restart became
+RPC-green with Agency loaded and Telegram's credential probe passing.
+OpenClaw remains on `litellm/task-general` plus the same six fallbacks; Hermes
+stayed active and unmodified.
+
+The changed `/new` completed native ingress and reset into session
+`25ed26a0-8dc8-433d-9bc1-3afdbe503ffd`, but no acknowledgement, outbound
+receipt, or Agency run followed; the operator confirmed non-delivery. Native
+log/command event SHAs are `716f2bd1...` / `c8b214cf...`; redacted failure
+artifact SHA is `ea9d4c9e...`. The passing two-gate static regression is thus
+not sufficient evidence of the exact live hook sequence.
+
+The next candidate adds a bounded, content-free live phase trace. It records
+only hook phase, boolean state, text-surface count, content length, and active
+authorization count; tests exclude message text, identifiers, credentials,
+and payloads. The affected OpenClaw slice remains 246 passed / 1 intentional
+skip.
+
+Clean diagnostic pair `675fb22a` / `b8c3b155` was installed Agency-only into
+stopped OpenClaw as `2949e798-5500-45c9-956b-4b5a97aa802b`; the installer
+left it stopped. Bundle `72c40ad4...`, runtime `fb719841...`, and launcher SHA
+`859139b0...` bind to the checkout. Native restart is RPC-green with zero
+restarts, all 11 hooks registered, and Telegram configured/running/probe-green.
+Store backup SHA `5ca1ffbe...` has source/backup integrity `ok`, schema 47;
+contractors remain 15. Native routes remain exact and Hermes stays active and
+unmodified. No delegation or Rule 4 evidence was produced, and no AR-119
+matrix cell moves.
+
+The operator's changed `/new` again produced no acknowledgement, Agency run,
+or routing decision. The content-free trace proved reply-payload observation
+preceded reset authorization by 2 ms; both callbacks had sessions, but the
+reset lifecycle supplied different identities, so the exact-key-only lookup
+timed out after one second. Redacted artifact SHA is `0fe6ae7a...`.
+
+A live-shaped distinct-session regression failed before implementation at exit
+30. The bounded repair keeps exact-session priority, then accepts only one
+recent exact-text authorization when a supplied lifecycle session differs.
+Two candidates remain ambiguous; replay, wrong text, and expiry remain closed.
+The affected slice passes 246 / 1 intentional skip. The candidate is not
+installed in that evidence state.
+
+Clean pair `c671dd35` / `278705da` was installed Agency-only into stopped
+OpenClaw as `97fd0d49-e833-458a-a4b6-fb818761f212`; the installer left it
+stopped. Bundle `97f95751...`, runtime `145ac94d...`, and launcher SHA
+`9adc2a85...` bind to the checkout. Store backup SHA `5ca1ffbe...` has
+source/backup integrity `ok`, schema 47; contractors remain 15. Native restart
+is RPC-green, Telegram probe-green, and zero-restart. Native routes remain
+exact and Hermes stays active.
+
+The repaired `/new` delivered. Its trace proves the earlier reply gate waited,
+accepted the later unique authorization, and the sessionless final message
+consumed it once to count zero. Fresh session `130e58cd...` then completed
+exact status as run `7e907028...`, trace `58bce9a1...`, abstained routing
+`92befae5...`, `openclaw-operations` row `b2d2f4b8...`, and accepted terminal
+`9d7d7372...`. The exact deterministic header names native `task-general`;
+zero Agency model receipts and zero delegation/native-child rows preserve its
+control-only scope. Native Telegram outbound followed completion. Response /
+transcript SHAs are `ecac2803...` / `4c1cc3f7...`; Store integrity is `ok`.
+No resident binding exists for this control turn. Substantive
+`task-agency-router` proof remains pending; no matrix cell moves.
+
+## 2026-08-24 - OpenClaw substantive routing passes before native context overflow
+
+The operator sent the exact restart-safety request in fresh native session
+`130e58cd...`. Agency run `324dcb7c...`, trace `755985e5...`, and accepted
+routing `436eaef9...` correlate. Three successful wrapper receipts selected
+the OpenClaw harness, profile `linux-task-agency-router`, provider type
+`litellm`, and exact requested alias/model-group `task-agency-router`.
+Workforce inference loaded two specialists and `openclaw-operations` row
+`ef7b8440...`. Wrapper ordinals are not provider fallback; every attempt stayed
+on the same profile and alias. Actual answering-model telemetry is absent.
+
+The native `task-general` parent produced no prose while making 30 tool-only
+model calls and 108 distinct read-only tool calls. About 395 KiB of tool
+results grew native context from roughly 34k to 147k tokens, where OpenClaw
+stopped the loop for context overflow. No five-line header was authored and no
+Telegram response was queued. Telegram remained connected and reported no
+channel error.
+
+Agency finalization `fba6d9db...` atomically closed the turn
+`response_invalid` with all five required header fields missing. No resident
+binding, delegation, worker, activation, native-child, or delivery-verification
+row exists. Redacted artifacts are `d4e177d8...` / `31f86489...`; final native
+transcript SHA is `7a6addc6...`. Store integrity is `ok`, schema 47, contractors
+remain 15, and launcher SHA is unchanged at `9adc2a85...`.
+
+The native warning carries `isError`, but the installed Agency bridge routes
+it through ordinary answer finalization and therefore cancels it as headerless.
+The next bounded candidate will authorize only a matching, one-use,
+short-lived exact session/run native-error payload after failed `agent_end`
+evidence and terminal Store closure. It will persist no raw error text and will
+not change normal answer, control, child, host configuration, or model-routing
+boundaries. The failed input is retained and will not be retried unchanged.
+No delegation or Rule 4 proof exists and no AR-119 matrix cell moves.
+
+## 2026-08-24 - OpenClaw native-error candidate passes local security gates
+
+The Agency-only ADR-0169 candidate now registers OpenClaw `agent_end` and arms
+one 30-second, one-use marker keyed only by hashes of the exact session and run
+after a failed native end event. A later successful end clears it. Only a final
+payload explicitly marked `isError` may consume the marker, and only an exact
+authoritative Store `response_invalid` receipt with `native_host_error`
+authorizes the existing outbound seal. Raw native errors and native messages
+never cross the bridge or persist.
+
+Expected-red evidence first proved absent `agent_end` registration and an
+unknown bridge action; the initial repair then exposed an omitted serialized
+response hash before exact correlation passed. Tests cover wrong session/run,
+absence, expiry, replay, successful-fallback clearing, runtime-disable races,
+malformed receipts, bridge failure, exact Store closure, specialist expiry,
+and installer capability negotiation. The final focused slice passes 251 with
+1 intentional skip. Repository Ruff check/format, documentation checks, and
+diff check pass; an independent security review found no blocking issue.
+
+The candidate is not installed. OpenClaw remains on its prior Agency bundle and
+native `litellm/task-general`; Agency remains scoped to
+`linux-task-agency-router` / exact `task-agency-router`. Hermes and all
+protected harnesses remain untouched. No live error delivery, substantive
+completion, delegation, Rule 4, or matrix-cell claim is made.
+
+## 2026-08-24 - Native-error repair installed into stopped OpenClaw only
+
+From clean recovery ledger `484fe2de`, the operator took a SQLite online backup
+with source and backup integrity `ok`, recorded schema 47 and 15 contractors,
+and preserved Agency config and launcher hashes. OpenClaw reported zero active
+or queued native tasks; Hermes remained active as break glass. OpenClaw was
+then stopped natively before Agency-only install `6ede7fad...` published bundle
+`6f7e47bd...`, runtime `a3b8894f...`, and launcher SHA `0fd98d4d...`. The
+installer did not restart the gateway.
+
+The before/after Store backups are identical at SHA `07dbad1e...`; contractor
+count remains 15. OpenClaw's pre/post config comparison has one changed leaf,
+`meta.lastTouchedAt`. Native `litellm/task-general` and its exact six fallbacks
+are unchanged. Agency config SHA remains `43367ec9...`; its OpenClaw harness
+still selects `linux-task-agency-router`, provider `litellm`, exact alias/model
+group `task-agency-router`, and the loopback `/v1` endpoint. The credential
+environment name is populated in the live OpenClaw process; its value is
+excluded.
+
+Native restart is RPC-green with zero restarts. `agency-preflight` is loaded
+and registers all 12 required hooks, including `agent_end`, with no plugin
+diagnostics. Telegram and Slack are configured/running without a current
+error; Hermes remains active and untouched. A fresh `/new`, exact first status,
+and changed bounded substantive turn remain pending, so no live error delivery,
+parent acceptance, delegation, Rule 4, or matrix-cell claim is made.
+
+## 2026-08-24 - Fresh OpenClaw reset acknowledgement delivered post-install
+
+The operator sent only `/new`. The installed plugin observed the final native
+acknowledgement before the reset authorization existed, waited for
+`before_reset`, then allowed the reply-payload gate. The final message gate
+consumed the exact authorization and Telegram accepted
+`✅ New session started.` without a channel error. Fresh native session
+`447738d1...` reports zero tokens. Redacted acknowledgement artifact SHA is
+`8fea7044...`; all Telegram identifiers and credential values are excluded.
+
+No Agency run was created by the native reset. Exact `agency status` remains
+the required first message in this new session. No substantive completion,
+live native-error delivery, delegation, Rule 4, or matrix-cell proof follows
+from the reset acknowledgement alone.
+
+## 2026-08-24 - Fresh OpenClaw status rejects a stale skill header
+
+The operator sent exact `agency status` first in fresh native session
+`447738d1...`. Agency run `a4b27543...`, trace `7e7a6318...`, and abstained
+routing `f7bc2f7e...` correlate. OpenClaw's native `task-general` parent read
+the harmless `openclaw-operations` skill. Agency recorded Store skill row
+`3b9037a9...`; the awaited tool result carried a newer exact header with
+`Skills loaded: openclaw-operations`.
+
+The parent ignored that update and authored the initial header with
+`Skills loaded: none`. Agency correctly rejected it: terminal
+`25cf1630...` is `response_invalid`, missing `skills_loaded`, and Telegram
+queued no outbound response. No Agency model receipt exists because this was
+deterministic control routing. No specialist, resident binding, worker,
+native-child, or delegation row exists; the prose's claimed binding is not
+evidence. Transcript / trace / redacted artifact SHAs are `78d096d5...` /
+`6c9bc3bc...` / `9a9e2a35...`.
+
+The exact input is retained and cannot be retried unchanged. The next bounded
+candidate must improve the supported post-tool context's salience while
+retaining first-pass/no-rewrite, terminal evidence, full-payload binding, and
+all child-delivery checks. No live activation, substantive completion,
+delegation, Rule 4, or matrix-cell claim moves.
+
+## 2026-08-24 - OpenClaw refreshed-header truncation repair is locally ready
+
+Installed-host inspection proved the preceding failure was not native model
+disobedience. The awaited middleware returned a 100,000-character native read
+block and a separate 878-character Agency update block. OpenClaw's live
+4,000-character recovery projection uses proportional allocation with a zero
+minimum, leaving too little of the small block for the exact five-line header.
+The parent therefore authored from the only complete snapshot it received,
+and Agency correctly rejected that now-stale response.
+
+The first regression failed at exit 236. An initial same-block framing draft
+was then rejected in review because it exceeded OpenClaw's 100,000-character
+post-middleware text limit. The revised Agency-only implementation prefixes
+the refreshed context into the dominant first text block and splits the cloned
+model-visible result at UTF-16-safe host boundaries. The observed result is two
+validator-safe blocks, all native text and details are preserved, and the
+4,000-character zero-minimum projection retains every updated header line. If
+the host's 200-block ceiling leaves no space for a safe split, middleware
+framing returns no replacement and the existing finalization contract remains
+fail-closed; native evidence is never silently trimmed.
+
+Tests cover realistic five-line context, the observed 100,000-character shape,
+mixed valid blocks, 199-to-200 and exhausted-200 boundaries, original-object
+preservation, and a surrogate-pair split. The final focused slice passes 251
+with 1 intentional skip. Targeted Ruff and diff checks pass, and independent
+review against the installed validator and recovery projection reports no
+blocker. The candidate is not installed. Native `task-general`, Agency's exact
+`task-agency-router` profile, Hermes, and all protected hosts remain unchanged;
+no live delivery, delegation, Rule 4, or matrix-cell claim follows yet.
+
+## 2026-08-24 - Refreshed-header repair installed into OpenClaw only
+
+From clean repair/ledger `d7187e80` / `456a75b7`, the operator confirmed zero
+active or queued OpenClaw tasks and took an online SQLite backup. Source and
+backup integrity are `ok`, schema is 47, contractors remain 15, and the backup
+SHA is `abcc1396...`. OpenClaw 2026.7.1-2 was stopped natively before
+Agency-only install `fa68e6a4...`; the installer left it stopped. Bundle
+`36619063...`, runtime `573a6a14...`, and launcher SHA `d65af026...` bind the
+same checkout.
+
+Native restart is RPC-green with zero restarts. `agency-preflight` is loaded
+with all 12 required hooks and its awaited middleware; Telegram and Slack are
+configured, running, connected, and report no current error. The live process
+has the configured LiteLLM credential environment name populated; no value was
+read or retained.
+
+The only OpenClaw config-leaf change is `meta.lastTouchedAt`; native
+`litellm/task-general` and its exact six fallbacks remain unchanged. Agency's
+OpenClaw harness still selects `linux-task-agency-router`, LiteLLM, and exact
+alias/model-group `task-agency-router`. Agency config and Hermes
+config/environment/launcher hashes are unchanged; Hermes remains active as
+break glass. Fresh status, skill, substantive response, Store, and Telegram
+proof are pending, so no delegation, Rule 4, or matrix-cell claim moves.
+
+## 2026-08-24 - OpenClaw refreshed-header repair passes scoped live parent acceptance
+
+The live proof followed repair `d7187e80`, install checkpoint `00d5ac27`, and
+its ledger on the same Agency-only runtime. OpenClaw itself was not
+reinstalled. Native `/new` delivered `✅ New session started.` and created fresh
+Nexus session `6360c186-7834-473e-9cb7-70e181581493`. The exact first user
+message was then `agency status`. Store run
+`86f838f0-aeca-4565-9474-7913b68f9d61`, trace
+`ad834646-724f-4ea7-bce7-b13011c735e1`, abstained decision
+`a67e66ad-1aa2-471f-aabb-da75a3674867`, and accepted terminal event
+`d84fc7d8-6f00-4daa-aeb9-3a99c96be8bb` correlate. The deterministic control
+response carried the exact five lines `agency-steward` / `none` / `none` /
+`requested execution alias: task-general` / `deterministic`, followed by an
+explicit staffing abstention. Telegram accepted the one-chunk response. The
+transcript SHA at this first-response checkpoint is
+`ee310dc47082f0e310797ec44d3363157f43b34269a9ce6a981110c0ffb21ced`.
+No model receipt is expected for this control route.
+
+The changed skill-only request read the installed `node-connect` `SKILL.md`
+once and performed no other tool work. Run
+`25fa081a-1ce6-4397-a234-9fc4283e6e74`, trace
+`c1bbbdc7-c203-4ba2-942f-3c262bcf88f4`, accepted routing
+`3548700e-a512-4cd1-8f3f-793b0061173d`, specialist row
+`8e538079-1bb2-4178-8eae-b1929873d13b`, skill row
+`d02c71ae-e69b-412b-97a6-bde4e31d50f0`, and accepted terminal event
+`6907ed38-2fb8-4e87-ae53-22c2d6cb21c6` correlate. Three wrapper receipts
+applied through the OpenClaw harness, profile `linux-task-agency-router`,
+provider type `litellm`, and exact alias/model-group `task-agency-router`.
+The delivered header was exactly `agency-steward, code-reviewer` / `none` /
+`node-connect` / `workforce inference: [router] task-agency-router ->
+linux-task-agency-router/task-agency-router (wrapper)` / `inference`; its body
+reported only title `Node Connect` and the requested purpose. Telegram accepted
+one text chunk. The transcript SHA is
+`92698a17450388c4a0d2de50ba5b967ff8ecdfff70bcfa0b037cd6b9d70c6c08`.
+
+The substantive request constrained the native parent to exactly three
+read-only artifacts: `current-openclaw.json`, `openclaw.plugin.json`, and the
+installed `agency-preflight/index.js`. The transcript contains one batched
+native `read` call for each path, each exactly once, and no other tool or
+delegation call. Run `72314429-1c90-4ef2-b087-18a7be37606e`, trace
+`50c11095-843d-4c2d-a6f4-dd140eb4a1bf`, accepted routing
+`21b8b545-05bc-4e8f-85b3-bc3a8738aa34`, specialist rows
+`4bb8ce63-7868-4f4d-9dfd-145132e94745` and
+`1707c674-e2af-4392-af18-ca22590bd006`, and accepted terminal event
+`803465de-335f-42d8-9877-98a85eaab743` correlate. The delivered five-line
+header was exactly `agency-steward, section-508-accessibility-specialist,
+ai-evaluation-engineer` / `none` / `none` / the same exact
+`task-agency-router` workforce route / `inference`. The body reported at most
+three evidence-backed risks: process-local state loss on restart, hard-coded
+version-specific absolute paths, and conditional recovery dependence on a
+temporary `source_root`. It also explicitly limited the result because the
+single permitted `index.js` read was tool-truncated and no restart or path
+validation was performed.
+
+Receipts `dd3c7a9f-90aa-4992-8504-a61d4179edcc`,
+`3c3e955f-f502-425a-9a60-43b630f0987f`, and
+`301f3cef-8480-449a-b800-920f93732b02` succeeded. Receipt
+`e0ac9e5a-2961-4eaa-bb57-980922b37af4` faithfully retains one rejected
+contract-invalid response. All four stayed on the same OpenClaw harness,
+`linux-task-agency-router` LiteLLM profile, and exact `task-agency-router`
+alias/model-group; there was no cross-provider fallback. Telegram accepted the
+final response in one chunk with no send failure. Final transcript and
+trajectory SHAs are
+`93dcbc7659dde73cb3d9c49b79917fb7ba3a96a84e4eed93896973ca009de88c`
+and `0e4b57bb9f0cb199e608ff9cfdad1013421f26e069de3845127f508ba7da6821`.
+
+The post-live SQLite backup SHA is
+`02a76504f72946b7181619642e5b454ee49d0b9f9421632e1fe6f24a1b8ffbba`;
+source and backup integrity are `ok`, schema remains 47, and contractors remain
+15 before and after. Runtime
+`573a6a140cb23a60b48ba4b6ce638cccba6854fa11acd701aa05c9cc47ce1ab4`,
+launcher `d65af026617abe5d836b9ba9ec3b6efe63d0815ef971c2b8f93bf7007e7771ef`,
+and install `fa68e6a4-75d9-4a47-8358-20b4e654b10e` remain authoritative.
+Agency config SHA is unchanged at `43367ec9...`; native
+`litellm/task-general` and all six configured fallbacks are unchanged. Hermes
+config, environment, and launcher remain at `95b87b7f...`, `792fd43a...`, and
+`7c033c97...`; Hermes and the Codex OAuth/config/canary, Claude, and ZCode
+surfaces were not touched.
+
+This passes the scoped OpenClaw parent acceptance set: fresh activation,
+Store-backed header delivery, harmless skill loading, substantive parent
+routing through the exact Agency LiteLLM alias, terminal Store correlation,
+and Telegram delivery. The LiteLLM callback is absent even though the proxy
+can import this checkout, so the actual answering model remains unavailable;
+the wrapper alias is not promoted into that claim. No resident binding,
+delegation, child, Rule 4, or AR-119 matrix-cell proof exists. Every earlier
+failed attempt remains recorded and was not retried unchanged.
+
+## 2026-08-24 - Hermes Agency-only install is restart-ready on the current checkout
+
+Hermes Agent v0.20.4 uses effective home `/home/holeshot/.hermes-nexus` and
+the owning custom service `hermes-gateway-nexus.service`. Before mutation, the
+service was stopped normally. Native `task-general`, its exact five fallbacks,
+config SHA `95b87b7f...`, and environment SHA `792fd43a...` remained unchanged.
+The native plugin inventory also remained byte-identical at SHA
+`a675e845...`: 59 plugins discovered and the same six enabled before and after.
+
+Source and online-backup Store images are byte-identical at SHA
+`02a76504f72946b7181619642e5b454ee49d0b9f9421632e1fe6f24a1b8ffbba`;
+both integrity checks are `ok`, schema remains 47, and contractors remain 15.
+Agency-only install `0a3d141a-4e32-40d2-8c3d-6a7e296eb55f` completed from
+current checkout `80d686a27f9955e1d2c9aa5f454947c45145b052` with bundle
+`45b76c0e45cddaa0f0d6caec1855db93013bdf0fb78ec6616827abde8d7322c7`,
+runtime `573a6a140cb23a60b48ba4b6ce638cccba6854fa11acd701aa05c9cc47ce1ab4`,
+and launcher SHA
+`e65a078479cc4f6196b3b5b61f15c15ffd36bf9cda0f5082b8bc844b7a4ed9e7`.
+The install excluded the dashboard and did not restart Hermes.
+
+Post-install plugin doctor reports eight registered hooks, zero tools, and no
+inventory drift. The same owning service was restarted natively and is
+`active/running`, with zero restarts and result `success`. The configured
+credential environment name is `LITELLM_API_KEY`; it is populated in the live
+service, and its value was never read or retained. Agency config remains
+unchanged and retains the Hermes harness route to `linux-task-agency-router`,
+provider type `litellm`, and exact alias/model-group `task-agency-router`.
+
+Fresh reset, exact first status, harmless skill, substantive parent routing,
+Store/header correlation, and Telegram delivery are pending. This install
+checkpoint makes no activation, inference-attribution, delegation, child,
+Rule 4, or matrix-cell claim. OpenClaw's accepted proof and every earlier
+failure remain unchanged.
+
+## 2026-08-24 - Hermes passes scoped live parent acceptance
+
+Native reset acknowledged fresh session `...65697a38`. Exact
+first status run `116caa4a-d364-4269-9903-ca49d8de90f5`, trace suffix
+`b446051a`, abstained routing `b6ace409-07e7-4d91-af26-c21480b197a4`,
+`hermes-agent` skill row `e6157654-bec8-448c-b217-79d1431fcd41`, and accepted
+terminal `dee42fb2-8877-4dc6-ad22-f50d16fbac2b` correlate. Telegram delivered
+1,140 characters in 223.6 seconds with this exact header:
+
+~~~text
+Agency/Agencies loaded: agency-steward
+Agency/Agencies delegated: none
+Skills loaded: hermes-agent
+Actual Model selected: observed execution receipt: [general] task-general -> task-general (host)
+Recruited via: deterministic
+~~~
+
+Response and transcript-manifest SHAs are
+`5b9fd3f22718ac6ab1ffa8efc1b646320b3225af1715067d302f696a4e6ba3c3`
+and `886d32acd851d450f1f3aa5a1e0075598a7387706d44207048138f7a00889bc7`.
+The deterministic control route is not Agency LiteLLM-inference proof.
+
+Changed skill run `e328626d-011a-4cb2-a797-ea6ff7499897`, trace suffix
+`432b78d6`, accepted routing `d1da7fd7-b4a2-4df3-b056-d6cd866c6789`,
+`technical-writer` row `b2385c80-6267-41d9-81f0-78fc8dce7787`, two retained
+`codebase-inspection` rows `a070accc-2c7e-45c8-aac8-cb680896c935` and
+`8218bddf-acc1-426e-8b11-94d5c51eed9c`, and terminal
+`53a5245b-2146-480e-a51e-f58dcd470d6c` correlate. Three applied wrapper
+receipts stayed on Hermes profile `linux-task-agency-router`, provider type
+`litellm`, and exact alias/model-group `task-agency-router`; cross-provider
+fallback was zero. The exact header was `agency-steward, technical-writer` /
+`none` / `codebase-inspection` / `observed execution receipt: [general]
+task-general -> task-general (host)` / `inference`. Telegram delivered 427
+characters in 58.2 seconds; response SHA is
+`25b5be683b454d7e221701d944b8a9ed138fbd9acdc5a2c1b859117d78d1c09d`.
+
+A separate operator input missing its leading `R` is retained rather than
+silently substituted for the exact substantive draw. It produced read-only,
+non-delegating run `dedbed83-db25-4813-bb50-627328d27409`, selected
+`senior-secops-engineer`, and accepted terminal
+`d010887b-0794-4d3a-9579-7f279d11d142`. Telegram delivered its 4,928-character
+response in 676.1 seconds. It is successful typo evidence, not the required
+substantive proof.
+
+The exact substantive prompt at SHA
+`d79ece6296b0a792ee4ff6d9bad6fb655fe610812a111cc74ccff599d5c12fb1`
+produced run `d29c4652-46a9-41db-938c-d3b3bfdf3726`, trace suffix
+`b2e909cf`, accepted routing `1bc084f2-5fc4-4832-b77b-f82352b4840f`,
+`ai-evaluation-engineer` row `b952d046-e5c8-4a30-9e60-bcce44db252b`, and
+skill rows `2e62f150-cda0-490e-952a-2feb6d410bb6`
+(`agent-runtime-operations`), `6cac7dc0-7228-42e8-841f-4d239a4712ba`
+(`pr-review-workflow`), and `0bde577c-803d-4ff2-bdf8-86b68350f280`
+(`hermes-agent`). Applied wrapper receipts
+`72c45dae-ae57-482c-a41f-85ad3ef5009b`,
+`5c096da9-6a82-415c-855e-87a1f5fd9948`, and
+`6286cc80-d5ea-49e1-9d47-f0af4d89f096` all used the same exact Hermes Agency
+profile, LiteLLM provider, and alias/model-group, with zero cross-provider
+fallback. Terminal `543adf12-bac1-4588-8f00-a53c54b305f3` accepted.
+
+Telegram delivered 5,274 characters in 263.9 seconds with the exact header
+`agency-steward, ai-evaluation-engineer` / `none` /
+`agent-runtime-operations, pr-review-workflow, hermes-agent` / the observed
+native `task-general` host receipt / `inference`. Response and transcript-
+manifest SHAs are
+`1381e301f248417c4480ce4da51af35fc8c1b001443b0514a37e55df2532b7fc`
+and `12637e2a6c30718c62a8234a6f13632cc124aa16007e690e8c2eb85eb0ab9a25`.
+There is no resident binding, delegation, worker, activation, or child row.
+
+Three post-response internal, non-user preflights remain failed lifecycle
+evidence: run/receipt pairs `a9874148-d04a-440c-a964-a7ed39572c31` /
+`2934adb1-bc02-4001-abf9-87863b006006`,
+`e38ecc07-9698-4144-91c1-2a0b01d2c1e3` /
+`60547574-02a1-4b2e-928c-4c23f8a5ae72`, and
+`3608e1d2-dfbf-4884-b6fa-0edefc16a895` /
+`3f54ebbc-86b8-4ad7-be2b-2ecd704fccd9`. Each contains two strict planner
+contract rejections on the same Agency profile and did not block or alter a
+user reply. The failed bare plugin-doctor working-directory attempt is also
+retained; the corrected explicit-home command passes eight hooks and zero
+tools.
+
+Native config `95b87b7f...`, environment `792fd43a...`, Agency config
+`43367ec9...`, launcher `e65a0784...`, and plugin inventory 59 discovered / 6
+enabled / 4 non-bundled remain unchanged. Final online Store backup SHA is
+`bdf1a6e66136b80cfa7ea736c81cceaee45a53aa6951388869d32087515b2654`;
+source and backup integrity are `ok`, schema is 47, and contractors remain 15.
+Hermes host-scoped status, skill, workforce inference, finalization, and
+Telegram delivery now pass. The proxy callback is absent, so the actual
+upstream answering model remains unavailable and neither alias is promoted to
+that claim. No delegation, Rule 4, or AR-119 matrix cell moves; OpenClaw and
+all protected configuration remain unchanged.
+
+## 2026-08-24 - OpenClaw child executes but ready-receipt integrity blocks delivery
+
+The retained first OpenClaw draw created a real `sessions_spawn` child. That
+child completed its bounded read-only review, but the parent completion was
+represented as a synthetic `announce:v1:...` run and attempted a targeted
+`message(action=send)`. Agency correctly suppressed the send before Telegram
+queueing, so execution occurred but operational completion delivery failed.
+The same evidence exposed an unprojected host-profile timeout and lifecycle
+correlation that depended on process memory.
+
+AR-281/AR-282 keep the repair inside Agency Runtime. OpenClaw child staffing
+now inherits the owning `linux-task-agency-router` timeout, lifecycle recovery
+revalidates exact durable parent/worker/run/launch bindings, and a dedicated
+prepare/finalize path authorizes completion on the exact parent trace. The
+completion model may issue only one exact implicit-target
+`message(action=send, message=<finalized parent header and body>)`; a one-use
+authorization is consumed at send time. The path creates neither a synthetic
+announcement run nor an Agency inference receipt.
+
+The focused profile, installer, adapter, lifecycle, and security gate passes
+299 tests with 1 existing skip. Clean implementation/ledger checkout
+`27e9ec6267522f7ad2d23695737c6a69b9d052f1` was installed through Agency's
+installer only while OpenClaw 2026.7.1-2 was natively stopped. The installed
+bundle/runtime digest is
+`0c2bb3fc55ac94a79fc88db76549a5aef3d76124f85ef347e9fb023e01bf8999`;
+launcher SHA-256 is
+`e9169d044ba88a28a23b51b342d14e2031864a4e5ccdc7afa3d30386fbfa8cdc`.
+The gateway restarted natively with RPC healthy and the plugin loaded,
+enabled, and activated with all 12 hooks. `LITELLM_API_KEY` is populated in the
+live process; its value was not read or retained.
+
+Native `litellm/task-general` and all six fallbacks are exact, and the semantic
+native-config diff after excluding the host-managed timestamp is empty.
+Contractors remain 15 before and after; pre-install Store integrity is `ok` at
+schema 47. Hermes remained active and untouched: config
+`95b87b7fc0427ad4e3da4f5f468054cf9f7ddba679d1bb606b782a13e1a0172d`,
+environment
+`792fd43a5312d1c1d69f6afbeef3bbdd1a8198ee03ac06b4b3b6dfa20ec2f324`,
+and launcher
+`e65a078479cc4f6196b3b5b61f15c15ffd36bf9cda0f5082b8bc844b7a4ed9e7`
+remain unchanged; no Hermes install occurred.
+
+The operator's fresh Telegram `/new` was acknowledged. Changed parent run
+`a0f349c8-712d-4702-bc14-ac2e8e0e4ee1`, trace
+`856341f9-40f0-49f7-99fd-ba39a4a4a6c8`, and transcript
+`4ad38fad-d167-4310-a4e7-2a0c8f189646` then launched one native child. Worker
+`agent:nexus:subagent:e0ee5df5-a66e-4085-b7e1-19bb41dbfed5`, native run
+`b182db5c-1764-4d83-a0be-c5a0575ac828`, and child transcript
+`bf9127d3-6436-49a6-bf28-9af373ab371e` show that the read-only child ran and
+completed. Completion nevertheless failed closed before Telegram queueing, and
+the operator received nothing. The parent and child lifecycle remain open.
+
+This draw did prove the intended Agency child-routing boundary. Canonical route
+`ba9e00d0-b2ac-4ffb-a1ce-7b2c27a53d4c` and native-child route
+`native-child-eaa40e37d3a5dad02a475e9a38fca63d` coexist on the parent trace.
+The child route has one applied `litellm` attempt through
+`linux-task-agency-router` for exact alias/model-group `task-agency-router`, no
+cross-provider fallback, and no provider-supplied actual model. It does not
+prove parent return or delivery.
+
+The cause is deterministic: the ready-receipt checker required exactly one
+total routing row, but successful child staffing validly appended the second
+`native_child_inference` row. The otherwise-valid canonical receipt therefore
+failed integrity, completion preparation returned empty, and the bridge issued
+its generic uncorrelated denial. Durable identity joins all passed. Cleanup was
+later than the denial, and restart/reload, timeout, TTL expiry, and identity
+mismatch are ruled out.
+
+The Agency-only correction is now locally green. It requires exactly one
+canonical route and permits only unique auxiliary rows that strictly re-project
+as complete native-child successes. Exact route IDs, canonical timestamps and
+context digests, exact numeric types, canonical JSON fields, and unique
+host/launch identities are validated; duplicate, unrecognized, malformed, or
+type-shifted evidence fails closed. Independent Critical/High review is green
+after those integrity gaps were closed.
+
+Focused validation passes 113 tests with 1 skip and the named fast Python spine
+passes 848 with 3 skips. Metadata, policy, worklog, and documentation checks
+pass for 780 Markdown files and a current 1,155-commit worklog. Full Ruff check
+and format pass across 682 files; dashboard UI passes 134 tests; routing eval
+passes; and full decision conformance passes baseline and kills 160/160
+mutations with zero survived or invalid while restoring the source unchanged.
+`git diff --check` passes. The default private-HOME evaluation lacked `pytest`;
+the changed `.venv` attempt then failed the trusted persistent-interpreter
+boundary; an owner-private evaluation venv based on `/usr/bin/python3` passed.
+The exhaustive workflow-dispatch corpus was not run.
+
+At that pre-install checkpoint, the correction was locally green but unproven
+live. Hermes and all protected hosts remained untouched. Operational proof was
+not green, and ADR-0156 Rule 4 remained unproven because there was no immutable
+host-authored child-delivery artifact. The following checkpoint records the
+subsequent Agency-only installation.
+
+## 2026-08-24 - Ready-receipt correction installed; fresh draw not started
+
+Clean implementation/ledger commits
+`c7520586143d9a497dce37f32cad994de66ffb00` /
+`2bf42059cb1e46fa2e25f2d7847c85b9cf1b9b84` were installed from a clean
+worktree. Evidence is rooted at
+`/home/holeshot/.agency-runtime/evidence/ar281-openclaw-c7520586-4ceF3vbq`.
+The pre-install online SQLite backup SHA is
+`736434a7dffd310592661edf07af41ae2a62f347c1174e527ff34d3cdcdecd81`;
+source and backup integrity are `ok`, and schema is 47. Agency config remains
+`43367ec9...` with credential material represented only through `api_key_env`.
+
+OpenClaw 2026.7.1-2 was stopped natively while Hermes remained active. The
+Agency-only no-dashboard install completed, wrote the OpenClaw backup under
+`~/.agency-runtime/backups/openclaw/20260824T195320.228690Z`, and did not
+restart the gateway. Bundle
+`ae5b0a3ed2b7d6f7a2a6e516a2a6f1e20bc2144a8fb560a61f0f1705bbece9bb`,
+runtime
+`46ed926c5fac5066838ff6eea56d1cc866a3e9b2f99f474bfcd45d2ccfc99788`,
+install `ed2572b6-4d6b-4699-8e77-e82c49e4e48d`, and launcher
+`46c4fd6e67ceb3bfb36027c3e6f5183842f6cbaa01b1f25c31169e4554ace15d`
+bind to the exact correction checkout. Native restart restored an active
+service, RPC health, and all 12 loaded/enabled/activated Agency hooks.
+
+The live process has `LITELLM_API_KEY` populated without exposing its value.
+OpenClaw semantic config `5f806455...`, native `litellm/task-general`, and the
+exact six fallbacks remain unchanged. Contractors are 15/15; post-install Store
+integrity is `ok` at schema 47. Hermes remained active with config
+`95b87b7f...`, environment `792fd43a...`, and launcher `e65a0784...` unchanged;
+no Hermes install occurred. `config validate` remains expected-degraded because
+of cold inventory, protected hosts, and the legacy-provider warning, not a new
+failure. The correction is installed but unproven live. No fresh Telegram draw
+has started; the next operator action is `/new`. Operational child delivery and
+ADR-0156 Rule 4 remain unproven.
+
+## 2026-08-24 - Second OpenClaw child exposes omitted completion-context hash
+
+The genuinely changed OpenClaw draw is preserved as a second failed delivery.
+Parent run `db9fb4f4-5eb1-40b4-a5e2-3ad2015835e1`, trace
+`1dc07325-047e-471e-b7f6-5830b651463f`, and parent transcript
+`ba29f451-b36e-4e71-bc8b-2c7fb241dfbe` spawned exactly one child session
+`82abcc6d-3131-49f9-88f4-f911296e3750`. Native run
+`cf704bcb-d0b0-4d89-9c85-3770f011adc6`, delegation
+`0f2ea05c-4736-4e34-9f29-eed90d48b85c`, worker row
+`native-child:0b0cf13329292b13ea2d4386a0c591e2ed60bc16b3dc4b218f7d3ab673289da0`,
+and route `native-child-c8e004f5b93a1decf22bb9d9840ef0a9` correlate.
+
+The native child completed at `20:18:26Z`. Its first completion message failed
+closed as `FINALIZATION_UNAVAILABLE`; 12 later completion attempts were
+uncorrelated. No Telegram send was queued, no finalization or delivery row was
+created, and the Store parent/delegation/worker lifecycle remains
+active/delegated/open. This is a retained timeout-free completion-delivery
+failure, not acceptance.
+
+The native-child route contains one applied attempt through automatically
+selected OpenClaw profile `linux-task-agency-router`, provider type `litellm`,
+and exact requested alias/model-group `task-agency-router`. Cross-provider
+fallback is zero and provider telemetry supplied no actual answering model.
+OpenClaw's separate native execution remained on `task-general`; neither alias
+is promoted into an actual-model claim.
+
+The new cause is exact. OpenClaw authorization supplied `headerContextHash`,
+but `serializeBridgePayload` omitted it before the Python completion finalizer,
+which requires that hash. A focused regression failed first. The smallest fix
+forwards that one bounded field; the four-file focused suite passes 145 tests
+with 1 existing skip under `umask 077`, targeted Ruff check and format plus
+`git diff --check` pass, and independent Critical/High review is GREEN.
+
+That candidate is not installed and has no live-fix claim. OpenClaw was stopped
+cleanly after the failed draw; Hermes remained active and untouched. Codex
+OAuth/configuration/canary, Claude, ZCode, native host routes, and host configs
+were not changed. Operational child completion remains unproven, ADR-0156 Rule
+4 remains unproven, and no AR-119 matrix cell moves.
+
+## 2026-08-24 - Third OpenClaw child delivers but misses Store terminalization
+
+Correction/ledger `10ba4c84` / `8a2bf9b7` was installed through Agency only
+while OpenClaw 2026.7.1-2 was stopped natively. Evidence is rooted at
+`/home/holeshot/.agency-runtime/evidence/ar281-openclaw-10ba4c84-hSltm1Sn`.
+Install `f361ae58...`, bundle `a12bdf34...`, runtime `77e00aa2...`, and launcher
+`3fc5e135...` bind to that checkout. Native restart restored service/RPC and 12
+loaded/enabled/activated hooks. OpenClaw semantic config `e42bf218...`, native
+`litellm/task-general`, and all six fallbacks remained unchanged. Hermes stayed
+active and untouched. Contractors remained 15; before/after Store backups
+`6aeaaad4...` / `0a65fa88...` have integrity `ok`, schema 47.
+
+Fresh parent run `5529c6cf-8020-4bc5-a94f-b4731a70a838`, trace
+`a5f6f53b-4d8f-446b-af98-049e5031599a`, and parent transcript
+`7c3bacfd-6f05-4b0d-982c-5c3575bd8110` spawned exactly one child transcript
+`7d1c9571-c20d-4039-968a-ff31ae1e4e29`, native run
+`06fb1c56-6d3b-4a46-b720-1c8d45428ac5`, delegation
+`79049f17-7858-454a-a73c-91a4d7c1f4b0`, and worker row
+`native-child:9ea15e2fd27853ff4cac294c99e3a37f514884f411481c77b9e99a8fa2cdb34e`.
+OpenClaw's native task ledger records the child `succeeded` and its completion
+`delivered`. Telegram delivered one final parent response with the exact
+five-line Agency inference header and the child's one-sentence read-only result.
+
+Canonical route `99f1388a-17eb-46e9-ab36-d9426fd05f24` and native-child route
+`native-child-4ef0e65f64b0725eac80bd3d644a7d0a` both automatically used profile
+`linux-task-agency-router`, provider type `litellm`, and exact requested
+alias/model-group `task-agency-router`. Cross-provider fallback is zero;
+provider telemetry supplied no actual answering model. OpenClaw's separate
+native parent and child execution remained on `task-general`.
+
+Operational delivery passed, but Agency evidence did not. Parent finalization
+`6621d580-8fef-4471-81f5-cb41a3529916` is completed while the delegation stays
+`delegated` and the worker has no end or exit receipt. A copied-Store replay of
+the exact authoritative `record_native_child_ended(..., outcome="ok")` closes
+both rows, so Store identity mapping is sound; the live bridge callback was
+missed.
+
+The defect has two one-shot forms. An instance with only the gateway spawn
+observation stored `pendingEnd` and treated correlation as handled instead of
+trying durable launch-bound reconciliation. A trace-bound terminal write that
+failed or lost its receipt retained state but relied on a duplicate end hook,
+although OpenClaw emits that hook once. Sparse reset/delete shapes also cannot
+reconstruct requester/run identity from the raw event even though accepted
+child state retains it.
+
+Expected-red coverage first reproduced the split-instance swallow and missing
+same-callback retry, then reproduced early-end and sparse-reset loss after
+independent review found the incomplete edge. The smallest fix falls through to
+durable reconciliation for observation-only ends and uses exact accepted child
+state for same-callback fallback from both the end hook and accepted-tool-result
+race. It deletes only the matching in-memory state after a recorded receipt and
+suppresses duplicates. Focused tests pass 146 with 1 existing skip and the
+named fast spine passes 849/3 under `umask 077`. Docs 783/worklog 1,158, full
+Ruff 682, dashboard 134, routing eval, and 160/160 conformance mutations pass;
+source is unchanged. The unisolated evaluator lacked `pytest`, then the private
+evaluator inherited unsafe `0002`; both failures are retained before the
+owner-private `0077` pass. Independent re-review found no Critical, High, or
+Medium issue.
+
+The candidate is not installed and has no live-fix claim. OpenClaw remains the
+only host in scope until a changed draw closes parent, delegation, and worker
+while delivering through Telegram. Hermes remains break glass and untouched.
+Even a green operational retest will not prove ADR-0156 Rule 4 without an
+immutable host-authored delivery artifact; no matrix cell moves.
+
+## 2026-08-24 - Post-cleanup child-end receipt remains unavailable
+
+The next installed correction, `933d9f4a` with ledger `84e85a4c`, preserved a
+new operational child return but did not close Agency lifecycle. Parent run
+`0191a16c-d5cf-485b-bfa0-70199097ef95`, trace
+`29e96603-cfdc-4ec4-8c86-993b6c9179b7`, native run
+`368bcc67-c1ef-43a7-bf3e-28bd751e8648`, and delegation
+`d6ceb33a-cf76-4c23-aee5-4d221f35255b` correlate the retained failure.
+OpenClaw delivered the child response through Telegram, then `cleanup: delete`
+removed the host registry entry before the deferred `subagent_ended` callback
+could provide Agency's terminal receipt. The Agency worker and delegation
+therefore remained open.
+
+The routing boundary stayed correct: workforce inference automatically used
+OpenClaw profile `linux-task-agency-router`, provider type `litellm`, and exact
+requested alias/model-group `task-agency-router` with zero cross-provider
+fallback. Provider telemetry supplied no actual answering model. OpenClaw's
+separate native execution remained on `task-general`; no native host config or
+protected-host route changed.
+
+AR-283 replaces callback timing with a durable post-transport state machine.
+The uninstalled schema-48 candidate records the first immutable child outcome
+as delivery `pending` without closing the worker. `message_sending` retains the
+finalized response hash in a bounded all-outbound attempt ledger but proves no
+transport. Only OpenClaw 2026.7.1-2's post-adapter
+`message_sent(success=true)` with one unique active attempt may atomically mark
+`delivered` and close the worker and delegation. Explicit send failure records
+`failed` and stays open. At `gateway_start`, only receipt-backed pending/failed
+rows become `interrupted` lifecycle failures while preserving the separately
+observed execution outcome; generic child-end/stop handling cannot bypass the
+delivery gate.
+
+The audited host exposes no shared immutable send identifier. Every supplied
+target/channel/account/conversation/session/run field and the response hash
+must match, with active attempts retained at least one hour and consumed
+ambiguity tombstones for 24 hours. Zero, stale, delayed, ordinary-identical,
+multiple, or conflicting matches fail closed. A crash after platform
+acceptance but before the Store commit remains irreducibly ambiguous and is
+recorded interrupted, never delivered. Focused validation is 294 passed with
+one unrelated skip and independent review is GO; the
+candidate is uninstalled, the live Store remains schema 47, operational Agency
+terminalization remains unproven, and ADR-0156 Rule 4 and the matrix do not
+move.
+
+## 2026-08-24 - Post-send OpenClaw child terminalization passes live
+
+Current `origin/main` `fc077039` was integrated with the schema-48 OpenClaw
+delivery repair as merge `5511300e` and ledger `7295f289`. The integrated
+candidate passed 781 focused tests with one unrelated skip, the 852-test named
+fast spine with three skips, 134 dashboard tests, all 683 Ruff files, and the
+documentation gates. Agency-only installation produced launcher SHA-256
+`0ddbe52da806327d18091009bf79cdaf889899e6e41a525f1edd16715ca0ce50`;
+OpenClaw 2026.7.1-2 retained its byte-identical native configuration and Hermes
+remained untouched.
+
+Changed Telegram parent `c067362a-8bf1-46db-a6d5-85f21a847744`, trace
+`079b9ba8-6dd6-4885-be6e-ad51db7ddc03`, loaded `code-reviewer` and executed one
+native `sessions_spawn` worker. Native run
+`dc60b3b9-916e-4d4a-99f7-0e0786d3ebdc` recorded outcome `ok`, then the unique
+post-adapter `message_sent(success=true)` receipt recorded delivery `delivered`,
+ended the worker with exit 0, completed delegation
+`0d9f02a8-3610-4367-93b8-90a68fe62835`, and preserved the Telegram-delivered
+finding. Parent terminal finalization is `c46d714d-92f0-4276-ae30-d75dbde5ba8a`.
+
+Parent route `fcdb5d39-fdc3-4765-81e4-3545d7f80ca9` contains three applied
+provider attempts; native-child route `native-child-d7bc5cfc0114541571cb9e0202cc1701`
+contains one. Every attempt automatically selected OpenClaw profile
+`linux-task-agency-router`, provider type `litellm`, and exact requested
+alias/model-group `task-agency-router`; fallback is false. Provider telemetry
+did not supply an actual answering model, and OpenClaw native execution stayed
+separately on `task-general`.
+
+Fresh first-message status parent `cc936edb-021d-4e32-bcb5-8771f180f972`, trace
+`6f57aca7-0073-4824-ab77-db68f471ae0d`, also completed, finalized, and delivered
+the exact deterministic five-line Agency header through Telegram. Both ready
+recipes carry binding `rmb-fef54dccff0a71da62d23ec36ae83a1b` as
+`host_mode=request_scoped`, `delivery_mode=request`. OpenClaw intentionally
+persists no `resident_manager_bindings` row; the request-scoped binding in the
+ready run recipe is the Store-backed evidence used by header validation.
+
+AR-283 operational acceptance is green. This does not prove ADR-0156 Rule 4 and
+does not move the matrix. Before the OpenClaw package closes, the current merged
+install still needs one harmless no-child skill receipt, one new non-delegating
+substantive receipt, and a final SQLite backup/integrity hash. Hermes remains
+break glass until those bounded checks pass.
+
+## 2026-08-24 - OpenClaw merged-install acceptance closes
+
+The remaining bounded checks pass on the installed merged runtime. Skill run
+`53f6d825-ca0d-4046-981a-194cbf0c061e`, trace
+`3645e474-80a7-4c19-a1d5-f11acbaa1747`, delivered the exact refreshed header
+with `codebase-onboarding-engineer` and `openclaw-operations`; Store skill row
+`3e57162a-d280-422c-918a-d73e5cd7ae53` correlates it. No worker or delegation
+was created.
+
+The genuinely new, non-delegating restart-safety review completed as run
+`2b0033c9-a640-4275-8573-467b313d2411`, trace
+`06785961-364e-4d52-a2ce-e2c26921dacf`, routing decision
+`6eb8f30d-8186-4e27-9ac8-79f117872d73`, specialist
+`cce108ba-216a-4578-a651-fea47a5e4bc2`, and finalization
+`a6833f9a-cdeb-4498-849b-c32289d03232`. The Telegram-delivered header is
+`agency-steward, code-reviewer / none / openclaw-operations / workforce
+inference task-agency-router -> linux-task-agency-router/task-agency-router
+(wrapper) / inference`. All three attempts used the automatic OpenClaw profile,
+provider type `litellm`, and exact alias/model-group `task-agency-router`; both
+fallback flags are false, no child/delegation exists, and no actual-model
+callback receipt exists.
+
+Final SQLite backup
+`/home/holeshot/.agency-runtime/evidence/ar283-openclaw-final-qy36G1/agency-final.db`
+has SHA-256 `a0d558a330c94b341e7624d455fe0c7ef257bd992a5903c8592e7a3f5de4f188`,
+integrity `ok`, schema 48, and 15 Agency Runtime contractors. Live integrity is
+also `ok`. OpenClaw remains on exact prework `litellm/task-general` plus six
+fallbacks; Hermes and protected hosts remain untouched.
+
+OpenClaw scoped acceptance is closed. ADR-0156 Rule 4 remains unproven and the
+matrix remains unchanged. AR-284 separately records that strict-stage ordinals
+must not be interpreted as provider fallback counts. The next bounded package
+is Agency-only Hermes verification from this same checkout.
+
+## 2026-08-25 - Current Hermes install and deterministic status pass
+
+Clean ledger checkpoint `7a012d47` was used for an Agency-only install into
+Hermes Agent v0.20.4 at effective
+`HERMES_HOME=/home/holeshot/.hermes-nexus`. The native configuration,
+environment, service unit, Agency configuration, and 59-plugin inventory
+hashes match their pre-install values. Credential evidence records only that
+`LITELLM_API_KEY` is populated. Install `4e97f5a6-7df9-42da-8f6f-b285b7d2f1a2`
+wrote bundle `05bada2969b77bc4d64111c1cc105b506bfdbab546a8298df3519995f9dc44fd`,
+runtime `ecc0b1cb8859e9bb78ef9b394a312e10a2b9b6bed3ff2260a85b0e3fb502de59`,
+and launcher SHA-256
+`3544cff1ebb441673aeefcb92cb101f4106995fea8bd564889ed61d5a9038592`.
+The installer did not restart Hermes. Native stop reached not-running while
+systemd retained the process's exit-1 result; the existing unit then restarted
+active with result `success` and its unchanged inventory.
+
+After an acknowledged `/new`, exact first message `agency status` completed as
+run `42b23dfd-f2ad-430f-b9e2-fc604f4defcd`, trace
+`20260825_065425_f0b77171:20260825_065425_f0b77171:7948cbf5`, routing decision
+`03143a75-a097-4644-b575-ffe8866feac5`, and finalization
+`dd660adc-984a-4f55-b81f-807d0a378926`. Telegram delivered the exact
+Store-backed header `agency-steward / none / hermes-agent / observed execution
+receipt task-general -> task-general (host) / deterministic`. Store skill row
+`6a8cbe40-daef-4296-90a3-24b6038f96fd` records `hermes-agent`; no specialist,
+worker, or delegation exists. Binding
+`rmb-c5df89aa144e55adba09b6f1b684cf0b` is request-scoped inside the ready run
+recipe, so zero persistent binding rows is expected.
+
+This control route correctly did not attempt Agency workforce inference. Its
+native `task-general` host receipts neither prove `task-agency-router` routing
+nor supply an authoritative upstream actual model. Response SHA-256 is
+`243e806c6904fe3b3de95bbb417b0c3a9baccb041ba3feb5bd4671b4ac591873`;
+redacted native transcript artifact
+`/home/holeshot/.agency-runtime/evidence/ar119-hermes-status-MrOUoGJ4/native-transcript-redacted-index.json`
+has SHA-256 `22e13b75173a8bfed4ace2decebf535e33fe7fdd068fb36e9e726ba75eb1954c`.
+Post-status Store backup
+`/home/holeshot/.agency-runtime/evidence/ar119-hermes-status-MrOUoGJ4/agency-after-status.db`
+has SHA-256 `d1ab6cfd6a2881f17aae17bc4e835f7df0971ec02bb328d20cb3df088ca51794`,
+integrity `ok`, schema 48; contractors remain 15/15.
+
+One Hermes-native read-only configuration-existence command was falsely
+blocked by the gateway self-stop guard and was not retried. Separate internal
+post-response run `efaba29e-ed22-48df-b204-a682ad200475`, trace
+`20260825_065425_f0b77171:8fba6441-67da-4a7b-a2eb-6b7a9e648b80:ecf4c5d1`,
+retains failure receipt `1919eeca-a951-4b32-9c5b-c65a8ee8545c`: two planner
+responses were contract-invalid on
+`linux-task-agency-router` / `litellm` / exact `task-agency-router`. It had a
+blank user message and created no route, header, finalization, receipt row,
+specialist, skill, worker, or delegation; it did not block or alter the
+delivered user turn. This is retained as the AR-280 internal-lifecycle boundary,
+not user-turn acceptance or actual-model evidence.
+
+Hermes install, activation, exact status, skill recording, finalization, Store
+correlation, header delivery, and native-config preservation pass on the current
+runtime. A genuinely new non-delegating substantive request must still prove
+the Hermes harness profile and exact Agency alias; the operator-requested native
+child remains a separate operational check. ADR-0156 Rule 4 remains unproven and
+no matrix cell moves.
+
+## 2026-08-25 - Hermes substantive router acceptance passes
+
+The exact non-mutating, non-delegating configuration-drift review completed as
+run `78ff9331-b931-41f5-b118-8c38e906d89b`, trace
+`20260825_065425_f0b77171:20260825_065425_f0b77171:ada0be68`, accepted routing
+decision `0697fd16-9e16-4163-a318-4c47f1537308`, specialist
+`4fec5063-9f8a-4ade-ab60-709967f6edb1` (`ai-evaluation-engineer`), and
+finalization `83689dc3-801c-4dd5-a091-7b0055d1921c`. Six skill rows record
+three unique header names: `hermes-agent`, `pr-review-workflow`, and
+`agent-runtime-operations`. No worker or delegation exists.
+
+All three workforce inference stages automatically selected the Hermes harness
+default `linux-task-agency-router`, provider type `litellm`, and exact requested
+alias/model-group `task-agency-router`. Both routing fallback flags are false.
+Three wrapper receipts echo the requested alias and 31 native host receipts name
+`task-general`; neither is provider-supplied upstream model telemetry. Zero
+LiteLLM callback rows exist, so the actual answering model remains unavailable.
+
+Hermes's Telegram adapter successfully edited its streamed message and marked
+the exact Store-backed response ready with header `agency-steward,
+ai-evaluation-engineer / none / hermes-agent, pr-review-workflow,
+agent-runtime-operations / observed execution receipt task-general ->
+task-general (host) / inference` plus the read-only review. Agency finalization
+and the native response share SHA-256
+`14755b596990c7ebf2edac4a885a22ffd7860d7bf40ee722b8a1272b79f6add8`.
+The redacted 127-row turn artifact
+`/home/holeshot/.agency-runtime/evidence/ar119-hermes-substantive-EcLP9AnD/native-substantive-redacted.json`
+has SHA-256 `84b2c32788cff46bc3c47febe35c55f0c953cd9e77f55558bfd9bb6a08365314`.
+The long host turn completed after 640.6 seconds and 32 native API calls; it is
+not a timeout.
+
+Post-turn Store backup
+`/home/holeshot/.agency-runtime/evidence/ar119-hermes-substantive-EcLP9AnD/agency-after-substantive.db`
+has SHA-256 `bce1a2dfc3ac01c9218dec55df1242f71065b26305e0e4cd0953bd9c8c13c40c`,
+integrity `ok`, schema 48, and 15 contractors. Hermes config `95b87b7f...`,
+environment `792fd43a...`, service `404d3227...`, Agency config `43367ec9...`,
+launcher `3544cff1...`, bundle `05bada29...`, runtime `ecc0b1cb...`, and active
+service result remain unchanged.
+
+Hermes's automatic post-response activity again produced a separate blank
+non-user preflight failure: run `125ba6c2-20c2-4c83-8d64-f734fb5f1bed`, trace
+`20260825_065425_f0b77171:0f0f4e9c-ea7e-4506-95f5-18f2aff7befc:a7c6d3e0`,
+receipt `9bc23ae7-e9c6-4822-999d-a0216992600f`. Its two planner responses were
+contract-invalid on the same exact Agency profile/provider/alias, and it
+created no route, model receipt, finalization, specialist, skill, worker, or
+delegation. It did not block or alter the finalized response-ready user turn and remains
+the AR-280 internal-lifecycle limitation.
+
+Current Hermes parent acceptance is green for install, activation, fresh
+status, status-time skill recording, substantive inference, exact
+profile/provider/alias selection, finalization, Store correlation, header and
+native Telegram stream-edit/response-ready evidence, zero fallback, and
+native-config preservation. The operational native-child attempt below failed;
+it does not prove ADR-0156 Rule 4 or move a matrix cell.
+
+## 2026-08-25 - Hermes async child executes but both parent returns are blocked
+
+The changed Hermes draw used parent run
+`705cfd21-216b-4476-8339-88e73eebb09c` and exact trace
+`20260825_075940_bc454f4c:20260825_075940_bc454f4c:372aadb7`. Automatic parent
+route `70628c7c-1c19-4970-89dc-cab5969cfc51` selected
+`ai-evaluation-engineer`; specialist row
+`6f715a26-8285-4fe2-88c7-bda4dc1f1df2` loaded at
+`2026-08-25T12:00:29.804000+00:00`. The parent then returned a 166-character
+"still reviewing" draft, native state row 533511 at
+`2026-08-25T12:01:18.392260+00:00`, SHA-256
+`7a04e8e56b92a50ff4e9594a85ea2eba0dc6d198805bdc1e736f7c03223a8579`.
+Finalization `8f12869c-2558-468e-8c92-6b27f0381934` rejected it at
+`2026-08-25T12:01:18.610917+00:00` because all five Agency header fields were
+missing. Parent run status is `response_invalid`; Telegram marked the
+151-character Agency block response-ready at 08:01:19.613 local.
+
+The one native child did execute. Delegation
+`7333c869-49f5-4416-b4e4-11d80a7e1c9f`, work unit `unit-231fa91a8d`, generic
+worker `sa-0-1835962e`, and native run `hermes-subagent:sa-0-1835962e` started
+at `2026-08-25T12:00:57.650329+00:00` and completed at
+`2026-08-25T12:02:28.565359+00:00`. Worker
+`native-child:1d729a3e9c46e7703349c48ff3b0b73709681c20f1183e041adb4043c9f2a10f`
+ran from `12:00:57.656000` through `12:02:28.564000`, exit 0. That operational
+process result is not Agency acceptance: recommended and retrieved specialist
+are empty, activation is null, and native terminal outcome, native delivery
+status, both observed timestamps, tool evidence, stdout, and stderr are empty.
+No captured assignment, parent scope, delivery verification, activation
+receipt, or activation consumption exists. Child route
+`9ed701ed-dadd-4c06-b5ee-4b3504504643` at
+`2026-08-25T12:00:57.971000+00:00` is `inference_invalid` from
+`native_child_inference_failure`.
+
+The retained native journal is
+`/home/holeshot/.hermes-nexus/cache/delegation/live/deleg_d19e55e6/task-0.log`,
+56 lines and 14,988 bytes, SHA-256
+`a8960d530d4655aac924bd6e7c49a1fd410b483d78f8f1460aaf65b54812a06d`.
+Its line 54 preserves the child's substantive finding at 08:02:28 local; line
+55 preserves Agency replacing the consolidated result with the
+151-character unverified-draft block because turn-scoped finalization did not
+accept it. The 08:01:57 self-stop-guard rejection remains a separate retained
+tool failure, not a transport failure, and was not retried.
+
+Async completion notification row 533537 arrived at
+`2026-08-25T12:02:29.733338+00:00`, content SHA-256
+`2f476c97a4b24f4a86f8226f52a71d86a049e4c0622ce9f4fbcbbc377c938b14`.
+Hermes handled it as separate trace
+`20260825_075940_bc454f4c:20260825_075940_bc454f4c:4e4a2bc2`, run
+`dd27dffd-800e-4a54-b07d-c9a165e1274b`. Native state row 533555 stored the
+one-finding answer at `2026-08-25T12:06:55.467739+00:00`, SHA-256
+`8ef12d74f101e4b18085c69bf11ff1e7da3c365f105e7c5c7b6611bd4f680bb2`.
+Finalization `dac1bbe9-5cf2-422c-ad6f-a15f6fc2ad35` again rejected all five
+missing header fields at `2026-08-25T12:06:55.684283+00:00`. The Telegram
+gateway logged a streamed-message edit and response-ready at 08:06:56.849
+local, but the 151-character payload was the Agency block, not the finding.
+There is no distinct child send-success event or Store delivery receipt.
+
+Owner-private evidence directory
+`/home/holeshot/.agency-runtime/evidence/ar119-hermes-child-failed-k7gu0py9`
+retains `agency-after-failed-child.db`, SHA-256
+`caeddf05fce08d61be5bc41e0a9d773a4fb4f37d2973cb6b7e12d3ba91cda3ed`,
+integrity `ok`, schema 48; `failed-child-store-redacted.json`, SHA-256
+`78c4adfdb7dca8e7d48b5bddb9e642dfd69135df85853ebdbb0c183ffb38019a`;
+and `native-child-transcript-redacted.json`, SHA-256
+`e87bb0270df4eb7806faedccd871ea8b48aeca1e8f8d224f6677cba8df16564e`.
+
+The failure is a Hermes async parent-correlation/finalization defect, not a
+Telegram outage or a failed child process. Child execution completed, but the
+parent return and later finding were both blocked; terminal and delivery proof
+remain absent, so no Rule 4 or matrix claim moves. The next bounded package is
+to integrate the latest main selection work, add a focused regression first,
+make the smallest general correlation/finalization repair, reinstall Agency
+only, and use a fresh session plus genuinely changed async child request to
+require compute-terminal and accepted parent-return evidence. Hermes exposes no
+native Telegram post-send hook, so this package cannot claim transport delivery.

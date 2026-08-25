@@ -4,11 +4,14 @@ from __future__ import annotations
 
 import hashlib
 import json
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
 import pytest
 
+from agency_runtime.adapters.openclaw import node_bridge
+from agency_runtime.adapters.openclaw.plugin import OpenClawAdapter
 from agency_runtime.core import preflight as preflight_module
 from agency_runtime.core.config import AgencyConfig, OllamaConfig
 from agency_runtime.core.header.contract import (
@@ -23,6 +26,10 @@ from agency_runtime.core.header.contract import (
 from agency_runtime.core.header.explanations import (
     humanize_effect_codes,
     humanize_reason_codes,
+)
+from agency_runtime.core.native_child_decision import (
+    NATIVE_CHILD_STAFFING_DECISION_SCHEMA,
+    canonical_native_child_provider_receipt_digest,
 )
 from agency_runtime.core.preflight import run_preflight
 from agency_runtime.core.selector import pipeline
@@ -109,6 +116,7 @@ def _ready_store(
     *,
     trace_id: str,
     routing_value: dict[str, Any] | None = None,
+    host: str = "codex",
 ) -> tuple[Store, dict[str, Any]]:
     store = Store(tmp_path / f"{trace_id}.db")
     message = "Audit the routing evidence boundary."
@@ -123,11 +131,153 @@ def _ready_store(
         store,
         session_id="session",
         user_message=message,
-        host="codex",
+        host=host,
         trace_id=trace_id,
         config=AgencyConfig(ollama=OllamaConfig(enabled=False, model="")),
     )
     return store, routing
+
+
+def _append_valid_openclaw_native_child_route(
+    store: Store,
+    *,
+    trace_id: str,
+    child_key: str = "completion",
+) -> dict[str, str]:
+    """Append the exact success projection emitted by native-child staffing."""
+
+    session_id = "session"
+    launch_id = f"{child_key}-launch"
+    worker_id = f"agent:main:subagent:{child_key}-child"
+    native_run_id = f"{child_key}-child-run"
+    work_unit_id = f"{child_key}-review"
+    task_sha256 = hashlib.sha256(f"Review the {child_key} boundary.".encode()).hexdigest()
+    context_fingerprint = hashlib.sha256(f"{child_key}-context".encode()).hexdigest()
+    issued = datetime(2026, 8, 24, 12, 0, tzinfo=timezone.utc)
+    attempts = [
+        {
+            "provider_name": "linux-task-agency-router",
+            "provider_type": "litellm",
+            "requested_model": "task-agency-router",
+            "model_group": "task-agency-router",
+            "actual_model": "",
+            "model_receipt_source": "unavailable",
+            "status": "applied",
+            "reason_code": "",
+        }
+    ]
+    cards = [
+        {
+            "specialist_slug": "code-reviewer",
+            "specialist_version": "revision-code-reviewer",
+            "specialist_prompt_hash": hashlib.sha256(b"review prompt").hexdigest(),
+            "body_character_length": 13,
+        }
+    ]
+    delivery = {
+        "schema": NATIVE_CHILD_STAFFING_DECISION_SCHEMA,
+        "host": "openclaw",
+        "parent_session_id": session_id,
+        "parent_trace_id": trace_id,
+        "launch_id": launch_id,
+        "binding_kind": "launch_id",
+        "binding_id": launch_id,
+        "provider_attempts": attempts,
+        "provider_receipt_digest": canonical_native_child_provider_receipt_digest(attempts),
+        "task_sha256": task_sha256,
+        "team_digest": hashlib.sha256(
+            json.dumps(
+                cards,
+                allow_nan=False,
+                ensure_ascii=True,
+                separators=(",", ":"),
+                sort_keys=True,
+            ).encode()
+        ).hexdigest(),
+        "candidate_digest": hashlib.sha256(b"runtime").hexdigest(),
+        "runtime_digest": hashlib.sha256(b"runtime").hexdigest(),
+        "install_id": "install-openclaw-test",
+        "bundle_digest": hashlib.sha256(b"bundle").hexdigest(),
+        "issued_at": issued.isoformat(timespec="seconds").replace("+00:00", "Z"),
+        "expires_at": (issued + timedelta(seconds=60))
+        .isoformat(timespec="seconds")
+        .replace("+00:00", "Z"),
+        "nonce": f"{child_key}-nonce",
+        "cards": cards,
+    }
+    decision = {
+        "status": "applied",
+        "semantic_status": "applied",
+        "source": "native_child_inference",
+        "selected_ids": ["code-reviewer"],
+        "semantic_ids": ["code-reviewer"],
+        "companion_ids": [],
+        "available_companion_ids": [],
+        "unavailable_companion_ids": [],
+        "confidence": 0.9,
+        "latency_ms": 12,
+        "provider": "linux-task-agency-router",
+        "candidate_count": 1,
+        "top_score": 0.0,
+        "native_child_reason": "applied",
+        "inference_configured": True,
+        "inference_required": True,
+        "inference_attempted": True,
+        "inference_mode": "inferred",
+        "source_message_hash": task_sha256,
+        "query_hash": task_sha256,
+        "context_fingerprint": context_fingerprint,
+        "native_child_delivery": delivery,
+    }
+    store.record_routing_decision(
+        trace_id=trace_id,
+        session_id=session_id,
+        query_hash=task_sha256,
+        context_fingerprint=context_fingerprint,
+        decision=decision,
+        require_open_run=True,
+        final_delivery_validator=lambda: True,
+    )
+    store.record_delegation(
+        trace_id=trace_id,
+        session_id=session_id,
+        host="openclaw",
+        work_unit_id=work_unit_id,
+        recommended_agent="code-reviewer",
+        status="delegated",
+        backend="sessions_spawn",
+        executed_worker_kind="generic-worker",
+        executed_worker_id=worker_id,
+        native_run_id=native_run_id,
+    )
+    store.record_native_child_started(
+        host="openclaw",
+        backend="sessions_spawn",
+        session_id=session_id,
+        trace_id=trace_id,
+        work_unit_id=work_unit_id,
+        worker_id=worker_id,
+        native_run_id=native_run_id,
+    )
+    assert store.bind_native_child_launch(
+        host="openclaw",
+        session_id=session_id,
+        trace_id=trace_id,
+        worker_id=worker_id,
+        native_run_id=native_run_id,
+        launch_id=launch_id,
+    )
+    return {
+        "sessionId": session_id,
+        "traceId": f"announce:v1:{worker_id}:{native_run_id}",
+        "parentSessionId": session_id,
+        "parentTraceId": trace_id,
+        "workerId": worker_id,
+        "nativeRunId": native_run_id,
+        "launchId": launch_id,
+        "workUnitId": work_unit_id,
+        "model": "litellm/task-general",
+    }
 
 
 def test_ready_receipt_accepts_valid_routing_above_legacy_node_limit(
@@ -178,6 +328,418 @@ def test_ready_receipt_accepts_valid_routing_above_legacy_node_limit(
     )
 
     assert receipt == project_durable_routing_receipt(routing)
+
+
+def test_openclaw_completion_header_keeps_canonical_preflight_route_with_child_route(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    trace_id = "openclaw-completion-parent"
+    store, _routing_value = _ready_store(
+        tmp_path,
+        monkeypatch,
+        trace_id=trace_id,
+        host="openclaw",
+    )
+    completion = _append_valid_openclaw_native_child_route(store, trace_id=trace_id)
+
+    prepared = node_bridge.handle(
+        {"action": "native_child_completion_prepare", **completion},
+        adapter=OpenClawAdapter(store=store),
+    )
+
+    assert prepared["prepared"] is True
+    assert prepared["completion"] is True
+    assert prepared["completionRunId"] == completion["traceId"]
+    assert prepared["parentTraceId"] == trace_id
+    assert prepared["context"].startswith("[AGENCY NATIVE CHILD COMPLETION CONTRACT]")
+    assert "Agency/Agencies loaded: agency-steward" in prepared["context"]
+    assert store.get_run(completion["traceId"]) is None
+
+
+@pytest.mark.parametrize(
+    ("extra_source", "extra_decision"),
+    [
+        ("computed", {"source": "unexpected_auxiliary_route"}),
+        ("native_child_inference", {"source": "native_child_inference"}),
+    ],
+)
+def test_ready_receipt_rejects_unrecognized_or_malformed_auxiliary_routes(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    extra_source: str,
+    extra_decision: dict[str, Any],
+) -> None:
+    trace_id = f"invalid-auxiliary-{extra_source}"
+    store, _routing_value = _ready_store(
+        tmp_path,
+        monkeypatch,
+        trace_id=trace_id,
+    )
+    conn = store._connect()
+    try:
+        conn.execute(
+            "INSERT INTO routing_decisions "
+            "(id, trace_id, session_id, query_hash, context_fingerprint, status, "
+            "source, selected_ids, semantic_ids, companion_ids, confidence, "
+            "latency_ms, provider, work_units, decision, created_at) "
+            "VALUES (?, ?, 'session', ?, ?, 'applied', ?, '[]', '[]', '[]', "
+            "0, 0, '', '{}', ?, ?)",
+            (
+                f"extra-{extra_source}",
+                trace_id,
+                "d" * 64,
+                "e" * 64,
+                extra_source,
+                json.dumps(extra_decision, sort_keys=True),
+                store._now(),
+            ),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    snapshot = store.get_completion_evidence_snapshot("session", trace_id)
+
+    with pytest.raises(RuntimeError, match="routing receipt failed integrity"):
+        store.get_ready_routing_receipt(
+            "session",
+            trace_id,
+            evidence_revision=snapshot["evidence_revision"],
+        )
+
+
+def test_ready_receipt_rejects_duplicate_canonical_preflight_route(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    trace_id = "duplicate-canonical-route"
+    store, _routing_value = _ready_store(tmp_path, monkeypatch, trace_id=trace_id)
+    conn = store._connect()
+    try:
+        row = conn.execute(
+            "SELECT * FROM routing_decisions WHERE trace_id = ?",
+            (trace_id,),
+        ).fetchone()
+        assert row is not None
+        fields = (
+            "trace_id",
+            "session_id",
+            "query_hash",
+            "context_fingerprint",
+            "status",
+            "source",
+            "selected_ids",
+            "semantic_ids",
+            "companion_ids",
+            "confidence",
+            "latency_ms",
+            "provider",
+            "work_units",
+            "decision",
+            "created_at",
+        )
+        conn.execute(
+            "INSERT INTO routing_decisions "
+            "(id, trace_id, session_id, query_hash, context_fingerprint, status, "
+            "source, selected_ids, semantic_ids, companion_ids, confidence, "
+            "latency_ms, provider, work_units, decision, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            ("duplicate-canonical", *(row[field] for field in fields)),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    snapshot = store.get_completion_evidence_snapshot("session", trace_id)
+
+    with pytest.raises(RuntimeError, match="routing receipt failed integrity"):
+        store.get_ready_routing_receipt(
+            "session",
+            trace_id,
+            evidence_revision=snapshot["evidence_revision"],
+        )
+
+
+def test_ready_receipt_rejects_duplicate_valid_native_child_launch_route(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    trace_id = "duplicate-native-child-launch-route"
+    store, _routing_value = _ready_store(
+        tmp_path,
+        monkeypatch,
+        trace_id=trace_id,
+        host="openclaw",
+    )
+    _append_valid_openclaw_native_child_route(store, trace_id=trace_id)
+    conn = store._connect()
+    try:
+        row = conn.execute(
+            "SELECT * FROM routing_decisions WHERE trace_id = ? "
+            "AND source = 'native_child_inference'",
+            (trace_id,),
+        ).fetchone()
+        assert row is not None
+        fields = (
+            "trace_id",
+            "session_id",
+            "query_hash",
+            "context_fingerprint",
+            "status",
+            "source",
+            "selected_ids",
+            "semantic_ids",
+            "companion_ids",
+            "confidence",
+            "latency_ms",
+            "provider",
+            "work_units",
+            "decision",
+            "created_at",
+        )
+        conn.execute(
+            "INSERT INTO routing_decisions "
+            "(id, trace_id, session_id, query_hash, context_fingerprint, status, "
+            "source, selected_ids, semantic_ids, companion_ids, confidence, "
+            "latency_ms, provider, work_units, decision, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            ("duplicate-native-child-launch", *(row[field] for field in fields)),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    snapshot = store.get_completion_evidence_snapshot("session", trace_id)
+
+    with pytest.raises(RuntimeError, match="routing receipt failed integrity"):
+        store.get_ready_routing_receipt(
+            "session",
+            trace_id,
+            evidence_revision=snapshot["evidence_revision"],
+        )
+
+
+def test_ready_receipt_accepts_distinct_native_child_launch_routes(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    trace_id = "distinct-native-child-launch-routes"
+    store, routing_value = _ready_store(
+        tmp_path,
+        monkeypatch,
+        trace_id=trace_id,
+        host="openclaw",
+    )
+    _append_valid_openclaw_native_child_route(store, trace_id=trace_id)
+    _append_valid_openclaw_native_child_route(
+        store,
+        trace_id=trace_id,
+        child_key="second",
+    )
+    snapshot = store.get_completion_evidence_snapshot("session", trace_id)
+
+    receipt = store.get_ready_routing_receipt(
+        "session",
+        trace_id,
+        evidence_revision=snapshot["evidence_revision"],
+    )
+
+    assert receipt == project_durable_routing_receipt(routing_value)
+
+
+def test_ready_receipt_rejects_noncanonical_native_child_route_timestamp(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    trace_id = "noncanonical-native-child-created-at"
+    store, _routing_value = _ready_store(
+        tmp_path,
+        monkeypatch,
+        trace_id=trace_id,
+        host="openclaw",
+    )
+    _append_valid_openclaw_native_child_route(store, trace_id=trace_id)
+    conn = store._connect()
+    try:
+        conn.execute(
+            "UPDATE routing_decisions SET created_at = 'not-a-store-clock' "
+            "WHERE trace_id = ? AND source = 'native_child_inference'",
+            (trace_id,),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    snapshot = store.get_completion_evidence_snapshot("session", trace_id)
+
+    with pytest.raises(RuntimeError, match="routing receipt failed integrity"):
+        store.get_ready_routing_receipt(
+            "session",
+            trace_id,
+            evidence_revision=snapshot["evidence_revision"],
+        )
+
+
+@pytest.mark.parametrize("tamper", ["whitespace_text", "blob"])
+def test_ready_receipt_rejects_noncanonical_native_child_route_id(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    tamper: str,
+) -> None:
+    trace_id = f"noncanonical-native-child-route-id-{tamper}"
+    store, _routing_value = _ready_store(
+        tmp_path,
+        monkeypatch,
+        trace_id=trace_id,
+        host="openclaw",
+    )
+    _append_valid_openclaw_native_child_route(store, trace_id=trace_id)
+    conn = store._connect()
+    try:
+        if tamper == "whitespace_text":
+            conn.execute(
+                "UPDATE routing_decisions SET id = ' padded-native-child-route ' "
+                "WHERE trace_id = ? AND source = 'native_child_inference'",
+                (trace_id,),
+            )
+        else:
+            conn.execute(
+                "UPDATE routing_decisions SET id = CAST('blob-native-child-route' AS BLOB) "
+                "WHERE trace_id = ? AND source = 'native_child_inference'",
+                (trace_id,),
+            )
+        conn.commit()
+    finally:
+        conn.close()
+    snapshot = store.get_completion_evidence_snapshot("session", trace_id)
+
+    with pytest.raises(RuntimeError, match="routing receipt failed integrity"):
+        store.get_ready_routing_receipt(
+            "session",
+            trace_id,
+            evidence_revision=snapshot["evidence_revision"],
+        )
+
+
+@pytest.mark.parametrize(
+    ("column", "replacement"),
+    [
+        ("selected_ids", '["code-reviewer" ]'),
+        ("semantic_ids", '[ "code-reviewer"]'),
+        ("companion_ids", "[ ]"),
+        ("work_units", "{ }"),
+    ],
+)
+def test_ready_receipt_rejects_noncanonical_native_child_json_projection(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    column: str,
+    replacement: str,
+) -> None:
+    trace_id = f"noncanonical-native-child-{column}"
+    store, _routing_value = _ready_store(
+        tmp_path,
+        monkeypatch,
+        trace_id=trace_id,
+        host="openclaw",
+    )
+    _append_valid_openclaw_native_child_route(store, trace_id=trace_id)
+    conn = store._connect()
+    try:
+        conn.execute(
+            f"UPDATE routing_decisions SET {column} = ? "  # nosec B608 - test allowlist
+            "WHERE trace_id = ? AND source = 'native_child_inference'",
+            (replacement, trace_id),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    snapshot = store.get_completion_evidence_snapshot("session", trace_id)
+
+    with pytest.raises(RuntimeError, match="routing receipt failed integrity"):
+        store.get_ready_routing_receipt(
+            "session",
+            trace_id,
+            evidence_revision=snapshot["evidence_revision"],
+        )
+
+
+def test_ready_receipt_rejects_non_digest_native_child_context_projection(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    trace_id = "non-digest-native-child-context"
+    store, _routing_value = _ready_store(
+        tmp_path,
+        monkeypatch,
+        trace_id=trace_id,
+        host="openclaw",
+    )
+    _append_valid_openclaw_native_child_route(store, trace_id=trace_id)
+    conn = store._connect()
+    try:
+        row = conn.execute(
+            "SELECT decision FROM routing_decisions WHERE trace_id = ? "
+            "AND source = 'native_child_inference'",
+            (trace_id,),
+        ).fetchone()
+        assert row is not None
+        decision = json.loads(row["decision"])
+        decision["context_fingerprint"] = "opaque-context"
+        conn.execute(
+            "UPDATE routing_decisions SET context_fingerprint = ?, decision = ? "
+            "WHERE trace_id = ? AND source = 'native_child_inference'",
+            ("opaque-context", json.dumps(decision, sort_keys=True), trace_id),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    snapshot = store.get_completion_evidence_snapshot("session", trace_id)
+
+    with pytest.raises(RuntimeError, match="routing receipt failed integrity"):
+        store.get_ready_routing_receipt(
+            "session",
+            trace_id,
+            evidence_revision=snapshot["evidence_revision"],
+        )
+
+
+@pytest.mark.parametrize("tamper", ["fractional_latency", "blob_confidence"])
+def test_ready_receipt_rejects_coercible_native_child_numeric_columns(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    tamper: str,
+) -> None:
+    trace_id = f"coercible-native-child-{tamper}"
+    store, _routing_value = _ready_store(
+        tmp_path,
+        monkeypatch,
+        trace_id=trace_id,
+        host="openclaw",
+    )
+    _append_valid_openclaw_native_child_route(store, trace_id=trace_id)
+    conn = store._connect()
+    try:
+        if tamper == "fractional_latency":
+            conn.execute(
+                "UPDATE routing_decisions SET latency_ms = 12.9 "
+                "WHERE trace_id = ? AND source = 'native_child_inference'",
+                (trace_id,),
+            )
+        else:
+            conn.execute(
+                "UPDATE routing_decisions SET confidence = CAST('0.9' AS BLOB) "
+                "WHERE trace_id = ? AND source = 'native_child_inference'",
+                (trace_id,),
+            )
+        conn.commit()
+    finally:
+        conn.close()
+    snapshot = store.get_completion_evidence_snapshot("session", trace_id)
+
+    with pytest.raises(RuntimeError, match="routing receipt failed integrity"):
+        store.get_ready_routing_receipt(
+            "session",
+            trace_id,
+            evidence_revision=snapshot["evidence_revision"],
+        )
 
 
 def test_routing_receipt_is_bounded_content_free_and_idempotent() -> None:

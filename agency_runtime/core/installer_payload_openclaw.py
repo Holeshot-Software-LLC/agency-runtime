@@ -35,16 +35,51 @@ const MAX_OUTBOUND_PAYLOAD_DEPTH = 20;
 const MAX_TOOL_PAYLOAD_BYTES = 96 * 1024;
 const MAX_TOOL_PROJECTION_NODES = 2048;
 const MAX_TOOL_PROJECTION_BYTES = MAX_TOOL_PAYLOAD_BYTES;
+const MAX_OPENCLAW_MIDDLEWARE_CONTENT_BLOCKS = 200;
+const MAX_OPENCLAW_MIDDLEWARE_TEXT_CHARS = 100000;
 const TOOL_TRUNCATED = "[truncated]";
 const TERMINAL_REJECTION_TTL_MS = 10 * 60 * 1000;
 const MAX_TERMINAL_REJECTIONS = 128;
+const PREFLIGHT_CONTEXT_TTL_MS = 10 * 60 * 1000;
+const MAX_PREFLIGHT_CONTEXTS = 128;
+const TOOL_CORRELATION_TTL_MS = 10 * 60 * 1000;
+const MAX_TOOL_CORRELATIONS = 128;
+const NATIVE_CHILD_OBSERVATION_TTL_MS = 10 * 60 * 1000;
+const MAX_NATIVE_CHILD_STATES = 512;
 const OUTBOUND_AUTHORIZATION_TTL_MS = 30 * 1000;
+// OpenClaw 2026.7.1-2 does not expose one shared per-send identifier across
+// message_sending and every message_sent transport path. Keep active attempts
+// beyond the host/recovery horizon and consumed ambiguity tombstones for a day;
+// capacity exhaustion cancels new sends instead of evicting safety evidence.
+const OUTBOUND_SEND_ACTIVE_TTL_MS = Math.max(
+  60 * 60 * 1000,
+  NATIVE_CHILD_OBSERVATION_TTL_MS + {host_timeout_ms},
+);
+const OUTBOUND_SEND_TOMBSTONE_TTL_MS = 24 * 60 * 60 * 1000;
+const NATIVE_ERROR_TTL_MS = 30 * 1000;
+const NATIVE_CONTROL_ACK_TTL_MS = 10 * 1000;
+const NATIVE_CONTROL_ACK_WAIT_MS = 1_000;
+const NATIVE_CONTROL_ACK_POLL_MS = 10;
 const MAX_OUTBOUND_AUTHORIZATIONS = 128;
+const MAX_OUTBOUND_SEND_ATTEMPTS = 32 * 1024;
+const MAX_NATIVE_ERROR_MARKERS = 128;
 const CONTROL_AUTHORIZATION_FIELD = "agencyRuntimeControlAuthorization";
+const preflightContexts = new Map();
+const toolCorrelations = new Map();
 const terminalRejections = new Map();
 const outboundAuthorizations = new Map();
+const outboundSendAttempts = new Map();
 const controlAuthorizations = new Map();
+const nativeControlAuthorizations = new Map();
+const nativeErrorMarkers = new Map();
+let nativeControlDiagnosticBudget = 64;
 const nativeChildParents = new Map();
+const nativeChildObservations = new Map();
+const NATIVE_CONTROL_ACKS = new Map([
+  ["/new", "✅ New session started."],
+  ["/reset", "✅ Session reset."],
+]);
+const NATIVE_CONTROL_ACK_TEXTS = new Set(NATIVE_CONTROL_ACKS.values());
 const DISPATCH_MARKER_START = "\u2063";
 const DISPATCH_MARKER_ZERO = "\u200b";
 const DISPATCH_MARKER_ONE = "\u200c";
@@ -59,7 +94,7 @@ const PREVIEW_STREAMING_CHANNELS = new Set([
   "discord", "feishu", "matrix", "mattermost", "msteams", "slack", "telegram",
 ]);
 const TOOL_PAYLOAD_KEYS = [
-  "name", "skill", "skill_name", "command", "slug", "agent_slug",
+  "name", "skill", "skill_name", "command", "path", "slug", "agent_slug",
   "agent", "agentId", "agent_id", "recommended_agent", "subagent_type",
   "task_name", "target", "goal", "task", "prompt", "description", "message",
   "work_unit_id", "workUnitId", "unit_id", "task_id", "taskId", "run_id",
@@ -219,6 +254,7 @@ function serializeBridgePayload(payload) {{
     traceId: boundedCorrelation(payload?.traceId),
     parentSessionId: boundedCorrelation(payload?.parentSessionId),
     parentTraceId: boundedCorrelation(payload?.parentTraceId),
+    launchId: boundedCorrelation(payload?.launchId),
     workUnitId: boundedUtf8(payload?.workUnitId, 160),
     workerId: boundedUtf8(payload?.workerId, 256),
     nativeRunId: boundedUtf8(payload?.nativeRunId, 256),
@@ -227,9 +263,21 @@ function serializeBridgePayload(payload) {{
     outcome: boundedUtf8(payload?.outcome, 32),
     userMessage: boundedUtf8(payload?.userMessage, MAX_BRIDGE_TEXT_BYTES),
     finalResponse: boundedUtf8(payload?.finalResponse, MAX_BRIDGE_TEXT_BYTES),
+    draftText: boundedUtf8(payload?.draftText, MAX_BRIDGE_TEXT_BYTES),
     outboundPayload: boundedUtf8(payload?.outboundPayload, MAX_OUTBOUND_PAYLOAD_BYTES),
+    responseHash: boundedUtf8(payload?.responseHash, 65),
+    headerContextHash: boundedUtf8(payload?.headerContextHash, 65),
     model: boundedUtf8(payload?.model, 1024),
+    requestedModel: boundedUtf8(payload?.requestedModel, 1024),
+    modelGroup: boundedUtf8(payload?.modelGroup, 1024),
+    resolvedProvider: boundedUtf8(payload?.resolvedProvider, 1024),
+    resolvedModel: boundedUtf8(payload?.resolvedModel, 1024),
+    modelId: boundedUtf8(payload?.modelId, 1024),
+    source: boundedUtf8(payload?.source, 256),
+    status: boundedUtf8(payload?.status, 64),
+    success: payload?.success === true,
     attempt: Number.isSafeInteger(payload?.attempt) ? payload.attempt : 0,
+    includeHeaderContext: payload?.includeHeaderContext === true,
     toolName: boundedUtf8(payload?.toolName, 1024),
     error: boundedUtf8(payload?.error, 32 * 1024),
   }};
@@ -336,6 +384,24 @@ function sessionId(event, ctx) {{
   return String(ctx?.sessionKey || ctx?.sessionId || event?.sessionKey || event?.sessionId || "");
 }}
 
+function isNativeSubagentSession(event, ctx) {{
+  return sessionId(event, ctx).includes(":subagent:");
+}}
+
+function nativeChildIdentityKey(childSession, nativeRunId) {{
+  const boundedSession = boundedNativeChildIdentity(childSession);
+  const boundedRun = boundedNativeChildIdentity(nativeRunId);
+  return boundedSession && boundedRun
+    ? JSON.stringify([boundedSession, boundedRun])
+    : "";
+}}
+
+function authenticatedNativeChildState(event, ctx) {{
+  const key = nativeChildIdentityKey(sessionId(event, ctx), traceId(event, ctx));
+  const state = key ? nativeChildParents.get(key) : undefined;
+  return state?.startedRecorded === true ? state : undefined;
+}}
+
 function traceId(event, ctx) {{
   return String(ctx?.runId || event?.runId || ctx?.turnId || event?.turnId || "");
 }}
@@ -355,7 +421,7 @@ function modelProviderId(ctx) {{
 
 function modelCallReceipt(event, ctx) {{
   const provider = String(event?.provider || modelProviderId(ctx));
-  const requestedModel = modelId(ctx);
+  const requestedModel = modelId(ctx) || String(event?.model || "");
   const observedModel = String(event?.model || requestedModel);
   const routerBacked = provider.toLowerCase().includes("litellm");
   return {{
@@ -597,6 +663,95 @@ function pruneOutboundAuthorizations(now = Date.now()) {{
   while (controlAuthorizations.size >= MAX_OUTBOUND_AUTHORIZATIONS) {{
     controlAuthorizations.delete(controlAuthorizations.keys().next().value);
   }}
+  for (const [key, state] of nativeControlAuthorizations) {{
+    if (Number(state?.expiresAt || 0) <= now) nativeControlAuthorizations.delete(key);
+  }}
+  while (nativeControlAuthorizations.size >= MAX_OUTBOUND_AUTHORIZATIONS) {{
+    nativeControlAuthorizations.delete(nativeControlAuthorizations.keys().next().value);
+  }}
+}}
+
+function nativeControlAuthorizationKey(session, text) {{
+  if (!session || !text) return "";
+  return `${{responseDigest(session)}}\\0${{responseDigest(text)}}`;
+}}
+
+function authorizeNativeControlAcknowledgement(session, command) {{
+  const expected = NATIVE_CONTROL_ACKS.get(String(command || "").trim().toLowerCase());
+  const key = expected ? nativeControlAuthorizationKey(session, expected) : "";
+  if (!key) return false;
+  const now = Date.now();
+  pruneOutboundAuthorizations(now);
+  nativeControlAuthorizations.set(key, {{
+    expected,
+    expiresAt: now + NATIVE_CONTROL_ACK_TTL_MS,
+  }});
+  return true;
+}}
+
+function logNativeControlDiagnostic(api, phase, details = {{}}) {{
+  if (nativeControlDiagnosticBudget <= 0) return;
+  nativeControlDiagnosticBudget -= 1;
+  api?.logger?.info?.(`agency-preflight native-control ${{JSON.stringify({{
+    phase,
+    sessionPresent: details.sessionPresent === true,
+    exactText: details.exactText === true,
+    kindFinal: details.kindFinal === true,
+    authorizationPresent: details.authorizationPresent === true,
+    allowed: details.allowed === true,
+    textSurfaceCount: Number(details.textSurfaceCount || 0),
+    contentLength: Number(details.contentLength || 0),
+    authorizationCount: nativeControlAuthorizations.size,
+  }})}}`);
+}}
+
+function nativeControlAcknowledgementAuthorization(session, text) {{
+  if (!NATIVE_CONTROL_ACK_TEXTS.has(text)) return false;
+  const now = Date.now();
+  pruneOutboundAuthorizations(now);
+  if (session) {{
+    const key = nativeControlAuthorizationKey(session, text);
+    const state = key ? nativeControlAuthorizations.get(key) : undefined;
+    if (Number(state?.expiresAt || 0) > now) return key;
+  }}
+  let candidate = "";
+  for (const [key, state] of nativeControlAuthorizations) {{
+    if (state?.expected !== text || Number(state?.expiresAt || 0) <= now) continue;
+    if (candidate) return "";
+    candidate = key;
+  }}
+  return candidate;
+}}
+
+function hasNativeControlAcknowledgementAuthorization(session, text) {{
+  return Boolean(nativeControlAcknowledgementAuthorization(session, text));
+}}
+
+function consumeNativeControlAcknowledgement(session, text) {{
+  const candidate = nativeControlAcknowledgementAuthorization(session, text);
+  if (!candidate) return false;
+  nativeControlAuthorizations.delete(candidate);
+  return true;
+}}
+
+async function waitForNativeControlAcknowledgementAuthorization(session, text) {{
+  if (!NATIVE_CONTROL_ACK_TEXTS.has(text)) return false;
+  const deadline = Date.now() + NATIVE_CONTROL_ACK_WAIT_MS;
+  while (Date.now() < deadline) {{
+    await new Promise((resolve) => setTimeout(resolve, NATIVE_CONTROL_ACK_POLL_MS));
+    if (hasNativeControlAcknowledgementAuthorization(session, text)) return true;
+  }}
+  return false;
+}}
+
+async function waitForNativeControlAcknowledgement(session, text) {{
+  if (!NATIVE_CONTROL_ACK_TEXTS.has(text)) return false;
+  const deadline = Date.now() + NATIVE_CONTROL_ACK_WAIT_MS;
+  while (Date.now() < deadline) {{
+    await new Promise((resolve) => setTimeout(resolve, NATIVE_CONTROL_ACK_POLL_MS));
+    if (consumeNativeControlAcknowledgement(session, text)) return true;
+  }}
+  return false;
 }}
 
 function authorizeOutbound(session, text, kind = "final", run = "") {{
@@ -646,7 +801,9 @@ function consumeOutboundAuthorization(session, text) {{
   if (!session) return null;
   const now = Date.now();
   pruneOutboundAuthorizations(now);
-  for (const kind of ["final", "tool", "control", "disabled"]) {{
+  for (const kind of [
+    "final", "error", "tool", "control", "disabled", "child_completion",
+  ]) {{
     const exact = outboundAuthorizationKey(session, text, kind);
     const exactState = outboundAuthorizations.get(exact);
     if (
@@ -668,6 +825,55 @@ function consumeOutboundAuthorization(session, text) {{
     }}
   }}
   return null;
+}}
+
+function nativeErrorMarkerKey(session, run) {{
+  const exactSession = boundedCorrelation(session);
+  const exactRun = boundedCorrelation(run);
+  if (
+    !exactSession
+    || !exactRun
+    || Buffer.byteLength(exactSession, "utf8") > 512
+    || Buffer.byteLength(exactRun, "utf8") > 512
+  ) return "";
+  return `${{responseDigest(exactSession)}}\\0${{responseDigest(exactRun)}}`;
+}}
+
+function pruneNativeErrorMarkers(now = Date.now()) {{
+  for (const [key, state] of nativeErrorMarkers) {{
+    if (Number(state?.expiresAt || 0) <= now) nativeErrorMarkers.delete(key);
+  }}
+  while (nativeErrorMarkers.size >= MAX_NATIVE_ERROR_MARKERS) {{
+    nativeErrorMarkers.delete(nativeErrorMarkers.keys().next().value);
+  }}
+}}
+
+function observeAgentEnd(event, ctx) {{
+  const session = sessionId(event, ctx);
+  const run = String(event?.runId || ctx?.runId || "");
+  const key = nativeErrorMarkerKey(session, run);
+  if (!key) return false;
+  const now = Date.now();
+  pruneNativeErrorMarkers(now);
+  if (event?.success === false) {{
+    nativeErrorMarkers.set(key, {{ expiresAt: now + NATIVE_ERROR_TTL_MS }});
+    return true;
+  }}
+  if (event?.success === true) nativeErrorMarkers.delete(key);
+  return false;
+}}
+
+function clearNativeErrorMarker(session, run) {{
+  const key = nativeErrorMarkerKey(session, run);
+  if (key) nativeErrorMarkers.delete(key);
+}}
+
+function consumeNativeErrorMarker(session, run) {{
+  const key = nativeErrorMarkerKey(session, run);
+  if (!key) return false;
+  const state = nativeErrorMarkers.get(key);
+  nativeErrorMarkers.delete(key);
+  return Number(state?.expiresAt || 0) > Date.now();
 }}
 
 function terminalRejectionKey(session, run, text) {{
@@ -709,6 +915,836 @@ function blockedReplyResult(session, run, message = TERMINAL_REJECTION_MESSAGE) 
   return {{ cancel: true, reason: String(message || TERMINAL_REJECTION_MESSAGE) }};
 }}
 
+function preflightContextKey(event, ctx) {{
+  const session = sessionId(event, ctx);
+  const run = traceId(event, ctx);
+  return session && run ? `${{session}}\\0${{run}}` : "";
+}}
+
+function prunePreflightContexts(now = Date.now()) {{
+  for (const [key, state] of preflightContexts) {{
+    if (Number(state?.expiresAt || 0) <= now) preflightContexts.delete(key);
+  }}
+  while (preflightContexts.size >= MAX_PREFLIGHT_CONTEXTS) {{
+    preflightContexts.delete(preflightContexts.keys().next().value);
+  }}
+}}
+
+function rememberPreflightContext(result, event, ctx) {{
+  const key = preflightContextKey(event, ctx);
+  const context = typeof result?.context === "string" ? result.context : "";
+  const completion = result?.completion === true;
+  const headerContextHash = String(result?.headerContextHash || "");
+  if (
+    !key
+    || !context
+    || Buffer.byteLength(context, "utf8") > MAX_BRIDGE_TEXT_BYTES
+    || (
+      completion
+      && (
+        !/^[0-9a-f]{{64}}$/.test(headerContextHash)
+        || headerContextHash !== responseDigest(context)
+      )
+    )
+  ) return false;
+  const now = Date.now();
+  prunePreflightContexts(now);
+  preflightContexts.set(key, {{
+    context,
+    model: boundedUtf8(modelId(ctx), 1024),
+    kind: completion ? "native_child_completion" : "ordinary",
+    headerContextHash: completion ? headerContextHash : "",
+    completionRunId: completion ? toolCorrelationIdentity(result?.completionRunId) : "",
+    parentSessionId: completion ? toolCorrelationIdentity(result?.parentSessionId) : "",
+    parentTraceId: completion ? toolCorrelationIdentity(result?.parentTraceId) : "",
+    workerId: completion ? boundedNativeChildIdentity(result?.workerId) : "",
+    nativeRunId: completion ? boundedNativeChildIdentity(result?.nativeRunId) : "",
+    launchId: completion ? toolCorrelationIdentity(result?.launchId) : "",
+    workUnitId: completion ? boundedUtf8(result?.workUnitId, 160) : "",
+    expiresAt: now + PREFLIGHT_CONTEXT_TTL_MS,
+  }});
+  return true;
+}}
+
+function readPreflightState(event, ctx) {{
+  const key = preflightContextKey(event, ctx);
+  const state = key ? preflightContexts.get(key) : undefined;
+  if (Number(state?.expiresAt || 0) <= Date.now()) {{
+    if (key) preflightContexts.delete(key);
+    return undefined;
+  }}
+  return state;
+}}
+
+function readPreflightContext(event, ctx) {{
+  const state = readPreflightState(event, ctx);
+  return String(state?.context || "");
+}}
+
+function readPreflightModel(event, ctx) {{
+  const state = readPreflightState(event, ctx);
+  return String(state?.model || "");
+}}
+
+function isNativeChildCompletionContext(event, ctx) {{
+  return readPreflightState(event, ctx)?.kind === "native_child_completion";
+}}
+
+function splitOpenClawMiddlewareText(text) {{
+  const chunks = [];
+  let offset = 0;
+  while (offset < text.length) {{
+    let end = Math.min(offset + MAX_OPENCLAW_MIDDLEWARE_TEXT_CHARS, text.length);
+    if (
+      end < text.length
+      && end > offset
+      && text.charCodeAt(end - 1) >= 0xd800
+      && text.charCodeAt(end - 1) <= 0xdbff
+      && text.charCodeAt(end) >= 0xdc00
+      && text.charCodeAt(end) <= 0xdfff
+    ) {{
+      end -= 1;
+    }}
+    chunks.push(text.slice(offset, end));
+    offset = end;
+  }}
+  return chunks;
+}}
+
+function frameToolResultWithHeader(content, context) {{
+  const prefix = `${{context}}\n\n`;
+  const firstTextIndex = content.findIndex(
+    (item) => item?.type === "text" && typeof item.text === "string",
+  );
+  if (firstTextIndex < 0) {{
+    if (content.length >= MAX_OPENCLAW_MIDDLEWARE_CONTENT_BLOCKS) return null;
+    return [...content, {{ type: "text", text: context }}];
+  }}
+  const first = content[firstTextIndex];
+  const chunks = splitOpenClawMiddlewareText(`${{prefix}}${{first.text}}`);
+  const additionalBlocks = chunks.length - 1;
+  if (content.length + additionalBlocks <= MAX_OPENCLAW_MIDDLEWARE_CONTENT_BLOCKS) {{
+    const replacements = chunks.map((text, index) => (
+      index === 0 ? {{ ...first, text }} : {{ type: "text", text }}
+    ));
+    return [
+      ...content.slice(0, firstTextIndex),
+      ...replacements,
+      ...content.slice(firstTextIndex + 1),
+    ];
+  }}
+  return null;
+}}
+
+function forgetPreflightContext(event, ctx) {{
+  const key = preflightContextKey(event, ctx);
+  if (key) preflightContexts.delete(key);
+}}
+
+function pruneToolCorrelations(now = Date.now()) {{
+  for (const [key, state] of toolCorrelations) {{
+    if (Number(state?.expiresAt || 0) <= now) toolCorrelations.delete(key);
+  }}
+  while (toolCorrelations.size >= MAX_TOOL_CORRELATIONS) {{
+    toolCorrelations.delete(toolCorrelations.keys().next().value);
+  }}
+}}
+
+function toolCorrelationIdentity(value) {{
+  const identity = boundedCorrelation(value);
+  return identity && Buffer.byteLength(identity, "utf8") <= 512 ? identity : "";
+}}
+
+function boundedNativeChildIdentity(value, maximumBytes = 256) {{
+  let identity;
+  try {{ identity = String(value ?? ""); }}
+  catch {{ return ""; }}
+  if (!identity || identity.includes("\\0")) return "";
+  return Buffer.byteLength(identity, "utf8") <= maximumBytes ? identity : "";
+}}
+
+function acceptedSessionsSpawnResult(result) {{
+  try {{
+    const details = result?.details;
+    if (!details || typeof details !== "object" || details.status !== "accepted") return null;
+    const childSessionKey = boundedNativeChildIdentity(details.childSessionKey);
+    const runId = boundedNativeChildIdentity(details.runId);
+    return childSessionKey && runId ? {{ childSessionKey, runId }} : null;
+  }} catch {{
+    return null;
+  }}
+}}
+
+function nativeChildCompletionRunId(childSession, nativeRunId) {{
+  const boundedSession = boundedNativeChildIdentity(childSession);
+  const boundedRun = boundedNativeChildIdentity(nativeRunId);
+  if (!boundedSession || !boundedRun) return "";
+  return toolCorrelationIdentity(`announce:v1:${{boundedSession}}:${{boundedRun}}`);
+}}
+
+function hostAuthenticatedNativeChildCompletionRun(event, ctx) {{
+  // OpenClaw owns the hook event/context run identity for its internal announce
+  // agent. The prefix is sufficient to classify the run for fail-closed
+  // handling, but never to recover or split child identities: both identities
+  // may themselves contain colons. Rehydration therefore remains
+  // exact-identity-only.
+  const contextRun = toolCorrelationIdentity(ctx?.runId);
+  const eventRun = toolCorrelationIdentity(event?.runId);
+  if (contextRun.startsWith("announce:v1:")) return contextRun;
+  return eventRun.startsWith("announce:v1:") ? eventRun : "";
+}}
+
+function resolveNativeChildCompletionState(event, ctx) {{
+  const contextRun = toolCorrelationIdentity(ctx?.runId);
+  const eventRun = toolCorrelationIdentity(event?.runId);
+  if (contextRun && eventRun && eventRun !== contextRun) return {{ matched: true }};
+  const run = hostAuthenticatedNativeChildCompletionRun(event, ctx);
+  const requesterSessionId = toolCorrelationIdentity(sessionId(event, ctx));
+  if (!run || !requesterSessionId) return null;
+  const matches = [];
+  for (const [key, state] of nativeChildParents) {{
+    if (state?.completionRunId !== run) continue;
+    matches.push({{ key, state }});
+    if (matches.length > 1) break;
+  }}
+  if (matches.length === 0) return null;
+  if (matches.length !== 1) return {{ matched: true }};
+  const match = matches[0];
+  if (
+    match.state?.requesterSessionId !== requesterSessionId
+    || match.state?.startedRecorded !== true
+    || match.state?.completionDeliveryState !== "pending"
+  ) return {{ matched: true }};
+  return {{
+    matched: true,
+    key: match.key,
+    state: match.state,
+    requesterSessionId,
+    completionRunId: run,
+  }};
+}}
+
+function nativeChildCompletionContentDigest(content) {{
+  if (typeof content !== "string" || !content) return "";
+  try {{ return responseDigest(canonicalOutboundPayload({{ text: content }})); }}
+  catch {{ return ""; }}
+}}
+
+function pruneOutboundSendAttempts(now = Date.now()) {{
+  for (const [key, state] of outboundSendAttempts) {{
+    if (Number(state?.expiresAt || 0) <= now) outboundSendAttempts.delete(key);
+  }}
+}}
+
+function outboundSendScope(event, ctx, sessionOverride = "", runOverride = "") {{
+  return {{
+    sessionId: toolCorrelationIdentity(
+      sessionOverride || event?.sessionKey || ctx?.sessionKey,
+    ),
+    runId: toolCorrelationIdentity(runOverride || event?.runId || ctx?.runId),
+    target: boundedUtf8(event?.to || ctx?.to, 2048),
+    channelId: boundedUtf8(event?.channelId || ctx?.channelId, 512),
+    accountId: boundedUtf8(event?.accountId || ctx?.accountId, 512),
+    conversationId: boundedUtf8(event?.conversationId || ctx?.conversationId, 512),
+  }};
+}}
+
+function rememberOutboundSendAttempt(
+  event,
+  ctx,
+  content,
+  kind,
+  childKey = "",
+  sessionOverride = "",
+  runOverride = "",
+) {{
+  if (typeof content !== "string") return false;
+  if (!content) return true;
+  const responseHash = nativeChildCompletionContentDigest(content);
+  if (!responseHash) return false;
+  const scope = outboundSendScope(event, ctx, sessionOverride, runOverride);
+  pruneOutboundSendAttempts();
+  if (outboundSendAttempts.size >= MAX_OUTBOUND_SEND_ATTEMPTS) return false;
+  outboundSendAttempts.set(randomUUID(), {{
+    ...scope,
+    responseHash,
+    kind: String(kind || "ordinary"),
+    childKey: String(childKey || ""),
+    consumed: false,
+    expiresAt: Date.now() + OUTBOUND_SEND_ACTIVE_TTL_MS,
+  }});
+  return true;
+}}
+
+function consumeOutboundSendAttempt(event, ctx) {{
+  const scope = outboundSendScope(event, ctx);
+  const responseHash = nativeChildCompletionContentDigest(event?.content);
+  if (!responseHash) return null;
+  pruneOutboundSendAttempts();
+  const matches = [];
+  for (const [key, state] of outboundSendAttempts) {{
+    if (
+      state?.responseHash !== responseHash
+      || (scope.sessionId && state?.sessionId !== scope.sessionId)
+      || (scope.runId && state?.runId !== scope.runId)
+      || (scope.target && state?.target !== scope.target)
+      || (scope.channelId && state?.channelId !== scope.channelId)
+      || (scope.accountId && state?.accountId !== scope.accountId)
+      || (scope.conversationId && state?.conversationId !== scope.conversationId)
+    ) continue;
+    matches.push({{ key, state }});
+    if (matches.length > 1) return null;
+  }}
+  if (matches.length !== 1) return null;
+  if (matches[0].state?.consumed === true) return null;
+  matches[0].state.consumed = true;
+  matches[0].state.expiresAt = Date.now() + OUTBOUND_SEND_TOMBSTONE_TTL_MS;
+  return matches[0].state;
+}}
+
+function markNativeChildCompletionSending(session, run, content) {{
+  const requesterSessionId = toolCorrelationIdentity(session);
+  const completionRunId = toolCorrelationIdentity(run);
+  const completionResponseHash = nativeChildCompletionContentDigest(content);
+  if (!requesterSessionId || !completionRunId || !completionResponseHash) return false;
+  const matches = [];
+  for (const [key, state] of nativeChildParents) {{
+    if (
+      state?.requesterSessionId === requesterSessionId
+      && state?.completionRunId === completionRunId
+      && state?.completionDeliveryState === "authorized"
+    ) matches.push({{ key, state }});
+    if (matches.length > 1) break;
+  }}
+  if (matches.length !== 1) return "";
+  const selected = matches[0];
+  for (const [key, state] of nativeChildParents) {{
+    if (
+      key !== selected.key
+      && state?.completionDeliveryState === "sending"
+      && state?.completionResponseHash === completionResponseHash
+    ) return "";
+  }}
+  selected.state.completionDeliveryState = "sending";
+  selected.state.completionResponseHash = completionResponseHash;
+  return selected.key;
+}}
+
+function resolveNativeChildMessageSent(event, ctx) {{
+  const attempt = consumeOutboundSendAttempt(event, ctx);
+  if (attempt?.kind !== "child_completion" || !attempt?.childKey) return null;
+  const state = nativeChildParents.get(attempt.childKey);
+  if (
+    !state
+    || state?.completionDeliveryState !== "sending"
+    || state?.completionResponseHash !== attempt.responseHash
+    || state?.requesterSessionId !== attempt.sessionId
+    || state?.completionRunId !== attempt.runId
+  ) return null;
+  return {{ key: attempt.childKey, state }};
+}}
+
+async function authorizeNativeChildCompletionMessage(event, ctx, completion) {{
+  const childState = completion?.state;
+  const prepared = readPreflightState(event, ctx);
+  const exactPreparedState = Boolean(
+    prepared?.kind === "native_child_completion"
+    && prepared?.completionRunId === completion?.completionRunId
+    && prepared?.parentSessionId === childState?.sessionId
+    && prepared?.parentTraceId === childState?.traceId
+    && prepared?.workerId === childState?.workerId
+    && prepared?.nativeRunId === childState?.nativeRunId
+    && prepared?.launchId === childState?.launchId
+    && prepared?.workUnitId === childState?.workUnitId
+    && /^[0-9a-f]{{64}}$/.test(String(prepared?.headerContextHash || ""))
+  );
+  if (!childState || !exactPreparedState) return {{
+    block: true,
+    blockReason: "Agency Runtime rejected an uncorrelated native child completion.",
+  }};
+  // A correlated completion gets one first-pass delivery attempt. Invalid
+  // envelopes and failed receipts remain durable failures rather than opening
+  // a second message-tool path in the same host run.
+  childState.completionDeliveryState = "attempted";
+  const params = (
+    event?.params
+    && typeof event.params === "object"
+    && !Array.isArray(event.params)
+  ) ? event.params : null;
+  const exactEnvelope = Boolean(
+    params
+    && Object.keys(params).length === 2
+    && Object.prototype.hasOwnProperty.call(params, "action")
+    && Object.prototype.hasOwnProperty.call(params, "message")
+    && params.action === "send"
+    && typeof params.message === "string"
+    && params.message.trim()
+  );
+  let messageBytes = 0;
+  try {{ messageBytes = exactEnvelope ? Buffer.byteLength(params.message, "utf8") : 0; }}
+  catch {{ messageBytes = 0; }}
+  if (!exactEnvelope || messageBytes > MAX_BRIDGE_TEXT_BYTES) return {{
+    block: true,
+    blockReason: "Agency Runtime requires one text-only implicit-target child completion.",
+  }};
+  const text = params.message;
+  let outboundPayload;
+  try {{ outboundPayload = canonicalOutboundPayload({{ text }}); }}
+  catch {{ return {{ block: true, blockReason: FINALIZATION_UNAVAILABLE }}; }}
+  const stateEpoch = ++runtimeStateEpoch;
+  let gate;
+  try {{
+    gate = await invokeAgency({{
+      action: "native_child_completion_finalize",
+      sessionId: completion.requesterSessionId,
+      traceId: completion.completionRunId,
+      parentSessionId: childState.sessionId,
+      parentTraceId: childState.traceId,
+      workerId: childState.workerId,
+      nativeRunId: childState.nativeRunId,
+      launchId: childState.launchId,
+      workUnitId: childState.workUnitId,
+      headerContextHash: prepared.headerContextHash,
+      finalResponse: text,
+      outboundPayload,
+      model: modelId(ctx) || readPreflightModel(event, ctx),
+    }});
+  }} catch {{
+    return {{ block: true, blockReason: FINALIZATION_UNAVAILABLE }};
+  }}
+  const exactReceipt = Boolean(
+    gate?.action === "allow"
+    && gate?.authoritative === true
+    && gate?.terminalBound === true
+    && gate?.terminalStatus === "completed"
+    && String(gate?.responseHash || "") === responseDigest(outboundPayload)
+    && String(gate?.turnId || "") === childState.traceId
+    && String(gate?.parentSessionId || "") === childState.sessionId
+    && String(gate?.parentTraceId || "") === childState.traceId
+    && String(gate?.completionRunId || "") === completion.completionRunId
+  );
+  if (
+    !observeRuntimeState(gate, stateEpoch)
+    || !runtimeEnabled
+    || !exactReceipt
+    || nativeChildParents.get(completion.key) !== childState
+  ) return {{ block: true, blockReason: FINALIZATION_UNAVAILABLE }};
+  const marked = authorizeMarkedPayload(
+    completion.requesterSessionId,
+    {{ text }},
+    "child_completion",
+    completion.completionRunId,
+  );
+  if (!marked?.text) return {{ block: true, blockReason: FINALIZATION_UNAVAILABLE }};
+  childState.completionDeliveryState = "authorized";
+  return {{ params: {{ ...params, message: marked.text }} }};
+}}
+
+function pruneNativeChildState(now = Date.now()) {{
+  for (const [key, observation] of nativeChildObservations) {{
+    if (Number(observation?.expiresAt || 0) <= now) nativeChildObservations.delete(key);
+  }}
+  while (nativeChildObservations.size >= MAX_NATIVE_CHILD_STATES) {{
+    nativeChildObservations.delete(nativeChildObservations.keys().next().value);
+  }}
+  while (nativeChildParents.size >= MAX_NATIVE_CHILD_STATES) {{
+    nativeChildParents.delete(nativeChildParents.keys().next().value);
+  }}
+}}
+
+function nativeChildRequester(event, ctx) {{
+  return toolCorrelationIdentity(ctx?.requesterSessionKey || event?.requesterSessionKey);
+}}
+
+function rememberNativeChildSpawn(event, ctx) {{
+  const childSession = boundedNativeChildIdentity(event?.childSessionKey || ctx?.childSessionKey);
+  const nativeRunId = boundedNativeChildIdentity(event?.runId || ctx?.runId);
+  const requesterSessionId = nativeChildRequester(event, ctx);
+  const key = nativeChildIdentityKey(childSession, nativeRunId);
+  if (!key || !requesterSessionId) return null;
+  const now = Date.now();
+  pruneNativeChildState(now);
+  const previous = nativeChildObservations.get(key);
+  const previousActive = Number(previous?.expiresAt || 0) > now;
+  const ambiguous = previousActive && (
+    previous?.ambiguous === true
+    || previous?.requesterSessionId !== requesterSessionId
+  );
+  const observation = {{
+    childSession,
+    nativeRunId,
+    requesterSessionId,
+    pendingEnd: previousActive ? previous?.pendingEnd : undefined,
+    ambiguous,
+    expiresAt: now + NATIVE_CHILD_OBSERVATION_TTL_MS,
+  }};
+  nativeChildObservations.set(key, observation);
+  return ambiguous ? null : observation;
+}}
+
+function rememberNativeChildPendingEnd(target, outcome, error) {{
+  if (!target) return false;
+  const existing = target?.pendingEnd;
+  if (existing) {{
+    return existing.outcome === outcome && existing.error === error;
+  }}
+  target.pendingEnd = {{ outcome, error }};
+  return true;
+}}
+
+async function persistNativeChildPendingEnd(childState) {{
+  if (
+    !childState?.startedRecorded
+    || !childState?.pendingEnd
+    || childState?.pendingEndRecorded === true
+    || childState?.pendingEndInFlight === true
+  ) return childState?.pendingEndRecorded === true;
+  childState.pendingEndInFlight = true;
+  try {{
+    const receipt = await invokeAgency({{
+      action: "native_child_terminal_observed",
+      sessionId: String(childState.sessionId || ""),
+      traceId: String(childState.traceId || ""),
+      launchId: String(childState.launchId || ""),
+      workUnitId: String(childState.workUnitId || ""),
+      workerId: String(childState.workerId || ""),
+      nativeRunId: String(childState.nativeRunId || ""),
+      outcome: String(childState.pendingEnd.outcome || "unknown"),
+    }});
+    if (
+      receipt?.recorded !== true
+      || String(receipt?.outcome || "") !== String(childState.pendingEnd.outcome || "unknown")
+    ) throw new Error("native child terminal observation was not recorded");
+    childState.pendingEndRecorded = true;
+    return true;
+  }} catch {{
+    return false;
+  }} finally {{
+    childState.pendingEndInFlight = false;
+  }}
+}}
+
+function pendingNativeChildEnd(event, ctx) {{
+  const childSession = boundedNativeChildIdentity(event?.targetSessionKey || ctx?.childSessionKey);
+  const nativeRunId = boundedNativeChildIdentity(event?.runId || ctx?.runId);
+  const requesterSessionId = nativeChildRequester(event, ctx);
+  if (!childSession) return {{ correlationHandled: true }};
+  const outcome = boundedUtf8(event?.outcome || "unknown", 32);
+  const error = outcome === "ok"
+    ? ""
+    : boundedUtf8(event?.error || event?.reason || "", 32 * 1024);
+  const key = nativeChildIdentityKey(childSession, nativeRunId);
+  let existing = key ? nativeChildParents.get(key) : undefined;
+  let ambiguous = false;
+  if (!existing && (!nativeRunId || !requesterSessionId)) {{
+    const matches = [];
+    for (const state of nativeChildParents.values()) {{
+      if (state?.workerId !== childSession) continue;
+      if (nativeRunId && state?.nativeRunId !== nativeRunId) continue;
+      if (requesterSessionId && state?.requesterSessionId !== requesterSessionId) continue;
+      matches.push(state);
+      if (matches.length > 1) break;
+    }}
+    ambiguous = matches.length > 1;
+    existing = matches.length === 1 ? matches[0] : undefined;
+  }}
+  if (existing) {{
+    if (
+      (requesterSessionId && existing.requesterSessionId !== requesterSessionId)
+      || (nativeRunId && existing.nativeRunId !== nativeRunId)
+    ) return {{ correlationHandled: true }};
+    if (!rememberNativeChildPendingEnd(existing, outcome, error)) {{
+      return {{ correlationHandled: true }};
+    }}
+    return existing;
+  }}
+  if (ambiguous || !requesterSessionId) return {{ correlationHandled: true }};
+  if (!key) return null;
+  const observation = nativeChildObservations.get(key);
+  if (
+    !observation
+    || observation.ambiguous === true
+    || Number(observation.expiresAt || 0) <= Date.now()
+    || observation.requesterSessionId !== requesterSessionId
+  ) return observation ? {{ correlationHandled: true }} : null;
+  if (observation.terminal === true) return {{ correlationHandled: true }};
+  if (!rememberNativeChildPendingEnd(observation, outcome, error)) {{
+    return {{ correlationHandled: true }};
+  }}
+  return null;
+}}
+
+function finishNativeChildEndPersistence(key, childState) {{
+  if (nativeChildParents.get(key) === childState) {{
+    nativeChildParents.delete(key);
+  }}
+  pruneNativeChildState();
+  nativeChildObservations.set(key, {{
+    childSession: String(childState.workerId || ""),
+    nativeRunId: String(childState.nativeRunId || ""),
+    requesterSessionId: String(childState.requesterSessionId || ""),
+    terminal: true,
+    expiresAt: Date.now() + NATIVE_CHILD_OBSERVATION_TTL_MS,
+  }});
+  return true;
+}}
+
+function nativeChildDeliveryPayload(childState, includeTrace, success) {{
+  const payload = {{
+    action: "native_child_delivery_observed",
+    sessionId: String(childState?.sessionId || ""),
+    launchId: String(childState?.launchId || ""),
+    workUnitId: String(childState?.workUnitId || ""),
+    workerId: String(childState?.workerId || ""),
+    nativeRunId: String(childState?.nativeRunId || ""),
+    responseHash: String(childState?.completionResponseHash || ""),
+    success: success === true,
+  }};
+  if (includeTrace) payload.traceId = String(childState?.traceId || "");
+  return payload;
+}}
+
+function exactNativeChildDeliveryReceipt(receipt, success) {{
+  const expected = success === true ? "delivered" : "failed";
+  return receipt?.recorded === true && receipt?.deliveryStatus === expected;
+}}
+
+async function persistNativeChildDelivery(key, childState) {{
+  if (
+    !childState?.startedRecorded
+    || childState?.pendingEndRecorded !== true
+    || !childState?.pendingEnd
+    || childState?.completionDeliveryState !== "delivered"
+    || !/^[0-9a-f]{{64}}$/.test(String(childState?.completionResponseHash || ""))
+    || childState?.endInFlight
+  ) {{
+    return false;
+  }}
+  childState.endInFlight = true;
+  try {{
+    const receipt = await invokeAgency(nativeChildDeliveryPayload(childState, true, true));
+    if (!exactNativeChildDeliveryReceipt(receipt, true)) {{
+      throw new Error("native child delivery was not recorded");
+    }}
+  }} catch {{
+    try {{
+      const reconciled = await invokeAgency(
+        nativeChildDeliveryPayload(childState, false, true),
+      );
+      if (!exactNativeChildDeliveryReceipt(reconciled, true)) {{
+        throw new Error("native child delivery was not reconciled");
+      }}
+    }} catch {{
+      childState.endInFlight = false;
+      return false;
+    }}
+  }}
+  return finishNativeChildEndPersistence(key, childState);
+}}
+
+function persistNativeChildDeliverySync(key, childState, success) {{
+  if (
+    !childState?.startedRecorded
+    || childState?.pendingEndRecorded !== true
+    || !childState?.pendingEnd
+    || !["delivered", "failed"].includes(childState?.completionDeliveryState)
+    || !/^[0-9a-f]{{64}}$/.test(String(childState?.completionResponseHash || ""))
+    || childState?.endInFlight
+  ) {{
+    return false;
+  }}
+  childState.endInFlight = true;
+  try {{
+    const traceBound = invokeAgencySync(
+      nativeChildDeliveryPayload(childState, true, success),
+      {outbound_timeout_ms},
+    );
+    if (exactNativeChildDeliveryReceipt(traceBound, success)) {{
+      if (success === true) return finishNativeChildEndPersistence(key, childState);
+      childState.deliveryResultRecorded = true;
+      childState.endInFlight = false;
+      return true;
+    }}
+  }} catch {{
+    // The exact persisted-launch fallback below is intentionally trace-less.
+  }}
+  try {{
+    const reconciled = invokeAgencySync(
+      nativeChildDeliveryPayload(childState, false, success),
+      {outbound_timeout_ms},
+    );
+    if (exactNativeChildDeliveryReceipt(reconciled, success)) {{
+      if (success === true) return finishNativeChildEndPersistence(key, childState);
+      childState.deliveryResultRecorded = true;
+      childState.endInFlight = false;
+      return true;
+    }}
+  }} catch {{
+    // A later host callback or gateway-start reconciliation remains available.
+  }}
+  childState.endInFlight = false;
+  return false;
+}}
+
+async function observePersistedNativeChildEnd(event, ctx) {{
+  const childSession = boundedNativeChildIdentity(
+    event?.targetSessionKey || ctx?.childSessionKey,
+  );
+  const nativeRunId = boundedNativeChildIdentity(event?.runId || ctx?.runId);
+  const requesterSessionId = nativeChildRequester(event, ctx);
+  if (!childSession || !requesterSessionId) return false;
+  try {{
+    const receipt = await invokeAgency({{
+      action: "native_child_terminal_observed",
+      sessionId: requesterSessionId,
+      workerId: childSession,
+      nativeRunId,
+      outcome: boundedUtf8(event?.outcome || "unknown", 32),
+    }});
+    return receipt?.recorded === true;
+  }} catch {{
+    return false;
+  }}
+}}
+
+
+async function recordNativeChildAgentEnd(event, ctx) {{
+  const childSession = boundedNativeChildIdentity(sessionId(event, ctx));
+  const nativeRunId = boundedNativeChildIdentity(traceId(event, ctx));
+  const key = nativeChildIdentityKey(childSession, nativeRunId);
+  if (!key) return false;
+  const childState = nativeChildParents.get(key);
+  const observation = nativeChildObservations.get(key);
+  const validObservation = Boolean(
+    observation
+    && observation.ambiguous !== true
+    && Number(observation.expiresAt || 0) > Date.now()
+  );
+  if (!childState && !validObservation) return false;
+  if (observation?.terminal === true) return true;
+  const outcome = event?.success === true ? "ok" : "error";
+  const error = event?.success === true
+    ? ""
+    : boundedUtf8(event?.error || "native child agent run failed", 32 * 1024);
+  if (childState) {{
+    if (
+      childState.workerId !== childSession
+      || childState.nativeRunId !== nativeRunId
+      || !toolCorrelationIdentity(childState.requesterSessionId)
+    ) return false;
+    if (!rememberNativeChildPendingEnd(childState, outcome, error)) return false;
+    return persistNativeChildPendingEnd(childState);
+  }}
+  if (
+    observation.childSession !== childSession
+    || observation.nativeRunId !== nativeRunId
+    || !toolCorrelationIdentity(observation.requesterSessionId)
+  ) return false;
+  return rememberNativeChildPendingEnd(observation, outcome, error);
+}}
+
+async function persistCompletedNativeChildEnd(event, ctx) {{
+  const contextRun = toolCorrelationIdentity(ctx?.runId);
+  const eventRun = toolCorrelationIdentity(event?.runId);
+  if (contextRun && eventRun && contextRun !== eventRun) return false;
+  const completionRunId = hostAuthenticatedNativeChildCompletionRun(event, ctx);
+  const requesterSessionId = toolCorrelationIdentity(sessionId(event, ctx));
+  if (!completionRunId || !requesterSessionId) return false;
+  const matches = [];
+  for (const [key, state] of nativeChildParents) {{
+    if (state?.completionRunId !== completionRunId) continue;
+    matches.push({{ key, state }});
+    if (matches.length > 1) return false;
+  }}
+  const match = matches[0];
+  if (
+    !match
+    || match.state?.requesterSessionId !== requesterSessionId
+    || match.state?.startedRecorded !== true
+    || !match.state?.pendingEnd
+    || match.state?.pendingEndRecorded !== true
+    || match.state?.endInFlight === true
+    || match.state?.completionDeliveryState !== "delivered"
+  ) return false;
+  if (nativeChildParents.get(match.key) !== match.state) return false;
+  return persistNativeChildDelivery(match.key, match.state);
+}}
+
+function rememberToolCorrelation(event, ctx, parentScope = undefined) {{
+  const toolCallId = toolCorrelationIdentity(event?.toolCallId || ctx?.toolCallId);
+  const sourceSessionId = toolCorrelationIdentity(sessionId(event, ctx));
+  const sourceTraceId = toolCorrelationIdentity(traceId(event, ctx));
+  const session = toolCorrelationIdentity(parentScope?.sessionId || sourceSessionId);
+  const run = toolCorrelationIdentity(parentScope?.traceId || sourceTraceId);
+  const model = boundedUtf8(modelId(ctx) || readPreflightModel(event, ctx), 1024);
+  const toolName = boundedUtf8(event?.toolName || ctx?.toolName, 512);
+  const params = (
+    event?.params
+    && typeof event.params === "object"
+    && !Array.isArray(event.params)
+  ) ? event.params : {{}};
+  const task = toolName === "sessions_spawn"
+    ? boundedUtf8(typeof params.task === "string" ? params.task : "", MAX_BRIDGE_TEXT_BYTES)
+    : "";
+  const workUnitId = toolName === "sessions_spawn"
+    ? boundedUtf8(typeof params.taskName === "string" ? params.taskName : "", 160)
+    : "";
+  if (!toolCallId || !session || !run) return false;
+  const now = Date.now();
+  pruneToolCorrelations(now);
+  const previous = toolCorrelations.get(toolCallId);
+  const previousActive = Number(previous?.expiresAt || 0) > now;
+  const ambiguous = previousActive && (
+    previous?.ambiguous === true
+    || previous?.sessionId !== session
+    || previous?.traceId !== run
+    || previous?.toolName !== toolName
+    || previous?.task !== task
+    || previous?.workUnitId !== workUnitId
+    || previous?.sourceSessionId !== sourceSessionId
+    || previous?.sourceTraceId !== sourceTraceId
+  );
+  toolCorrelations.set(toolCallId, {{
+    sessionId: session,
+    traceId: run,
+    model,
+    toolName,
+    task,
+    workUnitId,
+    launchId: toolCallId,
+    sourceSessionId,
+    sourceTraceId,
+    nativeParent: Boolean(parentScope),
+    ambiguous,
+    expiresAt: now + TOOL_CORRELATION_TTL_MS,
+  }});
+  return !ambiguous;
+}}
+
+function consumeToolCorrelation(event, ctx) {{
+  const toolCallId = toolCorrelationIdentity(event?.toolCallId || ctx?.toolCallId);
+  if (!toolCallId) return null;
+  const state = toolCorrelations.get(toolCallId);
+  toolCorrelations.delete(toolCallId);
+  if (
+    !state
+    || state.ambiguous === true
+    || Number(state.expiresAt || 0) <= Date.now()
+  ) return null;
+  return {{
+    sessionId: String(state.sessionId || ""),
+    traceId: String(state.traceId || ""),
+    model: String(state.model || ""),
+    toolName: String(state.toolName || ""),
+    task: String(state.task || ""),
+    workUnitId: String(state.workUnitId || ""),
+    launchId: String(state.launchId || ""),
+    sourceSessionId: String(state.sourceSessionId || ""),
+    sourceTraceId: String(state.sourceTraceId || ""),
+    nativeParent: state.nativeParent === true,
+  }};
+}}
+
 function observeRuntimeState(result, epoch = runtimeStateEpoch) {{
   if (epoch !== runtimeStateEpoch) return false;
   if (
@@ -718,7 +1754,14 @@ function observeRuntimeState(result, epoch = runtimeStateEpoch) {{
   ) {{
     runtimeEnabled = false;
     outboundAuthorizations.clear();
+    outboundSendAttempts.clear();
     controlAuthorizations.clear();
+    nativeControlAuthorizations.clear();
+    nativeErrorMarkers.clear();
+    preflightContexts.clear();
+    toolCorrelations.clear();
+    nativeChildParents.clear();
+    nativeChildObservations.clear();
   }} else if (result?.runtime_enabled === true || result?.runtimeEnabled === true) {{
     runtimeEnabled = true;
   }}
@@ -742,11 +1785,230 @@ export default definePluginEntry({{
   description: "Agency Runtime routing, evidence, and final-response enforcement.",
   register(api) {{
     deliveryCompatibility = inspectFinalOnlyDelivery(api?.config);
-    api.on("gateway_start", (_event, ctx) => {{
+    api.on("before_tool_call", async (event, ctx) => {{
+      if (!runtimeEnabled) return undefined;
+      const toolName = String(event?.toolName || ctx?.toolName || "");
+      const completionRun = hostAuthenticatedNativeChildCompletionRun(event, ctx);
+      const completion = resolveNativeChildCompletionState(event, ctx);
+      if (completion?.matched === true) {{
+        if (toolName === "message") {{
+          return authorizeNativeChildCompletionMessage(event, ctx, completion);
+        }}
+        if (completion?.state) completion.state.completionDeliveryState = "attempted";
+        return {{
+          block: true,
+          blockReason: "Agency Runtime permits only the bound child-completion message.",
+        }};
+      }}
+      if (completionRun) {{
+        return {{
+          block: true,
+          blockReason: "Agency Runtime rejected an uncorrelated native child completion.",
+        }};
+      }}
+      if (isNativeChildCompletionContext(event, ctx)) {{
+        return {{
+          block: true,
+          blockReason: "Agency Runtime permits only the bound child-completion message.",
+        }};
+      }}
+      const nativeSubagent = isNativeSubagentSession(event, ctx);
+      const nativeParent = nativeSubagent
+        ? authenticatedNativeChildState(event, ctx)
+        : undefined;
+      if (nativeSubagent && (!nativeParent || toolName !== "sessions_spawn")) {{
+        return undefined;
+      }}
+      if (!rememberToolCorrelation(event, ctx, nativeParent)) return undefined;
+      if (toolName !== "sessions_spawn") return undefined;
+      const params = (
+        event?.params
+        && typeof event.params === "object"
+        && !Array.isArray(event.params)
+      ) ? event.params : null;
+      const task = typeof params?.task === "string" ? params.task : "";
+      const launchId = toolCorrelationIdentity(event?.toolCallId || ctx?.toolCallId);
+      let taskBytes;
+      try {{ taskBytes = Buffer.byteLength(task, "utf8"); }}
+      catch {{ return undefined; }}
+      if (
+        !params
+        || !task
+        || !launchId
+        || taskBytes > MAX_BRIDGE_TEXT_BYTES
+      ) return undefined;
+      const stateEpoch = ++runtimeStateEpoch;
+      let preparation;
+      try {{
+        preparation = await invokeAgency({{
+          action: "native_child_prepare",
+          sessionId: String(nativeParent?.sessionId || sessionId(event, ctx)),
+          traceId: String(nativeParent?.traceId || traceId(event, ctx)),
+          launchId,
+          goal: task,
+        }});
+      }} catch {{
+        return undefined;
+      }}
+      if (!observeRuntimeState(preparation, stateEpoch) || !runtimeEnabled) return undefined;
+      const rewrittenTask = typeof preparation?.rewrittenTask === "string"
+        ? preparation.rewrittenTask
+        : "";
+      if (
+        preparation?.staffed !== true
+        || !rewrittenTask
+        || Buffer.byteLength(rewrittenTask, "utf8") > MAX_BRIDGE_TEXT_BYTES
+      ) return undefined;
+      return {{ params: {{ ...params, task: rewrittenTask }} }};
+    }}, {{ timeoutMs: {host_timeout_ms} }});
+
+    api.registerAgentToolResultMiddleware(async (event, ctx) => {{
+      if (!runtimeEnabled) return undefined;
+      const correlation = consumeToolCorrelation(event, ctx);
+      const correlatedSession = correlation?.sessionId || sessionId(event, ctx);
+      const correlatedTrace = correlation?.traceId || traceId(event, ctx);
+      if (!correlatedSession || !correlatedTrace) return undefined;
+      const stateEpoch = ++runtimeStateEpoch;
+      const acceptedChild = correlation?.toolName === "sessions_spawn"
+        ? acceptedSessionsSpawnResult(event?.result)
+        : null;
+      if (acceptedChild) {{
+        const childKey = nativeChildIdentityKey(
+          acceptedChild.childSessionKey,
+          acceptedChild.runId,
+        );
+        const observation = nativeChildObservations.get(childKey);
+        const observedRequesterMatches = Boolean(
+          observation
+          && observation.ambiguous !== true
+          && Number(observation.expiresAt || 0) > Date.now()
+          && observation.requesterSessionId === correlation?.sourceSessionId
+        );
+        const childState = {{
+          sessionId: correlatedSession,
+          traceId: correlatedTrace,
+          workerId: acceptedChild.childSessionKey,
+          nativeRunId: acceptedChild.runId,
+          workUnitId: correlation?.workUnitId || "",
+          launchId: correlation?.launchId || "",
+          requesterSessionId: correlation?.sourceSessionId || "",
+          completionRunId: nativeChildCompletionRunId(
+            acceptedChild.childSessionKey,
+            acceptedChild.runId,
+          ),
+          completionDeliveryState: "pending",
+          pendingEnd: observedRequesterMatches ? observation?.pendingEnd : undefined,
+          pendingEndRecorded: false,
+          pendingEndInFlight: false,
+          startedRecorded: false,
+          endInFlight: false,
+        }};
+        pruneNativeChildState();
+        nativeChildParents.set(childKey, childState);
+        nativeChildObservations.delete(childKey);
+        try {{
+          const startedReceipt = await invokeAgency({{
+            action: "native_child_started",
+            sessionId: childState.sessionId,
+            traceId: childState.traceId,
+            launchId: childState.launchId,
+            workUnitId: childState.workUnitId,
+            workerId: childState.workerId,
+            nativeRunId: childState.nativeRunId,
+            childSessionId: childState.workerId,
+            goal: correlation?.task || "",
+          }});
+          const recordedWorkUnit = boundedUtf8(startedReceipt?.workUnitId, 160);
+          if (
+            startedReceipt?.recorded !== true
+            || startedReceipt?.launchBound !== true
+            || !recordedWorkUnit
+            || (childState.workUnitId && childState.workUnitId !== recordedWorkUnit)
+          ) {{
+            throw new Error("native child start was not launch-bound exactly");
+          }}
+          childState.workUnitId = recordedWorkUnit;
+          childState.startedRecorded = true;
+          await persistNativeChildPendingEnd(childState);
+        }} catch {{
+          // Host execution already succeeded; lifecycle evidence remains partial.
+        }}
+        if (correlation?.nativeParent === true) return undefined;
+      }}
+      let result;
+      try {{
+        result = await invokeAgency({{
+          action: "post_tool_call",
+          sessionId: correlatedSession,
+          traceId: correlatedTrace,
+          model: correlation?.model || modelId(ctx) || readPreflightModel(event, ctx),
+          toolName: String(event?.toolName || ""),
+          toolInput: event?.args || {{}},
+          toolResult: event?.result,
+          error: event?.isError === true ? "tool_result_error" : "",
+          includeHeaderContext: true,
+        }});
+      }} catch {{
+        return undefined;
+      }}
+      if (!observeRuntimeState(result, stateEpoch) || !runtimeEnabled) return undefined;
+      const context = typeof result?.context === "string" ? result.context : "";
+      if (!context || Buffer.byteLength(context, "utf8") > MAX_BRIDGE_TEXT_BYTES) {{
+        return undefined;
+      }}
+      const original = (
+        event?.result
+        && typeof event.result === "object"
+        && !Array.isArray(event.result)
+      ) ? event.result : {{}};
+      const content = Array.isArray(original.content) ? original.content : [];
+      const framedContent = frameToolResultWithHeader(content, context);
+      if (!framedContent) return undefined;
+      return {{
+        result: {{
+          ...original,
+          content: framedContent,
+        }},
+      }};
+    }}, {{ runtimes: ["openclaw"] }});
+
+    api.on("gateway_start", async (_event, ctx) => {{
       deliveryCompatibility = inspectFinalOnlyDelivery(ctx?.config);
+      if (!runtimeEnabled) return;
+      try {{
+        await invokeAgency({{ action: "native_child_pending_reconcile" }});
+      }} catch {{
+        // Receipt-backed pending children remain visible for the next startup.
+      }}
+    }}, {{ timeoutMs: {host_timeout_ms} }});
+
+    api.on("before_reset", (event, ctx) => {{
+      const reason = String(event?.reason || "").trim().toLowerCase();
+      const session = String(event?.sessionKey || ctx?.sessionKey || "");
+      const authorized = authorizeNativeControlAcknowledgement(
+        session,
+        reason === "new" || reason === "reset" ? `/${{reason}}` : "",
+      );
+      logNativeControlDiagnostic(api, "before_reset", {{
+        sessionPresent: Boolean(session),
+        authorizationPresent: authorized,
+        allowed: authorized,
+      }});
     }});
 
-    api.on("before_agent_run", async () => {{
+    api.on("before_agent_run", async (event, ctx) => {{
+      if (
+        hostAuthenticatedNativeChildCompletionRun(event, ctx)
+        && !isNativeChildCompletionContext(event, ctx)
+      ) {{
+        return {{
+          outcome: "block",
+          reason: "agency_native_child_completion_uncorrelated",
+          category: "runtime_unavailable",
+          message: "Agency Runtime could not correlate this native child completion.",
+        }};
+      }}
+      if (isNativeSubagentSession(event, ctx)) return {{ outcome: "pass" }};
       const stateEpoch = ++runtimeStateEpoch;
       try {{
         const state = await invokeAgency({{ action: "control", command: "status" }});
@@ -761,15 +2023,23 @@ export default definePluginEntry({{
         }};
       }}
       if (!runtimeEnabled) return {{ outcome: "pass" }};
-      if (deliveryCompatibility.verified && deliveryCompatibility.unsafe.length === 0) {{
-        return {{ outcome: "pass" }};
+      if (!(deliveryCompatibility.verified && deliveryCompatibility.unsafe.length === 0)) {{
+        return {{
+          outcome: "block",
+          reason: "agency_final_only_delivery_required",
+          category: "runtime_configuration",
+          message: "Agency Runtime requires OpenClaw preview and block streaming to be disabled. Stop the gateway and rerun the Agency installer.",
+        }};
       }}
-      return {{
-        outcome: "block",
-        reason: "agency_final_only_delivery_required",
-        category: "runtime_configuration",
-        message: "Agency Runtime requires OpenClaw preview and block streaming to be disabled. Stop the gateway and rerun the Agency installer.",
-      }};
+      if (!readPreflightContext(event, ctx)) {{
+        return {{
+          outcome: "block",
+          reason: "agency_preflight_failed",
+          category: "runtime_unavailable",
+          message: "Agency Runtime could not complete preflight. Restore the local runtime and retry.",
+        }};
+      }}
+      return {{ outcome: "pass" }};
     }}, {{ priority: 1000, timeoutMs: {host_timeout_ms} }});
 
     api.registerCommand({{
@@ -798,89 +2068,132 @@ export default definePluginEntry({{
     }});
 
     api.on("before_prompt_build", async (event, ctx) => {{
+      const completionRun = hostAuthenticatedNativeChildCompletionRun(event, ctx);
+      const completion = resolveNativeChildCompletionState(event, ctx);
+      if (completion?.matched === true) {{
+        const childState = completion?.state;
+        if (!childState) return undefined;
+        if (!(await persistNativeChildPendingEnd(childState))) return undefined;
+        const stateEpoch = ++runtimeStateEpoch;
+        let result;
+        try {{
+          result = await invokeAgency({{
+            action: "native_child_completion_prepare",
+            sessionId: completion.requesterSessionId,
+            traceId: completion.completionRunId,
+            parentSessionId: childState.sessionId,
+            parentTraceId: childState.traceId,
+            workerId: childState.workerId,
+            nativeRunId: childState.nativeRunId,
+            launchId: childState.launchId,
+            workUnitId: childState.workUnitId,
+            model: modelId(ctx),
+          }});
+        }} catch {{
+          return undefined;
+        }}
+        const exactReceipt = Boolean(
+          result?.prepared === true
+          && result?.completion === true
+          && String(result?.completionRunId || "") === completion.completionRunId
+          && String(result?.parentSessionId || "") === childState.sessionId
+          && String(result?.parentTraceId || "") === childState.traceId
+          && String(result?.workerId || "") === childState.workerId
+          && String(result?.nativeRunId || "") === childState.nativeRunId
+          && String(result?.launchId || "") === childState.launchId
+          && String(result?.workUnitId || "") === childState.workUnitId
+        );
+        const stateApplied = observeRuntimeState(result, stateEpoch);
+        if (!runtimeEnabled) return undefined;
+        if (
+          !stateApplied
+          || !exactReceipt
+          || nativeChildParents.get(completion.key) !== childState
+          || !rememberPreflightContext(result, event, ctx)
+        ) return undefined;
+        const context = readPreflightContext(event, ctx);
+        return context ? {{ appendContext: context }} : undefined;
+      }}
+      if (completionRun) return undefined;
+      if (isNativeSubagentSession(event, ctx)) return undefined;
       const stateEpoch = ++runtimeStateEpoch;
-      const childParent = nativeChildParents.get(sessionId(event, ctx));
-      const result = await invokeAgency({{
-        action: "preflight",
-        sessionId: sessionId(event, ctx),
-        traceId: traceId(event, ctx),
-        userMessage: String(event?.prompt || ""),
-        model: modelId(ctx),
-        parentSessionId: String(childParent?.sessionId || ""),
-        parentTraceId: String(childParent?.traceId || ""),
-        workerId: String(childParent?.workerId || ""),
-        nativeRunId: String(childParent?.nativeRunId || ""),
-      }});
+      try {{
+        const state = await invokeAgency({{ action: "control", command: "status" }});
+        if (!observeRuntimeState(state, stateEpoch) || !runtimeEnabled) return undefined;
+      }} catch {{
+        return undefined;
+      }}
+      const childParent = authenticatedNativeChildState(event, ctx);
+      let result;
+      try {{
+        result = await invokeAgency({{
+          action: "preflight",
+          sessionId: sessionId(event, ctx),
+          traceId: traceId(event, ctx),
+          userMessage: String(event?.prompt || ""),
+          model: modelId(ctx),
+          parentSessionId: String(childParent?.sessionId || ""),
+          parentTraceId: String(childParent?.traceId || ""),
+          workerId: String(childParent?.workerId || ""),
+          nativeRunId: String(childParent?.nativeRunId || ""),
+        }});
+      }} catch {{
+        return undefined;
+      }}
       const stateApplied = observeRuntimeState(result, stateEpoch);
-      if (!stateApplied && !runtimeEnabled) return undefined;
-      return result.context ? {{ appendContext: result.context }} : undefined;
+      if (!runtimeEnabled) return undefined;
+      if (!stateApplied || !rememberPreflightContext(result, event, ctx)) return undefined;
+      const context = readPreflightContext(event, ctx);
+      return context ? {{ appendContext: context }} : undefined;
     }}, {{ priority: 100, timeoutMs: {host_timeout_ms} }});
 
     api.on("model_call_ended", async (event, ctx) => {{
       if (!runtimeEnabled) return;
+      if (hostAuthenticatedNativeChildCompletionRun(event, ctx)) return;
+      if (isNativeSubagentSession(event, ctx)) return;
+      if (isNativeChildCompletionContext(event, ctx)) return;
       await invokeAgency(modelCallReceipt(event, ctx));
+    }}, {{ timeoutMs: {host_timeout_ms} }});
+
+    api.on("agent_end", async (event, ctx) => {{
+      if (!runtimeEnabled) return;
+      if (
+        hostAuthenticatedNativeChildCompletionRun(event, ctx)
+        || isNativeChildCompletionContext(event, ctx)
+      ) {{
+        await persistCompletedNativeChildEnd(event, ctx);
+        forgetPreflightContext(event, ctx);
+        return;
+      }}
+      if (isNativeSubagentSession(event, ctx)) {{
+        await recordNativeChildAgentEnd(event, ctx);
+        return;
+      }}
+      observeAgentEnd(event, ctx);
     }}, {{ timeoutMs: {host_timeout_ms} }});
 
     api.on("subagent_spawned", async (event, ctx) => {{
       if (!runtimeEnabled) return;
-      const childSession = String(event?.childSessionKey || "");
-      const parentSession = sessionId(event, ctx);
-      const parentTrace = String(ctx?.runId || ctx?.turnId || event?.parentRunId || event?.parentTurnId || "");
-      const nativeRunId = String(event?.runId || (childSession ? `openclaw-subagent:${{childSession}}` : ""));
-      const workUnitId = String(event?.workUnitId || event?.taskName || "");
-      const goal = String(event?.goal || event?.task || event?.prompt || "");
-      if (childSession && parentSession && parentTrace) {{
-        nativeChildParents.set(childSession, {{
-          sessionId: parentSession,
-          traceId: parentTrace,
-          workerId: childSession,
-          nativeRunId,
-          workUnitId,
-        }});
-        if (nativeChildParents.size > 512) nativeChildParents.delete(nativeChildParents.keys().next().value);
-      }}
-      await invokeAgency({{
-        action: "native_child_started",
-        sessionId: sessionId(event, ctx),
-        traceId: String(ctx?.runId || ctx?.turnId || event?.parentRunId || event?.parentTurnId || ""),
-        workUnitId,
-        workerId: String(event?.childSessionKey || ""),
-        nativeRunId,
-        childSessionId: childSession,
-        goal,
-      }});
+      rememberNativeChildSpawn(event, ctx);
     }}, {{ timeoutMs: {host_timeout_ms} }});
 
     api.on("subagent_ended", async (event, ctx) => {{
       if (!runtimeEnabled) return;
-      nativeChildParents.delete(String(event?.targetSessionKey || ""));
-      await invokeAgency({{
-        action: "native_child_ended",
-        sessionId: sessionId(event, ctx),
-        traceId: String(ctx?.runId || ctx?.turnId || event?.parentRunId || event?.parentTurnId || ""),
-        workUnitId: String(event?.workUnitId || event?.taskName || ""),
-        workerId: String(event?.targetSessionKey || ""),
-        nativeRunId: String(event?.runId || ""),
-        outcome: String(event?.outcome || "unknown"),
-        error: String(event?.error || event?.reason || ""),
-      }});
-    }}, {{ timeoutMs: {host_timeout_ms} }});
-
-    api.on("after_tool_call", async (event, ctx) => {{
-      if (!runtimeEnabled) return;
-      await invokeAgency({{
-        action: "post_tool_call",
-        sessionId: sessionId(event, ctx),
-        traceId: traceId(event, ctx),
-        toolName: String(event?.toolName || ""),
-        toolInput: event?.params || {{}},
-        toolResult: event?.result,
-        error: String(event?.error?.message || event?.error || ""),
-      }});
+      const childState = pendingNativeChildEnd(event, ctx);
+      if (childState?.correlationHandled === true) return;
+      if (!childState) {{
+        await observePersistedNativeChildEnd(event, ctx);
+        return;
+      }}
+      await persistNativeChildPendingEnd(childState);
     }}, {{ timeoutMs: {host_timeout_ms} }});
 
     api.on("before_agent_finalize", async (event, ctx) => {{
+      if (hostAuthenticatedNativeChildCompletionRun(event, ctx)) return undefined;
+      if (isNativeSubagentSession(event, ctx)) return undefined;
+      if (isNativeChildCompletionContext(event, ctx)) return undefined;
       const stateEpoch = ++runtimeStateEpoch;
+      const correlatedModel = modelId(ctx) || readPreflightModel(event, ctx);
       let decision;
       const finalText = finalAssistantText(event);
       const verificationFailure = {{
@@ -897,7 +2210,7 @@ export default definePluginEntry({{
           sessionId: sessionId(event, ctx),
           traceId: traceId(event, ctx),
           finalResponse: finalText,
-          model: modelId(ctx),
+          model: correlatedModel,
           attempt: 0,
         }});
       }} catch {{
@@ -924,7 +2237,130 @@ export default definePluginEntry({{
     api.on("reply_payload_sending", (event, ctx) => {{
       try {{
       const session = String(event?.sessionKey || ctx?.sessionKey || "");
+      if (
+        hostAuthenticatedNativeChildCompletionRun(event, ctx)
+        || isNativeChildCompletionContext(event, ctx)
+      ) {{
+        return {{
+          cancel: true,
+          reason: "Agency Runtime requires message-tool-only native child completion delivery.",
+        }};
+      }}
+      if (isNativeSubagentSession(event, ctx)) return {{ payload: event?.payload }};
       const kind = String(event?.kind || "");
+      const run = String(event?.runId || ctx?.runId || "");
+      const nativeTextSurfaces = outboundTextSurfaces(event?.payload);
+      const nativeTextSurfaceCount = nativeTextSurfaces.length;
+      const nativeControlText = kind === "final"
+        && nativeTextSurfaceCount > 0
+        && nativeTextSurfaces.every((value) => value === nativeTextSurfaces[0])
+        ? nativeTextSurfaces[0]
+        : "";
+      const nativeControlAuthorized = hasNativeControlAcknowledgementAuthorization(
+        session,
+        nativeControlText,
+      );
+      if (
+        NATIVE_CONTROL_ACK_TEXTS.has(nativeControlText)
+      ) {{
+        logNativeControlDiagnostic(api, "reply_payload_observed", {{
+          sessionPresent: Boolean(session),
+          exactText: NATIVE_CONTROL_ACK_TEXTS.has(nativeControlText),
+          kindFinal: kind === "final",
+          authorizationPresent: nativeControlAuthorized,
+          textSurfaceCount: nativeTextSurfaceCount,
+        }});
+      }}
+      if (NATIVE_CONTROL_ACK_TEXTS.has(nativeControlText)) {{
+        const allowNativeControl = () => ({{ payload: event.payload }});
+        if (nativeControlAuthorized) {{
+          logNativeControlDiagnostic(api, "reply_payload_result", {{
+            sessionPresent: Boolean(session),
+            exactText: true,
+            kindFinal: true,
+            authorizationPresent: true,
+            allowed: true,
+          }});
+          return allowNativeControl();
+        }}
+        return waitForNativeControlAcknowledgementAuthorization(
+          session,
+          nativeControlText,
+        ).then((allowed) => {{
+          logNativeControlDiagnostic(api, "reply_payload_result", {{
+            sessionPresent: Boolean(session),
+            exactText: true,
+            kindFinal: true,
+            authorizationPresent: allowed,
+            allowed,
+          }});
+          return allowed
+            ? allowNativeControl()
+            : {{
+              cancel: true,
+              reason: "Agency Runtime cancelled an uncorrelated native control acknowledgement.",
+            }};
+        }});
+      }}
+      if (kind === "final" && event?.payload?.isError === true) {{
+        if (!consumeNativeErrorMarker(session, run)) {{
+          refreshRuntimeStateSync();
+          if (!runtimeEnabled) {{
+            const marked = authorizeMarkedPayload(session, event.payload, "disabled");
+            if (marked) return {{ payload: marked }};
+          }}
+          return blockedReplyResult(session, run, FINALIZATION_UNAVAILABLE);
+        }}
+        forgetPreflightContext(event, ctx);
+        let outboundPayload;
+        try {{
+          outboundPayload = canonicalOutboundPayload(event.payload);
+        }} catch {{
+          return blockedReplyResult(session, run, FINALIZATION_UNAVAILABLE);
+        }}
+        const digest = responseDigest(outboundPayload);
+        const stateEpoch = ++runtimeStateEpoch;
+        let nativeError;
+        try {{
+          nativeError = invokeAgencySync({{
+            action: "native_error",
+            sessionId: session,
+            traceId: run,
+            responseHash: digest,
+          }}, {outbound_timeout_ms});
+        }} catch {{
+          return blockedReplyResult(session, run, FINALIZATION_UNAVAILABLE);
+        }}
+        const exactReceipt = (
+          String(nativeError?.responseHash || "") === digest
+          && String(nativeError?.turnId || "") === run
+        );
+        const stateApplied = observeRuntimeState(nativeError, stateEpoch);
+        if (!stateApplied) return blockedReplyResult(session, run, FINALIZATION_UNAVAILABLE);
+        if (!runtimeEnabled) {{
+          const marked = exactReceipt && nativeError?.action === "bypass_error"
+            ? authorizeMarkedPayload(session, event.payload, "disabled")
+            : null;
+          return marked
+            ? {{ payload: marked }}
+            : blockedReplyResult(session, run, FINALIZATION_UNAVAILABLE);
+        }}
+        const authoritative = (
+          nativeError?.action === "allow_error"
+          && nativeError?.authoritative === true
+          && nativeError?.terminalStatus === "response_invalid"
+          && typeof nativeError?.finalizationId === "string"
+          && nativeError.finalizationId.length > 0
+          && exactReceipt
+        );
+        const marked = authoritative
+          ? authorizeMarkedPayload(session, event.payload, "error", run)
+          : null;
+        return marked
+          ? {{ payload: marked }}
+          : blockedReplyResult(session, run, FINALIZATION_UNAVAILABLE);
+      }}
+      if (kind === "final") clearNativeErrorMarker(session, run);
       if (kind !== "final") {{
         refreshRuntimeStateSync();
         if (!runtimeEnabled) {{
@@ -950,7 +2386,8 @@ export default definePluginEntry({{
           reason: "Agency Runtime rejected an unsupported OpenClaw reply payload kind.",
         }};
       }}
-      const run = String(event?.runId || ctx?.runId || "");
+      const correlatedModel = modelId(ctx) || readPreflightModel(event, ctx);
+      forgetPreflightContext(event, ctx);
       let text;
       let outboundPayload;
       try {{
@@ -989,7 +2426,7 @@ export default definePluginEntry({{
           traceId: run,
           finalResponse: text,
           outboundPayload,
-          model: modelId(ctx),
+          model: correlatedModel,
         }}, {outbound_timeout_ms});
       }} catch {{
         return blockedReplyResult(session, run, FINALIZATION_UNAVAILABLE);
@@ -1028,11 +2465,124 @@ export default definePluginEntry({{
       try {{
       const session = String(event?.sessionKey || ctx?.sessionKey || "");
       const content = typeof event?.content === "string" ? event.content : "";
+      const run = String(event?.runId || ctx?.runId || "");
+      const completionRun = hostAuthenticatedNativeChildCompletionRun(event, ctx);
+      if (!completionRun && isNativeSubagentSession(event, ctx)) {{
+        return rememberOutboundSendAttempt(
+          event,
+          ctx,
+          content,
+          "native_subagent",
+          "",
+          session,
+          run,
+        )
+          ? {{ content }}
+          : {{ cancel: true, cancelReason: FINALIZATION_UNAVAILABLE }};
+      }}
+      if (
+        NATIVE_CONTROL_ACK_TEXTS.has(content)
+      ) {{
+        logNativeControlDiagnostic(api, "message_observed", {{
+          sessionPresent: Boolean(session),
+          exactText: NATIVE_CONTROL_ACK_TEXTS.has(content),
+          authorizationPresent: hasNativeControlAcknowledgementAuthorization(session, content),
+          contentLength: content.length,
+        }});
+      }}
       const unmarked = unmarkOutboundText(content);
       const authorized = unmarked
         ? consumeOutboundAuthorization(session, unmarked.markedText)
         : null;
-      if (authorized) return {{ content: unmarked.content }};
+      if (authorized) {{
+        if (authorized.kind === "child_completion") {{
+          const childKey = markNativeChildCompletionSending(
+            session,
+            authorized.runId,
+            unmarked.content,
+          );
+          if (
+            !childKey
+            || !rememberOutboundSendAttempt(
+              event,
+              ctx,
+              unmarked.content,
+              authorized.kind,
+              childKey,
+              session,
+              authorized.runId,
+            )
+          ) {{
+            const state = childKey ? nativeChildParents.get(childKey) : null;
+            if (state) state.completionDeliveryState = "attempted";
+            return {{
+              cancel: true,
+              cancelReason: "Agency Runtime rejected an uncorrelated native child completion.",
+            }};
+          }}
+        }} else if (!rememberOutboundSendAttempt(
+          event,
+          ctx,
+          unmarked.content,
+          authorized.kind,
+          "",
+          session,
+          authorized.runId,
+        )) {{
+          return {{ cancel: true, cancelReason: FINALIZATION_UNAVAILABLE }};
+        }}
+        return {{ content: unmarked.content }};
+      }}
+      if (completionRun) {{
+        return {{
+          cancel: true,
+          cancelReason: "Agency Runtime rejected an uncorrelated native child completion.",
+        }};
+      }}
+      if (consumeNativeControlAcknowledgement(session, content)) {{
+        logNativeControlDiagnostic(api, "message_result", {{
+          sessionPresent: Boolean(session),
+          exactText: true,
+          authorizationPresent: true,
+          allowed: true,
+          contentLength: content.length,
+        }});
+        return rememberOutboundSendAttempt(
+          event,
+          ctx,
+          content,
+          "native_control",
+          "",
+          session,
+          run,
+        )
+          ? {{ content }}
+          : {{ cancel: true, cancelReason: FINALIZATION_UNAVAILABLE }};
+      }}
+      if (NATIVE_CONTROL_ACK_TEXTS.has(content)) {{
+        return waitForNativeControlAcknowledgement(session, content).then((allowed) => {{
+          logNativeControlDiagnostic(api, "message_result", {{
+            sessionPresent: Boolean(session),
+            exactText: true,
+            authorizationPresent: allowed,
+            allowed,
+          }});
+          return allowed && rememberOutboundSendAttempt(
+            event,
+            ctx,
+            content,
+            "native_control",
+            "",
+            session,
+            run,
+          )
+            ? {{ content }}
+            : {{
+              cancel: true,
+              cancelReason: "Agency Runtime cancelled an uncorrelated native control acknowledgement.",
+            }};
+        }});
+      }}
       return {{
         cancel: true,
         cancelReason: "Agency Runtime cancelled an outbound message that did not match final validation.",
@@ -1044,6 +2594,15 @@ export default definePluginEntry({{
         }};
       }}
     }}, {{ priority: Number.NEGATIVE_INFINITY, timeoutMs: {outbound_timeout_ms + 1_000} }});
+
+    api.on("message_sent", (event, ctx) => {{
+      if (!runtimeEnabled) return;
+      const completion = resolveNativeChildMessageSent(event, ctx);
+      if (!completion?.state) return;
+      const success = event?.success === true;
+      completion.state.completionDeliveryState = success ? "delivered" : "failed";
+      persistNativeChildDeliverySync(completion.key, completion.state, success);
+    }}, {{ timeoutMs: {outbound_timeout_ms + 1_000} }});
   }},
 }});
 """

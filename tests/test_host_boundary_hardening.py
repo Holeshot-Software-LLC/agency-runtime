@@ -644,6 +644,24 @@ def test_openclaw_bridge_main_never_emits_nonfinite_json(
     assert stdout.getvalue() == "{}\n"
 
 
+def test_openclaw_bridge_main_accepts_a_null_error_field(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from agency_runtime.adapters.openclaw import node_bridge
+
+    monkeypatch.setattr(node_bridge, "_read_payload", lambda: {"action": "control"})
+    monkeypatch.setattr(
+        node_bridge,
+        "handle",
+        lambda _payload: {"ok": True, "error": None},
+    )
+    stdout = io.StringIO()
+    monkeypatch.setattr(sys, "stdout", stdout)
+
+    assert node_bridge.main() == 0
+    assert json.loads(stdout.getvalue()) == {"ok": True, "error": None}
+
+
 @pytest.mark.parametrize("timeout", [0, -1, float("nan"), float("inf"), 601])
 def test_canary_rejects_unbounded_timeouts(timeout: float) -> None:
     with pytest.raises(ValueError, match="timeout must be"):

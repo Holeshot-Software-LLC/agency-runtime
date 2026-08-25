@@ -170,14 +170,14 @@ def _revision(message: str = _VERIFICATION_UNAVAILABLE) -> dict[str, Any]:
     )
 
 
-def _header_snapshot_context(
+def _exact_header_snapshot(
     adapter: Any,
     *,
     session_id: str,
     trace_id: str,
     model: str,
 ) -> str:
-    """Render exact first-pass header guidance from current-turn Store evidence."""
+    """Render the exact five Store-backed header lines for one turn."""
 
     if not session_id or not trace_id:
         return ""
@@ -188,7 +188,7 @@ def _header_snapshot_context(
     )
 
     try:
-        header = format_header(
+        return format_header(
             fill_header_fields(
                 {},
                 session_id,
@@ -199,15 +199,72 @@ def _header_snapshot_context(
         )
     except (EvidenceCorrelationError, KeyError, RuntimeError, TypeError, ValueError):
         return ""
+
+
+def _header_snapshot_context(
+    adapter: Any,
+    *,
+    session_id: str,
+    trace_id: str,
+    model: str,
+) -> str:
+    """Render exact first-pass header guidance from current-turn Store evidence."""
+
+    header = _exact_header_snapshot(
+        adapter,
+        session_id=session_id,
+        trace_id=trace_id,
+        model=model,
+    )
+    if not header:
+        return ""
     return (
-        "[AGENCY INITIAL HEADER SNAPSHOT v1]\n"
-        "Use these exact seven lines for substantive progress until Agency evidence "
-        "changes. Immediately before the natural final response, call `agency.finalize` "
-        f"exactly once with session_id `{session_id}`, trace_id `{trace_id}`, and the "
-        "response body as draft_text; emit its returned text byte-for-byte. That local "
-        "tool constructs the first visible header from current Store evidence. Never "
-        "guess changed values and never wait for a host correction.\n"
-        f"{header}"
+        "[AGENCY FIRST-PASS FINALIZATION CONTRACT]\n"
+        "MANDATORY: the first and only natural final response must begin with the "
+        "latest exact Store-backed header snapshot for this turn.\n"
+        "[AGENCY INITIAL HEADER SNAPSHOT v2]\n"
+        "Copy the exact five header lines below byte-for-byte as the first lines of "
+        "your natural final response. The newest snapshot for this turn supersedes "
+        "every earlier snapshot. After any tool call, use the latest "
+        "[AGENCY UPDATED HEADER SNAPSHOT v2] appended to that tool result. Do not call "
+        "a finalizer tool, do not emit NO_REPLY, and never guess changed values.\n"
+        f"{header}\n"
+        "[AGENCY FINALIZATION GATE]\n"
+        "Emit one natural final response from the latest snapshot. There is no "
+        "correction pass."
+    )
+
+
+def _native_child_completion_context(
+    adapter: Any,
+    *,
+    session_id: str,
+    trace_id: str,
+    model: str,
+) -> str:
+    """Render message-tool-only completion guidance with the parent header."""
+
+    header = _exact_header_snapshot(
+        adapter,
+        session_id=session_id,
+        trace_id=trace_id,
+        model=model,
+    )
+    if not header:
+        return ""
+    return (
+        "[AGENCY NATIVE CHILD COMPLETION CONTRACT]\n"
+        "Deliver the child result with exactly one tool call: "
+        'message(action="send", message=<header+body>). The call must use the '
+        "implicit current target and contain exactly the action and message fields.\n"
+        "The message value must begin with the exact five Store-backed parent header "
+        "lines below, copied byte-for-byte, followed by the child result body.\n"
+        "[AGENCY PARENT HEADER SNAPSHOT v1]\n"
+        f"{header}\n"
+        "[AGENCY CHILD COMPLETION DELIVERY GATE]\n"
+        "Do not call any other tool. Do not emit a natural visible final response, "
+        "NO_REPLY, or a finalizer call. There is one delivery attempt and no "
+        "correction pass."
     )
 
 
@@ -663,12 +720,21 @@ def _outbound_allowance(
     *,
     trace_id: str = "",
     runtime_disabled: bool = False,
+    authoritative_terminal: bool = False,
 ) -> dict[str, Any]:
     """Return a positive decision with the correlation Python actually used."""
 
     result: dict[str, Any] = {"action": "allow", "responseHash": digest}
     if trace_id:
         result["turnId"] = trace_id
+    if authoritative_terminal:
+        result.update(
+            {
+                "authoritative": True,
+                "terminalBound": True,
+                "terminalStatus": "completed",
+            }
+        )
     if runtime_disabled:
         result["runtimeDisabled"] = True
     else:
@@ -899,7 +965,11 @@ def _handle_outbound_gate(
             TERMINAL_OUTCOME_MESSAGES[terminal_state],
         )
     if terminal_state == "completed":
-        return _outbound_allowance(digest, trace_id=effective_trace)
+        return _outbound_allowance(
+            digest,
+            trace_id=effective_trace,
+            authoritative_terminal=True,
+        )
     if terminal_state == "unavailable":
         # Agency could not read its own evidence.  Rule 8 permits withholding
         # only for an evaluated negative, so a blind gate allows the turn.
@@ -996,7 +1066,11 @@ def _outbound_evaluated_decision(
             "Agency Runtime could not commit outbound evidence.",
         )
     if accepted:
-        return _outbound_allowance(digest, trace_id=effective_trace)
+        return _outbound_allowance(
+            digest,
+            trace_id=effective_trace,
+            authoritative_terminal=True,
+        )
     return _outbound_denial(digest)
 
 
@@ -1116,10 +1190,162 @@ def _handle_pre_verify(
     )
 
 
+def _handle_finalize_tool(
+    adapter: Any,
+    payload: dict[str, Any],
+    *,
+    session_id: str,
+    trace_id: str,
+) -> dict[str, Any]:
+    """Dispatch the OpenClaw-native tool through the canonical Agency finalizer."""
+
+    draft_text = _bounded_string(payload, "draftText", limit=MAX_INPUT_BYTES)
+    if not session_id or not trace_id or not draft_text:
+        return {"error": "finalization requires draftText, sessionId, and traceId"}
+    if not adapter.runtime_enabled():
+        return {
+            "action": "bypass",
+            "text": draft_text,
+            "runtimeEnabled": False,
+            "runtimeDisabled": True,
+            "bypassed": True,
+        }
+    from agency_runtime.core.header.finalize import finalize_response
+
+    result = finalize_response(
+        draft_text,
+        trace_metadata={
+            "trace_id": trace_id,
+            "session_id": session_id,
+            "host": "openclaw",
+        },
+        store=adapter.store,
+        model="",
+        commit_terminal=False,
+    )
+    if not isinstance(result, dict):
+        return {"error": "finalization returned an invalid result"}
+    return {**dict(result), "runtimeEnabled": True}
+
+
+def _native_error_denial(response_digest: str = "", trace_id: str = "") -> dict[str, Any]:
+    """Return a content-free denial for an unproven native host failure."""
+
+    return {
+        "action": "deny_error",
+        "responseHash": response_digest,
+        "turnId": trace_id,
+        "runtimeEnabled": True,
+    }
+
+
+def _handle_native_error(
+    adapter: Any,
+    payload: dict[str, Any],
+    *,
+    session_id: str,
+    trace_id: str,
+) -> dict[str, Any]:
+    """Bind one exact OpenClaw native error without persisting its content."""
+
+    response_digest = _bounded_string(payload, "responseHash", limit=65)
+    denial = _native_error_denial(response_digest, trace_id)
+    if (
+        not session_id
+        or not trace_id
+        or len(response_digest) != 64
+        or any(character not in "0123456789abcdef" for character in response_digest)
+    ):
+        return denial
+    snapshot_reader = getattr(adapter.store, "get_completion_evidence_snapshot", None)
+    committer = getattr(adapter.store, "commit_terminal_finalization", None)
+    terminal_reader = getattr(adapter.store, "get_authoritative_finalization", None)
+    if not all(callable(value) for value in (snapshot_reader, committer, terminal_reader)):
+        return denial
+    try:
+        snapshot = snapshot_reader(session_id, trace_id)
+        run = snapshot.get("run") if isinstance(snapshot, dict) else None
+        revision = snapshot.get("evidence_revision") if isinstance(snapshot, dict) else None
+        if (
+            not isinstance(run, dict)
+            or str(run.get("session_id") or "") != session_id
+            or str(run.get("trace_id") or "") != trace_id
+            or str(run.get("host") or "").casefold() != "openclaw"
+            or str(run.get("status") or "") not in {"active", "evidence_only", "response_invalid"}
+            or isinstance(revision, bool)
+            or not isinstance(revision, int)
+            or revision <= 0
+        ):
+            return denial
+        committed = committer(
+            session_id=session_id,
+            trace_id=trace_id,
+            host="openclaw",
+            action="response_invalid",
+            response_hash=response_digest,
+            status="response_invalid",
+            expected_evidence_revision=revision,
+            missing=["native_host_error"],
+        )
+        if (
+            not isinstance(committed, dict)
+            or committed.get("authoritative") is not True
+            or committed.get("outcome") not in {"committed", "replay"}
+            or str(committed.get("action") or "") != "response_invalid"
+            or str(committed.get("response_hash") or "") != response_digest
+            or str(committed.get("status") or "") != "response_invalid"
+        ):
+            return denial
+        terminal = terminal_reader(
+            session_id,
+            trace_id,
+            action="response_invalid",
+            response_hash=response_digest,
+        )
+        if not isinstance(terminal, dict):
+            return denial
+        missing = json.loads(str(terminal.get("missing") or "null"))
+        event_id = str(terminal.get("id") or "")
+        if (
+            terminal.get("authoritative") is not True
+            or str(terminal.get("session_id") or "") != session_id
+            or str(terminal.get("trace_id") or "") != trace_id
+            or str(terminal.get("host") or "").casefold() != "openclaw"
+            or str(terminal.get("action") or "") != "response_invalid"
+            or str(terminal.get("response_hash") or "") != response_digest
+            or terminal.get("policy_response_hash") not in {None, ""}
+            or str(terminal.get("terminal_status") or "") != "response_invalid"
+            or str(terminal.get("status") or "") != "response_invalid"
+            or missing != ["native_host_error"]
+            or not event_id
+        ):
+            return denial
+    except Exception:
+        return denial
+    return {
+        "action": "allow_error",
+        "authoritative": True,
+        "outcome": "committed",
+        "terminalStatus": "response_invalid",
+        "turnId": trace_id,
+        "responseHash": response_digest,
+        "finalizationId": event_id,
+        "runtimeEnabled": True,
+    }
+
+
 def _runtime_disabled_result(payload: dict[str, Any], action: str) -> dict[str, Any]:
     """Return the exact no-side-effect contract for one disabled host action."""
 
     disabled = {"runtimeEnabled": False, "runtimeDisabled": True, "bypassed": True}
+    if action == "finalize":
+        return {
+            "action": "bypass",
+            "text": _bounded_string(payload, "draftText", limit=MAX_INPUT_BYTES),
+            "runtimeEnabled": False,
+            "runtimeDisabled": True,
+            "bypassed": True,
+        }
     if action == "outbound_gate":
         binding = _bounded_string(payload, "outboundPayload", limit=MAX_INPUT_BYTES)
         if not binding:
@@ -1128,17 +1354,385 @@ def _runtime_disabled_result(payload: dict[str, Any], action: str) -> dict[str, 
             **_outbound_allowance(response_hash(binding), runtime_disabled=True),
             "bypassed": True,
         }
-    if action in {"preflight", "pre_verify"}:
+    if action == "native_error":
+        return {
+            "action": "bypass_error",
+            "responseHash": _bounded_string(payload, "responseHash", limit=65),
+            "turnId": _bounded_string(payload, "traceId", limit=512),
+            "runtimeEnabled": False,
+            "runtimeDisabled": True,
+            "bypassed": True,
+        }
+    if action in {
+        "preflight",
+        "pre_verify",
+        "native_child_prepare",
+        "native_child_completion_prepare",
+        "native_child_completion_finalize",
+    }:
+        return disabled
+    if action == "post_tool_call" and payload.get("includeHeaderContext") is True:
         return disabled
     if action in {
         "post_tool_call",
         "post_api_request",
         "native_child_started",
+        "native_child_terminal_observed",
+        "native_child_delivery_observed",
+        "native_child_pending_reconcile",
         "native_child_ended",
         "on_session_end",
     }:
         return {}
     return {"error": f"unknown action: {action}"}
+
+
+def _handle_native_child_prepare(
+    adapter: OpenClawAdapter,
+    payload: dict[str, Any],
+    *,
+    session_id: str,
+    trace_id: str,
+) -> dict[str, Any]:
+    """Staff one exact host-authenticated ``sessions_spawn`` launch."""
+
+    task = _bounded_string(payload, "goal", limit=MAX_INPUT_BYTES)
+    launch_id = validate_correlation_id(
+        payload.get("launchId"),
+        field="launch_id",
+        required=False,
+    )
+    if not session_id or not trace_id or not launch_id or not task:
+        return {"staffed": False, "runtimeEnabled": True}
+    from agency_runtime.core.native_child_install_identity import (
+        current_managed_host_install_identity,
+    )
+    from agency_runtime.core.native_child_staffing import staff_native_child
+
+    def delivery_fits(rewritten_task: str) -> bool:
+        try:
+            prospective = json.dumps(
+                {
+                    "staffed": True,
+                    "rewrittenTask": rewritten_task,
+                    "decisionId": "x" * 128,
+                    "runtimeEnabled": True,
+                },
+                allow_nan=False,
+                separators=(",", ":"),
+            )
+            return len(prospective.encode("ascii")) <= MAX_BRIDGE_OUTPUT_BYTES
+        except (TypeError, UnicodeError, ValueError):
+            return False
+
+    try:
+        result = staff_native_child(
+            adapter.store,
+            host="openclaw",
+            task=task,
+            parent_session_id=session_id,
+            parent_trace_id=trace_id,
+            launch_id=launch_id,
+            binding_kind="launch_id",
+            binding_id=launch_id,
+            install_identity=current_managed_host_install_identity("openclaw"),
+            install_identity_reader=current_managed_host_install_identity,
+            maximum_delivery_bytes=MAX_PREFLIGHT_CONTEXT_CHARS,
+            delivery_validator=delivery_fits,
+        )
+    except Exception:
+        return {"staffed": False, "runtimeEnabled": True}
+    if not result.staffed:
+        return {"staffed": False, "runtimeEnabled": True}
+    rewritten_task = str(result.rewritten_task or "")
+    if not rewritten_task or not delivery_fits(rewritten_task):
+        return {"staffed": False, "runtimeEnabled": True}
+    return {
+        "staffed": True,
+        "rewrittenTask": rewritten_task,
+        "decisionId": str(result.decision_id or ""),
+        "runtimeEnabled": True,
+    }
+
+
+def _openclaw_native_child_completion_mapping(
+    adapter: Any,
+    payload: dict[str, Any],
+    *,
+    requester_session_id: str,
+    completion_run_id: str,
+) -> dict[str, str] | None:
+    """Resolve one exact retained completion identity through the Store."""
+
+    resolver = getattr(
+        adapter.store,
+        "resolve_openclaw_native_child_completion",
+        None,
+    )
+    if not callable(resolver) or not requester_session_id or not completion_run_id:
+        return None
+    try:
+        mapping = resolver(
+            requester_session_id=requester_session_id,
+            completion_run_id=completion_run_id,
+            parent_session_id=_bounded_string(
+                payload,
+                "parentSessionId",
+                limit=512,
+            ),
+            parent_trace_id=_bounded_string(payload, "parentTraceId", limit=512),
+            worker_id=_bounded_string(payload, "workerId", limit=256),
+            native_run_id=_bounded_string(payload, "nativeRunId", limit=256),
+            launch_id=_bounded_string(payload, "launchId", limit=512),
+            work_unit_id=_bounded_string(payload, "workUnitId", limit=160),
+        )
+    except (KeyError, RuntimeError, TypeError, ValueError):
+        return None
+    if not isinstance(mapping, dict):
+        return None
+    expected = {
+        "requester_session_id": requester_session_id,
+        "completion_run_id": completion_run_id,
+        "parent_session_id": _bounded_string(payload, "parentSessionId", limit=512),
+        "parent_trace_id": _bounded_string(payload, "parentTraceId", limit=512),
+        "worker_id": _bounded_string(payload, "workerId", limit=256),
+        "native_run_id": _bounded_string(payload, "nativeRunId", limit=256),
+        "launch_id": _bounded_string(payload, "launchId", limit=512),
+        "work_unit_id": _bounded_string(payload, "workUnitId", limit=160),
+    }
+    if any(str(mapping.get(key) or "") != value for key, value in expected.items()):
+        return None
+    if not str(mapping.get("delegation_event_id") or "") or not str(
+        mapping.get("worker_run_id") or ""
+    ):
+        return None
+    return {key: str(value) for key, value in mapping.items()}
+
+
+def _handle_native_child_completion_prepare(
+    adapter: Any,
+    payload: dict[str, Any],
+    *,
+    requester_session_id: str,
+    completion_run_id: str,
+    model: str,
+) -> dict[str, Any]:
+    """Project a live child's exact parent header into its announce agent."""
+
+    rejected = {"prepared": False, "runtimeEnabled": True}
+    mapping = _openclaw_native_child_completion_mapping(
+        adapter,
+        payload,
+        requester_session_id=requester_session_id,
+        completion_run_id=completion_run_id,
+    )
+    if mapping is None:
+        return rejected
+    context = _native_child_completion_context(
+        adapter,
+        session_id=mapping["parent_session_id"],
+        trace_id=mapping["parent_trace_id"],
+        model=model,
+    )
+    if not context or len(context.encode("utf-8")) > MAX_PREFLIGHT_CONTEXT_CHARS:
+        return rejected
+    return {
+        "prepared": True,
+        "completion": True,
+        "context": context,
+        "headerContextHash": response_hash(context),
+        "completionRunId": mapping["completion_run_id"],
+        "parentSessionId": mapping["parent_session_id"],
+        "parentTraceId": mapping["parent_trace_id"],
+        "workerId": mapping["worker_id"],
+        "nativeRunId": mapping["native_run_id"],
+        "launchId": mapping["launch_id"],
+        "workUnitId": mapping["work_unit_id"],
+        "runtimeEnabled": True,
+    }
+
+
+def _handle_native_child_completion_finalize(
+    adapter: Any,
+    payload: dict[str, Any],
+    *,
+    requester_session_id: str,
+    completion_run_id: str,
+    model: str,
+) -> dict[str, Any]:
+    """Revalidate and finalize one announce message against its parent turn."""
+
+    final_response = _bounded_string(payload, "finalResponse", limit=MAX_INPUT_BYTES)
+    outbound_payload = _bounded_string(payload, "outboundPayload", limit=MAX_INPUT_BYTES)
+    binding = outbound_payload or final_response
+    denied = {
+        **_outbound_denial(response_hash(binding)),
+        "completionRunId": completion_run_id,
+        "runtimeEnabled": True,
+    }
+    prepared_hash = _bounded_string(payload, "headerContextHash", limit=65)
+    if (
+        not final_response
+        or len(prepared_hash) != 64
+        or any(character not in "0123456789abcdef" for character in prepared_hash)
+    ):
+        return denied
+    mapping = _openclaw_native_child_completion_mapping(
+        adapter,
+        payload,
+        requester_session_id=requester_session_id,
+        completion_run_id=completion_run_id,
+    )
+    if mapping is None:
+        return denied
+    current_context = _native_child_completion_context(
+        adapter,
+        session_id=mapping["parent_session_id"],
+        trace_id=mapping["parent_trace_id"],
+        model=model,
+    )
+    if not current_context or response_hash(current_context) != prepared_hash:
+        return denied
+    gate = _handle_outbound_gate(
+        adapter,
+        session_id=mapping["parent_session_id"],
+        trace_id=mapping["parent_trace_id"],
+        final_response=final_response,
+        outbound_payload=outbound_payload,
+        model=model,
+    )
+    return {
+        **gate,
+        "completionRunId": completion_run_id,
+        "parentSessionId": mapping["parent_session_id"],
+        "parentTraceId": mapping["parent_trace_id"],
+    }
+
+
+def _handle_delivery_action(
+    adapter: Any,
+    payload: dict[str, Any],
+    *,
+    action: str,
+    session_id: str,
+    trace_id: str,
+    model: str,
+) -> dict[str, Any] | None:
+    """Dispatch one exact final-delivery action, or decline the action."""
+
+    if action == "native_child_prepare":
+        return _handle_native_child_prepare(
+            adapter,
+            payload,
+            session_id=session_id,
+            trace_id=trace_id,
+        )
+    if action == "native_child_completion_prepare":
+        return _handle_native_child_completion_prepare(
+            adapter,
+            payload,
+            requester_session_id=session_id,
+            completion_run_id=trace_id,
+            model=model,
+        )
+    if action == "native_child_completion_finalize":
+        return _handle_native_child_completion_finalize(
+            adapter,
+            payload,
+            requester_session_id=session_id,
+            completion_run_id=trace_id,
+            model=model,
+        )
+    if action == "outbound_gate":
+        return _handle_outbound_gate(
+            adapter,
+            session_id=session_id,
+            trace_id=trace_id,
+            final_response=_bounded_string(
+                payload,
+                "finalResponse",
+                limit=MAX_INPUT_BYTES,
+            ),
+            outbound_payload=_bounded_string(
+                payload,
+                "outboundPayload",
+                limit=MAX_INPUT_BYTES,
+            ),
+            model=model,
+        )
+    if action == "native_error":
+        return _handle_native_error(
+            adapter,
+            payload,
+            session_id=session_id,
+            trace_id=trace_id,
+        )
+    return None
+
+
+def _handle_native_child_receipt_action(
+    adapter: OpenClawAdapter,
+    payload: dict[str, Any],
+    *,
+    action: str,
+    session_id: str,
+    trace_id: str,
+) -> dict[str, Any] | None:
+    """Persist one OpenClaw child receipt, or decline the action."""
+
+    if action == "native_child_terminal_observed":
+        if not session_id:
+            return {}
+        worker_id = _bounded_string(payload, "workerId", limit=256)
+        if not worker_id:
+            return {}
+        outcome = _bounded_string(payload, "outcome", limit=32) or "unknown"
+        receipt = adapter.store.record_native_child_terminal_observed(
+            host="openclaw",
+            backend="sessions_spawn",
+            requester_session_id=session_id,
+            parent_trace_id=trace_id,
+            work_unit_id=_bounded_string(payload, "workUnitId", limit=160),
+            worker_id=worker_id,
+            native_run_id=_bounded_string(payload, "nativeRunId", limit=256),
+            launch_id=_bounded_string(payload, "launchId", limit=512),
+            outcome=outcome,
+        )
+        return {
+            "recorded": receipt is not None,
+            "outcome": str(receipt.get("outcome") or "") if receipt else "",
+        }
+
+    if action == "native_child_delivery_observed":
+        if not session_id:
+            return {}
+        worker_id = _bounded_string(payload, "workerId", limit=256)
+        response_digest = _bounded_string(payload, "responseHash", limit=65)
+        delivery_success = payload.get("success")
+        if not worker_id or not response_digest or not isinstance(delivery_success, bool):
+            return {}
+        receipt = adapter.store.record_openclaw_native_child_delivery(
+            requester_session_id=session_id,
+            parent_trace_id=trace_id,
+            work_unit_id=_bounded_string(payload, "workUnitId", limit=160),
+            worker_id=worker_id,
+            native_run_id=_bounded_string(payload, "nativeRunId", limit=256),
+            launch_id=_bounded_string(payload, "launchId", limit=512),
+            response_hash=response_digest,
+            success=delivery_success,
+        )
+        return {
+            "recorded": receipt is not None,
+            "deliveryStatus": (str(receipt.get("native_delivery_status") or "") if receipt else ""),
+        }
+
+    if action == "native_child_pending_reconcile":
+        return {
+            "reconciled": adapter.store.reconcile_openclaw_pending_native_child_deliveries(),
+            "runtimeEnabled": True,
+        }
+
+    return None
 
 
 def _handle_observation_action(
@@ -1150,6 +1744,16 @@ def _handle_observation_action(
     trace_id: str,
 ) -> dict[str, Any] | None:
     """Persist one fail-open host observation, or decline the action."""
+
+    native_child = _handle_native_child_receipt_action(
+        adapter,
+        payload,
+        action=action,
+        session_id=session_id,
+        trace_id=trace_id,
+    )
+    if native_child is not None:
+        return native_child
 
     if action == "post_tool_call":
         tool_input = payload.get("toolInput")
@@ -1166,6 +1770,20 @@ def _handle_observation_action(
             session_id=session_id,
             trace_id=effective_trace,
         )
+        if payload.get("includeHeaderContext") is True:
+            context = _header_snapshot_context(
+                adapter,
+                session_id=session_id,
+                trace_id=effective_trace,
+                model=_bounded_string(payload, "model", limit=MAX_MODEL_CHARS),
+            )
+            if context:
+                context = context.replace(
+                    "[AGENCY INITIAL HEADER SNAPSHOT v2]",
+                    "[AGENCY UPDATED HEADER SNAPSHOT v2]",
+                    1,
+                )
+                return {"context": context, "runtimeEnabled": True}
         return {}
 
     if action == "post_api_request":
@@ -1177,6 +1795,13 @@ def _handle_observation_action(
             limit=MAX_MODEL_CHARS,
         )
         resolved_model = _bounded_string(payload, "resolvedModel", limit=MAX_MODEL_CHARS)
+        source = _bounded_string(payload, "source", limit=128)
+        if source == "openclaw-litellm-router" and not resolved_provider and not resolved_model:
+            # OpenClaw exposes the requested LiteLLM alias, not the router
+            # answering model. Persisting that alias-only event would create a
+            # new evidence revision after the model authored its header, while
+            # still providing no actual-model evidence.
+            return {}
         adapter.post_api_request_handler(
             requested_model=requested_model,
             model=requested_model,
@@ -1185,7 +1810,7 @@ def _handle_observation_action(
             resolved_model=resolved_model,
             resolved_provider=resolved_provider,
             model_id=_bounded_string(payload, "modelId", limit=MAX_MODEL_CHARS),
-            source=_bounded_string(payload, "source", limit=128) or "openclaw-model-call",
+            source=source or "openclaw-model-call",
             status=_bounded_string(payload, "status", limit=64) or "success",
             session_id=session_id,
             trace_id=trace_id,
@@ -1197,6 +1822,7 @@ def _handle_observation_action(
             return {}
         worker_id = _bounded_string(payload, "workerId", limit=256)
         native_run_id = _bounded_string(payload, "nativeRunId", limit=256)
+        launch_id = _bounded_string(payload, "launchId", limit=512)
         work_unit_id = _bounded_string(payload, "workUnitId", limit=160)
         goal = _bounded_string(payload, "goal", limit=MAX_INPUT_BYTES)
         if not worker_id or not native_run_id:
@@ -1204,41 +1830,82 @@ def _handle_observation_action(
         if work_unit_id or goal:
             adapter.post_tool_call_handler(
                 tool_name="sessions_spawn",
-                args={"prompt": goal, "work_unit_id": work_unit_id},
+                args={"task": goal, "taskName": work_unit_id},
                 result={
                     "childSessionKey": worker_id,
-                    "native_run_id": native_run_id,
+                    "runId": native_run_id,
                 },
                 session_id=session_id,
                 trace_id=trace_id,
             )
-            return {}
-        adapter.store.record_native_child_started(
+        else:
+            adapter.store.record_native_child_started(
+                host="openclaw",
+                backend="sessions_spawn",
+                session_id=session_id,
+                trace_id=trace_id,
+                work_unit_id=work_unit_id,
+                worker_id=worker_id,
+                native_run_id=native_run_id,
+            )
+        launch_bound = bool(
+            launch_id
+            and adapter.store.bind_native_child_launch(
+                host="openclaw",
+                session_id=session_id,
+                trace_id=trace_id,
+                worker_id=worker_id,
+                native_run_id=native_run_id,
+                launch_id=launch_id,
+            )
+        )
+        recorded_child = adapter.store.get_native_child_run(
             host="openclaw",
-            backend="sessions_spawn",
             session_id=session_id,
             trace_id=trace_id,
-            work_unit_id=work_unit_id,
             worker_id=worker_id,
             native_run_id=native_run_id,
         )
-        return {}
+        return {
+            "recorded": recorded_child is not None,
+            "launchBound": launch_bound,
+            "workUnitId": (
+                str(recorded_child.get("work_unit_id") or "")
+                if isinstance(recorded_child, dict)
+                else ""
+            ),
+        }
 
     if action == "native_child_ended":
-        if not session_id or not trace_id:
+        if not session_id:
             return {}
-        adapter.store.record_native_child_ended(
+        outcome = _bounded_string(payload, "outcome", limit=32) or "unknown"
+        if trace_id:
+            adapter.store.record_native_child_ended(
+                host="openclaw",
+                backend="sessions_spawn",
+                session_id=session_id,
+                trace_id=trace_id,
+                work_unit_id=_bounded_string(payload, "workUnitId", limit=160),
+                worker_id=payload.get("workerId"),
+                native_run_id=payload.get("nativeRunId"),
+                outcome=outcome,
+                error=payload.get("error"),
+            )
+            return {"recorded": True}
+        worker_id = _bounded_string(payload, "workerId", limit=256)
+        if not worker_id:
+            return {}
+        terminal = adapter.store.reconcile_native_child_ended(
             host="openclaw",
             backend="sessions_spawn",
-            session_id=session_id,
-            trace_id=trace_id,
-            work_unit_id=_bounded_string(payload, "workUnitId", limit=160),
-            worker_id=payload.get("workerId"),
-            native_run_id=payload.get("nativeRunId"),
-            outcome=_bounded_string(payload, "outcome", limit=32) or "unknown",
+            requester_session_id=session_id,
+            worker_id=worker_id,
+            native_run_id=_bounded_string(payload, "nativeRunId", limit=256),
+            outcome=outcome,
             error=payload.get("error"),
         )
-        return {}
+        return {"recorded": terminal is not None}
 
     return None
 
@@ -1326,6 +1993,14 @@ def handle(
         )
         return {**result, "runtimeEnabled": True}
 
+    if action == "finalize":
+        return _handle_finalize_tool(
+            adapter,
+            payload,
+            session_id=session_id,
+            trace_id=trace_id,
+        )
+
     if action == "pre_verify":
         return _handle_pre_verify(
             adapter,
@@ -1335,23 +2010,16 @@ def handle(
             model=model,
         )
 
-    if action == "outbound_gate":
-        return _handle_outbound_gate(
-            adapter,
-            session_id=session_id,
-            trace_id=trace_id,
-            final_response=_bounded_string(
-                payload,
-                "finalResponse",
-                limit=MAX_INPUT_BYTES,
-            ),
-            outbound_payload=_bounded_string(
-                payload,
-                "outboundPayload",
-                limit=MAX_INPUT_BYTES,
-            ),
-            model=model,
-        )
+    delivery = _handle_delivery_action(
+        adapter,
+        payload,
+        action=action,
+        session_id=session_id,
+        trace_id=trace_id,
+        model=model,
+    )
+    if delivery is not None:
+        return delivery
 
     observation = _handle_observation_action(
         adapter,
@@ -1438,7 +2106,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         encoded = json.dumps(result, ensure_ascii=True, separators=(",", ":"))
     sys.stdout.write(encoded)
     sys.stdout.write("\n")
-    return 0 if "error" not in result else 2
+    return 2 if result.get("error") else 0
 
 
 if __name__ == "__main__":  # pragma: no cover - exercised by subprocess tests

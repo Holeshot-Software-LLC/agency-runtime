@@ -51,6 +51,7 @@ from agency_runtime.core.workforce.hybrid_recall import (
     discover_hybrid_recall,
 )
 from agency_runtime.core.workforce.intent import (
+    COMPACT_INTENT_REPAIR_SYSTEM,
     COMPACT_INTENT_RESPONSE_SCHEMA,
     COMPACT_INTENT_SYSTEM,
     MAX_PRIMARY_UNITS,
@@ -61,6 +62,7 @@ from agency_runtime.core.workforce.intent import (
 from agency_runtime.core.workforce.plan_policy import (
     plan_policy_repair_guidance,
     plan_policy_violations,
+    plan_semantic_validation_reason_codes,
     planner_acceptance_contract,
 )
 from agency_runtime.core.workforce.planning_contracts import (
@@ -513,6 +515,7 @@ class WorkforceInferenceAttempt:
     reason_code: str
     latency_ms: int
     validation_detail: str = ""
+    validation_reason_codes: tuple[str, ...] = ()
     input_count: int = 0
     dimensions: int = 0
     candidate_count: int = 0
@@ -1044,6 +1047,7 @@ def _attempt(
     reason_code: str,
     result: StructuredProviderResult | None = None,
     validation_detail: str = "",
+    validation_reason_codes: Sequence[str] = (),
 ) -> WorkforceInferenceAttempt:
     return WorkforceInferenceAttempt(
         stage=stage,
@@ -1057,6 +1061,7 @@ def _attempt(
         reason_code=reason_code,
         latency_ms=0 if result is None else result.latency_ms,
         validation_detail=validation_detail,
+        validation_reason_codes=tuple(validation_reason_codes),
     )
 
 
@@ -1072,6 +1077,16 @@ def _validation_detail(error: BaseException) -> str:
     ):
         return detail
     return detail[:256]
+
+
+def _validation_reason_codes(stage: str, error: BaseException) -> tuple[str, ...]:
+    """Return content-free planner rejection codes for durable receipts."""
+
+    if isinstance(error, _PlanPolicyValidationError):
+        return error.violations
+    if stage == "planner":
+        return plan_semantic_validation_reason_codes(error)
+    return ()
 
 
 def _invoke_stage(
@@ -1122,6 +1137,7 @@ def _invoke_stage(
                 parsed = parser(result.value)
             except (KeyError, TypeError, ValueError) as exc:
                 detail = _validation_detail(exc)
+                validation_reason_codes = _validation_reason_codes(stage, exc)
                 attempts.append(
                     _attempt(
                         stage,
@@ -1130,6 +1146,7 @@ def _invoke_stage(
                         reason_code="provider_response_contract_invalid",
                         result=result,
                         validation_detail=detail,
+                        validation_reason_codes=validation_reason_codes,
                     )
                 )
                 if semantic_attempt + 1 < max_semantic_attempts:
@@ -1176,18 +1193,42 @@ def _invoke_stage(
                             )
                         )
                     elif isinstance(exc, _PlanPolicyValidationError):
-                        current_system_prompt = system_prompt
+                        current_system_prompt = COMPACT_INTENT_REPAIR_SYSTEM
                         current_prompt = (
                             f"{prompt}\n\n[RUNTIME VALIDATION FEEDBACK]\n"
                             + _json_prompt(
                                 {
                                     "prior_plan_status": "rejected",
                                     "required_action": (
-                                        "Return one complete replacement plan authored by inference. "
-                                        "Keep every valid necessary unit, add or reorder the missing "
-                                        "units, and make every dependency point to an earlier unit."
+                                        "Return one complete replacement compact plan authored by "
+                                        "inference. Use only supplied-schema fields, preserve every "
+                                        "necessary valid unit, apply every required correction, and "
+                                        "make every dependency point to an earlier unit. Verify that "
+                                        "none of the listed codes remains before returning."
                                     ),
+                                    "validation_reason_codes": list(exc.violations),
                                     "violations": list(plan_policy_repair_guidance(exc.violations)),
+                                }
+                            )
+                        )
+                    elif stage == "planner":
+                        current_system_prompt = COMPACT_INTENT_REPAIR_SYSTEM
+                        current_prompt = (
+                            f"{prompt}\n\n[RUNTIME VALIDATION FEEDBACK]\n"
+                            + _json_prompt(
+                                {
+                                    "prior_plan_status": "rejected",
+                                    "validation_reason_codes": list(validation_reason_codes),
+                                    "deterministic_validation_detail": detail,
+                                    "violations": list(
+                                        plan_policy_repair_guidance(validation_reason_codes)
+                                    ),
+                                    "required_action": (
+                                        "Return one complete replacement compact plan authored by "
+                                        "inference. Use only supplied-schema fields and correct the "
+                                        "deterministic semantic contract failure without weakening "
+                                        "the original plan acceptance contract."
+                                    ),
                                 }
                             )
                         )
@@ -2940,9 +2981,11 @@ def plan_and_staff_workforce(
         requested_limit=max_planned_units,
         explicit_indivisible_unit=explicit_indivisible_unit,
     )
+    _, _, planner_capability_ids = _known_intent_vocabulary(snapshot)
     planner_schema = compact_intent_response_schema(
         max_work_units=planning_unit_limit,
         required_artifact_kind=required_planned_artifact_kind,
+        known_capability_ids=planner_capability_ids,
     )
 
     # Every inferred mode spends its first call on a compact intent plan. Full

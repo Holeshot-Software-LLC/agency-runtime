@@ -16,6 +16,9 @@ import pytest
 from agency_runtime.core import installer_payloads, process_argv
 from agency_runtime.core.config import (
     AgencyConfig,
+    HarnessInferenceConfig,
+    InferenceConfig,
+    InferenceProfile,
     JudgeConfig,
     OllamaConfig,
     ProviderEntry,
@@ -166,6 +169,7 @@ class FakeNativeRunner:
                     "enabled": True,
                     "loaded": True,
                     "hooks": sorted(OPENCLAW_REQUIRED_HOOKS),
+                    "contracts": {"agentToolResultMiddleware": ["openclaw"]},
                 }
             return {
                 "returncode": 0,
@@ -602,6 +606,52 @@ def test_generated_hook_timeout_covers_default_fast_stage_repair_budget() -> Non
     codex_hooks = json.loads(codex_files["plugins/agency-preflight/hooks/hooks.json"])
     handler = codex_hooks["hooks"]["UserPromptSubmit"][0]["hooks"][0]
     assert handler["timeout"] == 125
+
+
+def test_openclaw_native_child_timeout_uses_static_harness_profile() -> None:
+    cfg = AgencyConfig(
+        inference=InferenceConfig(
+            profiles={
+                "openclaw-router": InferenceProfile(
+                    name="openclaw-router",
+                    adapter="litellm",
+                    model="task-agency-router",
+                    base_url="http://proxy.invalid/v1",
+                    api_key_env="LITELLM_TEST_KEY",
+                    timeout_ms=120_000,
+                ),
+                "hermes-router": InferenceProfile(
+                    name="hermes-router",
+                    adapter="litellm",
+                    model="hermes-test-router",
+                    base_url="http://proxy.invalid/v1",
+                    api_key_env="LITELLM_TEST_KEY",
+                    timeout_ms=30_000,
+                ),
+            },
+            harnesses={
+                "openclaw": HarnessInferenceConfig(default_profile="openclaw-router"),
+                "hermes": HarnessInferenceConfig(default_profile="hermes-router"),
+            },
+        )
+    )
+
+    openclaw_files, _ = _bundle_files("openclaw", cfg)
+    bridge = openclaw_files["index.js"]
+    before_tool_call = bridge.split('api.on("before_tool_call"', 1)[1].split(
+        "api.registerAgentToolResultMiddleware", 1
+    )[0]
+
+    assert "function invokeAgency(payload, processTimeoutMs = 125000)" in bridge
+    assert before_tool_call.rstrip().endswith("}, { timeoutMs: 127000 });")
+
+    # The native-child extension is OpenClaw-only. It must not change the
+    # generated timeout for the Hermes bridge or other host hook bundles.
+    hermes_files, _ = _bundle_files("hermes", cfg)
+    assert "_TIMEOUT_SECONDS = 80" in hermes_files["__init__.py"]
+    codex_files, _ = _bundle_files("codex", cfg)
+    codex_hooks = json.loads(codex_files["plugins/agency-preflight/hooks/hooks.json"])
+    assert codex_hooks["hooks"]["UserPromptSubmit"][0]["hooks"][0]["timeout"] == 80
 
 
 def test_codex_windows_hook_command_is_inert_powershell_argv(
@@ -1375,6 +1425,7 @@ def test_openclaw_refuses_install_that_would_silently_restart_live_gateway(
     ("version", "supported"),
     [
         ("OpenClaw 2026.7.1", True),
+        ("OpenClaw 2026.7.1-2 (0790d9f)", True),
         ("openclaw v2026.7.2+build.9", True),
         ("OpenClaw 2026.7.999", True),
         ("OpenClaw 2026.8.0", False),
@@ -1516,7 +1567,11 @@ def test_openclaw_runtime_metadata_without_loaded_fact_stays_unverified(
 def test_openclaw_runtime_contract_accepts_official_typed_hook_report(tmp_path: Path) -> None:
     runner = FakeNativeRunner(
         runtime_payload={
-            "plugin": {"id": "agency-preflight", "status": "loaded"},
+            "plugin": {
+                "id": "agency-preflight",
+                "status": "loaded",
+                "contracts": {"agentToolResultMiddleware": ["openclaw"]},
+            },
             "typedHooks": [{"name": name} for name in sorted(OPENCLAW_REQUIRED_HOOKS)],
         }
     )
@@ -1534,6 +1589,8 @@ def test_openclaw_runtime_contract_accepts_official_typed_hook_report(tmp_path: 
     )
     assert runtime_step["loaded"] is True
     assert runtime_step["missing_required_hooks"] == []
+    assert runtime_step["tool_result_middleware_runtimes"] == ["openclaw"]
+    assert runtime_step["tool_result_middleware_contract_proven"] is True
     assert runtime_step["registration_contract_proven"] is True
     assert runtime_step["delivery_behavior_proven"] is False
     assert runtime_step["runtime_contract_scope"] == "registration_only"
@@ -1543,13 +1600,54 @@ def test_openclaw_runtime_contract_accepts_official_typed_hook_report(tmp_path: 
     }
 
 
-def test_openclaw_runtime_contract_fails_closed_when_one_hook_is_missing(
+def test_openclaw_runtime_contract_fails_closed_without_tool_result_middleware(
     tmp_path: Path,
 ) -> None:
-    hooks = sorted(OPENCLAW_REQUIRED_HOOKS - {"message_sending"})
     runner = FakeNativeRunner(
         runtime_payload={
-            "plugin": {"id": "agency-preflight", "status": "loaded"},
+            "plugin": {
+                "id": "agency-preflight",
+                "status": "loaded",
+            },
+            "typedHooks": [{"name": name} for name in sorted(OPENCLAW_REQUIRED_HOOKS)],
+        }
+    )
+
+    result = install_agent_adapter(
+        "openclaw",
+        home_dir=tmp_path,
+        binary_resolver=_resolver("openclaw"),
+        command_runner=runner,
+    )
+
+    assert result["ok"] is False
+    assert result["failed_step"] == "runtime_inspect_unproven"
+    runtime_step = next(
+        step for step in result["native_steps"] if step["name"] == "runtime_inspect"
+    )
+    assert runtime_step["missing_required_hooks"] == []
+    assert runtime_step["tool_result_middleware_runtimes"] == []
+    assert runtime_step["tool_result_middleware_contract_proven"] is False
+    assert runtime_step["registration_contract_proven"] is False
+    assert "agency-preflight" in runner.openclaw_disabled
+
+
+@pytest.mark.parametrize(
+    "missing_hook",
+    ["message_sending", "message_sent", "agent_end"],
+)
+def test_openclaw_runtime_contract_fails_closed_when_one_hook_is_missing(
+    missing_hook: str,
+    tmp_path: Path,
+) -> None:
+    hooks = sorted(OPENCLAW_REQUIRED_HOOKS - {missing_hook})
+    runner = FakeNativeRunner(
+        runtime_payload={
+            "plugin": {
+                "id": "agency-preflight",
+                "status": "loaded",
+                "contracts": {"agentToolResultMiddleware": ["openclaw"]},
+            },
             "typedHooks": [{"name": name} for name in hooks],
         }
     )
@@ -1566,7 +1664,7 @@ def test_openclaw_runtime_contract_fails_closed_when_one_hook_is_missing(
     runtime_step = next(
         step for step in result["native_steps"] if step["name"] == "runtime_inspect"
     )
-    assert runtime_step["missing_required_hooks"] == ["message_sending"]
+    assert runtime_step["missing_required_hooks"] == [missing_hook]
     assert "agency-preflight" in runner.openclaw_disabled
 
 
@@ -1579,7 +1677,11 @@ def test_openclaw_runtime_contract_rejects_explicit_nonterminal_priority(
             hook["priority"] = -1000
     runner = FakeNativeRunner(
         runtime_payload={
-            "plugin": {"id": "agency-preflight", "status": "loaded"},
+            "plugin": {
+                "id": "agency-preflight",
+                "status": "loaded",
+                "contracts": {"agentToolResultMiddleware": ["openclaw"]},
+            },
             "typedHooks": typed_hooks,
         }
     )
@@ -1622,7 +1724,11 @@ def test_openclaw_runtime_priority_metadata_is_not_guessed(
             hook["priority"] = priority
     runner = FakeNativeRunner(
         runtime_payload={
-            "plugin": {"id": "agency-preflight", "status": "loaded"},
+            "plugin": {
+                "id": "agency-preflight",
+                "status": "loaded",
+                "contracts": {"agentToolResultMiddleware": ["openclaw"]},
+            },
             "typedHooks": typed_hooks,
         }
     )

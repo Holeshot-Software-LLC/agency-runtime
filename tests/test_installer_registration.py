@@ -32,7 +32,11 @@ def _json_result(value: Any, *, returncode: int = 0) -> dict[str, Any]:
 
 def _openclaw_runtime_payload() -> dict[str, Any]:
     return {
-        "plugin": {"id": "agency-preflight", "status": "loaded"},
+        "plugin": {
+            "id": "agency-preflight",
+            "status": "loaded",
+            "contracts": {"agentToolResultMiddleware": ["openclaw"]},
+        },
         "typedHooks": [
             {
                 "name": name,
@@ -303,6 +307,7 @@ def test_openclaw_policy_rollback_retains_final_only_when_disable_is_unproven(
                 _result(),
                 _result(),
                 _result(),
+                _result(),
                 _json_result(_openclaw_runtime_payload()),
             ],
             commands=[
@@ -338,6 +343,13 @@ def test_openclaw_policy_rollback_retains_final_only_when_disable_is_unproven(
                 ],
                 [
                     "openclaw",
+                    "config",
+                    "set",
+                    "plugins.entries.agency-preflight.hooks.allowPromptInjection",
+                    "true",
+                ],
+                [
+                    "openclaw",
                     "plugins",
                     "inspect",
                     "agency-preflight",
@@ -352,6 +364,7 @@ def test_openclaw_policy_rollback_retains_final_only_when_disable_is_unproven(
                 "install",
                 "enable",
                 "conversation_access",
+                "prompt_injection",
                 "runtime_inspect",
             ],
         ),
@@ -706,6 +719,7 @@ def test_openclaw_existing_plugin_install_condition_is_exact(
         [
             _result(),
             _result(),
+            _result(),
             _json_result(_openclaw_runtime_payload()),
         ]
     )
@@ -758,6 +772,38 @@ def test_openclaw_gateway_gate_stops_before_any_mutating_command(
     assert [step["name"] for step in steps] == ["gateway_status"]
     assert steps[0]["gateway_state"] == state
     assert len(runner.commands) == 1
+    assert runner.exhausted
+
+
+def test_openclaw_gateway_gate_accepts_explicit_nested_stopped_status() -> None:
+    runner = _SequenceRunner(
+        [
+            _json_result(
+                {
+                    "service": {
+                        "runtime": {
+                            "status": "stopped",
+                            "state": "inactive",
+                            "subState": "dead",
+                        }
+                    },
+                    "rpc": {"ok": False},
+                },
+                returncode=1,
+            )
+        ]
+    )
+
+    live, probe = registration.openclaw_gateway_live(
+        home_dir=Path("isolated-home"),
+        command_runner=runner,
+    )
+
+    assert live is False
+    assert probe.returncode == 1
+    assert runner.commands == [
+        ["openclaw", "gateway", "status", "--deep", "--require-rpc", "--json"]
+    ]
     assert runner.exhausted
 
 
@@ -843,6 +889,29 @@ def test_openclaw_gateway_gate_stops_before_any_mutating_command(
                 _json_result({"id": "agency-preflight"}),
                 _result(),
                 _result(),
+                _result(returncode=1),
+                *_OPENCLAW_POLICY_RESTORE_RESPONSES,
+            ],
+            steps=[
+                "gateway_status",
+                *_OPENCLAW_POLICY_STEPS,
+                "inspect_existing",
+                "enable",
+                "conversation_access",
+                "prompt_injection",
+                *_OPENCLAW_POLICY_RESTORE_STEPS,
+            ],
+            failed_step="prompt_injection",
+        ),
+        _FailureCase(
+            host="openclaw",
+            responses=[
+                _json_result({"running": False}),
+                *_OPENCLAW_POLICY_RESPONSES,
+                _json_result({"id": "agency-preflight"}),
+                _result(),
+                _result(),
+                _result(),
                 _json_result({"id": "agency-preflight"}),
                 *_OPENCLAW_POLICY_RESTORE_RESPONSES,
             ],
@@ -852,6 +921,7 @@ def test_openclaw_gateway_gate_stops_before_any_mutating_command(
                 "inspect_existing",
                 "enable",
                 "conversation_access",
+                "prompt_injection",
                 "runtime_inspect",
                 *_OPENCLAW_POLICY_RESTORE_STEPS,
             ],

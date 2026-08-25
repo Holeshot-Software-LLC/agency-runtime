@@ -51,6 +51,7 @@ Status meanings:
 - ADR-0065 Keep a compact resident manager kernel at the parent boundary → ADR-0122 Use one Agency-native resident steward
 - ADR-0127 Bind opaque Codex children through exact plan labels → ADR-0128 Persist exact Codex plan authority and serialize opaque launches
 - ADR-0124 Grade product trials against the inferred unit graph → ADR-0133 Treat product specialist loads as turn-scoped
+- ADR-0165 Keep LiteLLM inference profiles model-agnostic → ADR-0166 Delegate exact schema translation to LiteLLM
 
 ## Architecture and integrations
 
@@ -66,6 +67,8 @@ Status meanings:
 | [ADR-0050](0050-isolate-installed-python-module-resolution.md) | Isolate installed Python module resolution from host workspaces | Accepted |
 | [ADR-0108](0108-retire-only-owned-host-integrations.md) | Retire only ownership-proven host integrations | Accepted |
 | [ADR-0155](0155-defer-agent-plugins-conformance-to-client-adoption.md) | Defer Agent Plugins conformance to client adoption | Accepted |
+| [ADR-0169](0169-deliver-openclaw-native-errors-through-exact-terminal-evidence.md) | Deliver OpenClaw native errors through exact terminal evidence | Accepted |
+| [ADR-0170](0170-authorize-finalized-openclaw-child-announcements.md) | Authorize finalized OpenClaw child announcements | Accepted |
 
 ## Routing, policy, and providers
 
@@ -130,6 +133,8 @@ Status meanings:
 | [ADR-0158](0158-collect-child-canary-proof-inside-disposable-host-profiles.md) | Collect child-canary proof inside disposable host profiles | Accepted |
 | [ADR-0159](0159-authenticate-codex-plaintext-spawns-from-host-transcripts.md) | Authenticate Codex plaintext spawns from host transcripts | Accepted |
 | [ADR-0160](0160-pin-child-judge-providers-per-canary-harness.md) | Pin child-judge providers per canary harness | Accepted |
+| [ADR-0167](0167-authorize-openclaw-native-skill-reads-from-inventory.md) | Authorize OpenClaw native skill reads from inventory | Accepted |
+| [ADR-0168](0168-refresh-openclaw-headers-through-awaited-tool-results.md) | Refresh OpenClaw headers through awaited tool results | Accepted |
 
 ## State and roster governance
 
@@ -233,6 +238,8 @@ Status meanings:
 | [ADR-0152](0152-fail-open-with-honest-header-when-no-specialist.md) | Fail open with an honest header when no specialist is selected | Accepted |
 | [ADR-0153](0153-adopt-per-stage-inference-profile-routes.md) | Adopt per-stage inference profile routes | Accepted |
 | [ADR-0154](0154-plain-text-cli-cards-over-rich-dependency.md) | Plain-text CLI cards over a rich dependency | Accepted |
+| [ADR-0165](0165-keep-litellm-inference-profiles-model-agnostic.md) | Keep LiteLLM inference profiles model-agnostic | Superseded |
+| [ADR-0166](0166-delegate-exact-schema-translation-to-litellm.md) | Delegate exact schema translation to LiteLLM | Accepted |
 
 ## Documentation governance
 

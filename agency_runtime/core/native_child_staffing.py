@@ -15,7 +15,7 @@ import secrets
 import sys
 from collections.abc import Callable, Container, Mapping, Sequence
 from contextlib import nullcontext
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime, timedelta, timezone
 from hashlib import sha256
 from typing import Any, Final
@@ -58,6 +58,7 @@ from agency_runtime.core.selector.judge import query_judge
 from agency_runtime.core.selector.receipt_projection import project_model_receipt_attempts
 from agency_runtime.core.specialist_contracts import MAX_SPECIALIST_PROMPT_CHARS
 from agency_runtime.core.store.version_identity import normalize_version_identity
+from agency_runtime.core.workforce.inference import configured_workforce_providers
 
 MAX_NATIVE_CHILD_STAFFING_DELIVERY_BYTES: Final[int] = 48_000
 NATIVE_CHILD_STAFFING_TTL_SECONDS: Final[int] = 60
@@ -1059,6 +1060,24 @@ def staff_native_child(  # noqa: C901 - one ordered fail-open native-child bound
             normalized_host,
             os.environ,
         )
+        if not requested_provider:
+            projected_providers = configured_workforce_providers(
+                snapshot.config,
+                stage="recruiter",
+                route_key="workforce.recruiter",
+                harness=normalized_host,
+            )
+            projected_judge = judge_config.judge
+            if normalized_host == "openclaw" and len(projected_providers) == 1:
+                projected_judge = replace(
+                    projected_judge,
+                    timeout=projected_providers[0].timeout,
+                )
+            judge_config = replace(
+                judge_config,
+                judge=projected_judge,
+                providers=projected_providers,
+            )
     except CanaryChildJudgeProviderError:
         return _unstaffed(
             store=store,

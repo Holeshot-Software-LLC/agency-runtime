@@ -6,6 +6,9 @@ created: 2026-08-12
 updated: 2026-08-12
 tags: [evidence, native-child, hosts, routing, correlation]
 related:
+  - docs/roadmap/issue-AR-282-deliver-finalized-openclaw-child-announcements.md
+  - docs/roadmap/issue-AR-283-persist-openclaw-child-terminals-after-delivery.md
+  - docs/decisions/0170-authorize-finalized-openclaw-child-announcements.md
   - docs/decisions/0027-authoritative-runtime-evidence-traces.md
   - docs/decisions/0118-require-inference-owned-staffing.md
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
@@ -15,6 +18,7 @@ related:
   - docs/roadmap/issue-AR-255-inference-owned-host-proven-child-staffing.md
   - docs/roadmap/issue-AR-256-canonical-nine-rule-completion-contract.md
   - docs/roadmap/issue-AR-260-accept-verified-launch-bindings-in-outcome-canary.md
+  - docs/roadmap/issue-AR-281-route-native-children-through-host-profiles.md
   - docs/decisions/0157-automatically-promote-host-verified-contractors.md
   - docs/decisions/0158-collect-child-canary-proof-inside-disposable-host-profiles.md
   - agency_runtime/core/child_delivery_evidence.py

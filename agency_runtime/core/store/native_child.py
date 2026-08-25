@@ -85,7 +85,8 @@ class NativeChildStoreMixin:
 
         rows = conn.execute(
             "SELECT id, delegation_event_id, backend, session_id, trace_id, "
-            "work_unit_id, host, worker_id, native_run_id, exit_code, started_at, ended_at "
+            "work_unit_id, host, worker_id, native_run_id, exit_code, started_at, ended_at, "
+            "native_delivery_status "
             "FROM worker_runs WHERE delegation_event_id = ? ORDER BY rowid LIMIT 2",
             (delegation_event_id,),
         ).fetchall()
@@ -604,6 +605,154 @@ class NativeChildStoreMixin:
         finally:
             conn.close()
 
+    def resolve_openclaw_native_child_completion(
+        self,
+        *,
+        requester_session_id: str,
+        completion_run_id: str,
+        parent_session_id: str,
+        parent_trace_id: str,
+        worker_id: str,
+        native_run_id: str,
+        launch_id: str,
+        work_unit_id: str,
+    ) -> dict[str, str] | None:
+        """Resolve one live OpenClaw announce run to its exact parent turn.
+
+        OpenClaw creates an internal ``announce:v1`` agent run after a native
+        child finishes its work but before the host emits ``subagent_ended``.
+        That internal run is not an Agency turn.  It may borrow the parent's
+        Store-backed header and finalization path only while every persisted
+        launch identity remains reciprocal, unique, ready, and open.
+
+        This is deliberately a read-only resolver.  In particular it never
+        creates a run for the synthetic announce identity.
+        """
+
+        normalized_requester = validate_correlation_id(
+            requester_session_id,
+            field="requester_session_id",
+        )
+        normalized_completion = validate_correlation_id(
+            completion_run_id,
+            field="completion_run_id",
+        )
+        normalized_parent_session = validate_correlation_id(
+            parent_session_id,
+            field="parent_session_id",
+        )
+        normalized_parent_trace = validate_correlation_id(
+            parent_trace_id,
+            field="parent_trace_id",
+        )
+        normalized_worker = _identity(
+            worker_id,
+            maximum=MAX_DELEGATION_WORKER_ID_CHARS,
+            field="worker_id",
+        )
+        normalized_run = _identity(
+            native_run_id,
+            maximum=MAX_DELEGATION_NATIVE_RUN_ID_CHARS,
+            field="native_run_id",
+        )
+        normalized_launch = validate_correlation_id(launch_id, field="launch_id")
+        normalized_unit = _identity(
+            work_unit_id,
+            maximum=MAX_DELEGATION_WORK_UNIT_ID_CHARS,
+            field="work_unit_id",
+        )
+        expected_completion = f"announce:v1:{normalized_worker}:{normalized_run}"
+        if normalized_completion != expected_completion:
+            return None
+        # The persisted native-child projection has one parent session.  A
+        # different requester cannot inherit that parent's delivery authority.
+        if normalized_requester != normalized_parent_session:
+            return None
+
+        conn = self._connect()
+        try:
+            conn.execute("BEGIN")
+            matches = conn.execute(
+                "SELECT wr.id AS worker_run_id, wr.session_id AS parent_session_id, "
+                "wr.trace_id AS parent_trace_id, wr.work_unit_id, wr.worker_id, "
+                "wr.native_run_id, wr.execution_tool_use_id AS launch_id, "
+                "delegation.id AS delegation_event_id "
+                "FROM worker_runs AS wr "
+                "JOIN delegation_events AS delegation "
+                "ON delegation.id = wr.delegation_event_id "
+                "JOIN runs AS parent ON parent.trace_id = wr.trace_id "
+                "WHERE wr.host = 'openclaw' AND wr.backend = 'sessions_spawn' "
+                "AND wr.session_id = ? AND wr.trace_id = ? "
+                "AND wr.work_unit_id = ? AND wr.worker_id = ? AND wr.native_run_id = ? "
+                "AND wr.execution_tool_use_id = ? "
+                "AND wr.execution_tool_use_id <> '' "
+                "AND wr.execution_dispatched_at IS NOT NULL "
+                "AND wr.started_at IS NOT NULL AND wr.ended_at IS NULL "
+                "AND wr.exit_code IS NULL "
+                "AND ('announce:v1:' || wr.worker_id || ':' || wr.native_run_id) = ? "
+                "AND delegation.trace_id = wr.trace_id "
+                "AND COALESCE(delegation.session_id, '') = wr.session_id "
+                "AND delegation.host = wr.host AND delegation.backend = wr.backend "
+                "AND COALESCE(delegation.work_unit_id, '') = wr.work_unit_id "
+                "AND delegation.executed_worker_kind = 'generic-worker' "
+                "AND delegation.executed_worker_id = wr.worker_id "
+                "AND delegation.native_run_id = wr.native_run_id "
+                "AND delegation.status = 'delegated' "
+                "AND delegation.completed_at IS NULL "
+                "AND COALESCE(parent.session_id, '') = wr.session_id "
+                "AND parent.host = 'openclaw' "
+                "AND parent.status IN ('active', 'evidence_only') "
+                "AND parent.preflight_state = 'ready' "
+                "AND parent.ended_at IS NULL "
+                "AND parent.terminal_finalization_id IS NULL "
+                "ORDER BY wr.rowid LIMIT 2",
+                (
+                    normalized_parent_session,
+                    normalized_parent_trace,
+                    normalized_unit,
+                    normalized_worker,
+                    normalized_run,
+                    normalized_launch,
+                    normalized_completion,
+                ),
+            ).fetchall()
+            if len(matches) > 1:
+                raise ValueError("OpenClaw completion matches multiple persisted parent scopes")
+            if not matches:
+                conn.rollback()
+                return None
+            match = matches[0]
+            expected_worker_id = _worker_run_id(
+                "openclaw",
+                normalized_parent_session,
+                normalized_parent_trace,
+                normalized_worker,
+                normalized_run,
+            )
+            if str(match["worker_run_id"] or "") != expected_worker_id:
+                raise ValueError("OpenClaw completion matched an invalid worker receipt")
+            result = {
+                "requester_session_id": normalized_requester,
+                "completion_run_id": normalized_completion,
+                "parent_session_id": normalized_parent_session,
+                "parent_trace_id": normalized_parent_trace,
+                "worker_id": normalized_worker,
+                "native_run_id": normalized_run,
+                "launch_id": normalized_launch,
+                "work_unit_id": normalized_unit,
+                "delegation_event_id": str(match["delegation_event_id"] or ""),
+                "worker_run_id": expected_worker_id,
+            }
+            if not result["delegation_event_id"]:
+                raise ValueError("OpenClaw completion has no reciprocal delegation")
+            conn.commit()
+            return result
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
+
     def record_codex_child_tool_evidence(
         self,
         *,
@@ -711,6 +860,521 @@ class NativeChildStoreMixin:
         finally:
             conn.close()
 
+    def record_native_child_terminal_observed(
+        self,
+        *,
+        host: str,
+        backend: str,
+        requester_session_id: str,
+        worker_id: str,
+        native_run_id: str,
+        outcome: str,
+        parent_trace_id: str = "",
+        work_unit_id: str = "",
+        launch_id: str = "",
+    ) -> dict[str, Any] | None:
+        """Persist one child-end observation without closing its worker.
+
+        OpenClaw observes the child agent ending before its separate announce
+        message reaches the channel.  This marker survives a gateway restart,
+        but deliberately leaves ``ended_at`` and ``exit_code`` untouched so a
+        post-send receipt remains the only successful completion authority.
+        """
+
+        normalized_outcome = str(outcome or "unknown").strip().lower() or "unknown"
+        if normalized_outcome not in _OUTCOME_EXIT_CODES:
+            raise ValueError("native child outcome is invalid")
+        normalized_host = _identity(
+            host,
+            maximum=MAX_DELEGATION_HOST_CHARS,
+            field="host",
+        ).lower()
+        normalized_backend = _identity(
+            backend,
+            maximum=MAX_DELEGATION_BACKEND_CHARS,
+            field="backend",
+        )
+        normalized_requester = validate_correlation_id(
+            requester_session_id,
+            field="requester_session_id",
+        )
+        normalized_trace = validate_correlation_id(
+            parent_trace_id,
+            field="parent_trace_id",
+            required=False,
+        )
+        normalized_worker = _identity(
+            worker_id,
+            maximum=MAX_DELEGATION_WORKER_ID_CHARS,
+            field="worker_id",
+        )
+        normalized_run = (
+            _identity(
+                native_run_id,
+                maximum=MAX_DELEGATION_NATIVE_RUN_ID_CHARS,
+                field="native_run_id",
+            )
+            if native_run_id
+            else ""
+        )
+        normalized_unit = (
+            _identity(
+                work_unit_id,
+                maximum=MAX_DELEGATION_WORK_UNIT_ID_CHARS,
+                field="work_unit_id",
+            )
+            if work_unit_id
+            else ""
+        )
+        normalized_launch = validate_correlation_id(
+            launch_id,
+            field="launch_id",
+            required=False,
+        )
+        conn = self._connect()
+        try:
+            conn.execute("BEGIN IMMEDIATE")
+            matches = conn.execute(
+                "SELECT wr.*, delegation.status AS delegation_status, "
+                "delegation.completed_at AS delegation_completed_at "
+                "FROM worker_runs AS wr JOIN delegation_events AS delegation "
+                "ON delegation.id = wr.delegation_event_id "
+                "WHERE wr.host = ? AND wr.backend = ? AND wr.session_id = ? "
+                "AND wr.worker_id = ? AND (? = '' OR wr.native_run_id = ?) "
+                "AND (? = '' OR wr.trace_id = ?) "
+                "AND (? = '' OR wr.work_unit_id = ?) "
+                "AND (? = '' OR wr.execution_tool_use_id = ?) "
+                "AND wr.execution_tool_use_id <> '' "
+                "AND wr.execution_dispatched_at IS NOT NULL "
+                "AND wr.started_at IS NOT NULL AND wr.ended_at IS NULL "
+                "AND wr.exit_code IS NULL "
+                "AND delegation.trace_id = wr.trace_id "
+                "AND COALESCE(delegation.session_id, '') = wr.session_id "
+                "AND delegation.host = wr.host AND delegation.backend = wr.backend "
+                "AND COALESCE(delegation.work_unit_id, '') = wr.work_unit_id "
+                "AND delegation.executed_worker_kind = 'generic-worker' "
+                "AND delegation.executed_worker_id = wr.worker_id "
+                "AND delegation.native_run_id = wr.native_run_id "
+                "AND delegation.status = 'delegated' "
+                "AND delegation.completed_at IS NULL "
+                "ORDER BY wr.rowid LIMIT 2",
+                (
+                    normalized_host,
+                    normalized_backend,
+                    normalized_requester,
+                    normalized_worker,
+                    normalized_run,
+                    normalized_run,
+                    normalized_trace,
+                    normalized_trace,
+                    normalized_unit,
+                    normalized_unit,
+                    normalized_launch,
+                    normalized_launch,
+                ),
+            ).fetchall()
+            if len(matches) > 1:
+                raise ValueError("native child end observation is ambiguous")
+            if not matches:
+                conn.rollback()
+                return None
+            row = matches[0]
+            expected_id = _worker_run_id(
+                normalized_host,
+                str(row["session_id"]),
+                str(row["trace_id"]),
+                str(row["worker_id"]),
+                str(row["native_run_id"]),
+            )
+            if str(row["id"] or "") != expected_id:
+                raise ValueError("native child end observation matched an invalid worker receipt")
+            existing_at = row["native_terminal_observed_at"]
+            existing_outcome = str(row["native_terminal_outcome"] or "")
+            existing_delivery = str(row["native_delivery_status"] or "")
+            if existing_at is not None:
+                if existing_outcome != normalized_outcome or existing_delivery not in {
+                    "pending",
+                    "delivered",
+                    "failed",
+                    "interrupted",
+                }:
+                    raise ValueError(
+                        "native child terminal observation conflicts with existing evidence"
+                    )
+            else:
+                if existing_outcome or existing_delivery:
+                    raise RuntimeError("native child terminal observation is incomplete")
+                updated = conn.execute(
+                    "UPDATE worker_runs SET native_terminal_outcome = ?, "
+                    "native_delivery_status = 'pending', "
+                    f"native_terminal_observed_at = {STORE_CLOCK_SQL} "  # nosec B608
+                    "WHERE id = ? AND native_terminal_outcome = '' "
+                    "AND native_delivery_status = '' "
+                    "AND native_terminal_observed_at IS NULL "
+                    "AND ended_at IS NULL AND exit_code IS NULL",
+                    (normalized_outcome, expected_id),
+                ).rowcount
+                if updated != 1:
+                    raise RuntimeError("native child terminal observation write was not atomic")
+            stored = conn.execute(
+                "SELECT id, native_terminal_outcome, native_delivery_status, "
+                "native_terminal_observed_at "
+                "FROM worker_runs WHERE id = ?",
+                (expected_id,),
+            ).fetchone()
+            if (
+                stored is None
+                or str(stored["native_terminal_outcome"] or "") != normalized_outcome
+                or str(stored["native_delivery_status"] or "")
+                not in {
+                    "pending",
+                    "delivered",
+                    "failed",
+                    "interrupted",
+                }
+                or stored["native_terminal_observed_at"] is None
+            ):
+                raise RuntimeError("native child terminal observation postcondition failed")
+            conn.commit()
+            return {
+                "id": str(stored["id"]),
+                "outcome": normalized_outcome,
+                "observed_at": str(stored["native_terminal_observed_at"]),
+            }
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
+
+    def reconcile_openclaw_pending_native_child_deliveries(self) -> int:
+        """Fail only ended children whose OpenClaw delivery was interrupted."""
+
+        conn = self._connect()
+        try:
+            conn.execute("BEGIN IMMEDIATE")
+            rows = conn.execute(
+                "SELECT wr.id, wr.native_terminal_outcome "
+                "FROM worker_runs AS wr JOIN delegation_events AS delegation "
+                "ON delegation.id = wr.delegation_event_id "
+                "WHERE wr.host = 'openclaw' AND wr.backend = 'sessions_spawn' "
+                "AND wr.execution_tool_use_id <> '' "
+                "AND wr.execution_dispatched_at IS NOT NULL "
+                "AND wr.native_terminal_observed_at IS NOT NULL "
+                "AND wr.native_terminal_outcome <> '' "
+                "AND wr.native_delivery_status IN ('pending', 'failed') "
+                "AND wr.ended_at IS NULL AND wr.exit_code IS NULL "
+                "AND delegation.trace_id = wr.trace_id "
+                "AND COALESCE(delegation.session_id, '') = wr.session_id "
+                "AND delegation.host = wr.host AND delegation.backend = wr.backend "
+                "AND COALESCE(delegation.work_unit_id, '') = wr.work_unit_id "
+                "AND delegation.executed_worker_kind = 'generic-worker' "
+                "AND delegation.executed_worker_id = wr.worker_id "
+                "AND delegation.native_run_id = wr.native_run_id "
+                "AND delegation.status = 'delegated' "
+                "AND delegation.completed_at IS NULL ORDER BY wr.rowid"
+            ).fetchall()
+            for row in rows:
+                updated = conn.execute(
+                    "UPDATE worker_runs SET native_delivery_status = 'interrupted', "
+                    "native_delivery_observed_at = COALESCE(native_delivery_observed_at, "
+                    f"{STORE_CLOCK_SQL}) "  # nosec B608
+                    "WHERE id = ? AND native_delivery_status IN ('pending', 'failed') "
+                    "AND ended_at IS NULL AND exit_code IS NULL",
+                    (str(row["id"]),),
+                ).rowcount
+                if updated != 1:
+                    raise RuntimeError("native child interruption write was not atomic")
+                self._record_native_child_terminal(
+                    conn,
+                    row_id=str(row["id"]),
+                    # Preserve the host-observed execution outcome in its
+                    # dedicated column, but an unproved delivery cannot expose
+                    # a successful terminal lifecycle projection.
+                    normalized_outcome="error",
+                    error="native_child_delivery_interrupted",
+                )
+            conn.commit()
+            return len(rows)
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
+
+    def record_openclaw_native_child_delivery(
+        self,
+        *,
+        requester_session_id: str,
+        worker_id: str,
+        native_run_id: str,
+        response_hash: str,
+        success: bool,
+        parent_trace_id: str = "",
+        work_unit_id: str = "",
+        launch_id: str = "",
+    ) -> dict[str, Any] | None:
+        """Atomically bind one post-send result to an observed child."""
+
+        if not isinstance(success, bool):
+            raise TypeError("success must be a boolean")
+        target_status = "delivered" if success else "failed"
+
+        normalized_requester = validate_correlation_id(
+            requester_session_id,
+            field="requester_session_id",
+        )
+        normalized_trace = validate_correlation_id(
+            parent_trace_id,
+            field="parent_trace_id",
+            required=False,
+        )
+        normalized_worker = _identity(
+            worker_id,
+            maximum=MAX_DELEGATION_WORKER_ID_CHARS,
+            field="worker_id",
+        )
+        normalized_run = (
+            _identity(
+                native_run_id,
+                maximum=MAX_DELEGATION_NATIVE_RUN_ID_CHARS,
+                field="native_run_id",
+            )
+            if native_run_id
+            else ""
+        )
+        normalized_unit = (
+            _identity(
+                work_unit_id,
+                maximum=MAX_DELEGATION_WORK_UNIT_ID_CHARS,
+                field="work_unit_id",
+            )
+            if work_unit_id
+            else ""
+        )
+        normalized_launch = validate_correlation_id(
+            launch_id,
+            field="launch_id",
+            required=False,
+        )
+        normalized_hash = str(response_hash or "").strip()
+        if len(normalized_hash) != 64 or any(
+            character not in "0123456789abcdef" for character in normalized_hash
+        ):
+            raise ValueError("response_hash must be a lowercase SHA-256 digest")
+
+        conn = self._connect()
+        try:
+            conn.execute("BEGIN IMMEDIATE")
+            matches = conn.execute(
+                "SELECT wr.*, delegation.status AS delegation_status "
+                "FROM worker_runs AS wr JOIN delegation_events AS delegation "
+                "ON delegation.id = wr.delegation_event_id "
+                "JOIN runs AS parent ON parent.trace_id = wr.trace_id "
+                "JOIN finalization_events AS finalization "
+                "ON finalization.id = parent.terminal_finalization_id "
+                "WHERE wr.host = 'openclaw' AND wr.backend = 'sessions_spawn' "
+                "AND wr.session_id = ? AND wr.worker_id = ? "
+                "AND (? = '' OR wr.native_run_id = ?) "
+                "AND (? = '' OR wr.trace_id = ?) "
+                "AND (? = '' OR wr.work_unit_id = ?) "
+                "AND (? = '' OR wr.execution_tool_use_id = ?) "
+                "AND wr.execution_tool_use_id <> '' "
+                "AND wr.execution_dispatched_at IS NOT NULL "
+                "AND wr.native_terminal_observed_at IS NOT NULL "
+                "AND wr.native_terminal_outcome <> '' "
+                "AND wr.native_delivery_status IN ('pending', 'delivered', 'failed') "
+                "AND delegation.trace_id = wr.trace_id "
+                "AND COALESCE(delegation.session_id, '') = wr.session_id "
+                "AND delegation.host = wr.host AND delegation.backend = wr.backend "
+                "AND COALESCE(delegation.work_unit_id, '') = wr.work_unit_id "
+                "AND delegation.executed_worker_kind = 'generic-worker' "
+                "AND delegation.executed_worker_id = wr.worker_id "
+                "AND delegation.native_run_id = wr.native_run_id "
+                "AND COALESCE(parent.session_id, '') = wr.session_id "
+                "AND parent.host = wr.host AND parent.status = 'completed' "
+                "AND parent.terminal_finalization_id IS NOT NULL "
+                "AND finalization.trace_id = wr.trace_id "
+                "AND finalization.response_hash = ? "
+                "AND finalization.terminal_status = parent.status "
+                "ORDER BY wr.rowid LIMIT 2",
+                (
+                    normalized_requester,
+                    normalized_worker,
+                    normalized_run,
+                    normalized_run,
+                    normalized_trace,
+                    normalized_trace,
+                    normalized_unit,
+                    normalized_unit,
+                    normalized_launch,
+                    normalized_launch,
+                    normalized_hash,
+                ),
+            ).fetchall()
+            if len(matches) > 1:
+                raise ValueError("OpenClaw delivery matches multiple pending native children")
+            if not matches:
+                conn.rollback()
+                return None
+            row = matches[0]
+            expected_id = _worker_run_id(
+                "openclaw",
+                str(row["session_id"]),
+                str(row["trace_id"]),
+                str(row["worker_id"]),
+                str(row["native_run_id"]),
+            )
+            if str(row["id"] or "") != expected_id:
+                raise ValueError("OpenClaw delivery matched an invalid worker receipt")
+            stored_status = str(row["native_delivery_status"] or "")
+            if stored_status == target_status:
+                if (
+                    row["native_delivery_observed_at"] is None
+                    or (success and row["ended_at"] is None)
+                    or (not success and row["ended_at"] is not None)
+                ):
+                    raise ValueError("OpenClaw delivery conflicts with existing evidence")
+            elif stored_status != "pending":
+                raise ValueError("OpenClaw delivery conflicts with existing evidence")
+            else:
+                if row["ended_at"] is not None or row["exit_code"] is not None:
+                    raise ValueError("OpenClaw delivery matched an already-terminal worker")
+                updated = conn.execute(
+                    "UPDATE worker_runs SET native_delivery_status = ?, "
+                    f"native_delivery_observed_at = {STORE_CLOCK_SQL} "  # nosec B608
+                    "WHERE id = ? AND native_delivery_status = 'pending' "
+                    "AND native_delivery_observed_at IS NULL "
+                    "AND ended_at IS NULL AND exit_code IS NULL",
+                    (target_status, expected_id),
+                ).rowcount
+                if updated != 1:
+                    raise RuntimeError("OpenClaw delivery write was not atomic")
+                if success:
+                    child_outcome = str(row["native_terminal_outcome"] or "")
+                    self._record_native_child_terminal(
+                        conn,
+                        row_id=expected_id,
+                        normalized_outcome=child_outcome,
+                        error=("" if child_outcome == "ok" else "native_child_execution_failed"),
+                    )
+            stored = conn.execute(
+                "SELECT id, native_terminal_outcome, native_delivery_status, "
+                "native_delivery_observed_at, exit_code, ended_at "
+                "FROM worker_runs WHERE id = ?",
+                (expected_id,),
+            ).fetchone()
+            if (
+                stored is None
+                or str(stored["native_delivery_status"] or "") != target_status
+                or stored["native_delivery_observed_at"] is None
+                or (success and stored["ended_at"] is None)
+                or (success and stored["exit_code"] is None)
+                or (not success and stored["ended_at"] is not None)
+                or (not success and stored["exit_code"] is not None)
+            ):
+                raise RuntimeError("OpenClaw delivery postcondition failed")
+            conn.commit()
+            return dict(stored)
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
+
+    def _record_native_child_terminal(
+        self,
+        conn: Any,
+        *,
+        row_id: str,
+        normalized_outcome: str,
+        error: object = "",
+    ) -> dict[str, Any]:
+        """Commit one exact worker terminal transition in the caller's transaction."""
+
+        exit_code = _OUTCOME_EXIT_CODES[normalized_outcome]
+        row = conn.execute(
+            "SELECT id, delegation_event_id, backend, session_id, trace_id, "
+            "work_unit_id, host, worker_id, native_run_id, exit_code, started_at, ended_at, "
+            "native_delivery_status "
+            "FROM worker_runs WHERE id = ?",
+            (row_id,),
+        ).fetchone()
+        if row is None:
+            raise RuntimeError("native child end has no start receipt")
+        if (
+            str(row["host"] or "") == "openclaw"
+            and str(row["backend"] or "") == "sessions_spawn"
+            and str(row["native_delivery_status"] or "") in {"pending", "failed"}
+        ):
+            raise RuntimeError("OpenClaw native child completion awaits delivery evidence")
+        if (
+            row["ended_at"] is not None
+            and row["exit_code"] is not None
+            and int(row["exit_code"]) != exit_code
+        ):
+            raise ValueError("native child terminal outcome conflicts with existing evidence")
+        conn.execute(
+            f"UPDATE worker_runs SET exit_code = ?, ended_at = "  # nosec B608
+            f"COALESCE(ended_at, {STORE_CLOCK_SQL}) WHERE id = ?",  # nosec B608
+            (exit_code, row_id),
+        )
+        delegation = self._native_child_delegation(
+            conn,
+            host=str(row["host"]),
+            backend=str(row["backend"]),
+            session_id=str(row["session_id"]),
+            trace_id=str(row["trace_id"]),
+            work_unit_id=str(row["work_unit_id"]),
+            worker_id=str(row["worker_id"]),
+            native_run_id=str(row["native_run_id"]),
+        )
+        if delegation is not None:
+            attached_delegation = str(row["delegation_event_id"] or "")
+            if attached_delegation and attached_delegation != str(delegation["id"]):
+                raise ValueError("native child receipt conflicts with its delegation")
+            conn.execute(
+                "UPDATE worker_runs SET delegation_event_id = ?, "
+                "work_unit_id = CASE WHEN work_unit_id = '' THEN ? ELSE work_unit_id END "
+                "WHERE id = ? AND delegation_event_id IS NULL",
+                (str(delegation["id"]), str(delegation["work_unit_id"] or ""), row_id),
+            )
+            self._merge_native_child_terminal(
+                conn,
+                delegation=delegation,
+                status="completed" if normalized_outcome == "ok" else "failed",
+                outcome=normalized_outcome,
+                error=error,
+            )
+            delegation = conn.execute(
+                "SELECT * FROM delegation_events WHERE id = ?",
+                (delegation["id"],),
+            ).fetchone()
+        workforce_outcome_id = (
+            None
+            if delegation is None
+            else record_native_assignment_outcome(
+                conn,
+                delegation=delegation,
+                worker_run_id=row_id,
+                outcome=normalized_outcome,
+                store=self,
+            )
+        )
+        terminal = conn.execute(
+            "SELECT id, delegation_event_id, backend, session_id, trace_id, "
+            "work_unit_id, host, worker_id, native_run_id, exit_code, started_at, ended_at "
+            "FROM worker_runs WHERE id = ?",
+            (row_id,),
+        ).fetchone()
+        if terminal is None or terminal["ended_at"] is None:
+            raise RuntimeError("native child end postcondition failed")
+        return {
+            **dict(terminal),
+            "outcome": normalized_outcome,
+            "workforce_outcome_id": workforce_outcome_id,
+        }
+
     def record_native_child_ended(
         self,
         *,
@@ -738,83 +1402,131 @@ class NativeChildStoreMixin:
             native_run_id=native_run_id,
             work_unit_id=work_unit_id,
         )
-        row_id = str(started["id"])
-        exit_code = _OUTCOME_EXIT_CODES[normalized_outcome]
         conn = self._connect()
         try:
             conn.execute("BEGIN IMMEDIATE")
-            row = conn.execute(
-                "SELECT id, delegation_event_id, backend, session_id, trace_id, "
-                "work_unit_id, host, worker_id, native_run_id, exit_code, started_at, ended_at "
-                "FROM worker_runs WHERE id = ?",
-                (row_id,),
-            ).fetchone()
-            if row is None:
-                raise RuntimeError("native child end has no start receipt")
-            if (
-                row["ended_at"] is not None
-                and row["exit_code"] is not None
-                and int(row["exit_code"]) != exit_code
-            ):
-                raise ValueError("native child terminal outcome conflicts with existing evidence")
-            conn.execute(
-                f"UPDATE worker_runs SET exit_code = ?, ended_at = "  # nosec B608
-                f"COALESCE(ended_at, {STORE_CLOCK_SQL}) WHERE id = ?",  # nosec B608
-                (exit_code, row_id),
-            )
-            delegation = self._native_child_delegation(
+            terminal = self._record_native_child_terminal(
                 conn,
-                host=str(started["host"]),
-                backend=str(started["backend"]),
-                session_id=str(started["session_id"]),
-                trace_id=str(started["trace_id"]),
-                work_unit_id=str(started["work_unit_id"]),
-                worker_id=str(started["worker_id"]),
-                native_run_id=str(started["native_run_id"]),
+                row_id=str(started["id"]),
+                normalized_outcome=normalized_outcome,
+                error=error,
             )
-            if delegation is not None:
-                conn.execute(
-                    "UPDATE worker_runs SET delegation_event_id = ?, "
-                    "work_unit_id = CASE WHEN work_unit_id = '' THEN ? ELSE work_unit_id END "
-                    "WHERE id = ? AND delegation_event_id IS NULL",
-                    (str(delegation["id"]), str(delegation["work_unit_id"] or ""), row_id),
-                )
-                self._merge_native_child_terminal(
-                    conn,
-                    delegation=delegation,
-                    status="completed" if normalized_outcome == "ok" else "failed",
-                    outcome=normalized_outcome,
-                    error=error,
-                )
-                delegation = conn.execute(
-                    "SELECT * FROM delegation_events WHERE id = ?",
-                    (delegation["id"],),
-                ).fetchone()
-            workforce_outcome_id = (
-                None
-                if delegation is None
-                else record_native_assignment_outcome(
-                    conn,
-                    delegation=delegation,
-                    worker_run_id=row_id,
-                    outcome=normalized_outcome,
-                    store=self,
-                )
-            )
-            terminal = conn.execute(
-                "SELECT id, delegation_event_id, backend, session_id, trace_id, "
-                "work_unit_id, host, worker_id, native_run_id, exit_code, started_at, ended_at "
-                "FROM worker_runs WHERE id = ?",
-                (row_id,),
-            ).fetchone()
-            if terminal is None or terminal["ended_at"] is None:
-                raise RuntimeError("native child end postcondition failed")
             conn.commit()
-            return {
-                **dict(terminal),
-                "outcome": normalized_outcome,
-                "workforce_outcome_id": workforce_outcome_id,
-            }
+            return terminal
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
+
+    def reconcile_native_child_ended(
+        self,
+        *,
+        host: str,
+        backend: str,
+        requester_session_id: str,
+        worker_id: str,
+        native_run_id: str,
+        outcome: str,
+        error: object = "",
+    ) -> dict[str, Any] | None:
+        """Close one unique, launch-bound child when the parent trace was lost.
+
+        Native host completion callbacks can outlive the plugin process that
+        remembered their parent trace. The requester session plus host-issued
+        child identities may recover that trace only from one exact persisted
+        accepted launch. A missing run id is permitted for host reset/failure
+        shapes, but uniqueness is still mandatory and no lifecycle row is ever
+        created by this recovery path.
+        """
+
+        normalized_outcome = str(outcome or "unknown").strip().lower() or "unknown"
+        if normalized_outcome not in _OUTCOME_EXIT_CODES:
+            raise ValueError("native child outcome is invalid")
+        normalized_host = _identity(
+            host,
+            maximum=MAX_DELEGATION_HOST_CHARS,
+            field="host",
+        ).lower()
+        normalized_backend = _identity(
+            backend,
+            maximum=MAX_DELEGATION_BACKEND_CHARS,
+            field="backend",
+        )
+        normalized_requester = validate_correlation_id(
+            requester_session_id,
+            field="requester_session_id",
+        )
+        normalized_worker = _identity(
+            worker_id,
+            maximum=MAX_DELEGATION_WORKER_ID_CHARS,
+            field="worker_id",
+        )
+        normalized_run = (
+            _identity(
+                native_run_id,
+                maximum=MAX_DELEGATION_NATIVE_RUN_ID_CHARS,
+                field="native_run_id",
+            )
+            if native_run_id
+            else ""
+        )
+        conn = self._connect()
+        try:
+            conn.execute("BEGIN IMMEDIATE")
+            matches = conn.execute(
+                "SELECT wr.id, wr.session_id, wr.trace_id, wr.work_unit_id, wr.host, "
+                "wr.backend, wr.worker_id, wr.native_run_id, wr.delegation_event_id "
+                "FROM worker_runs AS wr "
+                "JOIN delegation_events AS delegation "
+                "ON delegation.id = wr.delegation_event_id "
+                "JOIN runs AS parent ON parent.trace_id = wr.trace_id "
+                "WHERE wr.host = ? AND wr.backend = ? AND wr.session_id = ? "
+                "AND wr.worker_id = ? AND (? = '' OR wr.native_run_id = ?) "
+                "AND wr.execution_tool_use_id <> '' "
+                "AND wr.execution_dispatched_at IS NOT NULL "
+                "AND delegation.trace_id = wr.trace_id "
+                "AND COALESCE(delegation.session_id, '') = wr.session_id "
+                "AND delegation.host = wr.host AND delegation.backend = wr.backend "
+                "AND COALESCE(delegation.work_unit_id, '') = wr.work_unit_id "
+                "AND delegation.executed_worker_kind = 'generic-worker' "
+                "AND delegation.executed_worker_id = wr.worker_id "
+                "AND delegation.native_run_id = wr.native_run_id "
+                "AND delegation.status IN ('delegated', 'completed', 'failed') "
+                "AND COALESCE(parent.session_id, '') = wr.session_id "
+                "AND parent.host = wr.host ORDER BY wr.rowid LIMIT 2",
+                (
+                    normalized_host,
+                    normalized_backend,
+                    normalized_requester,
+                    normalized_worker,
+                    normalized_run,
+                    normalized_run,
+                ),
+            ).fetchall()
+            if len(matches) > 1:
+                raise ValueError("native child callback matches multiple persisted parent scopes")
+            if not matches:
+                conn.rollback()
+                return None
+            matched = matches[0]
+            expected_row_id = _worker_run_id(
+                normalized_host,
+                normalized_requester,
+                str(matched["trace_id"]),
+                normalized_worker,
+                str(matched["native_run_id"]),
+            )
+            if str(matched["id"]) != expected_row_id:
+                raise ValueError("native child callback matched an invalid worker receipt")
+            terminal = self._record_native_child_terminal(
+                conn,
+                row_id=expected_row_id,
+                normalized_outcome=normalized_outcome,
+                error=error,
+            )
+            conn.commit()
+            return terminal
         except Exception:
             conn.rollback()
             raise
@@ -853,6 +1565,18 @@ class NativeChildStoreMixin:
         conn = self._connect()
         try:
             conn.execute("BEGIN IMMEDIATE")
+            current = conn.execute(
+                "SELECT host, backend, native_delivery_status FROM worker_runs WHERE id = ?",
+                (row_id,),
+            ).fetchone()
+            if current is None:
+                raise RuntimeError("native child stop has no start receipt")
+            if (
+                str(current["host"] or "") == "openclaw"
+                and str(current["backend"] or "") == "sessions_spawn"
+                and str(current["native_delivery_status"] or "") in {"pending", "failed"}
+            ):
+                raise RuntimeError("OpenClaw native child completion awaits delivery evidence")
             conn.execute(
                 f"UPDATE worker_runs SET ended_at = "  # nosec B608
                 f"COALESCE(ended_at, {STORE_CLOCK_SQL}) WHERE id = ?",  # nosec B608
@@ -932,7 +1656,9 @@ class NativeChildStoreMixin:
                 "SELECT id, delegation_event_id, backend, session_id, trace_id, "
                 "work_unit_id, host, worker_id, native_run_id, exit_code, started_at, "
                 "execution_tool_use_id, execution_dispatched_at, tool_evidence_schema, "
-                "tool_evidence, tool_evidence_source, tool_evidence_recorded_at, ended_at "
+                "tool_evidence, tool_evidence_source, tool_evidence_recorded_at, "
+                "native_terminal_outcome, native_delivery_status, "
+                "native_terminal_observed_at, native_delivery_observed_at, ended_at "
                 "FROM worker_runs WHERE id = ? AND (? = '' OR work_unit_id = ?)",
                 (row_id, normalized_unit, normalized_unit),
             ).fetchone()

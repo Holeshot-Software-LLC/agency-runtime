@@ -159,12 +159,17 @@ def finalize_response(
     trace_metadata: Mapping[str, Any] | None = None,
     store: Any | None = None,
     model: str = "",
+    *,
+    commit_terminal: bool = True,
 ) -> FinalizationResult:
     """Apply the Agency header finalization gate.
 
     Returns ``action='accept'`` when the response is finalizable, ``rewrite``
     when any of the seven required header fields remain missing after attempted
     auto-fill, and ``continue`` when there is no substantive draft body yet.
+    A host whose terminal boundary binds a richer outbound envelope may set
+    ``commit_terminal=False`` while constructing the response, but it must
+    atomically commit that complete envelope before delivery.
     """
     metadata = dict(trace_metadata or {})
     session_id = metadata.get("session_id", metadata.get("session", ""))
@@ -298,7 +303,7 @@ def finalize_response(
             missing = violation["missing"]
 
     result = {"action": action, "text": text, "missing": missing}
-    if action == "accept":
+    if action == "accept" and commit_terminal:
         commit_failure = _commit_terminal_finalization(
             store,
             session_id=session_id,

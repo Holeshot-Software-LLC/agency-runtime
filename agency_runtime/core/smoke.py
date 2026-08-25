@@ -182,6 +182,8 @@ def _smoke_openclaw_plugin(host: str, plugin_path: Path) -> dict[str, Any]:
     code = plugin_path.read_text(encoding="utf-8")
     if manifest.get("id") != "agency-preflight":
         raise RuntimeError("invalid OpenClaw plugin manifest id")
+    if manifest.get("contracts") != {"agentToolResultMiddleware": ["openclaw"]}:
+        raise RuntimeError("invalid OpenClaw tool-result middleware contract")
     if manifest.get("mcpServers") != "./.mcp.json":
         raise RuntimeError("OpenClaw manifest does not declare its MCP component")
     if package.get("openclaw", {}).get("extensions") != ["./index.js"]:
@@ -190,6 +192,7 @@ def _smoke_openclaw_plugin(host: str, plugin_path: Path) -> dict[str, Any]:
     required_tokens = {
         "before_prompt_build",
         "before_agent_finalize",
+        "registerAgentToolResultMiddleware",
         "api.registerCommand",
         'name: "agency"',
         'description: "Agency Runtime read-only status; persistent on/off commands are denied"',

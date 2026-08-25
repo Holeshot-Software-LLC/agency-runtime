@@ -120,29 +120,45 @@ def openclaw_gateway_live(
         timeout=12,
     )
     payload = _json_output(probe)
-    if not probe.ok or not isinstance(payload, dict):
+    if not isinstance(payload, dict) or probe.stdout_truncated or probe.stderr_truncated:
         return None, probe
 
+    service = payload.get("service")
+    runtime = service.get("runtime") if isinstance(service, Mapping) else None
+    runtime = runtime if isinstance(runtime, Mapping) else {}
     status = str(payload.get("status", "")).strip().lower()
+    runtime_status = str(runtime.get("status", "")).strip().lower()
+    runtime_state = str(runtime.get("state", "")).strip().lower()
+    runtime_substate = str(runtime.get("subState", "")).strip().lower()
     signals = {
         key: _bool_field(payload, key)
         for key in ("running", "reachable", "healthy", "rpcHealthy", "active")
     }
-    if any(value is True for value in signals.values()) or status in {
-        "running",
-        "healthy",
-        "ready",
-        "online",
-    }:
+    if (
+        any(value is True for value in signals.values())
+        or status in {"running", "healthy", "ready", "online"}
+        or runtime_status in {"running", "healthy", "ready", "online"}
+        or runtime_state in {"active", "activating", "deactivating", "reloading"}
+        or runtime_substate == "running"
+    ):
         return True, probe
     # Only an explicit process-state signal can prove the gateway stopped.
     # An unreachable or unhealthy gateway may still be a live process that a
     # plugin install would reload.
-    if signals["running"] is False or status in {
-        "stopped",
-        "not-running",
-        "not_running",
-    }:
+    if probe.ok and (
+        signals["running"] is False or status in {"stopped", "not-running", "not_running"}
+    ):
+        return False, probe
+    # OpenClaw 2026.7 reports a stopped systemd service as complete JSON while
+    # --require-rpc exits 1 because no stopped process can answer RPC. Accept
+    # only that exact, internally consistent process-state triple; every other
+    # non-zero native status remains unproven.
+    if (
+        probe.returncode == 1
+        and runtime_status == "stopped"
+        and runtime_state == "inactive"
+        and runtime_substate == "dead"
+    ):
         return False, probe
     return None, probe
 
@@ -294,6 +310,16 @@ def _verify_openclaw_runtime(session: _RegistrationSession) -> _RegistrationResu
     }
     hooks.discard("")
     missing_hooks = sorted(OPENCLAW_REQUIRED_HOOKS - hooks)
+    contracts = record.get("contracts") if isinstance(record, Mapping) else None
+    middleware_values = (
+        contracts.get("agentToolResultMiddleware", []) if isinstance(contracts, Mapping) else []
+    )
+    middleware_runtimes = {
+        str(value).strip()
+        for value in middleware_values
+        if isinstance(value, str) and str(value).strip()
+    }
+    middleware_contract_proven = "openclaw" in middleware_runtimes
     terminal_hooks = {"message_sending", "reply_payload_sending"}
     priorities: dict[str, object] = {}
     priority_status: dict[str, str] = {}
@@ -321,13 +347,19 @@ def _verify_openclaw_runtime(session: _RegistrationSession) -> _RegistrationResu
         name for name, status in priority_status.items() if status == "mismatch"
     )
     registration_proven = (
-        verified.ok and isinstance(record, dict) and loaded is True and not missing_hooks
+        verified.ok
+        and isinstance(record, dict)
+        and loaded is True
+        and not missing_hooks
+        and middleware_contract_proven
     )
     session.steps[-1].update(
         {
             "loaded": loaded,
             "registered_hooks": sorted(hooks),
             "missing_required_hooks": missing_hooks,
+            "tool_result_middleware_runtimes": sorted(middleware_runtimes),
+            "tool_result_middleware_contract_proven": middleware_contract_proven,
             "terminal_hook_priorities": dict(sorted(priorities.items())),
             "terminal_hook_priority_status": dict(sorted(priority_status.items())),
             "terminal_hook_priority_mismatches": priority_mismatches,
@@ -457,6 +489,18 @@ def _register_openclaw(
     )
     if not access.ok:
         return _rollback_openclaw_policy(session, "conversation_access")
+    prompt_injection = session.run(
+        "prompt_injection",
+        [
+            session.binary,
+            "config",
+            "set",
+            f"plugins.entries.{PLUGIN_ID}.hooks.allowPromptInjection",
+            "true",
+        ],
+    )
+    if not prompt_injection.ok:
+        return _rollback_openclaw_policy(session, "prompt_injection")
     result = _verify_openclaw_runtime(session)
     return result if result[1] else _rollback_openclaw_policy(session, str(result[2]))
 
@@ -761,6 +805,16 @@ def native_command_plan(host: str, target: Path) -> list[dict[str, Any]]:
                     "config",
                     "set",
                     f"plugins.entries.{PLUGIN_ID}.hooks.allowConversationAccess",
+                    "true",
+                ],
+            },
+            {
+                "name": "prompt_injection",
+                "argv": [
+                    binary,
+                    "config",
+                    "set",
+                    f"plugins.entries.{PLUGIN_ID}.hooks.allowPromptInjection",
                     "true",
                 ],
             },
