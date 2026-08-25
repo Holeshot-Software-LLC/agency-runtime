@@ -716,12 +716,23 @@ agency search "incident response"
 agency route "review this authentication design"
 agency explain "review this authentication design" --session-id demo
 agency eval routing --json --no-details
+agency eval shadow-recall --confirm-live-inference "RUN LIVE SHADOW RECALL EVAL" --json
 ```
 
 `agency eval routing` is an offline deterministic candidate-recall, policy,
 delegation, and performance gate. Its candidate IDs are shortlist evidence for
 inference, not selected or recommended specialists. Substantive specialist
 selection requires a valid configured inference decision and runtime receipt.
+
+`agency eval shadow-recall` is the explicit live AR-266 promotion gate for
+learned workforce recall. It runs four predeclared identity-free vocabulary-gap
+cases under Codex, Claude, Hermes, and OpenClaw host contexts while the effective
+Agency configuration remains in `shadow`. The report requires exact typed-lane
+retention, no category regression or forbidden/ineligible/disabled activation,
+fresh catalog identity after a disabled-worker overlay, and at least one
+recovered gap. It calls only the configured embedding and recall-reranker
+routes; it does not execute specialists, change staffing, hire, or enable
+`additive` mode.
 
 From a development checkout with the dev dependencies installed, prove that
 the focused suite rejects Agency's curated decision regressions:

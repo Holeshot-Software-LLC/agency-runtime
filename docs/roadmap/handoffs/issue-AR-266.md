@@ -98,10 +98,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/320
 
 The local Agency-only config is validated and active in `shadow` mode. Explicit
 global capability routes use free local Ollama models and do not replace native
-host defaults. Forced four-host retrieval, native OpenClaw parent integration,
-and native Hermes parent/embedding/reranker/finalizer correlation pass. Both
-gateways are active. AR-288 is locally complete; AR-266 remains open only for
-the full shadow-value matrix and does not recommend additive activation.
+host defaults. The fixed four-category/four-host `agency eval shadow-recall`
+gate is implemented and 106 focused tests pass before any live matrix result.
+Both gateways are active. AR-288 is locally complete; AR-266 remains open for
+that live gate and does not yet recommend additive activation.
 
 ## unresolved-gates
 
@@ -127,12 +127,12 @@ must not be promoted into terminal or outbound-delivery proof.
 
 ## next-bounded-work-package
 
-1. Verify this worktree is clean and the latest substantive/ledger pair is at
-   `HEAD`; do not resume from the shared checkout.
-2. Reconcile the already-completed forced four-host retrieval smokes into the
-   requested final evidence bundles without invoking Codex OAuth or canaries.
-3. Continue only the remaining AR-266 full shadow-value matrix or an explicitly
-   authorized host proof; do not rerun the retained Hermes inputs unchanged.
+1. Run the exact-confirmed `agency eval shadow-recall` command from this
+   worktree and preserve its complete content-free JSON report.
+2. Promote only Agency's dense-recall mode to `additive` if every fixed gate is
+   green; otherwise retain shadow and preserve the exact failed cell.
+3. Validate one changed additive work unit without invoking Codex OAuth or
+   canaries, then checkpoint exact evidence and keep native host configs intact.
 
 ## same-task-continuity
 

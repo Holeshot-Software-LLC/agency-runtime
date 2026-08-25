@@ -158,6 +158,11 @@ eligibility constraints.
   `claude`, `hermes`, and `openclaw`) produced applied embedding and reranker
   attempts, 16 novel candidates, and no provider fallback. Codex and Claude
   were evaluator-only; no native host, OAuth, or canary was invoked.
+- A versioned `agency eval shadow-recall` promotion gate now fixes four
+  identity-free vocabulary-gap targets across those same four host contexts.
+  Its focused evaluator, CLI, parser, shadow-isolation, and gate contracts pass
+  106 tests. Live provider execution remains the next gate; no result has been
+  observed or threshold changed while defining the matrix.
 - Native OpenClaw trace `8e6033b2-6ab6-4e1d-ac3b-dca792e8eb2d` produced a real
   Agency header after exact-alias parent inference and both local recall stages
   applied. Routing decision `8b52dd59-fb6a-4326-a655-04d57267382e` loaded

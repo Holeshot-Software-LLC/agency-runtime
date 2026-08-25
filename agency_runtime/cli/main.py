@@ -308,6 +308,7 @@ cmd_eval_routing = _roster.cmd_eval_routing
 cmd_eval_compare = _evals.cmd_eval_compare
 cmd_eval_decision_conformance = _evals.cmd_eval_decision_conformance
 cmd_eval_full_roster = _evals.cmd_eval_full_roster
+cmd_eval_shadow_recall = _evals.cmd_eval_shadow_recall
 cmd_eval_product = _evals.cmd_eval_product
 cmd_eval_upstream_architecture = _evals.cmd_eval_upstream_architecture
 cmd_eval_upstream_selection = _evals.cmd_eval_upstream_selection
@@ -424,6 +425,7 @@ _COMMAND_NAMES = (
     "cmd_eval_compare",
     "cmd_eval_decision_conformance",
     "cmd_eval_full_roster",
+    "cmd_eval_shadow_recall",
     "cmd_eval_product",
     "cmd_eval_upstream_architecture",
     "cmd_eval_upstream_selection",
