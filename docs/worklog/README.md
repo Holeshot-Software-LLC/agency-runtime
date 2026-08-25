@@ -1222,6 +1222,11 @@ This registry connects repository history to the roadmap and to optional detail 
 | `ca48c3fa` | 2026-08-25 | docs(ar266): record additive promotion evidence | [AR-266](../roadmap/issue-AR-266-dense-hybrid-workforce-recall.md) | [detail](2026-08-25-ca48c3fa-record-additive-promotion-evidence.md) |
 | `e1d783ff` | 2026-08-25 | Merge pull request #323 from Holeshot-Software-LLC/codex/ar266-local-retrieval-smoke | [AR-266](../roadmap/issue-AR-266-dense-hybrid-workforce-recall.md) | null |
 | `65a4ad76` | 2026-08-25 | docs(ar266): record merged additive recall | [AR-266](../roadmap/issue-AR-266-dense-hybrid-workforce-recall.md) | null |
+| `04057072` | 2026-08-25 | Merge pull request #324 from Holeshot-Software-LLC/codex/ar266-merge-record | [AR-266](../roadmap/issue-AR-266-dense-hybrid-workforce-recall.md) | null |
+| `cc41b21f` | 2026-08-25 | fix(codex): keep 0.149 opaque children unstaffed | [AR-180](../roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md), [AR-255](../roadmap/issue-AR-255-inference-owned-host-proven-child-staffing.md) | [detail](2026-08-25-cc41b21f-codex-0149-opaque-compatibility.md) |
+| `f6969862` | 2026-08-25 | docs(codex): record 0.149 hook activation gap | [AR-180](../roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md), [AR-255](../roadmap/issue-AR-255-inference-owned-host-proven-child-staffing.md) | [detail](2026-08-25-f6969862-codex-hook-activation-gap.md) |
+| `04a23ebe` | 2026-08-25 | docs(codex): isolate 0.149 spawn hook gap | [AR-180](../roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md), [AR-255](../roadmap/issue-AR-255-inference-owned-host-proven-child-staffing.md) | [detail](2026-08-25-04a23ebe-isolate-codex-spawn-hook-gap.md) |
+| `53350797` | 2026-08-25 | docs(codex): close 0.149 hook compatibility probe | [AR-180](../roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md), [AR-255](../roadmap/issue-AR-255-inference-owned-host-proven-child-staffing.md) | [detail](2026-08-25-53350797-close-codex-hook-compatibility-probe.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

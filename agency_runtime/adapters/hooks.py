@@ -1379,8 +1379,8 @@ class HookBridge:
             f"worker_kind={json.dumps(identity.worker_kind)}",
             f"worker_id={json.dumps(identity.worker_id, ensure_ascii=True)}",
             f"native_run_id={json.dumps(identity.native_run_id, ensure_ascii=True)}",
-            "Codex 0.147 did not expose this child's decrypted inter-agent assignment "
-            "to the synchronous hook, so Agency supplied no specialist card. The host "
+            "The authenticated Codex hook contract did not expose this child's decrypted "
+            "inter-agent assignment, so Agency supplied no specialist card. The host "
             "may proceed with its native child unstaffed; this child is not asked to "
             "call preflight or repair the missing channel.",
         ]

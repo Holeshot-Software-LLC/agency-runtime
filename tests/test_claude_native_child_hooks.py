@@ -648,7 +648,7 @@ def test_codex_subagent_lifecycle_reports_opaque_unstaffed_identity() -> None:
     context = start["hookSpecificOutput"]["additionalContext"]
     assert 'worker_id="agent-42"' in context
     assert 'native_run_id="codex-agent:agent-42"' in context
-    assert "did not expose this child's decrypted inter-agent assignment" in context
+    assert "hook contract did not expose this child's decrypted" in context
     assert "proceed with its native child unstaffed" in context
     assert "agency.preflight" not in context
     assert "parent_scope_token" not in context

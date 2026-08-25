@@ -960,9 +960,10 @@ def _expected_v6_reason(
     """Return ``verified`` only for an exact, independently consumed decision."""
 
     if host == "codex":
-        # Codex 0.147 stores the delegated input as ordinary developer/user
-        # records and carries the actual V2 inter-agent message opaquely. There
-        # is no host-authored field identifying Agency's hook output.
+        # Supported Codex transcripts store the delegated input as ordinary
+        # developer/user records and carry the actual inter-agent message
+        # opaquely. There is no host-authored field identifying Agency's hook
+        # output.
         return "unsupported_opaque_interagent_channel"
     if expected is None:
         return (
@@ -1770,9 +1771,9 @@ def _verify_child_delivery_with_capability(
     ):
         return replace(diagnostic, verification_reason="artifact_origin_not_canonical")
     if normalized == "codex":
-        # Codex 0.147's opaque inter-agent channel has no attributable hook
-        # output. Preserve that explicit diagnostic and never consult the Store
-        # in a way that could turn it green.
+        # The authenticated Codex profiles' opaque inter-agent channel has no
+        # attributable hook output. Preserve that explicit diagnostic and never
+        # consult the Store in a way that could turn it green.
         return diagnostic
     decision_getter, receipt_getter = _store_delivery_methods(store)
     expected = _expected_delivery_from_store_decision(
