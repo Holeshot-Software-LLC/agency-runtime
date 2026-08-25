@@ -48,6 +48,7 @@ from agency_runtime.core.policy.profiles import PROFILES
 
 _BUNDLED_DEFAULTS = Path(__file__).parent / "config_defaults.yaml"
 MAX_PROVIDER_CHAIN_ENTRIES = 4
+MAX_INFERENCE_EMBEDDING_DIMENSIONS = 4_096
 CODEX_REASONING_EFFORTS = frozenset({"low", "medium", "high", "xhigh", "max", "ultra"})
 _CLI_MODEL_ID_PATTERN = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/@+\-]{0,255}\Z")
 
@@ -142,6 +143,9 @@ class ProviderEntry:
     # when a model this package has not seen needs the other output-length
     # parameter, so a model change stays a configuration edit.
     token_parameter: str = ""
+    # Zero means the provider's native embedding width. Nonzero values are
+    # valid only for explicit embedding-capability inference profiles.
+    dimensions: int = 0
 
     def resolve_api_key(self) -> str:
         """Return the API key: direct value first, then env var."""
@@ -303,6 +307,7 @@ class InferenceProfile:
     api_key_env: str = ""
     timeout_ms: int = 30_000
     transport: str = ""  # cli adapter only: one of INFERENCE_CLI_TRANSPORTS
+    dimensions: int = 0  # embedding profiles only; zero uses the provider default
 
     def uses_thinking(self) -> bool:
         return bool(self.thinking_level)
@@ -562,6 +567,7 @@ def _build_inference_profile(name: str, raw: Any) -> InferenceProfile:
         api_key_env=str(raw.get("api_key_env", "")).strip(),
         timeout_ms=int(raw.get("timeout_ms", 30_000)),
         transport=str(raw.get("transport", "")).strip().casefold(),
+        dimensions=int(raw.get("dimensions", 0)),
     )
 
 
@@ -1412,6 +1418,7 @@ def config_to_yaml(cfg: AgencyConfig, *, redact: bool = True) -> str:
                     "api_key_env": profile.api_key_env,
                     "timeout_ms": profile.timeout_ms,
                     "transport": profile.transport,
+                    "dimensions": profile.dimensions,
                 }
                 for name, profile in cfg.inference.profiles.items()
             },

@@ -481,6 +481,7 @@ inference:
       adapter: litellm
       model: text-embedding-3-large
       capability_class: embeddings
+      dimensions: 1024
       base_url: http://127.0.0.1:4000/v1
       api_key_env: LITELLM_API_KEY
     workforce-recall-reranker:
@@ -498,6 +499,13 @@ vectors and send only the queries. A second bounded call reranks every recalled
 ID without dropping or inventing candidates. Missing routes, provider failures,
 malformed vectors, absent actual-model receipts, or cache-identity mismatches
 fall back to the unchanged typed candidate lane.
+
+`dimensions` is optional: zero (the default) omits the provider field. A
+nonzero value is valid only on an `embeddings` profile using `ollama`,
+`openai-compatible`, or `litellm`. Agency requires the provider to return that
+exact width and includes it in catalog identity. A rejected or stripped option,
+or a mismatched response, falls back to typed-only recall. Safety bounds remain
+unchanged, and Agency never slices or pads vectors client-side.
 
 Default files: config `~/.agency-runtime/agency.yaml`, database
 `~/.agency-runtime/agency.db`, global switch `~/.agency-runtime/run/control.json`.
@@ -708,12 +716,23 @@ agency search "incident response"
 agency route "review this authentication design"
 agency explain "review this authentication design" --session-id demo
 agency eval routing --json --no-details
+agency eval shadow-recall --confirm-live-inference "RUN LIVE SHADOW RECALL EVAL" --json
 ```
 
 `agency eval routing` is an offline deterministic candidate-recall, policy,
 delegation, and performance gate. Its candidate IDs are shortlist evidence for
 inference, not selected or recommended specialists. Substantive specialist
 selection requires a valid configured inference decision and runtime receipt.
+
+`agency eval shadow-recall` is the explicit live AR-266 promotion gate for
+learned workforce recall. It runs four predeclared identity-free vocabulary-gap
+cases under Codex, Claude, Hermes, and OpenClaw host contexts while the effective
+Agency configuration remains in `shadow`. The report requires exact typed-lane
+retention, no category regression or forbidden/ineligible/disabled activation,
+fresh catalog identity after a disabled-worker overlay, and at least one
+recovered gap. It calls only the configured embedding and recall-reranker
+routes; it does not execute specialists, change staffing, hire, or enable
+`additive` mode.
 
 From a development checkout with the dev dependencies installed, prove that
 the focused suite rejects Agency's curated decision regressions:

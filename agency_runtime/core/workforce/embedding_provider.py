@@ -19,6 +19,7 @@ from typing import TypeAlias
 
 from agency_runtime.core.bounded_json import safe_load_bounded_json
 from agency_runtime.core.config import (
+    MAX_INFERENCE_EMBEDDING_DIMENSIONS,
     ProviderEntry,
     _is_loopback_http_url,
     is_safe_credential_url,
@@ -26,7 +27,7 @@ from agency_runtime.core.config import (
 from agency_runtime.core.http_safety import open_no_redirect
 
 MAX_EMBEDDING_INPUTS = 10_016
-MAX_EMBEDDING_DIMENSIONS = 4_096
+MAX_EMBEDDING_DIMENSIONS = MAX_INFERENCE_EMBEDDING_DIMENSIONS
 MAX_EMBEDDING_VECTOR_VALUES = 1_000_000
 MAX_EMBEDDING_TEXT_BYTES = 16 * 1_024
 MAX_EMBEDDING_BATCH_BYTES = 32 * 1_024 * 1_024
@@ -250,10 +251,22 @@ def _timeout(value: object) -> float:
     return float(value)
 
 
+def _configured_dimensions(value: object, *, input_count: int) -> int:
+    if (
+        isinstance(value, bool)
+        or not isinstance(value, int)
+        or not 0 <= value <= MAX_EMBEDDING_DIMENSIONS
+    ):
+        raise ValueError("embedding provider dimensions are outside the supported range")
+    if value and input_count * value > MAX_EMBEDDING_VECTOR_VALUES:
+        raise ValueError("embedding matrix exceeds its scalar-count bound")
+    return value
+
+
 def _provider_request(
     provider: ProviderEntry,
     texts: tuple[str, ...],
-) -> tuple[urllib.request.Request, float, bool]:
+) -> tuple[urllib.request.Request, float, bool, int]:
     if not isinstance(provider, ProviderEntry):
         raise TypeError("embedding provider must be a configured ProviderEntry")
     provider_type = _configured_text(provider.type, label="type").casefold()
@@ -264,6 +277,7 @@ def _provider_request(
         raise ValueError("embedding provider type is unsupported")
     model = _configured_text(provider.model, label="model")
     base_url = _configured_text(provider.base_url, label="base URL")
+    dimensions = _configured_dimensions(provider.dimensions, input_count=len(texts))
 
     api_key = provider.resolve_api_key()
     if (
@@ -293,6 +307,8 @@ def _provider_request(
             "model": model,
         }
         path = "/v1/embeddings"
+    if dimensions:
+        payload["dimensions"] = dimensions
     body = json.dumps(
         payload,
         allow_nan=False,
@@ -313,6 +329,7 @@ def _provider_request(
         ),
         _timeout(provider.timeout),
         ollama_mode,
+        dimensions,
     )
 
 
@@ -361,7 +378,7 @@ def invoke_embedding_provider(
     bounded = _bounded_inputs(texts)
     if not bounded:
         raise ValueError("embedding provider input batch must not be empty")
-    request, timeout, ollama_mode = _provider_request(provider, bounded)
+    request, timeout, ollama_mode, dimensions = _provider_request(provider, bounded)
     started = time.monotonic()
     with open_no_redirect(request, timeout=timeout) as response:
         raw = response.read(MAX_EMBEDDING_RESPONSE_BYTES + 1)
@@ -381,7 +398,10 @@ def invoke_embedding_provider(
     vectors = validate_and_normalize_vectors(
         raw_vectors,
         expected_count=len(bounded),
+        maximum_dimensions=dimensions or MAX_EMBEDDING_DIMENSIONS,
     )
+    if dimensions and len(vectors[0]) != dimensions:
+        raise ValueError("embedding response dimensions do not match the configured request")
     return EmbeddingProviderResponse(
         vectors=vectors,
         provider_name=_identity(provider.name),
@@ -400,6 +420,7 @@ def embed_texts(
     invoker: EmbeddingInvoker | None = None,
     provider_name: str = "",
     requested_model: str = "",
+    expected_dimensions: int = 0,
 ) -> EmbeddingBatch:
     """Invoke one injected embedding provider and validate its whole response.
 
@@ -410,6 +431,10 @@ def embed_texts(
     """
 
     bounded = _bounded_inputs(texts)
+    configured_dimensions = _configured_dimensions(
+        expected_dimensions,
+        input_count=len(bounded),
+    )
     if not bounded:
         return EmbeddingBatch(
             (),
@@ -473,7 +498,10 @@ def embed_texts(
         vectors = validate_and_normalize_vectors(
             raw_vectors,
             expected_count=len(bounded),
+            maximum_dimensions=configured_dimensions or MAX_EMBEDDING_DIMENSIONS,
         )
+        if configured_dimensions and len(vectors[0]) != configured_dimensions:
+            raise ValueError("embedding response dimensions do not match the configured request")
     except Exception:
         measured = min(
             MAX_EMBEDDING_LATENCY_MS,

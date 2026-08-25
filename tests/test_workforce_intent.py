@@ -7,6 +7,7 @@ import pytest
 from agency_runtime.core.workforce.intent import (
     COMPACT_INTENT_RESPONSE_SCHEMA,
     COMPACT_INTENT_SYSTEM,
+    compact_intent_response_schema,
     compact_intent_taxonomy,
     compile_intent_plan,
     enrich_intent_plan,
@@ -58,6 +59,16 @@ def _intent(
             }
         ],
     }
+
+
+def test_compact_intent_schema_binds_capabilities_to_current_ontology() -> None:
+    schema = compact_intent_response_schema(
+        max_work_units=2,
+        known_capability_ids=("analysis", "review"),
+    )
+
+    capabilities = schema["properties"]["units"]["items"]["properties"]["capability_ids"]
+    assert capabilities["items"]["enum"] == ["analysis", "review"]
 
 
 def _compile(

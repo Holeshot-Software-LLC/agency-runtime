@@ -1159,6 +1159,24 @@ def _register_delegation_and_evals(sub: Subparsers, handlers: Handlers) -> None:
         help="Omit per-case details from the report",
     )
     _bind(eval_full_roster, handlers, "cmd_eval_full_roster")
+    eval_shadow_recall = eval_sub.add_parser(
+        "shadow-recall",
+        help="Run the fixed live AR-266 four-host shadow-value matrix",
+    )
+    eval_shadow_recall.add_argument(
+        "--confirm-live-inference",
+        default="",
+        help='Required exact phrase: "RUN LIVE SHADOW RECALL EVAL"',
+    )
+    eval_shadow_recall.add_argument(
+        "--json", action="store_true", help="Print machine-readable results"
+    )
+    eval_shadow_recall.add_argument(
+        "--no-details",
+        action="store_true",
+        help="Omit per-host and per-case matrix details",
+    )
+    _bind(eval_shadow_recall, handlers, "cmd_eval_shadow_recall")
     eval_upstream_architecture = eval_sub.add_parser(
         "upstream-architecture",
         help="Compare Agency's explicit contracts with a pinned upstream orchestrator",

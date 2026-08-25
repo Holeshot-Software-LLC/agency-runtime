@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import os
+import stat
 from pathlib import Path
 
 import pytest
@@ -130,6 +132,34 @@ def test_config_parent_uses_private_host_capability_for_missing_descendant(
 
     assert created == [target.parent]
     assert checks == 3
+
+
+def test_config_parent_creates_nested_components_privately_under_permissive_umask(
+    tmp_path: Path,
+) -> None:
+    tmp_path.chmod(0o700)
+    runtime_home = tmp_path / "runtime"
+    runtime_home.mkdir(mode=0o700)
+    target = (
+        runtime_home
+        / "openclaw"
+        / "config-identities"
+        / ("a" * 64)
+        / "final-only-streaming-backup.yaml"
+    )
+
+    previous_umask = os.umask(0o002)
+    try:
+        persistence.ensure_config_parent(target, is_windows=False)
+    finally:
+        os.umask(previous_umask)
+
+    for candidate in (
+        runtime_home / "openclaw",
+        runtime_home / "openclaw" / "config-identities",
+        target.parent,
+    ):
+        assert stat.S_IMODE(os.lstat(candidate).st_mode) == 0o700
 
 
 def test_config_parent_does_not_use_capability_fallback_on_posix(

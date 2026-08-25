@@ -244,7 +244,11 @@ def _config(mode: str = "balanced", **workforce: object) -> AgencyConfig:
     return AgencyConfig(providers=(_provider(),), workforce=policy)
 
 
-def _hybrid_config(*, dense_recall_mode: str = "additive") -> AgencyConfig:
+def _hybrid_config(
+    *,
+    dense_recall_mode: str = "additive",
+    embedding_dimensions: int = 0,
+) -> AgencyConfig:
     embedding = InferenceProfile(
         name="recall-embedding",
         adapter="litellm",
@@ -252,6 +256,7 @@ def _hybrid_config(*, dense_recall_mode: str = "additive") -> AgencyConfig:
         capability_class="embeddings",
         base_url="https://router.example.test/v1",
         api_key="secret",
+        dimensions=embedding_dimensions,
     )
     reranker = InferenceProfile(
         name="recall-reranker",
@@ -1041,6 +1046,64 @@ def test_additive_hybrid_recall_expands_beyond_typed_24_before_inference_selects
     assert outcome.staffing.units[0].selected == ("zz-vector-specialist",)
 
 
+def test_embedding_dimensions_change_catalog_identity_and_force_a_cold_catalog() -> None:
+    clear_hybrid_recall_cache()
+    snapshot = _hybrid_recall_snapshot()
+    current_dimensions = 2
+    embedding_input_counts: list[int] = []
+
+    def embed(texts: tuple[str, ...]) -> EmbeddingProviderResponse:
+        embedding_input_counts.append(len(texts))
+        vectors = [
+            ([1.0] + [0.0] * (current_dimensions - 1))
+            if "zz-vector-specialist" in text or text.startswith("unit identity:")
+            else ([0.0, 1.0] + [0.0] * (current_dimensions - 2))
+            for text in texts
+        ]
+        return EmbeddingProviderResponse(
+            vectors=vectors,
+            provider_name="recall-embedding",
+            requested_model="embedding-model-v1",
+            actual_model="embedding-model-v1",
+        )
+
+    def invoke(_provider, prompt, _schema, **_kwargs):
+        payload = json.loads(prompt)
+        if "planning_taxonomy" in payload:
+            return _result(_compact_plan_document())
+        if payload.get("recall_policy") == "deterministic_candidate_recall_only":
+            return _result(
+                {
+                    "units": [
+                        {
+                            "unit_id": row["unit_id"],
+                            "ranked_candidate_ids": [
+                                candidate["agent_id"] for candidate in row["candidates"]
+                            ],
+                        }
+                        for row in payload["units"]
+                    ]
+                }
+            )
+        return _result(_nomination_document("generic-000"))
+
+    identities: list[str] = []
+    for dimensions in (2, 3):
+        current_dimensions = dimensions
+        outcome = plan_and_staff_workforce(
+            "Analyze the workforce retrieval vocabulary gap.",
+            snapshot,
+            config=_hybrid_config(embedding_dimensions=dimensions),
+            context=_context(),
+            invoker=invoke,
+            embedding_invoker=embed,
+        )
+        identities.append(outcome.attempts[1].catalog_identity)
+
+    assert identities[0] != identities[1]
+    assert embedding_input_counts == [snapshot.worker_count + 1, snapshot.worker_count + 1]
+
+
 def test_invalid_recall_reranker_falls_back_to_unchanged_typed_cards() -> None:
     clear_hybrid_recall_cache()
     snapshot = _hybrid_recall_snapshot()
@@ -1277,7 +1340,7 @@ def test_an_invented_domain_is_repaired_by_the_planner_not_blamed_on_the_recruit
     ] == [("planner", "provider_response_contract_invalid")]
     assert "[RUNTIME VALIDATION FEEDBACK]" in prompts[1]
     assert "text-normalization" in prompts[1]
-    assert systems[1] == systems[0]
+    assert "bounded work-plan repairer" in systems[1]
 
 
 def test_a_staffing_failure_names_the_axis_only_when_the_roster_cannot_cover_it() -> None:
@@ -1579,9 +1642,11 @@ def test_semantically_invalid_provider_output_gets_one_bounded_repair_attempt() 
         )
     )
     prompts: list[str] = []
+    systems: list[str] = []
 
     def invoke(*args, **kwargs):
         prompts.append(args[1])
+        systems.append(kwargs["system_prompt"])
         return next(responses)
 
     outcome = plan_and_staff_workforce(
@@ -1600,7 +1665,63 @@ def test_semantically_invalid_provider_output_gets_one_bounded_repair_attempt() 
         "applied",
     ]
     assert outcome.attempts[0].validation_detail == "work-unit plan contains duplicate unit ids"
-    assert "work-unit plan contains duplicate unit ids" in prompts[1]
+    assert outcome.attempts[0].validation_reason_codes == ("plan_response_semantic_invalid",)
+    feedback = json.loads(prompts[1].partition("[RUNTIME VALIDATION FEEDBACK]\n")[2])
+    assert feedback["validation_reason_codes"] == ["plan_response_semantic_invalid"]
+    assert feedback["deterministic_validation_detail"] == (
+        "work-unit plan contains duplicate unit ids"
+    )
+    assert "bounded work-plan repairer" in systems[1]
+
+
+def test_forward_dependency_rejection_supplies_closed_repair_guidance() -> None:
+    snapshot = _snapshot(_contract("technical-analyst"))
+    invalid = _compact_plan_document()
+    invalid["units"][0]["depends_on"] = ["unit-review"]
+    invalid["units"].append(
+        {
+            **invalid["units"][0],
+            "unit_id": "unit-review",
+            "outcome": "Review the analysis evidence",
+            "artifact_kind": "review-report",
+            "capability_ids": ["review"],
+            "depends_on": [],
+        }
+    )
+    responses = iter(
+        (
+            _result(invalid),
+            _result(_compact_plan_document()),
+            _result(_nomination_document()),
+        )
+    )
+    prompts: list[str] = []
+
+    def invoke(*args, **kwargs):
+        prompts.append(args[1])
+        return next(responses)
+
+    outcome = plan_and_staff_workforce(
+        "Analyze this implementation safely.",
+        snapshot,
+        config=_config(balanced_call_budget=3),
+        context=_context(),
+        invoker=invoke,
+    )
+
+    assert outcome.accepted
+    assert outcome.attempts[0].validation_reason_codes == ("plan_dependency_not_earlier",)
+    feedback = json.loads(prompts[1].partition("[RUNTIME VALIDATION FEEDBACK]\n")[2])
+    assert feedback["validation_reason_codes"] == ["plan_dependency_not_earlier"]
+    assert feedback["violations"] == [
+        {
+            "code": "plan_dependency_not_earlier",
+            "required_correction": (
+                "Topologically order the complete plan and allow each depends_on entry to "
+                "reference only an exact unit ID that appears earlier."
+            ),
+        }
+    ]
 
 
 def test_planner_repair_enforces_configured_work_unit_limit_before_recruitment() -> None:
@@ -1832,9 +1953,11 @@ def test_planner_repair_receives_exact_assurance_graph_and_remains_inference_own
         ),
     )
     prompts: list[str] = []
+    systems: list[str] = []
 
     def invoke(_provider, prompt, _schema, **_kwargs):
         prompts.append(prompt)
+        systems.append(_kwargs["system_prompt"])
         if len(prompts) == 1:
             initial = json.loads(prompt)
             contract = initial["constraints"]["plan_acceptance_contract"]
@@ -1853,6 +1976,7 @@ def test_planner_repair_receives_exact_assurance_graph_and_remains_inference_own
                 "plan_tests_not_ordered_after_implementation",
                 "plan_missing_security_review",
             ]
+            assert feedback["validation_reason_codes"] == codes
             assert all(item["required_correction"] for item in feedback["violations"])
             return _result(repaired)
         nominations = {
@@ -1882,6 +2006,12 @@ def test_planner_repair_receives_exact_assurance_graph_and_remains_inference_own
         "applied",
         "applied",
     ]
+    assert outcome.attempts[0].validation_reason_codes == (
+        "plan_missing_test_evidence_review",
+        "plan_tests_not_ordered_after_implementation",
+        "plan_missing_security_review",
+    )
+    assert "bounded work-plan repairer" in systems[1]
     assert outcome.plan is not None
     assert [item.unit_id for item in outcome.plan.units] == [
         item["unit_id"] for item in repaired["units"]
@@ -3065,6 +3195,7 @@ def test_workforce_routing_reports_only_rejected_or_failed_attempts_as_failures(
                 status="rejected",
                 reason_code="provider_response_contract_invalid",
                 latency_ms=8,
+                validation_reason_codes=("plan_missing_security_review",),
             ),
         ),
         abstention_codes=(),
@@ -3090,6 +3221,9 @@ def test_workforce_routing_reports_only_rejected_or_failed_attempts_as_failures(
     )
 
     assert routing["inference_failures"] == ["provider_response_contract_invalid"]
+    assert routing["provider_attempts"][1]["validation_reason_codes"] == [
+        "plan_missing_security_review"
+    ]
 
 
 def test_reconcile_unit_id_handles_exact_match() -> None:

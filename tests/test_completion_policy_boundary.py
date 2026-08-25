@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 from pathlib import Path
 from types import ModuleType
+from typing import Any
 
 import pytest
 
@@ -108,6 +110,189 @@ def test_hermes_accepts_exact_first_visible_response_constructed_by_finalize_too
         == finalized["text"]
     )
     assert store.get_run("hermes-turn")["status"] == "completed"
+
+
+def test_generated_hermes_registers_callable_first_pass_finalizer(
+    tmp_path: Path,
+) -> None:
+    store = Store(tmp_path / "hermes-native-finalizer.db")
+    _create_turn(
+        store,
+        session_id="hermes-session",
+        trace_id="hermes-turn",
+        request_kind="trivial",
+    )
+    module = _load_generated_hermes(tmp_path)
+    adapter = HermesAdapter(store)
+    module._adapter = adapter
+    assert module._MAX_FINALIZER_RESULT_CHARS == hermes_bridge.MAX_FINALIZER_RESULT_CHARS
+    module._remember_turn("hermes-session", "hermes-turn")
+    initial_snapshot = hermes_bridge._header_snapshot_context(
+        adapter,
+        session_id="hermes-session",
+        trace_id="hermes-turn",
+        model="task-general",
+    )
+    assert "Skills loaded: none" in initial_snapshot
+    assert "Actual Model selected: requested execution alias: task-general" in initial_snapshot
+
+    store.record_skill_loaded(
+        "hermes-session",
+        "current-evidence-skill",
+        trace_id="hermes-turn",
+    )
+    adapter.post_api_request_handler(
+        response={"model": "local/current-model"},
+        model="task-general",
+        session_id="hermes-session",
+        trace_id="hermes-turn",
+    )
+
+    class ToolContext:
+        def __init__(self) -> None:
+            self.tools: dict[str, dict[str, Any]] = {}
+
+        def register_hook(self, *_args: object, **_kwargs: object) -> None:
+            pass
+
+        def register_command(self, *_args: object, **_kwargs: object) -> None:
+            pass
+
+        def register_tool(self, **kwargs: Any) -> None:
+            self.tools[str(kwargs["name"])] = kwargs
+
+    context = ToolContext()
+    module.register(context)
+
+    assert set(context.tools) == {"agency_finalize"}
+    registration = context.tools["agency_finalize"]
+    assert registration["toolset"] == "agency-runtime"
+    assert registration["schema"]["name"] == "agency_finalize"
+    assert registration["schema"]["parameters"]["required"] == ["draft_text"]
+    assert set(registration["schema"]["parameters"]["properties"]) == {"draft_text"}
+
+    finalized_text = registration["handler"](
+        {"draft_text": "First native Hermes response."},
+        session_id="hermes-session",
+        task_id="hermes-task",
+    )
+
+    assert finalized_text.startswith("Agency/Agencies loaded: none\n")
+    assert "Skills loaded: current-evidence-skill\n" in finalized_text
+    assert (
+        "Actual Model selected: observed execution receipt: "
+        "[general] task-general -> local/current-model via task-general (host)\n"
+    ) in finalized_text
+    assert finalized_text.endswith("First native Hermes response.")
+    assert store.get_run("hermes-turn")["status"] == "completed"
+    assert (
+        module._pre_verify(
+            finalized_text,
+            attempt=0,
+            conversation_id="hermes-session",
+            turn_id="hermes-turn",
+        )
+        is None
+    )
+    assert (
+        module._transform_llm_output(
+            finalized_text,
+            conversation_id="hermes-session",
+            turn_id="hermes-turn",
+        )
+        == finalized_text
+    )
+
+
+def test_generated_hermes_finalizer_rejects_draft_above_inline_transport_budget(
+    tmp_path: Path,
+) -> None:
+    store = Store(tmp_path / "hermes-native-finalizer-bound.db")
+    _create_turn(
+        store,
+        session_id="hermes-session",
+        trace_id="hermes-turn",
+        request_kind="trivial",
+    )
+    module = _load_generated_hermes(tmp_path)
+    module._adapter = HermesAdapter(store)
+    module._remember_turn("hermes-session", "hermes-turn")
+    draft = "🔥" * (hermes_bridge.MAX_FINALIZER_DRAFT_CHARS + 1)
+
+    result = json.loads(
+        module._agency_finalize(
+            {"draft_text": draft},
+            session_id="hermes-session",
+            task_id="hermes-task",
+        )
+    )
+
+    assert result == {
+        "action": "continue",
+        "text": "",
+        "missing": ["host_transport"],
+    }
+    assert store.get_run("hermes-turn")["status"] == "active"
+    assert store.get_authoritative_finalization("hermes-session", "hermes-turn") is None
+
+
+def test_hermes_bridge_refuses_accepted_text_above_inline_transport_budget(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store = Store(tmp_path / "hermes-native-finalizer-transport.db")
+    _create_turn(
+        store,
+        session_id="hermes-session",
+        trace_id="hermes-turn",
+        request_kind="trivial",
+    )
+    monkeypatch.setattr(hermes_bridge, "MAX_FINALIZER_RESULT_CHARS", 64)
+
+    result = hermes_bridge.handle(
+        {
+            "action": "finalize",
+            "session_id": "hermes-session",
+            "trace_id": "hermes-turn",
+            "draft_text": "This draft fits the plugin input but its header cannot stay inline.",
+        },
+        adapter=HermesAdapter(store),
+    )
+
+    assert result == {
+        "action": "continue",
+        "text": "",
+        "missing": ["host_transport"],
+    }
+    assert store.get_run("hermes-turn")["status"] == "active"
+    assert store.get_authoritative_finalization("hermes-session", "hermes-turn") is None
+
+
+def test_generated_hermes_finalizer_rejects_missing_native_correlation(
+    tmp_path: Path,
+) -> None:
+    store = Store(tmp_path / "hermes-native-finalizer-correlation.db")
+    _create_turn(
+        store,
+        session_id="hermes-session",
+        trace_id="hermes-turn",
+        request_kind="trivial",
+    )
+    module = _load_generated_hermes(tmp_path)
+    module._adapter = HermesAdapter(store)
+    result = json.loads(
+        module._agency_finalize(
+            {"draft_text": "Do not finalize this uncorrelated turn."},
+        )
+    )
+
+    assert result == {
+        "action": "continue",
+        "text": "",
+        "missing": ["correlation"],
+    }
+    assert store.get_run("hermes-turn")["status"] == "active"
+    assert store.get_authoritative_finalization("hermes-session", "hermes-turn") is None
 
 
 def test_hermes_transform_rejects_unfinalized_natural_response_without_repair(
@@ -468,5 +653,29 @@ def test_hermes_runtime_disabled_remains_intentional_passthrough(tmp_path: Path)
     store.set_host_control("hermes", enabled=False, expected_generation=0, source="test")
     module = _load_generated_hermes(tmp_path)
     module._adapter = HermesAdapter(store=store)
+    module._remember_turn("session", "turn")
 
     assert module._transform_llm_output("Original answer.") == "Original answer."
+    assert (
+        module._agency_finalize(
+            {"draft_text": "Original answer."},
+            session_id="session",
+        )
+        == "Original answer."
+    )
+    long_draft = "x" * (hermes_bridge.MAX_FINALIZER_DRAFT_CHARS + 1)
+    assert (
+        module._agency_finalize(
+            {"draft_text": long_draft},
+            session_id="session",
+        )
+        == long_draft
+    )
+    module._forget_turn("session")
+    assert (
+        module._agency_finalize(
+            {"draft_text": long_draft},
+            session_id="session",
+        )
+        == long_draft
+    )

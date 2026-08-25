@@ -3,7 +3,7 @@ title: "Troubleshooting Agency Runtime"
 status: active
 category: operations
 created: 2026-07-10
-updated: 2026-08-12
+updated: 2026-08-25
 tags: [operations, troubleshooting]
 related:
   - README.md
@@ -21,6 +21,8 @@ related:
   - docs/roadmap/issue-AR-189-add-owned-host-integration-uninstall.md
   - docs/roadmap/issue-AR-190-make-upgrade-plans-runnable-in-uv-tools.md
   - docs/roadmap/issue-AR-192-fail-fast-on-codex-hook-trust-drift.md
+  - docs/roadmap/issue-AR-266-dense-hybrid-workforce-recall.md
+  - docs/roadmap/issue-AR-286-configure-bounded-embedding-dimensions.md
   - docs/roadmap/AR-119-founding-vision.md
   - docs/roadmap/AR-119-rule-host-evidence-matrix.md
   - docs/decisions/0045-turn-scoped-specialist-activation.md
@@ -829,6 +831,27 @@ Agency has no deterministic specialist-selection mode. Do not leave a broken
 provider configured in the hope of obtaining a silent fallback. Candidate
 audit with `--require-inference` is also fail-closed: a degraded inference
 review cannot approve or activate a quarantined revision.
+
+## Dense recall falls back to typed-only
+
+Keep `workforce.dense_recall_mode` at `shadow` while diagnosing learned recall.
+Both `workforce.recall.embedding` and `workforce.recall.reranker` must name
+explicit capability-correct profiles; neither inherits the default text route.
+
+An embedding profile's optional `dimensions` value defaults to zero, which
+omits the provider request field. A nonzero value is valid only with
+`capability_class: embeddings` on `ollama`, `openai-compatible`, or `litellm`.
+Agency requires the exact requested width and binds it into catalog identity.
+If the provider rejects or strips the option, returns another width, or the
+complete batch exceeds an existing bound, learned recall remains unavailable
+and the unchanged typed candidate lane continues. Do not raise the safety
+bounds or slice/pad vectors client-side; select a provider-native dimension or
+a compatible embedding model instead.
+
+The reranker is a separate bounded text call and cannot repair embedding
+evidence. It must return every offered discovery exactly once. Provider failure
+or an invalid permutation also preserves typed-only behavior and cannot create
+a staffing gap or select a specialist.
 
 ## No specialist is selected
 

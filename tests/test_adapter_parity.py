@@ -150,12 +150,29 @@ class FakeHookContext:
     def __init__(self) -> None:
         self.hooks: dict[str, Any] = {}
         self.commands: dict[str, Any] = {}
+        self.tools: dict[str, dict[str, Any]] = {}
 
     def register_hook(self, name: str, fn: Any) -> None:
         self.hooks[name] = fn
 
     def register_command(self, name: str, fn: Any, **_kwargs: Any) -> None:
         self.commands[name] = fn
+
+    def register_tool(
+        self,
+        *,
+        name: str,
+        toolset: str,
+        schema: dict[str, Any],
+        handler: Any,
+        **kwargs: Any,
+    ) -> None:
+        self.tools[name] = {
+            "toolset": toolset,
+            "schema": schema,
+            "handler": handler,
+            **kwargs,
+        }
 
 
 def test_explicit_host_home_rejects_path_escape(tmp_path: Path) -> None:
@@ -376,6 +393,8 @@ def test_generated_hermes_plugin_imports_and_registers_native_hooks(
         "on_session_end",
     } <= set(ctx.hooks)
     assert set(ctx.commands) == {"agency"}
+    assert set(ctx.tools) == {"agency_finalize"}
+    assert ctx.tools["agency_finalize"]["toolset"] == "agency-runtime"
     initial_control = Store(tmp_path / "hermes.db").get_host_control("hermes")
     assert "remains enabled" in ctx.commands["agency"]("off")
     assert "enabled" in ctx.commands["agency"]("status")
@@ -477,6 +496,7 @@ def test_generated_hermes_plugin_imports_and_registers_native_hooks(
         module._subagent_start(
             parent_session_id="hermes-session",
             parent_turn_id="hermes-turn",
+            child_session_id=f"{child_id}-session",
             child_subagent_id=child_id,
             child_role="ambiguous-reviewer",
             child_goal=f"Review as {child_id}",
@@ -487,6 +507,169 @@ def test_generated_hermes_plugin_imports_and_registers_native_hooks(
         child_status="completed",
     )
     assert "native_child_ended" not in dict(calls)
+
+
+def test_generated_hermes_plugin_correlates_v0204_child_session_fields(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    private_installer_launcher: tuple[Path, Path],
+) -> None:
+    """Hermes v0.20.4 identifies child turns and stops by child session."""
+
+    monkeypatch.setenv("AGENCY_DB_PATH", str(tmp_path / "hermes-child.db"))
+    ensure_private_test_directory(tmp_path / ".hermes" / "plugins", parents=True)
+    result = install_agent_adapter("hermes", home_dir=tmp_path)
+    plugin_path = Path(result["plugin_path"])
+    spec = importlib.util.spec_from_file_location(
+        "agency_runtime_generated_hermes_child_session",
+        plugin_path,
+    )
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    calls: list[tuple[str, dict[str, Any]]] = []
+
+    def invoke(action: str, payload: dict[str, Any] | None = None) -> Any:
+        calls.append((action, dict(payload or {})))
+        return {"context": "routed"} if action == "pre_llm_call" else None
+
+    module._invoke = invoke
+    module._subagent_start(
+        parent_session_id="parent-session",
+        parent_turn_id="parent-turn",
+        child_session_id="host-child-session",
+        child_subagent_id="host-child-worker",
+        child_goal="Review the Hermes bridge",
+    )
+
+    # The real child pre-LLM hook carries its current session and parent
+    # session, but no child_subagent_id or child_role.
+    assert module._pre_llm_call(
+        session_id="host-child-session",
+        parent_session_id="parent-session",
+        user_message="Review the Hermes bridge",
+    ) == {"context": "routed"}
+    child_preflight = calls[-1][1]
+    assert child_preflight["parent_session_id"] == "parent-session"
+    assert child_preflight["parent_trace_id"] == "parent-turn"
+    assert child_preflight["native_worker_id"] == "host-child-worker"
+    assert child_preflight["native_run_id"] == "hermes-subagent:host-child-worker"
+
+    # The real stop hook also omits the subagent id and resolves the exact
+    # host-issued child_session_id instead.
+    module._subagent_stop(
+        parent_session_id="parent-session",
+        parent_turn_id="parent-turn",
+        child_session_id="host-child-session",
+        child_status="completed",
+    )
+    ended = calls[-1]
+    assert ended[0] == "native_child_ended"
+    assert ended[1]["worker_id"] == "host-child-worker"
+    assert ended[1]["native_run_id"] == "hermes-subagent:host-child-worker"
+
+    # Successful stop cleanup prevents a later unrelated turn that reuses the
+    # child session from inheriting stale native-child authority.
+    module._pre_llm_call(
+        session_id="host-child-session",
+        parent_session_id="parent-session",
+        user_message="Unrelated later turn",
+    )
+    cleaned_preflight = calls[-1][1]
+    assert cleaned_preflight["native_worker_id"] == ""
+    assert cleaned_preflight["native_run_id"] == ""
+
+
+def test_generated_hermes_plugin_fails_closed_on_child_session_conflict(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    private_installer_launcher: tuple[Path, Path],
+) -> None:
+    monkeypatch.setenv("AGENCY_DB_PATH", str(tmp_path / "hermes-conflict.db"))
+    ensure_private_test_directory(tmp_path / ".hermes" / "plugins", parents=True)
+    result = install_agent_adapter("hermes", home_dir=tmp_path)
+    plugin_path = Path(result["plugin_path"])
+    spec = importlib.util.spec_from_file_location(
+        "agency_runtime_generated_hermes_child_conflict",
+        plugin_path,
+    )
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    calls: list[tuple[str, dict[str, Any]]] = []
+
+    def invoke(action: str, payload: dict[str, Any] | None = None) -> Any:
+        calls.append((action, dict(payload or {})))
+        return {"context": "routed"} if action == "pre_llm_call" else None
+
+    module._invoke = invoke
+    for worker_id in ("worker-a", "worker-b"):
+        module._subagent_start(
+            parent_session_id="parent-session",
+            parent_turn_id="parent-turn",
+            child_session_id="conflicted-child-session",
+            child_subagent_id=worker_id,
+            child_goal=f"Review as {worker_id}",
+        )
+
+    calls.clear()
+    module._pre_llm_call(
+        session_id="conflicted-child-session",
+        parent_session_id="parent-session",
+        user_message="Ambiguous child turn",
+    )
+    ambiguous_preflight = calls[-1][1]
+    assert ambiguous_preflight["native_worker_id"] == ""
+    assert ambiguous_preflight["native_run_id"] == ""
+    module._subagent_stop(
+        parent_session_id="parent-session",
+        child_session_id="conflicted-child-session",
+        child_status="completed",
+    )
+    assert "native_child_ended" not in dict(calls)
+
+    calls.clear()
+    module._subagent_start(
+        parent_session_id="correct-parent",
+        parent_turn_id="correct-turn",
+        child_session_id="consistent-child-session",
+        child_subagent_id="consistent-worker",
+        child_goal="Check parent consistency",
+    )
+    calls.clear()
+    module._pre_llm_call(
+        session_id="consistent-child-session",
+        parent_session_id="wrong-parent",
+        user_message="Wrong parent",
+    )
+    mismatched_preflight = calls[-1][1]
+    assert mismatched_preflight["native_worker_id"] == ""
+    module._subagent_stop(
+        parent_session_id="wrong-parent",
+        child_session_id="consistent-child-session",
+        child_status="completed",
+    )
+    assert "native_child_ended" not in dict(calls)
+
+    calls.clear()
+    module._subagent_stop(
+        parent_session_id="correct-parent",
+        parent_turn_id="wrong-turn",
+        child_session_id="consistent-child-session",
+        child_status="completed",
+    )
+    assert "native_child_ended" not in dict(calls)
+
+    calls.clear()
+    module._subagent_stop(
+        parent_session_id="correct-parent",
+        parent_turn_id="correct-turn",
+        child_session_id="consistent-child-session",
+        child_status="completed",
+    )
+    assert dict(calls)["native_child_ended"]["worker_id"] == "consistent-worker"
 
 
 def test_generated_hermes_plugin_loads_in_isolated_interpreter_without_agency_on_path(
@@ -505,10 +688,13 @@ class Context:
     def __init__(self):
         self.hooks = {}
         self.commands = {}
+        self.tools = {}
     def register_hook(self, name, handler):
         self.hooks[name] = handler
     def register_command(self, name, handler, **_kwargs):
         self.commands[name] = handler
+    def register_tool(self, *, name, handler, **_kwargs):
+        self.tools[name] = handler
 
 spec = importlib.util.spec_from_file_location("isolated_hermes_plugin", sys.argv[1])
 if spec is None or spec.loader is None:
@@ -517,7 +703,11 @@ module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(module)
 ctx = Context()
 module.register(ctx)
-print(json.dumps({"hooks": sorted(ctx.hooks), "commands": sorted(ctx.commands)}))
+print(json.dumps({
+    "hooks": sorted(ctx.hooks),
+    "commands": sorted(ctx.commands),
+    "tools": sorted(ctx.tools),
+}))
 """
 
     completed = subprocess.run(
@@ -542,6 +732,7 @@ print(json.dumps({"hooks": sorted(ctx.hooks), "commands": sorted(ctx.commands)})
         "transform_llm_output",
     ]
     assert loaded["commands"] == ["agency"]
+    assert loaded["tools"] == ["agency_finalize"]
 
 
 def test_generated_hermes_bridge_uses_bounded_shell_free_absolute_argv(
@@ -875,6 +1066,17 @@ def test_generated_codex_and_claude_bundles_use_native_hooks_and_mcp(
     assert result["maturity"] == "staged-not-registered"
 
 
+def test_openclaw_disabled_tool_refresh_reports_runtime_state() -> None:
+    from agency_runtime.adapters.openclaw.node_bridge import _runtime_disabled_result
+
+    assert _runtime_disabled_result({"includeHeaderContext": True}, "post_tool_call") == {
+        "runtimeEnabled": False,
+        "runtimeDisabled": True,
+        "bypassed": True,
+    }
+    assert _runtime_disabled_result({}, "post_tool_call") == {}
+
+
 def test_openclaw_bridge_routes_user_prompts_and_terminalizes_first_invalid_response(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -926,9 +1128,11 @@ def test_openclaw_bridge_routes_user_prompts_and_terminalizes_first_invalid_resp
         {
             "action": "post_tool_call",
             "sessionId": "bridge",
+            "traceId": "bridge-turn",
             "toolName": "agency_agents_load",
-            "toolInput": {"agent": "chief-of-staff"},
+            "toolInput": {"agent": "technical-writer"},
             "toolResult": {"ok": True},
+            "includeHeaderContext": True,
         }
     )
     verified = handle(
@@ -956,11 +1160,20 @@ def test_openclaw_bridge_routes_user_prompts_and_terminalizes_first_invalid_resp
     enabled_status = handle({"action": "control", "command": "status"})
 
     assert "managers=agency-steward" in routed["context"]
-    assert "[AGENCY INITIAL HEADER SNAPSHOT v1]" in routed["context"]
-    assert "call `agency.finalize` exactly once" in routed["context"]
+    assert "[AGENCY FIRST-PASS FINALIZATION CONTRACT]\n" in routed["context"]
+    assert "[AGENCY INITIAL HEADER SNAPSHOT v2]" in routed["context"]
+    assert "first and only natural final response" in routed["context"]
+    assert "Do not call a finalizer tool" in routed["context"]
+    assert "do not emit NO_REPLY" in routed["context"]
+    assert routed["context"].endswith("There is no correction pass.")
     assert correlated["context"]
     assert ordinary["context"]
-    assert recorded == {}
+    assert recorded["runtimeEnabled"] is True
+    assert "[AGENCY UPDATED HEADER SNAPSHOT v2]" in recorded["context"]
+    assert (
+        "Agency/Agencies loaded: agency-steward, code-reviewer, technical-writer"
+        in recorded["context"]
+    )
     assert verified["action"] == "terminal"
     assert verified["terminalRejected"] is True
     assert verified["terminalStatus"] == "response_invalid"
@@ -1010,10 +1223,9 @@ def test_openclaw_bridge_routes_user_prompts_and_terminalizes_first_invalid_resp
         "updated_at": None,
         "source": "default",
     }
-    # Plural by design: a turn may load more than one card, so this records the
-    # inference-selected specialist alongside the resident manager rather than
-    # truncating to one.
-    assert store.get_specialists_for_session("bridge") == ["code-reviewer", "chief-of-staff"]
+    # Plural by design: this records the inference-selected specialist and the
+    # later native-tool-loaded specialist rather than truncating to one.
+    assert store.get_specialists_for_session("bridge") == ["code-reviewer", "technical-writer"]
 
 
 def test_hermes_preflight_appends_exact_first_pass_header_snapshot(
@@ -1039,7 +1251,16 @@ def test_hermes_preflight_appends_exact_first_pass_header_snapshot(
     )
 
     assert "[AGENCY INITIAL HEADER SNAPSHOT v1]" in result["context"]
-    assert "call `agency.finalize` exactly once" in result["context"]
+    assert "invoke the local finalizer exactly once" in result["context"]
+    assert (
+        "If `agency_finalize` is visible, call it directly with only draft_text"
+        in result["context"]
+    )
+    assert (
+        "call Hermes `tool_call` once with name=`agency_finalize` and arguments "
+        "containing only draft_text"
+    ) in result["context"]
+    assert "no `tool_describe` round trip is needed" in result["context"]
     assert "Agency/Agencies loaded: agency-steward" in result["context"]
 
 
@@ -1397,7 +1618,6 @@ def test_openclaw_accepts_exact_first_visible_response_constructed_by_finalize_t
     tmp_path: Path,
 ) -> None:
     from agency_runtime.adapters.openclaw.node_bridge import handle
-    from agency_runtime.server.mcp_tools import dispatch_tool_call
 
     store = Store(tmp_path / "openclaw-first-pass.db")
     store.create_run(
@@ -1406,29 +1626,33 @@ def test_openclaw_accepts_exact_first_visible_response_constructed_by_finalize_t
         host="openclaw",
         metadata={"request_kind": "trivial"},
     )
-    finalized = dispatch_tool_call(
-        "agency.finalize",
+    finalized = handle(
         {
-            "draft_text": "First visible response.",
-            "session_id": "first-pass-session",
-            "trace_id": "first-pass-turn",
+            "action": "finalize",
+            "draftText": "First visible response.",
+            "sessionId": "first-pass-session",
+            "traceId": "first-pass-turn",
         },
-        store,
+        adapter=OpenClawAdapter(store=store),
     )
 
     assert finalized["action"] == "accept"
-    assert (
-        handle(
-            {
-                "action": "pre_verify",
-                "sessionId": "first-pass-session",
-                "traceId": "first-pass-turn",
-                "finalResponse": finalized["text"],
-            },
-            adapter=OpenClawAdapter(store=store),
-        )
-        == {}
+    finalization = store.get_authoritative_finalization(
+        "first-pass-session",
+        "first-pass-turn",
+        action="accept",
     )
+    assert finalization is None
+    pending = handle(
+        {
+            "action": "pre_verify",
+            "sessionId": "first-pass-session",
+            "traceId": "first-pass-turn",
+            "finalResponse": finalized["text"],
+        },
+        adapter=OpenClawAdapter(store=store),
+    )
+    assert pending["action"] == "allow_pending"
     allowed = handle(
         {
             "action": "outbound_gate",
@@ -1440,6 +1664,85 @@ def test_openclaw_accepts_exact_first_visible_response_constructed_by_finalize_t
     )
     assert allowed["action"] == "allow"
     assert allowed["turnId"] == "first-pass-turn"
+    finalization = store.get_authoritative_finalization(
+        "first-pass-session",
+        "first-pass-turn",
+        action="accept",
+    )
+    assert finalization is not None
+    assert finalization["host"] == "openclaw"
+
+
+def test_openclaw_finalize_tool_defers_terminal_until_full_outbound_payload_is_bound(
+    tmp_path: Path,
+) -> None:
+    from agency_runtime.adapters.openclaw.node_bridge import handle
+
+    store = Store(tmp_path / "openclaw-full-payload-finalization.db")
+    store.create_run(
+        trace_id="full-payload-turn",
+        session_id="full-payload-session",
+        host="openclaw",
+        metadata={"request_kind": "trivial"},
+    )
+    adapter = OpenClawAdapter(store=store)
+    finalized = handle(
+        {
+            "action": "finalize",
+            "draftText": "First visible response.",
+            "sessionId": "full-payload-session",
+            "traceId": "full-payload-turn",
+        },
+        adapter=adapter,
+    )
+
+    assert finalized["action"] == "accept"
+    assert (
+        store.get_authoritative_finalization(
+            "full-payload-session",
+            "full-payload-turn",
+        )
+        is None
+    )
+    pending = handle(
+        {
+            "action": "pre_verify",
+            "sessionId": "full-payload-session",
+            "traceId": "full-payload-turn",
+            "finalResponse": finalized["text"],
+        },
+        adapter=adapter,
+    )
+    assert pending["action"] == "allow_pending"
+
+    outbound_payload = json.dumps(
+        {"mediaUrls": [], "text": finalized["text"]},
+        separators=(",", ":"),
+        sort_keys=True,
+    )
+    allowed = handle(
+        {
+            "action": "outbound_gate",
+            "sessionId": "full-payload-session",
+            "traceId": "full-payload-turn",
+            "finalResponse": finalized["text"],
+            "outboundPayload": outbound_payload,
+        },
+        adapter=adapter,
+    )
+    payload_digest = hashlib.sha256(outbound_payload.encode()).hexdigest()
+    policy_digest = hashlib.sha256(finalized["text"].encode()).hexdigest()
+    assert allowed["action"] == "allow"
+    assert allowed["responseHash"] == payload_digest
+    terminal = store.get_authoritative_finalization(
+        "full-payload-session",
+        "full-payload-turn",
+        action="accept",
+        response_hash=payload_digest,
+    )
+    assert terminal is not None
+    assert terminal["response_hash"] == payload_digest
+    assert terminal["policy_response_hash"] == policy_digest
 
 
 def test_openclaw_strong_delegation_decline_is_terminal_and_exactly_replayed(
@@ -1680,6 +1983,99 @@ def test_openclaw_bridge_acceptance_closes_exact_turn(
     assert store.recent_runtime_activity(limit=10)["finalizations"][0]["action"] == "accept"
 
 
+def test_openclaw_native_error_finalizes_only_the_exact_active_turn(
+    tmp_path: Path,
+) -> None:
+    from agency_runtime.adapters.openclaw.node_bridge import handle
+    from agency_runtime.core.header.finalize import response_hash
+
+    store = Store(tmp_path / "native-error.db")
+    store.create_run(
+        trace_id="native-error-turn",
+        session_id="native-error-session",
+        host="openclaw",
+        metadata={"request_kind": "nontrivial"},
+    )
+    store.record_specialist_loaded(
+        "native-error-session",
+        "code-reviewer",
+        trace_id="native-error-turn",
+    )
+    digest = response_hash('{"isError":true,"text":"Native provider failed."}')
+    payload = {
+        "action": "native_error",
+        "sessionId": "native-error-session",
+        "traceId": "native-error-turn",
+        "responseHash": digest,
+    }
+
+    wrong_session = handle(
+        {**payload, "sessionId": "other-session"}, adapter=OpenClawAdapter(store=store)
+    )
+    first = handle(payload, adapter=OpenClawAdapter(store=store))
+    replay = handle(payload, adapter=OpenClawAdapter(store=store))
+
+    assert wrong_session["action"] == "deny_error"
+    assert first == replay
+    assert first == {
+        "action": "allow_error",
+        "authoritative": True,
+        "outcome": "committed",
+        "terminalStatus": "response_invalid",
+        "turnId": "native-error-turn",
+        "responseHash": digest,
+        "finalizationId": first["finalizationId"],
+        "runtimeEnabled": True,
+    }
+    assert first["finalizationId"]
+    assert store.get_run("native-error-turn")["status"] == "response_invalid"
+    assert store.get_active_specialists_for_trace("native-error-session", "native-error-turn") == []
+    terminal = store.get_authoritative_finalization(
+        "native-error-session",
+        "native-error-turn",
+        action="response_invalid",
+        response_hash=digest,
+    )
+    assert terminal is not None
+    assert json.loads(terminal["missing"]) == ["native_host_error"]
+    assert terminal["policy_response_hash"] is None
+    activity = store.recent_runtime_activity(limit=10)
+    assert [row["action"] for row in activity["finalizations"]] == ["response_invalid"]
+
+    store.create_run(
+        trace_id="policy-rejection-turn",
+        session_id="policy-rejection-session",
+        host="openclaw",
+    )
+    snapshot = store.get_completion_evidence_snapshot(
+        "policy-rejection-session", "policy-rejection-turn"
+    )
+    store.commit_terminal_finalization(
+        session_id="policy-rejection-session",
+        trace_id="policy-rejection-turn",
+        host="openclaw",
+        action="response_invalid",
+        response_hash=digest,
+        status="response_invalid",
+        expected_evidence_revision=snapshot["evidence_revision"],
+        missing=["completion_policy"],
+    )
+    ordinary_rejection = handle(
+        {
+            **payload,
+            "sessionId": "policy-rejection-session",
+            "traceId": "policy-rejection-turn",
+        },
+        adapter=OpenClawAdapter(store=store),
+    )
+    assert ordinary_rejection["action"] == "deny_error"
+    overlong = handle(
+        {**payload, "responseHash": f"{digest}0"},
+        adapter=OpenClawAdapter(store=store),
+    )
+    assert overlong["action"] == "deny_error"
+
+
 @pytest.mark.parametrize(
     "normalization",
     [
@@ -1757,6 +2153,9 @@ def test_openclaw_commits_the_exact_normalized_outbound_text(
         "responseHash": response_hash(outbound_text),
         "turnId": "normalized-turn",
         "runtimeEnabled": True,
+        "authoritative": True,
+        "terminalBound": True,
+        "terminalStatus": "completed",
     }
     terminal = store.get_authoritative_finalization(
         "normalized-session",
@@ -1789,7 +2188,12 @@ def test_generated_openclaw_plugin_is_native_openclaw_package(
 
     assert manifest["id"] == "agency-preflight"
     assert manifest["activation"]["onStartup"] is True
+    assert manifest["contracts"] == {"agentToolResultMiddleware": ["openclaw"]}
     assert package["openclaw"]["extensions"] == ["./index.js"]
+    assert "api.registerAgentToolResultMiddleware" in code
+    assert "api.registerTool" not in code
+    assert "agency_finalize" not in code
+    assert 'api.on("after_tool_call"' not in code
     assert "before_prompt_build" in code
     assert "before_agent_finalize" in code
     assert "reply_payload_sending" in code

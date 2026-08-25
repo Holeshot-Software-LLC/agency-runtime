@@ -390,11 +390,19 @@ def _openclaw_plugin_harness_source() -> str:
         (
             "const registeredHooks = new Map();\n"
             "const registeredHookOptions = new Map();\n"
+            "const registeredTools = new Map();\n"
+            "const registeredToolResultMiddlewares = [];\n"
+            "const pluginLogs = [];\n"
             "let registeredCommand;\n"
             "function definePluginEntry(definition) {\n"
             "  definition.register({\n"
             "    config: { agents: { defaults: { blockStreamingDefault: 'off' } }, channels: {} },\n"
+            "    logger: { info(message) { pluginLogs.push(String(message)); } },\n"
             "    registerCommand(command) { registeredCommand = command; },\n"
+            "    registerTool(tool) { registeredTools.set(tool.name, tool); },\n"
+            "    registerAgentToolResultMiddleware(handler, options = {}) {\n"
+            "      registeredToolResultMiddlewares.push({ handler, options });\n"
+            "    },\n"
             "    on(name, handler, options = {}) {\n"
             "      registeredHooks.set(name, handler);\n"
             "      registeredHookOptions.set(name, options);\n"
@@ -410,9 +418,73 @@ def _openclaw_plugin_harness_source() -> str:
             "let outboundQueries = 0;\n"
             "let outboundDelayMs = 0;\n"
             "let failOutboundSync = false;\n"
+            "let outboundReceiptMode = 'valid';\n"
             "let failPreflight = false;\n"
+            "let preflightContext = 'Agency preflight context';\n"
+            "let toolHeaderContext = '[AGENCY UPDATED HEADER SNAPSHOT v2]\\nAgency header';\n"
+            "let nativeChildRewrittenTask = '';\n"
+            "let nativeChildCompletionContext = '[AGENCY NATIVE CHILD COMPLETION CONTRACT]\\nmessage(action=\\\"send\\\", message=<header+body>)\\nAgency/Agencies loaded: agency-steward\\nAgency/Agencies delegated: code-reviewer\\nSkills loaded: none\\nActual Model selected: workforce inference: task-agency-router\\nRecruited via: inference\\nDo not emit a natural visible final response or NO_REPLY.';\n"
+            "let nativeChildEndFailuresRemaining = 0;\n"
+            "const nativeChildEndRecordedResults = [];\n"
+            "let nativeChildDeliveryFailuresRemaining = 0;\n"
+            "const nativeChildDeliveryRecordedResults = [];\n"
+            "let enforceNativeChildOpenForCompletion = false;\n"
+            "const nativeChildStoreStates = new Map();\n"
+            "function nativeChildStoreKey(workerId, nativeRunId) {\n"
+            "  return JSON.stringify([String(workerId || ''), String(nativeRunId || '')]);\n"
+            "}\n"
+            "function nativeChildObservationResult(payload) {\n"
+            "  if (!enforceNativeChildOpenForCompletion) {\n"
+            "    return { recorded: true, outcome: payload.outcome || 'unknown' };\n"
+            "  }\n"
+            "  const stored = nativeChildStoreStates.get(\n"
+            "    nativeChildStoreKey(payload.workerId, payload.nativeRunId),\n"
+            "  );\n"
+            "  if (!stored || stored.open !== true\n"
+            "      || stored.sessionId !== payload.sessionId\n"
+            "      || (payload.traceId && stored.traceId !== payload.traceId)\n"
+            "      || (payload.launchId && stored.launchId !== payload.launchId)\n"
+            "      || (payload.workUnitId && stored.workUnitId !== payload.workUnitId)) {\n"
+            "    return { recorded: false, outcome: '' };\n"
+            "  }\n"
+            "  if (stored.terminalOutcome && stored.terminalOutcome !== payload.outcome) {\n"
+            "    return { recorded: false, outcome: '' };\n"
+            "  }\n"
+            "  stored.terminalOutcome = payload.outcome || 'unknown';\n"
+            "  stored.deliveryStatus ||= 'pending';\n"
+            "  return { recorded: true, outcome: stored.terminalOutcome };\n"
+            "}\n"
+            "function nativeChildDeliveryResult(payload) {\n"
+            "  if (nativeChildDeliveryFailuresRemaining > 0) {\n"
+            "    nativeChildDeliveryFailuresRemaining -= 1;\n"
+            "    throw new Error('native child delivery unavailable');\n"
+            "  }\n"
+            "  const target = payload.success === true ? 'delivered' : 'failed';\n"
+            "  if (!enforceNativeChildOpenForCompletion) {\n"
+            "    return { recorded: true, deliveryStatus: target };\n"
+            "  }\n"
+            "  const stored = nativeChildStoreStates.get(\n"
+            "    nativeChildStoreKey(payload.workerId, payload.nativeRunId),\n"
+            "  );\n"
+            "  const forced = nativeChildDeliveryRecordedResults.length\n"
+            "    ? nativeChildDeliveryRecordedResults.shift() : true;\n"
+            "  if (!forced || !stored || stored.open !== true\n"
+            "      || stored.sessionId !== payload.sessionId\n"
+            "      || (payload.traceId && stored.traceId !== payload.traceId)\n"
+            "      || (payload.launchId && stored.launchId !== payload.launchId)\n"
+            "      || (payload.workUnitId && stored.workUnitId !== payload.workUnitId)\n"
+            "      || stored.terminalOutcome === ''\n"
+            "      || stored.deliveryStatus !== 'pending'\n"
+            "      || !/^[0-9a-f]{64}$/.test(String(payload.responseHash || ''))) {\n"
+            "    return { recorded: false, deliveryStatus: '' };\n"
+            "  }\n"
+            "  stored.deliveryStatus = target;\n"
+            "  if (payload.success === true) stored.open = false;\n"
+            "  return { recorded: true, deliveryStatus: target };\n"
+            "}\n"
             "let failControl = false;\n"
             "let runtimeControlEnabled = true;\n"
+            "let nativeErrorReceiptMode = 'valid';\n"
             "const bridgeCalls = [];\n"
             "function syncBridgeResult(payload) {\n"
             "  bridgeCalls.push(payload);\n"
@@ -426,6 +498,33 @@ def _openclaw_plugin_harness_source() -> str:
             "      message: denied ? 'control denied; runtime remains unchanged' : 'control status',\n"
             "    };\n"
             "  }\n"
+            "  if (payload.action === 'native_error') {\n"
+            "    if (nativeErrorReceiptMode === 'throw') {\n"
+            "      throw new Error('native error receipt unavailable');\n"
+            "    }\n"
+            "    if (!runtimeControlEnabled) {\n"
+            "      return {\n"
+            "        action: 'bypass_error', turnId: payload.traceId,\n"
+            "        responseHash: payload.responseHash, runtimeEnabled: false,\n"
+            "        runtimeDisabled: true, bypassed: true,\n"
+            "      };\n"
+            "    }\n"
+            "    const receipt = {\n"
+            "      action: 'allow_error', authoritative: true, outcome: 'committed',\n"
+            "      terminalStatus: 'response_invalid', turnId: payload.traceId,\n"
+            "      responseHash: payload.responseHash, finalizationId: 'native-error-event',\n"
+            "      runtimeEnabled: true,\n"
+            "    };\n"
+            "    if (nativeErrorReceiptMode === 'wrong_hash') receipt.responseHash = '0'.repeat(64);\n"
+            "    if (nativeErrorReceiptMode === 'wrong_turn') receipt.turnId = 'other-run';\n"
+            "    if (nativeErrorReceiptMode === 'non_authoritative') receipt.authoritative = false;\n"
+            "    if (nativeErrorReceiptMode === 'missing_finalization') delete receipt.finalizationId;\n"
+            "    if (nativeErrorReceiptMode === 'wrong_terminal') receipt.terminalStatus = 'completed';\n"
+            "    return receipt;\n"
+            "  }\n"
+            "  if (payload.action === 'native_child_delivery_observed') {\n"
+            "    return nativeChildDeliveryResult(payload);\n"
+            "  }\n"
             "  if (payload.action !== 'outbound_gate') return {};\n"
             "  if (failOutboundSync) throw new Error('outbound unavailable');\n"
             "  outboundQueries += 1;\n"
@@ -438,7 +537,10 @@ def _openclaw_plugin_harness_source() -> str:
             "  if (payload.finalResponse === 'mutated invalid') {\n"
             "    return { action: 'replace', message: 'mutation rejected', responseHash };\n"
             "  }\n"
-            "  return { action: 'allow', responseHash, turnId: payload.traceId };\n"
+            "  return {\n"
+            "    action: 'allow', authoritative: true, terminalBound: true,\n"
+            "    terminalStatus: 'completed', responseHash, turnId: payload.traceId,\n"
+            "  };\n"
             "}\n"
             "function execFileSync(_python, _args, options) {\n"
             "  return JSON.stringify(syncBridgeResult(JSON.parse(options.input)));\n"
@@ -458,14 +560,98 @@ def _openclaw_plugin_harness_source() -> str:
             "        setImmediate(() => { callback(new Error('control unavailable'), '', 'control unavailable'); done?.(); });\n"
             "        return;\n"
             "      }\n"
+            "      if (nativeChildEndFailuresRemaining > 0 && payload.action === 'native_child_ended') {\n"
+            "        nativeChildEndFailuresRemaining -= 1;\n"
+            "        setImmediate(() => { callback(new Error('native child end unavailable'), '', 'native child end unavailable'); done?.(); });\n"
+            "        return;\n"
+            "      }\n"
             "      let result = {};\n"
-            "      if (payload.action === 'pre_verify') {\n"
+            "      if (payload.action === 'preflight') {\n"
+            "        result = { runtimeEnabled: true, context: preflightContext };\n"
+            "      } else if (payload.action === 'native_child_prepare') {\n"
+            "        result = {\n"
+            "          runtimeEnabled: true, staffed: Boolean(nativeChildRewrittenTask),\n"
+            "          rewrittenTask: nativeChildRewrittenTask,\n"
+            "        };\n"
+            "      } else if (payload.action === 'native_child_started') {\n"
+            "        result = {\n"
+            "          recorded: true, launchBound: true,\n"
+            "          workUnitId: payload.workUnitId || 'derived-work-unit',\n"
+            "        };\n"
+            "        if (enforceNativeChildOpenForCompletion) {\n"
+            "          nativeChildStoreStates.set(\n"
+            "            nativeChildStoreKey(payload.workerId, payload.nativeRunId),\n"
+            "            { ...payload, workUnitId: result.workUnitId, open: true,\n"
+            "              terminalOutcome: '', deliveryStatus: '' },\n"
+            "          );\n"
+            "        }\n"
+            "      } else if (payload.action === 'native_child_terminal_observed') {\n"
+            "        result = nativeChildObservationResult(payload);\n"
+            "      } else if (payload.action === 'native_child_delivery_observed') {\n"
+            "        try {\n"
+            "          result = nativeChildDeliveryResult(payload);\n"
+            "        } catch (error) {\n"
+            "          setImmediate(() => { callback(error, '', error.message); done?.(); });\n"
+            "          return;\n"
+            "        }\n"
+            "      } else if (payload.action === 'native_child_pending_reconcile') {\n"
+            "        let reconciled = 0;\n"
+            "        for (const stored of nativeChildStoreStates.values()) {\n"
+            "          if (stored.open === true && ['pending', 'failed'].includes(stored.deliveryStatus)) {\n"
+            "            stored.deliveryStatus = 'interrupted';\n"
+            "            stored.open = false;\n"
+            "            reconciled += 1;\n"
+            "          }\n"
+            "        }\n"
+            "        result = { reconciled, runtimeEnabled: true };\n"
+            "      } else if (payload.action === 'native_child_ended') {\n"
+            "        result = {\n"
+            "          recorded: nativeChildEndRecordedResults.length\n"
+            "            ? nativeChildEndRecordedResults.shift() : true,\n"
+            "        };\n"
+            "        if (enforceNativeChildOpenForCompletion && result.recorded === true) {\n"
+            "          const stored = nativeChildStoreStates.get(\n"
+            "            nativeChildStoreKey(payload.workerId, payload.nativeRunId),\n"
+            "          );\n"
+            "          if (stored\n"
+            "              && stored.sessionId === payload.sessionId\n"
+            "              && (!payload.traceId || stored.traceId === payload.traceId)\n"
+            "              && (!payload.workUnitId || stored.workUnitId === payload.workUnitId)) {\n"
+            "            stored.open = false;\n"
+            "          }\n"
+            "        }\n"
+            "      } else if (payload.action === 'native_child_completion_prepare') {\n"
+            "        const stored = nativeChildStoreStates.get(\n"
+            "          nativeChildStoreKey(payload.workerId, payload.nativeRunId),\n"
+            "        );\n"
+            "        const completionOpen = !enforceNativeChildOpenForCompletion || Boolean(\n"
+            "          stored?.open === true\n"
+            "          && stored.deliveryStatus === 'pending'\n"
+            "          && stored.sessionId === payload.parentSessionId\n"
+            "          && stored.traceId === payload.parentTraceId\n"
+            "          && stored.launchId === payload.launchId\n"
+            "          && stored.workUnitId === payload.workUnitId\n"
+            "        );\n"
+            "        result = {\n"
+            "          prepared: completionOpen, completion: completionOpen, runtimeEnabled: true,\n"
+            "          context: nativeChildCompletionContext,\n"
+            "          headerContextHash: createHash('sha256').update(nativeChildCompletionContext).digest('hex'),\n"
+            "          completionRunId: payload.traceId, parentSessionId: payload.parentSessionId,\n"
+            "          parentTraceId: payload.parentTraceId, workerId: payload.workerId,\n"
+            "          nativeRunId: payload.nativeRunId, launchId: payload.launchId,\n"
+            "          workUnitId: payload.workUnitId,\n"
+            "        };\n"
+            "      } else if (payload.action === 'post_tool_call' && payload.includeHeaderContext === true) {\n"
+            "        result = { runtimeEnabled: true, context: toolHeaderContext };\n"
+            "      } else if (payload.action === 'pre_verify') {\n"
             "        result = {\n"
             "          action: 'terminal', message: 'first-pass response invalid',\n"
             "          terminalRejected: true, terminalStatus: 'response_invalid',\n"
             "          turnId: payload.traceId,\n"
             "          responseHash: createHash('sha256').update(payload.finalResponse).digest('hex'),\n"
             "        };\n"
+            "      } else if (payload.action === 'finalize') {\n"
+            "        result = { action: 'accept', text: 'Agency final response' };\n"
             "      } else if (payload.action === 'control') {\n"
             "        const denied = payload.command === 'off' || payload.command === 'on';\n"
             "        result = {\n"
@@ -474,7 +660,8 @@ def _openclaw_plugin_harness_source() -> str:
             "          runtime_enabled: runtimeControlEnabled,\n"
             "          message: denied ? 'control denied; runtime remains unchanged' : 'control status',\n"
             "        };\n"
-            "      } else if (payload.action === 'outbound_gate') {\n"
+            "      } else if (payload.action === 'outbound_gate'\n"
+            "          || payload.action === 'native_child_completion_finalize') {\n"
             "        outboundQueries += 1;\n"
             "        const outboundBinding = payload.outboundPayload || payload.finalResponse;\n"
             "        if (!runtimeControlEnabled) {\n"
@@ -496,11 +683,32 @@ def _openclaw_plugin_harness_source() -> str:
             "          };\n"
             "        } else {\n"
             "          result = {\n"
-            "            action: 'allow',\n"
+            "            action: 'allow', authoritative: true, terminalBound: true,\n"
+            "            terminalStatus: 'completed',\n"
             "            responseHash: createHash('sha256').update(outboundBinding).digest('hex'),\n"
-            "            turnId: payload.traceId,\n"
+            "            turnId: payload.action === 'native_child_completion_finalize'\n"
+            "              ? payload.parentTraceId : payload.traceId,\n"
+            "            completionRunId: payload.action === 'native_child_completion_finalize'\n"
+            "              ? payload.traceId : undefined,\n"
+            "            parentSessionId: payload.parentSessionId,\n"
+            "            parentTraceId: payload.parentTraceId,\n"
             "          };\n"
             "        }\n"
+            "      }\n"
+            "      if ((payload.action === 'outbound_gate'\n"
+            "          || payload.action === 'native_child_completion_finalize')\n"
+            "          && outboundReceiptMode === 'wrong_hash') {\n"
+            "        result.responseHash = '0'.repeat(64);\n"
+            "      } else if ((payload.action === 'outbound_gate'\n"
+            "          || payload.action === 'native_child_completion_finalize')\n"
+            "          && outboundReceiptMode === 'wrong_turn') {\n"
+            "        result.turnId = 'other-run';\n"
+            "      } else if ((payload.action === 'outbound_gate'\n"
+            "          || payload.action === 'native_child_completion_finalize')\n"
+            "          && outboundReceiptMode === 'blind') {\n"
+            "        delete result.authoritative;\n"
+            "        delete result.terminalBound;\n"
+            "        delete result.terminalStatus;\n"
             "      }\n"
             "      const deliver = () => { callback(null, JSON.stringify(result), ''); done?.(); };\n"
             "      if (payload.action === 'outbound_gate' && outboundDelayMs > 0) {\n"
@@ -515,6 +723,2568 @@ def _openclaw_plugin_harness_source() -> str:
         ),
     )
     return source.replace("export default definePluginEntry", "const plugin = definePluginEntry")
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is not installed")
+def test_generated_openclaw_native_error_requires_exact_agent_end_marker(
+    tmp_path: Path,
+) -> None:
+    source = _openclaw_plugin_harness_source()
+    source += r"""
+const agentEnd = registeredHooks.get("agent_end");
+const outbound = registeredHooks.get("reply_payload_sending");
+const messageSeal = registeredHooks.get("message_sending");
+if (typeof agentEnd !== "function" || typeof outbound !== "function"
+    || typeof messageSeal !== "function") process.exit(301);
+
+let clock = 1_000_000;
+Date.now = () => clock;
+const errorPayload = { text: "Native provider failed.", isError: true };
+
+agentEnd(
+  {
+    runId: "native-error-run", messages: [{ role: "assistant", content: "private" }],
+    success: false, error: "private provider error", durationMs: 17,
+  },
+  { sessionKey: "native-error-session" },
+);
+const allowed = outbound(
+  {
+    payload: errorPayload, kind: "final",
+    sessionKey: "native-error-session", runId: "native-error-run",
+  },
+  { sessionKey: "native-error-session", runId: "native-error-run" },
+);
+if (allowed?.then || allowed?.cancel || !allowed?.payload?.text
+    || allowed.payload.text === errorPayload.text) process.exit(302);
+const nativeCall = bridgeCalls.find((call) => call.action === "native_error");
+if (!nativeCall
+    || nativeCall.sessionId !== "native-error-session"
+    || nativeCall.traceId !== "native-error-run"
+    || !/^[0-9a-f]{64}$/.test(nativeCall.responseHash)) process.exit(303);
+if (Object.hasOwn(nativeCall, "messages")
+    || nativeCall.error !== ""
+    || nativeCall.outboundPayload !== ""
+    || nativeCall.finalResponse !== "") process.exit(304);
+const delivered = messageSeal(
+  { content: allowed.payload.text, sessionKey: "native-error-session" },
+  { sessionKey: "native-error-session" },
+);
+if (delivered?.content !== errorPayload.text) process.exit(305);
+
+const replay = outbound(
+  {
+    payload: errorPayload, kind: "final",
+    sessionKey: "native-error-session", runId: "native-error-run",
+  },
+  { sessionKey: "native-error-session", runId: "native-error-run" },
+);
+if (replay?.cancel !== true) process.exit(306);
+
+for (const mode of [
+  "wrong_hash", "wrong_turn", "non_authoritative", "missing_finalization",
+  "wrong_terminal", "throw",
+]) {
+  nativeErrorReceiptMode = mode;
+  const receiptRun = `receipt-${mode}`;
+  agentEnd(
+    { runId: receiptRun, messages: [], success: false, error: "private", durationMs: 1 },
+    { sessionKey: "receipt-session" },
+  );
+  const malformed = outbound(
+    {
+      payload: errorPayload, kind: "final",
+      sessionKey: "receipt-session", runId: receiptRun,
+    },
+    { sessionKey: "receipt-session", runId: receiptRun },
+  );
+  if (malformed?.cancel !== true) process.exit(313);
+}
+nativeErrorReceiptMode = "valid";
+
+agentEnd(
+  { runId: "exact-run", messages: [], success: false, error: "private", durationMs: 1 },
+  { sessionKey: "exact-session" },
+);
+const wrongSession = outbound(
+  {
+    payload: errorPayload, kind: "final",
+    sessionKey: "wrong-session", runId: "exact-run",
+  },
+  { sessionKey: "wrong-session", runId: "exact-run" },
+);
+const wrongRun = outbound(
+  {
+    payload: errorPayload, kind: "final",
+    sessionKey: "exact-session", runId: "wrong-run",
+  },
+  { sessionKey: "exact-session", runId: "wrong-run" },
+);
+const missing = outbound(
+  {
+    payload: errorPayload, kind: "final",
+    sessionKey: "missing-session", runId: "missing-run",
+  },
+  { sessionKey: "missing-session", runId: "missing-run" },
+);
+if (wrongSession?.cancel !== true || wrongRun?.cancel !== true || missing?.cancel !== true) {
+  process.exit(307);
+}
+
+agentEnd(
+  { runId: "fallback-run", messages: [], success: false, error: "private", durationMs: 1 },
+  { sessionKey: "fallback-session" },
+);
+agentEnd(
+  { runId: "fallback-run", messages: [], success: true, durationMs: 2 },
+  { sessionKey: "fallback-session" },
+);
+const cleared = outbound(
+  {
+    payload: errorPayload, kind: "final",
+    sessionKey: "fallback-session", runId: "fallback-run",
+  },
+  { sessionKey: "fallback-session", runId: "fallback-run" },
+);
+if (cleared?.cancel !== true) process.exit(308);
+
+agentEnd(
+  { runId: "stale-run", messages: [], success: false, error: "private", durationMs: 1 },
+  { sessionKey: "stale-session" },
+);
+clock += 60 * 60 * 1000;
+const stale = outbound(
+  {
+    payload: errorPayload, kind: "final",
+    sessionKey: "stale-session", runId: "stale-run",
+  },
+  { sessionKey: "stale-session", runId: "stale-run" },
+);
+if (stale?.cancel !== true) process.exit(309);
+const nativeErrorCallsBeforeDisable = bridgeCalls.filter(
+  (call) => call.action === "native_error",
+).length;
+
+agentEnd(
+  {
+    runId: "disable-race-run", messages: [], success: false,
+    error: "private", durationMs: 1,
+  },
+  { sessionKey: "disable-race-session" },
+);
+runtimeControlEnabled = false;
+const disabledRace = outbound(
+  {
+    payload: errorPayload, kind: "final",
+    sessionKey: "disable-race-session", runId: "disable-race-run",
+  },
+  { sessionKey: "disable-race-session", runId: "disable-race-run" },
+);
+const deliveredDisabledRace = messageSeal(
+  { content: disabledRace?.payload?.text, sessionKey: "disable-race-session" },
+  { sessionKey: "disable-race-session" },
+);
+if (deliveredDisabledRace?.content !== errorPayload.text) process.exit(310);
+if (bridgeCalls.filter((call) => call.action === "native_error").length
+    !== nativeErrorCallsBeforeDisable + 1) process.exit(314);
+
+await registeredCommand.handler({ args: "status", sessionKey: "disabled-error-session" });
+const disabledError = outbound(
+  {
+    payload: errorPayload, kind: "final",
+    sessionKey: "disabled-error-session", runId: "disabled-error-run",
+  },
+  { sessionKey: "disabled-error-session", runId: "disabled-error-run" },
+);
+const deliveredDisabledError = messageSeal(
+  { content: disabledError?.payload?.text, sessionKey: "disabled-error-session" },
+  { sessionKey: "disabled-error-session" },
+);
+if (deliveredDisabledError?.content !== errorPayload.text) process.exit(311);
+if (bridgeCalls.filter((call) => call.action === "native_error").length
+    !== nativeErrorCallsBeforeDisable + 1) process.exit(312);
+"""
+    script = tmp_path / "openclaw-native-error-correlation.mjs"
+    script.write_text(source, encoding="utf-8")
+
+    completed = subprocess.run(
+        [str(shutil.which("node")), str(script)],
+        capture_output=True,
+        text=True,
+        timeout=10,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is not installed")
+def test_generated_openclaw_prompt_build_preflights_before_input_gate(
+    tmp_path: Path,
+) -> None:
+    source = _openclaw_plugin_harness_source()
+    source += """
+const beforeRun = registeredHooks.get("before_agent_run");
+const promptBuild = registeredHooks.get("before_prompt_build");
+if (typeof beforeRun !== "function" || typeof promptBuild !== "function") process.exit(201);
+const event = { prompt: "inspect safely", messages: [] };
+const context = { sessionKey: "gate-session", runId: "gate-run", modelId: "task-general" };
+const injection = await promptBuild(event, context);
+if (injection?.appendContext !== "Agency preflight context") process.exit(204);
+if (bridgeCalls.filter((item) => item.action === "preflight").length !== 1) process.exit(203);
+const passed = await beforeRun(event, context);
+if (passed?.outcome !== "pass") process.exit(202);
+if (bridgeCalls.filter((item) => item.action === "preflight").length !== 1) process.exit(205);
+
+preflightContext = "";
+const blockedEvent = { prompt: "second request", messages: [] };
+const blockedContext = {
+  sessionKey: "blocked-session", runId: "blocked-run", modelId: "task-general",
+};
+if (await promptBuild(blockedEvent, blockedContext) !== undefined) process.exit(207);
+const blocked = await beforeRun(blockedEvent, blockedContext);
+if (blocked?.outcome !== "block" || blocked?.reason !== "agency_preflight_failed") process.exit(206);
+"""
+    script = tmp_path / "openclaw-input-gate.mjs"
+    script.write_text(source, encoding="utf-8")
+
+    completed = subprocess.run(
+        [str(shutil.which("node")), str(script)],
+        capture_output=True,
+        text=True,
+        timeout=10,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is not installed")
+def test_generated_openclaw_reuses_preflight_model_through_final_delivery(
+    tmp_path: Path,
+) -> None:
+    source = _openclaw_plugin_harness_source()
+    source += """
+const promptBuild = registeredHooks.get("before_prompt_build");
+const finalize = registeredHooks.get("before_agent_finalize");
+const outbound = registeredHooks.get("reply_payload_sending");
+if (typeof promptBuild !== "function" || typeof finalize !== "function"
+    || typeof outbound !== "function") process.exit(271);
+const context = {
+  sessionKey: "model-correlation-session",
+  runId: "model-correlation-run",
+  modelId: "task-general",
+};
+if ((await promptBuild({ prompt: "agency status" }, context))?.appendContext
+    !== "Agency preflight context") process.exit(272);
+const terminalContext = {
+  sessionKey: "model-correlation-session",
+  runId: "model-correlation-run",
+};
+await finalize(
+  { lastAssistantMessage: "candidate", stopHookActive: false },
+  terminalContext,
+);
+const verify = bridgeCalls.find((payload) => payload.action === "pre_verify");
+if (!verify || verify.model !== "task-general") process.exit(273);
+await outbound(
+  {
+    payload: { text: "different candidate" },
+    kind: "final",
+    sessionKey: "model-correlation-session",
+    runId: "model-correlation-run",
+  },
+  terminalContext,
+);
+const gate = bridgeCalls.find((payload) => payload.action === "outbound_gate");
+if (!gate || gate.model !== "task-general") process.exit(274);
+"""
+    script = tmp_path / "openclaw-model-correlation.mjs"
+    script.write_text(source, encoding="utf-8")
+
+    completed = subprocess.run(
+        [str(shutil.which("node")), str(script)],
+        capture_output=True,
+        text=True,
+        timeout=10,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is not installed")
+def test_generated_openclaw_model_receipt_uses_event_model_when_context_omits_it(
+    tmp_path: Path,
+) -> None:
+    source = _openclaw_plugin_harness_source()
+    source += """
+const modelEnded = registeredHooks.get("model_call_ended");
+if (typeof modelEnded !== "function") process.exit(81);
+await modelEnded(
+  {
+    runId: "run-event-model",
+    callId: "call-event-model",
+    sessionKey: "session-event-model",
+    provider: "litellm",
+    model: "task-general",
+    durationMs: 5,
+    outcome: "completed",
+  },
+  { sessionKey: "session-event-model", runId: "run-event-model" },
+);
+const receipt = bridgeCalls.find((payload) => payload.action === "post_api_request");
+if (!receipt) process.exit(82);
+if (receipt.requestedModel !== "task-general") process.exit(83);
+if (receipt.modelGroup !== "task-general") process.exit(84);
+if (receipt.resolvedProvider !== "" || receipt.resolvedModel !== "") process.exit(85);
+"""
+    script = tmp_path / "openclaw-model-receipt.mjs"
+    script.write_text(source, encoding="utf-8")
+
+    completed = subprocess.run(
+        [str(shutil.which("node")), str(script)],
+        capture_output=True,
+        text=True,
+        timeout=10,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+
+
+def test_generated_openclaw_uses_natural_first_pass_without_finalize_tool() -> None:
+    code = openclaw_index(5)
+
+    assert "api.registerAgentToolResultMiddleware" in code
+    assert "api.registerTool" not in code
+    assert "agency_finalize" not in code
+    assert 'api.on("after_tool_call"' not in code
+    assert "before_agent_finalize" in code
+    assert 'action: "revise"' not in code
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is not installed")
+def test_generated_openclaw_never_fabricates_header_when_refresh_is_unavailable(
+    tmp_path: Path,
+) -> None:
+    source = _openclaw_plugin_harness_source()
+    source += """
+toolHeaderContext = "";
+const registration = registeredToolResultMiddlewares[0];
+if (!registration) process.exit(242);
+const adjusted = await registration.handler(
+  {
+    toolCallId: "call-no-refresh",
+    toolName: "read",
+    args: { path: "/opt/openclaw/skills/weather/SKILL.md" },
+    result: { content: [{ type: "text", text: "native tool output" }] },
+  },
+  { runtime: "openclaw", sessionKey: "no-refresh-session", runId: "no-refresh-run" },
+);
+if (adjusted !== undefined) process.exit(243);
+const call = bridgeCalls.find((payload) => payload.action === "post_tool_call");
+if (!call || call.includeHeaderContext !== true) process.exit(244);
+"""
+    script = tmp_path / "openclaw-no-fabricated-header.mjs"
+    script.write_text(source, encoding="utf-8")
+
+    completed = subprocess.run(
+        [str(shutil.which("node")), str(script)],
+        capture_output=True,
+        text=True,
+        timeout=10,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is not installed")
+def test_generated_openclaw_refreshes_header_in_awaited_tool_result_middleware(
+    tmp_path: Path,
+) -> None:
+    source = _openclaw_plugin_harness_source()
+    source += """
+if (registeredTools.has("agency_finalize")) process.exit(232);
+if (registeredHooks.has("after_tool_call")) process.exit(233);
+if (registeredToolResultMiddlewares.length !== 1) process.exit(234);
+const registration = registeredToolResultMiddlewares[0];
+if (JSON.stringify(registration.options?.runtimes) !== JSON.stringify(["openclaw"])) process.exit(235);
+toolHeaderContext = [
+  "[AGENCY FIRST-PASS FINALIZATION CONTRACT]",
+  "MANDATORY: the first and only natural final response must begin with the latest exact Store-backed header snapshot for this turn.",
+  "[AGENCY UPDATED HEADER SNAPSHOT v2]",
+  "Copy the exact five header lines below byte-for-byte as the first lines of your natural final response. The newest snapshot for this turn supersedes every earlier snapshot. After any tool call, use the latest [AGENCY UPDATED HEADER SNAPSHOT v2] appended to that tool result. Do not call a finalizer tool, do not emit NO_REPLY, and never guess changed values.",
+  "Agency/Agencies loaded: agency-steward",
+  "Agency/Agencies delegated: none",
+  "Skills loaded: openclaw-operations",
+  "Actual Model selected: requested execution alias: task-general",
+  "Recruited via: deterministic",
+  "[AGENCY FINALIZATION GATE]",
+  "Emit one natural final response from the latest snapshot. There is no correction pass.",
+].join("\\n");
+const nativeText = "x".repeat(100000);
+const originalResult = {
+  content: [{ type: "text", text: nativeText }],
+  details: { ok: true },
+};
+const adjusted = await registration.handler(
+  {
+    toolCallId: "call-refresh",
+    toolName: "read",
+    args: { path: "/opt/openclaw/skills/weather/SKILL.md" },
+    result: originalResult,
+  },
+  { runtime: "openclaw", sessionKey: "refresh-session", runId: "refresh-run" },
+);
+if (adjusted?.result?.content?.length !== 2) process.exit(236);
+if (adjusted.result.content.some((block) => block.type === "text" && block.text.length > 100000)) process.exit(237);
+const framedText = adjusted.result.content.map((block) => block.text || "").join("");
+const expectedPrefix = `${toolHeaderContext}\n\n`;
+if (!framedText.startsWith(expectedPrefix)) process.exit(242);
+if (framedText.slice(expectedPrefix.length) !== nativeText) process.exit(243);
+if (originalResult.content.length !== 1 || originalResult.content[0].text !== nativeText) process.exit(252);
+if (adjusted.result.details?.ok !== true) process.exit(238);
+if (adjusted.result.details !== originalResult.details) process.exit(263);
+const projectedTextBlocks = adjusted.result.content.filter((block) => block.type === "text");
+const projectedTotal = projectedTextBlocks.reduce((total, block) => total + block.text.length, 0);
+const recoveryProjection = projectedTextBlocks.map((block) => {
+  const proportionalBudget = Math.max(1, Math.floor(4000 * (block.text.length / projectedTotal)));
+  return block.text.slice(0, Math.max(1, proportionalBudget - 128));
+}).join("\\n");
+if (!recoveryProjection.includes(toolHeaderContext)) process.exit(261);
+const mixedOriginal = {
+  content: [
+    { type: "image", data: "native-image", mimeType: "image/png" },
+    { type: "text", text: "first native text", citation: "keep-first" },
+    { type: "text", text: "last native text", citation: "keep-last" },
+    { type: "image", data: "native-image-tail", mimeType: "image/png" },
+  ],
+  details: { mixed: true },
+};
+const mixedAdjusted = await registration.handler(
+  {
+    toolCallId: "call-refresh-mixed",
+    toolName: "read",
+    args: { path: "/opt/openclaw/skills/mixed/SKILL.md" },
+    result: mixedOriginal,
+  },
+  { runtime: "openclaw", sessionKey: "refresh-mixed-session", runId: "refresh-mixed-run" },
+);
+if (mixedAdjusted?.result?.content?.length !== 4) process.exit(244);
+if (JSON.stringify(mixedAdjusted.result.content[0]) !== JSON.stringify(mixedOriginal.content[0])) process.exit(245);
+if (JSON.stringify(mixedAdjusted.result.content[3]) !== JSON.stringify(mixedOriginal.content[3])) process.exit(246);
+if (mixedAdjusted.result.content[1]?.text !== `${toolHeaderContext}\n\nfirst native text`) process.exit(247);
+if (mixedAdjusted.result.content[1]?.citation !== "keep-first") process.exit(248);
+if (mixedAdjusted.result.content[2]?.text !== "last native text") process.exit(249);
+if (mixedAdjusted.result.content[2]?.citation !== "keep-last") process.exit(250);
+if (mixedAdjusted.result.details?.mixed !== true) process.exit(251);
+const nativeResultIsValid = (result) => (
+  Array.isArray(result?.content)
+  && result.content.length <= 200
+  && result.content.every((block) => (
+    block?.type === "text"
+      ? typeof block.text === "string" && block.text.length <= 100000
+      : block?.type === "image"
+        && typeof block.mimeType === "string"
+        && typeof block.data === "string"
+  ))
+);
+if (!nativeResultIsValid(adjusted.result) || !nativeResultIsValid(mixedAdjusted.result)) process.exit(253);
+const boundaryImages = Array.from(
+  { length: 198 },
+  (_value, index) => ({ type: "image", data: `image-${index}`, mimeType: "image/png" }),
+);
+const boundaryOriginal = {
+  content: [{ type: "text", text: nativeText }, ...boundaryImages],
+  details: { boundary: true },
+};
+const boundaryAdjusted = await registration.handler(
+  {
+    toolCallId: "call-refresh-boundary",
+    toolName: "read",
+    args: { path: "/opt/openclaw/skills/boundary/SKILL.md" },
+    result: boundaryOriginal,
+  },
+  { runtime: "openclaw", sessionKey: "refresh-boundary-session", runId: "refresh-boundary-run" },
+);
+if (!nativeResultIsValid(boundaryAdjusted?.result)) process.exit(254);
+if (boundaryAdjusted.result.content.length !== 200) process.exit(255);
+if (!boundaryAdjusted.result.content[0].text.startsWith(expectedPrefix)) process.exit(256);
+if (boundaryAdjusted.result.content[0].text.length !== 100000) process.exit(257);
+if (JSON.stringify(boundaryAdjusted.result.content.slice(2)) !== JSON.stringify(boundaryImages)) process.exit(258);
+if (boundaryAdjusted.result.content.slice(0, 2).map((block) => block.text).join("").slice(expectedPrefix.length) !== nativeText) process.exit(262);
+if (boundaryOriginal.content[0].text !== nativeText) process.exit(259);
+const overflowBoundary = await registration.handler(
+  {
+    toolCallId: "call-refresh-overflow-boundary",
+    toolName: "read",
+    args: { path: "/opt/openclaw/skills/overflow/SKILL.md" },
+    result: {
+      content: [
+        { type: "text", text: nativeText },
+        ...Array.from({ length: 199 }, () => ({ type: "image", data: "i", mimeType: "image/png" })),
+      ],
+    },
+  },
+  { runtime: "openclaw", sessionKey: "refresh-overflow-session", runId: "refresh-overflow-run" },
+);
+if (overflowBoundary !== undefined) process.exit(264);
+const emojiPrefixCount = 99999 - expectedPrefix.length;
+const unicodeNative = `${"u".repeat(emojiPrefixCount)}😀tail`;
+const unicodeAdjusted = await registration.handler(
+  {
+    toolCallId: "call-refresh-unicode",
+    toolName: "read",
+    args: { path: "/opt/openclaw/skills/unicode/SKILL.md" },
+    result: { content: [{ type: "text", text: unicodeNative }] },
+  },
+  { runtime: "openclaw", sessionKey: "refresh-unicode-session", runId: "refresh-unicode-run" },
+);
+if (!nativeResultIsValid(unicodeAdjusted?.result)) process.exit(265);
+if (unicodeAdjusted.result.content.length !== 2) process.exit(266);
+if (!unicodeAdjusted.result.content[1].text.startsWith("😀")) process.exit(267);
+if (unicodeAdjusted.result.content.map((block) => block.text).join("") !== `${expectedPrefix}${unicodeNative}`) process.exit(268);
+const noTextBoundary = await registration.handler(
+  {
+    toolCallId: "call-refresh-no-text-boundary",
+    toolName: "read",
+    args: { path: "/opt/openclaw/skills/no-text/SKILL.md" },
+    result: { content: Array.from({ length: 200 }, () => ({ type: "image", data: "i", mimeType: "image/png" })) },
+  },
+  { runtime: "openclaw", sessionKey: "refresh-no-text-session", runId: "refresh-no-text-run" },
+);
+if (noTextBoundary !== undefined) process.exit(260);
+const call = bridgeCalls.find((payload) => payload.action === "post_tool_call");
+if (!call || call.includeHeaderContext !== true) process.exit(239);
+if (call.sessionId !== "refresh-session" || call.traceId !== "refresh-run") process.exit(240);
+if (call.toolName !== "read" || call.toolInput?.path !== "/opt/openclaw/skills/weather/SKILL.md") process.exit(241);
+"""
+    script = tmp_path / "openclaw-tool-result-header-refresh.mjs"
+    script.write_text(source, encoding="utf-8")
+
+    completed = subprocess.run(
+        [str(shutil.which("node")), str(script)],
+        capture_output=True,
+        text=True,
+        timeout=10,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is not installed")
+def test_generated_openclaw_correlates_native_tool_result_without_middleware_context(
+    tmp_path: Path,
+) -> None:
+    source = _openclaw_plugin_harness_source()
+    source += """
+const beforeToolCall = registeredHooks.get("before_tool_call");
+if (typeof beforeToolCall !== "function") process.exit(245);
+await beforeToolCall(
+  {
+    toolCallId: "call-native-context",
+    toolName: "read",
+    params: { path: "/opt/openclaw/skills/weather/SKILL.md" },
+    runId: "native-run",
+  },
+  {
+    toolCallId: "call-native-context",
+    toolName: "read",
+    sessionKey: "native-session",
+    runId: "native-run",
+  },
+);
+const registration = registeredToolResultMiddlewares[0];
+if (!registration) process.exit(246);
+await registration.handler(
+  {
+    toolCallId: "call-native-context",
+    toolName: "read",
+    args: { path: "/opt/openclaw/skills/weather/SKILL.md" },
+    result: { content: [{ type: "text", text: "native tool output" }] },
+  },
+  { runtime: "openclaw" },
+);
+const call = bridgeCalls.find((payload) => payload.action === "post_tool_call");
+if (!call) process.exit(247);
+if (call.sessionId !== "native-session" || call.traceId !== "native-run") process.exit(248);
+"""
+    script = tmp_path / "openclaw-native-tool-result-correlation.mjs"
+    script.write_text(source, encoding="utf-8")
+
+    completed = subprocess.run(
+        [str(shutil.which("node")), str(script)],
+        capture_output=True,
+        text=True,
+        timeout=10,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is not installed")
+def test_generated_openclaw_staffs_real_sessions_spawn_shape_and_binds_child_lifecycle(
+    tmp_path: Path,
+) -> None:
+    source = _openclaw_plugin_harness_source()
+    source += r"""
+const beforeToolCall = registeredHooks.get("before_tool_call");
+const spawned = registeredHooks.get("subagent_spawned");
+const ended = registeredHooks.get("subagent_ended");
+const promptBuild = registeredHooks.get("before_prompt_build");
+const beforeRun = registeredHooks.get("before_agent_run");
+const finalize = registeredHooks.get("before_agent_finalize");
+const modelEnded = registeredHooks.get("model_call_ended");
+const agentEnd = registeredHooks.get("agent_end");
+const replyPayload = registeredHooks.get("reply_payload_sending");
+const messageSending = registeredHooks.get("message_sending");
+const registration = registeredToolResultMiddlewares[0];
+if (typeof beforeToolCall !== "function" || typeof spawned !== "function"
+    || typeof ended !== "function" || typeof promptBuild !== "function"
+    || typeof beforeRun !== "function" || typeof finalize !== "function"
+    || typeof modelEnded !== "function" || typeof agentEnd !== "function"
+    || typeof replyPayload !== "function" || typeof messageSending !== "function"
+    || !registration) process.exit(320);
+
+const originalTask = "Review the restart boundary and report one risk.";
+nativeChildRewrittenTask = `${originalTask}\n\n[AGENCY INFERENCE TEAM v6]\nexact-card`;
+const originalParams = {
+  task: originalTask,
+  taskName: "restart-review",
+  mode: "run",
+  cleanup: "keep",
+  model: "litellm/task-general",
+  thinking: "low",
+};
+const parentContext = {
+  toolName: "sessions_spawn",
+  toolCallId: "spawn-call-one",
+  sessionKey: "parent-session-one",
+  runId: "parent-run-one",
+};
+const adjusted = await beforeToolCall(
+  {
+    toolName: "sessions_spawn",
+    toolCallId: "spawn-call-one",
+    runId: "parent-run-one",
+    params: originalParams,
+  },
+  parentContext,
+);
+if (!adjusted?.params) process.exit(321);
+if (adjusted.params === originalParams) process.exit(322);
+if (adjusted.params.task !== nativeChildRewrittenTask) process.exit(323);
+for (const key of ["taskName", "mode", "cleanup", "model", "thinking"]) {
+  if (adjusted.params[key] !== originalParams[key]) process.exit(324);
+}
+if (originalParams.task !== originalTask) process.exit(325);
+const preparation = bridgeCalls.find((payload) => payload.action === "native_child_prepare");
+if (!preparation) process.exit(326);
+if (preparation.sessionId !== "parent-session-one"
+    || preparation.traceId !== "parent-run-one"
+    || preparation.launchId !== "spawn-call-one"
+    || preparation.goal !== originalTask) process.exit(327);
+
+// OpenClaw 2026.7.1-2 emits this child-only observation before the tool result.
+await spawned(
+  {
+    childSessionKey: "agent:main:subagent:child-one",
+    agentId: "main",
+    mode: "run",
+    threadRequested: false,
+    runId: "child-run-one",
+  },
+  {
+    runId: "child-run-one",
+    childSessionKey: "agent:main:subagent:child-one",
+    requesterSessionKey: "parent-session-one",
+  },
+);
+if (bridgeCalls.some((payload) => payload.action === "native_child_started")) {
+  process.exit(328);
+}
+
+const hostResult = {
+  content: [{ type: "text", text: "accepted" }],
+  details: {
+    status: "accepted",
+    childSessionKey: "agent:main:subagent:child-one",
+    runId: "child-run-one",
+    mode: "run",
+    taskName: "restart-review",
+  },
+};
+const refreshed = await registration.handler(
+  {
+    toolCallId: "spawn-call-one",
+    toolName: "sessions_spawn",
+    args: adjusted.params,
+    result: hostResult,
+  },
+  { runtime: "openclaw" },
+);
+if (refreshed?.result?.details !== hostResult.details) process.exit(329);
+const started = bridgeCalls.find((payload) => payload.action === "native_child_started");
+if (!started) process.exit(330);
+if (started.sessionId !== "parent-session-one"
+    || started.traceId !== "parent-run-one"
+    || started.launchId !== "spawn-call-one"
+    || started.workerId !== "agent:main:subagent:child-one"
+    || started.nativeRunId !== "child-run-one"
+    || started.workUnitId !== "restart-review"
+    || started.goal !== originalTask) process.exit(331);
+
+const childContext = {
+  sessionKey: "agent:main:subagent:child-one",
+  runId: "child-run-one",
+  modelId: "litellm/task-general",
+};
+const childBridgeCallCount = bridgeCalls.length;
+if (await promptBuild({ prompt: nativeChildRewrittenTask }, childContext) !== undefined) {
+  process.exit(335);
+}
+if ((await beforeRun({ prompt: nativeChildRewrittenTask }, childContext))?.outcome !== "pass") {
+  process.exit(336);
+}
+if (await finalize({ lastAssistantMessage: "child answer" }, childContext) !== undefined) {
+  process.exit(337);
+}
+await modelEnded(
+  { runId: "child-run-one", provider: "litellm", model: "task-general" },
+  childContext,
+);
+await agentEnd({ runId: "child-run-one", success: true, messages: [] }, childContext);
+if (bridgeCalls.filter(
+  (payload) => payload.action === "native_child_terminal_observed",
+).length !== 1) process.exit(341);
+const childPayload = { text: "child answer" };
+const childReply = await replyPayload(
+  {
+    payload: childPayload,
+    kind: "final",
+    sessionKey: "agent:main:subagent:child-one",
+    runId: "child-run-one",
+  },
+  childContext,
+);
+if (childReply?.payload !== childPayload) process.exit(338);
+const childMessage = await messageSending(
+  { content: "child answer", sessionKey: "agent:main:subagent:child-one" },
+  childContext,
+);
+if (childMessage?.content !== "child answer" || childMessage?.cancel === true) process.exit(339);
+if (bridgeCalls.length !== childBridgeCallCount + 1) process.exit(340);
+
+await ended(
+  {
+    targetSessionKey: "agent:main:subagent:child-one",
+    targetKind: "subagent",
+    reason: "completed",
+    runId: "child-run-one",
+    outcome: "ok",
+  },
+  {
+    runId: "child-run-one",
+    childSessionKey: "agent:main:subagent:child-one",
+    requesterSessionKey: "parent-session-one",
+  },
+);
+const endedCalls = bridgeCalls.filter(
+  (payload) => payload.action === "native_child_terminal_observed",
+);
+if (endedCalls.length !== 1) process.exit(332);
+if (endedCalls[0].sessionId !== "parent-session-one"
+    || endedCalls[0].traceId !== "parent-run-one"
+    || endedCalls[0].workerId !== "agent:main:subagent:child-one"
+    || endedCalls[0].nativeRunId !== "child-run-one"
+    || endedCalls[0].workUnitId !== "restart-review"
+    || endedCalls[0].outcome !== "ok") process.exit(333);
+
+// Cleanup is consume-once: a duplicate terminal hook cannot be re-correlated.
+await ended(
+  {
+    targetSessionKey: "agent:main:subagent:child-one",
+    targetKind: "subagent",
+    reason: "duplicate",
+    runId: "child-run-one",
+    outcome: "ok",
+  },
+  {
+    runId: "child-run-one",
+    childSessionKey: "agent:main:subagent:child-one",
+    requesterSessionKey: "parent-session-one",
+  },
+);
+if (bridgeCalls.filter(
+  (payload) => payload.action === "native_child_terminal_observed",
+).length !== 1) {
+  process.exit(334);
+}
+"""
+    script = tmp_path / "openclaw-native-child-launch-correlation.mjs"
+    script.write_text(source, encoding="utf-8")
+
+    completed = subprocess.run(
+        [str(shutil.which("node")), str(script)],
+        capture_output=True,
+        text=True,
+        timeout=10,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is not installed")
+def test_generated_openclaw_defers_child_end_until_delete_cleanup_delivery_finishes(
+    tmp_path: Path,
+) -> None:
+    source = _openclaw_plugin_harness_source()
+    source += r"""
+const beforeToolCall = registeredHooks.get("before_tool_call");
+const beforePromptBuild = registeredHooks.get("before_prompt_build");
+const beforeAgentRun = registeredHooks.get("before_agent_run");
+const messageSending = registeredHooks.get("message_sending");
+const messageSent = registeredHooks.get("message_sent");
+const agentEnd = registeredHooks.get("agent_end");
+const ended = registeredHooks.get("subagent_ended");
+const registration = registeredToolResultMiddlewares[0];
+if (typeof beforeToolCall !== "function" || typeof beforePromptBuild !== "function"
+    || typeof beforeAgentRun !== "function" || typeof messageSending !== "function"
+    || typeof messageSent !== "function" || typeof agentEnd !== "function"
+    || typeof ended !== "function"
+    || !registration) process.exit(210);
+
+const parentSession = "delete-parent-session";
+const parentRun = "delete-parent-run";
+const childSession = "agent:main:subagent:delete-child";
+const childRun = "delete-child-run";
+const task = "Return one read-only finding before delete cleanup.";
+enforceNativeChildOpenForCompletion = true;
+nativeChildRewrittenTask = `${task}\n\n[AGENCY INFERENCE TEAM v6]\nexact-card`;
+const adjusted = await beforeToolCall(
+  {
+    toolName: "sessions_spawn", toolCallId: "delete-spawn-call",
+    runId: parentRun,
+    params: { task, taskName: "delete-cleanup-review", mode: "run", cleanup: "delete" },
+  },
+  {
+    toolName: "sessions_spawn", toolCallId: "delete-spawn-call",
+    sessionKey: parentSession, runId: parentRun,
+  },
+);
+if (!adjusted?.params) process.exit(211);
+await registration.handler(
+  {
+    toolCallId: "delete-spawn-call", toolName: "sessions_spawn",
+    args: adjusted.params,
+    result: {
+      content: [{ type: "text", text: "accepted" }],
+      details: {
+        status: "accepted", childSessionKey: childSession,
+        runId: childRun, mode: "run", taskName: "delete-cleanup-review",
+      },
+    },
+  },
+  { runtime: "openclaw" },
+);
+
+await agentEnd(
+  { runId: childRun, success: true, messages: [] },
+  { sessionKey: childSession, runId: childRun, modelId: "litellm/task-general" },
+);
+await agentEnd(
+  { runId: childRun, success: false, error: "conflicting replay", messages: [] },
+  { sessionKey: childSession, runId: childRun, modelId: "litellm/task-general" },
+);
+if (bridgeCalls.some((call) => call.action === "native_child_ended")) process.exit(212);
+const observations = bridgeCalls.filter(
+  (call) => call.action === "native_child_terminal_observed",
+);
+if (observations.length !== 1 || observations[0].outcome !== "ok"
+    || observations[0].error !== "") process.exit(213);
+
+// The child outcome is captured in memory, but the persisted worker must remain
+// open while Agency prepares and authorizes OpenClaw's announce delivery.
+const completionRun = `announce:v1:${childSession}:${childRun}`;
+const completionContext = {
+  sessionKey: parentSession, runId: completionRun,
+  modelId: "litellm/task-general",
+};
+const prepared = await beforePromptBuild(
+  { prompt: "host-owned child completion", sessionKey: parentSession, runId: completionRun },
+  completionContext,
+);
+if (!prepared?.appendContext?.includes("[AGENCY NATIVE CHILD COMPLETION CONTRACT]")) {
+  process.exit(214);
+}
+if ((await beforeAgentRun(
+  { sessionKey: parentSession, runId: completionRun }, completionContext,
+))?.outcome !== "pass") process.exit(215);
+const rawText = [
+  "Agency/Agencies loaded: agency-steward",
+  "Agency/Agencies delegated: code-reviewer",
+  "Skills loaded: none",
+  "Actual Model selected: workforce inference: task-agency-router",
+  "Recruited via: inference",
+  "",
+  "The delete-cleanup review found no configuration mutation.",
+].join("\n");
+const sealed = await beforeToolCall(
+  {
+    toolName: "message", toolCallId: "delete-completion-message",
+    runId: completionRun, params: { action: "send", message: rawText },
+  },
+  { ...completionContext, toolName: "message", toolCallId: "delete-completion-message" },
+);
+if (!sealed?.params?.message || sealed.params.message === rawText) process.exit(216);
+const delivered = await messageSending(
+  { content: sealed.params.message, sessionKey: parentSession, runId: completionRun },
+  completionContext,
+);
+if (delivered?.cancel === true || delivered?.content !== rawText) process.exit(217);
+if (bridgeCalls.some((call) => call.action === "native_child_ended")) process.exit(218);
+
+// Completion agent_end is not a transport receipt and cannot close the worker.
+await agentEnd(
+  { runId: `${completionRun}:mismatch`, success: true, messages: [] },
+  completionContext,
+);
+if (bridgeCalls.some((call) => call.action === "native_child_ended")) process.exit(223);
+await agentEnd(
+  { runId: completionRun, success: true, messages: [] },
+  completionContext,
+);
+if (bridgeCalls.some((call) => call.action === "native_child_delivery_observed")) {
+  process.exit(219);
+}
+
+// Only the authoritative post-send hook can close the worker. Exercise the
+// trace-less exact-identity fallback after a rejected trace-bound receipt.
+nativeChildDeliveryRecordedResults.push(false);
+messageSent(
+  {
+    content: rawText, success: true,
+    messageId: "host-receipt-present",
+  },
+  {},
+);
+const terminal = bridgeCalls.filter(
+  (call) => call.action === "native_child_delivery_observed",
+);
+if (terminal.length !== 2) process.exit(220);
+if (terminal[0].sessionId !== parentSession
+    || terminal[0].traceId !== parentRun
+    || terminal[0].workUnitId !== "delete-cleanup-review"
+    || terminal[0].workerId !== childSession
+    || terminal[0].nativeRunId !== childRun
+    || terminal[0].launchId !== "delete-spawn-call"
+    || terminal[0].success !== true
+    || !/^[0-9a-f]{64}$/.test(terminal[0].responseHash)) process.exit(221);
+if (terminal[1].sessionId !== parentSession
+    || terminal[1].traceId
+    || terminal[1].workerId !== childSession
+    || terminal[1].nativeRunId !== childRun
+    || terminal[1].success !== true
+    || terminal[1].responseHash !== terminal[0].responseHash) process.exit(224);
+
+// The one in-flight attempt was consumed. A replayed host callback cannot
+// manufacture a second delivery receipt.
+messageSent(
+  {
+    content: rawText, success: true,
+    messageId: "stale-host-receipt",
+  },
+  {},
+);
+if (bridgeCalls.filter(
+  (call) => call.action === "native_child_delivery_observed",
+).length !== 2) process.exit(234);
+
+// cleanup=delete may suppress this late host callback. If it does arrive, it
+// is an idempotent replay and cannot create another Store transition.
+await ended(
+  {
+    targetSessionKey: childSession, targetKind: "subagent",
+    reason: "subagent-complete", runId: childRun, outcome: "ok",
+  },
+  {
+    runId: childRun, childSessionKey: childSession,
+    requesterSessionKey: parentSession,
+  },
+);
+if (bridgeCalls.filter(
+  (call) => call.action === "native_child_delivery_observed",
+).length !== 2) {
+  process.exit(222);
+}
+"""
+    script = tmp_path / "openclaw-native-child-agent-end-before-delete.mjs"
+    script.write_text(source, encoding="utf-8")
+
+    completed = subprocess.run(
+        [str(shutil.which("node")), str(script)],
+        capture_output=True,
+        text=True,
+        timeout=10,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is not installed")
+def test_generated_openclaw_failed_post_send_stays_open_and_hashes_fail_closed(
+    tmp_path: Path,
+) -> None:
+    source = _openclaw_plugin_harness_source()
+    source += r"""
+const messageSending = registeredHooks.get("message_sending");
+const messageSent = registeredHooks.get("message_sent");
+const agentEnd = registeredHooks.get("agent_end");
+const gatewayStart = registeredHooks.get("gateway_start");
+if (typeof messageSending !== "function" || typeof messageSent !== "function"
+    || typeof agentEnd !== "function" || typeof gatewayStart !== "function") {
+  process.exit(225);
+}
+
+const failedKey = nativeChildIdentityKey(
+  "agent:main:subagent:failed-child", "failed-child-run",
+);
+const failedState = {
+  sessionId: "failed-parent-session",
+  traceId: "failed-parent-run",
+  launchId: "failed-spawn-call",
+  workUnitId: "failed-delivery-review",
+  workerId: "agent:main:subagent:failed-child",
+  nativeRunId: "failed-child-run",
+  requesterSessionId: "failed-requester-session",
+  completionRunId: "announce:v1:failed-child:failed-child-run",
+  completionDeliveryState: "authorized",
+  pendingEnd: { outcome: "ok", error: "" },
+  pendingEndRecorded: true,
+  startedRecorded: true,
+  endInFlight: false,
+};
+nativeChildParents.set(failedKey, failedState);
+const failedText = "A transport failure must not close the Agency worker.";
+const markedFailure = authorizeMarkedPayload(
+  failedState.requesterSessionId,
+  { text: failedText },
+  "child_completion",
+  failedState.completionRunId,
+);
+if (!markedFailure?.text) process.exit(226);
+const sendingFailure = await messageSending(
+  {
+    content: markedFailure.text,
+    sessionKey: failedState.requesterSessionId,
+    runId: failedState.completionRunId,
+  },
+  {
+    sessionKey: failedState.requesterSessionId,
+    runId: failedState.completionRunId,
+  },
+);
+if (sendingFailure?.cancel === true || sendingFailure?.content !== failedText) {
+  process.exit(227);
+}
+messageSent(
+  {
+    content: failedText,
+    success: false,
+    sessionKey: failedState.requesterSessionId,
+  },
+  {
+    sessionKey: failedState.requesterSessionId,
+    runId: failedState.completionRunId,
+  },
+);
+const failureReceipts = bridgeCalls.filter(
+  (call) => call.action === "native_child_delivery_observed"
+    && call.nativeRunId === failedState.nativeRunId,
+);
+if (failureReceipts.length !== 1 || failureReceipts[0].success !== false
+    || failedState.completionDeliveryState !== "failed"
+    || nativeChildParents.get(failedKey) !== failedState) process.exit(228);
+await agentEnd(
+  { runId: failedState.completionRunId, success: true, messages: [] },
+  {
+    sessionKey: failedState.requesterSessionId,
+    runId: failedState.completionRunId,
+  },
+);
+if (bridgeCalls.filter(
+  (call) => call.action === "native_child_delivery_observed"
+    && call.nativeRunId === failedState.nativeRunId,
+).length !== 1) process.exit(229);
+
+function authorizedState(parent, child, run) {
+  return {
+    sessionId: `${parent}-store-session`,
+    traceId: `${parent}-store-run`,
+    launchId: `${parent}-spawn`,
+    workUnitId: `${parent}-review`,
+    workerId: child,
+    nativeRunId: run,
+    requesterSessionId: parent,
+    completionRunId: `announce:v1:${child}:${run}`,
+    completionDeliveryState: "authorized",
+    pendingEnd: { outcome: "ok", error: "" },
+    pendingEndRecorded: true,
+    startedRecorded: true,
+    endInFlight: false,
+  };
+}
+const first = authorizedState(
+  "hash-parent-one", "agent:main:subagent:hash-child-one", "hash-run-one",
+);
+const second = authorizedState(
+  "hash-parent-two", "agent:main:subagent:hash-child-two", "hash-run-two",
+);
+nativeChildParents.set(nativeChildIdentityKey(first.workerId, first.nativeRunId), first);
+nativeChildParents.set(nativeChildIdentityKey(second.workerId, second.nativeRunId), second);
+const identicalText = "Identical content must remain uniquely correlated.";
+const firstMarked = authorizeMarkedPayload(
+  first.requesterSessionId,
+  { text: identicalText },
+  "child_completion",
+  first.completionRunId,
+);
+const secondMarked = authorizeMarkedPayload(
+  second.requesterSessionId,
+  { text: identicalText },
+  "child_completion",
+  second.completionRunId,
+);
+if (!firstMarked?.text || !secondMarked?.text) process.exit(230);
+const firstSending = await messageSending(
+  {
+    content: firstMarked.text,
+    sessionKey: first.requesterSessionId,
+    runId: first.completionRunId,
+  },
+  { sessionKey: first.requesterSessionId, runId: first.completionRunId },
+);
+if (firstSending?.cancel === true || firstSending?.content !== identicalText) {
+  process.exit(231);
+}
+const secondSending = await messageSending(
+  {
+    content: secondMarked.text,
+    sessionKey: second.requesterSessionId,
+    runId: second.completionRunId,
+  },
+  { sessionKey: second.requesterSessionId, runId: second.completionRunId },
+);
+if (secondSending?.cancel !== true
+    || second.completionDeliveryState !== "authorized") process.exit(232);
+
+const collision = authorizedState(
+  "collision-parent",
+  "agent:main:subagent:collision-child",
+  "collision-child-run",
+);
+nativeChildParents.set(
+  nativeChildIdentityKey(collision.workerId, collision.nativeRunId),
+  collision,
+);
+const collisionText = "An ordinary send can have the same visible text.";
+const collisionChildMarked = authorizeMarkedPayload(
+  collision.requesterSessionId,
+  { text: collisionText },
+  "child_completion",
+  collision.completionRunId,
+);
+const collisionOrdinaryMarked = authorizeMarkedPayload(
+  collision.requesterSessionId,
+  { text: collisionText },
+  "final",
+  "ordinary-run",
+);
+if (!collisionChildMarked?.text || !collisionOrdinaryMarked?.text) process.exit(235);
+const collisionChildSending = await messageSending(
+  {
+    content: collisionChildMarked.text,
+    sessionKey: collision.requesterSessionId,
+    runId: collision.completionRunId,
+  },
+  {
+    sessionKey: collision.requesterSessionId,
+    runId: collision.completionRunId,
+  },
+);
+const collisionOrdinarySending = await messageSending(
+  {
+    content: collisionOrdinaryMarked.text,
+    sessionKey: collision.requesterSessionId,
+    runId: "ordinary-run",
+  },
+  { sessionKey: collision.requesterSessionId, runId: "ordinary-run" },
+);
+if (collisionChildSending?.cancel === true
+    || collisionOrdinarySending?.cancel === true) process.exit(236);
+messageSent(
+  {
+    content: collisionText,
+    success: true,
+    sessionKey: collision.requesterSessionId,
+  },
+  { sessionKey: collision.requesterSessionId },
+);
+if (bridgeCalls.some(
+  (call) => call.action === "native_child_delivery_observed"
+    && call.nativeRunId === collision.nativeRunId,
+)) process.exit(237);
+messageSent(
+  {
+    content: collisionText,
+    success: true,
+    sessionKey: collision.requesterSessionId,
+  },
+  { sessionKey: collision.requesterSessionId },
+);
+if (bridgeCalls.some(
+  (call) => call.action === "native_child_delivery_observed"
+    && call.nativeRunId === collision.nativeRunId,
+)) process.exit(238);
+
+const staleSession = "stale-parent";
+const staleText = "A stale ordinary receipt must not close a later child.";
+const realDateNow = Date.now;
+let fakeNow = realDateNow();
+Date.now = () => fakeNow;
+const priorOrdinaryMarked = authorizeMarkedPayload(
+  staleSession,
+  { text: staleText },
+  "final",
+  "prior-ordinary-run",
+);
+if (!priorOrdinaryMarked?.text) process.exit(239);
+const priorOrdinarySending = await messageSending(
+  {
+    content: priorOrdinaryMarked.text,
+    sessionKey: staleSession,
+    runId: "prior-ordinary-run",
+  },
+  { sessionKey: staleSession, runId: "prior-ordinary-run" },
+);
+if (priorOrdinarySending?.cancel === true) process.exit(240);
+messageSent(
+  {
+    content: staleText,
+    success: true,
+    sessionKey: staleSession,
+    runId: "prior-ordinary-run",
+  },
+  { sessionKey: staleSession, runId: "prior-ordinary-run" },
+);
+fakeNow += 31 * 1000;
+const staleChild = authorizedState(
+  staleSession,
+  "agent:main:subagent:stale-child",
+  "stale-child-run",
+);
+nativeChildParents.set(
+  nativeChildIdentityKey(staleChild.workerId, staleChild.nativeRunId),
+  staleChild,
+);
+const staleChildMarked = authorizeMarkedPayload(
+  staleSession,
+  { text: staleText },
+  "child_completion",
+  staleChild.completionRunId,
+);
+if (!staleChildMarked?.text) process.exit(241);
+const staleChildSending = await messageSending(
+  {
+    content: staleChildMarked.text,
+    sessionKey: staleSession,
+    runId: staleChild.completionRunId,
+  },
+  { sessionKey: staleSession, runId: staleChild.completionRunId },
+);
+if (staleChildSending?.cancel === true) process.exit(242);
+messageSent(
+  { content: staleText, success: true, sessionKey: staleSession },
+  { sessionKey: staleSession },
+);
+if (bridgeCalls.some(
+  (call) => call.action === "native_child_delivery_observed"
+    && call.nativeRunId === staleChild.nativeRunId,
+)) process.exit(243);
+
+const delayedSession = "delayed-parent";
+const delayedText = "A delayed ordinary callback must remain ambiguous.";
+const delayedOrdinaryMarked = authorizeMarkedPayload(
+  delayedSession,
+  { text: delayedText },
+  "final",
+  "delayed-ordinary-run",
+);
+if (!delayedOrdinaryMarked?.text) process.exit(244);
+const delayedOrdinarySending = await messageSending(
+  {
+    content: delayedOrdinaryMarked.text,
+    sessionKey: delayedSession,
+    runId: "delayed-ordinary-run",
+  },
+  { sessionKey: delayedSession, runId: "delayed-ordinary-run" },
+);
+if (delayedOrdinarySending?.cancel === true) process.exit(245);
+fakeNow += 31 * 1000;
+const delayedChild = authorizedState(
+  delayedSession,
+  "agent:main:subagent:delayed-child",
+  "delayed-child-run",
+);
+nativeChildParents.set(
+  nativeChildIdentityKey(delayedChild.workerId, delayedChild.nativeRunId),
+  delayedChild,
+);
+const delayedChildMarked = authorizeMarkedPayload(
+  delayedSession,
+  { text: delayedText },
+  "child_completion",
+  delayedChild.completionRunId,
+);
+if (!delayedChildMarked?.text) process.exit(246);
+const delayedChildSending = await messageSending(
+  {
+    content: delayedChildMarked.text,
+    sessionKey: delayedSession,
+    runId: delayedChild.completionRunId,
+  },
+  { sessionKey: delayedSession, runId: delayedChild.completionRunId },
+);
+if (delayedChildSending?.cancel === true) process.exit(247);
+messageSent(
+  { content: delayedText, success: true, sessionKey: delayedSession },
+  { sessionKey: delayedSession },
+);
+if (bridgeCalls.some(
+  (call) => call.action === "native_child_delivery_observed"
+    && call.nativeRunId === delayedChild.nativeRunId,
+)) process.exit(248);
+Date.now = realDateNow;
+
+await gatewayStart({}, { config: { agents: { defaults: {} }, channels: {} } });
+if (bridgeCalls.filter(
+  (call) => call.action === "native_child_pending_reconcile",
+).length !== 1) process.exit(233);
+"""
+    script = tmp_path / "openclaw-native-child-post-send-failure.mjs"
+    script.write_text(source, encoding="utf-8")
+
+    completed = subprocess.run(
+        [str(shutil.which("node")), str(script)],
+        capture_output=True,
+        text=True,
+        timeout=10,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is not installed")
+def test_generated_openclaw_authorizes_one_exact_native_child_completion_message(
+    tmp_path: Path,
+) -> None:
+    source = _openclaw_plugin_harness_source()
+    source += r"""
+const beforeToolCall = registeredHooks.get("before_tool_call");
+const beforePromptBuild = registeredHooks.get("before_prompt_build");
+const beforeAgentRun = registeredHooks.get("before_agent_run");
+const beforeAgentFinalize = registeredHooks.get("before_agent_finalize");
+const modelCallEnded = registeredHooks.get("model_call_ended");
+const messageSending = registeredHooks.get("message_sending");
+const agentEnd = registeredHooks.get("agent_end");
+const registration = registeredToolResultMiddlewares[0];
+if (typeof beforeToolCall !== "function" || typeof beforePromptBuild !== "function"
+    || typeof beforeAgentRun !== "function" || typeof beforeAgentFinalize !== "function"
+    || typeof modelCallEnded !== "function" || typeof messageSending !== "function"
+    || typeof agentEnd !== "function"
+    || !registration) process.exit(451);
+
+const parentSession = "completion-parent-session";
+const parentRun = "completion-parent-run";
+const childSession = "agent:main:subagent:completion-child";
+const childRun = "completion-child-run";
+const task = "Return one bounded read-only completion finding.";
+nativeChildRewrittenTask = `${task}\n\n[AGENCY INFERENCE TEAM v6]\nexact-card`;
+const adjusted = await beforeToolCall(
+  {
+    toolName: "sessions_spawn", toolCallId: "completion-spawn-call",
+    runId: parentRun, params: { task, taskName: "completion-review", mode: "run" },
+  },
+  {
+    toolName: "sessions_spawn", toolCallId: "completion-spawn-call",
+    sessionKey: parentSession, runId: parentRun,
+  },
+);
+if (!adjusted?.params) process.exit(452);
+await registration.handler(
+  {
+    toolCallId: "completion-spawn-call", toolName: "sessions_spawn",
+    args: adjusted.params,
+    result: {
+      content: [{ type: "text", text: "accepted" }],
+      details: {
+        status: "accepted", childSessionKey: childSession,
+        runId: childRun, mode: "run", taskName: "completion-review",
+      },
+    },
+  },
+  { runtime: "openclaw" },
+);
+const started = bridgeCalls.find((call) => call.action === "native_child_started");
+if (!started) process.exit(453);
+await agentEnd(
+  { runId: childRun, success: true, messages: [] },
+  { sessionKey: childSession, runId: childRun, modelId: "litellm/task-general" },
+);
+
+const completionRun = `announce:v1:${childSession}:${childRun}`;
+const rawText = [
+  "Agency/Agencies loaded: agency-steward",
+  "Agency/Agencies delegated: code-reviewer",
+  "Skills loaded: none",
+  "Actual Model selected: workforce inference: task-agency-router",
+  "Recruited via: inference",
+  "",
+  "The bounded child review completed with no restart-safety finding.",
+].join("\n");
+const completionContext = {
+  toolName: "message", sessionKey: parentSession, runId: completionRun,
+  modelId: "litellm/task-general",
+};
+const prepared = await beforePromptBuild(
+  { prompt: "host-owned child completion", sessionKey: parentSession, runId: completionRun },
+  completionContext,
+);
+if (!prepared?.appendContext?.includes("[AGENCY NATIVE CHILD COMPLETION CONTRACT]")) {
+  process.exit(481);
+}
+if (!prepared.appendContext.includes('message(action="send", message=<header+body>)')
+    || !prepared.appendContext.includes("Do not emit a natural visible final response")
+    || !prepared.appendContext.includes("NO_REPLY")) process.exit(482);
+const admission = await beforeAgentRun(
+  { sessionKey: parentSession, runId: completionRun }, completionContext,
+);
+if (admission?.outcome !== "pass") process.exit(483);
+const prepares = bridgeCalls.filter(
+  (call) => call.action === "native_child_completion_prepare",
+);
+if (prepares.length !== 1) process.exit(484);
+if (bridgeCalls.some((call) => call.action === "preflight"
+    && call.traceId === completionRun)) process.exit(485);
+
+const sealed = await beforeToolCall(
+  {
+    toolName: "message", toolCallId: "completion-message-call",
+    runId: completionRun, params: { action: "send", message: rawText },
+  },
+  { ...completionContext, toolCallId: "completion-message-call" },
+);
+if (!sealed?.params || sealed.params.action !== "send") process.exit(454);
+if (sealed.params.message === rawText || !sealed.params.message.startsWith(rawText)) {
+  process.exit(455);
+}
+const gates = bridgeCalls.filter(
+  (call) => call.action === "native_child_completion_finalize",
+);
+if (gates.length !== 1) process.exit(456);
+if (bridgeCalls.some((call) => call.action === "pre_verify"
+    && call.traceId === completionRun)) process.exit(478);
+if (gates[0].sessionId !== parentSession || gates[0].traceId !== completionRun
+    || gates[0].parentSessionId !== parentSession
+    || gates[0].parentTraceId !== parentRun
+    || gates[0].workerId !== childSession || gates[0].nativeRunId !== childRun
+    || gates[0].headerContextHash
+      !== createHash("sha256").update(nativeChildCompletionContext).digest("hex")
+    || gates[0].finalResponse !== rawText
+    || gates[0].outboundPayload !== JSON.stringify({ text: rawText })) process.exit(457);
+
+// The correlated completion owns one first-pass attempt, even before transport
+// consumes its seal.
+const second = await beforeToolCall(
+  {
+    toolName: "message", toolCallId: "completion-message-call-two",
+    runId: completionRun, params: { action: "send", message: "second response" },
+  },
+  { ...completionContext, toolCallId: "completion-message-call-two" },
+);
+if (second?.block !== true) process.exit(458);
+if (bridgeCalls.filter(
+  (call) => call.action === "native_child_completion_finalize",
+).length !== 1) {
+  process.exit(459);
+}
+
+await modelCallEnded(
+  { sessionKey: parentSession, runId: completionRun, model: "task-general" },
+  completionContext,
+);
+await beforeAgentFinalize(
+  { sessionKey: parentSession, runId: completionRun, lastAssistantMessage: rawText },
+  completionContext,
+);
+if (bridgeCalls.some((call) => call.action === "post_api_request"
+    && call.traceId === completionRun)) process.exit(486);
+if (bridgeCalls.some((call) => call.action === "pre_verify"
+    && call.traceId === completionRun)) process.exit(487);
+
+const delivered = await messageSending(
+  { content: sealed.params.message, sessionKey: parentSession },
+  completionContext,
+);
+if (delivered?.cancel === true || delivered?.content !== rawText) process.exit(460);
+const replay = await messageSending(
+  { content: sealed.params.message, sessionKey: parentSession },
+  completionContext,
+);
+if (replay?.cancel !== true) process.exit(461);
+"""
+    script = tmp_path / "openclaw-native-child-completion-message.mjs"
+    script.write_text(source, encoding="utf-8")
+
+    completed = subprocess.run(
+        [str(shutil.which("node")), str(script)],
+        capture_output=True,
+        text=True,
+        timeout=10,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is not installed")
+def test_generated_openclaw_child_completion_message_fails_closed(
+    tmp_path: Path,
+) -> None:
+    source = _openclaw_plugin_harness_source()
+    source += r"""
+const beforeToolCall = registeredHooks.get("before_tool_call");
+const beforePromptBuild = registeredHooks.get("before_prompt_build");
+const beforeAgentRun = registeredHooks.get("before_agent_run");
+const messageSending = registeredHooks.get("message_sending");
+const agentEnd = registeredHooks.get("agent_end");
+const registration = registeredToolResultMiddlewares[0];
+if (typeof beforeToolCall !== "function" || typeof beforePromptBuild !== "function"
+    || typeof beforeAgentRun !== "function" || typeof messageSending !== "function"
+    || typeof agentEnd !== "function"
+    || !registration) process.exit(462);
+
+async function acceptChild(parentSession, parentRun, callId, childSession, childRun) {
+  const task = `Review ${callId} without mutation.`;
+  nativeChildRewrittenTask = `${task}\n\n[AGENCY INFERENCE TEAM v6]\nexact-card`;
+  const adjusted = await beforeToolCall(
+    {
+      toolName: "sessions_spawn", toolCallId: callId, runId: parentRun,
+      params: { task, taskName: `${callId}-review`, mode: "run" },
+    },
+    {
+      toolName: "sessions_spawn", toolCallId: callId,
+      sessionKey: parentSession, runId: parentRun,
+    },
+  );
+  if (!adjusted?.params) process.exit(463);
+  await registration.handler(
+    {
+      toolCallId: callId, toolName: "sessions_spawn", args: adjusted.params,
+      result: {
+        content: [{ type: "text", text: "accepted" }],
+        details: {
+          status: "accepted", childSessionKey: childSession,
+          runId: childRun, mode: "run", taskName: `${callId}-review`,
+        },
+      },
+    },
+    { runtime: "openclaw" },
+  );
+  await agentEnd(
+    { runId: childRun, success: true, messages: [] },
+    { sessionKey: childSession, runId: childRun, modelId: "litellm/task-general" },
+  );
+  return `announce:v1:${childSession}:${childRun}`;
+}
+
+async function completionMessage(parentSession, completionRun, callId, params) {
+  return beforeToolCall(
+    { toolName: "message", toolCallId: callId, runId: completionRun, params },
+    {
+      toolName: "message", toolCallId: callId,
+      sessionKey: parentSession, runId: completionRun,
+      modelId: "litellm/task-general",
+    },
+  );
+}
+
+async function prepareCompletion(parentSession, completionRun) {
+  const context = {
+    sessionKey: parentSession, runId: completionRun,
+    modelId: "litellm/task-general",
+  };
+  const prepared = await beforePromptBuild(
+    { prompt: "host-owned child completion", ...context }, context,
+  );
+  if (!prepared?.appendContext) return false;
+  const admission = await beforeAgentRun(context, context);
+  return admission?.outcome === "pass";
+}
+
+const strictRun = await acceptChild(
+  "strict-parent", "strict-parent-run", "strict-spawn",
+  "agent:main:subagent:strict-child", "strict-child-run",
+);
+if (!await prepareCompletion("strict-parent", strictRun)) process.exit(488);
+const explicitTarget = await completionMessage(
+  "strict-parent", strictRun, "strict-message-one",
+  { action: "send", message: "strict response", target: "elsewhere" },
+);
+if (explicitTarget?.block !== true) process.exit(464);
+const correctedRetry = await completionMessage(
+  "strict-parent", strictRun, "strict-message-two",
+  { action: "send", message: "corrected response" },
+);
+if (correctedRetry?.block !== true) process.exit(465);
+if (bridgeCalls.some((call) => call.action === "native_child_completion_finalize"
+    && call.traceId === strictRun)) process.exit(466);
+
+const requesterRun = await acceptChild(
+  "requester-parent", "requester-parent-run", "requester-spawn",
+  "agent:main:subagent:requester-child", "requester-child-run",
+);
+const wrongRequester = await completionMessage(
+  "different-parent", requesterRun, "wrong-requester-message",
+  { action: "send", message: "wrong requester" },
+);
+if (wrongRequester?.block !== true) process.exit(467);
+if (bridgeCalls.some((call) => call.action === "native_child_completion_finalize"
+    && call.traceId === requesterRun)) process.exit(468);
+
+const wrongRunResult = await completionMessage(
+  "requester-parent", `${requesterRun}:wrong`, "wrong-run-message",
+  { action: "send", message: "wrong run" },
+);
+if (wrongRunResult?.block !== true) process.exit(469);
+const wrongRunTransport = await messageSending(
+  { content: "wrong run", sessionKey: "requester-parent" },
+  { sessionKey: "requester-parent", runId: `${requesterRun}:wrong` },
+);
+if (wrongRunTransport?.cancel !== true) process.exit(470);
+
+const wrongHashRun = await acceptChild(
+  "hash-parent", "hash-parent-run", "hash-spawn",
+  "agent:main:subagent:hash-child", "hash-child-run",
+);
+if (!await prepareCompletion("hash-parent", wrongHashRun)) process.exit(489);
+outboundReceiptMode = "wrong_hash";
+const wrongHash = await completionMessage(
+  "hash-parent", wrongHashRun, "hash-message",
+  { action: "send", message: "wrong hash receipt" },
+);
+if (wrongHash?.block !== true) process.exit(471);
+if (bridgeCalls.filter((call) => call.action === "native_child_completion_finalize"
+    && call.traceId === wrongHashRun).length !== 1) process.exit(472);
+
+const wrongTurnRun = await acceptChild(
+  "turn-parent", "turn-parent-run", "turn-spawn",
+  "agent:main:subagent:turn-child", "turn-child-run",
+);
+if (!await prepareCompletion("turn-parent", wrongTurnRun)) process.exit(490);
+outboundReceiptMode = "wrong_turn";
+const wrongTurn = await completionMessage(
+  "turn-parent", wrongTurnRun, "turn-message",
+  { action: "send", message: "wrong turn receipt" },
+);
+if (wrongTurn?.block !== true) process.exit(473);
+if (bridgeCalls.filter((call) => call.action === "native_child_completion_finalize"
+    && call.traceId === wrongTurnRun).length !== 1) process.exit(474);
+const blindRun = await acceptChild(
+  "blind-parent", "blind-parent-run", "blind-spawn",
+  "agent:main:subagent:blind-child", "blind-child-run",
+);
+if (!await prepareCompletion("blind-parent", blindRun)) process.exit(491);
+outboundReceiptMode = "blind";
+const blind = await completionMessage(
+  "blind-parent", blindRun, "blind-message",
+  { action: "send", message: "blind Rule-8 allowance" },
+);
+if (blind?.block !== true) process.exit(479);
+if (bridgeCalls.filter((call) => call.action === "native_child_completion_finalize"
+    && call.traceId === blindRun).length !== 1) process.exit(480);
+outboundReceiptMode = "valid";
+
+const collisionOne = await acceptChild(
+  "collision-parent", "collision-parent-run-one", "collision-spawn-one",
+  "agent:main:subagent:collision", "left:right",
+);
+const collisionTwo = await acceptChild(
+  "collision-parent", "collision-parent-run-two", "collision-spawn-two",
+  "agent:main:subagent:collision:left", "right",
+);
+if (collisionOne !== collisionTwo) process.exit(475);
+const ambiguous = await completionMessage(
+  "collision-parent", collisionOne, "collision-message",
+  { action: "send", message: "ambiguous response" },
+);
+if (ambiguous?.block !== true) process.exit(476);
+if (bridgeCalls.some((call) => call.action === "native_child_completion_finalize"
+    && call.traceId === collisionOne)) process.exit(477);
+"""
+    script = tmp_path / "openclaw-native-child-completion-fail-closed.mjs"
+    script.write_text(source, encoding="utf-8")
+
+    completed = subprocess.run(
+        [str(shutil.which("node")), str(script)],
+        capture_output=True,
+        text=True,
+        timeout=10,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is not installed")
+def test_generated_openclaw_blocks_orphan_announce_without_synthetic_preflight(
+    tmp_path: Path,
+) -> None:
+    source = _openclaw_plugin_harness_source()
+    source += r"""
+const beforePromptBuild = registeredHooks.get("before_prompt_build");
+const beforeAgentRun = registeredHooks.get("before_agent_run");
+const beforeToolCall = registeredHooks.get("before_tool_call");
+const modelCallEnded = registeredHooks.get("model_call_ended");
+const beforeAgentFinalize = registeredHooks.get("before_agent_finalize");
+const replyPayloadSending = registeredHooks.get("reply_payload_sending");
+const messageSending = registeredHooks.get("message_sending");
+if (typeof beforePromptBuild !== "function" || typeof beforeAgentRun !== "function"
+    || typeof beforeToolCall !== "function" || typeof modelCallEnded !== "function"
+    || typeof beforeAgentFinalize !== "function"
+    || typeof replyPayloadSending !== "function" || typeof messageSending !== "function") {
+  process.exit(492);
+}
+
+const session = "orphan-completion-parent";
+const run = "announce:v1:agent:main:subagent:lost-child:lost-child-run";
+const context = { sessionKey: session, runId: run, modelId: "litellm/task-general" };
+const prompt = await beforePromptBuild(
+  { prompt: "host-owned announce", sessionKey: session, runId: run }, context,
+);
+if (prompt !== undefined) process.exit(493);
+if (bridgeCalls.some((call) => call.action === "preflight" && call.traceId === run)) {
+  process.exit(494);
+}
+const mismatchedPrompt = await beforePromptBuild(
+  { prompt: "host-owned announce", sessionKey: session, runId: "different-event-run" },
+  context,
+);
+if (mismatchedPrompt !== undefined) process.exit(504);
+const mismatchedAdmission = await beforeAgentRun(
+  { sessionKey: session, runId: "different-event-run" }, context,
+);
+if (mismatchedAdmission?.outcome !== "block") process.exit(505);
+const mismatchedTool = await beforeToolCall(
+  {
+    toolName: "message", toolCallId: "mismatched-orphan-message",
+    runId: "different-event-run", params: { action: "send", message: "unbound" },
+  },
+  { ...context, toolName: "message", toolCallId: "mismatched-orphan-message" },
+);
+if (mismatchedTool?.block !== true) process.exit(506);
+if (bridgeCalls.some((call) => call.action === "preflight" && call.traceId === run)) {
+  process.exit(507);
+}
+const inverseContext = {
+  sessionKey: session, runId: "ordinary-context-run", modelId: "litellm/task-general",
+};
+const inversePrompt = await beforePromptBuild(
+  { prompt: "host-owned announce", sessionKey: session, runId: run }, inverseContext,
+);
+if (inversePrompt !== undefined) process.exit(508);
+const inverseAdmission = await beforeAgentRun(
+  { sessionKey: session, runId: run }, inverseContext,
+);
+if (inverseAdmission?.outcome !== "block") process.exit(509);
+const inverseTool = await beforeToolCall(
+  {
+    toolName: "message", toolCallId: "inverse-mismatched-orphan-message",
+    runId: run, params: { action: "send", message: "unbound" },
+  },
+  {
+    ...inverseContext, toolName: "message",
+    toolCallId: "inverse-mismatched-orphan-message",
+  },
+);
+if (inverseTool?.block !== true) process.exit(510);
+if (bridgeCalls.some((call) => call.traceId === run && [
+  "preflight", "native_child_completion_prepare", "native_child_completion_finalize",
+].includes(call.action))) process.exit(511);
+const admission = await beforeAgentRun({ sessionKey: session, runId: run }, context);
+if (admission?.outcome !== "block"
+    || admission?.reason !== "agency_native_child_completion_uncorrelated") {
+  process.exit(495);
+}
+const tool = await beforeToolCall(
+  {
+    toolName: "message", toolCallId: "orphan-message", runId: run,
+    params: { action: "send", message: "unbound completion" },
+  },
+  { ...context, toolName: "message", toolCallId: "orphan-message" },
+);
+if (tool?.block !== true) process.exit(496);
+if (bridgeCalls.some((call) => call.action === "native_child_completion_finalize"
+    && call.traceId === run)) process.exit(497);
+
+await modelCallEnded({ sessionKey: session, runId: run, model: "task-general" }, context);
+await beforeAgentFinalize(
+  { sessionKey: session, runId: run, lastAssistantMessage: "unbound completion" }, context,
+);
+const reply = await replyPayloadSending(
+  { sessionKey: session, runId: run, kind: "final", payload: { text: "unbound" } },
+  context,
+);
+if (reply?.cancel !== true) process.exit(498);
+const direct = await messageSending(
+  { content: "unbound completion", sessionKey: session }, context,
+);
+if (direct?.cancel !== true) process.exit(499);
+if (bridgeCalls.some((call) => call.traceId === run && [
+  "preflight", "post_api_request", "pre_verify", "post_tool_call",
+  "native_child_completion_finalize",
+].includes(call.action))) process.exit(500);
+
+// Prefix classification is scoped to the host-authenticated ctx.runId. An
+// ordinary external user turn still follows the normal preflight/admission path.
+const ordinary = { sessionKey: "ordinary-session", runId: "ordinary-run" };
+const ordinaryPrompt = await beforePromptBuild(
+  { prompt: "ordinary user request", ...ordinary }, ordinary,
+);
+if (ordinaryPrompt?.appendContext !== preflightContext) process.exit(501);
+const ordinaryAdmission = await beforeAgentRun(ordinary, ordinary);
+if (ordinaryAdmission?.outcome !== "pass") process.exit(502);
+if (bridgeCalls.filter((call) => call.action === "preflight"
+    && call.traceId === "ordinary-run").length !== 1) process.exit(503);
+"""
+    script = tmp_path / "openclaw-orphan-announce-fails-closed.mjs"
+    script.write_text(source, encoding="utf-8")
+
+    completed = subprocess.run(
+        [str(shutil.which("node")), str(script)],
+        capture_output=True,
+        text=True,
+        timeout=10,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is not installed")
+def test_generated_openclaw_reconciles_end_after_process_state_loss(
+    tmp_path: Path,
+) -> None:
+    source = _openclaw_plugin_harness_source()
+    source += r"""
+const ended = registeredHooks.get("subagent_ended");
+if (typeof ended !== "function") process.exit(401);
+
+await ended(
+  {
+    targetSessionKey: "agent:main:subagent:restarted-child",
+    targetKind: "subagent",
+    reason: "completed",
+    runId: "restarted-child-run",
+    outcome: "ok",
+  },
+  {
+    childSessionKey: "agent:main:subagent:restarted-child",
+    requesterSessionKey: "restarted-parent-session",
+    runId: "restarted-child-run",
+  },
+);
+const durable = bridgeCalls.filter(
+  (call) => call.action === "native_child_terminal_observed",
+);
+if (durable.length !== 1) process.exit(402);
+if (durable[0].sessionId !== "restarted-parent-session"
+    || durable[0].traceId
+    || durable[0].workerId !== "agent:main:subagent:restarted-child"
+    || durable[0].nativeRunId !== "restarted-child-run"
+    || durable[0].outcome !== "ok") process.exit(403);
+
+// Spawn-failed declares runId optional. A requester-bound callback may omit it;
+// the Store must require one unique accepted launch before recording anything.
+await ended(
+  {
+    targetSessionKey: "agent:main:subagent:failed-child",
+    targetKind: "subagent",
+    reason: "spawn-failed",
+    outcome: "error",
+  },
+  {
+    childSessionKey: "agent:main:subagent:failed-child",
+    requesterSessionKey: "failed-parent-session",
+  },
+);
+const optionalRun = bridgeCalls.filter(
+  (call) => call.action === "native_child_terminal_observed",
+);
+if (optionalRun.length !== 2) process.exit(404);
+if (optionalRun[1].sessionId !== "failed-parent-session"
+    || optionalRun[1].traceId
+    || optionalRun[1].workerId !== "agent:main:subagent:failed-child"
+    || optionalRun[1].nativeRunId
+    || optionalRun[1].outcome !== "error") process.exit(405);
+
+// Session reset/delete emits neither requester nor run identity. Without live
+// accepted-child state, the plugin must fail closed instead of guessing.
+await ended(
+  {
+    targetSessionKey: "agent:main:subagent:orphan-reset",
+    targetKind: "subagent",
+    reason: "session-reset",
+    outcome: "reset",
+  },
+  { childSessionKey: "agent:main:subagent:orphan-reset" },
+);
+if (bridgeCalls.filter(
+  (call) => call.action === "native_child_terminal_observed",
+).length !== 2) {
+  process.exit(406);
+}
+"""
+    script = tmp_path / "openclaw-native-child-durable-end-fallback.mjs"
+    script.write_text(source, encoding="utf-8")
+
+    completed = subprocess.run(
+        [str(shutil.which("node")), str(script)],
+        capture_output=True,
+        text=True,
+        timeout=10,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is not installed")
+def test_generated_openclaw_reconciles_observed_end_from_persisted_launch(
+    tmp_path: Path,
+) -> None:
+    source = _openclaw_plugin_harness_source()
+    source += r"""
+const spawned = registeredHooks.get("subagent_spawned");
+const ended = registeredHooks.get("subagent_ended");
+if (typeof spawned !== "function" || typeof ended !== "function") process.exit(421);
+
+const childSession = "agent:main:subagent:split-instance-child";
+await spawned(
+  {
+    childSessionKey: childSession, agentId: "main", mode: "run",
+    threadRequested: false, runId: "split-instance-run",
+  },
+  {
+    childSessionKey: childSession, requesterSessionKey: "split-instance-parent",
+    runId: "split-instance-run",
+  },
+);
+
+// The accepted sessions_spawn receipt was persisted by a different plugin
+// instance, so this instance has only the gateway observation. Its sole end
+// hook must still attempt the Store's exact launch-bound reconciliation path.
+await ended(
+  {
+    targetSessionKey: childSession, targetKind: "subagent", reason: "completed",
+    runId: "split-instance-run", outcome: "ok",
+  },
+  {
+    childSessionKey: childSession, requesterSessionKey: "split-instance-parent",
+    runId: "split-instance-run",
+  },
+);
+
+const durable = bridgeCalls.filter(
+  (call) => call.action === "native_child_terminal_observed",
+);
+if (durable.length !== 1) process.exit(422);
+if (durable[0].sessionId !== "split-instance-parent"
+    || durable[0].traceId
+    || durable[0].workerId !== childSession
+    || durable[0].nativeRunId !== "split-instance-run"
+    || durable[0].outcome !== "ok") process.exit(423);
+"""
+    script = tmp_path / "openclaw-native-child-split-instance-end.mjs"
+    script.write_text(source, encoding="utf-8")
+
+    completed = subprocess.run(
+        [str(shutil.which("node")), str(script)],
+        capture_output=True,
+        text=True,
+        timeout=10,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is not installed")
+def test_generated_openclaw_reconciles_early_and_reset_end_observations(
+    tmp_path: Path,
+) -> None:
+    source = _openclaw_plugin_harness_source()
+    source += r"""
+const beforeToolCall = registeredHooks.get("before_tool_call");
+const beforePromptBuild = registeredHooks.get("before_prompt_build");
+const messageSending = registeredHooks.get("message_sending");
+const messageSent = registeredHooks.get("message_sent");
+const agentEnd = registeredHooks.get("agent_end");
+const spawned = registeredHooks.get("subagent_spawned");
+const ended = registeredHooks.get("subagent_ended");
+const registration = registeredToolResultMiddlewares[0];
+if (typeof beforeToolCall !== "function" || typeof beforePromptBuild !== "function"
+    || typeof messageSending !== "function" || typeof agentEnd !== "function"
+    || typeof messageSent !== "function"
+    || typeof spawned !== "function" || typeof ended !== "function"
+    || !registration) process.exit(341);
+enforceNativeChildOpenForCompletion = true;
+
+async function prepareParentSpawn(parentSession, parentRun, callId, taskName, task) {
+  nativeChildRewrittenTask = `${task}\n\n[AGENCY INFERENCE TEAM v6]\nexact-card`;
+  const adjusted = await beforeToolCall(
+    {
+      toolName: "sessions_spawn", toolCallId: callId, runId: parentRun,
+      params: { task, taskName, mode: "run" },
+    },
+    {
+      toolName: "sessions_spawn", toolCallId: callId,
+      sessionKey: parentSession, runId: parentRun,
+    },
+  );
+  if (!adjusted?.params || adjusted.params.task !== nativeChildRewrittenTask) {
+    process.exit(342);
+  }
+  return adjusted.params;
+}
+
+async function acceptSpawn(callId, args, childSession, childRun, taskName) {
+  return registration.handler(
+    {
+      toolCallId: callId,
+      toolName: "sessions_spawn",
+      args,
+      result: {
+        content: [{ type: "text", text: "accepted" }],
+        details: {
+          status: "accepted", childSessionKey: childSession,
+          runId: childRun, mode: "run", taskName,
+        },
+      },
+    },
+    { runtime: "openclaw" },
+  );
+}
+
+async function deliverCompletion(
+  parentSession, childSession, childRun, callId, finding,
+) {
+  const completionRun = `announce:v1:${childSession}:${childRun}`;
+  const context = {
+    toolName: "message", sessionKey: parentSession, runId: completionRun,
+    modelId: "litellm/task-general",
+  };
+  const prepared = await beforePromptBuild(
+    { prompt: "host-owned child completion", sessionKey: parentSession, runId: completionRun },
+    context,
+  );
+  if (!prepared?.appendContext?.includes("[AGENCY NATIVE CHILD COMPLETION CONTRACT]")) {
+    process.exit(350);
+  }
+  const rawText = [
+    "Agency/Agencies loaded: agency-steward",
+    "Agency/Agencies delegated: code-reviewer",
+    "Skills loaded: none",
+    "Actual Model selected: workforce inference: task-agency-router",
+    "Recruited via: inference",
+    "",
+    finding,
+  ].join("\n");
+  const sealed = await beforeToolCall(
+    {
+      toolName: "message", toolCallId: callId, runId: completionRun,
+      params: { action: "send", message: rawText },
+    },
+    { ...context, toolCallId: callId },
+  );
+  if (!sealed?.params?.message || sealed.params.message === rawText) process.exit(351);
+  const delivered = await messageSending(
+    { content: sealed.params.message, sessionKey: parentSession, runId: completionRun },
+    context,
+  );
+  if (delivered?.cancel === true || delivered?.content !== rawText) process.exit(352);
+  await agentEnd({ runId: completionRun, success: true, messages: [] }, context);
+  messageSent(
+    { content: rawText, success: true, sessionKey: parentSession },
+    context,
+  );
+}
+
+const raceArgs = await prepareParentSpawn(
+  "race-parent-session", "race-parent-run", "race-call", "race-task",
+  "Return one short read-only finding.",
+);
+const raceChild = "agent:main:subagent:race-child";
+await spawned(
+  {
+    childSessionKey: raceChild, agentId: "main", mode: "run",
+    threadRequested: false, runId: "race-child-run",
+  },
+  {
+    childSessionKey: raceChild, requesterSessionKey: "race-parent-session",
+    runId: "race-child-run",
+  },
+);
+await ended(
+  {
+    targetSessionKey: raceChild, targetKind: "subagent", reason: "completed",
+    runId: "race-child-run", outcome: "ok",
+  },
+  {
+    childSessionKey: raceChild, requesterSessionKey: "race-parent-session",
+    runId: "race-child-run",
+  },
+);
+const earlyRaceEnds = bridgeCalls.filter((call) =>
+  call.action === "native_child_terminal_observed"
+    && call.nativeRunId === "race-child-run");
+if (earlyRaceEnds.length !== 1 || earlyRaceEnds[0].traceId) process.exit(343);
+
+await acceptSpawn("race-call", raceArgs, raceChild, "race-child-run", "race-task");
+const raceStartIndex = bridgeCalls.findIndex((call) =>
+  call.action === "native_child_started" && call.nativeRunId === "race-child-run");
+if (raceStartIndex < 0) process.exit(344);
+if (bridgeCalls.filter((call) =>
+  call.action === "native_child_terminal_observed"
+    && call.nativeRunId === "race-child-run"
+).length !== 2) {
+  process.exit(353);
+}
+await deliverCompletion(
+  "race-parent-session", raceChild, "race-child-run", "race-completion-call",
+  "The early-end race review completed without mutation.",
+);
+const raceEnds = bridgeCalls.filter((call) =>
+  call.action === "native_child_delivery_observed"
+    && call.nativeRunId === "race-child-run");
+if (raceEnds.length !== 1
+    || raceEnds[0].traceId !== "race-parent-run"
+    || raceEnds[0].success !== true) process.exit(344);
+
+// The early end was consumed exactly once after accepted launch binding and
+// completion-message delivery both succeeded.
+await ended(
+  {
+    targetSessionKey: raceChild, targetKind: "subagent", reason: "duplicate",
+    runId: "race-child-run", outcome: "ok",
+  },
+  {
+    childSessionKey: raceChild, requesterSessionKey: "race-parent-session",
+    runId: "race-child-run",
+  },
+);
+if (bridgeCalls.filter((call) => call.action === "native_child_terminal_observed"
+    && call.nativeRunId === "race-child-run").length !== 2) process.exit(345);
+
+const retryArgs = await prepareParentSpawn(
+  "retry-parent-session", "retry-parent-run", "retry-call", "retry-task",
+  "Return one different read-only finding.",
+);
+const retryChild = "agent:main:subagent:retry-child";
+await spawned(
+  {
+    childSessionKey: retryChild, agentId: "main", mode: "run",
+    threadRequested: false, runId: "retry-child-run",
+  },
+  {
+    childSessionKey: retryChild, requesterSessionKey: "retry-parent-session",
+    runId: "retry-child-run",
+  },
+);
+await acceptSpawn("retry-call", retryArgs, retryChild, "retry-child-run", "retry-task");
+
+await ended(
+  {
+    targetSessionKey: retryChild, targetKind: "subagent", reason: "completed",
+    runId: "retry-child-run", outcome: "ok",
+  },
+  {
+    childSessionKey: retryChild, requesterSessionKey: "retry-parent-session",
+    runId: "retry-child-run",
+  },
+);
+const retriedEnds = bridgeCalls.filter(
+  (call) => call.action === "native_child_terminal_observed"
+    && call.nativeRunId === "retry-child-run",
+);
+if (retriedEnds.length !== 1
+    || retriedEnds[0].traceId !== "retry-parent-run") process.exit(346);
+
+// The one-shot host callback performed its own durable fallback. Later duplicate
+// hooks must not generate another terminal transition.
+await ended(
+  {
+    targetSessionKey: retryChild, targetKind: "subagent", reason: "completed",
+    runId: "retry-child-run", outcome: "ok",
+  },
+  {
+    childSessionKey: retryChild, requesterSessionKey: "retry-parent-session",
+    runId: "retry-child-run",
+  },
+);
+await ended(
+  {
+    targetSessionKey: retryChild, targetKind: "subagent", reason: "duplicate",
+    runId: "retry-child-run", outcome: "ok",
+  },
+  {
+    childSessionKey: retryChild, requesterSessionKey: "retry-parent-session",
+    runId: "retry-child-run",
+  },
+);
+if (bridgeCalls.filter((call) => call.action === "native_child_terminal_observed"
+    && call.nativeRunId === "retry-child-run").length !== 1) process.exit(347);
+
+// Reset/delete hooks omit runId and requesterSessionKey in OpenClaw 2026.7.1-2.
+// One unique live accepted-child state may safely supply both; never guess.
+const resetArgs = await prepareParentSpawn(
+  "reset-parent-session", "reset-parent-run", "reset-call", "reset-task",
+  "Return one reset-bound read-only finding.",
+);
+const resetChild = "agent:main:subagent:reset-child";
+await acceptSpawn("reset-call", resetArgs, resetChild, "reset-child-run", "reset-task");
+await ended(
+  {
+    targetSessionKey: resetChild, targetKind: "subagent",
+    reason: "session-reset", outcome: "reset",
+  },
+  { childSessionKey: resetChild },
+);
+const resetEnds = bridgeCalls.filter((call) =>
+  call.action === "native_child_terminal_observed"
+    && call.nativeRunId === "reset-child-run");
+if (resetEnds.length !== 1) process.exit(348);
+if (resetEnds[0].sessionId !== "reset-parent-session"
+    || resetEnds[0].traceId !== "reset-parent-run"
+    || resetEnds[0].workerId !== resetChild
+    || resetEnds[0].outcome !== "reset") process.exit(349);
+"""
+    script = tmp_path / "openclaw-native-child-race-and-retry.mjs"
+    script.write_text(source, encoding="utf-8")
+
+    completed = subprocess.run(
+        [str(shutil.which("node")), str(script)],
+        capture_output=True,
+        text=True,
+        timeout=10,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is not installed")
+def test_generated_openclaw_authenticates_nested_sessions_spawn_from_accepted_child(
+    tmp_path: Path,
+) -> None:
+    source = _openclaw_plugin_harness_source()
+    source += r"""
+const beforeToolCall = registeredHooks.get("before_tool_call");
+const spawned = registeredHooks.get("subagent_spawned");
+const registration = registeredToolResultMiddlewares[0];
+if (typeof beforeToolCall !== "function" || typeof spawned !== "function"
+    || !registration) process.exit(351);
+
+const rootTask = "Review one bounded root concern.";
+nativeChildRewrittenTask = `${rootTask}\n\n[AGENCY INFERENCE TEAM v6]\nroot-card`;
+const rootAdjusted = await beforeToolCall(
+  {
+    toolName: "sessions_spawn", toolCallId: "root-call", runId: "root-run",
+    params: { task: rootTask, taskName: "root-task", mode: "run" },
+  },
+  {
+    toolName: "sessions_spawn", toolCallId: "root-call",
+    sessionKey: "root-session", runId: "root-run",
+  },
+);
+const childSession = "agent:main:subagent:known-child";
+await spawned(
+  {
+    childSessionKey: childSession, agentId: "main", mode: "run",
+    threadRequested: false, runId: "known-child-run",
+  },
+  {
+    childSessionKey: childSession, requesterSessionKey: "root-session",
+    runId: "known-child-run",
+  },
+);
+await registration.handler(
+  {
+    toolCallId: "root-call", toolName: "sessions_spawn", args: rootAdjusted.params,
+    result: {
+      content: [{ type: "text", text: "accepted" }],
+      details: {
+        status: "accepted", childSessionKey: childSession,
+        runId: "known-child-run", mode: "run", taskName: "root-task",
+      },
+    },
+  },
+  { runtime: "openclaw" },
+);
+
+const callsBeforeForgery = bridgeCalls.length;
+const forged = await beforeToolCall(
+  {
+    toolName: "sessions_spawn", toolCallId: "forged-call", runId: "forged-run",
+    params: { task: "Uncorrelated nested task", taskName: "forged-task" },
+  },
+  {
+    toolName: "sessions_spawn", toolCallId: "forged-call",
+    sessionKey: "agent:main:subagent:forged-child", runId: "forged-run",
+  },
+);
+if (forged !== undefined || bridgeCalls.length !== callsBeforeForgery) process.exit(352);
+
+const nestedTask = "Review one bounded nested concern.";
+nativeChildRewrittenTask = `${nestedTask}\n\n[AGENCY INFERENCE TEAM v6]\nnested-card`;
+const nestedAdjusted = await beforeToolCall(
+  {
+    toolName: "sessions_spawn", toolCallId: "nested-call", runId: "known-child-run",
+    params: {
+      task: nestedTask, taskName: "nested-task", mode: "run",
+      cleanup: "keep", thinking: "low",
+    },
+  },
+  {
+    toolName: "sessions_spawn", toolCallId: "nested-call",
+    sessionKey: childSession, runId: "known-child-run",
+  },
+);
+if (!nestedAdjusted?.params || nestedAdjusted.params.task !== nativeChildRewrittenTask
+    || nestedAdjusted.params.cleanup !== "keep"
+    || nestedAdjusted.params.thinking !== "low") process.exit(353);
+const nestedPreparation = bridgeCalls.filter((call) =>
+  call.action === "native_child_prepare").at(-1);
+if (!nestedPreparation
+    || nestedPreparation.sessionId !== "root-session"
+    || nestedPreparation.traceId !== "root-run"
+    || nestedPreparation.launchId !== "nested-call"
+    || nestedPreparation.goal !== nestedTask) process.exit(354);
+
+const grandchildSession = "agent:main:subagent:known-grandchild";
+await spawned(
+  {
+    childSessionKey: grandchildSession, agentId: "main", mode: "run",
+    threadRequested: false, runId: "known-grandchild-run",
+  },
+  {
+    childSessionKey: grandchildSession, requesterSessionKey: childSession,
+    runId: "known-grandchild-run",
+  },
+);
+const nestedMiddlewareResult = await registration.handler(
+  {
+    toolCallId: "nested-call", toolName: "sessions_spawn", args: nestedAdjusted.params,
+    result: {
+      content: [{ type: "text", text: "accepted" }],
+      details: {
+        status: "accepted", childSessionKey: grandchildSession,
+        runId: "known-grandchild-run", mode: "run", taskName: "nested-task",
+      },
+    },
+  },
+  { runtime: "openclaw" },
+);
+if (nestedMiddlewareResult !== undefined) process.exit(355);
+const grandchildStart = bridgeCalls.find((call) =>
+  call.action === "native_child_started" && call.nativeRunId === "known-grandchild-run");
+if (!grandchildStart
+    || grandchildStart.sessionId !== "root-session"
+    || grandchildStart.traceId !== "root-run"
+    || grandchildStart.launchId !== "nested-call"
+    || grandchildStart.workerId !== grandchildSession) process.exit(356);
+"""
+    script = tmp_path / "openclaw-native-child-nested-auth.mjs"
+    script.write_text(source, encoding="utf-8")
+
+    completed = subprocess.run(
+        [str(shutil.which("node")), str(script)],
+        capture_output=True,
+        text=True,
+        timeout=10,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is not installed")
+def test_generated_openclaw_preserves_preflight_model_for_tool_result_header_refresh(
+    tmp_path: Path,
+) -> None:
+    source = _openclaw_plugin_harness_source()
+    source += """
+const promptBuild = registeredHooks.get("before_prompt_build");
+const beforeToolCall = registeredHooks.get("before_tool_call");
+const registration = registeredToolResultMiddlewares[0];
+if (typeof promptBuild !== "function" || typeof beforeToolCall !== "function"
+    || !registration) process.exit(275);
+const turnContext = {
+  sessionKey: "tool-model-session",
+  runId: "tool-model-run",
+  modelId: "task-general",
+};
+if ((await promptBuild({ prompt: "agency status" }, turnContext))?.appendContext
+    !== "Agency preflight context") process.exit(276);
+await beforeToolCall(
+  { toolCallId: "call-tool-model", toolName: "read", runId: "tool-model-run" },
+  turnContext,
+);
+await registration.handler(
+  {
+    toolCallId: "call-tool-model",
+    toolName: "read",
+    args: { path: "/opt/openclaw/skills/weather/SKILL.md" },
+    result: { content: [{ type: "text", text: "native tool output" }] },
+  },
+  { runtime: "openclaw" },
+);
+const call = bridgeCalls.find((payload) => payload.action === "post_tool_call");
+if (!call) process.exit(277);
+if (call.sessionId !== "tool-model-session" || call.traceId !== "tool-model-run") {
+  process.exit(278);
+}
+if (call.model !== "task-general") process.exit(279);
+"""
+    script = tmp_path / "openclaw-tool-result-model-correlation.mjs"
+    script.write_text(source, encoding="utf-8")
+
+    completed = subprocess.run(
+        [str(shutil.which("node")), str(script)],
+        capture_output=True,
+        text=True,
+        timeout=10,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is not installed")
+def test_generated_openclaw_rejects_ambiguous_native_tool_result_correlation(
+    tmp_path: Path,
+) -> None:
+    source = _openclaw_plugin_harness_source()
+    source += """
+const beforeToolCall = registeredHooks.get("before_tool_call");
+const registration = registeredToolResultMiddlewares[0];
+if (typeof beforeToolCall !== "function" || !registration) process.exit(249);
+for (const [sessionKey, runId] of [["session-a", "run-a"], ["session-b", "run-b"]]) {
+  await beforeToolCall(
+    { toolCallId: "call-collision", toolName: "read", runId },
+    { toolCallId: "call-collision", toolName: "read", sessionKey, runId },
+  );
+}
+await beforeToolCall(
+  { toolCallId: "call-collision", toolName: "read", runId: "run-b" },
+  {
+    toolCallId: "call-collision",
+    toolName: "read",
+    sessionKey: "session-b",
+    runId: "run-b",
+  },
+);
+await registration.handler(
+  {
+    toolCallId: "call-collision",
+    toolName: "read",
+    args: { path: "/opt/openclaw/skills/weather/SKILL.md" },
+    result: { content: [{ type: "text", text: "native tool output" }] },
+  },
+  { runtime: "openclaw" },
+);
+if (bridgeCalls.some((payload) => payload.action === "post_tool_call")) process.exit(250);
+"""
+    script = tmp_path / "openclaw-ambiguous-tool-result-correlation.mjs"
+    script.write_text(source, encoding="utf-8")
+
+    completed = subprocess.run(
+        [str(shutil.which("node")), str(script)],
+        capture_output=True,
+        text=True,
+        timeout=10,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is not installed")
+def test_generated_openclaw_allows_one_exact_native_reset_acknowledgement(
+    tmp_path: Path,
+) -> None:
+    source = _openclaw_plugin_harness_source()
+    source += """
+const beforeReset = registeredHooks.get("before_reset");
+const messageSeal = registeredHooks.get("message_sending");
+if (typeof beforeReset !== "function" || typeof messageSeal !== "function") process.exit(227);
+const context = { sessionKey: "native-reset-session" };
+// OpenClaw 2026.7.1 starts before_reset from an unawaited async transcript-read
+// task, so its native acknowledgement can reach message_sending first.
+const raced = messageSeal(
+  { content: "✅ New session started.", sessionKey: "native-reset-session" },
+  context,
+);
+setTimeout(() => beforeReset({ reason: "new" }, context), 20);
+const allowed = await raced;
+if (allowed?.content !== "✅ New session started." || allowed?.cancel === true) process.exit(228);
+const replay = await messageSeal(
+  { content: "✅ New session started.", sessionKey: "native-reset-session" },
+  context,
+);
+if (replay?.cancel !== true) process.exit(229);
+beforeReset({ reason: "new-with-tail" }, context);
+const tailed = await messageSeal(
+  { content: "✅ New session started.", sessionKey: "native-reset-session" },
+  context,
+);
+if (tailed?.cancel !== true) process.exit(230);
+beforeReset({ reason: "reset" }, context);
+const reset = await messageSeal(
+  { content: "✅ Session reset.", sessionKey: "native-reset-session" },
+  context,
+);
+if (reset?.content !== "✅ Session reset." || reset?.cancel === true) process.exit(231);
+"""
+    script = tmp_path / "openclaw-native-reset-ack.mjs"
+    script.write_text(source, encoding="utf-8")
+
+    completed = subprocess.run(
+        [str(shutil.which("node")), str(script)],
+        capture_output=True,
+        text=True,
+        timeout=10,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
 
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is not installed")
@@ -565,12 +3335,13 @@ const encoded = serializeBridgePayload({
   goal: "Review authentication",
   outcome: "ok",
   toolName: "delegate_task",
-  toolInput: { agent: "reviewer", prompt: huge, ignored: huge },
+  toolInput: { agent: "reviewer", path: "/opt/openclaw/skills/weather/SKILL.md", prompt: huge, ignored: huge },
   toolResult: { success: true, message: huge, ignored: huge },
 });
 if (Buffer.byteLength(encoded, "utf8") > MAX_BRIDGE_INPUT_BYTES) process.exit(21);
 const projected = JSON.parse(encoded);
 if ("ignored" in projected.toolInput || "ignored" in projected.toolResult) process.exit(22);
+if (projected.toolInput.path !== "/opt/openclaw/skills/weather/SKILL.md") process.exit(37);
 if (projected.parentSessionId !== "parent-session" || projected.parentTraceId !== "parent-trace") process.exit(33);
 if (projected.workUnitId !== "unit-auth" || projected.workerId !== "child-session") process.exit(34);
 if (projected.nativeRunId !== "native-run" || projected.childSessionId !== "child-session") process.exit(35);
@@ -670,6 +3441,158 @@ if (uncaught !== 0) process.exit(33);
 
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is not installed")
+def test_generated_openclaw_correlates_unambiguous_reset_ack_without_session_context(
+    tmp_path: Path,
+) -> None:
+    source = _openclaw_plugin_harness_source()
+    source += """
+const beforeReset = registeredHooks.get("before_reset");
+const messageSeal = registeredHooks.get("message_sending");
+if (typeof beforeReset !== "function" || typeof messageSeal !== "function") {
+  process.exit(280);
+}
+const raced = messageSeal(
+  { content: "✅ New session started." },
+  { channelId: "telegram" },
+);
+setTimeout(
+  () => beforeReset({ reason: "new" }, { sessionKey: "native-reset-session" }),
+  20,
+);
+const allowed = await raced;
+if (allowed?.content !== "✅ New session started." || allowed?.cancel === true) {
+  process.exit(281);
+}
+const replay = await messageSeal(
+  { content: "✅ New session started." },
+  { channelId: "telegram" },
+);
+if (replay?.cancel !== true) process.exit(282);
+
+beforeReset({ reason: "reset" }, { sessionKey: "reset-session-a" });
+beforeReset({ reason: "reset" }, { sessionKey: "reset-session-b" });
+if (consumeNativeControlAcknowledgement("", "✅ Session reset.") !== false) {
+  process.exit(283);
+}
+const firstExact = await messageSeal(
+  { content: "✅ Session reset." },
+  { sessionKey: "reset-session-a" },
+);
+const secondExact = await messageSeal(
+  { content: "✅ Session reset." },
+  { sessionKey: "reset-session-b" },
+);
+if (firstExact?.cancel === true || secondExact?.cancel === true) process.exit(284);
+"""
+    script = tmp_path / "openclaw-sessionless-native-reset-ack.mjs"
+    script.write_text(source, encoding="utf-8")
+
+    completed = subprocess.run(
+        [str(shutil.which("node")), str(script)],
+        capture_output=True,
+        text=True,
+        timeout=10,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is not installed")
+def test_generated_openclaw_allows_reset_ack_through_both_outbound_gates(
+    tmp_path: Path,
+) -> None:
+    source = _openclaw_plugin_harness_source()
+    source += """
+const beforeReset = registeredHooks.get("before_reset");
+const replySeal = registeredHooks.get("reply_payload_sending");
+const messageSeal = registeredHooks.get("message_sending");
+if (
+  typeof beforeReset !== "function"
+  || typeof replySeal !== "function"
+  || typeof messageSeal !== "function"
+) process.exit(285);
+const replyContext = { sessionKey: "pre-reset-session", channelId: "telegram" };
+const resetContext = { sessionKey: "post-reset-session", channelId: "telegram" };
+const messageContext = { sessionKey: "delivery-reset-session", channelId: "telegram" };
+const payloadEvent = {
+  kind: "final",
+  payload: { text: "✅ New session started." },
+  sessionKey: "pre-reset-session",
+};
+const raced = replySeal(payloadEvent, replyContext);
+setTimeout(() => beforeReset({ reason: "new" }, resetContext), 20);
+const payloadAllowed = await raced;
+if (
+  payloadAllowed?.cancel === true
+  || payloadAllowed?.payload?.text !== "✅ New session started."
+) process.exit(286);
+const messageAllowed = await messageSeal(
+  { content: payloadAllowed.payload.text, sessionKey: "delivery-reset-session" },
+  messageContext,
+);
+if (
+  messageAllowed?.cancel === true
+  || messageAllowed?.content !== "✅ New session started."
+) process.exit(287);
+const replayPayload = await replySeal(payloadEvent, replyContext);
+if (replayPayload?.cancel !== true) process.exit(288);
+
+beforeReset({ reason: "reset" }, { sessionKey: "reset-session-a" });
+beforeReset({ reason: "reset" }, { sessionKey: "reset-session-b" });
+const mismatchedAmbiguousPayload = await replySeal(
+  {
+    kind: "final",
+    payload: { text: "✅ Session reset." },
+    sessionKey: "unrelated-reset-session",
+  },
+  { sessionKey: "unrelated-reset-session", channelId: "telegram" },
+);
+if (mismatchedAmbiguousPayload?.cancel !== true) process.exit(294);
+const ambiguousPayload = await replySeal(
+  { kind: "final", payload: { text: "✅ Session reset." } },
+  { channelId: "telegram" },
+);
+if (ambiguousPayload?.cancel !== true) process.exit(289);
+for (const sessionKey of ["reset-session-a", "reset-session-b"]) {
+  const exactContext = { sessionKey, channelId: "telegram" };
+  const exactPayload = await replySeal(
+    { kind: "final", payload: { text: "✅ Session reset." }, sessionKey },
+    exactContext,
+  );
+  if (exactPayload?.payload?.text !== "✅ Session reset.") process.exit(290);
+  const exactMessage = await messageSeal(
+    { content: exactPayload.payload.text, sessionKey },
+    exactContext,
+  );
+  if (exactMessage?.content !== "✅ Session reset.") process.exit(291);
+}
+const diagnosticText = pluginLogs.join("\\n");
+if (!diagnosticText.includes("native-control")) process.exit(292);
+if (
+  diagnosticText.includes("pre-reset-session")
+  || diagnosticText.includes("post-reset-session")
+  || diagnosticText.includes("delivery-reset-session")
+  || diagnosticText.includes("unrelated-reset-session")
+  || diagnosticText.includes("reset-session-a")
+  || diagnosticText.includes("✅")
+) process.exit(293);
+"""
+    script = tmp_path / "openclaw-two-gate-native-reset-ack.mjs"
+    script.write_text(source, encoding="utf-8")
+
+    completed = subprocess.run(
+        [str(shutil.which("node")), str(script)],
+        capture_output=True,
+        text=True,
+        timeout=10,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is not installed")
 def test_generated_openclaw_outbound_gate_blocks_first_pass_rejection(
     tmp_path: Path,
 ) -> None:
@@ -704,17 +3627,23 @@ let cyclicBlocked = false;
 try { canonicalOutboundPayload(cyclicPayload); } catch { cyclicBlocked = true; }
 if (!cyclicBlocked) process.exit(87);
 
-if ((await beforeRun())?.outcome !== "pass") process.exit(72);
+const gateEvent = { prompt: "gate check", messages: [] };
+const gateContext = {
+  sessionKey: "gate-check-session", runId: "gate-check-run", modelId: "task-general",
+};
+if ((await preflight(gateEvent, gateContext))?.appendContext !== "Agency preflight context") process.exit(71);
+if ((await beforeRun(gateEvent, gateContext))?.outcome !== "pass") process.exit(72);
 failControl = true;
-if ((await beforeRun())?.outcome !== "block") process.exit(73);
+if ((await beforeRun(gateEvent, gateContext))?.outcome !== "block") process.exit(73);
 failControl = false;
 gatewayStart({}, { config: { agents: { defaults: { blockStreamingDefault: "on" } } } });
-if ((await beforeRun())?.outcome !== "block") process.exit(74);
+if ((await beforeRun(gateEvent, gateContext))?.outcome !== "block") process.exit(74);
 runtimeControlEnabled = false;
-if ((await beforeRun())?.outcome !== "pass") process.exit(75);
+if ((await beforeRun(gateEvent, gateContext))?.outcome !== "pass") process.exit(75);
 runtimeControlEnabled = true;
 gatewayStart({}, { config: { agents: { defaults: { blockStreamingDefault: "off" } }, channels: {} } });
-if ((await beforeRun())?.outcome !== "pass") process.exit(83);
+if ((await preflight(gateEvent, gateContext))?.appendContext !== "Agency preflight context") process.exit(82);
+if ((await beforeRun(gateEvent, gateContext))?.outcome !== "pass") process.exit(83);
 
 const natural = "still invalid";
 const context = { sessionKey: "session", runId: "run" };
@@ -874,10 +3803,13 @@ if (mismatch?.cancel !== true || !mismatch?.cancelReason) process.exit(61);
 
 // If OpenClaw skips or times out the reply hook, the synchronous message seal
 // still fails closed because enabled preflight marked the session pending.
-await preflight(
-  { prompt: "review", sessionKey: "skipped-session", runId: "skipped-run" },
-  { sessionKey: "skipped-session", runId: "skipped-run" },
-);
+const skippedEvent = { prompt: "review", messages: [] };
+const skippedContext = {
+  sessionKey: "skipped-session", runId: "skipped-run", modelId: "task-general",
+};
+const skippedInjection = await preflight(skippedEvent, skippedContext);
+if (skippedInjection?.appendContext !== "Agency preflight context") process.exit(123);
+if ((await beforeRun(skippedEvent, skippedContext))?.outcome !== "pass") process.exit(122);
 const skippedReply = await messageSeal(
   { content: "unverified final", sessionKey: "skipped-session" },
   { sessionKey: "skipped-session" },
@@ -890,21 +3822,18 @@ const secondSkippedReply = await messageSeal(
 if (secondSkippedReply?.cancel !== true || !secondSkippedReply?.cancelReason) process.exit(64);
 
 failPreflight = true;
-let failedPreflight = false;
-try {
-  await preflight(
-    { prompt: "review", sessionKey: "failed-session", runId: "failed-run" },
-    { sessionKey: "failed-session", runId: "failed-run" },
-  );
-} catch {
-  failedPreflight = true;
-}
+const failedEvent = { prompt: "review", messages: [] };
+const failedContext = {
+  sessionKey: "failed-session", runId: "failed-run", modelId: "task-general",
+};
+const failedInjection = await preflight(failedEvent, failedContext);
+const failedPreflight = await beforeRun(failedEvent, failedContext);
 failPreflight = false;
 const failedPreflightMessage = await messageSeal(
   { content: "unverified after preflight failure", sessionKey: "failed-session" },
   { sessionKey: "failed-session" },
 );
-if (!failedPreflight || failedPreflightMessage?.cancel !== true) process.exit(71);
+if (failedInjection !== undefined || failedPreflight?.outcome !== "block" || failedPreflightMessage?.cancel !== true) process.exit(71);
 
 // A synchronous bridge timeout/error returns a cancellation before OpenClaw can
 // advance its event loop, and no unmarked payload receives a dispatch grant.
@@ -999,6 +3928,10 @@ await preflight(
   { prompt: "review", sessionKey: "split-session", runId: "stable-run", turnId: "different-turn" },
   splitContext,
 );
+if ((await beforeRun(
+  { prompt: "review", messages: [] },
+  splitContext,
+))?.outcome !== "pass") process.exit(123);
 await finalize(
   { lastAssistantMessage: "invalid", runId: "stable-run", turnId: "different-turn" },
   splitContext,
@@ -1015,14 +3948,18 @@ const correlatedCalls = bridgeCalls.filter((call) =>
 );
 if (correlatedCalls.length !== 3 || correlatedCalls.some((call) => call.traceId !== "stable-run")) process.exit(67);
 
-await preflight(
-  { prompt: "first", sessionKey: "concurrent-session", runId: "concurrent-a" },
-  { sessionKey: "concurrent-session", runId: "concurrent-a" },
-);
-await preflight(
-  { prompt: "second", sessionKey: "concurrent-session", runId: "concurrent-b" },
-  { sessionKey: "concurrent-session", runId: "concurrent-b" },
-);
+const concurrentEventA = { prompt: "first", messages: [] };
+const concurrentContextA = {
+  sessionKey: "concurrent-session", runId: "concurrent-a", modelId: "task-general",
+};
+await preflight(concurrentEventA, concurrentContextA);
+if ((await beforeRun(concurrentEventA, concurrentContextA))?.outcome !== "pass") process.exit(124);
+const concurrentEventB = { prompt: "second", messages: [] };
+const concurrentContextB = {
+  sessionKey: "concurrent-session", runId: "concurrent-b", modelId: "task-general",
+};
+await preflight(concurrentEventB, concurrentContextB);
+if ((await beforeRun(concurrentEventB, concurrentContextB))?.outcome !== "pass") process.exit(125);
 const firstConcurrentReply = await outbound(
   {
     payload: { text: "first validated" }, kind: "final",

@@ -560,6 +560,7 @@ def discover_hybrid_recall(  # noqa: C901 - one bounded fail-open recall transac
     catalog_identity: str,
     provider_name: str,
     requested_model: str,
+    embedding_dimensions: int = 0,
     turn_routing_context: Mapping[str, Any] | None = None,
     embedding_invoker: EmbeddingInvoker | None = None,
     per_unit_limit: int = DEFAULT_HYBRID_ADDITIONS_PER_UNIT,
@@ -691,6 +692,7 @@ def discover_hybrid_recall(  # noqa: C901 - one bounded fail-open recall transac
             invoker=embedding_invoker,
             provider_name=provider_name,
             requested_model=requested_model,
+            expected_dimensions=embedding_dimensions,
         )
     except (TypeError, ValueError):
         invalid_input = _failed_embedding(

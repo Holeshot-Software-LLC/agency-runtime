@@ -16,6 +16,9 @@ import pytest
 from agency_runtime.core import installer_payloads, process_argv
 from agency_runtime.core.config import (
     AgencyConfig,
+    HarnessInferenceConfig,
+    InferenceConfig,
+    InferenceProfile,
     JudgeConfig,
     OllamaConfig,
     ProviderEntry,
@@ -166,6 +169,7 @@ class FakeNativeRunner:
                     "enabled": True,
                     "loaded": True,
                     "hooks": sorted(OPENCLAW_REQUIRED_HOOKS),
+                    "contracts": {"agentToolResultMiddleware": ["openclaw"]},
                 }
             return {
                 "returncode": 0,
@@ -580,7 +584,7 @@ def test_generated_hook_timeout_covers_balanced_workforce_call_budget() -> None:
     codex_files, _ = _bundle_files("codex", cfg)
     codex_hooks = json.loads(codex_files["plugins/agency-preflight/hooks/hooks.json"])
     handler = codex_hooks["hooks"]["UserPromptSubmit"][0]["hooks"][0]
-    assert handler["timeout"] == 125
+    assert handler["timeout"] == 595
 
 
 def test_generated_hook_timeout_covers_default_fast_stage_repair_budget() -> None:
@@ -601,7 +605,233 @@ def test_generated_hook_timeout_covers_default_fast_stage_repair_budget() -> Non
     codex_files, _ = _bundle_files("codex", cfg)
     codex_hooks = json.loads(codex_files["plugins/agency-preflight/hooks/hooks.json"])
     handler = codex_hooks["hooks"]["UserPromptSubmit"][0]["hooks"][0]
-    assert handler["timeout"] == 125
+    assert handler["timeout"] == 595
+
+
+def test_openclaw_native_child_timeout_uses_static_harness_profile() -> None:
+    cfg = AgencyConfig(
+        workforce=WorkforceConfig(
+            mode="strict",
+            dense_recall_mode="off",
+            max_work_units=1,
+            hiring_call_budget=1,
+        ),
+        inference=InferenceConfig(
+            profiles={
+                "openclaw-router": InferenceProfile(
+                    name="openclaw-router",
+                    adapter="litellm",
+                    model="task-agency-router",
+                    base_url="http://proxy.invalid/v1",
+                    api_key_env="LITELLM_TEST_KEY",
+                    timeout_ms=120_000,
+                ),
+                "hermes-router": InferenceProfile(
+                    name="hermes-router",
+                    adapter="litellm",
+                    model="hermes-test-router",
+                    base_url="http://proxy.invalid/v1",
+                    api_key_env="LITELLM_TEST_KEY",
+                    timeout_ms=30_000,
+                ),
+            },
+            harnesses={
+                "openclaw": HarnessInferenceConfig(default_profile="openclaw-router"),
+                "hermes": HarnessInferenceConfig(default_profile="hermes-router"),
+            },
+        ),
+    )
+
+    openclaw_files, _ = _bundle_files("openclaw", cfg)
+    bridge = openclaw_files["index.js"]
+    before_tool_call = bridge.split('api.on("before_tool_call"', 1)[1].split(
+        "api.registerAgentToolResultMiddleware", 1
+    )[0]
+
+    assert installer_payloads.openclaw_native_child_timeout_seconds(cfg) == 125
+    assert "function invokeAgency(payload, processTimeoutMs = 595000)" in bridge
+    assert before_tool_call.rstrip().endswith("}, { timeoutMs: 597000 });")
+
+    # Every host uses only its own static profile budget. OpenClaw's 120-second
+    # profile reaches the cap; Hermes independently funds its 30-second
+    # profile's staffing and one bounded hiring path; Codex has no profile.
+    hermes_files, _ = _bundle_files("hermes", cfg)
+    assert "_TIMEOUT_SECONDS = 185" in hermes_files["__init__.py"]
+    codex_files, _ = _bundle_files("codex", cfg)
+    codex_hooks = json.loads(codex_files["plugins/agency-preflight/hooks/hooks.json"])
+    assert codex_hooks["hooks"]["UserPromptSubmit"][0]["hooks"][0]["timeout"] == 80
+
+
+def test_hermes_hook_timeout_uses_only_its_static_harness_profile() -> None:
+    cfg = AgencyConfig(
+        workforce=WorkforceConfig(
+            mode="strict",
+            dense_recall_mode="off",
+            max_work_units=1,
+            hiring_call_budget=1,
+        ),
+        inference=InferenceConfig(
+            profiles={
+                "openclaw-router": InferenceProfile(
+                    name="openclaw-router",
+                    adapter="litellm",
+                    model="openclaw-test-router",
+                    base_url="http://proxy.invalid/v1",
+                    api_key_env="LITELLM_TEST_KEY",
+                    timeout_ms=30_000,
+                ),
+                "hermes-router": InferenceProfile(
+                    name="hermes-router",
+                    adapter="litellm",
+                    model="task-agency-router",
+                    base_url="http://proxy.invalid/v1",
+                    api_key_env="LITELLM_TEST_KEY",
+                    timeout_ms=120_000,
+                ),
+            },
+            harnesses={
+                "openclaw": HarnessInferenceConfig(default_profile="openclaw-router"),
+                "hermes": HarnessInferenceConfig(default_profile="hermes-router"),
+            },
+        ),
+    )
+
+    hermes_files, _ = _bundle_files("hermes", cfg)
+    assert "_TIMEOUT_SECONDS = 595" in hermes_files["__init__.py"]
+
+    openclaw_files, _ = _bundle_files("openclaw", cfg)
+    assert "function invokeAgency(payload, processTimeoutMs = 185000)" in openclaw_files["index.js"]
+    codex_files, _ = _bundle_files("codex", cfg)
+    codex_hooks = json.loads(codex_files["plugins/agency-preflight/hooks/hooks.json"])
+    assert codex_hooks["hooks"]["UserPromptSubmit"][0]["hooks"][0]["timeout"] == 80
+
+
+def test_host_scoped_hook_timeout_adds_separate_dense_recall_budget() -> None:
+    cfg = AgencyConfig(
+        workforce=WorkforceConfig(
+            mode="balanced",
+            dense_recall_mode="shadow",
+            balanced_call_budget=1,
+            hiring_call_budget=1,
+            max_work_units=1,
+        ),
+        inference=InferenceConfig(
+            profiles={
+                "hermes-router": InferenceProfile(
+                    name="hermes-router",
+                    adapter="litellm",
+                    model="task-agency-router",
+                    base_url="http://proxy.invalid/v1",
+                    api_key_env="LITELLM_TEST_KEY",
+                    timeout_ms=20_000,
+                ),
+                "embedding": InferenceProfile(
+                    name="embedding",
+                    adapter="ollama",
+                    model="embedding-test",
+                    capability_class="embeddings",
+                    base_url="http://ollama.invalid",
+                    timeout_ms=10_000,
+                ),
+                "reranker": InferenceProfile(
+                    name="reranker",
+                    adapter="ollama",
+                    model="reranker-test",
+                    capability_class="text",
+                    base_url="http://ollama.invalid",
+                    timeout_ms=15_000,
+                ),
+            },
+            routes={
+                "workforce.recall.embedding": "embedding",
+                "workforce.recall.reranker": "reranker",
+            },
+            harnesses={"hermes": HarnessInferenceConfig(default_profile="hermes-router")},
+        ),
+    )
+
+    hermes_files, _ = _bundle_files("hermes", cfg)
+    assert "_TIMEOUT_SECONDS = 70" in hermes_files["__init__.py"]
+
+
+def test_dense_recall_budget_is_additive_to_legacy_provider_floor() -> None:
+    cfg = AgencyConfig(
+        providers=(
+            ProviderEntry(
+                name="legacy-provider",
+                type="cli",
+                transport="codex",
+                model="gpt-test",
+                timeout=30,
+            ),
+        ),
+        workforce=WorkforceConfig(
+            mode="fast",
+            dense_recall_mode="shadow",
+            fast_call_budget=1,
+            hiring_call_budget=1,
+            max_work_units=1,
+        ),
+        inference=InferenceConfig(
+            profiles={
+                "hermes-router": InferenceProfile(
+                    name="hermes-router",
+                    adapter="litellm",
+                    model="task-agency-router",
+                    base_url="http://proxy.invalid/v1",
+                    api_key_env="LITELLM_TEST_KEY",
+                    timeout_ms=20_000,
+                ),
+                "embedding": InferenceProfile(
+                    name="embedding",
+                    adapter="ollama",
+                    model="embedding-test",
+                    capability_class="embeddings",
+                    base_url="http://ollama.invalid",
+                    timeout_ms=10_000,
+                ),
+                "reranker": InferenceProfile(
+                    name="reranker",
+                    adapter="ollama",
+                    model="reranker-test",
+                    capability_class="text",
+                    base_url="http://ollama.invalid",
+                    timeout_ms=15_000,
+                ),
+            },
+            routes={
+                "workforce.recall.embedding": "embedding",
+                "workforce.recall.reranker": "reranker",
+            },
+            harnesses={"hermes": HarnessInferenceConfig(default_profile="hermes-router")},
+        ),
+    )
+
+    assert installer_payloads.hook_timeout_seconds(cfg, harness="hermes") == 95
+
+
+def test_host_hook_timeout_covers_legacy_provider_gap_hiring_fallback() -> None:
+    cfg = AgencyConfig(
+        ollama=OllamaConfig(enabled=False, model=""),
+        providers=(
+            ProviderEntry(
+                name="legacy-provider",
+                type="cli",
+                transport="codex",
+                model="gpt-test",
+                timeout=20,
+            ),
+        ),
+        workforce=WorkforceConfig(
+            mode="fast",
+            dense_recall_mode="off",
+            fast_call_budget=1,
+            hiring_call_budget=6,
+            max_work_units=1,
+        ),
+    )
+
+    assert installer_payloads.hook_timeout_seconds(cfg, harness="hermes") == 145
 
 
 def test_codex_windows_hook_command_is_inert_powershell_argv(
@@ -1375,6 +1605,7 @@ def test_openclaw_refuses_install_that_would_silently_restart_live_gateway(
     ("version", "supported"),
     [
         ("OpenClaw 2026.7.1", True),
+        ("OpenClaw 2026.7.1-2 (0790d9f)", True),
         ("openclaw v2026.7.2+build.9", True),
         ("OpenClaw 2026.7.999", True),
         ("OpenClaw 2026.8.0", False),
@@ -1516,7 +1747,11 @@ def test_openclaw_runtime_metadata_without_loaded_fact_stays_unverified(
 def test_openclaw_runtime_contract_accepts_official_typed_hook_report(tmp_path: Path) -> None:
     runner = FakeNativeRunner(
         runtime_payload={
-            "plugin": {"id": "agency-preflight", "status": "loaded"},
+            "plugin": {
+                "id": "agency-preflight",
+                "status": "loaded",
+                "contracts": {"agentToolResultMiddleware": ["openclaw"]},
+            },
             "typedHooks": [{"name": name} for name in sorted(OPENCLAW_REQUIRED_HOOKS)],
         }
     )
@@ -1534,6 +1769,8 @@ def test_openclaw_runtime_contract_accepts_official_typed_hook_report(tmp_path: 
     )
     assert runtime_step["loaded"] is True
     assert runtime_step["missing_required_hooks"] == []
+    assert runtime_step["tool_result_middleware_runtimes"] == ["openclaw"]
+    assert runtime_step["tool_result_middleware_contract_proven"] is True
     assert runtime_step["registration_contract_proven"] is True
     assert runtime_step["delivery_behavior_proven"] is False
     assert runtime_step["runtime_contract_scope"] == "registration_only"
@@ -1543,13 +1780,54 @@ def test_openclaw_runtime_contract_accepts_official_typed_hook_report(tmp_path: 
     }
 
 
-def test_openclaw_runtime_contract_fails_closed_when_one_hook_is_missing(
+def test_openclaw_runtime_contract_fails_closed_without_tool_result_middleware(
     tmp_path: Path,
 ) -> None:
-    hooks = sorted(OPENCLAW_REQUIRED_HOOKS - {"message_sending"})
     runner = FakeNativeRunner(
         runtime_payload={
-            "plugin": {"id": "agency-preflight", "status": "loaded"},
+            "plugin": {
+                "id": "agency-preflight",
+                "status": "loaded",
+            },
+            "typedHooks": [{"name": name} for name in sorted(OPENCLAW_REQUIRED_HOOKS)],
+        }
+    )
+
+    result = install_agent_adapter(
+        "openclaw",
+        home_dir=tmp_path,
+        binary_resolver=_resolver("openclaw"),
+        command_runner=runner,
+    )
+
+    assert result["ok"] is False
+    assert result["failed_step"] == "runtime_inspect_unproven"
+    runtime_step = next(
+        step for step in result["native_steps"] if step["name"] == "runtime_inspect"
+    )
+    assert runtime_step["missing_required_hooks"] == []
+    assert runtime_step["tool_result_middleware_runtimes"] == []
+    assert runtime_step["tool_result_middleware_contract_proven"] is False
+    assert runtime_step["registration_contract_proven"] is False
+    assert "agency-preflight" in runner.openclaw_disabled
+
+
+@pytest.mark.parametrize(
+    "missing_hook",
+    ["message_sending", "message_sent", "agent_end"],
+)
+def test_openclaw_runtime_contract_fails_closed_when_one_hook_is_missing(
+    missing_hook: str,
+    tmp_path: Path,
+) -> None:
+    hooks = sorted(OPENCLAW_REQUIRED_HOOKS - {missing_hook})
+    runner = FakeNativeRunner(
+        runtime_payload={
+            "plugin": {
+                "id": "agency-preflight",
+                "status": "loaded",
+                "contracts": {"agentToolResultMiddleware": ["openclaw"]},
+            },
             "typedHooks": [{"name": name} for name in hooks],
         }
     )
@@ -1566,7 +1844,7 @@ def test_openclaw_runtime_contract_fails_closed_when_one_hook_is_missing(
     runtime_step = next(
         step for step in result["native_steps"] if step["name"] == "runtime_inspect"
     )
-    assert runtime_step["missing_required_hooks"] == ["message_sending"]
+    assert runtime_step["missing_required_hooks"] == [missing_hook]
     assert "agency-preflight" in runner.openclaw_disabled
 
 
@@ -1579,7 +1857,11 @@ def test_openclaw_runtime_contract_rejects_explicit_nonterminal_priority(
             hook["priority"] = -1000
     runner = FakeNativeRunner(
         runtime_payload={
-            "plugin": {"id": "agency-preflight", "status": "loaded"},
+            "plugin": {
+                "id": "agency-preflight",
+                "status": "loaded",
+                "contracts": {"agentToolResultMiddleware": ["openclaw"]},
+            },
             "typedHooks": typed_hooks,
         }
     )
@@ -1622,7 +1904,11 @@ def test_openclaw_runtime_priority_metadata_is_not_guessed(
             hook["priority"] = priority
     runner = FakeNativeRunner(
         runtime_payload={
-            "plugin": {"id": "agency-preflight", "status": "loaded"},
+            "plugin": {
+                "id": "agency-preflight",
+                "status": "loaded",
+                "contracts": {"agentToolResultMiddleware": ["openclaw"]},
+            },
             "typedHooks": typed_hooks,
         }
     )
@@ -2398,7 +2684,13 @@ def test_split_bundle_generation_resolves_facade_helpers(
 ) -> None:
     import agency_runtime.core.installer as installer
 
-    monkeypatch.setattr(installer, "_hook_timeout_seconds", lambda _cfg: 17)
+    observed: dict[str, str] = {}
+
+    def hook_timeout(_cfg: AgencyConfig, *, harness: str = "") -> int:
+        observed["harness"] = harness
+        return 17
+
+    monkeypatch.setattr(installer, "_hook_timeout_seconds", hook_timeout)
     monkeypatch.setattr(
         installer,
         "_codex_hooks",
@@ -2418,6 +2710,7 @@ def test_split_bundle_generation_resolves_facade_helpers(
 
     files, _primary = installer._bundle_files("codex", AgencyConfig())
 
+    assert observed == {"harness": "codex"}
     prefix = "plugins/agency-preflight"
     assert json.loads(files[f"{prefix}/hooks/hooks.json"]) == {"marker": "hooks-17"}
     assert json.loads(files[f"{prefix}/.mcp.json"]) == {"marker": "mcp"}

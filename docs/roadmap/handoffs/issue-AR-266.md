@@ -7,6 +7,9 @@ updated: 2026-08-25
 tags: [handoff, workforce, embeddings, retrieval, inference]
 related:
   - docs/roadmap/issue-AR-266-dense-hybrid-workforce-recall.md
+  - docs/roadmap/issue-AR-286-configure-bounded-embedding-dimensions.md
+  - docs/roadmap/issue-AR-287-bind-host-hook-timeouts-to-inference-budgets.md
+  - docs/roadmap/issue-AR-288-expose-hermes-native-finalizer-tool.md
   - docs/decisions/0164-use-dense-embeddings-only-for-workforce-recall.md
   - docs/roadmap/issue-AR-265-contextual-turn-classification.md
   - docs/worklog/README.md
@@ -14,9 +17,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-266
-branch: codex/ar266-merge-ledger
-evidence_commit: 042b5ed974486b067aba886750210e97c029a2d2
-minimum_ledger_commit: 299b1ec59337bcb61d6ee881d58d7a43d53c31d2
+branch: codex/ar266-local-retrieval-smoke
+evidence_commit: 8d8a7d5eea6a0410cbc8ac76ca4bbb066da8c04f
+minimum_ledger_commit: b6f9da3e254dfa0e9d31c82bbe3a4fcda277dc92
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/320
 ---
@@ -25,99 +28,114 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/320
 
 ## checkpoint
 
-- The isolated worktree is on
-  `codex/ar266-dense-hybrid-workforce-recall` from exact fetched
-  `origin/main` commit `fc0770392b5a2cc38c589d2411698d0a0ac602ae`.
-- The shared main checkout contains another worker's OpenClaw changes and must
-  remain untouched.
-- Bootstrap telemetry reported 29.9 percent remaining. Planning and ledger
-  commits `9629cc8e` and `71edf5cc` form the clean starting checkpoint.
-- AR-266 and ADR-0164 preserve the existing 24 typed candidates as a guaranteed
-  lane while searching the complete roster through additive lexical and
-  learned-dense recall. Inference remains the sole final selector.
-- Tracker [#320](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/320)
-  exists with `epic:workforce`; the owner authorized publication, and
-  [PR #321](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/321)
-  passed every automatic check and merged to exact `origin/main` commit
-  `042b5ed974486b067aba886750210e97c029a2d2` without override. Its reviewed
-  second parent is exact ledgered branch head
-  `299b1ec59337bcb61d6ee881d58d7a43d53c31d2`.
-- This merge-record package runs from that exact main commit in a second
-  isolated worktree on `codex/ar266-merge-ledger`. The shared main checkout and
-  its other worker's OpenClaw changes remain untouched.
-- No provider call, model installation, config mutation, or live canary
-  occurred on this box. The official Ollama installer was only downloaded to a
-  temporary folder and signature-verified before the owner redirected model
-  smoke testing to another machine.
+- Worktree `/tmp/agency-runtime-ar266-retrieval.nVONyD` is on branch
+  `codex/ar266-local-retrieval-smoke`, based on exact fetched `origin/main`
+  `4d2f88895f8fb8e3234ff4d8dbef47108c830476`.
+- The clean code checkpoint is `8d8a7d5e` with ledger `b6f9da3e`. It adds the
+  fixed live shadow-recall promotion gate after schema-48 integration, bounded
+  dimensions, complete hook budgets, and the Hermes-native finalizer. Run
+  `git log -2 --oneline` after resume to verify the documentation checkpoint
+  pair created after this capsule projection.
+- Store schema is 48, integrity is `ok`, and the enabled roster has 278 workers.
+  The pre-mutation SQLite online backup also passed integrity check.
+- The pre-promotion Agency config was backed up at SHA-256
+  `2261184786cfb0911b4a8eeb429f3011edb2ed28b20b4da3f6ca14de43e52468`.
+  Effective config is now `additive` at SHA-256
+  `8cebe127352000a7e8a238e7fa842f428f985721a4d58fc3f1b5e2ffb8fe354b`.
+- Both gateways are active. Current launcher-manifest SHA-256 values are
+  `ace4ad8d3014216ff176018353e8ea7909377c82998c34892c8241a78b707b64`
+  (OpenClaw) and `cd025c3589d9ca8f592ae1e24114fee9df2b8477420f80ac518ea9b993c59f93`
+  (Hermes).
 
 ## completed-evidence
 
-- Implementation commit `51c7a8ec` adds explicit embedding/reranker route resolution,
-  positive-only projections, exact vector validation, lexical+dense RRF, a
-  model-bound two-entry cache, and typed-only failure evidence.
-- Additive integration recovers a specialist beyond the 24 typed cards and
-  leaves inference plus the unchanged verifier as the only staffing authority.
-- Shadow retrieval has an independent two-call budget and cannot consume
-  planner, recruiter, repair, or critic capacity. Missing actual-model identity
-  fails closed before cache population or reuse.
-- 144 focused retrieval/inference tests, 77 configuration/profile tests, 68
-  receipt tests, and 147 routing/selection/hiring tests with one skip pass.
-- The named fast spine passes 806 tests with 20 skips; 134 dashboard tests,
-  full Ruff checks, every routing-eval threshold, and 151/151 decision
-  conformance mutations pass.
-- Independent security re-review reports GO on both High repairs. No live
-  provider call, model installation, config mutation, or live canary occurred.
-- Verified checkpoint `fee0a116` and ledger commit `b5fe8cb9` complete the
-  original implementation bookkeeping. Tracker #320 and PR #321 now provide
-  the outward publication records.
-- Direct tracker verification confirms issue #320 is open with the exact
-  `[AR-266]` title, URL, and `epic:workforce` label. The repository-wide strict
-  tracker gates remain red on pre-existing historical missing-issue and state
-  mismatches outside AR-266; ordinary documentation validation passes all 739
-  files.
-- PR #321's hosted gates pass: the 13-minute quality job, CodeQL, dependency
-  review, source/dependency audit, uninstrumented performance, Windows Python
-  3.11/3.12/3.13 portability, Ubuntu and Windows unsigned-distribution smoke,
-  artifact assembly, and the automatic-gate summary all completed green.
+- AR-286/AR-287 provide exact 1,024-dimension embeddings and complete hook
+  budgets. Four host-labelled smokes applied both local stages without native
+  Codex/Claude OAuth, config, or canary changes.
+- Native OpenClaw `2026.7.1-2` trace
+  `8e6033b2-6ab6-4e1d-ac3b-dca792e8eb2d` applied exact-alias parent inference,
+  both local recall stages and wrote a real Agency header with `gis-analyst`
+  and `codebase-onboarding-engineer`. Native `litellm/task-general` and config
+  stayed unchanged. With no `message_sent` or finalization row, this active
+  CLI-only run is retrieval/header proof, not terminal or Telegram proof.
+- Final gates pass: 106 AR-266 tests, the 856-test spine with 3 skips, 134
+  dashboard tests, all docs and Ruff checks, routing, and exact decision
+  conformance with 160 of 160 mutations killed. An initial cached-`uv` spine
+  failed 74 launcher tests closed on its user-replaceable interpreter; the
+  changed trusted-system-base environment passed. An initial conformance run
+  stopped before mutation because system Python lacked `pytest`; its changed
+  trusted-fixture run passed.
+- Agency alone was reinstalled into Hermes from this checkout. Hermes `0.20.4`
+  reports the `agency-runtime` native toolset; installed runtime digest is
+  `824c4d2b267c3d5c56610c44284ec1242113f900d4177ca5d193c0e907b59702`.
+  Its native config remains byte-identical at SHA-256
+  `95b87b7fc0427ad4e3da4f5f468054cf9f7ddba679d1bb606b782a13e1a0172d`.
+- Fresh Hermes session `20260825_112803_2eae8e`, trace
+  `20260825_112803_2eae8e:fbbb0bcf-ef22-40de-bbd4-030fb5919eb9:cb12755e`,
+  completed run `3fa51d15-99f2-49d1-bd22-3713ca7cc6c8`. Request-scoped binding
+  `rmb-49d1637099543d6f77e47dbb8be8c243` is validated in preflight; no persistent
+  Hermes binding-table row is expected.
+- The same turn applied LiteLLM profile `linux-task-agency-router` with exact
+  requested alias/model group `task-agency-router`, local Ollama embedding
+  `qwen3-embedding:latest`, and local Ollama reranker
+  `qwen3-14b-abliterated:latest`. One recruiter attempt was rejected before its
+  bounded repair succeeded; there was no alternate-provider fallback. Hermes's
+  answering receipt remained native `task-general`.
+- Routing decision `29759202-cbc1-458b-a366-5835fcdce3d0` loaded `gis-analyst`
+  and `codebase-onboarding-engineer`; specialist-load rows are
+  `80521db4-c461-4668-b4df-e7fe1b29a656` and
+  `e6d27363-07ee-42ca-93c2-7385babf7b3b`. No skill or child was requested.
+  Terminal finalization `e87cec42-c0db-4252-8e92-5c64c556980f` committed exact
+  response hash `91c4a26d30097a6bf18e55dfb792d7c6e1532fe6ba61bca723596b847470daa4`.
+- The final post-smoke SQLite online backup has integrity `ok`, schema 48, roster 278,
+  and SHA-256
+  `a57b7dc0a965fd1bf54c30a2a190ba86712a2aed52c87b80080f371c3d1f6628`.
+  The preinstall backup also had integrity `ok`, schema 48, and roster 278.
+- Distinct failures remain preserved. Session `20260825_111718_f91ab5` applied
+  both recall stages but correctly rejected an oversized `host_transport`
+  draft. Session `20260825_112213_7fef69` applied both stages but failed closed
+  after two unsafe recruiter classifications (`staff_without_safe_team`).
+  Neither input was retried unchanged.
 
 ## current-state
 
-Exact fetched `origin/main` commit `042b5ed9` contains the verified, ledgered
-AR-266 implementation from PR #321. It supports explicitly configured
-embedding and recall-reranker models, safe current-turn subject queries,
-shadow/additive modes, complete roster search, and bounded typed fallback.
-Additive production value remains unproven until a configured shadow
-evaluation uses real providers on the owner's model-capable machine.
+The exact-confirmed four-category/four-host live matrix passed all 16 cells with
+1.0 baseline retention, zero category regression, zero forbidden, ineligible,
+or disabled activation, zero provider fallback, safe cold/warm caching, safe
+changed-catalog rebuild, and one eligible gap recovered on every host. Agency's
+local mode is now `additive`. A changed additive smoke recovered
+`medical-billing-coding-specialist` beyond the retained 24-card baseline. Both
+free local provider stages applied. Native host configs, primaries, OAuth, and
+canaries remained untouched; both gateway services are active.
 
 ## unresolved-gates
 
-- Publish this exact-main merge record through the required docs-only PR.
-- Run a predeclared live shadow evaluation against explicitly configured
-  embedding and reranker models before recommending additive production use.
+- Create AR-288's tracker only after explicit authorization; no outward tracker
+  write was made.
+- Publish the AR-266 gate and additive evidence through a reviewed PR before
+  another machine pulls `main`; direct commits to `main` are forbidden.
+- The complete warning-strict corpus and hosted workflow remain intentionally
+  undispatched; neither is a routine handoff requirement.
 - Resolve the inherited `test_configuration.py` default-mode expectation
   separately from AR-266; fetched main declares `strict`, while that test still
   expects `fast`.
-- Repair the unsupported installed config before any host refresh or canary.
-- Keep tracker #320 open while the live shadow-value gate remains unresolved.
+- Keep tracker #320 open until merge and separately authorized tracker closure.
 
 ## exact-blocker
 
-There is no implementation blocker; PR #321 is merged and all automatic checks
-passed. Production-quality lift is not yet proven because no live
-embedding/reranker shadow evaluation ran. The installed hook refresh on this
-box remains blocked by unsupported top-level config fields; model configuration
-and live evidence have moved to the owner's model-capable machine.
+There is no runtime blocker. Publication requires an authorized PR open/merge;
+tracker changes remain separately unauthorized. OpenClaw trace `8e6033b2-...`
+remains active in Store and must not be promoted into terminal or
+outbound-delivery proof.
 
 ## next-bounded-work-package
 
-1. Commit and publish this exact-main merge checkpoint with its reciprocal
-   worklog ledger row through the required docs-only PR.
-2. On the model-capable machine, start from the resulting exact `main`,
-   configure a learned embedding model and a
-   bounded text reranker, then run the predeclared shadow matrix without
-   enabling additive production behavior.
-3. Keep AR-266 and tracker #320 in progress until the live acceptance evidence
-   is durable; do not present the merge itself as additive-value proof.
+1. Run the named local gates and create the substantive/ledger documentation
+   checkpoint pair, then push this branch.
+2. With explicit publication authorization, open and merge the PR without
+   changing tracker state.
+3. On each other machine, pull merged `main`, run the fixed live gate while
+   still in `shadow`, and promote that machine's Agency config only if it passes.
 
 ## same-task-continuity
 
@@ -154,5 +172,9 @@ git diff --check
   queries, or vectors.
 - Do not treat an absent embedding route as permission to use the default
   inference profile.
+- Do not invent or require an embedding-stub launcher variable; no retained
+  evidence identifies one, and live endpoints belong to Agency profiles.
 - Preserve malformed/timed-out provider evidence as unavailable, not as an
   upstream loss or proof that baseline recall failed.
+- Do not raise embedding safety bounds or slice/pad provider vectors; rejected,
+  stripped, or mismatched dimension requests retain typed-only behavior.

@@ -6,7 +6,11 @@ import argparse
 import json
 
 from agency_runtime.cli import eval_commands
-from agency_runtime.cli.eval_commands import cmd_eval_compare, cmd_eval_full_roster
+from agency_runtime.cli.eval_commands import (
+    cmd_eval_compare,
+    cmd_eval_full_roster,
+    cmd_eval_shadow_recall,
+)
 
 
 def _observation(mode: str, run_id: str) -> dict[str, object]:
@@ -110,3 +114,43 @@ def test_cmd_eval_full_roster_json_can_omit_details(monkeypatch, capsys) -> None
         cmd_eval_full_roster(argparse.Namespace(candidate_limit=8, json=True, no_details=True)) == 1
     )
     assert "details" not in json.loads(capsys.readouterr().out)
+
+
+def test_cmd_eval_shadow_recall_requires_confirmation_and_reports_gate(monkeypatch, capsys) -> None:
+    monkeypatch.setattr(eval_commands, "Store", lambda: object())
+    monkeypatch.setattr(eval_commands, "load_config", lambda: object())
+    monkeypatch.setattr(eval_commands, "workforce_index_snapshot", lambda _store: object())
+    monkeypatch.setattr(
+        eval_commands,
+        "run_shadow_value_matrix",
+        lambda _snapshot, *, config: {
+            "passed": True,
+            "metrics": {
+                "baseline_retention_rate": 1.0,
+                "recovered_vocabulary_gap_count": 3,
+                "forbidden_activation_count": 0,
+                "ineligible_activation_count": 0,
+                "disabled_activation_count": 0,
+            },
+            "gates": [],
+            "details": [{"bounded": True}],
+        },
+    )
+    args = argparse.Namespace(
+        confirm_live_inference="",
+        json=False,
+        no_details=False,
+    )
+    try:
+        cmd_eval_shadow_recall(args)
+    except ValueError as exc:
+        assert "RUN LIVE SHADOW RECALL EVAL" in str(exc)
+    else:  # pragma: no cover - the command must remain confirmation-gated
+        raise AssertionError("missing shadow evaluation confirmation was accepted")
+
+    args.confirm_live_inference = "RUN LIVE SHADOW RECALL EVAL"
+    assert cmd_eval_shadow_recall(args) == 0
+    output = capsys.readouterr().out
+    assert "shadow recall eval passed" in output
+    assert "baseline-retention=1.000" in output
+    assert "recovered-gaps=3" in output

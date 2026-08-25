@@ -29,6 +29,7 @@ from agency_runtime.core.evals.upstream_selection import (
 from agency_runtime.core.evals.upstream_selection import (
     run_matched_upstream_selection_benchmark,
 )
+from agency_runtime.core.evals.workforce_recall_shadow import run_shadow_value_matrix
 from agency_runtime.core.evals.workforce_selection import CASES, run_workforce_inference_eval
 from agency_runtime.core.host_capabilities import canonicalize_tool_capabilities
 from agency_runtime.core.roster.workforce import workforce_index_snapshot
@@ -153,6 +154,38 @@ def cmd_eval_full_roster(args: argparse.Namespace) -> int:
             )
         print("evidence\tcontract-only; no task-outcome or superiority claim")
     return 0 if report["passed"] else 1
+
+
+def cmd_eval_shadow_recall(args: argparse.Namespace) -> int:
+    """Run the exact-confirmed four-host AR-266 shadow-value matrix."""
+
+    confirmation = "RUN LIVE SHADOW RECALL EVAL"
+    if args.confirm_live_inference != confirmation:
+        raise ValueError(f'confirmation required: --confirm-live-inference "{confirmation}"')
+    config = load_config()
+    snapshot = workforce_index_snapshot(Store())
+    report = run_shadow_value_matrix(snapshot, config=config)
+    command_passed = bool(report["passed"])
+    if args.no_details:
+        report = {key: value for key, value in report.items() if key != "details"}
+    if args.json:
+        print_json(report)
+    else:
+        status = "passed" if command_passed else "failed"
+        metrics = report["metrics"]
+        print(
+            f"shadow recall eval {status}: "
+            f"baseline-retention={metrics['baseline_retention_rate']:.3f} "
+            f"recovered-gaps={metrics['recovered_vocabulary_gap_count']}"
+        )
+        print(
+            "shadow-safety\t"
+            f"forbidden={metrics['forbidden_activation_count']} "
+            f"ineligible={metrics['ineligible_activation_count']} "
+            f"disabled={metrics['disabled_activation_count']}"
+        )
+        print("boundary\tretrieval shadow evidence only; no specialist execution")
+    return 0 if command_passed else 1
 
 
 def cmd_eval_upstream_architecture(args: argparse.Namespace) -> int:
@@ -311,6 +344,7 @@ __all__ = [
     "cmd_eval_decision_conformance",
     "cmd_eval_full_roster",
     "cmd_eval_product",
+    "cmd_eval_shadow_recall",
     "cmd_eval_upstream_architecture",
     "cmd_eval_upstream_selection",
     "cmd_eval_workforce",

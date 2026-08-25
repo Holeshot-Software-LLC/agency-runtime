@@ -50,12 +50,15 @@ def _shipped_events() -> dict[str, frozenset[str]]:
 
     openclaw_source = openclaw_index(_TIMEOUT_SECONDS)
     hermes_source = hermes_plugin(_TIMEOUT_SECONDS, AgencyConfig())
+    openclaw_events = set(re.findall(r'api\.on\("([a-z_]+)"', openclaw_source))
+    if "api.registerAgentToolResultMiddleware(" in openclaw_source:
+        openclaw_events.add("agent_tool_result_middleware")
     return {
         "codex": frozenset(codex_hooks(_TIMEOUT_SECONDS)["hooks"]),
         "claude": frozenset(claude_hooks(_TIMEOUT_SECONDS)["hooks"]),
         "zcode": frozenset(zcode_hooks(_TIMEOUT_SECONDS)["hooks"]["events"]),
         "hermes": frozenset(re.findall(r'register_hook\("([a-z_]+)"', hermes_source)),
-        "openclaw": frozenset(re.findall(r'api\.on\("([a-z_]+)"', openclaw_source)),
+        "openclaw": frozenset(openclaw_events),
     }
 
 
@@ -105,7 +108,7 @@ REQUIRED_BOUNDARIES: dict[str, tuple[str, dict[str, tuple[str, ...]]]] = {
             "claude": ("PostToolUse",),
             "zcode": ("PostToolUse",),
             "hermes": ("post_tool_call",),
-            "openclaw": ("after_tool_call",),
+            "openclaw": ("agent_tool_result_middleware",),
         },
     ),
     "turn_finalized": (

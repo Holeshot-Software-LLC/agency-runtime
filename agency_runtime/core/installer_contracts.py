@@ -29,13 +29,15 @@ OPENCLAW_REQUIRED_HOOKS = frozenset(
         "gateway_start",
         "before_agent_run",
         "before_prompt_build",
+        "agent_end",
         "model_call_ended",
-        "after_tool_call",
         "subagent_spawned",
         "subagent_ended",
         "before_agent_finalize",
+        "before_reset",
         "reply_payload_sending",
         "message_sending",
+        "message_sent",
     }
 )
 HOOK_TIMEOUT_BUFFER_SECONDS = 5.0
@@ -118,10 +120,13 @@ _OPENCLAW_VERSION = re.compile(
 
 
 def parse_openclaw_version(value: object) -> tuple[int, int, int] | None:
-    """Parse one stable date-version without accepting prerelease capability drift."""
+    """Parse a stable date-version, including numeric distribution revisions."""
 
     match = _OPENCLAW_VERSION.search(str(value or ""))
-    if match is None or match.group("prerelease"):
+    if match is None:
+        return None
+    release_suffix = match.group("prerelease")
+    if release_suffix and re.fullmatch(r"-[0-9]+", release_suffix) is None:
         return None
     return tuple(int(match.group(name)) for name in ("year", "month", "patch"))
 

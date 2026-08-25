@@ -41,7 +41,7 @@ from agency_runtime.core.store.trace_identity import (
     ensure_correlation_key_integrity,
 )
 
-SCHEMA_VERSION = 47
+SCHEMA_VERSION = 48
 
 # Columns an already-created activation receipts table gains by migration.
 #
@@ -81,6 +81,25 @@ DELEGATION_ACTIVATION_RECEIPT_MIGRATED_COLUMNS: tuple[tuple[str, str], ...] = (
 # time next to real ones.
 MODEL_RECEIPT_MIGRATED_COLUMNS: tuple[tuple[str, str], ...] = (
     ("latency_ms", "INTEGER NOT NULL DEFAULT 0"),
+)
+
+# A native host may report that a child agent ended before it reports whether
+# the child's user-visible completion was delivered. Keep that observation on
+# the still-open worker row so a restarted host can fail only known pending
+# completions without interfering with children the host can resume.
+NATIVE_CHILD_TERMINAL_MIGRATED_COLUMNS: tuple[tuple[str, str], ...] = (
+    (
+        "native_terminal_outcome",
+        "TEXT NOT NULL DEFAULT '' CHECK (native_terminal_outcome IN "
+        "('', 'ok', 'error', 'timeout', 'killed', 'reset', 'deleted', 'unknown'))",
+    ),
+    (
+        "native_delivery_status",
+        "TEXT NOT NULL DEFAULT '' CHECK (native_delivery_status IN "
+        "('', 'pending', 'delivered', 'failed', 'interrupted'))",
+    ),
+    ("native_terminal_observed_at", "TEXT"),
+    ("native_delivery_observed_at", "TEXT"),
 )
 
 STORE_CLOCK_SQL = "STRFTIME('%Y-%m-%dT%H:%M:%f000+00:00', 'NOW')"
@@ -1231,6 +1250,13 @@ CREATE TABLE IF NOT EXISTS worker_runs (
     tool_evidence TEXT NOT NULL DEFAULT '',
     tool_evidence_source TEXT NOT NULL DEFAULT '',
     tool_evidence_recorded_at TEXT,
+    native_terminal_outcome TEXT NOT NULL DEFAULT ''
+        CHECK (native_terminal_outcome IN
+            ('', 'ok', 'error', 'timeout', 'killed', 'reset', 'deleted', 'unknown')),
+    native_delivery_status TEXT NOT NULL DEFAULT ''
+        CHECK (native_delivery_status IN ('', 'pending', 'delivered', 'failed', 'interrupted')),
+    native_terminal_observed_at TEXT,
+    native_delivery_observed_at TEXT,
     ended_at TEXT,
     FOREIGN KEY (delegation_event_id) REFERENCES delegation_events(id)
 );
@@ -5259,6 +5285,8 @@ def migrate_schema(
         "TEXT NOT NULL DEFAULT ''",
     )
     ensure_column(conn, "worker_runs", "tool_evidence_recorded_at", "TEXT")
+    for column, definition in NATIVE_CHILD_TERMINAL_MIGRATED_COLUMNS:
+        ensure_column(conn, "worker_runs", column, definition)
     conn.execute(
         "CREATE INDEX IF NOT EXISTS idx_worker_runs_trace ON worker_runs(session_id, trace_id)"
     )

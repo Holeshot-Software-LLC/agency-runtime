@@ -51,6 +51,7 @@ _ANTHROPIC_THINKING_BUDGETS = {
     "xhigh": 32768,
 }
 _OPENAI_REASONING_EFFORTS = frozenset({"low", "medium", "high"})
+_LITELLM_REASONING_EFFORTS = frozenset({"low", "medium", "high", "xhigh"})
 
 
 def _translate_thinking_level_for_adapter(
@@ -75,7 +76,7 @@ def _translate_thinking_level_for_adapter(
         return normalized if normalized in _OPENAI_REASONING_EFFORTS else "unsupported"
     if provider_type == "anthropic":
         return normalized if normalized in _ANTHROPIC_THINKING_BUDGETS else "unsupported"
-    return normalized  # ollama / litellm / cli: pass through / ignored
+    return normalized  # litellm: reasoning_effort; ollama / cli: recorded and ignored
 
 
 def translate_thinking_level_for_adapter(
@@ -325,6 +326,21 @@ def _join_api_path(base_url: str, path: str) -> str:
     return base + normalized
 
 
+def _schema_instruction(system_prompt: str, schema: Mapping[str, Any]) -> str:
+    serialized = json.dumps(
+        schema,
+        ensure_ascii=False,
+        separators=(",", ":"),
+        sort_keys=True,
+        allow_nan=False,
+    )
+    return (
+        f"{system_prompt}\n\nReturn ONLY a single valid JSON object matching this "
+        f"schema (no prose, no markdown, no explanation). Start with {{ and end with }}:\n"
+        f"{serialized}"
+    )
+
+
 def _http_payload(
     provider: ProviderEntry,
     prompt: str,
@@ -350,18 +366,13 @@ def _http_payload(
             "/api/chat",
         )
     if provider_type == "anthropic":
-        schema_instruction = (
-            f"{system_prompt}\n\nReturn ONLY a single valid JSON object matching this "
-            f"schema (no prose, no markdown, no explanation). Start with {{ and end with }}:\n"
-            f"{json.dumps(schema, ensure_ascii=False)}"
-        )
         payload: dict[str, Any] = {
             "max_tokens": 8192,
             "messages": [
                 {"content": prompt, "role": "user"},
             ],
             "model": provider.model,
-            "system": schema_instruction,
+            "system": _schema_instruction(system_prompt, schema),
             "temperature": 0,
         }
         # Thinking mode is disabled for structured JSON: thinking consumes
@@ -370,7 +381,7 @@ def _http_payload(
         return payload, "/v1/messages"
     payload = {
         "messages": [
-            {"content": system_prompt, "role": "system"},
+            {"content": _schema_instruction(system_prompt, schema), "role": "system"},
             {"content": prompt, "role": "user"},
         ],
         "model": provider.model,
@@ -378,6 +389,15 @@ def _http_payload(
         "stream": False,
         "temperature": 0,
     }
+    if provider_type == "litellm":
+        payload["response_format"] = {
+            "json_schema": {
+                "name": "agency_structured_response",
+                "schema": dict(schema),
+                "strict": True,
+            },
+            "type": "json_schema",
+        }
     if requires_completion_token_parameter(provider.model, declared=provider.token_parameter):
         payload["max_completion_tokens"] = 2048
         payload.pop("temperature", None)
@@ -386,7 +406,7 @@ def _http_payload(
     if (
         provider_type == "openai-compatible"
         and provider.reasoning_effort in _OPENAI_REASONING_EFFORTS
-    ):
+    ) or (provider_type == "litellm" and provider.reasoning_effort in _LITELLM_REASONING_EFFORTS):
         payload["reasoning_effort"] = provider.reasoning_effort
     return payload, "/v1/chat/completions"
 

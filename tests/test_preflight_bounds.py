@@ -1472,6 +1472,57 @@ def test_failure_first_prevents_late_ready_commit(
     assert store.runtime_table_counts()["routing_decisions"] == 0
 
 
+def test_hermes_preflight_lease_matches_host_scoped_hook_budget(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from agency_runtime.core.config import (
+        HarnessInferenceConfig,
+        InferenceConfig,
+        InferenceProfile,
+        WorkforceConfig,
+    )
+
+    store = Store(tmp_path / "agency.db")
+    _activate_test_specialist(store)
+    config = AgencyConfig(
+        workforce=WorkforceConfig(mode="strict"),
+        inference=InferenceConfig(
+            profiles={
+                "hermes-router": InferenceProfile(
+                    name="hermes-router",
+                    adapter="litellm",
+                    model="task-agency-router",
+                    base_url="http://proxy.invalid/v1",
+                    api_key_env="LITELLM_TEST_KEY",
+                    timeout_ms=120_000,
+                )
+            },
+            harnesses={"hermes": HarnessInferenceConfig(default_profile="hermes-router")},
+        ),
+    )
+    observed: dict[str, Any] = {}
+    original_begin = store.begin_preflight_attempt
+
+    def record_begin(**kwargs: Any) -> dict[str, Any]:
+        observed.update(kwargs)
+        return original_begin(**kwargs)
+
+    monkeypatch.setattr(store, "begin_preflight_attempt", record_begin)
+    monkeypatch.setattr(pipeline, "route", _route_to_test_specialist())
+
+    run_preflight(
+        store,
+        session_id="hermes-session",
+        user_message="Review the bounded runtime lifecycle.",
+        host="hermes",
+        trace_id="hermes-profile-budget",
+        config=config,
+    )
+
+    assert observed["lease_seconds"] == 595
+
+
 def test_store_clock_lease_exceeds_generated_hook_budget_by_write_margin(
     tmp_path: Path,
 ) -> None:
