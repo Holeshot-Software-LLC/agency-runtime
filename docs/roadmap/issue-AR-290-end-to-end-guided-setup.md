@@ -152,18 +152,17 @@ activation state into a hard stage failure. Guided setup must preserve strict
 standalone install semantics while reporting this exact resumable case as
 degraded.
 
-The clean AR-292 checkpoint was installed and its setup, installer, pointer-
-isolation, native Jina reranker, and dashboard files hash-matched source. A full
-installed `agency setup --non-interactive --all` retained the existing config,
-registered Codex, Claude, and ZCode, installed the dashboard, diagnosed the
-expected native-trust warnings, and passed all 8 deterministic smoke checks.
-An immediately following idempotent pass captured native exit 2 with
-`installation: activation-pending`; no hard stage or residual drift remained.
+The exact merged `aa2830d0` checkpoint was installed and its configuration,
+provider, setup, and dashboard modules hash-matched source. A full all-harness
+refresh retained the config, registered Codex, Claude, and ZCode, and cleared
+the stale launcher projection; authoritative status now reports no runtime
+drift. Deterministic installed smoke passes all 8 checks.
 
-Final installed validation returned degraded exit 2 only for Codex trust/load
-and Claude/ZCode load uncertainty. Doctor confirmed schema 48, 299 active
-agents, and usable Codex and Claude subscription providers. Dashboard status
-returned 0 with installed, owned, enabled, active, current-manifest, and
-reachable all true. `workforce.dense_recall_mode` is `additive`, learned routes
-are empty, and the missing private Jina environment variable leaves recall on
-the safe typed-only lane.
+Final validation returns degraded 2 only for attended Codex trust and cold
+Claude/ZCode loading uncertainty. Status includes the exact Codex trust and
+verification walkthrough. Doctor confirms schema 48, 299 active agents, and
+usable Codex and Claude subscription providers. Dashboard status returns 0
+with installed, owned, enabled, active, current-manifest, and reachable all
+true. `workforce.dense_recall_mode` is `additive`; bounded live calls applied
+`jina-embeddings-v3` at 1,024 dimensions and `jina-reranker-v3.5` over two
+documents without persisting or displaying the credential.

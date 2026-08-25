@@ -18,8 +18,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-290
 branch: codex/ar290-guided-setup-readme
-evidence_commit: 341971d4ae2fc74a9806700080f2bf15cec26f37
-minimum_ledger_commit: 341971d4ae2fc74a9806700080f2bf15cec26f37
+evidence_commit: 257fe30fe7325485dcbef30195451309bdba63af
+minimum_ledger_commit: aa2830d0247489b8da3f0ef882c762955ea5d0fd
 hard_checkpoint_percent: 50
 tracker_url: null
 ---
@@ -33,10 +33,11 @@ tracker_url: null
   switched, staged, cleaned, or committed.
 - The branch contains AR-289 native Jina reranking, AR-290 guided setup and
   consumer documentation, AR-291 pointer isolation, AR-292 truthful degraded
-  setup classification, and the AR-293 safe inference-profile config repair.
-- Remote `main` was fetched at `a19a1669` before publication reconciliation.
-  The feature branch still needs a non-rewriting merge from current remote
-  `main`, final verification, PR review, and a merge commit.
+  setup classification, AR-293 safe inference-profile config operations, and
+  AR-294 expanded-regression fixture repair.
+- Remote `main` at `a19a1669` was merged without rewriting history in
+  `7487b31b`; current verification completed at the `aa2830d0` ledger. Re-fetch
+  before publication and merge again without rewriting only if remote advanced.
 - Tracker creation was attempted after the owner authorized push/merge, but the
   external approval boundary requires an explicit tracker authorization. No
   issue, label, PR, tag, release, or publication was created by that attempt.
@@ -45,12 +46,10 @@ tracker_url: null
 
 ## completed-evidence
 
-- Source gates already recorded: AR-289 passed 174 focused tests, the 856-test
-  named fast spine, 134 dashboard tests, full Ruff, routing gates, and 160/160
-  decision-conformance mutations. AR-290 passed 255 focused tests, the 849-test
-  named fast spine with 20 skips, 136 dashboard tests, full Ruff, docs, routing,
-  and 160/160 decision-conformance mutations. AR-291 passed 194 focused tests;
-  AR-292 passed 58 focused and 299 broader warning-strict tests.
+- Current merged source passed the 1,127-test expanded configuration/security
+  run with 21 skips, all 136 dashboard UI tests, full Ruff and documentation
+  gates, every routing threshold, and all 160 decision-conformance mutations
+  with a green baseline, zero survivors/invalid results, and unchanged source.
 - Installed all-detected Windows setup registered Codex, Claude, ZCode, and the
   dashboard, reported no runtime drift, and passed deterministic smoke 8/8.
   Its exact exit 2 means attended activation remains, not mutation failure.
@@ -67,8 +66,9 @@ tracker_url: null
   Codex TUI, trust all eight Agency hooks, start a new session, then run
   `agency install --agent codex --verify-activation`.
 - Reinstalling the candidate changed the owned dashboard launcher identity.
-  The service correctly refused stale restart, was explicitly reinstalled, and
-  is now owned, enabled, active, current, reachable, and open on loopback.
+  The all-harness refresh cleared the one stale Claude projection, authoritative
+  status reports `runtime_drift: null`, and the owned service is enabled,
+  active, current, reachable, and open at `http://127.0.0.1:7810/`.
 
 ## exact-blocker
 
@@ -81,12 +81,12 @@ tracker_url: null
   release gates.
 - AR-119 still lacks exact-candidate Rule-4 proof for all claimed hosts,
   benchmark-valid completed outcomes, and current-artifact host/OS evidence.
-- AR-289 through AR-293 tracker mapping is blocked on explicit authorization.
+- AR-289 through AR-294 tracker mapping is blocked on explicit authorization.
   A tag or release is not authorized and would still be premature.
 
 ## same-task-continuity
 
-Recheck the branch and this capsule after merging current remote `main`. Keep
+Recheck remote `main`, the branch, and this capsule before publication. Keep
 exact command exits, artifact hashes, installed identity, host-written evidence,
 and Store correlation separate. Do not infer native delivery from model text,
 copied plugins, or Store rows alone. A Linux continuation is a new operator

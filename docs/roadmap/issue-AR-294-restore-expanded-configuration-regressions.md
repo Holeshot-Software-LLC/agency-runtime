@@ -76,4 +76,7 @@ Before correction, the merged expanded run completed with 1,125 passed, 21
 skipped, and exactly these two failures. Neither traceback entered product
 execution: one compared a stale expected string and the other raised Python's
 missing-keyword `TypeError` while constructing a direct test call. Focused and
-expanded post-fix results are recorded in the AR-294 worklog checkpoint.
+expanded post-fix results are recorded in the AR-294 worklog checkpoint. The
+corrected run passed 1,127 tests with the same 21 skips; all 136 dashboard UI
+tests, full Ruff and documentation gates, every routing threshold, and the
+green baseline plus all 160 decision-conformance mutations also passed.
