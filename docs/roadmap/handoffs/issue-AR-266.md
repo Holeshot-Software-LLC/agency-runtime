@@ -17,9 +17,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-266
-branch: codex/ar266-local-retrieval-smoke
-evidence_commit: 8d8a7d5eea6a0410cbc8ac76ca4bbb066da8c04f
-minimum_ledger_commit: b6f9da3e254dfa0e9d31c82bbe3a4fcda277dc92
+branch: codex/ar266-merge-record
+evidence_commit: e1d783ff0e9bb68dd48943b05fc95d8f68a3a603
+minimum_ledger_commit: a88c9a8d56044ef47d71f80d5b5dc00c665fec77
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/320
 ---
@@ -28,14 +28,11 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/320
 
 ## checkpoint
 
-- Worktree `/tmp/agency-runtime-ar266-retrieval.nVONyD` is on branch
-  `codex/ar266-local-retrieval-smoke`, based on exact fetched `origin/main`
-  `4d2f88895f8fb8e3234ff4d8dbef47108c830476`.
-- The clean code checkpoint is `8d8a7d5e` with ledger `b6f9da3e`. It adds the
-  fixed live shadow-recall promotion gate after schema-48 integration, bounded
-  dimensions, complete hook budgets, and the Hermes-native finalizer. Run
-  `git log -2 --oneline` after resume to verify the documentation checkpoint
-  pair created after this capsule projection.
+- Worktree `/tmp/agency-runtime-ar266-merge-record.4GB5Yg` is on branch
+  `codex/ar266-merge-record`, based on merged `origin/main` `e1d783ff`.
+- PR #323 merged the clean head `a88c9a8d` as `e1d783ff` after every automatic
+  gate passed. Run `git log -2 --oneline` after resume to verify the merge-record
+  documentation checkpoint pair created after this capsule projection.
 - Store schema is 48, integrity is `ok`, and the enabled roster has 278 workers.
   The pre-mutation SQLite online backup also passed integrity check.
 - The pre-promotion Agency config was backed up at SHA-256
@@ -106,36 +103,32 @@ changed-catalog rebuild, and one eligible gap recovered on every host. Agency's
 local mode is now `additive`. A changed additive smoke recovered
 `medical-billing-coding-specialist` beyond the retained 24-card baseline. Both
 free local provider stages applied. Native host configs, primaries, OAuth, and
-canaries remained untouched; both gateway services are active.
+canaries remained untouched; both gateways are active. PR #323 published this
+exact scope to `main` as `e1d783ff` with all automatic checks green.
 
 ## unresolved-gates
 
 - Create AR-288's tracker only after explicit authorization; no outward tracker
   write was made.
-- Publish the AR-266 gate and additive evidence through a reviewed PR before
-  another machine pulls `main`; direct commits to `main` are forbidden.
 - The complete warning-strict corpus and hosted workflow remain intentionally
   undispatched; neither is a routine handoff requirement.
 - Resolve the inherited `test_configuration.py` default-mode expectation
   separately from AR-266; fetched main declares `strict`, while that test still
   expects `fast`.
-- Keep tracker #320 open until merge and separately authorized tracker closure.
+- Keep tracker #320 open by owner direction; closure remains unauthorized.
 
 ## exact-blocker
 
-There is no runtime blocker. Publication requires an authorized PR open/merge;
-tracker changes remain separately unauthorized. OpenClaw trace `8e6033b2-...`
-remains active in Store and must not be promoted into terminal or
-outbound-delivery proof.
+There is no runtime or publication blocker. Tracker changes remain unauthorized.
+OpenClaw trace `8e6033b2-...` remains active in Store and must not be promoted
+into terminal or outbound-delivery proof.
 
 ## next-bounded-work-package
 
-1. Run the named local gates and create the substantive/ledger documentation
-   checkpoint pair, then push this branch.
-2. With explicit publication authorization, open and merge the PR without
-   changing tracker state.
-3. On each other machine, pull merged `main`, run the fixed live gate while
+1. Create the substantive/ledger merge-record checkpoint pair.
+2. On each other machine, pull merged `main`, run the fixed live gate while
    still in `shadow`, and promote that machine's Agency config only if it passes.
+3. Change tracker #320 only with separate explicit owner authorization.
 
 ## same-task-continuity
 

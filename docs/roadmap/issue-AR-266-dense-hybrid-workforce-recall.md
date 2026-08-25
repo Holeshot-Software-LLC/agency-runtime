@@ -72,10 +72,11 @@ specialists before inference decides the final staffing plan.
   roster. AR-286 owns a provider-native bounded-dimension request; no client-side
   slicing or safety-bound increase is permitted.
 - Tracker [#320](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/320)
-  is linked, and [PR #321](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/321)
-  merged the shadow-default implementation to `main` as `042b5ed9`. The issue
-  remains in progress until the live shadow-value gate is proven; the merge
-  does not recommend additive production activation.
+  remains open by owner direction. [PR #323](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/323)
+  merged the complete live-gate continuation to `main` as `e1d783ff` after all
+  automatic checks passed. The earlier shadow-default implementation remains
+  traceable through [PR #321](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/321)
+  and merge `042b5ed9`.
 
 ## Approach
 
@@ -142,17 +143,18 @@ eligibility constraints.
 - Two independent High findings were repaired and re-reviewed GO: shadow uses
   an independent evidence budget, and absent actual-model identity cannot seed
   or reuse the cache.
-- Tracker [#320](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/320)
-  carries the remaining live shadow gate, and
-  [PR #321](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/321)
-  merged the safe shadow-default implementation at `042b5ed9` after every
-  automatic quality, CodeQL, dependency, Windows portability, performance, and
-  unsigned-distribution gate passed without override.
+- [PR #323](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/323)
+  merged the live gate, provider integration, and additive evidence to `main`
+  at `e1d783ff`. Static quality, CodeQL, dependency review, three Windows
+  portability contracts, performance, both unsigned-distribution builds, and
+  the platform-honest artifact assembly all passed without override. Tracker
+  [#320](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/320)
+  remains open and unchanged by explicit owner direction.
 - The full `tests/test_configuration.py` file retains one inherited mainline
   mismatch: it expects the default workforce mode `fast`, while fetched
   `origin/main` config declares `strict`. All AR-266 configuration tests pass.
-- Local AR-286 configuration on 2026-08-25 keeps dense recall in `shadow` and
-  routes its two optional stages directly to Ollama: embeddings use
+- Local AR-286 configuration on 2026-08-25 routes both optional recall stages
+  directly to Ollama: embeddings use
   `qwen3-embedding:latest` at an exact 1,024 dimensions and reranking uses
   `qwen3-14b-abliterated:latest` under the closed response schema. The existing
   OpenClaw and Hermes parent-workforce defaults remain
@@ -235,8 +237,8 @@ eligibility constraints.
   Its Store trace applied the harness-scoped LiteLLM alias
   `task-agency-router`, local 1,024-dimension `qwen3-embedding:latest`, and
   local `qwen3-14b-abliterated:latest`; Hermes native execution stayed on
-  `task-general`. This is bounded live-provider evidence, not the complete
-  shadow-value matrix or an additive-production recommendation.
+  `task-general`. This bounded native evidence precedes and does not substitute
+  for the separately completed 16-cell shadow-value matrix.
 
 ## Dependencies
 
