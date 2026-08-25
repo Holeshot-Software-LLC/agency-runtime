@@ -68,6 +68,7 @@ canary:
 # under ``inference`` below (ADR-0153 / AR-235 §3).
 workforce:
   mode: strict
+  dense_recall_mode: shadow   # evidence-only until explicitly set to additive
   provider: ""                  # blank = use the configured provider chain
   fast_call_budget: 4
   balanced_call_budget: 4

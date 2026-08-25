@@ -36,6 +36,7 @@ _PROFILES = frozenset({"local-only", "standard", "power", "yolo"})
 _ENABLED_VALUES = frozenset({"auto", "true", "false"})
 _DELEGATION_MODES = frozenset({"observe", "prefer", "strong"})
 _WORKFORCE_MODES = frozenset({"fast", "balanced", "strict"})
+_DENSE_RECALL_MODES = frozenset({"off", "shadow", "additive"})
 _CANARY_HOSTS = frozenset({"codex", "claude", "openclaw", "hermes", "zcode"})
 
 
@@ -442,6 +443,7 @@ def _validate_workforce(value: Any) -> dict[str, Any]:
     section = _mapping(value, "workforce")
     allowed = {
         "mode",
+        "dense_recall_mode",
         "provider",
         "fast_call_budget",
         "balanced_call_budget",
@@ -465,6 +467,9 @@ def _validate_workforce(value: Any) -> dict[str, Any]:
         raise _error("workforce", "contains unsupported fields")
     validators: dict[str, Callable[[Any], Any]] = {
         "mode": lambda item: _choice(item, "workforce.mode", _WORKFORCE_MODES),
+        "dense_recall_mode": lambda item: _choice(
+            item, "workforce.dense_recall_mode", _DENSE_RECALL_MODES
+        ),
         "provider": lambda item: _string(item, "workforce.provider", maximum=80).strip(),
         "fast_call_budget": lambda item: _integer(
             item, "workforce.fast_call_budget", minimum=1, maximum=8
@@ -892,6 +897,23 @@ def _validate_inference(value: Any) -> dict[str, Any]:
             "default_profile": harness_default,
             "routes": harness_routes,
         }
+    capability_routes = {
+        "workforce.recall.embedding": "embeddings",
+        "workforce.recall.reranker": "text",
+    }
+    route_tables = [("inference.routes", routes)] + [
+        (f"inference.harnesses.{name}.routes", harness["routes"])
+        for name, harness in harnesses.items()
+    ]
+    for route_path, route_table in route_tables:
+        for route_key, required_capability in capability_routes.items():
+            profile_name = route_table.get(route_key)
+            if profile_name and profiles[profile_name]["capability_class"] != required_capability:
+                raise _error(
+                    f"{route_path}.{route_key}",
+                    f"profile {profile_name!r} must declare capability_class "
+                    f"{required_capability!r}",
+                )
     return {
         "default_profile": default_profile,
         "strict_independence": strict_independence,

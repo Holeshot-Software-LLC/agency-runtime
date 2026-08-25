@@ -1126,6 +1126,11 @@ This registry connects repository history to the roadmap and to optional detail 
 | `871e3eb7` | 2026-08-24 | docs(ar265): record pull request 318 | null | null |
 | `90b852bd` | 2026-08-24 | Merge pull request #318 from Holeshot-Software-LLC/codex/ar265-contextual-turn-classification | null | null |
 | `dfe8cb26` | 2026-08-24 | docs(ar265): record merged contextual routing canary | [AR-265](../roadmap/issue-AR-265-contextual-turn-classification.md) | null |
+| `fc077039` | 2026-08-24 | Merge pull request #319 from Holeshot-Software-LLC/codex/ar265-live-evidence | [AR-265](../roadmap/issue-AR-265-contextual-turn-classification.md) | null |
+| `9629cc8e` | 2026-08-24 | docs(ar266): plan dense hybrid workforce recall | [AR-266](../roadmap/issue-AR-266-dense-hybrid-workforce-recall.md) | null |
+| `51c7a8ec` | 2026-08-24 | feat(workforce): add dense hybrid candidate recall | [AR-266](../roadmap/issue-AR-266-dense-hybrid-workforce-recall.md) | null |
+| `fee0a116` | 2026-08-24 | docs(ar266): checkpoint verified hybrid recall | [AR-266](../roadmap/issue-AR-266-dense-hybrid-workforce-recall.md) | null |
+| `c42018e1` | 2026-08-25 | docs(ar266): link tracker and pull request | [AR-266](../roadmap/issue-AR-266-dense-hybrid-workforce-recall.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes

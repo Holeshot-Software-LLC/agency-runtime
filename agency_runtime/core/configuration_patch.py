@@ -122,6 +122,9 @@ _SET_VALIDATORS = {
     "workforce.mode": lambda item: _choice(
         item, "workforce.mode", frozenset({"fast", "balanced", "strict"})
     ),
+    "workforce.dense_recall_mode": lambda item: _choice(
+        item, "workforce.dense_recall_mode", frozenset({"off", "shadow", "additive"})
+    ),
     "workforce.provider": lambda item: _string(item, "workforce.provider", maximum=80).strip(),
     "workforce.fast_call_budget": lambda item: _integer(
         item, "workforce.fast_call_budget", minimum=1, maximum=8

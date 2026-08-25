@@ -226,6 +226,7 @@ class SelectorConfig:
 
 DELEGATION_MODES = frozenset({"observe", "prefer", "strong"})
 WORKFORCE_MODES = frozenset({"fast", "balanced", "strict"})
+DENSE_RECALL_MODES = frozenset({"off", "shadow", "additive"})
 
 # Per-stage inference profile adapter allowlist and thinking-level vocabulary
 # mirror the conveyor project reference pattern (conveyor/src/config/types.ts:294-310).
@@ -262,6 +263,7 @@ class WorkforceConfig:
     """
 
     mode: str = "strict"
+    dense_recall_mode: str = "shadow"
     provider: str = ""
     fast_call_budget: int = 4
     balanced_call_budget: int = 4
@@ -726,6 +728,9 @@ def _dict_to_config(raw: dict[str, Any], config_path: str = "") -> AgencyConfig:
         ),
         workforce=WorkforceConfig(
             mode=str(workforce_raw.get("mode", "strict")).strip().casefold(),
+            dense_recall_mode=str(workforce_raw.get("dense_recall_mode", "shadow"))
+            .strip()
+            .casefold(),
             provider=str(workforce_raw.get("provider", "")).strip(),
             fast_call_budget=int(workforce_raw.get("fast_call_budget", 4)),
             balanced_call_budget=int(workforce_raw.get("balanced_call_budget", 4)),
@@ -1336,6 +1341,7 @@ def config_to_yaml(cfg: AgencyConfig, *, redact: bool = True) -> str:
         },
         "workforce": {
             "mode": cfg.workforce.mode,
+            "dense_recall_mode": cfg.workforce.dense_recall_mode,
             "provider": cfg.workforce.provider,
             "fast_call_budget": cfg.workforce.fast_call_budget,
             "balanced_call_budget": cfg.workforce.balanced_call_budget,
