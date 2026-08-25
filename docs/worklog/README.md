@@ -1212,6 +1212,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `14ee6074` | 2026-08-25 | docs(hermes): preserve failed native-child proof | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md) | null |
 | `382fb4d9` | 2026-08-25 | merge: integrate dense recall with current host runtime | [AR-266](../roadmap/issue-AR-266-dense-hybrid-workforce-recall.md), [AR-285](../roadmap/issue-AR-285-accept-openclaw-stopped-gateway-status.md) | [detail](2026-08-25-382fb4d9-integrate-dense-recall-with-current-host-runtime.md) |
 | `2bea0c76` | 2026-08-25 | feat(workforce): configure bounded embedding dimensions | [AR-286](../roadmap/issue-AR-286-configure-bounded-embedding-dimensions.md) | [detail](2026-08-25-2bea0c76-configure-bounded-embedding-dimensions.md) |
+| `fc5847e6` | 2026-08-25 | docs(ar266): checkpoint local retrieval smoke | [AR-266](../roadmap/issue-AR-266-dense-hybrid-workforce-recall.md), [AR-286](../roadmap/issue-AR-286-configure-bounded-embedding-dimensions.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
