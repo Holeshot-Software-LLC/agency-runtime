@@ -260,6 +260,12 @@ def _provider_attempts(outcome: WorkforceRoutingOutcome) -> list[dict[str, Any]]
             "reason": item.reason_code,
             "validation_detail": item.validation_detail,
             "latency_ms": item.latency_ms,
+            "input_count": item.input_count,
+            "dimensions": item.dimensions,
+            "candidate_count": item.candidate_count,
+            "catalog_cache_hit": item.catalog_cache_hit,
+            "catalog_identity": item.catalog_identity,
+            "provider_call_count": item.provider_call_count,
         }
         for item in outcome.attempts
     ]

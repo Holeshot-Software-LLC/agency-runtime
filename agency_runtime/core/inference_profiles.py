@@ -240,6 +240,56 @@ def shares_provider_with(
     )
 
 
+def resolve_explicit_capability_route(
+    config: AgencyConfig,
+    route_key: str,
+    *,
+    capability_class: str,
+    harness: str = "",
+) -> ProfileResolution | None:
+    """Resolve only an explicitly mapped capability route.
+
+    Optional capability-specific payloads must never inherit a harness or
+    global ``default_profile``. In particular, embedding inputs must not be
+    sent to a generic text model merely because one is the default.
+    """
+
+    inference = config.inference
+    if not isinstance(inference, InferenceConfig):
+        raise ConfigValidationError(f"inference route {route_key!r}: config.inference is invalid")
+    harness_key = harness.strip().casefold()
+    harness_config = inference.harnesses.get(harness_key) if harness_key else None
+    profile_name = ""
+    origin = ""
+    if harness_config is not None and route_key in harness_config.routes:
+        profile_name = harness_config.routes[route_key]
+        origin = f"harnesses.{harness_key}.routes"
+    elif route_key in inference.routes:
+        profile_name = inference.routes[route_key]
+        origin = "routes"
+    if not profile_name:
+        return None
+    profile = inference.profiles.get(profile_name)
+    if profile is None:
+        raise ConfigValidationError(
+            f"inference {origin} route {route_key!r}: profile {profile_name!r} is not defined"
+        )
+    required = capability_class.strip().casefold()
+    actual = profile.capability_class.strip().casefold()
+    if not required or actual != required:
+        raise ConfigValidationError(
+            f"inference route {route_key!r}: profile {profile_name!r} must declare "
+            f"capability_class {required!r}"
+        )
+    return ProfileResolution(
+        route_key=route_key,
+        profile=profile,
+        provider=provider_from_profile(profile),
+        thinking_level_configured=profile.thinking_level,
+        thinking_level_consumed=translate_thinking_level(profile),
+    )
+
+
 def route_requires_independence(route_key: str) -> bool:
     """Return True when a route key must use a different provider than its creator."""
 
@@ -292,6 +342,7 @@ __all__ = [
     "enforce_strict_independence",
     "provider_from_profile",
     "resolve",
+    "resolve_explicit_capability_route",
     "route_requires_independence",
     "shares_provider_with",
     "translate_thinking_level",

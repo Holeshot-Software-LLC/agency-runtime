@@ -43,18 +43,24 @@ specialists before inference decides the final staffing plan.
 
 ## Current state
 
-- `_typed_shortlists` scans all enabled contracts but
-  `_bounded_typed_candidates` retains at most 24 candidates per work unit.
-- `allowed_candidate_ids` is exactly the resulting detail-card set, so the
-  recruiter cannot recover a specialist that recall omitted.
-- The legacy semantic selector uses deterministic sparse metadata features and
-  is not on the active workforce path.
-- The Store's legacy `agent_embeddings` table lacks roster, contract,
-  projection, model-revision, dimension, and normalization identity. Its rows
-  are not safe production index evidence.
-- Inference already owns final staffing through the configurable
-  `workforce.recruiter` route, and the hard staffing verifier rejects invalid
-  proposals after inference.
+- The local implementation keeps the ordered 24-card typed lane and searches
+  every enabled approved contract through positive-only lexical and learned
+  dense recall before the recruiter call.
+- `workforce.dense_recall_mode` supports `off`, `shadow`, and `additive`.
+  Learned recall activates only when both explicit capability-correct embedding
+  and reranker routes exist; neither route inherits a default model.
+- Cold turns batch the complete card catalog with current work-unit queries;
+  warm turns embed only the queries against a two-entry exact-identity cache.
+- The reranker must return every offered discovery exactly once. Additive mode
+  can then expand the recruiter universe beyond 24, while shadow mode records
+  evidence without changing cards or consuming the authoritative staffing
+  budget.
+- Missing exact actual-model identity, invalid vectors, provider failure,
+  dimension/model drift, unsafe projections, or an invalid reranker all fail to
+  the unchanged typed lane. No vectors or query text are persisted.
+- Focused and production-spine verification is green. No live embedding or
+  reranker provider was called, so cross-provider quality and shadow value
+  evidence remain open.
 - Tracker creation is pending explicit outward authorization.
 
 ## Approach
@@ -75,12 +81,16 @@ query retrieval on every routed turn. Rebuild roster vectors only when the
 roster fingerprint, contract-card hash, projection version, embedding model
 revision, dimensions, or normalization identity changes.
 
-Require an explicit `inference.routes.workforce.recall.embedding` profile with
-`capability_class = "embeddings"`; a missing route disables learned recall
-rather than falling through to the default text model. The existing
-`workforce.recruiter` inference profile is the configurable reranker and sole
-selection authority. Support `off`, `shadow`, and `additive` modes. Shadow is
-the safe default while evaluation evidence is accumulated.
+Require explicit `workforce.recall.embedding` and
+`workforce.recall.reranker` inference routes. The embedding profile must use
+`capability_class = "embeddings"`, while the reranker uses `text`; missing
+routes disable learned recall rather than falling through to a default model.
+The recall reranker must return every offered discovery exactly once and may
+only order them. The existing `workforce.recruiter` remains the sole staffing
+selector. Support `off`, `shadow`, and `additive` modes. Shadow is the safe
+default while evaluation evidence is accumulated and uses an independent
+two-call evidence budget that cannot consume planner, recruiter, repair, or
+critic capacity.
 
 Use an exact in-process cosine scan at current roster scale and a bounded
 process cache. Do not reuse or grandfather legacy `agent_embeddings` rows.
@@ -94,6 +104,27 @@ verifier. Dense or lexical evidence is recall evidence only: it cannot select,
 exclude, authorize hiring, grant mutation authority, or override exact
 eligibility constraints.
 
+## Verification evidence
+
+- 144 focused hybrid-recall, inference-profile, and workforce-inference tests
+  pass, including recovery beyond the typed 24, invalid-reranker fallback,
+  context-specialized queries, exact-model cache failure, and shadow budget
+  non-interference.
+- Configuration/profile and receipt projections pass 77 and 68 focused tests;
+  routing, selection, and hiring regressions pass 147 tests with one skip.
+- The named fast Python production spine passes 806 tests with 20 skips; all
+  134 dashboard tests pass; full-repository Ruff check and format-check pass.
+- Routing evaluation passes every threshold, including 1.0 required recall,
+  0.0 forbidden rate, and all 263/1,000/10,000-agent scale gates.
+- Decision conformance passes its baseline and kills all 151 curated mutations
+  with zero survivors; source integrity remains unchanged.
+- Two independent High findings were repaired and re-reviewed GO: shadow uses
+  an independent evidence budget, and absent actual-model identity cannot seed
+  or reuse the cache.
+- The full `tests/test_configuration.py` file retains one inherited mainline
+  mismatch: it expects the default workforce mode `fast`, while fetched
+  `origin/main` config declares `strict`. All AR-266 configuration tests pass.
+
 ## Dependencies
 
 - AR-265 and ADR-0163 provide bounded current-turn subject context without
@@ -104,30 +135,31 @@ eligibility constraints.
 
 ## Acceptance
 
-- [ ] Versioned positive-only card documents exclude prompts, instructions,
+- [x] Versioned positive-only card documents exclude prompts, instructions,
       negative fields, audit findings, prior transcript, and raw vectors.
-- [ ] Index identity binds the complete roster count and digest, recruiter
-      fingerprint, card hashes, projection version, model revision,
-      dimensions, and normalization.
-- [ ] Every current-turn work unit receives a context-specialized query; a
+- [x] Index evidence binds the complete roster count and digest, recruiter
+      fingerprint, card hashes, projection version, exact actual-model
+      revision, dimensions, and normalization identity.
+- [x] Every current-turn work unit receives a context-specialized query; a
       `what's next?` turn in two subjects produces distinct safe queries.
-- [ ] The complete enabled roster is searched while all baseline typed IDs and
+- [x] The complete enabled roster is searched while all baseline typed IDs and
       their order are retained in additive mode.
-- [ ] Expanded cards are byte-bounded and validated against the exact snapshot
+- [x] Expanded cards are byte-bounded and validated against the exact snapshot
       universe before recruiter inference.
-- [ ] A separately configured embeddings model supplies learned vectors; the
-      existing configurable recruiter model remains the sole reranker and
-      selection authority.
-- [ ] Missing, timed-out, malformed, stale, or mismatched embeddings preserve
+- [x] Separately configured embedding and recall-reranker models supply learned
+      vectors and bounded ordering; the existing configurable recruiter remains
+      the sole staffing selection authority.
+- [x] Missing, timed-out, malformed, stale, or mismatched embeddings preserve
       typed-only staffing and record explicit unavailable evidence.
-- [ ] Dense evidence alone cannot create a semantic gap, hire a contractor,
+- [x] Dense evidence alone cannot create a semantic gap, hire a contractor,
       select an ineligible worker, or bypass the unchanged staffing verifier.
 - [ ] Shadow evaluation proves 100-percent baseline retention, no category
-      recall regression, zero forbidden/ineligible/disabled additions, zero
+      recall regression, zero forbidden/ineligible/disabled activation, zero
       stale-index reuse, and at least one predeclared recovered vocabulary gap.
-- [ ] Warm turns do not re-embed the roster, use at most one batched query
-      embedding request, and add no recruiter inference call.
-- [ ] Focused tests, the named fast production spine, routing and decision
+- [x] Warm turns do not re-embed the roster, use at most one batched query
+      embedding request and one bounded recall-reranker request, without
+      consuming the authoritative staffing call budget.
+- [x] Focused tests, the named fast production spine, routing and decision
       conformance evaluations, documentation gates, and `git diff --check`
       pass before handoff.
 - [ ] A same-repository tracker issue titled `[AR-266]` with label

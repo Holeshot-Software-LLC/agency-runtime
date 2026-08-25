@@ -44,15 +44,20 @@ legacy Store table cannot prove which exact cards and model produced its rows.
 Use learned embeddings only as an additive candidate-recall lane. Preserve the
 existing typed candidates and their order, fuse lexical and dense discoveries
 through deterministic reciprocal-rank fusion, and pass the byte-bounded union
-to the existing inference recruiter. The recruiter profile is the configurable
-reranker and remains the sole selection authority; the unchanged staffing
-verifier remains the final eligibility and safety veto.
+to the existing inference recruiter. A separately configured recall-reranker
+profile may order only the complete offered discovery set: it cannot drop,
+invent, select, or hire a worker. The existing recruiter remains the sole
+staffing selection authority; the unchanged staffing verifier remains the
+final eligibility and safety veto.
 
-Require a separately and explicitly mapped workforce embedding route whose
-profile declares the `embeddings` capability. Never inherit the generic
-default text route. Provide `off`, `shadow`, and `additive` modes, with shadow
-as the initial default. Provider failure or invalid vectors degrades to the
-existing typed behavior and cannot generate a hiring gap.
+Require separately and explicitly mapped `workforce.recall.embedding` and
+`workforce.recall.reranker` routes. The former declares the `embeddings`
+capability and the latter declares `text`; neither inherits a generic default
+route. Provide `off`, `shadow`, and `additive` modes, with shadow as the initial
+default. Recall uses an independent fixed two-call evidence budget, so shadow
+cannot consume planner, recruiter, repair, or critic capacity. Provider
+failure or invalid evidence degrades to the existing typed behavior and cannot
+generate a hiring gap.
 
 Embed only a versioned allowlist of positive governed card fields. Keep
 negative suitability, authority, host, platform, tool, audit, employment,
@@ -64,9 +69,10 @@ or sticky specialist identity.
 
 At current scale, use exact cosine scan and a bounded process cache. Bind every
 cached catalog to the full roster digest, recruiter fingerprint, contract card
-hashes, projection version, provider and model revision, dimensions, and
-normalization. Do not reuse the legacy `agent_embeddings` table; persistence
-requires a future schema whose manifest enforces the same identity.
+hashes, projection version, provider, exact actual-model revision, dimensions,
+and normalization. A missing actual-model receipt is typed-only and cannot
+populate or reuse the cache. Do not reuse the legacy `agent_embeddings` table;
+persistence requires a future schema whose manifest enforces the same identity.
 
 ## Consequences
 

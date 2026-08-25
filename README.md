@@ -460,6 +460,45 @@ Precedence: harness routes → harness default → global routes → global defa
 → the legacy provider chain. `AGENCY_INFERENCE_HARNESS` naming a configured
 section overrides harness selection for terminal testing.
 
+**Hybrid workforce recall.** Learned recall is opt-in at the provider boundary:
+both recall routes must be mapped explicitly, and neither route inherits a
+default text profile. `shadow` records bounded recall evidence without changing
+the recruiter cards; `additive` preserves every typed candidate and adds only
+validated discoveries. The recall reranker may only order the complete offered
+discovery set. The existing `workforce.recruiter` route still makes the first
+staffing decision, and the staffing verifier remains the final safety veto.
+
+```yaml
+workforce:
+  dense_recall_mode: additive  # off | shadow | additive
+
+inference:
+  routes:
+    workforce.recall.embedding: workforce-embedding
+    workforce.recall.reranker: workforce-recall-reranker
+  profiles:
+    workforce-embedding:
+      adapter: litellm
+      model: text-embedding-3-large
+      capability_class: embeddings
+      base_url: http://127.0.0.1:4000/v1
+      api_key_env: LITELLM_API_KEY
+    workforce-recall-reranker:
+      adapter: litellm
+      model: gpt5.6-luna-low
+      thinking_level: low
+      capability_class: text
+      base_url: http://127.0.0.1:4000/v1
+      api_key_env: LITELLM_API_KEY
+```
+
+Cold turns send one bounded batch containing the positive-only roster cards
+and current work-unit queries. Warm turns reuse the exact model-bound roster
+vectors and send only the queries. A second bounded call reranks every recalled
+ID without dropping or inventing candidates. Missing routes, provider failures,
+malformed vectors, absent actual-model receipts, or cache-identity mismatches
+fall back to the unchanged typed candidate lane.
+
 Default files: config `~/.agency-runtime/agency.yaml`, database
 `~/.agency-runtime/agency.db`, global switch `~/.agency-runtime/run/control.json`.
 Use `AGENCY_CONFIG_PATH` / `AGENCY_DB_PATH` to relocate.

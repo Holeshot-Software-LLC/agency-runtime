@@ -27,10 +27,12 @@ from agency_runtime.core.workforce.contract import (
     WorkforceContract,
     workforce_index_fingerprint,
 )
+from agency_runtime.core.workforce.embedding_provider import EmbeddingProviderResponse
 from agency_runtime.core.workforce.fallback import (
     deterministic_plan_and_staff,
     deterministic_work_plan,
 )
+from agency_runtime.core.workforce.hybrid_recall import clear_hybrid_recall_cache
 from agency_runtime.core.workforce.inference import (
     _RECRUITER_REPAIR_SYSTEM,
     _RECRUITER_SYSTEM,
@@ -240,6 +242,43 @@ def _provider(name: str = "task-agency-router", *, model: str = "router-alias") 
 def _config(mode: str = "balanced", **workforce: object) -> AgencyConfig:
     policy = replace(WorkforceConfig(mode=mode), **workforce)
     return AgencyConfig(providers=(_provider(),), workforce=policy)
+
+
+def _hybrid_config(*, dense_recall_mode: str = "additive") -> AgencyConfig:
+    embedding = InferenceProfile(
+        name="recall-embedding",
+        adapter="litellm",
+        model="embedding-model-v1",
+        capability_class="embeddings",
+        base_url="https://router.example.test/v1",
+        api_key="secret",
+    )
+    reranker = InferenceProfile(
+        name="recall-reranker",
+        adapter="litellm",
+        model="reranker-model-v1",
+        capability_class="text",
+        base_url="https://router.example.test/v1",
+        api_key="secret",
+    )
+    return AgencyConfig(
+        providers=(_provider(),),
+        workforce=WorkforceConfig(
+            mode="balanced",
+            dense_recall_mode=dense_recall_mode,
+            balanced_call_budget=4,
+        ),
+        inference=InferenceConfig(
+            routes={
+                "workforce.recall.embedding": "recall-embedding",
+                "workforce.recall.reranker": "recall-reranker",
+            },
+            profiles={
+                "recall-embedding": embedding,
+                "recall-reranker": reranker,
+            },
+        ),
+    )
 
 
 def _context() -> StaffingContext:
@@ -887,6 +926,221 @@ def test_inference_uses_semantic_order_without_trusting_uncalibrated_score_gaps(
         ("analysis-alternative", 0.9),
     ]
     assert row.margin == 0.1
+
+
+def _hybrid_recall_snapshot() -> WorkforceIndexSnapshot:
+    base = _contract("generic-analyst")
+    generic = tuple(
+        replace(
+            base,
+            worker_id=f"worker:generic-{index:03d}",
+            agent_id=f"generic-{index:03d}",
+            display_name=f"Generic Analyst {index:03d}",
+            version_hash="sha256:" + f"{index + 1:064x}",
+        )
+        for index in range(26)
+    )
+    target = replace(
+        base,
+        worker_id="worker:zz-vector-specialist",
+        agent_id="zz-vector-specialist",
+        display_name="Vectorized Workforce Retrieval Specialist",
+        outcomes=("Recover specialists across terminology gaps",),
+        scope_qualifiers=("dense semantic workforce recall",),
+        version_hash="sha256:" + "f" * 64,
+    )
+    return _snapshot(*generic, target)
+
+
+def _semantic_embedding_response(texts: tuple[str, ...]) -> EmbeddingProviderResponse:
+    vectors = [
+        [1.0, 0.0]
+        if "zz-vector-specialist" in text or text.startswith("unit identity:")
+        else [0.0, 1.0]
+        for text in texts
+    ]
+    return EmbeddingProviderResponse(
+        vectors=vectors,
+        provider_name="recall-embedding",
+        requested_model="embedding-model-v1",
+        actual_model="embedding-model-v1",
+        latency_ms=11,
+    )
+
+
+def test_additive_hybrid_recall_expands_beyond_typed_24_before_inference_selects() -> None:
+    clear_hybrid_recall_cache()
+    snapshot = _hybrid_recall_snapshot()
+    recruiter_payload: dict[str, Any] = {}
+
+    def invoke(_provider, prompt, _schema, **_kwargs):
+        payload = json.loads(prompt)
+        if "planning_taxonomy" in payload:
+            return _result(_compact_plan_document())
+        if payload.get("recall_policy") == "deterministic_candidate_recall_only":
+            candidate_ids = [item["agent_id"] for item in payload["units"][0]["candidates"]]
+            ranked = [
+                "zz-vector-specialist",
+                *(item for item in candidate_ids if item != "zz-vector-specialist"),
+            ]
+            return _result(
+                {
+                    "units": [
+                        {
+                            "unit_id": "unit-analyze",
+                            "ranked_candidate_ids": ranked,
+                        }
+                    ]
+                }
+            )
+        recruiter_payload.update(payload)
+        return _result(_nomination_document("zz-vector-specialist"))
+
+    outcome = plan_and_staff_workforce(
+        "Analyze the workforce retrieval vocabulary gap.",
+        snapshot,
+        config=_hybrid_config(),
+        context=_context(),
+        invoker=invoke,
+        embedding_invoker=_semantic_embedding_response,
+    )
+
+    assert outcome.accepted
+    assert outcome.calls_used == 4
+    assert [item.stage for item in outcome.attempts] == [
+        "planner",
+        "recall_embedding",
+        "recall_reranker",
+        "recruiter",
+    ]
+    embedding_attempt = outcome.attempts[1]
+    assert embedding_attempt.input_count == snapshot.worker_count + 1
+    assert embedding_attempt.dimensions == 2
+    assert embedding_attempt.provider_call_count == 1
+    assert embedding_attempt.catalog_identity.startswith("sha256:")
+    assert outcome.attempts[2].provider_call_count == 1
+    detail_ids = [item["agent_id"] for item in recruiter_payload["detail_cards"]]
+    assert len(detail_ids) > 24
+    assert "zz-vector-specialist" in detail_ids
+    assert recruiter_payload["hybrid_recall"]["authority"] == (
+        "deterministic_candidate_recall_only"
+    )
+    assert recruiter_payload["response_contract"][
+        "hybrid_recall_never_selects_or_authorizes_hiring"
+    ]
+    typed_ids = [item["agent_id"] for item in recruiter_payload["typed_recall"][0]["candidates"]]
+    assert typed_ids[:24] == [
+        item["agent_id"]
+        for item in _typed_shortlists(
+            outcome.plan,
+            snapshot.contracts,
+            context=_context(),
+        )[0]["candidates"]
+    ]
+    assert "zz-vector-specialist" in typed_ids[24:]
+    assert outcome.staffing.units[0].selected == ("zz-vector-specialist",)
+
+
+def test_invalid_recall_reranker_falls_back_to_unchanged_typed_cards() -> None:
+    clear_hybrid_recall_cache()
+    snapshot = _hybrid_recall_snapshot()
+    recruiter_payload: dict[str, Any] = {}
+
+    def invoke(_provider, prompt, _schema, **_kwargs):
+        payload = json.loads(prompt)
+        if "planning_taxonomy" in payload:
+            return _result(_compact_plan_document())
+        if payload.get("recall_policy") == "deterministic_candidate_recall_only":
+            return _result(
+                {
+                    "units": [
+                        {
+                            "unit_id": "unit-analyze",
+                            "ranked_candidate_ids": ["invented-specialist"],
+                        }
+                    ]
+                }
+            )
+        recruiter_payload.update(payload)
+        return _result(_nomination_document("generic-000"))
+
+    outcome = plan_and_staff_workforce(
+        "Analyze the workforce retrieval vocabulary gap.",
+        snapshot,
+        config=_hybrid_config(),
+        context=_context(),
+        invoker=invoke,
+        embedding_invoker=_semantic_embedding_response,
+    )
+
+    assert outcome.accepted
+    assert outcome.calls_used == 4
+    assert [item.stage for item in outcome.attempts] == [
+        "planner",
+        "recall_embedding",
+        "recall_reranker",
+        "recruiter",
+    ]
+    assert outcome.attempts[2].status == "rejected"
+    assert outcome.attempts[2].reason_code == "provider_response_contract_invalid"
+    assert "hybrid_recall" not in recruiter_payload
+    detail_ids = [item["agent_id"] for item in recruiter_payload["detail_cards"]]
+    assert len(detail_ids) == 24
+    assert "zz-vector-specialist" not in detail_ids
+    assert outcome.staffing.units[0].selected == ("generic-000",)
+
+
+def test_shadow_recall_never_consumes_authoritative_repair_budget() -> None:
+    clear_hybrid_recall_cache()
+    snapshot = _hybrid_recall_snapshot()
+    recruiter_payload: dict[str, Any] = {}
+    planner_calls = 0
+
+    def invoke(_provider, prompt, _schema, **_kwargs):
+        nonlocal planner_calls
+        payload = json.loads(prompt.split("\n\n[RUNTIME VALIDATION FEEDBACK]", 1)[0])
+        if "planning_taxonomy" in payload:
+            planner_calls += 1
+            if planner_calls == 1:
+                return _result({})
+            return _result(_compact_plan_document())
+        if payload.get("recall_policy") == "deterministic_candidate_recall_only":
+            return _result(
+                {
+                    "units": [
+                        {
+                            "unit_id": row["unit_id"],
+                            "ranked_candidate_ids": [
+                                candidate["agent_id"] for candidate in row["candidates"]
+                            ],
+                        }
+                        for row in payload["units"]
+                    ]
+                }
+            )
+        recruiter_payload.update(payload)
+        return _result(_nomination_document("generic-000"))
+
+    outcome = plan_and_staff_workforce(
+        "Analyze the workforce retrieval vocabulary gap.",
+        snapshot,
+        config=_hybrid_config(dense_recall_mode="shadow"),
+        context=_context(),
+        invoker=invoke,
+        embedding_invoker=_semantic_embedding_response,
+    )
+
+    assert outcome.accepted
+    assert outcome.calls_used == 5
+    assert [item.stage for item in outcome.attempts] == [
+        "planner",
+        "planner",
+        "recall_embedding",
+        "recall_reranker",
+        "recruiter",
+    ]
+    assert "hybrid_recall" not in recruiter_payload
+    assert len(recruiter_payload["detail_cards"]) == 24
 
 
 def test_recruiter_receives_complete_positive_and_negative_activation_contract() -> None:

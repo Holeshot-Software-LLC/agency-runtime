@@ -30,8 +30,8 @@ tracker_url: null
   `origin/main` commit `fc0770392b5a2cc38c589d2411698d0a0ac602ae`.
 - The shared main checkout contains another worker's OpenClaw changes and must
   remain untouched.
-- Bootstrap telemetry reported 29.9 percent remaining, so the planning record
-  and its ledger row are the first required clean checkpoint.
+- Bootstrap telemetry reported 29.9 percent remaining. Planning and ledger
+  commits `9629cc8e` and `71edf5cc` form the clean starting checkpoint.
 - AR-266 and ADR-0164 preserve the existing 24 typed candidates as a guaranteed
   lane while searching the complete roster through additive lexical and
   learned-dense recall. Inference remains the sole final selector.
@@ -41,54 +41,59 @@ tracker_url: null
 
 ## completed-evidence
 
-- Active code inspection proves typed recall is capped at 24 candidates per
-  unit and recruiter candidates must come from the resulting detail cards.
-- The complete governed recruiter index contains the positive card fields
-  needed for lexical and learned-dense retrieval.
-- ADR-0083, ADR-0118, and ADR-0121 permit deterministic recall and validation
-  but reserve substantive staffing selection for inference.
-- Security review rejects the legacy `agent_embeddings` table because it lacks
-  exact projection, roster, model, dimension, and normalization identity.
-- Evaluation design requires 100-percent baseline retention, zero unsafe
-  additions, zero stale-index reuse, and no increase in false gap or hiring
-  signals before additive activation.
+- The implementation adds explicit embedding/reranker route resolution,
+  positive-only projections, exact vector validation, lexical+dense RRF, a
+  model-bound two-entry cache, and typed-only failure evidence.
+- Additive integration recovers a specialist beyond the 24 typed cards and
+  leaves inference plus the unchanged verifier as the only staffing authority.
+- Shadow retrieval has an independent two-call budget and cannot consume
+  planner, recruiter, repair, or critic capacity. Missing actual-model identity
+  fails closed before cache population or reuse.
+- 144 focused retrieval/inference tests, 77 configuration/profile tests, 68
+  receipt tests, and 147 routing/selection/hiring tests with one skip pass.
+- The named fast spine passes 806 tests with 20 skips; 134 dashboard tests,
+  full Ruff checks, every routing-eval threshold, and 151/151 decision
+  conformance mutations pass.
+- Independent security re-review reports GO on both High repairs. No live
+  provider call, installation, tracker mutation, push, or PR occurred.
 
 ## current-state
 
-Planning is in progress. Runtime implementation and tests have not yet been
-committed. The intended first slice is an in-memory, explicitly configured,
-shadow-default hybrid recall path with an injectable embedding provider. It
-must not silently use the default text provider or persist raw query/vector
-content.
+The local candidate is implementation-complete and verified in the isolated
+worktree. It supports explicitly configured embedding and recall-reranker
+models, safe current-turn subject queries, shadow/additive modes, complete
+roster search, and bounded typed fallback. The implementation and its exact
+ledger row are the next clean checkpoint; additive production value remains
+unproven until a configured shadow evaluation uses a real provider.
 
 ## unresolved-gates
 
-- Implement explicit embedding-route resolution, safe projection and query
-  schemas, exact vector validation, reciprocal-rank fusion, and bounded cache.
-- Integrate shadow/additive results before recruiter detail-card construction
-  without changing baseline typed order or staffing verification.
-- Add provider, inference, context, cache, dynamic-hiring, scaling, and
-  evaluation tests; run focused and named fast gates.
+- Commit the verified implementation and exact worklog/roadmap ledger rows.
+- Run a predeclared live shadow evaluation against explicitly configured
+  embedding and reranker models before recommending additive production use.
+- Resolve the inherited `test_configuration.py` default-mode expectation
+  separately from AR-266; fetched main declares `strict`, while that test still
+  expects `fast`.
 - Repair the unsupported installed config before any host refresh or canary.
 - Obtain explicit authorization before tracker creation, push, or PR work.
 
 ## exact-blocker
 
-There is no local implementation blocker. The installed hook refresh is
-separately blocked by unsupported top-level config fields, and tracker, push,
-pull-request, installation, and live-canary actions remain authorization
-boundaries. Neither condition blocks the isolated local implementation and
-verification package.
+There is no local implementation blocker. Production-quality lift is not yet
+proven because no live embedding/reranker shadow evaluation was authorized or
+run. The installed hook refresh remains blocked by unsupported top-level config
+fields, and tracker, push, PR, installation, and live-canary actions remain
+authorization boundaries.
 
 ## next-bounded-work-package
 
-1. Commit this roadmap/ADR/handoff planning record and its exact worklog row.
-2. Implement the positive-only hybrid recall module and explicit learned
-   embedding provider/profile boundary in shadow-default mode.
-3. Integrate additive candidates into workforce recruiter cards, record safe
-   receipts, and prove typed-only fallback plus context-sensitive retrieval.
-4. Run focused review and verification, then create a clean substantive and
-   ledger checkpoint before reporting any outward-action boundary.
+1. Create the local implementation commit, then record it and the final handoff
+   checkpoint in exact worklog/roadmap ledger rows.
+2. After explicit authorization, configure a learned embedding model and a
+   bounded text reranker, then run the predeclared shadow matrix without
+   enabling additive production behavior.
+3. Create/link the tracker and publish a PR only after separate outward-action
+   authorization.
 
 ## same-task-continuity
 

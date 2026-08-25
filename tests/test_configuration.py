@@ -108,6 +108,12 @@ def test_default_workforce_mode_funds_one_repair_per_inference_stage(tmp_path: P
     assert workforce.fast_call_budget == 4
 
 
+def test_default_dense_recall_mode_is_evidence_only(tmp_path: Path) -> None:
+    workforce = load_config(tmp_path / "missing.yaml", reload=True).workforce
+
+    assert workforce.dense_recall_mode == "shadow"
+
+
 def test_explicit_fast_call_budget_remains_operator_owned(tmp_path: Path) -> None:
     path = tmp_path / "agency.yaml"
     _write(path, {"workforce": {"fast_call_budget": 2}})
@@ -274,6 +280,7 @@ def test_workforce_policy_round_trips_through_shared_cli_dashboard_config(
     result = apply_config_operations(
         [
             {"op": "set", "path": "workforce.mode", "value": "strict"},
+            {"op": "set", "path": "workforce.dense_recall_mode", "value": "additive"},
             {"op": "set", "path": "workforce.provider", "value": "codex-oauth"},
             {"op": "set", "path": "workforce.max_hires_per_task", "value": 0},
             {"op": "set", "path": "workforce.auto_promote_successes", "value": 12},
@@ -284,12 +291,14 @@ def test_workforce_policy_round_trips_through_shared_cli_dashboard_config(
 
     assert result.state.persisted["workforce"] == {
         "mode": "strict",
+        "dense_recall_mode": "additive",
         "provider": "codex-oauth",
         "max_hires_per_task": 0,
         "auto_promote_successes": 12,
     }
     loaded = load_config(path, reload=True)
     assert loaded.workforce.mode == "strict"
+    assert loaded.workforce.dense_recall_mode == "additive"
     assert loaded.workforce.provider == "codex-oauth"
     assert loaded.workforce.max_hires_per_task == 0
     assert loaded.workforce.auto_promote_successes == 12
@@ -342,6 +351,7 @@ def test_canary_child_judge_provider_map_round_trips_as_typed_config(
     ("path", "value", "message"),
     [
         ("workforce.mode", "guess", "unsupported value"),
+        ("workforce.dense_recall_mode", "guess", "unsupported value"),
         ("workforce.fast_call_budget", 5, "balanced_call_budget"),
         ("workforce.max_selected_total", 3, "max_selected_per_unit"),
         ("workforce.max_hires_per_day", -1, "supported range"),

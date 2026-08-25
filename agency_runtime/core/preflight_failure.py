@@ -89,6 +89,8 @@ PREFLIGHT_PROVIDER_STAGES = frozenset(
         "combined",
         "planner",
         "recruiter",
+        "recall_embedding",
+        "recall_reranker",
         "hiring",
         "critic",
         "selector",

@@ -34,6 +34,7 @@ from agency_runtime.core.inference_profiles import (
     ProfileResolution,
     enforce_strict_independence,
     resolve,
+    resolve_explicit_capability_route,
     route_requires_independence,
     shares_provider_with,
     translate_thinking_level,
@@ -229,6 +230,26 @@ def test_schema_rejects_invalid_route_key_pattern() -> None:
         validate_config_document(document)
 
 
+def test_schema_requires_capability_classes_for_recall_routes() -> None:
+    document = {
+        "inference": {
+            "routes": {"workforce.recall.embedding": "recall-text"},
+            "profiles": {
+                "recall-text": {
+                    "adapter": "litellm",
+                    "model": "text-model",
+                    "capability_class": "text",
+                    "base_url": "https://router.example.test/v1",
+                    "api_key_env": "ROUTER_KEY",
+                }
+            },
+        }
+    }
+
+    with pytest.raises(ConfigValidationError, match="capability_class 'embeddings'"):
+        validate_config_document(document)
+
+
 # ── Route resolution ────────────────────────────────────────────────
 
 
@@ -260,6 +281,79 @@ def test_default_profile_fallback_when_route_is_missing() -> None:
 
     assert resolution.profile is default
     assert resolution.provider.model == "default-model"
+
+
+def test_explicit_capability_route_never_inherits_default_profile() -> None:
+    default = _profile("agency-default", capability_class="text")
+    config = _config(profiles={"agency-default": default}, default_profile="agency-default")
+
+    assert (
+        resolve_explicit_capability_route(
+            config,
+            "workforce.recall.embedding",
+            capability_class="embeddings",
+        )
+        is None
+    )
+
+
+def test_explicit_capability_route_requires_matching_capability() -> None:
+    text = _profile("recall-text", capability_class="text")
+    config = _config(
+        profiles={"recall-text": text},
+        routes={"workforce.recall.embedding": "recall-text"},
+    )
+
+    with pytest.raises(ConfigValidationError, match="capability_class 'embeddings'"):
+        resolve_explicit_capability_route(
+            config,
+            "workforce.recall.embedding",
+            capability_class="embeddings",
+        )
+
+
+def test_explicit_capability_route_honors_harness_then_global_routes() -> None:
+    global_embedding = _profile(
+        "global-embedding", model="embed-global", capability_class="embeddings"
+    )
+    host_embedding = _profile("host-embedding", model="embed-host", capability_class="embeddings")
+    base = _config(
+        profiles={
+            "global-embedding": global_embedding,
+            "host-embedding": host_embedding,
+        },
+        routes={"workforce.recall.embedding": "global-embedding"},
+    )
+    config = AgencyConfig(
+        providers=base.providers,
+        workforce=base.workforce,
+        inference=InferenceConfig(
+            routes=base.inference.routes,
+            profiles=base.inference.profiles,
+            harnesses={
+                "codex": HarnessInferenceConfig(
+                    default_profile="global-embedding",
+                    routes={"workforce.recall.embedding": "host-embedding"},
+                )
+            },
+        ),
+    )
+
+    host = resolve_explicit_capability_route(
+        config,
+        "workforce.recall.embedding",
+        capability_class="embeddings",
+        harness="codex",
+    )
+    global_result = resolve_explicit_capability_route(
+        config,
+        "workforce.recall.embedding",
+        capability_class="embeddings",
+        harness="claude",
+    )
+
+    assert host is not None and host.provider.model == "embed-host"
+    assert global_result is not None and global_result.provider.model == "embed-global"
 
 
 def test_missing_route_with_no_default_raises_config_error() -> None:
