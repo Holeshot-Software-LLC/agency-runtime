@@ -4613,3 +4613,45 @@ one unrelated skip and independent review is GO; the
 candidate is uninstalled, the live Store remains schema 47, operational Agency
 terminalization remains unproven, and ADR-0156 Rule 4 and the matrix do not
 move.
+
+## 2026-08-24 - Post-send OpenClaw child terminalization passes live
+
+Current `origin/main` `fc077039` was integrated with the schema-48 OpenClaw
+delivery repair as merge `5511300e` and ledger `7295f289`. The integrated
+candidate passed 781 focused tests with one unrelated skip, the 852-test named
+fast spine with three skips, 134 dashboard tests, all 683 Ruff files, and the
+documentation gates. Agency-only installation produced launcher SHA-256
+`0ddbe52da806327d18091009bf79cdaf889899e6e41a525f1edd16715ca0ce50`;
+OpenClaw 2026.7.1-2 retained its byte-identical native configuration and Hermes
+remained untouched.
+
+Changed Telegram parent `c067362a-8bf1-46db-a6d5-85f21a847744`, trace
+`079b9ba8-6dd6-4885-be6e-ad51db7ddc03`, loaded `code-reviewer` and executed one
+native `sessions_spawn` worker. Native run
+`dc60b3b9-916e-4d4a-99f7-0e0786d3ebdc` recorded outcome `ok`, then the unique
+post-adapter `message_sent(success=true)` receipt recorded delivery `delivered`,
+ended the worker with exit 0, completed delegation
+`0d9f02a8-3610-4367-93b8-90a68fe62835`, and preserved the Telegram-delivered
+finding. Parent terminal finalization is `c46d714d-92f0-4276-ae30-d75dbde5ba8a`.
+
+Parent route `fcdb5d39-fdc3-4765-81e4-3545d7f80ca9` contains three applied
+provider attempts; native-child route `native-child-d7bc5cfc0114541571cb9e0202cc1701`
+contains one. Every attempt automatically selected OpenClaw profile
+`linux-task-agency-router`, provider type `litellm`, and exact requested
+alias/model-group `task-agency-router`; fallback is false. Provider telemetry
+did not supply an actual answering model, and OpenClaw native execution stayed
+separately on `task-general`.
+
+Fresh first-message status parent `cc936edb-021d-4e32-bcb5-8771f180f972`, trace
+`6f57aca7-0073-4824-ab77-db68f471ae0d`, also completed, finalized, and delivered
+the exact deterministic five-line Agency header through Telegram. Both ready
+recipes carry binding `rmb-fef54dccff0a71da62d23ec36ae83a1b` as
+`host_mode=request_scoped`, `delivery_mode=request`. OpenClaw intentionally
+persists no `resident_manager_bindings` row; the request-scoped binding in the
+ready run recipe is the Store-backed evidence used by header validation.
+
+AR-283 operational acceptance is green. This does not prove ADR-0156 Rule 4 and
+does not move the matrix. Before the OpenClaw package closes, the current merged
+install still needs one harmless no-child skill receipt, one new non-delegating
+substantive receipt, and a final SQLite backup/integrity hash. Hermes remains
+break glass until those bounded checks pass.

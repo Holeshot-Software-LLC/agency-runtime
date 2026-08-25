@@ -100,8 +100,10 @@ In a completely new session for each host:
 1. Send exact agency status as the first user message.
 2. Preserve the first assistant response and host transcript before sending a
    second message.
-3. Correlate the session and trace with runs, resident_manager_bindings,
-   routing_decisions, and specialists_loaded.
+3. Correlate the session and trace with runs, routing decisions, specialists,
+   and resident binding evidence. Request-scoped OpenClaw/Hermes must carry the
+   validated binding in `runs.preflight_result` and have no persistent binding
+   row; only persistent hosts correlate a `resident_manager_bindings` row.
 4. Only if the response has a real Store-backed Agency header, load one harmless
    available skill through the host's installed Agency skill surface without
    spawning a child.
@@ -2934,3 +2936,62 @@ The schema-48 candidate still requires a clean local substantive/ledger
 checkpoint, Agency-only installation while
 OpenClaw is natively stopped, and one genuinely changed live draw. Hermes stays
 break glass until OpenClaw passes. No Rule 4 or matrix claim moves.
+
+## Merged schema-48 OpenClaw post-send acceptance
+
+~~~yaml
+host: openclaw
+checkout_sha: 5511300ebc20af31cd6488a009f21f878326c231
+minimum_ledger_sha: 7295f28980316739af83ba8fa55c91667022cba1
+clean_tree_at_install: true
+origin_main_sha: fc0770392b5a2cc38c589d2411698d0a0ac602ae
+host_version: OpenClaw 2026.7.1-2
+native_model_primary: litellm/task-general
+native_model_fallback_count: 6; unchanged
+agency_inference_profile: linux-task-agency-router
+provider_type: litellm
+requested_alias: task-agency-router
+model_group: task-agency-router
+fallback_count: 0 cross-provider
+actual_model_and_receipt_source: unavailable; provider telemetry supplied none
+launcher_manifest_sha256: 0ddbe52da806327d18091009bf79cdaf889899e6e41a525f1edd16715ca0ce50
+store_schema: 48
+store_integrity_live: ok
+contractor_count: 15; unchanged
+fresh_status_run_id: cc936edb-021d-4e32-bcb5-8771f180f972
+fresh_status_trace_id: 6f57aca7-0073-4824-ab77-db68f471ae0d
+fresh_status_routing_decision_id: a38adb08-3db4-4ba8-a1f5-f3a213a22336
+fresh_status_finalization_id: ea3c8a3f-c612-447a-bcbc-28749e2ced43
+fresh_status_route: deterministic; inference not attempted
+fresh_status_header: agency-steward / none / none / requested execution alias task-general / deterministic
+resident_binding_id: rmb-fef54dccff0a71da62d23ec36ae83a1b
+resident_binding_scope: request_scoped / request; retained in runs.preflight_result
+resident_manager_bindings_row: none expected for OpenClaw request-scoped contract
+child_parent_run_id: c067362a-8bf1-46db-a6d5-85f21a847744
+child_parent_trace_id: 079b9ba8-6dd6-4885-be6e-ad51db7ddc03
+child_parent_routing_decision_id: fcdb5d39-fdc3-4765-81e4-3545d7f80ca9
+specialist_loaded_id: 1b3db69a-dd17-4c04-8b7d-31e5fbf3e125
+specialist_slug: code-reviewer
+native_child_route_id: native-child-d7bc5cfc0114541571cb9e0202cc1701
+native_run_id: dc60b3b9-916e-4d4a-99f7-0e0786d3ebdc
+worker_id: native-child:9b3d120aa95786f6230cd1636eb913372d6c8b87210cf9cbdbb691263eae0320
+delegation_id: 0d9f02a8-3610-4367-93b8-90a68fe62835
+backend: sessions_spawn
+native_terminal_outcome: ok
+native_delivery_status: delivered
+worker_exit_code: 0
+worker_ended: true
+delegation_status: completed
+parent_finalization_id: c46d714d-92f0-4276-ae30-d75dbde5ba8a
+parent_provider_attempts: 3 applied on linux-task-agency-router / litellm / task-agency-router
+child_provider_attempts: 1 applied on linux-task-agency-router / litellm / task-agency-router
+telegram_delivery: exact Store-backed header and file-line finding observed by operator
+native_transcript_sha256: e2295eedcf915499b7b8c27261e95f83047885a29536c5e892fdc8d69220166c
+native_trajectory_sha256: 9163d31805dc35929783703467e2b8c6f0f8a0ed3f277c0da287584dd8b4b459
+operational_native_child_acceptance: pass
+rule4_proven: false
+matrix_cell_moved: false
+remaining_openclaw_checks: harmless no-child skill; changed non-delegating substantive turn; final SQLite backup/integrity/hash
+hermes: untouched break glass during this package
+protected_hosts: Codex OAuth/config/canary, Claude, and ZCode untouched
+~~~

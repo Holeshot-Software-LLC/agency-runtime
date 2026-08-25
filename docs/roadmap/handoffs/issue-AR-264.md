@@ -38,8 +38,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-264
 branch: codex/ar278-openclaw-one-pass
-evidence_commit: 933d9f4a5bb3dcade7ad6dc726b0d267f0582cde
-minimum_ledger_commit: 84e85a4ca681394416ac3c0a1b23e73e707f32f3
+evidence_commit: 5511300ebc20af31cd6488a009f21f878326c231
+minimum_ledger_commit: 7295f28980316739af83ba8fa55c91667022cba1
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 ---
@@ -71,12 +71,22 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
   retain the changed failure: OpenClaw delivered the child response, but
   `cleanup: delete` removed the host registry entry before Agency terminalized
   the worker and delegation.
-- AR-283's uninstalled schema-48 candidate records the immutable child outcome
-  separately from delivery. Only `message_sent(success=true)` atomically marks
-  `delivered` and closes lifecycle; explicit failure stays open, and startup
-  reconciles only receipt-backed pending/failed rows as interrupted lifecycle
-  failures while preserving the observed child outcome. Generic end/stop
-  cannot bypass the gate.
+- Merged schema-48 runtime `5511300e` is installed Agency-only with launcher
+  `0ddbe52d...`; exact OpenClaw native configuration and Hermes remain
+  untouched. Integrated focused tests pass 781/1, named fast spine 852/3,
+  dashboard 134, Ruff 683, and docs.
+- Changed parent `c067362a...` / trace `079b9ba8...` loaded `code-reviewer`,
+  executed one native `sessions_spawn` worker, and delivered through Telegram.
+  Post-send success closed worker `native-child:9b3d120a...` with outcome `ok`
+  / delivery `delivered` and delegation `0d9f02a8...` as `completed`.
+- Parent and child receipts use only automatic OpenClaw profile
+  `linux-task-agency-router`, provider `litellm`, and exact
+  `task-agency-router`; fallback is false and actual model unavailable. Fresh
+  status `cc936edb...` / `6f57aca7...` also completed and delivered its exact
+  deterministic header.
+- OpenClaw is deliberately request-scoped: binding `rmb-fef54dcc...` is in the
+  ready run recipe and no `resident_manager_bindings` row is expected. The
+  Store is schema 48 and live integrity is `ok`.
 - The host has no shared immutable send identifier. One unique active attempt
   must match every supplied target/channel/account/conversation/session/run
   field and the exact response hash; stale, delayed, replayed, or
@@ -89,15 +99,16 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 - OpenClaw reset, activation, exact status, changed skill, substantive inference, first-pass headers, Store correlation, and Telegram delivery pass on the installed repair.
 - Install/launcher provenance, contractor preservation, config invariants, final Store integrity, exact alias, and zero fallback are current.
 - Native `task-general` and Agency `task-agency-router` remain separate; no actual answering model is invented from wrapper receipts.
-- The latest draw proves OpenClaw native-child inference, execution, and
-  operational Telegram delivery, but not Agency terminalization or Rule 4.
+- The latest draw proves OpenClaw native-child inference, execution, operational
+  Telegram delivery, and post-send Agency terminalization, but not Rule 4.
 - Hermes reinstall, exact status, corrected attribution, skill, substantive routing, Store correlation, headers, and Telegram delivery pass.
 
 ## exact-blocker
 
-The schema-48 post-transport candidate is uninstalled and still needs focused
-validation, independent review, a clean local checkpoint, and a changed
-OpenClaw retest. Rule 4 separately requires an ADR-0156 host-artifact receipt.
+OpenClaw child lifecycle is green. The merged install still needs one harmless
+skill-load receipt, one changed non-delegating substantive receipt, and a final
+SQLite backup/integrity checkpoint. Rule 4 separately requires an ADR-0156
+host-artifact receipt.
 
 ## same-task-continuity
 
@@ -105,8 +116,8 @@ Continue from the clean candidate checkpoint into OpenClaw-only live child proof
 
 ## next-bounded-work-package
 
-1. Finish focused validation and review, then checkpoint and install only the post-transport terminal-reconciliation fix into natively stopped OpenClaw.
-2. Prove a changed child closes parent, delegation, and worker while delivering through Telegram.
+1. Capture a harmless no-child skill load and one changed non-delegating substantive OpenClaw turn.
+2. Create the final SQLite backup and complete the OpenClaw evidence bundle.
 3. Then perform the equivalent Agency-only Hermes proof; preserve Rule 4 as unproven.
 
 ## verification

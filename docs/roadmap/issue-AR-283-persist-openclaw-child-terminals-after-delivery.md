@@ -84,8 +84,18 @@ failure.
 - Generic native-child end handling refuses delivery-gated rows in `pending`
   or `failed`, so a late `subagent_ended` callback cannot bypass the transport
   decision. Exact replays are idempotent; conflicting replays fail closed.
-- Focused validation and independent review of the schema-48 candidate are in
-  progress. It has not been installed and has no live-pass claim.
+- The schema-48 runtime was integrated with current `origin/main` as
+  `5511300e`, ledgered by `7295f289`, installed Agency-only into audited
+  OpenClaw 2026.7.1-2, and retained the byte-identical native host config.
+- Live parent `c067362a-8bf1-46db-a6d5-85f21a847744`, trace
+  `079b9ba8-6dd6-4885-be6e-ad51db7ddc03`, native run
+  `dc60b3b9-916e-4d4a-99f7-0e0786d3ebdc`, and delegation
+  `0d9f02a8-3610-4367-93b8-90a68fe62835` now pass the post-send gate: outcome
+  `ok`, delivery `delivered`, worker ended with exit 0, delegation `completed`,
+  parent finalized, and the exact result reached Telegram.
+- Parent and child inference receipts stayed on `linux-task-agency-router` /
+  `litellm` / exact `task-agency-router`, with no fallback and no supplied
+  actual-model telemetry. Operational delivery still is not Rule 4 evidence.
 
 ## Approach
 
@@ -131,9 +141,9 @@ failure.
 - [x] Focused OpenClaw, Store, installer, and dispatch gates pass on the final
       candidate: 294 passed and one unrelated platform skip.
 - [x] Independent review has no unresolved Critical, High, or Medium finding.
-- [ ] Install the clean Agency-only candidate while OpenClaw is natively
+- [x] Install the clean Agency-only candidate while OpenClaw is natively
       stopped; do not change OpenClaw source or native configuration.
-- [ ] A fresh changed Telegram draw delivers the child result and closes the
+- [x] A fresh changed Telegram draw delivers the child result and closes the
       exact Agency worker and delegation.
 - [x] Hermes, Codex OAuth/configuration/canary, Claude, ZCode, native
       `task-general`, and Agency's exact `task-agency-router` route remain
