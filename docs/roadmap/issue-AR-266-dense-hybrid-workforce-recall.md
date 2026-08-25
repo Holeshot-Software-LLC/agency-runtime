@@ -10,6 +10,7 @@ related:
   - docs/roadmap/issue-AR-286-configure-bounded-embedding-dimensions.md
   - docs/roadmap/issue-AR-287-bind-host-hook-timeouts-to-inference-budgets.md
   - docs/roadmap/issue-AR-288-expose-hermes-native-finalizer-tool.md
+  - docs/roadmap/issue-AR-289-native-reranker-transports.md
   - docs/roadmap/issue-AR-265-contextual-turn-classification.md
   - docs/decisions/0083-use-capability-indexed-recall-and-bounded-inference.md
   - docs/decisions/0118-require-inference-owned-staffing.md
@@ -25,7 +26,7 @@ issue_id: AR-266
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/320
 depends_on: []
-blocks: [AR-286, AR-287]
+blocks: [AR-286, AR-287, AR-289]
 ---
 
 # AR-266: Recall the complete workforce with dense hybrid retrieval

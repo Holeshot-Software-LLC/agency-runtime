@@ -112,6 +112,7 @@ Status meanings:
 | [ADR-0161](0161-pin-accepted-outcome-parent-recruiter-separately.md) | Pin the accepted-outcome parent recruiter separately | Accepted |
 | [ADR-0163](0163-resolve-contextual-turns-from-transcript-free-subjects.md) | Resolve contextual turns from transcript-free same-session subjects | Accepted |
 | [ADR-0164](0164-use-dense-embeddings-only-for-workforce-recall.md) | Use learned embeddings only for additive workforce recall | Accepted |
+| [ADR-0171](0171-separate-native-and-structured-reranker-transports.md) | Separate native and structured reranker transports | Accepted |
 
 ## Evidence and observability
 
