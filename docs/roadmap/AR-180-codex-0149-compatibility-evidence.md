@@ -82,8 +82,19 @@ Every parent rollout again persisted an encrypted `message`; the last two were
 event, but the canonical parent rollout and each child `thread_spawn` record
 correlated the exact depth-one launch. The missing hook artifacts do **not**
 prove that `PreToolUse` receives ciphertext: they prove only that no tested
-configuration produced an observable hook invocation. A hook-engine sanity
-probe that matches every local tool remains the next bounded discriminator.
+configuration produced an observable spawn-hook invocation.
+
+A changed named-profile sanity probe then matched every local tool and ran one
+read-only `pwd` command in parent session
+`01a03a79-2964-7340-ab3b-64632fbf5062`. Its `PreToolUse` hook emitted the
+expected bounded projection with `tool_name: Bash`, input key `command`, and no
+message. The parent rollout SHA-256 is
+`94693316c336ff68a94af7efd677b35c009347fbf59b7f01f3c8693314ec7c05`;
+the one-line redacted capture SHA-256 is
+`6a52deca6c8f644a2452b24bddf3dbfc3fd988ad407226140e2e1fc9790f06aa`.
+This proves the hook engine, named profile, trust bypass, and capture script are
+active. The remaining discriminator is `spawn_agent` matching or specialized
+tool dispatch under the same match-all profile.
 
 ## Configuration invariants
 

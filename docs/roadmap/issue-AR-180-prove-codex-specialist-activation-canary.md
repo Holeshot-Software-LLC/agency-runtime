@@ -355,10 +355,12 @@ The current official hook contract still gives `SubagentStart` only
 rewrite for `spawn_agent`, but project, session-override, and named-profile
 probes with the one-shot trust bypass emitted no redacted hook artifact across
 three additional real children. Persisted parent messages remained encrypted,
-and no live plaintext hook input or exact call-to-child binding is proven. The
-exact 0.147 profiles remain unchanged; 0.149.1 fails open unstaffed, no Agency
-installation or canary was run, and no Installed, Live, or Rule-4 claim
-advances. The bounded evidence is retained in
+and no live plaintext hook input or exact call-to-child binding is proven. A
+changed match-all named-profile probe did capture a read-only Bash call, proving
+general hook activation and narrowing the gap to `spawn_agent` matching or
+specialized dispatch. The exact 0.147 profiles remain unchanged; 0.149.1 fails
+open unstaffed, no Agency installation or canary was run, and no Installed,
+Live, or Rule-4 claim advances. The bounded evidence is retained in
 `docs/roadmap/AR-180-codex-0149-compatibility-evidence.md`.
 
 ## Approach

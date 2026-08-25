@@ -16,8 +16,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-180
 branch: codex/ar180-codex-0149-subagent-context
-evidence_commit: cc41b21f2dd8cad5911d43ffe4bf7ba76924786b
-minimum_ledger_commit: 17b27b8cf3ff49078ff840bc7fd43c65f5846cad
+evidence_commit: f69698629a512a24b8944b0ecf2e8e6541742cf7
+minimum_ledger_commit: 75b06826d2ef010d0f3447e7cfa2af91c1a8631d
 hard_checkpoint_percent: 50
 tracker_url: null
 ---
@@ -29,7 +29,7 @@ tracker_url: null
 - Worktree `/tmp/agency-runtime-ar180-codex-0149.HK2zvZ` is on branch
   `codex/ar180-codex-0149-subagent-context`, based on current `origin/main`
   `04057072`.
-- The latest complete substantive/ledger pair is `cc41b21f` / `17b27b8c`.
+- The latest complete substantive/ledger pair is `f6969862` / `75b06826`.
   The branch is clean apart from ignored disposable hook-probe files.
 - Codex CLI is `0.149.1`. Agency was not installed into Codex and no Agency
   canary, login, logout, OAuth reconfiguration, or host configuration change
@@ -46,6 +46,9 @@ tracker_url: null
 - Three additional fresh depth-one children tested project, session `-c`, and
   named-profile `PreToolUse` hook sources with the one-shot trust bypass. All
   parent messages remained encrypted and no redacted hook artifact appeared.
+- A changed match-all named profile captured one read-only Bash `PreToolUse`
+  event. This proves the hook engine, profile layer, trust bypass, and redacting
+  script are active; the missing evidence is now spawn-specific.
 - The installed feature inventory calls hooks and multi-agent stable. Official
   docs say `spawn_agent` matches `Agent` at `PreToolUse` and supports argument
   rewrite, while `SubagentStart` lacks assignment and parent-call identity.
@@ -58,10 +61,11 @@ tracker_url: null
 
 ## exact-blocker
 
-No tested 0.149.1 hook source has emitted an observable `PreToolUse` envelope.
-Without that envelope, Agency cannot prove it sees plaintext assignment input
-or bind a staffing rewrite to the exact native spawn. Persisted rollouts remain
-encrypted, and `SubagentStart` is insufficient by itself.
+No tested 0.149.1 `spawn_agent` path has emitted an observable `PreToolUse`
+envelope even though the same match-all profile captures Bash. Agency therefore
+cannot yet prove it sees plaintext assignment input or bind a staffing rewrite
+to the exact native spawn. Persisted rollouts remain encrypted, and
+`SubagentStart` is insufficient by itself.
 
 ## same-task-continuity
 
@@ -70,12 +74,10 @@ task or transfer ownership because the telemetry threshold was crossed.
 
 ## next-bounded-work-package
 
-1. Use a disposable named profile whose `PreToolUse` matcher accepts every
-   local tool and run one harmless read-only shell tool to prove or disprove
-   basic hook-engine activation.
-2. If the sanity hook fires, run one changed native-child marker and inspect
-   only the bounded redacted projection. Diagnose matcher or specialized-tool
-   dispatch before changing Agency.
+1. Recreate the disposable match-all named profile and run one changed
+   native-child marker. Inspect only the bounded redacted projection.
+2. If no spawn hook fires, diagnose the documented `Agent` matcher against
+   actual 0.149.1 specialized-tool dispatch before changing Agency.
 3. If plaintext is observed, add a regression first and design the smallest
    authenticated Codex-only pre-spawn rewrite. If it is not, retain unstaffed
    fail-open behavior and close this compatibility package.
