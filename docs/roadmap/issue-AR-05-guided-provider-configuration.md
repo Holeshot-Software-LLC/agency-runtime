@@ -17,7 +17,7 @@ issue_id: AR-05
 priority: p1
 tracker_url: "https://github.com/Holeshot-Software-LLC/agency-runtime/issues/5"
 depends_on: []
-blocks: [AR-06, AR-07, AR-80]
+blocks: [AR-06, AR-07, AR-80, AR-290]
 ---
 
 # AR-05: Complete guided provider configuration
