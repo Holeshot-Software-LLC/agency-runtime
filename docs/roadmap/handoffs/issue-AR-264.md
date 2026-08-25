@@ -26,6 +26,7 @@ related:
   - docs/roadmap/issue-AR-281-route-native-children-through-host-profiles.md
   - docs/roadmap/issue-AR-282-deliver-finalized-openclaw-child-announcements.md
   - docs/roadmap/issue-AR-283-persist-openclaw-child-terminals-after-delivery.md
+  - docs/roadmap/issue-AR-284-disambiguate-provider-fallback-receipts.md
   - docs/decisions/0162-compile-structured-contractor-execution-guidance.md
   - docs/decisions/0164-keep-litellm-inference-profiles-model-agnostic.md
   - docs/decisions/0165-delegate-exact-schema-translation-to-litellm.md

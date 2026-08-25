@@ -2992,6 +2992,7 @@ operational_native_child_acceptance: pass
 rule4_proven: false
 matrix_cell_moved: false
 remaining_openclaw_checks: harmless no-child skill; changed non-delegating substantive turn; final SQLite backup/integrity/hash
+fallback_evidence_limit: AR-284; attempted_fallbacks contains stage ordinals, so routing flags and provider identities prove zero cross-provider fallback
 hermes: untouched break glass during this package
 protected_hosts: Codex OAuth/config/canary, Claude, and ZCode untouched
 ~~~

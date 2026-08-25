@@ -36,6 +36,7 @@ related:
   - docs/roadmap/issue-AR-281-route-native-children-through-host-profiles.md
   - docs/roadmap/issue-AR-282-deliver-finalized-openclaw-child-announcements.md
   - docs/roadmap/issue-AR-283-persist-openclaw-child-terminals-after-delivery.md
+  - docs/roadmap/issue-AR-284-disambiguate-provider-fallback-receipts.md
   - docs/roadmap/AR-119-founding-vision.md
   - docs/roadmap/AR-119-vision-loop-status.md
   - docs/roadmap/AR-119-39ff6dca-recruiter-diagnostic-evidence.md
@@ -134,6 +135,7 @@ separately requires an ADR-0156 host-authored artifact receipt.
 - Hermes service is `hermes-gateway-nexus.service`; its plugin parent was safely tightened from `0775` to `0700` after the installer correctly refused the shared-write boundary.
 - Never emit credential values or numeric channel/user identifiers. The Store channel session key is retained only by SHA.
 - OpenClaw `model_call_ended` proves requested metadata, not the LiteLLM answering model. Never promote an alias into an actual-model claim.
+- AR-284 records that `model_receipts.attempted_fallbacks` currently contains strict-stage ordinals; prove provider fallback from routing flags and provider identities instead.
 - Do not run unsupported host canaries or reconfigure/re-prove Codex.
 
 ## next-bounded-work-package
