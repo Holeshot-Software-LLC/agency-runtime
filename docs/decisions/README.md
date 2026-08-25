@@ -108,6 +108,7 @@ Status meanings:
 | [ADR-0123](0123-use-general-preflight-ceiling-for-persistent-parents.md) | Use the general preflight ceiling for persistent native parents | Accepted |
 | [ADR-0161](0161-pin-accepted-outcome-parent-recruiter-separately.md) | Pin the accepted-outcome parent recruiter separately | Accepted |
 | [ADR-0163](0163-resolve-contextual-turns-from-transcript-free-subjects.md) | Resolve contextual turns from transcript-free same-session subjects | Accepted |
+| [ADR-0164](0164-use-dense-embeddings-only-for-workforce-recall.md) | Use learned embeddings only for additive workforce recall | Accepted |
 
 ## Evidence and observability
 
