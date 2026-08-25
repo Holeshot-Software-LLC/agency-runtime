@@ -61,15 +61,15 @@ tracker_url: null
   interpreter lacked pytest; the repository-virtualenv run supplied the valid
   result.
 - Both supplied Jina endpoints answered a separate bounded live probe before
-  this code slice. No credential was persisted and no unpublished runtime was
-  installed, so that probe is endpoint compatibility evidence, not a live
-  post-implementation Agency result.
+  this code slice. The clean stacked implementation was later installed under
+  explicit owner authorization and its native reranker file hash matched
+  source. No credential or route was persisted, so there is still no live
+  post-implementation Agency/Jina result.
 
 ## exact-blocker
 
-- Tracker creation, push, pull request, merge, installation of this unpublished
-  branch, and machine configuration were not authorized as outward or
-  user-runtime mutations. The local implementation has no known code blocker.
+- Tracker creation, push, pull request, merge, and publication remain
+  unauthorized outward actions. The implementation has no known code blocker.
 - A post-merge live Jina smoke requires a rotated/environment-backed key and an
   installed merged build. Do not reuse or record the credential pasted into
   conversation history.
@@ -83,11 +83,9 @@ new task, tracker write, publication, or runtime mutation.
 
 ## next-bounded-work-package
 
-1. Create the local implementation substantive commit and its exact worklog
-   ledger commit.
-2. With explicit authorization, push the branch and open a pull request; merge
+1. With explicit authorization, push the branch and open a pull request; merge
    only after its automatic gates pass.
-3. After merge, install the merged build, place a rotated key in `JINA_API_KEY`,
+2. After merge, install the merged build, place a rotated key in `JINA_API_KEY`,
    configure the two explicit Jina recall profiles, validate config, and run a
    fresh additive smoke without persisting the credential.
 

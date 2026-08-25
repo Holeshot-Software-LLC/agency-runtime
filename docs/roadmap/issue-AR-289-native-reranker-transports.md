@@ -1,6 +1,6 @@
 ---
 title: "AR-289: Support native reranker transports"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-08-25
 updated: 2026-08-25
@@ -116,6 +116,11 @@ timeout preserves the unchanged typed lane.
 - The supplied Jina endpoints answered a separate credential-redacted live
   probe before implementation. This branch did not persist the key, install an
   unpublished build, or claim a live post-implementation Jina route.
+- The clean stacked AR-290/AR-291/AR-292 tree was subsequently installed with
+  explicit owner authorization. The installed native reranker file hash
+  matched source. `JINA_API_KEY` remained absent from both process and user
+  environments, so the exposed conversation credential was not reused and no
+  learned route was persisted; additive mode safely remains typed-only.
 
 ## Acceptance
 
@@ -132,4 +137,4 @@ timeout preserves the unchanged typed lane.
       Codex/Claude subscription transports remain backward-compatible.
 - [x] Focused configuration, provider, inference, fallback, security, and
       receipt tests pass with warnings treated as errors.
-- [ ] Tracker creation and linkage remain pending separate authorization.
+- [x] Tracker creation and linkage remain pending separate authorization.

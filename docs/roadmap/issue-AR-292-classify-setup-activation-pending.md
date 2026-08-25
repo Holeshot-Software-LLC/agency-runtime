@@ -1,6 +1,6 @@
 ---
 title: "AR-292: Classify setup activation pending as degraded"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-08-25
 updated: 2026-08-25
@@ -82,9 +82,9 @@ degraded. Document the exit-code meanings for consumers.
 - [x] Consumer README explains setup exits 0, 2, and 1 without overstating live
       host or release evidence.
 - [x] Focused setup/install tests, Ruff, docs, and diff checks pass.
-- [ ] Installed guided setup returns 2 with activation pending and no hard stage
+- [x] Installed guided setup returns 2 with activation pending and no hard stage
       failure or residual drift.
-- [ ] Tracker creation and linkage remain pending separate authorization.
+- [x] Tracker creation and linkage remain pending separate authorization.
 
 ## Verification evidence
 
@@ -95,4 +95,8 @@ expected places before implementation, then passed all 58 focused tests. The
 broader setup, install, native installer, doctor, parser, and dashboard-service
 group passed all 299 tests with warnings as errors. Full Ruff lint and format,
 metadata, policy, worklog, 815-file documentation, and diff checks pass. Exact
-installed setup evidence remains pending.
+installed setup then registered Codex, Claude, and ZCode plus the dashboard,
+reported no residual drift, and passed deterministic smoke 8/8. A final
+idempotent pass captured native exit 2 and the exact
+`installation: activation-pending` summary; configuration and doctor remained
+truthfully degraded only for attended trust/restart state.

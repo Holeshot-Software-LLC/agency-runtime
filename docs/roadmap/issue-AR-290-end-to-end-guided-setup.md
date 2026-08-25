@@ -1,6 +1,6 @@
 ---
 title: "AR-290: Add end-to-end guided setup"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-08-25
 updated: 2026-08-25
@@ -122,7 +122,7 @@ advanced configuration surfaces.
 - [x] Release readiness is reported against the canonical checklist without
       treating local smoke as current artifact, host, tracker, or publication
       proof.
-- [ ] Tracker creation and linkage remain pending separate authorization.
+- [x] Tracker creation and linkage remain pending separate authorization.
 
 ## Verification evidence
 
@@ -151,3 +151,19 @@ completion until Codex activation is proven, but setup collapsed that attended
 activation state into a hard stage failure. Guided setup must preserve strict
 standalone install semantics while reporting this exact resumable case as
 degraded.
+
+The clean AR-292 checkpoint was installed and its setup, installer, pointer-
+isolation, native Jina reranker, and dashboard files hash-matched source. A full
+installed `agency setup --non-interactive --all` retained the existing config,
+registered Codex, Claude, and ZCode, installed the dashboard, diagnosed the
+expected native-trust warnings, and passed all 8 deterministic smoke checks.
+An immediately following idempotent pass captured native exit 2 with
+`installation: activation-pending`; no hard stage or residual drift remained.
+
+Final installed validation returned degraded exit 2 only for Codex trust/load
+and Claude/ZCode load uncertainty. Doctor confirmed schema 48, 299 active
+agents, and usable Codex and Claude subscription providers. Dashboard status
+returned 0 with installed, owned, enabled, active, current-manifest, and
+reachable all true. `workforce.dense_recall_mode` is `additive`, learned routes
+are empty, and the missing private Jina environment variable leaves recall on
+the safe typed-only lane.

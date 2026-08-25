@@ -16,8 +16,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-290
 branch: codex/ar290-guided-setup-readme
-evidence_commit: 737495633f0343e5a7553c1f00f166d493100d84
-minimum_ledger_commit: 737495633f0343e5a7553c1f00f166d493100d84
+evidence_commit: 935b8120901143c666319e761fa63cc4a31d1cd3
+minimum_ledger_commit: 935b8120901143c666319e761fa63cc4a31d1cd3
 hard_checkpoint_percent: 50
 tracker_url: null
 ---
@@ -35,8 +35,8 @@ tracker_url: null
 - Bootstrap telemetry reported 69.8 percent remaining, so no hard checkpoint
   was required before recording this clean planning pair.
 - `agency setup`, its bounded parser/facade surface, the dashboard Settings
-  journey, consumer README flow/matrices/prompt, and changelog entries are now
-  implemented in this worktree. The source remains uninstalled and unpushed.
+  journey, consumer README flow/matrices/prompt, and changelog entries are
+  implemented and installed from the clean local worktree. Nothing is pushed.
 - Closeout telemetry reported 34.3 percent remaining. The fixed threshold now
   requires the verified implementation and ledger commits before installation;
   it does not pause the same task or authorize outward publication.
@@ -74,6 +74,14 @@ tracker_url: null
   pointer. Repeated setup had no runtime drift and again registered all three
   detected hosts plus the dashboard, but AR-292 showed that the orchestrator
   misclassified attended Codex activation pending as a hard install failure.
+- AR-292's 58 focused and 299 broader warning-strict tests pass. The exact
+  installed tree hash-matches source; full setup passed smoke 8/8, and the
+  final idempotent all-detected pass captured native exit 2 with
+  `activation-pending`, no hard stage, and no runtime drift.
+- Final config validation and doctor returned truthful degraded 2 for native
+  trust/load uncertainty only. Dashboard inspection returned 0 and proved it
+  installed, owned, enabled, active, current, and reachable. Dense recall is
+  additive with empty learned routes because no private rotated Jina key exists.
 
 ## exact-blocker
 
@@ -82,9 +90,9 @@ tracker_url: null
   artifact, exact-host, tracker, signing, or publication evidence.
 - Tracker creation, push, pull request, merge, hosted workflows, tag, and
   release creation are outward actions and remain unauthorized.
-- AR-292 must classify only the exact successful attended Codex activation
-  state as degraded; every true host, dashboard, verification, or drift failure
-  must remain hard.
+- Codex still requires a fresh terminal TUI, owner hook trust, and a later
+  `agency install --agent codex --verify-activation`; Claude and ZCode also need
+  fresh host sessions before loaded/live claims.
 
 ## same-task-continuity
 
@@ -95,11 +103,12 @@ not create another task or treat the threshold as publication authority.
 
 ## next-bounded-work-package
 
-1. Implement and verify the bounded AR-292 setup-only degraded classification.
-2. Commit its substantive and worklog checkpoints, install that exact source,
-   and repeat guided setup without rerunning already-green source suites.
-3. Validate final config/doctor/dashboard posture. Leave learned recall routes
-   unset unless a privately supplied credential can be verified.
+1. The owner restarts each installed harness and settles Codex hook trust, then
+   runs the printed activation verification command from a fresh terminal TUI.
+2. If learned recall is wanted on this machine, rotate the exposed Jina key,
+   set `JINA_API_KEY` privately, and configure the documented explicit routes.
+3. Push, PR, tracker, hosted matrices, signing, tag, and release work remain
+   separate outward actions requiring authorization.
 
 ## verification
 
