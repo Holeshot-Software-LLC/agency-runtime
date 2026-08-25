@@ -14,9 +14,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-266
-branch: codex/ar266-dense-hybrid-workforce-recall
-evidence_commit: 51c7a8ec952e62528f60c7e35702223d036a3915
-minimum_ledger_commit: fc0770392b5a2cc38c589d2411698d0a0ac602ae
+branch: codex/ar266-merge-ledger
+evidence_commit: 042b5ed974486b067aba886750210e97c029a2d2
+minimum_ledger_commit: 299b1ec59337bcb61d6ee881d58d7a43d53c31d2
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/320
 ---
@@ -36,12 +36,19 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/320
   lane while searching the complete roster through additive lexical and
   learned-dense recall. Inference remains the sole final selector.
 - Tracker [#320](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/320)
-  exists with `epic:workforce`; the owner authorized publication and
+  exists with `epic:workforce`; the owner authorized publication, and
   [PR #321](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/321)
-  carries the branch. No provider call, model installation, config mutation,
-  or live canary occurred on this box. The official Ollama installer was only
-  downloaded to a temporary folder and signature-verified before the owner
-  redirected model smoke testing to another machine.
+  passed every automatic check and merged to exact `origin/main` commit
+  `042b5ed974486b067aba886750210e97c029a2d2` without override. Its reviewed
+  second parent is exact ledgered branch head
+  `299b1ec59337bcb61d6ee881d58d7a43d53c31d2`.
+- This merge-record package runs from that exact main commit in a second
+  isolated worktree on `codex/ar266-merge-ledger`. The shared main checkout and
+  its other worker's OpenClaw changes remain untouched.
+- No provider call, model installation, config mutation, or live canary
+  occurred on this box. The official Ollama installer was only downloaded to a
+  temporary folder and signature-verified before the owner redirected model
+  smoke testing to another machine.
 
 ## completed-evidence
 
@@ -68,19 +75,23 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/320
   tracker gates remain red on pre-existing historical missing-issue and state
   mismatches outside AR-266; ordinary documentation validation passes all 739
   files.
+- PR #321's hosted gates pass: the 13-minute quality job, CodeQL, dependency
+  review, source/dependency audit, uninstrumented performance, Windows Python
+  3.11/3.12/3.13 portability, Ubuntu and Windows unsigned-distribution smoke,
+  artifact assembly, and the automatic-gate summary all completed green.
 
 ## current-state
 
-Implementation commit `51c7a8ec` is verified, ledgered, and published from the
-isolated worktree in PR #321. It supports explicitly configured embedding and
-recall-reranker models, safe current-turn subject queries, shadow/additive
-modes, complete roster search, and bounded typed fallback. Additive production
-value remains unproven until a configured shadow evaluation uses real
-providers on the owner's model-capable machine.
+Exact fetched `origin/main` commit `042b5ed9` contains the verified, ledgered
+AR-266 implementation from PR #321. It supports explicitly configured
+embedding and recall-reranker models, safe current-turn subject queries,
+shadow/additive modes, complete roster search, and bounded typed fallback.
+Additive production value remains unproven until a configured shadow
+evaluation uses real providers on the owner's model-capable machine.
 
 ## unresolved-gates
 
-- Merge PR #321 only after its final branch records and required checks pass.
+- Publish this exact-main merge record through the required docs-only PR.
 - Run a predeclared live shadow evaluation against explicitly configured
   embedding and reranker models before recommending additive production use.
 - Resolve the inherited `test_configuration.py` default-mode expectation
@@ -91,17 +102,18 @@ providers on the owner's model-capable machine.
 
 ## exact-blocker
 
-There is no implementation or publication blocker beyond PR #321 checks.
-Production-quality lift is not yet proven because no live embedding/reranker
-shadow evaluation ran. The installed hook refresh on this box remains blocked
-by unsupported top-level config fields; model configuration and live evidence
-have moved to the owner's model-capable machine.
+There is no implementation blocker; PR #321 is merged and all automatic checks
+passed. Production-quality lift is not yet proven because no live
+embedding/reranker shadow evaluation ran. The installed hook refresh on this
+box remains blocked by unsupported top-level config fields; model configuration
+and live evidence have moved to the owner's model-capable machine.
 
 ## next-bounded-work-package
 
-1. Finish the tracker/PR record commit and its exact worklog ledger row, push
-   them to PR #321, wait for required checks, and merge the PR.
-2. On the model-capable machine, configure a learned embedding model and a
+1. Commit and publish this exact-main merge checkpoint with its reciprocal
+   worklog ledger row through the required docs-only PR.
+2. On the model-capable machine, start from the resulting exact `main`,
+   configure a learned embedding model and a
    bounded text reranker, then run the predeclared shadow matrix without
    enabling additive production behavior.
 3. Keep AR-266 and tracker #320 in progress until the live acceptance evidence

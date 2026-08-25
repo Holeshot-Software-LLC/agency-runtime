@@ -62,9 +62,10 @@ specialists before inference decides the final staffing plan.
   reranker provider was called, so cross-provider quality and shadow value
   evidence remain open.
 - Tracker [#320](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/320)
-  and publication [PR #321](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/321)
-  are linked. The issue remains in progress until the live shadow-value gate is
-  proven; this PR does not recommend additive production activation.
+  is linked, and [PR #321](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/321)
+  merged the shadow-default implementation to `main` as `042b5ed9`. The issue
+  remains in progress until the live shadow-value gate is proven; the merge
+  does not recommend additive production activation.
 
 ## Approach
 
@@ -128,7 +129,9 @@ eligibility constraints.
 - Tracker [#320](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/320)
   carries the remaining live shadow gate, and
   [PR #321](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/321)
-  publishes the safe shadow-default implementation.
+  merged the safe shadow-default implementation at `042b5ed9` after every
+  automatic quality, CodeQL, dependency, Windows portability, performance, and
+  unsigned-distribution gate passed without override.
 - The full `tests/test_configuration.py` file retains one inherited mainline
   mismatch: it expects the default workforce mode `fast`, while fetched
   `origin/main` config declares `strict`. All AR-266 configuration tests pass.
