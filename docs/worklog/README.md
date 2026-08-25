@@ -1197,6 +1197,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `dfe8cb26` | 2026-08-24 | docs(ar265): record merged contextual routing canary | [AR-265](../roadmap/issue-AR-265-contextual-turn-classification.md) | null |
 | `fc077039` | 2026-08-24 | Merge pull request #319 from Holeshot-Software-LLC/codex/ar265-live-evidence | [AR-265](../roadmap/issue-AR-265-contextual-turn-classification.md) | null |
 | `5511300e` | 2026-08-24 | merge: integrate contextual routing with OpenClaw delivery | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md), [AR-265](../roadmap/issue-AR-265-contextual-turn-classification.md), [AR-283](../roadmap/issue-AR-283-persist-openclaw-child-terminals-after-delivery.md) | [detail](2026-08-24-5511300e-integrate-contextual-routing-with-openclaw-delivery.md) |
+| `bb048696` | 2026-08-24 | docs(openclaw): record post-send child acceptance | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md), [AR-264](../roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md), [AR-283](../roadmap/issue-AR-283-persist-openclaw-child-terminals-after-delivery.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
