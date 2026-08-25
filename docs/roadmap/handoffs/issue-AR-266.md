@@ -18,8 +18,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-266
 branch: codex/ar266-local-retrieval-smoke
-evidence_commit: 050245651ce958f3b1fdb51069c4fed73d193494
-minimum_ledger_commit: 48e03933a90985697e0c5bd6d4e4e731d58189d3
+evidence_commit: 8d8a7d5eea6a0410cbc8ac76ca4bbb066da8c04f
+minimum_ledger_commit: b6f9da3e254dfa0e9d31c82bbe3a4fcda277dc92
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/320
 ---
@@ -31,37 +31,40 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/320
 - Worktree `/tmp/agency-runtime-ar266-retrieval.nVONyD` is on branch
   `codex/ar266-local-retrieval-smoke`, based on exact fetched `origin/main`
   `4d2f88895f8fb8e3234ff4d8dbef47108c830476`.
-- The clean code checkpoint is `05024565` with ledger `48e03933`. It follows
-  schema-48 integration, bounded dimensions, complete hook budgets, and the
-  Hermes-native finalizer. Run `git log -2 --oneline` after resume to verify the
-  documentation checkpoint pair created after this capsule projection.
+- The clean code checkpoint is `8d8a7d5e` with ledger `b6f9da3e`. It adds the
+  fixed live shadow-recall promotion gate after schema-48 integration, bounded
+  dimensions, complete hook budgets, and the Hermes-native finalizer. Run
+  `git log -2 --oneline` after resume to verify the documentation checkpoint
+  pair created after this capsule projection.
 - Store schema is 48, integrity is `ok`, and the enabled roster has 278 workers.
   The pre-mutation SQLite online backup also passed integrity check.
-- Effective Agency config SHA-256 after the atomic retrieval-only update is
+- The pre-promotion Agency config was backed up at SHA-256
   `2261184786cfb0911b4a8eeb429f3011edb2ed28b20b4da3f6ca14de43e52468`.
+  Effective config is now `additive` at SHA-256
+  `8cebe127352000a7e8a238e7fa842f428f985721a4d58fc3f1b5e2ffb8fe354b`.
 - Both gateways are active. Current launcher-manifest SHA-256 values are
   `ace4ad8d3014216ff176018353e8ea7909377c82998c34892c8241a78b707b64`
-  for OpenClaw and
-  `cd025c3589d9ca8f592ae1e24114fee9df2b8477420f80ac518ea9b993c59f93`
-  for Hermes.
+  (OpenClaw) and `cd025c3589d9ca8f592ae1e24114fee9df2b8477420f80ac518ea9b993c59f93`
+  (Hermes).
 
 ## completed-evidence
 
-- AR-286/AR-287 provide exact 1,024-dimension embeddings and complete host-hook
-  budgets. Four forced host-labelled smokes applied both local recall stages;
-  Codex and Claude were evaluator-only, leaving native OAuth/config/canaries
-  untouched.
+- AR-286/AR-287 provide exact 1,024-dimension embeddings and complete hook
+  budgets. Four host-labelled smokes applied both local stages without native
+  Codex/Claude OAuth, config, or canary changes.
 - Native OpenClaw `2026.7.1-2` trace
   `8e6033b2-6ab6-4e1d-ac3b-dca792e8eb2d` applied exact-alias parent inference,
-  local embedding, and local reranking, then wrote a real Agency header with
-  `gis-analyst` and `codebase-onboarding-engineer`. Its native primary remained
-  `litellm/task-general`; no config changed. The CLI-only run remains active
-  with no `message_sent` or finalization row, so it is retrieval/header proof,
-  not terminal or Telegram-delivery proof. Historical failures remain in the
-  canonical issue; the unsupported embeddings-stub claim is retracted.
-- AR-288 exposes Hermes-native `agency_finalize` without native config changes;
-  three red-before regressions, 109 focused tests, the 856-test spine, and local
-  gates pass. System Python lacks `pytest`, so the 160-snippet substitute passed.
+  both local recall stages and wrote a real Agency header with `gis-analyst`
+  and `codebase-onboarding-engineer`. Native `litellm/task-general` and config
+  stayed unchanged. With no `message_sent` or finalization row, this active
+  CLI-only run is retrieval/header proof, not terminal or Telegram proof.
+- Final gates pass: 106 AR-266 tests, the 856-test spine with 3 skips, 134
+  dashboard tests, all docs and Ruff checks, routing, and exact decision
+  conformance with 160 of 160 mutations killed. An initial cached-`uv` spine
+  failed 74 launcher tests closed on its user-replaceable interpreter; the
+  changed trusted-system-base environment passed. An initial conformance run
+  stopped before mutation because system Python lacked `pytest`; its changed
+  trusted-fixture run passed.
 - Agency alone was reinstalled into Hermes from this checkout. Hermes `0.20.4`
   reports the `agency-runtime` native toolset; installed runtime digest is
   `824c4d2b267c3d5c56610c44284ec1242113f900d4177ca5d193c0e907b59702`.
@@ -96,43 +99,43 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/320
 
 ## current-state
 
-The local Agency-only config is validated and active in `shadow` mode. Explicit
-global capability routes use free local Ollama models and do not replace native
-host defaults. The fixed four-category/four-host `agency eval shadow-recall`
-gate is implemented and 106 focused tests pass before any live matrix result.
-Both gateways are active. AR-288 is locally complete; AR-266 remains open for
-that live gate and does not yet recommend additive activation.
+The exact-confirmed four-category/four-host live matrix passed all 16 cells with
+1.0 baseline retention, zero category regression, zero forbidden, ineligible,
+or disabled activation, zero provider fallback, safe cold/warm caching, safe
+changed-catalog rebuild, and one eligible gap recovered on every host. Agency's
+local mode is now `additive`. A changed additive smoke recovered
+`medical-billing-coding-specialist` beyond the retained 24-card baseline. Both
+free local provider stages applied. Native host configs, primaries, OAuth, and
+canaries remained untouched; both gateway services are active.
 
 ## unresolved-gates
 
 - Create AR-288's tracker only after explicit authorization; no outward tracker
   write was made.
-- Complete AR-266's full shadow-value safety/quality matrix. The complete
-  warning-strict corpus and hosted workflow remain intentionally undispatched.
-- Keep the full AR-266 shadow-value acceptance box open: this bounded smoke is
-  real provider evidence, not the complete safety/quality matrix and not an
-  additive-production recommendation.
+- Publish the AR-266 gate and additive evidence through a reviewed PR before
+  another machine pulls `main`; direct commits to `main` are forbidden.
+- The complete warning-strict corpus and hosted workflow remain intentionally
+  undispatched; neither is a routine handoff requirement.
 - Resolve the inherited `test_configuration.py` default-mode expectation
   separately from AR-266; fetched main declares `strict`, while that test still
   expects `fast`.
-- Keep tracker #320 open while the live shadow-value gate remains unresolved.
+- Keep tracker #320 open until merge and separately authorized tracker closure.
 
 ## exact-blocker
 
-There is no Hermes runtime blocker. The unsupported embeddings-stub claim is
-retracted: no repository path or retained artifact requires one, and live
-retrieval used Agency's explicit Ollama profiles. AR-288 tracker creation needs
-owner authorization. OpenClaw trace `8e6033b2-...` remains active in Store and
-must not be promoted into terminal or outbound-delivery proof.
+There is no runtime blocker. Publication requires an authorized PR open/merge;
+tracker changes remain separately unauthorized. OpenClaw trace `8e6033b2-...`
+remains active in Store and must not be promoted into terminal or
+outbound-delivery proof.
 
 ## next-bounded-work-package
 
-1. Run the exact-confirmed `agency eval shadow-recall` command from this
-   worktree and preserve its complete content-free JSON report.
-2. Promote only Agency's dense-recall mode to `additive` if every fixed gate is
-   green; otherwise retain shadow and preserve the exact failed cell.
-3. Validate one changed additive work unit without invoking Codex OAuth or
-   canaries, then checkpoint exact evidence and keep native host configs intact.
+1. Run the named local gates and create the substantive/ledger documentation
+   checkpoint pair, then push this branch.
+2. With explicit publication authorization, open and merge the PR without
+   changing tracker state.
+3. On each other machine, pull merged `main`, run the fixed live gate while
+   still in `shadow`, and promote that machine's Agency config only if it passes.
 
 ## same-task-continuity
 
