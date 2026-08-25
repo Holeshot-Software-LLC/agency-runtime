@@ -1,6 +1,6 @@
 ---
 title: "Expose Hermes native finalizer tool"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-08-25
 updated: 2026-08-25
@@ -62,6 +62,26 @@ changes; an honest stale header is correctly blocked by strict finalization.
   generated-plugin, completion-boundary, adapter, and bridge-encoding checks
   pass (109 tests),
   including a red-before exact-text boundary regression.
+- Agency alone was reinstalled from this checkout. Hermes's native config
+  remained byte-identical at SHA-256
+  `95b87b7fc0427ad4e3da4f5f468054cf9f7ddba679d1bb606b782a13e1a0172d`,
+  the native inventory reported the `agency-runtime` toolset, and launcher
+  manifest SHA-256 became
+  `cd025c3589d9ca8f592ae1e24114fee9df2b8477420f80ac518ea9b993c59f93`.
+- Fresh Hermes session `20260825_112803_2eae8e`, trace
+  `20260825_112803_2eae8e:fbbb0bcf-ef22-40de-bbd4-030fb5919eb9:cb12755e`,
+  completed through native `agency_finalize`. Terminal finalization
+  `e87cec42-c0db-4252-8e92-5c64c556980f` committed response SHA-256
+  `91c4a26d30097a6bf18e55dfb792d7c6e1532fe6ba61bca723596b847470daa4`.
+  The same Store-backed turn applied the exact LiteLLM alias
+  `task-agency-router`, local `qwen3-embedding:latest`, and local
+  `qwen3-14b-abliterated:latest`; Hermes's native answer receipt remained
+  `task-general`. The LiteLLM alias is not promoted to an underlying-model
+  claim because proxy callback telemetry did not supply one.
+- Two changed probes are retained as useful fail-closed evidence: one applied
+  both local recall stages but exceeded the inline finalizer transport bound;
+  another applied both stages but exhausted recruiter repair on
+  `staff_without_safe_team`. Neither was retried unchanged.
 - Tracker creation is pending explicit authorization.
 
 ## Approach
@@ -97,9 +117,9 @@ or modify native Hermes configuration/source.
       session/trace and never trusts model-supplied correlation or host identity.
 - [x] Malformed, missing, stale, raced, or rejected evidence remains fail-closed
       under the existing terminal policy.
-- [ ] Agency alone is reinstalled into Hermes without changing native config,
+- [x] Agency alone is reinstalled into Hermes without changing native config,
       and the native inventory reports the tool.
-- [ ] One genuinely new Hermes turn calls the tool once, emits its exact accepted
+- [x] One genuinely new Hermes turn calls the tool once, emits its exact accepted
       text, and records successful finalization plus parent/embedding/reranker
       receipts.
 - [x] Focused tests and proportionate repository gates pass.

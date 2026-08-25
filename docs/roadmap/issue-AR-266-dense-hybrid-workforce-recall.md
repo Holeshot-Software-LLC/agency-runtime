@@ -61,9 +61,10 @@ specialists before inference decides the final staffing plan.
 - Missing exact actual-model identity, invalid vectors, provider failure,
   dimension/model drift, unsafe projections, or an invalid reranker all fail to
   the unchanged typed lane. No vectors or query text are persisted.
-- Focused and production-spine verification is green. No live embedding or
-  reranker provider was called, so cross-provider quality and shadow value
-  evidence remain open.
+- Focused and production-spine verification is green. Forced four-host smokes
+  and one native Hermes turn applied the live local embedding and reranker
+  providers. The broader cross-provider quality and full shadow-value matrix
+  remain open.
 - Local shadow preparation found that a provider's valid 4,096-dimension
   default can exceed the unchanged aggregate scalar bound for the complete
   roster. AR-286 owns a provider-native bounded-dimension request; no client-side
@@ -183,6 +184,15 @@ eligibility constraints.
   rejected the stale header. That failed attempt is preserved, and a changed
   native turn remains pending behind AR-288: the generated plugin instructs the
   model to call `agency.finalize` but exposes no Hermes native finalizer tool.
+- AR-288 then registered Hermes-native `agency_finalize` without changing
+  Hermes config. Fresh session `20260825_112803_2eae8e` completed with exact
+  terminal response hash
+  `91c4a26d30097a6bf18e55dfb792d7c6e1532fe6ba61bca723596b847470daa4`.
+  Its Store trace applied the harness-scoped LiteLLM alias
+  `task-agency-router`, local 1,024-dimension `qwen3-embedding:latest`, and
+  local `qwen3-14b-abliterated:latest`; Hermes native execution stayed on
+  `task-general`. This is bounded live-provider evidence, not the complete
+  shadow-value matrix or an additive-production recommendation.
 
 ## Dependencies
 
