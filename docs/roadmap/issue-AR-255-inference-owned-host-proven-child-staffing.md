@@ -77,9 +77,12 @@ Three more real children tested project, session-override, and named-profile
 `PreToolUse` hook sources with the one-shot trust bypass; none emitted the
 content-safe capture. A match-all named-profile hook did capture a changed
 read-only Bash call, narrowing the gap to `spawn_agent` matching or specialized
-dispatch but still proving no plaintext child rewrite path. Agency therefore
-keeps 0.149.1 unstaffed and does not restore AR-209's retired plan-row transport.
-No install, canary, or matrix movement resulted.
+dispatch. A final match-all child then captured `collaborationspawn_agent` with
+the assignment already Fernet-encrypted and the fixed plaintext marker absent.
+Agency already recognizes that exact tool spelling, so no matcher or adapter
+repair is required. Agency therefore keeps 0.149.1 unstaffed and does not
+restore AR-209's retired plan-row transport. No install, canary, or matrix
+movement resulted.
 
 ## Approach
 

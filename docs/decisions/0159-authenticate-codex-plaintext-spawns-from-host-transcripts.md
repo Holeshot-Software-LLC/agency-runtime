@@ -211,7 +211,10 @@ emitted no redacted hook artifact. That absence is an activation gap, not proof
 that the hook would receive ciphertext. A changed match-all named-profile probe
 did capture one read-only Bash `PreToolUse` event, proving general hook
 activation while narrowing the missing evidence to `spawn_agent` matching or
-specialized dispatch. The decision remains in force: the 0.147 profiles stay
-exact, 0.149.1 remains unsupported and unstaffed, and no installation or Rule-4
-claim advances. The bounded projection is retained in
+specialized dispatch. A final changed child under that same match-all profile
+captured `collaborationspawn_agent` with a 228-character Fernet message and no
+plaintext marker. Agency's checked-in matcher already includes that observed
+tool spelling. The decision remains in force: the 0.147 profiles stay exact,
+0.149.1 remains unsupported and unstaffed, and no installation or Rule-4 claim
+advances. The bounded projection is retained in
 `docs/roadmap/AR-180-codex-0149-compatibility-evidence.md`.

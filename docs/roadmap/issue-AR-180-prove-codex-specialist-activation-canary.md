@@ -358,9 +358,13 @@ three additional real children. Persisted parent messages remained encrypted,
 and no live plaintext hook input or exact call-to-child binding is proven. A
 changed match-all named-profile probe did capture a read-only Bash call, proving
 general hook activation and narrowing the gap to `spawn_agent` matching or
-specialized dispatch. The exact 0.147 profiles remain unchanged; 0.149.1 fails
-open unstaffed, no Agency installation or canary was run, and no Installed,
-Live, or Rule-4 claim advances. The bounded evidence is retained in
+specialized dispatch. A final changed child under that same profile captured
+`collaborationspawn_agent`, but its message was already a 228-character Fernet
+ciphertext and the plaintext marker was absent. Agency's existing exact matcher
+already includes that tool spelling, so no code change is needed. The exact
+0.147 profiles remain unchanged; 0.149.1 fails open unstaffed, no Agency
+installation or canary was run, and no Installed, Live, or Rule-4 claim
+advances. The bounded evidence is retained in
 `docs/roadmap/AR-180-codex-0149-compatibility-evidence.md`.
 
 ## Approach

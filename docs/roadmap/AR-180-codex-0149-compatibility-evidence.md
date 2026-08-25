@@ -96,6 +96,25 @@ This proves the hook engine, named profile, trust bypass, and capture script are
 active. The remaining discriminator is `spawn_agent` matching or specialized
 tool dispatch under the same match-all profile.
 
+The decisive changed child probe used that same match-all profile. Parent
+session `01a03a7c-3667-72f2-8c49-1d5a0145fa8e` launched depth-one child
+`01a03a7c-51f2-74d3-a4c6-c8abbda4d006`; the parent rollout SHA-256 is
+`9d75a7c7a408b3f518fd72ea87c7afcc6c6b40ea075d40f13352b07caeb12df4`.
+The hook emitted exactly two content-free rows:
+
+- `collaborationspawn_agent` carried keys `fork_turns`, `message`, and
+  `task_name`; `message` was a 228-character Fernet-shaped string, the fixed
+  plaintext marker was absent, and `encrypted_function_args` was absent.
+- `collaborationwait_agent` carried only `timeout_ms` and no message.
+
+The two-line redacted capture SHA-256 is
+`da650efeb5d47187733baf8595b6d54821e411420518fcb6220af4b07123f756`.
+This proves exact Codex 0.149.1 encryption happens before the observable
+`PreToolUse` boundary. Agency already recognizes the observed
+`collaborationspawn_agent` spelling in its checked-in Codex matcher and hook
+normalizer, so no installer or adapter change is required for honest unstaffed
+handling.
+
 ## Configuration invariants
 
 The persistent Codex configuration SHA-256 was
@@ -112,5 +131,6 @@ exact parent call through a documented authenticated field. The exact
 `0.147.0` attestation profiles therefore remain unchanged, and `0.149.1` must
 fail open with an explicitly unstaffed native child. Installed and Live remain
 unproven, and no AR-119 matrix cell moves. The documented `PreToolUse` rewrite
-surface is a plausible future integration path, but it is not current runtime
-evidence until a live hook invocation is observed and causally bound.
+surface cannot currently supply selection context because its observed message
+is already encrypted. A future Codex release must expose authenticated plaintext
+or an exact parent-call binding before Agency can staff these children safely.
