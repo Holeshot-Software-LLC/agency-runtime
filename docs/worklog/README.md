@@ -1213,6 +1213,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `382fb4d9` | 2026-08-25 | merge: integrate dense recall with current host runtime | [AR-266](../roadmap/issue-AR-266-dense-hybrid-workforce-recall.md), [AR-285](../roadmap/issue-AR-285-accept-openclaw-stopped-gateway-status.md) | [detail](2026-08-25-382fb4d9-integrate-dense-recall-with-current-host-runtime.md) |
 | `2bea0c76` | 2026-08-25 | feat(workforce): configure bounded embedding dimensions | [AR-286](../roadmap/issue-AR-286-configure-bounded-embedding-dimensions.md) | [detail](2026-08-25-2bea0c76-configure-bounded-embedding-dimensions.md) |
 | `fc5847e6` | 2026-08-25 | docs(ar266): checkpoint local retrieval smoke | [AR-266](../roadmap/issue-AR-266-dense-hybrid-workforce-recall.md), [AR-286](../roadmap/issue-AR-286-configure-bounded-embedding-dimensions.md) | null |
+| `3cb2da6c` | 2026-08-25 | fix(hosts): bind hook timeouts to inference budgets | [AR-266](../roadmap/issue-AR-266-dense-hybrid-workforce-recall.md), [AR-287](../roadmap/issue-AR-287-bind-host-hook-timeouts-to-inference-budgets.md) | [detail](2026-08-25-3cb2da6c-bind-hook-timeouts-to-inference-budgets.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
