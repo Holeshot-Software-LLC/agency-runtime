@@ -1226,6 +1226,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `95402d56` | 2026-08-25 | docs(ar289): plan native reranker transports | [AR-289](../roadmap/issue-AR-289-native-reranker-transports.md) | null |
 | `03a01fda` | 2026-08-25 | feat(ar289): add native Jina reranker transport | [AR-289](../roadmap/issue-AR-289-native-reranker-transports.md) | null |
 | `4a71c0da` | 2026-08-25 | docs(ar290): plan guided setup | [AR-290](../roadmap/issue-AR-290-end-to-end-guided-setup.md) | null |
+| `21243e7e` | 2026-08-25 | feat(ar290): add guided setup journey | [AR-290](../roadmap/issue-AR-290-end-to-end-guided-setup.md) | [detail](2026-08-25-21243e7e-add-guided-setup-journey.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
