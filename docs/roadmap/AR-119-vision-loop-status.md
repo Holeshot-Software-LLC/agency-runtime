@@ -4800,6 +4800,82 @@ the AR-280 internal-lifecycle limitation.
 Current Hermes parent acceptance is green for install, activation, fresh
 status, status-time skill recording, substantive inference, exact
 profile/provider/alias selection, finalization, Store correlation, header and
-native Telegram stream-edit/response-ready evidence, zero fallback, and native-config preservation. The
-operator-requested operational native-child check remains; it will not prove
-ADR-0156 Rule 4 or move a matrix cell.
+native Telegram stream-edit/response-ready evidence, zero fallback, and
+native-config preservation. The operational native-child attempt below failed;
+it does not prove ADR-0156 Rule 4 or move a matrix cell.
+
+## 2026-08-25 - Hermes async child executes but both parent returns are blocked
+
+The changed Hermes draw used parent run
+`705cfd21-216b-4476-8339-88e73eebb09c` and exact trace
+`20260825_075940_bc454f4c:20260825_075940_bc454f4c:372aadb7`. Automatic parent
+route `70628c7c-1c19-4970-89dc-cab5969cfc51` selected
+`ai-evaluation-engineer`; specialist row
+`6f715a26-8285-4fe2-88c7-bda4dc1f1df2` loaded at
+`2026-08-25T12:00:29.804000+00:00`. The parent then returned a 166-character
+"still reviewing" draft, native state row 533511 at
+`2026-08-25T12:01:18.392260+00:00`, SHA-256
+`7a04e8e56b92a50ff4e9594a85ea2eba0dc6d198805bdc1e736f7c03223a8579`.
+Finalization `8f12869c-2558-468e-8c92-6b27f0381934` rejected it at
+`2026-08-25T12:01:18.610917+00:00` because all five Agency header fields were
+missing. Parent run status is `response_invalid`; Telegram marked the
+151-character Agency block response-ready at 08:01:19.613 local.
+
+The one native child did execute. Delegation
+`7333c869-49f5-4416-b4e4-11d80a7e1c9f`, work unit `unit-231fa91a8d`, generic
+worker `sa-0-1835962e`, and native run `hermes-subagent:sa-0-1835962e` started
+at `2026-08-25T12:00:57.650329+00:00` and completed at
+`2026-08-25T12:02:28.565359+00:00`. Worker
+`native-child:1d729a3e9c46e7703349c48ff3b0b73709681c20f1183e041adb4043c9f2a10f`
+ran from `12:00:57.656000` through `12:02:28.564000`, exit 0. That operational
+process result is not Agency acceptance: recommended and retrieved specialist
+are empty, activation is null, and native terminal outcome, native delivery
+status, both observed timestamps, tool evidence, stdout, and stderr are empty.
+No captured assignment, parent scope, delivery verification, activation
+receipt, or activation consumption exists. Child route
+`9ed701ed-dadd-4c06-b5ee-4b3504504643` at
+`2026-08-25T12:00:57.971000+00:00` is `inference_invalid` from
+`native_child_inference_failure`.
+
+The retained native journal is
+`/home/holeshot/.hermes-nexus/cache/delegation/live/deleg_d19e55e6/task-0.log`,
+56 lines and 14,988 bytes, SHA-256
+`a8960d530d4655aac924bd6e7c49a1fd410b483d78f8f1460aaf65b54812a06d`.
+Its line 54 preserves the child's substantive finding at 08:02:28 local; line
+55 preserves Agency replacing the consolidated result with the
+151-character unverified-draft block because turn-scoped finalization did not
+accept it. The 08:01:57 self-stop-guard rejection remains a separate retained
+tool failure, not a transport failure, and was not retried.
+
+Async completion notification row 533537 arrived at
+`2026-08-25T12:02:29.733338+00:00`, content SHA-256
+`2f476c97a4b24f4a86f8226f52a71d86a049e4c0622ce9f4fbcbbc377c938b14`.
+Hermes handled it as separate trace
+`20260825_075940_bc454f4c:20260825_075940_bc454f4c:4e4a2bc2`, run
+`dd27dffd-800e-4a54-b07d-c9a165e1274b`. Native state row 533555 stored the
+one-finding answer at `2026-08-25T12:06:55.467739+00:00`, SHA-256
+`8ef12d74f101e4b18085c69bf11ff1e7da3c365f105e7c5c7b6611bd4f680bb2`.
+Finalization `dac1bbe9-5cf2-422c-ad6f-a15f6fc2ad35` again rejected all five
+missing header fields at `2026-08-25T12:06:55.684283+00:00`. The Telegram
+gateway logged a streamed-message edit and response-ready at 08:06:56.849
+local, but the 151-character payload was the Agency block, not the finding.
+There is no distinct child send-success event or Store delivery receipt.
+
+Owner-private evidence directory
+`/home/holeshot/.agency-runtime/evidence/ar119-hermes-child-failed-k7gu0py9`
+retains `agency-after-failed-child.db`, SHA-256
+`caeddf05fce08d61be5bc41e0a9d773a4fb4f37d2973cb6b7e12d3ba91cda3ed`,
+integrity `ok`, schema 48; `failed-child-store-redacted.json`, SHA-256
+`78c4adfdb7dca8e7d48b5bddb9e642dfd69135df85853ebdbb0c183ffb38019a`;
+and `native-child-transcript-redacted.json`, SHA-256
+`e87bb0270df4eb7806faedccd871ea8b48aeca1e8f8d224f6677cba8df16564e`.
+
+The failure is a Hermes async parent-correlation/finalization defect, not a
+Telegram outage or a failed child process. Child execution completed, but the
+parent return and later finding were both blocked; terminal and delivery proof
+remain absent, so no Rule 4 or matrix claim moves. The next bounded package is
+to integrate the latest main selection work, add a focused regression first,
+make the smallest general correlation/finalization repair, reinstall Agency
+only, and use a fresh session plus genuinely changed async child request to
+require compute-terminal and accepted parent-return evidence. Hermes exposes no
+native Telegram post-send hook, so this package cannot claim transport delivery.

@@ -3147,7 +3147,7 @@ post_substantive_store_schema: 48
 contractor_count: 15; unchanged
 native_config_invariant: config/environment/service/Agency config/launcher hashes unchanged; service active and Result success
 hermes_parent_acceptance: pass
-remaining_hermes_checks: one operator-requested operational native child plus final backup and records
+remaining_hermes_checks: async native-child attempt failed below; focused correlation repair and fresh changed async proof required
 rule4_proven: false
 matrix_cell_moved: false
 protected_hosts: Codex OAuth/config/canary, Claude, and ZCode untouched
@@ -3171,4 +3171,101 @@ Agency/Agencies delegated: none - executed worker has no validated Agency specia
 Skills loaded: none
 Actual Model selected: workforce inference: [router] task-agency-router -> linux-task-agency-router/task-agency-router (wrapper)
 Recruited via: inference
+~~~
+
+## Hermes failed async-child evidence bundle
+
+~~~yaml
+host: hermes
+evidence_scope: one changed native child; retained failure
+parent_session_id: 20260825_075940_bc454f4c
+parent_run_id: 705cfd21-216b-4476-8339-88e73eebb09c
+parent_trace_id: 20260825_075940_bc454f4c:20260825_075940_bc454f4c:372aadb7
+parent_started_at_utc: 2026-08-25T12:00:03.960000+00:00
+parent_ended_at_utc: 2026-08-25T12:01:18.610917+00:00
+parent_last_child_activity_at_utc: 2026-08-25T12:02:28.565000+00:00
+parent_status: response_invalid
+parent_routing_decision_id: 70628c7c-1c19-4970-89dc-cab5969cfc51
+parent_route_status: accepted
+parent_specialist_id: 6f715a26-8285-4fe2-88c7-bda4dc1f1df2
+parent_specialist_slug: ai-evaluation-engineer
+parent_first_response_state_row: 533511
+parent_first_response_at_utc: 2026-08-25T12:01:18.392260+00:00
+parent_first_response_sha256: 7a04e8e56b92a50ff4e9594a85ea2eba0dc6d198805bdc1e736f7c03223a8579
+parent_first_response_disposition: blocked; still-reviewing draft lacked all five Agency header fields
+parent_finalization_id: 8f12869c-2558-468e-8c92-6b27f0381934
+parent_finalization_at_utc: 2026-08-25T12:01:18.610917+00:00
+parent_finalization_missing: [agencies_loaded, agencies_delegated, skills_loaded, actual_model_selected, recruited_via]
+parent_telegram_response_ready_local: 2026-08-25T08:01:19.613-04:00
+parent_telegram_payload: 151-character Agency unverified-draft block; not child result
+delegation_id: 7333c869-49f5-4416-b4e4-11d80a7e1c9f
+work_unit_id: unit-231fa91a8d
+delegation_backend: delegate_task
+delegation_started_at_utc: 2026-08-25T12:00:57.650329+00:00
+delegation_completed_at_utc: 2026-08-25T12:02:28.565359+00:00
+delegation_store_status: completed; operational process result only
+delegation_error_field: ok
+executed_worker_kind: generic-worker
+executed_worker_id: sa-0-1835962e
+native_run_id: hermes-subagent:sa-0-1835962e
+recommended_specialist: none
+retrieved_specialist: none
+activation_receipt: none
+worker_id: native-child:1d729a3e9c46e7703349c48ff3b0b73709681c20f1183e041adb4043c9f2a10f
+worker_started_at_utc: 2026-08-25T12:00:57.656000+00:00
+worker_ended_at_utc: 2026-08-25T12:02:28.564000+00:00
+worker_exit_code: 0
+worker_stdout_stderr_tool_evidence: empty
+worker_native_terminal_outcome: absent
+worker_native_delivery_status: absent
+worker_terminal_delivery_observed_at: absent
+native_child_inference_route_id: 9ed701ed-dadd-4c06-b5ee-4b3504504643
+native_child_inference_route_at_utc: 2026-08-25T12:00:57.971000+00:00
+native_child_inference_route_status: inference_invalid
+native_child_inference_route_source: native_child_inference_failure
+captured_assignment_count: 0
+parent_scope_count: 0
+delivery_verification_count: 0
+activation_receipt_count: 0
+activation_consumption_count: 0
+child_journal: /home/holeshot/.hermes-nexus/cache/delegation/live/deleg_d19e55e6/task-0.log
+child_journal_sha256: a8960d530d4655aac924bd6e7c49a1fd410b483d78f8f1460aaf65b54812a06d
+child_journal_size: 56 lines; 14,988 bytes
+child_journal_finding: line 54 at 2026-08-25T08:02:28-04:00
+child_journal_terminal: line 55; finding replaced by Agency unverified-draft block
+retained_tool_failure: 2026-08-25T08:01:57-04:00 self-stop guard false positive; not transport; not retried
+async_notification_state_row: 533537
+async_notification_at_utc: 2026-08-25T12:02:29.733338+00:00
+async_notification_sha256: 2f476c97a4b24f4a86f8226f52a71d86a049e4c0622ce9f4fbcbbc377c938b14
+post_child_run_id: dd27dffd-800e-4a54-b07d-c9a165e1274b
+post_child_trace_id: 20260825_075940_bc454f4c:20260825_075940_bc454f4c:4e4a2bc2
+post_child_started_at_utc: 2026-08-25T12:02:30.098000+00:00
+post_child_raw_response_state_row: 533555
+post_child_raw_response_at_utc: 2026-08-25T12:06:55.467739+00:00
+post_child_raw_response_sha256: 8ef12d74f101e4b18085c69bf11ff1e7da3c365f105e7c5c7b6611bd4f680bb2
+post_child_finalization_id: dac1bbe9-5cf2-422c-ad6f-a15f6fc2ad35
+post_child_finalization_at_utc: 2026-08-25T12:06:55.684283+00:00
+post_child_finalization_status: response_invalid; same five required header fields absent
+post_child_telegram_response_ready_local: 2026-08-25T08:06:56.849-04:00
+post_child_telegram_payload: 151-character Agency unverified-draft block; not finding
+telegram_stream_edit_logged: true; block payload only
+telegram_child_send_success_event: absent
+agency_child_delivery_receipt: absent
+evidence_directory: /home/holeshot/.agency-runtime/evidence/ar119-hermes-child-failed-k7gu0py9
+store_backup: /home/holeshot/.agency-runtime/evidence/ar119-hermes-child-failed-k7gu0py9/agency-after-failed-child.db
+store_backup_sha256: caeddf05fce08d61be5bc41e0a9d773a4fb4f37d2973cb6b7e12d3ba91cda3ed
+store_backup_integrity: ok
+store_backup_schema: 48
+store_projection: /home/holeshot/.agency-runtime/evidence/ar119-hermes-child-failed-k7gu0py9/failed-child-store-redacted.json
+store_projection_sha256: 78c4adfdb7dca8e7d48b5bddb9e642dfd69135df85853ebdbb0c183ffb38019a
+native_transcript_redacted: /home/holeshot/.agency-runtime/evidence/ar119-hermes-child-failed-k7gu0py9/native-child-transcript-redacted.json
+native_transcript_redacted_sha256: e87bb0270df4eb7806faedccd871ea8b48aeca1e8f8d224f6677cba8df16564e
+safe_diagnosis: Hermes async parent correlation/finalization defect; child process completed but parent and finding were blocked
+operational_native_child_acceptance: fail
+native_terminal_proven: false
+native_delivery_proven: false
+rule4_proven: false
+matrix_cell_moved: false
+next_package: integrate latest main; focused correlation regression/fix; Agency-only reinstall; fresh changed async child proof
+protected_hosts: Codex OAuth/config/canary, Claude, and ZCode untouched
 ~~~

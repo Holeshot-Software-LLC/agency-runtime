@@ -114,6 +114,18 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
   same-profile contract-invalid planner rejections. Its blank non-user turn
   created no route, receipt, finalization, specialist, skill, worker, or
   delegation and did not alter the finalized response-ready user turn.
+- Changed Hermes child run `705cfd21...` / exact trace `...:372aadb7` failed
+  finalization `8f12869c...` before delegation `7333c869...` completed. Worker
+  `native-child:1d729a3e...` exited 0 at `2026-08-25T12:02:28.564000+00:00`,
+  but child route `9ed701ed...` is `native_child_inference_failure` and no
+  validated specialist, terminal, delivery, scope, or activation receipt exists.
+- Journal `task-0.log` SHA `a8960d53...` preserves the finding and Agency block.
+  Post-child run `dd27dffd...` / trace `...:4e4a2bc2` and finalization
+  `dac1bbe9...` blocked the finding again; Telegram marked only the block
+  response-ready. No child send-success exists and Rule 4 remains unproven.
+- Evidence `ar119-hermes-child-failed-k7gu0py9` retains Store backup
+  `caeddf05...` (`ok`, schema 48), Store projection `78c4adfd...`, and redacted
+  native transcript `e87bb027...`; contractor count remains 15.
 
 ## completed-evidence
 
@@ -128,10 +140,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 
 ## exact-blocker
 
-No scoped OpenClaw or Hermes parent blocker remains. Hermes still needs one
-operator-requested operational native child plus final backup/records. Rule 4
-remains separately unproven, AR-284 is non-blocking, and tracker writes remain
-unauthorized.
+Hermes async-child correlation/finalization is now the scoped blocker. Child
+execution completed, but both parent and finding were blocked and no terminal
+or delivery proof exists. Rule 4 remains unproven; tracker writes are unauthorized.
 
 ## same-task-continuity
 
@@ -140,10 +151,11 @@ unchanged inputs.
 
 ## next-bounded-work-package
 
-1. Use a fresh Hermes session for exactly one harmless native child, retaining
-   operational lifecycle and delivery evidence without making a Rule 4 claim.
-2. Take the final Store backup, close the packet/capsules, and leave protected
-   hosts untouched.
+1. Integrate latest main and add a focused Hermes async-correlation regression
+   before the smallest general bridge/finalization fix.
+2. Reinstall Agency only; use a fresh, changed async child proof and require
+   compute-terminal plus accepted parent-return evidence. Hermes has no native
+   Telegram post-send hook; do not claim Rule 4 or transport delivery.
 
 ## verification
 

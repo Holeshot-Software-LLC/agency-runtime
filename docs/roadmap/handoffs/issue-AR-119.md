@@ -87,41 +87,42 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
   `linux-task-agency-router` / `litellm` / exact `task-agency-router` route with
   false fallback flags; post-send success closes the worker/delegation. Final
   backup `a0d558a3...` is integrity `ok`, schema 48, contractors 15.
-- Hermes Agent v0.20.4 was preserved at effective
-  `$HERMES_HOME=/home/holeshot/.hermes-nexus`. The native config, environment,
-  service unit, Agency config, and 59-plugin inventory hashes are unchanged.
-  `LITELLM_API_KEY` is populated by name only. Agency-only install
-  `4e97f5a6...` produced bundle `05bada29...`, runtime `ecc0b1cb...`, and
-  launcher SHA-256 `3544cff1...`; the installer did not restart the gateway.
-- The existing Hermes service restarted active with result `success`. Fresh
-  first-message status run `42b23dfd...` / trace
-  `20260825_065425_f0b77171:...:7948cbf5` / route `03143a75...` finalized as
-  `dd660adc...` and reached Telegram. Its exact header is
-  `agency-steward / none / hermes-agent / observed host receipt task-general /
-  deterministic`; skill row `6a8cbe40...` exists and no worker/delegation does.
-- Binding `rmb-c5df89aa...` is request-scoped in `runs.preflight_result`; zero
-  persistent binding rows is expected. The deterministic control route did not
-  attempt workforce inference. Its host `task-general` receipts do not prove an
-  upstream actual model or the Agency router.
-- Redacted native transcript artifact `native-transcript-redacted-index.json`
-  has SHA-256 `22e13b75...`; response SHA is `243e806c...`. Post-status Store
-  backup `d1ab6cfd...` is integrity `ok`, schema 48; contractors remain 15/15.
-- New substantive run `78ff9331...` / trace `...:ada0be68` / route
-  `0697fd16...` selected `ai-evaluation-engineer`, finalized as `83689dc3...`,
-  and the native Telegram adapter recorded a successful stream edit and exact
-  response ready. Six Store skill rows represent three header names; no child or delegation exists.
-- All three workforce stages used automatic Hermes profile
-  `linux-task-agency-router`, provider `litellm`, and exact alias/model-group
-  `task-agency-router`; both fallback flags are false. Wrapper receipts echo the
-  alias, native host receipts name `task-general`, and zero callback rows leave
-  the actual upstream model unavailable.
-- Response SHA `14755b59...`, redacted artifact `84b2c327...`, and post-turn
-  backup `bce1a2df...` (`ok`, schema 48, contractors 15) are retained. Native
-  config/environment/service/Agency-config/launcher hashes remain unchanged.
-- The 640.6-second native turn is a pass, not a timeout. Internal post-response
-  run `125ba6c2...` separately failed two contract-invalid planner responses on
-  the same Agency profile; it created no evidence rows and did not affect the
-  finalized response-ready user turn.
+- Hermes Agent v0.20.4 remains at effective
+  `$HERMES_HOME=/home/holeshot/.hermes-nexus`; native config, environment,
+  service, Agency config, and 59-plugin inventory hashes are unchanged.
+  Agency-only install `4e97f5a6...` produced runtime `ecc0b1cb...` and launcher
+  `3544cff1...`; `LITELLM_API_KEY` is populated by name only.
+- Fresh status `42b23dfd...` / `...:7948cbf5` and substantive
+  `78ff9331...` / `...:ada0be68` reached Telegram with Store-backed headers.
+  The substantive route used automatic `linux-task-agency-router` / `litellm` /
+  exact `task-agency-router`, false fallback flags, and no actual-model claim.
+  Backups `d1ab6cfd...` and `bce1a2df...` are `ok`, schema 48, contractors 15.
+- The changed Hermes async-child draw is retained as failed. Parent run
+  `705cfd21-216b-4476-8339-88e73eebb09c`, trace
+  `20260825_075940_bc454f4c:20260825_075940_bc454f4c:372aadb7`, finalized
+  `response_invalid` as `8f12869c-2558-468e-8c92-6b27f0381934` at
+  `2026-08-25T12:01:18.610917+00:00`, before the child completed.
+- Delegation `7333c869-49f5-4416-b4e4-11d80a7e1c9f` / work unit
+  `unit-231fa91a8d` ran generic worker `sa-0-1835962e` as
+  `hermes-subagent:sa-0-1835962e`. Worker
+  `native-child:1d729a3e9c46e7703349c48ff3b0b73709681c20f1183e041adb4043c9f2a10f`
+  exited 0 at `2026-08-25T12:02:28.564000+00:00`, but has no validated
+  specialist, activation, terminal, delivery, scope, or tool-evidence receipt.
+- Child route `9ed701ed-dadd-4c06-b5ee-4b3504504643` is
+  `native_child_inference_failure`. Journal
+  `/home/holeshot/.hermes-nexus/cache/delegation/live/deleg_d19e55e6/task-0.log`
+  (SHA-256 `a8960d530d4655aac924bd6e7c49a1fd410b483d78f8f1460aaf65b54812a06d`)
+  preserves the finding at 08:02:28 local and its replacement by Agency's
+  unverified-draft block. Parent and finding were both blocked.
+- Evidence directory `ar119-hermes-child-failed-k7gu0py9` retains Store backup
+  `caeddf05fce08d61be5bc41e0a9d773a4fb4f37d2973cb6b7e12d3ba91cda3ed`
+  (`ok`, schema 48), Store projection `78c4adfdb7dca8e7d48b5bddb9e642dfd69135df85853ebdbb0c183ffb38019a`,
+  and redacted native transcript `e87bb0270df4eb7806faedccd871ea8b48aeca1e8f8d224f6677cba8df16564e`.
+- Notification row 533537 arrived at `2026-08-25T12:02:29.733338+00:00`.
+  Separate run `dd27dffd-800e-4a54-b07d-c9a165e1274b` / trace `...:4e4a2bc2`
+  stored finding SHA `8ef12d74...`, but finalization `dac1bbe9...` rejected the
+  same five missing header fields. Telegram marked only the 151-character block
+  response-ready at 08:06:56.849 local; no child send-success/delivery receipt exists.
 
 ## completed-evidence
 
@@ -137,10 +138,9 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 
 ## exact-blocker
 
-No scoped OpenClaw or Hermes parent blocker remains. Hermes still needs the one
-operator-requested operational native-child turn plus final backup/records.
-Rule 4 remains separately unproven, AR-284 is non-blocking, and tracker writes
-remain unauthorized.
+Hermes async native-child correlation/finalization is blocked: execution exits
+zero, but parent and finding fail finalization and no terminal/delivery proof
+exists. Rule 4 remains unproven; no matrix cell moved. Tracker writes remain unauthorized.
 
 ## traps (machine-specific; do not rediscover)
 
@@ -154,8 +154,12 @@ remain unauthorized.
 
 ## next-bounded-work-package
 
-1. In a fresh Hermes session, execute exactly one harmless native child; preserve operational lifecycle/delivery evidence without calling it Rule 4 proof.
-2. Take the final Store backup, close records and proportionate gates, and leave Codex, Claude, and ZCode untouched.
+1. Fetch/integrate latest main, add a focused Hermes async-correlation regression,
+   and make the smallest general bridge/finalization fix.
+2. Reinstall Agency only, then use a fresh session and genuinely changed
+   async child request to prove compute terminal and accepted parent return.
+   Hermes has no native Telegram post-send hook; do not call this Rule 4 or
+   transport delivery.
 
 ## same-task-continuity
 
