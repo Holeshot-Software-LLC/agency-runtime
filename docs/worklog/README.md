@@ -1238,6 +1238,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `bb610528` | 2026-08-25 | fix(ar293): allow safe inference profile config operations | [AR-293](../roadmap/issue-AR-293-safe-inference-profile-config-operations.md) | [detail](2026-08-25-bb610528-allow-safe-inference-profile-config-operations.md) |
 | `7487b31b` | 2026-08-25 | merge: reconcile guided setup with current main | [AR-289](../roadmap/issue-AR-289-native-reranker-transports.md), [AR-290](../roadmap/issue-AR-290-end-to-end-guided-setup.md), [AR-291](../roadmap/issue-AR-291-isolate-smoke-runtime-pointers.md), [AR-292](../roadmap/issue-AR-292-classify-setup-activation-pending.md), [AR-293](../roadmap/issue-AR-293-safe-inference-profile-config-operations.md) | [detail](2026-08-25-7487b31b-reconcile-guided-setup-with-current-main.md) |
 | `257fe30f` | 2026-08-25 | test(ar294): restore expanded configuration regressions | [AR-294](../roadmap/issue-AR-294-restore-expanded-configuration-regressions.md) | [detail](2026-08-25-257fe30f-restore-expanded-configuration-regressions.md) |
+| `80a3095e` | 2026-08-25 | docs(ar290): record merged Windows and Linux handoff | [AR-290](../roadmap/issue-AR-290-end-to-end-guided-setup.md), [AR-294](../roadmap/issue-AR-294-restore-expanded-configuration-regressions.md) | [detail](2026-08-25-80a3095e-record-merged-windows-and-linux-handoff.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
