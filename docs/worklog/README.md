@@ -1218,6 +1218,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `05024565` | 2026-08-25 | fix(hermes): expose native Agency finalizer | [AR-266](../roadmap/issue-AR-266-dense-hybrid-workforce-recall.md), [AR-288](../roadmap/issue-AR-288-expose-hermes-native-finalizer-tool.md) | [detail](2026-08-25-05024565-expose-hermes-native-finalizer.md) |
 | `09d86e9f` | 2026-08-25 | docs(hermes): record native retrieval checkpoint | [AR-266](../roadmap/issue-AR-266-dense-hybrid-workforce-recall.md), [AR-288](../roadmap/issue-AR-288-expose-hermes-native-finalizer-tool.md) | null |
 | `18ac01d0` | 2026-08-25 | docs(openclaw): record native retrieval smoke | [AR-266](../roadmap/issue-AR-266-dense-hybrid-workforce-recall.md) | null |
+| `8d8a7d5e` | 2026-08-25 | feat(workforce): add shadow recall promotion gate | [AR-266](../roadmap/issue-AR-266-dense-hybrid-workforce-recall.md) | [detail](2026-08-25-8d8a7d5e-shadow-recall-promotion-gate.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
