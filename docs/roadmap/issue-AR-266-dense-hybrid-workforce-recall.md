@@ -9,6 +9,7 @@ related:
   - docs/roadmap/handoffs/issue-AR-266.md
   - docs/roadmap/issue-AR-286-configure-bounded-embedding-dimensions.md
   - docs/roadmap/issue-AR-287-bind-host-hook-timeouts-to-inference-budgets.md
+  - docs/roadmap/issue-AR-288-expose-hermes-native-finalizer-tool.md
   - docs/roadmap/issue-AR-265-contextual-turn-classification.md
   - docs/decisions/0083-use-capability-indexed-recall-and-bounded-inference.md
   - docs/decisions/0118-require-inference-owned-staffing.md
@@ -180,7 +181,8 @@ eligibility constraints.
   embedding, and reranker receipts. Its operator-only eight-iteration CLI cap
   then forced a no-tool summary before `agency.finalize`; finalization correctly
   rejected the stale header. That failed attempt is preserved, and a changed
-  native turn using Hermes's normal iteration budget remains pending.
+  native turn remains pending behind AR-288: the generated plugin instructs the
+  model to call `agency.finalize` but exposes no Hermes native finalizer tool.
 
 ## Dependencies
 

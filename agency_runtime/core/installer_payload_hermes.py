@@ -25,6 +25,7 @@ _MODULE_ARGS = ("-I", "-S", _BOOTSTRAP, "agency_runtime.adapters.hermes.bridge")
 _MAX_INPUT_BYTES = 1024 * 1024
 _MAX_OUTPUT_BYTES = 128 * 1024
 _MAX_TEXT_BYTES = 64 * 1024
+_MAX_FINALIZER_RESULT_CHARS = 4_096
 _MAX_DEPTH = 20
 _MAX_NODES = 8192
 _MAX_ITEMS = 128
@@ -549,6 +550,54 @@ def _transform_llm_output(response_text="", **kwargs):
     return result if isinstance(result, str) and result.strip() else response_text
 
 
+def _finalize_tool_result(draft_text, missing):
+    return json.dumps(
+        {
+            "action": "continue",
+            "text": draft_text,
+            "missing": list(missing),
+        },
+        allow_nan=False,
+        ensure_ascii=True,
+        separators=(",", ":"),
+    )
+
+
+def _agency_finalize(args=None, **kwargs):
+    arguments = args if isinstance(args, Mapping) else {}
+    draft_text = _bounded_text(arguments.get("draft_text"))
+    session_id, trace_id = _correlation(kwargs)
+    try:
+        result = _invoke(
+            "finalize",
+            {
+                "session_id": session_id,
+                "trace_id": trace_id,
+                "draft_text": draft_text,
+                "model": kwargs.get("model"),
+            },
+        )
+    except Exception:
+        return _finalize_tool_result("", ["agency_runtime"])
+    if isinstance(result, str):
+        return _bounded_text(result)
+    if not isinstance(result, Mapping):
+        return _finalize_tool_result("", ["agency_runtime"])
+    finalized_text = result.get("text")
+    if result.get("action") == "accept" and isinstance(finalized_text, str):
+        # The bridge already byte-caps and validates its JSON envelope.  Do not
+        # truncate an accepted response after its exact digest was committed.
+        if len(finalized_text) <= _MAX_FINALIZER_RESULT_CHARS:
+            return finalized_text
+        return _finalize_tool_result("", ["host_transport"])
+    return json.dumps(
+        _project(result),
+        allow_nan=False,
+        ensure_ascii=True,
+        separators=(",", ":"),
+    )
+
+
 def _on_session_end(**kwargs):
     session_id, trace_id = _correlation(kwargs)
     if not session_id or not trace_id:
@@ -586,6 +635,34 @@ def _agency_command(*args, **kwargs):
 
 
 def register(ctx):
+    ctx.register_tool(
+        name="agency_finalize",
+        toolset="agency-runtime",
+        schema={
+            "name": "agency_finalize",
+            "description": (
+                "Construct the exact Agency final response from current turn evidence. "
+                "Call exactly once with at most 3,000 draft characters immediately "
+                "before answering, then emit the tool result byte-for-byte."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "draft_text": {
+                        "type": "string",
+                        "description": (
+                            "The complete substantive response body, at most 3,000 "
+                            "characters, without a guessed Agency header."
+                        ),
+                    },
+                },
+                "required": ["draft_text"],
+            },
+        },
+        handler=_agency_finalize,
+        description="Construct one evidence-bound Agency final response.",
+        check_fn=lambda: True,
+    )
     ctx.register_hook("pre_llm_call", _pre_llm_call)
     ctx.register_hook("post_tool_call", _post_tool_call)
     ctx.register_hook("post_api_request", _post_api_request)

@@ -8,6 +8,7 @@ tags: [host-integrations, reliability, inference, timeouts, evidence]
 related:
   - docs/roadmap/issue-AR-266-dense-hybrid-workforce-recall.md
   - docs/roadmap/handoffs/issue-AR-266.md
+  - docs/roadmap/issue-AR-288-expose-hermes-native-finalizer-tool.md
   - docs/roadmap/reference-workforce-inference-stages.md
   - docs/worklog/README.md
 supersedes: []
@@ -62,7 +63,8 @@ process still owned.
   injected its synthetic maximum-iteration summary instruction without tool
   access. The stale draft header was correctly rejected. A changed native turn
   using Hermes's normal budget remains pending; the failed input will not be
-  retried unchanged.
+  retried unchanged. AR-288 owns the independently confirmed missing native
+  finalizer tool; it does not reopen this timeout repair.
 - Independent review returned GO with no Critical, High, or Medium findings.
 - Tracker creation is pending explicit authorization.
 

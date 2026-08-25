@@ -150,12 +150,29 @@ class FakeHookContext:
     def __init__(self) -> None:
         self.hooks: dict[str, Any] = {}
         self.commands: dict[str, Any] = {}
+        self.tools: dict[str, dict[str, Any]] = {}
 
     def register_hook(self, name: str, fn: Any) -> None:
         self.hooks[name] = fn
 
     def register_command(self, name: str, fn: Any, **_kwargs: Any) -> None:
         self.commands[name] = fn
+
+    def register_tool(
+        self,
+        *,
+        name: str,
+        toolset: str,
+        schema: dict[str, Any],
+        handler: Any,
+        **kwargs: Any,
+    ) -> None:
+        self.tools[name] = {
+            "toolset": toolset,
+            "schema": schema,
+            "handler": handler,
+            **kwargs,
+        }
 
 
 def test_explicit_host_home_rejects_path_escape(tmp_path: Path) -> None:
@@ -376,6 +393,8 @@ def test_generated_hermes_plugin_imports_and_registers_native_hooks(
         "on_session_end",
     } <= set(ctx.hooks)
     assert set(ctx.commands) == {"agency"}
+    assert set(ctx.tools) == {"agency_finalize"}
+    assert ctx.tools["agency_finalize"]["toolset"] == "agency-runtime"
     initial_control = Store(tmp_path / "hermes.db").get_host_control("hermes")
     assert "remains enabled" in ctx.commands["agency"]("off")
     assert "enabled" in ctx.commands["agency"]("status")
@@ -669,10 +688,13 @@ class Context:
     def __init__(self):
         self.hooks = {}
         self.commands = {}
+        self.tools = {}
     def register_hook(self, name, handler):
         self.hooks[name] = handler
     def register_command(self, name, handler, **_kwargs):
         self.commands[name] = handler
+    def register_tool(self, *, name, handler, **_kwargs):
+        self.tools[name] = handler
 
 spec = importlib.util.spec_from_file_location("isolated_hermes_plugin", sys.argv[1])
 if spec is None or spec.loader is None:
@@ -681,7 +703,11 @@ module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(module)
 ctx = Context()
 module.register(ctx)
-print(json.dumps({"hooks": sorted(ctx.hooks), "commands": sorted(ctx.commands)}))
+print(json.dumps({
+    "hooks": sorted(ctx.hooks),
+    "commands": sorted(ctx.commands),
+    "tools": sorted(ctx.tools),
+}))
 """
 
     completed = subprocess.run(
@@ -706,6 +732,7 @@ print(json.dumps({"hooks": sorted(ctx.hooks), "commands": sorted(ctx.commands)})
         "transform_llm_output",
     ]
     assert loaded["commands"] == ["agency"]
+    assert loaded["tools"] == ["agency_finalize"]
 
 
 def test_generated_hermes_bridge_uses_bounded_shell_free_absolute_argv(
@@ -1224,7 +1251,16 @@ def test_hermes_preflight_appends_exact_first_pass_header_snapshot(
     )
 
     assert "[AGENCY INITIAL HEADER SNAPSHOT v1]" in result["context"]
-    assert "call `agency.finalize` exactly once" in result["context"]
+    assert "invoke the local finalizer exactly once" in result["context"]
+    assert (
+        "If `agency_finalize` is visible, call it directly with only draft_text"
+        in result["context"]
+    )
+    assert (
+        "call Hermes `tool_call` once with name=`agency_finalize` and arguments "
+        "containing only draft_text"
+    ) in result["context"]
+    assert "no `tool_describe` round trip is needed" in result["context"]
     assert "Agency/Agencies loaded: agency-steward" in result["context"]
 
 

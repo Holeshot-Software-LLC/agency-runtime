@@ -28,6 +28,11 @@ MAX_DEPTH = 20
 MAX_NODES = 8_192
 MAX_TEXT_BYTES = 65_536
 MAX_PREFLIGHT_CONTEXT_BYTES = 48_000
+# Hermes 0.20.4 may spill any tool result above a context-scaled threshold
+# whose floor is 8,000 characters. Keep the exact accepted final response well
+# below that floor so the native host cannot replace it with a preview/path.
+MAX_FINALIZER_DRAFT_CHARS = 3_000
+MAX_FINALIZER_RESULT_CHARS = 4_096
 
 FINALIZATION_BLOCK_RESPONSE = (
     "Agency Runtime blocked an unverified draft because turn-scoped finalization "
@@ -82,9 +87,13 @@ def _header_snapshot_context(
     return (
         "[AGENCY INITIAL HEADER SNAPSHOT v1]\n"
         "Use these exact seven lines for substantive progress until Agency evidence "
-        "changes. Immediately before the natural final response, call `agency.finalize` "
-        f"exactly once with session_id `{session_id}`, trace_id `{trace_id}`, and the "
-        "response body as draft_text; emit its returned text byte-for-byte. That local "
+        "changes. Immediately before the natural final response, invoke the local "
+        "finalizer exactly once. If `agency_finalize` is visible, call it directly with "
+        "only draft_text, kept at or below 3,000 characters. Otherwise call Hermes "
+        "`tool_call` once with "
+        "name=`agency_finalize` and arguments containing only draft_text; no "
+        "`tool_describe` round trip is needed. Emit the tool result byte-for-byte. That "
+        "local "
         "tool constructs the first visible header from current Store evidence. Never "
         "guess changed values and never wait for a host correction.\n"
         f"{header}"
@@ -322,6 +331,93 @@ def _transform_output(adapter: HermesAdapter, payload: Mapping[str, Any]) -> str
     return response_text
 
 
+def _finalize(adapter: HermesAdapter, payload: Mapping[str, Any]) -> dict[str, Any] | str:
+    """Construct one exact terminal response from current Hermes turn evidence."""
+
+    draft_text = _bounded_text(payload.get("draft_text"))
+    session_id = _bounded_text(payload.get("session_id"), maximum_bytes=512)
+    trace_id = _bounded_text(payload.get("trace_id"), maximum_bytes=512)
+    model = _bounded_text(payload.get("model"), maximum_bytes=512)
+    if not adapter.runtime_enabled():
+        return draft_text
+    effective_trace = adapter.resolve_turn_trace(session_id, trace_id)
+    if not session_id or not effective_trace:
+        return {"action": "continue", "text": "", "missing": ["correlation"]}
+    if len(draft_text) > MAX_FINALIZER_DRAFT_CHARS:
+        adapter.store.record_finalization(
+            trace_id=effective_trace,
+            host="hermes",
+            action="validation_continue",
+            missing=["host_transport"],
+        )
+        return {"action": "continue", "text": "", "missing": ["host_transport"]}
+    from agency_runtime.core.header.finalize import (
+        _commit_terminal_finalization,
+        finalize_response,
+    )
+
+    result = dict(
+        finalize_response(
+            draft_text,
+            trace_metadata={
+                "session_id": session_id,
+                "trace_id": effective_trace,
+                "host": "hermes",
+            },
+            store=adapter.store,
+            model=model,
+            commit_terminal=False,
+        )
+    )
+    finalized_text = result.get("text")
+    if result.get("action") != "accept" or not isinstance(finalized_text, str):
+        missing = result.get("missing")
+        return {
+            "action": "continue",
+            "text": "",
+            "missing": list(missing) if isinstance(missing, list) else ["finalization"],
+        }
+    if len(finalized_text) > MAX_FINALIZER_RESULT_CHARS:
+        adapter.store.record_finalization(
+            trace_id=effective_trace,
+            host="hermes",
+            action="validation_continue",
+            missing=["host_transport"],
+        )
+        return {"action": "continue", "text": "", "missing": ["host_transport"]}
+
+    decision = adapter.evaluate_completion_policy(
+        finalized_text,
+        session_id=session_id,
+        trace_id=effective_trace,
+        model=model,
+    )
+    revision = decision.get("evidence_revision")
+    if (
+        decision.get("action") != "accept"
+        or isinstance(revision, bool)
+        or not isinstance(revision, int)
+        or revision <= 0
+    ):
+        missing = decision.get("missing")
+        return {
+            "action": "continue",
+            "text": "",
+            "missing": list(missing) if isinstance(missing, list) else ["evidence_verification"],
+        }
+    commit_failure = _commit_terminal_finalization(
+        adapter.store,
+        session_id=session_id,
+        trace_id=effective_trace,
+        host="hermes",
+        response_text=finalized_text,
+        expected_evidence_revision=revision,
+    )
+    if commit_failure:
+        return {"action": "continue", "text": "", "missing": [commit_failure]}
+    return result
+
+
 def _close_session(adapter: HermesAdapter, payload: Mapping[str, Any]) -> None:
     session_id = _bounded_text(payload.get("session_id"), maximum_bytes=512)
     trace_id = _bounded_text(payload.get("trace_id"), maximum_bytes=512)
@@ -342,6 +438,8 @@ def _runtime_disabled_result(payload: Mapping[str, Any], action: str) -> Any:
 
     if action == "transform_llm_output":
         return _bounded_text(payload.get("response_text"))
+    if action == "finalize":
+        return _bounded_text(payload.get("draft_text"))
     if action in {
         "pre_llm_call",
         "post_tool_call",
@@ -506,6 +604,8 @@ def handle(
         return None
     if action == "pre_verify":
         return _pre_verify(adapter, payload)
+    if action == "finalize":
+        return _finalize(adapter, payload)
     if action == "transform_llm_output":
         return _transform_output(adapter, payload)
     if action == "on_session_end":
@@ -526,9 +626,9 @@ def _encode_result(result: Any) -> bytes:
     encoded = json.dumps(
         {"ok": True, "result": result},
         allow_nan=False,
-        ensure_ascii=True,
+        ensure_ascii=False,
         separators=(",", ":"),
-    ).encode("ascii")
+    ).encode("utf-8")
     if len(encoded) > MAX_OUTPUT_BYTES:
         raise ValueError("Hermes bridge output exceeds the byte limit")
     return encoded

@@ -9,6 +9,7 @@ related:
   - docs/roadmap/issue-AR-266-dense-hybrid-workforce-recall.md
   - docs/roadmap/issue-AR-286-configure-bounded-embedding-dimensions.md
   - docs/roadmap/issue-AR-287-bind-host-hook-timeouts-to-inference-budgets.md
+  - docs/roadmap/issue-AR-288-expose-hermes-native-finalizer-tool.md
   - docs/decisions/0164-use-dense-embeddings-only-for-workforce-recall.md
   - docs/roadmap/issue-AR-265-contextual-turn-classification.md
   - docs/worklog/README.md
@@ -30,7 +31,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/320
 - Worktree `/tmp/agency-runtime-ar266-retrieval.nVONyD` is on branch
   `codex/ar266-local-retrieval-smoke`, based on exact fetched `origin/main`
   `4d2f88895f8fb8e3234ff4d8dbef47108c830476`.
-- Current clean implementation/ledger head is `dfcb005c`; substantive commits
+- The latest prior recovery pair ends at `dfcb005c`; substantive commits
   `382fb4d9`, `2bea0c76`, and `3cb2da6c` integrate the current host runtime, add
   bounded embedding dimensions, and bind host hook timeouts to the complete
   inference budget. Ledger commits are `04cef50f`, `9adee235`, `f9860466`, and
@@ -66,9 +67,12 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/320
   semantically unchanged. Hermes remains on `0.20.4`; its native config hash
   stayed byte-identical through the Agency refresh.
 - Failed evidence is preserved: OpenClaw's implicit missing-`main` invocation
-  was rejected before allocation; Hermes honored SIGTERM but its process
-  returned exit 1 during stop; an earlier isolated test launcher correctly
-  refused before allocation when its explicit embedding-stub URL was absent.
+  was rejected before allocation, and Hermes honored SIGTERM but its process
+  returned exit 1 during stop. A prior capsule revision also asserted an
+  embedding-stub launcher refusal, but retained no command, variable name, test,
+  or artifact; exhaustive repository/evidence search found no such dependency,
+  and the recorded smokes used live Ollama. That unsupported assertion is not
+  acceptance evidence or a production prerequisite.
 - Hermes session `20260825_092554_bd5aef` failed before provider attempt because
   the fresh CLI shell lacked the credential indirection that is populated in
   the gateway. A distinct securely bound session, `20260825_092951_6ab6b9`,
@@ -87,6 +91,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/320
   receipts. Its operator-only `--max-turns 8` cap then injected a synthetic
   no-tool summary before `agency.finalize`; the stale header was correctly
   rejected and that distinct failure is preserved.
+- AR-288 exposes Hermes-native `agency_finalize` without native config changes;
+  three red-before regressions, 109 focused tests, the 856-test spine, and local
+  gates pass. System Python lacks `pytest`, so the 160-snippet substitute passed.
 
 ## current-state
 
@@ -96,13 +103,15 @@ OpenClaw/Hermes host defaults. Hermes now runs the AR-287 repair from this
 checkout; OpenClaw remains active and untouched as break-glass. Forced
 four-host retrieval and OpenClaw native parent integration pass. Hermes has
 current provider and timeout evidence but still needs one normally budgeted,
-Store-backed response that finalizes successfully.
+Store-backed response that finalizes successfully. AR-288 now owns the concrete
+missing native `agency_finalize` tool exposed by that live checkpoint; its
+repository repair is ready for an Agency-only reinstall.
 
 ## unresolved-gates
 
-- Complete one changed native Hermes retrieval turn with its normal iteration
-  budget and exact Store correlation; do not retry any of the three failed
-  inputs unchanged.
+- Install AR-288's self-contained Hermes native finalizer tool, then complete
+  one changed native retrieval turn with exact Store correlation; do not retry
+  any of the three failed inputs unchanged.
 - Run the remaining proportionate gates and record final before/after Store and
   host evidence. The complete warning-strict corpus and hosted workflow remain
   intentionally undispatched.
@@ -123,9 +132,8 @@ remains active in Store and must not be promoted into outbound-delivery proof.
 
 ## next-bounded-work-package
 
-1. Checkpoint the installed timeout and retained capped-turn evidence.
-2. Run one genuinely changed Hermes request at the native iteration budget and
-   correlate its response, header, routing, recall, and finalization evidence.
+1. Commit the validated AR-288 repository repair and its ledger row.
+2. Reinstall Agency alone; run and correlate one genuinely changed Hermes request.
 3. Run proportionate gates, record final evidence, and create the final local
    recovery/ledger pair before moving to any other host.
 
@@ -164,8 +172,8 @@ git diff --check
   queries, or vectors.
 - Do not treat an absent embedding route as permission to use the default
   inference profile.
-- The preserved missing embedding-stub URL belongs only to an isolated test
-  launcher; never export or require that fixture URL for a live host.
+- Do not invent or require an embedding-stub launcher variable; no retained
+  evidence identifies one, and live endpoints belong to Agency profiles.
 - Preserve malformed/timed-out provider evidence as unavailable, not as an
   upstream loss or proof that baseline recall failed.
 - Do not raise embedding safety bounds or slice/pad provider vectors; rejected,

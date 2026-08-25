@@ -380,9 +380,18 @@ def test_generated_plugin_reports_install_and_import_failures(
         smoke._smoke_generated_plugin("hermes", tmp_path)
 
 
+def test_generated_hermes_smoke_covers_native_finalizer_tool(
+    tmp_path: Path,
+    private_installer_launcher,
+) -> None:
+    result = smoke._smoke_generated_plugin("hermes", tmp_path)
+
+    assert result["tools"] == ["agency_finalize"]
+
+
 @pytest.mark.parametrize(
     "failure",
-    ["hooks", "commands", "description", "status", "mutation"],
+    ["hooks", "tools", "commands", "description", "status", "mutation"],
 )
 def test_generated_hermes_plugin_validates_runtime_contract(
     tmp_path: Path,
@@ -400,6 +409,21 @@ def test_generated_hermes_plugin_validates_runtime_contract(
     module = SimpleNamespace()
 
     def register(ctx: Any) -> None:
+        if failure != "tools":
+            ctx.register_tool(
+                name="agency_finalize",
+                toolset="agency-runtime",
+                schema={
+                    "name": "agency_finalize",
+                    "description": "Construct one evidence-bound Agency final response.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {"draft_text": {"type": "string"}},
+                        "required": ["draft_text"],
+                    },
+                },
+                handler=lambda _args, **_kwargs: "finalized",
+            )
         if failure != "hooks":
             for name in (
                 "pre_llm_call",
@@ -440,6 +464,7 @@ def test_generated_hermes_plugin_validates_runtime_contract(
     monkeypatch.setattr(smoke.importlib.util, "module_from_spec", lambda _spec: module)
     message = {
         "hooks": "missing hooks",
+        "tools": "native finalizer tool",
         "commands": "control command",
         "description": "read-only authority",
         "status": "invalid response",

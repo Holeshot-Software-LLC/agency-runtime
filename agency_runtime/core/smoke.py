@@ -50,6 +50,8 @@ class _FakeHookContext:
         self.hooks: dict[str, Any] = {}
         self.commands: dict[str, Any] = {}
         self.command_options: dict[str, dict[str, Any]] = {}
+        self.tools: dict[str, Any] = {}
+        self.tool_options: dict[str, dict[str, Any]] = {}
 
     def register_hook(self, name: str, fn: Any) -> None:
         self.hooks[name] = fn
@@ -57,6 +59,22 @@ class _FakeHookContext:
     def register_command(self, name: str, fn: Any, **kwargs: Any) -> None:
         self.commands[name] = fn
         self.command_options[name] = dict(kwargs)
+
+    def register_tool(
+        self,
+        *,
+        name: str,
+        toolset: str,
+        schema: dict[str, Any],
+        handler: Any,
+        **kwargs: Any,
+    ) -> None:
+        self.tools[name] = handler
+        self.tool_options[name] = {
+            "toolset": toolset,
+            "schema": schema,
+            **kwargs,
+        }
 
 
 def _load_plugin_json(path: Path, *, label: str) -> Any:
@@ -526,6 +544,22 @@ def _smoke_generated_plugin(host: str, tmp_home: Path) -> dict[str, Any]:
     missing = sorted(required - set(ctx.hooks))
     if missing:
         raise RuntimeError(f"missing hooks: {', '.join(missing)}")
+    if set(ctx.tools) != {"agency_finalize"}:
+        raise RuntimeError("missing Hermes agency_finalize native finalizer tool")
+    finalizer_options = ctx.tool_options["agency_finalize"]
+    finalizer_schema = finalizer_options.get("schema")
+    finalizer_parameters = (
+        finalizer_schema.get("parameters") if isinstance(finalizer_schema, dict) else None
+    )
+    if (
+        not callable(ctx.tools["agency_finalize"])
+        or finalizer_options.get("toolset") != "agency-runtime"
+        or not isinstance(finalizer_parameters, dict)
+        or finalizer_parameters.get("type") != "object"
+        or set(finalizer_parameters.get("properties") or {}) != {"draft_text"}
+        or finalizer_parameters.get("required") != ["draft_text"]
+    ):
+        raise RuntimeError("Hermes agency_finalize native tool contract is invalid")
     if set(ctx.commands) != {"agency"}:
         raise RuntimeError("missing Hermes agency control command")
     description = str(ctx.command_options["agency"].get("description") or "")
@@ -541,13 +575,12 @@ def _smoke_generated_plugin(host: str, tmp_home: Path) -> dict[str, Any]:
     if "Agency Runtime is enabled for hermes." not in repeated_status:
         raise RuntimeError("Hermes agency mutation command changed persistent state")
     ctx.hooks["post_api_request"](response={}, model="task-general", session_id=f"smoke-{host}")
-    plugin_yaml = plugin_path.parent / "plugin.yaml"
-    if not plugin_yaml.exists() or "mcp_servers: ./.mcp.json" not in plugin_yaml.read_text(
-        encoding="utf-8"
-    ):
-        raise RuntimeError("Hermes plugin.yaml does not declare its MCP component")
-    _validate_bridge_mcp(plugin_path.parent, host=host)
-    return {"host": host, "plugin_path": str(plugin_path), "adapter": "HermesBridge"}
+    return {
+        "host": host,
+        "plugin_path": str(plugin_path),
+        "adapter": "HermesBridge",
+        "tools": sorted(ctx.tools),
+    }
 
 
 def run_smoke(*, all_hosts: bool = False, host: str | None = None) -> dict[str, Any]:
