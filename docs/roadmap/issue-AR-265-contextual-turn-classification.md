@@ -67,8 +67,23 @@ delegation, or mutation authority.
 - GitHub tracker [#317](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/317)
   is open with the required `epic:routing` label.
 - Pull request [#318](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/318)
-  is open from the isolated AR-265 branch; its final hosted checks and merge
-  state remain evidence gates.
+  passed its automatic checks and merged without admin override as
+  `90b852bdaa2ee1b9d02f61dff9f561a5c165bac4` on 2026-08-24.
+- A Codex-only exact-main install published adapter
+  `0.1.0+codex.0b797ab9d097`, preserved the other hosts, and passed the
+  deterministic Codex smoke contract `4/4` with all eight hooks verified.
+  Activation still correctly requires a fresh host process.
+- A fresh Codex CLI process then proved the two-turn contextual route. The
+  exact second prompt `what's next?` persisted classifier v5
+  `turn_kind=conversation`, the decision tuple `(true, true, false)`, a guarded
+  same-session context source, exactly one read-only analysis unit, specialist
+  loads for `code-reviewer` and `software-architect`, zero delegations, and an
+  accepted completed finalization.
+- The attempted Codex Desktop task is negative lifecycle evidence, not an
+  AR-265 classification result: that already-running process reported the old
+  projection, its first turn failed preflight, and its second turn persisted
+  `turn_kind=new_intent`. A full Desktop restart and completely new task remain
+  required before claiming Desktop-installed proof.
 
 ## Approach
 
@@ -188,7 +203,13 @@ non-delegated, and read-only.
 - [x] Same-repository tracker
       [#317](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/317)
       has the exact `[AR-265]` title and `epic:routing` label.
-- [ ] Authorized pull request
+- [x] Authorized pull request
       [#318](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/318)
       passes its final hosted checks and is merged without disturbing
       concurrent OpenClaw work.
+- [x] Exact merged main is installed for Codex only, deterministic smoke passes,
+      and a fresh Codex CLI process plus correlated Store evidence proves the
+      contextual two-turn route without delegation or mutation authority.
+- [ ] After a full Codex Desktop restart, a completely new task proves the same
+      two-turn route on the Desktop host. The stale-process attempt is retained
+      as negative lifecycle evidence and is not promoted to a pass.
