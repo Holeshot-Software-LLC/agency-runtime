@@ -15,7 +15,7 @@ superseded_by: null
 type: handoff
 issue_id: AR-266
 branch: codex/ar266-dense-hybrid-workforce-recall
-evidence_commit: fc0770392b5a2cc38c589d2411698d0a0ac602ae
+evidence_commit: 51c7a8ec952e62528f60c7e35702223d036a3915
 minimum_ledger_commit: fc0770392b5a2cc38c589d2411698d0a0ac602ae
 hard_checkpoint_percent: 50
 tracker_url: null
@@ -41,7 +41,7 @@ tracker_url: null
 
 ## completed-evidence
 
-- The implementation adds explicit embedding/reranker route resolution,
+- Implementation commit `51c7a8ec` adds explicit embedding/reranker route resolution,
   positive-only projections, exact vector validation, lexical+dense RRF, a
   model-bound two-entry cache, and typed-only failure evidence.
 - Additive integration recovers a specialist beyond the 24 typed cards and
@@ -59,11 +59,11 @@ tracker_url: null
 
 ## current-state
 
-The local candidate is implementation-complete and verified in the isolated
-worktree. It supports explicitly configured embedding and recall-reranker
-models, safe current-turn subject queries, shadow/additive modes, complete
-roster search, and bounded typed fallback. The implementation and its exact
-ledger row are the next clean checkpoint; additive production value remains
+Implementation commit `51c7a8ec` is verified in the isolated worktree. It
+supports explicitly configured embedding and recall-reranker models, safe
+current-turn subject queries, shadow/additive modes, complete roster search,
+and bounded typed fallback. Its exact ledger row and this handoff checkpoint
+are the remaining local bookkeeping; additive production value remains
 unproven until a configured shadow evaluation uses a real provider.
 
 ## unresolved-gates
@@ -87,8 +87,8 @@ authorization boundaries.
 
 ## next-bounded-work-package
 
-1. Create the local implementation commit, then record it and the final handoff
-   checkpoint in exact worklog/roadmap ledger rows.
+1. Record implementation commit `51c7a8ec` and this final handoff checkpoint in
+   exact worklog/roadmap ledger rows.
 2. After explicit authorization, configure a learned embedding model and a
    bounded text reranker, then run the predeclared shadow matrix without
    enabling additive production behavior.

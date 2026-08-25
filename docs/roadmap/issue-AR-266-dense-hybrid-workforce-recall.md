@@ -106,6 +106,7 @@ eligibility constraints.
 
 ## Verification evidence
 
+- Implementation commit `51c7a8ec` contains the bounded hybrid-recall slice.
 - 144 focused hybrid-recall, inference-profile, and workforce-inference tests
   pass, including recovery beyond the typed 24, invalid-reranker fallback,
   context-specialized queries, exact-model cache failure, and shadow budget
