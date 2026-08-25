@@ -1647,25 +1647,6 @@ known_limit: fresh status, Store-backed skill, substantive LiteLLM routing, and 
 protected_hosts: Codex OAuth/config/canary, Claude, and ZCode untouched
 ~~~
 
-## 2026-08-24 - OpenClaw operational child delivery with missed Agency end receipt
-
-The `headerContextHash` correction/ledger `10ba4c84` / `8a2bf9b7` was
-installed through Agency only while OpenClaw was natively stopped. Evidence is
-owner-private under
-`/home/holeshot/.agency-runtime/evidence/ar281-openclaw-10ba4c84-hSltm1Sn`.
-No native host model or fallback configuration changed, Hermes remained active
-and untouched, and protected hosts were not inspected or modified.
-
-The fresh changed draw delivered successfully to Telegram. The exact response
-header was:
-
-~~~text
-Agency/Agencies loaded: agency-steward, code-reviewer
-Agency/Agencies delegated: none - executed worker has no validated Agency specialist
-Skills loaded: none
-Actual Model selected: workforce inference: [router] task-agency-router -> linux-task-agency-router/task-agency-router (wrapper)
-Recruited via: inference
-~~~
 
 The body was the child's one-sentence finding that the generated plugin forwards
 bounded `headerContextHash` into the Python bridge. OpenClaw's native task ledger
@@ -3109,4 +3090,85 @@ known_limit: status proves control activation and skill delivery, not Agency wor
 rule4_proven: false
 matrix_cell_moved: false
 protected_hosts: Codex OAuth/config/canary, Claude, and ZCode untouched
+~~~
+
+### Hermes substantive parent acceptance
+
+~~~yaml
+substantive_run_id: 78ff9331-b931-41f5-b118-8c38e906d89b
+substantive_trace_id: 20260825_065425_f0b77171:20260825_065425_f0b77171:ada0be68
+substantive_routing_decision_id: 0697fd16-9e16-4163-a318-4c47f1537308
+substantive_route_status: accepted
+execution_host: hermes; selected automatically
+resident_binding_id: rmb-c5df89aa144e55adba09b6f1b684cf0b
+resident_binding_scope: request_scoped / request; zero persistent row expected
+substantive_specialist_id: 4fec5063-9f8a-4ade-ab60-709967f6edb1
+substantive_specialist_slug: ai-evaluation-engineer
+substantive_skill_rows:
+  - 56e4c911-d92d-4035-ac9b-fb27aade6782 / hermes-agent
+  - da0e65bc-3dad-4e61-ad47-fc76e14b1bd2 / pr-review-workflow
+  - abd0f980-b008-4ca0-84c8-8c5fe4578b79 / agent-runtime-operations
+  - b1e11c73-3ac0-483f-809e-72b3e1540af3 / agent-runtime-operations
+  - 177981eb-baa9-43cb-9f4b-f50161800718 / pr-review-workflow
+  - 98338238-02ae-406d-b913-c09d85f3eabd / hermes-agent
+substantive_header_exact: |
+  Agency/Agencies loaded: agency-steward, ai-evaluation-engineer
+  Agency/Agencies delegated: none
+  Skills loaded: hermes-agent, pr-review-workflow, agent-runtime-operations
+  Actual Model selected: observed execution receipt: [general] task-general -> task-general (host)
+  Recruited via: inference
+agency_inference_profile: linux-task-agency-router
+provider_type: litellm
+requested_alias: task-agency-router
+model_group: task-agency-router
+provider_attempt_status: 3 applied; all same Hermes harness profile/provider/alias
+agency_wrapper_receipt_ids: [80c6056c-9985-4d0e-b732-984aae2002f6, dbeb977e-7d41-406f-a944-83c64a090fb2, 9608f4fd-4a05-4baa-9954-fcb41b8f0147]
+fallback_considered: false
+fallback_applied: false
+fallback_count: 0 cross-provider
+actual_model_and_receipt_source: unavailable; 3 wrapper alias echoes, 31 native task-general host receipts, and zero LiteLLM callback rows
+substantive_finalization_id: 83689dc3-801c-4dd5-a091-7b0055d1921c
+substantive_response_sha256: 14755b596990c7ebf2edac4a885a22ffd7860d7bf40ee722b8a1272b79f6add8
+substantive_transcript_artifact: /home/holeshot/.agency-runtime/evidence/ar119-hermes-substantive-EcLP9AnD/native-substantive-redacted.json
+substantive_transcript_artifact_sha256: 84b2c32788cff46bc3c47febe35c55f0c953cd9e77f55558bfd9bb6a08365314
+substantive_transcript_rows: 127
+substantive_worker_count: 0
+substantive_delegation_count: 0
+telegram_delivery: exact transformed response ready; operator channel; 640.6 seconds; 32 native API calls
+timeout_or_failure_receipt: none for user turn; completed normally
+post_response_failure_run: 125ba6c2-20c2-4c83-8d64-f734fb5f1bed
+post_response_failure_trace: 20260825_065425_f0b77171:0f0f4e9c-ea7e-4506-95f5-18f2aff7befc:a7c6d3e0
+post_response_failure_receipt: 9bc23ae7-e9c6-4822-999d-a0216992600f
+post_response_failure: blank non-user turn; 2 contract-invalid planner responses on same exact profile/provider/alias; zero route/model-receipt/finalization/specialist/skill/worker/delegation; user turn unaffected
+post_substantive_store_backup: /home/holeshot/.agency-runtime/evidence/ar119-hermes-substantive-EcLP9AnD/agency-after-substantive.db
+post_substantive_store_backup_sha256: bce1a2dfc3ac01c9218dec55df1242f71065b26305e0e4cd0953bd9c8c13c40c
+post_substantive_store_integrity: ok
+post_substantive_store_schema: 48
+contractor_count: 15; unchanged
+native_config_invariant: config/environment/service/Agency config/launcher hashes unchanged; service active and Result success
+hermes_parent_acceptance: pass
+remaining_hermes_checks: one operator-requested operational native child plus final backup and records
+rule4_proven: false
+matrix_cell_moved: false
+protected_hosts: Codex OAuth/config/canary, Claude, and ZCode untouched
+~~~
+
+## 2026-08-24 - OpenClaw operational child delivery with missed Agency end receipt
+
+The `headerContextHash` correction/ledger `10ba4c84` / `8a2bf9b7` was
+installed through Agency only while OpenClaw was natively stopped. Evidence is
+owner-private under
+`/home/holeshot/.agency-runtime/evidence/ar281-openclaw-10ba4c84-hSltm1Sn`.
+No native host model or fallback configuration changed, Hermes remained active
+and untouched, and protected hosts were not inspected or modified.
+
+The fresh changed draw delivered successfully to Telegram. The exact response
+header was:
+
+~~~text
+Agency/Agencies loaded: agency-steward, code-reviewer
+Agency/Agencies delegated: none - executed worker has no validated Agency specialist
+Skills loaded: none
+Actual Model selected: workforce inference: [router] task-agency-router -> linux-task-agency-router/task-agency-router (wrapper)
+Recruited via: inference
 ~~~

@@ -39,8 +39,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-264
 branch: codex/ar278-openclaw-one-pass
-evidence_commit: 9b51aa18c7437422e9a91f55eea86fbb5f52b832
-minimum_ledger_commit: 7a012d4772362ed7ba5b3c305cf13501f7f8d591
+evidence_commit: f2c472b5355638ecf720167e60e612b8f772146a
+minimum_ledger_commit: a04a1d2fc09257188211c6612cc315d2cabc54c4
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 ---
@@ -49,7 +49,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 
 ## checkpoint
 
-- Branch `codex/ar278-openclaw-one-pass` is clean at ledger `7a012d47` over
+- Last clean checkpoint is status ledger `a04a1d2f` over
   current `origin/main` `fc077039`. All 15 packaged contractors remain present.
 - Historical OpenClaw/Hermes failures remain in the canonical loop and packet;
   this capsule projects only current recovery state.
@@ -96,6 +96,24 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 - Redacted transcript artifact `native-transcript-redacted-index.json` has
   SHA-256 `22e13b75...`; response SHA is `243e806c...`. Post-status Store backup
   `d1ab6cfd...` is integrity `ok`, schema 48; contractors remain 15.
+- Substantive run `78ff9331...`, trace `...:ada0be68`, accepted route
+  `0697fd16...`, specialist `4fec5063...` (`ai-evaluation-engineer`), and
+  finalization `83689dc3...` correlate the native Telegram stream-edit and
+  response-ready read-only review.
+  Six Store skill rows reduce to `hermes-agent`, `pr-review-workflow`, and
+  `agent-runtime-operations`; worker/delegation count is zero.
+- Three applied stages prove automatic Hermes selection of
+  `linux-task-agency-router` / `litellm` / exact alias/model-group
+  `task-agency-router`, with false fallback flags. Wrapper/host receipts do not
+  supply an authoritative actual upstream model; callback rows are zero.
+- Response SHA `14755b59...`, redacted 127-row turn artifact `84b2c327...`, and
+  post-substantive Store backup `bce1a2df...` (`ok`, schema 48, contractors 15)
+  are retained. The 640.6-second turn completed and delivered without timeout;
+  all native and Agency configuration/launcher hashes remain unchanged.
+- Internal post-response run `125ba6c2...` / receipt `9bc23ae7...` preserves two
+  same-profile contract-invalid planner rejections. Its blank non-user turn
+  created no route, receipt, finalization, specialist, skill, worker, or
+  delegation and did not alter the finalized response-ready user turn.
 
 ## completed-evidence
 
@@ -104,28 +122,27 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 - Native `task-general` and Agency `task-agency-router` remain separate; no actual answering model is invented from wrapper receipts.
 - The latest draw proves OpenClaw native-child inference, execution, operational
   Telegram delivery, and post-send Agency terminalization, but not Rule 4.
-- Current Hermes install, activation, exact status, status-time `hermes-agent`
-  recording, finalization, Store correlation, header, and Telegram delivery pass.
+- Current Hermes install, activation, exact status, status-time skill recording,
+  substantive inference, finalization, Store correlation, exact headers, zero
+  fallback, and native Telegram stream-edit/response-ready evidence pass.
 
 ## exact-blocker
 
-No scoped OpenClaw blocker remains. Current Hermes still needs a genuinely new
-non-delegating inference turn and one operator-requested operational native
-child. Rule 4 remains separately unproven, AR-284 is non-blocking, and tracker
-writes remain unauthorized.
+No scoped OpenClaw or Hermes parent blocker remains. Hermes still needs one
+operator-requested operational native child plus final backup/records. Rule 4
+remains separately unproven, AR-284 is non-blocking, and tracker writes remain
+unauthorized.
 
 ## same-task-continuity
 
-Continue from the clean Hermes install/status checkpoint without retesting
+Continue from the clean Hermes parent-evidence checkpoint without retesting
 unchanged inputs.
 
 ## next-bounded-work-package
 
-1. Run the exact Hermes configuration-drift review without delegation and prove
-   automatic `linux-task-agency-router` / `litellm` / `task-agency-router`.
-2. Use a fresh Hermes session for exactly one harmless native child, retaining
+1. Use a fresh Hermes session for exactly one harmless native child, retaining
    operational lifecycle and delivery evidence without making a Rule 4 claim.
-3. Take the final Store backup, close the packet/capsules, and leave protected
+2. Take the final Store backup, close the packet/capsules, and leave protected
    hosts untouched.
 
 ## verification

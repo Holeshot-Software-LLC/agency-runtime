@@ -4748,3 +4748,58 @@ runtime. A genuinely new non-delegating substantive request must still prove
 the Hermes harness profile and exact Agency alias; the operator-requested native
 child remains a separate operational check. ADR-0156 Rule 4 remains unproven and
 no matrix cell moves.
+
+## 2026-08-25 - Hermes substantive router acceptance passes
+
+The exact non-mutating, non-delegating configuration-drift review completed as
+run `78ff9331-b931-41f5-b118-8c38e906d89b`, trace
+`20260825_065425_f0b77171:20260825_065425_f0b77171:ada0be68`, accepted routing
+decision `0697fd16-9e16-4163-a318-4c47f1537308`, specialist
+`4fec5063-9f8a-4ade-ab60-709967f6edb1` (`ai-evaluation-engineer`), and
+finalization `83689dc3-801c-4dd5-a091-7b0055d1921c`. Six skill rows record
+three unique header names: `hermes-agent`, `pr-review-workflow`, and
+`agent-runtime-operations`. No worker or delegation exists.
+
+All three workforce inference stages automatically selected the Hermes harness
+default `linux-task-agency-router`, provider type `litellm`, and exact requested
+alias/model-group `task-agency-router`. Both routing fallback flags are false.
+Three wrapper receipts echo the requested alias and 31 native host receipts name
+`task-general`; neither is provider-supplied upstream model telemetry. Zero
+LiteLLM callback rows exist, so the actual answering model remains unavailable.
+
+Hermes's Telegram adapter successfully edited its streamed message and marked
+the exact Store-backed response ready with header `agency-steward,
+ai-evaluation-engineer / none / hermes-agent, pr-review-workflow,
+agent-runtime-operations / observed execution receipt task-general ->
+task-general (host) / inference` plus the read-only review. Agency finalization
+and the native response share SHA-256
+`14755b596990c7ebf2edac4a885a22ffd7860d7bf40ee722b8a1272b79f6add8`.
+The redacted 127-row turn artifact
+`/home/holeshot/.agency-runtime/evidence/ar119-hermes-substantive-EcLP9AnD/native-substantive-redacted.json`
+has SHA-256 `84b2c32788cff46bc3c47febe35c55f0c953cd9e77f55558bfd9bb6a08365314`.
+The long host turn completed after 640.6 seconds and 32 native API calls; it is
+not a timeout.
+
+Post-turn Store backup
+`/home/holeshot/.agency-runtime/evidence/ar119-hermes-substantive-EcLP9AnD/agency-after-substantive.db`
+has SHA-256 `bce1a2dfc3ac01c9218dec55df1242f71065b26305e0e4cd0953bd9c8c13c40c`,
+integrity `ok`, schema 48, and 15 contractors. Hermes config `95b87b7f...`,
+environment `792fd43a...`, service `404d3227...`, Agency config `43367ec9...`,
+launcher `3544cff1...`, bundle `05bada29...`, runtime `ecc0b1cb...`, and active
+service result remain unchanged.
+
+Hermes's automatic post-response activity again produced a separate blank
+non-user preflight failure: run `125ba6c2-20c2-4c83-8d64-f734fb5f1bed`, trace
+`20260825_065425_f0b77171:0f0f4e9c-ea7e-4506-95f5-18f2aff7befc:a7c6d3e0`,
+receipt `9bc23ae7-e9c6-4822-999d-a0216992600f`. Its two planner responses were
+contract-invalid on the same exact Agency profile/provider/alias, and it
+created no route, model receipt, finalization, specialist, skill, worker, or
+delegation. It did not block or alter the finalized response-ready user turn and remains
+the AR-280 internal-lifecycle limitation.
+
+Current Hermes parent acceptance is green for install, activation, fresh
+status, status-time skill recording, substantive inference, exact
+profile/provider/alias selection, finalization, Store correlation, header and
+native Telegram stream-edit/response-ready evidence, zero fallback, and native-config preservation. The
+operator-requested operational native-child check remains; it will not prove
+ADR-0156 Rule 4 or move a matrix cell.
