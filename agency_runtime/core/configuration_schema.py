@@ -6,7 +6,7 @@ import copy
 import ipaddress
 import math
 import re
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Mapping, Sequence
 from typing import Any
 from urllib.parse import urlsplit
 
@@ -688,6 +688,30 @@ def _validate_adapters(value: Any) -> dict[str, Any]:
     return {name: _validate_adapter_entry(item, name) for name, item in section.items()}
 
 
+def _validate_native_reranker_profile(
+    *,
+    path: str,
+    adapter: str,
+    capability_class: str,
+    thinking_level: str,
+) -> None:
+    if adapter == "jina" and capability_class != "rerank":
+        raise _error(
+            f"{path}.capability_class",
+            "Jina profiles must declare capability_class 'rerank'",
+        )
+    if capability_class == "rerank" and adapter != "jina":
+        raise _error(
+            f"{path}.adapter",
+            "native rerank capability currently requires adapter 'jina'",
+        )
+    if adapter == "jina" and thinking_level:
+        raise _error(
+            f"{path}.thinking_level",
+            "native reranker profiles do not accept thinking_level",
+        )
+
+
 def _validate_inference_profile(name: str, value: Any) -> dict[str, Any]:
     path = f"inference.profiles.{name}"
     section = _mapping(value, path)
@@ -749,6 +773,12 @@ def _validate_inference_profile(name: str, value: Any) -> dict[str, Any]:
             f"{path}.capability_class",
             "must be one of " + ", ".join(sorted(INFERENCE_CAPABILITY_CLASSES)),
         )
+    _validate_native_reranker_profile(
+        path=path,
+        adapter=adapter,
+        capability_class=capability_class,
+        thinking_level=thinking_level,
+    )
     dimensions = _integer(
         section.get("dimensions", 0),
         f"{path}.dimensions",
@@ -830,6 +860,57 @@ def _validate_inference_profile(name: str, value: Any) -> dict[str, Any]:
     }
 
 
+def _validate_profile_default(
+    profile_name: str,
+    profiles: Mapping[str, Mapping[str, Any]],
+    *,
+    path: str,
+) -> None:
+    if not profile_name:
+        return
+    if profile_name not in profiles:
+        raise _error(
+            path,
+            f"must reference a profile in inference.profiles (got {profile_name!r})",
+        )
+    if profiles[profile_name]["capability_class"] == "rerank":
+        raise _error(
+            path,
+            "native rerank profiles must be selected by an explicit reranker route",
+        )
+
+
+def _validate_inference_capability_routes(
+    profiles: Mapping[str, Mapping[str, Any]],
+    route_tables: Sequence[tuple[str, Mapping[str, str]]],
+) -> None:
+    capability_routes = {
+        "workforce.recall.embedding": frozenset({"embeddings"}),
+        "workforce.recall.reranker": frozenset({"rerank", "text"}),
+    }
+    for route_path, route_table in route_tables:
+        for route_key, required_capabilities in capability_routes.items():
+            profile_name = route_table.get(route_key)
+            if (
+                profile_name
+                and profiles[profile_name]["capability_class"] not in required_capabilities
+            ):
+                expected = " or ".join(repr(item) for item in sorted(required_capabilities))
+                raise _error(
+                    f"{route_path}.{route_key}",
+                    f"profile {profile_name!r} must declare capability_class {expected}",
+                )
+        for route_key, profile_name in route_table.items():
+            if (
+                profiles[profile_name]["capability_class"] == "rerank"
+                and route_key != "workforce.recall.reranker"
+            ):
+                raise _error(
+                    f"{route_path}.{route_key}",
+                    "native rerank profiles may route only workforce.recall.reranker",
+                )
+
+
 def _validate_inference_routes(value: Any, path: str) -> dict[str, str]:
     routes_section = _mapping(value, path)
     routes: dict[str, str] = {}
@@ -868,11 +949,11 @@ def _validate_inference(value: Any) -> dict[str, Any]:
         if not isinstance(name, str) or not name.strip():
             raise _error("inference.profiles", "profile names must be non-empty strings")
         profiles[name] = _validate_inference_profile(name, item)
-    if default_profile and default_profile not in profiles:
-        raise _error(
-            "inference.default_profile",
-            f"must reference a profile in inference.profiles (got {default_profile!r})",
-        )
+    _validate_profile_default(
+        default_profile,
+        profiles,
+        path="inference.default_profile",
+    )
     missing = sorted(set(routes.values()) - set(profiles))
     if missing:
         raise _error(
@@ -898,11 +979,11 @@ def _validate_inference(value: Any) -> dict[str, Any]:
             f"{harness_path}.default_profile",
             maximum=128,
         ).strip()
-        if harness_default and harness_default not in profiles:
-            raise _error(
-                f"{harness_path}.default_profile",
-                f"must reference a profile in inference.profiles (got {harness_default!r})",
-            )
+        _validate_profile_default(
+            harness_default,
+            profiles,
+            path=f"{harness_path}.default_profile",
+        )
         harness_routes = _validate_inference_routes(
             harness.get("routes", {}), f"{harness_path}.routes"
         )
@@ -916,23 +997,11 @@ def _validate_inference(value: Any) -> dict[str, Any]:
             "default_profile": harness_default,
             "routes": harness_routes,
         }
-    capability_routes = {
-        "workforce.recall.embedding": "embeddings",
-        "workforce.recall.reranker": "text",
-    }
     route_tables = [("inference.routes", routes)] + [
         (f"inference.harnesses.{name}.routes", harness["routes"])
         for name, harness in harnesses.items()
     ]
-    for route_path, route_table in route_tables:
-        for route_key, required_capability in capability_routes.items():
-            profile_name = route_table.get(route_key)
-            if profile_name and profiles[profile_name]["capability_class"] != required_capability:
-                raise _error(
-                    f"{route_path}.{route_key}",
-                    f"profile {profile_name!r} must declare capability_class "
-                    f"{required_capability!r}",
-                )
+    _validate_inference_capability_routes(profiles, route_tables)
     return {
         "default_profile": default_profile,
         "strict_independence": strict_independence,

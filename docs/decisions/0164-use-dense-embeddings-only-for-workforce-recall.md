@@ -8,11 +8,13 @@ tags: [workforce, embeddings, retrieval, inference, privacy]
 related:
   - docs/roadmap/issue-AR-266-dense-hybrid-workforce-recall.md
   - docs/roadmap/issue-AR-286-configure-bounded-embedding-dimensions.md
+  - docs/roadmap/issue-AR-289-native-reranker-transports.md
   - docs/roadmap/handoffs/issue-AR-266.md
   - docs/decisions/0083-use-capability-indexed-recall-and-bounded-inference.md
   - docs/decisions/0118-require-inference-owned-staffing.md
   - docs/decisions/0121-gate-deterministic-recall-without-selection-authority.md
   - docs/decisions/0163-resolve-contextual-turns-from-transcript-free-subjects.md
+  - docs/decisions/0171-separate-native-and-structured-reranker-transports.md
   - SECURITY.md
   - docs/THREAT_MODEL.md
   - docs/worklog/README.md
@@ -59,6 +61,11 @@ default. Recall uses an independent fixed two-call evidence budget, so shadow
 cannot consume planner, recruiter, repair, or critic capacity. Provider
 failure or invalid evidence degrades to the existing typed behavior and cannot
 generate a hiring gap.
+
+ADR-0171 subsequently refines the reranker transport clause: the route may
+continue to declare structured `text` or explicitly declare a stage-scoped
+native `rerank` capability. All additive-authority and fallback constraints in
+this decision remain unchanged.
 
 Embedding profiles may request a provider-native output projection through a
 bounded `dimensions` value. Zero omits the request field. A nonzero value is

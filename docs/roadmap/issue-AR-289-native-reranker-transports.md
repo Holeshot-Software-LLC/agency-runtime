@@ -6,6 +6,7 @@ created: 2026-08-25
 updated: 2026-08-25
 tags: [workforce, reranking, retrieval, inference, providers]
 related:
+  - docs/roadmap/handoffs/issue-AR-289.md
   - docs/roadmap/issue-AR-266-dense-hybrid-workforce-recall.md
   - docs/roadmap/issue-AR-286-configure-bounded-embedding-dimensions.md
   - docs/roadmap/reference-workforce-inference-stages.md
@@ -86,21 +87,49 @@ timeout preserves the unchanged typed lane.
 
 ## Verification evidence
 
-Pending implementation and focused verification.
+- Added a stage-scoped `jina` adapter and `rerank` capability. Persisted config
+  rejects native reranker defaults, non-reranker routes, `thinking_level`, and
+  mismatched adapter/capability combinations while preserving structured
+  `text` reranker profiles.
+- Added a bounded no-redirect Jina transport for root, `/v1`, or exact
+  `/v1/rerank` base URLs. It resolves literal or environment-backed bearer
+  credentials, requires HTTPS for credentialed remote endpoints, permits
+  keyless literal loopback, bounds input/output, requests all documents, and
+  records no query, document, score, or credential content in receipts.
+- Native response validation requires the exact complete index permutation,
+  finite descending numeric scores, and a text actual-model receipt. The
+  validated order is projected back into each work unit without persisting or
+  interpreting scores as staffing confidence.
+- The existing structured reranker branch remains byte-path compatible for
+  Ollama/local chat models, LiteLLM, direct chat API keys, and Codex/Claude
+  subscription CLIs. A focused regression proves it never dispatches the
+  native invoker.
+- Focused configuration, transport, and workforce integration verification:
+  `174 passed` with warnings as errors. The named fast production spine plus
+  the new provider file passed `856` tests with `20` expected skips. Dashboard
+  verification passed `134` tests. Whole-repository Ruff lint and format
+  checks passed for `691` Python files; documentation validation passed for
+  `807` Markdown files.
+- Routing evaluation passed every configured gate. Decision conformance passed
+  its baseline and killed all `160/160` curated mutations with zero survivors;
+  its report confirmed the source tree was unchanged.
+- The supplied Jina endpoints answered a separate credential-redacted live
+  probe before implementation. This branch did not persist the key, install an
+  unpublished build, or claim a live post-implementation Jina route.
 
 ## Acceptance
 
-- [ ] A Jina inference profile can explicitly declare `capability_class:
+- [x] A Jina inference profile can explicitly declare `capability_class:
       rerank` without becoming eligible for generative inference stages.
-- [ ] Native reranking sends one bounded query and the complete offered
+- [x] Native reranking sends one bounded query and the complete offered
       candidate set to `/v1/rerank` with credentials resolved from an
       environment variable.
-- [ ] Only a complete exact permutation with an exact actual-model receipt is
+- [x] Only a complete exact permutation with an exact actual-model receipt is
       accepted; malformed or partial results preserve typed-only recall.
-- [ ] Native scores can order recalled candidates but never become staffing
+- [x] Native scores can order recalled candidates but never become staffing
       confidence, eligibility, hiring, or execution authority.
-- [ ] Existing text rerankers on Ollama, LiteLLM, direct chat APIs, and
+- [x] Existing text rerankers on Ollama, LiteLLM, direct chat APIs, and
       Codex/Claude subscription transports remain backward-compatible.
-- [ ] Focused configuration, provider, inference, fallback, security, and
+- [x] Focused configuration, provider, inference, fallback, security, and
       receipt tests pass with warnings treated as errors.
 - [ ] Tracker creation and linkage remain pending separate authorization.

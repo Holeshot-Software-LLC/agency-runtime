@@ -256,6 +256,23 @@ def resolve_explicit_capability_route(
     sent to a generic text model merely because one is the default.
     """
 
+    return resolve_explicit_capability_route_any(
+        config,
+        route_key,
+        capability_classes=(capability_class,),
+        harness=harness,
+    )
+
+
+def resolve_explicit_capability_route_any(
+    config: AgencyConfig,
+    route_key: str,
+    *,
+    capability_classes: tuple[str, ...],
+    harness: str = "",
+) -> ProfileResolution | None:
+    """Resolve an explicit route that accepts one of several capabilities."""
+
     inference = config.inference
     if not isinstance(inference, InferenceConfig):
         raise ConfigValidationError(f"inference route {route_key!r}: config.inference is invalid")
@@ -276,12 +293,15 @@ def resolve_explicit_capability_route(
         raise ConfigValidationError(
             f"inference {origin} route {route_key!r}: profile {profile_name!r} is not defined"
         )
-    required = capability_class.strip().casefold()
+    required = tuple(
+        dict.fromkeys(item.strip().casefold() for item in capability_classes if item.strip())
+    )
     actual = profile.capability_class.strip().casefold()
-    if not required or actual != required:
+    if not required or actual not in required:
+        expected = " or ".join(repr(item) for item in sorted(required))
         raise ConfigValidationError(
             f"inference route {route_key!r}: profile {profile_name!r} must declare "
-            f"capability_class {required!r}"
+            f"capability_class {expected}"
         )
     return ProfileResolution(
         route_key=route_key,

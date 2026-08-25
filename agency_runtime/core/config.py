@@ -130,7 +130,7 @@ class ProviderEntry:
     """
 
     name: str = ""
-    type: str = "openai-compatible"  # openai-compatible, anthropic, ollama, litellm, cli
+    type: str = "openai-compatible"  # structured providers plus explicit native adapters
     transport: str = ""  # allowlisted CLI transport: codex or claude
     model: str = ""
     base_url: str = ""
@@ -234,9 +234,11 @@ DENSE_RECALL_MODES = frozenset({"off", "shadow", "additive"})
 
 # Per-stage inference profile adapter allowlist and thinking-level vocabulary
 # mirror the conveyor project reference pattern (conveyor/src/config/types.ts:294-310).
-INFERENCE_ADAPTER_TYPES = frozenset({"openai-compatible", "anthropic", "ollama", "litellm", "cli"})
+INFERENCE_ADAPTER_TYPES = frozenset(
+    {"openai-compatible", "anthropic", "ollama", "litellm", "cli", "jina"}
+)
 INFERENCE_THINKING_LEVELS = frozenset({"low", "medium", "high", "xhigh"})
-INFERENCE_CAPABILITY_CLASSES = frozenset({"text", "embeddings", "code"})
+INFERENCE_CAPABILITY_CLASSES = frozenset({"text", "embeddings", "rerank", "code"})
 INFERENCE_CLI_TRANSPORTS = frozenset({"codex", "claude"})
 # Harness sections scope inference routes to the host that owns the turn.
 INFERENCE_HARNESS_NAMES = frozenset({"codex", "claude", "zcode", "hermes", "openclaw", "cli"})

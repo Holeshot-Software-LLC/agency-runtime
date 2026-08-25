@@ -848,10 +848,15 @@ and the unchanged typed candidate lane continues. Do not raise the safety
 bounds or slice/pad vectors client-side; select a provider-native dimension or
 a compatible embedding model instead.
 
-The reranker is a separate bounded text call and cannot repair embedding
-evidence. It must return every offered discovery exactly once. Provider failure
-or an invalid permutation also preserves typed-only behavior and cannot create
-a staffing gap or select a specialist.
+The reranker is a separate bounded call and cannot repair embedding evidence.
+It may use the existing `text` capability for Ollama/local chat models,
+LiteLLM, direct chat APIs, and subscription CLIs, or the native `rerank`
+capability with `adapter: jina`. A Jina profile must be explicitly mapped only
+to `workforce.recall.reranker`; use `base_url: https://api.jina.ai/v1` and an
+environment-backed `api_key_env`. Both transports must return every offered
+discovery exactly once. Provider failure, a missing actual-model receipt, or an
+invalid permutation preserves typed-only behavior and cannot create a staffing
+gap or select a specialist.
 
 ## No specialist is selected
 

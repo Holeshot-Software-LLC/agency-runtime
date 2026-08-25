@@ -493,10 +493,42 @@ inference:
       api_key_env: LITELLM_API_KEY
 ```
 
+On a machine without local models, Jina can serve both operations. Embeddings
+use its OpenAI-compatible endpoint, while native reranking uses the explicit
+`jina` adapter and `rerank` capability. Keep the key in the environment rather
+than in YAML:
+
+```yaml
+inference:
+  routes:
+    workforce.recall.embedding: jina-embedding
+    workforce.recall.reranker: jina-reranker
+  profiles:
+    jina-embedding:
+      adapter: openai-compatible
+      model: jina-embeddings-v3
+      capability_class: embeddings
+      dimensions: 1024
+      base_url: https://api.jina.ai/v1
+      api_key_env: JINA_API_KEY
+    jina-reranker:
+      adapter: jina
+      model: jina-reranker-v3.5
+      capability_class: rerank
+      base_url: https://api.jina.ai/v1
+      api_key_env: JINA_API_KEY
+```
+
+The `jina` adapter is valid only on `workforce.recall.reranker`; it cannot be a
+default or serve a generative inference stage. Existing `text` rerankers remain
+supported for Ollama/local chat models, LiteLLM, direct chat API keys, and
+Codex or Claude subscription CLIs.
+
 Cold turns send one bounded batch containing the positive-only roster cards
 and current work-unit queries. Warm turns reuse the exact model-bound roster
-vectors and send only the queries. A second bounded call reranks every recalled
-ID without dropping or inventing candidates. Missing routes, provider failures,
+vectors and send only the queries. A second bounded structured or native call
+reranks every recalled ID without dropping or inventing candidates. Missing
+routes, provider failures,
 malformed vectors, absent actual-model receipts, or cache-identity mismatches
 fall back to the unchanged typed candidate lane.
 
