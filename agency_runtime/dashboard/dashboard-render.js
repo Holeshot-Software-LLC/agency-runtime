@@ -805,6 +805,67 @@ export function createRenderer(core, config, callbacks) {
 		grid.append(uninstall);
 	}
 
+	function renderSetup() {
+		const overall = byId("setup-state");
+		if (!overall) return false;
+		const status = (id, label, value) => {
+			const node = byId(id);
+			if (!node) return;
+			node.textContent = label;
+			node.dataset.state = value;
+		};
+		const snapshot = state.config || state.pendingConfig;
+		const effective = snapshot?.effective || snapshot?.config || {};
+		const providers = Array.isArray(effective.providers) ? effective.providers : [];
+		const profiles = isRecord(effective.inference?.profiles)
+			? Object.keys(effective.inference.profiles)
+			: [];
+		const overviewInference = state.overview?.inference;
+		const configured = overviewInference?.configured === true
+			|| providers.length > 0
+			|| profiles.length > 0
+			|| (typeof effective.judge?.model === "string" && effective.judge.model.length > 0);
+		const configKnown = Boolean(snapshot || overviewInference);
+		status(
+			"setup-config-state",
+			!configKnown ? "CHECKING" : (configured ? "CONFIGURED" : "NEEDS PROVIDER"),
+			!configKnown ? "unknown" : (configured ? "ready" : "action"),
+		);
+
+		const hosts = Array.isArray(state.hosts) ? state.hosts : [];
+		const detected = hosts.filter((host) => (
+			host?.executable_discovered === true
+			|| host?.native_root_exists === true
+			|| host?.registered === true
+		));
+		const registered = detected.filter((host) => host?.registered === true).length;
+		let hostLabel = "NO HOST DETECTED";
+		let hostStatus = detected.length ? "action" : "unknown";
+		if (registered > 0) {
+			hostLabel = `${registered} / ${detected.length} REGISTERED`;
+			hostStatus = registered === detected.length ? "ready" : "action";
+		} else if (detected.length) hostLabel = `${detected.length} DETECTED`;
+		status("setup-hosts-state", hostLabel, hostStatus);
+		status("setup-dashboard-state", "RUNNING", "ready");
+		status("setup-verification-state", "RUN IN TERMINAL", "action");
+
+		const overallLabel = !configKnown
+			? "CHECKING"
+			: !configured
+				? "ACTION NEEDED"
+				: registered > 0
+					? "CORE READY"
+					: "CONFIGURED";
+		const overallState = !configKnown
+			? "unknown"
+			: configured && registered > 0
+				? "ready"
+				: "action";
+		overall.textContent = overallLabel;
+		overall.dataset.state = overallState;
+		return true;
+	}
+
 	function renderRouteHosts() {
 		const select = byId("route-host");
 		if (!select) return "";
@@ -2127,6 +2188,7 @@ export function createRenderer(core, config, callbacks) {
 	}
 
 	function renderActiveView() {
+		renderSetup();
 		renderRouteHosts();
 		if (state.activeView === "overview" && state.overview) renderOverview();
 		else if (state.activeView === "evidence") renderEvidence(activeEvidenceKind());
@@ -2136,6 +2198,7 @@ export function createRenderer(core, config, callbacks) {
 	}
 
 	function renderActiveControlView() {
+		renderSetup();
 		renderRouteHosts();
 		if (state.activeView === "overview" && state.overview) renderOverview();
 		else if (state.activeView === "hosts") renderHosts();
@@ -2237,6 +2300,7 @@ export function createRenderer(core, config, callbacks) {
 		renderOverview,
 		emptyRow,
 		renderHosts,
+		renderSetup,
 		renderRouteHosts,
 		renderRoster,
 		renderWorkforce,

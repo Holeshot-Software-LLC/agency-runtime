@@ -43,6 +43,17 @@ prompt a consumer can paste to an installation agent.
 
 ## Current state
 
+- `agency setup` now composes the existing guarded provider wizard, config
+  validation, bounded harness/dashboard selection, doctor, and optional
+  deterministic smoke stages. Existing config is retained by default and every
+  stage reports independently.
+- The dashboard Settings view now exposes the same four-stage journey with
+  current configuration/registration posture, provider-editor navigation, and
+  inert attended command copies. It gains no host-install or shell endpoint.
+- The consumer README now leads with the guided journey, a setup diagram,
+  current-state and provider matrices, Jina/local/LiteLLM/API/subscription
+  coverage, a paste-ready installation-agent interview, and explicit release
+  limits.
 - `agency configure` safely interviews for security posture, inference
   providers, fallback order, authentication indirection, detected adapters,
   and tuning.
@@ -91,22 +102,38 @@ advanced configuration surfaces.
 
 ## Acceptance
 
-- [ ] `agency setup` interviews for retained versus replaced configuration,
+- [x] `agency setup` interviews for retained versus replaced configuration,
       inference provider setup, harness scope, dashboard installation, and
       smoke verification, then prints a stage-by-stage result.
-- [ ] Non-interactive setup has explicit bounded flags and never places secret
+- [x] Non-interactive setup has explicit bounded flags and never places secret
       values on command lines, in JSON, or in durable evidence.
-- [ ] Existing `agency configure`, install, validation, doctor, smoke, native
+- [x] Existing `agency configure`, install, validation, doctor, smoke, native
       trust, and dashboard-service contracts remain authoritative and
       independently callable.
-- [ ] The dashboard shows one ordered setup walkthrough with truthful current
+- [x] The dashboard shows one ordered setup walkthrough with truthful current
       posture and copy-only attended commands; it gains no host mutation API.
-- [ ] The consumer README contains a clear quick start, capability/support
+- [x] The consumer README contains a clear quick start, capability/support
       tables, architecture and setup diagrams, current prerelease limits, and a
       paste-ready agent setup prompt.
-- [ ] Focused CLI/parser/dashboard tests, the named fast spine, dashboard UI,
+- [x] Focused CLI/parser/dashboard tests, the named fast spine, dashboard UI,
       documentation, Ruff, routing, decision conformance, and diff gates pass.
-- [ ] Release readiness is reported against the canonical checklist without
+- [x] Release readiness is reported against the canonical checklist without
       treating local smoke as current artifact, host, tracker, or publication
       proof.
 - [ ] Tracker creation and linkage remain pending separate authorization.
+
+## Verification evidence
+
+The current worktree has passed 255 focused configuration/setup/parser/install/
+dashboard-service tests, the named fast Python production spine plus setup
+coverage (849 passed, 20 skipped, warnings strict), all 136 dashboard UI tests,
+both full Ruff gates, all four documentation gates, every deterministic routing
+evaluation threshold, and the eight-check network-free five-host source smoke.
+Decision conformance passed its green baseline, killed all 160 curated
+mutations with zero survived or invalid results, and proved its selected source
+inputs unchanged. Final metadata/documentation/diff checks are repeated at the
+clean implementation checkpoint.
+
+Read-only GitHub checks on 2026-08-25 found no release, tag, AR-290 tracker
+issue, or AR-289/AR-290 pull request. Those absences are current remote state,
+not authorization to create any of them.

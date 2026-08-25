@@ -2259,10 +2259,27 @@ test("owner settings surface materializes the ZCode adapter field", () => {
 		throw new Error("owner surface setup does not fetch");
   });
   const grid = new FakeNode("adapter-grid");
+  const settings = harness.node("view-settings");
   harness.missing("config-adapter-zcode");
+  harness.missing("setup-journey");
   harness.select(".adapter-grid", [grid]);
 
 	assert.equal(harness.api.configureOwnerSurface(), true);
+  assert.equal(settings.children.length, 1);
+  const setupText = descendants(settings.children[0]).map((node) => node.textContent).join(" ");
+  assert.match(setupText, /Agency Runtime setup/);
+  assert.match(setupText, /Configure inference/);
+  assert.match(setupText, /Wire native harnesses/);
+  assert.match(setupText, /Validate and smoke/);
+  const commands = descendants(settings.children[0])
+    .map((node) => node.dataset?.setupCommand)
+    .filter(Boolean);
+  assert.deepEqual(commands, [
+    "agency setup",
+    "agency install --all",
+    "agency dashboard service open",
+    "agency smoke --all --json",
+  ]);
   assert.equal(grid.children.length, 1);
   const [label] = grid.children;
   assert.equal(label.textContent, "ZCode");
@@ -2273,6 +2290,55 @@ test("owner settings surface materializes the ZCode adapter field", () => {
     select.children.map((option) => [option.value, option.textContent]),
     [["auto", "Auto"], ["true", "Enabled"], ["false", "Disabled"]],
   );
+});
+
+test("setup journey reports configuration and native registration without claiming live proof", () => {
+  const harness = createAppHarness(() => {
+    throw new Error("setup posture rendering does not fetch");
+  });
+  harness.api.state.config = {
+    effective: { providers: [{ name: "owner-provider", type: "cli" }] },
+  };
+  harness.api.state.hosts = [
+    { host: "codex", executable_discovered: true, registered: true },
+    { host: "claude", executable_discovered: true, registered: false },
+  ];
+
+  assert.equal(harness.api.renderSetup(), true);
+  assert.equal(harness.node("setup-config-state").textContent, "CONFIGURED");
+  assert.equal(harness.node("setup-hosts-state").textContent, "1 / 2 REGISTERED");
+  assert.equal(harness.node("setup-dashboard-state").textContent, "RUNNING");
+  assert.equal(harness.node("setup-verification-state").textContent, "RUN IN TERMINAL");
+  assert.equal(harness.node("setup-state").textContent, "CORE READY");
+  assert.notEqual(harness.node("setup-verification-state").dataset.state, "ready");
+
+  harness.api.state.config = { effective: { providers: [] } };
+  harness.api.state.hosts = [];
+  harness.api.renderSetup();
+  assert.equal(harness.node("setup-config-state").textContent, "NEEDS PROVIDER");
+  assert.equal(harness.node("setup-hosts-state").textContent, "NO HOST DETECTED");
+  assert.equal(harness.node("setup-state").textContent, "ACTION NEEDED");
+});
+
+test("setup journey copies only inert attended commands and focuses the provider editor", async () => {
+  const copied = [];
+  const harness = createAppHarness(() => {
+    throw new Error("setup command copying does not fetch");
+  });
+  harness.context.window.navigator = {
+    clipboard: { writeText: async (value) => copied.push(value) },
+  };
+  const copy = harness.node("setup-command-copy");
+  copy.dataset.setupCommand = "agency setup";
+  harness.select("[data-setup-command]", [copy]);
+
+  assert.equal(harness.api.bindEvents(), true);
+  await copy.listeners.get("click")[0]();
+  assert.deepEqual(copied, ["agency setup"]);
+  assert.match(harness.node("notice").textContent, /owner-controlled terminal/i);
+
+  harness.node("setup-configure-button").listeners.get("click")[0]();
+  assert.equal(harness.node("provider-builder-name").focusCount, 1);
 });
 
 test("Route Lab renders authoritative host evidence and bounded eligibility rejections", () => {

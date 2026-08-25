@@ -119,6 +119,7 @@ export function createDashboard(runtime = globalThis) {
 	}
 
 	function configureOwnerSurface() {
+		ensureSetupJourney();
 		const manualProviderModel = byId("provider-builder-model");
 		if (manualProviderModel && !manualProviderModel.getAttribute("aria-label")) {
 			manualProviderModel.setAttribute(
@@ -153,6 +154,115 @@ export function createDashboard(runtime = globalThis) {
 		if (configForm) configForm.setAttribute("aria-label", "Agency Runtime configuration");
 		const privacy = byId("privacy-chip");
 		if (privacy?.textContent === "Metadata only") privacy.textContent = "Runtime metadata only";
+		return true;
+	}
+
+	function ensureSetupJourney() {
+		const settings = byId("view-settings");
+		if (!settings || byId("setup-journey")) return false;
+
+		const createNode = (tag, className, textContent = "") => {
+			const node = document.createElement(tag);
+			node.className = className;
+			node.textContent = textContent;
+			return node;
+		};
+		const copyButton = (id, label, command) => {
+			const button = createNode("button", "button ghost compact", label);
+			button.id = id;
+			button.type = "button";
+			button.dataset.setupCommand = command;
+			return button;
+		};
+		const step = ({ index, id, title, detail, command = "", action = "" }) => {
+			const item = createNode("li", "setup-step");
+			item.append(createNode("span", "setup-step-index", String(index)));
+			const copy = createNode("div", "setup-step-copy");
+			copy.append(createNode("strong", "", title), createNode("small", "", detail));
+			if (command) copy.append(createNode("code", "", command));
+			const controls = createNode("div", "setup-step-controls");
+			const status = createNode("span", "panel-tag", "CHECKING");
+			status.id = `setup-${id}-state`;
+			status.dataset.state = "unknown";
+			controls.append(status);
+			if (action === "configure") {
+				const button = createNode("button", "button ghost compact", "Review providers");
+				button.id = "setup-configure-button";
+				button.type = "button";
+				controls.append(button);
+			} else if (command) {
+				controls.append(copyButton(`setup-${id}-copy`, "Copy command", command));
+			}
+			item.append(copy, controls);
+			return item;
+		};
+
+		const journey = createNode("article", "panel setup-journey");
+		journey.id = "setup-journey";
+		journey.setAttribute("aria-labelledby", "setup-journey-title");
+		const heading = createNode("div", "panel-head");
+		const title = createNode("div", "");
+		title.append(
+			createNode("p", "eyebrow", "FIRST RUN"),
+			createNode("h2", "", "Agency Runtime setup"),
+		);
+		title.children[1].id = "setup-journey-title";
+		const overall = createNode("span", "panel-tag", "CHECKING");
+		overall.id = "setup-state";
+		overall.dataset.state = "unknown";
+		heading.append(title, overall);
+		journey.append(
+			heading,
+			createNode(
+				"p",
+				"panel-copy",
+				"Use the terminal walkthrough for guarded host installation. This page reports configuration and registration posture and never grants native harness trust.",
+			),
+		);
+		const actions = createNode("div", "setup-actions");
+		actions.append(copyButton("setup-command-copy", "Copy agency setup", "agency setup"));
+		journey.append(actions);
+		const list = createNode("ol", "setup-steps");
+		list.append(
+			step({
+				index: 1,
+				id: "config",
+				title: "Configure inference",
+				detail: "Choose a security profile, provider/model, credential indirection, and fallback order.",
+				action: "configure",
+			}),
+			step({
+				index: 2,
+				id: "hosts",
+				title: "Wire native harnesses",
+				detail: "Install every safely detected host or select one explicitly in an owner terminal.",
+				command: "agency install --all",
+			}),
+			step({
+				index: 3,
+				id: "dashboard",
+				title: "Open the local dashboard",
+				detail: "The user-scoped service is loopback-only and authenticated per launch.",
+				command: "agency dashboard service open",
+			}),
+			step({
+				index: 4,
+				id: "verification",
+				title: "Validate and smoke",
+				detail: "Confirm config, diagnostics, and deterministic readiness without calling it live host proof.",
+				command: "agency smoke --all --json",
+			}),
+		);
+		journey.append(
+			list,
+			createNode(
+				"small",
+				"setup-caveat",
+				"CORE READY means configured inference plus at least one native registration. It does not claim hook trust, child delivery, a live canary, or release readiness.",
+			),
+		);
+		if (typeof settings.prepend === "function") settings.prepend(journey);
+		else settings.children.unshift(journey);
 		return true;
 	}
 
@@ -194,6 +304,20 @@ export function createDashboard(runtime = globalThis) {
 		});
 		renderer.configureEvidenceTabs();
 		configureOwnerSurface();
+		renderer.renderSetup();
+		document.querySelectorAll("[data-setup-command]").forEach((node) => {
+			listen(node, "click", () => copyAttendedCommand(
+				node.dataset.setupCommand,
+				"Setup command copied. Review it in an owner-controlled terminal.",
+			));
+		});
+		const setupConfigure = byId("setup-configure-button");
+		if (setupConfigure) {
+			listen(setupConfigure, "click", () => {
+				byId("config-form")?.scrollIntoView?.({ behavior: "smooth", block: "start" });
+				byId("provider-builder-name")?.focus?.({ preventScroll: true });
+			});
+		}
 		listen(byId("refresh-button"), "click", async () => {
 			const refreshed = await live.refreshAll();
 			if (refreshed && state.activeView === "overview") await live.refreshMetricEvidence();
@@ -375,6 +499,7 @@ export function createDashboard(runtime = globalThis) {
 		handlePageHide,
 		bindEvents,
 		configureOwnerSurface,
+		ensureSetupJourney,
 		start,
 		destroy,
 	};

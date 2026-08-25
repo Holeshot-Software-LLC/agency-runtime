@@ -544,6 +544,57 @@ def _register_configuration(sub: Subparsers, handlers: Handlers) -> None:
     )
 
 
+def _register_setup(sub: Subparsers, handlers: Handlers) -> None:
+    setup = sub.add_parser(
+        "setup",
+        help="Guided first run — configure, install, diagnose, and smoke",
+    )
+    setup.add_argument(
+        "--non-interactive",
+        action="store_true",
+        help="Use detected configuration without prompts (requires an explicit install scope)",
+    )
+    setup.add_argument(
+        "--profile",
+        choices=sorted(PROFILES),
+        default=None,
+        help="Security and capability profile used when configuration is created or replaced",
+    )
+    setup.add_argument(
+        "--force-config",
+        action="store_true",
+        help="Replace an existing config through the guarded provider wizard",
+    )
+    setup_target = setup.add_mutually_exclusive_group()
+    setup_target.add_argument(
+        "--all",
+        action="store_true",
+        help="Install every safely detected supported harness",
+    )
+    setup_target.add_argument(
+        "--agent",
+        choices=list(HOSTS),
+        default=None,
+        help="Install one explicit supported harness",
+    )
+    setup_target.add_argument(
+        "--skip-install",
+        action="store_true",
+        help="Skip harness and dashboard installation",
+    )
+    setup.add_argument(
+        "--no-dashboard",
+        action="store_true",
+        help="Do not install or refresh the optional local dashboard service",
+    )
+    setup.add_argument(
+        "--skip-smoke",
+        action="store_true",
+        help="Skip deterministic readiness smoke checks",
+    )
+    _bind(setup, handlers, "cmd_setup")
+
+
 def _register_roster(sub: Subparsers, handlers: Handlers) -> None:
     sync = sub.add_parser(
         "sync", help="Download sources into quarantine and create a roster snapshot"
@@ -1679,6 +1730,7 @@ def build_parser(handlers: Handlers) -> argparse.ArgumentParser:
     _register_uninstall(sub, handlers)
     _register_host_control(sub, handlers)
     _register_configuration(sub, handlers)
+    _register_setup(sub, handlers)
     _register_roster(sub, handlers)
     _register_workforce(sub, handlers)
     _register_selection(sub, handlers)

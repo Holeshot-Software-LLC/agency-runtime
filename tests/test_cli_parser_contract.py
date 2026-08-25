@@ -83,6 +83,7 @@ HANDLER_NAMES = (
     "cmd_search",
     "cmd_serve",
     "cmd_smoke",
+    "cmd_setup",
     "cmd_source_add",
     "cmd_source_list",
     "cmd_status",
@@ -185,6 +186,7 @@ EXPECTED_PATHS = (
     "agency route",
     "agency search",
     "agency serve",
+    "agency setup",
     "agency smoke",
     "agency source",
     "agency source add",
@@ -285,6 +287,7 @@ EXPECTED_BINDINGS = {
     "agency route": "cmd_route",
     "agency search": "cmd_search",
     "agency serve": "cmd_serve",
+    "agency setup": "cmd_setup",
     "agency smoke": "cmd_smoke",
     "agency source add": "cmd_source_add",
     "agency source list": "cmd_source_list",
@@ -306,7 +309,7 @@ EXPECTED_BINDINGS = {
     "agency workforce show": "cmd_workforce_show",
     "agency workforce suspend": "cmd_workforce_transition",
 }
-EXPECTED_MANIFEST_SHA256 = "18245a80051c31569fcf823a8704277f17a5e3045a636899834b4cb26b609cef"
+EXPECTED_MANIFEST_SHA256 = "7efc05f26d4c4abb5a3841420bd9260d0e5f9443a711686ca6d024469921f640"
 
 
 def _handler(name: str):

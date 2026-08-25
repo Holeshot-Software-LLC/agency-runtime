@@ -3,10 +3,11 @@ title: "Changelog"
 status: active
 category: release
 created: 2026-07-10
-updated: 2026-08-24
+updated: 2026-08-25
 tags: [release, changelog]
 related:
   - docs/RELEASE_CHECKLIST.md
+  - docs/roadmap/issue-AR-290-end-to-end-guided-setup.md
   - docs/roadmap/README.md
   - docs/worklog/README.md
   - THIRD_PARTY_NOTICES.md
@@ -28,6 +29,16 @@ changes rather than duplicating every commit.
 
 ### Added
 
+- `agency setup` now composes the guarded provider wizard, config validation,
+  bounded native-harness/dashboard install choices, doctor, and optional
+  deterministic smoke into one resumable first-run journey. The dashboard
+  Settings view mirrors that journey with truthful posture and copy-only
+  attended commands; it gains no host-install or shell-execution endpoint.
+- Learned workforce recall can use Jina's native rerank API through a dedicated
+  `jina`/`rerank` inference profile while Jina embeddings continue through the
+  OpenAI-compatible transport. Structured text rerankers through local models,
+  LiteLLM, API-key profiles, and Codex/Claude subscription CLIs remain
+  supported, and typed-only recall remains the failure-safe default.
 - Live Agency canaries can persist one child-judge provider pin per harness.
   The judge and its abstention repair use only that provider, cross-provider
   CLI credentials are copied into a second disposable private home, and proof

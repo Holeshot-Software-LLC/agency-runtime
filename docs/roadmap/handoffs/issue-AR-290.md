@@ -34,6 +34,12 @@ tracker_url: null
   guidance contract. Tracker creation remains pending explicit authorization.
 - Bootstrap telemetry reported 69.8 percent remaining, so no hard checkpoint
   was required before recording this clean planning pair.
+- `agency setup`, its bounded parser/facade surface, the dashboard Settings
+  journey, consumer README flow/matrices/prompt, and changelog entries are now
+  implemented in this worktree. The source remains uninstalled and unpushed.
+- Closeout telemetry reported 34.3 percent remaining. The fixed threshold now
+  requires the verified implementation and ledger commits before installation;
+  it does not pause the same task or authorize outward publication.
 
 ## completed-evidence
 
@@ -45,6 +51,19 @@ tracker_url: null
   matrices, tracker synchronization, and publication authorization remain open.
 - Product design preserves existing guarded mutations and keeps dashboard host
   installation copy-only.
+- Focused setup/config/parser/install/dashboard-service verification passed
+  255 tests. The named warning-strict fast spine plus setup coverage passed 849
+  tests with 20 skips; dashboard UI passed all 136 tests; full Ruff lint and
+  format checks passed across 693 files.
+- Documentation metadata, policy availability, worklog consistency, and
+  structural verification passed for 811 Markdown files. Routing evaluation
+  passed every threshold, and network-free source smoke passed all eight checks
+  across the Store, roster/parity, and five generated host integrations.
+- Read-only remote checks found no release, tag, AR-290 tracker issue, or
+  AR-289/AR-290 pull request.
+- Decision conformance passed its green baseline, killed all 160 curated
+  mutations with zero survived or invalid results, and reported
+  `source_unchanged=true`. The complete scoped implementation gate is green.
 
 ## exact-blocker
 
@@ -63,12 +82,12 @@ not create another task or treat the threshold as publication authority.
 
 ## next-bounded-work-package
 
-1. Add the setup orchestrator and parser/facade contract with focused tests.
-2. Add the dashboard walkthrough and consumer README journey/prompt.
-3. Run focused verification, the named fast spine, dashboard, documentation,
-   routing, decision conformance, and release-readiness diagnostics.
-4. Record exact evidence in this capsule and create the local implementation
-   and worklog ledger commits.
+1. Rerun final documentation, focused setup/dashboard, telemetry, and diff
+   checks after this evidence update.
+2. Create the local implementation and worklog ledger commits.
+3. Install that exact local commit, refresh safely detected harnesses and the
+   dashboard, then validate and run deterministic installed smoke. Leave learned
+   recall routes unset unless a privately supplied credential can be verified.
 
 ## verification
 
