@@ -1223,6 +1223,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `e1d783ff` | 2026-08-25 | Merge pull request #323 from Holeshot-Software-LLC/codex/ar266-local-retrieval-smoke | [AR-266](../roadmap/issue-AR-266-dense-hybrid-workforce-recall.md) | null |
 | `65a4ad76` | 2026-08-25 | docs(ar266): record merged additive recall | [AR-266](../roadmap/issue-AR-266-dense-hybrid-workforce-recall.md) | null |
 | `04057072` | 2026-08-25 | Merge pull request #324 from Holeshot-Software-LLC/codex/ar266-merge-record | null | null |
+| `95402d56` | 2026-08-25 | docs(ar289): plan native reranker transports | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
