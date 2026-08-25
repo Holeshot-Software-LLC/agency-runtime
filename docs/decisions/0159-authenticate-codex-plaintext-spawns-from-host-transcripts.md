@@ -204,7 +204,11 @@ four fresh depth-one native children. Every parent call retained only the
 plaintext task label and fork mode beside a Fernet-shaped encrypted message;
 none carried `encrypted_function_args`. The current official hook schema still
 exposes no decrypted assignment or exact parent call identity at
-`SubagentStart`. This confirms rather than supersedes the decision: the 0.147
-profiles stay exact, 0.149.1 remains unsupported and unstaffed, and no
+`SubagentStart`. It now documents `spawn_agent` argument inspection and rewrite
+at `PreToolUse`, but three additional real-child probes using project,
+session-override, and named-profile hook sources with the one-shot trust bypass
+emitted no redacted hook artifact. That absence is an activation gap, not proof
+that the hook would receive ciphertext. The decision remains in force: the
+0.147 profiles stay exact, 0.149.1 remains unsupported and unstaffed, and no
 installation or Rule-4 claim advances. The bounded projection is retained in
 `docs/roadmap/AR-180-codex-0149-compatibility-evidence.md`.

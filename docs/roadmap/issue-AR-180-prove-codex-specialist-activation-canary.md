@@ -351,12 +351,14 @@ attempts emitted no redacted hook log and remain retained setup failures rather
 than evidence about undocumented fields.
 
 The current official hook contract still gives `SubagentStart` only
-`agent_id` and `agent_type`, while `PreToolUse` receives the already-encrypted
-local function arguments. It supplies no documented call identity at child
-start that could authenticate injected specialist context. The exact 0.147
-profiles remain unchanged; 0.149.1 fails open unstaffed, no Agency installation
-or canary was run, and no Installed, Live, or Rule-4 claim advances. The bounded
-evidence is retained in
+`agent_id` and `agent_type`. It documents `PreToolUse` argument inspection and
+rewrite for `spawn_agent`, but project, session-override, and named-profile
+probes with the one-shot trust bypass emitted no redacted hook artifact across
+three additional real children. Persisted parent messages remained encrypted,
+and no live plaintext hook input or exact call-to-child binding is proven. The
+exact 0.147 profiles remain unchanged; 0.149.1 fails open unstaffed, no Agency
+installation or canary was run, and no Installed, Live, or Rule-4 claim
+advances. The bounded evidence is retained in
 `docs/roadmap/AR-180-codex-0149-compatibility-evidence.md`.
 
 ## Approach

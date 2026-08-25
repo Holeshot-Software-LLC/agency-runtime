@@ -73,8 +73,11 @@ The 2026-08-25 Codex CLI `0.149.1` compatibility recheck does not change that
 boundary. Four fresh native spawns all persisted a Fernet-shaped encrypted
 message with no `encrypted_function_args` marker. The documented
 `SubagentStart` event still lacks the assignment and exact parent call identity.
-Agency therefore keeps 0.149.1 unstaffed and does not restore AR-209's retired
-plan-row transport. No install, canary, or matrix movement resulted.
+Three more real children tested project, session-override, and named-profile
+`PreToolUse` hook sources with the one-shot trust bypass; none emitted the
+content-safe capture, so no live plaintext rewrite path is proven. Agency
+therefore keeps 0.149.1 unstaffed and does not restore AR-209's retired plan-row
+transport. No install, canary, or matrix movement resulted.
 
 ## Approach
 

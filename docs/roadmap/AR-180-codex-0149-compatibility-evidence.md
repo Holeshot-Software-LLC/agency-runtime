@@ -62,6 +62,29 @@ receives `agent_id` and `agent_type` but no task label, parent call ID, or
 decrypted assignment. The same documentation calls the rollout transcript an
 unstable interface. Source: `https://learn.chatgpt.com/docs/hooks`.
 
+## Stable-hook activation recheck
+
+The installed CLI reports both `hooks` and `multi_agent` as stable features.
+Three additional fresh parent sessions then completed one real depth-one child
+each while a disposable redacting `PreToolUse` hook was supplied through a
+different documented configuration path. The hook retained no assignment
+content and was designed to emit only argument keys, message type and length,
+ciphertext shape, and whether one fixed harmless marker was visible.
+
+| Hook source | Parent session | Child session | Parent rollout SHA-256 | Redacted hook artifact |
+|---|---|---|---|---|
+| Project layer plus one-shot trust bypass | `01a03a6f-66b1-79e0-88be-71aff65c91c0` | `01a03a6f-7e7b-79e0-8ca7-4f8ebfcda9b6` | `3a75ab8a4ef4b0034c525afa81ce237a308a2b70cd975f0c64c5807012e13bee` | absent |
+| Session `-c` layer plus one-shot trust bypass | `01a03a70-b402-7821-8ec5-f901f91f0e2a` | `01a03a70-ccdd-7f10-8f65-ab9da4745268` | `ebe3be5dc704918b37a3a0ad6395d1008d24e83e7d41177bb50a7d983c5953b6` | absent |
+| Named profile plus one-shot trust bypass | `01a03a73-4cbd-7773-9c6b-98d8e0421fbe` | `01a03a73-6a80-7093-a04e-ac34824a658a` | `7676fca949b4b1d0069e0b888927288f56130ceb77208d09127dd5475750befb` | absent |
+
+Every parent rollout again persisted an encrypted `message`; the last two were
+228 characters and Fernet-shaped. Codex's streaming JSON omitted the spawn
+event, but the canonical parent rollout and each child `thread_spawn` record
+correlated the exact depth-one launch. The missing hook artifacts do **not**
+prove that `PreToolUse` receives ciphertext: they prove only that no tested
+configuration produced an observable hook invocation. A hook-engine sanity
+probe that matches every local tool remains the next bounded discriminator.
+
 ## Configuration invariants
 
 The persistent Codex configuration SHA-256 was
@@ -77,4 +100,6 @@ specialist from the encrypted assignment or bind `SubagentStart` context to the
 exact parent call through a documented authenticated field. The exact
 `0.147.0` attestation profiles therefore remain unchanged, and `0.149.1` must
 fail open with an explicitly unstaffed native child. Installed and Live remain
-unproven, and no AR-119 matrix cell moves.
+unproven, and no AR-119 matrix cell moves. The documented `PreToolUse` rewrite
+surface is a plausible future integration path, but it is not current runtime
+evidence until a live hook invocation is observed and causally bound.
