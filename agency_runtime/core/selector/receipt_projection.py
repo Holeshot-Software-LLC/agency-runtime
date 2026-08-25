@@ -654,6 +654,7 @@ def _routing_effect_codes(
 
     selected = _ids(routing.get("selected_ids"))
     append("inference_attempted", routing.get("inference_attempted") is True)
+    append("turn_context_applied", routing.get("turn_context_applied") is True)
     append("inference_degraded", inference_mode == "degraded")
     append("routing_reused", routing.get("continuation_reused") is True)
     append(

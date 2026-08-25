@@ -8,8 +8,8 @@ tags: [openclaw, finalization, headers, tool-results]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md
-  - docs/roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md
-  - docs/decisions/0166-refresh-openclaw-headers-through-awaited-tool-results.md
+  - docs/roadmap/issue-AR-279-deliver-openclaw-finalizer-results.md
+  - docs/decisions/0167-refresh-openclaw-headers-through-awaited-tool-results.md
 supersedes: []
 superseded_by: null
 type: worklog
@@ -20,7 +20,7 @@ pr: null
 related_issues:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md
-  - docs/roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md
+  - docs/roadmap/issue-AR-279-deliver-openclaw-finalizer-results.md
 ---
 
 # Worklog detail: refresh OpenClaw headers through awaited tool results
@@ -43,7 +43,7 @@ full-payload outbound authorization remain authoritative.
 
 Declare and prove the OpenClaw
 `contracts.agentToolResultMiddleware: [openclaw]` capability during smoke and
-native registration inspection. A missing contract fails closed. ADR-0166
+native registration inspection. A missing contract fails closed. ADR-0167
 records why this is OpenClaw-only.
 
 ## Challenges encountered
@@ -60,7 +60,7 @@ test retains the fail-closed behavior.
 
 ## Decisions and alternatives
 
-ADR-0166 owns the host-specific decision. Direct channel send, a second model
+ADR-0167 owns the host-specific decision. Direct channel send, a second model
 pass, invalid-draft rewrite, OpenClaw source/configuration change, and applying
 the mechanism to other harnesses were rejected. The internal bridge finalizer
 action remains available for compatibility and historical evidence but is not
@@ -82,5 +82,5 @@ exposed by the generated OpenClaw plugin.
 
 Install Agency Runtime only into a natively stopped OpenClaw gateway from this
 clean checkpoint, restart OpenClaw natively, and collect fresh Telegram plus
-post-live Store/config evidence under AR-278. Hermes and protected hosts remain
+post-live Store/config evidence under AR-279. Hermes and protected hosts remain
 untouched. Tracker creation remains pending separate authorization.

@@ -7,8 +7,8 @@ updated: 2026-08-22
 tags: [openclaw, preflight, safety, reliability]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
-  - docs/roadmap/issue-AR-275-preserve-planner-repair-diagnostics.md
-  - docs/roadmap/issue-AR-277-keep-openclaw-finalization-first-pass.md
+  - docs/roadmap/issue-AR-276-preserve-planner-repair-diagnostics.md
+  - docs/roadmap/issue-AR-278-keep-openclaw-finalization-first-pass.md
   - docs/roadmap/handoffs/issue-AR-119.md
   - docs/roadmap/AR-119-openclaw-hermes-verification-packet.md
   - agency_runtime/core/installer_payload_openclaw.py
@@ -17,14 +17,14 @@ supersedes: []
 superseded_by: null
 type: issue
 epic: reliability
-issue_id: AR-276
+issue_id: AR-277
 priority: p0
 tracker_url: null
-depends_on: [AR-275]
-blocks: [AR-119, AR-277]
+depends_on: [AR-276]
+blocks: [AR-119, AR-278]
 ---
 
-# AR-276: Gate OpenClaw provider calls on Agency preflight
+# AR-277: Gate OpenClaw provider calls on Agency preflight
 
 ## Problem
 
@@ -117,10 +117,10 @@ stages with zero fallback, selected two specialists, and recorded
 `openclaw-operations`. The native model performed read-only inspection but did
 not call `agency_finalize`; Store run `e2e9e65d-540c-4aa7-86c5-b945cbc6ac62`
 closed `response_invalid`, and no header or Telegram delivery is claimed.
-AR-277 owns the first-pass instruction repair; a second model pass remains
+AR-278 owns the first-pass instruction repair; a second model pass remains
 forbidden.
 
-AR-277's first-pass-only repair was then installed from clean pair
+AR-278's first-pass-only repair was then installed from clean pair
 `0833884a` / `7be371d2` without changing native OpenClaw inference. A fresh,
 changed request again completed all three exact Agency LiteLLM stages with no
 fallback, but native `task-general` made 31 successful read-only tool calls and
@@ -134,7 +134,7 @@ stages with no fallback; the unchanged native host called only
 `agency_finalize`. Finalization `07759321-7b9f-42b9-bb4f-4086d3ecd167`
 accepted the exact five-line inference header and completed Store run
 `c24afc99-8508-47b8-b09e-79fb9b317cea`. Post-live Store integrity and native
-Telegram/Slack probes pass. This closes AR-276's substantive parent-delivery
+Telegram/Slack probes pass. This closes AR-277's substantive parent-delivery
 dependency without claiming a child canary or AR-119 matrix movement.
 
 ## Approach
@@ -155,7 +155,7 @@ changes.
 
 ## Dependencies
 
-- AR-275 strict planner diagnosis and repair.
+- AR-276 strict planner diagnosis and repair.
 - Installed OpenClaw 2026.7.1 fail-closed `before_agent_run` contract.
 - Existing Store preflight/finalization and final-only outbound enforcement.
 
@@ -176,6 +176,6 @@ changes.
 - [x] Permission candidate was reinstalled Agency-only and proven from native config.
 - [x] Prompt-build-order candidate is reinstalled Agency-only into stopped OpenClaw.
 - [x] Fresh accepted nontrivial turn proves workforce routing without exceeding the native hook budget.
-- [x] First changed AR-277 turn is preserved as a native provider timeout after successful Agency preflight.
-- [x] Fresh changed substantive turn proves first-pass finalization after AR-277 installation.
+- [x] First changed AR-278 turn is preserved as a native provider timeout after successful Agency preflight.
+- [x] Fresh changed substantive turn proves first-pass finalization after AR-278 installation.
 - [ ] Tracker creation remains pending separate authorization.

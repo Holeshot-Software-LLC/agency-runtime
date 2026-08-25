@@ -1,5 +1,5 @@
 ---
-title: "AR-267: Create nested config parents privately"
+title: "AR-268: Create nested config parents privately"
 status: in_progress
 category: roadmap
 created: 2026-08-21
@@ -9,21 +9,21 @@ related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md
   - docs/roadmap/AR-119-openclaw-hermes-verification-packet.md
-  - docs/roadmap/issue-AR-265-accept-openclaw-stopped-gateway-status.md
-  - docs/roadmap/issue-AR-266-accept-openclaw-numeric-package-revision.md
+  - docs/roadmap/issue-AR-266-accept-openclaw-stopped-gateway-status.md
+  - docs/roadmap/issue-AR-267-accept-openclaw-numeric-package-revision.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
 type: issue
 epic: security
-issue_id: AR-267
+issue_id: AR-268
 priority: p0
 tracker_url: null
 depends_on: []
 blocks: []
 ---
 
-# AR-267: Create nested config parents privately
+# AR-268: Create nested config parents privately
 
 ## Problem
 
@@ -63,7 +63,7 @@ configuration parent.
 
 - AR-119 owns truthful installed and live host evidence.
 - AR-264 owns the current Linux OpenClaw/Hermes verification package.
-- AR-265 and AR-266 repair the preceding stopped-state and stable-version
+- AR-266 and AR-267 repair the preceding stopped-state and stable-version
   compatibility boundaries exposed by the same install.
 
 ## Acceptance

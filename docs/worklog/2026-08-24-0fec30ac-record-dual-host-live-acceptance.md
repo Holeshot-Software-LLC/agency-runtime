@@ -8,7 +8,7 @@ tags: [openclaw, hermes, litellm, evidence, telegram]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md
-  - docs/roadmap/issue-AR-279-exclude-hermes-internal-post-response-preflight.md
+  - docs/roadmap/issue-AR-280-exclude-hermes-internal-post-response-preflight.md
 supersedes: []
 superseded_by: null
 type: worklog
@@ -19,7 +19,7 @@ pr: null
 related_issues:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md
-  - docs/roadmap/issue-AR-279-exclude-hermes-internal-post-response-preflight.md
+  - docs/roadmap/issue-AR-280-exclude-hermes-internal-post-response-preflight.md
 ---
 
 # Worklog detail: Record dual-host live acceptance
@@ -40,7 +40,7 @@ harness profiles request the opaque `task-agency-router` LiteLLM alias.
 
 The package preserves all earlier failed attempts, redacts transport-derived
 session prefixes, records immutable configuration and launcher hashes, and
-adds AR-279 for the newly observed Hermes internal post-response lifecycle
+adds AR-280 for the newly observed Hermes internal post-response lifecycle
 calls. No hosted tracker, pull request, Action, or publication operation was
 performed.
 
@@ -48,7 +48,7 @@ performed.
 
 Hermes produced separate non-user post-response preflights after successful
 reply delivery. They consumed strict-planner attempts on the correct Agency
-profile and failed without blocking the accepted user turns. AR-279 retains the
+profile and failed without blocking the accepted user turns. AR-280 retains the
 problem and requires a positively authenticated lifecycle discriminator before
 any repair.
 
@@ -83,7 +83,7 @@ turn boundaries.
 
 ## Follow-ups
 
-- [AR-279](../roadmap/issue-AR-279-exclude-hermes-internal-post-response-preflight.md)
+- [AR-280](../roadmap/issue-AR-280-exclude-hermes-internal-post-response-preflight.md)
   owns the Hermes internal post-response preflight exclusion.
 - Native-child delivery, delegation, Rule 4, and AR-119 matrix-cell proof remain
   outside this parent-runtime acceptance package.

@@ -8,9 +8,9 @@ tags: [openclaw, finalization, plugin, tool]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/handoffs/issue-AR-119.md
-  - docs/roadmap/issue-AR-271-preserve-openclaw-model-receipt-fields.md
-  - docs/roadmap/issue-AR-277-keep-openclaw-finalization-first-pass.md
-  - docs/roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md
+  - docs/roadmap/issue-AR-272-preserve-openclaw-model-receipt-fields.md
+  - docs/roadmap/issue-AR-278-keep-openclaw-finalization-first-pass.md
+  - docs/roadmap/issue-AR-279-deliver-openclaw-finalizer-results.md
   - docs/decisions/0120-construct-first-pass-evidence-headers.md
   - agency_runtime/core/installer_payload_manifests.py
   - agency_runtime/core/installer_payload_openclaw.py
@@ -20,14 +20,14 @@ supersedes: []
 superseded_by: null
 type: issue
 epic: reliability
-issue_id: AR-272
+issue_id: AR-273
 priority: p0
 tracker_url: null
 depends_on: []
-blocks: [AR-119, AR-274, AR-277, AR-278]
+blocks: [AR-119, AR-275, AR-278, AR-279]
 ---
 
-# AR-272: Expose OpenClaw native finalizer tool
+# AR-273: Expose OpenClaw native finalizer tool
 
 ## Problem
 
@@ -85,7 +85,7 @@ finalization `b0f9a0f4-8da2-4b54-b678-826b3a5b61bc` accepted once with
 `bcba81da99187df1157a81e813538251e6108a853b2fb3265a21c9585a3794ca`
 exactly matches the 680-byte native response. The later skill work unit reached
 Agency inference but failed the strict provider response contract before
-finalization; that retained failure is not an AR-272 regression.
+finalization; that retained failure is not an AR-273 regression.
 
 ## Approach
 
@@ -101,7 +101,7 @@ correction or allow an invalid draft.
 
 - OpenClaw `2026.7.1-2` native plugin tool and `contracts.tools` APIs.
 - Existing Store-backed `agency.finalize` and exact outbound binding.
-- AR-271 model-receipt preservation.
+- AR-272 model-receipt preservation.
 
 ## Acceptance
 

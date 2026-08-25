@@ -8,8 +8,8 @@ tags: [evidence, finalization, headers, native-hosts, openclaw, hermes]
 related:
   - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
   - docs/roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md
-  - docs/roadmap/issue-AR-277-keep-openclaw-finalization-first-pass.md
-  - docs/roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md
+  - docs/roadmap/issue-AR-278-keep-openclaw-finalization-first-pass.md
+  - docs/roadmap/issue-AR-279-deliver-openclaw-finalizer-results.md
   - docs/roadmap/issue-AR-27-authoritative-delegation-stop-enforcement.md
   - docs/decisions/0045-turn-scoped-specialist-activation.md
   - docs/decisions/0049-openclaw-final-only-full-payload-delivery.md

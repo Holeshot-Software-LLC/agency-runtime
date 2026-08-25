@@ -8,12 +8,12 @@ tags: [openclaw, native-child, delivery, lifecycle, telegram]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md
-  - docs/roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md
-  - docs/roadmap/issue-AR-280-route-native-children-through-host-profiles.md
-  - docs/roadmap/issue-AR-281-deliver-finalized-openclaw-child-announcements.md
-  - docs/roadmap/issue-AR-282-persist-openclaw-child-terminals-after-delivery.md
+  - docs/roadmap/issue-AR-279-deliver-openclaw-finalizer-results.md
+  - docs/roadmap/issue-AR-281-route-native-children-through-host-profiles.md
+  - docs/roadmap/issue-AR-282-deliver-finalized-openclaw-child-announcements.md
+  - docs/roadmap/issue-AR-283-persist-openclaw-child-terminals-after-delivery.md
   - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
-  - docs/decisions/0168-authorize-finalized-openclaw-child-announcements.md
+  - docs/decisions/0169-authorize-finalized-openclaw-child-announcements.md
 supersedes: []
 superseded_by: null
 type: worklog
@@ -24,10 +24,10 @@ pr: null
 related_issues:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md
-  - docs/roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md
-  - docs/roadmap/issue-AR-280-route-native-children-through-host-profiles.md
-  - docs/roadmap/issue-AR-281-deliver-finalized-openclaw-child-announcements.md
-  - docs/roadmap/issue-AR-282-persist-openclaw-child-terminals-after-delivery.md
+  - docs/roadmap/issue-AR-279-deliver-openclaw-finalizer-results.md
+  - docs/roadmap/issue-AR-281-route-native-children-through-host-profiles.md
+  - docs/roadmap/issue-AR-282-deliver-finalized-openclaw-child-announcements.md
+  - docs/roadmap/issue-AR-283-persist-openclaw-child-terminals-after-delivery.md
 ---
 
 # Worklog detail: Gate OpenClaw child terminals on post-send receipts

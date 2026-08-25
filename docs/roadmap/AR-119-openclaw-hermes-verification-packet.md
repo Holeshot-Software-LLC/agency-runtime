@@ -11,16 +11,16 @@ related:
   - docs/roadmap/AR-119-founding-vision.md
   - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
   - docs/decisions/0158-collect-child-canary-proof-inside-disposable-host-profiles.md
-  - docs/roadmap/issue-AR-272-expose-openclaw-native-finalizer-tool.md
-  - docs/roadmap/issue-AR-273-model-agnostic-structured-inference-profiles.md
-  - docs/decisions/0163-keep-litellm-inference-profiles-model-agnostic.md
-  - docs/roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md
-  - docs/roadmap/issue-AR-279-exclude-hermes-internal-post-response-preflight.md
-  - docs/roadmap/issue-AR-282-persist-openclaw-child-terminals-after-delivery.md
-  - docs/roadmap/issue-AR-280-route-native-children-through-host-profiles.md
-  - docs/roadmap/issue-AR-281-deliver-finalized-openclaw-child-announcements.md
-  - docs/decisions/0166-refresh-openclaw-headers-through-awaited-tool-results.md
-  - docs/decisions/0168-authorize-finalized-openclaw-child-announcements.md
+  - docs/roadmap/issue-AR-273-expose-openclaw-native-finalizer-tool.md
+  - docs/roadmap/issue-AR-274-model-agnostic-structured-inference-profiles.md
+  - docs/decisions/0164-keep-litellm-inference-profiles-model-agnostic.md
+  - docs/roadmap/issue-AR-279-deliver-openclaw-finalizer-results.md
+  - docs/roadmap/issue-AR-280-exclude-hermes-internal-post-response-preflight.md
+  - docs/roadmap/issue-AR-283-persist-openclaw-child-terminals-after-delivery.md
+  - docs/roadmap/issue-AR-281-route-native-children-through-host-profiles.md
+  - docs/roadmap/issue-AR-282-deliver-finalized-openclaw-child-announcements.md
+  - docs/decisions/0167-refresh-openclaw-headers-through-awaited-tool-results.md
+  - docs/decisions/0169-authorize-finalized-openclaw-child-announcements.md
 supersedes: []
 superseded_by: null
 type: reference
@@ -272,7 +272,7 @@ There are no specialist or skill rows. Native parent receipts used
 `task-general` with zero fallback. This is status-control, finalization, and
 delivery proof only.
 
-### Agency inference failure and AR-273 repair checkpoint
+### Agency inference failure and AR-274 repair checkpoint
 
 The only harmless skill attempt used genuinely new text and was not retried.
 Trace `9384d3a3-0a28-4150-a8fa-ab493efda7bf`, run
@@ -286,7 +286,7 @@ Claude, or any other provider occurred. No Store-backed header, finalization,
 skill row, routing decision, specialist, or model receipt was written. The bare
 native word `Loaded.` is therefore not successful Agency skill evidence.
 
-AR-273 traced the strict rejection to Agency's generic HTTP payload. The
+AR-274 traced the strict rejection to Agency's generic HTTP payload. The
 LiteLLM/OpenAI-compatible path requested JSON-object mode but never supplied
 the already bounded Agency schema to the model. It also recorded a configured
 LiteLLM thinking level without forwarding it. The alias mapping was not the
@@ -307,10 +307,10 @@ No post-proof Telegram-scoped Store run has arrived. Operator `/new` plus exact
 Hermes host canary ran, Rule 4 remains outside this package, and no AR-119 matrix
 cell moved.
 
-### Post-AR-273 install and retained live result — 2026-08-22
+### Post-AR-274 install and retained live result — 2026-08-22
 
 Agency-only install `4dd7ee41-121f-4cde-a391-9cecd0665d72` projected the
-AR-273 repair into the existing OpenClaw host. Bundle digest is
+AR-274 repair into the existing OpenClaw host. Bundle digest is
 `51320b45f63cc68db52b267928c1939ab908052f623900a51786228c5b978419`;
 runtime digest is
 `c71fbb41ca8780b5e5a5424ef240dbf92bdf56a36dbc9d2caac70dcfa22d3497`;
@@ -494,11 +494,11 @@ entry returned by `openclaw skills info weather --json`. It then records
 The visible prose says Weather was loaded, but there is no `skills_loaded`
 Store row and the authoritative header says `Skills loaded: none`. This turn
 therefore proves exact-schema LiteLLM workforce inference and final delivery,
-not skill loading. AR-274 owns the bridge defect: bounded serialization drops
+not skill loading. AR-275 owns the bridge defect: bounded serialization drops
 `path`, and the adapter does not inventory-authorize native `read` as a
 canonical skill event. No host canary ran and no AR-119 matrix cell moved.
 
-### Pre-live AR-274 repair receipt
+### Pre-live AR-275 repair receipt
 
 Expected-red JUnit `/tmp/ar274-openclaw-native-skill-read-red.xml` contains
 exactly two failures: the adapter authorizer was never consulted and the
@@ -568,10 +568,10 @@ consumed Codex canary were not touched; no host canary, push, PR, tracker write,
 hosted workflow, alias-target change, or matrix movement occurred.
 
 
-### Pre-live AR-275 planner diagnostic and repair receipt
+### Pre-live AR-276 planner diagnostic and repair receipt
 
 The terminal receipts above are immutable and remain intentionally generic;
-they were written before AR-275 and cannot be enriched after the fact. The new
+they were written before AR-276 and cannot be enriched after the fact. The new
 expected-red slice retained four failures/four passes showing that exact local
 planner codes stopped at the workforce attempt boundary. The repaired slice is
 8/8 green, and the affected planner/intent/preflight/routing slice is 178
@@ -807,7 +807,7 @@ model configuration, Hermes, Codex OAuth/model/canary, Claude, and ZCode were
 not changed.
 
 
-### Exact substantive failure and AR-277 pre-install checkpoint
+### Exact substantive failure and AR-278 pre-install checkpoint
 
 ~~~yaml
 host: openclaw
@@ -1075,7 +1075,7 @@ hermes_and_protected_hosts: untouched
 The prior final evidence bundle remains valid for CLI-only host/Store
 correlation and exact Agency LiteLLM routing. It does not prove Telegram
 delivery. No direct send, second model pass, invalid-draft rewrite, host config
-change, or safety relaxation is part of the AR-278 candidate.
+change, or safety relaxation is part of the AR-279 candidate.
 
 
 ### Telegram exact-text/full-payload conflict bundle
@@ -1126,7 +1126,7 @@ agency_uninstall_dry_run: blocked before mutation
 uninstall_operation_id: 952ff8f6-a660-4309-ac54-191481944440
 uninstall_plan_digest: a497a256064f2ececd2f27d11993cb681628e4094d2309b398c039d89ec7e2aa
 uninstall_error: Native plugin identity is not bound to the managed target
-follow_up_issue: AR-269
+follow_up_issue: AR-270
 recovery_action: stopped openclaw-gateway; native plugins disable agency-preflight; native restart
 agency_native_state: registered=true; staged=true; enabled=false; effective_enabled=false; hook_count=0
 gateway_state: active/running; RPC probe ok
@@ -2700,7 +2700,7 @@ new private temporary root, and set the CI-only fixture launcher to root-owned
 host, Agency, LiteLLM, Codex, Claude, or ZCode configuration changed between
 these validation attempts.
 
-### OpenClaw failed child delivery and locally green correction (AR-280/AR-281)
+### OpenClaw failed child delivery and locally green correction (AR-281/AR-282)
 
 The retained first OpenClaw draw executed a real `sessions_spawn` worker and
 completed its read-only task. Delivery nevertheless failed: completion entered
@@ -2876,7 +2876,7 @@ Workforce inference still selected the OpenClaw harness automatically and used
 native execution stayed on `task-general`; provider telemetry supplied no
 actual answering model.
 
-AR-282's uninstalled candidate advances the Store from schema 47 to 48. Child
+AR-283's uninstalled candidate advances the Store from schema 47 to 48. Child
 `agent_end` records the first immutable outcome and delivery `pending` without
 closing lifecycle. `message_sending` records every allowed text send in a
 bounded attempt ledger but is pre-transport. Only OpenClaw 2026.7.1-2's
@@ -2926,7 +2926,7 @@ hermes: active break glass; untouched in this package
 operational_agency_terminalization_proven: false
 rule4_proven: false
 matrix_cell_moved: false
-tracker_state: AR-282 creation pending separate authorization
+tracker_state: AR-283 creation pending separate authorization
 protected_hosts: Codex OAuth/config/canary, Claude, and ZCode untouched
 ~~~
 

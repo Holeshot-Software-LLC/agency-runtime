@@ -911,6 +911,154 @@ def test_turn_classification_versions_pure_social_bypass_without_rewriting_v3() 
     assert projected["selection_required"] is False
 
 
+def test_turn_classification_v5_projects_advisory_selection_without_rewriting_v4() -> None:
+    advisory = {
+        **_turn_classification(turn_kind="conversation"),
+        "selection_required": True,
+        "reroute_required": True,
+        "execution_decision_required": False,
+        "message_fingerprint": _DIGEST_B,
+    }
+
+    assert (
+        store_preflight._project_turn_classification({**advisory, "classifier_version": 4}) is None
+    )
+    projected = store_preflight._project_turn_classification({**advisory, "classifier_version": 5})
+    assert projected is not None
+    assert projected["selection_required"] is True
+    assert projected["reroute_required"] is True
+    assert projected["execution_decision_required"] is False
+
+
+def test_recipe_projection_preserves_only_closed_workforce_subject_hints() -> None:
+    hints = {
+        "domains": ["software-engineering"],
+        "languages": ["python"],
+        "frameworks": ["sqlite"],
+        "capability_ids": ["technical-analysis"],
+        "platforms": ["windows"],
+    }
+    routing = {
+        **_routing("turn"),
+        "workforce_unit_descriptors": [],
+        "workforce_unit_bindings": [],
+        "workforce_subject_hints": hints,
+    }
+
+    projected = store_preflight._project_recipe_routing(routing, trace_id="turn")
+
+    assert projected is not None
+    assert projected["workforce_subject_hints"] == hints
+    assert (
+        store_preflight._project_recipe_routing(
+            {
+                **routing,
+                "workforce_subject_hints": {
+                    **hints,
+                    "prior_user_message": ["must not persist"],
+                },
+            },
+            trace_id="turn",
+        )
+        is None
+    )
+
+
+@pytest.mark.parametrize(
+    ("mutate_source", "expected"),
+    (
+        (False, "committed"),
+        (True, "turn_context_guard_conflict"),
+    ),
+)
+def test_ready_commit_revalidates_the_exact_turn_context_source(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mutate_source: bool,
+    expected: str,
+) -> None:
+    store = Store(tmp_path / "agency.db")
+    monkeypatch.setattr(store, "_commit_resident_manager_binding", lambda *_a, **_k: True)
+    source_started = store.begin_preflight_attempt(
+        session_id="session",
+        trace_id="source",
+        host="codex",
+        request_fingerprint=_DIGEST_A,
+        request_kind="nontrivial",
+    )
+    source_recipe, source_routing, source_refs = _ready_payload("source")
+    assert store.mark_preflight_ready(
+        session_id="session",
+        trace_id="source",
+        attempt_token=source_started["attempt_token"],
+        recipe=source_recipe,
+        host="codex",
+        routing_evidence=source_routing,
+        specialist_refs=source_refs,
+    ) == {"outcome": "committed"}
+
+    target_started = store.begin_preflight_attempt(
+        session_id="session",
+        trace_id="target",
+        host="codex",
+        request_fingerprint=_DIGEST_B,
+        request_kind="nontrivial",
+    )
+    state = store.get_turn_state_context(
+        "session",
+        before_trace_id="target",
+        host="codex",
+    )
+    context = state["turn_routing_context"]
+    guard = state["turn_routing_context_guard"]
+    assert context["source_trace_id"] == "source"
+    assert guard["source_trace_id"] == "source"
+
+    recipe, routing, refs = _resident_recipe("target", version=15)
+    routing.update(
+        turn_context_applied=True,
+        turn_context_source_trace_id="source",
+        turn_context_revision=guard["source_context_revision"],
+    )
+    projected_routing = store_preflight._project_routing_evidence(
+        routing,
+        trace_id="target",
+    )
+    assert projected_routing is not None
+    recipe.update(
+        routing=projected_routing["decision"],
+        turn_context_guard=guard,
+        turn_classification={
+            **_turn_classification(turn_kind="conversation"),
+            "selection_required": True,
+            "reroute_required": True,
+            "execution_decision_required": False,
+            "classifier_version": 5,
+            "message_fingerprint": _DIGEST_B,
+        },
+    )
+    if mutate_source:
+        connection = store._connect()
+        try:
+            connection.execute(
+                "UPDATE runs SET evidence_revision = evidence_revision + 1 "
+                "WHERE trace_id = 'source'"
+            )
+            connection.commit()
+        finally:
+            connection.close()
+
+    assert store.mark_preflight_ready(
+        session_id="session",
+        trace_id="target",
+        attempt_token=target_started["attempt_token"],
+        recipe=recipe,
+        host="codex",
+        routing_evidence=routing,
+        specialist_refs=refs,
+    ) == {"outcome": expected}
+
+
 def test_continuation_guard_and_resident_kernel_reject_invalid_projections() -> None:
     valid_guard = {
         "guard_version": 1,

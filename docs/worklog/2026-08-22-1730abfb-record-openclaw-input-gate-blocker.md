@@ -9,8 +9,8 @@ related:
   - docs/worklog/README.md
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md
-  - docs/roadmap/issue-AR-275-preserve-planner-repair-diagnostics.md
-  - docs/roadmap/issue-AR-276-gate-openclaw-provider-calls-on-agency-preflight.md
+  - docs/roadmap/issue-AR-276-preserve-planner-repair-diagnostics.md
+  - docs/roadmap/issue-AR-277-gate-openclaw-provider-calls-on-agency-preflight.md
   - docs/roadmap/AR-119-openclaw-hermes-verification-packet.md
 supersedes: []
 superseded_by: null
@@ -22,8 +22,8 @@ pr: null
 related_issues:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md
-  - docs/roadmap/issue-AR-275-preserve-planner-repair-diagnostics.md
-  - docs/roadmap/issue-AR-276-gate-openclaw-provider-calls-on-agency-preflight.md
+  - docs/roadmap/issue-AR-276-preserve-planner-repair-diagnostics.md
+  - docs/roadmap/issue-AR-277-gate-openclaw-provider-calls-on-agency-preflight.md
 ---
 
 # Worklog detail: Record OpenClaw input-gate blocker

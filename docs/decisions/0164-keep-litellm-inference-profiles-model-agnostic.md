@@ -7,21 +7,21 @@ updated: 2026-08-21
 tags: [inference, litellm, routing, structured-output]
 related:
   - docs/decisions/0153-adopt-per-stage-inference-profile-routes.md
-  - docs/decisions/0164-delegate-exact-schema-translation-to-litellm.md
-  - docs/roadmap/issue-AR-273-model-agnostic-structured-inference-profiles.md
+  - docs/decisions/0165-delegate-exact-schema-translation-to-litellm.md
+  - docs/roadmap/issue-AR-274-model-agnostic-structured-inference-profiles.md
   - docs/roadmap/reference-workforce-inference-stages.md
   - agency_runtime/core/structured_provider.py
   - agency_runtime/core/inference_profiles.py
   - tests/test_roster_inference_adapter.py
   - tests/test_inference_profiles.py
 supersedes: []
-superseded_by: docs/decisions/0164-delegate-exact-schema-translation-to-litellm.md
-id: ADR-0163
+superseded_by: docs/decisions/0165-delegate-exact-schema-translation-to-litellm.md
+id: ADR-0164
 type: decision
 deciders: [maintainers]
 ---
 
-# ADR-0163: Keep LiteLLM inference profiles model-agnostic
+# ADR-0164: Keep LiteLLM inference profiles model-agnostic
 
 ## Context
 

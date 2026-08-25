@@ -10,17 +10,17 @@ related:
   - docs/roadmap/issue-AR-122-contractor-hiring-and-lifecycle.md
   - docs/roadmap/issue-AR-123-workforce-cli-and-dashboard.md
   - docs/roadmap/handoffs/issue-AR-264.md
-  - docs/roadmap/issue-AR-265-accept-openclaw-stopped-gateway-status.md
-  - docs/roadmap/issue-AR-266-accept-openclaw-numeric-package-revision.md
-  - docs/roadmap/issue-AR-267-create-nested-config-parents-privately.md
-  - docs/roadmap/issue-AR-268-accept-null-openclaw-control-errors.md
-  - docs/roadmap/issue-AR-269-bind-openclaw-installed-copy-provenance.md
-  - docs/roadmap/issue-AR-270-accept-stopped-openclaw-uninstall-status.md
-  - docs/roadmap/issue-AR-271-preserve-openclaw-model-receipt-fields.md
-  - docs/roadmap/issue-AR-272-expose-openclaw-native-finalizer-tool.md
-  - docs/roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md
-  - docs/roadmap/issue-AR-279-exclude-hermes-internal-post-response-preflight.md
-  - docs/roadmap/issue-AR-280-route-native-children-through-host-profiles.md
+  - docs/roadmap/issue-AR-266-accept-openclaw-stopped-gateway-status.md
+  - docs/roadmap/issue-AR-267-accept-openclaw-numeric-package-revision.md
+  - docs/roadmap/issue-AR-268-create-nested-config-parents-privately.md
+  - docs/roadmap/issue-AR-269-accept-null-openclaw-control-errors.md
+  - docs/roadmap/issue-AR-270-bind-openclaw-installed-copy-provenance.md
+  - docs/roadmap/issue-AR-271-accept-stopped-openclaw-uninstall-status.md
+  - docs/roadmap/issue-AR-272-preserve-openclaw-model-receipt-fields.md
+  - docs/roadmap/issue-AR-273-expose-openclaw-native-finalizer-tool.md
+  - docs/roadmap/issue-AR-279-deliver-openclaw-finalizer-results.md
+  - docs/roadmap/issue-AR-280-exclude-hermes-internal-post-response-preflight.md
+  - docs/roadmap/issue-AR-281-route-native-children-through-host-profiles.md
   - docs/decisions/0081-compile-contractors-from-governed-structured-contracts.md
   - docs/decisions/0162-compile-structured-contractor-execution-guidance.md
   - docs/worklog/README.md
@@ -31,7 +31,7 @@ epic: roster-governance
 issue_id: AR-264
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
-depends_on: [AR-122, AR-123, AR-278]
+depends_on: [AR-122, AR-123, AR-279]
 blocks: [AR-119]
 ---
 
@@ -149,10 +149,10 @@ metadata and compiled prompt contain explicit evidence requirements.
 - The Linux package uses fetched `origin/main` `4a326773` with repaired anchor `f76050d7` in ancestry and checkout-module CLI identity throughout.
 - Before install, Store contractor count was zero. The first partial attempt seeded 263 roster entries and all 15 packaged contractors before stopping safely at launcher identity; later attempts reused them idempotently.
 - Existing LiteLLM configuration is preserved through populated `LITELLM_API_KEY` and exact alias `task-agency-router`. Agency routes only OpenClaw and Hermes through harness profile `linux-task-agency-router`.
-- OpenClaw install failures were preserved as AR-265 through AR-267. A later completed install accepted Telegram input but queued no reply because its healthy control payload with `error: null` exited 2; AR-268 has a failing-before/passing-after bounded bridge repair.
+- OpenClaw install failures were preserved as AR-266 through AR-269. A later completed install accepted Telegram input but queued no reply because its healthy control payload with `error: null` exited 2; AR-270 has a failing-before/passing-after bounded bridge repair.
 - Focused sets pass 45 registration, 18 version/live-gateway, and 59 configuration/streaming tests.
-- The installed plugin was removed while stopped, all five native streaming values and the `task-general` host default/catalog were restored, and the 15-contractor Store state plus failed bundle evidence remain retained. AR-269 and AR-270 record two fail-closed uninstall compatibility defects.
-- Baseline OpenClaw is active with Slack connected and Telegram polling. AR-271 preserved native model receipts, but the next control remained failed because the Agency plugin exposed no native finalizer. AR-272 adds only the Agency-owned `agency_finalize` wrapper; its pre-fix Node regression exited 91 and 65 focused OpenClaw tests pass. A clean checkpoint precedes installing that Agency integration and collecting fresh proof.
+- The installed plugin was removed while stopped, all five native streaming values and the `task-general` host default/catalog were restored, and the 15-contractor Store state plus failed bundle evidence remain retained. AR-270 and AR-271 record two fail-closed uninstall compatibility defects.
+- Baseline OpenClaw is active with Slack connected and Telegram polling. AR-272 preserved native model receipts, but the next control remained failed because the Agency plugin exposed no native finalizer. AR-273 adds only the Agency-owned `agency_finalize` wrapper; its pre-fix Node regression exited 91 and 65 focused OpenClaw tests pass. A clean checkpoint precedes installing that Agency integration and collecting fresh proof.
 - Hermes remains running and untouched as break glass. Exact `task-agency-router` remains only in Agency's harness profile; no native host default uses it.
 - Codex OAuth/configuration and the consumed Codex canary remain untouched. This Linux package has not moved any AR-119 matrix cell.
 

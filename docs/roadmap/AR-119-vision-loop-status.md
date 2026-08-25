@@ -20,13 +20,13 @@ related:
   - docs/roadmap/issue-AR-261-disambiguate-technical-diagnosis-risk.md
   - docs/roadmap/issue-AR-262-preserve-slow-host-dashboard-parity.md
   - docs/roadmap/issue-AR-263-restore-codex-desktop-parent-hook-delivery.md
-  - docs/roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md
-  - docs/roadmap/issue-AR-279-exclude-hermes-internal-post-response-preflight.md
-  - docs/roadmap/issue-AR-280-route-native-children-through-host-profiles.md
-  - docs/roadmap/issue-AR-281-deliver-finalized-openclaw-child-announcements.md
-  - docs/roadmap/issue-AR-282-persist-openclaw-child-terminals-after-delivery.md
-  - docs/decisions/0166-refresh-openclaw-headers-through-awaited-tool-results.md
-  - docs/decisions/0168-authorize-finalized-openclaw-child-announcements.md
+  - docs/roadmap/issue-AR-279-deliver-openclaw-finalizer-results.md
+  - docs/roadmap/issue-AR-280-exclude-hermes-internal-post-response-preflight.md
+  - docs/roadmap/issue-AR-281-route-native-children-through-host-profiles.md
+  - docs/roadmap/issue-AR-282-deliver-finalized-openclaw-child-announcements.md
+  - docs/roadmap/issue-AR-283-persist-openclaw-child-terminals-after-delivery.md
+  - docs/decisions/0167-refresh-openclaw-headers-through-awaited-tool-results.md
+  - docs/decisions/0169-authorize-finalized-openclaw-child-announcements.md
   - docs/roadmap/AR-255-child-parity-design.md
 supersedes: []
 superseded_by: null
@@ -2738,7 +2738,7 @@ main `4a3267738bb20519500513ea1498fc68f8ea9443`. Native OpenClaw remains
 LiteLLM alias `task-agency-router`. Hermes remains running and untouched.
 
 OpenClaw `2026.7.1-2` now installs and starts with 13 plugins, connected Slack,
-and active Telegram polling. AR-268 repaired the concrete outage where a valid
+and active Telegram polling. AR-269 repaired the concrete outage where a valid
 control envelope with `error: null` exited 2. Exact installed bridge status now
 exits 0. The first fresh local control after that repair is retained as failed,
 not promoted: session `57f19f38-338d-4d93-9c46-eac7b6a4831a`, trace
@@ -2747,7 +2747,7 @@ event `01af794d-fb97-41c5-8920-2a8bfc2a3558` names missing field
 `actual_model_selected`. The visible Agency-shaped header is therefore not
 Store-backed acceptance evidence.
 
-AR-271 records the exact cause: installed OpenClaw supplies the model through
+AR-272 records the exact cause: installed OpenClaw supplies the model through
 `model_call_ended.event.model` when hook context omits `modelId`, and Agency
 serialization dropped all receipt fields. The new executable Node regression
 failed pre-fix with exit 83 and passes after the bounded fallback and serializer
@@ -2769,7 +2769,7 @@ must not be promoted. No AR-119 matrix cell moved.
 
 ## 2026-08-21 — OpenClaw native Agency finalizer repair pending checkpoint
 
-The first post-AR-271 local control is retained as failed evidence. OpenClaw
+The first post-AR-272 local control is retained as failed evidence. OpenClaw
 session `264a65e9-7462-4ea7-9b40-9b38206f1b35`, Agency trace
 `94f32f04-3b72-4ffa-8801-953b320e657f`, preserved four native `task-general`
 request receipts but delivered no Store-backed header. Run
@@ -2778,7 +2778,7 @@ request receipts but delivered no Store-backed header. Run
 missing. Native plugin inspection reported zero tools and zero MCP servers even
 though the managed bundle retained `.mcp.json`.
 
-AR-272 isolates the defect to the Agency-generated OpenClaw plugin: preflight
+AR-273 isolates the defect to the Agency-generated OpenClaw plugin: preflight
 required canonical `agency.finalize`, but OpenClaw had no native callable tool
 backing it. The new provider-safe `agency_finalize` wrapper delegates bounded
 arguments to the unchanged canonical Store finalizer. It introduces no correction
@@ -2834,7 +2834,7 @@ the existing input was not retried. No new Telegram-scoped Store run arrived
 after local proof, no host canary ran, and **no AR-119 matrix cell moved**.
 
 
-## 2026-08-21 — AR-273 model-agnostic LiteLLM repair reaches clean-test checkpoint
+## 2026-08-21 — AR-274 model-agnostic LiteLLM repair reaches clean-test checkpoint
 
 The prior alias-remapping conclusion is superseded by code-path evidence, not
 by a proxy change. Agency's generic OpenAI-compatible/LiteLLM request selected
@@ -2843,7 +2843,7 @@ the correct OpenClaw harness, profile, provider, and exact alias, but sent only
 schema. The same path could record a configured LiteLLM thinking level without
 forwarding it. The alias and its target remain unchanged.
 
-AR-273 and ADR-0163 retain LiteLLM as the model-agnostic boundary. Agency now
+AR-274 and ADR-0164 retain LiteLLM as the model-agnostic boundary. Agency now
 places the exact deterministic schema in the trusted system instruction and
 forwards a configured level as standardized `reasoning_effort`, which LiteLLM
 translates for the routed provider/model. Agency does not construct a native
@@ -2860,9 +2860,9 @@ glass. No fresh provider turn, skill row, Telegram receipt, actual-model claim,
 host canary, or AR-119 matrix movement is claimed.
 
 
-## 2026-08-22 — AR-273 installed; control green, substantive response invalid
+## 2026-08-22 — AR-274 installed; control green, substantive response invalid
 
-The clean AR-273 pair is `1b789ac3` plus ledger `6d6ea571`. Agency-only
+The clean AR-274 pair is `1b789ac3` plus ledger `6d6ea571`. Agency-only
 install `4dd7ee41-121f-4cde-a391-9cecd0665d72` projected bundle
 `51320b45f63cc68db52b267928c1939ab908052f623900a51786228c5b978419`
 into the existing OpenClaw `2026.7.1-2` host. OpenClaw itself was not
@@ -2916,7 +2916,7 @@ promoted into an actual-model claim.
 
 The installed LiteLLM 1.94.0 adapter declares `response_format` support and
 maps the standard `json_schema` payload to the current routed provider's
-native schema format. ADR-0164 therefore supersedes ADR-0163's JSON-object-mode
+native schema format. ADR-0165 therefore supersedes ADR-0164's JSON-object-mode
 choice while retaining its opaque-alias and standardized-reasoning rules.
 Agency now sends the exact closed schema through LiteLLM's standard request and
 continues to include the schema in the trusted prompt and validate it locally.
@@ -3013,7 +3013,7 @@ row and the honest five-line header says `Skills loaded: none`. This is not
 successful skill evidence. Current OpenClaw exposes no `skill_view`; the
 generated bridge drops `path`, and the adapter normalizes no native `read`.
 
-AR-274 records the regression-first repair boundary: preserve a bounded path,
+AR-275 records the regression-first repair boundary: preserve a bounded path,
 authorize it against the exact eligible/model-visible native inventory entry,
 and fail closed for arbitrary or lookalike reads and inventory failure. Existing
 filesystem, executable, finalization, and Store trust checks stay unchanged.
@@ -3022,7 +3022,7 @@ Hermes, Claude, ZCode, and Codex OAuth/model configuration remain untouched.
 No host canary ran and **no AR-119 matrix cell moved**.
 
 
-## 2026-08-22 — AR-274 native skill bridge is locally green
+## 2026-08-22 — AR-275 native skill bridge is locally green
 
 Two focused regressions preserve the exact pre-repair failure. The generated
 OpenClaw transport discarded `path` and its executable test exited 37; the
@@ -3074,7 +3074,7 @@ alias target. No retry, validator weakening, actual-model invention, host
 canary, or AR-119 matrix movement is authorized.
 
 
-## 2026-08-22 — AR-275 planner repair diagnostics are locally green
+## 2026-08-22 — AR-276 planner repair diagnostics are locally green
 
 The two terminal OpenClaw planner failures already had deterministic semantic
 detail inside each `WorkforceInferenceAttempt`, including exact local policy
@@ -3084,7 +3084,7 @@ receipts exposed only `provider_response_contract_invalid`. The single repair
 attempt also reused the ordinary intent-planner system instruction instead of
 a concise complete-replacement contract.
 
-AR-275 preserves the regression first. Four focused cases failed while four
+AR-276 preserves the regression first. Four focused cases failed while four
 controls passed: planner codes were absent from terminal projection and from
 attempt/routing serialization, and the repair prompt lacked structured codes.
 The minimal repair records exact closed-vocabulary policy codes, uses one fixed
@@ -3275,7 +3275,7 @@ records every required header field missing. Response/transcript SHAs are
 `f4f6d7b7...` / `f0f9e359...`. This proves accepted Agency inference and a
 native first-pass finalizer failure, not response delivery.
 
-AR-277 records the defect. A bounded host revision candidate passed local
+AR-278 records the defect. A bounded host revision candidate passed local
 tests but was rejected before commit or installation because ADR-0120 makes
 the first invalid natural response terminal. The replacement strengthens only
 persistent native-tool and per-turn first-pass instructions, explicitly says
@@ -3357,7 +3357,7 @@ This is not a Telegram-ingress, LiteLLM, preflight, or Store failure. It is a
 post-finalizer host-delivery failure, and the earlier CLI bundle does not prove
 channel delivery. OpenClaw 2026.7.1-2 exposes no supported post-suppression
 hook that can recover the accepted payload without bypassing host delivery
-controls. AR-278 therefore changes only the generated finalizer metadata: the
+controls. AR-279 therefore changes only the generated finalizer metadata: the
 tool validates and returns but does not send, its result is not user-visible by
 itself, the next/final assistant output must copy it, and `NO_REPLY` is
 forbidden. Expected-red exit 223 is retained; three focused finalizer checks
@@ -3445,7 +3445,7 @@ protected hosts remain untouched pending Lucas's OpenClaw capability decision.
 Lucas selected temporary recovery. Ownership-bound uninstall dry-run operation
 `952ff8f6-a660-4309-ac54-191481944440` retained plan digest `a497a256...` and
 failed before mutation because native installed-copy provenance is not bound to
-the Agency target; AR-269 owns that defect. The gateway was stopped natively,
+the Agency target; AR-270 owns that defect. The gateway was stopped natively,
 and OpenClaw's supported plugin command disabled only `agency-preflight`.
 
 OpenClaw restarted active/RPC-green on 2026.7.1-2. Agency remains staged and
@@ -3473,7 +3473,7 @@ plugin SDK nevertheless exposes awaited
 `registerAgentToolResultMiddleware`, which runs after a native tool result and
 before the model continues.
 
-ADR-0166 therefore changes Agency's OpenClaw adapter only. Preflight supplies
+ADR-0167 therefore changes Agency's OpenClaw adapter only. Preflight supplies
 the initial exact five-line Store snapshot. One middleware scoped to runtime
 `openclaw` records each tool observation synchronously, preserves the native
 result, and appends the updated exact snapshot. The model emits one natural
@@ -3610,7 +3610,7 @@ Response SHA is `1e8c1df5...`; transcript SHA is `593ddef8...`. The header's
 receipts prove deterministic status did not invoke or prove
 `task-agency-router`; no answering model is claimed. Pre/post Store backups
 are integrity `ok`, schema 47, SHAs `d00c86f9...` / `470aa2fd...`; contractors
-remain 15. AR-278 delivery passes. Harmless skill and substantive workforce
+remain 15. AR-279 delivery passes. Harmless skill and substantive workforce
 proof remain pending.
 
 ## 2026-08-23 - Delivered skill turn isolates missing middleware correlation
@@ -3983,7 +3983,7 @@ No delegation or Rule 4 proof exists and no AR-119 matrix cell moves.
 
 ## 2026-08-24 - OpenClaw native-error candidate passes local security gates
 
-The Agency-only ADR-0167 candidate now registers OpenClaw `agent_end` and arms
+The Agency-only ADR-0168 candidate now registers OpenClaw `agent_end` and arms
 one 30-second, one-use marker keyed only by hashes of the exact session and run
 after a failed native end event. A later successful end clears it. Only a final
 payload explicitly marked `isError` may consume the marker, and only an exact
@@ -4348,7 +4348,7 @@ queueing, so execution occurred but operational completion delivery failed.
 The same evidence exposed an unprojected host-profile timeout and lifecycle
 correlation that depended on process memory.
 
-AR-280/AR-281 keep the repair inside Agency Runtime. OpenClaw child staffing
+AR-281/AR-282 keep the repair inside Agency Runtime. OpenClaw child staffing
 now inherits the owning `linux-task-agency-router` timeout, lifecycle recovery
 revalidates exact durable parent/worker/run/launch bindings, and a dedicated
 prepare/finalize path authorizes completion on the exact parent trace. The
@@ -4590,7 +4590,7 @@ fallback. Provider telemetry supplied no actual answering model. OpenClaw's
 separate native execution remained on `task-general`; no native host config or
 protected-host route changed.
 
-AR-282 replaces callback timing with a durable post-transport state machine.
+AR-283 replaces callback timing with a durable post-transport state machine.
 The uninstalled schema-48 candidate records the first immutable child outcome
 as delivery `pending` without closing the worker. `message_sending` retains the
 finalized response hash in a bounded all-outbound attempt ledger but proves no

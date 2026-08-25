@@ -8,7 +8,7 @@ tags: [openclaw, telegram, reset, delivery, security]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md
-  - docs/roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md
+  - docs/roadmap/issue-AR-279-deliver-openclaw-finalizer-results.md
 supersedes: []
 superseded_by: null
 type: worklog
@@ -19,7 +19,7 @@ pr: null
 related_issues:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md
-  - docs/roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md
+  - docs/roadmap/issue-AR-279-deliver-openclaw-finalizer-results.md
 ---
 
 # Worklog detail: Correlate sessionless OpenClaw reset acknowledgements

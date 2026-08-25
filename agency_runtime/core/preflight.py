@@ -68,6 +68,11 @@ from agency_runtime.core.turn_intent import (
     force_fresh_turn_reroute,
 )
 from agency_runtime.core.turn_origin import TurnOriginReceipt, current_turn_origin
+from agency_runtime.core.turn_routing_context import (
+    project_turn_routing_context,
+    project_turn_routing_context_guard,
+    turn_routing_context_revision,
+)
 from agency_runtime.core.unit_assignment import (
     MAX_SUGGESTED_WORK_UNITS,
     MAX_UNIT_SELECTION_WORKERS,
@@ -112,6 +117,7 @@ class SubstantiveSpecialistUnavailable(RuntimeError):
         self.inference_mode = str(r.get("inference_mode") or "degraded")
         self.routing_error = str(r.get("error") or "")
         self.inference_failures: tuple[str, ...] = tuple(r.get("inference_failures") or ())
+        self.routing = dict(r)
 
 
 class _PreflightFailureDiagnostics:
@@ -244,19 +250,31 @@ def _turn_state_for_preflight(
     *,
     session_id: str,
     trace_id: str,
-) -> TurnState:
+    host: str,
+) -> tuple[TurnState, dict[str, Any], dict[str, Any]]:
     """Read durable prior-turn state or fail closed when it is unavailable."""
 
     getter = getattr(store, "get_turn_state_context", None)
     if not callable(getter):
-        return TurnState(state_known=False, state_status="missing")
+        return TurnState(state_known=False, state_status="missing"), {}, {}
     try:
-        value = getter(session_id, before_trace_id=trace_id)
+        value = getter(session_id, before_trace_id=trace_id, host=host)
     except Exception:
-        return TurnState(state_known=False, state_status="missing")
+        return TurnState(state_known=False, state_status="missing"), {}, {}
     if not isinstance(value, Mapping):
-        return TurnState(state_known=False, state_status="corrupt")
-    return TurnState.from_mapping(value)
+        return TurnState(state_known=False, state_status="corrupt"), {}, {}
+    routing_context = project_turn_routing_context(value.get("turn_routing_context"))
+    context_guard = project_turn_routing_context_guard(value.get("turn_routing_context_guard"))
+    if (
+        not routing_context
+        or not context_guard
+        or routing_context.get("source_trace_id") != context_guard.get("source_trace_id")
+        or turn_routing_context_revision(routing_context)
+        != context_guard.get("source_context_revision")
+    ):
+        routing_context = {}
+        context_guard = {}
+    return TurnState.from_mapping(value), routing_context, context_guard
 
 
 def _catalog_with_policy(store: Store, disabled_agents: frozenset[str]) -> list[dict]:
@@ -904,6 +922,8 @@ def _fail_open_preflight_result(
     resident_context: str,
     roster_size: int,
     host: str,
+    classification: TurnClassification,
+    source_routing: Mapping[str, Any] | None = None,
     inference_attempted: bool = True,
     inference_mode: str = "degraded",
     routing_error: str = "",
@@ -936,7 +956,23 @@ def _fail_open_preflight_result(
         "provider": "deterministic",
         "trace_id": trace_id,
         "error": error_detail or "no accepted specialist route; the host answers as a generalist",
+        "turn_kind": classification.turn_kind,
+        "selection_required": classification.selection_required,
+        "reroute_required": classification.reroute_required,
+        "execution_decision_required": classification.execution_decision_required,
+        "continuation_of": classification.continuation_of,
+        "classifier_version": classification.classifier_version,
+        "state_revision": classification.state_revision,
     }
+    prior_routing = source_routing if isinstance(source_routing, Mapping) else {}
+    if prior_routing.get("turn_context_applied") is True:
+        routing.update(
+            turn_context_applied=True,
+            turn_context_source_trace_id=str(
+                prior_routing.get("turn_context_source_trace_id") or ""
+            ),
+            turn_context_revision=str(prior_routing.get("turn_context_revision") or ""),
+        )
     return PreflightResult(
         session_id=session_id,
         trace_id=trace_id,
@@ -946,10 +982,13 @@ def _fail_open_preflight_result(
         selected_specialists=(),
         trivial=False,
         roster_size=roster_size,
-        turn_kind="substantive",
-        selection_required=True,
-        reroute_required=False,
-        execution_decision_required=False,
+        turn_kind=classification.turn_kind,
+        selection_required=classification.selection_required,
+        reroute_required=classification.reroute_required,
+        execution_decision_required=classification.execution_decision_required,
+        continuation_of=classification.continuation_of,
+        classifier_version=classification.classifier_version,
+        state_revision=classification.state_revision,
         resident_managers=resident_managers,
         resident_manager_kernel_version=(
             RESIDENT_MANAGER_KERNEL_REFERENCE.version if resident_managers else 0
@@ -1015,6 +1054,18 @@ def _mark_ready_with_binding_replan(
     return store.mark_preflight_ready(**arguments)
 
 
+def _require_ready_commit(ready: object) -> None:
+    """Reject stale contextual evidence and every non-ready CAS outcome."""
+
+    if isinstance(ready, dict) and ready.get("outcome") == "turn_context_guard_conflict":
+        raise RuntimeError("turn routing context changed before ready commit")
+    if not isinstance(ready, dict) or ready.get("outcome") not in {
+        "committed",
+        "replay",
+    }:
+        raise RuntimeError("preflight attempt became terminal before it reached ready")
+
+
 def _prepare_preflight_evidence(
     store: Store,
     *,
@@ -1036,6 +1087,7 @@ def _prepare_preflight_evidence(
     resident_binding: Any,
     resident_context: str,
     pipeline: Any,
+    turn_context_guard: Mapping[str, Any] | None = None,
     parent_session_id: str = "",
     parent_trace_id: str = "",
     route_request: Any = None,
@@ -1156,6 +1208,8 @@ def _prepare_preflight_evidence(
         }
         if continuation_snapshot is not None:
             recipe["continuation_guard"] = continuation_snapshot["guard"]
+        if turn_context_guard:
+            recipe["turn_context_guard"] = dict(turn_context_guard)
         # Replayed for its validation side effects: it raises if the recipe cannot
         # rebuild the exact result being committed. The rebuilt value itself is
         # unused now that no delivery mode derives private plan scopes from it.
@@ -1337,10 +1391,15 @@ def run_preflight(
             normalized_host,
             native_child=bool(normalized_parent_trace),
         )
-        turn_state = _turn_state_for_preflight(
+        (
+            turn_state,
+            prior_turn_routing_context,
+            prior_turn_context_guard,
+        ) = _turn_state_for_preflight(
             store,
             session_id=normalized_session,
             trace_id=turn_trace_id,
+            host=normalized_host,
         )
         classification = classify_turn_intent(user_message, turn_state)
         if current_origin is None:
@@ -1349,6 +1408,24 @@ def run_preflight(
                 "adapter_origin_untrusted",
                 untrusted_origin=True,
             )
+        turn_routing_context = prior_turn_routing_context
+        turn_context_guard = prior_turn_context_guard
+        if classification.continuation_of and (
+            not turn_routing_context
+            or turn_routing_context.get("source_trace_id") != classification.continuation_of
+        ):
+            turn_routing_context = {}
+            turn_context_guard = {}
+        if not (
+            classification.selection_required
+            and classification.reroute_required
+            and (
+                not classification.execution_decision_required
+                or classification.turn_kind in {"continuation", "revision"}
+            )
+        ):
+            turn_routing_context = {}
+            turn_context_guard = {}
         request_kind = classification.legacy_request_kind
         request_fingerprint = sha256(
             str(user_message).encode("utf-8", errors="surrogatepass")
@@ -1454,6 +1531,7 @@ def run_preflight(
             available_tools=runtime_capabilities.capabilities,
             capability_receipt=runtime_capabilities,
             workforce_snapshot=workforce_snapshot,
+            turn_routing_context=turn_routing_context,
         )
         routing_fingerprint = route_request.context_fingerprint
         policy_fingerprint = _context_policy_fingerprint(
@@ -1484,6 +1562,7 @@ def run_preflight(
             "parent_session_id": normalized_parent_session,
             "parent_trace_id": normalized_parent_trace,
             "diagnostics": diagnostics,
+            "turn_context_guard": turn_context_guard,
         }
         (
             recipe,
@@ -1561,11 +1640,7 @@ def run_preflight(
                 config=cfg,
                 pipeline=pipeline,
             )
-        if not isinstance(ready, dict) or ready.get("outcome") not in {
-            "committed",
-            "replay",
-        }:
-            raise RuntimeError("preflight attempt became terminal before it reached ready")
+        _require_ready_commit(ready)
         diagnostics.enter("ready_read")
         ready_result = _read_ready_result(
             store,
@@ -1606,6 +1681,8 @@ def run_preflight(
                 resident_context=resident_context,
                 roster_size=len(catalog),
                 host=normalized_host,
+                classification=classification,
+                source_routing=error.routing,
                 inference_attempted=error.inference_attempted,
                 inference_mode=error.inference_mode,
                 routing_error=error.routing_error,

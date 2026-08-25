@@ -9,9 +9,9 @@ related:
   - docs/decisions/0118-require-inference-owned-staffing.md
   - docs/roadmap/issue-AR-235-autonomous-gap-hiring-with-isolated-security-review.md
   - docs/roadmap/issue-AR-253-dynamic-team-dispatch-on-every-harness.md
-  - docs/roadmap/issue-AR-273-model-agnostic-structured-inference-profiles.md
-  - docs/roadmap/issue-AR-280-route-native-children-through-host-profiles.md
-  - docs/decisions/0163-keep-litellm-inference-profiles-model-agnostic.md
+  - docs/roadmap/issue-AR-274-model-agnostic-structured-inference-profiles.md
+  - docs/roadmap/issue-AR-281-route-native-children-through-host-profiles.md
+  - docs/decisions/0164-keep-litellm-inference-profiles-model-agnostic.md
   - docs/roadmap/reference-workforce-inference-stages.md
   - docs/roadmap/handoffs/issue-AR-235.md
   - agency_runtime/core/inference_profiles.py
@@ -71,7 +71,7 @@ per-stage model selection. The reference doc
 per-stage inventory, profile schema, and per-adapter `thinking_level`
 mapping; the runtime owns the resolver and the validation pipeline.
 
-ADR-0163 refines the LiteLLM-only mapping below: opaque aliases use the
+ADR-0164 refines the LiteLLM-only mapping below: opaque aliases use the
 gateway's standardized `reasoning_effort` translation rather than an
 Agency-constructed provider-native `thinking` object. The named-profile and
 route decision remains unchanged.

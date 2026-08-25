@@ -8,24 +8,24 @@ tags: [openclaw, native-child, lifecycle, delivery, cleanup]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md
-  - docs/roadmap/issue-AR-280-route-native-children-through-host-profiles.md
-  - docs/roadmap/issue-AR-281-deliver-finalized-openclaw-child-announcements.md
+  - docs/roadmap/issue-AR-281-route-native-children-through-host-profiles.md
+  - docs/roadmap/issue-AR-282-deliver-finalized-openclaw-child-announcements.md
   - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
-  - docs/decisions/0168-authorize-finalized-openclaw-child-announcements.md
+  - docs/decisions/0169-authorize-finalized-openclaw-child-announcements.md
   - agency_runtime/core/installer_payload_openclaw.py
   - tests/test_security_turn_boundaries.py
 supersedes: []
 superseded_by: null
 type: issue
 epic: host-integrations
-issue_id: AR-282
+issue_id: AR-283
 priority: p0
 tracker_url: null
 depends_on: []
 blocks: []
 ---
 
-# AR-282: Persist OpenClaw child terminals after announcement delivery
+# AR-283: Persist OpenClaw child terminals after announcement delivery
 
 ## Problem
 
@@ -111,8 +111,8 @@ failure.
 
 ## Dependencies
 
-- AR-280's accepted native-child launch and host-profile correlation.
-- AR-281's exact one-use finalized child-announcement delivery.
+- AR-281's accepted native-child launch and host-profile correlation.
+- AR-282's exact one-use finalized child-announcement delivery.
 - OpenClaw 2026.7.1-2's audited child, announcement, `message_sending`,
   `message_sent`, and cleanup hook ordering.
 - Tracker creation requires separate authorization and remains pending.

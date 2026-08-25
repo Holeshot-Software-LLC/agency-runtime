@@ -7,12 +7,12 @@ updated: 2026-08-22
 tags: [inference, planning, observability, repair, litellm]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
-  - docs/roadmap/issue-AR-273-model-agnostic-structured-inference-profiles.md
-  - docs/roadmap/issue-AR-276-gate-openclaw-provider-calls-on-agency-preflight.md
+  - docs/roadmap/issue-AR-274-model-agnostic-structured-inference-profiles.md
+  - docs/roadmap/issue-AR-277-gate-openclaw-provider-calls-on-agency-preflight.md
   - docs/roadmap/handoffs/issue-AR-119.md
   - docs/roadmap/AR-119-openclaw-hermes-verification-packet.md
   - docs/decisions/0027-authoritative-runtime-evidence-traces.md
-  - docs/decisions/0164-delegate-exact-schema-translation-to-litellm.md
+  - docs/decisions/0165-delegate-exact-schema-translation-to-litellm.md
   - agency_runtime/core/preflight_failure.py
   - agency_runtime/core/workforce/inference.py
   - agency_runtime/core/workforce/intent.py
@@ -22,14 +22,14 @@ supersedes: []
 superseded_by: null
 type: issue
 epic: provider-runtime
-issue_id: AR-275
+issue_id: AR-276
 priority: p0
 tracker_url: null
-depends_on: [AR-273]
-blocks: [AR-119, AR-276]
+depends_on: [AR-274]
+blocks: [AR-119, AR-277]
 ---
 
-# AR-275: Preserve planner repair diagnostics
+# AR-276: Preserve planner repair diagnostics
 
 ## Problem
 
@@ -73,7 +73,7 @@ Fresh substantive session `44c5c168-b8db-4a3e-8a31-131251199b27` / trace
 `task-agency-router` with zero protected fallback. An Agency-only changed
 diagnostic exposed the exact failures: out-of-ontology `capability_ids`,
 then a dependency referencing a later unit. OpenClaw nevertheless started
-native `task-general`, ran 58 tools, and timed out at 300 seconds; AR-276
+native `task-general`, ran 58 tools, and timed out at 300 seconds; AR-277
 owns that separate fail-open host-hook defect. Every receipt is retained.
 
 The docs gates, full ruff checks, 827-test production spine, 134-test UI gate,
@@ -116,10 +116,10 @@ that the runtime cannot resolve.
 
 ## Dependencies
 
-- AR-273 exact-schema delivery and harness-scoped inference profiles.
-- AR-276 OpenClaw fail-closed input-gate delivery.
+- AR-274 exact-schema delivery and harness-scoped inference profiles.
+- AR-277 OpenClaw fail-closed input-gate delivery.
 - ADR-0027 authoritative, bounded runtime evidence.
-- ADR-0164 LiteLLM-owned target translation with strict local validation.
+- ADR-0165 LiteLLM-owned target translation with strict local validation.
 - The existing one-repair call budget and zero protected-provider fallback.
 
 ## Acceptance

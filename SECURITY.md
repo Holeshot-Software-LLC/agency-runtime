@@ -3,7 +3,7 @@ title: "Security Policy"
 status: active
 category: governance
 created: 2026-07-10
-updated: 2026-07-27
+updated: 2026-08-24
 tags: [security, reporting, privacy]
 related:
   - README.md
@@ -15,6 +15,7 @@ related:
   - docs/decisions/0096-require-operator-presence-for-persistent-controls.md
   - docs/decisions/0098-pair-portable-and-win-amd64-wheels.md
   - docs/decisions/0099-separate-reproducible-unsigned-builds-from-signed-delivery.md
+  - docs/decisions/0163-resolve-contextual-turns-from-transcript-free-subjects.md
   - docs/roadmap/issue-AR-143-require-operator-presence-for-controls.md
   - docs/roadmap/issue-AR-160-publish-platform-honest-native-release-artifacts.md
   - docs/roadmap/issue-AR-161-sign-and-license-windows-operator-presence-delivery.md
@@ -120,6 +121,12 @@ product contract:
 - Metadata-only observability is the default. Opt-in content capture uses
   bounded defensive redaction, but no automatic redactor can guarantee removal
   of every secret or personal identifier.
+- Context-dependent routing never reuses retained user or assistant messages,
+  including when content capture is enabled. It may send one bounded
+  same-session subject capsule containing closed domain, language, framework,
+  capability, and platform identifiers plus governed specialist-card metadata.
+  The capsule is untrusted evidence, not an instruction or permission, and its
+  exact source and digest are revalidated in the ready transaction.
 - Host installers call native plugin lifecycle commands. Preview with
   `--dry-run`, inspect the command plan, retain backups, and do not run an
   untrusted executable found earlier on `PATH`.

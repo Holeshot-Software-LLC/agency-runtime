@@ -25,6 +25,11 @@ from agency_runtime.core.turn_intent import (
     force_fresh_turn_reroute,
     is_pure_acknowledgement,
 )
+from agency_runtime.core.turn_routing_context import (
+    turn_routing_context_from_recipe,
+    turn_routing_context_revision,
+    workforce_subject_hints_from_plan,
+)
 
 
 def _active_state(**overrides: object) -> TurnState:
@@ -138,6 +143,168 @@ def test_social_conversation_is_distinct_from_acknowledgement_and_real_questions
     assert "no_pending_state" in social.reason_codes
     assert question.turn_kind == "new_intent"
     assert question.selection_required is True
+
+
+@pytest.mark.parametrize(
+    "message",
+    (
+        "what's next?",
+        "what's the status?",
+        "where do we stand?",
+        "anything else?",
+        "ok so what now?",
+        "what should we focus on next?",
+        "what should happen next?",
+        "what do you recommend next?",
+        "what is the next best step?",
+        "where should we go from here?",
+        "what is the plan?",
+        "what remains?",
+        "what are our options?",
+        "how should we proceed?",
+        "what do you think?",
+        "any recommendations?",
+        "next steps?",
+        "options?",
+        "priorities?",
+        "where are we at?",
+        "where do things stand?",
+        "what do you suggest?",
+        "any suggestions?",
+    ),
+)
+def test_contextual_work_inquiries_select_fresh_read_only_expertise(message: str) -> None:
+    decision = classify_turn_intent(message, _empty_state())
+
+    assert decision.turn_kind == "conversation"
+    assert decision.selection_required is True
+    assert decision.reroute_required is True
+    assert decision.execution_decision_required is False
+    assert decision.legacy_request_kind == "nontrivial"
+    assert "contextual_work_inquiry" in decision.reason_codes
+    assert "fresh_read_only_expertise" in decision.reason_codes
+
+
+def test_contextual_work_inquiry_correlates_active_work_but_routes_fresh() -> None:
+    decision = classify_turn_intent("what should happen next?", _active_state())
+
+    assert decision.turn_kind == "continuation"
+    assert decision.continuation_of == "turn-42"
+    assert decision.selection_required is True
+    assert decision.reroute_required is True
+    assert decision.execution_decision_required is False
+    assert "active_state" in decision.reason_codes
+
+    for pending_state in (
+        _active_state(
+            active_plan=False,
+            unfinished_work=False,
+            pending_question=True,
+        ),
+        _active_state(
+            active_plan=False,
+            unfinished_work=False,
+            pending_authorization=True,
+        ),
+    ):
+        pending_inquiry = classify_turn_intent("where do we go from here?", pending_state)
+        assert pending_inquiry.turn_kind == "continuation"
+        assert pending_inquiry.reroute_required is True
+        assert pending_inquiry.execution_decision_required is False
+
+
+def test_contextual_work_inquiry_without_trusted_state_stays_read_only() -> None:
+    decision = classify_turn_intent("status", TurnState(state_known=False))
+
+    assert decision.turn_kind == "conversation"
+    assert decision.selection_required is True
+    assert decision.reroute_required is True
+    assert decision.execution_decision_required is False
+    assert decision.continuation_of == ""
+    assert "turn_state_missing" in decision.reason_codes
+    assert "contextual_work_inquiry_state_untrusted" in decision.reason_codes
+
+
+@pytest.mark.parametrize(
+    "message",
+    (
+        "what is the plan?",
+        "what remains?",
+        "what are our options?",
+        "how should we proceed?",
+        "what do you think?",
+        "any recommendations?",
+        "next steps?",
+        "options?",
+        "priorities?",
+        "where are we at?",
+        "where do things stand?",
+        "what do you suggest?",
+        "any suggestions?",
+    ),
+)
+def test_structural_advisory_forms_stay_read_only_in_every_state(message: str) -> None:
+    current = classify_turn_intent(message, _empty_state())
+    active = classify_turn_intent(message, _active_state())
+    missing = classify_turn_intent(message, TurnState(state_known=False))
+
+    assert current.turn_kind == "conversation"
+    assert current.selection_required is True
+    assert current.reroute_required is True
+    assert current.execution_decision_required is False
+    assert active.turn_kind == "continuation"
+    assert active.continuation_of == "turn-42"
+    assert active.selection_required is True
+    assert active.reroute_required is True
+    assert active.execution_decision_required is False
+    assert missing.turn_kind == "conversation"
+    assert missing.selection_required is True
+    assert missing.reroute_required is True
+    assert missing.execution_decision_required is False
+
+
+@pytest.mark.parametrize(
+    "message",
+    (
+        "what's next in pipeline.py that needs changing?",
+        "can you fix pipeline.py?",
+        "please change the configuration",
+        "run the tests now",
+        "could you deploy the service?",
+        "review this diff",
+        "do that next",
+        "do the next step",
+        "would you do that next?",
+        "could you work on that next?",
+        "can you proceed with the plan?",
+        "can you go on?",
+    ),
+)
+def test_action_bearing_requests_keep_execution_authority(message: str) -> None:
+    decision = classify_turn_intent(message, _empty_state())
+
+    assert decision.turn_kind == "new_intent"
+    assert decision.selection_required is True
+    assert decision.reroute_required is True
+    assert decision.execution_decision_required is True
+
+
+@pytest.mark.parametrize(
+    "message",
+    (
+        "do that next",
+        "would you do that next?",
+        "could you work on that next?",
+        "can you proceed with the plan?",
+        "can you go on?",
+    ),
+)
+def test_contextual_action_requests_stay_executable_in_every_state(message: str) -> None:
+    for state in (_empty_state(), _active_state(), TurnState(state_known=False)):
+        decision = classify_turn_intent(message, state)
+        assert decision.selection_required is True
+        assert decision.reroute_required is True
+        assert decision.execution_decision_required is True
 
 
 def test_exact_runtime_control_is_not_confused_with_general_control_language() -> None:
@@ -312,6 +479,7 @@ def test_unknown_durable_state_fails_closed_for_apparent_acknowledgement() -> No
     (
         ("thanks", _empty_state(), "acknowledgement", (False, False, False)),
         ("hello", _empty_state(), "conversation", (False, False, False)),
+        ("what's next?", _empty_state(), "conversation", (True, True, False)),
         ("agency status", _empty_state(), "control", (False, False, False)),
         ("continue", _active_state(), "continuation", (True, False, True)),
         ("fix auth", _empty_state(), "new_intent", (True, True, True)),
@@ -598,6 +766,50 @@ def test_only_a_sealed_classification_can_be_forced_to_fresh_routing() -> None:
     assert fresh.reroute_required is True
     assert fresh.confidence == 0.5
 
+    for bypass in (
+        classify_turn_intent("thanks", _empty_state()),
+        classify_turn_intent("hello", _empty_state()),
+    ):
+        forced = force_fresh_turn_reroute(
+            bypass,
+            "adapter_origin_untrusted",
+            untrusted_origin=True,
+        )
+        assert forced.selection_required is True
+        assert forced.reroute_required is True
+        assert forced.execution_decision_required is True
+
+    inquiry = classify_turn_intent("what's next?", _empty_state())
+    fresh_inquiry = force_fresh_turn_reroute(
+        inquiry,
+        "adapter_origin_untrusted",
+        untrusted_origin=True,
+    )
+    assert fresh_inquiry.turn_kind == "conversation"
+    assert fresh_inquiry.selection_required is True
+    assert fresh_inquiry.reroute_required is True
+    assert fresh_inquiry.execution_decision_required is False
+
+
+def test_classifier_v5_adds_advisory_selection_without_rewriting_v4() -> None:
+    values = {
+        "turn_kind": "conversation",
+        "selection_required": True,
+        "reroute_required": True,
+        "execution_decision_required": False,
+        "continuation_of": "",
+        "confidence": 1.0,
+        "reason_codes": ("test",),
+        "state_revision": "a" * 64,
+        "message_fingerprint": "b" * 64,
+    }
+
+    with pytest.raises(ValueError, match="decision combination"):
+        TurnClassification(**values, classifier_version=4)
+
+    projected = TurnClassification(**values, classifier_version=5)
+    assert projected.execution_decision_required is False
+
 
 def test_turn_state_rejects_unknown_previous_kind_and_bounds_labels() -> None:
     state = TurnState.from_mapping(
@@ -725,6 +937,153 @@ def test_store_turn_state_tracks_abandoned_active_work_without_prompt_content(tm
     finally:
         connection.close()
     assert "fix auth" not in str(metadata)
+
+
+def test_completed_advisory_turn_does_not_mask_older_unfinished_work(tmp_path) -> None:
+    store = Store(tmp_path / "agency.db")
+    store.create_run(
+        trace_id="unfinished",
+        session_id="session",
+        host="codex",
+        metadata={
+            "request_kind": "nontrivial",
+            "turn_kind": "new_intent",
+            "selection_required": True,
+            "execution_decision_required": True,
+        },
+    )
+    store.create_run(
+        trace_id="advisory",
+        session_id="session",
+        host="codex",
+        metadata={
+            "request_kind": "nontrivial",
+            "turn_kind": "conversation",
+            "selection_required": True,
+            "reroute_required": True,
+            "execution_decision_required": False,
+        },
+    )
+    connection = store._connect()
+    try:
+        connection.execute("UPDATE runs SET status = 'completed' WHERE trace_id = 'advisory'")
+        connection.commit()
+    finally:
+        connection.close()
+
+    state = store.get_turn_state_context("session")
+
+    assert state["previous_trace_id"] == "unfinished"
+    assert state["active_plan"] is True
+    assert state["unfinished_work"] is True
+    next_inquiry = classify_turn_intent("what should happen next?", state)
+    assert next_inquiry.turn_kind == "continuation"
+    assert next_inquiry.continuation_of == "unfinished"
+    assert next_inquiry.reroute_required is True
+    assert next_inquiry.execution_decision_required is False
+
+
+def test_context_projection_uses_typed_subject_and_never_prior_request_prose() -> None:
+    prior_plan = {
+        "request_summary": "SECRET prior user request text",
+        "units": [
+            {
+                "domains": ["software-engineering"],
+                "languages": ["python"],
+                "frameworks": ["sqlite"],
+                "required_capabilities": ["technical-analysis"],
+                "platforms": ["windows"],
+                "outcome": "Do not retain this prose",
+                "resources": ["C:/private/repository/path"],
+                "acceptance_evidence": ["hidden acceptance prose"],
+            }
+        ],
+    }
+
+    hints = workforce_subject_hints_from_plan(prior_plan)
+
+    assert hints == {
+        "domains": ["software-engineering"],
+        "languages": ["python"],
+        "frameworks": ["sqlite"],
+        "capability_ids": ["technical-analysis"],
+        "platforms": ["windows"],
+    }
+    encoded = json.dumps(hints, sort_keys=True)
+    assert "SECRET" not in encoded
+    assert "private/repository" not in encoded
+    assert "acceptance prose" not in encoded
+
+
+def test_context_projection_reranks_historical_specialists_without_copying_plan_text() -> None:
+    recipe = {
+        "selection_refs": [
+            {
+                "slug": "database-reliability-engineer",
+                "description": "Audited database reliability specialist",
+                "capabilities": ["sqlite", "recovery"],
+            },
+            {
+                "slug": "unselected-specialist",
+                "description": "Must not be projected",
+                "capabilities": [],
+            },
+        ],
+        "routing": {
+            "selected_ids": ["database-reliability-engineer"],
+            "workforce_unit_descriptors": [],
+            "workforce_subject_hints": {
+                "domains": ["software-engineering"],
+                "languages": ["python"],
+                "frameworks": ["sqlite"],
+                "capability_ids": ["technical-analysis"],
+                "platforms": ["windows"],
+            },
+            "workforce_plan": {"request_summary": "SECRET prior prompt"},
+        },
+    }
+
+    context = turn_routing_context_from_recipe(
+        recipe,
+        source_trace_id="prior-turn",
+        source_status="completed",
+        source_turn_kind="new_intent",
+    )
+
+    assert [item["slug"] for item in context["specialists"]] == ["database-reliability-engineer"]
+    assert context["workforce_subject_hints"]["frameworks"] == ["sqlite"]
+    assert "SECRET prior prompt" not in json.dumps(context)
+    assert len(turn_routing_context_revision(context)) == 64
+
+
+def test_turn_context_is_scoped_to_the_exact_session_and_host(tmp_path) -> None:
+    store = Store(tmp_path / "agency.db")
+    store.create_run(
+        trace_id="codex-subject",
+        session_id="session",
+        host="codex",
+        metadata={"turn_kind": "new_intent", "selection_required": True},
+    )
+    store.create_run(
+        trace_id="other-host-subject",
+        session_id="session",
+        host="openclaw",
+        metadata={"turn_kind": "new_intent", "selection_required": True},
+    )
+    store.create_run(
+        trace_id="other-session-subject",
+        session_id="other-session",
+        host="codex",
+        metadata={"turn_kind": "new_intent", "selection_required": True},
+    )
+
+    codex = store.get_turn_state_context("session", host="codex")
+    openclaw = store.get_turn_state_context("session", host="openclaw")
+
+    assert codex["previous_trace_id"] == "codex-subject"
+    assert codex["turn_routing_context"]["source_trace_id"] == "codex-subject"
+    assert openclaw["previous_trace_id"] == "other-host-subject"
+    assert openclaw["turn_routing_context"]["source_trace_id"] == "other-host-subject"
 
 
 def test_pending_authorization_survives_terminal_finalization_and_routes_yes(tmp_path) -> None:

@@ -9,7 +9,7 @@ related:
   - docs/worklog/README.md
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md
-  - docs/roadmap/issue-AR-276-gate-openclaw-provider-calls-on-agency-preflight.md
+  - docs/roadmap/issue-AR-277-gate-openclaw-provider-calls-on-agency-preflight.md
 supersedes: []
 superseded_by: null
 type: worklog
@@ -20,7 +20,7 @@ pr: null
 related_issues:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md
-  - docs/roadmap/issue-AR-276-gate-openclaw-provider-calls-on-agency-preflight.md
+  - docs/roadmap/issue-AR-277-gate-openclaw-provider-calls-on-agency-preflight.md
 ---
 
 # Worklog detail: fix(openclaw): preflight during prompt build
@@ -69,4 +69,4 @@ checks, and `git diff --check` pass.
 Reinstall Agency only into stopped OpenClaw, restart natively, and require a
 fresh Store-backed header and finalization before claiming native or Telegram
 delivery under
-[AR-276](../roadmap/issue-AR-276-gate-openclaw-provider-calls-on-agency-preflight.md).
+[AR-277](../roadmap/issue-AR-277-gate-openclaw-provider-calls-on-agency-preflight.md).

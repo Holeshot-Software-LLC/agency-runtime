@@ -6,25 +6,25 @@ created: 2026-08-24
 updated: 2026-08-24
 tags: [openclaw, errors, delivery, finalization, security]
 related:
-  - docs/roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md
+  - docs/roadmap/issue-AR-279-deliver-openclaw-finalizer-results.md
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md
   - docs/roadmap/handoffs/issue-AR-119.md
   - docs/roadmap/handoffs/issue-AR-264.md
   - docs/decisions/0049-openclaw-final-only-full-payload-delivery.md
   - docs/decisions/0120-construct-first-pass-evidence-headers.md
-  - docs/decisions/0166-refresh-openclaw-headers-through-awaited-tool-results.md
+  - docs/decisions/0167-refresh-openclaw-headers-through-awaited-tool-results.md
   - agency_runtime/core/installer_payload_openclaw.py
   - agency_runtime/adapters/openclaw/node_bridge.py
   - tests/test_security_turn_boundaries.py
 supersedes: []
 superseded_by: null
-id: ADR-0167
+id: ADR-0168
 type: decision
 deciders: [maintainers]
 ---
 
-# ADR-0167: Deliver OpenClaw native errors through exact terminal evidence
+# ADR-0168: Deliver OpenClaw native errors through exact terminal evidence
 
 ## Context
 

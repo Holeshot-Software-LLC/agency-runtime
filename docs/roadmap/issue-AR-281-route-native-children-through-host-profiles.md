@@ -14,7 +14,7 @@ related:
   - docs/decisions/0118-require-inference-owned-staffing.md
   - docs/decisions/0153-adopt-per-stage-inference-profile-routes.md
   - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
-  - docs/roadmap/issue-AR-281-deliver-finalized-openclaw-child-announcements.md
+  - docs/roadmap/issue-AR-282-deliver-finalized-openclaw-child-announcements.md
   - agency_runtime/core/native_child_staffing.py
   - agency_runtime/core/installer_payload_openclaw.py
   - agency_runtime/core/installer_payload_hermes.py
@@ -22,14 +22,14 @@ supersedes: []
 superseded_by: null
 type: issue
 epic: host-integrations
-issue_id: AR-280
+issue_id: AR-281
 priority: p0
 tracker_url: null
 depends_on: []
-blocks: [AR-119, AR-281]
+blocks: [AR-119, AR-282]
 ---
 
-# AR-280: Route native children through host-scoped inference
+# AR-281: Route native children through host-scoped inference
 
 ## Problem
 
@@ -66,7 +66,7 @@ the selected cards reached that child.
   process the selected host profile's bounded deadline while leaving Hermes's
   existing judge and hook deadlines unchanged, and can reconcile a child end
   from durable Store joins when process-local correlation is gone.
-- AR-281 separately finalizes OpenClaw's authenticated completion send against
+- AR-282 separately finalizes OpenClaw's authenticated completion send against
   the original parent trace. The combined focused gate passes 299 tests with
   one existing skip. Clean checkout `27e9ec62` was installed through Agency's
   OpenClaw installer only while the gateway was natively stopped, then the
@@ -118,9 +118,9 @@ the selected cards reached that child.
 - The second route again proves automatic OpenClaw selection of
   `linux-task-agency-router` / `litellm` / exact `task-agency-router`, zero
   cross-provider fallback, and no actual-model telemetry. Native OpenClaw
-  remained on `task-general`; AR-280's host-profile routing is not the new
+  remained on `task-general`; AR-281's host-profile routing is not the new
   failure.
-- The new defect is AR-281 bridge serialization omitting authorized
+- The new defect is AR-282 bridge serialization omitting authorized
   `headerContextHash`. Its expected-red preceded a one-line forwarding fix;
   the four-file suite passes 145/1 under `umask 077`, targeted Ruff/format/diff
   pass, and independent review is GREEN. Candidate is not installed; OpenClaw

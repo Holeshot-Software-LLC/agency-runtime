@@ -9,11 +9,11 @@ related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/handoffs/issue-AR-119.md
   - docs/roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md
-  - docs/roadmap/issue-AR-275-preserve-planner-repair-diagnostics.md
+  - docs/roadmap/issue-AR-276-preserve-planner-repair-diagnostics.md
   - docs/roadmap/reference-workforce-inference-stages.md
   - docs/decisions/0153-adopt-per-stage-inference-profile-routes.md
-  - docs/decisions/0163-keep-litellm-inference-profiles-model-agnostic.md
-  - docs/decisions/0164-delegate-exact-schema-translation-to-litellm.md
+  - docs/decisions/0164-keep-litellm-inference-profiles-model-agnostic.md
+  - docs/decisions/0165-delegate-exact-schema-translation-to-litellm.md
   - agency_runtime/core/structured_provider.py
   - agency_runtime/core/inference_profiles.py
   - tests/test_roster_inference_adapter.py
@@ -22,14 +22,14 @@ supersedes: []
 superseded_by: null
 type: issue
 epic: provider-runtime
-issue_id: AR-273
+issue_id: AR-274
 priority: p0
 tracker_url: null
 depends_on: []
-blocks: [AR-119, AR-275]
+blocks: [AR-119, AR-276]
 ---
 
-# AR-273: Make structured inference profiles model-agnostic
+# AR-274: Make structured inference profiles model-agnostic
 
 ## Problem
 
@@ -105,7 +105,7 @@ claimed.
 This proves the exact-schema LiteLLM repair for a live workforce turn. It does
 not prove skill loading: OpenClaw used native `read` for the bundled Weather
 `SKILL.md`, while Agency recorded no skill row and honestly finalized
-`Skills loaded: none`. AR-274 owns that separate bridge-normalization defect.
+`Skills loaded: none`. AR-275 owns that separate bridge-normalization defect.
 
 A later exact restart-safety review in fresh session
 `7e1f8a3c-6b29-4ea0-b1d4-93a4c51de287` retained the opposite eval outcome:
@@ -144,8 +144,8 @@ separate.
 ## Dependencies
 
 - ADR-0153 named inference profiles and harness-scoped routing.
-- ADR-0163 model-agnostic LiteLLM parameter translation, as superseded by
-  ADR-0164 for exact schema delivery.
+- ADR-0164 model-agnostic LiteLLM parameter translation, as superseded by
+  ADR-0165 for exact schema delivery.
 - Existing bounded schema serialization and strict response validation.
 - Existing OpenClaw live failure receipt retained as the regression evidence.
 

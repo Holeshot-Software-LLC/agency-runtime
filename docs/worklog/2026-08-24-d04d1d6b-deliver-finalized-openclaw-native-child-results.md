@@ -8,10 +8,10 @@ tags: [openclaw, native-child, finalization, delivery, security]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md
-  - docs/roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md
-  - docs/roadmap/issue-AR-280-route-native-children-through-host-profiles.md
-  - docs/roadmap/issue-AR-281-deliver-finalized-openclaw-child-announcements.md
-  - docs/decisions/0168-authorize-finalized-openclaw-child-announcements.md
+  - docs/roadmap/issue-AR-279-deliver-openclaw-finalizer-results.md
+  - docs/roadmap/issue-AR-281-route-native-children-through-host-profiles.md
+  - docs/roadmap/issue-AR-282-deliver-finalized-openclaw-child-announcements.md
+  - docs/decisions/0169-authorize-finalized-openclaw-child-announcements.md
 supersedes: []
 superseded_by: null
 type: worklog
@@ -22,9 +22,9 @@ pr: null
 related_issues:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md
-  - docs/roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md
-  - docs/roadmap/issue-AR-280-route-native-children-through-host-profiles.md
-  - docs/roadmap/issue-AR-281-deliver-finalized-openclaw-child-announcements.md
+  - docs/roadmap/issue-AR-279-deliver-openclaw-finalizer-results.md
+  - docs/roadmap/issue-AR-281-route-native-children-through-host-profiles.md
+  - docs/roadmap/issue-AR-282-deliver-finalized-openclaw-child-announcements.md
 ---
 
 # Worklog detail: Deliver finalized OpenClaw native-child results
@@ -68,7 +68,7 @@ interpreter plus umask `0077` for the curated mutation gate.
 
 ## Decisions and alternatives
 
-ADR-0168 records the completion authority boundary. Finalizing a synthetic
+ADR-0169 records the completion authority boundary. Finalizing a synthetic
 announcement trace, trusting prompt prose, allowing arbitrary message-tool
 targets, sending directly from Agency, or parsing colon-delimited identities
 were rejected. Operational parent delivery remains distinct from ADR-0156

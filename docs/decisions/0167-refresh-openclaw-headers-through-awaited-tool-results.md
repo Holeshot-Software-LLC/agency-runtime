@@ -6,7 +6,7 @@ created: 2026-08-23
 updated: 2026-08-23
 tags: [openclaw, finalization, headers, tool-results, host-integration]
 related:
-  - docs/roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md
+  - docs/roadmap/issue-AR-279-deliver-openclaw-finalizer-results.md
   - docs/roadmap/handoffs/issue-AR-119.md
   - docs/roadmap/handoffs/issue-AR-264.md
   - docs/decisions/0049-openclaw-final-only-full-payload-delivery.md
@@ -18,12 +18,12 @@ related:
   - tests/test_native_installer.py
 supersedes: []
 superseded_by: null
-id: ADR-0166
+id: ADR-0167
 type: decision
 deciders: [maintainers]
 ---
 
-# ADR-0166: Refresh OpenClaw headers through awaited tool results
+# ADR-0167: Refresh OpenClaw headers through awaited tool results
 
 ## Context
 

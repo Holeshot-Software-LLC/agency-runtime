@@ -11,7 +11,7 @@ related:
   - docs/roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md
   - docs/roadmap/issue-AR-252-record-verified-acceptance-outcomes.md
   - docs/roadmap/issue-AR-255-inference-owned-host-proven-child-staffing.md
-  - docs/roadmap/issue-AR-280-route-native-children-through-host-profiles.md
+  - docs/roadmap/issue-AR-281-route-native-children-through-host-profiles.md
   - docs/decisions/0118-require-inference-owned-staffing.md
   - docs/decisions/0132-fund-one-repair-per-workforce-inference-stage.md
   - docs/decisions/0153-adopt-per-stage-inference-profile-routes.md

@@ -1,5 +1,5 @@
 ---
-title: "AR-265: Accept OpenClaw stopped gateway status"
+title: "AR-266: Accept OpenClaw stopped gateway status"
 status: in_progress
 category: roadmap
 created: 2026-08-21
@@ -16,14 +16,14 @@ supersedes: []
 superseded_by: null
 type: issue
 epic: install
-issue_id: AR-265
+issue_id: AR-266
 priority: p0
 tracker_url: null
 depends_on: []
 blocks: []
 ---
 
-# AR-265: Accept OpenClaw stopped gateway status
+# AR-266: Accept OpenClaw stopped gateway status
 
 ## Problem
 

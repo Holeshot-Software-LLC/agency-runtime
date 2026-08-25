@@ -7,10 +7,10 @@ updated: 2026-08-22
 tags: [openclaw, finalization, streaming, security, host-integration]
 related:
   - docs/roadmap/issue-AR-33-openclaw-final-outbound-seal.md
-  - docs/roadmap/issue-AR-277-keep-openclaw-finalization-first-pass.md
-  - docs/roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md
-  - docs/roadmap/issue-AR-281-deliver-finalized-openclaw-child-announcements.md
-  - docs/decisions/0168-authorize-finalized-openclaw-child-announcements.md
+  - docs/roadmap/issue-AR-278-keep-openclaw-finalization-first-pass.md
+  - docs/roadmap/issue-AR-279-deliver-openclaw-finalizer-results.md
+  - docs/roadmap/issue-AR-282-deliver-finalized-openclaw-child-announcements.md
+  - docs/decisions/0169-authorize-finalized-openclaw-child-announcements.md
   - docs/decisions/0024-native-host-packages-and-minimal-bridges.md
   - docs/decisions/0027-authoritative-runtime-evidence-traces.md
   - docs/decisions/0034-persistent-soft-host-control.md

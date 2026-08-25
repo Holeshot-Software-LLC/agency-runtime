@@ -52,6 +52,7 @@ from agency_runtime.core.store.projections import (
     RUN_CONTENT_LIMIT as _RUN_CONTENT_LIMIT,
 )
 from agency_runtime.core.store.projections import (
+    decode_run_metadata,
     project_run_metadata,
     redact_sensitive_text,
 )
@@ -66,6 +67,12 @@ from agency_runtime.core.store.version_identity import (
     is_valid_version_identity,
 )
 from agency_runtime.core.turn_intent import TURN_CLASSIFIER_VERSION
+from agency_runtime.core.turn_routing_context import (
+    project_turn_routing_context_guard,
+    terminal_turn_context_passthrough,
+    turn_routing_context_from_recipe,
+    turn_routing_context_revision,
+)
 from agency_runtime.core.unit_assignment import (
     project_unit_assignment_agents,
 )
@@ -357,15 +364,19 @@ def _project_turn_classification(value: object) -> dict[str, Any] | None:
         booleans["reroute_required"],
         booleans["execution_decision_required"],
     )
+    conversation_decisions = {(True, True, True)}
+    if classifier_version >= 4:
+        conversation_decisions.add((False, False, False))
+    if classifier_version >= 5:
+        conversation_decisions.add((True, True, False))
+    continuation_decisions = {(True, False, True), (True, True, True)}
+    if classifier_version >= 5:
+        continuation_decisions.add((True, True, False))
     allowed = {
         "acknowledgement": {(False, False, False), (True, True, True)},
-        "conversation": (
-            {(True, True, True), (False, False, False)}
-            if classifier_version >= 4
-            else {(True, True, True)}
-        ),
+        "conversation": conversation_decisions,
         "control": {(False, False, False)},
-        "continuation": {(True, False, True), (True, True, True)},
+        "continuation": continuation_decisions,
         "new_intent": {(True, True, True)},
         "revision": {(True, True, True)},
     }
@@ -446,6 +457,15 @@ def _project_workforce_replay_fields(value: Mapping[str, Any]) -> dict[str, Any]
         if descriptors is None:
             return None
         projected["workforce_unit_descriptors"] = descriptors
+    if "workforce_subject_hints" in value:
+        from agency_runtime.core.turn_routing_context import (
+            project_workforce_subject_hints,
+        )
+
+        subject_hints = project_workforce_subject_hints(value.get("workforce_subject_hints"))
+        if subject_hints is None:
+            return None
+        projected["workforce_subject_hints"] = subject_hints
     bindings = project_workforce_unit_bindings(value.get("workforce_unit_bindings"))
     if bindings is None:
         return None
@@ -643,6 +663,7 @@ def _project_preflight_recipe(
     routing = _project_recipe_routing(value.get("routing"), trace_id=trace_id)
     turn_classification = _project_turn_classification(value.get("turn_classification"))
     continuation_guard = _project_continuation_guard(value.get("continuation_guard"))
+    turn_context_guard = project_turn_routing_context_guard(value.get("turn_context_guard"))
     roster_generation = value.get("roster_generation", 0)
     raw_resident_manager_kernel = value.get("resident_manager_kernel")
     resident_manager_kernel = _project_resident_manager_kernel(raw_resident_manager_kernel)
@@ -669,6 +690,7 @@ def _project_preflight_recipe(
         or (recipe_version >= 10 and "roster_generation" not in value)
         or (recipe_version >= 10 and "selection_refs" not in value)
         or (value.get("continuation_guard") is not None and continuation_guard is None)
+        or (value.get("turn_context_guard") is not None and turn_context_guard is None)
         or (recipe_version >= 6 and turn_classification is None)
         or (
             recipe_version == 7
@@ -709,6 +731,33 @@ def _project_preflight_recipe(
             )
         )
         or (routing.get("continuation_reused") is True and continuation_guard is None)
+        or (
+            recipe_version >= 15
+            and (
+                (routing.get("turn_context_applied") is True) != bool(turn_context_guard)
+                or (
+                    bool(turn_context_guard)
+                    and (
+                        routing.get("turn_context_source_trace_id")
+                        != turn_context_guard["source_trace_id"]
+                        or routing.get("turn_context_revision")
+                        != turn_context_guard["source_context_revision"]
+                        or turn_classification is None
+                        or turn_classification["selection_required"] is not True
+                        or turn_classification["reroute_required"] is not True
+                        or not (
+                            turn_classification["execution_decision_required"] is False
+                            or turn_classification["turn_kind"] in {"continuation", "revision"}
+                        )
+                        or (
+                            bool(turn_classification["continuation_of"])
+                            and turn_classification["continuation_of"]
+                            != turn_context_guard["source_trace_id"]
+                        )
+                    )
+                )
+            )
+        )
     ):
         return None
     projected = {
@@ -735,6 +784,8 @@ def _project_preflight_recipe(
         projected["resident_manager_binding"] = resident_manager_binding
     if continuation_guard is not None:
         projected["continuation_guard"] = continuation_guard
+    if turn_context_guard:
+        projected["turn_context_guard"] = turn_context_guard
     return projected
 
 
@@ -1369,6 +1420,92 @@ def _continuation_guard_matches(
         and recipe.get("specialist_refs") == source_recipe.get("specialist_refs")
         and recipe.get("selection_refs") == source_recipe.get("selection_refs")
         and recipe.get("unit_assignment_agents") == source_recipe.get("unit_assignment_agents")
+    )
+
+
+def _turn_context_source_row(
+    conn: Any,
+    *,
+    session_id: str,
+    trace_id: str,
+    host: str,
+) -> Any | None:
+    """Return the exact prior context-bearing row for one active target turn."""
+
+    target = conn.execute(
+        "SELECT turn_sequence FROM runs WHERE session_id = ? AND trace_id = ? "
+        "AND status = 'active'",
+        (session_id, trace_id),
+    ).fetchone()
+    if target is None:
+        return None
+    rows = conn.execute(
+        "SELECT trace_id, status, metadata, preflight_result, preflight_state, "
+        "evidence_revision, turn_sequence FROM runs WHERE session_id = ? "
+        "AND LOWER(TRIM(host)) = ? AND turn_sequence < ? "
+        "ORDER BY turn_sequence DESC LIMIT 33",
+        (session_id, host, int(target["turn_sequence"])),
+    ).fetchall()
+    for row in rows:
+        metadata = decode_run_metadata(row["metadata"])
+        if terminal_turn_context_passthrough(str(row["status"] or ""), metadata):
+            continue
+        return row
+    return None
+
+
+def _turn_context_guard_matches(conn: Any, recipe: dict[str, Any]) -> bool:
+    """Revalidate the context source and roster inside the ready transaction."""
+
+    guard = project_turn_routing_context_guard(recipe.get("turn_context_guard"))
+    routing = recipe.get("routing")
+    if not guard or not isinstance(routing, dict):
+        return False
+    row = _turn_context_source_row(
+        conn,
+        session_id=str(recipe["session_id"]),
+        trace_id=str(recipe["trace_id"]),
+        host=str(recipe["host"]),
+    )
+    counter = conn.execute(
+        "SELECT value FROM store_counters WHERE name = 'roster-generation'"
+    ).fetchone()
+    if (
+        row is None
+        or counter is None
+        or str(row["trace_id"] or "") != guard["source_trace_id"]
+        or int(row["turn_sequence"] or 0) != guard["source_turn_sequence"]
+        or int(row["evidence_revision"] or 0) != guard["source_evidence_revision"]
+        or int(counter["value"]) != guard["source_roster_generation"]
+    ):
+        return False
+    raw_recipe = str(row["preflight_result"] or "")
+    if sha256(raw_recipe.encode("utf-8")).hexdigest() != guard["source_recipe_digest"]:
+        return False
+    source_recipe = _decode_preflight_recipe(
+        raw_recipe,
+        session_id=str(recipe["session_id"]),
+        trace_id=guard["source_trace_id"],
+    )
+    source_recipe = source_recipe if isinstance(source_recipe, dict) else {}
+    metadata = decode_run_metadata(row["metadata"])
+    source_turn_kind = str(metadata.get("turn_kind") or "")
+    if not source_turn_kind:
+        source_turn_kind = (
+            "acknowledgement"
+            if str(metadata.get("request_kind") or "") == "trivial"
+            else "new_intent"
+        )
+    context = turn_routing_context_from_recipe(
+        source_recipe,
+        source_trace_id=guard["source_trace_id"],
+        source_status=str(row["status"] or ""),
+        source_turn_kind=source_turn_kind,
+    )
+    return bool(
+        turn_routing_context_revision(context) == guard["source_context_revision"]
+        and routing.get("turn_context_source_trace_id") == guard["source_trace_id"]
+        and routing.get("turn_context_revision") == guard["source_context_revision"]
     )
 
 
@@ -2252,6 +2389,11 @@ class PreflightStoreMixin(ResidentManagerBindingStoreMixin):
             ):
                 conn.commit()
                 return {"outcome": "continuation_guard_conflict"}
+            if evidence.recipe.get("turn_context_guard") is not None and not (
+                _turn_context_guard_matches(conn, evidence.recipe)
+            ):
+                conn.commit()
+                return {"outcome": "turn_context_guard_conflict"}
             projected_refs = evidence.specialist_refs
             projected_routing = evidence.routing
             encoded_recipe = evidence.encoded_recipe

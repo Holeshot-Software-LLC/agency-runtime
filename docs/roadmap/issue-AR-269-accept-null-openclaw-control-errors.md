@@ -14,14 +14,14 @@ supersedes: []
 superseded_by: null
 type: issue
 epic: reliability
-issue_id: AR-268
+issue_id: AR-269
 priority: p0
 tracker_url: null
 depends_on: []
 blocks: []
 ---
 
-# AR-268: Accept null OpenClaw control errors
+# AR-269: Accept null OpenClaw control errors
 
 ## Problem
 

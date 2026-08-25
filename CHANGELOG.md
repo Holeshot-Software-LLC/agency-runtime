@@ -3,7 +3,7 @@ title: "Changelog"
 status: active
 category: release
 created: 2026-07-10
-updated: 2026-08-20
+updated: 2026-08-24
 tags: [release, changelog]
 related:
   - docs/RELEASE_CHECKLIST.md
@@ -54,6 +54,19 @@ changes rather than duplicating every commit.
 
 ### Changed
 
+- Context-dependent status, progress, recommendation, and next-step turns now
+  refresh inference-owned specialist selection from a bounded same-session
+  subject capsule while remaining parent-only and read-only. Prior transcript
+  text is excluded even when observability content capture is enabled; cache,
+  recipe, receipt, and commit-time source guards bind the applied context.
+  Advisory gap hiring may add missing assessment expertise without granting
+  native-child, workspace-write, or external-write authority. Fail-open results
+  preserve the current turn classification, and legacy explanatory header
+  lines no longer mask a terminal authorization question. A closed structural
+  advisory grammar recognizes common plan, options, priority, and suggestion
+  shorthand while explicit action requests remain executable; exact context
+  schemas reject extra prose and malformed version values.
+
 - The Claude accepted-outcome canary now requires a separate, per-host parent-
   recruiter provider pin. Only its recruiter and bounded repair use that exact
   no-fallback provider; the parent planner, ordinary host turns, activation
@@ -94,6 +107,12 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
+- Contextual work inquiries now perform fresh specialist selection without
+  granting execution authority. Classifier v5 covers status, progress,
+  recommendation, and prospective next-step forms; advisory planning is bound
+  to one read-only analysis unit, write-scoped projections fail safely, and
+  completed advisory turns no longer hide older unfinished work. Concrete
+  change requests retain their executable route.
 - Codex plaintext collaboration support now uses a sealed v3 attestation with
   separate exact profiles for CLI `0.147.0` and Desktop
   `0.147.0-alpha.6.6`. The unchanged CLI profile and the Desktop profile bind

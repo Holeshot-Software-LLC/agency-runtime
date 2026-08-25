@@ -8,8 +8,8 @@ tags: [openclaw, finalization, evidence, litellm]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md
-  - docs/roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md
-  - docs/decisions/0166-refresh-openclaw-headers-through-awaited-tool-results.md
+  - docs/roadmap/issue-AR-279-deliver-openclaw-finalizer-results.md
+  - docs/decisions/0167-refresh-openclaw-headers-through-awaited-tool-results.md
 supersedes: []
 superseded_by: null
 type: worklog
@@ -20,7 +20,7 @@ pr: null
 related_issues:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md
-  - docs/roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md
+  - docs/roadmap/issue-AR-279-deliver-openclaw-finalizer-results.md
 ---
 
 # Worklog detail: exclude alias-only OpenClaw completion evidence

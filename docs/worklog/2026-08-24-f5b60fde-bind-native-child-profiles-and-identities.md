@@ -9,7 +9,7 @@ related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-253-dynamic-team-dispatch-on-every-harness.md
   - docs/roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md
-  - docs/roadmap/issue-AR-280-route-native-children-through-host-profiles.md
+  - docs/roadmap/issue-AR-281-route-native-children-through-host-profiles.md
   - docs/decisions/0118-require-inference-owned-staffing.md
   - docs/decisions/0153-adopt-per-stage-inference-profile-routes.md
   - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
@@ -24,7 +24,7 @@ related_issues:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-253-dynamic-team-dispatch-on-every-harness.md
   - docs/roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md
-  - docs/roadmap/issue-AR-280-route-native-children-through-host-profiles.md
+  - docs/roadmap/issue-AR-281-route-native-children-through-host-profiles.md
 ---
 
 # Worklog detail: Bind native-child profiles and identities

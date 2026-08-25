@@ -7,24 +7,24 @@ updated: 2026-08-22
 tags: [inference, litellm, routing, structured-output]
 related:
   - docs/decisions/0153-adopt-per-stage-inference-profile-routes.md
-  - docs/decisions/0163-keep-litellm-inference-profiles-model-agnostic.md
-  - docs/roadmap/issue-AR-273-model-agnostic-structured-inference-profiles.md
-  - docs/roadmap/issue-AR-275-preserve-planner-repair-diagnostics.md
+  - docs/decisions/0164-keep-litellm-inference-profiles-model-agnostic.md
+  - docs/roadmap/issue-AR-274-model-agnostic-structured-inference-profiles.md
+  - docs/roadmap/issue-AR-276-preserve-planner-repair-diagnostics.md
   - agency_runtime/core/structured_provider.py
   - tests/test_roster_inference_adapter.py
 supersedes:
-  - docs/decisions/0163-keep-litellm-inference-profiles-model-agnostic.md
+  - docs/decisions/0164-keep-litellm-inference-profiles-model-agnostic.md
 superseded_by: null
-id: ADR-0164
+id: ADR-0165
 type: decision
 deciders: [maintainers]
 ---
 
-# ADR-0164: Delegate exact schema translation to LiteLLM
+# ADR-0165: Delegate exact schema translation to LiteLLM
 
 ## Context
 
-ADR-0163 kept LiteLLM requests in JSON-object mode because an opaque alias does
+ADR-0164 kept LiteLLM requests in JSON-object mode because an opaque alias does
 not expose stable target capabilities. A bounded live diagnostic then proved
 that transport, authentication, alias resolution, and the OpenAI response
 envelope were healthy, but prompt-only schema delivery was insufficient: the
@@ -52,7 +52,7 @@ CLI adapter behavior remains unchanged.
 Strict local parsing and schema validation remain authoritative. A target that
 rejects, drops, or fails to satisfy the structured-output request produces a
 failed provider attempt; it does not authorize relaxed validation, protected
-provider fallback, or an actual-model claim. ADR-0163's standardized
+provider fallback, or an actual-model claim. ADR-0164's standardized
 `reasoning_effort` translation and alias-evidence rules remain in force.
 
 ## Consequences

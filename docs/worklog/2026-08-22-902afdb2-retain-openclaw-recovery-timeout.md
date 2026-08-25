@@ -9,8 +9,8 @@ related:
   - docs/worklog/README.md
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md
-  - docs/roadmap/issue-AR-276-gate-openclaw-provider-calls-on-agency-preflight.md
-  - docs/roadmap/issue-AR-277-keep-openclaw-finalization-first-pass.md
+  - docs/roadmap/issue-AR-277-gate-openclaw-provider-calls-on-agency-preflight.md
+  - docs/roadmap/issue-AR-278-keep-openclaw-finalization-first-pass.md
   - docs/decisions/0049-openclaw-final-only-full-payload-delivery.md
   - docs/decisions/0120-construct-first-pass-evidence-headers.md
 supersedes: []
@@ -23,15 +23,15 @@ pr: null
 related_issues:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md
-  - docs/roadmap/issue-AR-276-gate-openclaw-provider-calls-on-agency-preflight.md
-  - docs/roadmap/issue-AR-277-keep-openclaw-finalization-first-pass.md
+  - docs/roadmap/issue-AR-277-gate-openclaw-provider-calls-on-agency-preflight.md
+  - docs/roadmap/issue-AR-278-keep-openclaw-finalization-first-pass.md
 ---
 
 # Worklog detail: docs(roadmap): retain OpenClaw recovery timeout
 
 ## Purpose
 
-Preserve the first changed post-AR-277 live result before another evaluation,
+Preserve the first changed post-AR-278 live result before another evaluation,
 without promoting successful Agency preflight into native response delivery.
 
 ## Approach
@@ -66,4 +66,4 @@ worklog consistency, documentation validation, handoff size, and
 Run the tighter fresh-session proof after immediate context telemetry. Then
 take the post-live SQLite backup, correlate exact Store and host evidence, and
 run proportionate final gates under
-[AR-277](../roadmap/issue-AR-277-keep-openclaw-finalization-first-pass.md).
+[AR-278](../roadmap/issue-AR-278-keep-openclaw-finalization-first-pass.md).

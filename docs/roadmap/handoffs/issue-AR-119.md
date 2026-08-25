@@ -18,24 +18,24 @@ related:
   - docs/roadmap/issue-AR-262-preserve-slow-host-dashboard-parity.md
   - docs/roadmap/issue-AR-263-restore-codex-desktop-parent-hook-delivery.md
   - docs/roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md
-  - docs/roadmap/issue-AR-265-accept-openclaw-stopped-gateway-status.md
-  - docs/roadmap/issue-AR-266-accept-openclaw-numeric-package-revision.md
-  - docs/roadmap/issue-AR-267-create-nested-config-parents-privately.md
-  - docs/roadmap/issue-AR-268-accept-null-openclaw-control-errors.md
-  - docs/roadmap/issue-AR-269-bind-openclaw-installed-copy-provenance.md
-  - docs/roadmap/issue-AR-270-accept-stopped-openclaw-uninstall-status.md
-  - docs/roadmap/issue-AR-271-preserve-openclaw-model-receipt-fields.md
-  - docs/roadmap/issue-AR-272-expose-openclaw-native-finalizer-tool.md
-  - docs/roadmap/issue-AR-273-model-agnostic-structured-inference-profiles.md
-  - docs/roadmap/issue-AR-274-record-openclaw-native-skill-reads.md
-  - docs/roadmap/issue-AR-275-preserve-planner-repair-diagnostics.md
-  - docs/roadmap/issue-AR-276-gate-openclaw-provider-calls-on-agency-preflight.md
-  - docs/roadmap/issue-AR-277-keep-openclaw-finalization-first-pass.md
-  - docs/roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md
-  - docs/roadmap/issue-AR-279-exclude-hermes-internal-post-response-preflight.md
-  - docs/roadmap/issue-AR-280-route-native-children-through-host-profiles.md
-  - docs/roadmap/issue-AR-281-deliver-finalized-openclaw-child-announcements.md
-  - docs/roadmap/issue-AR-282-persist-openclaw-child-terminals-after-delivery.md
+  - docs/roadmap/issue-AR-266-accept-openclaw-stopped-gateway-status.md
+  - docs/roadmap/issue-AR-267-accept-openclaw-numeric-package-revision.md
+  - docs/roadmap/issue-AR-268-create-nested-config-parents-privately.md
+  - docs/roadmap/issue-AR-269-accept-null-openclaw-control-errors.md
+  - docs/roadmap/issue-AR-270-bind-openclaw-installed-copy-provenance.md
+  - docs/roadmap/issue-AR-271-accept-stopped-openclaw-uninstall-status.md
+  - docs/roadmap/issue-AR-272-preserve-openclaw-model-receipt-fields.md
+  - docs/roadmap/issue-AR-273-expose-openclaw-native-finalizer-tool.md
+  - docs/roadmap/issue-AR-274-model-agnostic-structured-inference-profiles.md
+  - docs/roadmap/issue-AR-275-record-openclaw-native-skill-reads.md
+  - docs/roadmap/issue-AR-276-preserve-planner-repair-diagnostics.md
+  - docs/roadmap/issue-AR-277-gate-openclaw-provider-calls-on-agency-preflight.md
+  - docs/roadmap/issue-AR-278-keep-openclaw-finalization-first-pass.md
+  - docs/roadmap/issue-AR-279-deliver-openclaw-finalizer-results.md
+  - docs/roadmap/issue-AR-280-exclude-hermes-internal-post-response-preflight.md
+  - docs/roadmap/issue-AR-281-route-native-children-through-host-profiles.md
+  - docs/roadmap/issue-AR-282-deliver-finalized-openclaw-child-announcements.md
+  - docs/roadmap/issue-AR-283-persist-openclaw-child-terminals-after-delivery.md
   - docs/roadmap/AR-119-founding-vision.md
   - docs/roadmap/AR-119-vision-loop-status.md
   - docs/roadmap/AR-119-39ff6dca-recruiter-diagnostic-evidence.md
@@ -49,11 +49,11 @@ related:
   - docs/decisions/0157-automatically-promote-host-verified-contractors.md
   - docs/decisions/0158-collect-child-canary-proof-inside-disposable-host-profiles.md
   - docs/decisions/0160-pin-child-judge-providers-per-canary-harness.md
-  - docs/decisions/0163-keep-litellm-inference-profiles-model-agnostic.md
-  - docs/decisions/0164-delegate-exact-schema-translation-to-litellm.md
-  - docs/decisions/0165-authorize-openclaw-native-skill-reads-from-inventory.md
-  - docs/decisions/0166-refresh-openclaw-headers-through-awaited-tool-results.md
-  - docs/decisions/0168-authorize-finalized-openclaw-child-announcements.md
+  - docs/decisions/0164-keep-litellm-inference-profiles-model-agnostic.md
+  - docs/decisions/0165-delegate-exact-schema-translation-to-litellm.md
+  - docs/decisions/0166-authorize-openclaw-native-skill-reads-from-inventory.md
+  - docs/decisions/0167-refresh-openclaw-headers-through-awaited-tool-results.md
+  - docs/decisions/0169-authorize-finalized-openclaw-child-announcements.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
@@ -83,7 +83,7 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
   acceptance passes; Rule 4/delegation remains unproven and the matrix unchanged.
 - Hermes v0.20.4 parent acceptance remains retained: Agency-only install `0a3d141a...`, bundle `45b76c0e...`, launcher `e65a0784...`, exact status/skill/substantive Telegram delivery, and Agency LiteLLM receipts on `linux-task-agency-router` / `task-agency-router` with zero cross-provider fallback. Final backup `bdf1a6e6...` is `ok`/`ok`, schema 47, contractors 15; actual upstream model is unavailable.
 - The first OpenClaw native-child draw is preserved as a failure: a real `sessions_spawn` child completed its read-only work, but the completion entered a synthetic `announce:v1:...` run and Agency suppressed its targeted send before Telegram queueing. Staffing still used the unprojected timeout and terminal correlation depended on process memory; execution alone does not prove delivery.
-- AR-280/AR-281 retain exact durable completion finalization: one implicit-target, one-use send on the parent trace, with no synthetic completion run or inference receipt.
+- AR-281/AR-282 retain exact durable completion finalization: one implicit-target, one-use send on the parent trace, with no synthetic completion run or inference receipt.
 - Installed correction/ledger `10ba4c84` / `8a2bf9b7` is rooted at `/home/holeshot/.agency-runtime/evidence/ar281-openclaw-10ba4c84-hSltm1Sn`. Agency-only install `f361ae58...` used bundle `a12bdf34...`, runtime `77e00aa2...`, and launcher `3fc5e135...`; native restart restored service/RPC and 12 Agency hooks.
 - OpenClaw semantic config `e42bf218...`, native `task-general`, and six fallbacks stayed unchanged. Hermes config/env/launcher `95b87b7f...` / `792fd43...` / `e65a0784...` stayed active and untouched. Contractors are 15/15; pre/post Store backups `6aeaaad4...` / `0a65fa88...` are `ok`, schema 47. Credential presence was checked by environment-variable name only.
 - Third changed draw parent `5529c6cf...` / trace `a5f6f53b...` spawned exactly one child `7d1c9571...`, native run `06fb1c56...`, delegation `79049f17...`, worker `native-child:9ea15e2f...`, and route `native-child-4ef0e65f...`. Telegram delivered the exact inference header and one-sentence result; OpenClaw's task ledger says `succeeded` / `delivered`.
@@ -95,7 +95,7 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
   retain the changed failure: OpenClaw delivered the child response, but
   `cleanup: delete` removed the host registry entry before Agency closed the
   worker and delegation.
-- AR-282's uninstalled schema-48 candidate persists the immutable child outcome
+- AR-283's uninstalled schema-48 candidate persists the immutable child outcome
   as delivery `pending`; only OpenClaw 2026.7.1-2's post-adapter
   `message_sent(success=true)` atomically marks it `delivered` and closes
   lifecycle. Explicit failure remains open. `gateway_start` reconciles only

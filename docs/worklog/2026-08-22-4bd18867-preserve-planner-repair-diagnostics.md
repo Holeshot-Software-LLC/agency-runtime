@@ -9,10 +9,10 @@ related:
   - docs/worklog/README.md
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md
-  - docs/roadmap/issue-AR-273-model-agnostic-structured-inference-profiles.md
-  - docs/roadmap/issue-AR-275-preserve-planner-repair-diagnostics.md
+  - docs/roadmap/issue-AR-274-model-agnostic-structured-inference-profiles.md
+  - docs/roadmap/issue-AR-276-preserve-planner-repair-diagnostics.md
   - docs/decisions/0027-authoritative-runtime-evidence-traces.md
-  - docs/decisions/0164-delegate-exact-schema-translation-to-litellm.md
+  - docs/decisions/0165-delegate-exact-schema-translation-to-litellm.md
 supersedes: []
 superseded_by: null
 type: worklog
@@ -23,8 +23,8 @@ pr: null
 related_issues:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md
-  - docs/roadmap/issue-AR-273-model-agnostic-structured-inference-profiles.md
-  - docs/roadmap/issue-AR-275-preserve-planner-repair-diagnostics.md
+  - docs/roadmap/issue-AR-274-model-agnostic-structured-inference-profiles.md
+  - docs/roadmap/issue-AR-276-preserve-planner-repair-diagnostics.md
 ---
 
 # Worklog detail: Preserve planner repair diagnostics
@@ -59,7 +59,7 @@ fixture resolves to `/usr/bin/python3.12`, where pytest is unavailable.
 Structured runtime-owned codes were chosen over parsing or persisting generic
 validation prose. A dedicated repair contract was chosen over model-specific
 prompt branches, alias inspection, more retries, relaxed validation, or a
-protected-provider fallback. ADR-0027 and ADR-0164 govern those boundaries.
+protected-provider fallback. ADR-0027 and ADR-0165 govern those boundaries.
 
 ## Verification
 
@@ -73,4 +73,4 @@ retained as a launcher limitation, not a pass.
 
 Install Agency only into stopped OpenClaw from this checkpoint and run one
 genuinely new substantive turn. Tracker creation remains separately
-unauthorized under AR-275.
+unauthorized under AR-276.

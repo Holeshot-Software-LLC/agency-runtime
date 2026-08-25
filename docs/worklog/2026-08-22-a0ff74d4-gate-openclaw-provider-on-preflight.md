@@ -8,10 +8,10 @@ tags: [openclaw, inference, preflight, safety]
 related:
   - docs/worklog/README.md
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
-  - docs/roadmap/issue-AR-275-preserve-planner-repair-diagnostics.md
-  - docs/roadmap/issue-AR-276-gate-openclaw-provider-calls-on-agency-preflight.md
+  - docs/roadmap/issue-AR-276-preserve-planner-repair-diagnostics.md
+  - docs/roadmap/issue-AR-277-gate-openclaw-provider-calls-on-agency-preflight.md
   - docs/decisions/0027-authoritative-runtime-evidence-traces.md
-  - docs/decisions/0164-delegate-exact-schema-translation-to-litellm.md
+  - docs/decisions/0165-delegate-exact-schema-translation-to-litellm.md
 supersedes: []
 superseded_by: null
 type: worklog
@@ -21,8 +21,8 @@ date: 2026-08-22
 pr: null
 related_issues:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
-  - docs/roadmap/issue-AR-275-preserve-planner-repair-diagnostics.md
-  - docs/roadmap/issue-AR-276-gate-openclaw-provider-calls-on-agency-preflight.md
+  - docs/roadmap/issue-AR-276-preserve-planner-repair-diagnostics.md
+  - docs/roadmap/issue-AR-277-gate-openclaw-provider-calls-on-agency-preflight.md
 ---
 
 # Worklog detail: Gate OpenClaw provider calls on Agency preflight
@@ -76,4 +76,4 @@ limitation and was not retried unchanged.
 Reinstall Agency only into stopped OpenClaw from this checkpoint. Run an
 Agency-only inference check before one genuinely new native turn, then record
 Store/header/finalization evidence. Tracker creation remains separately
-unauthorized under AR-275 and AR-276.
+unauthorized under AR-276 and AR-277.

@@ -140,6 +140,9 @@ _ROUTING_DECISION_FIELDS = frozenset(
         "inference_required",
         "inference_attempted",
         "inference_mode",
+        "turn_context_applied",
+        "turn_context_source_trace_id",
+        "turn_context_revision",
     }
 )
 
@@ -170,6 +173,7 @@ _ROUTING_BOOLEAN_FIELDS = frozenset(
         "inference_configured",
         "inference_required",
         "inference_attempted",
+        "turn_context_applied",
     }
 )
 _ROUTING_FLOAT_FIELDS = frozenset({"confidence", "top_score"})
@@ -182,6 +186,7 @@ _ROUTING_DIGEST_FIELDS = frozenset(
         "origin_query_hash",
         "origin_context_fingerprint",
         "offered_agent_digest",
+        "turn_context_revision",
     }
 )
 # Agent slugs, not free text. A malformed id fails the field closed rather than
@@ -284,7 +289,7 @@ def _project_routing_field(key: str, value: object) -> object:
         )
 
         return project_native_child_staffing_decision(value) or _OMIT_ROUTING_FIELD
-    if key in {"trace_id", "origin_trace_id"}:
+    if key in {"trace_id", "origin_trace_id", "turn_context_source_trace_id"}:
         return str(value or "").strip()[:256]
     return _OMIT_ROUTING_FIELD
 

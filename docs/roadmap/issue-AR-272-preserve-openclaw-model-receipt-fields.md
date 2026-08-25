@@ -8,21 +8,21 @@ tags: [openclaw, model-receipt, finalization, compatibility]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/handoffs/issue-AR-119.md
-  - docs/roadmap/issue-AR-268-accept-null-openclaw-control-errors.md
+  - docs/roadmap/issue-AR-269-accept-null-openclaw-control-errors.md
   - agency_runtime/core/installer_payload_openclaw.py
   - tests/test_security_turn_boundaries.py
 supersedes: []
 superseded_by: null
 type: issue
 epic: reliability
-issue_id: AR-271
+issue_id: AR-272
 priority: p0
 tracker_url: null
 depends_on: []
 blocks: [AR-119]
 ---
 
-# AR-271: Preserve OpenClaw model receipt fields
+# AR-272: Preserve OpenClaw model receipt fields
 
 ## Problem
 

@@ -14,14 +14,14 @@ supersedes: []
 superseded_by: null
 type: issue
 epic: install
-issue_id: AR-269
+issue_id: AR-270
 priority: p0
 tracker_url: null
 depends_on: []
 blocks: []
 ---
 
-# AR-269: Bind OpenClaw installed-copy provenance
+# AR-270: Bind OpenClaw installed-copy provenance
 
 ## Problem
 

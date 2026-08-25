@@ -8,18 +8,18 @@ tags: [openclaw, finalization, telegram, delivery, reliability]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md
-  - docs/roadmap/issue-AR-272-expose-openclaw-native-finalizer-tool.md
-  - docs/roadmap/issue-AR-277-keep-openclaw-finalization-first-pass.md
-  - docs/roadmap/issue-AR-281-deliver-finalized-openclaw-child-announcements.md
-  - docs/decisions/0168-authorize-finalized-openclaw-child-announcements.md
+  - docs/roadmap/issue-AR-273-expose-openclaw-native-finalizer-tool.md
+  - docs/roadmap/issue-AR-278-keep-openclaw-finalization-first-pass.md
+  - docs/roadmap/issue-AR-282-deliver-finalized-openclaw-child-announcements.md
+  - docs/decisions/0169-authorize-finalized-openclaw-child-announcements.md
   - docs/roadmap/handoffs/issue-AR-119.md
   - docs/roadmap/handoffs/issue-AR-264.md
   - docs/roadmap/AR-119-vision-loop-status.md
   - docs/roadmap/AR-119-openclaw-hermes-verification-packet.md
   - docs/decisions/0049-openclaw-final-only-full-payload-delivery.md
   - docs/decisions/0120-construct-first-pass-evidence-headers.md
-  - docs/decisions/0166-refresh-openclaw-headers-through-awaited-tool-results.md
-  - docs/decisions/0167-deliver-openclaw-native-errors-through-exact-terminal-evidence.md
+  - docs/decisions/0167-refresh-openclaw-headers-through-awaited-tool-results.md
+  - docs/decisions/0168-deliver-openclaw-native-errors-through-exact-terminal-evidence.md
   - agency_runtime/core/installer_payload_openclaw.py
   - tests/test_security_turn_boundaries.py
   - tests/test_adapter_parity.py
@@ -27,14 +27,14 @@ supersedes: []
 superseded_by: null
 type: issue
 epic: reliability
-issue_id: AR-278
+issue_id: AR-279
 priority: p0
 tracker_url: null
-depends_on: [AR-272, AR-277]
-blocks: [AR-119, AR-264, AR-281]
+depends_on: [AR-273, AR-278]
+blocks: [AR-119, AR-264, AR-282]
 ---
 
-# AR-278: Deliver accepted OpenClaw finalizer results instead of silent replies
+# AR-279: Deliver accepted OpenClaw finalizer results instead of silent replies
 
 ## Problem
 
@@ -141,7 +141,7 @@ evidence without changing OpenClaw source, configuration, or model routing.
 Lucas selected temporary recovery instead. The ownership-bound Agency uninstall
 dry-run failed before mutation because OpenClaw reports its native installed
 copy at top level and the managed source only in nested install provenance; this
-is retained under AR-269. With the gateway stopped, OpenClaw's native plugin
+is retained under AR-270. With the gateway stopped, OpenClaw's native plugin
 command disabled only `agency-preflight`, then the native service restarted.
 Agency is registered/staged but inactive, RPC and both channel probes are green,
 native `litellm/task-general` plus all six fallbacks are unchanged, and Hermes
@@ -158,7 +158,7 @@ native result. Missing or disabled refresh returns the host result unchanged.
 `before_agent_finalize` still validates the first natural response and the
 existing full-payload gate remains authoritative. Expected-red exit 232 is
 retained. The affected security, adapter, and installer slice passes 72 tests,
-including installer refusal when the middleware contract is absent. ADR-0166
+including installer refusal when the middleware contract is absent. ADR-0167
 records the host-specific decision. The candidate is not installed; Agency
 remains natively disabled and ordinary OpenClaw remains available.
 
@@ -278,7 +278,7 @@ bindings prove deterministic status did not invoke `task-agency-router`.
 Neither requested alias is promoted into an answering-model claim.
 
 Pre-install Store backup SHA `d00c86f9...` and post-status SHA `470aa2fd...`
-both have integrity `ok`, schema 47; contractors remain 15. The AR-278
+both have integrity `ok`, schema 47; contractors remain 15. The AR-279
 delivery defect now passes in its exact scope. Skill loading and substantive
 Agency workforce inference remain separate pending proofs.
 
@@ -680,7 +680,7 @@ attempt exposed an unprojected OpenClaw host-profile timeout and child-end
 correlation that depended on process memory. It proves worker execution, not
 completion delivery.
 
-AR-280/AR-281 implement the repair in Agency Runtime only. Native-child
+AR-281/AR-282 implement the repair in Agency Runtime only. Native-child
 staffing receives the owning OpenClaw profile timeout; durable Store bindings
 recover the exact parent/worker/run/launch lifecycle; and dedicated completion
 prepare/finalize calls revalidate the original parent trace. The generated
@@ -798,7 +798,7 @@ delivery and ADR-0156 Rule 4 remain unproven, and no matrix cell moves.
 
 ## Approach
 
-Change only Agency's OpenClaw adapter as specified by ADR-0166 and ADR-0167. Do not expose
+Change only Agency's OpenClaw adapter as specified by ADR-0167 and ADR-0168. Do not expose
 the finalizer tool. Supply the initial exact Store-backed header at preflight,
 record native tool evidence through OpenClaw's awaited tool-result middleware,
 and append the updated exact snapshot before the model continues. Keep
@@ -816,10 +816,10 @@ Hermes and all protected hosts remain outside the mutation boundary.
 
 ## Dependencies
 
-- AR-272 provides the Store-backed finalization service retained behind the
+- AR-273 provides the Store-backed finalization service retained behind the
   adapter compatibility boundary.
-- AR-277 provides the no-correction first-pass and terminal-rejection contract.
-- ADR-0166 selects OpenClaw's awaited tool-result middleware for exact snapshot
+- AR-278 provides the no-correction first-pass and terminal-rejection contract.
+- ADR-0167 selects OpenClaw's awaited tool-result middleware for exact snapshot
   refresh while leaving Hermes and protected hosts unchanged.
 - OpenClaw 2026.7.1-2 supplies the audited middleware, finalization, and
   full-payload hook contracts.

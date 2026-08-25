@@ -6,12 +6,12 @@ created: 2026-08-22
 updated: 2026-08-22
 tags: [openclaw, skills, evidence, plugin]
 related:
-  - docs/decisions/0165-authorize-openclaw-native-skill-reads-from-inventory.md
+  - docs/decisions/0166-authorize-openclaw-native-skill-reads-from-inventory.md
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/handoffs/issue-AR-119.md
   - docs/roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md
-  - docs/roadmap/issue-AR-272-expose-openclaw-native-finalizer-tool.md
-  - docs/roadmap/issue-AR-273-model-agnostic-structured-inference-profiles.md
+  - docs/roadmap/issue-AR-273-expose-openclaw-native-finalizer-tool.md
+  - docs/roadmap/issue-AR-274-model-agnostic-structured-inference-profiles.md
   - agency_runtime/core/installer_payload_openclaw.py
   - agency_runtime/adapters/openclaw/
   - tests/test_openclaw_adapter.py
@@ -20,14 +20,14 @@ supersedes: []
 superseded_by: null
 type: issue
 epic: reliability
-issue_id: AR-274
+issue_id: AR-275
 priority: p0
 tracker_url: null
-depends_on: [AR-272]
+depends_on: [AR-273]
 blocks: [AR-119]
 ---
 
-# AR-274: Record authorized OpenClaw native skill reads
+# AR-275: Record authorized OpenClaw native skill reads
 
 ## Problem
 
@@ -69,7 +69,7 @@ model visibility, and every disable/block flag before normalizing to canonical
 `skill_view`. The focused receipt passes 22 with one skip; the affected
 installer/dispatch/inference/header/Store slice passes 453 with one skip. A
 read-only live helper smoke authorized only `weather`. Commits `7fcd828d` and
-`7d0460a3` carry the repair and ledger; ADR-0165 records the boundary.
+`7d0460a3` carry the repair and ledger; ADR-0166 records the boundary.
 
 The first Agency-only install attempt failed before mutation because the
 checkout virtualenv was not a trusted persistent launcher. With the changed,
@@ -86,7 +86,7 @@ records `Skills loaded: healthcheck`. All three workforce stages used the
 OpenClaw-scoped LiteLLM profile and exact `task-agency-router` alias/model-group
 without a protected-provider fallback. No actual answering model is claimed.
 
-The later AR-278 awaited-middleware delivery repair regressed that evidence
+The later AR-279 awaited-middleware delivery repair regressed that evidence
 path. In native session `5570abb9-eecc-4d77-be4b-bb9636bdf886`, trace
 `6b18f9f0-a8bb-4a68-b70b-45ec7cdfe454` completed a new read-only `healthcheck`
 request and delivered its response. Routing decision
@@ -162,7 +162,7 @@ or executable-namespace trust rules.
 - OpenClaw `2026.7.1-2` native `skills info --json`, `before_tool_call`, and
   awaited tool-result middleware contracts.
 - Existing Agency skill evidence, Store correlation, and first-pass finalization.
-- AR-272 native finalizer and AR-273 LiteLLM structured-inference repair.
+- AR-273 native finalizer and AR-274 LiteLLM structured-inference repair.
 
 ## Acceptance
 

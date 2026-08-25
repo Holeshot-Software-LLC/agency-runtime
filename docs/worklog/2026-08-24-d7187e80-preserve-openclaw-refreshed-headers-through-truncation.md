@@ -8,8 +8,8 @@ tags: [openclaw, headers, middleware, truncation, finalization]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md
-  - docs/roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md
-  - docs/decisions/0166-refresh-openclaw-headers-through-awaited-tool-results.md
+  - docs/roadmap/issue-AR-279-deliver-openclaw-finalizer-results.md
+  - docs/decisions/0167-refresh-openclaw-headers-through-awaited-tool-results.md
 supersedes: []
 superseded_by: null
 type: worklog
@@ -20,7 +20,7 @@ pr: null
 related_issues:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md
-  - docs/roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md
+  - docs/roadmap/issue-AR-279-deliver-openclaw-finalizer-results.md
 ---
 
 # Worklog detail: Preserve OpenClaw refreshed headers through truncation
@@ -55,7 +55,7 @@ the documented process-local `0077` run passed.
 
 ## Decisions and alternatives
 
-ADR-0166 continues to own the awaited middleware decision. The repair does not
+ADR-0167 continues to own the awaited middleware decision. The repair does not
 rewrite a final, add a second model pass, send directly, trim native evidence,
 or modify host/model configuration. Separate short context blocks remain
 unsafe under recovery `minKeepChars=0`; silent tail truncation at the 200-block

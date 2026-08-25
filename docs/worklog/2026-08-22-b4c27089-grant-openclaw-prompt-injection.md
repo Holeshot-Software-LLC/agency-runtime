@@ -9,7 +9,7 @@ related:
   - docs/worklog/README.md
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md
-  - docs/roadmap/issue-AR-276-gate-openclaw-provider-calls-on-agency-preflight.md
+  - docs/roadmap/issue-AR-277-gate-openclaw-provider-calls-on-agency-preflight.md
 supersedes: []
 superseded_by: null
 type: worklog
@@ -20,7 +20,7 @@ pr: null
 related_issues:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md
-  - docs/roadmap/issue-AR-276-gate-openclaw-provider-calls-on-agency-preflight.md
+  - docs/roadmap/issue-AR-277-gate-openclaw-provider-calls-on-agency-preflight.md
 ---
 
 # Worklog detail: fix(openclaw): grant agency prompt injection
@@ -67,4 +67,4 @@ pass for 682 Python files; `git diff --check` passes.
 
 Stop OpenClaw natively, reinstall Agency only from this checkpoint, restart,
 and require fresh Store-backed header/finalization evidence under
-[AR-276](../roadmap/issue-AR-276-gate-openclaw-provider-calls-on-agency-preflight.md).
+[AR-277](../roadmap/issue-AR-277-gate-openclaw-provider-calls-on-agency-preflight.md).

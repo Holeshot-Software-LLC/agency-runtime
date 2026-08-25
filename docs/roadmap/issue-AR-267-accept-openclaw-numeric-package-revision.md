@@ -1,5 +1,5 @@
 ---
-title: "AR-266: Accept OpenClaw numeric package revisions"
+title: "AR-267: Accept OpenClaw numeric package revisions"
 status: in_progress
 category: roadmap
 created: 2026-08-21
@@ -9,20 +9,20 @@ related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md
   - docs/roadmap/AR-119-openclaw-hermes-verification-packet.md
-  - docs/roadmap/issue-AR-265-accept-openclaw-stopped-gateway-status.md
+  - docs/roadmap/issue-AR-266-accept-openclaw-stopped-gateway-status.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
 type: issue
 epic: install
-issue_id: AR-266
+issue_id: AR-267
 priority: p0
 tracker_url: null
 depends_on: []
 blocks: []
 ---
 
-# AR-266: Accept OpenClaw numeric package revisions
+# AR-267: Accept OpenClaw numeric package revisions
 
 ## Problem
 
@@ -55,7 +55,7 @@ or otherwise prerelease-like suffixes and any unsupported release line.
 
 - AR-119 owns truthful installed and live host evidence.
 - AR-264 owns the current Linux OpenClaw/Hermes verification package.
-- AR-265 repairs the preceding stopped-gateway classification boundary.
+- AR-266 repairs the preceding stopped-gateway classification boundary.
 
 ## Acceptance
 

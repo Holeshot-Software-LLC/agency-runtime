@@ -6,22 +6,22 @@ created: 2026-08-24
 updated: 2026-08-24
 tags: [openclaw, native-child, delivery, finalization, security]
 related:
-  - docs/roadmap/issue-AR-281-deliver-finalized-openclaw-child-announcements.md
-  - docs/roadmap/issue-AR-282-persist-openclaw-child-terminals-after-delivery.md
-  - docs/roadmap/issue-AR-280-route-native-children-through-host-profiles.md
-  - docs/roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md
+  - docs/roadmap/issue-AR-282-deliver-finalized-openclaw-child-announcements.md
+  - docs/roadmap/issue-AR-283-persist-openclaw-child-terminals-after-delivery.md
+  - docs/roadmap/issue-AR-281-route-native-children-through-host-profiles.md
+  - docs/roadmap/issue-AR-279-deliver-openclaw-finalizer-results.md
   - docs/decisions/0049-openclaw-final-only-full-payload-delivery.md
   - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
   - agency_runtime/core/installer_payload_openclaw.py
   - agency_runtime/adapters/openclaw/node_bridge.py
 supersedes: []
 superseded_by: null
-id: ADR-0168
+id: ADR-0169
 type: decision
 deciders: [maintainers]
 ---
 
-# ADR-0168: Authorize finalized OpenClaw child announcements
+# ADR-0169: Authorize finalized OpenClaw child announcements
 
 ## Context
 

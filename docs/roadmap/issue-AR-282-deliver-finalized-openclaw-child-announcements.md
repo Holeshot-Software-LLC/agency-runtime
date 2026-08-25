@@ -7,26 +7,26 @@ updated: 2026-08-24
 tags: [openclaw, native-child, telegram, finalization, reliability]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
-  - docs/roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md
-  - docs/roadmap/issue-AR-280-route-native-children-through-host-profiles.md
-  - docs/roadmap/issue-AR-282-persist-openclaw-child-terminals-after-delivery.md
+  - docs/roadmap/issue-AR-279-deliver-openclaw-finalizer-results.md
+  - docs/roadmap/issue-AR-281-route-native-children-through-host-profiles.md
+  - docs/roadmap/issue-AR-283-persist-openclaw-child-terminals-after-delivery.md
   - docs/decisions/0049-openclaw-final-only-full-payload-delivery.md
   - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
-  - docs/decisions/0168-authorize-finalized-openclaw-child-announcements.md
+  - docs/decisions/0169-authorize-finalized-openclaw-child-announcements.md
   - agency_runtime/core/installer_payload_openclaw.py
   - agency_runtime/adapters/openclaw/node_bridge.py
 supersedes: []
 superseded_by: null
 type: issue
 epic: host-integrations
-issue_id: AR-281
+issue_id: AR-282
 priority: p0
 tracker_url: null
-depends_on: [AR-278, AR-280]
+depends_on: [AR-279, AR-281]
 blocks: [AR-119]
 ---
 
-# AR-281: Deliver finalized OpenClaw child announcements
+# AR-282: Deliver finalized OpenClaw child announcements
 
 ## Problem
 
@@ -46,7 +46,7 @@ Telegram-ingress, native-model, or OpenClaw configuration failure.
 
 - The first live native-child staffing attempt also exposed a separate
   15-second inherited judge deadline and a process-local end-callback
-  dependency; both are within AR-280's host-profile and lifecycle scope.
+  dependency; both are within AR-281's host-profile and lifecycle scope.
 - OpenClaw's completion-run identity is derived from host-issued child session
   and run values already captured by Agency at the accepted spawn result.
 - `subagent_ended` fires after completion delivery and cleanup, so it cannot
@@ -174,8 +174,8 @@ Telegram-ingress, native-model, or OpenClaw configuration failure.
 
 - OpenClaw 2026.7.1-2's audited `sessions_spawn`, `before_tool_call`, and
   `message_sending` contracts.
-- AR-278's exact finalization and terminal message seal.
-- AR-280's host-scoped child staffing and durable lifecycle correlation.
+- AR-279's exact finalization and terminal message seal.
+- AR-281's host-scoped child staffing and durable lifecycle correlation.
 - Tracker creation requires separate authorization and remains pending.
 
 ## Acceptance
@@ -236,7 +236,7 @@ acceptance item remains unchecked until a changed installed draw also closes
 the delegation and worker. No `native_child_delivery_verifications` row was
 fabricated; ADR-0156 Rule 4 and the AR-119 matrix remain unchanged.
 
-## AR-282 post-transport lifecycle correction
+## AR-283 post-transport lifecycle correction
 
 The subsequently installed `933d9f4a` one-shot terminal-reconciliation build
 preserved another operational delivery but did not close Agency lifecycle.
@@ -248,7 +248,7 @@ OpenClaw delivered the child response, then `cleanup: delete` removed the host
 registry entry before the expected `subagent_ended` receipt could close the
 worker and delegation.
 
-AR-282 owns the replacement. Its uninstalled schema-48 candidate separates an
+AR-283 owns the replacement. Its uninstalled schema-48 candidate separates an
 immutable child-terminal observation from delivery status. `message_sending`
 records all allowed text sends in a bounded attempt ledger but does not prove
 transport. Only OpenClaw's post-adapter `message_sent(success=true)` with one

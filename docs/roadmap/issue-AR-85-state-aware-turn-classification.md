@@ -3,7 +3,7 @@ title: "AR-85: Replace generic triviality with state-aware turn classification"
 status: done
 category: roadmap
 created: 2026-07-18
-updated: 2026-07-20
+updated: 2026-08-24
 tags: [routing, lifecycle, correlation, inference, compatibility]
 related:
   - docs/decisions/0064-classify-turn-intent-from-durable-state.md
@@ -17,7 +17,7 @@ issue_id: AR-85
 priority: p0
 tracker_url: "https://github.com/Holeshot-Software-LLC/agency-runtime/issues/86"
 depends_on: [AR-25]
-blocks: []
+blocks: [AR-265]
 ---
 
 # AR-85: Replace generic triviality with state-aware turn classification

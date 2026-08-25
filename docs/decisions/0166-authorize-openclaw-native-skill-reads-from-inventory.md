@@ -8,7 +8,7 @@ tags: [openclaw, skills, evidence, security]
 related:
   - docs/decisions/0027-authoritative-runtime-evidence-traces.md
   - docs/decisions/0120-construct-first-pass-evidence-headers.md
-  - docs/roadmap/issue-AR-274-record-openclaw-native-skill-reads.md
+  - docs/roadmap/issue-AR-275-record-openclaw-native-skill-reads.md
   - docs/roadmap/handoffs/issue-AR-119.md
   - agency_runtime/core/installer_payload_openclaw.py
   - agency_runtime/adapters/openclaw/plugin.py
@@ -18,12 +18,12 @@ related:
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
-id: ADR-0165
+id: ADR-0166
 type: decision
 deciders: [maintainers]
 ---
 
-# ADR-0165: Authorize OpenClaw native skill reads from inventory
+# ADR-0166: Authorize OpenClaw native skill reads from inventory
 
 ## Context
 

@@ -8,8 +8,8 @@ tags: [openclaw, errors, delivery, finalization, security]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md
-  - docs/roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md
-  - docs/decisions/0167-deliver-openclaw-native-errors-through-exact-terminal-evidence.md
+  - docs/roadmap/issue-AR-279-deliver-openclaw-finalizer-results.md
+  - docs/decisions/0168-deliver-openclaw-native-errors-through-exact-terminal-evidence.md
 supersedes: []
 superseded_by: null
 type: worklog
@@ -20,7 +20,7 @@ pr: null
 related_issues:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md
-  - docs/roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md
+  - docs/roadmap/issue-AR-279-deliver-openclaw-finalizer-results.md
 ---
 
 # Worklog detail: Deliver correlated OpenClaw native errors
@@ -59,7 +59,7 @@ environment executable was used and passed.
 
 ## Decisions and alternatives
 
-ADR-0167 owns the durable decision. The repair does not add an Agency header to
+ADR-0168 owns the durable decision. The repair does not add an Agency header to
 an error, send directly, change OpenClaw source/configuration/model routing, or
 relax ordinary finalization. Delivering a native error remains failure evidence,
 not Agency success or substantive acceptance.

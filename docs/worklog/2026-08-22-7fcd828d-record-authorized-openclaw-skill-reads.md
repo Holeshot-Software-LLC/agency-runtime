@@ -6,11 +6,11 @@ created: 2026-08-22
 updated: 2026-08-22
 tags: [openclaw, skills, evidence, security]
 related:
-  - docs/decisions/0165-authorize-openclaw-native-skill-reads-from-inventory.md
+  - docs/decisions/0166-authorize-openclaw-native-skill-reads-from-inventory.md
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md
-  - docs/roadmap/issue-AR-273-model-agnostic-structured-inference-profiles.md
-  - docs/roadmap/issue-AR-274-record-openclaw-native-skill-reads.md
+  - docs/roadmap/issue-AR-274-model-agnostic-structured-inference-profiles.md
+  - docs/roadmap/issue-AR-275-record-openclaw-native-skill-reads.md
   - docs/roadmap/handoffs/issue-AR-119.md
   - docs/worklog/README.md
 supersedes: []
@@ -23,8 +23,8 @@ pr: null
 related_issues:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md
-  - docs/roadmap/issue-AR-273-model-agnostic-structured-inference-profiles.md
-  - docs/roadmap/issue-AR-274-record-openclaw-native-skill-reads.md
+  - docs/roadmap/issue-AR-274-model-agnostic-structured-inference-profiles.md
+  - docs/roadmap/issue-AR-275-record-openclaw-native-skill-reads.md
 ---
 
 # Worklog detail: Record authorized OpenClaw native skill reads
@@ -81,5 +81,5 @@ unchanged.
 
 ## Follow-ups
 
-- [AR-274](../roadmap/issue-AR-274-record-openclaw-native-skill-reads.md): reinstall Agency only into OpenClaw and prove a genuinely different skill in a fresh session.
+- [AR-275](../roadmap/issue-AR-275-record-openclaw-native-skill-reads.md): reinstall Agency only into OpenClaw and prove a genuinely different skill in a fresh session.
 - [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md): run the distinct substantive OpenClaw work unit after skill evidence passes; do not move a Rule-4 matrix cell.

@@ -8,8 +8,8 @@ tags: [openclaw, hermes, finalization, correlation]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md
-  - docs/roadmap/issue-AR-274-record-openclaw-native-skill-reads.md
-  - docs/roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md
+  - docs/roadmap/issue-AR-275-record-openclaw-native-skill-reads.md
+  - docs/roadmap/issue-AR-279-deliver-openclaw-finalizer-results.md
 supersedes: []
 superseded_by: null
 type: worklog
@@ -20,8 +20,8 @@ pr: null
 related_issues:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md
-  - docs/roadmap/issue-AR-274-record-openclaw-native-skill-reads.md
-  - docs/roadmap/issue-AR-278-deliver-openclaw-finalizer-results.md
+  - docs/roadmap/issue-AR-275-record-openclaw-native-skill-reads.md
+  - docs/roadmap/issue-AR-279-deliver-openclaw-finalizer-results.md
 ---
 
 # Worklog detail: Preserve native finalization attribution
