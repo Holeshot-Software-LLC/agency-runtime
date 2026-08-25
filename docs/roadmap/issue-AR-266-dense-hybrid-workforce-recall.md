@@ -145,6 +145,28 @@ eligibility constraints.
 - The full `tests/test_configuration.py` file retains one inherited mainline
   mismatch: it expects the default workforce mode `fast`, while fetched
   `origin/main` config declares `strict`. All AR-266 configuration tests pass.
+- Local AR-286 configuration on 2026-08-25 keeps dense recall in `shadow` and
+  routes its two optional stages directly to Ollama: embeddings use
+  `qwen3-embedding:latest` at an exact 1,024 dimensions and reranking uses
+  `qwen3-14b-abliterated:latest` under the closed response schema. The existing
+  OpenClaw and Hermes parent-workforce defaults remain
+  `linux-task-agency-router` / `task-agency-router` through LiteLLM.
+- One forced, bounded AR-266 integration smoke per host label (`codex`,
+  `claude`, `hermes`, and `openclaw`) produced applied embedding and reranker
+  attempts, 16 novel candidates, and no provider fallback. Codex and Claude
+  were evaluator-only; no native host, OAuth, or canary was invoked.
+- A fresh native OpenClaw gateway turn then produced a real Agency header and
+  Store trace `4fbd059b-ea18-4ce7-8332-0446a70fdb9f`. Parent inference used the
+  exact LiteLLM alias and the recall embedding stage used the configured local
+  model. Its specialist was already in typed recall, so the native turn did
+  not need the reranker. Because the CLI turn was not delivered to an external
+  channel, its Store run remains active and is not outbound-delivery proof.
+- The preceding OpenClaw attempt was rejected before allocation because the
+  CLI's implicit `main` agent no longer exists; the distinct successful turn
+  explicitly targeted the configured default agent `nexus`. No OpenClaw
+  configuration was changed. Hermes shutdown also returned exit 1 after
+  honoring SIGTERM; that failed stop receipt is preserved, and the refreshed
+  service subsequently started normally.
 
 ## Dependencies
 

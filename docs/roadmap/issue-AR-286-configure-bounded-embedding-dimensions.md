@@ -39,14 +39,25 @@ cache identity, and model evidence ambiguous.
 
 ## Current state
 
-- The embedding profile records provider, model, capability, URL, credential
-  indirection, transport, and timeout, but no requested output dimension.
-- The locally available embedding model returns 4,096 values by default and
-  supports a provider-native 1,024-dimension response when requested.
-- Agency correctly rejects a complete-roster batch whose scalar count exceeds
-  the existing safety bound. No bound was raised and no vector was sliced.
-- Reranking is independent of this defect; its separately routed text profile
-  remains subject to the existing closed response schema.
+- Commit `2bea0c76` adds the bounded `dimensions` profile field, provider-native
+  request projection, exact-width response enforcement, cache identity, and
+  typed-only fallback. Its ledger commit is `9adee235`.
+- The local Agency-only configuration now requests 1,024 dimensions from
+  `qwen3-embedding:latest` through Ollama and routes recall reranking to
+  `qwen3-14b-abliterated:latest`. Dense recall remains `shadow`.
+- A direct live embedding call returned one 1,024-value vector and identified
+  the requested model as the actual answering model. A direct reranker call
+  returned a complete schema-valid two-candidate ordering with its model
+  identity sourced from the response body.
+- A bounded four-host-labelled integration smoke ran the exact AR-266 hybrid
+  path for Codex, Claude, Hermes, and OpenClaw. All four recorded applied
+  embedding and reranker attempts; Codex and Claude were evaluator-only and
+  did not invoke either native host or OAuth.
+- The first host embedded the complete 278-worker catalog plus one query; the
+  other three reused the exact model-and-dimension-bound catalog and embedded
+  one new query each. Every host observed 1,024 dimensions and 16 additions.
+- Existing per-vector and one-million-scalar bounds remain unchanged. No
+  vector was sliced or padded.
 - Tracker creation is pending explicit authorization. No outward tracker write
   is authorized by this local package.
 
@@ -79,18 +90,33 @@ bounds unchanged.
   absence or removal of that support must fail to typed-only recall.
 - Tracker creation requires separate authorization.
 
+## Verification evidence
+
+- Regression-first artifact
+  `/tmp/ar286-regression-red.txt` has SHA-256
+  `8e4fe65511b6eaad6d41d3aef49206b3f373f88467c1ae5b5e66dcab8184b54b`
+  and contains the expected 12 failures before implementation.
+- 167 focused configuration, embedding-provider, cache-identity, fallback,
+  receipt, and workforce inference tests pass with warnings treated as errors.
+- Independent review returned GO with no Critical, High, or Medium findings.
+- Full Ruff check and format-check, documentation checks, and
+  `git diff --check` passed before the implementation checkpoint.
+- Live local embedding, reranker, and four-host-labelled shadow-path smokes
+  passed on 2026-08-25. They do not prove native Codex/Claude activation or
+  authorize additive recall.
+
 ## Acceptance
 
-- [ ] `dimensions` defaults to zero and zero omits the provider request field.
-- [ ] Only embedding profiles on `ollama`, `openai-compatible`, or `litellm`
+- [x] `dimensions` defaults to zero and zero omits the provider request field.
+- [x] Only embedding profiles on `ollama`, `openai-compatible`, or `litellm`
       accept a nonzero bounded value.
-- [ ] Ollama and OpenAI-compatible/LiteLLM embedding requests receive the
+- [x] Ollama and OpenAI-compatible/LiteLLM embedding requests receive the
       configured nonzero dimension.
-- [ ] Every returned vector must exactly match the requested dimension;
+- [x] Every returned vector must exactly match the requested dimension;
       unsupported, stripped, or mismatched requests preserve typed-only recall.
-- [ ] Catalog identity changes when the requested dimension changes.
-- [ ] Existing per-vector and aggregate scalar bounds remain unchanged, and no
+- [x] Catalog identity changes when the requested dimension changes.
+- [x] Existing per-vector and aggregate scalar bounds remain unchanged, and no
       client-side slicing or padding is introduced.
-- [ ] Focused configuration, provider, cache-identity, fallback, and receipt
+- [x] Focused configuration, provider, cache-identity, fallback, and receipt
       regressions pass before live shadow evaluation.
 - [ ] Tracker creation and linkage remain pending separate authorization.

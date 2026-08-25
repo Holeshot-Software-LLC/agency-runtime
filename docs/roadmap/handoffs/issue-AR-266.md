@@ -15,9 +15,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-266
-branch: codex/ar266-merge-ledger
-evidence_commit: 042b5ed974486b067aba886750210e97c029a2d2
-minimum_ledger_commit: 299b1ec59337bcb61d6ee881d58d7a43d53c31d2
+branch: codex/ar266-local-retrieval-smoke
+evidence_commit: 2bea0c763243757895032d8552da988368a64ecb
+minimum_ledger_commit: 9adee235d74d0302e1afe090e26064a24d66d471
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/320
 ---
@@ -26,104 +26,85 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/320
 
 ## checkpoint
 
-- The isolated worktree is on
-  `codex/ar266-dense-hybrid-workforce-recall` from exact fetched
-  `origin/main` commit `fc0770392b5a2cc38c589d2411698d0a0ac602ae`.
-- The shared main checkout contains another worker's OpenClaw changes and must
-  remain untouched.
-- Bootstrap telemetry reported 29.9 percent remaining. Planning and ledger
-  commits `9629cc8e` and `71edf5cc` form the clean starting checkpoint.
-- AR-266 and ADR-0164 preserve the existing 24 typed candidates as a guaranteed
-  lane while searching the complete roster through additive lexical and
-  learned-dense recall. Inference remains the sole final selector.
-- Tracker [#320](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/320)
-  exists with `epic:workforce`; the owner authorized publication, and
-  [PR #321](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/321)
-  passed every automatic check and merged to exact `origin/main` commit
-  `042b5ed974486b067aba886750210e97c029a2d2` without override. Its reviewed
-  second parent is exact ledgered branch head
-  `299b1ec59337bcb61d6ee881d58d7a43d53c31d2`.
-- This merge-record package runs from that exact main commit in a second
-  isolated worktree on `codex/ar266-merge-ledger`. The shared main checkout and
-  its other worker's OpenClaw changes remain untouched.
-- No provider call, model installation, config mutation, or live canary
-  occurred on this box. The official Ollama installer was only downloaded to a
-  temporary folder and signature-verified before the owner redirected model
-  smoke testing to another machine.
+- Worktree `/tmp/agency-runtime-ar266-retrieval.nVONyD` is on branch
+  `codex/ar266-local-retrieval-smoke`, based on exact fetched `origin/main`
+  `4d2f88895f8fb8e3234ff4d8dbef47108c830476`.
+- Current clean implementation/ledger head is `9adee235`; substantive commits
+  `382fb4d9` and `2bea0c76` integrate the current host runtime and add bounded
+  embedding dimensions, with ledger commits `04cef50f` and `9adee235`.
+- Store schema is 48, integrity is `ok`, and the enabled roster has 278 workers.
+  The pre-mutation SQLite online backup also passed integrity check.
+- Effective Agency config SHA-256 after the atomic retrieval-only update is
+  `2261184786cfb0911b4a8eeb429f3011edb2ed28b20b4da3f6ca14de43e52468`.
+- Both gateways are active. Current launcher-manifest SHA-256 values are
+  `ace4ad8d3014216ff176018353e8ea7909377c82998c34892c8241a78b707b64`
+  for OpenClaw and
+  `75f44200e7b052e33f2b691e8337a6172970174785bb8fb3edad57057c7dbfe6`
+  for Hermes.
 
 ## completed-evidence
 
-- Implementation commit `51c7a8ec` adds explicit embedding/reranker route resolution,
-  positive-only projections, exact vector validation, lexical+dense RRF, a
-  model-bound two-entry cache, and typed-only failure evidence.
-- Additive integration recovers a specialist beyond the 24 typed cards and
-  leaves inference plus the unchanged verifier as the only staffing authority.
-- Shadow retrieval has an independent two-call budget and cannot consume
-  planner, recruiter, repair, or critic capacity. Missing actual-model identity
-  fails closed before cache population or reuse.
-- 144 focused retrieval/inference tests, 77 configuration/profile tests, 68
-  receipt tests, and 147 routing/selection/hiring tests with one skip pass.
-- The named fast spine passes 806 tests with 20 skips; 134 dashboard tests,
-  full Ruff checks, every routing-eval threshold, and 151/151 decision
-  conformance mutations pass.
-- Independent security re-review reports GO on both High repairs. No live
-  provider call, model installation, config mutation, or live canary occurred.
-- Verified checkpoint `fee0a116` and ledger commit `b5fe8cb9` complete the
-  original implementation bookkeeping. Tracker #320 and PR #321 now provide
-  the outward publication records.
-- Direct tracker verification confirms issue #320 is open with the exact
-  `[AR-266]` title, URL, and `epic:workforce` label. The repository-wide strict
-  tracker gates remain red on pre-existing historical missing-issue and state
-  mismatches outside AR-266; ordinary documentation validation passes all 739
-  files.
-- PR #321's hosted gates pass: the 13-minute quality job, CodeQL, dependency
-  review, source/dependency audit, uninstrumented performance, Windows Python
-  3.11/3.12/3.13 portability, Ubuntu and Windows unsigned-distribution smoke,
-  artifact assembly, and the automatic-gate summary all completed green.
+- AR-286 regression-first implementation passes 167 focused tests with
+  warnings as errors. Ruff check/format, documentation gates, and independent
+  review are green; no Critical, High, or Medium finding remains.
+- Agency's local embedding adapter returned exactly 1,024 dimensions from
+  `qwen3-embedding:latest`. The local structured adapter returned a complete,
+  schema-valid reranking from `qwen3-14b-abliterated:latest`.
+- Four forced host-labelled AR-266 smokes (`codex`, `claude`, `hermes`,
+  `openclaw`) each applied both local provider stages and recovered 16 novel
+  candidates. Codex and Claude were evaluator-only; their native config,
+  OAuth, and canary evidence were untouched.
+- OpenClaw's fresh native Store trace
+  `4fbd059b-ea18-4ce7-8332-0446a70fdb9f` contains accepted workforce routing,
+  the exact parent alias/profile, and an applied local embedding attempt. The
+  native response carried a real Agency header and loaded `code-reviewer`.
+- OpenClaw remains on audited `2026.7.1-2`, its primary remains
+  `litellm/task-general`, and its native model/provider document is
+  semantically unchanged. Hermes remains on `0.20.4`; its native config hash
+  stayed byte-identical through the Agency refresh.
+- Failed evidence is preserved: OpenClaw's implicit missing-`main` invocation
+  was rejected before allocation; Hermes honored SIGTERM but its process
+  returned exit 1 during stop; an earlier isolated test launcher correctly
+  refused before allocation when its explicit embedding-stub URL was absent.
 
 ## current-state
 
-Exact fetched `origin/main` commit `042b5ed9` contains the verified, ledgered
-AR-266 implementation from PR #321. It supports explicitly configured
-embedding and recall-reranker models, safe current-turn subject queries,
-shadow/additive modes, complete roster search, and bounded typed fallback.
-Additive production value remains unproven until a configured shadow
-evaluation uses real providers on the owner's model-capable machine.
-Local preparation found a provider-native 1,024-dimension projection is needed
-to keep the complete-roster batch under the unchanged scalar bound. AR-286 owns
-that configuration path; no vector slicing or bound increase is authorized.
+The local Agency-only config is validated and active in `shadow` mode. Explicit
+global capability routes use free local Ollama models and do not replace the
+OpenClaw/Hermes host defaults. Both installed host projections come from this
+same checkout and accept the new dimensions field. The forced four-host path
+passes; OpenClaw native parent integration passes through Store-backed routing.
+Hermes native retrieval proof is the next bounded live step.
 
 ## unresolved-gates
 
-- Publish this exact-main merge record through the required docs-only PR.
-- Run a predeclared live shadow evaluation against explicitly configured
-  embedding and reranker models before recommending additive production use.
-- Complete AR-286 so an exact requested dimension is sent, verified, and bound
-  into catalog identity before the local shadow evaluation.
+- Complete the fresh native Hermes retrieval turn and exact Store correlation.
+- Run the remaining proportionate gates and record final before/after Store and
+  host evidence. The complete warning-strict corpus and hosted workflow remain
+  intentionally undispatched.
+- Keep the full AR-266 shadow-value acceptance box open: this bounded smoke is
+  real provider evidence, not the complete safety/quality matrix and not an
+  additive-production recommendation.
 - Resolve the inherited `test_configuration.py` default-mode expectation
   separately from AR-266; fetched main declares `strict`, while that test still
   expects `fast`.
-- Repair the unsupported installed config before any host refresh or canary.
 - Keep tracker #320 open while the live shadow-value gate remains unresolved.
 
 ## exact-blocker
 
-There is no implementation blocker; PR #321 is merged and all automatic checks
-passed. Production-quality lift is not yet proven because no live
-embedding/reranker shadow evaluation ran. The installed hook refresh on this
-box remains blocked by unsupported top-level config fields; model configuration
-and live evidence have moved to the owner's model-capable machine.
+There is no external blocker. The only current incomplete live step is the
+fresh Hermes bridge turn. OpenClaw's non-delivered CLI run remains active in
+Store and must not be promoted into outbound-delivery or terminal-finalization
+proof.
 
 ## next-bounded-work-package
 
-1. Commit and publish this exact-main merge checkpoint with its reciprocal
-   worklog ledger row through the required docs-only PR.
-2. On the model-capable machine, start from the resulting exact `main`,
-   complete AR-286, configure a learned embedding model with a provider-native
-   bounded dimension and a bounded text reranker, then run the predeclared
-   shadow matrix without enabling additive production behavior.
-3. Keep AR-266 and tracker #320 in progress until the live acceptance evidence
-   is durable; do not present the merge itself as additive-value proof.
+1. Create this local recovery/ledger pair, then run one fresh Hermes native
+   turn without changing Hermes config.
+2. Correlate the Hermes Store trace and retain any failure without unchanged
+   retry.
+3. Run proportionate repository gates, update this capsule and both issue
+   records with final evidence, and create the final local recovery/ledger pair.
 
 ## same-task-continuity
 
