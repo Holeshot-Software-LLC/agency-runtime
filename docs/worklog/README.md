@@ -1124,6 +1124,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `b2c34a6d` | 2026-08-24 | docs(ar265): checkpoint reviewed routing repair | [AR-265](../roadmap/issue-AR-265-contextual-turn-classification.md) | null |
 | `9c1a18fc` | 2026-08-24 | docs(ar265): link tracker issue 317 | [AR-265](../roadmap/issue-AR-265-contextual-turn-classification.md) | null |
 | `871e3eb7` | 2026-08-24 | docs(ar265): record pull request 318 | null | null |
+| `90b852bd` | 2026-08-24 | Merge pull request #318 from Holeshot-Software-LLC/codex/ar265-contextual-turn-classification | null | null |
+| `dfe8cb26` | 2026-08-24 | docs(ar265): record merged contextual routing canary | [AR-265](../roadmap/issue-AR-265-contextual-turn-classification.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
