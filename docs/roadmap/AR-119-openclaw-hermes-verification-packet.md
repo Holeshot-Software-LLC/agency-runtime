@@ -2991,8 +2991,52 @@ native_trajectory_sha256: 9163d31805dc35929783703467e2b8c6f0f8a0ed3f277c0da28758
 operational_native_child_acceptance: pass
 rule4_proven: false
 matrix_cell_moved: false
-remaining_openclaw_checks: harmless no-child skill; changed non-delegating substantive turn; final SQLite backup/integrity/hash
+remaining_openclaw_checks: none; completed in final parent checks below
 fallback_evidence_limit: AR-284; attempted_fallbacks contains stage ordinals, so routing flags and provider identities prove zero cross-provider fallback
 hermes: untouched break glass during this package
 protected_hosts: Codex OAuth/config/canary, Claude, and ZCode untouched
+~~~
+
+### Final OpenClaw parent checks
+
+~~~yaml
+skill_run_id: 53f6d825-ca0d-4046-981a-194cbf0c061e
+skill_trace_id: 3645e474-80a7-4c19-a1d5-f11acbaa1747
+skill_routing_decision_id: 739b6d73-79d1-470d-8b15-66bffb37985b
+skill_specialist_id: 477ff2c2-2bd6-49bb-970c-63081a38d116
+skill_specialist_slug: codebase-onboarding-engineer
+skill_store_row_id: 3e57162a-d280-422c-918a-d73e5cd7ae53
+skill_name: openclaw-operations
+skill_finalization_id: 18b8f125-9ef9-4237-adc8-a2da35ba8d63
+skill_header: agency-steward, codebase-onboarding-engineer / none / openclaw-operations / task-agency-router wrapper / inference
+skill_worker_count: 0
+skill_delegation_count: 0
+skill_transcript_sha256_at_delivery: 03660f3d2da3c6addade2de9b5ce169e2bc1071a38ec2491ca6a55a6bcd18730
+skill_trajectory_sha256_at_delivery: e21700a609e107b5324fd997ea9ae13bd683fe49c9e4f163a7cbf59aab711057
+substantive_run_id: 2b0033c9-a640-4275-8573-467b313d2411
+substantive_trace_id: 06785961-364e-4d52-a2ce-e2c26921dacf
+substantive_routing_decision_id: 6eb8f30d-8186-4e27-9ac8-79f117872d73
+substantive_specialist_id: cce108ba-216a-4578-a651-fea47a5e4bc2
+substantive_specialist_slug: code-reviewer
+substantive_skill_store_row_id: 6512dcab-2777-4273-a2d8-bd181c708511
+substantive_finalization_id: a6833f9a-cdeb-4498-849b-c32289d03232
+substantive_header: agency-steward, code-reviewer / none / openclaw-operations / task-agency-router wrapper / inference
+substantive_provider_attempts: 3 applied; openclaw / linux-task-agency-router / litellm / task-agency-router
+substantive_fallback_considered: false
+substantive_fallback_applied: false
+substantive_actual_model: unavailable; zero LiteLLM callback receipts
+substantive_worker_count: 0
+substantive_delegation_count: 0
+substantive_transcript_sha256: 8437676addffa339fb73d80f3cc1d65928372000e6de0141c8d69fa582c06955
+substantive_trajectory_sha256: 4cfdbc295798c1e0de70f6cb9dd1d3aec74810ee69bc65343d7ad5662e4f9901
+native_model_invariant: litellm/task-general plus six unchanged fallbacks; exact semantic equality to prework
+final_store_backup: /home/holeshot/.agency-runtime/evidence/ar283-openclaw-final-qy36G1/agency-final.db
+final_store_backup_sha256: a0d558a330c94b341e7624d455fe0c7ef257bd992a5903c8592e7a3f5de4f188
+final_store_backup_integrity: ok
+final_store_backup_schema: 48
+final_store_contractors: 15; unchanged
+remaining_openclaw_checks: none
+openclaw_scoped_acceptance: pass
+rule4_proven: false
+matrix_cell_moved: false
 ~~~

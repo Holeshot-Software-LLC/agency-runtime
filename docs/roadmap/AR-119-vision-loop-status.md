@@ -4655,3 +4655,37 @@ does not move the matrix. Before the OpenClaw package closes, the current merged
 install still needs one harmless no-child skill receipt, one new non-delegating
 substantive receipt, and a final SQLite backup/integrity hash. Hermes remains
 break glass until those bounded checks pass.
+
+## 2026-08-24 - OpenClaw merged-install acceptance closes
+
+The remaining bounded checks pass on the installed merged runtime. Skill run
+`53f6d825-ca0d-4046-981a-194cbf0c061e`, trace
+`3645e474-80a7-4c19-a1d5-f11acbaa1747`, delivered the exact refreshed header
+with `codebase-onboarding-engineer` and `openclaw-operations`; Store skill row
+`3e57162a-d280-422c-918a-d73e5cd7ae53` correlates it. No worker or delegation
+was created.
+
+The genuinely new, non-delegating restart-safety review completed as run
+`2b0033c9-a640-4275-8573-467b313d2411`, trace
+`06785961-364e-4d52-a2ce-e2c26921dacf`, routing decision
+`6eb8f30d-8186-4e27-9ac8-79f117872d73`, specialist
+`cce108ba-216a-4578-a651-fea47a5e4bc2`, and finalization
+`a6833f9a-cdeb-4498-849b-c32289d03232`. The Telegram-delivered header is
+`agency-steward, code-reviewer / none / openclaw-operations / workforce
+inference task-agency-router -> linux-task-agency-router/task-agency-router
+(wrapper) / inference`. All three attempts used the automatic OpenClaw profile,
+provider type `litellm`, and exact alias/model-group `task-agency-router`; both
+fallback flags are false, no child/delegation exists, and no actual-model
+callback receipt exists.
+
+Final SQLite backup
+`/home/holeshot/.agency-runtime/evidence/ar283-openclaw-final-qy36G1/agency-final.db`
+has SHA-256 `a0d558a330c94b341e7624d455fe0c7ef257bd992a5903c8592e7a3f5de4f188`,
+integrity `ok`, schema 48, and 15 Agency Runtime contractors. Live integrity is
+also `ok`. OpenClaw remains on exact prework `litellm/task-general` plus six
+fallbacks; Hermes and protected hosts remain untouched.
+
+OpenClaw scoped acceptance is closed. ADR-0156 Rule 4 remains unproven and the
+matrix remains unchanged. AR-284 separately records that strict-stage ordinals
+must not be interpreted as provider fallback counts. The next bounded package
+is Agency-only Hermes verification from this same checkout.

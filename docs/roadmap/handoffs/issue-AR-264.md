@@ -39,8 +39,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-264
 branch: codex/ar278-openclaw-one-pass
-evidence_commit: 5511300ebc20af31cd6488a009f21f878326c231
-minimum_ledger_commit: 7295f28980316739af83ba8fa55c91667022cba1
+evidence_commit: 3b1f9783aa09e8a0440ac5e1668e83f8e97dfd66
+minimum_ledger_commit: 34f3b52c92412cff13984a51d26bd5ea04160518
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 ---
@@ -88,12 +88,12 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 - OpenClaw is deliberately request-scoped: binding `rmb-fef54dcc...` is in the
   ready run recipe and no `resident_manager_bindings` row is expected. The
   Store is schema 48 and live integrity is `ok`.
-- The host has no shared immutable send identifier. One unique active attempt
-  must match every supplied target/channel/account/conversation/session/run
-  field and the exact response hash; stale, delayed, replayed, or
-  ordinary-identical ambiguity fails closed. Focused validation is 294 passed
-  with one unrelated skip and independent review is GO; the installed Store
-  remains schema 47 and Rule 4/matrix remain unchanged.
+- Skill trace `3645e474...` delivered `openclaw-operations` with Store row
+  `3e57162a...` and no worker. Changed substantive trace `06785961...` delivered
+  `code-reviewer` plus the skill, with three same-profile LiteLLM attempts,
+  false fallback flags, no child/delegation, and finalization `a6833f9a...`.
+- Final SQLite backup `a0d558a3...` is integrity `ok`, schema 48, contractors
+  15; native `task-general` plus six fallbacks remains exactly equal to prework.
 
 ## completed-evidence
 
@@ -106,10 +106,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313
 
 ## exact-blocker
 
-OpenClaw child lifecycle is green. The merged install still needs one harmless
-skill-load receipt, one changed non-delegating substantive receipt, and a final
-SQLite backup/integrity checkpoint. Rule 4 separately requires an ADR-0156
-host-artifact receipt.
+No scoped OpenClaw blocker remains. Rule 4 remains separately unproven, AR-284
+tracks a non-blocking receipt-semantics defect, and tracker writes remain
+unauthorized.
 
 ## same-task-continuity
 
@@ -117,9 +116,9 @@ Continue from the clean candidate checkpoint into OpenClaw-only live child proof
 
 ## next-bounded-work-package
 
-1. Capture a harmless no-child skill load and one changed non-delegating substantive OpenClaw turn.
-2. Create the final SQLite backup and complete the OpenClaw evidence bundle.
-3. Then perform the equivalent Agency-only Hermes proof; preserve Rule 4 as unproven.
+1. Freeze the clean OpenClaw evidence/ledger checkpoint without unchanged retests.
+2. Preserve effective `$HERMES_HOME` and native config, then run Agency-only Hermes proof from this checkout.
+3. Preserve Rule 4 as unproven and leave protected hosts untouched.
 
 ## verification
 

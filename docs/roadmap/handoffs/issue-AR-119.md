@@ -61,8 +61,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-119
 branch: codex/ar278-openclaw-one-pass
-evidence_commit: 5511300ebc20af31cd6488a009f21f878326c231
-minimum_ledger_commit: 7295f28980316739af83ba8fa55c91667022cba1
+evidence_commit: 3b1f9783aa09e8a0440ac5e1668e83f8e97dfd66
+minimum_ledger_commit: 34f3b52c92412cff13984a51d26bd5ea04160518
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
@@ -107,6 +107,15 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
   `rmb-fef54dcc...` is retained in each ready run recipe as
   `request_scoped` / `request`; zero `resident_manager_bindings` rows is the
   tested OpenClaw contract, not missing evidence.
+- Skill parent `53f6d825...` / trace `3645e474...` delivered the refreshed header
+  with `openclaw-operations`, Store row `3e57162a...`, and no child/delegation.
+  Changed substantive parent `2b0033c9...` / trace `06785961...` finalized and
+  delivered `agency-steward, code-reviewer / none / openclaw-operations /
+  task-agency-router wrapper / inference`, again with no child/delegation.
+- Both final inferred turns used three applied attempts only on
+  `linux-task-agency-router` / `litellm` / exact `task-agency-router`, with both
+  routing fallback flags false and no authoritative actual-model telemetry.
+  Final SQLite backup `a0d558a3...` is integrity `ok`, schema 48, contractors 15.
 - The host exposes no shared immutable send ID. One active scope/hash match is
   required; exhaustion, stale/delayed ambiguity, and replays fail closed. The
   installed Store is schema 48 with integrity `ok`.
@@ -123,10 +132,10 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 
 ## exact-blocker
 
-The schema-48 OpenClaw child lifecycle passes. Current merged-install acceptance
-still needs one harmless no-child skill-load receipt, one new non-delegating
-substantive receipt, and the final Store backup/integrity checkpoint. Rule 4
-separately requires an ADR-0156 host-authored artifact receipt.
+No scoped OpenClaw acceptance blocker remains. Status, skill, substantive,
+native-child, finalization, Telegram delivery, configuration invariants, and
+final Store integrity all pass. Rule 4 remains separately unproven, AR-284 is a
+non-blocking receipt-semantics follow-up, and tracker writes remain unauthorized.
 
 ## traps (machine-specific; do not rediscover)
 
@@ -140,9 +149,9 @@ separately requires an ADR-0156 host-authored artifact receipt.
 
 ## next-bounded-work-package
 
-1. Record a harmless OpenClaw skill load without a child and one changed, non-delegating substantive turn on the installed merged build.
-2. Back up the final Store through SQLite, record integrity/hash, and close the OpenClaw evidence bundle.
-3. Only then perform the equivalent Agency-only Hermes proof; never promote operational return into Rule 4.
+1. Freeze the clean OpenClaw evidence/ledger checkpoint; do not retest unchanged inputs.
+2. Preserve effective `$HERMES_HOME` and native configuration, then perform Agency-only Hermes install/proof from the same checkout.
+3. Keep operational child return distinct from ADR-0156 Rule 4 and leave Codex/Claude/ZCode untouched.
 
 ## same-task-continuity
 
