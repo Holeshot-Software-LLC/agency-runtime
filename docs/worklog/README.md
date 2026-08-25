@@ -1224,6 +1224,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `65a4ad76` | 2026-08-25 | docs(ar266): record merged additive recall | [AR-266](../roadmap/issue-AR-266-dense-hybrid-workforce-recall.md) | null |
 | `04057072` | 2026-08-25 | Merge pull request #324 from Holeshot-Software-LLC/codex/ar266-merge-record | [AR-266](../roadmap/issue-AR-266-dense-hybrid-workforce-recall.md) | null |
 | `cc41b21f` | 2026-08-25 | fix(codex): keep 0.149 opaque children unstaffed | [AR-180](../roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md), [AR-255](../roadmap/issue-AR-255-inference-owned-host-proven-child-staffing.md) | [detail](2026-08-25-cc41b21f-codex-0149-opaque-compatibility.md) |
+| `f6969862` | 2026-08-25 | docs(codex): record 0.149 hook activation gap | [AR-180](../roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md), [AR-255](../roadmap/issue-AR-255-inference-owned-host-proven-child-staffing.md) | [detail](2026-08-25-f6969862-codex-hook-activation-gap.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
