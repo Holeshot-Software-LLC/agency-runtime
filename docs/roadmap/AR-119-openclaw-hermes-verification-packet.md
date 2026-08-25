@@ -3,7 +3,7 @@ title: "Exact-main Linux handoff for OpenClaw and Hermes"
 status: active
 category: roadmap
 created: 2026-08-16
-updated: 2026-08-24
+updated: 2026-08-25
 tags: [roadmap, verification, hosts, openclaw, hermes, linux, AR-119]
 related:
   - docs/roadmap/handoffs/issue-AR-119.md
@@ -3039,4 +3039,74 @@ remaining_openclaw_checks: none
 openclaw_scoped_acceptance: pass
 rule4_proven: false
 matrix_cell_moved: false
+~~~
+
+## Current Hermes install and first-response checkpoint
+
+~~~yaml
+host: hermes
+checkout_sha: 7a012d4772362ed7ba5b3c305cf13501f7f8d591
+clean_tree_at_install: true
+origin_main_sha: fc0770392b5a2cc38c589d2411698d0a0ac602ae
+host_version: Hermes Agent v0.20.4 (2026.8.18)
+effective_hermes_home: /home/holeshot/.hermes-nexus
+profile_identity: hermes harness default -> linux-task-agency-router
+native_litellm_config_source_redacted: /home/holeshot/.hermes-nexus/config.yaml; SHA-256 95b87b7fc0427ad4e3da4f5f468054cf9f7ddba679d1bb606b782a13e1a0172d; unchanged
+native_environment_source_redacted: /home/holeshot/.hermes-nexus/.env; SHA-256 792fd43a5312d1c1d69f6afbeef3bbdd1a8198ee03ac06b4b3b6dfa20ec2f324; unchanged
+native_service_manifest_sha256: 404d3227f17143a215613a2e215883c1f18553aea023da8f7872ce8c9f526d21; unchanged
+native_plugin_inventory_sha256: b2f761002439d0a6de57638038d414efeda7d8567808c8a346b257cc821b8cfa; 59 total and 6 enabled; unchanged
+agency_config_source: /home/holeshot/.agency-runtime/agency.yaml; SHA-256 43367ec9aa05a66fc2a60bb254f270836fb3616753769115fabb253a04d5d9f8; unchanged
+litellm_base_url_source: agency inference profile base_url; http://127.0.0.1:4000/v1; includes /v1
+credential_env_name: LITELLM_API_KEY
+credential_present_boolean: true
+agency_inference_profile: linux-task-agency-router
+provider_type: litellm
+requested_alias: task-agency-router
+model_group: task-agency-router
+actual_model_and_receipt_source: unavailable for Agency/upstream; status has only native task-general host receipts
+runtime_digest: ecc0b1cb8859e9bb78ef9b394a312e10a2b9b6bed3ff2260a85b0e3fb502de59
+bundle_digest: 05bada2969b77bc4d64111c1cc105b506bfdbab546a8298df3519995f9dc44fd
+store_schema: 48
+install_result: complete; ok true; partial false; install 4e97f5a6-7df9-42da-8f6f-b285b7d2f1a2; installer did not restart host
+launcher_manifest: /home/holeshot/.agency-runtime/launchers/current-hermes.json
+launcher_manifest_sha256: 3544cff1ebb441673aeefcb92cb101f4106995fea8bd564889ed61d5a9038592
+native_stop_result: gateway not running; systemd retained process exit 1
+native_restart_result: active; systemd Result success; unchanged plugin inventory
+fresh_session_id: 20260825_065425_f0b77171
+agency_run_id: 42b23dfd-f2ad-430f-b9e2-fc604f4defcd
+agency_trace_id: 20260825_065425_f0b77171:20260825_065425_f0b77171:7948cbf5
+first_response_artifact: /home/holeshot/.hermes-nexus/state.db messages projection, sequence 44; content SHA-256 243e806c6904fe3b3de95bbb417b0c3a9baccb041ba3feb5bd4671b4ac591873
+native_transcript_redacted_artifact: /home/holeshot/.agency-runtime/evidence/ar119-hermes-status-MrOUoGJ4/native-transcript-redacted-index.json
+native_transcript_redacted_artifact_sha256: 22e13b75173a8bfed4ace2decebf535e33fe7fdd068fb36e9e726ba75eb1954c
+native_transcript_projection_sha256: 337443446718356544f8a593ecd1018640a9ea7f00ef4b6f4dbf6406938e4259
+header_exact: |
+  Agency/Agencies loaded: agency-steward
+  Agency/Agencies delegated: none
+  Skills loaded: hermes-agent
+  Actual Model selected: observed execution receipt: [general] task-general -> task-general (host)
+  Recruited via: deterministic
+resident_binding_id: rmb-c5df89aa144e55adba09b6f1b684cf0b
+resident_binding_scope: request_scoped / request; retained in runs.preflight_result
+resident_manager_bindings_row: none expected for Hermes request-scoped contract
+routing_decision_ids: [03143a75-a097-4644-b575-ffe8866feac5]
+specialists_loaded_ids: []
+skill_name_and_store_row_id: hermes-agent / 6a8cbe40-daef-4296-90a3-24b6038f96fd
+provider_attempt_status: Agency workforce inference not attempted; deterministic control route
+fallback_count: 0 applied; routing fallback flags false
+telegram_delivery: exact response observed by operator
+failed_native_attempt: one read-only config-existence command falsely blocked by Hermes gateway self-stop guard; not retried
+internal_post_response_failure_run: efaba29e-ed22-48df-b204-a682ad200475
+internal_post_response_failure_trace: 20260825_065425_f0b77171:8fba6441-67da-4a7b-a2eb-6b7a9e648b80:ecf4c5d1
+internal_post_response_failure_receipt: 1919eeca-a951-4b32-9c5b-c65a8ee8545c
+internal_post_response_failure: two planner contract-invalid rejections on linux-task-agency-router / litellm / exact task-agency-router; blank non-user message; no route/header/finalization/specialist/skill/worker/delegation; delivered user turn unaffected
+before_store_backup_sha256: a0d558a330c94b341e7624d455fe0c7ef257bd992a5903c8592e7a3f5de4f188
+before_store_integrity: ok
+after_status_store_backup: /home/holeshot/.agency-runtime/evidence/ar119-hermes-status-MrOUoGJ4/agency-after-status.db
+after_status_store_backup_sha256: d1ab6cfd6a2881f17aae17bc4e835f7df0971ec02bb328d20cb3df088ca51794
+after_status_store_integrity: ok
+contractor_count: 15 before / 15 after
+known_limit: status proves control activation and skill delivery, not Agency workforce inference or provider actual model; current substantive and operational native-child checks remain
+rule4_proven: false
+matrix_cell_moved: false
+protected_hosts: Codex OAuth/config/canary, Claude, and ZCode untouched
 ~~~

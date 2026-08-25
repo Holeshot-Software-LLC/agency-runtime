@@ -3,7 +3,7 @@ title: "AR-119 vision-completion loop final status"
 status: active
 category: roadmap
 created: 2026-08-17
-updated: 2026-08-24
+updated: 2026-08-25
 tags: [roadmap, report, autonomous, loop, AR-119, AR-253, AR-255]
 related:
   - docs/roadmap/AR-119-vision-completion-autonomous-brief.md
@@ -4689,3 +4689,62 @@ OpenClaw scoped acceptance is closed. ADR-0156 Rule 4 remains unproven and the
 matrix remains unchanged. AR-284 separately records that strict-stage ordinals
 must not be interpreted as provider fallback counts. The next bounded package
 is Agency-only Hermes verification from this same checkout.
+
+## 2026-08-25 - Current Hermes install and deterministic status pass
+
+Clean ledger checkpoint `7a012d47` was used for an Agency-only install into
+Hermes Agent v0.20.4 at effective
+`HERMES_HOME=/home/holeshot/.hermes-nexus`. The native configuration,
+environment, service unit, Agency configuration, and 59-plugin inventory
+hashes match their pre-install values. Credential evidence records only that
+`LITELLM_API_KEY` is populated. Install `4e97f5a6-7df9-42da-8f6f-b285b7d2f1a2`
+wrote bundle `05bada2969b77bc4d64111c1cc105b506bfdbab546a8298df3519995f9dc44fd`,
+runtime `ecc0b1cb8859e9bb78ef9b394a312e10a2b9b6bed3ff2260a85b0e3fb502de59`,
+and launcher SHA-256
+`3544cff1ebb441673aeefcb92cb101f4106995fea8bd564889ed61d5a9038592`.
+The installer did not restart Hermes. Native stop reached not-running while
+systemd retained the process's exit-1 result; the existing unit then restarted
+active with result `success` and its unchanged inventory.
+
+After an acknowledged `/new`, exact first message `agency status` completed as
+run `42b23dfd-f2ad-430f-b9e2-fc604f4defcd`, trace
+`20260825_065425_f0b77171:20260825_065425_f0b77171:7948cbf5`, routing decision
+`03143a75-a097-4644-b575-ffe8866feac5`, and finalization
+`dd660adc-984a-4f55-b81f-807d0a378926`. Telegram delivered the exact
+Store-backed header `agency-steward / none / hermes-agent / observed execution
+receipt task-general -> task-general (host) / deterministic`. Store skill row
+`6a8cbe40-daef-4296-90a3-24b6038f96fd` records `hermes-agent`; no specialist,
+worker, or delegation exists. Binding
+`rmb-c5df89aa144e55adba09b6f1b684cf0b` is request-scoped inside the ready run
+recipe, so zero persistent binding rows is expected.
+
+This control route correctly did not attempt Agency workforce inference. Its
+native `task-general` host receipts neither prove `task-agency-router` routing
+nor supply an authoritative upstream actual model. Response SHA-256 is
+`243e806c6904fe3b3de95bbb417b0c3a9baccb041ba3feb5bd4671b4ac591873`;
+redacted native transcript artifact
+`/home/holeshot/.agency-runtime/evidence/ar119-hermes-status-MrOUoGJ4/native-transcript-redacted-index.json`
+has SHA-256 `22e13b75173a8bfed4ace2decebf535e33fe7fdd068fb36e9e726ba75eb1954c`.
+Post-status Store backup
+`/home/holeshot/.agency-runtime/evidence/ar119-hermes-status-MrOUoGJ4/agency-after-status.db`
+has SHA-256 `d1ab6cfd6a2881f17aae17bc4e835f7df0971ec02bb328d20cb3df088ca51794`,
+integrity `ok`, schema 48; contractors remain 15/15.
+
+One Hermes-native read-only configuration-existence command was falsely
+blocked by the gateway self-stop guard and was not retried. Separate internal
+post-response run `efaba29e-ed22-48df-b204-a682ad200475`, trace
+`20260825_065425_f0b77171:8fba6441-67da-4a7b-a2eb-6b7a9e648b80:ecf4c5d1`,
+retains failure receipt `1919eeca-a951-4b32-9c5b-c65a8ee8545c`: two planner
+responses were contract-invalid on
+`linux-task-agency-router` / `litellm` / exact `task-agency-router`. It had a
+blank user message and created no route, header, finalization, receipt row,
+specialist, skill, worker, or delegation; it did not block or alter the
+delivered user turn. This is retained as the AR-280 internal-lifecycle boundary,
+not user-turn acceptance or actual-model evidence.
+
+Hermes install, activation, exact status, skill recording, finalization, Store
+correlation, header delivery, and native-config preservation pass on the current
+runtime. A genuinely new non-delegating substantive request must still prove
+the Hermes harness profile and exact Agency alias; the operator-requested native
+child remains a separate operational check. ADR-0156 Rule 4 remains unproven and
+no matrix cell moves.

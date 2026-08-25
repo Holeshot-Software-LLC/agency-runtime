@@ -3,7 +3,7 @@ title: "AR-119 active recovery capsule"
 status: active
 category: roadmap
 created: 2026-07-23
-updated: 2026-08-24
+updated: 2026-08-25
 tags: [handoff, vision, inference, child-delivery, contractors, evaluation, recovery]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
@@ -61,8 +61,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-119
 branch: codex/ar278-openclaw-one-pass
-evidence_commit: 3b1f9783aa09e8a0440ac5e1668e83f8e97dfd66
-minimum_ledger_commit: 34f3b52c92412cff13984a51d26bd5ea04160518
+evidence_commit: 9b51aa18c7437422e9a91f55eea86fbb5f52b832
+minimum_ledger_commit: 7a012d4772362ed7ba5b3c305cf13501f7f8d591
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
 ---
@@ -74,24 +74,14 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 
 ## checkpoint
 
-- Branch `codex/ar278-openclaw-one-pass` installed ledger checkpoint `7295f289`; `origin/main` is `fc077039`, `f76050d7` is an ancestor, and Agency 0.1.0 imports from this checkout.
-- OpenClaw remains audited 2026.7.1-2 on native `litellm/task-general` plus six unchanged fallbacks. Agency alone uses `linux-task-agency-router`, provider type `litellm`, and alias/model-group `task-agency-router`; no protected-host route changed.
-- Retained OpenClaw parent acceptance covers fresh status, skill, and substantive
-  Telegram responses with exact Store-backed headers. All Agency attempts stayed
-  on `linux-task-agency-router` / `litellm` / `task-agency-router` with zero
-  cross-provider fallback; actual model telemetry is unavailable.
-- Store backup `02a76504...` is `ok`, schema 47, with 15 contractors. Parent
-  acceptance passes; Rule 4/delegation remains unproven and the matrix unchanged.
-- Hermes v0.20.4 parent acceptance remains retained: Agency-only install `0a3d141a...`, bundle `45b76c0e...`, launcher `e65a0784...`, exact status/skill/substantive Telegram delivery, and Agency LiteLLM receipts on `linux-task-agency-router` / `task-agency-router` with zero cross-provider fallback. Final backup `bdf1a6e6...` is `ok`/`ok`, schema 47, contractors 15; actual upstream model is unavailable.
-- All native-child failures remain preserved in the canonical loop status and
-  packet: suppressed synthetic announcement, open lifecycle after a delivered
-  third draw, and `933d9f4a` losing the post-cleanup end callback.
-- AR-281/AR-282 retain exact one-use parent-trace completion finalization;
-  AR-283 adds the required post-send terminal gate without weakening it.
-- Merged schema-48 runtime `5511300e` is installed Agency-only with launcher
-  SHA-256 `0ddbe52d...`; OpenClaw's native model configuration is byte-identical
-  to the prework backup and Hermes remains untouched. Integrated focused tests
-  pass 781/1, the named fast spine 852/3, dashboard 134, Ruff 683, and docs.
+- Branch `codex/ar278-openclaw-one-pass` is clean at ledger `7a012d47` over
+  current `origin/main` `fc077039`; `f76050d7` is an ancestor and Agency 0.1.0
+  imports from this checkout. Integrated focused tests pass 781/1, the named
+  fast spine 852/3, dashboard 134, Ruff 683, and documentation gates.
+- OpenClaw scoped acceptance is closed on the merged schema-48 runtime. Native
+  `litellm/task-general` plus six fallbacks is byte-identical to prework; Agency
+  alone uses `linux-task-agency-router` / `litellm` / exact
+  `task-agency-router`. Actual answering-model telemetry remains unavailable.
 - Changed live parent `c067362a...` / trace `079b9ba8...` selected
   `code-reviewer`, spawned one `sessions_spawn` worker, and delivered the exact
   Store-backed result through Telegram. `message_sent(success=true)` recorded
@@ -116,9 +106,25 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
   `linux-task-agency-router` / `litellm` / exact `task-agency-router`, with both
   routing fallback flags false and no authoritative actual-model telemetry.
   Final SQLite backup `a0d558a3...` is integrity `ok`, schema 48, contractors 15.
-- The host exposes no shared immutable send ID. One active scope/hash match is
-  required; exhaustion, stale/delayed ambiguity, and replays fail closed. The
-  installed Store is schema 48 with integrity `ok`.
+- Hermes Agent v0.20.4 was preserved at effective
+  `$HERMES_HOME=/home/holeshot/.hermes-nexus`. The native config, environment,
+  service unit, Agency config, and 59-plugin inventory hashes are unchanged.
+  `LITELLM_API_KEY` is populated by name only. Agency-only install
+  `4e97f5a6...` produced bundle `05bada29...`, runtime `ecc0b1cb...`, and
+  launcher SHA-256 `3544cff1...`; the installer did not restart the gateway.
+- The existing Hermes service restarted active with result `success`. Fresh
+  first-message status run `42b23dfd...` / trace
+  `20260825_065425_f0b77171:...:7948cbf5` / route `03143a75...` finalized as
+  `dd660adc...` and reached Telegram. Its exact header is
+  `agency-steward / none / hermes-agent / observed host receipt task-general /
+  deterministic`; skill row `6a8cbe40...` exists and no worker/delegation does.
+- Binding `rmb-c5df89aa...` is request-scoped in `runs.preflight_result`; zero
+  persistent binding rows is expected. The deterministic control route did not
+  attempt workforce inference. Its host `task-general` receipts do not prove an
+  upstream actual model or the Agency router.
+- Redacted native transcript artifact `native-transcript-redacted-index.json`
+  has SHA-256 `22e13b75...`; response SHA is `243e806c...`. Post-status Store
+  backup `d1ab6cfd...` is integrity `ok`, schema 48; contractors remain 15/15.
 
 ## completed-evidence
 
@@ -128,14 +134,16 @@ This is a recovery map, not evidence that an unproven matrix cell moved.
 - All failed draws remain retained. The merged build now proves operational
   parent return, Telegram delivery, and post-send Agency child terminalization.
   Strict ADR-0156 Rule 4 is still unproven; no matrix cell moved.
-- Hermes reinstall, exact status, corrected attribution, skill, substantive routing, Store correlation, headers, and Telegram delivery pass.
+- Current Hermes install, activation, fresh status, skill recording,
+  finalization, Store correlation, exact header, and Telegram delivery pass.
 
 ## exact-blocker
 
-No scoped OpenClaw acceptance blocker remains. Status, skill, substantive,
-native-child, finalization, Telegram delivery, configuration invariants, and
-final Store integrity all pass. Rule 4 remains separately unproven, AR-284 is a
-non-blocking receipt-semantics follow-up, and tracker writes remain unauthorized.
+No scoped OpenClaw acceptance blocker remains. Current Hermes still needs one
+new non-delegating substantive turn to prove automatic
+`linux-task-agency-router` selection and one bounded operational native-child
+turn requested by the operator. Rule 4 remains separately unproven, AR-284 is
+non-blocking, and tracker writes remain unauthorized.
 
 ## traps (machine-specific; do not rediscover)
 
@@ -149,9 +157,9 @@ non-blocking receipt-semantics follow-up, and tracker writes remain unauthorized
 
 ## next-bounded-work-package
 
-1. Freeze the clean OpenClaw evidence/ledger checkpoint; do not retest unchanged inputs.
-2. Preserve effective `$HERMES_HOME` and native configuration, then perform Agency-only Hermes install/proof from the same checkout.
-3. Keep operational child return distinct from ADR-0156 Rule 4 and leave Codex/Claude/ZCode untouched.
+1. Send the exact new Hermes configuration-drift review with no delegation; correlate the header, LiteLLM route, finalization, and delivery.
+2. In a fresh Hermes session, execute exactly one harmless native child; preserve operational lifecycle/delivery evidence without calling it Rule 4 proof.
+3. Take the final Store backup, close records and gates, and leave Codex, Claude, and ZCode untouched.
 
 ## same-task-continuity
 
@@ -161,13 +169,8 @@ Continue in this task after the checkpoint. Preserve every failed receipt and do
 
 ~~~text
 python scripts/context_handoff_status.py --json --threshold 50
-python scripts/docs_metadata.py --check
-python scripts/update_policy_availability.py --check
-python scripts/update_worklog.py --check
-python scripts/verify_docs.py
-ruff check agency_runtime tests scripts
-ruff format --check agency_runtime tests scripts
-git diff --check
+python scripts/docs_metadata.py --check && python scripts/update_policy_availability.py --check && python scripts/update_worklog.py --check && python scripts/verify_docs.py
+ruff check agency_runtime tests scripts && ruff format --check agency_runtime tests scripts && git diff --check
 ~~~
 
 ## constraints
