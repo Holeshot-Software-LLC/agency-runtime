@@ -158,12 +158,13 @@ eligibility constraints.
   `claude`, `hermes`, and `openclaw`) produced applied embedding and reranker
   attempts, 16 novel candidates, and no provider fallback. Codex and Claude
   were evaluator-only; no native host, OAuth, or canary was invoked.
-- A fresh native OpenClaw gateway turn then produced a real Agency header and
-  Store trace `4fbd059b-ea18-4ce7-8332-0446a70fdb9f`. Parent inference used the
-  exact LiteLLM alias and the recall embedding stage used the configured local
-  model. Its specialist was already in typed recall, so the native turn did
-  not need the reranker. Because the CLI turn was not delivered to an external
-  channel, its Store run remains active and is not outbound-delivery proof.
+- Native OpenClaw trace `8e6033b2-6ab6-4e1d-ac3b-dca792e8eb2d` produced a real
+  Agency header after exact-alias parent inference and both local recall stages
+  applied. Routing decision `8b52dd59-fb6a-4326-a655-04d57267382e` loaded
+  `gis-analyst` and `codebase-onboarding-engineer`; the OpenClaw receipt kept
+  native `task-general` with no fallback. Because this CLI turn has no outbound
+  `message_sent` receipt or finalization row, its Store run remains active and
+  is native retrieval/header proof, not terminal or external-channel delivery.
 - The preceding OpenClaw attempt was rejected before allocation because the
   CLI's implicit `main` agent no longer exists; the distinct successful turn
   explicitly targeted the configured default agent `nexus`. No OpenClaw

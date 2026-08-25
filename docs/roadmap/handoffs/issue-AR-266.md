@@ -51,10 +51,14 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/320
   budgets. Four forced host-labelled smokes applied both local recall stages;
   Codex and Claude were evaluator-only, leaving native OAuth/config/canaries
   untouched.
-- Native OpenClaw parent integration passed on audited `2026.7.1-2` without
-  changing its `litellm/task-general` primary. Historical failed host attempts
-  remain in the canonical issue; the unsupported embeddings-stub assertion is
-  retracted because no retained command, variable, test, or artifact supports it.
+- Native OpenClaw `2026.7.1-2` trace
+  `8e6033b2-6ab6-4e1d-ac3b-dca792e8eb2d` applied exact-alias parent inference,
+  local embedding, and local reranking, then wrote a real Agency header with
+  `gis-analyst` and `codebase-onboarding-engineer`. Its native primary remained
+  `litellm/task-general`; no config changed. The CLI-only run remains active
+  with no `message_sent` or finalization row, so it is retrieval/header proof,
+  not terminal or Telegram-delivery proof. Historical failures remain in the
+  canonical issue; the unsupported embeddings-stub claim is retracted.
 - AR-288 exposes Hermes-native `agency_finalize` without native config changes;
   three red-before regressions, 109 focused tests, the 856-test spine, and local
   gates pass. System Python lacks `pytest`, so the 160-snippet substitute passed.
@@ -80,9 +84,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/320
   `e6d27363-07ee-42ca-93c2-7385babf7b3b`. No skill or child was requested.
   Terminal finalization `e87cec42-c0db-4252-8e92-5c64c556980f` committed exact
   response hash `91c4a26d30097a6bf18e55dfb792d7c6e1532fe6ba61bca723596b847470daa4`.
-- The post-smoke SQLite online backup has integrity `ok`, schema 48, roster 278,
+- The final post-smoke SQLite online backup has integrity `ok`, schema 48, roster 278,
   and SHA-256
-  `c258651760d7b91247e6c0c9f29a627e28ee3eb3a367e4bea03c6a60f7de1d35`.
+  `a57b7dc0a965fd1bf54c30a2a190ba86712a2aed52c87b80080f371c3d1f6628`.
   The preinstall backup also had integrity `ok`, schema 48, and roster 278.
 - Distinct failures remain preserved. Session `20260825_111718_f91ab5` applied
   both recall stages but correctly rejected an oversized `host_transport`
@@ -118,8 +122,8 @@ the full shadow-value matrix and does not recommend additive activation.
 There is no Hermes runtime blocker. The unsupported embeddings-stub claim is
 retracted: no repository path or retained artifact requires one, and live
 retrieval used Agency's explicit Ollama profiles. AR-288 tracker creation needs
-owner authorization. OpenClaw's prior non-delivered CLI run remains active in
-Store and must not be promoted into outbound-delivery proof.
+owner authorization. OpenClaw trace `8e6033b2-...` remains active in Store and
+must not be promoted into terminal or outbound-delivery proof.
 
 ## next-bounded-work-package
 
