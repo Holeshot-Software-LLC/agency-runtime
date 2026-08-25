@@ -1220,6 +1220,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `18ac01d0` | 2026-08-25 | docs(openclaw): record native retrieval smoke | [AR-266](../roadmap/issue-AR-266-dense-hybrid-workforce-recall.md) | null |
 | `8d8a7d5e` | 2026-08-25 | feat(workforce): add shadow recall promotion gate | [AR-266](../roadmap/issue-AR-266-dense-hybrid-workforce-recall.md) | [detail](2026-08-25-8d8a7d5e-shadow-recall-promotion-gate.md) |
 | `ca48c3fa` | 2026-08-25 | docs(ar266): record additive promotion evidence | [AR-266](../roadmap/issue-AR-266-dense-hybrid-workforce-recall.md) | [detail](2026-08-25-ca48c3fa-record-additive-promotion-evidence.md) |
+| `e1d783ff` | 2026-08-25 | Merge pull request #323 from Holeshot-Software-LLC/codex/ar266-local-retrieval-smoke | [AR-266](../roadmap/issue-AR-266-dense-hybrid-workforce-recall.md) | null |
+| `65a4ad76` | 2026-08-25 | docs(ar266): record merged additive recall | [AR-266](../roadmap/issue-AR-266-dense-hybrid-workforce-recall.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes

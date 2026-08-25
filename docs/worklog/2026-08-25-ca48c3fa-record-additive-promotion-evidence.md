@@ -16,7 +16,7 @@ type: worklog
 commit: ca48c3fa43e9bd0b2f01cd51df3d50047ceb32ca
 short: ca48c3fa
 date: 2026-08-25
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/323
 related_issues:
   - docs/roadmap/issue-AR-266-dense-hybrid-workforce-recall.md
 ---
