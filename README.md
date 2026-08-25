@@ -119,6 +119,12 @@ used to resume. For explicit automation, use a bounded scope such as
 `agency setup --non-interactive --all`; non-interactive setup refuses to infer
 an installation scope.
 
+Setup exits `0` when every selected stage is complete, `2` when configuration
+and installation are usable but an attended action such as Codex hook trust or
+a harness restart remains, and `1` on a hard failure. An exit of `2` is a
+truthful resumable state, not release or live-host proof; follow the printed
+action and rerun setup or the named verification command.
+
 ```mermaid
 flowchart TD
     A["Install current source"] --> B["agency setup"]

@@ -92,6 +92,7 @@ def test_interactive_setup_composes_config_install_doctor_and_smoke(tmp_path: Pa
     assert install_args["agent"] is None
     assert install_args["no_dashboard"] is False
     assert install_args["verify_activation"] is False
+    assert install_args["_setup_accept_activation_pending"] is True
     assert calls[4][1] == {"all": True, "agent": None, "json": False}
 
 
@@ -203,6 +204,53 @@ def test_install_failure_runs_read_only_doctor_but_not_smoke(tmp_path: Path) -> 
         "install",
         "doctor",
     ]
+
+
+def test_attended_codex_activation_pending_is_degraded_and_smoke_can_run(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    calls: list[tuple[str, dict[str, Any]]] = []
+    dependencies = _dependencies(
+        tmp_path / "agency.yaml",
+        calls,
+        install=2,
+        doctor=2,
+    )
+
+    assert (
+        subject.cmd_setup(
+            _args(non_interactive=True, all=True),
+            dependencies=dependencies,
+        )
+        == 2
+    )
+    assert [name for name, _args in calls] == [
+        "configure",
+        "validate",
+        "install",
+        "doctor",
+        "smoke",
+    ]
+    assert "installation     activation-pending" in capsys.readouterr().out
+
+
+def test_any_degraded_setup_stage_is_preserved_in_final_exit_code(tmp_path: Path) -> None:
+    calls: list[tuple[str, dict[str, Any]]] = []
+    dependencies = _dependencies(
+        tmp_path / "agency.yaml",
+        calls,
+        validate=2,
+        doctor=0,
+    )
+
+    assert (
+        subject.cmd_setup(
+            _args(non_interactive=True, skip_install=True, skip_smoke=True),
+            dependencies=dependencies,
+        )
+        == 2
+    )
 
 
 def test_validation_failure_stops_before_any_install_mutation(tmp_path: Path) -> None:

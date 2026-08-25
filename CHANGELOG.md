@@ -118,6 +118,10 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
+- Guided setup now distinguishes a successfully registered Codex integration
+  that awaits attended hook trust from a hard installation failure. The
+  setup-only degraded path remains fail-closed for incomplete host registration,
+  dashboard failure, activation verification failure, or runtime drift.
 - Deterministic generated-host smoke no longer publishes alternate-home
   launcher pointers into the operator's current-install state. Real owner-home
   installs still publish advisory staleness pointers normally.

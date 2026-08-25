@@ -520,6 +520,108 @@ def test_codex_install_requires_current_profile_activation(capsys):
     assert subject._install_succeeded({"ok": True}, results, all_hosts=False) is False
     assert "Agency is not active in normal sessions" in capsys.readouterr().out
 
+    assert (
+        subject._install_exit_code(
+            {"ok": True},
+            results,
+            residual_drift=None,
+            setup_accept_activation_pending=False,
+        )
+        == 1
+    )
+    assert (
+        subject._install_exit_code(
+            {"ok": True},
+            results,
+            residual_drift=None,
+            setup_accept_activation_pending=True,
+        )
+        == 2
+    )
+
+
+def test_setup_activation_degradation_cannot_mask_other_install_failures() -> None:
+    pending_codex = {
+        "host": "codex",
+        "ok": True,
+        "complete": False,
+        "status": "registered",
+        "registered": True,
+        "maturity": "activation-required",
+        "activation": {
+            "state": "activation_required",
+            "complete": False,
+            "trust_mode": "attended",
+            "trust_bypass_used": False,
+            "approval_surface": "codex-terminal-tui",
+            "approval_launch_command": "codex",
+            "desktop_slash_hooks_is_trust_ui": False,
+            "verification_command": "agency install --agent codex --verify-activation",
+        },
+    }
+    staged_host = {
+        "host": "hermes",
+        "ok": True,
+        "complete": False,
+        "status": "staged_unverified",
+        "registered": False,
+        "maturity": "staged-not-registered",
+    }
+    failed_host = {"host": "claude", "ok": False, "complete": False}
+    failed_verification = {
+        **pending_codex,
+        "activation": {
+            **pending_codex["activation"],
+            "state": "verification_failed",
+        },
+    }
+
+    assert (
+        subject._install_exit_code(
+            {"ok": False},
+            [pending_codex],
+            residual_drift=None,
+            setup_accept_activation_pending=True,
+        )
+        == 1
+    )
+    assert (
+        subject._install_exit_code(
+            {"ok": True},
+            [pending_codex, staged_host],
+            residual_drift=None,
+            setup_accept_activation_pending=True,
+        )
+        == 1
+    )
+    assert (
+        subject._install_exit_code(
+            {"ok": True},
+            [pending_codex, failed_host],
+            residual_drift=None,
+            setup_accept_activation_pending=True,
+        )
+        == 1
+    )
+    assert (
+        subject._install_exit_code(
+            {"ok": True},
+            [failed_verification],
+            residual_drift=None,
+            setup_accept_activation_pending=True,
+        )
+        == 1
+    )
+    assert (
+        subject._install_exit_code(
+            {"ok": True},
+            [pending_codex],
+            residual_drift={"foreign_package": True},
+            setup_accept_activation_pending=True,
+        )
+        == 1
+    )
+
 
 def test_codex_install_verifies_activation_with_current_profile_canary():
     calls = []

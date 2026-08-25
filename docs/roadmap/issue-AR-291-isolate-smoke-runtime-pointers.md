@@ -1,6 +1,6 @@
 ---
 title: "AR-291: Isolate smoke runtime pointers"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-08-25
 updated: 2026-08-25
@@ -81,19 +81,26 @@ guided setup/doctor.
       byte-identical and creates no absent-host pointer.
 - [x] Focused smoke/installer tests and the relevant fast-spine tests pass with
       warnings as errors; Ruff, docs, and diff gates pass.
-- [ ] Only the contaminated Hermes/OpenClaw pointer documents are removed after
+- [x] Only the contaminated Hermes/OpenClaw pointer documents are removed after
       exact identity verification.
-- [ ] The repaired installed `agency setup --non-interactive --all` no longer
+- [x] The repaired installed `agency setup --non-interactive --all` no longer
       reports foreign-package residual drift; ordinary native-trust warnings
       remain truthful.
-- [ ] Tracker creation and linkage remain pending separate authorization.
+- [x] Tracker creation and linkage remain pending separate authorization.
 
 ## Verification evidence
 
 The alternate/default-home publication contract and the real generated-Hermes
 smoke path have failing-before regression coverage. The focused smoke,
 installer orchestration, native installer, and doctor group passed all 194
-tests with warnings as errors. Full Ruff lint, focused format, metadata, policy,
-worklog, 813-file documentation, and diff checks pass. Installed cleanup,
-package refresh, deterministic smoke, and repeated setup remain the next
-bounded package.
+tests with warnings as errors. Full Ruff lint and format, metadata, policy,
+worklog, 814-file documentation, and diff checks passed before the checkpoint.
+
+The clean repaired tree was installed and its setup, pointer-isolation, native
+Jina reranker, and dashboard files hash-matched source. After exact host and
+source-root validation, only `current-hermes.json` and
+`current-openclaw.json` were removed; the Codex, Claude, and ZCode pointers
+remained byte-identical. Installed deterministic smoke passed 8/8 checks and
+recreated neither absent-host pointer. Repeated setup reported no residual
+runtime drift. Its remaining hard exit was separately isolated as AR-292's
+setup return-code classification bug, not an AR-291 failure.

@@ -69,6 +69,11 @@ tracker_url: null
   alternate-home Hermes/OpenClaw pointer documents into the operator launcher
   directory. AR-291 records the bounded pointer-isolation defect and its
   194-test repair; the successful host mutations remain intact.
+- After installing AR-291, deterministic smoke passed 8/8 and left the three
+  real-host pointers byte-identical while recreating neither absent-host
+  pointer. Repeated setup had no runtime drift and again registered all three
+  detected hosts plus the dashboard, but AR-292 showed that the orchestrator
+  misclassified attended Codex activation pending as a hard install failure.
 
 ## exact-blocker
 
@@ -77,9 +82,9 @@ tracker_url: null
   artifact, exact-host, tracker, signing, or publication evidence.
 - Tracker creation, push, pull request, merge, hosted workflows, tag, and
   release creation are outward actions and remain unauthorized.
-- AR-290 installed acceptance remains locally blocked until the AR-291 repair
-  is committed, installed, the exact two contaminated absent-host pointers are
-  removed, and the same setup path is repeated without residual drift.
+- AR-292 must classify only the exact successful attended Codex activation
+  state as degraded; every true host, dashboard, verification, or drift failure
+  must remain hard.
 
 ## same-task-continuity
 
@@ -90,11 +95,11 @@ not create another task or treat the threshold as publication authority.
 
 ## next-bounded-work-package
 
-1. Commit the verified AR-291 isolation repair and its worklog ledger.
-2. Install that exact local commit and remove only the two identity-verified
-   contaminated Hermes/OpenClaw pointer documents.
-3. Rerun installed deterministic smoke and guided setup. Leave learned recall
-   routes unset unless a privately supplied credential can be verified.
+1. Implement and verify the bounded AR-292 setup-only degraded classification.
+2. Commit its substantive and worklog checkpoints, install that exact source,
+   and repeat guided setup without rerunning already-green source suites.
+3. Validate final config/doctor/dashboard posture. Leave learned recall routes
+   unset unless a privately supplied credential can be verified.
 
 ## verification
 

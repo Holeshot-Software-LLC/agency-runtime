@@ -191,6 +191,7 @@ def _install_arguments(args: argparse.Namespace, selection: InstallSelection) ->
         autonomous=False,
         activation_timeout=180.0,
         json=False,
+        _setup_accept_activation_pending=True,
     )
 
 
@@ -221,7 +222,14 @@ def _run_install(
 
     result = dependencies.install(_install_arguments(args, selection))
     label = "all-detected" if selection.mode == "all" else str(selection.host)
-    return int(result), label if result == 0 else "failed"
+    result = int(result)
+    if result == 0:
+        install_label = label
+    elif result == 2:
+        install_label = "activation-pending"
+    else:
+        install_label = "failed"
+    return result, install_label
 
 
 def _smoke_requested(args: argparse.Namespace, dependencies: SetupDependencies) -> bool:
@@ -305,7 +313,7 @@ def cmd_setup(
     doctor_result = int(dependencies.doctor(argparse.Namespace(json=False, verbose=True)))
     doctor_label = {0: "passed", 2: "degraded"}.get(doctor_result, "failed")
     stages.append(("doctor", doctor_label))
-    if install_result != 0 or doctor_result not in _DIAGNOSTIC_RESULTS:
+    if install_result not in _DIAGNOSTIC_RESULTS or doctor_result not in _DIAGNOSTIC_RESULTS:
         _print_summary(stages)
         print("A stage failed. Review the output above, then resume with: agency setup")
         return 1
@@ -332,7 +340,7 @@ def cmd_setup(
             "  After Codex hook trust is settled: agency install --agent codex --verify-activation"
         )
     print("  Deterministic smoke is readiness evidence, not a live host canary.")
-    return 2 if doctor_result == 2 else 0
+    return 2 if 2 in {validation_result, install_result, doctor_result} else 0
 
 
 __all__ = ["InstallSelection", "SetupDependencies", "cmd_setup"]

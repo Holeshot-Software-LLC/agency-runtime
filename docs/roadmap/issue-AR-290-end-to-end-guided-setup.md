@@ -11,6 +11,7 @@ related:
   - docs/roadmap/issue-AR-05-guided-provider-configuration.md
   - docs/roadmap/issue-AR-112-public-user-readme.md
   - docs/roadmap/issue-AR-291-isolate-smoke-runtime-pointers.md
+  - docs/roadmap/issue-AR-292-classify-setup-activation-pending.md
   - docs/decisions/0172-compose-first-run-setup-from-guarded-owner-operations.md
   - docs/RELEASE_CHECKLIST.md
   - docs/worklog/README.md
@@ -21,7 +22,7 @@ epic: install
 issue_id: AR-290
 priority: p1
 tracker_url: null
-depends_on: [AR-05, AR-291]
+depends_on: [AR-05, AR-291, AR-292]
 blocks: []
 ---
 
@@ -141,6 +142,12 @@ not authorization to create any of them.
 
 Installed dogfood then exposed AR-291: deterministic source smoke had published
 alternate-home Hermes/OpenClaw runtime pointers into the operator launcher
-directory, so otherwise-successful setup returned failure on residual drift.
-AR-290 stays in progress until that bounded isolation repair is installed and
-the same setup path is repeated.
+directory. The repaired install, identity-bounded cleanup, 8/8 installed smoke,
+and repeated drift-free setup now complete that dependency.
+
+The repaired repeat removed residual drift and kept every real host mutation
+successful, then exposed AR-292: standalone install correctly withholds
+completion until Codex activation is proven, but setup collapsed that attended
+activation state into a hard stage failure. Guided setup must preserve strict
+standalone install semantics while reporting this exact resumable case as
+degraded.

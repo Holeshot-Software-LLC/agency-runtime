@@ -697,6 +697,65 @@ def _install_succeeded(
     return successful and all(result.get("complete", result.get("ok")) for result in host_results)
 
 
+def _setup_activation_pending_only(
+    dashboard_result: Mapping[str, Any],
+    host_results: list[dict[str, Any]],
+) -> bool:
+    """Recognize the one incomplete state setup may continue as degraded."""
+
+    if dashboard_result.get("ok") is not True or not host_results:
+        return False
+    pending: list[Mapping[str, Any]] = []
+    for result in host_results:
+        if result.get("ok") is not True:
+            return False
+        if result.get("complete", result.get("ok")) is True:
+            continue
+        pending.append(result)
+    if len(pending) != 1:
+        return False
+
+    result = pending[0]
+    activation = result.get("activation")
+    return bool(
+        result.get("host") == "codex"
+        and result.get("status") == "registered"
+        and result.get("registered") is True
+        and result.get("maturity") == "activation-required"
+        and isinstance(activation, Mapping)
+        and activation.get("state") == "activation_required"
+        and activation.get("complete") is False
+        and activation.get("trust_mode") == "attended"
+        and activation.get("trust_bypass_used") is False
+        and activation.get("approval_surface") == CODEX_HOOK_TRUST_SURFACE
+        and activation.get("approval_launch_command") == CODEX_HOOK_TRUST_COMMAND
+        and activation.get("desktop_slash_hooks_is_trust_ui") is False
+        and activation.get("verification_command")
+        == "agency install --agent codex --verify-activation"
+    )
+
+
+def _install_exit_code(
+    dashboard_result: dict[str, Any],
+    host_results: list[dict[str, Any]],
+    *,
+    residual_drift: dict[str, Any] | None,
+    setup_accept_activation_pending: bool,
+    all_hosts: bool = False,
+) -> int:
+    """Reduce install evidence without weakening standalone completion."""
+
+    if _install_succeeded(dashboard_result, host_results, all_hosts=all_hosts):
+        return 0
+    if (
+        setup_accept_activation_pending
+        and residual_drift is None
+        and _setup_activation_pending_only(dashboard_result, host_results)
+    ):
+        return 2
+    return 1
+
+
 def _seed_starter_roster(store: Store) -> int:
     from agency_runtime.core.installer import seed_starter_roster
 
@@ -1525,12 +1584,15 @@ def cmd_install(
                 ),
             }
         )
-    successful = _install_succeeded(
+    return _install_exit_code(
         dashboard_result,
         host_results,
+        residual_drift=residual_drift,
+        setup_accept_activation_pending=bool(
+            getattr(args, "_setup_accept_activation_pending", False)
+        ),
         all_hosts=all_hosts,
     )
-    return 0 if successful else 1
 
 
 def _cli_install_drift_projection() -> dict[str, Any] | None:
