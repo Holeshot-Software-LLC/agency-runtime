@@ -1215,6 +1215,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `fc5847e6` | 2026-08-25 | docs(ar266): checkpoint local retrieval smoke | [AR-266](../roadmap/issue-AR-266-dense-hybrid-workforce-recall.md), [AR-286](../roadmap/issue-AR-286-configure-bounded-embedding-dimensions.md) | null |
 | `3cb2da6c` | 2026-08-25 | fix(hosts): bind hook timeouts to inference budgets | [AR-266](../roadmap/issue-AR-266-dense-hybrid-workforce-recall.md), [AR-287](../roadmap/issue-AR-287-bind-host-hook-timeouts-to-inference-budgets.md) | [detail](2026-08-25-3cb2da6c-bind-hook-timeouts-to-inference-budgets.md) |
 | `7cea4c7c` | 2026-08-25 | docs(ar266): checkpoint Hermes timeout repair | [AR-266](../roadmap/issue-AR-266-dense-hybrid-workforce-recall.md), [AR-287](../roadmap/issue-AR-287-bind-host-hook-timeouts-to-inference-budgets.md) | null |
+| `05024565` | 2026-08-25 | fix(hermes): expose native Agency finalizer | [AR-266](../roadmap/issue-AR-266-dense-hybrid-workforce-recall.md), [AR-288](../roadmap/issue-AR-288-expose-hermes-native-finalizer-tool.md) | [detail](2026-08-25-05024565-expose-hermes-native-finalizer.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
