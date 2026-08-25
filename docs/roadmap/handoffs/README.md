@@ -73,6 +73,7 @@ behavior.
 ## Active capsules
 
 - [AR-119 inference-first workforce](issue-AR-119.md)
+- [AR-180 Codex 0.149 hook compatibility](issue-AR-180.md)
 - [AR-189 ownership-bound host uninstall](issue-AR-189.md)
 - [AR-190 uv-tool upgrade planning](issue-AR-190.md)
 - [AR-196 dashboard-service two-phase activation](issue-AR-196.md)
