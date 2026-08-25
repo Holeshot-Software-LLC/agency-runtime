@@ -10,6 +10,7 @@ related:
   - docs/roadmap/handoffs/issue-AR-290.md
   - docs/roadmap/issue-AR-05-guided-provider-configuration.md
   - docs/roadmap/issue-AR-112-public-user-readme.md
+  - docs/roadmap/issue-AR-291-isolate-smoke-runtime-pointers.md
   - docs/decisions/0172-compose-first-run-setup-from-guarded-owner-operations.md
   - docs/RELEASE_CHECKLIST.md
   - docs/worklog/README.md
@@ -20,7 +21,7 @@ epic: install
 issue_id: AR-290
 priority: p1
 tracker_url: null
-depends_on: [AR-05]
+depends_on: [AR-05, AR-291]
 blocks: []
 ---
 
@@ -137,3 +138,9 @@ clean implementation checkpoint.
 Read-only GitHub checks on 2026-08-25 found no release, tag, AR-290 tracker
 issue, or AR-289/AR-290 pull request. Those absences are current remote state,
 not authorization to create any of them.
+
+Installed dogfood then exposed AR-291: deterministic source smoke had published
+alternate-home Hermes/OpenClaw runtime pointers into the operator launcher
+directory, so otherwise-successful setup returned failure on residual drift.
+AR-290 stays in progress until that bounded isolation repair is installed and
+the same setup path is repeated.

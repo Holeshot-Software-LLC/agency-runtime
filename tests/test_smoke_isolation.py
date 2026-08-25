@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from agency_runtime.core import installer_orchestration as orchestration
 from agency_runtime.core import smoke
 from agency_runtime.core.config import load_config, reset_config_cache
 
@@ -24,6 +25,7 @@ def test_smoke_all_hosts_ignores_cached_real_store_path(
     monkeypatch.delenv("AGENCY_DB_PATH", raising=False)
     reset_config_cache()
     observed_paths: list[Path] = []
+    pointer_publications: list[tuple[str, str]] = []
     real_smoke_generated_plugin = smoke._smoke_generated_plugin
 
     def inspect_isolated_host(host: str, _tmp_home: Path) -> dict[str, str]:
@@ -35,6 +37,11 @@ def test_smoke_all_hosts_ignores_cached_real_store_path(
         return {"host": host}
 
     monkeypatch.setattr(smoke, "_smoke_generated_plugin", inspect_isolated_host)
+    monkeypatch.setattr(
+        orchestration,
+        "record_installed_runtime",
+        lambda bootstrap, *, host: pointer_publications.append((bootstrap, host)) or "digest",
+    )
     monkeypatch.setattr(
         smoke,
         "run_host_parity_eval",
@@ -49,5 +56,6 @@ def test_smoke_all_hosts_ignores_cached_real_store_path(
         assert len(observed_paths) == len(smoke.HOSTS)
         assert len(set(observed_paths)) == 1
         assert operator_db.exists() is False
+        assert pointer_publications == []
     finally:
         reset_config_cache()

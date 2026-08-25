@@ -118,6 +118,9 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
+- Deterministic generated-host smoke no longer publishes alternate-home
+  launcher pointers into the operator's current-install state. Real owner-home
+  installs still publish advisory staleness pointers normally.
 - Contextual work inquiries now perform fresh specialist selection without
   granting execution authority. Classifier v5 covers status, progress,
   recommendation, and prospective next-step forms; advisory planning is bound

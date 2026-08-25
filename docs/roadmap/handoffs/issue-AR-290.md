@@ -64,6 +64,11 @@ tracker_url: null
 - Decision conformance passed its green baseline, killed all 160 curated
   mutations with zero survived or invalid results, and reported
   `source_unchanged=true`. The complete scoped implementation gate is green.
+- Installed setup registered Codex, Claude, ZCode, and the dashboard, then
+  truthfully failed its final projection check because source smoke had written
+  alternate-home Hermes/OpenClaw pointer documents into the operator launcher
+  directory. AR-291 records the bounded pointer-isolation defect and its
+  194-test repair; the successful host mutations remain intact.
 
 ## exact-blocker
 
@@ -72,6 +77,9 @@ tracker_url: null
   artifact, exact-host, tracker, signing, or publication evidence.
 - Tracker creation, push, pull request, merge, hosted workflows, tag, and
   release creation are outward actions and remain unauthorized.
+- AR-290 installed acceptance remains locally blocked until the AR-291 repair
+  is committed, installed, the exact two contaminated absent-host pointers are
+  removed, and the same setup path is repeated without residual drift.
 
 ## same-task-continuity
 
@@ -82,12 +90,11 @@ not create another task or treat the threshold as publication authority.
 
 ## next-bounded-work-package
 
-1. Rerun final documentation, focused setup/dashboard, telemetry, and diff
-   checks after this evidence update.
-2. Create the local implementation and worklog ledger commits.
-3. Install that exact local commit, refresh safely detected harnesses and the
-   dashboard, then validate and run deterministic installed smoke. Leave learned
-   recall routes unset unless a privately supplied credential can be verified.
+1. Commit the verified AR-291 isolation repair and its worklog ledger.
+2. Install that exact local commit and remove only the two identity-verified
+   contaminated Hermes/OpenClaw pointer documents.
+3. Rerun installed deterministic smoke and guided setup. Leave learned recall
+   routes unset unless a privately supplied credential can be verified.
 
 ## verification
 
