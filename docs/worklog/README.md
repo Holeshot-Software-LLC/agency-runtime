@@ -1228,6 +1228,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `4a71c0da` | 2026-08-25 | docs(ar290): plan guided setup | [AR-290](../roadmap/issue-AR-290-end-to-end-guided-setup.md) | null |
 | `21243e7e` | 2026-08-25 | feat(ar290): add guided setup journey | [AR-290](../roadmap/issue-AR-290-end-to-end-guided-setup.md) | [detail](2026-08-25-21243e7e-add-guided-setup-journey.md) |
 | `4a72bbb1` | 2026-08-25 | fix(ar291): isolate smoke runtime pointers | [AR-291](../roadmap/issue-AR-291-isolate-smoke-runtime-pointers.md) | [detail](2026-08-25-4a72bbb1-isolate-smoke-runtime-pointers.md) |
+| `af2f872f` | 2026-08-25 | fix(ar292): preserve setup activation degradation | [AR-292](../roadmap/issue-AR-292-classify-setup-activation-pending.md) | [detail](2026-08-25-af2f872f-preserve-setup-activation-degradation.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
