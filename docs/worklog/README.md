@@ -1259,6 +1259,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `bb6bd74f` | 2026-08-26 | fix(workforce): ignore false novelty sentinels | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-305](../roadmap/issue-AR-305-normalize-planner-novelty-absence.md) | null |
 | `bd4e7f75` | 2026-08-26 | fix(workforce): bind strict critic semantics | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-305](../roadmap/issue-AR-305-normalize-planner-novelty-absence.md), [AR-306](../roadmap/issue-AR-306-bind-strict-critic-semantics.md) | null |
 | `3e188c9f` | 2026-08-26 | fix(workforce): clarify critic approval contract | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-306](../roadmap/issue-AR-306-bind-strict-critic-semantics.md) | null |
+| `926aef81` | 2026-08-26 | docs(ar297): record direct workforce acceptance | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-305](../roadmap/issue-AR-305-normalize-planner-novelty-absence.md), [AR-306](../roadmap/issue-AR-306-bind-strict-critic-semantics.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
