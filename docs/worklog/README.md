@@ -1256,6 +1256,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `dbd3eda9` | 2026-08-26 | fix(workforce): reserve embedding response nodes | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-303](../roadmap/issue-AR-303-bound-full-roster-embedding-requests.md) | null |
 | `5acfbf41` | 2026-08-26 | fix(workforce): clarify recruiter repair contracts | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-304](../roadmap/issue-AR-304-preserve-recruiter-critic-validation-diagnostics.md) | null |
 | `e10284ec` | 2026-08-26 | docs(ar297): record bounded recall live verdict | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-303](../roadmap/issue-AR-303-bound-full-roster-embedding-requests.md), [AR-304](../roadmap/issue-AR-304-preserve-recruiter-critic-validation-diagnostics.md) | [ADR-0175](../decisions/0175-batch-complete-embedding-input-sets.md) |
+| `bb6bd74f` | 2026-08-26 | fix(workforce): ignore false novelty sentinels | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-305](../roadmap/issue-AR-305-normalize-planner-novelty-absence.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
