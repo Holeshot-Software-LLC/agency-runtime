@@ -19,6 +19,8 @@ related:
   - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
   - docs/decisions/0174-admit-local-ollama-canary-child-judges.md
   - docs/decisions/0175-batch-complete-embedding-input-sets.md
+  - docs/decisions/0176-use-owner-runtime-temp-for-nonroot-user-services.md
+  - docs/decisions/0177-make-local-verification-private-by-construction.md
   - README.md
   - docs/RELEASE_CHECKLIST.md
   - docs/worklog/README.md
@@ -27,8 +29,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-297
 branch: codex/ar297-production-container-live-evidence
-evidence_commit: 3e188c9fe0761394e31ebd2ffa3269e136d13df8
-minimum_ledger_commit: eb9da40f4e5662b4671885da004bf93289f8fdeb
+evidence_commit: 2a9dc984a904140fc0d744dd90629944cefeac53
+minimum_ledger_commit: 2aa0b5a9c00763972ebea740cfe69aa6d2b4544b
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 ---
@@ -37,117 +39,94 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 
 ## checkpoint
 
-- PR #326 is merged. The dedicated Linux worktree remains on
+- Work remains in the dedicated Linux worktree on
   `codex/ar297-production-container-live-evidence`, descended from clean
   `origin/main` `0a23983aa7b99ec27ef18b1a950f6a0327961f72`.
-- Telemetry exited 0 at 77.2, 60.1, 49.5, 27.8, 26.5, 18.2, and 9.2 percent;
-  the bounded-package end check exited 0 at 41.8 percent after compaction.
-  Every live attempt at or below the threshold followed a clean recovery pair:
-  `14a4346c` / `3841fcce`, `dbd3eda9` / `95c323eb`, then `5acfbf41` /
-  `8eb54c96`.
-- Fresh telemetry crossed the threshold at 49.4 percent after the recruiter A/B
-  and planner diagnostic. This recovery pair records the smallest safe repair
-  before any post-fix live evaluation.
-- The exact unsigned Linux candidate remains
-  `987cee8ff01a4a16780eac15bb8120f828d4193d`. Its scoped verdict is **NO-GO**.
-  AR-297 and tracker #335 remain open.
+- The exact candidate is substantive `2a9dc984` plus ledger `2aa0b5a9`. The
+  source was clean before live work. Telemetry immediately before the first
+  clean Codex canary exited 0 at 21.1 percent; this recovery pair records the
+  resulting smallest safe slice before another live call.
+- The current Linux verdict remains **NO-GO**. AR-297 and tracker #335 remain
+  open; AR-301/302 product acceptance now passes, while their unauthorized
+  tracker parity remains explicit.
 
 ## completed-evidence
 
-- Exact Agency config mode 0600, 3,642 bytes, SHA-256
-  `cb569bf027133305df594d8ff029dffb8d38f545e960517d4431dfbf1b2bc2e1`
-  remains strict/additive with Qwen 14B abliterated generation, Mistral 24B
-  critic/reranker/child judge, and LiteLLM `qwen3-embedding` at 4,096
-  dimensions. Jina is absent and was not called.
-- The retained exact artifacts remain wheel
-  `17a3bc0053a882b22ff72d8b3a2ebcd23ef602c2b5c034e7a05e8ae10ff929f1`
-  and sdist
-  `6551c43fc6fc7dfe7d8b9318e5b7605d1ecc8e214490eb7d0d2af001ffa9adb5`.
-  Clean installs previously passed for Claude, Hermes, and OpenClaw; Codex
-  installed managed policy but its two canaries failed before attestation.
-- The prior ordinary Claude and OpenClaw processes timed out. Hermes session
-  `20260826_143220_d88838` exited 0 only after Agency replaced an unverified
-  draft with a refusal; Store run `ecdff898-6dc7-42c9-b0f9-db3447f46623`
-  remained `preflight_failed`. No harness has a successful ordinary Agency turn.
-- Authenticated dashboard evidence remains valid: unauthenticated health is
-  401; authenticated health/detail are 200 and `no-store`; Accessibility
-  Auditor renders all 2,657 characters at SHA-256
-  `c3cfc0981cb980d700ee6b115c3669f5533108598419ca83f26bd5f30e185848`.
-  Runtime delivery was not asserted.
-- Prior named gates pass through direct acceptance; a fresh trusted conformance
-  run exits 0 with a green baseline, source unchanged, and 160/160 mutations
-  killed. AR-301/302 focused Linux checks pass 241 tests under caller umask 0002;
-  unsafe worktree Python fails once at startup. The exhaustive workflow was not
-  dispatched, and all proof containers remain removed.
-- AR-303 now prevalidates one complete logical embedding set and permits at
-  most two ordered scalar-safe calls. The exact 263-card/4,096-dimension test
-  uses batches 243 and 21 including one query; warm uses one. Partial failure,
-  model drift, and dimension drift discard all vectors and never seed cache.
-  Cold recall and host timeouts cover two embeddings plus one reranker.
-- AR-304 adds closed recruiter candidate and strict-critic semantic diagnoses.
-  Provider-authored prose and unknown codes cannot enter repair or preflight
-  receipts. The focused warning-strict set passes 139 tests and changed files
-  pass Ruff.
-- The approved Mistral-only recruiter A/B config hash is `87551b5b...e125628`.
-  It exited 2 after 296,074 ms on trace `d276a583-e632-49af-b80f-7bece3b34b90`:
-  Mistral ranked the two correct accessibility specialists first, yet verifier
-  sufficiency still found one uncovered capability.
-- A planner-only diagnostic then proved Qwen emitted string
-  `novel_capability: "false"`, compiled as the sole uncovered
-  `capability:false`. Diagnostic hash is `8c7a2c5c...d4bf137`; no Jina or secret
-  was used. AR-305 normalizes only stringified absence sentinels at both gap and
-  unknown-domain boundaries. Focused tests pass 158 with one skip.
-- Post-fix trace `bbf187df-29ab-495a-acb0-7f60885a8b7e` applied planner,
-  embedding, reranker, recruiter, and critic, then exited 2 only at
-  `staffing_critic_rejected`. Summary/Store hashes are `a4ca68e1...132371a` and
-  `7b679a1d...95fb346`.
-- Diagnostic `c2dbfa54...bbba2` proves Mistral selected only Accessibility
-  Auditor at confidence 1.0/margin 0.1; the verifier accepted, but the critic
-  claimed `unsupported-confidence` and `unsafe-composition`. AR-306 adds exact
-  thresholds, pre-execution scope, and selected-only semantics without removing
-  critic veto authority; 158 focused tests pass with one skip.
-- Confirmation trace `a60ed00e-4f08-4a84-8135-8bbc1a2a4f1b` moved both critic
-  attempts to approval, but each included reasons and failed closed at
-  `critic_approval_reasons_present`. Summary/Store hashes are
-  `c89620c2...d8722e` / `7d911ec3...3efe75`. AR-306 now states the conditional
-  reason-array contract explicitly; focused tests remain 158/1 skipped.
-- Final trace `f8af12a9-2747-489d-879a-4a8417d1ef35` exits 0 after 123,320 ms.
-  Five model receipts, one accepted route, and one specialist load correlate;
-  only Accessibility Auditor is selected and its complete 2,659-byte prompt is
-  verbatim in context. Summary/Store hashes are `e608576c...cb8576` and
-  `c0cb4beb...de8be`; no failure, Jina call, or persisted secret exists.
+- Exact mode-0600 config SHA-256 is
+  `87551b5bc936a41742d6846523377e3cf869d8e5c2ce2e4941c447848e125628`:
+  strict assurance, additive dense recall, Qwen 14B abliterated generation,
+  Mistral 24B critic/reranker/recruiter/child judge, and LiteLLM
+  `qwen3-embedding` at 4,096 dimensions. Jina is absent and was not called.
+- Direct acceptance remains green: session
+  `ar297-direct-50344949-2206-4286-8dc8-d73bf640399f`, trace
+  `f8af12a9-2747-489d-879a-4a8417d1ef35`, run
+  `61c2b08b-b32c-4493-89b1-777d5efde4f9`; five model receipts, one accepted
+  route, and only Accessibility Auditor loaded with its complete 2,659-byte
+  prompt at SHA-256 `c3cfc098...e185848`.
+- Caller-umask-0002 build, strict Twine, and independent verification exit 0.
+  The mode-0644 wheel is 9,239,034 bytes at `912220eb...3740a2`; the mode-0644
+  sdist is 25,356,218 bytes at `b3a35227...163c7c`. The named fast spine exits
+  0 with 859 passed and 3 skipped. Metadata, policy availability, worklog,
+  docs, Ruff check/format, 138 UI tests, routing, diff, and decision conformance
+  all exit 0; conformance kills 160/160 mutations with source unchanged.
+- The exact wheel is installed on the host in the owner-private `2aa0b5a9...`
+  venv; `pip check` exits 0. All four host bundles are current. The attended
+  combined install exits 1 only because Codex truthfully remains
+  activation-required; OpenClaw was safely stopped and restored.
+- The real non-root dashboard service install exits 0. It is enabled,
+  active/running at PID 496966 with zero restarts. Unit SHA-256 is
+  `7824e756...d5f4e8`; its owner runtime directory is mode 0700. Health is 401
+  unauthenticated and 200/no-store authenticated. Authenticated worker detail
+  is 200/no-store and the browser clears its bearer fragment and renders all
+  2,659 prompt bytes. Mode-0600 screenshot SHA-256 is
+  `7b60d2e9...454de` (156,166 bytes).
+- Fresh images bind candidate `2aa0b5a9...` and wheel `912220eb...3740a2`:
+  Codex `d3a2e3bd...49e546`, Claude `eb720746...fda24d`, Hermes
+  `6262bad6...be1443`, OpenClaw base `2bf86f32...ccea47`, and OpenClaw
+  systemd `967c229c...f11ca`. Four fresh containers prove no initial Agency
+  state. Claude, UID-10000 Hermes, and OpenClaw production installs exit 0;
+  OpenClaw registers all 13 hooks.
+- The first exact Codex production transaction installs current managed-only
+  policy with all eight events and no bypass. Requirements and relay hashes are
+  `240d0622...78613` and `4b06fde8...c58e`, but its canary exits 1. Session
+  `01a03f2e-593d-7861-bd79-3ab68ca5a92f`, trace
+  `01a03f2e-5948-7bc1-83d1-15d7d331ca95`, and Store
+  `aabc7fa8...9beb3` correlate one run and one preflight failure. Planning and
+  both Mistral stages apply; additive recall records `embedding_provider_failed`.
+  No route, specialist, child, finalization, or attestation row exists.
 
 ## exact-blocker
 
-- AR-305 and AR-306 are direct-live proven. Native delivery remains distinct;
-  the four-container ordinary-turn matrix has not been rerun on this source.
-- AR-301/302 have focused implementations without a trust exception. The first
-  ambient-0002 build crossed wheel canonicalization, then exposed the missing
-  0664/0775 sdist projections; their corrected immutable build, full spine, real
-  non-root service, and auth proofs remain. No harness has a current successful
-  ordinary Agency turn or Codex attestation.
+- Determine why LiteLLM embedding fails only inside the managed Codex canary
+  although the parent install process has the credential. Do not change the
+  approved config, model, endpoint, dimensions, reranker, thinking, judge,
+  auth, or service-manager choices without interviewing the owner.
+- Codex still lacks an attestation. No later ordinary Codex, Claude, Hermes, or
+  OpenClaw process has current successful Agency-turn evidence on this source.
 - AR-299 through AR-306 tracker parity, hosted cross-OS artifacts, signing,
-  push, PR, merge, tag, publication, and release remain unauthorized.
+  push, PR, merge, tag, publication, release, and exhaustive workflow dispatch
+  remain unauthorized.
 
 ## same-task-continuity
 
-The exact artifacts remain under `~/.agency-runtime/release-artifacts/`
-`dist-987cee8ff01a4a16780eac15bb8120f828d4193d-linux-ar297`; the config remains
-under `~/.agency-runtime/configs/`. The corrected private probe script is
-`/tmp/ar297_direct_preflight_probe.py`; final private artifacts are
-`authenticated-agency.db` and `direct-preflight-authenticated-summary.json`.
-The probe obtains the existing LiteLLM credential in memory and persists no
-secret. A/B and planner evidence is under `ar297-mistral-recruiter-KsV0r1NA`;
-post-fix and strict diagnostics are under `ar297-postfix-8vIi2aDz`.
+Artifacts remain under `~/.agency-runtime/release-artifacts/`
+`dist-2aa0b5a9c00763972ebea740cfe69aa6d2b4544b-linux-ar297`. Private live
+evidence is under `~/.agency-runtime/evidence/ar297-go-zKOPE1b8`; the exact
+config is `agency-exact.yaml`. The four current proof container IDs begin
+`e55383162646`, `420e0d4b20f6`, `3ff874135b36`, and `59f2302ed9fe`.
+The secret-safe helper remains
+`/tmp/agency-runtime-ar297-evidence.pcLOZn/run_with_litellm_key.py`.
 
 ## next-bounded-work-package
 
-1. Checkpoint AR-301/302, build and independently verify the fresh candidate,
-   and run the remaining named gates from the trusted interpreter.
-2. Recreate the four clean harness containers and repeat unattended
-   ordinary-turn evidence; interview before any further model/config choice.
-3. Recheck authenticated dashboard/service evidence, update canonical records,
-   tear down proof containers, and issue the Linux-scoped verdict.
+1. Diagnose the Codex-only embedding failure without a model call; if a safe
+   exact-route probe and one no-bypass canary retry are justified, run telemetry
+   immediately before each live call.
+2. Run later ordinary Conveyor-equivalent Codex, Claude, Hermes, and OpenClaw
+   processes and correlate Store plus native host artifacts without changing
+   the approved topology.
+3. Update canonical records, copy/hash exact host evidence, tear down only the
+   four proof containers, and issue the Linux-scoped verdict.
 
 ## verification
 
@@ -172,5 +151,5 @@ git diff --check
   prose distinct. Never expose or persist a secret.
 - Do not configure/call Jina, overwrite foreign policy, use an activation
   bypass, or touch the shared checkout.
-- No tracker, push, PR, merge, tag, signing, publication, release, or hosted
-  workflow action is authorized.
+- No tracker, push, PR, merge, tag, signing, publication, release, hosted
+  workflow, or new model/config choice is authorized.

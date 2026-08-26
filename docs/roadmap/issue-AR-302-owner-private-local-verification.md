@@ -68,9 +68,9 @@ Executable and configuration namespace checks remain strict.
 
 ## Acceptance
 
-- [ ] Distribution build and verification produce canonical safe modes under
+- [x] Distribution build and verification produce canonical safe modes under
       ambient umask 0002 without an operator preamble.
-- [ ] The named fast spine creates a trusted offline configuration under umask
+- [x] The named fast spine creates a trusted offline configuration under umask
       0002 when invoked with a trusted interpreter.
 - [x] An interpreter below an untrusted namespace fails early with one bounded
       actionable diagnostic rather than broad secondary failures.
@@ -101,3 +101,14 @@ The first immutable ambient-0002 build after the wheel repair crossed wheel
 canonicalization and then failed closed on the newly observed 0775 top-level
 sdist directory. The follow-up admits exactly 0664 sdist files and 0775 sdist
 directories and adds byte-convergence coverage; no failed build was relabelled.
+
+The immutable follow-up at ledger
+`2aa0b5a9c00763972ebea740cfe69aa6d2b4544b` ran directly under caller umask
+0002 without a private-umask preamble. Build, strict Twine, and independent
+verification each exited 0. The canonical mode-0644 wheel is 9,239,034 bytes
+at SHA-256 `912220eb8b9db12c68f38b3a49735ed56d1a99b477e455220bb2d3a96d3740a2`;
+the canonical mode-0644 sdist is 25,356,218 bytes at SHA-256
+`b3a35227b05ff75d2b1ee1a58c88d0c180d904148dc95aa070991d07ce163c7c`.
+The named fast spine then ran under the same caller umask with OS-owned
+`/usr/bin/python3` and no temporary-directory override: exit 0, 859 passed,
+3 skipped. Only the explicitly prohibited tracker write remains open.

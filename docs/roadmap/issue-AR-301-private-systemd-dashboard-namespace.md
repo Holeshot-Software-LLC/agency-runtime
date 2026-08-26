@@ -73,13 +73,13 @@ authenticated on loopback.
 
 ## Acceptance
 
-- [ ] A normal non-root Linux systemd user service starts with the shipped
+- [x] A normal non-root Linux systemd user service starts with the shipped
       hardening and an owner-private exact config.
 - [x] The non-root unit avoids ambiguous root remapping while a genuinely
       untrusted UID 65534 parent remains rejected.
 - [x] Existing ownership, substitution, rollback, WSL, and hardening tests stay
       fail-closed and pass with warnings treated as errors.
-- [ ] Authenticated loopback health succeeds from the installed service while
+- [x] Authenticated loopback health succeeds from the installed service while
       unauthenticated access is rejected.
 - [ ] A same-repository tracker issue is created and linked after explicit
       authorization.
@@ -101,3 +101,21 @@ service/configuration tests pass 128 with one skip, and the broader AR-301/302
 set passes 241 with two Windows-only tests deselected on Linux, all under a
 caller umask of 0002 and `-W error`. The remaining acceptance requires the real
 installed non-root service and authenticated loopback probe.
+
+The exact `2aa0b5a9c00763972ebea740cfe69aa6d2b4544b` wheel is now installed in
+an owner-private host venv. The ordinary non-root systemd user transaction
+exited 0 and produced an enabled, active/running service with PID 496966, zero
+restarts, and a reachable readiness check. The mode-0600 unit has SHA-256
+`7824e75623c9346d0e11a41aa25cfd70bbae26c6d62fd7eead77d4b1d4d5f4e8`;
+it sets `PrivateTmp=false`, creates `%t/agency-runtime-dashboard` at mode 0700,
+and binds `TMPDIR`, `TMP`, and `TEMP` there. The exact mode-0600 config hash is
+`87551b5bc936a41742d6846523377e3cf869d8e5c2ce2e4941c447848e125628`.
+
+The installed service rejects unauthenticated health with 401. Its private
+in-memory bearer yields 200 for health and Accessibility Auditor detail; both
+responses carry `Cache-Control: no-store`. The browser cleared the token
+fragment and rendered the complete untruncated 2,659-byte definition at
+SHA-256 `c3cfc0981cb980d700ee6b115c3669f5533108598419ca83f26bd5f30e185848`.
+The mode-0600 screenshot is 156,166 bytes at SHA-256
+`7b60d2e963aaabba09399a07137b288e567a93f3466b1e167bb4b7496b5454de`.
+Only the explicitly prohibited tracker write remains open.

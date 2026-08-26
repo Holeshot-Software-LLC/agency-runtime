@@ -474,3 +474,45 @@ remained healthy. The Linux-scoped verdict is **NO-GO**: artifact, install,
 prompt-visibility, dashboard-authentication, and repository gates pass, but no
 four-harness unattended Agency-turn matrix, Codex attestation, or non-root
 dashboard-service proof exists.
+
+The fresh exact candidate is ledger
+`2aa0b5a9c00763972ebea740cfe69aa6d2b4544b`. Under caller umask 0002, build,
+strict Twine, and independent verification exit 0 for wheel
+`912220eb8b9db12c68f38b3a49735ed56d1a99b477e455220bb2d3a96d3740a2`
+and sdist
+`b3a35227b05ff75d2b1ee1a58c88d0c180d904148dc95aa070991d07ce163c7c`.
+The exact named fast spine exits 0 with 859 passed and 3 skipped; all remaining
+listed repository gates also exit 0, including 160/160 decision-conformance
+mutations killed with source unchanged.
+
+The exact wheel is installed on the Linux host in the owner-private
+`2aa0b5a9...` venv and `pip check` exits 0. All four native bundles were
+refreshed; the attended combined command exits 1 solely because Codex correctly
+remains activation-required. The ordinary non-root dashboard service now
+installs and starts with exit 0, is active/running with zero restarts, rejects
+unauthenticated health with 401, and returns authenticated 200/no-store health
+and worker detail. The browser renders all 2,659 bytes of the Accessibility
+Auditor prompt at SHA-256
+`c3cfc0981cb980d700ee6b115c3669f5533108598419ca83f26bd5f30e185848`;
+stored definition remains explicitly distinct from runtime delivery.
+
+Five fresh image builds bind the exact candidate and wheel hash. Their image
+IDs are `d3a2e3bd...49e546` (Codex), `eb720746...fda24d` (Claude),
+`6262bad6...be1443` (Hermes), `2bf86f32...ccea47` (OpenClaw base), and
+`967c229c...f11ca` (OpenClaw systemd). Fresh clean-state production transactions
+exit 0 for Claude, native-UID Hermes, and OpenClaw. Their installed bundle
+digests are `8bcaebb9...ef4f6c`, `1e41599f...073f9d`, and
+`a9bd648f...3b1732`; OpenClaw loads all 13 required hooks. No ordinary turn is
+claimed yet.
+
+The first clean Codex production transaction installs current managed-only
+policy with all eight events and no trust bypass, but exits 1 after its live
+canary. Session `01a03f2e-593d-7861-bd79-3ab68ca5a92f`, trace
+`01a03f2e-5948-7bc1-83d1-15d7d331ca95`, and Store hash
+`aabc7fa82eb1d66de637d67657b8c43031881cbf5433f6efea94ff1be4d9beb3`
+correlate one run and one `workforce_inference_failed` receipt. Planning,
+Mistral recruiting, and Mistral criticism apply, while additive recall records
+`embedding_provider_failed`; there are no model, route, specialist, child,
+finalization, or attestation rows. The caller had the LiteLLM credential only
+in process memory. This failure remains a blocker and is not an activation
+claim.
