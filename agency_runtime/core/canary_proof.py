@@ -524,7 +524,9 @@ def invoke_and_collect_evidence(
     facade = _facade()
     try:
         with private_temporary_directory(prefix="canary") as workdir:
-            if host == "claude" and type(preparation.backend) is facade._SafeClaudeCanaryBackend:
+            if (
+                host == "claude" and type(preparation.backend) is facade._SafeClaudeCanaryBackend
+            ) or (host == "codex" and type(preparation.backend) is facade._SafeCodexCanaryBackend):
                 result, host_child_delivery = preparation.backend.execute_with_host_delivery(
                     task=prompt,
                     workdir=str(workdir),

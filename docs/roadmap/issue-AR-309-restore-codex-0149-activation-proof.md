@@ -11,11 +11,15 @@ related:
   - docs/roadmap/handoffs/issue-AR-297.md
   - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
   - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
+  - docs/decisions/0179-admit-exact-codex-canary-delivery-at-subagent-start.md
   - agency_runtime/core/canary.py
   - agency_runtime/core/canary_backends.py
   - agency_runtime/core/child_delivery_evidence.py
   - agency_runtime/adapters/hooks.py
   - tests/test_codex_activation_canary.py
+  - tests/test_codex_activation_verification.py
+  - tests/test_canary_activation_snapshot.py
+  - tests/test_child_delivery_evidence.py
   - tests/test_host_hooks.py
   - docs/worklog/README.md
 supersedes: []
@@ -90,6 +94,26 @@ visible launch marker, and the parent copies the stale initial
   `953295259aa29014719af67e930a7e4315cbdcc40eda226ca971bee3962790a3`.
   Stderr contains only the Codex remote-plugin OAuth transport-close warning.
 - Tracker creation is prohibited by the active AR-297 task.
+- The bounded repair now recognizes the exact 0.149
+  `event_msg/item_completed/SubAgentActivity` start, resolves quiet parent
+  stdout from one invocation-window root rollout, and projects the single
+  spawn/wait topology. At the exact `code_reviewer` `SubagentStart`, it binds
+  the persisted fixed route to the real host child UUID, returns one complete
+  v6 delivery, and leaves every ordinary or mismatched child identity-only.
+- The private structural reader requires one distinct pre-speech v6 record,
+  the exact Store decision and install identity, an owner-private canonical
+  child rollout, the child/parent UUIDs, decision lifetime, invocation window,
+  and atomic receipt consumption. The public Codex parser still returns
+  `unsupported_opaque_interagent_channel` and repeated v6 records fail closed.
+- Post-spawn reconciliation joins the host response to the bound UUID and
+  exact fixed work unit. Receipt-backed completion snapshots may project the
+  delivered `code-reviewer` identity without rewriting the underlying
+  delegation row, and the completed wait refreshes the final Store header.
+- Warning-strict focused verification passes: 328 Codex delivery, canary,
+  hook, card-proof, and header tests; 109 activation-snapshot, activation
+  contract, Store atomicity, delegation, and turn-security tests; plus the
+  exact real-Store parent-resolution regression. A rebuilt live transaction
+  has not yet run on this repair, so no attestation claim has advanced.
 
 ## Approach
 
@@ -99,16 +123,16 @@ Codex 0.149 V2 evidence boundary. Update the rollout parser only for the exact
 allowlisted `event_msg/item_completed/SubAgentActivity` envelope and retain
 one-child cardinality plus invocation-window checks.
 
-Because Codex deliberately redacts the decrypted launch message from the child
-rollout, bind an unpredictable hook-generated one-use receipt to the exact
-decision, child, work-unit/card digest, and invocation. Require the child to
-return that receipt in its first host-persisted response before any parent
-acceptance. The parent must not receive the clear receipt before spawn, and
-Store state or parent prose remains insufficient by itself. Supply a
-plan-derived conditional final-header contract before spawn, but accept it only
-when host collaboration plus delivery evidence agree and the first parent
-finalization passes. Record the durable authority change before implementation;
-do not weaken ADR-0156 or activate a trust bypass.
+Codex does persist `SubagentStart` `additionalContext` as one distinct
+host-written developer message before first child speech. Bind the exact
+already-persisted canary plan to the host-created child UUID at that event and
+deliver the complete v6 rewritten task as the sole message. Parse pre-speech
+messages individually and require exactly one complete Store-, install-, child-,
+and invocation-bound delivery. The successful wait must reconcile that receipt
+and actual child identity before rendering the final Store-backed header.
+ADR-0179 records this narrow authority; ordinary opaque Codex spawns remain
+unstaffed, Store state or parent prose remains insufficient by itself, and no
+trust bypass is activated.
 
 ## Dependencies
 
@@ -127,7 +151,7 @@ do not weaken ADR-0156 or activate a trust bypass.
       and missing proof fields are retained without a secret.
 - [x] A bounded stable-surface diagnostic determines whether supported Codex
       behavior restores visible pre-speech delivery and post-wait context.
-- [ ] The exact Codex 0.149 rollout envelope is parsed without accepting an
+- [x] The exact Codex 0.149 rollout envelope is parsed without accepting an
       ambiguous parent, child, tool sequence, or invocation window.
 - [ ] A host-authored artifact proves the exact selected workforce card reached
       the sole child before speech; Store state and parent prose remain

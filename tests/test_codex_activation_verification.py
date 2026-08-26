@@ -15,6 +15,7 @@ from agency_runtime.adapters import hooks
 from agency_runtime.cli import install_commands
 from agency_runtime.cli import main as cli_main
 from agency_runtime.core import canary_proof, preflight
+from agency_runtime.core.activation_canary_contract import CODEX_ACTIVATION_CANARY_WORK_UNIT
 from agency_runtime.core.canary_backends import SafeCodexCanaryBackend
 from agency_runtime.core.codex_activation_verification import (
     is_exact_codex_activation_verification,
@@ -24,7 +25,9 @@ from agency_runtime.core.installer_contracts import (
     CODEX_ACTIVATION_CANARY_PROOF_CONTRACT,
     CODEX_HOOK_EVENTS,
 )
+from agency_runtime.core.native_child_staffing import NativeChildStaffingResult
 from agency_runtime.core.store.sqlite import Store
+from agency_runtime.core.unit_assignment import work_unit_id_from_text
 
 
 def _identity() -> dict[str, Any]:
@@ -797,3 +800,85 @@ def test_restricted_activation_canary_skips_catalog_mutations(
         )
         is snapshot
     )
+
+
+def test_exact_codex_subagent_start_staffs_the_real_child_uuid(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    child_id = "11111111-1111-4111-8111-111111111111"
+    observed: dict[str, Any] = {}
+
+    class StartStore:
+        def record_native_child_started(self, **kwargs: Any) -> dict[str, Any]:
+            observed["started"] = kwargs
+            return dict(kwargs)
+
+    def staff(*_args: Any, **kwargs: Any) -> NativeChildStaffingResult:
+        observed["staff"] = kwargs
+        assert kwargs["delivery_validator"]("[AGENCY INFERENCE TEAM v6]") is True
+        return NativeChildStaffingResult(
+            staffed=True,
+            reason_code="staffed",
+            rewritten_task="[AGENCY INFERENCE TEAM v6]\nexact delivery",
+            decision_id="decision-one",
+            selected_ids=("code-reviewer",),
+        )
+
+    monkeypatch.setattr(
+        hooks.HookBridge,
+        "_restricted_codex_activation_parent_scope",
+        lambda _self, _payload: ("session-one", "trace-one"),
+    )
+    monkeypatch.setattr(
+        "agency_runtime.core.native_child_install_identity.current_runtime_managed_host_install_identity",
+        lambda _host: object(),
+    )
+    monkeypatch.setattr(
+        "agency_runtime.core.native_child_staffing.staff_native_child",
+        staff,
+    )
+    monkeypatch.setattr(
+        "agency_runtime.core.child_delivery_evidence._restricted_codex_canary_route",
+        lambda *_args, **_kwargs: {
+            "decision_id": "decision-one",
+            "binding_id": child_id,
+            "launch_id": child_id,
+        },
+    )
+
+    response = hooks.HookBridge(  # type: ignore[arg-type]
+        "codex",
+        store=StartStore(),
+        _master={"enabled": True},
+    ).handle(
+        {
+            "hook_event_name": "SubagentStart",
+            "session_id": "session-one",
+            "turn_id": child_id,
+            "agent_id": child_id,
+            "agent_type": "code_reviewer",
+        }
+    )
+
+    staff_call = observed["staff"]
+    assert staff_call["task"] == CODEX_ACTIVATION_CANARY_WORK_UNIT
+    assert staff_call["parent_session_id"] == "session-one"
+    assert staff_call["parent_trace_id"] == "trace-one"
+    assert staff_call["launch_id"] == child_id
+    assert staff_call["binding_kind"] == "child_id"
+    assert staff_call["binding_id"] == child_id
+    assert observed["started"] == {
+        "host": "codex",
+        "backend": "spawn_agent",
+        "session_id": "session-one",
+        "trace_id": "trace-one",
+        "work_unit_id": work_unit_id_from_text(CODEX_ACTIVATION_CANARY_WORK_UNIT),
+        "worker_id": child_id,
+        "native_run_id": f"codex-agent:{child_id}",
+    }
+    assert response == {
+        "hookSpecificOutput": {
+            "hookEventName": "SubagentStart",
+            "additionalContext": "[AGENCY INFERENCE TEAM v6]\nexact delivery",
+        }
+    }

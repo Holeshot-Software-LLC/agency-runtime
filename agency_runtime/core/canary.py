@@ -72,7 +72,10 @@ CODEX_CANARY_DEVELOPER_INSTRUCTIONS = (
     "terminal. Do not call followup_task. Never retry any collaboration call. If the spawn "
     "fails or the wait times "
     "out, report that result and stop the protocol. "
-    "Use no other tools. Return the child's conclusion with the required Agency header. "
+    "Use no other tools. After the exact spawn succeeds and the completed wait returns, "
+    "the final Agency header must report the sole loaded code-reviewer as delegated. If "
+    "either native call fails, keep delegation as none and report the failure. Return the "
+    "child's conclusion with the required Agency header. "
     "Do not modify files, call external services, or expose secrets."
 )
 CODEX_NATIVE_ONLY_DEVELOPER_INSTRUCTIONS = (

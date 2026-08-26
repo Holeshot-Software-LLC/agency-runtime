@@ -2073,6 +2073,15 @@ class Store(
                     (normalized_trace, normalized_session),
                 ).fetchall()
             ]
+            verified_native_specialists = self._verified_native_child_specialists_for_completion(
+                conn,
+                session_id=normalized_session,
+                trace_id=normalized_trace,
+            )
+            for delegation in delegations:
+                enrichment = verified_native_specialists.get(str(delegation.get("id") or ""))
+                if enrichment is not None:
+                    delegation.update(enrichment)
             raw_classification = recipe.get("turn_classification") if recipe is not None else None
             if isinstance(raw_classification, dict):
                 turn_classification = dict(raw_classification)

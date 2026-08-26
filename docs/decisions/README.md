@@ -138,6 +138,7 @@ Status meanings:
 | [ADR-0167](0167-authorize-openclaw-native-skill-reads-from-inventory.md) | Authorize OpenClaw native skill reads from inventory | Accepted |
 | [ADR-0168](0168-refresh-openclaw-headers-through-awaited-tool-results.md) | Refresh OpenClaw headers through awaited tool results | Accepted |
 | [ADR-0174](0174-admit-local-ollama-canary-child-judges.md) | Admit local Ollama canary child judges | Accepted |
+| [ADR-0179](0179-admit-exact-codex-canary-delivery-at-subagent-start.md) | Admit exact Codex canary delivery at SubagentStart | Accepted |
 
 ## State and roster governance
 

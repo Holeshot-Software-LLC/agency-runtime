@@ -8,6 +8,10 @@ from pathlib import Path
 
 import pytest
 
+from agency_runtime.core.activation_canary_contract import (
+    CODEX_ACTIVATION_CANARY_PROMPT,
+    CODEX_ACTIVATION_CANARY_ROUTE_SOURCE,
+)
 from agency_runtime.core.canary_proof import codex_activation_failures
 from agency_runtime.core.config import reset_config_cache
 from agency_runtime.core.host_capabilities import native_adapter_capability_receipt
@@ -152,6 +156,59 @@ def test_canary_activation_snapshot_projects_exact_preflight_failure(
     encoded = json.dumps(snapshot, sort_keys=True)
     assert request not in encoded
     assert "private provider timeout detail" not in encoded
+
+
+def test_restricted_codex_parent_snapshot_resolves_only_the_exact_live_route(
+    store: Store,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from agency_runtime.core.installer import seed_starter_roster
+    from agency_runtime.core.workforce import inference
+
+    seed_starter_roster(store)
+    monkeypatch.setenv("AGENCY_CANARY_MODE", "1")
+    monkeypatch.setenv("AGENCY_CANARY_REQUIRE_EXISTING_STORE", "1")
+    monkeypatch.setattr(
+        inference,
+        "invoke_structured_provider_result",
+        stub_inference_invoker(("code-reviewer",)),
+    )
+    session_id = "restricted-parent"
+    trace_id = "restricted-trace"
+    task = f"{CODEX_ACTIVATION_CANARY_PROMPT}\n\nCanary nonce: {'a' * 32}"
+    result = run_preflight(
+        store,
+        session_id=session_id,
+        trace_id=trace_id,
+        user_message=task,
+        host="codex",
+        capability_receipt=native_adapter_capability_receipt(
+            "codex",
+            platform="windows" if os.name == "nt" else "linux",
+            session_id=session_id,
+            trace_id=trace_id,
+            available_tools=("repository-read", "native-delegation"),
+        ),
+    )
+
+    snapshot = store.get_codex_activation_canary_parent_snapshot(
+        session_id=session_id,
+        trace_id=trace_id,
+    )
+
+    assert result.routing["source"] == CODEX_ACTIVATION_CANARY_ROUTE_SOURCE
+    assert snapshot is not None
+    assert snapshot["proven"] is True
+    assert snapshot["session_id"] == session_id
+    assert snapshot["trace_id"] == trace_id
+    assert snapshot["route"]["selected_ids"] == ["code-reviewer"]
+    assert (
+        store.get_codex_activation_canary_parent_snapshot(
+            session_id=session_id,
+            trace_id="other-trace",
+        )
+        is None
+    )
 
 
 def test_store_receipt_remains_diagnostic_without_host_artifact_proof(

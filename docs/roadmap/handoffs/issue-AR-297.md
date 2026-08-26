@@ -33,8 +33,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-297
 branch: codex/ar297-production-container-live-evidence
-evidence_commit: 105ce02180cde503a39189fd9f158f6121704e9d
-minimum_ledger_commit: 1f32915d14a9760d8cd12d21fbc6e7f3d8940a66
+evidence_commit: 907436e2d4c8ad53ff69e5808ba2d3c4d4678e66
+minimum_ledger_commit: 507042ec30816c903882d590b18204fa24103b75
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 ---
@@ -46,10 +46,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Work remains in the dedicated Linux worktree on
   `codex/ar297-production-container-live-evidence`, descended from clean
   `origin/main` `0a23983aa7b99ec27ef18b1a950f6a0327961f72`.
-- The last implementation candidate is substantive `105ce021` plus ledger
-  `1f32915d`; the AR-309 recovery pair is `6c01811a` plus `c89d80c3`.
-  Telemetry before the bounded stable comparison exited 0 at 10.4 percent, so
-  this checkpoint records that completed comparison before implementation.
+- The last clean recovery pair is substantive `907436e2` plus ledger
+  `507042ec`. Telemetry before this implementation checkpoint exits 0 at 32.9
+  percent, so the AR-309 parser/receipt/header repair and its focused evidence
+  are being checkpointed before another live evaluation.
 - The current Linux verdict remains **NO-GO**. AR-297 and tracker #335 remain
   open. No tracker, push, PR, merge, tag, signing, publication, release, or
   hosted workflow action is authorized.
@@ -91,16 +91,27 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - AR-308 is therefore live-proven through its exact delivery boundary. AR-309
   now owns the later host-artifact/header defect. No model, endpoint, dimension,
   reranker, thinking, judge, auth, or service-manager choice changed.
+- AR-309 now has a bounded implementation: exact 0.149
+  `item_completed/SubAgentActivity` and quiet-root parsing, real child-UUID
+  `SubagentStart` v6 delivery, one-use canonical-rollout receipt verification,
+  post-spawn execution reconciliation, and receipt-backed final headers. The
+  public Codex artifact parser remains diagnostic-only and ordinary opaque
+  children remain unstaffed.
+- Warning-strict focused verification passes with 328 Codex delivery/canary/
+  hook/header tests and 109 activation-snapshot, contract, Store atomicity,
+  delegation, and security tests. The exact real-Store parent route regression
+  also passes. No repaired live canary or new artifact exists yet.
 
 ## exact-blocker
 
-- Codex still lacks an attestation because its 0.149.1 V2 child artifact does
-  not expose the pre-speech card and its final parent header retains stale
-  `delegated: none`. ADR-0156 forbids substituting Store rows or model prose.
-- Stable `multi_agent` cannot execute the accepted plan. The next bounded
-  package keeps V2, allowlists its exact Codex 0.149 collaboration envelope,
-  and adds a one-use host-persisted child receipt bound to the exact card plus a
-  conditional header contract. It must remain failed closed on any mismatch.
+- Codex still lacks an attestation because the repaired implementation has not
+  yet been rebuilt, installed, and exercised in a fresh exact V2 transaction.
+  The old candidate still has no pre-speech card receipt and a stale
+  `delegated: none` header; ADR-0156 forbids substituting Store rows or prose.
+- Stable `multi_agent` cannot execute the accepted plan. The next bounded step
+  rebuilds the repaired V2 candidate and requires one canonical child artifact,
+  one consumed delivery receipt, a current delegated header, accepted first
+  finalization, and a no-bypass attestation in the same invocation.
 - No later ordinary Codex, Claude, Hermes, or OpenClaw process has a current
   successful Agency-turn receipt on this source.
 - Refresh the host install/dashboard and named repository gates for the exact
@@ -121,9 +132,9 @@ secret-safe helper remains
 
 ## next-bounded-work-package
 
-1. Record the delivery-receipt authority decision, implement the bounded
-   AR-309 V2 parser/receipt/header repair, checkpoint it, and rebuild one exact
-   no-bypass Codex transaction.
+1. Rebuild the checkpointed AR-309 candidate, install it into the dedicated
+   Codex proof container and host profile, and run one exact no-bypass V2
+   transaction with Store, rollout, receipt, header, and attestation proof.
 2. Complete fresh Claude, Hermes, and OpenClaw installs, then run later ordinary
    Conveyor-equivalent Codex, Claude, Hermes, and OpenClaw
    processes and correlate Store plus native artifacts.

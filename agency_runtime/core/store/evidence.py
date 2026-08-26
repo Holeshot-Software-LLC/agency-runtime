@@ -1873,6 +1873,191 @@ class EvidenceStoreMixin(PreflightStoreMixin):
             return None
         return _project_native_child_staffing_row(row, decision_id=normalized_id)
 
+    def get_native_child_staffing_decisions_for_parent(
+        self,
+        *,
+        session_id: str,
+        trace_id: str,
+        host: str,
+        limit: int = 2,
+    ) -> list[dict[str, Any]]:
+        """Return bounded exact staffing routes for one live parent turn.
+
+        This content-free lookup exists for host lifecycle surfaces that reveal
+        the authenticated child identity only after the inference decision was
+        committed.  It never selects a route: callers must require the exact
+        cardinality and independently validate its closed-world contract.
+        """
+
+        normalized_session = validate_correlation_id(session_id, field="session_id")
+        normalized_trace = validate_correlation_id(trace_id, field="trace_id")
+        normalized_host = validate_correlation_id(host, field="host").casefold()
+        if normalized_host not in EXECUTION_HOSTS:
+            raise ValueError("host must identify a supported execution host")
+        if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 2:
+            raise ValueError("native child parent route limit must be one or two")
+        conn = self._connect()
+        try:
+            rows = conn.execute(
+                "SELECT route.id, route.trace_id, route.session_id, route.query_hash, "
+                "route.context_fingerprint, route.status, route.source, "
+                "route.selected_ids, route.semantic_ids, route.companion_ids, "
+                "route.confidence, route.latency_ms, route.provider, route.work_units, "
+                "route.decision, route.created_at, run.host AS run_host "
+                "FROM routing_decisions AS route JOIN runs AS run "
+                "ON run.trace_id = route.trace_id AND run.session_id = route.session_id "
+                "WHERE route.session_id = ? AND route.trace_id = ? "
+                "AND route.source = 'native_child_inference' AND run.host = ? "
+                "ORDER BY route.created_at, route.rowid LIMIT ?",
+                (normalized_session, normalized_trace, normalized_host, limit),
+            ).fetchall()
+        finally:
+            conn.close()
+        projected: list[dict[str, Any]] = []
+        for row in rows:
+            route = _project_native_child_staffing_row(
+                row,
+                decision_id=str(row["id"] or ""),
+            )
+            if route is not None:
+                projected.append(route)
+        return projected
+
+    def get_codex_activation_canary_parent_snapshot(
+        self,
+        *,
+        session_id: str,
+        trace_id: str,
+    ) -> dict[str, Any] | None:
+        """Resolve the sole live restricted activation-canary parent route.
+
+        The host lifecycle hook has the parent session plus the real child UUID,
+        but Codex 0.149 reports the child's turn UUID in ``SubagentStart``.  This
+        lookup recovers no prompt text: it admits only the already persisted,
+        exact canary route and then reuses the canonical snapshot validator.
+        """
+
+        normalized_session = validate_correlation_id(session_id, field="session_id")
+        normalized_trace = validate_correlation_id(trace_id, field="trace_id")
+        from agency_runtime.core.activation_canary_contract import (
+            CODEX_ACTIVATION_CANARY_ROUTE_SOURCE,
+        )
+
+        conn = self._connect()
+        try:
+            rows = conn.execute(
+                "SELECT route.query_hash FROM routing_decisions AS route "
+                "JOIN runs AS run ON run.trace_id = route.trace_id "
+                "AND run.session_id = route.session_id "
+                "WHERE route.session_id = ? AND route.trace_id = ? "
+                "AND route.source = ? AND route.status = 'accepted' "
+                "AND run.host = 'codex' AND run.preflight_state = 'ready' "
+                "AND run.status IN ('active', 'evidence_only') "
+                "AND run.ended_at IS NULL AND run.terminal_finalization_id IS NULL "
+                "AND run.preflight_request_fingerprint = route.query_hash "
+                "ORDER BY route.created_at, route.rowid LIMIT 2",
+                (
+                    normalized_session,
+                    normalized_trace,
+                    CODEX_ACTIVATION_CANARY_ROUTE_SOURCE,
+                ),
+            ).fetchall()
+        finally:
+            conn.close()
+        if len(rows) != 1:
+            return None
+        query_hash = str(rows[0]["query_hash"] or "")
+        try:
+            snapshot = self.get_canary_activation_snapshot(
+                host="codex",
+                query_hash=query_hash,
+                session_id=normalized_session,
+            )
+        except (RuntimeError, TypeError, ValueError):
+            return None
+        if not (
+            isinstance(snapshot, dict)
+            and snapshot.get("proven") is True
+            and snapshot.get("session_id") == normalized_session
+            and snapshot.get("trace_id") == normalized_trace
+        ):
+            return None
+        return snapshot
+
+    def _verified_native_child_specialists_for_completion(
+        self,
+        conn: sqlite3.Connection,
+        *,
+        session_id: str,
+        trace_id: str,
+    ) -> dict[str, dict[str, str]]:
+        """Project receipt-backed specialist identity onto snapshot copies only."""
+
+        route_rows = conn.execute(
+            "SELECT route.id, route.trace_id, route.session_id, route.query_hash, "
+            "route.context_fingerprint, route.status, route.source, route.selected_ids, "
+            "route.semantic_ids, route.companion_ids, route.confidence, route.latency_ms, "
+            "route.provider, route.work_units, route.decision, route.created_at, "
+            "run.host AS run_host FROM routing_decisions AS route JOIN runs AS run "
+            "ON run.trace_id = route.trace_id AND run.session_id = route.session_id "
+            "WHERE route.session_id = ? AND route.trace_id = ? "
+            "AND route.source = 'native_child_inference' ORDER BY route.created_at, "
+            "route.rowid LIMIT 2",
+            (session_id, trace_id),
+        ).fetchall()
+        if len(route_rows) != 1:
+            return {}
+        route = _project_native_child_staffing_row(
+            route_rows[0],
+            decision_id=str(route_rows[0]["id"] or ""),
+        )
+        cards = route.get("cards") if isinstance(route, Mapping) else None
+        if (
+            not isinstance(route, Mapping)
+            or route.get("binding_kind") != "child_id"
+            or route.get("binding_id") != route.get("launch_id")
+            or not isinstance(cards, list)
+            or len(cards) != 1
+            or not isinstance(cards[0], Mapping)
+        ):
+            return {}
+        receipt = conn.execute(
+            "SELECT decision_id, nonce, artifact_digest, host, parent_session_id, "
+            "parent_trace_id, launch_id, binding_kind, binding_id, child_id, verified_at "
+            "FROM native_child_delivery_verifications WHERE decision_id = ?",
+            (route["decision_id"],),
+        ).fetchone()
+        if receipt is None or not (
+            receipt["host"] == route["host"]
+            and receipt["parent_session_id"] == session_id == route["parent_session_id"]
+            and receipt["parent_trace_id"] == trace_id == route["parent_trace_id"]
+            and receipt["launch_id"] == route["launch_id"]
+            and receipt["binding_kind"] == "child_id"
+            and receipt["binding_id"] == receipt["child_id"] == route["binding_id"]
+            and receipt["nonce"] == route["nonce"]
+        ):
+            return {}
+        workers = conn.execute(
+            "SELECT delegation_event_id, worker_id, native_run_id, started_at, ended_at "
+            "FROM worker_runs WHERE host = ? AND session_id = ? AND trace_id = ? "
+            "AND worker_id = ? ORDER BY started_at, rowid LIMIT 2",
+            (route["host"], session_id, trace_id, receipt["child_id"]),
+        ).fetchall()
+        if len(workers) != 1:
+            return {}
+        worker = workers[0]
+        delegation_id = str(worker["delegation_event_id"] or "")
+        if not delegation_id or not worker["started_at"] or not worker["ended_at"]:
+            return {}
+        card = cards[0]
+        return {
+            delegation_id: {
+                "retrieved_specialist_slug": str(card.get("specialist_slug") or ""),
+                "retrieved_specialist_version": str(card.get("specialist_version") or ""),
+                "retrieved_specialist_prompt_hash": str(card.get("specialist_prompt_hash") or ""),
+            }
+        }
+
     def get_native_child_delivery_verification(
         self,
         decision_id: str,

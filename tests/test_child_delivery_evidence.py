@@ -845,6 +845,65 @@ def test_codex_parser_preserves_opaque_channel_failure_without_store_authority(
     assert evidence.verification_reason == "unsupported_opaque_interagent_channel"
 
 
+def test_restricted_codex_structural_reader_requires_store_consumption(
+    tmp_path: Path,
+    private_root: None,
+) -> None:
+    message = _codex_message(_v6_envelope("Review.", host="codex", child_id=CODEX_CHILD_SESSION))
+    message["timestamp"] = OBSERVED_AT
+    artifact = _codex_artifact(
+        tmp_path,
+        [_codex_meta(spawned=True), message, _codex_message("Completed.", role="assistant")],
+    )
+    diagnostic = codex_child_delivery_evidence(artifact)
+    assert diagnostic is not None
+    assert diagnostic.verification_reason == "unsupported_opaque_interagent_channel"
+
+    class StoreLike:
+        def _record_native_child_delivery_verification(
+            self,
+            **kwargs: object,
+        ) -> dict[str, object]:
+            return {**kwargs, "verified_delivery": True}
+
+    verified = _verify_child_delivery_evidence(
+        artifact,
+        host="codex",
+        expected=_expected_from_diagnostic(diagnostic),
+        verification_consumer=subject._store_native_child_delivery_consumer(StoreLike()),
+        structural_hook_output=True,
+    )
+
+    assert verified is not None
+    assert verified.staffed is True
+    assert verified.verification_reason == "verified"
+
+
+def test_restricted_codex_structural_reader_rejects_multiple_v6_records(
+    tmp_path: Path,
+    private_root: None,
+) -> None:
+    valid = _codex_message(_v6_envelope("Review.", host="codex", child_id=CODEX_CHILD_SESSION))
+    valid["timestamp"] = OBSERVED_AT
+    artifact = _codex_artifact(
+        tmp_path,
+        [
+            _codex_meta(spawned=True),
+            _codex_message("[AGENCY INFERENCE TEAM v6]\npartial"),
+            valid,
+            _codex_message("Completed.", role="assistant"),
+        ],
+    )
+
+    assert (
+        subject._codex_child_delivery_evidence(
+            artifact,
+            structural_hook_output=True,
+        )
+        is None
+    )
+
+
 def test_v6_stale_host_event_never_verifies(
     tmp_path: Path,
     private_root: None,

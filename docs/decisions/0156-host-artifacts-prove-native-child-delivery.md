@@ -20,6 +20,7 @@ related:
   - docs/roadmap/issue-AR-260-accept-verified-launch-bindings-in-outcome-canary.md
   - docs/roadmap/issue-AR-281-route-native-children-through-host-profiles.md
   - docs/roadmap/issue-AR-309-restore-codex-0149-activation-proof.md
+  - docs/decisions/0179-admit-exact-codex-canary-delivery-at-subagent-start.md
   - docs/decisions/0157-automatically-promote-host-verified-contractors.md
   - docs/decisions/0158-collect-child-canary-proof-inside-disposable-host-profiles.md
   - agency_runtime/core/child_delivery_evidence.py
