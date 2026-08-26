@@ -1262,6 +1262,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `926aef81` | 2026-08-26 | docs(ar297): record direct workforce acceptance | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-305](../roadmap/issue-AR-305-normalize-planner-novelty-absence.md), [AR-306](../roadmap/issue-AR-306-bind-strict-critic-semantics.md) | null |
 | `5c86aae4` | 2026-08-26 | fix(linux): harden service and verification namespaces | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-301](../roadmap/issue-AR-301-private-systemd-dashboard-namespace.md), [AR-302](../roadmap/issue-AR-302-owner-private-local-verification.md) | [detail](2026-08-26-5c86aae4-harden-linux-service-and-verification-namespaces.md) |
 | `2a9dc984` | 2026-08-26 | fix(release): admit cooperative sdist modes | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-302](../roadmap/issue-AR-302-owner-private-local-verification.md) | [detail](2026-08-26-2a9dc984-admit-cooperative-sdist-modes.md) |
+| `b54a9f1e` | 2026-08-26 | docs(ar297): checkpoint exact Linux installs | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-301](../roadmap/issue-AR-301-private-systemd-dashboard-namespace.md), [AR-302](../roadmap/issue-AR-302-owner-private-local-verification.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
