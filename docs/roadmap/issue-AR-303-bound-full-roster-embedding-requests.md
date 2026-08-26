@@ -63,7 +63,9 @@ the configured embedding provider could be reached.
   `d055d5b4-4bb9-4f6a-993c-5364b27c9e2b` then applied both embedding batches
   with exact `qwen3-embedding` identity and applied the exact Mistral reranker.
   Staffing continued to the recruiter, where separate AR-304 semantic failures
-  remained.
+  remained. Prompt-corrected trace
+  `e10388cf-492c-403c-b2e4-f24cf4df78da` independently applied the same exact
+  embedding and reranker route before a schema-valid recruiter repair abstained.
 - Tracker creation is prohibited by the active task.
 
 ## Approach
@@ -100,6 +102,6 @@ path because the runtime cannot safely infer a provider-native width.
 - [x] Focused warning-strict tests and Ruff checks pass.
 - [x] One authenticated exact-config private preflight applies the two-batch
       embedding route and persists correlated evidence.
-- [ ] The named repository gates pass on the checkpointed implementation.
+- [x] The named repository gates pass on the checkpointed implementation.
 - [ ] A same-repository tracker is created and linked after explicit
       authorization.

@@ -56,7 +56,12 @@ from durable evidence.
   systems now state the schema semantics explicitly: scores are JSON numbers
   from zero through one, and evidence is unique lowercase hyphenated codes,
   never prose. Each diagnostic adds its exact closed correction to repair.
-- Focused warning-strict coverage currently passes 129 tests, including every
+- Prompt-corrected trace `e10388cf-492c-403c-b2e4-f24cf4df78da` retained the
+  closed `staff_without_safe_team` diagnosis. Its bounded repair was
+  schema-valid and applied, then abstained without selecting a specialist.
+  That remaining model-quality/routing failure is distinct from diagnostic
+  preservation and no provider prose entered the receipt.
+- Focused warning-strict coverage currently passes 139 tests, including every
   recruiter subreason and adversarial provider-authored critic text.
 - Tracker creation is prohibited by the active task.
 
@@ -91,6 +96,6 @@ become durable content.
 - [x] Focused warning-strict tests and Ruff checks pass.
 - [x] One private live failure persists a precise recruiter subreason without
       provider content.
-- [ ] The named repository gates pass on the checkpointed implementation.
+- [x] The named repository gates pass on the checkpointed implementation.
 - [ ] A same-repository tracker is created and linked after explicit
       authorization.

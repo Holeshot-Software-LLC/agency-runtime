@@ -322,6 +322,31 @@ AR-304 now states the exact score and evidence-code formats in both recruiter
 systems and appends the matching closed correction to bounded repair feedback;
 no model choice or validation rule changed.
 
+After clean checkpoint `5acfbf41` / `8eb54c96`, the single prompt-corrected
+private preflight ran at 9.2 percent telemetry and exited 2 after 232,336 ms.
+Session `ar297-direct-3efe9f90-9f57-458d-8ef0-a20d972ae03b`, trace
+`e10388cf-492c-403c-b2e4-f24cf4df78da`, and Store run
+`4bdcfa5a-1d4c-44bf-adef-cc13c4ec5499` correlate one `preflight_failed` turn.
+The exact two-batch `qwen3-embedding` route and Mistral reranker applied. The
+first Qwen recruiter response was rejected with closed diagnosis
+`staff_without_safe_team` after ranking only `uswds-developer`; its repair was
+schema-valid and applied, but abstained. Routing therefore remained
+`no_specialist_fail_open` with `no_safe_sufficient_team` and
+`recruiter_abstained`, while hiring retained `hiring_status_abstained` and
+`hiring_inference_failed`.
+
+Only `runs` and `preflight_failure_receipts` have correlated rows. The sole
+loaded identity is the resident `agency-steward`; no target specialist was
+selected, so the complete 2,659-byte Accessibility Auditor prompt at SHA-256
+`c3cfc0981cb980d700ee6b115c3669f5533108598419ca83f26bd5f30e185848`
+was not present in the 1,311-byte workforce context. The mode-0600 7,376-byte
+summary SHA-256 is
+`601dbcc9e6335962e3b5ce087110f5882fea528e34992bac7adb10e2181d7566`;
+the mode-0600 3,936,256-byte Store SHA-256 is
+`ce9aa8685fe6643688112d01202688eeffd4eb5b8cb9642a734746445b0a8627`.
+The run reused the existing service credential only in process memory, retained
+no secret, made no Jina call, and was the package's final model attempt.
+
 Every named repository gate now has a successful exact run: documentation and
 both Ruff checks exit 0; the trusted/private fast spine passes 858 with 3 skips;
 dashboard UI passes 138; routing passes every threshold; decision conformance
@@ -329,6 +354,18 @@ passes its baseline and kills 160/160 mutations with source unchanged; and diff
 checking exits 0. Initial runs from ambient umask 0002 and an interpreter below
 untrusted `/tmp` remain preserved as environment failures. AR-302 records that
 local repeatability defect rather than hiding it.
+
+The final capture also preserves fail-closed interpreter diagnostics. An
+unbound fixture-interpreter run exited 1 with 787 passed, 3 skipped, and 71
+trust failures against a group-writable uv base interpreter. Binding the private
+cached Python 3.13 reduced that to exit 1 with 856 passed, 3 skipped, and 2
+failures because that build lacks Linux `pidfd_open` and
+`pidfd_send_signal`; the same two focused containment tests then pass under
+OS-owned `/usr/bin/python3`. The complete OS-owned Linux fast spine exits 0
+with 858 passed and 3 skipped. Conversely, the first conformance attempt under
+isolated `/usr/bin/python3` exited 1 before baseline because that interpreter's
+isolated environment lacks pytest; the final private-venv evaluator exits 0,
+kills all 160 mutations, and reports source unchanged.
 
 Fresh portable wheel and sdist environments each exit 0 for package import,
 ten dashboard assets, 263-worker roster integrity, offline selection safety,
