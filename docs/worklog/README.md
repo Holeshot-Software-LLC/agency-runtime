@@ -3,7 +3,7 @@ title: Worklog
 status: active
 category: worklog
 created: 2026-07-10
-updated: 2026-08-25
+updated: 2026-08-26
 tags: []
 related: []
 supersedes: []
@@ -1244,6 +1244,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `0a5bdb06` | 2026-08-25 | docs(ar296): record installed inference topology | [AR-296](../roadmap/issue-AR-296-project-effective-inference-topology.md), [AR-290](../roadmap/issue-AR-290-end-to-end-guided-setup.md) | [detail](2026-08-25-0a5bdb06-record-installed-inference-topology.md) |
 | `3023f055` | 2026-08-25 | feat(ar297): complete unattended bootstrap and prompt visibility | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-298](../roadmap/issue-AR-298-expose-complete-workforce-prompts.md) | [detail](2026-08-25-3023f055-complete-unattended-bootstrap-and-prompt-visibility.md) |
 | `803e2c0f` | 2026-08-25 | docs(ar297): record Windows verification and Linux handoff | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-298](../roadmap/issue-AR-298-expose-complete-workforce-prompts.md) | [detail](2026-08-25-803e2c0f-record-windows-verification-and-linux-handoff.md) |
+| `da7d883b` | 2026-08-26 | docs(tracker): link AR-289 through AR-298 | [AR-289](../roadmap/issue-AR-289-native-reranker-transports.md), [AR-290](../roadmap/issue-AR-290-end-to-end-guided-setup.md), [AR-291](../roadmap/issue-AR-291-isolate-smoke-runtime-pointers.md), [AR-292](../roadmap/issue-AR-292-classify-setup-activation-pending.md), [AR-293](../roadmap/issue-AR-293-safe-inference-profile-config-operations.md), [AR-294](../roadmap/issue-AR-294-restore-expanded-configuration-regressions.md), [AR-295](../roadmap/issue-AR-295-audit-guided-dashboard-asset-budget.md), [AR-296](../roadmap/issue-AR-296-project-effective-inference-topology.md), [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-298](../roadmap/issue-AR-298-expose-complete-workforce-prompts.md) | [detail](2026-08-26-da7d883b-link-ar289-through-ar298-trackers.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
