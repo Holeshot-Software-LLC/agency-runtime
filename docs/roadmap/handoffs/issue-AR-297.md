@@ -74,11 +74,11 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   Auditor renders all 2,657 characters at SHA-256
   `c3cfc0981cb980d700ee6b115c3669f5533108598419ca83f26bd5f30e185848`.
   Runtime delivery was not asserted.
-- All named repository gates pass on the checkpointed implementation: the
-  OS-owned Linux fast spine exits 0 with 858 passed and 3 skipped; UI passes
-  138; routing passes every threshold; conformance kills 160/160 mutations with
-  source unchanged. The optional exhaustive workflow was not dispatched. All
-  five proof containers remain removed; no container was created this package.
+- Prior named gates pass through direct acceptance; a fresh trusted conformance
+  run exits 0 with a green baseline, source unchanged, and 160/160 mutations
+  killed. AR-301/302 focused Linux checks pass 241 tests under caller umask 0002;
+  unsafe worktree Python fails once at startup. The exhaustive workflow was not
+  dispatched, and all proof containers remain removed.
 - AR-303 now prevalidates one complete logical embedding set and permits at
   most two ordered scalar-safe calls. The exact 263-card/4,096-dimension test
   uses batches 243 and 21 including one query; warm uses one. Partial failure,
@@ -121,9 +121,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 
 - AR-305 and AR-306 are direct-live proven. Native delivery remains distinct;
   the four-container ordinary-turn matrix has not been rerun on this source.
-- AR-301 blocks the shipped non-root dashboard service. AR-302 blocks ordinary
-  ambient-umask/trusted-interpreter repeatability. No harness has a current
-  successful ordinary Agency turn or Codex canary attestation.
+- AR-301/302 now have focused implementations without a trust exception; their
+  immutable build, full spine, real non-root service, and auth proofs remain.
+  No harness has a current successful ordinary Agency turn or Codex attestation.
 - AR-299 through AR-306 tracker parity, hosted cross-OS artifacts, signing,
   push, PR, merge, tag, publication, and release remain unauthorized.
 
@@ -140,8 +140,8 @@ post-fix and strict diagnostics are under `ar297-postfix-8vIi2aDz`.
 
 ## next-bounded-work-package
 
-1. Run all named repository gates, resolve AR-301 and AR-302, and build and
-   independently verify a fresh exact candidate.
+1. Checkpoint AR-301/302, build and independently verify the fresh candidate,
+   and run the remaining named gates from the trusted interpreter.
 2. Recreate the four clean harness containers and repeat unattended
    ordinary-turn evidence; interview before any further model/config choice.
 3. Recheck authenticated dashboard/service evidence, update canonical records,

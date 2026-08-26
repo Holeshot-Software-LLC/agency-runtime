@@ -214,6 +214,32 @@ def test_owner_private_and_public_posix_source_modes_converge_exactly() -> None:
     assert private == public
 
 
+def test_cooperative_umask_posix_source_mode_converges_to_safe_output() -> None:
+    entries = {
+        "package/cooperative.py": b"cooperative",
+        "package-1.dist-info/RECORD": b"record",
+    }
+
+    cooperative = subject.canonicalize_wheel_bytes(
+        _source_wheel(entries, ordinary_mode=0o664),
+        timestamp=TIMESTAMP,
+    )
+    owner_private = subject.canonicalize_wheel_bytes(
+        _source_wheel(entries, ordinary_mode=0o600),
+        timestamp=TIMESTAMP,
+    )
+
+    assert cooperative == owner_private
+    with zipfile.ZipFile(io.BytesIO(cooperative)) as archive:
+        modes = {
+            item.filename: stat.S_IMODE(item.external_attr >> 16) for item in archive.infolist()
+        }
+    assert modes == {
+        "package-1.dist-info/RECORD": 0o664,
+        "package/cooperative.py": 0o644,
+    }
+
+
 def test_windows_private_source_mode_remains_rejected() -> None:
     source = _source_wheel(
         {

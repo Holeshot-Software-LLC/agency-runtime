@@ -22,6 +22,8 @@ related:
   - docs/roadmap/issue-AR-306-bind-strict-critic-semantics.md
   - docs/decisions/0174-admit-local-ollama-canary-child-judges.md
   - docs/decisions/0175-batch-complete-embedding-input-sets.md
+  - docs/decisions/0176-use-owner-runtime-temp-for-nonroot-user-services.md
+  - docs/decisions/0177-make-local-verification-private-by-construction.md
   - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
   - agency_runtime/cli/install_commands.py
   - agency_runtime/core/codex_managed_policy.py

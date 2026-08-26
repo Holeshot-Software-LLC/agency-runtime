@@ -69,11 +69,18 @@ SOURCE_WHEEL_MODE_ALLOWLISTS = {
         "record": frozenset({stat.S_IFREG | 0o664}),
     },
     3: {
-        # A private POSIX producer may run with umask 077. ``wheel`` 0.47.0
-        # preserves 0600 on generated/copy-created members while retaining
-        # 0644 on mode-preserving members. Both inputs are non-executable
-        # regular files and canonical output is still exactly 0644.
-        "ordinary": frozenset({stat.S_IFREG | 0o600, stat.S_IFREG | 0o644}),
+        # POSIX producers project their umask into generated/copy-created
+        # members: 0600 at umask 077, 0644 at umask 022, and 0664 at the
+        # cooperative umask 002. The raw wheel is still confined below the
+        # builder's mode-0700 staging directory. All three inputs are
+        # non-executable regular files and canonical output is exactly 0644.
+        "ordinary": frozenset(
+            {
+                stat.S_IFREG | 0o600,
+                stat.S_IFREG | 0o644,
+                stat.S_IFREG | 0o664,
+            }
+        ),
         "record": frozenset({stat.S_IFREG | 0o664}),
     },
 }

@@ -8,6 +8,7 @@ tags: [testing, packaging, security, linux, developer-experience]
 related:
   - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
   - docs/roadmap/handoffs/issue-AR-297.md
+  - docs/decisions/0177-make-local-verification-private-by-construction.md
   - docs/RELEASE_CHECKLIST.md
   - scripts/build_distributions.py
   - tests/conftest.py
@@ -50,11 +51,14 @@ establishes an owner-private umask and trusted temporary root.
 
 ## Approach
 
-Make repository-owned creation boundaries establish and verify the required
-permissions independently of ambient cooperative umasks. Keep executable and
-configuration namespace checks strict. Give local commands an early bounded
-diagnostic when the selected interpreter itself is below an untrusted path.
-Retain CI's explicit private-root setup as defense in depth.
+ADR-0177 makes repository-owned creation boundaries establish and verify the
+required permissions independently of ambient cooperative umasks. It admits
+only the observed 0664 non-executable POSIX source-wheel projection inside the
+mode-0700 staging boundary and still emits 0644 canonical output. Pytest sets
+and restores a private POSIX umask, explicitly creates the shared offline config
+at 0700/0600, and gives one early bounded diagnostic when the selected fixture
+interpreter is below an untrusted path. Executable and configuration namespace
+checks remain strict.
 
 ## Dependencies
 
@@ -68,9 +72,9 @@ Retain CI's explicit private-root setup as defense in depth.
       ambient umask 0002 without an operator preamble.
 - [ ] The named fast spine creates a trusted offline configuration under umask
       0002 when invoked with a trusted interpreter.
-- [ ] An interpreter below an untrusted namespace fails early with one bounded
+- [x] An interpreter below an untrusted namespace fails early with one bounded
       actionable diagnostic rather than broad secondary failures.
-- [ ] Focused packaging, configuration-trust, and suite-isolation regressions
+- [x] Focused packaging, configuration-trust, and suite-isolation regressions
       pass with warnings treated as errors.
 - [ ] A same-repository tracker issue is created and linked after explicit
       authorization.
@@ -85,3 +89,10 @@ not implement AR-302, weaken a trust boundary, dispatch an exhaustive workflow,
 or create its unauthorized tracker. Its first final policy-availability check
 also exited 1 under a bare Python lacking the package; the exact-candidate host
 venv rerun exited 0.
+
+The implementation's focused Linux set passes 241 tests with two Windows-only
+attribute tests deselected under a caller umask of 0002 and `-W error`. The
+unsafe worktree venv exits 4 in 38 ms with exactly one actionable
+`AGENCY_CI_PYTHON` diagnostic. The remaining acceptance requires an immutable
+ambient-0002 build plus independent verification and the complete named fast
+spine from a trusted interpreter.

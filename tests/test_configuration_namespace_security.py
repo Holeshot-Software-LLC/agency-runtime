@@ -57,6 +57,28 @@ def test_posix_config_namespace_accepts_0755_but_rejects_writable_parent(
     )
 
 
+def test_posix_config_namespace_rejects_genuine_overflow_uid_parent(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    target = tmp_path / "overflow-owned" / "agency.yaml"
+    chain = persistence._directory_chain(target.parent)
+    metadata = {candidate: _directory_metadata(mode=0o755, uid=0) for candidate in chain}
+    metadata[target.parent] = _directory_metadata(mode=0o700, uid=65534)
+    monkeypatch.setattr(persistence.os, "lstat", metadata.__getitem__)
+    monkeypatch.setattr(
+        persistence,
+        "_posix_directory_has_default_acl",
+        lambda _path: False,
+    )
+
+    assert not persistence.config_namespace_is_trusted(
+        target,
+        is_windows=False,
+        effective_uid=1001,
+    )
+
+
 def test_posix_config_namespace_rejects_replaceable_ancestor_and_default_acl(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
