@@ -10,6 +10,7 @@ related:
   - CHANGELOG.md
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-296-project-effective-inference-topology.md
+  - docs/roadmap/handoffs/issue-AR-297.md
   - agency_runtime/core/store/workforce.py
   - agency_runtime/cli/workforce_commands.py
   - agency_runtime/server/dashboard.py
@@ -100,3 +101,13 @@ renders the full prompt while keeping the stored-definition/delivery-proof
 distinction visible. Together with AR-297's managed-policy projection, the exact
 dashboard is 386,366 bytes under an audited 378 KiB ceiling with 706 bytes of
 headroom.
+
+The installed CLI now proves the packaged prompt surface against the live
+Store: an active worker resolved with schema `agency.workforce.prompt.v1`, its
+immutable version and standing, 160 bounded body characters out of 2,791,
+truncation metadata, a content hash, stored-definition authority, and
+`runtime_delivery_proof=not_asserted`, exiting 0. The installed dashboard
+renderer and Store reader hash-match source exactly. The authenticated browser
+token expired before the new owner-detail view could be inspected, so the
+remaining visual acceptance item stays open rather than being inferred from
+source tests or file identity.

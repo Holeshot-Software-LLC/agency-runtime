@@ -11,6 +11,7 @@ related:
   - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
   - docs/roadmap/issue-AR-290-end-to-end-guided-setup.md
   - docs/roadmap/handoffs/issue-AR-290.md
+  - docs/roadmap/handoffs/issue-AR-297.md
   - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
   - agency_runtime/cli/install_commands.py
   - agency_runtime/core/codex_managed_policy.py
@@ -127,6 +128,23 @@ no trust bypass, and fails before a canary when managed policy is refused.
 The exact guided dashboard is 386,366 bytes. The audited 378 KiB ceiling leaves
 706 bytes (0.18 percent) of headroom after the managed-policy and complete-prompt
 projections; the release packaging gate passes at that bound.
+
+On the installed Windows runtime, strict assurance and additive dense recall
+validate structurally. Codex, Claude Code, ZCode, and the dashboard projection
+are registered, enabled, and current with no runtime drift; OpenClaw and Hermes
+are absent and were skipped. Deterministic installed smoke passes 8/8. The
+install remains incomplete only because this attended workstation has not
+granted Codex hook trust, while doctor additionally labels all three installed
+harnesses cold. That is truthful attended-host degradation, not evidence for
+or against the dedicated-container managed-policy path.
+
+The exact installed dashboard, managed-policy module, and workforce Store
+reader hash-match source. Repository verification passes 840 named fast-spine
+tests with 20 skips, 138 dashboard UI tests, Ruff and documentation checks, all
+routing thresholds, and the curated decision-conformance evaluator with a
+passing baseline, every mutation killed, and source unchanged. The evaluator
+must run through the development interpreter; the minimal consumer uv-tool
+environment does not include the repository test dependency.
 
 The required Linux container and post-install Conveyor-equivalent evidence are
 intentionally still open. Windows source tests cannot establish Linux `/etc`

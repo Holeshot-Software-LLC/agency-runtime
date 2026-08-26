@@ -28,6 +28,7 @@ related:
   - docs/decisions/0118-require-inference-owned-staffing.md
   - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
   - docs/decisions/0157-automatically-promote-host-verified-contractors.md
+  - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
   - docs/roadmap/AR-119-founding-vision.md
   - docs/roadmap/AR-119-rule-host-evidence-matrix.md
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
@@ -42,6 +43,8 @@ related:
   - docs/roadmap/issue-AR-186-bound-delivery-to-live-demo-checkpoints.md
   - docs/roadmap/issue-AR-188-add-immutable-update-discovery.md
   - docs/roadmap/issue-AR-192-fail-fast-on-codex-hook-trust-drift.md
+  - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
+  - docs/roadmap/issue-AR-298-expose-complete-workforce-prompts.md
 supersedes: []
 superseded_by: null
 ---
@@ -110,6 +113,13 @@ or adding an index-install claim.
       and must prove routing, specialist evidence, finalization, and the
       response header. Isolated canary bypasses remain package-only evidence
       and never establish normal-profile readiness.
+    - For a dedicated unattended production container, require an exact
+      `--config` bind and explicit host scope, owned system managed-hook
+      policy with managed-only loading and all eight events, refusal of foreign
+      policy, a normal-invocation no-bypass canary, and a persisted current
+      attestation. Then prove a later ordinary Conveyor-equivalent invocation
+      loads Agency without a trust prompt. Never apply this system-policy path
+      to an attended or shared workstation.
 - [ ] Windows npm command shims and POSIX executable launch are both verified.
 - [ ] Ubuntu/WSL live evidence comes from a Linux environment with the project
       and test tooling installed; Windows-only evidence is not relabeled Linux.
@@ -135,6 +145,15 @@ or adding an index-install claim.
 - [ ] Bare install auto-discovers every installed supported harness, selects the
       dashboard unless `--no-dashboard` is present, and reports each component
       independently. Harness trust remains native to the harness.
+- [ ] Exact-config production-container install reaches a terminal result
+      without human input for each claimed container host; the supplied config,
+      native payload, Store binding, dashboard binding when selected, and
+      activation evidence agree.
+- [ ] Owner CLI and authenticated dashboard views expose complete current and
+      historical workforce prompt definitions with immutable lineage, standing,
+      version, content hash, source, relation, and truncation provenance. They
+      state that stored definition is not host-delivery proof and never add
+      prompt bodies to ordinary status or list output.
 - [ ] Every other persistent CLI mutation remains unavailable unless it gains a
       separately valid authority and committing boundary.
 - [ ] Deferred stdin/prompt input is ingested before verification. Secret
@@ -183,7 +202,7 @@ python -m pytest tests -q -W error -p no:cacheprovider -m performance
 node --test --experimental-test-coverage --test-coverage-lines=95 --test-coverage-branches=90 --test-coverage-functions=96 tests/dashboard_ui.test.mjs
 agency eval host-parity --json
 agency eval routing --json --no-details
-agency eval decision-conformance --repository . --json
+python -m agency_runtime.cli eval decision-conformance --repository . --json
 agency eval full-roster --json --no-details
 ```
 
