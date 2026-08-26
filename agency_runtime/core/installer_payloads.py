@@ -42,6 +42,7 @@ from agency_runtime.core.process_argv import (
     absolute_executable_path,
     agency_bootstrap_path,
 )
+from agency_runtime.core.workforce.hybrid_recall import MAX_HYBRID_EMBEDDING_CALLS
 from agency_runtime.core.workforce.planning_contracts import MAX_WORK_UNITS
 
 _BOUND_LAUNCHER_ARTIFACTS: ContextVar[tuple[str, str] | None] = ContextVar(
@@ -324,10 +325,9 @@ def _host_inference_budget_seconds(cfg: AgencyConfig, harness: str) -> float:
             embedding = None
             reranker = None
         if embedding is not None and reranker is not None:
-            recall_budget = max(0.0, float(embedding.provider.timeout)) + max(
-                0.0,
-                float(reranker.provider.timeout),
-            )
+            recall_budget = MAX_HYBRID_EMBEDDING_CALLS * max(
+                0.0, float(embedding.provider.timeout)
+            ) + max(0.0, float(reranker.provider.timeout))
 
     # Keep the legacy/provider-chain calculation as a floor for stages that
     # have no explicit profile. Recall is a separate path and therefore sits

@@ -232,6 +232,18 @@ def _bounded_inputs(texts: Sequence[str]) -> tuple[str, ...]:
     return tuple(result)
 
 
+def bound_embedding_inputs(texts: Sequence[str]) -> tuple[str, ...]:
+    """Normalize and validate one complete logical embedding input set.
+
+    Higher-level callers may divide this already-bounded set into multiple
+    scalar-safe provider requests. Validating the logical set first prevents a
+    later chunk from discovering an input-count or byte-bound failure after an
+    earlier provider call has already occurred.
+    """
+
+    return _bounded_inputs(texts)
+
+
 def _join_api_path(base_url: str, path: str) -> str:
     base = base_url.rstrip("/")
     normalized_path = "/" + path.lstrip("/")
@@ -375,7 +387,7 @@ def invoke_embedding_provider(
     caller deliberately wraps and injects it as an :class:`EmbeddingInvoker`.
     """
 
-    bounded = _bounded_inputs(texts)
+    bounded = bound_embedding_inputs(texts)
     if not bounded:
         raise ValueError("embedding provider input batch must not be empty")
     request, timeout, ollama_mode, dimensions = _provider_request(provider, bounded)
@@ -430,7 +442,7 @@ def embed_texts(
     its unchanged typed baseline.
     """
 
-    bounded = _bounded_inputs(texts)
+    bounded = bound_embedding_inputs(texts)
     configured_dimensions = _configured_dimensions(
         expected_dimensions,
         input_count=len(bounded),
@@ -545,6 +557,7 @@ __all__ = [
     "MAX_EMBEDDING_BATCH_BYTES",
     "MAX_EMBEDDING_DIMENSIONS",
     "MAX_EMBEDDING_INPUTS",
+    "MAX_EMBEDDING_LATENCY_MS",
     "MAX_EMBEDDING_RESPONSE_BYTES",
     "MAX_EMBEDDING_TEXT_BYTES",
     "MAX_EMBEDDING_VECTOR_VALUES",
@@ -552,6 +565,7 @@ __all__ = [
     "EmbeddingInvoker",
     "EmbeddingProviderResponse",
     "EmbeddingReceipt",
+    "bound_embedding_inputs",
     "embed_texts",
     "invoke_embedding_provider",
     "validate_and_normalize_vectors",

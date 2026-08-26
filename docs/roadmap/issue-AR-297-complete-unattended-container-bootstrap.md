@@ -16,7 +16,10 @@ related:
   - docs/roadmap/issue-AR-300-bind-explicit-install-config-to-managed-canary.md
   - docs/roadmap/issue-AR-301-private-systemd-dashboard-namespace.md
   - docs/roadmap/issue-AR-302-owner-private-local-verification.md
+  - docs/roadmap/issue-AR-303-bound-full-roster-embedding-requests.md
+  - docs/roadmap/issue-AR-304-preserve-recruiter-critic-validation-diagnostics.md
   - docs/decisions/0174-admit-local-ollama-canary-child-judges.md
+  - docs/decisions/0175-batch-complete-embedding-input-sets.md
   - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
   - agency_runtime/cli/install_commands.py
   - agency_runtime/core/codex_managed_policy.py
@@ -32,7 +35,7 @@ epic: host-integrations
 issue_id: AR-297
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
-depends_on: [AR-300, AR-301, AR-302]
+depends_on: [AR-300, AR-301, AR-302, AR-303, AR-304]
 blocks: []
 ---
 
@@ -277,6 +280,24 @@ the 16,912-byte native system prompt SHA-256 is
 `e99111a2373e66b18fa7e3ecd1b4353105ed1cdd30bdd909476427ae8623855e`.
 Agency correctly withheld that draft because turn-scoped finalization did not
 accept it. No second request dump was created and no further retry was run.
+
+The next bounded recovery implements AR-303 and AR-304 before repeating any
+container matrix. Full-roster recall now prevalidates the logical input set and
+may use at most two ordered scalar-safe embedding calls; partial failure or
+model/dimension drift is atomic and uncached. Recruiter and critic contract
+failures now retain only closed runtime-owned subreasons. The focused
+warning-strict set passes 129 tests. Private trace
+`ae75a071-1bc2-444c-821a-f616dfd1402a` crossed the former 4,096-dimensional
+scalar rejection and then failed at LiteLLM authentication because the direct
+process lacked the config-declared `LITELLM_API_KEY`. Both recruiter attempts
+persisted `recruiter_candidate_score_invalid` without provider prose. Its
+mode-0600 summary and Store SHA-256 values are
+`f2c434d9486528b5808b4d263b3609c2ef446c0325527fbe628d84a20202542d`
+and `8910f9167ac5ca731ff44d5b0498dad9977562fa9712ccc5cfc1dce6003dced2`.
+An ephemeral one-input check using the existing protected LiteLLM service
+credential then applied in 3,818 ms at exactly 4,096 dimensions. The corrected
+full preflight awaits the mandatory clean telemetry checkpoint; no secret was
+persisted and no container was created.
 
 Every named repository gate now has a successful exact run: documentation and
 both Ruff checks exit 0; the trusted/private fast spine passes 858 with 3 skips;

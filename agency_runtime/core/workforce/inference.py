@@ -48,6 +48,7 @@ from agency_runtime.core.workforce.embedding_provider import (
 )
 from agency_runtime.core.workforce.hybrid_recall import (
     HYBRID_RECALL_PROJECTION_VERSION,
+    MAX_HYBRID_EMBEDDING_CALLS,
     HybridRecallResult,
     discover_hybrid_recall,
 )
@@ -124,6 +125,30 @@ _NOMINATION_FAILURE_CODES = frozenset(
         "staff_without_safe_team",
     }
 )
+RECRUITER_VALIDATION_REASON_CODES = frozenset(
+    {
+        "recruiter_candidate_classification_conflict",
+        "recruiter_candidate_classification_invalid",
+        "recruiter_candidate_forbidden_evidence_missing",
+        "recruiter_candidate_id_unknown",
+        "recruiter_candidate_negative_evidence_invalid",
+        "recruiter_candidate_positive_evidence_invalid",
+        "recruiter_candidate_positive_evidence_missing",
+        "recruiter_candidate_row_shape_invalid",
+        "recruiter_candidate_score_invalid",
+    }
+)
+CRITIC_VALIDATION_REASON_CODES = frozenset(
+    {
+        "critic_approval_invalid",
+        "critic_approval_reasons_present",
+        "critic_reason_code_invalid",
+        "critic_reason_codes_invalid",
+        "critic_rejection_reason_missing",
+        "critic_response_shape_invalid",
+    }
+)
+_CRITIC_REASON_CODE = re.compile(r"^[a-z0-9][a-z0-9-]{0,127}$")
 _NOMINATION_REPAIR_REQUIREMENTS = {
     "candidate_outside_detail_cards": (
         "Use only candidate IDs present in detail_cards. typed_recall candidate rows are bounded "
@@ -604,6 +629,9 @@ class _NominationFailure:
     # Prompt-only repair evidence. It is never serialized into a receipt; only
     # the three counts above cross the durable content-free boundary.
     repair_contract: _SafeTeamRepairContract | None = field(default=None, compare=False, repr=False)
+    # Closed runtime-owned diagnosis for broad invalid_candidate failures.
+    # Provider-authored values never enter this field or any durable receipt.
+    diagnostic_code: str = ""
 
 
 class _NominationValidationError(ValueError):
@@ -644,6 +672,13 @@ class _NominationValidationError(ValueError):
                 and re.fullmatch(r"[a-z][a-z_]{0,63}", failure.ineligibility) is None
             )
             or invalid_counts(failure)
+            or (
+                failure.diagnostic_code
+                and (
+                    failure.code != "invalid_candidate"
+                    or failure.diagnostic_code not in RECRUITER_VALIDATION_REASON_CODES
+                )
+            )
             for failure in unique
         ):
             raise ValueError("nomination validation failure is not allowlisted")
@@ -681,6 +716,7 @@ def _nomination_repair_feedback_row(failure: _NominationFailure) -> dict[str, An
     row: dict[str, Any] = {
         "unit_id": failure.unit_id,
         "code": failure.code,
+        **({"diagnostic_code": failure.diagnostic_code} if failure.diagnostic_code else {}),
         **({"uncoverable_requirement_axis": failure.axis} if failure.axis else {}),
         "required_correction": correction,
     }
@@ -700,6 +736,16 @@ class _PlanPolicyValidationError(ValueError):
             raise ValueError("plan policy validation failure is not allowlisted")
         self.violations = unique
         super().__init__("workforce plan is incomplete: " + ",".join(unique))
+
+
+class _CriticValidationError(ValueError):
+    """One closed strict-critic contract failure without response content."""
+
+    def __init__(self, code: str, detail: str) -> None:
+        if code not in CRITIC_VALIDATION_REASON_CODES:
+            raise ValueError("critic validation failure is not allowlisted")
+        self.code = code
+        super().__init__(detail)
 
 
 @dataclass(frozen=True, slots=True)
@@ -1081,7 +1127,12 @@ def _validation_detail(error: BaseException) -> str:
         return "structured response failed deterministic semantic validation"
     if isinstance(
         error,
-        (_NominationValidationError, _PlanPolicyValidationError, _StaffingVerificationError),
+        (
+            _CriticValidationError,
+            _NominationValidationError,
+            _PlanPolicyValidationError,
+            _StaffingVerificationError,
+        ),
     ):
         return detail
     return detail[:256]
@@ -1092,6 +1143,14 @@ def _validation_reason_codes(stage: str, error: BaseException) -> tuple[str, ...
 
     if isinstance(error, _PlanPolicyValidationError):
         return error.violations
+    if stage == "recruiter" and isinstance(error, _NominationValidationError):
+        return tuple(
+            dict.fromkeys(
+                failure.diagnostic_code for failure in error.failures if failure.diagnostic_code
+            )
+        )
+    if stage == "critic" and isinstance(error, _CriticValidationError):
+        return (error.code,)
     if stage == "planner":
         return plan_semantic_validation_reason_codes(error)
     return ()
@@ -1812,10 +1871,11 @@ def _run_hybrid_recall(
     if embedding_route is None or reranker_route is None:
         return None, {}, []
 
-    # Recall is optional evidence. Its fixed two-call budget is deliberately
-    # separate so shadow or additive retrieval cannot consume the planner,
-    # recruiter, repair, or strict-critic budget that owns the staffing result.
-    recall_budget = _CallBudget(2)
+    # Recall is optional evidence. A cold catalog may need two scalar-safe
+    # embedding batches before its one reranker call; a warm catalog still uses
+    # one embedding call plus one reranker. This independent budget cannot
+    # consume planner, recruiter, repair, or strict-critic capacity.
+    recall_budget = _CallBudget(MAX_HYBRID_EMBEDDING_CALLS + 1)
     provider = embedding_route.provider
     invoker_identity = "agency-embedding-provider-v1"
     if embedding_invoker is None:
@@ -2136,6 +2196,51 @@ def _valid_nomination_evidence(value: object) -> bool:
             for item in value
         )
     )
+
+
+def _nomination_candidate_diagnostic(
+    item: object,
+    *,
+    known: set[str],
+    classifications: Mapping[str, str],
+) -> str:
+    """Return one closed candidate-row failure identity, or an empty string."""
+
+    if not isinstance(item, Mapping) or set(item) != {
+        "agent_id",
+        "score",
+        "classification",
+        "positive_evidence",
+        "negative_evidence",
+    }:
+        return "recruiter_candidate_row_shape_invalid"
+    agent_id = str(item["agent_id"] or "").strip().casefold()
+    score = item["score"]
+    classification = str(item["classification"] or "").strip().casefold()
+    positive = item["positive_evidence"]
+    negative = item["negative_evidence"]
+    if agent_id not in known:
+        return "recruiter_candidate_id_unknown"
+    if (
+        isinstance(score, bool)
+        or not isinstance(score, (int, float))
+        or not math.isfinite(float(score))
+        or not 0.0 <= float(score) <= 1.0
+    ):
+        return "recruiter_candidate_score_invalid"
+    if classification not in {"required", "acceptable", "forbidden"}:
+        return "recruiter_candidate_classification_invalid"
+    if not _valid_nomination_evidence(positive):
+        return "recruiter_candidate_positive_evidence_invalid"
+    if not _valid_nomination_evidence(negative):
+        return "recruiter_candidate_negative_evidence_invalid"
+    if classification == "forbidden" and not negative:
+        return "recruiter_candidate_forbidden_evidence_missing"
+    if classification != "forbidden" and not positive:
+        return "recruiter_candidate_positive_evidence_missing"
+    if agent_id in classifications and classifications[agent_id] != classification:
+        return "recruiter_candidate_classification_conflict"
+    return ""
 
 
 def _semantic_staffing_classes(
@@ -2480,41 +2585,28 @@ def _collect_nomination_semantics(
             continue
         scores: dict[str, float] = {}
         classifications: dict[str, str] = {}
-        invalid_candidate = False
+        invalid_candidate: _NominationFailure | None = None
         for item in raw_ranks:
-            if not isinstance(item, Mapping) or set(item) != {
-                "agent_id",
-                "score",
-                "classification",
-                "positive_evidence",
-                "negative_evidence",
-            }:
-                invalid_candidate = True
+            diagnostic_code = _nomination_candidate_diagnostic(
+                item,
+                known=known,
+                classifications=classifications,
+            )
+            if diagnostic_code:
+                invalid_candidate = _NominationFailure(
+                    expected_unit.unit_id,
+                    "invalid_candidate",
+                    diagnostic_code=diagnostic_code,
+                )
                 break
+            assert isinstance(item, Mapping)
             agent_id = str(item["agent_id"] or "").strip().casefold()
             score = item["score"]
             classification = str(item["classification"] or "").strip().casefold()
-            positive = item["positive_evidence"]
-            negative = item["negative_evidence"]
-            if (
-                agent_id not in known
-                or isinstance(score, bool)
-                or not isinstance(score, (int, float))
-                or not math.isfinite(float(score))
-                or not 0.0 <= float(score) <= 1.0
-                or classification not in {"required", "acceptable", "forbidden"}
-                or not _valid_nomination_evidence(positive)
-                or not _valid_nomination_evidence(negative)
-                or (classification == "forbidden" and not negative)
-                or (classification != "forbidden" and not positive)
-                or (agent_id in classifications and classifications[agent_id] != classification)
-            ):
-                invalid_candidate = True
-                break
             scores[agent_id] = max(scores.get(agent_id, 0.0), float(score))
             classifications[agent_id] = classification
         if invalid_candidate:
-            failures.append(_NominationFailure(expected_unit.unit_id, "invalid_candidate"))
+            failures.append(invalid_candidate)
             continue
         if allowed_candidate_ids is not None and set(scores) - allowed_candidate_ids:
             failures.append(
@@ -3081,16 +3173,42 @@ def _strict_critic(
 
     def parse_critic(value: Mapping[str, Any]) -> tuple[bool, tuple[str, ...]]:
         if not isinstance(value, Mapping) or set(value) != {"approved", "reason_codes"}:
-            raise ValueError("critic response is invalid")
+            raise _CriticValidationError(
+                "critic_response_shape_invalid",
+                "strict critic response shape is invalid",
+            )
         approved = value["approved"]
         reasons = value["reason_codes"]
-        if not isinstance(approved, bool) or not isinstance(reasons, list):
-            raise ValueError("critic response is invalid")
-        normalized = tuple(str(item).strip().casefold() for item in reasons)
-        if any(not item or len(item) > 128 for item in normalized) or len(set(normalized)) != len(
-            normalized
-        ):
-            raise ValueError("critic reason code is invalid")
+        if not isinstance(approved, bool):
+            raise _CriticValidationError(
+                "critic_approval_invalid",
+                "strict critic approval flag is invalid",
+            )
+        if not isinstance(reasons, list) or len(reasons) > 16:
+            raise _CriticValidationError(
+                "critic_reason_codes_invalid",
+                "strict critic reason-code collection is invalid",
+            )
+        normalized = tuple(
+            item.strip().casefold() if isinstance(item, str) else "" for item in reasons
+        )
+        if any(_CRITIC_REASON_CODE.fullmatch(item) is None for item in normalized) or len(
+            set(normalized)
+        ) != len(normalized):
+            raise _CriticValidationError(
+                "critic_reason_code_invalid",
+                "strict critic reason code is invalid",
+            )
+        if approved and normalized:
+            raise _CriticValidationError(
+                "critic_approval_reasons_present",
+                "strict critic approval must not include rejection reasons",
+            )
+        if not approved and not normalized:
+            raise _CriticValidationError(
+                "critic_rejection_reason_missing",
+                "strict critic rejection requires one reason code",
+            )
         return approved, normalized
 
     critic, attempts, failure = _invoke_stage(

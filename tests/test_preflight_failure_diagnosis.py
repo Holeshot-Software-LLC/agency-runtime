@@ -92,6 +92,42 @@ def test_rejected_planner_attempt_preserves_allowlisted_validation_codes() -> No
 
 
 @pytest.mark.parametrize(
+    ("stage", "code"),
+    [
+        ("recruiter", "recruiter_candidate_score_invalid"),
+        ("critic", "critic_rejection_reason_missing"),
+    ],
+)
+def test_recruiter_and_critic_attempts_preserve_closed_diagnostic_codes(
+    stage: str,
+    code: str,
+) -> None:
+    projected = project_preflight_provider_attempts(
+        [_attempt(stage=stage, validation_reason_codes=[code])]
+    )
+
+    assert projected is not None
+    assert projected[0]["validation_reason_codes"] == [code]
+
+
+@pytest.mark.parametrize("stage", ["recruiter", "critic"])
+def test_recruiter_and_critic_receipts_drop_provider_authored_diagnostic_codes(
+    stage: str,
+) -> None:
+    projected = project_preflight_provider_attempts(
+        [
+            _attempt(
+                stage=stage,
+                validation_reason_codes=["provider_authored_private_reason"],
+            )
+        ]
+    )
+
+    assert projected is not None
+    assert "validation_reason_codes" not in projected[0]
+
+
+@pytest.mark.parametrize(
     "codes",
     [
         ["plan_provider_authored_private_reason"],

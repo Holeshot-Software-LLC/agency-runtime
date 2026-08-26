@@ -9,12 +9,14 @@ related:
   - docs/roadmap/issue-AR-266-dense-hybrid-workforce-recall.md
   - docs/roadmap/issue-AR-286-configure-bounded-embedding-dimensions.md
   - docs/roadmap/issue-AR-289-native-reranker-transports.md
+  - docs/roadmap/issue-AR-303-bound-full-roster-embedding-requests.md
   - docs/roadmap/handoffs/issue-AR-266.md
   - docs/decisions/0083-use-capability-indexed-recall-and-bounded-inference.md
   - docs/decisions/0118-require-inference-owned-staffing.md
   - docs/decisions/0121-gate-deterministic-recall-without-selection-authority.md
   - docs/decisions/0163-resolve-contextual-turns-from-transcript-free-subjects.md
   - docs/decisions/0171-separate-native-and-structured-reranker-transports.md
+  - docs/decisions/0175-batch-complete-embedding-input-sets.md
   - SECURITY.md
   - docs/THREAT_MODEL.md
   - docs/worklog/README.md
@@ -66,6 +68,13 @@ ADR-0171 subsequently refines the reranker transport clause: the route may
 continue to declare structured `text` or explicitly declare a stage-scoped
 native `rerank` capability. All additive-authority and fallback constraints in
 this decision remain unchanged.
+
+ADR-0175 subsequently refines the fixed recall-call budget for a complete
+logical input set that exceeds the existing aggregate scalar bound. A cold
+catalog may use at most two ordered scalar-safe embedding calls before its one
+reranker call; a warm catalog retains one embedding plus one reranker. This is
+input batching, not vector slicing: the scalar limit, exact dimension checks,
+typed-only fallback, and prohibition on vector reshaping remain unchanged.
 
 Embedding profiles may request a provider-native output projection through a
 bounded `dimensions` value. Zero omits the request field. A nonzero value is

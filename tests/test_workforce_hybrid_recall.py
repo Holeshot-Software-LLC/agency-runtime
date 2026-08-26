@@ -4,9 +4,11 @@ from __future__ import annotations
 
 import math
 from collections.abc import Sequence
+from dataclasses import replace
 
 import pytest
 
+from agency_runtime.core.workforce import hybrid_recall as hybrid_recall_module
 from agency_runtime.core.workforce.contract import (
     WORKFORCE_CONTRACT_SCHEMA_VERSION,
     AuditContract,
@@ -479,3 +481,167 @@ def test_missing_actual_model_identity_never_populates_or_reuses_catalog_cache()
     assert result.receipt.reason_code == "embedding_model_identity_missing"
     assert result.units[0].additions == ()
     assert hybrid_recall_cache_size() == 0
+
+
+def test_ar303_full_roster_4096_embeddings_use_two_ordered_bounded_batches() -> None:
+    plan = _plan()
+    base = _contract("worker-000", outcome="Bounded workforce recall")
+    contracts = tuple(
+        replace(
+            base,
+            worker_id=f"worker:worker-{index:03d}",
+            agent_id=f"worker-{index:03d}",
+            display_name=f"Worker {index:03d}",
+            version_hash="sha256:" + f"{index + 1:064x}",
+        )
+        for index in range(263)
+    )
+    vector = (1.0, *(0.0 for _ in range(4_095)))
+    calls: list[tuple[str, ...]] = []
+
+    def invoke(texts: tuple[str, ...]) -> EmbeddingProviderResponse:
+        calls.append(texts)
+        return EmbeddingProviderResponse(
+            vectors=(vector,) * len(texts),
+            provider_name="fixture-provider",
+            requested_model="fixture-model",
+            actual_model="fixture-model-v1",
+            latency_ms=7,
+        )
+
+    cold = discover_hybrid_recall(
+        plan,
+        contracts,
+        typed_candidate_ids={"unit-primary": ("worker-000",)},
+        catalog_identity="fixture-catalog-4096",
+        embedding_invoker=invoke,
+        provider_name="fixture-provider",
+        requested_model="fixture-model",
+        embedding_dimensions=4_096,
+    )
+    warm = discover_hybrid_recall(
+        plan,
+        contracts,
+        typed_candidate_ids={"unit-primary": ("worker-000",)},
+        catalog_identity="fixture-catalog-4096",
+        embedding_invoker=invoke,
+        provider_name="fixture-provider",
+        requested_model="fixture-model",
+        embedding_dimensions=4_096,
+    )
+
+    assert [len(batch) for batch in calls] == [244, 20, 1]
+    assert cold.receipt.status == "applied"
+    assert cold.receipt.provider_call_count == 2
+    assert cold.receipt.embedding.input_count == 264
+    assert cold.receipt.embedding.dimensions == 4_096
+    assert cold.receipt.embedding.latency_ms == 14
+    assert cold.receipt.catalog_cache_hit is False
+    assert warm.receipt.status == "applied"
+    assert warm.receipt.provider_call_count == 1
+    assert warm.receipt.catalog_cache_hit is True
+    assert hybrid_recall_cache_size() == 1
+
+
+def test_ar303_second_embedding_batch_failure_is_atomic_and_uncached(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(hybrid_recall_module, "MAX_EMBEDDING_VECTOR_VALUES", 6)
+    plan = _plan()
+    contracts = tuple(
+        _contract(f"worker-{index}", outcome="Bounded workforce recall") for index in range(3)
+    )
+    calls: list[tuple[str, ...]] = []
+
+    def invoke(texts: tuple[str, ...]) -> EmbeddingProviderResponse:
+        calls.append(texts)
+        if len(calls) == 2:
+            raise RuntimeError("PRIVATE SECOND BATCH FAILURE")
+        return EmbeddingProviderResponse(
+            vectors=((1.0, 0.0, 0.0),) * len(texts),
+            provider_name="fixture-provider",
+            requested_model="fixture-model",
+            actual_model="fixture-model-v1",
+        )
+
+    result = discover_hybrid_recall(
+        plan,
+        contracts,
+        typed_candidate_ids={"unit-primary": ("worker-0",)},
+        catalog_identity="fixture-catalog-partial-failure",
+        embedding_invoker=invoke,
+        provider_name="fixture-provider",
+        requested_model="fixture-model",
+        embedding_dimensions=3,
+    )
+
+    assert [len(batch) for batch in calls] == [2, 2]
+    assert result.receipt.status == "typed_only"
+    assert result.receipt.reason_code == "embedding_provider_failed"
+    assert result.receipt.provider_call_count == 2
+    assert result.receipt.embedding.input_count == 4
+    assert hybrid_recall_cache_size() == 0
+    assert "PRIVATE SECOND BATCH FAILURE" not in repr(result.receipt)
+
+
+def test_ar303_cross_batch_model_drift_is_atomic_and_uncached(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(hybrid_recall_module, "MAX_EMBEDDING_VECTOR_VALUES", 6)
+    calls = 0
+
+    def invoke(texts: tuple[str, ...]) -> EmbeddingProviderResponse:
+        nonlocal calls
+        calls += 1
+        return EmbeddingProviderResponse(
+            vectors=((1.0, 0.0, 0.0),) * len(texts),
+            provider_name="fixture-provider",
+            requested_model="fixture-model",
+            actual_model=f"fixture-model-v{calls}",
+        )
+
+    result = discover_hybrid_recall(
+        _plan(),
+        tuple(
+            _contract(f"worker-{index}", outcome="Bounded workforce recall") for index in range(3)
+        ),
+        typed_candidate_ids={"unit-primary": ("worker-0",)},
+        catalog_identity="fixture-catalog-model-drift",
+        embedding_invoker=invoke,
+        provider_name="fixture-provider",
+        requested_model="fixture-model",
+        embedding_dimensions=3,
+    )
+
+    assert calls == 2
+    assert result.receipt.status == "typed_only"
+    assert result.receipt.reason_code == "embedding_model_mismatch"
+    assert result.receipt.provider_call_count == 2
+    assert result.receipt.embedding.actual_model == ""
+    assert hybrid_recall_cache_size() == 0
+
+
+def test_ar303_more_than_two_embedding_batches_fail_before_provider_call(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(hybrid_recall_module, "MAX_EMBEDDING_VECTOR_VALUES", 3)
+    calls: list[tuple[str, ...]] = []
+
+    result = discover_hybrid_recall(
+        _plan(),
+        tuple(
+            _contract(f"worker-{index}", outcome="Bounded workforce recall") for index in range(3)
+        ),
+        typed_candidate_ids={"unit-primary": ("worker-0",)},
+        catalog_identity="fixture-catalog-too-many-batches",
+        embedding_invoker=lambda texts: calls.append(texts),
+        provider_name="fixture-provider",
+        requested_model="fixture-model",
+        embedding_dimensions=3,
+    )
+
+    assert calls == []
+    assert result.receipt.status == "typed_only"
+    assert result.receipt.reason_code == "embedding_inputs_invalid"
+    assert result.receipt.provider_call_count == 0
+    assert result.receipt.embedding.input_count == 4

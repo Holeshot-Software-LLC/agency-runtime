@@ -20,6 +20,7 @@ from agency_runtime.core.roster.workforce import WorkforceIndexSnapshot
 from agency_runtime.core.selector.pipeline import _record_workforce_model_receipts
 from agency_runtime.core.selector.receipt_projection import project_nomination_failures
 from agency_runtime.core.structured_provider import StructuredProviderResult
+from agency_runtime.core.workforce import hybrid_recall as hybrid_recall_module
 from agency_runtime.core.workforce.contract import (
     WORKFORCE_CONTRACT_SCHEMA_VERSION,
     AuditContract,
@@ -1048,6 +1049,60 @@ def test_additive_hybrid_recall_expands_beyond_typed_24_before_inference_selects
     ]
     assert "zz-vector-specialist" in typed_ids[24:]
     assert outcome.staffing.units[0].selected == ("zz-vector-specialist",)
+
+
+def test_ar303_two_embedding_batches_leave_one_recall_reranker_call(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    clear_hybrid_recall_cache()
+    monkeypatch.setattr(hybrid_recall_module, "MAX_EMBEDDING_VECTOR_VALUES", 54)
+    snapshot = _hybrid_recall_snapshot()
+    embedding_calls: list[tuple[str, ...]] = []
+
+    def embed(texts: tuple[str, ...]) -> EmbeddingProviderResponse:
+        embedding_calls.append(texts)
+        return _semantic_embedding_response(texts)
+
+    def invoke(_provider, prompt, _schema, **_kwargs):
+        payload = json.loads(prompt)
+        if "planning_taxonomy" in payload:
+            return _result(_compact_plan_document())
+        if payload.get("recall_policy") == "deterministic_candidate_recall_only":
+            candidate_ids = [item["agent_id"] for item in payload["units"][0]["candidates"]]
+            return _result(
+                {
+                    "units": [
+                        {
+                            "unit_id": "unit-analyze",
+                            "ranked_candidate_ids": [
+                                "zz-vector-specialist",
+                                *(item for item in candidate_ids if item != "zz-vector-specialist"),
+                            ],
+                        }
+                    ]
+                }
+            )
+        return _result(_nomination_document("zz-vector-specialist"))
+
+    outcome = plan_and_staff_workforce(
+        "Analyze the workforce retrieval vocabulary gap.",
+        snapshot,
+        config=_hybrid_config(embedding_dimensions=2),
+        context=_context(),
+        invoker=invoke,
+        embedding_invoker=embed,
+    )
+
+    assert outcome.accepted
+    assert [len(batch) for batch in embedding_calls] == [27, 1]
+    assert [item.stage for item in outcome.attempts] == [
+        "planner",
+        "recall_embedding",
+        "recall_reranker",
+        "recruiter",
+    ]
+    assert outcome.attempts[1].provider_call_count == 2
+    assert outcome.attempts[2].provider_call_count == 1
 
 
 def test_ar289_native_jina_reranker_expands_the_same_additive_candidate_lane() -> None:
@@ -2775,8 +2830,69 @@ def test_recruiter_failure_detail_never_persists_unknown_candidate_content() -> 
     assert outcome.accepted
     detail = outcome.attempts[1].validation_detail
     assert detail == "workforce nomination failures: unit-analyze=invalid_candidate"
+    assert outcome.attempts[1].validation_reason_codes == ("recruiter_candidate_id_unknown",)
     assert unknown_candidate not in detail
     assert "provider-authored-private-rationale" not in detail
+
+
+@pytest.mark.parametrize(
+    ("case", "reason_code"),
+    [
+        ("row_shape", "recruiter_candidate_row_shape_invalid"),
+        ("unknown_id", "recruiter_candidate_id_unknown"),
+        ("score", "recruiter_candidate_score_invalid"),
+        ("classification", "recruiter_candidate_classification_invalid"),
+        ("positive_evidence", "recruiter_candidate_positive_evidence_invalid"),
+        ("negative_evidence", "recruiter_candidate_negative_evidence_invalid"),
+        ("forbidden_evidence", "recruiter_candidate_forbidden_evidence_missing"),
+        ("positive_missing", "recruiter_candidate_positive_evidence_missing"),
+        ("classification_conflict", "recruiter_candidate_classification_conflict"),
+    ],
+)
+def test_ar304_recruiter_candidate_rejections_have_closed_subreasons(
+    case: str,
+    reason_code: str,
+) -> None:
+    snapshot = _snapshot(_contract("technical-analyst"))
+    plan = parse_work_unit_plan(_plan_document())
+    parser = _NominationAccumulator(
+        plan,
+        snapshot,
+        config=_config(mode="fast"),
+        context=_context(),
+        allowed_candidate_ids=frozenset({"technical-analyst"}),
+    )
+    response = _nomination_document()
+    candidate = response["units"][0]["ranked_semantic"][0]
+    if case == "row_shape":
+        candidate["provider_private_field"] = "PRIVATE"
+    elif case == "unknown_id":
+        candidate["agent_id"] = "unknown-private-candidate"
+    elif case == "score":
+        candidate["score"] = True
+    elif case == "classification":
+        candidate["classification"] = "preferred"
+    elif case == "positive_evidence":
+        candidate["positive_evidence"] = ["PRIVATE INVALID EVIDENCE"]
+    elif case == "negative_evidence":
+        candidate["negative_evidence"] = ["PRIVATE INVALID EVIDENCE"]
+    elif case == "forbidden_evidence":
+        candidate["classification"] = "forbidden"
+        candidate["positive_evidence"] = []
+        candidate["negative_evidence"] = []
+    elif case == "positive_missing":
+        candidate["positive_evidence"] = []
+    elif case == "classification_conflict":
+        response["units"][0]["ranked_semantic"].append(
+            _nominee("technical-analyst", 0.80, "acceptable")
+        )
+
+    with pytest.raises(_NominationValidationError) as caught:
+        parser.parse(response)
+
+    assert caught.value.failures[0].code == "invalid_candidate"
+    assert caught.value.failures[0].diagnostic_code == reason_code
+    assert "PRIVATE" not in str(caught.value)
 
 
 def test_explicit_gap_decision_survives_as_hiring_signal() -> None:
@@ -2943,6 +3059,71 @@ def test_strict_mode_critic_can_only_veto_an_already_verified_team() -> None:
         "staffing_critic_rejected",
         "wrong-neighbor-risk",
     )
+
+
+def test_ar304_strict_critic_rejection_requires_one_closed_reason_code() -> None:
+    snapshot = _snapshot(_contract("technical-analyst"))
+    responses = iter(
+        (
+            _result(_compact_plan_document()),
+            _result(_nomination_document()),
+            _result({"approved": False, "reason_codes": []}),
+            _result({"approved": False, "reason_codes": ["wrong-neighbor-risk"]}),
+        )
+    )
+    outcome = plan_and_staff_workforce(
+        "Analyze this implementation safely.",
+        snapshot,
+        config=_config("strict"),
+        context=_context(),
+        invoker=lambda *_args, **_kwargs: next(responses),
+    )
+
+    assert not outcome.accepted
+    assert outcome.calls_used == 4
+    assert [item.status for item in outcome.attempts] == [
+        "applied",
+        "applied",
+        "rejected",
+        "applied",
+    ]
+    rejected = outcome.attempts[2]
+    assert rejected.stage == "critic"
+    assert rejected.validation_reason_codes == ("critic_rejection_reason_missing",)
+    assert rejected.validation_detail == "strict critic rejection requires one reason code"
+    assert outcome.abstention_codes == (
+        "inference_invalid",
+        "staffing_critic_rejected",
+        "wrong-neighbor-risk",
+    )
+
+
+def test_ar304_strict_critic_diagnostics_never_retain_provider_authored_text() -> None:
+    snapshot = _snapshot(_contract("technical-analyst"))
+    private_reason = "PRIVATE provider-authored critic rationale"
+    responses = iter(
+        (
+            _result(_compact_plan_document()),
+            _result(_nomination_document()),
+            _result({"approved": False, "reason_codes": [private_reason]}),
+            _result({"approved": True, "reason_codes": []}),
+        )
+    )
+
+    outcome = plan_and_staff_workforce(
+        "Analyze this implementation safely.",
+        snapshot,
+        config=_config("strict"),
+        context=_context(),
+        invoker=lambda *_args, **_kwargs: next(responses),
+    )
+
+    assert outcome.accepted
+    rejected = outcome.attempts[2]
+    assert rejected.status == "rejected"
+    assert rejected.validation_reason_codes == ("critic_reason_code_invalid",)
+    assert rejected.validation_detail == "strict critic reason code is invalid"
+    assert private_reason not in repr(rejected)
 
 
 def test_fast_mode_uses_planner_and_recruiter_and_binds_runtime_hashes() -> None:

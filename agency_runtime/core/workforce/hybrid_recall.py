@@ -25,8 +25,13 @@ from agency_runtime.core.turn_routing_context import (
 )
 from agency_runtime.core.workforce.contract import WorkforceContract
 from agency_runtime.core.workforce.embedding_provider import (
+    MAX_EMBEDDING_DIMENSIONS,
+    MAX_EMBEDDING_LATENCY_MS,
+    MAX_EMBEDDING_VECTOR_VALUES,
+    EmbeddingBatch,
     EmbeddingInvoker,
     EmbeddingReceipt,
+    bound_embedding_inputs,
     embed_texts,
 )
 from agency_runtime.core.workforce.planning_contracts import (
@@ -44,6 +49,7 @@ DEFAULT_HYBRID_RETRIEVAL_LIMIT = 32
 DEFAULT_RRF_RANK_CONSTANT = 60
 HYBRID_RECALL_PROJECTION_VERSION = "1"
 MAX_HYBRID_CATALOG_CACHE_ENTRIES = 2
+MAX_HYBRID_EMBEDDING_CALLS = 2
 
 _AGENT_ID = re.compile(r"^[a-z0-9][a-z0-9._:-]{0,127}$")
 _CATALOG_IDENTITY = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$")
@@ -509,6 +515,157 @@ def _failed_embedding(receipt: EmbeddingReceipt, reason_code: str) -> EmbeddingR
     )
 
 
+def _embedding_receipt(
+    receipts: Sequence[EmbeddingReceipt],
+    *,
+    status: str,
+    reason_code: str,
+    input_count: int,
+    actual_model: str = "",
+    dimensions: int = 0,
+) -> EmbeddingReceipt:
+    """Collapse bounded batch receipts into one content-free logical receipt."""
+
+    first = receipts[0]
+    return EmbeddingReceipt(
+        status=status,
+        reason_code=reason_code,
+        provider_name=first.provider_name,
+        requested_model=first.requested_model,
+        actual_model=actual_model,
+        input_count=input_count,
+        dimensions=dimensions,
+        latency_ms=min(
+            MAX_EMBEDDING_LATENCY_MS,
+            sum(receipt.latency_ms for receipt in receipts),
+        ),
+    )
+
+
+def _embedding_chunks(
+    inputs: Sequence[str],
+    *,
+    dimensions: int,
+) -> tuple[tuple[str, ...], ...]:
+    bounded = bound_embedding_inputs(inputs)
+    if (
+        isinstance(dimensions, bool)
+        or not isinstance(dimensions, int)
+        or not 0 <= dimensions <= MAX_EMBEDDING_DIMENSIONS
+    ):
+        raise ValueError("embedding dimensions are outside the supported range")
+    batch_size = (
+        len(bounded) if dimensions == 0 else max(1, MAX_EMBEDDING_VECTOR_VALUES // dimensions)
+    )
+    chunks = tuple(
+        bounded[offset : offset + batch_size] for offset in range(0, len(bounded), batch_size)
+    )
+    if len(chunks) > MAX_HYBRID_EMBEDDING_CALLS:
+        raise ValueError("hybrid recall exceeds its bounded embedding-call budget")
+    return chunks
+
+
+def _embed_recall_inputs(
+    inputs: Sequence[str],
+    *,
+    invoker: EmbeddingInvoker | None,
+    provider_name: str,
+    requested_model: str,
+    expected_dimensions: int,
+) -> tuple[EmbeddingBatch, int]:
+    """Embed one logical recall set in at most two scalar-safe requests."""
+
+    chunks = _embedding_chunks(inputs, dimensions=expected_dimensions)
+    receipts: list[EmbeddingReceipt] = []
+    vectors: list[tuple[float, ...]] = []
+    provider_call_count = 0
+    observed_dimensions = 0
+    observed_model = ""
+    for chunk in chunks:
+        batch = embed_texts(
+            chunk,
+            invoker=invoker,
+            provider_name=provider_name,
+            requested_model=requested_model,
+            expected_dimensions=expected_dimensions,
+        )
+        if invoker is not None:
+            provider_call_count += 1
+        receipts.append(batch.receipt)
+        if batch.receipt.status != "applied":
+            return (
+                EmbeddingBatch(
+                    (),
+                    _embedding_receipt(
+                        receipts,
+                        status=batch.receipt.status,
+                        reason_code=batch.receipt.reason_code,
+                        input_count=len(inputs),
+                    ),
+                ),
+                provider_call_count,
+            )
+        if not batch.receipt.actual_model:
+            return (
+                EmbeddingBatch(
+                    (),
+                    _embedding_receipt(
+                        receipts,
+                        status="failed",
+                        reason_code="embedding_model_identity_missing",
+                        input_count=len(inputs),
+                    ),
+                ),
+                provider_call_count,
+            )
+        if observed_dimensions and batch.receipt.dimensions != observed_dimensions:
+            return (
+                EmbeddingBatch(
+                    (),
+                    _embedding_receipt(
+                        receipts,
+                        status="failed",
+                        reason_code="embedding_dimension_mismatch",
+                        input_count=len(inputs),
+                    ),
+                ),
+                provider_call_count,
+            )
+        effective_model = _effective_model(batch.receipt)
+        if observed_model and effective_model != observed_model:
+            return (
+                EmbeddingBatch(
+                    (),
+                    _embedding_receipt(
+                        receipts,
+                        status="failed",
+                        reason_code="embedding_model_mismatch",
+                        input_count=len(inputs),
+                    ),
+                ),
+                provider_call_count,
+            )
+        observed_dimensions = batch.receipt.dimensions
+        observed_model = effective_model
+        vectors.extend(batch.vectors)
+    if not receipts or len(vectors) != len(inputs):
+        raise ValueError("hybrid recall embedding batch split is invalid")
+    return (
+        EmbeddingBatch(
+            tuple(vectors),
+            _embedding_receipt(
+                receipts,
+                status="applied",
+                reason_code="",
+                input_count=len(inputs),
+                actual_model=receipts[0].actual_model,
+                dimensions=observed_dimensions,
+            ),
+        ),
+        provider_call_count,
+    )
+
+
 def _typed_only_result(
     plan: WorkUnitPlan,
     baselines: Mapping[str, tuple[str, ...]],
@@ -687,7 +844,7 @@ def discover_hybrid_recall(  # noqa: C901 - one bounded fail-open recall transac
     query_texts = tuple(query.text for query in queries)
     inputs = query_texts if cache_hit else document_texts + query_texts
     try:
-        embedding = embed_texts(
+        embedding, provider_call_count = _embed_recall_inputs(
             inputs,
             invoker=embedding_invoker,
             provider_name=provider_name,
@@ -714,7 +871,6 @@ def discover_hybrid_recall(  # noqa: C901 - one bounded fail-open recall transac
             catalog_cache_hit=cache_hit,
             provider_call_count=0,
         )
-    provider_call_count = int(embedding_invoker is not None)
     if embedding.receipt.status != "applied":
         return _typed_only_result(
             plan,
@@ -868,6 +1024,7 @@ __all__ = [
     "HYBRID_RECALL_PROJECTION_VERSION",
     "MAX_HYBRID_ADDITIONS_PER_PLAN",
     "MAX_HYBRID_ADDITIONS_PER_UNIT",
+    "MAX_HYBRID_EMBEDDING_CALLS",
     "HybridRecallCandidate",
     "HybridRecallReceipt",
     "HybridRecallResult",
