@@ -1240,6 +1240,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `257fe30f` | 2026-08-25 | test(ar294): restore expanded configuration regressions | [AR-294](../roadmap/issue-AR-294-restore-expanded-configuration-regressions.md) | [detail](2026-08-25-257fe30f-restore-expanded-configuration-regressions.md) |
 | `80a3095e` | 2026-08-25 | docs(ar290): record merged Windows and Linux handoff | [AR-290](../roadmap/issue-AR-290-end-to-end-guided-setup.md), [AR-294](../roadmap/issue-AR-294-restore-expanded-configuration-regressions.md) | [detail](2026-08-25-80a3095e-record-merged-windows-and-linux-handoff.md) |
 | `80d89880` | 2026-08-25 | test(ar295): audit guided dashboard asset budget | [AR-295](../roadmap/issue-AR-295-audit-guided-dashboard-asset-budget.md), [AR-290](../roadmap/issue-AR-290-end-to-end-guided-setup.md) | [detail](2026-08-25-80d89880-audit-guided-dashboard-asset-budget.md) |
+| `05291b0e` | 2026-08-25 | feat(ar296): project effective inference topology | [AR-296](../roadmap/issue-AR-296-project-effective-inference-topology.md), [AR-290](../roadmap/issue-AR-290-end-to-end-guided-setup.md) | [detail](2026-08-25-05291b0e-project-effective-inference-topology.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
