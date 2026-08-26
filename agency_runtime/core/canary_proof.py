@@ -386,6 +386,7 @@ def prepare_live_invocation(
     host: str,
     *,
     path: Path,
+    config_path: Path | None = None,
     timeout: float,
     native: Mapping[str, Any],
     backend_factory: Callable[..., Any],
@@ -399,11 +400,12 @@ def prepare_live_invocation(
 ) -> LivePreparation:
     facade = _facade()
     try:
-        store = (
-            facade.Store(path, require_existing_current=True)
-            if require_existing_store
-            else facade.Store(path)
-        )
+        store_kwargs: dict[str, Any] = {}
+        if config_path is not None:
+            store_kwargs["config_path"] = config_path
+        if require_existing_store:
+            store_kwargs["require_existing_current"] = True
+        store = facade.Store(path, **store_kwargs)
         before = store.recent_runtime_activity(limit=200)
     except Exception:
         return LivePreparation(

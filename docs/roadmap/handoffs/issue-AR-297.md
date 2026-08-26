@@ -9,6 +9,7 @@ related:
   - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
   - docs/roadmap/issue-AR-298-expose-complete-workforce-prompts.md
   - docs/roadmap/issue-AR-299-local-ollama-canary-child-judge.md
+  - docs/roadmap/issue-AR-300-bind-explicit-install-config-to-managed-canary.md
   - docs/roadmap/handoffs/issue-AR-290.md
   - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
   - docs/decisions/0174-admit-local-ollama-canary-child-judges.md
@@ -55,7 +56,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   on loopback and maps aliases `qwen3.5-9b`, `qwen3.5-2b`, and
   `qwen3-embedding` to those local models. Jina was neither configured nor called.
 - The owner-approved revised exact config SHA-256 is
-  `8a67099de98bc0bae91bdfdaab3f8bfbc1134b904e72bd07eeb578601b5acb74`.
+  `cb569bf027133305df594d8ff029dffb8d38f545e960517d4431dfbf1b2bc2e1`.
   It uses strict assurance/independence, additive recall, direct Ollama text
   routes, unchanged LiteLLM embedding at exactly 4096 dimensions, and a free
   local no-thinking Mistral child judge. No secret value is present.
@@ -70,18 +71,28 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   digest `5a408ab55df5`, 24.0B Q4_K_M, 131,072 context, and Apache 2.0. AR-299 and
   ADR-0174 add only safe named Ollama child-judge profiles. Focused tests pass
   13/13 with warnings as errors.
-- Exact wheel/sdist verification is complete: wheel SHA-256
-  `896200663b422978702333bde13f5a5833bc0d4642f9efd17c9e90e7f3827313`
-  and sdist SHA-256
-  `9f52bcbd0a3bfeb4f3e3109721d19cf45e789fcbbb31ca080ef0fa1e985381b9`.
+- Every final route has a bounded sanitized receipt: generation, critic,
+  embedding, reranker, and local child judge all pass exact model/schema checks.
+  LiteLLM returns two normalized vectors at exactly 4096 dimensions. Jina was
+  neither configured nor called.
+- The prior `78ce8421` wheel/sdist passed build, strict Twine, and independent
+  Linux verification at SHA-256 `0d3ee2b31f5566144d96a3a212466621826d6abe976c0fc18b8c61417df09616`
+  and `ea0698628727f57cc32b15fb64f5d719ef807813d87b1325a733d827228a70eb`.
+  AR-300 changes source, so those artifacts are retained evidence rather than
+  the final candidate; an exact rebuild is pending.
 
 ## exact-blocker
 
-- Critic, embedding, reranker, and local-child-judge routes still need bounded
-  post-revision live receipts. The planner route passes.
-- Five exact-artifact images and clean running containers exist with harness
-  prerequisites proven, but no `agency install --production-container` or
-  later ordinary unattended invocation has run.
+- Clean Claude Code and native-UID Hermes production-container installs exit 0.
+  Hermes first refused a root-owned private boundary, then passed from a newly
+  recreated container as UID 10000 with a byte-identical owner-readable config.
+- The first clean Codex transaction installed its bundle and managed policy but
+  exited 1 before inference (`live_attempted=false`) because its canary lost the
+  explicit config identity. AR-300 fixes that handoff with 15 focused
+  warning-strict tests; exact artifact/container rebuild and retry remain open.
+- OpenClaw's non-systemd dry-run exited 1 with gateway state `unknown`, correctly
+  refusing mutation. Its separately isolated systemd-capable image is the next
+  retry boundary. No service-manager check was bypassed.
 - AR-298 still needs packaged/Agency-hired/historical CLI prompt proof and an
   installed authenticated owner-detail visual check.
 - Fresh-environment installs, repository gates, signing, tag, publication, and
@@ -101,10 +112,10 @@ print, persist in YAML, bake into images, or copy into evidence.
 
 ## next-bounded-work-package
 
-1. Exercise critic, embedding, reranker, and local-child-judge routes and
-   preserve sanitized requested/actual receipts plus exact exits.
-2. Install the exact candidate independently in the four clean harness
-   containers; prove later ordinary unattended loading and bounded turns.
+1. Commit AR-300 with its ledger, rebuild exact artifacts/images, and retry clean
+   Codex and systemd-capable OpenClaw production transactions.
+2. Prove later ordinary unattended loading and bounded turns independently in
+   Codex, Claude Code, Hermes, and OpenClaw.
 3. Use the fifth isolated systemd container for authenticated dashboard and
    complete workforce-prompt proof, then install/prove the host runtime.
 4. Run every named repository and applicable release gate.

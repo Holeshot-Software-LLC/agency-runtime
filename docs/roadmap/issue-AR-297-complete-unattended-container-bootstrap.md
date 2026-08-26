@@ -13,6 +13,7 @@ related:
   - docs/roadmap/handoffs/issue-AR-290.md
   - docs/roadmap/handoffs/issue-AR-297.md
   - docs/roadmap/issue-AR-299-local-ollama-canary-child-judge.md
+  - docs/roadmap/issue-AR-300-bind-explicit-install-config-to-managed-canary.md
   - docs/decisions/0174-admit-local-ollama-canary-child-judges.md
   - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
   - agency_runtime/cli/install_commands.py
@@ -29,7 +30,7 @@ epic: host-integrations
 issue_id: AR-297
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
-depends_on: []
+depends_on: [AR-300]
 blocks: []
 ---
 
@@ -172,8 +173,9 @@ units but failed semantic compilation (exit 1, 32,272 ms); the local
 passed every policy check (exit 0, 23,774 ms). Generation is therefore pinned
 to the measured 14B model rather than selected from parameter count or prose.
 
-The revised secret-indirected configuration outside the repository has
-SHA-256 `8a67099de98bc0bae91bdfdaab3f8bfbc1134b904e72bd07eeb578601b5acb74`.
+The final owner-approved secret-indirected configuration outside the repository
+has SHA-256
+`cb569bf027133305df594d8ff029dffb8d38f545e960517d4431dfbf1b2bc2e1`.
 It uses strict workforce assurance and independence, additive dense recall,
 direct Ollama generation/critic/text-reranker profiles, unchanged LiteLLM
 `qwen3-embedding` at exactly 4096 dimensions, and a no-thinking
@@ -188,3 +190,18 @@ profile into the existing exact-name/no-fallback canary projection. Thirteen
 focused warning-strict tests pass; unsafe non-loopback HTTP still fails before
 transport. Tracker creation remains prohibited by the active task, so AR-299
 tracker parity is an explicit unresolved gate rather than an omitted record.
+
+Bounded exact-route probes pass for every final route without Jina: generation
+uses `qwen3-14b-abliterated:latest`; critic, text reranker, and child judge use
+`mistral-small3.2:24b`; and the authenticated LiteLLM embedding alias resolves
+to `qwen3-embedding` with two exact 4096-wide normalized vectors. Sanitized
+requested/actual identities and schema checks are preserved in the private
+evidence root.
+
+The first clean Codex production-container transaction installed the native
+bundle and current managed policy, then exited 1 before inference with
+`live_attempted=false`: the canary reopened its Store at the absent default
+config path and could not resolve the explicit config's local judge pin. AR-300
+threads both exact identities across that internal boundary and passes 15
+focused warning-strict regressions plus Ruff and formatting. A rebuilt clean
+retry remains required; no bypass or default-path copy was used.

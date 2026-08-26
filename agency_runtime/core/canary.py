@@ -574,6 +574,7 @@ def run_canary(
     execute: bool = False,
     confirm: str = "",
     db_path: str | Path | None = None,
+    config_path: str | Path | None = None,
     timeout: float = 120,
     mode: str = "agency",
     profile_scope: str = "isolated-profile",
@@ -595,6 +596,7 @@ def run_canary(
     )
     timeout = _validated_timeout(timeout)
     path = Path(db_path).expanduser() if db_path else _default_db_path()
+    bound_config_path = Path(config_path).expanduser() if config_path is not None else None
     assessment = _assess_readiness(host, path, inspector, profile_scope=profile_scope)
     report = _readiness_report(host, assessment, mode=mode, trust_mode=trust_mode)
     master_before = _attach_master_readiness(report, mode=mode)
@@ -612,6 +614,7 @@ def run_canary(
     preparation = _prepare_live_invocation(
         host,
         path=path,
+        config_path=bound_config_path,
         timeout=timeout,
         native=assessment.native,
         backend_factory=backend_factory,

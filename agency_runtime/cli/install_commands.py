@@ -620,6 +620,8 @@ def _codex_activation_state(
     autonomous: bool = False,
     managed_policy: bool = False,
     managed_policy_changed: bool = False,
+    config_path: Path | None = None,
+    db_path: Path | None = None,
 ) -> None:
     """Attach current-profile readiness without mutating Codex trust state."""
 
@@ -642,6 +644,13 @@ def _codex_activation_state(
             }
             if autonomous or managed_policy:
                 canary_kwargs["trust_mode"] = trust_mode
+            if managed_policy:
+                if config_path is None or db_path is None:
+                    raise ValueError(
+                        "managed-policy canary requires the exact config and Store paths"
+                    )
+                canary_kwargs["config_path"] = config_path
+                canary_kwargs["db_path"] = db_path
             candidate = canary_runner("codex", **canary_kwargs)
             verification = (
                 dict(candidate)
@@ -780,6 +789,7 @@ def _install_hosts(
     autonomous: bool = False,
     production_container: bool = False,
     config_path: Path | None = None,
+    db_path: Path | None = None,
     managed_codex_installer: Callable[..., dict[str, Any]] | None = None,
     canary_attestation_invalidator: Callable[[str], bool] | None = None,
 ) -> list[dict[str, Any]]:
@@ -874,6 +884,8 @@ def _install_hosts(
                 autonomous=autonomous,
                 managed_policy=production_container,
                 managed_policy_changed=bool(policy and policy.get("changed")),
+                config_path=config_path,
+                db_path=db_path,
             )
         elif all_hosts or production_container:
             _mark_all_host_completion(result)
@@ -1726,6 +1738,7 @@ def cmd_install(
         autonomous=autonomous,
         production_container=production_container,
         config_path=config_path,
+        db_path=cfg.store.resolved_path(),
         managed_codex_installer=dependencies.managed_codex_installer,
         canary_attestation_invalidator=getattr(
             runtime_store,

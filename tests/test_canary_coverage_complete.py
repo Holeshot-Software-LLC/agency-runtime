@@ -566,6 +566,47 @@ def test_prepare_live_invocation_resolves_and_passes_the_exact_canary_pin(
     ]
 
 
+def test_prepare_live_invocation_binds_an_explicit_config_path_to_the_store(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    observed: list[tuple[Path, dict[str, Any]]] = []
+
+    class _Store:
+        config_path = None
+
+        def __init__(self, path: Path, **kwargs: Any) -> None:
+            observed.append((path, kwargs))
+
+        def recent_runtime_activity(self, *, limit: int) -> dict[str, list[Any]]:
+            assert limit == 200
+            return {}
+
+    monkeypatch.setattr(canary, "Store", _Store)
+    prepared = canary._prepare_live_invocation(
+        "codex",
+        path=tmp_path / "agency.db",
+        config_path=tmp_path / "exact-agency.yaml",
+        timeout=2,
+        native=_native(),
+        backend_factory=lambda *_args, **_kwargs: object(),
+        master_enabled=False,
+        mode="native-only",
+        require_existing_store=True,
+    )
+
+    assert prepared.error is None
+    assert observed == [
+        (
+            tmp_path / "agency.db",
+            {
+                "config_path": tmp_path / "exact-agency.yaml",
+                "require_existing_current": True,
+            },
+        )
+    ]
+
+
 def test_prepare_live_invocation_resolves_separate_accepted_outcome_parent_pin(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
