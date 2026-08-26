@@ -72,22 +72,43 @@ visible launch marker, and the parent copies the stale initial
 - Codex 0.149.1 reports both `multi_agent` and `multi_agent_v2` as stable,
   with `multi_agent` enabled and `multi_agent_v2` disabled by default. The
   current canary overrides that native default and forces V2.
+- The bounded supported-`multi_agent` comparison exits 0, but it cannot
+  replace V2. Session `01a03f94-156b-75f1-9022-ea7cef6ace55`, trace
+  `01a03f94-15cb-7192-bf4e-34f518c4798a`, and query SHA-256
+  `4d160cfe3770d67ea8246cc096d9d47c665cb589ad6b140970de6dfc67d0c652`
+  record the same accepted `code-reviewer` route with
+  `delivery=delegate`, but zero native routes, deliveries, delegations, or
+  worker runs. The injected host context carries only the generic instruction
+  to follow a plan, not an actual `[AGENCY DELEGATION PLAN]` row, so the
+  truthful first response reports `delegated: none` and does not spawn.
+- The stable diagnostic stdout, stderr, Store snapshot, and parent rollout are
+  retained mode 0600 at SHA-256
+  `356d36d14a66702a05f82c00997c0e90268e307a0a888cc4647aea7e4e306bc6`,
+  `dc6b65253c32f61f8551adfbf795546e6ed20d353aa0686024692d4415e73f5a`,
+  `bb518e7cd3157bee97c408c4b0d140f8b7928a5c94ecf7b7ebbbe5fff642b20d`,
+  and
+  `953295259aa29014719af67e930a7e4315cbdcc40eda226ca971bee3962790a3`.
+  Stderr contains only the Codex remote-plugin OAuth transport-close warning.
 - Tracker creation is prohibited by the active AR-297 task.
 
 ## Approach
 
-First compare one bounded exact stable-`multi_agent` diagnostic against the
-retained V2 artifact. Admit a host-surface change only if the stable surface
-preserves the same exact inference plan and direct spawn/wait protocol while
-restoring both an independently verifiable child-delivery artifact and the
-authoritative final header snapshot.
+The supported stable surface does not restore the required delegation, so keep
+the only surface that executes the accepted native plan and repair the exact
+Codex 0.149 V2 evidence boundary. Update the rollout parser only for the exact
+allowlisted `event_msg/item_completed/SubAgentActivity` envelope and retain
+one-child cardinality plus invocation-window checks.
 
-If the supported stable surface does not restore those proofs, fail closed and
-repair the exact Codex 0.149 evidence boundary without treating Store rows,
-model prose, parent stdout, or an Agency-authored artifact as host delivery.
-Update the rollout parser only for an exact allowlisted host envelope, retain
-one-child cardinality and invocation-window checks, and require an accepted
-first-pass finalization. Do not weaken ADR-0156 or activate a trust bypass.
+Because Codex deliberately redacts the decrypted launch message from the child
+rollout, bind an unpredictable hook-generated one-use receipt to the exact
+decision, child, work-unit/card digest, and invocation. Require the child to
+return that receipt in its first host-persisted response before any parent
+acceptance. The parent must not receive the clear receipt before spawn, and
+Store state or parent prose remains insufficient by itself. Supply a
+plan-derived conditional final-header contract before spawn, but accept it only
+when host collaboration plus delivery evidence agree and the first parent
+finalization passes. Record the durable authority change before implementation;
+do not weaken ADR-0156 or activate a trust bypass.
 
 ## Dependencies
 
@@ -104,7 +125,7 @@ first-pass finalization. Do not weaken ADR-0156 or activate a trust bypass.
       native spawn/wait before failing at the later Codex 0.149 boundary.
 - [x] Exact parent and child host artifacts, Store identifiers, exit, hashes,
       and missing proof fields are retained without a secret.
-- [ ] A bounded stable-surface diagnostic determines whether supported Codex
+- [x] A bounded stable-surface diagnostic determines whether supported Codex
       behavior restores visible pre-speech delivery and post-wait context.
 - [ ] The exact Codex 0.149 rollout envelope is parsed without accepting an
       ambiguous parent, child, tool sequence, or invocation window.

@@ -46,9 +46,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Work remains in the dedicated Linux worktree on
   `codex/ar297-production-container-live-evidence`, descended from clean
   `origin/main` `0a23983aa7b99ec27ef18b1a950f6a0327961f72`.
-- The exact candidate is substantive `105ce021` plus ledger `1f32915d`.
-  Telemetry before the next live diagnostic exited 0 at 30.3 percent, so this
-  recovery pair records the newly surfaced AR-309 boundary before that call.
+- The last implementation candidate is substantive `105ce021` plus ledger
+  `1f32915d`; the AR-309 recovery pair is `6c01811a` plus `c89d80c3`.
+  Telemetry before the bounded stable comparison exited 0 at 10.4 percent, so
+  this checkpoint records that completed comparison before implementation.
 - The current Linux verdict remains **NO-GO**. AR-297 and tracker #335 remain
   open. No tracker, push, PR, merge, tag, signing, publication, release, or
   hosted workflow action is authorized.
@@ -81,6 +82,12 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   actual Codex 0.149 lifecycle. The newer V2 envelope redacts the decrypted
   child launch and omits Agency's post-wait header context; Store finalization
   is `response_invalid`, no host delivery verifies, and no attestation exists.
+- The one supported-`multi_agent` comparison exits 0 but records zero native
+  deliveries/delegations/worker runs for session `01a03f94...e55`, trace
+  `01a03f94...a`, and query hash `4d160cfe...c652`. Its mode-0600 stdout,
+  stderr, Store, and rollout SHAs are `356d36d1...bc6`, `dc6b6525...f5a`,
+  `bb518e7c...20d`, and `95329525...a3`: the actual plan row is absent, so
+  stable cannot replace the V2 surface that spawned the child.
 - AR-308 is therefore live-proven through its exact delivery boundary. AR-309
   now owns the later host-artifact/header defect. No model, endpoint, dimension,
   reranker, thinking, judge, auth, or service-manager choice changed.
@@ -90,10 +97,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Codex still lacks an attestation because its 0.149.1 V2 child artifact does
   not expose the pre-speech card and its final parent header retains stale
   `delegated: none`. ADR-0156 forbids substituting Store rows or model prose.
-- The next bounded live action is one stable-`multi_agent` diagnostic. It must
-  preserve the exact route and direct spawn/wait while independently restoring
-  host delivery and final-header context, or the product must remain failed
-  closed and repair the exact 0.149 boundary.
+- Stable `multi_agent` cannot execute the accepted plan. The next bounded
+  package keeps V2, allowlists its exact Codex 0.149 collaboration envelope,
+  and adds a one-use host-persisted child receipt bound to the exact card plus a
+  conditional header contract. It must remain failed closed on any mismatch.
 - No later ordinary Codex, Claude, Hermes, or OpenClaw process has a current
   successful Agency-turn receipt on this source.
 - Refresh the host install/dashboard and named repository gates for the exact
@@ -114,8 +121,9 @@ secret-safe helper remains
 
 ## next-bounded-work-package
 
-1. Run one stable-`multi_agent` diagnostic, implement the bounded AR-309 proof
-   repair, checkpoint it, and rebuild one exact no-bypass Codex transaction.
+1. Record the delivery-receipt authority decision, implement the bounded
+   AR-309 V2 parser/receipt/header repair, checkpoint it, and rebuild one exact
+   no-bypass Codex transaction.
 2. Complete fresh Claude, Hermes, and OpenClaw installs, then run later ordinary
    Conveyor-equivalent Codex, Claude, Hermes, and OpenClaw
    processes and correlate Store plus native artifacts.

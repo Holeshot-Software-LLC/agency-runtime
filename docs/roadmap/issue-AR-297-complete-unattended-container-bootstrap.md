@@ -586,3 +586,12 @@ parent never receives Agency's post-wait header snapshot, so its stale
 `delegated: none` response is rejected and no attestation persists. AR-309
 owns that later proof boundary; Store rows and model prose are not promoted
 into host-artifact authority.
+
+The bounded supported-`multi_agent` comparison cannot replace V2. Although it
+records the same accepted `delivery=delegate` route, its injected host context
+contains no concrete delegation-plan row, so session
+`01a03f94-156b-75f1-9022-ea7cef6ace55` truthfully spawns no child. The retained
+stdout, stderr, Store, and parent-rollout SHAs are `356d36d1...bc6`,
+`dc6b6525...f5a`, `bb518e7c...20d`, and `95329525...a3`. AR-309 therefore
+keeps the V2 execution surface and repairs its exact fail-closed evidence
+boundary.
