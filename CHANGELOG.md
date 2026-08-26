@@ -11,6 +11,7 @@ related:
   - docs/roadmap/issue-AR-296-project-effective-inference-topology.md
   - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
   - docs/roadmap/issue-AR-298-expose-complete-workforce-prompts.md
+  - docs/roadmap/issue-AR-305-normalize-planner-novelty-absence.md
   - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
   - docs/roadmap/README.md
   - docs/worklog/README.md
@@ -89,6 +90,10 @@ changes rather than duplicating every commit.
 
 ### Changed
 
+- Compact workforce planning now treats stringified `false`, `none`, and
+  `null` novelty values as absence instead of impossible new capabilities. The
+  same normalization cannot authorize an unknown domain, while genuine novel
+  capability gaps remain unchanged.
 - Context-dependent status, progress, recommendation, and next-step turns now
   refresh inference-owned specialist selection from a bounded same-session
   subject capsule while remaining parent-only and read-only. Prior transcript

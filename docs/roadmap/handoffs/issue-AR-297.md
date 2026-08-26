@@ -14,6 +14,7 @@ related:
   - docs/roadmap/issue-AR-302-owner-private-local-verification.md
   - docs/roadmap/issue-AR-303-bound-full-roster-embedding-requests.md
   - docs/roadmap/issue-AR-304-preserve-recruiter-critic-validation-diagnostics.md
+  - docs/roadmap/issue-AR-305-normalize-planner-novelty-absence.md
   - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
   - docs/decisions/0174-admit-local-ollama-canary-child-judges.md
   - docs/decisions/0175-batch-complete-embedding-input-sets.md
@@ -43,6 +44,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   Every live attempt at or below the threshold followed a clean recovery pair:
   `14a4346c` / `3841fcce`, `dbd3eda9` / `95c323eb`, then `5acfbf41` /
   `8eb54c96`.
+- Fresh telemetry crossed the threshold at 49.4 percent after the recruiter A/B
+  and planner diagnostic. This recovery pair records the smallest safe repair
+  before any post-fix live evaluation.
 - The exact unsigned Linux candidate remains
   `987cee8ff01a4a16780eac15bb8120f828d4193d`. Its scoped verdict is **NO-GO**.
   AR-297 and tracker #335 remain open.
@@ -103,12 +107,21 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   the 3,936,256-byte Store is
   `ce9aa8685fe6643688112d01202688eeffd4eb5b8cb9642a734746445b0a8627`.
   This was the package's final model call.
+- The approved Mistral-only recruiter A/B config hash is `87551b5b...e125628`.
+  It exited 2 after 296,074 ms on trace `d276a583-e632-49af-b80f-7bece3b34b90`:
+  Mistral ranked the two correct accessibility specialists first, yet verifier
+  sufficiency still found one uncovered capability.
+- A planner-only diagnostic then proved Qwen emitted string
+  `novel_capability: "false"`, compiled as the sole uncovered
+  `capability:false`. Diagnostic hash is `8c7a2c5c...d4bf137`; no Jina or secret
+  was used. AR-305 normalizes only stringified absence sentinels at both gap and
+  unknown-domain boundaries. Focused tests pass 158 with one skip.
 
 ## exact-blocker
 
-- AR-303 recall and AR-304 diagnostics are live-proven. The current Qwen route
-  still abstains after a valid safe-team repair, so no specialist or workforce
-  prompt loads. A different model/thinking route requires an owner interview.
+- AR-303 recall and AR-304 diagnostics are live-proven. AR-305's false-gap
+  repair is focused-test proven but awaits one post-fix live preflight, so no
+  specialist or workforce prompt has yet loaded on the repaired source.
 - AR-301 blocks the shipped non-root dashboard service. AR-302 blocks ordinary
   ambient-umask/trusted-interpreter repeatability. No harness has a current
   successful ordinary Agency turn or Codex canary attestation.
@@ -123,16 +136,17 @@ under `~/.agency-runtime/configs/`. The corrected private probe script is
 `/tmp/ar297_direct_preflight_probe.py`; final private artifacts are
 `authenticated-agency.db` and `direct-preflight-authenticated-summary.json`.
 The probe obtains the existing LiteLLM credential in memory and persists no
-secret. Do not repeat the unchanged model call or recreate containers yet.
+secret. The A/B and planner diagnostic are under private evidence root
+`ar297-mistral-recruiter-KsV0r1NA`.
 
 ## next-bounded-work-package
 
-1. Analyze the target-versus-ranked-candidate mismatch offline without another
-   provider call. If changing the generation model, thinking level, or route is
-   proposed, interview the owner before changing the exact config.
-2. Resolve AR-301 and AR-302, then build and verify a fresh exact candidate.
-3. Only after direct specialist selection is green, recreate the four clean
-   harness containers and repeat unattended ordinary-turn evidence.
+1. After this clean recovery pair, run exactly one strict/additive post-fix
+   direct preflight using the approved Mistral recruiter A/B config.
+2. If specialist selection and complete prompt visibility pass, run named
+   repository gates, resolve AR-301 and AR-302, and build a fresh candidate.
+3. Only then recreate the four clean harness containers and repeat unattended
+   ordinary-turn evidence; interview before any further model/config choice.
 
 ## verification
 

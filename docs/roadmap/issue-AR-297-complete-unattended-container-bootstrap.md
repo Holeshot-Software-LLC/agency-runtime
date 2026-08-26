@@ -18,6 +18,7 @@ related:
   - docs/roadmap/issue-AR-302-owner-private-local-verification.md
   - docs/roadmap/issue-AR-303-bound-full-roster-embedding-requests.md
   - docs/roadmap/issue-AR-304-preserve-recruiter-critic-validation-diagnostics.md
+  - docs/roadmap/issue-AR-305-normalize-planner-novelty-absence.md
   - docs/decisions/0174-admit-local-ollama-canary-child-judges.md
   - docs/decisions/0175-batch-complete-embedding-input-sets.md
   - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
@@ -35,7 +36,7 @@ epic: host-integrations
 issue_id: AR-297
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
-depends_on: [AR-300, AR-301, AR-302, AR-303, AR-304]
+depends_on: [AR-300, AR-301, AR-302, AR-303, AR-304, AR-305]
 blocks: []
 ---
 
@@ -346,6 +347,30 @@ the mode-0600 3,936,256-byte Store SHA-256 is
 `ce9aa8685fe6643688112d01202688eeffd4eb5b8cb9642a734746445b0a8627`.
 The run reused the existing service credential only in process memory, retained
 no secret, made no Jina call, and was the package's final model attempt.
+
+The owner-approved one-variable Mistral recruiter A/B changed only
+`workforce.recruiter` from `local-generation` to `local-critic`; its mode-0600
+3,638-byte config SHA-256 is
+`87551b5bc936a41742d6846523377e3cf869d8e5c2ce2e4941c447848e125628`.
+It exited 2 after 296,074 ms. Session
+`ar297-direct-48045cad-ba8d-42b4-b372-075105116b51`, trace
+`d276a583-e632-49af-b80f-7bece3b34b90`, and run
+`4d0c87fc-e85a-4e4b-865a-474b9886cb93` correlate the failure. Mistral ranked
+`accessibility-auditor`, `section-508-accessibility-specialist`, then
+`uswds-developer`, but deterministic sufficiency still rejected the team on
+the capability axis. The mode-0600 summary and Store hashes are
+`8b71384383212e99a3f902065344cfd4e48e73e72b53085edf0cc9085263a3a7` and
+`994893bb05270087deb2eae3030e76791d1e7ab032fe79c4823b7e07572425fa`.
+
+AR-305 then reproduced the exact planner boundary in one diagnostic call.
+Qwen returned `novel_capability: "false"`; compilation converted that absence
+sentinel into the sole uncovered requirement `capability:false`. Its 4,148-byte
+mode-0600 diagnostic SHA-256 is
+`8c7a2c5c0941ad56fb69f6363662bba8e472449ca82e1c73b9c6a837ad4bf137`.
+The bounded candidate canonicalizes stringified absence without weakening real
+novel-gap or unknown-domain validation. Planning/inference/selection tests pass
+158 with one skip, and changed-file static gates pass. A post-fix live turn has
+not yet run at this checkpoint.
 
 Every named repository gate now has a successful exact run: documentation and
 both Ruff checks exit 0; the trusted/private fast spine passes 858 with 3 skips;
