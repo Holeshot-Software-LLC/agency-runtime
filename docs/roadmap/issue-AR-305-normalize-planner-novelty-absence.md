@@ -20,7 +20,7 @@ issue_id: AR-305
 priority: p0
 tracker_url: null
 depends_on: []
-blocks: [AR-297]
+blocks: [AR-297, AR-306]
 ---
 
 # AR-305: Normalize planner novelty absence sentinels

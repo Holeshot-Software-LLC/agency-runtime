@@ -19,6 +19,7 @@ related:
   - docs/roadmap/issue-AR-303-bound-full-roster-embedding-requests.md
   - docs/roadmap/issue-AR-304-preserve-recruiter-critic-validation-diagnostics.md
   - docs/roadmap/issue-AR-305-normalize-planner-novelty-absence.md
+  - docs/roadmap/issue-AR-306-bind-strict-critic-semantics.md
   - docs/decisions/0174-admit-local-ollama-canary-child-judges.md
   - docs/decisions/0175-batch-complete-embedding-input-sets.md
   - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
@@ -36,7 +37,7 @@ epic: host-integrations
 issue_id: AR-297
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
-depends_on: [AR-300, AR-301, AR-302, AR-303, AR-304, AR-305]
+depends_on: [AR-300, AR-301, AR-302, AR-303, AR-304, AR-305, AR-306]
 blocks: []
 ---
 
@@ -371,6 +372,30 @@ The bounded candidate canonicalizes stringified absence without weakening real
 novel-gap or unknown-domain validation. Planning/inference/selection tests pass
 158 with one skip, and changed-file static gates pass. A post-fix live turn has
 not yet run at this checkpoint.
+
+The clean post-AR-305 preflight exited 2 after 110,442 ms, but it advanced the
+boundary: Qwen planning, both `qwen3-embedding` batches, Mistral reranking, the
+Mistral recruiter, and the Mistral critic all applied. Session
+`ar297-direct-2776dc3d-9ca1-4f2c-9b96-28fb05a21a49`, trace
+`bbf187df-29ab-495a-acb0-7f60885a8b7e`, and run
+`be80eeee-c874-454d-bd74-b800e0ec32a8` correlate the remaining
+`staffing_critic_rejected` failure. Its 6,815-byte summary SHA-256 is
+`a4ca68e121e5ba1db3f9dade51da2556ad194c62f1c663eaf5e86734d132371a`;
+the 3,936,256-byte Store is
+`7b679a1de05dc49455f577ab44c4ecd521b8580e31a8e38d59f1b5f4795fb346`.
+
+The non-activating strict-pipeline diagnostic exited 2 after 131,589 ms. It
+proves the compiled unit requires only `analysis` and `audit`; Mistral selected
+only `accessibility-auditor` at confidence 1.0 and margin 0.1, retained the
+Section 508 specialist as runner-up, and forbade the USWDS implementer. The
+hard verifier accepted that team, but the critic returned
+`unsupported-confidence` and `unsafe-composition`. The mode-0600 8,603-byte
+artifact SHA-256 is
+`c2dbfa542123917bbbd75971ed33aff21be6b95d2a6c538f2261a774911bbba2`.
+AR-306 now supplies the previously absent exact thresholds, pre-execution scope,
+and selected-only composition contract while retaining independent veto
+authority. Focused tests remain 158 passed and one skipped; a live confirmation
+has not yet run.
 
 Every named repository gate now has a successful exact run: documentation and
 both Ruff checks exit 0; the trusted/private fast spine passes 858 with 3 skips;

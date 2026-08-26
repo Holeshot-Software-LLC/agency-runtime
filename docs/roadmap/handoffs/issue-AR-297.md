@@ -15,6 +15,7 @@ related:
   - docs/roadmap/issue-AR-303-bound-full-roster-embedding-requests.md
   - docs/roadmap/issue-AR-304-preserve-recruiter-critic-validation-diagnostics.md
   - docs/roadmap/issue-AR-305-normalize-planner-novelty-absence.md
+  - docs/roadmap/issue-AR-306-bind-strict-critic-semantics.md
   - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
   - docs/decisions/0174-admit-local-ollama-canary-child-judges.md
   - docs/decisions/0175-batch-complete-embedding-input-sets.md
@@ -87,26 +88,6 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   Provider-authored prose and unknown codes cannot enter repair or preflight
   receipts. The focused warning-strict set passes 139 tests and changed files
   pass Ruff.
-- The mode-0700 private evidence root retains three precursor failures without
-  secrets: unauthenticated trace `ae75a071-1bc2-444c-821a-f616dfd1402a`,
-  node-limit trace `7a45e47a-4fb1-4f19-b712-acd24743f910`, and diagnostic trace
-  `d055d5b4-4bb9-4f6a-993c-5364b27c9e2b`. Their summary/Store hashes remain in
-  the canonical issue. The existing LiteLLM credential was used only in memory.
-- Final trace `e10388cf-492c-403c-b2e4-f24cf4df78da`, session
-  `ar297-direct-3efe9f90-9f57-458d-8ef0-a20d972ae03b`, and run
-  `4bdcfa5a-1d4c-44bf-adef-cc13c4ec5499` correlate one 232,336-ms preflight that
-  exited 2. Both embedding batches and Mistral reranking applied. The first Qwen
-  recruiter response ranked only `uswds-developer` and retained closed
-  `staff_without_safe_team`; its schema-valid repair applied, then abstained.
-- Routing ended `no_specialist_fail_open` with `no_safe_sufficient_team` and
-  `recruiter_abstained`. Only `runs` and `preflight_failure_receipts` correlate;
-  only `agency-steward` loaded. The 2,659-byte Accessibility Auditor prompt hash
-  remained exact but was not included because no target specialist was selected.
-- Final mode-0600 summary is 7,376 bytes at SHA-256
-  `601dbcc9e6335962e3b5ce087110f5882fea528e34992bac7adb10e2181d7566`;
-  the 3,936,256-byte Store is
-  `ce9aa8685fe6643688112d01202688eeffd4eb5b8cb9642a734746445b0a8627`.
-  This was the package's final model call.
 - The approved Mistral-only recruiter A/B config hash is `87551b5b...e125628`.
   It exited 2 after 296,074 ms on trace `d276a583-e632-49af-b80f-7bece3b34b90`:
   Mistral ranked the two correct accessibility specialists first, yet verifier
@@ -116,16 +97,25 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   `capability:false`. Diagnostic hash is `8c7a2c5c...d4bf137`; no Jina or secret
   was used. AR-305 normalizes only stringified absence sentinels at both gap and
   unknown-domain boundaries. Focused tests pass 158 with one skip.
+- Post-fix trace `bbf187df-29ab-495a-acb0-7f60885a8b7e` applied planner,
+  embedding, reranker, recruiter, and critic, then exited 2 only at
+  `staffing_critic_rejected`. Summary/Store hashes are `a4ca68e1...132371a` and
+  `7b679a1d...95fb346`.
+- Diagnostic `c2dbfa54...bbba2` proves Mistral selected only Accessibility
+  Auditor at confidence 1.0/margin 0.1; the verifier accepted, but the critic
+  claimed `unsupported-confidence` and `unsafe-composition`. AR-306 adds exact
+  thresholds, pre-execution scope, and selected-only semantics without removing
+  critic veto authority; 158 focused tests pass with one skip.
 
 ## exact-blocker
 
-- AR-303 recall and AR-304 diagnostics are live-proven. AR-305's false-gap
-  repair is focused-test proven but awaits one post-fix live preflight, so no
-  specialist or workforce prompt has yet loaded on the repaired source.
+- AR-305 is live-proven through verifier-safe selection. AR-306 is focused-test
+  proven but awaits one live critic confirmation; no workforce prompt has yet
+  loaded on the repaired source.
 - AR-301 blocks the shipped non-root dashboard service. AR-302 blocks ordinary
   ambient-umask/trusted-interpreter repeatability. No harness has a current
   successful ordinary Agency turn or Codex canary attestation.
-- AR-299 through AR-304 tracker parity, hosted cross-OS artifacts, signing,
+- AR-299 through AR-306 tracker parity, hosted cross-OS artifacts, signing,
   push, PR, merge, tag, publication, and release remain unauthorized.
 
 ## same-task-continuity
@@ -136,13 +126,13 @@ under `~/.agency-runtime/configs/`. The corrected private probe script is
 `/tmp/ar297_direct_preflight_probe.py`; final private artifacts are
 `authenticated-agency.db` and `direct-preflight-authenticated-summary.json`.
 The probe obtains the existing LiteLLM credential in memory and persists no
-secret. The A/B and planner diagnostic are under private evidence root
-`ar297-mistral-recruiter-KsV0r1NA`.
+secret. A/B and planner evidence is under `ar297-mistral-recruiter-KsV0r1NA`;
+post-fix and strict diagnostics are under `ar297-postfix-8vIi2aDz`.
 
 ## next-bounded-work-package
 
-1. After this clean recovery pair, run exactly one strict/additive post-fix
-   direct preflight using the approved Mistral recruiter A/B config.
+1. After the AR-306 clean recovery pair, run exactly one strict/additive
+   preflight using the unchanged approved Mistral recruiter A/B config.
 2. If specialist selection and complete prompt visibility pass, run named
    repository gates, resolve AR-301 and AR-302, and build a fresh candidate.
 3. Only then recreate the four clean harness containers and repeat unattended

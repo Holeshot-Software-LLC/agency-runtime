@@ -3041,6 +3041,7 @@ def test_typed_recall_matrix_is_bounded_independently_of_roster_size() -> None:
 
 def test_strict_mode_critic_can_only_veto_an_already_verified_team() -> None:
     snapshot = _snapshot(_contract("technical-analyst"))
+    prompts: list[dict[str, object]] = []
     responses = iter(
         (
             _result(_compact_plan_document()),
@@ -3048,12 +3049,17 @@ def test_strict_mode_critic_can_only_veto_an_already_verified_team() -> None:
             _result({"approved": False, "reason_codes": ["wrong-neighbor-risk"]}),
         )
     )
+
+    def invoke(*args, **_kwargs):
+        prompts.append(json.loads(args[1]))
+        return next(responses)
+
     outcome = plan_and_staff_workforce(
         "Analyze this implementation safely.",
         snapshot,
         config=_config("strict"),
         context=_context(),
-        invoker=lambda *_args, **_kwargs: next(responses),
+        invoker=invoke,
     )
 
     assert not outcome.accepted
@@ -3065,6 +3071,20 @@ def test_strict_mode_critic_can_only_veto_an_already_verified_team() -> None:
         "staffing_critic_rejected",
         "wrong-neighbor-risk",
     )
+    assert prompts[2]["critic_contract"] == {
+        "review_scope": "pre_execution_semantic_staffing",
+        "verified_staffing_hard_checks_passed": True,
+        "composition_uses_selected_workers_only": True,
+        "unselected_categories": [
+            "acceptable",
+            "runner_up",
+            "forbidden",
+            "disabled_shadows",
+            "unavailable_shadows",
+        ],
+        "minimum_confidence": 0.8,
+        "minimum_margin": 0.1,
+    }
 
 
 def test_ar304_strict_critic_rejection_requires_one_closed_reason_code() -> None:
