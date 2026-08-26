@@ -1055,7 +1055,7 @@ def test_ar303_two_embedding_batches_leave_one_recall_reranker_call(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     clear_hybrid_recall_cache()
-    monkeypatch.setattr(hybrid_recall_module, "MAX_EMBEDDING_VECTOR_VALUES", 54)
+    monkeypatch.setattr(hybrid_recall_module, "embedding_batch_input_limit", lambda _dims: 27)
     snapshot = _hybrid_recall_snapshot()
     embedding_calls: list[tuple[str, ...]] = []
 

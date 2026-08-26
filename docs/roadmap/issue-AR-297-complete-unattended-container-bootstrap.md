@@ -299,6 +299,18 @@ credential then applied in 3,818 ms at exactly 4,096 dimensions. The corrected
 full preflight awaits the mandatory clean telemetry checkpoint; no secret was
 persisted and no container was created.
 
+After clean checkpoint `14a4346c` / `3841fcce`, authenticated trace
+`7a45e47a-4fb1-4f19-b712-acd24743f910` received HTTP 200 but failed closed on
+the bounded JSON structural-node limit. A direct 244-row reproduction proved
+that 999,424 vector scalars fit the scalar cap while response row/container
+nodes exceed the separate one-million-node parser cap. AR-303 now reserves
+those nodes and limits a 4,096-dimensional call to 243 rows; the exact
+regression is 243+21 and 139 focused warning-strict tests pass. The preserved
+summary and Store hashes are
+`31f8c8ad731a5e1f84bfd9037dd5a5457d386e4b213ec636b5d5c63227d8b326`
+and `72b33ee665806d9c8b055379cd98a28441903250ef67d403b8a60ee9273355bd`.
+No post-correction live call ran before the required recovery checkpoint.
+
 Every named repository gate now has a successful exact run: documentation and
 both Ruff checks exit 0; the trusted/private fast spine passes 858 with 3 skips;
 dashboard UI passes 138; routing passes every threshold; decision conformance

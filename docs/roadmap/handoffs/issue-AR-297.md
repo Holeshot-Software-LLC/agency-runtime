@@ -38,10 +38,11 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - PR #326 is merged. The dedicated Linux worktree is on
   `codex/ar297-production-container-live-evidence` at clean starting commit
   `3177638dd541c2d59c216627e2a6cd0d2112d561`, ahead of `origin/main` by 12.
-- Bootstrap telemetry exited 0 at 77.2 percent remaining. The first live-check
-  telemetry exited 0 at 60.1 percent. The corrected authenticated live check
-  was not started because telemetry then exited 0 at 49.5 percent and requires
-  this clean recovery pair first.
+- Bootstrap and first live-check telemetry exited 0 at 77.2 and 60.1 percent.
+  Telemetry then required the clean `14a4346c` / `3841fcce` recovery pair at
+  49.5 percent. Immediately before the authenticated check it exited 0 at 27.8
+  percent; immediately before the bounded provider diagnostic it exited 0 at
+  26.5 percent. The clean pair satisfied the checkpoint requirement.
 - The exact unsigned Linux candidate remains
   `987cee8ff01a4a16780eac15bb8120f828d4193d`. Its scoped verdict is **NO-GO**.
   AR-297 and tracker #335 remain open.
@@ -74,12 +75,12 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   remain. No container was created in the current package.
 - AR-303 now prevalidates one complete logical embedding set and permits at
   most two ordered scalar-safe calls. The exact 263-card/4,096-dimension test
-  uses batches 244 and 20 including one query; warm uses one. Partial failure,
+  uses batches 243 and 21 including one query; warm uses one. Partial failure,
   model drift, and dimension drift discard all vectors and never seed cache.
   Cold recall and host timeouts cover two embeddings plus one reranker.
 - AR-304 adds closed recruiter candidate and strict-critic semantic diagnoses.
   Provider-authored prose and unknown codes cannot enter repair or preflight
-  receipts. The focused warning-strict set passes 129 tests and changed files
+  receipts. The focused warning-strict set passes 139 tests and changed files
   pass Ruff.
 - Private trace `ae75a071-1bc2-444c-821a-f616dfd1402a` ran from a mode-0700
   evidence root against the exact config. It crossed the former scalar failure,
@@ -96,11 +97,24 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   matches the config's auth choice. One ephemeral one-input check using that
   service credential applied in 3,818 ms at exactly 4,096 dimensions. No secret
   was printed, copied into config, or persisted in evidence.
+- Authenticated trace `7a45e47a-4fb1-4f19-b712-acd24743f910` received HTTP 200
+  for the first 244-row embedding call but still failed closed before recall.
+  A direct bounded reproduction identified `BoundedJSONError: JSON exceeds the
+  structural-node limit`: 999,424 vector scalars fit the scalar cap, while the
+  response's row/container nodes exceed the separate one-million-node parser
+  cap. Its 6,947-byte summary SHA-256 is
+  `31f8c8ad731a5e1f84bfd9037dd5a5457d386e4b213ec636b5d5c63227d8b326`;
+  its 3,940,352-byte Store SHA-256 is
+  `72b33ee665806d9c8b055379cd98a28441903250ef67d403b8a60ee9273355bd`.
+- The corrected limiter reserves fixed and per-row response nodes, yielding a
+  243-row maximum at 4,096 dimensions and 243+21 in the exact regression. All
+  139 focused warning-strict tests pass; no further live call preceded this
+  recovery checkpoint.
 
 ## exact-blocker
 
-- The authenticated full-roster probe still must run after this checkpoint.
-  The first probe did not prove applied batch two or reranking, and the Qwen
+- The node-bounded authenticated full-roster probe still must run after this
+  checkpoint. Prior probes did not prove applied batch two or reranking, and the Qwen
   recruiter still needs to clear its now-exact invalid-score diagnosis.
 - AR-301 blocks the shipped non-root dashboard service. AR-302 blocks ordinary
   ambient-umask/trusted-interpreter repeatability. No harness has a current
@@ -113,15 +127,16 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 The exact artifacts remain under `~/.agency-runtime/release-artifacts/`
 `dist-987cee8ff01a4a16780eac15bb8120f828d4193d-linux-ar297`; the config remains
 under `~/.agency-runtime/configs/`. The corrected private probe script is
-`/tmp/ar297_direct_preflight_probe.py`; it targets a fresh
-`authenticated-agency.db` and summary in the evidence root. It obtains the
+`/tmp/ar297_direct_preflight_probe.py`; preserved failures use `no-auth-*` and
+`authenticated-node-limit-*`, while the next run targets fresh
+`authenticated-agency.db` and summary artifacts. It obtains the
 already-running LiteLLM service credential in process memory and persists no
 secret. Do not recreate containers until a later bounded package requires it.
 
 ## next-bounded-work-package
 
 1. After the recovery pair, rerun telemetry and execute the prepared
-   authenticated private preflight once. Require applied two-batch embedding,
+   node-bounded authenticated private preflight once. Require applied two-batch embedding,
    reranking, exact model identities, Accessibility Auditor selection, and full
    prompt inclusion; retain any closed recruiter/critic diagnosis on failure.
 2. Finish focused review, run the named fast spine and every repository gate,

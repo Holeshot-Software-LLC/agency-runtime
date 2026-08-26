@@ -27,12 +27,12 @@ from agency_runtime.core.workforce.contract import WorkforceContract
 from agency_runtime.core.workforce.embedding_provider import (
     MAX_EMBEDDING_DIMENSIONS,
     MAX_EMBEDDING_LATENCY_MS,
-    MAX_EMBEDDING_VECTOR_VALUES,
     EmbeddingBatch,
     EmbeddingInvoker,
     EmbeddingReceipt,
     bound_embedding_inputs,
     embed_texts,
+    embedding_batch_input_limit,
 )
 from agency_runtime.core.workforce.planning_contracts import (
     WorkUnit,
@@ -554,9 +554,7 @@ def _embedding_chunks(
         or not 0 <= dimensions <= MAX_EMBEDDING_DIMENSIONS
     ):
         raise ValueError("embedding dimensions are outside the supported range")
-    batch_size = (
-        len(bounded) if dimensions == 0 else max(1, MAX_EMBEDDING_VECTOR_VALUES // dimensions)
-    )
+    batch_size = len(bounded) if dimensions == 0 else embedding_batch_input_limit(dimensions)
     chunks = tuple(
         bounded[offset : offset + batch_size] for offset in range(0, len(bounded), batch_size)
     )

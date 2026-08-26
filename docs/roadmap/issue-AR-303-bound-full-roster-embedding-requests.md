@@ -41,8 +41,9 @@ the configured embedding provider could be reached.
 
 - The candidate implementation validates the complete logical input set before
   transport, then divides it into at most two ordered scalar-safe input batches.
-- At 4,096 dimensions the per-call ceiling is 244 inputs. The exact 263-card
-  regression uses batches of 244 and 20 including its query; a warm cache still
+- At 4,096 dimensions the per-call ceiling is 243 inputs after reserving JSON
+  row/container nodes. The exact 263-card regression uses batches of 243 and 21
+  including its query; a warm cache still
   embeds only the query in one call.
 - All batches must report the same exact actual model and dimensions. Any
   provider failure, count mismatch, dimension drift, or model drift discards
@@ -50,12 +51,16 @@ the configured embedding provider could be reached.
   unchanged typed-only recall lane.
 - The independent cold recall budget is three calls: at most two embeddings and
   one reranker. Generated host timeouts account for both embedding calls.
-- Focused warning-strict coverage currently passes 129 tests. The first private
+- Focused warning-strict coverage currently passes 139 tests. The first private
   live preflight reached LiteLLM rather than failing the scalar bound, then
   received 401 because the direct process did not inherit the configured
   `LITELLM_API_KEY`. A one-input check using the running gateway's existing
   protected service credential passed at exactly 4,096 dimensions. The
-  authenticated full preflight is pending the required clean checkpoint.
+  authenticated full preflight then reached a 200 response but rejected it
+  because 244 rows of 4,096 values plus JSON row/container structure exceeded
+  the parser's separate one-million-node cap. The batch limiter now reserves
+  those nodes and admits at most 243 rows; another authenticated preflight is
+  pending the required clean checkpoint.
 - Tracker creation is prohibited by the active task.
 
 ## Approach
@@ -85,6 +90,8 @@ path because the runtime cannot safely infer a provider-native width.
 - [x] Complete logical input bounds are checked before any provider call.
 - [x] Second-batch provider failure, dimension drift, and model drift are
       atomic, content-free, uncached typed-only outcomes.
+- [x] The per-call row limit satisfies both the scalar-value cap and bounded
+      JSON structural-node cap.
 - [x] Recall and host timeout budgets cover two embedding calls plus one
       reranker without consuming staffing inference capacity.
 - [x] Focused warning-strict tests and Ruff checks pass.

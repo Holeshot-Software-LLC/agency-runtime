@@ -530,7 +530,7 @@ def test_ar303_full_roster_4096_embeddings_use_two_ordered_bounded_batches() -> 
         embedding_dimensions=4_096,
     )
 
-    assert [len(batch) for batch in calls] == [244, 20, 1]
+    assert [len(batch) for batch in calls] == [243, 21, 1]
     assert cold.receipt.status == "applied"
     assert cold.receipt.provider_call_count == 2
     assert cold.receipt.embedding.input_count == 264
@@ -546,7 +546,7 @@ def test_ar303_full_roster_4096_embeddings_use_two_ordered_bounded_batches() -> 
 def test_ar303_second_embedding_batch_failure_is_atomic_and_uncached(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setattr(hybrid_recall_module, "MAX_EMBEDDING_VECTOR_VALUES", 6)
+    monkeypatch.setattr(hybrid_recall_module, "embedding_batch_input_limit", lambda _dims: 2)
     plan = _plan()
     contracts = tuple(
         _contract(f"worker-{index}", outcome="Bounded workforce recall") for index in range(3)
@@ -587,7 +587,7 @@ def test_ar303_second_embedding_batch_failure_is_atomic_and_uncached(
 def test_ar303_cross_batch_model_drift_is_atomic_and_uncached(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setattr(hybrid_recall_module, "MAX_EMBEDDING_VECTOR_VALUES", 6)
+    monkeypatch.setattr(hybrid_recall_module, "embedding_batch_input_limit", lambda _dims: 2)
     calls = 0
 
     def invoke(texts: tuple[str, ...]) -> EmbeddingProviderResponse:
@@ -624,7 +624,7 @@ def test_ar303_cross_batch_model_drift_is_atomic_and_uncached(
 def test_ar303_more_than_two_embedding_batches_fail_before_provider_call(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setattr(hybrid_recall_module, "MAX_EMBEDDING_VECTOR_VALUES", 3)
+    monkeypatch.setattr(hybrid_recall_module, "embedding_batch_input_limit", lambda _dims: 1)
     calls: list[tuple[str, ...]] = []
 
     result = discover_hybrid_recall(
