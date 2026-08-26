@@ -595,6 +595,17 @@ ordinary non-root systemd dashboard service fails closed under `PrivateTmp`
 box requiring cross-OS, signing, publication, or successful live host delivery
 is satisfied by them.
 
+The named repository gates subsequently pass from trusted owner-private Linux
+execution: 858 fast-spine tests pass with 3 skips, dashboard UI passes 138,
+routing passes every threshold, and decision conformance passes its baseline
+with 160/160 mutations killed, zero survived/invalid, and source unchanged.
+Fresh wheel and sdist installs each pass packaged import/data, 263-worker roster,
+offline selection safety, eight-tool MCP, authenticated dashboard health,
+deterministic smoke 8/8, CLI help/version, and `pip check`. Ambient umask 0002
+and an interpreter below untrusted `/tmp` first fail closed; AR-302 retains that
+local-repeatability defect. These local successes do not supply hosted Windows,
+cross-producer parity, signing, or publication evidence.
+
 The 2026-07-26 checkpoint passed the then-current ordinary warning-strict suite
 (7,604 passed, 61 skipped, 1 expected failure), Python coverage at 97.08 percent,
 the separate performance arm, dashboard coverage, routing, delegation,

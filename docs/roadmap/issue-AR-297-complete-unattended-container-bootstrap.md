@@ -15,6 +15,7 @@ related:
   - docs/roadmap/issue-AR-299-local-ollama-canary-child-judge.md
   - docs/roadmap/issue-AR-300-bind-explicit-install-config-to-managed-canary.md
   - docs/roadmap/issue-AR-301-private-systemd-dashboard-namespace.md
+  - docs/roadmap/issue-AR-302-owner-private-local-verification.md
   - docs/decisions/0174-admit-local-ollama-canary-child-judges.md
   - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
   - agency_runtime/cli/install_commands.py
@@ -31,7 +32,7 @@ epic: host-integrations
 issue_id: AR-297
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
-depends_on: [AR-300, AR-301]
+depends_on: [AR-300, AR-301, AR-302]
 blocks: []
 ---
 
@@ -238,3 +239,32 @@ correctly remains activation-required. The owner-scoped dashboard service rolls
 back because systemd `PrivateTmp=true` remaps trusted root ancestors to UID
 65534 and the configuration validator fails closed. AR-301 records that product
 defect; foreground worker readiness does not substitute for service proof.
+
+The approved Mistral Hermes compatibility attempt persisted model
+`mistral-small3.2:24b` but retained the previously configured `medium` reasoning
+level. Prompt SHA-256
+`6b5c3c66979625bcc9b90a91978637ce15ca7fb3d3fa95da5b1df03c54c3b154`
+created session `20260826_135649_5c52c9` and Store trace
+`20260826_135649_5c52c9:5dc5c889-8e55-49d1-a67e-d790fbe89472:95f4cb56`.
+Agency loaded unattended but terminalized preflight as
+`workforce_inference_failed`; no Agency model receipt exists. Hermes then
+exited 1 when Ollama rejected thinking for Mistral. Its native auxiliary chain
+also warned about a paid OpenRouter default, received no paid response, and
+fell back locally. Per the owner's interview constraint, a retry awaits explicit
+approval for `reasoning_effort=none` and `auxiliary.free_only=true`.
+
+Every named repository gate now has a successful exact run: documentation and
+both Ruff checks exit 0; the trusted/private fast spine passes 858 with 3 skips;
+dashboard UI passes 138; routing passes every threshold; decision conformance
+passes its baseline and kills 160/160 mutations with source unchanged; and diff
+checking exits 0. Initial runs from ambient umask 0002 and an interpreter below
+untrusted `/tmp` remain preserved as environment failures. AR-302 records that
+local repeatability defect rather than hiding it.
+
+Fresh portable wheel and sdist environments each exit 0 for package import,
+ten dashboard assets, 263-worker roster integrity, offline selection safety,
+eight MCP tools, authenticated dashboard health, deterministic smoke 8/8,
+`agency --version`/help, and `pip check`. Host status exits 0 with the four
+recorded bundle digests and no runtime drift. OpenClaw's authenticated gateway
+RPC probe now exits 0; this read-only health result does not replace its failed
+ordinary Agency turn.

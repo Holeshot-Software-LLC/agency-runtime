@@ -11,6 +11,7 @@ related:
   - docs/roadmap/issue-AR-299-local-ollama-canary-child-judge.md
   - docs/roadmap/issue-AR-300-bind-explicit-install-config-to-managed-canary.md
   - docs/roadmap/issue-AR-301-private-systemd-dashboard-namespace.md
+  - docs/roadmap/issue-AR-302-owner-private-local-verification.md
   - docs/roadmap/handoffs/issue-AR-290.md
   - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
   - docs/decisions/0174-admit-local-ollama-canary-child-judges.md
@@ -22,8 +23,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-297
 branch: codex/ar297-production-container-live-evidence
-evidence_commit: 2b16a88b84eddb523b791833520b1d5f7ba42141
-minimum_ledger_commit: 987cee8ff01a4a16780eac15bb8120f828d4193d
+evidence_commit: 802a4b4fd74e4501f4b9d65b8cf6840bff7a4767
+minimum_ledger_commit: 72d0965c42b372019b4ebc93631cb034f31165c5
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 ---
@@ -34,9 +35,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 
 - PR #326 is merged. The dedicated Linux worktree is based on clean
   `origin/main` commit `0a23983aa7b99ec27ef18b1a950f6a0327961f72` and is
-  currently clean through AR-300 commit `2b16a88b` plus ledger `987cee8f`.
-- Telemetry reported 14.0 percent remaining after the bounded live work. This
-  capsule update is the required clean checkpoint before another live model call.
+  clean through evidence commit `802a4b4f` plus ledger `72d0965c`.
+- Telemetry reported 12.6 percent remaining after gates. This refresh is the
+  required clean checkpoint before another live model call.
 - Tracker #335 remains linked and open. Tracker creation for AR-299 through
   AR-301 and every push, merge, tag, signing, publication, release, and hosted
   workflow action remain prohibited by the active task.
@@ -77,10 +78,11 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Ordinary Claude timed out after 240 seconds with no output. Store trace
   `5e7cea73-3db3-400b-b083-0a9687180693`, session
   `c6710945-2869-4953-977f-3024662b7251`, ended with preflight still in progress.
-- Hermes was persistently configured through its CLI for local Ollama. Qwen 14B
-  was rejected before inference because Hermes requires 64K context and the
-  model advertises 32,768/40,960. The owner approved already-local
-  `mistral-small3.2:24b` (digest `5a408ab55df5`, 131,072 context) for the next run.
+- Hermes model `mistral-small3.2:24b` accepted 131,072 context, but Agency
+  preflight failed and Ollama then rejected Hermes's retained `medium` thinking.
+  Session `20260826_135649_5c52c9`, Store trace ending `95f4cb56`, no Agency
+  model receipt, exit 1. A retry awaits approval for reasoning `none` and native
+  auxiliary `free_only=true`; no paid auxiliary response succeeded.
 - Ordinary OpenClaw loaded Agency but the strict `before_agent_run` hook timed
   out. Store trace `9b61694c-c562-498a-ab50-25aa2b5fcabd`, session
   `10ab5af0-1911-4833-8879-3202c63ffe6e`, retained an in-progress preflight and
@@ -106,6 +108,12 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   UID 65534, so the config namespace validator refuses cross-account path
   substitution. Foreground execution stays healthy. AR-301 records this defect;
   no hardening or ownership check was bypassed.
+- Final gates: docs/Ruff/diff exit 0; fast spine 858 passed/3 skipped; UI
+  138 passed; routing passed; decision conformance killed 160/160; fresh wheel
+  and sdist smoke, MCP, dashboard, CLI, 8/8 deterministic smoke, and `pip check`
+  all exit 0. AR-302 records ambient-umask/untrusted-interpreter failed runs.
+- Host status exits 0 with all four bundles and no drift. OpenClaw user service
+  and authenticated RPC are healthy; ordinary Agency-turn proof remains failed.
 
 ## exact-blocker
 
@@ -113,7 +121,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   incomplete or failed, so unattended loading is not proven.
 - Host dashboard service cannot start under its shipped Linux hardening because
   of AR-301. OpenClaw gateway health still needs a read-only final status check.
-- AR-299 through AR-301 tracker parity is unauthorized. Signing, publication,
+- AR-299 through AR-302 tracker parity is unauthorized. Signing, publication,
   tags, release, hosted cross-OS artifacts, and optional exhaustive workflows
   remain unrun and unauthorized.
 
@@ -126,8 +134,8 @@ copy it into repository evidence.
 
 ## next-bounded-work-package
 
-1. Run the owner-approved Hermes ordinary turn with local Mistral 24B once and
-   preserve exact exit, Store correlation, requested/actual model, and output.
+1. If the owner approves reasoning `none` and auxiliary `free_only=true`, run
+   the same Mistral Hermes turn once and preserve exact terminal evidence.
 2. Perform only the remaining read-only host/OpenClaw/status checks; do not
    retry Codex or weaken the dashboard service boundary.
 3. Run every repository gate named in `AGENTS.md` and the applicable unsigned
