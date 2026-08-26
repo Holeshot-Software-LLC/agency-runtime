@@ -55,6 +55,12 @@ the configured child judge can run.
   the current-profile canary environment. The identity reader still validates
   the complete managed tree, install ID, bundle digest, launcher artifacts,
   and running private-runtime digest. No fallback or bypass is introduced.
+- Exact `3e42598d` C2 passes that repaired boundary. Native-child decision
+  `1d351ac6-cc63-4799-a263-cc3960c63082` is persisted over a 59-card catalog
+  only after the immutable install identity and stable routing-state checks.
+  The requested free child judge then fails unavailable after 26,341 ms, so
+  Agency withholds the v6 card. This is a later honest blocker, not an identity
+  fallback or false delivery claim.
 - Tracker creation is prohibited by the active AR-297 task.
 
 ## Approach
@@ -82,7 +88,7 @@ home authority.
 - [x] Focused boundary and install-identity tests pass warning-strict (7 tests),
       and the broader Codex/native-child boundary set passes 559 tests; Ruff
       and all 869 documentation checks also pass, each at exit 0.
-- [ ] A rebuilt fresh no-bypass Codex transaction writes one v6 child artifact,
+- [x] A rebuilt fresh no-bypass Codex transaction writes one v6 child artifact,
       consumes its receipt, and persists the activation attestation or exposes
       a later honest blocker.
 - [ ] A same-repository tracker issue is created and linked after explicit

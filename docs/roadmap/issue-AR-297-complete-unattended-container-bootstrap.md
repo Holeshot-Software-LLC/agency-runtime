@@ -718,3 +718,24 @@ authority across the subprocess boundary without changing the config or trust
 mode. Seven focused and 559 broader warning-strict tests, Ruff, and all 869
 documentation checks pass at exit 0; a rebuilt live proof follows a clean
 recovery checkpoint.
+
+Exact ledger `3e42598d` produces mode-0644 wheel `0bb18a70...d983` and sdist
+`73d8c201...ae55`; build, strict Twine, and independent verification each exit
+0. Image `6fbbdbd5...696c` binds the wheel, and fresh C1/C2 absence receipts
+`575a1fe3...090`/`abf3d278...8a4b` both exit 0. C1 exits 1 before routing after
+two semantically invalid Qwen planner responses; receipt, Store, and parent
+rollout hash to `86983408...0fc0`, `765c26a6...d307`, and
+`f8ec06fb...fb24`.
+
+C2 reaches accepted route `9f377961-6ced-428d-b1f6-17382b37fb2d`, creates
+child `01a04053-b0fc-76a1-8a38-b88b68040455`, and completes fixed unit
+`unit-05d45f7553` at exit 0. AR-315 is live-proven: native-child decision
+`1d351ac6-cc63-4799-a263-cc3960c63082` can exist only after the immutable
+install identity and stable routing-state checks, and it evaluates all 59
+eligible cards. The requested free Mistral child judge fails unavailable after
+26,341 ms, so only the 563-byte identity is delivered. The outer 180-second
+canary expires five seconds after child completion, without a finalization or
+attestation. Receipt/Store/parent/child hashes are `e043a745...ead5`,
+`7e8a6f9f...9706`, `d74fa302...43a4`, and `a54138e7...0c53`. The next bounded
+step diagnoses that exact child-judge route, then retries a fresh unchanged
+container with the supported 600-second activation timeout.

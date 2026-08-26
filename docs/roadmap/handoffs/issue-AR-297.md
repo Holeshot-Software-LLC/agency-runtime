@@ -41,8 +41,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-297
 branch: codex/ar297-production-container-live-evidence
-evidence_commit: e718dca062dab654bfd4fb4314c31a644099c198
-minimum_ledger_commit: 1ea2686f0e75b855594299dbde76edee842fe54f
+evidence_commit: 4b346af8dae605e6187b292bd46664dad4ab98df
+minimum_ledger_commit: 3e42598da5eaa5b58d0bb0771cea6f90719d48d1
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 ---
@@ -54,59 +54,51 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Work remains in dedicated worktree `/tmp/agency-runtime-ar297.WQUbF2` on
   `codex/ar297-production-container-live-evidence`, based on `origin/main`
   `0a23983a`. Never use the shared checkout.
-- Last clean recovery pair: exact Codex abstention `e718dca0` and worklog
-  `1ea2686f`. This substantive checkpoint captures retry R2 and AR-315; its
-  immediately following worklog commit must record the exact SHA before the
-  next live run. Current telemetry is 79.1 percent remaining.
+- Last clean recovery pair: AR-315 `4b346af8` and worklog `3e42598d`. This
+  checkpoint captures exact-candidate attempts C1/C2; its following worklog
+  commit must record the exact SHA before another live run. Telemetry is 36.1
+  percent remaining.
 - Linux remains **NO-GO**. AR-297/#335 stay open. Tracker writes, push, PR,
   merge, tag, signing, publication, release, and hosted workflow actions are
   not authorized.
 
 ## completed-evidence
 
-- Exact mode-0600 config SHA is `87551b5bc936a41742d6846523377e3cf869d8e5c2ce2e4941c447848e125628`:
-  strict assurance, additive dense recall, Qwen 14B abliterated generation,
-  Mistral 24B critic/reranker/recruiter/child judge, and LiteLLM
-  `qwen3-embedding` at 4,096 dimensions. Jina is absent and was not called.
-- Exact `84dd879e` caller-umask-0002 build, strict Twine, and independent
-  verification exit 0. Mode-0644 wheel `61dbb8c6...c950b` is 9,298,676 bytes;
-  sdist `3845d6e0...8329c` is 25,540,553 bytes.
-- Codex image `12534257...647291` and fresh container `22ce57f2...e93bff`
-  bind that wheel. Absence receipt `ae43bf47...ae4bc` exits 0.
-- Earlier exact candidate `1f32915d` passed every named gate: 860 Python spine
-  tests (three skips), 138 dashboard tests, routing, and 161/161 killed
-  decision mutations. These gates must still be refreshed for the final exact
-  candidate.
-- AR-309 implements exact 0.149 `SubAgentActivity`/quiet-root parsing,
-  child-UUID v6 delivery, one-use canonical-rollout verification, post-spawn
-  reconciliation, and receipt-backed final headers. Its 437 focused tests pass.
-- AR-310's managed existing-Store call contract passes 268 focused tests and is
-  live-proven by `c60678ef`: the invocation reaches native Codex, exact route,
-  fixed delegate work unit, and one `code-reviewer` load with no trust bypass.
-- AR-311 is live-proven: exact parent `01a04003...fd20` creates child
-  `01a04005...b5b0`, which completes fixed unit `unit-05d45f7553` with exit 0.
-  Parent/child rollouts hash to `8b93d005...1b668`/`6e18884f...f73a0`.
-- AR-313 admits normal-umask Codex artifacts by owner/link/write/ACL integrity,
-  and AR-314 pins omitted MultiAgentV2 role `default` without using it for
-  selection. Focused warning-strict checks pass 586 plus two helper tests.
-- R2 installed-runtime diagnostics prove the missing owner-home capability:
-  absent resolves no identity; explicit `/root` resolves a current managed
-  identity with matched runtime. Both exit 0; stdout hashes are
-  `550b2048...e3fff`/`1fccf6f2...ee60`. AR-315's 7 focused and 559 broader
-  warning-strict tests, Ruff, and all 869 documentation checks pass at exit 0.
+- Exact mode-0600 config SHA is `87551b5b...e125628`: strict assurance,
+  additive dense recall, Qwen 14B abliterated generation, Mistral 24B
+  critic/reranker/recruiter/free child judge, and LiteLLM `qwen3-embedding` at
+  4,096 dimensions. Jina is absent and was not called.
+- Exact ledger `3e42598d` caller-umask-0002 build, strict Twine, and independent
+  verification exit 0. Mode-0644 wheel `0bb18a70...d983` is 9,299,031 bytes;
+  sdist `73d8c201...ae55` is 25,561,038 bytes. Codex image is
+  `6fbbdbd5...696c`; C1/C2 absence receipts `575a1fe3...090` and
+  `abf3d278...8a4b` exit 0.
+- AR-309 through AR-314 prove exact Codex 0.149 parent/child correlation,
+  managed Store, fixed native plan, normal-umask artifacts, and default host
+  role. AR-315 passes 7 focused and 559 broader warning-strict tests plus Ruff
+  and 869-document validation.
+- AR-315 is live-proven in C2: decision `1d351ac6...c63082` exists only after
+  immutable install identity, stable routing state, and a 59-card catalog pass;
+  it records the configured free child judge attempt without admitting a card.
+- Earlier exact `1f32915d` named gates pass: 860 Python tests (three skips), 138
+  dashboard tests, routing, and 161/161 decision mutations. Refresh all gates
+  for the final exact candidate.
 
 ## exact-blocker
 
-- Codex still lacks an attestation. Fresh R2 container `537744e9...09476`
-  passes absence, then exits 1 with empty stderr and JSON SHA
-  `aba8cf2d...5089`. Parent `01a04030...825f`, trace `01a04030...fa3e`, route
-  `3bac13eb...366e`, and child `01a04033...9148` correlate one fixed worker
-  exit 0, but zero native routes/deliveries/grants/consumptions and rejected
-  finalization `a065ac2c...51e9`. Store/parent/child hashes are
-  `9209d92e...c177`/`bf356b10...e309`/`e9d3c8f8...6cf93`.
-- AR-315 projects the explicit owner-home authority required by canary-mode
-  install identity. Checkpoint, rebuild, and require exactly one v6
-  `code_reviewer` artifact, consumed receipt, current header, accepted first
+- C1 container `b6f94914...f39c2` exits 1 before route after both Qwen planner
+  attempts are semantically invalid. Receipt/Store/parent hashes are
+  `86983408...0fc0`/`765c26a6...d307`/`f8ec06fb...fb24`.
+- C2 container `3f98857e...f8a91` exits 1 with empty stderr and receipt
+  `e043a745...ead5`. Parent `01a04051...8c60`, trace `01a04051...25fce`, route
+  `9f377961...fb2d`, and child `01a04053...0455` correlate fixed worker exit 0.
+  The 180-second outer window expires five seconds later; its child judge had
+  already failed unavailable after 26,341 ms, so only the 563-byte identity is
+  delivered. Store/parent/child hashes are `7e8a6f9f...9706`,
+  `d74fa302...43a4`, and `a54138e7...0c53`.
+- Diagnose the exact child-judge route read-only, then use one fresh unchanged
+  container with the supported 600-second activation timeout. Require one v6
+  `code-reviewer` artifact, consumed receipt, current header, accepted first
   finalization, and no-bypass attestation in one invocation.
 - No later ordinary Codex, Claude, Hermes, or OpenClaw process has a current
   successful Agency-turn receipt on this source.
@@ -119,10 +111,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 ## same-task-continuity
 
 Exact artifacts: `~/.agency-runtime/release-artifacts/`
-`dist-84dd879e13550e37d0b3245a2ae49355e2912cac-linux-ar297`. Evidence:
-`~/.agency-runtime/evidence/ar297-go-84dd879e`. Current Codex proof containers
-are `agency-ar297-codex-84dd879e` and its `-r2` retry; evidence is retained. All
-AR-297-labelled containers await final teardown. Secret-safe helper:
+`dist-3e42598da5eaa5b58d0bb0771cea6f90719d48d1-linux-ar297`. Evidence:
+`~/.agency-runtime/evidence/ar297-go-3e42598d`. Current exact Codex containers
+are `agency-ar297-codex-3e42598d` and `-c2`; older evidence containers remain.
+All AR-297 containers await final teardown. Secret-safe helper:
 `/tmp/agency-runtime-ar297-evidence.pcLOZn/run_with_litellm_key.py`.
 
 ## next-bounded-work-package
@@ -130,7 +122,7 @@ AR-297-labelled containers await final teardown. Secret-safe helper:
 After compaction, reread this capsule and `git status`, then resume at the first
 unchecked line. Mark an item complete only with exact retained evidence.
 
-1. [x] Rebuild and verify exact `84dd879e` artifacts plus the Codex image.
+1. [x] Rebuild and verify exact `3e42598d` artifacts plus the Codex image.
 2. [ ] Prove fresh Codex absence, then one exact no-bypass V2 install with one
    canonical child artifact, consumed receipt, current header, accepted
    finalization, Store correlation, and attestation.
