@@ -106,6 +106,11 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   claimed `unsupported-confidence` and `unsafe-composition`. AR-306 adds exact
   thresholds, pre-execution scope, and selected-only semantics without removing
   critic veto authority; 158 focused tests pass with one skip.
+- Confirmation trace `a60ed00e-4f08-4a84-8135-8bbc1a2a4f1b` moved both critic
+  attempts to approval, but each included reasons and failed closed at
+  `critic_approval_reasons_present`. Summary/Store hashes are
+  `c89620c2...d8722e` / `7d911ec3...3efe75`. AR-306 now states the conditional
+  reason-array contract explicitly; focused tests remain 158/1 skipped.
 
 ## exact-blocker
 

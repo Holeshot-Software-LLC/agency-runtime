@@ -3084,6 +3084,10 @@ def test_strict_mode_critic_can_only_veto_an_already_verified_team() -> None:
         ],
         "minimum_confidence": 0.8,
         "minimum_margin": 0.1,
+        "response_semantics": {
+            "approved_true_reason_codes": "empty",
+            "approved_false_reason_codes": "one_or_more_unique_hyphenated_codes",
+        },
     }
 
 

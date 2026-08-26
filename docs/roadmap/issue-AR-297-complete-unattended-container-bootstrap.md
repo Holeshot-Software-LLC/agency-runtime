@@ -397,6 +397,19 @@ and selected-only composition contract while retaining independent veto
 authority. Focused tests remain 158 passed and one skipped; a live confirmation
 has not yet run.
 
+The first AR-306 live confirmation exited 2 after 123,381 ms. Session
+`ar297-direct-634be4cb-022f-4aba-91ad-7b1f8dcbc26b`, trace
+`a60ed00e-4f08-4a84-8135-8bbc1a2a4f1b`, and run
+`e499ad35-f2dc-4a4d-bb76-56f9b23e980d` show every stage through recruiter
+applied. Both critic attempts changed from veto to approval but incorrectly
+returned reason codes; both failed closed with the precise runtime diagnostic
+`critic_approval_reasons_present`. The 7,441-byte summary and 3,936,256-byte
+Store SHA-256 values are
+`c89620c2983489f118173612d97f01b05662f73be788a204998c2583a6d8722e` and
+`7d911ec3faff8e9198a1ddfa791649b124b396b36997c8f3c499daab0a3efe75`.
+AR-306 now makes the conditional empty-on-approval/nonempty-on-rejection rule
+explicit without weakening the parser or accepting the malformed response.
+
 Every named repository gate now has a successful exact run: documentation and
 both Ruff checks exit 0; the trusted/private fast spine passes 858 with 3 skips;
 dashboard UI passes 138; routing passes every threshold; decision conformance

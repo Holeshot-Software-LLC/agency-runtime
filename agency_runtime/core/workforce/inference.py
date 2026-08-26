@@ -344,7 +344,9 @@ _CRITIC_SYSTEM = (
     "and margin meet the exact critic_contract thresholds. Reject only a specific wrong-neighbor "
     "selection, missing lifecycle assurance, unsafe selected-team composition beyond the hard "
     "checks, or unsupported confidence. Approve when none applies. You may veto but never add or "
-    "replace workers. Return only one JSON object matching the supplied schema."
+    "replace workers. When approved is true, reason_codes must be exactly an empty JSON array. "
+    "When approved is false, reason_codes must contain one or more unique lowercase hyphenated "
+    "staffing-defect codes. Return only one JSON object matching the supplied schema."
 )
 _RECALL_RERANKER_SYSTEM = (
     "You rank only the supplied novel workforce-recall candidates for each work unit. "
@@ -3218,6 +3220,10 @@ def _strict_critic(
                 ],
                 "minimum_confidence": config.workforce.min_confidence,
                 "minimum_margin": config.workforce.min_margin,
+                "response_semantics": {
+                    "approved_true_reason_codes": "empty",
+                    "approved_false_reason_codes": "one_or_more_unique_hyphenated_codes",
+                },
             },
             "plan": plan.as_dict(),
             "proposal": proposal.as_dict(),

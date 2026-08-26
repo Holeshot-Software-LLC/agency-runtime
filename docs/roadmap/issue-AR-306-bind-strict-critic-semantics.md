@@ -44,6 +44,10 @@ exact minimum margin as both `unsupported-confidence` and
 - The candidate supplies a bounded pre-execution critic contract with the exact
   confidence and margin thresholds, selected-only composition semantics, and
   the categories that remain unselected.
+- The first live confirmation made both critic attempts approve, but each
+  attached reason codes and was correctly rejected with
+  `critic_approval_reasons_present`. The candidate now states the conditional
+  response rule in both the critic control document and system prompt.
 - The critic system explicitly forbids demanding completed task evidence and
   preserves semantic wrong-neighbor, lifecycle-assurance, selected-composition,
   and confidence veto authority.
@@ -73,6 +77,8 @@ Do not auto-approve, discard a veto, change a model route, or weaken validation.
 - [x] The critic is told this is pre-execution staffing and cannot demand task
       output that does not exist yet.
 - [x] Independent semantic veto authority remains intact.
+- [x] Approval requires an empty reason-code array and rejection requires one
+      or more bounded hyphenated reason codes.
 - [x] Focused warning-strict tests and changed-file static checks pass.
 - [ ] A live strict/additive preflight approves the correct team and loads its
       complete governed prompt.
