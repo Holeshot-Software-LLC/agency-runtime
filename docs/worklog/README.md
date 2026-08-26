@@ -1270,6 +1270,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `6c01811a` | 2026-08-26 | docs(ar309): checkpoint codex 0.149 proof gap | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-309](../roadmap/issue-AR-309-restore-codex-0149-activation-proof.md) | [ADR-0156](../decisions/0156-host-artifacts-prove-native-child-delivery.md), [ADR-0173](../decisions/0173-complete-production-container-installation-with-managed-activation.md) |
 | `907436e2` | 2026-08-26 | docs(ar309): rule out stable codex delegation | null | null |
 | `3930eb56` | 2026-08-26 | fix(ar309): prove codex subagent start delivery | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-309](../roadmap/issue-AR-309-restore-codex-0149-activation-proof.md) | [ADR-0179](../decisions/0179-admit-exact-codex-canary-delivery-at-subagent-start.md) |
+| `131f57e5` | 2026-08-26 | docs(ar297): persist Linux GO recovery ledger | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
