@@ -1249,6 +1249,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `c395bf4a` | 2026-08-26 | docs(ar297): checkpoint Linux production preflight | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `f58842b2` | 2026-08-26 | feat(ar299): allow local Ollama canary judges | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-299](../roadmap/issue-AR-299-local-ollama-canary-child-judge.md) | null |
 | `2b16a88b` | 2026-08-26 | fix(ar300): bind production canary config | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-300](../roadmap/issue-AR-300-bind-explicit-install-config-to-managed-canary.md) | [detail](2026-08-26-2b16a88b-bind-production-canary-config.md) |
+| `802a4b4f` | 2026-08-26 | docs(ar297): checkpoint Linux production evidence | [AR-290](../roadmap/issue-AR-290-end-to-end-guided-setup.md), [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-298](../roadmap/issue-AR-298-expose-complete-workforce-prompts.md), [AR-299](../roadmap/issue-AR-299-local-ollama-canary-child-judge.md), [AR-300](../roadmap/issue-AR-300-bind-explicit-install-config-to-managed-canary.md), [AR-301](../roadmap/issue-AR-301-private-systemd-dashboard-namespace.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
