@@ -183,6 +183,47 @@ def cmd_workforce_show(
     return 0
 
 
+def cmd_workforce_prompt(
+    args: argparse.Namespace,
+    *,
+    dependencies: WorkforceDependencies = DEFAULT_DEPENDENCIES,
+) -> int:
+    """Print one exact stored prompt with immutable workforce provenance."""
+
+    result = dependencies.store_factory().get_workforce_prompt(
+        args.worker,
+        version=str(args.version or ""),
+        max_chars=int(args.max_chars),
+    )
+    if args.json:
+        _emit(result, as_json=True, dependencies=dependencies)
+        return 0
+    worker = result["worker"]
+    prompt = result["prompt"]
+    print(f"worker\t{worker['agent_slug']}\t{worker['worker_id']}")
+    print(
+        "standing\t"
+        f"{worker['standing']}\temployment={worker['employment_class']}\torigin={worker['origin']}"
+    )
+    print(
+        "version\t"
+        f"{prompt['version']}\thash={prompt['hash']}\tcurrent={str(prompt['current']).lower()}"
+    )
+    print(
+        "source\t"
+        f"{prompt['source_id'] or 'unknown'}\tsource-version={prompt['source_version'] or 'unknown'}"
+        f"\trelation={prompt['relation']}"
+    )
+    print("delivery-proof\tnot asserted by this stored-definition view")
+    if prompt["truncated"]:
+        print(f"truncated\t{prompt['body_chars']} of {prompt['total_chars']} characters")
+    print("prompt\tbegin")
+    body = str(prompt["body"])
+    print(body, end="" if body.endswith("\n") else "\n")
+    print("prompt\tend")
+    return 0
+
+
 def cmd_workforce_search(
     args: argparse.Namespace,
     *,
@@ -474,6 +515,7 @@ __all__ = [
     "cmd_workforce_consolidate",
     "cmd_workforce_duplicates",
     "cmd_workforce_list",
+    "cmd_workforce_prompt",
     "cmd_workforce_search",
     "cmd_workforce_show",
     "cmd_workforce_transition",

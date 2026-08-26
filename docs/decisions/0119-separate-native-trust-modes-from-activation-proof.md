@@ -1,22 +1,24 @@
 ---
 title: "Separate native trust modes from activation proof"
-status: accepted
+status: superseded
 category: decisions
 created: 2026-07-30
-updated: 2026-07-30
+updated: 2026-08-25
 tags: [host-integrations, trust, activation, automation, canary, codex]
 related:
   - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
   - docs/roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md
   - docs/roadmap/issue-AR-185-bind-codex-activation-verification.md
   - docs/roadmap/issue-AR-203-prove-product-canary-write-and-activation.md
+  - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
   - docs/decisions/0036-capability-bound-host-canary-attestations.md
   - docs/decisions/0076-bind-isolated-canaries-to-explicit-agency-modes.md
   - docs/decisions/0116-bind-product-trials-to-exact-workspace-proof.md
+  - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
   - README.md
 supersedes:
   - docs/decisions/0077-prove-codex-activation-behaviorally.md
-superseded_by: null
+superseded_by: docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
 id: ADR-0119
 type: decision
 deciders: [maintainers]

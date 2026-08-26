@@ -9,6 +9,9 @@ related:
   - docs/RELEASE_CHECKLIST.md
   - docs/roadmap/issue-AR-290-end-to-end-guided-setup.md
   - docs/roadmap/issue-AR-296-project-effective-inference-topology.md
+  - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
+  - docs/roadmap/issue-AR-298-expose-complete-workforce-prompts.md
+  - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
   - docs/roadmap/README.md
   - docs/worklog/README.md
   - THIRD_PARTY_NOTICES.md
@@ -30,6 +33,20 @@ changes rather than duplicating every commit.
 
 ### Added
 
+- `agency install --production-container --config <path>` now accepts one exact
+  validated Agency configuration and performs a fail-closed dedicated-container
+  transaction. Codex receives an Agency-owned system-managed hook policy and a
+  mandatory normal-invocation activation canary; foreign system policy is
+  refused, prior activation proof is cleared before policy mutation, and the
+  command never treats the one-shot autonomous trust bypass as durable
+  readiness for a later Conveyor process. Doctor, status, and dashboard
+  inspection project the persistent policy authority separately from live
+  activation proof.
+- `agency workforce prompt <worker>` and the authenticated Workforce detail
+  view now expose the complete governed prompt for every durable worker
+  standing, including an exact immutable historical version. The projection
+  identifies Store definition authority while explicitly declining to infer
+  runtime delivery from stored content.
 - The authenticated dashboard Settings view now projects the effective named
   inference topology: assurance and dense-recall modes, global and per-harness
   routes/defaults, provider models, thinking levels, capabilities, embedding

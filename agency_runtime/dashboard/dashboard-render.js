@@ -691,6 +691,16 @@ export function createRenderer(core, config, callbacks) {
 			}
 			if (String(host.host || "").toLowerCase() === "codex") {
 				const proof = div( "activation-proof");
+				const policy = host.managed_hook_policy && typeof host.managed_hook_policy === "object"
+					? host.managed_hook_policy
+					: null;
+				const policyStatus = String(policy?.status || "uninspected");
+				proof.append(
+					strong( "", policy?.current ? "Hook authority · managed system policy" : "Hook authority · attended or unresolved"),
+					small( "", policy?.current
+						? `${policyStatus} · ${policy.hook_events?.length || 0} events · config ${policy.config_path || "unavailable"}`
+						: `${policyStatus} · no current Agency-managed policy is asserted`),
+				);
 				const inspection = String(host.inspection_status || "unknown").toLowerCase();
 				const status = String(host.canary_attestation_status || "absent").toLowerCase();
 				const attestation = host.canary_attestation && typeof host.canary_attestation === "object"
@@ -2106,20 +2116,22 @@ export function createRenderer(core, config, callbacks) {
 			});
 		}
 		root.append(comparisons);
-		const prompt = detail.compiled_prompt;
-		if (prompt?.preview) {
+		const definition = detail.prompt_definition;
+		const prompt = definition?.prompt;
+		if (prompt?.body) {
 			const promptDetails = el("details", "compiled-prompt-preview");
 			promptDetails.dataset.preserveKey = `worker:${worker.agent_slug}:prompt`;
 			promptDetails.append(
-				el("summary", "", "Compiled prompt preview"),
+				el("summary", "", "Complete governed prompt"),
 				small( "", "Version " + String(prompt.version || "unknown") + " · " + String(prompt.hash || "no hash")),
 				small(
 					"",
-					"Owner-only governed specialist definition · separate from runtime observation capture",
+					String(definition.definition_authority || "unknown authority") + " · stored definition · runtime delivery is not asserted",
 				),
+				small( "", "Source " + String(prompt.source_id || "unknown") + " · relation " + String(prompt.relation || "unknown") + " · " + (prompt.current ? "current" : "historical")),
 			);
 			const pre = el("pre");
-			pre.textContent = String(prompt.preview) + (prompt.truncated ? "\n… preview truncated" : "");
+			pre.textContent = String(prompt.body) + (prompt.truncated ? "\n… definition truncated" : "");
 			promptDetails.append(pre);
 			root.append(promptDetails);
 		}

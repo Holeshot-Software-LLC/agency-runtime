@@ -309,10 +309,11 @@ def test_release_resources_are_addressable() -> None:
     # the later README-reality work adds traceable product proof projections. AR-236
     # adds source-separated selection, latency, child-delivery, Rule-8, and wiring
     # evidence. AR-290 adds the four-stage guided setup journey, and AR-296 adds
-    # the bounded effective-profile/route authority projection. Keep that production
-    # behavior readable and branch-testable while retaining a narrow ceiling above
-    # the audited 385,530-byte payload.
-    assert dashboard_bytes < 377 * 1024, "dashboard assets exceeded the 377 KiB budget"
+    # the bounded effective-profile/route authority projection. AR-297 adds explicit
+    # managed-policy authority and AR-298 adds complete governed prompt visibility.
+    # Keep that production behavior readable and branch-testable while retaining a
+    # narrow ceiling above the audited 386,366-byte payload.
+    assert dashboard_bytes < 378 * 1024, "dashboard assets exceeded the 378 KiB budget"
 
 
 def test_release_metadata_is_single_source_and_cross_platform() -> None:

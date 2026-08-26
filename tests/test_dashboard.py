@@ -915,7 +915,10 @@ def test_dashboard_workforce_and_hiring_apis_share_revision_bound_lifecycle(
     assert detail["detail"]["recruitment_contract"]["evidence_requirements"] == [
         "changed artifacts and focused verification results"
     ]
-    assert "Inspect before acting" in detail["detail"]["compiled_prompt"]["preview"]
+    definition = detail["detail"]["prompt_definition"]
+    assert definition["definition_authority"] == "agency_store"
+    assert definition["runtime_delivery_proof"] == "not_asserted"
+    assert "Inspect before acting" in definition["prompt"]["body"]
     assert len(detail["detail"]["closest_workers"]) == min(10, workforce["total"] - 1)
     assert detail["detail"]["promotion_readiness"] == {
         "state": "contractor",
@@ -934,8 +937,9 @@ def test_dashboard_workforce_and_hiring_apis_share_revision_bound_lifecycle(
             "suppressed until the window expires.",
         ],
     }
-    assert detail["detail"]["compiled_prompt"]["preview"]
-    assert detail["detail"]["compiled_prompt"]["hash"]
+    assert definition["prompt"]["body"]
+    assert definition["prompt"]["hash"]
+    assert definition["prompt"]["truncated"] is False
 
     status, hiring, _headers = _json_response(
         dashboard_server,
@@ -992,6 +996,33 @@ def test_dashboard_workforce_and_hiring_apis_share_revision_bound_lifecycle(
     )
     assert status == 200
     assert suspended["worker"]["state"] == "suspended"
+
+
+def test_dashboard_prompt_definition_remains_visible_after_worker_retirement(
+    dashboard_server,
+) -> None:
+    store = dashboard_server["store"]
+    install_known_contractors(store)
+    slug = "application-integration-verifier"
+    store.transition_workforce_worker(
+        slug,
+        action="retire",
+        expected_revision=0,
+        reason="exercise terminal dashboard visibility",
+    )
+
+    status, response, _headers = _json_response(
+        dashboard_server,
+        f"/api/workforce?worker={slug}",
+        token=dashboard_server["token"],
+    )
+
+    assert status == 200
+    detail = response["detail"]
+    assert detail["worker"]["standing"] == "retired"
+    assert detail["prompt_definition"]["worker"]["standing"] == "retired"
+    assert detail["prompt_definition"]["runtime_delivery_proof"] == "not_asserted"
+    assert "Inspect before acting" in detail["prompt_definition"]["prompt"]["body"]
 
 
 def test_dashboard_hiring_collection_stays_bounded_and_exact_case_keeps_evidence(
@@ -1318,13 +1349,17 @@ def test_dashboard_worker_detail_response_budget_failure_is_a_generic_500(
 ) -> None:
     caplog.set_level(logging.ERROR, logger="agency_runtime.server.dashboard")
     store = dashboard_server["store"]
-    worker = store.get_workforce_worker("security-reviewer", disabled_agents=())
+    detail = store.get_workforce_worker_detail(
+        "security-reviewer",
+        evidence_limit=200,
+        disabled_agents=(),
+        include_history_documents=False,
+    )
     private_sentinel = "oversized-worker-private-sentinel"
 
     def oversized_worker_detail(_worker, **_kwargs):
         return {
-            "worker": worker,
-            "outcomes": [],
+            **detail,
             "private_payload": private_sentinel + ("x" * MAX_WORKFORCE_DETAIL_RESPONSE_BYTES),
         }
 

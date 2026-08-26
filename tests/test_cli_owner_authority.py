@@ -131,6 +131,11 @@ def test_install_shape_remains_closed_world_without_presence_metadata() -> None:
     unpaired = cli_main.build_parser().parse_args(["install", "--autonomous"])
     assert is_exact_install_lifecycle(unpaired) is False
 
+    production = cli_main.build_parser().parse_args(
+        ["install", "--production-container", "--config", "agency.yaml"]
+    )
+    assert is_exact_install_lifecycle(production) is True
+
 
 def test_retired_operator_presence_module_is_not_shipped() -> None:
     package_root = Path(cli_main.__file__).resolve().parents[1]

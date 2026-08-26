@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
 
 from agency_runtime.cli import install_commands as subject
 from agency_runtime.cli import main as cli_main
+from agency_runtime.core.config import load_config
 
 
 def args(**changes):
@@ -16,6 +18,7 @@ def args(**changes):
         "agent": None,
         "all": False,
         "autonomous": False,
+        "config": None,
         "activation_timeout": 180.0,
         "accepted_outcome": False,
         "backup": None,
@@ -30,6 +33,7 @@ def args(**changes):
         "output": None,
         "profile": None,
         "profile_scope": "isolated-profile",
+        "production_container": False,
         "rollback": False,
         "timeout": 5.0,
         "verify_activation": False,
@@ -64,7 +68,7 @@ def inference_snapshot():
 def dependencies(**changes):
     emitted = []
     values = {
-        "load_config": lambda: config(),
+        "load_config": lambda *_args: config(),
         "store_factory": lambda _config: object(),
         "emit_json": emitted.append,
         "readiness_probe": lambda: True,
@@ -131,6 +135,59 @@ def test_autonomous_mode_requires_activation_and_codex_scope() -> None:
                 ["install", "--agent", "zcode", "--autonomous", "--verify-activation"]
             )
         )
+
+
+def test_production_container_requires_explicit_config_and_install_lifecycle() -> None:
+    with pytest.raises(ValueError, match="requires --config"):
+        subject._validate_install_mode(
+            cli_main.build_parser().parse_args(
+                ["install", "--agent", "codex", "--production-container"]
+            )
+        )
+    parsed = cli_main.build_parser().parse_args(
+        [
+            "install",
+            "--agent",
+            "codex",
+            "--production-container",
+            "--config",
+            "container-agency.yaml",
+        ]
+    )
+    assert subject._validate_install_mode(parsed) == (False, False, None)
+    with pytest.raises(ValueError, match="cannot be combined"):
+        subject._validate_install_mode(
+            cli_main.build_parser().parse_args(
+                [
+                    "install",
+                    "--agent",
+                    "codex",
+                    "--verify-activation",
+                    "--config",
+                    "container-agency.yaml",
+                ]
+            )
+        )
+
+
+def test_explicit_install_config_is_loaded_and_identity_bound(tmp_path: Path) -> None:
+    config_path = tmp_path / "agency.yaml"
+    config_path.write_text("profile: standard\n", encoding="utf-8")
+    observed: list[Path] = []
+
+    def loader(path: Path):
+        observed.append(path)
+        return SimpleNamespace(config_path=str(path), profile="standard")
+
+    parsed = cli_main.build_parser().parse_args(
+        ["install", "--agent", "claude", "--config", str(config_path)]
+    )
+    loaded = subject._load_install_config(
+        parsed,
+        subject.InstallDependencies(load_config=loader),
+    )
+    assert observed == [config_path.resolve()]
+    assert loaded.config_path == str(config_path.resolve())
 
 
 @pytest.mark.parametrize(
@@ -348,6 +405,8 @@ def test_dry_run_reports_complete_and_incomplete(monkeypatch, capsys):
             plan_agent_adapter=planner,
             plan_dashboard_service=lambda **_kw: {"ok": True},
             dependencies=deps,
+            cfg=config(),
+            config_path=Path("agency.yaml"),
         )
         == 0
     )
@@ -363,6 +422,8 @@ def test_dry_run_reports_complete_and_incomplete(monkeypatch, capsys):
             plan_agent_adapter=planner,
             plan_dashboard_service=lambda **_kw: {"ok": False},
             dependencies=deps,
+            cfg=config(),
+            config_path=Path("agency.yaml"),
         )
         == 0
     )
@@ -382,9 +443,46 @@ def test_dry_run_reports_complete_and_incomplete(monkeypatch, capsys):
             },
             plan_dashboard_service=lambda **_kw: {"ok": True},
             dependencies=deps,
+            cfg=config(),
+            config_path=Path("agency.yaml"),
         )
         == 0
     )
+
+
+def test_production_container_dry_run_includes_managed_policy_plan() -> None:
+    deps, emitted = dependencies(
+        managed_codex_planner=lambda _cfg, **kwargs: {
+            "ok": True,
+            "complete": True,
+            "status": "planned",
+            "config_path": str(kwargs["config_path"]),
+        }
+    )
+
+    assert (
+        subject._run_dry_run(
+            args(all=True, production_container=True),
+            profile_name="standard",
+            targets=["codex"],
+            all_hosts=True,
+            dashboard_opted_out=True,
+            json_mode=True,
+            plan_agent_adapter=lambda host: {"host": host, "ok": True},
+            plan_dashboard_service=lambda **_kwargs: pytest.fail(
+                "dashboard planner must honor opt-out"
+            ),
+            dependencies=deps,
+            cfg=config(),
+            config_path=Path("container-agency.yaml"),
+            production_container=True,
+        )
+        == 0
+    )
+    report = emitted[-1]
+    assert report["production_container"] is True
+    assert report["config_path"] == "container-agency.yaml"
+    assert report["host_plans"][0]["managed_policy"]["status"] == "planned"
 
 
 def test_no_hosts_dashboard_install_and_summary(monkeypatch, capsys):
@@ -728,6 +826,248 @@ def test_codex_autonomous_install_proves_bypass_without_claiming_trust() -> None
             "trust_mode": "autonomous_bypass",
         },
     )
+
+
+def test_codex_production_container_installs_managed_policy_and_proves_normal_launch() -> None:
+    calls: list[tuple[tuple[object, ...], dict[str, object]]] = []
+    policies: list[dict[str, object]] = []
+    invalidations: list[str] = []
+    verification = {
+        "schema_version": "agency.host_canary.v1",
+        "profile_scope": "current-profile",
+        "trust_mode": "managed_policy",
+        "trust_bypass_used": False,
+        "live_attempted": True,
+        "canary_passed": True,
+        "attestation_persisted": True,
+        "unmet_prerequisites": [],
+    }
+
+    def canary_runner(*runner_args, **kwargs):
+        calls.append((runner_args, kwargs))
+        return verification
+
+    def policy_installer(_cfg, **kwargs):
+        policies.append(kwargs)
+        return {
+            "ok": True,
+            "complete": True,
+            "changed": True,
+            "status": "installed",
+            "trust_mode": "managed_policy",
+        }
+
+    results = subject._install_hosts(
+        ["codex"],
+        config(),
+        all_hosts=False,
+        json_mode=True,
+        install_agent_adapter=lambda _host, _cfg: {
+            "host": "codex",
+            "ok": True,
+            "status": "registered",
+            "registered": True,
+            "changed": True,
+        },
+        activation_timeout=42,
+        host_inspector=lambda _host: {
+            "canary": True,
+            "canary_attestation_status": "verified",
+            "canary_attestation": {"profile_scope": "current-profile"},
+        },
+        canary_runner=canary_runner,
+        production_container=True,
+        config_path=Path("container-agency.yaml"),
+        managed_codex_installer=policy_installer,
+        canary_attestation_invalidator=lambda host: invalidations.append(host) or True,
+    )
+
+    result = results[0]
+    assert result["complete"] is True
+    assert result["hook_trust_status"] == "managed"
+    assert result["managed_policy"]["status"] == "installed"
+    assert result["managed_policy"]["prior_attestation_invalidated"] is True
+    assert result["activation"]["trust_mode"] == "managed_policy"
+    assert result["activation"]["trust_bypass_used"] is False
+    assert result["activation"]["system_policy_managed"] is True
+    assert result["activation"]["persistent_profile_changed"] is True
+    assert policies == [{"config_path": Path("container-agency.yaml")}]
+    assert invalidations == ["codex"]
+    assert calls == [
+        (
+            ("codex",),
+            {
+                "execute": True,
+                "confirm": "RUN LIVE codex CURRENT-PROFILE CANARY",
+                "timeout": 42,
+                "mode": "agency",
+                "profile_scope": "current-profile",
+                "trust_mode": "managed_policy",
+            },
+        )
+    ]
+
+
+def test_codex_production_container_fails_closed_before_canary_on_policy_refusal() -> None:
+    result = subject._install_hosts(
+        ["codex"],
+        config(),
+        all_hosts=False,
+        json_mode=True,
+        install_agent_adapter=lambda _host, _cfg: {
+            "host": "codex",
+            "ok": True,
+            "status": "registered",
+            "registered": True,
+        },
+        host_inspector=lambda _host: pytest.fail("canary inspection must not run"),
+        canary_runner=lambda *_args, **_kwargs: pytest.fail("canary must not run"),
+        production_container=True,
+        config_path=Path("container-agency.yaml"),
+        managed_codex_installer=lambda *_args, **_kwargs: {
+            "ok": False,
+            "complete": False,
+            "changed": False,
+            "status": "refused",
+            "error": "foreign requirements.toml",
+        },
+        canary_attestation_invalidator=lambda _host: False,
+    )[0]
+
+    assert result["ok"] is False
+    assert result["complete"] is False
+    assert result["status"] == "managed_policy_failed"
+    assert result["partial"] is True
+    assert result["error"] == "foreign requirements.toml"
+
+
+def test_codex_production_container_invalidates_old_proof_before_policy_mutation() -> None:
+    policy_called = False
+
+    def policy_installer(*_args, **_kwargs):
+        nonlocal policy_called
+        policy_called = True
+        return {"ok": True, "complete": True, "changed": True}
+
+    result = subject._install_hosts(
+        ["codex"],
+        config(),
+        all_hosts=False,
+        json_mode=True,
+        install_agent_adapter=lambda _host, _cfg: {
+            "host": "codex",
+            "ok": True,
+            "status": "registered",
+            "registered": True,
+        },
+        production_container=True,
+        config_path=Path("container-agency.yaml"),
+        managed_codex_installer=policy_installer,
+        canary_attestation_invalidator=lambda _host: (_ for _ in ()).throw(
+            RuntimeError("private Store failure")
+        ),
+    )[0]
+
+    assert policy_called is False
+    assert result["ok"] is False
+    assert result["status"] == "managed_policy_attestation_invalidation_failed"
+    assert result["error"] == "prior Codex activation proof could not be invalidated safely"
+    assert "private" not in json.dumps(result)
+
+
+def test_production_container_command_threads_exact_config_through_transaction(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    import agency_runtime.core.installer as installer
+
+    config_path = tmp_path / "agency.yaml"
+    config_path.write_text("profile: standard\n", encoding="utf-8")
+    loaded_paths: list[Path] = []
+    stored_configs: list[object] = []
+    adapter_configs: list[object] = []
+    policy_paths: list[Path] = []
+
+    def loader(path: Path):
+        loaded_paths.append(path)
+        return load_config(path, reload=True)
+
+    class RuntimeStore:
+        def clear_host_canary_attestation(self, host: str) -> bool:
+            assert host == "codex"
+            return False
+
+    def store_factory(cfg):
+        stored_configs.append(cfg)
+        return RuntimeStore()
+
+    monkeypatch.setattr(subject, "_materialize_install_controls", lambda *_args: None)
+    monkeypatch.setattr(subject, "_cli_install_drift_projection", lambda: None)
+    monkeypatch.setattr(installer, "seed_starter_roster", lambda _store: 0)
+
+    def install_adapter(_host, cfg):
+        adapter_configs.append(cfg)
+        return {
+            "host": "codex",
+            "ok": True,
+            "status": "registered",
+            "registered": True,
+            "changed": True,
+        }
+
+    monkeypatch.setattr(installer, "install_agent_adapter", install_adapter)
+    deps, emitted = dependencies(
+        load_config=loader,
+        store_factory=store_factory,
+        host_inspector=lambda _host: {
+            "canary": True,
+            "canary_attestation_status": "verified",
+            "canary_attestation": {"profile_scope": "current-profile"},
+        },
+        canary_runner=lambda *_args, **_kwargs: {
+            "schema_version": "agency.host_canary.v1",
+            "profile_scope": "current-profile",
+            "trust_mode": "managed_policy",
+            "trust_bypass_used": False,
+            "live_attempted": True,
+            "canary_passed": True,
+            "attestation_persisted": True,
+            "unmet_prerequisites": [],
+        },
+        managed_codex_installer=lambda _cfg, **kwargs: (
+            policy_paths.append(kwargs["config_path"])
+            or {
+                "ok": True,
+                "complete": True,
+                "changed": True,
+                "status": "installed",
+                "trust_mode": "managed_policy",
+            }
+        ),
+    )
+    parsed = cli_main.build_parser().parse_args(
+        [
+            "install",
+            "--agent",
+            "codex",
+            "--production-container",
+            "--config",
+            str(config_path),
+            "--no-dashboard",
+            "--json",
+        ]
+    )
+
+    assert subject.cmd_install(parsed, dependencies=deps) == 0
+    resolved = config_path.resolve()
+    assert loaded_paths == [resolved]
+    assert len(stored_configs) == 1
+    assert adapter_configs == stored_configs
+    assert policy_paths == [resolved]
+    assert emitted[-1]["ok"] is True
+    assert emitted[-1]["production_container"] is True
+    assert emitted[-1]["config_path"] == str(resolved)
+    assert emitted[-1]["dashboard"]["status"] == "opted_out"
 
 
 def test_codex_autonomous_install_does_not_claim_an_unattempted_bypass() -> None:

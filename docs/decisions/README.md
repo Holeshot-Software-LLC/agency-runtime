@@ -46,7 +46,7 @@ Status meanings:
 - ADR-0090 Model-facing control paths are read-only → ADR-0096 Require genuine operator presence for persistent controls → ADR-0110 Remove Agency-owned Windows Hello and use harness-native trust → ADR-0111 Install the applicable suite by default → ADR-0117 Unify owner CLI and dashboard control authority
 - ADR-0087 Inference decides from a relevance shortlist → ADR-0088 Deterministic typed-recall is the offline floor → ADR-0118 Require inference-owned specialist staffing
 - ADR-0030 Gate routing changes with versioned quantitative evaluation → ADR-0121 Gate deterministic recall without selection authority
-- ADR-0077 Prove Codex hook activation behaviorally without bypassing trust → ADR-0119 Separate native trust modes from activation proof
+- ADR-0077 Prove Codex hook activation behaviorally without bypassing trust → ADR-0119 Separate native trust modes from activation proof → ADR-0173 Complete production-container installation with managed activation
 - ADR-0071 Bound native delegation correction to one evidence-checked pass → ADR-0120 Construct evidence headers before first publication
 - ADR-0065 Keep a compact resident manager kernel at the parent boundary → ADR-0122 Use one Agency-native resident steward
 - ADR-0127 Bind opaque Codex children through exact plan labels → ADR-0128 Persist exact Codex plan authority and serialize opaque launches
@@ -164,6 +164,7 @@ Status meanings:
 | [ADR-0029](0029-secure-local-dashboard-and-bounded-observability.md) | Keep the operations dashboard local and observability bounded | Accepted |
 | [ADR-0031](0031-optional-user-dashboard-service-and-shared-configuration.md) | Use an optional user-scoped dashboard service with one typed configuration boundary | Accepted |
 | [ADR-0172](0172-compose-first-run-setup-from-guarded-owner-operations.md) | Compose first-run setup from guarded owner operations | Accepted |
+| [ADR-0173](0173-complete-production-container-installation-with-managed-activation.md) | Complete production-container installation with managed activation | Accepted |
 | [ADR-0032](0032-adaptive-authenticated-dashboard-polling.md) | Use adaptive authenticated polling and source-owned signal visualizations | Accepted |
 | [ADR-0034](0034-persistent-soft-host-control.md) | Separate immediate host control from native plugin lifecycle | Accepted |
 | [ADR-0036](0036-capability-bound-host-canary-attestations.md) | Bind live host canary attestations to capability and installation identity | Accepted |
@@ -213,7 +214,7 @@ Status meanings:
 | [ADR-0113](0113-prove-decision-conformance-with-isolated-mutations.md) | Prove decision conformance with isolated curated mutations | Accepted |
 | [ADR-0116](0116-bind-product-trials-to-exact-workspace-proof.md) | Bind product trials to exact isolated workspace proof | Accepted |
 | [ADR-0117](0117-unify-owner-control-authority.md) | Unify owner CLI and dashboard control authority | Accepted |
-| [ADR-0119](0119-separate-native-trust-modes-from-activation-proof.md) | Separate native trust modes from activation proof | Accepted |
+| [ADR-0119](0119-separate-native-trust-modes-from-activation-proof.md) | Separate native trust modes from activation proof | Superseded |
 | [ADR-0124](0124-grade-product-trials-against-the-inferred-unit-graph.md) | Grade product trials against the inferred unit graph | Superseded |
 | [ADR-0125](0125-admit-only-exact-content-free-codex-host-notices.md) | Admit only exact content-free Codex host notices | Accepted |
 | [ADR-0126](0126-authorize-exact-product-delegation-at-the-codex-developer-boundary.md) | Authorize exact product delegation at the Codex developer boundary | Superseded |

@@ -359,6 +359,10 @@ def cmd_workforce_show(args: argparse.Namespace) -> int:
     return _workforce.cmd_workforce_show(args, dependencies=_workforce_dependencies())
 
 
+def cmd_workforce_prompt(args: argparse.Namespace) -> int:
+    return _workforce.cmd_workforce_prompt(args, dependencies=_workforce_dependencies())
+
+
 def cmd_workforce_transition(args: argparse.Namespace) -> int:
     return _workforce.cmd_workforce_transition(args, dependencies=_workforce_dependencies())
 
@@ -496,6 +500,7 @@ _COMMAND_NAMES = (
     "cmd_upgrade",
     "cmd_version",
     "cmd_workforce_list",
+    "cmd_workforce_prompt",
     "cmd_workforce_consolidate",
     "cmd_workforce_duplicates",
     "cmd_workforce_search",

@@ -12,7 +12,10 @@ related:
   - docs/TROUBLESHOOTING.md
   - docs/roadmap/issue-AR-290-end-to-end-guided-setup.md
   - docs/roadmap/issue-AR-293-safe-inference-profile-config-operations.md
+  - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
+  - docs/roadmap/issue-AR-298-expose-complete-workforce-prompts.md
   - docs/decisions/0172-compose-first-run-setup-from-guarded-owner-operations.md
+  - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
   - docs/roadmap/issue-AR-189-add-owned-host-integration-uninstall.md
   - docs/decisions/0108-retire-only-owned-host-integrations.md
   - docs/decisions/0117-unify-owner-control-authority.md
@@ -164,23 +167,83 @@ agency dashboard service open
 | Providers | Local/Ollama, OpenAI-compatible APIs, LiteLLM, direct API-key profiles, and authenticated Codex or Claude subscription CLIs | Exact model availability and authentication belong to the selected provider/account |
 | Learned recall | Typed-only recall is the safe default; optional embeddings plus structured or native reranking are supported | `shadow` or `additive` must be chosen explicitly; provider failure falls back to typed recall |
 | Native hosts | Codex, Claude Code, ZCode, Hermes, and OpenClaw adapters are implemented | Exact-candidate live Rule-4 proof is still incomplete across the five-host matrix |
-| Dashboard | Optional, local-only owner observatory and control plane with a setup checklist | Host installation remains an attended CLI/native-trust operation |
+| Unattended containers | Exact config binding and fail-closed production-container installation are implemented; Codex uses durable system-managed hooks and a normal-invocation activation canary | Clean Linux Codex, Claude Code, and OpenClaw container evidence remains a release gate |
+| Dashboard | Optional, local-only owner observatory and control plane with a setup checklist, complete workforce prompt detail, and Codex hook-authority projection | The browser remains read-only for host installation; unattended lifecycle belongs to the explicit CLI transaction |
 | Distribution | Source installation is documented | No stable package, signed public artifact, tag, or release is claimed yet |
+
+### Unattended production containers
+
+`agency setup` is the interactive workstation walkthrough. A fresh production
+container instead receives a completed, validated config plus credential
+environment variables from its image or orchestrator and runs one fail-closed
+runtime-install transaction:
+
+```bash
+python -m pip install .
+agency install \
+  --production-container \
+  --config /etc/agency/agency.yaml \
+  --all \
+  --no-dashboard \
+  --json
+```
+
+Use `--agent codex`, `--agent claude`, or `--agent openclaw` instead of `--all`
+when the image contains one known harness. Package acquisition and harness
+authentication happen before this command; there is no Agency post-install
+step after it succeeds. Conveyor may invoke the ordinary harness process next.
+It must not configure Agency, approve hooks, or finish setup.
+
+For Codex, production-container mode requires administrator or root authority
+to own the documented system policy path (`/etc/codex/requirements.toml` on
+Unix or `%ProgramData%\OpenAI\Codex\requirements.toml` on Windows). It pins
+hooks on, loads only policy-managed hooks, registers all eight Agency events
+through one absolute managed relay, and runs a fresh normal current-profile
+canary without a trust bypass. The command exits nonzero unless that canary
+persists an activation attestation. To avoid destroying enterprise policy, an
+existing requirements or relay file must already be a digest-valid Agency-owned
+document; any foreign file is refused unchanged. This mode is for a dedicated
+container, not a shared developer workstation whose other unmanaged hooks must
+continue to run.
+
+Claude Code and OpenClaw retain their native registration lifecycles and have
+no later Agency trust ceremony. The exact Linux release gate still has to prove
+their first ordinary container invocation against the merge candidate; source
+registration alone is not being mislabeled as live loading.
+
+```mermaid
+flowchart LR
+    I["Image: Python + harness + auth"] --> C["Exact Agency config + secret env names"]
+    C --> X["agency install --production-container"]
+    X --> V["Validate config + seed governed workforce"]
+    V --> H["Install native harness integration"]
+    H --> M{"Codex?"}
+    M -- yes --> P["Install managed system hooks"]
+    P --> A["Normal-invocation activation canary"]
+    M -- no --> R["Require native registration complete"]
+    A --> Z{"exit 0"}
+    R --> Z
+    Z --> Q["Conveyor invokes ordinary harness"]
+    Q --> D["Agency selects, recalls, hires, and amends dynamically"]
+    D --> N["Harness owns native child execution"]
+```
 
 ### Give this prompt to an installation agent
 
-The prompt below is intentionally provider-neutral. It makes the agent ask
-before choosing models or mutating host integrations, and it routes the work
-through `agency setup` instead of inventing a second installer.
+The prompt below is intentionally provider-neutral. It first distinguishes an
+attended workstation from a dedicated unattended container, then routes each
+case through the matching public Agency surface instead of inventing a second
+installer.
 
 <details>
 <summary>Copy the complete Agency Runtime setup prompt</summary>
 
 ```text
-Help me install and configure Agency Runtime on this machine. Treat this as an
-attended owner setup, not permission to publish, push, tag, create a release,
-run a paid/live canary, weaken native host trust, or expose a dashboard beyond
-loopback.
+Help me install and configure Agency Runtime on this machine. First ask whether
+this is (A) an attended owner workstation or (B) a dedicated unattended
+production container that will be provisioned once and then invoked by an
+orchestrator such as Conveyor. This is not permission to publish, push, tag,
+create a release, expose a dashboard beyond loopback, or leak credentials.
 
 Before changing anything, inspect the machine and repository, then interview
 me for every decision you cannot prove safely. Ask in small groups and explain
@@ -214,6 +277,12 @@ the tradeoffs. At minimum establish:
 8. Whether to run deterministic smoke after setup. Explain that it is not a
    live host canary, benchmark, signed-artifact check, or release proof. Ask
    again before any command that can call a live/paid model.
+9. For an unattended container, the exact config path, which single harness or
+   detected harness set the image contains, how its subscription or API
+   authentication is injected before installation, whether the dashboard is
+   intentionally omitted, and whether the installer has system-policy
+   authority. Do not leave any question, trust prompt, restart, or config write
+   for Conveyor or the first production request.
 
 Use the repository's public surfaces as the authority:
 
@@ -221,6 +290,13 @@ Use the repository's public surfaces as the authority:
 - Use `agency setup` for the attended end-to-end journey. Use explicit bounded
   flags only when the answers justify them; do not hand-author configuration
   that a guarded CLI command can write.
+- For a dedicated unattended container, complete the interview before image
+  execution, materialize the reviewed config and secret environment-variable
+  contract, run `agency config validate`, then run
+  `agency install --production-container --config <absolute-path> --all
+  --no-dashboard --json` (or one exact `--agent`). Treat any nonzero exit as a
+  failed provision. Never substitute the invocation-scoped
+  `--autonomous --verify-activation` diagnostic for durable installation.
 - Use `agency configure` only for the provider/starter-roster wizard, and use
   `agency config ...` for reviewed advanced profile, harness-route, or learned
   recall changes.
@@ -239,7 +315,8 @@ existing configuration. Finish with a concise report containing source and
 installed identity, config path (never values of secrets), provider/profile
 names and actual tested model receipts, selected harnesses and their separate
 registration/trust/load/live states, dashboard state, commands/tests run with
-exit codes, anything skipped, and the exact next attended action. Make no
+exit codes, anything skipped, and the exact next action. For production mode,
+an exit-zero report must say that Conveyor has no setup responsibility. Make no
 release-readiness claim beyond the evidence observed on this machine.
 ```
 
@@ -854,19 +931,37 @@ mode it starts the bounded model-backed canary only when the exact eight Agency
 hooks are enabled and trusted; missing, changed, or unsettled trust fails
 quickly without using provider quota.
 
-For an owner-controlled fresh container or other disposable environment, use
-the explicit autonomous mode after configuring inference through the same CLI
-surface:
+`--autonomous` is an invocation-scoped diagnostic for attended recovery. It may
+use Codex's one-shot hook-trust bypass, so it cannot prepare a later
+Conveyor-launched Codex process and is not the production-container contract.
+
+For a dedicated, owner-controlled container, give the installer its complete
+validated Agency configuration and request the production transaction:
 
 ```bash
-agency install --autonomous --verify-activation --json
+agency install \
+  --production-container \
+  --config /etc/agency/agency.yaml \
+  --all \
+  --no-dashboard \
+  --json
 ```
 
-Autonomous mode may use the harness's supported noninteractive hook-trust bypass
-for that exact invocation. It records `trust_mode=autonomous_bypass` and never
-claims the hooks were trusted. Both modes must still prove hook start, route,
-correlated specialist-card delivery, host-native child lifecycle, and finalization before
-reporting runtime readiness.
+For Codex, that transaction installs an Agency-owned system policy, enables
+only the managed Agency hook set, and runs a mandatory normal-invocation live
+canary. It refuses a foreign requirements file instead of merging or replacing
+it. An exit of zero means the exact config, registration, managed policy,
+activation evidence, and current attestation all agree; no later trust prompt
+or setup step is delegated to Conveyor. The container must already have the
+harness package, harness authentication, inference credentials, and authority
+to write the system policy. See
+[Unattended production containers](#unattended-production-containers) for the
+security boundary and clean-container requirements.
+
+Attended and autonomous verification must still prove hook start, route,
+correlated specialist-card delivery, host-native child lifecycle, and
+finalization before reporting runtime readiness. Autonomous evidence records
+`trust_mode=autonomous_bypass` and never claims durable trust.
 
 The intended post-gate install and rollback commands include ZCode:
 
@@ -938,6 +1033,8 @@ agency doctor --json          # what's installed and verified
 agency smoke --all --json     # canary readiness check (see 🩺 below)
 agency agents list            # roster
 agency roster list
+agency workforce prompt code-reviewer
+agency workforce prompt code-reviewer --version <immutable-version> --json
 
 agency search "incident response"
 agency route "review this authentication design"
@@ -1030,6 +1127,16 @@ write-only and render only as “present (redacted).” The panel explains when 
 blank legacy judge is expected and keeps the authority boundary explicit:
 Agency inference owns staffing; the native harness owns child spawn and
 execution.
+
+The Hosts view distinguishes attended Codex trust from current, absent,
+drifted, or foreign system-managed policy and keeps that authority separate
+from the last successful activation proof. The Workforce detail view exposes
+the complete governed prompt definition for
+active, disabled, suspended, retired, and merged workers. The matching CLI
+command can retrieve the current definition or an exact immutable historical
+version. Both surfaces label the Agency Store as definition authority and keep
+that distinct from runtime-delivery proof: seeing a prompt proves what Agency
+governs, not that a particular host delivered it to a child.
 
 `agency dashboard service open` is an owner convenience operation: it ensures
 an Agency-owned service is installed and running before opening its loopback

@@ -1135,11 +1135,18 @@ test("workforce detail renders comparison, promotion, prompt, history, and state
       right: "python-application-engineer",
       score: 0.42,
     }],
-    compiled_prompt: {
-      hash: "a".repeat(64),
-      preview: "Use the governed TypeScript contract.",
-      truncated: false,
-      version: "contractor-v1",
+    prompt_definition: {
+      definition_authority: "agency_store",
+      runtime_delivery_proof: "not_asserted",
+      prompt: {
+        body: "Use the governed TypeScript contract.",
+        current: true,
+        hash: "a".repeat(64),
+        relation: "generated",
+        source_id: "agency.generated",
+        truncated: false,
+        version: "contractor-v1",
+      },
     },
     promotion_readiness: {
       automatic_policy_enabled: true,
@@ -1202,8 +1209,9 @@ test("workforce detail renders comparison, promotion, prompt, history, and state
   assert.match(text, /Evidence required/);
   assert.match(text, /changed artifacts and focused verification results/);
   assert.doesNotMatch(text, /Evidence required none recorded/);
-  assert.match(text, /Owner-only governed specialist definition/);
-  assert.match(text, /separate from runtime observation capture/);
+  assert.match(text, /Complete governed prompt/);
+  assert.match(text, /agency_store · stored definition · runtime delivery is not asserted/);
+  assert.match(text, /Source agency.generated · relation generated · current/);
   assert.match(text, /Reason recorded/);
   assert.doesNotMatch(text, /SHA-256|ffffffffffff|known contractor installed|lifecycle evidence/);
   assert.match(text, /1 of 7 version records \(bounded\)/);
@@ -2074,6 +2082,12 @@ test("host cards render activation proof truthfully without adding canary contro
     canary_attestation_status: "verified",
     host: "codex",
     inspection_status: "complete",
+    managed_hook_policy: {
+      config_path: "/etc/agency/agency.yaml",
+      current: true,
+      hook_events: Array(8).fill("event"),
+      status: "current",
+    },
     maturity: "runtime-verified",
   }];
   harness.api.renderHosts();
@@ -2083,6 +2097,8 @@ test("host cards render activation proof truthfully without adding canary contro
   assert.ok(labels.includes("Contract · agency.codex-activation-canary.v2"));
   assert.ok(labels.includes("Profile · current-profile"));
   assert.ok(labels.includes("Trace · trace-safe"));
+  assert.ok(labels.includes("Hook authority · managed system policy"));
+  assert.ok(labels.includes("current · 8 events · config /etc/agency/agency.yaml"));
   assert.deepEqual(
     descendants(harness.node("host-grid"))
       .filter((node) => node.type === "button")

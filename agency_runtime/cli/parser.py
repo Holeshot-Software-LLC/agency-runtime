@@ -174,6 +174,11 @@ def _register_install(sub: Subparsers, handlers: Handlers) -> None:
         default=None,
         help="Verify the already-configured profile; use `agency configure` to change it",
     )
+    install.add_argument(
+        "--config",
+        default=None,
+        help="Load and bind this exact Agency YAML configuration for the installation",
+    )
     install_target = install.add_mutually_exclusive_group()
     install_target.add_argument(
         "--all",
@@ -222,6 +227,14 @@ def _register_install(sub: Subparsers, handlers: Handlers) -> None:
         help=(
             "Use the harness-supported hook-trust bypass for this explicit activation "
             "verification without changing persistent trust state"
+        ),
+    )
+    install.add_argument(
+        "--production-container",
+        action="store_true",
+        help=(
+            "Fail-closed dedicated-container install; for Codex, install system-managed "
+            "Agency hooks and prove a fresh normal invocation"
         ),
     )
     install.add_argument(
@@ -979,6 +992,26 @@ def _register_workforce(sub: Subparsers, handlers: Handlers) -> None:
     )
     workforce_show.add_argument("--json", action="store_true", help="Print machine-readable output")
     _bind(workforce_show, handlers, "cmd_workforce_show")
+
+    workforce_prompt = workforce_sub.add_parser(
+        "prompt", help="Show an exact governed prompt with immutable source lineage"
+    )
+    workforce_prompt.add_argument("worker", help="Stable worker ID or slug")
+    workforce_prompt.add_argument(
+        "--version",
+        default="",
+        help="Exact historical workforce version (default: current)",
+    )
+    workforce_prompt.add_argument(
+        "--max-chars",
+        type=_positive_int,
+        default=262_144,
+        help="Maximum prompt characters to return (maximum: 262144)",
+    )
+    workforce_prompt.add_argument(
+        "--json", action="store_true", help="Print machine-readable output"
+    )
+    _bind(workforce_prompt, handlers, "cmd_workforce_prompt")
 
     for action in ("promote", "suspend", "resume", "retire"):
         action_parser = workforce_sub.add_parser(action, help=f"{action.title()} a worker")

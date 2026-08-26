@@ -836,6 +836,61 @@ def _serialize_inspection(
     }
 
 
+def _apply_codex_managed_policy_projection(result: dict[str, Any]) -> None:
+    """Project system-managed Codex hook authority without confusing it with activation."""
+
+    from agency_runtime.core.codex_managed_policy import inspect_managed_codex_policy
+
+    try:
+        policy = inspect_managed_codex_policy()
+    except Exception as exc:
+        policy = {
+            "schema_version": "agency.codex.managed_hooks.inspection.v1",
+            "status": "inspection_error",
+            "current": False,
+            "trust_mode": None,
+            "drift_reasons": [f"inspection:{type(exc).__name__}"],
+        }
+    result["managed_hook_policy"] = policy
+    status = str(policy.get("status") or "inspection_error")
+    result["evidence"] = [*result.get("evidence", []), f"codex-managed-policy:{status}"]
+    if policy.get("current") is True:
+        result.update(
+            trust_mode="managed_policy",
+            hook_trust_status="managed",
+            hook_trust_action=None,
+            hook_trust_surface="codex-system-policy",
+            hook_trust_command=None,
+        )
+        return
+    if status == "absent":
+        result["trust_mode"] = "attended"
+        return
+    reasons = result.get("canary_stale_reasons")
+    stale_reasons = (
+        [reason for reason in reasons if isinstance(reason, str) and reason]
+        if isinstance(reasons, list)
+        else []
+    )
+    if "managed_hook_policy" not in stale_reasons:
+        stale_reasons.append("managed_hook_policy")
+    if result.get("canary_attestation") is not None:
+        result["canary_attestation_status"] = "stale"
+    result.update(
+        trust_mode="unknown",
+        canary=None,
+        canary_stale_reasons=stale_reasons,
+        hook_trust_status="modified",
+        hook_trust_action=(
+            "Codex system-managed hook policy is not a current Agency document; repair the "
+            "dedicated-container policy or use the attended profile contract."
+        ),
+        hook_trust_surface="codex-system-policy",
+        hook_trust_command=None,
+        maturity="activation-required",
+    )
+
+
 def _inspect_host(
     host: str,
     *,
@@ -879,13 +934,19 @@ def _inspect_host(
         attestation = None
     if status != "absent":
         state.evidence.append(f"canary-attestation:{status}")
-    return _serialize_inspection(
+    result = _serialize_inspection(
         state,
         canary=canary,
         attestation_status=status,
         stale_reasons=stale_reasons,
         attestation=attestation,
     )
+    if host == "codex" and home_dir is None:
+        _apply_codex_managed_policy_projection(result)
+    elif host == "codex":
+        result["managed_hook_policy"] = None
+        result["trust_mode"] = "uninspected"
+    return result
 
 
 def _failed_inspection(host: str, exc: Exception) -> dict[str, Any]:
@@ -918,6 +979,8 @@ def _failed_inspection(host: str, exc: Exception) -> dict[str, Any]:
         "hook_trust_action": None,
         "hook_trust_surface": None,
         "hook_trust_command": None,
+        "managed_hook_policy": None,
+        "trust_mode": None,
         "maturity": "inspection-error",
         "native_lifecycle": HOSTS[host]["native_lifecycle"],
         "evidence": [f"inspection:error:{type(exc).__name__}"],

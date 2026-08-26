@@ -181,6 +181,7 @@ def _install_selection(
 def _install_arguments(args: argparse.Namespace, selection: InstallSelection) -> argparse.Namespace:
     return argparse.Namespace(
         profile=getattr(args, "profile", None),
+        config=None,
         all=selection.mode == "all",
         agent=selection.host,
         dry_run=False,
@@ -189,6 +190,7 @@ def _install_arguments(args: argparse.Namespace, selection: InstallSelection) ->
         backup=None,
         no_dashboard=not selection.dashboard,
         autonomous=False,
+        production_container=False,
         activation_timeout=180.0,
         json=False,
         _setup_accept_activation_pending=True,

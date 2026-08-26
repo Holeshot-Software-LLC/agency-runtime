@@ -108,6 +108,60 @@ def test_workforce_show_text_mode_prints_full_promotion_readiness(
     assert "evidence-rule\t" in output
 
 
+def test_workforce_prompt_exposes_exact_current_definition_and_provenance(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    store = _installed_store(tmp_path)
+    monkeypatch.setattr(cli, "_store", lambda *args, **kwargs: store)
+    slug = "application-integration-verifier"
+
+    assert cli.main(["workforce", "prompt", slug, "--json"]) == 0
+    definition = json.loads(capsys.readouterr().out)
+    assert definition["schema_version"] == "agency.workforce.prompt.v1"
+    assert definition["definition_authority"] == "agency_store"
+    assert definition["runtime_delivery_proof"] == "not_asserted"
+    assert definition["worker"]["agent_slug"] == slug
+    assert definition["prompt"]["current"] is True
+    assert definition["prompt"]["hash"] == definition["worker"]["current_hash"]
+    assert "Inspect before acting" in definition["prompt"]["body"]
+    version = definition["prompt"]["version"]
+
+    store.transition_workforce_worker(
+        slug,
+        action="retire",
+        expected_revision=0,
+        reason="exercise terminal prompt visibility",
+    )
+    assert (
+        cli.main(
+            [
+                "workforce",
+                "prompt",
+                slug,
+                "--version",
+                version,
+                "--max-chars",
+                "32",
+                "--json",
+            ]
+        )
+        == 0
+    )
+    retired = json.loads(capsys.readouterr().out)
+    assert retired["worker"]["standing"] == "retired"
+    assert retired["prompt"]["version"] == version
+    assert retired["prompt"]["body_chars"] == 32
+    assert retired["prompt"]["truncated"] is True
+
+    assert cli.main(["workforce", "prompt", slug, "--max-chars", "80"]) == 0
+    human = capsys.readouterr().out
+    assert "delivery-proof\tnot asserted" in human
+    assert "prompt\tbegin" in human
+    assert "prompt\tend" in human
+
+
 def test_hiring_list_and_show_render_card_and_tabular_outputs(
     tmp_path: Path,
     monkeypatch,
