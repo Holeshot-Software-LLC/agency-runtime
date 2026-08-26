@@ -3,7 +3,7 @@ title: "AR-293: Allow safe inference profile config operations"
 status: done
 category: roadmap
 created: 2026-08-25
-updated: 2026-08-25
+updated: 2026-08-26
 tags: [configuration, inference, profiles, security, cli, jina]
 related:
   - docs/roadmap/issue-AR-289-native-reranker-transports.md
@@ -23,7 +23,7 @@ type: issue
 epic: provider-configuration
 issue_id: AR-293
 priority: p0
-tracker_url: null
+tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/331
 depends_on: []
 blocks: [AR-296]
 ---
@@ -48,8 +48,8 @@ configuration. That left the consumer walkthrough unable to finish safely.
   secrets, but it had no dynamic inference-profile or route operations.
 - Direct profile keys are recursively redacted on display, but their presence
   was not exposed in the write-only secret-presence projection.
-- Tracker creation was attempted after push/merge authorization, but the
-  external approval boundary requires separate explicit tracker authorization.
+- Tracker issue [#331](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/331)
+  is linked and closed to match this completed record.
 
 ## Approach
 
@@ -82,8 +82,7 @@ the authority for route/profile coherence and capability restrictions.
 - [x] The installed CLI configures both Jina routes without storing the key in
       YAML; bounded live embedding and native reranker calls both apply with
       exact model identities.
-- [x] Tracker creation and linkage remain pending explicit tracker
-      authorization after the external approval boundary rejected the write.
+- [x] Tracker issue #331 is linked and closed to match canonical done status.
 
 ## Verification evidence
 

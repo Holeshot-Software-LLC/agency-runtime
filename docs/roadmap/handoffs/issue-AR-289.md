@@ -3,7 +3,7 @@ title: "AR-289 active recovery capsule"
 status: active
 category: roadmap
 created: 2026-08-25
-updated: 2026-08-25
+updated: 2026-08-26
 tags: [handoff, workforce, reranking, inference, providers]
 related:
   - docs/roadmap/issue-AR-289-native-reranker-transports.md
@@ -19,7 +19,7 @@ branch: codex/ar289-native-reranker-transports
 evidence_commit: 95402d56ee1a7c908b89d9eeeb45c858f6769446
 minimum_ledger_commit: 01ba3b9f97bd2c835ecc6156a08f660514703edd
 hard_checkpoint_percent: 50
-tracker_url: null
+tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/327
 ---
 
 # AR-289 active recovery capsule
@@ -33,6 +33,8 @@ tracker_url: null
 - The clean planning checkpoint is `95402d56`; its required worklog ledger is
   `01ba3b9f`. The implementation, tests, operating docs, canonical issue, and
   this capsule form the next substantive checkpoint slice.
+- The implementation is integrated into draft PR #326. Tracker #327 is linked
+  and closed; PR #326 merge is authorized after its required checks pass.
 - Telemetry reported 23.6 percent remaining before implementation. The clean
   planning pair was created before code work, and same-task execution continued
   under the fixed 50-percent protocol. Package-closeout telemetry reported 9.9
@@ -68,8 +70,8 @@ tracker_url: null
 
 ## exact-blocker
 
-- Tracker creation, push, pull request, merge, and publication remain
-  unauthorized outward actions. The implementation has no known code blocker.
+- The implementation has no known code blocker. Required PR #326 hosted checks
+  are green and its merge is authorized.
 - A post-merge live Jina smoke requires a rotated/environment-backed key and an
   installed merged build. Do not reuse or record the credential pasted into
   conversation history.
@@ -83,8 +85,7 @@ new task, tracker write, publication, or runtime mutation.
 
 ## next-bounded-work-package
 
-1. With explicit authorization, push the branch and open a pull request; merge
-   only after its automatic gates pass.
+1. Merge PR #326 after scoped tracker parity and the required gates pass.
 2. After merge, install the merged build, place a rotated key in `JINA_API_KEY`,
    configure the two explicit Jina recall profiles, validate config, and run a
    fresh additive smoke without persisting the credential.
@@ -117,5 +118,5 @@ git diff --check
 - Preserve the structured text path for local chat models, LiteLLM, direct API
   keys, and Codex or Claude subscription CLIs.
 - Do not persist the supplied credential or install/publish an unmerged branch.
-- Do not create a tracker, push, open a PR, dispatch hosted workflows, publish,
-  tag, sign, merge, or mutate machine config without explicit authorization.
+- This turn authorizes tracker #327 and PR #326 merge only. It does not
+  authorize publishing, tagging, signing, or unrelated machine mutation.

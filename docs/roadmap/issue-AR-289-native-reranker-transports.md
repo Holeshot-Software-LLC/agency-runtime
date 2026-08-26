@@ -3,7 +3,7 @@ title: "AR-289: Support native reranker transports"
 status: done
 category: roadmap
 created: 2026-08-25
-updated: 2026-08-25
+updated: 2026-08-26
 tags: [workforce, reranking, retrieval, inference, providers]
 related:
   - docs/roadmap/handoffs/issue-AR-289.md
@@ -19,7 +19,7 @@ type: issue
 epic: provider-runtime
 issue_id: AR-289
 priority: p1
-tracker_url: null
+tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/327
 depends_on: [AR-266]
 blocks: []
 ---
@@ -52,8 +52,8 @@ the route becomes active.
 - The supplied Jina embedding and reranker endpoints both answered a bounded
   credential-redacted live probe on 2026-08-25, but no credential or Jina route
   was persisted.
-- Tracker creation is pending explicit authorization. No outward tracker write
-  is authorized by this local package.
+- Tracker issue [#327](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/327)
+  is linked and closed to match this completed record.
 
 ## Approach
 
@@ -83,7 +83,7 @@ timeout preserves the unchanged typed lane.
 - ADR-0164 keeps learned recall additive and non-authoritative.
 - The structured text reranker remains the compatibility path for providers
   without a native rerank operation.
-- Tracker creation requires separate authorization.
+- Tracker issue #327 is linked and closed in parity with this completed record.
 
 ## Verification evidence
 
@@ -137,4 +137,4 @@ timeout preserves the unchanged typed lane.
       Codex/Claude subscription transports remain backward-compatible.
 - [x] Focused configuration, provider, inference, fallback, security, and
       receipt tests pass with warnings treated as errors.
-- [x] Tracker creation and linkage remain pending separate authorization.
+- [x] Tracker issue #327 is linked and closed to match canonical done status.

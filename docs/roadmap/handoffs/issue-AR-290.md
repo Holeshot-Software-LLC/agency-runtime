@@ -3,7 +3,7 @@ title: "AR-290 active recovery capsule"
 status: active
 category: roadmap
 created: 2026-08-25
-updated: 2026-08-25
+updated: 2026-08-26
 tags: [handoff, onboarding, install, configuration, dashboard, release]
 related:
   - docs/roadmap/issue-AR-290-end-to-end-guided-setup.md
@@ -26,7 +26,7 @@ branch: codex/ar290-guided-setup-readme
 evidence_commit: 3023f0557e72911c4d42be53dccca3369b05ca8e
 minimum_ledger_commit: a5cd7cae5f5874d50c75cb0c0a3d680e2195ab15
 hard_checkpoint_percent: 50
-tracker_url: null
+tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/328
 ---
 
 # AR-290 active recovery capsule
@@ -40,8 +40,9 @@ tracker_url: null
   surface.
 - Last verified remote `main` at `a19a1669` was merged without rewriting in
   `7487b31b`. Fetch again before push or merge and preserve concurrent work.
-- Tracker creation remains pending explicit tracker authorization. No issue,
-  label, tag, package publication, or release was created.
+- Trackers #327 through #336 are linked with exact labels and states. Scoped
+  AR-289 through AR-298 parity passes; PR #326 merge is explicitly authorized
+  after required checks, which are green.
 - Current telemetry is above the 50-percent checkpoint threshold; continue the
   same task after every clean checkpoint.
 
@@ -79,9 +80,10 @@ tracker_url: null
 - AR-297 needs clean Linux Codex, Claude Code, and OpenClaw production-container
   evidence, including a later ordinary Conveyor-equivalent invocation.
 - AR-298 needs installed authenticated owner-detail visual proof.
-- Exact release artifacts, fresh-environment portability, hosted checks,
-  tracker parity, signing, tag, publication, and release gates remain open or
-  unauthorized.
+- Exact release artifacts, fresh-environment portability, signing, tag,
+  publication, and release gates remain open or unauthorized.
+- The global strict tracker audit still exposes older AR-128 through AR-288
+  repository debt outside the AR-289 through AR-298 authorization.
 - AR-119 still lacks complete all-host exact-candidate Rule-4 proof; no Store
   row, copied plugin, model prose, or deterministic smoke can substitute.
 
@@ -94,16 +96,11 @@ or pre-allocation evidence remains unknown, never healthy.
 
 ## next-bounded-work-package
 
-Push the clean recovery pair to draft PR #326, recheck hosted status and remote
-`main`, and keep the PR draft while tracker parity and Linux release evidence
-remain open. The exact cross-machine execution prompt now lives in
-`docs/roadmap/handoffs/issue-AR-297.md`; use that prompt rather than any
-older setup instructions.
-
-After explicit tracker authorization, create and link the missing issues and
-labels, then run strict tracker verification. Do not merge as
-repository-complete, tag, sign, publish, or create a release until the canonical
-release checklist and required hosted checks are green.
+Checkpoint and push the tracker-link pair, mark PR #326 ready, merge it after
+the required checks remain green, and verify the exact remote `main` merge.
+The cross-machine execution prompt lives in
+`docs/roadmap/handoffs/issue-AR-297.md`; use it for the still-open Linux
+release evidence. Do not tag, sign, publish, or create a release.
 
 ## verification
 
@@ -128,5 +125,5 @@ git diff --check
 - Never expose the Jina credential; the owner intends to rotate it.
 - Do not touch the shared `main` checkout or another linked worktree.
 - Preserve exact historical subjects and non-rewriting worklog SHAs.
-- No tracker, merge, tag, signing, package publication, or release action is
-  authorized merely by a handoff.
+- This turn authorizes trackers AR-289 through AR-298 and PR #326 merge only.
+  It does not authorize a tag, signing, package publication, or release.

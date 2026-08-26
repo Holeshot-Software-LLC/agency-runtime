@@ -3,7 +3,7 @@ title: "AR-297: Complete unattended container bootstrap"
 status: in_progress
 category: roadmap
 created: 2026-08-25
-updated: 2026-08-25
+updated: 2026-08-26
 tags: [installation, containers, codex, hooks, automation, configuration]
 related:
   - README.md
@@ -26,7 +26,7 @@ type: issue
 epic: host-integrations
 issue_id: AR-297
 priority: p0
-tracker_url: null
+tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 depends_on: []
 blocks: []
 ---
@@ -55,7 +55,8 @@ must rely on ambient shell state.
   remains explicitly nonpersistent.
 - Claude Code, OpenClaw, ZCode, and Hermes already use their native
   registration/enablement lifecycles without Agency inventing a trust store.
-- Tracker creation remains pending explicit tracker authorization.
+- Tracker issue [#335](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335)
+  is linked and remains open with this in-progress record.
 
 ## Approach
 
@@ -111,7 +112,7 @@ reach native registration completeness in production-container mode.
       loading, and a bounded Agency turn without human input.
 - [ ] Release-artifact and remaining release-checklist gates pass on the exact
       merge candidate.
-- [ ] Tracker creation and linkage receive separate authorization.
+- [x] Tracker issue #335 is linked and remains open while acceptance is pending.
 
 ## Verification evidence
 

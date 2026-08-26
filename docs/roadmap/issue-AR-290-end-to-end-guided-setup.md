@@ -3,7 +3,7 @@ title: "AR-290: Add end-to-end guided setup"
 status: done
 category: roadmap
 created: 2026-08-25
-updated: 2026-08-25
+updated: 2026-08-26
 tags: [onboarding, install, configuration, dashboard, documentation]
 related:
   - README.md
@@ -23,7 +23,7 @@ type: issue
 epic: install
 issue_id: AR-290
 priority: p1
-tracker_url: null
+tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/328
 depends_on: [AR-05, AR-291, AR-292]
 blocks: [AR-295, AR-296]
 ---
@@ -74,8 +74,8 @@ prompt a consumer can paste to an installation agent.
   artifact matrices, benchmark outcomes, tracker parity, and publication
   authorization remain release blockers; additional local smoke alone cannot
   close them.
-- Tracker creation is pending explicit authorization. No outward tracker write
-  is authorized by this local package.
+- Tracker issue [#328](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/328)
+  is linked and closed to match this completed record.
 
 ## Approach
 
@@ -104,8 +104,8 @@ advanced configuration surfaces.
 - Existing installer, dashboard service, doctor, and smoke commands remain the
   authorities for their stages; setup does not duplicate their mutations.
 - ADR-0031 keeps the dashboard optional and user-scoped.
-- Tracker creation and every push, pull request, hosted workflow, tag, or
-  release action require separate authorization.
+- Tracker writes, pushes, pull requests, hosted workflows, tags, and releases
+  retain separate authority; tracker #328 and PR #326 received it.
 
 ## Acceptance
 
@@ -127,7 +127,7 @@ advanced configuration surfaces.
 - [x] Release readiness is reported against the canonical checklist without
       treating local smoke as current artifact, host, tracker, or publication
       proof.
-- [x] Tracker creation and linkage remain pending separate authorization.
+- [x] Tracker issue #328 is linked and closed to match canonical done status.
 
 ## Verification evidence
 

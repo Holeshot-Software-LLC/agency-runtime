@@ -3,7 +3,7 @@ title: "AR-297 active recovery capsule"
 status: active
 category: roadmap
 created: 2026-08-25
-updated: 2026-08-25
+updated: 2026-08-26
 tags: [handoff, containers, unattended, codex, claude, openclaw, release]
 related:
   - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
@@ -21,7 +21,7 @@ branch: codex/ar290-guided-setup-readme
 evidence_commit: 3023f0557e72911c4d42be53dccca3369b05ca8e
 minimum_ledger_commit: a5cd7cae5f5874d50c75cb0c0a3d680e2195ab15
 hard_checkpoint_percent: 50
-tracker_url: null
+tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 ---
 
 # AR-297 active recovery capsule
@@ -31,8 +31,8 @@ tracker_url: null
 - Work is isolated on `codex/ar290-guided-setup-readme`; the shared `main`
   checkout was not switched, staged, cleaned, or committed.
 - Implementation is preserved at `3023f055` and its ledger at `a5cd7cae`.
-  Draft PR #326 is the publication surface; tracker creation still requires
-  explicit tracker authorization.
+  Draft PR #326 is the publication surface; tracker #335 is linked and open,
+  required hosted checks are green, and PR #326 merge is authorized.
 - Windows installation uses strict assurance and additive dense recall. This
   attended workstation correctly reports Codex managed policy absent and
   attended hook trust unverified; no system policy was installed or simulated.
@@ -79,8 +79,8 @@ tracker_url: null
 - Clean Linux Claude Code and OpenClaw containers must separately prove native
   registration, enablement, loading, and one bounded Agency turn.
 - AR-298 still needs an installed authenticated owner-detail visual check.
-- Exact wheel/sdist, fresh-environment, hosted-check, tracker, signing, tag,
-  publication, and release gates remain open or unauthorized.
+- Exact wheel/sdist, fresh-environment, signing, tag, publication, and release
+  gates remain open or unauthorized.
 
 ## same-task-continuity
 

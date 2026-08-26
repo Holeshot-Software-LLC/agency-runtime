@@ -3,7 +3,7 @@ title: "AR-294: Restore expanded configuration regressions"
 status: done
 category: roadmap
 created: 2026-08-25
-updated: 2026-08-25
+updated: 2026-08-26
 tags: [testing, configuration, regression, release]
 related:
   - docs/roadmap/issue-AR-293-safe-inference-profile-config-operations.md
@@ -19,7 +19,7 @@ type: issue
 epic: testing
 issue_id: AR-294
 priority: p0
-tracker_url: null
+tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/332
 depends_on: []
 blocks: []
 ---
@@ -43,7 +43,8 @@ both drifts had remained hidden while product behavior stayed correct.
 - Every production transaction caller supplies the narrowing function.
 - The two failures occur only in expanded regression tests and reproduce on
   current remote `main` ancestry.
-- Tracker creation remains pending explicit tracker authorization.
+- Tracker issue [#332](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/332)
+  is linked and closed to match this completed record.
 
 ## Approach
 
@@ -67,8 +68,7 @@ contract rejects the revision before any read, patch, narrowing, or write.
 - [x] Both tests fail before this fixture-only correction and pass afterward.
 - [x] The expanded merged Python spine, Ruff, docs, UI, routing, decision-
       conformance, and diff gates pass.
-- [x] Tracker creation and linkage remain pending explicit tracker
-      authorization.
+- [x] Tracker issue #332 is linked and closed to match canonical done status.
 
 ## Verification evidence
 

@@ -3,7 +3,7 @@ title: "AR-292: Classify setup activation pending as degraded"
 status: done
 category: roadmap
 created: 2026-08-25
-updated: 2026-08-25
+updated: 2026-08-26
 tags: [setup, install, codex, activation, cli, reliability]
 related:
   - docs/roadmap/issue-AR-290-end-to-end-guided-setup.md
@@ -20,7 +20,7 @@ type: issue
 epic: install
 issue_id: AR-292
 priority: p0
-tracker_url: null
+tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/330
 depends_on: []
 blocks: [AR-290]
 ---
@@ -50,7 +50,8 @@ failed activation verification, and runtime drift must remain hard failures.
   live activation canary; the user must restart Codex and settle hook trust.
 - The install command already has structured host, dashboard, activation, and
   residual-drift facts before reducing them to an exit code.
-- Tracker creation is pending explicit authorization.
+- Tracker issue [#330](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/330)
+  is linked and closed to match this completed record.
 
 ## Approach
 
@@ -84,7 +85,7 @@ degraded. Document the exit-code meanings for consumers.
 - [x] Focused setup/install tests, Ruff, docs, and diff checks pass.
 - [x] Installed guided setup returns 2 with activation pending and no hard stage
       failure or residual drift.
-- [x] Tracker creation and linkage remain pending separate authorization.
+- [x] Tracker issue #330 is linked and closed to match canonical done status.
 
 ## Verification evidence
 

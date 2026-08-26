@@ -3,7 +3,7 @@ title: "AR-295: Audit guided dashboard asset budget"
 status: done
 category: roadmap
 created: 2026-08-25
-updated: 2026-08-25
+updated: 2026-08-26
 tags: [testing, dashboard, packaging, release]
 related:
   - docs/roadmap/issue-AR-290-end-to-end-guided-setup.md
@@ -21,7 +21,7 @@ type: issue
 epic: testing
 issue_id: AR-295
 priority: p0
-tracker_url: null
+tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/333
 depends_on: [AR-290]
 blocks: [AR-296]
 ---
@@ -44,7 +44,8 @@ comment named a 355,184-byte audit even though current main had already reached
   accidentally bundled resource.
 - A 368 KiB ceiling is 376,832 bytes, leaving a narrow 2,460-byte margin above
   the exact candidate rather than disabling or broadly relaxing the guard.
-- Tracker creation remains pending explicit tracker authorization.
+- Tracker issue [#333](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/333)
+  is linked and closed to match this completed record.
 
 ## Approach
 
@@ -66,7 +67,7 @@ an explicit new audit.
 - [x] The ceiling and diagnostic name agree at 368 KiB.
 - [x] The new ceiling leaves less than one percent unmeasured headroom.
 - [x] All 161 workflow-contract tests pass with warnings strict.
-- [x] Tracker creation and linkage remain pending explicit authorization.
+- [x] Tracker issue #333 is linked and closed to match canonical done status.
 
 ## Verification evidence
 

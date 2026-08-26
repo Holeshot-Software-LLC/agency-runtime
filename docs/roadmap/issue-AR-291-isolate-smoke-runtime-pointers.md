@@ -3,7 +3,7 @@ title: "AR-291: Isolate smoke runtime pointers"
 status: done
 category: roadmap
 created: 2026-08-25
-updated: 2026-08-25
+updated: 2026-08-26
 tags: [smoke, install, isolation, runtime-pointers, reliability]
 related:
   - docs/roadmap/issue-AR-290-end-to-end-guided-setup.md
@@ -19,7 +19,7 @@ type: issue
 epic: reliability
 issue_id: AR-291
 priority: p0
-tracker_url: null
+tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/329
 depends_on: []
 blocks: [AR-290]
 ---
@@ -51,7 +51,8 @@ mutations.
 - The exact contaminated Hermes/OpenClaw pointer files are identified and can
   be removed after the repair is installed. Codex, Claude, and ZCode pointers
   already name the installed uv package and must be preserved.
-- Tracker creation is pending explicit authorization.
+- Tracker issue [#329](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/329)
+  is linked and closed to match this completed record.
 
 ## Approach
 
@@ -86,7 +87,7 @@ guided setup/doctor.
 - [x] The repaired installed `agency setup --non-interactive --all` no longer
       reports foreign-package residual drift; ordinary native-trust warnings
       remain truthful.
-- [x] Tracker creation and linkage remain pending separate authorization.
+- [x] Tracker issue #329 is linked and closed to match canonical done status.
 
 ## Verification evidence
 

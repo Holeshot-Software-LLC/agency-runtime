@@ -3,7 +3,7 @@ title: "AR-298: Expose complete workforce prompts"
 status: in_progress
 category: roadmap
 created: 2026-08-25
-updated: 2026-08-25
+updated: 2026-08-26
 tags: [workforce, prompts, cli, dashboard, observability]
 related:
   - README.md
@@ -25,7 +25,7 @@ type: issue
 epic: observability
 issue_id: AR-298
 priority: p0
-tracker_url: null
+tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/336
 depends_on: []
 blocks: []
 ---
@@ -50,7 +50,8 @@ hired or amended workers.
   wrong authority for lifecycle-wide operator inspection.
 - A stored definition is not proof that a host delivered it to a child; only a
   correlated host artifact can establish delivery.
-- Tracker creation remains pending explicit tracker authorization.
+- Tracker issue [#336](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/336)
+  is linked and remains open with this in-progress record.
 
 ## Approach
 
@@ -89,7 +90,7 @@ and explicitly state that runtime delivery is not asserted.
 - [x] Focused Store/CLI/backend/UI tests pass, including retired-worker access.
 - [ ] The exact installed dashboard is visually verified without leaking a
       bearer, provider credential, or prompt outside the owner detail view.
-- [ ] Tracker creation and linkage receive separate authorization.
+- [x] Tracker issue #336 is linked and remains open while acceptance is pending.
 
 ## Verification evidence
 

@@ -3,7 +3,7 @@ title: "AR-296: Project effective inference topology in the dashboard"
 status: done
 category: roadmap
 created: 2026-08-25
-updated: 2026-08-25
+updated: 2026-08-26
 tags: [dashboard, inference, configuration, delegation, truthfulness]
 related:
   - README.md
@@ -27,7 +27,7 @@ type: issue
 epic: dashboard
 issue_id: AR-296
 priority: p0
-tracker_url: null
+tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/334
 depends_on: [AR-290, AR-293, AR-295]
 blocks: []
 ---
@@ -57,7 +57,9 @@ native harness owns child spawning and execution.
   guidance for an accepted plan and as bounded child-routing correction policy;
   it does not transfer spawn authority from the native host to Agency.
 - The current dashboard does not project those facts as one comprehensible
-  topology. Tracker creation remains pending explicit tracker authorization.
+  topology. Tracker issue
+  [#334](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/334)
+  is linked and closed to match this completed record.
 
 ## Approach
 
@@ -101,7 +103,7 @@ packaged dashboard payload rather than bypassing its release guard.
       gates pass.
 - [x] The exact candidate is installed and visually verified in the
       authenticated loopback dashboard.
-- [x] Tracker creation and linkage remain pending separate authorization.
+- [x] Tracker issue #334 is linked and closed to match canonical done status.
 
 ## Verification evidence
 
