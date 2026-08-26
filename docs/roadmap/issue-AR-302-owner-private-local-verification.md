@@ -53,12 +53,12 @@ establishes an owner-private umask and trusted temporary root.
 
 ADR-0177 makes repository-owned creation boundaries establish and verify the
 required permissions independently of ambient cooperative umasks. It admits
-only the observed 0664 non-executable POSIX source-wheel projection inside the
-mode-0700 staging boundary and still emits 0644 canonical output. Pytest sets
-and restores a private POSIX umask, explicitly creates the shared offline config
-at 0700/0600, and gives one early bounded diagnostic when the selected fixture
-interpreter is below an untrusted path. Executable and configuration namespace
-checks remain strict.
+only the observed 0664 non-executable POSIX source-file and 0775 sdist-directory
+projections inside the mode-0700 staging boundary and still emits 0644/0755
+canonical output. Pytest sets and restores a private POSIX umask, explicitly
+creates the shared offline config at 0700/0600, and gives one early bounded
+diagnostic when the selected fixture interpreter is below an untrusted path.
+Executable and configuration namespace checks remain strict.
 
 ## Dependencies
 
@@ -96,3 +96,8 @@ unsafe worktree venv exits 4 in 38 ms with exactly one actionable
 `AGENCY_CI_PYTHON` diagnostic. The remaining acceptance requires an immutable
 ambient-0002 build plus independent verification and the complete named fast
 spine from a trusted interpreter.
+
+The first immutable ambient-0002 build after the wheel repair crossed wheel
+canonicalization and then failed closed on the newly observed 0775 top-level
+sdist directory. The follow-up admits exactly 0664 sdist files and 0775 sdist
+directories and adds byte-convergence coverage; no failed build was relabelled.

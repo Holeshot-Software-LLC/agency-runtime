@@ -84,12 +84,13 @@ SOURCE_WHEEL_MODE_ALLOWLISTS = {
         "record": frozenset({stat.S_IFREG | 0o664}),
     },
 }
-# A restrictive POSIX producer intentionally creates owner-private build
-# outputs. Setuptools preserves that umask projection in the raw sdist: regular
-# files are 0600 and directories are 0700. Those inputs are non-executable
-# files and owner-traversable directories; canonical output remains 0644/0755.
-SOURCE_TAR_FILE_MODES = {0o600, 0o644, 0o666}
-SOURCE_TAR_DIRECTORY_MODES = {0o700, 0o755, 0o777}
+# POSIX producers project their umask into the raw sdist. Restrictive output is
+# 0600/0700, public output is 0644/0755, and cooperative umask 002 produces
+# 0664/0775. Windows producers use 0666/0777. These inputs remain regular
+# non-executable files and traversable directories; canonical output is still
+# exactly 0644/0755.
+SOURCE_TAR_FILE_MODES = {0o600, 0o644, 0o664, 0o666}
+SOURCE_TAR_DIRECTORY_MODES = {0o700, 0o755, 0o775, 0o777}
 _SDIST_SOURCES_MANIFEST = "agency_runtime.egg-info/SOURCES.txt"
 _ZERO_BLOCK = b"\0" * tarfile.BLOCKSIZE
 _PAX_RECORD = re.compile(rb"(0|[1-9][0-9]*) ([^=\n]+)=([^\n]*)\n")

@@ -121,9 +121,11 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 
 - AR-305 and AR-306 are direct-live proven. Native delivery remains distinct;
   the four-container ordinary-turn matrix has not been rerun on this source.
-- AR-301/302 now have focused implementations without a trust exception; their
-  immutable build, full spine, real non-root service, and auth proofs remain.
-  No harness has a current successful ordinary Agency turn or Codex attestation.
+- AR-301/302 have focused implementations without a trust exception. The first
+  ambient-0002 build crossed wheel canonicalization, then exposed the missing
+  0664/0775 sdist projections; their corrected immutable build, full spine, real
+  non-root service, and auth proofs remain. No harness has a current successful
+  ordinary Agency turn or Codex attestation.
 - AR-299 through AR-306 tracker parity, hosted cross-OS artifacts, signing,
   push, PR, merge, tag, publication, and release remain unauthorized.
 

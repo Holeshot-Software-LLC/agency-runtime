@@ -38,11 +38,12 @@ refusals, even though one early executable-namespace diagnosis is sufficient.
 
 ## Decision
 
-Admit raw mode 0664 only for ordinary non-executable POSIX wheel members while
-they remain inside the builder's independently validated mode-0700 staging
-directory. Continue to canonicalize every such member to exactly 0644, retain
-the exact RECORD contract, reject executable/special/unreviewed modes, and
-publish only canonical mode-0644 artifact files.
+Admit raw mode 0664 only for ordinary non-executable POSIX wheel and sdist file
+members, plus mode 0775 for sdist directories, while they remain inside the
+builder's independently validated mode-0700 staging directory. Continue to
+canonicalize files to exactly 0644 and directories to 0755, retain the exact
+RECORD contract, reject executable/special/unreviewed modes, and publish only
+canonical mode-0644 artifact files.
 
 At pytest configuration time on POSIX, establish umask 0077 before fixture
 storage is created and restore the caller's exact umask during unconfiguration.
