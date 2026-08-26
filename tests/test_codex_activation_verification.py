@@ -15,7 +15,10 @@ from agency_runtime.adapters import hooks
 from agency_runtime.cli import install_commands
 from agency_runtime.cli import main as cli_main
 from agency_runtime.core import canary_proof, preflight
-from agency_runtime.core.activation_canary_contract import CODEX_ACTIVATION_CANARY_WORK_UNIT
+from agency_runtime.core.activation_canary_contract import (
+    CODEX_ACTIVATION_CANARY_NATIVE_AGENT_TYPE,
+    CODEX_ACTIVATION_CANARY_WORK_UNIT,
+)
 from agency_runtime.core.canary_backends import SafeCodexCanaryBackend
 from agency_runtime.core.codex_activation_verification import (
     is_exact_codex_activation_verification,
@@ -856,7 +859,9 @@ def test_exact_codex_subagent_start_staffs_the_real_child_uuid(
             "session_id": "session-one",
             "turn_id": child_id,
             "agent_id": child_id,
-            "agent_type": "code_reviewer",
+            # Codex 0.149.1 MultiAgentV2 keeps task_name in agent_path. With no
+            # explicit agent_type argument, SubagentStart reports "default".
+            "agent_type": CODEX_ACTIVATION_CANARY_NATIVE_AGENT_TYPE,
         }
     )
 

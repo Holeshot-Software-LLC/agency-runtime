@@ -262,6 +262,74 @@ def test_restricted_codex_user_prompt_injects_the_exact_native_plan(
     assert snapshot["route"]["source"] == CODEX_ACTIVATION_CANARY_ROUTE_SOURCE
 
 
+def test_restricted_codex_opaque_spawn_preserves_the_proven_parent_route(
+    store: Store,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """The v6 child hook, not opaque PreToolUse text, owns canary staffing."""
+
+    from agency_runtime.core.installer import seed_starter_roster
+    from agency_runtime.core.workforce import inference
+
+    seed_starter_roster(store)
+    monkeypatch.setenv("AGENCY_CANARY_MODE", "1")
+    monkeypatch.setenv("AGENCY_CANARY_REQUIRE_EXISTING_STORE", "1")
+    monkeypatch.setattr(
+        inference,
+        "invoke_structured_provider_result",
+        stub_inference_invoker(("code-reviewer",)),
+    )
+    session_id = "restricted-opaque-parent"
+    trace_id = "restricted-opaque-trace"
+    task = f"{CODEX_ACTIVATION_CANARY_PROMPT}\n\nCanary nonce: {'c' * 32}"
+    bridge = HookBridge("codex", store=store, _master={"enabled": True})
+    bridge.handle(
+        {
+            "hook_event_name": "UserPromptSubmit",
+            "session_id": session_id,
+            "turn_id": trace_id,
+            "model": "gpt-5.6-codex",
+            "prompt": task,
+        }
+    )
+    before = store.get_codex_activation_canary_parent_snapshot(
+        session_id=session_id,
+        trace_id=trace_id,
+    )
+    assert before is not None
+    assert before["proven"] is True
+
+    response = HookBridge(
+        "codex",
+        store=store,
+        _master={"enabled": True},
+    ).handle(
+        {
+            "hook_event_name": "PreToolUse",
+            "session_id": session_id,
+            "turn_id": trace_id,
+            "tool_use_id": "call-restricted-opaque",
+            "tool_name": "collaborationspawn_agent",
+            "transcript_path": str(tmp_path / "missing-rollout.jsonl"),
+            "tool_input": {
+                "fork_turns": "none",
+                "message": "gAAAAA" + "A" * 80,
+                "task_name": CODEX_ACTIVATION_CANARY_NATIVE_TASK_NAME,
+            },
+        }
+    )
+
+    after = store.get_codex_activation_canary_parent_snapshot(
+        session_id=session_id,
+        trace_id=trace_id,
+    )
+    assert response == {}
+    assert after is not None
+    assert after["proven"] is True
+    assert after["route"]["id"] == before["route"]["id"]
+
+
 def test_store_receipt_remains_diagnostic_without_host_artifact_proof(
     store: Store,
     monkeypatch: pytest.MonkeyPatch,

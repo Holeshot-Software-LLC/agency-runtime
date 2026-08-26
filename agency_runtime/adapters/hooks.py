@@ -1380,7 +1380,11 @@ class HookBridge:
                 )
             except (HookInputError, ValueError):
                 return {}
-            if agent_type == "code_reviewer":
+            from agency_runtime.core.activation_canary_contract import (
+                CODEX_ACTIVATION_CANARY_NATIVE_AGENT_TYPE,
+            )
+
+            if agent_type == CODEX_ACTIVATION_CANARY_NATIVE_AGENT_TYPE:
                 context = self._staff_restricted_codex_activation_child(
                     session_id=session_id,
                     trace_id=trace_id,

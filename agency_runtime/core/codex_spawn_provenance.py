@@ -28,9 +28,11 @@ from agency_runtime.core.filesystem_trust import (
     same_file_identity,
 )
 from agency_runtime.core.store.security import (
+    storage_artifact_parent_is_trusted,
     storage_file_is_trusted,
-    storage_parent_is_trusted,
 )
+
+storage_parent_is_trusted = storage_artifact_parent_is_trusted
 
 _SCHEMA: Final = "agency.codex-plaintext-spawn-attestation.v3"
 _SUPPORTED_CLI_VERSION: Final = "0.147.0"

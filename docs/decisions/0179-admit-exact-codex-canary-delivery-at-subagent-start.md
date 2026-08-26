@@ -15,6 +15,8 @@ related:
   - docs/roadmap/issue-AR-309-restore-codex-0149-activation-proof.md
   - docs/roadmap/issue-AR-310-require-managed-codex-canary-store.md
   - docs/roadmap/issue-AR-311-inject-exact-codex-canary-native-plan.md
+  - docs/roadmap/issue-AR-313-trust-normal-umask-codex-artifacts.md
+  - docs/roadmap/issue-AR-314-bind-codex-default-canary-role.md
   - agency_runtime/adapters/hooks.py
   - agency_runtime/core/canary_backends.py
   - agency_runtime/core/child_delivery_evidence.py
@@ -57,6 +59,13 @@ row for that unit. The host-created child UUID is the delivery's `child_id`
 binding and launch identity. Any absent, ambiguous, stale, mismatched, or
 unsupported input returns the existing identity-only unstaffed context.
 
+The exact 0.149.1 MultiAgentV2 spawn keeps `task_name=code_reviewer` as the
+child path and, because the optional explicit role is absent, reports the
+built-in `agent_type=default` at `SubagentStart`. That value is only a pinned
+host-schema discriminator: it never selects a specialist or work unit. A child
+rollout that reports an explicit `agent_role` is not the exact canary shape and
+fails closed.
+
 The hook runs the ordinary configured inference-owned staffing transaction and
 returns its complete v6 rewritten task as the sole `additionalContext` message.
 It does not infer selection from `agent_type`, task labels, encrypted text,
@@ -67,8 +76,11 @@ For this bounded profile, a Codex rollout reader treats individual pre-speech
 input messages as separate candidates. Exactly one complete v6 message must
 match the Store decision, host parent UUID, child UUID, install identity, fixed
 task hash, card hashes, and decision lifetime. Partial, combined, repeated, or
-ambiguous markers fail closed. The canonical owner-private rollout, host
-timestamp, and invocation window remain mandatory. Only the internal canary
+ambiguous markers fail closed. The canonical rollout must have an owner/root-
+controlled, link-free, non-group/other-writable namespace and an owner-written
+single-link file; host-selected read/traverse bits do not substitute for
+mutation authority. The host timestamp and invocation window remain mandatory.
+Only the internal canary
 collector may classify that distinct `SubagentStart` message as structural hook
 output and atomically persist or re-project the immutable one-use delivery
 receipt; the public diagnostic reader cannot turn caller-supplied Codex text

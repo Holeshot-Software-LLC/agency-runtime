@@ -9,6 +9,8 @@ related:
   - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
   - docs/roadmap/issue-AR-309-restore-codex-0149-activation-proof.md
   - docs/roadmap/issue-AR-310-require-managed-codex-canary-store.md
+  - docs/roadmap/issue-AR-313-trust-normal-umask-codex-artifacts.md
+  - docs/roadmap/issue-AR-314-bind-codex-default-canary-role.md
   - docs/roadmap/handoffs/issue-AR-297.md
   - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
   - docs/decisions/0179-admit-exact-codex-canary-delivery-at-subagent-start.md
@@ -25,7 +27,7 @@ issue_id: AR-311
 priority: p0
 tracker_url: null
 depends_on: [AR-309, AR-310]
-blocks: [AR-297]
+blocks: [AR-297, AR-314]
 ---
 
 # AR-311: Inject the exact Codex canary native plan
@@ -60,6 +62,11 @@ cannot run.
 - Finalization `d7160d7b-7e22-40f4-b13d-4bbba01be04c` is
   `response_invalid` with missing `evidence_verification`; no attestation
   exists. Tracker creation is prohibited by the active AR-297 task.
+- Rebuilt exact candidate `49bf1190` proves this repair in a fresh no-bypass
+  transaction. Parent `01a04003-649c-7193-af0e-76cfde91fd20` creates exact
+  child `01a04005-8353-7f42-9020-3453eed3b5b0`, whose fixed-unit worker run
+  exits 0. The later missing v6 delivery belongs to AR-314's exact Codex role
+  shape and AR-313's host-artifact integrity boundary, not this plan row.
 
 ## Approach
 
@@ -95,7 +102,7 @@ is a bounded conformance repair rather than a new durable decision.
       work-unit ID, and native task label are golden-pinned.
 - [x] Focused warning-strict Codex, hook, Store, installer, and security tests
       pass (545 tests).
-- [ ] A rebuilt fresh transaction spawns `code_reviewer` exactly once and
+- [x] A rebuilt fresh transaction spawns `code_reviewer` exactly once and
       either persists the full attestation or reports the next honest blocker.
 - [ ] A same-repository tracker issue is created and linked after explicit
       authorization.

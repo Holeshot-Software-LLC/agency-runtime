@@ -10,6 +10,8 @@ related:
   - docs/roadmap/issue-AR-308-bind-activation-canary-delegation.md
   - docs/roadmap/issue-AR-310-require-managed-codex-canary-store.md
   - docs/roadmap/issue-AR-311-inject-exact-codex-canary-native-plan.md
+  - docs/roadmap/issue-AR-313-trust-normal-umask-codex-artifacts.md
+  - docs/roadmap/issue-AR-314-bind-codex-default-canary-role.md
   - docs/roadmap/handoffs/issue-AR-297.md
   - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
   - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
@@ -32,7 +34,7 @@ issue_id: AR-309
 priority: p0
 tracker_url: null
 depends_on: [AR-308]
-blocks: [AR-297, AR-310, AR-311]
+blocks: [AR-297, AR-310, AR-311, AR-313, AR-314]
 ---
 
 # AR-309: Restore Codex 0.149 activation proof
@@ -122,6 +124,14 @@ visible launch marker, and the parent copies the stale initial
   parent receives no concrete delegation row and tries invalid
   `task_name=code-reviewer`; AR-311 owns that pre-child label defect. No
   AR-309 host-delivery or attestation claim advances from the failed spawn.
+- Exact rebuilt candidate `49bf1190` proves AR-311 and crosses child execution:
+  child `01a04005-8353-7f42-9020-3453eed3b5b0` completes fixed unit
+  `unit-05d45f7553` with exit 0. Parent/child rollouts hash to
+  `8b93d005...1b668` and `6e18884f...f73a0`, but the child receives only the
+  identity context. Codex emits the omitted MultiAgentV2 role as `default`, not
+  the task path `code_reviewer`, and its normal-umask date directories are 0755.
+  AR-314 and AR-313 own those two later bounded compatibility repairs. There is
+  still no native delivery receipt or attestation claim.
 
 ## Approach
 

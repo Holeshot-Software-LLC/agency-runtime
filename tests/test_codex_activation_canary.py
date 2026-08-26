@@ -19,6 +19,7 @@ from agency_runtime.core.canary_backends import (
     _codex_product_child_tool_evidence,
     _codex_product_rollout_collaboration_evidence,
     _codex_product_wait_counts,
+    _codex_rollout_events,
     codex_canary_record,
     codex_collaboration_evidence,
 )
@@ -951,6 +952,48 @@ def _write_codex_rollout(
     )
     path.chmod(0o600)
     return path
+
+
+@pytest.mark.skipif(os.name == "nt", reason="POSIX mode regression")
+def test_codex_rollout_accepts_normal_host_umask_directories_under_private_home(
+    tmp_path: Path,
+) -> None:
+    """Codex writes 0755 date directories and 0644 rollouts with umask 0022."""
+
+    home = tmp_path / "codex-home"
+    home.mkdir(mode=0o700)
+    rollout_root = home / "sessions"
+    thread_id = "019fa6a6-9432-7c70-a594-68ccdf7e4988"
+    events: list[dict[str, object]] = [
+        {"type": "session_meta", "payload": {"id": thread_id, "source": "exec"}}
+    ]
+    path = _write_codex_rollout(rollout_root, thread_id, events)
+    for candidate in (rollout_root, *reversed(path.parents[:3])):
+        candidate.chmod(0o755)
+    path.chmod(0o644)
+
+    assert (
+        _codex_rollout_events(
+            rollout_root,
+            thread_id,
+            parent_thread_id=None,
+            expected_agent_path=None,
+            not_before=None,
+            not_after=None,
+        )
+        == events
+    )
+
+    path.parent.chmod(0o775)
+    with pytest.raises(ValueError, match="integrity"):
+        _codex_rollout_events(
+            rollout_root,
+            thread_id,
+            parent_thread_id=None,
+            expected_agent_path=None,
+            not_before=None,
+            not_after=None,
+        )
 
 
 def test_codex_direct_rollout_projects_one_spawn_and_terminal_wait(tmp_path: Path) -> None:

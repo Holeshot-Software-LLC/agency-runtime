@@ -43,6 +43,9 @@ CODEX_ACTIVATION_CANARY_PROMPT = (
 CODEX_ACTIVATION_CANARY_ROUTE_SOURCE = "codex_activation_canary_inference"
 CODEX_ACTIVATION_CANARY_WORK_UNIT_SOURCE = "activation-canary-contract"
 CODEX_ACTIVATION_CANARY_NATIVE_TASK_NAME = "code_reviewer"
+# MultiAgentV2 keeps the task name in agent_path. With no optional agent_type
+# argument, Codex 0.149.1 emits this built-in role in SubagentStart.
+CODEX_ACTIVATION_CANARY_NATIVE_AGENT_TYPE = "default"
 _CODEX_ACTIVATION_CANARY_TASK = re.compile(
     re.escape(CODEX_ACTIVATION_CANARY_PROMPT) + r"\n\nCanary nonce: (?P<nonce>[0-9a-f]{32})\Z"
 )

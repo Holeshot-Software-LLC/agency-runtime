@@ -52,6 +52,7 @@ from agency_runtime.core.private_paths import (
 )
 from agency_runtime.core.store.security import (
     assert_storage_parent_chain,
+    storage_artifact_parent_is_trusted,
     storage_file_is_trusted,
     storage_parent_is_trusted,
 )
@@ -556,7 +557,12 @@ def _uncollected_outcome(reason: str) -> _HostAcceptedOutcomeCollection:
     return _HostAcceptedOutcomeCollection(result=None, reason=reason)
 
 
-def _trusted_launch_prefix_bytes(path: Path, *, label: str) -> bytes | None:
+def _trusted_launch_prefix_bytes(
+    path: Path,
+    *,
+    label: str,
+    artifact_parent: bool = False,
+) -> bytes | None:
     """Return the exact bounded bytes used to compute artifact identity."""
 
     is_windows = os.name == "nt"
@@ -564,7 +570,10 @@ def _trusted_launch_prefix_bytes(path: Path, *, label: str) -> bytes | None:
         assert_storage_parent_chain(path.parent, allow_missing=False)
     except (OSError, ValueError):
         return None
-    if not storage_parent_is_trusted(
+    parent_is_trusted = (
+        storage_artifact_parent_is_trusted if artifact_parent else storage_parent_is_trusted
+    )
+    if not parent_is_trusted(
         path.parent,
         is_windows=is_windows,
     ) or not storage_file_is_trusted(path, is_windows=is_windows):
@@ -579,10 +588,19 @@ def _trusted_launch_prefix_bytes(path: Path, *, label: str) -> bytes | None:
         return None
 
 
-def _trusted_launch_material(path: Path, *, label: str) -> tuple[str, str] | None:
+def _trusted_launch_material(
+    path: Path,
+    *,
+    label: str,
+    artifact_parent: bool = False,
+) -> tuple[str, str] | None:
     """Read and hash one exact trusted artifact window without a TOCTOU reread."""
 
-    payload = _trusted_launch_prefix_bytes(path, label=label)
+    payload = _trusted_launch_prefix_bytes(
+        path,
+        label=label,
+        artifact_parent=artifact_parent,
+    )
     if payload is None:
         return None
     # Prefix reads may end in the middle of a later UTF-8 code point. Only
@@ -681,14 +699,17 @@ def _canonical_host_artifact_is_trusted(
         file_before = artifact.lstat()
     except (OSError, ValueError):
         return False
+    parent_is_trusted = (
+        storage_artifact_parent_is_trusted if host == "codex" else storage_parent_is_trusted
+    )
     if (
         metadata_is_link_or_reparse_point(root_before)
         or not stat.S_ISDIR(root_before.st_mode)
         or metadata_is_link_or_reparse_point(file_before)
         or not stat.S_ISREG(file_before.st_mode)
         or int(getattr(file_before, "st_nlink", 0) or 0) != 1
-        or not storage_parent_is_trusted(canonical_root, is_windows=os.name == "nt")
-        or not storage_parent_is_trusted(artifact.parent, is_windows=os.name == "nt")
+        or not parent_is_trusted(canonical_root, is_windows=os.name == "nt")
+        or not parent_is_trusted(artifact.parent, is_windows=os.name == "nt")
         or not storage_file_is_trusted(artifact, is_windows=os.name == "nt")
     ):
         return False
@@ -1502,7 +1523,11 @@ def _codex_child_delivery_evidence(  # noqa: C901 - one pre-speech artifact boun
     stops the moment the child speaks.
     """
 
-    material = _trusted_launch_material(path, label="Codex child rollout")
+    material = _trusted_launch_material(
+        path,
+        label="Codex child rollout",
+        artifact_parent=True,
+    )
     if material is None:
         return None
     text, artifact_digest = material
@@ -1677,7 +1702,10 @@ def _restricted_codex_canary_artifact(
     try:
         canonical_root = absolute_path(root)
         assert_storage_parent_chain(canonical_root, allow_missing=False)
-        if not storage_parent_is_trusted(canonical_root, is_windows=os.name == "nt"):
+        if not storage_artifact_parent_is_trusted(
+            canonical_root,
+            is_windows=os.name == "nt",
+        ):
             return None
         matches = list(canonical_root.glob(f"*/*/*/rollout-*-{child_id}.jsonl"))
     except (OSError, RuntimeError, ValueError):

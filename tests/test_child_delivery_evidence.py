@@ -1004,6 +1004,37 @@ def test_codex_full_meta_and_filename_identity_is_canonical_but_unsupported(
     assert evidence.verification_reason == "unsupported_opaque_interagent_channel"
 
 
+@pytest.mark.skipif(os.name == "nt", reason="POSIX mode regression")
+def test_codex_normal_umask_artifact_keeps_integrity_without_private_date_dirs(
+    tmp_path: Path,
+) -> None:
+    artifact = _codex_artifact(
+        tmp_path,
+        [
+            _codex_meta(spawned=True),
+            _codex_message(
+                _v6_envelope("Audit the schema.", host="codex", child_id=CODEX_CHILD_SESSION)
+            ),
+        ],
+    )
+    for parent in artifact.parents[:3]:
+        parent.chmod(0o755)
+    artifact.chmod(0o644)
+
+    evidence = codex_child_delivery_evidence(artifact)
+
+    assert evidence is not None
+    assert subject._canonical_host_artifact_is_trusted(
+        artifact,
+        host="codex",
+        root=tmp_path,
+        evidence=evidence,
+    )
+
+    artifact.parent.chmod(0o775)
+    assert codex_child_delivery_evidence(artifact) is None
+
+
 def test_codex_truncated_filename_is_noncanonical_and_never_consults_store(
     tmp_path: Path,
     private_root: None,

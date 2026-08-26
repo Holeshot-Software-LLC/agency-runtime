@@ -691,24 +691,24 @@ def _codex_rollout_events(
     from agency_runtime.core.filesystem_trust import same_file_identity
     from agency_runtime.core.store.security import (
         assert_storage_parent_chain,
+        storage_artifact_parent_is_trusted,
         storage_file_is_trusted,
-        storage_parent_is_trusted,
     )
 
     root = Path(rollout_root)
     assert_storage_parent_chain(root, allow_missing=False)
-    if not storage_parent_is_trusted(root, is_windows=facade.os.name == "nt"):
-        raise ValueError("Codex rollout root was not private")
+    if not storage_artifact_parent_is_trusted(root, is_windows=facade.os.name == "nt"):
+        raise ValueError("Codex rollout root lacked namespace integrity")
     matches = list(root.glob(f"*/*/*/rollout-*-{thread_id}.jsonl")) if root.is_dir() else []
     if len(matches) != 1:
         raise ValueError("Codex rollout identity was missing or ambiguous")
     path = matches[0]
     assert_storage_parent_chain(path.parent, allow_missing=False)
-    if not storage_parent_is_trusted(
+    if not storage_artifact_parent_is_trusted(
         path.parent,
         is_windows=facade.os.name == "nt",
     ) or not storage_file_is_trusted(path, is_windows=facade.os.name == "nt"):
-        raise ValueError("Codex rollout path was not private")
+        raise ValueError("Codex rollout path lacked namespace integrity")
     metadata = path.lstat()
     if not_before is not None and (
         metadata.st_mtime + _CODEX_ROLLOUT_CLOCK_SKEW_SECONDS < not_before
@@ -731,7 +731,10 @@ def _codex_rollout_events(
         not same_file_identity(metadata, current)
         or current.st_size != metadata.st_size
         or current.st_mtime_ns != metadata.st_mtime_ns
-        or not storage_parent_is_trusted(path.parent, is_windows=facade.os.name == "nt")
+        or not storage_artifact_parent_is_trusted(
+            path.parent,
+            is_windows=facade.os.name == "nt",
+        )
     ):
         raise ValueError("Codex rollout changed during evidence collection")
     lines = payload.splitlines()
@@ -764,6 +767,7 @@ def _codex_rollout_events(
             or spawn.get("parent_thread_id") != parent_thread_id
             or spawn.get("depth") != 1
             or spawn.get("agent_path") != expected_agent_path
+            or spawn.get("agent_role") is not None
         ):
             raise ValueError("Codex child rollout did not identify the exact parent")
     return events

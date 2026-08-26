@@ -25,6 +25,9 @@ related:
   - docs/roadmap/issue-AR-309-restore-codex-0149-activation-proof.md
   - docs/roadmap/issue-AR-310-require-managed-codex-canary-store.md
   - docs/roadmap/issue-AR-311-inject-exact-codex-canary-native-plan.md
+  - docs/roadmap/issue-AR-312-validate-explicit-production-config.md
+  - docs/roadmap/issue-AR-313-trust-normal-umask-codex-artifacts.md
+  - docs/roadmap/issue-AR-314-bind-codex-default-canary-role.md
   - docs/decisions/0174-admit-local-ollama-canary-child-judges.md
   - docs/decisions/0175-batch-complete-embedding-input-sets.md
   - docs/decisions/0176-use-owner-runtime-temp-for-nonroot-user-services.md
@@ -45,7 +48,7 @@ epic: host-integrations
 issue_id: AR-297
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
-depends_on: [AR-300, AR-301, AR-302, AR-303, AR-304, AR-305, AR-306, AR-307, AR-308, AR-309, AR-310, AR-311]
+depends_on: [AR-300, AR-301, AR-302, AR-303, AR-304, AR-305, AR-306, AR-307, AR-308, AR-309, AR-310, AR-311, AR-313, AR-314]
 blocks: []
 ---
 
@@ -619,3 +622,42 @@ Canonical parent rollout `fe8aedb9...2d6` proves the only spawn uses invalid
 the host rejects it before child creation. AR-311's canary-only
 `code_reviewer` plan repair passes 545 focused warning-strict tests. Rebuilt
 live attestation remains required.
+
+Exact post-AR-311 candidate `49bf11902af5eca7fae528edf75374e73f747933`
+was built under caller umask 0002. Build, strict Twine, and independent
+verification exit 0 for mode-0644 wheel
+`d9c77acfb03577e15e87b4a292776a4fd090c38c655c836fadd4ec3578d860b6`
+(9,295,276 bytes) and sdist
+`9c74f940713d7a12ce055c4c3d5e350b345003385fb2065b806252344c348ed0`
+(25,509,833 bytes). Codex image
+`2aed0f4936f53f8247f8b9ec62a4e9488c48a3e1eeca91bf68445800833a276b`
+and fresh container `c22a08de...1767d3` bind that wheel. The final absence
+receipt exits 0 at SHA-256 `2444f2c4...06a8c`; no Agency target existed before
+installation.
+
+The exact no-bypass production install exits 1 with empty stderr and a
+mode-0600 21,339-byte JSON at SHA-256 `a28b8b9e...fac87`. Managed-only policy,
+all eight events, and `trust_bypass_used=false` remain current. Session
+`01a04003-649c-7193-af0e-76cfde91fd20`, trace
+`01a04003-64a8-7ef3-8087-9a0f3ca8d7d7`, query
+`7a92318a...b046`, and route `b29473bb-5622-471d-a308-fa492cc4c18d`
+prove the accepted fixed `code-reviewer` delegate plan. AR-311 is live-proven:
+Codex creates child `01a04005-8353-7f42-9020-3453eed3b5b0`, its native worker
+run exits 0 on fixed unit `unit-05d45f7553`, and the canonical parent/child
+rollouts hash to `8b93d005...1b668` and `6e18884f...f73a0`.
+
+The child still receives only the 563-byte identity context, not the v6 team,
+because Codex 0.149.1 reports the omitted optional role as built-in `default`
+while preserving `task_name=code_reviewer` as its path. The evidence readers
+also reject Codex's normal mode-0755 date directories as non-private before
+parsing. Consequently there are zero native child staffing decisions,
+deliveries, activation grants, or consumptions. Finalization
+`1b1a8833-0bc5-4dba-91be-31da5bafc219` is `response_invalid` with missing
+`evidence_verification`. AR-313 and AR-314 own the two bounded compatibility
+repairs; 586 focused warning-strict tests plus two artifact-parent tests pass.
+
+The same fresh image also exposes AR-312: the README's pre-install
+`agency config validate` form has no explicit config argument and exits 1
+against the absent default Store. Its stdout is SHA-256
+`c462b0f5...52b7`; the exact config is later accepted by the production
+transaction, so AR-312 is recorded without expanding this live package.
