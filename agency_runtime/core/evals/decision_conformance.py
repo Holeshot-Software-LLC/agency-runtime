@@ -734,11 +734,27 @@ class _NominationSemantics:""",
         before="""        return {
             "max_planned_units": 1,
             "required_planned_artifact_kind": "review-report",
+            "required_delivery": "delegate",
         }""",
         after="""        return {
             "max_planned_units": 2,
             "required_planned_artifact_kind": "review-report",
+            "required_delivery": "delegate",
         }""",
+        test_node=(
+            "tests/test_activation_canary_contract.py::"
+            "test_activation_canary_uses_inference_owned_selection"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="activation-canary-allows-load-delivery",
+        invariant=(
+            "The exact Codex activation canary delegates the inference-selected worker through "
+            "the native host instead of loading it into the parent."
+        ),
+        source_path="agency_runtime/core/selector/pipeline.py",
+        before='            "required_delivery": "delegate",',
+        after='            "required_delivery": "load",',
         test_node=(
             "tests/test_activation_canary_contract.py::"
             "test_activation_canary_uses_inference_owned_selection"

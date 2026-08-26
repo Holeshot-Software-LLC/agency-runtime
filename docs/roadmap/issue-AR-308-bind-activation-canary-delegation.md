@@ -12,6 +12,7 @@ related:
   - docs/decisions/0118-require-inference-owned-staffing.md
   - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
   - agency_runtime/core/selector/pipeline.py
+  - agency_runtime/core/evals/decision_conformance.py
   - agency_runtime/core/workforce/inference.py
   - tests/test_activation_canary_contract.py
   - tests/test_workforce_inference.py
@@ -52,6 +53,10 @@ or attestation could exist.
   execution mode. The deterministic proposal default remains `load` for every
   ordinary route.
 - Tracker creation is prohibited by the active AR-297 task.
+- The first named spine reached 859 passes with three skips but exited 1
+  because the curated plan-subdivision mutation still anchored the former
+  two-field canary options. Its source guard now preserves `delegate`, and a
+  separate mutation proves changing delivery back to `load` is killed.
 
 ## Approach
 
@@ -83,6 +88,8 @@ closed-world activation projection.
       delivery while selection and ranking remain unchanged.
 - [x] Invalid delivery constraints fail before provider invocation.
 - [x] Cached recruiter output remains `load` for a later ordinary route.
+- [x] Decision conformance independently mutates `delegate` back to `load`, and
+      the focused activation contract kills that mutation.
 - [x] Focused warning-strict tests pass 196 with one expected skip; changed-file
       Ruff, formatting, and diff checks pass.
 - [ ] A rebuilt exact Codex production-container transaction completes the
