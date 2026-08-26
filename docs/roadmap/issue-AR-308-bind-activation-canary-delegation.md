@@ -9,6 +9,7 @@ related:
   - CHANGELOG.md
   - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
   - docs/roadmap/handoffs/issue-AR-297.md
+  - docs/roadmap/issue-AR-309-restore-codex-0149-activation-proof.md
   - docs/decisions/0118-require-inference-owned-staffing.md
   - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
   - agency_runtime/core/selector/pipeline.py
@@ -25,7 +26,7 @@ issue_id: AR-308
 priority: p0
 tracker_url: null
 depends_on: []
-blocks: [AR-297]
+blocks: [AR-297, AR-309]
 ---
 
 # AR-308: Bind activation canary delegation
@@ -53,6 +54,10 @@ or attestation could exist.
   execution mode. The deterministic proposal default remains `load` for every
   ordinary route.
 - Tracker creation is prohibited by the active AR-297 task.
+- The exact rebuilt `1f32915d` canary now accepts `delivery=delegate`, loads
+  `code-reviewer`, records one direct native delegation, and reaches the sole
+  child conclusion. Its later Codex 0.149 host-artifact/header failure belongs
+  to AR-309 rather than this delivery projection.
 - The first named spine reached 859 passes with three skips but exited 1
   because the curated plan-subdivision mutation still anchored the former
   two-field canary options. Its source guard now preserves `delegate`, and a

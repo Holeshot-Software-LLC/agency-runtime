@@ -18,6 +18,7 @@ related:
   - docs/roadmap/issue-AR-306-bind-strict-critic-semantics.md
   - docs/roadmap/issue-AR-307-project-canary-inference-credentials.md
   - docs/roadmap/issue-AR-308-bind-activation-canary-delegation.md
+  - docs/roadmap/issue-AR-309-restore-codex-0149-activation-proof.md
   - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
   - docs/decisions/0174-admit-local-ollama-canary-child-judges.md
   - docs/decisions/0175-batch-complete-embedding-input-sets.md
@@ -32,8 +33,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-297
 branch: codex/ar297-production-container-live-evidence
-evidence_commit: a13e3cf854b3243d37b00bf593d3afca19e65be9
-minimum_ledger_commit: c52797620e804333ce15a4dec824e481c8807429
+evidence_commit: 105ce02180cde503a39189fd9f158f6121704e9d
+minimum_ledger_commit: 1f32915d14a9760d8cd12d21fbc6e7f3d8940a66
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 ---
@@ -45,9 +46,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Work remains in the dedicated Linux worktree on
   `codex/ar297-production-container-live-evidence`, descended from clean
   `origin/main` `0a23983aa7b99ec27ef18b1a950f6a0327961f72`.
-- The exact candidate is substantive `a13e3cf8` plus ledger `c5279762`.
-  Telemetry before the latest route diagnostic exited 0 at 38.7 percent; this
-  recovery pair records the smallest safe slice before another live call.
+- The exact candidate is substantive `105ce021` plus ledger `1f32915d`.
+  Telemetry before the next live diagnostic exited 0 at 30.3 percent, so this
+  recovery pair records the newly surfaced AR-309 boundary before that call.
 - The current Linux verdict remains **NO-GO**. AR-297 and tracker #335 remain
   open. No tracker, push, PR, merge, tag, signing, publication, release, or
   hosted workflow action is authorized.
@@ -60,62 +61,63 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   Mistral 24B critic/reranker/recruiter/child judge, and LiteLLM
   `qwen3-embedding` at 4,096 dimensions. Jina is absent and was not called.
 - Caller-umask-0002 build, strict Twine, and independent verification exit 0.
-  Wheel SHA is `6677c922...90f5` (9,242,783 bytes); sdist SHA is
-  `326f0907...3bf3b` (25,386,943 bytes). Both are mode 0644.
-- Five new images bind `c5279762` and wheel `6677c922...90f5`: IDs begin
-  `f50d8eef`, `5e482815`, `ba3551bc`, `28d1f07b`, and `9d45c40d`. Four new
-  containers pass the pre-install absence receipt at SHA `dedaabba...fd82f`.
-- Two unchanged Codex installs exit 1 after live routing, sessions
-  `01a03f4e-27e6-7772-942f-f121ac9c487f` and
-  `01a03f52-6822-72e3-9c46-d8a7dfc05e7b`. Both prove current managed-only
-  policy, eight events, no bypass, Qwen planning, exact 4,096-wide LiteLLM
-  embedding, and Mistral recruiting/criticism; both end
-  `workforce_inference_failed` before route, child, finalization, or attestation.
-- AR-307 is live-proven: the config-declared credential reaches only the
-  tool-reduced child and `qwen3-embedding` applies. The later staffing failure
-  remains AR-297's blocker rather than a credential or endpoint failure.
-- Claude and UID-10000 Hermes clean installs exit 0 with bundle digests
-  `702a880f...0724` and `eda2cb87...9858`. OpenClaw first exits 1 rather than
-  invent missing native policy; after the approved SecretRef-only native
-  profile at SHA `7d567996...8060`, it exits 0, is runtime-verified, and loads
-  all 13 hooks with bundle `e0cd11d0...e598`.
-- An ordinary route diagnostic exits 0 and proves requested/actual model plus
-  4,096-dimensional recall receipts, but outside the restricted canary it
-  misclassifies the review as workspace-write implementation. It is diagnostic
-  model-quality evidence only, not activation or host-delivery proof.
-- Historical exact-candidate host install, authenticated dashboard 401/200,
-  complete 2,659-byte prompt visibility, and all repository gates passed at
-  `2aa0b5a9`; they must be refreshed for `c5279762` before a final verdict.
+  Wheel SHA is `a81338f5...ca78` (9,244,572 bytes); sdist SHA is
+  `22e4286f...a15a` (25,397,183 bytes). Both are mode 0644.
+- Five exact image IDs begin `226afba9` (Codex), `507328b7` (Claude),
+  `8a50f5cb` (Hermes), `fd9967a0` (OpenClaw base), and `893b88eb`
+  (OpenClaw systemd). Four fresh containers bind candidate `1f32915d`; their
+  pre-install absence receipt passes at SHA `58e279f1...d128`.
+- All named repository gates already pass at `1f32915d`: 860 Python spine
+  tests with three skips, 138 dashboard tests, routing, and 161/161 killed
+  decision mutations. The decision-conformance JSON SHA is
+  `b0636470...0a6`, and source remained unchanged.
+- The sole fresh Codex install exits 1 with empty stderr and exact JSON SHA
+  `72c4ba0...6e4ab`. Managed-only policy and no bypass are preserved. Session
+  `01a03f83-bb05-7c43-b9b3-38cb8d9e30dd` proves Qwen planning, exact
+  4,096-wide LiteLLM embedding, Mistral recruiting/criticism, accepted
+  `delivery=delegate`, one loaded `code-reviewer`, one native spawn, one child
+  answer, and one completed wait.
+- Parent/child rollout SHAs `5a548331...2af2` and `4732afb2...225e` prove the
+  actual Codex 0.149 lifecycle. The newer V2 envelope redacts the decrypted
+  child launch and omits Agency's post-wait header context; Store finalization
+  is `response_invalid`, no host delivery verifies, and no attestation exists.
+- AR-308 is therefore live-proven through its exact delivery boundary. AR-309
+  now owns the later host-artifact/header defect. No model, endpoint, dimension,
+  reranker, thinking, judge, auth, or service-manager choice changed.
 
 ## exact-blocker
 
-- Codex still lacks an attestation after the fixed embedding boundary. Exact
-  diagnostic `b6dc0aa...bc6e8` proves accepted inference selection was cleared
-  only because deterministic staffing emitted `load` while the canary requires
-  `delegate`. AR-308 binds that execution-only contract; live proof is pending.
+- Codex still lacks an attestation because its 0.149.1 V2 child artifact does
+  not expose the pre-speech card and its final parent header retains stale
+  `delegated: none`. ADR-0156 forbids substituting Store rows or model prose.
+- The next bounded live action is one stable-`multi_agent` diagnostic. It must
+  preserve the exact route and direct spawn/wait while independently restoring
+  host delivery and final-header context, or the product must remain failed
+  closed and repair the exact 0.149 boundary.
 - No later ordinary Codex, Claude, Hermes, or OpenClaw process has a current
   successful Agency-turn receipt on this source.
 - Refresh the host install/dashboard and named repository gates for the exact
   candidate, then remove both old and new AR-297 proof containers.
-- AR-299 through AR-307 tracker parity, hosted cross-OS artifacts, signing,
+- AR-299 through AR-309 tracker parity, hosted cross-OS artifacts, signing,
   push, PR, merge, tag, publication, release, and exhaustive workflow dispatch
   remain unauthorized.
 
 ## same-task-continuity
 
 Exact artifacts are under `~/.agency-runtime/release-artifacts/`
-`dist-c52797620e804333ce15a4dec824e481c8807429-linux-ar297`. Private current
-evidence is `~/.agency-runtime/evidence/ar297-go-c5279762`; historical evidence
-is `~/.agency-runtime/evidence/ar297-go-zKOPE1b8`. New container IDs begin
-`847e86f5`, `6e9769aa`, `517f31e9`, and `9cef57e3`; old IDs remain separately
-labelled. The secret-safe helper remains
+`dist-1f32915d14a9760d8cd12d21fbc6e7f3d8940a66-linux-ar297`. Private current
+evidence is `~/.agency-runtime/evidence/ar297-go-1f32915d`; historical evidence
+remains retained. Current container IDs begin `e6075282`, `792ed3e9`,
+`4938a43d`, and `62df9b7b`; older labelled proof containers remain. The
+secret-safe helper remains
 `/tmp/agency-runtime-ar297-evidence.pcLOZn/run_with_litellm_key.py`.
 
 ## next-bounded-work-package
 
-1. Checkpoint AR-308, rebuild the exact candidate, and run one clean no-bypass
-   Codex managed-policy installation/canary.
-2. Run later ordinary Conveyor-equivalent Codex, Claude, Hermes, and OpenClaw
+1. Run one stable-`multi_agent` diagnostic, implement the bounded AR-309 proof
+   repair, checkpoint it, and rebuild one exact no-bypass Codex transaction.
+2. Complete fresh Claude, Hermes, and OpenClaw installs, then run later ordinary
+   Conveyor-equivalent Codex, Claude, Hermes, and OpenClaw
    processes and correlate Store plus native artifacts.
 3. Refresh exact host/dashboard and repository gates, update canonical records,
    remove every labelled AR-297 proof container, and issue the Linux verdict.

@@ -22,6 +22,7 @@ related:
   - docs/roadmap/issue-AR-306-bind-strict-critic-semantics.md
   - docs/roadmap/issue-AR-307-project-canary-inference-credentials.md
   - docs/roadmap/issue-AR-308-bind-activation-canary-delegation.md
+  - docs/roadmap/issue-AR-309-restore-codex-0149-activation-proof.md
   - docs/decisions/0174-admit-local-ollama-canary-child-judges.md
   - docs/decisions/0175-batch-complete-embedding-input-sets.md
   - docs/decisions/0176-use-owner-runtime-temp-for-nonroot-user-services.md
@@ -42,7 +43,7 @@ epic: host-integrations
 issue_id: AR-297
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
-depends_on: [AR-300, AR-301, AR-302, AR-303, AR-304, AR-305, AR-306, AR-307, AR-308]
+depends_on: [AR-300, AR-301, AR-302, AR-303, AR-304, AR-305, AR-306, AR-307, AR-308, AR-309]
 blocks: []
 ---
 
@@ -574,3 +575,14 @@ novelty and its repaired plan misclassifies the read-only review as a
 workspace-write implementation. Because the closed-world activation
 projection was intentionally absent, that diagnostic is model-quality
 evidence only and is not canary, host delivery, or activation proof.
+
+The rebuilt exact `1f32915d` candidate passes all named repository gates and
+produces independently verified wheel `a81338f5...ca78` plus sdist
+`22e4286f...a15a`. Its one clean no-bypass Codex 0.149.1 transaction crosses
+AR-308: accepted `delivery=delegate` selects and loads `code-reviewer`, then
+executes one direct native child and one completed wait. The transaction still
+exits 1 because the V2 child rollout redacts pre-speech card delivery and the
+parent never receives Agency's post-wait header snapshot, so its stale
+`delegated: none` response is rejected and no attestation persists. AR-309
+owns that later proof boundary; Store rows and model prose are not promoted
+into host-artifact authority.
