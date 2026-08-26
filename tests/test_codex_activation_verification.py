@@ -577,6 +577,7 @@ def test_existing_store_requirement_crosses_current_profile_process_boundary(
     tmp_path: Path,
 ) -> None:
     calls: list[dict[str, Any]] = []
+    owner_home = tmp_path / "owner-home"
 
     def runner(argv: list[str], **kwargs: Any) -> BoundedProcessResult:
         calls.append({"argv": argv, **kwargs})
@@ -587,9 +588,9 @@ def test_existing_store_requirement_crosses_current_profile_process_boundary(
         db_path=tmp_path / "agency.db",
         timeout=1,
         marketplace=tmp_path,
-        auth_source=tmp_path / "auth.json",
+        auth_source=owner_home / ".codex" / "auth.json",
         process_runner=runner,
-        source_env={},
+        source_env={"HOME": str(owner_home)},
         profile_scope="current-profile",
         require_existing_store=True,
     )
@@ -597,6 +598,7 @@ def test_existing_store_requirement_crosses_current_profile_process_boundary(
     backend.execute(task="canary", workdir=str(tmp_path))
 
     assert calls[0]["env"]["AGENCY_CANARY_REQUIRE_EXISTING_STORE"] == "1"
+    assert Path(calls[0]["env"]["AGENCY_CANARY_NATIVE_INSTALL_HOME"]) == owner_home.resolve()
 
 
 def test_autonomous_current_profile_uses_supported_bypass_without_trust_inspection(

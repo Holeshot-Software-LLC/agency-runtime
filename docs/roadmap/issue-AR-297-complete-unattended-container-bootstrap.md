@@ -28,12 +28,14 @@ related:
   - docs/roadmap/issue-AR-312-validate-explicit-production-config.md
   - docs/roadmap/issue-AR-313-trust-normal-umask-codex-artifacts.md
   - docs/roadmap/issue-AR-314-bind-codex-default-canary-role.md
+  - docs/roadmap/issue-AR-315-project-codex-canary-install-home.md
   - docs/decisions/0174-admit-local-ollama-canary-child-judges.md
   - docs/decisions/0175-batch-complete-embedding-input-sets.md
   - docs/decisions/0176-use-owner-runtime-temp-for-nonroot-user-services.md
   - docs/decisions/0177-make-local-verification-private-by-construction.md
   - docs/decisions/0178-project-config-declared-credentials-into-tool-reduced-canaries.md
   - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
+  - docs/decisions/0180-project-current-profile-canary-install-home.md
   - agency_runtime/cli/install_commands.py
   - agency_runtime/core/codex_managed_policy.py
   - agency_runtime/core/canary.py
@@ -48,7 +50,7 @@ epic: host-integrations
 issue_id: AR-297
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
-depends_on: [AR-300, AR-301, AR-302, AR-303, AR-304, AR-305, AR-306, AR-307, AR-308, AR-309, AR-310, AR-311, AR-313, AR-314]
+depends_on: [AR-300, AR-301, AR-302, AR-303, AR-304, AR-305, AR-306, AR-307, AR-308, AR-309, AR-310, AR-311, AR-313, AR-314, AR-315]
 blocks: []
 ---
 
@@ -687,5 +689,32 @@ exact `qwen3-embedding` applies; Mistral recruiting applies after one rejected
 unsafe-team proposal but then abstains with `no_safe_sufficient_team` and
 `recruiter_abstained`. Store `ff60c8c3...a5bc1` and canonical parent rollout
 `032f2ee6...7c4d` are retained mode 0600. Because identical config accepted on
-the prior transaction, one fresh unchanged retry is the next bounded live
-step; no model, thinking, route, or policy choice changes.
+the prior transaction, one fresh unchanged retry followed without changing a
+model, thinking level, route, or policy choice.
+
+Retry R2 uses fresh container `537744e9...09476`; absence exits 0 at receipt
+SHA-256 `0161a419...05fd`. Its no-bypass exact install exits 1 with empty stderr
+and a mode-0600 21,349-byte JSON at SHA-256 `aba8cf2d...5089`. Session
+`01a04030-ba19-71c2-94fe-f821351a825f`, trace
+`01a04030-ba32-7902-a09f-22dc2a32fa3e`, query
+`3337f391...5c56`, and accepted route
+`3bac13eb-34f4-4d8a-9973-2170c0f8366e` create child
+`01a04033-0c92-7f91-a9cf-fc89c5a99148`. Its fixed worker unit exits 0, but
+the child again receives only the 563-byte identity message. There are zero
+native child routes, deliveries, grants, or consumptions; finalization
+`a065ac2c-b1be-4057-83b2-a6bd3c6f51e9` rejects missing
+`evidence_verification`. Store, parent rollout, and child rollout hashes are
+`9209d92e...c177`, `bf356b10...e309`, and `e9d3c8f8...6cf93`.
+
+AR-315 isolates the exact pre-staffing rejection. The current-profile backend
+sets canary mode but omits the owner-home capability that the immutable
+managed-install identity reader requires in every canary. Against the installed
+private runtime, the no-capability diagnostic resolves no identity; adding
+only `/root` as the explicit native-install home resolves a current identity
+whose candidate and running digests match. Both exit 0 with empty stderr;
+their mode-0600 stdout hashes are `550b2048...e3fff` and
+`1fccf6f2...ee60`. The bounded source repair projects that existing owner-home
+authority across the subprocess boundary without changing the config or trust
+mode. Seven focused and 559 broader warning-strict tests, Ruff, and all 869
+documentation checks pass at exit 0; a rebuilt live proof follows a clean
+recovery checkpoint.

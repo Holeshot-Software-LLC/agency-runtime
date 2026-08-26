@@ -69,6 +69,7 @@ Status meanings:
 | [ADR-0155](0155-defer-agent-plugins-conformance-to-client-adoption.md) | Defer Agent Plugins conformance to client adoption | Accepted |
 | [ADR-0169](0169-deliver-openclaw-native-errors-through-exact-terminal-evidence.md) | Deliver OpenClaw native errors through exact terminal evidence | Accepted |
 | [ADR-0170](0170-authorize-finalized-openclaw-child-announcements.md) | Authorize finalized OpenClaw child announcements | Accepted |
+| [ADR-0180](0180-project-current-profile-canary-install-home.md) | Project current-profile canary install-home authority | Accepted |
 
 ## Routing, policy, and providers
 

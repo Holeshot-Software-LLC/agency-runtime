@@ -7,6 +7,7 @@ updated: 2026-08-26
 tags: [canary, configuration, containers, install, security]
 related:
   - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
+  - docs/roadmap/issue-AR-315-project-codex-canary-install-home.md
   - docs/roadmap/handoffs/issue-AR-297.md
   - docs/roadmap/issue-AR-307-project-canary-inference-credentials.md
   - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
@@ -24,7 +25,7 @@ issue_id: AR-300
 priority: p0
 tracker_url: null
 depends_on: []
-blocks: [AR-297, AR-307]
+blocks: [AR-297, AR-307, AR-315]
 ---
 
 # AR-300: Bind the explicit install config to the managed canary

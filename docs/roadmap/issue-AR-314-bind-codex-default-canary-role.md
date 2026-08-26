@@ -9,6 +9,7 @@ related:
   - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
   - docs/roadmap/issue-AR-309-restore-codex-0149-activation-proof.md
   - docs/roadmap/issue-AR-311-inject-exact-codex-canary-native-plan.md
+  - docs/roadmap/issue-AR-315-project-codex-canary-install-home.md
   - docs/roadmap/handoffs/issue-AR-297.md
   - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
   - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
@@ -26,7 +27,7 @@ issue_id: AR-314
 priority: p0
 tracker_url: null
 depends_on: [AR-309, AR-311]
-blocks: [AR-297]
+blocks: [AR-297, AR-315]
 ---
 
 # AR-314: Bind the Codex 0.149 default canary child role

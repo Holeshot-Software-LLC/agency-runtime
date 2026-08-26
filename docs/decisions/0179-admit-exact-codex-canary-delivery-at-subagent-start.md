@@ -17,6 +17,8 @@ related:
   - docs/roadmap/issue-AR-311-inject-exact-codex-canary-native-plan.md
   - docs/roadmap/issue-AR-313-trust-normal-umask-codex-artifacts.md
   - docs/roadmap/issue-AR-314-bind-codex-default-canary-role.md
+  - docs/roadmap/issue-AR-315-project-codex-canary-install-home.md
+  - docs/decisions/0180-project-current-profile-canary-install-home.md
   - agency_runtime/adapters/hooks.py
   - agency_runtime/core/canary_backends.py
   - agency_runtime/core/child_delivery_evidence.py

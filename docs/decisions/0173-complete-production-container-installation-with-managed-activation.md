@@ -3,7 +3,7 @@ title: "Complete production-container installation with managed activation"
 status: accepted
 category: decisions
 created: 2026-08-25
-updated: 2026-08-25
+updated: 2026-08-26
 tags: [installation, containers, codex, hooks, trust, automation]
 related:
   - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
@@ -15,10 +15,12 @@ related:
   - docs/roadmap/issue-AR-311-inject-exact-codex-canary-native-plan.md
   - docs/roadmap/issue-AR-312-validate-explicit-production-config.md
   - docs/roadmap/issue-AR-314-bind-codex-default-canary-role.md
+  - docs/roadmap/issue-AR-315-project-codex-canary-install-home.md
   - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
   - docs/decisions/0036-capability-bound-host-canary-attestations.md
   - docs/decisions/0118-require-inference-owned-staffing.md
   - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
+  - docs/decisions/0180-project-current-profile-canary-install-home.md
   - README.md
   - docs/RELEASE_CHECKLIST.md
   - docs/worklog/README.md

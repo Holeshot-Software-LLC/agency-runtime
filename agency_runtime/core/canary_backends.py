@@ -3464,6 +3464,12 @@ class SafeCodexCanaryBackend:
             env["AGENCY_DB_PATH"] = str(self.db_path.resolve())
             env["AGENCY_CANARY_MODE"] = "1"
             env["AGENCY_CANARY_MASTER_ENABLED"] = "1" if self.master_enabled else "0"
+            # Canary mode deliberately refuses ambient HOME as install
+            # authority. Project the same explicit owner-home capability used
+            # by isolated hosts even though this profile keeps that home.
+            env[CANARY_NATIVE_INSTALL_HOME_ENV] = str(
+                facade._source_home(self.source_env).resolve()
+            )
             _project_child_judge_environment(
                 env,
                 provider=self.child_judge_provider,
