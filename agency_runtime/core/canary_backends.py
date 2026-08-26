@@ -69,6 +69,12 @@ _CODEX_PRODUCT_MAX_SPAWNS = 16
 _CODEX_PRODUCT_MAX_WAITS = 64
 # Current Codex wait_agent schema ceiling; the activation canary separately requires 60 seconds.
 _CODEX_PRODUCT_MAX_WAIT_TIMEOUT_MS = 3_600_000
+_MAX_CANARY_CREDENTIAL_ENVIRONMENT_NAMES = 256
+_MAX_CANARY_CREDENTIAL_VALUE_BYTES = 64 * 1024
+_CANARY_CREDENTIAL_ENVIRONMENT_NAME = re.compile(
+    r"(?:^|_)(?:API_KEY|KEY|TOKEN|SECRET|PASSWORD|CREDENTIALS?)\Z",
+    re.IGNORECASE,
+)
 CODEX_COLLABORATION_DIAGNOSTIC_SCHEMA = "agency.codex-collaboration-diagnostic.v1"
 CODEX_COLLABORATION_DIAGNOSTIC_REASONS = frozenset(
     {
@@ -383,6 +389,45 @@ def _project_canary_cli_transport_environment(
         host=label,
     )
     env[variable] = str(provider_home)
+
+
+def _project_configured_credential_environment(
+    env: dict[str, str],
+    *,
+    source_env: Mapping[str, str],
+    names: tuple[str, ...],
+) -> None:
+    """Project only exact config-declared credentials into a tool-reduced canary."""
+
+    if not isinstance(names, tuple) or len(names) > _MAX_CANARY_CREDENTIAL_ENVIRONMENT_NAMES:
+        raise ValueError("canary credential environment-name set is invalid")
+    observed: set[str] = set()
+    for name in names:
+        if (
+            not isinstance(name, str)
+            or not name
+            or not name.isascii()
+            or not name.isidentifier()
+            or len(name) > 256
+            or name in observed
+            or name in env
+            or name.startswith("AGENCY_CANARY_")
+            or _CANARY_CREDENTIAL_ENVIRONMENT_NAME.search(name) is None
+        ):
+            raise ValueError("canary credential environment name is invalid")
+        observed.add(name)
+        value = source_env.get(name)
+        if value is None or value == "":
+            continue
+        if not isinstance(value, str) or "\x00" in value:
+            raise ValueError("canary credential environment value is invalid")
+        try:
+            size = len(value.encode("utf-8"))
+        except UnicodeEncodeError as exc:
+            raise ValueError("canary credential environment value is invalid") from exc
+        if size > _MAX_CANARY_CREDENTIAL_VALUE_BYTES:
+            raise ValueError("canary credential environment value is invalid")
+        env[name] = value
 
 
 def _project_child_judge_environment(
@@ -2820,6 +2865,7 @@ class SafeCodexCanaryBackend:
     child_judge_provider: str = ""
     child_judge_transport: str = ""
     child_judge_auth_source: Path | None = None
+    credential_environment_names: tuple[str, ...] = ()
 
     def _exec_options(self) -> tuple[str, ...]:
         if not isinstance(self.trust_mode, str) or self.trust_mode not in {
@@ -2851,6 +2897,11 @@ class SafeCodexCanaryBackend:
             CODEX_HOOK_EVENT_DIAGNOSTICS_ENV,
         )
 
+        _project_configured_credential_environment(
+            env,
+            source_env=self.source_env,
+            names=self.credential_environment_names,
+        )
         if self.require_existing_store or self.require_exact_activation_rollout:
             env[CODEX_ACTIVATION_EXISTING_STORE_ENV] = "1"
         if self.hook_event_diagnostics:
@@ -3182,7 +3233,6 @@ class SafeCodexCanaryBackend:
                 runtime_home,
                 self.db_path,
             )
-            self._configure_canary_environment(env)
             projected = facade._project_isolated_runtime_control(
                 runtime_home,
                 enabled=self.master_enabled,
@@ -3198,6 +3248,7 @@ class SafeCodexCanaryBackend:
                 runtime_home=runtime_home,
                 auth_source=self.child_judge_auth_source,
             )
+            self._configure_canary_environment(env)
             failure = self._install_plugin(workdir=workdir, env=env, deadline=deadline)
             if failure is None:
                 failure = self._verify_plugin(workdir=workdir, env=env, deadline=deadline)
@@ -3258,6 +3309,7 @@ class SafeClaudeCanaryBackend:
     parent_recruiter_provider: str = ""
     parent_recruiter_transport: str = ""
     parent_recruiter_auth_source: Path | None = None
+    credential_environment_names: tuple[str, ...] = ()
 
     def _record_child_judge_provider(self, record: dict[str, Any]) -> dict[str, Any]:
         if self.child_judge_provider:
@@ -3341,6 +3393,11 @@ class SafeClaudeCanaryBackend:
                     runtime_home=runtime_home,
                     auth_source=self.parent_recruiter_auth_source,
                 )
+            _project_configured_credential_environment(
+                env,
+                source_env=self.source_env,
+                names=self.credential_environment_names,
+            )
             timeout = facade._remaining_canary_timeout(deadline)
             if timeout <= 0:
                 return self._record_child_judge_provider(_timeout_record("claude")), None
@@ -3524,6 +3581,7 @@ def backend(  # noqa: C901 - one bounded validation and backend construction bou
     child_judge_transport: str = "",
     parent_recruiter_provider: str = "",
     parent_recruiter_transport: str = "",
+    credential_environment_names: tuple[str, ...] = (),
 ) -> SafeCodexCanaryBackend | SafeClaudeCanaryBackend:
     from agency_runtime.core.delegation.backends import run_bounded_process
 
@@ -3606,6 +3664,7 @@ def backend(  # noqa: C901 - one bounded validation and backend construction bou
             child_judge_provider=child_judge_provider,
             child_judge_transport=child_judge_transport,
             child_judge_auth_source=child_judge_auth_source,
+            credential_environment_names=credential_environment_names,
         )
 
     original_home = Path(source_env.get("CLAUDE_CONFIG_DIR") or (home / ".claude")).expanduser()
@@ -3624,6 +3683,7 @@ def backend(  # noqa: C901 - one bounded validation and backend construction bou
         parent_recruiter_provider=parent_recruiter_provider,
         parent_recruiter_transport=parent_recruiter_transport,
         parent_recruiter_auth_source=parent_recruiter_auth_source,
+        credential_environment_names=credential_environment_names,
     )
 
 

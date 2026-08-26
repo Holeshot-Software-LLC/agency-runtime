@@ -16,11 +16,13 @@ related:
   - docs/roadmap/issue-AR-304-preserve-recruiter-critic-validation-diagnostics.md
   - docs/roadmap/issue-AR-305-normalize-planner-novelty-absence.md
   - docs/roadmap/issue-AR-306-bind-strict-critic-semantics.md
+  - docs/roadmap/issue-AR-307-project-canary-inference-credentials.md
   - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
   - docs/decisions/0174-admit-local-ollama-canary-child-judges.md
   - docs/decisions/0175-batch-complete-embedding-input-sets.md
   - docs/decisions/0176-use-owner-runtime-temp-for-nonroot-user-services.md
   - docs/decisions/0177-make-local-verification-private-by-construction.md
+  - docs/decisions/0178-project-config-declared-credentials-into-tool-reduced-canaries.md
   - README.md
   - docs/RELEASE_CHECKLIST.md
   - docs/worklog/README.md
@@ -94,23 +96,30 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   `aabc7fa8...9beb3` correlate one run and one preflight failure. Planning and
   both Mistral stages apply; additive recall records `embedding_provider_failed`.
   No route, specialist, child, finalization, or attestation row exists.
+- AR-307's no-model probe proves the exact declared credential is present in
+  the installer and removed by the general CLI environment. The bounded
+  candidate projects only exact config-declared, credential-shaped values into
+  the tool-reduced canary, rejects process/control collisions before launch,
+  and leaves the general allowlist unchanged. Focused slices pass 90 and 118
+  warning-strict tests; no post-fix model call has run.
 
 ## exact-blocker
 
-- Determine why LiteLLM embedding fails only inside the managed Codex canary
-  although the parent install process has the credential. Do not change the
+- Commit the focused AR-307 recovery pair, rebuild exact artifacts and images,
+  and rerun the no-bypass Codex production transaction. Do not change the
   approved config, model, endpoint, dimensions, reranker, thinking, judge,
   auth, or service-manager choices without interviewing the owner.
 - Codex still lacks an attestation. No later ordinary Codex, Claude, Hermes, or
   OpenClaw process has current successful Agency-turn evidence on this source.
-- AR-299 through AR-306 tracker parity, hosted cross-OS artifacts, signing,
+- AR-299 through AR-307 tracker parity, hosted cross-OS artifacts, signing,
   push, PR, merge, tag, publication, release, and exhaustive workflow dispatch
   remain unauthorized.
 
 ## same-task-continuity
 
-Artifacts remain under `~/.agency-runtime/release-artifacts/`
-`dist-2aa0b5a9c00763972ebea740cfe69aa6d2b4544b-linux-ar297`. Private live
+Prior artifacts remain under `~/.agency-runtime/release-artifacts/`
+`dist-2aa0b5a9c00763972ebea740cfe69aa6d2b4544b-linux-ar297` and become
+historical when AR-307 commits. Private live
 evidence is under `~/.agency-runtime/evidence/ar297-go-zKOPE1b8`; the exact
 config is `agency-exact.yaml`. The four current proof container IDs begin
 `e55383162646`, `420e0d4b20f6`, `3ff874135b36`, and `59f2302ed9fe`.
@@ -119,9 +128,9 @@ The secret-safe helper remains
 
 ## next-bounded-work-package
 
-1. Diagnose the Codex-only embedding failure without a model call; if a safe
-   exact-route probe and one no-bypass canary retry are justified, run telemetry
-   immediately before each live call.
+1. Create the AR-307 substantive/ledger recovery pair, rebuild exact artifacts
+   and fresh images, and run telemetry immediately before the one no-bypass
+   Codex canary retry.
 2. Run later ordinary Conveyor-equivalent Codex, Claude, Hermes, and OpenClaw
    processes and correlate Store plus native host artifacts without changing
    the approved topology.

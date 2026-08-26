@@ -643,7 +643,10 @@ def test_managed_policy_current_profile_uses_normal_invocation_without_plugin_tr
         marketplace=tmp_path,
         auth_source=tmp_path / "auth.json",
         process_runner=runner,
-        source_env={},
+        source_env={
+            "LITELLM_API_KEY": "configured-secret",
+            "UNRELATED_TOKEN": "unrelated-secret",
+        },
         profile_scope="current-profile",
         require_existing_store=True,
         require_exact_activation_rollout=True,
@@ -651,6 +654,7 @@ def test_managed_policy_current_profile_uses_normal_invocation_without_plugin_tr
             "managed hooks are policy-trusted and do not use the plugin trust probe"
         ),
         trust_mode="managed_policy",
+        credential_environment_names=("LITELLM_API_KEY",),
     )
 
     result = backend.execute(task="canary", workdir=str(tmp_path))
@@ -659,6 +663,82 @@ def test_managed_policy_current_profile_uses_normal_invocation_without_plugin_tr
     assert result["trust_mode"] == "managed_policy"
     assert result["trust_bypass_used"] is False
     assert result["persistent_trust_changed"] is False
+    assert calls[0]["env"]["LITELLM_API_KEY"] == "configured-secret"
+    assert "UNRELATED_TOKEN" not in calls[0]["env"]
+
+
+@pytest.mark.parametrize(
+    "names",
+    [
+        ("bad-name",),
+        ("PATH",),
+        ("NODE_OPTIONS",),
+        ("AGENCY_CANARY_SECRET",),
+        ("DUPLICATE", "DUPLICATE"),
+        tuple(f"KEY_{index}" for index in range(257)),
+    ],
+)
+def test_managed_canary_refuses_invalid_credential_environment_names(
+    tmp_path: Path,
+    names: tuple[str, ...],
+) -> None:
+    invoked = False
+
+    def runner(*_args: Any, **_kwargs: Any) -> BoundedProcessResult:
+        nonlocal invoked
+        invoked = True
+        return BoundedProcessResult(1, "", "")
+
+    backend = SafeCodexCanaryBackend(
+        executable="codex",
+        db_path=tmp_path / "agency.db",
+        timeout=1,
+        marketplace=tmp_path,
+        auth_source=tmp_path / "auth.json",
+        process_runner=runner,
+        source_env={"DUPLICATE": "private"},
+        profile_scope="current-profile",
+        require_existing_store=True,
+        require_exact_activation_rollout=True,
+        trust_mode="managed_policy",
+        credential_environment_names=names,
+    )
+
+    with pytest.raises(ValueError, match="credential environment"):
+        backend.execute(task="canary", workdir=str(tmp_path))
+    assert invoked is False
+
+
+@pytest.mark.parametrize("value", [["not", "text"], "contains\x00nul", "x" * 65_537])
+def test_managed_canary_refuses_invalid_credential_environment_values(
+    tmp_path: Path,
+    value: object,
+) -> None:
+    invoked = False
+
+    def runner(*_args: Any, **_kwargs: Any) -> BoundedProcessResult:
+        nonlocal invoked
+        invoked = True
+        return BoundedProcessResult(1, "", "")
+
+    backend = SafeCodexCanaryBackend(
+        executable="codex",
+        db_path=tmp_path / "agency.db",
+        timeout=1,
+        marketplace=tmp_path,
+        auth_source=tmp_path / "auth.json",
+        process_runner=runner,
+        source_env={"CONFIGURED_KEY": value},  # type: ignore[dict-item]
+        profile_scope="current-profile",
+        require_existing_store=True,
+        require_exact_activation_rollout=True,
+        trust_mode="managed_policy",
+        credential_environment_names=("CONFIGURED_KEY",),
+    )
+
+    with pytest.raises(ValueError, match="credential environment value"):
+        backend.execute(task="canary", workdir=str(tmp_path))
+    assert invoked is False
 
 
 def test_current_profile_hook_uses_existing_current_store_mode(

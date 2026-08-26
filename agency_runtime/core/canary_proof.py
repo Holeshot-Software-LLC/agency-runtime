@@ -21,6 +21,9 @@ from agency_runtime.core.child_delivery_evidence import (
 from agency_runtime.core.codex_child_tool_evidence import (
     normalize_codex_child_tool_evidence,
 )
+from agency_runtime.core.configuration_contracts import (
+    configured_credential_environment_names,
+)
 from agency_runtime.core.installer_contracts import (
     CODEX_ACTIVATION_CANARY_PROOF_CONTRACT,
 )
@@ -427,6 +430,7 @@ def prepare_live_invocation(
     child_judge_transport = ""
     parent_recruiter_provider = ""
     parent_recruiter_transport = ""
+    credential_environment_names: tuple[str, ...] = ()
     if (
         mode == "agency"
         and backend_factory is facade._backend
@@ -434,6 +438,7 @@ def prepare_live_invocation(
     ):
         try:
             config = facade.load_config(getattr(store, "config_path", None), reload=True)
+            credential_environment_names = configured_credential_environment_names(config)
             resolved = facade._configured_canary_child_judge_provider(config, host)
             if resolved is None:
                 raise ValueError("missing provider pin")
@@ -476,6 +481,7 @@ def prepare_live_invocation(
                 child_judge_transport=child_judge_transport,
                 parent_recruiter_provider=parent_recruiter_provider,
                 parent_recruiter_transport=parent_recruiter_transport,
+                credential_environment_names=credential_environment_names,
             )
         else:
             backend = backend_factory(host, db_path=path, timeout=timeout)

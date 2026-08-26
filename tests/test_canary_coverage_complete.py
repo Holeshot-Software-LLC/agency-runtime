@@ -21,6 +21,9 @@ from agency_runtime.core.config import (
     InferenceProfile,
     ProviderEntry,
 )
+from agency_runtime.core.configuration_contracts import (
+    configured_credential_environment_names,
+)
 from agency_runtime.core.selector.policy import detect_actions, load_bundled_policy
 
 
@@ -562,8 +565,39 @@ def test_prepare_live_invocation_resolves_and_passes_the_exact_canary_pin(
             "child_judge_transport": "codex",
             "parent_recruiter_provider": "",
             "parent_recruiter_transport": "",
+            "credential_environment_names": ("LITELLM_API_KEY",),
         }
     ]
+
+
+def test_configured_canary_credentials_include_inference_profiles_without_values() -> None:
+    config = AgencyConfig(
+        providers=(
+            ProviderEntry(
+                name="legacy",
+                model="legacy",
+                base_url="http://127.0.0.1:4000/v1",
+                api_key_env="LEGACY_KEY",
+            ),
+        ),
+        inference=InferenceConfig(
+            profiles={
+                "embedding": InferenceProfile(
+                    name="embedding",
+                    adapter="litellm",
+                    model="embedding",
+                    capability_class="embeddings",
+                    base_url="http://127.0.0.1:4000/v1",
+                    api_key_env="EXACT_LITELLM_KEY",
+                )
+            }
+        ),
+    )
+
+    names = configured_credential_environment_names(config)
+
+    assert names == ("EXACT_LITELLM_KEY", "LEGACY_KEY", "LITELLM_API_KEY")
+    assert all("secret" not in name.casefold() for name in names)
 
 
 def test_prepare_live_invocation_binds_an_explicit_config_path_to_the_store(

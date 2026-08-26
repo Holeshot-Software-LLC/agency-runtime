@@ -20,10 +20,12 @@ related:
   - docs/roadmap/issue-AR-304-preserve-recruiter-critic-validation-diagnostics.md
   - docs/roadmap/issue-AR-305-normalize-planner-novelty-absence.md
   - docs/roadmap/issue-AR-306-bind-strict-critic-semantics.md
+  - docs/roadmap/issue-AR-307-project-canary-inference-credentials.md
   - docs/decisions/0174-admit-local-ollama-canary-child-judges.md
   - docs/decisions/0175-batch-complete-embedding-input-sets.md
   - docs/decisions/0176-use-owner-runtime-temp-for-nonroot-user-services.md
   - docs/decisions/0177-make-local-verification-private-by-construction.md
+  - docs/decisions/0178-project-config-declared-credentials-into-tool-reduced-canaries.md
   - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
   - agency_runtime/cli/install_commands.py
   - agency_runtime/core/codex_managed_policy.py
@@ -39,7 +41,7 @@ epic: host-integrations
 issue_id: AR-297
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
-depends_on: [AR-300, AR-301, AR-302, AR-303, AR-304, AR-305, AR-306]
+depends_on: [AR-300, AR-301, AR-302, AR-303, AR-304, AR-305, AR-306, AR-307]
 blocks: []
 ---
 
@@ -516,3 +518,14 @@ Mistral recruiting, and Mistral criticism apply, while additive recall records
 finalization, or attestation rows. The caller had the LiteLLM credential only
 in process memory. This failure remains a blocker and is not an activation
 claim.
+
+AR-307 isolates that failure without another model call. A secret-safe probe
+inside the same Codex container records the declared credential present in the
+installer environment and absent from the general safe CLI projection, while
+printing no value. The bounded candidate now derives credential-shaped names
+from the exact config, projects only matching process-local values after the
+native/control environment is complete, and rejects collisions, canary-control
+names, malformed values, NULs, duplicates, and oversize before launch. The
+global CLI allowlist remains unchanged. Focused warning-strict slices pass 90
+and 118 tests; changed-file Ruff, formatting, metadata, policy availability,
+worklog, documentation, and diff checks exit 0. No post-fix model call has run.

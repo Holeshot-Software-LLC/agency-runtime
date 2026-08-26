@@ -169,6 +169,7 @@ Status meanings:
 | [ADR-0173](0173-complete-production-container-installation-with-managed-activation.md) | Complete production-container installation with managed activation | Accepted |
 | [ADR-0176](0176-use-owner-runtime-temp-for-nonroot-user-services.md) | Use owner-runtime temporary directories for non-root user services | Accepted |
 | [ADR-0177](0177-make-local-verification-private-by-construction.md) | Make local verification private at repository-owned boundaries | Accepted |
+| [ADR-0178](0178-project-config-declared-credentials-into-tool-reduced-canaries.md) | Project config-declared credentials into tool-reduced canaries | Accepted |
 | [ADR-0032](0032-adaptive-authenticated-dashboard-polling.md) | Use adaptive authenticated polling and source-owned signal visualizations | Accepted |
 | [ADR-0034](0034-persistent-soft-host-control.md) | Separate immediate host control from native plugin lifecycle | Accepted |
 | [ADR-0036](0036-capability-bound-host-canary-attestations.md) | Bind live host canary attestations to capability and installation identity | Accepted |

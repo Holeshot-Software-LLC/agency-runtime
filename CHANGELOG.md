@@ -13,7 +13,9 @@ related:
   - docs/roadmap/issue-AR-298-expose-complete-workforce-prompts.md
   - docs/roadmap/issue-AR-305-normalize-planner-novelty-absence.md
   - docs/roadmap/issue-AR-306-bind-strict-critic-semantics.md
+  - docs/roadmap/issue-AR-307-project-canary-inference-credentials.md
   - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
+  - docs/decisions/0178-project-config-declared-credentials-into-tool-reduced-canaries.md
   - docs/roadmap/README.md
   - docs/worklog/README.md
   - THIRD_PARTY_NOTICES.md
@@ -91,6 +93,11 @@ changes rather than duplicating every commit.
 
 ### Changed
 
+- Exact-config live canaries now project only credential environment variables
+  explicitly named by that validated configuration after applying the normal
+  minimal CLI environment. Values remain process-only and bounded; malformed
+  names, control-variable collisions, or values fail before launch, while
+  ordinary CLI judgments still drop LiteLLM and unrelated credentials.
 - Compact workforce planning now treats stringified `false`, `none`, and
   `null` novelty values as absence instead of impossible new capabilities. The
   same normalization cannot authorize an unknown domain, while genuine novel

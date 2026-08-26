@@ -8,6 +8,7 @@ tags: [installation, containers, codex, hooks, trust, automation]
 related:
   - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
   - docs/roadmap/issue-AR-300-bind-explicit-install-config-to-managed-canary.md
+  - docs/roadmap/issue-AR-307-project-canary-inference-credentials.md
   - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
   - docs/decisions/0036-capability-bound-host-canary-attestations.md
   - docs/decisions/0118-require-inference-owned-staffing.md

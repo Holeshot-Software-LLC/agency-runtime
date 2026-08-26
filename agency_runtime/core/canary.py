@@ -261,6 +261,7 @@ def _backend(
     child_judge_transport: str = "",
     parent_recruiter_provider: str = "",
     parent_recruiter_transport: str = "",
+    credential_environment_names: tuple[str, ...] = (),
 ):
     return _backends.backend(
         host,
@@ -280,6 +281,7 @@ def _backend(
         child_judge_transport=child_judge_transport,
         parent_recruiter_provider=parent_recruiter_provider,
         parent_recruiter_transport=parent_recruiter_transport,
+        credential_environment_names=credential_environment_names,
     )
 
 

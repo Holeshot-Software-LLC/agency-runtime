@@ -265,6 +265,7 @@ def test_safe_cli_environment_drops_unrelated_credentials() -> None:
             "NODE_EXTRA_CA_CERTS": "/trust/corporate-ca.pem",
             "REQUESTS_CA_BUNDLE": "/trust/python-ca.pem",
             "SSL_CERT_FILE": "/trust/openssl-ca.pem",
+            "LITELLM_API_KEY": "configured-but-not-scoped",
             "OPENAI_API_KEY": "secret",
             "AWS_SECRET_ACCESS_KEY": "secret",
             "UNRELATED_TOKEN": "secret",
@@ -276,6 +277,7 @@ def test_safe_cli_environment_drops_unrelated_credentials() -> None:
     assert safe["NODE_EXTRA_CA_CERTS"] == "/trust/corporate-ca.pem"
     assert safe["REQUESTS_CA_BUNDLE"] == "/trust/python-ca.pem"
     assert safe["SSL_CERT_FILE"] == "/trust/openssl-ca.pem"
+    assert "LITELLM_API_KEY" not in safe
     assert "OPENAI_API_KEY" not in safe
     assert "AWS_SECRET_ACCESS_KEY" not in safe
     assert "UNRELATED_TOKEN" not in safe
