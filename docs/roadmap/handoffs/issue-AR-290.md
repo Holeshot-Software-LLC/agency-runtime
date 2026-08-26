@@ -20,8 +20,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-290
 branch: codex/ar290-guided-setup-readme
-evidence_commit: 80a3095eaf7fd68f543fa6277da5bacd7029642e
-minimum_ledger_commit: ca25f93c02bdcca43dbea7ffd877996a879a1005
+evidence_commit: 05291b0ecfdb1403b56ab9682d7fa04a0eb3648e
+minimum_ledger_commit: b1211fe2ca3fe9a89cbc02e8313674a898ece419
 hard_checkpoint_percent: 50
 tracker_url: null
 ---
@@ -31,10 +31,10 @@ tracker_url: null
 ## checkpoint
 
 - Work remains isolated on `codex/ar290-guided-setup-readme`; the dirty shared `main` checkout was not switched, staged, cleaned, or committed.
-- The branch contains AR-289 through AR-295 plus AR-296's bounded effective-inference topology and authority projection. Exact AR-296 installed/browser proof is next.
+- The branch contains locally complete AR-289 through AR-296. AR-296's exact install, authenticated visual proof, installed diagnostics, smoke, and repository gates pass.
 - Remote `main` at `a19a1669` was merged without rewriting in `7487b31b`; verification completed at ledger `aa2830d0`. Re-fetch before publication and merge again only if remote advanced.
 - Tracker creation still requires explicit tracker authorization. The rejected attempt created no issue, label, tag, release, or publication; draft PR #326 already exists for the branch.
-- Context telemetry is below 50 percent; preserve AR-296 in a substantive/ledger checkpoint before its installed dashboard evaluation.
+- Pre-evaluation telemetry required a hard checkpoint. AR-296 was preserved at substantive `05291b0e` and ledger `b1211fe2` before its installed dashboard evaluation; end-of-package telemetry now reports 62.7 percent remaining and no additional hard checkpoint requirement.
 
 ## completed-evidence
 
@@ -46,13 +46,16 @@ tracker_url: null
 - Bounded calls applied `jina-embeddings-v3` at 1,024 dimensions and `jina-reranker-v3.5` to an exact two-document permutation.
 - Config validation degrades only for cold hosts and Codex hook trust, with the exact fresh-TUI/eight-hook/`--verify-activation` repair.
 - Prior reinstall refreshed the owned dashboard launcher, cleared stale Claude projection, and left `runtime_drift: null`; service is enabled, active, current, reachable, and open on loopback port 7810.
+- Source and installed dashboard assets hash-match exactly. Authenticated visual inspection shows 13 profiles and 11 routes, strict assurance, additive recall, both Jina roles, per-model thinking, active critic/security-review judge roles, and the Agency-staffing/native-host-spawn boundary without rendering a secret.
+- Installed status exits 0 with direct generation 56 and Codex, Claude, and ZCode registered/enabled/current. Doctor exits degraded 2 only for Codex attended hook trust and cold loading proof. Deterministic installed smoke exits 0 with 8/8 checks passed.
+- Final local gates pass: 839 fast-spine tests with 20 skips, 138 dashboard UI tests, Ruff, all documentation checks, routing evaluation, and 160/160 killed decision mutations with unchanged source.
 
 ## exact-blocker
 
 - Windows still needs attended Codex hook trust and fresh Codex, Claude, and ZCode sessions before loaded/live claims; doctor cannot grant host trust.
 - Linux can close only Linux artifact/install/service/local-provider/present-host evidence, not Windows, absent-host, five-host Rule-4, signing, tracker, tag, publication, or release gates.
 - AR-119 still lacks all-host exact-candidate Rule-4 proof, benchmark-valid outcomes, and current artifact/OS evidence.
-- AR-296 still needs exact installation and authenticated visual proof. AR-289 through AR-296 tracker mapping needs explicit authorization; tag/release remain premature and unauthorized.
+- AR-289 through AR-296 tracker mapping needs explicit authorization; tag/release remain premature and unauthorized. The draft PR cannot become a repository-complete main merge until tracker parity and required hosted checks are green.
 
 ## same-task-continuity
 
@@ -60,9 +63,13 @@ Recheck remote `main`, branch, and this capsule before publication. Keep command
 
 ## next-bounded-work-package
 
-Install the exact clean AR-296 checkpoint, refresh the Agency dashboard service, and reload the authenticated tab. Verify strict/additive state, Jina routes/profiles, Codex/Claude/ZCode model/thinking projection, blank-legacy-judge explanation, and Agency-staffing/native-host-spawn copy. Run fast gates, installed smoke, validation, doctor/status, and drift checks; record them before the final checkpoint and PR update.
+Push the final recovery pair to draft PR #326, recheck its hosted checks and
+remote `main`, and retain draft status while tracker parity is unauthorized.
+After tracker authorization, create/link the missing issues and labels, run the
+strict tracker gates, then merge only after the PR and repository policies are
+green. No tag, signing, package publication, or release creation is authorized.
 
-After that local package and branch merge, paste this prompt into the Linux task:
+After this branch is merged to `main`, paste this prompt into the Linux task:
 
 ~~~text
 You are continuing Agency Runtime release verification on a Linux machine that

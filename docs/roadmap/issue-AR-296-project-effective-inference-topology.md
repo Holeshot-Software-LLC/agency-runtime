@@ -1,6 +1,6 @@
 ---
 title: "AR-296: Project effective inference topology in the dashboard"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-08-25
 updated: 2026-08-25
@@ -87,21 +87,21 @@ packaged dashboard payload rather than bypassing its release guard.
 
 ## Acceptance
 
-- [ ] Settings shows strict/balanced/fast assurance separately from recall mode.
-- [ ] Global and harness-scoped routes/defaults identify the selected profiles.
-- [ ] Named profiles show model, thinking level, capability, dimensions,
+- [x] Settings shows strict/balanced/fast assurance separately from recall mode.
+- [x] Global and harness-scoped routes/defaults identify the selected profiles.
+- [x] Named profiles show model, thinking level, capability, dimensions,
       sanitized endpoint, and credential indirection without secret values.
-- [ ] A blank legacy judge is explained as expected when named routes own stage
+- [x] A blank legacy judge is explained as expected when named routes own stage
       inference.
-- [ ] Delegation copy says Agency selects staffing and the native harness owns
+- [x] Delegation copy says Agency selects staffing and the native harness owns
       child spawn/execution, while retaining the exact configured guidance and
       child-routing bounds.
-- [ ] Oversized topology maps are withheld at explicit dashboard bounds.
-- [ ] Dashboard UI, release-asset, documentation, and proportional repository
+- [x] Oversized topology maps are withheld at explicit dashboard bounds.
+- [x] Dashboard UI, release-asset, documentation, and proportional repository
       gates pass.
-- [ ] The exact candidate is installed and visually verified in the
+- [x] The exact candidate is installed and visually verified in the
       authenticated loopback dashboard.
-- [ ] Tracker creation and linkage remain pending separate authorization.
+- [x] Tracker creation and linkage remain pending separate authorization.
 
 ## Verification evidence
 
@@ -116,3 +116,39 @@ secret-redaction, endpoint-sanitization, authority-copy, route/profile, and
 oversized-map cases. The unchanged release-asset test then measured exactly
 385,530 bytes and failed its prior 368 KiB ceiling. A 377 KiB ceiling is
 386,048 bytes, leaving 518 bytes (0.13 percent) of audited headroom.
+
+The implementation is checkpointed at `05291b0e` with ledger `b1211fe2` and
+was force-refreshed through the consumer `uv tool` install from that exact
+worktree. Because the local path install does not expose a VCS revision in
+package metadata, installed identity was additionally proven by exact asset
+hashes: `app.js` is
+`DEC1F70AD9C4F8B71812847920411DBB422583F876D22A3B8E1C95249F86868A` and
+`dashboard-render.js` is
+`830023FAAC7F05719EC74B591F40E31447BC396A71F953560555C284D0CE50C2` in both
+source and the installed package. The owned dashboard service is enabled,
+active, manifest-current, drift-free, and reachable on authenticated loopback.
+
+The authenticated installed Settings view was then visually inspected in a
+fresh bearer-safe session. It renders `13 PROFILES · 11 ROUTES`, assurance
+`STRICT`, recall `ADDITIVE`, the Jina embedding and reranker routes with
+environment-backed authentication, Codex/Claude/ZCode model and thinking
+details, critic/security-review judge roles, the blank-legacy-judge
+explanation, and the Agency-staffing/native-host-spawn boundary. No bearer,
+credential, URL query, or secret value was captured or rendered.
+
+Installed `agency status --json` exits 0 with generation 56 and direct control;
+Codex, Claude, and ZCode are discovered, registered, enabled, current, and free
+of stale configuration. OpenClaw and Hermes are truthfully absent. Loading
+remains unknown from cold inventory, and Codex remains `activation-required`
+until the operator accepts all eight hooks in a fresh terminal TUI. Installed
+`agency doctor --json` therefore exits 2 as `DEGRADED`, with 13 passing checks
+and only those four cold-loading/trust warnings. Installed deterministic
+`agency smoke --all --json` exits 0 with all 8 checks passed.
+
+Final repository verification passes the 839-test named fast Python spine with
+20 skips and warnings strict, all 138 dashboard UI tests, full Ruff lint and
+format checks, all documentation gates, every routing threshold, and decision
+conformance with all 160 curated mutations killed and source unchanged. The
+first installed decision-conformance invocation correctly lacked the
+development-only `pytest` dependency; the required gate passed through the
+candidate source using the repository development interpreter.
