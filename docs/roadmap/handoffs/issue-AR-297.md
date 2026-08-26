@@ -17,7 +17,7 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-297
-branch: codex/ar290-guided-setup-readme
+branch: codex/ar297-production-container-live-evidence
 evidence_commit: 3023f0557e72911c4d42be53dccca3369b05ca8e
 minimum_ledger_commit: a5cd7cae5f5874d50c75cb0c0a3d680e2195ab15
 hard_checkpoint_percent: 50
@@ -28,135 +28,74 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 
 ## checkpoint
 
-- Work is isolated on `codex/ar290-guided-setup-readme`; the shared `main`
-  checkout was not switched, staged, cleaned, or committed.
-- Implementation is preserved at `3023f055` and its ledger at `a5cd7cae`.
-  Draft PR #326 is the publication surface; tracker #335 is linked and open,
-  required hosted checks are green, and PR #326 merge is authorized.
-- Windows installation uses strict assurance and additive dense recall. This
-  attended workstation correctly reports Codex managed policy absent and
-  attended hook trust unverified; no system policy was installed or simulated.
-- The Jina key was consumed only through environment indirection and was not
-  written to config, repository, Store evidence, argv, or this capsule. The
-  owner will rotate it.
+- PR #326 is merged. Linux work is isolated from clean `origin/main` commit
+  `0a23983aa7b99ec27ef18b1a950f6a0327961f72` on
+  `codex/ar297-production-container-live-evidence`; the shared checkout and its
+  untracked patch were not changed.
+- Telemetry reported 32.8 percent remaining before the first live evaluation,
+  requiring this clean checkpoint. Implementation remains preserved at
+  `3023f055` and its ledger at `a5cd7cae`.
+- Tracker #335 remains linked and open. No tracker, push, merge, tag, signing,
+  publication, release, or optional hosted workflow action is authorized.
 
 ## completed-evidence
 
-- `agency install --production-container --config <path>` now binds one exact
-  validated config and host scope through Store, native payloads, optional
-  dashboard service, and activation evidence.
-- Codex production-container mode installs owned system managed-hook policy,
-  refuses foreign or modified policy, invalidates stale activation proof before
-  mutation, and requires a fresh normal-invocation managed-policy canary.
-- Store, CLI, and authenticated dashboard backend expose complete current or
-  historical workforce prompts across every standing, with exact lineage,
-  version, content hash, truncation, and stored-definition provenance. They do
-  not claim runtime delivery.
-- The installed Windows runtime hash-matches source for the dashboard renderer,
-  managed-policy module, and workforce Store reader. Installed prompt lookup
-  returned schema `agency.workforce.prompt.v1`, active standing, an immutable
-  version, 160 bounded body characters of 2,791, a content hash, exit 0, and
-  `runtime_delivery_proof=not_asserted`.
-- Installed `agency install --all --json` refreshed Codex, Claude, ZCode, and
-  dashboard projections. Its only incomplete condition is attended Codex hook
-  trust; OpenClaw and Hermes are absent and were skipped. Dashboard service is
-  owned, current, enabled, active, reachable, and opened on loopback.
-- Installed deterministic smoke passes 8/8. Status shows no runtime drift;
-  doctor is degraded only for cold host loading and attended Codex trust.
-- Repository verification passes: 840 fast-spine tests with 20 skips, 138
-  dashboard UI tests, Ruff and documentation gates, all routing thresholds,
-  and the curated decision-conformance evaluator with a passing baseline,
-  every mutation killed, and source unchanged.
-- The installed dashboard renderer is exact, but the controllable authenticated
-  tab expired before the new prompt/policy surfaces could be visually checked.
-  Source UI tests are proof of behavior, not installed authenticated visual proof.
+- The prior Windows source/install evidence remains as recorded in AR-297 and
+  AR-298; it is not relabelled Linux or current live-container proof.
+- Linux inventory: Ubuntu 24.04.4 LTS, kernel 7.0.0-29, Python 3.12.3,
+  Docker 29.7.2, and systemd 255 with a running user manager.
+- Harness inventory: Codex 0.149.1 with ChatGPT auth; Claude Code 2.1.239 with
+  first-party subscription auth; Hermes 0.20.4; OpenClaw 2026.7.1-2 with its
+  systemd-user gateway reachable.
+- Local inference inventory: Ollama 0.30.0 exposes `qwen3.5:9b`, `qwen3.5:2b`,
+  and `qwen3-embedding` with observed embedding width 4096. LiteLLM is reachable
+  on loopback and maps aliases `qwen3.5-9b`, `qwen3.5-2b`, and
+  `qwen3-embedding` to those local models. Jina was neither configured nor called.
+- Owner-approved exact config SHA-256 is
+  `22eb6507e7eb5b4420196cb61c09121a66266537f3ead9e521ab51b8412657e4`.
+  It uses strict assurance, additive recall, explicit local generation,
+  critic/judge, embedding, and text-reranker profiles, exact 4096 dimensions,
+  credential name `LITELLM_API_KEY`, and a separate Codex subscription child
+  judge. No secret value is present in the config.
+- Direct schema validation exited 0. Credential-aware
+  `agency config validate` exited 2 only because cold discovered hosts were not
+  yet registered. No model or host canary was invoked before this checkpoint.
 
 ## exact-blocker
 
-- A clean Linux Codex container must prove owned `/etc` policy installation,
-  a no-bypass activation canary, persisted current attestation, and a later
-  ordinary Conveyor-equivalent invocation that loads Agency unattended.
-- Clean Linux Claude Code and OpenClaw containers must separately prove native
-  registration, enablement, loading, and one bounded Agency turn.
-- AR-298 still needs an installed authenticated owner-detail visual check.
-- Exact wheel/sdist, fresh-environment, signing, tag, publication, and release
-  gates remain open or unauthorized.
+- Local model routes still need bounded live receipts before container work.
+- Clean Codex, Claude Code, Hermes, and OpenClaw production-container installs
+  and later ordinary unattended invocations remain unrun.
+- AR-298 still needs packaged/Agency-hired/historical CLI prompt proof and an
+  installed authenticated owner-detail visual check.
+- Wheel/sdist, fresh-environment, repository gates, signing, tag, publication,
+  and complete release gates remain open or unauthorized.
 
 ## same-task-continuity
 
-Fetch before publication and compare `origin/main` with this branch. Preserve
-discovery, registration, enablement, loading, live canary, host-written prompt
-delivery, Store evidence, and model prose as separate claims. Never convert an
-absent host or failed pre-allocation launch into runtime evidence.
+Use `/tmp/agency-runtime-ar297.WQUbF2` and the private evidence root recorded in
+the active session. Keep discovery, registration, enablement, loading, canary,
+host-written delivery, Store correlation, and model prose separate. Inject
+credentials only by inherited environment or private runtime mounts; never
+print, persist in YAML, bake into images, or copy into evidence.
 
 ## next-bounded-work-package
-After this branch is pushed, paste the following prompt into the Linux task:
 
-~~~text
-Continue Agency Runtime release verification on this Linux machine. Pull the
-exact merge candidate: use origin/main if PR #326 is merged; otherwise fetch
-and check out origin/codex/ar290-guided-setup-readme. Record the clean commit
-SHA. Read AGENTS.md, README.md, docs/RELEASE_CHECKLIST.md,
-docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md,
-docs/roadmap/issue-AR-298-expose-complete-workforce-prompts.md,
-docs/roadmap/handoffs/issue-AR-297.md, and ADR-0173 before mutation.
-
-This box has local models. Do not configure or call Jina. Inventory the exact
-Linux distribution, Python, container runtime, Codex/Claude Code/OpenClaw
-versions and auth, local inference server, model IDs, embedding dimensions,
-reranker capability, LiteLLM availability, and service manager. If any model,
-dimension, endpoint, credential-variable name, or harness choice is unknown,
-interview me before mutation. Keep secrets in environment variables or hidden
-input, never YAML, argv, logs, evidence, or commits.
-
-Create a valid exact config outside the repository with workforce.mode=strict,
-workforce.dense_recall_mode=additive, explicit local generation/judge/embedding/
-reranker routes, correct capabilities, thinking levels, and verified dimensions.
-Run agency config validate. In clean dedicated root containers, install the
-exact candidate and run, separately for Codex, Claude Code, and OpenClaw:
-agency install --production-container --config <absolute-config> --agent
-<host> --no-dashboard --json. Inject harness auth and model environment before
-installation. Do not use an activation bypass or attended trust prompt.
-
-For Codex require exit 0, managed_hook_policy.status=current, trust mode
-managed_policy, all eight owned managed events, a persisted current activation
-attestation, and no bypass. Then start a new ordinary Codex process using the
-same argv shape Conveyor will use and prove Agency loads unattended. For Claude
-Code and OpenClaw, start a new ordinary process after install and prove native
-registration, enablement, loading, and one bounded Agency turn. Report each
-lifecycle stage separately. A copied plugin, Store row, or model statement is
-not host delivery; prompt/delegation delivery needs the correlated host-written
-artifact required by the repository contracts.
-
-Verify `agency workforce prompt` for a packaged active worker, an Agency-hired
-worker, and a retired or exact historical version. With the dashboard enabled
-in a separate clean install, open its authenticated owner view and verify full
-prompt provenance plus the real strict/additive topology, generation/judge/
-embedding/reranker providers, requested and actual models, thinking levels,
-capabilities, dimensions, sanitized endpoints, credential indirection, and the
-Agency-selection/native-host-execution boundary. Capture no bearer or secret.
-
-Build wheel and sdist from the exact clean candidate, record SHA-256 hashes,
-check metadata and dependencies, install the exact artifact in a fresh venv,
-and repeat applicable config/install/status/doctor/smoke checks. Run focused
-Linux installer/provider/service tests, the named fast Python spine, 138-or-more
-dashboard Node tests, full Ruff lint/format checks, docs checks, routing eval,
-decision-conformance through the development interpreter, release hygiene, and
-git diff --check. Do not dispatch optional exhaustive hosted matrices.
-
-Update the canonical AR-297/AR-298 issues, this capsule, AR-290 where affected,
-and the release checklist with dated command exits, exact hashes, observed host
-artifacts, Store correlations, and unresolved gates. Make the required clean
-substantive/ledger checkpoint. Do not create trackers, push, merge, tag, sign,
-publish, create a release, or run paid external canaries without explicit
-authorization in that Linux task. End with a Linux-scoped GO/NO-GO and list
-every release gate this machine could not close.
-~~~
+1. Exercise the four approved local routes and preserve sanitized requested/
+   actual model receipts plus exact exits.
+2. Build and verify wheel/sdist from the exact candidate.
+3. Create four clean root containers and prove production install plus later
+   ordinary unattended loading for Codex, Claude Code, Hermes, and OpenClaw.
+4. Use a fifth isolated systemd container for authenticated dashboard and
+   workforce-prompt proof, then run the named repository gates.
+5. Update AR-297/AR-298/AR-290, this capsule, and release checklist; create the
+   final substantive/ledger pair and issue the Linux-scoped verdict.
 
 ## verification
 
 ~~~text
 python scripts/context_handoff_status.py --json --threshold 50
+agency config validate
 python scripts/docs_metadata.py --check
 python scripts/update_policy_availability.py --check
 python scripts/update_worklog.py --check
@@ -172,7 +111,7 @@ git diff --check
 ~~~
 
 ## constraints
-- Never expose the Jina credential; rotate it before broad release use.
+- Do not configure or call Jina.
 - Do not touch a shared checkout or overwrite foreign system policy.
 - No deterministic smoke, dashboard status, copied plugin, Store row, or cold
   inventory is live-host or host-delivery proof.

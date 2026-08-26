@@ -108,8 +108,8 @@ reach native registration completeness in production-container mode.
       parser closure, and fail-closed activation.
 - [ ] A clean Linux Codex container proves the exact transaction, then a later
       ordinary Conveyor-equivalent Codex invocation loads Agency unattended.
-- [ ] Clean Linux Claude Code and OpenClaw containers prove native registration,
-      loading, and a bounded Agency turn without human input.
+- [ ] Clean Linux Claude Code, Hermes, and OpenClaw containers prove native
+      registration, loading, and a bounded Agency turn without human input.
 - [ ] Release-artifact and remaining release-checklist gates pass on the exact
       merge candidate.
 - [x] Tracker issue #335 is linked and remains open while acceptance is pending.
@@ -151,3 +151,23 @@ The required Linux container and post-install Conveyor-equivalent evidence are
 intentionally still open. Windows source tests cannot establish Linux `/etc`
 permissions, real Codex managed-policy loading, Claude/OpenClaw process state,
 or release artifact portability.
+
+The 2026-08-26 Linux preflight is isolated on
+`codex/ar297-production-container-live-evidence` at clean merge candidate
+`0a23983aa7b99ec27ef18b1a950f6a0327961f72`. The host is Ubuntu 24.04.4 LTS,
+kernel 7.0.0-29, Python 3.12.3, Docker 29.7.2, and systemd 255. Exact harness
+inventory is Codex 0.149.1 with ChatGPT auth, Claude Code 2.1.239 with first-party
+subscription auth, Hermes 0.20.4, and OpenClaw 2026.7.1-2 with a reachable
+systemd-user gateway. Local inference inventory found Ollama 0.30.0 and an
+authenticated LiteLLM loopback gateway; no Jina route was configured or called.
+
+The owner approved an exact secret-indirected configuration outside the
+repository with SHA-256
+`22eb6507e7eb5b4420196cb61c09121a66266537f3ead9e521ab51b8412657e4`:
+strict workforce assurance, additive dense recall, LiteLLM `qwen3.5-9b`
+generation/critic profiles at medium/high, `qwen3-embedding` at exactly 4096
+dimensions, `qwen3.5-2b` text reranking at low, and a separately pinned Codex
+subscription child judge. Direct schema validation exited 0. Credential-aware
+`agency config validate` exited 2 only for expected cold, not-yet-registered
+host warnings. No model invocation or container installation had occurred at
+this checkpoint.
