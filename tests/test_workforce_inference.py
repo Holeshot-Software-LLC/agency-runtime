@@ -45,6 +45,7 @@ from agency_runtime.core.workforce.inference import (
     _compact_planner_prompt,
     _explicit_indivisible_unit_request,
     _invoke_stage,
+    _nomination_repair_feedback_row,
     _NominationAccumulator,
     _NominationFailure,
     _NominationValidationError,
@@ -2893,6 +2894,11 @@ def test_ar304_recruiter_candidate_rejections_have_closed_subreasons(
     assert caught.value.failures[0].code == "invalid_candidate"
     assert caught.value.failures[0].diagnostic_code == reason_code
     assert "PRIVATE" not in str(caught.value)
+    feedback = _nomination_repair_feedback_row(caught.value.failures[0])
+    assert feedback["diagnostic_code"] == reason_code
+    assert feedback["required_correction"].startswith(
+        "Return one schema-valid, non-duplicated ranking row. "
+    )
 
 
 def test_explicit_gap_decision_survives_as_hiring_signal() -> None:

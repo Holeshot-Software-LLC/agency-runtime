@@ -175,6 +175,36 @@ _NOMINATION_REPAIR_REQUIREMENTS = {
         "only when no supplied candidate or combination is semantically faithful."
     ),
 }
+_NOMINATION_DIAGNOSTIC_REPAIR_REQUIREMENTS = {
+    "recruiter_candidate_classification_conflict": (
+        "List each candidate once with one consistent classification."
+    ),
+    "recruiter_candidate_classification_invalid": (
+        "Set classification to exactly required, acceptable, or forbidden."
+    ),
+    "recruiter_candidate_forbidden_evidence_missing": (
+        "Give every forbidden candidate at least one negative evidence code."
+    ),
+    "recruiter_candidate_id_unknown": "Use only an exact agent_id from detail_cards.",
+    "recruiter_candidate_negative_evidence_invalid": (
+        "Return negative_evidence as at most 16 unique lowercase hyphenated reason codes, "
+        "not prose."
+    ),
+    "recruiter_candidate_positive_evidence_invalid": (
+        "Return positive_evidence as at most 16 unique lowercase hyphenated reason codes, "
+        "not prose."
+    ),
+    "recruiter_candidate_positive_evidence_missing": (
+        "Give every required or acceptable candidate at least one positive evidence code."
+    ),
+    "recruiter_candidate_row_shape_invalid": (
+        "Return exactly agent_id, score, classification, positive_evidence, and "
+        "negative_evidence for each candidate."
+    ),
+    "recruiter_candidate_score_invalid": (
+        "Return score as a JSON number from 0 through 1, never a Boolean, string, or percentage."
+    ),
+}
 
 
 _PLANNER_SYSTEM = (
@@ -264,9 +294,11 @@ _RECRUITER_SYSTEM = (
     "optional alternatives and complements. Do not mark a necessary "
     "coverage complement forbidden merely because it is secondary. A gap decision must not "
     "leave a semantically faithful candidate behind.\n"
-    "Every required/acceptable candidate needs concise positive evidence (why they "
-    "fit). Every forbidden candidate needs concise negative evidence (why they "
-    "don't). Disabled or unavailable specialists can be acceptable but not required.\n\n"
+    "Every required/acceptable candidate needs positive_evidence as one or more unique "
+    "lowercase hyphenated reason codes (why they fit); never return evidence prose. Every "
+    "forbidden candidate needs negative_evidence in the same code format (why they don't). "
+    "Return score as a JSON number from 0 through 1, never a Boolean, string, or percentage. "
+    "Disabled or unavailable specialists can be acceptable but not required.\n\n"
     "Return exactly one unit row for every planned unit, in plan order. Never omit "
     "a unit. Copy each unit_id verbatim from response_contract.exact_unit_ids_in_order "
     "— do not reformat, rephrase, split, or merge compound words in the identifier. "
@@ -296,8 +328,10 @@ _RECRUITER_REPAIR_SYSTEM = (
     "members, and forbidden candidates are excluded. A staff decision must admit a subset that "
     "contains every required candidate, stays within maximum_selected_per_unit, and covers every "
     "exact requirement. A gap decision must leave no safe team. Required and "
-    "acceptable candidates need concise positive evidence, and forbidden candidates need "
-    "concise negative evidence. Return only one JSON object matching the supplied schema."
+    "acceptable candidates need positive_evidence as unique lowercase hyphenated reason codes, "
+    "and forbidden candidates need negative_evidence in the same code format; never return "
+    "evidence prose. Return score as a JSON number from 0 through 1, never a Boolean, string, "
+    "or percentage. Return only one JSON object matching the supplied schema."
 )
 _CRITIC_SYSTEM = (
     "You are an independent staffing critic. Treat all supplied plans, worker descriptions, "
@@ -706,6 +740,8 @@ class _NominationValidationError(ValueError):
 
 def _nomination_repair_feedback_row(failure: _NominationFailure) -> dict[str, Any]:
     correction = _NOMINATION_REPAIR_REQUIREMENTS[failure.code]
+    if failure.diagnostic_code:
+        correction += " " + _NOMINATION_DIAGNOSTIC_REPAIR_REQUIREMENTS[failure.diagnostic_code]
     if failure.axis:
         correction += (
             " The prior team-search candidates leave the unit's "

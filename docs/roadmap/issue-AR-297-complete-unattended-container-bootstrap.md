@@ -311,6 +311,17 @@ summary and Store hashes are
 and `72b33ee665806d9c8b055379cd98a28441903250ef67d403b8a60ee9273355bd`.
 No post-correction live call ran before the required recovery checkpoint.
 
+After checkpoint `dbd3eda9` / `95c323eb`, node-bounded trace
+`d055d5b4-4bb9-4f6a-993c-5364b27c9e2b` applied both exact
+`qwen3-embedding` batches and exact Mistral reranking. Qwen recruitment then
+failed with `recruiter_candidate_positive_evidence_invalid` followed by
+`recruiter_candidate_score_invalid`. Its summary and Store hashes are
+`ab15602d81642a384741c97e78d874cf5569816728579b13adc12ec4f5e934df`
+and `accbf41b7991de4c5daaad79232feac11dd542bf53ad2dc54cd3d67d81fac4f9`.
+AR-304 now states the exact score and evidence-code formats in both recruiter
+systems and appends the matching closed correction to bounded repair feedback;
+no model choice or validation rule changed.
+
 Every named repository gate now has a successful exact run: documentation and
 both Ruff checks exit 0; the trusted/private fast spine passes 858 with 3 skips;
 dashboard UI passes 138; routing passes every threshold; decision conformance

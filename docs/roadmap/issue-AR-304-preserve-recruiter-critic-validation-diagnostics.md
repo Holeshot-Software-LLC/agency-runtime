@@ -49,6 +49,13 @@ from durable evidence.
 - The first private AR-297 preflight persisted two exact
   `recruiter_candidate_score_invalid` diagnoses. That attempt also proved the
   prior embedding scalar failure had moved to the provider boundary.
+- After node-bounded recall applied, trace
+  `d055d5b4-4bb9-4f6a-993c-5364b27c9e2b` diagnosed
+  `recruiter_candidate_positive_evidence_invalid` on the first response and
+  `recruiter_candidate_score_invalid` on repair. The recruiter and repair
+  systems now state the schema semantics explicitly: scores are JSON numbers
+  from zero through one, and evidence is unique lowercase hyphenated codes,
+  never prose. Each diagnostic adds its exact closed correction to repair.
 - Focused warning-strict coverage currently passes 129 tests, including every
   recruiter subreason and adversarial provider-authored critic text.
 - Tracker creation is prohibited by the active task.
@@ -77,6 +84,8 @@ become durable content.
 - [x] Strict critic approval and rejection semantics fail closed with bounded
       stage-specific codes.
 - [x] Repair prompts receive only runtime-owned diagnostic tokens.
+- [x] Recruiter prompts state score and evidence-code semantics explicitly and
+      diagnostic repairs name the exact required correction.
 - [x] Preflight receipts preserve valid recruiter/critic codes and drop unknown
       or provider-authored values.
 - [x] Focused warning-strict tests and Ruff checks pass.

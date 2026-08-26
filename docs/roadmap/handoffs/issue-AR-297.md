@@ -107,15 +107,24 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   its 3,940,352-byte Store SHA-256 is
   `72b33ee665806d9c8b055379cd98a28441903250ef67d403b8a60ee9273355bd`.
 - The corrected limiter reserves fixed and per-row response nodes, yielding a
-  243-row maximum at 4,096 dimensions and 243+21 in the exact regression. All
-  139 focused warning-strict tests pass; no further live call preceded this
-  recovery checkpoint.
+  243-row maximum at 4,096 dimensions and 243+21 in the exact regression.
+- Node-bounded authenticated trace `d055d5b4-4bb9-4f6a-993c-5364b27c9e2b`
+  then applied both exact `qwen3-embedding` batches and exact Mistral reranking.
+  It failed only at Qwen recruitment: first
+  `recruiter_candidate_positive_evidence_invalid`, then
+  `recruiter_candidate_score_invalid`. Its 7,395-byte summary SHA-256 is
+  `ab15602d81642a384741c97e78d874cf5569816728579b13adc12ec4f5e934df`;
+  its 3,936,256-byte Store SHA-256 is
+  `accbf41b7991de4c5daaad79232feac11dd542bf53ad2dc54cd3d67d81fac4f9`.
+- Recruiter and repair prompts now state the exact numeric-score and hyphenated
+  evidence-code formats, and diagnostic feedback supplies the matching closed
+  correction. Focused warning-strict coverage remains 139; no further model
+  call preceded this recovery checkpoint.
 
 ## exact-blocker
 
-- The node-bounded authenticated full-roster probe still must run after this
-  checkpoint. Prior probes did not prove applied batch two or reranking, and the Qwen
-  recruiter still needs to clear its now-exact invalid-score diagnosis.
+- AR-303 recall is live-proven. The Qwen recruiter still must clear its exact
+  evidence-format/score diagnoses before a specialist can load.
 - AR-301 blocks the shipped non-root dashboard service. AR-302 blocks ordinary
   ambient-umask/trusted-interpreter repeatability. No harness has a current
   successful ordinary Agency turn or Codex canary attestation.
@@ -135,10 +144,9 @@ secret. Do not recreate containers until a later bounded package requires it.
 
 ## next-bounded-work-package
 
-1. After the recovery pair, rerun telemetry and execute the prepared
-   node-bounded authenticated private preflight once. Require applied two-batch embedding,
-   reranking, exact model identities, Accessibility Auditor selection, and full
-   prompt inclusion; retain any closed recruiter/critic diagnosis on failure.
+1. After the recovery pair, rerun telemetry and execute the prompt-corrected
+   authenticated private preflight once. Require Accessibility Auditor selection
+   and full prompt inclusion; retain any closed recruiter/critic diagnosis.
 2. Finish focused review, run the named fast spine and every repository gate,
    then update AR-297, AR-303, AR-304, and this capsule with exact exits, hashes,
    Store correlations, and unresolved gates.

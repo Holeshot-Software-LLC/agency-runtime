@@ -59,8 +59,11 @@ the configured embedding provider could be reached.
   authenticated full preflight then reached a 200 response but rejected it
   because 244 rows of 4,096 values plus JSON row/container structure exceeded
   the parser's separate one-million-node cap. The batch limiter now reserves
-  those nodes and admits at most 243 rows; another authenticated preflight is
-  pending the required clean checkpoint.
+  those nodes and admits at most 243 rows. Authenticated trace
+  `d055d5b4-4bb9-4f6a-993c-5364b27c9e2b` then applied both embedding batches
+  with exact `qwen3-embedding` identity and applied the exact Mistral reranker.
+  Staffing continued to the recruiter, where separate AR-304 semantic failures
+  remained.
 - Tracker creation is prohibited by the active task.
 
 ## Approach
@@ -95,7 +98,7 @@ path because the runtime cannot safely infer a provider-native width.
 - [x] Recall and host timeout budgets cover two embedding calls plus one
       reranker without consuming staffing inference capacity.
 - [x] Focused warning-strict tests and Ruff checks pass.
-- [ ] One authenticated exact-config private preflight applies the two-batch
+- [x] One authenticated exact-config private preflight applies the two-batch
       embedding route and persists correlated evidence.
 - [ ] The named repository gates pass on the checkpointed implementation.
 - [ ] A same-repository tracker is created and linked after explicit
