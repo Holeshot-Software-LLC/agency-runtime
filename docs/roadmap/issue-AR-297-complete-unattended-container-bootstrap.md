@@ -661,3 +661,31 @@ The same fresh image also exposes AR-312: the README's pre-install
 against the absent default Store. Its stdout is SHA-256
 `c462b0f5...52b7`; the exact config is later accepted by the production
 transaction, so AR-312 is recorded without expanding this live package.
+
+After clean AR-313/AR-314 recovery pair `0accd39e` / `84dd879e`, the first
+artifact command used an incorrect expanded commit and the immutable-source
+guard exited 1 before creating output. The group-writable worktree venv then
+failed the executable-namespace guard and lacked Twine. Both diagnostics are
+retained. The established owner-private release interpreter produced the exact
+candidate successfully under caller umask 0002: build, strict Twine, and
+independent verification exit 0 for mode-0644 wheel
+`61dbb8c621cbc6229532f30216dab4bf2a5693cf96ad2b084080cb85a07c950b`
+(9,298,676 bytes) and sdist
+`3845d6e076a60d0da1d3c0578da65a9639e0d0756ba323956fb21d536808329c`
+(25,540,553 bytes). Image `12534257...647291` and fresh container
+`22ce57f2...e93bff` bind that exact wheel; absence exits 0 at receipt SHA-256
+`ae43bf47...ae4bc`.
+
+The first exact `84dd879e` no-bypass install exits 1 after 145 seconds with
+empty stderr and a mode-0600 21,016-byte JSON at SHA-256
+`b138e5f6...e6800`. It does not reach AR-313/AR-314: session
+`01a0402b-2183-77e2-bd3d-998a74504989`, trace
+`01a0402b-218f-7ce3-8649-b7943c62395f`, and query
+`fc016fdf...891a` terminate `preflight_failed` before any route, load, child,
+finalization, or attestation. Qwen planning applies after one semantic repair;
+exact `qwen3-embedding` applies; Mistral recruiting applies after one rejected
+unsafe-team proposal but then abstains with `no_safe_sufficient_team` and
+`recruiter_abstained`. Store `ff60c8c3...a5bc1` and canonical parent rollout
+`032f2ee6...7c4d` are retained mode 0600. Because identical config accepted on
+the prior transaction, one fresh unchanged retry is the next bounded live
+step; no model, thinking, route, or policy choice changes.

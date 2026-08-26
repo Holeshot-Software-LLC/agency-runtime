@@ -64,12 +64,11 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   strict assurance, additive dense recall, Qwen 14B abliterated generation,
   Mistral 24B critic/reranker/recruiter/child judge, and LiteLLM
   `qwen3-embedding` at 4,096 dimensions. Jina is absent and was not called.
-- Exact `49bf1190` caller-umask-0002 build, strict Twine, and independent
-  verification exit 0. Mode-0644 wheel `d9c77acf...60b6` is 9,295,276 bytes;
-  sdist `9c74f940...ed0` is 25,509,833 bytes.
-- Codex image `2aed0f49...a276b` binds full candidate, wheel, Codex 0.149.1,
-  and AR-297 labels. Fresh container `c22a08de...1767d3` has absence receipt
-  `2444f2c4...06a8c` and no Agency targets before installation.
+- Exact `84dd879e` caller-umask-0002 build, strict Twine, and independent
+  verification exit 0. Mode-0644 wheel `61dbb8c6...c950b` is 9,298,676 bytes;
+  sdist `3845d6e0...8329c` is 25,540,553 bytes.
+- Codex image `12534257...647291` and fresh container `22ce57f2...e93bff`
+  bind that wheel. Absence receipt `ae43bf47...ae4bc` exits 0.
 - Earlier exact candidate `1f32915d` passed every named gate: 860 Python spine
   tests (three skips), 138 dashboard tests, routing, and 161/161 killed
   decision mutations. These gates must still be refreshed for the final exact
@@ -89,16 +88,14 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 
 ## exact-blocker
 
-- Codex still lacks an attestation. Exact `49bf1190` install exits 1 with empty
-  stderr and mode-0600 JSON SHA `a28b8b9e...fac87`. Trace
-  `01a04003-64a8-7ef3-8087-9a0f3ca8d7d7` has one accepted route/load,
-  delegation, and completed worker but zero native delivery or activation rows.
-- The child receives only 563-byte identity context: Codex reports built-in
-  `agent_type=default`, while the pre-repair hook required `code_reviewer`.
-  Readers also reject host-owned 0755 date directories as non-private.
-  Finalization `1b1a8833-0bc5-4dba-91be-31da5bafc219` is `response_invalid`
-  with missing `evidence_verification`.
-- Rebuild AR-313/AR-314, replace the proof container, then require exactly one
+- Codex still lacks an attestation. First exact `84dd879e` install exits 1 with
+  empty stderr and JSON SHA `b138e5f6...e6800`. Session `01a0402b...4989` and
+  trace `01a0402b...395f` fail preflight before route/child: planning repairs,
+  embedding applies, and recruiting repairs then safely abstains with
+  `no_safe_sufficient_team`/`recruiter_abstained`. Store and parent rollout
+  hashes are `ff60c8c3...a5bc1`/`032f2ee6...7c4d`.
+- Run one fresh unchanged retry because the identical config previously reached
+  the child. Then require exactly one
   `code_reviewer` child artifact, consumed receipt, current header, accepted
   first finalization, and no-bypass attestation in one invocation.
 - No later ordinary Codex, Claude, Hermes, or OpenClaw process has a current
@@ -112,9 +109,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 ## same-task-continuity
 
 Exact artifacts: `~/.agency-runtime/release-artifacts/`
-`dist-49bf11902af5eca7fae528edf75374e73f747933-linux-ar297`. Evidence:
-`~/.agency-runtime/evidence/ar297-go-49bf1190`. Current Codex proof container is
-`agency-ar297-codex-49bf1190`; historical evidence remains retained. All
+`dist-84dd879e13550e37d0b3245a2ae49355e2912cac-linux-ar297`. Evidence:
+`~/.agency-runtime/evidence/ar297-go-84dd879e`. Current Codex proof container is
+`agency-ar297-codex-84dd879e`; historical evidence remains retained. All
 AR-297-labelled containers await final teardown. Secret-safe helper:
 `/tmp/agency-runtime-ar297-evidence.pcLOZn/run_with_litellm_key.py`.
 
@@ -123,7 +120,7 @@ AR-297-labelled containers await final teardown. Secret-safe helper:
 After compaction, reread this capsule and `git status`, then resume at the first
 unchecked line. Mark an item complete only with exact retained evidence.
 
-1. [x] Rebuild and verify exact `49bf1190` artifacts plus the Codex image.
+1. [x] Rebuild and verify exact `84dd879e` artifacts plus the Codex image.
 2. [ ] Prove fresh Codex absence, then one exact no-bypass V2 install with one
    canonical child artifact, consumed receipt, current header, accepted
    finalization, Store correlation, and attestation.
