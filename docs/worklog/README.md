@@ -1260,6 +1260,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `bd4e7f75` | 2026-08-26 | fix(workforce): bind strict critic semantics | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-305](../roadmap/issue-AR-305-normalize-planner-novelty-absence.md), [AR-306](../roadmap/issue-AR-306-bind-strict-critic-semantics.md) | null |
 | `3e188c9f` | 2026-08-26 | fix(workforce): clarify critic approval contract | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-306](../roadmap/issue-AR-306-bind-strict-critic-semantics.md) | null |
 | `926aef81` | 2026-08-26 | docs(ar297): record direct workforce acceptance | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-305](../roadmap/issue-AR-305-normalize-planner-novelty-absence.md), [AR-306](../roadmap/issue-AR-306-bind-strict-critic-semantics.md) | null |
+| `5c86aae4` | 2026-08-26 | fix(linux): harden service and verification namespaces | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-301](../roadmap/issue-AR-301-private-systemd-dashboard-namespace.md), [AR-302](../roadmap/issue-AR-302-owner-private-local-verification.md) | [detail](2026-08-26-5c86aae4-harden-linux-service-and-verification-namespaces.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
