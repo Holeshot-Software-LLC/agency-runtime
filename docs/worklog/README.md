@@ -1248,6 +1248,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `0a23983a` | 2026-08-26 | Merge pull request #326 from Holeshot-Software-LLC/codex/ar290-guided-setup-readme | null | null |
 | `c395bf4a` | 2026-08-26 | docs(ar297): checkpoint Linux production preflight | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `f58842b2` | 2026-08-26 | feat(ar299): allow local Ollama canary judges | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-299](../roadmap/issue-AR-299-local-ollama-canary-child-judge.md) | null |
+| `2b16a88b` | 2026-08-26 | fix(ar300): bind production canary config | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-300](../roadmap/issue-AR-300-bind-explicit-install-config-to-managed-canary.md) | [detail](2026-08-26-2b16a88b-bind-production-canary-config.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
