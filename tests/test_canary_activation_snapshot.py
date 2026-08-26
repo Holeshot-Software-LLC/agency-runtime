@@ -8,9 +8,12 @@ from pathlib import Path
 
 import pytest
 
+from agency_runtime.adapters.hooks import HookBridge
 from agency_runtime.core.activation_canary_contract import (
+    CODEX_ACTIVATION_CANARY_NATIVE_TASK_NAME,
     CODEX_ACTIVATION_CANARY_PROMPT,
     CODEX_ACTIVATION_CANARY_ROUTE_SOURCE,
+    CODEX_ACTIVATION_CANARY_WORK_UNIT,
 )
 from agency_runtime.core.canary_proof import codex_activation_failures
 from agency_runtime.core.config import reset_config_cache
@@ -209,6 +212,54 @@ def test_restricted_codex_parent_snapshot_resolves_only_the_exact_live_route(
         )
         is None
     )
+
+
+def test_restricted_codex_user_prompt_injects_the_exact_native_plan(
+    store: Store,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from agency_runtime.core.installer import seed_starter_roster
+    from agency_runtime.core.workforce import inference
+
+    seed_starter_roster(store)
+    monkeypatch.setenv("AGENCY_CANARY_MODE", "1")
+    monkeypatch.setenv("AGENCY_CANARY_REQUIRE_EXISTING_STORE", "1")
+    monkeypatch.setattr(
+        inference,
+        "invoke_structured_provider_result",
+        stub_inference_invoker(("code-reviewer",)),
+    )
+    session_id = "restricted-plan-parent"
+    trace_id = "restricted-plan-trace"
+    task = f"{CODEX_ACTIVATION_CANARY_PROMPT}\n\nCanary nonce: {'b' * 32}"
+
+    output = HookBridge(
+        "codex",
+        store=store,
+        _master={"enabled": True},
+    ).handle(
+        {
+            "hook_event_name": "UserPromptSubmit",
+            "session_id": session_id,
+            "turn_id": trace_id,
+            "model": "gpt-5.6-codex",
+            "prompt": task,
+        }
+    )
+
+    context = output["hookSpecificOutput"]["additionalContext"]
+    assert context.count("[AGENCY DELEGATION PLAN]") == 1
+    plan = context.split("[AGENCY DELEGATION PLAN]", 1)[1]
+    assert '"specialist":"code-reviewer"' in plan
+    assert f'"native_task_name":"{CODEX_ACTIVATION_CANARY_NATIVE_TASK_NAME}"' in plan
+    assert json.dumps(CODEX_ACTIVATION_CANARY_WORK_UNIT) in plan
+    assert '"work_unit_id":"unit-05d45f7553"' in plan
+    snapshot = store.get_codex_activation_canary_parent_snapshot(
+        session_id=session_id,
+        trace_id=trace_id,
+    )
+    assert snapshot is not None
+    assert snapshot["route"]["source"] == CODEX_ACTIVATION_CANARY_ROUTE_SOURCE
 
 
 def test_store_receipt_remains_diagnostic_without_host_artifact_proof(

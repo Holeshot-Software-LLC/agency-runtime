@@ -9,6 +9,7 @@ related:
   - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
   - docs/roadmap/issue-AR-308-bind-activation-canary-delegation.md
   - docs/roadmap/issue-AR-310-require-managed-codex-canary-store.md
+  - docs/roadmap/issue-AR-311-inject-exact-codex-canary-native-plan.md
   - docs/roadmap/handoffs/issue-AR-297.md
   - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
   - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
@@ -31,7 +32,7 @@ issue_id: AR-309
 priority: p0
 tracker_url: null
 depends_on: [AR-308]
-blocks: [AR-297, AR-310]
+blocks: [AR-297, AR-310, AR-311]
 ---
 
 # AR-309: Restore Codex 0.149 activation proof
@@ -117,6 +118,10 @@ visible launch marker, and the parent copies the stale initial
   attempted the repair but stopped before Codex execution because the managed
   installer omitted the exact existing-Store marker; AR-310 owns that bounded
   call-contract defect, so no AR-309 attestation claim has advanced.
+- The next exact `c60678ef` transaction reaches the accepted route, but the
+  parent receives no concrete delegation row and tries invalid
+  `task_name=code-reviewer`; AR-311 owns that pre-child label defect. No
+  AR-309 host-delivery or attestation claim advances from the failed spawn.
 
 ## Approach
 

@@ -20,6 +20,7 @@ related:
   - docs/roadmap/issue-AR-308-bind-activation-canary-delegation.md
   - docs/roadmap/issue-AR-309-restore-codex-0149-activation-proof.md
   - docs/roadmap/issue-AR-310-require-managed-codex-canary-store.md
+  - docs/roadmap/issue-AR-311-inject-exact-codex-canary-native-plan.md
   - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
   - docs/decisions/0174-admit-local-ollama-canary-child-judges.md
   - docs/decisions/0175-batch-complete-embedding-input-sets.md
@@ -34,8 +35,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-297
 branch: codex/ar297-production-container-live-evidence
-evidence_commit: 131f57e5360407176cebd34c90b935f6c196f509
-minimum_ledger_commit: 139192da8d2bf8ba1e67211695405219027058c2
+evidence_commit: 6bf3b5ec453dbeacdd075b2683e89a6efbfdc3c6
+minimum_ledger_commit: c60678ef352e43db253b2d3d6e0fb162f80bfbf7
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 ---
@@ -44,14 +45,15 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 
 ## checkpoint
 
-- Work remains in the dedicated Linux worktree on branch
-  `codex/ar297-production-container-live-evidence`, from clean `origin/main` `0a23983a`.
-- The last clean recovery pair is goal ledger `131f57e5` plus worklog
-  `139192da`. The AR-310 restricted-Store repair now passes 268 warning-strict
-  focused tests and is being checkpointed before rebuilding the live candidate.
-- The current Linux verdict remains **NO-GO**. AR-297 and tracker #335 remain
-  open. No tracker, push, PR, merge, tag, signing, publication, release, or
-  hosted workflow action is authorized.
+- Work remains in dedicated worktree `/tmp/agency-runtime-ar297.WQUbF2` on
+  `codex/ar297-production-container-live-evidence`, based on `origin/main`
+  `0a23983a`. Never use the shared checkout.
+- Last clean recovery pair: AR-310 repair `6bf3b5ec` and worklog `c60678ef`.
+  AR-311's canary-only native-plan repair passes focused verification and is
+  awaiting its clean recovery pair before the next live run.
+- Linux remains **NO-GO**. AR-297/#335 stay open. Tracker writes, push, PR,
+  merge, tag, signing, publication, release, and hosted workflow actions are
+  not authorized.
 
 ## completed-evidence
 
@@ -59,79 +61,64 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   strict assurance, additive dense recall, Qwen 14B abliterated generation,
   Mistral 24B critic/reranker/recruiter/child judge, and LiteLLM
   `qwen3-embedding` at 4,096 dimensions. Jina is absent and was not called.
-- Rebuilt caller-umask-0002 artifacts at ledger `fd163da2` pass build, strict
-  Twine, and independent verification. The mode-0644 wheel is
-  `2d78f9c...16ab5` (9,291,917 bytes) and sdist is `cf160e6a...d06a`
-  (25,479,108 bytes).
-- Five exact image IDs begin `226afba9` (Codex), `507328b7` (Claude),
-  `8a50f5cb` (Hermes), `fd9967a0` (OpenClaw base), and `893b88eb`
-  (OpenClaw systemd). Four fresh containers bind candidate `1f32915d`; their
-  pre-install absence receipt passes at SHA `58e279f1...d128`.
-- All named repository gates already pass at `1f32915d`: 860 Python spine
-  tests with three skips, 138 dashboard tests, routing, and 161/161 killed
-  decision mutations. The decision-conformance JSON SHA is
-  `b0636470...0a6`, and source remained unchanged.
-- The sole fresh Codex install exits 1 with empty stderr and exact JSON SHA
-  `72c4ba0...6e4ab`. Managed-only policy and no bypass are preserved. Session
-  `01a03f83-bb05-7c43-b9b3-38cb8d9e30dd` proves Qwen planning, exact
-  4,096-wide LiteLLM embedding, Mistral recruiting/criticism, accepted
-  `delivery=delegate`, one loaded `code-reviewer`, one native spawn, one child
-  answer, and one completed wait.
-- Parent/child rollout SHAs `5a548331...2af2` and `4732afb2...225e` prove the
-  actual Codex 0.149 lifecycle. The newer V2 envelope redacts the decrypted
-  child launch and omits Agency's post-wait header context; Store finalization
-  is `response_invalid`, no host delivery verifies, and no attestation exists.
-- The one supported-`multi_agent` comparison exits 0 but records zero native
-  deliveries/delegations/worker runs for session `01a03f94...e55`, trace
-  `01a03f94...a`, and query hash `4d160cfe...c652`. Its mode-0600 stdout,
-  stderr, Store, and rollout SHAs are `356d36d1...bc6`, `dc6b6525...f5a`,
-  `bb518e7c...20d`, and `95329525...a3`: the actual plan row is absent, so
-  stable cannot replace the V2 surface that spawned the child.
-- AR-308 is therefore live-proven through its exact delivery boundary. AR-309
-  now owns the later host-artifact/header defect. No model, endpoint, dimension,
-  reranker, thinking, judge, auth, or service-manager choice changed.
-- AR-309 now has a bounded implementation: exact 0.149
-  `item_completed/SubAgentActivity` and quiet-root parsing, real child-UUID
-  `SubagentStart` v6 delivery, one-use canonical-rollout receipt verification,
-  post-spawn execution reconciliation, and receipt-backed final headers. The
-  public Codex artifact parser remains diagnostic-only and ordinary opaque
-  children remain unstaffed.
-- Warning-strict AR-309 verification passes 328 Codex delivery/canary/hook/
-  header and 109 Store/contract/security tests. Fresh `fd163da2` absence passes,
-  but live install stops before Codex because its managed canary omits the exact
-  existing-Store marker; AR-310's repair passes 268 focused tests.
+- Exact `c60678ef` caller-umask-0002 build, strict Twine, and independent
+  verification exit 0. Mode-0644 wheel `3c8eb01b...09c4e` is 9,291,980 bytes;
+  sdist `8b8db82c...39131` is 25,489,348 bytes.
+- Codex image `49493058...c9a5c` binds full candidate, wheel, Codex 0.149.1,
+  and AR-297 labels. Fresh container `30b2b90c...be88` has absence receipt
+  `a5c70707...28b0d` and no Agency targets before installation.
+- Earlier exact candidate `1f32915d` passed every named gate: 860 Python spine
+  tests (three skips), 138 dashboard tests, routing, and 161/161 killed
+  decision mutations. These gates must still be refreshed for the final exact
+  candidate.
+- AR-309 implements exact 0.149 `SubAgentActivity`/quiet-root parsing,
+  child-UUID v6 delivery, one-use canonical-rollout verification, post-spawn
+  reconciliation, and receipt-backed final headers. Its 437 focused tests pass.
+- AR-310's managed existing-Store call contract passes 268 focused tests and is
+  live-proven by `c60678ef`: the invocation reaches native Codex, exact route,
+  fixed delegate work unit, and one `code-reviewer` load with no trust bypass.
+- AR-311 renders one Store-proven canary-only plan with exact
+  `native_task_name=code_reviewer`, fixed goal, unit, and empty dependencies.
+  Ordinary/mismatched routes receive no plan; 545 warning-strict focused Codex,
+  hook, Store, installer, and security tests pass.
 
 ## exact-blocker
 
-- Codex still lacks an attestation. Exact install JSON `64b021ce...1b54` and
-  diagnostic `d55536f7...2845` exit 1 before any rollout or Store run; private
-  traceback `a2821a18...ba65` isolates AR-310's missing restricted-Store flag.
-- Rebuild that repair, replace the now-mutated proof container, and require one
-  canonical child artifact, consumed receipt, current delegated header,
-  accepted first finalization, and no-bypass attestation in one invocation.
+- Codex still lacks an attestation. Exact `c60678ef` install exits 1 with empty
+  stderr and mode-0600 JSON SHA `a58dae29...4ad7`. Session
+  `01a03fe6-c434-7432-a7ef-8d5535109e8c`, trace
+  `01a03fe6-c43f-7790-b15d-582199c78b2b`, and query `eab71210...97d80`
+  have one route/load but zero delegations, workers, or deliveries.
+- Canonical parent rollout `fe8aedb9...2d6` records the sole call with invalid
+  `task_name=code-reviewer`; Codex rejects the hyphen before child creation.
+  Finalization `d7160d7b-7e22-40f4-b13d-4bbba01be04c` is
+  `response_invalid` with missing `evidence_verification`.
+- Rebuild AR-311, replace the mutated proof container, then require exactly one
+  `code_reviewer` child artifact, consumed receipt, current header, accepted
+  first finalization, and no-bypass attestation in one invocation.
 - No later ordinary Codex, Claude, Hermes, or OpenClaw process has a current
   successful Agency-turn receipt on this source.
 - Refresh the host install/dashboard and named repository gates for the exact
   candidate, then remove both old and new AR-297 proof containers.
-- AR-299 through AR-310 tracker parity, hosted cross-OS artifacts, signing,
+- AR-299 through AR-311 tracker parity, hosted cross-OS artifacts, signing,
   push, PR, merge, tag, publication, release, and exhaustive workflow dispatch
   remain unauthorized.
 
 ## same-task-continuity
 
-Exact artifacts are under `~/.agency-runtime/release-artifacts/`
-`dist-fd163da266b309266b8bfd14a3363236d7853d43-linux-ar297`. Private current
-evidence is `~/.agency-runtime/evidence/ar297-go-fd163da2`; historical evidence
-remains retained. Codex image `9afefdb2...39442` and container
-`570506ea...39b9` retain the failed proof; replace it after rebuild. All AR-297
-containers await teardown. Helper: `/tmp/agency-runtime-ar297-evidence.pcLOZn/run_with_litellm_key.py`.
+Exact artifacts: `~/.agency-runtime/release-artifacts/`
+`dist-c60678ef352e43db253b2d3d6e0fb162f80bfbf7-linux-ar297`. Evidence:
+`~/.agency-runtime/evidence/ar297-go-c60678ef`. Current Codex proof container is
+`agency-ar297-codex-c60678ef`; historical evidence remains retained. All
+AR-297-labelled containers await final teardown. Secret-safe helper:
+`/tmp/agency-runtime-ar297-evidence.pcLOZn/run_with_litellm_key.py`.
 
 ## next-bounded-work-package
 
 After compaction, reread this capsule and `git status`, then resume at the first
 unchecked line. Mark an item complete only with exact retained evidence.
 
-1. [x] Rebuild and verify exact `fd163da2` artifacts plus the Codex image.
+1. [x] Rebuild and verify exact `c60678ef` artifacts plus the Codex image.
 2. [ ] Prove fresh Codex absence, then one exact no-bypass V2 install with one
    canonical child artifact, consumed receipt, current header, accepted
    finalization, Store correlation, and attestation.

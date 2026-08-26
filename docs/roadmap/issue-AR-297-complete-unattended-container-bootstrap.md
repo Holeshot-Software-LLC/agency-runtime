@@ -24,6 +24,7 @@ related:
   - docs/roadmap/issue-AR-308-bind-activation-canary-delegation.md
   - docs/roadmap/issue-AR-309-restore-codex-0149-activation-proof.md
   - docs/roadmap/issue-AR-310-require-managed-codex-canary-store.md
+  - docs/roadmap/issue-AR-311-inject-exact-codex-canary-native-plan.md
   - docs/decisions/0174-admit-local-ollama-canary-child-judges.md
   - docs/decisions/0175-batch-complete-embedding-input-sets.md
   - docs/decisions/0176-use-owner-runtime-temp-for-nonroot-user-services.md
@@ -44,7 +45,7 @@ epic: host-integrations
 issue_id: AR-297
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
-depends_on: [AR-300, AR-301, AR-302, AR-303, AR-304, AR-305, AR-306, AR-307, AR-308, AR-309, AR-310]
+depends_on: [AR-300, AR-301, AR-302, AR-303, AR-304, AR-305, AR-306, AR-307, AR-308, AR-309, AR-310, AR-311]
 blocks: []
 ---
 
@@ -606,3 +607,15 @@ run exists, and private debug SHA `a2821a18...ba65` proves the sealed collector
 refused a backend lacking `require_existing_store`. AR-310's managed-only
 one-line call-contract repair passes 268 warning-strict focused tests; a fresh
 rebuild and no-bypass live transaction remain required.
+
+The rebuilt exact `c60678ef` candidate produces independently verified wheel
+`3c8eb01b...09c4e`, sdist `8b8db82c...39131`, and Codex image
+`49493058...c9a5c`. Fresh container `30b2b90c...be88` passes absence at
+`a5c70707...28b0d`. Its no-bypass install exits 1 with empty stderr and JSON
+SHA `a58dae29...4ad7`, but now reaches session `01a03fe6-c434-7432-a7ef-8d5535109e8c`:
+the exact route, fixed delegate unit, and one `code-reviewer` load persist.
+Canonical parent rollout `fe8aedb9...2d6` proves the only spawn uses invalid
+`task_name=code-reviewer` because no concrete delegation-plan row was injected;
+the host rejects it before child creation. AR-311's canary-only
+`code_reviewer` plan repair passes 545 focused warning-strict tests. Rebuilt
+live attestation remains required.

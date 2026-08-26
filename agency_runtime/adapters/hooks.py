@@ -2057,6 +2057,12 @@ class HookBridge:
                 reservation,
             )
             return {}
+        plan_context = self._restricted_codex_activation_plan_context(
+            payload,
+            result,
+            session_id=correlation.session_id,
+            trace_id=trace_id,
+        )
         header_context = self._header_snapshot_context(
             session_id=correlation.session_id,
             trace_id=trace_id,
@@ -2068,7 +2074,12 @@ class HookBridge:
                 "A later Agency header snapshot for this turn supersedes this one."
             ),
         )
-        combined_context = f"{context.rstrip()}\n\n{header_context}" if header_context else context
+        context_segments = [context.rstrip()]
+        if plan_context:
+            context_segments.append(plan_context)
+        if header_context:
+            context_segments.append(header_context)
+        combined_context = "\n\n".join(context_segments)
         if len(combined_context) > MAX_CONTEXT_CHARS:
             combined_context = context
         return {
@@ -2077,6 +2088,31 @@ class HookBridge:
                 "additionalContext": combined_context[:MAX_CONTEXT_CHARS],
             }
         }
+
+    def _restricted_codex_activation_plan_context(
+        self,
+        payload: dict[str, Any],
+        result: Any,
+        *,
+        session_id: str,
+        trace_id: str,
+    ) -> str:
+        """Expose one fixed execution row only for the proven canary parent."""
+
+        if self.host != "codex" or not isinstance(result, dict):
+            return ""
+        if result.get("session_id") != session_id or result.get("trace_id") != trace_id:
+            return ""
+        if self._restricted_codex_activation_parent_scope(payload) != (session_id, trace_id):
+            return ""
+        try:
+            from agency_runtime.core.activation_canary_contract import (
+                render_codex_activation_canary_delegation_plan,
+            )
+
+            return render_codex_activation_canary_delegation_plan(result.get("routing"))
+        except (TypeError, ValueError):
+            return ""
 
     def handle(self, payload: dict[str, Any]) -> dict[str, Any]:
         if not isinstance(payload, dict):

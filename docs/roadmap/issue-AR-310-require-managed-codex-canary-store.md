@@ -8,6 +8,7 @@ tags: [codex, canary, installer, store, production-container]
 related:
   - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
   - docs/roadmap/issue-AR-309-restore-codex-0149-activation-proof.md
+  - docs/roadmap/issue-AR-311-inject-exact-codex-canary-native-plan.md
   - docs/roadmap/handoffs/issue-AR-297.md
   - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
   - docs/decisions/0179-admit-exact-codex-canary-delivery-at-subagent-start.md
@@ -24,7 +25,7 @@ issue_id: AR-310
 priority: p0
 tracker_url: null
 depends_on: [AR-309]
-blocks: [AR-297]
+blocks: [AR-297, AR-311]
 ---
 
 # AR-310: Require the exact Store for managed Codex canaries
@@ -55,6 +56,10 @@ to prove even though it has just materialized the Store.
 - The production installer passes `config_path` and `db_path`, while the
   verification-only and direct current-profile paths already pass
   `require_existing_store=True`.
+- Rebuilt candidate `c60678ef` proves the repair reaches native Codex: the
+  exact route, fixed delegate unit, and `code-reviewer` load persist under
+  session `01a03fe6-c434-7432-a7ef-8d5535109e8c`. The later invalid native
+  task label is isolated to AR-311.
 - Tracker creation is prohibited by the active AR-297 task.
 
 ## Approach
@@ -80,7 +85,7 @@ full call contract, then rebuild and repeat the fresh exact no-bypass proof.
 - [x] The managed-policy installer passes the exact existing-Store requirement
       without changing attended, bypass, config, or credential boundaries.
 - [x] Focused warning-strict installer and Codex canary tests pass (268 tests).
-- [ ] A rebuilt fresh no-bypass transaction reaches native Codex execution and
-      either persists the exact attestation or reports the next honest blocker.
+- [x] A rebuilt fresh no-bypass transaction reaches native Codex execution and
+      reports AR-311's later missing-plan blocker with exact retained evidence.
 - [ ] A same-repository tracker issue is created and linked after explicit
       authorization.

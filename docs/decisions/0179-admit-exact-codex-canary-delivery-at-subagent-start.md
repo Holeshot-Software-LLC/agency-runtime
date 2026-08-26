@@ -14,6 +14,7 @@ related:
   - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
   - docs/roadmap/issue-AR-309-restore-codex-0149-activation-proof.md
   - docs/roadmap/issue-AR-310-require-managed-codex-canary-store.md
+  - docs/roadmap/issue-AR-311-inject-exact-codex-canary-native-plan.md
   - agency_runtime/adapters/hooks.py
   - agency_runtime/core/canary_backends.py
   - agency_runtime/core/child_delivery_evidence.py
