@@ -529,3 +529,47 @@ names, malformed values, NULs, duplicates, and oversize before launch. The
 global CLI allowlist remains unchanged. Focused warning-strict slices pass 90
 and 118 tests; changed-file Ruff, formatting, metadata, policy availability,
 worklog, documentation, and diff checks exit 0. No post-fix model call has run.
+
+The post-AR-307 exact candidate is substantive `a13e3cf8` plus ledger
+`c5279762`. Caller-umask-0002 build, strict Twine, and independent verification
+all exit 0 for the mode-0644 wheel at SHA-256
+`6677c9227a9ef6af5aa9e241e1799011cfa98333765699b97abef3a2b0ba90f5`
+(9,242,783 bytes) and sdist at
+`326f0907be2a603116fb76a19d8ecd0d8cf3d53cf9e412f4579650592253bf3b`
+(25,386,943 bytes). Five rebuilt image IDs begin `f50d8eef` (Codex),
+`5e482815` (Claude), `ba3551bc` (Hermes), `28d1f07b` (OpenClaw base), and
+`9d45c40d` (OpenClaw systemd); every label binds ledger `c5279762` and wheel
+`6677c922...90f5`. Four new containers pass the pre-install absence contract;
+its mode-0600 receipt hashes to `dedaabba...1491fd82f`.
+
+Two unchanged, no-bypass Codex transactions then exit 1 after real local
+inference. Sessions `01a03f4e-27e6-7772-942f-f121ac9c487f` and
+`01a03f52-6822-72e3-9c46-d8a7dfc05e7b` correlate traces
+`01a03f4e-27f3-7e52-a19e-705f7531a614` and
+`01a03f52-6885-73d2-8b73-66b4c274a06e`. Both prove current managed-only
+policy, all eight owned events, `managed_policy` trust, and no bypass. Qwen
+planning applies after one semantic repair; LiteLLM embedding applies with the
+requested/actual `qwen3-embedding`; and Mistral recruiting plus criticism
+apply. Both terminate `workforce_inference_failed` before a route, specialist,
+child, finalization, or attestation exists. The first complete install JSON
+hashes to `53ecfca5...e767152`; the unchanged retry hashes to
+`d0efdf28...20837d`. AR-307 is therefore live-proven while Codex activation
+remains honestly blocked by the separate strict staffing outcome.
+
+Clean exact-source production installs exit 0 for Claude Code and native UID
+10000 Hermes with bundle digests `702a880f...e970724` and
+`eda2cb87...31e9858`. OpenClaw's first mutation exits 1 because the pristine
+host had no `agents.defaults` policy; Agency correctly refuses to invent it.
+After applying the already approved container-local native profile using only
+`LITELLM_API_KEY` and `OPENCLAW_GATEWAY_TOKEN` SecretRefs, its mode-0600
+`openclaw.json` hashes to `7d567996...cc8060`. The retry exits 0 with bundle
+`e0cd11d0...07e598`, runtime-verified loading, and all 13 hooks registered.
+No ordinary post-install harness turn is claimed at this checkpoint.
+
+A content-safe ordinary `agency route` diagnostic for the canary text exits 0
+outside the restricted activation environment. It records exact 4,096-wide
+embedding and all requested/actual models, but Qwen initially rejects false
+novelty and its repaired plan misclassifies the read-only review as a
+workspace-write implementation. Because the closed-world activation
+projection was intentionally absent, that diagnostic is model-quality
+evidence only and is not canary, host delivery, or activation proof.

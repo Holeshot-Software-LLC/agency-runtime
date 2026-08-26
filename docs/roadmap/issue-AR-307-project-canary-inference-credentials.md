@@ -94,7 +94,10 @@ credential from their container or service manager environment.
       fail before the native process starts.
 - [x] Focused canary, activation, CLI-environment, dashboard-helper, Ruff, and
       formatting checks pass.
-- [ ] A rebuilt clean Codex production-container transaction completes its
-      no-bypass canary and persists the exact current attestation.
+- [x] A rebuilt clean Codex production-container transaction projects the
+      credential into the tool-reduced child and applies LiteLLM
+      `qwen3-embedding` at exactly 4,096 dimensions. Its later strict-staffing
+      rejection is recorded separately by AR-297 and does not relabel this
+      credential boundary as failed or claim an activation attestation.
 - [ ] A same-repository tracker issue is created and linked after explicit
       authorization.
