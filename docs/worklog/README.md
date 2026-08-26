@@ -1263,6 +1263,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `5c86aae4` | 2026-08-26 | fix(linux): harden service and verification namespaces | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-301](../roadmap/issue-AR-301-private-systemd-dashboard-namespace.md), [AR-302](../roadmap/issue-AR-302-owner-private-local-verification.md) | [detail](2026-08-26-5c86aae4-harden-linux-service-and-verification-namespaces.md) |
 | `2a9dc984` | 2026-08-26 | fix(release): admit cooperative sdist modes | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-302](../roadmap/issue-AR-302-owner-private-local-verification.md) | [detail](2026-08-26-2a9dc984-admit-cooperative-sdist-modes.md) |
 | `b54a9f1e` | 2026-08-26 | docs(ar297): checkpoint exact Linux installs | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-301](../roadmap/issue-AR-301-private-systemd-dashboard-namespace.md), [AR-302](../roadmap/issue-AR-302-owner-private-local-verification.md) | null |
+| `a13e3cf8` | 2026-08-26 | fix(canary): project declared inference credentials | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-300](../roadmap/issue-AR-300-bind-explicit-install-config-to-managed-canary.md), [AR-307](../roadmap/issue-AR-307-project-canary-inference-credentials.md) | [ADR-0178](../decisions/0178-project-config-declared-credentials-into-tool-reduced-canaries.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
