@@ -27,8 +27,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-297
 branch: codex/ar297-production-container-live-evidence
-evidence_commit: 5acfbf41cf1563fe38df243880b79867d56ca1af
-minimum_ledger_commit: 8eb54c96740d5ccde5db0ff2c44ea12181354337
+evidence_commit: 3e188c9fe0761394e31ebd2ffa3269e136d13df8
+minimum_ledger_commit: eb9da40f4e5662b4671885da004bf93289f8fdeb
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 ---
@@ -111,12 +111,16 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   `critic_approval_reasons_present`. Summary/Store hashes are
   `c89620c2...d8722e` / `7d911ec3...3efe75`. AR-306 now states the conditional
   reason-array contract explicitly; focused tests remain 158/1 skipped.
+- Final trace `f8af12a9-2747-489d-879a-4a8417d1ef35` exits 0 after 123,320 ms.
+  Five model receipts, one accepted route, and one specialist load correlate;
+  only Accessibility Auditor is selected and its complete 2,659-byte prompt is
+  verbatim in context. Summary/Store hashes are `e608576c...cb8576` and
+  `c0cb4beb...de8be`; no failure, Jina call, or persisted secret exists.
 
 ## exact-blocker
 
-- AR-305 is live-proven through verifier-safe selection. AR-306 is focused-test
-  proven but awaits one live critic confirmation; no workforce prompt has yet
-  loaded on the repaired source.
+- AR-305 and AR-306 are direct-live proven. Native delivery remains distinct;
+  the four-container ordinary-turn matrix has not been rerun on this source.
 - AR-301 blocks the shipped non-root dashboard service. AR-302 blocks ordinary
   ambient-umask/trusted-interpreter repeatability. No harness has a current
   successful ordinary Agency turn or Codex canary attestation.
@@ -136,12 +140,12 @@ post-fix and strict diagnostics are under `ar297-postfix-8vIi2aDz`.
 
 ## next-bounded-work-package
 
-1. After the AR-306 clean recovery pair, run exactly one strict/additive
-   preflight using the unchanged approved Mistral recruiter A/B config.
-2. If specialist selection and complete prompt visibility pass, run named
-   repository gates, resolve AR-301 and AR-302, and build a fresh candidate.
-3. Only then recreate the four clean harness containers and repeat unattended
+1. Run all named repository gates, resolve AR-301 and AR-302, and build and
+   independently verify a fresh exact candidate.
+2. Recreate the four clean harness containers and repeat unattended
    ordinary-turn evidence; interview before any further model/config choice.
+3. Recheck authenticated dashboard/service evidence, update canonical records,
+   tear down proof containers, and issue the Linux-scoped verdict.
 
 ## verification
 

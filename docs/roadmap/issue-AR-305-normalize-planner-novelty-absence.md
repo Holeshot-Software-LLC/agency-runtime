@@ -68,7 +68,7 @@ in the workforce ontology.
 - [x] Genuine novel capability identifiers and existing-ontology rejection are
       unchanged.
 - [x] Focused warning-strict tests and changed-file static checks pass.
-- [ ] A live strict/additive preflight selects and loads the correct audited
+- [x] A live strict/additive preflight selects and loads the correct audited
       specialist with complete prompt visibility.
 - [ ] A same-repository tracker is created and linked after explicit
       authorization.

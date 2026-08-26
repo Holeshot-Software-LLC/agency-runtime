@@ -48,6 +48,8 @@ exact minimum margin as both `unsupported-confidence` and
   attached reason codes and was correctly rejected with
   `critic_approval_reasons_present`. The candidate now states the conditional
   response rule in both the critic control document and system prompt.
+- The final direct preflight applies the contract-compliant critic response,
+  accepts only Accessibility Auditor, and injects its complete governed prompt.
 - The critic system explicitly forbids demanding completed task evidence and
   preserves semantic wrong-neighbor, lifecycle-assurance, selected-composition,
   and confidence veto authority.
@@ -80,7 +82,7 @@ Do not auto-approve, discard a veto, change a model route, or weaken validation.
 - [x] Approval requires an empty reason-code array and rejection requires one
       or more bounded hyphenated reason codes.
 - [x] Focused warning-strict tests and changed-file static checks pass.
-- [ ] A live strict/additive preflight approves the correct team and loads its
+- [x] A live strict/additive preflight approves the correct team and loads its
       complete governed prompt.
 - [ ] A same-repository tracker is created and linked after explicit
       authorization.

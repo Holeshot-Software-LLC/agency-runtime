@@ -410,6 +410,24 @@ Store SHA-256 values are
 AR-306 now makes the conditional empty-on-approval/nonempty-on-rejection rule
 explicit without weakening the parser or accepting the malformed response.
 
+Final direct trace `f8af12a9-2747-489d-879a-4a8417d1ef35` is accepted at clean
+source ledger `eb9da40f4e5662b4671885da004bf93289f8fdeb`. Session
+`ar297-direct-50344949-2206-4286-8dc8-d73bf640399f` and run
+`61c2b08b-b32c-4493-89b1-777d5efde4f9` correlate five successful model
+receipts, one accepted routing decision, and one Accessibility Auditor load;
+there is no preflight failure. The 123,320-ms strict/additive turn selects only
+`accessibility-auditor` at confidence 1.0, with typed requirements `analysis`
+and `audit`. Its exact 2,659-byte governed prompt is present verbatim in the
+5,373-byte context at SHA-256
+`c3cfc0981cb980d700ee6b115c3669f5533108598419ca83f26bd5f30e185848`.
+The mode-0600 4,066-byte summary SHA-256 is
+`e608576c0444071e08cc2ac297d7b72ae432c709a831e83035abc1aac7cb8576`;
+the mode-0600 3,952,640-byte Store is
+`c0cb4beb2d165f8d8f63da3269bf21427e1cf543ce9d18388142aa45606de8be`.
+Jina remained absent and the existing LiteLLM credential remained in memory.
+This closes the direct specialist-selection and complete-prompt gate without
+claiming native harness delivery or container acceptance.
+
 Every named repository gate now has a successful exact run: documentation and
 both Ruff checks exit 0; the trusted/private fast spine passes 858 with 3 skips;
 dashboard UI passes 138; routing passes every threshold; decision conformance
