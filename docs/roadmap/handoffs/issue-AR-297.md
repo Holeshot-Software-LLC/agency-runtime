@@ -19,6 +19,7 @@ related:
   - docs/roadmap/issue-AR-307-project-canary-inference-credentials.md
   - docs/roadmap/issue-AR-308-bind-activation-canary-delegation.md
   - docs/roadmap/issue-AR-309-restore-codex-0149-activation-proof.md
+  - docs/roadmap/issue-AR-310-require-managed-codex-canary-store.md
   - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
   - docs/decisions/0174-admit-local-ollama-canary-child-judges.md
   - docs/decisions/0175-batch-complete-embedding-input-sets.md
@@ -33,8 +34,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-297
 branch: codex/ar297-production-container-live-evidence
-evidence_commit: 3930eb567bd59e7cc251c8e35199f996819f6c6e
-minimum_ledger_commit: fd163da266b309266b8bfd14a3363236d7853d43
+evidence_commit: 131f57e5360407176cebd34c90b935f6c196f509
+minimum_ledger_commit: 139192da8d2bf8ba1e67211695405219027058c2
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 ---
@@ -43,13 +44,11 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 
 ## checkpoint
 
-- Work remains in the dedicated Linux worktree on
-  `codex/ar297-production-container-live-evidence`, descended from clean
-  `origin/main` `0a23983aa7b99ec27ef18b1a950f6a0327961f72`.
-- The last clean recovery pair is substantive `3930eb56` plus ledger
-  `fd163da2`. Telemetry before that implementation checkpoint exited 0 at 32.9
-  percent. The AR-309 parser/receipt/header repair and 437 warning-strict
-  focused tests are therefore durably checkpointed before another live canary.
+- Work remains in the dedicated Linux worktree on branch
+  `codex/ar297-production-container-live-evidence`, from clean `origin/main` `0a23983a`.
+- The last clean recovery pair is goal ledger `131f57e5` plus worklog
+  `139192da`. The AR-310 restricted-Store repair now passes 268 warning-strict
+  focused tests and is being checkpointed before rebuilding the live candidate.
 - The current Linux verdict remains **NO-GO**. AR-297 and tracker #335 remain
   open. No tracker, push, PR, merge, tag, signing, publication, release, or
   hosted workflow action is authorized.
@@ -97,26 +96,24 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   post-spawn execution reconciliation, and receipt-backed final headers. The
   public Codex artifact parser remains diagnostic-only and ordinary opaque
   children remain unstaffed.
-- Warning-strict focused verification passes with 328 Codex delivery/canary/
-  hook/header tests and 109 activation-snapshot, contract, Store atomicity,
-  delegation, and security tests. The exact real-Store parent route regression
-  also passes. No repaired live canary or new artifact exists yet.
+- Warning-strict AR-309 verification passes 328 Codex delivery/canary/hook/
+  header and 109 Store/contract/security tests. Fresh `fd163da2` absence passes,
+  but live install stops before Codex because its managed canary omits the exact
+  existing-Store marker; AR-310's repair passes 268 focused tests.
 
 ## exact-blocker
 
-- Codex still lacks an attestation because the repaired implementation has not
-  yet been rebuilt, installed, and exercised in a fresh exact V2 transaction.
-  The old candidate still has no pre-speech card receipt and a stale
-  `delegated: none` header; ADR-0156 forbids substituting Store rows or prose.
-- Stable `multi_agent` cannot execute the accepted plan. The next bounded step
-  rebuilds the repaired V2 candidate and requires one canonical child artifact,
-  one consumed delivery receipt, a current delegated header, accepted first
-  finalization, and a no-bypass attestation in the same invocation.
+- Codex still lacks an attestation. Exact install JSON `64b021ce...1b54` and
+  diagnostic `d55536f7...2845` exit 1 before any rollout or Store run; private
+  traceback `a2821a18...ba65` isolates AR-310's missing restricted-Store flag.
+- Rebuild that repair, replace the now-mutated proof container, and require one
+  canonical child artifact, consumed receipt, current delegated header,
+  accepted first finalization, and no-bypass attestation in one invocation.
 - No later ordinary Codex, Claude, Hermes, or OpenClaw process has a current
   successful Agency-turn receipt on this source.
 - Refresh the host install/dashboard and named repository gates for the exact
   candidate, then remove both old and new AR-297 proof containers.
-- AR-299 through AR-309 tracker parity, hosted cross-OS artifacts, signing,
+- AR-299 through AR-310 tracker parity, hosted cross-OS artifacts, signing,
   push, PR, merge, tag, publication, release, and exhaustive workflow dispatch
   remain unauthorized.
 
@@ -125,9 +122,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 Exact artifacts are under `~/.agency-runtime/release-artifacts/`
 `dist-fd163da266b309266b8bfd14a3363236d7853d43-linux-ar297`. Private current
 evidence is `~/.agency-runtime/evidence/ar297-go-fd163da2`; historical evidence
-remains retained. New Codex image `9afefdb2...39442` and clean container
-`570506ea...39b9` bind the exact wheel/config; proof is next, and all older
-AR-297 containers await teardown. Secret-safe helper: `/tmp/agency-runtime-ar297-evidence.pcLOZn/run_with_litellm_key.py`.
+remains retained. Codex image `9afefdb2...39442` and container
+`570506ea...39b9` retain the failed proof; replace it after rebuild. All AR-297
+containers await teardown. Helper: `/tmp/agency-runtime-ar297-evidence.pcLOZn/run_with_litellm_key.py`.
 
 ## next-bounded-work-package
 

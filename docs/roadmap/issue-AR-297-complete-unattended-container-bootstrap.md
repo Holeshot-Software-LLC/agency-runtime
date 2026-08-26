@@ -23,6 +23,7 @@ related:
   - docs/roadmap/issue-AR-307-project-canary-inference-credentials.md
   - docs/roadmap/issue-AR-308-bind-activation-canary-delegation.md
   - docs/roadmap/issue-AR-309-restore-codex-0149-activation-proof.md
+  - docs/roadmap/issue-AR-310-require-managed-codex-canary-store.md
   - docs/decisions/0174-admit-local-ollama-canary-child-judges.md
   - docs/decisions/0175-batch-complete-embedding-input-sets.md
   - docs/decisions/0176-use-owner-runtime-temp-for-nonroot-user-services.md
@@ -43,7 +44,7 @@ epic: host-integrations
 issue_id: AR-297
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
-depends_on: [AR-300, AR-301, AR-302, AR-303, AR-304, AR-305, AR-306, AR-307, AR-308, AR-309]
+depends_on: [AR-300, AR-301, AR-302, AR-303, AR-304, AR-305, AR-306, AR-307, AR-308, AR-309, AR-310]
 blocks: []
 ---
 
@@ -595,3 +596,13 @@ stdout, stderr, Store, and parent-rollout SHAs are `356d36d1...bc6`,
 `dc6b6525...f5a`, `bb518e7c...20d`, and `95329525...a3`. AR-309 therefore
 keeps the V2 execution surface and repairs its exact fail-closed evidence
 boundary.
+
+The first rebuilt AR-309 candidate at ledger `fd163da2` produces verified
+wheel `2d78f9c...16ab5` and Codex image `9afefdb2...39442`. Fresh container
+`570506ea...39b9` passes absence at `eee05217...68a0`, but both its exact
+install and bounded diagnostic stop before Codex execution: JSON SHAs are
+`64b021ce...1b54` and `d55536f7...2845`, stderr is empty, no rollout or Store
+run exists, and private debug SHA `a2821a18...ba65` proves the sealed collector
+refused a backend lacking `require_existing_store`. AR-310's managed-only
+one-line call-contract repair passes 268 warning-strict focused tests; a fresh
+rebuild and no-bypass live transaction remain required.

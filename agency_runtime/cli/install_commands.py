@@ -651,6 +651,7 @@ def _codex_activation_state(
                     )
                 canary_kwargs["config_path"] = config_path
                 canary_kwargs["db_path"] = db_path
+                canary_kwargs["require_existing_store"] = True
             candidate = canary_runner("codex", **canary_kwargs)
             verification = (
                 dict(candidate)

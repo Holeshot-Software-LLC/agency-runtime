@@ -907,6 +907,7 @@ def test_codex_production_container_installs_managed_policy_and_proves_normal_la
                 "trust_mode": "managed_policy",
                 "config_path": Path("container-agency.yaml"),
                 "db_path": Path("container-agency.db"),
+                "require_existing_store": True,
             },
         )
     ]
