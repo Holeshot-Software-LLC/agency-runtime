@@ -12,6 +12,8 @@ related:
   - docs/roadmap/issue-AR-290-end-to-end-guided-setup.md
   - docs/roadmap/handoffs/issue-AR-290.md
   - docs/roadmap/handoffs/issue-AR-297.md
+  - docs/roadmap/issue-AR-299-local-ollama-canary-child-judge.md
+  - docs/decisions/0174-admit-local-ollama-canary-child-judges.md
   - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
   - agency_runtime/cli/install_commands.py
   - agency_runtime/core/codex_managed_policy.py
@@ -161,13 +163,28 @@ subscription auth, Hermes 0.20.4, and OpenClaw 2026.7.1-2 with a reachable
 systemd-user gateway. Local inference inventory found Ollama 0.30.0 and an
 authenticated LiteLLM loopback gateway; no Jina route was configured or called.
 
-The owner approved an exact secret-indirected configuration outside the
-repository with SHA-256
-`22eb6507e7eb5b4420196cb61c09121a66266537f3ead9e521ab51b8412657e4`:
-strict workforce assurance, additive dense recall, LiteLLM `qwen3.5-9b`
-generation/critic profiles at medium/high, `qwen3-embedding` at exactly 4096
-dimensions, `qwen3.5-2b` text reranking at low, and a separately pinned Codex
-subscription child judge. Direct schema validation exited 0. Credential-aware
-`agency config validate` exited 2 only for expected cold, not-yet-registered
-host warnings. No model invocation or container installation had occurred at
-this checkpoint.
+The owner subsequently approved an all-free local text and child-judge
+topology. A bounded synthetic planner A/B used Agency's exact compact planner
+system prompt, response schema, semantic compiler, policy validator, and an
+untrusted injection suffix with Ollama `think: false`. `qwen3.5:9b` returned six
+units but failed semantic compilation (exit 1, 32,272 ms); the local
+`qwen3-14b-abliterated:latest` returned six units, echoed no injection, and
+passed every policy check (exit 0, 23,774 ms). Generation is therefore pinned
+to the measured 14B model rather than selected from parameter count or prose.
+
+The revised secret-indirected configuration outside the repository has
+SHA-256 `8a67099de98bc0bae91bdfdaab3f8bfbc1134b904e72bd07eeb578601b5acb74`.
+It uses strict workforce assurance and independence, additive dense recall,
+direct Ollama generation/critic/text-reranker profiles, unchanged LiteLLM
+`qwen3-embedding` at exactly 4096 dimensions, and a no-thinking
+`mistral-small3.2:24b` child judge pinned for every target harness. Direct
+schema validation exits 0 and the file remains mode 0600 with no secret value.
+The judge was acquired under the owner's explicit approval; local metadata
+records digest `5a408ab55df5`, 24.0B parameters, Q4_K_M, 131,072-token context,
+and Apache-2.0 licensing.
+
+AR-299/ADR-0174 now admit only an already-declared, safe, available Ollama
+profile into the existing exact-name/no-fallback canary projection. Thirteen
+focused warning-strict tests pass; unsafe non-loopback HTTP still fails before
+transport. Tracker creation remains prohibited by the active task, so AR-299
+tracker parity is an explicit unresolved gate rather than an omitted record.

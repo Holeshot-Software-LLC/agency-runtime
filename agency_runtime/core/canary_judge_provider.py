@@ -10,7 +10,7 @@ from agency_runtime.core.inference_profiles import provider_from_profile
 
 CANARY_CHILD_JUDGE_PROVIDER_ENV = "AGENCY_CANARY_CHILD_JUDGE_PROVIDER"
 _SUPPORTED_CLI_TRANSPORTS = frozenset({"claude", "codex"})
-_SUPPORTED_PROFILE_ADAPTERS = frozenset({"anthropic"})
+_SUPPORTED_PROFILE_ADAPTERS = frozenset({"anthropic", "ollama"})
 
 
 class CanaryChildJudgeProviderError(ValueError):
