@@ -33,8 +33,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-297
 branch: codex/ar297-production-container-live-evidence
-evidence_commit: 907436e2d4c8ad53ff69e5808ba2d3c4d4678e66
-minimum_ledger_commit: 507042ec30816c903882d590b18204fa24103b75
+evidence_commit: 3930eb567bd59e7cc251c8e35199f996819f6c6e
+minimum_ledger_commit: fd163da266b309266b8bfd14a3363236d7853d43
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 ---
@@ -46,24 +46,24 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Work remains in the dedicated Linux worktree on
   `codex/ar297-production-container-live-evidence`, descended from clean
   `origin/main` `0a23983aa7b99ec27ef18b1a950f6a0327961f72`.
-- The last clean recovery pair is substantive `907436e2` plus ledger
-  `507042ec`. Telemetry before this implementation checkpoint exits 0 at 32.9
-  percent, so the AR-309 parser/receipt/header repair and its focused evidence
-  are being checkpointed before another live evaluation.
+- The last clean recovery pair is substantive `3930eb56` plus ledger
+  `fd163da2`. Telemetry before that implementation checkpoint exited 0 at 32.9
+  percent. The AR-309 parser/receipt/header repair and 437 warning-strict
+  focused tests are therefore durably checkpointed before another live canary.
 - The current Linux verdict remains **NO-GO**. AR-297 and tracker #335 remain
   open. No tracker, push, PR, merge, tag, signing, publication, release, or
   hosted workflow action is authorized.
 
 ## completed-evidence
 
-- Exact mode-0600 config SHA-256 is
-  `87551b5bc936a41742d6846523377e3cf869d8e5c2ce2e4941c447848e125628`:
+- Exact mode-0600 config SHA is `87551b5bc936a41742d6846523377e3cf869d8e5c2ce2e4941c447848e125628`:
   strict assurance, additive dense recall, Qwen 14B abliterated generation,
   Mistral 24B critic/reranker/recruiter/child judge, and LiteLLM
   `qwen3-embedding` at 4,096 dimensions. Jina is absent and was not called.
-- Caller-umask-0002 build, strict Twine, and independent verification exit 0.
-  Wheel SHA is `a81338f5...ca78` (9,244,572 bytes); sdist SHA is
-  `22e4286f...a15a` (25,397,183 bytes). Both are mode 0644.
+- Rebuilt caller-umask-0002 artifacts at ledger `fd163da2` pass build, strict
+  Twine, and independent verification. The mode-0644 wheel is
+  `2d78f9c...16ab5` (9,291,917 bytes) and sdist is `cf160e6a...d06a`
+  (25,479,108 bytes).
 - Five exact image IDs begin `226afba9` (Codex), `507328b7` (Claude),
   `8a50f5cb` (Hermes), `fd9967a0` (OpenClaw base), and `893b88eb`
   (OpenClaw systemd). Four fresh containers bind candidate `1f32915d`; their
@@ -123,23 +123,35 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 ## same-task-continuity
 
 Exact artifacts are under `~/.agency-runtime/release-artifacts/`
-`dist-1f32915d14a9760d8cd12d21fbc6e7f3d8940a66-linux-ar297`. Private current
-evidence is `~/.agency-runtime/evidence/ar297-go-1f32915d`; historical evidence
-remains retained. Current container IDs begin `e6075282`, `792ed3e9`,
-`4938a43d`, and `62df9b7b`; older labelled proof containers remain. The
-secret-safe helper remains
-`/tmp/agency-runtime-ar297-evidence.pcLOZn/run_with_litellm_key.py`.
+`dist-fd163da266b309266b8bfd14a3363236d7853d43-linux-ar297`. Private current
+evidence is `~/.agency-runtime/evidence/ar297-go-fd163da2`; historical evidence
+remains retained. New Codex image `9afefdb2...39442` and clean container
+`570506ea...39b9` bind the exact wheel/config; proof is next, and all older
+AR-297 containers await teardown. Secret-safe helper: `/tmp/agency-runtime-ar297-evidence.pcLOZn/run_with_litellm_key.py`.
 
 ## next-bounded-work-package
 
-1. Rebuild the checkpointed AR-309 candidate, install it into the dedicated
-   Codex proof container and host profile, and run one exact no-bypass V2
-   transaction with Store, rollout, receipt, header, and attestation proof.
-2. Complete fresh Claude, Hermes, and OpenClaw installs, then run later ordinary
-   Conveyor-equivalent Codex, Claude, Hermes, and OpenClaw
-   processes and correlate Store plus native artifacts.
-3. Refresh exact host/dashboard and repository gates, update canonical records,
-   remove every labelled AR-297 proof container, and issue the Linux verdict.
+After compaction, reread this capsule and `git status`, then resume at the first
+unchecked line. Mark an item complete only with exact retained evidence.
+
+1. [x] Rebuild and verify exact `fd163da2` artifacts plus the Codex image.
+2. [ ] Prove fresh Codex absence, then one exact no-bypass V2 install with one
+   canonical child artifact, consumed receipt, current header, accepted
+   finalization, Store correlation, and attestation.
+3. [ ] Build and prove separate clean exact Claude, native-UID Hermes, and
+   OpenClaw systemd production-container installs.
+4. [ ] Run later ordinary unattended Conveyor-equivalent processes for all four
+   harnesses; retain native artifacts, Store correlations, and full workforce
+   prompt visibility without treating definition presence as runtime delivery.
+5. [ ] Install the exact candidate on this Linux host and prove the private
+   authenticated dashboard plus the approved service-manager contract.
+6. [ ] Run every named repository gate and record exact exits and hashes.
+7. [ ] Update canonical issues/capsule and make the required local substantive
+   and `docs(worklog):` ledger commits.
+8. [ ] Resolve and remove every container labelled `AR-297`; retain teardown
+   evidence and verify zero labelled survivors.
+9. [ ] Issue the Linux-scoped GO/NO-GO and complete the persistent goal only
+   when all required items above are truthfully closed.
 
 ## verification
 
