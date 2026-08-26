@@ -74,3 +74,14 @@ Retain CI's explicit private-root setup as defense in depth.
       pass with warnings treated as errors.
 - [ ] A same-repository tracker issue is created and linked after explicit
       authorization.
+
+## Verification evidence
+
+The exact AR-297 candidate retains successful trusted-owner runs for every named
+repository gate, fresh wheel and sdist installs, and `pip check`. The failed
+ambient-umask and untrusted-interpreter runs remain recorded rather than
+relabelled. This closure package changes documentation evidence only; it does
+not implement AR-302, weaken a trust boundary, dispatch an exhaustive workflow,
+or create its unauthorized tracker. Its first final policy-availability check
+also exited 1 under a bare Python lacking the package; the exact-candidate host
+venv rerun exited 0.

@@ -227,11 +227,10 @@ finalization, or attestation proof. This proves AR-300 crossed the prior config
 boundary, but it does not satisfy AR-297's unattended Codex acceptance.
 
 Later ordinary invocations also remain incomplete: Claude times out with Store
-trace `5e7cea73-3db3-400b-b083-0a9687180693`; Hermes rejects Qwen 14B before
-inference because its declared context is below Hermes's 64K minimum; and
-OpenClaw loads Agency but times out in `before_agent_run` with trace
-`9b61694c-c562-498a-ab50-25aa2b5fcabd`. The owner approved already-local
-Mistral 24B for one Hermes compatibility run. None of these partial states is
+trace `5e7cea73-3db3-400b-b083-0a9687180693`; the first Hermes attempt rejects
+Qwen 14B before inference because its declared context is below Hermes's 64K
+minimum; and OpenClaw loads Agency but times out in `before_agent_run` with
+trace `9b61694c-c562-498a-ab50-25aa2b5fcabd`. None of these partial states is
 labelled a successful Agency turn.
 
 The exact wheel and four native bundles are installed on the Linux host. Codex
@@ -250,8 +249,34 @@ Agency loaded unattended but terminalized preflight as
 `workforce_inference_failed`; no Agency model receipt exists. Hermes then
 exited 1 when Ollama rejected thinking for Mistral. Its native auxiliary chain
 also warned about a paid OpenRouter default, received no paid response, and
-fell back locally. Per the owner's interview constraint, a retry awaits explicit
-approval for `reasoning_effort=none` and `auxiliary.free_only=true`.
+fell back locally. At that checkpoint, the interview constraint required
+explicit approval for `reasoning_effort=none` and `auxiliary.free_only=true`.
+
+The owner then approved those two exact Hermes settings and one retry. The
+2,811-byte native config, owned by UID/GID 10000, had SHA-256
+`b2540d6e86de4705fe20903b693a14906c7810c7e2d179811964e0b12706b0d4`.
+The same 246-byte prompt and hash created Hermes session
+`20260826_143220_d88838` and Store trace
+`20260826_143220_d88838:59ceb645-aba9-4910-9cb6-1f25d61efd89:2f835640`.
+The ordinary process exited 0, but only because the turn guard replaced its
+unverified draft with the terminal refusal. Store run
+`ecdff898-6dc7-42c9-b0f9-db3447f46623` is `preflight_failed`; receipt
+`ee306616-aa15-4262-b88f-b1e9818f0de0` records routing
+`workforce_inference_failed`, `runtime_error`, and staffing
+`inference_invalid`. The planner applied Qwen 14B, additive embedding rejected
+invalid inputs, and both recruiter attempts returned an invalid candidate.
+Only `runs` and `preflight_failure_receipts` contain correlated rows: there are
+no Agency model, route, skill, specialist, delegation, finalization, or canary
+attestation records.
+
+Hermes itself completed two local Mistral API calls with reasoning-token count
+zero, but its single `tool_search` found only the connected Agency source and it
+never invoked the service. Its 1,367-byte draft SHA-256 is
+`b4dfa808fd380fd99439f55417fcfa09635ccb4bffdde2148a93aff1f12794e9`;
+the 16,912-byte native system prompt SHA-256 is
+`e99111a2373e66b18fa7e3ecd1b4353105ed1cdd30bdd909476427ae8623855e`.
+Agency correctly withheld that draft because turn-scoped finalization did not
+accept it. No second request dump was created and no further retry was run.
 
 Every named repository gate now has a successful exact run: documentation and
 both Ruff checks exit 0; the trusted/private fast spine passes 858 with 3 skips;
@@ -268,3 +293,20 @@ eight MCP tools, authenticated dashboard health, deterministic smoke 8/8,
 recorded bundle digests and no runtime drift. OpenClaw's authenticated gateway
 RPC probe now exits 0; this read-only health result does not replace its failed
 ordinary Agency turn.
+
+The final read-only host check again exits 0: OpenClaw's user service is active
+with zero restarts, authenticated RPC is `admin_capable`, and Agency Preflight
+0.1.0 is loaded. `agency status --json` reports every installed bundle current,
+Codex activation-required, the other three runtime-unverified, and all canary
+attestations absent. The foreign OpenClaw device-auth policy warning was observed
+but not changed.
+
+Final teardown resolved and removed only container IDs `2ad5e056c84c`
+(Codex), `23d812c2bbf1` (Claude), `473cd5bd6059` (Hermes),
+`ec5ea44a6f7a` (OpenClaw), and `c7a713bb3b06` (dashboard). `docker rm -f`
+exited 0 for all five, the subsequent filtered container list was empty, and
+all six final candidate images remain. The host install and OpenClaw service
+remained healthy. The Linux-scoped verdict is **NO-GO**: artifact, install,
+prompt-visibility, dashboard-authentication, and repository gates pass, but no
+four-harness unattended Agency-turn matrix, Codex attestation, or non-root
+dashboard-service proof exists.

@@ -180,3 +180,11 @@ transaction rolls back because its normal non-root systemd namespace remaps
 trusted root ancestors to UID 65534 under `PrivateTmp=true`; AR-301 owns that
 new defect. This later scoped evidence does not revise AR-290's completed setup
 feature or relabel its earlier Windows/Jina evidence as current Linux proof.
+
+The final AR-297 read-only status check still reports all four Linux host
+bundles current and no runtime drift. OpenClaw's authenticated RPC and loaded
+Agency plugin both exit 0, while every canary attestation remains absent. The
+five dedicated proof containers were removed without removing their images;
+the host installation and OpenClaw user service remained healthy. This is
+truthful installed posture, not completion of the failed unattended-turn or
+dashboard-service gates.

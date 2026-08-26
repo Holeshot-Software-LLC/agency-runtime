@@ -82,3 +82,12 @@ authenticated on loopback.
       unauthenticated access is rejected.
 - [ ] A same-repository tracker issue is created and linked after explicit
       authorization.
+
+## Verification evidence
+
+The final AR-297 host check did not mutate or retry this transaction. The
+unrelated OpenClaw user service remained active with authenticated RPC, proving
+that the user manager itself is healthy; it does not explain away the dashboard
+namespace refusal. The dedicated root-user dashboard proof container was
+removed after its evidence was captured, its image was retained, and the normal
+non-root dashboard acceptance items remain open without a bypass.

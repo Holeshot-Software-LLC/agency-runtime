@@ -97,3 +97,9 @@ instead of repeating the prior absent-default-config failure. Both attempts
 then exit 1 at `staffing_critic_rejected`; neither records the required child
 judge or persistent attestation. This is positive evidence for the bounded
 config-forwarding repair but not completion of the container acceptance item.
+
+No further Codex retry was authorized or run. The final container teardown
+removed the exact managed-policy proof container but retained image
+`73e6110e7bbb2c6d7c70574f65a6f7bfa1d57260e566bc203f454a435f1c4ea1`.
+The host Codex installation truthfully remains activation-required with no
+canary attestation, so the live and tracker acceptance items stay open.

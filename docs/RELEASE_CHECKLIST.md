@@ -606,6 +606,18 @@ and an interpreter below untrusted `/tmp` first fail closed; AR-302 retains that
 local-repeatability defect. These local successes do not supply hosted Windows,
 cross-producer parity, signing, or publication evidence.
 
+The final owner-approved Hermes retry set native reasoning to `none` and
+restricted auxiliary routing to free models. The ordinary command exited 0, but
+Agency preflight recorded `workforce_inference_failed` and the turn guard
+withheld Hermes's unverified draft. Trace
+`20260826_143220_d88838:59ceb645-aba9-4910-9cb6-1f25d61efd89:2f835640`
+has no Agency model receipt, route, specialist, delegation, finalization, or
+attestation row. The final authenticated OpenClaw RPC and loaded-plugin checks
+exit 0, while host status still reports absent canary attestations. All five
+dedicated proof containers were then removed with exit 0, their final images and
+host artifacts were retained, and the Linux-scoped release verdict remains
+**NO-GO**.
+
 The 2026-07-26 checkpoint passed the then-current ordinary warning-strict suite
 (7,604 passed, 61 skipped, 1 expected failure), Python coverage at 97.08 percent,
 the separate performance arm, dashboard coverage, routing, delegation,

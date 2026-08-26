@@ -125,3 +125,11 @@ Both surfaces identify Agency Store authority and explicitly set runtime
 delivery proof to `not_asserted`. The fresh Store has no worker with multiple
 lineage versions, so exact historical behavior remains source-test evidence,
 not fabricated live evidence.
+
+The final ordinary Hermes attempt reinforces that boundary rather than changing
+this acceptance result. Hermes could see one connected `agency-runtime` tool
+source but did not invoke it, loaded no specialist, and produced no delegation
+or finalization record. Agency withheld the resulting draft. Complete installed
+CLI and authenticated dashboard visibility therefore remains proven, while
+runtime delivery of the Accessibility Auditor prompt remains explicitly
+`not_asserted`.

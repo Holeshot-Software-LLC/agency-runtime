@@ -90,3 +90,11 @@ judge receipt exists, so the clean live acceptance item remains open. Direct
 bounded route probing separately proves `mistral-small3.2:24b` answers the
 required schema with thinking disabled; that transport receipt is not
 substituted for a completed canary child receipt.
+
+The final approved ordinary Hermes retry also used local Mistral with native
+reasoning disabled, but Agency preflight failed during recruitment before any
+child selection. Trace
+`20260826_143220_d88838:59ceb645-aba9-4910-9cb6-1f25d61efd89:2f835640`
+contains no Agency model receipt or canary attestation. It therefore adds no
+requested/actual child-judge proof and leaves both live acceptance and tracker
+parity open.
