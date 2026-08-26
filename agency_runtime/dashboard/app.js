@@ -119,7 +119,16 @@ export function createDashboard(runtime = globalThis) {
 	}
 
 	function configureOwnerSurface() {
+		ensureInferenceTopology();
 		ensureSetupJourney();
+		const legacyJudgeHeading = byId("config-judge-model")
+			?.closest?.("article")
+			?.querySelector?.("h2");
+		if (legacyJudgeHeading) {
+			legacyJudgeHeading.textContent = "Legacy fallback and child-routing bounds";
+		}
+		const legacyJudgeLabel = document.querySelector('label[for="config-judge-model"]');
+		if (legacyJudgeLabel) legacyJudgeLabel.textContent = "Legacy fallback judge model";
 		const manualProviderModel = byId("provider-builder-model");
 		if (manualProviderModel && !manualProviderModel.getAttribute("aria-label")) {
 			manualProviderModel.setAttribute(
@@ -154,6 +163,79 @@ export function createDashboard(runtime = globalThis) {
 		if (configForm) configForm.setAttribute("aria-label", "Agency Runtime configuration");
 		const privacy = byId("privacy-chip");
 		if (privacy?.textContent === "Metadata only") privacy.textContent = "Runtime metadata only";
+		return true;
+	}
+
+	function ensureInferenceTopology() {
+		const settings = byId("view-settings");
+		if (!settings || byId("inference-topology")) return false;
+		const createNode = (tag, className, textContent = "") => {
+			const node = document.createElement(tag);
+			node.className = className;
+			node.textContent = textContent;
+			return node;
+		};
+		const metric = (label, id) => {
+			const card = createNode("article", "metric");
+			card.append(createNode("span", "", label));
+			const value = createNode("strong", "", "—");
+			value.id = id;
+			card.append(value);
+			return card;
+		};
+		const group = (title, id) => {
+			const wrapper = createNode("div", "");
+			wrapper.append(createNode("h3", "", title));
+			const list = createNode("div", "stack-list");
+			list.id = id;
+			wrapper.append(list);
+			return wrapper;
+		};
+
+		const panel = createNode("article", "panel config-panel");
+		panel.id = "inference-topology";
+		panel.setAttribute("aria-labelledby", "inference-topology-title");
+		const heading = createNode("div", "panel-head");
+		const title = createNode("div", "");
+		title.append(
+			createNode("p", "eyebrow", "EFFECTIVE INFERENCE"),
+			createNode("h2", "", "Inference roles"),
+		);
+		title.children[1].id = "inference-topology-title";
+		const status = createNode("span", "panel-tag", "CHECKING");
+		status.id = "inference-topology-state";
+		status.dataset.state = "unknown";
+		heading.append(title, status);
+		panel.append(
+			heading,
+			createNode(
+				"p",
+				"panel-copy",
+				"Named profiles and routes own stage inference. Agency inference selects the staffing plan; the native harness owns child spawning and execution.",
+			),
+		);
+		const metrics = createNode("div", "metric-grid");
+		metrics.append(
+			metric("Assurance", "inference-assurance-state"),
+			metric("Dense recall", "inference-recall-state"),
+			metric("Named profiles", "inference-profile-count"),
+			metric("Effective routes", "inference-route-count"),
+		);
+		panel.append(metrics);
+		const topology = createNode("div", "config-grid config-split");
+		topology.append(
+			group("Effective route map", "inference-route-list"),
+			group("Named provider profiles", "inference-profile-list"),
+		);
+		panel.append(
+			topology,
+			createNode("p", "panel-copy", "Loading inference authority…"),
+			createNode("p", "panel-copy", "Loading delegation boundary…"),
+		);
+		panel.children[panel.children.length - 2].id = "inference-legacy-note";
+		panel.children[panel.children.length - 1].id = "inference-delegation-note";
+		if (typeof settings.prepend === "function") settings.prepend(panel);
+		else settings.children.unshift(panel);
 		return true;
 	}
 
@@ -305,6 +387,7 @@ export function createDashboard(runtime = globalThis) {
 		renderer.configureEvidenceTabs();
 		configureOwnerSurface();
 		renderer.renderSetup();
+		renderer.renderInferenceTopology();
 		document.querySelectorAll("[data-setup-command]").forEach((node) => {
 			listen(node, "click", () => copyAttendedCommand(
 				node.dataset.setupCommand,
@@ -499,6 +582,7 @@ export function createDashboard(runtime = globalThis) {
 		handlePageHide,
 		bindEvents,
 		configureOwnerSurface,
+		ensureInferenceTopology,
 		ensureSetupJourney,
 		start,
 		destroy,

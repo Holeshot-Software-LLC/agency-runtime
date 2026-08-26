@@ -13,6 +13,7 @@ related:
   - docs/roadmap/issue-AR-291-isolate-smoke-runtime-pointers.md
   - docs/roadmap/issue-AR-292-classify-setup-activation-pending.md
   - docs/roadmap/issue-AR-295-audit-guided-dashboard-asset-budget.md
+  - docs/roadmap/issue-AR-296-project-effective-inference-topology.md
   - docs/decisions/0172-compose-first-run-setup-from-guarded-owner-operations.md
   - docs/RELEASE_CHECKLIST.md
   - docs/worklog/README.md
@@ -24,7 +25,7 @@ issue_id: AR-290
 priority: p1
 tracker_url: null
 depends_on: [AR-05, AR-291, AR-292]
-blocks: [AR-295]
+blocks: [AR-295, AR-296]
 ---
 
 # AR-290: Add end-to-end guided setup
@@ -53,6 +54,9 @@ prompt a consumer can paste to an installation agent.
 - The dashboard Settings view now exposes the same four-stage journey with
   current configuration/registration posture, provider-editor navigation, and
   inert attended command copies. It gains no host-install or shell endpoint.
+- AR-296 adds the missing redacted effective-profile topology, including
+  per-stage/per-harness model and thinking routes, Jina recall roles, and the
+  explicit Agency-staffing/native-host-spawn authority boundary.
 - The consumer README now leads with the guided journey, a setup diagram,
   current-state and provider matrices, Jina/local/LiteLLM/API/subscription
   coverage, a paste-ready installation-agent interview, and explicit release

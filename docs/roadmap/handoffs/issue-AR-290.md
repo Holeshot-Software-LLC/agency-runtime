@@ -9,6 +9,7 @@ related:
   - docs/roadmap/issue-AR-290-end-to-end-guided-setup.md
   - docs/roadmap/issue-AR-293-safe-inference-profile-config-operations.md
   - docs/roadmap/issue-AR-295-audit-guided-dashboard-asset-budget.md
+  - docs/roadmap/issue-AR-296-project-effective-inference-topology.md
   - docs/decisions/0172-compose-first-run-setup-from-guarded-owner-operations.md
   - README.md
   - docs/RELEASE_CHECKLIST.md
@@ -29,73 +30,39 @@ tracker_url: null
 
 ## checkpoint
 
-- Work remains isolated in the linked worktree on
-  `codex/ar290-guided-setup-readme`; the dirty shared `main` checkout was not
-  switched, staged, cleaned, or committed.
-- The branch contains AR-289 native Jina reranking, AR-290 guided setup and
-  consumer documentation, AR-291 pointer isolation, AR-292 truthful degraded
-  setup classification, AR-293 safe inference-profile config operations, and
-  AR-294/AR-295 expanded-regression and dashboard-budget repairs.
-- Remote `main` at `a19a1669` was merged without rewriting history in
-  `7487b31b`; current verification completed at the `aa2830d0` ledger. Re-fetch
-  before publication and merge again without rewriting only if remote advanced.
-- Tracker creation was attempted after the owner authorized push/merge, but the
-  external approval boundary requires an explicit tracker authorization. No
-  issue, label, PR, tag, release, or publication was created by that attempt.
-- Context telemetry is below the fixed 50-percent threshold. Preserve this
-  state in a substantive/ledger checkpoint before any live release evaluation.
+- Work remains isolated on `codex/ar290-guided-setup-readme`; the dirty shared `main` checkout was not switched, staged, cleaned, or committed.
+- The branch contains AR-289 through AR-295 plus AR-296's bounded effective-inference topology and authority projection. Exact AR-296 installed/browser proof is next.
+- Remote `main` at `a19a1669` was merged without rewriting in `7487b31b`; verification completed at ledger `aa2830d0`. Re-fetch before publication and merge again only if remote advanced.
+- Tracker creation still requires explicit tracker authorization. The rejected attempt created no issue, label, tag, release, or publication; draft PR #326 already exists for the branch.
+- Context telemetry is below 50 percent; preserve AR-296 in a substantive/ledger checkpoint before its installed dashboard evaluation.
 
 ## completed-evidence
 
-- Current merged source passed the 1,127-test expanded configuration/security
-  run with 21 skips, all 136 dashboard UI tests, full Ruff and documentation
-  gates, 161 workflow contracts, every routing threshold, and all 160 decision-
-  conformance mutations with a green baseline and unchanged source.
-- Installed all-detected Windows setup registered Codex, Claude, ZCode, and the
-  dashboard, reported no runtime drift, and passed deterministic smoke 8/8.
-  Its exact exit 2 means attended activation remains, not mutation failure.
-- `workforce.dense_recall_mode` is `additive`. The guarded installed CLI wrote
-  Jina embedding and reranker profiles plus both recall routes using only the
-  environment-variable name `JINA_API_KEY`; the credential is absent from YAML,
-  argv, repository files, Store evidence, and displayed output.
-- The supplied credential is stored in the current-user environment. One
-  bounded Agency embedding call applied `jina-embeddings-v3` at exactly 1,024
-  dimensions, and one bounded native rerank call applied
-  `jina-reranker-v3.5` to an exact two-document permutation.
-- `agency config validate` returns degraded 2 only for cold native-host loading
-  and Codex hook trust. It prints the exact owner repair: start a fresh terminal
-  Codex TUI, trust all eight Agency hooks, start a new session, then run
-  `agency install --agent codex --verify-activation`.
-- Reinstalling the candidate changed the owned dashboard launcher identity.
-  The all-harness refresh cleared the one stale Claude projection, authoritative
-  status reports `runtime_drift: null`, and the owned service is enabled,
-  active, current, reachable, and open at `http://127.0.0.1:7810/`.
+- Merged source passed 1,127 expanded tests with 21 skips, 136 UI tests, Ruff/docs, 161 workflow contracts, all routing thresholds, and 160/160 decision mutations with unchanged source.
+- AR-296 passes 138 UI tests and coverage at 96.92 percent lines, 86.74 branches, and 95.71 functions. It covers secret redaction, sanitized endpoints, strict/additive state, route/profile/thinking detail, judge roles, native-host ownership, and oversized-map refusal.
+- The asset gate first failed at exactly 385,530 bytes. The audited 377 KiB ceiling leaves 518 bytes (0.13 percent); focused packaging and all documentation checks pass.
+- Installed Windows setup registered Codex, Claude, ZCode, and dashboard, reported no drift, and passed deterministic smoke 8/8. Exit 2 preserves attended activation rather than mutation failure.
+- Dense recall is `additive`; assurance is `strict`. The installed config names both Jina routes/profiles only through `JINA_API_KEY`, absent from YAML, argv, repository, Store evidence, and output.
+- Bounded calls applied `jina-embeddings-v3` at 1,024 dimensions and `jina-reranker-v3.5` to an exact two-document permutation.
+- Config validation degrades only for cold hosts and Codex hook trust, with the exact fresh-TUI/eight-hook/`--verify-activation` repair.
+- Prior reinstall refreshed the owned dashboard launcher, cleared stale Claude projection, and left `runtime_drift: null`; service is enabled, active, current, reachable, and open on loopback port 7810.
 
 ## exact-blocker
 
-- Windows local completion still needs attended Codex hook trust and fresh
-  Codex, Claude, and ZCode sessions before loaded/live claims. The owner will do
-  that when physically present; doctor cannot approve host trust.
-- The Linux machine can close Linux artifact, install, service, local-provider,
-  and present-host evidence only. It cannot relabel itself Windows evidence or
-  close absent-host, five-host Rule-4, signing, tracker, publication, tag, or
-  release gates.
-- AR-119 still lacks exact-candidate Rule-4 proof for all claimed hosts,
-  benchmark-valid completed outcomes, and current-artifact host/OS evidence.
-- AR-289 through AR-295 tracker mapping is blocked on explicit authorization.
-  A tag or release is not authorized and would still be premature.
+- Windows still needs attended Codex hook trust and fresh Codex, Claude, and ZCode sessions before loaded/live claims; doctor cannot grant host trust.
+- Linux can close only Linux artifact/install/service/local-provider/present-host evidence, not Windows, absent-host, five-host Rule-4, signing, tracker, tag, publication, or release gates.
+- AR-119 still lacks all-host exact-candidate Rule-4 proof, benchmark-valid outcomes, and current artifact/OS evidence.
+- AR-296 still needs exact installation and authenticated visual proof. AR-289 through AR-296 tracker mapping needs explicit authorization; tag/release remain premature and unauthorized.
 
 ## same-task-continuity
 
-Recheck remote `main`, the branch, and this capsule before publication. Keep
-exact command exits, artifact hashes, installed identity, host-written evidence,
-and Store correlation separate. Do not infer native delivery from model text,
-copied plugins, or Store rows alone. A Linux continuation is a new operator
-thread, so it must update canonical repository evidence before claiming gates.
+Recheck remote `main`, branch, and this capsule before publication. Keep command exits, artifact hashes, installed identity, host artifacts, and Store correlation separate; model text, copied plugins, and Store rows do not prove native delivery. Linux must update canonical evidence before claiming gates.
 
 ## next-bounded-work-package
 
-Paste this prompt into the Linux task after this branch has merged:
+Install the exact clean AR-296 checkpoint, refresh the Agency dashboard service, and reload the authenticated tab. Verify strict/additive state, Jina routes/profiles, Codex/Claude/ZCode model/thinking projection, blank-legacy-judge explanation, and Agency-staffing/native-host-spawn copy. Run fast gates, installed smoke, validation, doctor/status, and drift checks; record them before the final checkpoint and PR update.
+
+After that local package and branch merge, paste this prompt into the Linux task:
 
 ~~~text
 You are continuing Agency Runtime release verification on a Linux machine that
@@ -113,7 +80,8 @@ argv, YAML, logs, evidence, or commits.
 
 Install the exact current main candidate through the documented consumer path.
 Run agency setup for detected harnesses and the dashboard, preserving valid
-existing config. Set workforce.dense_recall_mode to additive. Configure explicit
+existing config. Set workforce.mode to strict and workforce.dense_recall_mode
+to additive. Configure explicit
 workforce.recall.embedding and workforce.recall.reranker routes for the verified
 local models. Use a native reranker only if its adapter is supported; otherwise
 use a structured text reranker. Run agency config validate, agency doctor --json,
@@ -127,6 +95,14 @@ version --json, then repeat the applicable Linux setup/config/doctor/status/
 smoke/dashboard-service checks. Exercise the local embedding and reranker
 through Agency's bounded provider seams and record only content-free provider,
 requested/actual model, dimensions/count, status, and latency receipts.
+
+Open the authenticated dashboard Settings view and verify that its effective
+inference topology matches the redacted config: strict assurance, additive
+recall, global and harness routes/defaults, local embedding/reranker profiles,
+models, thinking levels, capabilities, dimensions, sanitized endpoints, and
+credential indirection. Confirm that it labels critic/security-review routes as
+the active judge roles and states that Agency selects staffing while the native
+harness owns child spawning/execution. Capture no bearer or credential.
 
 Run the repository's named fast Python spine from AGENTS.md, focused Linux
 service/installer/config/provider tests, dashboard Node tests, full Ruff lint

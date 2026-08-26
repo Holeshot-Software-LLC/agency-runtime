@@ -8,6 +8,7 @@ tags: [release, changelog]
 related:
   - docs/RELEASE_CHECKLIST.md
   - docs/roadmap/issue-AR-290-end-to-end-guided-setup.md
+  - docs/roadmap/issue-AR-296-project-effective-inference-topology.md
   - docs/roadmap/README.md
   - docs/worklog/README.md
   - THIRD_PARTY_NOTICES.md
@@ -29,6 +30,12 @@ changes rather than duplicating every commit.
 
 ### Added
 
+- The authenticated dashboard Settings view now projects the effective named
+  inference topology: assurance and dense-recall modes, global and per-harness
+  routes/defaults, provider models, thinking levels, capabilities, embedding
+  dimensions, sanitized endpoints, and credential indirection. It labels the
+  legacy judge fallback honestly and states that Agency inference selects
+  staffing while the native harness owns child spawning and execution.
 - `agency setup` now composes the guarded provider wizard, config validation,
   bounded native-harness/dashboard install choices, doctor, and optional
   deterministic smoke into one resumable first-run journey. The dashboard

@@ -8,6 +8,7 @@ tags: [configuration, inference, profiles, security, cli, jina]
 related:
   - docs/roadmap/issue-AR-289-native-reranker-transports.md
   - docs/roadmap/issue-AR-290-end-to-end-guided-setup.md
+  - docs/roadmap/issue-AR-296-project-effective-inference-topology.md
   - docs/decisions/0006-config-first-redacted-configuration.md
   - docs/decisions/0153-adopt-per-stage-inference-profile-routes.md
   - docs/decisions/0171-separate-native-and-structured-reranker-transports.md
@@ -24,7 +25,7 @@ issue_id: AR-293
 priority: p0
 tracker_url: null
 depends_on: []
-blocks: []
+blocks: [AR-296]
 ---
 
 # AR-293: Allow safe inference profile config operations

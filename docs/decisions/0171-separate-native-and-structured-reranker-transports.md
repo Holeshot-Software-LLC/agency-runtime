@@ -8,6 +8,7 @@ tags: [workforce, reranking, retrieval, inference, providers]
 related:
   - docs/roadmap/issue-AR-289-native-reranker-transports.md
   - docs/roadmap/issue-AR-293-safe-inference-profile-config-operations.md
+  - docs/roadmap/issue-AR-296-project-effective-inference-topology.md
   - docs/roadmap/issue-AR-266-dense-hybrid-workforce-recall.md
   - docs/decisions/0153-adopt-per-stage-inference-profile-routes.md
   - docs/decisions/0164-use-dense-embeddings-only-for-workforce-recall.md

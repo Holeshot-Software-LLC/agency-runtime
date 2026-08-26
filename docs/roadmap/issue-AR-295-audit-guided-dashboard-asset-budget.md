@@ -7,6 +7,7 @@ updated: 2026-08-25
 tags: [testing, dashboard, packaging, release]
 related:
   - docs/roadmap/issue-AR-290-end-to-end-guided-setup.md
+  - docs/roadmap/issue-AR-296-project-effective-inference-topology.md
   - docs/roadmap/handoffs/issue-AR-290.md
   - docs/RELEASE_CHECKLIST.md
   - tests/test_release_packaging.py
@@ -22,7 +23,7 @@ issue_id: AR-295
 priority: p0
 tracker_url: null
 depends_on: [AR-290]
-blocks: []
+blocks: [AR-296]
 ---
 
 # AR-295: Audit guided dashboard asset budget

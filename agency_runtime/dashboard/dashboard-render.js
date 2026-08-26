@@ -4,6 +4,9 @@ const EXECUTION_HOSTS = ["codex", "claude", "openclaw", "hermes", "zcode"];
 const ROUTE_LAB_HOST_INVENTORY_LIMIT = EXECUTION_HOSTS.length * 2;
 const ROUTE_LAB_CAPABILITY_LIMIT = 64;
 const ROUTE_LAB_EVIDENCE_LIMIT = 8;
+const INFERENCE_PROFILE_LIMIT = 64;
+const INFERENCE_ROUTE_LIMIT = 128;
+const INFERENCE_HARNESS_LIMIT = 16;
 const ROUTE_LAB_TOKEN_PATTERN = /^[a-z0-9][a-z0-9._+-]{0,63}$/;
 const ROUTE_LAB_NATIVE_CAPABILITIES = new Set([
 	"code-execution",
@@ -863,6 +866,170 @@ export function createRenderer(core, config, callbacks) {
 				: "action";
 		overall.textContent = overallLabel;
 		overall.dataset.state = overallState;
+		return true;
+	}
+
+	function inferenceText(value, fallback = "—", limit = 160) {
+		if (typeof value !== "string") return fallback;
+		const normalized = value.trim().replace(/\s+/g, " ");
+		return normalized ? normalized.slice(0, limit) : fallback;
+	}
+
+	function inferenceEndpoint(value) {
+		if (typeof value !== "string" || !value.trim()) return "endpoint inherited/default";
+		try {
+			const parsed = new URL(value);
+			if (!new Set(["http:", "https:"]).has(parsed.protocol)) return "endpoint configured";
+			const path = parsed.pathname === "/" ? "" : parsed.pathname;
+			return `${parsed.protocol}//${parsed.host}${path}`.slice(0, 160);
+		} catch {
+			return "endpoint configured";
+		}
+	}
+
+	function inferenceListItem(title, details) {
+		const item = div("stack-item");
+		const copy = div("");
+		copy.append(strong("", title));
+		details.forEach((detail) => copy.append(small("", detail)));
+		item.append(copy);
+		return item;
+	}
+
+	function renderInferenceTopology() {
+		const status = byId("inference-topology-state");
+		if (!status) return false;
+		const snapshot = state.config || state.pendingConfig;
+		const effective = snapshot?.effective || snapshot?.config || {};
+		const inference = isRecord(effective.inference) ? effective.inference : {};
+		const workforce = isRecord(effective.workforce) ? effective.workforce : {};
+		const delegation = isRecord(effective.delegation) ? effective.delegation : {};
+		const profiles = isRecord(inference.profiles) ? inference.profiles : {};
+		const harnesses = isRecord(inference.harnesses) ? inference.harnesses : {};
+		const profileNames = Object.keys(profiles);
+		const harnessNames = Object.keys(harnesses);
+		let bounded = profileNames.length <= INFERENCE_PROFILE_LIMIT
+			&& harnessNames.length <= INFERENCE_HARNESS_LIMIT;
+		const routeRows = [];
+		const addRoutes = (scope, routeConfig) => {
+			if (!isRecord(routeConfig)) return;
+			const defaultProfile = inferenceText(routeConfig.default_profile, "", 128);
+			if (defaultProfile && routeRows.length < INFERENCE_ROUTE_LIMIT) {
+				routeRows.push([`${scope} default`, `unmatched stages → ${defaultProfile}`]);
+			}
+			const routes = isRecord(routeConfig.routes) ? routeConfig.routes : {};
+			const routeNames = Object.keys(routes);
+			if (routeRows.length + routeNames.length > INFERENCE_ROUTE_LIMIT) {
+				bounded = false;
+				return;
+			}
+			routeNames.sort().forEach((route) => {
+				routeRows.push([
+					scope,
+					`${inferenceText(route, "invalid route", 128)} → ${inferenceText(routes[route], "unresolved", 128)}`,
+				]);
+			});
+		};
+		addRoutes("global", inference);
+		if (bounded) {
+			harnessNames.sort().forEach((host) => {
+				addRoutes(`harness · ${inferenceText(host, "unknown", 32)}`, harnesses[host]);
+			});
+		}
+
+		const assurance = inferenceText(workforce.mode, "unknown", 32).toUpperCase();
+		const recall = inferenceText(workforce.dense_recall_mode, "unknown", 32).toUpperCase();
+		byId("inference-assurance-state").textContent = assurance;
+		byId("inference-recall-state").textContent = recall;
+		byId("inference-profile-count").textContent = bounded ? String(profileNames.length) : "BOUNDED";
+		byId("inference-route-count").textContent = bounded ? String(routeRows.length) : "BOUNDED";
+
+		const routeList = byId("inference-route-list");
+		routeList.replaceChildren();
+		if (!bounded) {
+			routeList.append(el(
+				"div",
+				"empty-compact",
+				"Projection withheld because the effective profile or route map exceeded the dashboard safety bound.",
+			));
+		} else if (!routeRows.length) {
+			routeList.append(el("div", "empty-compact", "No named route or default profile is configured."));
+		} else {
+			routeRows.forEach(([scope, route]) => {
+				routeList.append(inferenceListItem(scope, [route]));
+			});
+		}
+
+		const profileList = byId("inference-profile-list");
+		profileList.replaceChildren();
+		if (!bounded) {
+			profileList.append(el("div", "empty-compact", "Named profile projection is safely bounded."));
+		} else if (!profileNames.length) {
+			profileList.append(el("div", "empty-compact", "No named inference profiles are configured."));
+		} else {
+			profileNames.sort().forEach((name) => {
+				const profile = isRecord(profiles[name]) ? profiles[name] : {};
+				const adapter = inferenceText(profile.adapter, "adapter unset", 32);
+				const transport = inferenceText(profile.transport, "", 32);
+				const model = inferenceText(profile.model, "model unset", 128);
+				const thinking = inferenceText(profile.thinking_level, "model default", 32);
+				const capability = inferenceText(profile.capability_class, "text/default", 32);
+				const dimensions = Number.isInteger(profile.dimensions) && profile.dimensions > 0
+					? ` · ${profile.dimensions} dimensions`
+					: "";
+				let auth = "no API key configured";
+				if (typeof profile.api_key_env === "string" && profile.api_key_env.trim()) {
+					auth = `auth env ${inferenceText(profile.api_key_env, "", 128)}`;
+				} else if (profile.api_key) auth = "direct key present (redacted)";
+				else if (adapter === "cli") auth = "host subscription auth";
+				profileList.append(inferenceListItem(
+					inferenceText(name, "unnamed profile", 128),
+					[
+						`${adapter}${transport ? `/${transport}` : ""} · ${model}`,
+						`thinking ${thinking} · capability ${capability}${dimensions}`,
+						`${inferenceEndpoint(profile.base_url)} · ${auth}`,
+					],
+				));
+			});
+		}
+
+		const judgeModel = inferenceText(effective.judge?.model, "", 128);
+		const namedAuthority = bounded && profileNames.length > 0 && routeRows.length > 0;
+		byId("inference-legacy-note").textContent = judgeModel
+			? `Legacy judge fallback is configured as ${judgeModel}; named profile resolution takes precedence when a route resolves. Critic and security-review routes are the active named judge roles.`
+			: namedAuthority
+				? "Legacy judge fallback is not configured; the named profiles and routes shown above own current stage inference. Critic and security-review routes are the active judge roles."
+				: "No named profile route or legacy judge fallback is configured; the ordered provider chain is the current fallback.";
+
+		const mode = inferenceText(delegation.mode, "unknown", 32);
+		let strength = "delegation strength is unavailable";
+		if (mode === "observe") strength = "all plans remain optional";
+		else if (mode === "strong") strength = "every accepted plan is strongly preferred";
+		else if (mode === "prefer") {
+			const preferred = Number(delegation.preferred_min_units);
+			const strongUnits = Number(delegation.strongly_preferred_min_units);
+			const confidence = Number(delegation.strongly_preferred_min_confidence);
+			strength = Number.isFinite(preferred) && Number.isFinite(strongUnits)
+				&& Number.isFinite(confidence)
+				? `preferred from ${preferred} work units; strongly preferred from ${strongUnits} at ${Math.round(confidence * 100)}% confidence`
+				: "threshold-based native delegation guidance";
+		}
+		const childBudget = Number(delegation.child_inference_budget);
+		const childConcurrency = Number(delegation.child_inference_concurrency);
+		const childTtl = Number(delegation.child_cache_ttl_seconds);
+		const childBounds = [childBudget, childConcurrency, childTtl].every(Number.isFinite)
+			? ` Child inference per parent trace: budget ${childBudget}, concurrency ${childConcurrency}, cache ${childTtl}s.`
+			: " Child inference bounds are unavailable.";
+		byId("inference-delegation-note").textContent = `Agency inference owns staffing; the native harness owns child spawning and execution. Delegation mode ${mode}: ${strength}.${childBounds}`;
+
+		status.textContent = !snapshot
+			? "CHECKING"
+			: !bounded
+				? "BOUNDS EXCEEDED"
+				: namedAuthority
+					? `${profileNames.length} PROFILES · ${routeRows.length} ROUTES`
+					: "FALLBACK ONLY";
+		status.dataset.state = !snapshot ? "unknown" : (bounded ? "ready" : "action");
 		return true;
 	}
 
@@ -2189,6 +2356,7 @@ export function createRenderer(core, config, callbacks) {
 
 	function renderActiveView() {
 		renderSetup();
+		renderInferenceTopology();
 		renderRouteHosts();
 		if (state.activeView === "overview" && state.overview) renderOverview();
 		else if (state.activeView === "evidence") renderEvidence(activeEvidenceKind());
@@ -2199,6 +2367,7 @@ export function createRenderer(core, config, callbacks) {
 
 	function renderActiveControlView() {
 		renderSetup();
+		renderInferenceTopology();
 		renderRouteHosts();
 		if (state.activeView === "overview" && state.overview) renderOverview();
 		else if (state.activeView === "hosts") renderHosts();
@@ -2301,6 +2470,7 @@ export function createRenderer(core, config, callbacks) {
 		emptyRow,
 		renderHosts,
 		renderSetup,
+		renderInferenceTopology,
 		renderRouteHosts,
 		renderRoster,
 		renderWorkforce,

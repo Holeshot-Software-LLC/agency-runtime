@@ -627,6 +627,14 @@ Precedence: harness routes → harness default → global routes → global defa
 → the legacy provider chain. `AGENCY_INFERENCE_HARNESS` naming a configured
 section overrides harness selection for terminal testing.
 
+Assurance, recall, and delegation are deliberately separate controls:
+
+| Control | What it owns | What it does not own |
+|---|---|---|
+| `workforce.mode` | Staffing decomposition and recruiter/critic assurance (`strict` exercises the highest-assurance path) | Embedding/reranker activation or native child spawning |
+| `workforce.dense_recall_mode` | Whether validated learned recall stays `shadow` evidence or may add discoveries in `additive` mode | Final specialist selection; inference and the verifier still decide |
+| `delegation.mode` | Optional/preferred/strongly-preferred guidance for an accepted plan plus bounded child-routing correction | Specialist choice or child execution; Agency inference selects staffing and the native harness owns spawning/execution |
+
 **Hybrid workforce recall.** Learned recall is opt-in at the provider boundary:
 both recall routes must be mapped explicitly, and neither route inherits a
 default text profile. `shadow` records bounded recall evidence without changing
@@ -1012,6 +1020,16 @@ editor or copy attended commands such as `agency setup` and
 `agency smoke --all --json`; the browser does not install host integrations,
 invoke a shell, settle native trust, or turn `CORE READY` into a live-proof
 claim.
+
+Settings also projects the redacted effective inference topology instead of
+making operators decode the raw JSON: assurance and recall modes, global and
+harness-scoped route/default bindings, and each named profile's adapter,
+transport, model, thinking level, capability, embedding dimensions, sanitized
+endpoint, and credential environment-variable name. Direct keys remain
+write-only and render only as “present (redacted).” The panel explains when a
+blank legacy judge is expected and keeps the authority boundary explicit:
+Agency inference owns staffing; the native harness owns child spawn and
+execution.
 
 `agency dashboard service open` is an owner convenience operation: it ensures
 an Agency-owned service is installed and running before opening its loopback
