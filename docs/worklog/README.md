@@ -1276,6 +1276,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `0accd39e` | 2026-08-26 | fix(codex): bind exact host artifact role shape | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-309](../roadmap/issue-AR-309-restore-codex-0149-activation-proof.md), [AR-311](../roadmap/issue-AR-311-inject-exact-codex-canary-native-plan.md), [AR-312](../roadmap/issue-AR-312-validate-explicit-production-config.md), [AR-313](../roadmap/issue-AR-313-trust-normal-umask-codex-artifacts.md), [AR-314](../roadmap/issue-AR-314-bind-codex-default-canary-role.md) | [detail](2026-08-26-0accd39e-bind-exact-host-artifact-role-shape.md) |
 | `e718dca0` | 2026-08-26 | docs(ar297): record exact Codex staffing abstention | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `4b346af8` | 2026-08-26 | fix(ar315): project Codex canary install home | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-309](../roadmap/issue-AR-309-restore-codex-0149-activation-proof.md), [AR-315](../roadmap/issue-AR-315-project-codex-canary-install-home.md) | [detail](2026-08-26-4b346af8-project-codex-canary-install-home.md) |
+| `2fa5013f` | 2026-08-26 | docs(ar297): checkpoint exact Codex child judge blocker | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-315](../roadmap/issue-AR-315-project-codex-canary-install-home.md) | [detail](2026-08-26-2fa5013f-checkpoint-exact-codex-child-judge-blocker.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
