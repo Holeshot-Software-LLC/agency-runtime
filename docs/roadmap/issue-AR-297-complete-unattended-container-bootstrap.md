@@ -29,6 +29,7 @@ related:
   - docs/roadmap/issue-AR-313-trust-normal-umask-codex-artifacts.md
   - docs/roadmap/issue-AR-314-bind-codex-default-canary-role.md
   - docs/roadmap/issue-AR-315-project-codex-canary-install-home.md
+  - docs/roadmap/issue-AR-316-size-ollama-selector-judge-context.md
   - docs/decisions/0174-admit-local-ollama-canary-child-judges.md
   - docs/decisions/0175-batch-complete-embedding-input-sets.md
   - docs/decisions/0176-use-owner-runtime-temp-for-nonroot-user-services.md
@@ -50,7 +51,7 @@ epic: host-integrations
 issue_id: AR-297
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
-depends_on: [AR-300, AR-301, AR-302, AR-303, AR-304, AR-305, AR-306, AR-307, AR-308, AR-309, AR-310, AR-311, AR-313, AR-314, AR-315]
+depends_on: [AR-300, AR-301, AR-302, AR-303, AR-304, AR-305, AR-306, AR-307, AR-308, AR-309, AR-310, AR-311, AR-313, AR-314, AR-315, AR-316]
 blocks: []
 ---
 
@@ -739,3 +740,9 @@ attestation. Receipt/Store/parent/child hashes are `e043a745...ead5`,
 `7e8a6f9f...9706`, `d74fa302...43a4`, and `a54138e7...0c53`. The next bounded
 step diagnoses that exact child-judge route, then retries a fresh unchanged
 container with the supported 600-second activation timeout.
+
+AR-316 records the completed route diagnosis: the selector protocol hardcodes
+`num_ctx=8192`, so Ollama truncates C2's 19,520-token complete catalog to 8,191
+despite the installed model's 131,072-token capability. The same-model,
+same-endpoint 32,768-token repair is waiting for the required operator approval;
+no judge-route parameter has been changed.

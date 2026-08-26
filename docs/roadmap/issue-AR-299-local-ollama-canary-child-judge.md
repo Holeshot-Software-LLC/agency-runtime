@@ -7,6 +7,7 @@ updated: 2026-08-26
 tags: [canary, inference, ollama, providers, security, evidence]
 related:
   - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
+  - docs/roadmap/issue-AR-316-size-ollama-selector-judge-context.md
   - docs/roadmap/handoffs/issue-AR-297.md
   - docs/decisions/0160-pin-child-judge-providers-per-canary-harness.md
   - docs/decisions/0174-admit-local-ollama-canary-child-judges.md
@@ -21,7 +22,7 @@ issue_id: AR-299
 priority: p0
 tracker_url: null
 depends_on: []
-blocks: []
+blocks: [AR-316]
 ---
 
 # AR-299: Allow a local Ollama canary child judge

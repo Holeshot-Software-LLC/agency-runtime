@@ -7,6 +7,7 @@ updated: 2026-08-26
 tags: [canary, inference, ollama, providers, security, evidence]
 related:
   - docs/roadmap/issue-AR-299-local-ollama-canary-child-judge.md
+  - docs/roadmap/issue-AR-316-size-ollama-selector-judge-context.md
   - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
   - docs/roadmap/handoffs/issue-AR-297.md
   - docs/decisions/0160-pin-child-judge-providers-per-canary-harness.md

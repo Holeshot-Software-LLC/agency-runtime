@@ -25,6 +25,7 @@ related:
   - docs/roadmap/issue-AR-313-trust-normal-umask-codex-artifacts.md
   - docs/roadmap/issue-AR-314-bind-codex-default-canary-role.md
   - docs/roadmap/issue-AR-315-project-codex-canary-install-home.md
+  - docs/roadmap/issue-AR-316-size-ollama-selector-judge-context.md
   - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
   - docs/decisions/0174-admit-local-ollama-canary-child-judges.md
   - docs/decisions/0175-batch-complete-embedding-input-sets.md
@@ -41,8 +42,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-297
 branch: codex/ar297-production-container-live-evidence
-evidence_commit: 4b346af8dae605e6187b292bd46664dad4ab98df
-minimum_ledger_commit: 3e42598da5eaa5b58d0bb0771cea6f90719d48d1
+evidence_commit: 2fa5013fc96174195a21fd998571bb6cb20e20f5
+minimum_ledger_commit: 260bd197586d3c9c9334f364aca4e86d879e9c29
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 ---
@@ -54,10 +55,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Work remains in dedicated worktree `/tmp/agency-runtime-ar297.WQUbF2` on
   `codex/ar297-production-container-live-evidence`, based on `origin/main`
   `0a23983a`. Never use the shared checkout.
-- Last clean recovery pair: AR-315 `4b346af8` and worklog `3e42598d`. This
-  checkpoint captures exact-candidate attempts C1/C2; its following worklog
-  commit must record the exact SHA before another live run. Telemetry is 36.1
-  percent remaining.
+- Last clean recovery pair: C1/C2 evidence `2fa5013f` and worklog `260bd197`.
+  This checkpoint captures AR-316; its following worklog commit must record the
+  exact SHA before another live run. Telemetry is 6.2 percent remaining.
 - Linux remains **NO-GO**. AR-297/#335 stay open. Tracker writes, push, PR,
   merge, tag, signing, publication, release, and hosted workflow actions are
   not authorized.
@@ -96,15 +96,17 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   already failed unavailable after 26,341 ms, so only the 563-byte identity is
   delivered. Store/parent/child hashes are `7e8a6f9f...9706`,
   `d74fa302...43a4`, and `a54138e7...0c53`.
-- Diagnose the exact child-judge route read-only, then use one fresh unchanged
-  container with the supported 600-second activation timeout. Require one v6
+- AR-316 proves selector `num_ctx=8192` truncated C2's 19,520-token complete
+  catalog to 8,191. Wait for operator approval before changing the existing
+  Mistral route to 32,768, then use one fresh container with the supported
+  600-second activation timeout. Require one v6
   `code-reviewer` artifact, consumed receipt, current header, accepted first
   finalization, and no-bypass attestation in one invocation.
 - No later ordinary Codex, Claude, Hermes, or OpenClaw process has a current
   successful Agency-turn receipt on this source.
 - Refresh the host install/dashboard and named repository gates for the exact
   candidate, then remove both old and new AR-297 proof containers.
-- AR-299 through AR-315 tracker parity, hosted cross-OS artifacts, signing,
+- AR-299 through AR-316 tracker parity, hosted cross-OS artifacts, signing,
   push, PR, merge, tag, publication, release, and exhaustive workflow dispatch
   remain unauthorized.
 
