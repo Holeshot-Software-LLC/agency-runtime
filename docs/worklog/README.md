@@ -1255,6 +1255,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `14a4346c` | 2026-08-26 | fix(workforce): bound full-roster embedding recall | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-303](../roadmap/issue-AR-303-bound-full-roster-embedding-requests.md), [AR-304](../roadmap/issue-AR-304-preserve-recruiter-critic-validation-diagnostics.md) | null |
 | `dbd3eda9` | 2026-08-26 | fix(workforce): reserve embedding response nodes | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-303](../roadmap/issue-AR-303-bound-full-roster-embedding-requests.md) | null |
 | `5acfbf41` | 2026-08-26 | fix(workforce): clarify recruiter repair contracts | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-304](../roadmap/issue-AR-304-preserve-recruiter-critic-validation-diagnostics.md) | null |
+| `e10284ec` | 2026-08-26 | docs(ar297): record bounded recall live verdict | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-303](../roadmap/issue-AR-303-bound-full-roster-embedding-requests.md), [AR-304](../roadmap/issue-AR-304-preserve-recruiter-critic-validation-diagnostics.md) | [ADR-0175](../decisions/0175-batch-complete-embedding-input-sets.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
