@@ -1242,6 +1242,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `80d89880` | 2026-08-25 | test(ar295): audit guided dashboard asset budget | [AR-295](../roadmap/issue-AR-295-audit-guided-dashboard-asset-budget.md), [AR-290](../roadmap/issue-AR-290-end-to-end-guided-setup.md) | [detail](2026-08-25-80d89880-audit-guided-dashboard-asset-budget.md) |
 | `05291b0e` | 2026-08-25 | feat(ar296): project effective inference topology | [AR-296](../roadmap/issue-AR-296-project-effective-inference-topology.md), [AR-290](../roadmap/issue-AR-290-end-to-end-guided-setup.md) | [detail](2026-08-25-05291b0e-project-effective-inference-topology.md) |
 | `0a5bdb06` | 2026-08-25 | docs(ar296): record installed inference topology | [AR-296](../roadmap/issue-AR-296-project-effective-inference-topology.md), [AR-290](../roadmap/issue-AR-290-end-to-end-guided-setup.md) | [detail](2026-08-25-0a5bdb06-record-installed-inference-topology.md) |
+| `3023f055` | 2026-08-25 | feat(ar297): complete unattended bootstrap and prompt visibility | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-298](../roadmap/issue-AR-298-expose-complete-workforce-prompts.md) | [detail](2026-08-25-3023f055-complete-unattended-bootstrap-and-prompt-visibility.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
