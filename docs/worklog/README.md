@@ -1254,6 +1254,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `05c9485c` | 2026-08-26 | docs(ar297): record terminal Linux no-go | [AR-290](../roadmap/issue-AR-290-end-to-end-guided-setup.md), [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-298](../roadmap/issue-AR-298-expose-complete-workforce-prompts.md), [AR-299](../roadmap/issue-AR-299-local-ollama-canary-child-judge.md), [AR-300](../roadmap/issue-AR-300-bind-explicit-install-config-to-managed-canary.md), [AR-301](../roadmap/issue-AR-301-private-systemd-dashboard-namespace.md), [AR-302](../roadmap/issue-AR-302-owner-private-local-verification.md) | null |
 | `14a4346c` | 2026-08-26 | fix(workforce): bound full-roster embedding recall | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-303](../roadmap/issue-AR-303-bound-full-roster-embedding-requests.md), [AR-304](../roadmap/issue-AR-304-preserve-recruiter-critic-validation-diagnostics.md) | null |
 | `dbd3eda9` | 2026-08-26 | fix(workforce): reserve embedding response nodes | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-303](../roadmap/issue-AR-303-bound-full-roster-embedding-requests.md) | null |
+| `5acfbf41` | 2026-08-26 | fix(workforce): clarify recruiter repair contracts | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-304](../roadmap/issue-AR-304-preserve-recruiter-critic-validation-diagnostics.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
