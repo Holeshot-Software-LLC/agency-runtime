@@ -14,6 +14,7 @@ related:
   - docs/roadmap/handoffs/issue-AR-297.md
   - docs/roadmap/issue-AR-299-local-ollama-canary-child-judge.md
   - docs/roadmap/issue-AR-300-bind-explicit-install-config-to-managed-canary.md
+  - docs/roadmap/issue-AR-301-private-systemd-dashboard-namespace.md
   - docs/decisions/0174-admit-local-ollama-canary-child-judges.md
   - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
   - agency_runtime/cli/install_commands.py
@@ -30,7 +31,7 @@ epic: host-integrations
 issue_id: AR-297
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
-depends_on: [AR-300]
+depends_on: [AR-300, AR-301]
 blocks: []
 ---
 
@@ -203,5 +204,37 @@ bundle and current managed policy, then exited 1 before inference with
 `live_attempted=false`: the canary reopened its Store at the absent default
 config path and could not resolve the explicit config's local judge pin. AR-300
 threads both exact identities across that internal boundary and passes 15
-focused warning-strict regressions plus Ruff and formatting. A rebuilt clean
-retry remains required; no bypass or default-path copy was used.
+focused warning-strict regressions plus Ruff and formatting. No bypass or
+default-path copy was used.
+
+The rebuilt exact candidate is commit
+`987cee8ff01a4a16780eac15bb8120f828d4193d`. Its wheel SHA-256 is
+`17a3bc0053a882b22ff72d8b3a2ebcd23ef602c2b5c034e7a05e8ae10ff929f1`
+and its sdist SHA-256 is
+`6551c43fc6fc7dfe7d8b9318e5b7605d1ecc8e214490eb7d0d2af001ffa9adb5`;
+build, strict Twine, and independent verification each exit 0 under owner-private
+umask 0077. The documented build under ambient umask 0002 fails the independent
+archive-permission contract and remains an explicit usability gate.
+
+Clean production installs exit 0 for Claude Code, native-UID Hermes, and
+OpenClaw. OpenClaw loads all 13 hooks. Two rebuilt Codex attempts reach the
+exact managed canary but exit 1 at `staffing_critic_rejected` after the additive
+embedding route reports invalid inputs. Store traces
+`01a03e2b-01ba-7c02-962f-155b0fd8b3b8` and
+`01a03e2c-f2cc-7f83-93f7-42bfae07df79` contain no route, specialist, child,
+finalization, or attestation proof. This proves AR-300 crossed the prior config
+boundary, but it does not satisfy AR-297's unattended Codex acceptance.
+
+Later ordinary invocations also remain incomplete: Claude times out with Store
+trace `5e7cea73-3db3-400b-b083-0a9687180693`; Hermes rejects Qwen 14B before
+inference because its declared context is below Hermes's 64K minimum; and
+OpenClaw loads Agency but times out in `before_agent_run` with trace
+`9b61694c-c562-498a-ab50-25aa2b5fcabd`. The owner approved already-local
+Mistral 24B for one Hermes compatibility run. None of these partial states is
+labelled a successful Agency turn.
+
+The exact wheel and four native bundles are installed on the Linux host. Codex
+correctly remains activation-required. The owner-scoped dashboard service rolls
+back because systemd `PrivateTmp=true` remaps trusted root ancestors to UID
+65534 and the configuration validator fails closed. AR-301 records that product
+defect; foreground worker readiness does not substitute for service proof.

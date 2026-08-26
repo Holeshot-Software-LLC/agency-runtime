@@ -80,3 +80,13 @@ Reject credentialless non-loopback HTTP endpoints before inference.
       the actual local model that answered.
 - [ ] A same-repository tracker issue is created and linked after explicit
       authorization.
+
+## Verification evidence
+
+The rebuilt exact Codex canary resolves the explicit configuration and proceeds
+past the missing-pin failure that created this issue, but both bounded attempts
+exit at staffing critique before a child is selected. No requested/actual child
+judge receipt exists, so the clean live acceptance item remains open. Direct
+bounded route probing separately proves `mistral-small3.2:24b` answers the
+required schema with thinking disabled; that transport receipt is not
+substituted for a completed canary child receipt.

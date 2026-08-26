@@ -172,3 +172,11 @@ with installed, owned, enabled, active, current-manifest, and reachable all
 true. `workforce.dense_recall_mode` is `additive`; bounded live calls applied
 `jina-embeddings-v3` at 1,024 dimensions and `jina-reranker-v3.5` over two
 documents without persisting or displaying the credential.
+
+The separate AR-297 Linux candidate installs the exact wheel and native
+Hermes, OpenClaw, Codex, and Claude bundles on the current host without using
+Jina. Codex remains truthfully activation-required. The dashboard service
+transaction rolls back because its normal non-root systemd namespace remaps
+trusted root ancestors to UID 65534 under `PrivateTmp=true`; AR-301 owns that
+new defect. This later scoped evidence does not revise AR-290's completed setup
+feature or relabel its earlier Windows/Jina evidence as current Linux proof.

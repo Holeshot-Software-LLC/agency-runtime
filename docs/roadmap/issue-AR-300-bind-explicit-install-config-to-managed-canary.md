@@ -87,3 +87,13 @@ that pair to the Store while preserving `require_existing_current`.
       records the pinned requested/actual local judge identities.
 - [ ] A same-repository tracker issue is created and linked after explicit
       authorization.
+
+## Verification evidence
+
+The rebuilt candidate reaches live managed-canary staffing twice with the exact
+configuration SHA-256
+`cb569bf027133305df594d8ff029dffb8d38f545e960517d4431dfbf1b2bc2e1`,
+instead of repeating the prior absent-default-config failure. Both attempts
+then exit 1 at `staffing_critic_rejected`; neither records the required child
+judge or persistent attestation. This is positive evidence for the bounded
+config-forwarding repair but not completion of the container acceptance item.
