@@ -14,6 +14,7 @@ related:
   - docs/roadmap/issue-AR-305-normalize-planner-novelty-absence.md
   - docs/roadmap/issue-AR-306-bind-strict-critic-semantics.md
   - docs/roadmap/issue-AR-307-project-canary-inference-credentials.md
+  - docs/roadmap/issue-AR-308-bind-activation-canary-delegation.md
   - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
   - docs/decisions/0178-project-config-declared-credentials-into-tool-reduced-canaries.md
   - docs/roadmap/README.md
@@ -159,6 +160,11 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
+- The exact managed Codex activation canary now binds its inference-selected
+  specialist to native `delegate` delivery before deterministic verification
+  and strict criticism. Ordinary staffing retains `load`, cached inference
+  selection is not mutated, and invalid delivery constraints fail before any
+  provider call.
 - `agency config set` can now create validated named inference profiles and
   publish the complete dotted route map used by embedding and reranker stages.
   Direct profile credentials use the same hidden-input, write-only, redacted

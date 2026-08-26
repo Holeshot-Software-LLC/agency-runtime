@@ -104,6 +104,7 @@ MAX_TYPED_RECALL_CANDIDATES_PER_UNIT = 24
 MAX_HYBRID_DETAIL_CARD_BYTES = 256 * 1024
 _PLANNING_CAPABILITIES = tuple(sorted(CORE_CAPABILITY_IDS))
 _WORKFORCE_ROUTING_POLICY_VERSION = "1"
+_REQUIRED_DELIVERIES = frozenset({"delegate", "load"})
 _CACHE_CREDENTIAL_KEY = secrets.token_bytes(32)
 _EXPLICIT_SINGLE_WORK_UNIT = re.compile(
     r"\b(?:exactly\s+one|one|single)\s+(?:indivisible\s+)?"
@@ -125,6 +126,31 @@ _NOMINATION_FAILURE_CODES = frozenset(
         "staff_without_safe_team",
     }
 )
+
+
+def _required_delivery_contract(value: object) -> str | None:
+    if value is None:
+        return None
+    if not isinstance(value, str) or value not in _REQUIRED_DELIVERIES:
+        raise ValueError("required_delivery must be 'delegate', 'load', or None")
+    return value
+
+
+def _with_required_delivery(
+    proposal: RecruiterProposal,
+    required_delivery: str | None,
+) -> RecruiterProposal:
+    if required_delivery is None:
+        return proposal
+    # Inference still owns the selected identities and their ranking. A caller
+    # with an exact execution contract may bind only the delivery mechanism
+    # before the deterministic verifier and strict critic run.
+    return replace(
+        proposal,
+        units=tuple(replace(unit, delivery=required_delivery) for unit in proposal.units),
+    )
+
+
 RECRUITER_VALIDATION_REASON_CODES = frozenset(
     {
         "recruiter_candidate_classification_conflict",
@@ -3304,6 +3330,7 @@ def plan_and_staff_workforce(
     routing_context_fingerprint: str = "",
     max_planned_units: int | None = None,
     required_planned_artifact_kind: str | None = None,
+    required_delivery: str | None = None,
     turn_routing_context: Mapping[str, Any] | None = None,
 ) -> WorkforceRoutingOutcome:
     """Plan, recruit, and verify one request without letting inference activate workers."""
@@ -3314,6 +3341,7 @@ def plan_and_staff_workforce(
     # for exercising inference through the whole stack without a live CLI.
     if invoker is None:
         invoker = invoke_structured_provider_result
+    delivery_contract = _required_delivery_contract(required_delivery)
     ask = _safe_request(request)
     projected_turn_context = project_turn_routing_context(turn_routing_context)
     if projected_turn_context is None:
@@ -3461,7 +3489,7 @@ def plan_and_staff_workforce(
             staffing=rejected_staffing,
             cache_hits=cache_hits,
         )
-    proposal = parsed_proposal
+    proposal = _with_required_delivery(parsed_proposal, delivery_contract)
     staffing = verify_staffing(
         plan,
         proposal,

@@ -21,6 +21,7 @@ related:
   - docs/roadmap/issue-AR-305-normalize-planner-novelty-absence.md
   - docs/roadmap/issue-AR-306-bind-strict-critic-semantics.md
   - docs/roadmap/issue-AR-307-project-canary-inference-credentials.md
+  - docs/roadmap/issue-AR-308-bind-activation-canary-delegation.md
   - docs/decisions/0174-admit-local-ollama-canary-child-judges.md
   - docs/decisions/0175-batch-complete-embedding-input-sets.md
   - docs/decisions/0176-use-owner-runtime-temp-for-nonroot-user-services.md
@@ -41,7 +42,7 @@ epic: host-integrations
 issue_id: AR-297
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
-depends_on: [AR-300, AR-301, AR-302, AR-303, AR-304, AR-305, AR-306, AR-307]
+depends_on: [AR-300, AR-301, AR-302, AR-303, AR-304, AR-305, AR-306, AR-307, AR-308]
 blocks: []
 ---
 

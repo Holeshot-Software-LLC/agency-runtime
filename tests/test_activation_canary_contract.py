@@ -280,6 +280,7 @@ def test_activation_canary_uses_inference_owned_selection(
     assert calls == [_task()]
     assert planner_options[0]["max_planned_units"] == 1
     assert planner_options[0]["required_planned_artifact_kind"] == "review-report"
+    assert planner_options[0]["required_delivery"] == "delegate"
     assert result["source"] == CODEX_ACTIVATION_CANARY_ROUTE_SOURCE
     assert result["selected_ids"] == ["code-reviewer"]
     assert result["inference_required"] is True

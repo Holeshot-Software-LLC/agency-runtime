@@ -17,6 +17,7 @@ related:
   - docs/roadmap/issue-AR-305-normalize-planner-novelty-absence.md
   - docs/roadmap/issue-AR-306-bind-strict-critic-semantics.md
   - docs/roadmap/issue-AR-307-project-canary-inference-credentials.md
+  - docs/roadmap/issue-AR-308-bind-activation-canary-delegation.md
   - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
   - docs/decisions/0174-admit-local-ollama-canary-child-judges.md
   - docs/decisions/0175-batch-complete-embedding-input-sets.md
@@ -88,9 +89,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 
 ## exact-blocker
 
-- Codex still lacks an attestation after the fixed embedding boundary. Determine
-  the exact restricted staffing rejection without weakening strict assurance;
-  any model/route/config choice still requires the owner interview.
+- Codex still lacks an attestation after the fixed embedding boundary. Exact
+  diagnostic `b6dc0aa...bc6e8` proves accepted inference selection was cleared
+  only because deterministic staffing emitted `load` while the canary requires
+  `delegate`. AR-308 binds that execution-only contract; live proof is pending.
 - No later ordinary Codex, Claude, Hermes, or OpenClaw process has a current
   successful Agency-turn receipt on this source.
 - Refresh the host install/dashboard and named repository gates for the exact
@@ -111,8 +113,8 @@ labelled. The secret-safe helper remains
 
 ## next-bounded-work-package
 
-1. Run one exact restricted-route diagnostic, then either fix the bounded
-   canary/card contract or interview the owner before any topology change.
+1. Checkpoint AR-308, rebuild the exact candidate, and run one clean no-bypass
+   Codex managed-policy installation/canary.
 2. Run later ordinary Conveyor-equivalent Codex, Claude, Hermes, and OpenClaw
    processes and correlate Store plus native artifacts.
 3. Refresh exact host/dashboard and repository gates, update canonical records,

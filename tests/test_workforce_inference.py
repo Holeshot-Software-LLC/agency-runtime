@@ -404,6 +404,75 @@ def test_balanced_mode_always_uses_inference_for_planning_and_selection() -> Non
     assert all(item.model_group == "router-alias" for item in outcome.attempts)
     assert all(item.actual_model == "gpt-5.6-mini" for item in outcome.attempts)
     assert outcome.staffing.units[0].selected == ("technical-analyst",)
+    assert outcome.proposal.units[0].delivery == "load"
+    assert outcome.staffing.units[0].delivery == "load"
+
+
+def test_required_delivery_binds_execution_without_changing_inference_selection() -> None:
+    snapshot = _snapshot(_contract("technical-analyst"))
+    calls = 0
+    responses = iter(
+        [
+            _result(_compact_plan_document()),
+            _result(_nomination_document()),
+        ]
+    )
+
+    def invoke(*_args: Any, **_kwargs: Any) -> StructuredProviderResult:
+        nonlocal calls
+        calls += 1
+        return next(responses)
+
+    outcome = plan_and_staff_workforce(
+        "Analyze this implementation safely.",
+        snapshot,
+        config=_config(),
+        context=_context(),
+        invoker=invoke,
+        required_delivery="delegate",
+    )
+    ordinary = plan_and_staff_workforce(
+        "Analyze this implementation safely.",
+        snapshot,
+        config=_config(),
+        context=_context(),
+        invoker=invoke,
+    )
+
+    assert outcome.accepted
+    assert outcome.proposal.units[0].selected == ("technical-analyst",)
+    assert outcome.proposal.units[0].delivery == "delegate"
+    assert outcome.staffing.units[0].selected == ("technical-analyst",)
+    assert outcome.staffing.units[0].delivery == "delegate"
+    assert ordinary.accepted
+    assert ordinary.cache_hits == ("plan", "recruiter")
+    assert ordinary.proposal.units[0].delivery == "load"
+    assert ordinary.staffing.units[0].delivery == "load"
+    assert calls == 2
+
+
+def test_invalid_required_delivery_fails_before_provider_invocation() -> None:
+    calls = 0
+
+    def invoke(*_args: Any, **_kwargs: Any) -> StructuredProviderResult:
+        nonlocal calls
+        calls += 1
+        return _result(_compact_plan_document())
+
+    with pytest.raises(
+        ValueError,
+        match="required_delivery must be 'delegate', 'load', or None",
+    ):
+        plan_and_staff_workforce(
+            "Analyze this implementation safely.",
+            _snapshot(_contract("technical-analyst")),
+            config=_config(),
+            context=_context(),
+            invoker=invoke,
+            required_delivery=[],  # type: ignore[arg-type]
+        )
+
+    assert calls == 0
 
 
 def test_explicit_indivisible_request_bounds_planner_prompt_schema_and_parser() -> None:
