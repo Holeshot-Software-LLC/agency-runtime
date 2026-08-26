@@ -64,6 +64,14 @@ def test_codex_hook_trust_diagnostic_preserves_the_manual_security_boundary() ->
     )
     assert trusted is not None and trusted.status == "pass"
 
+    managed = doctor._codex_hook_trust_check(
+        "true",
+        {"registered": True, "hook_trust_status": "managed"},
+    )
+    assert managed is not None and managed.status == "pass"
+    assert "managed system policy" in managed.message
+    assert "Activation proof is reported separately" in managed.detail
+
     untrusted = doctor._codex_hook_trust_check(
         "true",
         {
@@ -83,7 +91,7 @@ def test_codex_hook_trust_diagnostic_preserves_the_manual_security_boundary() ->
 
     unverified = doctor._codex_hook_trust_check("true", {"registered": True})
     assert unverified is not None and unverified.status == "warn"
-    assert "never grant hook trust automatically" in unverified.detail
+    assert "ordinary plugin installation does not" in unverified.detail
 
 
 def test_http_json_probe_rejects_oversized_and_non_object_payloads(

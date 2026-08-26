@@ -627,6 +627,40 @@ def test_autonomous_current_profile_uses_supported_bypass_without_trust_inspecti
     assert result["persistent_trust_changed"] is False
 
 
+def test_managed_policy_current_profile_uses_normal_invocation_without_plugin_trust_probe(
+    tmp_path: Path,
+) -> None:
+    calls: list[dict[str, Any]] = []
+
+    def runner(argv: list[str], **kwargs: Any) -> BoundedProcessResult:
+        calls.append({"argv": argv, **kwargs})
+        return BoundedProcessResult(1, "", "")
+
+    backend = SafeCodexCanaryBackend(
+        executable="codex",
+        db_path=tmp_path / "agency.db",
+        timeout=1,
+        marketplace=tmp_path,
+        auth_source=tmp_path / "auth.json",
+        process_runner=runner,
+        source_env={},
+        profile_scope="current-profile",
+        require_existing_store=True,
+        require_exact_activation_rollout=True,
+        hook_trust_inspector=lambda *_args, **_kwargs: pytest.fail(
+            "managed hooks are policy-trusted and do not use the plugin trust probe"
+        ),
+        trust_mode="managed_policy",
+    )
+
+    result = backend.execute(task="canary", workdir=str(tmp_path))
+
+    assert "--dangerously-bypass-hook-trust" not in calls[0]["argv"]
+    assert result["trust_mode"] == "managed_policy"
+    assert result["trust_bypass_used"] is False
+    assert result["persistent_trust_changed"] is False
+
+
 def test_current_profile_hook_uses_existing_current_store_mode(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

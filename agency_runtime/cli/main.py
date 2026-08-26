@@ -30,6 +30,7 @@ from . import install_commands as _install
 from . import parser as _parser
 from . import roster_commands as _roster
 from . import service_commands as _services
+from . import setup_commands as _setup
 from . import workforce_commands as _workforce
 
 _REDACTED = _common.REDACTED
@@ -318,6 +319,22 @@ cmd_db_stats = _roster.cmd_db_stats
 cmd_db_trim = _roster.cmd_db_trim
 
 
+def cmd_setup(args: argparse.Namespace) -> int:
+    """Run setup through facade callbacks so historical monkeypatching remains valid."""
+
+    return _setup.cmd_setup(
+        args,
+        dependencies=_setup.SetupDependencies(
+            configure=cmd_configure,
+            validate=cmd_config_validate,
+            install=cmd_install,
+            dashboard_service=cmd_dashboard_service,
+            doctor=cmd_doctor,
+            smoke=cmd_smoke,
+        ),
+    )
+
+
 def _workforce_dependencies() -> _workforce.WorkforceDependencies:
     return _workforce.WorkforceDependencies(store_factory=_store, emit_json=_print_json)
 
@@ -340,6 +357,10 @@ def cmd_workforce_consolidate(args: argparse.Namespace) -> int:
 
 def cmd_workforce_show(args: argparse.Namespace) -> int:
     return _workforce.cmd_workforce_show(args, dependencies=_workforce_dependencies())
+
+
+def cmd_workforce_prompt(args: argparse.Namespace) -> int:
+    return _workforce.cmd_workforce_prompt(args, dependencies=_workforce_dependencies())
 
 
 def cmd_workforce_transition(args: argparse.Namespace) -> int:
@@ -471,6 +492,7 @@ _COMMAND_NAMES = (
     "cmd_search",
     "cmd_serve",
     "cmd_smoke",
+    "cmd_setup",
     "cmd_source_add",
     "cmd_source_list",
     "cmd_status",
@@ -478,6 +500,7 @@ _COMMAND_NAMES = (
     "cmd_upgrade",
     "cmd_version",
     "cmd_workforce_list",
+    "cmd_workforce_prompt",
     "cmd_workforce_consolidate",
     "cmd_workforce_duplicates",
     "cmd_workforce_search",

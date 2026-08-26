@@ -69,6 +69,13 @@ def _secret_presence(document: Mapping[str, Any]) -> dict[str, bool]:
         litellm = adapters.get("litellm")
         if isinstance(litellm, dict):
             result["adapters.litellm.api_key"] = bool(litellm.get("api_key"))
+    inference = document.get("inference")
+    if isinstance(inference, dict):
+        profiles = inference.get("profiles")
+        if isinstance(profiles, dict):
+            for name, profile in profiles.items():
+                if isinstance(name, str) and isinstance(profile, dict):
+                    result[f"inference.profiles.{name}.api_key"] = bool(profile.get("api_key"))
     return result
 
 

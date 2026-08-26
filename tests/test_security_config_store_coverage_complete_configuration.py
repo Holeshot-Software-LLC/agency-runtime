@@ -157,6 +157,21 @@ def test_patch_provider_and_nested_shape_guards() -> None:
         ({"providers": []}, "providers.bad.api_key", "path is not supported"),
         ({"providers": []}, "providers.0.api_key", "target does not exist"),
         ({"providers": ["invalid"]}, "providers.0.api_key", "target is invalid"),
+        (
+            {"inference": []},
+            "inference.profiles.remote.api_key",
+            "target does not exist",
+        ),
+        (
+            {"inference": {"profiles": []}},
+            "inference.profiles.remote.api_key",
+            "target does not exist",
+        ),
+        (
+            {"inference": {"profiles": {"remote": "invalid"}}},
+            "inference.profiles.remote.api_key",
+            "target is invalid",
+        ),
     ],
 )
 def test_patch_secret_targets_fail_closed_on_ambiguous_shapes(
@@ -792,6 +807,7 @@ def test_configuration_transactions_cover_conflict_and_contract_errors() -> None
             validate=lambda value: dict(value),
             apply=lambda document, _operations: (document, set(), False),
             complete=lambda *_args, **_kwargs: object(),  # type: ignore[arg-type]
+            narrow=lambda pristine, _patched, _changed: pristine,
         )
 
     common = {

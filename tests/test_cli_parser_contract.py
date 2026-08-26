@@ -83,6 +83,7 @@ HANDLER_NAMES = (
     "cmd_search",
     "cmd_serve",
     "cmd_smoke",
+    "cmd_setup",
     "cmd_source_add",
     "cmd_source_list",
     "cmd_status",
@@ -92,6 +93,7 @@ HANDLER_NAMES = (
     "cmd_workforce_consolidate",
     "cmd_workforce_duplicates",
     "cmd_workforce_list",
+    "cmd_workforce_prompt",
     "cmd_workforce_search",
     "cmd_workforce_show",
     "cmd_workforce_transition",
@@ -185,6 +187,7 @@ EXPECTED_PATHS = (
     "agency route",
     "agency search",
     "agency serve",
+    "agency setup",
     "agency smoke",
     "agency source",
     "agency source add",
@@ -203,6 +206,7 @@ EXPECTED_PATHS = (
     "agency workforce list",
     "agency workforce merge",
     "agency workforce promote",
+    "agency workforce prompt",
     "agency workforce resume",
     "agency workforce retire",
     "agency workforce search",
@@ -285,6 +289,7 @@ EXPECTED_BINDINGS = {
     "agency route": "cmd_route",
     "agency search": "cmd_search",
     "agency serve": "cmd_serve",
+    "agency setup": "cmd_setup",
     "agency smoke": "cmd_smoke",
     "agency source add": "cmd_source_add",
     "agency source list": "cmd_source_list",
@@ -300,13 +305,14 @@ EXPECTED_BINDINGS = {
     "agency workforce list": "cmd_workforce_list",
     "agency workforce merge": "cmd_workforce_transition",
     "agency workforce promote": "cmd_workforce_transition",
+    "agency workforce prompt": "cmd_workforce_prompt",
     "agency workforce resume": "cmd_workforce_transition",
     "agency workforce retire": "cmd_workforce_transition",
     "agency workforce search": "cmd_workforce_search",
     "agency workforce show": "cmd_workforce_show",
     "agency workforce suspend": "cmd_workforce_transition",
 }
-EXPECTED_MANIFEST_SHA256 = "18245a80051c31569fcf823a8704277f17a5e3045a636899834b4cb26b609cef"
+EXPECTED_MANIFEST_SHA256 = "69971acde89d46fb2af458eb407b8a518b1384e2e4cc55297dcacaab9c4d65a6"
 
 
 def _handler(name: str):
@@ -482,6 +488,17 @@ def test_install_parser_exposes_explicit_autonomous_activation_mode() -> None:
     assert parsed.json is True
 
 
+def test_install_parser_exposes_durable_production_container_mode() -> None:
+    parsed = _parser().parse_args(
+        ["install", "--production-container", "--config", "/etc/agency/agency.yaml"]
+    )
+
+    assert parsed.production_container is True
+    assert parsed.config == "/etc/agency/agency.yaml"
+    assert parsed.autonomous is False
+    assert parsed.verify_activation is False
+
+
 def test_child_evidence_parser_exposes_no_receipt_writing_mode() -> None:
     child_parser = dict(_walk_parser(_parser()))["agency evidence children"]
 
@@ -498,9 +515,11 @@ def test_child_evidence_parser_exposes_no_receipt_writing_mode() -> None:
             {
                 "command": "install",
                 "profile": None,
+                "config": None,
                 "all": False,
                 "agent": None,
                 "autonomous": False,
+                "production_container": False,
                 "dry_run": False,
                 "rollback": False,
                 "backup": None,

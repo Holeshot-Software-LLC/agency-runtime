@@ -35,6 +35,7 @@ from agency_runtime.core.inference_profiles import (
     enforce_strict_independence,
     resolve,
     resolve_explicit_capability_route,
+    resolve_explicit_capability_route_any,
     route_requires_independence,
     shares_provider_with,
     translate_thinking_level,
@@ -250,6 +251,85 @@ def test_schema_requires_capability_classes_for_recall_routes() -> None:
         validate_config_document(document)
 
 
+def _ar289_jina_profile_document() -> dict[str, Any]:
+    return {
+        "inference": {
+            "routes": {"workforce.recall.reranker": "jina-reranker"},
+            "profiles": {
+                "jina-reranker": {
+                    "adapter": "jina",
+                    "model": "jina-reranker-v3.5",
+                    "capability_class": "rerank",
+                    "base_url": "https://api.jina.ai/v1",
+                    "api_key_env": "JINA_API_KEY",
+                }
+            },
+        }
+    }
+
+
+def test_ar289_schema_accepts_explicit_jina_native_reranker_profile() -> None:
+    validated = validate_config_document(_ar289_jina_profile_document())
+
+    profile = validated["inference"]["profiles"]["jina-reranker"]
+    assert profile["adapter"] == "jina"
+    assert profile["capability_class"] == "rerank"
+
+
+def test_ar289_jina_profile_materializes_without_losing_native_identity() -> None:
+    import yaml
+
+    from agency_runtime.core.config import _dict_to_config, config_to_yaml
+    from agency_runtime.core.inference_profiles import provider_from_profile
+
+    validated = validate_config_document(_ar289_jina_profile_document())
+    config = _dict_to_config(validated)
+    profile = config.inference.profiles["jina-reranker"]
+    provider = provider_from_profile(profile)
+    rendered = yaml.safe_load(config_to_yaml(config, redact=False))
+
+    assert profile.capability_class == "rerank"
+    assert provider.type == "jina"
+    assert provider.model == "jina-reranker-v3.5"
+    assert rendered["inference"]["profiles"]["jina-reranker"]["adapter"] == "jina"
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "message"),
+    [
+        ("capability_class", "text", "must declare capability_class 'rerank'"),
+        ("thinking_level", "low", "do not accept thinking_level"),
+        ("adapter", "litellm", "requires adapter 'jina'"),
+    ],
+)
+def test_ar289_schema_rejects_invalid_native_reranker_profiles(
+    field: str,
+    value: str,
+    message: str,
+) -> None:
+    document = _ar289_jina_profile_document()
+    document["inference"]["profiles"]["jina-reranker"][field] = value
+
+    with pytest.raises(ConfigValidationError, match=message):
+        validate_config_document(document)
+
+
+def test_ar289_native_reranker_profile_cannot_be_a_default() -> None:
+    document = _ar289_jina_profile_document()
+    document["inference"]["default_profile"] = "jina-reranker"
+
+    with pytest.raises(ConfigValidationError, match="explicit reranker route"):
+        validate_config_document(document)
+
+
+def test_ar289_native_reranker_profile_cannot_route_another_stage() -> None:
+    document = _ar289_jina_profile_document()
+    document["inference"]["routes"] = {"workforce.recruiter": "jina-reranker"}
+
+    with pytest.raises(ConfigValidationError, match=r"only workforce\.recall\.reranker"):
+        validate_config_document(document)
+
+
 def _ar286_embedding_profile_document(*, dimensions: object | None) -> dict[str, Any]:
     profile: dict[str, object] = {
         "adapter": "ollama",
@@ -396,6 +476,29 @@ def test_explicit_capability_route_requires_matching_capability() -> None:
             "workforce.recall.embedding",
             capability_class="embeddings",
         )
+
+
+def test_ar289_explicit_reranker_route_accepts_text_or_native_capability() -> None:
+    for capability_class in ("text", "rerank"):
+        profile = _profile(
+            "reranker",
+            adapter="litellm" if capability_class == "text" else "jina",
+            model="reranker-model",
+            capability_class=capability_class,
+        )
+        config = _config(
+            profiles={"reranker": profile},
+            routes={"workforce.recall.reranker": "reranker"},
+        )
+
+        resolution = resolve_explicit_capability_route_any(
+            config,
+            "workforce.recall.reranker",
+            capability_classes=("rerank", "text"),
+        )
+
+        assert resolution is not None
+        assert resolution.profile.capability_class == capability_class
 
 
 def test_explicit_capability_route_honors_harness_then_global_routes() -> None:

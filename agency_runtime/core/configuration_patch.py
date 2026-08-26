@@ -27,9 +27,13 @@ from agency_runtime.core.configuration_schema import (
     _string,
     _string_list,
     _url,
+    _validate_inference_profile,
+    _validate_inference_routes,
     _validate_providers,
     validate_config_document,
 )
+
+_INFERENCE_PROFILE_PATH_PREFIX = "inference.profiles."
 
 
 def _providers_for_operation(value: Any) -> list[dict[str, Any]]:
@@ -60,6 +64,43 @@ def _providers_for_operation(value: Any) -> list[dict[str, Any]]:
             item["api_key"] = "validation-placeholder"
     _validate_providers(candidates)
     return scrubbed
+
+
+def _inference_profile_for_operation(path: str, value: Any) -> dict[str, Any]:
+    """Validate one named inference profile without accepting an inline secret."""
+
+    name = path.removeprefix(_INFERENCE_PROFILE_PATH_PREFIX)
+    if not name or "." in name:
+        raise ConfigValidationError("inference profile operation path is not supported")
+    if not isinstance(value, Mapping):
+        raise _error(path, "must be a mapping")
+    profile = dict(value)
+    if profile.get("api_key"):
+        raise _error(f"{path}.api_key", "must use a secret operation")
+    profile.pop("api_key", None)
+    return _validate_inference_profile(name, profile)
+
+
+def _apply_inference_profile(
+    document: dict[str, Any],
+    path: str,
+    profile: dict[str, Any],
+) -> None:
+    """Replace one profile while preserving an existing direct secret when safe."""
+
+    name = path.removeprefix(_INFERENCE_PROFILE_PATH_PREFIX)
+    inference = document.setdefault("inference", {})
+    if not isinstance(inference, dict):
+        raise ConfigValidationError("operation conflicts with the existing configuration shape")
+    profiles = inference.setdefault("profiles", {})
+    if not isinstance(profiles, dict):
+        raise ConfigValidationError("operation conflicts with the existing configuration shape")
+    existing = profiles.get(name)
+    existing_secret = existing.get("api_key", "") if isinstance(existing, dict) else ""
+    updated = copy.deepcopy(profile)
+    if existing_secret and not updated.get("api_key_env"):
+        updated["api_key"] = existing_secret
+    profiles[name] = updated
 
 
 _SET_VALIDATORS = {
@@ -224,9 +265,13 @@ _SET_VALIDATORS = {
 
 def _set_validator(path: str, value: Any) -> Any:
     validator = _SET_VALIDATORS.get(path)
-    if validator is None:
-        raise ConfigValidationError("operation path is not supported")
-    return validator(value)
+    if validator is not None:
+        return validator(value)
+    if path == "inference.routes":
+        return _validate_inference_routes(value, path)
+    if path.startswith(_INFERENCE_PROFILE_PATH_PREFIX):
+        return _inference_profile_for_operation(path, value)
+    raise ConfigValidationError("operation path is not supported")
 
 
 def _nested_set(document: dict[str, Any], path: str, value: Any) -> None:
@@ -333,6 +378,22 @@ def _secret_target(document: dict[str, Any], path: str) -> tuple[dict[str, Any],
         entry = providers[index]
         if not isinstance(entry, dict):
             raise ConfigValidationError("provider secret target is invalid")
+        return entry, "api_key"
+    if (
+        len(parts) == 4
+        and parts[0] == "inference"
+        and parts[1] == "profiles"
+        and parts[3] == "api_key"
+    ):
+        inference = document.get("inference")
+        if not isinstance(inference, dict):
+            raise ConfigValidationError("inference profile secret target does not exist")
+        profiles = inference.get("profiles")
+        if not isinstance(profiles, dict) or parts[2] not in profiles:
+            raise ConfigValidationError("inference profile secret target does not exist")
+        entry = profiles[parts[2]]
+        if not isinstance(entry, dict):
+            raise ConfigValidationError("inference profile secret target is invalid")
         return entry, "api_key"
     raise ConfigValidationError("secret operation path is not supported")
 
@@ -494,6 +555,8 @@ def apply_operations(
             value = _set_validator(operation_path, operation.get("value"))
             if operation_path == "providers":
                 _apply_provider_list(document, value)
+            elif operation_path.startswith(_INFERENCE_PROFILE_PATH_PREFIX):
+                _apply_inference_profile(document, operation_path, value)
             else:
                 _nested_set(document, operation_path, value)
             changed.add(operation_path)

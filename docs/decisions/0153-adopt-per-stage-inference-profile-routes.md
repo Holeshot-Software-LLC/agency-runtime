@@ -3,7 +3,7 @@ title: "Adopt per-stage inference profile routes"
 status: accepted
 category: decisions
 created: 2026-08-04
-updated: 2026-08-12
+updated: 2026-08-25
 tags: [routing, inference, workforce, configuration, security]
 related:
   - docs/decisions/0118-require-inference-owned-staffing.md
@@ -11,6 +11,8 @@ related:
   - docs/roadmap/issue-AR-253-dynamic-team-dispatch-on-every-harness.md
   - docs/roadmap/issue-AR-274-model-agnostic-structured-inference-profiles.md
   - docs/roadmap/issue-AR-281-route-native-children-through-host-profiles.md
+  - docs/roadmap/issue-AR-293-safe-inference-profile-config-operations.md
+  - docs/roadmap/issue-AR-296-project-effective-inference-topology.md
   - docs/decisions/0165-keep-litellm-inference-profiles-model-agnostic.md
   - docs/roadmap/reference-workforce-inference-stages.md
   - docs/roadmap/handoffs/issue-AR-235.md

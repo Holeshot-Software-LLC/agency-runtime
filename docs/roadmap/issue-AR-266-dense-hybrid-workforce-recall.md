@@ -10,12 +10,14 @@ related:
   - docs/roadmap/issue-AR-286-configure-bounded-embedding-dimensions.md
   - docs/roadmap/issue-AR-287-bind-host-hook-timeouts-to-inference-budgets.md
   - docs/roadmap/issue-AR-288-expose-hermes-native-finalizer-tool.md
+  - docs/roadmap/issue-AR-289-native-reranker-transports.md
   - docs/roadmap/issue-AR-265-contextual-turn-classification.md
   - docs/decisions/0083-use-capability-indexed-recall-and-bounded-inference.md
   - docs/decisions/0118-require-inference-owned-staffing.md
   - docs/decisions/0121-gate-deterministic-recall-without-selection-authority.md
   - docs/decisions/0163-resolve-contextual-turns-from-transcript-free-subjects.md
   - docs/decisions/0164-use-dense-embeddings-only-for-workforce-recall.md
+  - docs/decisions/0171-separate-native-and-structured-reranker-transports.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
@@ -25,7 +27,7 @@ issue_id: AR-266
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/320
 depends_on: []
-blocks: [AR-286, AR-287]
+blocks: [AR-286, AR-287, AR-289]
 ---
 
 # AR-266: Recall the complete workforce with dense hybrid retrieval
@@ -98,8 +100,10 @@ revision, dimensions, or normalization identity changes.
 
 Require explicit `workforce.recall.embedding` and
 `workforce.recall.reranker` inference routes. The embedding profile must use
-`capability_class = "embeddings"`, while the reranker uses `text`; missing
-routes disable learned recall rather than falling through to a default model.
+`capability_class = "embeddings"`; under ADR-0171 the reranker may use the
+existing structured `text` capability or a stage-scoped native `rerank`
+capability. Missing routes disable learned recall rather than falling through
+to a default model.
 An embedding profile may request a bounded provider-native projection through
 `dimensions`: zero omits the field, while a nonzero value is accepted only for
 embedding-capable Ollama, OpenAI-compatible, and LiteLLM profiles. The returned

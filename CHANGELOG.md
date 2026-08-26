@@ -3,10 +3,15 @@ title: "Changelog"
 status: active
 category: release
 created: 2026-07-10
-updated: 2026-08-24
+updated: 2026-08-25
 tags: [release, changelog]
 related:
   - docs/RELEASE_CHECKLIST.md
+  - docs/roadmap/issue-AR-290-end-to-end-guided-setup.md
+  - docs/roadmap/issue-AR-296-project-effective-inference-topology.md
+  - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
+  - docs/roadmap/issue-AR-298-expose-complete-workforce-prompts.md
+  - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
   - docs/roadmap/README.md
   - docs/worklog/README.md
   - THIRD_PARTY_NOTICES.md
@@ -28,6 +33,36 @@ changes rather than duplicating every commit.
 
 ### Added
 
+- `agency install --production-container --config <path>` now accepts one exact
+  validated Agency configuration and performs a fail-closed dedicated-container
+  transaction. Codex receives an Agency-owned system-managed hook policy and a
+  mandatory normal-invocation activation canary; foreign system policy is
+  refused, prior activation proof is cleared before policy mutation, and the
+  command never treats the one-shot autonomous trust bypass as durable
+  readiness for a later Conveyor process. Doctor, status, and dashboard
+  inspection project the persistent policy authority separately from live
+  activation proof.
+- `agency workforce prompt <worker>` and the authenticated Workforce detail
+  view now expose the complete governed prompt for every durable worker
+  standing, including an exact immutable historical version. The projection
+  identifies Store definition authority while explicitly declining to infer
+  runtime delivery from stored content.
+- The authenticated dashboard Settings view now projects the effective named
+  inference topology: assurance and dense-recall modes, global and per-harness
+  routes/defaults, provider models, thinking levels, capabilities, embedding
+  dimensions, sanitized endpoints, and credential indirection. It labels the
+  legacy judge fallback honestly and states that Agency inference selects
+  staffing while the native harness owns child spawning and execution.
+- `agency setup` now composes the guarded provider wizard, config validation,
+  bounded native-harness/dashboard install choices, doctor, and optional
+  deterministic smoke into one resumable first-run journey. The dashboard
+  Settings view mirrors that journey with truthful posture and copy-only
+  attended commands; it gains no host-install or shell-execution endpoint.
+- Learned workforce recall can use Jina's native rerank API through a dedicated
+  `jina`/`rerank` inference profile while Jina embeddings continue through the
+  OpenAI-compatible transport. Structured text rerankers through local models,
+  LiteLLM, API-key profiles, and Codex/Claude subscription CLIs remain
+  supported, and typed-only recall remains the failure-safe default.
 - Live Agency canaries can persist one child-judge provider pin per harness.
   The judge and its abstention repair use only that provider, cross-provider
   CLI credentials are copied into a second disposable private home, and proof
@@ -107,6 +142,18 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
+- `agency config set` can now create validated named inference profiles and
+  publish the complete dotted route map used by embedding and reranker stages.
+  Direct profile credentials use the same hidden-input, write-only, redacted
+  secret contract as other provider keys; inline profile-map secrets fail
+  closed.
+- Guided setup now distinguishes a successfully registered Codex integration
+  that awaits attended hook trust from a hard installation failure. The
+  setup-only degraded path remains fail-closed for incomplete host registration,
+  dashboard failure, activation verification failure, or runtime drift.
+- Deterministic generated-host smoke no longer publishes alternate-home
+  launcher pointers into the operator's current-install state. Real owner-home
+  installs still publish advisory staleness pointers normally.
 - Contextual work inquiries now perform fresh specialist selection without
   granting execution authority. Classifier v5 covers status, progress,
   recommendation, and prospective next-step forms; advisory planning is bound

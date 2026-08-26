@@ -1135,11 +1135,18 @@ test("workforce detail renders comparison, promotion, prompt, history, and state
       right: "python-application-engineer",
       score: 0.42,
     }],
-    compiled_prompt: {
-      hash: "a".repeat(64),
-      preview: "Use the governed TypeScript contract.",
-      truncated: false,
-      version: "contractor-v1",
+    prompt_definition: {
+      definition_authority: "agency_store",
+      runtime_delivery_proof: "not_asserted",
+      prompt: {
+        body: "Use the governed TypeScript contract.",
+        current: true,
+        hash: "a".repeat(64),
+        relation: "generated",
+        source_id: "agency.generated",
+        truncated: false,
+        version: "contractor-v1",
+      },
     },
     promotion_readiness: {
       automatic_policy_enabled: true,
@@ -1202,8 +1209,9 @@ test("workforce detail renders comparison, promotion, prompt, history, and state
   assert.match(text, /Evidence required/);
   assert.match(text, /changed artifacts and focused verification results/);
   assert.doesNotMatch(text, /Evidence required none recorded/);
-  assert.match(text, /Owner-only governed specialist definition/);
-  assert.match(text, /separate from runtime observation capture/);
+  assert.match(text, /Complete governed prompt/);
+  assert.match(text, /agency_store · stored definition · runtime delivery is not asserted/);
+  assert.match(text, /Source agency.generated · relation generated · current/);
   assert.match(text, /Reason recorded/);
   assert.doesNotMatch(text, /SHA-256|ffffffffffff|known contractor installed|lifecycle evidence/);
   assert.match(text, /1 of 7 version records \(bounded\)/);
@@ -2074,6 +2082,12 @@ test("host cards render activation proof truthfully without adding canary contro
     canary_attestation_status: "verified",
     host: "codex",
     inspection_status: "complete",
+    managed_hook_policy: {
+      config_path: "/etc/agency/agency.yaml",
+      current: true,
+      hook_events: Array(8).fill("event"),
+      status: "current",
+    },
     maturity: "runtime-verified",
   }];
   harness.api.renderHosts();
@@ -2083,6 +2097,8 @@ test("host cards render activation proof truthfully without adding canary contro
   assert.ok(labels.includes("Contract · agency.codex-activation-canary.v2"));
   assert.ok(labels.includes("Profile · current-profile"));
   assert.ok(labels.includes("Trace · trace-safe"));
+  assert.ok(labels.includes("Hook authority · managed system policy"));
+  assert.ok(labels.includes("current · 8 events · config /etc/agency/agency.yaml"));
   assert.deepEqual(
     descendants(harness.node("host-grid"))
       .filter((node) => node.type === "button")
@@ -2259,10 +2275,42 @@ test("owner settings surface materializes the ZCode adapter field", () => {
 		throw new Error("owner surface setup does not fetch");
   });
   const grid = new FakeNode("adapter-grid");
+  const settings = harness.node("view-settings");
+  const legacyHeading = new FakeNode("legacy-heading");
+  const legacyLabel = new FakeNode("legacy-label");
+  harness.node("config-judge-model").closestNode = {
+    querySelector: () => legacyHeading,
+  };
   harness.missing("config-adapter-zcode");
+  harness.missing("inference-topology");
+  harness.missing("setup-journey");
   harness.select(".adapter-grid", [grid]);
+  harness.select('label[for="config-judge-model"]', [legacyLabel]);
 
 	assert.equal(harness.api.configureOwnerSurface(), true);
+  assert.equal(settings.children.length, 2);
+  const setupText = descendants(settings.children[0]).map((node) => node.textContent).join(" ");
+  assert.match(setupText, /Agency Runtime setup/);
+  assert.match(setupText, /Configure inference/);
+  assert.match(setupText, /Wire native harnesses/);
+  assert.match(setupText, /Validate and smoke/);
+  const commands = descendants(settings.children[0])
+    .map((node) => node.dataset?.setupCommand)
+    .filter(Boolean);
+  assert.deepEqual(commands, [
+    "agency setup",
+    "agency install --all",
+    "agency dashboard service open",
+    "agency smoke --all --json",
+  ]);
+  const inferenceText = descendants(settings.children[1])
+    .map((node) => node.textContent)
+    .join(" ");
+  assert.match(inferenceText, /Inference roles/);
+  assert.match(inferenceText, /Agency inference selects the staffing plan/);
+  assert.match(inferenceText, /native harness owns child spawning and execution/);
+  assert.equal(legacyHeading.textContent, "Legacy fallback and child-routing bounds");
+  assert.equal(legacyLabel.textContent, "Legacy fallback judge model");
   assert.equal(grid.children.length, 1);
   const [label] = grid.children;
   assert.equal(label.textContent, "ZCode");
@@ -2273,6 +2321,177 @@ test("owner settings surface materializes the ZCode adapter field", () => {
     select.children.map((option) => [option.value, option.textContent]),
     [["auto", "Auto"], ["true", "Enabled"], ["false", "Disabled"]],
   );
+});
+
+test("setup journey reports configuration and native registration without claiming live proof", () => {
+  const harness = createAppHarness(() => {
+    throw new Error("setup posture rendering does not fetch");
+  });
+  harness.api.state.config = {
+    effective: { providers: [{ name: "owner-provider", type: "cli" }] },
+  };
+  harness.api.state.hosts = [
+    { host: "codex", executable_discovered: true, registered: true },
+    { host: "claude", executable_discovered: true, registered: false },
+  ];
+
+  assert.equal(harness.api.renderSetup(), true);
+  assert.equal(harness.node("setup-config-state").textContent, "CONFIGURED");
+  assert.equal(harness.node("setup-hosts-state").textContent, "1 / 2 REGISTERED");
+  assert.equal(harness.node("setup-dashboard-state").textContent, "RUNNING");
+  assert.equal(harness.node("setup-verification-state").textContent, "RUN IN TERMINAL");
+  assert.equal(harness.node("setup-state").textContent, "CORE READY");
+  assert.notEqual(harness.node("setup-verification-state").dataset.state, "ready");
+
+  harness.api.state.config = { effective: { providers: [] } };
+  harness.api.state.hosts = [];
+  harness.api.renderSetup();
+  assert.equal(harness.node("setup-config-state").textContent, "NEEDS PROVIDER");
+  assert.equal(harness.node("setup-hosts-state").textContent, "NO HOST DETECTED");
+  assert.equal(harness.node("setup-state").textContent, "ACTION NEEDED");
+});
+
+test("inference topology projects routes, thinking, recall, and native host authority", () => {
+  const secret = "secret-that-must-never-render";
+  const harness = createAppHarness(() => {
+    throw new Error("inference topology rendering does not fetch");
+  });
+  harness.api.state.config = {
+    effective: {
+      delegation: {
+        mode: "prefer",
+        preferred_min_units: 2,
+        strongly_preferred_min_units: 4,
+        strongly_preferred_min_confidence: 0.8,
+        child_inference_budget: 4,
+        child_inference_concurrency: 2,
+        child_cache_ttl_seconds: 900,
+      },
+      inference: {
+        routes: {
+          "workforce.recall.embedding": "jina-embedding",
+          "workforce.recall.reranker": "jina-reranker",
+        },
+        profiles: {
+          "codex-fast": {
+            adapter: "cli",
+            transport: "codex",
+            model: "gpt-5.6-terra",
+            thinking_level: "low",
+          },
+          "jina-embedding": {
+            adapter: "openai-compatible",
+            model: "jina-embeddings-v3",
+            capability_class: "embeddings",
+            dimensions: 1024,
+            base_url: "https://api.jina.ai/v1?ignored=credential",
+            api_key_env: "JINA_API_KEY",
+          },
+          "jina-reranker": {
+            adapter: "jina",
+            model: "jina-reranker-v3.5",
+            capability_class: "rerank",
+            base_url: "https://api.jina.ai/v1",
+            api_key: secret,
+          },
+        },
+        harnesses: {
+          codex: {
+            default_profile: "codex-fast",
+            routes: { "workforce.recruiter.critic": "codex-review" },
+          },
+        },
+      },
+      judge: { model: "" },
+      workforce: { mode: "strict", dense_recall_mode: "additive" },
+    },
+  };
+
+  assert.equal(harness.api.renderInferenceTopology(), true);
+  assert.equal(harness.node("inference-assurance-state").textContent, "STRICT");
+  assert.equal(harness.node("inference-recall-state").textContent, "ADDITIVE");
+  assert.equal(harness.node("inference-profile-count").textContent, "3");
+  assert.equal(harness.node("inference-route-count").textContent, "4");
+  assert.equal(
+    harness.node("inference-topology-state").textContent,
+    "3 PROFILES · 4 ROUTES",
+  );
+  const routes = descendants(harness.node("inference-route-list"))
+    .map((node) => node.textContent)
+    .join(" ");
+  assert.match(routes, /workforce\.recall\.embedding → jina-embedding/);
+  assert.match(routes, /harness · codex/);
+  assert.match(routes, /unmatched stages → codex-fast/);
+  assert.match(routes, /workforce\.recruiter\.critic → codex-review/);
+  const profiles = descendants(harness.node("inference-profile-list"))
+    .map((node) => node.textContent)
+    .join(" ");
+  assert.match(profiles, /codex-fast/);
+  assert.match(profiles, /thinking low/);
+  assert.match(profiles, /jina-embeddings-v3/);
+  assert.match(profiles, /capability embeddings · 1024 dimensions/);
+  assert.match(profiles, /https:\/\/api\.jina\.ai\/v1/);
+  assert.match(profiles, /auth env JINA_API_KEY/);
+  assert.match(profiles, /direct key present \(redacted\)/);
+  assert.doesNotMatch(profiles, new RegExp(secret));
+  assert.doesNotMatch(profiles, /ignored=credential/);
+  assert.match(
+    harness.node("inference-legacy-note").textContent,
+    /named profiles and routes shown above own current stage inference/i,
+  );
+  assert.match(harness.node("inference-legacy-note").textContent, /active judge roles/i);
+  assert.match(
+    harness.node("inference-delegation-note").textContent,
+    /Agency inference owns staffing; the native harness owns child spawning and execution/i,
+  );
+  assert.match(harness.node("inference-delegation-note").textContent, /budget 4/);
+});
+
+test("inference topology withholds oversized untrusted projections", () => {
+  const harness = createAppHarness(() => {
+    throw new Error("bounded inference topology rendering does not fetch");
+  });
+  harness.api.state.config = {
+    effective: {
+      inference: {
+        profiles: Object.fromEntries(
+          Array.from({ length: 65 }, (_, index) => [`profile-${index}`, { model: "safe" }]),
+        ),
+        routes: {},
+        harnesses: {},
+      },
+      workforce: { mode: "strict", dense_recall_mode: "additive" },
+    },
+  };
+
+  assert.equal(harness.api.renderInferenceTopology(), true);
+  assert.equal(harness.node("inference-topology-state").textContent, "BOUNDS EXCEEDED");
+  assert.equal(harness.node("inference-topology-state").dataset.state, "action");
+  assert.match(
+    descendants(harness.node("inference-route-list")).map((node) => node.textContent).join(" "),
+    /safety bound/i,
+  );
+});
+
+test("setup journey copies only inert attended commands and focuses the provider editor", async () => {
+  const copied = [];
+  const harness = createAppHarness(() => {
+    throw new Error("setup command copying does not fetch");
+  });
+  harness.context.window.navigator = {
+    clipboard: { writeText: async (value) => copied.push(value) },
+  };
+  const copy = harness.node("setup-command-copy");
+  copy.dataset.setupCommand = "agency setup";
+  harness.select("[data-setup-command]", [copy]);
+
+  assert.equal(harness.api.bindEvents(), true);
+  await copy.listeners.get("click")[0]();
+  assert.deepEqual(copied, ["agency setup"]);
+  assert.match(harness.node("notice").textContent, /owner-controlled terminal/i);
+
+  harness.node("setup-configure-button").listeners.get("click")[0]();
+  assert.equal(harness.node("provider-builder-name").focusCount, 1);
 });
 
 test("Route Lab renders authoritative host evidence and bounded eligibility rejections", () => {

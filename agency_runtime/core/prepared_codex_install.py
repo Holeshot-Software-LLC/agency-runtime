@@ -197,10 +197,12 @@ def is_exact_prepared_codex_install(namespace: object) -> bool:
         getattr(namespace, "command", None) == "install"
         and getattr(namespace, "agent", None) == _HOST
         and getattr(namespace, "profile", None) is None
+        and getattr(namespace, "config", None) is None
         and not bool(getattr(namespace, "all", False))
         and not bool(getattr(namespace, "dry_run", False))
         and not bool(getattr(namespace, "rollback", False))
         and not bool(getattr(namespace, "verify_activation", False))
+        and not bool(getattr(namespace, "production_container", False))
         and getattr(namespace, "backup", None) is None
         and bool(getattr(namespace, "no_dashboard", False))
         and math.isfinite(timeout)

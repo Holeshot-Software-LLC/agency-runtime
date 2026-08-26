@@ -62,6 +62,7 @@ from agency_runtime.core.workforce.recruiter_index import (
     recruiter_index_fingerprint,
     serialize_recruiter_index,
 )
+from agency_runtime.core.workforce.reranker_provider import RerankerProviderResponse
 from agency_runtime.core.workforce.routing_projection import project_workforce_routing
 from agency_runtime.core.workforce.staffing_verifier import StaffingContext, StaffingDecision
 
@@ -248,6 +249,7 @@ def _hybrid_config(
     *,
     dense_recall_mode: str = "additive",
     embedding_dimensions: int = 0,
+    native_reranker: bool = False,
 ) -> AgencyConfig:
     embedding = InferenceProfile(
         name="recall-embedding",
@@ -260,10 +262,12 @@ def _hybrid_config(
     )
     reranker = InferenceProfile(
         name="recall-reranker",
-        adapter="litellm",
-        model="reranker-model-v1",
-        capability_class="text",
-        base_url="https://router.example.test/v1",
+        adapter="jina" if native_reranker else "litellm",
+        model="jina-reranker-v3.5" if native_reranker else "reranker-model-v1",
+        capability_class="rerank" if native_reranker else "text",
+        base_url=(
+            "https://api.jina.ai/v1" if native_reranker else "https://router.example.test/v1"
+        ),
         api_key="secret",
     )
     return AgencyConfig(
@@ -1044,6 +1048,164 @@ def test_additive_hybrid_recall_expands_beyond_typed_24_before_inference_selects
     ]
     assert "zz-vector-specialist" in typed_ids[24:]
     assert outcome.staffing.units[0].selected == ("zz-vector-specialist",)
+
+
+def test_ar289_native_jina_reranker_expands_the_same_additive_candidate_lane() -> None:
+    clear_hybrid_recall_cache()
+    snapshot = _hybrid_recall_snapshot()
+    recruiter_payload: dict[str, Any] = {}
+    observed_native: dict[str, object] = {}
+
+    def invoke(_provider, prompt, _schema, **_kwargs):
+        payload = json.loads(prompt)
+        if "planning_taxonomy" in payload:
+            return _result(_compact_plan_document())
+        assert payload.get("recall_policy") != "deterministic_candidate_recall_only"
+        recruiter_payload.update(payload)
+        return _result(_nomination_document("zz-vector-specialist"))
+
+    def rerank(query: str, documents: tuple[str, ...]) -> RerankerProviderResponse:
+        observed_native["query"] = json.loads(query)
+        observed_native["documents"] = tuple(json.loads(item) for item in documents)
+        target = next(
+            index
+            for index, document in enumerate(documents)
+            if '"agent_id":"zz-vector-specialist"' in document
+        )
+        order = (target, *(index for index in range(len(documents)) if index != target))
+        return RerankerProviderResponse(
+            ranked_indices=order,
+            scores=tuple(float(len(order) - index) for index in range(len(order))),
+            provider_name="recall-reranker",
+            requested_model="jina-reranker-v3.5",
+            actual_model="jina-reranker-v3.5",
+            latency_ms=13,
+        )
+
+    outcome = plan_and_staff_workforce(
+        "Analyze the workforce retrieval vocabulary gap.",
+        snapshot,
+        config=_hybrid_config(native_reranker=True),
+        context=_context(),
+        invoker=invoke,
+        embedding_invoker=_semantic_embedding_response,
+        reranker_invoker=rerank,
+    )
+
+    assert outcome.accepted
+    assert outcome.calls_used == 4
+    assert [item.stage for item in outcome.attempts] == [
+        "planner",
+        "recall_embedding",
+        "recall_reranker",
+        "recruiter",
+    ]
+    reranker_attempt = outcome.attempts[2]
+    assert reranker_attempt.provider_type == "jina"
+    assert reranker_attempt.status == "applied"
+    assert reranker_attempt.reason_code == "dense_recall_reranked"
+    assert reranker_attempt.actual_model == "jina-reranker-v3.5"
+    assert reranker_attempt.model_receipt_source == "response.body.model"
+    assert reranker_attempt.input_count == len(observed_native["documents"])
+    assert reranker_attempt.provider_call_count == 1
+    assert "candidates" not in observed_native["query"]["work_units"][0]
+    assert all(
+        set(document) == {"candidate", "work_unit"} for document in observed_native["documents"]
+    )
+    assert "zz-vector-specialist" in {
+        card["agent_id"] for card in recruiter_payload["detail_cards"]
+    }
+    assert recruiter_payload["hybrid_recall"]["authority"] == (
+        "deterministic_candidate_recall_only"
+    )
+    assert outcome.staffing.units[0].selected == ("zz-vector-specialist",)
+
+
+def test_ar289_invalid_native_reranker_falls_back_to_unchanged_typed_cards() -> None:
+    clear_hybrid_recall_cache()
+    snapshot = _hybrid_recall_snapshot()
+    recruiter_payload: dict[str, Any] = {}
+
+    def invoke(_provider, prompt, _schema, **_kwargs):
+        payload = json.loads(prompt)
+        if "planning_taxonomy" in payload:
+            return _result(_compact_plan_document())
+        recruiter_payload.update(payload)
+        return _result(_nomination_document("generic-000"))
+
+    def invalid_rerank(_query: str, documents: tuple[str, ...]) -> RerankerProviderResponse:
+        return RerankerProviderResponse(
+            ranked_indices=(0,) * len(documents),
+            scores=tuple(float(len(documents) - index) for index in range(len(documents))),
+            provider_name="recall-reranker",
+            requested_model="jina-reranker-v3.5",
+            actual_model="jina-reranker-v3.5",
+        )
+
+    outcome = plan_and_staff_workforce(
+        "Analyze the workforce retrieval vocabulary gap.",
+        snapshot,
+        config=_hybrid_config(native_reranker=True),
+        context=_context(),
+        invoker=invoke,
+        embedding_invoker=_semantic_embedding_response,
+        reranker_invoker=invalid_rerank,
+    )
+
+    assert outcome.accepted
+    assert outcome.calls_used == 4
+    assert outcome.attempts[2].status == "failed"
+    assert outcome.attempts[2].reason_code == "reranker_response_invalid"
+    assert "hybrid_recall" not in recruiter_payload
+    detail_ids = [item["agent_id"] for item in recruiter_payload["detail_cards"]]
+    assert len(detail_ids) == 24
+    assert "zz-vector-specialist" not in detail_ids
+    assert outcome.staffing.units[0].selected == ("generic-000",)
+
+
+def test_ar289_structured_text_reranker_does_not_dispatch_native_invoker() -> None:
+    clear_hybrid_recall_cache()
+    snapshot = _hybrid_recall_snapshot()
+
+    def invoke(_provider, prompt, _schema, **_kwargs):
+        payload = json.loads(prompt)
+        if "planning_taxonomy" in payload:
+            return _result(_compact_plan_document())
+        if payload.get("recall_policy") == "deterministic_candidate_recall_only":
+            return _result(
+                {
+                    "units": [
+                        {
+                            "unit_id": row["unit_id"],
+                            "ranked_candidate_ids": [
+                                candidate["agent_id"] for candidate in row["candidates"]
+                            ],
+                        }
+                        for row in payload["units"]
+                    ]
+                }
+            )
+        return _result(_nomination_document("generic-000"))
+
+    def unexpected_native(
+        _query: str,
+        _documents: tuple[str, ...],
+    ) -> RerankerProviderResponse:
+        pytest.fail("structured text reranker dispatched the native transport")
+
+    outcome = plan_and_staff_workforce(
+        "Analyze the workforce retrieval vocabulary gap.",
+        snapshot,
+        config=_hybrid_config(),
+        context=_context(),
+        invoker=invoke,
+        embedding_invoker=_semantic_embedding_response,
+        reranker_invoker=unexpected_native,
+    )
+
+    assert outcome.accepted
+    assert outcome.attempts[2].provider_type == "litellm"
+    assert outcome.attempts[2].status == "applied"
 
 
 def test_embedding_dimensions_change_catalog_identity_and_force_a_cold_catalog() -> None:

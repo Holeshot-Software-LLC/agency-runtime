@@ -335,7 +335,12 @@ def _prepare_adapter_launcher_paths() -> tuple[str, str]:
     return prepared
 
 
-def _record_installed_runtime_pointer(bootstrap_path: str, host: str) -> None:
+def _record_installed_runtime_pointer(
+    bootstrap_path: str,
+    host: str,
+    *,
+    home_dir: str | Path | None,
+) -> None:
     """Note which projection this install published, for later drift reports.
 
     Advisory only: hooks read this to warn that they are running an older
@@ -343,6 +348,11 @@ def _record_installed_runtime_pointer(bootstrap_path: str, host: str) -> None:
     therefore not abort an otherwise complete install.
     """
 
+    # Alternate homes are used for generated-bundle smoke, tests, and isolated
+    # profiles. Their files are not the current operator installation, so they
+    # must not overwrite its advisory current-host projection.
+    if home_dir is not None:
+        return
     with suppress(OSError, ValueError):
         record_installed_runtime(bootstrap_path, host=host)
 
@@ -552,7 +562,11 @@ def _install_agent_adapter_unlocked(
         }
     try:
         launcher_paths = _prepare_adapter_launcher_paths()
-        _record_installed_runtime_pointer(launcher_paths[1], host)
+        _record_installed_runtime_pointer(
+            launcher_paths[1],
+            host,
+            home_dir=home_dir,
+        )
         with bind_launcher_artifact_paths(launcher_paths):
             files, primary = _bundle_files(
                 host,

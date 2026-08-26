@@ -174,6 +174,11 @@ def _register_install(sub: Subparsers, handlers: Handlers) -> None:
         default=None,
         help="Verify the already-configured profile; use `agency configure` to change it",
     )
+    install.add_argument(
+        "--config",
+        default=None,
+        help="Load and bind this exact Agency YAML configuration for the installation",
+    )
     install_target = install.add_mutually_exclusive_group()
     install_target.add_argument(
         "--all",
@@ -222,6 +227,14 @@ def _register_install(sub: Subparsers, handlers: Handlers) -> None:
         help=(
             "Use the harness-supported hook-trust bypass for this explicit activation "
             "verification without changing persistent trust state"
+        ),
+    )
+    install.add_argument(
+        "--production-container",
+        action="store_true",
+        help=(
+            "Fail-closed dedicated-container install; for Codex, install system-managed "
+            "Agency hooks and prove a fresh normal invocation"
         ),
     )
     install.add_argument(
@@ -542,6 +555,57 @@ def _register_configuration(sub: Subparsers, handlers: Handlers) -> None:
         handlers,
         "cmd_config_reset",
     )
+
+
+def _register_setup(sub: Subparsers, handlers: Handlers) -> None:
+    setup = sub.add_parser(
+        "setup",
+        help="Guided first run — configure, install, diagnose, and smoke",
+    )
+    setup.add_argument(
+        "--non-interactive",
+        action="store_true",
+        help="Use detected configuration without prompts (requires an explicit install scope)",
+    )
+    setup.add_argument(
+        "--profile",
+        choices=sorted(PROFILES),
+        default=None,
+        help="Security and capability profile used when configuration is created or replaced",
+    )
+    setup.add_argument(
+        "--force-config",
+        action="store_true",
+        help="Replace an existing config through the guarded provider wizard",
+    )
+    setup_target = setup.add_mutually_exclusive_group()
+    setup_target.add_argument(
+        "--all",
+        action="store_true",
+        help="Install every safely detected supported harness",
+    )
+    setup_target.add_argument(
+        "--agent",
+        choices=list(HOSTS),
+        default=None,
+        help="Install one explicit supported harness",
+    )
+    setup_target.add_argument(
+        "--skip-install",
+        action="store_true",
+        help="Skip harness and dashboard installation",
+    )
+    setup.add_argument(
+        "--no-dashboard",
+        action="store_true",
+        help="Do not install or refresh the optional local dashboard service",
+    )
+    setup.add_argument(
+        "--skip-smoke",
+        action="store_true",
+        help="Skip deterministic readiness smoke checks",
+    )
+    _bind(setup, handlers, "cmd_setup")
 
 
 def _register_roster(sub: Subparsers, handlers: Handlers) -> None:
@@ -928,6 +992,26 @@ def _register_workforce(sub: Subparsers, handlers: Handlers) -> None:
     )
     workforce_show.add_argument("--json", action="store_true", help="Print machine-readable output")
     _bind(workforce_show, handlers, "cmd_workforce_show")
+
+    workforce_prompt = workforce_sub.add_parser(
+        "prompt", help="Show an exact governed prompt with immutable source lineage"
+    )
+    workforce_prompt.add_argument("worker", help="Stable worker ID or slug")
+    workforce_prompt.add_argument(
+        "--version",
+        default="",
+        help="Exact historical workforce version (default: current)",
+    )
+    workforce_prompt.add_argument(
+        "--max-chars",
+        type=_positive_int,
+        default=262_144,
+        help="Maximum prompt characters to return (maximum: 262144)",
+    )
+    workforce_prompt.add_argument(
+        "--json", action="store_true", help="Print machine-readable output"
+    )
+    _bind(workforce_prompt, handlers, "cmd_workforce_prompt")
 
     for action in ("promote", "suspend", "resume", "retire"):
         action_parser = workforce_sub.add_parser(action, help=f"{action.title()} a worker")
@@ -1679,6 +1763,7 @@ def build_parser(handlers: Handlers) -> argparse.ArgumentParser:
     _register_uninstall(sub, handlers)
     _register_host_control(sub, handlers)
     _register_configuration(sub, handlers)
+    _register_setup(sub, handlers)
     _register_roster(sub, handlers)
     _register_workforce(sub, handlers)
     _register_selection(sub, handlers)

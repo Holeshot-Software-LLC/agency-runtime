@@ -41,10 +41,12 @@ _PUBLIC_FIELDS = frozenset(
         "autonomous",
         "backup",
         "command",
+        "config",
         "dry_run",
         "json",
         "no_dashboard",
         "profile",
+        "production_container",
         "rollback",
         "verify_activation",
     }
@@ -122,8 +124,10 @@ def is_exact_codex_activation_verification(namespace: object) -> bool:
         getattr(namespace, "command", None) == "install"
         and getattr(namespace, "agent", None) == "codex"
         and getattr(namespace, "profile", None) is None
+        and getattr(namespace, "config", None) is None
         and getattr(namespace, "all", False) is False
         and getattr(namespace, "autonomous", False) is False
+        and getattr(namespace, "production_container", False) is False
         and getattr(namespace, "dry_run", False) is False
         and getattr(namespace, "rollback", False) is False
         and getattr(namespace, "verify_activation", False) is True

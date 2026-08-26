@@ -588,6 +588,8 @@ def _unknown_host(host: str, *, status: str, error: str | None = None) -> dict[s
         "marketplace_registered": None,
         "hook_trust_status": None,
         "hook_trust_action": None,
+        "managed_hook_policy": None,
+        "trust_mode": None,
         "maturity": "inspection-pending" if status == "timed_out" else "inspection-error",
         "evidence": [],
         "inspection_status": status,
@@ -2227,15 +2229,10 @@ class DashboardHTTPHandler(AgencyHTTPHandler):
                 required_successes=config.workforce.auto_promote_successes,
                 review_window_days=config.workforce.contractor_review_days,
             )
-            detail["compiled_prompt"] = (
-                None
-                if prompt is None
-                else {
-                    "version": prompt["version"],
-                    "hash": prompt["hash"],
-                    "preview": str(prompt["prompt_body"])[:8192],
-                    "truncated": len(str(prompt["prompt_body"])) > 8192,
-                }
+            detail["prompt_definition"] = self.store.get_workforce_prompt(
+                slug,
+                max_chars=262_144,
+                disabled_agents=disabled,
             )
             payload: dict[str, Any] = {"detail": detail}
         else:

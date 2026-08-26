@@ -15,6 +15,7 @@ from agency_runtime.core.bounded_json import safe_load_bounded_json
 from agency_runtime.core.correlation import validate_correlation_id
 from agency_runtime.core.roster.revisions import (
     content_digest_identity,
+    content_identity_matches,
     serialized_revision_metadata,
 )
 from agency_runtime.core.store.schema import STORE_CLOCK_SQL
@@ -30,6 +31,7 @@ from agency_runtime.core.workforce.identity import stable_worker_id
 from agency_runtime.core.workforce.promotion import promotion_readiness
 
 MAX_WORKFORCE_DOCUMENT_BYTES = 256 * 1024
+MAX_WORKFORCE_PROMPT_CHARS = 256 * 1024
 MAX_WORKFORCE_PAGE = 1_000
 MAX_HIRING_SUMMARY_PAGE = 200
 MAX_HIRING_COLLECTION_RESPONSE_BYTES = 1024 * 1024
@@ -2078,6 +2080,98 @@ class WorkforceStoreMixin:
             "hiring_cases": cases,
             "hiring_cases_total_count": hiring_cases_total_count,
             "hiring_cases_truncated": hiring_cases_total_count > len(cases),
+        }
+
+    def get_workforce_prompt(
+        self,
+        worker_id_or_slug: str,
+        *,
+        version: str = "",
+        max_chars: int = MAX_WORKFORCE_PROMPT_CHARS,
+        disabled_agents: Container[str] | None = None,
+    ) -> dict[str, Any]:
+        """Return one exact governed prompt for any durable workforce standing.
+
+        This reader is deliberately workforce-scoped rather than active-roster
+        scoped. Suspended, retired, merged, and disabled workers remain
+        inspectable, and an explicit historical version must belong to the
+        selected worker's immutable lineage.
+        """
+
+        if isinstance(max_chars, bool) or not isinstance(max_chars, int):
+            raise TypeError("workforce prompt limit must be an integer")
+        if not 1 <= max_chars <= MAX_WORKFORCE_PROMPT_CHARS:
+            raise ValueError("workforce prompt limit is invalid")
+        value = _bounded_text(worker_id_or_slug, field="worker identity", maximum=256)
+        selected_version = _bounded_text(
+            version,
+            field="workforce prompt version",
+            maximum=512,
+            required=False,
+        )
+        disabled = self.get_disabled_agent_slugs() if disabled_agents is None else disabled_agents
+        with closing(self._connect()) as conn:
+            worker_row = conn.execute(
+                "SELECT * FROM agent_workers WHERE worker_id = ? OR agent_slug = ? LIMIT 1",
+                (value, value.casefold()),
+            ).fetchone()
+            if worker_row is None:
+                raise KeyError("workforce worker not found")
+            worker = _worker_projection(worker_row, disabled)
+            query = (
+                "SELECT version.id AS agent_version_id, version.version, "
+                "version.source_version, version.source_id, version.hash, "
+                "version.content, version.created_at, lineage.relation, "
+                "lineage.hiring_case_id, lineage.created_at AS lineage_created_at "
+                "FROM agent_version_lineage AS lineage "
+                "JOIN agent_versions AS version ON version.id = lineage.agent_version_id "
+                "WHERE lineage.worker_id = ? AND version.id = ? LIMIT 1"
+            )
+            parameters: tuple[str, ...] = (
+                str(worker["worker_id"]),
+                str(worker["current_agent_version_id"]),
+            )
+            if selected_version:
+                query = (
+                    "SELECT version.id AS agent_version_id, version.version, "
+                    "version.source_version, version.source_id, version.hash, "
+                    "version.content, version.created_at, lineage.relation, "
+                    "lineage.hiring_case_id, lineage.created_at AS lineage_created_at "
+                    "FROM agent_version_lineage AS lineage "
+                    "JOIN agent_versions AS version ON version.id = lineage.agent_version_id "
+                    "WHERE lineage.worker_id = ? AND version.version = ? LIMIT 1"
+                )
+                parameters = (str(worker["worker_id"]), selected_version)
+            prompt_row = conn.execute(query, parameters).fetchone()
+        if prompt_row is None:
+            raise KeyError("workforce prompt version not found")
+        body = str(prompt_row["content"] or "")
+        prompt_hash = str(prompt_row["hash"] or "")
+        if not body or not prompt_hash or not content_identity_matches(body, prompt_hash):
+            raise RuntimeError("stored workforce prompt identity is invalid")
+        total_chars = len(body)
+        return {
+            "schema_version": "agency.workforce.prompt.v1",
+            "definition_authority": "agency_store",
+            "runtime_delivery_proof": "not_asserted",
+            "worker": worker,
+            "prompt": {
+                "agent_version_id": str(prompt_row["agent_version_id"]),
+                "version": str(prompt_row["version"]),
+                "source_version": str(prompt_row["source_version"] or ""),
+                "source_id": str(prompt_row["source_id"] or ""),
+                "hash": prompt_hash,
+                "relation": str(prompt_row["relation"]),
+                "hiring_case_id": prompt_row["hiring_case_id"],
+                "created_at": str(prompt_row["created_at"]),
+                "lineage_created_at": str(prompt_row["lineage_created_at"]),
+                "current": str(prompt_row["agent_version_id"])
+                == str(worker["current_agent_version_id"]),
+                "body": body[:max_chars],
+                "body_chars": min(total_chars, max_chars),
+                "total_chars": total_chars,
+                "truncated": total_chars > max_chars,
+            },
         }
 
     def list_workforce_workers(

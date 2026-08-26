@@ -7,6 +7,7 @@ updated: 2026-08-01
 tags: [codex, agents, delegation, authority, inference, product]
 related:
   - docs/roadmap/issue-AR-223-prove-codex-child-task-execution.md
+  - docs/roadmap/issue-AR-296-project-effective-inference-topology.md
   - docs/decisions/0126-authorize-exact-product-delegation-at-the-codex-developer-boundary.md
   - docs/decisions/0128-persist-exact-codex-plan-authority-and-serialize-launches.md
   - docs/worklog/README.md

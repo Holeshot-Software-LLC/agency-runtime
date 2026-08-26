@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from agency_runtime.core import installer_orchestration as orchestration
@@ -199,3 +201,29 @@ def test_unknown_host_results_keep_public_schema_distinctions() -> None:
             "error": "Unknown host: unknown",
         }
     )
+
+
+def test_runtime_pointer_publication_is_limited_to_default_owner_home(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[tuple[str, str]] = []
+    monkeypatch.setattr(
+        orchestration,
+        "record_installed_runtime",
+        lambda bootstrap, *, host: calls.append((bootstrap, host)) or "digest",
+    )
+
+    orchestration._record_installed_runtime_pointer(
+        "C:/private/runtime/_bootstrap.py",
+        "hermes",
+        home_dir=tmp_path,
+    )
+    assert calls == []
+
+    orchestration._record_installed_runtime_pointer(
+        "C:/private/runtime/_bootstrap.py",
+        "hermes",
+        home_dir=None,
+    )
+    assert calls == [("C:/private/runtime/_bootstrap.py", "hermes")]

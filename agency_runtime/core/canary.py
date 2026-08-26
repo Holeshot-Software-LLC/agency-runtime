@@ -90,7 +90,7 @@ SAFE_CANARY_HOSTS = frozenset({"codex", "claude"})
 ISOLATED_CANARY_HOSTS = SAFE_CANARY_HOSTS
 CANARY_MODES = frozenset({"agency", "native-only"})
 CANARY_PROFILE_SCOPES = frozenset({"isolated-profile", "current-profile"})
-CANARY_TRUST_MODES = frozenset({"attended", "autonomous_bypass"})
+CANARY_TRUST_MODES = frozenset({"attended", "autonomous_bypass", "managed_policy"})
 MAX_CANARY_TIMEOUT_SECONDS = 600.0
 CODEX_CURRENT_PROFILE_EXEC_OPTIONS = (
     "--json",
@@ -562,6 +562,10 @@ def _validate_canary_request(
         raise ValueError(
             "autonomous bypass canaries support Codex Agency current-profile mode only"
         )
+    if trust_mode == "managed_policy" and (
+        host != "codex" or mode != "agency" or profile_scope != "current-profile"
+    ):
+        raise ValueError("managed-policy canaries support Codex Agency current-profile mode only")
 
 
 def run_canary(

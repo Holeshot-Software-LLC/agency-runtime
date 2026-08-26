@@ -104,8 +104,10 @@ def test_state_accepts_only_empty_or_whitespace_yaml_document(
 def test_default_workforce_mode_funds_one_repair_per_inference_stage(tmp_path: Path) -> None:
     workforce = load_config(tmp_path / "missing.yaml", reload=True).workforce
 
-    assert workforce.mode == "fast"
+    assert workforce.mode == "strict"
     assert workforce.fast_call_budget == 4
+    assert workforce.balanced_call_budget == 4
+    assert workforce.strict_call_budget == 5
 
 
 def test_default_dense_recall_mode_is_evidence_only(tmp_path: Path) -> None:
@@ -302,6 +304,166 @@ def test_workforce_policy_round_trips_through_shared_cli_dashboard_config(
     assert loaded.workforce.provider == "codex-oauth"
     assert loaded.workforce.max_hires_per_task == 0
     assert loaded.workforce.auto_promote_successes == 12
+
+
+def test_inference_profiles_and_recall_routes_round_trip_through_config_operations(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "agency.yaml"
+    state = read_config_state(path)
+
+    result = apply_config_operations(
+        [
+            {
+                "op": "set",
+                "path": "inference.profiles.jina-embedding",
+                "value": {
+                    "adapter": "openai-compatible",
+                    "model": "jina-embeddings-v3",
+                    "capability_class": "embeddings",
+                    "dimensions": 1024,
+                    "base_url": "https://api.jina.ai/v1",
+                    "api_key_env": "JINA_API_KEY",
+                },
+            },
+            {
+                "op": "set",
+                "path": "inference.profiles.jina-reranker",
+                "value": {
+                    "adapter": "jina",
+                    "model": "jina-reranker-v3.5",
+                    "capability_class": "rerank",
+                    "base_url": "https://api.jina.ai/v1",
+                    "api_key_env": "JINA_API_KEY",
+                },
+            },
+            {
+                "op": "set",
+                "path": "inference.routes",
+                "value": {
+                    "workforce.recall.embedding": "jina-embedding",
+                    "workforce.recall.reranker": "jina-reranker",
+                },
+            },
+        ],
+        expected_revision=state.revision,
+        path=path,
+    )
+
+    assert result.state.persisted["inference"]["routes"] == {
+        "workforce.recall.embedding": "jina-embedding",
+        "workforce.recall.reranker": "jina-reranker",
+    }
+    loaded = load_config(path, reload=True)
+    assert loaded.inference.profiles["jina-embedding"].dimensions == 1024
+    assert loaded.inference.profiles["jina-reranker"].adapter == "jina"
+
+
+def test_inference_profile_direct_key_uses_write_only_secret_operation(tmp_path: Path) -> None:
+    path = tmp_path / "agency.yaml"
+    state = read_config_state(path)
+    created = apply_config_operations(
+        [
+            {
+                "op": "set",
+                "path": "inference.profiles.remote-text",
+                "value": {
+                    "adapter": "openai-compatible",
+                    "model": "remote-model",
+                    "base_url": "https://api.example.test/v1",
+                },
+            }
+        ],
+        expected_revision=state.revision,
+        path=path,
+    )
+
+    updated = apply_config_operations(
+        [
+            {
+                "op": "secret",
+                "path": "inference.profiles.remote-text.api_key",
+                "action": "replace",
+                "value": "profile-secret",
+            }
+        ],
+        expected_revision=created.state.revision,
+        path=path,
+    )
+
+    written = yaml.safe_load(path.read_text(encoding="utf-8"))
+    assert written["inference"]["profiles"]["remote-text"]["api_key"] == "profile-secret"
+    assert updated.state.persisted["inference"]["profiles"]["remote-text"]["api_key"] == (
+        "***REDACTED***"
+    )
+    assert updated.state.secret_presence["inference.profiles.remote-text.api_key"] is True
+    assert "profile-secret" not in repr(updated)
+
+    preserved = apply_config_operations(
+        [
+            {
+                "op": "set",
+                "path": "inference.profiles.remote-text",
+                "value": {
+                    "adapter": "openai-compatible",
+                    "model": "updated-remote-model",
+                    "base_url": "https://api.example.test/v1",
+                },
+            }
+        ],
+        expected_revision=updated.state.revision,
+        path=path,
+    )
+    preserved_document = yaml.safe_load(path.read_text(encoding="utf-8"))
+    assert preserved_document["inference"]["profiles"]["remote-text"]["api_key"] == (
+        "profile-secret"
+    )
+    assert preserved.state.secret_presence["inference.profiles.remote-text.api_key"] is True
+
+    switched = apply_config_operations(
+        [
+            {
+                "op": "set",
+                "path": "inference.profiles.remote-text",
+                "value": {
+                    "adapter": "openai-compatible",
+                    "model": "updated-remote-model",
+                    "base_url": "https://api.example.test/v1",
+                    "api_key_env": "REMOTE_MODEL_KEY",
+                },
+            }
+        ],
+        expected_revision=preserved.state.revision,
+        path=path,
+    )
+    switched_document = yaml.safe_load(path.read_text(encoding="utf-8"))
+    assert switched_document["inference"]["profiles"]["remote-text"]["api_key"] == ""
+    assert switched.state.secret_presence["inference.profiles.remote-text.api_key"] is False
+
+
+def test_inference_profile_set_rejects_inline_direct_key(tmp_path: Path) -> None:
+    path = tmp_path / "agency.yaml"
+    state = read_config_state(path)
+
+    with pytest.raises(ConfigValidationError, match="must use a secret operation"):
+        apply_config_operations(
+            [
+                {
+                    "op": "set",
+                    "path": "inference.profiles.remote-text",
+                    "value": {
+                        "adapter": "openai-compatible",
+                        "model": "remote-model",
+                        "base_url": "https://api.example.test/v1",
+                        "api_key": "inline-secret",
+                    },
+                }
+            ],
+            expected_revision=state.revision,
+            path=path,
+        )
+
+    assert not path.exists()
 
 
 def test_canary_child_judge_provider_map_round_trips_as_typed_config(

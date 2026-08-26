@@ -34,13 +34,15 @@ from ._common import print_json, store
 class InstallDependencies:
     """Patchable process-boundary dependencies for install commands."""
 
-    load_config: Callable[[], AgencyConfig] = load_config
+    load_config: Callable[..., AgencyConfig] = load_config
     store_factory: Callable[[AgencyConfig | None], Any] = store
     emit_json: Callable[[Any], None] = print_json
     readiness_probe: Callable[[], bool] | None = None
     canary_runner: Callable[..., dict[str, Any]] | None = None
     host_inspector: Callable[[str], dict[str, Any]] | None = None
     prepared_codex_installer: Callable[[AgencyConfig], dict[str, Any]] | None = None
+    managed_codex_installer: Callable[..., dict[str, Any]] | None = None
+    managed_codex_planner: Callable[..., dict[str, Any]] | None = None
 
 
 DEFAULT_DEPENDENCIES = InstallDependencies()
@@ -134,12 +136,21 @@ def _validate_install_mode(args: argparse.Namespace) -> tuple[bool, bool, str | 
     backup = getattr(args, "backup", None)
     verify_activation = bool(getattr(args, "verify_activation", False))
     autonomous = bool(getattr(args, "autonomous", False))
+    production_container = bool(getattr(args, "production_container", False))
+    config_argument = getattr(args, "config", None)
     if rollback_mode and dry_run:
         raise ValueError("install --rollback and --dry-run are mutually exclusive")
     if backup is not None and not rollback_mode:
         raise ValueError("install --backup requires --rollback")
     if autonomous and not verify_activation:
         raise ValueError("install --autonomous requires --verify-activation")
+    _validate_install_config_mode(
+        config_argument=config_argument,
+        production_container=production_container,
+        rollback_mode=rollback_mode,
+        verify_activation=verify_activation,
+        autonomous=autonomous,
+    )
     if verify_activation:
         if rollback_mode or dry_run or backup is not None:
             raise ValueError(
@@ -171,6 +182,62 @@ def _validate_install_mode(args: argparse.Namespace) -> tuple[bool, bool, str | 
         if not autonomous and not is_exact_codex_activation_verification(args):
             raise ValueError("install --verify-activation shape is invalid")
     return rollback_mode, dry_run, backup
+
+
+def _validate_install_config_mode(
+    *,
+    config_argument: object,
+    production_container: bool,
+    rollback_mode: bool,
+    verify_activation: bool,
+    autonomous: bool,
+) -> None:
+    """Keep explicit config and durable container mode out of special lifecycles."""
+
+    if production_container:
+        if rollback_mode or verify_activation or autonomous:
+            raise ValueError(
+                "install --production-container cannot be combined with rollback or "
+                "activation-verification modes"
+            )
+        if not isinstance(config_argument, str) or not config_argument.strip():
+            raise ValueError("install --production-container requires --config")
+    if config_argument is not None and (
+        not isinstance(config_argument, str)
+        or not config_argument.strip()
+        or "\x00" in config_argument
+    ):
+        raise ValueError("install --config must name one non-empty path")
+    if config_argument is not None and (rollback_mode or verify_activation):
+        raise ValueError("install --config cannot be combined with rollback or verification-only")
+
+
+def _require_production_targets(production_container: bool, targets: list[str]) -> None:
+    if production_container and not targets:
+        raise ValueError("production-container install requires one detected or selected host")
+
+
+def _load_install_config(
+    args: argparse.Namespace, dependencies: InstallDependencies
+) -> AgencyConfig:
+    """Load the exact explicit install config, or preserve the ambient default contract."""
+
+    argument = getattr(args, "config", None)
+    if argument is None:
+        return dependencies.load_config()
+    path = Path(str(argument)).expanduser().resolve(strict=True)
+    cfg = dependencies.load_config(path)
+    if not cfg.config_path or not _same_absolute_path(cfg.config_path, path):
+        raise ValueError("install config loader did not bind the requested configuration")
+    return cfg
+
+
+def _installed_config_path(cfg: AgencyConfig) -> Path:
+    """Return the exact path persisted into host and dashboard launchers."""
+
+    if cfg.config_path:
+        return Path(cfg.config_path).expanduser().resolve(strict=False)
+    return resolve_config_path()
 
 
 def _render_rollback_result(host: str, result: dict[str, Any]) -> None:
@@ -255,11 +322,12 @@ def _plan_dashboard(
     *,
     opted_out: bool,
     plan_dashboard_service: Callable[..., dict[str, Any]],
+    config_path: Path | None = None,
 ) -> dict[str, Any]:
     """Plan dashboard lifecycle without querying it after an explicit opt-out."""
     if opted_out:
         return _dashboard_opt_out_result(dry_run=True)
-    return plan_dashboard_service(config_path=resolve_config_path())
+    return plan_dashboard_service(config_path=config_path or resolve_config_path())
 
 
 def _host_plans_complete(
@@ -269,7 +337,14 @@ def _host_plans_complete(
 ) -> bool:
     """Require every selected native plan to be valid, including config-native hosts."""
     del all_hosts
-    return all(plan.get("ok") for plan in plans)
+    return all(
+        plan.get("ok")
+        and (
+            not isinstance(plan.get("managed_policy"), Mapping)
+            or plan["managed_policy"].get("ok") is True
+        )
+        for plan in plans
+    )
 
 
 def _render_host_plan(plan: dict[str, Any]) -> None:
@@ -330,12 +405,24 @@ def _run_dry_run(
     plan_agent_adapter: Callable[[str], dict[str, Any]],
     plan_dashboard_service: Callable[..., dict[str, Any]],
     dependencies: InstallDependencies,
+    cfg: AgencyConfig,
+    config_path: Path,
+    production_container: bool = False,
 ) -> int:
     """Build and emit the complete dry-run report."""
     plans = [plan_agent_adapter(host) for host in targets]
+    if production_container and "codex" in targets:
+        from agency_runtime.core.codex_managed_policy import plan_managed_codex_policy
+
+        policy_planner = dependencies.managed_codex_planner or plan_managed_codex_policy
+        policy = policy_planner(cfg, config_path=config_path)
+        for plan in plans:
+            if plan.get("host") == "codex":
+                plan["managed_policy"] = policy
     dashboard_plan = _plan_dashboard(
         opted_out=dashboard_opted_out,
         plan_dashboard_service=plan_dashboard_service,
+        config_path=config_path,
     )
     plan_complete = _host_plans_complete(plans, all_hosts=all_hosts) and bool(
         dashboard_plan.get("ok")
@@ -345,6 +432,8 @@ def _run_dry_run(
         "complete": plan_complete,
         "dry_run": True,
         "profile": profile_name,
+        "config_path": str(config_path),
+        "production_container": production_container,
         "starter_roster": {
             "action": "seed_missing_idempotently",
             "candidate_count": len(STARTER_ROSTER),
@@ -405,6 +494,7 @@ def _install_dashboard(
     opted_out: bool,
     install_dashboard_service: Callable[..., dict[str, Any]],
     dependencies: InstallDependencies,
+    config_path: Path | None = None,
 ) -> dict[str, Any]:
     """Install the optional dashboard or return an explicit opt-out result."""
     if opted_out:
@@ -412,7 +502,7 @@ def _install_dashboard(
     from agency_runtime.core.dashboard_runtime import dashboard_service_reachable
 
     return install_dashboard_service(
-        config_path=resolve_config_path(),
+        config_path=config_path or resolve_config_path(),
         reachability_probe=dashboard_service_reachable,
         readiness_probe=dependencies.readiness_probe,
     )
@@ -491,6 +581,22 @@ def _codex_activation_required(
             ),
             "verification_command": "agency install --autonomous --verify-activation --json",
         }
+    if trust_mode == "managed_policy":
+        return {
+            "state": "activation_required",
+            "complete": False,
+            "trust_mode": "managed_policy",
+            "trust_bypass_used": False,
+            "persistent_profile_changed": True,
+            "approval_surface": None,
+            "approval_launch_command": None,
+            "desktop_slash_hooks_is_trust_ui": False,
+            "action": (
+                "Managed Codex hook policy is installed, but a fresh normal invocation did "
+                "not prove Agency activation. Inspect the managed-policy and canary evidence."
+            ),
+            "verification_command": None,
+        }
     return {
         "state": "activation_required",
         "complete": False,
@@ -512,13 +618,19 @@ def _codex_activation_state(
     inspector: Callable[[str], dict[str, Any]],
     canary_runner: Callable[..., dict[str, Any]],
     autonomous: bool = False,
+    managed_policy: bool = False,
+    managed_policy_changed: bool = False,
 ) -> None:
     """Attach current-profile readiness without mutating Codex trust state."""
 
     if not result.get("ok") or result.get("registered") is not True:
         return
     verification: dict[str, Any] | None = None
-    trust_mode = "autonomous_bypass" if autonomous else "attended"
+    if autonomous and managed_policy:
+        raise ValueError("Codex activation cannot combine bypass and managed-policy trust")
+    trust_mode = (
+        "managed_policy" if managed_policy else "autonomous_bypass" if autonomous else "attended"
+    )
     if verify:
         try:
             canary_kwargs: dict[str, Any] = {
@@ -528,7 +640,7 @@ def _codex_activation_state(
                 "mode": "agency",
                 "profile_scope": "current-profile",
             }
-            if autonomous:
+            if autonomous or managed_policy:
                 canary_kwargs["trust_mode"] = trust_mode
             candidate = canary_runner("codex", **canary_kwargs)
             verification = (
@@ -566,6 +678,23 @@ def _codex_activation_state(
             and verification.get("attestation_persisted") is False
             and verification.get("unmet_prerequisites") == []
         )
+    elif managed_policy:
+        ready = bool(
+            verify
+            and isinstance(verification, Mapping)
+            and verification.get("schema_version") == "agency.host_canary.v1"
+            and verification.get("profile_scope") == "current-profile"
+            and verification.get("trust_mode") == trust_mode
+            and verification.get("trust_bypass_used") is False
+            and verification.get("live_attempted") is True
+            and verification.get("canary_passed") is True
+            and verification.get("attestation_persisted") is True
+            and verification.get("unmet_prerequisites") == []
+            and inspected.get("canary") is True
+            and inspected.get("canary_attestation_status") == "verified"
+            and isinstance(attestation, Mapping)
+            and attestation.get("profile_scope") == "current-profile"
+        )
     else:
         latest_verification_passed = not verify or bool(
             isinstance(verification, Mapping) and verification.get("canary_passed") is True
@@ -579,8 +708,22 @@ def _codex_activation_state(
         )
     if ready:
         hook_trust_status = (
-            inspected.get("hook_trust_status") or "unverified" if autonomous else "trusted"
+            "managed"
+            if managed_policy
+            else inspected.get("hook_trust_status") or "unverified"
+            if autonomous
+            else "trusted"
         )
+        activation = {
+            "state": "ready",
+            "complete": True,
+            "trust_mode": trust_mode,
+            "trust_bypass_used": autonomous,
+            "profile_scope": "current-profile",
+            "persistent_profile_changed": managed_policy_changed,
+        }
+        if managed_policy:
+            activation["system_policy_managed"] = True
         result.update(
             {
                 "complete": True,
@@ -588,14 +731,7 @@ def _codex_activation_state(
                 "canary": True,
                 "hook_trust_status": hook_trust_status,
                 "hook_trust_action": None,
-                "activation": {
-                    "state": "ready",
-                    "complete": True,
-                    "trust_mode": trust_mode,
-                    "trust_bypass_used": autonomous,
-                    "profile_scope": "current-profile",
-                    "persistent_profile_changed": False,
-                },
+                "activation": activation,
             }
         )
         if verification is not None:
@@ -619,7 +755,10 @@ def _codex_activation_state(
             "hook_trust_action": activation["action"],
             "activation": activation,
             "warning": (
-                "Codex files are installed, but bypass-mode activation was not proven."
+                "Codex files and managed policy are installed, but a fresh normal invocation "
+                "did not prove Agency activation."
+                if managed_policy
+                else "Codex files are installed, but bypass-mode activation was not proven."
                 if autonomous
                 else "Codex files are installed, but Agency is not active in normal sessions."
             ),
@@ -639,6 +778,10 @@ def _install_hosts(
     host_inspector: Callable[[str], dict[str, Any]] | None = None,
     canary_runner: Callable[..., dict[str, Any]] | None = None,
     autonomous: bool = False,
+    production_container: bool = False,
+    config_path: Path | None = None,
+    managed_codex_installer: Callable[..., dict[str, Any]] | None = None,
+    canary_attestation_invalidator: Callable[[str], bool] | None = None,
 ) -> list[dict[str, Any]]:
     """Install selected host adapters and preserve partial-failure evidence."""
     results: list[dict[str, Any]] = []
@@ -655,16 +798,84 @@ def _install_hosts(
                 "changed": False,
                 "error": f"{type(exc).__name__}: {safe_display_token(str(exc), limit=500)}",
             }
-        if host == "codex" and host_inspector is not None and canary_runner is not None:
+        policy: dict[str, Any] | None = None
+        if (
+            host == "codex"
+            and production_container
+            and result.get("ok") is True
+            and result.get("registered") is True
+        ):
+            from agency_runtime.core.codex_managed_policy import install_managed_codex_policy
+
+            installer = managed_codex_installer or install_managed_codex_policy
+            if canary_attestation_invalidator is None:
+                result.update(
+                    ok=False,
+                    complete=False,
+                    status="managed_policy_attestation_invalidation_failed",
+                    partial=bool(result.get("changed")),
+                    error=(
+                        "managed Codex policy requires the exact Store attestation "
+                        "invalidator before mutation"
+                    ),
+                )
+                results.append(result)
+                if not json_mode:
+                    _print_install_result(host, result)
+                continue
+            try:
+                prior_attestation_invalidated = bool(canary_attestation_invalidator("codex"))
+            except Exception:
+                result.update(
+                    ok=False,
+                    complete=False,
+                    status="managed_policy_attestation_invalidation_failed",
+                    partial=bool(result.get("changed")),
+                    error="prior Codex activation proof could not be invalidated safely",
+                )
+                results.append(result)
+                if not json_mode:
+                    _print_install_result(host, result)
+                continue
+            try:
+                policy = installer(cfg, config_path=config_path or _installed_config_path(cfg))
+            except Exception as exc:
+                policy = {
+                    "ok": False,
+                    "complete": False,
+                    "changed": False,
+                    "status": "failed",
+                    "trust_mode": "managed_policy",
+                    "error": f"{type(exc).__name__}: {safe_display_token(str(exc), limit=500)}",
+                }
+            policy["prior_attestation_invalidated"] = prior_attestation_invalidated
+            result["managed_policy"] = policy
+            result["changed"] = bool(result.get("changed") or policy.get("changed"))
+            if policy.get("ok") is not True or policy.get("complete") is not True:
+                result.update(
+                    ok=False,
+                    complete=False,
+                    status="managed_policy_failed",
+                    partial=True,
+                    error=policy.get("error") or "managed Codex policy installation failed",
+                )
+        if (
+            host == "codex"
+            and result.get("ok") is True
+            and host_inspector is not None
+            and canary_runner is not None
+        ):
             _codex_activation_state(
                 result,
-                verify=verify_activation,
+                verify=verify_activation or production_container,
                 timeout=activation_timeout,
                 inspector=host_inspector,
                 canary_runner=canary_runner,
                 autonomous=autonomous,
+                managed_policy=production_container,
+                managed_policy_changed=bool(policy and policy.get("changed")),
             )
-        elif all_hosts:
+        elif all_hosts or production_container:
             _mark_all_host_completion(result)
         results.append(result)
         if not json_mode:
@@ -695,6 +906,65 @@ def _install_succeeded(
     if not host_results:
         return successful
     return successful and all(result.get("complete", result.get("ok")) for result in host_results)
+
+
+def _setup_activation_pending_only(
+    dashboard_result: Mapping[str, Any],
+    host_results: list[dict[str, Any]],
+) -> bool:
+    """Recognize the one incomplete state setup may continue as degraded."""
+
+    if dashboard_result.get("ok") is not True or not host_results:
+        return False
+    pending: list[Mapping[str, Any]] = []
+    for result in host_results:
+        if result.get("ok") is not True:
+            return False
+        if result.get("complete", result.get("ok")) is True:
+            continue
+        pending.append(result)
+    if len(pending) != 1:
+        return False
+
+    result = pending[0]
+    activation = result.get("activation")
+    return bool(
+        result.get("host") == "codex"
+        and result.get("status") == "registered"
+        and result.get("registered") is True
+        and result.get("maturity") == "activation-required"
+        and isinstance(activation, Mapping)
+        and activation.get("state") == "activation_required"
+        and activation.get("complete") is False
+        and activation.get("trust_mode") == "attended"
+        and activation.get("trust_bypass_used") is False
+        and activation.get("approval_surface") == CODEX_HOOK_TRUST_SURFACE
+        and activation.get("approval_launch_command") == CODEX_HOOK_TRUST_COMMAND
+        and activation.get("desktop_slash_hooks_is_trust_ui") is False
+        and activation.get("verification_command")
+        == "agency install --agent codex --verify-activation"
+    )
+
+
+def _install_exit_code(
+    dashboard_result: dict[str, Any],
+    host_results: list[dict[str, Any]],
+    *,
+    residual_drift: dict[str, Any] | None,
+    setup_accept_activation_pending: bool,
+    all_hosts: bool = False,
+) -> int:
+    """Reduce install evidence without weakening standalone completion."""
+
+    if _install_succeeded(dashboard_result, host_results, all_hosts=all_hosts):
+        return 0
+    if (
+        setup_accept_activation_pending
+        and residual_drift is None
+        and _setup_activation_pending_only(dashboard_result, host_results)
+    ):
+        return 2
+    return 1
 
 
 def _seed_starter_roster(store: Store) -> int:
@@ -1353,7 +1623,8 @@ def cmd_install(
     )
     if special_result is not None:
         return special_result
-    cfg = dependencies.load_config()
+    cfg = _load_install_config(args, dependencies)
+    config_path = _installed_config_path(cfg)
     refusal = _operator_policy_refusal(cfg, json_mode=json_mode, dependencies=dependencies)
     if refusal is not None:
         return refusal
@@ -1383,8 +1654,10 @@ def cmd_install(
     profile_name = _resolve_profile_name(args, cfg)
     targets = _resolve_install_targets(args, detect_installed_agents)
     autonomous = _require_autonomous_codex_target(args, targets)
+    production_container = bool(getattr(args, "production_container", False))
     all_hosts = args.agent is None
     dashboard_opted_out = bool(getattr(args, "no_dashboard", False))
+    _require_production_targets(production_container, targets)
     if dry_run:
         return _run_dry_run(
             args,
@@ -1396,11 +1669,14 @@ def cmd_install(
             plan_agent_adapter=plan_agent_adapter,
             plan_dashboard_service=plan_dashboard_service,
             dependencies=dependencies,
+            cfg=cfg,
+            config_path=config_path,
+            production_container=production_container,
         )
 
     dashboard_preflight: dict[str, Any] | None = None
     if not dashboard_opted_out and dashboard_service_environment_overrides(cfg):
-        dashboard_preflight = plan_dashboard_service(config_path=resolve_config_path())
+        dashboard_preflight = plan_dashboard_service(config_path=config_path)
 
     try:
         runtime_store = dependencies.store_factory(cfg)
@@ -1448,6 +1724,14 @@ def cmd_install(
         host_inspector=dependencies.host_inspector or inspect_host_installation,
         canary_runner=dependencies.canary_runner or run_canary,
         autonomous=autonomous,
+        production_container=production_container,
+        config_path=config_path,
+        managed_codex_installer=dependencies.managed_codex_installer,
+        canary_attestation_invalidator=getattr(
+            runtime_store,
+            "clear_host_canary_attestation",
+            None,
+        ),
     )
 
     if dashboard_preflight is not None:
@@ -1458,6 +1742,7 @@ def cmd_install(
                 opted_out=dashboard_opted_out,
                 install_dashboard_service=install_dashboard_service,
                 dependencies=dependencies,
+                config_path=config_path,
             )
         except Exception as exc:
             dashboard_result = {
@@ -1509,6 +1794,8 @@ def cmd_install(
                 "ok": complete,
                 "complete": complete,
                 "profile": profile_name,
+                "config_path": str(config_path),
+                "production_container": production_container,
                 "roster_added": int(roster_added),
                 "roster_upgraded": roster_upgraded,
                 "contractors_installed": contractors_installed,
@@ -1525,12 +1812,15 @@ def cmd_install(
                 ),
             }
         )
-    successful = _install_succeeded(
+    return _install_exit_code(
         dashboard_result,
         host_results,
+        residual_drift=residual_drift,
+        setup_accept_activation_pending=bool(
+            getattr(args, "_setup_accept_activation_pending", False)
+        ),
         all_hosts=all_hosts,
     )
-    return 0 if successful else 1
 
 
 def _cli_install_drift_projection() -> dict[str, Any] | None:

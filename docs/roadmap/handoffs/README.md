@@ -85,3 +85,6 @@ behavior.
 - [AR-207 preflight and delegation failure diagnostics](issue-AR-207.md)
 - [AR-264 actionable contractor execution profiles](issue-AR-264.md)
 - [AR-265 contextual turn classification](issue-AR-265.md)
+- [AR-289 native reranker transports](issue-AR-289.md)
+- [AR-290 end-to-end guided setup](issue-AR-290.md)
+- [AR-297 complete unattended container bootstrap](issue-AR-297.md)

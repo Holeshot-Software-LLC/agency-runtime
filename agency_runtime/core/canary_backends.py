@@ -2825,6 +2825,7 @@ class SafeCodexCanaryBackend:
         if not isinstance(self.trust_mode, str) or self.trust_mode not in {
             "attended",
             "autonomous_bypass",
+            "managed_policy",
         }:
             raise ValueError("unsupported Codex hook trust mode")
         if self.exec_options is not None:
@@ -2890,7 +2891,7 @@ class SafeCodexCanaryBackend:
         if (
             self.profile_scope != "current-profile"
             or not self.require_exact_activation_rollout
-            or self.trust_mode == "autonomous_bypass"
+            or self.trust_mode in {"autonomous_bypass", "managed_policy"}
         ):
             return None
         facade = _facade()
@@ -3543,6 +3544,8 @@ def backend(  # noqa: C901 - one bounded validation and backend construction bou
         host != "codex" or profile_scope != "current-profile"
     ):
         raise ValueError("autonomous bypass canaries support Codex current-profile only")
+    if trust_mode == "managed_policy" and (host != "codex" or profile_scope != "current-profile"):
+        raise ValueError("managed-policy canaries support Codex current-profile only")
     if type(require_existing_store) is not bool:
         raise TypeError("require_existing_store must be a boolean")
     if require_existing_store and (host != "codex" or profile_scope != "current-profile"):

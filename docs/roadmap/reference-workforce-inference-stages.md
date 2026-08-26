@@ -344,10 +344,10 @@ inference:
     "<route.key>": "<profile.name>"
   profiles:
     "<profile.name>":
-      adapter: "litellm" | "openai-compatible" | "anthropic" | "ollama" | "cli"
+      adapter: "litellm" | "openai-compatible" | "anthropic" | "ollama" | "cli" | "jina"
       model: "<model-or-alias>"
       thinking_level: "low" | "medium" | "high" | "xhigh" | null
-      capability_class: "text" | "embeddings" | "code" | null   # optional
+      capability_class: "text" | "embeddings" | "rerank" | "code" | null
       dimensions: 0                    # embedding profiles only; 0 omits field
       base_url: "<url>"                # adapter-specific
       api_key_env: "<env-var-name>"    # preferred over api_key
@@ -363,6 +363,12 @@ rejects or strips the option, or returns a different width, leaves learned
 recall unavailable and preserves the typed-only lane. Existing vector and
 aggregate scalar bounds are unchanged; Agency never slices or pads vectors.
 
+`adapter: jina` requires `capability_class: rerank`, cannot declare
+`thinking_level`, cannot be a default profile, and may be mapped only to
+`workforce.recall.reranker`. That route also continues to accept
+`capability_class: text` for structured local, LiteLLM, direct-API, and
+subscription rerankers.
+
 **`thinking_level` adapter mapping** (the
 `structured_provider` translates per-adapter):
 
@@ -373,6 +379,7 @@ aggregate scalar bounds are unchanged; Agency never slices or pads vectors.
 | `ollama` | n/a — recorded in receipt, ignored | | | |
 | `litellm` | standardized `reasoning_effort: "low"`; LiteLLM translates for the routed model | `"medium"` | `"high"` | `"xhigh"` |
 | `cli` | n/a — recorded in receipt, ignored | | | |
+| `jina` | n/a — native rerank profiles reject `thinking_level` | | | |
 
 When the adapter does not support thinking, the field is recorded in
 the receipt and ignored at call time. The receipt shows the actual

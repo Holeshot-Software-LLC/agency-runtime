@@ -623,6 +623,13 @@ def _codex_hook_trust_check(
             "pass",
             "codex: Agency Runtime command hooks are trusted",
         )
+    if trust_status == "managed":
+        return CheckResult(
+            "adapter_codex_hook_trust",
+            "pass",
+            "codex: Agency Runtime command hooks are trusted by managed system policy",
+            "Activation proof is reported separately and remains required for runtime readiness.",
+        )
     severity = (
         "fail" if configured == "true" and trust_status in {"untrusted", "modified"} else "warn"
     )
@@ -630,7 +637,10 @@ def _codex_hook_trust_check(
         "adapter_codex_hook_trust",
         severity,
         f"codex: command-hook trust is {trust_status}; {action}",
-        "Installation and plugin enablement never grant hook trust automatically.",
+        (
+            "Dedicated production containers may grant policy trust through the explicit "
+            "system-managed install mode; ordinary plugin installation does not."
+        ),
     )
 
 

@@ -23,6 +23,7 @@ from agency_runtime.core.inference_profiles import (
 )
 from agency_runtime.core.inference_profiles import (
     resolve_explicit_capability_route,
+    resolve_explicit_capability_route_any,
 )
 from agency_runtime.core.structured_provider import (
     StructuredProviderResult,
@@ -74,6 +75,12 @@ from agency_runtime.core.workforce.planning_contracts import (
     UnitRecruitment,
     WorkUnit,
     WorkUnitPlan,
+)
+from agency_runtime.core.workforce.reranker_provider import (
+    RerankerBatch,
+    RerankerInvoker,
+    invoke_reranker_provider,
+    rerank_documents,
 )
 from agency_runtime.core.workforce.staffing_verifier import (
     REQUIREMENT_AXES,
@@ -1613,6 +1620,161 @@ def _parse_recall_rerank(
     return ranked
 
 
+def _native_recall_reranker_inputs(
+    document: Mapping[str, Any],
+    offered: Mapping[str, tuple[str, ...]],
+) -> tuple[str, tuple[str, ...], tuple[tuple[str, str], ...]]:
+    """Split the positive-only recall projection into one native rerank batch."""
+
+    raw_units = document.get("units")
+    if (
+        not isinstance(raw_units, Sequence)
+        or isinstance(raw_units, (str, bytes, bytearray))
+        or len(raw_units) != len(offered)
+    ):
+        raise ValueError("native reranker input units do not match their offered sets")
+    query_units: list[dict[str, Any]] = []
+    documents: list[str] = []
+    references: list[tuple[str, str]] = []
+    for expected_unit_id, raw_unit in zip(offered, raw_units, strict=True):
+        if not isinstance(raw_unit, Mapping) or raw_unit.get("unit_id") != expected_unit_id:
+            raise ValueError("native reranker input unit order is invalid")
+        raw_candidates = raw_unit.get("candidates")
+        if not isinstance(raw_candidates, Sequence) or isinstance(
+            raw_candidates, (str, bytes, bytearray)
+        ):
+            raise ValueError("native reranker candidates must be an array")
+        candidate_by_id = {
+            str(candidate.get("agent_id", "")).strip().casefold(): candidate
+            for candidate in raw_candidates
+            if isinstance(candidate, Mapping)
+        }
+        if set(candidate_by_id) != set(offered[expected_unit_id]):
+            raise ValueError("native reranker candidates do not match their offered set")
+        work_unit = {str(key): value for key, value in raw_unit.items() if key != "candidates"}
+        query_units.append(work_unit)
+        for agent_id in offered[expected_unit_id]:
+            documents.append(
+                _json_prompt(
+                    {
+                        "candidate": candidate_by_id[agent_id],
+                        "work_unit": work_unit,
+                    }
+                )
+            )
+            references.append((expected_unit_id, agent_id))
+    query = _json_prompt(
+        {
+            "plan_hash": document.get("plan_hash"),
+            "projection_version": document.get("projection_version"),
+            "recall_policy": document.get("recall_policy"),
+            "work_units": query_units,
+        }
+    )
+    return query, tuple(documents), tuple(references)
+
+
+def _native_reranked_offers(
+    result: RerankerBatch,
+    references: Sequence[tuple[str, str]],
+    offered: Mapping[str, tuple[str, ...]],
+) -> dict[str, tuple[str, ...]]:
+    ranked: dict[str, list[str]] = {unit_id: [] for unit_id in offered}
+    if len(result.ranked_indices) != len(references):
+        raise ValueError("native reranker result does not match its reference set")
+    for index in result.ranked_indices:
+        unit_id, agent_id = references[index]
+        ranked[unit_id].append(agent_id)
+    exact = {unit_id: tuple(agent_ids) for unit_id, agent_ids in ranked.items()}
+    if any(
+        len(candidate_ids) != len(set(candidate_ids)) or set(candidate_ids) != set(offered[unit_id])
+        for unit_id, candidate_ids in exact.items()
+    ):
+        raise ValueError("native reranker did not preserve every offered set")
+    return exact
+
+
+def _native_reranker_attempt(
+    provider: ProviderEntry,
+    result: RerankerBatch,
+) -> WorkforceInferenceAttempt:
+    receipt = result.receipt
+    status = receipt.status if receipt.status in {"applied", "failed", "skipped"} else "failed"
+    return WorkforceInferenceAttempt(
+        stage="recall_reranker",
+        provider_name=receipt.provider_name or provider.name,
+        provider_type=provider.type,
+        requested_model=receipt.requested_model or provider.model,
+        model_group=provider.model if provider.type.casefold() == "litellm" else "",
+        actual_model=receipt.actual_model,
+        model_receipt_source="response.body.model" if receipt.actual_model else "unavailable",
+        status=status,
+        reason_code=receipt.reason_code or "dense_recall_reranked",
+        latency_ms=receipt.latency_ms,
+        input_count=receipt.input_count,
+        candidate_count=receipt.input_count,
+        provider_call_count=1,
+    )
+
+
+def _run_native_recall_reranker(
+    *,
+    document: Mapping[str, Any],
+    offered: Mapping[str, tuple[str, ...]],
+    provider: ProviderEntry,
+    budget: _CallBudget,
+    invoker: RerankerInvoker | None,
+) -> tuple[dict[str, tuple[str, ...]], WorkforceInferenceAttempt]:
+    try:
+        query, documents, references = _native_recall_reranker_inputs(document, offered)
+    except (TypeError, ValueError):
+        return {}, WorkforceInferenceAttempt(
+            stage="recall_reranker",
+            provider_name=provider.name,
+            provider_type=provider.type,
+            requested_model=provider.model,
+            model_group="",
+            actual_model="",
+            model_receipt_source="unavailable",
+            status="skipped",
+            reason_code="dense_recall_projection_invalid",
+            latency_ms=0,
+        )
+
+    if invoker is None:
+
+        def raw_invoker(query_text: str, candidates: tuple[str, ...]):
+            return invoke_reranker_provider(provider, query_text, candidates)
+
+    else:
+        raw_invoker = invoker
+
+    def active_invoker(query_text: str, candidates: tuple[str, ...]):
+        if not budget.consume():
+            raise RuntimeError("workforce recall call budget exhausted")
+        return raw_invoker(query_text, candidates)
+
+    native_result = rerank_documents(
+        query,
+        documents,
+        invoker=active_invoker,
+        provider_name=provider.name,
+        requested_model=provider.model,
+    )
+    attempt = _native_reranker_attempt(provider, native_result)
+    if native_result.receipt.status != "applied":
+        return {}, attempt
+    try:
+        ranked = _native_reranked_offers(native_result, references, offered)
+    except (IndexError, KeyError, TypeError, ValueError):
+        return {}, replace(
+            attempt,
+            status="failed",
+            reason_code="reranker_response_invalid",
+        )
+    return ranked, attempt
+
+
 def _run_hybrid_recall(
     *,
     plan: WorkUnitPlan,
@@ -1623,6 +1785,7 @@ def _run_hybrid_recall(
     invoker: StructuredInvoker,
     embedding_invoker: EmbeddingInvoker | None,
     turn_routing_context: Mapping[str, Any] | None,
+    reranker_invoker: RerankerInvoker | None = None,
 ) -> tuple[
     HybridRecallResult | None,
     dict[str, tuple[str, ...]],
@@ -1638,10 +1801,10 @@ def _run_hybrid_recall(
             capability_class="embeddings",
             harness=harness,
         )
-        reranker_route = resolve_explicit_capability_route(
+        reranker_route = resolve_explicit_capability_route_any(
             config,
             "workforce.recall.reranker",
-            capability_class="text",
+            capability_classes=("rerank", "text"),
             harness=harness,
         )
     except ConfigValidationError:
@@ -1752,6 +1915,18 @@ def _run_hybrid_recall(
     )
     if not offered:
         return result, {}, attempts
+    if reranker_route.profile.capability_class.strip().casefold() == "rerank":
+        native_ranked, native_attempt = _run_native_recall_reranker(
+            document=reranker_document,
+            offered=offered,
+            provider=reranker_route.provider,
+            budget=recall_budget,
+            invoker=reranker_invoker,
+        )
+        attempts.append(native_attempt)
+        if config.workforce.dense_recall_mode != "additive":
+            return result, {}, attempts
+        return result, native_ranked, attempts
     try:
         reranked, reranker_attempts, _failure = _invoke_stage(
             stage="recall_reranker",
@@ -2650,6 +2825,7 @@ def _recruit_ambiguous_plan(
     budget: _CallBudget,
     invoker: StructuredInvoker,
     embedding_invoker: EmbeddingInvoker | None,
+    reranker_invoker: RerankerInvoker | None,
     routing_context_fingerprint: str,
     explicit_indivisible_unit: bool = False,
     turn_routing_context: Mapping[str, Any] | None = None,
@@ -2689,6 +2865,7 @@ def _recruit_ambiguous_plan(
         context=context,
         invoker=invoker,
         embedding_invoker=embedding_invoker,
+        reranker_invoker=reranker_invoker,
         turn_routing_context=turn_routing_context,
     )
     typed_recall, detail_cards, hybrid_evidence = _apply_hybrid_recall(
@@ -2942,6 +3119,7 @@ def plan_and_staff_workforce(
     context: StaffingContext,
     invoker: StructuredInvoker | None = None,
     embedding_invoker: EmbeddingInvoker | None = None,
+    reranker_invoker: RerankerInvoker | None = None,
     routing_context_fingerprint: str = "",
     max_planned_units: int | None = None,
     required_planned_artifact_kind: str | None = None,
@@ -3082,6 +3260,7 @@ def plan_and_staff_workforce(
         budget=budget,
         invoker=invoker,
         embedding_invoker=embedding_invoker,
+        reranker_invoker=reranker_invoker,
         routing_context_fingerprint=routing_context_fingerprint,
         explicit_indivisible_unit=explicit_indivisible_unit,
         turn_routing_context=projected_turn_context,

@@ -3,13 +3,19 @@ title: "Agency Runtime"
 status: active
 category: overview
 created: 2026-07-08
-updated: 2026-08-13
+updated: 2026-08-25
 tags: [agents, routing, delegation, dashboard]
 related:
   - CONTRIBUTING.md
   - SECURITY.md
   - THIRD_PARTY_NOTICES.md
   - docs/TROUBLESHOOTING.md
+  - docs/roadmap/issue-AR-290-end-to-end-guided-setup.md
+  - docs/roadmap/issue-AR-293-safe-inference-profile-config-operations.md
+  - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
+  - docs/roadmap/issue-AR-298-expose-complete-workforce-prompts.md
+  - docs/decisions/0172-compose-first-run-setup-from-guarded-owner-operations.md
+  - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
   - docs/roadmap/issue-AR-189-add-owned-host-integration-uninstall.md
   - docs/decisions/0108-retire-only-owned-host-integrations.md
   - docs/decisions/0117-unify-owner-control-authority.md
@@ -93,6 +99,228 @@ with the request, so your main agent stays small.
 
 > Agency Runtime is prerelease software. Install it from this repository; no
 > public package release is claimed yet.
+
+## 🚀 Start here
+
+Install the current source with Python 3.10 or newer, then let the guided setup
+compose the existing guarded configuration, installation, diagnostic, and
+smoke commands:
+
+```bash
+git clone https://github.com/Holeshot-Software-LLC/agency-runtime.git
+cd agency-runtime
+python -m pip install .
+
+agency setup
+```
+
+`agency setup` keeps a valid existing configuration by default. On a first
+run it opens the provider wizard, validates the result, finds supported agent
+harnesses, asks which integrations and optional local dashboard to install,
+runs `agency doctor`, and offers deterministic smoke checks. It prints every
+stage separately, so a partial install is visible and the same command can be
+used to resume. For explicit automation, use a bounded scope such as
+`agency setup --non-interactive --all`; non-interactive setup refuses to infer
+an installation scope.
+
+Setup exits `0` when every selected stage is complete, `2` when configuration
+and installation are usable but an attended action such as Codex hook trust or
+a harness restart remains, and `1` on a hard failure. An exit of `2` is a
+truthful resumable state, not release or live-host proof; follow the printed
+action and rerun setup or the named verification command.
+
+```mermaid
+flowchart TD
+    A["Install current source"] --> B["agency setup"]
+    B --> C{"Existing configuration?"}
+    C -- keep --> D["Validate provider and policy"]
+    C -- create or replace --> E["Interview: profile, provider, model, fallback, secret indirection"]
+    E --> D
+    D --> F{"Choose harness scope"}
+    F --> G["Install all detected or one explicit host"]
+    F --> H["Skip host wiring"]
+    G --> I{"Install local dashboard?"}
+    H --> I
+    I --> J["Doctor + optional deterministic smoke"]
+    J --> K["Restart harnesses and settle native trust"]
+    K --> L["Optional attended live canary"]
+```
+
+| Setup stage | What you decide | What a passing stage proves |
+|---|---|---|
+| Inference | Security profile, primary provider/model, credential environment variable, fallback order | The persisted configuration is valid and the selected provider contract is reachable |
+| Harnesses | All safely detected hosts, one explicit host, or none | Agency-owned integration files and native registration were applied for the selected scope |
+| Dashboard | Install the optional per-user loopback service or skip it | The local service can be installed and opened; it does not prove a host loaded Agency |
+| Verification | Doctor and deterministic smoke now or later | Configuration and plugin readiness only; live child execution and card delivery need separate host evidence |
+
+If you installed the dashboard, open it with:
+
+```bash
+agency dashboard service open
+```
+
+### Current prerelease state
+
+| Surface | Current source state | Important limit |
+|---|---|---|
+| Staffing core | Implemented and covered by the repository's focused production spine | A configured inference provider is required for substantive selection; failures select nobody and fail open to the host generalist |
+| Providers | Local/Ollama, OpenAI-compatible APIs, LiteLLM, direct API-key profiles, and authenticated Codex or Claude subscription CLIs | Exact model availability and authentication belong to the selected provider/account |
+| Learned recall | Typed-only recall is the safe default; optional embeddings plus structured or native reranking are supported | `shadow` or `additive` must be chosen explicitly; provider failure falls back to typed recall |
+| Native hosts | Codex, Claude Code, ZCode, Hermes, and OpenClaw adapters are implemented | Exact-candidate live Rule-4 proof is still incomplete across the five-host matrix |
+| Unattended containers | Exact config binding and fail-closed production-container installation are implemented; Codex uses durable system-managed hooks and a normal-invocation activation canary | Clean Linux Codex, Claude Code, and OpenClaw container evidence remains a release gate |
+| Dashboard | Optional, local-only owner observatory and control plane with a setup checklist, complete workforce prompt detail, and Codex hook-authority projection | The browser remains read-only for host installation; unattended lifecycle belongs to the explicit CLI transaction |
+| Distribution | Source installation is documented | No stable package, signed public artifact, tag, or release is claimed yet |
+
+### Unattended production containers
+
+`agency setup` is the interactive workstation walkthrough. A fresh production
+container instead receives a completed, validated config plus credential
+environment variables from its image or orchestrator and runs one fail-closed
+runtime-install transaction:
+
+```bash
+python -m pip install .
+agency install \
+  --production-container \
+  --config /etc/agency/agency.yaml \
+  --all \
+  --no-dashboard \
+  --json
+```
+
+Use `--agent codex`, `--agent claude`, or `--agent openclaw` instead of `--all`
+when the image contains one known harness. Package acquisition and harness
+authentication happen before this command; there is no Agency post-install
+step after it succeeds. Conveyor may invoke the ordinary harness process next.
+It must not configure Agency, approve hooks, or finish setup.
+
+For Codex, production-container mode requires administrator or root authority
+to own the documented system policy path (`/etc/codex/requirements.toml` on
+Unix or `%ProgramData%\OpenAI\Codex\requirements.toml` on Windows). It pins
+hooks on, loads only policy-managed hooks, registers all eight Agency events
+through one absolute managed relay, and runs a fresh normal current-profile
+canary without a trust bypass. The command exits nonzero unless that canary
+persists an activation attestation. To avoid destroying enterprise policy, an
+existing requirements or relay file must already be a digest-valid Agency-owned
+document; any foreign file is refused unchanged. This mode is for a dedicated
+container, not a shared developer workstation whose other unmanaged hooks must
+continue to run.
+
+Claude Code and OpenClaw retain their native registration lifecycles and have
+no later Agency trust ceremony. The exact Linux release gate still has to prove
+their first ordinary container invocation against the merge candidate; source
+registration alone is not being mislabeled as live loading.
+
+```mermaid
+flowchart LR
+    I["Image: Python + harness + auth"] --> C["Exact Agency config + secret env names"]
+    C --> X["agency install --production-container"]
+    X --> V["Validate config + seed governed workforce"]
+    V --> H["Install native harness integration"]
+    H --> M{"Codex?"}
+    M -- yes --> P["Install managed system hooks"]
+    P --> A["Normal-invocation activation canary"]
+    M -- no --> R["Require native registration complete"]
+    A --> Z{"exit 0"}
+    R --> Z
+    Z --> Q["Conveyor invokes ordinary harness"]
+    Q --> D["Agency selects, recalls, hires, and amends dynamically"]
+    D --> N["Harness owns native child execution"]
+```
+
+### Give this prompt to an installation agent
+
+The prompt below is intentionally provider-neutral. It first distinguishes an
+attended workstation from a dedicated unattended container, then routes each
+case through the matching public Agency surface instead of inventing a second
+installer.
+
+<details>
+<summary>Copy the complete Agency Runtime setup prompt</summary>
+
+```text
+Help me install and configure Agency Runtime on this machine. First ask whether
+this is (A) an attended owner workstation or (B) a dedicated unattended
+production container that will be provisioned once and then invoked by an
+orchestrator such as Conveyor. This is not permission to publish, push, tag,
+create a release, expose a dashboard beyond loopback, or leak credentials.
+
+Before changing anything, inspect the machine and repository, then interview
+me for every decision you cannot prove safely. Ask in small groups and explain
+the tradeoffs. At minimum establish:
+
+1. Operating system, shell, Python version, repository/source ref, whether an
+   existing Agency Runtime installation or config must be preserved, and the
+   intended install method.
+2. Security profile and which installed harnesses I want wired: Codex, Claude
+   Code, ZCode, Hermes, and/or OpenClaw. Distinguish detected, registered,
+   trusted/enabled, loaded, and live; never infer one state from another.
+3. Whether I want the optional per-user local dashboard installed and opened.
+4. My primary staffing-inference provider and exact model: local Ollama or an
+   OpenAI-compatible endpoint, LiteLLM/router alias, direct OpenAI-compatible
+   or Anthropic API credentials, or an authenticated Codex/Claude subscription
+   CLI. Ask about reasoning/thinking level, timeouts, and ordered fallbacks.
+   Verify model discovery where the public CLI supports it. Do not guess a
+   model, endpoint, router alias, subscription entitlement, or credential.
+5. Whether one global profile is enough or I need per-stage or per-harness
+   profiles/routes. Keep the simplest working configuration unless I request
+   advanced routing.
+6. Whether I want typed-only workforce recall (safe default), `shadow`, or
+   `additive` learned recall. If learned recall is requested, separately ask
+   for an embeddings provider and a reranker. Support local models, LiteLLM,
+   direct API-key profiles, subscription CLIs for structured text reranking,
+   and native Jina embeddings/reranking on machines without local models.
+7. For every secret, ask only for the environment-variable NAME and have me
+   set the value through a hidden/owner-controlled mechanism. Never request or
+   place a secret value in chat, argv, YAML, logs, screenshots, commits, or the
+   final report. If a secret was already pasted, tell me to rotate it.
+8. Whether to run deterministic smoke after setup. Explain that it is not a
+   live host canary, benchmark, signed-artifact check, or release proof. Ask
+   again before any command that can call a live/paid model.
+9. For an unattended container, the exact config path, which single harness or
+   detected harness set the image contains, how its subscription or API
+   authentication is injected before installation, whether the dashboard is
+   intentionally omitted, and whether the installer has system-policy
+   authority. Do not leave any question, trust prompt, restart, or config write
+   for Conveyor or the first production request.
+
+Use the repository's public surfaces as the authority:
+
+- Run `agency version --json` and a write-free install/status inspection first.
+- Use `agency setup` for the attended end-to-end journey. Use explicit bounded
+  flags only when the answers justify them; do not hand-author configuration
+  that a guarded CLI command can write.
+- For a dedicated unattended container, complete the interview before image
+  execution, materialize the reviewed config and secret environment-variable
+  contract, run `agency config validate`, then run
+  `agency install --production-container --config <absolute-path> --all
+  --no-dashboard --json` (or one exact `--agent`). Treat any nonzero exit as a
+  failed provision. Never substitute the invocation-scoped
+  `--autonomous --verify-activation` diagnostic for durable installation.
+- Use `agency configure` only for the provider/starter-roster wizard, and use
+  `agency config ...` for reviewed advanced profile, harness-route, or learned
+  recall changes.
+- Run `agency config validate`, `agency doctor --json`, and the selected
+  deterministic `agency smoke --agent <host> --json` or
+  `agency smoke --all --json` scope.
+- If the dashboard was selected, use `agency dashboard service open` and walk
+  me through its Settings setup checklist. Do not create a dashboard endpoint
+  that installs host integrations or executes shell commands.
+- Tell me exactly which harnesses must be restarted and which native trust or
+  activation step remains. Do not claim loaded/live/card-delivery evidence
+  without the corresponding current host-written artifact and Store evidence.
+
+Stop on a hard validation or ownership failure; preserve unrelated files and
+existing configuration. Finish with a concise report containing source and
+installed identity, config path (never values of secrets), provider/profile
+names and actual tested model receipts, selected harnesses and their separate
+registration/trust/load/live states, dashboard state, commands/tests run with
+exit codes, anything skipped, and the exact next action. For production mode,
+an exit-zero report must say that Conveyor has no setup responsibility. Make no
+release-readiness claim beyond the evidence observed on this machine.
+```
+
+</details>
 
 > **Nine-rule completion is not claimed.** Rule 1 source and simulation are
 > repaired across all five adapters, but Rule 8 remains source-negative on
@@ -385,16 +613,32 @@ Agency requires a working provider for every substantive specialist-selection
 turn. Configure and validate one before expecting routing or hiring.
 
 ```bash
-agency configure          # guided setup
+agency setup              # complete first run: config + hosts + dashboard + checks
+agency configure          # provider and starter-roster wizard only
 agency config show
 agency config validate
 ```
 
-**Ways to configure inference:**
+**Provider coverage:**
+
+| Need | Supported provider paths |
+|---|---|
+| Main staffing and hiring inference | Local Ollama, OpenAI-compatible endpoints, LiteLLM routers, direct OpenAI-compatible or Anthropic API-key profiles, authenticated Codex CLI, or authenticated Claude CLI |
+| Embeddings for optional learned recall | Ollama, OpenAI-compatible endpoints (including Jina), or LiteLLM; an exact vector width can be enforced |
+| Reranking for optional learned recall | Structured text inference through local models, LiteLLM, direct API profiles, or Codex/Claude subscription CLIs; native ranking through the dedicated Jina adapter |
+| No embedding/reranking model | Typed-only recall remains fully supported and is the default |
+
+**Ways to configure the primary provider:**
 
 - **Codex CLI / subscription reuse** — reuse an authenticated Codex session;
   exposes the account-visible model and reasoning levels (`low` is usually
   enough for the compact plan and reduces latency).
+- **Claude CLI / subscription reuse** — reuse an authenticated Claude session;
+  model selection is supported, while per-call thinking control is recorded as
+  unavailable rather than invented.
+- **Ollama or direct API-key profile** — use a local Ollama model or a reviewed
+  OpenAI-compatible/Anthropic endpoint with a credential environment-variable
+  name.
 - **OpenAI-compatible endpoint** — any local or remote OpenAI-compatible API
   (e.g. `http://127.0.0.1:1234/v1`).
 - **LiteLLM router** — enter the router/model-group alias exactly (e.g.
@@ -460,6 +704,14 @@ Precedence: harness routes → harness default → global routes → global defa
 → the legacy provider chain. `AGENCY_INFERENCE_HARNESS` naming a configured
 section overrides harness selection for terminal testing.
 
+Assurance, recall, and delegation are deliberately separate controls:
+
+| Control | What it owns | What it does not own |
+|---|---|---|
+| `workforce.mode` | Staffing decomposition and recruiter/critic assurance (`strict` exercises the highest-assurance path) | Embedding/reranker activation or native child spawning |
+| `workforce.dense_recall_mode` | Whether validated learned recall stays `shadow` evidence or may add discoveries in `additive` mode | Final specialist selection; inference and the verifier still decide |
+| `delegation.mode` | Optional/preferred/strongly-preferred guidance for an accepted plan plus bounded child-routing correction | Specialist choice or child execution; Agency inference selects staffing and the native harness owns spawning/execution |
+
 **Hybrid workforce recall.** Learned recall is opt-in at the provider boundary:
 both recall routes must be mapped explicitly, and neither route inherits a
 default text profile. `shadow` records bounded recall evidence without changing
@@ -493,10 +745,59 @@ inference:
       api_key_env: LITELLM_API_KEY
 ```
 
+On a machine without local models, Jina can serve both operations. Embeddings
+use its OpenAI-compatible endpoint, while native reranking uses the explicit
+`jina` adapter and `rerank` capability. Keep the key in the environment rather
+than in YAML:
+
+```yaml
+inference:
+  routes:
+    workforce.recall.embedding: jina-embedding
+    workforce.recall.reranker: jina-reranker
+  profiles:
+    jina-embedding:
+      adapter: openai-compatible
+      model: jina-embeddings-v3
+      capability_class: embeddings
+      dimensions: 1024
+      base_url: https://api.jina.ai/v1
+      api_key_env: JINA_API_KEY
+    jina-reranker:
+      adapter: jina
+      model: jina-reranker-v3.5
+      capability_class: rerank
+      base_url: https://api.jina.ai/v1
+      api_key_env: JINA_API_KEY
+```
+
+The `jina` adapter is valid only on `workforce.recall.reranker`; it cannot be a
+default or serve a generative inference stage. Existing `text` rerankers remain
+supported for Ollama/local chat models, LiteLLM, direct chat API keys, and
+Codex or Claude subscription CLIs.
+
+Setup agents can apply those non-secret mappings through the guarded CLI:
+
+```text
+agency config set inference.profiles.jina-embedding --stdin
+agency config set inference.profiles.jina-reranker --stdin
+agency config set inference.routes --stdin
+agency config set workforce.dense_recall_mode additive
+agency config validate
+```
+
+For each `--stdin` command, send one YAML or JSON mapping and then end standard
+input. Dotted route names belong inside the complete `inference.routes` map.
+Put only an environment-variable name such as `JINA_API_KEY` in a profile. If
+a direct profile key is unavoidable, use
+`agency config set inference.profiles.<name>.api_key --prompt`; direct keys are
+write-only and never accepted as positional values or profile-map fields.
+
 Cold turns send one bounded batch containing the positive-only roster cards
 and current work-unit queries. Warm turns reuse the exact model-bound roster
-vectors and send only the queries. A second bounded call reranks every recalled
-ID without dropping or inventing candidates. Missing routes, provider failures,
+vectors and send only the queries. A second bounded structured or native call
+reranks every recalled ID without dropping or inventing candidates. Missing
+routes, provider failures,
 malformed vectors, absent actual-model receipts, or cache-identity mismatches
 fall back to the unchanged typed candidate lane.
 
@@ -523,9 +824,12 @@ cd agency-runtime
 python -m pip install .
 
 agency --version
-agency install --dry-run
-agency doctor
+agency setup
 ```
+
+To inspect the native-install plan without changing the machine, run
+`agency install --dry-run --json`. Use `agency install` directly for a repair
+or a known scoped install; use `agency setup` for the consumer first run.
 
 Inspect the exact installed build and resolve an update target without changing
 the environment:
@@ -627,19 +931,37 @@ mode it starts the bounded model-backed canary only when the exact eight Agency
 hooks are enabled and trusted; missing, changed, or unsettled trust fails
 quickly without using provider quota.
 
-For an owner-controlled fresh container or other disposable environment, use
-the explicit autonomous mode after configuring inference through the same CLI
-surface:
+`--autonomous` is an invocation-scoped diagnostic for attended recovery. It may
+use Codex's one-shot hook-trust bypass, so it cannot prepare a later
+Conveyor-launched Codex process and is not the production-container contract.
+
+For a dedicated, owner-controlled container, give the installer its complete
+validated Agency configuration and request the production transaction:
 
 ```bash
-agency install --autonomous --verify-activation --json
+agency install \
+  --production-container \
+  --config /etc/agency/agency.yaml \
+  --all \
+  --no-dashboard \
+  --json
 ```
 
-Autonomous mode may use the harness's supported noninteractive hook-trust bypass
-for that exact invocation. It records `trust_mode=autonomous_bypass` and never
-claims the hooks were trusted. Both modes must still prove hook start, route,
-correlated specialist-card delivery, host-native child lifecycle, and finalization before
-reporting runtime readiness.
+For Codex, that transaction installs an Agency-owned system policy, enables
+only the managed Agency hook set, and runs a mandatory normal-invocation live
+canary. It refuses a foreign requirements file instead of merging or replacing
+it. An exit of zero means the exact config, registration, managed policy,
+activation evidence, and current attestation all agree; no later trust prompt
+or setup step is delegated to Conveyor. The container must already have the
+harness package, harness authentication, inference credentials, and authority
+to write the system policy. See
+[Unattended production containers](#unattended-production-containers) for the
+security boundary and clean-container requirements.
+
+Attended and autonomous verification must still prove hook start, route,
+correlated specialist-card delivery, host-native child lifecycle, and
+finalization before reporting runtime readiness. Autonomous evidence records
+`trust_mode=autonomous_bypass` and never claims durable trust.
 
 The intended post-gate install and rollback commands include ZCode:
 
@@ -711,6 +1033,8 @@ agency doctor --json          # what's installed and verified
 agency smoke --all --json     # canary readiness check (see 🩺 below)
 agency agents list            # roster
 agency roster list
+agency workforce prompt code-reviewer
+agency workforce prompt code-reviewer --version <immutable-version> --json
 
 agency search "incident response"
 agency route "review this authentication design"
@@ -783,6 +1107,36 @@ without a live canary. It is an observatory and owner control plane, not a
 child-execution scheduler. Delegation-event rows may include legacy or
 recommendation-only records; the dashboard shows an observed child only when
 execution correlation exists, and no such row proves specialist-card delivery.
+
+The Settings view starts with the same four-part setup journey used by the
+CLI: configure inference, wire native harnesses, open the dashboard, then
+validate and smoke. It derives `CONFIGURED`, registration counts, and service
+state from the dashboard's current bounded projections and labels verification
+as a terminal action. Its buttons only navigate to the existing provider
+editor or copy attended commands such as `agency setup` and
+`agency smoke --all --json`; the browser does not install host integrations,
+invoke a shell, settle native trust, or turn `CORE READY` into a live-proof
+claim.
+
+Settings also projects the redacted effective inference topology instead of
+making operators decode the raw JSON: assurance and recall modes, global and
+harness-scoped route/default bindings, and each named profile's adapter,
+transport, model, thinking level, capability, embedding dimensions, sanitized
+endpoint, and credential environment-variable name. Direct keys remain
+write-only and render only as “present (redacted).” The panel explains when a
+blank legacy judge is expected and keeps the authority boundary explicit:
+Agency inference owns staffing; the native harness owns child spawn and
+execution.
+
+The Hosts view distinguishes attended Codex trust from current, absent,
+drifted, or foreign system-managed policy and keeps that authority separate
+from the last successful activation proof. The Workforce detail view exposes
+the complete governed prompt definition for
+active, disabled, suspended, retired, and merged workers. The matching CLI
+command can retrieve the current definition or an exact immutable historical
+version. Both surfaces label the Agency Store as definition authority and keep
+that distinct from runtime-delivery proof: seeing a prompt proves what Agency
+governs, not that a particular host delivered it to a child.
 
 `agency dashboard service open` is an owner convenience operation: it ensures
 an Agency-owned service is installed and running before opening its loopback
@@ -921,6 +1275,21 @@ their configured routes, and child staffing still uses the independent
 Claude canaries always run in a disposable isolated profile;
 `--profile-scope current-profile` and `agency install --agent codex
 --verify-activation` are Codex-only surfaces.
+
+---
+
+## 🚦 Release status
+
+The current source is **not ready for a public release yet**, and the remaining
+work is broader than another local smoke run. The canonical
+[release checklist](docs/RELEASE_CHECKLIST.md) still requires current
+exact-candidate live evidence across the supported host matrix, valid measured
+outcomes, current platform artifact/build matrices, tracker and documentation
+parity, and the authorized signing and publication path. A successful
+`agency setup`, green tests, `agency doctor`, or deterministic
+`agency smoke --all` is valuable local readiness evidence, but none substitutes
+for those release gates. Until they are closed, install from an explicitly
+reviewed source commit and treat all artifacts as prerelease.
 
 ---
 
