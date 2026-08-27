@@ -24,8 +24,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-297
 branch: codex/ar297-production-container-live-evidence
-evidence_commit: e17e5221657ec90df8092879cf9d5c79d65ecb50
-minimum_ledger_commit: e17e5221657ec90df8092879cf9d5c79d65ecb50
+evidence_commit: e0b0b25c30083b09743fe1a04f2a0ad4cdf4e533
+minimum_ledger_commit: e0b0b25c30083b09743fe1a04f2a0ad4cdf4e533
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 ---
@@ -37,8 +37,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Work only in `/tmp/agency-runtime-ar297.WQUbF2` on
   `codex/ar297-production-container-live-evidence`, based on `origin/main`
   `0a23983a`. Never touch the shared checkout.
-- Clean ledger `5bd9cf80` retains the passing `e17e5221` artifacts and three
-  ordinary rows; AR-328 now supersedes that final candidate pending rebuild.
+- Clean ledger `e0b0b25c` binds AR-328; exact artifacts/images pass and four fresh installs are next.
 - Linux remains **NO-GO**. AR-297/#335 remain open. No tracker write, push, PR,
   merge, tag, signing, publication, release, or hosted workflow is authorized.
 
@@ -54,16 +53,17 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Prior named gates pass: 912 docs, Ruff lint/format, 860 Python tests with 3
   skips, 138 dashboard tests, routing 1.4.0, and 167/167 decision mutations;
   receipts are `c5f34de1...8b7f`, `25cc4f01...4cb`, `2eb1981a...3ef9`,
-  `eeb12164...10d4`, and `9a45044f...0a71`; rerun is pending for `e17e5221`.
+  `eeb12164...10d4`, and `9a45044f...0a71`; rerun is pending for `e0b0b25c`.
 - AR-328 regression `751276ea...e3a` fails before repair. The exact cache guard
   preserves movable installs; 359 tests pass with 2 skips at
   `981fbbc8...ddd0`, and focused Ruff/docs pass with empty stderr.
 - Exact Qwen2 committed-source replay `f98bb268...7cb3` exits 0: read-only and
   full restricted verification both return staffed `verified_existing_receipt`.
-- Exact `e17e5221` wheel/sdist are `8b35c8f6...d897`/`7e9f7ad6...9287`;
-  manifest `3ae9f798...86b6`, six builds, and independent image receipt
-  `e3e6302d...f947` exit 0. Exact image IDs begin `28c3fd34`, `fa17365f`,
-  `29acb4de`, `3739b180`, and `b89804f5`.
+- Exact `e0b0b25c` wheel/sdist are `75d63ff9...3762`/`2b1ae7ec...79d9`;
+  manifest `fcfd0231...b1b0`, canonical/Twine/verification, and six final
+  builds exit 0. R1 image verification correctly rejects Node 22; the pinned
+  Node 24.15 rebuild passes at `07f372e3...eb9a`. Final image IDs begin
+  `c8e7a265`, `93eb1f9e`, `3a4cac26`, `c3d712ec`, and `4d2ccddc`.
 - Fresh Codex absence/install/Store/status receipts `ad4edec5...dfd6`,
   `c41e8eae...0039`, `1ca3bf03...cf6`, and `6754603c...4173` exit 0.
   Bundle `9bcb81e6...454e` has one exact child, valid header, `missing=[]`,
@@ -112,16 +112,16 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 
 ## exact-blocker
 
-- Checkpoint AR-328, rebuild the exact candidate, repeat final clean installs
-  and ordinary rows, complete Claude's pending first-party login, then refresh
-  the host/dashboard, named gates, records, and teardown.
+- Refresh four separate clean candidate installs and their ordinary rows,
+  complete Claude's pending first-party login, then refresh the host/dashboard,
+  named gates, records, and teardown.
 - Cross-OS artifacts, signing, tracker parity, push/PR/merge/tag/publication,
   release, and exhaustive dispatch are unauthorized, not Linux-only GO gates.
 
 ## same-task-continuity
 
-- Historical exact artifacts: `~/.agency-runtime/release-artifacts/dist-e17e5221657ec90df8092879cf9d5c79d65ecb50-linux-ar297`.
-- Evidence: `~/.agency-runtime/evidence/ar297-go-e17e5221`; secret-safe helpers
+- Exact artifacts: `~/.agency-runtime/release-artifacts/dist-e0b0b25c30083b09743fe1a04f2a0ad4cdf4e533-linux-ar297`.
+- Evidence: `~/.agency-runtime/evidence/ar297-go-e0b0b25c`; secret-safe helpers
   remain `/tmp/agency-runtime-ar297-evidence.pcLOZn/`.
 - Protected Python: `~/.agency-runtime-ci/ar297-release-0827/venv/bin/python`.
 - Exactly 42 AR-297-labelled containers remain; remove all only at final teardown.
@@ -131,7 +131,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 After compaction, reread this capsule and `git status`, then resume at the first
 unchecked line. Mark an item complete only with exact retained evidence.
 
-1. [ ] Rebuild and independently verify final AR-328 artifacts/images.
+1. [x] Rebuild and independently verify final AR-328 artifacts/images.
 2. [x] Test deterministic temporary Mistral aliases and remove all three.
 3. [x] Test and remove exact Gemma 3 27B; it selects the wrong role.
 4. [x] AR-327 repair/rebuild and one clean Codex install pass with verified

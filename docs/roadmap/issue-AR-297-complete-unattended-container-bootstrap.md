@@ -1811,3 +1811,13 @@ root movable for upgrade, rollback, and uninstall. Regression-first failure
 tests with 2 skips at `981fbbc8...ddd0`, while focused Ruff and docs pass. This
 source change supersedes `e17e5221` as the final candidate, so exact artifacts,
 images, four clean installs, and their later-process evidence must be rebuilt.
+
+Clean ledger `e0b0b25c30083b09743fe1a04f2a0ad4cdf4e533` produces wheel
+`75d63ff9...3762` (9,351,340 bytes) and sdist `2b1ae7ec...79d9`
+(26,052,593 bytes). Canonical build, strict Twine, independent distribution
+verification, the artifact manifest, and all six final image builds exit 0.
+The first independent image run exits 1 because it detects an accidental Node
+22 OpenClaw base; that receipt is retained. Rebuilding only the OpenClaw pair
+with the established Node 24.15 pin makes the final verifier pass at
+`07f372e3...eb9a`. Codex, Claude, Hermes, OpenClaw systemd, and dashboard image
+IDs begin `c8e7a265`, `93eb1f9e`, `3a4cac26`, `c3d712ec`, and `4d2ccddc`.

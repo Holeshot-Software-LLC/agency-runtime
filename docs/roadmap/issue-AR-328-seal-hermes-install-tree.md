@@ -75,7 +75,7 @@ host bundle contract unchanged.
 - [x] Strict ownership rejects guard-mode drift, and reinstall replaces an
       exact unsealed guard rather than reporting it unchanged.
 - [x] Focused warning-strict installer, rollback, and uninstall tests pass.
-- [ ] Exact rebuilt artifacts and production images pass independent checks.
+- [x] Exact rebuilt artifacts and production images pass independent checks.
 - [ ] A fresh host install survives Hermes restart and strict exact-tree
       validation with no unmanifested cache.
 - [ ] A same-repository tracker issue is created and linked after explicit
@@ -83,10 +83,14 @@ host bundle contract unchanged.
 
 ## Verification
 
-Owner-private receipts are retained under
-`~/.agency-runtime/evidence/ar297-go-e17e5221/` until the rebuilt candidate gets
-its own exact evidence directory. The regression-first failure exits 1 at
-stdout `751276ea...e3a`. The final broader installer, rollback, authority, and
-uninstall set passes 359 tests with 2 skips at `981fbbc8...ddd0`; focused Ruff
-lint/format and documentation checks exit 0 at `82b3e6a6...4f18`,
-`177f260a...f0de`, and `6e0883bd...a98f`. Every retained stderr is empty.
+Owner-private source receipts remain under
+`~/.agency-runtime/evidence/ar297-go-e17e5221/`. The regression-first failure
+exits 1 at stdout `751276ea...e3a`; the final broader installer, rollback,
+authority, and uninstall set passes 359 tests with 2 skips at
+`981fbbc8...ddd0`. Candidate `e0b0b25c` artifacts are retained under
+`~/.agency-runtime/evidence/ar297-go-e0b0b25c/`: canonical build, strict Twine,
+independent distribution verification, manifest, and six final image builds
+exit 0. Wheel/sdist hashes are `75d63ff9...3762`/`2b1ae7ec...79d9`; final image
+verification exits 0 at `07f372e3...eb9a`. R1's exit 1 is retained: it caught
+an incorrect Node 22 OpenClaw rebuild before the established Node 24.15 pin was
+restored. Fresh Hermes restart and strict-tree evidence remain AR-297's next gate.
