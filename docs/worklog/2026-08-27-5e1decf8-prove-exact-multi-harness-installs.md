@@ -55,10 +55,11 @@ exit-1 post-dry-run absence diagnostic is retained rather than discarded.
 
 ## Decisions and alternatives
 
-OpenClaw uses `litellm/task-agency-generator`, not a direct model identifier.
-Its gateway and LiteLLM credentials remain exact environment SecretRefs. The
-gateway stayed stopped for safe installation; a runtime plugin inspection
-proved all hooks without conflating installation with the later ordinary turn.
+The initial OpenClaw profile intended to use a LiteLLM generation alias rather
+than a direct model identifier. Its gateway and LiteLLM credentials remained
+exact environment SecretRefs. The gateway stayed stopped for safe
+installation; a runtime plugin inspection proved all hooks without conflating
+installation with the later ordinary turn.
 
 ## Verification
 
@@ -74,8 +75,12 @@ proved all hooks without conflating installation with the later ordinary turn.
   `534327ca...74a`, `193e891f...6444`, `9a0f49b5...1b7a`, and
   `bfa7557a...b3f7`. Runtime-verified bundle `4d9afa0b...d79` loads all 13
   hooks. Store `c53dc2a9...01b6` passes quick-check with zero runs.
-- OpenClaw sanitized pre/post native receipts `d7450a2a...627a` and
-  `1fdf490a...d6d` preserve only the approved alias and SecretRefs.
+- The initial sanitized OpenClaw receipts `d7450a2a...627a` and
+  `1fdf490a...d6d` preserve SecretRefs but use the nonexistent
+  `task-agency-generator` spelling. Authenticated alias inventory
+  `7163aa90...911a` caught that pre-turn error; correction `65ceab8f...d161`
+  exits 0 and sanitized receipt `2180a4dc...23e8` proves current SHA
+  `88409233...e909` uses exact `task-agency-generation` plus SecretRefs.
 - Metadata, policy availability, worklog consistency, documentation validation
   for 905 Markdown files, and diff check pass with the repository on the exact
   clean checkpoint before this ledger update.

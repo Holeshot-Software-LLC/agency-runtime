@@ -1305,19 +1305,25 @@ ordinary run, while native manifest and current launcher hash to
 `e2b48933...1e7d` and `74da0cde...c6a`.
 
 Exact OpenClaw systemd container `512df094...1fff` brings its root user manager
-to `running` at receipt `2524b552...26a`. Its mode-0600 native profile hashes
-to `f05f9322...557f`; sanitized receipt `d7450a2a...627a` proves provider
-`openai-completions` at the loopback LiteLLM endpoint, only alias
-`task-agency-generator`, and environment SecretRefs for both credentials.
-Fresh absence `534327ca...74a` and dry-run `193e891f...6444` exit 0. The dry
-run creates only the empty Agency ephemeral directory and no native plugin;
-that bounded diagnostic is retained at `9108c029...8db0` rather than hidden.
-The sole production install `9a0f49b5...1b7a` exits 0 with `complete=true`,
-runtime-verified bundle `4d9afa0b...d79`, and all 13 hooks loaded at
-`bfa7557a...b3f7`. Post-install native config `4e756989...0699` still contains
-only the exact alias and SecretRefs. Store `c53dc2a9...01b6` passes quick-check
-with zero runs; its count receipt, native manifest, and launcher hash to
-`762636c2...2cd3`, `bcfdc272...380e`, and `08a672a5...4c2`.
+to `running` at receipt `2524b552...26a`. Fresh absence `534327ca...74a` and
+dry-run `193e891f...6444` exit 0. The dry run creates only the empty Agency
+ephemeral directory and no native plugin; that bounded diagnostic is retained
+at `9108c029...8db0` rather than hidden. The sole production install
+`9a0f49b5...1b7a` exits 0 with `complete=true`, runtime-verified bundle
+`4d9afa0b...d79`, and all 13 hooks loaded at `bfa7557a...b3f7`. Store
+`c53dc2a9...01b6` passes quick-check with zero runs; its count receipt, native
+manifest, and launcher hash to `762636c2...2cd3`, `bcfdc272...380e`, and
+`08a672a5...4c2`.
+
+The first mode-0600 native profile used `task-agency-generator`, which the
+authenticated pre-turn inventory `7163aa90...911a` proves does not exist; the
+actual approved alias is `task-agency-generation`. This did not affect Agency
+installation because no native model turn ran, but the earlier sanitized
+receipts are retained as a configuration failure rather than promoted. Before
+any ordinary model call, correction `65ceab8f...d161` exited 0. Current native
+config SHA `88409233...e909` and sanitized receipt `2180a4dc...23e8` now prove
+provider `openai-completions` at the loopback LiteLLM endpoint, exactly alias
+`task-agency-generation`, and environment SecretRefs for both credentials.
 
 The separate exact production-install row is therefore closed for Codex,
 Claude Code, native-UID Hermes, and OpenClaw systemd. Registration, enablement,

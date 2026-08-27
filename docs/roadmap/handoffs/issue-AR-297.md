@@ -24,8 +24,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-297
 branch: codex/ar297-production-container-live-evidence
-evidence_commit: 51537d0cb0f3e7654eee0d39bfd3839cd27fb47b
-minimum_ledger_commit: 51537d0cb0f3e7654eee0d39bfd3839cd27fb47b
+evidence_commit: dc37ff258422e763de2168cf328cfaeba69acc58
+minimum_ledger_commit: dc37ff258422e763de2168cf328cfaeba69acc58
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 ---
@@ -37,9 +37,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Work only in `/tmp/agency-runtime-ar297.WQUbF2` on
   `codex/ar297-production-container-live-evidence`, based on `origin/main`
   `0a23983a`. Never touch the shared checkout.
-- Clean ledger `51537d0c` binds exact AR-327 artifacts/images and the fresh
-  Codex install. Separate Claude, native-UID Hermes, and OpenClaw installs now
-  pass; later ordinary four-harness processes are next.
+- Clean ledger `dc37ff25` binds exact artifacts/images and all four separate
+  harness installs; later ordinary four-harness processes are next.
 - Linux remains **NO-GO**. AR-297/#335 remain open. No tracker write, push, PR,
   merge, tag, signing, publication, release, or hosted workflow is authorized.
 
@@ -96,11 +95,12 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   `ea4e9444...783f`. Hermes `9d5cfe07...ccf0` proves UID 10000 absence
   `c90213d8...175c`, dry-run `f9c06879...9c59`, and sole install
   `d2d7ce1b...5ae1` with bundle `d7a3a3a7...3a33`; both Stores pass quick-check.
-- OpenClaw `512df094...1fff` runs the exact systemd image. Native config receipt
-  `d7450a2a...627a` proves only LiteLLM alias `task-agency-generator` plus env
-  SecretRefs. Absence `534327ca...74a`, dry-run `193e891f...6444`, and sole
-  install `9a0f49b5...1b7a` exit 0 with bundle `4d9afa0b...d79`, all 13 hooks
-  loaded at `bfa7557a...b3f7`, and quick-check Store `c53dc2a9...01b6`.
+- OpenClaw `512df094...1fff` passes absence `534327ca...74a`, dry-run
+  `193e891f...6444`, and install `9a0f49b5...1b7a`; bundle `4d9afa0b...d79`
+  loads all 13 hooks at `bfa7557a...b3f7` and Store
+  `c53dc2a9...01b6` passes quick-check. Authenticated alias inventory
+  `7163aa90...911a` caught the pre-turn `generator` typo; corrected native
+  receipt `2180a4dc...23e8` binds `task-agency-generation` plus env SecretRefs.
 
 ## exact-blocker
 
