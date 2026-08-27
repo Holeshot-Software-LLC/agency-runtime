@@ -899,3 +899,10 @@ Llama returns valid JSON but selects `ai-evaluation-engineer` at
 Mistral Small 3.2 24B model behind temporary no-fallback exact-schema alias
 `28a681dc...7a91`; create receipt `d364b366...e485` passes without changing
 the stable `task-agency-child-judge` route.
+
+Schema-bound Mistral selects sole `code-reviewer` on the initial form at
+`76d2cd38...d1a0` but abstains on repair at `98ead20c...c791`; its probe alias
+is removed without promotion. Official Apache-2.0 GPT-OSS 20B acquisition and
+model receipts `1e030701...7cee`/`7b701cde...c3d0` pass, proving
+20.9B/MXFP4 and 131,072-token context. Sole temporary schema deployment
+`9a85ecdf...a219` is ready while the stable Agency route remains unchanged.

@@ -64,7 +64,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Work remains in dedicated worktree `/tmp/agency-runtime-ar297.WQUbF2` on
   `codex/ar297-production-container-live-evidence`, based on `origin/main`
   `0a23983a`. Never use the shared checkout.
-- Clean pair `ecac503c`/`31ac6a1e` and five exact images bind `c1cf1793`.
+- Clean recovery `b89a637f`/`bed213cd`, ledger `75904a7d`, binds `c1cf1793`.
 - Linux remains **NO-GO**. AR-297/#335 stay open. Tracker writes, push, PR,
   merge, tag, signing, publication, release, and hosted workflow actions are
   not authorized.
@@ -97,16 +97,16 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Fresh `c1cf1793` absence passes at `7d08f8c1...c341`; one no-bypass install
   `04f8c2df...7ad` exits 1 after spawn once, wait once at 300 seconds, child
   exit 0, and `timed_out=false`. AR-320's wait repair is live-proven.
-- Mistral initial and repair judge calls both abstain over all 59 cards; Store
-  route `fcdf4396...9447` records `native_child_abstention_confirmed`. Qwen 14B
-  is ruled out by truncated prose `d34221cc...af9c` and wrong-card JSON
-  `697d9cd9...1ac0`. AR-321 owns a reliable free LiteLLM alias.
+- Stable Mistral abstains twice at Store route `fcdf4396...9447`; Qwen 14B is
+  ruled out by truncated prose `d34221cc...af9c` and wrong JSON `697d9cd9...1ac0`.
 - AR-321 rejects Qwen 9B/30B, Dolphin 24B, Qwen 2B, and Ministral 14B. The last
   returns invalid objects at `84a4b980...b8d1`, then schema-valid two-card JSON
   at `aa8917b2...6cef`; deletion `f40895e6...d6ab` closes its aliases.
   Granite abstains twice; Qwen 2.5 chooses the wrong card at `35f1030d...5e8e`;
   Llama then chooses `ai-evaluation-engineer` at `e39a84bd...8274`; its alias
-  is removed. Schema-bound Mistral alias `28a681dc...7a91` awaits exact probes.
+  is removed. Schema Mistral passes initial `76d2cd38...d1a0` but repair
+  abstains `98ead20c...c791`; its alias is removed. GPT-OSS 20B pull/model
+  `1e030701...7cee`/`7b701cde...c3d0` pass; alias `9a85ecdf...a219` awaits probes.
 - No later ordinary Codex, Claude, Hermes, or OpenClaw process has a current
   successful Agency-turn receipt on this source.
 - Refresh the host install/dashboard and named repository gates for the exact
@@ -134,7 +134,7 @@ unchecked line. Mark an item complete only with exact retained evidence.
 
 1. [x] Rebuild and independently verify artifacts/images from the exact
    AR-320/LiteLLM checkpoint; `c1cf1793` is the candidate.
-2. [ ] Through AR-321, test schema-bound Mistral and promote only a repeatedly exact
+2. [ ] Through AR-321, test GPT-OSS 20B and promote only a repeatedly exact
    free LiteLLM alias, then prove fresh Codex canonical delivery,
    consumption, header, finalization, Store correlation, and attestation.
 3. [ ] Build and prove separate clean exact Claude, native-UID Hermes, and

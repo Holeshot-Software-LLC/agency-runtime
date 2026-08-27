@@ -85,6 +85,13 @@ prose, and with JSON-object output it confidently selects the wrong specialist.
   temporary no-fallback schema deployment `28a681dc...7a91` isolates output
   grammar from the already-installed `mistral-small3.2:24b` semantics; create
   receipt `d364b366...e485` passes while the stable alias remains unchanged.
+- Schema-bound Mistral selects sole `code-reviewer` initially at
+  `76d2cd38...d1a0` but abstains on the funded repair at
+  `98ead20c...c791`, so it is not yet promoted and its temporary alias is
+  removed. Official Apache-2.0 `gpt-oss:20b` acquisition exits 0 at
+  `1e030701...7cee`; metadata `7b701cde...c3d0` proves GPT-OSS,
+  20.9B/MXFP4, and 131,072-token context. Sole temporary schema deployment
+  `9a85ecdf...a219` passes create receipt `cbf87bba...d9fe` before evaluation.
 - The owner requires all Agency inference on this system to resolve through
   authenticated LiteLLM aliases and requires the child judge to remain free.
   Tracker creation remains prohibited by the active task.
