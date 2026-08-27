@@ -1340,6 +1340,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `c5749a29` | 2026-08-27 | docs(ar297): prove ordinary Codex completion | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | [detail](2026-08-27-c5749a29-prove-ordinary-codex-completion.md) |
 | `6d32c459` | 2026-08-27 | docs(ar297): prove exact host dashboard install | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | [detail](2026-08-27-6d32c459-prove-exact-host-dashboard-install.md) |
 | `c914cc46` | 2026-08-27 | docs(ar297): close named repository gates | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | [detail](2026-08-27-c914cc46-close-named-repository-gates.md) |
+| `606ce9e5` | 2026-08-27 | docs(ar297): checkpoint refreshed Claude preflight | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | [detail](2026-08-27-606ce9e5-checkpoint-refreshed-claude-preflight.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
