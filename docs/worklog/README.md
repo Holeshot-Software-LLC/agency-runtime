@@ -1353,6 +1353,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `97fc64c0` | 2026-08-27 | docs(ar297): checkpoint exact AR328 candidate | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-328](../roadmap/issue-AR-328-seal-hermes-install-tree.md) | [ADR-0191](../decisions/0191-seal-managed-hermes-python-bundles.md) |
 | `d2ae9b57` | 2026-08-27 | docs(ar297): checkpoint final non-Codex installs | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-328](../roadmap/issue-AR-328-seal-hermes-install-tree.md) | [ADR-0191](../decisions/0191-seal-managed-hermes-python-bundles.md) |
 | `4bc8bd97` | 2026-08-27 | docs(ar297): prove four final candidate installs | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | [ADR-0173](../decisions/0173-complete-production-container-installation-with-managed-activation.md), [ADR-0191](../decisions/0191-seal-managed-hermes-python-bundles.md) |
+| `14cab69b` | 2026-08-27 | docs(ar297): checkpoint final ordinary rows | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
