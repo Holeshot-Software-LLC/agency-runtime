@@ -120,6 +120,14 @@ prose, and with JSON-object output it confidently selects the wrong specialist.
 - Fresh Codex container `agency-ar297-codex-c1cf1793-j2` reaches the stable
   accepted route, so model selection is no longer the blocker. AR-322 owns the
   later child-session correlation failure exposed by that exact transaction.
+- Fresh exact `c3493337` source proves the intervening lineage repairs now join
+  the parent and child: one native worker run is persisted for child
+  `01a041eb...1128`. The stable authenticated free Mistral alias evaluates all
+  59 cards in 62,139 ms with confidence 0.8, but the selected team fails exact
+  compatibility as `native_child_compatibility_mutated`; its failure projection
+  intentionally persists no selected IDs. Store correlation
+  `50bd2770...a0b6` exits 0 against Store `4842b81d...9c9`. Model reliability is
+  again the active blocker; no alias or model choice has been changed.
 
 ## Approach
 

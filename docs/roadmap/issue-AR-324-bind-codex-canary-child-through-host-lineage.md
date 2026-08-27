@@ -76,6 +76,11 @@ parent route is exact and accepted and the native child exits successfully.
   the parent while `agent_id` is the child. The regression fails before and
   passes after the separate-ID join. Warning-strict focused sets pass 192/192
   and 258/258 with two expected skips; ADR-0188 supersedes ADR-0187.
+- Exact `c3493337` live evidence proves the separate-ID lineage join reaches
+  restricted staffing and persists one native worker run for exact child
+  `01a041eb...1128`. Store `4842b81d...9c9` then records the free LiteLLM judge
+  failing closed as `native_child_compatibility_mutated`; v6 delivery remains
+  absent for that downstream AR-321 reliability failure, not a lineage miss.
 - Tracker creation is prohibited by the active AR-297 task.
 
 ## Approach

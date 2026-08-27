@@ -982,5 +982,32 @@ the root parent in `SubagentStart.session_id` and the spawned child in
 that contract at source checkpoint `34f41532`. The regression fails before and
 passes after requiring hook parent/child to agree independently with the
 rollout parent/child; focused warning-strict sets pass 192/192 and 258/258 with
-two expected skips. A clean ledger, exact rebuild, and fresh no-bypass
-transaction remain required.
+two expected skips. Clean recovery and worklog ledgers `7f760a59` and
+`c3493337` record that repair.
+
+Exact clean ledger `c34933377f7fb16431120f21d487bfbc9910cd55` passes the
+canonical build, strict Twine check, independent verifier, and artifact
+manifest at exit 0. Its mode-0644 wheel `3ee91ef7...6626` is 9,317,437 bytes
+and sdist `5a762480...9455` is 25,765,853 bytes; manifest
+`7fa7d2c1...3bfd` records both. Exact Codex, Claude, Hermes, OpenClaw systemd,
+and dashboard image IDs are `2d0b6555...0272`, `c731f8c8...ba8`,
+`56645dba...dae8`, `f87f2ab8...218`, and `951618f1...66a`; packaged-version,
+commit, wheel, and label verification `884a225f...821` exits 0.
+
+Fresh container `agency-ar297-codex-c3493337` passes preinstall absence at
+`a88f8e7d...deb`; its only no-bypass production install receipt
+`0ef4c8bb...d46` exits 1 after accepted parent route
+`41ac6703-bd29-490c-88d3-b7d9b9aefb38`, one child spawn, one 300-second wait,
+and child `01a041eb-27a6-7f22-851e-ff23455f1128` exit 0 without timeout. The
+separate-ID host-lineage join now succeeds: the Store contains one native
+worker run for that exact child. Parent/child rollouts and Store hash to
+`2b0acaec...a11`, `3d0ef98d...d3c`, and `4842b81d...9c9`.
+
+The newly admitted restricted staffing call reaches the authenticated free
+`local-child-judge` LiteLLM route over all 59 cards, then fails closed after
+62,139 ms with `native_child_compatibility_mutated`, confidence 0.8, and no
+persisted selected identifiers. Sanitized correlation receipt
+`50bd2770...a0b6` exits 0 and also distinguishes the expected earlier opaque
+inter-agent diagnostic. Because exact v6 delivery, consumption, header,
+finalization, and attestation remain absent, AR-321 continues to own reliable
+free child-judge selection before another fresh Codex transaction.
