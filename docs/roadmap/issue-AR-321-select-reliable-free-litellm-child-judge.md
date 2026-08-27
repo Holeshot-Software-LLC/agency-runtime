@@ -97,6 +97,10 @@ prose, and with JSON-object output it confidently selects the wrong specialist.
   as a semantic abstention. Replacement no-fallback deployment
   `25f90630...45d1` uses the model's lowest supported reasoning effort with the
   same schema/context/retry bounds; create receipt `17fdcd76...8b6f` passes.
+- Low-reasoning GPT-OSS again returns empty content at `b5bad7af...0500`, so
+  its alias is removed at `50e1398f...6ce2`. Fresh-name schema-bound Mistral
+  deployment `4527083a...1ff6` passes create receipt `a53f4249...c78c` for an
+  uncached repeat of the already-passing initial selector.
 - The owner requires all Agency inference on this system to resolve through
   authenticated LiteLLM aliases and requires the child judge to remain free.
   Tracker creation remains prohibited by the active task.
@@ -124,8 +128,9 @@ health, model, latency, and response receipts, then repoint the stable
 
 - [x] A temporary LiteLLM alias is created with a secret-safe receipt and its
       exact local model, context, structured-output, and thinking controls.
-- [ ] Repeated initial and repair selector probes choose `code-reviewer` from
-      the exact 59-card universe without fallback, truncation, or direct access.
+- [ ] Repeated fresh-name initial probes choose sole `code-reviewer` from the
+      exact 59-card universe without fallback, truncation, or direct access;
+      repair probes either choose that card or fail closed, never misroute.
 - [ ] The stable child-judge alias is updated through LiteLLM, remains healthy,
       and the exact Agency config still passes all route and schema checks.
 - [ ] A fresh no-bypass Codex production-container install proves accepted v6

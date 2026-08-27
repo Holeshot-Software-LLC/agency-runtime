@@ -912,3 +912,9 @@ that invalid temporary alias is removed. Replacement deployment
 `25f90630...45d1` keeps the exact schema, 32,768 context, and zero retries while
 using GPT-OSS's lowest supported reasoning effort; secret-safe create receipt
 `17fdcd76...8b6f` passes without changing the stable Agency route.
+
+Low-reasoning GPT-OSS again returns empty at `b5bad7af...0500`, so its alias is
+removed. A fresh-name schema-bound Mistral deployment `4527083a...1ff6` passes
+create receipt `a53f4249...c78c` for an uncached repeat. Promotion now requires
+repeated sole-card initial success; repair may safely abstain but may not
+misroute, matching the real funded path rather than forcing a false selection.
