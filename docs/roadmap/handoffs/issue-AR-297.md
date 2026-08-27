@@ -104,16 +104,16 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   exit 0 at 65,536/no-thinking; unrelated aliases are unchanged. OpenClaw's
   three-pointer config transition/verify `e97e02e2...deba`/`a141d193...e1ce`
   exit 0; two stale-metadata attempts rolled back.
-- Tool smoke `2b25ad2a...d1f15` passes. Hermes R5 `275e7154...116b`/
-  `9fa22217...7e03` calls/accepts its finalizer but a model rewrite is blocked.
-  AR-288 red `cad6beee...d937` is repaired with trace-scoped accepted replay;
-  236 focused tests pass at `68ade380...3ffc`. Exact artifacts/install pass;
-  the fresh default-config ordinary Hermes turn remains pending.
+- Hermes R5 isolates rewritten accepted text; AR-288's trace-scoped replay and
+  236 tests pass. Fresh default-config session `20260827_201909_a6a13c` exits 0;
+  receipt `3c40a9bf...8959` proves one exact card/finalizer, Store acceptance,
+  `missing=[]`, visible replay `ad8a06d3...eeaa`, healthy Stores, all aliases,
+  and no post-install/live config drift. AR-288 is locally done.
 
 ## exact-blocker
 
-- Complete four current-candidate ordinary turns plus Claude login, refresh the
-  exact host/dashboard and named gates, checkpoint, then teardown.
+- Complete Codex, Claude, and OpenClaw ordinary turns plus Claude login; refresh
+  the exact host/dashboard and named gates, checkpoint, then teardown.
 - Cross-OS artifacts, signing, tracker parity, push/PR/merge/tag/publication,
   release, and exhaustive dispatch are unauthorized, not Linux-only GO gates.
 

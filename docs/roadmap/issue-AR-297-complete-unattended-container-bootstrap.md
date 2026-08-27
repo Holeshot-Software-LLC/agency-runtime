@@ -1716,3 +1716,28 @@ installed Stores pass quick-check. Diagnostic Hermes R1 and OpenClaw dry-run
 witnesses remain labelled for final teardown; 42 AR-297 containers now exist.
 Package-end telemetry `4e0e2fb9...f1fce` reports 21.4 percent remaining and
 requires this clean recovery pair before any next live process.
+
+The fresh default-config Hermes ordinary process now closes AR-288 and its
+current AR-297 matrix cell. Immediately preceding telemetry used the clean
+`aa834796` / `5b29da9b` checkpoint. UID-10000 session
+`20260827_201909_a6a13c` used the exact 684-byte task `7411494b...49de`,
+default progressive tool disclosure, stable LiteLLM alias
+`task-agency-hermes`, disabled thinking, and no bypass. Native stdout/stderr
+and exit hash to `69affec8...d98`, `55098ee0...e4e`, and
+`bde29436...120`; stderr contains only Hermes's deprecated
+`TERMINAL_CWD` warning.
+
+Native state receipt `f33f7457...100` proves one exact 3,227-byte
+`section-508-accessibility-specialist` card in the 7,729-byte API content,
+four API calls, two progressive `tool_search` calls, exactly one
+`agency_finalize`, and one mandatory follow-up. Store correlation
+`f2516e6a...d3e` passes quick-check, binds completed trace
+`20260827_201909_a6a13c:35d9bbf4-282c-4759-8e4c-1453a70daf91:fb8114f4`,
+accepted selection/load, all five required Agency alias groups, and terminal
+acceptance with `missing=[]`. The accepted finalizer result and exact visible
+response both hash to `ad8a06d3...eeaa`; the model follow-up instead hashes to
+`473a37ba...d3e`, proving trace-scoped replay—not model coincidence—delivered
+the authoritative text. Independent receipt `3c40a9bf...8959` exits 0 and
+also proves both SQLite copies healthy and post-install/post-live native config
+byte-identical at `2552f21c...e680`. Codex, Claude, and OpenClaw current-candidate
+ordinary cells remain independently open.

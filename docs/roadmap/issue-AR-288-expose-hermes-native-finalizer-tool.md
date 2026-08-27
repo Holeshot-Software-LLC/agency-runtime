@@ -1,6 +1,6 @@
 ---
 title: "Expose Hermes native finalizer tool"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-08-25
 updated: 2026-08-27
@@ -105,8 +105,13 @@ changes; an honest stale header is correctly blocked by strict finalization.
   independently verifies exact artifacts/images. Fresh UID-10000 Hermes R2
   absence, exact default native config, dry-run, sole install, status, and
   plugin-doctor receipts all exit 0; the installed bundle registers one native
-  finalizer and eight hooks. A fresh ordinary byte-exact emission remains the
-  only local acceptance item pending.
+  finalizer and eight hooks. Fresh ordinary session
+  `20260827_201909_a6a13c` then exits 0 with one exact 3,227-byte specialist
+  card, one `agency_finalize`, authoritative accepted response
+  `ad8a06d3...eeaa`, and byte-identical visible output. Independent receipt
+  `3c40a9bf...8959` also proves Store/native quick-checks, `missing=[]`, the
+  mandatory model follow-up differs, and the post-install/default native config
+  remains byte-identical across the live turn at `2552f21c...e680`.
 
 ## Approach
 
@@ -156,5 +161,5 @@ accept stale evidence, or modify native Hermes configuration/source.
       native finalizer result; replay is bounded, one-shot, and trace-scoped.
 - [x] Default Hermes tool-search guidance discovers `agency_finalize` without
       requiring native config drift.
-- [ ] Rebuilt exact artifacts pass a fresh default-config Hermes turn whose
+- [x] Rebuilt exact artifacts pass a fresh default-config Hermes turn whose
       visible output is the byte-exact accepted tool result.
