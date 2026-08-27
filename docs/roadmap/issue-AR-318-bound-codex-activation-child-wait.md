@@ -10,7 +10,9 @@ related:
   - docs/roadmap/issue-AR-309-restore-codex-0149-activation-proof.md
   - docs/roadmap/handoffs/issue-AR-297.md
   - docs/roadmap/issue-AR-319-honor-pinned-canary-judge-timeout.md
+  - docs/roadmap/issue-AR-320-bound-codex-wait-to-full-child-staffing.md
   - docs/decisions/0182-bound-codex-activation-child-wait.md
+  - docs/decisions/0184-bound-codex-wait-to-full-child-staffing.md
   - agency_runtime/core/activation_canary_contract.py
   - agency_runtime/core/canary.py
   - agency_runtime/core/canary_backends.py
@@ -56,6 +58,9 @@ route and the native child has completed its work at exit 0.
 - Fresh `c6b7d92d` live evidence emits the exact 120,000-ms wait, observes child
   completion, and returns `timed_out=false`. AR-319 owns the downstream pinned
   judge timeout that still prevents full v6 admission.
+- Fresh `89a56901` evidence proves the full legal child-staffing path may make
+  two successful inference calls totaling about 125 seconds. ADR-0184
+  supersedes the 120-second decision; AR-320 owns the new exact bound.
 - Tracker creation is prohibited by the active AR-297 task.
 
 ## Approach

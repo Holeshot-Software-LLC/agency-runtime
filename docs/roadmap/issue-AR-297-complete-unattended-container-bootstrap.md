@@ -33,6 +33,7 @@ related:
   - docs/roadmap/issue-AR-317-route-agency-inference-through-litellm-aliases.md
   - docs/roadmap/issue-AR-318-bound-codex-activation-child-wait.md
   - docs/roadmap/issue-AR-319-honor-pinned-canary-judge-timeout.md
+  - docs/roadmap/issue-AR-320-bound-codex-wait-to-full-child-staffing.md
   - docs/decisions/0174-admit-local-ollama-canary-child-judges.md
   - docs/decisions/0175-batch-complete-embedding-input-sets.md
   - docs/decisions/0176-use-owner-runtime-temp-for-nonroot-user-services.md
@@ -43,6 +44,7 @@ related:
   - docs/decisions/0181-use-litellm-aliases-as-host-inference-control-plane.md
   - docs/decisions/0182-bound-codex-activation-child-wait.md
   - docs/decisions/0183-honor-pinned-canary-judge-timeout.md
+  - docs/decisions/0184-bound-codex-wait-to-full-child-staffing.md
   - agency_runtime/cli/install_commands.py
   - agency_runtime/core/codex_managed_policy.py
   - agency_runtime/core/canary.py
@@ -57,7 +59,7 @@ epic: host-integrations
 issue_id: AR-297
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
-depends_on: [AR-300, AR-301, AR-302, AR-303, AR-304, AR-305, AR-306, AR-307, AR-308, AR-309, AR-310, AR-311, AR-313, AR-314, AR-315, AR-317, AR-318, AR-319]
+depends_on: [AR-300, AR-301, AR-302, AR-303, AR-304, AR-305, AR-306, AR-307, AR-308, AR-309, AR-310, AR-311, AR-313, AR-314, AR-315, AR-317, AR-318, AR-319, AR-320]
 blocks: []
 ---
 
@@ -825,3 +827,13 @@ pre-build attempts exit 1 without artifacts: worktree-Python trust rejection
 IDs are `7765d320...b545`, `222a78c7...cdb2`, `896c03d1...0766`,
 `24736e64...1f3d`, and `4c0182f3...88e1`; exact version/label verification
 `5edc4c29...395c` exits 0. Fresh clean Codex runtime proof remains required.
+
+Fresh container `f72c1b51...0555` passes exact absence at `a56ac1c5...d994`;
+install `96e4d746...73cf` exits 1. The parent accepts `code-reviewer`, spawns
+child `01a04131...7490`, and waits once for 120,000 ms. Owner journal
+`a32aa50c...edc2` proves the initial child judge and its funded abstention
+repair both succeed untruncated in 62,057.76 and 62,870.53 ms. Their combined
+125 seconds exceeds the parent wait; identity arrives only after timeout and
+the child is interrupted without v6 delivery. Store and parent/child rollouts
+hash to `d8755fd9...2f72`, `00d8e1d5...8076`, and `e978545c...d00a`. AR-320
+owns the full-path bound; no model or route change is required.

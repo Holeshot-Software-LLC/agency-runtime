@@ -9,6 +9,7 @@ related:
   - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
   - docs/roadmap/issue-AR-317-route-agency-inference-through-litellm-aliases.md
   - docs/roadmap/issue-AR-318-bound-codex-activation-child-wait.md
+  - docs/roadmap/issue-AR-320-bound-codex-wait-to-full-child-staffing.md
   - docs/roadmap/handoffs/issue-AR-297.md
   - docs/decisions/0183-honor-pinned-canary-judge-timeout.md
   - agency_runtime/core/canary_judge_provider.py

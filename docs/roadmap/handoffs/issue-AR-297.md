@@ -29,6 +29,7 @@ related:
   - docs/roadmap/issue-AR-317-route-agency-inference-through-litellm-aliases.md
   - docs/roadmap/issue-AR-318-bound-codex-activation-child-wait.md
   - docs/roadmap/issue-AR-319-honor-pinned-canary-judge-timeout.md
+  - docs/roadmap/issue-AR-320-bound-codex-wait-to-full-child-staffing.md
   - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
   - docs/decisions/0174-admit-local-ollama-canary-child-judges.md
   - docs/decisions/0175-batch-complete-embedding-input-sets.md
@@ -40,6 +41,7 @@ related:
   - docs/decisions/0181-use-litellm-aliases-as-host-inference-control-plane.md
   - docs/decisions/0182-bound-codex-activation-child-wait.md
   - docs/decisions/0183-honor-pinned-canary-judge-timeout.md
+  - docs/decisions/0184-bound-codex-wait-to-full-child-staffing.md
   - README.md
   - docs/RELEASE_CHECKLIST.md
   - docs/worklog/README.md
@@ -61,9 +63,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Work remains in dedicated worktree `/tmp/agency-runtime-ar297.WQUbF2` on
   `codex/ar297-production-container-live-evidence`, based on `origin/main`
   `0a23983a`. Never use the shared checkout.
-- Last clean recovery pair is AR-319 source `785070f6` and worklog `89a56901`.
-  Its exact artifacts and five proof images pass independent verification;
-  checkpoint them, then continue the same Codex proof.
+- Last clean recovery pair is artifact evidence `633b0e84` and worklog
+  `7c0a8322`. Checkpoint the exact AR-320 two-call wait evidence, then continue
+  the same Codex proof.
 - Linux remains **NO-GO**. AR-297/#335 stay open. Tracker writes, push, PR,
   merge, tag, signing, publication, release, and hosted workflow actions are
   not authorized.
@@ -98,10 +100,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 
 ## exact-blocker
 
-- The prior `c6b7d92d` run isolated the 60,091-ms aggregate cutoff after its
-  native wait succeeded. AR-319 now honors the pinned Mistral profile's
-  120-second bound and passes 222 affected tests. Exact `89a56901` images are
-  verified; prove full v6 delivery in a fresh container.
+- Fresh `89a56901` absence passes at `a56ac1c5...d994`; install
+  `96e4d746...73cf` exits 1. Two successful untruncated child-judge calls take
+  62,057.76 and 62,870.53 ms, so the valid repair path outlives the single
+  120-second wait. AR-320 must bind that wait to the full two-call ceiling.
 - No later ordinary Codex, Claude, Hermes, or OpenClaw process has a current
   successful Agency-turn receipt on this source.
 - Refresh the host install/dashboard and named repository gates for the exact

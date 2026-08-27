@@ -1,6 +1,6 @@
 ---
 title: "Bound the Codex activation child wait above observed latency"
-status: accepted
+status: superseded
 category: decisions
 created: 2026-08-26
 updated: 2026-08-26
@@ -10,7 +10,9 @@ related:
   - docs/decisions/0179-admit-exact-codex-canary-delivery-at-subagent-start.md
   - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
   - docs/roadmap/issue-AR-318-bound-codex-activation-child-wait.md
+  - docs/roadmap/issue-AR-320-bound-codex-wait-to-full-child-staffing.md
   - docs/roadmap/handoffs/issue-AR-297.md
+  - docs/decisions/0184-bound-codex-wait-to-full-child-staffing.md
   - agency_runtime/core/activation_canary_contract.py
   - agency_runtime/core/canary.py
   - agency_runtime/core/canary_backends.py
@@ -18,7 +20,7 @@ related:
   - tests/test_canary_coverage_complete.py
   - docs/worklog/README.md
 supersedes: []
-superseded_by: null
+superseded_by: docs/decisions/0184-bound-codex-wait-to-full-child-staffing.md
 id: ADR-0182
 type: decision
 deciders: [maintainers]
