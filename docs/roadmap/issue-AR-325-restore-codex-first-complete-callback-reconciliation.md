@@ -10,6 +10,7 @@ related:
   - docs/roadmap/issue-AR-309-restore-codex-0149-activation-proof.md
   - docs/roadmap/issue-AR-324-bind-codex-canary-child-through-host-lineage.md
   - docs/roadmap/handoffs/issue-AR-297.md
+  - docs/roadmap/issue-AR-326-admit-terminal-codex-host-artifact-collection.md
   - docs/decisions/0144-claim-codex-spawn-execution-at-the-first-complete-callback.md
   - docs/decisions/0179-admit-exact-codex-canary-delivery-at-subagent-start.md
   - docs/decisions/0188-separate-codex-hook-parent-and-child-identities.md
@@ -26,7 +27,7 @@ issue_id: AR-325
 priority: p0
 tracker_url: null
 depends_on: [AR-321, AR-324]
-blocks: [AR-297]
+blocks: [AR-297, AR-326]
 ---
 
 # AR-325: Restore Codex first-complete-callback reconciliation
@@ -90,6 +91,10 @@ integrity fail before the header could be reconciled.
   format checks pass at `94423e2d...0564`. `git diff --check` is empty. All
   three commands exit 0 with empty stderr.
 - Tracker creation is prohibited by the active AR-297 task.
+- Fresh exact `19e0210b` live evidence proves this repair: finalization
+  `d5b3d58f...928c` accepts with `missing=[]`, the exact real child and dispatch
+  agree, and the header is valid. AR-326 owns the later independent attestation
+  failure caused by post-return collection consulting a live-only parent lookup.
 
 ## Approach
 

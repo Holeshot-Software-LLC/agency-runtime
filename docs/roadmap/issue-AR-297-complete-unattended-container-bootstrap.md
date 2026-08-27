@@ -38,6 +38,7 @@ related:
   - docs/roadmap/issue-AR-322-bind-codex-child-session-to-canary-parent.md
   - docs/roadmap/issue-AR-324-bind-codex-canary-child-through-host-lineage.md
   - docs/roadmap/issue-AR-325-restore-codex-first-complete-callback-reconciliation.md
+  - docs/roadmap/issue-AR-326-admit-terminal-codex-host-artifact-collection.md
   - docs/decisions/0144-claim-codex-spawn-execution-at-the-first-complete-callback.md
   - docs/decisions/0174-admit-local-ollama-canary-child-judges.md
   - docs/decisions/0175-batch-complete-embedding-input-sets.md
@@ -68,7 +69,7 @@ epic: host-integrations
 issue_id: AR-297
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
-depends_on: [AR-300, AR-301, AR-302, AR-303, AR-304, AR-305, AR-306, AR-307, AR-308, AR-309, AR-310, AR-311, AR-313, AR-314, AR-315, AR-317, AR-318, AR-319, AR-320, AR-321, AR-322, AR-324, AR-325]
+depends_on: [AR-300, AR-301, AR-302, AR-303, AR-304, AR-305, AR-306, AR-307, AR-308, AR-309, AR-310, AR-311, AR-313, AR-314, AR-315, AR-317, AR-318, AR-319, AR-320, AR-321, AR-322, AR-324, AR-325, AR-326]
 blocks: []
 ---
 
@@ -1159,3 +1160,24 @@ exits 0 with empty stderr. A separate 145-test security/atomicity slice also
 exits 0 at stdout `ae7689e3...7a84` with empty stderr. A fresh exact build and
 clean Codex install remain required before accepted finalization or attestation
 may be claimed.
+
+Clean ledger `19e0210bd5c5b3949dc4206b7cc8ca9244c9a144` now produces wheel
+`81d0bba7...43c1` (9,335,316 bytes) and sdist `c8891af1...01dd`
+(25,837,538 bytes). Build, strict Twine, verifier, manifest, all six image
+builds, and image verification exit 0; manifest and image receipt hash to
+`4a63946a...5330` and `81f1eed2...95ec`. Codex/Claude/Hermes/OpenClaw/dashboard
+images are `30ffdb63...9819`, `fe59a43f...2f8d`, `f9a8d750...a92a`,
+`6e0f9958...4b29`, and `11f0a9a9...126b`.
+
+Fresh absence `dd5b6e71...c301` exits 0. The sole no-bypass install
+`4c3e1e1b...c97e` exits 1 only at attestation: finalization
+`d5b3d58f-c94d-418f-b857-9a4c07de928c` accepts with `missing=[]`; parent
+`01a0435e...ac6f`, trace `01a0435e...aeb0`, child `01a0435f...02ac`, native
+decision `native-child-98105e66...a7a6`, complete v6 prompt
+`e409b2c8...20bd`, verified delivery, exit-0 child, valid header, and one
+completed wait agree. Parent/child/Store hashes are `5cea5e66...3e22`,
+`1518a498...ecd1`, and `ceb65010...2fc8`; SQLite quick-check passes. AR-326
+records the remaining lifecycle bug: after Codex returns, the bounded backend
+collector asks a live-only parent resolver and receives `verification_refused`
+despite the exact accepted terminal graph. Diagnostic `89fafc05...5b02`
+isolates that lookup failure without changing the proof Store.

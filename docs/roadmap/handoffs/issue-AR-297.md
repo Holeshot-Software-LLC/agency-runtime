@@ -10,6 +10,7 @@ related:
   - docs/roadmap/issue-AR-321-select-reliable-free-litellm-child-judge.md
   - docs/roadmap/issue-AR-324-bind-codex-canary-child-through-host-lineage.md
   - docs/roadmap/issue-AR-325-restore-codex-first-complete-callback-reconciliation.md
+  - docs/roadmap/issue-AR-326-admit-terminal-codex-host-artifact-collection.md
   - docs/decisions/0144-claim-codex-spawn-execution-at-the-first-complete-callback.md
   - docs/decisions/0179-admit-exact-codex-canary-delivery-at-subagent-start.md
   - docs/decisions/0188-separate-codex-hook-parent-and-child-identities.md
@@ -20,8 +21,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-297
 branch: codex/ar297-production-container-live-evidence
-evidence_commit: c34933377f7fb16431120f21d487bfbc9910cd55
-minimum_ledger_commit: c34933377f7fb16431120f21d487bfbc9910cd55
+evidence_commit: 19e0210bd5c5b3949dc4206b7cc8ca9244c9a144
+minimum_ledger_commit: 19e0210bd5c5b3949dc4206b7cc8ca9244c9a144
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 ---
@@ -33,9 +34,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Work only in `/tmp/agency-runtime-ar297.WQUbF2` on
   `codex/ar297-production-container-live-evidence`, based on `origin/main`
   `0a23983a`. Never touch the shared checkout.
-- Clean ledger `c3493337` binds the previous source and exact artifacts. The
-  current bounded package is AR-325's callback reconciliation repair; live work
-  starts only from its clean substantive/worklog checkpoint.
+- Clean ledger `19e0210b` binds the repaired source and current exact artifacts.
+  The next bounded package is regression-first AR-326 terminal collection.
 - Linux remains **NO-GO**. AR-297/#335 remain open. No tracker write, push, PR,
   merge, tag, signing, publication, release, or hosted workflow is authorized.
 
@@ -44,31 +44,23 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Mode-0600 config `ar297-litellm-a4e213d6b454ca90.yaml` hashes to
   `a4e213d6...97348`: strict assurance, additive dense recall, and every Agency
   inference route through authenticated LiteLLM aliases. No Jina route exists.
-- Exact `c3493337` build/Twine/verifier/manifest exit 0. Wheel
-  `3ee91ef7...6626` is 9,317,437 bytes; sdist `5a762480...9455` is 25,765,853
-  bytes; manifest is `7fa7d2c1...3bfd`. Codex/Claude/Hermes/OpenClaw/dashboard
-  images are `2d0b6555...0272`, `c731f8c8...ba8`, `56645dba...dae8`,
-  `f87f2ab8...218`, and `951618f1...66a`; verification exits 0.
+- Exact `19e0210b` build/Twine/verifier/manifest and six image builds exit 0.
+  Wheel `81d0bba7...43c1` is 9,335,316 bytes; sdist `c8891af1...01dd` is
+  25,837,538 bytes. Manifest/image receipts are `4a63946a...5330` and
+  `81f1eed2...95ec`; Codex image is `30ffdb63...9819`.
 - Free Qwen 3 32B is promoted behind stable alias `task-agency-child-judge`.
   Promotion/metadata/final validation/literal/spend receipts are
   `6e19008f...1750`, `e1cba9f6...e841`, `42921a7e...867c`,
   `b686ab4b...9abe`, and `d7183bb5...2f07`. Temporary aliases are removed.
-- Fresh exact Codex absence
-  `eb44d7eefef2e18daf408cf70da02d8f87155aa69b1a325b53f67b7601afc7e1`
-  exits 0. The sole no-bypass install JSON hashes to
-  `c56eb749f236f63b0b87a3439b9f58eb2aa8a2a0078d0a2253168ce334bc3c44`
-  and exits 1 only at finalization.
-- Parent `01a04311-f671-7e70-b8cc-accd93ef10a4`, trace
-  `01a04311-f6a8-73a2-8318-3cb72700b7ed`, route
-  `8a7b167a-cda0-421e-a5e4-8e0a06e2cee4`, and child
-  `01a04313-bcd6-79b1-b304-f37769d1872e` agree. Qwen selects sole
-  `code-reviewer` at 0.9; the complete 2,379-character card hashes to
-  `e409b2c8...20bd`, native delivery is verified, child exit is 0, and the one
-  300-second wait completes without timeout.
-- Parent/child/Store hashes are `fb580c43...a383`, `c60cc6a6...d079`, and
-  `3e41479f...48a6`. This live-proves AR-321's model and AR-324's lineage/full
-  prompt delivery, but finalization `eaea50d9...3833` rejects
-  `missing=[evidence_verification]`.
+- Fresh absence `dd5b6e71...c301` exits 0. The sole no-bypass install
+  `4c3e1e1b...c97e` accepts finalization `d5b3d58f...928c` with `missing=[]`.
+  Parent `01a0435e...ac6f`, trace `01a0435e...aeb0`, child
+  `01a0435f...02ac`, complete prompt `e409b2c8...20bd`, native delivery,
+  exit-0 child, valid header, and one completed wait agree.
+- Parent/child/Store hashes are `5cea5e66...3e22`, `1518a498...ecd1`, and
+  `ceb65010...2fc8`; Store quick-check passes. Attestation alone fails because
+  the post-return backend collector consults a live-only parent resolver.
+  Content-free diagnostic `89fafc05...5b02` isolates AR-326.
 - AR-325 isolates the contradictory opaque failure route and the synthetic
   wrong-unit delegation left beside the real unbound worker. The repair keeps
   ordinary opaque diagnostics, preserves a fixed-unit pending dispatch,
@@ -85,10 +77,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 
 ## exact-blocker
 
-- Reuse a clean AR-325 source checkpoint or finish its substantive/worklog pair,
-  then rebuild and independently verify exact artifacts/images.
-- A fresh clean no-bypass Codex install must prove accepted finalization, exact
-  Store/header correlation, and current-profile attestation. Existing live
+- Repair AR-326 without widening hook authority, checkpoint it, rebuild exact
+  artifacts/images, and run a new one-install Codex container. Existing live
   evidence cannot be relabelled after source repair.
 - Claude, Hermes, OpenClaw, later ordinary processes, exact host install,
   authenticated dashboard, named gates, and final teardown remain pending.
@@ -99,16 +89,16 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 ## same-task-continuity
 
 - Exact artifacts: `~/.agency-runtime/release-artifacts/`
-  `dist-c34933377f7fb16431120f21d487bfbc9910cd55-linux-ar297`.
-- Evidence: `~/.agency-runtime/evidence/ar297-go-c3493337-qwen3-32b` and
+  `dist-19e0210bd5c5b3949dc4206b7cc8ca9244c9a144-linux-ar297`.
+- Evidence: `~/.agency-runtime/evidence/ar297-go-19e0210b` and
   `~/.agency-runtime/evidence/ar325-callback-reconciliation-precheckpoint`.
 - Secret-safe helpers: `/tmp/agency-runtime-ar297-evidence.pcLOZn/`
   `run_with_litellm_key.py` and `capture_command.py`. Never print the key.
 - Protected test Python is
   `~/.agency-runtime-ci/ar297-repair-0827/venv/bin/python`.
-- Exactly 28 containers currently carry label
+- Exactly 29 containers currently carry label
   `dev.agency-runtime.proof=AR-297`; latest is
-  `agency-ar297-codex-c3493337-qwen2`. Remove all 28 only at final teardown.
+  `agency-ar297-codex-19e0210b-qwen1`. Remove all only at final teardown.
 
 ## next-bounded-work-package
 
@@ -118,9 +108,9 @@ unchecked line. Mark an item complete only with exact retained evidence.
 1. [x] Build and independently verify exact `c3493337` artifacts/images.
 2. [x] Test deterministic temporary Mistral aliases and remove all three.
 3. [x] Test and remove exact Gemma 3 27B; it selects the wrong role.
-4. [ ] Checkpoint AR-325, rebuild exact artifacts/images, then prove fresh Codex
-   delivery, dispatch, header, accepted finalization, Store correlation, and
-   current-profile attestation in one new clean container.
+4. [ ] Repair/checkpoint AR-326, rebuild exact artifacts/images, then prove
+   current-profile attestation in one new clean Codex container. Delivery,
+   dispatch, header, accepted finalization, and Store correlation already pass.
 5. [ ] Prove separate clean exact Claude, native-UID Hermes, and OpenClaw
    systemd production-container installs.
 6. [ ] Run later ordinary unattended Conveyor-equivalent processes for all four
