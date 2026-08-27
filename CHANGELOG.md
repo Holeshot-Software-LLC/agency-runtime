@@ -3,7 +3,7 @@ title: "Changelog"
 status: active
 category: release
 created: 2026-07-10
-updated: 2026-08-25
+updated: 2026-08-26
 tags: [release, changelog]
 related:
   - docs/RELEASE_CHECKLIST.md
@@ -15,8 +15,10 @@ related:
   - docs/roadmap/issue-AR-306-bind-strict-critic-semantics.md
   - docs/roadmap/issue-AR-307-project-canary-inference-credentials.md
   - docs/roadmap/issue-AR-308-bind-activation-canary-delegation.md
+  - docs/roadmap/issue-AR-317-route-agency-inference-through-litellm-aliases.md
   - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
   - docs/decisions/0178-project-config-declared-credentials-into-tool-reduced-canaries.md
+  - docs/decisions/0181-use-litellm-aliases-as-host-inference-control-plane.md
   - docs/roadmap/README.md
   - docs/worklog/README.md
   - THIRD_PARTY_NOTICES.md
@@ -73,10 +75,11 @@ changes rather than duplicating every commit.
   CLI credentials are copied into a second disposable private home, and proof
   records the requested and actual answering providers separately. Ordinary
   child staffing is unchanged. A pin may also reuse one exact supported
-  Anthropic-compatible inference profile without adding it to the ordinary
-  provider chain; this enables the local ZCode/GLM judge path but does not
-  claim a safe native ZCode canary backend. Profile pins project only their
-  exact identity; CLI transports alone receive isolated credential homes.
+  Anthropic-compatible, literal-loopback Ollama, or credential-declared safe
+  LiteLLM inference profile without adding it to the ordinary provider chain;
+  this enables local model aliases while keeping proxy fallbacks a separately
+  proven policy. Profile pins project only their exact identity; CLI
+  transports alone receive isolated credential homes.
   ZCode's documented Agent `PreToolUse` hook reaches the staffing boundary
   under test, while installed proof still requires an attended ZCode session.
 

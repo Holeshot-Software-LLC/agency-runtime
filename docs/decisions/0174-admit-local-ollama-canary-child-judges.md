@@ -8,10 +8,12 @@ tags: [canary, inference, ollama, providers, security, evidence]
 related:
   - docs/roadmap/issue-AR-299-local-ollama-canary-child-judge.md
   - docs/roadmap/issue-AR-316-size-ollama-selector-judge-context.md
+  - docs/roadmap/issue-AR-317-route-agency-inference-through-litellm-aliases.md
   - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
   - docs/roadmap/handoffs/issue-AR-297.md
   - docs/decisions/0160-pin-child-judge-providers-per-canary-harness.md
   - docs/decisions/0158-collect-child-canary-proof-inside-disposable-host-profiles.md
+  - docs/decisions/0181-use-litellm-aliases-as-host-inference-control-plane.md
   - agency_runtime/core/canary_judge_provider.py
   - tests/test_canary_child_judge_provider.py
   - docs/THREAT_MODEL.md

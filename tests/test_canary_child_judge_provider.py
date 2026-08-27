@@ -165,6 +165,57 @@ def test_ar299_canary_pin_resolves_one_keyless_loopback_ollama_profile() -> None
     assert config.providers == original_chain
 
 
+def test_ar317_canary_pin_resolves_one_authenticated_loopback_litellm_alias() -> None:
+    original_chain = (ProviderEntry(name="codex-subscription", type="cli", transport="codex"),)
+    config = AgencyConfig(
+        providers=original_chain,
+        inference=InferenceConfig(
+            profiles={
+                "local-child-judge": InferenceProfile(
+                    name="local-child-judge",
+                    adapter="litellm",
+                    model="task-agency-child-judge",
+                    base_url="http://127.0.0.1:4000",
+                    api_key_env="LITELLM_API_KEY",
+                )
+            }
+        ),
+        canary=CanaryConfig(
+            child_judge_provider_by_host=(("codex", "local-child-judge"),),
+        ),
+    )
+
+    resolved = configured_canary_child_judge_provider(config, "CODEX")
+    assert resolved is not None
+    provider, transport = resolved
+    assert transport == ""
+    assert (
+        provider.name,
+        provider.type,
+        provider.model,
+        provider.base_url,
+        provider.api_key_env,
+    ) == (
+        "local-child-judge",
+        "litellm",
+        "task-agency-child-judge",
+        "http://127.0.0.1:4000",
+        "LITELLM_API_KEY",
+    )
+
+    narrowed, requested = canary_child_judge_config(
+        config,
+        "codex",
+        {
+            "AGENCY_CANARY_MODE": "1",
+            CANARY_CHILD_JUDGE_PROVIDER_ENV: "local-child-judge",
+        },
+    )
+    assert requested == "local-child-judge"
+    assert narrowed.providers == (provider,)
+    assert config.providers == original_chain
+
+
 def test_canary_pin_rejects_ambiguous_provider_and_profile_name() -> None:
     config = AgencyConfig(
         providers=(ProviderEntry(name="shared", type="cli", transport="codex"),),
@@ -214,6 +265,19 @@ def test_canary_pin_rejects_ambiguous_provider_and_profile_name() -> None:
             adapter="ollama",
             model="mistral-small3.2:24b",
             base_url="http://api.example.invalid",
+        ),
+        InferenceProfile(
+            name="unsupported-profile",
+            adapter="litellm",
+            model="task-agency-child-judge",
+            base_url="http://127.0.0.1:4000",
+        ),
+        InferenceProfile(
+            name="unsupported-profile",
+            adapter="litellm",
+            model="task-agency-child-judge",
+            base_url="http://api.example.invalid/v1",
+            api_key_env="LITELLM_API_KEY",
         ),
     ],
 )

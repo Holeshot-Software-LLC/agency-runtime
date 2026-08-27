@@ -26,6 +26,7 @@ related:
   - docs/roadmap/issue-AR-314-bind-codex-default-canary-role.md
   - docs/roadmap/issue-AR-315-project-codex-canary-install-home.md
   - docs/roadmap/issue-AR-316-size-ollama-selector-judge-context.md
+  - docs/roadmap/issue-AR-317-route-agency-inference-through-litellm-aliases.md
   - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
   - docs/decisions/0174-admit-local-ollama-canary-child-judges.md
   - docs/decisions/0175-batch-complete-embedding-input-sets.md
@@ -34,6 +35,7 @@ related:
   - docs/decisions/0178-project-config-declared-credentials-into-tool-reduced-canaries.md
   - docs/decisions/0179-admit-exact-codex-canary-delivery-at-subagent-start.md
   - docs/decisions/0180-project-current-profile-canary-install-home.md
+  - docs/decisions/0181-use-litellm-aliases-as-host-inference-control-plane.md
   - README.md
   - docs/RELEASE_CHECKLIST.md
   - docs/worklog/README.md
@@ -55,9 +57,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Work remains in dedicated worktree `/tmp/agency-runtime-ar297.WQUbF2` on
   `codex/ar297-production-container-live-evidence`, based on `origin/main`
   `0a23983a`. Never use the shared checkout.
-- Last clean recovery pair: C1/C2 evidence `2fa5013f` and worklog `260bd197`.
-  This checkpoint captures AR-316; its following worklog commit must record the
-  exact SHA before another live run. Telemetry is 6.2 percent remaining.
+- Last clean recovery pair: AR-316 governance `6a363bd1` and worklog
+  `aef88ffc`. Telemetry is 38.8 percent; checkpoint AR-317 source/governance
+  before its first live probe.
 - Linux remains **NO-GO**. AR-297/#335 stay open. Tracker writes, push, PR,
   merge, tag, signing, publication, release, and hosted workflow actions are
   not authorized.
@@ -80,6 +82,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - AR-315 is live-proven in C2: decision `1d351ac6...c63082` exists only after
   immutable install identity, stable routing state, and a 59-card catalog pass;
   it records the configured free child judge attempt without admitting a card.
+- AR-317 admits only credential-declared safe LiteLLM canary profiles; 158
+  focused warning-strict tests pass. Pre-change alias/readiness/fallback hashes
+  are `39e2d4c1...31e3`/`a10d798c...245`/`8e801fde...075f`.
 - Earlier exact `1f32915d` named gates pass: 860 Python tests (three skips), 138
   dashboard tests, routing, and 161/161 decision mutations. Refresh all gates
   for the final exact candidate.
@@ -96,10 +101,11 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   already failed unavailable after 26,341 ms, so only the 563-byte identity is
   delivered. Store/parent/child hashes are `7e8a6f9f...9706`,
   `d74fa302...43a4`, and `a54138e7...0c53`.
-- AR-316 proves selector `num_ctx=8192` truncated C2's 19,520-token complete
-  catalog to 8,191. Wait for operator approval before changing the existing
-  Mistral route to 32,768, then use one fresh container with the supported
-  600-second activation timeout. Require one v6
+- AR-316 proves direct selector `num_ctx=8192` truncated C2's 19,520-token
+  catalog. The operator selected AR-317 instead: all Agency inference crosses
+  authenticated LiteLLM aliases, `task-agency-router` becomes Mistral-backed,
+  shared fallbacks remain foreign policy, and the exact child alias has none.
+  After alias/config proof, use a fresh 600-second container. Require one v6
   `code-reviewer` artifact, consumed receipt, current header, accepted first
   finalization, and no-bypass attestation in one invocation.
 - No later ordinary Codex, Claude, Hermes, or OpenClaw process has a current
@@ -114,7 +120,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 
 Exact artifacts: `~/.agency-runtime/release-artifacts/`
 `dist-3e42598da5eaa5b58d0bb0771cea6f90719d48d1-linux-ar297`. Evidence:
-`~/.agency-runtime/evidence/ar297-go-3e42598d`. Current exact Codex containers
+`~/.agency-runtime/evidence/ar297-go-3e42598d` and
+`ar297-litellm-routing-ioeoBe`. Current exact Codex containers
 are `agency-ar297-codex-3e42598d` and `-c2`; older evidence containers remain.
 All AR-297 containers await final teardown. Secret-safe helper:
 `/tmp/agency-runtime-ar297-evidence.pcLOZn/run_with_litellm_key.py`.

@@ -30,6 +30,7 @@ related:
   - docs/roadmap/issue-AR-314-bind-codex-default-canary-role.md
   - docs/roadmap/issue-AR-315-project-codex-canary-install-home.md
   - docs/roadmap/issue-AR-316-size-ollama-selector-judge-context.md
+  - docs/roadmap/issue-AR-317-route-agency-inference-through-litellm-aliases.md
   - docs/decisions/0174-admit-local-ollama-canary-child-judges.md
   - docs/decisions/0175-batch-complete-embedding-input-sets.md
   - docs/decisions/0176-use-owner-runtime-temp-for-nonroot-user-services.md
@@ -37,6 +38,7 @@ related:
   - docs/decisions/0178-project-config-declared-credentials-into-tool-reduced-canaries.md
   - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
   - docs/decisions/0180-project-current-profile-canary-install-home.md
+  - docs/decisions/0181-use-litellm-aliases-as-host-inference-control-plane.md
   - agency_runtime/cli/install_commands.py
   - agency_runtime/core/codex_managed_policy.py
   - agency_runtime/core/canary.py
@@ -51,7 +53,7 @@ epic: host-integrations
 issue_id: AR-297
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
-depends_on: [AR-300, AR-301, AR-302, AR-303, AR-304, AR-305, AR-306, AR-307, AR-308, AR-309, AR-310, AR-311, AR-313, AR-314, AR-315, AR-316]
+depends_on: [AR-300, AR-301, AR-302, AR-303, AR-304, AR-305, AR-306, AR-307, AR-308, AR-309, AR-310, AR-311, AR-313, AR-314, AR-315, AR-317]
 blocks: []
 ---
 

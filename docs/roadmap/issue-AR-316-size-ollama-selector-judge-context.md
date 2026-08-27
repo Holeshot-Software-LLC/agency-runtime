@@ -9,8 +9,10 @@ related:
   - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
   - docs/roadmap/issue-AR-299-local-ollama-canary-child-judge.md
   - docs/roadmap/issue-AR-315-project-codex-canary-install-home.md
+  - docs/roadmap/issue-AR-317-route-agency-inference-through-litellm-aliases.md
   - docs/roadmap/handoffs/issue-AR-297.md
   - docs/decisions/0174-admit-local-ollama-canary-child-judges.md
+  - docs/decisions/0181-use-litellm-aliases-as-host-inference-control-plane.md
   - agency_runtime/core/selector/judge_protocol.py
   - tests/test_selector_judge_refactor.py
   - docs/worklog/README.md
@@ -22,7 +24,7 @@ issue_id: AR-316
 priority: p0
 tracker_url: null
 depends_on: [AR-299]
-blocks: [AR-297]
+blocks: []
 ---
 
 # AR-316: Size Ollama selector-judge context for complete catalogs
@@ -48,37 +50,32 @@ withheld the specialist card, but the clean production canary cannot complete.
 - `build_judge_payload` itself sends `num_ctx=8192`; changing the Ollama service
   default or model metadata cannot override that request value.
 - A bounded 32,768-token request for the same model and endpoint is the proposed
-  repair. Because this changes the approved judge-route execution parameters,
-  implementation is waiting for the required operator interview.
+  direct-transport repair. The operator instead selected AR-317's LiteLLM-only
+  host topology, so this direct Ollama defect remains open but no longer blocks
+  the AR-297 exact candidate.
 - Tracker creation is prohibited by the active AR-297 task.
 
 ## Approach
 
-After operator approval, raise only the bounded Ollama selector-judge request
-context to 32,768 while preserving `think=false`, JSON-only output, the
-128-token response budget, provider ordering, and the complete candidate
-universe. Add a protocol regression that inspects the exact request body and a
-large-catalog regression that prevents the 8K cap from returning unnoticed.
-
-Do not change the selected Mistral model, loopback endpoint, child-judge pin,
-reranker, thinking level, or fallback policy. Rebuild the immutable candidate
-and prove the complete no-bypass Codex transaction with the supported
-600-second outer activation timeout.
+Retain the exact diagnosis for a future bounded direct-Ollama transport repair.
+AR-297 does not change the hardcoded request or exercise that route. AR-317
+instead projects a dedicated no-fallback LiteLLM alias whose backend owns the
+32,768-token context, then proves the complete no-bypass Codex transaction with
+the supported 600-second outer activation timeout.
 
 ## Dependencies
 
 - AR-299 and ADR-0174 own the exact free local child-judge route.
 - AR-315 proves the immutable managed-install identity now reaches this stage.
 - AR-297 owns fresh-container, Store, host-artifact, and attestation evidence.
-- The operator must approve the 32,768-token judge-route context before code or
-  exact configuration changes.
+- AR-317 and ADR-0181 own the operator-selected LiteLLM alias topology.
 
 ## Acceptance
 
 - [x] Exact Store, rollout, and Ollama logs correlate the failure to request-
       level 8,192-token truncation, not model absence or endpoint failure.
-- [ ] The operator approves a 32,768-token context for the existing Mistral
-      Ollama judge route.
+- [x] The operator declines the direct route for AR-297 and selects a
+      Mistral-backed LiteLLM alias instead.
 - [ ] The bounded transport and large-catalog regressions pass warning-strict.
 - [ ] A fresh exact Codex production-container transaction records the actual
       child-judge model, one v6 delivery and consumption, accepted finalization,

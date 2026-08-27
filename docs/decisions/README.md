@@ -115,6 +115,7 @@ Status meanings:
 | [ADR-0164](0164-use-dense-embeddings-only-for-workforce-recall.md) | Use learned embeddings only for additive workforce recall | Accepted |
 | [ADR-0171](0171-separate-native-and-structured-reranker-transports.md) | Separate native and structured reranker transports | Accepted |
 | [ADR-0175](0175-batch-complete-embedding-input-sets.md) | Batch complete embedding input sets within a bounded recall budget | Accepted |
+| [ADR-0181](0181-use-litellm-aliases-as-host-inference-control-plane.md) | Use LiteLLM aliases as the host inference control plane | Accepted |
 
 ## Evidence and observability
 

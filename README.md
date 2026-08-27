@@ -3,7 +3,7 @@ title: "Agency Runtime"
 status: active
 category: overview
 created: 2026-07-08
-updated: 2026-08-25
+updated: 2026-08-26
 tags: [agents, routing, delegation, dashboard]
 related:
   - CONTRIBUTING.md
@@ -14,8 +14,10 @@ related:
   - docs/roadmap/issue-AR-293-safe-inference-profile-config-operations.md
   - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
   - docs/roadmap/issue-AR-298-expose-complete-workforce-prompts.md
+  - docs/roadmap/issue-AR-317-route-agency-inference-through-litellm-aliases.md
   - docs/decisions/0172-compose-first-run-setup-from-guarded-owner-operations.md
   - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
+  - docs/decisions/0181-use-litellm-aliases-as-host-inference-control-plane.md
   - docs/roadmap/issue-AR-189-add-owned-host-integration-uninstall.md
   - docs/decisions/0108-retire-only-owned-host-integrations.md
   - docs/decisions/0117-unify-owner-control-authority.md
@@ -1257,13 +1259,17 @@ canary:
 ```
 
 Each child-judge value must resolve exactly once to a configured Codex/Claude
-CLI provider or a supported Anthropic-compatible inference profile. Profile pins are
-materialized only into the canary's one-provider tuple; they never enter or
-reorder the ordinary provider chain. There is no fallback. ZCode can reuse an
-existing GLM inference profile for judge selection, but it still lacks a safe
-noninteractive native canary backend. ZCode is hook-driven rather than a
-launchable CLI here, so current provider-attribution proof requires an attended
-installed ZCode Agent call; profile execution alone is not host proof.
+CLI provider or a supported Anthropic, literal-loopback Ollama, or authenticated
+LiteLLM inference profile. A LiteLLM profile must declare its credential and
+use HTTPS or a literal-loopback HTTP endpoint. Profile pins are materialized
+only into the canary's one-provider tuple; they never enter or reorder Agency's
+ordinary provider chain, and Agency never tries a second provider. Any fallback
+inside an external proxy remains separate proxy policy and must be disabled or
+independently excluded when a canary requires one exact answering model. ZCode
+can reuse an existing GLM inference profile for judge selection, but it still
+lacks a safe noninteractive native canary backend. ZCode is hook-driven rather
+than a launchable CLI here, so current provider-attribution proof requires an
+attended installed ZCode Agent call; profile execution alone is not host proof.
 
 The accepted-outcome parent recruiter is a separate canary-only role. Its pin
 must name exactly one configured Codex or Claude CLI provider. Only the Claude
