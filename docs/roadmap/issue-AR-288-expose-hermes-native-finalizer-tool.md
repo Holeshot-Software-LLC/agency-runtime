@@ -100,7 +100,13 @@ changes; an honest stale header is correctly blocked by strict finalization.
   same text hash is already the authoritative completed acceptance. Rejected,
   mismatched, repeated, disabled-runtime, or unavailable-Agency paths preserve
   their prior behavior. Four focused suites pass 236 tests at
-  `68ade380...3ffc`; rebuilt-artifact install and live proof remain pending.
+  `68ade380...3ffc`.
+- Clean candidate `e17e5221657ec90df8092879cf9d5c79d65ecb50` rebuilds and
+  independently verifies exact artifacts/images. Fresh UID-10000 Hermes R2
+  absence, exact default native config, dry-run, sole install, status, and
+  plugin-doctor receipts all exit 0; the installed bundle registers one native
+  finalizer and eight hooks. A fresh ordinary byte-exact emission remains the
+  only local acceptance item pending.
 
 ## Approach
 

@@ -1691,3 +1691,28 @@ disabled/unavailable/rejected behavior. Completion, parity, installer, and
 smoke suites pass 236 tests at `68ade380...3ffc`. Exact artifacts, clean
 installs, named gates, and a default-config live turn must be refreshed from
 the eventual substantive commit before any Linux GO.
+
+Substantive Hermes repair `5d478c3323a255c6eea6f856b6db294d7402c0b0`
+and clean ledger candidate `e17e5221657ec90df8092879cf9d5c79d65ecb50`
+now produce exact wheel `8b35c8f6...d897` and sdist `7e9f7ad6...9287`.
+Canonical build, strict Twine, independent distribution verification, six
+image builds, and independent label/version verification all exit 0; artifact
+manifest and image receipts hash to `3ae9f798...86b6` and
+`e3e6302d...f947`.
+
+Four new actual-install witnesses independently prove pre-install absence and
+complete once from exact images. Codex receipt `c41e8eae...0039` binds bundle
+`9bcb81e6...454e`, managed policy with no activation bypass, one verified
+native child, a valid exact header, `missing=[]`, and current-profile
+attestation; independent Store receipt `1ca3bf03...cf6` passes quick-check.
+Claude receipt `1917bec2...575` binds registered/enabled bundle
+`7ffd1c4c...c53`. UID-10000 Hermes R2 receipt `5c3b902b...838` binds exact
+default `task-agency-hermes` configuration and bundle `06c68be0...b4e`; native
+doctor passes with one tool and eight hooks. OpenClaw R2 receipt
+`df4601f0...b12` binds the sole LiteLLM provider/primary
+`task-agency-openclaw`, empty fallbacks, SecretRefs, systemd user-manager
+contract, bundle `25ad98ae...34cb`, and runtime-loaded 13-hook plugin. All four
+installed Stores pass quick-check. Diagnostic Hermes R1 and OpenClaw dry-run
+witnesses remain labelled for final teardown; 42 AR-297 containers now exist.
+Package-end telemetry `4e0e2fb9...f1fce` reports 21.4 percent remaining and
+requires this clean recovery pair before any next live process.

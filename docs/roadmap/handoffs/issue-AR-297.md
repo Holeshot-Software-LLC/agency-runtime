@@ -24,8 +24,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-297
 branch: codex/ar297-production-container-live-evidence
-evidence_commit: f45ad0ab23b57c4e982e04a667d1e29dfade4701
-minimum_ledger_commit: f45ad0ab23b57c4e982e04a667d1e29dfade4701
+evidence_commit: e17e5221657ec90df8092879cf9d5c79d65ecb50
+minimum_ledger_commit: e17e5221657ec90df8092879cf9d5c79d65ecb50
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 ---
@@ -37,7 +37,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Work only in `/tmp/agency-runtime-ar297.WQUbF2` on
   `codex/ar297-production-container-live-evidence`, based on `origin/main`
   `0a23983a`. Never touch the shared checkout.
-- Clean ledger `f45ad0ab` binds evidence through Hermes visibility repair.
+- Clean candidate ledger `e17e5221` contains Hermes accepted-result replay;
+  exact artifacts and four fresh installs pass. End telemetry is 21.4%.
 - Linux remains **NO-GO**. AR-297/#335 remain open. No tracker write, push, PR,
   merge, tag, signing, publication, release, or hosted workflow is authorized.
 
@@ -50,34 +51,32 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   Promotion/metadata/final validation/literal/spend receipts are
   `6e19008f...1750`, `e1cba9f6...e841`, `42921a7e...867c`,
   `b686ab4b...9abe`, and `d7183bb5...2f07`. Temporary aliases are removed.
-- Final named gates pass: 912 docs, Ruff lint/format, 860 Python tests with 3
+- Prior named gates pass: 912 docs, Ruff lint/format, 860 Python tests with 3
   skips, 138 dashboard tests, routing 1.4.0, and 167/167 decision mutations;
   receipts are `c5f34de1...8b7f`, `25cc4f01...4cb`, `2eb1981a...3ef9`,
-  `eeb12164...10d4`, and `9a45044f...0a71`. All final exits are 0.
+  `eeb12164...10d4`, and `9a45044f...0a71`; rerun is pending for `e17e5221`.
 - Qwen1's bounded Codex timeout is retained at `40c1c188...7f5a` and
   `5f76b443...6eaa`. AR-327's 211/17 tests and two mutations pass at
   `1b0fd16d...9ab3`, `f54f2441...aab`, and `527ff7d8...a78`.
 - Exact Qwen2 committed-source replay `f98bb268...7cb3` exits 0: read-only and
   full restricted verification both return staffed `verified_existing_receipt`.
-- Exact `7dbd0cbc` wheel/sdist are `e117b362...fc03d` and `ac30feb0...9fb6c`;
-  manifest `780512b2...b7876`, six builds, and image receipt
-  `00fcf8e6...5f76` exit 0. Exact image IDs are `206e94c4`, `237c788d`,
-  `7869a7a3`, `91c3a5bc`, and `1b0653a5`.
-- Fresh Codex `2ec2180b...17bb` passes absence `e857f524...d9bd`; its sole
-  no-bypass install `54572077...ac82` exits 0 with one exact native child,
-  `missing=[]`, valid header, and attestation `ded810a5...6e66`. Store/status
-  correlations `ef8304ef...e30c` and `e4755e50...66a3` exit 0.
-- Fresh Claude `d33914d6...9991` passes absence `f95648d6...9919`; dry-run
-  `67f5125e...7467` and sole install `798da70f...5afa` exit 0 with bundle
-  `ea4e9444...783f`. Hermes `9d5cfe07...ccf0` proves UID 10000 absence
-  `c90213d8...175c`, dry-run `f9c06879...9c59`, and sole install
-  `d2d7ce1b...5ae1` with bundle `d7a3a3a7...3a33`; both Stores pass quick-check.
-- OpenClaw `512df094...1fff` passes absence `534327ca...74a`, dry-run
-  `193e891f...6444`, and install `9a0f49b5...1b7a`; bundle `4d9afa0b...d79`
-  loads all 13 hooks at `bfa7557a...b3f7` and Store
-  `c53dc2a9...01b6` passes quick-check. Authenticated alias inventory
-  `7163aa90...911a` caught the pre-turn `generator` typo; corrected native
-  receipt `2180a4dc...23e8` binds `task-agency-generation` plus env SecretRefs.
+- Exact `e17e5221` wheel/sdist are `8b35c8f6...d897`/`7e9f7ad6...9287`;
+  manifest `3ae9f798...86b6`, six builds, and independent image receipt
+  `e3e6302d...f947` exit 0. Exact image IDs begin `28c3fd34`, `fa17365f`,
+  `29acb4de`, `3739b180`, and `b89804f5`.
+- Fresh Codex absence/install/Store/status receipts `ad4edec5...dfd6`,
+  `c41e8eae...0039`, `1ca3bf03...cf6`, and `6754603c...4173` exit 0.
+  Bundle `9bcb81e6...454e` has one exact child, valid header, `missing=[]`,
+  current-profile attestation, and no activation bypass.
+- Fresh Claude absence/dry/install/status receipts `5665ae9a...573`,
+  `67f5125e...7467`, `1917bec2...575`, and `ab524382...ffc3` exit 0;
+  bundle `7ffd1c4c...c53` is registered/enabled and native inventory is exact.
+- Fresh UID-10000 Hermes R2 absence/config/dry/install receipts
+  `4e962155...2b`, `880b3da3...aea`, `917e1577...06c`, and
+  `5c3b902b...838` exit 0; bundle `06c68be0...b4e` registers one finalizer and
+  eight hooks. Fresh OpenClaw R2 absence/config/install/runtime receipts
+  `89c245f4...f2b`, `bdc0667b...873`, `df4601f0...b12`, and
+  `2f0293a8...bee` exit 0; exact alias-only config loads all 13 hooks.
 - Hermes R1-R3 prove one exact card and accepted routing; R3 receipts
   `80942b3b...3944`, `6d1d3f52...8a29`, `00211b3c...b1c`, and
   `f3b89dac...cf92` rule out missing task/bridge access. Mistral made zero
@@ -104,39 +103,40 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Approved Qwen3 Coder aliases apply/verify `d69aa6b6...af4d`/`a1e2381d...a5dd`
   exit 0 at 65,536/no-thinking; unrelated aliases are unchanged. OpenClaw's
   three-pointer config transition/verify `e97e02e2...deba`/`a141d193...e1ce`
-  exit 0; two stale-metadata attempts rolled back. Docker receipt still binds 36.
+  exit 0; two stale-metadata attempts rolled back.
 - Tool smoke `2b25ad2a...d1f15` passes. Hermes R5 `275e7154...116b`/
   `9fa22217...7e03` calls/accepts its finalizer but a model rewrite is blocked.
   AR-288 red `cad6beee...d937` is repaired with trace-scoped accepted replay;
-  236 focused tests pass at `68ade380...3ffc`. Fresh exact proof is pending.
+  236 focused tests pass at `68ade380...3ffc`. Exact artifacts/install pass;
+  the fresh default-config ordinary Hermes turn remains pending.
 
 ## exact-blocker
 
-- Commit/rebuild the AR-288 repair, refresh exact installs/gates, complete four
-  current-candidate ordinary turns plus Claude login, then teardown.
+- Complete four current-candidate ordinary turns plus Claude login, refresh the
+  exact host/dashboard and named gates, checkpoint, then teardown.
 - Cross-OS artifacts, signing, tracker parity, push/PR/merge/tag/publication,
   release, and exhaustive dispatch are unauthorized, not Linux-only GO gates.
 
 ## same-task-continuity
 
-- Prior exact artifacts are `~/.agency-runtime/release-artifacts/dist-7dbd0cbc5cbc77e46fc795568bb63ddcf5e3ee6f-linux-ar297`; rebuilt candidate pending.
-- Evidence: `~/.agency-runtime/evidence/ar297-go-7dbd0cbc`; receipt manifest
-  `4b48dcc8...7e6b`; secret-safe helpers `/tmp/agency-runtime-ar297-evidence.pcLOZn/`.
+- Exact artifacts: `~/.agency-runtime/release-artifacts/dist-e17e5221657ec90df8092879cf9d5c79d65ecb50-linux-ar297`.
+- Evidence: `~/.agency-runtime/evidence/ar297-go-e17e5221`; secret-safe helpers
+  remain `/tmp/agency-runtime-ar297-evidence.pcLOZn/`.
 - Protected Python: `~/.agency-runtime-ci/ar297-release-0827/venv/bin/python`.
-- Exactly 36 containers carry label `dev.agency-runtime.proof=AR-297`; remove
-  them only at final teardown.
+- Exactly 42 containers carry label `dev.agency-runtime.proof=AR-297`, including
+  retained failed/dry-run witnesses; remove all only at final teardown.
 
 ## next-bounded-work-package
 
 After compaction, reread this capsule and `git status`, then resume at the first
 unchecked line. Mark an item complete only with exact retained evidence.
 
-1. [ ] Build and independently verify exact accepted-replay artifacts/images.
+1. [x] Build and independently verify exact accepted-replay artifacts/images.
 2. [x] Test deterministic temporary Mistral aliases and remove all three.
 3. [x] Test and remove exact Gemma 3 27B; it selects the wrong role.
 4. [x] AR-327 repair/rebuild and one clean Codex install pass with verified
    current-profile attestation and no activation bypass.
-5. [ ] Refresh separate clean exact Codex, Claude, Hermes, and OpenClaw
+5. [x] Refresh separate clean exact Codex, Claude, Hermes, and OpenClaw
    systemd production-container installs.
 6. [ ] Run later ordinary unattended Conveyor-equivalent processes for all four
    harnesses; retain native artifacts, Store correlations, and prompt visibility.
