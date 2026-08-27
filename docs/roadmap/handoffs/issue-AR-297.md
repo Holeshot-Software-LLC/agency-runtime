@@ -24,8 +24,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-297
 branch: codex/ar297-production-container-live-evidence
-evidence_commit: 64a430ee5aa60a7b60950d0daa9d074958dc8b7b
-minimum_ledger_commit: 64a430ee5aa60a7b60950d0daa9d074958dc8b7b
+evidence_commit: b66bb020b68ac517e4f75071fab80dd9e662de0d
+minimum_ledger_commit: b66bb020b68ac517e4f75071fab80dd9e662de0d
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 ---
@@ -37,8 +37,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Work only in `/tmp/agency-runtime-ar297.WQUbF2` on
   `codex/ar297-production-container-live-evidence`, based on `origin/main`
   `0a23983a`. Never touch the shared checkout.
-- Clean ledger `64a430ee` binds exact artifacts/images, all four separate
-  installs, and the rejected three-attempt Hermes Mistral route.
+- Clean ledger `b66bb020` binds installs, rejected Hermes Mistral, and first
+  ordinary Claude/OpenClaw/Codex diagnostics.
 - Linux remains **NO-GO**. AR-297/#335 remain open. No tracker write, push, PR,
   merge, tag, signing, publication, release, or hosted workflow is authorized.
 
@@ -95,14 +95,14 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - OpenClaw R1 native/Store receipts `0e4ecc3d...c53`/`6bf28dbe...367b` prove
   one exact card, all five routes, and native exit 0; the approved 14B route
   returned exact `{}` and Agency recorded `response_invalid`.
-- Codex R1 native/Store receipts `a18f2b10...71ed`/`06dcfe2f...e3e` prove
-  ordinary no-bypass loading and one exact card in parent and child rollouts;
-  opaque delegation left only `evidence_verification` missing, so R2 is next.
+- Direct-only Codex R2 native/Store receipts `53598f2a...5fd5`/
+  `b269dc11...478d` prove one exact card, four alias receipts, no delegation,
+  native exit 0, and accepted finalization with `missing=[]`; Codex row 6 closes.
 
 ## exact-blocker
 
-- Direct-only Codex R2, refreshed same-method Claude OAuth, owner-selected
-  Hermes/OpenClaw aliases, host/dashboard, named gates, and teardown remain.
+- Refreshed same-method Claude OAuth, owner-selected Hermes/OpenClaw aliases,
+  host/dashboard, named gates, and teardown remain.
 - Cross-OS artifacts, signing, tracker parity, push/PR/merge/tag/publication,
   release, and exhaustive workflow dispatch remain unauthorized—not GO gates
   for this Linux-only bounded task unless authority changes.

@@ -1470,3 +1470,19 @@ no model or auth change.
 
 End-of-package telemetry `63bf6e3a...beda` reports 45.6 percent remaining and
 requires this clean substantive/ledger checkpoint before the next live call.
+
+After clean ledger `b66bb020`, Codex R2 used the exact retained 824-byte
+direct-only task `3ef304e5...dd3`, the same ChatGPT auth and default model,
+read-only sandbox, managed policy, and process-memory LiteLLM credential. It
+made no tool or collaboration call. Native stdout/stderr/exit hash to
+`69f672c2...2874`, `5079dcb4...365f`, and `bde29436...120`; the only stderr
+line is the same unrelated optional Cloudflare MCP OAuth diagnostic.
+
+Native receipt `53598f2a...5fd5` binds sole thread
+`01a04454...fb65`, one 4,547-byte response `43b2e44c...0b32`, no child, and
+one exact 2,659-byte `accessibility-auditor` card in rollout
+`693e9dfe...4cd9`. Store correlation `b269dc11...478d` passes quick-check and
+binds trace `01a04454...12f6`, one accepted route, all four used alias-only
+receipts, and finalization `f7937fc5...46e6` with `action=accept`,
+`terminal_status=completed`, and `missing=[]`. Later ordinary Codex loading is
+therefore complete; Claude, Hermes, and OpenClaw remain open independently.
