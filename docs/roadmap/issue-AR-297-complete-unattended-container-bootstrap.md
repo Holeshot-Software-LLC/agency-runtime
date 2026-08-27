@@ -1630,3 +1630,39 @@ process as R1 did.
 Immediately preceding live-probe telemetry `e9b158b2...2f40` reports 17.4
 percent remaining and requires this clean recovery pair before any approved
 Qwen model invocation.
+
+After clean checkpoint `abb79e1f` / `94d25bb4`, fresh telemetry
+`85b85aa4...b668` reported 82.4 percent remaining. Authenticated, no-cache
+tool smoke `2b25ad2a...d1f15` exits 0 through loopback LiteLLM: both
+`task-agency-hermes` and `task-agency-openclaw` return HTTP 200, their exact
+deployment IDs, no fallback, no text, and exactly one `agency_finalize` call
+with byte-identical arguments. The receipt retains no response content.
+
+The following normal UID-10000 Hermes R4 used the unchanged 684-byte task,
+four-turn ceiling, disabled thinking, and no bypass flags. Native stdout,
+stderr, and exit hash to `a94a1e6c...8a68`, `ae72e6e4...dad1f`, and
+`bde29436...120`; session `20260827_192506_ed39a0` made three API calls and
+five native tool calls. Native receipt `c484e1bb...8fb1` proves the exact
+3,227-byte specialist card occurs once and both SQLite copies pass
+quick-check. Store receipt `d38412bb...5fbe` binds accepted selection and load
+of `section-508-accessibility-specialist` plus every Agency inference alias.
+Qwen used four `tool_describe` calls and one `tool_search`, but Hermes's default
+progressive disclosure withheld the plugin finalizer from the direct tool
+array; no `agency_finalize` call occurred and Agency correctly retained
+`response_invalid`. R4 therefore rejects a remaining model-format explanation
+but does not close the Hermes ordinary-turn gate.
+
+The bounded native repair changes only this AR-297-owned Hermes config's
+`tools.tool_search.enabled` value to `off`, making its sole plugin finalizer
+eagerly visible without disabling Agency policy, using an activation bypass,
+or changing a model, endpoint, credential reference, thinking level, or
+foreign policy. The native transition `717d7279...a362` exits 0 and changes
+config SHA from `c4bcf36a...68549` to `80813e3d...36b3`, preserving mode 0600
+and UID/GID 10000. The first evidence helper `a46a312a...a42d` exits 1 because
+it checked the wrong native provider key (`base_url` rather than `api`);
+corrected independent verifier `da5a737e...94ea` exits 0, proves that sole
+exact delta and no inline secret, and invokes no model. Pre-R5 telemetry
+`5f738310...ee5f` reports 39.9 percent remaining, so no R5 invocation is
+admissible until this clean recovery pair exists. The approved official
+Claude.ai login is open at its first-party browser callback but is not yet
+claimed complete.

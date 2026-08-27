@@ -24,8 +24,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-297
 branch: codex/ar297-production-container-live-evidence
-evidence_commit: 035ab3ea3460b16d60a38f4903009aed520eb980
-minimum_ledger_commit: 035ab3ea3460b16d60a38f4903009aed520eb980
+evidence_commit: 94d25bb42a8897505f25fb76b03821e954d28037
+minimum_ledger_commit: 94d25bb42a8897505f25fb76b03821e954d28037
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 ---
@@ -37,7 +37,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Work only in `/tmp/agency-runtime-ar297.WQUbF2` on
   `codex/ar297-production-container-live-evidence`, based on `origin/main`
   `0a23983a`. Never touch the shared checkout.
-- Clean ledger `035ab3ea` binds all evidence through refreshed Claude R3.
+- Clean ledger `94d25bb4` binds evidence through approved harness aliases.
 - Linux remains **NO-GO**. AR-297/#335 remain open. No tracker write, push, PR,
   merge, tag, signing, publication, release, or hosted workflow is authorized.
 
@@ -105,26 +105,26 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   exit 0 at 65,536/no-thinking; unrelated aliases are unchanged. OpenClaw's
   three-pointer config transition/verify `e97e02e2...deba`/`a141d193...e1ce`
   exit 0; two stale-metadata attempts rolled back. Docker receipt still binds 36.
+- Tool smoke `2b25ad2a...d1f15` passes exact finalization for both aliases. Hermes
+  R4 `c484e1bb...8fb1`/`d38412bb...5fbe` retains `response_invalid`: discovery
+  deferred its finalizer. Sole native repair `tools.tool_search.enabled=off`
+  passes `717d7279...a362`/`da5a737e...94ea`; all inference settings stay exact.
 
 ## exact-blocker
 
-- Genuine first-party Claude re-login, three successful ordinary turns, and
-  teardown remain; telemetry `e9b158b2...2f40` requires this clean pair first.
+- Claude login, successful Hermes R5/OpenClaw R2/Claude R4, and teardown remain;
+  telemetry `5f738310...ee5f` at 39.9% requires this clean pair before R5.
 - Cross-OS artifacts, signing, tracker parity, push/PR/merge/tag/publication,
-  release, and exhaustive workflow dispatch remain unauthorized—not GO gates
-  for this Linux-only bounded task unless authority changes.
+  release, and exhaustive dispatch are unauthorized, not Linux-only GO gates.
 
 ## same-task-continuity
 
 - Exact artifacts: `~/.agency-runtime/release-artifacts/dist-7dbd0cbc5cbc77e46fc795568bb63ddcf5e3ee6f-linux-ar297`.
-- Current evidence is `~/.agency-runtime/evidence/ar297-go-7dbd0cbc`; receipt
-  manifest SHA is `4b48dcc8...7e6b`.
-- Secret-safe helpers: `/tmp/agency-runtime-ar297-evidence.pcLOZn/`
-  `run_with_litellm_key.py` and `capture_command.py`. Never print the key.
+- Evidence: `~/.agency-runtime/evidence/ar297-go-7dbd0cbc`; receipt manifest
+  `4b48dcc8...7e6b`; secret-safe helpers `/tmp/agency-runtime-ar297-evidence.pcLOZn/`.
 - Protected Python: `~/.agency-runtime-ci/ar297-release-0827/venv/bin/python`.
-- Exactly 36 containers currently carry label
-  `dev.agency-runtime.proof=AR-297`; latest is
-  `agency-ar297-openclaw-7dbd0cbc`. Remove all only at final teardown.
+- Exactly 36 containers carry label `dev.agency-runtime.proof=AR-297`; remove
+  them only at final teardown.
 
 ## next-bounded-work-package
 
