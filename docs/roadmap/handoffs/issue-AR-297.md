@@ -51,10 +51,11 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   Promotion/metadata/final validation/literal/spend receipts are
   `6e19008f...1750`, `e1cba9f6...e841`, `42921a7e...867c`,
   `b686ab4b...9abe`, and `d7183bb5...2f07`. Temporary aliases are removed.
-- Prior named gates pass: 912 docs, Ruff lint/format, 860 Python tests with 3
-  skips, 138 dashboard tests, routing 1.4.0, and 167/167 decision mutations;
-  receipts are `c5f34de1...8b7f`, `25cc4f01...4cb`, `2eb1981a...3ef9`,
-  `eeb12164...10d4`, and `9a45044f...0a71`; rerun is pending for `e0b0b25c`.
+- Final named gates pass for `e0b0b25c`: 916 docs, Ruff lint/format, 860 Python
+  tests with 3 skips, 138 dashboard tests, routing 1.4.0, and 167/167 killed
+  decision mutations. Receipts are `6e0883bd...a98f`, `82b3e6a6...6b4f`,
+  `b2a4a388...657f`, `3002917f...41c6`, `ac720857...8436`, and
+  `547b518c...584f`; all final exits are 0.
 - AR-328 regression `751276ea...e3a` fails before repair. The exact cache guard
   preserves movable installs; 359 tests pass with 2 skips at
   `981fbbc8...ddd0`, and focused Ruff/docs pass with empty stderr.
@@ -94,12 +95,15 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   sole LiteLLM host alias, thinking off, nonempty native response, accepted
   Store load/all Agency route receipts, unchanged config, and the explicit
   no-channel active-run limitation.
-- Exact host venv/wheel/pip check pass. Combined install `00d51490...b559`
-  exits 1 only for attended Codex activation; all four bundles are current and
-  packaged-runtime attestation `ec2f8fdd...9292` binds `dbf1581f...f301`.
-- Systemd contract `b3ffa572...f888`, restart `b72f17e7...94d8`, HTTP proof
-  `358ab92e...d94f`, and browser proof `7b22dd85...c483` exit 0. Auth is
-  401/200 no-store; exact 2,659-byte prompt `c3cfc098...5848` is untruncated.
+- Exact host refresh `68822689...33af` exits 1 only for normal attended Codex
+  activation; Hermes, OpenClaw, Claude, and dashboard complete. Read-only
+  attestation `64564e4a...bc24` exits 0 and binds wheel `75d63ff9...3762`,
+  mode-0600 config `a4e213d6...97348`, all four final bundles, private runtime
+  `d054649e...d3d7`, active zero-restart systemd-user dashboard, and restarted
+  healthy OpenClaw receipt `561de9bd...df54`.
+- HTTP/browser proofs `26923d58...bb2`/`65162e02...e32c` exit 0: auth is
+  401/200 no-store, the exact 2,659-byte prompt `c3cfc098...5848` is fully
+  visible, and screenshot `222d5109...b5ac` is retained without its token.
 - Optional host Codex verifier `933bc916...bb4` fails before model invocation
   because attended hook trust is not ready; it changes nothing and uses no bypass.
 - Approved Qwen3 Coder aliases apply/verify `d69aa6b6...af4d`/`a1e2381d...a5dd`
@@ -110,7 +114,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 ## exact-blocker
 
 - Complete Claude's pending first-party login and final ordinary row, then
-  refresh host/dashboard, gates, records, and teardown.
+  finish records and teardown.
 - Cross-OS artifacts, signing, tracker parity, push/PR/merge/tag/publication,
   release, and exhaustive dispatch are unauthorized, not Linux-only GO gates.
 
@@ -136,9 +140,9 @@ unchecked line. Mark an item complete only with exact retained evidence.
    systemd production-container installs.
 6. [ ] Repeat ordinary unattended processes for the final four installs; retain
    native artifacts, Store correlations, and prompt visibility.
-7. [ ] Refresh the exact candidate on this Linux host and prove the private
+7. [x] Refresh the exact candidate on this Linux host and prove the private
    authenticated dashboard plus the approved service-manager contract.
-8. [ ] Rerun every named repository gate and record exact exits and hashes.
+8. [x] Rerun every named repository gate and record exact exits and hashes.
 9. [ ] Update canonical issues/capsule and make each required substantive and
    `docs(worklog):` checkpoint pair.
 10. [ ] Remove every container labelled `AR-297`; retain teardown evidence and

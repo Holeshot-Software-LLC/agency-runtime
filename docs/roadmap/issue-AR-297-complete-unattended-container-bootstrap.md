@@ -157,7 +157,7 @@ reach native registration completeness in production-container mode.
       ordinary Conveyor-equivalent Codex invocation loads Agency unattended.
 - [ ] Clean Linux Claude Code, Hermes, and OpenClaw containers prove native
       registration, loading, and a bounded Agency turn without human input.
-- [ ] Release-artifact and remaining release-checklist gates pass on the exact
+- [x] Release-artifact and remaining Linux release-checklist gates pass on the exact
       merge candidate.
 - [x] Tracker issue #335 is linked and remains open while acceptance is pending.
 
@@ -1903,3 +1903,27 @@ exit 1 at `92a9f1c0...cb81`; the current exact alias verifier exits 0 at
 unchanged. Independent final receipt `3c300451...5a02` exits 0. Package
 telemetry `5bf27f4d...b073` reports 25.4 percent and requires this recovery
 pair. Only Claude remains open in the four-harness ordinary matrix.
+
+The final Linux host refresh uses the exact `e0b0b25c` wheel
+`75d63ff9...3762` and mode-0600 exact config `a4e213d6...97348`. The first
+read-only attestation correctly rejects the pre-AR-328 Hermes tree. After a
+safe OpenClaw gateway stop, ready dry-run `34cd4a78...4e9d` exits 0 and the
+bounded live transaction `68822689...33af` exits 1 only because attended Codex
+activation remains a truthful host limitation; Hermes, OpenClaw, Claude, and
+the dashboard complete. OpenClaw is restarted and its deep RPC receipt
+`561de9bd...df54` exits 0. Independent attestation `64564e4a...bc24` exits 0
+and binds every host bundle to private runtime `d054649e...d3d7`, with the
+systemd-user dashboard active, enabled, and at zero restarts.
+
+Authenticated HTTP proof `26923d58...bb2` and browser proof
+`65162e02...e32c` exit 0. They distinguish 401 from authenticated 200, require
+`no-store`, remove the bearer fragment, and render the exact untruncated
+2,659-byte `accessibility-auditor` prompt `c3cfc098...5848`; screenshot
+`222d5109...b5ac` is retained. Final named gates all exit 0: metadata and docs
+validate 916 Markdown files; worklog indexes 1,328 commits; Ruff checks 696
+files; the named Python spine passes 860 with 3 skips; dashboard UI passes
+138; routing 1.4.0 passes every threshold; and decision conformance starts
+green and kills 167/167 mutations with source unchanged. The exact gate
+receipts are indexed by `f9e37789...4618`; the initial policy checker without
+`PYTHONPATH` and decision evaluator without private umask are retained as
+environmental negative receipts before their passing reruns.
