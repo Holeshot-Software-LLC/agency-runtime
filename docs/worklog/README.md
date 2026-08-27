@@ -1322,6 +1322,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `5025390e` | 2026-08-27 | docs(ar321): prove stable Qwen judge route | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-321](../roadmap/issue-AR-321-select-reliable-free-litellm-child-judge.md) | null |
 | `56de576c` | 2026-08-27 | docs(ar297): checkpoint clean Qwen Codex container | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `ced83631` | 2026-08-27 | fix(codex): reconcile canary callback order | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-321](../roadmap/issue-AR-321-select-reliable-free-litellm-child-judge.md), [AR-324](../roadmap/issue-AR-324-bind-codex-canary-child-through-host-lineage.md), [AR-325](../roadmap/issue-AR-325-restore-codex-first-complete-callback-reconciliation.md) | [detail](2026-08-27-ced83631-reconcile-codex-canary-callback-order.md) |
+| `8eb18009` | 2026-08-27 | docs(roadmap): record terminal Codex collection gate | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-325](../roadmap/issue-AR-325-restore-codex-first-complete-callback-reconciliation.md), [AR-326](../roadmap/issue-AR-326-admit-terminal-codex-host-artifact-collection.md) | [detail](2026-08-27-8eb18009-record-terminal-codex-collection-gate.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
