@@ -1284,3 +1284,42 @@ status `e4755e50...66a3` exits 0 and reports `runtime-verified`, verified
 attestation, current launcher artifacts, and current managed policy. AR-327's
 exact rebuilt live gate is closed; ordinary post-install Codex loading remains
 part of the four-harness unattended-process row.
+
+The first exact Claude setup-only container exited 1 before invoking Agency
+because its entrypoint tried to copy credentials before creating
+`/root/.claude`; retained state and log receipts hash to
+`2d2e7c80...1f9e` and `5eea0608...eff`. Replacement container
+`d33914d6...9991` uses the same exact image, passes fresh absence at
+`f95648d6...9919`, and records exit-0 dry-run `67f5125e...7467` followed by
+one exit-0 production install `798da70f...5afa`. It registers and enables
+bundle `ea4e9444...783f`; status, plugin, and marketplace receipts hash to
+`bb4a673e...36fb`, `4003d55e...4f67`, and `c88bbcde...644f`. Its Store
+`6d9568d0...4dc2` passes SQLite quick-check and contains no ordinary run.
+
+Exact Hermes container `9d5cfe07...ccf0` proves the native UID/GID 10000
+boundary. Absence `c90213d8...175c`, dry-run `f9c06879...9c59`, and the sole
+install `d2d7ce1b...5ae1` all exit 0. Bundle `d7a3a3a7...3a33` is registered
+and enabled; status and native plugin receipts hash to `5cd0d280...f88` and
+`25d6f66f...36a`. Store `45f89485...887b3` passes quick-check with no
+ordinary run, while native manifest and current launcher hash to
+`e2b48933...1e7d` and `74da0cde...c6a`.
+
+Exact OpenClaw systemd container `512df094...1fff` brings its root user manager
+to `running` at receipt `2524b552...26a`. Its mode-0600 native profile hashes
+to `f05f9322...557f`; sanitized receipt `d7450a2a...627a` proves provider
+`openai-completions` at the loopback LiteLLM endpoint, only alias
+`task-agency-generator`, and environment SecretRefs for both credentials.
+Fresh absence `534327ca...74a` and dry-run `193e891f...6444` exit 0. The dry
+run creates only the empty Agency ephemeral directory and no native plugin;
+that bounded diagnostic is retained at `9108c029...8db0` rather than hidden.
+The sole production install `9a0f49b5...1b7a` exits 0 with `complete=true`,
+runtime-verified bundle `4d9afa0b...d79`, and all 13 hooks loaded at
+`bfa7557a...b3f7`. Post-install native config `4e756989...0699` still contains
+only the exact alias and SecretRefs. Store `c53dc2a9...01b6` passes quick-check
+with zero runs; its count receipt, native manifest, and launcher hash to
+`762636c2...2cd3`, `bcfdc272...380e`, and `08a672a5...4c2`.
+
+The separate exact production-install row is therefore closed for Codex,
+Claude Code, native-UID Hermes, and OpenClaw systemd. Registration, enablement,
+runtime loading, and later ordinary turns remain distinct: row 6 must still
+prove unattended Agency loading and a bounded ordinary process in all four.

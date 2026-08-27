@@ -24,8 +24,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-297
 branch: codex/ar297-production-container-live-evidence
-evidence_commit: 21051adf98231a2d74733dc34d9e7c757b861af6
-minimum_ledger_commit: 21051adf98231a2d74733dc34d9e7c757b861af6
+evidence_commit: 51537d0cb0f3e7654eee0d39bfd3839cd27fb47b
+minimum_ledger_commit: 51537d0cb0f3e7654eee0d39bfd3839cd27fb47b
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 ---
@@ -37,8 +37,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Work only in `/tmp/agency-runtime-ar297.WQUbF2` on
   `codex/ar297-production-container-live-evidence`, based on `origin/main`
   `0a23983a`. Never touch the shared checkout.
-- Clean ledger `21051adf` binds exact AR-327 artifacts/images. Fresh Codex
-  installation and attestation pass; clean Claude proof is next.
+- Clean ledger `51537d0c` binds exact AR-327 artifacts/images and the fresh
+  Codex install. Separate Claude, native-UID Hermes, and OpenClaw installs now
+  pass; later ordinary four-harness processes are next.
 - Linux remains **NO-GO**. AR-297/#335 remain open. No tracker write, push, PR,
   merge, tag, signing, publication, release, or hosted workflow is authorized.
 
@@ -90,11 +91,21 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   no-bypass install `54572077...ac82` exits 0 with one exact native child,
   `missing=[]`, valid header, and attestation `ded810a5...6e66`. Store/status
   correlations `ef8304ef...e30c` and `e4755e50...66a3` exit 0.
+- Fresh Claude `d33914d6...9991` passes absence `f95648d6...9919`; dry-run
+  `67f5125e...7467` and sole install `798da70f...5afa` exit 0 with bundle
+  `ea4e9444...783f`. Hermes `9d5cfe07...ccf0` proves UID 10000 absence
+  `c90213d8...175c`, dry-run `f9c06879...9c59`, and sole install
+  `d2d7ce1b...5ae1` with bundle `d7a3a3a7...3a33`; both Stores pass quick-check.
+- OpenClaw `512df094...1fff` runs the exact systemd image. Native config receipt
+  `d7450a2a...627a` proves only LiteLLM alias `task-agency-generator` plus env
+  SecretRefs. Absence `534327ca...74a`, dry-run `193e891f...6444`, and sole
+  install `9a0f49b5...1b7a` exit 0 with bundle `4d9afa0b...d79`, all 13 hooks
+  loaded at `bfa7557a...b3f7`, and quick-check Store `c53dc2a9...01b6`.
 
 ## exact-blocker
 
-- Claude, Hermes, OpenClaw, later ordinary processes, exact host install,
-  authenticated dashboard, named gates, and final teardown remain pending.
+- Later ordinary four-harness processes, exact host install, authenticated
+  dashboard, named gates, and final teardown remain pending.
 - Cross-OS artifacts, signing, tracker parity, push/PR/merge/tag/publication,
   release, and exhaustive workflow dispatch remain unauthorized—not GO gates
   for this Linux-only bounded task unless authority changes.
@@ -111,9 +122,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   `run_with_litellm_key.py` and `capture_command.py`. Never print the key.
 - Protected Python is `~/.agency-runtime-ci/ar297-release-0827/venv/bin/python`;
   prior UV 3.13 remains only the exact negative `pidfd` diagnostic.
-- Exactly 32 containers currently carry label
+- Exactly 36 containers currently carry label
   `dev.agency-runtime.proof=AR-297`; latest is
-  `agency-ar297-codex-7dbd0cbc-ar327`. Remove all only at final teardown.
+  `agency-ar297-openclaw-7dbd0cbc`. Remove all only at final teardown.
 
 ## next-bounded-work-package
 
@@ -125,7 +136,7 @@ unchecked line. Mark an item complete only with exact retained evidence.
 3. [x] Test and remove exact Gemma 3 27B; it selects the wrong role.
 4. [x] AR-327 repair/rebuild and one clean Codex install pass with verified
    current-profile attestation and no activation bypass.
-5. [ ] Prove separate clean exact Claude, native-UID Hermes, and OpenClaw
+5. [x] Prove separate clean exact Claude, native-UID Hermes, and OpenClaw
    systemd production-container installs.
 6. [ ] Run later ordinary unattended Conveyor-equivalent processes for all four
    harnesses; retain native artifacts, Store correlations, and prompt visibility.
