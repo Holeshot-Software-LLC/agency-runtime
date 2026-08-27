@@ -92,6 +92,11 @@ prose, and with JSON-object output it confidently selects the wrong specialist.
   `1e030701...7cee`; metadata `7b701cde...c3d0` proves GPT-OSS,
   20.9B/MXFP4, and 131,072-token context. Sole temporary schema deployment
   `9a85ecdf...a219` passes create receipt `cbf87bba...d9fe` before evaluation.
+- GPT-OSS with thinking disabled returns empty content at `91daeed4...2367`,
+  so that temporary alias is removed as an invalid configuration, not counted
+  as a semantic abstention. Replacement no-fallback deployment
+  `25f90630...45d1` uses the model's lowest supported reasoning effort with the
+  same schema/context/retry bounds; create receipt `17fdcd76...8b6f` passes.
 - The owner requires all Agency inference on this system to resolve through
   authenticated LiteLLM aliases and requires the child judge to remain free.
   Tracker creation remains prohibited by the active task.

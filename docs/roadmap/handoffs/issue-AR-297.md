@@ -64,7 +64,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Work remains in dedicated worktree `/tmp/agency-runtime-ar297.WQUbF2` on
   `codex/ar297-production-container-live-evidence`, based on `origin/main`
   `0a23983a`. Never use the shared checkout.
-- Clean recovery `b89a637f`/`bed213cd`, ledger `75904a7d`, binds `c1cf1793`.
+- Clean recovery `8859bfc3`, ledger `b7fe576d`, binds exact `c1cf1793`.
 - Linux remains **NO-GO**. AR-297/#335 stay open. Tracker writes, push, PR,
   merge, tag, signing, publication, release, and hosted workflow actions are
   not authorized.
@@ -106,7 +106,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   Llama then chooses `ai-evaluation-engineer` at `e39a84bd...8274`; its alias
   is removed. Schema Mistral passes initial `76d2cd38...d1a0` but repair
   abstains `98ead20c...c791`; its alias is removed. GPT-OSS 20B pull/model
-  `1e030701...7cee`/`7b701cde...c3d0` pass; alias `9a85ecdf...a219` awaits probes.
+  GPT-OSS pull/model pass; disabled `91daeed4...2367` is empty, while low alias `25f90630...45d1` awaits probes.
 - No later ordinary Codex, Claude, Hermes, or OpenClaw process has a current
   successful Agency-turn receipt on this source.
 - Refresh the host install/dashboard and named repository gates for the exact
@@ -134,7 +134,7 @@ unchecked line. Mark an item complete only with exact retained evidence.
 
 1. [x] Rebuild and independently verify artifacts/images from the exact
    AR-320/LiteLLM checkpoint; `c1cf1793` is the candidate.
-2. [ ] Through AR-321, test GPT-OSS 20B and promote only a repeatedly exact
+2. [ ] Through AR-321, test low-reasoning GPT-OSS and promote only a repeatedly exact
    free LiteLLM alias, then prove fresh Codex canonical delivery,
    consumption, header, finalization, Store correlation, and attestation.
 3. [ ] Build and prove separate clean exact Claude, native-UID Hermes, and

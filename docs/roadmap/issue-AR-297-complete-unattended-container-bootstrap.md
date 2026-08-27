@@ -906,3 +906,9 @@ is removed without promotion. Official Apache-2.0 GPT-OSS 20B acquisition and
 model receipts `1e030701...7cee`/`7b701cde...c3d0` pass, proving
 20.9B/MXFP4 and 131,072-token context. Sole temporary schema deployment
 `9a85ecdf...a219` is ready while the stable Agency route remains unchanged.
+
+GPT-OSS with thinking disabled returns empty content at `91daeed4...2367`, so
+that invalid temporary alias is removed. Replacement deployment
+`25f90630...45d1` keeps the exact schema, 32,768 context, and zero retries while
+using GPT-OSS's lowest supported reasoning effort; secret-safe create receipt
+`17fdcd76...8b6f` passes without changing the stable Agency route.
