@@ -787,4 +787,12 @@ AR-318 now binds one shared 120,000-ms wait into the exact Codex developer
 instruction and persisted-rollout validator while retaining one spawn, one
 wait, no retry, and the 600-second outer ceiling. The stale 60,000-ms shape is
 regression-rejected; Ruff and 309 focused warning-strict tests pass at exit 0.
-A rebuilt artifact and fresh clean Codex transaction remain required.
+Exact ledger `c6b7d92d3e66d25e3f108265852f8ad7092710a0` then produces
+mode-0644 wheel `704e78a9...79a8` (9,299,940 bytes) and sdist
+`69ee572e...552f` (25,612,238 bytes); manifest `c4b99600...557c` records full
+hashes and metadata. Build, strict Twine, and independent verifier stdout hashes
+are `a7e70dcf...2c7d7`, `6bd77304...354d`, and `70e8a13e...b73f`; all exit 0.
+Codex, Claude, Hermes, OpenClaw systemd, and dashboard images bind the exact
+wheel with IDs `c14c26b5...73879`, `40f3c505...c900c`, `6e7d7617...1c943`,
+`b9add4fc...e7288`, and `a3d2619c...7fa49`. Version/label receipt
+`676b83dd...5c2b` exits 0. A fresh clean Codex transaction remains required.

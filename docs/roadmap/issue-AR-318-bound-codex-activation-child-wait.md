@@ -38,9 +38,8 @@ route and the native child has completed its work at exit 0.
 
 ## Current state
 
-- Candidate `8d33694c` and config `a4e213d6...97348` pass clean absence, exact
-  artifact/image, and LiteLLM deployment checks. The production install reaches
-  accepted route `d1a4e01f...7565` and child `01a04100...e872` without a bypass.
+- Superseded candidate `8d33694c` reaches accepted route `d1a4e01f...7565` and
+  child `01a04100...e872` without a bypass under config `a4e213d6...97348`.
 - The child authors its terminal message 224 ms before the parent's single
   60-second wait returns `timed_out=true`. The parent then truthfully reports
   failure, so there is no native delivery, consumption, accepted finalization,
@@ -50,6 +49,9 @@ route and the native child has completed its work at exit 0.
 - The shared 120,000-ms source contract now drives both the Codex developer
   instruction and exact direct-rollout validator. The stale 60,000-ms shape is
   regression-rejected; Ruff and 309 focused warning-strict tests pass at exit 0.
+- Repaired ledger `c6b7d92d` canonical build, strict Twine, independent
+  verification, and five-image label/version verification exit 0. Wheel
+  `704e78a9...79a8` and image receipt `676b83dd...5c2b` are retained mode 0600.
 - Tracker creation is prohibited by the active AR-297 task.
 
 ## Approach

@@ -59,9 +59,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Work remains in dedicated worktree `/tmp/agency-runtime-ar297.WQUbF2` on
   `codex/ar297-production-container-live-evidence`, based on `origin/main`
   `0a23983a`. Never use the shared checkout.
-- Last clean recovery pair is wait-race evidence `4d6d4930` and worklog
-  `9aaf90e0`. AR-318 source tests pass; telemetry is 61.0 percent. Checkpoint
-  that bounded repair now, then rebuild and continue the same Codex proof.
+- Last clean recovery pair is AR-318 source `42642aab` and worklog `c6b7d92d`.
+  Its exact artifacts/images pass; telemetry is 39.8 percent. Checkpoint that
+  package now, then continue the same Codex proof.
 - Linux remains **NO-GO**. AR-297/#335 stay open. Tracker writes, push, PR,
   merge, tag, signing, publication, release, and hosted workflow actions are
   not authorized.
@@ -73,12 +73,12 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   authenticated LiteLLM aliases, Qwen generation with thinking disabled,
   Mistral critic/reranker/recruiter/free child judge, and 4,096-dimensional
   Qwen embedding. Direct Ollama and Jina are absent from active routes.
-- Exact ledger `8d33694c` build, strict Twine, and independent verification exit
-  0. Mode-0644 wheel `3b5fa8f9...466dd` is 9,299,617 bytes; sdist
-  `67ef88f3...0f8f2` is 25,601,998 bytes; manifest `7b4098b9...18dc8`.
-- Codex/Claude/Hermes/OpenClaw image IDs are `fe5df2d0...6de3`,
-  `e365adc1...74fa`, `34af3456...1c3c`, and `8375ab36...a800`; exact-label and
-  version verification exits 0 at `794d67f3...143a`.
+- Exact ledger `c6b7d92d` build, strict Twine, and independent verification exit
+  0. Mode-0644 wheel `704e78a9...79a8` is 9,299,940 bytes; sdist
+  `69ee572e...552f` is 25,612,238 bytes; manifest `c4b99600...557c`.
+- Codex/Claude/Hermes/OpenClaw/dashboard image IDs are `c14c26b5...73879`,
+  `40f3c505...c900c`, `6e7d7617...1c943`, `b9add4fc...e7288`, and
+  `a3d2619c...7fa49`; exact verification exits 0 at `676b83dd...5c2b`.
 - AR-309 through AR-315 prove Codex 0.149 correlation, managed Store, fixed
   plan, normal-umask artifacts, default role, install identity, and a 59-card
   catalog boundary across 566 warning-strict tests.
@@ -100,8 +100,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   `2942f5ee...935b` exits 1 after accepted route `d1a4e01f...7565` and child
   exit 0: its terminal message precedes the timed-out 60-second wait result by
   224 ms, so no delivery/header/attestation is admitted. AR-318 now binds one
-  120-second wait and passes Ruff plus 309 focused warning-strict tests; rebuild
-  and prove the full v6 transaction in a fresh container.
+  120-second wait and passes Ruff plus 309 focused warning-strict tests. Its
+  rebuilt exact images pass; prove the full v6 transaction in a fresh container.
 - No later ordinary Codex, Claude, Hermes, or OpenClaw process has a current
   successful Agency-turn receipt on this source.
 - Refresh the host install/dashboard and named repository gates for the exact
@@ -113,10 +113,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 ## same-task-continuity
 
 Exact artifacts: `~/.agency-runtime/release-artifacts/`
-`dist-8d33694c9895f9da30ef560206efa1206893c78f-linux-ar297`; config is
+`dist-c6b7d92d3e66d25e3f108265852f8ad7092710a0-linux-ar297`; config is
 `~/.agency-runtime/configs/`
 `ar297-litellm-a4e213d6b454ca90.yaml`. Evidence: `ar297-go-3e42598d` and
-`ar297-litellm-routing-ioeoBe`, plus current `ar297-go-8d33694c`. Old containers
+`ar297-litellm-routing-ioeoBe`, plus current `ar297-go-c6b7d92d`. Old containers
 are `agency-ar297-codex-3e42598d` and `-c2`; older evidence containers remain.
 All AR-297 containers await final teardown. Secret-safe helper:
 `/tmp/agency-runtime-ar297-evidence.pcLOZn/run_with_litellm_key.py`.
@@ -127,7 +127,7 @@ After compaction, reread this capsule and `git status`, then resume at the first
 unchecked line. Mark an item complete only with exact retained evidence.
 
 1. [x] Rebuild and independently verify artifacts/images from the exact
-   LiteLLM-config checkpoint; `8d33694c` is the candidate.
+   AR-318/LiteLLM checkpoint; `c6b7d92d` is the candidate.
 2. [ ] Prove fresh Codex absence, then one exact no-bypass V2 install with one
    canonical child artifact, consumed receipt, current header, accepted
    finalization, Store correlation, and attestation.
