@@ -1347,6 +1347,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `5d478c33` | 2026-08-27 | fix(hermes): replay accepted native finalizer result | [AR-288](../roadmap/issue-AR-288-expose-hermes-native-finalizer-tool.md), [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `aa834796` | 2026-08-27 | docs(ar297): prove exact accepted replay installs | [AR-288](../roadmap/issue-AR-288-expose-hermes-native-finalizer-tool.md), [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `f88369bc` | 2026-08-27 | docs(ar297): seal current Hermes ordinary proof | [AR-288](../roadmap/issue-AR-288-expose-hermes-native-finalizer-tool.md), [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `65ef42f2` | 2026-08-27 | docs(ar297): prove current Codex ordinary loading | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
