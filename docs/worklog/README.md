@@ -1341,6 +1341,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `6d32c459` | 2026-08-27 | docs(ar297): prove exact host dashboard install | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | [detail](2026-08-27-6d32c459-prove-exact-host-dashboard-install.md) |
 | `c914cc46` | 2026-08-27 | docs(ar297): close named repository gates | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | [detail](2026-08-27-c914cc46-close-named-repository-gates.md) |
 | `606ce9e5` | 2026-08-27 | docs(ar297): checkpoint refreshed Claude preflight | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | [detail](2026-08-27-606ce9e5-checkpoint-refreshed-claude-preflight.md) |
+| `609e2dd6` | 2026-08-27 | docs(ar297): retain refreshed Claude OAuth failure | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
