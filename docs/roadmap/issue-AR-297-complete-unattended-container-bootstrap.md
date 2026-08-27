@@ -809,3 +809,8 @@ the 563-byte identity reaches the child, so strict projection admits no v6
 delivery, header, finalization, or attestation. Store and parent/child rollouts
 hash to `c16b99c1...1438`, `e63a6865...1b8e`, and `7a25e86f...c879`. AR-319
 owns the bounded pinned-timeout repair.
+
+AR-319 now projects that pinned provider's validated timeout into the
+canary-only aggregate budget and permits the existing 120-second profile
+maximum through the selector's internal ceiling. Ruff and 222 affected
+warning-strict tests pass; a rebuilt fresh Codex transaction remains required.

@@ -48,16 +48,24 @@ bounded profile deadline, preventing an otherwise valid workforce envelope.
   the install rather than inferring delivery from the successful child result.
 - Install `d61d1574...d23f`, Store `c16b99c1...1438`, and parent/child rollouts
   `e63a6865...1b8e`/`7a25e86f...c879` are retained mode 0600.
+- The bounded repair projects the resolved provider timeout into the immutable
+  canary-only judge copy and aligns the internal transport ceiling with the
+  already validated 120-second provider/profile maximum. Ordinary
+  `judge.timeout` input remains capped at 60 seconds.
+- Ruff passes and 222 affected warning-strict provider, staffing, selector,
+  transport, and canary tests pass. An optional 431-test diagnostic sweep has
+  three failures in untouched Claude-argument and companion-policy paths;
+  these are not named fast gates and remain outside this package.
 - Tracker creation is prohibited by the active AR-297 task.
 
 ## Approach
 
 When an activation canary resolves one explicit provider pin, build its
 canary-only configuration with that provider's already validated timeout as the
-aggregate judge budget. Preserve exactly one provider, no fallback, the global
-configuration object, and the inference-profile 120-second maximum. Do not
-change the selected alias, model, endpoint, thinking level, or outer canary
-timeout.
+aggregate judge budget, and permit that budget through the internal transport
+ceiling. Preserve exactly one provider, no fallback, the global configuration
+object, and the inference-profile 120-second maximum. Do not change the
+selected alias, model, endpoint, thinking level, or outer canary timeout.
 
 ## Dependencies
 
@@ -67,9 +75,9 @@ timeout.
 
 ## Acceptance
 
-- [ ] A pinned canary provider's validated timeout becomes its aggregate judge
+- [x] A pinned canary provider's validated timeout becomes its aggregate judge
       budget without mutating ordinary configuration or fallback behavior.
-- [ ] Focused warning-strict provider, staffing, and canary tests pass.
+- [x] Focused warning-strict provider, staffing, and canary tests pass.
 - [ ] A rebuilt fresh Codex production-container install persists one verified
       v6 delivery, consumption, accepted finalization, header, and attestation.
 - [ ] A same-repository tracker issue is created and linked after explicit

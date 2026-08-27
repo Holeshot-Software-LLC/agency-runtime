@@ -17,6 +17,7 @@ from agency_runtime.core.config import (
     CanaryConfig,
     InferenceConfig,
     InferenceProfile,
+    JudgeConfig,
     ProviderEntry,
 )
 from agency_runtime.core.configuration_contracts import ConfigValidationError
@@ -54,7 +55,9 @@ def test_canary_pin_resolves_one_exact_cli_provider_and_removes_fallbacks() -> N
     )
     assert requested == "codex-subscription"
     assert narrowed.providers == (provider,)
+    assert narrowed.judge.timeout == provider.timeout
     assert config.providers != narrowed.providers
+    assert config.judge.timeout == 15.0
 
 
 def test_canary_pin_mismatch_fails_without_fallback() -> None:
@@ -169,6 +172,7 @@ def test_ar317_canary_pin_resolves_one_authenticated_loopback_litellm_alias() ->
     original_chain = (ProviderEntry(name="codex-subscription", type="cli", transport="codex"),)
     config = AgencyConfig(
         providers=original_chain,
+        judge=JudgeConfig(timeout=60.0),
         inference=InferenceConfig(
             profiles={
                 "local-child-judge": InferenceProfile(
@@ -177,6 +181,7 @@ def test_ar317_canary_pin_resolves_one_authenticated_loopback_litellm_alias() ->
                     model="task-agency-child-judge",
                     base_url="http://127.0.0.1:4000",
                     api_key_env="LITELLM_API_KEY",
+                    timeout_ms=120_000,
                 )
             }
         ),
@@ -213,7 +218,9 @@ def test_ar317_canary_pin_resolves_one_authenticated_loopback_litellm_alias() ->
     )
     assert requested == "local-child-judge"
     assert narrowed.providers == (provider,)
+    assert narrowed.judge.timeout == provider.timeout == 120.0
     assert config.providers == original_chain
+    assert config.judge.timeout == 60.0
 
 
 def test_canary_pin_rejects_ambiguous_provider_and_profile_name() -> None:

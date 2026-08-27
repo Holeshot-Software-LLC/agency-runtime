@@ -90,7 +90,14 @@ def canary_child_judge_config(
         raise CanaryChildJudgeProviderError(
             "the canary child-judge provider projection does not match its configured pin"
         )
-    return replace(config, providers=(provider,)), provider.name
+    return (
+        replace(
+            config,
+            judge=replace(config.judge, timeout=provider.timeout),
+            providers=(provider,),
+        ),
+        provider.name,
+    )
 
 
 __all__ = [

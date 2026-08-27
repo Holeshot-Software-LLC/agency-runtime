@@ -114,6 +114,26 @@ def test_cli_provider_rejects_invalid_timeout_and_clamps_direct_attempts(
     assert called == [judge._MAX_JUDGE_DEADLINE_SECONDS]
 
 
+def test_attempt_budget_preserves_profile_maximum_and_clamps_above_it(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(judge.time, "monotonic", lambda: 0.0)
+
+    ordinary = judge._AttemptState.begin(60.0)
+
+    assert ordinary.reserve(120.0) == 60.0
+
+    state = judge._AttemptState.begin(120.0)
+
+    assert state.deadline == 120.0
+    assert state.reserve(120.0) == 120.0
+
+    clamped = judge._AttemptState.begin(600.0)
+
+    assert clamped.deadline == 120.0
+    assert judge._MAX_JUDGE_DEADLINE_SECONDS == 120.0
+
+
 def test_legacy_transport_contains_network_failure(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

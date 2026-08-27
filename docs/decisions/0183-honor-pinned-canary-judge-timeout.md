@@ -39,8 +39,9 @@ A canary-only explicit provider pin uses that resolved provider's validated
 timeout as both its per-attempt and aggregate judge budget. The narrowed copy
 still contains exactly one provider and no fallback; the ordinary configuration
 object, global judge schema, aliases, models, endpoints, and thinking settings
-remain unchanged. Inference-profile validation continues to cap the bound at
-120 seconds.
+remain unchanged. The selector's internal transport ceiling admits the existing
+120-second provider/profile maximum, while ordinary `judge.timeout` input stays
+schema-capped at 60 seconds.
 
 ## Consequences
 

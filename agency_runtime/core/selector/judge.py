@@ -43,7 +43,11 @@ logger = logging.getLogger("agency_runtime.selector.judge")
 
 _MAX_JUDGE_RESPONSE_BYTES = 256 * 1024
 _MAX_PROVIDER_ATTEMPTS = MAX_PROVIDER_CHAIN_ENTRIES
-_MAX_JUDGE_DEADLINE_SECONDS = 60.0
+# Legacy ``judge.timeout`` input remains schema-capped at 60 seconds. Resolved
+# provider and inference-profile entries may declare up to 120 seconds, so the
+# internal transport ceiling must preserve that already-validated bound when a
+# caller deliberately projects one provider timeout into the aggregate budget.
+_MAX_JUDGE_DEADLINE_SECONDS = 120.0
 _MAX_JUDGE_CANDIDATES = 20
 _MAX_COMPLETE_CANDIDATE_PROMPT_BYTES = 1_280 * 1024
 _MAX_SELECTED = 50
