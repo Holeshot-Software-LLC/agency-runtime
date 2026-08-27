@@ -37,7 +37,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Work only in `/tmp/agency-runtime-ar297.WQUbF2` on
   `codex/ar297-production-container-live-evidence`, based on `origin/main`
   `0a23983a`. Never touch the shared checkout.
-- Clean ledger `54939116` binds the exact `e0b0b25c` artifacts; three final non-Codex installs pass.
+- Clean ledger `6781c59b` admitted the sole final Codex canary; all four final installs now pass.
 - Linux remains **NO-GO**. AR-297/#335 remain open. No tracker write, push, PR,
   merge, tag, signing, publication, release, or hosted workflow is authorized.
 
@@ -62,8 +62,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   builds exit 0. R1 image verification correctly rejects Node 22; the pinned
   Node 24.15 rebuild passes at `07f372e3...eb9a`. Final image IDs begin
   `c8e7a265`, `93eb1f9e`, `3a4cac26`, `c3d712ec`, and `4d2ccddc`.
-- Final Codex absence survives its dry-run at `0aab382c...3163`; its sole live
-  install awaits this telemetry-forced checkpoint.
+- Final Codex absence survives dry-run at `0aab382c...3163`; its sole live
+  install `ce370bc8...1330`, Store `d9469980...d5b9`, artifacts
+  `8831ece2...3940`, and status `e1c700b5...fd1f` exit 0. Bundle
+  `96b44257...7785` has one native child, `missing=[]`, managed trust, no bypass.
 - Final Claude install/status/artifacts `579d65c8...a0e9`/`98cbc224...897d`/
   `105bf8b0...6499` exit 0; bundle `b2151080...b119` is registered/enabled.
 - Final UID-10000 Hermes install/status/artifacts `4d04f360...02d8`/
@@ -108,9 +110,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 
 ## exact-blocker
 
-- Run the sole final Codex live install, checkpoint four-install evidence, then
-  repeat all ordinary rows and complete Claude's pending first-party login.
-- Refresh the host/dashboard, named gates, records, and teardown.
+- Repeat all four ordinary rows and complete Claude's pending first-party
+  login, then refresh the host/dashboard, named gates, records, and teardown.
 - Cross-OS artifacts, signing, tracker parity, push/PR/merge/tag/publication,
   release, and exhaustive dispatch are unauthorized, not Linux-only GO gates.
 
@@ -132,7 +133,7 @@ unchecked line. Mark an item complete only with exact retained evidence.
 3. [x] Test and remove exact Gemma 3 27B; it selects the wrong role.
 4. [x] AR-327 repair/rebuild and one clean Codex install pass with verified
    current-profile attestation and no activation bypass.
-5. [ ] Refresh separate clean exact Codex, Claude, Hermes, and OpenClaw
+5. [x] Refresh separate clean exact Codex, Claude, Hermes, and OpenClaw
    systemd production-container installs.
 6. [ ] Repeat ordinary unattended processes for the final four installs; retain
    native artifacts, Store correlations, and prompt visibility.

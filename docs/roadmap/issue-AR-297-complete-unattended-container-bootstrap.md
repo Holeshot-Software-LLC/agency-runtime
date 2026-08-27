@@ -1837,3 +1837,12 @@ pass independently. After native Hermes doctor, strict receipt
 `d7bc15f0...d8f8` proves the exact 0700 root, 0500 guard, 0400 marker, policy,
 and zero `.pyc` entries. Telemetry `5af0422f...082c` reports 26.1 percent and
 forces this clean recovery pair before the final Codex live install.
+
+After clean recovery `d2ae9b57` / `6781c59b`, telemetry immediately precedes
+the sole final Codex transaction. Exact install receipt `ce370bc8...1330`
+exits 0 with bundle `96b44257...7785`, one completed host-created child, one
+native delivery, one accepted finalization, `missing=[]`, persisted
+current-profile attestation, managed trust, and no activation bypass. Store
+correlation `d9469980...d5b9`, artifact backup `8831ece2...3940`, and status
+`e1c700b5...fd1f` independently pass. All four exact final-candidate install
+rows are now closed; their later ordinary unattended rows remain separate.
