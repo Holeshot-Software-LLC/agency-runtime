@@ -1345,6 +1345,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `abb79e1f` | 2026-08-27 | docs(ar297): checkpoint approved harness aliases | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `e23f45c6` | 2026-08-27 | docs(ar297): retain Hermes tool visibility repair | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `5d478c33` | 2026-08-27 | fix(hermes): replay accepted native finalizer result | [AR-288](../roadmap/issue-AR-288-expose-hermes-native-finalizer-tool.md), [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `aa834796` | 2026-08-27 | docs(ar297): prove exact accepted replay installs | [AR-288](../roadmap/issue-AR-288-expose-hermes-native-finalizer-tool.md), [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
