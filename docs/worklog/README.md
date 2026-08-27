@@ -3,7 +3,7 @@ title: Worklog
 status: active
 category: worklog
 created: 2026-07-10
-updated: 2026-08-26
+updated: 2026-08-27
 tags: []
 related: []
 supersedes: []
@@ -1293,6 +1293,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `74794970` | 2026-08-26 | docs(ar320): checkpoint full staffing wait repair | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-320](../roadmap/issue-AR-320-bound-codex-wait-to-full-child-staffing.md) | [ADR-0184](../decisions/0184-bound-codex-wait-to-full-child-staffing.md) |
 | `04b6b1a5` | 2026-08-26 | docs(ar320): checkpoint exact staffing candidate | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-320](../roadmap/issue-AR-320-bound-codex-wait-to-full-child-staffing.md) | [ADR-0184](../decisions/0184-bound-codex-wait-to-full-child-staffing.md) |
 | `94741593` | 2026-08-26 | docs(ar321): record free child judge blocker | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-317](../roadmap/issue-AR-317-route-agency-inference-through-litellm-aliases.md), [AR-320](../roadmap/issue-AR-320-bound-codex-wait-to-full-child-staffing.md), [AR-321](../roadmap/issue-AR-321-select-reliable-free-litellm-child-judge.md) | [ADR-0181](../decisions/0181-use-litellm-aliases-as-host-inference-control-plane.md) |
+| `f8348ab0` | 2026-08-27 | docs(ar321): checkpoint free judge candidates | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-321](../roadmap/issue-AR-321-select-reliable-free-litellm-child-judge.md) | [ADR-0181](../decisions/0181-use-litellm-aliases-as-host-inference-control-plane.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
