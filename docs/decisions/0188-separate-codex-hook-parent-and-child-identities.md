@@ -9,11 +9,13 @@ related:
   - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
   - docs/decisions/0179-admit-exact-codex-canary-delivery-at-subagent-start.md
   - docs/decisions/0187-bind-codex-canary-child-through-host-authored-lineage.md
+  - docs/decisions/0189-admit-only-accepted-terminal-codex-parents-for-post-return-collection.md
   - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
   - docs/roadmap/issue-AR-313-trust-normal-umask-codex-artifacts.md
   - docs/roadmap/issue-AR-314-bind-codex-default-canary-role.md
   - docs/roadmap/issue-AR-324-bind-codex-canary-child-through-host-lineage.md
   - docs/roadmap/issue-AR-325-restore-codex-first-complete-callback-reconciliation.md
+  - docs/roadmap/issue-AR-326-admit-terminal-codex-host-artifact-collection.md
   - agency_runtime/adapters/hooks.py
   - agency_runtime/core/child_delivery_evidence.py
   - tests/test_canary_activation_snapshot.py

@@ -20,6 +20,7 @@ related:
   - docs/roadmap/issue-AR-319-honor-pinned-canary-judge-timeout.md
   - docs/roadmap/issue-AR-320-bound-codex-wait-to-full-child-staffing.md
   - docs/roadmap/issue-AR-324-bind-codex-canary-child-through-host-lineage.md
+  - docs/roadmap/issue-AR-326-admit-terminal-codex-host-artifact-collection.md
   - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
   - docs/decisions/0178-project-config-declared-credentials-into-tool-reduced-canaries.md
   - docs/decisions/0181-use-litellm-aliases-as-host-inference-control-plane.md
@@ -28,6 +29,7 @@ related:
   - docs/decisions/0184-bound-codex-wait-to-full-child-staffing.md
   - docs/decisions/0187-bind-codex-canary-child-through-host-authored-lineage.md
   - docs/decisions/0188-separate-codex-hook-parent-and-child-identities.md
+  - docs/decisions/0189-admit-only-accepted-terminal-codex-parents-for-post-return-collection.md
   - docs/roadmap/README.md
   - docs/worklog/README.md
   - THIRD_PARTY_NOTICES.md
@@ -112,6 +114,11 @@ changes rather than duplicating every commit.
   pending dispatch and atomically promotes it to the host-authored real child;
   ordinary encrypted spawns remain unstaffed and diagnostic, and conflicting
   worker evidence still fails closed.
+- The Codex current-profile canary's bounded backend collector can now resolve
+  its exact parent after one authoritative accepted terminal commit, when the
+  host-authored child rollout is finally complete. Hook-side resolution remains
+  live-only; rejected, pending, missing, multi-finalization, stale, ordinary,
+  and artifact-less runs still fail closed.
 - Exact-config live canaries now project only credential environment variables
   explicitly named by that validated configuration after applying the normal
   minimal CLI environment. Values remain process-only and bounded; malformed

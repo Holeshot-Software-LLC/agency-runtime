@@ -1922,18 +1922,28 @@ def _restricted_codex_canary_route(
     *,
     parent_session_id: str,
     parent_trace_id: str,
+    accepted_terminal_parent: bool = False,
 ) -> Mapping[str, Any] | None:
-    """Return the sole child-bound route under the exact canary parent."""
+    """Return the sole child-bound route under one lifecycle-exact parent."""
 
+    if type(accepted_terminal_parent) is not bool:
+        return None
     parent_getter = getattr(store, "get_codex_activation_canary_parent_snapshot", None)
     routes_getter = getattr(store, "get_native_child_staffing_decisions_for_parent", None)
     if not callable(parent_getter) or not callable(routes_getter):
         return None
     try:
-        parent = parent_getter(
-            session_id=parent_session_id,
-            trace_id=parent_trace_id,
-        )
+        if accepted_terminal_parent:
+            parent = parent_getter(
+                session_id=parent_session_id,
+                trace_id=parent_trace_id,
+                accepted_terminal=True,
+            )
+        else:
+            parent = parent_getter(
+                session_id=parent_session_id,
+                trace_id=parent_trace_id,
+            )
         routes = routes_getter(
             session_id=parent_session_id,
             trace_id=parent_trace_id,
@@ -2016,6 +2026,7 @@ def _verify_restricted_codex_canary_child_delivery(
     *,
     parent_session_id: str,
     parent_trace_id: str,
+    accepted_terminal_parent: bool = False,
     started_at_ns: int | None = None,
     finished_at_ns: int | None = None,
     root: Path | None = None,
@@ -2026,6 +2037,7 @@ def _verify_restricted_codex_canary_child_delivery(
         store,
         parent_session_id=parent_session_id,
         parent_trace_id=parent_trace_id,
+        accepted_terminal_parent=accepted_terminal_parent,
     )
     if route is None:
         return None
@@ -2163,6 +2175,7 @@ def _collect_restricted_codex_canary_host_delivery(
         store,
         parent_session_id=parent_session_id,
         parent_trace_id=parent_trace_id,
+        accepted_terminal_parent=True,
         started_at_ns=started_at_ns,
         finished_at_ns=finished_at_ns,
         root=root,

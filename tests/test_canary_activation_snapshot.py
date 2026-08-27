@@ -51,6 +51,7 @@ def _native_child_decision(
     child_id: str = _CHILD,
     launch_id: str = _LAUNCH,
     task: str = _CHILD_TASK,
+    nonce: str = _NONCE,
 ) -> dict[str, object]:
     attempts = [
         {
@@ -99,7 +100,7 @@ def _native_child_decision(
         "bundle_digest": _digest("bundle"),
         "issued_at": "2026-08-12T12:00:00Z",
         "expires_at": "2026-08-12T12:05:00Z",
-        "nonce": _NONCE,
+        "nonce": nonce,
         "cards": cards,
     }
 
@@ -110,6 +111,7 @@ def _record_verified_native_child_delivery(
     session_id: str,
     trace_id: str,
     child_id: str,
+    nonce: str = _NONCE,
 ) -> None:
     """Persist the content-free route/receipt pair used by snapshot projection."""
 
@@ -119,6 +121,7 @@ def _record_verified_native_child_delivery(
         child_id=child_id,
         launch_id=child_id,
         task=CODEX_ACTIVATION_CANARY_WORK_UNIT,
+        nonce=nonce,
     )
     context_fingerprint = _digest(f"context:{trace_id}")
     decision_id = store.record_routing_decision(
@@ -367,6 +370,349 @@ def test_restricted_codex_parent_snapshot_resolves_only_the_exact_live_route(
         )
         is None
     )
+
+
+def test_restricted_codex_backend_route_admits_only_the_exact_accepted_terminal_parent(
+    store: Store,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from agency_runtime.core.child_delivery_evidence import (
+        _restricted_codex_canary_route,
+    )
+    from agency_runtime.core.installer import seed_starter_roster
+    from agency_runtime.core.workforce import inference
+
+    seed_starter_roster(store)
+    monkeypatch.setenv("AGENCY_CANARY_MODE", "1")
+    monkeypatch.setenv("AGENCY_CANARY_REQUIRE_EXISTING_STORE", "1")
+    monkeypatch.setattr(
+        inference,
+        "invoke_structured_provider_result",
+        stub_inference_invoker(("code-reviewer",)),
+    )
+    session_id = "restricted-terminal-parent"
+    trace_id = "restricted-terminal-trace"
+    child_id = "01a04324-a431-76d1-bdf6-2ddfe65db56b"
+    task = f"{CODEX_ACTIVATION_CANARY_PROMPT}\n\nCanary nonce: {'1' * 32}"
+    run_preflight(
+        store,
+        session_id=session_id,
+        trace_id=trace_id,
+        user_message=task,
+        host="codex",
+        capability_receipt=native_adapter_capability_receipt(
+            "codex",
+            platform="windows" if os.name == "nt" else "linux",
+            session_id=session_id,
+            trace_id=trace_id,
+            available_tools=("repository-read", "native-delegation"),
+        ),
+    )
+    _record_verified_native_child_delivery(
+        store,
+        session_id=session_id,
+        trace_id=trace_id,
+        child_id=child_id,
+    )
+
+    assert (
+        store.get_codex_activation_canary_parent_snapshot(
+            session_id=session_id,
+            trace_id=trace_id,
+        )
+        is not None
+    )
+    assert (
+        store.get_codex_activation_canary_parent_snapshot(
+            session_id=session_id,
+            trace_id=trace_id,
+            accepted_terminal=True,
+        )
+        is None
+    )
+    assert (
+        _restricted_codex_canary_route(
+            store,
+            parent_session_id=session_id,
+            parent_trace_id=trace_id,
+        )
+        is not None
+    )
+    assert (
+        _restricted_codex_canary_route(
+            store,
+            parent_session_id=session_id,
+            parent_trace_id=trace_id,
+            accepted_terminal_parent=True,
+        )
+        is None
+    )
+    with pytest.raises(ValueError, match="accepted_terminal must be a boolean"):
+        store.get_codex_activation_canary_parent_snapshot(
+            session_id=session_id,
+            trace_id=trace_id,
+            accepted_terminal=1,
+        )
+
+    revision = store.get_completion_evidence_snapshot(
+        session_id,
+        trace_id,
+    )["evidence_revision"]
+    committed = store.commit_terminal_finalization(
+        session_id=session_id,
+        trace_id=trace_id,
+        host="codex",
+        action="accept",
+        response_hash="a" * 64,
+        status="completed",
+        expected_evidence_revision=revision,
+    )
+
+    assert committed["authoritative"] is True
+    assert (
+        store.get_codex_activation_canary_parent_snapshot(
+            session_id=session_id,
+            trace_id=trace_id,
+        )
+        is None
+    )
+    assert (
+        _restricted_codex_canary_route(
+            store,
+            parent_session_id=session_id,
+            parent_trace_id=trace_id,
+        )
+        is None
+    )
+    terminal = store.get_codex_activation_canary_parent_snapshot(
+        session_id=session_id,
+        trace_id=trace_id,
+        accepted_terminal=True,
+    )
+    terminal_route = _restricted_codex_canary_route(
+        store,
+        parent_session_id=session_id,
+        parent_trace_id=trace_id,
+        accepted_terminal_parent=True,
+    )
+
+    assert terminal is not None
+    assert terminal["proven"] is True
+    assert terminal["run"]["status"] == "completed"
+    assert terminal["run"]["terminal_finalization_id"] == committed["event_id"]
+    assert terminal["cardinalities"]["finalizations"] == 1
+    assert terminal["finalizations"] == [
+        {
+            **terminal["finalizations"][0],
+            "id": committed["event_id"],
+            "trace_id": trace_id,
+            "host": "codex",
+            "action": "accept",
+            "missing": [],
+            "terminal_status": "completed",
+        }
+    ]
+    assert terminal_route is not None
+    assert terminal_route["binding_id"] == child_id
+
+
+def test_restricted_codex_backend_terminal_parent_rejects_inexact_terminal_shapes(
+    store: Store,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from agency_runtime.core.child_delivery_evidence import (
+        _restricted_codex_canary_route,
+    )
+    from agency_runtime.core.installer import seed_starter_roster
+    from agency_runtime.core.workforce import inference
+
+    monkeypatch.setenv("AGENCY_CANARY_MODE", "1")
+    monkeypatch.setenv("AGENCY_CANARY_REQUIRE_EXISTING_STORE", "1")
+    monkeypatch.setattr(
+        inference,
+        "invoke_structured_provider_result",
+        stub_inference_invoker(("code-reviewer",)),
+    )
+
+    def prepared(label: str, nonce: str) -> tuple[Store, str, str]:
+        session_id = f"restricted-{label}-parent"
+        trace_id = f"restricted-{label}-trace"
+        task = f"{CODEX_ACTIVATION_CANARY_PROMPT}\n\nCanary nonce: {nonce * 32}"
+        run_preflight(
+            store,
+            session_id=session_id,
+            trace_id=trace_id,
+            user_message=task,
+            host="codex",
+            capability_receipt=native_adapter_capability_receipt(
+                "codex",
+                platform="windows" if os.name == "nt" else "linux",
+                session_id=session_id,
+                trace_id=trace_id,
+                available_tools=("repository-read", "native-delegation"),
+            ),
+        )
+        _record_verified_native_child_delivery(
+            store,
+            session_id=session_id,
+            trace_id=trace_id,
+            child_id={
+                "closed": "01a04324-a432-76d1-bdf6-2ddfe65db56c",
+                "rejected": "01a04324-a432-76d1-bdf6-2ddfe65db56d",
+                "ambiguous": "01a04324-a432-76d1-bdf6-2ddfe65db56e",
+                "pending": "01a04324-a432-76d1-bdf6-2ddfe65db56f",
+                "missing": "01a04324-a432-76d1-bdf6-2ddfe65db570",
+            }[label],
+            nonce=f"nonce-{label}",
+        )
+        return store, session_id, trace_id
+
+    seed_starter_roster(store)
+
+    closed, closed_session, closed_trace = prepared("closed", "2")
+    assert closed.close_turn_evidence(closed_session, closed_trace) == 1
+
+    rejected, rejected_session, rejected_trace = prepared("rejected", "3")
+    rejected_revision = rejected.get_completion_evidence_snapshot(
+        rejected_session,
+        rejected_trace,
+    )["evidence_revision"]
+    rejected_commit = rejected.commit_terminal_finalization(
+        session_id=rejected_session,
+        trace_id=rejected_trace,
+        host="codex",
+        action="response_invalid",
+        response_hash="b" * 64,
+        status="completed",
+        expected_evidence_revision=rejected_revision,
+    )
+    assert rejected_commit["authoritative"] is True
+
+    ambiguous, ambiguous_session, ambiguous_trace = prepared("ambiguous", "4")
+    ambiguous.record_finalization(
+        trace_id=ambiguous_trace,
+        host="codex",
+        action="continue",
+        missing=["child_running"],
+    )
+    ambiguous_revision = ambiguous.get_completion_evidence_snapshot(
+        ambiguous_session,
+        ambiguous_trace,
+    )["evidence_revision"]
+    ambiguous_commit = ambiguous.commit_terminal_finalization(
+        session_id=ambiguous_session,
+        trace_id=ambiguous_trace,
+        host="codex",
+        action="accept",
+        response_hash="c" * 64,
+        status="completed",
+        expected_evidence_revision=ambiguous_revision,
+    )
+    assert ambiguous_commit["authoritative"] is True
+
+    pending, pending_session, pending_trace = prepared("pending", "5")
+    pending_revision = pending.get_completion_evidence_snapshot(
+        pending_session,
+        pending_trace,
+    )["evidence_revision"]
+    pending_commit = pending.commit_terminal_finalization(
+        session_id=pending_session,
+        trace_id=pending_trace,
+        host="codex",
+        action="accept",
+        response_hash="d" * 64,
+        status="completed",
+        expected_evidence_revision=pending_revision,
+        pending_interaction_kind="authorization",
+        pending_interaction_fingerprint="e" * 64,
+    )
+    assert pending_commit["authoritative"] is True
+
+    missing, missing_session, missing_trace = prepared("missing", "6")
+    missing_revision = missing.get_completion_evidence_snapshot(
+        missing_session,
+        missing_trace,
+    )["evidence_revision"]
+    missing_commit = missing.commit_terminal_finalization(
+        session_id=missing_session,
+        trace_id=missing_trace,
+        host="codex",
+        action="accept",
+        response_hash="f" * 64,
+        status="completed",
+        expected_evidence_revision=missing_revision,
+        missing=["evidence_verification"],
+    )
+    assert missing_commit["authoritative"] is True
+
+    for candidate, session_id, trace_id in (
+        (closed, closed_session, closed_trace),
+        (rejected, rejected_session, rejected_trace),
+        (ambiguous, ambiguous_session, ambiguous_trace),
+        (pending, pending_session, pending_trace),
+        (missing, missing_session, missing_trace),
+    ):
+        assert (
+            candidate.get_codex_activation_canary_parent_snapshot(
+                session_id=session_id,
+                trace_id=trace_id,
+                accepted_terminal=True,
+            )
+            is None
+        )
+        assert (
+            _restricted_codex_canary_route(
+                candidate,
+                parent_session_id=session_id,
+                parent_trace_id=trace_id,
+                accepted_terminal_parent=True,
+            )
+            is None
+        )
+
+
+def test_restricted_codex_collectors_keep_live_and_terminal_authority_separate(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from agency_runtime.core import child_delivery_evidence, codex_activation_verification
+
+    observed: list[bool] = []
+
+    def verify(*_args: object, **kwargs: object) -> None:
+        observed.append(bool(kwargs.get("accepted_terminal_parent", False)))
+        return None
+
+    monkeypatch.setattr(
+        child_delivery_evidence,
+        "_verify_restricted_codex_canary_child_delivery",
+        verify,
+    )
+    monkeypatch.setattr(
+        codex_activation_verification,
+        "is_restricted_codex_activation_canary_environment",
+        lambda _environment: True,
+    )
+
+    assert (
+        child_delivery_evidence._collect_restricted_codex_canary_child_delivery(
+            object(),
+            parent_session_id="collector-parent",
+            parent_trace_id="collector-trace",
+        )
+        is None
+    )
+    collection = child_delivery_evidence._collect_restricted_codex_canary_host_delivery(
+        object(),
+        parent_session_id="collector-parent",
+        parent_trace_id="collector-trace",
+        started_at_ns=1,
+        finished_at_ns=2,
+        root=tmp_path,
+    )
+
+    assert collection.reason == "verification_refused"
+    assert observed == [False, True]
 
 
 def test_restricted_codex_child_hook_resolves_one_host_lineage_bound_parent(

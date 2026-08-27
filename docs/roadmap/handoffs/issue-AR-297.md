@@ -14,6 +14,7 @@ related:
   - docs/decisions/0144-claim-codex-spawn-execution-at-the-first-complete-callback.md
   - docs/decisions/0179-admit-exact-codex-canary-delivery-at-subagent-start.md
   - docs/decisions/0188-separate-codex-hook-parent-and-child-identities.md
+  - docs/decisions/0189-admit-only-accepted-terminal-codex-parents-for-post-return-collection.md
   - docs/RELEASE_CHECKLIST.md
   - docs/worklog/README.md
 supersedes: []
@@ -21,8 +22,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-297
 branch: codex/ar297-production-container-live-evidence
-evidence_commit: 19e0210bd5c5b3949dc4206b7cc8ca9244c9a144
-minimum_ledger_commit: 19e0210bd5c5b3949dc4206b7cc8ca9244c9a144
+evidence_commit: 496ec8befc49807fc93f508290355fe81f5c6b02
+minimum_ledger_commit: 496ec8befc49807fc93f508290355fe81f5c6b02
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 ---
@@ -34,8 +35,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Work only in `/tmp/agency-runtime-ar297.WQUbF2` on
   `codex/ar297-production-container-live-evidence`, based on `origin/main`
   `0a23983a`. Never touch the shared checkout.
-- Clean ledger `19e0210b` binds the repaired source and current exact artifacts.
-  The next bounded package is regression-first AR-326 terminal collection.
+- Clean ledger `496ec8be` binds the prior exact live gate. The AR-326 terminal
+  collector repair is implemented and verified; its local checkpoint pair is
+  the next action before any rebuild or live claim.
 - Linux remains **NO-GO**. AR-297/#335 remain open. No tracker write, push, PR,
   merge, tag, signing, publication, release, or hosted workflow is authorized.
 
@@ -74,12 +76,19 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   `ae7689e3...7a84`, exit 0, and empty stderr.
 - Documentation checks pass for 893 files at `c5d005ae...18ac`; repository-wide
   Ruff/format passes at `94423e2d...0564`; diff-check output is empty. All exit 0.
+- AR-326 keeps hooks live-only while admitting only one exact accepted terminal
+  parent to the post-return collector. The affected 203-test suite exits 0 at
+  `4e76af29...a318`; its two focused mutations are killed at
+  `34858754...5cc7` with source unchanged.
+- The named Python spine passes 860 tests with 3 skips at `8cda02e1...4312`.
+  Full decision conformance kills 165/165 mutations at `891defed...ab8` with
+  zero survived/invalid and source unchanged. Both exit 0 with empty stderr.
 
 ## exact-blocker
 
-- Repair AR-326 without widening hook authority, checkpoint it, rebuild exact
-  artifacts/images, and run a new one-install Codex container. Existing live
-  evidence cannot be relabelled after source repair.
+- Checkpoint the verified AR-326 repair, rebuild exact artifacts/images, and run
+  a new one-install Codex container. Existing live evidence cannot be relabelled
+  after source repair.
 - Claude, Hermes, OpenClaw, later ordinary processes, exact host install,
   authenticated dashboard, named gates, and final teardown remain pending.
 - Cross-OS artifacts, signing, tracker parity, push/PR/merge/tag/publication,
@@ -90,12 +99,14 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 
 - Exact artifacts: `~/.agency-runtime/release-artifacts/`
   `dist-19e0210bd5c5b3949dc4206b7cc8ca9244c9a144-linux-ar297`.
-- Evidence: `~/.agency-runtime/evidence/ar297-go-19e0210b` and
-  `~/.agency-runtime/evidence/ar325-callback-reconciliation-precheckpoint`.
+- Evidence: `~/.agency-runtime/evidence/ar297-go-19e0210b`,
+  `~/.agency-runtime/evidence/ar325-callback-reconciliation-precheckpoint`, and
+  `~/.agency-runtime/evidence/ar326-terminal-collector-precheckpoint`.
 - Secret-safe helpers: `/tmp/agency-runtime-ar297-evidence.pcLOZn/`
   `run_with_litellm_key.py` and `capture_command.py`. Never print the key.
-- Protected test Python is
-  `~/.agency-runtime-ci/ar297-repair-0827/venv/bin/python`.
+- Linux process tests use protected Python 3.12 at
+  `~/.agency-runtime-ci/ar272-openclaw-fast-spine/venv/bin/python`; the prior UV
+  3.13 interpreter is retained only as the exact negative `pidfd` diagnostic.
 - Exactly 29 containers currently carry label
   `dev.agency-runtime.proof=AR-297`; latest is
   `agency-ar297-codex-19e0210b-qwen1`. Remove all only at final teardown.

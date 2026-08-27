@@ -55,6 +55,7 @@ related:
   - docs/decisions/0186-bind-codex-child-session-with-canary-request-digest.md
   - docs/decisions/0187-bind-codex-canary-child-through-host-authored-lineage.md
   - docs/decisions/0188-separate-codex-hook-parent-and-child-identities.md
+  - docs/decisions/0189-admit-only-accepted-terminal-codex-parents-for-post-return-collection.md
   - agency_runtime/cli/install_commands.py
   - agency_runtime/core/codex_managed_policy.py
   - agency_runtime/core/canary.py
@@ -1181,3 +1182,16 @@ records the remaining lifecycle bug: after Codex returns, the bounded backend
 collector asks a live-only parent resolver and receives `verification_refused`
 despite the exact accepted terminal graph. Diagnostic `89fafc05...5b02`
 isolates that lookup failure without changing the proof Store.
+
+The regression-first AR-326 repair leaves hook-side parent resolution live-only
+and gives only the post-return backend collector an exclusive accepted-terminal
+mode. It requires one completed Codex run, one bound `accept/completed`
+finalization with `missing=[]`, canonical non-pending metadata, and the existing
+session, trace, route, delivery, and artifact agreement. The affected suite
+passes 203 tests at `4e76af29...a318`; the named fast spine passes 860 tests with
+3 skips at `8cda02e1...4312`; and complete decision conformance kills 165/165
+mutations with source unchanged at `891defed...ab8`. All three exit 0 with empty
+stderr. Retained exit-1 receipts prove the earlier protected UV Python lacked
+Linux `pidfd_open` and the canonical system binary lacked pytest; neither run
+changed source. A new exact build and fresh one-install Codex proof remain
+required, so the prior failed attestation is not relabelled.

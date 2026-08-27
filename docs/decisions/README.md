@@ -149,6 +149,7 @@ Status meanings:
 | [ADR-0186](0186-bind-codex-child-session-with-canary-request-digest.md) | Bind Codex child sessions with a canary request digest | Superseded |
 | [ADR-0187](0187-bind-codex-canary-child-through-host-authored-lineage.md) | Bind the Codex canary child through host-authored lineage | Superseded |
 | [ADR-0188](0188-separate-codex-hook-parent-and-child-identities.md) | Separate Codex hook parent and child identities | Accepted |
+| [ADR-0189](0189-admit-only-accepted-terminal-codex-parents-for-post-return-collection.md) | Admit only accepted terminal Codex parents for post-return collection | Accepted |
 
 ## State and roster governance
 

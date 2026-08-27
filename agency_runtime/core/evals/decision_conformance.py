@@ -2873,6 +2873,34 @@ class _NominationSemantics:""",
         ),
     ),
     DecisionMutation(
+        mutation_id="codex-postreturn-collector-falls-back-to-live-parent",
+        invariant=(
+            "Only the backend post-return collector requests the exact accepted terminal "
+            "Codex parent; hook collection remains live-only."
+        ),
+        source_path="agency_runtime/core/child_delivery_evidence.py",
+        before="        accepted_terminal_parent=True,",
+        after="        accepted_terminal_parent=False,",
+        test_node=(
+            "tests/test_canary_activation_snapshot.py::"
+            "test_restricted_codex_collectors_keep_live_and_terminal_authority_separate"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-postreturn-collector-allows-nonaccept-terminal",
+        invariant=(
+            "A completed Codex run authorizes post-return collection only when its sole "
+            "bound terminal finalization action is accept."
+        ),
+        source_path="agency_runtime/core/store/evidence.py",
+        before='        and finalization.get("action") == "accept"',
+        after="        and True",
+        test_node=(
+            "tests/test_canary_activation_snapshot.py::"
+            "test_restricted_codex_backend_terminal_parent_rejects_inexact_terminal_shapes"
+        ),
+    ),
+    DecisionMutation(
         mutation_id="ranking-order-reversed",
         invariant="The model's semantic ranking order is preserved, never locally reranked.",
         source_path="agency_runtime/core/workforce/inference.py",

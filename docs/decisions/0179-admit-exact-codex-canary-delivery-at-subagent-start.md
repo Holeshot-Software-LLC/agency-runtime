@@ -19,8 +19,10 @@ related:
   - docs/roadmap/issue-AR-314-bind-codex-default-canary-role.md
   - docs/roadmap/issue-AR-315-project-codex-canary-install-home.md
   - docs/roadmap/issue-AR-325-restore-codex-first-complete-callback-reconciliation.md
+  - docs/roadmap/issue-AR-326-admit-terminal-codex-host-artifact-collection.md
   - docs/decisions/0180-project-current-profile-canary-install-home.md
   - docs/decisions/0186-bind-codex-child-session-with-canary-request-digest.md
+  - docs/decisions/0189-admit-only-accepted-terminal-codex-parents-for-post-return-collection.md
   - agency_runtime/adapters/hooks.py
   - agency_runtime/core/canary_backends.py
   - agency_runtime/core/child_delivery_evidence.py

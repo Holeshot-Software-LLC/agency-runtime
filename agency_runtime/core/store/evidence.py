@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import sqlite3
 from collections.abc import Mapping
+from datetime import datetime, timedelta
 from hashlib import sha256
 from typing import Any
 
@@ -580,6 +581,87 @@ def _canary_resolution_reason(
     if not run_state_consistent:
         return "run_state_inconsistent"
     return None
+
+
+def _accepted_terminal_codex_parent_snapshot(
+    snapshot: object,
+    *,
+    session_id: str,
+    trace_id: str,
+) -> bool:
+    """Require one exact authoritative accepted Codex terminal projection."""
+
+    def authoritative_timestamp(value: object) -> bool:
+        if not isinstance(value, str) or len(value) > 64:
+            return False
+        try:
+            parsed = datetime.fromisoformat(value)
+        except ValueError:
+            return False
+        return bool(
+            parsed.utcoffset() == timedelta(0)
+            and parsed.isoformat(timespec="microseconds") == value
+        )
+
+    if not isinstance(snapshot, Mapping):
+        return False
+    run = snapshot.get("run")
+    route = snapshot.get("route")
+    cardinalities = snapshot.get("cardinalities")
+    finalizations = snapshot.get("finalizations")
+    if not (
+        isinstance(run, Mapping)
+        and isinstance(route, Mapping)
+        and isinstance(cardinalities, Mapping)
+        and isinstance(finalizations, list)
+        and len(finalizations) == 1
+        and isinstance(finalizations[0], Mapping)
+    ):
+        return False
+    finalization = finalizations[0]
+    terminal_id = str(run.get("terminal_finalization_id") or "")
+    ended_at = run.get("ended_at")
+    created_at = finalization.get("created_at")
+    response_hash = finalization.get("response_hash")
+    policy_response_hash = finalization.get("policy_response_hash")
+    return bool(
+        snapshot.get("proven") is True
+        and snapshot.get("status") == "resolved"
+        and snapshot.get("reason") == "exact_route_resolved"
+        and snapshot.get("host") == "codex"
+        and snapshot.get("session_id") == session_id
+        and snapshot.get("trace_id") == trace_id
+        and snapshot.get("query_hash") == route.get("query_hash")
+        and run.get("host") == "codex"
+        and run.get("session_id") == session_id
+        and run.get("trace_id") == trace_id
+        and run.get("status") == "completed"
+        and authoritative_timestamp(ended_at)
+        and terminal_id
+        and route.get("session_id") == session_id
+        and route.get("trace_id") == trace_id
+        and cardinalities.get("routes") == 1
+        and cardinalities.get("runs") == 1
+        and cardinalities.get("finalizations") == 1
+        and finalization.get("id") == terminal_id
+        and finalization.get("trace_id") == trace_id
+        and finalization.get("host") == "codex"
+        and finalization.get("action") == "accept"
+        and finalization.get("missing") == []
+        and finalization.get("terminal_status") == "completed"
+        and authoritative_timestamp(created_at)
+        and created_at == ended_at
+        and isinstance(response_hash, str)
+        and content_digest_identity(response_hash) == response_hash
+        and (
+            policy_response_hash is None
+            or policy_response_hash == ""
+            or (
+                isinstance(policy_response_hash, str)
+                and content_digest_identity(policy_response_hash) == policy_response_hash
+            )
+        )
+    )
 
 
 _EXECUTED_DELEGATION_STATUSES = frozenset({"started", "running", "delegated", "completed"})
@@ -1928,34 +2010,51 @@ class EvidenceStoreMixin(PreflightStoreMixin):
         *,
         session_id: str,
         trace_id: str,
+        accepted_terminal: bool = False,
     ) -> dict[str, Any] | None:
-        """Resolve the sole live restricted activation-canary parent route.
+        """Resolve the sole lifecycle-exact restricted canary parent route.
 
         Parent hooks carry the parent session and turn directly. This lookup
-        recovers no prompt text: it admits only the already persisted, exact
-        canary route and then reuses the canonical snapshot validator. Child
-        lifecycle hooks use the separately digest-scoped snapshot resolver.
+        defaults to the live parent only. The backend's post-return collector
+        may explicitly request the one accepted terminal parent; that mode does
+        not fall back to a live, rejected, ambiguous, or continuation run.
+        This lookup recovers no prompt text and reuses the canonical snapshot
+        validator. Child lifecycle hooks use the separately digest-scoped
+        snapshot resolver.
         """
 
+        if type(accepted_terminal) is not bool:
+            raise ValueError("accepted_terminal must be a boolean")
         normalized_session = validate_correlation_id(session_id, field="session_id")
         normalized_trace = validate_correlation_id(trace_id, field="trace_id")
         from agency_runtime.core.activation_canary_contract import (
             CODEX_ACTIVATION_CANARY_ROUTE_SOURCE,
         )
 
+        lifecycle_clause = (
+            "AND run.status = 'completed' AND run.ended_at IS NOT NULL "
+            "AND run.terminal_finalization_id IS NOT NULL "
+            if accepted_terminal
+            else "AND run.status IN ('active', 'evidence_only') "
+            "AND run.ended_at IS NULL AND run.terminal_finalization_id IS NULL "
+        )
+
         conn = self._connect()
         try:
-            rows = conn.execute(
-                "SELECT route.query_hash FROM routing_decisions AS route "
+            query = (
+                "SELECT route.query_hash, run.metadata AS run_metadata "
+                "FROM routing_decisions AS route "
                 "JOIN runs AS run ON run.trace_id = route.trace_id "
                 "AND run.session_id = route.session_id "
                 "WHERE route.session_id = ? AND route.trace_id = ? "
                 "AND route.source = ? AND route.status = 'accepted' "
                 "AND run.host = 'codex' AND run.preflight_state = 'ready' "
-                "AND run.status IN ('active', 'evidence_only') "
-                "AND run.ended_at IS NULL AND run.terminal_finalization_id IS NULL "
-                "AND run.preflight_request_fingerprint = route.query_hash "
-                "ORDER BY route.created_at, route.rowid LIMIT 2",
+                + lifecycle_clause
+                + "AND run.preflight_request_fingerprint = route.query_hash "
+                "ORDER BY route.created_at, route.rowid LIMIT 2"
+            )
+            rows = conn.execute(
+                query,
                 (
                     normalized_session,
                     normalized_trace,
@@ -1966,6 +2065,17 @@ class EvidenceStoreMixin(PreflightStoreMixin):
             conn.close()
         if len(rows) != 1:
             return None
+        if accepted_terminal:
+            raw_metadata = rows[0]["run_metadata"]
+            metadata = decode_run_metadata(raw_metadata)
+            if (
+                not isinstance(raw_metadata, str)
+                or not raw_metadata
+                or project_run_metadata(metadata) != raw_metadata
+                or metadata.get("pending_interaction")
+                or metadata.get("pending_interaction_fingerprint")
+            ):
+                return None
         query_hash = str(rows[0]["query_hash"] or "")
         try:
             snapshot = self.get_canary_activation_snapshot(
@@ -1980,6 +2090,12 @@ class EvidenceStoreMixin(PreflightStoreMixin):
             and snapshot.get("proven") is True
             and snapshot.get("session_id") == normalized_session
             and snapshot.get("trace_id") == normalized_trace
+        ):
+            return None
+        if accepted_terminal and not _accepted_terminal_codex_parent_snapshot(
+            snapshot,
+            session_id=normalized_session,
+            trace_id=normalized_trace,
         ):
             return None
         return snapshot

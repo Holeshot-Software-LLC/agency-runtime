@@ -1,6 +1,6 @@
 ---
 title: "AR-326: Admit terminal Codex host-artifact collection"
-status: open
+status: in_progress
 category: roadmap
 created: 2026-08-27
 updated: 2026-08-27
@@ -11,9 +11,12 @@ related:
   - docs/roadmap/handoffs/issue-AR-297.md
   - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
   - docs/decisions/0179-admit-exact-codex-canary-delivery-at-subagent-start.md
+  - docs/decisions/0188-separate-codex-hook-parent-and-child-identities.md
+  - docs/decisions/0189-admit-only-accepted-terminal-codex-parents-for-post-return-collection.md
   - agency_runtime/core/canary_backends.py
   - agency_runtime/core/child_delivery_evidence.py
   - agency_runtime/core/store/evidence.py
+  - agency_runtime/core/evals/decision_conformance.py
   - tests/test_canary_activation_snapshot.py
   - docs/worklog/README.md
 supersedes: []
@@ -53,6 +56,20 @@ and current-profile attestation fails with `verification_refused`.
   `get_codex_activation_canary_parent_snapshot` returns no parent after the
   accepted terminal commit. Store `ceb65010...2fc8` passes SQLite quick-check.
 - Tracker creation is prohibited by the active AR-297 task.
+- The regression-first repair keeps the default resolver and every hook caller
+  live-only. Only the post-return backend collector requests an exclusive
+  accepted-terminal mode. That mode requires one exact completed run, one bound
+  `accept/completed` finalization with `missing=[]`, canonical non-pending
+  metadata, and the existing session/trace, route, delivery, artifact, and
+  invocation-window agreement.
+- Three lifecycle regressions and two curated conformance mutations pass. The
+  broader warning-strict Codex/artifact/host-canary review passes 203 tests.
+  ADR-0189 records the durable lifecycle boundary.
+- The named fast Python spine passes 860 tests with 3 skips under the protected
+  Linux-capable Python 3.12 interpreter. The complete decision-conformance
+  evaluator passes its baseline and kills all 165 mutations with no invalid or
+  surviving result and source unchanged. Fresh exact build and one-install live
+  proof remain required.
 
 ## Approach
 
@@ -71,14 +88,38 @@ rejection finalizations, stale artifacts, and every ordinary process.
 - ADR-0156 and ADR-0179 continue to require host-authored delivery evidence;
   terminal lookup may locate that evidence but cannot replace or manufacture it.
 
+## Verification
+
+Owner-private evidence is retained under
+`~/.agency-runtime/evidence/ar326-terminal-collector-precheckpoint`. The
+203-test affected suite, 17 decision tests, and two focused killed mutations
+all exit 0 with empty stderr; their stdout SHA-256 values are
+`4e76af29...a318`, `9cd8ed59...a033`, and `34858754...5cc7`.
+
+The initially selected protected UV Python 3.13.13 binary hashes to
+`1b6373b5...803d` and lacks `os.pidfd_open`. It therefore produced the retained
+exit-1 858-pass/2-failure fast-spine receipt `27fd9352...e38a`, with the same two
+native process-supervision tests failing again at `bd6cd01f...1f5b`. The exact
+same named spine under Linux-capable Python 3.12.3 passes 860 tests with 3 skips
+and exit 0 at `8cda02e1...4312`; stderr is empty.
+
+The full evaluator cannot use the canonical `/usr/bin/python3.12` binary
+directly because that canonical path has no pytest installation; the retained
+baseline refusal exits 1 at `353d7910...8333` without changing source. Its
+owner-private mode-0700 copy hashes to `1643dacd...1118`, exposes
+`os.pidfd_open`, and carries pytest. Through that interpreter the complete
+evaluator exits 0, passes its baseline, kills 165/165 mutations, reports zero
+survived or invalid, and leaves source unchanged. JSON stdout hashes to
+`891defed...ab8`; stderr is empty.
+
 ## Acceptance
 
-- [ ] Regression proves the current live-only resolver disappears after an
+- [x] Regression proves the current live-only resolver disappears after an
       accepted terminal commit while the bounded backend resolver remains exact.
-- [ ] Hook-side callers remain live-only and terminal, ambiguous, rejected, or
+- [x] Hook-side callers remain live-only and terminal, ambiguous, rejected, or
       stale runs cannot create host-delivery authority.
 - [ ] A rebuilt fresh one-install Codex container collects the canonical child
       artifact, persists current-profile attestation, and exits 0.
-- [ ] Focused warning-strict and named repository checks pass.
+- [x] Focused warning-strict and named repository checks pass.
 - [ ] A same-repository tracker issue is created and linked after explicit
       authorization.
