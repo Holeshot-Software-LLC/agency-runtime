@@ -141,6 +141,7 @@ Status meanings:
 | [ADR-0168](0168-refresh-openclaw-headers-through-awaited-tool-results.md) | Refresh OpenClaw headers through awaited tool results | Accepted |
 | [ADR-0174](0174-admit-local-ollama-canary-child-judges.md) | Admit local Ollama canary child judges | Accepted |
 | [ADR-0179](0179-admit-exact-codex-canary-delivery-at-subagent-start.md) | Admit exact Codex canary delivery at SubagentStart | Accepted |
+| [ADR-0182](0182-bound-codex-activation-child-wait.md) | Bound the Codex activation child wait above observed latency | Accepted |
 
 ## State and roster governance
 

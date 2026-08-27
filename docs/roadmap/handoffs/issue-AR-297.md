@@ -27,6 +27,7 @@ related:
   - docs/roadmap/issue-AR-315-project-codex-canary-install-home.md
   - docs/roadmap/issue-AR-316-size-ollama-selector-judge-context.md
   - docs/roadmap/issue-AR-317-route-agency-inference-through-litellm-aliases.md
+  - docs/roadmap/issue-AR-318-bound-codex-activation-child-wait.md
   - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
   - docs/decisions/0174-admit-local-ollama-canary-child-judges.md
   - docs/decisions/0175-batch-complete-embedding-input-sets.md
@@ -36,6 +37,7 @@ related:
   - docs/decisions/0179-admit-exact-codex-canary-delivery-at-subagent-start.md
   - docs/decisions/0180-project-current-profile-canary-install-home.md
   - docs/decisions/0181-use-litellm-aliases-as-host-inference-control-plane.md
+  - docs/decisions/0182-bound-codex-activation-child-wait.md
   - README.md
   - docs/RELEASE_CHECKLIST.md
   - docs/worklog/README.md
@@ -57,9 +59,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Work remains in dedicated worktree `/tmp/agency-runtime-ar297.WQUbF2` on
   `codex/ar297-production-container-live-evidence`, based on `origin/main`
   `0a23983a`. Never use the shared checkout.
-- Last clean recovery pair is exact-config evidence `860790ff` and worklog
-  `8d33694c`. Telemetry is 36.4 percent; checkpoint the completed artifact/image
-  package now, then continue the same task.
+- Last clean recovery pair is exact-artifact evidence `bd990c4a` and worklog
+  `5b2714e4`. Telemetry immediately before the failed Codex install was 29.5
+  percent; post-compaction telemetry is 80.3 percent. Checkpoint the retained
+  wait-race evidence now, then continue the same task with AR-318.
 - Linux remains **NO-GO**. AR-297/#335 stay open. Tracker writes, push, PR,
   merge, tag, signing, publication, release, and hosted workflow actions are
   not authorized.
@@ -77,13 +80,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Codex/Claude/Hermes/OpenClaw image IDs are `fe5df2d0...6de3`,
   `e365adc1...74fa`, `34af3456...1c3c`, and `8375ab36...a800`; exact-label and
   version verification exits 0 at `794d67f3...143a`.
-- AR-309 through AR-314 prove exact Codex 0.149 parent/child correlation,
-  managed Store, fixed native plan, normal-umask artifacts, and default host
-  role. AR-315 passes 7 focused and 559 broader warning-strict tests plus Ruff
-  and 869-document validation.
-- AR-315 is live-proven in C2: decision `1d351ac6...c63082` exists only after
-  immutable install identity, stable routing state, and a 59-card catalog pass;
-  it records the configured free child judge attempt without admitting a card.
+- AR-309 through AR-315 prove Codex 0.149 correlation, managed Store, fixed
+  plan, normal-umask artifacts, default role, install identity, and a 59-card
+  catalog boundary across 566 warning-strict tests.
 - AR-317 passes 158 focused tests. Six Mistral/Qwen aliases are healthy and the
   shared fallback remains `8e801fde...075f`; model snapshot `6a80b30a...be8df`.
   Child probe `5c9d6a27...800f4` uses 20,050 tokens at `n_ctx=32768` with
@@ -98,16 +97,11 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 
 ## exact-blocker
 
-- Superseded Codex C1/C2 both exit 1: C1 fails planner semantics; C2 reaches
-  route `9f377961...fb2d` and fixed child exit 0, then its truncated judge fails
-  and the 180-second canary expires. Receipts are `86983408...0fc0` and
-  `e043a745...ead5`; exact Store/rollout correlations remain in the issue.
-- AR-316 proves the discarded direct route truncated C2. The operator selected
-  disabled thinking and the new AR-317 config is structurally/deployment valid.
-  Its first no-thinking planner probe exits 1 only for missing codebase
-  discovery (`cfe56a4f...71dcc`); prove bounded repair in a fresh 600-second
-  container. Require one v6 `code-reviewer` artifact, consumed receipt, current header, accepted first
-  finalization, and no-bypass attestation in one invocation.
+- Fresh exact Codex absence passes at `f611452f...cc96`. Install receipt
+  `2942f5ee...935b` exits 1 after accepted route `d1a4e01f...7565` and child
+  exit 0: its terminal message precedes the timed-out 60-second wait result by
+  224 ms, so no delivery/header/attestation is admitted. AR-318 must bind one
+  120-second wait, then prove the full v6 transaction in a fresh container.
 - No later ordinary Codex, Claude, Hermes, or OpenClaw process has a current
   successful Agency-turn receipt on this source.
 - Refresh the host install/dashboard and named repository gates for the exact
