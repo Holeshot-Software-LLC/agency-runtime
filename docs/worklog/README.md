@@ -1281,6 +1281,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `61ee2428` | 2026-08-26 | feat(ar317): admit LiteLLM canary judge aliases | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-316](../roadmap/issue-AR-316-size-ollama-selector-judge-context.md), [AR-317](../roadmap/issue-AR-317-route-agency-inference-through-litellm-aliases.md) | [detail](2026-08-26-61ee2428-admit-litellm-canary-judge-aliases.md) |
 | `c283efac` | 2026-08-26 | docs(ar317): checkpoint LiteLLM alias evidence | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-317](../roadmap/issue-AR-317-route-agency-inference-through-litellm-aliases.md) | null |
 | `860790ff` | 2026-08-26 | docs(ar317): bind exact LiteLLM-only config | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-317](../roadmap/issue-AR-317-route-agency-inference-through-litellm-aliases.md) | null |
+| `bd990c4a` | 2026-08-26 | docs(ar297): checkpoint exact LiteLLM artifacts | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
