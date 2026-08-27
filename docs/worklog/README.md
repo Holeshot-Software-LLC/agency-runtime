@@ -1336,6 +1336,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `e56d1f4b` | 2026-08-27 | docs(ar297): diagnose Hermes tool transport | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | [detail](2026-08-27-e56d1f4b-diagnose-hermes-tool-transport.md) |
 | `9a7a99bf` | 2026-08-27 | docs(ar297): isolate Hermes tool admission gap | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | [detail](2026-08-27-9a7a99bf-isolate-hermes-tool-admission-gap.md) |
 | `831ac8f1` | 2026-08-27 | docs(ar297): reject unreliable Hermes Mistral route | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | [detail](2026-08-27-831ac8f1-reject-unreliable-hermes-mistral-route.md) |
+| `3fdb4218` | 2026-08-27 | docs(ar297): checkpoint ordinary harness diagnostics | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | [detail](2026-08-27-3fdb4218-checkpoint-ordinary-harness-diagnostics.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
