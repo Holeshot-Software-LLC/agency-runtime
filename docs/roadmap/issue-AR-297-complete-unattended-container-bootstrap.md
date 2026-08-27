@@ -3,7 +3,7 @@ title: "AR-297: Complete unattended container bootstrap"
 status: in_progress
 category: roadmap
 created: 2026-08-25
-updated: 2026-08-26
+updated: 2026-08-27
 tags: [installation, containers, codex, hooks, automation, configuration]
 related:
   - README.md
@@ -865,3 +865,12 @@ abliterated Qwen 14B model: its unconstrained response is prose truncated at
 wrong `ai-evaluation-engineer` card (`697d9cd9...1ac0`). AR-321 owns selection
 and promotion of a reliable free LiteLLM child-judge alias before the next
 fresh Codex install.
+
+AR-321's authenticated exact-prompt screen rejects preinstalled Qwen 3.5 9B,
+Qwen3 Coder 30B-A3B, Dolphin/Mistral 24B, and Qwen 3.5 2B for over-selection,
+wrong-card selection, or repeated abstention; all four temporary aliases were
+removed with retained receipts. The owner-approved official Apache-2.0
+Ministral 3 14B Q4_K_M download exits 0 at `1ae8154b...cf1e`; local metadata
+`6321d22e...f2c` proves 13.9B parameters and 262,144-token context. Its
+temporary authenticated LiteLLM alias `8ee1aea3...a11d` is ready for the next
+exact 59-card probe without changing the stable Agency route.

@@ -3,7 +3,7 @@ title: "AR-297 active recovery capsule"
 status: active
 category: roadmap
 created: 2026-08-25
-updated: 2026-08-26
+updated: 2026-08-27
 tags: [handoff, containers, unattended, codex, claude, hermes, openclaw, release]
 related:
   - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
@@ -64,8 +64,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Work remains in dedicated worktree `/tmp/agency-runtime-ar297.WQUbF2` on
   `codex/ar297-production-container-live-evidence`, based on `origin/main`
   `0a23983a`. Never use the shared checkout.
-- Last clean recovery pair is AR-320 artifact checkpoint `04b6b1a5` and ledger
-  `f2166270`. Exact artifacts and five images bind candidate `c1cf1793`.
+- Last clean recovery pair is AR-321 blocker checkpoint `94741593` and ledger
+  `42f00044`. Exact artifacts and five images bind candidate `c1cf1793`.
 - Linux remains **NO-GO**. AR-297/#335 stay open. Tracker writes, push, PR,
   merge, tag, signing, publication, release, and hosted workflow actions are
   not authorized.
@@ -83,17 +83,12 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Codex/Claude/Hermes/OpenClaw/dashboard image IDs are `c735534e...bd3f`,
   `93ab0881...acc3`, `e8819230...94ef`, `5355886a...ca94`, and
   `fc23a724...666f`; exact verification exits 0 at `2f9dadb5...a449`.
-- AR-309 through AR-315 prove Codex 0.149 correlation, managed Store, fixed
-  plan, normal-umask artifacts, default role, install identity, and a 59-card
-  catalog boundary across 566 warning-strict tests.
 - AR-317 passes 158 focused tests. Six Mistral/Qwen aliases are healthy and the
   shared fallback remains `8e801fde...075f`; model snapshot `6a80b30a...be8df`.
   Child probe `5c9d6a27...800f4` uses 20,050 tokens at `n_ctx=32768` with
   `truncated=0`/fallbacks 0; embedding `fb1d9fc7...34a94` is 4,096-dimensional.
-- Exact product schema/load and current six-deployment checks exit 0 at
-  `fb8d3384...f680f`. Critic/reranker/child/embedding adapter probes exit 0 at
-  `f1ec2f09...e142`, `6c220204...c1dc`, `82a1abf3...c244`, and
-  `0af8e0a4...92a6`; CLI validation exits 2 only on cold-host warnings.
+- Exact schema/load and six-deployment checks exit 0 at `fb8d3384...f680f`;
+  all four adapter probes pass and CLI warnings describe only cold hosts.
 - Earlier exact `1f32915d` named gates pass: 860 Python tests (three skips), 138
   dashboard tests, routing, and 161/161 decision mutations. Refresh all gates
   for the final exact candidate.
@@ -107,6 +102,11 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   route `fcdf4396...9447` records `native_child_abstention_confirmed`. Qwen 14B
   is ruled out by truncated prose `d34221cc...af9c` and wrong-card JSON
   `697d9cd9...1ac0`. AR-321 owns a reliable free LiteLLM alias.
+- AR-321 rejects Qwen 9B/30B, Dolphin 24B, and Qwen 2B at `a4a2ccbd...58c1`,
+  `2c04fa65...b580`, `cff40a52...1435`, and `12db1cd3...6bcb`; all probe
+  aliases are removed. Official Ministral 3 14B pull `1ae8154b...cf1e` and
+  metadata `6321d22e...f2c` pass; temporary LiteLLM alias
+  `8ee1aea3...a11d` awaits its first exact initial/repair probe.
 - No later ordinary Codex, Claude, Hermes, or OpenClaw process has a current
   successful Agency-turn receipt on this source.
 - Refresh the host install/dashboard and named repository gates for the exact
@@ -123,7 +123,8 @@ Exact artifacts: `~/.agency-runtime/release-artifacts/`
 `ar297-litellm-a4e213d6b454ca90.yaml`. Current evidence is
 `~/.agency-runtime/evidence/ar297-go-c1cf1793`; Codex container
 `agency-ar297-codex-c1cf1793` remains running, and older labelled evidence
-containers remain. All await final teardown. Secret-safe helper:
+containers remain. AR-321 evidence is under `ar321-child-judge`; all await
+final teardown. Secret-safe helper:
 `/tmp/agency-runtime-ar297-evidence.pcLOZn/run_with_litellm_key.py`.
 
 ## next-bounded-work-package
@@ -174,5 +175,6 @@ git diff --check
   prose distinct. Never expose or persist a secret.
 - Do not configure/call Jina, overwrite foreign policy, use an activation
   bypass, or touch the shared checkout.
-- No tracker, push, PR, merge, tag, signing, publication, release, hosted
-  workflow, or new model/config choice is authorized.
+- Free local child-judge alias tests/download are approved; keep every Agency
+  route behind LiteLLM. No tracker, push, PR, merge, tag, signing, publication,
+  release, hosted workflow, or unrelated model/config choice is authorized.

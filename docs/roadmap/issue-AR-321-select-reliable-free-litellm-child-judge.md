@@ -3,7 +3,7 @@ title: "AR-321: Select a reliable free LiteLLM child judge"
 status: in_progress
 category: roadmap
 created: 2026-08-26
-updated: 2026-08-26
+updated: 2026-08-27
 tags: [bug, workforce, child-judge, litellm, local-models, reliability]
 related:
   - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
@@ -48,6 +48,18 @@ prose, and with JSON-object output it confidently selects the wrong specialist.
   at 256 completion tokens. JSON-object probe `697d9cd9...1ac0` is structurally
   valid but incorrectly selects `ai-evaluation-engineer` instead of the
   required `code-reviewer`.
+- Authenticated exact-prompt probes also reject four free preinstalled models.
+  Qwen 3.5 9B selects two cards initially and three on repair at
+  `a4a2ccbd...58c1` and `d439740e...a78b`; Qwen3 Coder 30B-A3B selects three
+  at `2c04fa65...b580`; Dolphin/Mistral 24B selects `workflow-architect` at
+  `cff40a52...1435`; and Qwen 3.5 2B abstains twice at
+  `12db1cd3...6bcb` and `f6a1b70f...04fd`. Every rejected alias was removed.
+- Owner-approved acquisition of official Apache-2.0
+  `ministral-3:14b-instruct-2512-q4_K_M` exits 0 at `1ae8154b...cf1e`.
+  Ollama metadata `6321d22e...f2c` proves Mistral3, 13.9B parameters, Q4_K_M,
+  and 262,144-token context. Temporary alias deployment `8ee1aea3...a11d`
+  uses authenticated LiteLLM, 32,768 context, JSON mode, thinking off, and no
+  retries; create receipt `57cb1ccd...f295` passes before its first live probe.
 - The owner requires all Agency inference on this system to resolve through
   authenticated LiteLLM aliases and requires the child judge to remain free.
   Tracker creation remains prohibited by the active task.
@@ -73,7 +85,7 @@ health, model, latency, and response receipts, then repoint the stable
 
 ## Acceptance
 
-- [ ] A temporary LiteLLM alias is created with a secret-safe receipt and its
+- [x] A temporary LiteLLM alias is created with a secret-safe receipt and its
       exact local model, context, structured-output, and thinking controls.
 - [ ] Repeated initial and repair selector probes choose `code-reviewer` from
       the exact 59-card universe without fallback, truncation, or direct access.
