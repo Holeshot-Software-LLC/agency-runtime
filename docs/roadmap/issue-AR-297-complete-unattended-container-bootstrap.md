@@ -1101,3 +1101,12 @@ reasoning. Spend correlation `d7183bb5...2f07` binds request
 `chatcmpl-b1fe24cc-c39b-4c39-b99a-f37fc212e7b9` to
 `ollama/qwen3:32b`, stable deployment `0f0b1b59...a7d1`, successful status,
 and no response-cache hit. A new exact Codex container is now the live gate.
+
+The first new container preflight exits 1 only because its `docker run` omitted
+the required instance-level candidate/proof labels; content-free receipt
+`0cdc5547...ed1` still proves every Agency target absent. That clean setup-only
+container is removed at `d0308c3e...4b84` without an install attempt. Separately
+named `agency-ar297-codex-c3493337-qwen2` binds the exact verified image and
+both instance labels; injection passes and absence receipt `eb44d7ee...fc7e1`
+exits 0 with exact image/candidate/config, Codex 0.149.1, mode-0600 auth, and all
+Agency targets absent. Its one no-bypass production install is the next gate.

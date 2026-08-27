@@ -115,10 +115,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Qwen initial/repair probes select sole `code-reviewer`; promotion/metadata
   receipts `6e19008f...1750`/`e1cba9f6...e841` bind exact free Qwen.
   Validation and literal/spend proofs `42921a7e...867c`/`b686ab4b...9abe` pass.
-- No later ordinary harness process has a successful Agency-turn receipt.
+- Corrected new exact Codex container passes absence `eb44d7ee...fc7e1`; the
+  setup-only unlabeled container was removed without an Agency install attempt.
 - Refresh host/dashboard and named gates, then remove all AR-297 containers.
-- AR-299 through AR-317 tracker parity, hosted cross-OS artifacts, signing, push,
-  PR, merge, tag, publication, release, and exhaustive dispatch remain unauthorized.
+- Tracker parity, cross-OS artifacts, signing, push/PR/merge/tag/publication/release, and exhaustive dispatch remain unauthorized.
 
 ## same-task-continuity
 
