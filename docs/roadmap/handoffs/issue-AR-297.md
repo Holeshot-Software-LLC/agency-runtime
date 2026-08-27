@@ -64,8 +64,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Work remains in dedicated worktree `/tmp/agency-runtime-ar297.WQUbF2` on
   `codex/ar297-production-container-live-evidence`, based on `origin/main`
   `0a23983a`. Never use the shared checkout.
-- Last clean recovery pair is AR-321 candidate checkpoint `f8348ab0` and ledger
-  `7c10fd22`. Exact artifacts and five images bind candidate `c1cf1793`.
+- Last clean recovery pair is AR-321 rejection checkpoint `cc24d403` and ledger
+  `144f20c1`. Exact artifacts and five images bind candidate `c1cf1793`.
 - Linux remains **NO-GO**. AR-297/#335 stay open. Tracker writes, push, PR,
   merge, tag, signing, publication, release, and hosted workflow actions are
   not authorized.
@@ -104,8 +104,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   `697d9cd9...1ac0`. AR-321 owns a reliable free LiteLLM alias.
 - AR-321 rejects Qwen 9B/30B, Dolphin 24B, Qwen 2B, and Ministral 14B. The last
   returns invalid objects at `84a4b980...b8d1`, then schema-valid two-card JSON
-  at `aa8917b2...6cef`; deletion `f40895e6...d6ab` leaves no probe aliases.
-  Ministral remains installed. Next candidate is official free Granite 4.2 8B.
+  at `aa8917b2...6cef`; deletion `f40895e6...d6ab` closes its aliases.
+  Granite 4.2 8B pull/model receipts `1c990f61...c7ed`/`8d44fb7b...b81c` pass;
+  sole temporary schema alias `e791c3f0...9fc9` awaits its first exact probe.
 - No later ordinary Codex, Claude, Hermes, or OpenClaw process has a current
   successful Agency-turn receipt on this source.
 - Refresh the host install/dashboard and named repository gates for the exact

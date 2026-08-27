@@ -62,6 +62,12 @@ prose, and with JSON-object output it confidently selects the wrong specialist.
   valid strings but over-selects `ai-evaluation-engineer` and `code-reviewer`
   at `aa8917b2...6cef`. Both temporary aliases are removed; deletion receipt
   `f40895e6...d6ab` closes the last deployment.
+- Official Apache-2.0 `granite4.2:8b` acquisition exits 0 at
+  `1c990f61...c7ed`; metadata `8d44fb7b...b81c` proves Granite, 8.8B
+  parameters, Q4_K_M, and 131,072-token context. Temporary deployment
+  `e791c3f0...9fc9` is the sole `ar297-probe-child-judge-granite42-8b`
+  resolution with exact-schema JSON, 32,768 context, thinking off, and no
+  retries; secret-safe create receipt `d76a783c...455c` passes.
 - The owner requires all Agency inference on this system to resolve through
   authenticated LiteLLM aliases and requires the child judge to remain free.
   Tracker creation remains prohibited by the active task.

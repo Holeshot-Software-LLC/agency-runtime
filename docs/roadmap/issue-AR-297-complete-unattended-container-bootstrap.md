@@ -876,4 +876,8 @@ JSON probe returns explanation objects at `84a4b980...b8d1`; an exact-schema
 alias returns valid strings but over-selects two cards at `aa8917b2...6cef`.
 Both temporary aliases are removed, the downloaded free model remains locally
 installed, and stable Agency routes remain unchanged. AR-321 continues with a
-smaller official structured-output candidate.
+smaller official structured-output candidate. Official Apache-2.0 Granite 4.2
+8B acquisition subsequently exits 0 at `1c990f61...c7ed`; metadata
+`8d44fb7b...b81c` proves 8.8B/Q4_K_M and 131,072-token context. Its sole
+temporary schema-constrained LiteLLM deployment `e791c3f0...9fc9` is ready for
+the next exact probe; the stable child-judge alias remains unchanged.
