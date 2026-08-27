@@ -841,4 +841,11 @@ owns the full-path bound; no model or route change is required.
 AR-320 now derives one 300,000-ms wait from both 120,000-ms judge ceilings and
 a 60,000-ms completion margin while preserving the 600-second outer bound,
 one spawn, one wait, and no retry. Ruff and 418 affected warning-strict tests
-pass; fresh artifacts and a fresh clean Codex transaction remain required.
+pass. Exact ledger `c1cf1793db1bc98589ca958a553c502a0126c637` now produces
+mode-0644 wheel `8766b539...99d7` (9,300,725 bytes) and sdist
+`5dbd6edc...bf68a` (25,642,963 bytes). Canonical build, strict Twine, and the
+independent verifier exit 0; manifest `a04282e6...adade` records full metadata.
+Codex, Claude, Hermes, OpenClaw systemd, and dashboard images bind the exact
+wheel with IDs `c735534e...bd3f`, `93ab0881...acc3`, `e8819230...94ef`,
+`5355886a...ca94`, and `fc23a724...666f`; version/label verification
+`2f9dadb5...a449` exits 0. A fresh clean Codex transaction remains required.

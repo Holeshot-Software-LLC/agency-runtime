@@ -63,9 +63,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Work remains in dedicated worktree `/tmp/agency-runtime-ar297.WQUbF2` on
   `codex/ar297-production-container-live-evidence`, based on `origin/main`
   `0a23983a`. Never use the shared checkout.
-- Last clean recovery pair is AR-320 source `1989d111` and worklog `906989ea`.
-  Its bounded repair passes 418 affected warning-strict tests; rebuild exact
-  artifacts and continue the same Codex proof in a fresh container.
+- Last clean recovery pair is AR-320 recovery `74794970` and ledger
+  `c1cf1793`. Exact artifacts and five images now bind that ledger; continue
+  the same Codex proof in a fresh container.
 - Linux remains **NO-GO**. AR-297/#335 stay open. Tracker writes, push, PR,
   merge, tag, signing, publication, release, and hosted workflow actions are
   not authorized.
@@ -77,12 +77,12 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   authenticated LiteLLM aliases, Qwen generation with thinking disabled,
   Mistral critic/reranker/recruiter/free child judge, and 4,096-dimensional
   Qwen embedding. Direct Ollama and Jina are absent from active routes.
-- Exact ledger `89a56901` build, strict Twine, and independent verifier exit 0.
-  Mode-0644 wheel `486b04ba...75de` is 9,300,384 bytes; sdist
-  `d08d2ffc...56a2` is 25,622,478 bytes; manifest `4904e1cd...5321`.
-- Codex/Claude/Hermes/OpenClaw/dashboard image IDs are `7765d320...b545`,
-  `222a78c7...cdb2`, `896c03d1...0766`, `24736e64...1f3d`, and
-  `4c0182f3...88e1`; exact verification exits 0 at `5edc4c29...395c`.
+- Exact ledger `c1cf1793` build, strict Twine, and independent verifier exit 0.
+  Mode-0644 wheel `8766b539...99d7` is 9,300,725 bytes; sdist
+  `5dbd6edc...bf68a` is 25,642,963 bytes; manifest `a04282e6...adade`.
+- Codex/Claude/Hermes/OpenClaw/dashboard image IDs are `c735534e...bd3f`,
+  `93ab0881...acc3`, `e8819230...94ef`, `5355886a...ca94`, and
+  `fc23a724...666f`; exact verification exits 0 at `2f9dadb5...a449`.
 - AR-309 through AR-315 prove Codex 0.149 correlation, managed Store, fixed
   plan, normal-umask artifacts, default role, install identity, and a 59-card
   catalog boundary across 566 warning-strict tests.
@@ -129,7 +129,7 @@ After compaction, reread this capsule and `git status`, then resume at the first
 unchecked line. Mark an item complete only with exact retained evidence.
 
 1. [x] Rebuild and independently verify artifacts/images from the exact
-   AR-319/LiteLLM checkpoint; `89a56901` is the candidate.
+   AR-320/LiteLLM checkpoint; `c1cf1793` is the candidate.
 2. [ ] Prove fresh Codex absence, then one exact no-bypass V2 install with one
    canonical child artifact, consumed receipt, current header, accepted
    finalization, Store correlation, and attestation.

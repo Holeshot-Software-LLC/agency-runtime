@@ -59,6 +59,10 @@ single wait even though both inference calls finish successfully.
   ceilings plus a 60,000-ms completion margin. Ruff and 418 warning-strict
   canary, install, rollout, and staffing tests pass; stale 60- and 120-second
   rollout shapes are rejected.
+- Exact ledger `c1cf1793` artifacts pass canonical build, strict Twine, and
+  independent verification. Wheel `8766b539...99d7`, sdist
+  `5dbd6edc...bf68a`, and five separately pinned images pass exact label and
+  version verification at receipt `2f9dadb5...a449`.
 
 ## Approach
 
