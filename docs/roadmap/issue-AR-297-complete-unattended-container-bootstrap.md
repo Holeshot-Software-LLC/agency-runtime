@@ -1531,3 +1531,25 @@ OpenClaw turns, final named gates, and teardown remain.
 Checkpoint metadata, policy-availability, worklog-index, documentation, and
 diff checks all exit 0; their output hashes are `6f128b54...899c`, the empty
 SHA, `244c6d18...fa7a`, `45466cc3...8ba`, and the empty SHA respectively.
+
+A later normal current-profile Codex activation verifier used the exact host
+bundle and process-memory LiteLLM credential with no bypass. Receipt
+`933bc916...bb4` exits 1 before model invocation because the attended trust
+inspection reports all eight hook events unobserved; it leaves configuration,
+runtime controls, roster, dashboard, adapter, and trust store untouched. This
+retained limitation does not replace the completed dedicated-container Codex
+proof or reopen the exact host/dashboard installation row.
+
+Every named repository gate now passes on the committed tree. Metadata checks
+912 Markdown documents (`c5f34de1...8b7f`); policy availability is empty-output
+clean; worklog currentness (`25ea7b84...ef96`) and documentation validation
+(`cfaaa7c5...3444`) pass. Ruff lint (`82b3e6a6...4f18`) and format
+(`82826f75...0f1`) pass. The named warning-strict Python spine passes 860 tests
+with 3 skips (`25cc4f01...4cb`), dashboard UI passes 138/138
+(`2eb1981a...3ef9`), and routing 1.4.0 passes (`eeb12164...10d4`). Decision
+conformance's protected, `umask 077` repository run passes its baseline and
+kills 167/167 mutations with zero survived/invalid and source unchanged
+(`9a45044f...0a71`); the prior no-pytest and ambient-`0002` private-boundary
+failures remain retained at `1fe3f42b...f88d` and `4dd2f8f3...da6b` rather
+than relabelled. Final diff output is empty. Every successful gate has exact
+exit 0 receipt SHA `bde29436...120`.

@@ -24,8 +24,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-297
 branch: codex/ar297-production-container-live-evidence
-evidence_commit: b2f8cfea58dabd6e14c27eba13fbed16c238bad4
-minimum_ledger_commit: b2f8cfea58dabd6e14c27eba13fbed16c238bad4
+evidence_commit: 38eb2bf11be7337abf59c388db74311aaeb70ad1
+minimum_ledger_commit: 38eb2bf11be7337abf59c388db74311aaeb70ad1
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 ---
@@ -37,7 +37,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Work only in `/tmp/agency-runtime-ar297.WQUbF2` on
   `codex/ar297-production-container-live-evidence`, based on `origin/main`
   `0a23983a`. Never touch the shared checkout.
-- Clean ledger `b2f8cfea` binds all installs/diagnostics and ordinary Codex R2.
+- Clean ledger `38eb2bf1` binds all installs, ordinary Codex R2, and host proof.
 - Linux remains **NO-GO**. AR-297/#335 remain open. No tracker write, push, PR,
   merge, tag, signing, publication, release, or hosted workflow is authorized.
 
@@ -52,8 +52,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   `b686ab4b...9abe`, and `d7183bb5...2f07`. Temporary aliases are removed.
 - AR-325 callback-order repair passes 149/17/145 tests and two mutations at
   `394d9276...1c4d`, `74a9f4f9...4141`, `ae7689e3...7a84`, `ea4477e5...3695`.
-- Documentation checks pass for 893 files at `c5d005ae...18ac`; repository-wide
-  Ruff/format passes at `94423e2d...0564`; diff-check output is empty. All exit 0.
+- Final named gates pass: 912 docs, Ruff lint/format, 860 Python tests with 3
+  skips, 138 dashboard tests, routing 1.4.0, and 167/167 decision mutations;
+  receipts are `c5f34de1...8b7f`, `25cc4f01...4cb`, `2eb1981a...3ef9`,
+  `eeb12164...10d4`, and `9a45044f...0a71`. All final exits are 0.
 - AR-326's 203 tests/two mutations pass at `4e76af29...a318` and
   `34858754...5cc7`; the named 860-test spine and 165/165 decision mutations
   pass at `8cda02e1...4312` and `891defed...ab8`.
@@ -100,11 +102,13 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Systemd contract `b3ffa572...f888`, restart `b72f17e7...94d8`, HTTP proof
   `358ab92e...d94f`, and browser proof `7b22dd85...c483` exit 0. Auth is
   401/200 no-store; exact 2,659-byte prompt `c3cfc098...5848` is untruncated.
+- Optional host Codex verifier `933bc916...bb4` fails before model invocation
+  because attended hook trust is not ready; it changes nothing and uses no bypass.
 
 ## exact-blocker
 
 - Refreshed same-method Claude OAuth, owner-selected Hermes/OpenClaw aliases,
-  named gates, and teardown remain.
+  and teardown remain.
 - Cross-OS artifacts, signing, tracker parity, push/PR/merge/tag/publication,
   release, and exhaustive workflow dispatch remain unauthorized—not GO gates
   for this Linux-only bounded task unless authority changes.
@@ -137,7 +141,7 @@ unchecked line. Mark an item complete only with exact retained evidence.
    harnesses; retain native artifacts, Store correlations, and prompt visibility.
 7. [x] Install the exact candidate on this Linux host and prove the private
    authenticated dashboard plus the approved service-manager contract.
-8. [ ] Run every named repository gate and record exact exits and hashes.
+8. [x] Run every named repository gate and record exact exits and hashes.
 9. [ ] Update canonical issues/capsule and make each required substantive and
    `docs(worklog):` checkpoint pair.
 10. [ ] Remove every container labelled `AR-297`; retain teardown evidence and
