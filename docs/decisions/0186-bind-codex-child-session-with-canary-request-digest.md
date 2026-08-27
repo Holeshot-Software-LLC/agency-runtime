@@ -1,12 +1,13 @@
 ---
 title: "Bind Codex child sessions with a canary request digest"
-status: accepted
+status: superseded
 category: decisions
 created: 2026-08-27
 updated: 2026-08-27
 tags: [codex, canary, hooks, native-child, correlation, security]
 related:
   - docs/decisions/0179-admit-exact-codex-canary-delivery-at-subagent-start.md
+  - docs/decisions/0187-bind-codex-canary-child-through-host-authored-lineage.md
   - docs/decisions/0180-project-current-profile-canary-install-home.md
   - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
   - docs/roadmap/issue-AR-314-bind-codex-default-canary-role.md
@@ -19,7 +20,7 @@ related:
   - tests/test_codex_activation_verification.py
   - docs/worklog/README.md
 supersedes: []
-superseded_by: null
+superseded_by: docs/decisions/0187-bind-codex-canary-child-through-host-authored-lineage.md
 id: ADR-0186
 type: decision
 deciders: [maintainers]

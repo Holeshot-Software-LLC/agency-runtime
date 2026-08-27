@@ -12,6 +12,8 @@ related:
   - docs/roadmap/handoffs/issue-AR-297.md
   - docs/decisions/0179-admit-exact-codex-canary-delivery-at-subagent-start.md
   - docs/decisions/0186-bind-codex-child-session-with-canary-request-digest.md
+  - docs/decisions/0187-bind-codex-canary-child-through-host-authored-lineage.md
+  - docs/roadmap/issue-AR-324-bind-codex-canary-child-through-host-lineage.md
   - agency_runtime/adapters/hooks.py
   - agency_runtime/core/canary_backends.py
   - agency_runtime/core/codex_activation_verification.py
@@ -27,7 +29,7 @@ issue_id: AR-322
 priority: p0
 tracker_url: null
 depends_on: [AR-310, AR-314]
-blocks: [AR-297]
+blocks: [AR-297, AR-324]
 ---
 
 # AR-322: Bind Codex child sessions to the exact canary parent
@@ -60,7 +62,9 @@ identity message, so no v6 workforce delivery or activation proof existed.
   six image builds, and five-image label/version verification all exit 0.
   Wheel `23036c74...d68d`, sdist `09b85884...1a3b`, and image receipt
   `f1808c22...64674` bind the fresh candidate. Live proof remains pending.
-  Fresh rebuilt production-container proof remains pending.
+  Fresh rebuilt production-container proof `999f3005...33269` exits 1: the
+  parent digest and route agree, but the child still receives generic identity.
+  AR-324 owns the replacement host-lineage join.
 - Tracker creation is prohibited by the active AR-297 task.
 
 ## Approach

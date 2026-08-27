@@ -3,11 +3,12 @@ title: "AR-313: Trust normal-umask Codex artifacts by integrity"
 status: in_progress
 category: roadmap
 created: 2026-08-26
-updated: 2026-08-26
+updated: 2026-08-27
 tags: [codex, evidence, filesystem, security, production-container]
 related:
   - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
   - docs/roadmap/issue-AR-309-restore-codex-0149-activation-proof.md
+  - docs/roadmap/issue-AR-324-bind-codex-canary-child-through-host-lineage.md
   - docs/roadmap/handoffs/issue-AR-297.md
   - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
   - docs/decisions/0179-admit-exact-codex-canary-delivery-at-subagent-start.md
@@ -27,7 +28,7 @@ issue_id: AR-313
 priority: p0
 tracker_url: null
 depends_on: [AR-309]
-blocks: [AR-297]
+blocks: [AR-297, AR-324]
 ---
 
 # AR-313: Trust normal-umask Codex artifacts by integrity

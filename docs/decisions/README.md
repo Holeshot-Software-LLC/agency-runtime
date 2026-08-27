@@ -3,7 +3,7 @@ title: Decision registry
 status: active
 category: decisions
 created: 2026-07-10
-updated: 2026-08-26
+updated: 2026-08-27
 tags: [architecture, adr, governance]
 related:
   - docs/roadmap/README.md
@@ -52,6 +52,7 @@ Status meanings:
 - ADR-0127 Bind opaque Codex children through exact plan labels → ADR-0128 Persist exact Codex plan authority and serialize opaque launches
 - ADR-0124 Grade product trials against the inferred unit graph → ADR-0133 Treat product specialist loads as turn-scoped
 - ADR-0165 Keep LiteLLM inference profiles model-agnostic → ADR-0166 Delegate exact schema translation to LiteLLM
+- ADR-0186 Bind Codex child sessions with a canary request digest → ADR-0187 Bind the Codex canary child through host-authored lineage
 
 ## Architecture and integrations
 
@@ -145,7 +146,8 @@ Status meanings:
 | [ADR-0182](0182-bound-codex-activation-child-wait.md) | Bound the Codex activation child wait above observed latency | Superseded |
 | [ADR-0183](0183-honor-pinned-canary-judge-timeout.md) | Honor the pinned canary judge profile timeout | Accepted |
 | [ADR-0184](0184-bound-codex-wait-to-full-child-staffing.md) | Bound the Codex wait to the full child staffing path | Accepted |
-| [ADR-0186](0186-bind-codex-child-session-with-canary-request-digest.md) | Bind Codex child sessions with a canary request digest | Accepted |
+| [ADR-0186](0186-bind-codex-child-session-with-canary-request-digest.md) | Bind Codex child sessions with a canary request digest | Superseded |
+| [ADR-0187](0187-bind-codex-canary-child-through-host-authored-lineage.md) | Bind the Codex canary child through host-authored lineage | Accepted |
 
 ## State and roster governance
 

@@ -3,7 +3,7 @@ title: "Changelog"
 status: active
 category: release
 created: 2026-07-10
-updated: 2026-08-26
+updated: 2026-08-27
 tags: [release, changelog]
 related:
   - docs/RELEASE_CHECKLIST.md
@@ -19,12 +19,14 @@ related:
   - docs/roadmap/issue-AR-318-bound-codex-activation-child-wait.md
   - docs/roadmap/issue-AR-319-honor-pinned-canary-judge-timeout.md
   - docs/roadmap/issue-AR-320-bound-codex-wait-to-full-child-staffing.md
+  - docs/roadmap/issue-AR-324-bind-codex-canary-child-through-host-lineage.md
   - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
   - docs/decisions/0178-project-config-declared-credentials-into-tool-reduced-canaries.md
   - docs/decisions/0181-use-litellm-aliases-as-host-inference-control-plane.md
   - docs/decisions/0182-bound-codex-activation-child-wait.md
   - docs/decisions/0183-honor-pinned-canary-judge-timeout.md
   - docs/decisions/0184-bound-codex-wait-to-full-child-staffing.md
+  - docs/decisions/0187-bind-codex-canary-child-through-host-authored-lineage.md
   - docs/roadmap/README.md
   - docs/worklog/README.md
   - THIRD_PARTY_NOTICES.md
@@ -169,6 +171,12 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
+- Codex `0.149.1` activation children now recover their exact canary parent
+  from the bounded, owner-trusted leading host `session_meta` record instead of
+  depending on process-environment inheritance that native child hook sessions
+  do not retain. Canonical UUIDv7 lineage, path, version, origin, depth, and
+  live Store-route checks fail closed; an optional request digest can only
+  narrow the same host-authored parent.
 - The exact Codex activation canary now gives its single native wait enough
   time for the complete legal child-staffing path: two bounded judge calls plus
   a fixed child-completion margin inside the unchanged outer transaction. It

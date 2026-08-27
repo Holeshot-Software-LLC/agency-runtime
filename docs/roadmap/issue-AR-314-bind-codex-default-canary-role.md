@@ -3,7 +3,7 @@ title: "AR-314: Bind the Codex 0.149 default canary child role"
 status: in_progress
 category: roadmap
 created: 2026-08-26
-updated: 2026-08-26
+updated: 2026-08-27
 tags: [codex, canary, hooks, native-child, production-container]
 related:
   - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
@@ -11,6 +11,7 @@ related:
   - docs/roadmap/issue-AR-311-inject-exact-codex-canary-native-plan.md
   - docs/roadmap/issue-AR-315-project-codex-canary-install-home.md
   - docs/roadmap/issue-AR-322-bind-codex-child-session-to-canary-parent.md
+  - docs/roadmap/issue-AR-324-bind-codex-canary-child-through-host-lineage.md
   - docs/roadmap/handoffs/issue-AR-297.md
   - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
   - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
@@ -28,7 +29,7 @@ issue_id: AR-314
 priority: p0
 tracker_url: null
 depends_on: [AR-309, AR-311]
-blocks: [AR-297, AR-315, AR-322]
+blocks: [AR-297, AR-315, AR-322, AR-324]
 ---
 
 # AR-314: Bind the Codex 0.149 default canary child role

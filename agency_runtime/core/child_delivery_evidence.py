@@ -28,14 +28,16 @@ import threading
 import time
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from dataclasses import dataclass, field, replace
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from fnmatch import fnmatchcase
 from hashlib import sha256
 from heapq import heappush, heapreplace
 from pathlib import Path
 from typing import Any, Final
+from uuid import RFC_4122, UUID
 
 from agency_runtime.core.bounded_io import read_bounded_regular_file_prefix
+from agency_runtime.core.bounded_json import safe_load_bounded_json
 from agency_runtime.core.filesystem_trust import (
     absolute_path,
     metadata_is_link_or_reparse_point,
@@ -90,6 +92,36 @@ _OUTCOME_PAIR_ROLE_MARKER: Final[re.Pattern[str]] = re.compile(
 _OUTCOME_PAIR_MARKER_TOKEN: Final[str] = "agency-accepted-outcome-pair:v1:"
 _VERIFIER_SEMANTIC_SCHEMA: Final[str] = "agency.verifier-semantic.v1"
 _VERIFIER_SEMANTIC_DECISIONS: Final[frozenset[str]] = frozenset({"accepted", "rejected"})
+_CODEX_V1491_META_MAX_BYTES: Final[int] = 128 * 1024
+_CODEX_V1491_PAYLOAD_KEYS: Final[frozenset[str]] = frozenset(
+    {
+        "agent_nickname",
+        "agent_path",
+        "base_instructions",
+        "cli_version",
+        "context_window",
+        "cwd",
+        "history_mode",
+        "id",
+        "model_provider",
+        "multi_agent_version",
+        "originator",
+        "parent_thread_id",
+        "session_id",
+        "source",
+        "thread_source",
+        "timestamp",
+    }
+)
+_CODEX_V1491_ROLLOUT: Final[re.Pattern[str]] = re.compile(
+    r"rollout-(?P<year>\d{4})-(?P<month>\d{2})-(?P<day>\d{2})"
+    r"T(?P<hour>\d{2})-(?P<minute>\d{2})-(?P<second>\d{2})-"
+    r"(?P<child>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-"
+    r"[0-9a-f]{4}-[0-9a-f]{12})\.jsonl\Z"
+)
+_CODEX_V1491_TIMESTAMP: Final[re.Pattern[str]] = re.compile(
+    r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z\Z"
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -632,6 +664,272 @@ def _path_beneath_root(path: Path, root: Path) -> tuple[Path, tuple[str, ...]] |
     parts = relative.parts
     return (
         (artifact, parts) if parts and all(part not in {"", ".", ".."} for part in parts) else None
+    )
+
+
+def _canonical_codex_uuid7(value: object) -> UUID | None:
+    """Return one lowercase canonical RFC UUIDv7, never a loose identifier."""
+
+    if type(value) is not str or not value or value != value.strip():
+        return None
+    try:
+        parsed = UUID(value)
+    except (AttributeError, TypeError, ValueError):
+        return None
+    if str(parsed) != value or parsed.version != 7 or parsed.variant != RFC_4122:
+        return None
+    return parsed
+
+
+def _canonical_absolute_path_text(value: object) -> str:
+    """Return an already-canonical absolute path spelling or an empty string."""
+
+    if not isinstance(value, (str, os.PathLike)):
+        return ""
+    try:
+        candidate = Path(value)
+        normalized = absolute_path(candidate)
+    except (OSError, TypeError, ValueError):
+        return ""
+    return str(candidate) if candidate.is_absolute() and candidate == normalized else ""
+
+
+def _codex_v1491_utc_timestamp(value: object) -> datetime | None:
+    """Parse the millisecond UTC timestamp spelling emitted by Codex 0.149.1."""
+
+    if type(value) is not str or _CODEX_V1491_TIMESTAMP.fullmatch(value) is None:
+        return None
+    try:
+        return datetime.strptime(value, "%Y-%m-%dT%H:%M:%S.%fZ").replace(tzinfo=timezone.utc)
+    except ValueError:
+        return None
+
+
+def _codex_v1491_rollout_identity(
+    path: object,
+    *,
+    child: UUID,
+    root: Path,
+) -> tuple[Path, datetime] | None:
+    """Bind one canonical rollout path to its date partition and child UUID."""
+
+    if not isinstance(path, (str, os.PathLike)):
+        return None
+    try:
+        supplied = Path(path)
+        artifact = absolute_path(supplied)
+    except (OSError, TypeError, ValueError):
+        return None
+    if not supplied.is_absolute() or supplied != artifact:
+        return None
+    joined = _path_beneath_root(artifact, root)
+    if joined is None:
+        return None
+    _artifact, parts = joined
+    if len(parts) != 4:
+        return None
+    match = _CODEX_V1491_ROLLOUT.fullmatch(parts[3])
+    if match is None or match.group("child") != str(child):
+        return None
+    if parts[:3] != (
+        match.group("year"),
+        match.group("month"),
+        match.group("day"),
+    ):
+        return None
+    try:
+        rollout_at = datetime(
+            int(match.group("year")),
+            int(match.group("month")),
+            int(match.group("day")),
+            int(match.group("hour")),
+            int(match.group("minute")),
+            int(match.group("second")),
+            tzinfo=timezone.utc,
+        )
+    except ValueError:
+        return None
+    return artifact, rollout_at
+
+
+def _codex_v1491_first_record(path: Path) -> Mapping[str, Any] | None:
+    """Read exactly one bounded, duplicate-free, trusted host metadata record."""
+
+    prefix = _trusted_launch_prefix_bytes(
+        path,
+        label="Codex 0.149.1 child session metadata",
+        artifact_parent=True,
+    )
+    if prefix is None:
+        return None
+    newline = prefix.find(b"\n")
+    if (
+        newline <= 0
+        or newline > _CODEX_V1491_META_MAX_BYTES
+        or prefix[newline - 1 : newline] == b"\r"
+    ):
+        return None
+    try:
+        record = safe_load_bounded_json(
+            prefix[:newline],
+            maximum_bytes=_CODEX_V1491_META_MAX_BYTES,
+            maximum_depth=12,
+            maximum_nodes=256,
+        )
+    except (TypeError, ValueError):
+        return None
+    return record if isinstance(record, Mapping) else None
+
+
+def _codex_v1491_parent_from_record(  # noqa: C901 - exact closed host schema
+    record: Mapping[str, Any],
+    *,
+    child: UUID,
+    expected_cwd: str,
+    rollout_at: datetime,
+) -> str:
+    """Validate the closed Codex 0.149.1 child metadata contract."""
+
+    if set(record) != {"timestamp", "type", "payload", "ordinal"}:
+        return ""
+    if record.get("type") != "session_meta" or type(record.get("ordinal")) is not int:
+        return ""
+    if record.get("ordinal") != 0:
+        return ""
+    payload = record.get("payload")
+    if not isinstance(payload, Mapping) or set(payload) != _CODEX_V1491_PAYLOAD_KEYS:
+        return ""
+    if (
+        payload.get("cli_version") != "0.149.1"
+        or payload.get("originator") != "codex_exec"
+        or payload.get("history_mode") != "paginated"
+        or payload.get("thread_source") != "subagent"
+        or payload.get("multi_agent_version") != "v2"
+        or payload.get("model_provider") != "openai"
+        or payload.get("cwd") != expected_cwd
+    ):
+        return ""
+
+    record_child = _canonical_codex_uuid7(payload.get("id"))
+    parent_session = _canonical_codex_uuid7(payload.get("session_id"))
+    parent_thread = _canonical_codex_uuid7(payload.get("parent_thread_id"))
+    if (
+        record_child != child
+        or parent_session is None
+        or parent_thread != parent_session
+        or parent_session == child
+        or (parent_session.int >> 80) >= (child.int >> 80)
+    ):
+        return ""
+
+    source = payload.get("source")
+    if not isinstance(source, Mapping) or set(source) != {"subagent"}:
+        return ""
+    subagent = source.get("subagent")
+    if not isinstance(subagent, Mapping) or set(subagent) != {"thread_spawn"}:
+        return ""
+    spawn = subagent.get("thread_spawn")
+    expected_spawn_keys = {
+        "parent_thread_id",
+        "depth",
+        "agent_path",
+        "agent_nickname",
+        "agent_role",
+    }
+    if not isinstance(spawn, Mapping) or set(spawn) != expected_spawn_keys:
+        return ""
+    spawn_parent = _canonical_codex_uuid7(spawn.get("parent_thread_id"))
+    agent_path = payload.get("agent_path")
+    agent_nickname = payload.get("agent_nickname")
+    if (
+        spawn_parent != parent_session
+        or type(spawn.get("depth")) is not int
+        or spawn.get("depth") != 1
+        or spawn.get("agent_role") is not None
+        or type(agent_path) is not str
+        or not agent_path
+        or type(agent_nickname) is not str
+        or not agent_nickname
+        or spawn.get("agent_path") != agent_path
+        or spawn.get("agent_nickname") != agent_nickname
+    ):
+        return ""
+
+    base = payload.get("base_instructions")
+    if not isinstance(base, Mapping) or set(base) != {"provenance", "text"}:
+        return ""
+    provenance = base.get("provenance")
+    if (
+        type(base.get("text")) is not str
+        or not base.get("text")
+        or not isinstance(provenance, Mapping)
+        or set(provenance) != {"type", "model"}
+        or provenance.get("type") != "model"
+        or type(provenance.get("model")) is not str
+        or not provenance.get("model")
+    ):
+        return ""
+    context_window = payload.get("context_window")
+    if not isinstance(context_window, Mapping) or set(context_window) != {"window_id"}:
+        return ""
+    window_id = _canonical_codex_uuid7(context_window.get("window_id"))
+    if window_id is None or (window_id.int >> 80) != (child.int >> 80):
+        return ""
+
+    outer_at = _codex_v1491_utc_timestamp(record.get("timestamp"))
+    payload_at = _codex_v1491_utc_timestamp(payload.get("timestamp"))
+    child_at = datetime.fromtimestamp((child.int >> 80) / 1000, tz=timezone.utc)
+    if (
+        outer_at is None
+        or payload_at is None
+        or not payload_at <= outer_at <= payload_at + timedelta(seconds=5)
+        or payload_at.replace(microsecond=0) != rollout_at
+        or abs(payload_at - child_at) > timedelta(seconds=1)
+    ):
+        return ""
+    return str(parent_session)
+
+
+def codex_v1491_child_parent_session(
+    path: object,
+    *,
+    child_id: object,
+    cwd: object,
+    root: Path | None = None,
+) -> str:
+    """Resolve one exact Codex 0.149.1 child to its host-authored parent.
+
+    This is a pure, fail-closed artifact read. It confers no staffing or Store
+    authority by itself; the caller must still resolve and validate one exact
+    live parent route.
+    """
+
+    child = _canonical_codex_uuid7(child_id)
+    expected_cwd = _canonical_absolute_path_text(cwd)
+    if child is None or not expected_cwd:
+        return ""
+    try:
+        canonical_root = absolute_path(
+            default_child_artifact_root("codex") if root is None else Path(root)
+        )
+    except (OSError, TypeError, ValueError):
+        return ""
+    identity = _codex_v1491_rollout_identity(
+        path,
+        child=child,
+        root=canonical_root,
+    )
+    if identity is None:
+        return ""
+    artifact, rollout_at = identity
+    record = _codex_v1491_first_record(artifact)
+    if record is None:
+        return ""
+    return _codex_v1491_parent_from_record(
+        record,
+        child=child,
+        expected_cwd=expected_cwd,
+        rollout_at=rollout_at,
     )
 
 
@@ -2931,6 +3229,7 @@ __all__ = [
     "claude_child_delivery_evidence",
     "codex_child_artifacts",
     "codex_child_delivery_evidence",
+    "codex_v1491_child_parent_session",
     "default_child_artifact_root",
     "scan_child_artifacts",
     "scan_child_delivery_evidence",

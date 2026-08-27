@@ -35,6 +35,9 @@ _CHILD = "019fb000-1111-7222-8333-444455556666"
 _LAUNCH = "launch-canary-child"
 _NONCE = "nonce-canary-child"
 _PROMPT = "You are the exact code-review specialist."
+_CODEX_LINEAGE_PARENT = "01a041aa-830d-7a33-915b-fb8e8bf8e0f3"
+_CODEX_LINEAGE_CHILD = "01a041ac-427c-7333-8616-12672552ce9b"
+_CODEX_LINEAGE_WINDOW = "01a041ac-427c-7333-8616-12740adee42c"
 
 
 def _digest(value: str) -> str:
@@ -114,6 +117,56 @@ def _keys(value: object) -> set[str]:
     if isinstance(value, list):
         return {nested for item in value for nested in _keys(item)}
     return set()
+
+
+def _codex_v1491_lineage_artifact(root: Path, *, cwd: Path) -> Path:
+    artifact = (
+        root / "2026" / "08" / "27" / f"rollout-2026-08-27T05-23-23-{_CODEX_LINEAGE_CHILD}.jsonl"
+    )
+    artifact.parent.mkdir(parents=True)
+    artifact.write_text(
+        json.dumps(
+            {
+                "timestamp": "2026-08-27T05:23:23.457Z",
+                "type": "session_meta",
+                "payload": {
+                    "id": _CODEX_LINEAGE_CHILD,
+                    "timestamp": "2026-08-27T05:23:23.389Z",
+                    "session_id": _CODEX_LINEAGE_PARENT,
+                    "parent_thread_id": _CODEX_LINEAGE_PARENT,
+                    "source": {
+                        "subagent": {
+                            "thread_spawn": {
+                                "parent_thread_id": _CODEX_LINEAGE_PARENT,
+                                "depth": 1,
+                                "agent_path": "/root/code_reviewer",
+                                "agent_nickname": "Poincare",
+                                "agent_role": None,
+                            }
+                        }
+                    },
+                    "originator": "codex_exec",
+                    "cli_version": "0.149.1",
+                    "cwd": str(cwd),
+                    "model_provider": "openai",
+                    "base_instructions": {
+                        "text": "Exact supported Codex child instructions.",
+                        "provenance": {"type": "model", "model": "gpt-5.6-sol"},
+                    },
+                    "agent_path": "/root/code_reviewer",
+                    "agent_nickname": "Poincare",
+                    "context_window": {"window_id": _CODEX_LINEAGE_WINDOW},
+                    "history_mode": "paginated",
+                    "thread_source": "subagent",
+                    "multi_agent_version": "v2",
+                },
+                "ordinal": 0,
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return artifact
 
 
 def test_canary_activation_snapshot_projects_exact_preflight_failure(
@@ -217,10 +270,12 @@ def test_restricted_codex_parent_snapshot_resolves_only_the_exact_live_route(
     )
 
 
-def test_restricted_codex_child_session_resolves_one_digest_bound_parent(
+def test_restricted_codex_child_session_resolves_one_host_lineage_bound_parent(
     store: Store,
     monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
 ) -> None:
+    from agency_runtime.core import child_delivery_evidence
     from agency_runtime.core.installer import seed_starter_roster
     from agency_runtime.core.workforce import inference
 
@@ -235,57 +290,188 @@ def test_restricted_codex_child_session_resolves_one_digest_bound_parent(
     task = f"{CODEX_ACTIVATION_CANARY_PROMPT}\n\nCanary nonce: {'d' * 32}"
     query_hash = sha256(task.encode("utf-8")).hexdigest()
     monkeypatch.setenv(CODEX_ACTIVATION_QUERY_HASH_ENV, query_hash)
+    root = tmp_path / "codex-sessions"
+    cwd = tmp_path / "canary-work"
+    cwd.mkdir()
+    artifact = _codex_v1491_lineage_artifact(root, cwd=cwd)
+    monkeypatch.setattr(
+        child_delivery_evidence,
+        "default_child_artifact_root",
+        lambda host: root,
+    )
+    monkeypatch.setattr(
+        child_delivery_evidence,
+        "storage_artifact_parent_is_trusted",
+        lambda *_args, **_kwargs: True,
+    )
+    monkeypatch.setattr(
+        child_delivery_evidence,
+        "storage_file_is_trusted",
+        lambda *_args, **_kwargs: True,
+    )
     run_preflight(
         store,
-        session_id="digest-parent",
+        session_id=_CODEX_LINEAGE_PARENT,
         trace_id="digest-trace",
         user_message=task,
         host="codex",
         capability_receipt=native_adapter_capability_receipt(
             "codex",
             platform="windows" if os.name == "nt" else "linux",
-            session_id="digest-parent",
+            session_id=_CODEX_LINEAGE_PARENT,
             trace_id="digest-trace",
             available_tools=("repository-read", "native-delegation"),
         ),
     )
-    child_id = "22222222-2222-4222-8222-222222222222"
     bridge = HookBridge("codex", store=store, _master={"enabled": True})
-    payload = {"session_id": child_id, "agent_id": child_id}
+    payload = {
+        "hook_event_name": "SubagentStart",
+        "session_id": _CODEX_LINEAGE_CHILD,
+        "agent_id": _CODEX_LINEAGE_CHILD,
+        "agent_type": "default",
+        "cwd": str(cwd),
+        "transcript_path": str(artifact),
+    }
 
     assert bridge._restricted_codex_activation_child_parent_scope(payload) == (
-        "digest-parent",
+        _CODEX_LINEAGE_PARENT,
         "digest-trace",
+    )
+    assert bridge._restricted_codex_activation_child_parent_scope(
+        {
+            **payload,
+            "hook_event_name": "SubagentStop",
+            "agent_transcript_path": str(artifact),
+        }
+    ) == (_CODEX_LINEAGE_PARENT, "digest-trace")
+    assert (
+        bridge._restricted_codex_activation_child_parent_scope(
+            {**payload, "hook_event_name": "SubagentStop"}
+        )
+        is None
     )
     assert (
         bridge._restricted_codex_activation_child_parent_scope(
-            {**payload, "session_id": "33333333-3333-4333-8333-333333333333"}
+            {**payload, "session_id": _CODEX_LINEAGE_WINDOW}
         )
         is None
     )
     monkeypatch.setenv(CODEX_ACTIVATION_QUERY_HASH_ENV, "e" * 64)
     assert bridge._restricted_codex_activation_child_parent_scope(payload) is None
 
-    monkeypatch.setenv(CODEX_ACTIVATION_QUERY_HASH_ENV, query_hash)
-    assert store.close_turn_evidence("digest-parent", "digest-trace") == 1
+    monkeypatch.delenv(CODEX_ACTIVATION_QUERY_HASH_ENV)
+    assert bridge._restricted_codex_activation_child_parent_scope(payload) == (
+        _CODEX_LINEAGE_PARENT,
+        "digest-trace",
+    )
+    monkeypatch.delenv("AGENCY_CANARY_MODE")
     assert bridge._restricted_codex_activation_child_parent_scope(payload) is None
+    monkeypatch.setenv("AGENCY_CANARY_MODE", "1")
+    monkeypatch.setenv(CODEX_ACTIVATION_QUERY_HASH_ENV, query_hash)
 
     run_preflight(
         store,
-        session_id="duplicate-parent",
+        session_id="01a041aa-830e-7a33-915b-fb8e8bf8e0f3",
         trace_id="duplicate-trace",
         user_message=task,
         host="codex",
         capability_receipt=native_adapter_capability_receipt(
             "codex",
             platform="windows" if os.name == "nt" else "linux",
-            session_id="duplicate-parent",
+            session_id="01a041aa-830e-7a33-915b-fb8e8bf8e0f3",
             trace_id="duplicate-trace",
             available_tools=("repository-read", "native-delegation"),
         ),
     )
     ambiguous = store.get_canary_activation_snapshot(host="codex", query_hash=query_hash)
     assert ambiguous["reason"] == "route_ambiguous"
+    assert bridge._restricted_codex_activation_child_parent_scope(payload) == (
+        _CODEX_LINEAGE_PARENT,
+        "digest-trace",
+    )
+
+    run_preflight(
+        store,
+        session_id=_CODEX_LINEAGE_PARENT,
+        trace_id="second-parent-trace",
+        user_message=task,
+        host="codex",
+        capability_receipt=native_adapter_capability_receipt(
+            "codex",
+            platform="windows" if os.name == "nt" else "linux",
+            session_id=_CODEX_LINEAGE_PARENT,
+            trace_id="second-parent-trace",
+            available_tools=("repository-read", "native-delegation"),
+        ),
+    )
+    assert bridge._restricted_codex_activation_child_parent_scope(payload) is None
+    assert store.close_turn_evidence(_CODEX_LINEAGE_PARENT, "second-parent-trace") == 1
+    assert store.close_turn_evidence(_CODEX_LINEAGE_PARENT, "digest-trace") == 1
+    assert bridge._restricted_codex_activation_child_parent_scope(payload) is None
+
+
+def test_restricted_codex_child_lineage_rejects_a_terminal_parent(
+    store: Store,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    from agency_runtime.core import child_delivery_evidence
+    from agency_runtime.core.installer import seed_starter_roster
+    from agency_runtime.core.workforce import inference
+
+    seed_starter_roster(store)
+    monkeypatch.setenv("AGENCY_CANARY_MODE", "1")
+    monkeypatch.setenv("AGENCY_CANARY_REQUIRE_EXISTING_STORE", "1")
+    monkeypatch.setattr(
+        inference,
+        "invoke_structured_provider_result",
+        stub_inference_invoker(("code-reviewer",)),
+    )
+    task = f"{CODEX_ACTIVATION_CANARY_PROMPT}\n\nCanary nonce: {'f' * 32}"
+    query_hash = sha256(task.encode("utf-8")).hexdigest()
+    monkeypatch.setenv(CODEX_ACTIVATION_QUERY_HASH_ENV, query_hash)
+    root = tmp_path / "codex-sessions"
+    cwd = tmp_path / "canary-work"
+    cwd.mkdir()
+    artifact = _codex_v1491_lineage_artifact(root, cwd=cwd)
+    monkeypatch.setattr(child_delivery_evidence, "default_child_artifact_root", lambda host: root)
+    monkeypatch.setattr(
+        child_delivery_evidence,
+        "storage_artifact_parent_is_trusted",
+        lambda *_args, **_kwargs: True,
+    )
+    monkeypatch.setattr(
+        child_delivery_evidence,
+        "storage_file_is_trusted",
+        lambda *_args, **_kwargs: True,
+    )
+    run_preflight(
+        store,
+        session_id=_CODEX_LINEAGE_PARENT,
+        trace_id="terminal-trace",
+        user_message=task,
+        host="codex",
+        capability_receipt=native_adapter_capability_receipt(
+            "codex",
+            platform="windows" if os.name == "nt" else "linux",
+            session_id=_CODEX_LINEAGE_PARENT,
+            trace_id="terminal-trace",
+            available_tools=("repository-read", "native-delegation"),
+        ),
+    )
+    bridge = HookBridge("codex", store=store, _master={"enabled": True})
+    payload = {
+        "hook_event_name": "SubagentStart",
+        "session_id": _CODEX_LINEAGE_CHILD,
+        "agent_id": _CODEX_LINEAGE_CHILD,
+        "cwd": str(cwd),
+        "transcript_path": str(artifact),
+    }
+    assert bridge._restricted_codex_activation_child_parent_scope(payload) == (
+        _CODEX_LINEAGE_PARENT,
+        "terminal-trace",
+    )
+    assert store.close_turn_evidence(_CODEX_LINEAGE_PARENT, "terminal-trace") == 1
     assert bridge._restricted_codex_activation_child_parent_scope(payload) is None
 
 

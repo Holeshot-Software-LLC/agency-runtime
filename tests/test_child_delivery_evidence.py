@@ -9,6 +9,7 @@ child merely read back later.
 from __future__ import annotations
 
 import argparse
+import copy
 import json
 import os
 from dataclasses import replace
@@ -33,6 +34,7 @@ from agency_runtime.core.child_delivery_evidence import (
     child_delivery_projection,
     claude_child_delivery_evidence,
     codex_child_delivery_evidence,
+    codex_v1491_child_parent_session,
     scan_child_delivery_evidence,
 )
 from agency_runtime.core.native_child_decision import (
@@ -51,6 +53,9 @@ from agency_runtime.core.roster.revisions import content_digest
 PARENT_SESSION = "37a4776a-92f4-4fe8-b2fe-926652d70225"
 CHILD_AGENT = "a19cc709eae42e6aa"
 CODEX_CHILD_SESSION = "019fbb8b-1394-7413-a7bd-366714f530ad"
+CODEX_V1491_PARENT_SESSION = "01a041aa-830d-7a33-915b-fb8e8bf8e0f3"
+CODEX_V1491_CHILD_SESSION = "01a041ac-427c-7333-8616-12672552ce9b"
+CODEX_V1491_WINDOW_ID = "01a041ac-427c-7333-8616-12740adee42c"
 PROMPT = "You are a SQLite specialist. Prefer WAL mode and bounded transactions."
 OTHER_PROMPT = "You are a security reviewer. Name the exact attacker capability."
 _NOW = datetime.now(timezone.utc).replace(microsecond=0)
@@ -177,6 +182,311 @@ def _codex_artifact(tmp_path: Path, records: list[dict[str, object]]) -> Path:
         / "01"
         / f"rollout-2026-08-01T00-18-01-{CODEX_CHILD_SESSION}.jsonl",
         records,
+    )
+
+
+def _codex_v1491_meta(*, cwd: Path) -> dict[str, object]:
+    return {
+        "timestamp": "2026-08-27T05:23:23.457Z",
+        "type": "session_meta",
+        "payload": {
+            "id": CODEX_V1491_CHILD_SESSION,
+            "timestamp": "2026-08-27T05:23:23.389Z",
+            "session_id": CODEX_V1491_PARENT_SESSION,
+            "parent_thread_id": CODEX_V1491_PARENT_SESSION,
+            "source": {
+                "subagent": {
+                    "thread_spawn": {
+                        "parent_thread_id": CODEX_V1491_PARENT_SESSION,
+                        "depth": 1,
+                        "agent_path": "/root/code_reviewer",
+                        "agent_nickname": "Poincare",
+                        "agent_role": None,
+                    }
+                }
+            },
+            "originator": "codex_exec",
+            "cli_version": "0.149.1",
+            "cwd": str(cwd),
+            "model_provider": "openai",
+            "base_instructions": {
+                "text": "Exact supported Codex child instructions.",
+                "provenance": {"type": "model", "model": "gpt-5.6-sol"},
+            },
+            "agent_path": "/root/code_reviewer",
+            "agent_nickname": "Poincare",
+            "context_window": {"window_id": CODEX_V1491_WINDOW_ID},
+            "history_mode": "paginated",
+            "thread_source": "subagent",
+            "multi_agent_version": "v2",
+        },
+        "ordinal": 0,
+    }
+
+
+def _codex_v1491_artifact(
+    root: Path,
+    *,
+    cwd: Path,
+    meta: dict[str, object] | None = None,
+) -> Path:
+    return _write_jsonl(
+        root
+        / "2026"
+        / "08"
+        / "27"
+        / f"rollout-2026-08-27T05-23-23-{CODEX_V1491_CHILD_SESSION}.jsonl",
+        [meta or _codex_v1491_meta(cwd=cwd)],
+    )
+
+
+@pytest.fixture
+def codex_v1491_artifact_trust(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Model the owner-integrity probes while retaining real link checks."""
+
+    monkeypatch.setattr(
+        subject,
+        "storage_artifact_parent_is_trusted",
+        lambda *_args, **_kwargs: True,
+    )
+    monkeypatch.setattr(subject, "storage_file_is_trusted", lambda *_args, **_kwargs: True)
+
+
+def test_codex_v1491_child_metadata_resolves_the_exact_host_parent(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    codex_v1491_artifact_trust: None,
+) -> None:
+    root = tmp_path / "sessions"
+    cwd = tmp_path / "canary-work"
+    cwd.mkdir()
+    artifact = _codex_v1491_artifact(root, cwd=cwd)
+    monkeypatch.setattr(subject, "default_child_artifact_root", lambda host: root)
+
+    assert (
+        codex_v1491_child_parent_session(
+            artifact,
+            child_id=CODEX_V1491_CHILD_SESSION,
+            cwd=cwd,
+        )
+        == CODEX_V1491_PARENT_SESSION
+    )
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        "child_mismatch",
+        "parent_disagreement",
+        "wrong_version",
+        "nested_child",
+        "assigned_role",
+        "inherited_history",
+        "wrong_originator",
+        "wrong_history_mode",
+        "wrong_cwd",
+        "source_shape_drift",
+        "agent_metadata_disagreement",
+        "invalid_context_window",
+        "noncausal_timestamp",
+    ],
+)
+def test_codex_v1491_child_metadata_semantic_drift_fails_closed(
+    tmp_path: Path,
+    codex_v1491_artifact_trust: None,
+    mutation: str,
+) -> None:
+    root = tmp_path / "sessions"
+    cwd = tmp_path / "canary-work"
+    cwd.mkdir()
+    meta = copy.deepcopy(_codex_v1491_meta(cwd=cwd))
+    payload = meta["payload"]
+    assert isinstance(payload, dict)
+    source = payload["source"]
+    assert isinstance(source, dict)
+    subagent = source["subagent"]
+    assert isinstance(subagent, dict)
+    spawn = subagent["thread_spawn"]
+    assert isinstance(spawn, dict)
+
+    if mutation == "child_mismatch":
+        payload["id"] = CODEX_V1491_WINDOW_ID
+    elif mutation == "parent_disagreement":
+        payload["parent_thread_id"] = "01a041aa-830e-7a33-915b-fb8e8bf8e0f3"
+    elif mutation == "wrong_version":
+        payload["cli_version"] = "0.150.0"
+    elif mutation == "nested_child":
+        spawn["depth"] = 2
+    elif mutation == "assigned_role":
+        spawn["agent_role"] = "code-reviewer"
+    elif mutation == "inherited_history":
+        payload["forked_from_id"] = CODEX_V1491_PARENT_SESSION
+    elif mutation == "wrong_originator":
+        payload["originator"] = "codex_cli"
+    elif mutation == "wrong_history_mode":
+        payload["history_mode"] = "full"
+    elif mutation == "wrong_cwd":
+        payload["cwd"] = str(tmp_path / "other-work")
+    elif mutation == "source_shape_drift":
+        source["other"] = {}
+    elif mutation == "agent_metadata_disagreement":
+        spawn["agent_nickname"] = "Noether"
+    elif mutation == "invalid_context_window":
+        payload["context_window"] = {"window_id": CODEX_V1491_PARENT_SESSION}
+    elif mutation == "noncausal_timestamp":
+        payload["timestamp"] = "2026-08-27T05:24:23.389Z"
+    else:  # pragma: no cover - the parameter list is closed above
+        raise AssertionError(f"unhandled mutation: {mutation}")
+
+    artifact = _codex_v1491_artifact(root, cwd=cwd, meta=meta)
+    assert (
+        codex_v1491_child_parent_session(
+            artifact,
+            child_id=CODEX_V1491_CHILD_SESSION,
+            cwd=cwd,
+            root=root,
+        )
+        == ""
+    )
+
+
+def test_codex_v1491_child_metadata_rejects_ambiguous_or_unbounded_json(
+    tmp_path: Path,
+    codex_v1491_artifact_trust: None,
+) -> None:
+    root = tmp_path / "sessions"
+    cwd = tmp_path / "canary-work"
+    cwd.mkdir()
+    artifact = _codex_v1491_artifact(root, cwd=cwd)
+    line = json.dumps(_codex_v1491_meta(cwd=cwd))
+    artifact.write_text(
+        line.replace(
+            '{"timestamp":',
+            '{"timestamp":"2026-08-27T05:23:23.456Z","timestamp":',
+            1,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    assert (
+        codex_v1491_child_parent_session(
+            artifact,
+            child_id=CODEX_V1491_CHILD_SESSION,
+            cwd=cwd,
+            root=root,
+        )
+        == ""
+    )
+
+    artifact.write_text(line, encoding="utf-8")
+    assert (
+        codex_v1491_child_parent_session(
+            artifact,
+            child_id=CODEX_V1491_CHILD_SESSION,
+            cwd=cwd,
+            root=root,
+        )
+        == ""
+    )
+
+    oversized = _codex_v1491_meta(cwd=cwd)
+    oversized_payload = oversized["payload"]
+    assert isinstance(oversized_payload, dict)
+    base = oversized_payload["base_instructions"]
+    assert isinstance(base, dict)
+    base["text"] = "x" * (128 * 1024)
+    _codex_v1491_artifact(root, cwd=cwd, meta=oversized)
+    assert (
+        codex_v1491_child_parent_session(
+            artifact,
+            child_id=CODEX_V1491_CHILD_SESSION,
+            cwd=cwd,
+            root=root,
+        )
+        == ""
+    )
+
+
+def test_codex_v1491_child_metadata_rejects_foreign_shape_and_links(
+    tmp_path: Path,
+    codex_v1491_artifact_trust: None,
+) -> None:
+    root = tmp_path / "sessions"
+    cwd = tmp_path / "canary-work"
+    cwd.mkdir()
+    foreign = _write_jsonl(
+        tmp_path / "foreign" / f"rollout-2026-08-27T05-23-23-{CODEX_V1491_CHILD_SESSION}.jsonl",
+        [_codex_v1491_meta(cwd=cwd)],
+    )
+    assert (
+        codex_v1491_child_parent_session(
+            foreign,
+            child_id=CODEX_V1491_CHILD_SESSION,
+            cwd=cwd,
+            root=root,
+        )
+        == ""
+    )
+
+    wrong_suffix = _write_jsonl(
+        root / "2026" / "08" / "27" / f"rollout-2026-08-27T05-23-23-{CODEX_V1491_WINDOW_ID}.jsonl",
+        [_codex_v1491_meta(cwd=cwd)],
+    )
+    assert (
+        codex_v1491_child_parent_session(
+            wrong_suffix,
+            child_id=CODEX_V1491_CHILD_SESSION,
+            cwd=cwd,
+            root=root,
+        )
+        == ""
+    )
+
+    if os.name == "nt":
+        return
+    target = _write_jsonl(tmp_path / "target.jsonl", [_codex_v1491_meta(cwd=cwd)])
+    linked = (
+        root
+        / "2026"
+        / "08"
+        / "27"
+        / f"rollout-2026-08-27T05-23-23-{CODEX_V1491_CHILD_SESSION}.jsonl"
+    )
+    linked.parent.mkdir(parents=True, exist_ok=True)
+    linked.symlink_to(target)
+    assert (
+        codex_v1491_child_parent_session(
+            linked,
+            child_id=CODEX_V1491_CHILD_SESSION,
+            cwd=cwd,
+            root=root,
+        )
+        == ""
+    )
+
+
+def test_codex_v1491_child_metadata_requires_owner_integrity(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    root = tmp_path / "sessions"
+    cwd = tmp_path / "canary-work"
+    cwd.mkdir()
+    artifact = _codex_v1491_artifact(root, cwd=cwd)
+    monkeypatch.setattr(
+        subject,
+        "storage_artifact_parent_is_trusted",
+        lambda *_args, **_kwargs: False,
+    )
+
+    assert (
+        codex_v1491_child_parent_session(
+            artifact,
+            child_id=CODEX_V1491_CHILD_SESSION,
+            cwd=cwd,
+            root=root,
+        )
+        == ""
     )
 
 

@@ -1480,20 +1480,21 @@ class HookBridge:
             return None
         return correlation.session_id, trace_id
 
-    def _restricted_codex_activation_child_parent_scope(
+    def _restricted_codex_activation_child_parent_scope(  # noqa: C901 - closed authority gate
         self,
         payload: dict[str, Any],
     ) -> tuple[str, str] | None:
-        """Bind a real Codex child session to one digest-scoped canary parent."""
+        """Bind a real Codex child to one host-authored canary parent lineage."""
 
         if self.host != "codex":
             return None
         from agency_runtime.core.codex_activation_verification import (
+            CODEX_ACTIVATION_QUERY_HASH_ENV,
+            is_restricted_codex_activation_canary_environment,
             restricted_codex_activation_query_hash,
         )
 
-        query_hash = restricted_codex_activation_query_hash(os.environ)
-        if not query_hash:
+        if not is_restricted_codex_activation_canary_environment(os.environ):
             return None
         try:
             child_session_id = validate_correlation_id(
@@ -1508,15 +1509,50 @@ class HookBridge:
             return None
         if child_session_id != agent_id:
             return None
-        getter = getattr(self.store, "get_canary_activation_snapshot", None)
-        if not callable(getter):
+
+        try:
+            event = _required_string(payload, "hook_event_name")
+            cwd = _required_string(payload, "cwd")
+            if event == "SubagentStart":
+                artifact_path = _required_string(payload, "transcript_path")
+            elif event == "SubagentStop":
+                artifact_path = _required_string(payload, "agent_transcript_path")
+            else:
+                return None
+        except HookInputError:
+            return None
+        from agency_runtime.core.child_delivery_evidence import (
+            codex_v1491_child_parent_session,
+        )
+
+        try:
+            parent_session_id = codex_v1491_child_parent_session(
+                artifact_path,
+                child_id=child_session_id,
+                cwd=cwd,
+            )
+        except Exception:
+            return None
+        if not parent_session_id:
+            return None
+        parent_trace_id = self._unambiguous_open_trace(parent_session_id)
+        getter = getattr(self.store, "get_codex_activation_canary_parent_snapshot", None)
+        if not parent_trace_id or not callable(getter):
             return None
         try:
-            snapshot = getter(host="codex", query_hash=query_hash)
+            snapshot = getter(
+                session_id=parent_session_id,
+                trace_id=parent_trace_id,
+            )
         except Exception:
             return None
         route = snapshot.get("route") if isinstance(snapshot, dict) else None
         run = snapshot.get("run") if isinstance(snapshot, dict) else None
+        query_hash = restricted_codex_activation_query_hash(os.environ)
+        supplied_query_hash = os.environ.get(CODEX_ACTIVATION_QUERY_HASH_ENV)
+        if supplied_query_hash is not None and not query_hash:
+            return None
+        route_query_hash = route.get("query_hash") if isinstance(route, dict) else None
         from agency_runtime.core.activation_canary_contract import (
             CODEX_ACTIVATION_CANARY_ROUTE_SOURCE,
             CODEX_ACTIVATION_CANARY_WORK_UNIT_SOURCE,
@@ -1529,12 +1565,16 @@ class HookBridge:
             and snapshot.get("status") == "resolved"
             and snapshot.get("reason") == "exact_route_resolved"
             and snapshot.get("host") == "codex"
-            and snapshot.get("query_hash") == query_hash
-            and snapshot.get("session_id") == run.get("session_id")
-            and snapshot.get("trace_id") == run.get("trace_id")
-            and route.get("session_id") == run.get("session_id")
-            and route.get("trace_id") == run.get("trace_id")
-            and route.get("query_hash") == query_hash
+            and snapshot.get("query_hash") == route_query_hash
+            and snapshot.get("session_id") == parent_session_id
+            and snapshot.get("trace_id") == parent_trace_id
+            and run.get("session_id") == parent_session_id
+            and run.get("trace_id") == parent_trace_id
+            and route.get("session_id") == parent_session_id
+            and route.get("trace_id") == parent_trace_id
+            and isinstance(route_query_hash, str)
+            and re.fullmatch(r"[0-9a-f]{64}", route_query_hash) is not None
+            and (not query_hash or route_query_hash == query_hash)
             and route.get("status") == "accepted"
             and route.get("source") == CODEX_ACTIVATION_CANARY_ROUTE_SOURCE
             and route.get("selected_ids") == ["code-reviewer"]
@@ -1550,23 +1590,28 @@ class HookBridge:
             and run.get("host") == "codex"
             and run.get("status") in {"active", "evidence_only"}
             and run.get("preflight_state") == "ready"
-            and run.get("request_fingerprint") == query_hash
+            and run.get("request_fingerprint") == route_query_hash
             and run.get("ended_at") is None
             and run.get("terminal_finalization_id") is None
         ):
             return None
         try:
-            parent_session_id = validate_correlation_id(
+            validated_parent_session_id = validate_correlation_id(
                 snapshot.get("session_id"),
                 field="parent_session_id",
             )
-            parent_trace_id = validate_correlation_id(
+            validated_parent_trace_id = validate_correlation_id(
                 snapshot.get("trace_id"),
                 field="parent_trace_id",
             )
         except ValueError:
             return None
-        return parent_session_id, parent_trace_id
+        if (
+            validated_parent_session_id != parent_session_id
+            or validated_parent_trace_id != parent_trace_id
+        ):
+            return None
+        return validated_parent_session_id, validated_parent_trace_id
 
     def _staff_restricted_codex_activation_child(
         self,
