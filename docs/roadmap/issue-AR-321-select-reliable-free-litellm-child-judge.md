@@ -68,6 +68,12 @@ prose, and with JSON-object output it confidently selects the wrong specialist.
   `e791c3f0...9fc9` is the sole `ar297-probe-child-judge-granite42-8b`
   resolution with exact-schema JSON, 32,768 context, thinking off, and no
   retries; secret-safe create receipt `d76a783c...455c` passes.
+- Granite then abstains on both exact initial and repair prompts at
+  `b797bbf8...d4f8` and `9c842512...937b`; its alias deletion is retained and
+  leaves no Granite deployment. Official Apache-2.0 `qwen2.5:14b` acquisition
+  exits 0 at `e3793ca3...b203`; metadata `20b2d98b...360b` proves Qwen2,
+  14.8B/Q4_K_M, and 32,768-token context. Sole temporary schema deployment
+  `96ee8dc1...f9f0` passes create receipt `da7b3161...edf6` before evaluation.
 - The owner requires all Agency inference on this system to resolve through
   authenticated LiteLLM aliases and requires the child judge to remain free.
   Tracker creation remains prohibited by the active task.

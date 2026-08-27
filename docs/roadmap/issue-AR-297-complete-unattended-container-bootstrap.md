@@ -881,3 +881,9 @@ smaller official structured-output candidate. Official Apache-2.0 Granite 4.2
 `8d44fb7b...b81c` proves 8.8B/Q4_K_M and 131,072-token context. Its sole
 temporary schema-constrained LiteLLM deployment `e791c3f0...9fc9` is ready for
 the next exact probe; the stable child-judge alias remains unchanged.
+
+Granite 4.2 8B subsequently abstains on both exact selector calls at
+`b797bbf8...d4f8` and `9c842512...937b`; its temporary alias is removed. The
+official Apache-2.0 Qwen 2.5 14B download exits 0 at `e3793ca3...b203`, model
+receipt `20b2d98b...360b` proves 14.8B/Q4_K_M and 32,768-token context, and sole
+schema-constrained temporary LiteLLM deployment `96ee8dc1...f9f0` is ready.

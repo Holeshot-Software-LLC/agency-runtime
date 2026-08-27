@@ -64,8 +64,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Work remains in dedicated worktree `/tmp/agency-runtime-ar297.WQUbF2` on
   `codex/ar297-production-container-live-evidence`, based on `origin/main`
   `0a23983a`. Never use the shared checkout.
-- Last clean recovery pair is AR-321 rejection checkpoint `cc24d403` and ledger
-  `144f20c1`. Exact artifacts and five images bind candidate `c1cf1793`.
+- Clean pair `e631d776`/`cf25a3e0` and five exact images bind `c1cf1793`.
 - Linux remains **NO-GO**. AR-297/#335 stay open. Tracker writes, push, PR,
   merge, tag, signing, publication, release, and hosted workflow actions are
   not authorized.
@@ -105,8 +104,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - AR-321 rejects Qwen 9B/30B, Dolphin 24B, Qwen 2B, and Ministral 14B. The last
   returns invalid objects at `84a4b980...b8d1`, then schema-valid two-card JSON
   at `aa8917b2...6cef`; deletion `f40895e6...d6ab` closes its aliases.
-  Granite 4.2 8B pull/model receipts `1c990f61...c7ed`/`8d44fb7b...b81c` pass;
-  sole temporary schema alias `e791c3f0...9fc9` awaits its first exact probe.
+  Granite also abstains twice at `b797bbf8...d4f8`/`9c842512...937b` and its
+  alias is removed. Qwen 2.5 14B pull/model `e3793ca3...b203`/`20b2d98b...360b`
+  pass; sole temporary schema alias `96ee8dc1...f9f0` awaits exact probes.
 - No later ordinary Codex, Claude, Hermes, or OpenClaw process has a current
   successful Agency-turn receipt on this source.
 - Refresh the host install/dashboard and named repository gates for the exact
@@ -134,7 +134,7 @@ unchecked line. Mark an item complete only with exact retained evidence.
 
 1. [x] Rebuild and independently verify artifacts/images from the exact
    AR-320/LiteLLM checkpoint; `c1cf1793` is the candidate.
-2. [ ] Through AR-321, test Granite 4.2 8B and promote only a repeatedly exact
+2. [ ] Through AR-321, test Qwen 2.5 14B and promote only a repeatedly exact
    free LiteLLM alias, then prove fresh Codex canonical delivery,
    consumption, header, finalization, Store correlation, and attestation.
 3. [ ] Build and prove separate clean exact Claude, native-UID Hermes, and
