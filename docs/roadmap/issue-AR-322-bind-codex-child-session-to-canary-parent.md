@@ -56,6 +56,10 @@ identity message, so no v6 workforce delivery or activation proof existed.
   `agent_id`; an omitted explicit role still correctly reports `default`.
 - Source checkpoint `a5c1ad53` implements the bounded repair; 99 focused
   warning-strict regressions pass.
+- Clean ledger `c7f35dd5` canonical build, strict Twine, independent verifier,
+  six image builds, and five-image label/version verification all exit 0.
+  Wheel `23036c74...d68d`, sdist `09b85884...1a3b`, and image receipt
+  `f1808c22...64674` bind the fresh candidate. Live proof remains pending.
   Fresh rebuilt production-container proof remains pending.
 - Tracker creation is prohibited by the active AR-297 task.
 

@@ -946,3 +946,13 @@ verification, or native plan. Official Codex `rust-v0.149.1` source confirms
 checkpoint `a5c1ad53` binds that child to the unique nonce-request digest; 99
 focused warning-strict tests pass. Exact artifacts and fresh live proof must be
 rebuilt from this checkpoint before any Codex success claim.
+
+Clean ledger `c7f35dd541560a8a4e2420c62ee4a43fdd932cb5` now passes canonical
+build, strict Twine, and independent verification. Mode-0644 wheel
+`23036c74...d68d` is 9,305,733 bytes and sdist `09b85884...1a3b` is
+25,694,168 bytes; manifest receipt `bb9b8fb8...09a6` records both. Codex,
+Claude, Hermes, OpenClaw systemd, and dashboard image IDs are
+`c56df293...26fa0`, `3b0b0b98...21cdc`, `626bf282...bac3e`,
+`f2d35ea8...aa83b`, and `9d3eb4c2...c1507`; exact label and packaged-version
+verification `f1808c22...64674` exits 0. A fresh clean Codex transaction is the
+next live gate.

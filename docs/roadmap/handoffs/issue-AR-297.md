@@ -51,8 +51,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-297
 branch: codex/ar297-production-container-live-evidence
-evidence_commit: a5c1ad536f13c51ceaa5c1c13d2570b7c166f0a7
-minimum_ledger_commit: 260bd197586d3c9c9334f364aca4e86d879e9c29
+evidence_commit: c7f35dd541560a8a4e2420c62ee4a43fdd932cb5
+minimum_ledger_commit: c7f35dd541560a8a4e2420c62ee4a43fdd932cb5
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 ---
@@ -64,8 +64,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Work remains in dedicated worktree `/tmp/agency-runtime-ar297.WQUbF2` on
   `codex/ar297-production-container-live-evidence`, based on `origin/main`
   `0a23983a`. Never use the shared checkout.
-- Clean source checkpoint `a5c1ad53` implements AR-322; this capsule recovery
-  and its worklog ledger immediately follow it.
+- Clean ledger candidate `c7f35dd5` contains AR-322 source `a5c1ad53`, recovery
+  `77cd30ae`, and worklog ledger `c7f35dd5`.
 - Linux remains **NO-GO**. AR-297/#335 stay open. Tracker writes, push, PR,
   merge, tag, signing, publication, release, and hosted workflow actions are
   not authorized.
@@ -77,12 +77,12 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   authenticated LiteLLM aliases, Qwen generation with thinking disabled,
   Mistral critic/reranker/recruiter/free child judge, and 4,096-dimensional
   Qwen embedding. Direct Ollama and Jina are absent from active routes.
-- Superseded exact ledger `c1cf1793` build/Twine/verifier exit 0 and remains the
-  retained pre-AR-322 evidence baseline. Wheel `8766b539...99d7` is 9,300,725
-  bytes; sdist `5dbd6edc...bf68a`; manifest `a04282e6...adade`.
-- Codex/Claude/Hermes/OpenClaw/dashboard image IDs are `c735534e...bd3f`,
-  `93ab0881...acc3`, `e8819230...94ef`, `5355886a...ca94`, and
-  `fc23a724...666f`; exact verification exits 0 at `2f9dadb5...a449`.
+- Exact `c7f35dd5` build/Twine/verifier exit 0. Wheel `23036c74...d68d` is
+  9,305,733 bytes; sdist `09b85884...1a3b` is 25,694,168 bytes; manifest receipt
+  `bb9b8fb8...09a6` is mode 0600 evidence over mode-0644 artifacts.
+- Codex/Claude/Hermes/OpenClaw/dashboard image IDs are `c56df293...26fa0`,
+  `3b0b0b98...21cdc`, `626bf282...bac3e`, `f2d35ea8...aa83b`, and
+  `9d3eb4c2...c1507`; verification `f1808c22...64674` exits 0.
 - AR-317 passes 158 focused tests. Six Mistral/Qwen aliases are healthy and the
   shared fallback remains `8e801fde...075f`; model snapshot `6a80b30a...be8df`.
   Child probe `5c9d6a27...800f4` uses 20,050 tokens at `n_ctx=32768` with
@@ -118,8 +118,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 
 ## same-task-continuity
 
-Retained pre-AR-322 artifacts: `~/.agency-runtime/release-artifacts/`
-`dist-c1cf1793db1bc98589ca958a553c502a0126c637-linux-ar297`; config is
+Exact artifacts: `~/.agency-runtime/release-artifacts/`
+`dist-c7f35dd541560a8a4e2420c62ee4a43fdd932cb5-linux-ar297`; config is
 `~/.agency-runtime/configs/`
 `ar297-litellm-a4e213d6b454ca90.yaml`. Current evidence is
 `~/.agency-runtime/evidence/ar297-go-c1cf1793`; Codex container
@@ -133,8 +133,7 @@ running with older labelled evidence containers. AR-321 evidence is under
 After compaction, reread this capsule and `git status`, then resume at the first
 unchecked line. Mark an item complete only with exact retained evidence.
 
-1. [ ] Rebuild and independently verify artifacts/images from clean AR-322
-   source checkpoint `a5c1ad53`; `c1cf1793` is retained but superseded.
+1. [x] Build and independently verify exact `c7f35dd5` artifacts/images.
 2. [ ] Stable alias is proven; use the rebuilt candidate to prove Codex delivery,
    consumption, header, finalization, Store correlation, and attestation.
 3. [ ] Build and prove separate clean exact Claude, native-UID Hermes, and
