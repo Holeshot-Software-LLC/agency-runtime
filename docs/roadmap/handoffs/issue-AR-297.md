@@ -24,8 +24,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-297
 branch: codex/ar297-production-container-live-evidence
-evidence_commit: 38eb2bf11be7337abf59c388db74311aaeb70ad1
-minimum_ledger_commit: 38eb2bf11be7337abf59c388db74311aaeb70ad1
+evidence_commit: be05c90a0a539ad02056eb5354f3c93fe7facf18
+minimum_ledger_commit: be05c90a0a539ad02056eb5354f3c93fe7facf18
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 ---
@@ -37,7 +37,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Work only in `/tmp/agency-runtime-ar297.WQUbF2` on
   `codex/ar297-production-container-live-evidence`, based on `origin/main`
   `0a23983a`. Never touch the shared checkout.
-- Clean ledger `38eb2bf1` binds all installs, ordinary Codex R2, and host proof.
+- Clean ledger `be05c90a` binds installs, Codex R2, host proof, and named gates.
 - Linux remains **NO-GO**. AR-297/#335 remain open. No tracker write, push, PR,
   merge, tag, signing, publication, release, or hosted workflow is authorized.
 
@@ -50,15 +50,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   Promotion/metadata/final validation/literal/spend receipts are
   `6e19008f...1750`, `e1cba9f6...e841`, `42921a7e...867c`,
   `b686ab4b...9abe`, and `d7183bb5...2f07`. Temporary aliases are removed.
-- AR-325 callback-order repair passes 149/17/145 tests and two mutations at
-  `394d9276...1c4d`, `74a9f4f9...4141`, `ae7689e3...7a84`, `ea4477e5...3695`.
 - Final named gates pass: 912 docs, Ruff lint/format, 860 Python tests with 3
   skips, 138 dashboard tests, routing 1.4.0, and 167/167 decision mutations;
   receipts are `c5f34de1...8b7f`, `25cc4f01...4cb`, `2eb1981a...3ef9`,
   `eeb12164...10d4`, and `9a45044f...0a71`. All final exits are 0.
-- AR-326's 203 tests/two mutations pass at `4e76af29...a318` and
-  `34858754...5cc7`; the named 860-test spine and 165/165 decision mutations
-  pass at `8cda02e1...4312` and `891defed...ab8`.
 - Qwen1's bounded Codex timeout is retained at `40c1c188...7f5a` and
   `5f76b443...6eaa`. AR-327's 211/17 tests and two mutations pass at
   `1b0fd16d...9ab3`, `f54f2441...aab`, and `527ff7d8...a78`.
@@ -104,11 +99,13 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   401/200 no-store; exact 2,659-byte prompt `c3cfc098...5848` is untruncated.
 - Optional host Codex verifier `933bc916...bb4` fails before model invocation
   because attended hook trust is not ready; it changes nothing and uses no bypass.
+- Same-method Claude OAuth is refreshed: container copy refresh and status
+  `ca740051...3af1` pass. Alias inventory `73551634...0551` remains unchanged;
+  pre-final Docker receipt `6d0c7888...81f7` binds 36 labelled containers.
 
 ## exact-blocker
 
-- Refreshed same-method Claude OAuth, owner-selected Hermes/OpenClaw aliases,
-  and teardown remain.
+- Owner-selected Hermes/OpenClaw aliases, three ordinary turns, and teardown remain.
 - Cross-OS artifacts, signing, tracker parity, push/PR/merge/tag/publication,
   release, and exhaustive workflow dispatch remain unauthorized—not GO gates
   for this Linux-only bounded task unless authority changes.

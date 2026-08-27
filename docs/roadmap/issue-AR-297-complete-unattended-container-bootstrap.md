@@ -1553,3 +1553,19 @@ kills 167/167 mutations with zero survived/invalid and source unchanged
 failures remain retained at `1fe3f42b...f88d` and `4dd2f8f3...da6b` rather
 than relabelled. Final diff output is empty. Every successful gate has exact
 exit 0 receipt SHA `bde29436...120`.
+
+The next ordinary-process preflight found the host's existing same-method
+`claude.ai` OAuth session refreshed and logged in. The exact Claude R2 proof
+container's read-only host bind differed from its stale internal credential;
+an owner-private copy refresh exited 0 without printing credential bytes, and
+sanitized native status `ca740051...3af1` now reports first-party
+`authMethod=claude.ai` and `loggedIn=true`. No auth method or model changed.
+
+Authenticated LiteLLM inventory `73551634...0551` shows exactly the seven
+current `task-agency-*` aliases. Sanitized snapshots retain sole deployments
+for the Qwen 3 32B child judge (`54a2c740...d9ee`), rejected Mistral Hermes
+route (`ebc865a0...1ad`), and 14B generation route (`86751a87...2d6`). Local
+model inventory `e48128f2...40b0` confirms `qwen3:32b` remains resident, but no
+Hermes or OpenClaw alias/model change was made without the owner interview.
+Pre-final Docker inventory `6d0c7888...81f7` exits 0 and binds exactly 36
+AR-297-labelled containers: 35 running and one exited.
