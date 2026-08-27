@@ -1666,3 +1666,28 @@ exact delta and no inline secret, and invokes no model. Pre-R5 telemetry
 admissible until this clean recovery pair exists. The approved official
 Claude.ai login is open at its first-party browser callback but is not yet
 claimed complete.
+
+After clean checkpoint `e23f45c6` / `f45ad0ab`, immediately preceding
+telemetry `8ba51fdd...0336` permitted R5 under the existing checkpoint. Native
+R5 receipt `275e7154...116b` and Store correlation `9fa22217...7e03` prove
+session `20260827_193602_81f0fd`, accepted routing and exact specialist load,
+one exact card, all five Agency inference aliases, and exactly one native
+`agency_finalize` call. Finalization `940b9180...4f91` commits `missing=[]`,
+`status=completed`, and accepted response hash `fe57dceb...4fde`.
+
+R5 still does not close Hermes: its follow-up model text hashes to
+`25c20313...9341` rather than the accepted tool result. The output hook
+correctly returns the same bounded block `a94a1e6c...8a68`; stderr and native
+exit are `8afe29cc...0707` and `bde29436...120`. This isolates exact replay
+after successful finalization, not routing, prompt visibility, tool exposure,
+or Store acceptance. AR-288 is reopened locally; no tracker was created.
+
+The regression-first repair retains failing receipt `cad6beee...d937`, teaches
+default Hermes tool-search discovery, and replays only a bounded, one-shot,
+trace-scoped cached tool result that a separate bridge call matches to the
+authoritative completed Store hash. It never accepts the rewritten model text,
+does not change native config or request another model pass, and preserves
+disabled/unavailable/rejected behavior. Completion, parity, installer, and
+smoke suites pass 236 tests at `68ade380...3ffc`. Exact artifacts, clean
+installs, named gates, and a default-config live turn must be refreshed from
+the eventual substantive commit before any Linux GO.

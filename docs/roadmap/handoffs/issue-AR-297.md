@@ -24,8 +24,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-297
 branch: codex/ar297-production-container-live-evidence
-evidence_commit: 94d25bb42a8897505f25fb76b03821e954d28037
-minimum_ledger_commit: 94d25bb42a8897505f25fb76b03821e954d28037
+evidence_commit: f45ad0ab23b57c4e982e04a667d1e29dfade4701
+minimum_ledger_commit: f45ad0ab23b57c4e982e04a667d1e29dfade4701
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 ---
@@ -37,7 +37,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Work only in `/tmp/agency-runtime-ar297.WQUbF2` on
   `codex/ar297-production-container-live-evidence`, based on `origin/main`
   `0a23983a`. Never touch the shared checkout.
-- Clean ledger `94d25bb4` binds evidence through approved harness aliases.
+- Clean ledger `f45ad0ab` binds evidence through Hermes visibility repair.
 - Linux remains **NO-GO**. AR-297/#335 remain open. No tracker write, push, PR,
   merge, tag, signing, publication, release, or hosted workflow is authorized.
 
@@ -105,21 +105,21 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   exit 0 at 65,536/no-thinking; unrelated aliases are unchanged. OpenClaw's
   three-pointer config transition/verify `e97e02e2...deba`/`a141d193...e1ce`
   exit 0; two stale-metadata attempts rolled back. Docker receipt still binds 36.
-- Tool smoke `2b25ad2a...d1f15` passes exact finalization for both aliases. Hermes
-  R4 `c484e1bb...8fb1`/`d38412bb...5fbe` retains `response_invalid`: discovery
-  deferred its finalizer. Sole native repair `tools.tool_search.enabled=off`
-  passes `717d7279...a362`/`da5a737e...94ea`; all inference settings stay exact.
+- Tool smoke `2b25ad2a...d1f15` passes. Hermes R5 `275e7154...116b`/
+  `9fa22217...7e03` calls/accepts its finalizer but a model rewrite is blocked.
+  AR-288 red `cad6beee...d937` is repaired with trace-scoped accepted replay;
+  236 focused tests pass at `68ade380...3ffc`. Fresh exact proof is pending.
 
 ## exact-blocker
 
-- Claude login, successful Hermes R5/OpenClaw R2/Claude R4, and teardown remain;
-  telemetry `5f738310...ee5f` at 39.9% requires this clean pair before R5.
+- Commit/rebuild the AR-288 repair, refresh exact installs/gates, complete four
+  current-candidate ordinary turns plus Claude login, then teardown.
 - Cross-OS artifacts, signing, tracker parity, push/PR/merge/tag/publication,
   release, and exhaustive dispatch are unauthorized, not Linux-only GO gates.
 
 ## same-task-continuity
 
-- Exact artifacts: `~/.agency-runtime/release-artifacts/dist-7dbd0cbc5cbc77e46fc795568bb63ddcf5e3ee6f-linux-ar297`.
+- Prior exact artifacts are `~/.agency-runtime/release-artifacts/dist-7dbd0cbc5cbc77e46fc795568bb63ddcf5e3ee6f-linux-ar297`; rebuilt candidate pending.
 - Evidence: `~/.agency-runtime/evidence/ar297-go-7dbd0cbc`; receipt manifest
   `4b48dcc8...7e6b`; secret-safe helpers `/tmp/agency-runtime-ar297-evidence.pcLOZn/`.
 - Protected Python: `~/.agency-runtime-ci/ar297-release-0827/venv/bin/python`.
@@ -131,18 +131,18 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 After compaction, reread this capsule and `git status`, then resume at the first
 unchecked line. Mark an item complete only with exact retained evidence.
 
-1. [x] Build and independently verify exact `c3493337` artifacts/images.
+1. [ ] Build and independently verify exact accepted-replay artifacts/images.
 2. [x] Test deterministic temporary Mistral aliases and remove all three.
 3. [x] Test and remove exact Gemma 3 27B; it selects the wrong role.
 4. [x] AR-327 repair/rebuild and one clean Codex install pass with verified
    current-profile attestation and no activation bypass.
-5. [x] Prove separate clean exact Claude, native-UID Hermes, and OpenClaw
+5. [ ] Refresh separate clean exact Codex, Claude, Hermes, and OpenClaw
    systemd production-container installs.
 6. [ ] Run later ordinary unattended Conveyor-equivalent processes for all four
    harnesses; retain native artifacts, Store correlations, and prompt visibility.
-7. [x] Install the exact candidate on this Linux host and prove the private
+7. [ ] Refresh the exact candidate on this Linux host and prove the private
    authenticated dashboard plus the approved service-manager contract.
-8. [x] Run every named repository gate and record exact exits and hashes.
+8. [ ] Rerun every named repository gate and record exact exits and hashes.
 9. [ ] Update canonical issues/capsule and make each required substantive and
    `docs(worklog):` checkpoint pair.
 10. [ ] Remove every container labelled `AR-297`; retain teardown evidence and

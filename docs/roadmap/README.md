@@ -301,7 +301,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-285` | [Accept OpenClaw stopped gateway status](issue-AR-285-accept-openclaw-stopped-gateway-status.md) | in_progress | p0 | install | None (tracker creation pending explicit authorization) |
 | `AR-286` | [Configure bounded embedding dimensions](issue-AR-286-configure-bounded-embedding-dimensions.md) | in_progress | p0 | workforce | None (tracker creation pending explicit authorization) |
 | `AR-287` | [Bind host hook timeouts to inference budgets](issue-AR-287-bind-host-hook-timeouts-to-inference-budgets.md) | in_progress | p0 | host-integrations | None (tracker creation pending explicit authorization) |
-| `AR-288` | [Expose Hermes native finalizer tool](issue-AR-288-expose-hermes-native-finalizer-tool.md) | done | p0 | reliability | None (tracker creation pending explicit authorization) |
+| `AR-288` | [Expose Hermes native finalizer tool](issue-AR-288-expose-hermes-native-finalizer-tool.md) | in_progress | p0 | reliability | None (tracker creation pending explicit authorization) |
 | `AR-289` | [Support native reranker transports](issue-AR-289-native-reranker-transports.md) | done | p1 | provider-runtime | [#327](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/327) |
 | `AR-290` | [Add end-to-end guided setup](issue-AR-290-end-to-end-guided-setup.md) | done | p1 | install | [#328](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/328) |
 | `AR-291` | [Isolate smoke runtime pointers](issue-AR-291-isolate-smoke-runtime-pointers.md) | done | p0 | reliability | [#329](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/329) |
