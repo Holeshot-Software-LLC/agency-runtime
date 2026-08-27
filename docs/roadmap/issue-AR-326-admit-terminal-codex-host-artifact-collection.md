@@ -68,8 +68,10 @@ and current-profile attestation fails with `verification_refused`.
 - The named fast Python spine passes 860 tests with 3 skips under the protected
   Linux-capable Python 3.12 interpreter. The complete decision-conformance
   evaluator passes its baseline and kills all 165 mutations with no invalid or
-  surviving result and source unchanged. Fresh exact build and one-install live
-  proof remain required.
+  surviving result and source unchanged.
+- Clean ledger `4b443be2` produces independently verified exact artifacts and
+  five harness/dashboard images. A new clean Codex container passes its private
+  input and preinstall-absence checks; its sole install remains the live gate.
 
 ## Approach
 
@@ -111,6 +113,15 @@ owner-private mode-0700 copy hashes to `1643dacd...1118`, exposes
 evaluator exits 0, passes its baseline, kills 165/165 mutations, reports zero
 survived or invalid, and leaves source unchanged. JSON stdout hashes to
 `891defed...ab8`; stderr is empty.
+
+Exact `4b443be2` build, strict Twine, verifier, six image builds, and corrected
+image verification exit 0. Wheel `aaf9b461...1f7d` is 9,341,603 bytes; sdist
+`869b2842...545f` is 25,888,743 bytes. Manifest and image receipts hash to
+`c8fdc3f6...9c9e` and `f91c05d1...adde`. The first OpenClaw image verifier
+correctly refused Node 22.22.0 at stderr `e404ddeb...c427`; preserved failed
+tags precede the passing Node 24.15.0 rebuild. Fresh Codex container
+`cf983a11...79b1` passes absence receipt `0a7d2818...50cb` with no Agency target
+installed and exact mode-0600 config `a4e213d6...7348`.
 
 ## Acceptance
 

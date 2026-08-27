@@ -1195,3 +1195,20 @@ stderr. Retained exit-1 receipts prove the earlier protected UV Python lacked
 Linux `pidfd_open` and the canonical system binary lacked pytest; neither run
 changed source. A new exact build and fresh one-install Codex proof remain
 required, so the prior failed attestation is not relabelled.
+
+Clean AR-326 ledger `4b443be2f11045814250ab455d829800634c3909` now
+produces wheel `aaf9b461...1f7d` (9,341,603 bytes) and sdist
+`869b2842...545f` (25,888,743 bytes). Build, strict Twine, independent verifier,
+all six image builds, and final image verification exit 0; manifest and image
+receipts are `c8fdc3f6...9c9e` and `f91c05d1...adde`. Codex, Claude, Hermes,
+OpenClaw systemd, and dashboard image IDs begin `1c4fea8a`, `a4dae27b`,
+`e4cef33c`, `073a9d01`, and `9f484583`. The first generic OpenClaw build used
+Node 22.22.0 and was independently refused; both images remain explicitly
+tagged `node22-failed`, while the Node 24.15.0 rebuild passes.
+
+New Codex container `cf983a11...79b1` is bound to the exact candidate/image and
+is the thirtieth retained AR-297 proof container. Private input receipt
+`018f6d4f...494f` and fresh absence `0a7d2818...50cb` prove mode-0600 auth and
+config, exact config SHA `a4e213d6...7348`, Codex 0.149.1, and no pre-existing
+Agency runtime, Codex config, system requirements, or managed relay. No install
+has yet run in that container; its sole no-bypass install is the next live gate.
