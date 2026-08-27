@@ -24,8 +24,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-297
 branch: codex/ar297-production-container-live-evidence
-evidence_commit: b66bb020b68ac517e4f75071fab80dd9e662de0d
-minimum_ledger_commit: b66bb020b68ac517e4f75071fab80dd9e662de0d
+evidence_commit: b2f8cfea58dabd6e14c27eba13fbed16c238bad4
+minimum_ledger_commit: b2f8cfea58dabd6e14c27eba13fbed16c238bad4
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 ---
@@ -37,8 +37,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Work only in `/tmp/agency-runtime-ar297.WQUbF2` on
   `codex/ar297-production-container-live-evidence`, based on `origin/main`
   `0a23983a`. Never touch the shared checkout.
-- Clean ledger `b66bb020` binds installs, rejected Hermes Mistral, and first
-  ordinary Claude/OpenClaw/Codex diagnostics.
+- Clean ledger `b2f8cfea` binds all installs/diagnostics and ordinary Codex R2.
 - Linux remains **NO-GO**. AR-297/#335 remain open. No tracker write, push, PR,
   merge, tag, signing, publication, release, or hosted workflow is authorized.
 
@@ -51,9 +50,6 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   Promotion/metadata/final validation/literal/spend receipts are
   `6e19008f...1750`, `e1cba9f6...e841`, `42921a7e...867c`,
   `b686ab4b...9abe`, and `d7183bb5...2f07`. Temporary aliases are removed.
-- Historical sole no-bypass install `4c3e1e1b...c97e` proves native delivery,
-  exit-0 child, valid header, accepted finalization, and Store quick-check;
-  `89fafc05...5b02` isolates the later AR-326 attestation defect.
 - AR-325 callback-order repair passes 149/17/145 tests and two mutations at
   `394d9276...1c4d`, `74a9f4f9...4141`, `ae7689e3...7a84`, `ea4477e5...3695`.
 - Documentation checks pass for 893 files at `c5d005ae...18ac`; repository-wide
@@ -98,27 +94,29 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Direct-only Codex R2 native/Store receipts `53598f2a...5fd5`/
   `b269dc11...478d` prove one exact card, four alias receipts, no delegation,
   native exit 0, and accepted finalization with `missing=[]`; Codex row 6 closes.
+- Exact host venv/wheel/pip check pass. Combined install `00d51490...b559`
+  exits 1 only for attended Codex activation; all four bundles are current and
+  packaged-runtime attestation `ec2f8fdd...9292` binds `dbf1581f...f301`.
+- Systemd contract `b3ffa572...f888`, restart `b72f17e7...94d8`, HTTP proof
+  `358ab92e...d94f`, and browser proof `7b22dd85...c483` exit 0. Auth is
+  401/200 no-store; exact 2,659-byte prompt `c3cfc098...5848` is untruncated.
 
 ## exact-blocker
 
 - Refreshed same-method Claude OAuth, owner-selected Hermes/OpenClaw aliases,
-  host/dashboard, named gates, and teardown remain.
+  named gates, and teardown remain.
 - Cross-OS artifacts, signing, tracker parity, push/PR/merge/tag/publication,
   release, and exhaustive workflow dispatch remain unauthorized—not GO gates
   for this Linux-only bounded task unless authority changes.
 
 ## same-task-continuity
 
-- Exact artifacts: `~/.agency-runtime/release-artifacts/`
-  `dist-7dbd0cbc5cbc77e46fc795568bb63ddcf5e3ee6f-linux-ar297`.
-- Evidence: `~/.agency-runtime/evidence/ar297-go-19e0210b`,
-  `~/.agency-runtime/evidence/ar325-callback-reconciliation-precheckpoint`, and
-  `~/.agency-runtime/evidence/ar326-terminal-collector-precheckpoint`; current
-  candidate evidence is `~/.agency-runtime/evidence/ar297-go-7dbd0cbc`.
+- Exact artifacts: `~/.agency-runtime/release-artifacts/dist-7dbd0cbc5cbc77e46fc795568bb63ddcf5e3ee6f-linux-ar297`.
+- Current evidence is `~/.agency-runtime/evidence/ar297-go-7dbd0cbc`; receipt
+  manifest SHA is `4b48dcc8...7e6b`.
 - Secret-safe helpers: `/tmp/agency-runtime-ar297-evidence.pcLOZn/`
   `run_with_litellm_key.py` and `capture_command.py`. Never print the key.
-- Protected Python is `~/.agency-runtime-ci/ar297-release-0827/venv/bin/python`;
-  prior UV 3.13 remains only the exact negative `pidfd` diagnostic.
+- Protected Python: `~/.agency-runtime-ci/ar297-release-0827/venv/bin/python`.
 - Exactly 36 containers currently carry label
   `dev.agency-runtime.proof=AR-297`; latest is
   `agency-ar297-openclaw-7dbd0cbc`. Remove all only at final teardown.
@@ -137,7 +135,7 @@ unchecked line. Mark an item complete only with exact retained evidence.
    systemd production-container installs.
 6. [ ] Run later ordinary unattended Conveyor-equivalent processes for all four
    harnesses; retain native artifacts, Store correlations, and prompt visibility.
-7. [ ] Install the exact candidate on this Linux host and prove the private
+7. [x] Install the exact candidate on this Linux host and prove the private
    authenticated dashboard plus the approved service-manager contract.
 8. [ ] Run every named repository gate and record exact exits and hashes.
 9. [ ] Update canonical issues/capsule and make each required substantive and

@@ -1486,3 +1486,48 @@ binds trace `01a04454...12f6`, one accepted route, all four used alias-only
 receipts, and finalization `f7937fc5...46e6` with `action=accept`,
 `terminal_status=completed`, and `missing=[]`. Later ordinary Codex loading is
 therefore complete; Claude, Hermes, and OpenClaw remain open independently.
+
+The exact wheel is now also installed on the Linux host in owner-private venv
+`~/.agency-runtime/release-venvs/ar297-7dbd0cbc`. Venv creation, wheel install,
+and `pip check` exit 0; the wheel remains `e117b362...fc03d`, and receipt
+manifest `4b48dcc8...7e6b` binds the retained host evidence. A process-injected
+LiteLLM key was first rejected from dashboard planning as non-durable, and the
+live OpenClaw gateway independently blocked mutation. After a native exit-0
+gateway stop, the no-secret exact dry run exited 0. The single attended
+`install --config ... --all --json` receipt `00d51490...b559` then exited 1
+solely because refreshed Codex correctly remained `activation_required` with
+no bypass; Hermes, OpenClaw, Claude, and the dashboard all completed.
+
+Installed bundle digests are `04fdaf88...3195` (Hermes),
+`c7f12929...cc00` (OpenClaw), `b82c0201...eb41` (Codex), and
+`05be2f52...b8a6` (Claude). OpenClaw's native restart exited 0 and its second
+deep RPC status `78bab6d1...34a1` exited 0 with active/running state, no version
+drift, and a clean config audit. Independent packaged-context attestation
+`ec2f8fdd...9292` exits 0 and binds the candidate venv to immutable runtime
+`dbf1581f...f301`; the first checkout-contaminated probe is retained as the
+expected exit-1 negative rather than relabelled.
+
+The user-scoped systemd dashboard unit and manifest hash to
+`459e035c...e5a0` and `0cc62bc...735b`. It is enabled, active/running, has zero
+automatic restarts, and preserves `UMask=0077`, `NoNewPrivileges=yes`,
+`PrivateTmp=no`, owner runtime-directory mode 0700, loopback address families,
+the exact immutable runtime, and config `a4e213d6...7348`; contract receipt
+`b3ffa572...f888` exits 0. An Agency-owned restart `b72f17e7...94d8` exits 0
+and rotates the mode-0600 descriptor from fingerprint `e9c82e0b...e2fe` to
+`7e536f42...f6d4`.
+
+Post-restart HTTP proof `358ab92e...d94f` exits 0: unauthenticated health is
+401/no-store, authenticated health and workforce detail are 200/no-store, and
+the exact stored `accessibility-auditor` prompt is untruncated at 2,659 bytes
+and `c3cfc098...5848`, byte-identical to the installed asset. Headless browser
+proof `7b22dd85...c483` likewise exits 0 with 19 authenticated 200 responses,
+no console/page/request failures, immediate token-fragment removal, and the
+complete prompt visible in the DOM; screenshot `222d5109...b5ac` retains the
+expanded owner view without a token. No dashboard inference was invoked or
+claimed: the service process deliberately has no transient `LITELLM_API_KEY`,
+so this bounded proof covers authenticated operations and prompt visibility.
+The exact host-install/dashboard row is complete; ordinary Claude, Hermes, and
+OpenClaw turns, final named gates, and teardown remain.
+Checkpoint metadata, policy-availability, worklog-index, documentation, and
+diff checks all exit 0; their output hashes are `6f128b54...899c`, the empty
+SHA, `244c6d18...fa7a`, `45466cc3...8ba`, and the empty SHA respectively.
