@@ -123,6 +123,15 @@ tags precede the passing Node 24.15.0 rebuild. Fresh Codex container
 `cf983a11...79b1` passes absence receipt `0a7d2818...50cb` with no Agency target
 installed and exact mode-0600 config `a4e213d6...7348`.
 
+That container's sole install used the CLI default 180-second activation window
+and timed out at Codex exit 124 immediately after a pending spawn dispatch,
+before any native child route, delivery, finalization, or terminal parent
+existed. Install JSON `40c1c188...7f5a` and content-free Store correlation
+`5f76b443...6eaa` retain the failure; Store quick-check passes. This run neither
+proves nor disproves terminal collection. A second exact clean container passes
+fresh absence at `1849d13e...a74c` and will use the previously proven explicit
+300-second activation window for its sole install.
+
 ## Acceptance
 
 - [x] Regression proves the current live-only resolver disappears after an

@@ -1212,3 +1212,19 @@ is the thirtieth retained AR-297 proof container. Private input receipt
 config, exact config SHA `a4e213d6...7348`, Codex 0.149.1, and no pre-existing
 Agency runtime, Codex config, system requirements, or managed relay. No install
 has yet run in that container; its sole no-bypass install is the next live gate.
+
+That first new container's sole install hashes to `40c1c188...7f5a` and exits 1
+because the omitted CLI override left the activation window at its 180-second
+default. Codex exits 124 just after dispatch: parent `01a043a2...0011`, trace
+`01a043a2...ca32`, accepted sole `code-reviewer`, pending synthetic worker
+`task:code_reviewer`, and two rollout hashes `586e8285...3de2` and
+`fba3e1f9...35e9` are retained. No native child route, delivery, finalization,
+or attestation exists, so the run never reaches AR-326's terminal collector.
+The copied Store hashes to `e7bc0f97...9c55`, passes quick-check, closes the run
+as `canary_failed`, and correlates at content-free receipt `5f76b443...6eaa`.
+The container will not be reinstalled.
+
+Second exact container `9806a82a...2a2b` passes private input and fresh absence
+at `018f6d4f...494f` and `1849d13e...a74c`. Its sole install will use the
+previously proven `--activation-timeout 300`, still without an activation
+bypass or any config/model change.

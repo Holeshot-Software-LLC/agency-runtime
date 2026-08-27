@@ -35,9 +35,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Work only in `/tmp/agency-runtime-ar297.WQUbF2` on
   `codex/ar297-production-container-live-evidence`, based on `origin/main`
   `0a23983a`. Never touch the shared checkout.
-- Clean ledger `4b443be2` binds the verified AR-326 repair and new exact
-  artifacts/images. Container `agency-ar297-codex-4b443be2-qwen1` has passed
-  fresh absence; its sole install is the next action.
+- Clean ledger `4b443be2` binds the verified repair and exact artifacts/images.
+  Qwen1 timed out once at the 180-second CLI default. Clean Qwen2 has passed
+  absence; its sole `--activation-timeout 300` install is next.
 - Linux remains **NO-GO**. AR-297/#335 remain open. No tracker write, push, PR,
   merge, tag, signing, publication, release, or hosted workflow is authorized.
 
@@ -46,10 +46,6 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Mode-0600 config `ar297-litellm-a4e213d6b454ca90.yaml` hashes to
   `a4e213d6...97348`: strict assurance, additive dense recall, and every Agency
   inference route through authenticated LiteLLM aliases. No Jina route exists.
-- Exact `19e0210b` build/Twine/verifier/manifest and six image builds exit 0.
-  Wheel `81d0bba7...43c1` is 9,335,316 bytes; sdist `c8891af1...01dd` is
-  25,837,538 bytes. Manifest/image receipts are `4a63946a...5330` and
-  `81f1eed2...95ec`; Codex image is `30ffdb63...9819`.
 - Free Qwen 3 32B is promoted behind stable alias `task-agency-child-judge`.
   Promotion/metadata/final validation/literal/spend receipts are
   `6e19008f...1750`, `e1cba9f6...e841`, `42921a7e...867c`,
@@ -86,14 +82,16 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Exact `4b443be2` build/Twine/verifier/six images/final verification exit 0.
   Wheel and sdist are `aaf9b461...1f7d` and `869b2842...545f`; manifest/image
   receipts are `c8fdc3f6...9c9e` and `f91c05d1...adde`.
-- New Codex container `cf983a11...79b1` passes private input and fresh absence
-  at `018f6d4f...494f` and `0a7d2818...50cb`. No install has run there.
+- Qwen1 sole install `40c1c188...7f5a` exits 1 at the default 180-second Codex
+  timeout, before native route/delivery/finalization. Store quick-check passes;
+  correlation `5f76b443...6eaa` closes the run as `canary_failed`.
+- Clean Qwen2 `9806a82a...2a2b` passes fresh absence `1849d13e...a74c`; no
+  install has run there and Qwen1 will not be reinstalled.
 
 ## exact-blocker
 
-- Run exactly one no-bypass install in the existing clean `4b443be2` Codex
-  container and retain attestation, canonical artifact, Store, and rollout
-  correlation. Never relabel the prior failed evidence or reinstall this one.
+- Run exactly one no-bypass `--activation-timeout 300` install in clean Qwen2;
+  retain attestation, canonical artifact, Store, and rollout correlation.
 - Claude, Hermes, OpenClaw, later ordinary processes, exact host install,
   authenticated dashboard, named gates, and final teardown remain pending.
 - Cross-OS artifacts, signing, tracker parity, push/PR/merge/tag/publication,
@@ -103,19 +101,19 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 ## same-task-continuity
 
 - Exact artifacts: `~/.agency-runtime/release-artifacts/`
-  `dist-19e0210bd5c5b3949dc4206b7cc8ca9244c9a144-linux-ar297`.
+  `dist-4b443be2f11045814250ab455d829800634c3909-linux-ar297`.
 - Evidence: `~/.agency-runtime/evidence/ar297-go-19e0210b`,
   `~/.agency-runtime/evidence/ar325-callback-reconciliation-precheckpoint`, and
   `~/.agency-runtime/evidence/ar326-terminal-collector-precheckpoint`; current
   candidate evidence is `~/.agency-runtime/evidence/ar297-go-4b443be2`.
 - Secret-safe helpers: `/tmp/agency-runtime-ar297-evidence.pcLOZn/`
   `run_with_litellm_key.py` and `capture_command.py`. Never print the key.
-- Linux process tests use protected Python 3.12 at
-  `~/.agency-runtime-ci/ar272-openclaw-fast-spine/venv/bin/python`; the prior UV
-  3.13 interpreter is retained only as the exact negative `pidfd` diagnostic.
-- Exactly 30 containers currently carry label
+- Protected Python is
+  `~/.agency-runtime-ci/ar297-release-0827/venv/bin/python`; the prior UV 3.13
+  remains only the exact negative `pidfd` diagnostic.
+- Exactly 31 containers currently carry label
   `dev.agency-runtime.proof=AR-297`; latest is
-  `agency-ar297-codex-4b443be2-qwen1`. Remove all only at final teardown.
+  `agency-ar297-codex-4b443be2-qwen2`. Remove all only at final teardown.
 
 ## next-bounded-work-package
 
@@ -126,8 +124,8 @@ unchecked line. Mark an item complete only with exact retained evidence.
 2. [x] Test deterministic temporary Mistral aliases and remove all three.
 3. [x] Test and remove exact Gemma 3 27B; it selects the wrong role.
 4. [ ] Repair/checkpoint AR-326, rebuild exact artifacts/images, then prove
-   current-profile attestation in one new clean Codex container. Delivery,
-   dispatch, header, accepted finalization, and Store correlation already pass.
+   current-profile attestation in one clean Codex install; Qwen2 is fresh and
+   must use the proven explicit 300-second activation window.
 5. [ ] Prove separate clean exact Claude, native-UID Hermes, and OpenClaw
    systemd production-container installs.
 6. [ ] Run later ordinary unattended Conveyor-equivalent processes for all four
