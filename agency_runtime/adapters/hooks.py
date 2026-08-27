@@ -1310,6 +1310,12 @@ class HookBridge:
                 )
                 channel_attestation = None
             if channel_attestation is None:
+                restricted_parent = self._restricted_codex_activation_parent_scope(payload)
+                if restricted_parent is not None and self._restricted_codex_spawn_input(args):
+                    # ADR-0179 owns this one repository-authored canary spawn at
+                    # SubagentStart.  It is not an ordinary unsupported opaque
+                    # child, so do not append a contradictory failure route.
+                    return {}
                 # Encrypted, unmarked, ambiguous, or stale Codex calls remain
                 # ordinary host spawns. The diagnostic is content-free and the
                 # hook never blocks the child.
@@ -1664,6 +1670,15 @@ class HookBridge:
                 and len(result.rewritten_task.encode("utf-8")) <= MAX_CONTEXT_CHARS
             ):
                 return ""
+            promoter = getattr(self.store, "promote_codex_activation_canary_child", None)
+            if callable(promoter):
+                promoter(
+                    session_id=session_id,
+                    trace_id=trace_id,
+                    work_unit_id=work_unit_id_from_text(CODEX_ACTIVATION_CANARY_WORK_UNIT),
+                    worker_id=identity.worker_id,
+                    native_run_id=identity.native_run_id,
+                )
             recorder = getattr(self.store, "record_native_child_started", None)
             if not callable(recorder):
                 return ""
@@ -1682,6 +1697,33 @@ class HookBridge:
         except Exception:
             logger.debug("restricted Codex canary child staffing failed open", exc_info=True)
             return ""
+
+    @staticmethod
+    def _restricted_codex_spawn_input(tool_input: Any) -> bool:
+        """Recognize only the fixed native call shape emitted by the canary plan."""
+
+        from agency_runtime.core.native_child_prompt_delivery import (
+            is_codex_opaque_collaboration_message,
+        )
+
+        args = _dict_or_empty(tool_input)
+        return bool(
+            set(args) == {"fork_turns", "message", "task_name"}
+            and args.get("fork_turns") == "none"
+            and args.get("task_name") == "code_reviewer"
+            and is_codex_opaque_collaboration_message(args.get("message"))
+        )
+
+    @staticmethod
+    def _restricted_codex_spawn_response(tool_response: Any) -> bool:
+        """Recognize the exact identity-free Codex 0.149 spawn response."""
+
+        response = _native_child_response_mapping("codex", tool_response)
+        return bool(
+            isinstance(response, dict)
+            and set(response) == {"task_name"}
+            and response.get("task_name") == "/root/code_reviewer"
+        )
 
     def _restricted_codex_spawn_reconciliation(
         self,
@@ -1711,19 +1753,14 @@ class HookBridge:
             parent_session_id=session_id,
             parent_trace_id=trace_id,
         )
-        response = _native_child_response_mapping("codex", tool_response)
-        args = _dict_or_empty(tool_input)
         if not (
             isinstance(route, dict)
-            and isinstance(response, dict)
-            and set(response) == {"task_name"}
-            and response.get("task_name") == "/root/code_reviewer"
-            and set(args) == {"fork_turns", "message", "task_name"}
-            and args.get("fork_turns") == "none"
-            and args.get("task_name") == "code_reviewer"
-            and isinstance(args.get("message"), str)
-            and bool(args["message"])
+            and self._restricted_codex_spawn_input(tool_input)
+            and self._restricted_codex_spawn_response(tool_response)
         ):
+            return tool_response, "", None
+        response = _native_child_response_mapping("codex", tool_response)
+        if response is None:
             return tool_response, "", None
         try:
             identity = _native_child_identity("codex", route["binding_id"])
@@ -1874,8 +1911,10 @@ class HookBridge:
             tool_response,
         )
         observed_tool_response = tool_response
+        observed_codex_identity: NativeChildRunIdentity | None = None
         reconciled_codex_identity: NativeChildRunIdentity | None = None
         reconciled_codex_unit = ""
+        restricted_codex_spawn = False
         if (
             self.host == "codex"
             and event == "PostToolUse"
@@ -1883,6 +1922,12 @@ class HookBridge:
             and correlation.session_id
             and trace_id
         ):
+            restricted_codex_spawn = bool(
+                self._restricted_codex_activation_parent_scope(payload)
+                == (correlation.session_id, trace_id)
+                and self._restricted_codex_spawn_input(tool_input)
+                and self._restricted_codex_spawn_response(observed_tool_response)
+            )
             (
                 tool_response,
                 reconciled_codex_unit,
@@ -1932,11 +1977,11 @@ class HookBridge:
             if not isinstance(tool_response, dict) or not _first_string(
                 tool_response, "native_run_id"
             ):
-                tool_response, _identity = _native_child_tool_identity(
+                tool_response, observed_codex_identity = _native_child_tool_identity(
                     "codex",
                     tool_response,
                 )
-            if reconciled_codex_identity is not None:
+            if restricted_codex_spawn:
                 from agency_runtime.core.activation_canary_contract import (
                     CODEX_ACTIVATION_CANARY_WORK_UNIT,
                 )
@@ -1947,6 +1992,14 @@ class HookBridge:
             canonical_args["work_unit_id"] = resolved_codex_unit
         if reconciled_codex_unit:
             canonical_args["work_unit_id"] = reconciled_codex_unit
+        elif restricted_codex_spawn:
+            from agency_runtime.core.activation_canary_contract import (
+                CODEX_ACTIVATION_CANARY_WORK_UNIT,
+            )
+
+            canonical_args["work_unit_id"] = work_unit_id_from_text(
+                CODEX_ACTIVATION_CANARY_WORK_UNIT
+            )
         if correlation.work_unit_id and not _first_string(
             canonical_args, "work_unit_id", "workUnitId"
         ):
@@ -1963,29 +2016,63 @@ class HookBridge:
             tool_use_id=correlation.tool_use_id,
             agent_id=_optional_string(payload, "agent_id"),
         )
-        if reconciled_codex_identity is not None and reconciled_codex_unit:
+        claim_identity = reconciled_codex_identity
+        claim_unit = reconciled_codex_unit
+        if claim_identity is None and restricted_codex_spawn:
+            claim_identity = observed_codex_identity
+            from agency_runtime.core.activation_canary_contract import (
+                CODEX_ACTIVATION_CANARY_WORK_UNIT,
+            )
+
+            claim_unit = work_unit_id_from_text(CODEX_ACTIVATION_CANARY_WORK_UNIT)
+        if claim_identity is not None and claim_unit:
             try:
                 started = self.store.record_native_child_started(
                     host="codex",
                     backend="spawn_agent",
                     session_id=correlation.session_id,
                     trace_id=trace_id,
-                    work_unit_id=reconciled_codex_unit,
-                    worker_id=reconciled_codex_identity.worker_id,
-                    native_run_id=reconciled_codex_identity.native_run_id,
+                    work_unit_id=claim_unit,
+                    worker_id=claim_identity.worker_id,
+                    native_run_id=claim_identity.native_run_id,
                 )
                 claimed = self.store.claim_codex_native_child_execution(
                     session_id=correlation.session_id,
                     trace_id=trace_id,
-                    work_unit_id=reconciled_codex_unit,
-                    worker_id=reconciled_codex_identity.worker_id,
-                    native_run_id=reconciled_codex_identity.native_run_id,
+                    work_unit_id=claim_unit,
+                    worker_id=claim_identity.worker_id,
+                    native_run_id=claim_identity.native_run_id,
                     tool_use_id=correlation.tool_use_id,
                 )
                 if not isinstance(started, dict) or claimed is not True:
                     logger.debug("restricted Codex spawn reconciliation was incomplete")
             except Exception:
                 logger.debug("restricted Codex spawn reconciliation failed", exc_info=True)
+        if restricted_codex_spawn and reconciled_codex_identity is None:
+            # Close the only concurrent interleaving: SubagentStart may commit
+            # its route between the first route read and this pending dispatch.
+            # Whichever callback finishes second performs the same atomic
+            # promotion, so neither host callback order nor overlap loses it.
+            try:
+                _late_response, late_unit, late_identity = (
+                    self._restricted_codex_spawn_reconciliation(
+                        session_id=correlation.session_id,
+                        trace_id=trace_id,
+                        tool_input=tool_input,
+                        tool_response=observed_tool_response,
+                    )
+                )
+                promoter = getattr(self.store, "promote_codex_activation_canary_child", None)
+                if late_identity is not None and late_unit and callable(promoter):
+                    promoter(
+                        session_id=correlation.session_id,
+                        trace_id=trace_id,
+                        work_unit_id=late_unit,
+                        worker_id=late_identity.worker_id,
+                        native_run_id=late_identity.native_run_id,
+                    )
+            except Exception:
+                logger.debug("restricted Codex late spawn promotion failed", exc_info=True)
         return self._codex_post_tool_header_output(
             event=event,
             tool_name=tool_name,

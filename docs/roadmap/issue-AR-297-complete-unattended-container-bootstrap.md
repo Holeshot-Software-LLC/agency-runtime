@@ -37,6 +37,8 @@ related:
   - docs/roadmap/issue-AR-321-select-reliable-free-litellm-child-judge.md
   - docs/roadmap/issue-AR-322-bind-codex-child-session-to-canary-parent.md
   - docs/roadmap/issue-AR-324-bind-codex-canary-child-through-host-lineage.md
+  - docs/roadmap/issue-AR-325-restore-codex-first-complete-callback-reconciliation.md
+  - docs/decisions/0144-claim-codex-spawn-execution-at-the-first-complete-callback.md
   - docs/decisions/0174-admit-local-ollama-canary-child-judges.md
   - docs/decisions/0175-batch-complete-embedding-input-sets.md
   - docs/decisions/0176-use-owner-runtime-temp-for-nonroot-user-services.md
@@ -51,6 +53,7 @@ related:
   - docs/decisions/0185-enforce-child-judge-schema-at-litellm-alias.md
   - docs/decisions/0186-bind-codex-child-session-with-canary-request-digest.md
   - docs/decisions/0187-bind-codex-canary-child-through-host-authored-lineage.md
+  - docs/decisions/0188-separate-codex-hook-parent-and-child-identities.md
   - agency_runtime/cli/install_commands.py
   - agency_runtime/core/codex_managed_policy.py
   - agency_runtime/core/canary.py
@@ -65,7 +68,7 @@ epic: host-integrations
 issue_id: AR-297
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
-depends_on: [AR-300, AR-301, AR-302, AR-303, AR-304, AR-305, AR-306, AR-307, AR-308, AR-309, AR-310, AR-311, AR-313, AR-314, AR-315, AR-317, AR-318, AR-319, AR-320, AR-321, AR-322, AR-324]
+depends_on: [AR-300, AR-301, AR-302, AR-303, AR-304, AR-305, AR-306, AR-307, AR-308, AR-309, AR-310, AR-311, AR-313, AR-314, AR-315, AR-317, AR-318, AR-319, AR-320, AR-321, AR-322, AR-324, AR-325]
 blocks: []
 ---
 
@@ -1109,4 +1112,50 @@ container is removed at `d0308c3e...4b84` without an install attempt. Separately
 named `agency-ar297-codex-c3493337-qwen2` binds the exact verified image and
 both instance labels; injection passes and absence receipt `eb44d7ee...fc7e1`
 exits 0 with exact image/candidate/config, Codex 0.149.1, mode-0600 auth, and all
-Agency targets absent. Its one no-bypass production install is the next gate.
+Agency targets absent.
+
+That container's one no-bypass production install now exits 1 at finalization,
+not at selection, delivery, or child execution. Exact absence SHA-256 is
+`eb44d7eefef2e18daf408cf70da02d8f87155aa69b1a325b53f67b7601afc7e1`;
+the 27,042-byte mode-0600 install JSON hashes to
+`c56eb749f236f63b0b87a3439b9f58eb2aa8a2a0078d0a2253168ce334bc3c44`.
+Parent `01a04311-f671-7e70-b8cc-accd93ef10a4`, trace
+`01a04311-f6a8-73a2-8318-3cb72700b7ed`, accepted route
+`8a7b167a-cda0-421e-a5e4-8e0a06e2cee4`, and child
+`01a04313-bcd6-79b1-b304-f37769d1872e` agree. The promoted free Qwen alias
+selects sole `code-reviewer` at confidence 0.9; the complete 2,379-character
+card with prompt hash
+`e409b2c8b42430b9e69b1e0a93a42e8b790e6ae86c1a3e3e31c03ea0ed9820bd`
+is host-verified by native delivery decision
+`native-child-b2c5e574580f1be4788de94e30699684`. The child exits 0, the one
+300-second wait reports completed without timeout, and no activation bypass is
+used. This clears the AR-321 model gate and live-proves AR-324's separate-ID
+lineage and full v6 prompt delivery.
+
+Parent rollout SHA-256 is
+`fb580c43c012081c707df4e760c6b77567e3444cbe173f92f7ce171d8c87a383`;
+child rollout is
+`c60cc6a65a3a90e80f99939a93ba102fbb5187c05b0b111a2d8078459db2d079`;
+Store is
+`3e41479f4f8cffa924a60a990a0b2e3f08c4438734b28b793da8e1a67f4148a6`.
+Finalization `eaea50d9-c0e8-4d70-a744-a5e10faa3833` rejects only
+`evidence_verification`. AR-325 isolates two callback-order defects: the exact
+managed encrypted spawn also appended ordinary failure route
+`6b6ec8ec-ecff-40ab-8c47-b227906ddfba`, and post-tool-first ordering left
+synthetic delegation `1fd541cd-1e02-45ee-9976-efdcabac041d` on opaque-message
+unit `unit-a6211f69b1` while the real child completed unbound on fixed unit
+`unit-05d45f7553`.
+
+The regression-first AR-325 source repair keeps ordinary opaque spawns
+diagnostic, recognizes only the exact managed ciphertext/task/response shape,
+retains the fixed-unit dispatch when `PostToolUse` arrives first, and atomically
+promotes or merges it when the validated real child arrives. The opposite
+callback order can now claim after an already-observed terminal child. Five
+targeted warning-strict cases, 149 focused hook/Store/header/parity tests, and
+17 decision-conformance unit tests pass; both new curated mutations are killed
+with source unchanged. Their retained stdout SHA-256 values are
+`394d9276...1c4d`, `74a9f4f9...4141`, and `ea4477e5...3695`; every command
+exits 0 with empty stderr. A separate 145-test security/atomicity slice also
+exits 0 at stdout `ae7689e3...7a84` with empty stderr. A fresh exact build and
+clean Codex install remain required before accepted finalization or attestation
+may be claimed.

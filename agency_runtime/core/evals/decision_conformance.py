@@ -595,6 +595,45 @@ class _NominationSemantics:""",
         ),
     ),
     DecisionMutation(
+        mutation_id="restricted-codex-opaque-spawn-appends-contradictory-failure-route",
+        invariant=(
+            "The exact managed Codex canary defers its encrypted spawn to the "
+            "host-lineage SubagentStart boundary without appending an ordinary opaque-channel "
+            "failure route."
+        ),
+        source_path="agency_runtime/adapters/hooks.py",
+        before="""                if restricted_parent is not None and self._restricted_codex_spawn_input(args):
+                    # ADR-0179 owns this one repository-authored canary spawn at
+                    # SubagentStart.  It is not an ordinary unsupported opaque
+                    # child, so do not append a contradictory failure route.
+                    return {}""",
+        after="""                if False and restricted_parent is not None and self._restricted_codex_spawn_input(args):
+                    # ADR-0179 owns this one repository-authored canary spawn at
+                    # SubagentStart.  It is not an ordinary unsupported opaque
+                    # child, so do not append a contradictory failure route.
+                    return {}""",
+        test_node=(
+            "tests/test_canary_activation_snapshot.py::"
+            "test_restricted_codex_opaque_spawn_preserves_the_proven_parent_route"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="restricted-codex-post-first-drops-pending-dispatch",
+        invariant=(
+            "A restricted Codex PostToolUse that precedes SubagentStart retains the exact "
+            "fixed-unit dispatch for later real-child promotion."
+        ),
+        source_path="agency_runtime/adapters/hooks.py",
+        before="""        if claim_identity is None and restricted_codex_spawn:
+            claim_identity = observed_codex_identity""",
+        after="""        if claim_identity is None and False:
+            claim_identity = observed_codex_identity""",
+        test_node=(
+            "tests/test_canary_activation_snapshot.py::"
+            "test_restricted_codex_post_tool_first_promotes_the_pending_dispatch"
+        ),
+    ),
+    DecisionMutation(
         mutation_id="ready-routing-receipt-rejects-distinct-native-child-launch",
         invariant=(
             "Auxiliary routing uniqueness is scoped to host and launch identity rather than "

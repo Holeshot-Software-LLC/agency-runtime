@@ -12,6 +12,7 @@ related:
   - docs/roadmap/issue-AR-313-trust-normal-umask-codex-artifacts.md
   - docs/roadmap/issue-AR-314-bind-codex-default-canary-role.md
   - docs/roadmap/issue-AR-322-bind-codex-child-session-to-canary-parent.md
+  - docs/roadmap/issue-AR-325-restore-codex-first-complete-callback-reconciliation.md
   - docs/roadmap/handoffs/issue-AR-297.md
   - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
   - docs/decisions/0179-admit-exact-codex-canary-delivery-at-subagent-start.md
@@ -32,7 +33,7 @@ issue_id: AR-324
 priority: p0
 tracker_url: null
 depends_on: [AR-310, AR-313, AR-314, AR-322]
-blocks: [AR-297]
+blocks: [AR-297, AR-325]
 ---
 
 # AR-324: Bind the Codex canary child through host-authored lineage
@@ -81,6 +82,14 @@ parent route is exact and accepted and the native child exits successfully.
   `01a041eb...1128`. Store `4842b81d...9c9` then records the free LiteLLM judge
   failing closed as `native_child_compatibility_mutated`; v6 delivery remains
   absent for that downstream AR-321 reliability failure, not a lineage miss.
+- The promoted Qwen rerun advances further: child `01a04313...1872` receives
+  the complete 2,379-character `code-reviewer` card, exits 0, and obtains native
+  delivery decision `native-child-b2c5e574580f1be4788de94e30699684` with
+  verified host artifact. Parent/child rollouts and Store hash to
+  `fb580c43...a383`, `c60cc6a6...d079`, and `3e41479f...48a6`.
+  AR-324's separate parent/child lineage is therefore live-proven; finalization
+  remains open only because AR-325 must reconcile the post-tool-first dispatch
+  to that real worker before the snapshot can project the specialist.
 - Tracker creation is prohibited by the active AR-297 task.
 
 ## Approach

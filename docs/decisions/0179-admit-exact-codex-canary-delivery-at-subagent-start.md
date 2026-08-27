@@ -3,7 +3,7 @@ title: "Admit exact Codex canary delivery at SubagentStart"
 status: accepted
 category: decisions
 created: 2026-08-26
-updated: 2026-08-26
+updated: 2026-08-27
 tags: [codex, canary, native-child, hooks, evidence, security]
 related:
   - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
@@ -18,6 +18,7 @@ related:
   - docs/roadmap/issue-AR-313-trust-normal-umask-codex-artifacts.md
   - docs/roadmap/issue-AR-314-bind-codex-default-canary-role.md
   - docs/roadmap/issue-AR-315-project-codex-canary-install-home.md
+  - docs/roadmap/issue-AR-325-restore-codex-first-complete-callback-reconciliation.md
   - docs/decisions/0180-project-current-profile-canary-install-home.md
   - docs/decisions/0186-bind-codex-child-session-with-canary-request-digest.md
   - agency_runtime/adapters/hooks.py

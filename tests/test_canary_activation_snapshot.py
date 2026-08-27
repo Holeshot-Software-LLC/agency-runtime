@@ -44,7 +44,14 @@ def _digest(value: str) -> str:
     return sha256(value.encode()).hexdigest()
 
 
-def _native_child_decision() -> dict[str, object]:
+def _native_child_decision(
+    *,
+    parent_session_id: str = "snapshot-parent",
+    parent_trace_id: str = "snapshot-trace",
+    child_id: str = _CHILD,
+    launch_id: str = _LAUNCH,
+    task: str = _CHILD_TASK,
+) -> dict[str, object]:
     attempts = [
         {
             "provider_name": "selector",
@@ -77,14 +84,14 @@ def _native_child_decision() -> dict[str, object]:
     return {
         "schema": NATIVE_CHILD_STAFFING_DECISION_SCHEMA,
         "host": "codex",
-        "parent_session_id": "snapshot-parent",
-        "parent_trace_id": "snapshot-trace",
-        "launch_id": _LAUNCH,
+        "parent_session_id": parent_session_id,
+        "parent_trace_id": parent_trace_id,
+        "launch_id": launch_id,
         "binding_kind": "child_id",
-        "binding_id": _CHILD,
+        "binding_id": child_id,
         "provider_attempts": attempts,
         "provider_receipt_digest": canonical_native_child_provider_receipt_digest(attempts),
-        "task_sha256": _digest(_CHILD_TASK),
+        "task_sha256": _digest(task),
         "team_digest": team_digest,
         "candidate_digest": _digest("runtime"),
         "runtime_digest": _digest("runtime"),
@@ -95,6 +102,98 @@ def _native_child_decision() -> dict[str, object]:
         "nonce": _NONCE,
         "cards": cards,
     }
+
+
+def _record_verified_native_child_delivery(
+    store: Store,
+    *,
+    session_id: str,
+    trace_id: str,
+    child_id: str,
+) -> None:
+    """Persist the content-free route/receipt pair used by snapshot projection."""
+
+    decision = _native_child_decision(
+        parent_session_id=session_id,
+        parent_trace_id=trace_id,
+        child_id=child_id,
+        launch_id=child_id,
+        task=CODEX_ACTIVATION_CANARY_WORK_UNIT,
+    )
+    context_fingerprint = _digest(f"context:{trace_id}")
+    decision_id = store.record_routing_decision(
+        trace_id=trace_id,
+        session_id=session_id,
+        query_hash=str(decision["task_sha256"]),
+        context_fingerprint=context_fingerprint,
+        decision={
+            "status": "applied",
+            "semantic_status": "applied",
+            "source": "native_child_inference",
+            "selected_ids": ["code-reviewer"],
+            "semantic_ids": ["code-reviewer"],
+            "companion_ids": [],
+            "available_companion_ids": [],
+            "unavailable_companion_ids": [],
+            "confidence": 0.9,
+            "latency_ms": 12,
+            "provider": "selector",
+            "candidate_count": 1,
+            "top_score": 0.0,
+            "native_child_reason": "applied",
+            "inference_configured": True,
+            "inference_required": True,
+            "inference_attempted": True,
+            "inference_mode": "inferred",
+            "source_message_hash": decision["task_sha256"],
+            "query_hash": decision["task_sha256"],
+            "context_fingerprint": context_fingerprint,
+            "native_child_delivery": decision,
+        },
+    )
+    store._record_native_child_delivery_verification(
+        decision_id=decision_id,
+        nonce=str(decision["nonce"]),
+        artifact_digest=_digest(f"host-artifact:{child_id}"),
+        host="codex",
+        parent_session_id=session_id,
+        parent_trace_id=trace_id,
+        launch_id=child_id,
+        binding_kind="child_id",
+        binding_id=child_id,
+        child_id=child_id,
+        cards=decision["cards"],
+    )
+
+
+def _assert_verified_reconciliation_projection(
+    store: Store,
+    *,
+    session_id: str,
+    trace_id: str,
+) -> None:
+    """Prove the repaired link reaches the header and ready-receipt consumers."""
+
+    from agency_runtime.core.header.contract import fill_header_fields
+
+    snapshot = store.get_completion_evidence_snapshot(session_id, trace_id)
+    ready = store.get_ready_routing_receipt(
+        session_id,
+        trace_id,
+        evidence_revision=snapshot["evidence_revision"],
+    )
+    assert ready is not None
+    [delegation] = snapshot["delegations"]
+    assert delegation["retrieved_specialist_slug"] == "code-reviewer"
+    fields = fill_header_fields(
+        {},
+        session_id,
+        store,
+        "task-general",
+        trace_id,
+        evidence_snapshot=snapshot,
+    )
+    assert fields["agencies_delegated"] == "code-reviewer via generic-worker/spawn_agent"
 
 
 @pytest.fixture()
@@ -591,6 +690,417 @@ def test_restricted_codex_opaque_spawn_preserves_the_proven_parent_route(
     assert after is not None
     assert after["proven"] is True
     assert after["route"]["id"] == before["route"]["id"]
+    connection = store._connect()
+    try:
+        sources = [
+            str(row["source"])
+            for row in connection.execute(
+                "SELECT source FROM routing_decisions WHERE session_id = ? "
+                "AND trace_id = ? ORDER BY created_at, rowid",
+                (session_id, trace_id),
+            ).fetchall()
+        ]
+    finally:
+        connection.close()
+    assert sources == [CODEX_ACTIVATION_CANARY_ROUTE_SOURCE]
+
+    # The exception is exact: another opaque native spawn in the same managed
+    # parent remains an ordinary unsupported channel and keeps its diagnostic.
+    assert (
+        bridge.handle(
+            {
+                "hook_event_name": "PreToolUse",
+                "session_id": session_id,
+                "turn_id": trace_id,
+                "tool_use_id": "call-restricted-ordinary",
+                "tool_name": "collaborationspawn_agent",
+                "transcript_path": str(tmp_path / "missing-ordinary-rollout.jsonl"),
+                "tool_input": {
+                    "fork_turns": "none",
+                    "message": "gAAAAA" + "D" * 80,
+                    "task_name": "ordinary_worker",
+                },
+            }
+        )
+        == {}
+    )
+    connection = store._connect()
+    try:
+        sources = [
+            str(row["source"])
+            for row in connection.execute(
+                "SELECT source FROM routing_decisions WHERE session_id = ? "
+                "AND trace_id = ? ORDER BY created_at, rowid",
+                (session_id, trace_id),
+            ).fetchall()
+        ]
+    finally:
+        connection.close()
+    assert sources == [
+        CODEX_ACTIVATION_CANARY_ROUTE_SOURCE,
+        "native_child_inference_failure",
+    ]
+
+
+@pytest.mark.parametrize(
+    "overlap_state",
+    ["none", "unbound", "conflicting-dispatch"],
+    ids=["pending-rekey", "concurrent-real-merge", "conflicting-real-rejected"],
+)
+def test_restricted_codex_post_tool_first_promotes_the_pending_dispatch(
+    store: Store,
+    monkeypatch: pytest.MonkeyPatch,
+    overlap_state: str,
+) -> None:
+    """ADR-0144 joins the real child even when PostToolUse arrives first."""
+
+    from agency_runtime.adapters import hooks
+    from agency_runtime.core.installer import seed_starter_roster
+    from agency_runtime.core.native_child_staffing import NativeChildStaffingResult
+    from agency_runtime.core.unit_assignment import work_unit_id_from_text
+    from agency_runtime.core.workforce import inference
+
+    seed_starter_roster(store)
+    monkeypatch.setenv("AGENCY_CANARY_MODE", "1")
+    monkeypatch.setenv("AGENCY_CANARY_REQUIRE_EXISTING_STORE", "1")
+    monkeypatch.setattr(
+        inference,
+        "invoke_structured_provider_result",
+        stub_inference_invoker(("code-reviewer",)),
+    )
+    session_id = "restricted-post-first-parent"
+    trace_id = "restricted-post-first-trace"
+    tool_use_id = "call-restricted-post-first"
+    child_id = "01a04313-bcd6-79b1-b304-f37769d1872e"
+    task = f"{CODEX_ACTIVATION_CANARY_PROMPT}\n\nCanary nonce: {'e' * 32}"
+    tool_input = {
+        "fork_turns": "none",
+        "message": "gAAAAA" + "B" * 80,
+        "task_name": CODEX_ACTIVATION_CANARY_NATIVE_TASK_NAME,
+    }
+    bridge = HookBridge("codex", store=store, _master={"enabled": True})
+    bridge.handle(
+        {
+            "hook_event_name": "UserPromptSubmit",
+            "session_id": session_id,
+            "turn_id": trace_id,
+            "model": "gpt-5.6-codex",
+            "prompt": task,
+        }
+    )
+
+    post_payload = {
+        "hook_event_name": "PostToolUse",
+        "session_id": session_id,
+        "turn_id": trace_id,
+        "tool_use_id": tool_use_id,
+        "tool_name": "collaborationspawn_agent",
+        "tool_input": tool_input,
+        "tool_response": json.dumps({"task_name": "/root/code_reviewer"}),
+    }
+    bridge.handle(post_payload)
+
+    unit = work_unit_id_from_text(CODEX_ACTIVATION_CANARY_WORK_UNIT)
+    pending = store.get_native_child_run(
+        host="codex",
+        session_id=session_id,
+        trace_id=trace_id,
+        work_unit_id=unit,
+        worker_id="task:code_reviewer",
+        native_run_id="codex-task:code_reviewer",
+    )
+    assert pending is not None
+    assert pending["execution_tool_use_id"] == tool_use_id
+    assert pending["execution_dispatched_at"]
+
+    def staff(*_args: object, **_kwargs: object) -> NativeChildStaffingResult:
+        return NativeChildStaffingResult(
+            staffed=True,
+            reason_code="staffed",
+            rewritten_task="[AGENCY INFERENCE TEAM v6]\nexact delivery",
+            decision_id="decision-post-first",
+            selected_ids=("code-reviewer",),
+        )
+
+    monkeypatch.setattr(
+        "agency_runtime.core.native_child_install_identity.current_runtime_managed_host_install_identity",
+        lambda _host: object(),
+    )
+    monkeypatch.setattr(
+        "agency_runtime.core.native_child_staffing.staff_native_child",
+        staff,
+    )
+    monkeypatch.setattr(
+        "agency_runtime.core.child_delivery_evidence._restricted_codex_canary_route",
+        lambda *_args, **_kwargs: {
+            "decision_id": "decision-post-first",
+            "binding_id": child_id,
+            "launch_id": child_id,
+        },
+    )
+
+    # Model the narrow callback overlap where SubagentStart has recorded the
+    # real worker after PostToolUse retained the synthetic pending dispatch,
+    # but before either callback performed the final promotion.
+    if overlap_state != "none":
+        overlapping_real = store.record_native_child_started(
+            host="codex",
+            backend="spawn_agent",
+            session_id=session_id,
+            trace_id=trace_id,
+            work_unit_id=unit,
+            worker_id=child_id,
+            native_run_id=f"codex-agent:{child_id}",
+        )
+        assert overlapping_real["delegation_event_id"] is None
+    if overlap_state == "conflicting-dispatch":
+        assert store.bind_native_child_launch(
+            host="codex",
+            session_id=session_id,
+            trace_id=trace_id,
+            worker_id=child_id,
+            native_run_id=f"codex-agent:{child_id}",
+            launch_id="call-conflicting-real",
+        )
+
+    delivered = bridge._staff_restricted_codex_activation_child(
+        session_id=session_id,
+        trace_id=trace_id,
+        identity=hooks._native_child_identity("codex", child_id),
+    )
+
+    if overlap_state == "conflicting-dispatch":
+        assert delivered == ""
+        [unpromoted] = store.get_delegations(trace_id)
+        assert unpromoted["executed_worker_id"] == "task:code_reviewer"
+        assert unpromoted["native_run_id"] == "codex-task:code_reviewer"
+        assert (
+            store.get_native_child_run(
+                host="codex",
+                session_id=session_id,
+                trace_id=trace_id,
+                work_unit_id=unit,
+                worker_id="task:code_reviewer",
+                native_run_id="codex-task:code_reviewer",
+            )["execution_tool_use_id"]
+            == tool_use_id
+        )
+        assert (
+            store.get_native_child_run(
+                host="codex",
+                session_id=session_id,
+                trace_id=trace_id,
+                work_unit_id=unit,
+                worker_id=child_id,
+                native_run_id=f"codex-agent:{child_id}",
+            )["execution_tool_use_id"]
+            == "call-conflicting-real"
+        )
+        return
+
+    assert delivered == "[AGENCY INFERENCE TEAM v6]\nexact delivery"
+    [delegation] = store.get_delegations(trace_id)
+    assert delegation["work_unit_id"] == unit
+    assert delegation["recommended_agent"] == "code-reviewer"
+    assert delegation["executed_worker_id"] == child_id
+    assert delegation["native_run_id"] == f"codex-agent:{child_id}"
+    promoted = store.get_native_child_run(
+        host="codex",
+        session_id=session_id,
+        trace_id=trace_id,
+        work_unit_id=unit,
+        worker_id=child_id,
+        native_run_id=f"codex-agent:{child_id}",
+    )
+    assert promoted is not None
+    assert promoted["delegation_event_id"] == delegation["id"]
+    assert promoted["execution_tool_use_id"] == tool_use_id
+    assert promoted["execution_dispatched_at"]
+    assert (
+        bridge._staff_restricted_codex_activation_child(
+            session_id=session_id,
+            trace_id=trace_id,
+            identity=hooks._native_child_identity("codex", child_id),
+        )
+        == "[AGENCY INFERENCE TEAM v6]\nexact delivery"
+    )
+    assert len(store.get_delegations(trace_id)) == 1
+    bridge.handle(post_payload)
+    assert len(store.get_delegations(trace_id)) == 1
+    assert (
+        store.get_native_child_run(
+            host="codex",
+            session_id=session_id,
+            trace_id=trace_id,
+            work_unit_id=unit,
+            worker_id="task:code_reviewer",
+            native_run_id="codex-task:code_reviewer",
+        )
+        is None
+    )
+    store.record_native_child_ended(
+        host="codex",
+        backend="spawn_agent",
+        session_id=session_id,
+        trace_id=trace_id,
+        work_unit_id=unit,
+        worker_id=child_id,
+        native_run_id=f"codex-agent:{child_id}",
+        outcome="ok",
+    )
+    _record_verified_native_child_delivery(
+        store,
+        session_id=session_id,
+        trace_id=trace_id,
+        child_id=child_id,
+    )
+    _assert_verified_reconciliation_projection(
+        store,
+        session_id=session_id,
+        trace_id=trace_id,
+    )
+
+
+def test_restricted_codex_subagent_start_first_claims_at_post_tool(
+    store: Store,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The opposite ADR-0144 callback order keeps the direct real-child path."""
+
+    from agency_runtime.adapters import hooks
+    from agency_runtime.core.installer import seed_starter_roster
+    from agency_runtime.core.native_child_staffing import NativeChildStaffingResult
+    from agency_runtime.core.unit_assignment import work_unit_id_from_text
+    from agency_runtime.core.workforce import inference
+
+    seed_starter_roster(store)
+    monkeypatch.setenv("AGENCY_CANARY_MODE", "1")
+    monkeypatch.setenv("AGENCY_CANARY_REQUIRE_EXISTING_STORE", "1")
+    monkeypatch.setattr(
+        inference,
+        "invoke_structured_provider_result",
+        stub_inference_invoker(("code-reviewer",)),
+    )
+    session_id = "restricted-start-first-parent"
+    trace_id = "restricted-start-first-trace"
+    tool_use_id = "call-restricted-start-first"
+    child_id = "01a04315-bcd6-79b1-b304-f37769d1872e"
+    task = f"{CODEX_ACTIVATION_CANARY_PROMPT}\n\nCanary nonce: {'f' * 32}"
+    tool_input = {
+        "fork_turns": "none",
+        "message": "gAAAAA" + "C" * 80,
+        "task_name": CODEX_ACTIVATION_CANARY_NATIVE_TASK_NAME,
+    }
+    bridge = HookBridge("codex", store=store, _master={"enabled": True})
+    bridge.handle(
+        {
+            "hook_event_name": "UserPromptSubmit",
+            "session_id": session_id,
+            "turn_id": trace_id,
+            "model": "gpt-5.6-codex",
+            "prompt": task,
+        }
+    )
+
+    monkeypatch.setattr(
+        "agency_runtime.core.native_child_install_identity.current_runtime_managed_host_install_identity",
+        lambda _host: object(),
+    )
+    monkeypatch.setattr(
+        "agency_runtime.core.native_child_staffing.staff_native_child",
+        lambda *_args, **_kwargs: NativeChildStaffingResult(
+            staffed=True,
+            reason_code="staffed",
+            rewritten_task="[AGENCY INFERENCE TEAM v6]\nexact delivery",
+            decision_id="decision-start-first",
+            selected_ids=("code-reviewer",),
+        ),
+    )
+    monkeypatch.setattr(
+        "agency_runtime.core.child_delivery_evidence._restricted_codex_canary_route",
+        lambda *_args, **_kwargs: {
+            "decision_id": "decision-start-first",
+            "binding_id": child_id,
+            "launch_id": child_id,
+        },
+    )
+    identity = hooks._native_child_identity("codex", child_id)
+
+    assert (
+        bridge._staff_restricted_codex_activation_child(
+            session_id=session_id,
+            trace_id=trace_id,
+            identity=identity,
+        )
+        == "[AGENCY INFERENCE TEAM v6]\nexact delivery"
+    )
+    unit = work_unit_id_from_text(CODEX_ACTIVATION_CANARY_WORK_UNIT)
+    before_post = store.get_native_child_run(
+        host="codex",
+        session_id=session_id,
+        trace_id=trace_id,
+        work_unit_id=unit,
+        worker_id=child_id,
+        native_run_id=f"codex-agent:{child_id}",
+    )
+    assert before_post is not None
+    assert before_post["delegation_event_id"] is None
+    assert before_post["execution_tool_use_id"] == ""
+    store.record_native_child_ended(
+        host="codex",
+        backend="spawn_agent",
+        session_id=session_id,
+        trace_id=trace_id,
+        work_unit_id=unit,
+        worker_id=child_id,
+        native_run_id=f"codex-agent:{child_id}",
+        outcome="ok",
+    )
+
+    post_payload = {
+        "hook_event_name": "PostToolUse",
+        "session_id": session_id,
+        "turn_id": trace_id,
+        "tool_use_id": tool_use_id,
+        "tool_name": "collaborationspawn_agent",
+        "tool_input": tool_input,
+        "tool_response": json.dumps({"task_name": "/root/code_reviewer"}),
+    }
+    bridge.handle(post_payload)
+
+    [delegation] = store.get_delegations(trace_id)
+    assert delegation["work_unit_id"] == unit
+    assert delegation["executed_worker_id"] == child_id
+    assert delegation["native_run_id"] == f"codex-agent:{child_id}"
+    claimed = store.get_native_child_run(
+        host="codex",
+        session_id=session_id,
+        trace_id=trace_id,
+        work_unit_id=unit,
+        worker_id=child_id,
+        native_run_id=f"codex-agent:{child_id}",
+    )
+    assert claimed is not None
+    assert claimed["delegation_event_id"] == delegation["id"]
+    assert claimed["execution_tool_use_id"] == tool_use_id
+    assert claimed["execution_dispatched_at"]
+    assert claimed["ended_at"]
+    assert delegation["status"] == "completed"
+    bridge.handle(post_payload)
+    [replayed] = store.get_delegations(trace_id)
+    assert replayed["id"] == delegation["id"]
+    assert replayed["status"] == "completed"
+    _record_verified_native_child_delivery(
+        store,
+        session_id=session_id,
+        trace_id=trace_id,
+        child_id=child_id,
+    )
+    _assert_verified_reconciliation_projection(
+        store,
+        session_id=session_id,
+        trace_id=trace_id,
+    )
 
 
 def test_store_receipt_remains_diagnostic_without_host_artifact_proof(

@@ -7,6 +7,7 @@ updated: 2026-08-27
 tags: [bug, workforce, child-judge, litellm, local-models, reliability]
 related:
   - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
+  - docs/roadmap/issue-AR-325-restore-codex-first-complete-callback-reconciliation.md
   - docs/roadmap/issue-AR-317-route-agency-inference-through-litellm-aliases.md
   - docs/roadmap/issue-AR-320-bound-codex-wait-to-full-child-staffing.md
   - docs/roadmap/handoffs/issue-AR-297.md
@@ -22,7 +23,7 @@ issue_id: AR-321
 priority: p0
 tracker_url: null
 depends_on: [AR-317]
-blocks: [AR-297]
+blocks: [AR-297, AR-325]
 ---
 
 # AR-321: Select a reliable free LiteLLM child judge
@@ -191,6 +192,12 @@ prose, and with JSON-object output it confidently selects the wrong specialist.
   `d7183bb5...2f07` correlates request
   `chatcmpl-b1fe24cc-c39b-4c39-b99a-f37fc212e7b9` to exact Qwen backend and
   preserved deployment ID with successful status and no response-cache hit.
+- Fresh no-bypass container install `c56eb749...c44` proves the stable alias
+  again selects sole `code-reviewer` at confidence 0.9 from the complete live
+  roster. The complete card reaches child `01a04313...1872`, host delivery is
+  verified, the child exits 0, and the 300-second wait does not time out. The
+  model gate is closed; accepted parent finalization and attestation remain
+  downstream-blocked only by AR-325's callback reconciliation repair.
 
 ## Approach
 

@@ -13,6 +13,7 @@ related:
   - docs/roadmap/issue-AR-313-trust-normal-umask-codex-artifacts.md
   - docs/roadmap/issue-AR-314-bind-codex-default-canary-role.md
   - docs/roadmap/issue-AR-324-bind-codex-canary-child-through-host-lineage.md
+  - docs/roadmap/issue-AR-325-restore-codex-first-complete-callback-reconciliation.md
   - agency_runtime/adapters/hooks.py
   - agency_runtime/core/child_delivery_evidence.py
   - tests/test_canary_activation_snapshot.py

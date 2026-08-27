@@ -106,6 +106,12 @@ changes rather than duplicating every commit.
 
 ### Changed
 
+- The exact managed Codex current-profile canary now reconciles either
+  `PostToolUse`/`SubagentStart` callback order without retaining a contradictory
+  opaque-channel failure route. A post-tool-first spawn keeps one fixed-unit
+  pending dispatch and atomically promotes it to the host-authored real child;
+  ordinary encrypted spawns remain unstaffed and diagnostic, and conflicting
+  worker evidence still fails closed.
 - Exact-config live canaries now project only credential environment variables
   explicitly named by that validated configuration after applying the normal
   minimal CLI environment. Values remain process-only and bounded; malformed

@@ -7,6 +7,7 @@ updated: 2026-08-26
 tags: [codex, canary, native-child, evidence, headers]
 related:
   - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
+  - docs/roadmap/issue-AR-325-restore-codex-first-complete-callback-reconciliation.md
   - docs/roadmap/issue-AR-308-bind-activation-canary-delegation.md
   - docs/roadmap/issue-AR-310-require-managed-codex-canary-store.md
   - docs/roadmap/issue-AR-311-inject-exact-codex-canary-native-plan.md
