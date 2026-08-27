@@ -109,7 +109,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   `software-test-engineer`, proving semantic over-selection.
 - Nine temperature-zero requests reproduce that team; all temporary aliases
   are deleted and stable projection `18dd1bdd...18b3` is unchanged. Generic
-  compatibility repair `2642ac10...0b1e` safely abstains over all 59 cards.
+  repair `2642ac10...0b1e` abstains; closed diagnostic `29a0045c...f034`
+  repeats the pair. Same-model options are closed without unsafe filtering.
 - No later ordinary harness process has a successful Agency-turn receipt.
 - Refresh host/dashboard and named gates, then remove all AR-297 containers.
 - AR-299 through AR-317 tracker parity, hosted cross-OS artifacts, signing,
@@ -133,8 +134,7 @@ unchecked line. Mark an item complete only with exact retained evidence.
 
 1. [x] Build and independently verify exact `c3493337` artifacts/images.
 2. [x] Test deterministic temporary Mistral aliases and remove all three.
-3. [ ] Test one closed-diagnostic inference repair through the unchanged alias;
-   implement only if it can abstain and never filters model output.
+3. [ ] Waiting for owner choice; propose `gemma3:27b` behind temporary LiteLLM.
 4. [ ] In a new exact Codex container, prove delivery, consumption, header,
    finalization, Store correlation, and attestation.
 5. [ ] Build and prove separate clean exact Claude, native-UID Hermes, and

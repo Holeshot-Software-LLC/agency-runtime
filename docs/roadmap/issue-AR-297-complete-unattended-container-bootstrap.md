@@ -1045,3 +1045,13 @@ exact-schema selection at confidence 0.8; owner-private receipt
 prior selected IDs and the closed `separate_context_pairs` diagnostic so the
 same inference authority can reassess its answer. It still permits abstention
 and does not filter, force, add, or remove a specialist in deterministic code.
+
+The closed-diagnostic repair also fails to advance: it supplies the judge only
+its own prior IDs and the exact separate-context finding, then Mistral repeats
+`code-reviewer` plus `software-test-engineer` byte-for-byte after 19,637 prompt
+tokens. Owner-private receipt `29a0045c...f034` exits 0. Temperature and both
+inference-owned repair forms are therefore closed without a product mutation.
+Filtering, schema max-one, or deterministic role selection remain prohibited
+by ADR-0118/ADR-0185. The next viable gate is an owner-selected different free
+local child model behind temporary authenticated LiteLLM aliases; this host has
+46 GiB RAM, 35 GiB swap, and 331 GiB free disk, with no detected GPU.

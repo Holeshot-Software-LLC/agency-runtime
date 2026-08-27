@@ -142,6 +142,10 @@ prose, and with JSON-object output it confidently selects the wrong specialist.
   all 59 cards through the unchanged stable alias and safely abstains after
   20,146 prompt tokens. A closed-diagnostic variant remains bounded; no product
   code, stable alias, model, route, or thinking choice has changed.
+- Closed-diagnostic repair `29a0045c...f034` supplies only Mistral's prior IDs
+  and the separate-context finding; after 19,637 prompt tokens it repeats the
+  same incompatible pair byte-for-byte. Same-model prompt repair is closed.
+  Owner input is required before testing a different free local model/route.
 
 ## Approach
 
