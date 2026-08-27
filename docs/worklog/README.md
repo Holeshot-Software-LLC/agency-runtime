@@ -1316,6 +1316,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `21c735d8` | 2026-08-27 | docs(ar321): close deterministic Mistral retry | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-321](../roadmap/issue-AR-321-select-reliable-free-litellm-child-judge.md) | null |
 | `c805b910` | 2026-08-27 | docs(ar321): checkpoint compatibility repair abstention | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-321](../roadmap/issue-AR-321-select-reliable-free-litellm-child-judge.md) | null |
 | `da906bfc` | 2026-08-27 | docs(ar321): close same-model judge repairs | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-321](../roadmap/issue-AR-321-select-reliable-free-litellm-child-judge.md) | null |
+| `a0acac1a` | 2026-08-27 | docs(ar321): reject Gemma child judge trial | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-321](../roadmap/issue-AR-321-select-reliable-free-litellm-child-judge.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
