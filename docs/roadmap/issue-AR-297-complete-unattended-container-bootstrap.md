@@ -760,3 +760,15 @@ Agency critic, text-reranker, child-judge, and exact 4,096-dimensional embedding
 probes exit 0. A no-thinking synthetic planner probe returns a valid six-unit
 shape but exits 1 for `plan_missing_codebase_discovery`; the next exact Codex
 canary must prove its bounded repair before the remaining harness installs.
+
+Exact ledger `8d33694c9895f9da30ef560206efa1206893c78f` now produces a
+mode-0644 portable wheel `3b5fa8f9...466dd` (9,299,617 bytes) and source
+archive `67ef88f3...0f8f2` (25,601,998 bytes). Canonical build, strict Twine,
+and independent verification each exit 0; manifest `7b4098b9...18dc8` records
+their complete hashes, modes, ownership, and sizes. Separately built Codex,
+Claude, Hermes, and OpenClaw images bind that same exact commit and wheel; their
+IDs are `fe5df2d0...6de3`, `e365adc1...74fa`, `34af3456...1c3c`, and
+`8375ab36...a800`, with version/label receipt `794d67f3...143a` at exit 0.
+OpenClaw 2026.7.1-2 truthfully rejected the former Node 22.22.0 base at exit 1
+(`c6f9a003...0b07b`); its retained failed tag was replaced as candidate by the
+verified Node 24.15.0 image without changing Agency or the OpenClaw version.

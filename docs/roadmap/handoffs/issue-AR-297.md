@@ -57,9 +57,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Work remains in dedicated worktree `/tmp/agency-runtime-ar297.WQUbF2` on
   `codex/ar297-production-container-live-evidence`, based on `origin/main`
   `0a23983a`. Never use the shared checkout.
-- Last clean recovery pair is AR-317 alias evidence `c283efac` and worklog
-  `f0c11a10`. Post-compaction telemetry is 65.1 percent; continue the same task
-  and checkpoint this replacement-config package before rebuilding.
+- Last clean recovery pair is exact-config evidence `860790ff` and worklog
+  `8d33694c`. Telemetry is 36.4 percent; checkpoint the completed artifact/image
+  package now, then continue the same task.
 - Linux remains **NO-GO**. AR-297/#335 stay open. Tracker writes, push, PR,
   merge, tag, signing, publication, release, and hosted workflow actions are
   not authorized.
@@ -71,11 +71,12 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   authenticated LiteLLM aliases, Qwen generation with thinking disabled,
   Mistral critic/reranker/recruiter/free child judge, and 4,096-dimensional
   Qwen embedding. Direct Ollama and Jina are absent from active routes.
-- Exact ledger `3e42598d` caller-umask-0002 build, strict Twine, and independent
-  verification exit 0. Mode-0644 wheel `0bb18a70...d983` is 9,299,031 bytes;
-  sdist `73d8c201...ae55` is 25,561,038 bytes. Codex image is
-  `6fbbdbd5...696c`; C1/C2 absence receipts `575a1fe3...090` and
-  `abf3d278...8a4b` exit 0.
+- Exact ledger `8d33694c` build, strict Twine, and independent verification exit
+  0. Mode-0644 wheel `3b5fa8f9...466dd` is 9,299,617 bytes; sdist
+  `67ef88f3...0f8f2` is 25,601,998 bytes; manifest `7b4098b9...18dc8`.
+- Codex/Claude/Hermes/OpenClaw image IDs are `fe5df2d0...6de3`,
+  `e365adc1...74fa`, `34af3456...1c3c`, and `8375ab36...a800`; exact-label and
+  version verification exits 0 at `794d67f3...143a`.
 - AR-309 through AR-314 prove exact Codex 0.149 parent/child correlation,
   managed Store, fixed native plan, normal-umask artifacts, and default host
   role. AR-315 passes 7 focused and 559 broader warning-strict tests plus Ruff
@@ -117,11 +118,11 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 
 ## same-task-continuity
 
-Prior artifacts: `~/.agency-runtime/release-artifacts/`
-`dist-3e42598da5eaa5b58d0bb0771cea6f90719d48d1-linux-ar297`; rebuild after
-this checkpoint. Exact config is `~/.agency-runtime/configs/`
+Exact artifacts: `~/.agency-runtime/release-artifacts/`
+`dist-8d33694c9895f9da30ef560206efa1206893c78f-linux-ar297`; config is
+`~/.agency-runtime/configs/`
 `ar297-litellm-a4e213d6b454ca90.yaml`. Evidence: `ar297-go-3e42598d` and
-`ar297-litellm-routing-ioeoBe`. Current old Codex containers
+`ar297-litellm-routing-ioeoBe`, plus current `ar297-go-8d33694c`. Old containers
 are `agency-ar297-codex-3e42598d` and `-c2`; older evidence containers remain.
 All AR-297 containers await final teardown. Secret-safe helper:
 `/tmp/agency-runtime-ar297-evidence.pcLOZn/run_with_litellm_key.py`.
@@ -131,8 +132,8 @@ All AR-297 containers await final teardown. Secret-safe helper:
 After compaction, reread this capsule and `git status`, then resume at the first
 unchecked line. Mark an item complete only with exact retained evidence.
 
-1. [ ] Rebuild and independently verify artifacts/images from this exact
-   LiteLLM-config checkpoint; do not reuse `3e42598d` as the candidate.
+1. [x] Rebuild and independently verify artifacts/images from the exact
+   LiteLLM-config checkpoint; `8d33694c` is the candidate.
 2. [ ] Prove fresh Codex absence, then one exact no-bypass V2 install with one
    canonical child artifact, consumed receipt, current header, accepted
    finalization, Store correlation, and attestation.
