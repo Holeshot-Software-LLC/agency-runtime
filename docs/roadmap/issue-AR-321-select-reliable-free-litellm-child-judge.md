@@ -185,6 +185,12 @@ prose, and with JSON-object output it confidently selects the wrong specialist.
   `47c257af...ee11`. Final six-route validation `42921a7e...867c` exits 0 and
   proves exact Qwen metadata/backend, preserved ID, schema, 32,768 context,
   thinking off, zero retries, mode-0600 config, and all other routes unchanged.
+- Literal exact-config probe `b686ab4b...9abe` exits 0 through
+  `task-agency-child-judge`, selects sole `code-reviewer` at confidence 0.9,
+  and retains the same 54-byte content with zero reasoning. Spend receipt
+  `d7183bb5...2f07` correlates request
+  `chatcmpl-b1fe24cc-c39b-4c39-b99a-f37fc212e7b9` to exact Qwen backend and
+  preserved deployment ID with successful status and no response-cache hit.
 
 ## Approach
 

@@ -1093,3 +1093,11 @@ executable params remain byte-identical at `47c257af...ee11`. Final validation
 including exact Qwen backend/metadata/ID/schema, disabled thinking, 32,768
 context, zero retries, 4,096-dimensional embedding, and unchanged remaining
 routes. A literal stable-alias probe precedes the new exact Codex transaction.
+
+That literal stable-alias gate passes. Exact-config receipt `b686ab4b...9abe`
+exits 0 through `task-agency-child-judge`, selects sole `code-reviewer` at
+confidence 0.9, and records the same schema-valid 54-byte content with zero
+reasoning. Spend correlation `d7183bb5...2f07` binds request
+`chatcmpl-b1fe24cc-c39b-4c39-b99a-f37fc212e7b9` to
+`ollama/qwen3:32b`, stable deployment `0f0b1b59...a7d1`, successful status,
+and no response-cache hit. A new exact Codex container is now the live gate.
