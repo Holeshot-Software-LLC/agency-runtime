@@ -1000,7 +1000,10 @@ def test_codex_rollout_accepts_normal_host_umask_directories_under_private_home(
         )
 
 
-def test_codex_direct_rollout_rejects_stale_activation_wait_timeout() -> None:
+@pytest.mark.parametrize("stale_timeout_ms", (60_000, 120_000))
+def test_codex_direct_rollout_rejects_stale_activation_wait_timeout(
+    stale_timeout_ms: int,
+) -> None:
     calls = [
         {
             "name": "spawn_agent",
@@ -1016,7 +1019,7 @@ def test_codex_direct_rollout_rejects_stale_activation_wait_timeout() -> None:
             "name": "wait_agent",
             "call_id": "call-native-wait",
             "index": 1,
-            "arguments": {"timeout_ms": 60_000},
+            "arguments": {"timeout_ms": stale_timeout_ms},
         },
     ]
     outputs = {

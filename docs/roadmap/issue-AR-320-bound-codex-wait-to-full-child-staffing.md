@@ -55,6 +55,10 @@ single wait even though both inference calls finish successfully.
   hash to `d8755fd9...2f72`, `00d8e1d5...8076`, and `e978545c...d00a`.
 - The approved LiteLLM alias, free Mistral model, endpoint, timeout, and no-
   fallback pin are known and unchanged. Tracker creation is prohibited.
+- The bounded source contract derives 300,000 ms from two 120,000-ms judge
+  ceilings plus a 60,000-ms completion margin. Ruff and 418 warning-strict
+  canary, install, rollout, and staffing tests pass; stale 60- and 120-second
+  rollout shapes are rejected.
 
 ## Approach
 
@@ -74,9 +78,9 @@ Store, header, finalization, and attestation requirement. Reject the superseded
 
 ## Acceptance
 
-- [ ] Prompt and rollout validation require exactly one 300,000-ms wait while
+- [x] Prompt and rollout validation require exactly one 300,000-ms wait while
       rejecting the superseded 120,000-ms shape.
-- [ ] Focused warning-strict canary, staffing, and coverage tests pass.
+- [x] Focused warning-strict canary, staffing, and coverage tests pass.
 - [ ] A rebuilt fresh Codex production-container install proves delivery,
       consumption, first accepted finalization, header, and attestation.
 - [ ] A same-repository tracker issue is created and linked after explicit

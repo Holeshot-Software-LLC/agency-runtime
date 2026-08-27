@@ -837,3 +837,8 @@ repair both succeed untruncated in 62,057.76 and 62,870.53 ms. Their combined
 the child is interrupted without v6 delivery. Store and parent/child rollouts
 hash to `d8755fd9...2f72`, `00d8e1d5...8076`, and `e978545c...d00a`. AR-320
 owns the full-path bound; no model or route change is required.
+
+AR-320 now derives one 300,000-ms wait from both 120,000-ms judge ceilings and
+a 60,000-ms completion margin while preserving the 600-second outer bound,
+one spawn, one wait, and no retry. Ruff and 418 affected warning-strict tests
+pass; fresh artifacts and a fresh clean Codex transaction remain required.

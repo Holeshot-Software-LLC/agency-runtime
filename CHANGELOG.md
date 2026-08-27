@@ -18,11 +18,13 @@ related:
   - docs/roadmap/issue-AR-317-route-agency-inference-through-litellm-aliases.md
   - docs/roadmap/issue-AR-318-bound-codex-activation-child-wait.md
   - docs/roadmap/issue-AR-319-honor-pinned-canary-judge-timeout.md
+  - docs/roadmap/issue-AR-320-bound-codex-wait-to-full-child-staffing.md
   - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
   - docs/decisions/0178-project-config-declared-credentials-into-tool-reduced-canaries.md
   - docs/decisions/0181-use-litellm-aliases-as-host-inference-control-plane.md
   - docs/decisions/0182-bound-codex-activation-child-wait.md
   - docs/decisions/0183-honor-pinned-canary-judge-timeout.md
+  - docs/decisions/0184-bound-codex-wait-to-full-child-staffing.md
   - docs/roadmap/README.md
   - docs/worklog/README.md
   - THIRD_PARTY_NOTICES.md
@@ -167,6 +169,10 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
+- The exact Codex activation canary now gives its single native wait enough
+  time for the complete legal child-staffing path: two bounded judge calls plus
+  a fixed child-completion margin inside the unchanged outer transaction. It
+  still permits one spawn, one wait, no follow-up, and no retry.
 - A canary pinned to one resolved provider now uses that provider's validated
   timeout for both its single attempt and aggregate judge budget. This keeps
   120-second local inference profiles from being cut off by the legacy

@@ -63,9 +63,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Work remains in dedicated worktree `/tmp/agency-runtime-ar297.WQUbF2` on
   `codex/ar297-production-container-live-evidence`, based on `origin/main`
   `0a23983a`. Never use the shared checkout.
-- Last clean recovery pair is artifact evidence `633b0e84` and worklog
-  `7c0a8322`. Checkpoint the exact AR-320 two-call wait evidence, then continue
-  the same Codex proof.
+- Last clean recovery pair is AR-320 governance `761a279d` and worklog
+  `ae162196`. Its bounded source repair passes 418 affected warning-strict
+  tests; checkpoint that slice, then continue the same Codex proof.
 - Linux remains **NO-GO**. AR-297/#335 stay open. Tracker writes, push, PR,
   merge, tag, signing, publication, release, and hosted workflow actions are
   not authorized.
@@ -102,8 +102,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 
 - Fresh `89a56901` absence passes at `a56ac1c5...d994`; install
   `96e4d746...73cf` exits 1. Two successful untruncated child-judge calls take
-  62,057.76 and 62,870.53 ms, so the valid repair path outlives the single
-  120-second wait. AR-320 must bind that wait to the full two-call ceiling.
+  62,057.76 and 62,870.53 ms. AR-320 now binds one 300-second wait to both
+  calls plus completion margin and passes 418 tests; rebuild and prove it.
 - No later ordinary Codex, Claude, Hermes, or OpenClaw process has a current
   successful Agency-turn receipt on this source.
 - Refresh the host install/dashboard and named repository gates for the exact
