@@ -7,16 +7,16 @@ updated: 2026-08-27
 tags: [handoff, containers, unattended, codex, claude, hermes, openclaw, release]
 related:
   - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
-  - docs/roadmap/issue-AR-321-select-reliable-free-litellm-child-judge.md
   - docs/roadmap/issue-AR-324-bind-codex-canary-child-through-host-lineage.md
   - docs/roadmap/issue-AR-325-restore-codex-first-complete-callback-reconciliation.md
   - docs/roadmap/issue-AR-326-admit-terminal-codex-host-artifact-collection.md
   - docs/roadmap/issue-AR-327-replay-codex-delivery-receipts-across-append-only-completion.md
-  - docs/decisions/0144-claim-codex-spawn-execution-at-the-first-complete-callback.md
+  - docs/roadmap/issue-AR-328-seal-hermes-install-tree.md
   - docs/decisions/0179-admit-exact-codex-canary-delivery-at-subagent-start.md
   - docs/decisions/0188-separate-codex-hook-parent-and-child-identities.md
   - docs/decisions/0189-admit-only-accepted-terminal-codex-parents-for-post-return-collection.md
   - docs/decisions/0190-bind-codex-receipt-replay-to-an-exact-append-only-prefix.md
+  - docs/decisions/0191-seal-managed-hermes-python-bundles.md
   - docs/RELEASE_CHECKLIST.md
   - docs/worklog/README.md
 supersedes: []
@@ -37,8 +37,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Work only in `/tmp/agency-runtime-ar297.WQUbF2` on
   `codex/ar297-production-container-live-evidence`, based on `origin/main`
   `0a23983a`. Never touch the shared checkout.
-- Clean candidate ledger `e17e5221` contains Hermes accepted-result replay;
-  exact artifacts and four fresh installs pass. End telemetry is 21.4%.
+- Clean ledger `5bd9cf80` retains the passing `e17e5221` artifacts and three
+  ordinary rows; AR-328 now supersedes that final candidate pending rebuild.
 - Linux remains **NO-GO**. AR-297/#335 remain open. No tracker write, push, PR,
   merge, tag, signing, publication, release, or hosted workflow is authorized.
 
@@ -55,9 +55,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   skips, 138 dashboard tests, routing 1.4.0, and 167/167 decision mutations;
   receipts are `c5f34de1...8b7f`, `25cc4f01...4cb`, `2eb1981a...3ef9`,
   `eeb12164...10d4`, and `9a45044f...0a71`; rerun is pending for `e17e5221`.
-- Qwen1's bounded Codex timeout is retained at `40c1c188...7f5a` and
-  `5f76b443...6eaa`. AR-327's 211/17 tests and two mutations pass at
-  `1b0fd16d...9ab3`, `f54f2441...aab`, and `527ff7d8...a78`.
+- AR-328 regression `751276ea...e3a` fails before repair. The exact cache guard
+  preserves movable installs; 359 tests pass with 2 skips at
+  `981fbbc8...ddd0`, and focused Ruff/docs pass with empty stderr.
 - Exact Qwen2 committed-source replay `f98bb268...7cb3` exits 0: read-only and
   full restricted verification both return staffed `verified_existing_receipt`.
 - Exact `e17e5221` wheel/sdist are `8b35c8f6...d897`/`7e9f7ad6...9287`;
@@ -112,34 +112,34 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 
 ## exact-blocker
 
-- Complete Claude's ordinary turn plus its pending first-party login; refresh
-  the exact host/dashboard and named gates, checkpoint, then teardown.
+- Checkpoint AR-328, rebuild the exact candidate, repeat final clean installs
+  and ordinary rows, complete Claude's pending first-party login, then refresh
+  the host/dashboard, named gates, records, and teardown.
 - Cross-OS artifacts, signing, tracker parity, push/PR/merge/tag/publication,
   release, and exhaustive dispatch are unauthorized, not Linux-only GO gates.
 
 ## same-task-continuity
 
-- Exact artifacts: `~/.agency-runtime/release-artifacts/dist-e17e5221657ec90df8092879cf9d5c79d65ecb50-linux-ar297`.
+- Historical exact artifacts: `~/.agency-runtime/release-artifacts/dist-e17e5221657ec90df8092879cf9d5c79d65ecb50-linux-ar297`.
 - Evidence: `~/.agency-runtime/evidence/ar297-go-e17e5221`; secret-safe helpers
   remain `/tmp/agency-runtime-ar297-evidence.pcLOZn/`.
 - Protected Python: `~/.agency-runtime-ci/ar297-release-0827/venv/bin/python`.
-- Exactly 42 containers carry label `dev.agency-runtime.proof=AR-297`, including
-  retained failed/dry-run witnesses; remove all only at final teardown.
+- Exactly 42 AR-297-labelled containers remain; remove all only at final teardown.
 
 ## next-bounded-work-package
 
 After compaction, reread this capsule and `git status`, then resume at the first
 unchecked line. Mark an item complete only with exact retained evidence.
 
-1. [x] Build and independently verify exact accepted-replay artifacts/images.
+1. [ ] Rebuild and independently verify final AR-328 artifacts/images.
 2. [x] Test deterministic temporary Mistral aliases and remove all three.
 3. [x] Test and remove exact Gemma 3 27B; it selects the wrong role.
 4. [x] AR-327 repair/rebuild and one clean Codex install pass with verified
    current-profile attestation and no activation bypass.
-5. [x] Refresh separate clean exact Codex, Claude, Hermes, and OpenClaw
+5. [ ] Refresh separate clean exact Codex, Claude, Hermes, and OpenClaw
    systemd production-container installs.
-6. [ ] Run later ordinary unattended Conveyor-equivalent processes for all four
-   harnesses; retain native artifacts, Store correlations, and prompt visibility.
+6. [ ] Repeat ordinary unattended processes for the final four installs; retain
+   native artifacts, Store correlations, and prompt visibility.
 7. [ ] Refresh the exact candidate on this Linux host and prove the private
    authenticated dashboard plus the approved service-manager contract.
 8. [ ] Rerun every named repository gate and record exact exits and hashes.

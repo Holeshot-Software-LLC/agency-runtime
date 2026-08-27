@@ -21,6 +21,7 @@ related:
   - docs/roadmap/issue-AR-320-bound-codex-wait-to-full-child-staffing.md
   - docs/roadmap/issue-AR-324-bind-codex-canary-child-through-host-lineage.md
   - docs/roadmap/issue-AR-326-admit-terminal-codex-host-artifact-collection.md
+  - docs/roadmap/issue-AR-328-seal-hermes-install-tree.md
   - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
   - docs/decisions/0178-project-config-declared-credentials-into-tool-reduced-canaries.md
   - docs/decisions/0181-use-litellm-aliases-as-host-inference-control-plane.md
@@ -30,6 +31,7 @@ related:
   - docs/decisions/0187-bind-codex-canary-child-through-host-authored-lineage.md
   - docs/decisions/0188-separate-codex-hook-parent-and-child-identities.md
   - docs/decisions/0189-admit-only-accepted-terminal-codex-parents-for-post-return-collection.md
+  - docs/decisions/0191-seal-managed-hermes-python-bundles.md
   - docs/roadmap/README.md
   - docs/worklog/README.md
   - THIRD_PARTY_NOTICES.md
@@ -108,6 +110,10 @@ changes rather than duplicating every commit.
 
 ### Changed
 
+- POSIX Hermes installs now manifest and seal an exact `__pycache__` guard, so
+  ordinary Python plugin loading cannot add unverified bytecode to the managed
+  tree. The plugin root stays owner-private and movable for the existing atomic
+  upgrade, rollback, and uninstall transactions.
 - The exact managed Codex current-profile canary now reconciles either
   `PostToolUse`/`SubagentStart` callback order without retaining a contradictory
   opaque-channel failure route. A post-tool-first spawn keeps one fixed-unit

@@ -40,6 +40,7 @@ related:
   - docs/roadmap/issue-AR-325-restore-codex-first-complete-callback-reconciliation.md
   - docs/roadmap/issue-AR-326-admit-terminal-codex-host-artifact-collection.md
   - docs/roadmap/issue-AR-327-replay-codex-delivery-receipts-across-append-only-completion.md
+  - docs/roadmap/issue-AR-328-seal-hermes-install-tree.md
   - docs/decisions/0144-claim-codex-spawn-execution-at-the-first-complete-callback.md
   - docs/decisions/0174-admit-local-ollama-canary-child-judges.md
   - docs/decisions/0175-batch-complete-embedding-input-sets.md
@@ -58,6 +59,7 @@ related:
   - docs/decisions/0188-separate-codex-hook-parent-and-child-identities.md
   - docs/decisions/0189-admit-only-accepted-terminal-codex-parents-for-post-return-collection.md
   - docs/decisions/0190-bind-codex-receipt-replay-to-an-exact-append-only-prefix.md
+  - docs/decisions/0191-seal-managed-hermes-python-bundles.md
   - agency_runtime/cli/install_commands.py
   - agency_runtime/core/codex_managed_policy.py
   - agency_runtime/core/canary.py
@@ -72,7 +74,7 @@ epic: host-integrations
 issue_id: AR-297
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
-depends_on: [AR-300, AR-301, AR-302, AR-303, AR-304, AR-305, AR-306, AR-307, AR-308, AR-309, AR-310, AR-311, AR-313, AR-314, AR-315, AR-317, AR-318, AR-319, AR-320, AR-321, AR-322, AR-324, AR-325, AR-326, AR-327]
+depends_on: [AR-300, AR-301, AR-302, AR-303, AR-304, AR-305, AR-306, AR-307, AR-308, AR-309, AR-310, AR-311, AR-313, AR-314, AR-315, AR-317, AR-318, AR-319, AR-320, AR-321, AR-322, AR-324, AR-325, AR-326, AR-327, AR-328]
 blocks: []
 ---
 
@@ -1798,3 +1800,14 @@ PASS, not a channel-delivery claim; weakening the final-only boundary,
 installing a test-only transport, or silently choosing an external channel was
 rejected. Exact native config validation still exits 0. The OpenClaw matrix
 cell closes while its non-delivery limitation remains explicit.
+
+The exact Linux-host Hermes load then exposed AR-328: Python wrote an
+unmanifested `__pycache__/__init__.cpython-311.pyc` into the otherwise exact
+managed plugin tree. Deleting it once would not survive restart. The bounded
+repair manifests a POSIX cache guard, seals only that namespace to 0500/0400,
+records and strictly validates its policy, and leaves the owner-private plugin
+root movable for upgrade, rollback, and uninstall. Regression-first failure
+`751276ea...e3a` exits 1; the repaired broader installer surface passes 359
+tests with 2 skips at `981fbbc8...ddd0`, while focused Ruff and docs pass. This
+source change supersedes `e17e5221` as the final candidate, so exact artifacts,
+images, four clean installs, and their later-process evidence must be rebuilt.
