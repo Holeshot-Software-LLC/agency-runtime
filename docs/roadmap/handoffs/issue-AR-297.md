@@ -28,6 +28,7 @@ related:
   - docs/roadmap/issue-AR-316-size-ollama-selector-judge-context.md
   - docs/roadmap/issue-AR-317-route-agency-inference-through-litellm-aliases.md
   - docs/roadmap/issue-AR-318-bound-codex-activation-child-wait.md
+  - docs/roadmap/issue-AR-319-honor-pinned-canary-judge-timeout.md
   - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
   - docs/decisions/0174-admit-local-ollama-canary-child-judges.md
   - docs/decisions/0175-batch-complete-embedding-input-sets.md
@@ -38,6 +39,7 @@ related:
   - docs/decisions/0180-project-current-profile-canary-install-home.md
   - docs/decisions/0181-use-litellm-aliases-as-host-inference-control-plane.md
   - docs/decisions/0182-bound-codex-activation-child-wait.md
+  - docs/decisions/0183-honor-pinned-canary-judge-timeout.md
   - README.md
   - docs/RELEASE_CHECKLIST.md
   - docs/worklog/README.md
@@ -59,9 +61,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Work remains in dedicated worktree `/tmp/agency-runtime-ar297.WQUbF2` on
   `codex/ar297-production-container-live-evidence`, based on `origin/main`
   `0a23983a`. Never use the shared checkout.
-- Last clean recovery pair is AR-318 source `42642aab` and worklog `c6b7d92d`.
-  Its exact artifacts/images pass; telemetry is 39.8 percent. Checkpoint that
-  package now, then continue the same Codex proof.
+- Last clean recovery pair is artifact evidence `542e2dd2` and worklog
+  `4e754f48`. Pre-live telemetry was 32.7 percent. Checkpoint the retained
+  AR-319 timeout evidence now, then continue the same Codex proof.
 - Linux remains **NO-GO**. AR-297/#335 stay open. Tracker writes, push, PR,
   merge, tag, signing, publication, release, and hosted workflow actions are
   not authorized.
@@ -96,12 +98,12 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 
 ## exact-blocker
 
-- Fresh exact Codex absence passes at `f611452f...cc96`. Install receipt
-  `2942f5ee...935b` exits 1 after accepted route `d1a4e01f...7565` and child
-  exit 0: its terminal message precedes the timed-out 60-second wait result by
-  224 ms, so no delivery/header/attestation is admitted. AR-318 now binds one
-  120-second wait and passes Ruff plus 309 focused warning-strict tests. Its
-  rebuilt exact images pass; prove the full v6 transaction in a fresh container.
+- Fresh `c6b7d92d` absence passes at `802e7f60...617c`; install
+  `d61d1574...d23f` exits 1 after the exact 120-second wait observes child exit
+  0 without timeout. The pinned Mistral judge is cut off at 60,091 ms by the
+  legacy aggregate budget, so only identity reaches the child and no v6
+  delivery/header/attestation is admitted. AR-319 must honor the profile's
+  existing 120-second bound, then prove the full transaction in a fresh image.
 - No later ordinary Codex, Claude, Hermes, or OpenClaw process has a current
   successful Agency-turn receipt on this source.
 - Refresh the host install/dashboard and named repository gates for the exact

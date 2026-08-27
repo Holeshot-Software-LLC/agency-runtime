@@ -32,6 +32,7 @@ related:
   - docs/roadmap/issue-AR-316-size-ollama-selector-judge-context.md
   - docs/roadmap/issue-AR-317-route-agency-inference-through-litellm-aliases.md
   - docs/roadmap/issue-AR-318-bound-codex-activation-child-wait.md
+  - docs/roadmap/issue-AR-319-honor-pinned-canary-judge-timeout.md
   - docs/decisions/0174-admit-local-ollama-canary-child-judges.md
   - docs/decisions/0175-batch-complete-embedding-input-sets.md
   - docs/decisions/0176-use-owner-runtime-temp-for-nonroot-user-services.md
@@ -41,6 +42,7 @@ related:
   - docs/decisions/0180-project-current-profile-canary-install-home.md
   - docs/decisions/0181-use-litellm-aliases-as-host-inference-control-plane.md
   - docs/decisions/0182-bound-codex-activation-child-wait.md
+  - docs/decisions/0183-honor-pinned-canary-judge-timeout.md
   - agency_runtime/cli/install_commands.py
   - agency_runtime/core/codex_managed_policy.py
   - agency_runtime/core/canary.py
@@ -55,7 +57,7 @@ epic: host-integrations
 issue_id: AR-297
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
-depends_on: [AR-300, AR-301, AR-302, AR-303, AR-304, AR-305, AR-306, AR-307, AR-308, AR-309, AR-310, AR-311, AR-313, AR-314, AR-315, AR-317, AR-318]
+depends_on: [AR-300, AR-301, AR-302, AR-303, AR-304, AR-305, AR-306, AR-307, AR-308, AR-309, AR-310, AR-311, AR-313, AR-314, AR-315, AR-317, AR-318, AR-319]
 blocks: []
 ---
 
@@ -796,3 +798,14 @@ Codex, Claude, Hermes, OpenClaw systemd, and dashboard images bind the exact
 wheel with IDs `c14c26b5...73879`, `40f3c505...c900c`, `6e7d7617...1c943`,
 `b9add4fc...e7288`, and `a3d2619c...7fa49`. Version/label receipt
 `676b83dd...5c2b` exits 0. A fresh clean Codex transaction remains required.
+
+Fresh `c6b7d92d` absence passes at `802e7f60...617c`; exact install
+`d61d1574...d23f` exits 1 after accepted route `97e2084b...f386`. The parent
+emits one 120,000-ms wait, child `01a0411a...8103` completes, and the wait
+returns `timed_out=false`. Its pinned `local-child-judge` nevertheless records
+`native_child_inference_unavailable` at 60,091 ms because the 120-second
+profile remains capped by the legacy 60-second aggregate judge budget. Only
+the 563-byte identity reaches the child, so strict projection admits no v6
+delivery, header, finalization, or attestation. Store and parent/child rollouts
+hash to `c16b99c1...1438`, `e63a6865...1b8e`, and `7a25e86f...c879`. AR-319
+owns the bounded pinned-timeout repair.

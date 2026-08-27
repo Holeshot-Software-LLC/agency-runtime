@@ -9,6 +9,7 @@ related:
   - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
   - docs/roadmap/issue-AR-309-restore-codex-0149-activation-proof.md
   - docs/roadmap/handoffs/issue-AR-297.md
+  - docs/roadmap/issue-AR-319-honor-pinned-canary-judge-timeout.md
   - docs/decisions/0182-bound-codex-activation-child-wait.md
   - agency_runtime/core/activation_canary_contract.py
   - agency_runtime/core/canary.py
@@ -52,6 +53,9 @@ route and the native child has completed its work at exit 0.
 - Repaired ledger `c6b7d92d` canonical build, strict Twine, independent
   verification, and five-image label/version verification exit 0. Wheel
   `704e78a9...79a8` and image receipt `676b83dd...5c2b` are retained mode 0600.
+- Fresh `c6b7d92d` live evidence emits the exact 120,000-ms wait, observes child
+  completion, and returns `timed_out=false`. AR-319 owns the downstream pinned
+  judge timeout that still prevents full v6 admission.
 - Tracker creation is prohibited by the active AR-297 task.
 
 ## Approach
