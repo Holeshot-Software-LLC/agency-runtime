@@ -24,8 +24,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-297
 branch: codex/ar297-production-container-live-evidence
-evidence_commit: 5eedb539bc7503b268f17a5029462fb03a59ea3f
-minimum_ledger_commit: 5eedb539bc7503b268f17a5029462fb03a59ea3f
+evidence_commit: 64a430ee5aa60a7b60950d0daa9d074958dc8b7b
+minimum_ledger_commit: 64a430ee5aa60a7b60950d0daa9d074958dc8b7b
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 ---
@@ -37,8 +37,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Work only in `/tmp/agency-runtime-ar297.WQUbF2` on
   `codex/ar297-production-container-live-evidence`, based on `origin/main`
   `0a23983a`. Never touch the shared checkout.
-- Clean ledger `5eedb539` binds exact artifacts/images, all four separate
-  installs, and ordinary Hermes R1/R2 evidence.
+- Clean ledger `64a430ee` binds exact artifacts/images, all four separate
+  installs, and the rejected three-attempt Hermes Mistral route.
 - Linux remains **NO-GO**. AR-297/#335 remain open. No tracker write, push, PR,
   merge, tag, signing, publication, release, or hosted workflow is authorized.
 
@@ -85,23 +85,24 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   `c53dc2a9...01b6` passes quick-check. Authenticated alias inventory
   `7163aa90...911a` caught the pre-turn `generator` typo; corrected native
   receipt `2180a4dc...23e8` binds `task-agency-generation` plus env SecretRefs.
-- Ordinary Hermes R1 is withheld after a textual tool request; exact card
-  visibility is proven at `87866dee...c7e9`. The same approved alias/model now
-  uses `ollama_chat/` behind sole deployment `4089bb62...f0fe`.
-- Corrected R2 also exits natively 0 but remains `response_invalid`: Store,
-  correlation, native state, and visibility receipts are `5c95a565...cdd4`,
-  `2ebc93fd...712e`, `a937c8f9...b1f7`, and `a2a44504...761b`. The exact card
-  occurs once, but the model sees no `agency_finalize`, makes zero tool calls,
-  and Hermes warns `Unknown toolsets: agency-runtime`.
-- Self-contained R3 rules out missing task access: prompt `7411494b...49de`,
-  Store/correlation `80942b3b...3944`/`6d1d3f52...8a29`, and native
-  state/receipt `00211b3c...b1c`/`f3b89dac...cf92` prove accepted routing and
-  one exact card, but Mistral again makes zero tool calls and is withheld.
+- Hermes R1-R3 prove one exact card and accepted routing; R3 receipts
+  `80942b3b...3944`, `6d1d3f52...8a29`, `00211b3c...b1c`, and
+  `f3b89dac...cf92` rule out missing task/bridge access. Mistral made zero
+  finalizer calls in all three attempts and is rejected pending a new choice.
+- Claude R2 native/Store receipts `c5c3b811...b54f`/`ef24801d...b6fb` prove
+  one exact 3,227-byte card and all five LiteLLM routes, but its unchanged
+  first-party OAuth expired and could not refresh; no third attempt ran.
+- OpenClaw R1 native/Store receipts `0e4ecc3d...c53`/`6bf28dbe...367b` prove
+  one exact card, all five routes, and native exit 0; the approved 14B route
+  returned exact `{}` and Agency recorded `response_invalid`.
+- Codex R1 native/Store receipts `a18f2b10...71ed`/`06dcfe2f...e3e` prove
+  ordinary no-bypass loading and one exact card in parent and child rollouts;
+  opaque delegation left only `evidence_verification` missing, so R2 is next.
 
 ## exact-blocker
 
-- An owner-selected Hermes model-route change, all four ordinary completions,
-  host install/dashboard, named gates, and final teardown remain pending.
+- Direct-only Codex R2, refreshed same-method Claude OAuth, owner-selected
+  Hermes/OpenClaw aliases, host/dashboard, named gates, and teardown remain.
 - Cross-OS artifacts, signing, tracker parity, push/PR/merge/tag/publication,
   release, and exhaustive workflow dispatch remain unauthorized—not GO gates
   for this Linux-only bounded task unless authority changes.

@@ -1410,3 +1410,63 @@ finalizer, and `tool_describe` returns its required `draft_text` schema. Three
 bounded attempts therefore establish that the approved Mistral Hermes route is
 not reliable enough for the governed finalization contract. Selecting another
 Hermes model/alias target requires the mandated owner interview before R4.
+
+The first later ordinary Claude process is retained as a bounded negative, not
+retried away. R1 started the installed `SessionStart` and `UserPromptSubmit`
+hooks but omitted process-memory LiteLLM authentication and then found that its
+copied first-party OAuth session had expired. Native stdout
+`94a376d5...8d2d` and Store receipt `b5006ee0...cdd4` preserve that boundary.
+For R2, the current credential was restored from the same approved read-only
+host bind and the LiteLLM key existed only in the child process. The ordinary
+Claude 2.1.239 command used `dontAsk`, no model override, no activation bypass,
+and the exact 683-byte task `abfcd7ee...3408`.
+
+R2 native stream `13864e9a...de92`, Store correlation
+`ef24801d...b6fb`, and content-minimized receipt `c5c3b811...b54f` prove
+session `29700000-0000-4000-8000-000000000002`, accepted routing to
+`section-508-accessibility-specialist`, all five configured alias-only Agency
+receipts, and one exact 3,227-byte card `589a6e0c...303e` in the 6,511-byte
+additional context. Claude then failed its own provider turn because the
+unchanged `claude.ai` OAuth session was expired and could not refresh. The
+Store therefore truthfully ends the run with no terminal finalization. A third
+unchanged draw is prohibited; the same-method credential needs operator
+refresh before Claude can complete.
+
+OpenClaw's pre-turn plugin list `fba378be...935c` reports
+`agency-preflight` enabled and loaded, and doctor `9d8ec6e3...b4e6` reports no
+plugin issue. The later ordinary embedded process used the corrected native
+`litellm/task-agency-generation` alias, disabled thinking, both credentials in
+process memory, no model override, and no bypass. It exited 0 after 187,420 ms;
+stdout/stderr/exit hash to `909bbfe0...c73`, `78390e2d...81c4`, and
+`bde29436...120`.
+
+OpenClaw native receipt `0e4ecc3d...c53` binds session
+`29700000-0000-4000-8000-000000000101`, run
+`851c3ad2...9ec8`, quick-checked native state `f6d6c301...acb`, and trajectory
+`260c58b2...225`. Its 7,591-byte submitted prompt contains the exact 683-byte
+task and one exact 3,227-byte card, with 35 native tool definitions. All five
+Agency alias receipts succeed and Store correlation `6bf28dbe...367b` binds
+the accepted route. The approved 14B abliterated native generation route then
+returned exactly two bytes, `{}`, at `44136fa3...aff8`; Agency correctly
+recorded `response_invalid` rather than promoting native exit 0. A replacement
+OpenClaw alias/model is an owner-interview choice before R2.
+
+The first later ordinary Codex process used Codex 0.149.1 with ChatGPT auth, no
+model override, the read-only sandbox, an empty dedicated Git worktree, and no
+approval, sandbox, or hook-trust bypass. Native stdout/stderr/exit hash to
+`f87b33ca...c864`, `6c69d1ab...9566`, and `bde29436...120`; the unrelated
+remote Cloudflare MCP auth diagnostic did not stop the turn. Parent
+`01a04449...241e` and child `01a0444b...5c86` both completed natively.
+
+Codex native receipt `a18f2b10...71ed` proves the exact 2,659-byte
+`accessibility-auditor` card `c3cfc098...5848` occurs once in both parent
+`0eeaa6b9...07a0` and child `bfd567d7...fa99` rollouts. Store correlation
+`06dcfe2f...e3e` passes quick-check, binds the parent route and all five Agency
+aliases, and records finalization `a6bf6ed1...d499`. Codex chose an opaque
+collaboration child despite the self-contained task; Agency therefore withheld
+the otherwise complete 3,337-byte report because only `evidence_verification`
+was missing. A direct-only, no-delegation R2 is the next live step and requires
+no model or auth change.
+
+End-of-package telemetry `63bf6e3a...beda` reports 45.6 percent remaining and
+requires this clean substantive/ledger checkpoint before the next live call.
