@@ -1333,6 +1333,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `4b6890ae` | 2026-08-27 | docs(ar297): prove exact Codex production install | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-326](../roadmap/issue-AR-326-admit-terminal-codex-host-artifact-collection.md), [AR-327](../roadmap/issue-AR-327-replay-codex-delivery-receipts-across-append-only-completion.md) | [detail](2026-08-27-4b6890ae-prove-exact-codex-production-install.md) |
 | `5e1decf8` | 2026-08-27 | docs(ar297): prove exact multi-harness installs | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | [detail](2026-08-27-5e1decf8-prove-exact-multi-harness-installs.md) |
 | `11dcced4` | 2026-08-27 | docs(ar297): correct OpenClaw generation alias | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `e56d1f4b` | 2026-08-27 | docs(ar297): diagnose Hermes tool transport | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | [detail](2026-08-27-e56d1f4b-diagnose-hermes-tool-transport.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
