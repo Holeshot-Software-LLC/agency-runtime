@@ -1325,6 +1325,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `8eb18009` | 2026-08-27 | docs(roadmap): record terminal Codex collection gate | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-325](../roadmap/issue-AR-325-restore-codex-first-complete-callback-reconciliation.md), [AR-326](../roadmap/issue-AR-326-admit-terminal-codex-host-artifact-collection.md) | [detail](2026-08-27-8eb18009-record-terminal-codex-collection-gate.md) |
 | `592f4a6b` | 2026-08-27 | fix(codex): collect accepted terminal canary artifacts | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-326](../roadmap/issue-AR-326-admit-terminal-codex-host-artifact-collection.md) | [detail](2026-08-27-592f4a6b-collect-accepted-terminal-canary-artifacts.md) |
 | `08264555` | 2026-08-27 | docs(ar297): checkpoint exact terminal collector candidate | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-326](../roadmap/issue-AR-326-admit-terminal-codex-host-artifact-collection.md) | [detail](2026-08-27-08264555-checkpoint-exact-terminal-collector-candidate.md) |
+| `9061733d` | 2026-08-27 | docs(ar297): record bounded Codex timeout | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-326](../roadmap/issue-AR-326-admit-terminal-codex-host-artifact-collection.md) | [detail](2026-08-27-9061733d-record-bounded-codex-timeout.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
