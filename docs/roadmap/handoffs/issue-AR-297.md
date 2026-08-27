@@ -104,8 +104,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   native worker run, live-proving AR-324 beyond the earlier generic identity.
 - The restricted 59-card call reaches authenticated `local-child-judge`, then
   fails closed at 62,139 ms as `native_child_compatibility_mutated` with
-  confidence 0.8 and no persisted selected IDs. Sanitized Store correlation
-  `50bd2770...a0b6` exits 0; raw alias output is the next diagnosis.
+  confidence 0.8. Store correlation `50bd2770...a0b6` exits 0; unchanged-alias
+  repeat `6df05ca7...884` recovers exact cached IDs `code-reviewer` plus
+  `software-test-engineer`, proving semantic over-selection.
 - No later ordinary Codex, Claude, Hermes, or OpenClaw process has a current
   successful Agency-turn receipt on this source.
 - Refresh the host install/dashboard and named repository gates for the exact
@@ -131,9 +132,9 @@ After compaction, reread this capsule and `git status`, then resume at the first
 unchecked line. Mark an item complete only with exact retained evidence.
 
 1. [x] Build and independently verify exact `c3493337` artifacts/images.
-2. [ ] Recover the exact free-judge selection behind
-   `native_child_compatibility_mutated`; correct AR-321 without direct model
-   access or changing an unapproved model/route choice.
+2. [ ] Test the approved free Mistral backend under deterministic temporary
+   LiteLLM aliases; correct AR-321 without direct model access or changing an
+   unapproved model, route, endpoint, or thinking choice.
 3. [ ] In a new exact Codex container, prove delivery, consumption, header,
    finalization, Store correlation, and attestation.
 4. [ ] Build and prove separate clean exact Claude, native-UID Hermes, and

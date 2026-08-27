@@ -1011,3 +1011,15 @@ persisted selected identifiers. Sanitized correlation receipt
 inter-agent diagnostic. Because exact v6 delivery, consumption, header,
 finalization, and attestation remain absent, AR-321 continues to own reliable
 free child-judge selection before another fresh Codex transaction.
+
+LiteLLM spend log `chatcmpl-f7ce0722-fdd8-4168-a29f-059c29905990` identifies
+the exact stable-alias call as 19,526 prompt plus 26 completion tokens; its
+database response projection is empty and the original short-lived Redis body
+expired. One bounded repeat of the byte-identical 59-card prompt through the
+unchanged stable alias recovers the cached 26-token body exactly:
+`code-reviewer` plus `software-test-engineer`, confidence 0.8, content
+`8f9a361c...d155`. Owner-private receipt `6df05ca7...884` exits 0. This proves
+semantic over-selection rather than lineage, transport, schema, or parser
+failure. ADR-0185 forbids deterministic filtering of the larger team; the next
+bounded package tests the same approved free backend under a deterministic
+temporary LiteLLM deployment while leaving the stable alias unchanged.

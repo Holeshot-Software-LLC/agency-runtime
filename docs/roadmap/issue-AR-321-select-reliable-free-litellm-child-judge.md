@@ -126,8 +126,11 @@ prose, and with JSON-object output it confidently selects the wrong specialist.
   59 cards in 62,139 ms with confidence 0.8, but the selected team fails exact
   compatibility as `native_child_compatibility_mutated`; its failure projection
   intentionally persists no selected IDs. Store correlation
-  `50bd2770...a0b6` exits 0 against Store `4842b81d...9c9`. Model reliability is
-  again the active blocker; no alias or model choice has been changed.
+  `50bd2770...a0b6` exits 0 against Store `4842b81d...9c9`. Bounded unchanged
+  stable-alias repeat `6df05ca7...884` recovers the exact cached selection as
+  `code-reviewer` plus `software-test-engineer`, confidence 0.8, proving
+  semantic over-selection. Model reliability is again the active blocker; no
+  alias or model choice has been changed.
 
 ## Approach
 
