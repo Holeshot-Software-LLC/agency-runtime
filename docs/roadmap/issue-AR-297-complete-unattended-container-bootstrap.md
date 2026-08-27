@@ -1878,3 +1878,28 @@ quick-check and native config remains byte-identical at `2552f21c...e680`.
 OpenClaw telemetry `197e4afa...0922` reports 48.1 percent, requiring this clean
 checkpoint before its live invocation; OpenClaw and Claude ordinary rows remain
 open.
+
+After clean checkpoint `14cab69b` / `9a87eb57`, fresh telemetry
+`45d11f26...b17f` immediately precedes the final OpenClaw ordinary process.
+Normal embedded session `29700000-0000-4000-8000-000000000301` exits 0;
+native stdout, stderr, and exit hash to `c20a26f2...f1a`,
+`25f89ac5...d1c4`, and `bde29436...0120`. Native receipt
+`d29ed865...756f` proves the sole `litellm/task-agency-openclaw` host route,
+thinking off, one exact 683-byte task, one exact 2,659-byte
+`accessibility-auditor` card in the 6,936-byte compiled prompt, 35 native tools,
+successful non-timeout termination, healthy state SQLite, and one nonempty
+3,993-byte response `73f1216e...cc7d`.
+
+Store receipt `a38c5a82...9de2` passes quick-check and binds trace
+`399a365a-482e-4155-8410-ac1e6ddfb87a`, accepted specialist selection/load,
+and five successful alias-only Agency inference receipts across generation,
+embedding, reranker, and critic groups. The run truthfully remains active with
+no terminal finalization because the embedded invocation has no outbound
+delivery channel; no boundary was weakened and no synthetic or external
+channel was installed. The obsolete generation-alias sanitizer is retained as
+exit 1 at `92a9f1c0...cb81`; the current exact alias verifier exits 0 at
+`d521f10b...65ba` and proves post-live config byte-identical at
+`c6632a1f...67b4`, with sole provider, empty fallbacks, SecretRefs, and plugin
+unchanged. Independent final receipt `3c300451...5a02` exits 0. Package
+telemetry `5bf27f4d...b073` reports 25.4 percent and requires this recovery
+pair. Only Claude remains open in the four-harness ordinary matrix.

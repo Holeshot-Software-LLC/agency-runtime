@@ -37,9 +37,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Work only in `/tmp/agency-runtime-ar297.WQUbF2` on
   `codex/ar297-production-container-live-evidence`, based on `origin/main`
   `0a23983a`. Never touch the shared checkout.
-- Clean ledger `f2c2fa5d` closes all four final installs. Final Codex and Hermes
-  ordinary rows also pass; telemetry now requires this recovery pair before
-  OpenClaw's final ordinary invocation.
+- Clean ledger `9a87eb57` precedes the final OpenClaw ordinary PASS. Codex,
+  Hermes, and OpenClaw final ordinary rows now pass; Claude remains pending.
 - Linux remains **NO-GO**. AR-297/#335 remain open. No tracker write, push, PR,
   merge, tag, signing, publication, release, or hosted workflow is authorized.
 
@@ -91,6 +90,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   accepted completion, `missing=[]`, exact visible accepted replay, healthy
   Stores, and byte-identical config. The corrected native source receipt is
   `d8e9eab7...9fe3`; the first helper-default mismatch remains retained.
+- Final OpenClaw receipt `3c300451...5a02` exits 0: exact card/prompt visibility,
+  sole LiteLLM host alias, thinking off, nonempty native response, accepted
+  Store load/all Agency route receipts, unchanged config, and the explicit
+  no-channel active-run limitation.
 - Exact host venv/wheel/pip check pass. Combined install `00d51490...b559`
   exits 1 only for attended Codex activation; all four bundles are current and
   packaged-runtime attestation `ec2f8fdd...9292` binds `dbf1581f...f301`.
@@ -106,8 +109,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 
 ## exact-blocker
 
-- Complete OpenClaw's final ordinary row and Claude's pending first-party login
-  and final ordinary row, then refresh host/dashboard, gates, records, and teardown.
+- Complete Claude's pending first-party login and final ordinary row, then
+  refresh host/dashboard, gates, records, and teardown.
 - Cross-OS artifacts, signing, tracker parity, push/PR/merge/tag/publication,
   release, and exhaustive dispatch are unauthorized, not Linux-only GO gates.
 
