@@ -1334,6 +1334,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `5e1decf8` | 2026-08-27 | docs(ar297): prove exact multi-harness installs | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | [detail](2026-08-27-5e1decf8-prove-exact-multi-harness-installs.md) |
 | `11dcced4` | 2026-08-27 | docs(ar297): correct OpenClaw generation alias | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `e56d1f4b` | 2026-08-27 | docs(ar297): diagnose Hermes tool transport | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | [detail](2026-08-27-e56d1f4b-diagnose-hermes-tool-transport.md) |
+| `9a7a99bf` | 2026-08-27 | docs(ar297): isolate Hermes tool admission gap | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | [detail](2026-08-27-9a7a99bf-isolate-hermes-tool-admission-gap.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
