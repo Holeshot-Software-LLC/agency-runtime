@@ -1283,6 +1283,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `860790ff` | 2026-08-26 | docs(ar317): bind exact LiteLLM-only config | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-317](../roadmap/issue-AR-317-route-agency-inference-through-litellm-aliases.md) | null |
 | `bd990c4a` | 2026-08-26 | docs(ar297): checkpoint exact LiteLLM artifacts | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `4d6d4930` | 2026-08-26 | docs(ar318): record Codex activation wait race | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-318](../roadmap/issue-AR-318-bound-codex-activation-child-wait.md) | [ADR-0182](../decisions/0182-bound-codex-activation-child-wait.md) |
+| `42642aab` | 2026-08-26 | fix(ar318): bound Codex activation child wait | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-318](../roadmap/issue-AR-318-bound-codex-activation-child-wait.md) | [ADR-0182](../decisions/0182-bound-codex-activation-child-wait.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
