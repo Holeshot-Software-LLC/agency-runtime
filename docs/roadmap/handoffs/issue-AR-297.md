@@ -107,9 +107,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   confidence 0.8. Store correlation `50bd2770...a0b6` exits 0; unchanged-alias
   repeat `6df05ca7...884` recovers exact cached IDs `code-reviewer` plus
   `software-test-engineer`, proving semantic over-selection.
-- Three same-backend temperature-zero aliases reproduce that team across nine
-  unique requests (`5baea1c2...a7b1`), are deleted, and leave stable projection
-  `18dd1bdd...18b3` unchanged. Temperature is not a repair.
+- Nine temperature-zero requests reproduce that team; all temporary aliases
+  are deleted and stable projection `18dd1bdd...18b3` is unchanged. Generic
+  compatibility repair `2642ac10...0b1e` safely abstains over all 59 cards.
 - No later ordinary harness process has a successful Agency-turn receipt.
 - Refresh host/dashboard and named gates, then remove all AR-297 containers.
 - AR-299 through AR-317 tracker parity, hosted cross-OS artifacts, signing,
@@ -133,8 +133,8 @@ unchecked line. Mark an item complete only with exact retained evidence.
 
 1. [x] Build and independently verify exact `c3493337` artifacts/images.
 2. [x] Test deterministic temporary Mistral aliases and remove all three.
-3. [ ] Test one inference-owned compatibility repair through the unchanged
-   alias; implement only if it can abstain and never filters model output.
+3. [ ] Test one closed-diagnostic inference repair through the unchanged alias;
+   implement only if it can abstain and never filters model output.
 4. [ ] In a new exact Codex container, prove delivery, consumption, header,
    finalization, Store correlation, and attestation.
 5. [ ] Build and prove separate clean exact Claude, native-UID Hermes, and

@@ -1036,3 +1036,12 @@ at `a30c4b0d...9200`, `9638bf09...557`, and `18b39cbe...932e`; the stable
 deployment projection remains byte-identical at `18dd1bdd...18b3`. The next
 bounded option is an inference-owned compatibility-repair call through the
 same route; a different model or thinking choice still requires owner input.
+
+The first inference-owned compatibility-repair probe remains fail-closed but
+does not advance the canary. Through the unchanged stable alias it evaluates
+the complete 59-card universe with 20,146 prompt tokens and returns an empty
+exact-schema selection at confidence 0.8; owner-private receipt
+`2642ac10...0b1e` exits 0. The next bounded probe supplies only the model's own
+prior selected IDs and the closed `separate_context_pairs` diagnostic so the
+same inference authority can reassess its answer. It still permits abstention
+and does not filter, force, add, or remove a specialist in deterministic code.

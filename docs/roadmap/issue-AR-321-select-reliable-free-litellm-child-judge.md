@@ -138,6 +138,10 @@ prose, and with JSON-object output it confidently selects the wrong specialist.
   `a30c4b0d...9200`, `9638bf09...557`, and `18b39cbe...932e` leave zero
   temporary deployments, while the stable projection remains byte-identical
   at `18dd1bdd...18b3`.
+- Generic inference-owned compatibility repair `2642ac10...0b1e` re-evaluates
+  all 59 cards through the unchanged stable alias and safely abstains after
+  20,146 prompt tokens. A closed-diagnostic variant remains bounded; no product
+  code, stable alias, model, route, or thinking choice has changed.
 
 ## Approach
 
