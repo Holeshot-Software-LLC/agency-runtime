@@ -1480,7 +1480,7 @@ class HookBridge:
             return None
         return correlation.session_id, trace_id
 
-    def _restricted_codex_activation_child_parent_scope(  # noqa: C901 - closed authority gate
+    def _restricted_codex_activation_child_parent_scope(
         self,
         payload: dict[str, Any],
     ) -> tuple[str, str] | None:
@@ -1497,17 +1497,15 @@ class HookBridge:
         if not is_restricted_codex_activation_canary_environment(os.environ):
             return None
         try:
-            child_session_id = validate_correlation_id(
+            hook_parent_session_id = validate_correlation_id(
                 _required_string(payload, "session_id"),
                 field="session_id",
             )
-            agent_id = validate_correlation_id(
+            child_session_id = validate_correlation_id(
                 _required_string(payload, "agent_id"),
                 field="agent_id",
             )
         except (HookInputError, ValueError):
-            return None
-        if child_session_id != agent_id:
             return None
 
         try:
@@ -1533,7 +1531,7 @@ class HookBridge:
             )
         except Exception:
             return None
-        if not parent_session_id:
+        if not parent_session_id or parent_session_id != hook_parent_session_id:
             return None
         parent_trace_id = self._unambiguous_open_trace(parent_session_id)
         getter = getattr(self.store, "get_codex_activation_canary_parent_snapshot", None)

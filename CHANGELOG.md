@@ -27,6 +27,7 @@ related:
   - docs/decisions/0183-honor-pinned-canary-judge-timeout.md
   - docs/decisions/0184-bound-codex-wait-to-full-child-staffing.md
   - docs/decisions/0187-bind-codex-canary-child-through-host-authored-lineage.md
+  - docs/decisions/0188-separate-codex-hook-parent-and-child-identities.md
   - docs/roadmap/README.md
   - docs/worklog/README.md
   - THIRD_PARTY_NOTICES.md
@@ -174,9 +175,11 @@ changes rather than duplicating every commit.
 - Codex `0.149.1` activation children now recover their exact canary parent
   from the bounded, owner-trusted leading host `session_meta` record instead of
   depending on process-environment inheritance that native child hook sessions
-  do not retain. Canonical UUIDv7 lineage, path, version, origin, depth, and
-  live Store-route checks fail closed; an optional request digest can only
-  narrow the same host-authored parent.
+  do not retain. The hook's root `session_id` and child `agent_id` are validated
+  separately against the artifact's agreeing parent and child identities.
+  Canonical UUIDv7 lineage, path, version, origin, depth, and live Store-route
+  checks fail closed; an optional request digest can only narrow the same
+  host-authored parent.
 - The exact Codex activation canary now gives its single native wait enough
   time for the complete legal child-staffing path: two bounded judge calls plus
   a fixed child-completion margin inside the unchanged outer transaction. It

@@ -1,6 +1,6 @@
 ---
 title: "Bind the Codex canary child through host-authored lineage"
-status: accepted
+status: superseded
 category: decisions
 created: 2026-08-27
 updated: 2026-08-27
@@ -9,6 +9,7 @@ related:
   - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
   - docs/decisions/0179-admit-exact-codex-canary-delivery-at-subagent-start.md
   - docs/decisions/0186-bind-codex-child-session-with-canary-request-digest.md
+  - docs/decisions/0188-separate-codex-hook-parent-and-child-identities.md
   - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
   - docs/roadmap/issue-AR-313-trust-normal-umask-codex-artifacts.md
   - docs/roadmap/issue-AR-314-bind-codex-default-canary-role.md
@@ -21,7 +22,7 @@ related:
   - docs/worklog/README.md
 supersedes:
   - docs/decisions/0186-bind-codex-child-session-with-canary-request-digest.md
-superseded_by: null
+superseded_by: docs/decisions/0188-separate-codex-hook-parent-and-child-identities.md
 id: ADR-0187
 type: decision
 deciders: [maintainers]

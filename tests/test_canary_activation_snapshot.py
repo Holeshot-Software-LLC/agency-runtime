@@ -270,7 +270,7 @@ def test_restricted_codex_parent_snapshot_resolves_only_the_exact_live_route(
     )
 
 
-def test_restricted_codex_child_session_resolves_one_host_lineage_bound_parent(
+def test_restricted_codex_child_hook_resolves_one_host_lineage_bound_parent(
     store: Store,
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
@@ -326,7 +326,9 @@ def test_restricted_codex_child_session_resolves_one_host_lineage_bound_parent(
     bridge = HookBridge("codex", store=store, _master={"enabled": True})
     payload = {
         "hook_event_name": "SubagentStart",
-        "session_id": _CODEX_LINEAGE_CHILD,
+        # Codex 0.149.1 keeps the root session in ``session_id`` and identifies
+        # the spawned child thread separately in ``agent_id``.
+        "session_id": _CODEX_LINEAGE_PARENT,
         "agent_id": _CODEX_LINEAGE_CHILD,
         "agent_type": "default",
         "cwd": str(cwd),
@@ -462,7 +464,7 @@ def test_restricted_codex_child_lineage_rejects_a_terminal_parent(
     bridge = HookBridge("codex", store=store, _master={"enabled": True})
     payload = {
         "hook_event_name": "SubagentStart",
-        "session_id": _CODEX_LINEAGE_CHILD,
+        "session_id": _CODEX_LINEAGE_PARENT,
         "agent_id": _CODEX_LINEAGE_CHILD,
         "cwd": str(cwd),
         "transcript_path": str(artifact),
