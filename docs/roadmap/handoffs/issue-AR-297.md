@@ -24,8 +24,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-297
 branch: codex/ar297-production-container-live-evidence
-evidence_commit: be05c90a0a539ad02056eb5354f3c93fe7facf18
-minimum_ledger_commit: be05c90a0a539ad02056eb5354f3c93fe7facf18
+evidence_commit: 0ac06c116ea0aefbcbb5f7392669709fbe5f4afd
+minimum_ledger_commit: 0ac06c116ea0aefbcbb5f7392669709fbe5f4afd
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 ---
@@ -37,7 +37,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Work only in `/tmp/agency-runtime-ar297.WQUbF2` on
   `codex/ar297-production-container-live-evidence`, based on `origin/main`
   `0a23983a`. Never touch the shared checkout.
-- Clean ledger `be05c90a` binds installs, Codex R2, host proof, and named gates.
+- Clean ledger `0ac06c11` binds installs, Codex R2, host/gates, and Claude preflight.
 - Linux remains **NO-GO**. AR-297/#335 remain open. No tracker write, push, PR,
   merge, tag, signing, publication, release, or hosted workflow is authorized.
 
@@ -82,9 +82,11 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   `80942b3b...3944`, `6d1d3f52...8a29`, `00211b3c...b1c`, and
   `f3b89dac...cf92` rule out missing task/bridge access. Mistral made zero
   finalizer calls in all three attempts and is rejected pending a new choice.
-- Claude R2 native/Store receipts `c5c3b811...b54f`/`ef24801d...b6fb` prove
-  one exact 3,227-byte card and all five LiteLLM routes, but its unchanged
-  first-party OAuth expired and could not refresh; no third attempt ran.
+- Claude R2 and refreshed R3 receipts `a712f945...ba82`/`ea44335e...71b7`
+  prove one exact 3,227-byte card and all five LiteLLM routes. Local status
+  `ca740051...3af1` is not provider-valid: native stdout/exit
+  `456775a6...e4b3`/`85acfd2e...5409` retain the OAuth refresh failure, so no
+  unchanged R4 is admissible; package telemetry `b755a171...193c` is 56.9%.
 - OpenClaw R1 native/Store receipts `0e4ecc3d...c53`/`6bf28dbe...367b` prove
   one exact card, all five routes, and native exit 0; the approved 14B route
   returned exact `{}` and Agency recorded `response_invalid`.
@@ -99,13 +101,13 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   401/200 no-store; exact 2,659-byte prompt `c3cfc098...5848` is untruncated.
 - Optional host Codex verifier `933bc916...bb4` fails before model invocation
   because attended hook trust is not ready; it changes nothing and uses no bypass.
-- Same-method Claude OAuth is refreshed: container copy refresh and status
-  `ca740051...3af1` pass. Alias inventory `73551634...0551` remains unchanged;
-  pre-final Docker receipt `6d0c7888...81f7` binds 36 labelled containers.
+- Alias inventory `73551634...0551` remains unchanged; pre-final Docker receipt
+  `6d0c7888...81f7` binds 36 labelled containers.
 
 ## exact-blocker
 
-- Owner-selected Hermes/OpenClaw aliases, three ordinary turns, and teardown remain.
+- Genuine first-party Claude re-login, owner-selected Hermes/OpenClaw aliases,
+  three successful ordinary turns, and teardown remain.
 - Cross-OS artifacts, signing, tracker parity, push/PR/merge/tag/publication,
   release, and exhaustive workflow dispatch remain unauthorized—not GO gates
   for this Linux-only bounded task unless authority changes.

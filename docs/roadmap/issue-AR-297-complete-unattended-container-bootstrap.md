@@ -1561,6 +1561,31 @@ an owner-private copy refresh exited 0 without printing credential bytes, and
 sanitized native status `ca740051...3af1` now reports first-party
 `authMethod=claude.ai` and `loggedIn=true`. No auth method or model changed.
 
+That sanitized status was only local credential-presence metadata, not a
+successful provider exchange. After clean checkpoint `606ce9e5` / `0ac06c11`,
+the materially refreshed credential justified one R3 rather than an unchanged
+retry. Immediately preceding telemetry `85b38b88...6620` reported 24.5 percent
+remaining and a clean required checkpoint. The normal Claude 2.1.239 process
+again used `dontAsk`, no model override, no activation bypass, the exact
+684-byte task `7411494b...49de`, and sole native session
+`29700000-0000-4000-8000-000000000003`.
+
+R3 native stdout and exit hash to `456775a6...e4b3` and
+`85acfd2e...5409`; the process exits 1. Content-minimized native receipt
+`a712f945...ba82` nevertheless exits 0 and proves both Agency hooks completed,
+the exact 3,227-byte prompt `589a6e0c...303e` occurs once in the 6,511-byte
+additional context, and the exact task occurs twice in the owner-private native
+session `55eab009...0ffb`. Store correlation `ea44335e...71b7` passes
+quick-check and binds run `b0b4866b...0115`, trace
+`8d976302...e9aa`, accepted routing to
+`section-508-accessibility-specialist`, all five alias-only Agency receipts,
+and one specialist load. No terminal finalization exists because Claude's
+provider response again reports `authentication_failed`: the OAuth session is
+expired and could not be refreshed. No unchanged R4 is admissible; a genuine
+first-party `claude.ai` re-login is the remaining Claude operator gate.
+Package-end telemetry `b755a171...193c` reports 56.9 percent remaining and
+permits normal same-task continuation after this recovery pair.
+
 Authenticated LiteLLM inventory `73551634...0551` shows exactly the seven
 current `task-agency-*` aliases. Sanitized snapshots retain sole deployments
 for the Qwen 3 32B child judge (`54a2c740...d9ee`), rejected Mistral Hermes
