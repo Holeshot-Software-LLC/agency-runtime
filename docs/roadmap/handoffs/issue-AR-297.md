@@ -24,8 +24,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-297
 branch: codex/ar297-production-container-live-evidence
-evidence_commit: bfc7e7d28f0a7eb2df472fed5fcabeb566c627b7
-minimum_ledger_commit: bfc7e7d28f0a7eb2df472fed5fcabeb566c627b7
+evidence_commit: 5eedb539bc7503b268f17a5029462fb03a59ea3f
+minimum_ledger_commit: 5eedb539bc7503b268f17a5029462fb03a59ea3f
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 ---
@@ -37,8 +37,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Work only in `/tmp/agency-runtime-ar297.WQUbF2` on
   `codex/ar297-production-container-live-evidence`, based on `origin/main`
   `0a23983a`. Never touch the shared checkout.
-- Clean ledger `bfc7e7d2` binds exact artifacts/images, all four separate
-  installs, ordinary Hermes R1, and the corrected chat transport.
+- Clean ledger `5eedb539` binds exact artifacts/images, all four separate
+  installs, and ordinary Hermes R1/R2 evidence.
 - Linux remains **NO-GO**. AR-297/#335 remain open. No tracker write, push, PR,
   merge, tag, signing, publication, release, or hosted workflow is authorized.
 
@@ -93,11 +93,15 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   `2ebc93fd...712e`, `a937c8f9...b1f7`, and `a2a44504...761b`. The exact card
   occurs once, but the model sees no `agency_finalize`, makes zero tool calls,
   and Hermes warns `Unknown toolsets: agency-runtime`.
+- Self-contained R3 rules out missing task access: prompt `7411494b...49de`,
+  Store/correlation `80942b3b...3944`/`6d1d3f52...8a29`, and native
+  state/receipt `00211b3c...b1c`/`f3b89dac...cf92` prove accepted routing and
+  one exact card, but Mistral again makes zero tool calls and is withheld.
 
 ## exact-blocker
 
-- Hermes tool-definition admission, all four ordinary harness completions,
-  exact host install/dashboard, named gates, and final teardown remain pending.
+- An owner-selected Hermes model-route change, all four ordinary completions,
+  host install/dashboard, named gates, and final teardown remain pending.
 - Cross-OS artifacts, signing, tracker parity, push/PR/merge/tag/publication,
   release, and exhaustive workflow dispatch remain unauthorized—not GO gates
   for this Linux-only bounded task unless authority changes.

@@ -1384,3 +1384,29 @@ dynamically registered `agency_finalize` in registry toolset
 plugin manifest declares no `provides_tools`. The next bounded package must
 isolate that registration-to-model-definition gap before another live call;
 the first two failures remain retained evidence rather than being retried away.
+
+R3 removed task incompleteness as an alternative explanation without changing
+the model or configuration. The exact 684-byte self-contained HTML-review task
+hashes to `7411494b...49de` on both host and container, prohibits external
+access and follow-up questions, and runs through the same ordinary UID-10000
+process. Native stdout/stderr/exit hash to `a94a1e6c...8a68`,
+`9e844172...fff1`, and `bde29436...120`; the process again exits 0 only because
+Agency replaces its draft with the fail-closed response.
+
+R3 Agency Store `80942b3b...3944` and native state `00211b3c...b1c` pass
+quick-check. Correlation `6d1d3f52...8a29` binds accepted routing to the same
+specialist, all five Agency inference routes, run `299f0edf...39dc`, and
+`response_invalid` finalization `e98c98df...4d8c` missing only
+`actual_model_selected`. Native receipt `f3b89dac...cf92` exits 0 and proves
+one exact 3,227-byte card occurrence in the 7,608-byte API content. Mistral
+returned a complete 3,627-byte report at `62b553e6...5fd0`, copied the initial
+header snapshot, and still made zero tool calls despite receiving the exact
+direct-or-`tool_call` finalizer instruction once.
+
+Offline native inspection confirms the host bridge itself is usable: the raw
+tool list contains `agency_finalize`, the model-visible list replaces it with
+`tool_search`, `tool_describe`, and `tool_call`, the embedded catalog lists the
+finalizer, and `tool_describe` returns its required `draft_text` schema. Three
+bounded attempts therefore establish that the approved Mistral Hermes route is
+not reliable enough for the governed finalization contract. Selecting another
+Hermes model/alias target requires the mandated owner interview before R4.
