@@ -887,3 +887,9 @@ Granite 4.2 8B subsequently abstains on both exact selector calls at
 official Apache-2.0 Qwen 2.5 14B download exits 0 at `e3793ca3...b203`, model
 receipt `20b2d98b...360b` proves 14.8B/Q4_K_M and 32,768-token context, and sole
 schema-constrained temporary LiteLLM deployment `96ee8dc1...f9f0` is ready.
+
+Qwen 2.5 returns valid JSON but selects `python-application-engineer` at
+`35f1030d...5e8e`, so its alias is removed. Official free Llama 3.1 8B
+acquisition/model receipts `16e64126...2137` and `048e80f2...e20f` pass,
+proving 8.0B/Q4_K_M and 131,072-token context. Sole temporary schema deployment
+`fa9bc0d1...331e` is ready while the stable Agency route remains unchanged.

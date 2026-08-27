@@ -74,6 +74,12 @@ prose, and with JSON-object output it confidently selects the wrong specialist.
   exits 0 at `e3793ca3...b203`; metadata `20b2d98b...360b` proves Qwen2,
   14.8B/Q4_K_M, and 32,768-token context. Sole temporary schema deployment
   `96ee8dc1...f9f0` passes create receipt `da7b3161...edf6` before evaluation.
+- Qwen 2.5 returns exact-schema JSON but selects `python-application-engineer`
+  at `35f1030d...5e8e`, so its alias is removed without a repair call. Official
+  free `llama3.1:8b` acquisition exits 0 at `16e64126...2137`; metadata
+  `048e80f2...e20f` proves Llama, 8.0B/Q4_K_M, and 131,072-token context.
+  Sole temporary schema deployment `fa9bc0d1...331e` passes secret-safe create
+  receipt `469c84df...5740` before evaluation.
 - The owner requires all Agency inference on this system to resolve through
   authenticated LiteLLM aliases and requires the child judge to remain free.
   Tracker creation remains prohibited by the active task.
