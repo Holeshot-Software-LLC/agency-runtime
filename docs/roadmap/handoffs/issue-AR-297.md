@@ -107,22 +107,22 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   confidence 0.8. Store correlation `50bd2770...a0b6` exits 0; unchanged-alias
   repeat `6df05ca7...884` recovers exact cached IDs `code-reviewer` plus
   `software-test-engineer`, proving semantic over-selection.
-- No later ordinary Codex, Claude, Hermes, or OpenClaw process has a current
-  successful Agency-turn receipt on this source.
-- Refresh the host install/dashboard and named repository gates for the exact
-  candidate, then remove both old and new AR-297 proof containers.
+- Three same-backend temperature-zero aliases reproduce that team across nine
+  unique requests (`5baea1c2...a7b1`), are deleted, and leave stable projection
+  `18dd1bdd...18b3` unchanged. Temperature is not a repair.
+- No later ordinary harness process has a successful Agency-turn receipt.
+- Refresh host/dashboard and named gates, then remove all AR-297 containers.
 - AR-299 through AR-317 tracker parity, hosted cross-OS artifacts, signing,
   push, PR, merge, tag, publication, release, and exhaustive workflow dispatch
   remain unauthorized.
 
 ## same-task-continuity
 
-Exact artifacts: `~/.agency-runtime/release-artifacts/`
+Exact artifacts are under `~/.agency-runtime/release-artifacts/`
 `dist-c34933377f7fb16431120f21d487bfbc9910cd55-linux-ar297`; config is
-`~/.agency-runtime/configs/`
-`ar297-litellm-a4e213d6b454ca90.yaml`. Current evidence is
+`~/.agency-runtime/configs/ar297-litellm-a4e213d6b454ca90.yaml`. Evidence is
 `~/.agency-runtime/evidence/ar297-go-c3493337`; Codex container
-`agency-ar297-codex-c3493337` remains running with older labelled containers.
+`agency-ar297-codex-c3493337` remains with older labelled containers.
 AR-321 evidence is under `ar321-child-judge`; all await final teardown. Helper:
 `/tmp/agency-runtime-ar297-evidence.pcLOZn/run_with_litellm_key.py`.
 
@@ -132,24 +132,24 @@ After compaction, reread this capsule and `git status`, then resume at the first
 unchecked line. Mark an item complete only with exact retained evidence.
 
 1. [x] Build and independently verify exact `c3493337` artifacts/images.
-2. [ ] Test the approved free Mistral backend under deterministic temporary
-   LiteLLM aliases; correct AR-321 without direct model access or changing an
-   unapproved model, route, endpoint, or thinking choice.
-3. [ ] In a new exact Codex container, prove delivery, consumption, header,
+2. [x] Test deterministic temporary Mistral aliases and remove all three.
+3. [ ] Test one inference-owned compatibility repair through the unchanged
+   alias; implement only if it can abstain and never filters model output.
+4. [ ] In a new exact Codex container, prove delivery, consumption, header,
    finalization, Store correlation, and attestation.
-4. [ ] Build and prove separate clean exact Claude, native-UID Hermes, and
+5. [ ] Build and prove separate clean exact Claude, native-UID Hermes, and
    OpenClaw systemd production-container installs.
-5. [ ] Run later ordinary unattended Conveyor-equivalent processes for all four
+6. [ ] Run later ordinary unattended Conveyor-equivalent processes for all four
    harnesses; retain native artifacts, Store correlations, and full workforce
    prompt visibility without treating definition presence as runtime delivery.
-6. [ ] Install the exact candidate on this Linux host and prove the private
+7. [ ] Install the exact candidate on this Linux host and prove the private
    authenticated dashboard plus the approved service-manager contract.
-7. [ ] Run every named repository gate and record exact exits and hashes.
-8. [ ] Update canonical issues/capsule and make the required local substantive
+8. [ ] Run every named repository gate and record exact exits and hashes.
+9. [ ] Update canonical issues/capsule and make the required local substantive
    and `docs(worklog):` ledger commits.
-9. [ ] Resolve and remove every container labelled `AR-297`; retain teardown
+10. [ ] Resolve and remove every container labelled `AR-297`; retain teardown
    evidence and verify zero labelled survivors.
-10. [ ] Issue the Linux-scoped GO/NO-GO and complete the persistent goal only
+11. [ ] Issue the Linux-scoped GO/NO-GO and complete the persistent goal only
    when all required items above are truthfully closed.
 
 ## verification

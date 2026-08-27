@@ -131,6 +131,13 @@ prose, and with JSON-object output it confidently selects the wrong specialist.
   `code-reviewer` plus `software-test-engineer`, confidence 0.8, proving
   semantic over-selection. Model reliability is again the active blocker; no
   alias or model choice has been changed.
+- Three temporary same-backend exact-schema aliases add only temperature 0,
+  which Agency's request already declares. Nine unique successful LiteLLM
+  request IDs all reproduce the same two-card content `8f9a361c...d155`; spend
+  correlation `5baea1c2...a7b1` closes temperature as a repair. Delete receipts
+  `a30c4b0d...9200`, `9638bf09...557`, and `18b39cbe...932e` leave zero
+  temporary deployments, while the stable projection remains byte-identical
+  at `18dd1bdd...18b3`.
 
 ## Approach
 

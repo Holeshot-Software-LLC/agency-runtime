@@ -1023,3 +1023,16 @@ semantic over-selection rather than lineage, transport, schema, or parser
 failure. ADR-0185 forbids deterministic filtering of the larger team; the next
 bounded package tests the same approved free backend under a deterministic
 temporary LiteLLM deployment while leaving the stable alias unchanged.
+
+That deterministic avenue is now closed. Three fresh temporary aliases retain
+the approved backend, exact schema, 32,768 context, thinking off, 120-second
+timeouts, and zero retries while adding `temperature=0`; create receipts
+`b00a4c04...f430`, `f5880647...d454`, and `23ad4d61...afb3` pass. Agency's
+selector request already carries temperature 0, and nine unique successful
+LiteLLM request IDs across body/header no-cache diagnostics all reproduce the
+same two-card response `8f9a361c...d155`. Spend correlation
+`5baea1c2...a7b1` records the distinct requests. All three aliases are removed
+at `a30c4b0d...9200`, `9638bf09...557`, and `18b39cbe...932e`; the stable
+deployment projection remains byte-identical at `18dd1bdd...18b3`. The next
+bounded option is an inference-owned compatibility-repair call through the
+same route; a different model or thinking choice still requires owner input.
