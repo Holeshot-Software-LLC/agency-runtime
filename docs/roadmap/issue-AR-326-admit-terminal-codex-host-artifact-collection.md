@@ -82,6 +82,11 @@ and current-profile attestation fails with `verification_refused`.
 - Committed AR-327 source replays that exact retained Store and rollout with
   staffed `verified_existing_receipt` at `f98bb268...7cb3`, confirming AR-326's
   accepted-terminal collector itself is no longer the blocker.
+- Exact rebuilt container `2ec2180b...17bb` closes the live gate: its sole
+  300-second no-bypass install exits 0 at `54572077...ac82`, persists verified
+  current-profile attestation, and correlates one accepted terminal parent,
+  exact child delivery, exit-0 worker, and `missing=[]` finalization in Store
+  receipt `ef8304ef...e30c`.
 
 ## Approach
 
@@ -141,8 +146,8 @@ before any native child route, delivery, finalization, or terminal parent
 existed. Install JSON `40c1c188...7f5a` and content-free Store correlation
 `5f76b443...6eaa` retain the failure; Store quick-check passes. This run neither
 proves nor disproves terminal collection. A second exact clean container passes
-fresh absence at `1849d13e...a74c` and will use the previously proven explicit
-300-second activation window for its sole install.
+fresh absence at `1849d13e...a74c` and used the explicit 300-second activation
+window for its sole install, isolating the later AR-327 replay mismatch.
 
 ## Acceptance
 
@@ -150,7 +155,7 @@ fresh absence at `1849d13e...a74c` and will use the previously proven explicit
       accepted terminal commit while the bounded backend resolver remains exact.
 - [x] Hook-side callers remain live-only and terminal, ambiguous, rejected, or
       stale runs cannot create host-delivery authority.
-- [ ] A rebuilt fresh one-install Codex container collects the canonical child
+- [x] A rebuilt fresh one-install Codex container collects the canonical child
       artifact, persists current-profile attestation, and exits 0.
 - [x] Focused warning-strict and named repository checks pass.
 - [ ] A same-repository tracker issue is created and linked after explicit

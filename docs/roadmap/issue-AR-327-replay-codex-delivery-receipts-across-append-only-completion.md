@@ -98,7 +98,7 @@ whole-window semantics.
       mismatch cases fail closed; Claude's exact-artifact behavior is unchanged.
 - [x] The affected warning-strict suite and focused conformance mutations pass.
 - [x] Rebuilt exact artifacts/images pass independent verification.
-- [ ] One new clean no-bypass Codex install persists current-profile
+- [x] One new clean no-bypass Codex install persists current-profile
       attestation and exits 0.
 - [ ] A same-repository tracker issue is created and linked after explicit
       authorization.
@@ -123,7 +123,14 @@ wheel `e117b362...fc03d` and sdist `ac30feb0...9fb6c`. Canonical build,
 strict Twine, independent verification, manifest, all six image builds, and
 image verification exit 0; manifest and image receipts are
 `780512b2...b7876` and `00fcf8e6...5f76`. The new exact Codex image is
-`206e94c4...a5b2e`; its clean one-install proof remains pending.
+`206e94c4...a5b2e` and is the image used by the live proof below.
+
+Fresh container `2ec2180b...17bb` passes exact absence `e857f524...d9bd`.
+Its sole 300-second no-bypass install exits 0 at `54572077...ac82`, persists
+current-profile attestation `ded810a5...6e66`, and accepts finalization
+`56de0046...e30b` with `missing=[]`. Exact parent, trace, child, prompt, route,
+delivery, Store, and response header agree; read-only Store correlation
+`ef8304ef...e30c` and post-install status `e4755e50...66a3` both exit 0.
 
 The retained unfiltered suite exits 1 after 211 passes only because
 `test_native_child_delivery_verification_ledger.py` still expects schema 46 in

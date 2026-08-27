@@ -1264,3 +1264,23 @@ systemd, and dashboard image IDs are `206e94c4...a5b2e`,
 `237c788d...d7e40`, `7869a7a3...121b8`, `91c3a5bc...0fde`, and
 `1b0653a5...cb87`. One new clean Codex container, fresh absence, and its sole
 300-second no-bypass install are the next live gate.
+
+Exact Codex container `2ec2180b...17bb` passes fresh absence at
+`e857f524...d9bd` against image `206e94c4...a5b2e`, candidate `7dbd0cbc`,
+config `a4e213d6...7348`, private auth, Codex 0.149.1, and no pre-existing
+Agency target. Its sole 300-second no-bypass production install exits 0 at
+`54572077...ac82` with `complete=true`, managed-only eight-event policy, one
+native route/delivery, one exit-0 child, one completed wait, accepted
+finalization `56de0046...e30b` with `missing=[]`, valid response header, and
+persisted current-profile attestation `ded810a5...6e66`.
+
+Parent `01a043dc...1bff`, trace `01a043dc...d2c3`, child
+`01a043de...206b`, native decision `native-child-7738d04b...c06f`, complete
+2,379-character prompt `e409b2c8...20bd`, and delivery prefix
+`ef67633a...0b0c` agree. Store correlation `ef8304ef...e30c` exits 0 with
+SQLite `quick_check=ok`; Store and parent/child rollouts hash to
+`7e767300...27b1`, `b3fc13a8...9274`, and `f7633d02...5e88`. Later read-only
+status `e4755e50...66a3` exits 0 and reports `runtime-verified`, verified
+attestation, current launcher artifacts, and current managed policy. AR-327's
+exact rebuilt live gate is closed; ordinary post-install Codex loading remains
+part of the four-harness unattended-process row.
