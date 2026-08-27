@@ -1318,6 +1318,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `da906bfc` | 2026-08-27 | docs(ar321): close same-model judge repairs | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-321](../roadmap/issue-AR-321-select-reliable-free-litellm-child-judge.md) | null |
 | `a0acac1a` | 2026-08-27 | docs(ar321): reject Gemma child judge trial | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-321](../roadmap/issue-AR-321-select-reliable-free-litellm-child-judge.md) | null |
 | `c72e99b2` | 2026-08-27 | docs(ar321): checkpoint Qwen judge candidate | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-321](../roadmap/issue-AR-321-select-reliable-free-litellm-child-judge.md) | null |
+| `1bb2c659` | 2026-08-27 | docs(ar321): promote exact Qwen judge | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-321](../roadmap/issue-AR-321-select-reliable-free-litellm-child-judge.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
