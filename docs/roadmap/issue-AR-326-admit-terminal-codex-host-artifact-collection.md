@@ -79,6 +79,9 @@ and current-profile attestation fails with `verification_refused`.
   child artifact, Store decision, and receipt. Installation still exits 1 only
   because the receipt hashes the trusted rollout before Codex appends its final
   `task_complete` record; AR-327 owns that narrower replay mismatch.
+- Committed AR-327 source replays that exact retained Store and rollout with
+  staffed `verified_existing_receipt` at `f98bb268...7cb3`, confirming AR-326's
+  accepted-terminal collector itself is no longer the blocker.
 
 ## Approach
 

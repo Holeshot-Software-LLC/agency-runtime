@@ -1248,3 +1248,8 @@ JSONL prefix bound by the immutable receipt. The affected suite passes 211
 tests with three known AR-323 schema-literal cases deselected, 17 conformance
 tests pass, and both new mutations are killed with source unchanged. Exact
 artifacts and one new clean Codex proof remain pending.
+
+Committed-source replay against the exact retained Qwen2 Store and rollout
+exits 0 at `f98bb268...7cb3`; both the read-only receipt projection and full
+restricted verifier return staffed `verified_existing_receipt`. This is source
+validation only: the failed installed candidate is not relabelled or mutated.

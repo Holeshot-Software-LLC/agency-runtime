@@ -24,8 +24,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-297
 branch: codex/ar297-production-container-live-evidence
-evidence_commit: 396d4e2e6b6ed91193452816299a45c1c51b9451
-minimum_ledger_commit: 396d4e2e6b6ed91193452816299a45c1c51b9451
+evidence_commit: 2b688947743de52b2e56ed5d8f929d79516df1d2
+minimum_ledger_commit: 2b688947743de52b2e56ed5d8f929d79516df1d2
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 ---
@@ -37,9 +37,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Work only in `/tmp/agency-runtime-ar297.WQUbF2` on
   `codex/ar297-production-container-live-evidence`, based on `origin/main`
   `0a23983a`. Never touch the shared checkout.
-- Clean ledger `396d4e2e` binds Qwen2's exact AR-327 diagnosis. The
-  regression-first receipt-prefix repair and focused verification are ready
-  for their required clean substantive/ledger checkpoint.
+- Clean ledger `2b688947` binds AR-327's repair and focused evidence. Committed
+  source replays the exact retained Qwen2 failure green without a model or write;
+  exact artifact/image rebuild is next.
 - Linux remains **NO-GO**. AR-297/#335 remain open. No tracker write, push, PR,
   merge, tag, signing, publication, release, or hosted workflow is authorized.
 
@@ -95,11 +95,13 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   suite passes 211 tests with 3 known AR-323 deselections at `1b0fd16d...9ab3`;
   17 decision tests pass at `f54f2441...aab`, and both mutations are killed
   with source unchanged at `527ff7d8...a78`. Focused Ruff/format passes.
+- Exact Qwen2 committed-source replay `f98bb268...7cb3` exits 0: read-only and
+  full restricted verification both return staffed `verified_existing_receipt`.
 
 ## exact-blocker
 
-- Checkpoint AR-327, replay exact Qwen2 state through committed source, rebuild
-  artifacts/images, then use one new clean Codex container; never rerun Qwen1/2.
+- Checkpoint the exact replay, rebuild/verify artifacts and images, then use one
+  new clean Codex container; never rerun Qwen1/2.
 - Claude, Hermes, OpenClaw, later ordinary processes, exact host install,
   authenticated dashboard, named gates, and final teardown remain pending.
 - Cross-OS artifacts, signing, tracker parity, push/PR/merge/tag/publication,

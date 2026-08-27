@@ -62,6 +62,10 @@ to equal the later completed file rejects an unchanged verified prefix.
   literals explicitly deselected. Seventeen conformance tests pass and both new
   curated mutations are killed with source unchanged. Focused Ruff and format
   checks pass.
+- Committed source `636ce34b` replays the exact retained Qwen2 Store and child
+  rollout without a model call or write. Both read-only receipt verification
+  and the complete restricted verifier return staffed
+  `verified_existing_receipt`; receipt `91bd1c0d...21ac` remains immutable.
 - Tracker creation is prohibited by the active AR-297 task.
 
 ## Approach
@@ -108,6 +112,11 @@ suite passes 211 tests with 3 AR-323 deselections at stdout
 mutations are killed with zero survived/invalid and source unchanged at
 `527ff7d8...a78`; and focused Ruff/format passes at `82b3e6a6...4f18`.
 Every command exits 0 with empty stderr.
+
+Exact committed-source Qwen2 replay exits 0 at `f98bb268...7cb3`. It proves
+terminal parent/route resolution, trusted canonical artifact, exact Store
+decision/receipt, and both verification layers staffed without updating the
+failed installed candidate's Store or attestation.
 
 The retained unfiltered suite exits 1 after 211 passes only because
 `test_native_child_delivery_verification_ledger.py` still expects schema 46 in
