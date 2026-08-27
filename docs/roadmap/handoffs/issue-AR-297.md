@@ -86,9 +86,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   `ca740051...3af1` is not provider-valid: native stdout/exit
   `456775a6...e4b3`/`85acfd2e...5409` retain the OAuth refresh failure, so no
   unchanged R4 is admissible; package telemetry `b755a171...193c` is 56.9%.
-- OpenClaw R1 native/Store receipts `0e4ecc3d...c53`/`6bf28dbe...367b` prove
-  one exact card, all five routes, and native exit 0; the approved 14B route
-  returned exact `{}` and Agency recorded `response_invalid`.
+- OpenClaw R2 native/Store receipts `bb90b2fc...9841`/`1a4a1a4f...a2f5` prove
+  one exact card, all five routes, native exit 0, and a nonempty response. Its
+  no-delivery run stays active; bounded loading passes without weakening policy.
 - Fresh Codex receipts `8355a9a6...7590`/`7e39f736...d921`/`2ae0bdde...4a79`
   prove one exact card, four aliases, no delegation, exit 0, exact response
   correlation, `missing=[]`, and unchanged config/policy. Its ordinary row closes.
@@ -112,7 +112,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 
 ## exact-blocker
 
-- Complete Claude and OpenClaw ordinary turns plus Claude login; refresh
+- Complete Claude's ordinary turn plus its pending first-party login; refresh
   the exact host/dashboard and named gates, checkpoint, then teardown.
 - Cross-OS artifacts, signing, tracker parity, push/PR/merge/tag/publication,
   release, and exhaustive dispatch are unauthorized, not Linux-only GO gates.

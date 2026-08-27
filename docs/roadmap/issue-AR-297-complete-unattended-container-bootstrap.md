@@ -1768,3 +1768,33 @@ Independent verifier `2ae0bdde...4a79` exits 0, rechecks all correlations, and
 proves the mode-0600 exact config, managed requirements, and relay hashes remain
 unchanged on image `28c3fd34...8797`. Package telemetry `ca37511b...1ba0`
 reports 35.0 percent and requires this recovery pair before OpenClaw.
+
+The fresh exact OpenClaw systemd container also passes its bounded later
+ordinary loading cell. Immediately preceding telemetry receipt
+`13a15d89...1bc5` used the clean `65ef42f2` / `58bf9ca7` checkpoint. Normal
+embedded session `29700000-0000-4000-8000-000000000201` invoked the exact
+683-byte task `abfcd7ee...3408` with thinking off and sole native provider/model
+`litellm/task-agency-openclaw`; no model override, fallback, activation bypass,
+or configuration mutation occurred. Native stdout/stderr/exit hash to
+`0663ad32...f0d0`, `dafd580e...2b96`, and `bde29436...120` after 235,821 ms.
+
+Independent native receipt `bb90b2fc...9841` exits 0 and binds run
+`8fb5e4cc-6263-4dc7-8338-d9dce3e08877`, one exact 2,659-byte
+`accessibility-auditor` card `c3cfc098...5848` in the 6,936-byte compiled
+prompt, 35 native tools, and one 3,784-byte nonempty response
+`9005a854...610f`. Native session and trajectory hashes are
+`e0ce63a5...8ad0` and `5de86189...dcf9`; the native state SQLite quick-check
+passes at `1ea2b5cf...ca73`. Store backup `7be84928...47c3` passes quick-check
+and correlation receipt `1a4a1a4f...a2f5` binds accepted selection and load of
+`accessibility-auditor` plus all five required alias-only Agency inference
+receipts.
+
+The Store run truthfully remains active without a terminal finalization: this
+ordinary embedded command requested no channel delivery, and OpenClaw invokes
+its authoritative `reply_payload_sending` full-envelope gate only for an
+outbound channel payload. The shipped production package omits its private
+synthetic QA channel. This is therefore a bounded unattended Agency-loading
+PASS, not a channel-delivery claim; weakening the final-only boundary,
+installing a test-only transport, or silently choosing an external channel was
+rejected. Exact native config validation still exits 0. The OpenClaw matrix
+cell closes while its non-delivery limitation remains explicit.
