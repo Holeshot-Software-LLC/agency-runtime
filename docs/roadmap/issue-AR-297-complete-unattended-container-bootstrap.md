@@ -958,3 +958,10 @@ Claude, Hermes, OpenClaw systemd, and dashboard image IDs are
 `f2d35ea8...aa83b`, and `9d3eb4c2...c1507`; exact label and packaged-version
 verification `f1808c22...64674` exits 0. A fresh clean Codex transaction is the
 next live gate.
+
+That transaction at `c7f35dd5` confirms the request digest and parent route but
+again gives the successful child only generic identity. AR-324 source checkpoint
+`66b889a2` replaces ambient digest inheritance with the exact bounded,
+owner-trusted Codex `0.149.1` child `session_meta` lineage. Focused tests pass
+137/137 and the expanded canary/artifact/security set passes 259/259; a clean
+ledger rebuild and fresh no-bypass transaction remain required before success.

@@ -32,11 +32,11 @@ related:
   - docs/roadmap/issue-AR-320-bound-codex-wait-to-full-child-staffing.md
   - docs/roadmap/issue-AR-321-select-reliable-free-litellm-child-judge.md
   - docs/roadmap/issue-AR-322-bind-codex-child-session-to-canary-parent.md
+  - docs/roadmap/issue-AR-324-bind-codex-canary-child-through-host-lineage.md
   - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
   - docs/decisions/0185-enforce-child-judge-schema-at-litellm-alias.md
   - docs/decisions/0186-bind-codex-child-session-with-canary-request-digest.md
-  - docs/decisions/0177-make-local-verification-private-by-construction.md
-  - docs/decisions/0178-project-config-declared-credentials-into-tool-reduced-canaries.md
+  - docs/decisions/0187-bind-codex-canary-child-through-host-authored-lineage.md
   - docs/decisions/0179-admit-exact-codex-canary-delivery-at-subagent-start.md
   - docs/decisions/0180-project-current-profile-canary-install-home.md
   - docs/decisions/0181-use-litellm-aliases-as-host-inference-control-plane.md
@@ -51,7 +51,7 @@ superseded_by: null
 type: handoff
 issue_id: AR-297
 branch: codex/ar297-production-container-live-evidence
-evidence_commit: c7f35dd541560a8a4e2420c62ee4a43fdd932cb5
+evidence_commit: 66b889a27fc51c0b4681469ce1624e2302dce4a2
 minimum_ledger_commit: c7f35dd541560a8a4e2420c62ee4a43fdd932cb5
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
@@ -64,8 +64,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Work remains in dedicated worktree `/tmp/agency-runtime-ar297.WQUbF2` on
   `codex/ar297-production-container-live-evidence`, based on `origin/main`
   `0a23983a`. Never use the shared checkout.
-- Clean ledger candidate `c7f35dd5` contains AR-322 source `a5c1ad53`, recovery
-  `77cd30ae`, and worklog ledger `c7f35dd5`.
+- Clean artifact ledger `c7f35dd5` remains reproducible; AR-324 source
+  checkpoint `66b889a2` awaits its recovery/worklog ledger before rebuild.
 - Linux remains **NO-GO**. AR-297/#335 stay open. Tracker writes, push, PR,
   merge, tag, signing, publication, release, and hosted workflow actions are
   not authorized.
@@ -106,8 +106,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   at 300 seconds, and gets exit 0 without timeout. Rollouts
   `16f4d5e2...2934`/`910538f1...6953` and Store `d3471c9a...e2af` prove only
   generic identity because Codex identifies the child session, not the parent.
-- AR-322 checkpoint `a5c1ad53` binds child session==agent ID to the unique
-  Store request digest; 99 focused tests pass. Rebuild and live proof remain.
+- AR-324 source `66b889a2` binds the exact trusted Codex `0.149.1` child
+  `session_meta` lineage; 137 focused and 259 expanded tests pass. Rebuild and
+  live proof remain.
 - No later ordinary Codex, Claude, Hermes, or OpenClaw process has a current
   successful Agency-turn receipt on this source.
 - Refresh the host install/dashboard and named repository gates for the exact
@@ -122,9 +123,9 @@ Exact artifacts: `~/.agency-runtime/release-artifacts/`
 `dist-c7f35dd541560a8a4e2420c62ee4a43fdd932cb5-linux-ar297`; config is
 `~/.agency-runtime/configs/`
 `ar297-litellm-a4e213d6b454ca90.yaml`. Current evidence is
-`~/.agency-runtime/evidence/ar297-go-c1cf1793`; Codex container
-`agency-ar297-codex-c1cf1793` and `agency-ar297-codex-c1cf1793-j2` remain
-running with older labelled evidence containers. AR-321 evidence is under
+`~/.agency-runtime/evidence/ar297-go-c7f35dd5`; Codex container
+`agency-ar297-codex-c7f35dd5` remains running with older labelled evidence
+containers. AR-321 evidence is under
 `ar321-child-judge`; all await final teardown. Secret-safe helper:
 `/tmp/agency-runtime-ar297-evidence.pcLOZn/run_with_litellm_key.py`.
 
@@ -134,7 +135,7 @@ After compaction, reread this capsule and `git status`, then resume at the first
 unchecked line. Mark an item complete only with exact retained evidence.
 
 1. [x] Build and independently verify exact `c7f35dd5` artifacts/images.
-2. [ ] Stable alias is proven; use the rebuilt candidate to prove Codex delivery,
+2. [ ] Ledger AR-324, rebuild exact artifacts/images, then prove Codex delivery,
    consumption, header, finalization, Store correlation, and attestation.
 3. [ ] Build and prove separate clean exact Claude, native-UID Hermes, and
    OpenClaw systemd production-container installs.
