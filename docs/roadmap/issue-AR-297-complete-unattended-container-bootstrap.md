@@ -1821,3 +1821,19 @@ The first independent image run exits 1 because it detects an accidental Node
 with the established Node 24.15 pin makes the final verifier pass at
 `07f372e3...eb9a`. Codex, Claude, Hermes, OpenClaw systemd, and dashboard image
 IDs begin `c8e7a265`, `93eb1f9e`, `3a4cac26`, `c3d712ec`, and `4d2ccddc`.
+
+Final candidate setup then proves Codex, Claude, and UID-10000 Hermes remain
+absent after successful dry-runs. OpenClaw's dry-run exits 0 but strict receipt
+`8ffcb927...af70` detects its empty runtime-home namespace, so that container
+is retained as a diagnostic rather than cleaned and reused. A second untouched
+OpenClaw container passes absence at `5feaa49c...2cdd`.
+
+Claude, Hermes, and OpenClaw R2 installs exit 0 at `579d65c8...a0e9`,
+`4d04f360...02d8`, and `4debebf3...c748`; their exact bundle digests are
+`b2151080...b119`, `eab39058...c15e`, and `c7a68bb8...8f90`. All three Stores
+pass quick-check. OpenClaw's root user manager, exact sole
+`task-agency-openclaw` route, SecretRefs, empty fallbacks, and 13-hook runtime
+pass independently. After native Hermes doctor, strict receipt
+`d7bc15f0...d8f8` proves the exact 0700 root, 0500 guard, 0400 marker, policy,
+and zero `.pyc` entries. Telemetry `5af0422f...082c` reports 26.1 percent and
+forces this clean recovery pair before the final Codex live install.

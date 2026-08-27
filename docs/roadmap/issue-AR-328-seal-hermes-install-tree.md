@@ -76,7 +76,7 @@ host bundle contract unchanged.
       exact unsealed guard rather than reporting it unchanged.
 - [x] Focused warning-strict installer, rollback, and uninstall tests pass.
 - [x] Exact rebuilt artifacts and production images pass independent checks.
-- [ ] A fresh host install survives Hermes restart and strict exact-tree
+- [x] A fresh host install survives Hermes restart and strict exact-tree
       validation with no unmanifested cache.
 - [ ] A same-repository tracker issue is created and linked after explicit
       authorization.
@@ -93,4 +93,8 @@ independent distribution verification, manifest, and six final image builds
 exit 0. Wheel/sdist hashes are `75d63ff9...3762`/`2b1ae7ec...79d9`; final image
 verification exits 0 at `07f372e3...eb9a`. R1's exit 1 is retained: it caught
 an incorrect Node 22 OpenClaw rebuild before the established Node 24.15 pin was
-restored. Fresh Hermes restart and strict-tree evidence remain AR-297's next gate.
+restored. Final UID-10000 Hermes install `4d04f360...02d8`, native doctor, and
+the post-load strict-tree receipt `d7bc15f0...d8f8` exit 0. The latter binds
+image `3a4cac26...1bf`, policy `python-bytecode-cache-denied-v1`, target/guard/
+marker modes 0700/0500/0400, no `.pyc`, and exact validation. Only the
+authorization-prohibited tracker mapping remains open.

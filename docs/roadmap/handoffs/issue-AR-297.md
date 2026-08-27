@@ -37,7 +37,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Work only in `/tmp/agency-runtime-ar297.WQUbF2` on
   `codex/ar297-production-container-live-evidence`, based on `origin/main`
   `0a23983a`. Never touch the shared checkout.
-- Clean ledger `e0b0b25c` binds AR-328; exact artifacts/images pass and four fresh installs are next.
+- Clean ledger `54939116` binds the exact `e0b0b25c` artifacts; three final non-Codex installs pass.
 - Linux remains **NO-GO**. AR-297/#335 remain open. No tracker write, push, PR,
   merge, tag, signing, publication, release, or hosted workflow is authorized.
 
@@ -57,26 +57,22 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - AR-328 regression `751276ea...e3a` fails before repair. The exact cache guard
   preserves movable installs; 359 tests pass with 2 skips at
   `981fbbc8...ddd0`, and focused Ruff/docs pass with empty stderr.
-- Exact Qwen2 committed-source replay `f98bb268...7cb3` exits 0: read-only and
-  full restricted verification both return staffed `verified_existing_receipt`.
 - Exact `e0b0b25c` wheel/sdist are `75d63ff9...3762`/`2b1ae7ec...79d9`;
   manifest `fcfd0231...b1b0`, canonical/Twine/verification, and six final
   builds exit 0. R1 image verification correctly rejects Node 22; the pinned
   Node 24.15 rebuild passes at `07f372e3...eb9a`. Final image IDs begin
   `c8e7a265`, `93eb1f9e`, `3a4cac26`, `c3d712ec`, and `4d2ccddc`.
-- Fresh Codex absence/install/Store/status receipts `ad4edec5...dfd6`,
-  `c41e8eae...0039`, `1ca3bf03...cf6`, and `6754603c...4173` exit 0.
-  Bundle `9bcb81e6...454e` has one exact child, valid header, `missing=[]`,
-  current-profile attestation, and no activation bypass.
-- Fresh Claude absence/dry/install/status receipts `5665ae9a...573`,
-  `67f5125e...7467`, `1917bec2...575`, and `ab524382...ffc3` exit 0;
-  bundle `7ffd1c4c...c53` is registered/enabled and native inventory is exact.
-- Fresh UID-10000 Hermes R2 absence/config/dry/install receipts
-  `4e962155...2b`, `880b3da3...aea`, `917e1577...06c`, and
-  `5c3b902b...838` exit 0; bundle `06c68be0...b4e` registers one finalizer and
-  eight hooks. Fresh OpenClaw R2 absence/config/install/runtime receipts
-  `89c245f4...f2b`, `bdc0667b...873`, `df4601f0...b12`, and
-  `2f0293a8...bee` exit 0; exact alias-only config loads all 13 hooks.
+- Final Codex absence survives its dry-run at `0aab382c...3163`; its sole live
+  install awaits this telemetry-forced checkpoint.
+- Final Claude install/status/artifacts `579d65c8...a0e9`/`98cbc224...897d`/
+  `105bf8b0...6499` exit 0; bundle `b2151080...b119` is registered/enabled.
+- Final UID-10000 Hermes install/status/artifacts `4d04f360...02d8`/
+  `b9b6e7aa...a3f1`/`0cb3331c...2e8a` exit 0; bundle `eab39058...c15e`.
+  Native doctor and strict post-load tree proof `d7bc15f0...d8f8` retain only
+  the 0500/0400 manifested guard, no `.pyc`, and exact validation.
+- OpenClaw dry-run truthfully leaves an empty runtime home at `8ffcb927...af70`;
+  untouched R2 absence `5feaa49c...2cdd`, install `4debebf3...c748`, Store
+  `c6da8137...0b12`, systemd, exact alias config, and 13-hook runtime all pass.
 - Hermes R1-R3 prove one exact card and accepted routing; R3 receipts
   `80942b3b...3944`, `6d1d3f52...8a29`, `00211b3c...b1c`, and
   `f3b89dac...cf92` rule out missing task/bridge access. Mistral made zero
@@ -112,9 +108,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 
 ## exact-blocker
 
-- Refresh four separate clean candidate installs and their ordinary rows,
-  complete Claude's pending first-party login, then refresh the host/dashboard,
-  named gates, records, and teardown.
+- Run the sole final Codex live install, checkpoint four-install evidence, then
+  repeat all ordinary rows and complete Claude's pending first-party login.
+- Refresh the host/dashboard, named gates, records, and teardown.
 - Cross-OS artifacts, signing, tracker parity, push/PR/merge/tag/publication,
   release, and exhaustive dispatch are unauthorized, not Linux-only GO gates.
 
@@ -124,7 +120,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Evidence: `~/.agency-runtime/evidence/ar297-go-e0b0b25c`; secret-safe helpers
   remain `/tmp/agency-runtime-ar297-evidence.pcLOZn/`.
 - Protected Python: `~/.agency-runtime-ci/ar297-release-0827/venv/bin/python`.
-- Exactly 42 AR-297-labelled containers remain; remove all only at final teardown.
+- Exactly 47 labelled containers remain; six obsolete OpenClaw witnesses are stopped. Remove all at teardown.
 
 ## next-bounded-work-package
 
