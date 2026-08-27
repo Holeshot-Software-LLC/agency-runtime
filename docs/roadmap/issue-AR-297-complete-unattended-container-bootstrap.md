@@ -46,6 +46,7 @@ related:
   - docs/decisions/0182-bound-codex-activation-child-wait.md
   - docs/decisions/0183-honor-pinned-canary-judge-timeout.md
   - docs/decisions/0184-bound-codex-wait-to-full-child-staffing.md
+  - docs/decisions/0185-enforce-child-judge-schema-at-litellm-alias.md
   - agency_runtime/cli/install_commands.py
   - agency_runtime/core/codex_managed_policy.py
   - agency_runtime/core/canary.py
@@ -918,3 +919,10 @@ removed. A fresh-name schema-bound Mistral deployment `4527083a...1ff6` passes
 create receipt `a53f4249...c78c` for an uncached repeat. Promotion now requires
 repeated sole-card initial success; repair may safely abstain but may not
 misroute, matching the real funded path rather than forcing a false selection.
+
+Fresh-name repeat `cea48a7d...ae89` matches the first schema-Mistral result:
+sole `code-reviewer`, confidence 0.8, and 20,037 prompt tokens. Stable
+deployment `0f0b1b59...a7d1` keeps the free Mistral backend while adding the
+exact output schema, 32,768 context, thinking off, 120-second timeout, zero
+retries, and no fallback. Snapshot `03cf8292...9baa` and promotion
+`7af0aa02...aa45` are secret-safe; the Agency config remains byte-identical.

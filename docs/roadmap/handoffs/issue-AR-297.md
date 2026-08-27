@@ -32,7 +32,7 @@ related:
   - docs/roadmap/issue-AR-320-bound-codex-wait-to-full-child-staffing.md
   - docs/roadmap/issue-AR-321-select-reliable-free-litellm-child-judge.md
   - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
-  - docs/decisions/0174-admit-local-ollama-canary-child-judges.md
+  - docs/decisions/0185-enforce-child-judge-schema-at-litellm-alias.md
   - docs/decisions/0175-batch-complete-embedding-input-sets.md
   - docs/decisions/0176-use-owner-runtime-temp-for-nonroot-user-services.md
   - docs/decisions/0177-make-local-verification-private-by-construction.md
@@ -64,7 +64,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Work remains in dedicated worktree `/tmp/agency-runtime-ar297.WQUbF2` on
   `codex/ar297-production-container-live-evidence`, based on `origin/main`
   `0a23983a`. Never use the shared checkout.
-- Clean recovery `0f086498`, ledger `330e7182`, binds exact `c1cf1793`.
+- Clean recovery `17decade`, ledger `85aecba6`, binds exact `c1cf1793`.
 - Linux remains **NO-GO**. AR-297/#335 stay open. Tracker writes, push, PR,
   merge, tag, signing, publication, release, and hosted workflow actions are
   not authorized.
@@ -106,7 +106,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   Llama then chooses `ai-evaluation-engineer` at `e39a84bd...8274`; its alias
   is removed. Schema Mistral passes initial `76d2cd38...d1a0` but repair
   abstains `98ead20c...c791`; GPT-OSS is empty disabled/low; both are removed.
-  Fresh Mistral alias `4527083a...1ff6` awaits an uncached repeat; repair fails closed.
+  Fresh Mistral repeat `cea48a7d...ae89` passes. Stable deployment
+  `0f0b1b59...a7d1` promotion `7af0aa02...aa45` awaits stable-route proof.
 - No later ordinary Codex, Claude, Hermes, or OpenClaw process has a current
   successful Agency-turn receipt on this source.
 - Refresh the host install/dashboard and named repository gates for the exact
@@ -134,8 +135,7 @@ unchecked line. Mark an item complete only with exact retained evidence.
 
 1. [x] Rebuild and independently verify artifacts/images from the exact
    AR-320/LiteLLM checkpoint; `c1cf1793` is the candidate.
-2. [ ] Through AR-321, repeat schema Mistral and promote only a repeatedly exact
-   free LiteLLM alias, then prove fresh Codex canonical delivery,
+2. [ ] Prove the ADR-0185 stable alias and fresh Codex canonical delivery,
    consumption, header, finalization, Store correlation, and attestation.
 3. [ ] Build and prove separate clean exact Claude, native-UID Hermes, and
    OpenClaw systemd production-container installs.

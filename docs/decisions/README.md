@@ -116,6 +116,7 @@ Status meanings:
 | [ADR-0171](0171-separate-native-and-structured-reranker-transports.md) | Separate native and structured reranker transports | Accepted |
 | [ADR-0175](0175-batch-complete-embedding-input-sets.md) | Batch complete embedding input sets within a bounded recall budget | Accepted |
 | [ADR-0181](0181-use-litellm-aliases-as-host-inference-control-plane.md) | Use LiteLLM aliases as the host inference control plane | Accepted |
+| [ADR-0185](0185-enforce-child-judge-schema-at-litellm-alias.md) | Enforce the child-judge schema at the LiteLLM alias | Accepted |
 
 ## Evidence and observability
 

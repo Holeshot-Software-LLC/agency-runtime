@@ -11,6 +11,7 @@ related:
   - docs/decisions/0153-adopt-per-stage-inference-profile-routes.md
   - docs/decisions/0160-pin-child-judge-providers-per-canary-harness.md
   - docs/decisions/0174-admit-local-ollama-canary-child-judges.md
+  - docs/decisions/0185-enforce-child-judge-schema-at-litellm-alias.md
   - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
   - docs/roadmap/issue-AR-317-route-agency-inference-through-litellm-aliases.md
   - docs/roadmap/issue-AR-321-select-reliable-free-litellm-child-judge.md

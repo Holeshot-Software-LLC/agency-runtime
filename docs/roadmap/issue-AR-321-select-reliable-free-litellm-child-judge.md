@@ -11,6 +11,7 @@ related:
   - docs/roadmap/issue-AR-320-bound-codex-wait-to-full-child-staffing.md
   - docs/roadmap/handoffs/issue-AR-297.md
   - docs/decisions/0181-use-litellm-aliases-as-host-inference-control-plane.md
+  - docs/decisions/0185-enforce-child-judge-schema-at-litellm-alias.md
   - agency_runtime/core/native_child_staffing.py
   - docs/worklog/README.md
 supersedes: []
@@ -101,6 +102,11 @@ prose, and with JSON-object output it confidently selects the wrong specialist.
   its alias is removed at `50e1398f...6ce2`. Fresh-name schema-bound Mistral
   deployment `4527083a...1ff6` passes create receipt `a53f4249...c78c` for an
   uncached repeat of the already-passing initial selector.
+- The fresh-name repeat also selects sole `code-reviewer` at
+  `cea48a7d...ae89`, matching `76d2cd38...d1a0`. Stable deployment
+  `0f0b1b59...a7d1` retains the Mistral backend and now enforces the exact
+  schema/context/thinking/timeout/retry contract; before snapshot and promotion
+  receipts are `03cf8292...9baa` and `7af0aa02...aa45`. ADR-0185 owns it.
 - The owner requires all Agency inference on this system to resolve through
   authenticated LiteLLM aliases and requires the child judge to remain free.
   Tracker creation remains prohibited by the active task.
@@ -128,7 +134,7 @@ health, model, latency, and response receipts, then repoint the stable
 
 - [x] A temporary LiteLLM alias is created with a secret-safe receipt and its
       exact local model, context, structured-output, and thinking controls.
-- [ ] Repeated fresh-name initial probes choose sole `code-reviewer` from the
+- [x] Repeated fresh-name initial probes choose sole `code-reviewer` from the
       exact 59-card universe without fallback, truncation, or direct access;
       repair probes either choose that card or fail closed, never misroute.
 - [ ] The stable child-judge alias is updated through LiteLLM, remains healthy,
