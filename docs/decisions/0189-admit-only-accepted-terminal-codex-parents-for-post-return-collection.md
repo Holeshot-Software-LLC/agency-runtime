@@ -11,6 +11,8 @@ related:
   - docs/decisions/0188-separate-codex-hook-parent-and-child-identities.md
   - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
   - docs/roadmap/issue-AR-326-admit-terminal-codex-host-artifact-collection.md
+  - docs/roadmap/issue-AR-327-replay-codex-delivery-receipts-across-append-only-completion.md
+  - docs/decisions/0190-bind-codex-receipt-replay-to-an-exact-append-only-prefix.md
   - docs/roadmap/handoffs/issue-AR-297.md
   - agency_runtime/core/canary_backends.py
   - agency_runtime/core/child_delivery_evidence.py

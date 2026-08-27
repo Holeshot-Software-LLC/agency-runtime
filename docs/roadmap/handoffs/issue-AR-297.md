@@ -11,10 +11,12 @@ related:
   - docs/roadmap/issue-AR-324-bind-codex-canary-child-through-host-lineage.md
   - docs/roadmap/issue-AR-325-restore-codex-first-complete-callback-reconciliation.md
   - docs/roadmap/issue-AR-326-admit-terminal-codex-host-artifact-collection.md
+  - docs/roadmap/issue-AR-327-replay-codex-delivery-receipts-across-append-only-completion.md
   - docs/decisions/0144-claim-codex-spawn-execution-at-the-first-complete-callback.md
   - docs/decisions/0179-admit-exact-codex-canary-delivery-at-subagent-start.md
   - docs/decisions/0188-separate-codex-hook-parent-and-child-identities.md
   - docs/decisions/0189-admit-only-accepted-terminal-codex-parents-for-post-return-collection.md
+  - docs/decisions/0190-bind-codex-receipt-replay-to-an-exact-append-only-prefix.md
   - docs/RELEASE_CHECKLIST.md
   - docs/worklog/README.md
 supersedes: []
@@ -22,8 +24,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-297
 branch: codex/ar297-production-container-live-evidence
-evidence_commit: 4b443be2f11045814250ab455d829800634c3909
-minimum_ledger_commit: 4b443be2f11045814250ab455d829800634c3909
+evidence_commit: 477c926a9b4dcad6112475f597280dca4303b66e
+minimum_ledger_commit: 477c926a9b4dcad6112475f597280dca4303b66e
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 ---
@@ -35,9 +37,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Work only in `/tmp/agency-runtime-ar297.WQUbF2` on
   `codex/ar297-production-container-live-evidence`, based on `origin/main`
   `0a23983a`. Never touch the shared checkout.
-- Clean ledger `4b443be2` binds the verified repair and exact artifacts/images.
-  Qwen1 timed out once at the 180-second CLI default. Clean Qwen2 has passed
-  absence; its sole `--activation-timeout 300` install is next.
+- Clean ledger `477c926a` binds the verified repair, exact artifacts/images,
+  and Qwen1 timeout. Qwen2's sole 300-second install proves the full terminal
+  graph but exposes the distinct AR-327 append-only receipt replay mismatch.
 - Linux remains **NO-GO**. AR-297/#335 remain open. No tracker write, push, PR,
   merge, tag, signing, publication, release, or hosted workflow is authorized.
 
@@ -85,13 +87,22 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Qwen1 sole install `40c1c188...7f5a` exits 1 at the default 180-second Codex
   timeout, before native route/delivery/finalization. Store quick-check passes;
   correlation `5f76b443...6eaa` closes the run as `canary_failed`.
-- Clean Qwen2 `9806a82a...2a2b` passes fresh absence `1849d13e...a74c`; no
-  install has run there and Qwen1 will not be reinstalled.
+- Clean Qwen2 `9806a82a...2a2b` passes absence `1849d13e...a74c`. Its sole
+  no-bypass install `ca1a6d2f...fcc1` uses the explicit 300-second window and
+  exits 1 only at attestation; Codex itself exits 0 without timeout.
+- Parent `01a043ab...5351`, trace `01a043ab...08c0`, child `01a043ad...4cb2`,
+  route, delivery, prompt `e409b2c8...20bd`, exit-0 worker, completed run, and
+  accepted finalization `38c5914f...465c` with `missing=[]` agree. Store and
+  rollout hashes are `6730ee75...3195`, `aeda3b86...fa59`, `ee5d577e...005d`.
+- Diagnostic `dcc4d23a...23b6` proves terminal parent/route, trusted artifact,
+  decision, and receipt all resolve. Nine identity/binding fields plus nonce
+  match; only digest differs: receipt `91bd1c0d...21ac` is the exact 16-record
+  prefix before Codex appends `task_complete`, yielding `ee5d577e...005d`.
 
 ## exact-blocker
 
-- Run exactly one no-bypass `--activation-timeout 300` install in clean Qwen2;
-  retain attestation, canonical artifact, Store, and rollout correlation.
+- Implement/checkpoint AR-327's exact receipt-bound JSONL-prefix replay, rebuild
+  artifacts/images, and use one new clean Codex container; never rerun Qwen1/2.
 - Claude, Hermes, OpenClaw, later ordinary processes, exact host install,
   authenticated dashboard, named gates, and final teardown remain pending.
 - Cross-OS artifacts, signing, tracker parity, push/PR/merge/tag/publication,
@@ -108,9 +119,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   candidate evidence is `~/.agency-runtime/evidence/ar297-go-4b443be2`.
 - Secret-safe helpers: `/tmp/agency-runtime-ar297-evidence.pcLOZn/`
   `run_with_litellm_key.py` and `capture_command.py`. Never print the key.
-- Protected Python is
-  `~/.agency-runtime-ci/ar297-release-0827/venv/bin/python`; the prior UV 3.13
-  remains only the exact negative `pidfd` diagnostic.
+- Protected Python is `~/.agency-runtime-ci/ar297-release-0827/venv/bin/python`;
+  prior UV 3.13 remains only the exact negative `pidfd` diagnostic.
 - Exactly 31 containers currently carry label
   `dev.agency-runtime.proof=AR-297`; latest is
   `agency-ar297-codex-4b443be2-qwen2`. Remove all only at final teardown.
@@ -123,9 +133,9 @@ unchecked line. Mark an item complete only with exact retained evidence.
 1. [x] Build and independently verify exact `c3493337` artifacts/images.
 2. [x] Test deterministic temporary Mistral aliases and remove all three.
 3. [x] Test and remove exact Gemma 3 27B; it selects the wrong role.
-4. [ ] Repair/checkpoint AR-326, rebuild exact artifacts/images, then prove
-   current-profile attestation in one clean Codex install; Qwen2 is fresh and
-   must use the proven explicit 300-second activation window.
+4. [ ] Repair/checkpoint AR-327, rebuild exact artifacts/images, then prove
+   current-profile attestation in one new clean Codex install using the proven
+   explicit 300-second activation window.
 5. [ ] Prove separate clean exact Claude, native-UID Hermes, and OpenClaw
    systemd production-container installs.
 6. [ ] Run later ordinary unattended Conveyor-equivalent processes for all four

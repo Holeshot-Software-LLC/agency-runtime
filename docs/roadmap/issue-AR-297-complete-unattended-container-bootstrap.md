@@ -39,6 +39,7 @@ related:
   - docs/roadmap/issue-AR-324-bind-codex-canary-child-through-host-lineage.md
   - docs/roadmap/issue-AR-325-restore-codex-first-complete-callback-reconciliation.md
   - docs/roadmap/issue-AR-326-admit-terminal-codex-host-artifact-collection.md
+  - docs/roadmap/issue-AR-327-replay-codex-delivery-receipts-across-append-only-completion.md
   - docs/decisions/0144-claim-codex-spawn-execution-at-the-first-complete-callback.md
   - docs/decisions/0174-admit-local-ollama-canary-child-judges.md
   - docs/decisions/0175-batch-complete-embedding-input-sets.md
@@ -56,6 +57,7 @@ related:
   - docs/decisions/0187-bind-codex-canary-child-through-host-authored-lineage.md
   - docs/decisions/0188-separate-codex-hook-parent-and-child-identities.md
   - docs/decisions/0189-admit-only-accepted-terminal-codex-parents-for-post-return-collection.md
+  - docs/decisions/0190-bind-codex-receipt-replay-to-an-exact-append-only-prefix.md
   - agency_runtime/cli/install_commands.py
   - agency_runtime/core/codex_managed_policy.py
   - agency_runtime/core/canary.py
@@ -70,7 +72,7 @@ epic: host-integrations
 issue_id: AR-297
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
-depends_on: [AR-300, AR-301, AR-302, AR-303, AR-304, AR-305, AR-306, AR-307, AR-308, AR-309, AR-310, AR-311, AR-313, AR-314, AR-315, AR-317, AR-318, AR-319, AR-320, AR-321, AR-322, AR-324, AR-325, AR-326]
+depends_on: [AR-300, AR-301, AR-302, AR-303, AR-304, AR-305, AR-306, AR-307, AR-308, AR-309, AR-310, AR-311, AR-313, AR-314, AR-315, AR-317, AR-318, AR-319, AR-320, AR-321, AR-322, AR-324, AR-325, AR-326, AR-327]
 blocks: []
 ---
 
@@ -1225,6 +1227,18 @@ as `canary_failed`, and correlates at content-free receipt `5f76b443...6eaa`.
 The container will not be reinstalled.
 
 Second exact container `9806a82a...2a2b` passes private input and fresh absence
-at `018f6d4f...494f` and `1849d13e...a74c`. Its sole install will use the
-previously proven `--activation-timeout 300`, still without an activation
-bypass or any config/model change.
+at `018f6d4f...494f` and `1849d13e...a74c`. Its sole no-bypass install uses
+the proven `--activation-timeout 300`; Codex exits 0 without timing out and
+proves one native route/delivery, complete prompt hash `e409b2c8...20bd`, an
+exit-0 child, and accepted finalization `38c5914f...465c` with `missing=[]`.
+Install receipt `ca1a6d2f...fcc1` exits 1 only because attestation is absent.
+Store `6730ee75...3195` and parent/child rollouts `aeda3b86...fa59` and
+`ee5d577e...005d` are retained.
+
+Content-free replay diagnostic `dcc4d23a...23b6` proves AR-326's terminal
+lookup succeeds and every persisted receipt field agrees except
+`artifact_digest`. The live receipt hashes to `91bd1c0d...21ac`, exactly the
+completed rollout's first 84,598 bytes and 16 complete JSONL records; Codex then
+appends a seventeenth `task_complete` record, producing `ee5d577e...005d`.
+AR-327 and ADR-0190 own an exact receipt-bound append-only prefix replay; no
+second install will run in Qwen2.

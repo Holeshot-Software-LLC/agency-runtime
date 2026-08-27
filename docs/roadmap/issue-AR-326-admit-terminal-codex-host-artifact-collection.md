@@ -9,10 +9,12 @@ related:
   - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
   - docs/roadmap/issue-AR-325-restore-codex-first-complete-callback-reconciliation.md
   - docs/roadmap/handoffs/issue-AR-297.md
+  - docs/roadmap/issue-AR-327-replay-codex-delivery-receipts-across-append-only-completion.md
   - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
   - docs/decisions/0179-admit-exact-codex-canary-delivery-at-subagent-start.md
   - docs/decisions/0188-separate-codex-hook-parent-and-child-identities.md
   - docs/decisions/0189-admit-only-accepted-terminal-codex-parents-for-post-return-collection.md
+  - docs/decisions/0190-bind-codex-receipt-replay-to-an-exact-append-only-prefix.md
   - agency_runtime/core/canary_backends.py
   - agency_runtime/core/child_delivery_evidence.py
   - agency_runtime/core/store/evidence.py
@@ -27,7 +29,7 @@ issue_id: AR-326
 priority: p0
 tracker_url: null
 depends_on: [AR-325]
-blocks: [AR-297]
+blocks: [AR-297, AR-327]
 ---
 
 # AR-326: Admit terminal Codex host-artifact collection
@@ -72,6 +74,11 @@ and current-profile attestation fails with `verification_refused`.
 - Clean ledger `4b443be2` produces independently verified exact artifacts and
   five harness/dashboard images. A new clean Codex container passes its private
   input and preinstall-absence checks; its sole install remains the live gate.
+- Clean Qwen2 ran that sole install with the explicit 300-second window. Codex
+  exits 0 and the accepted terminal resolver now finds the exact parent, route,
+  child artifact, Store decision, and receipt. Installation still exits 1 only
+  because the receipt hashes the trusted rollout before Codex appends its final
+  `task_complete` record; AR-327 owns that narrower replay mismatch.
 
 ## Approach
 
@@ -89,6 +96,8 @@ rejection finalizations, stale artifacts, and every ordinary process.
   reconciliation that exposes this later lifecycle mismatch.
 - ADR-0156 and ADR-0179 continue to require host-authored delivery evidence;
   terminal lookup may locate that evidence but cannot replace or manufacture it.
+- AR-327 preserves the terminal lookup and binds immutable receipt replay to
+  the exact prior append-only Codex artifact prefix.
 
 ## Verification
 
