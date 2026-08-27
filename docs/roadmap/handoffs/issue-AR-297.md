@@ -111,13 +111,14 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   are deleted and stable projection `18dd1bdd...18b3` is unchanged. Generic
   repair `2642ac10...0b1e` abstains; closed diagnostic `29a0045c...f034`
   repeats the pair. Same-model options are closed without unsafe filtering.
-- Gemma 3 27B receipts `bfe27b67...f53e`/`70b7267c...1ead` pass, but uncached
-  probe `e53e906f...b31c` selects the wrong role; deletion `ec9514af...75c0` passes.
+- Gemma probe `e53e906f...b31c` selects the wrong role and is removed.
+- Qwen 3 32B initial probes `275b1a2b...81f3`/`574468ce...f138` and repair
+  `7ef675c5...e9e0` select sole `code-reviewer`; three request rows correlate.
+  Both aliases are deleted; stable pre-promotion projection remains `18dd1bdd...18b3`.
 - No later ordinary harness process has a successful Agency-turn receipt.
 - Refresh host/dashboard and named gates, then remove all AR-297 containers.
-- AR-299 through AR-317 tracker parity, hosted cross-OS artifacts, signing,
-  push, PR, merge, tag, publication, release, and exhaustive workflow dispatch
-  remain unauthorized.
+- AR-299 through AR-317 tracker parity, hosted cross-OS artifacts, signing, push,
+  PR, merge, tag, publication, release, and exhaustive dispatch remain unauthorized.
 
 ## same-task-continuity
 
@@ -126,8 +127,7 @@ Exact artifacts are under `~/.agency-runtime/release-artifacts/`
 `~/.agency-runtime/configs/ar297-litellm-a4e213d6b454ca90.yaml`. Evidence is
 `~/.agency-runtime/evidence/ar297-go-c3493337`; Codex container
 `agency-ar297-codex-c3493337` remains with older labelled containers.
-AR-321 evidence is under `ar321-child-judge`; helper is
-`/tmp/agency-runtime-ar297-evidence.pcLOZn/run_with_litellm_key.py`.
+AR-321 evidence is under `ar321-child-judge`; helper is `/tmp/agency-runtime-ar297-evidence.pcLOZn/run_with_litellm_key.py`.
 
 ## next-bounded-work-package
 
@@ -137,8 +137,8 @@ unchecked line. Mark an item complete only with exact retained evidence.
 1. [x] Build and independently verify exact `c3493337` artifacts/images.
 2. [x] Test deterministic temporary Mistral aliases and remove all three.
 3. [x] Test and remove exact Gemma 3 27B alias; it selects the wrong role.
-4. [ ] Waiting for the next owner-selected free model; after it passes, prove a
-   new exact Codex delivery, consumption, header, finalization, Store, and attestation.
+4. [ ] Promote exact Qwen 3 32B alias, validate routes, then prove a new exact
+   Codex delivery, consumption, header, finalization, Store, and attestation.
 5. [ ] Build and prove separate clean exact Claude, native-UID Hermes, and
    OpenClaw systemd production-container installs.
 6. [ ] Run later ordinary unattended Conveyor-equivalent processes for all four

@@ -158,6 +158,22 @@ prose, and with JSON-object output it confidently selects the wrong specialist.
   exits 0 but fails the required sole `code-reviewer` semantic result. The alias
   is removed at `ec9514af...75c0`, and stable Mistral deployment projection
   `18dd1bdd...18b3` remains byte-identical. Another model requires owner input.
+- Owner-approved `qwen3:32b` acquisition exits 0; pull stream
+  `eea2379c...c4a0` and metadata `0f040ecb...63fc` prove local digest
+  `030ee887880f`, Qwen 3, dense 32.8B/Q4_K_M, and 40,960-token native context.
+  Fresh temporary deployment receipts `2e458fb9...4bff` and
+  `c7242824...9cd3` each prove one authenticated exact-schema alias with
+  32,768 context, thinking off, 120-second timeouts, and zero retries.
+- Both initial 59-card probes select sole `code-reviewer` at confidence 0.9;
+  receipts `275b1a2b...81f3` and `574468ce...f138` exit 0 with the same
+  54-byte content and zero reasoning. The funded repair independently selects
+  the same sole card after 16,572 prompt tokens at `7ef675c5...e9e0`.
+  Spend correlation `5163ff8e...61f6` proves three distinct successful request
+  IDs, exact Qwen backend/deployment IDs, and no recorded response-cache hit.
+- Deletion receipts `298e202b...eb2a` and `7dad190b...673f` leave zero
+  temporary deployments. Pre-promotion stable receipt `16b48f2c...ad40`
+  remains byte-identical Mistral projection `18dd1bdd...18b3`; Qwen promotion
+  and exact route validation are the next bounded package.
 
 ## Approach
 

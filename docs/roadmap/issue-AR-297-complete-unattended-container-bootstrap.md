@@ -1067,3 +1067,17 @@ zero retries. Its uncached 59-card call `e53e906f...b31c` selects sole
 `ec9514af...75c0` leaves zero temporary deployments; the stable child-judge
 projection remains byte-identical at `18dd1bdd...18b3`. A new owner-selected
 free model is required before another exact Codex transaction.
+
+The subsequent owner-approved `qwen3:32b` candidate clears the bounded model
+gate. Pull stream `eea2379c...c4a0` exits 0; metadata `0f040ecb...63fc`
+proves digest `030ee887880f`, dense Qwen 3 32.8B/Q4_K_M, and 40,960-token
+native context. Two fresh exact-schema temporary aliases retain 32,768 context,
+thinking off, 120-second timeouts, and zero retries at `2e458fb9...4bff` and
+`c7242824...9cd3`. Initial probes `275b1a2b...81f3` and
+`574468ce...f138` each select sole `code-reviewer` at confidence 0.9; funded
+repair `7ef675c5...e9e0` returns the same sole card with zero reasoning bytes.
+Spend correlation `5163ff8e...61f6` proves three distinct successful LiteLLM
+request IDs, exact Qwen backend/deployments, and no response-cache hit. Both
+temporary aliases are removed at `298e202b...eb2a` and `7dad190b...673f`.
+Stable pre-promotion receipt `16b48f2c...ad40` still hashes to the byte-identical
+Mistral projection `18dd1bdd...18b3`; Qwen promotion is the next bounded gate.
