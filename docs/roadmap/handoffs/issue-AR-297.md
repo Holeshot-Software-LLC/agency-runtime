@@ -63,9 +63,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Work remains in dedicated worktree `/tmp/agency-runtime-ar297.WQUbF2` on
   `codex/ar297-production-container-live-evidence`, based on `origin/main`
   `0a23983a`. Never use the shared checkout.
-- Last clean recovery pair is AR-320 governance `761a279d` and worklog
-  `ae162196`. Its bounded source repair passes 418 affected warning-strict
-  tests; checkpoint that slice, then continue the same Codex proof.
+- Last clean recovery pair is AR-320 source `1989d111` and worklog `906989ea`.
+  Its bounded repair passes 418 affected warning-strict tests; rebuild exact
+  artifacts and continue the same Codex proof in a fresh container.
 - Linux remains **NO-GO**. AR-297/#335 stay open. Tracker writes, push, PR,
   merge, tag, signing, publication, release, and hosted workflow actions are
   not authorized.
