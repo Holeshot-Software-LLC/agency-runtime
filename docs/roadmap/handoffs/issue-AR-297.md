@@ -24,8 +24,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-297
 branch: codex/ar297-production-container-live-evidence
-evidence_commit: dc37ff258422e763de2168cf328cfaeba69acc58
-minimum_ledger_commit: dc37ff258422e763de2168cf328cfaeba69acc58
+evidence_commit: 42cd4eb288d1553006d3b4ac378b13c0ef337977
+minimum_ledger_commit: 42cd4eb288d1553006d3b4ac378b13c0ef337977
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 ---
@@ -37,8 +37,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Work only in `/tmp/agency-runtime-ar297.WQUbF2` on
   `codex/ar297-production-container-live-evidence`, based on `origin/main`
   `0a23983a`. Never touch the shared checkout.
-- Clean ledger `dc37ff25` binds exact artifacts/images and all four separate
-  harness installs; later ordinary four-harness processes are next.
+- Clean ledger `42cd4eb2` binds exact artifacts/images, all four separate
+  installs, and the corrected OpenClaw alias. Ordinary Hermes R2 is next.
 - Linux remains **NO-GO**. AR-297/#335 remain open. No tracker write, push, PR,
   merge, tag, signing, publication, release, or hosted workflow is authorized.
 
@@ -51,35 +51,19 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   Promotion/metadata/final validation/literal/spend receipts are
   `6e19008f...1750`, `e1cba9f6...e841`, `42921a7e...867c`,
   `b686ab4b...9abe`, and `d7183bb5...2f07`. Temporary aliases are removed.
-- Fresh absence `dd5b6e71...c301` exits 0. The sole no-bypass install
-  `4c3e1e1b...c97e` accepts finalization `d5b3d58f...928c` with `missing=[]`.
-  Parent `01a0435e...ac6f`, trace `01a0435e...aeb0`, child
-  `01a0435f...02ac`, complete prompt `e409b2c8...20bd`, native delivery,
-  exit-0 child, valid header, and one completed wait agree.
-- Parent/child/Store hashes are `5cea5e66...3e22`, `1518a498...ecd1`, and
-  `ceb65010...2fc8`; Store quick-check passes. Attestation alone fails because
-  the post-return backend collector consults a live-only parent resolver.
-  Content-free diagnostic `89fafc05...5b02` isolates AR-326.
-- AR-325 preserves ordinary opaque diagnostics, atomically joins the fixed-unit
-  dispatch to the real child in either callback order, and rejects conflicts.
-  Its 149-test, 17-test, two-mutation, and 145-test receipts are
-  `394d9276...1c4d`, `74a9f4f9...4141`, `ea4477e5...3695`, `ae7689e3...7a84`.
+- Historical sole no-bypass install `4c3e1e1b...c97e` proves native delivery,
+  exit-0 child, valid header, accepted finalization, and Store quick-check;
+  `89fafc05...5b02` isolates the later AR-326 attestation defect.
+- AR-325 callback-order repair passes 149/17/145 tests and two mutations at
+  `394d9276...1c4d`, `74a9f4f9...4141`, `ae7689e3...7a84`, `ea4477e5...3695`.
 - Documentation checks pass for 893 files at `c5d005ae...18ac`; repository-wide
   Ruff/format passes at `94423e2d...0564`; diff-check output is empty. All exit 0.
-- AR-326 keeps hooks live-only while admitting only one exact accepted terminal
-  parent to the post-return collector. The affected 203-test suite exits 0 at
-  `4e76af29...a318`; its two focused mutations are killed at
-  `34858754...5cc7` with source unchanged.
-- The named Python spine passes 860 tests with 3 skips at `8cda02e1...4312`.
-  Full decision conformance kills 165/165 mutations at `891defed...ab8` with
-  zero survived/invalid and source unchanged. Both exit 0 with empty stderr.
-- Qwen1 sole install `40c1c188...7f5a` exits 1 at the default 180-second Codex
-  timeout, before native route/delivery/finalization. Store quick-check passes;
-  correlation `5f76b443...6eaa` closes the run as `canary_failed`.
-- AR-327 reparses only the receipt-bound complete JSONL prefix. The affected
-  suite passes 211 tests with 3 known AR-323 deselections at `1b0fd16d...9ab3`;
-  17 decision tests pass at `f54f2441...aab`, and both mutations are killed
-  with source unchanged at `527ff7d8...a78`. Focused Ruff/format passes.
+- AR-326's 203 tests/two mutations pass at `4e76af29...a318` and
+  `34858754...5cc7`; the named 860-test spine and 165/165 decision mutations
+  pass at `8cda02e1...4312` and `891defed...ab8`.
+- Qwen1's bounded Codex timeout is retained at `40c1c188...7f5a` and
+  `5f76b443...6eaa`. AR-327's 211/17 tests and two mutations pass at
+  `1b0fd16d...9ab3`, `f54f2441...aab`, and `527ff7d8...a78`.
 - Exact Qwen2 committed-source replay `f98bb268...7cb3` exits 0: read-only and
   full restricted verification both return staffed `verified_existing_receipt`.
 - Exact `7dbd0cbc` wheel/sdist are `e117b362...fc03d` and `ac30feb0...9fb6c`;
@@ -101,11 +85,21 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   `c53dc2a9...01b6` passes quick-check. Authenticated alias inventory
   `7163aa90...911a` caught the pre-turn `generator` typo; corrected native
   receipt `2180a4dc...23e8` binds `task-agency-generation` plus env SecretRefs.
+- First ordinary Hermes exits natively 0 at `bde29436...120` but is correctly
+  withheld: Store/correlation `01ca5974...b14`/`6011ee8b...a5fd` record accepted
+  routing then `response_invalid`. Native receipt `87866dee...c7e9` proves the
+  exact 3,227-byte selected card appears once in Hermes API content; zero tool
+  calls show Mistral serialized `clarify` instead of invoking the finalizer.
+- Plugin/tool/template receipts `5de107fb...c496`, `ef80af98...c1a5`, and
+  `706c4d11...98c8` isolate the alias transport. The same approved model,
+  endpoint, 65,536 context, and disabled thinking now use `ollama_chat/` behind
+  sole deployment `4089bb62...f0fe`; delete/create receipts are
+  `958a2d6c...8c40` and `584558db...639`. Corrected Hermes R2 is next.
 
 ## exact-blocker
 
-- Later ordinary four-harness processes, exact host install, authenticated
-  dashboard, named gates, and final teardown remain pending.
+- Corrected ordinary Hermes R2, the other three ordinary harness processes,
+  exact host install/dashboard, named gates, and final teardown remain pending.
 - Cross-OS artifacts, signing, tracker parity, push/PR/merge/tag/publication,
   release, and exhaustive workflow dispatch remain unauthorized—not GO gates
   for this Linux-only bounded task unless authority changes.

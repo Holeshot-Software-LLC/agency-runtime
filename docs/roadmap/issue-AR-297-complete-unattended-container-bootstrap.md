@@ -1329,3 +1329,36 @@ The separate exact production-install row is therefore closed for Codex,
 Claude Code, native-UID Hermes, and OpenClaw systemd. Registration, enablement,
 runtime loading, and later ordinary turns remain distinct: row 6 must still
 prove unattended Agency loading and a bounded ordinary process in all four.
+
+Before the first later ordinary Hermes turn, authenticated alias creation
+`d23cb3f6...f6c84` and sanitized native-state receipt
+`517a40d3...0a51` bound stable alias `task-agency-hermes` to the approved free
+Mistral Small 3.2 24B backend, loopback LiteLLM endpoint, truthful 65,536-token
+context, disabled thinking, and an environment key reference. The mode-0600
+native config itself hashes to `c4bcf36a...68549`; no secret value is retained.
+
+The first normal UID-10000 `hermes chat -q` process used the same 397-byte task
+`fb36e4a...26235`, no bypass/ignore/safe flags, a four-turn ceiling, and
+process-memory credential injection. The native process exits 0 at
+`bde29436...120`, but Agency correctly replaces its draft with the fail-closed
+response at `cef7b4ec...f849`. Store `01ca5974...b14` passes quick-check and
+correlation `6011ee8b...a5fd` proves accepted route
+`section-508-accessibility-specialist`, six alias-only model receipts, and one
+`response_invalid` finalization missing the governed header fields. Native
+state `a71855e7...524e` passes quick-check; receipt `87866dee...c7e9` proves the
+exact 3,227-byte card `589a6e0c...303e` appears once in the 7,321-byte API user
+content. That establishes full workforce-prompt visibility, not successful
+completion: the raw 178-byte model response serialized a `clarify` JSON object
+as text, made zero native tool calls, and did not invoke `agency_finalize`.
+
+Hermes plugin doctor `5de107fb...c496` independently reports one registered
+Agency tool and eight hooks, while tool inventory `ef80af98...c1a5` shows the
+Agency toolset enabled. Mistral template receipt `706c4d11...98c8` contains
+native tool-call branches. The remaining mismatch was the AR-297-owned alias's
+LiteLLM `ollama/` text transport, which cannot preserve that native tool-call
+envelope unless JSON format is separately forced. It was removed at
+`958a2d6c...8c40` and recreated at `584558db...639` as the same alias, backend,
+endpoint, context, and thinking setting using `ollama_chat/` with truthful
+function-calling metadata; deployment `4089bb62...f0fe` is the sole current
+deployment. No new model choice was made. The corrected ordinary Hermes retry
+is the next live gate, and the first failure remains retained evidence.
