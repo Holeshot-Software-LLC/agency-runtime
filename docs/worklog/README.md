@@ -1344,6 +1344,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `609e2dd6` | 2026-08-27 | docs(ar297): retain refreshed Claude OAuth failure | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `abb79e1f` | 2026-08-27 | docs(ar297): checkpoint approved harness aliases | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `e23f45c6` | 2026-08-27 | docs(ar297): retain Hermes tool visibility repair | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `5d478c33` | 2026-08-27 | fix(hermes): replay accepted native finalizer result | [AR-288](../roadmap/issue-AR-288-expose-hermes-native-finalizer-tool.md), [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
