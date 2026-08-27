@@ -1321,6 +1321,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `1bb2c659` | 2026-08-27 | docs(ar321): promote exact Qwen judge | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-321](../roadmap/issue-AR-321-select-reliable-free-litellm-child-judge.md) | null |
 | `5025390e` | 2026-08-27 | docs(ar321): prove stable Qwen judge route | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-321](../roadmap/issue-AR-321-select-reliable-free-litellm-child-judge.md) | null |
 | `56de576c` | 2026-08-27 | docs(ar297): checkpoint clean Qwen Codex container | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `ced83631` | 2026-08-27 | fix(codex): reconcile canary callback order | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-321](../roadmap/issue-AR-321-select-reliable-free-litellm-child-judge.md), [AR-324](../roadmap/issue-AR-324-bind-codex-canary-child-through-host-lineage.md), [AR-325](../roadmap/issue-AR-325-restore-codex-first-complete-callback-reconciliation.md) | [detail](2026-08-27-ced83631-reconcile-codex-canary-callback-order.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
