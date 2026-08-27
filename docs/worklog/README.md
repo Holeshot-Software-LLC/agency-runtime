@@ -1298,6 +1298,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `e631d776` | 2026-08-27 | docs(ar321): checkpoint Granite judge candidate | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-321](../roadmap/issue-AR-321-select-reliable-free-litellm-child-judge.md) | [ADR-0181](../decisions/0181-use-litellm-aliases-as-host-inference-control-plane.md) |
 | `0baeb22f` | 2026-08-27 | docs(ar321): checkpoint Qwen 2.5 judge candidate | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-321](../roadmap/issue-AR-321-select-reliable-free-litellm-child-judge.md) | [ADR-0181](../decisions/0181-use-litellm-aliases-as-host-inference-control-plane.md) |
 | `ecac503c` | 2026-08-27 | docs(ar321): checkpoint Llama judge candidate | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-321](../roadmap/issue-AR-321-select-reliable-free-litellm-child-judge.md) | [ADR-0181](../decisions/0181-use-litellm-aliases-as-host-inference-control-plane.md) |
+| `b89a637f` | 2026-08-27 | docs(ar321): checkpoint schema-bound Mistral | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-321](../roadmap/issue-AR-321-select-reliable-free-litellm-child-judge.md) | [ADR-0181](../decisions/0181-use-litellm-aliases-as-host-inference-control-plane.md) |
+| `bed213cd` | 2026-08-27 | docs(ar321): restore recovery capsule bound | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-321](../roadmap/issue-AR-321-select-reliable-free-litellm-child-judge.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
