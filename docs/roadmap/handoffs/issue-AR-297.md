@@ -24,8 +24,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-297
 branch: codex/ar297-production-container-live-evidence
-evidence_commit: 42cd4eb288d1553006d3b4ac378b13c0ef337977
-minimum_ledger_commit: 42cd4eb288d1553006d3b4ac378b13c0ef337977
+evidence_commit: bfc7e7d28f0a7eb2df472fed5fcabeb566c627b7
+minimum_ledger_commit: bfc7e7d28f0a7eb2df472fed5fcabeb566c627b7
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 ---
@@ -37,8 +37,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Work only in `/tmp/agency-runtime-ar297.WQUbF2` on
   `codex/ar297-production-container-live-evidence`, based on `origin/main`
   `0a23983a`. Never touch the shared checkout.
-- Clean ledger `42cd4eb2` binds exact artifacts/images, all four separate
-  installs, and the corrected OpenClaw alias. Ordinary Hermes R2 is next.
+- Clean ledger `bfc7e7d2` binds exact artifacts/images, all four separate
+  installs, ordinary Hermes R1, and the corrected chat transport.
 - Linux remains **NO-GO**. AR-297/#335 remain open. No tracker write, push, PR,
   merge, tag, signing, publication, release, or hosted workflow is authorized.
 
@@ -85,20 +85,18 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   `c53dc2a9...01b6` passes quick-check. Authenticated alias inventory
   `7163aa90...911a` caught the pre-turn `generator` typo; corrected native
   receipt `2180a4dc...23e8` binds `task-agency-generation` plus env SecretRefs.
-- First ordinary Hermes exits natively 0 at `bde29436...120` but is correctly
-  withheld: Store/correlation `01ca5974...b14`/`6011ee8b...a5fd` record accepted
-  routing then `response_invalid`. Native receipt `87866dee...c7e9` proves the
-  exact 3,227-byte selected card appears once in Hermes API content; zero tool
-  calls show Mistral serialized `clarify` instead of invoking the finalizer.
-- Plugin/tool/template receipts `5de107fb...c496`, `ef80af98...c1a5`, and
-  `706c4d11...98c8` isolate the alias transport. The same approved model,
-  endpoint, 65,536 context, and disabled thinking now use `ollama_chat/` behind
-  sole deployment `4089bb62...f0fe`; delete/create receipts are
-  `958a2d6c...8c40` and `584558db...639`. Corrected Hermes R2 is next.
+- Ordinary Hermes R1 is withheld after a textual tool request; exact card
+  visibility is proven at `87866dee...c7e9`. The same approved alias/model now
+  uses `ollama_chat/` behind sole deployment `4089bb62...f0fe`.
+- Corrected R2 also exits natively 0 but remains `response_invalid`: Store,
+  correlation, native state, and visibility receipts are `5c95a565...cdd4`,
+  `2ebc93fd...712e`, `a937c8f9...b1f7`, and `a2a44504...761b`. The exact card
+  occurs once, but the model sees no `agency_finalize`, makes zero tool calls,
+  and Hermes warns `Unknown toolsets: agency-runtime`.
 
 ## exact-blocker
 
-- Corrected ordinary Hermes R2, the other three ordinary harness processes,
+- Hermes tool-definition admission, all four ordinary harness completions,
   exact host install/dashboard, named gates, and final teardown remain pending.
 - Cross-OS artifacts, signing, tracker parity, push/PR/merge/tag/publication,
   release, and exhaustive workflow dispatch remain unauthorized—not GO gates

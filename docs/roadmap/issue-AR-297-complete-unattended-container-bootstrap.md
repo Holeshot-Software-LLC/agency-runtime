@@ -1361,4 +1361,26 @@ envelope unless JSON format is separately forced. It was removed at
 endpoint, context, and thinking setting using `ollama_chat/` with truthful
 function-calling metadata; deployment `4089bb62...f0fe` is the sole current
 deployment. No new model choice was made. The corrected ordinary Hermes retry
-is the next live gate, and the first failure remains retained evidence.
+ran through the same normal UID-10000 process and again exited natively 0. Its
+stdout, stderr, and exit receipts hash to `a94a1e6c...8a68`,
+`988c3550...2bfb`, and `bde29436...120`; the stdout warning
+`Unknown toolsets: agency-runtime` precedes Agency's fail-closed replacement.
+
+R2 Store `5c95a565...cdd4` and native state `a937c8f9...b1f7` both pass
+SQLite quick-check. Correlation receipt `2ebc93fd...712e` binds run
+`6223f95c...55d3`, trace `20260827_164059_043752:3e23ee93-931c-4523-a3a8-`
+`e8dfbb8da4f6:ff1a5de7`, accepted routing to the same specialist, all five
+Agency inference routes, and terminal `response_invalid` finalization
+`d4960cf6...f2eb`. Native receipt `a2a44504...761b` exits 0 and proves the
+same 397-byte task plus one exact 3,227-byte card occurrence in the 7,321-byte
+API content. The assistant returned 842 bytes at `c97fa7fa...fb19` with
+`finish_reason=stop`, made zero tool calls, and requested access instead of
+invoking `agency_finalize`.
+
+The corrected chat transport therefore rules out the original serialization
+mismatch but does not close ordinary Hermes. Runtime inspection finds the
+dynamically registered `agency_finalize` in registry toolset
+`agency-runtime`, while the actual 21-tool model definition omits it and the
+plugin manifest declares no `provides_tools`. The next bounded package must
+isolate that registration-to-model-definition gap before another live call;
+the first two failures remain retained evidence rather than being retried away.
