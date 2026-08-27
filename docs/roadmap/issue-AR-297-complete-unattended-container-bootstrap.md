@@ -963,5 +963,24 @@ That transaction at `c7f35dd5` confirms the request digest and parent route but
 again gives the successful child only generic identity. AR-324 source checkpoint
 `66b889a2` replaces ambient digest inheritance with the exact bounded,
 owner-trusted Codex `0.149.1` child `session_meta` lineage. Focused tests pass
-137/137 and the expanded canary/artifact/security set passes 259/259; a clean
-ledger rebuild and fresh no-bypass transaction remain required before success.
+137/137 and the expanded canary/artifact/security set passes 259/259.
+
+Clean ledger `9e8fa342` then produces wheel `0d3c4948...dd4a`, sdist
+`e443491e...fc66`, manifest `02bd1e04...b327`, and verified Codex, Claude,
+Hermes, OpenClaw systemd, and dashboard images `eb4d9305...17e7`,
+`c5ac6f52...c6d6`, `f7c7f279...0874`, `a3597cf8...94bf`, and
+`041b92bd...9007`. Fresh exact Codex install `7197d5ff...a62` exits 1 after
+accepted route `25e06734...7484`, one spawn, one 300-second wait, and child
+`01a041d3...b1d2` exit 0 without timeout. Parent/child rollouts and Store hash
+to `f83e31f3...02fc`, `b4215dc8...0394`, and `56518a59...53b0`; the child
+still receives generic identity and finalization rejects missing
+`evidence_verification`.
+
+The exact supported source and retained rollout isolate the fault: Codex puts
+the root parent in `SubagentStart.session_id` and the spawned child in
+`agent_id`, while ADR-0187 incorrectly required equality. ADR-0188 supersedes
+that contract at source checkpoint `34f41532`. The regression fails before and
+passes after requiring hook parent/child to agree independently with the
+rollout parent/child; focused warning-strict sets pass 192/192 and 258/258 with
+two expected skips. A clean ledger, exact rebuild, and fresh no-bypass
+transaction remain required.
