@@ -893,3 +893,9 @@ Qwen 2.5 returns valid JSON but selects `python-application-engineer` at
 acquisition/model receipts `16e64126...2137` and `048e80f2...e20f` pass,
 proving 8.0B/Q4_K_M and 131,072-token context. Sole temporary schema deployment
 `fa9bc0d1...331e` is ready while the stable Agency route remains unchanged.
+
+Llama returns valid JSON but selects `ai-evaluation-engineer` at
+`e39a84bd...8274`, so its alias is removed. AR-321 next isolates the existing
+Mistral Small 3.2 24B model behind temporary no-fallback exact-schema alias
+`28a681dc...7a91`; create receipt `d364b366...e485` passes without changing
+the stable `task-agency-child-judge` route.

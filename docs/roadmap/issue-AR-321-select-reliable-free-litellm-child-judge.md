@@ -80,6 +80,11 @@ prose, and with JSON-object output it confidently selects the wrong specialist.
   `048e80f2...e20f` proves Llama, 8.0B/Q4_K_M, and 131,072-token context.
   Sole temporary schema deployment `fa9bc0d1...331e` passes secret-safe create
   receipt `469c84df...5740` before evaluation.
+- Llama returns exact-schema JSON but selects `ai-evaluation-engineer` at
+  `e39a84bd...8274`, so its alias is removed. Before another download, a
+  temporary no-fallback schema deployment `28a681dc...7a91` isolates output
+  grammar from the already-installed `mistral-small3.2:24b` semantics; create
+  receipt `d364b366...e485` passes while the stable alias remains unchanged.
 - The owner requires all Agency inference on this system to resolve through
   authenticated LiteLLM aliases and requires the child judge to remain free.
   Tracker creation remains prohibited by the active task.
