@@ -1291,6 +1291,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `761a279d` | 2026-08-26 | docs(ar320): record full child staffing wait gap | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-320](../roadmap/issue-AR-320-bound-codex-wait-to-full-child-staffing.md) | [ADR-0184](../decisions/0184-bound-codex-wait-to-full-child-staffing.md) |
 | `1989d111` | 2026-08-26 | fix(ar320): cover full child staffing wait | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-320](../roadmap/issue-AR-320-bound-codex-wait-to-full-child-staffing.md) | [ADR-0184](../decisions/0184-bound-codex-wait-to-full-child-staffing.md) |
 | `74794970` | 2026-08-26 | docs(ar320): checkpoint full staffing wait repair | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-320](../roadmap/issue-AR-320-bound-codex-wait-to-full-child-staffing.md) | [ADR-0184](../decisions/0184-bound-codex-wait-to-full-child-staffing.md) |
+| `04b6b1a5` | 2026-08-26 | docs(ar320): checkpoint exact staffing candidate | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-320](../roadmap/issue-AR-320-bound-codex-wait-to-full-child-staffing.md) | [ADR-0184](../decisions/0184-bound-codex-wait-to-full-child-staffing.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
