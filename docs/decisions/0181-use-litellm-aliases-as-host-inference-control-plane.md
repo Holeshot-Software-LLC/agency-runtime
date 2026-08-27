@@ -13,6 +13,7 @@ related:
   - docs/decisions/0174-admit-local-ollama-canary-child-judges.md
   - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
   - docs/roadmap/issue-AR-317-route-agency-inference-through-litellm-aliases.md
+  - docs/roadmap/issue-AR-321-select-reliable-free-litellm-child-judge.md
   - docs/roadmap/handoffs/issue-AR-297.md
   - README.md
   - CHANGELOG.md

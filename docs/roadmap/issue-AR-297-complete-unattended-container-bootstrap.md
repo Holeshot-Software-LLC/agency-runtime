@@ -34,6 +34,7 @@ related:
   - docs/roadmap/issue-AR-318-bound-codex-activation-child-wait.md
   - docs/roadmap/issue-AR-319-honor-pinned-canary-judge-timeout.md
   - docs/roadmap/issue-AR-320-bound-codex-wait-to-full-child-staffing.md
+  - docs/roadmap/issue-AR-321-select-reliable-free-litellm-child-judge.md
   - docs/decisions/0174-admit-local-ollama-canary-child-judges.md
   - docs/decisions/0175-batch-complete-embedding-input-sets.md
   - docs/decisions/0176-use-owner-runtime-temp-for-nonroot-user-services.md
@@ -59,7 +60,7 @@ epic: host-integrations
 issue_id: AR-297
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
-depends_on: [AR-300, AR-301, AR-302, AR-303, AR-304, AR-305, AR-306, AR-307, AR-308, AR-309, AR-310, AR-311, AR-313, AR-314, AR-315, AR-317, AR-318, AR-319, AR-320]
+depends_on: [AR-300, AR-301, AR-302, AR-303, AR-304, AR-305, AR-306, AR-307, AR-308, AR-309, AR-310, AR-311, AR-313, AR-314, AR-315, AR-317, AR-318, AR-319, AR-320, AR-321]
 blocks: []
 ---
 
@@ -849,3 +850,18 @@ Codex, Claude, Hermes, OpenClaw systemd, and dashboard images bind the exact
 wheel with IDs `c735534e...bd3f`, `93ab0881...acc3`, `e8819230...94ef`,
 `5355886a...ca94`, and `fc23a724...666f`; version/label verification
 `2f9dadb5...a449` exits 0. A fresh clean Codex transaction remains required.
+
+Fresh exact-candidate container `agency-ar297-codex-c1cf1793` passes absence at
+`7d08f8c1...c341`; its one no-bypass install receipt `04f8c2df...7ad` exits 1.
+The parent accepts `code-reviewer`, spawns one child, waits once for 300,000 ms,
+and receives `timed_out=false`, live-proving AR-320's full-path timing repair.
+The current Mistral child judge then abstains on both the initial and funded
+repair calls over all 59 eligible cards, so route `fcdf4396...9447` truthfully
+records `native_child_abstention_confirmed` and withholds v6 delivery. Store and
+parent/child rollouts hash to `9ed3c3f5...b103`, `539b0263...6890`, and
+`a1d474ca...e1e8`. An authenticated LiteLLM diagnostic rules out the existing
+abliterated Qwen 14B model: its unconstrained response is prose truncated at
+256 tokens (`d34221cc...af9c`), while constrained JSON confidently selects the
+wrong `ai-evaluation-engineer` card (`697d9cd9...1ac0`). AR-321 owns selection
+and promotion of a reliable free LiteLLM child-judge alias before the next
+fresh Codex install.

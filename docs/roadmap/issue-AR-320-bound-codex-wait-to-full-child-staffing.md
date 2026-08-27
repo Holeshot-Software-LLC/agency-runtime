@@ -10,6 +10,7 @@ related:
   - docs/roadmap/issue-AR-318-bound-codex-activation-child-wait.md
   - docs/roadmap/issue-AR-319-honor-pinned-canary-judge-timeout.md
   - docs/roadmap/handoffs/issue-AR-297.md
+  - docs/roadmap/issue-AR-321-select-reliable-free-litellm-child-judge.md
   - docs/decisions/0182-bound-codex-activation-child-wait.md
   - docs/decisions/0184-bound-codex-wait-to-full-child-staffing.md
   - agency_runtime/core/activation_canary_contract.py
@@ -63,6 +64,11 @@ single wait even though both inference calls finish successfully.
   independent verification. Wheel `8766b539...99d7`, sdist
   `5dbd6edc...bf68a`, and five separately pinned images pass exact label and
   version verification at receipt `2f9dadb5...a449`.
+- Fresh exact-candidate Codex parent `01a04143...04d4` spawns once and waits
+  once for 300,000 ms. Child `01a04146...c472` exits 0 and the wait returns
+  `timed_out=false`, so the bounded wait itself is live-proven. Installation
+  later exits 1 because both free Mistral selector calls abstain; AR-321 owns
+  that independent model-selection blocker.
 
 ## Approach
 

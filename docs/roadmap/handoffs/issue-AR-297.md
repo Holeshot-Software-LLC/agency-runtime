@@ -30,6 +30,7 @@ related:
   - docs/roadmap/issue-AR-318-bound-codex-activation-child-wait.md
   - docs/roadmap/issue-AR-319-honor-pinned-canary-judge-timeout.md
   - docs/roadmap/issue-AR-320-bound-codex-wait-to-full-child-staffing.md
+  - docs/roadmap/issue-AR-321-select-reliable-free-litellm-child-judge.md
   - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
   - docs/decisions/0174-admit-local-ollama-canary-child-judges.md
   - docs/decisions/0175-batch-complete-embedding-input-sets.md
@@ -63,9 +64,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Work remains in dedicated worktree `/tmp/agency-runtime-ar297.WQUbF2` on
   `codex/ar297-production-container-live-evidence`, based on `origin/main`
   `0a23983a`. Never use the shared checkout.
-- Last clean recovery pair is AR-320 recovery `74794970` and ledger
-  `c1cf1793`. Exact artifacts and five images now bind that ledger; continue
-  the same Codex proof in a fresh container.
+- Last clean recovery pair is AR-320 artifact checkpoint `04b6b1a5` and ledger
+  `f2166270`. Exact artifacts and five images bind candidate `c1cf1793`.
 - Linux remains **NO-GO**. AR-297/#335 stay open. Tracker writes, push, PR,
   merge, tag, signing, publication, release, and hosted workflow actions are
   not authorized.
@@ -100,10 +100,13 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 
 ## exact-blocker
 
-- Fresh `89a56901` absence passes at `a56ac1c5...d994`; install
-  `96e4d746...73cf` exits 1. Two successful untruncated child-judge calls take
-  62,057.76 and 62,870.53 ms. AR-320 now binds one 300-second wait to both
-  calls plus completion margin and passes 418 tests; rebuild and prove it.
+- Fresh `c1cf1793` absence passes at `7d08f8c1...c341`; one no-bypass install
+  `04f8c2df...7ad` exits 1 after spawn once, wait once at 300 seconds, child
+  exit 0, and `timed_out=false`. AR-320's wait repair is live-proven.
+- Mistral initial and repair judge calls both abstain over all 59 cards; Store
+  route `fcdf4396...9447` records `native_child_abstention_confirmed`. Qwen 14B
+  is ruled out by truncated prose `d34221cc...af9c` and wrong-card JSON
+  `697d9cd9...1ac0`. AR-321 owns a reliable free LiteLLM alias.
 - No later ordinary Codex, Claude, Hermes, or OpenClaw process has a current
   successful Agency-turn receipt on this source.
 - Refresh the host install/dashboard and named repository gates for the exact
@@ -115,12 +118,12 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 ## same-task-continuity
 
 Exact artifacts: `~/.agency-runtime/release-artifacts/`
-`dist-89a56901edb121b32255fbac8f2e58666a9c5d03-linux-ar297`; config is
+`dist-c1cf1793db1bc98589ca958a553c502a0126c637-linux-ar297`; config is
 `~/.agency-runtime/configs/`
-`ar297-litellm-a4e213d6b454ca90.yaml`. Evidence: `ar297-go-3e42598d` and
-`ar297-litellm-routing-ioeoBe`, plus current `ar297-go-89a56901`. Old containers
-are `agency-ar297-codex-3e42598d` and `-c2`; older evidence containers remain.
-All AR-297 containers await final teardown. Secret-safe helper:
+`ar297-litellm-a4e213d6b454ca90.yaml`. Current evidence is
+`~/.agency-runtime/evidence/ar297-go-c1cf1793`; Codex container
+`agency-ar297-codex-c1cf1793` remains running, and older labelled evidence
+containers remain. All await final teardown. Secret-safe helper:
 `/tmp/agency-runtime-ar297-evidence.pcLOZn/run_with_litellm_key.py`.
 
 ## next-bounded-work-package
@@ -130,9 +133,9 @@ unchecked line. Mark an item complete only with exact retained evidence.
 
 1. [x] Rebuild and independently verify artifacts/images from the exact
    AR-320/LiteLLM checkpoint; `c1cf1793` is the candidate.
-2. [ ] Prove fresh Codex absence, then one exact no-bypass V2 install with one
-   canonical child artifact, consumed receipt, current header, accepted
-   finalization, Store correlation, and attestation.
+2. [ ] Through AR-321, promote a repeatedly correct free child-judge LiteLLM
+   alias, then prove a fresh no-bypass Codex install with canonical delivery,
+   consumption, header, finalization, Store correlation, and attestation.
 3. [ ] Build and prove separate clean exact Claude, native-UID Hermes, and
    OpenClaw systemd production-container installs.
 4. [ ] Run later ordinary unattended Conveyor-equivalent processes for all four

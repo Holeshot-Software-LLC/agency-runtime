@@ -1,0 +1,87 @@
+---
+title: "AR-321: Select a reliable free LiteLLM child judge"
+status: in_progress
+category: roadmap
+created: 2026-08-26
+updated: 2026-08-26
+tags: [bug, workforce, child-judge, litellm, local-models, reliability]
+related:
+  - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
+  - docs/roadmap/issue-AR-317-route-agency-inference-through-litellm-aliases.md
+  - docs/roadmap/issue-AR-320-bound-codex-wait-to-full-child-staffing.md
+  - docs/roadmap/handoffs/issue-AR-297.md
+  - docs/decisions/0181-use-litellm-aliases-as-host-inference-control-plane.md
+  - agency_runtime/core/native_child_staffing.py
+  - docs/worklog/README.md
+supersedes: []
+superseded_by: null
+type: issue
+epic: provider-runtime
+issue_id: AR-321
+priority: p0
+tracker_url: null
+depends_on: [AR-317]
+blocks: [AR-297]
+---
+
+# AR-321: Select a reliable free LiteLLM child judge
+
+## Problem
+
+The exact production-container canary requires a free local child judge to
+select one eligible workforce card from the complete 59-card universe. The
+current `task-agency-child-judge` LiteLLM alias resolves to Mistral Small 3.2
+24B, which returns an empty response for both the initial selection and its one
+funded abstention repair. The already-installed abliterated Qwen 14B model is
+also unsuitable: without constrained JSON it exhausts its response budget in
+prose, and with JSON-object output it confidently selects the wrong specialist.
+
+## Current state
+
+- Fresh exact-candidate Codex install receipt `04f8c2df...7ad` exits 1 after a
+  successful 300,000-ms child wait, proving AR-320's timing repair live.
+- Mistral child-judge route `fcdf4396...9447` records
+  `native_child_abstention_confirmed` after two untruncated calls over the
+  complete 59-card set. The child is therefore denied the exact v6 delivery.
+- A diagnostic Qwen probe without JSON-object output is unavailable at
+  `8861fae6...`; the retained raw response `d34221cc...af9c` is prose truncated
+  at 256 completion tokens. JSON-object probe `697d9cd9...1ac0` is structurally
+  valid but incorrectly selects `ai-evaluation-engineer` instead of the
+  required `code-reviewer`.
+- The owner requires all Agency inference on this system to resolve through
+  authenticated LiteLLM aliases and requires the child judge to remain free.
+  Tracker creation remains prohibited by the active task.
+
+## Approach
+
+Create temporary authenticated LiteLLM aliases for already-installed free local
+models, preserving the exact 32,768-token context and structured-output
+contract. Exercise the real Agency selector prompt and complete 59-card
+universe repeatedly, including the funded abstention-repair form. Promote only
+a model that repeatedly returns the exact eligible `code-reviewer` identifier
+without fallback, truncation, or direct Ollama access. Retain alias-management,
+health, model, latency, and response receipts, then repoint the stable
+`task-agency-child-judge` alias so the Agency config remains indirection-only.
+
+## Dependencies
+
+- AR-317 and ADR-0181 own the authenticated LiteLLM-only control plane.
+- The exact AR-297 config remains mode 0600 and refers only to the stable
+  `task-agency-child-judge` alias; no direct local model name enters it.
+- Candidate choice is limited to free local models approved by the owner. No
+  Jina route may be configured or called.
+
+## Acceptance
+
+- [ ] A temporary LiteLLM alias is created with a secret-safe receipt and its
+      exact local model, context, structured-output, and thinking controls.
+- [ ] Repeated initial and repair selector probes choose `code-reviewer` from
+      the exact 59-card universe without fallback, truncation, or direct access.
+- [ ] The stable child-judge alias is updated through LiteLLM, remains healthy,
+      and the exact Agency config still passes all route and schema checks.
+- [ ] A fresh no-bypass Codex production-container install proves accepted v6
+      delivery, consumption, header, finalization, Store correlation, and
+      current-profile attestation through the promoted alias.
+- [ ] Temporary aliases are removed after retained evidence is complete.
+- [ ] A same-repository tracker issue is created and linked after explicit
+      authorization.

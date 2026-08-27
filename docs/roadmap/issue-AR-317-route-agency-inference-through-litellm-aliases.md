@@ -9,6 +9,7 @@ related:
   - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
   - docs/roadmap/issue-AR-299-local-ollama-canary-child-judge.md
   - docs/roadmap/issue-AR-316-size-ollama-selector-judge-context.md
+  - docs/roadmap/issue-AR-321-select-reliable-free-litellm-child-judge.md
   - docs/roadmap/handoffs/issue-AR-297.md
   - docs/decisions/0047-reconcile-litellm-model-and-router-evidence.md
   - docs/decisions/0174-admit-local-ollama-canary-child-judges.md
@@ -27,7 +28,7 @@ issue_id: AR-317
 priority: p0
 tracker_url: null
 depends_on: []
-blocks: [AR-297]
+blocks: [AR-297, AR-321]
 ---
 
 # AR-317: Route Agency inference through LiteLLM aliases
