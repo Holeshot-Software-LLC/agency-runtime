@@ -2901,6 +2901,36 @@ class _NominationSemantics:""",
         ),
     ),
     DecisionMutation(
+        mutation_id="codex-receipt-replay-drops-immutable-prefix-digest",
+        invariant=(
+            "Read-only Codex receipt replay reparses the exact prior artifact prefix bound "
+            "by the immutable Store receipt, not the later completed rollout."
+        ),
+        source_path="agency_runtime/core/child_delivery_evidence.py",
+        before=(
+            '        receipt_artifact_digest=receipt_artifact_digest if host == "codex" else "",'
+        ),
+        after='        receipt_artifact_digest="",',
+        test_node=(
+            "tests/test_child_delivery_evidence.py::"
+            "test_persisted_codex_receipt_replays_its_exact_prefix_after_host_append"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-receipt-prefix-allows-partial-jsonl-record",
+        invariant=(
+            "An immutable Codex receipt digest selects only a newline-terminated JSONL "
+            "prefix, never bytes ending inside a host record."
+        ),
+        source_path="agency_runtime/core/child_delivery_evidence.py",
+        before='        while (boundary := payload.find(b"\\n", cursor)) >= 0:',
+        after='        while (boundary := payload.find(b"", cursor)) >= 0:',
+        test_node=(
+            "tests/test_child_delivery_evidence.py::"
+            "test_persisted_codex_receipt_digest_must_end_at_a_jsonl_record_boundary"
+        ),
+    ),
+    DecisionMutation(
         mutation_id="ranking-order-reversed",
         invariant="The model's semantic ranking order is preserved, never locally reranked.",
         source_path="agency_runtime/core/workforce/inference.py",

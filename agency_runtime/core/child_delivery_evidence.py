@@ -625,8 +625,15 @@ def _trusted_launch_material(
     *,
     label: str,
     artifact_parent: bool = False,
+    required_prefix_digest: str = "",
 ) -> tuple[str, str] | None:
-    """Read and hash one exact trusted artifact window without a TOCTOU reread."""
+    """Read and hash one exact trusted artifact window without a TOCTOU reread.
+
+    An immutable Codex receipt may select the exact complete-JSONL prefix that
+    was consumed before the host appended ordinary completion records. The
+    digest is authority only when it matches one newline boundary in this same
+    trusted bounded read; later bytes are never parsed as part of that window.
+    """
 
     payload = _trusted_launch_prefix_bytes(
         path,
@@ -643,6 +650,21 @@ def _trusted_launch_material(
         if not found:
             return None
         payload = _separator + b"\n"
+    if required_prefix_digest:
+        if re.fullmatch(r"[0-9a-f]{64}", required_prefix_digest) is None:
+            return None
+        hasher = sha256()
+        matches: list[int] = []
+        cursor = 0
+        while (boundary := payload.find(b"\n", cursor)) >= 0:
+            boundary += 1
+            hasher.update(payload[cursor:boundary])
+            cursor = boundary
+            if hasher.hexdigest() == required_prefix_digest:
+                matches.append(boundary)
+        if len(matches) != 1:
+            return None
+        payload = payload[: matches[0]]
     try:
         text = payload.decode("utf-8")
     except UnicodeError:
@@ -1628,11 +1650,20 @@ def _verify_against_persisted_receipt(
     receipt = receipt_getter(diagnostic.decision_id)
     if not isinstance(receipt, Mapping):
         return diagnostic
+    receipt_artifact_digest = receipt.get("artifact_digest")
+    if host == "codex" and (
+        not isinstance(receipt_artifact_digest, str)
+        or re.fullmatch(r"[0-9a-f]{64}", receipt_artifact_digest) is None
+    ):
+        return replace(diagnostic, verification_reason="persisted_receipt_invalid")
+    expected_artifact_digest = (
+        receipt_artifact_digest if host == "codex" else diagnostic.artifact_digest
+    )
     expected = _expected_delivery_from_store_decision(
         decision_getter(diagnostic.decision_id),
         decision_id=diagnostic.decision_id,
         child_id=diagnostic.child_id,
-        artifact_digest=diagnostic.artifact_digest,
+        artifact_digest=expected_artifact_digest,
     )
     if expected is None:
         return replace(diagnostic, verification_reason="persisted_decision_invalid")
@@ -1642,9 +1673,14 @@ def _verify_against_persisted_receipt(
         expected=expected,
         verification_consumer=_persisted_receipt_consumer(receipt),
         structural_hook_output=structural_hook_output,
+        receipt_artifact_digest=receipt_artifact_digest if host == "codex" else "",
     )
     if verified is None:
-        return diagnostic
+        return (
+            replace(diagnostic, verification_reason="persisted_artifact_prefix_invalid")
+            if host == "codex"
+            else diagnostic
+        )
     return (
         replace(verified, verification_reason="verified_existing_receipt")
         if verified.staffed
@@ -1812,6 +1848,7 @@ def _codex_child_delivery_evidence(  # noqa: C901 - one pre-speech artifact boun
     expected_deliveries: Mapping[str, _ExpectedChildDelivery] | None = None,
     verification_consumer: _NativeChildDeliveryVerificationConsumer | None = None,
     structural_hook_output: bool = False,
+    receipt_artifact_digest: str = "",
 ) -> ChildDeliveryEvidence | None:
     """Read one Codex rollout, if it is a spawned child, for its launch cards.
 
@@ -1825,6 +1862,7 @@ def _codex_child_delivery_evidence(  # noqa: C901 - one pre-speech artifact boun
         path,
         label="Codex child rollout",
         artifact_parent=True,
+        required_prefix_digest=receipt_artifact_digest,
     )
     if material is None:
         return None
@@ -2343,6 +2381,7 @@ def _verify_child_delivery_evidence(
     expected: _ExpectedChildDelivery,
     verification_consumer: _NativeChildDeliveryVerificationConsumer,
     structural_hook_output: bool = False,
+    receipt_artifact_digest: str = "",
 ) -> ChildDeliveryEvidence | None:
     """Verify one exact artifact through an injected atomic persistence seam.
 
@@ -2361,6 +2400,7 @@ def _verify_child_delivery_evidence(
             expected_deliveries={expected.child_id: expected},
             verification_consumer=verification_consumer,
             structural_hook_output=structural_hook_output,
+            receipt_artifact_digest=receipt_artifact_digest,
         )
     return child_delivery_evidence(
         path,

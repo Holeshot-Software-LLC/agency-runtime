@@ -54,6 +54,14 @@ to equal the later completed file rejects an unchanged verified prefix.
   `event_msg/task_complete` record after the verified window.
 - Store `6730ee75...3195` and parent/child rollouts `aeda3b86...fa59` and
   `ee5d577e...005d` are retained. The Store copy passes quick-check.
+- The regression-first repair selects only the receipt digest's unique
+  newline-terminated prefix from one owner-trusted bounded read, reparses only
+  those bytes, and keeps public diagnostics, fresh Store consumption, and
+  Claude whole-window replay unchanged.
+- The affected suite passes 211 tests with the three known AR-323 schema-46
+  literals explicitly deselected. Seventeen conformance tests pass and both new
+  curated mutations are killed with source unchanged. Focused Ruff and format
+  checks pass.
 - Tracker creation is prohibited by the active AR-297 task.
 
 ## Approach
@@ -80,13 +88,30 @@ whole-window semantics.
 
 ## Acceptance
 
-- [ ] Regression proves an existing Codex receipt replays after only complete
+- [x] Regression proves an existing Codex receipt replays after only complete
       records are appended to its exact verified prefix.
-- [ ] Mutation, truncation, non-record-boundary, wrong-digest, and identity
+- [x] Mutation, truncation, non-record-boundary, wrong-digest, and identity
       mismatch cases fail closed; Claude's exact-artifact behavior is unchanged.
-- [ ] The affected warning-strict suite and focused conformance mutations pass.
+- [x] The affected warning-strict suite and focused conformance mutations pass.
 - [ ] Rebuilt exact artifacts/images pass independent verification.
 - [ ] One new clean no-bypass Codex install persists current-profile
       attestation and exits 0.
 - [ ] A same-repository tracker issue is created and linked after explicit
       authorization.
+
+## Verification
+
+Owner-private evidence is retained under
+`~/.agency-runtime/evidence/ar327-append-replay-precheckpoint`. The affected
+suite passes 211 tests with 3 AR-323 deselections at stdout
+`1b0fd16d...9ab3`; 17 decision tests pass at `f54f2441...aab`; two focused
+mutations are killed with zero survived/invalid and source unchanged at
+`527ff7d8...a78`; and focused Ruff/format passes at `82b3e6a6...4f18`.
+Every command exits 0 with empty stderr.
+
+The retained unfiltered suite exits 1 after 211 passes only because
+`test_native_child_delivery_verification_ledger.py` still expects schema 46 in
+the three cases already owned by AR-323; stdout hashes to `48dc8017...3b5`.
+The first mutation attempt likewise retains an exit-1 private-namespace refusal
+at `ce640b84...e538` before its baseline; the owner-private umask-077 rerun is
+the authoritative passing mutation receipt.

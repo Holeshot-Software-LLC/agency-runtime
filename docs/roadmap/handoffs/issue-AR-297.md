@@ -24,8 +24,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-297
 branch: codex/ar297-production-container-live-evidence
-evidence_commit: 477c926a9b4dcad6112475f597280dca4303b66e
-minimum_ledger_commit: 477c926a9b4dcad6112475f597280dca4303b66e
+evidence_commit: 396d4e2e6b6ed91193452816299a45c1c51b9451
+minimum_ledger_commit: 396d4e2e6b6ed91193452816299a45c1c51b9451
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 ---
@@ -37,9 +37,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Work only in `/tmp/agency-runtime-ar297.WQUbF2` on
   `codex/ar297-production-container-live-evidence`, based on `origin/main`
   `0a23983a`. Never touch the shared checkout.
-- Clean ledger `477c926a` binds the verified repair, exact artifacts/images,
-  and Qwen1 timeout. Qwen2's sole 300-second install proves the full terminal
-  graph but exposes the distinct AR-327 append-only receipt replay mismatch.
+- Clean ledger `396d4e2e` binds Qwen2's exact AR-327 diagnosis. The
+  regression-first receipt-prefix repair and focused verification are ready
+  for their required clean substantive/ledger checkpoint.
 - Linux remains **NO-GO**. AR-297/#335 remain open. No tracker write, push, PR,
   merge, tag, signing, publication, release, or hosted workflow is authorized.
 
@@ -61,17 +61,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   `ceb65010...2fc8`; Store quick-check passes. Attestation alone fails because
   the post-return backend collector consults a live-only parent resolver.
   Content-free diagnostic `89fafc05...5b02` isolates AR-326.
-- AR-325 isolates the contradictory opaque failure route and the synthetic
-  wrong-unit delegation left beside the real unbound worker. The repair keeps
-  ordinary opaque diagnostics, preserves a fixed-unit pending dispatch,
-  atomically rekeys/merges the real child, supports both callback orders and
-  replay, and rejects a conflicting real dispatch.
-- Five targeted cases pass. The six-file warning-strict suite passes 149/149,
-  decision evaluator tests pass 17/17, and both new mutations are killed with
-  source unchanged. Retained stdout hashes are `394d9276...1c4d`,
-  `74a9f4f9...4141`, and `ea4477e5...3695`; all exit 0 with empty stderr.
-- A separate security/atomicity slice passes 145/145 at stdout
-  `ae7689e3...7a84`, exit 0, and empty stderr.
+- AR-325 preserves ordinary opaque diagnostics, atomically joins the fixed-unit
+  dispatch to the real child in either callback order, and rejects conflicts.
+  Its 149-test, 17-test, two-mutation, and 145-test receipts are
+  `394d9276...1c4d`, `74a9f4f9...4141`, `ea4477e5...3695`, `ae7689e3...7a84`.
 - Documentation checks pass for 893 files at `c5d005ae...18ac`; repository-wide
   Ruff/format passes at `94423e2d...0564`; diff-check output is empty. All exit 0.
 - AR-326 keeps hooks live-only while admitting only one exact accepted terminal
@@ -98,11 +91,15 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   decision, and receipt all resolve. Nine identity/binding fields plus nonce
   match; only digest differs: receipt `91bd1c0d...21ac` is the exact 16-record
   prefix before Codex appends `task_complete`, yielding `ee5d577e...005d`.
+- AR-327 reparses only the receipt-bound complete JSONL prefix. The affected
+  suite passes 211 tests with 3 known AR-323 deselections at `1b0fd16d...9ab3`;
+  17 decision tests pass at `f54f2441...aab`, and both mutations are killed
+  with source unchanged at `527ff7d8...a78`. Focused Ruff/format passes.
 
 ## exact-blocker
 
-- Implement/checkpoint AR-327's exact receipt-bound JSONL-prefix replay, rebuild
-  artifacts/images, and use one new clean Codex container; never rerun Qwen1/2.
+- Checkpoint AR-327, replay exact Qwen2 state through committed source, rebuild
+  artifacts/images, then use one new clean Codex container; never rerun Qwen1/2.
 - Claude, Hermes, OpenClaw, later ordinary processes, exact host install,
   authenticated dashboard, named gates, and final teardown remain pending.
 - Cross-OS artifacts, signing, tracker parity, push/PR/merge/tag/publication,

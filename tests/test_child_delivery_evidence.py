@@ -14,6 +14,7 @@ import json
 import os
 from dataclasses import replace
 from datetime import datetime, timedelta, timezone
+from hashlib import sha256
 from pathlib import Path
 
 import pytest
@@ -561,6 +562,66 @@ def _expected_from_diagnostic(
     }
     values.update(overrides)
     return _ExpectedChildDelivery(**values)  # type: ignore[arg-type]
+
+
+def _persisted_store_from_diagnostic(
+    evidence: subject.ChildDeliveryEvidence,
+    *,
+    artifact_digest: str | None = None,
+) -> object:
+    """Return a read-only Store seam for one already-consumed exact receipt."""
+
+    digest = artifact_digest or evidence.artifact_digest
+    decision = {
+        "decision_id": evidence.decision_id,
+        "host": evidence.host,
+        "parent_session_id": evidence.envelope_parent_id,
+        "parent_trace_id": evidence.parent_trace_id,
+        "launch_id": evidence.launch_id,
+        "provider_receipt_digest": evidence.provider_receipt_digest,
+        "task_sha256": evidence.task_sha256,
+        "team_digest": evidence.team_digest,
+        "candidate_digest": evidence.candidate_digest,
+        "install_id": evidence.install_id,
+        "bundle_digest": evidence.bundle_digest,
+        "runtime_digest": evidence.runtime_digest,
+        "issued_at": evidence.issued_at,
+        "expires_at": evidence.expires_at,
+        "nonce": evidence.nonce,
+        "binding_kind": evidence.binding_kind,
+        "binding_id": evidence.binding_id,
+        "cards": [
+            {
+                "specialist_slug": card.specialist_slug,
+                "specialist_version": card.specialist_version,
+                "specialist_prompt_hash": card.specialist_prompt_hash,
+                "body_character_length": card.body_character_length,
+            }
+            for card in evidence.cards
+        ],
+    }
+    receipt = {
+        "verified_delivery": True,
+        "decision_id": evidence.decision_id,
+        "nonce": evidence.nonce,
+        "artifact_digest": digest,
+        "host": evidence.host,
+        "parent_session_id": evidence.envelope_parent_id,
+        "parent_trace_id": evidence.parent_trace_id,
+        "launch_id": evidence.launch_id,
+        "binding_kind": evidence.binding_kind,
+        "binding_id": evidence.binding_id,
+        "child_id": evidence.child_id,
+    }
+
+    class StoreLike:
+        def get_native_child_staffing_decision(self, decision_id: str) -> object:
+            return decision if decision_id == evidence.decision_id else None
+
+        def get_native_child_delivery_verification(self, decision_id: str) -> object:
+            return receipt if decision_id == evidence.decision_id else None
+
+    return StoreLike()
 
 
 def test_a_legacy_launch_record_is_diagnostic_not_verified_delivery(
@@ -1187,6 +1248,136 @@ def test_restricted_codex_structural_reader_requires_store_consumption(
     assert verified is not None
     assert verified.staffed is True
     assert verified.verification_reason == "verified"
+
+
+def test_persisted_codex_receipt_replays_its_exact_prefix_after_host_append(
+    tmp_path: Path,
+    private_root: None,
+) -> None:
+    message = _codex_message(_v6_envelope("Review.", host="codex", child_id=CODEX_CHILD_SESSION))
+    message["timestamp"] = OBSERVED_AT
+    artifact = _codex_artifact(
+        tmp_path,
+        [_codex_meta(spawned=True), message, _codex_message("Completed.", role="assistant")],
+    )
+    receipt_evidence = subject._codex_child_delivery_evidence(
+        artifact,
+        structural_hook_output=True,
+    )
+    assert receipt_evidence is not None
+    store = _persisted_store_from_diagnostic(receipt_evidence)
+
+    with artifact.open("a", encoding="utf-8") as stream:
+        stream.write(json.dumps({"type": "event_msg", "payload": {"type": "task_complete"}}))
+        stream.write("\n")
+    completed = subject._codex_child_delivery_evidence(
+        artifact,
+        structural_hook_output=True,
+    )
+    assert completed is not None
+    assert completed.artifact_digest != receipt_evidence.artifact_digest
+
+    replayed = subject._verify_against_persisted_receipt(
+        artifact,
+        host="codex",
+        diagnostic=completed,
+        store=store,
+        structural_hook_output=True,
+    )
+
+    assert replayed.staffed is True
+    assert replayed.verification_reason == "verified_existing_receipt"
+    assert replayed.artifact_digest == receipt_evidence.artifact_digest
+
+
+def test_persisted_codex_receipt_rejects_a_changed_verified_prefix(
+    tmp_path: Path,
+    private_root: None,
+) -> None:
+    message = _codex_message(_v6_envelope("Review.", host="codex", child_id=CODEX_CHILD_SESSION))
+    message["timestamp"] = OBSERVED_AT
+    artifact = _codex_artifact(tmp_path, [_codex_meta(spawned=True), message])
+    receipt_evidence = subject._codex_child_delivery_evidence(
+        artifact,
+        structural_hook_output=True,
+    )
+    assert receipt_evidence is not None
+    store = _persisted_store_from_diagnostic(receipt_evidence)
+
+    changed = artifact.read_text(encoding="utf-8").replace(
+        "2026-08-01T04:18:04.132Z",
+        "2026-08-01T04:18:04.133Z",
+        1,
+    )
+    artifact.write_text(changed, encoding="utf-8")
+    diagnostic = subject._codex_child_delivery_evidence(
+        artifact,
+        structural_hook_output=True,
+    )
+    assert diagnostic is not None
+
+    replayed = subject._verify_against_persisted_receipt(
+        artifact,
+        host="codex",
+        diagnostic=diagnostic,
+        store=store,
+        structural_hook_output=True,
+    )
+
+    assert replayed.staffed is False
+    assert replayed.verification_reason == "persisted_artifact_prefix_invalid"
+
+
+def test_persisted_codex_receipt_digest_must_end_at_a_jsonl_record_boundary(
+    tmp_path: Path,
+    private_root: None,
+) -> None:
+    message = _codex_message(_v6_envelope("Review.", host="codex", child_id=CODEX_CHILD_SESSION))
+    message["timestamp"] = OBSERVED_AT
+    artifact = _codex_artifact(tmp_path, [_codex_meta(spawned=True), message])
+    diagnostic = subject._codex_child_delivery_evidence(
+        artifact,
+        structural_hook_output=True,
+    )
+    assert diagnostic is not None
+    partial_digest = sha256(artifact.read_bytes()[:-1]).hexdigest()
+    store = _persisted_store_from_diagnostic(diagnostic, artifact_digest=partial_digest)
+
+    replayed = subject._verify_against_persisted_receipt(
+        artifact,
+        host="codex",
+        diagnostic=diagnostic,
+        store=store,
+        structural_hook_output=True,
+    )
+
+    assert replayed.staffed is False
+    assert replayed.verification_reason == "persisted_artifact_prefix_invalid"
+
+
+def test_persisted_codex_receipt_rejects_a_truncated_verified_prefix(
+    tmp_path: Path,
+    private_root: None,
+) -> None:
+    message = _codex_message(_v6_envelope("Review.", host="codex", child_id=CODEX_CHILD_SESSION))
+    message["timestamp"] = OBSERVED_AT
+    artifact = _codex_artifact(tmp_path, [_codex_meta(spawned=True), message])
+    diagnostic = subject._codex_child_delivery_evidence(
+        artifact,
+        structural_hook_output=True,
+    )
+    assert diagnostic is not None
+    artifact.write_bytes(artifact.read_bytes()[:-1])
+
+    assert (
+        subject._trusted_launch_material(
+            artifact,
+            label="truncated Codex receipt fixture",
+            artifact_parent=True,
+            required_prefix_digest=diagnostic.artifact_digest,
+        )
+        is None
+    )
 
 
 def test_restricted_codex_structural_reader_rejects_multiple_v6_records(

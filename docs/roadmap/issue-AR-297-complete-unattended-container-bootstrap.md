@@ -1242,3 +1242,9 @@ completed rollout's first 84,598 bytes and 16 complete JSONL records; Codex then
 appends a seventeenth `task_complete` record, producing `ee5d577e...005d`.
 AR-327 and ADR-0190 own an exact receipt-bound append-only prefix replay; no
 second install will run in Qwen2.
+
+The AR-327 regression-first candidate now reparses only the unique complete
+JSONL prefix bound by the immutable receipt. The affected suite passes 211
+tests with three known AR-323 schema-literal cases deselected, 17 conformance
+tests pass, and both new mutations are killed with source unchanged. Exact
+artifacts and one new clean Codex proof remain pending.
