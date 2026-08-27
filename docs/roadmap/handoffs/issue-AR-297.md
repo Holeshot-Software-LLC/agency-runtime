@@ -24,8 +24,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-297
 branch: codex/ar297-production-container-live-evidence
-evidence_commit: 2b688947743de52b2e56ed5d8f929d79516df1d2
-minimum_ledger_commit: 2b688947743de52b2e56ed5d8f929d79516df1d2
+evidence_commit: 7dbd0cbc5cbc77e46fc795568bb63ddcf5e3ee6f
+minimum_ledger_commit: 7dbd0cbc5cbc77e46fc795568bb63ddcf5e3ee6f
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 ---
@@ -37,9 +37,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Work only in `/tmp/agency-runtime-ar297.WQUbF2` on
   `codex/ar297-production-container-live-evidence`, based on `origin/main`
   `0a23983a`. Never touch the shared checkout.
-- Clean ledger `2b688947` binds AR-327's repair and focused evidence. Committed
-  source replays the exact retained Qwen2 failure green without a model or write;
-  exact artifact/image rebuild is next.
+- Clean ledger `7dbd0cbc` binds AR-327 and its exact Qwen2 replay. Exact
+  artifacts/images verify green; a new clean Codex one-install proof is next.
 - Linux remains **NO-GO**. AR-297/#335 remain open. No tracker write, push, PR,
   merge, tag, signing, publication, release, or hosted workflow is authorized.
 
@@ -74,9 +73,6 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - The named Python spine passes 860 tests with 3 skips at `8cda02e1...4312`.
   Full decision conformance kills 165/165 mutations at `891defed...ab8` with
   zero survived/invalid and source unchanged. Both exit 0 with empty stderr.
-- Exact `4b443be2` build/Twine/verifier/six images/final verification exit 0.
-  Wheel and sdist are `aaf9b461...1f7d` and `869b2842...545f`; manifest/image
-  receipts are `c8fdc3f6...9c9e` and `f91c05d1...adde`.
 - Qwen1 sole install `40c1c188...7f5a` exits 1 at the default 180-second Codex
   timeout, before native route/delivery/finalization. Store quick-check passes;
   correlation `5f76b443...6eaa` closes the run as `canary_failed`.
@@ -97,11 +93,15 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   with source unchanged at `527ff7d8...a78`. Focused Ruff/format passes.
 - Exact Qwen2 committed-source replay `f98bb268...7cb3` exits 0: read-only and
   full restricted verification both return staffed `verified_existing_receipt`.
+- Exact `7dbd0cbc` wheel/sdist are `e117b362...fc03d` and `ac30feb0...9fb6c`;
+  manifest `780512b2...b7876`, six builds, and image receipt
+  `00fcf8e6...5f76` exit 0. Exact image IDs are `206e94c4`, `237c788d`,
+  `7869a7a3`, `91c3a5bc`, and `1b0653a5`.
 
 ## exact-blocker
 
-- Checkpoint the exact replay, rebuild/verify artifacts and images, then use one
-  new clean Codex container; never rerun Qwen1/2.
+- Create one new clean Codex container, prove absence, and run its sole
+  300-second no-bypass install; never rerun Qwen1/2.
 - Claude, Hermes, OpenClaw, later ordinary processes, exact host install,
   authenticated dashboard, named gates, and final teardown remain pending.
 - Cross-OS artifacts, signing, tracker parity, push/PR/merge/tag/publication,
@@ -111,11 +111,11 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 ## same-task-continuity
 
 - Exact artifacts: `~/.agency-runtime/release-artifacts/`
-  `dist-4b443be2f11045814250ab455d829800634c3909-linux-ar297`.
+  `dist-7dbd0cbc5cbc77e46fc795568bb63ddcf5e3ee6f-linux-ar297`.
 - Evidence: `~/.agency-runtime/evidence/ar297-go-19e0210b`,
   `~/.agency-runtime/evidence/ar325-callback-reconciliation-precheckpoint`, and
   `~/.agency-runtime/evidence/ar326-terminal-collector-precheckpoint`; current
-  candidate evidence is `~/.agency-runtime/evidence/ar297-go-4b443be2`.
+  candidate evidence is `~/.agency-runtime/evidence/ar297-go-7dbd0cbc`.
 - Secret-safe helpers: `/tmp/agency-runtime-ar297-evidence.pcLOZn/`
   `run_with_litellm_key.py` and `capture_command.py`. Never print the key.
 - Protected Python is `~/.agency-runtime-ci/ar297-release-0827/venv/bin/python`;
@@ -132,9 +132,8 @@ unchecked line. Mark an item complete only with exact retained evidence.
 1. [x] Build and independently verify exact `c3493337` artifacts/images.
 2. [x] Test deterministic temporary Mistral aliases and remove all three.
 3. [x] Test and remove exact Gemma 3 27B; it selects the wrong role.
-4. [ ] Repair/checkpoint AR-327, rebuild exact artifacts/images, then prove
-   current-profile attestation in one new clean Codex install using the proven
-   explicit 300-second activation window.
+4. [ ] AR-327 repair/rebuild are green; prove current-profile attestation in
+   one new clean Codex install using the explicit 300-second activation window.
 5. [ ] Prove separate clean exact Claude, native-UID Hermes, and OpenClaw
    systemd production-container installs.
 6. [ ] Run later ordinary unattended Conveyor-equivalent processes for all four

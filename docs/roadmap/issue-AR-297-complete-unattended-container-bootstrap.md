@@ -1253,3 +1253,14 @@ Committed-source replay against the exact retained Qwen2 Store and rollout
 exits 0 at `f98bb268...7cb3`; both the read-only receipt projection and full
 restricted verifier return staffed `verified_existing_receipt`. This is source
 validation only: the failed installed candidate is not relabelled or mutated.
+
+Clean AR-327 ledger `7dbd0cbc5cbc77e46fc795568bb63ddcf5e3ee6f` now
+produces wheel `e117b362...fc03d` (9,344,796 bytes) and sdist
+`ac30feb0...9fb6c` (25,929,703 bytes). Canonical build, strict Twine,
+independent distribution verification, artifact manifest, all six image
+builds, and final image verification exit 0. Manifest and image receipt hash to
+`780512b2...b7876` and `00fcf8e6...5f76`. Codex, Claude, Hermes, OpenClaw
+systemd, and dashboard image IDs are `206e94c4...a5b2e`,
+`237c788d...d7e40`, `7869a7a3...121b8`, `91c3a5bc...0fde`, and
+`1b0653a5...cb87`. One new clean Codex container, fresh absence, and its sole
+300-second no-bypass install are the next live gate.

@@ -97,7 +97,7 @@ whole-window semantics.
 - [x] Mutation, truncation, non-record-boundary, wrong-digest, and identity
       mismatch cases fail closed; Claude's exact-artifact behavior is unchanged.
 - [x] The affected warning-strict suite and focused conformance mutations pass.
-- [ ] Rebuilt exact artifacts/images pass independent verification.
+- [x] Rebuilt exact artifacts/images pass independent verification.
 - [ ] One new clean no-bypass Codex install persists current-profile
       attestation and exits 0.
 - [ ] A same-repository tracker issue is created and linked after explicit
@@ -117,6 +117,13 @@ Exact committed-source Qwen2 replay exits 0 at `f98bb268...7cb3`. It proves
 terminal parent/route resolution, trusted canonical artifact, exact Store
 decision/receipt, and both verification layers staffed without updating the
 failed installed candidate's Store or attestation.
+
+Clean ledger `7dbd0cbc5cbc77e46fc795568bb63ddcf5e3ee6f` produces exact
+wheel `e117b362...fc03d` and sdist `ac30feb0...9fb6c`. Canonical build,
+strict Twine, independent verification, manifest, all six image builds, and
+image verification exit 0; manifest and image receipts are
+`780512b2...b7876` and `00fcf8e6...5f76`. The new exact Codex image is
+`206e94c4...a5b2e`; its clean one-install proof remains pending.
 
 The retained unfiltered suite exits 1 after 211 passes only because
 `test_native_child_delivery_verification_ledger.py` still expects schema 46 in
