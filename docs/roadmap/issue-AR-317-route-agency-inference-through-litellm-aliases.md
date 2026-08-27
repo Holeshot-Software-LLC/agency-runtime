@@ -55,9 +55,9 @@ remain the private model backend, but it must not be an Agency-facing route.
   abliterated model and has an existing shared general fallback chain. The
   operator selected the installed `mistral-small3.2:24b` model as its new
   primary backend.
-- The exact config names direct Ollama models for generation, critic,
-  reranker, and child judge. Its 4,096-dimensional `qwen3-embedding` route is
-  already transported through LiteLLM.
+- The prior exact config named direct Ollama models for generation, critic,
+  reranker, and child judge. It remains immutable as historical evidence and
+  has been superseded for the next candidate by a new LiteLLM-only artifact.
 - Canary child-judge pins admit exact CLI, Anthropic, and Ollama profiles but
   now also admit one authenticated safe `litellm` profile after 158 focused
   warning-strict tests.
@@ -74,9 +74,25 @@ remain the private model backend, but it must not be an Agency-facing route.
   fallbacks. The embedding alias returns exactly 4,096 dimensions; its receipt
   hash is `fb1d9fc7...34a94`.
 - Qwen generation returns strict JSON through its alias when thinking is
-  disabled (`4f0a1ef0...69eca`). The approved `medium` level fails HTTP 500
+  disabled (`4f0a1ef0...69eca`). The attempted `medium` level fails HTTP 500
   because this installed abliterated build reports that it does not support
-  thinking (`a4783b2c...12d1a`); the exact config awaits the operator choice.
+  thinking (`a4783b2c...12d1a`); the operator explicitly selected disabled
+  thinking for the exact generation profile.
+- The replacement mode-0600 config is
+  `~/.agency-runtime/configs/ar297-litellm-a4e213d6b454ca90.yaml`, SHA-256
+  `a4e213d6...97348`. Product schema/load plus authenticated deployment
+  validation exit 0 at `fb8d3384...f680f`: all six deployment IDs and backend
+  mappings match, direct Ollama is disabled, every inference profile uses
+  LiteLLM, embedding is 4,096-dimensional, and only the credential environment
+  name is persisted. `agency config validate` exits 2 only for the expected
+  cold-host loading/trust warnings (`03c2747b...d617c`), so installed live
+  validation remains open.
+- Agency-level critic, text-reranker, child-judge, and two-input normalized
+  embedding probes exit 0 at `f1ec2f09...e142`, `6c220204...c1dc`,
+  `82a1abf3...c244`, and `0af8e0a4...92a6`. The first no-thinking synthetic
+  planner call exits 1 solely on `plan_missing_codebase_discovery` at
+  `cfe56a4f...71dcc`; the bounded planner repair and full canary remain the
+  acceptance authority rather than relabeling that response as a pass.
 - Tracker creation is prohibited by the active AR-297 task.
 
 ## Approach
@@ -101,7 +117,9 @@ and its credential environment name; disable direct Ollama routing.
 - ADR-0174 retains the direct Ollama product capability but no longer governs
   the selected AR-297 host topology.
 - The operator approved LiteLLM-only Agency routing and a Mistral-backed
-  `task-agency-router`; no Jina route is permitted.
+  `task-agency-router`, then explicitly approved disabled Qwen generation
+  thinking after the installed model rejected `medium`; no Jina route is
+  permitted.
 - Existing shared LiteLLM fallbacks are foreign policy and remain unchanged
   unless the operator explicitly authorizes their removal.
 
@@ -117,8 +135,10 @@ and its credential environment name; disable direct Ollama routing.
 - [x] Stage aliases resolve to the approved local backends, preserve the 4,096
       embedding dimension, and prove a 20,050-token no-fallback child response
       at a 32,768-token context without truncation.
-- [ ] The new mode-0600 exact config contains only LiteLLM inference routes and
-      passes strict structural, model, credential, and installed validation.
+- [x] The new mode-0600 exact config contains only LiteLLM inference routes and
+      passes strict structural, model, credential, and deployment validation.
+- [ ] The exact config passes clean installed live validation in each target
+      production container and on the Linux host.
 - [ ] A fresh no-bypass Codex transaction proves one resolved Mistral child
       decision, v6 delivery/consumption, accepted finalization, and attestation.
 - [ ] A same-repository tracker issue is created and linked after explicit

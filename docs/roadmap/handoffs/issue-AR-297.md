@@ -57,19 +57,20 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Work remains in dedicated worktree `/tmp/agency-runtime-ar297.WQUbF2` on
   `codex/ar297-production-container-live-evidence`, based on `origin/main`
   `0a23983a`. Never use the shared checkout.
-- Last clean recovery pair: AR-316 governance `6a363bd1` and worklog
-  `aef88ffc`; AR-317 source/worklog are `61ee2428`/`539c9a9a`. Telemetry is
-  21.0 percent; checkpoint the live alias package before continuing.
+- Last clean recovery pair is AR-317 alias evidence `c283efac` and worklog
+  `f0c11a10`. Post-compaction telemetry is 65.1 percent; continue the same task
+  and checkpoint this replacement-config package before rebuilding.
 - Linux remains **NO-GO**. AR-297/#335 stay open. Tracker writes, push, PR,
   merge, tag, signing, publication, release, and hosted workflow actions are
   not authorized.
 
 ## completed-evidence
 
-- Exact mode-0600 config SHA is `87551b5b...e125628`: strict assurance,
-  additive dense recall, Qwen 14B abliterated generation, Mistral 24B
-  critic/reranker/recruiter/free child judge, and LiteLLM `qwen3-embedding` at
-  4,096 dimensions. Jina is absent and was not called.
+- Replacement mode-0600 config `ar297-litellm-a4e213d6b454ca90.yaml` has SHA
+  `a4e213d6...97348`: strict/additive, all six Agency routes through
+  authenticated LiteLLM aliases, Qwen generation with thinking disabled,
+  Mistral critic/reranker/recruiter/free child judge, and 4,096-dimensional
+  Qwen embedding. Direct Ollama and Jina are absent from active routes.
 - Exact ledger `3e42598d` caller-umask-0002 build, strict Twine, and independent
   verification exit 0. Mode-0644 wheel `0bb18a70...d983` is 9,299,031 bytes;
   sdist `73d8c201...ae55` is 25,561,038 bytes. Codex image is
@@ -86,28 +87,25 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   shared fallback remains `8e801fde...075f`; model snapshot `6a80b30a...be8df`.
   Child probe `5c9d6a27...800f4` uses 20,050 tokens at `n_ctx=32768` with
   `truncated=0`/fallbacks 0; embedding `fb1d9fc7...34a94` is 4,096-dimensional.
+- Exact product schema/load and current six-deployment checks exit 0 at
+  `fb8d3384...f680f`. Critic/reranker/child/embedding adapter probes exit 0 at
+  `f1ec2f09...e142`, `6c220204...c1dc`, `82a1abf3...c244`, and
+  `0af8e0a4...92a6`; CLI validation exits 2 only on cold-host warnings.
 - Earlier exact `1f32915d` named gates pass: 860 Python tests (three skips), 138
   dashboard tests, routing, and 161/161 decision mutations. Refresh all gates
   for the final exact candidate.
 
 ## exact-blocker
 
-- C1 container `b6f94914...f39c2` exits 1 before route after both Qwen planner
-  attempts are semantically invalid. Receipt/Store/parent hashes are
-  `86983408...0fc0`/`765c26a6...d307`/`f8ec06fb...fb24`.
-- C2 container `3f98857e...f8a91` exits 1 with empty stderr and receipt
-  `e043a745...ead5`. Parent `01a04051...8c60`, trace `01a04051...25fce`, route
-  `9f377961...fb2d`, and child `01a04053...0455` correlate fixed worker exit 0.
-  The 180-second outer window expires five seconds later; its child judge had
-  already failed unavailable after 26,341 ms, so only the 563-byte identity is
-  delivered. Store/parent/child hashes are `7e8a6f9f...9706`,
-  `d74fa302...43a4`, and `a54138e7...0c53`.
-- AR-316 proves the discarded direct route truncated C2. AR-317 alias routing
-  now passes except Qwen generation with `thinking_level=medium`: the installed
-  abliterated model explicitly rejects thinking, while the same no-thinking
-  alias passes. Obtain the operator's thinking choice, publish the new exact
-  config, then use a fresh 600-second container. Require one v6
-  `code-reviewer` artifact, consumed receipt, current header, accepted first
+- Superseded Codex C1/C2 both exit 1: C1 fails planner semantics; C2 reaches
+  route `9f377961...fb2d` and fixed child exit 0, then its truncated judge fails
+  and the 180-second canary expires. Receipts are `86983408...0fc0` and
+  `e043a745...ead5`; exact Store/rollout correlations remain in the issue.
+- AR-316 proves the discarded direct route truncated C2. The operator selected
+  disabled thinking and the new AR-317 config is structurally/deployment valid.
+  Its first no-thinking planner probe exits 1 only for missing codebase
+  discovery (`cfe56a4f...71dcc`); prove bounded repair in a fresh 600-second
+  container. Require one v6 `code-reviewer` artifact, consumed receipt, current header, accepted first
   finalization, and no-bypass attestation in one invocation.
 - No later ordinary Codex, Claude, Hermes, or OpenClaw process has a current
   successful Agency-turn receipt on this source.
@@ -119,10 +117,11 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 
 ## same-task-continuity
 
-Exact artifacts: `~/.agency-runtime/release-artifacts/`
-`dist-3e42598da5eaa5b58d0bb0771cea6f90719d48d1-linux-ar297`. Evidence:
-`~/.agency-runtime/evidence/ar297-go-3e42598d` and
-`ar297-litellm-routing-ioeoBe`. Current exact Codex containers
+Prior artifacts: `~/.agency-runtime/release-artifacts/`
+`dist-3e42598da5eaa5b58d0bb0771cea6f90719d48d1-linux-ar297`; rebuild after
+this checkpoint. Exact config is `~/.agency-runtime/configs/`
+`ar297-litellm-a4e213d6b454ca90.yaml`. Evidence: `ar297-go-3e42598d` and
+`ar297-litellm-routing-ioeoBe`. Current old Codex containers
 are `agency-ar297-codex-3e42598d` and `-c2`; older evidence containers remain.
 All AR-297 containers await final teardown. Secret-safe helper:
 `/tmp/agency-runtime-ar297-evidence.pcLOZn/run_with_litellm_key.py`.
@@ -132,7 +131,8 @@ All AR-297 containers await final teardown. Secret-safe helper:
 After compaction, reread this capsule and `git status`, then resume at the first
 unchecked line. Mark an item complete only with exact retained evidence.
 
-1. [x] Rebuild and verify exact `3e42598d` artifacts plus the Codex image.
+1. [ ] Rebuild and independently verify artifacts/images from this exact
+   LiteLLM-config checkpoint; do not reuse `3e42598d` as the candidate.
 2. [ ] Prove fresh Codex absence, then one exact no-bypass V2 install with one
    canonical child artifact, consumed receipt, current header, accepted
    finalization, Store correlation, and attestation.

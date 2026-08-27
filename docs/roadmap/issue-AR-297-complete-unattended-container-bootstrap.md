@@ -748,3 +748,15 @@ AR-316 records the completed route diagnosis: the selector protocol hardcodes
 despite the installed model's 131,072-token capability. The same-model,
 same-endpoint 32,768-token repair is waiting for the required operator approval;
 no judge-route parameter has been changed.
+
+AR-317 replaces that direct route for this Linux candidate without modifying
+the retained diagnosis. The operator selected stable LiteLLM aliases for every
+Agency inference stage, Mistral for `task-agency-router`, and disabled thinking
+for Qwen generation after the installed abliterated build rejected `medium`.
+The new mode-0600 exact config has SHA-256 `a4e213d6...97348`; product
+schema/load and authenticated six-deployment validation exit 0 at
+`fb8d3384...f680f`, with direct Ollama disabled and no secret value or Jina.
+Agency critic, text-reranker, child-judge, and exact 4,096-dimensional embedding
+probes exit 0. A no-thinking synthetic planner probe returns a valid six-unit
+shape but exits 1 for `plan_missing_codebase_discovery`; the next exact Codex
+canary must prove its bounded repair before the remaining harness installs.
