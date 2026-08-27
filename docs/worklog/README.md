@@ -1288,6 +1288,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `15fb6dd5` | 2026-08-26 | docs(ar319): record pinned judge timeout conflict | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-319](../roadmap/issue-AR-319-honor-pinned-canary-judge-timeout.md) | [ADR-0183](../decisions/0183-honor-pinned-canary-judge-timeout.md) |
 | `785070f6` | 2026-08-26 | fix(ar319): honor pinned canary judge timeout | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-319](../roadmap/issue-AR-319-honor-pinned-canary-judge-timeout.md) | [ADR-0183](../decisions/0183-honor-pinned-canary-judge-timeout.md) |
 | `633b0e84` | 2026-08-26 | docs(ar319): checkpoint rebuilt timeout candidate | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-319](../roadmap/issue-AR-319-honor-pinned-canary-judge-timeout.md) | [ADR-0183](../decisions/0183-honor-pinned-canary-judge-timeout.md) |
+| `761a279d` | 2026-08-26 | docs(ar320): record full child staffing wait gap | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-320](../roadmap/issue-AR-320-bound-codex-wait-to-full-child-staffing.md) | [ADR-0184](../decisions/0184-bound-codex-wait-to-full-child-staffing.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
