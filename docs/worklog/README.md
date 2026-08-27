@@ -1285,6 +1285,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `4d6d4930` | 2026-08-26 | docs(ar318): record Codex activation wait race | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-318](../roadmap/issue-AR-318-bound-codex-activation-child-wait.md) | [ADR-0182](../decisions/0182-bound-codex-activation-child-wait.md) |
 | `42642aab` | 2026-08-26 | fix(ar318): bound Codex activation child wait | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-318](../roadmap/issue-AR-318-bound-codex-activation-child-wait.md) | [ADR-0182](../decisions/0182-bound-codex-activation-child-wait.md) |
 | `542e2dd2` | 2026-08-26 | docs(ar318): checkpoint rebuilt Codex candidate | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-318](../roadmap/issue-AR-318-bound-codex-activation-child-wait.md) | [ADR-0182](../decisions/0182-bound-codex-activation-child-wait.md) |
+| `15fb6dd5` | 2026-08-26 | docs(ar319): record pinned judge timeout conflict | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-319](../roadmap/issue-AR-319-honor-pinned-canary-judge-timeout.md) | [ADR-0183](../decisions/0183-honor-pinned-canary-judge-timeout.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
