@@ -59,7 +59,24 @@ remain the private model backend, but it must not be an Agency-facing route.
   reranker, and child judge. Its 4,096-dimensional `qwen3-embedding` route is
   already transported through LiteLLM.
 - Canary child-judge pins admit exact CLI, Anthropic, and Ollama profiles but
-  do not yet admit an authenticated `litellm` inference profile.
+  now also admit one authenticated safe `litellm` profile after 158 focused
+  warning-strict tests.
+- `task-agency-router` now resolves primarily to Mistral with a 32,768-token
+  context. Its existing fallback snapshot remains byte-identical at
+  `8e801fde...075f`. Five dedicated stage aliases resolve to the approved local
+  backends and each returns HTTP 404 for general-fallback lookup; the canonical
+  model snapshot is `6a80b30a...be8df`.
+- A 20,050-token child-alias probe returns strict JSON at HTTP 200 with zero
+  attempted fallbacks. Ollama records `n_ctx=32768`, all 20,050 prompt tokens,
+  and `truncated=0`; receipt/journal hashes are `5c9d6a27...800f4` and
+  `2ed8eaca...b1e7`.
+- Router, critic, and reranker probes return strict JSON at HTTP 200 with zero
+  fallbacks. The embedding alias returns exactly 4,096 dimensions; its receipt
+  hash is `fb1d9fc7...34a94`.
+- Qwen generation returns strict JSON through its alias when thinking is
+  disabled (`4f0a1ef0...69eca`). The approved `medium` level fails HTTP 500
+  because this installed abliterated build reports that it does not support
+  thinking (`a4783b2c...12d1a`); the exact config awaits the operator choice.
 - Tracker creation is prohibited by the active AR-297 task.
 
 ## Approach
@@ -97,8 +114,9 @@ and its credential environment name; disable direct Ollama routing.
 - [x] The canary admits one credential-declared safe LiteLLM profile; 158
       focused projection, inference-profile, network, and coverage-complete
       regressions pass warning-strict at exit 0.
-- [ ] Stage aliases resolve to the approved local backends, preserve the 4,096
-      embedding dimension, and give the no-fallback child judge enough context.
+- [x] Stage aliases resolve to the approved local backends, preserve the 4,096
+      embedding dimension, and prove a 20,050-token no-fallback child response
+      at a 32,768-token context without truncation.
 - [ ] The new mode-0600 exact config contains only LiteLLM inference routes and
       passes strict structural, model, credential, and installed validation.
 - [ ] A fresh no-bypass Codex transaction proves one resolved Mistral child

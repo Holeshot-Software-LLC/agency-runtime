@@ -58,8 +58,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   `codex/ar297-production-container-live-evidence`, based on `origin/main`
   `0a23983a`. Never use the shared checkout.
 - Last clean recovery pair: AR-316 governance `6a363bd1` and worklog
-  `aef88ffc`. Telemetry is 38.8 percent; checkpoint AR-317 source/governance
-  before its first live probe.
+  `aef88ffc`; AR-317 source/worklog are `61ee2428`/`539c9a9a`. Telemetry is
+  21.0 percent; checkpoint the live alias package before continuing.
 - Linux remains **NO-GO**. AR-297/#335 stay open. Tracker writes, push, PR,
   merge, tag, signing, publication, release, and hosted workflow actions are
   not authorized.
@@ -82,9 +82,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - AR-315 is live-proven in C2: decision `1d351ac6...c63082` exists only after
   immutable install identity, stable routing state, and a 59-card catalog pass;
   it records the configured free child judge attempt without admitting a card.
-- AR-317 admits only credential-declared safe LiteLLM canary profiles; 158
-  focused warning-strict tests pass. Pre-change alias/readiness/fallback hashes
-  are `39e2d4c1...31e3`/`a10d798c...245`/`8e801fde...075f`.
+- AR-317 passes 158 focused tests. Six Mistral/Qwen aliases are healthy and the
+  shared fallback remains `8e801fde...075f`; model snapshot `6a80b30a...be8df`.
+  Child probe `5c9d6a27...800f4` uses 20,050 tokens at `n_ctx=32768` with
+  `truncated=0`/fallbacks 0; embedding `fb1d9fc7...34a94` is 4,096-dimensional.
 - Earlier exact `1f32915d` named gates pass: 860 Python tests (three skips), 138
   dashboard tests, routing, and 161/161 decision mutations. Refresh all gates
   for the final exact candidate.
@@ -101,18 +102,18 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   already failed unavailable after 26,341 ms, so only the 563-byte identity is
   delivered. Store/parent/child hashes are `7e8a6f9f...9706`,
   `d74fa302...43a4`, and `a54138e7...0c53`.
-- AR-316 proves direct selector `num_ctx=8192` truncated C2's 19,520-token
-  catalog. The operator selected AR-317 instead: all Agency inference crosses
-  authenticated LiteLLM aliases, `task-agency-router` becomes Mistral-backed,
-  shared fallbacks remain foreign policy, and the exact child alias has none.
-  After alias/config proof, use a fresh 600-second container. Require one v6
+- AR-316 proves the discarded direct route truncated C2. AR-317 alias routing
+  now passes except Qwen generation with `thinking_level=medium`: the installed
+  abliterated model explicitly rejects thinking, while the same no-thinking
+  alias passes. Obtain the operator's thinking choice, publish the new exact
+  config, then use a fresh 600-second container. Require one v6
   `code-reviewer` artifact, consumed receipt, current header, accepted first
   finalization, and no-bypass attestation in one invocation.
 - No later ordinary Codex, Claude, Hermes, or OpenClaw process has a current
   successful Agency-turn receipt on this source.
 - Refresh the host install/dashboard and named repository gates for the exact
   candidate, then remove both old and new AR-297 proof containers.
-- AR-299 through AR-316 tracker parity, hosted cross-OS artifacts, signing,
+- AR-299 through AR-317 tracker parity, hosted cross-OS artifacts, signing,
   push, PR, merge, tag, publication, release, and exhaustive workflow dispatch
   remain unauthorized.
 
