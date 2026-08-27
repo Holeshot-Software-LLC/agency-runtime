@@ -1303,6 +1303,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `8859bfc3` | 2026-08-27 | docs(ar321): checkpoint GPT-OSS judge candidate | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-321](../roadmap/issue-AR-321-select-reliable-free-litellm-child-judge.md) | [ADR-0181](../decisions/0181-use-litellm-aliases-as-host-inference-control-plane.md) |
 | `0f086498` | 2026-08-27 | docs(ar321): checkpoint GPT-OSS reasoning repair | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-321](../roadmap/issue-AR-321-select-reliable-free-litellm-child-judge.md) | [ADR-0181](../decisions/0181-use-litellm-aliases-as-host-inference-control-plane.md) |
 | `17decade` | 2026-08-27 | docs(ar321): checkpoint Mistral repeat candidate | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-321](../roadmap/issue-AR-321-select-reliable-free-litellm-child-judge.md) | [ADR-0181](../decisions/0181-use-litellm-aliases-as-host-inference-control-plane.md) |
+| `d05a13ae` | 2026-08-27 | docs(ar321): promote schema-bound Mistral judge | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-321](../roadmap/issue-AR-321-select-reliable-free-litellm-child-judge.md) | [ADR-0181](../decisions/0181-use-litellm-aliases-as-host-inference-control-plane.md), [ADR-0185](../decisions/0185-enforce-child-judge-schema-at-litellm-alias.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
