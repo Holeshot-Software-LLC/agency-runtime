@@ -1313,6 +1313,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `7f760a59` | 2026-08-27 | docs(ar297): checkpoint separate Codex hook identities | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-324](../roadmap/issue-AR-324-bind-codex-canary-child-through-host-lineage.md) | null |
 | `e15d841f` | 2026-08-27 | docs(ar297): checkpoint exact child compatibility blocker | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-321](../roadmap/issue-AR-321-select-reliable-free-litellm-child-judge.md), [AR-324](../roadmap/issue-AR-324-bind-codex-canary-child-through-host-lineage.md) | null |
 | `4902da2e` | 2026-08-27 | docs(ar321): checkpoint exact stable over-selection | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-321](../roadmap/issue-AR-321-select-reliable-free-litellm-child-judge.md) | null |
+| `21c735d8` | 2026-08-27 | docs(ar321): close deterministic Mistral retry | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-321](../roadmap/issue-AR-321-select-reliable-free-litellm-child-judge.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
