@@ -1349,6 +1349,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `f88369bc` | 2026-08-27 | docs(ar297): seal current Hermes ordinary proof | [AR-288](../roadmap/issue-AR-288-expose-hermes-native-finalizer-tool.md), [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `65ef42f2` | 2026-08-27 | docs(ar297): prove current Codex ordinary loading | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `bd9966d3` | 2026-08-27 | docs(ar297): prove current OpenClaw ordinary loading | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `de991dc0` | 2026-08-27 | fix(installer): seal Hermes bytecode cache [AR-328] | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-328](../roadmap/issue-AR-328-seal-hermes-install-tree.md) | [ADR-0191](../decisions/0191-seal-managed-hermes-python-bundles.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
