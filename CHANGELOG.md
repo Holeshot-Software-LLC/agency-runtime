@@ -16,9 +16,11 @@ related:
   - docs/roadmap/issue-AR-307-project-canary-inference-credentials.md
   - docs/roadmap/issue-AR-308-bind-activation-canary-delegation.md
   - docs/roadmap/issue-AR-317-route-agency-inference-through-litellm-aliases.md
+  - docs/roadmap/issue-AR-318-bound-codex-activation-child-wait.md
   - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
   - docs/decisions/0178-project-config-declared-credentials-into-tool-reduced-canaries.md
   - docs/decisions/0181-use-litellm-aliases-as-host-inference-control-plane.md
+  - docs/decisions/0182-bound-codex-activation-child-wait.md
   - docs/roadmap/README.md
   - docs/worklog/README.md
   - THIRD_PARTY_NOTICES.md
@@ -232,11 +234,11 @@ changes rather than duplicating every commit.
   claimed child lineage, execution input inside the second turn and before the
   response, one nonempty turn-bound final answer, and matching completion.
 - Codex product evidence now accepts the current bounded native `wait_agent`
-  timeout while leaving the activation canary's exact 60-second contract
-  unchanged. Current inferred work-unit goals carry their verified mutation
-  scope, reserve that suffix under bounded truncation, and make the delegated
-  workspace-write sentinel obligation explicit without giving the parent write
-  authority.
+  timeout while the activation canary uses one exact 120-second terminal wait
+  inside its unchanged 600-second outer ceiling. Current inferred work-unit
+  goals carry their verified mutation scope, reserve that suffix under bounded
+  truncation, and make the delegated workspace-write sentinel obligation
+  explicit without giving the parent write authority.
 - Dynamic contractors now bind external-mutation risk to the validated work
   unit instead of a model-authored Boolean. Ordinary repository and isolated-
   workspace writes remain autonomous, explicit safety prohibitions no longer

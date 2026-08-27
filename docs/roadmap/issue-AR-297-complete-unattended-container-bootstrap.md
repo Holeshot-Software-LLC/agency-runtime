@@ -782,3 +782,9 @@ single 60-second wait returns `timed_out=true`; the parent correctly refuses a
 delivery, header, accepted finalization, or attestation. Store and parent/child
 rollouts hash to `3f3f5d84...397e`, `ec0c7859...d523`, and
 `fc2c7681...d8f9`. AR-318 owns the bounded one-wait timing repair.
+
+AR-318 now binds one shared 120,000-ms wait into the exact Codex developer
+instruction and persisted-rollout validator while retaining one spawn, one
+wait, no retry, and the 600-second outer ceiling. The stale 60,000-ms shape is
+regression-rejected; Ruff and 309 focused warning-strict tests pass at exit 0.
+A rebuilt artifact and fresh clean Codex transaction remain required.

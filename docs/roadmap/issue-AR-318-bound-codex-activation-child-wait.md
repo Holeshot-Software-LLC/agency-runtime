@@ -47,6 +47,9 @@ route and the native child has completed its work at exit 0.
   header, or attestation.
 - Install receipt `2942f5ee...935b`, Store `3f3f5d84...397e`, parent rollout
   `ec0c7859...d523`, and child rollout `fc2c7681...d8f9` are retained mode 0600.
+- The shared 120,000-ms source contract now drives both the Codex developer
+  instruction and exact direct-rollout validator. The stale 60,000-ms shape is
+  regression-rejected; Ruff and 309 focused warning-strict tests pass at exit 0.
 - Tracker creation is prohibited by the active AR-297 task.
 
 ## Approach
@@ -66,8 +69,8 @@ as stale rather than weakening terminal-completion evidence.
 
 ## Acceptance
 
-- [ ] Prompt and rollout validation require exactly one 120,000-ms wait.
-- [ ] Focused warning-strict canary and coverage tests pass.
+- [x] Prompt and rollout validation require exactly one 120,000-ms wait.
+- [x] Focused warning-strict canary and coverage tests pass.
 - [ ] A rebuilt fresh Codex production-container install produces the required
       delivery, consumption, first accepted finalization, header, and attestation.
 - [ ] A same-repository tracker issue is created and linked after explicit

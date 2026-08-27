@@ -12,10 +12,14 @@ import pytest
 
 from agency_runtime.adapters.hooks import HookBridge
 from agency_runtime.core import canary
-from agency_runtime.core.activation_canary_contract import CODEX_ACTIVATION_CANARY_WORK_UNIT
+from agency_runtime.core.activation_canary_contract import (
+    CODEX_ACTIVATION_CANARY_WAIT_TIMEOUT_MS,
+    CODEX_ACTIVATION_CANARY_WORK_UNIT,
+)
 from agency_runtime.core.canary_backends import (
     _assert_codex_child_activation_is_tool_free,
     _codex_child_execution_projection,
+    _codex_exact_direct_rollout_calls,
     _codex_product_child_tool_evidence,
     _codex_product_rollout_collaboration_evidence,
     _codex_product_wait_counts,
@@ -996,6 +1000,34 @@ def test_codex_rollout_accepts_normal_host_umask_directories_under_private_home(
         )
 
 
+def test_codex_direct_rollout_rejects_stale_activation_wait_timeout() -> None:
+    calls = [
+        {
+            "name": "spawn_agent",
+            "call_id": "call-native-spawn",
+            "index": 0,
+            "arguments": {
+                "fork_turns": "none",
+                "message": "opaque-message",
+                "task_name": "code_reviewer",
+            },
+        },
+        {
+            "name": "wait_agent",
+            "call_id": "call-native-wait",
+            "index": 1,
+            "arguments": {"timeout_ms": 60_000},
+        },
+    ]
+    outputs = {
+        "call-native-spawn": {"task_name": "/root/code_reviewer"},
+        "call-native-wait": {"message": "Wait completed.", "timed_out": False},
+    }
+
+    with pytest.raises(ValueError, match="arguments exceeded the canary contract"):
+        _codex_exact_direct_rollout_calls(calls, outputs, [])
+
+
 def test_codex_direct_rollout_projects_one_spawn_and_terminal_wait(tmp_path: Path) -> None:
     parent_id = "019fa6a6-9432-7c70-a594-68ccdf7e4988"
     receiver_id = "019fa6a6-a197-7a83-b3fb-d2c20411f608"
@@ -1065,7 +1097,9 @@ def test_codex_direct_rollout_projects_one_spawn_and_terminal_wait(tmp_path: Pat
                     "name": "wait_agent",
                     "namespace": "collaboration",
                     "call_id": "call-native-wait",
-                    "arguments": json.dumps({"timeout_ms": 60_000}),
+                    "arguments": json.dumps(
+                        {"timeout_ms": CODEX_ACTIVATION_CANARY_WAIT_TIMEOUT_MS}
+                    ),
                 },
             },
             {
@@ -1257,7 +1291,9 @@ def test_codex_0149_quiet_stdout_projects_subagent_start_v6_delivery(
                     "name": "wait_agent",
                     "namespace": "collaboration",
                     "call_id": "call-native-wait",
-                    "arguments": json.dumps({"timeout_ms": 60_000}),
+                    "arguments": json.dumps(
+                        {"timeout_ms": CODEX_ACTIVATION_CANARY_WAIT_TIMEOUT_MS}
+                    ),
                 },
             },
             {

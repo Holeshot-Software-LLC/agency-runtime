@@ -216,6 +216,8 @@ def test_agency_canary_explicitly_requests_one_whole_unit_subagent() -> None:
         canary.CODEX_CANARY_DEVELOPER_INSTRUCTIONS.lower()
     )
     assert "call wait_agent once" in canary.CODEX_CANARY_DEVELOPER_INSTRUCTIONS.lower()
+    assert "120000 ms timeout" in canary.CODEX_CANARY_DEVELOPER_INSTRUCTIONS.lower()
+    assert "60000 ms timeout" not in canary.CODEX_CANARY_DEVELOPER_INSTRUCTIONS.lower()
     assert "fork_turns set to none" in canary.CODEX_CANARY_DEVELOPER_INSTRUCTIONS.lower()
     assert "never retry any collaboration call" in (
         canary.CODEX_CANARY_DEVELOPER_INSTRUCTIONS.lower()

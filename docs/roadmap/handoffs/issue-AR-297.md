@@ -59,10 +59,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Work remains in dedicated worktree `/tmp/agency-runtime-ar297.WQUbF2` on
   `codex/ar297-production-container-live-evidence`, based on `origin/main`
   `0a23983a`. Never use the shared checkout.
-- Last clean recovery pair is exact-artifact evidence `bd990c4a` and worklog
-  `5b2714e4`. Telemetry immediately before the failed Codex install was 29.5
-  percent; post-compaction telemetry is 80.3 percent. Checkpoint the retained
-  wait-race evidence now, then continue the same task with AR-318.
+- Last clean recovery pair is wait-race evidence `4d6d4930` and worklog
+  `9aaf90e0`. AR-318 source tests pass; telemetry is 61.0 percent. Checkpoint
+  that bounded repair now, then rebuild and continue the same Codex proof.
 - Linux remains **NO-GO**. AR-297/#335 stay open. Tracker writes, push, PR,
   merge, tag, signing, publication, release, and hosted workflow actions are
   not authorized.
@@ -100,8 +99,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Fresh exact Codex absence passes at `f611452f...cc96`. Install receipt
   `2942f5ee...935b` exits 1 after accepted route `d1a4e01f...7565` and child
   exit 0: its terminal message precedes the timed-out 60-second wait result by
-  224 ms, so no delivery/header/attestation is admitted. AR-318 must bind one
-  120-second wait, then prove the full v6 transaction in a fresh container.
+  224 ms, so no delivery/header/attestation is admitted. AR-318 now binds one
+  120-second wait and passes Ruff plus 309 focused warning-strict tests; rebuild
+  and prove the full v6 transaction in a fresh container.
 - No later ordinary Codex, Claude, Hermes, or OpenClaw process has a current
   successful Agency-turn receipt on this source.
 - Refresh the host install/dashboard and named repository gates for the exact

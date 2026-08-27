@@ -26,6 +26,7 @@ from agency_runtime.core import canary_backends as _backends
 from agency_runtime.core import canary_proof as _proof
 from agency_runtime.core.activation_canary_contract import (
     CODEX_ACTIVATION_CANARY_PROMPT,
+    CODEX_ACTIVATION_CANARY_WAIT_TIMEOUT_MS,
 )
 from agency_runtime.core.bounded_io import (
     FileSizeLimitError,  # noqa: F401 - historical facade attribute
@@ -68,7 +69,8 @@ CODEX_CANARY_DEVELOPER_INSTRUCTIONS = (
     "for the whole unit: follow the injected [AGENCY DELEGATION PLAN], require exactly one "
     "row, call spawn_agent exactly once with fork_turns set to none, that row's exact "
     "native_task_name, and exact goal. The selected specialist executes in that initial "
-    "child turn. Call wait_agent once with a 60000 ms timeout for the child to become "
+    f"child turn. Call wait_agent once with a {CODEX_ACTIVATION_CANARY_WAIT_TIMEOUT_MS} "
+    "ms timeout for the child to become "
     "terminal. Do not call followup_task. Never retry any collaboration call. If the spawn "
     "fails or the wait times "
     "out, report that result and stop the protocol. "

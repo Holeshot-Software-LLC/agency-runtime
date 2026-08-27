@@ -46,6 +46,7 @@ CODEX_ACTIVATION_CANARY_NATIVE_TASK_NAME = "code_reviewer"
 # MultiAgentV2 keeps the task name in agent_path. With no optional agent_type
 # argument, Codex 0.149.1 emits this built-in role in SubagentStart.
 CODEX_ACTIVATION_CANARY_NATIVE_AGENT_TYPE = "default"
+CODEX_ACTIVATION_CANARY_WAIT_TIMEOUT_MS = 120_000
 _CODEX_ACTIVATION_CANARY_TASK = re.compile(
     re.escape(CODEX_ACTIVATION_CANARY_PROMPT) + r"\n\nCanary nonce: (?P<nonce>[0-9a-f]{32})\Z"
 )
@@ -121,6 +122,7 @@ __all__ = [
     "CODEX_ACTIVATION_CANARY_NATIVE_TASK_NAME",
     "CODEX_ACTIVATION_CANARY_PROMPT",
     "CODEX_ACTIVATION_CANARY_ROUTE_SOURCE",
+    "CODEX_ACTIVATION_CANARY_WAIT_TIMEOUT_MS",
     "CODEX_ACTIVATION_CANARY_WORK_UNIT",
     "CODEX_ACTIVATION_CANARY_WORK_UNIT_SOURCE",
     "is_exact_codex_activation_canary_task",

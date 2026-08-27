@@ -12,6 +12,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from agency_runtime.core.activation_canary_contract import (
+    CODEX_ACTIVATION_CANARY_WAIT_TIMEOUT_MS,
+)
 from agency_runtime.core.bounded_io import FileSizeLimitError
 from agency_runtime.core.canary_judge_provider import CANARY_CHILD_JUDGE_PROVIDER_ENV
 from agency_runtime.core.canary_parent_recruiter_provider import (
@@ -68,7 +71,7 @@ _CODEX_ROLLOUT_CONTRACTS = frozenset({"canary", "product"})
 _CODEX_PRODUCT_COLLABORATION_SCHEMA = "agency.codex-product-collaboration.v2"
 _CODEX_PRODUCT_MAX_SPAWNS = 16
 _CODEX_PRODUCT_MAX_WAITS = 64
-# Current Codex wait_agent schema ceiling; the activation canary separately requires 60 seconds.
+# Current Codex wait_agent schema ceiling; the activation canary has a separate exact bound.
 _CODEX_PRODUCT_MAX_WAIT_TIMEOUT_MS = 3_600_000
 _MAX_CANARY_CREDENTIAL_ENVIRONMENT_NAMES = 256
 _MAX_CANARY_CREDENTIAL_VALUE_BYTES = 64 * 1024
@@ -1290,7 +1293,7 @@ def _codex_exact_direct_rollout_calls(
         or not isinstance(spawn_args.get("message"), str)
         or not isinstance(spawn_args.get("task_name"), str)
         or set(wait["arguments"]) != {"timeout_ms"}
-        or wait["arguments"].get("timeout_ms") != 60_000
+        or wait["arguments"].get("timeout_ms") != CODEX_ACTIVATION_CANARY_WAIT_TIMEOUT_MS
     ):
         raise ValueError("Codex direct collaboration arguments exceeded the canary contract")
     spawn_output = outputs.get(spawn["call_id"])
