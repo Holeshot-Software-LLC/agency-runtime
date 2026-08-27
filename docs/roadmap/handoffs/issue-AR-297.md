@@ -89,9 +89,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - OpenClaw R1 native/Store receipts `0e4ecc3d...c53`/`6bf28dbe...367b` prove
   one exact card, all five routes, and native exit 0; the approved 14B route
   returned exact `{}` and Agency recorded `response_invalid`.
-- Direct-only Codex R2 native/Store receipts `53598f2a...5fd5`/
-  `b269dc11...478d` prove one exact card, four alias receipts, no delegation,
-  native exit 0, and accepted finalization with `missing=[]`; Codex row 6 closes.
+- Fresh Codex receipts `8355a9a6...7590`/`7e39f736...d921`/`2ae0bdde...4a79`
+  prove one exact card, four aliases, no delegation, exit 0, exact response
+  correlation, `missing=[]`, and unchanged config/policy. Its ordinary row closes.
 - Exact host venv/wheel/pip check pass. Combined install `00d51490...b559`
   exits 1 only for attended Codex activation; all four bundles are current and
   packaged-runtime attestation `ec2f8fdd...9292` binds `dbf1581f...f301`.
@@ -112,7 +112,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 
 ## exact-blocker
 
-- Complete Codex, Claude, and OpenClaw ordinary turns plus Claude login; refresh
+- Complete Claude and OpenClaw ordinary turns plus Claude login; refresh
   the exact host/dashboard and named gates, checkpoint, then teardown.
 - Cross-OS artifacts, signing, tracker parity, push/PR/merge/tag/publication,
   release, and exhaustive dispatch are unauthorized, not Linux-only GO gates.

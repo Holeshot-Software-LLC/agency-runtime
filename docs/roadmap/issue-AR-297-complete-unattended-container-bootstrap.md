@@ -151,7 +151,7 @@ reach native registration completeness in production-container mode.
       absent, drifted, and foreign-or-modified policy state.
 - [x] Focused source tests cover policy generation, idempotence, refusal,
       parser closure, and fail-closed activation.
-- [ ] A clean Linux Codex container proves the exact transaction, then a later
+- [x] A clean Linux Codex container proves the exact transaction, then a later
       ordinary Conveyor-equivalent Codex invocation loads Agency unattended.
 - [ ] Clean Linux Claude Code, Hermes, and OpenClaw containers prove native
       registration, loading, and a bounded Agency turn without human input.
@@ -1741,3 +1741,30 @@ the authoritative text. Independent receipt `3c40a9bf...8959` exits 0 and
 also proves both SQLite copies healthy and post-install/post-live native config
 byte-identical at `2552f21c...e680`. Codex, Claude, and OpenClaw current-candidate
 ordinary cells remain independently open.
+
+The fresh exact Codex container now also passes its later ordinary cell. Two
+pre-model setup receipts remain as honest negatives: native stderr
+`d2cbaf84...38f3` records the initially absent work directory and
+`dd701e71...324d` records the empty directory before Git initialization. Both
+fail before hook or model work. After creating the same empty dedicated Git
+repository used by the prior control, telemetry `149b846c...6749` (receipt path
+`codex-ordinary-r3-prelive-context.json`) confirmed the clean `2ae22537`
+checkpoint and admitted the changed-condition R3.
+
+Normal Codex 0.149.1 session `01a044ee-8605-7301-adfd-6474eb422291`
+then exited 0 with default ChatGPT model, `approval_policy=never`, read-only
+sandbox, exact 824-byte direct-only task `3ef304e5...dd3`, no tool or
+collaboration call, and no child. Native stream, rollout, and receipt hash to
+`a204142a...7ad1`, `a6754b55...4164`, and `8355a9a6...7590`; the rollout
+contains one exact 2,659-byte `accessibility-auditor` card
+`c3cfc098...5848`.
+
+Store correlation `7e39f736...d921` passes quick-check and binds trace
+`01a044ee-86ba-7ee3-ae93-3f976bc4da77`, accepted selection/load, four
+successful alias-only generation/embedding/critic receipts, and completed
+finalization `a6e3bd79...7e35` with `missing=[]`. Its accepted response hash
+`31f67a63...8302` exactly matches the sole 4,461-byte native answer.
+Independent verifier `2ae0bdde...4a79` exits 0, rechecks all correlations, and
+proves the mode-0600 exact config, managed requirements, and relay hashes remain
+unchanged on image `28c3fd34...8797`. Package telemetry `ca37511b...1ba0`
+reports 35.0 percent and requires this recovery pair before OpenClaw.
