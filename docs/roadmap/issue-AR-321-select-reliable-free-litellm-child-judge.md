@@ -146,6 +146,18 @@ prose, and with JSON-object output it confidently selects the wrong specialist.
   and the separate-context finding; after 19,637 prompt tokens it repeats the
   same incompatible pair byte-for-byte. Same-model prompt repair is closed.
   Owner input is required before testing a different free local model/route.
+- Owner-approved `gemma3:27b` acquisition exits 0; pull stream
+  `bfe27b67...f53e` and metadata `70b7267c...1ead` prove local digest
+  `a418f5838eaf`, Gemma 3, 27.4B/Q4_K_M, and 131,072-token native context.
+  Temporary authenticated deployment `1058108a...d188` is the sole exact-schema
+  alias with 32,768 context, thinking off, 120-second timeouts, and zero retries;
+  secret-safe create receipt `30805cfe...39c2` passes.
+- Its uncached exact 59-card selector call returns schema-valid sole
+  `ai-evaluation-engineer`, confidence 0.9, after 17,325 prompt plus 21
+  completion tokens with zero reasoning bytes. Receipt `e53e906f...b31c`
+  exits 0 but fails the required sole `code-reviewer` semantic result. The alias
+  is removed at `ec9514af...75c0`, and stable Mistral deployment projection
+  `18dd1bdd...18b3` remains byte-identical. Another model requires owner input.
 
 ## Approach
 

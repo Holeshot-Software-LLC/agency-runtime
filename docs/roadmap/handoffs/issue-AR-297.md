@@ -111,6 +111,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   are deleted and stable projection `18dd1bdd...18b3` is unchanged. Generic
   repair `2642ac10...0b1e` abstains; closed diagnostic `29a0045c...f034`
   repeats the pair. Same-model options are closed without unsafe filtering.
+- Gemma 3 27B receipts `bfe27b67...f53e`/`70b7267c...1ead` pass, but uncached
+  probe `e53e906f...b31c` selects the wrong role; deletion `ec9514af...75c0` passes.
 - No later ordinary harness process has a successful Agency-turn receipt.
 - Refresh host/dashboard and named gates, then remove all AR-297 containers.
 - AR-299 through AR-317 tracker parity, hosted cross-OS artifacts, signing,
@@ -124,7 +126,7 @@ Exact artifacts are under `~/.agency-runtime/release-artifacts/`
 `~/.agency-runtime/configs/ar297-litellm-a4e213d6b454ca90.yaml`. Evidence is
 `~/.agency-runtime/evidence/ar297-go-c3493337`; Codex container
 `agency-ar297-codex-c3493337` remains with older labelled containers.
-AR-321 evidence is under `ar321-child-judge`; all await final teardown. Helper:
+AR-321 evidence is under `ar321-child-judge`; helper is
 `/tmp/agency-runtime-ar297-evidence.pcLOZn/run_with_litellm_key.py`.
 
 ## next-bounded-work-package
@@ -134,19 +136,17 @@ unchecked line. Mark an item complete only with exact retained evidence.
 
 1. [x] Build and independently verify exact `c3493337` artifacts/images.
 2. [x] Test deterministic temporary Mistral aliases and remove all three.
-3. [ ] Waiting for owner choice; propose `gemma3:27b` behind temporary LiteLLM.
-4. [ ] In a new exact Codex container, prove delivery, consumption, header,
-   finalization, Store correlation, and attestation.
+3. [x] Test and remove exact Gemma 3 27B alias; it selects the wrong role.
+4. [ ] Waiting for the next owner-selected free model; after it passes, prove a
+   new exact Codex delivery, consumption, header, finalization, Store, and attestation.
 5. [ ] Build and prove separate clean exact Claude, native-UID Hermes, and
    OpenClaw systemd production-container installs.
 6. [ ] Run later ordinary unattended Conveyor-equivalent processes for all four
-   harnesses; retain native artifacts, Store correlations, and full workforce
-   prompt visibility without treating definition presence as runtime delivery.
+   harnesses; retain native artifacts, Store correlations, and prompt visibility.
 7. [ ] Install the exact candidate on this Linux host and prove the private
    authenticated dashboard plus the approved service-manager contract.
 8. [ ] Run every named repository gate and record exact exits and hashes.
-9. [ ] Update canonical issues/capsule and make the required local substantive
-   and `docs(worklog):` ledger commits.
+9. [ ] Update canonical issues/capsule; make substantive and worklog commits.
 10. [ ] Resolve and remove every container labelled `AR-297`; retain teardown
    evidence and verify zero labelled survivors.
 11. [ ] Issue the Linux-scoped GO/NO-GO and complete the persistent goal only

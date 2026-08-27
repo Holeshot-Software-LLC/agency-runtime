@@ -1055,3 +1055,15 @@ Filtering, schema max-one, or deterministic role selection remain prohibited
 by ADR-0118/ADR-0185. The next viable gate is an owner-selected different free
 local child model behind temporary authenticated LiteLLM aliases; this host has
 46 GiB RAM, 35 GiB swap, and 331 GiB free disk, with no detected GPU.
+
+The owner-approved `gemma3:27b` trial is also closed. Pull stream
+`bfe27b67...f53e` exits 0; metadata `70b7267c...1ead` proves local digest
+`a418f5838eaf`, Gemma 3, 27.4B/Q4_K_M, and 131,072-token native context.
+Temporary deployment receipt `30805cfe...39c2` proves one authenticated
+exact-schema alias with 32,768 context, thinking off, 120-second timeouts, and
+zero retries. Its uncached 59-card call `e53e906f...b31c` selects sole
+`ai-evaluation-engineer` at confidence 0.9 instead of required
+`code-reviewer`, so no repair or promotion is admissible. Deletion receipt
+`ec9514af...75c0` leaves zero temporary deployments; the stable child-judge
+projection remains byte-identical at `18dd1bdd...18b3`. A new owner-selected
+free model is required before another exact Codex transaction.
