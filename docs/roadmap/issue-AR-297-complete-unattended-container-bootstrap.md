@@ -1846,3 +1846,35 @@ current-profile attestation, managed trust, and no activation bypass. Store
 correlation `d9469980...d5b9`, artifact backup `8831ece2...3940`, and status
 `e1c700b5...fd1f` independently pass. All four exact final-candidate install
 rows are now closed; their later ordinary unattended rows remain separate.
+
+The final `e0b0b25c` Codex and Hermes containers now pass their later ordinary
+unattended rows. Codex pre-live telemetry `0092ba2f...722d` precedes normal
+0.149.1 session `01a04546-933a-7c61-93a8-fb6129ffe24d`; native stdout,
+stderr, and exit hash to `ded07214...80e1`, `2f47dea9...0a07`, and
+`bde29436...0120`. Independent receipt `8b372e4c...2423` exits 0 and binds
+trace `01a04546-9377-7a73-9f23-2d44e09beac8`, the exact 824-byte task, one
+exact 2,659-byte `accessibility-auditor` card, no child or collaboration call,
+read-only sandbox, `approval_policy=never`, accepted selection/load, four
+successful alias-only generation/embedding/critic receipts, completed
+finalization, and `missing=[]`. The sole 5,523-byte native response exactly
+matches the Store response hash; config, hook, requirements, image, and mode
+checks remain exact. Native and Store source receipts are
+`a4033406...fb67` and `eebb3782...f6dc`.
+
+Hermes pre-live telemetry `1a48fef3...c23e` precedes normal UID-10000 session
+`20260827_221502_139df0`; native stdout, stderr, and exit hash to
+`6da1a595...a71`, `e2173f25...42d`, and `bde29436...0120`. The first native
+summary intentionally retains exit 1 because its helper defaulted to a
+different historical task digest; corrected explicit-task receipt
+`d8e9eab7...9fe3` exits 0. Independent verification `9ee57328...f2f7` binds
+trace `20260827_221502_139df0:e0f86b7b-0295-445d-a6bf-f21309621df7:0cfa5f1f`,
+the exact 684-byte task, one exact 3,227-byte
+`section-508-accessibility-specialist` card, one `tool_search`, exactly one
+`agency_finalize`, accepted selection/load, all five required alias groups,
+completed finalization, and `missing=[]`. The accepted finalizer and visible
+response both hash to `5d3f0b59...563d`, distinct from the mandatory model
+follow-up `444f5bbf...da8e`, proving authoritative replay. Both Stores pass
+quick-check and native config remains byte-identical at `2552f21c...e680`.
+OpenClaw telemetry `197e4afa...0922` reports 48.1 percent, requiring this clean
+checkpoint before its live invocation; OpenClaw and Claude ordinary rows remain
+open.

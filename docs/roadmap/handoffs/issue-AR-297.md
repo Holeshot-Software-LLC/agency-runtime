@@ -37,7 +37,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Work only in `/tmp/agency-runtime-ar297.WQUbF2` on
   `codex/ar297-production-container-live-evidence`, based on `origin/main`
   `0a23983a`. Never touch the shared checkout.
-- Clean ledger `6781c59b` admitted the sole final Codex canary; all four final installs now pass.
+- Clean ledger `f2c2fa5d` closes all four final installs. Final Codex and Hermes
+  ordinary rows also pass; telemetry now requires this recovery pair before
+  OpenClaw's final ordinary invocation.
 - Linux remains **NO-GO**. AR-297/#335 remain open. No tracker write, push, PR,
   merge, tag, signing, publication, release, or hosted workflow is authorized.
 
@@ -75,21 +77,20 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - OpenClaw dry-run truthfully leaves an empty runtime home at `8ffcb927...af70`;
   untouched R2 absence `5feaa49c...2cdd`, install `4debebf3...c748`, Store
   `c6da8137...0b12`, systemd, exact alias config, and 13-hook runtime all pass.
-- Hermes R1-R3 prove one exact card and accepted routing; R3 receipts
-  `80942b3b...3944`, `6d1d3f52...8a29`, `00211b3c...b1c`, and
-  `f3b89dac...cf92` rule out missing task/bridge access. Mistral made zero
-  finalizer calls in all three attempts and is rejected pending a new choice.
 - Claude R2 and refreshed R3 receipts `a712f945...ba82`/`ea44335e...71b7`
   prove one exact 3,227-byte card and all five LiteLLM routes. Local status
   `ca740051...3af1` is not provider-valid: native stdout/exit
   `456775a6...e4b3`/`85acfd2e...5409` retain the OAuth refresh failure, so no
   unchanged R4 is admissible; package telemetry `b755a171...193c` is 56.9%.
-- OpenClaw R2 native/Store receipts `bb90b2fc...9841`/`1a4a1a4f...a2f5` prove
-  one exact card, all five routes, native exit 0, and a nonempty response. Its
-  no-delivery run stays active; bounded loading passes without weakening policy.
-- Fresh Codex receipts `8355a9a6...7590`/`7e39f736...d921`/`2ae0bdde...4a79`
-  prove one exact card, four aliases, no delegation, exit 0, exact response
-  correlation, `missing=[]`, and unchanged config/policy. Its ordinary row closes.
+- Final-candidate Codex receipt `8b372e4c...2423` exits 0 for session
+  `01a04546-933a-7c61-93a8-fb6129ffe24d`: one exact 2,659-byte card, four
+  successful alias-only receipts, accepted completion, native/Store response
+  equality, read-only/no-delegation execution, and unchanged exact runtime.
+- Final-candidate Hermes receipt `9ee57328...f2f7` exits 0 for session
+  `20260827_221502_139df0`: one exact 3,227-byte card, all five alias groups,
+  accepted completion, `missing=[]`, exact visible accepted replay, healthy
+  Stores, and byte-identical config. The corrected native source receipt is
+  `d8e9eab7...9fe3`; the first helper-default mismatch remains retained.
 - Exact host venv/wheel/pip check pass. Combined install `00d51490...b559`
   exits 1 only for attended Codex activation; all four bundles are current and
   packaged-runtime attestation `ec2f8fdd...9292` binds `dbf1581f...f301`.
@@ -102,16 +103,11 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   exit 0 at 65,536/no-thinking; unrelated aliases are unchanged. OpenClaw's
   three-pointer config transition/verify `e97e02e2...deba`/`a141d193...e1ce`
   exit 0; two stale-metadata attempts rolled back.
-- Hermes R5 isolates rewritten accepted text; AR-288's trace-scoped replay and
-  236 tests pass. Fresh default-config session `20260827_201909_a6a13c` exits 0;
-  receipt `3c40a9bf...8959` proves one exact card/finalizer, Store acceptance,
-  `missing=[]`, visible replay `ad8a06d3...eeaa`, healthy Stores, all aliases,
-  and no post-install/live config drift. AR-288 is locally done.
 
 ## exact-blocker
 
-- Repeat all four ordinary rows and complete Claude's pending first-party
-  login, then refresh the host/dashboard, named gates, records, and teardown.
+- Complete OpenClaw's final ordinary row and Claude's pending first-party login
+  and final ordinary row, then refresh host/dashboard, gates, records, and teardown.
 - Cross-OS artifacts, signing, tracker parity, push/PR/merge/tag/publication,
   release, and exhaustive dispatch are unauthorized, not Linux-only GO gates.
 
