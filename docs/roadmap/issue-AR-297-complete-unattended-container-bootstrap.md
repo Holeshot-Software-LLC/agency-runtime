@@ -1081,3 +1081,15 @@ request IDs, exact Qwen backend/deployments, and no response-cache hit. Both
 temporary aliases are removed at `298e202b...eb2a` and `7dad190b...673f`.
 Stable pre-promotion receipt `16b48f2c...ad40` still hashes to the byte-identical
 Mistral projection `18dd1bdd...18b3`; Qwen promotion is the next bounded gate.
+
+Stable Qwen promotion now passes without changing the Agency config or alias
+identity. Update receipt `6e19008f...1750` preserves deployment
+`0f0b1b59...a7d1`, records prior projection `18dd1bdd...18b3`, and binds
+`ollama/qwen3:32b` at new projection `a8dcd172...744a3`. Strict review catches
+the legacy update endpoint's stale informational Mistral key. Partial metadata
+repair `e1cba9f6...e841` changes only base/key/tier to exact free Qwen values;
+executable params remain byte-identical at `47c257af...ee11`. Final validation
+`42921a7e...867c` exits 0 over the mode-0600 config and all six deployments,
+including exact Qwen backend/metadata/ID/schema, disabled thinking, 32,768
+context, zero retries, 4,096-dimensional embedding, and unchanged remaining
+routes. A literal stable-alias probe precedes the new exact Codex transaction.

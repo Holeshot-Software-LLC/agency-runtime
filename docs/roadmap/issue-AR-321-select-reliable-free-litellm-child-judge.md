@@ -174,6 +174,17 @@ prose, and with JSON-object output it confidently selects the wrong specialist.
   temporary deployments. Pre-promotion stable receipt `16b48f2c...ad40`
   remains byte-identical Mistral projection `18dd1bdd...18b3`; Qwen promotion
   and exact route validation are the next bounded package.
+- In-place stable promotion receipt `6e19008f...1750` preserves deployment ID
+  `0f0b1b59...a7d1` and the alias while changing the executable backend to
+  `ollama/qwen3:32b`; its before projection is exact prior
+  `18dd1bdd...18b3`, and its after projection is `a8dcd172...744a3`.
+- Strict inspection catches that LiteLLM's legacy update endpoint retained the
+  former informational Mistral key even though execution resolved to Qwen.
+  Bounded partial metadata patch `e1cba9f6...e841` changes only base/key/tier to
+  `qwen3:32b`/`qwen3:32b`/`free`; executable params remain byte-identical at
+  `47c257af...ee11`. Final six-route validation `42921a7e...867c` exits 0 and
+  proves exact Qwen metadata/backend, preserved ID, schema, 32,768 context,
+  thinking off, zero retries, mode-0600 config, and all other routes unchanged.
 
 ## Approach
 
