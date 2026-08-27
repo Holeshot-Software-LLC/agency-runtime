@@ -31,10 +31,10 @@ related:
   - docs/roadmap/issue-AR-319-honor-pinned-canary-judge-timeout.md
   - docs/roadmap/issue-AR-320-bound-codex-wait-to-full-child-staffing.md
   - docs/roadmap/issue-AR-321-select-reliable-free-litellm-child-judge.md
+  - docs/roadmap/issue-AR-322-bind-codex-child-session-to-canary-parent.md
   - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
   - docs/decisions/0185-enforce-child-judge-schema-at-litellm-alias.md
-  - docs/decisions/0175-batch-complete-embedding-input-sets.md
-  - docs/decisions/0176-use-owner-runtime-temp-for-nonroot-user-services.md
+  - docs/decisions/0186-bind-codex-child-session-with-canary-request-digest.md
   - docs/decisions/0177-make-local-verification-private-by-construction.md
   - docs/decisions/0178-project-config-declared-credentials-into-tool-reduced-canaries.md
   - docs/decisions/0179-admit-exact-codex-canary-delivery-at-subagent-start.md
@@ -51,7 +51,7 @@ superseded_by: null
 type: handoff
 issue_id: AR-297
 branch: codex/ar297-production-container-live-evidence
-evidence_commit: 2fa5013fc96174195a21fd998571bb6cb20e20f5
+evidence_commit: a5c1ad536f13c51ceaa5c1c13d2570b7c166f0a7
 minimum_ledger_commit: 260bd197586d3c9c9334f364aca4e86d879e9c29
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
@@ -64,7 +64,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Work remains in dedicated worktree `/tmp/agency-runtime-ar297.WQUbF2` on
   `codex/ar297-production-container-live-evidence`, based on `origin/main`
   `0a23983a`. Never use the shared checkout.
-- Clean recovery `17decade`, ledger `85aecba6`, binds exact `c1cf1793`.
+- Clean source checkpoint `a5c1ad53` implements AR-322; this capsule recovery
+  and its worklog ledger immediately follow it.
 - Linux remains **NO-GO**. AR-297/#335 stay open. Tracker writes, push, PR,
   merge, tag, signing, publication, release, and hosted workflow actions are
   not authorized.
@@ -76,9 +77,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   authenticated LiteLLM aliases, Qwen generation with thinking disabled,
   Mistral critic/reranker/recruiter/free child judge, and 4,096-dimensional
   Qwen embedding. Direct Ollama and Jina are absent from active routes.
-- Exact ledger `c1cf1793` build, strict Twine, and independent verifier exit 0.
-  Mode-0644 wheel `8766b539...99d7` is 9,300,725 bytes; sdist
-  `5dbd6edc...bf68a` is 25,642,963 bytes; manifest `a04282e6...adade`.
+- Superseded exact ledger `c1cf1793` build/Twine/verifier exit 0 and remains the
+  retained pre-AR-322 evidence baseline. Wheel `8766b539...99d7` is 9,300,725
+  bytes; sdist `5dbd6edc...bf68a`; manifest `a04282e6...adade`.
 - Codex/Claude/Hermes/OpenClaw/dashboard image IDs are `c735534e...bd3f`,
   `93ab0881...acc3`, `e8819230...94ef`, `5355886a...ca94`, and
   `fc23a724...666f`; exact verification exits 0 at `2f9dadb5...a449`.
@@ -97,17 +98,16 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Fresh `c1cf1793` absence passes at `7d08f8c1...c341`; one no-bypass install
   `04f8c2df...7ad` exits 1 after spawn once, wait once at 300 seconds, child
   exit 0, and `timed_out=false`. AR-320's wait repair is live-proven.
-- Stable Mistral abstains twice at Store route `fcdf4396...9447`; Qwen 14B is
-  ruled out by truncated prose `d34221cc...af9c` and wrong JSON `697d9cd9...1ac0`.
-- AR-321 rejects Qwen 9B/30B, Dolphin 24B, Qwen 2B, and Ministral 14B. The last
-  returns invalid objects at `84a4b980...b8d1`, then schema-valid two-card JSON
-  at `aa8917b2...6cef`; deletion `f40895e6...d6ab` closes its aliases.
-  Granite abstains twice; Qwen 2.5 chooses the wrong card at `35f1030d...5e8e`;
-  Llama then chooses `ai-evaluation-engineer` at `e39a84bd...8274`; its alias
-  is removed. Schema Mistral passes initial `76d2cd38...d1a0` but repair
-  abstains `98ead20c...c791`; GPT-OSS is empty disabled/low; both are removed.
-  Fresh Mistral repeat `cea48a7d...ae89` passes. Stable deployment
-  `0f0b1b59...a7d1` promotion `7af0aa02...aa45` awaits stable-route proof.
+- Stable literal alias proof `54a773f7...00d3` selects sole `code-reviewer`;
+  snapshot `de042cbe...6c0a` proves the exact free Mistral schema deployment,
+  and temporary alias deletion leaves zero at `74a870bc...95da`.
+- Fresh j2 absence `3e80348e...1178` passes; install `d08883a7...7623` reaches
+  accepted route `6ca7be2e...0da7`, spawns child `01a04187...ac7e`, waits once
+  at 300 seconds, and gets exit 0 without timeout. Rollouts
+  `16f4d5e2...2934`/`910538f1...6953` and Store `d3471c9a...e2af` prove only
+  generic identity because Codex identifies the child session, not the parent.
+- AR-322 checkpoint `a5c1ad53` binds child session==agent ID to the unique
+  Store request digest; 99 focused tests pass. Rebuild and live proof remain.
 - No later ordinary Codex, Claude, Hermes, or OpenClaw process has a current
   successful Agency-turn receipt on this source.
 - Refresh the host install/dashboard and named repository gates for the exact
@@ -118,14 +118,14 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 
 ## same-task-continuity
 
-Exact artifacts: `~/.agency-runtime/release-artifacts/`
+Retained pre-AR-322 artifacts: `~/.agency-runtime/release-artifacts/`
 `dist-c1cf1793db1bc98589ca958a553c502a0126c637-linux-ar297`; config is
 `~/.agency-runtime/configs/`
 `ar297-litellm-a4e213d6b454ca90.yaml`. Current evidence is
 `~/.agency-runtime/evidence/ar297-go-c1cf1793`; Codex container
-`agency-ar297-codex-c1cf1793` remains running, and older labelled evidence
-containers remain. AR-321 evidence is under `ar321-child-judge`; all await
-final teardown. Secret-safe helper:
+`agency-ar297-codex-c1cf1793` and `agency-ar297-codex-c1cf1793-j2` remain
+running with older labelled evidence containers. AR-321 evidence is under
+`ar321-child-judge`; all await final teardown. Secret-safe helper:
 `/tmp/agency-runtime-ar297-evidence.pcLOZn/run_with_litellm_key.py`.
 
 ## next-bounded-work-package
@@ -133,9 +133,9 @@ final teardown. Secret-safe helper:
 After compaction, reread this capsule and `git status`, then resume at the first
 unchecked line. Mark an item complete only with exact retained evidence.
 
-1. [x] Rebuild and independently verify artifacts/images from the exact
-   AR-320/LiteLLM checkpoint; `c1cf1793` is the candidate.
-2. [ ] Prove the ADR-0185 stable alias and fresh Codex canonical delivery,
+1. [ ] Rebuild and independently verify artifacts/images from clean AR-322
+   source checkpoint `a5c1ad53`; `c1cf1793` is retained but superseded.
+2. [ ] Stable alias is proven; use the rebuilt candidate to prove Codex delivery,
    consumption, header, finalization, Store correlation, and attestation.
 3. [ ] Build and prove separate clean exact Claude, native-UID Hermes, and
    OpenClaw systemd production-container installs.

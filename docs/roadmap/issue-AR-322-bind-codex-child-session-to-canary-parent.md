@@ -54,7 +54,8 @@ identity message, so no v6 workforce delivery or activation proof existed.
 - The official `rust-v0.149.1` hook implementation constructs the lifecycle
   request from the child session while retaining the host-created child UUID as
   `agent_id`; an omitted explicit role still correctly reports `default`.
-- The bounded source repair and 99 focused warning-strict regressions pass.
+- Source checkpoint `a5c1ad53` implements the bounded repair; 99 focused
+  warning-strict regressions pass.
   Fresh rebuilt production-container proof remains pending.
 - Tracker creation is prohibited by the active AR-297 task.
 

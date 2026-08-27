@@ -110,6 +110,16 @@ prose, and with JSON-object output it confidently selects the wrong specialist.
 - The owner requires all Agency inference on this system to resolve through
   authenticated LiteLLM aliases and requires the child judge to remain free.
   Tracker creation remains prohibited by the active task.
+- Stable literal alias session `b392fe97...2024` and trace `67605732...8175`
+  select sole `code-reviewer` with confidence 0.8; retained receipt
+  `54a773f7...00d3` exits 0 without a temporary override. Post-promotion
+  snapshot `de042cbe...6c0a` proves the sole deployment still resolves to the
+  free local Mistral backend with exact schema, 32,768 context, thinking off,
+  120-second timeouts, and zero retries. Temporary repeat alias deletion leaves
+  zero deployments at `74a870bc...95da`.
+- Fresh Codex container `agency-ar297-codex-c1cf1793-j2` reaches the stable
+  accepted route, so model selection is no longer the blocker. AR-322 owns the
+  later child-session correlation failure exposed by that exact transaction.
 
 ## Approach
 
@@ -137,11 +147,11 @@ health, model, latency, and response receipts, then repoint the stable
 - [x] Repeated fresh-name initial probes choose sole `code-reviewer` from the
       exact 59-card universe without fallback, truncation, or direct access;
       repair probes either choose that card or fail closed, never misroute.
-- [ ] The stable child-judge alias is updated through LiteLLM, remains healthy,
+- [x] The stable child-judge alias is updated through LiteLLM, remains healthy,
       and the exact Agency config still passes all route and schema checks.
 - [ ] A fresh no-bypass Codex production-container install proves accepted v6
       delivery, consumption, header, finalization, Store correlation, and
       current-profile attestation through the promoted alias.
-- [ ] Temporary aliases are removed after retained evidence is complete.
+- [x] Temporary aliases are removed after retained evidence is complete.
 - [ ] A same-repository tracker issue is created and linked after explicit
       authorization.

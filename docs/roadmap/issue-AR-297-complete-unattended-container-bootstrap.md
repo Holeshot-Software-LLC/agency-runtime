@@ -928,3 +928,21 @@ deployment `0f0b1b59...a7d1` keeps the free Mistral backend while adding the
 exact output schema, 32,768 context, thinking off, 120-second timeout, zero
 retries, and no fallback. Snapshot `03cf8292...9baa` and promotion
 `7af0aa02...aa45` are secret-safe; the Agency config remains byte-identical.
+
+Stable literal-alias proof `54a773f7...00d3` exits 0 and selects sole
+`code-reviewer`; post-promotion deployment snapshot `de042cbe...6c0a` proves
+the exact Mistral/schema/context/timeout contract, and temporary alias deletion
+leaves zero deployments at `74a870bc...95da`. Fresh container
+`agency-ar297-codex-c1cf1793-j2` passes corrected absence
+`3e80348e...1178`; its one no-bypass install `d08883a7...7623` reaches accepted
+route `6ca7be2e...0da7`, spawns child `01a04187...ac7e`, waits once for 300
+seconds, and receives child exit 0 with `timed_out=false`.
+
+The child nevertheless receives only generic identity context. Parent/child
+rollouts `16f4d5e2...2934`/`910538f1...6953` and Store
+`d3471c9a...e2af` prove no native parent scope, captured assignment, delivery
+verification, or native plan. Official Codex `rust-v0.149.1` source confirms
+`SubagentStart` identifies the child session, not the parent. AR-322 source
+checkpoint `a5c1ad53` binds that child to the unique nonce-request digest; 99
+focused warning-strict tests pass. Exact artifacts and fresh live proof must be
+rebuilt from this checkpoint before any Codex success claim.
