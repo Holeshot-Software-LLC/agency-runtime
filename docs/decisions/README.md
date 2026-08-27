@@ -145,6 +145,7 @@ Status meanings:
 | [ADR-0182](0182-bound-codex-activation-child-wait.md) | Bound the Codex activation child wait above observed latency | Superseded |
 | [ADR-0183](0183-honor-pinned-canary-judge-timeout.md) | Honor the pinned canary judge profile timeout | Accepted |
 | [ADR-0184](0184-bound-codex-wait-to-full-child-staffing.md) | Bound the Codex wait to the full child staffing path | Accepted |
+| [ADR-0186](0186-bind-codex-child-session-with-canary-request-digest.md) | Bind Codex child sessions with a canary request digest | Accepted |
 
 ## State and roster governance
 

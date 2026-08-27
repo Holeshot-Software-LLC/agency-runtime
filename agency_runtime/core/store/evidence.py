@@ -1931,10 +1931,10 @@ class EvidenceStoreMixin(PreflightStoreMixin):
     ) -> dict[str, Any] | None:
         """Resolve the sole live restricted activation-canary parent route.
 
-        The host lifecycle hook has the parent session plus the real child UUID,
-        but Codex 0.149 reports the child's turn UUID in ``SubagentStart``.  This
-        lookup recovers no prompt text: it admits only the already persisted,
-        exact canary route and then reuses the canonical snapshot validator.
+        Parent hooks carry the parent session and turn directly. This lookup
+        recovers no prompt text: it admits only the already persisted, exact
+        canary route and then reuses the canonical snapshot validator. Child
+        lifecycle hooks use the separately digest-scoped snapshot resolver.
         """
 
         normalized_session = validate_correlation_id(session_id, field="session_id")

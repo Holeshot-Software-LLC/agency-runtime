@@ -16,6 +16,9 @@ from agency_runtime.core.activation_canary_contract import (
     CODEX_ACTIVATION_CANARY_WORK_UNIT,
 )
 from agency_runtime.core.canary_proof import codex_activation_failures
+from agency_runtime.core.codex_activation_verification import (
+    CODEX_ACTIVATION_QUERY_HASH_ENV,
+)
 from agency_runtime.core.config import reset_config_cache
 from agency_runtime.core.host_capabilities import native_adapter_capability_receipt
 from agency_runtime.core.native_child_decision import (
@@ -212,6 +215,78 @@ def test_restricted_codex_parent_snapshot_resolves_only_the_exact_live_route(
         )
         is None
     )
+
+
+def test_restricted_codex_child_session_resolves_one_digest_bound_parent(
+    store: Store,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from agency_runtime.core.installer import seed_starter_roster
+    from agency_runtime.core.workforce import inference
+
+    seed_starter_roster(store)
+    monkeypatch.setenv("AGENCY_CANARY_MODE", "1")
+    monkeypatch.setenv("AGENCY_CANARY_REQUIRE_EXISTING_STORE", "1")
+    monkeypatch.setattr(
+        inference,
+        "invoke_structured_provider_result",
+        stub_inference_invoker(("code-reviewer",)),
+    )
+    task = f"{CODEX_ACTIVATION_CANARY_PROMPT}\n\nCanary nonce: {'d' * 32}"
+    query_hash = sha256(task.encode("utf-8")).hexdigest()
+    monkeypatch.setenv(CODEX_ACTIVATION_QUERY_HASH_ENV, query_hash)
+    run_preflight(
+        store,
+        session_id="digest-parent",
+        trace_id="digest-trace",
+        user_message=task,
+        host="codex",
+        capability_receipt=native_adapter_capability_receipt(
+            "codex",
+            platform="windows" if os.name == "nt" else "linux",
+            session_id="digest-parent",
+            trace_id="digest-trace",
+            available_tools=("repository-read", "native-delegation"),
+        ),
+    )
+    child_id = "22222222-2222-4222-8222-222222222222"
+    bridge = HookBridge("codex", store=store, _master={"enabled": True})
+    payload = {"session_id": child_id, "agent_id": child_id}
+
+    assert bridge._restricted_codex_activation_child_parent_scope(payload) == (
+        "digest-parent",
+        "digest-trace",
+    )
+    assert (
+        bridge._restricted_codex_activation_child_parent_scope(
+            {**payload, "session_id": "33333333-3333-4333-8333-333333333333"}
+        )
+        is None
+    )
+    monkeypatch.setenv(CODEX_ACTIVATION_QUERY_HASH_ENV, "e" * 64)
+    assert bridge._restricted_codex_activation_child_parent_scope(payload) is None
+
+    monkeypatch.setenv(CODEX_ACTIVATION_QUERY_HASH_ENV, query_hash)
+    assert store.close_turn_evidence("digest-parent", "digest-trace") == 1
+    assert bridge._restricted_codex_activation_child_parent_scope(payload) is None
+
+    run_preflight(
+        store,
+        session_id="duplicate-parent",
+        trace_id="duplicate-trace",
+        user_message=task,
+        host="codex",
+        capability_receipt=native_adapter_capability_receipt(
+            "codex",
+            platform="windows" if os.name == "nt" else "linux",
+            session_id="duplicate-parent",
+            trace_id="duplicate-trace",
+            available_tools=("repository-read", "native-delegation"),
+        ),
+    )
+    ambiguous = store.get_canary_activation_snapshot(host="codex", query_hash=query_hash)
+    assert ambiguous["reason"] == "route_ambiguous"
+    assert bridge._restricted_codex_activation_child_parent_scope(payload) is None
 
 
 def test_restricted_codex_user_prompt_injects_the_exact_native_plan(

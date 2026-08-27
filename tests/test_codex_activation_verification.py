@@ -6,6 +6,7 @@ import copy
 import io
 import os
 from datetime import datetime, timezone
+from hashlib import sha256
 from pathlib import Path
 from typing import Any
 
@@ -21,7 +22,9 @@ from agency_runtime.core.activation_canary_contract import (
 )
 from agency_runtime.core.canary_backends import SafeCodexCanaryBackend
 from agency_runtime.core.codex_activation_verification import (
+    CODEX_ACTIVATION_QUERY_HASH_ENV,
     is_exact_codex_activation_verification,
+    restricted_codex_activation_query_hash,
 )
 from agency_runtime.core.delegation.backends import BoundedProcessResult
 from agency_runtime.core.installer_contracts import (
@@ -599,6 +602,31 @@ def test_existing_store_requirement_crosses_current_profile_process_boundary(
 
     assert calls[0]["env"]["AGENCY_CANARY_REQUIRE_EXISTING_STORE"] == "1"
     assert Path(calls[0]["env"]["AGENCY_CANARY_NATIVE_INSTALL_HOME"]) == owner_home.resolve()
+    assert CODEX_ACTIVATION_QUERY_HASH_ENV not in calls[0]["env"]
+
+
+def test_restricted_activation_query_hash_requires_the_exact_environment() -> None:
+    digest = "a" * 64
+    restricted = {
+        "AGENCY_CANARY_MODE": "1",
+        "AGENCY_CANARY_REQUIRE_EXISTING_STORE": "1",
+        CODEX_ACTIVATION_QUERY_HASH_ENV: digest,
+    }
+
+    assert restricted_codex_activation_query_hash(restricted) == digest
+    assert restricted_codex_activation_query_hash({}) == ""
+    assert (
+        restricted_codex_activation_query_hash(
+            {**restricted, CODEX_ACTIVATION_QUERY_HASH_ENV: digest.upper()}
+        )
+        == ""
+    )
+    assert (
+        restricted_codex_activation_query_hash(
+            {**restricted, "AGENCY_CANARY_REQUIRE_EXISTING_STORE": "0"}
+        )
+        == ""
+    )
 
 
 def test_autonomous_current_profile_uses_supported_bypass_without_trust_inspection(
@@ -627,7 +655,8 @@ def test_autonomous_current_profile_uses_supported_bypass_without_trust_inspecti
         trust_mode="autonomous_bypass",
     )
 
-    result = backend.execute(task="canary", workdir=str(tmp_path))
+    task = "canary"
+    result = backend.execute(task=task, workdir=str(tmp_path))
 
     assert "--dangerously-bypass-hook-trust" in calls[0]["argv"]
     assert result["trust_mode"] == "autonomous_bypass"
@@ -665,7 +694,8 @@ def test_managed_policy_current_profile_uses_normal_invocation_without_plugin_tr
         credential_environment_names=("LITELLM_API_KEY",),
     )
 
-    result = backend.execute(task="canary", workdir=str(tmp_path))
+    task = "canary"
+    result = backend.execute(task=task, workdir=str(tmp_path))
 
     assert "--dangerously-bypass-hook-trust" not in calls[0]["argv"]
     assert result["trust_mode"] == "managed_policy"
@@ -673,6 +703,37 @@ def test_managed_policy_current_profile_uses_normal_invocation_without_plugin_tr
     assert result["persistent_trust_changed"] is False
     assert calls[0]["env"]["LITELLM_API_KEY"] == "configured-secret"
     assert "UNRELATED_TOKEN" not in calls[0]["env"]
+    assert (
+        calls[0]["env"][CODEX_ACTIVATION_QUERY_HASH_ENV] == sha256(task.encode("utf-8")).hexdigest()
+    )
+
+
+def test_product_rollout_does_not_receive_activation_query_hash(tmp_path: Path) -> None:
+    calls: list[dict[str, Any]] = []
+
+    def runner(argv: list[str], **kwargs: Any) -> BoundedProcessResult:
+        calls.append({"argv": argv, **kwargs})
+        return BoundedProcessResult(1, "", "")
+
+    backend = SafeCodexCanaryBackend(
+        executable="codex",
+        db_path=tmp_path / "agency.db",
+        timeout=1,
+        marketplace=tmp_path,
+        auth_source=tmp_path / "auth.json",
+        process_runner=runner,
+        source_env={},
+        profile_scope="current-profile",
+        require_existing_store=True,
+        require_exact_activation_rollout=True,
+        rollout_contract="product",
+        trust_mode="managed_policy",
+        trusted_workdir=str(tmp_path),
+    )
+
+    backend.execute(task="ordinary product task", workdir=str(tmp_path))
+
+    assert CODEX_ACTIVATION_QUERY_HASH_ENV not in calls[0]["env"]
 
 
 @pytest.mark.parametrize(
@@ -831,7 +892,7 @@ def test_exact_codex_subagent_start_staffs_the_real_child_uuid(
 
     monkeypatch.setattr(
         hooks.HookBridge,
-        "_restricted_codex_activation_parent_scope",
+        "_restricted_codex_activation_child_parent_scope",
         lambda _self, _payload: ("session-one", "trace-one"),
     )
     monkeypatch.setattr(
@@ -858,7 +919,8 @@ def test_exact_codex_subagent_start_staffs_the_real_child_uuid(
     ).handle(
         {
             "hook_event_name": "SubagentStart",
-            "session_id": "session-one",
+            # Codex SubagentStart identifies the child session, not its parent.
+            "session_id": child_id,
             "turn_id": child_id,
             "agent_id": child_id,
             # Codex 0.149.1 MultiAgentV2 keeps task_name in agent_path. With no

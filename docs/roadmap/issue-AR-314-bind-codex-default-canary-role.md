@@ -10,6 +10,7 @@ related:
   - docs/roadmap/issue-AR-309-restore-codex-0149-activation-proof.md
   - docs/roadmap/issue-AR-311-inject-exact-codex-canary-native-plan.md
   - docs/roadmap/issue-AR-315-project-codex-canary-install-home.md
+  - docs/roadmap/issue-AR-322-bind-codex-child-session-to-canary-parent.md
   - docs/roadmap/handoffs/issue-AR-297.md
   - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
   - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
@@ -27,7 +28,7 @@ issue_id: AR-314
 priority: p0
 tracker_url: null
 depends_on: [AR-309, AR-311]
-blocks: [AR-297, AR-315]
+blocks: [AR-297, AR-315, AR-322]
 ---
 
 # AR-314: Bind the Codex 0.149 default canary child role
@@ -56,6 +57,8 @@ identity context and never delivered the Store-proven v6 workforce card.
   and delivery receipt still select and prove `code-reviewer`.
 - Ordinary, explicit-role, mismatched, and opaque spawns remain unstaffed.
   Tracker creation is prohibited by the active AR-297 task.
+- Later exact evidence confirms `SubagentStart` supplies the child session UUID,
+  not the parent session; AR-322 owns that independent correlation repair.
 
 ## Approach
 

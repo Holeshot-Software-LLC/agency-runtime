@@ -3227,6 +3227,23 @@ class SafeCodexCanaryBackend:
                 raise ValueError("hook event diagnostics require the existing Agency store")
             env[CODEX_HOOK_EVENT_DIAGNOSTICS_ENV] = "1"
 
+    def _project_activation_query_hash(self, env: dict[str, str], *, task: str) -> None:
+        """Bind the restricted child hook to this exact canary invocation."""
+
+        if not (
+            self.require_existing_store
+            and self.require_exact_activation_rollout
+            and self.rollout_contract == "canary"
+        ):
+            return
+        from agency_runtime.core.codex_activation_verification import (
+            CODEX_ACTIVATION_QUERY_HASH_ENV,
+        )
+
+        env[CODEX_ACTIVATION_QUERY_HASH_ENV] = hashlib.sha256(
+            task.encode("utf-8", errors="surrogatepass")
+        ).hexdigest()
+
     def _execution_environment(
         self,
         env: Mapping[str, str],
@@ -3483,6 +3500,7 @@ class SafeCodexCanaryBackend:
                 auth_source=self.child_judge_auth_source,
             )
             self._configure_canary_environment(env)
+            self._project_activation_query_hash(env, task=task)
             trust_failure = self._verify_current_profile_hook_trust(
                 workdir=workdir,
                 env=env,

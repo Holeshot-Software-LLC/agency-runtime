@@ -19,6 +19,7 @@ related:
   - docs/roadmap/issue-AR-314-bind-codex-default-canary-role.md
   - docs/roadmap/issue-AR-315-project-codex-canary-install-home.md
   - docs/decisions/0180-project-current-profile-canary-install-home.md
+  - docs/decisions/0186-bind-codex-child-session-with-canary-request-digest.md
   - agency_runtime/adapters/hooks.py
   - agency_runtime/core/canary_backends.py
   - agency_runtime/core/child_delivery_evidence.py
@@ -54,12 +55,14 @@ ADR-0156.
 Agency may staff at Codex `SubagentStart` only for its exact repository-owned
 current-profile activation canary. Admission requires both
 `AGENCY_CANARY_MODE=1` and `AGENCY_CANARY_REQUIRE_EXISTING_STORE=1`, a managed
-no-bypass invocation, exactly one live parent trace for the supplied parent
-session, the fixed activation work unit, one accepted `code-reviewer` route
-whose source is `codex_activation_canary_inference`, and one exact delegate plan
-row for that unit. The host-created child UUID is the delivery's `child_id`
-binding and launch identity. Any absent, ambiguous, stale, mismatched, or
-unsupported input returns the existing identity-only unstaffed context.
+no-bypass invocation, the ADR-0186 invocation digest, child `session_id` equal
+to `agent_id`, exactly one active Store parent whose ready request fingerprint
+matches that digest, the fixed activation work unit, one accepted
+`code-reviewer` route whose source is `codex_activation_canary_inference`, and
+one exact delegate plan row for that unit. The host-created child UUID is the
+delivery's `child_id` binding and launch identity. Any absent, ambiguous,
+stale, mismatched, terminal, or unsupported input returns the existing
+identity-only unstaffed context.
 
 The exact 0.149.1 MultiAgentV2 spawn keeps `task_name=code_reviewer` as the
 child path and, because the optional explicit role is absent, reports the

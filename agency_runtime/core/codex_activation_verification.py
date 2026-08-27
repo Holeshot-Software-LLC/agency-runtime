@@ -9,9 +9,11 @@ from __future__ import annotations
 
 import math
 import os
+import re
 from collections.abc import Mapping
 
 CODEX_ACTIVATION_EXISTING_STORE_ENV = "AGENCY_CANARY_REQUIRE_EXISTING_STORE"
+CODEX_ACTIVATION_QUERY_HASH_ENV = "AGENCY_CANARY_REQUEST_SHA256"
 CODEX_HOOK_EVENT_DIAGNOSTICS_ENV = "AGENCY_CODEX_HOOK_EVENT_DIAGNOSTICS"
 CODEX_HOOK_EVENT_DIAGNOSTIC_STAGES = ("accepted", "completed", "failed")
 MAX_CODEX_HOOK_EVENT_DIAGNOSTIC_COUNT = 999
@@ -52,6 +54,7 @@ _PUBLIC_FIELDS = frozenset(
     }
 )
 _BOUND_FIELDS = _PUBLIC_FIELDS | frozenset({"func"})
+_LOWER_SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 
 
 def is_restricted_codex_activation_canary_environment(
@@ -76,6 +79,20 @@ def is_codex_hook_event_diagnostics_environment(
         is_restricted_codex_activation_canary_environment(values)
         and values.get(CODEX_HOOK_EVENT_DIAGNOSTICS_ENV) == "1"
     )
+
+
+def restricted_codex_activation_query_hash(
+    environ: Mapping[str, str] | None = None,
+) -> str:
+    """Return the exact invocation digest only inside the restricted canary."""
+
+    values = os.environ if environ is None else environ
+    if not is_restricted_codex_activation_canary_environment(values):
+        return ""
+    candidate = values.get(CODEX_ACTIVATION_QUERY_HASH_ENV)
+    if not isinstance(candidate, str) or _LOWER_SHA256.fullmatch(candidate) is None:
+        return ""
+    return candidate
 
 
 def sanitize_codex_hook_event_diagnostics(value: object) -> dict[str, dict[str, int]]:
@@ -141,6 +158,7 @@ def is_exact_codex_activation_verification(namespace: object) -> bool:
 
 __all__ = [
     "CODEX_ACTIVATION_EXISTING_STORE_ENV",
+    "CODEX_ACTIVATION_QUERY_HASH_ENV",
     "CODEX_HOOK_EVENT_DIAGNOSTICS_ENV",
     "CODEX_HOOK_EVENT_DIAGNOSTIC_STAGES",
     "CODEX_RECONCILIATION_DIAGNOSTIC_REASONS",
@@ -148,5 +166,6 @@ __all__ = [
     "is_codex_hook_event_diagnostics_environment",
     "is_exact_codex_activation_verification",
     "is_restricted_codex_activation_canary_environment",
+    "restricted_codex_activation_query_hash",
     "sanitize_codex_hook_event_diagnostics",
 ]

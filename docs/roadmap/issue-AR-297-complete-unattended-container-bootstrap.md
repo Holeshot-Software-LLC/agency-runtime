@@ -35,6 +35,7 @@ related:
   - docs/roadmap/issue-AR-319-honor-pinned-canary-judge-timeout.md
   - docs/roadmap/issue-AR-320-bound-codex-wait-to-full-child-staffing.md
   - docs/roadmap/issue-AR-321-select-reliable-free-litellm-child-judge.md
+  - docs/roadmap/issue-AR-322-bind-codex-child-session-to-canary-parent.md
   - docs/decisions/0174-admit-local-ollama-canary-child-judges.md
   - docs/decisions/0175-batch-complete-embedding-input-sets.md
   - docs/decisions/0176-use-owner-runtime-temp-for-nonroot-user-services.md
@@ -47,6 +48,7 @@ related:
   - docs/decisions/0183-honor-pinned-canary-judge-timeout.md
   - docs/decisions/0184-bound-codex-wait-to-full-child-staffing.md
   - docs/decisions/0185-enforce-child-judge-schema-at-litellm-alias.md
+  - docs/decisions/0186-bind-codex-child-session-with-canary-request-digest.md
   - agency_runtime/cli/install_commands.py
   - agency_runtime/core/codex_managed_policy.py
   - agency_runtime/core/canary.py
@@ -61,7 +63,7 @@ epic: host-integrations
 issue_id: AR-297
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
-depends_on: [AR-300, AR-301, AR-302, AR-303, AR-304, AR-305, AR-306, AR-307, AR-308, AR-309, AR-310, AR-311, AR-313, AR-314, AR-315, AR-317, AR-318, AR-319, AR-320, AR-321]
+depends_on: [AR-300, AR-301, AR-302, AR-303, AR-304, AR-305, AR-306, AR-307, AR-308, AR-309, AR-310, AR-311, AR-313, AR-314, AR-315, AR-317, AR-318, AR-319, AR-320, AR-321, AR-322]
 blocks: []
 ---
 

@@ -9,6 +9,7 @@ related:
   - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
   - docs/roadmap/issue-AR-309-restore-codex-0149-activation-proof.md
   - docs/roadmap/issue-AR-311-inject-exact-codex-canary-native-plan.md
+  - docs/roadmap/issue-AR-322-bind-codex-child-session-to-canary-parent.md
   - docs/roadmap/handoffs/issue-AR-297.md
   - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
   - docs/decisions/0179-admit-exact-codex-canary-delivery-at-subagent-start.md
@@ -25,7 +26,7 @@ issue_id: AR-310
 priority: p0
 tracker_url: null
 depends_on: [AR-309]
-blocks: [AR-297, AR-311]
+blocks: [AR-297, AR-311, AR-322]
 ---
 
 # AR-310: Require the exact Store for managed Codex canaries
