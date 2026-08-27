@@ -814,3 +814,14 @@ AR-319 now projects that pinned provider's validated timeout into the
 canary-only aggregate budget and permits the existing 120-second profile
 maximum through the selector's internal ceiling. Ruff and 222 affected
 warning-strict tests pass; a rebuilt fresh Codex transaction remains required.
+
+Exact ledger `89a56901edb121b32255fbac8f2e58666a9c5d03` canonical build, strict
+Twine, and independent verification exit 0. Mode-0644 wheel
+`486b04ba...75de` is 9,300,384 bytes and sdist `d08d2ffc...56a2` is 25,622,478
+bytes; manifest `4904e1cd...5321` records full metadata. Two earlier retained
+pre-build attempts exit 1 without artifacts: worktree-Python trust rejection
+`382ab257...b1e0` and system-Python missing-build rejection
+`2d7234be...dc85`. Codex, Claude, Hermes, OpenClaw systemd, and dashboard image
+IDs are `7765d320...b545`, `222a78c7...cdb2`, `896c03d1...0766`,
+`24736e64...1f3d`, and `4c0182f3...88e1`; exact version/label verification
+`5edc4c29...395c` exits 0. Fresh clean Codex runtime proof remains required.

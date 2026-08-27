@@ -56,6 +56,10 @@ bounded profile deadline, preventing an otherwise valid workforce envelope.
   transport, and canary tests pass. An optional 431-test diagnostic sweep has
   three failures in untouched Claude-argument and companion-policy paths;
   these are not named fast gates and remain outside this package.
+- Exact ledger `89a56901edb121b32255fbac8f2e58666a9c5d03` produces verified
+  mode-0644 wheel `486b04ba...75de` and sdist `d08d2ffc...56a2`. All five
+  proof images bind the wheel and candidate; version/label receipt
+  `5edc4c29...395c` exits 0. Fresh Codex runtime proof remains required.
 - Tracker creation is prohibited by the active AR-297 task.
 
 ## Approach
