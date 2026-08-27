@@ -106,8 +106,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   at `aa8917b2...6cef`; deletion `f40895e6...d6ab` closes its aliases.
   Granite abstains twice; Qwen 2.5 chooses the wrong card at `35f1030d...5e8e`;
   Llama then chooses `ai-evaluation-engineer` at `e39a84bd...8274`; its alias
-  is removed. Temporary exact-schema Mistral Small 3.2 alias
-  `28a681dc...7a91` awaits probes; the stable route is unchanged.
+  is removed. Schema-bound Mistral alias `28a681dc...7a91` awaits exact probes.
 - No later ordinary Codex, Claude, Hermes, or OpenClaw process has a current
   successful Agency-turn receipt on this source.
 - Refresh the host install/dashboard and named repository gates for the exact
