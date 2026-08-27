@@ -1594,3 +1594,39 @@ model inventory `e48128f2...40b0` confirms `qwen3:32b` remains resident, but no
 Hermes or OpenClaw alias/model change was made without the owner interview.
 Pre-final Docker inventory `6d0c7888...81f7` exits 0 and binds exactly 36
 AR-297-labelled containers: 35 running and one exited.
+
+The owner then approved the exact remaining harness route and same-method
+Claude.ai login: already-resident free
+`qwen3-coder-30b-a3b-128k-rocm:latest` behind stable aliases
+`task-agency-hermes` and `task-agency-openclaw`, authenticated loopback
+LiteLLM with `ollama_chat`, 65,536 configured context, thinking disabled,
+tool calling enabled, and all other aliases unchanged. No-mutation plan
+`94827ae4...a5a7` exits 0 and binds native model metadata with tools,
+completion, Q4_K_M 30.5B, and truthful 262,144 maximum context.
+
+The first two bounded mutations are retained exact rollback negatives.
+LiteLLM returned HTTP 200 while `/model/update` changed Hermes transport
+parameters but preserved stale Mistral `model_info`; the independent exact
+projection rejected it. Receipts `202e0f47...f143` and
+`e95f446b...75e2` prove the new OpenClaw alias was deleted, Hermes was restored,
+and all unrelated aliases stayed unchanged. The corrected delete/recreate
+transaction `d69aa6b...af4d` exits 0. Independent verification
+`a1e2381d...a5dd` exits 0 with exactly eight `task-agency-*` aliases, sole
+approved Hermes/OpenClaw deployment IDs, exact 65,536/no-thinking/tool
+metadata, candidate context/capabilities, and no model invocation; the six
+unrelated alias projection remains `1e3c1db5...7f08` before and after.
+
+OpenClaw's owner-approved native transition `e97e02e2...deba` exits 0 and
+changes only its primary plus provider model ID/name from
+`task-agency-generation` to isolated `task-agency-openclaw`. Config SHA changes
+from `88409233...e909` to `7b8fd421...6c26`; credential SecretRefs, empty
+fallbacks, Agency plugin, and every unrelated field remain exact. Independent
+receipt `a141d193...e1ce` and native schema validation
+`275572d1...cfef` exit 0. A later user-service start attempt exits 5 at
+`5d96cc23...fc13` because this proof container has no gateway unit; no unit was
+created or changed, and the required ordinary proof uses OpenClaw's embedded
+process as R1 did.
+
+Immediately preceding live-probe telemetry `e9b158b2...2f40` reports 17.4
+percent remaining and requires this clean recovery pair before any approved
+Qwen model invocation.

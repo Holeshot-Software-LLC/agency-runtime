@@ -24,8 +24,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-297
 branch: codex/ar297-production-container-live-evidence
-evidence_commit: 0ac06c116ea0aefbcbb5f7392669709fbe5f4afd
-minimum_ledger_commit: 0ac06c116ea0aefbcbb5f7392669709fbe5f4afd
+evidence_commit: 035ab3ea3460b16d60a38f4903009aed520eb980
+minimum_ledger_commit: 035ab3ea3460b16d60a38f4903009aed520eb980
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 ---
@@ -37,7 +37,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Work only in `/tmp/agency-runtime-ar297.WQUbF2` on
   `codex/ar297-production-container-live-evidence`, based on `origin/main`
   `0a23983a`. Never touch the shared checkout.
-- Clean ledger `0ac06c11` binds installs, Codex R2, host/gates, and Claude preflight.
+- Clean ledger `035ab3ea` binds all evidence through refreshed Claude R3.
 - Linux remains **NO-GO**. AR-297/#335 remain open. No tracker write, push, PR,
   merge, tag, signing, publication, release, or hosted workflow is authorized.
 
@@ -101,13 +101,15 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   401/200 no-store; exact 2,659-byte prompt `c3cfc098...5848` is untruncated.
 - Optional host Codex verifier `933bc916...bb4` fails before model invocation
   because attended hook trust is not ready; it changes nothing and uses no bypass.
-- Alias inventory `73551634...0551` remains unchanged; pre-final Docker receipt
-  `6d0c7888...81f7` binds 36 labelled containers.
+- Approved Qwen3 Coder aliases apply/verify `d69aa6b6...af4d`/`a1e2381d...a5dd`
+  exit 0 at 65,536/no-thinking; unrelated aliases are unchanged. OpenClaw's
+  three-pointer config transition/verify `e97e02e2...deba`/`a141d193...e1ce`
+  exit 0; two stale-metadata attempts rolled back. Docker receipt still binds 36.
 
 ## exact-blocker
 
-- Genuine first-party Claude re-login, owner-selected Hermes/OpenClaw aliases,
-  three successful ordinary turns, and teardown remain.
+- Genuine first-party Claude re-login, three successful ordinary turns, and
+  teardown remain; telemetry `e9b158b2...2f40` requires this clean pair first.
 - Cross-OS artifacts, signing, tracker parity, push/PR/merge/tag/publication,
   release, and exhaustive workflow dispatch remain unauthorized—not GO gates
   for this Linux-only bounded task unless authority changes.
