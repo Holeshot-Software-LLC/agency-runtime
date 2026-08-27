@@ -64,8 +64,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Work remains in dedicated worktree `/tmp/agency-runtime-ar297.WQUbF2` on
   `codex/ar297-production-container-live-evidence`, based on `origin/main`
   `0a23983a`. Never use the shared checkout.
-- Last clean recovery pair is AR-321 blocker checkpoint `94741593` and ledger
-  `42f00044`. Exact artifacts and five images bind candidate `c1cf1793`.
+- Last clean recovery pair is AR-321 candidate checkpoint `f8348ab0` and ledger
+  `7c10fd22`. Exact artifacts and five images bind candidate `c1cf1793`.
 - Linux remains **NO-GO**. AR-297/#335 stay open. Tracker writes, push, PR,
   merge, tag, signing, publication, release, and hosted workflow actions are
   not authorized.
@@ -102,11 +102,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   route `fcdf4396...9447` records `native_child_abstention_confirmed`. Qwen 14B
   is ruled out by truncated prose `d34221cc...af9c` and wrong-card JSON
   `697d9cd9...1ac0`. AR-321 owns a reliable free LiteLLM alias.
-- AR-321 rejects Qwen 9B/30B, Dolphin 24B, and Qwen 2B at `a4a2ccbd...58c1`,
-  `2c04fa65...b580`, `cff40a52...1435`, and `12db1cd3...6bcb`; all probe
-  aliases are removed. Official Ministral 3 14B pull `1ae8154b...cf1e` and
-  metadata `6321d22e...f2c` pass; temporary LiteLLM alias
-  `8ee1aea3...a11d` awaits its first exact initial/repair probe.
+- AR-321 rejects Qwen 9B/30B, Dolphin 24B, Qwen 2B, and Ministral 14B. The last
+  returns invalid objects at `84a4b980...b8d1`, then schema-valid two-card JSON
+  at `aa8917b2...6cef`; deletion `f40895e6...d6ab` leaves no probe aliases.
+  Ministral remains installed. Next candidate is official free Granite 4.2 8B.
 - No later ordinary Codex, Claude, Hermes, or OpenClaw process has a current
   successful Agency-turn receipt on this source.
 - Refresh the host install/dashboard and named repository gates for the exact
@@ -134,8 +133,8 @@ unchecked line. Mark an item complete only with exact retained evidence.
 
 1. [x] Rebuild and independently verify artifacts/images from the exact
    AR-320/LiteLLM checkpoint; `c1cf1793` is the candidate.
-2. [ ] Through AR-321, promote a repeatedly correct free child-judge LiteLLM
-   alias, then prove a fresh no-bypass Codex install with canonical delivery,
+2. [ ] Through AR-321, test Granite 4.2 8B and promote only a repeatedly exact
+   free LiteLLM alias, then prove fresh Codex canonical delivery,
    consumption, header, finalization, Store correlation, and attestation.
 3. [ ] Build and prove separate clean exact Claude, native-UID Hermes, and
    OpenClaw systemd production-container installs.

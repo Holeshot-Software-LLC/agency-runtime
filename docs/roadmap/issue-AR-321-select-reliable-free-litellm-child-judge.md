@@ -57,9 +57,11 @@ prose, and with JSON-object output it confidently selects the wrong specialist.
 - Owner-approved acquisition of official Apache-2.0
   `ministral-3:14b-instruct-2512-q4_K_M` exits 0 at `1ae8154b...cf1e`.
   Ollama metadata `6321d22e...f2c` proves Mistral3, 13.9B parameters, Q4_K_M,
-  and 262,144-token context. Temporary alias deployment `8ee1aea3...a11d`
-  uses authenticated LiteLLM, 32,768 context, JSON mode, thinking off, and no
-  retries; create receipt `57cb1ccd...f295` passes before its first live probe.
+  and 262,144-token context. Its plain JSON probe `84a4b980...b8d1` puts
+  explanation objects in `selected_ids`; exact schema enforcement then returns
+  valid strings but over-selects `ai-evaluation-engineer` and `code-reviewer`
+  at `aa8917b2...6cef`. Both temporary aliases are removed; deletion receipt
+  `f40895e6...d6ab` closes the last deployment.
 - The owner requires all Agency inference on this system to resolve through
   authenticated LiteLLM aliases and requires the child judge to remain free.
   Tracker creation remains prohibited by the active task.

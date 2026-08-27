@@ -871,6 +871,9 @@ Qwen3 Coder 30B-A3B, Dolphin/Mistral 24B, and Qwen 3.5 2B for over-selection,
 wrong-card selection, or repeated abstention; all four temporary aliases were
 removed with retained receipts. The owner-approved official Apache-2.0
 Ministral 3 14B Q4_K_M download exits 0 at `1ae8154b...cf1e`; local metadata
-`6321d22e...f2c` proves 13.9B parameters and 262,144-token context. Its
-temporary authenticated LiteLLM alias `8ee1aea3...a11d` is ready for the next
-exact 59-card probe without changing the stable Agency route.
+`6321d22e...f2c` proves 13.9B parameters and 262,144-token context. Its plain
+JSON probe returns explanation objects at `84a4b980...b8d1`; an exact-schema
+alias returns valid strings but over-selects two cards at `aa8917b2...6cef`.
+Both temporary aliases are removed, the downloaded free model remains locally
+installed, and stable Agency routes remain unchanged. AR-321 continues with a
+smaller official structured-output candidate.
