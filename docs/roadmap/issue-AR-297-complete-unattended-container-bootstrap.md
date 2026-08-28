@@ -2146,3 +2146,31 @@ all five Agency alias groups, and fail-closed finalization
 close and must expire or close before a final Store-cleanliness claim. The next
 attempt must materially narrow the supported Hermes tool surface rather than
 change the model or overwrite persistent user policy.
+
+The least-privilege host R3 closes the fresh Hermes matrix cell without a
+model or persistent-policy change. Supported ordinary CLI invocation manifest
+`e6182cae...35a7` pins only toolset `agency-runtime` and a four-turn ceiling;
+it retains the same `task-agency-hermes` alias, current profile, credential
+reference, and persistent config `0ef96df3...ee74`. The bounded 818-byte task
+`f1d1963e...b038` explicitly permits only the local Agency finalizer and caps
+the report below its native transport budget. Pre-live telemetry
+`0347535c...8c16` follows clean recovery `2c52e99a` / `a0cdea6f`.
+
+Session `20260828_113341_bbcb27` exits 0 with native stdout/stderr/exit
+`67fbb7cb...1871`, `218e0296...777f`, and `bde29436...0120`. Correct online
+state backup `cb86b49e...1624` passes quick-check; the rejected pre-WAL copy
+and its failed helper outputs were removed. Native receipt
+`d466fbb3...cdb8` proves one exact 2,659-byte `accessibility-auditor` card in
+the 12,531-byte API payload, three API calls, and exact tool sequence
+`tool_search` then `agency_finalize`. No GitHub, terminal, browser, file, or
+other non-Agency tool is present or called.
+
+Store `4ded5b87...e551` passes quick-check, and correlation
+`82409a45...d632` binds accepted selection/load, generation, additive
+embedding, critic, and host-alias receipts, plus terminal finalization
+`a424f727...fab76` with `missing=[]`. The exact accepted 2,646-byte response
+and visible output both hash to `d44c75bb...2f2b`; R1/R2 independently retain
+the configured reranker application. Supported lifecycle replay
+`32adcb5c...486a` closes R2's expired interrupted trace without changing its
+negative result. Independent verifier `f64738b9...8ce9` exits 0. The fresh
+Hermes row is complete at this explicit Conveyor-style least-privilege scope.
