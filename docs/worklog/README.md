@@ -3,7 +3,7 @@ title: Worklog
 status: active
 category: worklog
 created: 2026-07-10
-updated: 2026-08-27
+updated: 2026-08-28
 tags: []
 related: []
 supersedes: []
@@ -1362,6 +1362,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `0ef2e8cb` | 2026-08-27 | docs(ar297): prove repaired distribution smoke | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-328](../roadmap/issue-AR-328-seal-hermes-install-tree.md) | null |
 | `591aad20` | 2026-08-27 | Merge pull request #337 from Holeshot-Software-LLC/codex/ar297-production-container-live-evidence | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-328](../roadmap/issue-AR-328-seal-hermes-install-tree.md) | null |
 | `e5e5e7e4` | 2026-08-27 | docs(ar297): record merged Linux delivery | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-328](../roadmap/issue-AR-328-seal-hermes-install-tree.md) | null |
+| `87231198` | 2026-08-28 | Merge pull request #338 from Holeshot-Software-LLC/codex/ar297-publish-closure | null | null |
+| `aead84d0` | 2026-08-28 | fix(codex): freeze inspector bootstrap as persistent input [AR-329] | [AR-329](../roadmap/issue-AR-329-freeze-codex-inspector-bootstrap-as-persistent-input.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
