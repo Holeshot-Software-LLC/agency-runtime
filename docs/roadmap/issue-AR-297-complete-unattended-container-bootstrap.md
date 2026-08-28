@@ -2174,3 +2174,41 @@ the configured reranker application. Supported lifecycle replay
 `32adcb5c...486a` closes R2's expired interrupted trace without changing its
 negative result. Independent verifier `f64738b9...8ce9` exits 0. The fresh
 Hermes row is complete at this explicit Conveyor-style least-privilege scope.
+
+Fresh ordinary OpenClaw now closes the fourth host harness cell. The first
+fresh invocation fails before model work at exit 1 because the machine's
+additive native model allow-lists predate and reject the already approved
+`litellm/task-agency-openclaw` alias; stdout is empty and stderr/exit hash to
+`fa87265e...5523` / `85acfd2e...5409`. No configuration or session artifact is
+created. Transaction receipt `831edb7a...dd2f` then adds only empty alias
+entries to the global and `openclaw` allow-lists. The native config changes
+from `3480c474...588ff` to `5a864f4e...ddfb6` at mode 0600 with all unrelated
+foreign policy, credentials, providers, fallbacks, gateway, and plugin fields
+unchanged; native validation exits 0.
+
+Immediately preceding telemetry `f104b10f...4b451` reports 51.9 percent and a
+clean `01598467` / `313ad7cd` recovery pair. Supported embedded OpenClaw
+2026.7.1-2 session `29700000-0000-4000-8000-000000000505` uses agent
+`openclaw`, the approved LiteLLM alias, thinking off, no delivery, and the
+exact 684-byte task `7411494b...49de`. It exits 0 after 234,660 ms; native
+stdout/stderr/exit hash to `661198c2...6b8b`, `aac406a2...b7d3`, and
+`bde29436...0120`. Corrected native receipt `1ac86bca...10fa` proves the full
+task file and its 683-byte message body, one exact 2,659-byte
+`accessibility-auditor` card, sole `litellm` provider and
+`task-agency-openclaw` model, thinking off, successful session end, healthy
+native SQLite, and a nonempty 3,239-byte response `c519f1ab...ddcf`. The first
+helper receipt remains retained at exit 1 because it expected the historical
+trimmed final prompt rather than this version's exact final newline.
+
+Store backup `97602525...f56a` passes quick-check. Correlation
+`84d672a6...afbf` binds trace `64adf094-cec5-4ac3-bbf1-f56200e5135b`,
+accepted selection/load, exact task fingerprint, and five successful
+generation/embedding/reranker/critic alias receipts. As in the isolated proof,
+the no-delivery embedded process has an active run and no terminal finalizer;
+that limitation is explicit rather than promoted to delivery evidence.
+Independent verifier `61fd0b83...7fe7` exits 0. After the additive config is
+loaded by the existing user-scoped systemd service, authenticated RPC receipt
+`a144aab9...172` exits 0 with operator role, loopback port 18789, zero restart
+count, no extra service, and no plugin drift. Package-end telemetry
+`d02d00d7...d6d9` reports 42.5 percent and requires this clean recovery pair
+before the authenticated dashboard proof.
