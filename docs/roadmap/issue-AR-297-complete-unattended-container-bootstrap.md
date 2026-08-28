@@ -2086,3 +2086,19 @@ Store response both hash to `572926de...0355`. Independent host verifier
 `db8f6780...e2f3` exits 0 and rechecks the exact bundle, immutable runtime,
 mode-0600 config, prompt, rollout, Store, and response equality. Claude,
 Hermes, and OpenClaw ordinary rows remain.
+
+Fresh ordinary Claude Code also passes on the exact candidate. Session
+`29700000-0000-4000-8000-000000000403` uses the existing first-party
+subscription login, normal default model, `dontAsk`, no bypass, and exact
+683-byte task `abfcd7ee...3408`; native stdout/stderr/exit hash to
+`38cd1ba7...3d03`, the empty SHA, and `bde29436...0120`. Native receipt
+`c0800570...b370` proves one exact 3,227-byte
+`section-508-accessibility-specialist` card `589a6e0c...303e`, no tool use,
+and successful completion. Store `0319318c...29d1` passes quick-check;
+correlation `15e99b7c...7c6b` binds trace
+`58b2d963-c7bd-4653-b100-9e7045ef86a5`, accepted selection/load, all five
+generation/embedding/reranker/critic alias receipts, and finalization
+`45913401...640d` with `missing=[]`. Native and Store response hash is
+`b4cd2225...8016`. Independent verifier `ed965d7c...8ca9` exits 0 with all
+19 checks true and no secret disclosure. Hermes and OpenClaw ordinary rows
+remain.

@@ -37,8 +37,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 
 - Work only in `/tmp/agency-runtime-ar297.WQUbF2`; never touch the shared
   checkout. Host-live closure branch starts at `origin/main` `87231198`.
-- AR-330's repaired 0.150.1 canary and the fresh ordinary Codex row pass.
-  Claude, Hermes, OpenClaw, dashboard, and final gates require fresh proof.
+- AR-330's canary plus fresh ordinary Codex and Claude rows pass. Hermes,
+  OpenClaw, dashboard, and final gates require fresh proof.
 - Clean source/ledger is `f6870aa6` / `33d9503b`; no uncommitted work exists.
 
 ## completed-evidence
@@ -82,10 +82,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - OpenClaw dry-run truthfully leaves an empty runtime home at `8ffcb927...af70`;
   untouched R2 absence `5feaa49c...2cdd`, install `4debebf3...c748`, Store
   `c6da8137...0b12`, systemd, exact alias config, and 13-hook runtime all pass.
-- Final Claude receipt `7c4968e8...4dee` exits 0 for session `.303`: one exact
-  3,227-byte card, all five alias receipts, accepted completion, `missing=[]`,
-  native/Store response equality, exact config, and no bypass. The prior
-  untrusted-`/tmp` Store attempt remains an honest bounded negative.
+- Fresh Claude verifier `ed965d7c...8ca9` exits 0 for session `.403`: exact
+  3,227-byte card, no tool use, all five alias receipts, accepted completion,
+  `missing=[]`, native/Store response equality, existing subscription auth,
+  normal default model, and no bypass.
 - Fresh ordinary Codex verifier `db8f6780...e2f3` exits 0 for session
   `01a048dd-10f0-77e2-94bd-d5e4c4572a4f`: exact 2,659-byte card, four
   alias-only receipts, accepted completion, `missing=[]`, native/Store response
@@ -120,8 +120,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 
 - AR-330's prior `ef88754e...f2a4` failure is resolved by exact live receipt
   `eca6fcb4...647c`; no activation or model/config choice remains blocked.
-- Fresh ordinary Claude, Hermes, and OpenClaw process proofs, dashboard proof,
-  named gates, record audit, and authorized merge remain.
+- Fresh ordinary Hermes and OpenClaw process proofs, dashboard proof, named
+  gates, record audit, and authorized merge remain.
 - Tracker audit `413c8a3a...1600` retains pre-existing parity debt; tracker
   writes/closure, signing, tagging, and release publication remain unauthorized.
 
@@ -144,8 +144,8 @@ unchecked line. Mark an item complete only with exact retained evidence.
 2. [x] Repair AR-329 with a mode-0400 regression and focused Codex suites.
 3. [x] Commit the repair ledger, build/install the exact candidate, and restore
    healthy dashboard/OpenClaw services.
-4. [ ] Build/install/trust/canary and ordinary Codex pass; prove ordinary
-   Claude, Hermes, and OpenClaw Store/full-prompt rows on the host.
+4. [ ] Build/install/trust/canary plus ordinary Codex/Claude pass; prove
+   ordinary Hermes and OpenClaw Store/full-prompt rows on the host.
 5. [ ] Run every named repository gate, record exact hashes/exits, merge the
    authorized PR without bypass, and issue the final Linux-scoped verdict.
 
