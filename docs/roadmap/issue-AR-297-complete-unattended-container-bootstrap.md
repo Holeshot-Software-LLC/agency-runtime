@@ -2378,3 +2378,27 @@ metadata marks it Pro research-preview with a separate limit. Target the full
 preflight at no more than 20 seconds warm and 30 seconds cold; promote only a
 repeatedly passing exact configuration, then resume one-at-a-time manual host
 tests.
+
+The owner then broadened the screen: keep embeddings local, but subscription
+routes may replace every other local stage when repeated evidence proves both
+lower latency and accepted quality. All such routes still remain behind
+LiteLLM aliases and strict provider/model independence remains enabled. Bounded
+Z.AI deployments set zero retries and a 25-second internal timeout; an external
+30-second ceiling prevents the gateway's global retry policy from recreating a
+multi-minute wait. GLM 5.2 with thinking disabled produces no response before
+operator termination at 46.32 seconds (`44876a0a...752` / exit 143). GLM 5.3
+low returns HTTP 200 in 23.01 seconds but fails the strict structured boundary
+(`b5cdd83a...ee5` / exit 1). GLM 5 Turbo with thinking disabled returns six
+units in 21.88 seconds but fails semantic validation (`463703e6...288` / exit
+1). Their temporary aliases are deleted by receipts `f228ab49...0c6`,
+`e90cc768...faf`, and `745087c8...d01`.
+
+GLM 5.3 Flash low is the sole passing GLM planner: config
+`11bdde01...6da5` yields six policy-clean units in 21,727 ms / 21.84 seconds,
+exit 0 and response `cdcca1ff...ae9d`; its temporary alias remains only for the
+next independent verifier comparison. Subscription Sol-light also passes the
+identical hard planner with six units and no policy violations in 12,864 ms /
+12.98 seconds; config/response are `8c71e965...d8c2` /
+`f1710b0a...ec6`. Sol and Terra are therefore effectively tied on one sample,
+with Sol only 0.18 seconds faster in wall time; repeated runs, not that
+noise-sized difference, must select the planner.

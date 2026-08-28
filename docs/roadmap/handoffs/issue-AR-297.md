@@ -89,10 +89,15 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   semantic gate while Terra `65427d17...36b` at 13,047ms passes. Profile
   `437b7ce3...9b83` attributes the remaining delay to two 4,096-dimension
   embedding batches and Mistral/embedding GPU reload churn.
-- Approved screen: Terra-light; 1,024-dimension Qwen3 embedding; Qwen 14B vs
-  Qwen 3.5 9B critic/reranker; GLM Flash/FlashX/Turbo; and Spark low/medium if
-  an exact subscription-backed LiteLLM route can be proved. Target is <=20s
-  warm and <=30s cold without weakening strict/additive behavior.
+- Subscription may replace every text stage when faster and accepted;
+  embeddings remain local. GLM 5.2/5.3/Turbo fail at 46.32/23.01/21.88s;
+  delete receipts `f228ab49...0c6`/`e90cc768...faf`/`745087c8...d01` pass.
+  GLM 5.3 Flash low passes at 21.84s (`cdcca1ff...ae9d`) and remains temporarily
+  available for verifier testing. Sol-light passes at 12.98s
+  (`f1710b0a...ec6`), effectively tied with Terra's 13.16s single sample.
+- Complete repeated Sol/Terra/Spark comparison, 1,024-dimension Qwen3
+  embeddings, and subscription/local critic/reranker comparison. Target is
+  <=20s warm and <=30s cold without weakening strict/additive behavior.
 - Record audits `769fb577...6056`/`e98fd0e5...64a7` exit 1 only on inherited
   parity debt; AR-297/#335 has no mismatch. Tracker/release writes stay unauthorized.
 
