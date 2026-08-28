@@ -1384,6 +1384,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `69daa994` | 2026-08-28 | docs(ar297): checkpoint manual Codex credential repair | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `3b4a0b5c` | 2026-08-28 | docs(ar297): record manual generation route comparison | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `508bf3ce` | 2026-08-28 | docs(ar297): compact manual route checkpoint | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `c3387faa` | 2026-08-28 | docs(ar297): checkpoint preflight latency screen | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
