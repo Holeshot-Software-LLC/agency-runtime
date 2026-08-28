@@ -111,12 +111,12 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   generation rollback `75855980...6bc` restores local Qwen, and deletion receipts
   `bfb54a1f...86ae`/`b412d6cf...4851` remove both temporary Spark aliases.
 - Frozen manifest `62f8bec4...c6fd` covers 603 screens, 18 local warm-ups, and
-  at most 18 confirmations (639 maximum); harness `226f4532...b4e8` passes.
-  OpenAI `a0c3f787...85e2` is 270/238/197/32; MiniMax
-  `5f93b3a3...7747` is 36/32/19/four; Z.AI `636a1dec...5bf5` is
-  135/100/73/35; local cumulative ledger `336fdf67...fcc1` adds
-  162/78/24/84 plus 18 warm-ups. The full screen is 603/448/313/155.
-  Qwen3 Coder 30B leads local routes; HTTP-200 inspection finds zero temporary aliases.
+  18 confirmations (639 maximum). Final ledger `2080c834...d56` reaches the
+  exact cap; replay audit/rankings/results `1823c21b...19e`/`ebd3f4fb...cee6`/
+  `f6c92e4b...189a` pass all 466 saved responses. Five cross-provider pairs
+  repeat; planner and hiring critic have no repeated primary, while hiring
+  generation and safety repair lack a repeated fallback. HTTP-200 inspection
+  finds zero temporary aliases; only seven of 18 local warm-ups strictly pass.
 - Record audits `769fb577...6056`/`e98fd0e5...64a7` exit 1 only on inherited
   parity debt; AR-297/#335 has no mismatch. Tracker/release writes stay unauthorized.
 

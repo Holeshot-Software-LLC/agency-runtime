@@ -2523,7 +2523,7 @@ deleted after its nine-cell slice.
 Local Ollama completes all 162 frozen cells and all 18 accounted warm-ups
 exactly once. Cumulative ledger `336fdf67...fcc1` records 78 structured
 completions, 24 strict eligibilities, and 84 bounded transport/JSON failures;
-nine warm-ups pass and nine fail. Qwen3 Coder 30B is the strongest local route:
+seven warm-ups pass and 11 fail. Qwen3 Coder 30B is the strongest local route:
 it scores 100 on planner/recruiter/critic/reranker/judge, reaches 17.125 seconds
 on planning and 0.892--4.334 seconds on the compact stages, but misses the full
 hiring and repair gold gates at 80. Mistral 24B passes recruiter and judge but
@@ -2532,3 +2532,19 @@ structured path. The completed screen is therefore 603/603 cells, 448
 structured and 313 eligible. Post-block inspection returns HTTP 200 with zero
 temporary benchmark aliases; the only cleanup warning names an already-absent
 OpenAI alias after its prior successful delete and does not leave live state.
+
+The exact 18-call confirmation budget completes with 18 structured responses
+and 12 strict eligibilities, bringing the retained ledger to its hard maximum
+of 639 paired starts/finishes at `2080c834...d56`. Replay audit
+`1823c21b...19e` revalidates all 466 saved response hashes and decision scores;
+rankings/plan/results are `ebd3f4fb...cee6`, `311ab6c0...2d9`, and
+`f6c92e4b...189a`. Five stage pairs repeat with different providers:
+recruiter M3-adaptive/Luna-low, critic local Qwen 3.5 2B-off/Terra-medium,
+reranker and judge M3-adaptive/local Qwen3 Coder 30B-off, and security review
+GPT-5.4-mini-low/local Qwen3 Coder 30B-off. Planner M3-off/GPT-5.5-high both
+regress to 82.5; GPT-5.4-mini-low repeats hiring generation and safety repair
+but neither cross-provider probe qualifies; Terra-ultra regresses to 85 on the
+hiring critic and its local probe also fails. Therefore five pairs are
+promotable, while planner, hiring generator fallback, hiring critic, and safety
+repair fallback remain unresolved. HTTP-200 inspection again finds zero
+temporary aliases.
