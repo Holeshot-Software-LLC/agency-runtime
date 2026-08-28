@@ -2402,3 +2402,26 @@ identical hard planner with six units and no policy violations in 12,864 ms /
 `f1710b0a...ec6`. Sol and Terra are therefore effectively tied on one sample,
 with Sol only 0.18 seconds faster in wall time; repeated runs, not that
 noise-sized difference, must select the planner.
+
+Temporary subscription Spark aliases then establish a materially different
+latency tier. Low reasoning passes the identical six-unit hard planner with no
+violations in 2,593 ms / 2.70 seconds (`ce3a5eff...ed6`, exit 0); medium also
+passes in 2,920 ms / 3.03 seconds (`64ed8fa6...ce2`, exit 0). Exact config
+`a330c1a8...419` assigns Spark-low to planning, recruitment, and text
+reranking, Sol-light to independent critic/review, and the existing local
+embedding alias at the approved 1,024 dimensions. Its cold and immediately
+repeated runs time out at the external 60/45-second ceilings (`9928ea39...836`
+for both exits). Gateway chronology isolates one local embedding request at
+about 34--37 seconds even while the 8B embedding model is GPU-resident; Spark
+stages remain approximately 2--6 seconds. Dimension truncation reduces result
+width and batching but does not reduce the 8B model's forward-pass cost.
+
+The owner requests production aliases with a measured best primary and an
+ordered second-best fallback from a different provider so Spark quota
+exhaustion fails over unattended. LiteLLM's deployment `order` control is the
+selected mechanism: order 1 is always tried before order 2, 429 places the
+failed deployment on cooldown, and per-deployment zero retries prevents
+multi-minute same-provider loops. The exact matrix and forced-failure proof
+remain pending. Embeddings stay local; the next owner choice is whether to
+download and test the official 639-MB `qwen3-embedding:0.6b` artifact at its
+native 1,024 dimensions in place of the current 8B model.

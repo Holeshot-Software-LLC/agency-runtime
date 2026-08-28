@@ -98,6 +98,14 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Complete repeated Sol/Terra/Spark comparison, 1,024-dimension Qwen3
   embeddings, and subscription/local critic/reranker comparison. Target is
   <=20s warm and <=30s cold without weakening strict/additive behavior.
+- Spark low/medium both pass the hard planner at 2.70/3.03s
+  (`ce3a5eff...ed6`/`64ed8fa6...ce2`). Full Spark/Sol configs still time out at
+  60s cold and 45s repeated because the resident 8B embedding call alone takes
+  about 34--37s; Store hashes are `d22dfc65...79f9`/`948df40a...fbc8`.
+- Owner requests each stable text alias use the best measured primary plus an
+  ordered cross-provider fallback. Use LiteLLM deployment `order`, zero
+  per-deployment retries, cooldown, and forced-failure evidence. Await approval
+  for local `qwen3-embedding:0.6b` at native 1,024 dimensions.
 - Record audits `769fb577...6056`/`e98fd0e5...64a7` exit 1 only on inherited
   parity debt; AR-297/#335 has no mismatch. Tracker/release writes stay unauthorized.
 
