@@ -1366,6 +1366,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `aead84d0` | 2026-08-28 | fix(codex): freeze inspector bootstrap as persistent input [AR-329] | [AR-329](../roadmap/issue-AR-329-freeze-codex-inspector-bootstrap-as-persistent-input.md) | null |
 | `c1b4e713` | 2026-08-28 | docs(ar297): checkpoint attended Codex trust gate | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-329](../roadmap/issue-AR-329-freeze-codex-inspector-bootstrap-as-persistent-input.md) | null |
 | `58301299` | 2026-08-28 | docs(ar297): bound trust-gate capsule | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-329](../roadmap/issue-AR-329-freeze-codex-inspector-bootstrap-as-persistent-input.md) | null |
+| `522102f7` | 2026-08-28 | fix(codex): support 0.150 collaboration rollouts [AR-330] | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-313](../roadmap/issue-AR-313-trust-normal-umask-codex-artifacts.md), [AR-330](../roadmap/issue-AR-330-support-codex-0150-collaboration-rollouts.md) | [detail](2026-08-28-522102f7-support-codex-0150-collaboration-rollouts.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
