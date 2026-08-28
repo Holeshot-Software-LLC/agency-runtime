@@ -225,6 +225,22 @@ def _codex_v1491_meta(*, cwd: Path) -> dict[str, object]:
     }
 
 
+def _codex_v1501_meta(*, cwd: Path) -> dict[str, object]:
+    meta = copy.deepcopy(_codex_v1491_meta(cwd=cwd))
+    payload = meta["payload"]
+    assert isinstance(payload, dict)
+    payload["cli_version"] = "0.150.1"
+    payload["agent_role"] = "Code Reviewer"
+    source = payload["source"]
+    assert isinstance(source, dict)
+    subagent = source["subagent"]
+    assert isinstance(subagent, dict)
+    spawn = subagent["thread_spawn"]
+    assert isinstance(spawn, dict)
+    spawn["agent_role"] = "Code Reviewer"
+    return meta
+
+
 def _codex_v1491_artifact(
     root: Path,
     *,
@@ -271,6 +287,93 @@ def test_codex_v1491_child_metadata_resolves_the_exact_host_parent(
             cwd=cwd,
         )
         == CODEX_V1491_PARENT_SESSION
+    )
+
+
+def test_codex_v1501_child_metadata_resolves_the_exact_explicit_role_parent(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    codex_v1491_artifact_trust: None,
+) -> None:
+    root = tmp_path / "sessions"
+    cwd = tmp_path / "canary-work"
+    cwd.mkdir()
+    artifact = _codex_v1491_artifact(
+        root,
+        cwd=cwd,
+        meta=_codex_v1501_meta(cwd=cwd),
+    )
+    monkeypatch.setattr(subject, "default_child_artifact_root", lambda host: root)
+
+    assert (
+        codex_v1491_child_parent_session(
+            artifact,
+            child_id=CODEX_V1491_CHILD_SESSION,
+            cwd=cwd,
+        )
+        == CODEX_V1491_PARENT_SESSION
+    )
+
+
+def test_codex_rollout_filename_accepts_utc_and_host_local_wall_time() -> None:
+    payload_at = datetime(2026, 8, 27, 5, 23, 23, tzinfo=timezone.utc)
+    utc_wall = payload_at.replace(tzinfo=None)
+    local_wall = payload_at.astimezone().replace(tzinfo=None)
+
+    assert subject._codex_rollout_wall_matches(utc_wall, payload_at)
+    assert subject._codex_rollout_wall_matches(local_wall, payload_at)
+    assert not subject._codex_rollout_wall_matches(
+        utc_wall + timedelta(seconds=1),
+        payload_at,
+    )
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        "missing_top_level_role",
+        "mismatched_top_level_role",
+        "missing_nested_role",
+        "mismatched_nested_role",
+    ],
+)
+def test_codex_v1501_child_metadata_role_drift_fails_closed(
+    tmp_path: Path,
+    codex_v1491_artifact_trust: None,
+    mutation: str,
+) -> None:
+    root = tmp_path / "sessions"
+    cwd = tmp_path / "canary-work"
+    cwd.mkdir()
+    meta = _codex_v1501_meta(cwd=cwd)
+    payload = meta["payload"]
+    assert isinstance(payload, dict)
+    source = payload["source"]
+    assert isinstance(source, dict)
+    subagent = source["subagent"]
+    assert isinstance(subagent, dict)
+    spawn = subagent["thread_spawn"]
+    assert isinstance(spawn, dict)
+    if mutation == "missing_top_level_role":
+        del payload["agent_role"]
+    elif mutation == "mismatched_top_level_role":
+        payload["agent_role"] = "default"
+    elif mutation == "missing_nested_role":
+        del spawn["agent_role"]
+    elif mutation == "mismatched_nested_role":
+        spawn["agent_role"] = "default"
+    else:  # pragma: no cover - the parameter list is closed above
+        raise AssertionError(f"unhandled mutation: {mutation}")
+    artifact = _codex_v1491_artifact(root, cwd=cwd, meta=meta)
+
+    assert (
+        codex_v1491_child_parent_session(
+            artifact,
+            child_id=CODEX_V1491_CHILD_SESSION,
+            cwd=cwd,
+            root=root,
+        )
+        == ""
     )
 
 

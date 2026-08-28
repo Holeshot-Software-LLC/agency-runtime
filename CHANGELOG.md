@@ -111,6 +111,11 @@ changes rather than duplicating every commit.
 
 ### Changed
 
+- Codex 0.150.1 activation children now retain the exact explicit
+  `Code Reviewer` role in both host-authored lineage fields and accept rollout
+  filenames written in either Codex's UTC or host-local wall-time form. Legacy
+  0.149.1 implicit-role children remain supported, while version, role,
+  timestamp, path, ownership, and parent/child drift still fail closed.
 - Codex current-profile activation verification now binds its sealed,
   non-executable Python bootstrap with persistent artifact identities. The
   interpreter remains executable-only and both launch inputs remain bound by

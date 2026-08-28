@@ -114,6 +114,10 @@ _CODEX_V1491_PAYLOAD_KEYS: Final[frozenset[str]] = frozenset(
         "timestamp",
     }
 )
+_CODEX_V1501_PAYLOAD_KEYS: Final[frozenset[str]] = frozenset(
+    {*_CODEX_V1491_PAYLOAD_KEYS, "agent_role"}
+)
+_CODEX_V1501_CANARY_AGENT_ROLE: Final[str] = "Code Reviewer"
 _CODEX_V1491_ROLLOUT: Final[re.Pattern[str]] = re.compile(
     r"rollout-(?P<year>\d{4})-(?P<month>\d{2})-(?P<day>\d{2})"
     r"T(?P<hour>\d{2})-(?P<minute>\d{2})-(?P<second>\d{2})-"
@@ -764,18 +768,27 @@ def _codex_v1491_rollout_identity(
     ):
         return None
     try:
-        rollout_at = datetime(
+        rollout_wall = datetime(
             int(match.group("year")),
             int(match.group("month")),
             int(match.group("day")),
             int(match.group("hour")),
             int(match.group("minute")),
             int(match.group("second")),
-            tzinfo=timezone.utc,
         )
     except ValueError:
         return None
-    return artifact, rollout_at
+    return artifact, rollout_wall
+
+
+def _codex_rollout_wall_matches(rollout_wall: datetime, payload_at: datetime) -> bool:
+    """Match Codex filenames written as either UTC or the host's local wall time."""
+
+    if rollout_wall.tzinfo is not None or payload_at.tzinfo is None:
+        return False
+    utc_wall = payload_at.astimezone(timezone.utc).replace(tzinfo=None, microsecond=0)
+    local_wall = payload_at.astimezone().replace(tzinfo=None, microsecond=0)
+    return rollout_wall in {utc_wall, local_wall}
 
 
 def _codex_v1491_first_record(path: Path) -> Mapping[str, Any] | None:
@@ -814,7 +827,7 @@ def _codex_v1491_parent_from_record(  # noqa: C901 - exact closed host schema
     expected_cwd: str,
     rollout_at: datetime,
 ) -> str:
-    """Validate the closed Codex 0.149.1 child metadata contract."""
+    """Validate one closed, version-shaped Codex child metadata contract."""
 
     if set(record) != {"timestamp", "type", "payload", "ordinal"}:
         return ""
@@ -823,10 +836,20 @@ def _codex_v1491_parent_from_record(  # noqa: C901 - exact closed host schema
     if record.get("ordinal") != 0:
         return ""
     payload = record.get("payload")
-    if not isinstance(payload, Mapping) or set(payload) != _CODEX_V1491_PAYLOAD_KEYS:
+    if not isinstance(payload, Mapping):
+        return ""
+    cli_version = payload.get("cli_version")
+    if cli_version == "0.149.1":
+        expected_payload_keys = _CODEX_V1491_PAYLOAD_KEYS
+        expected_agent_role: str | None = None
+    elif cli_version == "0.150.1":
+        expected_payload_keys = _CODEX_V1501_PAYLOAD_KEYS
+        expected_agent_role = _CODEX_V1501_CANARY_AGENT_ROLE
+    else:
         return ""
     if (
-        payload.get("cli_version") != "0.149.1"
+        set(payload) != expected_payload_keys
+        or payload.get("agent_role") != expected_agent_role
         or payload.get("originator") != "codex_exec"
         or payload.get("history_mode") != "paginated"
         or payload.get("thread_source") != "subagent"
@@ -871,7 +894,7 @@ def _codex_v1491_parent_from_record(  # noqa: C901 - exact closed host schema
         spawn_parent != parent_session
         or type(spawn.get("depth")) is not int
         or spawn.get("depth") != 1
-        or spawn.get("agent_role") is not None
+        or spawn.get("agent_role") != expected_agent_role
         or type(agent_path) is not str
         or not agent_path
         or type(agent_nickname) is not str
@@ -909,7 +932,7 @@ def _codex_v1491_parent_from_record(  # noqa: C901 - exact closed host schema
         outer_at is None
         or payload_at is None
         or not payload_at <= outer_at <= payload_at + timedelta(seconds=5)
-        or payload_at.replace(microsecond=0) != rollout_at
+        or not _codex_rollout_wall_matches(rollout_at, payload_at)
         or abs(payload_at - child_at) > timedelta(seconds=1)
     ):
         return ""
@@ -923,11 +946,12 @@ def codex_v1491_child_parent_session(
     cwd: object,
     root: Path | None = None,
 ) -> str:
-    """Resolve one exact Codex 0.149.1 child to its host-authored parent.
+    """Resolve one exact supported Codex child to its host-authored parent.
 
     This is a pure, fail-closed artifact read. It confers no staffing or Store
     authority by itself; the caller must still resolve and validate one exact
-    live parent route.
+    live parent route. The legacy name remains stable for embedders while the
+    closed parser admits the exact 0.149.1 and 0.150.1 metadata variants.
     """
 
     child = _canonical_codex_uuid7(child_id)

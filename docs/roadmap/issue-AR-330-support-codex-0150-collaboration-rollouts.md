@@ -13,9 +13,12 @@ related:
   - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
   - docs/decisions/0179-admit-exact-codex-canary-delivery-at-subagent-start.md
   - agency_runtime/core/canary_backends.py
+  - agency_runtime/core/child_delivery_evidence.py
   - agency_runtime/core/activation_canary_contract.py
   - agency_runtime/adapters/hooks.py
   - tests/test_codex_activation_canary.py
+  - tests/test_canary_activation_snapshot.py
+  - tests/test_child_delivery_evidence.py
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
@@ -47,6 +50,15 @@ Codex install. Pinning or downgrading Codex would hide the compatibility defect.
   retained negative run correctly contains no Agency staffing delivery.
 - This host uses umask `0002`; AR-313's integrity guard needs to recognize the
   owner-exclusive user-private group without admitting a second account.
+- Rebuilt candidate `c3959c85` passes 8/8 attended hook trust, but exact
+  verifier `ef88754e...f2a4` exits 1 because the child receives the generic
+  identity. Parent/child rollouts `7a966722...3a9` and `8aa757e2...8f75`
+  isolate a second compatibility boundary: the strict lineage reader rejects
+  the new top-level role and interprets the host-local filename as UTC.
+- The bounded follow-up accepts only exact 0.149.1 implicit-role or 0.150.1
+  `Code Reviewer` schemas and only UTC or this host's local wall-time spelling.
+  The retained real child now resolves parent `01a048b4...33cd`; 103 focused
+  warning-strict lineage/snapshot tests pass.
 - Tracker creation is prohibited by the active AR-297 task.
 
 ## Approach
@@ -72,6 +84,8 @@ fail-closed.
 - [x] Focused tests cover both 0.149 and 0.150 exact canary projections.
 - [x] Group-writable artifacts are accepted only for a proven exclusive
       user-private group; shared groups and other-writable paths remain refused.
+- [x] The strict child-lineage reader binds the exact 0.150.1 explicit role and
+      host-local rollout filename without weakening 0.149.1 or drift rejection.
 - [ ] A rebuilt exact candidate staffs and verifies a live Codex 0.150.1 child
       without a bypass or version pin.
 - [ ] Ordinary Codex product execution loads Agency unattended and its Store,

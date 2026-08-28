@@ -2020,3 +2020,15 @@ Host refresh `10c50ca...82fb` installs all four exact bundles and the active
 dashboard. OpenClaw returns to healthy authenticated RPC on port 18789. Codex
 reports the refreshed inventory exactly as eight `modified` hooks with none
 missing, making one fresh attended trust grant the explicit operator gate.
+
+The owner completed that trust grant. Exact no-bypass verifier
+`ef88754e...f2a4` then passes all 8/8 trust checks and launches Codex 0.150.1,
+but exits 1 because child `01a048b6...1301` receives only the generic identity.
+Parent/child rollouts `7a966722...3a9`/`8aa757e2...8f75` and Store
+`eafa2c87...56f` isolate the missing boundary: the strict hook lineage reader
+still admits only the 0.149.1 implicit-role/UTC-filename shape. The bounded
+AR-330 follow-up adds the exact 0.150.1 `Code Reviewer` top-level/nested role
+shape plus Codex's host-local filename spelling, while preserving exact
+0.149.1 and fail-closed drift behavior. The real retained child now resolves
+its exact parent and 103 focused warning-strict tests pass; rebuild, fresh
+trust, and live staffing verification remain pending.

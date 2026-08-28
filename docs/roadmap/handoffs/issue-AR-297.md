@@ -39,8 +39,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   checkout. Host-live closure branch starts at `origin/main` `87231198`.
 - All scoped matrix rows pass; final audit `3c82c16d...cd79` returns Linux
   **GO**. Clean reviewed head is `3a9a09c2`.
-- AR-330 now projects the retained real Codex 0.150.1 explicit-role,
-  nickname, terminal-activity, and exclusive-user-group artifact shapes.
+- AR-330 projects the real 0.150.1 role, nickname, activity, user-private-group,
+  strict-lineage, and host-local rollout-filename shapes.
 
 ## completed-evidence
 
@@ -120,10 +120,11 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 
 ## exact-blocker
 
-- The pre-repair Codex verifier `350a838c...06eae` passed 8/8 attended trust
-  then truthfully refused the new 0.150.1 collaboration projection.
-- Focused AR-330 activation/provenance/delivery tests pass 593 warning-strict;
-  an exact rebuild/reinstall will require one immediate fresh trust grant.
+- No-bypass verifier `ef88754e...f2a4` passes 8/8 trust, then exits 1 because
+  child `01a048b6...1301` receives generic identity.
+- Rollouts `7a966722...3a9`/`8aa757e2...8f75` isolate the 0.149-only lineage and
+  UTC reader; AR-330 resolves the real child and 103 tests pass. Rebuild/live
+  proof and immediate fresh trust are next.
 - Tracker audit `413c8a3a...1600` retains pre-existing parity debt; tracker
   writes/closure, signing, tagging, and release publication remain unauthorized.
 
@@ -145,8 +146,8 @@ unchecked line. Mark an item complete only with exact retained evidence.
 2. [x] Repair AR-329 with a mode-0400 regression and focused Codex suites.
 3. [x] Commit the repair ledger, build/install the exact candidate, and restore
    healthy dashboard/OpenClaw services.
-4. [ ] Checkpoint/build/install AR-330, request fresh Codex trust immediately,
-   then rerun all four harness/Store/prompt/dashboard proofs.
+4. [ ] Commit/build/install the completed AR-330 lineage repair, request fresh
+   Codex trust immediately, then rerun all four harness/Store/prompt proofs.
 5. [ ] Run every named repository gate, record exact hashes/exits, merge the
    authorized PR without bypass, and issue the final Linux-scoped verdict.
 
@@ -171,8 +172,7 @@ git diff --check
 
 - Keep registration, loading, canary, delivery, Store correlation, and model
   claims distinct. Never expose or persist a secret.
-- Do not configure/call Jina, overwrite foreign policy, use an activation
-  bypass, or touch the shared checkout.
+- Do not call Jina, overwrite foreign policy, bypass activation, or touch the shared checkout.
 - All Agency inference on this system stays behind LiteLLM aliases. Any unknown
   model, endpoint, dimension, reranker, thinking level, judge route,
   harness-auth, or service-manager choice requires an owner interview.
