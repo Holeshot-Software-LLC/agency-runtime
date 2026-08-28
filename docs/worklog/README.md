@@ -1387,6 +1387,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `c3387faa` | 2026-08-28 | docs(ar297): checkpoint preflight latency screen | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `6ef1ea24` | 2026-08-28 | docs(ar297): checkpoint subscription model screen | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `87e600f9` | 2026-08-28 | docs(ar297): checkpoint Spark and fallback screen | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `09233ec4` | 2026-08-28 | docs(ar297): checkpoint approved embedding candidate | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
