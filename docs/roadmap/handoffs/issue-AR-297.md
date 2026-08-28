@@ -36,10 +36,11 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 
 - Work only in `/tmp/agency-runtime-ar297.WQUbF2` on the AR-297 branch based on
   `origin/main` `0a23983a`; never touch the shared checkout.
-- Clean ledger `ce21847b` precedes exact teardown and final audit. All scoped
-  matrix rows pass; final audit `3c82c16d...cd79` returns Linux **GO**.
-- AR-297/#335 remain open only for authorization-pending external records; no
-  tracker write, push, PR, merge, tag, signing, publication, release, or hosted workflow ran.
+- Clean ledger `78d9d21d` precedes authorized publication. All scoped matrix
+  rows pass; final audit `3c82c16d...cd79` returns Linux **GO**.
+- PR #337 is open at head `bc7887c9`. CodeQL and dependency review pass after
+  authorized repository capability repair. First CI run `33137554337` isolates
+  one Ubuntu disposable-smoke cleanup regression; its Windows sibling passes.
 
 ## completed-evidence
 
@@ -113,7 +114,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 
 ## exact-blocker
 
-- No unresolved Linux-only GO gate remains.
+- No unresolved Linux runtime GO gate remains. PR publication is gated on the
+  bounded Ubuntu smoke cleanup repair and a fresh green hosted run.
 - Read-only tracker audit exits 1 at `413c8a3a...1600` for pre-existing
   repository-wide parity debt; no tracker write is authorized.
 - Cross-OS artifacts, signing, release actions, and hosted workflow remain outside Linux GO.
@@ -131,24 +133,14 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 After compaction, reread this capsule and `git status`, then resume at the first
 unchecked line. Mark an item complete only with exact retained evidence.
 
-1. [x] Rebuild and independently verify final AR-328 artifacts/images.
-2. [x] Test deterministic temporary Mistral aliases and remove all three.
-3. [x] Test and remove exact Gemma 3 27B; it selects the wrong role.
-4. [x] AR-327 repair/rebuild and one clean Codex install pass with verified
-   current-profile attestation and no activation bypass.
-5. [x] Refresh separate clean exact Codex, Claude, Hermes, and OpenClaw
-   systemd production-container installs.
-6. [x] Repeat ordinary unattended processes for the final four installs; retain
-   native artifacts, Store correlations, and prompt visibility.
-7. [x] Refresh the exact candidate on this Linux host and prove the private
-   authenticated dashboard plus the approved service-manager contract.
-8. [x] Rerun every named repository gate and record exact exits and hashes.
-9. [x] Update canonical issues/capsule and make each required substantive and
-   `docs(worklog):` checkpoint pair.
-10. [x] Remove every container labelled `AR-297`; retain teardown evidence and
-    prove zero labelled survivors.
-11. [x] Issue the Linux-scoped GO/NO-GO and complete the persistent goal only
-    when every in-scope item above is truthfully closed.
+1. [ ] Commit the bounded disposable-Hermes-guard smoke repair and its recovery
+   ledger after focused and named repository gates pass.
+2. [ ] Push the repair, require fresh Ubuntu distribution and aggregate CI
+   success, and confirm all PR checks are terminal green or expected skips.
+3. [ ] Merge PR #337 without bypass, fetch `origin/main`, and prove the merge
+   commit contains the exact reviewed head.
+4. [ ] Retain the Linux-scoped GO; do not tag, sign, publish a release, or close
+   tracker #335 without separate authorization.
 
 ## verification
 

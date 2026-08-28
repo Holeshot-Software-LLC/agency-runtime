@@ -30,7 +30,10 @@ from agency_runtime.core.installer import (
 from agency_runtime.core.installer_contracts import (
     ADAPTER_LAUNCHER_MANIFEST,
     CODEX_HOOK_EVENTS,
+    HERMES_BYTECODE_GUARD,
+    PLUGIN_ID,
 )
+from agency_runtime.core.installer_filesystem import _set_hermes_bytecode_guard_modes
 from agency_runtime.core.installer_payloads import bind_launcher_artifact_paths
 from agency_runtime.core.policy.defaults import STARTER_ROSTER
 from agency_runtime.core.private_paths import ensure_private_directory, private_temporary_directory
@@ -99,6 +102,26 @@ def _temporary_env(**values: str) -> Iterator[None]:
                 os.environ.pop(key, None)
             else:
                 os.environ[key] = old_value
+
+
+def _unseal_disposable_hermes_guard(home: Path) -> None:
+    """Restore cleanup access only for smoke's exact generated Hermes guard."""
+
+    target = home / ".hermes" / "plugins" / PLUGIN_ID
+    guard = target / Path(HERMES_BYTECODE_GUARD).parent
+    marker = target / HERMES_BYTECODE_GUARD
+    if not os.path.lexists(guard) and not os.path.lexists(marker):
+        return
+    _set_hermes_bytecode_guard_modes(target, readonly=False)
+
+
+@contextmanager
+def _temporary_smoke_home() -> Iterator[Path]:
+    with private_temporary_directory(prefix="smoke") as home:
+        try:
+            yield home
+        finally:
+            _unseal_disposable_hermes_guard(home)
 
 
 def _check(name: str, fn: Any) -> dict[str, Any]:
@@ -628,7 +651,7 @@ def run_smoke(*, all_hosts: bool = False, host: str | None = None) -> dict[str, 
         reset_config_cache,
     )
 
-    with private_temporary_directory(prefix="smoke") as tmp_home:
+    with _temporary_smoke_home() as tmp_home:
         smoke_db = tmp_home / "agency.db"
         smoke_config = tmp_home / ".agency-runtime" / "agency.yaml"
         smoke_config.parent.mkdir(mode=0o700)

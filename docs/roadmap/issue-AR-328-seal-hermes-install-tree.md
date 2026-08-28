@@ -48,6 +48,10 @@ A one-time cache deletion would pass only until the next normal service start.
   installed Hermes bundle has no sealed cache namespace.
 - No foreign Hermes policy, systemd unit, model route, or credential is changed
   by the repair. Tracker creation remains prohibited by AR-297.
+- PR #337's first Ubuntu installed-distribution job exposed one bounded harness
+  regression: the correct 0500/0400 guard prevented cleanup of smoke's own
+  disposable home after every functional assertion had passed. Windows passed
+  because its existing read-only cleanup path is platform-specific.
 
 ## Approach
 
@@ -78,6 +82,9 @@ host bundle contract unchanged.
 - [x] Exact rebuilt artifacts and production images pass independent checks.
 - [x] A fresh host install survives Hermes restart and strict exact-tree
       validation with no unmanifested cache.
+- [x] Installed-distribution smoke restores write access only on its exact
+      disposable Hermes guard before removing the isolated smoke home, while
+      the generated production bundle remains sealed during validation.
 - [ ] A same-repository tracker issue is created and linked after explicit
       authorization.
 
@@ -98,3 +105,11 @@ the post-load strict-tree receipt `d7bc15f0...d8f8` exit 0. The latter binds
 image `3a4cac26...1bf`, policy `python-bytecode-cache-denied-v1`, target/guard/
 marker modes 0700/0500/0400, no `.pyc`, and exact validation. Only the
 authorization-prohibited tracker mapping remains open.
+
+The first hosted Ubuntu distribution job in run `33137554337`, job
+`98743288010`, exits 1 only at disposable cleanup after the installed wheel
+report and CLI surfaces pass; the sibling Windows distribution job exits 0.
+The same full smoke-isolation regression fails locally before repair with
+`PermissionError` on the exact cache-denied marker, then passes after the
+bounded teardown correction. Both smoke suites pass 37 tests under the
+owner-protected interpreter, and focused Ruff/format/diff checks exit 0.

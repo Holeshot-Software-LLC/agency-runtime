@@ -1975,3 +1975,14 @@ The final read-only tracker audit exits 1 with stderr
 issues and unrelated state/URL/label mismatches, but no AR-297 identity, URL,
 or label mismatch. Repairing that external governance debt requires tracker
 writes that were not authorized and remains explicitly outside this Linux GO.
+
+During authorized publication, PR #337's first CI run `33137554337` passed
+static quality, documentation, dashboard UI, performance, dependency audit,
+three Windows portability jobs, and the Windows unsigned distribution job.
+The Ubuntu unsigned distribution job `98743288010` exited 1 only after its
+installed wheel report and CLI help checks passed: AR-328's correct Hermes
+0500/0400 cache guard blocked removal of smoke's disposable home. The bounded
+repair reopens only that exact generated guard in smoke's `finally` path; the
+existing full isolation regression now passes, both focused smoke suites pass
+37 tests, and production guard validation remains unchanged. A fresh hosted
+run and final merge-state audit remain the next publication gates.
