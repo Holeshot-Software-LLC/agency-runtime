@@ -1358,6 +1358,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `b998ad22` | 2026-08-27 | docs(ar297): prove final host and repository gates | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `b3238fb2` | 2026-08-27 | docs(ar297): prove final Claude ordinary loading | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `e48f08be` | 2026-08-27 | docs(ar297): issue Linux GO and record teardown | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `3155fc5f` | 2026-08-27 | fix(smoke): unseal disposable Hermes guard [AR-328] | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-328](../roadmap/issue-AR-328-seal-hermes-install-tree.md) | [detail](2026-08-27-3155fc5f-unseal-disposable-hermes-guard.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
