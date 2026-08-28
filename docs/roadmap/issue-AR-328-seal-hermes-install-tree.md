@@ -120,3 +120,8 @@ Separate owner-private installed wheel and sdist environments each pass all
 eight deterministic smoke checks, including Hermes, and exit 0; artifacts and
 isolated homes remain under
 `~/.agency-runtime-ci/ar297-pr337-6e78b146/`.
+Fresh CI run `33139352190` independently passes the repaired Ubuntu unsigned
+distribution job `98748830279` in 1m24s, its Windows sibling in 3m27s, the
+aggregate automatic-gates job, and platform-honest artifact assembly. PR #337
+merges exact reviewed head `3a9a09c2` into `main` as `591aad20` without a
+bypass. Tracker creation is the sole remaining AR-328 record gate.

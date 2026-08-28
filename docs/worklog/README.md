@@ -1360,6 +1360,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `e48f08be` | 2026-08-27 | docs(ar297): issue Linux GO and record teardown | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `3155fc5f` | 2026-08-27 | fix(smoke): unseal disposable Hermes guard [AR-328] | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-328](../roadmap/issue-AR-328-seal-hermes-install-tree.md) | [detail](2026-08-27-3155fc5f-unseal-disposable-hermes-guard.md) |
 | `0ef2e8cb` | 2026-08-27 | docs(ar297): prove repaired distribution smoke | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-328](../roadmap/issue-AR-328-seal-hermes-install-tree.md) | null |
+| `591aad20` | 2026-08-27 | Merge pull request #337 from Holeshot-Software-LLC/codex/ar297-production-container-live-evidence | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-328](../roadmap/issue-AR-328-seal-hermes-install-tree.md) | null |
+| `e5e5e7e4` | 2026-08-27 | docs(ar297): record merged Linux delivery | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-328](../roadmap/issue-AR-328-seal-hermes-install-tree.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes

@@ -1994,3 +1994,16 @@ verification exit 0. The wheel hashes to `cf32f861...b2a7` and the sdist to
 all eight deterministic smoke checks with no cleanup error and exit 0. The
 artifacts, two copied-interpreter environments, and isolated homes remain under
 `~/.agency-runtime-ci/ar297-pr337-6e78b146/` for review.
+
+Fresh hosted CI run `33139352190` on exact reviewed head `3a9a09c2` completes
+with 16 successful checks, three intentional exhaustive-integration skips,
+zero failures, and zero pending checks. Ubuntu and Windows unsigned review
+distributions pass in 1m24s and 3m27s; all three Windows portability jobs,
+aggregate automatic gates, and platform-honest artifact assembly pass.
+Dependency review run `33139352171` and CodeQL run `33139352213` pass, including
+both language analyses and the aggregate CodeQL result. PR #337 was mergeable
+and clean, then merged without bypass at `2026-08-28T03:55:35Z` as
+`591aad207eadfe36671d374ff2b488d8bbd6a6a5`. Its parents are original
+`origin/main` `0a23983a` and exact reviewed head `3a9a09c2`; the post-fetch
+ancestry check exits 0. Tracker #335 remains open, and no tag, signing, release,
+or tracker closure was performed.

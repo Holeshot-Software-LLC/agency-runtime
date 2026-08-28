@@ -23,9 +23,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-297
-branch: codex/ar297-production-container-live-evidence
-evidence_commit: e0b0b25c30083b09743fe1a04f2a0ad4cdf4e533
-minimum_ledger_commit: e0b0b25c30083b09743fe1a04f2a0ad4cdf4e533
+branch: codex/ar297-publish-closure
+evidence_commit: 3a9a09c2e258f88bec6526e91db0b8cb54ae1ea9
+minimum_ledger_commit: 3a9a09c2e258f88bec6526e91db0b8cb54ae1ea9
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 ---
@@ -34,13 +34,12 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 
 ## checkpoint
 
-- Work only in `/tmp/agency-runtime-ar297.WQUbF2` on the AR-297 branch based on
-  `origin/main` `0a23983a`; never touch the shared checkout.
-- Clean ledger `78d9d21d` precedes authorized publication. All scoped matrix
-  rows pass; final audit `3c82c16d...cd79` returns Linux **GO**.
-- PR #337 is open at head `bc7887c9`. CodeQL and dependency review pass after
-  authorized repository capability repair. First CI run `33137554337` isolates
-  one Ubuntu disposable-smoke cleanup regression; its Windows sibling passes.
+- Work only in `/tmp/agency-runtime-ar297.WQUbF2`; never touch the shared
+  checkout. Publication-closure branch starts at `origin/main` `591aad20`.
+- All scoped matrix rows pass; final audit `3c82c16d...cd79` returns Linux
+  **GO**. Clean reviewed head is `3a9a09c2`.
+- PR #337 merged without bypass as `591aad207eadfe36671d374ff2b488d8bbd6a6a5`.
+  The merge's second parent is exact head `3a9a09c2`; ancestry exits 0.
 
 ## completed-evidence
 
@@ -59,6 +58,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Clean repair ledger `6e78b146` builds portable wheel `cf32f861...b2a7` and
   sdist `1b40ca8f...e228`; independent verification and separate installed
   8/8 wheel/sdist smoke runs exit 0 in the retained owner-private artifact root.
+- Fresh CI `33139352190` has 16 successes and three intended integration skips:
+  Ubuntu/Windows distributions, aggregate gates, and artifact assembly pass.
+  Dependency review `33139352171` and CodeQL `33139352213` also pass.
 - AR-328 regression `751276ea...e3a` fails before repair. The exact cache guard
   preserves movable installs; 359 tests pass with 2 skips at
   `981fbbc8...ddd0`, and focused Ruff/docs pass with empty stderr.
@@ -117,11 +119,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 
 ## exact-blocker
 
-- No unresolved Linux runtime GO gate remains. PR publication is gated on the
-  bounded Ubuntu smoke cleanup repair and a fresh green hosted run.
+- No unresolved Linux runtime or PR publication gate remains.
 - Read-only tracker audit exits 1 at `413c8a3a...1600` for pre-existing
   repository-wide parity debt; no tracker write is authorized.
-- Cross-OS artifacts, signing, release actions, and hosted workflow remain outside Linux GO.
+- Signing, tagging, release publication, and tracker closure were not performed.
 
 ## same-task-continuity
 
@@ -138,11 +139,11 @@ unchecked line. Mark an item complete only with exact retained evidence.
 
 1. [x] Commit the bounded disposable-Hermes-guard smoke repair and its recovery
    ledger after focused and named repository gates pass.
-2. [ ] Push the repair, require fresh Ubuntu distribution and aggregate CI
+2. [x] Push the repair, require fresh Ubuntu distribution and aggregate CI
    success, and confirm all PR checks are terminal green or expected skips.
-3. [ ] Merge PR #337 without bypass, fetch `origin/main`, and prove the merge
+3. [x] Merge PR #337 without bypass, fetch `origin/main`, and prove the merge
    commit contains the exact reviewed head.
-4. [ ] Retain the Linux-scoped GO; do not tag, sign, publish a release, or close
+4. [x] Retain the Linux-scoped GO; do not tag, sign, publish a release, or close
    tracker #335 without separate authorization.
 
 ## verification
@@ -171,5 +172,5 @@ git diff --check
 - All Agency inference on this system stays behind LiteLLM aliases. Any unknown
   model, endpoint, dimension, reranker, thinking level, judge route,
   harness-auth, or service-manager choice requires an owner interview.
-- No tracker creation, push, PR, merge, tag, signing, publication, release,
-  hosted workflow, or unrelated model/config change is authorized.
+- Do not create or close another tracker, tag, sign, publish a release, or make
+  an unrelated model/config change without separate authorization.
