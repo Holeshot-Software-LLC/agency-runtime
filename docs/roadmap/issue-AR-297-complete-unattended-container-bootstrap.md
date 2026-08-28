@@ -2102,3 +2102,25 @@ generation/embedding/reranker/critic alias receipts, and finalization
 `b4cd2225...8016`. Independent verifier `ed965d7c...8ca9` exits 0 with all
 19 checks true and no secret disclosure. Hermes and OpenClaw ordinary rows
 remain.
+
+The first fresh ordinary host Hermes attempt is retained as a fail-closed
+negative, not a completed matrix row. Normal Hermes 0.20.4 session
+`20260828_110948_f9349a` uses the unchanged `task-agency-hermes` LiteLLM
+alias, ordinary current-profile configuration, exact 684-byte task
+`7411494b...49de`, and no model, thinking, toolset, or bypass override. Native
+stdout/stderr/exit hash to `0f1d55ef...a801`, `e79cc69f...c6ef`, and
+`bde29436...0120`; the process exits 0 only because Agency replaces the
+unverified draft with its bounded block.
+
+Native state `1b0dbc22...f173` and Store `ae80fe76...1bd3` both pass SQLite
+quick-check. Offline inspection proves the selected 2,659-byte
+`accessibility-auditor` card `c3cfc098...5848` occurs exactly once in the
+12,397-byte first API payload. Correlation `5c85c67a...f2bf` binds accepted
+selection/load, all five required Agency alias groups including the reranker,
+and terminal finalization `8dfef4b6...a17` with
+`missing=[actual_model_selected]`. Hermes made six progressive tool searches
+but did not perform the explicitly instructed `agency_finalize` search or
+call; it then made one prompt-prohibited terminal call. Plugin doctor still
+proves one registered tool and eight hooks. This isolates nondeterministic
+model compliance after successful routing and prompt visibility; no product
+wiring defect, new model choice, configuration mutation, or AR item is claimed.
