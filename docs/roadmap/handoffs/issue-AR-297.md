@@ -3,7 +3,7 @@ title: "AR-297 active recovery capsule"
 status: active
 category: roadmap
 created: 2026-08-25
-updated: 2026-08-27
+updated: 2026-08-28
 tags: [handoff, containers, unattended, codex, claude, hermes, openclaw, release]
 related:
   - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
@@ -25,8 +25,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-297
 branch: codex/ar297-host-live-closure
-evidence_commit: aead84d0c89d13002d67d0a25d6978c8e6fca05e
-minimum_ledger_commit: b25951bae8091b9906ffad628ac85e64afb4bc62
+evidence_commit: f6870aa69e69fb68977fbb18c2e8565e9b62b9fd
+minimum_ledger_commit: 33d9503bc5b7ec711466232e5606d82c4eb32966
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 ---
@@ -37,10 +37,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 
 - Work only in `/tmp/agency-runtime-ar297.WQUbF2`; never touch the shared
   checkout. Host-live closure branch starts at `origin/main` `87231198`.
-- All scoped matrix rows pass; final audit `3c82c16d...cd79` returns Linux
-  **GO**. Clean reviewed head is `3a9a09c2`.
-- AR-330 projects the real 0.150.1 role, nickname, activity, user-private-group,
-  strict-lineage, and host-local rollout-filename shapes.
+- Prior exact matrix passed at `e0b0b25c`; AR-330 refresh now closes its repaired
+  0.150.1 live canary. Ordinary host rows and final gates require fresh proof.
+- Clean source/ledger is `f6870aa6` / `33d9503b`; no uncommitted work exists.
 
 ## completed-evidence
 
@@ -100,39 +99,38 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   sole LiteLLM host alias, thinking off, nonempty native response, accepted
   Store load/all Agency route receipts, unchanged config, and the explicit
   no-channel active-run limitation.
-- Exact host refresh `68822689...33af` exits 1 only for normal attended Codex
-  activation; Hermes, OpenClaw, Claude, and dashboard complete. Read-only
-  attestation `64564e4a...bc24` exits 0 and binds wheel `75d63ff9...3762`,
-  mode-0600 config `a4e213d6...97348`, all four final bundles, private runtime
-  `d054649e...d3d7`, active zero-restart systemd-user dashboard, and restarted
-  healthy OpenClaw receipt `561de9bd...df54`.
-- HTTP/browser proofs `26923d58...bb2`/`65162e02...e32c` exit 0: auth is
-  401/200 no-store, the exact 2,659-byte prompt `c3cfc098...5848` is fully
-  visible, and screenshot `222d5109...b5ac` is retained without its token.
-- Optional host Codex verifier `933bc916...bb4` fails before model invocation
-  because attended hook trust is not ready; it changes nothing and uses no bypass.
 - Teardown `40fa5062...1dc4` removes all 47 exact labelled containers with zero
   survivors; five images remain at `5c998f61...e276`, and host services stay healthy.
 - Approved Qwen3 Coder aliases apply/verify `d69aa6b6...af4d`/`a1e2381d...a5dd`
   exit 0 at 65,536/no-thinking; unrelated aliases are unchanged. OpenClaw's
   three-pointer config transition/verify `e97e02e2...deba`/`a141d193...e1ce`
   exit 0; two stale-metadata attempts rolled back.
+- Exact `33d9503b` wheel/sdist are `141b1c07...e87f9`/`4fa78570...385f`;
+  canonical build, strict Twine, verification, isolated install, and pip check pass.
+- Fresh host bundles are Hermes `90ea1533...e2a2`, OpenClaw `87c5a833...0955`,
+  Codex `bf284699...9d20d`, and Claude `ab1fd64d...a7b9`; runtime is
+  `59c12970...dcf2`, dashboard is active, and OpenClaw RPC `3d782263...c0ac` passes.
+- No-bypass Codex receipt `eca6fcb4...647c` exits 0 at trace
+  `01a048d3-5687-7c11-a0a9-b1f3abbb7402`; rollouts
+  `299542c3...7158`/`a8525798...c707` bind the real child and finalization.
+- Private Store `cbaec4a8...01f8` passes quick-check; correlation
+  `0fe1ac45...a34b` binds accepted selection/load, alias receipts, and `missing=[]`.
 
 ## exact-blocker
 
-- No-bypass verifier `ef88754e...f2a4` passes 8/8 trust, then exits 1 because
-  child `01a048b6...1301` receives generic identity.
-- Rollouts `7a966722...3a9`/`8aa757e2...8f75` isolate the 0.149-only lineage and
-  UTC reader; AR-330 resolves the real child and 103 tests pass. Rebuild/live
-  proof and immediate fresh trust are next.
+- AR-330's prior `ef88754e...f2a4` failure is resolved by exact live receipt
+  `eca6fcb4...647c`; no activation or model/config choice remains blocked.
+- Fresh ordinary Codex, Claude, Hermes, and OpenClaw process proofs, dashboard
+  proof, named gates, record audit, and authorized merge remain.
 - Tracker audit `413c8a3a...1600` retains pre-existing parity debt; tracker
   writes/closure, signing, tagging, and release publication remain unauthorized.
 
 ## same-task-continuity
 
-- Exact artifacts: `~/.agency-runtime/release-artifacts/dist-e0b0b25c30083b09743fe1a04f2a0ad4cdf4e533-linux-ar297`.
-- Evidence/helpers: `~/.agency-runtime/evidence/ar297-go-e0b0b25c`, `/tmp/agency-runtime-ar297-evidence.pcLOZn/`.
-- Protected Python: `~/.agency-runtime-ci/ar297-release-0827/venv/bin/python`.
+- Exact artifacts: `~/.agency-runtime/release-artifacts/dist-33d9503bc5b7ec711466232e5606d82c4eb32966`.
+- Candidate/evidence: `~/.agency-runtime/release-venvs/ar297-33d9503b`,
+  `~/.agency-runtime/evidence/ar297-host-live-20260828`.
+- Helpers/tooling: `/tmp/agency-runtime-ar297-evidence.pcLOZn/`.
 - Zero AR-297 containers remain; five exact images and healthy host services remain.
 
 ## next-bounded-work-package
@@ -146,8 +144,8 @@ unchecked line. Mark an item complete only with exact retained evidence.
 2. [x] Repair AR-329 with a mode-0400 regression and focused Codex suites.
 3. [x] Commit the repair ledger, build/install the exact candidate, and restore
    healthy dashboard/OpenClaw services.
-4. [ ] Commit/build/install the completed AR-330 lineage repair, request fresh
-   Codex trust immediately, then rerun all four harness/Store/prompt proofs.
+4. [ ] Build/install/trust/live canary now pass; rerun all four ordinary
+   harness/Store/full-prompt proofs from the exact host candidate.
 5. [ ] Run every named repository gate, record exact hashes/exits, merge the
    authorized PR without bypass, and issue the final Linux-scoped verdict.
 

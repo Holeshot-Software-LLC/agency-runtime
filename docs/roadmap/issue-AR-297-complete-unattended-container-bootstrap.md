@@ -2032,3 +2032,41 @@ shape plus Codex's host-local filename spelling, while preserving exact
 0.149.1 and fail-closed drift behavior. The real retained child now resolves
 its exact parent and 103 focused warning-strict tests pass; rebuild, fresh
 trust, and live staffing verification remain pending.
+
+Clean ledger `33d9503bc5b7ec711466232e5606d82c4eb32966` now produces
+portable wheel `141b1c07...e87f9` and sdist `4fa78570...385f`; canonical
+build, strict Twine, independent distribution verification, an isolated
+Python 3.12 wheel install, and `pip check` all exit 0. The owner-private
+candidate venv is `~/.agency-runtime/release-venvs/ar297-33d9503b`; the
+installed immutable runtime hashes to `59c12970...dcf2`. Exact config remains
+mode 0600 at `a4e213d6...7348`, with strict assurance, additive recall, only
+LiteLLM aliases, and no Jina route.
+
+The bounded host transaction installs fresh Hermes, OpenClaw, Codex, and
+Claude bundles `90ea1533...e2a2`, `87c5a833...0955`,
+`bf284699...9d20d`, and `ab1fd64d...a7b9`. Receipt
+`d68c4641...21ad` exits 1 only for the attended Codex trust gate and the
+deliberately non-durable process-local LiteLLM credential at the dashboard
+service boundary; all four host filesystem/native transactions complete.
+A credential-free idempotent Hermes/dashboard transaction
+`a3ddb605...7684` exits 0 and starts the candidate dashboard. OpenClaw's
+supported stop/install/start sequence retains its immediate not-ready status
+as a bounded negative; second deep authenticated RPC receipt
+`3d782263...c0ac` exits 0 with active/running state, zero restarts, clean
+config audit, and no version drift.
+
+After the fresh attended eight-hook grant, immediately-preceding telemetry
+reported 57.8 percent remaining. Exact no-bypass activation receipt
+`eca6fcb4...647c` exits 0 for Codex 0.150.1 and persists current-profile proof
+`93e3c88d...7635` at trace
+`01a048d3-5687-7c11-a0a9-b1f3abbb7402`. It binds accepted selection/load of
+`code-reviewer`, one real child, native delivery, four successful alias-only
+generation/embedding/critic receipts, and completed finalization
+`aae6686c...4392` with `missing=[]`; no activation bypass, adapter mutation,
+or configuration mutation occurs. Parent/child rollouts hash to
+`299542c3...7158` and `a8525798...c707`. Private Store backup
+`cbaec4a8...01f8` passes quick-check, and sanitized correlation receipt
+`0fe1ac45...a34b` binds the exact run, route, specialist, model receipts, and
+accepted response hash. The AR-330 live gate is closed; fresh ordinary
+Codex/Claude/Hermes/OpenClaw proofs, authenticated dashboard proof, named
+repository gates, final record audit, and authorized merge remain.
