@@ -1378,6 +1378,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `a4db8468` | 2026-08-28 | docs(ar297): prove authenticated host dashboard | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `43b67657` | 2026-08-28 | docs(ar297): record final repository gates | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `988a8f0c` | 2026-08-28 | docs(ar297): record final parity audit | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `dc8bbde6` | 2026-08-28 | Merge pull request #339 from Holeshot-Software-LLC/codex/ar297-host-live-closure | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `7b7fd6a7` | 2026-08-28 | docs(ar297): record merged-main host installation | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
