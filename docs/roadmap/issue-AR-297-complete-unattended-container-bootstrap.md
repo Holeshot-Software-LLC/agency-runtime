@@ -159,7 +159,8 @@ reach native registration completeness in production-container mode.
       registration, loading, and a bounded Agency turn without human input.
 - [x] Release-artifact and remaining Linux release-checklist gates pass on the exact
       merge candidate.
-- [x] Tracker issue #335 is linked and remains open while acceptance is pending.
+- [x] Tracker issue #335 is linked; its authorization-pending closure remains
+      separate from the completed Linux evidence scope.
 
 ## Verification evidence
 
@@ -1947,3 +1948,30 @@ remains exact at `a4e213d6...97348`; evidence manifest
 `7fdd19af...7378` and package telemetry `1841465e...11be` both exit 0. The
 four-harness later-ordinary matrix is therefore complete; teardown and final
 record audit remain.
+
+Final teardown first resolves exactly 47 unique full container IDs and
+independently binds every name and `dev.agency-runtime.proof=AR-297` label at
+receipt `d089a235...c6af`. Removal returns the same ordered 47-ID set, empty
+stderr, and exit 0; both filtered post-removal inventories are empty.
+Independent completion receipt `40fa5062...1dc4` exits 0. No image is removed:
+the five retained candidate images remain bound to exact commit `e0b0b25c` and
+wheel `75d63ff9...3762` at `5c998f61...e276`. Post-teardown host attestation
+`64564e4a...bc24`, authenticated dashboard proof `26923d58...bb2`, and
+OpenClaw deep status `33f99caf...86e0` all exit 0; the dashboard remains exact
+and OpenClaw remains running with healthy authenticated RPC. Teardown manifest
+`3fb64c9a...d009` and telemetry `f91b2bc3...1dea` exit 0.
+
+Independent final audit `3c82c16d...cd79` exits 0 and returns Linux-scoped
+**GO**. It revalidates exact source/artifacts/config, mode 0600, no Jina,
+LiteLLM loopback-only inference, all four ordinary receipts, all named gate
+exits and their manifest, exact host/dashboard/OpenClaw health, five retained
+images, and zero labelled container survivors. Cross-OS artifacts, signing,
+tracker writes or closure, push/PR/merge/tag/publication/release, and the
+optional exhaustive hosted workflow were not performed and are not Linux-only
+GO gates.
+
+The final read-only tracker audit exits 1 with stderr
+`413c8a3a...1600`: it reports pre-existing repository-wide missing remote
+issues and unrelated state/URL/label mismatches, but no AR-297 identity, URL,
+or label mismatch. Repairing that external governance debt requires tracker
+writes that were not authorized and remains explicitly outside this Linux GO.

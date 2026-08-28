@@ -34,13 +34,12 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 
 ## checkpoint
 
-- Work only in `/tmp/agency-runtime-ar297.WQUbF2` on
-  `codex/ar297-production-container-live-evidence`, based on `origin/main`
-  `0a23983a`. Never touch the shared checkout.
-- Clean ledger `053ce622` precedes the final Claude ordinary PASS. All four
-  final ordinary rows, the exact host/dashboard row, and named gates now pass.
-- Linux remains **NO-GO**. AR-297/#335 remain open. No tracker write, push, PR,
-  merge, tag, signing, publication, release, or hosted workflow is authorized.
+- Work only in `/tmp/agency-runtime-ar297.WQUbF2` on the AR-297 branch based on
+  `origin/main` `0a23983a`; never touch the shared checkout.
+- Clean ledger `ce21847b` precedes exact teardown and final audit. All scoped
+  matrix rows pass; final audit `3c82c16d...cd79` returns Linux **GO**.
+- AR-297/#335 remain open only for authorization-pending external records; no
+  tracker write, push, PR, merge, tag, signing, publication, release, or hosted workflow ran.
 
 ## completed-evidence
 
@@ -105,6 +104,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   visible, and screenshot `222d5109...b5ac` is retained without its token.
 - Optional host Codex verifier `933bc916...bb4` fails before model invocation
   because attended hook trust is not ready; it changes nothing and uses no bypass.
+- Teardown `40fa5062...1dc4` removes all 47 exact labelled containers with zero
+  survivors; five images remain at `5c998f61...e276`, and host services stay healthy.
 - Approved Qwen3 Coder aliases apply/verify `d69aa6b6...af4d`/`a1e2381d...a5dd`
   exit 0 at 65,536/no-thinking; unrelated aliases are unchanged. OpenClaw's
   three-pointer config transition/verify `e97e02e2...deba`/`a141d193...e1ce`
@@ -112,9 +113,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 
 ## exact-blocker
 
-- Checkpoint the complete four-harness matrix, then finish teardown and audit.
-- Cross-OS artifacts, signing, tracker parity, push/PR/merge/tag/publication,
-  release, and exhaustive dispatch are unauthorized, not Linux-only GO gates.
+- No unresolved Linux-only GO gate remains.
+- Read-only tracker audit exits 1 at `413c8a3a...1600` for pre-existing
+  repository-wide parity debt; no tracker write is authorized.
+- Cross-OS artifacts, signing, release actions, and hosted workflow remain outside Linux GO.
 
 ## same-task-continuity
 
@@ -122,7 +124,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Evidence: `~/.agency-runtime/evidence/ar297-go-e0b0b25c`; secret-safe helpers
   remain `/tmp/agency-runtime-ar297-evidence.pcLOZn/`.
 - Protected Python: `~/.agency-runtime-ci/ar297-release-0827/venv/bin/python`.
-- Exactly 47 labelled containers remain; six obsolete OpenClaw witnesses are stopped. Remove all at teardown.
+- Zero AR-297 containers remain; five exact images and healthy host services remain.
 
 ## next-bounded-work-package
 
@@ -141,11 +143,11 @@ unchecked line. Mark an item complete only with exact retained evidence.
 7. [x] Refresh the exact candidate on this Linux host and prove the private
    authenticated dashboard plus the approved service-manager contract.
 8. [x] Rerun every named repository gate and record exact exits and hashes.
-9. [ ] Update canonical issues/capsule and make each required substantive and
+9. [x] Update canonical issues/capsule and make each required substantive and
    `docs(worklog):` checkpoint pair.
-10. [ ] Remove every container labelled `AR-297`; retain teardown evidence and
+10. [x] Remove every container labelled `AR-297`; retain teardown evidence and
     prove zero labelled survivors.
-11. [ ] Issue the Linux-scoped GO/NO-GO and complete the persistent goal only
+11. [x] Issue the Linux-scoped GO/NO-GO and complete the persistent goal only
     when every in-scope item above is truthfully closed.
 
 ## verification
