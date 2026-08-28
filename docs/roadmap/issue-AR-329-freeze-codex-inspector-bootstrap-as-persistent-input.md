@@ -72,3 +72,15 @@ bounded protocol, and strict eight-hook trust predicate unchanged.
 - [ ] Every named repository gate passes for the exact candidate.
 - [ ] A same-repository tracker issue is created and linked after explicit
       authorization.
+
+## Verification
+
+Substantive repair `aead84d0c89d13002d67d0a25d6978c8e6fca05e` and ledger
+`b25951bae8091b9906ffad628ac85e64afb4bc62` pass 127 focused warning-strict
+Codex trust and activation tests. The exact portable wheel and source archive
+hash to `5f2c9b5d...4e33` and `24875bca...eff7`; canonical build, strict Twine,
+and independent distribution verification exit 0. Host refresh receipt
+`10c50ca...82fb` installs the four exact bundles and dashboard. The corrected
+inspector distinguishes the post-refresh operator state truthfully: all eight
+hooks are present and `modified`, so a fresh attended trust grant is required
+before the no-bypass live verifier can run.

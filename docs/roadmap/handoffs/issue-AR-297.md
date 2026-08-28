@@ -25,8 +25,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-297
 branch: codex/ar297-host-live-closure
-evidence_commit: 3a9a09c2e258f88bec6526e91db0b8cb54ae1ea9
-minimum_ledger_commit: 3a9a09c2e258f88bec6526e91db0b8cb54ae1ea9
+evidence_commit: aead84d0c89d13002d67d0a25d6978c8e6fca05e
+minimum_ledger_commit: b25951bae8091b9906ffad628ac85e64afb4bc62
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 ---
@@ -39,8 +39,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   checkout. Host-live closure branch starts at `origin/main` `87231198`.
 - All scoped matrix rows pass; final audit `3c82c16d...cd79` returns Linux
   **GO**. Clean reviewed head is `3a9a09c2`.
-- PR #337 merged without bypass as `591aad207eadfe36671d374ff2b488d8bbd6a6a5`.
-  The merge's second parent is exact head `3a9a09c2`; ancestry exits 0.
+- AR-329 repair/ledger are `aead84d0`/`b25951ba`; exact wheel/sdist hashes are
+  `5f2c9b5d...4e33`/`24875bca...eff7` and both verification exits are 0.
 
 ## completed-evidence
 
@@ -120,13 +120,12 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 
 ## exact-blocker
 
-- The added existing-host matrix is in progress: Hermes and OpenClaw host
-  launch configuration is repaired; exact ordinary turns remain to rerun.
-- AR-329 repairs the Codex verifier's misclassification of its mode-0400 Python
-  bootstrap; exact rebuilt/install/live verification remains.
-- Read-only tracker audit exits 1 at `413c8a3a...1600` for pre-existing
-  repository-wide parity debt; no tracker write is authorized.
-- Signing, tagging, release publication, and tracker closure were not performed.
+- Exact host refresh `10c50ca...82fb` installs all four bundles and the active
+  dashboard; OpenClaw restarts healthy at authenticated RPC port 18789.
+- Codex now reports all 8 refreshed hooks `modified`, none missing; one fresh
+  attended trust grant is the current operator gate.
+- Tracker audit `413c8a3a...1600` retains pre-existing parity debt; tracker
+  writes/closure, signing, tagging, and release publication remain unauthorized.
 
 ## same-task-continuity
 
@@ -145,9 +144,11 @@ unchecked line. Mark an item complete only with exact retained evidence.
    secret source without copying or printing the key; align only OpenClaw's
    client gateway port with its healthy service.
 2. [x] Repair AR-329 with a mode-0400 regression and focused Codex suites.
-3. [ ] Commit the repair ledger, build/install the exact candidate, and rerun
-   ordinary Codex, Claude, Hermes, OpenClaw, Store, and dashboard proofs.
-4. [ ] Run every named repository gate, record exact hashes/exits, merge the
+3. [x] Commit the repair ledger, build/install the exact candidate, and restore
+   healthy dashboard/OpenClaw services.
+4. [ ] After fresh attended Codex trust, rerun all four ordinary harness,
+   Store, workforce-prompt, and authenticated-dashboard proofs.
+5. [ ] Run every named repository gate, record exact hashes/exits, merge the
    authorized PR without bypass, and issue the final Linux-scoped verdict.
 
 ## verification

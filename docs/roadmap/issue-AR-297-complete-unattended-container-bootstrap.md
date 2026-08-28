@@ -2008,3 +2008,14 @@ and clean, then merged without bypass at `2026-08-28T03:55:35Z` as
 `origin/main` `0a23983a` and exact reviewed head `3a9a09c2`; the post-fetch
 ancestry check exits 0. Tracker #335 remains open, and no tag, signing, release,
 or tracker closure was performed.
+
+The owner subsequently extended the accepted container scope to an exact
+ordinary-process proof on this existing Linux host. AR-329 repair `aead84d0`
+corrects the Codex inspector's non-executable-bootstrap classification without
+weakening its artifact guard; 127 focused warning-strict tests pass. Clean
+ledger `b25951ba` produces wheel/sdist `5f2c9b5d...4e33`/`24875bca...eff7`,
+with canonical build, strict Twine, and independent verification exits 0.
+Host refresh `10c50ca...82fb` installs all four exact bundles and the active
+dashboard. OpenClaw returns to healthy authenticated RPC on port 18789. Codex
+reports the refreshed inventory exactly as eight `modified` hooks with none
+missing, making one fresh attended trust grant the explicit operator gate.
