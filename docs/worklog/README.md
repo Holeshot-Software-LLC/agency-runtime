@@ -1377,6 +1377,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `6d8c97d0` | 2026-08-28 | docs(ar297): prove ordinary OpenClaw host loading | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `a4db8468` | 2026-08-28 | docs(ar297): prove authenticated host dashboard | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `43b67657` | 2026-08-28 | docs(ar297): record final repository gates | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `988a8f0c` | 2026-08-28 | docs(ar297): record final parity audit | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
