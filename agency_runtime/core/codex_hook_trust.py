@@ -715,7 +715,7 @@ def inspect_codex_hook_trust(
     from agency_runtime.core.installer_contracts import CODEX_HOOK_EVENTS
     from agency_runtime.core.process_argv import (
         PreparedProcessArgv,
-        freeze_process_argv,
+        freeze_persistent_process_argv,
         isolated_python_argv,
     )
 
@@ -762,7 +762,15 @@ def inspect_codex_hook_trust(
             # Both artifacts now come from the published projection or from an
             # already-frozen hook process, so repository forbidden roots add
             # nothing: neither can resolve inside the checkout by construction.
-            worker_argv = freeze_process_argv(worker_argv, forbidden_roots=())
+            # The bootstrap is a Python input, not a directly executed binary,
+            # and the sealed projection intentionally installs it without an
+            # execute bit. Persistent freezing still binds its path, metadata,
+            # ownership, and content hash while requiring only argv[0] to be
+            # executable.
+            worker_argv = freeze_persistent_process_argv(
+                worker_argv,
+                forbidden_roots=(),
+            )
         except (OSError, TypeError, ValueError):
             return _base_report(len(expected_events), error="inspection_failed")
     try:

@@ -12,6 +12,7 @@ related:
   - docs/roadmap/issue-AR-326-admit-terminal-codex-host-artifact-collection.md
   - docs/roadmap/issue-AR-327-replay-codex-delivery-receipts-across-append-only-completion.md
   - docs/roadmap/issue-AR-328-seal-hermes-install-tree.md
+  - docs/roadmap/issue-AR-329-freeze-codex-inspector-bootstrap-as-persistent-input.md
   - docs/decisions/0179-admit-exact-codex-canary-delivery-at-subagent-start.md
   - docs/decisions/0188-separate-codex-hook-parent-and-child-identities.md
   - docs/decisions/0189-admit-only-accepted-terminal-codex-parents-for-post-return-collection.md
@@ -23,7 +24,7 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-297
-branch: codex/ar297-publish-closure
+branch: codex/ar297-host-live-closure
 evidence_commit: 3a9a09c2e258f88bec6526e91db0b8cb54ae1ea9
 minimum_ledger_commit: 3a9a09c2e258f88bec6526e91db0b8cb54ae1ea9
 hard_checkpoint_percent: 50
@@ -35,7 +36,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 ## checkpoint
 
 - Work only in `/tmp/agency-runtime-ar297.WQUbF2`; never touch the shared
-  checkout. Publication-closure branch starts at `origin/main` `591aad20`.
+  checkout. Host-live closure branch starts at `origin/main` `87231198`.
 - All scoped matrix rows pass; final audit `3c82c16d...cd79` returns Linux
   **GO**. Clean reviewed head is `3a9a09c2`.
 - PR #337 merged without bypass as `591aad207eadfe36671d374ff2b488d8bbd6a6a5`.
@@ -119,7 +120,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 
 ## exact-blocker
 
-- No unresolved Linux runtime or PR publication gate remains.
+- The added existing-host matrix is in progress: Hermes and OpenClaw host
+  launch configuration is repaired; exact ordinary turns remain to rerun.
+- AR-329 repairs the Codex verifier's misclassification of its mode-0400 Python
+  bootstrap; exact rebuilt/install/live verification remains.
 - Read-only tracker audit exits 1 at `413c8a3a...1600` for pre-existing
   repository-wide parity debt; no tracker write is authorized.
 - Signing, tagging, release publication, and tracker closure were not performed.
@@ -137,14 +141,14 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 After compaction, reread this capsule and `git status`, then resume at the first
 unchecked line. Mark an item complete only with exact retained evidence.
 
-1. [x] Commit the bounded disposable-Hermes-guard smoke repair and its recovery
-   ledger after focused and named repository gates pass.
-2. [x] Push the repair, require fresh Ubuntu distribution and aggregate CI
-   success, and confirm all PR checks are terminal green or expected skips.
-3. [x] Merge PR #337 without bypass, fetch `origin/main`, and prove the merge
-   commit contains the exact reviewed head.
-4. [x] Retain the Linux-scoped GO; do not tag, sign, publish a release, or close
-   tracker #335 without separate authorization.
+1. [x] Point ordinary Hermes at the existing owner-private OpenClaw/LiteLLM
+   secret source without copying or printing the key; align only OpenClaw's
+   client gateway port with its healthy service.
+2. [x] Repair AR-329 with a mode-0400 regression and focused Codex suites.
+3. [ ] Commit the repair ledger, build/install the exact candidate, and rerun
+   ordinary Codex, Claude, Hermes, OpenClaw, Store, and dashboard proofs.
+4. [ ] Run every named repository gate, record exact hashes/exits, merge the
+   authorized PR without bypass, and issue the final Linux-scoped verdict.
 
 ## verification
 
