@@ -1364,6 +1364,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `e5e5e7e4` | 2026-08-27 | docs(ar297): record merged Linux delivery | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-328](../roadmap/issue-AR-328-seal-hermes-install-tree.md) | null |
 | `87231198` | 2026-08-28 | Merge pull request #338 from Holeshot-Software-LLC/codex/ar297-publish-closure | null | null |
 | `aead84d0` | 2026-08-28 | fix(codex): freeze inspector bootstrap as persistent input [AR-329] | [AR-329](../roadmap/issue-AR-329-freeze-codex-inspector-bootstrap-as-persistent-input.md) | null |
+| `c1b4e713` | 2026-08-28 | docs(ar297): checkpoint attended Codex trust gate | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-329](../roadmap/issue-AR-329-freeze-codex-inspector-bootstrap-as-persistent-input.md) | null |
+| `58301299` | 2026-08-28 | docs(ar297): bound trust-gate capsule | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-329](../roadmap/issue-AR-329-freeze-codex-inspector-bootstrap-as-persistent-input.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
