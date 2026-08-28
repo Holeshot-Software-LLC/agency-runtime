@@ -2507,3 +2507,15 @@ leader with 7.179-second planning, 1.535-second recruitment, 2.512-second
 critique, 1.405-second reranking, and 0.818-second judging, all at 100 points;
 it remains ineligible for both full hiring-contract stages. Every MiniMax alias
 is removed after its nine-cell slice.
+
+Z.AI completes all 135 frozen cells exactly once. Cumulative ledger
+`636a1dec...5bf5` adds 100 structured completions, 73 strict eligibilities, and
+35 bounded transport/JSON failures across 15 documented input-mode candidates.
+Regular GLM-5.3 passes compact stages but not planner or full hiring generation;
+the Flash variants are slower and no more reliable. GLM-5.2 `low` and `medium`
+(both effective `high`) produce the best Z.AI planners at 17.044/17.657 seconds,
+but every 5.2 input fails the full hiring generator. GLM-5-Turbo off is
+inconsistent and on is slow at 32.780/32.862 seconds for planning/recruitment;
+neither is eligible on hiring. Z.AI therefore contributes only compact-stage
+fallback candidates, subject to cross-provider combined ranking. Every alias is
+deleted after its nine-cell slice.
