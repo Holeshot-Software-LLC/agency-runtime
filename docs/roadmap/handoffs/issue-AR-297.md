@@ -26,7 +26,7 @@ type: handoff
 issue_id: AR-297
 branch: codex/ar297-host-live-closure
 evidence_commit: f6870aa69e69fb68977fbb18c2e8565e9b62b9fd
-minimum_ledger_commit: 33d9503bc5b7ec711466232e5606d82c4eb32966
+minimum_ledger_commit: e81da27a69e81220b9cf0e84dc924fd008b03db6
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 ---
@@ -37,8 +37,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 
 - Work only in `/tmp/agency-runtime-ar297.WQUbF2`; never touch the shared
   checkout. Host-live closure branch starts at `origin/main` `87231198`.
-- Prior exact matrix passed at `e0b0b25c`; AR-330 refresh now closes its repaired
-  0.150.1 live canary. Ordinary host rows and final gates require fresh proof.
+- AR-330's repaired 0.150.1 canary and the fresh ordinary Codex row pass.
+  Claude, Hermes, OpenClaw, dashboard, and final gates require fresh proof.
 - Clean source/ledger is `f6870aa6` / `33d9503b`; no uncommitted work exists.
 
 ## completed-evidence
@@ -86,10 +86,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   3,227-byte card, all five alias receipts, accepted completion, `missing=[]`,
   native/Store response equality, exact config, and no bypass. The prior
   untrusted-`/tmp` Store attempt remains an honest bounded negative.
-- Final-candidate Codex receipt `8b372e4c...2423` exits 0 for session
-  `01a04546-933a-7c61-93a8-fb6129ffe24d`: one exact 2,659-byte card, four
-  successful alias-only receipts, accepted completion, native/Store response
-  equality, read-only/no-delegation execution, and unchanged exact runtime.
+- Fresh ordinary Codex verifier `db8f6780...e2f3` exits 0 for session
+  `01a048dd-10f0-77e2-94bd-d5e4c4572a4f`: exact 2,659-byte card, four
+  alias-only receipts, accepted completion, `missing=[]`, native/Store response
+  equality, read-only/no-delegation execution, and exact runtime/config.
 - Final-candidate Hermes receipt `9ee57328...f2f7` exits 0 for session
   `20260827_221502_139df0`: one exact 3,227-byte card, all five alias groups,
   accepted completion, `missing=[]`, exact visible accepted replay, healthy
@@ -120,8 +120,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 
 - AR-330's prior `ef88754e...f2a4` failure is resolved by exact live receipt
   `eca6fcb4...647c`; no activation or model/config choice remains blocked.
-- Fresh ordinary Codex, Claude, Hermes, and OpenClaw process proofs, dashboard
-  proof, named gates, record audit, and authorized merge remain.
+- Fresh ordinary Claude, Hermes, and OpenClaw process proofs, dashboard proof,
+  named gates, record audit, and authorized merge remain.
 - Tracker audit `413c8a3a...1600` retains pre-existing parity debt; tracker
   writes/closure, signing, tagging, and release publication remain unauthorized.
 
@@ -144,8 +144,8 @@ unchecked line. Mark an item complete only with exact retained evidence.
 2. [x] Repair AR-329 with a mode-0400 regression and focused Codex suites.
 3. [x] Commit the repair ledger, build/install the exact candidate, and restore
    healthy dashboard/OpenClaw services.
-4. [ ] Build/install/trust/live canary now pass; rerun all four ordinary
-   harness/Store/full-prompt proofs from the exact host candidate.
+4. [ ] Build/install/trust/canary and ordinary Codex pass; prove ordinary
+   Claude, Hermes, and OpenClaw Store/full-prompt rows on the host.
 5. [ ] Run every named repository gate, record exact hashes/exits, merge the
    authorized PR without bypass, and issue the final Linux-scoped verdict.
 

@@ -2070,3 +2070,19 @@ or configuration mutation occurs. Parent/child rollouts hash to
 accepted response hash. The AR-330 live gate is closed; fresh ordinary
 Codex/Claude/Hermes/OpenClaw proofs, authenticated dashboard proof, named
 repository gates, final record audit, and authorized merge remain.
+
+The first fresh later-ordinary host row passes on the same candidate. Normal
+Codex 0.150.1 session `01a048dd-10f0-77e2-94bd-d5e4c4572a4f` runs the exact
+824-byte direct-only task `3ef304e5...2dd3` under the user's unmodified
+`gpt-5.6-sol` model choice, `approval_policy=never`, and read-only sandbox; it
+makes no tool or collaboration call and exits 0. Native receipt
+`f4b845c8...7a82` proves one exact 2,659-byte `accessibility-auditor` card
+`c3cfc098...5848` in rollout `793448db...52d2`. Private Store
+`30f63fcf...6526` passes quick-check, and correlation `ecdc4998...22ec`
+binds trace `01a048dd-1171-7872-8125-00637de78618`, accepted selection/load,
+four successful alias-only generation/embedding/critic receipts, and
+finalization `8b42648c...4792` with `missing=[]`. The sole native response and
+Store response both hash to `572926de...0355`. Independent host verifier
+`db8f6780...e2f3` exits 0 and rechecks the exact bundle, immutable runtime,
+mode-0600 config, prompt, rollout, Store, and response equality. Claude,
+Hermes, and OpenClaw ordinary rows remain.
