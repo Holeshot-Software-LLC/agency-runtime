@@ -37,8 +37,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Work only in `/tmp/agency-runtime-ar297.WQUbF2` on
   `codex/ar297-production-container-live-evidence`, based on `origin/main`
   `0a23983a`. Never touch the shared checkout.
-- Clean ledger `9a87eb57` precedes the final OpenClaw ordinary PASS. Codex,
-  Hermes, and OpenClaw final ordinary rows now pass; Claude remains pending.
+- Clean ledger `053ce622` precedes the final Claude ordinary PASS. All four
+  final ordinary rows, the exact host/dashboard row, and named gates now pass.
 - Linux remains **NO-GO**. AR-297/#335 remain open. No tracker write, push, PR,
   merge, tag, signing, publication, release, or hosted workflow is authorized.
 
@@ -77,11 +77,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - OpenClaw dry-run truthfully leaves an empty runtime home at `8ffcb927...af70`;
   untouched R2 absence `5feaa49c...2cdd`, install `4debebf3...c748`, Store
   `c6da8137...0b12`, systemd, exact alias config, and 13-hook runtime all pass.
-- Claude R2 and refreshed R3 receipts `a712f945...ba82`/`ea44335e...71b7`
-  prove one exact 3,227-byte card and all five LiteLLM routes. Local status
-  `ca740051...3af1` is not provider-valid: native stdout/exit
-  `456775a6...e4b3`/`85acfd2e...5409` retain the OAuth refresh failure, so no
-  unchanged R4 is admissible; package telemetry `b755a171...193c` is 56.9%.
+- Final Claude receipt `7c4968e8...4dee` exits 0 for session `.303`: one exact
+  3,227-byte card, all five alias receipts, accepted completion, `missing=[]`,
+  native/Store response equality, exact config, and no bypass. The prior
+  untrusted-`/tmp` Store attempt remains an honest bounded negative.
 - Final-candidate Codex receipt `8b372e4c...2423` exits 0 for session
   `01a04546-933a-7c61-93a8-fb6129ffe24d`: one exact 2,659-byte card, four
   successful alias-only receipts, accepted completion, native/Store response
@@ -113,8 +112,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 
 ## exact-blocker
 
-- Complete Claude's pending first-party login and final ordinary row, then
-  finish records and teardown.
+- Checkpoint the complete four-harness matrix, then finish teardown and audit.
 - Cross-OS artifacts, signing, tracker parity, push/PR/merge/tag/publication,
   release, and exhaustive dispatch are unauthorized, not Linux-only GO gates.
 
@@ -138,7 +136,7 @@ unchecked line. Mark an item complete only with exact retained evidence.
    current-profile attestation and no activation bypass.
 5. [x] Refresh separate clean exact Codex, Claude, Hermes, and OpenClaw
    systemd production-container installs.
-6. [ ] Repeat ordinary unattended processes for the final four installs; retain
+6. [x] Repeat ordinary unattended processes for the final four installs; retain
    native artifacts, Store correlations, and prompt visibility.
 7. [x] Refresh the exact candidate on this Linux host and prove the private
    authenticated dashboard plus the approved service-manager contract.

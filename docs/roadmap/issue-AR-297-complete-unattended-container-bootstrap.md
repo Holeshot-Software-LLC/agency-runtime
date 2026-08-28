@@ -155,7 +155,7 @@ reach native registration completeness in production-container mode.
       parser closure, and fail-closed activation.
 - [x] A clean Linux Codex container proves the exact transaction, then a later
       ordinary Conveyor-equivalent Codex invocation loads Agency unattended.
-- [ ] Clean Linux Claude Code, Hermes, and OpenClaw containers prove native
+- [x] Clean Linux Claude Code, Hermes, and OpenClaw containers prove native
       registration, loading, and a bounded Agency turn without human input.
 - [x] Release-artifact and remaining Linux release-checklist gates pass on the exact
       merge candidate.
@@ -1927,3 +1927,23 @@ green and kills 167/167 mutations with source unchanged. The exact gate
 receipts are indexed by `f9e37789...4618`; the initial policy checker without
 `PYTHONPATH` and decision evaluator without private umask are retained as
 environmental negative receipts before their passing reruns.
+
+The operator completed Claude's first-party subscription login, and the
+credential was copied mode 0600 into only the already-installed final Claude
+proof container. The first authenticated invocation is retained as a bounded
+negative: its `/tmp` Store location correctly failed the product trust
+boundary before a valid Agency load. Corrected ordinary Claude Code 2.1.239
+session `29700000-0000-4000-8000-000000000303` uses `dontAsk`, no model
+override, no activation bypass, and an owner-private Store directory. Native
+stdout, stderr, and exit hash to `fed6961c...d406`, `e3b0c442...b855`, and
+`bde29436...0120`; the exact 3,227-byte
+`section-508-accessibility-specialist` card hashes to `589a6e0c...303e`.
+Independent verifier `7c4968e8...4dee` exits 0 and binds trace
+`21e96faa-84bb-40cc-a398-0df067f636d4`, one completed run, one accepted route,
+one specialist load, five successful receipts across the exact generation,
+embedding, reranker, and critic LiteLLM aliases, terminal acceptance with
+`missing=[]`, and native/Store response hash `74da8abb...9cb`. Post-live config
+remains exact at `a4e213d6...97348`; evidence manifest
+`7fdd19af...7378` and package telemetry `1841465e...11be` both exit 0. The
+four-harness later-ordinary matrix is therefore complete; teardown and final
+record audit remain.
