@@ -16,7 +16,7 @@ type: worklog
 commit: 68db507633774e5f78667976dffbed6cbc7aaaba
 short: 68db5076
 date: 2026-08-27
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/337
 related_issues:
   - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
   - docs/roadmap/issue-AR-327-replay-codex-delivery-receipts-across-append-only-completion.md

@@ -21,7 +21,7 @@ type: worklog
 commit: a5c1ad536f13c51ceaa5c1c13d2570b7c166f0a7
 short: a5c1ad53
 date: 2026-08-27
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/337
 related_issues:
   - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
   - docs/roadmap/issue-AR-322-bind-codex-child-session-to-canary-parent.md

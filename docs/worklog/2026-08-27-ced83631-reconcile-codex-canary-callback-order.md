@@ -22,7 +22,7 @@ type: worklog
 commit: ced8363177d6da1863969badc74e84c87e37dd34
 short: ced83631
 date: 2026-08-27
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/337
 related_issues:
   - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
   - docs/roadmap/issue-AR-321-select-reliable-free-litellm-child-judge.md

@@ -19,7 +19,7 @@ type: worklog
 commit: 4b346af8dae605e6187b292bd46664dad4ab98df
 short: 4b346af8
 date: 2026-08-26
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/337
 related_issues:
   - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
   - docs/roadmap/issue-AR-309-restore-codex-0149-activation-proof.md

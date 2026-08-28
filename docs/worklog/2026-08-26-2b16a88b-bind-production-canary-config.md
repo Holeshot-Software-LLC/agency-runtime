@@ -16,7 +16,7 @@ type: worklog
 commit: 2b16a88b
 short: 2b16a88b
 date: 2026-08-26
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/337
 related_issues:
   - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
   - docs/roadmap/issue-AR-300-bind-explicit-install-config-to-managed-canary.md

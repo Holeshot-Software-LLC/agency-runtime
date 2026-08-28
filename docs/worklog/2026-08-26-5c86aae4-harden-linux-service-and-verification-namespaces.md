@@ -17,7 +17,7 @@ type: worklog
 commit: 5c86aae4569f1664f55dcc8ce00d8fbc3b869932
 short: 5c86aae4
 date: 2026-08-26
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/337
 related_issues:
   - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
   - docs/roadmap/issue-AR-301-private-systemd-dashboard-namespace.md

@@ -19,7 +19,7 @@ type: worklog
 commit: 592f4a6bfdab323d4842c6189f106faf690f861c
 short: 592f4a6b
 date: 2026-08-27
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/337
 related_issues:
   - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
   - docs/roadmap/issue-AR-326-admit-terminal-codex-host-artifact-collection.md

@@ -18,7 +18,7 @@ type: worklog
 commit: 61ee2428e42b8e517cecbfa5d8a7e416c1a283e8
 short: 61ee2428
 date: 2026-08-26
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/337
 related_issues:
   - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
   - docs/roadmap/issue-AR-316-size-ollama-selector-judge-context.md

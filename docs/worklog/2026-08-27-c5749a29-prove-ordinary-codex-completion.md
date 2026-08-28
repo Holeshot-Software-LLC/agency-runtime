@@ -15,7 +15,7 @@ type: worklog
 commit: c5749a29b700446ad5157b62cc4d6c984624ccf9
 short: c5749a29
 date: 2026-08-27
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/337
 related_issues:
   - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
 ---

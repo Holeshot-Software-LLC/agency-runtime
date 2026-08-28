@@ -17,7 +17,7 @@ type: worklog
 commit: 2fa5013fc96174195a21fd998571bb6cb20e20f5
 short: 2fa5013f
 date: 2026-08-26
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/337
 related_issues:
   - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
   - docs/roadmap/issue-AR-315-project-codex-canary-install-home.md
