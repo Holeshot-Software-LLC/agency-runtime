@@ -1382,6 +1382,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `7b7fd6a7` | 2026-08-28 | docs(ar297): record merged-main host installation | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `1e6f5d07` | 2026-08-28 | Merge pull request #340 from Holeshot-Software-LLC/codex/ar297-main-install-proof | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `69daa994` | 2026-08-28 | docs(ar297): checkpoint manual Codex credential repair | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `3b4a0b5c` | 2026-08-28 | docs(ar297): record manual generation route comparison | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `508bf3ce` | 2026-08-28 | docs(ar297): compact manual route checkpoint | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
