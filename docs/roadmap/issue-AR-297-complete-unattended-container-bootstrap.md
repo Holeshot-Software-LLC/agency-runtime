@@ -2245,3 +2245,10 @@ decision run uses a private prepared CI interpreter and strict `0077` process
 umask so its disposable checkouts satisfy the existing private-path policy; it
 does not bypass or mutate Agency policy. The explicitly optional exhaustive
 corpus, four-shard coverage, and six-interpreter workflow were not dispatched.
+
+The final read-only record audit leaves source unchanged and isolates inherited
+repository-wide tracker debt rather than an AR-297 mismatch. Tracker-required
+documentation and tracker-parity stderr hash to `769fb577...6056` and
+`e98fd0e5...64a7`; both exit 1 because older roadmap items lack tracker URLs or
+have state/label drift. AR-297 and tracker #335 appear in neither mismatch list.
+No tracker, closure, tag, signature, release, or publication mutation was made.

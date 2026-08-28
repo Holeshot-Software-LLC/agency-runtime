@@ -123,8 +123,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - AR-330's prior `ef88754e...f2a4` failure is resolved by exact live receipt
   `eca6fcb4...647c`; no activation or model/config choice remains blocked.
 - Record audit, merge, `origin/main` install, and verdict remain; no gate fails.
-- Tracker audit `413c8a3a...1600` retains pre-existing parity debt; tracker
-  writes/closure, signing, tagging, and release publication remain unauthorized.
+- Record audits `769fb577...6056`/`e98fd0e5...64a7` exit 1 only on inherited
+  parity debt; AR-297/#335 has no mismatch. Tracker/release writes stay unauthorized.
 
 ## same-task-continuity
 
