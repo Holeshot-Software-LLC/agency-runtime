@@ -2479,3 +2479,19 @@ secret-safe alias manager and stage harness are `65c80909...4a38` and
 exists. Schema/semantic/injection eligibility is a hard gate before the
 60-percent-quality/40-percent-latency combined score; every promoted fallback
 must come from a different provider.
+
+The non-Spark OpenAI block completes all 270 frozen cells exactly once. Ledger
+`a0c3f787...85e2` records 238 structured completions, 197 strictly eligible
+responses, and 32 bounded transport/JSON failures across all 30 candidates and
+nine stages. GPT-5-nano accounts for nine immediate failures and is unusable
+through this subscription gateway; the remaining failures are retained
+48-second ceilings on heavier reasoning/stage combinations. Terra-low first
+meets the practical stage envelope with 100-point planner/recruiter/critic/
+reranker/judge/security results and 19.878/25.480-second hiring/safety outputs;
+Terra-ultra is the only OpenAI candidate to score 100 on all nine single-screen
+fixtures, at 24.435/24.744 seconds on the two full-contract stages. Mini-low is
+faster on those full contracts at 16.104/18.282 seconds but fails planner
+semantics. The first alias body was rejected before inference because `tier`
+must be `paid`, not `subscription`; its sanitized HTTP-422 receipt is retained,
+manager `8d7d884a...4d92` fixes that metadata field, and every later create/
+delete passes. Post-block inspection reports zero temporary benchmark aliases.

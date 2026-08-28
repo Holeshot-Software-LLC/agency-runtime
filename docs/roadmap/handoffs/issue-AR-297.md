@@ -35,8 +35,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 
 ## checkpoint
 
-- Work only in `/tmp/agency-runtime-ar297-main.JWaPCg`; never touch the shared checkout.
-- PRs #339/#340 merged product/evidence through clean `origin/main` `1e6f5d07`.
+- Work only in `/tmp/agency-runtime-ar297-main.JWaPCg`; never touch the shared checkout. PRs #339/#340 merged through `origin/main` `1e6f5d07`.
 - Credential repair is installed. Stable `task-agency-generation` is rolled back
   to local Qwen 14B; Spark is excluded after its bounded call audit.
 - Clean checkpoint `15cda0a4` precedes this recovery pair.
@@ -114,8 +113,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Frozen manifest `62f8bec4...c6fd` covers 67 approved non-Spark OpenAI,
   MiniMax, Z.AI, and local model/mode candidates over nine exact stages: 603
   screens, 18 local warm-ups, and at most 18 confirmations (639 hard maximum).
-  Harness/manager `226f4532...b4e8`/`65c80909...4a38` pass no-call preflight;
-  authenticated receipt `21700339...d176` finds zero temporary aliases.
+  Harness `226f4532...b4e8` passes no-call preflight. OpenAI ledger
+  `a0c3f787...85e2` completes 270/270 cells: 238 structured, 197 eligible, 32
+  bounded failures; Nano fails all nine. Corrected manager `8d7d884a...4d92`
+  and post-block inspection leave zero temporary aliases.
 - Record audits `769fb577...6056`/`e98fd0e5...64a7` exit 1 only on inherited
   parity debt; AR-297/#335 has no mismatch. Tracker/release writes stay unauthorized.
 
