@@ -119,9 +119,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Config repair `530b7837...1e5e` resolves ordinary-terminal auth. Two later
   manual Qwen turns `01a049a6...db07`/`01a049ab...9f76` still fail both bounded
   planner attempts; no route/load/finalization is promoted. Isolated exact-prompt
-  Qwen and Mistral trials both accept `accessibility-auditor` with byte-identical
-  5,858-byte context; repeated real Qwen failures make generation-route choice
-  the current operator interview.
+  Qwen and Mistral trials accept `accessibility-auditor` with byte-identical
+  context; repeated real Qwen failures make model choice the operator interview.
 - Record audits `769fb577...6056`/`e98fd0e5...64a7` exit 1 only on inherited
   parity debt; AR-297/#335 has no mismatch. Tracker/release writes stay unauthorized.
 
