@@ -221,53 +221,65 @@ def _keys(value: object) -> set[str]:
     return set()
 
 
-def _codex_v1491_lineage_artifact(root: Path, *, cwd: Path) -> Path:
+def _codex_v1491_lineage_artifact(
+    root: Path,
+    *,
+    cwd: Path,
+    explicit_role: bool = False,
+) -> Path:
     artifact = (
         root / "2026" / "08" / "27" / f"rollout-2026-08-27T05-23-23-{_CODEX_LINEAGE_CHILD}.jsonl"
     )
     artifact.parent.mkdir(parents=True)
-    artifact.write_text(
-        json.dumps(
-            {
-                "timestamp": "2026-08-27T05:23:23.457Z",
-                "type": "session_meta",
-                "payload": {
-                    "id": _CODEX_LINEAGE_CHILD,
-                    "timestamp": "2026-08-27T05:23:23.389Z",
-                    "session_id": _CODEX_LINEAGE_PARENT,
-                    "parent_thread_id": _CODEX_LINEAGE_PARENT,
-                    "source": {
-                        "subagent": {
-                            "thread_spawn": {
-                                "parent_thread_id": _CODEX_LINEAGE_PARENT,
-                                "depth": 1,
-                                "agent_path": "/root/code_reviewer",
-                                "agent_nickname": "Poincare",
-                                "agent_role": None,
-                            }
-                        }
-                    },
-                    "originator": "codex_exec",
-                    "cli_version": "0.149.1",
-                    "cwd": str(cwd),
-                    "model_provider": "openai",
-                    "base_instructions": {
-                        "text": "Exact supported Codex child instructions.",
-                        "provenance": {"type": "model", "model": "gpt-5.6-sol"},
-                    },
-                    "agent_path": "/root/code_reviewer",
-                    "agent_nickname": "Poincare",
-                    "context_window": {"window_id": _CODEX_LINEAGE_WINDOW},
-                    "history_mode": "paginated",
-                    "thread_source": "subagent",
-                    "multi_agent_version": "v2",
-                },
-                "ordinal": 0,
-            }
-        )
-        + "\n",
-        encoding="utf-8",
-    )
+    meta = {
+        "timestamp": "2026-08-27T05:23:23.457Z",
+        "type": "session_meta",
+        "payload": {
+            "id": _CODEX_LINEAGE_CHILD,
+            "timestamp": "2026-08-27T05:23:23.389Z",
+            "session_id": _CODEX_LINEAGE_PARENT,
+            "parent_thread_id": _CODEX_LINEAGE_PARENT,
+            "source": {
+                "subagent": {
+                    "thread_spawn": {
+                        "parent_thread_id": _CODEX_LINEAGE_PARENT,
+                        "depth": 1,
+                        "agent_path": "/root/code_reviewer",
+                        "agent_nickname": "Poincare",
+                        "agent_role": None,
+                    }
+                }
+            },
+            "originator": "codex_exec",
+            "cli_version": "0.149.1",
+            "cwd": str(cwd),
+            "model_provider": "openai",
+            "base_instructions": {
+                "text": "Exact supported Codex child instructions.",
+                "provenance": {"type": "model", "model": "gpt-5.6-sol"},
+            },
+            "agent_path": "/root/code_reviewer",
+            "agent_nickname": "Poincare",
+            "context_window": {"window_id": _CODEX_LINEAGE_WINDOW},
+            "history_mode": "paginated",
+            "thread_source": "subagent",
+            "multi_agent_version": "v2",
+        },
+        "ordinal": 0,
+    }
+    if explicit_role:
+        payload = meta["payload"]
+        assert isinstance(payload, dict)
+        payload["cli_version"] = "0.150.1"
+        payload["agent_role"] = "Code Reviewer"
+        source = payload["source"]
+        assert isinstance(source, dict)
+        subagent = source["subagent"]
+        assert isinstance(subagent, dict)
+        spawn = subagent["thread_spawn"]
+        assert isinstance(spawn, dict)
+        spawn["agent_role"] = "Code Reviewer"
+    artifact.write_text(json.dumps(meta) + "\n", encoding="utf-8")
     return artifact
 
 
@@ -715,10 +727,12 @@ def test_restricted_codex_collectors_keep_live_and_terminal_authority_separate(
     assert observed == [False, True]
 
 
+@pytest.mark.parametrize("explicit_role", (False, True), ids=("codex-0149", "codex-0150"))
 def test_restricted_codex_child_hook_resolves_one_host_lineage_bound_parent(
     store: Store,
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
+    explicit_role: bool,
 ) -> None:
     from agency_runtime.core import child_delivery_evidence
     from agency_runtime.core.installer import seed_starter_roster
@@ -738,7 +752,7 @@ def test_restricted_codex_child_hook_resolves_one_host_lineage_bound_parent(
     root = tmp_path / "codex-sessions"
     cwd = tmp_path / "canary-work"
     cwd.mkdir()
-    artifact = _codex_v1491_lineage_artifact(root, cwd=cwd)
+    artifact = _codex_v1491_lineage_artifact(root, cwd=cwd, explicit_role=explicit_role)
     monkeypatch.setattr(
         child_delivery_evidence,
         "default_child_artifact_root",
@@ -775,7 +789,7 @@ def test_restricted_codex_child_hook_resolves_one_host_lineage_bound_parent(
         # the spawned child thread separately in ``agent_id``.
         "session_id": _CODEX_LINEAGE_PARENT,
         "agent_id": _CODEX_LINEAGE_CHILD,
-        "agent_type": "default",
+        "agent_type": "Code Reviewer" if explicit_role else "default",
         "cwd": str(cwd),
         "transcript_path": str(artifact),
     }

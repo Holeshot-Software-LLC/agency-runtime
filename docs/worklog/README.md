@@ -3,7 +3,7 @@ title: Worklog
 status: active
 category: worklog
 created: 2026-07-10
-updated: 2026-08-27
+updated: 2026-08-28
 tags: []
 related: []
 supersedes: []
@@ -1362,6 +1362,22 @@ This registry connects repository history to the roadmap and to optional detail 
 | `0ef2e8cb` | 2026-08-27 | docs(ar297): prove repaired distribution smoke | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-328](../roadmap/issue-AR-328-seal-hermes-install-tree.md) | null |
 | `591aad20` | 2026-08-27 | Merge pull request #337 from Holeshot-Software-LLC/codex/ar297-production-container-live-evidence | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-328](../roadmap/issue-AR-328-seal-hermes-install-tree.md) | null |
 | `e5e5e7e4` | 2026-08-27 | docs(ar297): record merged Linux delivery | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-328](../roadmap/issue-AR-328-seal-hermes-install-tree.md) | null |
+| `87231198` | 2026-08-28 | Merge pull request #338 from Holeshot-Software-LLC/codex/ar297-publish-closure | null | null |
+| `aead84d0` | 2026-08-28 | fix(codex): freeze inspector bootstrap as persistent input [AR-329] | [AR-329](../roadmap/issue-AR-329-freeze-codex-inspector-bootstrap-as-persistent-input.md) | null |
+| `c1b4e713` | 2026-08-28 | docs(ar297): checkpoint attended Codex trust gate | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-329](../roadmap/issue-AR-329-freeze-codex-inspector-bootstrap-as-persistent-input.md) | null |
+| `58301299` | 2026-08-28 | docs(ar297): bound trust-gate capsule | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-329](../roadmap/issue-AR-329-freeze-codex-inspector-bootstrap-as-persistent-input.md) | null |
+| `522102f7` | 2026-08-28 | fix(codex): support 0.150 collaboration rollouts [AR-330] | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-313](../roadmap/issue-AR-313-trust-normal-umask-codex-artifacts.md), [AR-330](../roadmap/issue-AR-330-support-codex-0150-collaboration-rollouts.md) | [detail](2026-08-28-522102f7-support-codex-0150-collaboration-rollouts.md) |
+| `f6870aa6` | 2026-08-28 | fix(codex): admit 0.150 child lineage [AR-330] | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-330](../roadmap/issue-AR-330-support-codex-0150-collaboration-rollouts.md) | [detail](2026-08-28-f6870aa6-admit-codex-0150-child-lineage.md) |
+| `af8ffbdd` | 2026-08-28 | docs(ar297): checkpoint repaired Codex host canary | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-330](../roadmap/issue-AR-330-support-codex-0150-collaboration-rollouts.md) | null |
+| `f53b4fd4` | 2026-08-28 | docs(ar297): prove ordinary Codex host loading | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `9ba5bce0` | 2026-08-28 | docs(ar297): prove ordinary Claude host loading | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `3982e05c` | 2026-08-28 | docs(ar297): checkpoint Hermes host negative | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `2c52e99a` | 2026-08-28 | docs(ar297): retain second Hermes host negative | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `01598467` | 2026-08-28 | docs(ar297): prove scoped Hermes host loading | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `6d8c97d0` | 2026-08-28 | docs(ar297): prove ordinary OpenClaw host loading | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `a4db8468` | 2026-08-28 | docs(ar297): prove authenticated host dashboard | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `43b67657` | 2026-08-28 | docs(ar297): record final repository gates | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `988a8f0c` | 2026-08-28 | docs(ar297): record final parity audit | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes

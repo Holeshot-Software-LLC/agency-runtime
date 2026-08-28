@@ -962,7 +962,7 @@ def _write_codex_rollout(
 def test_codex_rollout_accepts_normal_host_umask_directories_under_private_home(
     tmp_path: Path,
 ) -> None:
-    """Codex writes 0755 date directories and 0644 rollouts with umask 0022."""
+    """Codex writes 0755/0644 or user-private-group 0775/0664 artifacts."""
 
     home = tmp_path / "codex-home"
     home.mkdir(mode=0o700)
@@ -989,6 +989,20 @@ def test_codex_rollout_accepts_normal_host_umask_directories_under_private_home(
     )
 
     path.parent.chmod(0o775)
+    path.chmod(0o664)
+    assert (
+        _codex_rollout_events(
+            rollout_root,
+            thread_id,
+            parent_thread_id=None,
+            expected_agent_path=None,
+            not_before=None,
+            not_after=None,
+        )
+        == events
+    )
+
+    path.parent.chmod(0o777)
     with pytest.raises(ValueError, match="integrity"):
         _codex_rollout_events(
             rollout_root,
@@ -1031,7 +1045,11 @@ def test_codex_direct_rollout_rejects_stale_activation_wait_timeout(
         _codex_exact_direct_rollout_calls(calls, outputs, [])
 
 
-def test_codex_direct_rollout_projects_one_spawn_and_terminal_wait(tmp_path: Path) -> None:
+@pytest.mark.parametrize("explicit_role", (False, True), ids=("codex-0149", "codex-0150"))
+def test_codex_direct_rollout_projects_one_spawn_and_terminal_wait(
+    tmp_path: Path,
+    explicit_role: bool,
+) -> None:
     parent_id = "019fa6a6-9432-7c70-a594-68ccdf7e4988"
     receiver_id = "019fa6a6-a197-7a83-b3fb-d2c20411f608"
     tool_use_id = "call-native-spawn"
@@ -1052,6 +1070,43 @@ def test_codex_direct_rollout_projects_one_spawn_and_terminal_wait(tmp_path: Pat
         goal_hash=work_unit_goal_hash(goal),
     )
     rollout_root = tmp_path / "sessions"
+    spawn_arguments = {
+        "fork_turns": "none",
+        "message": ciphertext,
+        "task_name": task_name,
+    }
+    if explicit_role:
+        spawn_arguments["agent_type"] = "Code Reviewer"
+    child_source = {
+        "parent_thread_id": parent_id,
+        "depth": 1,
+        "agent_path": f"/root/{task_name}",
+    }
+    if explicit_role:
+        child_source.update({"agent_nickname": "Hilbert", "agent_role": "Code Reviewer"})
+    terminal_activity = (
+        [
+            {
+                "type": "event_msg",
+                "payload": {
+                    "type": "item_completed",
+                    "thread_id": parent_id,
+                    "turn_id": "trace",
+                    "item": {
+                        "type": "SubAgentActivity",
+                        "id": "subagent-completed-one",
+                        "kind": "completed",
+                        "agent_thread_id": receiver_id,
+                        "agent_path": f"/root/{task_name}",
+                    },
+                    "started_at_ms": 2,
+                    "completed_at_ms": 2,
+                },
+            }
+        ]
+        if explicit_role
+        else []
+    )
     _write_codex_rollout(
         rollout_root,
         parent_id,
@@ -1065,13 +1120,7 @@ def test_codex_direct_rollout_projects_one_spawn_and_terminal_wait(tmp_path: Pat
                     "name": "spawn_agent",
                     "namespace": "collaboration",
                     "call_id": tool_use_id,
-                    "arguments": json.dumps(
-                        {
-                            "fork_turns": "none",
-                            "message": ciphertext,
-                            "task_name": task_name,
-                        }
-                    ),
+                    "arguments": json.dumps(spawn_arguments),
                 },
             },
             {
@@ -1113,6 +1162,7 @@ def test_codex_direct_rollout_projects_one_spawn_and_terminal_wait(tmp_path: Pat
                     "output": json.dumps({"message": "Wait completed.", "timed_out": False}),
                 },
             },
+            *terminal_activity,
         ],
     )
     _write_codex_rollout(
@@ -1123,15 +1173,7 @@ def test_codex_direct_rollout_projects_one_spawn_and_terminal_wait(tmp_path: Pat
                 "type": "session_meta",
                 "payload": {
                     "id": receiver_id,
-                    "source": {
-                        "subagent": {
-                            "thread_spawn": {
-                                "parent_thread_id": parent_id,
-                                "depth": 1,
-                                "agent_path": f"/root/{task_name}",
-                            }
-                        }
-                    },
+                    "source": {"subagent": {"thread_spawn": child_source}},
                 },
             },
             {"type": "event_msg", "payload": {"type": "task_started", "turn_id": "run"}},
@@ -1203,8 +1245,10 @@ def test_codex_direct_rollout_projects_one_spawn_and_terminal_wait(tmp_path: Pat
     assert product["calls"][0]["execution_completion_count"] == 1
 
 
-def test_codex_0149_quiet_stdout_projects_subagent_start_v6_delivery(
+@pytest.mark.parametrize("explicit_role", (False, True), ids=("codex-0149", "codex-0150"))
+def test_codex_quiet_stdout_projects_subagent_start_v6_delivery(
     tmp_path: Path,
+    explicit_role: bool,
 ) -> None:
     parent_id = "019fa6a6-9432-7c70-a594-68ccdf7e4988"
     receiver_id = "019fa6a6-a197-7a83-b3fb-d2c20411f608"
@@ -1239,6 +1283,48 @@ def test_codex_0149_quiet_stdout_projects_subagent_start_v6_delivery(
         binding_id=receiver_id,
     )
     rollout_root = tmp_path / "sessions"
+    spawn_arguments = {
+        "fork_turns": "none",
+        "message": "gAAAAA" + "opaque-canary-message" * 2,
+        "task_name": "code_reviewer",
+    }
+    if explicit_role:
+        spawn_arguments["agent_type"] = "Code Reviewer"
+    child_source = {
+        "parent_thread_id": parent_id,
+        "depth": 1,
+        "agent_path": "/root/code_reviewer",
+    }
+    if explicit_role:
+        child_source.update(
+            {
+                "agent_nickname": "Hilbert",
+                "agent_role": "Code Reviewer",
+            }
+        )
+    terminal_activity = (
+        [
+            {
+                "type": "event_msg",
+                "payload": {
+                    "type": "item_completed",
+                    "thread_id": parent_id,
+                    "turn_id": trace_id,
+                    "item": {
+                        "type": "SubAgentActivity",
+                        "id": "subagent-completed-one",
+                        "kind": "completed",
+                        "agent_thread_id": receiver_id,
+                        "agent_path": "/root/code_reviewer",
+                    },
+                    "started_at_ms": 2,
+                    "completed_at_ms": 2,
+                },
+            }
+        ]
+        if explicit_role
+        else []
+    )
     _write_codex_rollout(
         rollout_root,
         parent_id,
@@ -1252,13 +1338,7 @@ def test_codex_0149_quiet_stdout_projects_subagent_start_v6_delivery(
                     "name": "spawn_agent",
                     "namespace": "collaboration",
                     "call_id": tool_use_id,
-                    "arguments": json.dumps(
-                        {
-                            "fork_turns": "none",
-                            "message": "gAAAAA" + "opaque-canary-message" * 2,
-                            "task_name": "code_reviewer",
-                        }
-                    ),
+                    "arguments": json.dumps(spawn_arguments),
                 },
             },
             {
@@ -1307,6 +1387,7 @@ def test_codex_0149_quiet_stdout_projects_subagent_start_v6_delivery(
                     "output": json.dumps({"message": "Wait completed.", "timed_out": False}),
                 },
             },
+            *terminal_activity,
             {
                 "type": "response_item",
                 "payload": {
@@ -1329,15 +1410,7 @@ def test_codex_0149_quiet_stdout_projects_subagent_start_v6_delivery(
                 "type": "session_meta",
                 "payload": {
                     "id": receiver_id,
-                    "source": {
-                        "subagent": {
-                            "thread_spawn": {
-                                "parent_thread_id": parent_id,
-                                "depth": 1,
-                                "agent_path": "/root/code_reviewer",
-                            }
-                        }
-                    },
+                    "source": {"subagent": {"thread_spawn": child_source}},
                 },
             },
             {

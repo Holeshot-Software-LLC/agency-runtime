@@ -21,9 +21,11 @@ from agency_runtime.core.codex_hook_trust import (
     inspect_codex_hook_trust,
     sanitize_codex_hook_trust_report,
 )
+from agency_runtime.core.delegation import backends
 from agency_runtime.core.delegation.backends import BoundedProcessResult
 from agency_runtime.core.installer_contracts import CODEX_HOOK_EVENTS
 from agency_runtime.core.process_argv import (
+    PreparedProcessArgv,
     absolute_executable_path,
     agency_bootstrap_path,
     isolated_python_argv,
@@ -378,6 +380,43 @@ def test_worker_argv_launches_the_published_projection_not_the_checkout(
     assert argv[0] == absolute_executable_path(sys._base_executable)
     assert argv[1:3] == ["-I", "-S"]
     assert argv[4:] == ["agency_runtime.core.codex_hook_trust", "--worker"]
+
+
+def test_inspector_persistently_freezes_nonexecutable_published_bootstrap(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """The sealed Python input must not be treated as a direct executable."""
+
+    published = tmp_path / "launchers" / "runtime-sha256-abc" / "site-packages"
+    bootstrap = published / "agency_runtime" / "_bootstrap.py"
+    bootstrap.parent.mkdir(parents=True)
+    bootstrap.write_text("# published", encoding="utf-8")
+    bootstrap.chmod(0o400)
+
+    plan = SimpleNamespace(bootstrap_path=str(bootstrap))
+    monkeypatch.setattr(launcher_bootstrap, "running_runtime_digest", lambda: "")
+    monkeypatch.setattr(launcher_bootstrap, "plan_private_package_runtime", lambda _: plan)
+    monkeypatch.setattr(launcher_bootstrap, "verify_private_package_runtime", lambda _: "abc")
+    monkeypatch.setattr(
+        launcher_bootstrap, "persistent_python_executable", lambda: sys._base_executable
+    )
+
+    observed: dict[str, object] = {}
+
+    def runner(argv: object, **_kwargs: object) -> BoundedProcessResult:
+        observed["argv"] = argv
+        return BoundedProcessResult(0, json.dumps(_trusted_report()), "")
+
+    monkeypatch.setattr(backends, "run_bounded_process", runner)
+
+    report = inspect_codex_hook_trust(tmp_path, timeout=5.0)
+
+    assert report["status"] == "trusted"
+    prepared = observed["argv"]
+    assert isinstance(prepared, PreparedProcessArgv)
+    assert prepared.persistent_artifact_identities
+    assert not prepared.executable_identities
+    assert prepared.artifact_paths[1] == str(bootstrap)
 
 
 def test_absent_projection_is_not_reported_as_a_trust_failure(

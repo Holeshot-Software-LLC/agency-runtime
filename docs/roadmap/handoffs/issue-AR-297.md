@@ -3,7 +3,7 @@ title: "AR-297 active recovery capsule"
 status: active
 category: roadmap
 created: 2026-08-25
-updated: 2026-08-27
+updated: 2026-08-28
 tags: [handoff, containers, unattended, codex, claude, hermes, openclaw, release]
 related:
   - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
@@ -12,8 +12,9 @@ related:
   - docs/roadmap/issue-AR-326-admit-terminal-codex-host-artifact-collection.md
   - docs/roadmap/issue-AR-327-replay-codex-delivery-receipts-across-append-only-completion.md
   - docs/roadmap/issue-AR-328-seal-hermes-install-tree.md
+  - docs/roadmap/issue-AR-329-freeze-codex-inspector-bootstrap-as-persistent-input.md
   - docs/decisions/0179-admit-exact-codex-canary-delivery-at-subagent-start.md
-  - docs/decisions/0188-separate-codex-hook-parent-and-child-identities.md
+  - docs/roadmap/issue-AR-330-support-codex-0150-collaboration-rollouts.md
   - docs/decisions/0189-admit-only-accepted-terminal-codex-parents-for-post-return-collection.md
   - docs/decisions/0190-bind-codex-receipt-replay-to-an-exact-append-only-prefix.md
   - docs/decisions/0191-seal-managed-hermes-python-bundles.md
@@ -23,9 +24,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-297
-branch: codex/ar297-publish-closure
-evidence_commit: 3a9a09c2e258f88bec6526e91db0b8cb54ae1ea9
-minimum_ledger_commit: 3a9a09c2e258f88bec6526e91db0b8cb54ae1ea9
+branch: codex/ar297-host-live-closure
+evidence_commit: a4db84683d6e7f2386cb7e21ff9495c1c226a4e0
+minimum_ledger_commit: 00fec051dd791d6e29fe22b79995b49e5acd6bf1
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 ---
@@ -34,12 +35,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 
 ## checkpoint
 
-- Work only in `/tmp/agency-runtime-ar297.WQUbF2`; never touch the shared
-  checkout. Publication-closure branch starts at `origin/main` `591aad20`.
-- All scoped matrix rows pass; final audit `3c82c16d...cd79` returns Linux
-  **GO**. Clean reviewed head is `3a9a09c2`.
-- PR #337 merged without bypass as `591aad207eadfe36671d374ff2b488d8bbd6a6a5`.
-  The merge's second parent is exact head `3a9a09c2`; ancestry exits 0.
+- Work only in `/tmp/agency-runtime-ar297.WQUbF2`; never touch the shared checkout.
+- AR-330's canary, four host rows, dashboard, and every named gate pass; only
+  record audit, authorized merge, fresh `origin/main` install, and verdict remain.
+- Clean source/ledger `a4db8468` / `00fec051` immediately precedes final gates.
 
 ## completed-evidence
 
@@ -50,11 +49,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   Promotion/metadata/final validation/literal/spend receipts are
   `6e19008f...1750`, `e1cba9f6...e841`, `42921a7e...867c`,
   `b686ab4b...9abe`, and `d7183bb5...2f07`. Temporary aliases are removed.
-- Final named gates pass for `e0b0b25c`: 916 docs, Ruff lint/format, 860 Python
-  tests with 3 skips, 138 dashboard tests, routing 1.4.0, and 167/167 killed
-  decision mutations. Receipts are `6e0883bd...a98f`, `82b3e6a6...6b4f`,
-  `b2a4a388...657f`, `3002917f...41c6`, `ac720857...8436`, and
-  `547b518c...584f`; all final exits are 0.
+- Final named gates pass for `33d9503b`: 921 docs, Ruff/696 formats, 861 tests
+  with 3 skips, 138 dashboard tests, routing 1.4.0, and 167/167 mutations killed.
+  Manifest `ef8d8abc...1b09` records every accepted exit/hash and rejected
+  environment preflight; every accepted exit is 0.
 - Clean repair ledger `6e78b146` builds portable wheel `cf32f861...b2a7` and
   sdist `1b40ca8f...e228`; independent verification and separate installed
   8/8 wheel/sdist smoke runs exit 0 in the retained owner-private artifact root.
@@ -82,54 +80,58 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - OpenClaw dry-run truthfully leaves an empty runtime home at `8ffcb927...af70`;
   untouched R2 absence `5feaa49c...2cdd`, install `4debebf3...c748`, Store
   `c6da8137...0b12`, systemd, exact alias config, and 13-hook runtime all pass.
-- Final Claude receipt `7c4968e8...4dee` exits 0 for session `.303`: one exact
-  3,227-byte card, all five alias receipts, accepted completion, `missing=[]`,
-  native/Store response equality, exact config, and no bypass. The prior
-  untrusted-`/tmp` Store attempt remains an honest bounded negative.
-- Final-candidate Codex receipt `8b372e4c...2423` exits 0 for session
-  `01a04546-933a-7c61-93a8-fb6129ffe24d`: one exact 2,659-byte card, four
-  successful alias-only receipts, accepted completion, native/Store response
-  equality, read-only/no-delegation execution, and unchanged exact runtime.
+- Fresh Claude verifier `ed965d7c...8ca9` exits 0 for session `.403`: exact
+  3,227-byte card, no tool use, all five alias receipts, accepted completion,
+  `missing=[]`, native/Store response equality, existing subscription auth,
+  normal default model, and no bypass.
+- Fresh ordinary Codex verifier `db8f6780...e2f3` exits 0 for session
+  `01a048dd-10f0-77e2-94bd-d5e4c4572a4f`: exact 2,659-byte card, four
+  alias-only receipts, accepted completion, `missing=[]`, native/Store response
+  equality, read-only/no-delegation execution, and exact runtime/config.
 - Final-candidate Hermes receipt `9ee57328...f2f7` exits 0 for session
   `20260827_221502_139df0`: one exact 3,227-byte card, all five alias groups,
   accepted completion, `missing=[]`, exact visible accepted replay, healthy
   Stores, and byte-identical config. The corrected native source receipt is
   `d8e9eab7...9fe3`; the first helper-default mismatch remains retained.
-- Final OpenClaw receipt `3c300451...5a02` exits 0: exact card/prompt visibility,
-  sole LiteLLM host alias, thinking off, nonempty native response, accepted
-  Store load/all Agency route receipts, unchanged config, and the explicit
-  no-channel active-run limitation.
-- Exact host refresh `68822689...33af` exits 1 only for normal attended Codex
-  activation; Hermes, OpenClaw, Claude, and dashboard complete. Read-only
-  attestation `64564e4a...bc24` exits 0 and binds wheel `75d63ff9...3762`,
-  mode-0600 config `a4e213d6...97348`, all four final bundles, private runtime
-  `d054649e...d3d7`, active zero-restart systemd-user dashboard, and restarted
-  healthy OpenClaw receipt `561de9bd...df54`.
-- HTTP/browser proofs `26923d58...bb2`/`65162e02...e32c` exit 0: auth is
-  401/200 no-store, the exact 2,659-byte prompt `c3cfc098...5848` is fully
-  visible, and screenshot `222d5109...b5ac` is retained without its token.
-- Optional host Codex verifier `933bc916...bb4` fails before model invocation
-  because attended hook trust is not ready; it changes nothing and uses no bypass.
+- Hermes R1/R2 retain fail-closed negatives; least-privilege R3 verifier
+  `f64738b9...8ce9` proves exact card, Agency-only finalizer, accepted replay,
+  `missing=[]`, unchanged config, and complete Store correlation.
+- Fresh host OpenClaw verifier `61fd0b83...7fe7` exits 0: exact 684-byte task and
+  2,659-byte card, approved LiteLLM alias, thinking off, five successful Agency
+  receipts, healthy Stores, and the explicit no-channel active-run limitation.
+  Additive allow-list receipt `831edb7a...dd2f` preserves all foreign policy;
+  restarted authenticated systemd RPC passes at `a144aab9...172`.
 - Teardown `40fa5062...1dc4` removes all 47 exact labelled containers with zero
   survivors; five images remain at `5c998f61...e276`, and host services stay healthy.
 - Approved Qwen3 Coder aliases apply/verify `d69aa6b6...af4d`/`a1e2381d...a5dd`
   exit 0 at 65,536/no-thinking; unrelated aliases are unchanged. OpenClaw's
   three-pointer config transition/verify `e97e02e2...deba`/`a141d193...e1ce`
   exit 0; two stale-metadata attempts rolled back.
+- Exact `33d9503b` wheel/sdist are `141b1c07...e87f9`/`4fa78570...385f`;
+  canonical build, strict Twine, verification, isolated install, and pip check pass.
+- Fresh host bundles are Hermes `90ea1533...e2a2`, OpenClaw `87c5a833...0955`,
+  Codex `bf284699...9d20d`, and Claude `ab1fd64d...a7b9`; runtime is `59c12970...dcf2`.
+  Dashboard verifier `de359741...7ea` and OpenClaw RPC `a144aab9...172` pass.
+- No-bypass Codex receipt `eca6fcb4...647c` exits 0 at trace
+  `01a048d3-5687-7c11-a0a9-b1f3abbb7402`; rollouts
+  `299542c3...7158`/`a8525798...c707` bind the real child and finalization.
+- Private Store `cbaec4a8...01f8` passes quick-check; correlation
+  `0fe1ac45...a34b` binds accepted selection/load, alias receipts, and `missing=[]`.
 
 ## exact-blocker
 
-- No unresolved Linux runtime or PR publication gate remains.
-- Read-only tracker audit exits 1 at `413c8a3a...1600` for pre-existing
-  repository-wide parity debt; no tracker write is authorized.
-- Signing, tagging, release publication, and tracker closure were not performed.
+- AR-330's prior `ef88754e...f2a4` failure is resolved by exact live receipt
+  `eca6fcb4...647c`; no activation or model/config choice remains blocked.
+- Record audit, merge, `origin/main` install, and verdict remain; no gate fails.
+- Record audits `769fb577...6056`/`e98fd0e5...64a7` exit 1 only on inherited
+  parity debt; AR-297/#335 has no mismatch. Tracker/release writes stay unauthorized.
 
 ## same-task-continuity
 
-- Exact artifacts: `~/.agency-runtime/release-artifacts/dist-e0b0b25c30083b09743fe1a04f2a0ad4cdf4e533-linux-ar297`.
-- Evidence: `~/.agency-runtime/evidence/ar297-go-e0b0b25c`; secret-safe helpers
-  remain `/tmp/agency-runtime-ar297-evidence.pcLOZn/`.
-- Protected Python: `~/.agency-runtime-ci/ar297-release-0827/venv/bin/python`.
+- Exact artifacts: `~/.agency-runtime/release-artifacts/dist-33d9503bc5b7ec711466232e5606d82c4eb32966`.
+- Candidate/evidence: `~/.agency-runtime/release-venvs/ar297-33d9503b`,
+  `~/.agency-runtime/evidence/ar297-host-live-20260828`.
+- Helpers/tooling: `/tmp/agency-runtime-ar297-evidence.pcLOZn/`.
 - Zero AR-297 containers remain; five exact images and healthy host services remain.
 
 ## next-bounded-work-package
@@ -137,14 +139,17 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 After compaction, reread this capsule and `git status`, then resume at the first
 unchecked line. Mark an item complete only with exact retained evidence.
 
-1. [x] Commit the bounded disposable-Hermes-guard smoke repair and its recovery
-   ledger after focused and named repository gates pass.
-2. [x] Push the repair, require fresh Ubuntu distribution and aggregate CI
-   success, and confirm all PR checks are terminal green or expected skips.
-3. [x] Merge PR #337 without bypass, fetch `origin/main`, and prove the merge
-   commit contains the exact reviewed head.
-4. [x] Retain the Linux-scoped GO; do not tag, sign, publish a release, or close
-   tracker #335 without separate authorization.
+1. [x] Point ordinary Hermes at the existing owner-private OpenClaw/LiteLLM
+   secret source without copying or printing the key; align only OpenClaw's
+   client gateway port with its healthy service.
+2. [x] Repair AR-329 with a mode-0400 regression and focused Codex suites.
+3. [x] Commit the repair ledger, build/install the exact candidate, and restore
+   healthy dashboard/OpenClaw services.
+4. [x] Codex/Claude/scoped-Hermes pass; prove ordinary OpenClaw
+   Store/full-prompt row on the host.
+5. [ ] Dashboard and every named repository gate pass with exact hashes/exits;
+   audit records, merge the authorized PR, install from clean `origin/main`,
+   and issue the final Linux-scoped verdict.
 
 ## verification
 
@@ -167,8 +172,7 @@ git diff --check
 
 - Keep registration, loading, canary, delivery, Store correlation, and model
   claims distinct. Never expose or persist a secret.
-- Do not configure/call Jina, overwrite foreign policy, use an activation
-  bypass, or touch the shared checkout.
+- Do not call Jina, overwrite foreign policy, bypass activation, or touch the shared checkout.
 - All Agency inference on this system stays behind LiteLLM aliases. Any unknown
   model, endpoint, dimension, reranker, thinking level, judge route,
   harness-auth, or service-manager choice requires an owner interview.

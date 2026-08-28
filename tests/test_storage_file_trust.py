@@ -18,7 +18,10 @@ from pathlib import Path
 
 import pytest
 
-from agency_runtime.core.store.security import storage_file_is_trusted
+from agency_runtime.core.store.security import (
+    storage_artifact_file_is_trusted,
+    storage_file_is_trusted,
+)
 
 posix_only = pytest.mark.skipif(
     os.name == "nt",
@@ -52,6 +55,22 @@ def test_a_group_or_other_writable_artifact_is_refused(tmp_path: Path, mode: int
     """Writability is the boundary: another account could substitute the bytes."""
 
     assert storage_file_is_trusted(_artifact(tmp_path, mode=mode), is_windows=False) is False
+
+
+@posix_only
+def test_an_exclusive_user_group_preserves_host_artifact_integrity(tmp_path: Path) -> None:
+    artifact = _artifact(tmp_path, mode=0o664)
+
+    assert storage_artifact_file_is_trusted(
+        artifact,
+        is_windows=False,
+        owner_private_group_probe=lambda _path, _metadata: True,
+    )
+    assert not storage_artifact_file_is_trusted(
+        artifact,
+        is_windows=False,
+        owner_private_group_probe=lambda _path, _metadata: False,
+    )
 
 
 @posix_only

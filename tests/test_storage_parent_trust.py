@@ -237,11 +237,19 @@ def test_posix_foreign_artifact_parent_requires_integrity_not_confidentiality(
     )
 
     metadata[parent] = _directory_metadata(mode=0o775)
+    assert store_security.storage_artifact_parent_is_trusted(
+        parent,
+        is_windows=False,
+        effective_uid=1001,
+        default_acl_probe=lambda _path: False,
+        owner_private_group_probe=lambda _path, _metadata: True,
+    )
     assert not store_security.storage_artifact_parent_is_trusted(
         parent,
         is_windows=False,
         effective_uid=1001,
         default_acl_probe=lambda _path: False,
+        owner_private_group_probe=lambda _path, _metadata: False,
     )
 
 

@@ -29,7 +29,7 @@ issue_id: AR-314
 priority: p0
 tracker_url: null
 depends_on: [AR-309, AR-311]
-blocks: [AR-297, AR-315, AR-322, AR-324]
+blocks: [AR-297, AR-315, AR-322, AR-324, AR-330]
 ---
 
 # AR-314: Bind the Codex 0.149 default canary child role

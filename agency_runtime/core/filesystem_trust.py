@@ -80,6 +80,7 @@ def posix_directory_chain_is_trusted(
     final_owner_must_match: bool,
     forbidden_final_mode: int,
     default_acl_probe: Callable[[Path], bool] | None,
+    owner_private_group_probe: Callable[[Path, os.stat_result], bool] | None = None,
 ) -> bool:
     """Validate one already-lstat'd POSIX directory chain.
 
@@ -107,6 +108,10 @@ def posix_directory_chain_is_trusted(
         return False
     if stat.S_IMODE(final.st_mode) & forbidden_final_mode:
         return False
+    if stat.S_IMODE(final.st_mode) & stat.S_IWGRP and (
+        owner_private_group_probe is None or not owner_private_group_probe(final_path, final)
+    ):
+        return False
     if default_acl_probe is not None:
         try:
             if default_acl_probe(final_path):
@@ -115,7 +120,14 @@ def posix_directory_chain_is_trusted(
             return False
 
     for (_ancestor_path, ancestor), (_child_path, child) in pairwise(chain):
-        writable = stat.S_IMODE(ancestor.st_mode) & (stat.S_IWGRP | stat.S_IWOTH)
+        mode = stat.S_IMODE(ancestor.st_mode)
+        group_writable = bool(mode & stat.S_IWGRP)
+        private_group = bool(
+            group_writable
+            and owner_private_group_probe is not None
+            and owner_private_group_probe(_ancestor_path, ancestor)
+        )
+        writable = bool(mode & stat.S_IWOTH) or (group_writable and not private_group)
         if writable and not (
             ancestor.st_mode & stat.S_ISVTX and int(child.st_uid) in trusted_owners
         ):

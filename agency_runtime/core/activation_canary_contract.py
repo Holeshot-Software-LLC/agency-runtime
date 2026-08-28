@@ -43,9 +43,16 @@ CODEX_ACTIVATION_CANARY_PROMPT = (
 CODEX_ACTIVATION_CANARY_ROUTE_SOURCE = "codex_activation_canary_inference"
 CODEX_ACTIVATION_CANARY_WORK_UNIT_SOURCE = "activation-canary-contract"
 CODEX_ACTIVATION_CANARY_NATIVE_TASK_NAME = "code_reviewer"
-# MultiAgentV2 keeps the task name in agent_path. With no optional agent_type
-# argument, Codex 0.149.1 emits this built-in role in SubagentStart.
-CODEX_ACTIVATION_CANARY_NATIVE_AGENT_TYPE = "default"
+# Codex 0.150 requires the native role to be explicit in the collaboration call.
+# Keep the legacy implicit role admissible when reading 0.149 host evidence.
+CODEX_ACTIVATION_CANARY_NATIVE_AGENT_TYPE = "Code Reviewer"
+CODEX_ACTIVATION_CANARY_LEGACY_AGENT_TYPE = "default"
+CODEX_ACTIVATION_CANARY_NATIVE_AGENT_TYPES = frozenset(
+    {
+        CODEX_ACTIVATION_CANARY_NATIVE_AGENT_TYPE,
+        CODEX_ACTIVATION_CANARY_LEGACY_AGENT_TYPE,
+    }
+)
 _CODEX_ACTIVATION_CANARY_CHILD_JUDGE_CALL_BUDGET = 2
 _CODEX_ACTIVATION_CANARY_CHILD_JUDGE_TIMEOUT_MAX_MS = 120_000
 _CODEX_ACTIVATION_CANARY_CHILD_COMPLETION_MARGIN_MS = 60_000
@@ -87,6 +94,7 @@ def render_codex_activation_canary_delegation_plan(routing: object) -> str:
         "depends_on": [],
         "delivery": "delegate",
         "goal": CODEX_ACTIVATION_CANARY_WORK_UNIT,
+        "native_agent_type": CODEX_ACTIVATION_CANARY_NATIVE_AGENT_TYPE,
         "native_task_name": CODEX_ACTIVATION_CANARY_NATIVE_TASK_NAME,
         "specialist": "code-reviewer",
         "work_unit_id": work_unit_id_from_text(CODEX_ACTIVATION_CANARY_WORK_UNIT),
@@ -100,7 +108,7 @@ def render_codex_activation_canary_delegation_plan(routing: object) -> str:
     )
     return (
         "[AGENCY DELEGATION PLAN]\n"
-        "version=agency.codex-activation-plan.v1\n"
+        "version=agency.codex-activation-plan.v2\n"
         "row_count=1\n"
         f"row_1={encoded}\n"
         "Execute this accepted persisted row exactly once."

@@ -22,6 +22,7 @@ related:
   - docs/roadmap/issue-AR-324-bind-codex-canary-child-through-host-lineage.md
   - docs/roadmap/issue-AR-326-admit-terminal-codex-host-artifact-collection.md
   - docs/roadmap/issue-AR-328-seal-hermes-install-tree.md
+  - docs/roadmap/issue-AR-329-freeze-codex-inspector-bootstrap-as-persistent-input.md
   - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
   - docs/decisions/0178-project-config-declared-credentials-into-tool-reduced-canaries.md
   - docs/decisions/0181-use-litellm-aliases-as-host-inference-control-plane.md
@@ -110,6 +111,16 @@ changes rather than duplicating every commit.
 
 ### Changed
 
+- Codex 0.150.1 activation children now retain the exact explicit
+  `Code Reviewer` role in both host-authored lineage fields and accept rollout
+  filenames written in either Codex's UTC or host-local wall-time form. Legacy
+  0.149.1 implicit-role children remain supported, while version, role,
+  timestamp, path, ownership, and parent/child drift still fail closed.
+- Codex current-profile activation verification now binds its sealed,
+  non-executable Python bootstrap with persistent artifact identities. The
+  interpreter remains executable-only and both launch inputs remain bound by
+  owner, mode, path, metadata, and content hash, so settled hook trust can be
+  inspected without weakening the executable namespace guard.
 - POSIX Hermes installs now manifest and seal an exact `__pycache__` guard, so
   ordinary Python plugin loading cannot add unverified bytecode to the managed
   tree. The plugin root stays owner-private and movable for the existing atomic

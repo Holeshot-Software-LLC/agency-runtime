@@ -41,6 +41,8 @@ related:
   - docs/roadmap/issue-AR-326-admit-terminal-codex-host-artifact-collection.md
   - docs/roadmap/issue-AR-327-replay-codex-delivery-receipts-across-append-only-completion.md
   - docs/roadmap/issue-AR-328-seal-hermes-install-tree.md
+  - docs/roadmap/issue-AR-329-freeze-codex-inspector-bootstrap-as-persistent-input.md
+  - docs/roadmap/issue-AR-330-support-codex-0150-collaboration-rollouts.md
   - docs/decisions/0144-claim-codex-spawn-execution-at-the-first-complete-callback.md
   - docs/decisions/0174-admit-local-ollama-canary-child-judges.md
   - docs/decisions/0175-batch-complete-embedding-input-sets.md
@@ -74,7 +76,7 @@ epic: host-integrations
 issue_id: AR-297
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
-depends_on: [AR-300, AR-301, AR-302, AR-303, AR-304, AR-305, AR-306, AR-307, AR-308, AR-309, AR-310, AR-311, AR-313, AR-314, AR-315, AR-317, AR-318, AR-319, AR-320, AR-321, AR-322, AR-324, AR-325, AR-326, AR-327, AR-328]
+depends_on: [AR-300, AR-301, AR-302, AR-303, AR-304, AR-305, AR-306, AR-307, AR-308, AR-309, AR-310, AR-311, AR-313, AR-314, AR-315, AR-317, AR-318, AR-319, AR-320, AR-321, AR-322, AR-324, AR-325, AR-326, AR-327, AR-328, AR-329, AR-330]
 blocks: []
 ---
 
@@ -2007,3 +2009,246 @@ and clean, then merged without bypass at `2026-08-28T03:55:35Z` as
 `origin/main` `0a23983a` and exact reviewed head `3a9a09c2`; the post-fetch
 ancestry check exits 0. Tracker #335 remains open, and no tag, signing, release,
 or tracker closure was performed.
+
+The owner subsequently extended the accepted container scope to an exact
+ordinary-process proof on this existing Linux host. AR-329 repair `aead84d0`
+corrects the Codex inspector's non-executable-bootstrap classification without
+weakening its artifact guard; 127 focused warning-strict tests pass. Clean
+ledger `b25951ba` produces wheel/sdist `5f2c9b5d...4e33`/`24875bca...eff7`,
+with canonical build, strict Twine, and independent verification exits 0.
+Host refresh `10c50ca...82fb` installs all four exact bundles and the active
+dashboard. OpenClaw returns to healthy authenticated RPC on port 18789. Codex
+reports the refreshed inventory exactly as eight `modified` hooks with none
+missing, making one fresh attended trust grant the explicit operator gate.
+
+The owner completed that trust grant. Exact no-bypass verifier
+`ef88754e...f2a4` then passes all 8/8 trust checks and launches Codex 0.150.1,
+but exits 1 because child `01a048b6...1301` receives only the generic identity.
+Parent/child rollouts `7a966722...3a9`/`8aa757e2...8f75` and Store
+`eafa2c87...56f` isolate the missing boundary: the strict hook lineage reader
+still admits only the 0.149.1 implicit-role/UTC-filename shape. The bounded
+AR-330 follow-up adds the exact 0.150.1 `Code Reviewer` top-level/nested role
+shape plus Codex's host-local filename spelling, while preserving exact
+0.149.1 and fail-closed drift behavior. The real retained child now resolves
+its exact parent and 103 focused warning-strict tests pass; rebuild, fresh
+trust, and live staffing verification remain pending.
+
+Clean ledger `33d9503bc5b7ec711466232e5606d82c4eb32966` now produces
+portable wheel `141b1c07...e87f9` and sdist `4fa78570...385f`; canonical
+build, strict Twine, independent distribution verification, an isolated
+Python 3.12 wheel install, and `pip check` all exit 0. The owner-private
+candidate venv is `~/.agency-runtime/release-venvs/ar297-33d9503b`; the
+installed immutable runtime hashes to `59c12970...dcf2`. Exact config remains
+mode 0600 at `a4e213d6...7348`, with strict assurance, additive recall, only
+LiteLLM aliases, and no Jina route.
+
+The bounded host transaction installs fresh Hermes, OpenClaw, Codex, and
+Claude bundles `90ea1533...e2a2`, `87c5a833...0955`,
+`bf284699...9d20d`, and `ab1fd64d...a7b9`. Receipt
+`d68c4641...21ad` exits 1 only for the attended Codex trust gate and the
+deliberately non-durable process-local LiteLLM credential at the dashboard
+service boundary; all four host filesystem/native transactions complete.
+A credential-free idempotent Hermes/dashboard transaction
+`a3ddb605...7684` exits 0 and starts the candidate dashboard. OpenClaw's
+supported stop/install/start sequence retains its immediate not-ready status
+as a bounded negative; second deep authenticated RPC receipt
+`3d782263...c0ac` exits 0 with active/running state, zero restarts, clean
+config audit, and no version drift.
+
+After the fresh attended eight-hook grant, immediately-preceding telemetry
+reported 57.8 percent remaining. Exact no-bypass activation receipt
+`eca6fcb4...647c` exits 0 for Codex 0.150.1 and persists current-profile proof
+`93e3c88d...7635` at trace
+`01a048d3-5687-7c11-a0a9-b1f3abbb7402`. It binds accepted selection/load of
+`code-reviewer`, one real child, native delivery, four successful alias-only
+generation/embedding/critic receipts, and completed finalization
+`aae6686c...4392` with `missing=[]`; no activation bypass, adapter mutation,
+or configuration mutation occurs. Parent/child rollouts hash to
+`299542c3...7158` and `a8525798...c707`. Private Store backup
+`cbaec4a8...01f8` passes quick-check, and sanitized correlation receipt
+`0fe1ac45...a34b` binds the exact run, route, specialist, model receipts, and
+accepted response hash. The AR-330 live gate is closed; fresh ordinary
+Codex/Claude/Hermes/OpenClaw proofs, authenticated dashboard proof, named
+repository gates, final record audit, and authorized merge remain.
+
+The first fresh later-ordinary host row passes on the same candidate. Normal
+Codex 0.150.1 session `01a048dd-10f0-77e2-94bd-d5e4c4572a4f` runs the exact
+824-byte direct-only task `3ef304e5...2dd3` under the user's unmodified
+`gpt-5.6-sol` model choice, `approval_policy=never`, and read-only sandbox; it
+makes no tool or collaboration call and exits 0. Native receipt
+`f4b845c8...7a82` proves one exact 2,659-byte `accessibility-auditor` card
+`c3cfc098...5848` in rollout `793448db...52d2`. Private Store
+`30f63fcf...6526` passes quick-check, and correlation `ecdc4998...22ec`
+binds trace `01a048dd-1171-7872-8125-00637de78618`, accepted selection/load,
+four successful alias-only generation/embedding/critic receipts, and
+finalization `8b42648c...4792` with `missing=[]`. The sole native response and
+Store response both hash to `572926de...0355`. Independent host verifier
+`db8f6780...e2f3` exits 0 and rechecks the exact bundle, immutable runtime,
+mode-0600 config, prompt, rollout, Store, and response equality. Claude,
+Hermes, and OpenClaw ordinary rows remain.
+
+Fresh ordinary Claude Code also passes on the exact candidate. Session
+`29700000-0000-4000-8000-000000000403` uses the existing first-party
+subscription login, normal default model, `dontAsk`, no bypass, and exact
+683-byte task `abfcd7ee...3408`; native stdout/stderr/exit hash to
+`38cd1ba7...3d03`, the empty SHA, and `bde29436...0120`. Native receipt
+`c0800570...b370` proves one exact 3,227-byte
+`section-508-accessibility-specialist` card `589a6e0c...303e`, no tool use,
+and successful completion. Store `0319318c...29d1` passes quick-check;
+correlation `15e99b7c...7c6b` binds trace
+`58b2d963-c7bd-4653-b100-9e7045ef86a5`, accepted selection/load, all five
+generation/embedding/reranker/critic alias receipts, and finalization
+`45913401...640d` with `missing=[]`. Native and Store response hash is
+`b4cd2225...8016`. Independent verifier `ed965d7c...8ca9` exits 0 with all
+19 checks true and no secret disclosure. Hermes and OpenClaw ordinary rows
+remain.
+
+The first fresh ordinary host Hermes attempt is retained as a fail-closed
+negative, not a completed matrix row. Normal Hermes 0.20.4 session
+`20260828_110948_f9349a` uses the unchanged `task-agency-hermes` LiteLLM
+alias, ordinary current-profile configuration, exact 684-byte task
+`7411494b...49de`, and no model, thinking, toolset, or bypass override. Native
+stdout/stderr/exit hash to `0f1d55ef...a801`, `e79cc69f...c6ef`, and
+`bde29436...0120`; the process exits 0 only because Agency replaces the
+unverified draft with its bounded block.
+
+Native state `1b0dbc22...f173` and Store `ae80fe76...1bd3` both pass SQLite
+quick-check. Offline inspection proves the selected 2,659-byte
+`accessibility-auditor` card `c3cfc098...5848` occurs exactly once in the
+12,397-byte first API payload. Correlation `5c85c67a...f2bf` binds accepted
+selection/load, all five required Agency alias groups including the reranker,
+and terminal finalization `8dfef4b6...a17` with
+`missing=[actual_model_selected]`. Hermes made six progressive tool searches
+but did not perform the explicitly instructed `agency_finalize` search or
+call; it then made one prompt-prohibited terminal call. Plugin doctor still
+proves one registered tool and eight hooks. This isolates nondeterministic
+model compliance after successful routing and prompt visibility; no product
+wiring defect, new model choice, configuration mutation, or AR item is claimed.
+
+One unchanged, clean-checkpointed R2 confirms that the current host failure is
+reproducible and is not admissible for another unchanged retry. Immediately
+preceding telemetry `97092734...e3b` records the clean `3982e05c` /
+`b81d154c` recovery pair and 40.2 percent remaining. Normal session
+`20260828_112338_b056ed` again uses the exact task, stable Hermes alias,
+current profile, and no model, reasoning, toolset, or bypass override. Native
+stdout/exit are byte-identical to R1 at `0f1d55ef...a801` /
+`bde29436...0120`; stderr `c77a80b2...0a70` contains only the session ID.
+
+Native receipt `712a0dc8...ce28` proves one exact 3,227-byte
+`section-508-accessibility-specialist` card in the 13,052-byte first API
+payload, ten API calls, nine tool calls, and a 3,747-byte final draft. Despite
+the task's self-contained/no-external-access constraint, the model made four
+generic searches, one schema description, two GitHub searches, and two
+terminal calls; it never searched for or called `agency_finalize`. Store
+receipt `eee92f9b...5a89` passes quick-check and binds accepted selection/load,
+all five Agency alias groups, and fail-closed finalization
+`7f3d1839...2f86`. A second host-created trace remains `in_progress` after CLI
+close and must expire or close before a final Store-cleanliness claim. The next
+attempt must materially narrow the supported Hermes tool surface rather than
+change the model or overwrite persistent user policy.
+
+The least-privilege host R3 closes the fresh Hermes matrix cell without a
+model or persistent-policy change. Supported ordinary CLI invocation manifest
+`e6182cae...35a7` pins only toolset `agency-runtime` and a four-turn ceiling;
+it retains the same `task-agency-hermes` alias, current profile, credential
+reference, and persistent config `0ef96df3...ee74`. The bounded 818-byte task
+`f1d1963e...b038` explicitly permits only the local Agency finalizer and caps
+the report below its native transport budget. Pre-live telemetry
+`0347535c...8c16` follows clean recovery `2c52e99a` / `a0cdea6f`.
+
+Session `20260828_113341_bbcb27` exits 0 with native stdout/stderr/exit
+`67fbb7cb...1871`, `218e0296...777f`, and `bde29436...0120`. Correct online
+state backup `cb86b49e...1624` passes quick-check; the rejected pre-WAL copy
+and its failed helper outputs were removed. Native receipt
+`d466fbb3...cdb8` proves one exact 2,659-byte `accessibility-auditor` card in
+the 12,531-byte API payload, three API calls, and exact tool sequence
+`tool_search` then `agency_finalize`. No GitHub, terminal, browser, file, or
+other non-Agency tool is present or called.
+
+Store `4ded5b87...e551` passes quick-check, and correlation
+`82409a45...d632` binds accepted selection/load, generation, additive
+embedding, critic, and host-alias receipts, plus terminal finalization
+`a424f727...fab76` with `missing=[]`. The exact accepted 2,646-byte response
+and visible output both hash to `d44c75bb...2f2b`; R1/R2 independently retain
+the configured reranker application. Supported lifecycle replay
+`32adcb5c...486a` closes R2's expired interrupted trace without changing its
+negative result. Independent verifier `f64738b9...8ce9` exits 0. The fresh
+Hermes row is complete at this explicit Conveyor-style least-privilege scope.
+
+Fresh ordinary OpenClaw now closes the fourth host harness cell. The first
+fresh invocation fails before model work at exit 1 because the machine's
+additive native model allow-lists predate and reject the already approved
+`litellm/task-agency-openclaw` alias; stdout is empty and stderr/exit hash to
+`fa87265e...5523` / `85acfd2e...5409`. No configuration or session artifact is
+created. Transaction receipt `831edb7a...dd2f` then adds only empty alias
+entries to the global and `openclaw` allow-lists. The native config changes
+from `3480c474...588ff` to `5a864f4e...ddfb6` at mode 0600 with all unrelated
+foreign policy, credentials, providers, fallbacks, gateway, and plugin fields
+unchanged; native validation exits 0.
+
+Immediately preceding telemetry `f104b10f...4b451` reports 51.9 percent and a
+clean `01598467` / `313ad7cd` recovery pair. Supported embedded OpenClaw
+2026.7.1-2 session `29700000-0000-4000-8000-000000000505` uses agent
+`openclaw`, the approved LiteLLM alias, thinking off, no delivery, and the
+exact 684-byte task `7411494b...49de`. It exits 0 after 234,660 ms; native
+stdout/stderr/exit hash to `661198c2...6b8b`, `aac406a2...b7d3`, and
+`bde29436...0120`. Corrected native receipt `1ac86bca...10fa` proves the full
+task file and its 683-byte message body, one exact 2,659-byte
+`accessibility-auditor` card, sole `litellm` provider and
+`task-agency-openclaw` model, thinking off, successful session end, healthy
+native SQLite, and a nonempty 3,239-byte response `c519f1ab...ddcf`. The first
+helper receipt remains retained at exit 1 because it expected the historical
+trimmed final prompt rather than this version's exact final newline.
+
+Store backup `97602525...f56a` passes quick-check. Correlation
+`84d672a6...afbf` binds trace `64adf094-cec5-4ac3-bbf1-f56200e5135b`,
+accepted selection/load, exact task fingerprint, and five successful
+generation/embedding/reranker/critic alias receipts. As in the isolated proof,
+the no-delivery embedded process has an active run and no terminal finalizer;
+that limitation is explicit rather than promoted to delivery evidence.
+Independent verifier `61fd0b83...7fe7` exits 0. After the additive config is
+loaded by the existing user-scoped systemd service, authenticated RPC receipt
+`a144aab9...172` exits 0 with operator role, loopback port 18789, zero restart
+count, no extra service, and no plugin drift. Package-end telemetry
+`d02d00d7...d6d9` reports 42.5 percent and requires this clean recovery pair
+before the authenticated dashboard proof.
+
+The exact candidate dashboard closes the final live host surface. Immediately
+preceding HTTP/browser telemetry `dee39489...d0f5` / `9ee71f18...0a14` sees
+the clean `6d8c97d0` / `c5c6cfd9` recovery pair. Authenticated HTTP receipt
+`b16121ba...c59c` exits 0 with all 21 checks true: the mode-0600 descriptor PID
+matches systemd, unauthenticated health is 401, authenticated health/workforce
+are 200 with `no-store`, and the complete 2,659-byte prompt
+`c3cfc098...5848` is untruncated and byte-identical to the exact installed
+asset. No bearer token is disclosed.
+
+Browser receipt `abd3c832...c2f8` exits 0 with all 13 checks true under
+Playwright 1.60.0 and Chromium 148.0.7778.96. It removes the token fragment,
+selects `accessibility-auditor`, visibly expands the complete governed prompt,
+observes 19 authenticated API 200 responses, and records zero console, page,
+or request failures. Owner-private screenshot `222d5109...b5ac` is 166,535
+bytes at mode 0600 and was visually inspected. Independent verifier
+`de359741...7ea` exits 0 and binds runtime `59c12970...dcf2`, systemd PID
+687930 with zero restarts, port 7810, both proofs, exact prompt, and screenshot.
+Package-end telemetry `ece5d47f...7f4d` reports 32.1 percent and requires this
+clean recovery pair before final repository gates.
+
+Every named repository gate now passes against clean source commit
+`33d9503b`. Metadata and documentation checks validate 921 Markdown files;
+Ruff lint and the 696-file format check pass; the named fast production spine
+passes 861 tests with 3 skips; all 138 dashboard UI tests pass; routing schema
+1.4.0 passes; and decision conformance has a green baseline with all 167
+curated mutations killed, zero survivors, and unchanged source. Every accepted
+exit is 0. Owner-private manifest `ef8d8abc...1b09` binds the exact commands,
+stdout/stderr/exit hashes, and the rejected environment preflights. The final
+decision run uses a private prepared CI interpreter and strict `0077` process
+umask so its disposable checkouts satisfy the existing private-path policy; it
+does not bypass or mutate Agency policy. The explicitly optional exhaustive
+corpus, four-shard coverage, and six-interpreter workflow were not dispatched.
+
+The final read-only record audit leaves source unchanged and isolates inherited
+repository-wide tracker debt rather than an AR-297 mismatch. Tracker-required
+documentation and tracker-parity stderr hash to `769fb577...6056` and
+`e98fd0e5...64a7`; both exit 1 because older roadmap items lack tracker URLs or
+have state/label drift. AR-297 and tracker #335 appear in neither mismatch list.
+No tracker, closure, tag, signature, release, or publication mutation was made.
