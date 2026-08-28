@@ -2467,3 +2467,15 @@ completed, cached, retried, and rejected requests. The final technical report
 must rank each unique Agency text-stage contract; embeddings remain a separate
 local dimension/latency/recall measurement because reasoning level does not
 apply.
+
+The frozen pre-live manifest `62f8bec4...c6fd` contains 67 exact model/mode
+candidates: 30 non-Spark OpenAI subscription routes, four MiniMax routes, 15
+Z.AI routes, and 18 local Ollama routes. Nine production contracts produce 603
+one-shot screen cells, 18 accounted local warm-ups, and at most 18 top-two
+confirmations, for a hard maximum of 639 model calls with zero retries. The
+secret-safe alias manager and stage harness are `65c80909...4a38` and
+`226f4532...b4e8`; fixture/schema validation and authenticated alias preflight
+`21700339...d176` pass without a model call, and no temporary benchmark alias
+exists. Schema/semantic/injection eligibility is a hard gate before the
+60-percent-quality/40-percent-latency combined score; every promoted fallback
+must come from a different provider.

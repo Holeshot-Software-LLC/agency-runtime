@@ -111,8 +111,11 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Journal audit `e307f2e5...784d` proves 12 distinct Spark completions. Stable
   generation rollback `75855980...6bc` restores local Qwen, and deletion receipts
   `bfb54a1f...86ae`/`b412d6cf...4851` remove both temporary Spark aliases.
-  OpenAI non-Spark, MiniMax M2.7/M2.7-highspeed/M3, Z.AI, and warm local models
-  are approved under a one-screen-call plus one-top-two-confirmation hard cap.
+- Frozen manifest `62f8bec4...c6fd` covers 67 approved non-Spark OpenAI,
+  MiniMax, Z.AI, and local model/mode candidates over nine exact stages: 603
+  screens, 18 local warm-ups, and at most 18 confirmations (639 hard maximum).
+  Harness/manager `226f4532...b4e8`/`65c80909...4a38` pass no-call preflight;
+  authenticated receipt `21700339...d176` finds zero temporary aliases.
 - Record audits `769fb577...6056`/`e98fd0e5...64a7` exit 1 only on inherited
   parity debt; AR-297/#335 has no mismatch. Tracker/release writes stay unauthorized.
 
