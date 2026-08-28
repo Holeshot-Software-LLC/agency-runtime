@@ -2284,3 +2284,33 @@ printed or persisted. This closes the clean-main build and machine-install
 package. The remaining owner-requested work is an interactive read-only test
 in each harness followed by the Linux-scoped verdict; tracker #335 remains open
 and no release, tag, signature, publication, or tracker mutation is authorized.
+
+The first owner-observed Codex test then revealed an ordinary-terminal
+credential projection gap hidden by the earlier proof environment. The
+`UserPromptSubmit` hook visibly loaded the resident-steward frame, and Codex
+produced the requested three bullets, but Stop rejected publication with
+`AGENCY TURN TERMINAL`. Store trace `01a04996-795a-7473-9919-a75e3ca3c151`
+is `preflight_failed`: `task-agency-generation` has
+`provider_no_valid_response`. The LiteLLM service log binds the request to HTTP
+401 `No api key passed in`; LiteLLM, Ollama, the dashboard, and OpenClaw remain
+running. This is not a model or endpoint failure and the rejected answer is not
+promoted to a passing manual cell.
+
+The existing exact config references `LITELLM_API_KEY`, but a fresh ordinary
+terminal does not inherit that variable. Using the owner's prior authorization
+to obtain the key from mode-0600 `~/.openclaw/.env`, the supported write-only
+`agency config set ... --stdin` interface replaces all eight LiteLLM credential
+references in a copied config without printing the value. The old config stays
+untouched. Receipt `530b7837...1e5e` records 16 zero-exit operations and creates
+mode-0600 exact config `ar297-litellm-df75e01d31dd8ebc.yaml`, SHA
+`df75e01d31dd8ebc668c3f4127d70a0af14e1e63cf600a9a03e6a01884540922`.
+Validation no longer reports provider authentication unavailable; exit 2 is
+limited to the four truthful cold-inventory loading warnings.
+
+Codex/dashboard reinstall stdout `9824fbf2...4c58` installs bundle
+`40b3693c...e340` and moves the healthy dashboard to the new exact config. The
+overall exit is 1 only because changing the bundle invalidates prior attended
+Codex hook trust. No bypass is used. The current bounded exit is
+`waiting_for_operator`: close the old Codex TUI, trust all eight hooks in a
+fresh terminal, and repeat the manual prompt as a new turn before testing the
+other three harnesses.

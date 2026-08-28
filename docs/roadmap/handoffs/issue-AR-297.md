@@ -24,9 +24,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-297
-branch: codex/ar297-main-install-proof
-evidence_commit: 988a8f0ce5852ae59a42d6ebd95fffcb87bb21dd
-minimum_ledger_commit: a922bb05a5eaad4f29b82fd4745e3f9f363280de
+branch: codex/ar297-manual-live-fix
+evidence_commit: 7b7fd6a776ffe4230e45216c1951dec2a62ec6b0
+minimum_ledger_commit: 7079b27e762df7dd73f580eb06dd6b70985f0cdf
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 ---
@@ -36,15 +36,17 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 ## checkpoint
 
 - Work only in `/tmp/agency-runtime-ar297-main.JWaPCg`; never touch the shared checkout.
-- PR #339 merged all product work as `origin/main` `dc8bbde6`; its exact
-  artifacts, four host installs, Codex activation, and dashboard proof pass.
-- Clean merged-main checkpoint `dc8bbde6` precedes this evidence-only record.
+- PRs #339/#340 merged product/evidence through clean `origin/main` `1e6f5d07`.
+- Manual Codex loaded the steward but exposed missing ordinary-terminal LiteLLM
+  auth; exact config repair is installed and awaits fresh attended hook trust.
+- Clean merged checkpoint `1e6f5d07` precedes this recovery pair.
 
 ## completed-evidence
 
-- Mode-0600 config `ar297-litellm-a4e213d6b454ca90.yaml` hashes to
-  `a4e213d6...97348`: strict assurance, additive dense recall, and every Agency
-  inference route through authenticated LiteLLM aliases. No Jina route exists.
+- Baseline mode-0600 config `a4e213d6...97348` routes every Agency call through
+  LiteLLM aliases, but ordinary terminals lack its referenced environment key.
+  Write-only projection from owner-approved `~/.openclaw/.env` creates exact
+  mode-0600 config `df75e01d...0922`; no value is printed and no Jina route exists.
 - Free Qwen 3 32B is promoted behind stable alias `task-agency-child-judge`.
   Promotion/metadata/final validation/literal/spend receipts are
   `6e19008f...1750`, `e1cba9f6...e841`, `42921a7e...867c`,
@@ -67,19 +69,11 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   builds exit 0. R1 image verification correctly rejects Node 22; the pinned
   Node 24.15 rebuild passes at `07f372e3...eb9a`. Final image IDs begin
   `c8e7a265`, `93eb1f9e`, `3a4cac26`, `c3d712ec`, and `4d2ccddc`.
-- Final Codex absence survives dry-run at `0aab382c...3163`; its sole live
-  install `ce370bc8...1330`, Store `d9469980...d5b9`, artifacts
-  `8831ece2...3940`, and status `e1c700b5...fd1f` exit 0. Bundle
-  `96b44257...7785` has one native child, `missing=[]`, managed trust, no bypass.
-- Final Claude install/status/artifacts `579d65c8...a0e9`/`98cbc224...897d`/
-  `105bf8b0...6499` exit 0; bundle `b2151080...b119` is registered/enabled.
-- Final UID-10000 Hermes install/status/artifacts `4d04f360...02d8`/
-  `b9b6e7aa...a3f1`/`0cb3331c...2e8a` exit 0; bundle `eab39058...c15e`.
-  Native doctor and strict post-load tree proof `d7bc15f0...d8f8` retain only
-  the 0500/0400 manifested guard, no `.pyc`, and exact validation.
-- OpenClaw dry-run truthfully leaves an empty runtime home at `8ffcb927...af70`;
-  untouched R2 absence `5feaa49c...2cdd`, install `4debebf3...c748`, Store
-  `c6da8137...0b12`, systemd, exact alias config, and 13-hook runtime all pass.
+- Strict container proofs pass separately: Codex `ce370bc8...1330` with one
+  delivered native child; Claude `579d65c8...a0e9`; Hermes
+  `4d04f360...02d8` with sealed tree `d7bc15f0...d8f8`; and OpenClaw
+  `4debebf3...c748` with Store/systemd/13-hook evidence. All retain exact
+  bundles and `missing=[]` where terminal delivery applies.
 - Fresh Claude verifier `ed965d7c...8ca9` exits 0 for session `.403`: exact
   3,227-byte card, no tool use, all five alias receipts, accepted completion,
   `missing=[]`, native/Store response equality, existing subscription auth,
@@ -122,8 +116,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 
 ## exact-blocker
 
-- AR-330 is resolved by `eca6fcb4...647c`; no install, repository, activation,
-  or model/config gate fails. Record merge, manual tests, and verdict remain.
+- Manual Codex preflight trace `01a04996...c151` fails closed at HTTP 401 because
+  the ordinary terminal has no `LITELLM_API_KEY`; the steward loads but Stop
+  rejects the unaccepted answer. Config repair receipt `530b7837...1e5e` passes
+  all 16 write-only operations; Codex bundle `40b3693c...e340` now awaits trust.
 - Record audits `769fb577...6056`/`e98fd0e5...64a7` exit 1 only on inherited
   parity debt; AR-297/#335 has no mismatch. Tracker/release writes stay unauthorized.
 
@@ -132,6 +128,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Artifacts: `~/.agency-runtime/release-artifacts/dist-dc8bbde6a884f72614dae32585e488ce4997b9ac`.
 - Venv/evidence: `~/.agency-runtime/release-venvs/ar297-main-dc8bbde6` /
   `~/.agency-runtime/evidence/ar297-main-install-dc8bbde6`.
+- Manual repair/evidence: config `ar297-litellm-df75e01d31dd8ebc.yaml` /
+  `~/.agency-runtime/evidence/ar297-manual-live-20260828`.
 - Earlier live evidence remains under `~/.agency-runtime/evidence/ar297-host-live-20260828`.
 - Zero AR-297 containers remain; five exact images and healthy host services remain.
 
@@ -148,8 +146,8 @@ unchecked line. Mark an item complete only with exact retained evidence.
    healthy dashboard/OpenClaw services.
 4. [x] Codex/Claude/scoped-Hermes/OpenClaw, authenticated dashboard, and every
    named repository gate pass with exact retained hashes and exits.
-5. [ ] Merge the exact merged-main installation record, run the owner's manual
-   live tests one harness at a time, and issue the final Linux-scoped verdict.
+5. [ ] Complete fresh Codex trust/manual pass; then install/test Claude,
+   Hermes, and OpenClaw against `df75e01d...0922` and issue the Linux verdict.
 
 ## verification
 
