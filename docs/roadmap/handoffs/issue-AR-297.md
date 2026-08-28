@@ -24,9 +24,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-297
-branch: codex/ar297-host-live-closure
-evidence_commit: a4db84683d6e7f2386cb7e21ff9495c1c226a4e0
-minimum_ledger_commit: 00fec051dd791d6e29fe22b79995b49e5acd6bf1
+branch: codex/ar297-main-install-proof
+evidence_commit: 988a8f0ce5852ae59a42d6ebd95fffcb87bb21dd
+minimum_ledger_commit: a922bb05a5eaad4f29b82fd4745e3f9f363280de
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 ---
@@ -35,10 +35,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 
 ## checkpoint
 
-- Work only in `/tmp/agency-runtime-ar297.WQUbF2`; never touch the shared checkout.
-- AR-330's canary, four host rows, dashboard, and every named gate pass; only
-  record audit, authorized merge, fresh `origin/main` install, and verdict remain.
-- Clean source/ledger `a4db8468` / `00fec051` immediately precedes final gates.
+- Work only in `/tmp/agency-runtime-ar297-main.JWaPCg`; never touch the shared checkout.
+- PR #339 merged all product work as `origin/main` `dc8bbde6`; its exact
+  artifacts, four host installs, Codex activation, and dashboard proof pass.
+- Clean merged-main checkpoint `dc8bbde6` precedes this evidence-only record.
 
 ## completed-evidence
 
@@ -103,15 +103,17 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   restarted authenticated systemd RPC passes at `a144aab9...172`.
 - Teardown `40fa5062...1dc4` removes all 47 exact labelled containers with zero
   survivors; five images remain at `5c998f61...e276`, and host services stay healthy.
-- Approved Qwen3 Coder aliases apply/verify `d69aa6b6...af4d`/`a1e2381d...a5dd`
-  exit 0 at 65,536/no-thinking; unrelated aliases are unchanged. OpenClaw's
-  three-pointer config transition/verify `e97e02e2...deba`/`a141d193...e1ce`
-  exit 0; two stale-metadata attempts rolled back.
-- Exact `33d9503b` wheel/sdist are `141b1c07...e87f9`/`4fa78570...385f`;
-  canonical build, strict Twine, verification, isolated install, and pip check pass.
-- Fresh host bundles are Hermes `90ea1533...e2a2`, OpenClaw `87c5a833...0955`,
-  Codex `bf284699...9d20d`, and Claude `ab1fd64d...a7b9`; runtime is `59c12970...dcf2`.
-  Dashboard verifier `de359741...7ea` and OpenClaw RPC `a144aab9...172` pass.
+- Qwen3 Coder aliases `d69aa6b6...af4d`/`a1e2381d...a5dd` pass at 65,536;
+  OpenClaw transition/verify `e97e02e2...deba`/`a141d193...e1ce` pass.
+- Merged-main `dc8bbde6` wheel/sdist `c3f3cd0d...675c` / `dc57fa54...5325`;
+  build, Twine, verification, install, and pip check pass in a fresh venv.
+- Main-installed runtime is `2dd04fdc...9987`; Hermes/OpenClaw/Codex/Claude
+  bundles `b03b47fe...e9b`/`1f88f2ef...2c8`/`cecc8993...b3b`/`5d178603...136`;
+  exact attestation `93a25ad5...c25` passes all 18 checks.
+- Codex's default 180-second verification times out safely; the canonical
+  300-second retry `d90cfcd1...c47` passes managed trust/canary/attestation;
+  OpenClaw RPC `48b73bba...393b` also exits 0.
+- Dashboard `96d1a058...a515` passes auth, no-store, full prompt, and PID/port.
 - No-bypass Codex receipt `eca6fcb4...647c` exits 0 at trace
   `01a048d3-5687-7c11-a0a9-b1f3abbb7402`; rollouts
   `299542c3...7158`/`a8525798...c707` bind the real child and finalization.
@@ -120,18 +122,17 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 
 ## exact-blocker
 
-- AR-330's prior `ef88754e...f2a4` failure is resolved by exact live receipt
-  `eca6fcb4...647c`; no activation or model/config choice remains blocked.
-- Record audit, merge, `origin/main` install, and verdict remain; no gate fails.
+- AR-330 is resolved by `eca6fcb4...647c`; no install, repository, activation,
+  or model/config gate fails. Record merge, manual tests, and verdict remain.
 - Record audits `769fb577...6056`/`e98fd0e5...64a7` exit 1 only on inherited
   parity debt; AR-297/#335 has no mismatch. Tracker/release writes stay unauthorized.
 
 ## same-task-continuity
 
-- Exact artifacts: `~/.agency-runtime/release-artifacts/dist-33d9503bc5b7ec711466232e5606d82c4eb32966`.
-- Candidate/evidence: `~/.agency-runtime/release-venvs/ar297-33d9503b`,
-  `~/.agency-runtime/evidence/ar297-host-live-20260828`.
-- Helpers/tooling: `/tmp/agency-runtime-ar297-evidence.pcLOZn/`.
+- Artifacts: `~/.agency-runtime/release-artifacts/dist-dc8bbde6a884f72614dae32585e488ce4997b9ac`.
+- Venv/evidence: `~/.agency-runtime/release-venvs/ar297-main-dc8bbde6` /
+  `~/.agency-runtime/evidence/ar297-main-install-dc8bbde6`.
+- Earlier live evidence remains under `~/.agency-runtime/evidence/ar297-host-live-20260828`.
 - Zero AR-297 containers remain; five exact images and healthy host services remain.
 
 ## next-bounded-work-package
@@ -145,11 +146,10 @@ unchecked line. Mark an item complete only with exact retained evidence.
 2. [x] Repair AR-329 with a mode-0400 regression and focused Codex suites.
 3. [x] Commit the repair ledger, build/install the exact candidate, and restore
    healthy dashboard/OpenClaw services.
-4. [x] Codex/Claude/scoped-Hermes pass; prove ordinary OpenClaw
-   Store/full-prompt row on the host.
-5. [ ] Dashboard and every named repository gate pass with exact hashes/exits;
-   audit records, merge the authorized PR, install from clean `origin/main`,
-   and issue the final Linux-scoped verdict.
+4. [x] Codex/Claude/scoped-Hermes/OpenClaw, authenticated dashboard, and every
+   named repository gate pass with exact retained hashes and exits.
+5. [ ] Merge the exact merged-main installation record, run the owner's manual
+   live tests one harness at a time, and issue the final Linux-scoped verdict.
 
 ## verification
 

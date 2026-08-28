@@ -2252,3 +2252,35 @@ documentation and tracker-parity stderr hash to `769fb577...6056` and
 `e98fd0e5...64a7`; both exit 1 because older roadmap items lack tracker URLs or
 have state/label drift. AR-297 and tracker #335 appear in neither mismatch list.
 No tracker, closure, tag, signature, release, or publication mutation was made.
+
+PR #339 then merged the complete product package to `origin/main` as
+`dc8bbde6a884f72614dae32585e488ce4997b9ac`. A clean checkout built wheel
+`c3f3cd0d...675c` and sdist `dc57fa54...5325`; build `a7e70dcf...c7d7`, strict
+Twine `e2527bd9...a8a3`, and independent distribution verification
+`70e8a13e...73f` all exit 0. The exact wheel was installed into fresh venv
+`~/.agency-runtime/release-venvs/ar297-main-dc8bbde6`, with no external Agency
+version pin. Hermes/dashboard `cea01073...5a2`, Claude `097450fa...f66`,
+OpenClaw install `75be0172...a20`, and Codex install `19820581...24c` all exit
+0. OpenClaw's supported stop/install/start sequence and authenticated deep RPC
+`48b73bba...393b` pass without replacing foreign policy.
+
+The owner completed Codex TUI hook trust. The default 180-second verifier then
+timed out safely without persisting an attestation; its materially changed,
+previously proven 300-second retry exits 0 at `d90cfcd1...c47`, with managed
+trust, canary pass, trace `01a04952-fea8-7362-8593-08e24ab4045f`, proof digest
+`641cc99d...d18`, and bundle `cecc8993...ab3b`. Exact runtime attestation
+`93a25ad5...c25` exits 0 with all 18 checks true for runtime
+`2dd04fdc...9987` and Hermes/OpenClaw/Codex/Claude bundles
+`b03b47fe...e9b`, `1f88f2ef...2c8`, `cecc8993...ab3b`, and
+`5d178603...136`. The installer record binds the exact wheel URL; its PEP 610
+record does not include the optional archive hash, so the canonical builder
+and independent verifier separately bind the wheel SHA.
+
+Final status `7cc9023f...f512` exits 0, and authenticated dashboard proof
+`96d1a058...a515` exits 0 with unauthenticated 401, authenticated health and
+workforce 200 plus `no-store`, PID 1134253 on port 7810, and the full untruncated
+2,659-byte accessibility-auditor prompt `c3cfc098...5848`. No secret is
+printed or persisted. This closes the clean-main build and machine-install
+package. The remaining owner-requested work is an interactive read-only test
+in each harness followed by the Linux-scoped verdict; tracker #335 remains open
+and no release, tag, signature, publication, or tracker mutation is authorized.
