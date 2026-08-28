@@ -2232,3 +2232,16 @@ bytes at mode 0600 and was visually inspected. Independent verifier
 687930 with zero restarts, port 7810, both proofs, exact prompt, and screenshot.
 Package-end telemetry `ece5d47f...7f4d` reports 32.1 percent and requires this
 clean recovery pair before final repository gates.
+
+Every named repository gate now passes against clean source commit
+`33d9503b`. Metadata and documentation checks validate 921 Markdown files;
+Ruff lint and the 696-file format check pass; the named fast production spine
+passes 861 tests with 3 skips; all 138 dashboard UI tests pass; routing schema
+1.4.0 passes; and decision conformance has a green baseline with all 167
+curated mutations killed, zero survivors, and unchanged source. Every accepted
+exit is 0. Owner-private manifest `ef8d8abc...1b09` binds the exact commands,
+stdout/stderr/exit hashes, and the rejected environment preflights. The final
+decision run uses a private prepared CI interpreter and strict `0077` process
+umask so its disposable checkouts satisfy the existing private-path policy; it
+does not bypass or mutate Agency policy. The explicitly optional exhaustive
+corpus, four-shard coverage, and six-interpreter workflow were not dispatched.

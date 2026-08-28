@@ -25,8 +25,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-297
 branch: codex/ar297-host-live-closure
-evidence_commit: f6870aa69e69fb68977fbb18c2e8565e9b62b9fd
-minimum_ledger_commit: e81da27a69e81220b9cf0e84dc924fd008b03db6
+evidence_commit: a4db84683d6e7f2386cb7e21ff9495c1c226a4e0
+minimum_ledger_commit: 00fec051dd791d6e29fe22b79995b49e5acd6bf1
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 ---
@@ -36,9 +36,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 ## checkpoint
 
 - Work only in `/tmp/agency-runtime-ar297.WQUbF2`; never touch the shared checkout.
-- AR-330's canary, all four fresh host rows, and authenticated dashboard pass;
-  only named gates, record audit, authorized merge, and verdict remain.
-- Clean source/ledger `01598467` / `313ad7cd` immediately precedes OpenClaw.
+- AR-330's canary, four host rows, dashboard, and every named gate pass; only
+  record audit, authorized merge, fresh `origin/main` install, and verdict remain.
+- Clean source/ledger `a4db8468` / `00fec051` immediately precedes final gates.
 
 ## completed-evidence
 
@@ -49,11 +49,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   Promotion/metadata/final validation/literal/spend receipts are
   `6e19008f...1750`, `e1cba9f6...e841`, `42921a7e...867c`,
   `b686ab4b...9abe`, and `d7183bb5...2f07`. Temporary aliases are removed.
-- Final named gates pass for `e0b0b25c`: 916 docs, Ruff lint/format, 860 Python
-  tests with 3 skips, 138 dashboard tests, routing 1.4.0, and 167/167 killed
-  decision mutations. Receipts are `6e0883bd...a98f`, `82b3e6a6...6b4f`,
-  `b2a4a388...657f`, `3002917f...41c6`, `ac720857...8436`, and
-  `547b518c...584f`; all final exits are 0.
+- Final named gates pass for `33d9503b`: 921 docs, Ruff/696 formats, 861 tests
+  with 3 skips, 138 dashboard tests, routing 1.4.0, and 167/167 mutations killed.
+  Manifest `ef8d8abc...1b09` records every accepted exit/hash and rejected
+  environment preflight; every accepted exit is 0.
 - Clean repair ledger `6e78b146` builds portable wheel `cf32f861...b2a7` and
   sdist `1b40ca8f...e228`; independent verification and separate installed
   8/8 wheel/sdist smoke runs exit 0 in the retained owner-private artifact root.
@@ -123,7 +122,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 
 - AR-330's prior `ef88754e...f2a4` failure is resolved by exact live receipt
   `eca6fcb4...647c`; no activation or model/config choice remains blocked.
-- Named gates, record audit, authorized merge, and final verdict remain.
+- Record audit, merge, `origin/main` install, and verdict remain; no gate fails.
 - Tracker audit `413c8a3a...1600` retains pre-existing parity debt; tracker
   writes/closure, signing, tagging, and release publication remain unauthorized.
 
@@ -148,8 +147,9 @@ unchecked line. Mark an item complete only with exact retained evidence.
    healthy dashboard/OpenClaw services.
 4. [x] Codex/Claude/scoped-Hermes pass; prove ordinary OpenClaw
    Store/full-prompt row on the host.
-5. [ ] Dashboard passes; run every named repository gate, record hashes/exits,
-   merge the authorized PR, and issue the final Linux-scoped verdict.
+5. [ ] Dashboard and every named repository gate pass with exact hashes/exits;
+   audit records, merge the authorized PR, install from clean `origin/main`,
+   and issue the final Linux-scoped verdict.
 
 ## verification
 
