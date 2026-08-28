@@ -130,8 +130,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 ## same-task-continuity
 
 - Exact artifacts: `~/.agency-runtime/release-artifacts/dist-e0b0b25c30083b09743fe1a04f2a0ad4cdf4e533-linux-ar297`.
-- Evidence: `~/.agency-runtime/evidence/ar297-go-e0b0b25c`; secret-safe helpers
-  remain `/tmp/agency-runtime-ar297-evidence.pcLOZn/`.
+- Evidence/helpers: `~/.agency-runtime/evidence/ar297-go-e0b0b25c`, `/tmp/agency-runtime-ar297-evidence.pcLOZn/`.
 - Protected Python: `~/.agency-runtime-ci/ar297-release-0827/venv/bin/python`.
 - Zero AR-297 containers remain; five exact images and healthy host services remain.
 
