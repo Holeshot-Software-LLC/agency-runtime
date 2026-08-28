@@ -2519,3 +2519,16 @@ inconsistent and on is slow at 32.780/32.862 seconds for planning/recruitment;
 neither is eligible on hiring. Z.AI therefore contributes only compact-stage
 fallback candidates, subject to cross-provider combined ranking. Every alias is
 deleted after its nine-cell slice.
+
+Local Ollama completes all 162 frozen cells and all 18 accounted warm-ups
+exactly once. Cumulative ledger `336fdf67...fcc1` records 78 structured
+completions, 24 strict eligibilities, and 84 bounded transport/JSON failures;
+nine warm-ups pass and nine fail. Qwen3 Coder 30B is the strongest local route:
+it scores 100 on planner/recruiter/critic/reranker/judge, reaches 17.125 seconds
+on planning and 0.892--4.334 seconds on the compact stages, but misses the full
+hiring and repair gold gates at 80. Mistral 24B passes recruiter and judge but
+takes 20.416/3.970 seconds; all GPT-OSS 20B reasoning modes fail the strict
+structured path. The completed screen is therefore 603/603 cells, 448
+structured and 313 eligible. Post-block inspection returns HTTP 200 with zero
+temporary benchmark aliases; the only cleanup warning names an already-absent
+OpenAI alias after its prior successful delete and does not leave live state.

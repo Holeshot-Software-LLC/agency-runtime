@@ -112,11 +112,11 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   `bfb54a1f...86ae`/`b412d6cf...4851` remove both temporary Spark aliases.
 - Frozen manifest `62f8bec4...c6fd` covers 603 screens, 18 local warm-ups, and
   at most 18 confirmations (639 maximum); harness `226f4532...b4e8` passes.
-  OpenAI `a0c3f787...85e2`: 270 cells, 238 structured, 197 eligible, 32
-  failures; Nano fails all nine. MiniMax `5f93b3a3...7747`: 36/32/19/four;
-  M3-adaptive leads compact stages. Z.AI `636a1dec...5bf5`: 135/100/73/35;
-  it has compact fallbacks but no eligible full hiring generator. Manager
-  `8d7d884a...4d92` leaves zero temporary aliases after every provider block.
+  OpenAI `a0c3f787...85e2` is 270/238/197/32; MiniMax
+  `5f93b3a3...7747` is 36/32/19/four; Z.AI `636a1dec...5bf5` is
+  135/100/73/35; local cumulative ledger `336fdf67...fcc1` adds
+  162/78/24/84 plus 18 warm-ups. The full screen is 603/448/313/155.
+  Qwen3 Coder 30B leads local routes; HTTP-200 inspection finds zero temporary aliases.
 - Record audits `769fb577...6056`/`e98fd0e5...64a7` exit 1 only on inherited
   parity debt; AR-297/#335 has no mismatch. Tracker/release writes stay unauthorized.
 
