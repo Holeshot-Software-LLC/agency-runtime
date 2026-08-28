@@ -2212,3 +2212,23 @@ loaded by the existing user-scoped systemd service, authenticated RPC receipt
 count, no extra service, and no plugin drift. Package-end telemetry
 `d02d00d7...d6d9` reports 42.5 percent and requires this clean recovery pair
 before the authenticated dashboard proof.
+
+The exact candidate dashboard closes the final live host surface. Immediately
+preceding HTTP/browser telemetry `dee39489...d0f5` / `9ee71f18...0a14` sees
+the clean `6d8c97d0` / `c5c6cfd9` recovery pair. Authenticated HTTP receipt
+`b16121ba...c59c` exits 0 with all 21 checks true: the mode-0600 descriptor PID
+matches systemd, unauthenticated health is 401, authenticated health/workforce
+are 200 with `no-store`, and the complete 2,659-byte prompt
+`c3cfc098...5848` is untruncated and byte-identical to the exact installed
+asset. No bearer token is disclosed.
+
+Browser receipt `abd3c832...c2f8` exits 0 with all 13 checks true under
+Playwright 1.60.0 and Chromium 148.0.7778.96. It removes the token fragment,
+selects `accessibility-auditor`, visibly expands the complete governed prompt,
+observes 19 authenticated API 200 responses, and records zero console, page,
+or request failures. Owner-private screenshot `222d5109...b5ac` is 166,535
+bytes at mode 0600 and was visually inspected. Independent verifier
+`de359741...7ea` exits 0 and binds runtime `59c12970...dcf2`, systemd PID
+687930 with zero restarts, port 7810, both proofs, exact prompt, and screenshot.
+Package-end telemetry `ece5d47f...7f4d` reports 32.1 percent and requires this
+clean recovery pair before final repository gates.

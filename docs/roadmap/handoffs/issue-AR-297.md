@@ -36,8 +36,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 ## checkpoint
 
 - Work only in `/tmp/agency-runtime-ar297.WQUbF2`; never touch the shared checkout.
-- AR-330's canary plus fresh Codex, Claude, scoped Hermes, and OpenClaw rows pass;
-  the authenticated dashboard and final gates remain.
+- AR-330's canary, all four fresh host rows, and authenticated dashboard pass;
+  only named gates, record audit, authorized merge, and verdict remain.
 - Clean source/ledger `01598467` / `313ad7cd` immediately precedes OpenClaw.
 
 ## completed-evidence
@@ -111,8 +111,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Exact `33d9503b` wheel/sdist are `141b1c07...e87f9`/`4fa78570...385f`;
   canonical build, strict Twine, verification, isolated install, and pip check pass.
 - Fresh host bundles are Hermes `90ea1533...e2a2`, OpenClaw `87c5a833...0955`,
-  Codex `bf284699...9d20d`, and Claude `ab1fd64d...a7b9`; runtime is
-  `59c12970...dcf2`, dashboard is active, and OpenClaw RPC `3d782263...c0ac` passes.
+  Codex `bf284699...9d20d`, and Claude `ab1fd64d...a7b9`; runtime is `59c12970...dcf2`.
+  Dashboard verifier `de359741...7ea` and OpenClaw RPC `a144aab9...172` pass.
 - No-bypass Codex receipt `eca6fcb4...647c` exits 0 at trace
   `01a048d3-5687-7c11-a0a9-b1f3abbb7402`; rollouts
   `299542c3...7158`/`a8525798...c707` bind the real child and finalization.
@@ -123,7 +123,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 
 - AR-330's prior `ef88754e...f2a4` failure is resolved by exact live receipt
   `eca6fcb4...647c`; no activation or model/config choice remains blocked.
-- Dashboard proof, named gates, record audit, and authorized merge remain.
+- Named gates, record audit, authorized merge, and final verdict remain.
 - Tracker audit `413c8a3a...1600` retains pre-existing parity debt; tracker
   writes/closure, signing, tagging, and release publication remain unauthorized.
 
@@ -148,8 +148,8 @@ unchecked line. Mark an item complete only with exact retained evidence.
    healthy dashboard/OpenClaw services.
 4. [x] Codex/Claude/scoped-Hermes pass; prove ordinary OpenClaw
    Store/full-prompt row on the host.
-5. [ ] Prove authenticated dashboard; run every named repository gate, record
-   exact hashes/exits, merge the authorized PR, and issue the Linux verdict.
+5. [ ] Dashboard passes; run every named repository gate, record hashes/exits,
+   merge the authorized PR, and issue the final Linux-scoped verdict.
 
 ## verification
 
