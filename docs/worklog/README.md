@@ -1375,6 +1375,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `2c52e99a` | 2026-08-28 | docs(ar297): retain second Hermes host negative | null | null |
 | `01598467` | 2026-08-28 | docs(ar297): prove scoped Hermes host loading | null | null |
 | `6d8c97d0` | 2026-08-28 | docs(ar297): prove ordinary OpenClaw host loading | null | null |
+| `a4db8468` | 2026-08-28 | docs(ar297): prove authenticated host dashboard | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
