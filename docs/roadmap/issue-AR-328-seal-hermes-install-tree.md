@@ -113,3 +113,10 @@ The same full smoke-isolation regression fails locally before repair with
 `PermissionError` on the exact cache-denied marker, then passes after the
 bounded teardown correction. Both smoke suites pass 37 tests under the
 owner-protected interpreter, and focused Ruff/format/diff checks exit 0.
+Clean ledger head `6e78b14636fb682f9b0b4f7fa400fb5a51eed38f`
+builds and independently verifies the portable wheel and sdist with exits 0.
+Their SHA-256 values are `cf32f861...b2a7` and `1b40ca8f...e228`.
+Separate owner-private installed wheel and sdist environments each pass all
+eight deterministic smoke checks, including Hermes, and exit 0; artifacts and
+isolated homes remain under
+`~/.agency-runtime-ci/ar297-pr337-6e78b146/`.

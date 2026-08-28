@@ -1986,3 +1986,11 @@ repair reopens only that exact generated guard in smoke's `finally` path; the
 existing full isolation regression now passes, both focused smoke suites pass
 37 tests, and production guard validation remains unchanged. A fresh hosted
 run and final merge-state audit remain the next publication gates.
+
+At clean ledger head `6e78b14636fb682f9b0b4f7fa400fb5a51eed38f`,
+canonical build, strict Twine, and independent portable-distribution
+verification exit 0. The wheel hashes to `cf32f861...b2a7` and the sdist to
+`1b40ca8f...e228`. Separate owner-private installations of each artifact pass
+all eight deterministic smoke checks with no cleanup error and exit 0. The
+artifacts, two copied-interpreter environments, and isolated homes remain under
+`~/.agency-runtime-ci/ar297-pr337-6e78b146/` for review.

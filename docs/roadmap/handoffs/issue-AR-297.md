@@ -56,6 +56,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   decision mutations. Receipts are `6e0883bd...a98f`, `82b3e6a6...6b4f`,
   `b2a4a388...657f`, `3002917f...41c6`, `ac720857...8436`, and
   `547b518c...584f`; all final exits are 0.
+- Clean repair ledger `6e78b146` builds portable wheel `cf32f861...b2a7` and
+  sdist `1b40ca8f...e228`; independent verification and separate installed
+  8/8 wheel/sdist smoke runs exit 0 in the retained owner-private artifact root.
 - AR-328 regression `751276ea...e3a` fails before repair. The exact cache guard
   preserves movable installs; 359 tests pass with 2 skips at
   `981fbbc8...ddd0`, and focused Ruff/docs pass with empty stderr.
@@ -133,7 +136,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 After compaction, reread this capsule and `git status`, then resume at the first
 unchecked line. Mark an item complete only with exact retained evidence.
 
-1. [ ] Commit the bounded disposable-Hermes-guard smoke repair and its recovery
+1. [x] Commit the bounded disposable-Hermes-guard smoke repair and its recovery
    ledger after focused and named repository gates pass.
 2. [ ] Push the repair, require fresh Ubuntu distribution and aggregate CI
    success, and confirm all PR checks are terminal green or expected skips.
