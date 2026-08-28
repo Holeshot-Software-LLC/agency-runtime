@@ -2440,3 +2440,30 @@ receipt `e861bd5d...ff0b`. This is more than fifteen times faster than the
 resident 8B model on the comparable batch. The bounded package now proceeds
 to an explicitly unloaded full cold hook, an immediate warm hook, and ordered
 cross-provider primary-failure proof.
+
+The unloaded full hook returns at process level in 7.79 seconds, but strict
+Store inspection rejects the result: both Spark planner attempts are
+`plan_response_semantic_invalid`, the run is `preflight_failed`, and no model,
+routing, or specialist receipt is accepted. Stdout/Store are
+`67133d17...2cb`/`d1562321...c09`; this is a fast negative, not a cold pass.
+The gateway cost logger also fails to persist most Spark spend rows. A
+deduplicated journal audit exits 0 at `e307f2e5...784d` and proves 12 distinct
+Spark completions from 15:31:01 through 15:46:39 EDT. The retained first audit
+exits 1 because it counts the logger and duplicated exception line separately.
+
+The owner rejects Spark after it consumes about half of its separate five-hour
+subscription budget. Transaction `75855980...6bc` restores stable
+`task-agency-generation` to local `ollama/qwen3-14b-abliterated`; deletion
+receipts `bfb54a1f...86ae` and `b412d6cf...4851` remove the temporary low and
+medium Spark aliases. All eight stable Agency aliases again resolve locally.
+No later benchmark may include Spark.
+
+The owner authorizes a broader per-stage benchmark across non-Spark OpenAI
+subscription models, MiniMax M2.7/M2.7-highspeed/M3, Z.AI, and warm local
+models. Every provider-supported reasoning level, including off/unset where
+available, must be evaluated for latency, deterministic/semantic quality, and
+a combined score. The retained call ledger must distinguish attempted,
+completed, cached, retried, and rejected requests. The final technical report
+must rank each unique Agency text-stage contract; embeddings remain a separate
+local dimension/latency/recall measurement because reasoning level does not
+apply.

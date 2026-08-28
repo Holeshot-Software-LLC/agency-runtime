@@ -37,8 +37,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 
 - Work only in `/tmp/agency-runtime-ar297-main.JWaPCg`; never touch the shared checkout.
 - PRs #339/#340 merged product/evidence through clean `origin/main` `1e6f5d07`.
-- Credential repair is installed. Stable `task-agency-generation` now targets
-  subscription Luna-light; the current package is optimizing strict preflight latency.
+- Credential repair is installed. Stable `task-agency-generation` is rolled back
+  to local Qwen 14B; Spark is excluded after its bounded call audit.
 - Clean checkpoint `15cda0a4` precedes this recovery pair.
 
 ## completed-evidence
@@ -99,16 +99,20 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   embeddings, and subscription/local critic/reranker comparison. Target is
   <=20s warm and <=30s cold without weakening strict/additive behavior.
 - Spark low/medium both pass the hard planner at 2.70/3.03s
-  (`ce3a5eff...ed6`/`64ed8fa6...ce2`). Full Spark/Sol configs still time out at
+  (`ce3a5eff...ed6`/`64ed8fa6...ce2`). Full Spark/Sol configs initially time out at
   60s cold and 45s repeated because the resident 8B embedding call alone takes
   about 34--37s; Store hashes are `d22dfc65...79f9`/`948df40a...fbc8`.
 - Owner requests each stable text alias use the best measured primary plus an
   ordered cross-provider fallback. Use LiteLLM deployment `order`, zero
-  per-deployment retries, cooldown, and forced-failure evidence. Await approval
-  for local `qwen3-embedding:0.6b` at native 1,024 dimensions.
+  per-deployment retries, cooldown, and forced-failure evidence.
 - Approved 0.6B embedding pull/show/alias receipts pass. Cold 27-input probe
-  `e861bd5d...ff0b` returns 27 uniform 1,024-value vectors in 2.148s. Next run
-  unloaded full cold, immediate warm, and ordered cross-provider failover.
+  `e861bd5d...ff0b` returns 27 uniform 1,024-value vectors in 2.148s. The first
+  full run returns in 7.79s but fails strict planning twice; Store `d1562321...c09`.
+- Journal audit `e307f2e5...784d` proves 12 distinct Spark completions. Stable
+  generation rollback `75855980...6bc` restores local Qwen, and deletion receipts
+  `bfb54a1f...86ae`/`b412d6cf...4851` remove both temporary Spark aliases.
+  OpenAI non-Spark, MiniMax M2.7/M2.7-highspeed/M3, Z.AI, and warm local models
+  are approved under a one-screen-call plus one-top-two-confirmation hard cap.
 - Record audits `769fb577...6056`/`e98fd0e5...64a7` exit 1 only on inherited
   parity debt; AR-297/#335 has no mismatch. Tracker/release writes stay unauthorized.
 
@@ -135,9 +139,9 @@ unchecked line. Mark an item complete only with exact retained evidence.
    healthy dashboard/OpenClaw services.
 4. [x] Codex/Claude/scoped-Hermes/OpenClaw, authenticated dashboard, and every
    named repository gate pass with exact retained hashes and exits.
-5. [ ] Complete the approved quality/latency screen, promote the repeated
-   winner behind stable aliases, and prove <=20s warm / <=30s cold or report
-   the exact feasible floor.
+5. [ ] Complete the capped per-stage quality/latency screen, promote repeated
+   winners and cross-provider fallbacks, and prove <=20s warm / <=30s cold or
+   report the exact feasible floor.
 6. [ ] Complete Codex then Claude/Hermes/OpenClaw manual tests and issue the
    Linux verdict.
 
@@ -166,5 +170,7 @@ git diff --check
 - All Agency inference on this system stays behind LiteLLM aliases. Any unknown
   model, endpoint, dimension, reranker, thinking level, judge route,
   harness-auth, or service-manager choice requires an owner interview.
+- Exclude Spark. One screen call per candidate/stage and one confirmation call
+  only for the top two; zero deployment retries and retained call accounting.
 - Do not create or close another tracker, tag, sign, publish a release, or make
   an unrelated model/config change without separate authorization.
