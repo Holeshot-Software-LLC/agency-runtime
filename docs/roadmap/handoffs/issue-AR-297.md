@@ -37,9 +37,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 
 - Work only in `/tmp/agency-runtime-ar297-main.JWaPCg`; never touch the shared checkout.
 - PRs #339/#340 merged product/evidence through clean `origin/main` `1e6f5d07`.
-- Manual Codex loaded the steward but exposed missing ordinary-terminal LiteLLM
-  auth; exact config repair is installed and awaits fresh attended hook trust.
-- Clean merged checkpoint `1e6f5d07` precedes this recovery pair.
+- Credential repair is installed. Stable `task-agency-generation` now targets
+  subscription Luna-light; the current package is optimizing strict preflight latency.
+- Clean checkpoint `15cda0a4` precedes this recovery pair.
 
 ## completed-evidence
 
@@ -55,72 +55,44 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   with 3 skips, 138 dashboard tests, routing 1.4.0, and 167/167 mutations killed.
   Manifest `ef8d8abc...1b09` records every accepted exit/hash and rejected
   environment preflight; every accepted exit is 0.
-- Clean repair ledger `6e78b146` builds portable wheel `cf32f861...b2a7` and
-  sdist `1b40ca8f...e228`; independent verification and separate installed
-  8/8 wheel/sdist smoke runs exit 0 in the retained owner-private artifact root.
-- Fresh CI `33139352190` has 16 successes and three intended integration skips:
-  Ubuntu/Windows distributions, aggregate gates, and artifact assembly pass.
-  Dependency review `33139352171` and CodeQL `33139352213` also pass.
-- AR-328 regression `751276ea...e3a` fails before repair. The exact cache guard
-  preserves movable installs; 359 tests pass with 2 skips at
-  `981fbbc8...ddd0`, and focused Ruff/docs pass with empty stderr.
-- Exact `e0b0b25c` wheel/sdist are `75d63ff9...3762`/`2b1ae7ec...79d9`;
-  manifest `fcfd0231...b1b0`, canonical/Twine/verification, and six final
-  builds exit 0. R1 image verification correctly rejects Node 22; the pinned
-  Node 24.15 rebuild passes at `07f372e3...eb9a`. Final image IDs begin
-  `c8e7a265`, `93eb1f9e`, `3a4cac26`, `c3d712ec`, and `4d2ccddc`.
+- Exact build/CI/AR-328 evidence remains canonical in the issue. Final images
+  and distributions pass exact build, Twine, verification, install, security,
+  and hosted-platform gates; no optional exhaustive workflow was dispatched.
 - Strict container proofs pass separately: Codex `ce370bc8...1330` with one
   delivered native child; Claude `579d65c8...a0e9`; Hermes
   `4d04f360...02d8` with sealed tree `d7bc15f0...d8f8`; and OpenClaw
   `4debebf3...c748` with Store/systemd/13-hook evidence. All retain exact
   bundles and `missing=[]` where terminal delivery applies.
-- Fresh Claude verifier `ed965d7c...8ca9` exits 0 for session `.403`: exact
-  3,227-byte card, no tool use, all five alias receipts, accepted completion,
-  `missing=[]`, native/Store response equality, existing subscription auth,
-  normal default model, and no bypass.
-- Fresh ordinary Codex verifier `db8f6780...e2f3` exits 0 for session
-  `01a048dd-10f0-77e2-94bd-d5e4c4572a4f`: exact 2,659-byte card, four
-  alias-only receipts, accepted completion, `missing=[]`, native/Store response
-  equality, read-only/no-delegation execution, and exact runtime/config.
-- Final-candidate Hermes receipt `9ee57328...f2f7` exits 0 for session
-  `20260827_221502_139df0`: one exact 3,227-byte card, all five alias groups,
-  accepted completion, `missing=[]`, exact visible accepted replay, healthy
-  Stores, and byte-identical config. The corrected native source receipt is
-  `d8e9eab7...9fe3`; the first helper-default mismatch remains retained.
-- Hermes R1/R2 retain fail-closed negatives; least-privilege R3 verifier
-  `f64738b9...8ce9` proves exact card, Agency-only finalizer, accepted replay,
-  `missing=[]`, unchanged config, and complete Store correlation.
-- Fresh host OpenClaw verifier `61fd0b83...7fe7` exits 0: exact 684-byte task and
-  2,659-byte card, approved LiteLLM alias, thinking off, five successful Agency
-  receipts, healthy Stores, and the explicit no-channel active-run limitation.
-  Additive allow-list receipt `831edb7a...dd2f` preserves all foreign policy;
-  restarted authenticated systemd RPC passes at `a144aab9...172`.
+- Fresh ordinary Claude/Codex/Hermes/OpenClaw verifiers
+  `ed965d7c...8ca9`/`db8f6780...e2f3`/`f64738b9...8ce9`/`61fd0b83...7fe7`
+  prove exact full cards, required aliases, healthy Stores, and no bypass.
+  Additive OpenClaw receipt `831edb7a...dd2f` preserves foreign policy, and
+  authenticated systemd RPC passes at `a144aab9...172`.
 - Teardown `40fa5062...1dc4` removes all 47 exact labelled containers with zero
   survivors; five images remain at `5c998f61...e276`, and host services stay healthy.
-- Qwen3 Coder aliases `d69aa6b6...af4d`/`a1e2381d...a5dd` pass at 65,536;
-  OpenClaw transition/verify `e97e02e2...deba`/`a141d193...e1ce` pass.
 - Merged-main `dc8bbde6` wheel/sdist `c3f3cd0d...675c` / `dc57fa54...5325`;
   build, Twine, verification, install, and pip check pass in a fresh venv.
 - Main-installed runtime is `2dd04fdc...9987`; Hermes/OpenClaw/Codex/Claude
   bundles `b03b47fe...e9b`/`1f88f2ef...2c8`/`cecc8993...b3b`/`5d178603...136`;
   exact attestation `93a25ad5...c25` passes all 18 checks.
-- Codex's default 180-second verification times out safely; the canonical
-  300-second retry `d90cfcd1...c47` passes managed trust/canary/attestation;
-  OpenClaw RPC `48b73bba...393b` also exits 0.
+- Canonical 300-second Codex retry `d90cfcd1...c47` passes managed
+  trust/canary/attestation; OpenClaw RPC `48b73bba...393b` also exits 0.
 - Dashboard `96d1a058...a515` passes auth, no-store, full prompt, and PID/port.
-- No-bypass Codex receipt `eca6fcb4...647c` exits 0 at trace
-  `01a048d3-5687-7c11-a0a9-b1f3abbb7402`; rollouts
-  `299542c3...7158`/`a8525798...c707` bind the real child and finalization.
-- Private Store `cbaec4a8...01f8` passes quick-check; correlation
-  `0fe1ac45...a34b` binds accepted selection/load, alias receipts, and `missing=[]`.
 
 ## exact-blocker
 
-- Config repair `530b7837...1e5e` resolves ordinary-terminal auth. Two later
-  manual Qwen turns `01a049a6...db07`/`01a049ab...9f76` still fail both bounded
-  planner attempts; no route/load/finalization is promoted. Isolated exact-prompt
-  Qwen and Mistral trials accept `accessibility-auditor` with byte-identical
-  context; repeated real Qwen failures make model choice the operator interview.
+- Config repair `530b7837...1e5e` resolves ordinary-terminal auth. Two manual
+  Qwen turns fail closed. Exact Luna Store `9c303400...ca81` passes in 96.72s;
+  corrected alias transition `3e6b3491...d4c` preserves the stable ID and moves
+  generation to subscription Luna-light at low reasoning.
+- Hard planner receipts show Luna `aab403bd...6270` at 13,689ms fails one
+  semantic gate while Terra `65427d17...36b` at 13,047ms passes. Profile
+  `437b7ce3...9b83` attributes the remaining delay to two 4,096-dimension
+  embedding batches and Mistral/embedding GPU reload churn.
+- Approved screen: Terra-light; 1,024-dimension Qwen3 embedding; Qwen 14B vs
+  Qwen 3.5 9B critic/reranker; GLM Flash/FlashX/Turbo; and Spark low/medium if
+  an exact subscription-backed LiteLLM route can be proved. Target is <=20s
+  warm and <=30s cold without weakening strict/additive behavior.
 - Record audits `769fb577...6056`/`e98fd0e5...64a7` exit 1 only on inherited
   parity debt; AR-297/#335 has no mismatch. Tracker/release writes stay unauthorized.
 
@@ -147,9 +119,11 @@ unchecked line. Mark an item complete only with exact retained evidence.
    healthy dashboard/OpenClaw services.
 4. [x] Codex/Claude/scoped-Hermes/OpenClaw, authenticated dashboard, and every
    named repository gate pass with exact retained hashes and exits.
-5. [ ] Obtain generation-route choice, apply/verify it without changing the
-   stable alias contract, complete Codex then Claude/Hermes/OpenClaw manual
-   tests, and issue the Linux verdict.
+5. [ ] Complete the approved quality/latency screen, promote the repeated
+   winner behind stable aliases, and prove <=20s warm / <=30s cold or report
+   the exact feasible floor.
+6. [ ] Complete Codex then Claude/Hermes/OpenClaw manual tests and issue the
+   Linux verdict.
 
 ## verification
 

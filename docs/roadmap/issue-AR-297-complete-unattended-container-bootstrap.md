@@ -2336,3 +2336,45 @@ context with no failure. No stable alias or installed bundle is changed by the
 A/B. The next bounded exit is `waiting_for_operator` for the generation model
 choice: retain measured-but-unreliable Qwen 14B or remap the stable
 `task-agency-generation` alias to the slower structured Mistral 24B.
+
+The owner rejected Mistral's general-use latency and approved subscription
+model trials through the existing LiteLLM gateway. Exact-prompt Luna-light
+config `3f2144b3...c1df` exits 0 in 96.72 seconds: Store
+`9c303400...ca81` records accepted `accessibility-auditor`, all five required
+generation/embedding/reranker/critic receipts, and the byte-identical complete
+5,858-byte context `f1182d56...646a`. Terra was not called on this first pass.
+The first stable-alias transaction `c0bf514f...9f5` is a retained HTTP 422
+negative for invalid metadata tier and proves rollback to Qwen. Corrected
+transaction `3e6b3491...d4c` exits 0 and preserves deployment
+`df8ebd8f...3a51` and alias `task-agency-generation` while selecting
+`chatgpt/gpt-5.6-luna` at low reasoning. No host config or bundle changes.
+
+A harder planner-only probe shows why one simple pass is insufficient. Stable
+Luna returns in 13,689 ms but exits 1 solely for
+`plan_missing_codebase_discovery`; receipt `aab403bd...6270`. Temporary
+Terra-light config `37436635...d733` runs the identical request in 13,047 ms,
+exits 0, emits six units, echoes no injection, and has zero policy violations;
+receipt `65427d17...36b`. Stable production remains Luna pending the completed
+quality/latency comparison.
+
+Latency profile `437b7ce3...9b83` isolates the 96.72-second result: Luna
+completes near six seconds, two 4,096-dimension Qwen3 embedding batches finish
+near 40/45 seconds, and three Mistral structured stages finish near 55/90/97
+seconds. Ollama reports Mistral at 19 GB GPU residency and the embedding model
+at 4.7 GB on disk; alternating them causes cold-load churn. The embedding
+catalog cache is process-local, so ordinary per-hook processes cannot rely on
+a previous turn warming it. Multiple-minute preflight is explicitly not an
+acceptable general-use result.
+
+The owner approved the next bounded performance screen without weakening
+strict assurance or additive dense recall: Terra-light generation; Qwen3
+embedding at 1,024 dimensions; local Qwen 14B abliterated versus Qwen 3.5 9B
+for independent critic/text-reranker; unchanged free Qwen 3 32B child judge;
+and configured GLM 4.7 Flash/FlashX and GLM 5 Turbo candidates. GLM routes are
+HTTPS Z.AI deployments, not local Ollama weights. GPT-5.3-Codex-Spark is also
+approved for consideration through subscription auth at low/medium reasoning,
+but the gateway currently has no Spark deployment; official/current local
+metadata marks it Pro research-preview with a separate limit. Target the full
+preflight at no more than 20 seconds warm and 30 seconds cold; promote only a
+repeatedly passing exact configuration, then resume one-at-a-time manual host
+tests.
