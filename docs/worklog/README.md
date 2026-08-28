@@ -1370,6 +1370,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `f6870aa6` | 2026-08-28 | fix(codex): admit 0.150 child lineage [AR-330] | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-330](../roadmap/issue-AR-330-support-codex-0150-collaboration-rollouts.md) | [detail](2026-08-28-f6870aa6-admit-codex-0150-child-lineage.md) |
 | `af8ffbdd` | 2026-08-28 | docs(ar297): checkpoint repaired Codex host canary | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-330](../roadmap/issue-AR-330-support-codex-0150-collaboration-rollouts.md) | null |
 | `f53b4fd4` | 2026-08-28 | docs(ar297): prove ordinary Codex host loading | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `9ba5bce0` | 2026-08-28 | docs(ar297): prove ordinary Claude host loading | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
