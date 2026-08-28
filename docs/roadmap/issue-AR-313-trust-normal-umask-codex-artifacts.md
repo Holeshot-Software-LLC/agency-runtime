@@ -9,6 +9,7 @@ related:
   - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
   - docs/roadmap/issue-AR-309-restore-codex-0149-activation-proof.md
   - docs/roadmap/issue-AR-324-bind-codex-canary-child-through-host-lineage.md
+  - docs/roadmap/issue-AR-330-support-codex-0150-collaboration-rollouts.md
   - docs/roadmap/handoffs/issue-AR-297.md
   - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
   - docs/decisions/0179-admit-exact-codex-canary-delivery-at-subagent-start.md
@@ -28,7 +29,7 @@ issue_id: AR-313
 priority: p0
 tracker_url: null
 depends_on: [AR-309]
-blocks: [AR-297, AR-324]
+blocks: [AR-297, AR-324, AR-330]
 ---
 
 # AR-313: Trust normal-umask Codex artifacts by integrity
@@ -57,6 +58,10 @@ account could replace it.
   one file link, no unsafe default ACL, and equivalent Windows mutation denial.
 - Codex rollout, spawn-provenance, and child-delivery readers use that guard;
   Claude's product-created private collector retains the stricter privacy rule.
+- Codex 0.150.1 on the target host inherits umask `0002` and writes 0775/0664.
+  Those paths retain integrity only when the OS account database proves their
+  group is the owner's exclusive user-private group; unknown or shared groups
+  remain refused.
 - Tracker creation is prohibited by the active AR-297 task.
 
 ## Approach
@@ -80,9 +85,11 @@ configuration, control, or private temporary-directory boundaries.
       rollout below an owner-controlled namespace.
 - [x] The real shape is accepted for bounded parsing and canonical delivery
       verification without changing permissions.
-- [x] Group/other-writable paths, unsafe ACLs, foreign ownership, links,
+- [x] Shared-group/other-writable paths, unsafe ACLs, foreign ownership, links,
       multiple links, and identity replacement remain fail-closed on POSIX and
       Windows-shaped tests.
+- [x] Mode-0775/0664 Codex artifacts pass only with a proven exclusive
+      user-private group; other-writable and non-exclusive-group cases fail.
 - [x] Claude's fresh private collection and all Agency-created storage
       boundaries retain their prior confidentiality requirements.
 - [x] Focused warning-strict activation, provenance, delivery, hook, and

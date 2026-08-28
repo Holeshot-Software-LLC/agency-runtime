@@ -42,6 +42,7 @@ related:
   - docs/roadmap/issue-AR-327-replay-codex-delivery-receipts-across-append-only-completion.md
   - docs/roadmap/issue-AR-328-seal-hermes-install-tree.md
   - docs/roadmap/issue-AR-329-freeze-codex-inspector-bootstrap-as-persistent-input.md
+  - docs/roadmap/issue-AR-330-support-codex-0150-collaboration-rollouts.md
   - docs/decisions/0144-claim-codex-spawn-execution-at-the-first-complete-callback.md
   - docs/decisions/0174-admit-local-ollama-canary-child-judges.md
   - docs/decisions/0175-batch-complete-embedding-input-sets.md
@@ -75,7 +76,7 @@ epic: host-integrations
 issue_id: AR-297
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
-depends_on: [AR-300, AR-301, AR-302, AR-303, AR-304, AR-305, AR-306, AR-307, AR-308, AR-309, AR-310, AR-311, AR-313, AR-314, AR-315, AR-317, AR-318, AR-319, AR-320, AR-321, AR-322, AR-324, AR-325, AR-326, AR-327, AR-328, AR-329]
+depends_on: [AR-300, AR-301, AR-302, AR-303, AR-304, AR-305, AR-306, AR-307, AR-308, AR-309, AR-310, AR-311, AR-313, AR-314, AR-315, AR-317, AR-318, AR-319, AR-320, AR-321, AR-322, AR-324, AR-325, AR-326, AR-327, AR-328, AR-329, AR-330]
 blocks: []
 ---
 

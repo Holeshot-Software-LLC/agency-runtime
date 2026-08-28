@@ -14,7 +14,7 @@ related:
   - docs/roadmap/issue-AR-328-seal-hermes-install-tree.md
   - docs/roadmap/issue-AR-329-freeze-codex-inspector-bootstrap-as-persistent-input.md
   - docs/decisions/0179-admit-exact-codex-canary-delivery-at-subagent-start.md
-  - docs/decisions/0188-separate-codex-hook-parent-and-child-identities.md
+  - docs/roadmap/issue-AR-330-support-codex-0150-collaboration-rollouts.md
   - docs/decisions/0189-admit-only-accepted-terminal-codex-parents-for-post-return-collection.md
   - docs/decisions/0190-bind-codex-receipt-replay-to-an-exact-append-only-prefix.md
   - docs/decisions/0191-seal-managed-hermes-python-bundles.md
@@ -39,8 +39,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   checkout. Host-live closure branch starts at `origin/main` `87231198`.
 - All scoped matrix rows pass; final audit `3c82c16d...cd79` returns Linux
   **GO**. Clean reviewed head is `3a9a09c2`.
-- AR-329 repair/ledger are `aead84d0`/`b25951ba`; exact wheel/sdist hashes are
-  `5f2c9b5d...4e33`/`24875bca...eff7` and both verification exits are 0.
+- AR-330 now projects the retained real Codex 0.150.1 explicit-role,
+  nickname, terminal-activity, and exclusive-user-group artifact shapes.
 
 ## completed-evidence
 
@@ -120,10 +120,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 
 ## exact-blocker
 
-- Exact host refresh `10c50ca...82fb` installs all four bundles and the active
-  dashboard; OpenClaw restarts healthy at authenticated RPC port 18789.
-- Codex now reports all 8 refreshed hooks `modified`, none missing; one fresh
-  attended trust grant is the current operator gate.
+- The pre-repair Codex verifier `350a838c...06eae` passed 8/8 attended trust
+  then truthfully refused the new 0.150.1 collaboration projection.
+- Focused AR-330 activation/provenance/delivery tests pass 593 warning-strict;
+  an exact rebuild/reinstall will require one immediate fresh trust grant.
 - Tracker audit `413c8a3a...1600` retains pre-existing parity debt; tracker
   writes/closure, signing, tagging, and release publication remain unauthorized.
 
@@ -145,8 +145,8 @@ unchecked line. Mark an item complete only with exact retained evidence.
 2. [x] Repair AR-329 with a mode-0400 regression and focused Codex suites.
 3. [x] Commit the repair ledger, build/install the exact candidate, and restore
    healthy dashboard/OpenClaw services.
-4. [ ] After fresh attended Codex trust, rerun all four ordinary harness,
-   Store, workforce-prompt, and authenticated-dashboard proofs.
+4. [ ] Checkpoint/build/install AR-330, request fresh Codex trust immediately,
+   then rerun all four harness/Store/prompt/dashboard proofs.
 5. [ ] Run every named repository gate, record exact hashes/exits, merge the
    authorized PR without bypass, and issue the final Linux-scoped verdict.
 

@@ -1387,10 +1387,10 @@ class HookBridge:
             except (HookInputError, ValueError):
                 return {}
             from agency_runtime.core.activation_canary_contract import (
-                CODEX_ACTIVATION_CANARY_NATIVE_AGENT_TYPE,
+                CODEX_ACTIVATION_CANARY_NATIVE_AGENT_TYPES,
             )
 
-            if agent_type == CODEX_ACTIVATION_CANARY_NATIVE_AGENT_TYPE:
+            if agent_type in CODEX_ACTIVATION_CANARY_NATIVE_AGENT_TYPES:
                 context = self._staff_restricted_codex_activation_child(
                     session_id=session_id,
                     trace_id=trace_id,
@@ -1700,15 +1700,21 @@ class HookBridge:
 
     @staticmethod
     def _restricted_codex_spawn_input(tool_input: Any) -> bool:
-        """Recognize only the fixed native call shape emitted by the canary plan."""
+        """Recognize the exact 0.149 or 0.150 canary native call shape."""
 
+        from agency_runtime.core.activation_canary_contract import (
+            CODEX_ACTIVATION_CANARY_NATIVE_AGENT_TYPE,
+        )
         from agency_runtime.core.native_child_prompt_delivery import (
             is_codex_opaque_collaboration_message,
         )
 
         args = _dict_or_empty(tool_input)
+        legacy = set(args) == {"fork_turns", "message", "task_name"}
+        explicit = set(args) == {"agent_type", "fork_turns", "message", "task_name"}
         return bool(
-            set(args) == {"fork_turns", "message", "task_name"}
+            (legacy or explicit)
+            and (legacy or args.get("agent_type") == CODEX_ACTIVATION_CANARY_NATIVE_AGENT_TYPE)
             and args.get("fork_turns") == "none"
             and args.get("task_name") == "code_reviewer"
             and is_codex_opaque_collaboration_message(args.get("message"))

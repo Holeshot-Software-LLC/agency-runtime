@@ -54,6 +54,7 @@ from agency_runtime.core.private_paths import (
 )
 from agency_runtime.core.store.security import (
     assert_storage_parent_chain,
+    storage_artifact_file_is_trusted,
     storage_artifact_parent_is_trusted,
     storage_file_is_trusted,
     storage_parent_is_trusted,
@@ -605,10 +606,13 @@ def _trusted_launch_prefix_bytes(
     parent_is_trusted = (
         storage_artifact_parent_is_trusted if artifact_parent else storage_parent_is_trusted
     )
+    file_is_trusted = (
+        storage_artifact_file_is_trusted if artifact_parent else storage_file_is_trusted
+    )
     if not parent_is_trusted(
         path.parent,
         is_windows=is_windows,
-    ) or not storage_file_is_trusted(path, is_windows=is_windows):
+    ) or not file_is_trusted(path, is_windows=is_windows):
         return None
     try:
         return read_bounded_regular_file_prefix(
@@ -1022,6 +1026,9 @@ def _canonical_host_artifact_is_trusted(
     parent_is_trusted = (
         storage_artifact_parent_is_trusted if host == "codex" else storage_parent_is_trusted
     )
+    file_is_trusted = (
+        storage_artifact_file_is_trusted if host == "codex" else storage_file_is_trusted
+    )
     if (
         metadata_is_link_or_reparse_point(root_before)
         or not stat.S_ISDIR(root_before.st_mode)
@@ -1030,7 +1037,7 @@ def _canonical_host_artifact_is_trusted(
         or int(getattr(file_before, "st_nlink", 0) or 0) != 1
         or not parent_is_trusted(canonical_root, is_windows=os.name == "nt")
         or not parent_is_trusted(artifact.parent, is_windows=os.name == "nt")
-        or not storage_file_is_trusted(artifact, is_windows=os.name == "nt")
+        or not file_is_trusted(artifact, is_windows=os.name == "nt")
     ):
         return False
     try:

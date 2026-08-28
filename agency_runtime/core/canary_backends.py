@@ -687,6 +687,7 @@ def _codex_rollout_events(
     expected_agent_path: str | None,
     not_before: float | None,
     not_after: float | None,
+    expected_agent_role: str | None = None,
 ) -> list[dict[str, Any]]:
     """Read one exact link-resistant bounded Codex rollout."""
 
@@ -694,8 +695,8 @@ def _codex_rollout_events(
     from agency_runtime.core.filesystem_trust import same_file_identity
     from agency_runtime.core.store.security import (
         assert_storage_parent_chain,
+        storage_artifact_file_is_trusted,
         storage_artifact_parent_is_trusted,
-        storage_file_is_trusted,
     )
 
     root = Path(rollout_root)
@@ -710,7 +711,10 @@ def _codex_rollout_events(
     if not storage_artifact_parent_is_trusted(
         path.parent,
         is_windows=facade.os.name == "nt",
-    ) or not storage_file_is_trusted(path, is_windows=facade.os.name == "nt"):
+    ) or not storage_artifact_file_is_trusted(
+        path,
+        is_windows=facade.os.name == "nt",
+    ):
         raise ValueError("Codex rollout path lacked namespace integrity")
     metadata = path.lstat()
     if not_before is not None and (
@@ -765,12 +769,32 @@ def _codex_rollout_events(
         spawn = (
             source.get("subagent", {}).get("thread_spawn", {}) if isinstance(source, dict) else {}
         )
+        legacy_shape = set(spawn) == {"agent_path", "depth", "parent_thread_id"}
+        role = spawn.get("agent_role")
+        nickname = spawn.get("agent_nickname")
+        explicit_shape = (
+            set(spawn)
+            == {
+                "agent_nickname",
+                "agent_path",
+                "agent_role",
+                "depth",
+                "parent_thread_id",
+            }
+            and isinstance(role, str)
+            and role == expected_agent_role
+            and isinstance(nickname, str)
+            and 0 < len(nickname) <= 128
+        )
         if (
             not isinstance(spawn, dict)
             or spawn.get("parent_thread_id") != parent_thread_id
             or spawn.get("depth") != 1
             or spawn.get("agent_path") != expected_agent_path
-            or spawn.get("agent_role") is not None
+            or not (
+                (expected_agent_role is None and legacy_shape)
+                or (expected_agent_role is not None and explicit_shape)
+            )
         ):
             raise ValueError("Codex child rollout did not identify the exact parent")
     return events
@@ -1287,8 +1311,23 @@ def _codex_exact_direct_rollout_calls(
     ] != ["spawn_agent", "wait_agent"]:
         raise ValueError("Codex direct collaboration calls were not causally ordered")
     spawn_args = spawn["arguments"]
+    legacy_spawn = set(spawn_args) == {"fork_turns", "message", "task_name"}
+    explicit_spawn = set(spawn_args) == {
+        "agent_type",
+        "fork_turns",
+        "message",
+        "task_name",
+    }
+    from agency_runtime.core.activation_canary_contract import (
+        CODEX_ACTIVATION_CANARY_NATIVE_AGENT_TYPE,
+    )
+
     if (
-        set(spawn_args) != {"fork_turns", "message", "task_name"}
+        not (legacy_spawn or explicit_spawn)
+        or (
+            explicit_spawn
+            and spawn_args.get("agent_type") != CODEX_ACTIVATION_CANARY_NATIVE_AGENT_TYPE
+        )
         or spawn_args.get("fork_turns") != "none"
         or not isinstance(spawn_args.get("message"), str)
         or not isinstance(spawn_args.get("task_name"), str)
@@ -1312,7 +1351,14 @@ def _codex_exact_direct_rollout_calls(
         for activity in activities
         if activity.get("event_id") == spawn["call_id"] and activity.get("kind") == "started"
     ]
-    if len(activities) != 1 or len(start_activities) != 1:
+    completed_activities = [
+        activity for activity in activities if activity.get("kind") == "completed"
+    ]
+    if (
+        len(start_activities) != 1
+        or len(completed_activities) > 1
+        or len(activities) != 1 + len(completed_activities)
+    ):
         raise ValueError("Codex direct rollout did not identify one child start")
     activity = start_activities[0]
     receiver_id = _codex_thread_id(activity.get("agent_thread_id"))
@@ -1322,6 +1368,13 @@ def _codex_exact_direct_rollout_calls(
         or len(native_task_name) > 128
         or activity.get("agent_path") != spawn_output["task_name"]
         or not str(spawn_output["task_name"]).endswith(f"/{native_task_name}")
+        or any(
+            completed.get("agent_thread_id") != receiver_id
+            or completed.get("agent_path") != spawn_output["task_name"]
+            or not isinstance(completed.get("event_id"), str)
+            or not 0 < len(completed["event_id"]) <= 256
+            for completed in completed_activities
+        )
     ):
         raise ValueError("Codex direct child did not match its native task")
     return spawn, wait, receiver_id, native_task_name
@@ -1491,6 +1544,7 @@ def _codex_rollout_collaboration_evidence(
             receiver_id,
             parent_thread_id=parent_thread_id,
             expected_agent_path=f"/root/{native_task_name}",
+            expected_agent_role=spawn["arguments"].get("agent_type"),
             not_before=not_before,
             not_after=not_after,
         )
@@ -1699,7 +1753,7 @@ def _codex_rollout_collaboration_evidence(
     }
 
 
-def _codex_product_rollout_call_data(
+def _codex_product_rollout_call_data(  # noqa: C901 - one pinned product projection
     events: list[dict[str, Any]],
 ) -> tuple[
     list[dict[str, Any]],
@@ -1723,6 +1777,38 @@ def _codex_product_rollout_call_data(
         if event.get("type") == "event_msg" and payload.get("type") == "sub_agent_activity":
             activities.append(payload)
             continue
+        if event.get("type") == "event_msg" and payload.get("type") == "item_completed":
+            item = payload.get("item")
+            if isinstance(item, dict) and item.get("type") == "SubAgentActivity":
+                allowed_payload = {
+                    "type",
+                    "thread_id",
+                    "turn_id",
+                    "item",
+                    "started_at_ms",
+                    "completed_at_ms",
+                }
+                allowed_item = {
+                    "type",
+                    "id",
+                    "kind",
+                    "agent_thread_id",
+                    "agent_path",
+                }
+                if not set(payload).issubset(allowed_payload) or set(item) != allowed_item:
+                    raise ValueError(
+                        "Codex product sub-agent activity exceeded the pinned contract"
+                    )
+                activities.append(
+                    {
+                        "type": "sub_agent_activity",
+                        "event_id": item.get("id"),
+                        "kind": item.get("kind"),
+                        "agent_thread_id": item.get("agent_thread_id"),
+                        "agent_path": item.get("agent_path"),
+                    }
+                )
+                continue
         if event.get("type") != "response_item":
             continue
         item_type = str(payload.get("type") or "").strip()
@@ -1957,8 +2043,14 @@ def _codex_product_spawn_projection(
     """Prove one activated and explicitly executed product child."""
 
     arguments = spawn["arguments"]
+    base_arguments = {"fork_turns", "message", "task_name"}
+    agent_type = arguments.get("agent_type")
     if (
-        set(arguments) != {"fork_turns", "message", "task_name"}
+        set(arguments) not in (base_arguments, base_arguments | {"agent_type"})
+        or (
+            "agent_type" in arguments
+            and (not isinstance(agent_type, str) or not 0 < len(agent_type) <= 128)
+        )
         or arguments.get("fork_turns") != "none"
         or not isinstance(arguments.get("message"), str)
         or not isinstance(arguments.get("task_name"), str)
@@ -2037,6 +2129,7 @@ def _codex_product_spawn_projection(
         receiver_id,
         parent_thread_id=parent_thread_id,
         expected_agent_path=expected_path,
+        expected_agent_role=agent_type,
         not_before=not_before,
         not_after=not_after,
     )
@@ -2115,8 +2208,14 @@ def _codex_product_direct_spawn_projection(
     """Prove one specialist executed its exact goal in the initial spawn turn."""
 
     arguments = spawn["arguments"]
+    base_arguments = {"fork_turns", "message", "task_name"}
+    agent_type = arguments.get("agent_type")
     if (
-        set(arguments) != {"fork_turns", "message", "task_name"}
+        set(arguments) not in (base_arguments, base_arguments | {"agent_type"})
+        or (
+            "agent_type" in arguments
+            and (not isinstance(agent_type, str) or not 0 < len(agent_type) <= 128)
+        )
         or arguments.get("fork_turns") != "none"
         or not isinstance(arguments.get("message"), str)
         or not isinstance(arguments.get("task_name"), str)
@@ -2154,6 +2253,7 @@ def _codex_product_direct_spawn_projection(
         receiver_id,
         parent_thread_id=parent_thread_id,
         expected_agent_path=expected_path,
+        expected_agent_role=agent_type,
         not_before=not_before,
         not_after=not_after,
     )
@@ -2382,13 +2482,35 @@ def _codex_product_rollout_collaboration_evidence(
             )
             projected_spawns.append(projected)
             _merge_codex_product_child_tool_evidence(child_tool_evidence, tool_evidence)
-    expected_activity_count = len(spawns) if direct_mode else len(spawns) * 2
-    if len(activities) != expected_activity_count:
-        raise ValueError("Codex product child activity cardinality was invalid")
     receiver_ids = [row["receiver_thread_ids"][0] for row in projected_spawns]
     task_names = [row["native_task_name"] for row in projected_spawns]
     if len(set(receiver_ids)) != len(receiver_ids) or len(set(task_names)) != len(task_names):
         raise ValueError("Codex product children were not distinct")
+    expected_activity_count = len(spawns) if direct_mode else len(spawns) * 2
+    completed_activities = [
+        activity for activity in activities if activity.get("kind") == "completed"
+    ]
+    expected_paths = dict(zip(receiver_ids, (f"/root/{name}" for name in task_names), strict=True))
+    completed_receivers = [
+        str(activity.get("agent_thread_id") or "") for activity in completed_activities
+    ]
+    if (
+        len(activities) != expected_activity_count + len(completed_activities)
+        or len(completed_activities) > len(spawns)
+        or len(set(completed_receivers)) != len(completed_receivers)
+        or any(
+            receiver not in expected_paths
+            or completed.get("agent_path") != expected_paths[receiver]
+            or not isinstance(completed.get("event_id"), str)
+            or not 0 < len(completed["event_id"]) <= 256
+            for completed, receiver in zip(
+                completed_activities,
+                completed_receivers,
+                strict=True,
+            )
+        )
+    ):
+        raise ValueError("Codex product child activity cardinality was invalid")
     completed_waits, timed_out_waits = _codex_product_wait_counts(
         waits,
         outputs=outputs,

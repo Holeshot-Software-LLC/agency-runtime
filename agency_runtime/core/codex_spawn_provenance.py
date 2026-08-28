@@ -28,8 +28,10 @@ from agency_runtime.core.filesystem_trust import (
     same_file_identity,
 )
 from agency_runtime.core.store.security import (
+    storage_artifact_file_is_trusted as storage_file_is_trusted,
+)
+from agency_runtime.core.store.security import (
     storage_artifact_parent_is_trusted,
-    storage_file_is_trusted,
 )
 
 storage_parent_is_trusted = storage_artifact_parent_is_trusted

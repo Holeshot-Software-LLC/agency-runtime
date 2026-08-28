@@ -238,6 +238,7 @@ def storage_artifact_parent_is_trusted(
     windows_acl_probe: Callable[[Path, bool], bool] | None = None,
     effective_uid: int | None = None,
     default_acl_probe: Callable[[Path], bool] | None = None,
+    owner_private_group_probe: Callable[[Path, os.stat_result], bool] | None = None,
 ) -> bool:
     """Require integrity, not confidentiality, for a foreign artifact parent.
 
@@ -282,14 +283,76 @@ def storage_artifact_parent_is_trusted(
     if uid is None:
         return False
     acl_probe = default_acl_probe or posix_directory_has_default_acl
+    private_group_probe = owner_private_group_probe or _posix_owner_private_group_is_exclusive
     return posix_directory_chain_is_trusted(
         chain,
         effective_uid=uid,
         final_path=normalized,
         final_owner_must_match=True,
-        forbidden_final_mode=stat.S_IWGRP | stat.S_IWOTH,
+        forbidden_final_mode=stat.S_IWOTH,
         default_acl_probe=acl_probe,
+        owner_private_group_probe=private_group_probe,
     )
+
+
+def _posix_owner_private_group_is_exclusive(
+    _path: Path,
+    metadata: os.stat_result,
+) -> bool:
+    """Prove a POSIX user-private group has no second account member."""
+
+    try:
+        import grp
+        import pwd
+
+        effective_uid = int(os.geteuid())
+        owner = pwd.getpwuid(effective_uid)
+        group = grp.getgrgid(int(metadata.st_gid))
+        primary_members = {
+            int(account.pw_uid)
+            for account in pwd.getpwall()
+            if int(account.pw_gid) == int(metadata.st_gid)
+        }
+    except (AttributeError, ImportError, KeyError, OSError, TypeError, ValueError):
+        return False
+    return bool(
+        int(metadata.st_uid) == effective_uid
+        and int(owner.pw_gid) == int(metadata.st_gid)
+        and group.gr_name == owner.pw_name
+        and set(group.gr_mem).issubset({owner.pw_name})
+        and primary_members == {effective_uid}
+    )
+
+
+def storage_artifact_file_is_trusted(
+    path: Path,
+    *,
+    is_windows: bool,
+    owner_private_group_probe: Callable[[Path, os.stat_result], bool] | None = None,
+) -> bool:
+    """Require foreign host-file integrity, including an exclusive user group."""
+
+    if is_windows:
+        return storage_file_is_trusted(path, is_windows=True)
+    try:
+        metadata = os.lstat(path)
+    except OSError:
+        return False
+    if (
+        metadata_is_link_or_reparse_point(metadata)
+        or not stat.S_ISREG(metadata.st_mode)
+        or int(getattr(metadata, "st_nlink", 0) or 0) != 1
+        or int(getattr(metadata, "st_ino", 0) or 0) <= 0
+    ):
+        return False
+    uid_getter = getattr(os, "geteuid", None)
+    if not callable(uid_getter) or int(metadata.st_uid) != int(uid_getter()):
+        return False
+    mode = stat.S_IMODE(metadata.st_mode)
+    if mode & stat.S_IWOTH:
+        return False
+    private_group_probe = owner_private_group_probe or _posix_owner_private_group_is_exclusive
+    return not mode & stat.S_IWGRP or private_group_probe(path, metadata)
 
 
 def storage_file_is_trusted(path: Path, *, is_windows: bool) -> bool:

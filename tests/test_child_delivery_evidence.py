@@ -1533,6 +1533,10 @@ def test_codex_normal_umask_artifact_keeps_integrity_without_private_date_dirs(
     )
 
     artifact.parent.chmod(0o775)
+    artifact.chmod(0o664)
+    assert codex_child_delivery_evidence(artifact) is not None
+
+    artifact.parent.chmod(0o777)
     assert codex_child_delivery_evidence(artifact) is None
 
 

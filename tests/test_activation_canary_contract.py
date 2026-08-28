@@ -333,12 +333,13 @@ def test_activation_canary_renders_one_exact_native_delegation_row(
     assert CODEX_ACTIVATION_CANARY_NATIVE_TASK_NAME == "code_reviewer"
     assert plan == (
         "[AGENCY DELEGATION PLAN]\n"
-        "version=agency.codex-activation-plan.v1\n"
+        "version=agency.codex-activation-plan.v2\n"
         "row_count=1\n"
         'row_1={"delivery":"delegate","depends_on":[],"goal":'
         '"Identify the primary behavioral regression risk of replacing return value '
         'with return value.strip() in a Python text-normalization helper.",'
-        '"native_task_name":"code_reviewer","specialist":"code-reviewer",'
+        '"native_agent_type":"Code Reviewer","native_task_name":"code_reviewer",'
+        '"specialist":"code-reviewer",'
         '"work_unit_id":"unit-05d45f7553"}\n'
         "Execute this accepted persisted row exactly once."
     )

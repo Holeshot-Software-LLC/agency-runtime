@@ -17,7 +17,6 @@ from agency_runtime.cli import install_commands
 from agency_runtime.cli import main as cli_main
 from agency_runtime.core import canary_proof, preflight
 from agency_runtime.core.activation_canary_contract import (
-    CODEX_ACTIVATION_CANARY_NATIVE_AGENT_TYPE,
     CODEX_ACTIVATION_CANARY_WORK_UNIT,
 )
 from agency_runtime.core.canary_backends import SafeCodexCanaryBackend
@@ -868,8 +867,10 @@ def test_restricted_activation_canary_skips_catalog_mutations(
     )
 
 
+@pytest.mark.parametrize("agent_type", ("default", "Code Reviewer"))
 def test_exact_codex_subagent_start_staffs_the_real_child_uuid(
     monkeypatch: pytest.MonkeyPatch,
+    agent_type: str,
 ) -> None:
     child_id = "11111111-1111-4111-8111-111111111111"
     observed: dict[str, Any] = {}
@@ -923,9 +924,7 @@ def test_exact_codex_subagent_start_staffs_the_real_child_uuid(
             "session_id": child_id,
             "turn_id": child_id,
             "agent_id": child_id,
-            # Codex 0.149.1 MultiAgentV2 keeps task_name in agent_path. With no
-            # explicit agent_type argument, SubagentStart reports "default".
-            "agent_type": CODEX_ACTIVATION_CANARY_NATIVE_AGENT_TYPE,
+            "agent_type": agent_type,
         }
     )
 
