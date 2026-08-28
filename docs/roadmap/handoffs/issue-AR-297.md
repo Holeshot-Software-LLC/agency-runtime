@@ -94,9 +94,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   accepted completion, `missing=[]`, exact visible accepted replay, healthy
   Stores, and byte-identical config. The corrected native source receipt is
   `d8e9eab7...9fe3`; the first helper-default mismatch remains retained.
-- Fresh host Hermes R1 `5895fbb...7838` receives the exact card and all five
-  aliases, but finalization `8dfef4b6...a17` rejects the draft with
-  `missing=[actual_model_selected]` after no `agency_finalize` call.
+- Fresh host Hermes R1/R2 `5895fbb...7838`/`712a0dc8...ce28` receive exact
+  cards and all five aliases but omit `agency_finalize`; R2 also violates the
+  no-external-tools task, and Agency rejects both drafts.
 - Final OpenClaw receipt `3c300451...5a02` exits 0: exact card/prompt visibility,
   sole LiteLLM host alias, thinking off, nonempty native response, accepted
   Store load/all Agency route receipts, unchanged config, and the explicit
@@ -122,8 +122,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 
 - AR-330's prior `ef88754e...f2a4` failure is resolved by exact live receipt
   `eca6fcb4...647c`; no activation or model/config choice remains blocked.
-- Fresh ordinary Hermes retry and OpenClaw process proof, dashboard proof,
-  named gates, record audit, and authorized merge remain.
+- Least-privilege Hermes R3 plus OpenClaw/dashboard proof, named gates, record
+  audit, and authorized merge remain.
 - Tracker audit `413c8a3a...1600` retains pre-existing parity debt; tracker
   writes/closure, signing, tagging, and release publication remain unauthorized.
 
@@ -146,8 +146,8 @@ unchecked line. Mark an item complete only with exact retained evidence.
 2. [x] Repair AR-329 with a mode-0400 regression and focused Codex suites.
 3. [x] Commit the repair ledger, build/install the exact candidate, and restore
    healthy dashboard/OpenClaw services.
-4. [ ] Codex/Claude pass; retain Hermes R1 negative, then prove fresh ordinary
-   Hermes and OpenClaw Store/full-prompt rows on the host.
+4. [ ] Codex/Claude pass; retain Hermes R1/R2 negatives, then prove scoped
+   ordinary Hermes and OpenClaw Store/full-prompt rows on the host.
 5. [ ] Run every named repository gate, record exact hashes/exits, merge the
    authorized PR without bypass, and issue the final Linux-scoped verdict.
 

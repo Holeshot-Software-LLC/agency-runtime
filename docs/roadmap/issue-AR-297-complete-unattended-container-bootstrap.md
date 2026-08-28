@@ -2124,3 +2124,25 @@ call; it then made one prompt-prohibited terminal call. Plugin doctor still
 proves one registered tool and eight hooks. This isolates nondeterministic
 model compliance after successful routing and prompt visibility; no product
 wiring defect, new model choice, configuration mutation, or AR item is claimed.
+
+One unchanged, clean-checkpointed R2 confirms that the current host failure is
+reproducible and is not admissible for another unchanged retry. Immediately
+preceding telemetry `97092734...e3b` records the clean `3982e05c` /
+`b81d154c` recovery pair and 40.2 percent remaining. Normal session
+`20260828_112338_b056ed` again uses the exact task, stable Hermes alias,
+current profile, and no model, reasoning, toolset, or bypass override. Native
+stdout/exit are byte-identical to R1 at `0f1d55ef...a801` /
+`bde29436...0120`; stderr `c77a80b2...0a70` contains only the session ID.
+
+Native receipt `712a0dc8...ce28` proves one exact 3,227-byte
+`section-508-accessibility-specialist` card in the 13,052-byte first API
+payload, ten API calls, nine tool calls, and a 3,747-byte final draft. Despite
+the task's self-contained/no-external-access constraint, the model made four
+generic searches, one schema description, two GitHub searches, and two
+terminal calls; it never searched for or called `agency_finalize`. Store
+receipt `eee92f9b...5a89` passes quick-check and binds accepted selection/load,
+all five Agency alias groups, and fail-closed finalization
+`7f3d1839...2f86`. A second host-created trace remains `in_progress` after CLI
+close and must expire or close before a final Store-cleanliness claim. The next
+attempt must materially narrow the supported Hermes tool surface rather than
+change the model or overwrite persistent user policy.
