@@ -2433,3 +2433,10 @@ Temporary LiteLLM alias receipt `ba21d61a...f94b` exits 0 with backend
 `ollama/qwen3-embedding:0.6b`, `keep_alive=-1`, zero retries, 30-second
 timeout, embedding mode, and output vector size 1,024. Direct dimension and
 latency validation is the next bounded live evaluation.
+
+Cold direct probe config `782ba725...490e` then embeds 27 catalog-style inputs
+as exactly 27 uniform 1,024-value vectors in 2,148 ms / 2.26 seconds, exit 0;
+receipt `e861bd5d...ff0b`. This is more than fifteen times faster than the
+resident 8B model on the comparable batch. The bounded package now proceeds
+to an explicitly unloaded full cold hook, an immediate warm hook, and ordered
+cross-provider primary-failure proof.
