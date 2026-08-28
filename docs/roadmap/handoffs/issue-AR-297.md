@@ -106,6 +106,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   ordered cross-provider fallback. Use LiteLLM deployment `order`, zero
   per-deployment retries, cooldown, and forced-failure evidence. Await approval
   for local `qwen3-embedding:0.6b` at native 1,024 dimensions.
+- Approved 0.6B embedding pull/show/temporary-alias receipts
+  `8f42d4d6...d359`/`3b8529fe...504e`/`ba21d61a...f94b` pass; next prove its
+  exact dimension and full-hook cold/warm latency before alias promotion.
 - Record audits `769fb577...6056`/`e98fd0e5...64a7` exit 1 only on inherited
   parity debt; AR-297/#335 has no mismatch. Tracker/release writes stay unauthorized.
 

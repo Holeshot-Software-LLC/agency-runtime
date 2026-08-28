@@ -2425,3 +2425,11 @@ multi-minute same-provider loops. The exact matrix and forced-failure proof
 remain pending. Embeddings stay local; the next owner choice is whether to
 download and test the official 639-MB `qwen3-embedding:0.6b` artifact at its
 native 1,024 dimensions in place of the current 8B model.
+
+The owner approves that exact model/dimension. Pull exits 0 in 6.85 seconds
+(`8f42d4d6...d359`); `ollama show` receipt `3b8529fe...504e` confirms Qwen3,
+595.78M parameters, 32,768 context, 1,024 embedding length, and Q8_0.
+Temporary LiteLLM alias receipt `ba21d61a...f94b` exits 0 with backend
+`ollama/qwen3-embedding:0.6b`, `keep_alive=-1`, zero retries, 30-second
+timeout, embedding mode, and output vector size 1,024. Direct dimension and
+latency validation is the next bounded live evaluation.
