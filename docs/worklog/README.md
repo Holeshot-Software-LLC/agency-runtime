@@ -1371,11 +1371,12 @@ This registry connects repository history to the roadmap and to optional detail 
 | `af8ffbdd` | 2026-08-28 | docs(ar297): checkpoint repaired Codex host canary | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md), [AR-330](../roadmap/issue-AR-330-support-codex-0150-collaboration-rollouts.md) | null |
 | `f53b4fd4` | 2026-08-28 | docs(ar297): prove ordinary Codex host loading | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `9ba5bce0` | 2026-08-28 | docs(ar297): prove ordinary Claude host loading | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
-| `3982e05c` | 2026-08-28 | docs(ar297): checkpoint Hermes host negative | null | null |
-| `2c52e99a` | 2026-08-28 | docs(ar297): retain second Hermes host negative | null | null |
-| `01598467` | 2026-08-28 | docs(ar297): prove scoped Hermes host loading | null | null |
-| `6d8c97d0` | 2026-08-28 | docs(ar297): prove ordinary OpenClaw host loading | null | null |
-| `a4db8468` | 2026-08-28 | docs(ar297): prove authenticated host dashboard | null | null |
+| `3982e05c` | 2026-08-28 | docs(ar297): checkpoint Hermes host negative | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `2c52e99a` | 2026-08-28 | docs(ar297): retain second Hermes host negative | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `01598467` | 2026-08-28 | docs(ar297): prove scoped Hermes host loading | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `6d8c97d0` | 2026-08-28 | docs(ar297): prove ordinary OpenClaw host loading | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `a4db8468` | 2026-08-28 | docs(ar297): prove authenticated host dashboard | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `43b67657` | 2026-08-28 | docs(ar297): record final repository gates | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
