@@ -20,7 +20,12 @@ from agency_runtime.core.private_paths import (
     private_runtime_directory,
     remove_private_directory,
 )
-from tests.runtime_support import trusted_test_interpreter
+from tests.runtime_support import (
+    ensure_private_test_directory,
+    harden_private_test_file,
+    trusted_test_interpreter,
+    validate_trusted_test_interpreter,
+)
 
 _WINDOWS_TEMP_ANCHOR_ATTRIBUTE = "_agency_runtime_windows_temp_anchor"
 _WINDOWS_ORIGINAL_TEMPDIR_ATTRIBUTE = "_agency_runtime_windows_original_tempdir"
@@ -33,6 +38,7 @@ _RETAINED_NUMBERED_DIRS = 2
 _WINDOWS_PYTEST_PATHLIB_MKDIR_ATTRIBUTE = "_agency_runtime_pytest_pathlib_mkdir"
 _WINDOWS_PYTEST_TMPDIR_MKDIR_ATTRIBUTE = "_agency_runtime_pytest_tmpdir_mkdir"
 _WINDOWS_OS_MKDIR_ATTRIBUTE = "_agency_runtime_os_mkdir"
+_POSIX_ORIGINAL_UMASK_ATTRIBUTE = "_agency_runtime_posix_original_umask"
 _RUNTIME_CONFIGURATION_IDENTITY_MARKER = "runtime_configuration_identity"
 _OFFLINE_CONFIGURATION = (
     "providers: []\n"
@@ -86,11 +92,22 @@ def _test_runtime_root(session_root: Path, node_id: str) -> Path:
 def _write_offline_configuration(config_path: Path, store_path: Path) -> None:
     """Write the quota-free test configuration at one already-private path."""
 
-    config_path.parent.mkdir(parents=True, exist_ok=True)
+    ensure_private_test_directory(config_path.parent, parents=True)
     config_path.write_text(
         f'store:\n  db_path: "{store_path.as_posix()}"\n{_OFFLINE_CONFIGURATION}',
         encoding="utf-8",
     )
+    harden_private_test_file(config_path)
+
+
+def pytest_sessionstart(session: pytest.Session) -> None:
+    """Reject one unsafe launcher interpreter before fixtures create noise."""
+
+    del session
+    try:
+        validate_trusted_test_interpreter()
+    except RuntimeError as exc:
+        raise pytest.UsageError(str(exc)) from exc
 
 
 @pytest.fixture(scope="session")
@@ -287,9 +304,10 @@ def _pytest_private_root() -> tuple[Path, PrivateDirectoryIdentity | None]:
 
 
 def pytest_configure(config: pytest.Config) -> None:
-    """Put implicit Windows pytest storage below a private user-owned anchor."""
+    """Make implicit pytest storage private before any fixture can create it."""
 
     if os.name != "nt":
+        setattr(config, _POSIX_ORIGINAL_UMASK_ATTRIBUTE, os.umask(0o077))
         return
     temp_root, identity = _pytest_private_root()
     if identity is None:
@@ -389,6 +407,11 @@ def _prune_pytest_scratch(temp_root: Path) -> None:
 def pytest_unconfigure(config: pytest.Config) -> None:
     """Remove only the exact private anchor created by this pytest process."""
 
+    if os.name != "nt":
+        original_umask = getattr(config, _POSIX_ORIGINAL_UMASK_ATTRIBUTE, None)
+        if isinstance(original_umask, int):
+            os.umask(original_umask)
+        return
     temp_root = getattr(config, _WINDOWS_TEMP_ROOT_ATTRIBUTE, None)
     if isinstance(temp_root, Path):
         _prune_pytest_scratch(temp_root)

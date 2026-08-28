@@ -12,12 +12,18 @@ import pytest
 
 from agency_runtime.adapters.hooks import HookBridge
 from agency_runtime.core import canary
+from agency_runtime.core.activation_canary_contract import (
+    CODEX_ACTIVATION_CANARY_WAIT_TIMEOUT_MS,
+    CODEX_ACTIVATION_CANARY_WORK_UNIT,
+)
 from agency_runtime.core.canary_backends import (
     _assert_codex_child_activation_is_tool_free,
     _codex_child_execution_projection,
+    _codex_exact_direct_rollout_calls,
     _codex_product_child_tool_evidence,
     _codex_product_rollout_collaboration_evidence,
     _codex_product_wait_counts,
+    _codex_rollout_events,
     codex_canary_record,
     codex_collaboration_evidence,
 )
@@ -43,10 +49,12 @@ from agency_runtime.core.installer_contracts import (
     CODEX_HOOK_EVENTS,
 )
 from agency_runtime.core.native_child_prompt_delivery import (
+    InferenceTeamCard,
     parse_native_child_prompt_delivery,
     render_codex_direct_native_child_prompt_delivery,
     render_codex_native_child_execution_message,
     render_codex_opaque_native_child_prompt_delivery,
+    render_inference_team_delivery,
     render_native_child_prompt_delivery,
 )
 from agency_runtime.core.preflight import run_preflight
@@ -950,6 +958,79 @@ def _write_codex_rollout(
     return path
 
 
+@pytest.mark.skipif(os.name == "nt", reason="POSIX mode regression")
+def test_codex_rollout_accepts_normal_host_umask_directories_under_private_home(
+    tmp_path: Path,
+) -> None:
+    """Codex writes 0755 date directories and 0644 rollouts with umask 0022."""
+
+    home = tmp_path / "codex-home"
+    home.mkdir(mode=0o700)
+    rollout_root = home / "sessions"
+    thread_id = "019fa6a6-9432-7c70-a594-68ccdf7e4988"
+    events: list[dict[str, object]] = [
+        {"type": "session_meta", "payload": {"id": thread_id, "source": "exec"}}
+    ]
+    path = _write_codex_rollout(rollout_root, thread_id, events)
+    for candidate in (rollout_root, *reversed(path.parents[:3])):
+        candidate.chmod(0o755)
+    path.chmod(0o644)
+
+    assert (
+        _codex_rollout_events(
+            rollout_root,
+            thread_id,
+            parent_thread_id=None,
+            expected_agent_path=None,
+            not_before=None,
+            not_after=None,
+        )
+        == events
+    )
+
+    path.parent.chmod(0o775)
+    with pytest.raises(ValueError, match="integrity"):
+        _codex_rollout_events(
+            rollout_root,
+            thread_id,
+            parent_thread_id=None,
+            expected_agent_path=None,
+            not_before=None,
+            not_after=None,
+        )
+
+
+@pytest.mark.parametrize("stale_timeout_ms", (60_000, 120_000))
+def test_codex_direct_rollout_rejects_stale_activation_wait_timeout(
+    stale_timeout_ms: int,
+) -> None:
+    calls = [
+        {
+            "name": "spawn_agent",
+            "call_id": "call-native-spawn",
+            "index": 0,
+            "arguments": {
+                "fork_turns": "none",
+                "message": "opaque-message",
+                "task_name": "code_reviewer",
+            },
+        },
+        {
+            "name": "wait_agent",
+            "call_id": "call-native-wait",
+            "index": 1,
+            "arguments": {"timeout_ms": stale_timeout_ms},
+        },
+    ]
+    outputs = {
+        "call-native-spawn": {"task_name": "/root/code_reviewer"},
+        "call-native-wait": {"message": "Wait completed.", "timed_out": False},
+    }
+
+    with pytest.raises(ValueError, match="arguments exceeded the canary contract"):
+        _codex_exact_direct_rollout_calls(calls, outputs, [])
+
+
 def test_codex_direct_rollout_projects_one_spawn_and_terminal_wait(tmp_path: Path) -> None:
     parent_id = "019fa6a6-9432-7c70-a594-68ccdf7e4988"
     receiver_id = "019fa6a6-a197-7a83-b3fb-d2c20411f608"
@@ -1019,7 +1100,9 @@ def test_codex_direct_rollout_projects_one_spawn_and_terminal_wait(tmp_path: Pat
                     "name": "wait_agent",
                     "namespace": "collaboration",
                     "call_id": "call-native-wait",
-                    "arguments": json.dumps({"timeout_ms": 60_000}),
+                    "arguments": json.dumps(
+                        {"timeout_ms": CODEX_ACTIVATION_CANARY_WAIT_TIMEOUT_MS}
+                    ),
                 },
             },
             {
@@ -1118,6 +1201,188 @@ def test_codex_direct_rollout_projects_one_spawn_and_terminal_wait(tmp_path: Pat
     assert product["wait_count"] == 1
     assert product["calls"][0]["activation_completion_count"] == 0
     assert product["calls"][0]["execution_completion_count"] == 1
+
+
+def test_codex_0149_quiet_stdout_projects_subagent_start_v6_delivery(
+    tmp_path: Path,
+) -> None:
+    parent_id = "019fa6a6-9432-7c70-a594-68ccdf7e4988"
+    receiver_id = "019fa6a6-a197-7a83-b3fb-d2c20411f608"
+    trace_id = "019fa6a6-b197-7a83-b3fb-d2c20411f609"
+    tool_use_id = "call-native-spawn"
+    final = _valid_header()
+    prompt_body = "Review correctness and name the primary behavioral risk."
+    delivery = render_inference_team_delivery(
+        CODEX_ACTIVATION_CANARY_WORK_UNIT,
+        [
+            InferenceTeamCard(
+                specialist_slug="code-reviewer",
+                specialist_version="v1",
+                specialist_prompt_hash=response_hash(prompt_body),
+                prompt_body=prompt_body,
+            )
+        ],
+        host="codex",
+        parent_session_id=parent_id,
+        parent_trace_id=trace_id,
+        launch_id=receiver_id,
+        decision_id="native-child-0123456789abcdef0123456789abcdef",
+        provider_receipt_digest="1" * 64,
+        candidate_digest="2" * 64,
+        runtime_digest="2" * 64,
+        install_id="codex-install",
+        bundle_digest="3" * 64,
+        issued_at="2026-08-26T12:00:00Z",
+        expires_at="2026-08-26T12:05:00Z",
+        nonce="canary-child-nonce",
+        binding_kind="child_id",
+        binding_id=receiver_id,
+    )
+    rollout_root = tmp_path / "sessions"
+    _write_codex_rollout(
+        rollout_root,
+        parent_id,
+        [
+            {"type": "session_meta", "payload": {"id": parent_id, "source": "exec"}},
+            {
+                "type": "response_item",
+                "payload": {
+                    "type": "function_call",
+                    "id": "spawn-item",
+                    "name": "spawn_agent",
+                    "namespace": "collaboration",
+                    "call_id": tool_use_id,
+                    "arguments": json.dumps(
+                        {
+                            "fork_turns": "none",
+                            "message": "gAAAAA" + "opaque-canary-message" * 2,
+                            "task_name": "code_reviewer",
+                        }
+                    ),
+                },
+            },
+            {
+                "type": "event_msg",
+                "payload": {
+                    "type": "item_completed",
+                    "thread_id": parent_id,
+                    "turn_id": trace_id,
+                    "item": {
+                        "type": "SubAgentActivity",
+                        "id": tool_use_id,
+                        "kind": "started",
+                        "agent_thread_id": receiver_id,
+                        "agent_path": "/root/code_reviewer",
+                    },
+                    "started_at_ms": 1,
+                    "completed_at_ms": 1,
+                },
+            },
+            {
+                "type": "response_item",
+                "payload": {
+                    "type": "function_call_output",
+                    "call_id": tool_use_id,
+                    "output": json.dumps({"task_name": "/root/code_reviewer"}),
+                },
+            },
+            {
+                "type": "response_item",
+                "payload": {
+                    "type": "function_call",
+                    "id": "wait-item",
+                    "name": "wait_agent",
+                    "namespace": "collaboration",
+                    "call_id": "call-native-wait",
+                    "arguments": json.dumps(
+                        {"timeout_ms": CODEX_ACTIVATION_CANARY_WAIT_TIMEOUT_MS}
+                    ),
+                },
+            },
+            {
+                "type": "response_item",
+                "payload": {
+                    "type": "function_call_output",
+                    "call_id": "call-native-wait",
+                    "output": json.dumps({"message": "Wait completed.", "timed_out": False}),
+                },
+            },
+            {
+                "type": "response_item",
+                "payload": {
+                    "type": "message",
+                    "role": "assistant",
+                    "content": [{"type": "output_text", "text": final}],
+                },
+            },
+            {
+                "type": "event_msg",
+                "payload": {"type": "task_complete", "last_agent_message": final},
+            },
+        ],
+    )
+    _write_codex_rollout(
+        rollout_root,
+        receiver_id,
+        [
+            {
+                "type": "session_meta",
+                "payload": {
+                    "id": receiver_id,
+                    "source": {
+                        "subagent": {
+                            "thread_spawn": {
+                                "parent_thread_id": parent_id,
+                                "depth": 1,
+                                "agent_path": "/root/code_reviewer",
+                            }
+                        }
+                    },
+                },
+            },
+            {
+                "type": "response_item",
+                "payload": {
+                    "type": "message",
+                    "role": "developer",
+                    "content": [{"type": "input_text", "text": "identity-only preamble"}],
+                },
+            },
+            {
+                "type": "response_item",
+                "payload": {
+                    "type": "message",
+                    "role": "developer",
+                    "content": [{"type": "input_text", "text": delivery}],
+                },
+            },
+            {
+                "type": "response_item",
+                "payload": {
+                    "type": "message",
+                    "role": "assistant",
+                    "content": [{"type": "output_text", "text": "Whitespace may be semantic."}],
+                },
+            },
+        ],
+    )
+
+    record = codex_canary_record(
+        _process_result(""),
+        profile_scope="current-profile",
+        rollout_root=rollout_root,
+    )
+
+    assert record["status"] == "completed"
+    assert record["session_id"] == parent_id
+    assert record["output"] == final
+    assert record["collaboration"]["spawn_count"] == 1
+    assert record["collaboration"]["wait_count"] == 1
+    spawn, wait = record["collaboration"]["calls"]
+    assert spawn["receiver_thread_ids"] == [receiver_id]
+    assert spawn["native_task_name"] == "code_reviewer"
+    assert spawn["execution_delivery"]["native_task_name"] == "code_reviewer"
+    assert wait["agents_states"] == {receiver_id: "completed"}
 
 
 def test_codex_v2_rollout_recovers_spawn_omitted_from_stdout(tmp_path: Path) -> None:

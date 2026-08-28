@@ -3,7 +3,7 @@ title: "Troubleshooting Agency Runtime"
 status: active
 category: operations
 created: 2026-07-10
-updated: 2026-08-25
+updated: 2026-08-26
 tags: [operations, troubleshooting]
 related:
   - README.md
@@ -23,12 +23,14 @@ related:
   - docs/roadmap/issue-AR-192-fail-fast-on-codex-hook-trust-drift.md
   - docs/roadmap/issue-AR-266-dense-hybrid-workforce-recall.md
   - docs/roadmap/issue-AR-286-configure-bounded-embedding-dimensions.md
+  - docs/roadmap/issue-AR-317-route-agency-inference-through-litellm-aliases.md
   - docs/roadmap/AR-119-founding-vision.md
   - docs/roadmap/AR-119-rule-host-evidence-matrix.md
   - docs/decisions/0045-turn-scoped-specialist-activation.md
   - docs/decisions/0067-require-configured-inference-for-selection.md
   - docs/decisions/0071-bound-native-delegation-correction.md
   - docs/decisions/0120-construct-first-pass-evidence-headers.md
+  - docs/decisions/0181-use-litellm-aliases-as-host-inference-control-plane.md
   - docs/decisions/0073-own-subprocess-trees-atomically.md
   - docs/decisions/0098-pair-portable-and-win-amd64-wheels.md
   - docs/decisions/0099-separate-reproducible-unsigned-builds-from-signed-delivery.md
@@ -507,10 +509,13 @@ is not available. Codex and Claude require the exact
 
 An Agency-mode live canary also requires
 `canary.child_judge_provider_by_host.<host>` to name one exact configured
-Codex/Claude CLI provider or supported Anthropic-compatible inference profile.
-The canary fails before inference if the entry is absent, ambiguous,
-unavailable, unsafe, unsupported, or differs from the identity projected into
-the disposable host environment; it never tries the next provider. Inspect
+Codex/Claude CLI provider or supported Anthropic, literal-loopback Ollama, or
+credential-declared LiteLLM inference profile. A LiteLLM profile must use HTTPS
+or literal-loopback HTTP. The canary fails before inference if the entry is
+absent, ambiguous, unavailable, unsafe, unsupported, or differs from the
+identity projected into the disposable host environment; Agency never tries
+the next provider. A proxy's own fallbacks are separate policy and must be
+excluded independently when exact-model proof is required. Inspect
 `child_judge_provider_requested` and `child_judge_provider_answered` in the
 proof rather than inferring the judge from the driving host. ZCode may reuse an
 existing GLM inference profile without adding it to the ordinary provider

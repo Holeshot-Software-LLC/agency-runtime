@@ -13,6 +13,7 @@ from agency_runtime.core.workforce import embedding_provider
 from agency_runtime.core.workforce.embedding_provider import (
     EmbeddingProviderResponse,
     embed_texts,
+    embedding_batch_input_limit,
     invoke_embedding_provider,
 )
 
@@ -145,3 +146,13 @@ def test_ar286_embedding_receipt_keeps_observed_dimensions() -> None:
     assert result.receipt.status == "applied"
     assert result.receipt.dimensions == 3
     assert result.receipt.actual_model == "embedding-model-receipt"
+
+
+def test_ar303_embedding_batch_limit_reserves_response_structure_nodes() -> None:
+    assert embedding_batch_input_limit(4_096) == 243
+    assert embedding_provider.MAX_EMBEDDING_VECTOR_VALUES >= 243 * 4_096
+    assert (
+        243 * (4_096 + embedding_provider._EMBEDDING_RESPONSE_ROW_NODE_OVERHEAD)
+        + embedding_provider._EMBEDDING_RESPONSE_FIXED_NODE_RESERVE
+        <= embedding_provider.MAX_EMBEDDING_RESPONSE_NODES
+    )

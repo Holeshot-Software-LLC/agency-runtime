@@ -89,10 +89,11 @@ def _header_snapshot_context(
         "Use these exact seven lines for substantive progress until Agency evidence "
         "changes. Immediately before the natural final response, invoke the local "
         "finalizer exactly once. If `agency_finalize` is visible, call it directly with "
-        "only draft_text, kept at or below 3,000 characters. Otherwise call Hermes "
-        "`tool_call` once with "
-        "name=`agency_finalize` and arguments containing only draft_text; no "
-        "`tool_describe` round trip is needed. Emit the tool result byte-for-byte. That "
+        "only draft_text, kept at or below 3,000 characters. If `tool_search` is visible "
+        "instead, call it once with query=`agency_finalize`, then invoke the discovered "
+        "tool with only draft_text. Otherwise call Hermes `tool_call` once with "
+        "name=`agency_finalize` and arguments containing only draft_text. Do not use "
+        "`tool_describe`. Emit the tool result byte-for-byte. That "
         "local "
         "tool constructs the first visible header from current Store evidence. Never "
         "guess changed values and never wait for a host correction.\n"
@@ -331,6 +332,36 @@ def _transform_output(adapter: HermesAdapter, payload: Mapping[str, Any]) -> str
     return response_text
 
 
+def _accepted_replay(adapter: HermesAdapter, payload: Mapping[str, Any]) -> str | None:
+    """Return only an exact previously committed Hermes finalizer result."""
+
+    if not adapter.runtime_enabled():
+        return None
+    response_text = _bounded_text(payload.get("response_text"))
+    session_id = _bounded_text(payload.get("session_id"), maximum_bytes=512)
+    trace_id = _bounded_text(payload.get("trace_id"), maximum_bytes=512)
+    if not session_id or not trace_id or not response_text:
+        return None
+    effective_trace = adapter.resolve_turn_trace(session_id, trace_id)
+    from agency_runtime.core.header.finalize import accepted_response_run
+
+    replay = accepted_response_run(
+        adapter.store,
+        session_id,
+        effective_trace,
+        response_text,
+    )
+    if (
+        isinstance(replay, Mapping)
+        and replay.get("authoritative") is True
+        and replay.get("action") == "accept"
+        and replay.get("terminal_status") == "completed"
+        and replay.get("status") == "completed"
+    ):
+        return response_text
+    return None
+
+
 def _finalize(adapter: HermesAdapter, payload: Mapping[str, Any]) -> dict[str, Any] | str:
     """Construct one exact terminal response from current Hermes turn evidence."""
 
@@ -441,6 +472,7 @@ def _runtime_disabled_result(payload: Mapping[str, Any], action: str) -> Any:
     if action == "finalize":
         return _bounded_text(payload.get("draft_text"))
     if action in {
+        "accepted_replay",
         "pre_llm_call",
         "post_tool_call",
         "post_api_request",
@@ -606,6 +638,8 @@ def handle(
         return _pre_verify(adapter, payload)
     if action == "finalize":
         return _finalize(adapter, payload)
+    if action == "accepted_replay":
+        return _accepted_replay(adapter, payload)
     if action == "transform_llm_output":
         return _transform_output(adapter, payload)
     if action == "on_session_end":

@@ -3,7 +3,7 @@ title: "Changelog"
 status: active
 category: release
 created: 2026-07-10
-updated: 2026-08-25
+updated: 2026-08-27
 tags: [release, changelog]
 related:
   - docs/RELEASE_CHECKLIST.md
@@ -11,7 +11,27 @@ related:
   - docs/roadmap/issue-AR-296-project-effective-inference-topology.md
   - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
   - docs/roadmap/issue-AR-298-expose-complete-workforce-prompts.md
+  - docs/roadmap/issue-AR-305-normalize-planner-novelty-absence.md
+  - docs/roadmap/issue-AR-306-bind-strict-critic-semantics.md
+  - docs/roadmap/issue-AR-307-project-canary-inference-credentials.md
+  - docs/roadmap/issue-AR-308-bind-activation-canary-delegation.md
+  - docs/roadmap/issue-AR-317-route-agency-inference-through-litellm-aliases.md
+  - docs/roadmap/issue-AR-318-bound-codex-activation-child-wait.md
+  - docs/roadmap/issue-AR-319-honor-pinned-canary-judge-timeout.md
+  - docs/roadmap/issue-AR-320-bound-codex-wait-to-full-child-staffing.md
+  - docs/roadmap/issue-AR-324-bind-codex-canary-child-through-host-lineage.md
+  - docs/roadmap/issue-AR-326-admit-terminal-codex-host-artifact-collection.md
+  - docs/roadmap/issue-AR-328-seal-hermes-install-tree.md
   - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
+  - docs/decisions/0178-project-config-declared-credentials-into-tool-reduced-canaries.md
+  - docs/decisions/0181-use-litellm-aliases-as-host-inference-control-plane.md
+  - docs/decisions/0182-bound-codex-activation-child-wait.md
+  - docs/decisions/0183-honor-pinned-canary-judge-timeout.md
+  - docs/decisions/0184-bound-codex-wait-to-full-child-staffing.md
+  - docs/decisions/0187-bind-codex-canary-child-through-host-authored-lineage.md
+  - docs/decisions/0188-separate-codex-hook-parent-and-child-identities.md
+  - docs/decisions/0189-admit-only-accepted-terminal-codex-parents-for-post-return-collection.md
+  - docs/decisions/0191-seal-managed-hermes-python-bundles.md
   - docs/roadmap/README.md
   - docs/worklog/README.md
   - THIRD_PARTY_NOTICES.md
@@ -68,10 +88,11 @@ changes rather than duplicating every commit.
   CLI credentials are copied into a second disposable private home, and proof
   records the requested and actual answering providers separately. Ordinary
   child staffing is unchanged. A pin may also reuse one exact supported
-  Anthropic-compatible inference profile without adding it to the ordinary
-  provider chain; this enables the local ZCode/GLM judge path but does not
-  claim a safe native ZCode canary backend. Profile pins project only their
-  exact identity; CLI transports alone receive isolated credential homes.
+  Anthropic-compatible, literal-loopback Ollama, or credential-declared safe
+  LiteLLM inference profile without adding it to the ordinary provider chain;
+  this enables local model aliases while keeping proxy fallbacks a separately
+  proven policy. Profile pins project only their exact identity; CLI
+  transports alone receive isolated credential homes.
   ZCode's documented Agent `PreToolUse` hook reaches the staffing boundary
   under test, while installed proof still requires an attended ZCode session.
 
@@ -89,6 +110,34 @@ changes rather than duplicating every commit.
 
 ### Changed
 
+- POSIX Hermes installs now manifest and seal an exact `__pycache__` guard, so
+  ordinary Python plugin loading cannot add unverified bytecode to the managed
+  tree. The plugin root stays owner-private and movable for the existing atomic
+  upgrade, rollback, and uninstall transactions.
+- The exact managed Codex current-profile canary now reconciles either
+  `PostToolUse`/`SubagentStart` callback order without retaining a contradictory
+  opaque-channel failure route. A post-tool-first spawn keeps one fixed-unit
+  pending dispatch and atomically promotes it to the host-authored real child;
+  ordinary encrypted spawns remain unstaffed and diagnostic, and conflicting
+  worker evidence still fails closed.
+- The Codex current-profile canary's bounded backend collector can now resolve
+  its exact parent after one authoritative accepted terminal commit, when the
+  host-authored child rollout is finally complete. Hook-side resolution remains
+  live-only; rejected, pending, missing, multi-finalization, stale, ordinary,
+  and artifact-less runs still fail closed.
+- Exact-config live canaries now project only credential environment variables
+  explicitly named by that validated configuration after applying the normal
+  minimal CLI environment. Values remain process-only and bounded; malformed
+  names, control-variable collisions, or values fail before launch, while
+  ordinary CLI judgments still drop LiteLLM and unrelated credentials.
+- Compact workforce planning now treats stringified `false`, `none`, and
+  `null` novelty values as absence instead of impossible new capabilities. The
+  same normalization cannot authorize an unknown domain, while genuine novel
+  capability gaps remain unchanged.
+- Strict workforce critics now receive the exact confidence/margin thresholds,
+  pre-execution review scope, and selected-only composition semantics. They
+  retain independent semantic veto authority without mistaking runner-up or
+  forbidden candidates for members of the selected team.
 - Context-dependent status, progress, recommendation, and next-step turns now
   refresh inference-owned specialist selection from a bounded same-session
   subject capsule while remaining parent-only and read-only. Prior transcript
@@ -142,6 +191,28 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
+- Codex `0.149.1` activation children now recover their exact canary parent
+  from the bounded, owner-trusted leading host `session_meta` record instead of
+  depending on process-environment inheritance that native child hook sessions
+  do not retain. The hook's root `session_id` and child `agent_id` are validated
+  separately against the artifact's agreeing parent and child identities.
+  Canonical UUIDv7 lineage, path, version, origin, depth, and live Store-route
+  checks fail closed; an optional request digest can only narrow the same
+  host-authored parent.
+- The exact Codex activation canary now gives its single native wait enough
+  time for the complete legal child-staffing path: two bounded judge calls plus
+  a fixed child-completion margin inside the unchanged outer transaction. It
+  still permits one spawn, one wait, no follow-up, and no retry.
+- A canary pinned to one resolved provider now uses that provider's validated
+  timeout for both its single attempt and aggregate judge budget. This keeps
+  120-second local inference profiles from being cut off by the legacy
+  60-second global budget without widening ordinary judge configuration or
+  restoring any fallback.
+- The exact managed Codex activation canary now binds its inference-selected
+  specialist to native `delegate` delivery before deterministic verification
+  and strict criticism. Ordinary staffing retains `load`, cached inference
+  selection is not mutated, and invalid delivery constraints fail before any
+  provider call.
 - `agency config set` can now create validated named inference profiles and
   publish the complete dotted route map used by embedding and reranker stages.
   Direct profile credentials use the same hidden-input, write-only, redacted
@@ -206,11 +277,11 @@ changes rather than duplicating every commit.
   claimed child lineage, execution input inside the second turn and before the
   response, one nonempty turn-bound final answer, and matching completion.
 - Codex product evidence now accepts the current bounded native `wait_agent`
-  timeout while leaving the activation canary's exact 60-second contract
-  unchanged. Current inferred work-unit goals carry their verified mutation
-  scope, reserve that suffix under bounded truncation, and make the delegated
-  workspace-write sentinel obligation explicit without giving the parent write
-  authority.
+  timeout while the activation canary uses one exact 120-second terminal wait
+  inside its unchanged 600-second outer ceiling. Current inferred work-unit
+  goals carry their verified mutation scope, reserve that suffix under bounded
+  truncation, and make the delegated workspace-write sentinel obligation
+  explicit without giving the parent write authority.
 - Dynamic contractors now bind external-mutation risk to the validated work
   unit instead of a model-authored Boolean. Ordinary repository and isolated-
   workspace writes remain autonomous, explicit safety prohibitions no longer

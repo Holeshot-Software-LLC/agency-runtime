@@ -16,6 +16,7 @@ related:
   - docs/roadmap/issue-AR-255-inference-owned-host-proven-child-staffing.md
   - docs/roadmap/issue-AR-281-route-native-children-through-host-profiles.md
   - docs/roadmap/issue-AR-296-project-effective-inference-topology.md
+  - docs/roadmap/issue-AR-308-bind-activation-canary-delegation.md
   - docs/decisions/0067-require-configured-inference-for-selection.md
   - docs/decisions/0087-inference-decides-from-a-relevance-shortlist.md
   - README.md

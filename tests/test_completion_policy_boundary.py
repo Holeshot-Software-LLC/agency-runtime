@@ -204,6 +204,53 @@ def test_generated_hermes_registers_callable_first_pass_finalizer(
     )
 
 
+def test_generated_hermes_replays_exact_accepted_tool_result_over_model_rewrite(
+    tmp_path: Path,
+) -> None:
+    store = Store(tmp_path / "hermes-native-finalizer-replay.db")
+    _create_turn(
+        store,
+        session_id="hermes-session",
+        trace_id="hermes-turn",
+        request_kind="trivial",
+    )
+    module = _load_generated_hermes(tmp_path)
+    module._adapter = HermesAdapter(store)
+    module._remember_turn("hermes-session", "hermes-turn")
+
+    finalized_text = module._agency_finalize(
+        {"draft_text": "Exact native Hermes response."},
+        session_id="hermes-session",
+        turn_id="hermes-turn",
+    )
+    rewritten = finalized_text + "\nModel-added text must not survive."
+
+    assert (
+        module._transform_llm_output(
+            rewritten,
+            session_id="hermes-session",
+            turn_id="hermes-turn",
+        )
+        == finalized_text
+    )
+    assert (
+        module._transform_llm_output(
+            rewritten,
+            session_id="hermes-session",
+            turn_id="hermes-turn",
+        )
+        == module._FINALIZATION_BLOCK_RESPONSE
+    )
+    assert store.get_run("hermes-turn")["status"] == "completed"
+    terminal = store.get_authoritative_finalization(
+        "hermes-session",
+        "hermes-turn",
+        action="accept",
+        response_hash=response_hash(finalized_text),
+    )
+    assert terminal is not None
+
+
 def test_generated_hermes_finalizer_rejects_draft_above_inline_transport_budget(
     tmp_path: Path,
 ) -> None:
@@ -662,6 +709,14 @@ def test_hermes_runtime_disabled_remains_intentional_passthrough(tmp_path: Path)
             session_id="session",
         )
         == "Original answer."
+    )
+    assert (
+        module._transform_llm_output(
+            "A later model answer remains untouched.",
+            session_id="session",
+            turn_id="turn",
+        )
+        == "A later model answer remains untouched."
     )
     long_draft = "x" * (hermes_bridge.MAX_FINALIZER_DRAFT_CHARS + 1)
     assert (

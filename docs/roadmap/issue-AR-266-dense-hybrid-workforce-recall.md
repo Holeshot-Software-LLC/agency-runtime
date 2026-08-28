@@ -11,6 +11,7 @@ related:
   - docs/roadmap/issue-AR-287-bind-host-hook-timeouts-to-inference-budgets.md
   - docs/roadmap/issue-AR-288-expose-hermes-native-finalizer-tool.md
   - docs/roadmap/issue-AR-289-native-reranker-transports.md
+  - docs/roadmap/issue-AR-303-bound-full-roster-embedding-requests.md
   - docs/roadmap/issue-AR-265-contextual-turn-classification.md
   - docs/decisions/0083-use-capability-indexed-recall-and-bounded-inference.md
   - docs/decisions/0118-require-inference-owned-staffing.md
@@ -18,6 +19,7 @@ related:
   - docs/decisions/0163-resolve-contextual-turns-from-transcript-free-subjects.md
   - docs/decisions/0164-use-dense-embeddings-only-for-workforce-recall.md
   - docs/decisions/0171-separate-native-and-structured-reranker-transports.md
+  - docs/decisions/0175-batch-complete-embedding-input-sets.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
@@ -27,7 +29,7 @@ issue_id: AR-266
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/320
 depends_on: []
-blocks: [AR-286, AR-287, AR-289]
+blocks: [AR-286, AR-287, AR-289, AR-303]
 ---
 
 # AR-266: Recall the complete workforce with dense hybrid retrieval
@@ -71,8 +73,10 @@ specialists before inference decides the final staffing plan.
   unchanged.
 - Local shadow preparation found that a provider's valid 4,096-dimension
   default can exceed the unchanged aggregate scalar bound for the complete
-  roster. AR-286 owns a provider-native bounded-dimension request; no client-side
-  slicing or safety-bound increase is permitted.
+  roster. AR-286 owns the exact dimension request. AR-303 now permits at most
+  two scalar-safe input batches after whole-request prevalidation; no vector
+  slicing, output reshaping, partial cache commit, or safety-bound increase is
+  permitted.
 - Tracker [#320](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/320)
   remains open by owner direction. [PR #323](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/323)
   merged the complete live-gate continuation to `main` as `e1d783ff` after all
@@ -114,7 +118,8 @@ only order them. The existing `workforce.recruiter` remains the sole staffing
 selector. Support `off`, `shadow`, and `additive` modes. Shadow is the safe
 default while evaluation evidence is accumulated and uses an independent
 two-call evidence budget that cannot consume planner, recruiter, repair, or
-critic capacity.
+critic capacity. ADR-0175 refines that evidence budget to three calls for a
+cold catalog and two for a warm catalog without changing staffing authority.
 
 Use an exact in-process cosine scan at current roster scale and a bounded
 process cache. Do not reuse or grandfather legacy `agent_embeddings` rows.

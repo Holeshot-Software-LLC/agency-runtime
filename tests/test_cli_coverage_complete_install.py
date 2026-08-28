@@ -47,6 +47,7 @@ def config(profile="standard"):
         profile=profile,
         config_path="agency.yaml",
         judge=SimpleNamespace(model="judge-model", base_url="http://127.0.0.1"),
+        store=SimpleNamespace(resolved_path=lambda: Path("agency.db")),
     )
 
 
@@ -878,6 +879,7 @@ def test_codex_production_container_installs_managed_policy_and_proves_normal_la
         canary_runner=canary_runner,
         production_container=True,
         config_path=Path("container-agency.yaml"),
+        db_path=Path("container-agency.db"),
         managed_codex_installer=policy_installer,
         canary_attestation_invalidator=lambda host: invalidations.append(host) or True,
     )
@@ -903,6 +905,9 @@ def test_codex_production_container_installs_managed_policy_and_proves_normal_la
                 "mode": "agency",
                 "profile_scope": "current-profile",
                 "trust_mode": "managed_policy",
+                "config_path": Path("container-agency.yaml"),
+                "db_path": Path("container-agency.db"),
+                "require_existing_store": True,
             },
         )
     ]

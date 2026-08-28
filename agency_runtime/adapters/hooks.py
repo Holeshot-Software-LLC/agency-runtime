@@ -45,6 +45,7 @@ from agency_runtime.core.observability import (
     mark_current_observation,
 )
 from agency_runtime.core.store.sqlite import Store
+from agency_runtime.core.unit_assignment import work_unit_id_from_text
 
 logger = logging.getLogger(__name__)
 # A hook speaks one JSON object on stdout and must leave stderr clean; the host
@@ -1309,6 +1310,12 @@ class HookBridge:
                 )
                 channel_attestation = None
             if channel_attestation is None:
+                restricted_parent = self._restricted_codex_activation_parent_scope(payload)
+                if restricted_parent is not None and self._restricted_codex_spawn_input(args):
+                    # ADR-0179 owns this one repository-authored canary spawn at
+                    # SubagentStart.  It is not an ordinary unsupported opaque
+                    # child, so do not append a contradictory failure route.
+                    return {}
                 # Encrypted, unmarked, ambiguous, or stale Codex calls remain
                 # ordinary host spawns. The diagnostic is content-free and the
                 # hook never blocks the child.
@@ -1366,7 +1373,36 @@ class HookBridge:
         return {}
 
     def _handle_codex_subagent_start(self, payload: dict[str, Any]) -> dict[str, Any]:
-        """Inject identity while reporting the current opaque staffing limit."""
+        """Inject one exact canary team or an unstaffed child identity."""
+
+        restricted_parent = self._restricted_codex_activation_child_parent_scope(payload)
+        if restricted_parent is not None:
+            session_id, trace_id = restricted_parent
+            try:
+                agent_type = _required_string(payload, "agent_type")
+                identity = _native_child_identity(
+                    self.host,
+                    _required_string(payload, "agent_id"),
+                )
+            except (HookInputError, ValueError):
+                return {}
+            from agency_runtime.core.activation_canary_contract import (
+                CODEX_ACTIVATION_CANARY_NATIVE_AGENT_TYPE,
+            )
+
+            if agent_type == CODEX_ACTIVATION_CANARY_NATIVE_AGENT_TYPE:
+                context = self._staff_restricted_codex_activation_child(
+                    session_id=session_id,
+                    trace_id=trace_id,
+                    identity=identity,
+                )
+                if context:
+                    return {
+                        "hookSpecificOutput": {
+                            "hookEventName": "SubagentStart",
+                            "additionalContext": context,
+                        }
+                    }
 
         lifecycle = self._record_native_child_lifecycle(payload, event="started")
         if lifecycle is None:
@@ -1397,10 +1433,363 @@ class HookBridge:
             }
         }
 
+    def _restricted_codex_activation_parent_scope(
+        self,
+        payload: dict[str, Any],
+    ) -> tuple[str, str] | None:
+        """Resolve the parent hook's sole open restricted Codex canary turn."""
+
+        if self.host != "codex":
+            return None
+        from agency_runtime.core.codex_activation_verification import (
+            is_restricted_codex_activation_canary_environment,
+        )
+
+        if not is_restricted_codex_activation_canary_environment(os.environ):
+            return None
+        correlation = self._correlation(payload)
+        trace_id = self._unambiguous_open_trace(correlation.session_id)
+        getter = getattr(self.store, "get_codex_activation_canary_parent_snapshot", None)
+        if not trace_id or not callable(getter):
+            return None
+        try:
+            snapshot = getter(
+                session_id=correlation.session_id,
+                trace_id=trace_id,
+            )
+        except Exception:
+            return None
+        route = snapshot.get("route") if isinstance(snapshot, dict) else None
+        from agency_runtime.core.activation_canary_contract import (
+            CODEX_ACTIVATION_CANARY_ROUTE_SOURCE,
+            CODEX_ACTIVATION_CANARY_WORK_UNIT_SOURCE,
+        )
+
+        if not (
+            isinstance(route, dict)
+            and snapshot.get("proven") is True
+            and snapshot.get("session_id") == correlation.session_id
+            and snapshot.get("trace_id") == trace_id
+            and route.get("status") == "accepted"
+            and route.get("source") == CODEX_ACTIVATION_CANARY_ROUTE_SOURCE
+            and route.get("selected_ids") == ["code-reviewer"]
+            and route.get("semantic_ids") == ["code-reviewer"]
+            and route.get("companion_ids") == []
+            and route.get("work_units")
+            == {
+                "delegate": True,
+                "count": 1,
+                "confidence": "high",
+                "source": CODEX_ACTIVATION_CANARY_WORK_UNIT_SOURCE,
+            }
+        ):
+            return None
+        return correlation.session_id, trace_id
+
+    def _restricted_codex_activation_child_parent_scope(
+        self,
+        payload: dict[str, Any],
+    ) -> tuple[str, str] | None:
+        """Bind a real Codex child to one host-authored canary parent lineage."""
+
+        if self.host != "codex":
+            return None
+        from agency_runtime.core.codex_activation_verification import (
+            CODEX_ACTIVATION_QUERY_HASH_ENV,
+            is_restricted_codex_activation_canary_environment,
+            restricted_codex_activation_query_hash,
+        )
+
+        if not is_restricted_codex_activation_canary_environment(os.environ):
+            return None
+        try:
+            hook_parent_session_id = validate_correlation_id(
+                _required_string(payload, "session_id"),
+                field="session_id",
+            )
+            child_session_id = validate_correlation_id(
+                _required_string(payload, "agent_id"),
+                field="agent_id",
+            )
+        except (HookInputError, ValueError):
+            return None
+
+        try:
+            event = _required_string(payload, "hook_event_name")
+            cwd = _required_string(payload, "cwd")
+            if event == "SubagentStart":
+                artifact_path = _required_string(payload, "transcript_path")
+            elif event == "SubagentStop":
+                artifact_path = _required_string(payload, "agent_transcript_path")
+            else:
+                return None
+        except HookInputError:
+            return None
+        from agency_runtime.core.child_delivery_evidence import (
+            codex_v1491_child_parent_session,
+        )
+
+        try:
+            parent_session_id = codex_v1491_child_parent_session(
+                artifact_path,
+                child_id=child_session_id,
+                cwd=cwd,
+            )
+        except Exception:
+            return None
+        if not parent_session_id or parent_session_id != hook_parent_session_id:
+            return None
+        parent_trace_id = self._unambiguous_open_trace(parent_session_id)
+        getter = getattr(self.store, "get_codex_activation_canary_parent_snapshot", None)
+        if not parent_trace_id or not callable(getter):
+            return None
+        try:
+            snapshot = getter(
+                session_id=parent_session_id,
+                trace_id=parent_trace_id,
+            )
+        except Exception:
+            return None
+        route = snapshot.get("route") if isinstance(snapshot, dict) else None
+        run = snapshot.get("run") if isinstance(snapshot, dict) else None
+        query_hash = restricted_codex_activation_query_hash(os.environ)
+        supplied_query_hash = os.environ.get(CODEX_ACTIVATION_QUERY_HASH_ENV)
+        if supplied_query_hash is not None and not query_hash:
+            return None
+        route_query_hash = route.get("query_hash") if isinstance(route, dict) else None
+        from agency_runtime.core.activation_canary_contract import (
+            CODEX_ACTIVATION_CANARY_ROUTE_SOURCE,
+            CODEX_ACTIVATION_CANARY_WORK_UNIT_SOURCE,
+        )
+
+        if not (
+            isinstance(route, dict)
+            and isinstance(run, dict)
+            and snapshot.get("proven") is True
+            and snapshot.get("status") == "resolved"
+            and snapshot.get("reason") == "exact_route_resolved"
+            and snapshot.get("host") == "codex"
+            and snapshot.get("query_hash") == route_query_hash
+            and snapshot.get("session_id") == parent_session_id
+            and snapshot.get("trace_id") == parent_trace_id
+            and run.get("session_id") == parent_session_id
+            and run.get("trace_id") == parent_trace_id
+            and route.get("session_id") == parent_session_id
+            and route.get("trace_id") == parent_trace_id
+            and isinstance(route_query_hash, str)
+            and re.fullmatch(r"[0-9a-f]{64}", route_query_hash) is not None
+            and (not query_hash or route_query_hash == query_hash)
+            and route.get("status") == "accepted"
+            and route.get("source") == CODEX_ACTIVATION_CANARY_ROUTE_SOURCE
+            and route.get("selected_ids") == ["code-reviewer"]
+            and route.get("semantic_ids") == ["code-reviewer"]
+            and route.get("companion_ids") == []
+            and route.get("work_units")
+            == {
+                "delegate": True,
+                "count": 1,
+                "confidence": "high",
+                "source": CODEX_ACTIVATION_CANARY_WORK_UNIT_SOURCE,
+            }
+            and run.get("host") == "codex"
+            and run.get("status") in {"active", "evidence_only"}
+            and run.get("preflight_state") == "ready"
+            and run.get("request_fingerprint") == route_query_hash
+            and run.get("ended_at") is None
+            and run.get("terminal_finalization_id") is None
+        ):
+            return None
+        try:
+            validated_parent_session_id = validate_correlation_id(
+                snapshot.get("session_id"),
+                field="parent_session_id",
+            )
+            validated_parent_trace_id = validate_correlation_id(
+                snapshot.get("trace_id"),
+                field="parent_trace_id",
+            )
+        except ValueError:
+            return None
+        if (
+            validated_parent_session_id != parent_session_id
+            or validated_parent_trace_id != parent_trace_id
+        ):
+            return None
+        return validated_parent_session_id, validated_parent_trace_id
+
+    def _staff_restricted_codex_activation_child(
+        self,
+        *,
+        session_id: str,
+        trace_id: str,
+        identity: NativeChildRunIdentity,
+    ) -> str:
+        """Staff the fixed canary unit against the real 0.149 child UUID."""
+
+        from agency_runtime.core.activation_canary_contract import (
+            CODEX_ACTIVATION_CANARY_WORK_UNIT,
+        )
+        from agency_runtime.core.child_delivery_evidence import (
+            _restricted_codex_canary_route,
+        )
+        from agency_runtime.core.native_child_install_identity import (
+            current_runtime_managed_host_install_identity,
+        )
+        from agency_runtime.core.native_child_staffing import staff_native_child
+
+        try:
+            result = staff_native_child(
+                self.store,
+                host="codex",
+                task=CODEX_ACTIVATION_CANARY_WORK_UNIT,
+                parent_session_id=session_id,
+                parent_trace_id=trace_id,
+                launch_id=identity.worker_id,
+                binding_kind="child_id",
+                binding_id=identity.worker_id,
+                install_identity=current_runtime_managed_host_install_identity("codex"),
+                install_identity_reader=current_runtime_managed_host_install_identity,
+                maximum_delivery_bytes=MAX_CONTEXT_CHARS,
+                delivery_validator=lambda value: bool(
+                    isinstance(value, str) and len(value.encode("utf-8")) <= MAX_CONTEXT_CHARS
+                ),
+            )
+            route = _restricted_codex_canary_route(
+                self.store,
+                parent_session_id=session_id,
+                parent_trace_id=trace_id,
+            )
+            if not (
+                result.staffed
+                and result.selected_ids == ("code-reviewer",)
+                and isinstance(route, dict)
+                and route.get("decision_id") == result.decision_id
+                and route.get("binding_id") == identity.worker_id
+                and route.get("launch_id") == identity.worker_id
+                and result.rewritten_task
+                and len(result.rewritten_task.encode("utf-8")) <= MAX_CONTEXT_CHARS
+            ):
+                return ""
+            promoter = getattr(self.store, "promote_codex_activation_canary_child", None)
+            if callable(promoter):
+                promoter(
+                    session_id=session_id,
+                    trace_id=trace_id,
+                    work_unit_id=work_unit_id_from_text(CODEX_ACTIVATION_CANARY_WORK_UNIT),
+                    worker_id=identity.worker_id,
+                    native_run_id=identity.native_run_id,
+                )
+            recorder = getattr(self.store, "record_native_child_started", None)
+            if not callable(recorder):
+                return ""
+            started = recorder(
+                host="codex",
+                backend="spawn_agent",
+                session_id=session_id,
+                trace_id=trace_id,
+                work_unit_id=work_unit_id_from_text(CODEX_ACTIVATION_CANARY_WORK_UNIT),
+                worker_id=identity.worker_id,
+                native_run_id=identity.native_run_id,
+            )
+            if not isinstance(started, dict):
+                return ""
+            return result.rewritten_task
+        except Exception:
+            logger.debug("restricted Codex canary child staffing failed open", exc_info=True)
+            return ""
+
+    @staticmethod
+    def _restricted_codex_spawn_input(tool_input: Any) -> bool:
+        """Recognize only the fixed native call shape emitted by the canary plan."""
+
+        from agency_runtime.core.native_child_prompt_delivery import (
+            is_codex_opaque_collaboration_message,
+        )
+
+        args = _dict_or_empty(tool_input)
+        return bool(
+            set(args) == {"fork_turns", "message", "task_name"}
+            and args.get("fork_turns") == "none"
+            and args.get("task_name") == "code_reviewer"
+            and is_codex_opaque_collaboration_message(args.get("message"))
+        )
+
+    @staticmethod
+    def _restricted_codex_spawn_response(tool_response: Any) -> bool:
+        """Recognize the exact identity-free Codex 0.149 spawn response."""
+
+        response = _native_child_response_mapping("codex", tool_response)
+        return bool(
+            isinstance(response, dict)
+            and set(response) == {"task_name"}
+            and response.get("task_name") == "/root/code_reviewer"
+        )
+
+    def _restricted_codex_spawn_reconciliation(
+        self,
+        *,
+        session_id: str,
+        trace_id: str,
+        tool_input: Any,
+        tool_response: Any,
+    ) -> tuple[Any, str, NativeChildRunIdentity | None]:
+        """Join the post-spawn path to the child UUID bound at SubagentStart."""
+
+        from agency_runtime.core.codex_activation_verification import (
+            is_restricted_codex_activation_canary_environment,
+        )
+
+        if not is_restricted_codex_activation_canary_environment(os.environ):
+            return tool_response, "", None
+        from agency_runtime.core.activation_canary_contract import (
+            CODEX_ACTIVATION_CANARY_WORK_UNIT,
+        )
+        from agency_runtime.core.child_delivery_evidence import (
+            _restricted_codex_canary_route,
+        )
+
+        route = _restricted_codex_canary_route(
+            self.store,
+            parent_session_id=session_id,
+            parent_trace_id=trace_id,
+        )
+        if not (
+            isinstance(route, dict)
+            and self._restricted_codex_spawn_input(tool_input)
+            and self._restricted_codex_spawn_response(tool_response)
+        ):
+            return tool_response, "", None
+        response = _native_child_response_mapping("codex", tool_response)
+        if response is None:
+            return tool_response, "", None
+        try:
+            identity = _native_child_identity("codex", route["binding_id"])
+        except (KeyError, ValueError):
+            return tool_response, "", None
+        return (
+            {
+                "task_name": response["task_name"],
+                "agent_id": identity.worker_id,
+                "native_run_id": identity.native_run_id,
+                "work_unit_id": work_unit_id_from_text(CODEX_ACTIVATION_CANARY_WORK_UNIT),
+            },
+            work_unit_id_from_text(CODEX_ACTIVATION_CANARY_WORK_UNIT),
+            identity,
+        )
+
     def _handle_codex_subagent_stop(self, payload: dict[str, Any]) -> dict[str, Any]:
         """Close a planned Codex child only after its exact execution turn."""
 
-        session_id, trace_id, _work_unit_id = self._native_child_parent_scope(payload)
+        restricted_parent = self._restricted_codex_activation_child_parent_scope(payload)
+        if restricted_parent is None:
+            session_id, trace_id, work_unit_id = self._native_child_parent_scope(payload)
+        else:
+            session_id, trace_id = restricted_parent
+            from agency_runtime.core.activation_canary_contract import (
+                CODEX_ACTIVATION_CANARY_WORK_UNIT,
+            )
+
+            work_unit_id = work_unit_id_from_text(CODEX_ACTIVATION_CANARY_WORK_UNIT)
         _required_string(payload, "agent_type")
         try:
             identity = _native_child_identity(
@@ -1412,7 +1801,6 @@ class HookBridge:
         final_message = _optional_string(payload, "last_assistant_message")
         # The harness spawned this child itself, so there is no planned
         # execution receipt to reconcile against -- just close its lifecycle.
-        work_unit_id = _work_unit_id
         stopped = getattr(self.store, "record_native_child_stopped", None)
         if callable(stopped) and trace_id:
             stopped(
@@ -1438,6 +1826,22 @@ class HookBridge:
                 native_run_id=identity.native_run_id,
                 outcome="ok",
             )
+        if restricted_parent is not None:
+            try:
+                from agency_runtime.core.child_delivery_evidence import (
+                    _collect_restricted_codex_canary_child_delivery,
+                )
+
+                _collect_restricted_codex_canary_child_delivery(
+                    self.store,
+                    parent_session_id=session_id,
+                    parent_trace_id=trace_id,
+                )
+            except Exception:
+                logger.debug(
+                    "restricted Codex child delivery could not be collected at stop",
+                    exc_info=True,
+                )
         return {}
 
     def _resolve_codex_post_tool_unit(
@@ -1475,7 +1879,7 @@ class HookBridge:
             trace_id=trace_id,
         )
 
-    def _handle_post_tool_use(
+    def _handle_post_tool_use(  # noqa: C901 - one ordered native observation boundary
         self,
         event: str,
         payload: dict[str, Any],
@@ -1507,6 +1911,33 @@ class HookBridge:
             tool_response,
         )
         observed_tool_response = tool_response
+        observed_codex_identity: NativeChildRunIdentity | None = None
+        reconciled_codex_identity: NativeChildRunIdentity | None = None
+        reconciled_codex_unit = ""
+        restricted_codex_spawn = False
+        if (
+            self.host == "codex"
+            and event == "PostToolUse"
+            and tool_name in _CODEX_SPAWN_TOOL_NAMES
+            and correlation.session_id
+            and trace_id
+        ):
+            restricted_codex_spawn = bool(
+                self._restricted_codex_activation_parent_scope(payload)
+                == (correlation.session_id, trace_id)
+                and self._restricted_codex_spawn_input(tool_input)
+                and self._restricted_codex_spawn_response(observed_tool_response)
+            )
+            (
+                tool_response,
+                reconciled_codex_unit,
+                reconciled_codex_identity,
+            ) = self._restricted_codex_spawn_reconciliation(
+                session_id=correlation.session_id,
+                trace_id=trace_id,
+                tool_input=tool_input,
+                tool_response=observed_tool_response,
+            )
         resolved_codex_unit = self._resolve_codex_post_tool_unit(
             tool_name=tool_name,
             tool_input=tool_input,
@@ -1546,12 +1977,29 @@ class HookBridge:
             if not isinstance(tool_response, dict) or not _first_string(
                 tool_response, "native_run_id"
             ):
-                tool_response, _identity = _native_child_tool_identity(
+                tool_response, observed_codex_identity = _native_child_tool_identity(
                     "codex",
                     tool_response,
                 )
+            if restricted_codex_spawn:
+                from agency_runtime.core.activation_canary_contract import (
+                    CODEX_ACTIVATION_CANARY_WORK_UNIT,
+                )
+
+                canonical_args["agent"] = "code-reviewer"
+                canonical_args["goal"] = CODEX_ACTIVATION_CANARY_WORK_UNIT
         if resolved_codex_unit:
             canonical_args["work_unit_id"] = resolved_codex_unit
+        if reconciled_codex_unit:
+            canonical_args["work_unit_id"] = reconciled_codex_unit
+        elif restricted_codex_spawn:
+            from agency_runtime.core.activation_canary_contract import (
+                CODEX_ACTIVATION_CANARY_WORK_UNIT,
+            )
+
+            canonical_args["work_unit_id"] = work_unit_id_from_text(
+                CODEX_ACTIVATION_CANARY_WORK_UNIT
+            )
         if correlation.work_unit_id and not _first_string(
             canonical_args, "work_unit_id", "workUnitId"
         ):
@@ -1568,6 +2016,63 @@ class HookBridge:
             tool_use_id=correlation.tool_use_id,
             agent_id=_optional_string(payload, "agent_id"),
         )
+        claim_identity = reconciled_codex_identity
+        claim_unit = reconciled_codex_unit
+        if claim_identity is None and restricted_codex_spawn:
+            claim_identity = observed_codex_identity
+            from agency_runtime.core.activation_canary_contract import (
+                CODEX_ACTIVATION_CANARY_WORK_UNIT,
+            )
+
+            claim_unit = work_unit_id_from_text(CODEX_ACTIVATION_CANARY_WORK_UNIT)
+        if claim_identity is not None and claim_unit:
+            try:
+                started = self.store.record_native_child_started(
+                    host="codex",
+                    backend="spawn_agent",
+                    session_id=correlation.session_id,
+                    trace_id=trace_id,
+                    work_unit_id=claim_unit,
+                    worker_id=claim_identity.worker_id,
+                    native_run_id=claim_identity.native_run_id,
+                )
+                claimed = self.store.claim_codex_native_child_execution(
+                    session_id=correlation.session_id,
+                    trace_id=trace_id,
+                    work_unit_id=claim_unit,
+                    worker_id=claim_identity.worker_id,
+                    native_run_id=claim_identity.native_run_id,
+                    tool_use_id=correlation.tool_use_id,
+                )
+                if not isinstance(started, dict) or claimed is not True:
+                    logger.debug("restricted Codex spawn reconciliation was incomplete")
+            except Exception:
+                logger.debug("restricted Codex spawn reconciliation failed", exc_info=True)
+        if restricted_codex_spawn and reconciled_codex_identity is None:
+            # Close the only concurrent interleaving: SubagentStart may commit
+            # its route between the first route read and this pending dispatch.
+            # Whichever callback finishes second performs the same atomic
+            # promotion, so neither host callback order nor overlap loses it.
+            try:
+                _late_response, late_unit, late_identity = (
+                    self._restricted_codex_spawn_reconciliation(
+                        session_id=correlation.session_id,
+                        trace_id=trace_id,
+                        tool_input=tool_input,
+                        tool_response=observed_tool_response,
+                    )
+                )
+                promoter = getattr(self.store, "promote_codex_activation_canary_child", None)
+                if late_identity is not None and late_unit and callable(promoter):
+                    promoter(
+                        session_id=correlation.session_id,
+                        trace_id=trace_id,
+                        work_unit_id=late_unit,
+                        worker_id=late_identity.worker_id,
+                        native_run_id=late_identity.native_run_id,
+                    )
+            except Exception:
+                logger.debug("restricted Codex late spawn promotion failed", exc_info=True)
         return self._codex_post_tool_header_output(
             event=event,
             tool_name=tool_name,
@@ -1676,6 +2181,21 @@ class HookBridge:
             or _first_string(response, "message") != "Wait completed."
         ):
             return ""
+        try:
+            from agency_runtime.core.child_delivery_evidence import (
+                _collect_restricted_codex_canary_child_delivery,
+            )
+
+            _collect_restricted_codex_canary_child_delivery(
+                self.store,
+                parent_session_id=session_id,
+                parent_trace_id=trace_id,
+            )
+        except Exception:
+            logger.debug(
+                "restricted Codex child delivery could not be collected after wait",
+                exc_info=True,
+            )
         return self._header_snapshot_context(
             session_id=session_id,
             trace_id=trace_id,
@@ -1759,6 +2279,12 @@ class HookBridge:
                 reservation,
             )
             return {}
+        plan_context = self._restricted_codex_activation_plan_context(
+            payload,
+            result,
+            session_id=correlation.session_id,
+            trace_id=trace_id,
+        )
         header_context = self._header_snapshot_context(
             session_id=correlation.session_id,
             trace_id=trace_id,
@@ -1770,7 +2296,12 @@ class HookBridge:
                 "A later Agency header snapshot for this turn supersedes this one."
             ),
         )
-        combined_context = f"{context.rstrip()}\n\n{header_context}" if header_context else context
+        context_segments = [context.rstrip()]
+        if plan_context:
+            context_segments.append(plan_context)
+        if header_context:
+            context_segments.append(header_context)
+        combined_context = "\n\n".join(context_segments)
         if len(combined_context) > MAX_CONTEXT_CHARS:
             combined_context = context
         return {
@@ -1779,6 +2310,31 @@ class HookBridge:
                 "additionalContext": combined_context[:MAX_CONTEXT_CHARS],
             }
         }
+
+    def _restricted_codex_activation_plan_context(
+        self,
+        payload: dict[str, Any],
+        result: Any,
+        *,
+        session_id: str,
+        trace_id: str,
+    ) -> str:
+        """Expose one fixed execution row only for the proven canary parent."""
+
+        if self.host != "codex" or not isinstance(result, dict):
+            return ""
+        if result.get("session_id") != session_id or result.get("trace_id") != trace_id:
+            return ""
+        if self._restricted_codex_activation_parent_scope(payload) != (session_id, trace_id):
+            return ""
+        try:
+            from agency_runtime.core.activation_canary_contract import (
+                render_codex_activation_canary_delegation_plan,
+            )
+
+            return render_codex_activation_canary_delegation_plan(result.get("routing"))
+        except (TypeError, ValueError):
+            return ""
 
     def handle(self, payload: dict[str, Any]) -> dict[str, Any]:
         if not isinstance(payload, dict):

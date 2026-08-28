@@ -3,7 +3,7 @@ title: "Authenticate Codex plaintext spawns from host transcripts"
 status: accepted
 category: decisions
 created: 2026-08-12
-updated: 2026-08-25
+updated: 2026-08-26
 tags: [codex, native-child, hooks, transcripts, security, evidence]
 related:
   - docs/decisions/0118-require-inference-owned-staffing.md
@@ -12,6 +12,8 @@ related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md
   - docs/roadmap/AR-180-codex-0149-compatibility-evidence.md
+  - docs/roadmap/issue-AR-309-restore-codex-0149-activation-proof.md
+  - docs/decisions/0179-admit-exact-codex-canary-delivery-at-subagent-start.md
   - docs/roadmap/issue-AR-255-inference-owned-host-proven-child-staffing.md
   - docs/roadmap/AR-119-rule-host-evidence-matrix.md
   - docs/roadmap/handoffs/issue-AR-119.md
@@ -218,3 +220,10 @@ tool spelling. The decision remains in force: the 0.147 profiles stay exact,
 0.149.1 remains unsupported and unstaffed, and no installation or Rule-4 claim
 advances. The bounded projection is retained in
 `docs/roadmap/AR-180-codex-0149-compatibility-evidence.md`.
+
+ADR-0179 later admitted one narrower `0.149.1` exception for the
+repository-owned current-profile activation canary. It does not authenticate or
+rewrite the encrypted parent call: the already-persisted exact canary plan is
+bound to the host-created child UUID at `SubagentStart`, and the host persists
+the hook's complete v6 context as a distinct pre-speech child record. Ordinary
+`0.149.1` spawns remain unsupported and unstaffed under this decision.

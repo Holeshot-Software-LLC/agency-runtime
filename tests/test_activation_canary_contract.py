@@ -9,10 +9,12 @@ import pytest
 
 from agency_runtime.core import canary
 from agency_runtime.core.activation_canary_contract import (
+    CODEX_ACTIVATION_CANARY_NATIVE_TASK_NAME,
     CODEX_ACTIVATION_CANARY_PROMPT,
     CODEX_ACTIVATION_CANARY_ROUTE_SOURCE,
     CODEX_ACTIVATION_CANARY_WORK_UNIT,
     is_exact_codex_activation_canary_task,
+    render_codex_activation_canary_delegation_plan,
 )
 from agency_runtime.core.config import AgencyConfig
 from agency_runtime.core.host_capabilities import native_adapter_capability_receipt
@@ -280,6 +282,7 @@ def test_activation_canary_uses_inference_owned_selection(
     assert calls == [_task()]
     assert planner_options[0]["max_planned_units"] == 1
     assert planner_options[0]["required_planned_artifact_kind"] == "review-report"
+    assert planner_options[0]["required_delivery"] == "delegate"
     assert result["source"] == CODEX_ACTIVATION_CANARY_ROUTE_SOURCE
     assert result["selected_ids"] == ["code-reviewer"]
     assert result["inference_required"] is True
@@ -298,6 +301,101 @@ def test_activation_canary_uses_inference_owned_selection(
     # used to go on to build and hydrate a unit-agent plan, but planning work
     # units is Job B and the card goes to whoever the harness already spawned.
     assert result["work_units"]["units"] == [CODEX_ACTIVATION_CANARY_WORK_UNIT]
+
+
+def test_activation_canary_renders_one_exact_native_delegation_row(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from agency_runtime.core.workforce import inference, routing_projection
+
+    clear_cache()
+    clear_session_routing()
+    monkeypatch.setattr(
+        inference,
+        "plan_and_staff_workforce",
+        lambda *_args, **_kwargs: SimpleNamespace(attempts=()),
+    )
+    monkeypatch.setattr(
+        pipeline,
+        "_run_gap_hiring",
+        lambda *_args, **_kwargs: pytest.fail(
+            "the read-only activation canary must not enter gap hiring"
+        ),
+    )
+    monkeypatch.setattr(
+        routing_projection,
+        "project_workforce_routing",
+        lambda *_args, **_kwargs: _inferred_projection(),
+    )
+
+    plan = render_codex_activation_canary_delegation_plan(_route(monkeypatch))
+
+    assert CODEX_ACTIVATION_CANARY_NATIVE_TASK_NAME == "code_reviewer"
+    assert plan == (
+        "[AGENCY DELEGATION PLAN]\n"
+        "version=agency.codex-activation-plan.v1\n"
+        "row_count=1\n"
+        'row_1={"delivery":"delegate","depends_on":[],"goal":'
+        '"Identify the primary behavioral regression risk of replacing return value '
+        'with return value.strip() in a Python text-normalization helper.",'
+        '"native_task_name":"code_reviewer","specialist":"code-reviewer",'
+        '"work_unit_id":"unit-05d45f7553"}\n'
+        "Execute this accepted persisted row exactly once."
+    )
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("source", "workforce_inference"),
+        ("status", "abstained"),
+        ("selected_ids", ["security-reviewer"]),
+        ("semantic_ids", ["security-reviewer"]),
+        ("companion_ids", ["security-reviewer"]),
+    ],
+)
+def test_activation_canary_delegation_plan_rejects_nonexact_routes(
+    field: str,
+    value: object,
+) -> None:
+    routing = {
+        "status": "accepted",
+        "source": CODEX_ACTIVATION_CANARY_ROUTE_SOURCE,
+        "selected_ids": ["code-reviewer"],
+        "semantic_ids": ["code-reviewer"],
+        "companion_ids": [],
+        "work_units": {
+            "delegate": True,
+            "count": 1,
+            "confidence": "high",
+            "source": "activation-canary-contract",
+            "units": [CODEX_ACTIVATION_CANARY_WORK_UNIT],
+        },
+    }
+    routing[field] = value
+
+    with pytest.raises(ValueError, match="exact delegated contract"):
+        render_codex_activation_canary_delegation_plan(routing)
+
+
+def test_activation_canary_delegation_plan_rejects_boolean_unit_count() -> None:
+    routing = {
+        "status": "accepted",
+        "source": CODEX_ACTIVATION_CANARY_ROUTE_SOURCE,
+        "selected_ids": ["code-reviewer"],
+        "semantic_ids": ["code-reviewer"],
+        "companion_ids": [],
+        "work_units": {
+            "delegate": True,
+            "count": True,
+            "confidence": "high",
+            "source": "activation-canary-contract",
+            "units": [CODEX_ACTIVATION_CANARY_WORK_UNIT],
+        },
+    }
+
+    with pytest.raises(ValueError, match="exact delegated contract"):
+        render_codex_activation_canary_delegation_plan(routing)
 
 
 def test_existing_store_product_canary_can_hire_an_inference_declared_gap(

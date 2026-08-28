@@ -9,10 +9,12 @@ child merely read back later.
 from __future__ import annotations
 
 import argparse
+import copy
 import json
 import os
 from dataclasses import replace
 from datetime import datetime, timedelta, timezone
+from hashlib import sha256
 from pathlib import Path
 
 import pytest
@@ -33,6 +35,7 @@ from agency_runtime.core.child_delivery_evidence import (
     child_delivery_projection,
     claude_child_delivery_evidence,
     codex_child_delivery_evidence,
+    codex_v1491_child_parent_session,
     scan_child_delivery_evidence,
 )
 from agency_runtime.core.native_child_decision import (
@@ -51,6 +54,9 @@ from agency_runtime.core.roster.revisions import content_digest
 PARENT_SESSION = "37a4776a-92f4-4fe8-b2fe-926652d70225"
 CHILD_AGENT = "a19cc709eae42e6aa"
 CODEX_CHILD_SESSION = "019fbb8b-1394-7413-a7bd-366714f530ad"
+CODEX_V1491_PARENT_SESSION = "01a041aa-830d-7a33-915b-fb8e8bf8e0f3"
+CODEX_V1491_CHILD_SESSION = "01a041ac-427c-7333-8616-12672552ce9b"
+CODEX_V1491_WINDOW_ID = "01a041ac-427c-7333-8616-12740adee42c"
 PROMPT = "You are a SQLite specialist. Prefer WAL mode and bounded transactions."
 OTHER_PROMPT = "You are a security reviewer. Name the exact attacker capability."
 _NOW = datetime.now(timezone.utc).replace(microsecond=0)
@@ -180,6 +186,311 @@ def _codex_artifact(tmp_path: Path, records: list[dict[str, object]]) -> Path:
     )
 
 
+def _codex_v1491_meta(*, cwd: Path) -> dict[str, object]:
+    return {
+        "timestamp": "2026-08-27T05:23:23.457Z",
+        "type": "session_meta",
+        "payload": {
+            "id": CODEX_V1491_CHILD_SESSION,
+            "timestamp": "2026-08-27T05:23:23.389Z",
+            "session_id": CODEX_V1491_PARENT_SESSION,
+            "parent_thread_id": CODEX_V1491_PARENT_SESSION,
+            "source": {
+                "subagent": {
+                    "thread_spawn": {
+                        "parent_thread_id": CODEX_V1491_PARENT_SESSION,
+                        "depth": 1,
+                        "agent_path": "/root/code_reviewer",
+                        "agent_nickname": "Poincare",
+                        "agent_role": None,
+                    }
+                }
+            },
+            "originator": "codex_exec",
+            "cli_version": "0.149.1",
+            "cwd": str(cwd),
+            "model_provider": "openai",
+            "base_instructions": {
+                "text": "Exact supported Codex child instructions.",
+                "provenance": {"type": "model", "model": "gpt-5.6-sol"},
+            },
+            "agent_path": "/root/code_reviewer",
+            "agent_nickname": "Poincare",
+            "context_window": {"window_id": CODEX_V1491_WINDOW_ID},
+            "history_mode": "paginated",
+            "thread_source": "subagent",
+            "multi_agent_version": "v2",
+        },
+        "ordinal": 0,
+    }
+
+
+def _codex_v1491_artifact(
+    root: Path,
+    *,
+    cwd: Path,
+    meta: dict[str, object] | None = None,
+) -> Path:
+    return _write_jsonl(
+        root
+        / "2026"
+        / "08"
+        / "27"
+        / f"rollout-2026-08-27T05-23-23-{CODEX_V1491_CHILD_SESSION}.jsonl",
+        [meta or _codex_v1491_meta(cwd=cwd)],
+    )
+
+
+@pytest.fixture
+def codex_v1491_artifact_trust(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Model the owner-integrity probes while retaining real link checks."""
+
+    monkeypatch.setattr(
+        subject,
+        "storage_artifact_parent_is_trusted",
+        lambda *_args, **_kwargs: True,
+    )
+    monkeypatch.setattr(subject, "storage_file_is_trusted", lambda *_args, **_kwargs: True)
+
+
+def test_codex_v1491_child_metadata_resolves_the_exact_host_parent(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    codex_v1491_artifact_trust: None,
+) -> None:
+    root = tmp_path / "sessions"
+    cwd = tmp_path / "canary-work"
+    cwd.mkdir()
+    artifact = _codex_v1491_artifact(root, cwd=cwd)
+    monkeypatch.setattr(subject, "default_child_artifact_root", lambda host: root)
+
+    assert (
+        codex_v1491_child_parent_session(
+            artifact,
+            child_id=CODEX_V1491_CHILD_SESSION,
+            cwd=cwd,
+        )
+        == CODEX_V1491_PARENT_SESSION
+    )
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        "child_mismatch",
+        "parent_disagreement",
+        "wrong_version",
+        "nested_child",
+        "assigned_role",
+        "inherited_history",
+        "wrong_originator",
+        "wrong_history_mode",
+        "wrong_cwd",
+        "source_shape_drift",
+        "agent_metadata_disagreement",
+        "invalid_context_window",
+        "noncausal_timestamp",
+    ],
+)
+def test_codex_v1491_child_metadata_semantic_drift_fails_closed(
+    tmp_path: Path,
+    codex_v1491_artifact_trust: None,
+    mutation: str,
+) -> None:
+    root = tmp_path / "sessions"
+    cwd = tmp_path / "canary-work"
+    cwd.mkdir()
+    meta = copy.deepcopy(_codex_v1491_meta(cwd=cwd))
+    payload = meta["payload"]
+    assert isinstance(payload, dict)
+    source = payload["source"]
+    assert isinstance(source, dict)
+    subagent = source["subagent"]
+    assert isinstance(subagent, dict)
+    spawn = subagent["thread_spawn"]
+    assert isinstance(spawn, dict)
+
+    if mutation == "child_mismatch":
+        payload["id"] = CODEX_V1491_WINDOW_ID
+    elif mutation == "parent_disagreement":
+        payload["parent_thread_id"] = "01a041aa-830e-7a33-915b-fb8e8bf8e0f3"
+    elif mutation == "wrong_version":
+        payload["cli_version"] = "0.150.0"
+    elif mutation == "nested_child":
+        spawn["depth"] = 2
+    elif mutation == "assigned_role":
+        spawn["agent_role"] = "code-reviewer"
+    elif mutation == "inherited_history":
+        payload["forked_from_id"] = CODEX_V1491_PARENT_SESSION
+    elif mutation == "wrong_originator":
+        payload["originator"] = "codex_cli"
+    elif mutation == "wrong_history_mode":
+        payload["history_mode"] = "full"
+    elif mutation == "wrong_cwd":
+        payload["cwd"] = str(tmp_path / "other-work")
+    elif mutation == "source_shape_drift":
+        source["other"] = {}
+    elif mutation == "agent_metadata_disagreement":
+        spawn["agent_nickname"] = "Noether"
+    elif mutation == "invalid_context_window":
+        payload["context_window"] = {"window_id": CODEX_V1491_PARENT_SESSION}
+    elif mutation == "noncausal_timestamp":
+        payload["timestamp"] = "2026-08-27T05:24:23.389Z"
+    else:  # pragma: no cover - the parameter list is closed above
+        raise AssertionError(f"unhandled mutation: {mutation}")
+
+    artifact = _codex_v1491_artifact(root, cwd=cwd, meta=meta)
+    assert (
+        codex_v1491_child_parent_session(
+            artifact,
+            child_id=CODEX_V1491_CHILD_SESSION,
+            cwd=cwd,
+            root=root,
+        )
+        == ""
+    )
+
+
+def test_codex_v1491_child_metadata_rejects_ambiguous_or_unbounded_json(
+    tmp_path: Path,
+    codex_v1491_artifact_trust: None,
+) -> None:
+    root = tmp_path / "sessions"
+    cwd = tmp_path / "canary-work"
+    cwd.mkdir()
+    artifact = _codex_v1491_artifact(root, cwd=cwd)
+    line = json.dumps(_codex_v1491_meta(cwd=cwd))
+    artifact.write_text(
+        line.replace(
+            '{"timestamp":',
+            '{"timestamp":"2026-08-27T05:23:23.456Z","timestamp":',
+            1,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    assert (
+        codex_v1491_child_parent_session(
+            artifact,
+            child_id=CODEX_V1491_CHILD_SESSION,
+            cwd=cwd,
+            root=root,
+        )
+        == ""
+    )
+
+    artifact.write_text(line, encoding="utf-8")
+    assert (
+        codex_v1491_child_parent_session(
+            artifact,
+            child_id=CODEX_V1491_CHILD_SESSION,
+            cwd=cwd,
+            root=root,
+        )
+        == ""
+    )
+
+    oversized = _codex_v1491_meta(cwd=cwd)
+    oversized_payload = oversized["payload"]
+    assert isinstance(oversized_payload, dict)
+    base = oversized_payload["base_instructions"]
+    assert isinstance(base, dict)
+    base["text"] = "x" * (128 * 1024)
+    _codex_v1491_artifact(root, cwd=cwd, meta=oversized)
+    assert (
+        codex_v1491_child_parent_session(
+            artifact,
+            child_id=CODEX_V1491_CHILD_SESSION,
+            cwd=cwd,
+            root=root,
+        )
+        == ""
+    )
+
+
+def test_codex_v1491_child_metadata_rejects_foreign_shape_and_links(
+    tmp_path: Path,
+    codex_v1491_artifact_trust: None,
+) -> None:
+    root = tmp_path / "sessions"
+    cwd = tmp_path / "canary-work"
+    cwd.mkdir()
+    foreign = _write_jsonl(
+        tmp_path / "foreign" / f"rollout-2026-08-27T05-23-23-{CODEX_V1491_CHILD_SESSION}.jsonl",
+        [_codex_v1491_meta(cwd=cwd)],
+    )
+    assert (
+        codex_v1491_child_parent_session(
+            foreign,
+            child_id=CODEX_V1491_CHILD_SESSION,
+            cwd=cwd,
+            root=root,
+        )
+        == ""
+    )
+
+    wrong_suffix = _write_jsonl(
+        root / "2026" / "08" / "27" / f"rollout-2026-08-27T05-23-23-{CODEX_V1491_WINDOW_ID}.jsonl",
+        [_codex_v1491_meta(cwd=cwd)],
+    )
+    assert (
+        codex_v1491_child_parent_session(
+            wrong_suffix,
+            child_id=CODEX_V1491_CHILD_SESSION,
+            cwd=cwd,
+            root=root,
+        )
+        == ""
+    )
+
+    if os.name == "nt":
+        return
+    target = _write_jsonl(tmp_path / "target.jsonl", [_codex_v1491_meta(cwd=cwd)])
+    linked = (
+        root
+        / "2026"
+        / "08"
+        / "27"
+        / f"rollout-2026-08-27T05-23-23-{CODEX_V1491_CHILD_SESSION}.jsonl"
+    )
+    linked.parent.mkdir(parents=True, exist_ok=True)
+    linked.symlink_to(target)
+    assert (
+        codex_v1491_child_parent_session(
+            linked,
+            child_id=CODEX_V1491_CHILD_SESSION,
+            cwd=cwd,
+            root=root,
+        )
+        == ""
+    )
+
+
+def test_codex_v1491_child_metadata_requires_owner_integrity(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    root = tmp_path / "sessions"
+    cwd = tmp_path / "canary-work"
+    cwd.mkdir()
+    artifact = _codex_v1491_artifact(root, cwd=cwd)
+    monkeypatch.setattr(
+        subject,
+        "storage_artifact_parent_is_trusted",
+        lambda *_args, **_kwargs: False,
+    )
+
+    assert (
+        codex_v1491_child_parent_session(
+            artifact,
+            child_id=CODEX_V1491_CHILD_SESSION,
+            cwd=cwd,
+            root=root,
+        )
+        == ""
+    )
+
+
 def _v6_envelope(
     task: str,
     *,
@@ -251,6 +562,66 @@ def _expected_from_diagnostic(
     }
     values.update(overrides)
     return _ExpectedChildDelivery(**values)  # type: ignore[arg-type]
+
+
+def _persisted_store_from_diagnostic(
+    evidence: subject.ChildDeliveryEvidence,
+    *,
+    artifact_digest: str | None = None,
+) -> object:
+    """Return a read-only Store seam for one already-consumed exact receipt."""
+
+    digest = artifact_digest or evidence.artifact_digest
+    decision = {
+        "decision_id": evidence.decision_id,
+        "host": evidence.host,
+        "parent_session_id": evidence.envelope_parent_id,
+        "parent_trace_id": evidence.parent_trace_id,
+        "launch_id": evidence.launch_id,
+        "provider_receipt_digest": evidence.provider_receipt_digest,
+        "task_sha256": evidence.task_sha256,
+        "team_digest": evidence.team_digest,
+        "candidate_digest": evidence.candidate_digest,
+        "install_id": evidence.install_id,
+        "bundle_digest": evidence.bundle_digest,
+        "runtime_digest": evidence.runtime_digest,
+        "issued_at": evidence.issued_at,
+        "expires_at": evidence.expires_at,
+        "nonce": evidence.nonce,
+        "binding_kind": evidence.binding_kind,
+        "binding_id": evidence.binding_id,
+        "cards": [
+            {
+                "specialist_slug": card.specialist_slug,
+                "specialist_version": card.specialist_version,
+                "specialist_prompt_hash": card.specialist_prompt_hash,
+                "body_character_length": card.body_character_length,
+            }
+            for card in evidence.cards
+        ],
+    }
+    receipt = {
+        "verified_delivery": True,
+        "decision_id": evidence.decision_id,
+        "nonce": evidence.nonce,
+        "artifact_digest": digest,
+        "host": evidence.host,
+        "parent_session_id": evidence.envelope_parent_id,
+        "parent_trace_id": evidence.parent_trace_id,
+        "launch_id": evidence.launch_id,
+        "binding_kind": evidence.binding_kind,
+        "binding_id": evidence.binding_id,
+        "child_id": evidence.child_id,
+    }
+
+    class StoreLike:
+        def get_native_child_staffing_decision(self, decision_id: str) -> object:
+            return decision if decision_id == evidence.decision_id else None
+
+        def get_native_child_delivery_verification(self, decision_id: str) -> object:
+            return receipt if decision_id == evidence.decision_id else None
+
+    return StoreLike()
 
 
 def test_a_legacy_launch_record_is_diagnostic_not_verified_delivery(
@@ -845,6 +1216,195 @@ def test_codex_parser_preserves_opaque_channel_failure_without_store_authority(
     assert evidence.verification_reason == "unsupported_opaque_interagent_channel"
 
 
+def test_restricted_codex_structural_reader_requires_store_consumption(
+    tmp_path: Path,
+    private_root: None,
+) -> None:
+    message = _codex_message(_v6_envelope("Review.", host="codex", child_id=CODEX_CHILD_SESSION))
+    message["timestamp"] = OBSERVED_AT
+    artifact = _codex_artifact(
+        tmp_path,
+        [_codex_meta(spawned=True), message, _codex_message("Completed.", role="assistant")],
+    )
+    diagnostic = codex_child_delivery_evidence(artifact)
+    assert diagnostic is not None
+    assert diagnostic.verification_reason == "unsupported_opaque_interagent_channel"
+
+    class StoreLike:
+        def _record_native_child_delivery_verification(
+            self,
+            **kwargs: object,
+        ) -> dict[str, object]:
+            return {**kwargs, "verified_delivery": True}
+
+    verified = _verify_child_delivery_evidence(
+        artifact,
+        host="codex",
+        expected=_expected_from_diagnostic(diagnostic),
+        verification_consumer=subject._store_native_child_delivery_consumer(StoreLike()),
+        structural_hook_output=True,
+    )
+
+    assert verified is not None
+    assert verified.staffed is True
+    assert verified.verification_reason == "verified"
+
+
+def test_persisted_codex_receipt_replays_its_exact_prefix_after_host_append(
+    tmp_path: Path,
+    private_root: None,
+) -> None:
+    message = _codex_message(_v6_envelope("Review.", host="codex", child_id=CODEX_CHILD_SESSION))
+    message["timestamp"] = OBSERVED_AT
+    artifact = _codex_artifact(
+        tmp_path,
+        [_codex_meta(spawned=True), message, _codex_message("Completed.", role="assistant")],
+    )
+    receipt_evidence = subject._codex_child_delivery_evidence(
+        artifact,
+        structural_hook_output=True,
+    )
+    assert receipt_evidence is not None
+    store = _persisted_store_from_diagnostic(receipt_evidence)
+
+    with artifact.open("a", encoding="utf-8") as stream:
+        stream.write(json.dumps({"type": "event_msg", "payload": {"type": "task_complete"}}))
+        stream.write("\n")
+    completed = subject._codex_child_delivery_evidence(
+        artifact,
+        structural_hook_output=True,
+    )
+    assert completed is not None
+    assert completed.artifact_digest != receipt_evidence.artifact_digest
+
+    replayed = subject._verify_against_persisted_receipt(
+        artifact,
+        host="codex",
+        diagnostic=completed,
+        store=store,
+        structural_hook_output=True,
+    )
+
+    assert replayed.staffed is True
+    assert replayed.verification_reason == "verified_existing_receipt"
+    assert replayed.artifact_digest == receipt_evidence.artifact_digest
+
+
+def test_persisted_codex_receipt_rejects_a_changed_verified_prefix(
+    tmp_path: Path,
+    private_root: None,
+) -> None:
+    message = _codex_message(_v6_envelope("Review.", host="codex", child_id=CODEX_CHILD_SESSION))
+    message["timestamp"] = OBSERVED_AT
+    artifact = _codex_artifact(tmp_path, [_codex_meta(spawned=True), message])
+    receipt_evidence = subject._codex_child_delivery_evidence(
+        artifact,
+        structural_hook_output=True,
+    )
+    assert receipt_evidence is not None
+    store = _persisted_store_from_diagnostic(receipt_evidence)
+
+    changed = artifact.read_text(encoding="utf-8").replace(
+        "2026-08-01T04:18:04.132Z",
+        "2026-08-01T04:18:04.133Z",
+        1,
+    )
+    artifact.write_text(changed, encoding="utf-8")
+    diagnostic = subject._codex_child_delivery_evidence(
+        artifact,
+        structural_hook_output=True,
+    )
+    assert diagnostic is not None
+
+    replayed = subject._verify_against_persisted_receipt(
+        artifact,
+        host="codex",
+        diagnostic=diagnostic,
+        store=store,
+        structural_hook_output=True,
+    )
+
+    assert replayed.staffed is False
+    assert replayed.verification_reason == "persisted_artifact_prefix_invalid"
+
+
+def test_persisted_codex_receipt_digest_must_end_at_a_jsonl_record_boundary(
+    tmp_path: Path,
+    private_root: None,
+) -> None:
+    message = _codex_message(_v6_envelope("Review.", host="codex", child_id=CODEX_CHILD_SESSION))
+    message["timestamp"] = OBSERVED_AT
+    artifact = _codex_artifact(tmp_path, [_codex_meta(spawned=True), message])
+    diagnostic = subject._codex_child_delivery_evidence(
+        artifact,
+        structural_hook_output=True,
+    )
+    assert diagnostic is not None
+    partial_digest = sha256(artifact.read_bytes()[:-1]).hexdigest()
+    store = _persisted_store_from_diagnostic(diagnostic, artifact_digest=partial_digest)
+
+    replayed = subject._verify_against_persisted_receipt(
+        artifact,
+        host="codex",
+        diagnostic=diagnostic,
+        store=store,
+        structural_hook_output=True,
+    )
+
+    assert replayed.staffed is False
+    assert replayed.verification_reason == "persisted_artifact_prefix_invalid"
+
+
+def test_persisted_codex_receipt_rejects_a_truncated_verified_prefix(
+    tmp_path: Path,
+    private_root: None,
+) -> None:
+    message = _codex_message(_v6_envelope("Review.", host="codex", child_id=CODEX_CHILD_SESSION))
+    message["timestamp"] = OBSERVED_AT
+    artifact = _codex_artifact(tmp_path, [_codex_meta(spawned=True), message])
+    diagnostic = subject._codex_child_delivery_evidence(
+        artifact,
+        structural_hook_output=True,
+    )
+    assert diagnostic is not None
+    artifact.write_bytes(artifact.read_bytes()[:-1])
+
+    assert (
+        subject._trusted_launch_material(
+            artifact,
+            label="truncated Codex receipt fixture",
+            artifact_parent=True,
+            required_prefix_digest=diagnostic.artifact_digest,
+        )
+        is None
+    )
+
+
+def test_restricted_codex_structural_reader_rejects_multiple_v6_records(
+    tmp_path: Path,
+    private_root: None,
+) -> None:
+    valid = _codex_message(_v6_envelope("Review.", host="codex", child_id=CODEX_CHILD_SESSION))
+    valid["timestamp"] = OBSERVED_AT
+    artifact = _codex_artifact(
+        tmp_path,
+        [
+            _codex_meta(spawned=True),
+            _codex_message("[AGENCY INFERENCE TEAM v6]\npartial"),
+            valid,
+            _codex_message("Completed.", role="assistant"),
+        ],
+    )
+
+    assert (
+        subject._codex_child_delivery_evidence(
+            artifact,
+            structural_hook_output=True,
+        )
+        is None
+    )
+
+
 def test_v6_stale_host_event_never_verifies(
     tmp_path: Path,
     private_root: None,
@@ -943,6 +1503,37 @@ def test_codex_full_meta_and_filename_identity_is_canonical_but_unsupported(
         evidence=evidence,
     )
     assert evidence.verification_reason == "unsupported_opaque_interagent_channel"
+
+
+@pytest.mark.skipif(os.name == "nt", reason="POSIX mode regression")
+def test_codex_normal_umask_artifact_keeps_integrity_without_private_date_dirs(
+    tmp_path: Path,
+) -> None:
+    artifact = _codex_artifact(
+        tmp_path,
+        [
+            _codex_meta(spawned=True),
+            _codex_message(
+                _v6_envelope("Audit the schema.", host="codex", child_id=CODEX_CHILD_SESSION)
+            ),
+        ],
+    )
+    for parent in artifact.parents[:3]:
+        parent.chmod(0o755)
+    artifact.chmod(0o644)
+
+    evidence = codex_child_delivery_evidence(artifact)
+
+    assert evidence is not None
+    assert subject._canonical_host_artifact_is_trusted(
+        artifact,
+        host="codex",
+        root=tmp_path,
+        evidence=evidence,
+    )
+
+    artifact.parent.chmod(0o775)
+    assert codex_child_delivery_evidence(artifact) is None
 
 
 def test_codex_truncated_filename_is_noncanonical_and_never_consults_store(

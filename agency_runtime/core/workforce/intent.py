@@ -32,6 +32,7 @@ MAX_PRIMARY_UNITS = MAX_WORK_UNITS
 _IDENTIFIER = re.compile(r"[a-z0-9][a-z0-9-]{0,127}")
 _UNIT_IDENTIFIER = re.compile(r"unit-[a-z0-9][a-z0-9-]{0,62}")
 _TOKENS = re.compile(r"[a-z0-9]+")
+_NO_NOVEL_CAPABILITY_SENTINELS = frozenset({"false", "none", "null"})
 _COMMUNICATION_REQUEST = frozenset(
     {
         "announcement",
@@ -515,6 +516,20 @@ def _canonical_artifact_kind(declared: str, capabilities: Sequence[str]) -> str:
     return declared
 
 
+def _declared_novel_capability(value: object) -> str:
+    """Return a genuine novel capability, not a model's stringified absence."""
+
+    novel = _text(
+        value,
+        label="novel_capability",
+        maximum=MAX_LABEL_CHARS,
+        allow_empty=True,
+    ).casefold()
+    if novel in _NO_NOVEL_CAPABILITY_SENTINELS:
+        return ""
+    return normalize_capability_id(novel) if novel else ""
+
+
 def _unit_document(
     raw: Mapping[str, Any],
     *,
@@ -574,16 +589,9 @@ def _unit_document(
         artifact=artifact,
     )
     lifecycle, authority, mutation = _ARTIFACT_FACTS[artifact]
-    novel = _text(
-        raw["novel_capability"],
-        label="novel_capability",
-        maximum=MAX_LABEL_CHARS,
-        allow_empty=True,
-    ).casefold()
-    if novel:
-        novel = normalize_capability_id(novel)
-        if novel in known_capability_ids:
-            raise ValueError("novel_capability already exists in the workforce ontology")
+    novel = _declared_novel_capability(raw["novel_capability"])
+    if novel and novel in known_capability_ids:
+        raise ValueError("novel_capability already exists in the workforce ontology")
     capabilities = list(dict.fromkeys((artifact_capability(artifact), *capabilities, novel)))
     capabilities = [item for item in capabilities if item]
     outcome = _text(raw["outcome"], label="outcome", maximum=512)
@@ -783,12 +791,7 @@ def compile_intent_plan(
                 or {"agent", "selection"} <= outcome_tokens
             ):
                 document["domains"] = ["workforce-governance"]
-        if _text(
-            unit["novel_capability"],
-            label="novel_capability",
-            maximum=MAX_LABEL_CHARS,
-            allow_empty=True,
-        ):
+        if _declared_novel_capability(unit["novel_capability"]):
             allowed_domains.update(document["domains"])
         units.append(document)
     return parse_work_unit_plan(

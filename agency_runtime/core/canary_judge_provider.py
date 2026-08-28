@@ -10,7 +10,7 @@ from agency_runtime.core.inference_profiles import provider_from_profile
 
 CANARY_CHILD_JUDGE_PROVIDER_ENV = "AGENCY_CANARY_CHILD_JUDGE_PROVIDER"
 _SUPPORTED_CLI_TRANSPORTS = frozenset({"claude", "codex"})
-_SUPPORTED_PROFILE_ADAPTERS = frozenset({"anthropic"})
+_SUPPORTED_PROFILE_ADAPTERS = frozenset({"anthropic", "litellm", "ollama"})
 
 
 class CanaryChildJudgeProviderError(ValueError):
@@ -52,6 +52,7 @@ def configured_canary_child_judge_provider(
             return provider, transport
         if (
             adapter not in _SUPPORTED_PROFILE_ADAPTERS
+            or (adapter == "litellm" and not (provider.api_key or provider.api_key_env))
             or not is_safe_credential_url(provider.base_url)
             or not provider.is_available()
         ):
@@ -89,7 +90,14 @@ def canary_child_judge_config(
         raise CanaryChildJudgeProviderError(
             "the canary child-judge provider projection does not match its configured pin"
         )
-    return replace(config, providers=(provider,)), provider.name
+    return (
+        replace(
+            config,
+            judge=replace(config.judge, timeout=provider.timeout),
+            providers=(provider,),
+        ),
+        provider.name,
+    )
 
 
 __all__ = [

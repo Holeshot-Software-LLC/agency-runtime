@@ -88,7 +88,7 @@ and explicitly state that runtime delivery is not asserted.
 - [x] CLI and dashboard copy state that stored content is not runtime-delivery
       proof.
 - [x] Focused Store/CLI/backend/UI tests pass, including retired-worker access.
-- [ ] The exact installed dashboard is visually verified without leaking a
+- [x] The exact installed dashboard is visually verified without leaking a
       bearer, provider credential, or prompt outside the owner detail view.
 - [x] Tracker issue #336 is linked and remains open while acceptance is pending.
 
@@ -103,12 +103,33 @@ distinction visible. Together with AR-297's managed-policy projection, the exact
 dashboard is 386,366 bytes under an audited 378 KiB ceiling with 706 bytes of
 headroom.
 
-The installed CLI now proves the packaged prompt surface against the live
+The installed CLI first proved the packaged prompt surface against the live
 Store: an active worker resolved with schema `agency.workforce.prompt.v1`, its
 immutable version and standing, 160 bounded body characters out of 2,791,
 truncation metadata, a content hash, stored-definition authority, and
 `runtime_delivery_proof=not_asserted`, exiting 0. The installed dashboard
-renderer and Store reader hash-match source exactly. The authenticated browser
-token expired before the new owner-detail view could be inspected, so the
-remaining visual acceptance item stays open rather than being inferred from
-source tests or file identity.
+renderer and Store reader hash-match source exactly.
+
+The exact Linux candidate subsequently supplied current installed proof. An
+unauthenticated health request returned 401, while authenticated health and
+workforce detail returned 200 with `Cache-Control: no-store`. The Accessibility
+Auditor owner-detail view rendered all 2,657 characters with declared and body
+SHA-256
+`c3cfc0981cb980d700ee6b115c3669f5533108598419ca83f26bd5f30e185848`.
+The bearer-redacted screenshot SHA-256 is
+`7b60d2e963aaabba09399a07137b288e567a93f3466b1e167bb4b7496b5454de`.
+The installed CLI separately returned the complete 2,709-character current
+TypeScript contractor prompt at SHA-256
+`6b0d5cae3b65a44d56b22f51f5301bbd04f02bee7cdac9fe66bd9081b561c20f`.
+Both surfaces identify Agency Store authority and explicitly set runtime
+delivery proof to `not_asserted`. The fresh Store has no worker with multiple
+lineage versions, so exact historical behavior remains source-test evidence,
+not fabricated live evidence.
+
+The final ordinary Hermes attempt reinforces that boundary rather than changing
+this acceptance result. Hermes could see one connected `agency-runtime` tool
+source but did not invoke it, loaded no specialist, and produced no delegation
+or finalization record. Agency withheld the resulting draft. Complete installed
+CLI and authenticated dashboard visibility therefore remains proven, while
+runtime delivery of the Accessibility Auditor prompt remains explicitly
+`not_asserted`.

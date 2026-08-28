@@ -26,6 +26,7 @@ from agency_runtime.core import canary_backends as _backends
 from agency_runtime.core import canary_proof as _proof
 from agency_runtime.core.activation_canary_contract import (
     CODEX_ACTIVATION_CANARY_PROMPT,
+    CODEX_ACTIVATION_CANARY_WAIT_TIMEOUT_MS,
 )
 from agency_runtime.core.bounded_io import (
     FileSizeLimitError,  # noqa: F401 - historical facade attribute
@@ -68,11 +69,15 @@ CODEX_CANARY_DEVELOPER_INSTRUCTIONS = (
     "for the whole unit: follow the injected [AGENCY DELEGATION PLAN], require exactly one "
     "row, call spawn_agent exactly once with fork_turns set to none, that row's exact "
     "native_task_name, and exact goal. The selected specialist executes in that initial "
-    "child turn. Call wait_agent once with a 60000 ms timeout for the child to become "
+    f"child turn. Call wait_agent once with a {CODEX_ACTIVATION_CANARY_WAIT_TIMEOUT_MS} "
+    "ms timeout for the child to become "
     "terminal. Do not call followup_task. Never retry any collaboration call. If the spawn "
     "fails or the wait times "
     "out, report that result and stop the protocol. "
-    "Use no other tools. Return the child's conclusion with the required Agency header. "
+    "Use no other tools. After the exact spawn succeeds and the completed wait returns, "
+    "the final Agency header must report the sole loaded code-reviewer as delegated. If "
+    "either native call fails, keep delegation as none and report the failure. Return the "
+    "child's conclusion with the required Agency header. "
     "Do not modify files, call external services, or expose secrets."
 )
 CODEX_NATIVE_ONLY_DEVELOPER_INSTRUCTIONS = (
@@ -261,6 +266,7 @@ def _backend(
     child_judge_transport: str = "",
     parent_recruiter_provider: str = "",
     parent_recruiter_transport: str = "",
+    credential_environment_names: tuple[str, ...] = (),
 ):
     return _backends.backend(
         host,
@@ -280,6 +286,7 @@ def _backend(
         child_judge_transport=child_judge_transport,
         parent_recruiter_provider=parent_recruiter_provider,
         parent_recruiter_transport=parent_recruiter_transport,
+        credential_environment_names=credential_environment_names,
     )
 
 
@@ -574,6 +581,7 @@ def run_canary(
     execute: bool = False,
     confirm: str = "",
     db_path: str | Path | None = None,
+    config_path: str | Path | None = None,
     timeout: float = 120,
     mode: str = "agency",
     profile_scope: str = "isolated-profile",
@@ -595,6 +603,7 @@ def run_canary(
     )
     timeout = _validated_timeout(timeout)
     path = Path(db_path).expanduser() if db_path else _default_db_path()
+    bound_config_path = Path(config_path).expanduser() if config_path is not None else None
     assessment = _assess_readiness(host, path, inspector, profile_scope=profile_scope)
     report = _readiness_report(host, assessment, mode=mode, trust_mode=trust_mode)
     master_before = _attach_master_readiness(report, mode=mode)
@@ -612,6 +621,7 @@ def run_canary(
     preparation = _prepare_live_invocation(
         host,
         path=path,
+        config_path=bound_config_path,
         timeout=timeout,
         native=assessment.native,
         backend_factory=backend_factory,

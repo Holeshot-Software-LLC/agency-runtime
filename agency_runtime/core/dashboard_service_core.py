@@ -23,6 +23,9 @@ from numbers import Integral, Real
 from pathlib import Path
 from typing import Any
 
+from agency_runtime.core.configuration_contracts import (
+    configured_credential_environment_names,
+)
 from agency_runtime.core.configuration_persistence import resolve_config_path
 from agency_runtime.core.launcher_bootstrap import (
     current_python_cache_tag,
@@ -145,22 +148,7 @@ class _Context:
 def _configured_secret_environment_names(config: object | None) -> set[str]:
     """Return configured credential variable names without reading their values."""
 
-    names: set[str] = set()
-
-    def include(entry: object | None) -> None:
-        name = str(getattr(entry, "api_key_env", "") or "").strip()
-        if name and name.isascii() and name.isidentifier() and len(name) <= 128:
-            names.add(name)
-
-    if config is None:
-        return names
-    include(getattr(config, "judge", None))
-    for provider in getattr(config, "providers", ()) or ():
-        include(provider)
-    adapters = getattr(config, "adapters", None)
-    for adapter_name in ("litellm", "hermes", "openclaw", "codex", "claude", "zcode"):
-        include(getattr(adapters, adapter_name, None))
-    return names
+    return set(configured_credential_environment_names(config))
 
 
 def dashboard_service_environment_overrides(

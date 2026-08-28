@@ -15,6 +15,7 @@ from typing import Any
 from agency_runtime.core.bounded_io import read_bounded_regular_file
 from agency_runtime.core.bounded_json import BoundedJSONError, safe_load_bounded_json
 from agency_runtime.core.installer_contracts import (
+    HERMES_BYTECODE_GUARD,
     INSTALL_MANIFEST,
     PLUGIN_ID,
     PLUGIN_VERSION,
@@ -28,6 +29,7 @@ from agency_runtime.core.process_argv import PersistentArtifactIdentity
 from agency_runtime.core.store.security import metadata_is_link_or_reparse_point
 
 _MAX_INSTALL_MANIFEST_BYTES = 64 * 1024
+_HERMES_BYTECODE_POLICY = "python-bytecode-cache-denied-v1"
 
 
 class AtomicInstallTreeError(RuntimeError):
@@ -82,6 +84,69 @@ def safe_relative(path: str) -> Path:
     return candidate
 
 
+def _hermes_bytecode_guard_is_sealed(path: Path) -> bool:
+    """Return whether the exact generated cache namespace denies POSIX writes."""
+
+    if os.name == "nt":
+        return False
+    directory = path / Path(HERMES_BYTECODE_GUARD).parent
+    marker = path / HERMES_BYTECODE_GUARD
+    try:
+        directory_metadata = os.lstat(directory)
+        marker_metadata = os.lstat(marker)
+    except OSError:
+        return False
+    return bool(
+        not metadata_is_link_or_reparse_point(directory_metadata)
+        and stat.S_ISDIR(directory_metadata.st_mode)
+        and stat.S_IMODE(directory_metadata.st_mode) == 0o500
+        and not metadata_is_link_or_reparse_point(marker_metadata)
+        and stat.S_ISREG(marker_metadata.st_mode)
+        and stat.S_IMODE(marker_metadata.st_mode) == 0o400
+    )
+
+
+def _set_hermes_bytecode_guard_modes(path: Path, *, readonly: bool) -> None:
+    """Seal or unseal only the generated cache guard inside private staging."""
+
+    if os.name == "nt":
+        return
+    directory = path / Path(HERMES_BYTECODE_GUARD).parent
+    marker = path / HERMES_BYTECODE_GUARD
+    directory_metadata = os.lstat(directory)
+    marker_metadata = os.lstat(marker)
+    if (
+        metadata_is_link_or_reparse_point(directory_metadata)
+        or not stat.S_ISDIR(directory_metadata.st_mode)
+        or metadata_is_link_or_reparse_point(marker_metadata)
+        or not stat.S_ISREG(marker_metadata.st_mode)
+    ):
+        raise PermissionError("managed Hermes bytecode guard is unsafe")
+    os.chmod(marker, 0o400 if readonly else 0o600, follow_symlinks=False)
+    os.chmod(directory, 0o500 if readonly else 0o700, follow_symlinks=False)
+
+
+def _managed_content_is_current(
+    target: Path,
+    host: str,
+    files: Mapping[str, str],
+    *,
+    guarded_hermes: bool,
+) -> bool:
+    current = target.exists() and _managed_bundle_matches(target, host, files)
+    return bool(current and (not guarded_hermes or _hermes_bytecode_guard_is_sealed(target)))
+
+
+def _apply_install_tree_policy(
+    path: Path,
+    *,
+    guarded_hermes: bool,
+    readonly: bool,
+) -> None:
+    if guarded_hermes:
+        _set_hermes_bytecode_guard_modes(path, readonly=readonly)
+
+
 def atomic_install_tree(
     target: Path,
     files: Mapping[str, str],
@@ -94,8 +159,14 @@ def atomic_install_tree(
     target_precondition: Callable[[Path], None] | None = None,
 ) -> dict[str, Any]:
     owned_files = sorted(files)
+    guarded_hermes = bool(host == "hermes" and os.name != "nt" and HERMES_BYTECODE_GUARD in files)
     backup_path: Path | None = None
-    content_current = target.exists() and _managed_bundle_matches(target, host, files)
+    content_current = _managed_content_is_current(
+        target,
+        host,
+        files,
+        guarded_hermes=guarded_hermes,
+    )
     unchanged = content_current and not force_replace
     plan = {
         "target": str(target),
@@ -129,7 +200,7 @@ def atomic_install_tree(
             )
             backup_path = backup_root / stamp
 
-        manifest = {
+        manifest: dict[str, Any] = {
             "schema_version": 2,
             "owner": "agency-runtime",
             "host": host,
@@ -142,9 +213,12 @@ def atomic_install_tree(
             "backup_path": str(backup_path) if backup_path else None,
             "launcher_artifacts": [item.manifest() for item in launcher_artifacts],
         }
+        if guarded_hermes:
+            manifest["tree_write_policy"] = _HERMES_BYTECODE_POLICY
         (stage / INSTALL_MANIFEST).write_text(
             json.dumps(manifest, indent=2) + "\n", encoding="utf-8", newline="\n"
         )
+        _apply_install_tree_policy(stage, guarded_hermes=guarded_hermes, readonly=True)
         if target_precondition is not None:
             target_precondition(target)
         if target_present:
@@ -161,6 +235,11 @@ def atomic_install_tree(
                 )
         if stage.exists():
             try:
+                _apply_install_tree_policy(
+                    stage,
+                    guarded_hermes=guarded_hermes,
+                    readonly=False,
+                )
                 remove_private_directory(stage_identity)
             except Exception as cleanup_exc:
                 recovery_errors.append(
@@ -366,4 +445,8 @@ def validate_owned_install_tree(
         return False, error, None
     if actual_files != expected_files or actual_directories != expected_directories:
         return False, "Install tree contains missing or unexpected entries", None
+    if manifest.get("tree_write_policy") == _HERMES_BYTECODE_POLICY and not (
+        os.name != "nt" and _hermes_bytecode_guard_is_sealed(path)
+    ):
+        return False, "Install tree violates its Hermes bytecode-cache policy", None
     return True, None, manifest

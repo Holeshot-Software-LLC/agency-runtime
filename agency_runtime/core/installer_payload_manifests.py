@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import json
+import os
 from collections.abc import Callable, Mapping
 from typing import Any
 
 from agency_runtime.core.installer_contracts import (
+    HERMES_BYTECODE_GUARD,
     MARKETPLACE_ID,
     PLUGIN_ID,
     PLUGIN_VERSION,
@@ -82,6 +84,10 @@ def build_hermes_bundle(
         ),
         ".mcp.json": json.dumps(mcp, indent=2) + "\n",
     }
+    if os.name != "nt":
+        files[HERMES_BYTECODE_GUARD] = (
+            "Agency Runtime owns this sealed directory; Python bytecode is not admitted.\n"
+        )
     return files, "__init__.py"
 
 

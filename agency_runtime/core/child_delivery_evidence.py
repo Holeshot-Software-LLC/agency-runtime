@@ -28,14 +28,16 @@ import threading
 import time
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from dataclasses import dataclass, field, replace
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from fnmatch import fnmatchcase
 from hashlib import sha256
 from heapq import heappush, heapreplace
 from pathlib import Path
 from typing import Any, Final
+from uuid import RFC_4122, UUID
 
 from agency_runtime.core.bounded_io import read_bounded_regular_file_prefix
+from agency_runtime.core.bounded_json import safe_load_bounded_json
 from agency_runtime.core.filesystem_trust import (
     absolute_path,
     metadata_is_link_or_reparse_point,
@@ -52,6 +54,7 @@ from agency_runtime.core.private_paths import (
 )
 from agency_runtime.core.store.security import (
     assert_storage_parent_chain,
+    storage_artifact_parent_is_trusted,
     storage_file_is_trusted,
     storage_parent_is_trusted,
 )
@@ -89,6 +92,36 @@ _OUTCOME_PAIR_ROLE_MARKER: Final[re.Pattern[str]] = re.compile(
 _OUTCOME_PAIR_MARKER_TOKEN: Final[str] = "agency-accepted-outcome-pair:v1:"
 _VERIFIER_SEMANTIC_SCHEMA: Final[str] = "agency.verifier-semantic.v1"
 _VERIFIER_SEMANTIC_DECISIONS: Final[frozenset[str]] = frozenset({"accepted", "rejected"})
+_CODEX_V1491_META_MAX_BYTES: Final[int] = 128 * 1024
+_CODEX_V1491_PAYLOAD_KEYS: Final[frozenset[str]] = frozenset(
+    {
+        "agent_nickname",
+        "agent_path",
+        "base_instructions",
+        "cli_version",
+        "context_window",
+        "cwd",
+        "history_mode",
+        "id",
+        "model_provider",
+        "multi_agent_version",
+        "originator",
+        "parent_thread_id",
+        "session_id",
+        "source",
+        "thread_source",
+        "timestamp",
+    }
+)
+_CODEX_V1491_ROLLOUT: Final[re.Pattern[str]] = re.compile(
+    r"rollout-(?P<year>\d{4})-(?P<month>\d{2})-(?P<day>\d{2})"
+    r"T(?P<hour>\d{2})-(?P<minute>\d{2})-(?P<second>\d{2})-"
+    r"(?P<child>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-"
+    r"[0-9a-f]{4}-[0-9a-f]{12})\.jsonl\Z"
+)
+_CODEX_V1491_TIMESTAMP: Final[re.Pattern[str]] = re.compile(
+    r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z\Z"
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -556,7 +589,12 @@ def _uncollected_outcome(reason: str) -> _HostAcceptedOutcomeCollection:
     return _HostAcceptedOutcomeCollection(result=None, reason=reason)
 
 
-def _trusted_launch_prefix_bytes(path: Path, *, label: str) -> bytes | None:
+def _trusted_launch_prefix_bytes(
+    path: Path,
+    *,
+    label: str,
+    artifact_parent: bool = False,
+) -> bytes | None:
     """Return the exact bounded bytes used to compute artifact identity."""
 
     is_windows = os.name == "nt"
@@ -564,7 +602,10 @@ def _trusted_launch_prefix_bytes(path: Path, *, label: str) -> bytes | None:
         assert_storage_parent_chain(path.parent, allow_missing=False)
     except (OSError, ValueError):
         return None
-    if not storage_parent_is_trusted(
+    parent_is_trusted = (
+        storage_artifact_parent_is_trusted if artifact_parent else storage_parent_is_trusted
+    )
+    if not parent_is_trusted(
         path.parent,
         is_windows=is_windows,
     ) or not storage_file_is_trusted(path, is_windows=is_windows):
@@ -579,10 +620,26 @@ def _trusted_launch_prefix_bytes(path: Path, *, label: str) -> bytes | None:
         return None
 
 
-def _trusted_launch_material(path: Path, *, label: str) -> tuple[str, str] | None:
-    """Read and hash one exact trusted artifact window without a TOCTOU reread."""
+def _trusted_launch_material(
+    path: Path,
+    *,
+    label: str,
+    artifact_parent: bool = False,
+    required_prefix_digest: str = "",
+) -> tuple[str, str] | None:
+    """Read and hash one exact trusted artifact window without a TOCTOU reread.
 
-    payload = _trusted_launch_prefix_bytes(path, label=label)
+    An immutable Codex receipt may select the exact complete-JSONL prefix that
+    was consumed before the host appended ordinary completion records. The
+    digest is authority only when it matches one newline boundary in this same
+    trusted bounded read; later bytes are never parsed as part of that window.
+    """
+
+    payload = _trusted_launch_prefix_bytes(
+        path,
+        label=label,
+        artifact_parent=artifact_parent,
+    )
     if payload is None:
         return None
     # Prefix reads may end in the middle of a later UTF-8 code point. Only
@@ -593,6 +650,21 @@ def _trusted_launch_material(path: Path, *, label: str) -> tuple[str, str] | Non
         if not found:
             return None
         payload = _separator + b"\n"
+    if required_prefix_digest:
+        if re.fullmatch(r"[0-9a-f]{64}", required_prefix_digest) is None:
+            return None
+        hasher = sha256()
+        matches: list[int] = []
+        cursor = 0
+        while (boundary := payload.find(b"\n", cursor)) >= 0:
+            boundary += 1
+            hasher.update(payload[cursor:boundary])
+            cursor = boundary
+            if hasher.hexdigest() == required_prefix_digest:
+                matches.append(boundary)
+        if len(matches) != 1:
+            return None
+        payload = payload[: matches[0]]
     try:
         text = payload.decode("utf-8")
     except UnicodeError:
@@ -614,6 +686,272 @@ def _path_beneath_root(path: Path, root: Path) -> tuple[Path, tuple[str, ...]] |
     parts = relative.parts
     return (
         (artifact, parts) if parts and all(part not in {"", ".", ".."} for part in parts) else None
+    )
+
+
+def _canonical_codex_uuid7(value: object) -> UUID | None:
+    """Return one lowercase canonical RFC UUIDv7, never a loose identifier."""
+
+    if type(value) is not str or not value or value != value.strip():
+        return None
+    try:
+        parsed = UUID(value)
+    except (AttributeError, TypeError, ValueError):
+        return None
+    if str(parsed) != value or parsed.version != 7 or parsed.variant != RFC_4122:
+        return None
+    return parsed
+
+
+def _canonical_absolute_path_text(value: object) -> str:
+    """Return an already-canonical absolute path spelling or an empty string."""
+
+    if not isinstance(value, (str, os.PathLike)):
+        return ""
+    try:
+        candidate = Path(value)
+        normalized = absolute_path(candidate)
+    except (OSError, TypeError, ValueError):
+        return ""
+    return str(candidate) if candidate.is_absolute() and candidate == normalized else ""
+
+
+def _codex_v1491_utc_timestamp(value: object) -> datetime | None:
+    """Parse the millisecond UTC timestamp spelling emitted by Codex 0.149.1."""
+
+    if type(value) is not str or _CODEX_V1491_TIMESTAMP.fullmatch(value) is None:
+        return None
+    try:
+        return datetime.strptime(value, "%Y-%m-%dT%H:%M:%S.%fZ").replace(tzinfo=timezone.utc)
+    except ValueError:
+        return None
+
+
+def _codex_v1491_rollout_identity(
+    path: object,
+    *,
+    child: UUID,
+    root: Path,
+) -> tuple[Path, datetime] | None:
+    """Bind one canonical rollout path to its date partition and child UUID."""
+
+    if not isinstance(path, (str, os.PathLike)):
+        return None
+    try:
+        supplied = Path(path)
+        artifact = absolute_path(supplied)
+    except (OSError, TypeError, ValueError):
+        return None
+    if not supplied.is_absolute() or supplied != artifact:
+        return None
+    joined = _path_beneath_root(artifact, root)
+    if joined is None:
+        return None
+    _artifact, parts = joined
+    if len(parts) != 4:
+        return None
+    match = _CODEX_V1491_ROLLOUT.fullmatch(parts[3])
+    if match is None or match.group("child") != str(child):
+        return None
+    if parts[:3] != (
+        match.group("year"),
+        match.group("month"),
+        match.group("day"),
+    ):
+        return None
+    try:
+        rollout_at = datetime(
+            int(match.group("year")),
+            int(match.group("month")),
+            int(match.group("day")),
+            int(match.group("hour")),
+            int(match.group("minute")),
+            int(match.group("second")),
+            tzinfo=timezone.utc,
+        )
+    except ValueError:
+        return None
+    return artifact, rollout_at
+
+
+def _codex_v1491_first_record(path: Path) -> Mapping[str, Any] | None:
+    """Read exactly one bounded, duplicate-free, trusted host metadata record."""
+
+    prefix = _trusted_launch_prefix_bytes(
+        path,
+        label="Codex 0.149.1 child session metadata",
+        artifact_parent=True,
+    )
+    if prefix is None:
+        return None
+    newline = prefix.find(b"\n")
+    if (
+        newline <= 0
+        or newline > _CODEX_V1491_META_MAX_BYTES
+        or prefix[newline - 1 : newline] == b"\r"
+    ):
+        return None
+    try:
+        record = safe_load_bounded_json(
+            prefix[:newline],
+            maximum_bytes=_CODEX_V1491_META_MAX_BYTES,
+            maximum_depth=12,
+            maximum_nodes=256,
+        )
+    except (TypeError, ValueError):
+        return None
+    return record if isinstance(record, Mapping) else None
+
+
+def _codex_v1491_parent_from_record(  # noqa: C901 - exact closed host schema
+    record: Mapping[str, Any],
+    *,
+    child: UUID,
+    expected_cwd: str,
+    rollout_at: datetime,
+) -> str:
+    """Validate the closed Codex 0.149.1 child metadata contract."""
+
+    if set(record) != {"timestamp", "type", "payload", "ordinal"}:
+        return ""
+    if record.get("type") != "session_meta" or type(record.get("ordinal")) is not int:
+        return ""
+    if record.get("ordinal") != 0:
+        return ""
+    payload = record.get("payload")
+    if not isinstance(payload, Mapping) or set(payload) != _CODEX_V1491_PAYLOAD_KEYS:
+        return ""
+    if (
+        payload.get("cli_version") != "0.149.1"
+        or payload.get("originator") != "codex_exec"
+        or payload.get("history_mode") != "paginated"
+        or payload.get("thread_source") != "subagent"
+        or payload.get("multi_agent_version") != "v2"
+        or payload.get("model_provider") != "openai"
+        or payload.get("cwd") != expected_cwd
+    ):
+        return ""
+
+    record_child = _canonical_codex_uuid7(payload.get("id"))
+    parent_session = _canonical_codex_uuid7(payload.get("session_id"))
+    parent_thread = _canonical_codex_uuid7(payload.get("parent_thread_id"))
+    if (
+        record_child != child
+        or parent_session is None
+        or parent_thread != parent_session
+        or parent_session == child
+        or (parent_session.int >> 80) >= (child.int >> 80)
+    ):
+        return ""
+
+    source = payload.get("source")
+    if not isinstance(source, Mapping) or set(source) != {"subagent"}:
+        return ""
+    subagent = source.get("subagent")
+    if not isinstance(subagent, Mapping) or set(subagent) != {"thread_spawn"}:
+        return ""
+    spawn = subagent.get("thread_spawn")
+    expected_spawn_keys = {
+        "parent_thread_id",
+        "depth",
+        "agent_path",
+        "agent_nickname",
+        "agent_role",
+    }
+    if not isinstance(spawn, Mapping) or set(spawn) != expected_spawn_keys:
+        return ""
+    spawn_parent = _canonical_codex_uuid7(spawn.get("parent_thread_id"))
+    agent_path = payload.get("agent_path")
+    agent_nickname = payload.get("agent_nickname")
+    if (
+        spawn_parent != parent_session
+        or type(spawn.get("depth")) is not int
+        or spawn.get("depth") != 1
+        or spawn.get("agent_role") is not None
+        or type(agent_path) is not str
+        or not agent_path
+        or type(agent_nickname) is not str
+        or not agent_nickname
+        or spawn.get("agent_path") != agent_path
+        or spawn.get("agent_nickname") != agent_nickname
+    ):
+        return ""
+
+    base = payload.get("base_instructions")
+    if not isinstance(base, Mapping) or set(base) != {"provenance", "text"}:
+        return ""
+    provenance = base.get("provenance")
+    if (
+        type(base.get("text")) is not str
+        or not base.get("text")
+        or not isinstance(provenance, Mapping)
+        or set(provenance) != {"type", "model"}
+        or provenance.get("type") != "model"
+        or type(provenance.get("model")) is not str
+        or not provenance.get("model")
+    ):
+        return ""
+    context_window = payload.get("context_window")
+    if not isinstance(context_window, Mapping) or set(context_window) != {"window_id"}:
+        return ""
+    window_id = _canonical_codex_uuid7(context_window.get("window_id"))
+    if window_id is None or (window_id.int >> 80) != (child.int >> 80):
+        return ""
+
+    outer_at = _codex_v1491_utc_timestamp(record.get("timestamp"))
+    payload_at = _codex_v1491_utc_timestamp(payload.get("timestamp"))
+    child_at = datetime.fromtimestamp((child.int >> 80) / 1000, tz=timezone.utc)
+    if (
+        outer_at is None
+        or payload_at is None
+        or not payload_at <= outer_at <= payload_at + timedelta(seconds=5)
+        or payload_at.replace(microsecond=0) != rollout_at
+        or abs(payload_at - child_at) > timedelta(seconds=1)
+    ):
+        return ""
+    return str(parent_session)
+
+
+def codex_v1491_child_parent_session(
+    path: object,
+    *,
+    child_id: object,
+    cwd: object,
+    root: Path | None = None,
+) -> str:
+    """Resolve one exact Codex 0.149.1 child to its host-authored parent.
+
+    This is a pure, fail-closed artifact read. It confers no staffing or Store
+    authority by itself; the caller must still resolve and validate one exact
+    live parent route.
+    """
+
+    child = _canonical_codex_uuid7(child_id)
+    expected_cwd = _canonical_absolute_path_text(cwd)
+    if child is None or not expected_cwd:
+        return ""
+    try:
+        canonical_root = absolute_path(
+            default_child_artifact_root("codex") if root is None else Path(root)
+        )
+    except (OSError, TypeError, ValueError):
+        return ""
+    identity = _codex_v1491_rollout_identity(
+        path,
+        child=child,
+        root=canonical_root,
+    )
+    if identity is None:
+        return ""
+    artifact, rollout_at = identity
+    record = _codex_v1491_first_record(artifact)
+    if record is None:
+        return ""
+    return _codex_v1491_parent_from_record(
+        record,
+        child=child,
+        expected_cwd=expected_cwd,
+        rollout_at=rollout_at,
     )
 
 
@@ -681,14 +1019,17 @@ def _canonical_host_artifact_is_trusted(
         file_before = artifact.lstat()
     except (OSError, ValueError):
         return False
+    parent_is_trusted = (
+        storage_artifact_parent_is_trusted if host == "codex" else storage_parent_is_trusted
+    )
     if (
         metadata_is_link_or_reparse_point(root_before)
         or not stat.S_ISDIR(root_before.st_mode)
         or metadata_is_link_or_reparse_point(file_before)
         or not stat.S_ISREG(file_before.st_mode)
         or int(getattr(file_before, "st_nlink", 0) or 0) != 1
-        or not storage_parent_is_trusted(canonical_root, is_windows=os.name == "nt")
-        or not storage_parent_is_trusted(artifact.parent, is_windows=os.name == "nt")
+        or not parent_is_trusted(canonical_root, is_windows=os.name == "nt")
+        or not parent_is_trusted(artifact.parent, is_windows=os.name == "nt")
         or not storage_file_is_trusted(artifact, is_windows=os.name == "nt")
     ):
         return False
@@ -959,11 +1300,14 @@ def _expected_v6_reason(
 ) -> str:
     """Return ``verified`` only for an exact, independently consumed decision."""
 
-    if host == "codex":
+    if host == "codex" and not structural_hook_output:
         # Supported Codex transcripts store the delegated input as ordinary
         # developer/user records and carry the actual inter-agent message
-        # opaquely. There is no host-authored field identifying Agency's hook
-        # output.
+        # opaquely. Public diagnostics cannot attribute one such record to an
+        # Agency hook. The restricted current-profile canary has a narrower
+        # structural contract: its sole complete v6 record is the exact
+        # ``SubagentStart.additionalContext`` output and enters only through a
+        # sealed internal collector.
         return "unsupported_opaque_interagent_channel"
     if expected is None:
         return (
@@ -1298,6 +1642,7 @@ def _verify_against_persisted_receipt(
     host: str,
     diagnostic: ChildDeliveryEvidence,
     store: object,
+    structural_hook_output: bool = False,
 ) -> ChildDeliveryEvidence:
     """Re-project one exact immutable receipt without writing or consuming again."""
 
@@ -1305,11 +1650,20 @@ def _verify_against_persisted_receipt(
     receipt = receipt_getter(diagnostic.decision_id)
     if not isinstance(receipt, Mapping):
         return diagnostic
+    receipt_artifact_digest = receipt.get("artifact_digest")
+    if host == "codex" and (
+        not isinstance(receipt_artifact_digest, str)
+        or re.fullmatch(r"[0-9a-f]{64}", receipt_artifact_digest) is None
+    ):
+        return replace(diagnostic, verification_reason="persisted_receipt_invalid")
+    expected_artifact_digest = (
+        receipt_artifact_digest if host == "codex" else diagnostic.artifact_digest
+    )
     expected = _expected_delivery_from_store_decision(
         decision_getter(diagnostic.decision_id),
         decision_id=diagnostic.decision_id,
         child_id=diagnostic.child_id,
-        artifact_digest=diagnostic.artifact_digest,
+        artifact_digest=expected_artifact_digest,
     )
     if expected is None:
         return replace(diagnostic, verification_reason="persisted_decision_invalid")
@@ -1318,9 +1672,15 @@ def _verify_against_persisted_receipt(
         host=host,
         expected=expected,
         verification_consumer=_persisted_receipt_consumer(receipt),
+        structural_hook_output=structural_hook_output,
+        receipt_artifact_digest=receipt_artifact_digest if host == "codex" else "",
     )
     if verified is None:
-        return diagnostic
+        return (
+            replace(diagnostic, verification_reason="persisted_artifact_prefix_invalid")
+            if host == "codex"
+            else diagnostic
+        )
     return (
         replace(verified, verification_reason="verified_existing_receipt")
         if verified.staffed
@@ -1482,11 +1842,13 @@ def claude_child_delivery_evidence(
     )
 
 
-def codex_child_delivery_evidence(
+def _codex_child_delivery_evidence(  # noqa: C901 - one pre-speech artifact boundary
     path: Path,
     *,
     expected_deliveries: Mapping[str, _ExpectedChildDelivery] | None = None,
     verification_consumer: _NativeChildDeliveryVerificationConsumer | None = None,
+    structural_hook_output: bool = False,
+    receipt_artifact_digest: str = "",
 ) -> ChildDeliveryEvidence | None:
     """Read one Codex rollout, if it is a spawned child, for its launch cards.
 
@@ -1496,7 +1858,12 @@ def codex_child_delivery_evidence(
     stops the moment the child speaks.
     """
 
-    material = _trusted_launch_material(path, label="Codex child rollout")
+    material = _trusted_launch_material(
+        path,
+        label="Codex child rollout",
+        artifact_parent=True,
+        required_prefix_digest=receipt_artifact_digest,
+    )
     if material is None:
         return None
     text, artifact_digest = material
@@ -1519,8 +1886,7 @@ def codex_child_delivery_evidence(
         return None
     candidate = expected_deliveries.get(child_id) if expected_deliveries is not None else None
     expected = candidate if isinstance(candidate, _ExpectedChildDelivery) else None
-    parts: list[str] = []
-    input_timestamp = ""
+    messages: list[tuple[str, str]] = []
     for record in records:
         if record.get("type") != "response_item":
             continue
@@ -1536,25 +1902,332 @@ def codex_child_delivery_evidence(
         content = item.get("content")
         if not isinstance(content, Sequence) or isinstance(content, str):
             continue
+        parts: list[str] = []
         for block in content:
             if isinstance(block, Mapping) and block.get("type") in _CODEX_TEXT_TYPES:
                 value = block.get("text")
                 if isinstance(value, str):
                     parts.append(value)
-                    if not input_timestamp:
-                        input_timestamp = str(record.get("timestamp") or "")
+        if parts:
+            messages.append(("\n".join(parts), str(record.get("timestamp") or "")))
+    v6_messages = [
+        (text, timestamp)
+        for text, timestamp in messages
+        if any(token in text for token in _V6_TEAM_TOKENS)
+    ]
+    if v6_messages:
+        # SubagentStart.additionalContext is one distinct input record on the
+        # supported Codex profile. Never splice model-authored developer/user
+        # records around it into an otherwise valid atomic envelope.
+        if len(v6_messages) != 1:
+            return None
+        launch_text, input_timestamp = v6_messages[0]
+    else:
+        launch_text = "\n".join(text for text, _timestamp in messages)
+        input_timestamp = next((timestamp for _text, timestamp in messages if timestamp), "")
     return _evidence(
         host="codex",
         path=path,
         child_id=child_id,
         host_parent_id=host_parent_id,
-        launch_text="\n".join(parts),
+        launch_text=launch_text,
         expected=expected,
-        structural_hook_output=False,
+        structural_hook_output=structural_hook_output,
         artifact_digest=artifact_digest,
         host_event_at=input_timestamp,
         verification_consumer=verification_consumer,
     )
+
+
+def codex_child_delivery_evidence(
+    path: Path,
+    *,
+    expected_deliveries: Mapping[str, _ExpectedChildDelivery] | None = None,
+    verification_consumer: _NativeChildDeliveryVerificationConsumer | None = None,
+) -> ChildDeliveryEvidence | None:
+    """Public Codex artifact diagnostic; it can never attribute hook output."""
+
+    return _codex_child_delivery_evidence(
+        path,
+        expected_deliveries=expected_deliveries,
+        verification_consumer=verification_consumer,
+        structural_hook_output=False,
+    )
+
+
+def _restricted_codex_canary_route(
+    store: object,
+    *,
+    parent_session_id: str,
+    parent_trace_id: str,
+    accepted_terminal_parent: bool = False,
+) -> Mapping[str, Any] | None:
+    """Return the sole child-bound route under one lifecycle-exact parent."""
+
+    if type(accepted_terminal_parent) is not bool:
+        return None
+    parent_getter = getattr(store, "get_codex_activation_canary_parent_snapshot", None)
+    routes_getter = getattr(store, "get_native_child_staffing_decisions_for_parent", None)
+    if not callable(parent_getter) or not callable(routes_getter):
+        return None
+    try:
+        if accepted_terminal_parent:
+            parent = parent_getter(
+                session_id=parent_session_id,
+                trace_id=parent_trace_id,
+                accepted_terminal=True,
+            )
+        else:
+            parent = parent_getter(
+                session_id=parent_session_id,
+                trace_id=parent_trace_id,
+            )
+        routes = routes_getter(
+            session_id=parent_session_id,
+            trace_id=parent_trace_id,
+            host="codex",
+            limit=2,
+        )
+    except Exception:
+        return None
+    if not isinstance(parent, Mapping) or not isinstance(routes, list) or len(routes) != 1:
+        return None
+    parent_route = parent.get("route")
+    route = routes[0]
+    if not isinstance(parent_route, Mapping) or not isinstance(route, Mapping):
+        return None
+    from agency_runtime.core.activation_canary_contract import (
+        CODEX_ACTIVATION_CANARY_ROUTE_SOURCE,
+        CODEX_ACTIVATION_CANARY_WORK_UNIT,
+        CODEX_ACTIVATION_CANARY_WORK_UNIT_SOURCE,
+    )
+
+    expected_task_sha256 = sha256(CODEX_ACTIVATION_CANARY_WORK_UNIT.encode("utf-8")).hexdigest()
+    cards = route.get("cards")
+    return (
+        route
+        if (
+            parent.get("proven") is True
+            and parent.get("session_id") == parent_session_id
+            and parent.get("trace_id") == parent_trace_id
+            and parent_route.get("status") == "accepted"
+            and parent_route.get("source") == CODEX_ACTIVATION_CANARY_ROUTE_SOURCE
+            and parent_route.get("selected_ids") == ["code-reviewer"]
+            and parent_route.get("semantic_ids") == ["code-reviewer"]
+            and parent_route.get("companion_ids") == []
+            and parent_route.get("work_units")
+            == {
+                "delegate": True,
+                "count": 1,
+                "confidence": "high",
+                "source": CODEX_ACTIVATION_CANARY_WORK_UNIT_SOURCE,
+            }
+            and route.get("host") == "codex"
+            and route.get("parent_session_id") == parent_session_id
+            and route.get("parent_trace_id") == parent_trace_id
+            and route.get("task_sha256") == expected_task_sha256
+            and route.get("query_hash") == expected_task_sha256
+            and route.get("binding_kind") == "child_id"
+            and route.get("binding_id") == route.get("launch_id")
+            and isinstance(cards, list)
+            and len(cards) == 1
+            and isinstance(cards[0], Mapping)
+            and cards[0].get("specialist_slug") == "code-reviewer"
+        )
+        else None
+    )
+
+
+def _restricted_codex_canary_artifact(
+    root: Path,
+    *,
+    child_id: str,
+) -> Path | None:
+    """Resolve one canonical child rollout by its host-authenticated UUID."""
+
+    try:
+        canonical_root = absolute_path(root)
+        assert_storage_parent_chain(canonical_root, allow_missing=False)
+        if not storage_artifact_parent_is_trusted(
+            canonical_root,
+            is_windows=os.name == "nt",
+        ):
+            return None
+        matches = list(canonical_root.glob(f"*/*/*/rollout-*-{child_id}.jsonl"))
+    except (OSError, RuntimeError, ValueError):
+        return None
+    return matches[0] if len(matches) == 1 else None
+
+
+def _verify_restricted_codex_canary_child_delivery(
+    store: object,
+    *,
+    parent_session_id: str,
+    parent_trace_id: str,
+    accepted_terminal_parent: bool = False,
+    started_at_ns: int | None = None,
+    finished_at_ns: int | None = None,
+    root: Path | None = None,
+) -> ChildDeliveryEvidence | None:
+    """Verify the sole current-profile canary child rollout and persist receipt."""
+
+    route = _restricted_codex_canary_route(
+        store,
+        parent_session_id=parent_session_id,
+        parent_trace_id=parent_trace_id,
+        accepted_terminal_parent=accepted_terminal_parent,
+    )
+    if route is None:
+        return None
+    child_id = str(route.get("binding_id") or "")
+    try:
+        # Codex thread UUIDs are the host-owned identity joined by the rollout
+        # filename and session_meta record. Correlation IDs alone are broader.
+        from uuid import UUID
+
+        if str(UUID(child_id)) != child_id:
+            return None
+    except (AttributeError, TypeError, ValueError):
+        return None
+    root = default_child_artifact_root("codex") if root is None else absolute_path(root)
+    artifact = _restricted_codex_canary_artifact(root, child_id=child_id)
+    if artifact is None:
+        return None
+    try:
+        metadata = artifact.lstat()
+    except OSError:
+        return None
+    if (started_at_ns is not None or finished_at_ns is not None) and (
+        type(started_at_ns) is not int
+        or type(finished_at_ns) is not int
+        or started_at_ns <= 0
+        or finished_at_ns < started_at_ns
+        or int(getattr(metadata, "st_mtime_ns", 0) or 0) + 1_000_000_000 < started_at_ns
+        or int(getattr(metadata, "st_mtime_ns", 0) or 0) > finished_at_ns + 1_000_000_000
+    ):
+        return None
+    diagnostic = _codex_child_delivery_evidence(
+        artifact,
+        structural_hook_output=True,
+    )
+    if not (
+        diagnostic is not None
+        and diagnostic.v6_delivery
+        and diagnostic.child_id == child_id
+        and diagnostic.host_parent_id == parent_session_id
+        and diagnostic.parent_trace_id == parent_trace_id
+        and diagnostic.decision_id == route.get("decision_id")
+        and diagnostic.launch_id == child_id
+        and diagnostic.binding_kind == "child_id"
+        and diagnostic.binding_id == child_id
+        and diagnostic.task_sha256 == route.get("task_sha256")
+        and _canonical_host_artifact_is_trusted(
+            artifact,
+            host="codex",
+            root=root,
+            evidence=diagnostic,
+        )
+    ):
+        return None
+    if started_at_ns is not None and finished_at_ns is not None:
+        observed = _utc_timestamp(diagnostic.host_event_at)
+        if observed is None:
+            return None
+        observed_ns = int(observed.timestamp() * 1_000_000_000)
+        if not (
+            observed_ns + 1_000_000_000 >= started_at_ns
+            and observed_ns <= finished_at_ns + 1_000_000_000
+        ):
+            return None
+    expected = _expected_delivery_from_store_decision(
+        route,
+        decision_id=diagnostic.decision_id,
+        child_id=child_id,
+        artifact_digest=diagnostic.artifact_digest,
+    )
+    if expected is None:
+        return None
+    _decision_getter, receipt_getter = _store_delivery_methods(store)
+    if isinstance(receipt_getter(diagnostic.decision_id), Mapping):
+        verified = _verify_against_persisted_receipt(
+            artifact,
+            host="codex",
+            diagnostic=diagnostic,
+            store=store,
+            structural_hook_output=True,
+        )
+    else:
+        verified = _verify_child_delivery_evidence(
+            artifact,
+            host="codex",
+            expected=expected,
+            verification_consumer=_store_native_child_delivery_consumer(store),
+            structural_hook_output=True,
+        )
+        if (verified is None or not verified.staffed) and isinstance(
+            receipt_getter(diagnostic.decision_id), Mapping
+        ):
+            verified = _verify_against_persisted_receipt(
+                artifact,
+                host="codex",
+                diagnostic=diagnostic,
+                store=store,
+                structural_hook_output=True,
+            )
+    return verified if verified is not None and verified.staffed else None
+
+
+def _collect_restricted_codex_canary_child_delivery(
+    store: object,
+    *,
+    parent_session_id: str,
+    parent_trace_id: str,
+) -> ChildDeliveryEvidence | None:
+    """Hook-only current-profile verifier for the exact restricted canary."""
+
+    from agency_runtime.core.codex_activation_verification import (
+        is_restricted_codex_activation_canary_environment,
+    )
+
+    if not is_restricted_codex_activation_canary_environment(os.environ):
+        return None
+    return _verify_restricted_codex_canary_child_delivery(
+        store,
+        parent_session_id=parent_session_id,
+        parent_trace_id=parent_trace_id,
+    )
+
+
+def _collect_restricted_codex_canary_host_delivery(
+    store: object,
+    *,
+    parent_session_id: str,
+    parent_trace_id: str,
+    started_at_ns: int,
+    finished_at_ns: int,
+    root: Path,
+) -> HostChildCollection:
+    """Backend-only sealed proof for one exact current-profile invocation."""
+
+    verified = _verify_restricted_codex_canary_child_delivery(
+        store,
+        parent_session_id=parent_session_id,
+        parent_trace_id=parent_trace_id,
+        accepted_terminal_parent=True,
+        started_at_ns=started_at_ns,
+        finished_at_ns=finished_at_ns,
+        root=root,
+    )
+    if verified is None:
+        return _uncollected("verification_refused")
+    proof = _VerifiedHostChildDelivery(
+        evidence=verified,
+        _consumption_scope="single",
+        _seal=_VERIFIED_DELIVERY_SEAL,
+    )
+    with _VERIFIED_DELIVERY_LOCK:
+        _VERIFIED_DELIVERY_IDENTITIES[id(proof)] = proof
+    return HostChildCollection(proof=proof, reason="collected")
 
 
 def default_child_artifact_root(host: str) -> Path:
@@ -1707,6 +2380,8 @@ def _verify_child_delivery_evidence(
     host: str,
     expected: _ExpectedChildDelivery,
     verification_consumer: _NativeChildDeliveryVerificationConsumer,
+    structural_hook_output: bool = False,
+    receipt_artifact_digest: str = "",
 ) -> ChildDeliveryEvidence | None:
     """Verify one exact artifact through an injected atomic persistence seam.
 
@@ -1719,6 +2394,14 @@ def _verify_child_delivery_evidence(
         raise TypeError("expected child delivery must use the exact contract")
     if not callable(verification_consumer):
         raise TypeError("native child delivery verification consumer is required")
+    if host == "codex":
+        return _codex_child_delivery_evidence(
+            path,
+            expected_deliveries={expected.child_id: expected},
+            verification_consumer=verification_consumer,
+            structural_hook_output=structural_hook_output,
+            receipt_artifact_digest=receipt_artifact_digest,
+        )
     return child_delivery_evidence(
         path,
         host=host,
@@ -2599,6 +3282,7 @@ __all__ = [
     "claude_child_delivery_evidence",
     "codex_child_artifacts",
     "codex_child_delivery_evidence",
+    "codex_v1491_child_parent_session",
     "default_child_artifact_root",
     "scan_child_artifacts",
     "scan_child_delivery_evidence",

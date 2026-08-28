@@ -419,6 +419,7 @@ class NativeChildStoreMixin:
                 conn.rollback()
                 return False
             stored_unit = str(row["work_unit_id"] or "")
+            delegation_id = str(row["delegation_event_id"] or "")
             if stored_unit and stored_unit != normalized_unit:
                 conn.rollback()
                 return False
@@ -450,10 +451,11 @@ class NativeChildStoreMixin:
                 if updated_binding != 1:
                     conn.rollback()
                     return False
-            existing_tool_use = str(row["execution_tool_use_id"] or "")
-            if row["ended_at"] is not None:
+                delegation_id = str(delegation["id"])
+            if not delegation_id:
                 conn.rollback()
                 return False
+            existing_tool_use = str(row["execution_tool_use_id"] or "")
             if row["execution_dispatched_at"] is not None:
                 conn.rollback()
                 return existing_tool_use == normalized_tool_use
@@ -476,8 +478,7 @@ class NativeChildStoreMixin:
             updated = conn.execute(
                 f"UPDATE worker_runs SET execution_tool_use_id = ?, "  # nosec B608
                 f"execution_dispatched_at = {STORE_CLOCK_SQL} WHERE id = ? "  # nosec B608
-                "AND execution_dispatched_at IS NULL AND execution_tool_use_id = '' "
-                "AND ended_at IS NULL",
+                "AND execution_dispatched_at IS NULL AND execution_tool_use_id = ''",
                 (normalized_tool_use, row_id),
             ).rowcount
             if updated != 1:
@@ -494,6 +495,248 @@ class NativeChildStoreMixin:
                 or stored["execution_dispatched_at"] is None
             ):
                 raise RuntimeError("Codex child execution claim postcondition failed")
+            conn.commit()
+            return True
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
+
+    def promote_codex_activation_canary_child(  # noqa: C901 - one atomic identity join
+        self,
+        *,
+        session_id: str,
+        trace_id: str,
+        work_unit_id: str,
+        worker_id: str,
+        native_run_id: str,
+    ) -> bool:
+        """Promote one fixed-unit synthetic dispatch to its real Codex child.
+
+        Codex may report the parent spawn before ``SubagentStart`` supplies the
+        real child UUID.  ADR-0144 requires the first complete callback to own
+        the join, so the earlier callback retains a synthetic, fixed-unit
+        worker with the exact tool-use dispatch.  Only the restricted canary
+        may replace that sole pending identity; ordinary synthetic workers and
+        completed or ambiguous rows remain immutable through this boundary.
+        """
+
+        from agency_runtime.core.activation_canary_contract import (
+            CODEX_ACTIVATION_CANARY_WORK_UNIT,
+        )
+        from agency_runtime.core.unit_assignment import work_unit_id_from_text
+
+        normalized_session = validate_correlation_id(session_id, field="session_id")
+        normalized_trace = validate_correlation_id(trace_id, field="trace_id")
+        normalized_unit = _identity(
+            work_unit_id,
+            maximum=MAX_DELEGATION_WORK_UNIT_ID_CHARS,
+            field="work_unit_id",
+        )
+        expected_unit = work_unit_id_from_text(CODEX_ACTIVATION_CANARY_WORK_UNIT)
+        if normalized_unit != expected_unit:
+            raise ValueError("Codex activation canary work unit does not match")
+        normalized_worker = _identity(
+            worker_id,
+            maximum=MAX_DELEGATION_WORKER_ID_CHARS,
+            field="worker_id",
+        )
+        normalized_run = _identity(
+            native_run_id,
+            maximum=MAX_DELEGATION_NATIVE_RUN_ID_CHARS,
+            field="native_run_id",
+        )
+        if normalized_run != f"codex-agent:{normalized_worker}":
+            raise ValueError("Codex activation canary child identity does not match")
+
+        parent_reader = getattr(self, "get_codex_activation_canary_parent_snapshot", None)
+        if not callable(parent_reader):
+            return False
+        try:
+            parent = parent_reader(
+                session_id=normalized_session,
+                trace_id=normalized_trace,
+            )
+        except Exception:
+            return False
+        if not (
+            isinstance(parent, dict)
+            and parent.get("proven") is True
+            and parent.get("session_id") == normalized_session
+            and parent.get("trace_id") == normalized_trace
+        ):
+            return False
+
+        pending_worker = "task:code_reviewer"
+        pending_run = "codex-task:code_reviewer"
+        actual_row_id = _worker_run_id(
+            "codex",
+            normalized_session,
+            normalized_trace,
+            normalized_worker,
+            normalized_run,
+        )
+        conn = self._connect()
+        try:
+            conn.execute("BEGIN IMMEDIATE")
+            actual = conn.execute(
+                "SELECT delegation_event_id, work_unit_id, execution_tool_use_id, "
+                "execution_dispatched_at, exit_code, ended_at FROM worker_runs "
+                "WHERE id = ? AND host = 'codex' "
+                "AND session_id = ? AND trace_id = ? AND worker_id = ? "
+                "AND native_run_id = ?",
+                (
+                    actual_row_id,
+                    normalized_session,
+                    normalized_trace,
+                    normalized_worker,
+                    normalized_run,
+                ),
+            ).fetchone()
+            if actual is not None:
+                already_promoted = bool(
+                    str(actual["delegation_event_id"] or "")
+                    and str(actual["work_unit_id"] or "") == normalized_unit
+                    and str(actual["execution_tool_use_id"] or "")
+                    and actual["execution_dispatched_at"] is not None
+                )
+                if already_promoted:
+                    conn.commit()
+                    return True
+
+            pending = conn.execute(
+                "SELECT worker.id AS worker_row_id, delegation.id AS delegation_id, "
+                "worker.execution_tool_use_id, worker.execution_dispatched_at "
+                "FROM worker_runs AS worker JOIN delegation_events AS delegation "
+                "ON delegation.id = worker.delegation_event_id "
+                "JOIN runs AS run ON run.trace_id = delegation.trace_id "
+                "AND run.session_id = delegation.session_id "
+                "WHERE delegation.session_id = ? AND delegation.trace_id = ? "
+                "AND delegation.host = 'codex' AND delegation.backend = 'spawn_agent' "
+                "AND delegation.work_unit_id = ? AND delegation.status = 'delegated' "
+                "AND delegation.recommended_agent = 'code-reviewer' "
+                "AND delegation.executed_worker_kind = 'generic-worker' "
+                "AND delegation.executed_worker_id = ? AND delegation.native_run_id = ? "
+                "AND worker.host = 'codex' AND worker.backend = 'spawn_agent' "
+                "AND worker.session_id = ? AND worker.trace_id = ? "
+                "AND worker.work_unit_id = ? AND worker.worker_id = ? "
+                "AND worker.native_run_id = ? AND worker.execution_tool_use_id <> '' "
+                "AND worker.execution_dispatched_at IS NOT NULL AND worker.ended_at IS NULL "
+                "AND run.host = 'codex' AND run.status IN ('active', 'evidence_only') "
+                "AND run.preflight_state = 'ready' AND run.ended_at IS NULL "
+                "AND run.terminal_finalization_id IS NULL ORDER BY worker.rowid LIMIT 2",
+                (
+                    normalized_session,
+                    normalized_trace,
+                    normalized_unit,
+                    pending_worker,
+                    pending_run,
+                    normalized_session,
+                    normalized_trace,
+                    normalized_unit,
+                    pending_worker,
+                    pending_run,
+                ),
+            ).fetchall()
+            if not pending:
+                conn.commit()
+                return False
+            if len(pending) != 1:
+                raise ValueError("Codex activation canary pending dispatch is ambiguous")
+            pending_row_id = str(pending[0]["worker_row_id"])
+            delegation_id = str(pending[0]["delegation_id"])
+            pending_tool_use_id = str(pending[0]["execution_tool_use_id"])
+            pending_dispatched_at = str(pending[0]["execution_dispatched_at"])
+            updated_delegation = conn.execute(
+                "UPDATE delegation_events SET executed_worker_id = ?, native_run_id = ? "
+                "WHERE id = ? AND executed_worker_id = ? AND native_run_id = ?",
+                (
+                    normalized_worker,
+                    normalized_run,
+                    delegation_id,
+                    pending_worker,
+                    pending_run,
+                ),
+            ).rowcount
+            if actual is None:
+                updated_worker = conn.execute(
+                    f"UPDATE worker_runs SET id = ?, worker_id = ?, native_run_id = ?, "  # nosec B608
+                    f"started_at = {STORE_CLOCK_SQL} WHERE id = ? AND worker_id = ? "  # nosec B608
+                    "AND native_run_id = ? AND ended_at IS NULL",
+                    (
+                        actual_row_id,
+                        normalized_worker,
+                        normalized_run,
+                        pending_row_id,
+                        pending_worker,
+                        pending_run,
+                    ),
+                ).rowcount
+            else:
+                if not (
+                    not str(actual["delegation_event_id"] or "")
+                    and str(actual["work_unit_id"] or "") in {"", normalized_unit}
+                    and not str(actual["execution_tool_use_id"] or "")
+                    and actual["execution_dispatched_at"] is None
+                ):
+                    raise ValueError(
+                        "real Codex activation child conflicts with the pending dispatch"
+                    )
+                deleted_pending = conn.execute(
+                    "DELETE FROM worker_runs WHERE id = ? AND worker_id = ? "
+                    "AND native_run_id = ? AND ended_at IS NULL",
+                    (pending_row_id, pending_worker, pending_run),
+                ).rowcount
+                updated_worker = conn.execute(
+                    "UPDATE worker_runs SET delegation_event_id = ?, work_unit_id = ?, "
+                    "execution_tool_use_id = ?, execution_dispatched_at = ? WHERE id = ? "
+                    "AND (delegation_event_id IS NULL OR delegation_event_id = '') "
+                    "AND execution_tool_use_id = '' AND execution_dispatched_at IS NULL",
+                    (
+                        delegation_id,
+                        normalized_unit,
+                        pending_tool_use_id,
+                        pending_dispatched_at,
+                        actual_row_id,
+                    ),
+                ).rowcount
+                if deleted_pending != 1:
+                    raise RuntimeError("Codex activation canary pending merge failed")
+            if updated_delegation != 1 or updated_worker != 1:
+                raise RuntimeError("Codex activation canary promotion postcondition failed")
+            if actual is not None and actual["ended_at"] is not None:
+                delegation = conn.execute(
+                    "SELECT * FROM delegation_events WHERE id = ?",
+                    (delegation_id,),
+                ).fetchone()
+                if delegation is None or actual["exit_code"] is None:
+                    raise RuntimeError("terminal Codex activation child is incomplete")
+                exit_code = int(actual["exit_code"])
+                self._merge_native_child_terminal(
+                    conn,
+                    delegation=delegation,
+                    status="completed" if exit_code == 0 else "failed",
+                    outcome=_EXIT_CODE_OUTCOMES.get(exit_code, "error"),
+                )
+            promoted = conn.execute(
+                "SELECT worker.delegation_event_id, worker.work_unit_id, "
+                "worker.execution_tool_use_id, worker.execution_dispatched_at, "
+                "delegation.executed_worker_id, delegation.native_run_id "
+                "FROM worker_runs AS worker JOIN delegation_events AS delegation "
+                "ON delegation.id = worker.delegation_event_id WHERE worker.id = ?",
+                (actual_row_id,),
+            ).fetchone()
+            if not (
+                promoted is not None
+                and promoted["delegation_event_id"] == delegation_id
+                and promoted["work_unit_id"] == normalized_unit
+                and str(promoted["execution_tool_use_id"] or "")
+                and promoted["execution_dispatched_at"] is not None
+                and promoted["executed_worker_id"] == normalized_worker
+                and promoted["native_run_id"] == normalized_run
+            ):
+                raise RuntimeError("Codex activation canary promotion postcondition failed")
             conn.commit()
             return True
         except Exception:

@@ -17,6 +17,7 @@ from agency_runtime.core.config import (
     CanaryConfig,
     InferenceConfig,
     InferenceProfile,
+    JudgeConfig,
     ProviderEntry,
 )
 from agency_runtime.core.configuration_contracts import ConfigValidationError
@@ -54,7 +55,9 @@ def test_canary_pin_resolves_one_exact_cli_provider_and_removes_fallbacks() -> N
     )
     assert requested == "codex-subscription"
     assert narrowed.providers == (provider,)
+    assert narrowed.judge.timeout == provider.timeout
     assert config.providers != narrowed.providers
+    assert config.judge.timeout == 15.0
 
 
 def test_canary_pin_mismatch_fails_without_fallback() -> None:
@@ -122,6 +125,104 @@ def test_zcode_canary_pin_resolves_one_existing_glm_profile_without_chain_mutati
     assert config.providers == original_chain
 
 
+def test_ar299_canary_pin_resolves_one_keyless_loopback_ollama_profile() -> None:
+    original_chain = (ProviderEntry(name="codex-subscription", type="cli", transport="codex"),)
+    config = AgencyConfig(
+        providers=original_chain,
+        inference=InferenceConfig(
+            profiles={
+                "local-child-judge": InferenceProfile(
+                    name="local-child-judge",
+                    adapter="ollama",
+                    model="mistral-small3.2:24b",
+                    base_url="http://127.0.0.1:11434",
+                )
+            }
+        ),
+        canary=CanaryConfig(
+            child_judge_provider_by_host=(("codex", "local-child-judge"),),
+        ),
+    )
+
+    resolved = configured_canary_child_judge_provider(config, "CODEX")
+    assert resolved is not None
+    provider, transport = resolved
+    assert transport == ""
+    assert (provider.name, provider.type, provider.model, provider.auth_method()) == (
+        "local-child-judge",
+        "ollama",
+        "mistral-small3.2:24b",
+        "none",
+    )
+
+    narrowed, requested = canary_child_judge_config(
+        config,
+        "codex",
+        {
+            "AGENCY_CANARY_MODE": "1",
+            CANARY_CHILD_JUDGE_PROVIDER_ENV: "local-child-judge",
+        },
+    )
+    assert requested == "local-child-judge"
+    assert narrowed.providers == (provider,)
+    assert config.providers == original_chain
+
+
+def test_ar317_canary_pin_resolves_one_authenticated_loopback_litellm_alias() -> None:
+    original_chain = (ProviderEntry(name="codex-subscription", type="cli", transport="codex"),)
+    config = AgencyConfig(
+        providers=original_chain,
+        judge=JudgeConfig(timeout=60.0),
+        inference=InferenceConfig(
+            profiles={
+                "local-child-judge": InferenceProfile(
+                    name="local-child-judge",
+                    adapter="litellm",
+                    model="task-agency-child-judge",
+                    base_url="http://127.0.0.1:4000",
+                    api_key_env="LITELLM_API_KEY",
+                    timeout_ms=120_000,
+                )
+            }
+        ),
+        canary=CanaryConfig(
+            child_judge_provider_by_host=(("codex", "local-child-judge"),),
+        ),
+    )
+
+    resolved = configured_canary_child_judge_provider(config, "CODEX")
+    assert resolved is not None
+    provider, transport = resolved
+    assert transport == ""
+    assert (
+        provider.name,
+        provider.type,
+        provider.model,
+        provider.base_url,
+        provider.api_key_env,
+    ) == (
+        "local-child-judge",
+        "litellm",
+        "task-agency-child-judge",
+        "http://127.0.0.1:4000",
+        "LITELLM_API_KEY",
+    )
+
+    narrowed, requested = canary_child_judge_config(
+        config,
+        "codex",
+        {
+            "AGENCY_CANARY_MODE": "1",
+            CANARY_CHILD_JUDGE_PROVIDER_ENV: "local-child-judge",
+        },
+    )
+    assert requested == "local-child-judge"
+    assert narrowed.providers == (provider,)
+    assert narrowed.judge.timeout == provider.timeout == 120.0
+    assert config.providers == original_chain
+    assert config.judge.timeout == 60.0
+
+
 def test_canary_pin_rejects_ambiguous_provider_and_profile_name() -> None:
     config = AgencyConfig(
         providers=(ProviderEntry(name="shared", type="cli", transport="codex"),),
@@ -165,6 +266,25 @@ def test_canary_pin_rejects_ambiguous_provider_and_profile_name() -> None:
             model="GLM-5.2",
             base_url="http://api.example.invalid/v1",
             api_key="bounded-test-key",
+        ),
+        InferenceProfile(
+            name="unsupported-profile",
+            adapter="ollama",
+            model="mistral-small3.2:24b",
+            base_url="http://api.example.invalid",
+        ),
+        InferenceProfile(
+            name="unsupported-profile",
+            adapter="litellm",
+            model="task-agency-child-judge",
+            base_url="http://127.0.0.1:4000",
+        ),
+        InferenceProfile(
+            name="unsupported-profile",
+            adapter="litellm",
+            model="task-agency-child-judge",
+            base_url="http://api.example.invalid/v1",
+            api_key_env="LITELLM_API_KEY",
         ),
     ],
 )

@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import json
 import os
+import stat
+import subprocess
+import sys
 from contextlib import contextmanager
 from pathlib import Path
 from types import SimpleNamespace
@@ -13,9 +16,11 @@ from agency_runtime.core import installer
 from agency_runtime.core import installer_filesystem as filesystem
 from agency_runtime.core import installer_inventory as inventory
 from agency_runtime.core import installer_native as native
+from agency_runtime.core import installer_payload_manifests as payload_manifests
 from agency_runtime.core import installer_payloads as payloads
 from agency_runtime.core.config import AgencyConfig, OllamaConfig
 from agency_runtime.core.installer_contracts import (
+    HERMES_BYTECODE_GUARD,
     INSTALL_MANIFEST,
     PLUGIN_ID,
     PLUGIN_VERSION,
@@ -82,13 +87,96 @@ def test_atomic_install_restores_backup_when_final_replace_fails(
     with pytest.raises(OSError, match="final replace failure"):
         filesystem.atomic_install_tree(
             target,
-            {"plugin.py": "managed"},
-            host="codex",
+            {
+                "plugin.py": "managed",
+                HERMES_BYTECODE_GUARD: "cache denied\n",
+            },
+            host="hermes",
             dry_run=False,
             home_dir=tmp_path,
         )
 
     assert sentinel.read_text(encoding="utf-8") == "original"
+    assert not any(".staging-" in path.name for path in tmp_path.iterdir())
+
+
+@pytest.mark.skipif(os.name == "nt", reason="POSIX install-tree mode contract")
+def test_atomic_hermes_install_is_sealed_against_bytecode_cache_drift(
+    tmp_path: Path,
+) -> None:
+    target = tmp_path / "plugin"
+    files, primary = payload_manifests.build_hermes_bundle("VALUE = 1\n", mcp={})
+    assert primary == "__init__.py"
+    assert HERMES_BYTECODE_GUARD in files
+    previous_umask = os.umask(0o002)
+    try:
+        installed = filesystem.atomic_install_tree(
+            target,
+            files,
+            host="hermes",
+            dry_run=False,
+            home_dir=tmp_path,
+        )
+    finally:
+        os.umask(previous_umask)
+
+    assert installed["unchanged"] is False
+    guard_directory = target / Path(HERMES_BYTECODE_GUARD).parent
+    guard_marker = target / HERMES_BYTECODE_GUARD
+    assert stat.S_IMODE(target.stat().st_mode) == 0o700
+    assert stat.S_IMODE(guard_directory.stat().st_mode) == 0o500
+    assert stat.S_IMODE(guard_marker.stat().st_mode) == 0o400
+    environment = dict(os.environ)
+    environment.pop("PYTHONDONTWRITEBYTECODE", None)
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            (
+                "import pathlib, sys; "
+                f"sys.path.insert(0, {str(tmp_path)!r}); "
+                "import plugin; "
+                "assert plugin.VALUE == 1; "
+                f"assert list(pathlib.Path({str(guard_directory)!r}).iterdir()) == "
+                f"[pathlib.Path({str(guard_marker)!r})]"
+            ),
+        ],
+        check=False,
+        capture_output=True,
+        env=environment,
+        text=True,
+    )
+    assert completed.returncode == 0, completed.stderr
+    assert list(guard_directory.iterdir()) == [guard_marker]
+    valid, error, _manifest = filesystem.validate_owned_install_tree(
+        target,
+        host="hermes",
+        target=target,
+    )
+    assert valid is True
+    assert error is None
+
+    guard_directory.chmod(0o700)
+    guard_marker.chmod(0o600)
+    valid, error, _manifest = filesystem.validate_owned_install_tree(
+        target,
+        host="hermes",
+        target=target,
+    )
+    assert valid is False
+    assert error == "Install tree violates its Hermes bytecode-cache policy"
+    refreshed = filesystem.atomic_install_tree(
+        target,
+        files,
+        host="hermes",
+        dry_run=False,
+        home_dir=tmp_path,
+    )
+
+    assert refreshed["unchanged"] is False
+    assert refreshed["backup_path"] is not None
+    assert stat.S_IMODE(target.stat().st_mode) == 0o700
+    assert stat.S_IMODE((target / Path(HERMES_BYTECODE_GUARD).parent).stat().st_mode) == 0o500
 
 
 def _write_backup_manifest(path: Path, target_path: Path, **overrides: Any) -> None:

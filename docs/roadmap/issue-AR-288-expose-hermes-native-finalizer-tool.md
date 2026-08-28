@@ -3,7 +3,7 @@ title: "Expose Hermes native finalizer tool"
 status: done
 category: roadmap
 created: 2026-08-25
-updated: 2026-08-25
+updated: 2026-08-27
 tags: [hermes, finalization, plugin, tool, reliability]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
@@ -11,7 +11,9 @@ related:
   - docs/roadmap/issue-AR-266-dense-hybrid-workforce-recall.md
   - docs/roadmap/issue-AR-273-expose-openclaw-native-finalizer-tool.md
   - docs/roadmap/issue-AR-287-bind-host-hook-timeouts-to-inference-budgets.md
+  - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
   - docs/roadmap/handoffs/issue-AR-266.md
+  - docs/roadmap/handoffs/issue-AR-297.md
   - docs/decisions/0120-construct-first-pass-evidence-headers.md
   - agency_runtime/core/installer_payload_hermes.py
   - agency_runtime/adapters/hermes/bridge.py
@@ -83,6 +85,33 @@ changes; an honest stale header is correctly blocked by strict finalization.
   another applied both stages but exhausted recruiter repair on
   `staff_without_safe_team`. Neither was retried unchanged.
 - Tracker creation is pending explicit authorization.
+- AR-297's exact Hermes `0.20.4` production-container R5 exposed two current
+  compatibility gaps hidden by the earlier live pass. Default progressive tool
+  disclosure deferred `agency_finalize`, and after an exact native config
+  diagnostic made it eager, Qwen called the finalizer once but paraphrased its
+  2,625-byte result on Hermes's mandatory follow-up model turn. Store committed
+  the accepted exact hash, then the existing output hook correctly withheld the
+  rewritten text. The visible process therefore remained fail-closed rather
+  than satisfying this issue's exact-emission acceptance.
+- Red-before regression `cad6beee...d937` exits 1 on that exact boundary. The
+  bounded repair teaches default tool-search discovery and keeps the native
+  finalizer result in a 1,024-entry, trace-scoped, one-shot in-memory cache.
+  The transform hook returns it only when a separate bridge call proves the
+  same text hash is already the authoritative completed acceptance. Rejected,
+  mismatched, repeated, disabled-runtime, or unavailable-Agency paths preserve
+  their prior behavior. Four focused suites pass 236 tests at
+  `68ade380...3ffc`.
+- Clean candidate `e17e5221657ec90df8092879cf9d5c79d65ecb50` rebuilds and
+  independently verifies exact artifacts/images. Fresh UID-10000 Hermes R2
+  absence, exact default native config, dry-run, sole install, status, and
+  plugin-doctor receipts all exit 0; the installed bundle registers one native
+  finalizer and eight hooks. Fresh ordinary session
+  `20260827_201909_a6a13c` then exits 0 with one exact 3,227-byte specialist
+  card, one `agency_finalize`, authoritative accepted response
+  `ad8a06d3...eeaa`, and byte-identical visible output. Independent receipt
+  `3c40a9bf...8959` also proves Store/native quick-checks, `missing=[]`, the
+  mandatory model follow-up differs, and the post-install/default native config
+  remains byte-identical across the live turn at `2552f21c...e680`.
 
 ## Approach
 
@@ -95,9 +124,13 @@ Teach preflight the actual host-native identifier and its 3,000-character draft
 budget. Construct before commit, reject output above the inline-safe ceiling,
 then revalidate and atomically commit the exact result.
 
-Preserve first-pass finalization and terminal rejection. Do not repair a natural
-response after rejection, request a second model pass, accept stale evidence,
-or modify native Hermes configuration/source.
+Preserve first-pass finalization and terminal rejection. Under Hermes's default
+progressive disclosure, explicitly discover the exact finalizer without a
+schema-description round trip. Cache only the bounded result returned by that
+correlated native call, then replay it over any follow-up model rewrite only
+after the bridge independently matches its authoritative completed Store hash.
+Do not repair a response without that acceptance, request a second model pass,
+accept stale evidence, or modify native Hermes configuration/source.
 
 ## Dependencies
 
@@ -124,3 +157,9 @@ or modify native Hermes configuration/source.
       receipts.
 - [x] Focused tests and proportionate repository gates pass.
 - [x] Tracker creation remains pending separate authorization.
+- [x] A red-before regression covers a model rewriting an already accepted
+      native finalizer result; replay is bounded, one-shot, and trace-scoped.
+- [x] Default Hermes tool-search guidance discovers `agency_finalize` without
+      requiring native config drift.
+- [x] Rebuilt exact artifacts pass a fresh default-config Hermes turn whose
+      visible output is the byte-exact accepted tool result.

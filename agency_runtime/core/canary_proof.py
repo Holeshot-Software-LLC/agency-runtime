@@ -21,6 +21,9 @@ from agency_runtime.core.child_delivery_evidence import (
 from agency_runtime.core.codex_child_tool_evidence import (
     normalize_codex_child_tool_evidence,
 )
+from agency_runtime.core.configuration_contracts import (
+    configured_credential_environment_names,
+)
 from agency_runtime.core.installer_contracts import (
     CODEX_ACTIVATION_CANARY_PROOF_CONTRACT,
 )
@@ -386,6 +389,7 @@ def prepare_live_invocation(
     host: str,
     *,
     path: Path,
+    config_path: Path | None = None,
     timeout: float,
     native: Mapping[str, Any],
     backend_factory: Callable[..., Any],
@@ -399,11 +403,12 @@ def prepare_live_invocation(
 ) -> LivePreparation:
     facade = _facade()
     try:
-        store = (
-            facade.Store(path, require_existing_current=True)
-            if require_existing_store
-            else facade.Store(path)
-        )
+        store_kwargs: dict[str, Any] = {}
+        if config_path is not None:
+            store_kwargs["config_path"] = config_path
+        if require_existing_store:
+            store_kwargs["require_existing_current"] = True
+        store = facade.Store(path, **store_kwargs)
         before = store.recent_runtime_activity(limit=200)
     except Exception:
         return LivePreparation(
@@ -425,6 +430,7 @@ def prepare_live_invocation(
     child_judge_transport = ""
     parent_recruiter_provider = ""
     parent_recruiter_transport = ""
+    credential_environment_names: tuple[str, ...] = ()
     if (
         mode == "agency"
         and backend_factory is facade._backend
@@ -432,6 +438,7 @@ def prepare_live_invocation(
     ):
         try:
             config = facade.load_config(getattr(store, "config_path", None), reload=True)
+            credential_environment_names = configured_credential_environment_names(config)
             resolved = facade._configured_canary_child_judge_provider(config, host)
             if resolved is None:
                 raise ValueError("missing provider pin")
@@ -474,6 +481,7 @@ def prepare_live_invocation(
                 child_judge_transport=child_judge_transport,
                 parent_recruiter_provider=parent_recruiter_provider,
                 parent_recruiter_transport=parent_recruiter_transport,
+                credential_environment_names=credential_environment_names,
             )
         else:
             backend = backend_factory(host, db_path=path, timeout=timeout)
@@ -516,7 +524,9 @@ def invoke_and_collect_evidence(
     facade = _facade()
     try:
         with private_temporary_directory(prefix="canary") as workdir:
-            if host == "claude" and type(preparation.backend) is facade._SafeClaudeCanaryBackend:
+            if (
+                host == "claude" and type(preparation.backend) is facade._SafeClaudeCanaryBackend
+            ) or (host == "codex" and type(preparation.backend) is facade._SafeCodexCanaryBackend):
                 result, host_child_delivery = preparation.backend.execute_with_host_delivery(
                     task=prompt,
                     workdir=str(workdir),

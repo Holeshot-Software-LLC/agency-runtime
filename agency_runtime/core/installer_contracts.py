@@ -11,6 +11,7 @@ PLUGIN_ID = "agency-preflight"
 MARKETPLACE_ID = "agency-runtime"
 INSTALL_MANIFEST = ".agency-runtime-install.json"
 ADAPTER_LAUNCHER_MANIFEST = ".agency-runtime-launcher.json"
+HERMES_BYTECODE_GUARD = "__pycache__/.agency-runtime-cache-denied"
 PLUGIN_VERSION = "0.1.0"
 # v4: card delivery is proven only by a verified host-written child artifact.
 # Store specialist-load rows and Codex collaboration/output projections remain

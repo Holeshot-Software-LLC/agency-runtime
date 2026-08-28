@@ -214,6 +214,32 @@ def test_owner_private_and_public_posix_source_modes_converge_exactly() -> None:
     assert private == public
 
 
+def test_cooperative_umask_posix_source_mode_converges_to_safe_output() -> None:
+    entries = {
+        "package/cooperative.py": b"cooperative",
+        "package-1.dist-info/RECORD": b"record",
+    }
+
+    cooperative = subject.canonicalize_wheel_bytes(
+        _source_wheel(entries, ordinary_mode=0o664),
+        timestamp=TIMESTAMP,
+    )
+    owner_private = subject.canonicalize_wheel_bytes(
+        _source_wheel(entries, ordinary_mode=0o600),
+        timestamp=TIMESTAMP,
+    )
+
+    assert cooperative == owner_private
+    with zipfile.ZipFile(io.BytesIO(cooperative)) as archive:
+        modes = {
+            item.filename: stat.S_IMODE(item.external_attr >> 16) for item in archive.infolist()
+        }
+    assert modes == {
+        "package-1.dist-info/RECORD": 0o664,
+        "package/cooperative.py": 0o644,
+    }
+
+
 def test_windows_private_source_mode_remains_rejected() -> None:
     source = _source_wheel(
         {
@@ -383,9 +409,50 @@ def test_private_posix_sdist_modes_converge_with_public_modes() -> None:
         assert archive.getmember("package-1/package/module.py").mode == 0o644
 
 
+def test_cooperative_umask_posix_sdist_modes_converge_with_private_modes() -> None:
+    entries: dict[str, bytes | None] = {
+        "package-1": None,
+        "package-1/package": None,
+        "package-1/package/module.py": b"payload",
+    }
+    cooperative_source = _source_sdist(
+        entries,
+        file_modes={
+            "package-1": 0o775,
+            "package-1/package": 0o775,
+            "package-1/package/module.py": 0o664,
+        },
+    )
+    private_source = _source_sdist(
+        entries,
+        file_modes={
+            "package-1": 0o700,
+            "package-1/package": 0o700,
+            "package-1/package/module.py": 0o600,
+        },
+    )
+
+    cooperative = subject.canonicalize_sdist_bytes(
+        cooperative_source,
+        timestamp=TIMESTAMP,
+        expected_filename="package-1.tar.gz",
+    )
+    private = subject.canonicalize_sdist_bytes(
+        private_source,
+        timestamp=TIMESTAMP,
+        expected_filename="package-1.tar.gz",
+    )
+
+    assert cooperative == private
+    with tarfile.open(fileobj=io.BytesIO(cooperative), mode="r:gz") as archive:
+        assert archive.getmember("package-1").mode == 0o755
+        assert archive.getmember("package-1/package").mode == 0o755
+        assert archive.getmember("package-1/package/module.py").mode == 0o644
+
+
 @pytest.mark.parametrize(
     "mode",
-    [0o000, 0o600, 0o644, 0o711, 0o750, 0o770, 0o775, 0o1700, 0o2700, 0o4700],
+    [0o000, 0o600, 0o644, 0o711, 0o750, 0o770, 0o1700, 0o2700, 0o4700],
 )
 def test_sdist_rejects_unreviewed_directory_modes(mode: int) -> None:
     entries: dict[str, bytes | None] = {
@@ -423,9 +490,11 @@ def test_sdist_source_mode_allowlists_are_exact_across_all_permission_bits() -> 
     ordinary = "package-1/package/module.py"
     for mode in range(0o10000):
         assert subject._source_tar_file_mode_allowed(ordinary, mode) is (
-            mode in {0o600, 0o644, 0o666}
+            mode in {0o600, 0o644, 0o664, 0o666}
         )
-        assert (mode in subject.SOURCE_TAR_DIRECTORY_MODES) is (mode in {0o700, 0o755, 0o777})
+        assert (mode in subject.SOURCE_TAR_DIRECTORY_MODES) is (
+            mode in {0o700, 0o755, 0o775, 0o777}
+        )
 
 
 def test_generated_metadata_eol_variants_converge_without_mutating_source_payloads() -> None:

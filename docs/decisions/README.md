@@ -3,7 +3,7 @@ title: Decision registry
 status: active
 category: decisions
 created: 2026-07-10
-updated: 2026-08-24
+updated: 2026-08-27
 tags: [architecture, adr, governance]
 related:
   - docs/roadmap/README.md
@@ -52,6 +52,7 @@ Status meanings:
 - ADR-0127 Bind opaque Codex children through exact plan labels → ADR-0128 Persist exact Codex plan authority and serialize opaque launches
 - ADR-0124 Grade product trials against the inferred unit graph → ADR-0133 Treat product specialist loads as turn-scoped
 - ADR-0165 Keep LiteLLM inference profiles model-agnostic → ADR-0166 Delegate exact schema translation to LiteLLM
+- ADR-0186 Bind Codex child sessions with a canary request digest → ADR-0187 Bind the Codex canary child through host-authored lineage → ADR-0188 Separate Codex hook parent and child identities
 
 ## Architecture and integrations
 
@@ -69,6 +70,8 @@ Status meanings:
 | [ADR-0155](0155-defer-agent-plugins-conformance-to-client-adoption.md) | Defer Agent Plugins conformance to client adoption | Accepted |
 | [ADR-0169](0169-deliver-openclaw-native-errors-through-exact-terminal-evidence.md) | Deliver OpenClaw native errors through exact terminal evidence | Accepted |
 | [ADR-0170](0170-authorize-finalized-openclaw-child-announcements.md) | Authorize finalized OpenClaw child announcements | Accepted |
+| [ADR-0180](0180-project-current-profile-canary-install-home.md) | Project current-profile canary install-home authority | Accepted |
+| [ADR-0191](0191-seal-managed-hermes-python-bundles.md) | Seal managed Hermes Python cache namespaces | Accepted |
 
 ## Routing, policy, and providers
 
@@ -113,6 +116,9 @@ Status meanings:
 | [ADR-0163](0163-resolve-contextual-turns-from-transcript-free-subjects.md) | Resolve contextual turns from transcript-free same-session subjects | Accepted |
 | [ADR-0164](0164-use-dense-embeddings-only-for-workforce-recall.md) | Use learned embeddings only for additive workforce recall | Accepted |
 | [ADR-0171](0171-separate-native-and-structured-reranker-transports.md) | Separate native and structured reranker transports | Accepted |
+| [ADR-0175](0175-batch-complete-embedding-input-sets.md) | Batch complete embedding input sets within a bounded recall budget | Accepted |
+| [ADR-0181](0181-use-litellm-aliases-as-host-inference-control-plane.md) | Use LiteLLM aliases as the host inference control plane | Accepted |
+| [ADR-0185](0185-enforce-child-judge-schema-at-litellm-alias.md) | Enforce the child-judge schema at the LiteLLM alias | Accepted |
 
 ## Evidence and observability
 
@@ -136,6 +142,16 @@ Status meanings:
 | [ADR-0160](0160-pin-child-judge-providers-per-canary-harness.md) | Pin child-judge providers per canary harness | Accepted |
 | [ADR-0167](0167-authorize-openclaw-native-skill-reads-from-inventory.md) | Authorize OpenClaw native skill reads from inventory | Accepted |
 | [ADR-0168](0168-refresh-openclaw-headers-through-awaited-tool-results.md) | Refresh OpenClaw headers through awaited tool results | Accepted |
+| [ADR-0174](0174-admit-local-ollama-canary-child-judges.md) | Admit local Ollama canary child judges | Accepted |
+| [ADR-0179](0179-admit-exact-codex-canary-delivery-at-subagent-start.md) | Admit exact Codex canary delivery at SubagentStart | Accepted |
+| [ADR-0182](0182-bound-codex-activation-child-wait.md) | Bound the Codex activation child wait above observed latency | Superseded |
+| [ADR-0183](0183-honor-pinned-canary-judge-timeout.md) | Honor the pinned canary judge profile timeout | Accepted |
+| [ADR-0184](0184-bound-codex-wait-to-full-child-staffing.md) | Bound the Codex wait to the full child staffing path | Accepted |
+| [ADR-0186](0186-bind-codex-child-session-with-canary-request-digest.md) | Bind Codex child sessions with a canary request digest | Superseded |
+| [ADR-0187](0187-bind-codex-canary-child-through-host-authored-lineage.md) | Bind the Codex canary child through host-authored lineage | Superseded |
+| [ADR-0188](0188-separate-codex-hook-parent-and-child-identities.md) | Separate Codex hook parent and child identities | Accepted |
+| [ADR-0189](0189-admit-only-accepted-terminal-codex-parents-for-post-return-collection.md) | Admit only accepted terminal Codex parents for post-return collection | Accepted |
+| [ADR-0190](0190-bind-codex-receipt-replay-to-an-exact-append-only-prefix.md) | Bind Codex receipt replay to an exact append-only prefix | Accepted |
 
 ## State and roster governance
 
@@ -165,6 +181,9 @@ Status meanings:
 | [ADR-0031](0031-optional-user-dashboard-service-and-shared-configuration.md) | Use an optional user-scoped dashboard service with one typed configuration boundary | Accepted |
 | [ADR-0172](0172-compose-first-run-setup-from-guarded-owner-operations.md) | Compose first-run setup from guarded owner operations | Accepted |
 | [ADR-0173](0173-complete-production-container-installation-with-managed-activation.md) | Complete production-container installation with managed activation | Accepted |
+| [ADR-0176](0176-use-owner-runtime-temp-for-nonroot-user-services.md) | Use owner-runtime temporary directories for non-root user services | Accepted |
+| [ADR-0177](0177-make-local-verification-private-by-construction.md) | Make local verification private at repository-owned boundaries | Accepted |
+| [ADR-0178](0178-project-config-declared-credentials-into-tool-reduced-canaries.md) | Project config-declared credentials into tool-reduced canaries | Accepted |
 | [ADR-0032](0032-adaptive-authenticated-dashboard-polling.md) | Use adaptive authenticated polling and source-owned signal visualizations | Accepted |
 | [ADR-0034](0034-persistent-soft-host-control.md) | Separate immediate host control from native plugin lifecycle | Accepted |
 | [ADR-0036](0036-capability-bound-host-canary-attestations.md) | Bind live host canary attestations to capability and installation identity | Accepted |

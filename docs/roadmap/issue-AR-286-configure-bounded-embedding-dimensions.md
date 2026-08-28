@@ -7,6 +7,7 @@ updated: 2026-08-25
 tags: [workforce, embeddings, retrieval, inference, configuration]
 related:
   - docs/roadmap/issue-AR-266-dense-hybrid-workforce-recall.md
+  - docs/roadmap/issue-AR-303-bound-full-roster-embedding-requests.md
   - docs/roadmap/handoffs/issue-AR-266.md
   - docs/roadmap/reference-workforce-inference-stages.md
   - docs/decisions/0164-use-dense-embeddings-only-for-workforce-recall.md
@@ -19,7 +20,7 @@ issue_id: AR-286
 priority: p0
 tracker_url: null
 depends_on: [AR-266]
-blocks: []
+blocks: [AR-303]
 ---
 
 # AR-286: Configure bounded embedding dimensions

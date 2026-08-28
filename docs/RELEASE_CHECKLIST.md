@@ -579,6 +579,45 @@ outward-facing actions and require explicit authorization.
 
 ## Current blockers
 
+The 2026-08-26 AR-297 unsigned Linux checkpoint built and independently
+verified commit `987cee8ff01a4a16780eac15bb8120f828d4193d`. The portable wheel
+SHA-256 is
+`17a3bc0053a882b22ff72d8b3a2ebcd23ef602c2b5c034e7a05e8ae10ff929f1`
+and the sdist SHA-256 is
+`6551c43fc6fc7dfe7d8b9318e5b7605d1ecc8e214490eb7d0d2af001ffa9adb5`.
+Build, strict Twine, and independent verification exit 0 only with the required
+owner-private umask; the documented ambient-umask invocation exposes a
+group-writable archive-permission failure. Clean Claude, Hermes, and OpenClaw
+container registration passes, but Codex's managed canary exits at staffing
+critique, all four later ordinary turns lack terminal Agency proof, and the
+ordinary non-root systemd dashboard service fails closed under `PrivateTmp`
+(AR-301). These results are local unsigned Linux evidence only; no checklist
+box requiring cross-OS, signing, publication, or successful live host delivery
+is satisfied by them.
+
+The named repository gates subsequently pass from trusted owner-private Linux
+execution: 858 fast-spine tests pass with 3 skips, dashboard UI passes 138,
+routing passes every threshold, and decision conformance passes its baseline
+with 160/160 mutations killed, zero survived/invalid, and source unchanged.
+Fresh wheel and sdist installs each pass packaged import/data, 263-worker roster,
+offline selection safety, eight-tool MCP, authenticated dashboard health,
+deterministic smoke 8/8, CLI help/version, and `pip check`. Ambient umask 0002
+and an interpreter below untrusted `/tmp` first fail closed; AR-302 retains that
+local-repeatability defect. These local successes do not supply hosted Windows,
+cross-producer parity, signing, or publication evidence.
+
+The final owner-approved Hermes retry set native reasoning to `none` and
+restricted auxiliary routing to free models. The ordinary command exited 0, but
+Agency preflight recorded `workforce_inference_failed` and the turn guard
+withheld Hermes's unverified draft. Trace
+`20260826_143220_d88838:59ceb645-aba9-4910-9cb6-1f25d61efd89:2f835640`
+has no Agency model receipt, route, specialist, delegation, finalization, or
+attestation row. The final authenticated OpenClaw RPC and loaded-plugin checks
+exit 0, while host status still reports absent canary attestations. All five
+dedicated proof containers were then removed with exit 0, their final images and
+host artifacts were retained, and the Linux-scoped release verdict remains
+**NO-GO**.
+
 The 2026-07-26 checkpoint passed the then-current ordinary warning-strict suite
 (7,604 passed, 61 skipped, 1 expected failure), Python coverage at 97.08 percent,
 the separate performance arm, dashboard coverage, routing, delegation,

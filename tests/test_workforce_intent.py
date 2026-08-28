@@ -99,6 +99,7 @@ def _compile(
         known_capability_ids=(
             "analysis",
             "architecture",
+            "audit",
             "automation",
             "communication",
             "data-analysis",
@@ -486,6 +487,32 @@ def test_compiler_separates_known_capabilities_from_a_real_novel_gap() -> None:
         _compile(_intent(novel="risk-analysis"))
     with pytest.raises(ValueError, match="current workforce ontology"):
         _compile(_intent(capabilities=["unknown-capability"]))
+
+
+@pytest.mark.parametrize("sentinel", ["false", "none", "null"])
+def test_stringified_absence_does_not_create_a_novel_capability_gap(sentinel: str) -> None:
+    plan = _compile(
+        _intent(
+            artifact="analysis",
+            domains=["accessibility"],
+            capabilities=["audit"],
+            novel=sentinel,
+        ),
+        request="Audit the dashboard for WCAG accessibility barriers.",
+    )
+
+    assert plan.units[0].required_capabilities == ("analysis", "audit")
+
+    with pytest.raises(ValueError, match="known workforce vocabulary"):
+        _compile(
+            _intent(
+                artifact="analysis",
+                domains=["invented-accessibility-domain"],
+                capabilities=["audit"],
+                novel=sentinel,
+            ),
+            request="Audit the dashboard for WCAG accessibility barriers.",
+        )
 
 
 def test_an_invented_domain_is_refused_by_name_before_it_reaches_the_recruiter() -> None:

@@ -9,8 +9,10 @@ related:
   - docs/roadmap/issue-AR-29-reconcile-litellm-model-and-router-evidence.md
   - docs/roadmap/issue-AR-64-reject-unproven-litellm-router-alias-echoes.md
   - docs/roadmap/issue-AR-78-preserve-litellm-router-when-model-is-unavailable.md
+  - docs/roadmap/issue-AR-317-route-agency-inference-through-litellm-aliases.md
   - docs/decisions/0003-response-telemetry-is-model-truth.md
   - docs/decisions/0027-authoritative-runtime-evidence-traces.md
+  - docs/decisions/0181-use-litellm-aliases-as-host-inference-control-plane.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null

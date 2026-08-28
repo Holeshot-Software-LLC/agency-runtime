@@ -26,6 +26,26 @@ def trusted_test_interpreter() -> Path:
     return Path(configured or getattr(sys, "_base_executable", sys.executable)).resolve()
 
 
+def validate_trusted_test_interpreter() -> Path:
+    """Fail once before security tests fan out from an unsafe interpreter."""
+
+    from agency_runtime.core.launcher_bootstrap import persistent_python_executable
+
+    candidate = trusted_test_interpreter()
+    try:
+        trusted = persistent_python_executable(candidate)
+    except (OSError, ValueError) as exc:
+        selected = str(candidate)
+        if len(selected) > 512:
+            selected = f"{selected[:509]}..."
+        raise RuntimeError(
+            "Agency Runtime security tests require an OS- or owner-protected Python; "
+            "set AGENCY_CI_PYTHON to that exact executable "
+            f"(selected: {selected})"
+        ) from exc
+    return Path(trusted)
+
+
 def trusted_base_test_interpreter() -> Path:
     """Return the real base interpreter instead of a Windows venv redirector."""
 
@@ -128,6 +148,7 @@ __all__ = [
     "stub_inference_invoker",
     "trusted_base_test_interpreter",
     "trusted_test_interpreter",
+    "validate_trusted_test_interpreter",
     "wait_for_process_exit",
     "write_provider_config",
 ]

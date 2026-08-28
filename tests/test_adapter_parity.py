@@ -1256,11 +1256,13 @@ def test_hermes_preflight_appends_exact_first_pass_header_snapshot(
         "If `agency_finalize` is visible, call it directly with only draft_text"
         in result["context"]
     )
+    assert "call it once with query=`agency_finalize`" in result["context"]
+    assert "then invoke the discovered tool with only draft_text" in result["context"]
     assert (
         "call Hermes `tool_call` once with name=`agency_finalize` and arguments "
         "containing only draft_text"
     ) in result["context"]
-    assert "no `tool_describe` round trip is needed" in result["context"]
+    assert "Do not use `tool_describe`" in result["context"]
     assert "Agency/Agencies loaded: agency-steward" in result["context"]
 
 

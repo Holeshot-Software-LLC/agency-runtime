@@ -1136,6 +1136,7 @@ def _workforce_planning_options(
         return {
             "max_planned_units": 1,
             "required_planned_artifact_kind": "review-report",
+            "required_delivery": "delegate",
         }
     if not classification.execution_decision_required:
         # Contextual work inquiries need fresh expertise in the parent, not an

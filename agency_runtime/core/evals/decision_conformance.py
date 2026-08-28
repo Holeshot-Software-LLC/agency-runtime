@@ -595,6 +595,45 @@ class _NominationSemantics:""",
         ),
     ),
     DecisionMutation(
+        mutation_id="restricted-codex-opaque-spawn-appends-contradictory-failure-route",
+        invariant=(
+            "The exact managed Codex canary defers its encrypted spawn to the "
+            "host-lineage SubagentStart boundary without appending an ordinary opaque-channel "
+            "failure route."
+        ),
+        source_path="agency_runtime/adapters/hooks.py",
+        before="""                if restricted_parent is not None and self._restricted_codex_spawn_input(args):
+                    # ADR-0179 owns this one repository-authored canary spawn at
+                    # SubagentStart.  It is not an ordinary unsupported opaque
+                    # child, so do not append a contradictory failure route.
+                    return {}""",
+        after="""                if False and restricted_parent is not None and self._restricted_codex_spawn_input(args):
+                    # ADR-0179 owns this one repository-authored canary spawn at
+                    # SubagentStart.  It is not an ordinary unsupported opaque
+                    # child, so do not append a contradictory failure route.
+                    return {}""",
+        test_node=(
+            "tests/test_canary_activation_snapshot.py::"
+            "test_restricted_codex_opaque_spawn_preserves_the_proven_parent_route"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="restricted-codex-post-first-drops-pending-dispatch",
+        invariant=(
+            "A restricted Codex PostToolUse that precedes SubagentStart retains the exact "
+            "fixed-unit dispatch for later real-child promotion."
+        ),
+        source_path="agency_runtime/adapters/hooks.py",
+        before="""        if claim_identity is None and restricted_codex_spawn:
+            claim_identity = observed_codex_identity""",
+        after="""        if claim_identity is None and False:
+            claim_identity = observed_codex_identity""",
+        test_node=(
+            "tests/test_canary_activation_snapshot.py::"
+            "test_restricted_codex_post_tool_first_promotes_the_pending_dispatch"
+        ),
+    ),
+    DecisionMutation(
         mutation_id="ready-routing-receipt-rejects-distinct-native-child-launch",
         invariant=(
             "Auxiliary routing uniqueness is scoped to host and launch identity rather than "
@@ -734,11 +773,27 @@ class _NominationSemantics:""",
         before="""        return {
             "max_planned_units": 1,
             "required_planned_artifact_kind": "review-report",
+            "required_delivery": "delegate",
         }""",
         after="""        return {
             "max_planned_units": 2,
             "required_planned_artifact_kind": "review-report",
+            "required_delivery": "delegate",
         }""",
+        test_node=(
+            "tests/test_activation_canary_contract.py::"
+            "test_activation_canary_uses_inference_owned_selection"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="activation-canary-allows-load-delivery",
+        invariant=(
+            "The exact Codex activation canary delegates the inference-selected worker through "
+            "the native host instead of loading it into the parent."
+        ),
+        source_path="agency_runtime/core/selector/pipeline.py",
+        before='            "required_delivery": "delegate",',
+        after='            "required_delivery": "load",',
         test_node=(
             "tests/test_activation_canary_contract.py::"
             "test_activation_canary_uses_inference_owned_selection"
@@ -2815,6 +2870,64 @@ class _NominationSemantics:""",
         test_node=(
             "tests/test_native_child_decision.py::"
             "test_store_rejects_a_route_column_that_no_longer_matches_its_decision"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-postreturn-collector-falls-back-to-live-parent",
+        invariant=(
+            "Only the backend post-return collector requests the exact accepted terminal "
+            "Codex parent; hook collection remains live-only."
+        ),
+        source_path="agency_runtime/core/child_delivery_evidence.py",
+        before="        accepted_terminal_parent=True,",
+        after="        accepted_terminal_parent=False,",
+        test_node=(
+            "tests/test_canary_activation_snapshot.py::"
+            "test_restricted_codex_collectors_keep_live_and_terminal_authority_separate"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-postreturn-collector-allows-nonaccept-terminal",
+        invariant=(
+            "A completed Codex run authorizes post-return collection only when its sole "
+            "bound terminal finalization action is accept."
+        ),
+        source_path="agency_runtime/core/store/evidence.py",
+        before='        and finalization.get("action") == "accept"',
+        after="        and True",
+        test_node=(
+            "tests/test_canary_activation_snapshot.py::"
+            "test_restricted_codex_backend_terminal_parent_rejects_inexact_terminal_shapes"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-receipt-replay-drops-immutable-prefix-digest",
+        invariant=(
+            "Read-only Codex receipt replay reparses the exact prior artifact prefix bound "
+            "by the immutable Store receipt, not the later completed rollout."
+        ),
+        source_path="agency_runtime/core/child_delivery_evidence.py",
+        before=(
+            '        receipt_artifact_digest=receipt_artifact_digest if host == "codex" else "",'
+        ),
+        after='        receipt_artifact_digest="",',
+        test_node=(
+            "tests/test_child_delivery_evidence.py::"
+            "test_persisted_codex_receipt_replays_its_exact_prefix_after_host_append"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="codex-receipt-prefix-allows-partial-jsonl-record",
+        invariant=(
+            "An immutable Codex receipt digest selects only a newline-terminated JSONL "
+            "prefix, never bytes ending inside a host record."
+        ),
+        source_path="agency_runtime/core/child_delivery_evidence.py",
+        before='        while (boundary := payload.find(b"\\n", cursor)) >= 0:',
+        after='        while (boundary := payload.find(b"", cursor)) >= 0:',
+        test_node=(
+            "tests/test_child_delivery_evidence.py::"
+            "test_persisted_codex_receipt_digest_must_end_at_a_jsonl_record_boundary"
         ),
     ),
     DecisionMutation(

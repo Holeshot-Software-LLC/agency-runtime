@@ -134,15 +134,19 @@ def test_wsl_detection_fails_secure_when_kernel_evidence_is_unreadable(
     assert not systemd._is_wsl_kernel(release_reader=fail)
 
 
-def test_wsl_systemd_unit_omits_only_private_tmp(
+def test_wsl_systemd_unit_uses_owner_runtime_tmp_without_other_regression(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(systemd, "_is_wsl_kernel", lambda: True)
+    monkeypatch.setattr(systemd, "_systemd_user_manager_is_root", lambda: True)
 
     content = systemd._unit_content(_linux_context(tmp_path))
 
-    assert "PrivateTmp=" not in content
+    assert "PrivateTmp=false" in content
+    assert "RuntimeDirectory=agency-runtime-dashboard" in content
+    assert "RuntimeDirectoryMode=0700" in content
+    assert 'Environment="TMPDIR=%t/agency-runtime-dashboard"' in content
     assert "NoNewPrivileges=true" in content
     assert "UMask=0077" in content
     assert "RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6" in content
@@ -153,8 +157,33 @@ def test_normal_linux_systemd_unit_retains_private_tmp(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(systemd, "_is_wsl_kernel", lambda: False)
+    monkeypatch.setattr(systemd, "_systemd_user_manager_is_root", lambda: True)
 
     assert "PrivateTmp=true" in systemd._unit_content(_linux_context(tmp_path))
+
+
+def test_nonroot_linux_uses_private_runtime_tmp_without_user_namespace(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(systemd, "_is_wsl_kernel", lambda: False)
+    monkeypatch.setattr(systemd, "_systemd_user_manager_is_root", lambda: False)
+
+    content = systemd._unit_content(_linux_context(tmp_path))
+
+    assert "PrivateTmp=false" in content
+    assert "PrivateTmp=true" not in content
+    assert "RuntimeDirectory=agency-runtime-dashboard" in content
+    assert "RuntimeDirectoryMode=0700" in content
+    assert (
+        'Environment="TMPDIR=%t/agency-runtime-dashboard" '
+        '"TMP=%t/agency-runtime-dashboard" "TEMP=%t/agency-runtime-dashboard"' in content
+    )
+
+
+@pytest.mark.parametrize("value", (1, 1000, 65534))
+def test_nonroot_detection_never_confuses_other_uids_with_root(value: int) -> None:
+    assert not systemd._systemd_user_manager_is_root(effective_uid_reader=lambda: value)
 
 
 def test_trusted_parent_creation_rejects_namespace_before_mutation(

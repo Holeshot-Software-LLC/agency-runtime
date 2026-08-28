@@ -751,7 +751,7 @@ def test_host_scoped_hook_timeout_adds_separate_dense_recall_budget() -> None:
     )
 
     hermes_files, _ = _bundle_files("hermes", cfg)
-    assert "_TIMEOUT_SECONDS = 70" in hermes_files["__init__.py"]
+    assert "_TIMEOUT_SECONDS = 80" in hermes_files["__init__.py"]
 
 
 def test_dense_recall_budget_is_additive_to_legacy_provider_floor() -> None:
@@ -807,7 +807,7 @@ def test_dense_recall_budget_is_additive_to_legacy_provider_floor() -> None:
         ),
     )
 
-    assert installer_payloads.hook_timeout_seconds(cfg, harness="hermes") == 95
+    assert installer_payloads.hook_timeout_seconds(cfg, harness="hermes") == 105
 
 
 def test_host_hook_timeout_covers_legacy_provider_gap_hiring_fallback() -> None:

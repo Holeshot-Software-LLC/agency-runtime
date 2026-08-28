@@ -6,6 +6,7 @@ import copy
 import io
 import os
 from datetime import datetime, timezone
+from hashlib import sha256
 from pathlib import Path
 from typing import Any
 
@@ -15,16 +16,24 @@ from agency_runtime.adapters import hooks
 from agency_runtime.cli import install_commands
 from agency_runtime.cli import main as cli_main
 from agency_runtime.core import canary_proof, preflight
+from agency_runtime.core.activation_canary_contract import (
+    CODEX_ACTIVATION_CANARY_NATIVE_AGENT_TYPE,
+    CODEX_ACTIVATION_CANARY_WORK_UNIT,
+)
 from agency_runtime.core.canary_backends import SafeCodexCanaryBackend
 from agency_runtime.core.codex_activation_verification import (
+    CODEX_ACTIVATION_QUERY_HASH_ENV,
     is_exact_codex_activation_verification,
+    restricted_codex_activation_query_hash,
 )
 from agency_runtime.core.delegation.backends import BoundedProcessResult
 from agency_runtime.core.installer_contracts import (
     CODEX_ACTIVATION_CANARY_PROOF_CONTRACT,
     CODEX_HOOK_EVENTS,
 )
+from agency_runtime.core.native_child_staffing import NativeChildStaffingResult
 from agency_runtime.core.store.sqlite import Store
+from agency_runtime.core.unit_assignment import work_unit_id_from_text
 
 
 def _identity() -> dict[str, Any]:
@@ -571,6 +580,7 @@ def test_existing_store_requirement_crosses_current_profile_process_boundary(
     tmp_path: Path,
 ) -> None:
     calls: list[dict[str, Any]] = []
+    owner_home = tmp_path / "owner-home"
 
     def runner(argv: list[str], **kwargs: Any) -> BoundedProcessResult:
         calls.append({"argv": argv, **kwargs})
@@ -581,9 +591,9 @@ def test_existing_store_requirement_crosses_current_profile_process_boundary(
         db_path=tmp_path / "agency.db",
         timeout=1,
         marketplace=tmp_path,
-        auth_source=tmp_path / "auth.json",
+        auth_source=owner_home / ".codex" / "auth.json",
         process_runner=runner,
-        source_env={},
+        source_env={"HOME": str(owner_home)},
         profile_scope="current-profile",
         require_existing_store=True,
     )
@@ -591,6 +601,32 @@ def test_existing_store_requirement_crosses_current_profile_process_boundary(
     backend.execute(task="canary", workdir=str(tmp_path))
 
     assert calls[0]["env"]["AGENCY_CANARY_REQUIRE_EXISTING_STORE"] == "1"
+    assert Path(calls[0]["env"]["AGENCY_CANARY_NATIVE_INSTALL_HOME"]) == owner_home.resolve()
+    assert CODEX_ACTIVATION_QUERY_HASH_ENV not in calls[0]["env"]
+
+
+def test_restricted_activation_query_hash_requires_the_exact_environment() -> None:
+    digest = "a" * 64
+    restricted = {
+        "AGENCY_CANARY_MODE": "1",
+        "AGENCY_CANARY_REQUIRE_EXISTING_STORE": "1",
+        CODEX_ACTIVATION_QUERY_HASH_ENV: digest,
+    }
+
+    assert restricted_codex_activation_query_hash(restricted) == digest
+    assert restricted_codex_activation_query_hash({}) == ""
+    assert (
+        restricted_codex_activation_query_hash(
+            {**restricted, CODEX_ACTIVATION_QUERY_HASH_ENV: digest.upper()}
+        )
+        == ""
+    )
+    assert (
+        restricted_codex_activation_query_hash(
+            {**restricted, "AGENCY_CANARY_REQUIRE_EXISTING_STORE": "0"}
+        )
+        == ""
+    )
 
 
 def test_autonomous_current_profile_uses_supported_bypass_without_trust_inspection(
@@ -619,7 +655,8 @@ def test_autonomous_current_profile_uses_supported_bypass_without_trust_inspecti
         trust_mode="autonomous_bypass",
     )
 
-    result = backend.execute(task="canary", workdir=str(tmp_path))
+    task = "canary"
+    result = backend.execute(task=task, workdir=str(tmp_path))
 
     assert "--dangerously-bypass-hook-trust" in calls[0]["argv"]
     assert result["trust_mode"] == "autonomous_bypass"
@@ -643,7 +680,10 @@ def test_managed_policy_current_profile_uses_normal_invocation_without_plugin_tr
         marketplace=tmp_path,
         auth_source=tmp_path / "auth.json",
         process_runner=runner,
-        source_env={},
+        source_env={
+            "LITELLM_API_KEY": "configured-secret",
+            "UNRELATED_TOKEN": "unrelated-secret",
+        },
         profile_scope="current-profile",
         require_existing_store=True,
         require_exact_activation_rollout=True,
@@ -651,14 +691,123 @@ def test_managed_policy_current_profile_uses_normal_invocation_without_plugin_tr
             "managed hooks are policy-trusted and do not use the plugin trust probe"
         ),
         trust_mode="managed_policy",
+        credential_environment_names=("LITELLM_API_KEY",),
     )
 
-    result = backend.execute(task="canary", workdir=str(tmp_path))
+    task = "canary"
+    result = backend.execute(task=task, workdir=str(tmp_path))
 
     assert "--dangerously-bypass-hook-trust" not in calls[0]["argv"]
     assert result["trust_mode"] == "managed_policy"
     assert result["trust_bypass_used"] is False
     assert result["persistent_trust_changed"] is False
+    assert calls[0]["env"]["LITELLM_API_KEY"] == "configured-secret"
+    assert "UNRELATED_TOKEN" not in calls[0]["env"]
+    assert (
+        calls[0]["env"][CODEX_ACTIVATION_QUERY_HASH_ENV] == sha256(task.encode("utf-8")).hexdigest()
+    )
+
+
+def test_product_rollout_does_not_receive_activation_query_hash(tmp_path: Path) -> None:
+    calls: list[dict[str, Any]] = []
+
+    def runner(argv: list[str], **kwargs: Any) -> BoundedProcessResult:
+        calls.append({"argv": argv, **kwargs})
+        return BoundedProcessResult(1, "", "")
+
+    backend = SafeCodexCanaryBackend(
+        executable="codex",
+        db_path=tmp_path / "agency.db",
+        timeout=1,
+        marketplace=tmp_path,
+        auth_source=tmp_path / "auth.json",
+        process_runner=runner,
+        source_env={},
+        profile_scope="current-profile",
+        require_existing_store=True,
+        require_exact_activation_rollout=True,
+        rollout_contract="product",
+        trust_mode="managed_policy",
+        trusted_workdir=str(tmp_path),
+    )
+
+    backend.execute(task="ordinary product task", workdir=str(tmp_path))
+
+    assert CODEX_ACTIVATION_QUERY_HASH_ENV not in calls[0]["env"]
+
+
+@pytest.mark.parametrize(
+    "names",
+    [
+        ("bad-name",),
+        ("PATH",),
+        ("NODE_OPTIONS",),
+        ("AGENCY_CANARY_SECRET",),
+        ("DUPLICATE", "DUPLICATE"),
+        tuple(f"KEY_{index}" for index in range(257)),
+    ],
+)
+def test_managed_canary_refuses_invalid_credential_environment_names(
+    tmp_path: Path,
+    names: tuple[str, ...],
+) -> None:
+    invoked = False
+
+    def runner(*_args: Any, **_kwargs: Any) -> BoundedProcessResult:
+        nonlocal invoked
+        invoked = True
+        return BoundedProcessResult(1, "", "")
+
+    backend = SafeCodexCanaryBackend(
+        executable="codex",
+        db_path=tmp_path / "agency.db",
+        timeout=1,
+        marketplace=tmp_path,
+        auth_source=tmp_path / "auth.json",
+        process_runner=runner,
+        source_env={"DUPLICATE": "private"},
+        profile_scope="current-profile",
+        require_existing_store=True,
+        require_exact_activation_rollout=True,
+        trust_mode="managed_policy",
+        credential_environment_names=names,
+    )
+
+    with pytest.raises(ValueError, match="credential environment"):
+        backend.execute(task="canary", workdir=str(tmp_path))
+    assert invoked is False
+
+
+@pytest.mark.parametrize("value", [["not", "text"], "contains\x00nul", "x" * 65_537])
+def test_managed_canary_refuses_invalid_credential_environment_values(
+    tmp_path: Path,
+    value: object,
+) -> None:
+    invoked = False
+
+    def runner(*_args: Any, **_kwargs: Any) -> BoundedProcessResult:
+        nonlocal invoked
+        invoked = True
+        return BoundedProcessResult(1, "", "")
+
+    backend = SafeCodexCanaryBackend(
+        executable="codex",
+        db_path=tmp_path / "agency.db",
+        timeout=1,
+        marketplace=tmp_path,
+        auth_source=tmp_path / "auth.json",
+        process_runner=runner,
+        source_env={"CONFIGURED_KEY": value},  # type: ignore[dict-item]
+        profile_scope="current-profile",
+        require_existing_store=True,
+        require_exact_activation_rollout=True,
+        trust_mode="managed_policy",
+        credential_environment_names=("CONFIGURED_KEY",),
+    )
+
+    with pytest.raises(ValueError, match="credential environment value"):
+        backend.execute(task="canary", workdir=str(tmp_path))
+    assert invoked is False
 
 
 def test_current_profile_hook_uses_existing_current_store_mode(
@@ -717,3 +866,88 @@ def test_restricted_activation_canary_skips_catalog_mutations(
         )
         is snapshot
     )
+
+
+def test_exact_codex_subagent_start_staffs_the_real_child_uuid(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    child_id = "11111111-1111-4111-8111-111111111111"
+    observed: dict[str, Any] = {}
+
+    class StartStore:
+        def record_native_child_started(self, **kwargs: Any) -> dict[str, Any]:
+            observed["started"] = kwargs
+            return dict(kwargs)
+
+    def staff(*_args: Any, **kwargs: Any) -> NativeChildStaffingResult:
+        observed["staff"] = kwargs
+        assert kwargs["delivery_validator"]("[AGENCY INFERENCE TEAM v6]") is True
+        return NativeChildStaffingResult(
+            staffed=True,
+            reason_code="staffed",
+            rewritten_task="[AGENCY INFERENCE TEAM v6]\nexact delivery",
+            decision_id="decision-one",
+            selected_ids=("code-reviewer",),
+        )
+
+    monkeypatch.setattr(
+        hooks.HookBridge,
+        "_restricted_codex_activation_child_parent_scope",
+        lambda _self, _payload: ("session-one", "trace-one"),
+    )
+    monkeypatch.setattr(
+        "agency_runtime.core.native_child_install_identity.current_runtime_managed_host_install_identity",
+        lambda _host: object(),
+    )
+    monkeypatch.setattr(
+        "agency_runtime.core.native_child_staffing.staff_native_child",
+        staff,
+    )
+    monkeypatch.setattr(
+        "agency_runtime.core.child_delivery_evidence._restricted_codex_canary_route",
+        lambda *_args, **_kwargs: {
+            "decision_id": "decision-one",
+            "binding_id": child_id,
+            "launch_id": child_id,
+        },
+    )
+
+    response = hooks.HookBridge(  # type: ignore[arg-type]
+        "codex",
+        store=StartStore(),
+        _master={"enabled": True},
+    ).handle(
+        {
+            "hook_event_name": "SubagentStart",
+            # Codex SubagentStart identifies the child session, not its parent.
+            "session_id": child_id,
+            "turn_id": child_id,
+            "agent_id": child_id,
+            # Codex 0.149.1 MultiAgentV2 keeps task_name in agent_path. With no
+            # explicit agent_type argument, SubagentStart reports "default".
+            "agent_type": CODEX_ACTIVATION_CANARY_NATIVE_AGENT_TYPE,
+        }
+    )
+
+    staff_call = observed["staff"]
+    assert staff_call["task"] == CODEX_ACTIVATION_CANARY_WORK_UNIT
+    assert staff_call["parent_session_id"] == "session-one"
+    assert staff_call["parent_trace_id"] == "trace-one"
+    assert staff_call["launch_id"] == child_id
+    assert staff_call["binding_kind"] == "child_id"
+    assert staff_call["binding_id"] == child_id
+    assert observed["started"] == {
+        "host": "codex",
+        "backend": "spawn_agent",
+        "session_id": "session-one",
+        "trace_id": "trace-one",
+        "work_unit_id": work_unit_id_from_text(CODEX_ACTIVATION_CANARY_WORK_UNIT),
+        "worker_id": child_id,
+        "native_run_id": f"codex-agent:{child_id}",
+    }
+    assert response == {
+        "hookSpecificOutput": {
+            "hookEventName": "SubagentStart",
+            "additionalContext": "[AGENCY INFERENCE TEAM v6]\nexact delivery",
+        }
+    }

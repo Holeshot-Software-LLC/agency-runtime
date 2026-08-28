@@ -3,7 +3,7 @@ title: "Pin child-judge providers per canary harness"
 status: accepted
 category: decisions
 created: 2026-08-19
-updated: 2026-08-19
+updated: 2026-08-26
 tags: [canary, inference, providers, hosts, security, evidence]
 related:
   - docs/decisions/0118-require-inference-owned-staffing.md
@@ -12,6 +12,8 @@ related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-253-dynamic-team-dispatch-on-every-harness.md
   - docs/roadmap/issue-AR-255-inference-owned-host-proven-child-staffing.md
+  - docs/roadmap/issue-AR-299-local-ollama-canary-child-judge.md
+  - docs/decisions/0174-admit-local-ollama-canary-child-judges.md
   - docs/roadmap/AR-119-vision-loop-status.md
   - docs/roadmap/handoffs/issue-AR-119.md
   - docs/THREAT_MODEL.md
@@ -114,6 +116,9 @@ expected to decline unless new measurement reopens the finding.
 - A configured ZCode/GLM profile pin does not manufacture native ZCode proof;
   the missing safe backend keeps installed/live claims closed. Agency does not
   label a direct hook simulation as a native canary.
+- ADR-0174 later admits a named safe Ollama inference profile through the same
+  exact-resolution, no-fallback canary projection. It does not alter this
+  decision's ordinary-routing or native-delivery proof boundaries.
 
 ## Alternatives
 

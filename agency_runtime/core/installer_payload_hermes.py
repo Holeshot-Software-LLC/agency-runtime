@@ -33,6 +33,7 @@ _MAX_ACTIVE_TURNS = 1024
 _ACTIVE_TURN_TRACES = OrderedDict()
 _ACTIVE_TURN_LOCK = threading.RLock()
 _ACTIVE_CHILD_TRACES = OrderedDict()
+_FINALIZER_RESULTS = OrderedDict()
 _AMBIGUOUS_CHILD_BINDING = object()
 _FINALIZATION_BLOCK_RESPONSE = (
     "Agency Runtime blocked an unverified draft because turn-scoped finalization "
@@ -175,6 +176,29 @@ def _forget_turn(session_id, trace_id=""):
         current = _ACTIVE_TURN_TRACES.get(session_id)
         if current is not None and (not trace_id or current == trace_id):
             _ACTIVE_TURN_TRACES.pop(session_id, None)
+        for key in list(_FINALIZER_RESULTS):
+            if key[0] == session_id and (not trace_id or key[1] == trace_id):
+                _FINALIZER_RESULTS.pop(key, None)
+
+
+def _remember_finalizer_result(session_id, trace_id, result):
+    if not session_id or not trace_id or not isinstance(result, str):
+        return result
+    bounded = _bounded_text(result, _MAX_OUTPUT_BYTES)
+    key = (session_id, trace_id)
+    with _ACTIVE_TURN_LOCK:
+        _FINALIZER_RESULTS.pop(key, None)
+        _FINALIZER_RESULTS[key] = bounded
+        while len(_FINALIZER_RESULTS) > _MAX_ACTIVE_TURNS:
+            _FINALIZER_RESULTS.popitem(last=False)
+    return bounded
+
+
+def _take_finalizer_result(session_id, trace_id):
+    if not session_id or not trace_id:
+        return ""
+    with _ACTIVE_TURN_LOCK:
+        return _FINALIZER_RESULTS.pop((session_id, trace_id), "")
 
 
 def _correlation(kwargs, include_active=True):
@@ -532,6 +556,21 @@ def _pre_verify(final_response="", attempt=0, **kwargs):
 
 def _transform_llm_output(response_text="", **kwargs):
     session_id, trace_id = _correlation(kwargs)
+    finalized_text = _take_finalizer_result(session_id, trace_id)
+    if finalized_text:
+        try:
+            replay = _invoke(
+                "accepted_replay",
+                {
+                    "session_id": session_id,
+                    "trace_id": trace_id,
+                    "response_text": finalized_text,
+                },
+            )
+        except Exception:
+            replay = None
+        if isinstance(replay, str) and replay == finalized_text:
+            return finalized_text
     try:
         result = _invoke(
             "transform_llm_output",
@@ -578,23 +617,39 @@ def _agency_finalize(args=None, **kwargs):
             },
         )
     except Exception:
-        return _finalize_tool_result("", ["agency_runtime"])
+        return _remember_finalizer_result(
+            session_id,
+            trace_id,
+            _finalize_tool_result("", ["agency_runtime"]),
+        )
     if isinstance(result, str):
-        return _bounded_text(result)
+        return _remember_finalizer_result(session_id, trace_id, _bounded_text(result))
     if not isinstance(result, Mapping):
-        return _finalize_tool_result("", ["agency_runtime"])
+        return _remember_finalizer_result(
+            session_id,
+            trace_id,
+            _finalize_tool_result("", ["agency_runtime"]),
+        )
     finalized_text = result.get("text")
     if result.get("action") == "accept" and isinstance(finalized_text, str):
         # The bridge already byte-caps and validates its JSON envelope.  Do not
         # truncate an accepted response after its exact digest was committed.
         if len(finalized_text) <= _MAX_FINALIZER_RESULT_CHARS:
-            return finalized_text
-        return _finalize_tool_result("", ["host_transport"])
-    return json.dumps(
-        _project(result),
-        allow_nan=False,
-        ensure_ascii=True,
-        separators=(",", ":"),
+            return _remember_finalizer_result(session_id, trace_id, finalized_text)
+        return _remember_finalizer_result(
+            session_id,
+            trace_id,
+            _finalize_tool_result("", ["host_transport"]),
+        )
+    return _remember_finalizer_result(
+        session_id,
+        trace_id,
+        json.dumps(
+            _project(result),
+            allow_nan=False,
+            ensure_ascii=True,
+            separators=(",", ":"),
+        ),
     )
 
 

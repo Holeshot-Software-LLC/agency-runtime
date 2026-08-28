@@ -32,12 +32,15 @@ MAX_EMBEDDING_VECTOR_VALUES = 1_000_000
 MAX_EMBEDDING_TEXT_BYTES = 16 * 1_024
 MAX_EMBEDDING_BATCH_BYTES = 32 * 1_024 * 1_024
 MAX_EMBEDDING_RESPONSE_BYTES = 64 * 1_024 * 1_024
+MAX_EMBEDDING_RESPONSE_NODES = 1_000_000
 MAX_EMBEDDING_IDENTITY_CHARS = 512
 MAX_EMBEDDING_LATENCY_MS = 86_400_000
 MAX_EMBEDDING_TIMEOUT_SECONDS = 120.0
 EMBEDDING_NORMALIZATION_IDENTITY = "l2-unit-v1"
 
 _OPENAI_COMPATIBLE_TYPES = frozenset({"openai", "openai-compatible", "litellm"})
+_EMBEDDING_RESPONSE_FIXED_NODE_RESERVE = 256
+_EMBEDDING_RESPONSE_ROW_NODE_OVERHEAD = 4
 
 
 @dataclass(frozen=True, slots=True)
@@ -232,6 +235,34 @@ def _bounded_inputs(texts: Sequence[str]) -> tuple[str, ...]:
     return tuple(result)
 
 
+def bound_embedding_inputs(texts: Sequence[str]) -> tuple[str, ...]:
+    """Normalize and validate one complete logical embedding input set.
+
+    Higher-level callers may divide this already-bounded set into multiple
+    scalar-safe provider requests. Validating the logical set first prevents a
+    later chunk from discovering an input-count or byte-bound failure after an
+    earlier provider call has already occurred.
+    """
+
+    return _bounded_inputs(texts)
+
+
+def embedding_batch_input_limit(dimensions: int) -> int:
+    """Return the row limit satisfying both scalar and response-node bounds."""
+
+    if (
+        isinstance(dimensions, bool)
+        or not isinstance(dimensions, int)
+        or not 1 <= dimensions <= MAX_EMBEDDING_DIMENSIONS
+    ):
+        raise ValueError("embedding dimensions are outside the supported range")
+    scalar_limit = MAX_EMBEDDING_VECTOR_VALUES // dimensions
+    response_node_limit = (
+        MAX_EMBEDDING_RESPONSE_NODES - _EMBEDDING_RESPONSE_FIXED_NODE_RESERVE
+    ) // (dimensions + _EMBEDDING_RESPONSE_ROW_NODE_OVERHEAD)
+    return max(1, min(MAX_EMBEDDING_INPUTS, scalar_limit, response_node_limit))
+
+
 def _join_api_path(base_url: str, path: str) -> str:
     base = base_url.rstrip("/")
     normalized_path = "/" + path.lstrip("/")
@@ -375,7 +406,7 @@ def invoke_embedding_provider(
     caller deliberately wraps and injects it as an :class:`EmbeddingInvoker`.
     """
 
-    bounded = _bounded_inputs(texts)
+    bounded = bound_embedding_inputs(texts)
     if not bounded:
         raise ValueError("embedding provider input batch must not be empty")
     request, timeout, ollama_mode, dimensions = _provider_request(provider, bounded)
@@ -388,7 +419,7 @@ def invoke_embedding_provider(
         raw,
         maximum_bytes=MAX_EMBEDDING_RESPONSE_BYTES,
         maximum_depth=16,
-        maximum_nodes=1_000_000,
+        maximum_nodes=MAX_EMBEDDING_RESPONSE_NODES,
     )
     raw_vectors, actual_model = _response_vectors(
         decoded,
@@ -430,7 +461,7 @@ def embed_texts(
     its unchanged typed baseline.
     """
 
-    bounded = _bounded_inputs(texts)
+    bounded = bound_embedding_inputs(texts)
     configured_dimensions = _configured_dimensions(
         expected_dimensions,
         input_count=len(bounded),
@@ -545,14 +576,18 @@ __all__ = [
     "MAX_EMBEDDING_BATCH_BYTES",
     "MAX_EMBEDDING_DIMENSIONS",
     "MAX_EMBEDDING_INPUTS",
+    "MAX_EMBEDDING_LATENCY_MS",
     "MAX_EMBEDDING_RESPONSE_BYTES",
+    "MAX_EMBEDDING_RESPONSE_NODES",
     "MAX_EMBEDDING_TEXT_BYTES",
     "MAX_EMBEDDING_VECTOR_VALUES",
     "EmbeddingBatch",
     "EmbeddingInvoker",
     "EmbeddingProviderResponse",
     "EmbeddingReceipt",
+    "bound_embedding_inputs",
     "embed_texts",
+    "embedding_batch_input_limit",
     "invoke_embedding_provider",
     "validate_and_normalize_vectors",
 ]

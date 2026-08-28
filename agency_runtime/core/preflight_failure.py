@@ -26,6 +26,30 @@ _HIRING_EVENT_STATUSES = frozenset(
 
 PREFLIGHT_FAILURE_INVARIANTS = frozenset({"", "native_plan_scope_invalid"})
 
+_RECRUITER_VALIDATION_REASON_CODES = frozenset(
+    {
+        "recruiter_candidate_classification_conflict",
+        "recruiter_candidate_classification_invalid",
+        "recruiter_candidate_forbidden_evidence_missing",
+        "recruiter_candidate_id_unknown",
+        "recruiter_candidate_negative_evidence_invalid",
+        "recruiter_candidate_positive_evidence_invalid",
+        "recruiter_candidate_positive_evidence_missing",
+        "recruiter_candidate_row_shape_invalid",
+        "recruiter_candidate_score_invalid",
+    }
+)
+_CRITIC_VALIDATION_REASON_CODES = frozenset(
+    {
+        "critic_approval_invalid",
+        "critic_approval_reasons_present",
+        "critic_reason_code_invalid",
+        "critic_reason_codes_invalid",
+        "critic_rejection_reason_missing",
+        "critic_response_shape_invalid",
+    }
+)
+
 
 class PreflightInvariantError(ValueError):
     """Carry one fixed invariant identity without retaining rejected content."""
@@ -173,17 +197,25 @@ def preflight_routing_failure_reason(routing: Mapping[str, Any]) -> str:
     return "routing_failed"
 
 
-def _project_plan_validation_reason_codes(value: object) -> list[str]:
-    """Project only bounded, runtime-owned planner validation codes."""
+def _project_validation_reason_codes(value: object, *, stage: str) -> list[str]:
+    """Project only bounded, runtime-owned validation codes for one stage."""
 
     if not isinstance(value, (list, tuple)) or len(value) > MAX_PREFLIGHT_FAILURE_REASON_CODES:
+        return []
+    if stage in {"combined", "planner"}:
+        allowed = PLAN_VALIDATION_REASON_CODES
+    elif stage == "recruiter":
+        allowed = _RECRUITER_VALIDATION_REASON_CODES
+    elif stage == "critic":
+        allowed = _CRITIC_VALIDATION_REASON_CODES
+    else:
         return []
     result: list[str] = []
     for item in value:
         if not isinstance(item, str):
             return []
         code = item.strip().casefold()
-        if code not in PLAN_VALIDATION_REASON_CODES:
+        if code not in allowed:
             return []
         if code not in result:
             result.append(code)
@@ -222,12 +254,12 @@ def project_preflight_provider_attempts(value: object) -> list[dict[str, Any]] |
         )
         if nomination_failures:
             entry["validation_failures"] = nomination_failures
-        if stage in {"combined", "planner"}:
-            validation_reason_codes = _project_plan_validation_reason_codes(
-                source.get("validation_reason_codes")
-            )
-            if validation_reason_codes:
-                entry["validation_reason_codes"] = validation_reason_codes
+        validation_reason_codes = _project_validation_reason_codes(
+            source.get("validation_reason_codes"),
+            stage=stage,
+        )
+        if validation_reason_codes:
+            entry["validation_reason_codes"] = validation_reason_codes
         result.append(entry)
     return result
 

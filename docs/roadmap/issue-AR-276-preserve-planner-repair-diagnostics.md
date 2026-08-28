@@ -6,6 +6,7 @@ created: 2026-08-22
 updated: 2026-08-22
 tags: [inference, planning, observability, repair, litellm]
 related:
+  - docs/roadmap/issue-AR-304-preserve-recruiter-critic-validation-diagnostics.md
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-274-model-agnostic-structured-inference-profiles.md
   - docs/roadmap/issue-AR-277-gate-openclaw-provider-calls-on-agency-preflight.md
@@ -26,7 +27,7 @@ issue_id: AR-276
 priority: p0
 tracker_url: null
 depends_on: [AR-274]
-blocks: [AR-119, AR-277]
+blocks: [AR-119, AR-277, AR-304]
 ---
 
 # AR-276: Preserve planner repair diagnostics

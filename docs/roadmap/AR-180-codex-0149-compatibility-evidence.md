@@ -3,12 +3,14 @@ title: "Codex 0.149.1 native-child compatibility evidence"
 status: active
 category: roadmap
 created: 2026-08-25
-updated: 2026-08-25
+updated: 2026-08-26
 tags: [codex, native-child, hooks, compatibility, evidence]
 related:
   - docs/roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md
   - docs/roadmap/issue-AR-255-inference-owned-host-proven-child-staffing.md
   - docs/decisions/0159-authenticate-codex-plaintext-spawns-from-host-transcripts.md
+  - docs/decisions/0179-admit-exact-codex-canary-delivery-at-subagent-start.md
+  - docs/roadmap/issue-AR-309-restore-codex-0149-activation-proof.md
   - agency_runtime/adapters/hooks.py
   - agency_runtime/core/codex_spawn_provenance.py
 supersedes: []
@@ -134,3 +136,15 @@ unproven, and no AR-119 matrix cell moves. The documented `PreToolUse` rewrite
 surface cannot currently supply selection context because its observed message
 is already encrypted. A future Codex release must expose authenticated plaintext
 or an exact parent-call binding before Agency can staff these children safely.
+
+## Bounded later exception
+
+ADR-0179 does not change the general verdict above. AR-309 subsequently
+observed that the repository-owned current-profile activation canary already
+has exactly one accepted Store-bound plan before child creation, and Codex
+persists `SubagentStart` `additionalContext` as a distinct pre-speech developer
+message in the host-created child's rollout. That exact canary may therefore
+bind its plan to the host-created child UUID and require the persisted v6
+message plus immutable receipt. This exception does not authenticate the
+encrypted parent assignment, apply to ordinary Codex processes, or make Store
+state alone delivery proof.

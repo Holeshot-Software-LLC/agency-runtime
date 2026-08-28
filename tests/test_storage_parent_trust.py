@@ -210,6 +210,65 @@ def test_posix_parent_trust_requires_private_or_sticky_protected_chain(
     )
 
 
+def test_posix_foreign_artifact_parent_requires_integrity_not_confidentiality(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    os_facade,
+) -> None:
+    parent = tmp_path / "host" / "sessions" / "2026" / "08" / "26"
+    chain = store_security._directory_chain(parent)
+    metadata = {candidate: _directory_metadata(mode=0o755) for candidate in chain}
+    monkeypatch.setattr(
+        store_security,
+        "os",
+        os_facade(
+            store_security.os,
+            name="posix",
+            missing=frozenset({"getxattr"}),
+        ),
+    )
+    monkeypatch.setattr(store_security.os, "lstat", metadata.__getitem__)
+
+    assert store_security.storage_artifact_parent_is_trusted(
+        parent,
+        is_windows=False,
+        effective_uid=1001,
+        default_acl_probe=lambda _path: False,
+    )
+
+    metadata[parent] = _directory_metadata(mode=0o775)
+    assert not store_security.storage_artifact_parent_is_trusted(
+        parent,
+        is_windows=False,
+        effective_uid=1001,
+        default_acl_probe=lambda _path: False,
+    )
+
+
+def test_windows_foreign_artifact_parent_checks_each_integrity_boundary(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    parent = tmp_path / "host" / "sessions"
+    chain = store_security._directory_chain(parent)
+    metadata = {candidate: _directory_metadata(mode=0o755) for candidate in chain}
+    monkeypatch.setattr(store_security.os, "lstat", metadata.__getitem__)
+    observed: list[tuple[Path, bool]] = []
+
+    assert store_security.storage_artifact_parent_is_trusted(
+        parent,
+        is_windows=True,
+        windows_acl_probe=lambda path, final: observed.append((path, final)) or True,
+    )
+    assert observed == [(candidate, candidate == parent) for candidate in chain]
+
+    assert not store_security.storage_artifact_parent_is_trusted(
+        parent,
+        is_windows=True,
+        windows_acl_probe=lambda path, _final: path != chain[-2],
+    )
+
+
 def test_parent_chain_and_trust_probes_fail_closed_on_unknown_objects(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,

@@ -22,6 +22,7 @@ from agency_runtime.core.config import (
     HarnessInferenceConfig,
     InferenceConfig,
     InferenceProfile,
+    JudgeConfig,
     OllamaConfig,
     ProviderEntry,
 )
@@ -370,10 +371,15 @@ def test_canary_pin_constrains_initial_and_abstention_repair_calls(
 ) -> None:
     prompt = "Alpha exact specialist prompt."
     store = _Store([_agent("alpha-reviewer", prompt)], {"alpha-reviewer": prompt})
-    observed_providers: list[tuple[str, ...]] = []
+    observed: list[tuple[tuple[str, ...], float]] = []
 
     def judge(task: str, _catalog: list[dict[str, Any]], **kwargs: Any) -> dict[str, Any]:
-        observed_providers.append(tuple(provider.name for provider in kwargs["config"].providers))
+        observed.append(
+            (
+                tuple(provider.name for provider in kwargs["config"].providers),
+                kwargs["config"].judge.timeout,
+            )
+        )
         selected = ["alpha-reviewer"] if task.startswith("A previous evaluation") else []
         result = _judge_result(selected)
         result["provider_name"] = "codex-subscription"
@@ -382,28 +388,39 @@ def test_canary_pin_constrains_initial_and_abstention_repair_calls(
 
     monkeypatch.setenv("AGENCY_CANARY_MODE", "1")
     monkeypatch.setenv("AGENCY_CANARY_CHILD_JUDGE_PROVIDER", "codex-subscription")
+    config = AgencyConfig(
+        providers=(
+            ProviderEntry(
+                name="claude-subscription",
+                type="cli",
+                transport="claude",
+            ),
+            ProviderEntry(
+                name="codex-subscription",
+                type="cli",
+                transport="codex",
+                timeout=120.0,
+            ),
+        ),
+        judge=JudgeConfig(timeout=60.0),
+        canary=CanaryConfig(
+            child_judge_provider_by_host=(("claude", "codex-subscription"),),
+        ),
+        ollama=OllamaConfig(enabled=False),
+    )
     result = _invoke(
         monkeypatch,
         store,
         judge,
-        config=AgencyConfig(
-            providers=(
-                ProviderEntry(
-                    name="claude-subscription",
-                    type="cli",
-                    transport="claude",
-                ),
-                ProviderEntry(name="codex-subscription", type="cli", transport="codex"),
-            ),
-            canary=CanaryConfig(
-                child_judge_provider_by_host=(("claude", "codex-subscription"),),
-            ),
-            ollama=OllamaConfig(enabled=False),
-        ),
+        config=config,
     )
 
     assert result.staffed is True
-    assert observed_providers == [("codex-subscription",), ("codex-subscription",)]
+    assert observed == [
+        (("codex-subscription",), 120.0),
+        (("codex-subscription",), 120.0),
+    ]
+    assert config.judge.timeout == 60.0
     assert store.decisions[-1]["decision"]["requested_provider"] == "codex-subscription"
     assert store.decisions[-1]["decision"]["provider"] == "codex-subscription"
 

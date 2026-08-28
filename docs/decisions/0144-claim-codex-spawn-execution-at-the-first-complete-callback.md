@@ -3,10 +3,11 @@ title: "Claim Codex spawn execution at the first complete callback"
 status: accepted
 category: decisions
 created: 2026-08-02
-updated: 2026-08-02
+updated: 2026-08-27
 tags: [codex, delegation, execution, lifecycle, evidence]
 related:
   - docs/roadmap/issue-AR-223-prove-codex-child-task-execution.md
+  - docs/roadmap/issue-AR-325-restore-codex-first-complete-callback-reconciliation.md
   - docs/roadmap/handoffs/issue-AR-207.md
   - docs/decisions/0143-execute-codex-specialists-in-the-initial-spawn-turn.md
   - docs/decisions/0145-place-exact-codex-execution-after-specialist-expertise.md

@@ -9,6 +9,8 @@ related:
   - docs/roadmap/issue-AR-266-dense-hybrid-workforce-recall.md
   - docs/roadmap/handoffs/issue-AR-266.md
   - docs/roadmap/issue-AR-288-expose-hermes-native-finalizer-tool.md
+  - docs/roadmap/issue-AR-303-bound-full-roster-embedding-requests.md
+  - docs/decisions/0175-batch-complete-embedding-input-sets.md
   - docs/roadmap/reference-workforce-inference-stages.md
   - docs/worklog/README.md
 supersedes: []
@@ -43,8 +45,9 @@ process still owned.
   required capped 595 seconds. A separate regression proves `run_preflight`
   also allocated an 80-second lease.
 - The implementation computes one static budget per owning harness. It covers
-  the mode-specific parent workforce budget, optional embedding and reranker
-  calls, and synchronous gap-hiring calls, then applies the unchanged
+  the mode-specific parent workforce budget, up to two optional embedding calls
+  plus one reranker under ADR-0175, and synchronous gap-hiring calls, then
+  applies the unchanged
   595-second host ceiling and five-second margin contract.
 - Bundle generation and `run_preflight` now call the same host-aware helper.
   Environment overrides and live-provider probes do not influence installed
@@ -78,7 +81,9 @@ timeouts when both are active. Keep the legacy provider-chain calculation as a
 floor and fund it when an unresolved hiring route can fall back, then apply the
 existing host cap.
 
-Use the resulting value both when rendering a host bundle and when beginning
+For an explicit bounded-dimension embedding route, cover both statically
+reachable scalar-safe batches before the reranker. Use the resulting value
+both when rendering a host bundle and when beginning
 the corresponding preflight attempt lease. Preserve harness isolation: one
 host's profile must not expand another host or a host with no matching profile.
 

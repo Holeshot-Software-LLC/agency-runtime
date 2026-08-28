@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
 
@@ -34,6 +35,49 @@ ENV_OVERRIDE_PATHS: tuple[tuple[str, str], ...] = (
     ("AGENCY_PROFILE", "profile"),
     ("LITELLM_API_KEY", "adapters.litellm.api_key"),
 )
+
+_CONFIGURED_CREDENTIAL_ENVIRONMENT_NAME_MAX = 256
+_CONFIGURED_ADAPTER_NAMES = (
+    "litellm",
+    "hermes",
+    "openclaw",
+    "codex",
+    "claude",
+    "zcode",
+)
+
+
+def configured_credential_environment_names(config: object | None) -> tuple[str, ...]:
+    """Return validated config-declared credential names without reading values."""
+
+    names: set[str] = set()
+
+    def include(entry: object | None) -> None:
+        raw = getattr(entry, "api_key_env", "")
+        if not isinstance(raw, str):
+            return
+        name = raw.strip()
+        if (
+            name
+            and name.isascii()
+            and name.isidentifier()
+            and len(name) <= _CONFIGURED_CREDENTIAL_ENVIRONMENT_NAME_MAX
+        ):
+            names.add(name)
+
+    if config is None:
+        return ()
+    include(getattr(config, "judge", None))
+    for provider in getattr(config, "providers", ()) or ():
+        include(provider)
+    profiles = getattr(getattr(config, "inference", None), "profiles", None)
+    if isinstance(profiles, Mapping):
+        for profile in profiles.values():
+            include(profile)
+    adapters = getattr(config, "adapters", None)
+    for adapter_name in _CONFIGURED_ADAPTER_NAMES:
+        include(getattr(adapters, adapter_name, None))
+    return tuple(sorted(names))
 
 
 class ConfigurationError(ValueError):

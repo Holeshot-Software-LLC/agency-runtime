@@ -65,6 +65,7 @@ def _systemd_quote(value: str) -> str:
 
 
 _MAX_KERNEL_RELEASE_CHARS = 4096
+_DASHBOARD_RUNTIME_DIRECTORY = "agency-runtime-dashboard"
 
 
 def _is_wsl_kernel(*, release_reader: Callable[[], str] | None = None) -> bool:
@@ -82,9 +83,38 @@ def _is_wsl_kernel(*, release_reader: Callable[[], str] | None = None) -> bool:
     return "microsoft" in release.casefold()
 
 
+def _systemd_user_manager_is_root(
+    *,
+    effective_uid_reader: Callable[[], int] | None = None,
+) -> bool:
+    """Return true only when the current user manager can map host root exactly."""
+
+    reader = effective_uid_reader or getattr(os, "geteuid", None)
+    if not callable(reader):
+        return False
+    try:
+        return int(reader()) == 0
+    except (OSError, RuntimeError, TypeError, ValueError):
+        return False
+
+
+def _temporary_directory_hardening() -> str:
+    """Keep non-root user units private without an ambiguous UID remap."""
+
+    if _systemd_user_manager_is_root() and not _is_wsl_kernel():
+        return "PrivateTmp=true\n"
+    runtime = f"%t/{_DASHBOARD_RUNTIME_DIRECTORY}"
+    return (
+        "PrivateTmp=false\n"
+        f"RuntimeDirectory={_DASHBOARD_RUNTIME_DIRECTORY}\n"
+        "RuntimeDirectoryMode=0700\n"
+        f'Environment="TMPDIR={runtime}" "TMP={runtime}" "TEMP={runtime}"\n'
+    )
+
+
 def _unit_content(ctx: _Context) -> str:
     exec_start = " ".join(_systemd_quote(item) for item in ctx.worker_argv)
-    private_tmp = "" if _is_wsl_kernel() else "PrivateTmp=true\n"
+    temporary_directory_hardening = _temporary_directory_hardening()
     return (
         f"# {OWNER_MARKER}\n"
         "[Unit]\n"
@@ -97,7 +127,7 @@ def _unit_content(ctx: _Context) -> str:
         "RestartSec=3s\n"
         "UMask=0077\n"
         "NoNewPrivileges=true\n"
-        f"{private_tmp}"
+        f"{temporary_directory_hardening}"
         "RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6\n\n"
         "[Install]\n"
         "WantedBy=default.target\n"
@@ -265,5 +295,7 @@ __all__ = [
     "_systemd_active_state",
     "_systemd_enabled_state",
     "_systemd_unit_root",
+    "_systemd_user_manager_is_root",
+    "_temporary_directory_hardening",
     "_unit_content",
 ]

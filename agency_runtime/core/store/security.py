@@ -231,6 +231,67 @@ def storage_creation_boundary_is_trusted(
     return not writable_by_others or bool(metadata.st_mode & stat.S_ISVTX)
 
 
+def storage_artifact_parent_is_trusted(
+    path: Path,
+    *,
+    is_windows: bool,
+    windows_acl_probe: Callable[[Path, bool], bool] | None = None,
+    effective_uid: int | None = None,
+    default_acl_probe: Callable[[Path], bool] | None = None,
+) -> bool:
+    """Require integrity, not confidentiality, for a foreign artifact parent.
+
+    Host tools choose their own umask. Codex, for example, writes rollout date
+    directories at 0755 and the rollout itself at 0644. Read and traversal
+    grants do not let another account replace that artifact; mutation grants
+    do. Every component is therefore link-free and substitution-resistant,
+    while the final directory must be current-user owned and non-writable by
+    group or other.
+    """
+
+    normalized = _absolute_path(path)
+    if is_windows and windows_acl_probe is None and private_path_authority_covers(normalized):
+        return True
+    try:
+        chain = tuple(
+            (candidate, os.lstat(candidate)) for candidate in _directory_chain(normalized)
+        )
+    except (OSError, ValueError):
+        return False
+    if not chain or any(
+        metadata_is_link_or_reparse_point(metadata) or not stat.S_ISDIR(metadata.st_mode)
+        for _candidate, metadata in chain
+    ):
+        return False
+    if is_windows:
+        probe = windows_acl_probe or (
+            lambda candidate, final_parent: windows_directory_prevents_untrusted_writes(
+                candidate,
+                is_windows=True,
+                final_parent=final_parent,
+                allow_inheritable_read=final_parent,
+            )
+        )
+        try:
+            return all(probe(candidate, candidate == normalized) for candidate, _metadata in chain)
+        except Exception:
+            return False
+
+    uid_getter = getattr(os, "geteuid", None)
+    uid = int(uid_getter()) if effective_uid is None and callable(uid_getter) else effective_uid
+    if uid is None:
+        return False
+    acl_probe = default_acl_probe or posix_directory_has_default_acl
+    return posix_directory_chain_is_trusted(
+        chain,
+        effective_uid=uid,
+        final_path=normalized,
+        final_owner_must_match=True,
+        forbidden_final_mode=stat.S_IWGRP | stat.S_IWOTH,
+        default_acl_probe=acl_probe,
+    )
+
+
 def storage_file_is_trusted(path: Path, *, is_windows: bool) -> bool:
     """Require one current-user-owned, non-writable storage file identity.
 

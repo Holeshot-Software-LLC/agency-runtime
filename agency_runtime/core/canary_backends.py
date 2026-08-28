@@ -12,6 +12,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from agency_runtime.core.activation_canary_contract import (
+    CODEX_ACTIVATION_CANARY_WAIT_TIMEOUT_MS,
+)
 from agency_runtime.core.bounded_io import FileSizeLimitError
 from agency_runtime.core.canary_judge_provider import CANARY_CHILD_JUDGE_PROVIDER_ENV
 from agency_runtime.core.canary_parent_recruiter_provider import (
@@ -21,6 +24,7 @@ from agency_runtime.core.child_delivery_evidence import (
     _begin_private_host_artifact_collection,
     _collect_private_host_accepted_outcome,
     _collect_private_host_child_delivery,
+    _collect_restricted_codex_canary_host_delivery,
     _finish_private_host_invocation,
     _HostAcceptedOutcomeCollection,
     _start_private_host_invocation,
@@ -67,8 +71,14 @@ _CODEX_ROLLOUT_CONTRACTS = frozenset({"canary", "product"})
 _CODEX_PRODUCT_COLLABORATION_SCHEMA = "agency.codex-product-collaboration.v2"
 _CODEX_PRODUCT_MAX_SPAWNS = 16
 _CODEX_PRODUCT_MAX_WAITS = 64
-# Current Codex wait_agent schema ceiling; the activation canary separately requires 60 seconds.
+# Current Codex wait_agent schema ceiling; the activation canary has a separate exact bound.
 _CODEX_PRODUCT_MAX_WAIT_TIMEOUT_MS = 3_600_000
+_MAX_CANARY_CREDENTIAL_ENVIRONMENT_NAMES = 256
+_MAX_CANARY_CREDENTIAL_VALUE_BYTES = 64 * 1024
+_CANARY_CREDENTIAL_ENVIRONMENT_NAME = re.compile(
+    r"(?:^|_)(?:API_KEY|KEY|TOKEN|SECRET|PASSWORD|CREDENTIALS?)\Z",
+    re.IGNORECASE,
+)
 CODEX_COLLABORATION_DIAGNOSTIC_SCHEMA = "agency.codex-collaboration-diagnostic.v1"
 CODEX_COLLABORATION_DIAGNOSTIC_REASONS = frozenset(
     {
@@ -385,6 +395,45 @@ def _project_canary_cli_transport_environment(
     env[variable] = str(provider_home)
 
 
+def _project_configured_credential_environment(
+    env: dict[str, str],
+    *,
+    source_env: Mapping[str, str],
+    names: tuple[str, ...],
+) -> None:
+    """Project only exact config-declared credentials into a tool-reduced canary."""
+
+    if not isinstance(names, tuple) or len(names) > _MAX_CANARY_CREDENTIAL_ENVIRONMENT_NAMES:
+        raise ValueError("canary credential environment-name set is invalid")
+    observed: set[str] = set()
+    for name in names:
+        if (
+            not isinstance(name, str)
+            or not name
+            or not name.isascii()
+            or not name.isidentifier()
+            or len(name) > 256
+            or name in observed
+            or name in env
+            or name.startswith("AGENCY_CANARY_")
+            or _CANARY_CREDENTIAL_ENVIRONMENT_NAME.search(name) is None
+        ):
+            raise ValueError("canary credential environment name is invalid")
+        observed.add(name)
+        value = source_env.get(name)
+        if value is None or value == "":
+            continue
+        if not isinstance(value, str) or "\x00" in value:
+            raise ValueError("canary credential environment value is invalid")
+        try:
+            size = len(value.encode("utf-8"))
+        except UnicodeEncodeError as exc:
+            raise ValueError("canary credential environment value is invalid") from exc
+        if size > _MAX_CANARY_CREDENTIAL_VALUE_BYTES:
+            raise ValueError("canary credential environment value is invalid")
+        env[name] = value
+
+
 def _project_child_judge_environment(
     env: dict[str, str],
     *,
@@ -516,6 +565,45 @@ def codex_output(stdout: str) -> str | None:
     return messages[-1] if completed and messages else None
 
 
+def _codex_rollout_output(events: list[dict[str, Any]]) -> str | None:
+    """Recover the exact final parent message from a canonical exec rollout."""
+
+    messages: list[str] = []
+    completed_messages: list[str] = []
+    for event in events:
+        payload = event.get("payload")
+        if not isinstance(payload, dict):
+            continue
+        if event.get("type") == "response_item" and payload.get("type") in {
+            "message",
+            "agent_message",
+        }:
+            role = str(payload.get("role") or "").strip().casefold()
+            if role and role not in {"assistant", "agent"}:
+                continue
+            content = payload.get("content")
+            if isinstance(content, list):
+                text = "\n".join(
+                    str(block.get("text"))
+                    for block in content
+                    if isinstance(block, dict)
+                    and block.get("type") in {"output_text", "text"}
+                    and isinstance(block.get("text"), str)
+                )
+                if text:
+                    messages.append(text)
+        elif event.get("type") == "event_msg" and payload.get("type") in {
+            "task_complete",
+            "task_completed",
+        }:
+            value = payload.get("last_agent_message")
+            if isinstance(value, str) and value:
+                completed_messages.append(value)
+    if len(completed_messages) != 1 or not messages or messages[-1] != completed_messages[0]:
+        return None
+    return messages[-1]
+
+
 def _codex_thread_id(value: object) -> str:
     thread_id = str(value or "").strip()
     if _CODEX_THREAD_ID.fullmatch(thread_id) is None:
@@ -540,6 +628,57 @@ def _codex_stdout_thread_id(stdout: str) -> str | None:
     return next(iter(thread_ids))
 
 
+def _codex_parent_thread_id(
+    stdout: str,
+    rollout_root: Path | None,
+    *,
+    not_before: float | None,
+    not_after: float | None,
+) -> str | None:
+    """Resolve the sole exec parent, including Codex 0.149 quiet stdout."""
+
+    announced = _codex_stdout_thread_id(stdout)
+    if announced is not None or rollout_root is None:
+        return announced
+    root = Path(rollout_root)
+    try:
+        paths = list(root.glob("*/*/*/rollout-*.jsonl")) if root.is_dir() else []
+    except OSError:
+        return None
+    if len(paths) > 4096:
+        raise ValueError("Codex rollout root exceeded the parent lookup ceiling")
+    parents: set[str] = set()
+    for path in paths:
+        match = _CODEX_THREAD_ID.search(path.stem)
+        if match is None:
+            continue
+        try:
+            metadata = path.lstat()
+        except OSError:
+            continue
+        modified = metadata.st_mtime
+        if not_before is not None and modified + _CODEX_ROLLOUT_CLOCK_SKEW_SECONDS < not_before:
+            continue
+        if not_after is not None and modified - _CODEX_ROLLOUT_CLOCK_SKEW_SECONDS > not_after:
+            continue
+        thread_id = match.group(0)
+        try:
+            _codex_rollout_events(
+                root,
+                thread_id,
+                parent_thread_id=None,
+                expected_agent_path=None,
+                not_before=not_before,
+                not_after=not_after,
+            )
+        except (OSError, TypeError, ValueError):
+            continue
+        parents.add(thread_id)
+    if len(parents) > 1:
+        raise ValueError("Codex invocation wrote multiple parent exec rollouts")
+    return next(iter(parents)) if parents else None
+
+
 def _codex_rollout_events(
     rollout_root: Path,
     thread_id: str,
@@ -555,24 +694,24 @@ def _codex_rollout_events(
     from agency_runtime.core.filesystem_trust import same_file_identity
     from agency_runtime.core.store.security import (
         assert_storage_parent_chain,
+        storage_artifact_parent_is_trusted,
         storage_file_is_trusted,
-        storage_parent_is_trusted,
     )
 
     root = Path(rollout_root)
     assert_storage_parent_chain(root, allow_missing=False)
-    if not storage_parent_is_trusted(root, is_windows=facade.os.name == "nt"):
-        raise ValueError("Codex rollout root was not private")
+    if not storage_artifact_parent_is_trusted(root, is_windows=facade.os.name == "nt"):
+        raise ValueError("Codex rollout root lacked namespace integrity")
     matches = list(root.glob(f"*/*/*/rollout-*-{thread_id}.jsonl")) if root.is_dir() else []
     if len(matches) != 1:
         raise ValueError("Codex rollout identity was missing or ambiguous")
     path = matches[0]
     assert_storage_parent_chain(path.parent, allow_missing=False)
-    if not storage_parent_is_trusted(
+    if not storage_artifact_parent_is_trusted(
         path.parent,
         is_windows=facade.os.name == "nt",
     ) or not storage_file_is_trusted(path, is_windows=facade.os.name == "nt"):
-        raise ValueError("Codex rollout path was not private")
+        raise ValueError("Codex rollout path lacked namespace integrity")
     metadata = path.lstat()
     if not_before is not None and (
         metadata.st_mtime + _CODEX_ROLLOUT_CLOCK_SKEW_SECONDS < not_before
@@ -595,7 +734,10 @@ def _codex_rollout_events(
         not same_file_identity(metadata, current)
         or current.st_size != metadata.st_size
         or current.st_mtime_ns != metadata.st_mtime_ns
-        or not storage_parent_is_trusted(path.parent, is_windows=facade.os.name == "nt")
+        or not storage_artifact_parent_is_trusted(
+            path.parent,
+            is_windows=facade.os.name == "nt",
+        )
     ):
         raise ValueError("Codex rollout changed during evidence collection")
     lines = payload.splitlines()
@@ -628,6 +770,7 @@ def _codex_rollout_events(
             or spawn.get("parent_thread_id") != parent_thread_id
             or spawn.get("depth") != 1
             or spawn.get("agent_path") != expected_agent_path
+            or spawn.get("agent_role") is not None
         ):
             raise ValueError("Codex child rollout did not identify the exact parent")
     return events
@@ -704,7 +847,92 @@ def _codex_child_prompt_delivery(
     return next(iter(deliveries.values()))
 
 
-def _codex_rollout_call_data(
+def _codex_child_v6_canary_delivery(
+    events: list[dict[str, Any]],
+    *,
+    parent_thread_id: str,
+    child_thread_id: str,
+) -> tuple[dict[str, Any], dict[str, str]] | None:
+    """Project the sole exact 0.149 SubagentStart v6 input record."""
+
+    from agency_runtime.core.activation_canary_contract import (
+        CODEX_ACTIVATION_CANARY_WORK_UNIT,
+    )
+    from agency_runtime.core.native_child_prompt_delivery import (
+        parse_inference_team_delivery,
+    )
+    from agency_runtime.core.unit_assignment import (
+        work_unit_goal_hash,
+        work_unit_id_from_text,
+    )
+
+    deliveries: list[Any] = []
+    assistant_messages = 0
+    for event in events:
+        payload = event.get("payload")
+        if event.get("type") != "response_item" or not isinstance(payload, dict):
+            continue
+        item_type = payload.get("type")
+        role = str(payload.get("role") or "").strip().casefold()
+        if item_type == "agent_message" or (
+            item_type == "message" and role in {"assistant", "agent"}
+        ):
+            assistant_messages += 1
+        if item_type != "message" or role not in {"developer", "user"}:
+            continue
+        content = payload.get("content")
+        if not isinstance(content, list):
+            continue
+        text = "\n".join(
+            str(block.get("text"))
+            for block in content
+            if isinstance(block, dict)
+            and block.get("type") in {"input_text", "text"}
+            and isinstance(block.get("text"), str)
+        )
+        delivery = parse_inference_team_delivery(text)
+        if delivery is not None:
+            deliveries.append(delivery)
+    if len(deliveries) != 1 or assistant_messages < 1:
+        return None
+    delivery = deliveries[0]
+    expected_task_sha256 = hashlib.sha256(
+        CODEX_ACTIVATION_CANARY_WORK_UNIT.encode("utf-8")
+    ).hexdigest()
+    if not (
+        delivery.host == "codex"
+        and delivery.parent_session_id == parent_thread_id
+        and delivery.launch_id == child_thread_id
+        and delivery.binding_kind == "child_id"
+        and delivery.binding_id == child_thread_id
+        and delivery.original_task == CODEX_ACTIVATION_CANARY_WORK_UNIT
+        and delivery.task_sha256 == expected_task_sha256
+        and len(delivery.cards) == 1
+        and delivery.cards[0].specialist_slug == "code-reviewer"
+    ):
+        raise ValueError("Codex restricted canary delivery did not match its fixed contract")
+    work_unit_id = work_unit_id_from_text(CODEX_ACTIVATION_CANARY_WORK_UNIT)
+    prompt_delivery = {
+        "host": delivery.host,
+        "parent_session_id": delivery.parent_session_id,
+        "parent_trace_id": delivery.parent_trace_id,
+        "launch_id": delivery.launch_id,
+        "decision_id": delivery.decision_id,
+        "work_unit_id": work_unit_id,
+        "specialist_slug": delivery.cards[0].specialist_slug,
+        "specialist_version": delivery.cards[0].specialist_version,
+        "specialist_prompt_hash": delivery.cards[0].specialist_prompt_hash,
+        "task_sha256": delivery.task_sha256,
+    }
+    execution_delivery = {
+        "work_unit_id": work_unit_id,
+        "native_task_name": "code_reviewer",
+        "goal_hash": work_unit_goal_hash(CODEX_ACTIVATION_CANARY_WORK_UNIT),
+    }
+    return prompt_delivery, execution_delivery
+
+
+def _codex_rollout_call_data(  # noqa: C901 - one pinned rollout projection
     events: list[dict[str, Any]],
 ) -> tuple[
     list[dict[str, Any]],
@@ -725,6 +953,36 @@ def _codex_rollout_call_data(
         if event.get("type") == "event_msg" and payload.get("type") == "sub_agent_activity":
             activities.append(payload)
             continue
+        if event.get("type") == "event_msg" and payload.get("type") == "item_completed":
+            item = payload.get("item")
+            if isinstance(item, dict) and item.get("type") == "SubAgentActivity":
+                allowed_payload = {
+                    "type",
+                    "thread_id",
+                    "turn_id",
+                    "item",
+                    "started_at_ms",
+                    "completed_at_ms",
+                }
+                allowed_item = {
+                    "type",
+                    "id",
+                    "kind",
+                    "agent_thread_id",
+                    "agent_path",
+                }
+                if not set(payload).issubset(allowed_payload) or set(item) != allowed_item:
+                    raise ValueError("Codex sub-agent activity exceeded the pinned contract")
+                activities.append(
+                    {
+                        "type": "sub_agent_activity",
+                        "event_id": item.get("id"),
+                        "kind": item.get("kind"),
+                        "agent_thread_id": item.get("agent_thread_id"),
+                        "agent_path": item.get("agent_path"),
+                    }
+                )
+                continue
         if event.get("type") != "response_item":
             continue
         item_type = str(payload.get("type") or "").strip()
@@ -787,7 +1045,14 @@ def _assert_codex_child_rollout_is_tool_free(events: list[dict[str, Any]]) -> No
         if (
             event.get("type") == "event_msg"
             and isinstance(payload, dict)
-            and payload.get("type") == "sub_agent_activity"
+            and (
+                payload.get("type") == "sub_agent_activity"
+                or (
+                    payload.get("type") == "item_completed"
+                    and isinstance(payload.get("item"), dict)
+                    and payload["item"].get("type") == "SubAgentActivity"
+                )
+            )
         ):
             raise ValueError("Codex canary child started another native child")
         if (
@@ -1028,7 +1293,7 @@ def _codex_exact_direct_rollout_calls(
         or not isinstance(spawn_args.get("message"), str)
         or not isinstance(spawn_args.get("task_name"), str)
         or set(wait["arguments"]) != {"timeout_ms"}
-        or wait["arguments"].get("timeout_ms") != 60_000
+        or wait["arguments"].get("timeout_ms") != CODEX_ACTIVATION_CANARY_WAIT_TIMEOUT_MS
     ):
         raise ValueError("Codex direct collaboration arguments exceeded the canary contract")
     spawn_output = outputs.get(spawn["call_id"])
@@ -1198,7 +1463,12 @@ def _codex_rollout_collaboration_evidence(
 ) -> dict[str, Any] | None:
     """Project the native V2 lifecycle omitted by Codex 0.145 stdout JSONL."""
 
-    parent_thread_id = _codex_stdout_thread_id(stdout)
+    parent_thread_id = _codex_parent_thread_id(
+        stdout,
+        rollout_root,
+        not_before=not_before,
+        not_after=not_after,
+    )
     if parent_thread_id is None:
         return None
     events = _codex_rollout_events(
@@ -1225,6 +1495,51 @@ def _codex_rollout_collaboration_evidence(
             not_after=not_after,
         )
         _assert_codex_child_rollout_is_tool_free(child_events)
+        v6_canary = _codex_child_v6_canary_delivery(
+            child_events,
+            parent_thread_id=parent_thread_id,
+            child_thread_id=receiver_id,
+        )
+        if v6_canary is not None:
+            prompt_delivery, execution_delivery = v6_canary
+            if native_task_name != "code_reviewer":
+                raise ValueError("Codex restricted child task did not match code-reviewer")
+            projected_calls = [
+                {
+                    "id": spawn["id"],
+                    "event_type": "rollout_call_completed",
+                    "tool": "spawn_agent",
+                    "sender_thread_id": parent_thread_id,
+                    "receiver_thread_ids": [receiver_id],
+                    "agents_states": {receiver_id: "running"},
+                    "status": "completed",
+                    "prompt_delivery": prompt_delivery,
+                    "native_task_name": native_task_name,
+                    "execution_delivery": execution_delivery,
+                    "followup_tool_use_id": spawn["call_id"],
+                    "evidence_source": "persisted_rollout",
+                },
+                {
+                    "id": wait["id"],
+                    "event_type": "rollout_call_completed",
+                    "tool": "wait",
+                    "sender_thread_id": parent_thread_id,
+                    "receiver_thread_ids": [receiver_id],
+                    "agents_states": {receiver_id: "completed"},
+                    "status": "completed",
+                    "prompt_delivery": None,
+                    "evidence_source": "persisted_rollout",
+                },
+            ]
+            return {
+                "calls": projected_calls,
+                "spawn_count": 1,
+                "followup_count": 0,
+                "wait_count": 1,
+                "unexpected_item_types": sorted(set(unexpected.values())),
+                "unexpected_item_count": len(unexpected),
+                "evidence_source": "persisted_rollout",
+            }
         prompt_delivery = _codex_child_prompt_delivery(
             child_events,
             parent_thread_id=parent_thread_id,
@@ -1999,7 +2314,12 @@ def _codex_product_rollout_collaboration_evidence(
 ) -> dict[str, Any]:
     """Project a bounded exact multi-unit product collaboration topology."""
 
-    parent_thread_id = _codex_stdout_thread_id(stdout)
+    parent_thread_id = _codex_parent_thread_id(
+        stdout,
+        rollout_root,
+        not_before=not_before,
+        not_after=not_after,
+    )
     if parent_thread_id is None:
         raise ValueError("Codex product stdout omitted its parent thread")
     events = _codex_rollout_events(
@@ -2374,7 +2694,12 @@ def codex_collaboration_evidence(
     ):
         return None
     try:
-        thread_id = _codex_stdout_thread_id(stdout)
+        thread_id = _codex_parent_thread_id(
+            stdout,
+            rollout_root,
+            not_before=rollout_not_before,
+            not_after=rollout_not_after,
+        )
         if thread_id is None:
             return stdout_projection
         rollout_projection = _codex_rollout_collaboration_evidence(
@@ -2390,7 +2715,7 @@ def codex_collaboration_evidence(
         return None
 
 
-def _codex_rollout_content_free_counts(
+def _codex_rollout_content_free_counts(  # noqa: C901 - fixed diagnostic census
     events: list[dict[str, Any]],
 ) -> dict[str, int]:
     """Count native lifecycle shapes without retaining rollout content."""
@@ -2415,6 +2740,13 @@ def _codex_rollout_content_free_counts(
                     counts["child_start_count"] += 1
                 elif payload.get("kind") == "interacted":
                     counts["child_interaction_count"] += 1
+            elif payload.get("type") == "item_completed":
+                item = payload.get("item")
+                if isinstance(item, dict) and item.get("type") == "SubAgentActivity":
+                    if item.get("kind") == "started":
+                        counts["child_start_count"] += 1
+                    elif item.get("kind") == "interacted":
+                        counts["child_interaction_count"] += 1
             continue
         if event.get("type") != "response_item":
             continue
@@ -2492,7 +2824,12 @@ def _codex_rollout_collaboration_diagnostic(
         "unexpected_item_count": 0,
     }
     try:
-        parent_thread_id = _codex_stdout_thread_id(stdout)
+        parent_thread_id = _codex_parent_thread_id(
+            stdout,
+            rollout_root,
+            not_before=not_before,
+            not_after=not_after,
+        )
         if parent_thread_id is None:
             raise ValueError("Codex did not announce a parent rollout")
         events = _codex_rollout_events(
@@ -2642,7 +2979,7 @@ def _codex_session_projection(stdout: object) -> dict[str, str]:
     return {} if session_id is None else {"session_id": session_id}
 
 
-def codex_canary_record(
+def codex_canary_record(  # noqa: C901 - one fail-closed host result boundary
     result: Any,
     *,
     profile_scope: str = "isolated-profile",
@@ -2656,6 +2993,28 @@ def codex_canary_record(
         raise ValueError("unsupported Codex rollout contract")
     completed = facade._process_succeeded(result)
     timed_out = bool(result.timed_out)
+    parent_thread_id: str | None = None
+    parent_events: list[dict[str, Any]] | None = None
+    if rollout_root is not None:
+        try:
+            parent_thread_id = _codex_parent_thread_id(
+                result.stdout,
+                rollout_root,
+                not_before=rollout_not_before,
+                not_after=rollout_not_after,
+            )
+            if parent_thread_id is not None:
+                parent_events = _codex_rollout_events(
+                    rollout_root,
+                    parent_thread_id,
+                    parent_thread_id=None,
+                    expected_agent_path=None,
+                    not_before=rollout_not_before,
+                    not_after=rollout_not_after,
+                )
+        except (OSError, TypeError, ValueError):
+            parent_thread_id = None
+            parent_events = None
     record: dict[str, Any] = {
         "backend": "codex",
         "profile_scope": profile_scope,
@@ -2665,6 +3024,8 @@ def codex_canary_record(
         "stderr_truncated": result.stderr_truncated,
         **_codex_session_projection(result.stdout),
     }
+    if parent_thread_id is not None:
+        record["session_id"] = parent_thread_id
     if profile_scope == "isolated-profile":
         record["isolated_plugin"] = {
             "registered": True,
@@ -2709,6 +3070,8 @@ def codex_canary_record(
         )
         record["collaboration_diagnostic"] = collaboration_diagnostic
     output = facade._codex_output(result.stdout) if completed else None
+    if completed and output is None and parent_events is not None:
+        output = _codex_rollout_output(parent_events)
     if completed and output is not None and collaboration is not None:
         record.update(output=output, collaboration=collaboration)
     elif completed:
@@ -2820,6 +3183,7 @@ class SafeCodexCanaryBackend:
     child_judge_provider: str = ""
     child_judge_transport: str = ""
     child_judge_auth_source: Path | None = None
+    credential_environment_names: tuple[str, ...] = ()
 
     def _exec_options(self) -> tuple[str, ...]:
         if not isinstance(self.trust_mode, str) or self.trust_mode not in {
@@ -2851,12 +3215,34 @@ class SafeCodexCanaryBackend:
             CODEX_HOOK_EVENT_DIAGNOSTICS_ENV,
         )
 
+        _project_configured_credential_environment(
+            env,
+            source_env=self.source_env,
+            names=self.credential_environment_names,
+        )
         if self.require_existing_store or self.require_exact_activation_rollout:
             env[CODEX_ACTIVATION_EXISTING_STORE_ENV] = "1"
         if self.hook_event_diagnostics:
             if not self.require_existing_store:
                 raise ValueError("hook event diagnostics require the existing Agency store")
             env[CODEX_HOOK_EVENT_DIAGNOSTICS_ENV] = "1"
+
+    def _project_activation_query_hash(self, env: dict[str, str], *, task: str) -> None:
+        """Bind the restricted child hook to this exact canary invocation."""
+
+        if not (
+            self.require_existing_store
+            and self.require_exact_activation_rollout
+            and self.rollout_contract == "canary"
+        ):
+            return
+        from agency_runtime.core.codex_activation_verification import (
+            CODEX_ACTIVATION_QUERY_HASH_ENV,
+        )
+
+        env[CODEX_ACTIVATION_QUERY_HASH_ENV] = hashlib.sha256(
+            task.encode("utf-8", errors="surrogatepass")
+        ).hexdigest()
 
     def _execution_environment(
         self,
@@ -3098,6 +3484,12 @@ class SafeCodexCanaryBackend:
             env["AGENCY_DB_PATH"] = str(self.db_path.resolve())
             env["AGENCY_CANARY_MODE"] = "1"
             env["AGENCY_CANARY_MASTER_ENABLED"] = "1" if self.master_enabled else "0"
+            # Canary mode deliberately refuses ambient HOME as install
+            # authority. Project the same explicit owner-home capability used
+            # by isolated hosts even though this profile keeps that home.
+            env[CANARY_NATIVE_INSTALL_HOME_ENV] = str(
+                facade._source_home(self.source_env).resolve()
+            )
             _project_child_judge_environment(
                 env,
                 provider=self.child_judge_provider,
@@ -3108,6 +3500,7 @@ class SafeCodexCanaryBackend:
                 auth_source=self.child_judge_auth_source,
             )
             self._configure_canary_environment(env)
+            self._project_activation_query_hash(env, task=task)
             trust_failure = self._verify_current_profile_hook_trust(
                 workdir=workdir,
                 env=env,
@@ -3182,7 +3575,6 @@ class SafeCodexCanaryBackend:
                 runtime_home,
                 self.db_path,
             )
-            self._configure_canary_environment(env)
             projected = facade._project_isolated_runtime_control(
                 runtime_home,
                 enabled=self.master_enabled,
@@ -3198,6 +3590,7 @@ class SafeCodexCanaryBackend:
                 runtime_home=runtime_home,
                 auth_source=self.child_judge_auth_source,
             )
+            self._configure_canary_environment(env)
             failure = self._install_plugin(workdir=workdir, env=env, deadline=deadline)
             if failure is None:
                 failure = self._verify_plugin(workdir=workdir, env=env, deadline=deadline)
@@ -3241,6 +3634,54 @@ class SafeCodexCanaryBackend:
                 record["workspace_trust"] = workspace_trust
             return self._record_trust_mode(record, invocation_attempted=True)
 
+    def execute_with_host_delivery(
+        self,
+        *,
+        task: str,
+        workdir: str,
+        store: object,
+        check: bool = False,
+    ) -> tuple[dict[str, Any], _VerifiedHostChildDelivery | None]:
+        """Execute and seal the exact restricted current-profile child rollout."""
+
+        if not (
+            self.profile_scope == "current-profile"
+            and self.require_existing_store
+            and self.require_exact_activation_rollout
+            and self.rollout_contract == "canary"
+        ):
+            raise ValueError("Codex host-delivery collection requires the restricted canary")
+        facade = _facade()
+        started_at_ns = facade.time.time_ns()
+        record = self.execute(task=task, workdir=workdir, check=check)
+        finished_at_ns = facade.time.time_ns()
+        reason = "verification_refused"
+        proof: _VerifiedHostChildDelivery | None = None
+        try:
+            session_id = str(record.get("session_id") or "")
+            query_hash = hashlib.sha256(task.encode("utf-8")).hexdigest()
+            snapshot = store.get_canary_activation_snapshot(
+                host="codex",
+                query_hash=query_hash,
+                session_id=session_id,
+            )
+            parent_trace_id = str(snapshot.get("trace_id") or "")
+            collection = _collect_restricted_codex_canary_host_delivery(
+                store,
+                parent_session_id=session_id,
+                parent_trace_id=parent_trace_id,
+                started_at_ns=started_at_ns,
+                finished_at_ns=finished_at_ns,
+                root=self.auth_source.parent / "sessions",
+            )
+            reason = collection.reason
+            proof = collection.proof
+        except Exception:
+            reason = "verification_refused"
+            proof = None
+        record["host_child_collection_reason"] = reason
+        return record, proof
+
 
 @dataclass(frozen=True, slots=True)
 class SafeClaudeCanaryBackend:
@@ -3258,6 +3699,7 @@ class SafeClaudeCanaryBackend:
     parent_recruiter_provider: str = ""
     parent_recruiter_transport: str = ""
     parent_recruiter_auth_source: Path | None = None
+    credential_environment_names: tuple[str, ...] = ()
 
     def _record_child_judge_provider(self, record: dict[str, Any]) -> dict[str, Any]:
         if self.child_judge_provider:
@@ -3341,6 +3783,11 @@ class SafeClaudeCanaryBackend:
                     runtime_home=runtime_home,
                     auth_source=self.parent_recruiter_auth_source,
                 )
+            _project_configured_credential_environment(
+                env,
+                source_env=self.source_env,
+                names=self.credential_environment_names,
+            )
             timeout = facade._remaining_canary_timeout(deadline)
             if timeout <= 0:
                 return self._record_child_judge_provider(_timeout_record("claude")), None
@@ -3524,6 +3971,7 @@ def backend(  # noqa: C901 - one bounded validation and backend construction bou
     child_judge_transport: str = "",
     parent_recruiter_provider: str = "",
     parent_recruiter_transport: str = "",
+    credential_environment_names: tuple[str, ...] = (),
 ) -> SafeCodexCanaryBackend | SafeClaudeCanaryBackend:
     from agency_runtime.core.delegation.backends import run_bounded_process
 
@@ -3606,6 +4054,7 @@ def backend(  # noqa: C901 - one bounded validation and backend construction bou
             child_judge_provider=child_judge_provider,
             child_judge_transport=child_judge_transport,
             child_judge_auth_source=child_judge_auth_source,
+            credential_environment_names=credential_environment_names,
         )
 
     original_home = Path(source_env.get("CLAUDE_CONFIG_DIR") or (home / ".claude")).expanduser()
@@ -3624,6 +4073,7 @@ def backend(  # noqa: C901 - one bounded validation and backend construction bou
         parent_recruiter_provider=parent_recruiter_provider,
         parent_recruiter_transport=parent_recruiter_transport,
         parent_recruiter_auth_source=parent_recruiter_auth_source,
+        credential_environment_names=credential_environment_names,
     )
 
 

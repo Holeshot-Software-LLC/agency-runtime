@@ -21,6 +21,9 @@ from agency_runtime.core.config import (
     InferenceProfile,
     ProviderEntry,
 )
+from agency_runtime.core.configuration_contracts import (
+    configured_credential_environment_names,
+)
 from agency_runtime.core.selector.policy import detect_actions, load_bundled_policy
 
 
@@ -213,6 +216,9 @@ def test_agency_canary_explicitly_requests_one_whole_unit_subagent() -> None:
         canary.CODEX_CANARY_DEVELOPER_INSTRUCTIONS.lower()
     )
     assert "call wait_agent once" in canary.CODEX_CANARY_DEVELOPER_INSTRUCTIONS.lower()
+    assert "300000 ms timeout" in canary.CODEX_CANARY_DEVELOPER_INSTRUCTIONS.lower()
+    assert "120000 ms timeout" not in canary.CODEX_CANARY_DEVELOPER_INSTRUCTIONS.lower()
+    assert "60000 ms timeout" not in canary.CODEX_CANARY_DEVELOPER_INSTRUCTIONS.lower()
     assert "fork_turns set to none" in canary.CODEX_CANARY_DEVELOPER_INSTRUCTIONS.lower()
     assert "never retry any collaboration call" in (
         canary.CODEX_CANARY_DEVELOPER_INSTRUCTIONS.lower()
@@ -562,7 +568,79 @@ def test_prepare_live_invocation_resolves_and_passes_the_exact_canary_pin(
             "child_judge_transport": "codex",
             "parent_recruiter_provider": "",
             "parent_recruiter_transport": "",
+            "credential_environment_names": ("LITELLM_API_KEY",),
         }
+    ]
+
+
+def test_configured_canary_credentials_include_inference_profiles_without_values() -> None:
+    config = AgencyConfig(
+        providers=(
+            ProviderEntry(
+                name="legacy",
+                model="legacy",
+                base_url="http://127.0.0.1:4000/v1",
+                api_key_env="LEGACY_KEY",
+            ),
+        ),
+        inference=InferenceConfig(
+            profiles={
+                "embedding": InferenceProfile(
+                    name="embedding",
+                    adapter="litellm",
+                    model="embedding",
+                    capability_class="embeddings",
+                    base_url="http://127.0.0.1:4000/v1",
+                    api_key_env="EXACT_LITELLM_KEY",
+                )
+            }
+        ),
+    )
+
+    names = configured_credential_environment_names(config)
+
+    assert names == ("EXACT_LITELLM_KEY", "LEGACY_KEY", "LITELLM_API_KEY")
+    assert all("secret" not in name.casefold() for name in names)
+
+
+def test_prepare_live_invocation_binds_an_explicit_config_path_to_the_store(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    observed: list[tuple[Path, dict[str, Any]]] = []
+
+    class _Store:
+        config_path = None
+
+        def __init__(self, path: Path, **kwargs: Any) -> None:
+            observed.append((path, kwargs))
+
+        def recent_runtime_activity(self, *, limit: int) -> dict[str, list[Any]]:
+            assert limit == 200
+            return {}
+
+    monkeypatch.setattr(canary, "Store", _Store)
+    prepared = canary._prepare_live_invocation(
+        "codex",
+        path=tmp_path / "agency.db",
+        config_path=tmp_path / "exact-agency.yaml",
+        timeout=2,
+        native=_native(),
+        backend_factory=lambda *_args, **_kwargs: object(),
+        master_enabled=False,
+        mode="native-only",
+        require_existing_store=True,
+    )
+
+    assert prepared.error is None
+    assert observed == [
+        (
+            tmp_path / "agency.db",
+            {
+                "config_path": tmp_path / "exact-agency.yaml",
+                "require_existing_current": True,
+            },
+        )
     ]
 
 
