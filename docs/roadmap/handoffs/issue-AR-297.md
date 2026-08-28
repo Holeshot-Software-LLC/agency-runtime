@@ -116,10 +116,12 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 
 ## exact-blocker
 
-- Manual Codex preflight trace `01a04996...c151` fails closed at HTTP 401 because
-  the ordinary terminal has no `LITELLM_API_KEY`; the steward loads but Stop
-  rejects the unaccepted answer. Config repair receipt `530b7837...1e5e` passes
-  all 16 write-only operations; Codex bundle `40b3693c...e340` now awaits trust.
+- Config repair `530b7837...1e5e` resolves ordinary-terminal auth. Two later
+  manual Qwen turns `01a049a6...db07`/`01a049ab...9f76` still fail both bounded
+  planner attempts; no route/load/finalization is promoted. Isolated exact-prompt
+  Qwen and Mistral trials both accept `accessibility-auditor` with byte-identical
+  5,858-byte context; repeated real Qwen failures make generation-route choice
+  the current operator interview.
 - Record audits `769fb577...6056`/`e98fd0e5...64a7` exit 1 only on inherited
   parity debt; AR-297/#335 has no mismatch. Tracker/release writes stay unauthorized.
 
@@ -146,8 +148,9 @@ unchecked line. Mark an item complete only with exact retained evidence.
    healthy dashboard/OpenClaw services.
 4. [x] Codex/Claude/scoped-Hermes/OpenClaw, authenticated dashboard, and every
    named repository gate pass with exact retained hashes and exits.
-5. [ ] Complete fresh Codex trust/manual pass; then install/test Claude,
-   Hermes, and OpenClaw against `df75e01d...0922` and issue the Linux verdict.
+5. [ ] Obtain generation-route choice, apply/verify it without changing the
+   stable alias contract, complete Codex then Claude/Hermes/OpenClaw manual
+   tests, and issue the Linux verdict.
 
 ## verification
 

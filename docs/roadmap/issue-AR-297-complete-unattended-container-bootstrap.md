@@ -2314,3 +2314,25 @@ Codex hook trust. No bypass is used. The current bounded exit is
 `waiting_for_operator`: close the old Codex TUI, trust all eight hooks in a
 fresh terminal, and repeat the manual prompt as a new turn before testing the
 other three harnesses.
+
+Fresh trust succeeds, but two subsequent owner-observed turns still fail
+closed before selection. Trace `01a049a6-1623-7972-aebf-47a048cedb07` rejects
+the initial Qwen plan as semantically invalid and its repair for a forward
+dependency. Trace `01a049ab-dbc2-7fa1-87d8-87ed63e89f76` rejects the initial
+plan as semantically invalid and its repair for missing implementation, test
+implementation, and test-evidence review on the explicitly read-only copy
+task. Neither trace has routing, specialist loading, model receipts, or final
+acceptance, so both visible Codex drafts remain rejected rather than evidence.
+
+An isolated Store replay of the exact prompt on current
+`task-agency-generation` does pass once: database `63e5d86a...37a9` records an
+accepted `accessibility-auditor`, four successful LiteLLM receipts, and full
+5,858-byte context `f1182d56...646a`. Because one isolated success does not
+erase two real failures, a second isolated config changes only the generation
+profile to already-approved LiteLLM alias `task-agency-router`, whose local
+backend is free `mistral-small3.2:24b`. Config `741cf7cd...fe97` and Store
+`193cd280...ae5a` produce the same accepted specialist and byte-identical
+context with no failure. No stable alias or installed bundle is changed by the
+A/B. The next bounded exit is `waiting_for_operator` for the generation model
+choice: retain measured-but-unreliable Qwen 14B or remap the stable
+`task-agency-generation` alias to the slower structured Mistral 24B.
