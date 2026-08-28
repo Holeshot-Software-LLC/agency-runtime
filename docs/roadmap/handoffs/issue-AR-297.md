@@ -110,13 +110,13 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Journal audit `e307f2e5...784d` proves 12 distinct Spark completions. Stable
   generation rollback `75855980...6bc` restores local Qwen, and deletion receipts
   `bfb54a1f...86ae`/`b412d6cf...4851` remove both temporary Spark aliases.
-- Frozen manifest `62f8bec4...c6fd` covers 67 approved non-Spark OpenAI,
-  MiniMax, Z.AI, and local model/mode candidates over nine exact stages: 603
-  screens, 18 local warm-ups, and at most 18 confirmations (639 hard maximum).
+- Frozen manifest `62f8bec4...c6fd` covers 67 candidates/nine stages: 603
+  screens, 18 local warm-ups, and at most 18 confirmations (639 maximum).
   Harness `226f4532...b4e8` passes no-call preflight. OpenAI ledger
-  `a0c3f787...85e2` completes 270/270 cells: 238 structured, 197 eligible, 32
-  bounded failures; Nano fails all nine. Corrected manager `8d7d884a...4d92`
-  and post-block inspection leave zero temporary aliases.
+  `a0c3f787...85e2` completes 270 cells: 238 structured, 197 eligible, 32
+  bounded failures; Nano fails all nine. MiniMax ledger `5f93b3a3...7747`
+  completes 36 cells: 32 structured, 19 eligible, four failures; M3-adaptive
+  leads its compact stages. Manager `8d7d884a...4d92` leaves zero aliases.
 - Record audits `769fb577...6056`/`e98fd0e5...64a7` exit 1 only on inherited
   parity debt; AR-297/#335 has no mismatch. Tracker/release writes stay unauthorized.
 

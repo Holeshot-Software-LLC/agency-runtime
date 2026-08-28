@@ -2495,3 +2495,15 @@ semantics. The first alias body was rejected before inference because `tier`
 must be `paid`, not `subscription`; its sanitized HTTP-422 receipt is retained,
 manager `8d7d884a...4d92` fixes that metadata field, and every later create/
 delete passes. Post-block inspection reports zero temporary benchmark aliases.
+
+MiniMax completes all 36 frozen cells exactly once. Cumulative ledger
+`5f93b3a3...7747` adds 32 structured completions, 19 strict eligibilities, and
+four bounded failures across all four official model/mode candidates. M2.7 and
+M2.7-highspeed both fail planner and the hiring/security contract gates while
+passing the compact recruiter, critic, reranker, and judge fixtures; the
+highspeed route is slower on this workload. M3-off passes the 4.267-second
+planner but fails critic and hiring. M3-adaptive is the MiniMax compact-stage
+leader with 7.179-second planning, 1.535-second recruitment, 2.512-second
+critique, 1.405-second reranking, and 0.818-second judging, all at 100 points;
+it remains ineligible for both full hiring-contract stages. Every MiniMax alias
+is removed after its nine-cell slice.
