@@ -2835,3 +2835,18 @@ remaining failure is an isolated invalid enum rather than a stable prompt-shape
 defect, the next bounded package compares two fresh M3-off calls with two
 M3-adaptive calls on the exact content-free fixture without changing product
 code.
+
+MiniMax comparison manifest/runner `95b546c5...f445` / `9cd28015...c04d`
+execute exactly four zero-retry calls on that same content-free fixture. M3-off
+returns one score-100 contract in 13,347 ms then one transport/JSON failure in
+9,901 ms. M3-adaptive returns one score-80 schema failure in 22,007 ms then one
+transport/JSON failure in 14,922 ms. Neither route is repeatable.
+
+Ledger/analyzer/results `b339c776...4995` / `d7c2326b...fb2c` /
+`c4ca7581...6143` replay both saved responses, validate four starts and finishes,
+zero retries, six valid receipts, stable config `df75e01d...0922`, and final
+authenticated HTTP 200 with zero temporary aliases. Readiness remains eight of
+nine and MiniMax is rejected as the generation fallback. The next bounded
+package tests two Z.AI GLM-5-Turbo-off and two GLM-5-Turbo-on calls against the
+exact content-free fixture; those are the only non-OpenAI routes that previously
+returned semantically complete generator contracts.
