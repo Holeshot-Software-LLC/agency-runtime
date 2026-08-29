@@ -57,6 +57,13 @@ succeeded, the parent spawns exactly one child, and the child completes.
 - Attended trust itself succeeded and is not implicated; zero model calls
   were wasted on the deterministic refusals.
 
+
+- Implemented and merged as `ec46aced` (PR #352) with seven forward-version
+  tests; the branch parser resolves the retained real 0.151.0 child rollout
+  to its exact parent. Live verify-activation and the restricted canary wait
+  on the operator's fresh attended trust after the `6606ebed` install rotated
+  the launcher digest.
+
 ## Approach
 
 The owner directed on 2026-08-29 that nothing on the host system is pinned

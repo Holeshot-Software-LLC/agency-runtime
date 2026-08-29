@@ -3305,3 +3305,42 @@ direction. Claude and codex `exec` turns proceed natively after preflight
 failure while interactive strict paths refuse at Stop, so Agency master
 control is restored to OFF (generation 3) pending AR-335; the promoted
 planner route, bundles, and per-host wiring remain installed and unchanged.
+
+The AR-334/AR-335 implementation merges as `ec46aced` (PR #352, 16 checks)
+and rolls out the same evening. Exact main `6606ebed` builds, verifies, and
+passes strict Twine (wheel `c7e365bf...abcc`, sdist `09338ecb...7fc8`); the
+commit venv installs with `pip check` clean and packaged smoke 8/8. The
+branch parser resolves the retained real 0.151.0 child rollout to its exact
+parent before merge. Aggregate installs bind configuration v3
+(`a842795a...d9ec`, adding `content_fallback_routes` plus two fallback
+profiles) and then v4 (`3cf8a566...78fa`, raising `strict_call_budget` to 8
+after a live turn proved the planner rescue consumes three funded calls);
+hermes, claude, and openclaw complete (openclaw runtime-verified once the
+gateway is stopped for native installation), the dashboard serves v4, and
+codex remains `activation-required` pending fresh attended trust on the
+refreshed launcher digest.
+
+The AR-335 mechanism is live-proven end to end. Single-deployment
+content-fallback aliases exist for the planner (GLM-5 Turbo,
+`fe551fea...6321`) and recruiter (`03d783b3...692a`); alias receipts record
+that `/model/info` masks credentials so faithful clones must use
+environment-referenced keys, and that `chatgpt/gpt-5.6-luna` returns
+deterministic 403 HTML on faithful clones, implicating the production
+recruiter order-2 as dead route debt. The forced proof replays the retained
+production specimen through the real parse path and completes with a live
+Turbo call through the fallback alias (`structured_response_applied`,
+14,163 ms). Three consecutive live ordinary claude turns then show the
+planner primary emitting content-invalid completions and the Turbo
+content-fallback rescuing the stage each time, including a funded semantic
+repair.
+
+The remaining ordinary-turn blocker is isolated as AR-336: the recruiter
+stage consumes its full funded chain and dies on content codes
+(`recruiter_candidate_positive_evidence_invalid` on the M3 repair; the
+gpt-5.5 content-fallback rejected twice) while the canary staffing passes in
+the same hour. A diagnosis caution is retained: bare `run_preflight` calls
+without capability receipts run with `context_host=unknown` and empty tools
+and fabricate `agent_host_unsupported` rejections. Master control returns to
+OFF pending AR-336 and the operator's fresh Codex trust; the promoted
+planner route, fallback wiring, configuration v4, and host bundles all stay
+installed.
