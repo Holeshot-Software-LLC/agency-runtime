@@ -2928,3 +2928,13 @@ Safety repair alone returns an immediate MiniMax transport 408 after the
 disposable primary failure; it remains unreferenced with the exact order-2
 fallback plus disposable order-1 deployment. Resume after its 60-second
 cooldown; all eight proven aliases already contain their final two deployments.
+
+Safety cooldown resume returns one quality-100 MiniMax repair in 18,053 ms,
+then the forced-fallback call reaches the same deployment UUID with
+`x-litellm-attempted-fallbacks=1` but scores only 80. This contradicts the
+earlier two-pass sample and is retained as a production-repeatability failure,
+not waived. Ledger `40c56c2c...a5da` closes eight aliases and rejects MiniMax
+as the exact safety fallback. The disposable primary is removed; safety has
+one unreferenced order-2 deployment and every other alias has its final pair.
+The next bounded package tests the best remaining resident local candidate on
+the content-free safety fixture before changing that one manifest selection.
