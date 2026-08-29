@@ -116,16 +116,16 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   100; Llama fails. Six zero-retry calls clean up; the matrix is nine of nine.
 - All nine routes close: safety uses M3-off primary and GPT-5.4-mini fallback.
 - Safety forced/normal calls score 100 in 14.382/11.446s with exact UUIDs.
-- Audit `f42d79c8...b736`: 10 aliases, 19 deployments, 7 checks, no disposable.
-- Exact config `756da1c4...1cb0` and 1,024-dimensional embedding pass; install/manual gates remain.
-- Named gates `31896f7d...2f9a` pass: 921 docs, 864+3 Python, 138 UI, routing, Ruff/format, and 167/167 mutations.
+- Routes `527ef79a...760b`: 10 aliases, 19 deployments, exact 1,024 dimensions.
+- Gates `31896f7d...2f9a` and hosted run `33240382780` pass; PR #341 is merged.
+- Main `341f472b...099b` is active; four bundles pass, Codex needs attended trust.
 
 ## same-task-continuity
 
-- Artifacts/venv: `~/.agency-runtime/release-artifacts/dist-dc8bbde6a884f72614dae32585e488ce4997b9ac` / `~/.agency-runtime/release-venvs/ar297-main-dc8bbde6`.
-- Manual repair/evidence: config `ar297-litellm-df75e01d31dd8ebc.yaml` / `~/.agency-runtime/evidence/ar297-manual-live-20260828`.
-- Earlier live evidence remains under `~/.agency-runtime/evidence/ar297-host-live-20260828`.
-- Zero AR-297 containers remain; five exact images and healthy host services remain.
+- Main artifacts: `~/.agency-runtime/release-artifacts/dist-341f472ba3d57559b6730b66ec1504f5be52099b`.
+- Main evidence: `~/.agency-runtime/evidence/ar297-main-install-20260829-341f472b...099b`.
+- Exact config is `ar297-litellm-v2-756da1c4c916006f.yaml`; dashboard/OpenClaw are healthy.
+- Zero AR-297 containers remain; older immutable artifacts stay available for rollback.
 
 ## next-bounded-work-package
 
@@ -144,8 +144,8 @@ unchecked line. Mark an item complete only with exact retained evidence.
    six of nine cross-provider pairs now qualify with no stable config change.
 6. [x] Prompt hardening and the exact six-call follow-up are complete; no new
    repeated route qualifies and the stable config remains unchanged.
-7. [ ] All nine pairs, exact routes, and named gates are closed. Build/merge and
-   reinstall exact main without a pin under owner YOLO authority through 11 AM.
+7. [x] All pairs/routes/gates pass; PR #341 and exact main install are complete
+   without a version pin. Codex trust is the explicit operator checkpoint.
 8. [ ] Complete Codex then Claude/Hermes/OpenClaw manual tests and issue the
    Linux verdict.
 
