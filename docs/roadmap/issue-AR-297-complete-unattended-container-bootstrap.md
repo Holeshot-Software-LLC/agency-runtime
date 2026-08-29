@@ -3270,3 +3270,38 @@ deep RPC health check exits 0 after the window and both user services stay
 active. The zcode executable is not present on this machine. Remaining gates:
 attended Codex trust and `--verify-activation`, the restricted current-profile
 Codex canary, and the four ordinary attended host turns.
+
+The operator completes attended Codex trust on 2026-08-29 and delegates the
+verification and remaining tests. `agency install --agent codex
+--verify-activation` exits 1 with cause
+`codex_collaboration_projection_unavailable`: codex-cli auto-updated to
+0.151.0, whose rollouts no longer expose the plaintext Agency delivery
+envelope (the spawn task arrives as an encrypted inter-agent turn), so the
+AR-330 projection raises at `_codex_child_prompt_delivery` after every other
+stage passes. The restricted current-profile canary reproduces the refusal
+with diagnostic `native_collaboration_topology_invalid` while spawn, wait,
+and child-completion counts all pass. Attended trust itself succeeded and no
+model call was wasted. AR-334 records the 0.151 support gap; the short-term
+unblock is an owner decision between pinning codex 0.150.1 and carrying the
+0.151 contract.
+
+The four ordinary host turns then run unattended against the promoted route
+using the exact 2026-08-28 ordinary prompt and a Store-diff driver
+(`ar297-live-harness-20260829/ordinary_turn.py`). All four fail preflight.
+Claude (twice), OpenClaw, and Codex fail at the planner with
+`provider_no_valid_response`; an instrumented in-process preflight captures
+the cause: GPT-5.5-low returns a structurally perfect plan terminated by a
+stray `]}` (specimen `diag-failing-response-1.txt`, sha256 `6b742a20…`), the
+same extra-brace class that disqualified GPT-5.5-high. Because the completion
+is transport-successful, LiteLLM never fires the qualified Turbo fallback,
+and the zero-retry stage dies. Hermes passes the planner and fails the
+recruiter with `provider_response_contract_invalid` twice, matching both
+codex canary parents and one `agency route` probe that ended
+`no_safe_sufficient_team`/`inference-declared-gap`. The same alias returned
+valid plans for fixture, route, and canary calls in the same hour, so the
+emissions are intermittent. AR-335 records the architectural gap with the
+repository's own ADR-0185 alias-schema precedent as the recommended
+direction. Claude and codex `exec` turns proceed natively after preflight
+failure while interactive strict paths refuse at Stop, so Agency master
+control is restored to OFF (generation 3) pending AR-335; the promoted
+planner route, bundles, and per-host wiring remain installed and unchanged.

@@ -20,7 +20,7 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-297
-branch: claude/ar297-turbo-live-evidence
+branch: claude/ar297-live-test-findings
 evidence_commit: 233e122d543040ad656b8b33be79093c934e6ad8
 minimum_ledger_commit: b81dd8663ea52ca1c4ed9c6b40f98f2ff4270b61
 hard_checkpoint_percent: 50
@@ -51,8 +51,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   route lives in LiteLLM's database and survives restarts.
 - Owner accepted the fallback latency exception (23.9-30.2 s observed vs the
   20 s warm / 30 s cold target) for the order-2 slot only.
-- Agency master control is ON globally (generation 2); per-host runtime
-  controls are enabled.
+- Agency master control was enabled for the live phase and is restored to OFF
+  (generation 3) after the ordinary-turn matrix failed; per-host runtime
+  controls stay as installed.
 - Live isolated Claude agency canary PASSES end to end on the promoted route
   under `umask 077`: run/delegation/finalization, `code-reviewer` selected and
   loaded, zero preflight failures, verified child card delivery `collected`.
@@ -64,13 +65,25 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - New findings recorded: AR-331 (oracle vs policy discovery inventory),
   AR-332 (canary child umask), AR-333 (unsupported Codex isolated canary
   reported as ready); trackers #345-#347 exist and are linked.
+- Post-trust verification 2026-08-29: attended Codex trust succeeded, then
+  verify-activation exits 1 on codex-cli 0.151.0 contract drift (AR-334,
+  #349); the current-profile canary reproduces the deterministic refusal.
+- Ordinary-turn matrix 2026-08-29: all four hosts fail preflight on
+  content-invalid completions (AR-335, #350). Planner stray-`]}` specimen
+  `6b742a20…` retained; recruiter contract-invalid pattern on hermes and both
+  codex canary parents. The same alias returned valid plans for fixture,
+  route, and canary calls in the same hour.
 
 ## exact-blocker
 
-- Codex activation is attended by design: the refreshed bundle invalidated the
-  prior trust attestation. Fresh terminal `codex`, `Trust all and continue`
-  with all 8 Agency hook events listed, then
-  `agency install --agent codex --verify-activation`. No bypass.
+- AR-335 blocks every ordinary turn: a 200-but-content-invalid primary
+  completion never reaches the qualified Turbo fallback and the zero-retry
+  stage dies. Owner must select the mechanism (ADR-0185 alias-level schema
+  enforcement recommended) before master control returns to ON.
+- AR-334 blocks the Codex gates: codex-cli 0.151.0 hides the plaintext
+  delivery envelope from rollouts. Owner must pin codex 0.150.1 or fund the
+  0.151 contract. Attended trust is done and needs no repeat unless the
+  bundle changes.
 - claude-code 2.1.251 ships group-writable npm directories; the tree was
   tightened with `chmod -R g-w` so the host-version probe passes. A future
   claude-code upgrade may need the same tightening until AR-332 lands.
@@ -95,12 +108,20 @@ first unchecked line. Mark an item complete only with exact retained evidence.
    final-route evidence.
 3. [x] Enable master control and pass the live isolated Claude agency canary
    on the promoted route.
-4. [ ] Operator completes attended Codex trust in a fresh terminal, then
-   `agency install --agent codex --verify-activation` exits 0 with a fresh
-   persisted attestation and no bypass.
-5. [ ] Run the restricted current-profile Codex canary and retain its receipt.
-6. [ ] Run the four ordinary attended host turns (Codex, Claude, Hermes,
-   OpenClaw) against the promoted route and close AR-297 with exact evidence.
+4. [x] Operator completed attended Codex trust; verify-activation exits 1 on
+   the codex-cli 0.151.0 contract drift (AR-334), not on trust. No bypass.
+5. [x] Restricted current-profile Codex canary attempted: deterministic
+   `codex_collaboration_projection_unavailable` refusal retained (AR-334).
+6. [x] All four ordinary host turns attempted unattended and failed preflight
+   on content-invalid completions (AR-335); receipts and the planner
+   stray-`]}` specimen are retained. Master control restored to OFF.
+7. [ ] Owner decides: pin codex 0.150.1 or implement AR-334; select the
+   AR-335 mechanism (alias-level schema enforcement is the recommended
+   direction per ADR-0185).
+8. [ ] Land the selected AR-335 repair, re-enable master control, and pass
+   all four ordinary host turns against the promoted route.
+9. [ ] Pass Codex verify-activation and the restricted current-profile canary
+   on the decided codex version, then close AR-297 with exact evidence.
 
 ## verification
 
