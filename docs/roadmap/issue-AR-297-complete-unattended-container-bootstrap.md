@@ -2980,3 +2980,18 @@ the host-aware `agency config validate` reports the config valid but exits 2
 only for the expected pre-live cold-inventory warnings. The next bounded live
 step promotes M3-off after cooldown, proves its order-2 fallback and the
 OpenAI order-1 primary, then creates and proves the embedding alias.
+
+The actual M3-off production forced-fallback call then fails in 234 ms with
+HTTP 408 after the disposable order-1 failure, despite the three direct passes.
+Because that is the exact recovery path, the result is not waived; both exact
+partial deployments are removed. Resident Qwen3 32B thinking-on receives one
+120,097-ms cold timeout, then a fully resident response in 79,515 ms. That
+response passes every semantic, gold, and injection-safety check and has a
+128-character decision reason, but scores 80 solely because it returns the
+governed `contract.tools` array empty. This matches Qwen3 Coder's empty-tools
+defect; Coder also omitted the supplied nearest worker. The safety prompt now
+requires at least one exact bounded `required_tools` identifier and at least
+one supplied nearest worker when those governed inputs are present. It does
+not relax the closed schema or invent either value. Ruff check/format exit 0;
+122 hiring/contract/selection tests pass with one intentional skip. The next
+bounded package tests the faster local Qwen3 Coder against that exact repair.

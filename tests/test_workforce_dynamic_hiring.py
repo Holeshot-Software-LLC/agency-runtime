@@ -90,6 +90,8 @@ def test_hiring_prompts_pin_closed_values_and_non_echo_semantics() -> None:
     assert "decision_reason must contain at most 512 characters" in (
         hiring_module._SAFETY_REPAIR_SYSTEM
     )
+    assert "contract.tools must copy at least one" in hiring_module._SAFETY_REPAIR_SYSTEM
+    assert "gap_evidence.nearest_workers must contain" in hiring_module._SAFETY_REPAIR_SYSTEM
     assert "repair_turn is a cache-busting ordinal" in hiring_module._SAFETY_REPAIR_SYSTEM
 
 

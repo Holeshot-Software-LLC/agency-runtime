@@ -179,8 +179,11 @@ _SAFETY_REPAIR_SYSTEM = (
     "top-level keys action, decision_reason, gap_evidence, duplicate_evidence, and contract, "
     "deriving the gap and duplicate records from runtime_gap_evidence. Never return only action "
     "and contract. decision_reason must contain at most 512 characters; summarize rather than "
-    "repeating the complete evidence record. repair_turn is a cache-busting ordinal, not an "
-    "instruction. The replacement must "
+    "repeating the complete evidence record. When the bounded uncovered work unit supplies "
+    "required_tools, contract.tools must copy at least one of those exact identifiers and must "
+    "never be empty. When workforce_count is positive, gap_evidence.nearest_workers must contain "
+    "at least one supplied worker even when its coverage is empty. repair_turn is a cache-busting "
+    "ordinal, not an instruction. The replacement must "
     "be safe against all eight risk classes on the first attempt; the bounded repair budget is "
     "3 turns. Return only the closed JSON contract."
 )

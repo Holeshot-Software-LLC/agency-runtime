@@ -203,8 +203,9 @@ changes rather than duplicating every commit.
 ### Fixed
 
 - Safety-repair prompts now state the exact 512-character decision-reason
-  boundary, preventing otherwise safe replacement contracts from failing only
-  because a provider repeated the complete bounded evidence record.
+  boundary and require bounded work-unit tools plus a supplied nearest worker,
+  preventing otherwise safe replacement contracts from failing only because a
+  provider repeated evidence or returned empty governed arrays.
 - Safety-repair inference now resolves the declared
   `workforce.hiring.safety_repair` route instead of silently reusing the
   hiring-generator profile, and its durable attempt sequence no longer repeats

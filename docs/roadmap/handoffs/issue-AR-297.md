@@ -114,10 +114,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   generator varies; readiness is eight of nine.
 - Local comparison `055044a5...b793`: Qwen3 Coder generation repeats quality
   100; Llama fails. Six zero-retry calls clean up; the matrix is nine of nine.
-- Route proof closes eight aliases; prompt bounds `decision_reason` to 512.
-- A gateway restart clears a stale MiniMax client without config drift; all
-  eight pairs survive. M3-off then scores 100 in 12.565/8.458/5.639s.
-- Ledger `b31c76b9...ba25`; exact config `756da1c4...1cb0` passes at 1,024 dimensions; safety/probe aliases zero.
+- Eight aliases pass. M3-off scores 100 three times direct but forced recovery returns HTTP 408 and is rejected.
+- Resident Qwen3 32B scores 80 in 79.515s solely for empty governed tools.
+- Prompt now pins required tools and nearest worker; Ruff and 122 focused tests pass.
+- Exact config `756da1c4...1cb0` passes at 1,024 dimensions; safety/probe aliases zero.
 
 ## same-task-continuity
 
