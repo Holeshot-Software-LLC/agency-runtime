@@ -2850,3 +2850,16 @@ nine and MiniMax is rejected as the generation fallback. The next bounded
 package tests two Z.AI GLM-5-Turbo-off and two GLM-5-Turbo-on calls against the
 exact content-free fixture; those are the only non-OpenAI routes that previously
 returned semantically complete generator contracts.
+
+Z.AI comparison manifest/runner `0f6bdd40...541f` / `3e01d850...727e`
+execute exactly four zero-retry content-free calls. GLM-5-Turbo-off reaches the
+unchanged 48-second boundary twice at 48,137/48,075 ms; Turbo-on does the same
+at 48,065/48,035 ms. No response object returns, so both routes are rejected.
+
+Ledger/analyzer/results `a28bfd31...9709` / `5eb629c0...aee3` /
+`d95cf6da...bb3f` validate four starts and finishes, zero retries, six valid
+receipts, stable config `df75e01d...0922`, and final authenticated HTTP 200 with
+zero temporary aliases. Readiness remains eight of nine. The next bounded
+package prewarms then measures two calls each for local Qwen3 Coder 30B and
+Llama 3.1 8B against the shorter content-free fixture; both previously returned
+semantically complete score-80 generator contracts before the shape repairs.
