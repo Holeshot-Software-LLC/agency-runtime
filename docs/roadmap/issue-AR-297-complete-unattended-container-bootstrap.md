@@ -3188,3 +3188,17 @@ intentional skip. Replay script/artifact `3e5f8d84...5950` /
 response hashes and prove both schema-valid with zero policy violations. The
 product correction must now reach main and the installed runtime before the
 one retained authorized forced-production call can qualify Turbo as order 2.
+
+Candidate `84581629fb4fd7a97e696f90cdc81720f819158a` then passes the complete
+named local production gate: 921 documentation files, Ruff check and 696-file
+format check, 864 fast-spine tests with three intentional skips, 138 dashboard
+UI tests, routing eval 1.4.0, and decision-conformance baseline plus 167/167
+killed mutations with zero survived/invalid and unchanged source. The exact
+private-umask build, strict Twine check, and independent distribution verifier
+exit 0; wheel/sdist hashes are `2c55fc54...f71ce` / `314208f3...1117e`. A
+fresh neutral-directory wheel import, CLI help, and `pip check` also exit 0.
+Evidence `a01429a3...564b` preserves every diagnostic and final exit, including
+the intentionally retained fail-closed ambient-interpreter/umask attempts.
+No model call was made. Push, PR creation, merge, and installation from exact
+`origin/main` remain authorization-gated; the retained forced Turbo call and
+four attended host turns remain downstream.

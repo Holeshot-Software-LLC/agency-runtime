@@ -116,8 +116,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   deployments, exact config `756da1c4...1cb0`, and zero disposable aliases.
 - Closure `c9f097bf...6844` rejects Flash-off/GLM-5.2; Turbo is 1/2 only because
   its exact codebase-discovery unit hits the legacy software-engineering-only policy.
-- Policy `687386f6...093` retains path tokens but admits that exact built-in domain;
-  replay `f3999625...88dd` makes Turbo 2/2. Merge/install and one forced call remain.
+- Policy `687386f6...093` plus replay `f3999625...88dd` makes Turbo 2/2; candidate
+  `84581629...158a` passes 921 docs, Ruff/696 formats, 864+3 tests, 138 UI, routing, and 167/167 mutations.
+- Build/Twine/verify/install exit 0; wheel/sdist `2c55fc54...f71ce` / `314208f3...1117e`, record `a01429a3...564b`; no model ran.
 
 ## same-task-continuity
 
@@ -145,8 +146,8 @@ unchecked line. Mark an item complete only with exact retained evidence.
    repeated route qualifies and the stable config remains unchanged.
 7. [x] All pairs/routes/gates, PR #341, exact main install, attended Codex trust,
    and the owner-selected speed-first two-route proof are complete.
-8. [ ] Merge/install the policy correction, spend the retained forced Turbo
-   proof, then prove Codex `ready` and finish all four attended host turns.
+8. [ ] Obtain outward authorization, push/PR/merge/install `84581629...158a`, spend
+   the forced Turbo proof, then prove Codex `ready` and all four attended turns.
 
 ## verification
 
