@@ -97,10 +97,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Hiring critic is newly promotable: GPT-5.4-mini-low averages 2.085s and local
   Qwen 2B 6.258s including cold load, both 2/2 at quality 100. Planner,
   generator, and safety each have a repeated OpenAI primary but no fallback.
-- Refreshed report/input/data/SQL/validation `c608309f...68b6`/
-  `0ef0ff5f...ab52`/`362dd71f...387`/`1b2e80c0...e9eb`/
-  `0fa79f4c...68a8` preserve 313 rankings and admit six of nine pairs. Stable
-  config is unchanged; plugin tooling is restored exactly.
+- Report `8fd5667f...a587` / validation `ce57492e...572c` preserve 313 rankings,
+  reconcile 669 calls, and admit six of nine; plugin tooling is restored.
 - Prompt repair `38f51f01...276f` pins the five top-level keys, closed arrays,
   nonempty strings/tools, and verbatim-source exclusion for all safety fields.
   Ruff passes; 137 focused tests pass with one intentional skip. No model ran.
@@ -111,8 +109,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   inspection prove zero temporary aliases. Report/validation `8fd5667f...a587` /
   `ce57492e...572c` reconcile 669 calls and pass desktop/mobile/source checks;
   plugin tooling is restored exactly and readiness remains six of nine.
-- No-call remedy `2f01bd74...8fb4` / `a7dba727...0b12` pins planner keys and
-  projects only content-free safety facts. Ruff and 188 tests pass (one skip).
+- Closure manifest/ledger/results `a32cc7a5...a9e6` / `2dca9647...977a` /
+  `19565ac0...0472` add no pair: Z.AI planner fails 0/2, generator varies
+  100/80, and content-free M3 safety emits only two of five keys. Six receipts
+  and final HTTP 200 prove zero aliases; stable routing stays unchanged.
 - Record audits `769fb577...6056`/`e98fd0e5...64a7` exit 1 only on inherited
   parity debt; AR-297/#335 has no mismatch. Tracker/release writes stay unauthorized.
 
@@ -141,9 +141,10 @@ unchecked line. Mark an item complete only with exact retained evidence.
    six of nine cross-provider pairs now qualify with no stable config change.
 6. [x] Prompt hardening and the exact six-call follow-up are complete; no new
    repeated route qualifies and the stable config remains unchanged.
-7. [ ] The report and next remedy are complete. Obtain a new exact six-call
-   cap for Z.AI 5.2-low planner, Z.AI 5-Turbo-on generator, and M3-off safety;
-   then apply all nine pairs and prove fallback,
+7. [ ] Under owner YOLO authority through 11:00 AM, checkpoint the failed six
+   calls, reinforce exact key/array syntax, use unique content-free safety
+   nonces, and prewarm/repeat the local Qwen planner; then close all nine pairs,
+   apply the exact routes, and prove fallback,
    then reinstall exact main artifacts without an Agency version pin.
 8. [ ] Complete Codex then Claude/Hermes/OpenClaw manual tests and issue the
    Linux verdict.
@@ -173,7 +174,7 @@ git diff --check
 - All Agency inference on this system stays behind LiteLLM aliases. Any unknown
   model, endpoint, dimension, reranker, thinking level, judge route,
   harness-auth, or service-manager choice requires an owner interview.
-- Exclude Spark. Both the 24-call and six-call grants are exhausted; no further
-  model call is authorized. Keep zero deployment retries and retained accounting.
+- Exclude Spark. Owner grants in-scope model/config test authority through
+  11:00 AM local time; keep zero deployment retries and retained accounting.
 - Do not create or close another tracker, tag, sign, publish a release, or make
   an unrelated model/config change without separate authorization.

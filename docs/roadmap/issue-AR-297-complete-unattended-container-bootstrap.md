@@ -2675,3 +2675,24 @@ non-OpenAI strict screen pass at 17,044 ms), GLM-5-Turbo-on hiring generation
 (previously one score-80 shape failure before the explicit array/tool repair),
 and MiniMax M3-off safety repair against the new content-free prompt. Each needs
 two zero-retry repetitions under a new explicit six-call owner cap.
+
+The owner authorizes that exact six-call route-closure plan and grants broader
+in-scope YOLO authority through 11:00 AM local time. Manifest/runner
+`a32cc7a5...a9e6` / `dd2d3a9b...ecdd` execute exactly six starts and finishes
+with no retry. Z.AI GLM-5.2-low planner fails at the transport/JSON boundary
+twice in 24,498/26,249 ms. GLM-5-Turbo-on hiring generation passes once at
+quality 100 in 39,310 ms, then scores 80 in 29,477 ms because it collapses
+`execution_profile.working_principles` from an array to a string. MiniMax
+M3-off safety repair scores 56.25 twice: injection safety passes, but it emits
+only `action` and `contract`, omits the three other required top-level fields,
+and adds an empty second tool. The 31 ms second safety result is a cached
+identical-prompt response and is not independent evidence.
+
+Ledger/analyzer/results `2dca9647...977a` / `5ade50b5...950f` /
+`19565ac0...0472` replay all four saved responses, prove six valid create/delete
+receipts, and finish authenticated HTTP 200 inspection with zero temporary
+aliases. No pair is added, readiness remains six of nine, and stable routing is
+unchanged. The next bounded remedy must add a changing evaluation nonce to the
+content-free safety fixture, reinforce the exact five-key/array syntax, and
+prewarm the previously cold-sensitive local Qwen3 Coder planner before two
+strict repetitions rather than extend its production timeout.
