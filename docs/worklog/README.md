@@ -1428,6 +1428,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `b5a766e6` | 2026-08-29 | fix(ar297): pin governed safety arrays | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `ce29396f` | 2026-08-29 | docs(ar297): close ordered stage matrix | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `2300596b` | 2026-08-29 | docs(ar297): record final named gates | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `341f472b` | 2026-08-29 | Merge pull request #341 from Holeshot-Software-LLC/codex/ar297-manual-live-fix | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `e755ab53` | 2026-08-29 | docs(ar297): checkpoint exact main installation | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
