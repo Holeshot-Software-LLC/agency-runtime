@@ -3211,3 +3211,62 @@ reconciliation. Compile, Ruff, static-contract, and three simulated transaction
 checks exit 0. Preflight against old installed main exits 3 before LiteLLM auth,
 with zero model calls and zero mutations. Execution still requires the exact
 commit-named merged-main venv and exact initial production route.
+
+The 2026-08-29 independent review re-verifies the handoff from scratch: the
+pinned checkout equals merged `origin/main` `755efedc...5455`, all six retained
+evidence hashes, both distribution hashes, the installed policy `687386f6...093`
+against the repository file, the exact Agency and shared LiteLLM configuration
+digests, all five frozen runner inputs, and the three hosted runs
+(`33265165087`/`160`/`174`: CI, CodeQL, and dependency review, all success on
+`b81dd866`). The reviewer answers GO with conditions, and the owner approves
+execution on 2026-08-29, explicitly accepting the fallback latency exception:
+observed Turbo latencies of 23.9-30.2 s exceed the 20 s warm target and graze
+the 30 s cold bound, and are accepted for the order-2 fallback slot only
+because a fallback fires only after the primary has already failed inside the
+45 s deployment and 90 s router ceilings. The review also surfaces AR-331: the
+deterministic planning oracle's own repository-security plans fail the
+installed policy with `plan_missing_codebase_discovery`, an eval-surface
+disagreement that does not touch inference-only production turns.
+
+The owner-approved one-call promotion then executes against the quiescent
+system (OpenClaw gateway stopped for the window and restarted healthy, deep
+RPC exit 0). Self-test and preflight bind the exact venv, corrected policy,
+and exact initial route with zero calls and zero mutations. The forced
+production proof passes on the first and only call: HTTP 200 through
+`task-agency-planner-v2`, `x-litellm-attempted-fallbacks=1`, identity
+`ed1b5bbc-bbb7-533a-b3d8-5873a004e4c1`, syntax, schema, and semantics all
+valid under the corrected installed policy, injection-safe, 29,667 ms. The
+runner exits 0 with `promoted=true`, `exact_final=true`, one start and one
+finish, zero retries, zero cleanup errors, and no rollback. The final route is
+GPT-5.5-low order 1 (`c2692490...0cbb`) with GLM-5 Turbo thinking-on order 2
+(`ed1b5bbc...e4c1`); the previous GLM-5.3-Flash-low fallback deployment is
+removed. Both configuration files remain byte-identical (`756da1c4...1cb0` /
+`d2811be7...ecec`); the route change lives in LiteLLM's database, which
+`STORE_MODEL_IN_DB` persists across restarts. Promotion evidence hashes:
+summary `8faaf337016fb7dafca10f2214776093e7ae51a7426451fe37b5922f498f0e37`,
+final model info
+`79ce0c47c54969d32a7b748cd201e68caf34ba0cfcd033f973e6b9ef688f2f67`, call
+ledger `d3f289631788a3d6df22d151e7dc4ff438658f545b895324d62b0670919b8bc5`.
+
+The live harness phase follows under `ar297-live-harness-20260829`. Agency
+master control is enabled globally (generation 2) after per-host soft
+controls. The Claude host-version probe first fails on claude-code 2.1.251's
+group-writable npm directories ("cross-account substitution"); tightening the
+tree with `chmod -R g-w` proves version 2.1.251 and readiness. The first
+isolated agency canary completes a full live turn against the promoted route -
+one run, one delegation, one finalization, two routing rows, `code-reviewer`
+selected and loaded, four receipts, zero preflight failures - but fails only
+verified child card delivery with `artifact_not_trusted` because the ambient
+umask 002 lets the child create 775 project directories inside the 0700
+private lease (AR-332). The identical rerun under `umask 077` passes
+completely: `canary_passed=true`, delivery `collected`, and the same full
+Agency evidence. This is the first end-to-end live Agency turn on the merged
+main and the promoted planner route. The Codex isolated agency canary
+deterministically refuses before any child launch or model call because
+host-delivery collection requires the restricted current-profile canary
+(AR-333); Codex live proof therefore correctly waits on fresh attended trust.
+Hermes and OpenClaw report no proven noninteractive canary mode; OpenClaw's
+deep RPC health check exits 0 after the window and both user services stay
+active. The zcode executable is not present on this machine. Remaining gates:
+attended Codex trust and `--verify-activation`, the restricted current-profile
+Codex canary, and the four ordinary attended host turns.

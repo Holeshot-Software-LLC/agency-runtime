@@ -1440,6 +1440,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `233e122d` | 2026-08-29 | fix(ar297): admit codebase discovery domain | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `0ef96b8f` | 2026-08-29 | docs(ar297): checkpoint policy main readiness | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `14b5a644` | 2026-08-29 | docs(ar297): prepare one-call planner fallback proof | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `755efedc` | 2026-08-29 | Merge pull request #344 from Holeshot-Software-LLC/codex/ar297-manual-preflight-reliability | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `9ed759b0` | 2026-08-29 | docs(ar297): record turbo promotion, live canaries, and review findings | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
