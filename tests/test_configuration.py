@@ -359,6 +359,57 @@ def test_inference_profiles_and_recall_routes_round_trip_through_config_operatio
     assert loaded.inference.profiles["jina-reranker"].adapter == "jina"
 
 
+def test_inference_content_fallback_routes_round_trip_and_reject_unknown_profiles(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "agency.yaml"
+    state = read_config_state(path)
+
+    result = apply_config_operations(
+        [
+            {
+                "op": "set",
+                "path": "inference.profiles.agency-planner-content-fallback",
+                "value": {
+                    "adapter": "litellm",
+                    "model": "task-agency-planner-v2-content-fallback",
+                    "base_url": "http://127.0.0.1:4000",
+                    "api_key_env": "LITELLM_API_KEY",
+                },
+            },
+            {
+                "op": "set",
+                "path": "inference.content_fallback_routes",
+                "value": {"workforce.planner": "agency-planner-content-fallback"},
+            },
+        ],
+        expected_revision=state.revision,
+        path=path,
+    )
+
+    assert result.state.persisted["inference"]["content_fallback_routes"] == {
+        "workforce.planner": "agency-planner-content-fallback"
+    }
+    loaded = load_config(path, reload=True)
+    assert loaded.inference.content_fallback_routes == {
+        "workforce.planner": "agency-planner-content-fallback"
+    }
+
+    with pytest.raises(ConfigValidationError) as undefined:
+        apply_config_operations(
+            [
+                {
+                    "op": "set",
+                    "path": "inference.content_fallback_routes",
+                    "value": {"workforce.planner": "missing-profile"},
+                }
+            ],
+            expected_revision=result.state.revision,
+            path=path,
+        )
+    assert "undefined profile" in str(undefined.value)
+
+
 def test_inference_profile_direct_key_uses_write_only_secret_operation(tmp_path: Path) -> None:
     path = tmp_path / "agency.yaml"
     state = read_config_state(path)

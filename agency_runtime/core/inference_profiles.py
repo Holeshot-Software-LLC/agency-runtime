@@ -230,6 +230,44 @@ def resolve(
     )
 
 
+def resolve_content_fallback(
+    config: AgencyConfig,
+    route_key: str,
+) -> ProfileResolution | None:
+    """Resolve the optional content-fallback profile for one route key.
+
+    A content fallback exists for completions that succeed at the transport
+    but fail the stage's structured contract: the router-level order-2
+    fallback only observes transport failures, so a 200-with-invalid-content
+    primary would otherwise end the stage under the zero-retry doctrine. The
+    mapping is global and deliberately not harness-scoped; it names one
+    profile that the stage loop tries after the primary's content is
+    rejected. Returns ``None`` when no fallback is configured for the key,
+    and raises ``ConfigValidationError`` when the mapping names a profile
+    that is not defined.
+    """
+
+    inference = config.inference
+    if not isinstance(inference, InferenceConfig):
+        return None
+    profile_name = inference.content_fallback_routes.get(route_key, "").strip()
+    if not profile_name:
+        return None
+    profile = inference.profiles.get(profile_name)
+    if profile is None:
+        raise ConfigValidationError(
+            f"inference content_fallback_routes {route_key!r}: "
+            f"profile {profile_name!r} is not defined"
+        )
+    return ProfileResolution(
+        route_key=route_key,
+        profile=profile,
+        provider=provider_from_profile(profile),
+        thinking_level_configured=profile.thinking_level,
+        thinking_level_consumed=translate_thinking_level(profile),
+    )
+
+
 def shares_provider_with(
     left: ProfileResolution,
     right: ProfileResolution,
@@ -364,6 +402,7 @@ __all__ = [
     "enforce_strict_independence",
     "provider_from_profile",
     "resolve",
+    "resolve_content_fallback",
     "resolve_explicit_capability_route",
     "route_requires_independence",
     "shares_provider_with",

@@ -267,7 +267,7 @@ def _set_validator(path: str, value: Any) -> Any:
     validator = _SET_VALIDATORS.get(path)
     if validator is not None:
         return validator(value)
-    if path == "inference.routes":
+    if path in {"inference.routes", "inference.content_fallback_routes"}:
         return _validate_inference_routes(value, path)
     if path.startswith(_INFERENCE_PROFILE_PATH_PREFIX):
         return _inference_profile_for_operation(path, value)

@@ -11,6 +11,7 @@ related:
   - docs/roadmap/issue-AR-333-report-unsupported-codex-isolated-agency-canary.md
   - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
   - docs/decisions/0179-admit-exact-codex-canary-delivery-at-subagent-start.md
+  - docs/decisions/0193-admit-newer-codex-releases-under-the-newest-proven-child-contract.md
   - agency_runtime/core/canary_backends.py
   - agency_runtime/core/child_delivery_evidence.py
   - docs/worklog/README.md
@@ -57,6 +58,13 @@ succeeded, the parent spawns exactly one child, and the child completes.
   were wasted on the deterministic refusals.
 
 ## Approach
+
+The owner directed on 2026-08-29 that nothing on the host system is pinned
+and the code accounts for new versions; ADR-0193 records the admitted
+mechanism. The 0.151.0 child metadata proved byte-compatible with the 0.150.1
+contract except for the version string, so the version dispatch now admits
+release-shaped newer versions under the newest proven contract with bounded
+additive tolerance and exact structural invariants.
 
 Characterize the 0.151 delivery routing (where the decrypted spawn message
 is now observable, if anywhere), extend the rollout and stdout projections to

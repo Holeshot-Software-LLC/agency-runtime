@@ -3,7 +3,7 @@ title: "Changelog"
 status: active
 category: release
 created: 2026-07-10
-updated: 2026-08-27
+updated: 2026-08-29
 tags: [release, changelog]
 related:
   - docs/RELEASE_CHECKLIST.md
@@ -202,6 +202,15 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
+- Codex children spawned by CLI releases newer than the newest proven contract
+  (0.150.1) are no longer orphaned on version identity alone: shape-compatible
+  child metadata is admitted under that contract with bounded additive
+  tolerance while every lineage and timing invariant stays exact (AR-334,
+  ADR-0193).
+- A transport-successful but content-invalid primary completion no longer ends
+  a workforce stage: the optional `inference.content_fallback_routes` mapping
+  gives each configured route one different-provider profile that the existing
+  stage loop tries after the primary's content is rejected (AR-335, ADR-0192).
 - Repository path-mapping plans now recognize the built-in
   `codebase-discovery` domain as well as `software-engineering` when the unit
   remains a read-only analysis with explicit repository/code-path evidence.
