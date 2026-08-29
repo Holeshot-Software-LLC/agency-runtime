@@ -24,9 +24,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-297
-branch: codex/ar297-manual-live-fix
-evidence_commit: 7b7fd6a776ffe4230e45216c1951dec2a62ec6b0
-minimum_ledger_commit: 7079b27e762df7dd73f580eb06dd6b70985f0cdf
+branch: codex/ar297-speed-tiebreak
+evidence_commit: e755ab539c317915f4a71fda2d4de4bb6cf27fd0
+minimum_ledger_commit: 0e23be08bc202768f0683ef4697eace14fd8a4b5
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 ---
@@ -35,38 +35,28 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 
 ## checkpoint
 
-- Work only in `/tmp/agency-runtime-ar297-main.JWaPCg`; never touch the shared checkout. PRs #339/#340 merged through `origin/main` `1e6f5d07`.
-- Credential repair is installed. Stable `task-agency-generation` is rolled back
-  to local Qwen 14B; Spark is excluded after its bounded call audit.
-- Clean checkpoint `15cda0a4` precedes this recovery pair.
+- Work only in `/tmp/agency-runtime-ar297-speed-main.e2fb464c`; never touch the shared checkout.
+- PRs #341/#342 are merged through `origin/main` `e2fb464c`; exact main
+  `341f472b...099b` remains installed without an Agency version pin.
+- Clean checkpoint `e755ab53` / ledger `0e23be08` precedes this recovery pair.
 
 ## completed-evidence
 
-- Baseline mode-0600 config `a4e213d6...97348` routes every Agency call through
-  LiteLLM aliases, but ordinary terminals lack its referenced environment key.
-  Write-only projection from owner-approved `~/.openclaw/.env` creates exact
-  mode-0600 config `df75e01d...0922`; no value is printed and no Jina route exists.
-- Free Qwen 3 32B is promoted behind stable alias `task-agency-child-judge`.
-  Promotion/metadata/final validation/literal/spend receipts are
-  `6e19008f...1750`, `e1cba9f6...e841`, `42921a7e...867c`,
-  `b686ab4b...9abe`, and `d7183bb5...2f07`. Temporary aliases are removed.
+- Owner-private config `df75e01d...0922` resolves ordinary LiteLLM auth without
+  printing the key; no Jina route exists.
+- Free Qwen 3 32B promotion/validation/spend evidence is retained under stable
+  `task-agency-child-judge`; temporary aliases are removed.
 - Final named gates pass for `33d9503b`: 921 docs, Ruff/696 formats, 861 tests
-  with 3 skips, 138 dashboard tests, routing 1.4.0, and 167/167 mutations killed.
-  Manifest `ef8d8abc...1b09` records every accepted exit/hash and rejected
-  environment preflight; every accepted exit is 0.
-- Exact build/CI/AR-328 evidence remains canonical in the issue. Final images
-  and distributions pass exact build, Twine, verification, install, security,
-  and hosted-platform gates; no optional exhaustive workflow was dispatched.
+  plus 3 skips, 138 UI tests, routing 1.4.0, and 167/167 mutations killed.
+- Exact build, Twine, install, security, hosted-platform, and AR-328 evidence is
+  canonical in the issue; no optional exhaustive workflow was dispatched.
 - Strict container proofs pass separately: Codex `ce370bc8...1330` with one
   delivered native child; Claude `579d65c8...a0e9`; Hermes
   `4d04f360...02d8` with sealed tree `d7bc15f0...d8f8`; and OpenClaw
   `4debebf3...c748` with Store/systemd/13-hook evidence. All retain exact
   bundles and `missing=[]` where terminal delivery applies.
-- Fresh ordinary Claude/Codex/Hermes/OpenClaw verifiers
-  `ed965d7c...8ca9`/`db8f6780...e2f3`/`f64738b9...8ce9`/`61fd0b83...7fe7`
-  prove exact full cards, required aliases, healthy Stores, and no bypass.
-  Additive OpenClaw receipt `831edb7a...dd2f` preserves foreign policy, and
-  authenticated systemd RPC passes at `a144aab9...172`.
+- Ordinary Claude/Codex/Hermes/OpenClaw verifiers prove full cards, aliases,
+  healthy Stores, and no bypass; OpenClaw preserves foreign policy and RPC passes.
 - Teardown `40fa5062...1dc4` removes all 47 exact labelled containers with zero
   survivors; five images remain at `5c998f61...e276`, and host services stay healthy.
 - Merged-main `dc8bbde6` wheel/sdist `c3f3cd0d...675c` / `dc57fa54...5325`;
@@ -118,13 +108,21 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Safety forced/normal calls score 100 in 14.382/11.446s with exact UUIDs.
 - Routes `527ef79a...760b`: 10 aliases, 19 deployments, exact 1,024 dimensions.
 - Gates `31896f7d...2f9a` and hosted run `33240382780` pass; PR #341 is merged.
-- Main `341f472b...099b` is active; four bundles pass, Codex needs attended trust.
+- Main `341f472b...099b` is active; all four bundles pass. Attended Codex trust
+  and no-bypass activation `01119a71...2d69` exit 0 with a fresh v4 canary,
+  persisted attestation, `unmet_prerequisites=[]`, and empty stderr.
+- Owner-selected speed tie-break reverses planner to M3-off/GPT-5.5-high and
+  critic to Terra-medium/local Qwen 2B. Four zero-retry proofs score 100 at
+  3.851/10.105 and 1.300/0.670 seconds; ledger `a33d3810...3f67` closes 4/4.
+- Audit `8103d4b9...8d1` passes seven checks, nine routes, ten aliases, nineteen
+  deployments, exact config `756da1c4...1cb0`, and zero disposable aliases.
 
 ## same-task-continuity
 
 - Main artifacts: `~/.agency-runtime/release-artifacts/dist-341f472ba3d57559b6730b66ec1504f5be52099b`.
 - Main evidence: `~/.agency-runtime/evidence/ar297-main-install-20260829-341f472b...099b`.
-- Exact config is `ar297-litellm-v2-756da1c4c916006f.yaml`; dashboard/OpenClaw are healthy.
+- Exact config is `ar297-litellm-v2-756da1c4c916006f.yaml`; its stable alias
+  names and hash are unchanged while LiteLLM owns the two proven order swaps.
 - Zero AR-297 containers remain; older immutable artifacts stay available for rollback.
 
 ## next-bounded-work-package
@@ -144,8 +142,8 @@ unchecked line. Mark an item complete only with exact retained evidence.
    six of nine cross-provider pairs now qualify with no stable config change.
 6. [x] Prompt hardening and the exact six-call follow-up are complete; no new
    repeated route qualifies and the stable config remains unchanged.
-7. [x] All pairs/routes/gates pass; PR #341 and exact main install are complete
-   without a version pin. Codex trust is the explicit operator checkpoint.
+7. [x] All pairs/routes/gates, PR #341, exact main install, attended Codex trust,
+   and the owner-selected speed-first two-route proof are complete.
 8. [ ] Complete Codex then Claude/Hermes/OpenClaw manual tests and issue the
    Linux verdict.
 

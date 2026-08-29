@@ -3072,3 +3072,26 @@ including unauthenticated 401, authenticated 200/no-store, and exact full
 routes, exact 1,024-dimensional embedding, zero retries, unchanged shared
 LiteLLM config, and no disposable aliases. The package is now explicitly
 `waiting_for_operator` for Codex trust before the four attended manual turns.
+
+The operator completes fresh Codex hook trust, after which the exact no-bypass
+verification-only activation exits 0. Receipt `01119a718a06056ab87e7fb998f42a5686ff49c0d47d38a6d622534210872d69`
+records `ok=true`, a fresh `agency.codex-activation-canary.v4` attestation,
+`unmet_prerequisites=[]`, runtime-verified maturity, no installation mutation,
+and `trust_bypass_used=false`; stderr is the empty-content digest. The remaining
+work is the four attended ordinary-harness turns and their Store correlations.
+
+The owner then makes equal repeated quality and reliability a strict speed
+tie-break. The retained comparable runs identify two inversions: planner moves
+from GPT-5.5-high/M3-off to M3-off/GPT-5.5-high, and critic moves from local
+Qwen 3.5 2B/Terra-medium to Terra-medium/local Qwen 3.5 2B. A bounded four-call,
+zero-retry transaction proves the reordered planner primary/fallback at quality
+100 in 3,851/10,105 ms and the reordered critic primary/fallback at quality 100
+in 1,300/670 ms. Each exact deployment UUID matches its authenticated response
+header; both forced paths report one attempted fallback and both normal paths
+report zero. Ledger/final-model-info hashes are `a33d3810...3f67` /
+`4ffc596b...917`; runner/auditor hashes are `90168457...a9f` /
+`9a72a464...2e0`. Full audit `8103d4b9902befaaabbed496ace26351b361fcbb58442dc9a0bea1d862ec68d1`
+passes all seven checks across nine routes, ten aliases, and nineteen
+deployments, with exact 1,024-dimensional embedding, zero disposable aliases,
+unchanged mode-0600 Agency config `756da1c4...1cb0`, and unchanged shared
+LiteLLM config `d2811be7...ecec`.
