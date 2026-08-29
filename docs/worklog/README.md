@@ -1408,6 +1408,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `208041c1` | 2026-08-29 | docs(ar297): record hot route closure | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `b171985a` | 2026-08-29 | docs(ar297): record final-pair trials | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `c857fe19` | 2026-08-29 | fix(ar297): suppress ignored planner injections | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `4ed586ff` | 2026-08-29 | docs(ar297): record MiniMax fallback proof | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
