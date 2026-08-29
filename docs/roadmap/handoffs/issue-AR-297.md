@@ -20,7 +20,7 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-297
-branch: claude/ar297-rollout-evidence
+branch: claude/ar336-requalification-evidence
 evidence_commit: 233e122d543040ad656b8b33be79093c934e6ad8
 minimum_ledger_commit: b81dd8663ea52ca1c4ed9c6b40f98f2ff4270b61
 hard_checkpoint_percent: 50
@@ -80,11 +80,17 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   and three live planner rescues receipted under
   `~/.agency-runtime/evidence/ar335-content-fallback-aliases-20260829/`.
 
+- AR-336 receipts: matrix `cd4ef06c…`, repairs `eed4fc7a…`/`45211b19…`;
+  four-turn receipts `54db6a8e…` (claude, ok true), `7fc4eb2f…` (codex, ok
+  true), `c5b5a706…` (openclaw), `a74a20e9…` (hermes). LiteLLM response
+  cache identified as a fixture-probe hazard; use nonce-busted sampling.
+
 ## exact-blocker
 
-- AR-336 blocks the ordinary-turn gate: recruiter content codes across two
-  providers while canary staffing passes; the production recruiter order-2
-  (luna) is 403-dead. Master control stays OFF until it lands.
+- The sole open codex item is the restricted current-profile canary's
+  child-side delivery join (AR-334): parser and parent snapshot proven,
+  mid-turn open-trace state unobservable post-hoc; use the hook diagnostics
+  environment on the next attempt.
 - Codex gates wait on one fresh attended trust (the 6606ebed install rotated
   the launcher digest inside the hook commands); after trust,
   verify-activation is expected to exit 0 on 0.151 via ADR-0193.
@@ -126,13 +132,20 @@ first unchecked line. Mark an item complete only with exact retained evidence.
 8. [x] AR-334/AR-335 merged as `ec46aced`; exact main `6606ebed` installed
    with config v4; forced content-fallback proof passed; the planner rescue
    is live-proven in three consecutive ordinary turns.
-9. [ ] AR-336: requalify the recruiter route (contract vs models, plus the
-   dead luna order-2), then pass all four ordinary host turns and re-enable
-   master control.
-10. [ ] Operator completes fresh attended Codex trust on the new launcher
-   digest, then verify-activation must exit 0 on codex-cli 0.151 and the
-   restricted current-profile canary must pass before the codex ordinary
-   turn.
+9. [x] AR-336 executed: matrix revalidation, luna order-2 replaced with
+   gpt-5.5-low, planner content-fallback settled on gpt-5.6-terra medium;
+   all four ordinary host turns staff (claude/codex full bar with
+   finalization and header; openclaw/hermes staffing-complete per host
+   contract); master control ON (generation 6), inference operational.
+10. [x] Fresh attended Codex trust is complete and the ordinary codex turn
+   passes the full bar on 0.151 with Stop-gated publication.
+11. [ ] Close the last codex formality: run the restricted current-profile
+   canary under `AGENCY_CODEX_HOOK_EVENT_DIAGNOSTICS=1`, give the child-side
+   delivery join a recorded content-free refusal reason if needed (AR-334),
+   and land `verify-activation` exit 0 with a persisted attestation.
+12. [ ] Decide whether openclaw/hermes one-shot finalization observability
+   needs its own bounded item, then close AR-297 on the retained four-turn
+   evidence.
 
 ## verification
 

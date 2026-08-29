@@ -1448,6 +1448,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `ec46aced` | 2026-08-29 | fix(reliability): admit newer codex children and content fallbacks | [AR-334](../roadmap/issue-AR-334-support-codex-0151-collaboration-and-hook-contract.md) | null |
 | `6606ebed` | 2026-08-29 | Merge pull request #352 from Holeshot-Software-LLC/claude/ar334-335-host-update-resilience | [AR-334](../roadmap/issue-AR-334-support-codex-0151-collaboration-and-hook-contract.md) | null |
 | `69ca3a25` | 2026-08-29 | docs(ar297): record host-update resilience rollout and recruiter blocker | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `bc8cd54b` | 2026-08-29 | Merge pull request #354 from Holeshot-Software-LLC/claude/ar297-rollout-evidence | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `a029d917` | 2026-08-29 | docs(ar336): record recruiter requalification and four-turn staffing pass | [AR-336](../roadmap/issue-AR-336-requalify-the-recruiter-route-for-ordinary-tasks.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
