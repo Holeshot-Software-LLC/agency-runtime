@@ -101,12 +101,14 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   `0ef0ff5f...ab52`/`362dd71f...387`/`1b2e80c0...e9eb`/
   `0fa79f4c...68a8` preserve 313 rankings and admit six of nine pairs. Stable
   config is unchanged; plugin tooling is restored exactly.
-- Remaining evidence: planner MiniMax-off fails JSON and local 30B varies;
-  generator local 30B times out and GLM-Turbo varies; safety MiniMax-off scores
-  85 twice only because it reproduces untrusted source text.
 - Prompt repair `38f51f01...276f` pins the five top-level keys, closed arrays,
   nonempty strings/tools, and verbatim-source exclusion for all safety fields.
   Ruff passes; 137 focused tests pass with one intentional skip. No model ran.
+- Six-call follow-up manifest/ledger/results `ba2ecb0d...6207a` /
+  `02154df0...c2f2` / `249ce089...95cc` add no pair: M3 planner fails 0/2,
+  local Llama generator times out 2/2, and M3 safety varies 100/85. The latter
+  still echoes one marker in two fields. Six alias receipts and final HTTP 200
+  inspection prove zero temporary aliases; readiness remains six of nine.
 - Record audits `769fb577...6056`/`e98fd0e5...64a7` exit 1 only on inherited
   parity debt; AR-297/#335 has no mismatch. Tracker/release writes stay unauthorized.
 
@@ -133,10 +135,10 @@ unchecked line. Mark an item complete only with exact retained evidence.
    named repository gate pass with exact retained hashes and exits.
 5. [x] Execute the owner-authorized 24-call remediation and refresh the report;
    six of nine cross-provider pairs now qualify with no stable config change.
-6. [ ] Prompt hardening is complete and the owner authorizes exactly six
-   zero-retry calls: M3-adaptive planner, local Llama 3.1 8B generator, and
-   M3-off safety, two repetitions each. Execute and retain them.
-7. [ ] Apply all nine exact pairs, prove ordered forced fallback and latency,
+6. [x] Prompt hardening and the exact six-call follow-up are complete; no new
+   repeated route qualifies and the stable config remains unchanged.
+7. [ ] Refresh the report, bound the next prompt/runtime remedy, and obtain a
+   new explicit call cap; then apply all nine exact pairs and prove fallback,
    then reinstall exact main artifacts without an Agency version pin.
 8. [ ] Complete Codex then Claude/Hermes/OpenClaw manual tests and issue the
    Linux verdict.
@@ -166,8 +168,7 @@ git diff --check
 - All Agency inference on this system stays behind LiteLLM aliases. Any unknown
   model, endpoint, dimension, reranker, thinking level, judge route,
   harness-auth, or service-manager choice requires an owner interview.
-- Exclude Spark. The 24-call remediation cap is exhausted; the owner separately
-  authorizes only the exact six-call follow-up in checklist item 6. Keep zero
-  deployment retries and retained accounting.
+- Exclude Spark. Both the 24-call and six-call grants are exhausted; no further
+  model call is authorized. Keep zero deployment retries and retained accounting.
 - Do not create or close another tracker, tag, sign, publish a release, or make
   an unrelated model/config change without separate authorization.

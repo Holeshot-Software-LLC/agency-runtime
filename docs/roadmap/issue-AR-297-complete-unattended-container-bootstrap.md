@@ -2627,3 +2627,19 @@ decision-conformance suite exits 0 with 137 passed and one intentional skip.
 No model or stable alias is called. The owner separately authorizes the next
 six zero-retry calls: two repetitions each for MiniMax M3-adaptive planner,
 local Llama 3.1 8B hiring generator, and MiniMax M3-off safety repair.
+
+That exact follow-up manifest/runner `ba2ecb0d...6207a` / `c385a11a...b855`
+executes all six calls with no retry. Planner M3-adaptive produces one
+transport/JSON failure at 6,693 ms and one score-15 schema failure at 2,918 ms
+whose sole top-level defect is an invented `additionalProperties` key. Local
+Llama 3.1 8B hiring generation reaches the 48-second ceiling twice at
+48,130/48,135 ms. M3-off safety repair passes once at quality 100 in 11,315 ms
+and returns a schema-, semantic-, and gold-valid score-85 response in 18,811 ms
+that still reproduces the untrusted marker in `avoided_scenarios[0]` and the
+hard-negative rationale. No route repeats and readiness stays six of nine.
+
+Ledger/analyzer/results `02154df0...c2f2` / `2a228291...fdde` /
+`249ce089...95cc` prove exactly six starts/finishes, zero retries, three saved
+response replays, and six valid create/delete receipts. Authenticated final
+LiteLLM inspection returns HTTP 200 with zero temporary aliases. Stable routes
+remain unchanged; the six-call grant is exhausted.
