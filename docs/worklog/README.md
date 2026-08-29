@@ -1422,6 +1422,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `3013d387` | 2026-08-29 | fix(ar297): enforce zero LiteLLM retries | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `9d6b19c0` | 2026-08-29 | docs(ar297): checkpoint ordered route proof | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `1c8a2ad2` | 2026-08-29 | docs(ar297): checkpoint eight ordered aliases | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `beb97435` | 2026-08-29 | docs(ar297): reject unstable safety fallback | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
