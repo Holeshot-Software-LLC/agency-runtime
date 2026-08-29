@@ -112,9 +112,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Anti-echo intent/test `07fdffdc...2dfa` / `09b238ef...461c` pass Ruff and 188 tests; no model ran.
 - M3 fallback manifest/ledger/results `172ba9ac...5fc5` / `5106e992...1ee7` /
   `c8f79895...d90b`: planner repeats 100; generator varies; readiness is eight of nine.
-- Generator closure results `3f862167...b56e` / `cf3a3c38...2f6e`: M3 moves
-  to schema-complete 85/85; only raw-request echo remains. Content-free initial
-  projection `e69a0624...7956` passes Ruff/188 tests; cleanup passes.
+- Content-free generator result `c2a7f326...4e03`: raw request is absent; M3
+  varies action-none/100 in 0.966/10.336s. Two calls, three receipts, and cleanup
+  pass; stable config remains unchanged and readiness is eight of nine.
 - Record audits exit 1 only on inherited parity debt; AR-297/#335 is aligned.
 
 ## same-task-continuity
@@ -143,7 +143,7 @@ unchecked line. Mark an item complete only with exact retained evidence.
 6. [x] Prompt hardening and the exact six-call follow-up are complete; no new
    repeated route qualifies and the stable config remains unchanged.
 7. [ ] Under owner YOLO authority through 11:00 AM, eight pairs are closed.
-   Raw request is removed; run two bounded M3 generator calls;
+   Compare two M3-off and two M3-adaptive content-free generator calls;
    then apply exact routes, prove fallback, and reinstall
    exact main artifacts without an Agency version pin.
 8. [ ] Complete Codex then Claude/Hermes/OpenClaw manual tests and issue the

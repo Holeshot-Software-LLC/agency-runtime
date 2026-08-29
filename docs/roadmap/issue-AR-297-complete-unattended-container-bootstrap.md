@@ -2819,3 +2819,19 @@ The same content-free object flows into a bounded critic repair. Hiring
 source/test hashes are `e69a0624...7956` / `efec54af...b1a4`; Ruff 0.16.5
 check/format and the 188-test focused set exit 0 with one intentional skip. No
 model or stable alias is called.
+
+Content-free manifest/runner `e3ddc1ba...f4a4` / `5e973a33...b8ed` then execute
+two zero-retry MiniMax M3-off generation calls. The raw request is provably
+absent. The first returns `{"action":"none"}` in 966 ms and scores 15; the
+second returns a complete injection-safe score-100 contract in 10,336 ms. The
+distinct nonces and response hashes disprove an identical-prompt replay, but
+the route is still not repeatable.
+
+Ledger/analyzer/results `038c5195...853c` / `306c8b80...7773` /
+`c2a7f326...4e03` replay both responses, validate two starts and finishes, zero
+retries, three valid receipts, stable config `df75e01d...0922`, and final HTTP
+200 with zero temporary aliases. Readiness remains eight of nine. Because the
+remaining failure is an isolated invalid enum rather than a stable prompt-shape
+defect, the next bounded package compares two fresh M3-off calls with two
+M3-adaptive calls on the exact content-free fixture without changing product
+code.
