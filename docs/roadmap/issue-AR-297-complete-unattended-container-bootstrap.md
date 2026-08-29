@@ -2726,3 +2726,21 @@ benchmark aliases. Stable routing is unchanged. The next bounded candidate set
 is two current-fixture repetitions each of MiniMax M3-off and GPT-5.5-high for
 planner, plus GPT-5.4-mini-low and MiniMax M3-off for hiring generation. This
 eight-call package tests both required providers for each remaining stage.
+
+Final-pairs manifest/runner `bda0e8a2...c69b` / `df856b65...9e7b` execute that
+exact eight-call plan with no retry. GPT-5.5-high planner repeats at quality 100
+in 9,913/10,414 ms, and GPT-5.4-mini-low generation repeats at quality 100 in
+17,690/19,201 ms, confirming both current-fixture OpenAI primaries. MiniMax
+M3-off is not yet repeatable: planner scores 85 then 100 in 4,579/9,536 ms, with
+the first otherwise-valid response reproducing the untrusted phrase in
+`request_summary`; generation has one transport/JSON failure at 18,420 ms then
+one score-100 result at 21,249 ms.
+
+Ledger/analyzer/results `ae9c30e3...edbd` / `32b974a2...324f` /
+`33256428...7400` replay seven saved responses, validate exactly eight starts
+and finishes, zero retries, nine valid receipts, stable config
+`df75e01d...0922`, and authenticated HTTP 200 with zero temporary aliases.
+Readiness remains seven of nine because both cross-provider fallbacks still
+need two clean repetitions. The next bounded repair forbids quoting, describing,
+or paraphrasing ignored prompt-injection text in planner outputs, followed by
+two MiniMax M3-off planner and two generation measurements.

@@ -107,12 +107,13 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   safety varies 100/85 then emits only two keys. Both finish with zero aliases.
 - Shape/cache repair `863df134...a8d8` adds literal arrays, all five safety
   keys, and a noninstruction `repair_turn`; 188 focused tests pass.
-- Hot-closure manifest/ledger/results `af666f79...25bf` / `c375dd21...89d2` /
-  `e8d48a2c...959c` consume seven calls, zero retries. Local Qwen planner times
-  out prewarm plus 2/2 hot calls; Z.AI generator times out 2/2. M3 safety is
-  independently 2/2 at quality 100 in 28.261/6.053s with distinct hashes,
-  raising readiness to seven of nine. Nine receipts and authenticated HTTP 200
-  prove zero aliases; stable config remains `df75e01d...0922`.
+- Hot closure `e8d48a2c...959c` rejects local-Qwen planner and Z.AI generator
+  after bounded timeouts; M3 safety repeats quality 100 in 28.261/6.053s,
+  raising readiness to seven of nine with zero aliases/config mutation.
+- Final-pairs manifest/ledger/results `bda0e8a2...c69b` / `ae9c30e3...edbd` /
+  `33256428...7400`: GPT-5.5 planner/GPT-5.4-mini generator repeat quality 100;
+  M3 planner varies 85/100 on an injection echo and generator failure/100.
+  Eight zero-retry calls, seven replays, nine receipts, HTTP 200, and zero aliases pass; readiness remains seven of nine.
 - Record audits `769fb577...6056`/`e98fd0e5...64a7` exit 1 only on inherited
   parity debt; AR-297/#335 has no mismatch. Tracker/release writes stay unauthorized.
 
@@ -141,10 +142,10 @@ unchecked line. Mark an item complete only with exact retained evidence.
    six of nine cross-provider pairs now qualify with no stable config change.
 6. [x] Prompt hardening and the exact six-call follow-up are complete; no new
    repeated route qualifies and the stable config remains unchanged.
-7. [ ] Under owner YOLO authority through 11:00 AM, safety is closed and seven
-   of nine pairs qualify. Run the frozen eight-call planner/generator package;
-   then apply exact routes, prove fallback, and reinstall exact main artifacts
-   without an Agency version pin.
+7. [ ] Under owner YOLO authority through 11:00 AM, safety and both remaining
+   primaries are closed. Add the planner anti-echo repair and run four bounded
+   M3 fallback calls; then apply exact routes, prove fallback, and reinstall
+   exact main artifacts without an Agency version pin.
 8. [ ] Complete Codex then Claude/Hermes/OpenClaw manual tests and issue the
    Linux verdict.
 
