@@ -2899,3 +2899,22 @@ regression, all 68 roster/provider adapter tests, Ruff check/format, and
 `git diff --check` pass. A broader 161-pass diagnostic exposed two existing
 live-operator-state-coupled preflight expectations; the scoped adapter suite is
 green and the required named spine remains reserved for the post-install gate.
+
+The additive production projection begins under manifest/runner/ledger
+`354fdeff...585d` / `b9e70c15...a442` / `82491c19...669b`. Planner,
+recruiter, and critic each prove the real order-2 fallback after one disposable
+order-1 loopback failure (`x-litellm-attempted-fallbacks=1`), then the exact
+order-1 primary with zero fallbacks; all six accepted calls are HTTP 200,
+quality 100, and deployment-UUID reconciled. Recruiter's first MiniMax primary
+attempt transiently used its healthy OpenAI fallback, then the next ordinary
+call proved the MiniMax UUID at quality 100, demonstrating the desired
+unattended behavior without a retry.
+
+The first cold Qwen Coder reranker fallback reached its 45-second deployment
+ceiling. Reconfiguration adds `keep_alive=-1`; the immediate 45-ms retry is a
+bounded negative because LiteLLM correctly retains that exact deployment UUID
+in cooldown. At the clean checkpoint, planner/recruiter/critic each have their
+two final deployments, reranker has only its exact resident order-2 fallback,
+all other new aliases remain absent, and no disposable failure deployment
+survives. Resume after cooldown with the retained runner; do not recreate or
+delete the three proven aliases.

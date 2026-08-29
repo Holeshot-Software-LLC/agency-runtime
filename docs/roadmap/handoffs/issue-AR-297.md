@@ -115,8 +115,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Local comparison `055044a5...b793`: prewarmed Qwen3 Coder generation repeats
   quality 100 in 21.483/16.928s; Llama scores 47.5 twice. Six zero-retry calls,
   warmups, receipts, and cleanup pass; the matrix is nine of nine.
-- Safety repair consumes its declared route without duplicate receipts; Agency
-  LiteLLM calls also override shared retry policy to zero. Focused suites pass.
+- Route proof `82491c19...669b`: planner/recruiter/critic pass primary+forced
+  fallback. Reranker is fallback-only while its cold-failure UUID cools down.
 
 ## same-task-continuity
 
@@ -144,8 +144,8 @@ unchecked line. Mark an item complete only with exact retained evidence.
 6. [x] Prompt hardening and the exact six-call follow-up are complete; no new
    repeated route qualifies and the stable config remains unchanged.
 7. [ ] All nine pairs are closed and the safety route is live in source. Under
-   owner YOLO authority through 11:00 AM, apply exact aliases/routes, prove
-   forced fallback, and reinstall exact main artifacts without a version pin.
+   owner YOLO authority through 11:00 AM, resume the retained additive runner,
+   apply exact routes, and reinstall exact main artifacts without a version pin.
 8. [ ] Complete Codex then Claude/Hermes/OpenClaw manual tests and issue the
    Linux verdict.
 
