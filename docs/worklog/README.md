@@ -1439,6 +1439,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `683f047e` | 2026-08-29 | docs(ar297): qualify full planner primary | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `233e122d` | 2026-08-29 | fix(ar297): admit codebase discovery domain | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `0ef96b8f` | 2026-08-29 | docs(ar297): checkpoint policy main readiness | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `14b5a644` | 2026-08-29 | docs(ar297): prepare one-call planner fallback proof | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
