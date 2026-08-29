@@ -57,6 +57,13 @@ exactly the failure class it was qualified against.
   operator turns while the defect stands. Agency master control is OFF
   globally pending this repair.
 
+
+- Implemented and merged as `ec46aced` (PR #352); rolled out with config v4
+  (`3cf8a566...78fa`, strict_call_budget 8) and single-deployment fallback
+  aliases. The forced proof (retained specimen + live Turbo) passed, and the
+  planner rescue is live-proven in three consecutive ordinary turns. The
+  recruiter leg is blocked by AR-336 (route health), not by this mechanism.
+
 ## Approach
 
 The owner selected the mechanism on 2026-08-29 and ADR-0192 records it: an

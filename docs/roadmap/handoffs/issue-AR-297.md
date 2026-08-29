@@ -20,7 +20,7 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-297
-branch: claude/ar297-live-test-findings
+branch: claude/ar297-rollout-evidence
 evidence_commit: 233e122d543040ad656b8b33be79093c934e6ad8
 minimum_ledger_commit: b81dd8663ea52ca1c4ed9c6b40f98f2ff4270b61
 hard_checkpoint_percent: 50
@@ -74,16 +74,22 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   codex canary parents. The same alias returned valid plans for fixture,
   route, and canary calls in the same hour.
 
+- Rollout 2026-08-29 evening: exact main `6606ebed` built/verified/installed
+  (wheel `c7e365bf...abcc`); config v4 `3cf8a566...78fa` live everywhere;
+  content-fallback aliases `fe551fea...6321`/`03d783b3...692a`; forced proof
+  and three live planner rescues receipted under
+  `~/.agency-runtime/evidence/ar335-content-fallback-aliases-20260829/`.
+
 ## exact-blocker
 
-- AR-335 blocks every ordinary turn: a 200-but-content-invalid primary
-  completion never reaches the qualified Turbo fallback and the zero-retry
-  stage dies. Owner must select the mechanism (ADR-0185 alias-level schema
-  enforcement recommended) before master control returns to ON.
-- AR-334 blocks the Codex gates: codex-cli 0.151.0 hides the plaintext
-  delivery envelope from rollouts. Owner must pin codex 0.150.1 or fund the
-  0.151 contract. Attended trust is done and needs no repeat unless the
-  bundle changes.
+- AR-336 blocks the ordinary-turn gate: recruiter content codes across two
+  providers while canary staffing passes; the production recruiter order-2
+  (luna) is 403-dead. Master control stays OFF until it lands.
+- Codex gates wait on one fresh attended trust (the 6606ebed install rotated
+  the launcher digest inside the hook commands); after trust,
+  verify-activation is expected to exit 0 on 0.151 via ADR-0193.
+- Diagnosis caution: bare `run_preflight` without capability receipts runs
+  with `context_host=unknown` and fabricates host/tool rejections.
 - claude-code 2.1.251 ships group-writable npm directories; the tree was
   tightened with `chmod -R g-w` so the host-version probe passes. A future
   claude-code upgrade may need the same tightening until AR-332 lands.
@@ -115,13 +121,18 @@ first unchecked line. Mark an item complete only with exact retained evidence.
 6. [x] All four ordinary host turns attempted unattended and failed preflight
    on content-invalid completions (AR-335); receipts and the planner
    stray-`]}` specimen are retained. Master control restored to OFF.
-7. [ ] Owner decides: pin codex 0.150.1 or implement AR-334; select the
-   AR-335 mechanism (alias-level schema enforcement is the recommended
-   direction per ADR-0185).
-8. [ ] Land the selected AR-335 repair, re-enable master control, and pass
-   all four ordinary host turns against the promoted route.
-9. [ ] Pass Codex verify-activation and the restricted current-profile canary
-   on the decided codex version, then close AR-297 with exact evidence.
+7. [x] Owner decided 2026-08-29: no host pin, the code accounts for new
+   versions (AR-334, ADR-0193); content-fallback routes selected (ADR-0192).
+8. [x] AR-334/AR-335 merged as `ec46aced`; exact main `6606ebed` installed
+   with config v4; forced content-fallback proof passed; the planner rescue
+   is live-proven in three consecutive ordinary turns.
+9. [ ] AR-336: requalify the recruiter route (contract vs models, plus the
+   dead luna order-2), then pass all four ordinary host turns and re-enable
+   master control.
+10. [ ] Operator completes fresh attended Codex trust on the new launcher
+   digest, then verify-activation must exit 0 on codex-cli 0.151 and the
+   restricted current-profile canary must pass before the codex ordinary
+   turn.
 
 ## verification
 
