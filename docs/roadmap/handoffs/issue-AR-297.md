@@ -114,11 +114,11 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   zero-retry fixture proofs score 100; ledger `a33d3810...3f67` closes 4/4.
 - Audit `8103d4b9...8d1` passes seven checks, nine routes, ten aliases, nineteen
   deployments, exact config `756da1c4...1cb0`, and zero disposable aliases.
-- Manual Codex `01a04e2e...0025` fails before routing/finalization: both M3
-  planner calls are invalid (`96315ae6...eb6d` / `f9f00f08...2344`).
-- GPT-5.5-high/M3-off is restored; fixtures score 100 at 10.248/4.227s
-  (`8f739f42...1f46` / `2f54667d...09a2`). Diagnostic `c4e11b2d...634c`
-  proves GPT appends one unmatched `}`; strict parsing correctly rejects it.
+- Bakeoff `4977a4f1...99d7` accounts for 12/12 zero-retry full-prompt calls;
+  GPT-5.5-low wins at 7.107s, while GLM Flash is the only 2/2 cross-provider route at 29.059s.
+- Production order is now GPT-5.5-low / GLM-Flash-low with exact UUIDs, but the
+  forced fallback reaches GLM once and returns no parseable object in 44.446s
+  (`dd9a4a7b...d857`); normal-primary proof and fallback replacement remain.
 
 ## same-task-continuity
 
@@ -146,8 +146,8 @@ unchecked line. Mark an item complete only with exact retained evidence.
    repeated route qualifies and the stable config remains unchanged.
 7. [x] All pairs/routes/gates, PR #341, exact main install, attended Codex trust,
    and the owner-selected speed-first two-route proof are complete.
-8. [ ] After owner approval, run a full-prompt planner bake-off, prove Codex
-   `ready`, then complete Codex/Claude/Hermes/OpenClaw tests and verdict.
+8. [ ] Prove the promoted normal primary, qualify a reliable different-provider
+   fallback, then prove Codex `ready` and finish all four attended host turns.
 
 ## verification
 

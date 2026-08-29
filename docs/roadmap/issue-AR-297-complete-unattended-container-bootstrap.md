@@ -3118,3 +3118,36 @@ location, and character classes. Strict assurance forbids accepting or
 repairing that malformed output. Further live model tests require a renewed
 owner interview because the bounded authorization expired at 11:00; after
 approval, evaluate exact full planner prompts before another manual turn.
+
+The renewed, owner-approved full-prompt planner bakeoff uses the installed
+278-worker snapshot and the product's exact compact-planner schema, compiler,
+and plan-policy checks. Manifest, call ledger, and summary hashes are
+`2f86c8f4fb04e5cf7c34c21557553d524c818d8cd945b346cd1977654d14db07`,
+`c5ea70e582f4a95390f0f646ace0092f671945c14d23d0575fd72e3947f6749a`,
+and `4977a4f16eb4f84c34986ea5d49f4c2a32318aec7334abdcb193f3ead6a899d7`.
+All 12 authorized starts have matching finishes, every request declares zero
+retries, every response header reports zero attempted fallbacks, every exact
+deployment UUID reconciles, and authenticated inspection finds zero remaining
+disposable aliases. GPT-5.5-low, GPT-5.4-mini-low, Terra-low, and
+GLM-5.3-Flash-low pass both distinct production-shaped prompts. GPT-5.5-low is
+the speed winner at 7,107 ms mean; GPT-5.4-mini-low is 7,230.5 ms, Terra-low is
+8,958 ms, and the sole qualifying different-provider candidate GLM Flash is
+29,059 ms. Luna-low fails one semantic policy check. Local Qwen 14B
+abliterated returns JSON twice but omits both required top-level planner keys,
+so strict assurance rejects it despite a 581-ms warm response.
+
+The production alias is then changed additively from GPT-5.5-high/M3-off to
+GPT-5.5-low order 1 and GLM-5.3-Flash-low order 2 while both exact Agency and
+shared LiteLLM configuration files remain byte-identical at
+`756da1c4...1cb0` and `d2811be7...ecec`. The exact new deployment UUIDs are
+`c2692490-cc91-5363-95f5-954745830cbb` and
+`211c732c-97c0-565c-b1fe-457259dd2ed1`; the old UUIDs are removed and the
+disposable forced-failure UUID is removed after use. The production forced
+fallback reaches that exact GLM deployment with HTTP 200 and
+`x-litellm-attempted-fallbacks=1`, but its 44,446-ms response contains no
+parseable planner object. The strict proof therefore fails rather than
+promoting a 2/3 fallback. Promotion runner, call ledger, and mutation-receipt
+aggregate hashes are `3d95a6b4...58a6`, `dd9a4a7b...d857`, and
+`a1c7fd92...9b73`. GPT-5.5-low remains restored as order 1; the next bounded
+package must prove its ordinary primary path and replace or requalify the
+different-provider fallback before another attended Codex turn.
