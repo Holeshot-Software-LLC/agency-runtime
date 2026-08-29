@@ -1405,6 +1405,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `2f3b19dc` | 2026-08-29 | fix(ar297): project safety repair runtime facts | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `5d90ac90` | 2026-08-29 | docs(ar297): record route-closure trials | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `eeed5f92` | 2026-08-29 | fix(ar297): require complete safety repair shapes | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `208041c1` | 2026-08-29 | docs(ar297): record hot route closure | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
