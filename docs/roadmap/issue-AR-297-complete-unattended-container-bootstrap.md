@@ -3095,3 +3095,119 @@ passes all seven checks across nine routes, ten aliases, and nineteen
 deployments, with exact 1,024-dimensional embedding, zero disposable aliases,
 unchanged mode-0600 Agency config `756da1c4...1cb0`, and unchanged shared
 LiteLLM config `d2811be7...ecec`.
+
+The first attended ordinary Codex turn disproves the planner speed tie under a
+real full-workforce prompt. Session `01a04e2e...0025`, trace
+`01a04e2e...63e8`, reaches `preflight_failed` before any route, specialist, or
+finalization row. Both MiniMax M3 planner calls return HTTP 200 in 1,992/3,346
+ms but fail `plan_response_semantic_invalid`; the exact requested visible copy
+is then correctly refused by Stop because no Agency response was accepted.
+Content-free failure/call artifacts are `96315ae6...eb6d` /
+`f9f00f08...2344`.
+
+The planner is restored to the prior quality-first GPT-5.5-high/M3-off order.
+Its forced fallback and zero-fallback primary fixtures both score 100 in
+4,227/10,248 ms; ledger/model-info hashes are `8f739f42...1f46` /
+`2f54667d...09a2`. Installed-shape probes isolate a separate model-output
+defect: GPT returns HTTP 200 and `finish_reason=stop`, but its brace-delimited
+planner text is malformed. The final probe returns 492 characters and fails
+both ordinary and bounded JSON with `Extra data` at final position 491: one
+unmatched closing brace follows the otherwise complete object. Diagnostic
+`c4e11b2d...634c` contains only lengths, hashes, keys, token counts, error
+location, and character classes. Strict assurance forbids accepting or
+repairing that malformed output. Further live model tests require a renewed
+owner interview because the bounded authorization expired at 11:00; after
+approval, evaluate exact full planner prompts before another manual turn.
+
+The renewed, owner-approved full-prompt planner bakeoff uses the installed
+278-worker snapshot and the product's exact compact-planner schema, compiler,
+and plan-policy checks. Manifest, call ledger, and summary hashes are
+`2f86c8f4fb04e5cf7c34c21557553d524c818d8cd945b346cd1977654d14db07`,
+`c5ea70e582f4a95390f0f646ace0092f671945c14d23d0575fd72e3947f6749a`,
+and `4977a4f16eb4f84c34986ea5d49f4c2a32318aec7334abdcb193f3ead6a899d7`.
+All 12 authorized starts have matching finishes, every request declares zero
+retries, every response header reports zero attempted fallbacks, every exact
+deployment UUID reconciles, and authenticated inspection finds zero remaining
+disposable aliases. GPT-5.5-low, GPT-5.4-mini-low, Terra-low, and
+GLM-5.3-Flash-low pass both distinct production-shaped prompts. GPT-5.5-low is
+the speed winner at 7,107 ms mean; GPT-5.4-mini-low is 7,230.5 ms, Terra-low is
+8,958 ms, and the sole qualifying different-provider candidate GLM Flash is
+29,059 ms. Luna-low fails one semantic policy check. Local Qwen 14B
+abliterated returns JSON twice but omits both required top-level planner keys,
+so strict assurance rejects it despite a 581-ms warm response.
+
+The production alias is then changed additively from GPT-5.5-high/M3-off to
+GPT-5.5-low order 1 and GLM-5.3-Flash-low order 2 while both exact Agency and
+shared LiteLLM configuration files remain byte-identical at
+`756da1c4...1cb0` and `d2811be7...ecec`. The exact new deployment UUIDs are
+`c2692490-cc91-5363-95f5-954745830cbb` and
+`211c732c-97c0-565c-b1fe-457259dd2ed1`; the old UUIDs are removed and the
+disposable forced-failure UUID is removed after use. The production forced
+fallback reaches that exact GLM deployment with HTTP 200 and
+`x-litellm-attempted-fallbacks=1`, but its 44,446-ms response contains no
+parseable planner object. The strict proof therefore fails rather than
+promoting a 2/3 fallback. Promotion runner, call ledger, and mutation-receipt
+aggregate hashes are `3d95a6b4...58a6`, `dd9a4a7b...d857`, and
+`a1c7fd92...9b73`. GPT-5.5-low remains restored as order 1; the next bounded
+package must prove its ordinary primary path and replace or requalify the
+different-provider fallback before another attended Codex turn.
+
+After the required clean telemetry checkpoint, the restored ordinary primary
+is exercised through the real production alias. GPT-5.5-low returns HTTP 200
+in 11,154 ms, passes the unchanged syntax, schema, compiler, and plan-policy
+checks, matches deployment `c2692490-cc91-5363-95f5-954745830cbb`, and reports
+zero attempted fallbacks. The updated production ledger hash is
+`909856699f7c03f3b5a71235ad5ad48863385d8c672b3cc653200c1b3714e2f7`.
+The primary is therefore qualified; only a reliable different-provider
+planner fallback blocks the next ordinary Codex turn.
+
+The owner then authorizes six more zero-retry full-prompt comparisons and at
+most one forced-production proof. Runner, manifest, ledger, and summary hashes
+are `72630a8c...7ffe`, `41c54b9c...b02d`, `c9f097bf...6844`, and
+`555fa8ff...59ce`. Exactly six starts and finishes are retained; the seventh
+call is not spent because no candidate passes the legacy policy 2/2. GLM Flash
+thinking-off times out once and returns no parseable object once. GLM-5.2
+medium returns no parseable object twice. GLM-5 Turbo thinking-on passes the
+accessibility prompt in 23,871 ms, then returns a schema-valid six-unit
+repository plan in 30,230 ms that fails only
+`plan_missing_codebase_discovery`. All three disposable aliases are removed,
+the production route is unchanged, and final model-info hash
+`da94c198...29e5` confirms the same GPT-5.5-low/GLM-Flash-low UUID pair.
+
+The retained Turbo plan exposes a deterministic policy defect. Its first unit
+is a read-only analysis whose outcome maps the relevant repository code paths,
+but it uses Agency's exact built-in `codebase-discovery` domain instead of the
+less precise `software-engineering` domain. The predecessor detector already
+requires analysis classification plus repository/code-path outcome tokens, so
+accepting either of those two exact domains preserves the discovery invariant
+and does not relax syntax, topology, ordering, correctness review, security
+review, or mutation policy. Source/test hashes are `687386f6...093` /
+`71aacba1...9fa7`; Ruff check/format pass and 139 focused tests pass with one
+intentional skip. Replay script/artifact `3e5f8d84...5950` /
+`f3999625...88dd` apply the corrected policy to the two unchanged Turbo
+response hashes and prove both schema-valid with zero policy violations. The
+product correction must now reach main and the installed runtime before the
+one retained authorized forced-production call can qualify Turbo as order 2.
+
+Candidate `84581629fb4fd7a97e696f90cdc81720f819158a` then passes the complete
+named local production gate: 921 documentation files, Ruff check and 696-file
+format check, 864 fast-spine tests with three intentional skips, 138 dashboard
+UI tests, routing eval 1.4.0, and decision-conformance baseline plus 167/167
+killed mutations with zero survived/invalid and unchanged source. The exact
+private-umask build, strict Twine check, and independent distribution verifier
+exit 0; wheel/sdist hashes are `2c55fc54...f71ce` / `314208f3...1117e`. A
+fresh neutral-directory wheel import, CLI help, and `pip check` also exit 0.
+Evidence `a01429a3...564b` preserves every diagnostic and final exit, including
+the intentionally retained fail-closed ambient-interpreter/umask attempts.
+No model call was made. Push, PR creation, merge, and installation from exact
+`origin/main` remain authorization-gated; the retained forced Turbo call and
+four attended host turns remain downstream.
+
+While outward transition remains unapproved, the retained call is packaged but
+not spent. Runner/preparation hashes `d366a24a...70371` / `a89c7020...f3f4`
+freeze the exact Turbo-on UUID, repository-change prompt, corrected installed
+policy digest, helper/config/replay inputs, zero retries, and success/rollback
+reconciliation. Compile, Ruff, static-contract, and three simulated transaction
+checks exit 0. Preflight against old installed main exits 3 before LiteLLM auth,
+with zero model calls and zero mutations. Execution still requires the exact
+commit-named merged-main venv and exact initial production route.

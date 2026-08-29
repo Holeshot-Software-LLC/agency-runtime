@@ -555,7 +555,7 @@ def _has_codebase_discovery(inventory: _PlanInventory) -> bool:
             bool(_unit_tokens(item) & {"codebase", "repo", "repository"})
             or {"code", "path"} <= _unit_tokens(item)
         )
-        and "software-engineering" in item.domains
+        and bool({"codebase-discovery", "software-engineering"}.intersection(item.domains))
         for item in inventory.discoveries
     )
 
