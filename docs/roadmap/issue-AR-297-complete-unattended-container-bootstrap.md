@@ -3151,3 +3151,12 @@ aggregate hashes are `3d95a6b4...58a6`, `dd9a4a7b...d857`, and
 `a1c7fd92...9b73`. GPT-5.5-low remains restored as order 1; the next bounded
 package must prove its ordinary primary path and replace or requalify the
 different-provider fallback before another attended Codex turn.
+
+After the required clean telemetry checkpoint, the restored ordinary primary
+is exercised through the real production alias. GPT-5.5-low returns HTTP 200
+in 11,154 ms, passes the unchanged syntax, schema, compiler, and plan-policy
+checks, matches deployment `c2692490-cc91-5363-95f5-954745830cbb`, and reports
+zero attempted fallbacks. The updated production ledger hash is
+`909856699f7c03f3b5a71235ad5ad48863385d8c672b3cc653200c1b3714e2f7`.
+The primary is therefore qualified; only a reliable different-provider
+planner fallback blocks the next ordinary Codex turn.

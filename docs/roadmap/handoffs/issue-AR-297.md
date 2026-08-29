@@ -118,7 +118,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   GPT-5.5-low wins at 7.107s, while GLM Flash is the only 2/2 cross-provider route at 29.059s.
 - Production order is now GPT-5.5-low / GLM-Flash-low with exact UUIDs, but the
   forced fallback reaches GLM once and returns no parseable object in 44.446s
-  (`dd9a4a7b...d857`); normal-primary proof and fallback replacement remain.
+  while the 11.154s GPT primary passes (`90985669...e2f7`); replacement remains.
 
 ## same-task-continuity
 
