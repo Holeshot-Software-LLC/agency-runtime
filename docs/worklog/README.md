@@ -3,7 +3,7 @@ title: Worklog
 status: active
 category: worklog
 created: 2026-07-10
-updated: 2026-08-28
+updated: 2026-08-29
 tags: []
 related: []
 supersedes: []
@@ -1400,6 +1400,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `d4c31023` | 2026-08-28 | fix(ar297): clarify unresolved stage contracts | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `09498980` | 2026-08-29 | docs(ar297): record bounded model remediation | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `668e38cb` | 2026-08-29 | fix(ar297): close remaining hiring prompt shapes | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `6b6c31c0` | 2026-08-29 | docs(ar297): record six-call follow-up | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
