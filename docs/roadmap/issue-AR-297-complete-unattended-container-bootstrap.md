@@ -3037,3 +3037,38 @@ gate artifact is owner-private mode 0600. The first decision attempt under an
 incomplete tool venv and the first retained Ruff invocation that lacked its
 binary are environment negatives and are not counted as accepted gates. Exact
 main build/install and the four attended manual harness turns remain.
+
+PR [#341](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/341)
+then merged without bypass as `341f472ba3d57559b6730b66ec1504f5be52099b`;
+reviewed head `472fcfe1...3f10` is its second parent and the ancestry check
+exits 0. Automatic CI run `33240382780` passes the fast spine, AR-119 matrix,
+decision mutations, dashboard coverage, performance, security audit, Ubuntu
+and Windows distribution producers, Python 3.11/3.12/3.13 Windows portability,
+and the combined three-artifact byte-parity gate. CodeQL run `33240382805` and
+dependency review also pass. The complete compatibility and exhaustive
+coverage jobs are the policy-defined intentional skips; none was dispatched.
+
+A fresh detached `origin/main` worktree builds exact merge `341f472b...099b`.
+Wheel `8c0043c96aff043879e2ed4d80ef31787fc34ad01cf4a91c72e944369550acc5`
+and sdist `2d572780adf7f3d679cbb01b7fcf172ee537b0972e6bd04edba95070f1c95258`
+pass canonical build, strict Twine, independent distribution verification,
+fresh owner-private installation, `pip check`, and packaged smoke 8/8. The
+active command moves atomically to immutable main venv
+`~/.local/share/agency-runtime/venvs/341f472b...099b`; its previous target and
+venv remain intact for rollback. No Agency version constraint or release pin
+is created.
+
+The supported OpenClaw stop/install/start sequence exits 0 and deep RPC is
+healthy on its second bounded readiness probe. One exact `install --all`
+transaction binds config `756da1c4...1cb0`; Hermes/OpenClaw/Codex/Claude and
+dashboard each complete their native/filesystem step at exit 0 with bundles
+`9aa72f1a...9ea6`, `75302667...dc98`, `2497d154...34d2`, and
+`679021e9...3d69`. Overall receipt `44b70acd...4b5c` exits 1 only because the
+new Codex bundle truthfully requires fresh attended eight-hook trust; no bypass
+is used. Authenticated dashboard receipt `9ac8ef75...cd84` passes 17 checks,
+including unauthenticated 401, authenticated 200/no-store, and exact full
+2,659-byte prompt `c3cfc098...5848`. Post-install route audit
+`527ef79a...760b` again proves ten aliases, nineteen deployments, nine ordered
+routes, exact 1,024-dimensional embedding, zero retries, unchanged shared
+LiteLLM config, and no disposable aliases. The package is now explicitly
+`waiting_for_operator` for Codex trust before the four attended manual turns.
