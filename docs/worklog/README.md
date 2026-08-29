@@ -1398,6 +1398,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `1984791d` | 2026-08-28 | docs(ar297): record stage confirmations | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `b8d8abd7` | 2026-08-28 | docs(ar297): publish stage benchmark report | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `d4c31023` | 2026-08-28 | fix(ar297): clarify unresolved stage contracts | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `09498980` | 2026-08-29 | docs(ar297): record bounded model remediation | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
