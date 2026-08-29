@@ -112,9 +112,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Anti-echo intent/test `07fdffdc...2dfa` / `09b238ef...461c` pass Ruff and 188 tests; no model ran.
 - M3 fallback manifest/ledger/results `172ba9ac...5fc5` / `5106e992...1ee7` /
   `c8f79895...d90b`: planner repeats 100; generator varies; readiness is eight of nine.
-- Generator fallback comparisons `c4ca7581...6143` / `d95cf6da...bb3f` reject
-  MiniMax for variable quality and Z.AI after four timeouts. Eight zero-retry
-  calls and cleanup pass; readiness remains eight of nine.
+- Local comparison `055044a5...b793`: prewarmed Qwen3 Coder generation repeats
+  quality 100 in 21.483/16.928s; Llama scores 47.5 twice. Six zero-retry calls,
+  warmups, receipts, and cleanup pass; the matrix is nine of nine.
 - Record audits exit 1 only on inherited parity debt; AR-297/#335 is aligned.
 
 ## same-task-continuity
@@ -142,9 +142,8 @@ unchecked line. Mark an item complete only with exact retained evidence.
    six of nine cross-provider pairs now qualify with no stable config change.
 6. [x] Prompt hardening and the exact six-call follow-up are complete; no new
    repeated route qualifies and the stable config remains unchanged.
-7. [ ] Under owner YOLO authority through 11:00 AM, eight pairs are closed.
-   Prewarm/compare local Qwen3 Coder 30B and Llama 3.1 8B generation;
-   then apply exact routes, prove fallback, and reinstall
+7. [ ] Under owner YOLO authority through 11:00 AM, all nine pairs are closed.
+   Apply exact routes, prove forced fallback, and reinstall
    exact main artifacts without an Agency version pin.
 8. [ ] Complete Codex then Claude/Hermes/OpenClaw manual tests and issue the
    Linux verdict.

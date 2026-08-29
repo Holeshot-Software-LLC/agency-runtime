@@ -2863,3 +2863,18 @@ zero temporary aliases. Readiness remains eight of nine. The next bounded
 package prewarms then measures two calls each for local Qwen3 Coder 30B and
 Llama 3.1 8B against the shorter content-free fixture; both previously returned
 semantically complete score-80 generator contracts before the shape repairs.
+
+Local comparison manifest/runner `b4e41e99...bb48` / `b7543b0b...62cb`
+execute exactly six zero-retry calls: one counted warmup and two measured calls
+per model. Qwen3 Coder 30B warms in 21,882 ms, then returns two distinct,
+schema-, semantic-, gold-, and injection-valid score-100 generator contracts in
+21,483/16,928 ms. It closes the ninth different-provider pair within the 20s
+warm target on the second sustained call. Llama 3.1 8B warms in 5,850 ms but
+scores 47.5 twice in 18,741/15,477 ms and is rejected.
+
+Ledger/analyzer/results `857ea7f3...7799` / `e6af98fd...2e39` /
+`055044a5...b793` replay four measured responses, validate six starts and
+finishes, both warmups, zero retries, six valid receipts, exact stable config
+`df75e01d...0922`, and authenticated HTTP 200 with zero temporary aliases. The
+matrix is now nine of nine. Stable routes remain unchanged pending one atomic
+exact-config update and forced-failure proof.
