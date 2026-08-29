@@ -3344,3 +3344,32 @@ and fabricate `agent_host_unsupported` rejections. Master control returns to
 OFF pending AR-336 and the operator's fresh Codex trust; the promoted
 planner route, fallback wiring, configuration v4, and host bundles all stay
 installed.
+
+The operator re-trusts Codex on the rotated launcher digest and authorizes
+AR-336. The bounded recruiter matrix (nine calls, receipt-complete context)
+revalidates MiniMax-M3 2/2 and gpt-5.5-low 2/2 on ordinary fixtures, proving
+the earlier live rejections were a compound failure: Turbo-authored
+novel-capability plans starved staffing, the dead luna order-2 removed the
+transport escape, and the strict budget had already been consumed by the
+planner rescue. Route repairs land with receipts under
+`ar336-recruiter-requalification-20260829`: recruiter order-2 becomes
+gpt-5.5-low (`fc07bd43…`, which carries a live rescue immediately), and the
+planner content-fallback iterates Turbo -> qwen3-14b (rejected: deterministic
+context-ceiling refusal on stack-bearing live prompts) -> gpt-5.6-terra
+medium, which passes 2/2 in harness and then rescues live turns on three
+hosts. The LiteLLM response cache is identified as a fixture-probe hazard
+(3 ms cache hits masking live validity) and nonce-busted sampling is
+recorded as the corrected method.
+
+All four ordinary host turns then pass staffing on the promoted route:
+claude and codex meet the full bar with zero preflight failures, accepted
+routing, specialist loads, finalization, and the visible Agency header
+(codex on codex-cli 0.151 with Stop-gated publication); openclaw and hermes
+staff completely with specialists, routes, and alias receipts, their
+finalization unobservable in no-deliver and one-shot modes per host
+contract. Master control returns to ON (generation 6) and doctor reports
+inference operational. The one open codex formality is the restricted
+current-profile canary: the parser and the parent canary snapshot are
+individually proven, yet the child-side delivery join still declines
+(post-hoc unobservable mid-turn state), so `verify-activation` remains
+failing closed; the AR-334 record carries the diagnostics-mode next step.

@@ -64,6 +64,17 @@ succeeded, the parent spawns exactly one child, and the child completes.
   on the operator's fresh attended trust after the `6606ebed` install rotated
   the launcher digest.
 
+
+- Remaining on 2026-08-29 night: the ordinary codex turn passes the full bar
+  on 0.151 (staffing, finalization, header, Stop-gated publication), and the
+  parser plus the parent canary snapshot are individually proven, but
+  `verify-activation` still fails closed at the child-side delivery join
+  (`_restricted_codex_activation_child_parent_scope` returns None while its
+  observable preconditions pass post-hoc; the mid-turn open-trace state is
+  not reconstructable afterwards). Next bounded step: run the restricted
+  canary with `AGENCY_CODEX_HOOK_EVENT_DIAGNOSTICS=1` and, if needed, give
+  the child-scope join a content-free recorded refusal reason.
+
 ## Approach
 
 The owner directed on 2026-08-29 that nothing on the host system is pinned

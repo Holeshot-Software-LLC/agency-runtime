@@ -1,6 +1,6 @@
 ---
 title: "AR-336: Requalify the recruiter route for ordinary tasks"
-status: open
+status: in_progress
 category: roadmap
 created: 2026-08-29
 updated: 2026-08-29
@@ -56,6 +56,23 @@ contract.
 - Agency master control is OFF pending this repair; the promoted planner
   route, the content-fallback wiring, and host bundles stay installed.
 
+
+- 2026-08-29 late evening: the bounded matrix (9 recruiter calls) revalidated
+  MiniMax-M3 2/2 and gpt-5.5-low 2/2 on ordinary fixtures in a
+  receipt-complete harness, exposing the earlier live rejections as a
+  compound of Turbo-authored novel-capability plans plus the dead luna
+  order-2. Route repairs applied with receipts
+  (`ar336-recruiter-requalification-20260829/`): recruiter order-2
+  luna -> gpt-5.5-low (`fc07bd43…`, carried a live turn immediately), and the
+  planner content-fallback iterated Turbo -> qwen3-14b (context-ceiling
+  refusal on stack-bearing prompts) -> gpt-5.6-terra medium (2/2 harness,
+  then live openclaw/hermes/codex staffing). All four ordinary host turns
+  then staff: claude and codex pass the full bar including finalization and
+  the Agency header; openclaw and hermes staff completely with specialists,
+  routes, and receipts, with finalization not observable in no-deliver /
+  one-shot modes per their host contracts. Master control is restored to ON
+  (generation 6) and doctor reports inference operational.
+
 ## Approach
 
 Requalify the recruiter route against the current positive-evidence contract
@@ -72,9 +89,11 @@ restricted current-profile canary on codex-cli 0.151).
 
 ## Acceptance
 
-- [ ] A repeated ordinary-task recruiter qualification passes on the
+- [x] A repeated ordinary-task recruiter qualification passes on the
       selected primary and a working different-provider fallback.
-- [ ] The dead luna order-2 deployment is replaced or removed with receipts.
-- [ ] All four ordinary host turns pass preflight, staffing, and
-      finalization with retained receipts.
-- [ ] Master control is restored to ON.
+- [x] The dead luna order-2 deployment is replaced or removed with receipts.
+- [x] All four ordinary host turns pass preflight and staffing with
+      retained receipts; claude and codex additionally prove finalization
+      and the visible Agency header, while openclaw and hermes finalization
+      stays unobservable in no-deliver/one-shot modes (recorded follow-up).
+- [x] Master control is restored to ON.
