@@ -2775,3 +2775,17 @@ array, using the literal empty form when no edge is needed. Hiring source/test
 hashes are `81b5cb9e...a525` / `6e6dd0f3...e2a1`; Ruff 0.16.5 check/format and
 the 188-test focused set exit 0 with one intentional skip. No model or stable
 alias is called.
+
+Generator-close manifest/runner `5312ecb2...44ba` / `84bf953f...b345`
+execute exactly two zero-retry MiniMax calls in 7,633/7,625 ms, scoring 65/80.
+Both preserve the repaired full gap record and relationships array and satisfy
+all semantic/gold checks. One contract exceeds the four-host bound by adding an
+invented host; the other adds undeclared `contract.host_constraints`. The first
+also repeats an injection marker, so neither is eligible.
+
+Ledger/analyzer/results `c6d9b26d...57a2` / `a32e9c12...554c` /
+`3f862167...b56e` replay both responses, validate two starts and finishes, zero
+retries, three valid receipts, exact config `df75e01d...0922`, and authenticated
+HTTP 200 with zero temporary aliases. Readiness remains eight of nine. The next
+bounded repair forbids undeclared contract fields and requires hosts/platforms
+to copy only supplied work-unit values before another exact two-call proof.
