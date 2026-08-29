@@ -3,7 +3,7 @@ title: "AR-297: Complete unattended container bootstrap"
 status: in_progress
 category: roadmap
 created: 2026-08-25
-updated: 2026-08-27
+updated: 2026-08-29
 tags: [installation, containers, codex, hooks, automation, configuration]
 related:
   - README.md
@@ -2575,3 +2575,42 @@ state those exact closed-output requirements. Ruff 0.16.5 check/format and 160
 focused intent, hiring, contract, and decision-conformance tests exit 0. No
 model was called and no stable alias changed; a separately authorized maximum
 of 24 zero-retry remediation calls is still required before configuration.
+
+The owner then authorizes exactly 24 zero-retry remediation calls: 16 mandatory
+repetitions and at most eight predeclared stage reserves, with Spark and Jina
+excluded. Separate mode-0600 manifest/runner `f7477f43...9e3` /
+`de72a5ae...68d` preserve the original 639-call ledger and refuse reserve work
+unless a required stage still lacks a cross-provider pair. Ledger
+`deedc130...a1` contains exactly 24 unique starts and 24 matching finishes,
+zero retries, 20 valid alias receipts, 16 saved responses, and eight
+transport/JSON failures. Authenticated final inspection returns HTTP 200 with
+zero temporary aliases; no stable route or exact config changes.
+
+The repaired planner primary GPT-5.5-high passes twice at quality 100 in
+10,883/11,961 ms. MiniMax M3-off fails JSON twice, while the local 30B reserve
+times out once at 48,137 ms and passes once at 19,440 ms, so planner still has
+no repeatable fallback. Hiring critic is the only newly complete pair:
+GPT-5.4-mini-low passes twice at 2,165/2,004 ms and local Qwen 3.5 2B-off passes
+twice at 10,218 ms cold / 2,297 ms warm; MiniMax M3-adaptive varies one pass to
+one rejection. GPT-5.4-mini-low also passes hiring generation twice at
+17,203/17,961 ms and safety repair twice at 16,169/17,634 ms. Their fallbacks
+do not qualify: local Qwen3 Coder 30B reaches the 48-second limit on all four
+full-contract calls; GLM-5 Turbo generator returns one schema-invalid score-80
+response then one transport/JSON failure; MiniMax safety repair scores 85 twice
+but reproduces untrusted source text. Replay analyzer/results
+`0a4e92b7...1212` / `ce7704a5...b455` recheck all prompt, system, schema, saved
+response, decision, and score hashes.
+
+The refreshed mode-0600 technical report `c608309f...68b6` preserves all 313
+screen rankings, four chart IDs, and three table IDs; it adds all 24 remediation
+calls and raises readiness from five to six of nine pairs. Canonical
+input/data/SQL/notes/builder hashes are `0ef0ff5f...ab52`,
+`362dd71f...387`, `1b2e80c0...e9eb`, `290de5c3...49f`, and
+`1c8d81c9...2303`. Validation `0fa79f4c...68a8` passes packaging, chart
+extraction, 1,440/390-pixel browser checks, and keyboard source interaction in
+2.882 seconds; its analytical verdict is share-with-caveats because planner,
+hiring generation, and safety repair still lack repeatable cross-provider
+fallbacks. The temporary known top-bar correction used exact patched hashes
+`426377da...6c1` / `112e8616...e78`; plugin source/reader are restored exactly
+to `2f989ae1...ed4` / `6c5ed0d3...e7b5`, generated dependencies and failure
+screenshots are removed, and the complete LiteLLM config remains blocked.

@@ -3,7 +3,7 @@ title: "AR-297 active recovery capsule"
 status: active
 category: roadmap
 created: 2026-08-25
-updated: 2026-08-28
+updated: 2026-08-29
 tags: [handoff, containers, unattended, codex, claude, hermes, openclaw, release]
 related:
   - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
@@ -80,46 +80,30 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 
 ## exact-blocker
 
-- Config repair `530b7837...1e5e` resolves ordinary-terminal auth. Two manual
-  Qwen turns fail closed. Exact Luna Store `9c303400...ca81` passes in 96.72s;
-  corrected alias transition `3e6b3491...d4c` preserves the stable ID and moves
-  generation to subscription Luna-light at low reasoning.
-- Hard planner receipts show Luna `aab403bd...6270` at 13,689ms fails one
-  semantic gate while Terra `65427d17...36b` at 13,047ms passes. Profile
-  `437b7ce3...9b83` attributes the remaining delay to two 4,096-dimension
-  embedding batches and Mistral/embedding GPU reload churn.
-- Subscription may replace every text stage when faster and accepted;
-  embeddings remain local. GLM 5.2/5.3/Turbo fail at 46.32/23.01/21.88s;
-  delete receipts `f228ab49...0c6`/`e90cc768...faf`/`745087c8...d01` pass.
-  GLM 5.3 Flash low passes at 21.84s (`cdcca1ff...ae9d`) and remains temporarily
-  available for verifier testing. Sol-light passes at 12.98s
-  (`f1710b0a...ec6`), effectively tied with Terra's 13.16s single sample.
-- Complete repeated Sol/Terra/Spark comparison, 1,024-dimension Qwen3
-  embeddings, and subscription/local critic/reranker comparison. Target is
-  <=20s warm and <=30s cold without weakening strict/additive behavior.
-- Spark low/medium both pass the hard planner at 2.70/3.03s
-  (`ce3a5eff...ed6`/`64ed8fa6...ce2`). Full Spark/Sol configs initially time out at
-  60s cold and 45s repeated because the resident 8B embedding call alone takes
-  about 34--37s; Store hashes are `d22dfc65...79f9`/`948df40a...fbc8`.
-- Owner requests each stable text alias use the best measured primary plus an
-  ordered cross-provider fallback. Use LiteLLM deployment `order`, zero
-  per-deployment retries, cooldown, and forced-failure evidence.
-- Approved 0.6B embedding pull/show/alias receipts pass. Cold 27-input probe
-  `e861bd5d...ff0b` returns 27 uniform 1,024-value vectors in 2.148s. The first
-  full run returns in 7.79s but fails strict planning twice; Store `d1562321...c09`.
-- Journal audit `e307f2e5...784d` proves 12 distinct Spark completions. Stable
-  generation rollback `75855980...6bc` restores local Qwen, and deletion receipts
-  `bfb54a1f...86ae`/`b412d6cf...4851` remove both temporary Spark aliases.
+- Config repair `530b7837...1e5e` resolves ordinary auth. Stable generation is
+  rolled back to local Qwen and Spark is excluded after 12 audited completions.
+- Approved local Qwen3 0.6B embeddings return 27 exact 1,024-value vectors in
+  2.148s (`e861bd5d...ff0b`); strict/additive behavior stays unchanged.
+- Every stable text alias still requires the best repeated primary plus a
+  different-provider fallback, LiteLLM order 1/2, zero retries, cooldown, and
+  forced-failure evidence. Target remains <=20s warm and <=30s cold.
 - Manifest/ledger `62f8bec4...c6fd`/`2080c834...d56` contain exactly 603
   screens, 18 warm-ups, and 18 confirmations (639 maximum). Replay audit/
   rankings/results `1823c21b...19e`/`ebd3f4fb...cee6`/`f6c92e4b...189a` pass.
-- Report/input/data/SQL/builder `97ec909e...62d0`/`feddf5ca...1c50`/
-  `7ccd70e7...39f4`/`b966fe7c...dc3d`/`76e2ec0e...9b5` pass canonical desktop/
-  mobile/source checks. Readiness `3ba71f8e...9322` admits five of nine pairs;
-  no stable config changed and temporary reader tooling was restored exactly.
-- Failure audit maps the four gates to literal discovery tokens, empty approval
-  reasons, non-null closed strings, and non-echoed untrusted suffixes. The
-  prompt-only repair passes Ruff and 160 focused tests; live calls remain unauthorized.
+- Owner-authorized remediation manifest/ledger `f7477f43...9e3` /
+  `deedc130...a1` consume exactly 24 starts/finishes, zero retries. Replay
+  `ce7704a5...b455` checks 16 saved responses; 20 alias receipts pass and
+  authenticated inspection finds zero temporary aliases.
+- Hiring critic is newly promotable: GPT-5.4-mini-low averages 2.085s and local
+  Qwen 2B 6.258s including cold load, both 2/2 at quality 100. Planner,
+  generator, and safety each have a repeated OpenAI primary but no fallback.
+- Refreshed report/input/data/SQL/validation `c608309f...68b6`/
+  `0ef0ff5f...ab52`/`362dd71f...387`/`1b2e80c0...e9eb`/
+  `0fa79f4c...68a8` preserve 313 rankings and admit six of nine pairs. Stable
+  config is unchanged; plugin tooling is restored exactly.
+- Remaining evidence: planner MiniMax-off fails JSON and local 30B varies;
+  generator local 30B times out and GLM-Turbo varies; safety MiniMax-off scores
+  85 twice only because it reproduces untrusted source text.
 - Record audits `769fb577...6056`/`e98fd0e5...64a7` exit 1 only on inherited
   parity debt; AR-297/#335 has no mismatch. Tracker/release writes stay unauthorized.
 
@@ -144,9 +128,14 @@ unchecked line. Mark an item complete only with exact retained evidence.
    healthy dashboard/OpenClaw services.
 4. [x] Codex/Claude/scoped-Hermes/OpenClaw, authenticated dashboard, and every
    named repository gate pass with exact retained hashes and exits.
-5. [ ] Under a separately authorized call bound, remediate four unresolved
-   contracts, apply only repeated pairs, and prove the latency floor.
-6. [ ] Complete Codex then Claude/Hermes/OpenClaw manual tests and issue the
+5. [x] Execute the owner-authorized 24-call remediation and refresh the report;
+   six of nine cross-provider pairs now qualify with no stable config change.
+6. [ ] Harden closed hiring arrays/nonempty fields and safety non-reproduction;
+   seek owner authorization for exactly six calls: M3-adaptive planner, local
+   Llama 3.1 8B generator, and M3-off safety, two repetitions each.
+7. [ ] Apply all nine exact pairs, prove ordered forced fallback and latency,
+   then reinstall exact main artifacts without an Agency version pin.
+8. [ ] Complete Codex then Claude/Hermes/OpenClaw manual tests and issue the
    Linux verdict.
 
 ## verification
@@ -174,7 +163,7 @@ git diff --check
 - All Agency inference on this system stays behind LiteLLM aliases. Any unknown
   model, endpoint, dimension, reranker, thinking level, judge route,
   harness-auth, or service-manager choice requires an owner interview.
-- Exclude Spark. One screen call per candidate/stage and one confirmation call
-  only for the top two; zero deployment retries and retained call accounting.
+- Exclude Spark. The 24-call remediation cap is exhausted; no further model
+  call is authorized. Keep zero deployment retries and retained accounting.
 - Do not create or close another tracker, tag, sign, publish a release, or make
   an unrelated model/config change without separate authorization.
