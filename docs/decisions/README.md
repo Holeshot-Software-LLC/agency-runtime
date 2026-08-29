@@ -3,7 +3,7 @@ title: Decision registry
 status: active
 category: decisions
 created: 2026-07-10
-updated: 2026-08-27
+updated: 2026-08-29
 tags: [architecture, adr, governance]
 related:
   - docs/roadmap/README.md
@@ -119,6 +119,7 @@ Status meanings:
 | [ADR-0175](0175-batch-complete-embedding-input-sets.md) | Batch complete embedding input sets within a bounded recall budget | Accepted |
 | [ADR-0181](0181-use-litellm-aliases-as-host-inference-control-plane.md) | Use LiteLLM aliases as the host inference control plane | Accepted |
 | [ADR-0185](0185-enforce-child-judge-schema-at-litellm-alias.md) | Enforce the child-judge schema at the LiteLLM alias | Accepted |
+| [ADR-0192](0192-route-content-invalid-completions-to-a-content-fallback-profile.md) | Route content-invalid completions to a content-fallback profile | Accepted |
 
 ## Evidence and observability
 
@@ -144,6 +145,7 @@ Status meanings:
 | [ADR-0168](0168-refresh-openclaw-headers-through-awaited-tool-results.md) | Refresh OpenClaw headers through awaited tool results | Accepted |
 | [ADR-0174](0174-admit-local-ollama-canary-child-judges.md) | Admit local Ollama canary child judges | Accepted |
 | [ADR-0179](0179-admit-exact-codex-canary-delivery-at-subagent-start.md) | Admit exact Codex canary delivery at SubagentStart | Accepted |
+| [ADR-0193](0193-admit-newer-codex-releases-under-the-newest-proven-child-contract.md) | Admit newer Codex releases under the newest proven child contract | Accepted |
 | [ADR-0182](0182-bound-codex-activation-child-wait.md) | Bound the Codex activation child wait above observed latency | Superseded |
 | [ADR-0183](0183-honor-pinned-canary-judge-timeout.md) | Honor the pinned canary judge profile timeout | Accepted |
 | [ADR-0184](0184-bound-codex-wait-to-full-child-staffing.md) | Bound the Codex wait to the full child staffing path | Accepted |

@@ -118,6 +118,31 @@ _CODEX_V1501_PAYLOAD_KEYS: Final[frozenset[str]] = frozenset(
     {*_CODEX_V1491_PAYLOAD_KEYS, "agent_role"}
 )
 _CODEX_V1501_CANARY_AGENT_ROLE: Final[str] = "Code Reviewer"
+# Newest release whose child metadata contract is exactly proven by retained
+# live evidence. Newer release-shaped versions are admitted under that same
+# contract with bounded additive metadata (AR-334); versions at or below the
+# baseline still require their exact proven variant.
+_CODEX_FORWARD_BASELINE_CLI_VERSION: Final[tuple[int, int, int]] = (0, 150, 1)
+_CODEX_FORWARD_UNKNOWN_PAYLOAD_KEY_CEILING: Final[int] = 8
+# Additive tolerance never admits keys whose presence changes the meaning of
+# the lineage itself; a forked child is not a fresh spawn on any version.
+_CODEX_FORWARD_DISALLOWED_PAYLOAD_KEYS: Final[frozenset[str]] = frozenset({"forked_from_id"})
+_CODEX_RELEASE_CLI_VERSION: Final[re.Pattern[str]] = re.compile(
+    r"(\d{1,4})\.(\d{1,4})\.(\d{1,4})\Z"
+)
+
+
+def _codex_forward_cli_version(value: object) -> tuple[int, int, int] | None:
+    """Parse one release-shaped Codex CLI version for forward dispatch."""
+
+    if type(value) is not str:
+        return None
+    match = _CODEX_RELEASE_CLI_VERSION.fullmatch(value)
+    if match is None:
+        return None
+    return (int(match.group(1)), int(match.group(2)), int(match.group(3)))
+
+
 _CODEX_V1491_ROLLOUT: Final[re.Pattern[str]] = re.compile(
     r"rollout-(?P<year>\d{4})-(?P<month>\d{2})-(?P<day>\d{2})"
     r"T(?P<hour>\d{2})-(?P<minute>\d{2})-(?P<second>\d{2})-"
@@ -842,13 +867,31 @@ def _codex_v1491_parent_from_record(  # noqa: C901 - exact closed host schema
     if cli_version == "0.149.1":
         expected_payload_keys = _CODEX_V1491_PAYLOAD_KEYS
         expected_agent_role: str | None = None
+        payload_keys_admitted = set(payload) == expected_payload_keys
     elif cli_version == "0.150.1":
         expected_payload_keys = _CODEX_V1501_PAYLOAD_KEYS
         expected_agent_role = _CODEX_V1501_CANARY_AGENT_ROLE
+        payload_keys_admitted = set(payload) == expected_payload_keys
+    elif (
+        forward := _codex_forward_cli_version(cli_version)
+    ) is not None and forward > _CODEX_FORWARD_BASELINE_CLI_VERSION:
+        # A newer host release keeps the newest exactly-proven contract so a
+        # routine CLI auto-update cannot orphan the child on its own. Only
+        # bounded additive metadata is tolerated; every structural, lineage,
+        # and timing invariant below stays exact, so a release that actually
+        # changes the shape still fails closed.
+        expected_payload_keys = _CODEX_V1501_PAYLOAD_KEYS
+        expected_agent_role = _CODEX_V1501_CANARY_AGENT_ROLE
+        unknown_keys = set(payload) - expected_payload_keys
+        payload_keys_admitted = (
+            expected_payload_keys <= set(payload)
+            and len(unknown_keys) <= _CODEX_FORWARD_UNKNOWN_PAYLOAD_KEY_CEILING
+            and not (unknown_keys & _CODEX_FORWARD_DISALLOWED_PAYLOAD_KEYS)
+        )
     else:
         return ""
     if (
-        set(payload) != expected_payload_keys
+        not payload_keys_admitted
         or payload.get("agent_role") != expected_agent_role
         or payload.get("originator") != "codex_exec"
         or payload.get("history_mode") != "paginated"
@@ -951,7 +994,10 @@ def codex_v1491_child_parent_session(
     This is a pure, fail-closed artifact read. It confers no staffing or Store
     authority by itself; the caller must still resolve and validate one exact
     live parent route. The legacy name remains stable for embedders while the
-    closed parser admits the exact 0.149.1 and 0.150.1 metadata variants.
+    closed parser admits the exact 0.149.1 and 0.150.1 metadata variants, and
+    newer release-shaped CLI versions under the newest proven contract with
+    bounded additive metadata (AR-334) so routine host auto-updates do not
+    orphan the child on version identity alone.
     """
 
     child = _canonical_codex_uuid7(child_id)

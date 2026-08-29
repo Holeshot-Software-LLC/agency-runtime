@@ -22,6 +22,7 @@ from agency_runtime.core.inference_profiles import (
     resolve as resolve_inference_route,
 )
 from agency_runtime.core.inference_profiles import (
+    resolve_content_fallback,
     resolve_explicit_capability_route,
     resolve_explicit_capability_route_any,
 )
@@ -1021,9 +1022,18 @@ def configured_workforce_providers(
     effective_harness = _effective_inference_harness(config, harness)
     if route_key:
         try:
-            return (resolve_inference_route(config, route_key, harness=effective_harness).provider,)
+            resolution = resolve_inference_route(config, route_key, harness=effective_harness)
         except ConfigValidationError:
             pass
+        else:
+            chain = [resolution.provider]
+            # A content fallback rides behind the primary so the stage loop can
+            # leave a transport-successful but contract-invalid completion. The
+            # router-level order-2 deployment never observes that failure class.
+            fallback = resolve_content_fallback(config, route_key)
+            if fallback is not None and fallback.profile.name != resolution.profile.name:
+                chain.append(fallback.provider)
+            return tuple(chain)
     if config.inference.default_profile or (
         effective_harness in config.inference.harnesses
         and config.inference.harnesses[effective_harness].default_profile

@@ -8,6 +8,7 @@ tags: [bug, reliability, workforce, inference, litellm, fallback]
 related:
   - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
   - docs/decisions/0185-enforce-child-judge-schema-at-litellm-alias.md
+  - docs/decisions/0192-route-content-invalid-completions-to-a-content-fallback-profile.md
   - docs/decisions/0181-use-litellm-aliases-as-host-inference-control-plane.md
   - agency_runtime/core/structured_provider.py
   - agency_runtime/core/workforce/inference.py
@@ -57,6 +58,14 @@ exactly the failure class it was qualified against.
   globally pending this repair.
 
 ## Approach
+
+The owner selected the mechanism on 2026-08-29 and ADR-0192 records it: an
+optional global `inference.content_fallback_routes` mapping tried by the
+existing stage provider loop after the primary's content is rejected. An
+enforcement probe additionally proved the strict `response_format`
+json_schema the runtime already sends is silently dropped on the
+subscription responses bridge (`drop_params: true`), so backend grammar
+enforcement cannot currently cover that primary.
 
 ADR-0185 already enforces the child-judge response schema at the LiteLLM
 alias so malformed content becomes a provider failure and LiteLLM's own

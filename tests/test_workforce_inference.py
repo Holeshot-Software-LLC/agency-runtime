@@ -3297,6 +3297,127 @@ def test_provider_and_stage_model_selection_are_explicit_and_case_insensitive() 
     ]
 
 
+def test_content_fallback_route_extends_the_stage_provider_chain() -> None:
+    # AR-335: a transport-successful but contract-invalid primary completion
+    # never reaches the router-level order-2 fallback, so the stage chain
+    # itself must carry one different-provider profile behind the primary.
+    planner_profile = InferenceProfile(
+        name="agency-planner",
+        adapter="litellm",
+        model="task-agency-planner-v2",
+        base_url="https://router.example.test/v1",
+        api_key_env="LITELLM_API_KEY",
+    )
+    fallback_profile = InferenceProfile(
+        name="agency-planner-content-fallback",
+        adapter="litellm",
+        model="task-agency-planner-v2-content-fallback",
+        base_url="https://router.example.test/v1",
+        api_key_env="LITELLM_API_KEY",
+    )
+    config = AgencyConfig(
+        inference=InferenceConfig(
+            routes={"workforce.planner": "agency-planner"},
+            content_fallback_routes={"workforce.planner": "agency-planner-content-fallback"},
+            profiles={
+                "agency-planner": planner_profile,
+                "agency-planner-content-fallback": fallback_profile,
+            },
+        ),
+    )
+
+    chain = configured_workforce_providers(config, stage="planner", route_key="workforce.planner")
+
+    assert [(item.name, item.model) for item in chain] == [
+        ("agency-planner", "task-agency-planner-v2"),
+        ("agency-planner-content-fallback", "task-agency-planner-v2-content-fallback"),
+    ]
+
+
+def test_content_fallback_route_is_optional_and_never_duplicates_the_primary() -> None:
+    planner_profile = InferenceProfile(
+        name="agency-planner",
+        adapter="litellm",
+        model="task-agency-planner-v2",
+        base_url="https://router.example.test/v1",
+        api_key_env="LITELLM_API_KEY",
+    )
+    base_inference = InferenceConfig(
+        routes={"workforce.planner": "agency-planner"},
+        profiles={"agency-planner": planner_profile},
+    )
+    without_fallback = AgencyConfig(inference=base_inference)
+    self_referential = AgencyConfig(
+        inference=InferenceConfig(
+            routes={"workforce.planner": "agency-planner"},
+            content_fallback_routes={"workforce.planner": "agency-planner"},
+            profiles={"agency-planner": planner_profile},
+        ),
+    )
+
+    assert [
+        item.name
+        for item in configured_workforce_providers(
+            without_fallback, stage="planner", route_key="workforce.planner"
+        )
+    ] == ["agency-planner"]
+    assert [
+        item.name
+        for item in configured_workforce_providers(
+            self_referential, stage="planner", route_key="workforce.planner"
+        )
+    ] == ["agency-planner"]
+
+
+def test_invalid_primary_content_advances_to_the_content_fallback_provider() -> None:
+    # The stage loop already owns provider advancement; this regression pins
+    # the exact failure class from the 2026-08-29 matrix: the primary returns
+    # no valid structured response and the second provider must be consumed
+    # without any additional retry of the first.
+    from agency_runtime.core.workforce import inference as inference_module
+
+    primary = ProviderEntry(
+        name="agency-planner",
+        type="litellm",
+        model="task-agency-planner-v2",
+        base_url="https://router.example.test/v1",
+        api_key="k",
+    )
+    fallback = ProviderEntry(
+        name="agency-planner-content-fallback",
+        type="litellm",
+        model="task-agency-planner-v2-content-fallback",
+        base_url="https://router.example.test/v1",
+        api_key="k",
+    )
+    calls: list[str] = []
+
+    def scripted_invoker(provider, prompt, schema, *, system_prompt, timeout=None):
+        calls.append(provider.name)
+        if provider.name == "agency-planner":
+            return None
+        return _result({"value": "ok"})
+
+    parsed, attempts, failure = inference_module._invoke_stage(
+        stage="planner",
+        providers=(primary, fallback),
+        prompt="plan this",
+        schema={"type": "object"},
+        system_prompt="system",
+        budget=inference_module._CallBudget(maximum=4),
+        invoker=scripted_invoker,
+        parser=lambda value: value,
+    )
+
+    assert parsed == {"value": "ok"}
+    assert failure == ""
+    assert calls == ["agency-planner", "agency-planner-content-fallback"]
+    assert [(item.stage, item.provider_name, item.reason_code) for item in attempts] == [
+        ("planner", "agency-planner", "provider_no_valid_response"),
+        ("planner", "agency-planner-content-fallback", "structured_response_applied"),
+    ]
+
+
 def test_no_provider_declines_without_selecting_or_calling_the_model() -> None:
     snapshot = _snapshot(_contract("technical-analyst"))
     outcome = plan_and_staff_workforce(

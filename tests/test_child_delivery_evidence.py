@@ -315,6 +315,114 @@ def test_codex_v1501_child_metadata_resolves_the_exact_explicit_role_parent(
     )
 
 
+def _codex_forward_meta(*, cwd: Path, cli_version: str = "0.151.0") -> dict[str, object]:
+    """Model a newer host release whose shape matches the 0.150.1 contract.
+
+    Mirrors the retained real 0.151.0 child session metadata from the
+    2026-08-29 live harness: identical keys and lineage nesting, only the
+    ``cli_version`` differs (AR-334).
+    """
+
+    meta = copy.deepcopy(_codex_v1501_meta(cwd=cwd))
+    payload = meta["payload"]
+    assert isinstance(payload, dict)
+    payload["cli_version"] = cli_version
+    return meta
+
+
+def test_codex_forward_release_child_metadata_resolves_under_newest_contract(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    codex_v1491_artifact_trust: None,
+) -> None:
+    root = tmp_path / "sessions"
+    cwd = tmp_path / "canary-work"
+    cwd.mkdir()
+    artifact = _codex_v1491_artifact(root, cwd=cwd, meta=_codex_forward_meta(cwd=cwd))
+    monkeypatch.setattr(subject, "default_child_artifact_root", lambda host: root)
+
+    assert (
+        codex_v1491_child_parent_session(
+            artifact,
+            child_id=CODEX_V1491_CHILD_SESSION,
+            cwd=cwd,
+        )
+        == CODEX_V1491_PARENT_SESSION
+    )
+
+
+def test_codex_forward_release_tolerates_bounded_additive_metadata(
+    tmp_path: Path,
+    codex_v1491_artifact_trust: None,
+) -> None:
+    root = tmp_path / "sessions"
+    cwd = tmp_path / "canary-work"
+    cwd.mkdir()
+    meta = _codex_forward_meta(cwd=cwd, cli_version="0.152.3")
+    payload = meta["payload"]
+    assert isinstance(payload, dict)
+    payload["internal_chat_message_metadata_passthrough"] = {}
+    payload["collaboration_mode_kind"] = "default"
+    artifact = _codex_v1491_artifact(root, cwd=cwd, meta=meta)
+
+    assert (
+        codex_v1491_child_parent_session(
+            artifact,
+            child_id=CODEX_V1491_CHILD_SESSION,
+            cwd=cwd,
+            root=root,
+        )
+        == CODEX_V1491_PARENT_SESSION
+    )
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        "prerelease_version",
+        "older_than_baseline",
+        "unknown_key_flood",
+        "missing_required_role",
+        "forked_history_marker",
+    ],
+)
+def test_codex_forward_release_contract_drift_fails_closed(
+    tmp_path: Path,
+    codex_v1491_artifact_trust: None,
+    mutation: str,
+) -> None:
+    root = tmp_path / "sessions"
+    cwd = tmp_path / "canary-work"
+    cwd.mkdir()
+    meta = _codex_forward_meta(cwd=cwd)
+    payload = meta["payload"]
+    assert isinstance(payload, dict)
+    if mutation == "prerelease_version":
+        payload["cli_version"] = "0.151.0-nightly"
+    elif mutation == "older_than_baseline":
+        payload["cli_version"] = "0.149.2"
+    elif mutation == "unknown_key_flood":
+        for index in range(9):
+            payload[f"additive_key_{index}"] = index
+    elif mutation == "missing_required_role":
+        del payload["agent_role"]
+    elif mutation == "forked_history_marker":
+        payload["forked_from_id"] = CODEX_V1491_PARENT_SESSION
+    else:  # pragma: no cover - the parameter list is closed above
+        raise AssertionError(f"unhandled mutation: {mutation}")
+    artifact = _codex_v1491_artifact(root, cwd=cwd, meta=meta)
+
+    assert (
+        codex_v1491_child_parent_session(
+            artifact,
+            child_id=CODEX_V1491_CHILD_SESSION,
+            cwd=cwd,
+            root=root,
+        )
+        == ""
+    )
+
+
 def test_codex_rollout_filename_accepts_utc_and_host_local_wall_time() -> None:
     payload_at = datetime(2026, 8, 27, 5, 23, 23, tzinfo=timezone.utc)
     utc_wall = payload_at.replace(tzinfo=None)

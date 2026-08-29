@@ -929,7 +929,14 @@ def _validate_inference_routes(value: Any, path: str) -> dict[str, str]:
 def _validate_inference(value: Any) -> dict[str, Any]:
     path = "inference"
     section = _mapping(value, path)
-    allowed = {"default_profile", "strict_independence", "routes", "profiles", "harnesses"}
+    allowed = {
+        "default_profile",
+        "strict_independence",
+        "routes",
+        "content_fallback_routes",
+        "profiles",
+        "harnesses",
+    }
     if set(section) - allowed:
         raise _error(path, "contains unsupported fields")
     default_profile = _string(
@@ -959,6 +966,16 @@ def _validate_inference(value: Any) -> dict[str, Any]:
         raise _error(
             "inference.routes",
             "routes reference undefined profile(s): " + ", ".join(missing),
+        )
+    content_fallback_routes = _validate_inference_routes(
+        section.get("content_fallback_routes", {}),
+        "inference.content_fallback_routes",
+    )
+    content_missing = sorted(set(content_fallback_routes.values()) - set(profiles))
+    if content_missing:
+        raise _error(
+            "inference.content_fallback_routes",
+            "routes reference undefined profile(s): " + ", ".join(content_missing),
         )
     harnesses_raw = section.get("harnesses", {})
     harnesses_section = _mapping(harnesses_raw, "inference.harnesses")
@@ -1006,6 +1023,7 @@ def _validate_inference(value: Any) -> dict[str, Any]:
         "default_profile": default_profile,
         "strict_independence": strict_independence,
         "routes": routes,
+        "content_fallback_routes": content_fallback_routes,
         "profiles": profiles,
         "harnesses": harnesses,
     }

@@ -1444,6 +1444,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `9ed759b0` | 2026-08-29 | docs(ar297): record turbo promotion, live canaries, and review findings | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `eec4add7` | 2026-08-29 | Merge pull request #348 from Holeshot-Software-LLC/claude/ar297-turbo-live-evidence | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `8f6c797d` | 2026-08-29 | docs(ar297): record post-trust verification and ordinary-turn matrix | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `59f417c8` | 2026-08-29 | Merge pull request #351 from Holeshot-Software-LLC/claude/ar297-live-test-findings | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `ec46aced` | 2026-08-29 | fix(reliability): admit newer codex children and content fallbacks | [AR-334](../roadmap/issue-AR-334-support-codex-0151-collaboration-and-hook-contract.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes

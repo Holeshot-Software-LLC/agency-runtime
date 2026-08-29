@@ -338,11 +338,16 @@ class InferenceConfig:
     profiles whose schema would otherwise permit shared independence.
     ``harnesses`` scopes route tables to the host that owns the turn so the
     same installation can staff from different subscriptions per harness.
+    ``content_fallback_routes`` names one additional profile per route key for
+    completions that succeed at the transport but fail the stage's structured
+    contract; the router-level order-2 fallback never observes those, so this
+    global mapping is the only path that reaches a different provider.
     """
 
     default_profile: str = ""
     strict_independence: bool = False
     routes: dict[str, str] = field(default_factory=dict)
+    content_fallback_routes: dict[str, str] = field(default_factory=dict)
     profiles: dict[str, InferenceProfile] = field(default_factory=dict)
     harnesses: dict[str, HarnessInferenceConfig] = field(default_factory=dict)
 
@@ -644,6 +649,10 @@ def _build_inference(raw: Any) -> InferenceConfig:
         default_profile=str(raw.get("default_profile", "")).strip(),
         strict_independence=bool(raw.get("strict_independence", False)),
         routes=routes,
+        content_fallback_routes=_build_inference_routes(
+            raw.get("content_fallback_routes", {}),
+            path="inference.content_fallback_routes",
+        ),
         profiles=profiles,
         harnesses=harnesses,
     )
@@ -1409,6 +1418,7 @@ def config_to_yaml(cfg: AgencyConfig, *, redact: bool = True) -> str:
             "default_profile": cfg.inference.default_profile,
             "strict_independence": cfg.inference.strict_independence,
             "routes": dict(cfg.inference.routes),
+            "content_fallback_routes": dict(cfg.inference.content_fallback_routes),
             "profiles": {
                 name: {
                     "adapter": profile.adapter,
