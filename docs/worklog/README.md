@@ -1413,6 +1413,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `763186d1` | 2026-08-29 | docs(ar297): record generator closure defects | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `d22a9da2` | 2026-08-29 | fix(ar297): close hiring host output shape | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `32a76281` | 2026-08-29 | docs(ar297): record final generator marker gate | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `2f24748a` | 2026-08-29 | fix(ar297): project content-free hiring request | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
