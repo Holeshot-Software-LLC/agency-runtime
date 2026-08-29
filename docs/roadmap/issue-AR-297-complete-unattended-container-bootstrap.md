@@ -2789,3 +2789,10 @@ retries, three valid receipts, exact config `df75e01d...0922`, and authenticated
 HTTP 200 with zero temporary aliases. Readiness remains eight of nine. The next
 bounded repair forbids undeclared contract fields and requires hosts/platforms
 to copy only supplied work-unit values before another exact two-call proof.
+
+That no-call repair now forbids undeclared contract fields such as
+`host_constraints`, caps `contract.hosts` at four unique nonempty identifiers,
+and forbids reproducing injection text even inside evaluation scenarios and
+rationales. Hiring source/test hashes are `6e70bfa9...f269` /
+`8048bee0...20e7`; Ruff 0.16.5 check/format and the 188-test focused set exit 0
+with one intentional skip. No model or stable alias is called.
