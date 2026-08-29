@@ -1424,6 +1424,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `1c8a2ad2` | 2026-08-29 | docs(ar297): checkpoint eight ordered aliases | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `beb97435` | 2026-08-29 | docs(ar297): reject unstable safety fallback | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `e43e4df8` | 2026-08-29 | fix(ar297): bound safety repair rationale | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `d2bc9991` | 2026-08-29 | docs(ar297): qualify repaired safety fallback | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
