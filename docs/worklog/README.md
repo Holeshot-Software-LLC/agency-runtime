@@ -1418,6 +1418,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `ac80900f` | 2026-08-29 | docs(ar297): reject MiniMax generation fallback | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `400ac3e5` | 2026-08-29 | docs(ar297): reject ZAI generation fallback | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `39e621e5` | 2026-08-29 | docs(ar297): close nine-stage model matrix | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `3ab2d6f0` | 2026-08-29 | fix(ar297): honor safety repair route | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
