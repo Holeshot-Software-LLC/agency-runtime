@@ -206,6 +206,9 @@ changes rather than duplicating every commit.
   `workforce.hiring.safety_repair` route instead of silently reusing the
   hiring-generator profile, and its durable attempt sequence no longer repeats
   the initial unsafe security-review receipt.
+- Agency LiteLLM calls now request zero router retries per request, preserving
+  ordered cross-provider fallback without changing the shared gateway's global
+  retry policy or multiplying attempts inside one deployment order.
 - Codex `0.149.1` activation children now recover their exact canary parent
   from the bounded, owner-trusted leading host `session_meta` record instead of
   depending on process-environment inheritance that native child hook sessions

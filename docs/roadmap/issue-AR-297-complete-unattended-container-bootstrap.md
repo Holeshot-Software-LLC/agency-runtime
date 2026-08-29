@@ -2889,3 +2889,13 @@ attempt once. Ruff check/format, `git diff --check`, and the five focused
 hiring/decision suites pass with 189 tests and one intentional skip. The
 nine-stage LiteLLM projection can now bind every measured stage before live
 fallback proof.
+
+The host's shared LiteLLM 1.94 gateway retains a foreign/global three-retry
+policy, so Agency now sends the supported per-request
+`x-litellm-num-retries: 0` override on every LiteLLM structured call. This
+leaves global policy untouched while permitting the gateway's separate
+order-based fallback path to advance from order 1 to order 2. The exact header
+regression, all 68 roster/provider adapter tests, Ruff check/format, and
+`git diff --check` pass. A broader 161-pass diagnostic exposed two existing
+live-operator-state-coupled preflight expectations; the scoped adapter suite is
+green and the required named spine remains reserved for the post-install gate.

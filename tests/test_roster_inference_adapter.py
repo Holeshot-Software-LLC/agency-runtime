@@ -930,6 +930,11 @@ def test_structured_response_extractors_paths_payloads_and_headers() -> None:
     )
     assert structured_provider._http_headers("openai", "") == {"Content-Type": "application/json"}
     assert structured_provider._http_headers("openai", "key")["Authorization"] == "Bearer key"
+    assert structured_provider._http_headers("litellm", "key") == {
+        "Authorization": "Bearer key",
+        "Content-Type": "application/json",
+        "x-litellm-num-retries": "0",
+    }
     anthropic_headers = structured_provider._http_headers("anthropic", "key")
     assert anthropic_headers["x-api-key"] == "key"
     assert "Authorization" not in anthropic_headers

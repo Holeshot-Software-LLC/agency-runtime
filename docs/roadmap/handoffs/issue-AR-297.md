@@ -115,8 +115,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Local comparison `055044a5...b793`: prewarmed Qwen3 Coder generation repeats
   quality 100 in 21.483/16.928s; Llama scores 47.5 twice. Six zero-retry calls,
   warmups, receipts, and cleanup pass; the matrix is nine of nine.
-- Safety repair consumes its declared route without duplicating the first
-  unsafe review receipt; Ruff and 189 focused tests pass (one skipped).
+- Safety repair consumes its declared route without duplicate receipts; Agency
+  LiteLLM calls also override shared retry policy to zero. Focused suites pass.
 
 ## same-task-continuity
 

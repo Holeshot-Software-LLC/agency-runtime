@@ -413,6 +413,11 @@ def _http_payload(
 
 def _http_headers(provider_type: str, api_key: str) -> dict[str, str]:
     headers = {"Content-Type": "application/json"}
+    if provider_type == "litellm":
+        # Keep retry authority local to the Agency call. The shared gateway may
+        # serve foreign routes with a different global retry policy, while
+        # Agency's ordered deployments use one attempt per order level.
+        headers["x-litellm-num-retries"] = "0"
     if not api_key or provider_type == "ollama":
         return headers
     if provider_type == "anthropic":
