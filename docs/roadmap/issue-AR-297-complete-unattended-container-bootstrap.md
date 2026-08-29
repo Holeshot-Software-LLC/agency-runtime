@@ -2962,3 +2962,21 @@ deployments; stable Agency/LiteLLM config hashes remain
 and `d2811be77b0e4fd6c3ac73a4e1cf526776e9ffbe5866ebcf895b81fde809ecec`.
 After cooldown, the next bounded live package repeats adaptive M3 against the
 repaired prompt before any safety alias promotion.
+
+That post-repair package rejects adaptive M3 for transport instability: after
+three score-100 probe calls it later returns HTTP 500 even after a two-minute
+quiet window. The host reaches `api.minimax.io` in 39 ms TCP / 76 ms TLS, while
+the gateway log identifies a stale Anthropic connection timing out in 2 ms.
+One user-service restart clears only the LiteLLM connection pool; the shared
+config remains `d2811be7...ecec`, the service returns active/ready, and all
+eight proven alias pairs survive. M3-off then returns three independent,
+schema-valid score-100 safety repairs in 12,565/8,458/5,639 ms with zero
+retries. Manifest/runner/ledger are now `247da565...8f4` / `4ea85b3a...768d` /
+`b31c76b9...ba25`; authenticated inspection reports zero probe and safety
+aliases. Exact mode-0600 config `756da1c4...1cb0` contains the ten per-stage
+LiteLLM profiles, twelve routes, four child-judge host pins, and approved
+1,024-dimensional embedding profile. Its direct structural audit exits 0;
+the host-aware `agency config validate` reports the config valid but exits 2
+only for the expected pre-live cold-inventory warnings. The next bounded live
+step promotes M3-off after cooldown, proves its order-2 fallback and the
+OpenAI order-1 primary, then creates and proves the embedding alias.

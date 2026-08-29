@@ -114,10 +114,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   generator varies; readiness is eight of nine.
 - Local comparison `055044a5...b793`: Qwen3 Coder generation repeats quality
   100; Llama fails. Six zero-retry calls clean up; the matrix is nine of nine.
-- Route proof closes eight aliases; Qwen/Mistral score 80 and M3 variants vary.
-- Prompt repair pins `decision_reason` to the existing 512-character schema
-  bound; Ruff and 52 focused tests pass. Post-repair HTTP 500/408 calls are
-  transport negatives. Ledger `4894de42...3515`; safety/probe aliases are zero.
+- Route proof closes eight aliases; prompt bounds `decision_reason` to 512.
+- A gateway restart clears a stale MiniMax client without config drift; all
+  eight pairs survive. M3-off then scores 100 in 12.565/8.458/5.639s.
+- Ledger `b31c76b9...ba25`; exact config `756da1c4...1cb0` passes at 1,024 dimensions; safety/probe aliases zero.
 
 ## same-task-continuity
 
