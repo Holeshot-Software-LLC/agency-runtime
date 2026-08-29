@@ -2657,3 +2657,21 @@ arithmetic, sensitive-pattern scan, and share-with-caveats analytical review in
 dependency absence, and failure-screen absence are restored exactly. The
 general asset normalizer rejects an unrelated development redirect, while the
 scoped portable-reader normalization and delivery pass.
+
+The next no-call repair addresses the exact follow-up failures. The planner
+system now requires exactly `request_summary` and `units` and forbids emitting
+schema keywords such as `additionalProperties`. Safety repair no longer
+receives the raw request, free-text work-unit fields, or full worker prose; a
+new deterministic projection supplies only bounded identifiers, enums,
+booleans, counts, typed coverage, and four worker execution facts. Existing
+schema, semantic, injection, validation, and independent security-review gates
+remain unchanged. Intent/hiring source hashes are `2f01bd74...8fb4` /
+`a7dba727...0b12`; test hashes are `d9482a7c...4b64` / `db27aaf9...10a5`.
+Ruff 0.15.20 check/format and 188 focused tests exit 0 with one intentional
+skip. No model or stable route is called.
+
+The evidence-driven next candidate set is Z.AI GLM-5.2-low planner (the fastest
+non-OpenAI strict screen pass at 17,044 ms), GLM-5-Turbo-on hiring generation
+(previously one score-80 shape failure before the explicit array/tool repair),
+and MiniMax M3-off safety repair against the new content-free prompt. Each needs
+two zero-retry repetitions under a new explicit six-call owner cap.

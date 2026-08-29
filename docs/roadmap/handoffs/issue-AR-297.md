@@ -111,6 +111,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   inspection prove zero temporary aliases. Report/validation `8fd5667f...a587` /
   `ce57492e...572c` reconcile 669 calls and pass desktop/mobile/source checks;
   plugin tooling is restored exactly and readiness remains six of nine.
+- No-call remedy `2f01bd74...8fb4` / `a7dba727...0b12` pins planner keys and
+  projects only content-free safety facts. Ruff and 188 tests pass (one skip).
 - Record audits `769fb577...6056`/`e98fd0e5...64a7` exit 1 only on inherited
   parity debt; AR-297/#335 has no mismatch. Tracker/release writes stay unauthorized.
 
@@ -139,8 +141,9 @@ unchecked line. Mark an item complete only with exact retained evidence.
    six of nine cross-provider pairs now qualify with no stable config change.
 6. [x] Prompt hardening and the exact six-call follow-up are complete; no new
    repeated route qualifies and the stable config remains unchanged.
-7. [ ] The 669-call report is complete. Bound the next prompt/runtime remedy
-   and obtain a new explicit call cap; then apply all nine pairs and fallback,
+7. [ ] The report and next remedy are complete. Obtain a new exact six-call
+   cap for Z.AI 5.2-low planner, Z.AI 5-Turbo-on generator, and M3-off safety;
+   then apply all nine pairs and prove fallback,
    then reinstall exact main artifacts without an Agency version pin.
 8. [ ] Complete Codex then Claude/Hermes/OpenClaw manual tests and issue the
    Linux verdict.

@@ -157,10 +157,12 @@ _SAFETY_REPAIR_SYSTEM = (
     "The reviewer's verdict, bounded reason codes, and required changes are supplied as repair "
     "context. Use only the supplied required_changes as repair constraints; do not invent "
     "additional scope. Return one complete replacement candidate from the open-ended specialist "
-    "pool; do not edit, quote, or partially re-emit the rejected attempt. Never reproduce any "
-    "verbatim text from original_hiring_input anywhere in the response, including evaluation "
-    "scenario or rationale fields. Refer to unsafe source material only with neutral labels "
-    "that omit its words and markers. The replacement must "
+    "pool; do not edit, quote, or partially re-emit the rejected attempt. The raw request and "
+    "free-text work-unit fields are deliberately absent; runtime_gap_evidence contains only "
+    "bounded identifiers, enums, booleans, counts, and coverage facts. Never reproduce text from "
+    "any prior or untrusted input anywhere in the response, including evaluation scenario or "
+    "rationale fields. Refer to unsafe source material only with neutral labels that omit its "
+    "words and markers. The replacement must "
     "be safe against all eight risk classes on the first attempt; the bounded repair budget is "
     "3 turns. Return only the closed JSON contract."
 )
@@ -783,6 +785,40 @@ def _critic_prompt(
     )
 
 
+def _safety_repair_context(
+    unit: WorkUnit,
+    hiring_input: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Project only bounded runtime facts into an unsafe-candidate replacement."""
+
+    workforce = []
+    for raw in hiring_input["complete_workforce"]:
+        item = dict(raw)
+        workforce.append(
+            {
+                "agent_id": item["agent_id"],
+                "capability_ids": item["capability_ids"],
+                "authority": item["authority"],
+                "enabled": item["enabled"],
+            }
+        )
+    return {
+        "verified_gap": hiring_input["verified_gap"],
+        "workforce_count": hiring_input["workforce_count"],
+        "complete_workforce": workforce,
+        "uncovered_work_unit": {
+            "unit_id": unit.unit_id,
+            "artifact_kind": unit.artifact_kind,
+            "lifecycle_phase": unit.lifecycle_phase,
+            "required_capabilities": list(unit.required_capabilities),
+            "authority": unit.authority,
+            "mutation_scope": unit.mutation_scope,
+            "required_tools": list(unit.required_tools),
+            "platforms": list(unit.platforms),
+        },
+    }
+
+
 def _repair_rejected_candidate(
     *,
     request: str,
@@ -1057,7 +1093,7 @@ def _safety_repair_loop(
             providers,
             prompt=_json(
                 {
-                    "original_hiring_input": hiring_input,
+                    "runtime_gap_evidence": _safety_repair_context(unit, hiring_input),
                     "security_review_feedback": {
                         "verdict": "unsafe",
                         "reasons": list(reasons),
