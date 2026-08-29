@@ -1430,6 +1430,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `2300596b` | 2026-08-29 | docs(ar297): record final named gates | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `341f472b` | 2026-08-29 | Merge pull request #341 from Holeshot-Software-LLC/codex/ar297-manual-live-fix | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `e755ab53` | 2026-08-29 | docs(ar297): checkpoint exact main installation | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `e2fb464c` | 2026-08-29 | Merge pull request #342 from Holeshot-Software-LLC/codex/ar297-main-install-checkpoint | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `71e3d8ca` | 2026-08-29 | docs(ar297): record speed-first route proof | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
