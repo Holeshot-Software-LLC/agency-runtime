@@ -115,8 +115,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Local comparison `055044a5...b793`: prewarmed Qwen3 Coder generation repeats
   quality 100 in 21.483/16.928s; Llama scores 47.5 twice. Six zero-retry calls,
   warmups, receipts, and cleanup pass; the matrix is nine of nine.
-- Route proof `82491c19...669b`: planner/recruiter/critic pass primary+forced
-  fallback. Reranker is fallback-only while its cold-failure UUID cools down.
+- Route proof `784181c9...8c5a`: eight aliases pass primary+forced fallback;
+  safety is unreferenced fallback+disposable-primary pending cooldown resume.
 
 ## same-task-continuity
 

@@ -2918,3 +2918,13 @@ two final deployments, reranker has only its exact resident order-2 fallback,
 all other new aliases remain absent, and no disposable failure deployment
 survives. Resume after cooldown with the retained runner; do not recreate or
 delete the three proven aliases.
+
+Cooldown resume succeeds for the resident reranker in 3,836 ms, then its
+forced fallback and MiniMax primary pass in 1,288/3,538 ms. Child judge,
+hiring generator, hiring critic, and security review also pass both forced
+fallback and normal primary with deployment UUIDs reconciled, zero retries,
+and quality 92.5--100. Ledger `784181c9...8c5a` therefore closes eight aliases.
+Safety repair alone returns an immediate MiniMax transport 408 after the
+disposable primary failure; it remains unreferenced with the exact order-2
+fallback plus disposable order-1 deployment. Resume after its 60-second
+cooldown; all eight proven aliases already contain their final two deployments.
