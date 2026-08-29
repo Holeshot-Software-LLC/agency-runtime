@@ -118,7 +118,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   its exact codebase-discovery unit hits the legacy software-engineering-only policy.
 - Policy `687386f6...093` plus replay `f3999625...88dd` makes Turbo 2/2; candidate
   `84581629...158a` passes 921 docs, Ruff/696 formats, 864+3 tests, 138 UI, routing, and 167/167 mutations.
-- Build/Twine/verify/install exit 0; wheel/sdist `2c55fc54...f71ce` / `314208f3...1117e`, record `a01429a3...564b`; no model ran.
+- Build/Twine/verify/install exit 0; wheel/sdist `2c55fc54...f71ce` / `314208f3...1117e`, record `a01429a3...564b`; prepared one-call runner/manifest `d366a24a...70371` / `a89c7020...f3f4` pass static/rollback checks and old-main fail-closed without a model call.
 
 ## same-task-continuity
 

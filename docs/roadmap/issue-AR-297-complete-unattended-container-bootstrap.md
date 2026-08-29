@@ -3202,3 +3202,12 @@ the intentionally retained fail-closed ambient-interpreter/umask attempts.
 No model call was made. Push, PR creation, merge, and installation from exact
 `origin/main` remain authorization-gated; the retained forced Turbo call and
 four attended host turns remain downstream.
+
+While outward transition remains unapproved, the retained call is packaged but
+not spent. Runner/preparation hashes `d366a24a...70371` / `a89c7020...f3f4`
+freeze the exact Turbo-on UUID, repository-change prompt, corrected installed
+policy digest, helper/config/replay inputs, zero retries, and success/rollback
+reconciliation. Compile, Ruff, static-contract, and three simulated transaction
+checks exit 0. Preflight against old installed main exits 3 before LiteLLM auth,
+with zero model calls and zero mutations. Execution still requires the exact
+commit-named merged-main venv and exact initial production route.
