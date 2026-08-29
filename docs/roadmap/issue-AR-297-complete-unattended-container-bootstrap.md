@@ -2643,3 +2643,17 @@ Ledger/analyzer/results `02154df0...c2f2` / `2a228291...fdde` /
 response replays, and six valid create/delete receipts. Authenticated final
 LiteLLM inspection returns HTTP 200 with zero temporary aliases. Stable routes
 remain unchanged; the six-call grant is exhausted.
+
+The final follow-up technical report `8fd5667f...a587` now reconciles 669 total
+calls, 48 post-screen calls, 25 strict-eligible post-screen results, all 313
+original eligible ranking rows, and the unchanged six-of-nine decision.
+Artifact/data/SQL/notes/builder hashes are `1327b9fa...b381`,
+`71fd4bcd...a66e`, `26fff5be...01a4`, `cbe98456...bb66`, and
+`43fea685...8682`. Validation `ce57492e...572c` passes the 21-block/four-chart/
+three-table package, desktop/mobile checks, keyboard source interaction, exact
+arithmetic, sensitive-pattern scan, and share-with-caveats analytical review in
+2.912 seconds. The same known top-bar correction produces patched hashes
+`426377da...6c1` / `112e8616...e78`; plugin source, reader, compressed parts,
+dependency absence, and failure-screen absence are restored exactly. The
+general asset normalizer rejects an unrelated development redirect, while the
+scoped portable-reader normalization and delivery pass.

@@ -108,7 +108,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   `02154df0...c2f2` / `249ce089...95cc` add no pair: M3 planner fails 0/2,
   local Llama generator times out 2/2, and M3 safety varies 100/85. The latter
   still echoes one marker in two fields. Six alias receipts and final HTTP 200
-  inspection prove zero temporary aliases; readiness remains six of nine.
+  inspection prove zero temporary aliases. Report/validation `8fd5667f...a587` /
+  `ce57492e...572c` reconcile 669 calls and pass desktop/mobile/source checks;
+  plugin tooling is restored exactly and readiness remains six of nine.
 - Record audits `769fb577...6056`/`e98fd0e5...64a7` exit 1 only on inherited
   parity debt; AR-297/#335 has no mismatch. Tracker/release writes stay unauthorized.
 
@@ -137,8 +139,8 @@ unchecked line. Mark an item complete only with exact retained evidence.
    six of nine cross-provider pairs now qualify with no stable config change.
 6. [x] Prompt hardening and the exact six-call follow-up are complete; no new
    repeated route qualifies and the stable config remains unchanged.
-7. [ ] Refresh the report, bound the next prompt/runtime remedy, and obtain a
-   new explicit call cap; then apply all nine exact pairs and prove fallback,
+7. [ ] The 669-call report is complete. Bound the next prompt/runtime remedy
+   and obtain a new explicit call cap; then apply all nine pairs and fallback,
    then reinstall exact main artifacts without an Agency version pin.
 8. [ ] Complete Codex then Claude/Hermes/OpenClaw manual tests and issue the
    Linux verdict.
