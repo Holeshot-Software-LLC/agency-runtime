@@ -1401,6 +1401,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `09498980` | 2026-08-29 | docs(ar297): record bounded model remediation | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `668e38cb` | 2026-08-29 | fix(ar297): close remaining hiring prompt shapes | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `6b6c31c0` | 2026-08-29 | docs(ar297): record six-call follow-up | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `24892c4a` | 2026-08-29 | docs(ar297): publish follow-up benchmark report | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
