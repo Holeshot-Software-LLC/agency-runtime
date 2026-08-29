@@ -2614,3 +2614,16 @@ fallbacks. The temporary known top-bar correction used exact patched hashes
 `426377da...6c1` / `112e8616...e78`; plugin source/reader are restored exactly
 to `2f989ae1...ed4` / `6c5ed0d3...e7b5`, generated dependencies and failure
 screenshots are removed, and the complete LiteLLM config remains blocked.
+
+The next prompt-only repair makes the hiring response shape literal: exactly
+five top-level keys, `schema_version` only under `contract`, every declared
+array kept as an array, all required strings nonempty, and nonempty bounded
+tools for hire/amend. Safety repair now forbids reproducing any verbatim
+`original_hiring_input` text anywhere, including evaluation scenarios and
+rationales, and requires neutral labels without source markers. Source/test
+hashes are `38f51f01...276f` / `c14db2f49...0836`. Ruff 0.15.20 check and
+format exit 0; the focused dynamic-hiring, contract, selection-safety, and
+decision-conformance suite exits 0 with 137 passed and one intentional skip.
+No model or stable alias is called. The owner separately authorizes the next
+six zero-retry calls: two repetitions each for MiniMax M3-adaptive planner,
+local Llama 3.1 8B hiring generator, and MiniMax M3-off safety repair.

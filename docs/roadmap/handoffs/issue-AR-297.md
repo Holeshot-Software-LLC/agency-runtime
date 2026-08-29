@@ -104,6 +104,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Remaining evidence: planner MiniMax-off fails JSON and local 30B varies;
   generator local 30B times out and GLM-Turbo varies; safety MiniMax-off scores
   85 twice only because it reproduces untrusted source text.
+- Prompt repair `38f51f01...276f` pins the five top-level keys, closed arrays,
+  nonempty strings/tools, and verbatim-source exclusion for all safety fields.
+  Ruff passes; 137 focused tests pass with one intentional skip. No model ran.
 - Record audits `769fb577...6056`/`e98fd0e5...64a7` exit 1 only on inherited
   parity debt; AR-297/#335 has no mismatch. Tracker/release writes stay unauthorized.
 
@@ -130,9 +133,9 @@ unchecked line. Mark an item complete only with exact retained evidence.
    named repository gate pass with exact retained hashes and exits.
 5. [x] Execute the owner-authorized 24-call remediation and refresh the report;
    six of nine cross-provider pairs now qualify with no stable config change.
-6. [ ] Harden closed hiring arrays/nonempty fields and safety non-reproduction;
-   seek owner authorization for exactly six calls: M3-adaptive planner, local
-   Llama 3.1 8B generator, and M3-off safety, two repetitions each.
+6. [ ] Prompt hardening is complete and the owner authorizes exactly six
+   zero-retry calls: M3-adaptive planner, local Llama 3.1 8B generator, and
+   M3-off safety, two repetitions each. Execute and retain them.
 7. [ ] Apply all nine exact pairs, prove ordered forced fallback and latency,
    then reinstall exact main artifacts without an Agency version pin.
 8. [ ] Complete Codex then Claude/Hermes/OpenClaw manual tests and issue the
@@ -163,7 +166,8 @@ git diff --check
 - All Agency inference on this system stays behind LiteLLM aliases. Any unknown
   model, endpoint, dimension, reranker, thinking level, judge route,
   harness-auth, or service-manager choice requires an owner interview.
-- Exclude Spark. The 24-call remediation cap is exhausted; no further model
-  call is authorized. Keep zero deployment retries and retained accounting.
+- Exclude Spark. The 24-call remediation cap is exhausted; the owner separately
+  authorizes only the exact six-call follow-up in checklist item 6. Keep zero
+  deployment retries and retained accounting.
 - Do not create or close another tracker, tag, sign, publish a release, or make
   an unrelated model/config change without separate authorization.

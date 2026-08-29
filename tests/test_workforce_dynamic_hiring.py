@@ -49,8 +49,21 @@ _HASH = "sha256:" + "a" * 64
 def test_hiring_prompts_pin_closed_values_and_non_echo_semantics() -> None:
     assert "never null" in hiring_module._HIRE_SYSTEM
     assert "instruction-like suffix" in hiring_module._HIRE_SYSTEM
+    assert "top-level object has exactly" in hiring_module._HIRE_SYSTEM
+    assert "schema_version belongs only inside contract" in hiring_module._HIRE_SYSTEM
+    assert "Every schema field declared as an array" in hiring_module._HIRE_SYSTEM
+    assert "all five execution_profile fields" in hiring_module._HIRE_SYSTEM
+    assert "contract.tools must be a nonempty array" in hiring_module._HIRE_SYSTEM
     assert "reason_codes must be exactly an empty JSON array" in hiring_module._CRITIC_SYSTEM
     assert hiring_module._HIRE_SYSTEM in hiring_module._SAFETY_REPAIR_SYSTEM
+    assert (
+        "Never reproduce any verbatim text from original_hiring_input"
+        in hiring_module._SAFETY_REPAIR_SYSTEM
+    )
+    assert (
+        "including evaluation scenario or rationale fields" in hiring_module._SAFETY_REPAIR_SYSTEM
+    )
+    assert "neutral labels that omit its words and markers" in hiring_module._SAFETY_REPAIR_SYSTEM
 
 
 def _install_existing(store: Store) -> WorkforceContract:
