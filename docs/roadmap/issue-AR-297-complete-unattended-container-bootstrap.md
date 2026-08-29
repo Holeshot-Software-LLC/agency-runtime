@@ -2705,3 +2705,24 @@ added to each bounded safety replacement attempt and explicitly carries no
 instruction authority. Hiring source/test hashes are `863df134...a8d8` /
 `852fd91a...d0d6`; Ruff check/format and the same 188-test focused set pass with
 one intentional skip. No model or stable alias is called.
+
+The owner-authorized hot-closure manifest/runner `af666f79...25bf` /
+`4e93e10f...0756` then consume exactly seven zero-retry calls. The full local
+Qwen3 Coder planner prewarm and both measured hot calls all reach the unchanged
+48-second boundary (48,136/48,139/48,090 ms), so that route is rejected for
+reliable general use. Z.AI GLM-5-Turbo-on hiring generation also reaches the
+boundary twice (48,126/48,076 ms) without a returned object. MiniMax M3-off
+safety repair returns two independent score-100 objects in 28,261/6,053 ms;
+both are schema-, semantic-, gold-, and injection-valid and have distinct
+response hashes `cae75d76...5e9b` / `9371d74d...e0ed`. That route now supplies
+the different-provider fallback for the already repeated OpenAI safety route,
+raising readiness to seven of nine pairs.
+
+Ledger/analyzer/results `c375dd21...89d2` / `c3628fc4...8b7d` /
+`e8d48a2c...959c` replay both saved responses and validate all seven starts and
+finishes, zero retries, nine valid alias receipts, the exact stable config hash
+`df75e01d...0922`, and final authenticated LiteLLM HTTP 200 with zero temporary
+benchmark aliases. Stable routing is unchanged. The next bounded candidate set
+is two current-fixture repetitions each of MiniMax M3-off and GPT-5.5-high for
+planner, plus GPT-5.4-mini-low and MiniMax M3-off for hiring generation. This
+eight-call package tests both required providers for each remaining stage.

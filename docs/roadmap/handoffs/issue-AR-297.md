@@ -102,17 +102,17 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Prompt repair `38f51f01...276f` pins the five top-level keys, closed arrays,
   nonempty strings/tools, and verbatim-source exclusion for all safety fields.
   Ruff passes; 137 focused tests pass with one intentional skip. No model ran.
-- Six-call follow-up manifest/ledger/results `ba2ecb0d...6207a` /
-  `02154df0...c2f2` / `249ce089...95cc` add no pair: M3 planner fails 0/2,
-  local Llama generator times out 2/2, and M3 safety varies 100/85. The latter
-  still echoes one marker in two fields. Six alias receipts and final HTTP 200
-  inspection prove zero temporary aliases. Report/validation `8fd5667f...a587` /
-  `ce57492e...572c` reconcile 669 calls and pass desktop/mobile/source checks;
-  plugin tooling is restored exactly and readiness remains six of nine.
-- Closure manifest/ledger/results `a32cc7a5...a9e6` / `2dca9647...977a` /
-  `19565ac0...0472` add no pair: Z.AI planner fails 0/2, generator varies
-  100/80, and content-free M3 safety emits only two of five keys. Six receipts
-  prove zero aliases. Shape/cache repair `863df134...a8d8` passes 188 tests.
+- Follow-up and closure results `249ce089...95cc` / `19565ac0...0472` add no
+  pair: planner and local generator fail; Z.AI generator varies 100/80; M3
+  safety varies 100/85 then emits only two keys. Both finish with zero aliases.
+- Shape/cache repair `863df134...a8d8` adds literal arrays, all five safety
+  keys, and a noninstruction `repair_turn`; 188 focused tests pass.
+- Hot-closure manifest/ledger/results `af666f79...25bf` / `c375dd21...89d2` /
+  `e8d48a2c...959c` consume seven calls, zero retries. Local Qwen planner times
+  out prewarm plus 2/2 hot calls; Z.AI generator times out 2/2. M3 safety is
+  independently 2/2 at quality 100 in 28.261/6.053s with distinct hashes,
+  raising readiness to seven of nine. Nine receipts and authenticated HTTP 200
+  prove zero aliases; stable config remains `df75e01d...0922`.
 - Record audits `769fb577...6056`/`e98fd0e5...64a7` exit 1 only on inherited
   parity debt; AR-297/#335 has no mismatch. Tracker/release writes stay unauthorized.
 
@@ -141,11 +141,10 @@ unchecked line. Mark an item complete only with exact retained evidence.
    six of nine cross-provider pairs now qualify with no stable config change.
 6. [x] Prompt hardening and the exact six-call follow-up are complete; no new
    repeated route qualifies and the stable config remains unchanged.
-7. [ ] Under owner YOLO authority through 11:00 AM, the shape/cache repair is
-   complete. Prewarm/repeat the local Qwen planner and rerun bounded generator/
-   safety candidates; then close all nine pairs,
-   apply the exact routes, and prove fallback,
-   then reinstall exact main artifacts without an Agency version pin.
+7. [ ] Under owner YOLO authority through 11:00 AM, safety is closed and seven
+   of nine pairs qualify. Run the frozen eight-call planner/generator package;
+   then apply exact routes, prove fallback, and reinstall exact main artifacts
+   without an Agency version pin.
 8. [ ] Complete Codex then Claude/Hermes/OpenClaw manual tests and issue the
    Linux verdict.
 
