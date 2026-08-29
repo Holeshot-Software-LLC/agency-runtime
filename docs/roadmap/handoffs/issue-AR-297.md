@@ -112,7 +112,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Closure manifest/ledger/results `a32cc7a5...a9e6` / `2dca9647...977a` /
   `19565ac0...0472` add no pair: Z.AI planner fails 0/2, generator varies
   100/80, and content-free M3 safety emits only two of five keys. Six receipts
-  and final HTTP 200 prove zero aliases; stable routing stays unchanged.
+  prove zero aliases. Shape/cache repair `863df134...a8d8` passes 188 tests.
 - Record audits `769fb577...6056`/`e98fd0e5...64a7` exit 1 only on inherited
   parity debt; AR-297/#335 has no mismatch. Tracker/release writes stay unauthorized.
 
@@ -141,9 +141,9 @@ unchecked line. Mark an item complete only with exact retained evidence.
    six of nine cross-provider pairs now qualify with no stable config change.
 6. [x] Prompt hardening and the exact six-call follow-up are complete; no new
    repeated route qualifies and the stable config remains unchanged.
-7. [ ] Under owner YOLO authority through 11:00 AM, checkpoint the failed six
-   calls, reinforce exact key/array syntax, use unique content-free safety
-   nonces, and prewarm/repeat the local Qwen planner; then close all nine pairs,
+7. [ ] Under owner YOLO authority through 11:00 AM, the shape/cache repair is
+   complete. Prewarm/repeat the local Qwen planner and rerun bounded generator/
+   safety candidates; then close all nine pairs,
    apply the exact routes, and prove fallback,
    then reinstall exact main artifacts without an Agency version pin.
 8. [ ] Complete Codex then Claude/Hermes/OpenClaw manual tests and issue the

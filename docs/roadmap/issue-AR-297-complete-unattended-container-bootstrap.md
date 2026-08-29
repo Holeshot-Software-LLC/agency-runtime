@@ -2696,3 +2696,12 @@ unchanged. The next bounded remedy must add a changing evaluation nonce to the
 content-free safety fixture, reinforce the exact five-key/array syntax, and
 prewarm the previously cold-sensitive local Qwen3 Coder planner before two
 strict repetitions rather than extend its production timeout.
+
+The next prompt-only repair makes that shape executable: one-item working
+principles use a literal JSON array example, every array element must be
+nonempty, and safety repair must derive and return all five top-level records
+even with projected context. A one-based `repair_turn` cache-busting ordinal is
+added to each bounded safety replacement attempt and explicitly carries no
+instruction authority. Hiring source/test hashes are `863df134...a8d8` /
+`852fd91a...d0d6`; Ruff check/format and the same 188-test focused set pass with
+one intentional skip. No model or stable alias is called.

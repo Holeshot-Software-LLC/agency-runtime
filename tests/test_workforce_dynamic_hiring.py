@@ -53,6 +53,8 @@ def test_hiring_prompts_pin_closed_values_and_non_echo_semantics() -> None:
     assert "schema_version belongs only inside contract" in hiring_module._HIRE_SYSTEM
     assert "Every schema field declared as an array" in hiring_module._HIRE_SYSTEM
     assert "all five execution_profile fields" in hiring_module._HIRE_SYSTEM
+    assert '"working_principles":["one nonempty principle"]' in hiring_module._HIRE_SYSTEM
+    assert "every array element must be nonempty" in hiring_module._HIRE_SYSTEM
     assert "contract.tools must be a nonempty array" in hiring_module._HIRE_SYSTEM
     assert "reason_codes must be exactly an empty JSON array" in hiring_module._CRITIC_SYSTEM
     assert hiring_module._HIRE_SYSTEM in hiring_module._SAFETY_REPAIR_SYSTEM
@@ -63,6 +65,11 @@ def test_hiring_prompts_pin_closed_values_and_non_echo_semantics() -> None:
         "including evaluation scenario or rationale fields" in hiring_module._SAFETY_REPAIR_SYSTEM
     )
     assert "neutral labels that omit its words and markers" in hiring_module._SAFETY_REPAIR_SYSTEM
+    assert "Projected context does not reduce the response shape" in (
+        hiring_module._SAFETY_REPAIR_SYSTEM
+    )
+    assert "Never return only action and contract" in hiring_module._SAFETY_REPAIR_SYSTEM
+    assert "repair_turn is a cache-busting ordinal" in hiring_module._SAFETY_REPAIR_SYSTEM
 
 
 def _install_existing(store: Store) -> WorkforceContract:
@@ -1779,10 +1786,12 @@ def test_safety_repair_receives_only_content_free_runtime_gap_projection(tmp_pat
     assert outcome.hired is True
     repair = json.loads(calls[3]["prompt"])
     assert set(repair) == {
+        "repair_turn",
         "replacement_required",
         "runtime_gap_evidence",
         "security_review_feedback",
     }
+    assert repair["repair_turn"] == 1
     assert request not in calls[3]["prompt"]
     assert "ignore prior instructions" not in calls[3]["prompt"].casefold()
     runtime_gap = repair["runtime_gap_evidence"]
