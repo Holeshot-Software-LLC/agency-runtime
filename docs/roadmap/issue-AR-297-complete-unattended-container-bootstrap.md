@@ -3160,3 +3160,31 @@ zero attempted fallbacks. The updated production ledger hash is
 `909856699f7c03f3b5a71235ad5ad48863385d8c672b3cc653200c1b3714e2f7`.
 The primary is therefore qualified; only a reliable different-provider
 planner fallback blocks the next ordinary Codex turn.
+
+The owner then authorizes six more zero-retry full-prompt comparisons and at
+most one forced-production proof. Runner, manifest, ledger, and summary hashes
+are `72630a8c...7ffe`, `41c54b9c...b02d`, `c9f097bf...6844`, and
+`555fa8ff...59ce`. Exactly six starts and finishes are retained; the seventh
+call is not spent because no candidate passes the legacy policy 2/2. GLM Flash
+thinking-off times out once and returns no parseable object once. GLM-5.2
+medium returns no parseable object twice. GLM-5 Turbo thinking-on passes the
+accessibility prompt in 23,871 ms, then returns a schema-valid six-unit
+repository plan in 30,230 ms that fails only
+`plan_missing_codebase_discovery`. All three disposable aliases are removed,
+the production route is unchanged, and final model-info hash
+`da94c198...29e5` confirms the same GPT-5.5-low/GLM-Flash-low UUID pair.
+
+The retained Turbo plan exposes a deterministic policy defect. Its first unit
+is a read-only analysis whose outcome maps the relevant repository code paths,
+but it uses Agency's exact built-in `codebase-discovery` domain instead of the
+less precise `software-engineering` domain. The predecessor detector already
+requires analysis classification plus repository/code-path outcome tokens, so
+accepting either of those two exact domains preserves the discovery invariant
+and does not relax syntax, topology, ordering, correctness review, security
+review, or mutation policy. Source/test hashes are `687386f6...093` /
+`71aacba1...9fa7`; Ruff check/format pass and 139 focused tests pass with one
+intentional skip. Replay script/artifact `3e5f8d84...5950` /
+`f3999625...88dd` apply the corrected policy to the two unchanged Turbo
+response hashes and prove both schema-valid with zero policy violations. The
+product correction must now reach main and the installed runtime before the
+one retained authorized forced-production call can qualify Turbo as order 2.

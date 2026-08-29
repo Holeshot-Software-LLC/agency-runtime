@@ -2254,6 +2254,11 @@ def test_planner_repair_receives_exact_assurance_graph_and_remains_inference_own
                 "review-report",
                 "test-evidence",
             ]
+            assert contract["repository_security_or_code_path_mapping"] == {
+                "required_predecessor": (
+                    "software-engineering analysis that maps repository code paths"
+                )
+            }
             return _result(incomplete)
         if len(prompts) == 2:
             feedback = json.loads(prompt.partition("[RUNTIME VALIDATION FEEDBACK]\n")[2])
@@ -3386,6 +3391,57 @@ def test_production_observability_does_not_imply_release_verification() -> None:
     assert plan is not None
     assert all(item.lifecycle_phase != "release" for item in plan.units)
     assert plan_policy_violations(request, plan) == ()
+
+
+def test_codebase_discovery_domain_satisfies_repository_security_predecessor() -> None:
+    request = "Review authentication security in this repository code."
+    base = _plan_document()["units"][0]
+    document = {
+        "schema_version": 2,
+        "request_summary": request,
+        "units": [
+            {
+                **base,
+                "unit_id": "unit-discovery",
+                "outcome": "Map the relevant repository code paths.",
+                "domains": ["codebase-discovery"],
+            },
+            {
+                **base,
+                "unit_id": "unit-correctness-review",
+                "outcome": "Review code correctness.",
+                "artifact_kind": "review-report",
+                "lifecycle_phase": "review",
+                "domains": ["software-engineering"],
+                "required_capabilities": ["review"],
+                "authority": "review",
+                "depends_on": ["unit-discovery"],
+            },
+            {
+                **base,
+                "unit_id": "unit-security-review",
+                "outcome": "Review security exploitability.",
+                "artifact_kind": "review-report",
+                "lifecycle_phase": "review",
+                "domains": ["security"],
+                "required_capabilities": ["review"],
+                "authority": "review",
+                "depends_on": ["unit-discovery"],
+            },
+        ],
+    }
+
+    plan = parse_work_unit_plan(document)
+
+    assert plan_policy_violations(request, plan) == ()
+
+    document["units"][0] = {
+        **document["units"][0],
+        "domains": ["quality-assurance"],
+    }
+    unrelated = parse_work_unit_plan(document)
+
+    assert "plan_missing_codebase_discovery" in plan_policy_violations(request, unrelated)
 
 
 def test_read_only_live_test_evidence_remains_in_the_testing_lifecycle() -> None:

@@ -202,6 +202,9 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
+- Repository path-mapping plans now recognize the built-in
+  `codebase-discovery` domain as well as `software-engineering` when the unit
+  remains a read-only analysis with explicit repository/code-path evidence.
 - Safety-repair prompts now state the exact 512-character decision-reason
   boundary and require bounded work-unit tools plus a supplied nearest worker,
   preventing otherwise safe replacement contracts from failing only because a

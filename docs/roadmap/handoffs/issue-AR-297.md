@@ -114,11 +114,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   zero-retry fixture proofs score 100; ledger `a33d3810...3f67` closes 4/4.
 - Audit `8103d4b9...8d1` passes seven checks, nine routes, ten aliases, nineteen
   deployments, exact config `756da1c4...1cb0`, and zero disposable aliases.
-- Bakeoff `4977a4f1...99d7` accounts for 12/12 zero-retry full-prompt calls;
-  GPT-5.5-low wins at 7.107s, while GLM Flash is the only 2/2 cross-provider route at 29.059s.
-- Production order is now GPT-5.5-low / GLM-Flash-low with exact UUIDs, but the
-  forced fallback reaches GLM once and returns no parseable object in 44.446s
-  while the 11.154s GPT primary passes (`90985669...e2f7`); replacement remains.
+- Closure `c9f097bf...6844` rejects Flash-off/GLM-5.2; Turbo is 1/2 only because
+  its exact codebase-discovery unit hits the legacy software-engineering-only policy.
+- Policy `687386f6...093` retains path tokens but admits that exact built-in domain;
+  replay `f3999625...88dd` makes Turbo 2/2. Merge/install and one forced call remain.
 
 ## same-task-continuity
 
@@ -146,8 +145,8 @@ unchecked line. Mark an item complete only with exact retained evidence.
    repeated route qualifies and the stable config remains unchanged.
 7. [x] All pairs/routes/gates, PR #341, exact main install, attended Codex trust,
    and the owner-selected speed-first two-route proof are complete.
-8. [ ] Prove the promoted normal primary, qualify a reliable different-provider
-   fallback, then prove Codex `ready` and finish all four attended host turns.
+8. [ ] Merge/install the policy correction, spend the retained forced Turbo
+   proof, then prove Codex `ready` and finish all four attended host turns.
 
 ## verification
 
