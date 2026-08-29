@@ -115,7 +115,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Local comparison `055044a5...b793`: prewarmed Qwen3 Coder generation repeats
   quality 100 in 21.483/16.928s; Llama scores 47.5 twice. Six zero-retry calls,
   warmups, receipts, and cleanup pass; the matrix is nine of nine.
-- Record audits exit 1 only on inherited parity debt; AR-297/#335 is aligned.
+- Safety repair consumes its declared route without duplicating the first
+  unsafe review receipt; Ruff and 189 focused tests pass (one skipped).
 
 ## same-task-continuity
 
@@ -142,9 +143,9 @@ unchecked line. Mark an item complete only with exact retained evidence.
    six of nine cross-provider pairs now qualify with no stable config change.
 6. [x] Prompt hardening and the exact six-call follow-up are complete; no new
    repeated route qualifies and the stable config remains unchanged.
-7. [ ] Under owner YOLO authority through 11:00 AM, all nine pairs are closed.
-   Apply exact routes, prove forced fallback, and reinstall
-   exact main artifacts without an Agency version pin.
+7. [ ] All nine pairs are closed and the safety route is live in source. Under
+   owner YOLO authority through 11:00 AM, apply exact aliases/routes, prove
+   forced fallback, and reinstall exact main artifacts without a version pin.
 8. [ ] Complete Codex then Claude/Hermes/OpenClaw manual tests and issue the
    Linux verdict.
 

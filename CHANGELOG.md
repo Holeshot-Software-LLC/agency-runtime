@@ -202,6 +202,10 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
+- Safety-repair inference now resolves the declared
+  `workforce.hiring.safety_repair` route instead of silently reusing the
+  hiring-generator profile, and its durable attempt sequence no longer repeats
+  the initial unsafe security-review receipt.
 - Codex `0.149.1` activation children now recover their exact canary parent
   from the bounded, owner-trusted leading host `session_meta` record instead of
   depending on process-environment inheritance that native child hook sessions

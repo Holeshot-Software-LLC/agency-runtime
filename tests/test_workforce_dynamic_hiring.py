@@ -9,7 +9,13 @@ from typing import Any
 
 import pytest
 
-from agency_runtime.core.config import AgencyConfig, ProviderEntry, WorkforceConfig
+from agency_runtime.core.config import (
+    AgencyConfig,
+    InferenceConfig,
+    InferenceProfile,
+    ProviderEntry,
+    WorkforceConfig,
+)
 from agency_runtime.core.evals.product_scenarios import product_scenario
 from agency_runtime.core.host_capabilities import native_adapter_capability_receipt
 from agency_runtime.core.roster.workforce import workforce_index_snapshot
@@ -1830,6 +1836,84 @@ def test_safety_repair_receives_only_content_free_runtime_gap_projection(tmp_pat
         "capability_ids",
         "enabled",
     }
+
+
+def test_safety_repair_resolves_its_declared_inference_route(tmp_path: Path) -> None:
+    store = Store(tmp_path / "agency.db")
+    unsafe = {
+        "verdict": "unsafe",
+        "reasons": ["untrusted_source_marker"],
+        "required_changes": ["Use a neutral label for unsafe source material."],
+        "same_provider_as_creator_warning": False,
+    }
+    profiles = {
+        name: InferenceProfile(
+            name=name,
+            adapter="litellm",
+            model=model,
+            capability_class="text",
+            base_url="https://router.example.test/v1",
+            api_key="secret",
+        )
+        for name, model in {
+            "generator": "generator-model",
+            "critic": "critic-model",
+            "security": "security-model",
+            "safety": "safety-model",
+        }.items()
+    }
+    base = _config()
+    config = replace(
+        base,
+        inference=InferenceConfig(
+            routes={
+                "workforce.hiring": "generator",
+                "workforce.hiring.critic": "critic",
+                "workforce.hiring.security_review": "security",
+                "workforce.hiring.safety_repair": "safety",
+            },
+            profiles=profiles,
+        ),
+    )
+    responses = iter(
+        (
+            _hiring_response(),
+            {"approved": True, "reason_codes": []},
+            unsafe,
+            _hiring_response(),
+            _SAFE_SECURITY_REVIEW,
+        )
+    )
+    invoked: list[str] = []
+
+    def invoke(provider, _prompt, _schema, **kwargs):
+        invoked.append(provider.model)
+        return _result(next(responses), provider)
+
+    outcome = hire_contractor_for_gap(
+        "Implement the missing quantum compiler build integration.",
+        _unit(),
+        (_existing(),),
+        store=store,
+        config=config,
+        invoker=invoke,
+    )
+
+    assert outcome.hired is True
+    assert invoked == [
+        "generator-model",
+        "critic-model",
+        "security-model",
+        "safety-model",
+        "security-model",
+    ]
+    assert [attempt.stage for attempt in outcome.attempts] == [
+        "hiring",
+        "hiring-critic",
+        "security_review",
+        "safety_repair",
+        "security_review",
+    ]
 
 
 def test_deferred_external_hire_reports_class_without_committing(tmp_path: Path) -> None:

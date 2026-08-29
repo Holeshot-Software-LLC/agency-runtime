@@ -1096,7 +1096,23 @@ def _safety_repair_loop(
 
     repair_budget = max(0, int(config.workforce.hiring_repair_budget))
     reasons = verdict.reasons or ("security_review_unsafe",)
-    all_attempts = attempts + (() if verdict.attempt is None else (verdict.attempt,))
+    # The caller appends the unsafe review attempt before entering this loop.
+    # Start from that exact sequence so the durable receipt is not duplicated.
+    all_attempts = attempts
+    harness = staffing_context.host if staffing_context is not None else ""
+    repair_providers = configured_workforce_providers(
+        config,
+        stage="safety_repair",
+        route_key="workforce.hiring.safety_repair",
+        harness=harness,
+    )
+    if not repair_providers:
+        return ContractorHiringOutcome(
+            "rejected",
+            ("safety_repair_inference_failed", *reasons)[:MAX_ITEMS],
+            contract=candidate.contract,
+            attempts=all_attempts,
+        )
     for _turn in range(repair_budget):
         if budget.remaining < 1:
             return ContractorHiringOutcome(
@@ -1106,7 +1122,7 @@ def _safety_repair_loop(
                 attempts=all_attempts,
             )
         repair_result, repair_attempt = _invoke(
-            providers,
+            repair_providers,
             prompt=_json(
                 {
                     "runtime_gap_evidence": _safety_repair_context(unit, hiring_input),
@@ -1157,10 +1173,10 @@ def _safety_repair_loop(
             hiring_input=hiring_input,
             compiled=compiled,
             config=config,
-            creator_providers=providers,
+            creator_providers=repair_providers,
             budget=budget,
             invoker=invoker,
-            harness=staffing_context.host if staffing_context is not None else "",
+            harness=harness,
         )
         if next_verdict is None:
             return ContractorHiringOutcome(

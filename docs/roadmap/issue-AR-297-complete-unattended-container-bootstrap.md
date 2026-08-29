@@ -2878,3 +2878,14 @@ finishes, both warmups, zero retries, six valid receipts, exact stable config
 `df75e01d...0922`, and authenticated HTTP 200 with zero temporary aliases. The
 matrix is now nine of nine. Stable routes remain unchanged pending one atomic
 exact-config update and forced-failure proof.
+
+Live route inspection then found that the declared
+`workforce.hiring.safety_repair` route was not consumed: the bounded repair
+loop silently reused the hiring-generator providers and duplicated the first
+unsafe security-review attempt in its durable sequence. The narrow runtime
+repair resolves that exact route per harness, uses the resolved repair model as
+the creator identity for the following isolated review, and retains each
+attempt once. Ruff check/format, `git diff --check`, and the five focused
+hiring/decision suites pass with 189 tests and one intentional skip. The
+nine-stage LiteLLM projection can now bind every measured stage before live
+fallback proof.
