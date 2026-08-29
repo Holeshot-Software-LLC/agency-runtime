@@ -1396,6 +1396,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `773e9089` | 2026-08-28 | docs(ar297): checkpoint ZAI stage matrix | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `055009af` | 2026-08-28 | docs(ar297): checkpoint local stage matrix | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `1984791d` | 2026-08-28 | docs(ar297): record stage confirmations | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `b8d8abd7` | 2026-08-28 | docs(ar297): publish stage benchmark report | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
