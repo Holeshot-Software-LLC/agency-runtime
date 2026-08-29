@@ -1432,6 +1432,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `e755ab53` | 2026-08-29 | docs(ar297): checkpoint exact main installation | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `e2fb464c` | 2026-08-29 | Merge pull request #342 from Holeshot-Software-LLC/codex/ar297-main-install-checkpoint | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `71e3d8ca` | 2026-08-29 | docs(ar297): record speed-first route proof | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `1583934a` | 2026-08-29 | Merge pull request #343 from Holeshot-Software-LLC/codex/ar297-speed-tiebreak | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `fe71b5fb` | 2026-08-29 | docs(ar297): checkpoint manual preflight failures | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
