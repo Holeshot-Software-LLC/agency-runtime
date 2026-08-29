@@ -3023,3 +3023,17 @@ or forced-failure deployment survives. Exact config remains mode 0600 at
 the shared LiteLLM config remains `d2811be7...ecec`. The nine-stage ordered
 matrix is closed. Build/install from eventual exact main, named gates, and the
 four manual harness tests remain before the Linux verdict.
+
+The post-matrix named-gate manifest
+`31896f7de6b84b1725319ed5e1741d671b876a426e0fe1878457702c471c2f9a`
+audits eleven exit-0 gates against source `0f4a7e9e...1a74`: both 921-file
+documentation checks, current policy/worklog projections, Ruff check, 696-file
+format verification, the 864-pass/3-skip warning-strict Python spine, all 138
+dashboard tests, routing schema 1.4.0, `git diff --check`, and decision
+conformance. The decision receipt `46692e13...8545` kills all 167/167 curated
+mutations with zero invalid or surviving cases and source unchanged; routing
+receipt `effb7174...a7a` passes after telemetry `16847dac...3f`. Every retained
+gate artifact is owner-private mode 0600. The first decision attempt under an
+incomplete tool venv and the first retained Ruff invocation that lacked its
+binary are environment negatives and are not counted as accepted gates. Exact
+main build/install and the four attended manual harness turns remain.

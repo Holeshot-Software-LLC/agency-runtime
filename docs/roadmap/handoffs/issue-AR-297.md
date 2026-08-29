@@ -118,6 +118,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Safety forced/normal calls score 100 in 14.382/11.446s with exact UUIDs.
 - Audit `f42d79c8...b736`: 10 aliases, 19 deployments, 7 checks, no disposable.
 - Exact config `756da1c4...1cb0` and 1,024-dimensional embedding pass; install/manual gates remain.
+- Named gates `31896f7d...2f9a` pass: 921 docs, 864+3 Python, 138 UI, routing, Ruff/format, and 167/167 mutations.
 
 ## same-task-continuity
 
@@ -143,9 +144,8 @@ unchecked line. Mark an item complete only with exact retained evidence.
    six of nine cross-provider pairs now qualify with no stable config change.
 6. [x] Prompt hardening and the exact six-call follow-up are complete; no new
    repeated route qualifies and the stable config remains unchanged.
-7. [ ] All nine pairs are closed and the safety route is live in source. Under
-   owner YOLO authority through 11:00 AM, resume the retained additive runner,
-   apply exact routes, and reinstall exact main artifacts without a version pin.
+7. [ ] All nine pairs, exact routes, and named gates are closed. Build/merge and
+   reinstall exact main without a pin under owner YOLO authority through 11 AM.
 8. [ ] Complete Codex then Claude/Hermes/OpenClaw manual tests and issue the
    Linux verdict.
 
