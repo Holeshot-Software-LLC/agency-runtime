@@ -2768,3 +2768,10 @@ authenticated HTTP 200 with zero temporary aliases. Readiness is eight of nine;
 only the MiniMax generation fallback remains. The next no-call repair pins
 `relationships` as an array and the literal complete `gap_evidence` key set
 before two final bounded MiniMax generation measurements.
+
+The final no-call shape repair now requires `gap_evidence` to contain exactly
+all seven schema keys and requires `contract.relationships` to remain a JSON
+array, using the literal empty form when no edge is needed. Hiring source/test
+hashes are `81b5cb9e...a525` / `6e6dd0f3...e2a1`; Ruff 0.16.5 check/format and
+the 188-test focused set exit 0 with one intentional skip. No model or stable
+alias is called.

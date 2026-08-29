@@ -55,6 +55,10 @@ def test_hiring_prompts_pin_closed_values_and_non_echo_semantics() -> None:
     assert "all five execution_profile fields" in hiring_module._HIRE_SYSTEM
     assert '"working_principles":["one nonempty principle"]' in hiring_module._HIRE_SYSTEM
     assert "every array element must be nonempty" in hiring_module._HIRE_SYSTEM
+    assert "gap_evidence must be a complete seven-key record" in hiring_module._HIRE_SYSTEM
+    assert "never return a partial gap_evidence object" in hiring_module._HIRE_SYSTEM
+    assert '"relationships":[]' in hiring_module._HIRE_SYSTEM
+    assert "never a scalar or empty string" in hiring_module._HIRE_SYSTEM
     assert "contract.tools must be a nonempty array" in hiring_module._HIRE_SYSTEM
     assert "reason_codes must be exactly an empty JSON array" in hiring_module._CRITIC_SYSTEM
     assert hiring_module._HIRE_SYSTEM in hiring_module._SAFETY_REPAIR_SYSTEM
