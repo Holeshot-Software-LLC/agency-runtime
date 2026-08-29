@@ -1442,6 +1442,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `14b5a644` | 2026-08-29 | docs(ar297): prepare one-call planner fallback proof | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `755efedc` | 2026-08-29 | Merge pull request #344 from Holeshot-Software-LLC/codex/ar297-manual-preflight-reliability | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `9ed759b0` | 2026-08-29 | docs(ar297): record turbo promotion, live canaries, and review findings | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `eec4add7` | 2026-08-29 | Merge pull request #348 from Holeshot-Software-LLC/claude/ar297-turbo-live-evidence | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `8f6c797d` | 2026-08-29 | docs(ar297): record post-trust verification and ordinary-turn matrix | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
