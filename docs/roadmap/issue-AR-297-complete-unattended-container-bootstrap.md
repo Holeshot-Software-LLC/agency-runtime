@@ -2548,3 +2548,18 @@ hiring critic and its local probe also fails. Therefore five pairs are
 promotable, while planner, hiring generator fallback, hiring critic, and safety
 repair fallback remain unresolved. HTTP-200 inspection again finds zero
 temporary aliases.
+
+The decision report is retained as mode-0600 host artifact `report.html` at
+`97ec909e...62d0`; its canonical input/data/SQL/builder hashes are
+`feddf5ca...1c50`, `7ccd70e7...39f4`, `b966fe7c...dc3d`, and
+`76e2ec0e...9b5`. The packaged delivery receipt passes validation, packaging,
+four-chart extraction, 1,440/390-pixel browser verification, exact rendered
+counts, and keyboard source-dialog interaction in 7.694 seconds. Readiness
+receipt `3ba71f8e...9322` independently checks 18 manifest blocks, nine stages,
+18 confirmations, 313 eligible rankings, nine different-provider selections,
+and a clear sensitive-pattern scan. It admits only the five repeated pairs and
+marks the complete LiteLLM configuration not ready; stable routing is therefore
+unchanged until the four unresolved contracts have repeated eligible evidence.
+The one-use report reader correction was authorized, embedded only in the
+self-contained report, and the installed plugin source/reader were restored to
+their exact original `2f989ae1...ed4` / `6c5ed0d3...e7b5` hashes.

@@ -110,23 +110,23 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Journal audit `e307f2e5...784d` proves 12 distinct Spark completions. Stable
   generation rollback `75855980...6bc` restores local Qwen, and deletion receipts
   `bfb54a1f...86ae`/`b412d6cf...4851` remove both temporary Spark aliases.
-- Frozen manifest `62f8bec4...c6fd` covers 603 screens, 18 local warm-ups, and
-  18 confirmations (639 maximum). Final ledger `2080c834...d56` reaches the
-  exact cap; replay audit/rankings/results `1823c21b...19e`/`ebd3f4fb...cee6`/
-  `f6c92e4b...189a` pass all 466 saved responses. Five cross-provider pairs
-  repeat; planner and hiring critic have no repeated primary, while hiring
-  generation and safety repair lack a repeated fallback. HTTP-200 inspection
-  finds zero temporary aliases; only seven of 18 local warm-ups strictly pass.
+- Manifest/ledger `62f8bec4...c6fd`/`2080c834...d56` contain exactly 603
+  screens, 18 warm-ups, and 18 confirmations (639 maximum). Replay audit/
+  rankings/results `1823c21b...19e`/`ebd3f4fb...cee6`/`f6c92e4b...189a` pass.
+- Report/input/data/SQL/builder `97ec909e...62d0`/`feddf5ca...1c50`/
+  `7ccd70e7...39f4`/`b966fe7c...dc3d`/`76e2ec0e...9b5` pass canonical desktop/
+  mobile/source checks. Readiness `3ba71f8e...9322` admits five of nine pairs;
+  no stable config changed and temporary reader tooling was restored exactly.
+- Planner/hiring critic lack repeated primaries; hiring generation/safety repair
+  lack repeated fallbacks. Zero temporary aliases remain; 7/18 warm-ups pass.
 - Record audits `769fb577...6056`/`e98fd0e5...64a7` exit 1 only on inherited
   parity debt; AR-297/#335 has no mismatch. Tracker/release writes stay unauthorized.
 
 ## same-task-continuity
 
 - Artifacts: `~/.agency-runtime/release-artifacts/dist-dc8bbde6a884f72614dae32585e488ce4997b9ac`.
-- Venv/evidence: `~/.agency-runtime/release-venvs/ar297-main-dc8bbde6` /
-  `~/.agency-runtime/evidence/ar297-main-install-dc8bbde6`.
-- Manual repair/evidence: config `ar297-litellm-df75e01d31dd8ebc.yaml` /
-  `~/.agency-runtime/evidence/ar297-manual-live-20260828`.
+- Venv/evidence: `~/.agency-runtime/release-venvs/ar297-main-dc8bbde6` / `~/.agency-runtime/evidence/ar297-main-install-dc8bbde6`.
+- Manual repair/evidence: config `ar297-litellm-df75e01d31dd8ebc.yaml` / `~/.agency-runtime/evidence/ar297-manual-live-20260828`.
 - Earlier live evidence remains under `~/.agency-runtime/evidence/ar297-host-live-20260828`.
 - Zero AR-297 containers remain; five exact images and healthy host services remain.
 
@@ -143,9 +143,8 @@ unchecked line. Mark an item complete only with exact retained evidence.
    healthy dashboard/OpenClaw services.
 4. [x] Codex/Claude/scoped-Hermes/OpenClaw, authenticated dashboard, and every
    named repository gate pass with exact retained hashes and exits.
-5. [ ] Complete the capped per-stage quality/latency screen, promote repeated
-   winners and cross-provider fallbacks, and prove <=20s warm / <=30s cold or
-   report the exact feasible floor.
+5. [ ] Under a separately authorized call bound, remediate four unresolved
+   contracts, apply only repeated pairs, and prove the latency floor.
 6. [ ] Complete Codex then Claude/Hermes/OpenClaw manual tests and issue the
    Linux verdict.
 
