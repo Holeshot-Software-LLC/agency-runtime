@@ -2811,3 +2811,11 @@ nine. Since prompt-only non-echo wording has reached full structural quality
 but not marker safety, the next bounded repair removes the raw request from the
 initial hiring-generator projection and supplies only the governed work unit,
 verified gap, and workforce facts already sufficient to design the role.
+
+The initial hiring projection now implements that boundary: raw request text is
+replaced by a one-way `request_hash` carrying no instruction authority, while
+the governed work unit, verified gap, and complete workforce remain available.
+The same content-free object flows into a bounded critic repair. Hiring
+source/test hashes are `e69a0624...7956` / `efec54af...b1a4`; Ruff 0.16.5
+check/format and the 188-test focused set exit 0 with one intentional skip. No
+model or stable alias is called.

@@ -65,6 +65,8 @@ def test_hiring_prompts_pin_closed_values_and_non_echo_semantics() -> None:
     assert "at most four unique nonempty host identifiers" in hiring_module._HIRE_SYSTEM
     assert "even inside positive or negative evaluation scenarios" in hiring_module._HIRE_SYSTEM
     assert "injected disclosure request" in hiring_module._HIRE_SYSTEM
+    assert "The raw request is deliberately absent" in hiring_module._HIRE_SYSTEM
+    assert "request_hash is a correlation value" in hiring_module._HIRE_SYSTEM
     assert "contract.tools must be a nonempty array" in hiring_module._HIRE_SYSTEM
     assert "reason_codes must be exactly an empty JSON array" in hiring_module._CRITIC_SYSTEM
     assert hiring_module._HIRE_SYSTEM in hiring_module._SAFETY_REPAIR_SYSTEM
@@ -799,7 +801,8 @@ def test_product_request_gap_repair_receives_live_reason_family_and_typed_proof(
     repair_prompt = json.loads(calls[2]["prompt"])
     assert repair_prompt["critic_feedback"]["reason_codes"] == live_reasons
     original_input = repair_prompt["original_hiring_input"]
-    assert original_input["request"] == request
+    assert "request" not in original_input
+    assert original_input["request_hash"] == hiring_module._digest(request)
     verified = original_input["verified_gap"]
     assert verified["hiring_admitted"] is True
     assert set(verified["uncovered_requirements"]) == set(verified["typed_requirements"])
