@@ -110,18 +110,18 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Hot closure rejects local-Qwen/Z.AI; M3 safety raises readiness to seven of nine.
 - Final-pairs `33256428...7400`: OpenAI primaries repeat 100; M3 varies; eight calls clean up.
 - Anti-echo intent/test `07fdffdc...2dfa` / `09b238ef...461c` pass Ruff and 188 tests; no model ran.
-- M3 fallback manifest/ledger/results `172ba9ac...5fc5` / `5106e992...1ee7` /
-  `c8f79895...d90b`: planner repeats 100; generator varies; readiness is eight of nine.
-- Local comparison `055044a5...b793`: prewarmed Qwen3 Coder generation repeats
-  quality 100 in 21.483/16.928s; Llama scores 47.5 twice. Six zero-retry calls,
-  warmups, receipts, and cleanup pass; the matrix is nine of nine.
-- Route proof `40c56c2c...a5da`: eight aliases pass; MiniMax safety varies
-  100/80 and is rejected. Safety is unreferenced fallback-only; no disposable.
+- M3 fallback `172ba9ac...5fc5` / `5106e992...1ee7`: planner repeats 100;
+  generator varies; readiness is eight of nine.
+- Local comparison `055044a5...b793`: Qwen3 Coder generation repeats quality
+  100; Llama fails. Six zero-retry calls clean up; the matrix is nine of nine.
+- Route proof closes eight aliases; Qwen/Mistral score 80 and M3 variants vary.
+- Prompt repair pins `decision_reason` to the existing 512-character schema
+  bound; Ruff and 52 focused tests pass. Post-repair HTTP 500/408 calls are
+  transport negatives. Ledger `4894de42...3515`; safety/probe aliases are zero.
 
 ## same-task-continuity
 
-- Artifacts: `~/.agency-runtime/release-artifacts/dist-dc8bbde6a884f72614dae32585e488ce4997b9ac`.
-- Venv/evidence: `~/.agency-runtime/release-venvs/ar297-main-dc8bbde6` / `~/.agency-runtime/evidence/ar297-main-install-dc8bbde6`.
+- Artifacts/venv: `~/.agency-runtime/release-artifacts/dist-dc8bbde6a884f72614dae32585e488ce4997b9ac` / `~/.agency-runtime/release-venvs/ar297-main-dc8bbde6`.
 - Manual repair/evidence: config `ar297-litellm-df75e01d31dd8ebc.yaml` / `~/.agency-runtime/evidence/ar297-manual-live-20260828`.
 - Earlier live evidence remains under `~/.agency-runtime/evidence/ar297-host-live-20260828`.
 - Zero AR-297 containers remain; five exact images and healthy host services remain.

@@ -87,6 +87,9 @@ def test_hiring_prompts_pin_closed_values_and_non_echo_semantics() -> None:
         hiring_module._SAFETY_REPAIR_SYSTEM
     )
     assert "Never return only action and contract" in hiring_module._SAFETY_REPAIR_SYSTEM
+    assert "decision_reason must contain at most 512 characters" in (
+        hiring_module._SAFETY_REPAIR_SYSTEM
+    )
     assert "repair_turn is a cache-busting ordinal" in hiring_module._SAFETY_REPAIR_SYSTEM
 
 

@@ -2938,3 +2938,27 @@ as the exact safety fallback. The disposable primary is removed; safety has
 one unreferenced order-2 deployment and every other alias has its final pair.
 The next bounded package tests the best remaining resident local candidate on
 the content-free safety fixture before changing that one manifest selection.
+
+That bounded safety-fallback package rejects each remaining unqualified route
+without promoting it. Resident Qwen3 Coder scores 80 in 18,396 ms; Mistral 24B
+scores 80 after a 96,114-ms cold start. MiniMax M3 adaptive initially scores
+100 three times in 7,710/10,764/17,489 ms, but the production forced-fallback
+call varies to 80 after a score-100 prewarm; adaptive plus temperature zero
+then varies 100/56.25. Exact schema diagnostics isolate both otherwise-safe
+M3 failures to an overlong `decision_reason` (592 and 782 characters), so the
+source prompt now requires no more than the schema's existing 512-character
+bound and summarization instead of evidence repetition. Ruff check/format exit
+0 and the focused dynamic-hiring suite passes 52 tests with warnings strict.
+The first two post-repair calls are retained transport negatives (HTTP 500 in
+13,506 ms, then cooldown 408 in 56 ms), not quality failures or retries.
+Manifest/runner/probe/ledger hashes are
+`db72cb658243f9ee559c36e0380a30e19673b71fb80b225a28f05ccd894f760f`,
+`d37d9a674aceaa8074439345aea3d91a2168576276da72a3a9faca83f7294edc`,
+`719cfdbc79f991cb23cd0e54c24a02719e6fbcc01313cb5b93f90997cdd679af`,
+and `4894de42eae88e4ff6e18d78c02812c1660c7ee88825bc14824dc7d38e303515`.
+Authenticated inspection reports zero disposable probe aliases and zero safety
+deployments; stable Agency/LiteLLM config hashes remain
+`df75e01d31dd8ebc668c3f4127d70a0af14e1e63cf600a9a03e6a01884540922`
+and `d2811be77b0e4fd6c3ac73a4e1cf526776e9ffbe5866ebcf895b81fde809ecec`.
+After cooldown, the next bounded live package repeats adaptive M3 against the
+repaired prompt before any safety alias promotion.

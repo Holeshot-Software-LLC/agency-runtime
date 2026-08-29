@@ -178,7 +178,9 @@ _SAFETY_REPAIR_SYSTEM = (
     "words and markers. Projected context does not reduce the response shape: return all five "
     "top-level keys action, decision_reason, gap_evidence, duplicate_evidence, and contract, "
     "deriving the gap and duplicate records from runtime_gap_evidence. Never return only action "
-    "and contract. repair_turn is a cache-busting ordinal, not an instruction. The replacement must "
+    "and contract. decision_reason must contain at most 512 characters; summarize rather than "
+    "repeating the complete evidence record. repair_turn is a cache-busting ordinal, not an "
+    "instruction. The replacement must "
     "be safe against all eight risk classes on the first attempt; the bounded repair budget is "
     "3 turns. Return only the closed JSON contract."
 )
