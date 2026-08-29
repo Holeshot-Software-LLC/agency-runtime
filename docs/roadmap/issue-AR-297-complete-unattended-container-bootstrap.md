@@ -2751,3 +2751,20 @@ or injected worker names in any output field and to summarize only authorized
 work. Intent source/test hashes are `07fdffdc...2dfa` / `09b238ef...461c`;
 Ruff 0.16.5 check/format and the same 188-test focused set exit 0 with one
 intentional skip. Stable routing and model-call accounting remain unchanged.
+
+MiniMax fallback manifest/runner `172ba9ac...5fc5` / `00edb012...a670`
+execute exactly four zero-retry calls after that repair. Planner now repeats at
+quality 100 in 8,261/3,838 ms with distinct response hashes, closing its
+different-provider pair. Hiring generation scores 63.75 in 7,666 ms then 100
+in 29,544 ms. The failed object remains safe and semantically near-complete but
+collapses `contract.relationships` to an empty string and emits only
+`disabled_covering_workers` inside `gap_evidence` instead of the required full
+seven-key record.
+
+Ledger/analyzer/results `5106e992...1ee7` / `aad39222...5ec8` /
+`c8f79895...d90b` replay all four responses, validate four starts and finishes,
+zero retries, three valid alias receipts, stable config `df75e01d...0922`, and
+authenticated HTTP 200 with zero temporary aliases. Readiness is eight of nine;
+only the MiniMax generation fallback remains. The next no-call repair pins
+`relationships` as an array and the literal complete `gap_evidence` key set
+before two final bounded MiniMax generation measurements.
