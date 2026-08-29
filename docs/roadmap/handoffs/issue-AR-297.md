@@ -3,7 +3,7 @@ title: "AR-297 active recovery capsule"
 status: active
 category: roadmap
 created: 2026-08-25
-updated: 2026-08-28
+updated: 2026-08-29
 tags: [handoff, containers, unattended, codex, claude, hermes, openclaw, release]
 related:
   - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
@@ -24,9 +24,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-297
-branch: codex/ar297-main-install-proof
-evidence_commit: 988a8f0ce5852ae59a42d6ebd95fffcb87bb21dd
-minimum_ledger_commit: a922bb05a5eaad4f29b82fd4745e3f9f363280de
+branch: codex/ar297-manual-live-fix
+evidence_commit: 7b7fd6a776ffe4230e45216c1951dec2a62ec6b0
+minimum_ledger_commit: 7079b27e762df7dd73f580eb06dd6b70985f0cdf
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 ---
@@ -35,16 +35,17 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 
 ## checkpoint
 
-- Work only in `/tmp/agency-runtime-ar297-main.JWaPCg`; never touch the shared checkout.
-- PR #339 merged all product work as `origin/main` `dc8bbde6`; its exact
-  artifacts, four host installs, Codex activation, and dashboard proof pass.
-- Clean merged-main checkpoint `dc8bbde6` precedes this evidence-only record.
+- Work only in `/tmp/agency-runtime-ar297-main.JWaPCg`; never touch the shared checkout. PRs #339/#340 merged through `origin/main` `1e6f5d07`.
+- Credential repair is installed. Stable `task-agency-generation` is rolled back
+  to local Qwen 14B; Spark is excluded after its bounded call audit.
+- Clean checkpoint `15cda0a4` precedes this recovery pair.
 
 ## completed-evidence
 
-- Mode-0600 config `ar297-litellm-a4e213d6b454ca90.yaml` hashes to
-  `a4e213d6...97348`: strict assurance, additive dense recall, and every Agency
-  inference route through authenticated LiteLLM aliases. No Jina route exists.
+- Baseline mode-0600 config `a4e213d6...97348` routes every Agency call through
+  LiteLLM aliases, but ordinary terminals lack its referenced environment key.
+  Write-only projection from owner-approved `~/.openclaw/.env` creates exact
+  mode-0600 config `df75e01d...0922`; no value is printed and no Jina route exists.
 - Free Qwen 3 32B is promoted behind stable alias `task-agency-child-judge`.
   Promotion/metadata/final validation/literal/spend receipts are
   `6e19008f...1750`, `e1cba9f6...e841`, `42921a7e...867c`,
@@ -53,85 +54,76 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   with 3 skips, 138 dashboard tests, routing 1.4.0, and 167/167 mutations killed.
   Manifest `ef8d8abc...1b09` records every accepted exit/hash and rejected
   environment preflight; every accepted exit is 0.
-- Clean repair ledger `6e78b146` builds portable wheel `cf32f861...b2a7` and
-  sdist `1b40ca8f...e228`; independent verification and separate installed
-  8/8 wheel/sdist smoke runs exit 0 in the retained owner-private artifact root.
-- Fresh CI `33139352190` has 16 successes and three intended integration skips:
-  Ubuntu/Windows distributions, aggregate gates, and artifact assembly pass.
-  Dependency review `33139352171` and CodeQL `33139352213` also pass.
-- AR-328 regression `751276ea...e3a` fails before repair. The exact cache guard
-  preserves movable installs; 359 tests pass with 2 skips at
-  `981fbbc8...ddd0`, and focused Ruff/docs pass with empty stderr.
-- Exact `e0b0b25c` wheel/sdist are `75d63ff9...3762`/`2b1ae7ec...79d9`;
-  manifest `fcfd0231...b1b0`, canonical/Twine/verification, and six final
-  builds exit 0. R1 image verification correctly rejects Node 22; the pinned
-  Node 24.15 rebuild passes at `07f372e3...eb9a`. Final image IDs begin
-  `c8e7a265`, `93eb1f9e`, `3a4cac26`, `c3d712ec`, and `4d2ccddc`.
-- Final Codex absence survives dry-run at `0aab382c...3163`; its sole live
-  install `ce370bc8...1330`, Store `d9469980...d5b9`, artifacts
-  `8831ece2...3940`, and status `e1c700b5...fd1f` exit 0. Bundle
-  `96b44257...7785` has one native child, `missing=[]`, managed trust, no bypass.
-- Final Claude install/status/artifacts `579d65c8...a0e9`/`98cbc224...897d`/
-  `105bf8b0...6499` exit 0; bundle `b2151080...b119` is registered/enabled.
-- Final UID-10000 Hermes install/status/artifacts `4d04f360...02d8`/
-  `b9b6e7aa...a3f1`/`0cb3331c...2e8a` exit 0; bundle `eab39058...c15e`.
-  Native doctor and strict post-load tree proof `d7bc15f0...d8f8` retain only
-  the 0500/0400 manifested guard, no `.pyc`, and exact validation.
-- OpenClaw dry-run truthfully leaves an empty runtime home at `8ffcb927...af70`;
-  untouched R2 absence `5feaa49c...2cdd`, install `4debebf3...c748`, Store
-  `c6da8137...0b12`, systemd, exact alias config, and 13-hook runtime all pass.
-- Fresh Claude verifier `ed965d7c...8ca9` exits 0 for session `.403`: exact
-  3,227-byte card, no tool use, all five alias receipts, accepted completion,
-  `missing=[]`, native/Store response equality, existing subscription auth,
-  normal default model, and no bypass.
-- Fresh ordinary Codex verifier `db8f6780...e2f3` exits 0 for session
-  `01a048dd-10f0-77e2-94bd-d5e4c4572a4f`: exact 2,659-byte card, four
-  alias-only receipts, accepted completion, `missing=[]`, native/Store response
-  equality, read-only/no-delegation execution, and exact runtime/config.
-- Final-candidate Hermes receipt `9ee57328...f2f7` exits 0 for session
-  `20260827_221502_139df0`: one exact 3,227-byte card, all five alias groups,
-  accepted completion, `missing=[]`, exact visible accepted replay, healthy
-  Stores, and byte-identical config. The corrected native source receipt is
-  `d8e9eab7...9fe3`; the first helper-default mismatch remains retained.
-- Hermes R1/R2 retain fail-closed negatives; least-privilege R3 verifier
-  `f64738b9...8ce9` proves exact card, Agency-only finalizer, accepted replay,
-  `missing=[]`, unchanged config, and complete Store correlation.
-- Fresh host OpenClaw verifier `61fd0b83...7fe7` exits 0: exact 684-byte task and
-  2,659-byte card, approved LiteLLM alias, thinking off, five successful Agency
-  receipts, healthy Stores, and the explicit no-channel active-run limitation.
-  Additive allow-list receipt `831edb7a...dd2f` preserves all foreign policy;
-  restarted authenticated systemd RPC passes at `a144aab9...172`.
+- Exact build/CI/AR-328 evidence remains canonical in the issue. Final images
+  and distributions pass exact build, Twine, verification, install, security,
+  and hosted-platform gates; no optional exhaustive workflow was dispatched.
+- Strict container proofs pass separately: Codex `ce370bc8...1330` with one
+  delivered native child; Claude `579d65c8...a0e9`; Hermes
+  `4d04f360...02d8` with sealed tree `d7bc15f0...d8f8`; and OpenClaw
+  `4debebf3...c748` with Store/systemd/13-hook evidence. All retain exact
+  bundles and `missing=[]` where terminal delivery applies.
+- Fresh ordinary Claude/Codex/Hermes/OpenClaw verifiers
+  `ed965d7c...8ca9`/`db8f6780...e2f3`/`f64738b9...8ce9`/`61fd0b83...7fe7`
+  prove exact full cards, required aliases, healthy Stores, and no bypass.
+  Additive OpenClaw receipt `831edb7a...dd2f` preserves foreign policy, and
+  authenticated systemd RPC passes at `a144aab9...172`.
 - Teardown `40fa5062...1dc4` removes all 47 exact labelled containers with zero
   survivors; five images remain at `5c998f61...e276`, and host services stay healthy.
-- Qwen3 Coder aliases `d69aa6b6...af4d`/`a1e2381d...a5dd` pass at 65,536;
-  OpenClaw transition/verify `e97e02e2...deba`/`a141d193...e1ce` pass.
 - Merged-main `dc8bbde6` wheel/sdist `c3f3cd0d...675c` / `dc57fa54...5325`;
   build, Twine, verification, install, and pip check pass in a fresh venv.
 - Main-installed runtime is `2dd04fdc...9987`; Hermes/OpenClaw/Codex/Claude
   bundles `b03b47fe...e9b`/`1f88f2ef...2c8`/`cecc8993...b3b`/`5d178603...136`;
   exact attestation `93a25ad5...c25` passes all 18 checks.
-- Codex's default 180-second verification times out safely; the canonical
-  300-second retry `d90cfcd1...c47` passes managed trust/canary/attestation;
-  OpenClaw RPC `48b73bba...393b` also exits 0.
+- Canonical 300-second Codex retry `d90cfcd1...c47` passes managed
+  trust/canary/attestation; OpenClaw RPC `48b73bba...393b` also exits 0.
 - Dashboard `96d1a058...a515` passes auth, no-store, full prompt, and PID/port.
-- No-bypass Codex receipt `eca6fcb4...647c` exits 0 at trace
-  `01a048d3-5687-7c11-a0a9-b1f3abbb7402`; rollouts
-  `299542c3...7158`/`a8525798...c707` bind the real child and finalization.
-- Private Store `cbaec4a8...01f8` passes quick-check; correlation
-  `0fe1ac45...a34b` binds accepted selection/load, alias receipts, and `missing=[]`.
 
 ## exact-blocker
 
-- AR-330 is resolved by `eca6fcb4...647c`; no install, repository, activation,
-  or model/config gate fails. Record merge, manual tests, and verdict remain.
-- Record audits `769fb577...6056`/`e98fd0e5...64a7` exit 1 only on inherited
-  parity debt; AR-297/#335 has no mismatch. Tracker/release writes stay unauthorized.
+- Config repair `530b7837...1e5e` resolves ordinary auth. Stable generation is
+  rolled back to local Qwen and Spark is excluded after 12 audited completions.
+- Approved local Qwen3 0.6B embeddings return 27 exact 1,024-value vectors in
+  2.148s (`e861bd5d...ff0b`); strict/additive behavior stays unchanged.
+- Every stable text alias still requires the best repeated primary plus a
+  different-provider fallback, LiteLLM order 1/2, zero retries, cooldown, and
+  forced-failure evidence. Target remains <=20s warm and <=30s cold.
+- Manifest/ledger `62f8bec4...c6fd`/`2080c834...d56` contain exactly 603
+  screens, 18 warm-ups, and 18 confirmations (639 maximum). Replay audit/
+  rankings/results `1823c21b...19e`/`ebd3f4fb...cee6`/`f6c92e4b...189a` pass.
+- Owner-authorized remediation manifest/ledger `f7477f43...9e3` /
+  `deedc130...a1` consume exactly 24 starts/finishes, zero retries. Replay
+  `ce7704a5...b455` checks 16 saved responses; 20 alias receipts pass and
+  authenticated inspection finds zero temporary aliases.
+- Hiring critic is newly promotable: GPT-5.4-mini-low averages 2.085s and local
+  Qwen 2B 6.258s including cold load, both 2/2 at quality 100. Planner,
+  generator, and safety each have a repeated OpenAI primary but no fallback.
+- Report `8fd5667f...a587` / validation `ce57492e...572c` preserve 313 rankings,
+  reconcile 669 calls, and admit six of nine; plugin tooling is restored.
+- Prompt repair `38f51f01...276f` pins the five top-level keys, closed arrays,
+  nonempty strings/tools, and verbatim-source exclusion for all safety fields.
+  Ruff passes; 137 focused tests pass with one intentional skip. No model ran.
+- Follow-up and closure results `249ce089...95cc` / `19565ac0...0472` add no
+  pair: planner and local generator fail; Z.AI generator varies 100/80; M3
+  safety varies 100/85 then emits only two keys. Both finish with zero aliases.
+- Shape/cache repair `863df134...a8d8` adds literal arrays, all five safety
+  keys, and a noninstruction `repair_turn`; 188 focused tests pass.
+- Hot closure rejects local-Qwen/Z.AI; M3 safety raises readiness to seven of nine.
+- Final-pairs `33256428...7400`: OpenAI primaries repeat 100; M3 varies; eight calls clean up.
+- Anti-echo intent/test `07fdffdc...2dfa` / `09b238ef...461c` pass Ruff and 188 tests; no model ran.
+- M3 fallback `172ba9ac...5fc5` / `5106e992...1ee7`: planner repeats 100;
+  generator varies; readiness is eight of nine.
+- Local comparison `055044a5...b793`: Qwen3 Coder generation repeats quality
+  100; Llama fails. Six zero-retry calls clean up; the matrix is nine of nine.
+- All nine routes close: safety uses M3-off primary and GPT-5.4-mini fallback.
+- Safety forced/normal calls score 100 in 14.382/11.446s with exact UUIDs.
+- Audit `f42d79c8...b736`: 10 aliases, 19 deployments, 7 checks, no disposable.
+- Exact config `756da1c4...1cb0` and 1,024-dimensional embedding pass; install/manual gates remain.
+- Named gates `31896f7d...2f9a` pass: 921 docs, 864+3 Python, 138 UI, routing, Ruff/format, and 167/167 mutations.
 
 ## same-task-continuity
 
-- Artifacts: `~/.agency-runtime/release-artifacts/dist-dc8bbde6a884f72614dae32585e488ce4997b9ac`.
-- Venv/evidence: `~/.agency-runtime/release-venvs/ar297-main-dc8bbde6` /
-  `~/.agency-runtime/evidence/ar297-main-install-dc8bbde6`.
+- Artifacts/venv: `~/.agency-runtime/release-artifacts/dist-dc8bbde6a884f72614dae32585e488ce4997b9ac` / `~/.agency-runtime/release-venvs/ar297-main-dc8bbde6`.
+- Manual repair/evidence: config `ar297-litellm-df75e01d31dd8ebc.yaml` / `~/.agency-runtime/evidence/ar297-manual-live-20260828`.
 - Earlier live evidence remains under `~/.agency-runtime/evidence/ar297-host-live-20260828`.
 - Zero AR-297 containers remain; five exact images and healthy host services remain.
 
@@ -148,8 +140,14 @@ unchecked line. Mark an item complete only with exact retained evidence.
    healthy dashboard/OpenClaw services.
 4. [x] Codex/Claude/scoped-Hermes/OpenClaw, authenticated dashboard, and every
    named repository gate pass with exact retained hashes and exits.
-5. [ ] Merge the exact merged-main installation record, run the owner's manual
-   live tests one harness at a time, and issue the final Linux-scoped verdict.
+5. [x] Execute the owner-authorized 24-call remediation and refresh the report;
+   six of nine cross-provider pairs now qualify with no stable config change.
+6. [x] Prompt hardening and the exact six-call follow-up are complete; no new
+   repeated route qualifies and the stable config remains unchanged.
+7. [ ] All nine pairs, exact routes, and named gates are closed. Build/merge and
+   reinstall exact main without a pin under owner YOLO authority through 11 AM.
+8. [ ] Complete Codex then Claude/Hermes/OpenClaw manual tests and issue the
+   Linux verdict.
 
 ## verification
 
@@ -176,5 +174,7 @@ git diff --check
 - All Agency inference on this system stays behind LiteLLM aliases. Any unknown
   model, endpoint, dimension, reranker, thinking level, judge route,
   harness-auth, or service-manager choice requires an owner interview.
+- Exclude Spark. Owner grants in-scope model/config test authority through
+  11:00 AM local time; keep zero deployment retries and retained accounting.
 - Do not create or close another tracker, tag, sign, publish a release, or make
   an unrelated model/config change without separate authorization.

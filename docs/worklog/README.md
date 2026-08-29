@@ -3,7 +3,7 @@ title: Worklog
 status: active
 category: worklog
 created: 2026-07-10
-updated: 2026-08-28
+updated: 2026-08-29
 tags: []
 related: []
 supersedes: []
@@ -1380,6 +1380,54 @@ This registry connects repository history to the roadmap and to optional detail 
 | `988a8f0c` | 2026-08-28 | docs(ar297): record final parity audit | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `dc8bbde6` | 2026-08-28 | Merge pull request #339 from Holeshot-Software-LLC/codex/ar297-host-live-closure | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `7b7fd6a7` | 2026-08-28 | docs(ar297): record merged-main host installation | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `1e6f5d07` | 2026-08-28 | Merge pull request #340 from Holeshot-Software-LLC/codex/ar297-main-install-proof | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `69daa994` | 2026-08-28 | docs(ar297): checkpoint manual Codex credential repair | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `3b4a0b5c` | 2026-08-28 | docs(ar297): record manual generation route comparison | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `508bf3ce` | 2026-08-28 | docs(ar297): compact manual route checkpoint | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `c3387faa` | 2026-08-28 | docs(ar297): checkpoint preflight latency screen | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `6ef1ea24` | 2026-08-28 | docs(ar297): checkpoint subscription model screen | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `87e600f9` | 2026-08-28 | docs(ar297): checkpoint Spark and fallback screen | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `09233ec4` | 2026-08-28 | docs(ar297): checkpoint approved embedding candidate | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `ad06379f` | 2026-08-28 | docs(ar297): checkpoint fast local embedding proof | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `a4ba51bd` | 2026-08-28 | docs(ar297): retire Spark and bound route benchmark | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `e7695c27` | 2026-08-28 | docs(ar297): freeze per-stage model benchmark | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `4c2721f8` | 2026-08-28 | docs(ar297): checkpoint OpenAI stage matrix | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `2faf4f8e` | 2026-08-28 | docs(ar297): checkpoint MiniMax stage matrix | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `773e9089` | 2026-08-28 | docs(ar297): checkpoint ZAI stage matrix | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `055009af` | 2026-08-28 | docs(ar297): checkpoint local stage matrix | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `1984791d` | 2026-08-28 | docs(ar297): record stage confirmations | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `b8d8abd7` | 2026-08-28 | docs(ar297): publish stage benchmark report | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `d4c31023` | 2026-08-28 | fix(ar297): clarify unresolved stage contracts | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `09498980` | 2026-08-29 | docs(ar297): record bounded model remediation | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `668e38cb` | 2026-08-29 | fix(ar297): close remaining hiring prompt shapes | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `6b6c31c0` | 2026-08-29 | docs(ar297): record six-call follow-up | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `24892c4a` | 2026-08-29 | docs(ar297): publish follow-up benchmark report | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `2f3b19dc` | 2026-08-29 | fix(ar297): project safety repair runtime facts | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `5d90ac90` | 2026-08-29 | docs(ar297): record route-closure trials | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `eeed5f92` | 2026-08-29 | fix(ar297): require complete safety repair shapes | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `208041c1` | 2026-08-29 | docs(ar297): record hot route closure | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `b171985a` | 2026-08-29 | docs(ar297): record final-pair trials | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `c857fe19` | 2026-08-29 | fix(ar297): suppress ignored planner injections | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `4ed586ff` | 2026-08-29 | docs(ar297): record MiniMax fallback proof | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `b09b4f6f` | 2026-08-29 | fix(ar297): pin complete hiring evidence shapes | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `763186d1` | 2026-08-29 | docs(ar297): record generator closure defects | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `d22a9da2` | 2026-08-29 | fix(ar297): close hiring host output shape | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `32a76281` | 2026-08-29 | docs(ar297): record final generator marker gate | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `2f24748a` | 2026-08-29 | fix(ar297): project content-free hiring request | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `f40dde6d` | 2026-08-29 | docs(ar297): record content-free generator proof | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `ac80900f` | 2026-08-29 | docs(ar297): reject MiniMax generation fallback | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `400ac3e5` | 2026-08-29 | docs(ar297): reject ZAI generation fallback | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `39e621e5` | 2026-08-29 | docs(ar297): close nine-stage model matrix | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `3ab2d6f0` | 2026-08-29 | fix(ar297): honor safety repair route | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `3013d387` | 2026-08-29 | fix(ar297): enforce zero LiteLLM retries | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `9d6b19c0` | 2026-08-29 | docs(ar297): checkpoint ordered route proof | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `1c8a2ad2` | 2026-08-29 | docs(ar297): checkpoint eight ordered aliases | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `beb97435` | 2026-08-29 | docs(ar297): reject unstable safety fallback | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `e43e4df8` | 2026-08-29 | fix(ar297): bound safety repair rationale | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `d2bc9991` | 2026-08-29 | docs(ar297): qualify repaired safety fallback | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `b5a766e6` | 2026-08-29 | fix(ar297): pin governed safety arrays | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `ce29396f` | 2026-08-29 | docs(ar297): close ordered stage matrix | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `2300596b` | 2026-08-29 | docs(ar297): record final named gates | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes

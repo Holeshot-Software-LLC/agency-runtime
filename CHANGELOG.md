@@ -202,6 +202,17 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
+- Safety-repair prompts now state the exact 512-character decision-reason
+  boundary and require bounded work-unit tools plus a supplied nearest worker,
+  preventing otherwise safe replacement contracts from failing only because a
+  provider repeated evidence or returned empty governed arrays.
+- Safety-repair inference now resolves the declared
+  `workforce.hiring.safety_repair` route instead of silently reusing the
+  hiring-generator profile, and its durable attempt sequence no longer repeats
+  the initial unsafe security-review receipt.
+- Agency LiteLLM calls now request zero router retries per request, preserving
+  ordered cross-provider fallback without changing the shared gateway's global
+  retry policy or multiplying attempts inside one deployment order.
 - Codex `0.149.1` activation children now recover their exact canary parent
   from the bounded, owner-trusted leading host `session_meta` record instead of
   depending on process-environment inheritance that native child hook sessions

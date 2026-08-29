@@ -3,7 +3,7 @@ title: "AR-297: Complete unattended container bootstrap"
 status: in_progress
 category: roadmap
 created: 2026-08-25
-updated: 2026-08-27
+updated: 2026-08-29
 tags: [installation, containers, codex, hooks, automation, configuration]
 related:
   - README.md
@@ -2284,3 +2284,756 @@ printed or persisted. This closes the clean-main build and machine-install
 package. The remaining owner-requested work is an interactive read-only test
 in each harness followed by the Linux-scoped verdict; tracker #335 remains open
 and no release, tag, signature, publication, or tracker mutation is authorized.
+
+The first owner-observed Codex test then revealed an ordinary-terminal
+credential projection gap hidden by the earlier proof environment. The
+`UserPromptSubmit` hook visibly loaded the resident-steward frame, and Codex
+produced the requested three bullets, but Stop rejected publication with
+`AGENCY TURN TERMINAL`. Store trace `01a04996-795a-7473-9919-a75e3ca3c151`
+is `preflight_failed`: `task-agency-generation` has
+`provider_no_valid_response`. The LiteLLM service log binds the request to HTTP
+401 `No api key passed in`; LiteLLM, Ollama, the dashboard, and OpenClaw remain
+running. This is not a model or endpoint failure and the rejected answer is not
+promoted to a passing manual cell.
+
+The existing exact config references `LITELLM_API_KEY`, but a fresh ordinary
+terminal does not inherit that variable. Using the owner's prior authorization
+to obtain the key from mode-0600 `~/.openclaw/.env`, the supported write-only
+`agency config set ... --stdin` interface replaces all eight LiteLLM credential
+references in a copied config without printing the value. The old config stays
+untouched. Receipt `530b7837...1e5e` records 16 zero-exit operations and creates
+mode-0600 exact config `ar297-litellm-df75e01d31dd8ebc.yaml`, SHA
+`df75e01d31dd8ebc668c3f4127d70a0af14e1e63cf600a9a03e6a01884540922`.
+Validation no longer reports provider authentication unavailable; exit 2 is
+limited to the four truthful cold-inventory loading warnings.
+
+Codex/dashboard reinstall stdout `9824fbf2...4c58` installs bundle
+`40b3693c...e340` and moves the healthy dashboard to the new exact config. The
+overall exit is 1 only because changing the bundle invalidates prior attended
+Codex hook trust. No bypass is used. The current bounded exit is
+`waiting_for_operator`: close the old Codex TUI, trust all eight hooks in a
+fresh terminal, and repeat the manual prompt as a new turn before testing the
+other three harnesses.
+
+Fresh trust succeeds, but two subsequent owner-observed turns still fail
+closed before selection. Trace `01a049a6-1623-7972-aebf-47a048cedb07` rejects
+the initial Qwen plan as semantically invalid and its repair for a forward
+dependency. Trace `01a049ab-dbc2-7fa1-87d8-87ed63e89f76` rejects the initial
+plan as semantically invalid and its repair for missing implementation, test
+implementation, and test-evidence review on the explicitly read-only copy
+task. Neither trace has routing, specialist loading, model receipts, or final
+acceptance, so both visible Codex drafts remain rejected rather than evidence.
+
+An isolated Store replay of the exact prompt on current
+`task-agency-generation` does pass once: database `63e5d86a...37a9` records an
+accepted `accessibility-auditor`, four successful LiteLLM receipts, and full
+5,858-byte context `f1182d56...646a`. Because one isolated success does not
+erase two real failures, a second isolated config changes only the generation
+profile to already-approved LiteLLM alias `task-agency-router`, whose local
+backend is free `mistral-small3.2:24b`. Config `741cf7cd...fe97` and Store
+`193cd280...ae5a` produce the same accepted specialist and byte-identical
+context with no failure. No stable alias or installed bundle is changed by the
+A/B. The next bounded exit is `waiting_for_operator` for the generation model
+choice: retain measured-but-unreliable Qwen 14B or remap the stable
+`task-agency-generation` alias to the slower structured Mistral 24B.
+
+The owner rejected Mistral's general-use latency and approved subscription
+model trials through the existing LiteLLM gateway. Exact-prompt Luna-light
+config `3f2144b3...c1df` exits 0 in 96.72 seconds: Store
+`9c303400...ca81` records accepted `accessibility-auditor`, all five required
+generation/embedding/reranker/critic receipts, and the byte-identical complete
+5,858-byte context `f1182d56...646a`. Terra was not called on this first pass.
+The first stable-alias transaction `c0bf514f...9f5` is a retained HTTP 422
+negative for invalid metadata tier and proves rollback to Qwen. Corrected
+transaction `3e6b3491...d4c` exits 0 and preserves deployment
+`df8ebd8f...3a51` and alias `task-agency-generation` while selecting
+`chatgpt/gpt-5.6-luna` at low reasoning. No host config or bundle changes.
+
+A harder planner-only probe shows why one simple pass is insufficient. Stable
+Luna returns in 13,689 ms but exits 1 solely for
+`plan_missing_codebase_discovery`; receipt `aab403bd...6270`. Temporary
+Terra-light config `37436635...d733` runs the identical request in 13,047 ms,
+exits 0, emits six units, echoes no injection, and has zero policy violations;
+receipt `65427d17...36b`. Stable production remains Luna pending the completed
+quality/latency comparison.
+
+Latency profile `437b7ce3...9b83` isolates the 96.72-second result: Luna
+completes near six seconds, two 4,096-dimension Qwen3 embedding batches finish
+near 40/45 seconds, and three Mistral structured stages finish near 55/90/97
+seconds. Ollama reports Mistral at 19 GB GPU residency and the embedding model
+at 4.7 GB on disk; alternating them causes cold-load churn. The embedding
+catalog cache is process-local, so ordinary per-hook processes cannot rely on
+a previous turn warming it. Multiple-minute preflight is explicitly not an
+acceptable general-use result.
+
+The owner approved the next bounded performance screen without weakening
+strict assurance or additive dense recall: Terra-light generation; Qwen3
+embedding at 1,024 dimensions; local Qwen 14B abliterated versus Qwen 3.5 9B
+for independent critic/text-reranker; unchanged free Qwen 3 32B child judge;
+and configured GLM 4.7 Flash/FlashX and GLM 5 Turbo candidates. GLM routes are
+HTTPS Z.AI deployments, not local Ollama weights. GPT-5.3-Codex-Spark is also
+approved for consideration through subscription auth at low/medium reasoning,
+but the gateway currently has no Spark deployment; official/current local
+metadata marks it Pro research-preview with a separate limit. Target the full
+preflight at no more than 20 seconds warm and 30 seconds cold; promote only a
+repeatedly passing exact configuration, then resume one-at-a-time manual host
+tests.
+
+The owner then broadened the screen: keep embeddings local, but subscription
+routes may replace every other local stage when repeated evidence proves both
+lower latency and accepted quality. All such routes still remain behind
+LiteLLM aliases and strict provider/model independence remains enabled. Bounded
+Z.AI deployments set zero retries and a 25-second internal timeout; an external
+30-second ceiling prevents the gateway's global retry policy from recreating a
+multi-minute wait. GLM 5.2 with thinking disabled produces no response before
+operator termination at 46.32 seconds (`44876a0a...752` / exit 143). GLM 5.3
+low returns HTTP 200 in 23.01 seconds but fails the strict structured boundary
+(`b5cdd83a...ee5` / exit 1). GLM 5 Turbo with thinking disabled returns six
+units in 21.88 seconds but fails semantic validation (`463703e6...288` / exit
+1). Their temporary aliases are deleted by receipts `f228ab49...0c6`,
+`e90cc768...faf`, and `745087c8...d01`.
+
+GLM 5.3 Flash low is the sole passing GLM planner: config
+`11bdde01...6da5` yields six policy-clean units in 21,727 ms / 21.84 seconds,
+exit 0 and response `cdcca1ff...ae9d`; its temporary alias remains only for the
+next independent verifier comparison. Subscription Sol-light also passes the
+identical hard planner with six units and no policy violations in 12,864 ms /
+12.98 seconds; config/response are `8c71e965...d8c2` /
+`f1710b0a...ec6`. Sol and Terra are therefore effectively tied on one sample,
+with Sol only 0.18 seconds faster in wall time; repeated runs, not that
+noise-sized difference, must select the planner.
+
+Temporary subscription Spark aliases then establish a materially different
+latency tier. Low reasoning passes the identical six-unit hard planner with no
+violations in 2,593 ms / 2.70 seconds (`ce3a5eff...ed6`, exit 0); medium also
+passes in 2,920 ms / 3.03 seconds (`64ed8fa6...ce2`, exit 0). Exact config
+`a330c1a8...419` assigns Spark-low to planning, recruitment, and text
+reranking, Sol-light to independent critic/review, and the existing local
+embedding alias at the approved 1,024 dimensions. Its cold and immediately
+repeated runs time out at the external 60/45-second ceilings (`9928ea39...836`
+for both exits). Gateway chronology isolates one local embedding request at
+about 34--37 seconds even while the 8B embedding model is GPU-resident; Spark
+stages remain approximately 2--6 seconds. Dimension truncation reduces result
+width and batching but does not reduce the 8B model's forward-pass cost.
+
+The owner requests production aliases with a measured best primary and an
+ordered second-best fallback from a different provider so Spark quota
+exhaustion fails over unattended. LiteLLM's deployment `order` control is the
+selected mechanism: order 1 is always tried before order 2, 429 places the
+failed deployment on cooldown, and per-deployment zero retries prevents
+multi-minute same-provider loops. The exact matrix and forced-failure proof
+remain pending. Embeddings stay local; the next owner choice is whether to
+download and test the official 639-MB `qwen3-embedding:0.6b` artifact at its
+native 1,024 dimensions in place of the current 8B model.
+
+The owner approves that exact model/dimension. Pull exits 0 in 6.85 seconds
+(`8f42d4d6...d359`); `ollama show` receipt `3b8529fe...504e` confirms Qwen3,
+595.78M parameters, 32,768 context, 1,024 embedding length, and Q8_0.
+Temporary LiteLLM alias receipt `ba21d61a...f94b` exits 0 with backend
+`ollama/qwen3-embedding:0.6b`, `keep_alive=-1`, zero retries, 30-second
+timeout, embedding mode, and output vector size 1,024. Direct dimension and
+latency validation is the next bounded live evaluation.
+
+Cold direct probe config `782ba725...490e` then embeds 27 catalog-style inputs
+as exactly 27 uniform 1,024-value vectors in 2,148 ms / 2.26 seconds, exit 0;
+receipt `e861bd5d...ff0b`. This is more than fifteen times faster than the
+resident 8B model on the comparable batch. The bounded package now proceeds
+to an explicitly unloaded full cold hook, an immediate warm hook, and ordered
+cross-provider primary-failure proof.
+
+The unloaded full hook returns at process level in 7.79 seconds, but strict
+Store inspection rejects the result: both Spark planner attempts are
+`plan_response_semantic_invalid`, the run is `preflight_failed`, and no model,
+routing, or specialist receipt is accepted. Stdout/Store are
+`67133d17...2cb`/`d1562321...c09`; this is a fast negative, not a cold pass.
+The gateway cost logger also fails to persist most Spark spend rows. A
+deduplicated journal audit exits 0 at `e307f2e5...784d` and proves 12 distinct
+Spark completions from 15:31:01 through 15:46:39 EDT. The retained first audit
+exits 1 because it counts the logger and duplicated exception line separately.
+
+The owner rejects Spark after it consumes about half of its separate five-hour
+subscription budget. Transaction `75855980...6bc` restores stable
+`task-agency-generation` to local `ollama/qwen3-14b-abliterated`; deletion
+receipts `bfb54a1f...86ae` and `b412d6cf...4851` remove the temporary low and
+medium Spark aliases. All eight stable Agency aliases again resolve locally.
+No later benchmark may include Spark.
+
+The owner authorizes a broader per-stage benchmark across non-Spark OpenAI
+subscription models, MiniMax M2.7/M2.7-highspeed/M3, Z.AI, and warm local
+models. Every provider-supported reasoning level, including off/unset where
+available, must be evaluated for latency, deterministic/semantic quality, and
+a combined score. The retained call ledger must distinguish attempted,
+completed, cached, retried, and rejected requests. The final technical report
+must rank each unique Agency text-stage contract; embeddings remain a separate
+local dimension/latency/recall measurement because reasoning level does not
+apply.
+
+The frozen pre-live manifest `62f8bec4...c6fd` contains 67 exact model/mode
+candidates: 30 non-Spark OpenAI subscription routes, four MiniMax routes, 15
+Z.AI routes, and 18 local Ollama routes. Nine production contracts produce 603
+one-shot screen cells, 18 accounted local warm-ups, and at most 18 top-two
+confirmations, for a hard maximum of 639 model calls with zero retries. The
+secret-safe alias manager and stage harness are `65c80909...4a38` and
+`226f4532...b4e8`; fixture/schema validation and authenticated alias preflight
+`21700339...d176` pass without a model call, and no temporary benchmark alias
+exists. Schema/semantic/injection eligibility is a hard gate before the
+60-percent-quality/40-percent-latency combined score; every promoted fallback
+must come from a different provider.
+
+The non-Spark OpenAI block completes all 270 frozen cells exactly once. Ledger
+`a0c3f787...85e2` records 238 structured completions, 197 strictly eligible
+responses, and 32 bounded transport/JSON failures across all 30 candidates and
+nine stages. GPT-5-nano accounts for nine immediate failures and is unusable
+through this subscription gateway; the remaining failures are retained
+48-second ceilings on heavier reasoning/stage combinations. Terra-low first
+meets the practical stage envelope with 100-point planner/recruiter/critic/
+reranker/judge/security results and 19.878/25.480-second hiring/safety outputs;
+Terra-ultra is the only OpenAI candidate to score 100 on all nine single-screen
+fixtures, at 24.435/24.744 seconds on the two full-contract stages. Mini-low is
+faster on those full contracts at 16.104/18.282 seconds but fails planner
+semantics. The first alias body was rejected before inference because `tier`
+must be `paid`, not `subscription`; its sanitized HTTP-422 receipt is retained,
+manager `8d7d884a...4d92` fixes that metadata field, and every later create/
+delete passes. Post-block inspection reports zero temporary benchmark aliases.
+
+MiniMax completes all 36 frozen cells exactly once. Cumulative ledger
+`5f93b3a3...7747` adds 32 structured completions, 19 strict eligibilities, and
+four bounded failures across all four official model/mode candidates. M2.7 and
+M2.7-highspeed both fail planner and the hiring/security contract gates while
+passing the compact recruiter, critic, reranker, and judge fixtures; the
+highspeed route is slower on this workload. M3-off passes the 4.267-second
+planner but fails critic and hiring. M3-adaptive is the MiniMax compact-stage
+leader with 7.179-second planning, 1.535-second recruitment, 2.512-second
+critique, 1.405-second reranking, and 0.818-second judging, all at 100 points;
+it remains ineligible for both full hiring-contract stages. Every MiniMax alias
+is removed after its nine-cell slice.
+
+Z.AI completes all 135 frozen cells exactly once. Cumulative ledger
+`636a1dec...5bf5` adds 100 structured completions, 73 strict eligibilities, and
+35 bounded transport/JSON failures across 15 documented input-mode candidates.
+Regular GLM-5.3 passes compact stages but not planner or full hiring generation;
+the Flash variants are slower and no more reliable. GLM-5.2 `low` and `medium`
+(both effective `high`) produce the best Z.AI planners at 17.044/17.657 seconds,
+but every 5.2 input fails the full hiring generator. GLM-5-Turbo off is
+inconsistent and on is slow at 32.780/32.862 seconds for planning/recruitment;
+neither is eligible on hiring. Z.AI therefore contributes only compact-stage
+fallback candidates, subject to cross-provider combined ranking. Every alias is
+deleted after its nine-cell slice.
+
+Local Ollama completes all 162 frozen cells and all 18 accounted warm-ups
+exactly once. Cumulative ledger `336fdf67...fcc1` records 78 structured
+completions, 24 strict eligibilities, and 84 bounded transport/JSON failures;
+seven warm-ups pass and 11 fail. Qwen3 Coder 30B is the strongest local route:
+it scores 100 on planner/recruiter/critic/reranker/judge, reaches 17.125 seconds
+on planning and 0.892--4.334 seconds on the compact stages, but misses the full
+hiring and repair gold gates at 80. Mistral 24B passes recruiter and judge but
+takes 20.416/3.970 seconds; all GPT-OSS 20B reasoning modes fail the strict
+structured path. The completed screen is therefore 603/603 cells, 448
+structured and 313 eligible. Post-block inspection returns HTTP 200 with zero
+temporary benchmark aliases; the only cleanup warning names an already-absent
+OpenAI alias after its prior successful delete and does not leave live state.
+
+The exact 18-call confirmation budget completes with 18 structured responses
+and 12 strict eligibilities, bringing the retained ledger to its hard maximum
+of 639 paired starts/finishes at `2080c834...d56`. Replay audit
+`1823c21b...19e` revalidates all 466 saved response hashes and decision scores;
+rankings/plan/results are `ebd3f4fb...cee6`, `311ab6c0...2d9`, and
+`f6c92e4b...189a`. Five stage pairs repeat with different providers:
+recruiter M3-adaptive/Luna-low, critic local Qwen 3.5 2B-off/Terra-medium,
+reranker and judge M3-adaptive/local Qwen3 Coder 30B-off, and security review
+GPT-5.4-mini-low/local Qwen3 Coder 30B-off. Planner M3-off/GPT-5.5-high both
+regress to 82.5; GPT-5.4-mini-low repeats hiring generation and safety repair
+but neither cross-provider probe qualifies; Terra-ultra regresses to 85 on the
+hiring critic and its local probe also fails. Therefore five pairs are
+promotable, while planner, hiring generator fallback, hiring critic, and safety
+repair fallback remain unresolved. HTTP-200 inspection again finds zero
+temporary aliases.
+
+The decision report is retained as mode-0600 host artifact `report.html` at
+`97ec909e...62d0`; its canonical input/data/SQL/builder hashes are
+`feddf5ca...1c50`, `7ccd70e7...39f4`, `b966fe7c...dc3d`, and
+`76e2ec0e...9b5`. The packaged delivery receipt passes validation, packaging,
+four-chart extraction, 1,440/390-pixel browser verification, exact rendered
+counts, and keyboard source-dialog interaction in 7.694 seconds. Readiness
+receipt `3ba71f8e...9322` independently checks 18 manifest blocks, nine stages,
+18 confirmations, 313 eligible rankings, nine different-provider selections,
+and a clear sensitive-pattern scan. It admits only the five repeated pairs and
+marks the complete LiteLLM configuration not ready; stable routing is therefore
+unchanged until the four unresolved contracts have repeated eligible evidence.
+The one-use report reader correction was authorized, embedded only in the
+self-contained report, and the installed plugin source/reader were restored to
+their exact original `2f989ae1...ed4` / `6c5ed0d3...e7b5` hashes.
+
+Response-level failure audit isolates four prompt-contract defects without
+weakening any gate: planner confirmations omit the literal repository/code/path
+tokens used by the deterministic discovery veto; every approving hiring critic
+except one adds explanatory reason codes instead of the required empty array;
+the best local hiring generator and repair fallback emits `null` for the
+required string `coherent_amendment_target`; and MiniMax safety repair quotes an
+untrusted suffix while explaining that it ignored it. Production prompts now
+state those exact closed-output requirements. Ruff 0.16.5 check/format and 160
+focused intent, hiring, contract, and decision-conformance tests exit 0. No
+model was called and no stable alias changed; a separately authorized maximum
+of 24 zero-retry remediation calls is still required before configuration.
+
+The owner then authorizes exactly 24 zero-retry remediation calls: 16 mandatory
+repetitions and at most eight predeclared stage reserves, with Spark and Jina
+excluded. Separate mode-0600 manifest/runner `f7477f43...9e3` /
+`de72a5ae...68d` preserve the original 639-call ledger and refuse reserve work
+unless a required stage still lacks a cross-provider pair. Ledger
+`deedc130...a1` contains exactly 24 unique starts and 24 matching finishes,
+zero retries, 20 valid alias receipts, 16 saved responses, and eight
+transport/JSON failures. Authenticated final inspection returns HTTP 200 with
+zero temporary aliases; no stable route or exact config changes.
+
+The repaired planner primary GPT-5.5-high passes twice at quality 100 in
+10,883/11,961 ms. MiniMax M3-off fails JSON twice, while the local 30B reserve
+times out once at 48,137 ms and passes once at 19,440 ms, so planner still has
+no repeatable fallback. Hiring critic is the only newly complete pair:
+GPT-5.4-mini-low passes twice at 2,165/2,004 ms and local Qwen 3.5 2B-off passes
+twice at 10,218 ms cold / 2,297 ms warm; MiniMax M3-adaptive varies one pass to
+one rejection. GPT-5.4-mini-low also passes hiring generation twice at
+17,203/17,961 ms and safety repair twice at 16,169/17,634 ms. Their fallbacks
+do not qualify: local Qwen3 Coder 30B reaches the 48-second limit on all four
+full-contract calls; GLM-5 Turbo generator returns one schema-invalid score-80
+response then one transport/JSON failure; MiniMax safety repair scores 85 twice
+but reproduces untrusted source text. Replay analyzer/results
+`0a4e92b7...1212` / `ce7704a5...b455` recheck all prompt, system, schema, saved
+response, decision, and score hashes.
+
+The refreshed mode-0600 technical report `c608309f...68b6` preserves all 313
+screen rankings, four chart IDs, and three table IDs; it adds all 24 remediation
+calls and raises readiness from five to six of nine pairs. Canonical
+input/data/SQL/notes/builder hashes are `0ef0ff5f...ab52`,
+`362dd71f...387`, `1b2e80c0...e9eb`, `290de5c3...49f`, and
+`1c8d81c9...2303`. Validation `0fa79f4c...68a8` passes packaging, chart
+extraction, 1,440/390-pixel browser checks, and keyboard source interaction in
+2.882 seconds; its analytical verdict is share-with-caveats because planner,
+hiring generation, and safety repair still lack repeatable cross-provider
+fallbacks. The temporary known top-bar correction used exact patched hashes
+`426377da...6c1` / `112e8616...e78`; plugin source/reader are restored exactly
+to `2f989ae1...ed4` / `6c5ed0d3...e7b5`, generated dependencies and failure
+screenshots are removed, and the complete LiteLLM config remains blocked.
+
+The next prompt-only repair makes the hiring response shape literal: exactly
+five top-level keys, `schema_version` only under `contract`, every declared
+array kept as an array, all required strings nonempty, and nonempty bounded
+tools for hire/amend. Safety repair now forbids reproducing any verbatim
+`original_hiring_input` text anywhere, including evaluation scenarios and
+rationales, and requires neutral labels without source markers. Source/test
+hashes are `38f51f01...276f` / `c14db2f49...0836`. Ruff 0.15.20 check and
+format exit 0; the focused dynamic-hiring, contract, selection-safety, and
+decision-conformance suite exits 0 with 137 passed and one intentional skip.
+No model or stable alias is called. The owner separately authorizes the next
+six zero-retry calls: two repetitions each for MiniMax M3-adaptive planner,
+local Llama 3.1 8B hiring generator, and MiniMax M3-off safety repair.
+
+That exact follow-up manifest/runner `ba2ecb0d...6207a` / `c385a11a...b855`
+executes all six calls with no retry. Planner M3-adaptive produces one
+transport/JSON failure at 6,693 ms and one score-15 schema failure at 2,918 ms
+whose sole top-level defect is an invented `additionalProperties` key. Local
+Llama 3.1 8B hiring generation reaches the 48-second ceiling twice at
+48,130/48,135 ms. M3-off safety repair passes once at quality 100 in 11,315 ms
+and returns a schema-, semantic-, and gold-valid score-85 response in 18,811 ms
+that still reproduces the untrusted marker in `avoided_scenarios[0]` and the
+hard-negative rationale. No route repeats and readiness stays six of nine.
+
+Ledger/analyzer/results `02154df0...c2f2` / `2a228291...fdde` /
+`249ce089...95cc` prove exactly six starts/finishes, zero retries, three saved
+response replays, and six valid create/delete receipts. Authenticated final
+LiteLLM inspection returns HTTP 200 with zero temporary aliases. Stable routes
+remain unchanged; the six-call grant is exhausted.
+
+The final follow-up technical report `8fd5667f...a587` now reconciles 669 total
+calls, 48 post-screen calls, 25 strict-eligible post-screen results, all 313
+original eligible ranking rows, and the unchanged six-of-nine decision.
+Artifact/data/SQL/notes/builder hashes are `1327b9fa...b381`,
+`71fd4bcd...a66e`, `26fff5be...01a4`, `cbe98456...bb66`, and
+`43fea685...8682`. Validation `ce57492e...572c` passes the 21-block/four-chart/
+three-table package, desktop/mobile checks, keyboard source interaction, exact
+arithmetic, sensitive-pattern scan, and share-with-caveats analytical review in
+2.912 seconds. The same known top-bar correction produces patched hashes
+`426377da...6c1` / `112e8616...e78`; plugin source, reader, compressed parts,
+dependency absence, and failure-screen absence are restored exactly. The
+general asset normalizer rejects an unrelated development redirect, while the
+scoped portable-reader normalization and delivery pass.
+
+The next no-call repair addresses the exact follow-up failures. The planner
+system now requires exactly `request_summary` and `units` and forbids emitting
+schema keywords such as `additionalProperties`. Safety repair no longer
+receives the raw request, free-text work-unit fields, or full worker prose; a
+new deterministic projection supplies only bounded identifiers, enums,
+booleans, counts, typed coverage, and four worker execution facts. Existing
+schema, semantic, injection, validation, and independent security-review gates
+remain unchanged. Intent/hiring source hashes are `2f01bd74...8fb4` /
+`a7dba727...0b12`; test hashes are `d9482a7c...4b64` / `db27aaf9...10a5`.
+Ruff 0.15.20 check/format and 188 focused tests exit 0 with one intentional
+skip. No model or stable route is called.
+
+The evidence-driven next candidate set is Z.AI GLM-5.2-low planner (the fastest
+non-OpenAI strict screen pass at 17,044 ms), GLM-5-Turbo-on hiring generation
+(previously one score-80 shape failure before the explicit array/tool repair),
+and MiniMax M3-off safety repair against the new content-free prompt. Each needs
+two zero-retry repetitions under a new explicit six-call owner cap.
+
+The owner authorizes that exact six-call route-closure plan and grants broader
+in-scope YOLO authority through 11:00 AM local time. Manifest/runner
+`a32cc7a5...a9e6` / `dd2d3a9b...ecdd` execute exactly six starts and finishes
+with no retry. Z.AI GLM-5.2-low planner fails at the transport/JSON boundary
+twice in 24,498/26,249 ms. GLM-5-Turbo-on hiring generation passes once at
+quality 100 in 39,310 ms, then scores 80 in 29,477 ms because it collapses
+`execution_profile.working_principles` from an array to a string. MiniMax
+M3-off safety repair scores 56.25 twice: injection safety passes, but it emits
+only `action` and `contract`, omits the three other required top-level fields,
+and adds an empty second tool. The 31 ms second safety result is a cached
+identical-prompt response and is not independent evidence.
+
+Ledger/analyzer/results `2dca9647...977a` / `5ade50b5...950f` /
+`19565ac0...0472` replay all four saved responses, prove six valid create/delete
+receipts, and finish authenticated HTTP 200 inspection with zero temporary
+aliases. No pair is added, readiness remains six of nine, and stable routing is
+unchanged. The next bounded remedy must add a changing evaluation nonce to the
+content-free safety fixture, reinforce the exact five-key/array syntax, and
+prewarm the previously cold-sensitive local Qwen3 Coder planner before two
+strict repetitions rather than extend its production timeout.
+
+The next prompt-only repair makes that shape executable: one-item working
+principles use a literal JSON array example, every array element must be
+nonempty, and safety repair must derive and return all five top-level records
+even with projected context. A one-based `repair_turn` cache-busting ordinal is
+added to each bounded safety replacement attempt and explicitly carries no
+instruction authority. Hiring source/test hashes are `863df134...a8d8` /
+`852fd91a...d0d6`; Ruff check/format and the same 188-test focused set pass with
+one intentional skip. No model or stable alias is called.
+
+The owner-authorized hot-closure manifest/runner `af666f79...25bf` /
+`4e93e10f...0756` then consume exactly seven zero-retry calls. The full local
+Qwen3 Coder planner prewarm and both measured hot calls all reach the unchanged
+48-second boundary (48,136/48,139/48,090 ms), so that route is rejected for
+reliable general use. Z.AI GLM-5-Turbo-on hiring generation also reaches the
+boundary twice (48,126/48,076 ms) without a returned object. MiniMax M3-off
+safety repair returns two independent score-100 objects in 28,261/6,053 ms;
+both are schema-, semantic-, gold-, and injection-valid and have distinct
+response hashes `cae75d76...5e9b` / `9371d74d...e0ed`. That route now supplies
+the different-provider fallback for the already repeated OpenAI safety route,
+raising readiness to seven of nine pairs.
+
+Ledger/analyzer/results `c375dd21...89d2` / `c3628fc4...8b7d` /
+`e8d48a2c...959c` replay both saved responses and validate all seven starts and
+finishes, zero retries, nine valid alias receipts, the exact stable config hash
+`df75e01d...0922`, and final authenticated LiteLLM HTTP 200 with zero temporary
+benchmark aliases. Stable routing is unchanged. The next bounded candidate set
+is two current-fixture repetitions each of MiniMax M3-off and GPT-5.5-high for
+planner, plus GPT-5.4-mini-low and MiniMax M3-off for hiring generation. This
+eight-call package tests both required providers for each remaining stage.
+
+Final-pairs manifest/runner `bda0e8a2...c69b` / `df856b65...9e7b` execute that
+exact eight-call plan with no retry. GPT-5.5-high planner repeats at quality 100
+in 9,913/10,414 ms, and GPT-5.4-mini-low generation repeats at quality 100 in
+17,690/19,201 ms, confirming both current-fixture OpenAI primaries. MiniMax
+M3-off is not yet repeatable: planner scores 85 then 100 in 4,579/9,536 ms, with
+the first otherwise-valid response reproducing the untrusted phrase in
+`request_summary`; generation has one transport/JSON failure at 18,420 ms then
+one score-100 result at 21,249 ms.
+
+Ledger/analyzer/results `ae9c30e3...edbd` / `32b974a2...324f` /
+`33256428...7400` replay seven saved responses, validate exactly eight starts
+and finishes, zero retries, nine valid receipts, stable config
+`df75e01d...0922`, and authenticated HTTP 200 with zero temporary aliases.
+Readiness remains seven of nine because both cross-provider fallbacks still
+need two clean repetitions. The next bounded repair forbids quoting, describing,
+or paraphrasing ignored prompt-injection text in planner outputs, followed by
+two MiniMax M3-off planner and two generation measurements.
+
+That no-call planner repair is now implemented. The intent system instructs the
+model never to quote, describe, paraphrase, or mention ignored injection text
+or injected worker names in any output field and to summarize only authorized
+work. Intent source/test hashes are `07fdffdc...2dfa` / `09b238ef...461c`;
+Ruff 0.16.5 check/format and the same 188-test focused set exit 0 with one
+intentional skip. Stable routing and model-call accounting remain unchanged.
+
+MiniMax fallback manifest/runner `172ba9ac...5fc5` / `00edb012...a670`
+execute exactly four zero-retry calls after that repair. Planner now repeats at
+quality 100 in 8,261/3,838 ms with distinct response hashes, closing its
+different-provider pair. Hiring generation scores 63.75 in 7,666 ms then 100
+in 29,544 ms. The failed object remains safe and semantically near-complete but
+collapses `contract.relationships` to an empty string and emits only
+`disabled_covering_workers` inside `gap_evidence` instead of the required full
+seven-key record.
+
+Ledger/analyzer/results `5106e992...1ee7` / `aad39222...5ec8` /
+`c8f79895...d90b` replay all four responses, validate four starts and finishes,
+zero retries, three valid alias receipts, stable config `df75e01d...0922`, and
+authenticated HTTP 200 with zero temporary aliases. Readiness is eight of nine;
+only the MiniMax generation fallback remains. The next no-call repair pins
+`relationships` as an array and the literal complete `gap_evidence` key set
+before two final bounded MiniMax generation measurements.
+
+The final no-call shape repair now requires `gap_evidence` to contain exactly
+all seven schema keys and requires `contract.relationships` to remain a JSON
+array, using the literal empty form when no edge is needed. Hiring source/test
+hashes are `81b5cb9e...a525` / `6e6dd0f3...e2a1`; Ruff 0.16.5 check/format and
+the 188-test focused set exit 0 with one intentional skip. No model or stable
+alias is called.
+
+Generator-close manifest/runner `5312ecb2...44ba` / `84bf953f...b345`
+execute exactly two zero-retry MiniMax calls in 7,633/7,625 ms, scoring 65/80.
+Both preserve the repaired full gap record and relationships array and satisfy
+all semantic/gold checks. One contract exceeds the four-host bound by adding an
+invented host; the other adds undeclared `contract.host_constraints`. The first
+also repeats an injection marker, so neither is eligible.
+
+Ledger/analyzer/results `c6d9b26d...57a2` / `a32e9c12...554c` /
+`3f862167...b56e` replay both responses, validate two starts and finishes, zero
+retries, three valid receipts, exact config `df75e01d...0922`, and authenticated
+HTTP 200 with zero temporary aliases. Readiness remains eight of nine. The next
+bounded repair forbids undeclared contract fields and requires hosts/platforms
+to copy only supplied work-unit values before another exact two-call proof.
+
+That no-call repair now forbids undeclared contract fields such as
+`host_constraints`, caps `contract.hosts` at four unique nonempty identifiers,
+and forbids reproducing injection text even inside evaluation scenarios and
+rationales. Hiring source/test hashes are `6e70bfa9...f269` /
+`8048bee0...20e7`; Ruff 0.16.5 check/format and the 188-test focused set exit 0
+with one intentional skip. No model or stable alias is called.
+
+Generator-final manifest/runner `bec6e696...f960` / `5383729d...a47e` execute
+two more zero-retry MiniMax calls in 8,359/12,637 ms. Both are now schema-valid,
+semantically complete, and pass every gold check at score 85; their sole
+remaining failure is reproducing the raw request's injection markers inside
+negative safety examples despite the explicit non-echo instruction.
+
+Ledger/analyzer/results `ca43701b...66fa` / `71d36193...5a18` /
+`cf3a3c38...2f6e` replay both responses and validate two starts and finishes,
+zero retries, three valid receipts, stable config `df75e01d...0922`, and final
+authenticated HTTP 200 with zero temporary aliases. Readiness remains eight of
+nine. Since prompt-only non-echo wording has reached full structural quality
+but not marker safety, the next bounded repair removes the raw request from the
+initial hiring-generator projection and supplies only the governed work unit,
+verified gap, and workforce facts already sufficient to design the role.
+
+The initial hiring projection now implements that boundary: raw request text is
+replaced by a one-way `request_hash` carrying no instruction authority, while
+the governed work unit, verified gap, and complete workforce remain available.
+The same content-free object flows into a bounded critic repair. Hiring
+source/test hashes are `e69a0624...7956` / `efec54af...b1a4`; Ruff 0.16.5
+check/format and the 188-test focused set exit 0 with one intentional skip. No
+model or stable alias is called.
+
+Content-free manifest/runner `e3ddc1ba...f4a4` / `5e973a33...b8ed` then execute
+two zero-retry MiniMax M3-off generation calls. The raw request is provably
+absent. The first returns `{"action":"none"}` in 966 ms and scores 15; the
+second returns a complete injection-safe score-100 contract in 10,336 ms. The
+distinct nonces and response hashes disprove an identical-prompt replay, but
+the route is still not repeatable.
+
+Ledger/analyzer/results `038c5195...853c` / `306c8b80...7773` /
+`c2a7f326...4e03` replay both responses, validate two starts and finishes, zero
+retries, three valid receipts, stable config `df75e01d...0922`, and final HTTP
+200 with zero temporary aliases. Readiness remains eight of nine. Because the
+remaining failure is an isolated invalid enum rather than a stable prompt-shape
+defect, the next bounded package compares two fresh M3-off calls with two
+M3-adaptive calls on the exact content-free fixture without changing product
+code.
+
+MiniMax comparison manifest/runner `95b546c5...f445` / `9cd28015...c04d`
+execute exactly four zero-retry calls on that same content-free fixture. M3-off
+returns one score-100 contract in 13,347 ms then one transport/JSON failure in
+9,901 ms. M3-adaptive returns one score-80 schema failure in 22,007 ms then one
+transport/JSON failure in 14,922 ms. Neither route is repeatable.
+
+Ledger/analyzer/results `b339c776...4995` / `d7c2326b...fb2c` /
+`c4ca7581...6143` replay both saved responses, validate four starts and finishes,
+zero retries, six valid receipts, stable config `df75e01d...0922`, and final
+authenticated HTTP 200 with zero temporary aliases. Readiness remains eight of
+nine and MiniMax is rejected as the generation fallback. The next bounded
+package tests two Z.AI GLM-5-Turbo-off and two GLM-5-Turbo-on calls against the
+exact content-free fixture; those are the only non-OpenAI routes that previously
+returned semantically complete generator contracts.
+
+Z.AI comparison manifest/runner `0f6bdd40...541f` / `3e01d850...727e`
+execute exactly four zero-retry content-free calls. GLM-5-Turbo-off reaches the
+unchanged 48-second boundary twice at 48,137/48,075 ms; Turbo-on does the same
+at 48,065/48,035 ms. No response object returns, so both routes are rejected.
+
+Ledger/analyzer/results `a28bfd31...9709` / `5eb629c0...aee3` /
+`d95cf6da...bb3f` validate four starts and finishes, zero retries, six valid
+receipts, stable config `df75e01d...0922`, and final authenticated HTTP 200 with
+zero temporary aliases. Readiness remains eight of nine. The next bounded
+package prewarms then measures two calls each for local Qwen3 Coder 30B and
+Llama 3.1 8B against the shorter content-free fixture; both previously returned
+semantically complete score-80 generator contracts before the shape repairs.
+
+Local comparison manifest/runner `b4e41e99...bb48` / `b7543b0b...62cb`
+execute exactly six zero-retry calls: one counted warmup and two measured calls
+per model. Qwen3 Coder 30B warms in 21,882 ms, then returns two distinct,
+schema-, semantic-, gold-, and injection-valid score-100 generator contracts in
+21,483/16,928 ms. It closes the ninth different-provider pair within the 20s
+warm target on the second sustained call. Llama 3.1 8B warms in 5,850 ms but
+scores 47.5 twice in 18,741/15,477 ms and is rejected.
+
+Ledger/analyzer/results `857ea7f3...7799` / `e6af98fd...2e39` /
+`055044a5...b793` replay four measured responses, validate six starts and
+finishes, both warmups, zero retries, six valid receipts, exact stable config
+`df75e01d...0922`, and authenticated HTTP 200 with zero temporary aliases. The
+matrix is now nine of nine. Stable routes remain unchanged pending one atomic
+exact-config update and forced-failure proof.
+
+Live route inspection then found that the declared
+`workforce.hiring.safety_repair` route was not consumed: the bounded repair
+loop silently reused the hiring-generator providers and duplicated the first
+unsafe security-review attempt in its durable sequence. The narrow runtime
+repair resolves that exact route per harness, uses the resolved repair model as
+the creator identity for the following isolated review, and retains each
+attempt once. Ruff check/format, `git diff --check`, and the five focused
+hiring/decision suites pass with 189 tests and one intentional skip. The
+nine-stage LiteLLM projection can now bind every measured stage before live
+fallback proof.
+
+The host's shared LiteLLM 1.94 gateway retains a foreign/global three-retry
+policy, so Agency now sends the supported per-request
+`x-litellm-num-retries: 0` override on every LiteLLM structured call. This
+leaves global policy untouched while permitting the gateway's separate
+order-based fallback path to advance from order 1 to order 2. The exact header
+regression, all 68 roster/provider adapter tests, Ruff check/format, and
+`git diff --check` pass. A broader 161-pass diagnostic exposed two existing
+live-operator-state-coupled preflight expectations; the scoped adapter suite is
+green and the required named spine remains reserved for the post-install gate.
+
+The additive production projection begins under manifest/runner/ledger
+`354fdeff...585d` / `b9e70c15...a442` / `82491c19...669b`. Planner,
+recruiter, and critic each prove the real order-2 fallback after one disposable
+order-1 loopback failure (`x-litellm-attempted-fallbacks=1`), then the exact
+order-1 primary with zero fallbacks; all six accepted calls are HTTP 200,
+quality 100, and deployment-UUID reconciled. Recruiter's first MiniMax primary
+attempt transiently used its healthy OpenAI fallback, then the next ordinary
+call proved the MiniMax UUID at quality 100, demonstrating the desired
+unattended behavior without a retry.
+
+The first cold Qwen Coder reranker fallback reached its 45-second deployment
+ceiling. Reconfiguration adds `keep_alive=-1`; the immediate 45-ms retry is a
+bounded negative because LiteLLM correctly retains that exact deployment UUID
+in cooldown. At the clean checkpoint, planner/recruiter/critic each have their
+two final deployments, reranker has only its exact resident order-2 fallback,
+all other new aliases remain absent, and no disposable failure deployment
+survives. Resume after cooldown with the retained runner; do not recreate or
+delete the three proven aliases.
+
+Cooldown resume succeeds for the resident reranker in 3,836 ms, then its
+forced fallback and MiniMax primary pass in 1,288/3,538 ms. Child judge,
+hiring generator, hiring critic, and security review also pass both forced
+fallback and normal primary with deployment UUIDs reconciled, zero retries,
+and quality 92.5--100. Ledger `784181c9...8c5a` therefore closes eight aliases.
+Safety repair alone returns an immediate MiniMax transport 408 after the
+disposable primary failure; it remains unreferenced with the exact order-2
+fallback plus disposable order-1 deployment. Resume after its 60-second
+cooldown; all eight proven aliases already contain their final two deployments.
+
+Safety cooldown resume returns one quality-100 MiniMax repair in 18,053 ms,
+then the forced-fallback call reaches the same deployment UUID with
+`x-litellm-attempted-fallbacks=1` but scores only 80. This contradicts the
+earlier two-pass sample and is retained as a production-repeatability failure,
+not waived. Ledger `40c56c2c...a5da` closes eight aliases and rejects MiniMax
+as the exact safety fallback. The disposable primary is removed; safety has
+one unreferenced order-2 deployment and every other alias has its final pair.
+The next bounded package tests the best remaining resident local candidate on
+the content-free safety fixture before changing that one manifest selection.
+
+That bounded safety-fallback package rejects each remaining unqualified route
+without promoting it. Resident Qwen3 Coder scores 80 in 18,396 ms; Mistral 24B
+scores 80 after a 96,114-ms cold start. MiniMax M3 adaptive initially scores
+100 three times in 7,710/10,764/17,489 ms, but the production forced-fallback
+call varies to 80 after a score-100 prewarm; adaptive plus temperature zero
+then varies 100/56.25. Exact schema diagnostics isolate both otherwise-safe
+M3 failures to an overlong `decision_reason` (592 and 782 characters), so the
+source prompt now requires no more than the schema's existing 512-character
+bound and summarization instead of evidence repetition. Ruff check/format exit
+0 and the focused dynamic-hiring suite passes 52 tests with warnings strict.
+The first two post-repair calls are retained transport negatives (HTTP 500 in
+13,506 ms, then cooldown 408 in 56 ms), not quality failures or retries.
+Manifest/runner/probe/ledger hashes are
+`db72cb658243f9ee559c36e0380a30e19673b71fb80b225a28f05ccd894f760f`,
+`d37d9a674aceaa8074439345aea3d91a2168576276da72a3a9faca83f7294edc`,
+`719cfdbc79f991cb23cd0e54c24a02719e6fbcc01313cb5b93f90997cdd679af`,
+and `4894de42eae88e4ff6e18d78c02812c1660c7ee88825bc14824dc7d38e303515`.
+Authenticated inspection reports zero disposable probe aliases and zero safety
+deployments; stable Agency/LiteLLM config hashes remain
+`df75e01d31dd8ebc668c3f4127d70a0af14e1e63cf600a9a03e6a01884540922`
+and `d2811be77b0e4fd6c3ac73a4e1cf526776e9ffbe5866ebcf895b81fde809ecec`.
+After cooldown, the next bounded live package repeats adaptive M3 against the
+repaired prompt before any safety alias promotion.
+
+That post-repair package rejects adaptive M3 for transport instability: after
+three score-100 probe calls it later returns HTTP 500 even after a two-minute
+quiet window. The host reaches `api.minimax.io` in 39 ms TCP / 76 ms TLS, while
+the gateway log identifies a stale Anthropic connection timing out in 2 ms.
+One user-service restart clears only the LiteLLM connection pool; the shared
+config remains `d2811be7...ecec`, the service returns active/ready, and all
+eight proven alias pairs survive. M3-off then returns three independent,
+schema-valid score-100 safety repairs in 12,565/8,458/5,639 ms with zero
+retries. Manifest/runner/ledger are now `247da565...8f4` / `4ea85b3a...768d` /
+`b31c76b9...ba25`; authenticated inspection reports zero probe and safety
+aliases. Exact mode-0600 config `756da1c4...1cb0` contains the ten per-stage
+LiteLLM profiles, twelve routes, four child-judge host pins, and approved
+1,024-dimensional embedding profile. Its direct structural audit exits 0;
+the host-aware `agency config validate` reports the config valid but exits 2
+only for the expected pre-live cold-inventory warnings. The next bounded live
+step promotes M3-off after cooldown, proves its order-2 fallback and the
+OpenAI order-1 primary, then creates and proves the embedding alias.
+
+The actual M3-off production forced-fallback call then fails in 234 ms with
+HTTP 408 after the disposable order-1 failure, despite the three direct passes.
+Because that is the exact recovery path, the result is not waived; both exact
+partial deployments are removed. Resident Qwen3 32B thinking-on receives one
+120,097-ms cold timeout, then a fully resident response in 79,515 ms. That
+response passes every semantic, gold, and injection-safety check and has a
+128-character decision reason, but scores 80 solely because it returns the
+governed `contract.tools` array empty. This matches Qwen3 Coder's empty-tools
+defect; Coder also omitted the supplied nearest worker. The safety prompt now
+requires at least one exact bounded `required_tools` identifier and at least
+one supplied nearest worker when those governed inputs are present. It does
+not relax the closed schema or invent either value. Ruff check/format exit 0;
+122 hiring/contract/selection tests pass with one intentional skip. The next
+bounded package tests the faster local Qwen3 Coder against that exact repair.
+
+Qwen3 Coder remains ineligible: after a 48,959-ms reload it again scores 80,
+omitting `duplicate_evidence.reason` and returning empty tools and nearest
+workers despite the exact instruction. The production route therefore uses
+the only fully demonstrated ordering: MiniMax M3-off is order-1 primary and
+GPT-5.4-mini-low is the different-provider order-2 fallback. This reverses the
+raw-latency ranking only for safety repair because M3 succeeds direct while it
+cannot recover after a failed order-1 deployment. The reversed forced OpenAI
+fallback passes at quality 100 in 14,382 ms with
+`x-litellm-attempted-fallbacks=1`; the normal MiniMax primary passes at quality
+100 in 11,446 ms with zero fallbacks. Both exact response-header UUIDs match
+the inspected deployments. The local Qwen3 0.6B embedding alias also passes at
+exactly 1,024 dimensions.
+
+Final audit `f42d79c850b8a777bb770580225dc862a4457ebad09867618fd074f41478b736`
+exits 0 with seven checks, nine routes, ten aliases, and nineteen deployments.
+Ledger/manifest/runner/auditor hashes are
+`764c672ad1025a443efb699511c916639dc954cc44c8caacfcef3d9ced3470c2`,
+`06a1a9082ec1cb63a8bd79b0013753fe54d971b23511cc3af5cf464716989e4a`,
+`4ea85b3a82b4f3d2ce45c75a6faea5bdba1fd3944ef92a07817b01929b5d768d`,
+and `c71824f451ec3ebf907acc849ca1a529e82c9166da6586c9f9ad94303304fd60`.
+Final model-info/embedding receipts are `b30008c3...85ec` /
+`4c5dd702...9c06`, all evidence files are mode 0600, and no probe, benchmark,
+or forced-failure deployment survives. Exact config remains mode 0600 at
+`756da1c4c916006fd736d42cf9550116351d8d97a41a1448c5880e2d7d61cb0d`;
+the shared LiteLLM config remains `d2811be7...ecec`. The nine-stage ordered
+matrix is closed. Build/install from eventual exact main, named gates, and the
+four manual harness tests remain before the Linux verdict.
+
+The post-matrix named-gate manifest
+`31896f7de6b84b1725319ed5e1741d671b876a426e0fe1878457702c471c2f9a`
+audits eleven exit-0 gates against source `0f4a7e9e...1a74`: both 921-file
+documentation checks, current policy/worklog projections, Ruff check, 696-file
+format verification, the 864-pass/3-skip warning-strict Python spine, all 138
+dashboard tests, routing schema 1.4.0, `git diff --check`, and decision
+conformance. The decision receipt `46692e13...8545` kills all 167/167 curated
+mutations with zero invalid or surviving cases and source unchanged; routing
+receipt `effb7174...a7a` passes after telemetry `16847dac...3f`. Every retained
+gate artifact is owner-private mode 0600. The first decision attempt under an
+incomplete tool venv and the first retained Ruff invocation that lacked its
+binary are environment negatives and are not counted as accepted gates. Exact
+main build/install and the four attended manual harness turns remain.
