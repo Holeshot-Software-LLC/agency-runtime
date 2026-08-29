@@ -3095,3 +3095,23 @@ passes all seven checks across nine routes, ten aliases, and nineteen
 deployments, with exact 1,024-dimensional embedding, zero disposable aliases,
 unchanged mode-0600 Agency config `756da1c4...1cb0`, and unchanged shared
 LiteLLM config `d2811be7...ecec`.
+
+The first attended ordinary Codex turn disproves the planner speed tie under a
+real full-workforce prompt. Session `01a04e2e...0025`, trace
+`01a04e2e...63e8`, reaches `preflight_failed` before any route, specialist, or
+finalization row. Both MiniMax M3 planner calls return HTTP 200 in 1,992/3,346
+ms but fail `plan_response_semantic_invalid`; the exact requested visible copy
+is then correctly refused by Stop because no Agency response was accepted.
+Content-free failure/call artifacts are `96315ae6...eb6d` /
+`f9f00f08...2344`.
+
+The planner is restored to the prior quality-first GPT-5.5-high/M3-off order.
+Its forced fallback and zero-fallback primary fixtures both score 100 in
+4,227/10,248 ms; ledger/model-info hashes are `8f739f42...1f46` /
+`2f54667d...09a2`. A full installed-shape synthetic preflight then isolates a
+separate compatibility defect: GPT returns HTTP 200, `finish_reason=stop`, and
+a complete 538-character brace-delimited JSON object, but Agency's bounded
+model-text parser rejects it before semantic validation. Diagnostic
+`8d0b56ba...ff5a` contains only lengths, hashes, keys, token counts, and parser
+outcomes. No manual retry or later harness test may run until that exact parser
+rejection is explained and a clean full Codex preflight reaches `ready`.

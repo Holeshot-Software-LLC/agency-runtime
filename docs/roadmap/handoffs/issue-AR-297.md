@@ -24,9 +24,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-297
-branch: codex/ar297-speed-tiebreak
+branch: codex/ar297-manual-preflight-reliability
 evidence_commit: e755ab539c317915f4a71fda2d4de4bb6cf27fd0
-minimum_ledger_commit: 0e23be08bc202768f0683ef4697eace14fd8a4b5
+minimum_ledger_commit: 1a4402a3a61f717344e4456c7d4d19a3e7e5a93a
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 ---
@@ -35,10 +35,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 
 ## checkpoint
 
-- Work only in `/tmp/agency-runtime-ar297-speed-main.e2fb464c`; never touch the shared checkout.
-- PRs #341/#342 are merged through `origin/main` `e2fb464c`; exact main
-  `341f472b...099b` remains installed without an Agency version pin.
-- Clean checkpoint `e755ab53` / ledger `0e23be08` precedes this recovery pair.
+- Work only in `/tmp/agency-runtime-ar297-manual-preflight.1583934a`; never touch the shared checkout.
+- PRs #341--#343 reach `origin/main` `1583934a`; exact product `341f472b...099b` stays installed unpinned.
+- Clean checkpoint `71e3d8ca` / ledger `1a4402a3` precedes this recovery pair.
 
 ## completed-evidence
 
@@ -111,18 +110,21 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Main `341f472b...099b` is active; all four bundles pass. Attended Codex trust
   and no-bypass activation `01119a71...2d69` exit 0 with a fresh v4 canary,
   persisted attestation, `unmet_prerequisites=[]`, and empty stderr.
-- Owner-selected speed tie-break reverses planner to M3-off/GPT-5.5-high and
-  critic to Terra-medium/local Qwen 2B. Four zero-retry proofs score 100 at
-  3.851/10.105 and 1.300/0.670 seconds; ledger `a33d3810...3f67` closes 4/4.
+- Critic speed tie-break remains Terra-medium/local Qwen 2B. Four retained
+  zero-retry fixture proofs score 100; ledger `a33d3810...3f67` closes 4/4.
 - Audit `8103d4b9...8d1` passes seven checks, nine routes, ten aliases, nineteen
   deployments, exact config `756da1c4...1cb0`, and zero disposable aliases.
+- Manual Codex `01a04e2e...0025` fails before routing/finalization: both M3
+  planner calls are invalid (`96315ae6...eb6d` / `f9f00f08...2344`).
+- GPT-5.5-high/M3-off is restored; fixtures score 100 at 10.248/4.227s
+  (`8f739f42...1f46` / `2f54667d...09a2`). Diagnostic `8d0b56ba...ff5a`
+  proves complete GPT JSON is rejected by bounded parsing before semantics.
 
 ## same-task-continuity
 
 - Main artifacts: `~/.agency-runtime/release-artifacts/dist-341f472ba3d57559b6730b66ec1504f5be52099b`.
 - Main evidence: `~/.agency-runtime/evidence/ar297-main-install-20260829-341f472b...099b`.
-- Exact config is `ar297-litellm-v2-756da1c4c916006f.yaml`; its stable alias
-  names and hash are unchanged while LiteLLM owns the two proven order swaps.
+- Exact config `ar297-litellm-v2-756da1c4c916006f.yaml` is unchanged; LiteLLM owns the critic swap and planner rollback.
 - Zero AR-297 containers remain; older immutable artifacts stay available for rollback.
 
 ## next-bounded-work-package
@@ -144,8 +146,8 @@ unchecked line. Mark an item complete only with exact retained evidence.
    repeated route qualifies and the stable config remains unchanged.
 7. [x] All pairs/routes/gates, PR #341, exact main install, attended Codex trust,
    and the owner-selected speed-first two-route proof are complete.
-8. [ ] Complete Codex then Claude/Hermes/OpenClaw manual tests and issue the
-   Linux verdict.
+8. [ ] Explain/fix the full-preflight bounded-parser rejection, prove Codex
+   `ready`, then complete Codex/Claude/Hermes/OpenClaw manual tests and verdict.
 
 ## verification
 
@@ -172,7 +174,7 @@ git diff --check
 - All Agency inference on this system stays behind LiteLLM aliases. Any unknown
   model, endpoint, dimension, reranker, thinking level, judge route,
   harness-auth, or service-manager choice requires an owner interview.
-- Exclude Spark. Owner grants in-scope model/config test authority through
-  11:00 AM local time; keep zero deployment retries and retained accounting.
+- Exclude Spark. The time-bounded model/config test grant expired at 11:00 AM;
+  keep zero deployment retries and interview before any new model choice.
 - Do not create or close another tracker, tag, sign, publish a release, or make
   an unrelated model/config change without separate authorization.
