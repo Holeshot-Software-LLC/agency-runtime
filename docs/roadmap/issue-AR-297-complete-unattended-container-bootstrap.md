@@ -3108,10 +3108,13 @@ Content-free failure/call artifacts are `96315ae6...eb6d` /
 The planner is restored to the prior quality-first GPT-5.5-high/M3-off order.
 Its forced fallback and zero-fallback primary fixtures both score 100 in
 4,227/10,248 ms; ledger/model-info hashes are `8f739f42...1f46` /
-`2f54667d...09a2`. A full installed-shape synthetic preflight then isolates a
-separate compatibility defect: GPT returns HTTP 200, `finish_reason=stop`, and
-a complete 538-character brace-delimited JSON object, but Agency's bounded
-model-text parser rejects it before semantic validation. Diagnostic
-`8d0b56ba...ff5a` contains only lengths, hashes, keys, token counts, and parser
-outcomes. No manual retry or later harness test may run until that exact parser
-rejection is explained and a clean full Codex preflight reaches `ready`.
+`2f54667d...09a2`. Installed-shape probes isolate a separate model-output
+defect: GPT returns HTTP 200 and `finish_reason=stop`, but its brace-delimited
+planner text is malformed. The final probe returns 492 characters and fails
+both ordinary and bounded JSON with `Extra data` at final position 491: one
+unmatched closing brace follows the otherwise complete object. Diagnostic
+`c4e11b2d...634c` contains only lengths, hashes, keys, token counts, error
+location, and character classes. Strict assurance forbids accepting or
+repairing that malformed output. Further live model tests require a renewed
+owner interview because the bounded authorization expired at 11:00; after
+approval, evaluate exact full planner prompts before another manual turn.

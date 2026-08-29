@@ -117,8 +117,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Manual Codex `01a04e2e...0025` fails before routing/finalization: both M3
   planner calls are invalid (`96315ae6...eb6d` / `f9f00f08...2344`).
 - GPT-5.5-high/M3-off is restored; fixtures score 100 at 10.248/4.227s
-  (`8f739f42...1f46` / `2f54667d...09a2`). Diagnostic `8d0b56ba...ff5a`
-  proves complete GPT JSON is rejected by bounded parsing before semantics.
+  (`8f739f42...1f46` / `2f54667d...09a2`). Diagnostic `c4e11b2d...634c`
+  proves GPT appends one unmatched `}`; strict parsing correctly rejects it.
 
 ## same-task-continuity
 
@@ -146,8 +146,8 @@ unchecked line. Mark an item complete only with exact retained evidence.
    repeated route qualifies and the stable config remains unchanged.
 7. [x] All pairs/routes/gates, PR #341, exact main install, attended Codex trust,
    and the owner-selected speed-first two-route proof are complete.
-8. [ ] Explain/fix the full-preflight bounded-parser rejection, prove Codex
-   `ready`, then complete Codex/Claude/Hermes/OpenClaw manual tests and verdict.
+8. [ ] After owner approval, run a full-prompt planner bake-off, prove Codex
+   `ready`, then complete Codex/Claude/Hermes/OpenClaw tests and verdict.
 
 ## verification
 
