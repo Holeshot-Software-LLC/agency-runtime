@@ -117,8 +117,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   `7ccd70e7...39f4`/`b966fe7c...dc3d`/`76e2ec0e...9b5` pass canonical desktop/
   mobile/source checks. Readiness `3ba71f8e...9322` admits five of nine pairs;
   no stable config changed and temporary reader tooling was restored exactly.
-- Planner/hiring critic lack repeated primaries; hiring generation/safety repair
-  lack repeated fallbacks. Zero temporary aliases remain; 7/18 warm-ups pass.
+- Failure audit maps the four gates to literal discovery tokens, empty approval
+  reasons, non-null closed strings, and non-echoed untrusted suffixes. The
+  prompt-only repair passes Ruff and 160 focused tests; live calls remain unauthorized.
 - Record audits `769fb577...6056`/`e98fd0e5...64a7` exit 1 only on inherited
   parity debt; AR-297/#335 has no mismatch. Tracker/release writes stay unauthorized.
 

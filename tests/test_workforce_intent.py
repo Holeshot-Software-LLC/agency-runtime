@@ -141,6 +141,7 @@ def test_compact_system_preserves_evidence_before_operational_planning() -> None
     assert "analysis/discovery unit distinct from the dependent plan" in COMPACT_INTENT_SYSTEM
     assert "both planning and operations" in COMPACT_INTENT_SYSTEM
     assert "Every code mutation needs an implementation-change unit" in COMPACT_INTENT_SYSTEM
+    assert "maps the relevant repository code paths" in COMPACT_INTENT_SYSTEM
     assert "Test-code authors the tests; test-evidence independently" in COMPACT_INTENT_SYSTEM
     assert "even when the user did not separately request" in COMPACT_INTENT_SYSTEM
     assert (

@@ -46,6 +46,13 @@ from agency_runtime.core.workforce.staffing_verifier import (
 _HASH = "sha256:" + "a" * 64
 
 
+def test_hiring_prompts_pin_closed_values_and_non_echo_semantics() -> None:
+    assert "never null" in hiring_module._HIRE_SYSTEM
+    assert "instruction-like suffix" in hiring_module._HIRE_SYSTEM
+    assert "reason_codes must be exactly an empty JSON array" in hiring_module._CRITIC_SYSTEM
+    assert hiring_module._HIRE_SYSTEM in hiring_module._SAFETY_REPAIR_SYSTEM
+
+
 def _install_existing(store: Store) -> WorkforceContract:
     content = "Independently review software build changes and report evidence."
     digest = "sha256:" + hashlib.sha256(content.encode()).hexdigest()

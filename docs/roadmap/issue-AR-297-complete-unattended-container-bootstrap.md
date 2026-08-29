@@ -2563,3 +2563,15 @@ unchanged until the four unresolved contracts have repeated eligible evidence.
 The one-use report reader correction was authorized, embedded only in the
 self-contained report, and the installed plugin source/reader were restored to
 their exact original `2f989ae1...ed4` / `6c5ed0d3...e7b5` hashes.
+
+Response-level failure audit isolates four prompt-contract defects without
+weakening any gate: planner confirmations omit the literal repository/code/path
+tokens used by the deterministic discovery veto; every approving hiring critic
+except one adds explanatory reason codes instead of the required empty array;
+the best local hiring generator and repair fallback emits `null` for the
+required string `coherent_amendment_target`; and MiniMax safety repair quotes an
+untrusted suffix while explaining that it ignored it. Production prompts now
+state those exact closed-output requirements. Ruff 0.16.5 check/format and 160
+focused intent, hiring, contract, and decision-conformance tests exit 0. No
+model was called and no stable alias changed; a separately authorized maximum
+of 24 zero-retry remediation calls is still required before configuration.
