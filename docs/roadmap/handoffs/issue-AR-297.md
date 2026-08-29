@@ -112,9 +112,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 - Anti-echo intent/test `07fdffdc...2dfa` / `09b238ef...461c` pass Ruff and 188 tests; no model ran.
 - M3 fallback manifest/ledger/results `172ba9ac...5fc5` / `5106e992...1ee7` /
   `c8f79895...d90b`: planner repeats 100; generator varies; readiness is eight of nine.
-- Generator-close manifest/ledger/results `5312ecb2...44ba` / `c6d9b26d...57a2` /
-  `3f862167...b56e`: M3 scores 65/80 on invented host/host_constraints; cleanup passes.
-- Full closed hiring shapes `6e70bfa9...f269` pass Ruff and 188 tests; no model ran.
+- Generator closure results `3f862167...b56e` / `cf3a3c38...2f6e`: M3 moves
+  from structural 65/80 to schema-complete 85/85; only raw-request marker echo
+  remains. Four calls, six receipts, and authenticated cleanup pass.
 - Record audits exit 1 only on inherited parity debt; AR-297/#335 is aligned.
 
 ## same-task-continuity
@@ -143,7 +143,7 @@ unchecked line. Mark an item complete only with exact retained evidence.
 6. [x] Prompt hardening and the exact six-call follow-up are complete; no new
    repeated route qualifies and the stable config remains unchanged.
 7. [ ] Under owner YOLO authority through 11:00 AM, eight pairs are closed.
-   Closed host/injection fields are pinned; run two bounded M3 generator calls;
+   Remove raw request from hiring projection and run two bounded M3 calls;
    then apply exact routes, prove fallback, and reinstall
    exact main artifacts without an Agency version pin.
 8. [ ] Complete Codex then Claude/Hermes/OpenClaw manual tests and issue the

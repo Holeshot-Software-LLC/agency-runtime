@@ -2796,3 +2796,18 @@ and forbids reproducing injection text even inside evaluation scenarios and
 rationales. Hiring source/test hashes are `6e70bfa9...f269` /
 `8048bee0...20e7`; Ruff 0.16.5 check/format and the 188-test focused set exit 0
 with one intentional skip. No model or stable alias is called.
+
+Generator-final manifest/runner `bec6e696...f960` / `5383729d...a47e` execute
+two more zero-retry MiniMax calls in 8,359/12,637 ms. Both are now schema-valid,
+semantically complete, and pass every gold check at score 85; their sole
+remaining failure is reproducing the raw request's injection markers inside
+negative safety examples despite the explicit non-echo instruction.
+
+Ledger/analyzer/results `ca43701b...66fa` / `71d36193...5a18` /
+`cf3a3c38...2f6e` replay both responses and validate two starts and finishes,
+zero retries, three valid receipts, stable config `df75e01d...0922`, and final
+authenticated HTTP 200 with zero temporary aliases. Readiness remains eight of
+nine. Since prompt-only non-echo wording has reached full structural quality
+but not marker safety, the next bounded repair removes the raw request from the
+initial hiring-generator projection and supplies only the governed work unit,
+verified gap, and workforce facts already sufficient to design the role.
