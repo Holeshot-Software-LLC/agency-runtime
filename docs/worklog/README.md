@@ -1435,6 +1435,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `1583934a` | 2026-08-29 | Merge pull request #343 from Holeshot-Software-LLC/codex/ar297-speed-tiebreak | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `fe71b5fb` | 2026-08-29 | docs(ar297): checkpoint manual preflight failures | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `f91f73a1` | 2026-08-29 | docs(ar297): isolate malformed planner output | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
+| `35716ce8` | 2026-08-29 | docs(ar297): checkpoint full planner bakeoff | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
