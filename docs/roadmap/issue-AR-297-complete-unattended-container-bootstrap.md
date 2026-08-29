@@ -2744,3 +2744,10 @@ Readiness remains seven of nine because both cross-provider fallbacks still
 need two clean repetitions. The next bounded repair forbids quoting, describing,
 or paraphrasing ignored prompt-injection text in planner outputs, followed by
 two MiniMax M3-off planner and two generation measurements.
+
+That no-call planner repair is now implemented. The intent system instructs the
+model never to quote, describe, paraphrase, or mention ignored injection text
+or injected worker names in any output field and to summarize only authorized
+work. Intent source/test hashes are `07fdffdc...2dfa` / `09b238ef...461c`;
+Ruff 0.16.5 check/format and the same 188-test focused set exit 0 with one
+intentional skip. Stable routing and model-call accounting remain unchanged.
