@@ -2995,3 +2995,31 @@ one supplied nearest worker when those governed inputs are present. It does
 not relax the closed schema or invent either value. Ruff check/format exit 0;
 122 hiring/contract/selection tests pass with one intentional skip. The next
 bounded package tests the faster local Qwen3 Coder against that exact repair.
+
+Qwen3 Coder remains ineligible: after a 48,959-ms reload it again scores 80,
+omitting `duplicate_evidence.reason` and returning empty tools and nearest
+workers despite the exact instruction. The production route therefore uses
+the only fully demonstrated ordering: MiniMax M3-off is order-1 primary and
+GPT-5.4-mini-low is the different-provider order-2 fallback. This reverses the
+raw-latency ranking only for safety repair because M3 succeeds direct while it
+cannot recover after a failed order-1 deployment. The reversed forced OpenAI
+fallback passes at quality 100 in 14,382 ms with
+`x-litellm-attempted-fallbacks=1`; the normal MiniMax primary passes at quality
+100 in 11,446 ms with zero fallbacks. Both exact response-header UUIDs match
+the inspected deployments. The local Qwen3 0.6B embedding alias also passes at
+exactly 1,024 dimensions.
+
+Final audit `f42d79c850b8a777bb770580225dc862a4457ebad09867618fd074f41478b736`
+exits 0 with seven checks, nine routes, ten aliases, and nineteen deployments.
+Ledger/manifest/runner/auditor hashes are
+`764c672ad1025a443efb699511c916639dc954cc44c8caacfcef3d9ced3470c2`,
+`06a1a9082ec1cb63a8bd79b0013753fe54d971b23511cc3af5cf464716989e4a`,
+`4ea85b3a82b4f3d2ce45c75a6faea5bdba1fd3944ef92a07817b01929b5d768d`,
+and `c71824f451ec3ebf907acc849ca1a529e82c9166da6586c9f9ad94303304fd60`.
+Final model-info/embedding receipts are `b30008c3...85ec` /
+`4c5dd702...9c06`, all evidence files are mode 0600, and no probe, benchmark,
+or forced-failure deployment survives. Exact config remains mode 0600 at
+`756da1c4c916006fd736d42cf9550116351d8d97a41a1448c5880e2d7d61cb0d`;
+the shared LiteLLM config remains `d2811be7...ecec`. The nine-stage ordered
+matrix is closed. Build/install from eventual exact main, named gates, and the
+four manual harness tests remain before the Linux verdict.

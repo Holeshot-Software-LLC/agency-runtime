@@ -114,10 +114,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
   generator varies; readiness is eight of nine.
 - Local comparison `055044a5...b793`: Qwen3 Coder generation repeats quality
   100; Llama fails. Six zero-retry calls clean up; the matrix is nine of nine.
-- Eight aliases pass. M3-off scores 100 three times direct but forced recovery returns HTTP 408 and is rejected.
-- Resident Qwen3 32B scores 80 in 79.515s solely for empty governed tools.
-- Prompt now pins required tools and nearest worker; Ruff and 122 focused tests pass.
-- Exact config `756da1c4...1cb0` passes at 1,024 dimensions; safety/probe aliases zero.
+- All nine routes close: safety uses M3-off primary and GPT-5.4-mini fallback.
+- Safety forced/normal calls score 100 in 14.382/11.446s with exact UUIDs.
+- Audit `f42d79c8...b736`: 10 aliases, 19 deployments, 7 checks, no disposable.
+- Exact config `756da1c4...1cb0` and 1,024-dimensional embedding pass; install/manual gates remain.
 
 ## same-task-continuity
 
