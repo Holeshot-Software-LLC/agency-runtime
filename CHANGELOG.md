@@ -235,6 +235,11 @@ changes rather than duplicating every commit.
   acceptance, the canary spawn recognizer carries bounded additive key
   tolerance, and the diagnostics sink records the PreToolUse spawn-gate
   and stop-staffing outcomes (AR-334, ADR-0194).
+- The team-scoped canary child staffing commits again: the routing-authority
+  context fingerprint is computed over the unscoped eligible catalog before
+  team scoping, so the guarded commit re-check hashes the same input
+  instead of deterministically refusing with
+  `native_child_routing_state_changed` (AR-334, ADR-0194).
 - Host-canary child launches now run under a pinned private `umask 077` on
   POSIX hosts, so strict child-artifact trust no longer depends on the
   invoking shell's umask (AR-332).
