@@ -1420,6 +1420,16 @@ class HookBridge:
             "may proceed with its native child unstaffed; this child is not asked to "
             "call preflight or repair the missing channel.",
         ]
+        from agency_runtime.core.codex_activation_verification import (
+            is_restricted_codex_activation_canary_environment,
+        )
+
+        refusal = getattr(self, "_restricted_child_join_refusal", "")
+        if refusal and is_restricted_codex_activation_canary_environment(os.environ):
+            # A content-free slug lands in the child rollout so the canary
+            # collector can name why the restricted join declined (AR-334)
+            # instead of reporting an indistinguishable unstaffed child.
+            context_lines.append(f"restricted_join_refusal={json.dumps(refusal)}")
         context = "\n".join(context_lines)
         if len(context) > MAX_CONTEXT_CHARS:
             context = (
@@ -1486,22 +1496,51 @@ class HookBridge:
             return None
         return correlation.session_id, trace_id
 
-    def _restricted_codex_activation_child_parent_scope(
-        self,
-        payload: dict[str, Any],
-    ) -> tuple[str, str] | None:
-        """Bind a real Codex child to one host-authored canary parent lineage."""
+    def _decline_restricted_child_join(self, reason: str) -> None:
+        """Retain one content-free reason for the last declined canary join.
 
-        if self.host != "codex":
-            return None
-        from agency_runtime.core.codex_activation_verification import (
-            CODEX_ACTIVATION_QUERY_HASH_ENV,
-            is_restricted_codex_activation_canary_environment,
-            restricted_codex_activation_query_hash,
+        The join's refusals were previously indistinguishable from ordinary
+        opaque spawns, which cost a full forensic session when codex 0.151
+        moved a hook payload field (AR-334). The slug reaches the child's
+        identity injection only inside the restricted canary environment.
+        """
+
+        self._restricted_child_join_refusal = reason
+        logger.debug("restricted codex child join declined: %s", reason)
+
+    def _sole_codex_child_artifact(self, child_session_id: str) -> str | None:
+        """Resolve the sole canonical-root artifact named by this child.
+
+        Codex releases move hook payload fields (0.151 ships no transcript
+        path); the canonical sessions namespace plus the fail-closed metadata
+        parser remain the trust anchor (ADR-0193), so a missing path hint
+        falls back to the one child-named rollout under the canonical root.
+        The bounded lookup mirrors the parent-thread recovery ceiling.
+        """
+
+        from agency_runtime.core.child_delivery_evidence import (
+            default_child_artifact_root,
         )
 
-        if not is_restricted_codex_activation_canary_environment(os.environ):
+        try:
+            root = default_child_artifact_root("codex")
+            if not root.is_dir():
+                return None
+            candidates = [
+                str(item)
+                for index, item in enumerate(root.glob(f"*/*/*/rollout-*-{child_session_id}.jsonl"))
+                if index < 8
+            ]
+        except (OSError, ValueError):
             return None
+        return candidates[0] if len(candidates) == 1 else None
+
+    def _restricted_join_child_identity(
+        self,
+        payload: dict[str, Any],
+    ) -> tuple[str, str, str, str] | None:
+        """Validate one child hook payload's identity and artifact-hint scope."""
+
         try:
             hook_parent_session_id = validate_correlation_id(
                 _required_string(payload, "session_id"),
@@ -1511,19 +1550,35 @@ class HookBridge:
                 _required_string(payload, "agent_id"),
                 field="agent_id",
             )
-        except (HookInputError, ValueError):
-            return None
-
-        try:
             event = _required_string(payload, "hook_event_name")
             cwd = _required_string(payload, "cwd")
-            if event == "SubagentStart":
-                artifact_path = _required_string(payload, "transcript_path")
-            elif event == "SubagentStop":
-                artifact_path = _required_string(payload, "agent_transcript_path")
-            else:
-                return None
-        except HookInputError:
+        except (HookInputError, ValueError):
+            self._decline_restricted_child_join("child_correlation_invalid")
+            return None
+        if event == "SubagentStart":
+            hint_field = "transcript_path"
+        elif event == "SubagentStop":
+            hint_field = "agent_transcript_path"
+        else:
+            self._decline_restricted_child_join("hook_event_unsupported")
+            return None
+        return hook_parent_session_id, child_session_id, hint_field, cwd
+
+    def _restricted_join_artifact_parent(
+        self,
+        payload: dict[str, Any],
+        *,
+        hint_field: str,
+        child_session_id: str,
+        cwd: str,
+    ) -> str | None:
+        """Derive the artifact-anchored parent session for one canary child."""
+
+        artifact_path = str(payload.get(hint_field) or "").strip() or None
+        if artifact_path is None:
+            artifact_path = self._sole_codex_child_artifact(child_session_id)
+        if artifact_path is None:
+            self._decline_restricted_child_join("child_artifact_unresolved")
             return None
         from agency_runtime.core.child_delivery_evidence import (
             codex_v1491_child_parent_session,
@@ -1536,12 +1591,57 @@ class HookBridge:
                 cwd=cwd,
             )
         except Exception:
+            self._decline_restricted_child_join("child_metadata_unreadable")
             return None
-        if not parent_session_id or parent_session_id != hook_parent_session_id:
+        if not parent_session_id:
+            self._decline_restricted_child_join("parent_session_mismatch")
+            return None
+        return parent_session_id
+
+    def _restricted_codex_activation_child_parent_scope(
+        self,
+        payload: dict[str, Any],
+    ) -> tuple[str, str] | None:
+        """Bind a real Codex child to one host-authored canary parent lineage."""
+
+        self._restricted_child_join_refusal = ""
+        if self.host != "codex":
+            return None
+        from agency_runtime.core.codex_activation_verification import (
+            CODEX_ACTIVATION_QUERY_HASH_ENV,
+            is_restricted_codex_activation_canary_environment,
+            restricted_codex_activation_query_hash,
+        )
+
+        if not is_restricted_codex_activation_canary_environment(os.environ):
+            self._decline_restricted_child_join("canary_environment_absent")
+            return None
+        identity = self._restricted_join_child_identity(payload)
+        if identity is None:
+            return None
+        hook_parent_session_id, child_session_id, hint_field, cwd = identity
+        parent_session_id = self._restricted_join_artifact_parent(
+            payload,
+            hint_field=hint_field,
+            child_session_id=child_session_id,
+            cwd=cwd,
+        )
+        if parent_session_id is None:
+            return None
+        if (
+            parent_session_id != hook_parent_session_id
+            and hook_parent_session_id != child_session_id
+        ):
+            # Codex 0.150 SubagentStart carried the parent session while
+            # 0.151 carries the child's own session. The artifact-derived
+            # parent above is the fail-closed trust anchor either way; only a
+            # third identity in the payload is a mismatch (AR-334).
+            self._decline_restricted_child_join("parent_session_mismatch")
             return None
         parent_trace_id = self._unambiguous_open_trace(parent_session_id)
         getter = getattr(self.store, "get_codex_activation_canary_parent_snapshot", None)
         if not parent_trace_id or not callable(getter):
+            self._decline_restricted_child_join("parent_trace_ambiguous")
             return None
         try:
             snapshot = getter(
@@ -1549,12 +1649,14 @@ class HookBridge:
                 trace_id=parent_trace_id,
             )
         except Exception:
+            self._decline_restricted_child_join("parent_snapshot_unavailable")
             return None
         route = snapshot.get("route") if isinstance(snapshot, dict) else None
         run = snapshot.get("run") if isinstance(snapshot, dict) else None
         query_hash = restricted_codex_activation_query_hash(os.environ)
         supplied_query_hash = os.environ.get(CODEX_ACTIVATION_QUERY_HASH_ENV)
         if supplied_query_hash is not None and not query_hash:
+            self._decline_restricted_child_join("activation_query_hash_invalid")
             return None
         route_query_hash = route.get("query_hash") if isinstance(route, dict) else None
         from agency_runtime.core.activation_canary_contract import (
@@ -1598,6 +1700,7 @@ class HookBridge:
             and run.get("ended_at") is None
             and run.get("terminal_finalization_id") is None
         ):
+            self._decline_restricted_child_join("parent_snapshot_contract_mismatch")
             return None
         try:
             validated_parent_session_id = validate_correlation_id(
@@ -1609,11 +1712,13 @@ class HookBridge:
                 field="parent_trace_id",
             )
         except ValueError:
+            self._decline_restricted_child_join("parent_identity_mismatch")
             return None
         if (
             validated_parent_session_id != parent_session_id
             or validated_parent_trace_id != parent_trace_id
         ):
+            self._decline_restricted_child_join("parent_identity_mismatch")
             return None
         return validated_parent_session_id, validated_parent_trace_id
 

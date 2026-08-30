@@ -254,8 +254,8 @@ _PLAN_REPAIR_REQUIREMENTS = {
         "Add a downstream review-report for the requested documentation change."
     ),
     "plan_missing_codebase_discovery": (
-        "Add an earlier software-engineering analysis unit whose outcome maps the relevant "
-        "repository code paths."
+        "Add an earlier read-only discovery unit in the built-in codebase-discovery or "
+        "software-engineering domain whose outcome maps the relevant repository code paths."
     ),
     "plan_missing_regulated_assurance_review": (
         "Add an independent review-report for the named regulated assurance work."
@@ -472,7 +472,12 @@ class _PlanInventory:
             discoveries=tuple(
                 item
                 for item in plan.units
-                if item.artifact_kind == "analysis"
+                # The deterministic planning oracle emits its codebase
+                # discovery unit as a discovery-phase review-report while
+                # inference planners emit analysis; both are read-only
+                # repository mapping and must satisfy the same predecessor
+                # invariant (AR-331).
+                if item.artifact_kind in {"analysis", "review-report"}
                 and item.lifecycle_phase == "discovery"
                 and item.mutation_scope == "read_only"
             ),

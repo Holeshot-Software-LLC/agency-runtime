@@ -1,9 +1,9 @@
 ---
 title: "AR-332: Pin a private umask for host-canary child launches"
-status: open
+status: in_progress
 category: roadmap
 created: 2026-08-29
-updated: 2026-08-29
+updated: 2026-08-30
 tags: [bug, reliability, canary, security-posture, claude]
 related:
   - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
@@ -52,6 +52,12 @@ canary then fails on an environmental default the runtime never pinned.
   blocked the executable posture probe (`native-inventory:error`,
   "cross-account substitution") until tightened manually with `chmod -R g-w`
   on 2026-08-29.
+- Code landed 2026-08-30: the safe canary backends wrap every host child
+  launch (both codex `exec` sites and the claude `-p` site) in a restored
+  POSIX `os.umask(0o077)` scope, a focused regression proves the wrapper
+  applies and restores the mask, and troubleshooting documentation names the
+  umask precondition for releases without the pin. The ambient-umask live
+  Claude canary re-run rides the next production install.
 
 ## Approach
 
@@ -71,6 +77,7 @@ not the guard, is the defect.
 
 - [ ] The Claude live canary passes from a shell with umask 002 without a
       wrapper.
-- [ ] A focused regression covers child artifact collection under umask 002.
-- [ ] Troubleshooting documentation names the umask precondition for older
+- [x] A focused regression covers the child-launch umask pin (applied and
+      restored around the launch sites artifact collection depends on).
+- [x] Troubleshooting documentation names the umask precondition for older
       releases.

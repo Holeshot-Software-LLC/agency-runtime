@@ -3896,3 +3896,72 @@ def test_reconcile_unit_id_rejects_ambiguous_match() -> None:
     plan_ids = frozenset({"unit-discovery-codepath-mapping", "unit-discovery-codepath-analysis"})
     # Both share the same long prefix, so this is ambiguous
     assert _reconcile_unit_id("unit-discovery-code-paths", plan_ids) is None
+
+
+def test_deterministic_oracle_repository_security_plans_satisfy_plan_policy() -> None:
+    # AR-331: the oracle emits its codebase-discovery unit as a discovery-phase
+    # review-report; the policy's discovery inventory must accept that shape so
+    # the policy and its own offline oracle agree.
+    requests = (
+        "Review authentication security in this repository code.",
+        "Audit the security of the authentication code in this repo.",
+        "Fix the authentication security bug in this repository and verify the fix.",
+    )
+    for request in requests:
+        plan, reasons = deterministic_work_plan(request, context=_context())
+        assert reasons == ()
+        assert plan is not None
+        assert plan_policy_violations(request, plan) == ()
+
+
+def test_review_report_discovery_still_requires_repository_analysis_domain() -> None:
+    request = "Review authentication security in this repository code."
+    base = _plan_document()["units"][0]
+    document = {
+        "schema_version": 2,
+        "request_summary": request,
+        "units": [
+            {
+                **base,
+                "unit_id": "unit-discovery",
+                "outcome": "Map the relevant repository code paths.",
+                "artifact_kind": "review-report",
+                "lifecycle_phase": "discovery",
+                "domains": ["quality-assurance"],
+                "required_capabilities": ["review"],
+                "authority": "review",
+            },
+            {
+                **base,
+                "unit_id": "unit-correctness-review",
+                "outcome": "Review code correctness.",
+                "artifact_kind": "review-report",
+                "lifecycle_phase": "review",
+                "domains": ["software-engineering"],
+                "required_capabilities": ["review"],
+                "authority": "review",
+                "depends_on": ["unit-discovery"],
+            },
+            {
+                **base,
+                "unit_id": "unit-security-review",
+                "outcome": "Review security exploitability.",
+                "artifact_kind": "review-report",
+                "lifecycle_phase": "review",
+                "domains": ["security"],
+                "required_capabilities": ["review"],
+                "authority": "review",
+                "depends_on": ["unit-discovery"],
+            },
+        ],
+    }
+
+    rejected = parse_work_unit_plan(document)
+    assert "plan_missing_codebase_discovery" in plan_policy_violations(request, rejected)
+
+    document["units"][0] = {
+        **document["units"][0],
+        "domains": ["software-engineering"],
+    }
+    accepted = parse_work_unit_plan(document)
+    assert plan_policy_violations(request, accepted) == ()

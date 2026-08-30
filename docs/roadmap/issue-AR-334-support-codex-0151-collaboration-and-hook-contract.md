@@ -1,9 +1,9 @@
 ---
 title: "AR-334: Support Codex 0.151 collaboration and hook contract"
-status: open
+status: in_progress
 category: roadmap
 created: 2026-08-29
-updated: 2026-08-29
+updated: 2026-08-30
 tags: [bug, host-integrations, codex, canary, collaboration, rollout]
 related:
   - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
@@ -74,6 +74,18 @@ succeeded, the parent spawns exactly one child, and the child completes.
   not reconstructable afterwards). Next bounded step: run the restricted
   canary with `AGENCY_CODEX_HOOK_EVENT_DIAGNOSTICS=1` and, if needed, give
   the child-scope join a content-free recorded refusal reason.
+- Child-join fixes landed 2026-08-30 against the two verified 0.151 hook
+  drifts: the `transcript_path`/`agent_transcript_path` hints are optional
+  with a fail-closed fallback to the sole child-named rollout under the
+  canonical sessions root (the metadata parser stays the trust anchor), and
+  the payload `session_id` is accepted under both observed semantics (0.150
+  parent identity, 0.151 child self-identity) with any third identity still
+  refused. Every decline now records a content-free refusal slug surfaced in
+  the restricted-canary identity injection, and an opt-in
+  `AGENCY_CODEX_HOOK_EVENT_DIAGNOSTICS=1` mode names the declining branch.
+  Focused tests cover derivation-when-hint-missing, both session semantics,
+  and refusal naming. Live `verify-activation` rides the next production
+  install and the operator's fresh attended trust.
 
 ## Approach
 
@@ -102,8 +114,8 @@ short-term unblock for AR-297's Codex gates.
 
 - [ ] Current-profile activation canary passes on codex-cli 0.151 with
       verified child delivery evidence.
-- [ ] Version-scoped fixtures from real 0.151 rollouts cover parent and child
+- [x] Version-scoped fixtures from real 0.151 rollouts cover parent and child
       projections.
 - [ ] `agency install --agent codex --verify-activation` exits 0 with a fresh
       persisted attestation on 0.151.
-- [ ] 0.150 contracts remain green.
+- [x] 0.150 contracts remain green.

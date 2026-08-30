@@ -1,9 +1,9 @@
 ---
 title: "AR-331: Align plan-policy discovery inventory with the deterministic planning oracle"
-status: open
+status: done
 category: roadmap
 created: 2026-08-29
-updated: 2026-08-29
+updated: 2026-08-30
 tags: [bug, workforce, plan-policy, planning, evals]
 related:
   - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
@@ -51,6 +51,16 @@ plan is therefore rejected by the policy it is supposed to model, with
 - The `plan_missing_codebase_discovery` repair guidance still names only a
   "software-engineering analysis unit" although the corrected policy admits
   the built-in `codebase-discovery` domain as well.
+- Resolved 2026-08-30: the policy inventory admits read-only `review-report`
+  discovery units alongside `analysis`, the oracle emits the same
+  `unit-codebase-discovery` predecessor for security-typed repository
+  mutations (the third reproduced request previously planned no discovery
+  unit at all), and the repair guidance names both admitted built-in
+  repository-analysis domains. A focused test proves all three reproduced
+  request shapes pass `plan_policy_violations`, a companion test proves the
+  widened inventory still rejects non-repository review-report units, and
+  the decision-conformance mutation evaluation passes 167/167 with the
+  aligned shape.
 
 ## Approach
 
@@ -69,10 +79,10 @@ does not silently change recorded conformance outcomes.
 
 ## Acceptance
 
-- [ ] The deterministic oracle's repository-security plans pass the installed
+- [x] The deterministic oracle's repository-security plans pass the installed
       plan policy.
-- [ ] A focused test runs the policy over deterministic oracle outputs for the
+- [x] A focused test runs the policy over deterministic oracle outputs for the
       three reproduced request shapes.
-- [ ] The `plan_missing_codebase_discovery` repair guidance names both
+- [x] The `plan_missing_codebase_discovery` repair guidance names both
       admitted built-in repository-analysis domains.
-- [ ] Focused workforce-inference tests pass warning-strict.
+- [x] Focused workforce-inference tests pass warning-strict.

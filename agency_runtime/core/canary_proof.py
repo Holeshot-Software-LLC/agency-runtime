@@ -524,9 +524,19 @@ def invoke_and_collect_evidence(
     facade = _facade()
     try:
         with private_temporary_directory(prefix="canary") as workdir:
+            codex_backend = host == "codex" and (
+                type(preparation.backend) is facade._SafeCodexCanaryBackend
+            )
+            # Codex host-delivery collection is a current-profile contract
+            # (AR-333): an isolated-profile Codex canary runs without it and
+            # carries a distinct content-free reason instead of a guaranteed
+            # pre-invocation refusal masquerading as an invocation failure.
+            codex_delivery_supported = codex_backend and (
+                getattr(preparation.backend, "profile_scope", "") == "current-profile"
+            )
             if (
                 host == "claude" and type(preparation.backend) is facade._SafeClaudeCanaryBackend
-            ) or (host == "codex" and type(preparation.backend) is facade._SafeCodexCanaryBackend):
+            ) or codex_delivery_supported:
                 result, host_child_delivery = preparation.backend.execute_with_host_delivery(
                     task=prompt,
                     workdir=str(workdir),
@@ -539,6 +549,8 @@ def invoke_and_collect_evidence(
                     workdir=str(workdir),
                     check=False,
                 )
+                if codex_backend and isinstance(result, dict):
+                    result.setdefault("host_child_collection_reason", "unsupported_profile_scope")
             if not isinstance(result, dict):
                 raise RuntimeError("canary backend returned an invalid result")
     except Exception:

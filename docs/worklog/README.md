@@ -3,7 +3,7 @@ title: Worklog
 status: active
 category: worklog
 created: 2026-07-10
-updated: 2026-08-29
+updated: 2026-08-30
 tags: []
 related: []
 supersedes: []
@@ -1450,6 +1450,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `69ca3a25` | 2026-08-29 | docs(ar297): record host-update resilience rollout and recruiter blocker | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `bc8cd54b` | 2026-08-29 | Merge pull request #354 from Holeshot-Software-LLC/claude/ar297-rollout-evidence | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `a029d917` | 2026-08-29 | docs(ar336): record recruiter requalification and four-turn staffing pass | [AR-336](../roadmap/issue-AR-336-requalify-the-recruiter-route-for-ordinary-tasks.md) | null |
+| `cf6ac37a` | 2026-08-29 | Merge pull request #355 from Holeshot-Software-LLC/claude/ar336-requalification-evidence | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
