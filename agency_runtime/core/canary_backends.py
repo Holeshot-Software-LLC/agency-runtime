@@ -7,7 +7,8 @@ import json
 import os
 import re
 import stat
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Iterator, Mapping
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -41,6 +42,29 @@ from agency_runtime.core.private_paths import (
     _private_temporary_directory_lease,
     private_temporary_directory,
 )
+
+
+@contextmanager
+def _private_child_umask() -> Iterator[None]:
+    """Launch host children under a private umask so their artifacts verify.
+
+    Host CLIs create project and rollout directories with the ambient umask;
+    a user-private-group default (002) yields group-writable parents that the
+    strict artifact guards refuse (AR-332). The canary flow is serial, so the
+    briefly process-global umask cannot race an unrelated write, and the
+    spawned child inherits the private mask for its lifetime. Windows has no
+    umask semantics; the launch proceeds unchanged there.
+    """
+
+    if os.name == "nt":
+        yield
+        return
+    previous = os.umask(0o077)
+    try:
+        yield
+    finally:
+        os.umask(previous)
+
 
 _CODEX_ROLLOUT_MAX_BYTES = 1024 * 1024
 _CODEX_ROLLOUT_MAX_LINES = 5_000
@@ -3639,18 +3663,19 @@ class SafeCodexCanaryBackend:
             rollout_not_before = (
                 facade.time.time() if self.require_exact_activation_rollout else None
             )
-            result = self.process_runner(
-                [
-                    self.executable,
-                    "exec",
-                    *self._exec_options(),
-                ],
-                timeout=timeout,
-                cwd=workdir,
-                env=self._execution_environment(env, workdir=workdir),
-                input_text=task,
-                max_output_chars=256_000,
-            )
+            with _private_child_umask():
+                result = self.process_runner(
+                    [
+                        self.executable,
+                        "exec",
+                        *self._exec_options(),
+                    ],
+                    timeout=timeout,
+                    cwd=workdir,
+                    env=self._execution_environment(env, workdir=workdir),
+                    input_text=task,
+                    max_output_chars=256_000,
+                )
             return self._record_trust_mode(
                 facade._codex_canary_record(
                     result,
@@ -3729,18 +3754,19 @@ class SafeCodexCanaryBackend:
             rollout_not_before = (
                 facade.time.time() if self.require_exact_activation_rollout else None
             )
-            result = self.process_runner(
-                [
-                    self.executable,
-                    "exec",
-                    *self._exec_options(),
-                ],
-                timeout=timeout,
-                cwd=workdir,
-                env=self._execution_environment(env, workdir=workdir),
-                input_text=task,
-                max_output_chars=256_000,
-            )
+            with _private_child_umask():
+                result = self.process_runner(
+                    [
+                        self.executable,
+                        "exec",
+                        *self._exec_options(),
+                    ],
+                    timeout=timeout,
+                    cwd=workdir,
+                    env=self._execution_environment(env, workdir=workdir),
+                    input_text=task,
+                    max_output_chars=256_000,
+                )
             record = facade._codex_canary_record(
                 result,
                 rollout_root=(
@@ -3915,36 +3941,37 @@ class SafeClaudeCanaryBackend:
                 return self._record_child_judge_provider(_timeout_record("claude")), None
             invocation_start = _start_private_host_invocation(collection)
             try:
-                result = self.process_runner(
-                    [
-                        self.executable,
-                        "-p",
-                        "--output-format",
-                        "json",
-                        # One bounded preamble turn before the final message; a
-                        # hard 1-turn cap kills responses that open with text.
-                        "--max-turns",
-                        "4" if accepted_outcome else "2",
-                        # Persist only inside the isolated, owner-private home so
-                        # the host-authored child transcript can be collected
-                        # before that home is deleted. The sole enabled tool is
-                        # Claude's native child boundary.
-                        "--setting-sources=",
-                        "--plugin-dir",
-                        str(self.plugin_dir),
-                        "--tools=Agent",
-                        "--disallowedTools",
-                        "mcp__*",
-                        "--strict-mcp-config",
-                        "--permission-mode",
-                        "dontAsk",
-                    ],
-                    timeout=timeout,
-                    cwd=workdir,
-                    env=env,
-                    input_text=task,
-                    max_output_chars=256_000,
-                )
+                with _private_child_umask():
+                    result = self.process_runner(
+                        [
+                            self.executable,
+                            "-p",
+                            "--output-format",
+                            "json",
+                            # One bounded preamble turn before the final message; a
+                            # hard 1-turn cap kills responses that open with text.
+                            "--max-turns",
+                            "4" if accepted_outcome else "2",
+                            # Persist only inside the isolated, owner-private home so
+                            # the host-authored child transcript can be collected
+                            # before that home is deleted. The sole enabled tool is
+                            # Claude's native child boundary.
+                            "--setting-sources=",
+                            "--plugin-dir",
+                            str(self.plugin_dir),
+                            "--tools=Agent",
+                            "--disallowedTools",
+                            "mcp__*",
+                            "--strict-mcp-config",
+                            "--permission-mode",
+                            "dontAsk",
+                        ],
+                        timeout=timeout,
+                        cwd=workdir,
+                        env=env,
+                        input_text=task,
+                        max_output_chars=256_000,
+                    )
             finally:
                 invocation = _finish_private_host_invocation(invocation_start)
             collection_reason = "collected"
@@ -4159,6 +4186,10 @@ def backend(  # noqa: C901 - one bounded validation and backend construction bou
         raise ValueError("unsupported canary parent-recruiter transport")
     if host == "codex":
         original_home = Path(source_env.get("CODEX_HOME") or (home / ".codex")).expanduser()
+        from agency_runtime.core.codex_activation_verification import (
+            CODEX_HOOK_EVENT_DIAGNOSTICS_ENV,
+        )
+
         return SafeCodexCanaryBackend(
             executable=executable,
             db_path=db_path,
@@ -4177,6 +4208,13 @@ def backend(  # noqa: C901 - one bounded validation and backend construction bou
             child_judge_transport=child_judge_transport,
             child_judge_auth_source=child_judge_auth_source,
             credential_environment_names=credential_environment_names,
+            # Content-free hook-stage markers are an operator-enabled
+            # diagnostic (AR-334): exporting the variable when launching the
+            # canary CLI forwards it to the restricted child hooks, and the
+            # backend requires the existing Store before honoring it.
+            hook_event_diagnostics=(
+                source_env.get(CODEX_HOOK_EVENT_DIAGNOSTICS_ENV) == "1" and require_existing_store
+            ),
         )
 
     original_home = Path(source_env.get("CLAUDE_CONFIG_DIR") or (home / ".claude")).expanduser()

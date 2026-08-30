@@ -3,7 +3,7 @@ title: Worklog
 status: active
 category: worklog
 created: 2026-07-10
-updated: 2026-08-29
+updated: 2026-08-30
 tags: []
 related: []
 supersedes: []
@@ -1450,6 +1450,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `69ca3a25` | 2026-08-29 | docs(ar297): record host-update resilience rollout and recruiter blocker | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `bc8cd54b` | 2026-08-29 | Merge pull request #354 from Holeshot-Software-LLC/claude/ar297-rollout-evidence | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `a029d917` | 2026-08-29 | docs(ar336): record recruiter requalification and four-turn staffing pass | [AR-336](../roadmap/issue-AR-336-requalify-the-recruiter-route-for-ordinary-tasks.md) | null |
+| `cf6ac37a` | 2026-08-29 | Merge pull request #355 from Holeshot-Software-LLC/claude/ar336-requalification-evidence | null | null |
+| `f7b91364` | 2026-08-30 | fix(reliability): harden codex 0.151 child join and canary launch posture | [AR-334](../roadmap/issue-AR-334-support-codex-0151-collaboration-and-hook-contract.md) | Child-join hint fallback and dual session semantics with refusal slugs; umask 077 launch pin (AR-332); isolated codex canary plain path (AR-333); oracle discovery alignment with 167/167 conformance (AR-331) |
 <!-- worklog:end -->
 
 ## Provenance notes

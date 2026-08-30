@@ -1821,3 +1821,82 @@ def test_inspection_uses_only_current_matching_canary_attestation(
     stale_install = inspect()
     assert stale_install["canary"] is None
     assert "managed_plugin_version" in stale_install["canary_stale_reasons"]
+
+
+def test_isolated_codex_agency_canary_runs_without_host_delivery(
+    tmp_path,
+    monkeypatch,
+):
+    # AR-333: the host-delivery collection contract is current-profile only;
+    # the isolated combination must execute plainly and carry a distinct
+    # content-free reason instead of a guaranteed pre-invocation refusal.
+    from agency_runtime.core import canary_proof
+    from agency_runtime.core.canary_backends import SafeCodexCanaryBackend
+
+    def fake_execute(self, *, task, workdir, check=False):
+        return {"status": "completed", "backend": "codex"}
+
+    def forbidden_delivery(self, **_kwargs):
+        raise AssertionError("host delivery must not run for isolated codex")
+
+    monkeypatch.setattr(SafeCodexCanaryBackend, "execute", fake_execute)
+    monkeypatch.setattr(SafeCodexCanaryBackend, "execute_with_host_delivery", forbidden_delivery)
+    backend = SafeCodexCanaryBackend(
+        executable="/bin/false",
+        db_path=tmp_path / "agency.db",
+        timeout=5.0,
+        marketplace=tmp_path,
+        auth_source=tmp_path / "auth.json",
+        process_runner=lambda *a, **k: None,
+        source_env={},
+        profile_scope="isolated-profile",
+    )
+
+    class SnapshotStore:
+        def recent_runtime_activity(self, *, limit=50):
+            return {}
+
+        def get_canary_activation_snapshot(self, **_kwargs):
+            return {}
+
+    preparation = canary_proof.LivePreparation(
+        store=SnapshotStore(),
+        before={},
+        backend=backend,
+        prompt="canary",
+        expected_query_hash="0" * 64,
+    )
+
+    outcome = canary_proof.invoke_and_collect_evidence(
+        preparation,
+        host="codex",
+        path=tmp_path / "agency.db",
+        prompt="canary",
+        expected_query_hash="0" * 64,
+        mode="agency",
+    )
+
+    assert outcome.result is not None
+    assert outcome.result["host_child_collection_reason"] == "unsupported_profile_scope"
+    assert outcome.error is None
+
+
+def test_private_child_umask_applies_and_restores():
+    import os
+
+    if os.name == "nt":  # pragma: no cover - POSIX-only semantics
+        return
+    from agency_runtime.core.canary_backends import _private_child_umask
+
+    baseline = os.umask(0o002)
+    os.umask(baseline)
+    try:
+        with _private_child_umask():
+            inside = os.umask(0o077)
+            os.umask(inside)
+            assert inside == 0o077
+        after = os.umask(baseline)
+        os.umask(after)
+        assert after == baseline
+    finally:
+        os.umask(baseline)

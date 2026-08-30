@@ -3,7 +3,7 @@ title: "Troubleshooting Agency Runtime"
 status: active
 category: operations
 created: 2026-07-10
-updated: 2026-08-26
+updated: 2026-08-30
 tags: [operations, troubleshooting]
 related:
   - README.md
@@ -13,6 +13,7 @@ related:
   - docs/roadmap/issue-AR-57-durable-agency-wide-master-switch.md
   - docs/roadmap/issue-AR-60-frozen-executable-identity.md
   - docs/roadmap/issue-AR-95-bind-remediation-resolution-authority-to-complete-durable-evidence.md
+  - docs/roadmap/issue-AR-332-pin-private-umask-for-canary-child-launches.md
   - docs/roadmap/issue-AR-108-atomic-owned-process-containment.md
   - docs/roadmap/issue-AR-143-require-operator-presence-for-controls.md
   - docs/roadmap/issue-AR-160-publish-platform-honest-native-release-artifacts.md
@@ -997,6 +998,24 @@ into the interpreter recorded by `launcher_artifacts`, rerun
 the host runtime is current. The canary must prove both the seven-field header and
 correlated routing/finalization evidence; a zero host exit code alone is not
 sufficient.
+
+## A live canary refuses child artifacts as `artifact_not_trusted`
+
+Strict artifact trust requires the child artifact's final parent directories
+to be owner-only. Current releases pin a private `umask 077` around every
+host-canary child launch, so the invoking shell's umask no longer matters
+(AR-332). On releases without that pin, a permissive ambient umask (for
+example the common `002` default) lets the host child create its project
+directories group-writable inside the private collection lease, and the guard
+refuses the artifact even though the live turn completed. On those releases,
+run the canary from a `umask 077` shell:
+
+```bash
+(umask 077 && agency host-canary claude --execute --mode agency)
+```
+
+The guard semantics are the contract; the launch environment is the variable.
+Do not loosen directory modes to make a refusal disappear.
 
 ## WSL or Linux validation is missing tooling
 

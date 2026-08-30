@@ -3,7 +3,7 @@ title: "Changelog"
 status: active
 category: release
 created: 2026-07-10
-updated: 2026-08-29
+updated: 2026-08-30
 tags: [release, changelog]
 related:
   - docs/RELEASE_CHECKLIST.md
@@ -23,6 +23,10 @@ related:
   - docs/roadmap/issue-AR-326-admit-terminal-codex-host-artifact-collection.md
   - docs/roadmap/issue-AR-328-seal-hermes-install-tree.md
   - docs/roadmap/issue-AR-329-freeze-codex-inspector-bootstrap-as-persistent-input.md
+  - docs/roadmap/issue-AR-331-align-plan-policy-discovery-inventory-with-deterministic-oracle.md
+  - docs/roadmap/issue-AR-332-pin-private-umask-for-canary-child-launches.md
+  - docs/roadmap/issue-AR-333-report-unsupported-codex-isolated-agency-canary.md
+  - docs/roadmap/issue-AR-334-support-codex-0151-collaboration-and-hook-contract.md
   - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
   - docs/decisions/0178-project-config-declared-credentials-into-tool-reduced-canaries.md
   - docs/decisions/0181-use-litellm-aliases-as-host-inference-control-plane.md
@@ -202,6 +206,26 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
+- The restricted Codex activation child join survives the codex-cli 0.151 hook
+  contract: missing `transcript_path`/`agent_transcript_path` hints fall back
+  to the sole child-named rollout under the canonical sessions root, the
+  payload `session_id` is accepted under both the 0.150 parent-identity and
+  0.151 child-self-identity semantics with any third identity still refused,
+  every declined join records a content-free refusal slug, and
+  `AGENCY_CODEX_HOOK_EVENT_DIAGNOSTICS=1` names the declining branch (AR-334).
+- Host-canary child launches now run under a pinned private `umask 077` on
+  POSIX hosts, so strict child-artifact trust no longer depends on the
+  invoking shell's umask (AR-332).
+- The isolated-profile Codex agency canary no longer fails before launch on
+  the restricted host-delivery contract: collection is gated on
+  current-profile scope and the isolated path runs plainly with the stable
+  reason `unsupported_profile_scope` (AR-333).
+- The plan policy's codebase-discovery inventory admits the deterministic
+  oracle's read-only `review-report` discovery units, the oracle emits the
+  same discovery predecessor for security-typed repository mutations, and the
+  repair guidance names an earlier read-only discovery unit in both admitted
+  built-in domains, so the oracle's repository-security plans pass the policy
+  they model (AR-331).
 - Codex children spawned by CLI releases newer than the newest proven contract
   (0.150.1) are no longer orphaned on version identity alone: shape-compatible
   child metadata is admitted under that contract with bounded additive

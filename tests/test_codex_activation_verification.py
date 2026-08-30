@@ -950,3 +950,146 @@ def test_exact_codex_subagent_start_staffs_the_real_child_uuid(
             "additionalContext": "[AGENCY INFERENCE TEAM v6]\nexact delivery",
         }
     }
+
+
+def _restricted_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("AGENCY_CANARY_MODE", "1")
+    monkeypatch.setenv("AGENCY_CANARY_REQUIRE_EXISTING_STORE", "1")
+    monkeypatch.delenv("AGENCY_CODEX_ACTIVATION_QUERY_HASH", raising=False)
+
+
+class _NoOpenTraceStore:
+    def get_open_traces_for_session(self, _session_id: str) -> list[str]:
+        return []
+
+
+def test_restricted_child_join_derives_artifact_when_hint_missing(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # AR-334: codex 0.151 ships no transcript path in the SubagentStart
+    # payload; the sole child-named artifact under the canonical root is the
+    # derivable fallback and the fail-closed parser stays the trust anchor.
+    _restricted_env(monkeypatch)
+    child_id = "01a04f93-7d59-75c1-a813-c3479e11cc16"
+    parent_id = "01a04f92-e63c-76a2-9147-ee0636137875"
+    root = tmp_path / "sessions"
+    day = root / "2026" / "08" / "30"
+    day.mkdir(parents=True)
+    artifact = day / f"rollout-2026-08-30T00-00-00-{child_id}.jsonl"
+    artifact.write_text("{}\n", encoding="utf-8")
+    seen: dict[str, Any] = {}
+
+    def fake_parser(path: Any, *, child_id: str, cwd: Any, root: Any = None) -> str:
+        seen["path"] = str(path)
+        seen["child"] = child_id
+        return parent_id
+
+    monkeypatch.setattr(
+        "agency_runtime.core.child_delivery_evidence.default_child_artifact_root",
+        lambda _host: root,
+    )
+    monkeypatch.setattr(
+        "agency_runtime.core.child_delivery_evidence.codex_v1491_child_parent_session",
+        fake_parser,
+    )
+    bridge = hooks.HookBridge(  # type: ignore[arg-type]
+        "codex",
+        store=_NoOpenTraceStore(),
+        _master={"enabled": True},
+    )
+
+    scope = bridge._restricted_codex_activation_child_parent_scope(
+        {
+            "hook_event_name": "SubagentStart",
+            "session_id": child_id,
+            "agent_id": child_id,
+            "cwd": str(tmp_path),
+        }
+    )
+
+    assert scope is None
+    assert seen["path"] == str(artifact)
+    assert seen["child"] == child_id
+    assert bridge._restricted_child_join_refusal == "parent_trace_ambiguous"
+
+
+def test_restricted_child_join_accepts_both_session_semantics(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # 0.150 SubagentStart carried the parent session; 0.151 carries the
+    # child's own session. Both must reach the parent-trace stage, while a
+    # third identity stays a mismatch.
+    _restricted_env(monkeypatch)
+    child_id = "01a04f93-7d59-75c1-a813-c3479e11cc16"
+    parent_id = "01a04f92-e63c-76a2-9147-ee0636137875"
+    other_id = "01a04f92-0000-7000-8000-000000000001"
+    monkeypatch.setattr(
+        "agency_runtime.core.child_delivery_evidence.codex_v1491_child_parent_session",
+        lambda _path, *, child_id, cwd, root=None: parent_id,
+    )
+    bridge = hooks.HookBridge(  # type: ignore[arg-type]
+        "codex",
+        store=_NoOpenTraceStore(),
+        _master={"enabled": True},
+    )
+
+    outcomes: dict[str, str] = {}
+    for label, session_value in (
+        ("parent-session", parent_id),
+        ("child-session", child_id),
+        ("third-party", other_id),
+    ):
+        scope = bridge._restricted_codex_activation_child_parent_scope(
+            {
+                "hook_event_name": "SubagentStart",
+                "session_id": session_value,
+                "agent_id": child_id,
+                "cwd": str(tmp_path),
+                "transcript_path": str(tmp_path / "rollout.jsonl"),
+            }
+        )
+        assert scope is None
+        outcomes[label] = bridge._restricted_child_join_refusal
+
+    assert outcomes["parent-session"] == "parent_trace_ambiguous"
+    assert outcomes["child-session"] == "parent_trace_ambiguous"
+    assert outcomes["third-party"] == "parent_session_mismatch"
+
+
+def test_unstaffed_codex_identity_names_the_join_refusal(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _restricted_env(monkeypatch)
+    child_id = "11111111-1111-4111-8111-111111111111"
+
+    class StartStore:
+        def record_native_child_started(self, **kwargs: Any) -> dict[str, Any]:
+            return dict(kwargs)
+
+    def declining_scope(self: Any, _payload: Any) -> None:
+        self._restricted_child_join_refusal = "parent_snapshot_contract_mismatch"
+        return None
+
+    monkeypatch.setattr(
+        hooks.HookBridge,
+        "_restricted_codex_activation_child_parent_scope",
+        declining_scope,
+    )
+    response = hooks.HookBridge(  # type: ignore[arg-type]
+        "codex",
+        store=StartStore(),
+        _master={"enabled": True},
+    ).handle(
+        {
+            "hook_event_name": "SubagentStart",
+            "session_id": child_id,
+            "turn_id": child_id,
+            "agent_id": child_id,
+            "agent_type": "default",
+        }
+    )
+
+    context = response["hookSpecificOutput"]["additionalContext"]
+    assert 'restricted_join_refusal="parent_snapshot_contract_mismatch"' in context
