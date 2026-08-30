@@ -58,6 +58,22 @@ changes rather than duplicating every commit.
 
 ### Added
 
+- `agency battery` runs the change-triggered harness canary battery
+  (AR-337): per-harness version fingerprints gate the run, claude and codex
+  re-prove through their canary modes (codex attended-trust loss reported
+  as the distinct `attended_trust_required` outcome), hermes and openclaw
+  through staffing-complete ordinary checks, install trees are scanned
+  content-free for writable-permission regressions without unattended
+  remediation, receipts are sealed privately, and doctor surfaces the last
+  outcome per harness. `--baseline` adopts current versions as the proven
+  reference without running.
+- `agency battery --install-service` arms the owner-approved trigger
+  mechanism: a marker-owned refreshed shim plus three systemd-user units
+  (oneshot service, a path unit watching the resolved harness install
+  roots, and a persistent daily sweep timer), refusing foreign-unit
+  overwrites, seeding the baseline, and recording an ownership manifest;
+  `--uninstall-service` removes only marker-owned files (AR-337).
+
 - `agency install --production-container --config <path>` now accepts one exact
   validated Agency configuration and performs a fail-closed dedicated-container
   transaction. Codex receives an Agency-owned system-managed hook policy and a

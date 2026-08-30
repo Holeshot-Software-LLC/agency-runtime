@@ -207,6 +207,12 @@ def cmd_host_canary(args: argparse.Namespace) -> int:
     return _install.cmd_host_canary(args, dependencies=_install_dependencies())
 
 
+def cmd_battery(args: argparse.Namespace) -> int:
+    from agency_runtime.core.harness_battery import run_battery_cli
+
+    return run_battery_cli(args)
+
+
 def _configuration_dependencies() -> _config.ConfigurationDependencies:
     """Capture the facade's current patchable configuration dependencies."""
     return _config.ConfigurationDependencies(
@@ -468,6 +474,7 @@ _COMMAND_NAMES = (
     "cmd_hiring_list",
     "cmd_hiring_show",
     "cmd_host_canary",
+    "cmd_battery",
     "cmd_install",
     "cmd_uninstall",
     "cmd_mcp",

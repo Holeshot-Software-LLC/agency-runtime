@@ -763,6 +763,36 @@ def _provider_chain_checks(
     return checks
 
 
+def _harness_battery_checks() -> list[CheckResult]:
+    """Surface the last change-triggered battery outcome per harness (AR-337).
+
+    The check reads only the private fingerprint document: doctor never
+    spawns host CLIs. A failed battery is loud, a lost codex attended trust
+    is named distinctly, and a harness with no recorded baseline warns until
+    its first battery pass.
+    """
+
+    from agency_runtime.core.harness_battery import BATTERY_HOSTS, read_fingerprints
+
+    harnesses = read_fingerprints().get("harnesses", {})
+    checks: list[CheckResult] = []
+    for host in BATTERY_HOSTS:
+        entry = harnesses.get(host)
+        name = f"harness_battery_{host}"
+        if not isinstance(entry, dict) or not entry.get("last_outcome"):
+            checks.append(CheckResult(name, "warn", "no battery baseline recorded"))
+            continue
+        outcome = str(entry.get("last_outcome"))
+        version = str(entry.get("observed_version") or "")
+        if outcome == "passed":
+            checks.append(CheckResult(name, "pass", version))
+        elif outcome == "attended_trust_required":
+            checks.append(CheckResult(name, "warn", f"attended trust required ({version})"))
+        else:
+            checks.append(CheckResult(name, "fail", f"battery failed ({version})"))
+    return checks
+
+
 def run_doctor(config: AgencyConfig | None = None) -> DoctorReport:
     """Run all health checks and return a structured report."""
     cfg = config or load_config()
@@ -777,6 +807,7 @@ def run_doctor(config: AgencyConfig | None = None) -> DoctorReport:
     report.checks.extend(_adapter_checks(cfg))
 
     report.checks.extend(_provider_chain_checks(cfg, provider_validations))
+    report.checks.extend(_harness_battery_checks())
     return report
 
 

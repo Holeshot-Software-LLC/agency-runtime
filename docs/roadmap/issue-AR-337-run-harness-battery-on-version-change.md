@@ -1,6 +1,6 @@
 ---
 title: "AR-337: Run the harness canary battery on any host version change"
-status: open
+status: in_progress
 category: roadmap
 created: 2026-08-30
 updated: 2026-08-30
@@ -65,6 +65,49 @@ interview before implementation, per the standing service-manager
 constraint. Battery model spend stays bounded to the existing canary and
 ordinary-turn budgets and runs only on change.
 
+## Current state
+
+- Core landed 2026-08-30 (first package): `agency battery` observes each
+  harness's version, gates on drift against the private fingerprint
+  document (`~/.agency-runtime/harness-battery.json`, 0600), runs the
+  claude/codex canary modes and the hermes/openclaw staffing-complete
+  ordinary checks, scans harness install trees for group/other-writable
+  regressions (content-free counts, never remediating), seals per-run
+  receipts under `~/.agency-runtime/evidence/harness-battery/`, and only
+  marks a version proven on a passed battery. `agency battery --baseline`
+  adopts current versions as the reference point without running; doctor
+  surfaces the last outcome per harness (pass / attended-trust warn /
+  loud fail / no-baseline warn). Live-proven: baseline adopted for all four
+  harnesses, the no-change gate exits 0 with zero model spend, and a forced
+  claude battery ran a real passing canary with a sealed receipt and a
+  clean posture scan. The systemd path/timer units and installer wiring are
+  the remaining package.
+- Service package landed 2026-08-30 (second package): `agency battery
+  --install-service` writes a marker-owned shim
+  (`~/.agency-runtime/bin/agency-battery`, 0700, pointing at the installing
+  runtime) plus three systemd-user units — the oneshot service, a `.path`
+  unit watching the resolved harness install roots, and the daily
+  `Persistent` sweep timer — refuses to overwrite foreign units, enables
+  the triggers, seeds the baseline, and records an ownership manifest;
+  `--uninstall-service` removes only marker-owned files. Live-proven on
+  this machine: four watched roots resolved, both triggers enabled and
+  active, and a watched-root touch fired the path unit into the service
+  and shim end to end (the run itself completes once the first
+  battery-bearing runtime is installed, which refreshes the shim).
+
+## Owner interview outcome (2026-08-30)
+
+The owner approved the recommended mechanism: a dedicated systemd user
+oneshot service (`agency-runtime-battery`) triggered by a `.path` unit
+watching the harness install roots, with a daily timer as a catch-all
+sweep. The unit is separate from the dashboard service and carries a
+lighter sandbox because it must execute the host CLIs against real
+profiles. Codex attended-trust loss is reported as a distinct loud
+`attended_trust_required` status rather than a failure. Posture
+regressions are detected and reported content-free; the battery never
+mutates host-owned trees unattended — remediation stays a named attended
+action.
+
 ## Dependencies
 
 AR-297's verified four-host baseline (closed). Owner interview for the
@@ -72,16 +115,17 @@ trigger/service mechanism. No new inference routes.
 
 ## Acceptance
 
-- [ ] A version fingerprint per supported harness is recorded at install and
-      after each battery pass.
-- [ ] A battery run triggers when any harness version fingerprint changes,
+- [x] A version fingerprint per supported harness is recorded at install and
+      after each battery pass (`--install-service` seeds the baseline;
+      battery passes re-record).
+- [x] A battery run triggers when any harness version fingerprint changes,
       and not otherwise.
-- [ ] The battery runs each host's proven canary mode where one exists and
+- [x] The battery runs each host's proven canary mode where one exists and
       the staffing-complete ordinary check where none does, retaining
       receipts.
-- [ ] Harness-tree posture regressions are detected and reported
+- [x] Harness-tree posture regressions are detected and reported
       content-free.
-- [ ] Doctor surfaces the last battery outcome per harness; a failed battery
+- [x] Doctor surfaces the last battery outcome per harness; a failed battery
       is loud.
-- [ ] The trigger/service mechanism is recorded through an owner interview
+- [x] The trigger/service mechanism is recorded through an owner interview
       before implementation.
