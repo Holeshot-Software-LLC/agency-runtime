@@ -1290,6 +1290,16 @@ class HookBridge:
         if not isinstance(task, str) or not task:
             raise HookInputError(f"{tool_name} tool_input.{task_field} is required")
         if self.host == "codex":
+            if self._restricted_codex_activation_parent_scope(
+                payload
+            ) is not None and self._restricted_codex_spawn_input(args):
+                # The proven restricted canary parent's one recognized spawn
+                # belongs to the restricted flow on every admitted contract:
+                # 0.150 delivers it opaque and 0.151 hands the hook the
+                # decrypted fixed work unit. Ordinary plaintext staffing must
+                # not consume it; the child-bound canary decision is created
+                # by the first hook carrying the real child UUID (ADR-0194).
+                return {}
             try:
                 from agency_runtime.core.codex_spawn_provenance import (
                     attest_codex_plaintext_spawn,
@@ -1311,15 +1321,11 @@ class HookBridge:
                 )
                 channel_attestation = None
             if channel_attestation is None:
-                restricted_parent = self._restricted_codex_activation_parent_scope(payload)
-                if restricted_parent is not None and self._restricted_codex_spawn_input(args):
-                    # ADR-0179 owns this one repository-authored canary spawn at
-                    # SubagentStart.  It is not an ordinary unsupported opaque
-                    # child, so do not append a contradictory failure route.
-                    return {}
-                # Encrypted, unmarked, ambiguous, or stale Codex calls remain
-                # ordinary host spawns. The diagnostic is content-free and the
-                # hook never blocks the child.
+                # The recognized restricted canary spawn already returned
+                # above (ADR-0179, ADR-0194). Encrypted, unmarked, ambiguous,
+                # or stale Codex calls remain ordinary host spawns. The
+                # diagnostic is content-free and the hook never blocks the
+                # child.
                 self._record_native_child_unstaffed(
                     payload=payload,
                     args=args,
@@ -1863,10 +1869,11 @@ class HookBridge:
 
     @staticmethod
     def _restricted_codex_spawn_input(tool_input: Any) -> bool:
-        """Recognize the exact 0.149 or 0.150 canary native call shape."""
+        """Recognize the exact 0.149-0.151 canary native call shapes."""
 
         from agency_runtime.core.activation_canary_contract import (
             CODEX_ACTIVATION_CANARY_NATIVE_AGENT_TYPE,
+            CODEX_ACTIVATION_CANARY_WORK_UNIT,
         )
         from agency_runtime.core.native_child_prompt_delivery import (
             is_codex_opaque_collaboration_message,
@@ -1875,12 +1882,19 @@ class HookBridge:
         args = _dict_or_empty(tool_input)
         legacy = set(args) == {"fork_turns", "message", "task_name"}
         explicit = set(args) == {"agent_type", "fork_turns", "message", "task_name"}
+        message = args.get("message")
         return bool(
             (legacy or explicit)
             and (legacy or args.get("agent_type") == CODEX_ACTIVATION_CANARY_NATIVE_AGENT_TYPE)
             and args.get("fork_turns") == "none"
             and args.get("task_name") == "code_reviewer"
-            and is_codex_opaque_collaboration_message(args.get("message"))
+            and (
+                is_codex_opaque_collaboration_message(message)
+                # Codex 0.151 encrypts the channel but hands the hook the
+                # decrypted plaintext; only the byte-exact fixed canary work
+                # unit is admitted in that form (ADR-0194).
+                or message == CODEX_ACTIVATION_CANARY_WORK_UNIT
+            )
         )
 
     @staticmethod
@@ -1967,6 +1981,34 @@ class HookBridge:
             )
         except ValueError:
             return {}
+        if restricted_parent is not None:
+            try:
+                from agency_runtime.core.child_delivery_evidence import (
+                    _restricted_codex_canary_route,
+                )
+
+                if (
+                    _restricted_codex_canary_route(
+                        self.store,
+                        parent_session_id=session_id,
+                        parent_trace_id=trace_id,
+                    )
+                    is None
+                ):
+                    # Codex 0.151 exec never emits SubagentStart, so this stop
+                    # join is the first hook carrying the real child UUID; the
+                    # child-bound canary staffing decision is created here and
+                    # the pending synthetic dispatch is promoted (ADR-0194).
+                    self._staff_restricted_codex_activation_child(
+                        session_id=session_id,
+                        trace_id=trace_id,
+                        identity=identity,
+                    )
+            except Exception:
+                logger.debug(
+                    "restricted Codex stop-time canary staffing failed open",
+                    exc_info=True,
+                )
         final_message = _optional_string(payload, "last_assistant_message")
         # The harness spawned this child itself, so there is no planned
         # execution receipt to reconcile against -- just close its lifecycle.

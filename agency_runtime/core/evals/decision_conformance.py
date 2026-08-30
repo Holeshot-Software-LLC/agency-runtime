@@ -597,21 +597,17 @@ class _NominationSemantics:""",
     DecisionMutation(
         mutation_id="restricted-codex-opaque-spawn-appends-contradictory-failure-route",
         invariant=(
-            "The exact managed Codex canary defers its encrypted spawn to the "
-            "host-lineage SubagentStart boundary without appending an ordinary opaque-channel "
+            "The exact managed Codex canary leaves its recognized spawn to the "
+            "restricted flow without appending an ordinary opaque-channel "
             "failure route."
         ),
         source_path="agency_runtime/adapters/hooks.py",
-        before="""                if restricted_parent is not None and self._restricted_codex_spawn_input(args):
-                    # ADR-0179 owns this one repository-authored canary spawn at
-                    # SubagentStart.  It is not an ordinary unsupported opaque
-                    # child, so do not append a contradictory failure route.
-                    return {}""",
-        after="""                if False and restricted_parent is not None and self._restricted_codex_spawn_input(args):
-                    # ADR-0179 owns this one repository-authored canary spawn at
-                    # SubagentStart.  It is not an ordinary unsupported opaque
-                    # child, so do not append a contradictory failure route.
-                    return {}""",
+        before="""            if self._restricted_codex_activation_parent_scope(
+                payload
+            ) is not None and self._restricted_codex_spawn_input(args):""",
+        after="""            if False and self._restricted_codex_activation_parent_scope(
+                payload
+            ) is not None and self._restricted_codex_spawn_input(args):""",
         test_node=(
             "tests/test_canary_activation_snapshot.py::"
             "test_restricted_codex_opaque_spawn_preserves_the_proven_parent_route"
