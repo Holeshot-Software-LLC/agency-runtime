@@ -17,6 +17,7 @@ HANDLER_NAMES = (
     "cmd_agent_disable",
     "cmd_agent_enable",
     "cmd_agents_list",
+    "cmd_battery",
     "cmd_config_get",
     "cmd_config_path",
     "cmd_config_provider_list",
@@ -104,6 +105,7 @@ EXPECTED_PATHS = (
     "agency agents disable",
     "agency agents enable",
     "agency agents list",
+    "agency battery",
     "agency config",
     "agency config get",
     "agency config path",
@@ -217,6 +219,7 @@ EXPECTED_BINDINGS = {
     "agency agents disable": "cmd_agent_disable",
     "agency agents enable": "cmd_agent_enable",
     "agency agents list": "cmd_agents_list",
+    "agency battery": "cmd_battery",
     "agency config get": "cmd_config_get",
     "agency config path": "cmd_config_path",
     "agency config provider list": "cmd_config_provider_list",
@@ -312,7 +315,7 @@ EXPECTED_BINDINGS = {
     "agency workforce show": "cmd_workforce_show",
     "agency workforce suspend": "cmd_workforce_transition",
 }
-EXPECTED_MANIFEST_SHA256 = "69971acde89d46fb2af458eb407b8a518b1384e2e4cc55297dcacaab9c4d65a6"
+EXPECTED_MANIFEST_SHA256 = "8ef878d45c4ea4fedd4cd0b617292c4ec88350515da5bdfb8c3ae23264691519"
 
 
 def _handler(name: str):
