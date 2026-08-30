@@ -118,6 +118,22 @@ succeeded, the parent spawns exactly one child, and the child completes.
   consumer, with the collaboration projection carrying a matching
   host-encrypted branch. The curated decision-conformance mutation moved to
   the new gate and the catalog passes 167/167.
+- 2026-08-30 evening live run on the `552a56a3` install (owner stop-loss
+  active): the PreToolUse gate held (no ordinary staffing consumed the
+  spawn) and the scoped child judge saw exactly one candidate, but both
+  guarded staffing commits failed `native_child_routing_state_changed` —
+  a deterministic regression in the team-scope change itself: the decision
+  fingerprint hashed the scoped catalog while the commit re-check hashed the
+  unscoped one. Fixed by computing the routing-authority fingerprint before
+  scoping, with a store-backed regression test that fails on the broken
+  ordering and a fail-closed empty-scope test. One unexplained observability
+  gap remains open: the armed join-diagnostics sink stayed empty in live
+  hooks even on code paths provably reached, while the identical plumbing
+  works when the hook command is invoked directly with the armed
+  environment; the canary env vars demonstrably reach hook processes, so
+  the sink env vars' fate inside codex 0.151 hook spawning is the open
+  question. The next live canary exercises the delivery verifier chain for
+  the first time with a committed canary decision.
 
 ## Approach
 

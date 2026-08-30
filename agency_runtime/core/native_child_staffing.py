@@ -1012,13 +1012,6 @@ def staff_native_child(  # noqa: C901 - one ordered fail-open native-child bound
             capability_status=resolved_capability_status,
         )
         eligible_catalog = list(eligibility.eligible)
-        if team_scope is not None:
-            # A delegated unit dispatched under an inference-owned parent
-            # route inherits that route's team: the child judge still infers
-            # (or abstains) over real candidates, but only the parent's
-            # dispatched specialists are eligible (ADR-0194).
-            scoped = frozenset(team_scope)
-            eligible_catalog = [item for item in eligible_catalog if agent_identity(item) in scoped]
         context_fingerprint = _context_fingerprint(
             host=normalized_host,
             platform=normalized_platform,
@@ -1029,6 +1022,16 @@ def staff_native_child(  # noqa: C901 - one ordered fail-open native-child bound
             catalog=eligible_catalog,
             install=install,
         )
+        if team_scope is not None:
+            # A delegated unit dispatched under an inference-owned parent
+            # route inherits that route's team: the child judge still infers
+            # (or abstains) over real candidates, but only the parent's
+            # dispatched specialists are eligible. The context fingerprint
+            # stays a routing-authority digest over the unscoped eligible
+            # catalog so the guarded commit re-check hashes the same input
+            # (ADR-0194); scoping is a request property, not authority state.
+            scoped = frozenset(team_scope)
+            eligible_catalog = [item for item in eligible_catalog if agent_identity(item) in scoped]
     except Exception:
         return _unstaffed(
             store=store,
