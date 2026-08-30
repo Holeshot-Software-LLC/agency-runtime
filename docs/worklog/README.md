@@ -1462,6 +1462,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `83877fd0` | 2026-08-30 | fix(reliability): hash routing authority before team scoping | [AR-334](../roadmap/issue-AR-334-support-codex-0151-collaboration-and-hook-contract.md) | Fingerprint over unscoped catalog before team scoping; deterministic state-changed regression fixed with store-backed test |
 | `f081358d` | 2026-08-30 | Merge pull request #360 from Holeshot-Software-LLC/claude/ar334-scope-fingerprint | null | null |
 | `0ac646b9` | 2026-08-30 | docs(ar297): close the bootstrap epic on verified codex activation | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | Codex attestation verified on 0.151 (ADR-0194); AR-332/333/334 closed on live proofs; four-host evidence retained |
+| `effe1087` | 2026-08-30 | Merge pull request #361 from Holeshot-Software-LLC/claude/ar297-close-out | null | null |
+| `aa38e063` | 2026-08-30 | docs(ar337): file the change-triggered harness canary battery | [AR-337](../roadmap/issue-AR-337-run-harness-battery-on-version-change.md) | Owner-authorized change-triggered battery filed with tracker #362; roadmap index statuses caught up |
 <!-- worklog:end -->
 
 ## Provenance notes
