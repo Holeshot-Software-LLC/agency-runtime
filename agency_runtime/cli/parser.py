@@ -1437,6 +1437,46 @@ def _register_delegation_and_evals(sub: Subparsers, handlers: Handlers) -> None:
     )
     _bind(eval_compare, handlers, "cmd_eval_compare")
 
+    battery = sub.add_parser(
+        "battery",
+        help="Run the change-triggered harness canary battery",
+    )
+    battery.add_argument(
+        "--host",
+        choices=["claude", "codex", "hermes", "openclaw"],
+        help="Limit the battery to one harness",
+    )
+    battery.add_argument(
+        "--force",
+        action="store_true",
+        help="Run the battery even without a version change",
+    )
+    battery.add_argument(
+        "--baseline",
+        action="store_true",
+        help="Adopt current harness versions as the proven baseline without running",
+    )
+    battery.add_argument(
+        "--install-service",
+        action="store_true",
+        help="Install and enable the systemd-user path and timer triggers",
+    )
+    battery.add_argument(
+        "--uninstall-service",
+        action="store_true",
+        help="Disable and remove the systemd-user battery triggers",
+    )
+    battery.add_argument(
+        "--config",
+        help="Explicit Agency configuration path",
+    )
+    battery.add_argument(
+        "--json",
+        action="store_true",
+        help="Print the machine-readable battery report",
+    )
+    _bind(battery, handlers, "cmd_battery")
+
     smoke = sub.add_parser("smoke", help="Run deterministic local smoke checks")
     smoke.add_argument(
         "--all",

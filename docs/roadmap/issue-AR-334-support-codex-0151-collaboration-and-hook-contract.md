@@ -1,9 +1,9 @@
 ---
 title: "AR-334: Support Codex 0.151 collaboration and hook contract"
-status: open
+status: done
 category: roadmap
 created: 2026-08-29
-updated: 2026-08-29
+updated: 2026-08-30
 tags: [bug, host-integrations, codex, canary, collaboration, rollout]
 related:
   - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
@@ -12,6 +12,7 @@ related:
   - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
   - docs/decisions/0179-admit-exact-codex-canary-delivery-at-subagent-start.md
   - docs/decisions/0193-admit-newer-codex-releases-under-the-newest-proven-child-contract.md
+  - docs/decisions/0194-admit-host-encrypted-codex-canary-task-delivery.md
   - agency_runtime/core/canary_backends.py
   - agency_runtime/core/child_delivery_evidence.py
   - docs/worklog/README.md
@@ -74,6 +75,76 @@ succeeded, the parent spawns exactly one child, and the child completes.
   not reconstructable afterwards). Next bounded step: run the restricted
   canary with `AGENCY_CODEX_HOOK_EVENT_DIAGNOSTICS=1` and, if needed, give
   the child-scope join a content-free recorded refusal reason.
+- Child-join fixes landed 2026-08-30 against the two verified 0.151 hook
+  drifts: the `transcript_path`/`agent_transcript_path` hints are optional
+  with a fail-closed fallback to the sole child-named rollout under the
+  canonical sessions root (the metadata parser stays the trust anchor), and
+  the payload `session_id` is accepted under both observed semantics (0.150
+  parent identity, 0.151 child self-identity) with any third identity still
+  refused. Every decline now records a content-free refusal slug surfaced in
+  the restricted-canary identity injection, and an opt-in
+  `AGENCY_CODEX_HOOK_EVENT_DIAGNOSTICS=1` mode names the declining branch.
+  Focused tests cover derivation-when-hint-missing, both session semantics,
+  and refusal naming. Live `verify-activation` rides the next production
+  install and the operator's fresh attended trust.
+- 2026-08-30 live isolation after the `5459794d` install and fresh attended
+  trust: the join fixes advanced the restricted canary past the silent
+  declines — the SubagentStart handler now runs to a staffing decision — but
+  the child was staffed through the ordinary native-child path
+  (`native_child_inference`, child-judge selection) instead of the pinned
+  canary team, so delivery verification refuses the decision
+  (`host_child_collection_reason=verification_refused`) and the parent
+  projection reports `native_collaboration_topology_invalid` with
+  `child_interaction_count` 0. Every prior refusal channel is unobservable on
+  0.151 (hook stderr swallowed, hook stdout encrypted into the child
+  rollout), so the diagnostics-armed canary now writes the join outcome —
+  payload field-name census, refusal slug, agent-type admission — to a
+  private host-side sink surfaced as `hook_join_diagnostics` on the canary
+  record, and the join absorbs the SubagentStart rollout-flush race with two
+  bounded re-reads. The complete real 0.151 child rollout replays to its
+  exact parent through `codex_v1491_child_parent_session` with the recorded
+  session cwd, so the artifact contract itself holds.
+- Root cause isolated and adapted 2026-08-30 (ADR-0194): codex 0.151 exec
+  never emits `SubagentStart` (`SubagentStop` still fires, live-proven by a
+  stop-created lifecycle row with simultaneous start and end), and the
+  inter-agent channel is host-encrypted end to end while the PreToolUse hook
+  observes the decrypted plaintext. The restricted flow now recognizes the
+  canary spawn in both observed forms at `PreToolUse` and leaves it to the
+  restricted path, creates the child-bound canary staffing decision at the
+  `SubagentStop` join, and admits the host-encrypted task-delivery grade:
+  byte equality between the parent's attested spawn payload and the child's
+  sole pre-speech `NEW_TASK` ciphertext (verified byte-equal on the real
+  2026-08-30 rollouts), bound through the same one-use atomic verification
+  consumer, with the collaboration projection carrying a matching
+  host-encrypted branch. The curated decision-conformance mutation moved to
+  the new gate and the catalog passes 167/167.
+- 2026-08-30 evening live run on the `552a56a3` install (owner stop-loss
+  active): the PreToolUse gate held (no ordinary staffing consumed the
+  spawn) and the scoped child judge saw exactly one candidate, but both
+  guarded staffing commits failed `native_child_routing_state_changed` —
+  a deterministic regression in the team-scope change itself: the decision
+  fingerprint hashed the scoped catalog while the commit re-check hashed the
+  unscoped one. Fixed by computing the routing-authority fingerprint before
+  scoping, with a store-backed regression test that fails on the broken
+  ordering and a fail-closed empty-scope test. One unexplained observability
+  gap remains open: the armed join-diagnostics sink stayed empty in live
+  hooks even on code paths provably reached, while the identical plumbing
+  works when the hook command is invoked directly with the armed
+  environment; the canary env vars demonstrably reach hook processes, so
+  the sink env vars' fate inside codex 0.151 hook spawning is the open
+  question. The next live canary exercises the delivery verifier chain for
+  the first time with a committed canary decision.
+- CLOSED 2026-08-30 night on the `f081358d` install after fresh attended
+  trust: the restricted current-profile canary passed end to end
+  (`canary_passed=true`, delivery `collected` under the ADR-0194
+  host-encrypted grade, collaboration projection complete, attestation
+  persisted) and `agency install --agent codex --verify-activation` exits 0
+  with "Codex current-profile activation verified". Doctor reports the codex
+  adapter at `runtime-verified` with hook trust passing. Receipts:
+  `codex-canary-cp-f081358d.json` and `codex-verify-activation-f081358d.stdout`
+  under `~/.agency-runtime/evidence/ar297-live-harness-20260829/`. The
+  diagnostics-sink observability gap remains recorded above as a
+  non-blocking open note.
 
 ## Approach
 
@@ -100,10 +171,10 @@ short-term unblock for AR-297's Codex gates.
 
 ## Acceptance
 
-- [ ] Current-profile activation canary passes on codex-cli 0.151 with
+- [x] Current-profile activation canary passes on codex-cli 0.151 with
       verified child delivery evidence.
-- [ ] Version-scoped fixtures from real 0.151 rollouts cover parent and child
+- [x] Version-scoped fixtures from real 0.151 rollouts cover parent and child
       projections.
-- [ ] `agency install --agent codex --verify-activation` exits 0 with a fresh
+- [x] `agency install --agent codex --verify-activation` exits 0 with a fresh
       persisted attestation on 0.151.
-- [ ] 0.150 contracts remain green.
+- [x] 0.150 contracts remain green.

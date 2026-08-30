@@ -259,6 +259,40 @@ def _unit(
     }
 
 
+def _append_security_discovery_unit(
+    units: list[dict[str, object]],
+    *,
+    security: bool,
+    actionable_request: str,
+    tokens: frozenset[str],
+    context: StaffingContext,
+) -> None:
+    """Prepend the code-path mapping unit for security-typed repository work.
+
+    A security-sensitive repository mutation carries the same code-path
+    mapping predecessor invariant as a repository security review (AR-331);
+    without it the oracle's own plan fails the plan policy it models.
+    """
+
+    if security and not _has_inline_code_context(actionable_request, tokens):
+        units.append(
+            _unit(
+                "unit-codebase-discovery",
+                outcome=(
+                    "Map the relevant repository structure and trace the "
+                    "security-sensitive code path"
+                ),
+                artifact="review-report",
+                lifecycle="discovery",
+                domains=("software-engineering",),
+                authority="review",
+                mutation="read_only",
+                context=context,
+                tools=("repository", "filesystem"),
+            )
+        )
+
+
 def deterministic_work_plan(
     request: str,
     *,
@@ -358,6 +392,13 @@ def deterministic_work_plan(
             )
         )
     elif mutating and code:
+        _append_security_discovery_unit(
+            units,
+            security=security,
+            actionable_request=actionable_request,
+            tokens=tokens,
+            context=context,
+        )
         units.append(
             _unit(
                 "unit-implementation",

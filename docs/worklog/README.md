@@ -3,7 +3,7 @@ title: Worklog
 status: active
 category: worklog
 created: 2026-07-10
-updated: 2026-08-29
+updated: 2026-08-30
 tags: []
 related: []
 supersedes: []
@@ -1450,6 +1450,25 @@ This registry connects repository history to the roadmap and to optional detail 
 | `69ca3a25` | 2026-08-29 | docs(ar297): record host-update resilience rollout and recruiter blocker | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `bc8cd54b` | 2026-08-29 | Merge pull request #354 from Holeshot-Software-LLC/claude/ar297-rollout-evidence | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | null |
 | `a029d917` | 2026-08-29 | docs(ar336): record recruiter requalification and four-turn staffing pass | [AR-336](../roadmap/issue-AR-336-requalify-the-recruiter-route-for-ordinary-tasks.md) | null |
+| `cf6ac37a` | 2026-08-29 | Merge pull request #355 from Holeshot-Software-LLC/claude/ar336-requalification-evidence | null | null |
+| `f7b91364` | 2026-08-30 | fix(reliability): harden codex 0.151 child join and canary launch posture | [AR-334](../roadmap/issue-AR-334-support-codex-0151-collaboration-and-hook-contract.md) | Child-join hint fallback and dual session semantics with refusal slugs; umask 077 launch pin (AR-332); isolated codex canary plain path (AR-333); oracle discovery alignment with 167/167 conformance (AR-331) |
+| `5459794d` | 2026-08-30 | Merge pull request #356 from Holeshot-Software-LLC/claude/ar331-334-hardening-batch | null | null |
+| `c9642667` | 2026-08-30 | fix(reliability): record restricted join outcomes and absorb rollout-flush race | [AR-334](../roadmap/issue-AR-334-support-codex-0151-collaboration-and-hook-contract.md) | Private hook-join diagnostics sink surfaced as hook_join_diagnostics; bounded SubagentStart rollout-flush re-reads; live isolation recorded (ordinary-path staffing, verification_refused) |
+| `3b9b20be` | 2026-08-30 | Merge pull request #357 from Holeshot-Software-LLC/claude/ar334-join-diagnostics | null | null |
+| `2db42ce7` | 2026-08-30 | fix(reliability): admit host-encrypted codex canary task delivery | [AR-334](../roadmap/issue-AR-334-support-codex-0151-collaboration-and-hook-contract.md) | ADR-0194: PreToolUse canary-spawn recognition, SubagentStop staffing join, byte-equal ciphertext delivery grade; conformance mutation retargeted, 167/167 |
+| `d812e5d1` | 2026-08-30 | Merge pull request #358 from Holeshot-Software-LLC/claude/ar334-encrypted-channel-delivery | null | null |
+| `2e033084` | 2026-08-30 | fix(reliability): scope restricted canary child staffing to the parent route | [AR-334](../roadmap/issue-AR-334-support-codex-0151-collaboration-and-hook-contract.md) | team_scope narrows child-judge candidates to the parent route; additive spawn recognizer; spawn-gate and stop-staffing sink lines; mutation re-anchored 167/167 |
+| `552a56a3` | 2026-08-30 | Merge pull request #359 from Holeshot-Software-LLC/claude/ar334-encrypted-channel-delivery | null | null |
+| `83877fd0` | 2026-08-30 | fix(reliability): hash routing authority before team scoping | [AR-334](../roadmap/issue-AR-334-support-codex-0151-collaboration-and-hook-contract.md) | Fingerprint over unscoped catalog before team scoping; deterministic state-changed regression fixed with store-backed test |
+| `f081358d` | 2026-08-30 | Merge pull request #360 from Holeshot-Software-LLC/claude/ar334-scope-fingerprint | null | null |
+| `0ac646b9` | 2026-08-30 | docs(ar297): close the bootstrap epic on verified codex activation | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | Codex attestation verified on 0.151 (ADR-0194); AR-332/333/334 closed on live proofs; four-host evidence retained |
+| `effe1087` | 2026-08-30 | Merge pull request #361 from Holeshot-Software-LLC/claude/ar297-close-out | null | null |
+| `aa38e063` | 2026-08-30 | docs(ar337): file the change-triggered harness canary battery | [AR-337](../roadmap/issue-AR-337-run-harness-battery-on-version-change.md) | Owner-authorized change-triggered battery filed with tracker #362; roadmap index statuses caught up |
+| `85028544` | 2026-08-30 | Merge pull request #363 from Holeshot-Software-LLC/claude/ar337-harness-battery | null | null |
+| `7c0446eb` | 2026-08-30 | feat(reliability): add the change-triggered harness canary battery | [AR-337](../roadmap/issue-AR-337-run-harness-battery-on-version-change.md) | Core battery: fingerprint gating, canary/ordinary modes, posture counts, sealed receipts, doctor rows, --baseline; live-proven baseline + no-change gate + forced claude run |
+| `42c56d70` | 2026-08-30 | feat(reliability): arm the battery's systemd path and timer triggers | [AR-337](../roadmap/issue-AR-337-run-harness-battery-on-version-change.md) | Marker-owned shim + service/path/timer units, foreign-unit refusal, baseline seeding, manifest; live trigger fire proven |
+| `6cae921b` | 2026-08-30 | Merge pull request #364 from Holeshot-Software-LLC/claude/ar337-battery-core | null | null |
+| `c797789d` | 2026-08-30 | fix(reliability): write battery service files owner-private | [AR-337](../roadmap/issue-AR-337-run-harness-battery-on-version-change.md) | CodeQL py/overly-permissive-file on unit writes; all service files now 0600/0700 with a mode-pinning test |
 <!-- worklog:end -->
 
 ## Provenance notes

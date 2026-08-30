@@ -1,9 +1,9 @@
 ---
 title: "AR-333: Report the unsupported Codex isolated-profile agency canary loudly"
-status: open
+status: done
 category: roadmap
 created: 2026-08-29
-updated: 2026-08-29
+updated: 2026-08-30
 tags: [bug, host-integrations, codex, canary, diagnosability]
 related:
   - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
@@ -50,6 +50,17 @@ readiness report for the same flags says `ready=true`.
   unreachable in ordinary operation.
 - The supported Codex path is the restricted current-profile canary, which
   requires completed attended trust; that ordering is by design and stays.
+- Code landed 2026-08-30: `invoke_and_collect_evidence` gates host-delivery
+  collection on the backend's `current-profile` scope, so the isolated-profile
+  agency canary now runs through plain `execute()` and its evidence carries
+  the stable content-free reason `unsupported_profile_scope` instead of
+  refusing before launch. Readiness `ready=true` for the combination is now
+  truthful because the combination executes. A focused test drives a real
+  `SafeCodexCanaryBackend` through the collection gate and proves the plain
+  path plus the recorded reason. Live-proven 2026-08-30 on the `5459794d`
+  install: the isolated-profile agency canary launched a real turn (spawn
+  and accepted finalization) instead of refusing pre-launch
+  (`codex-canary-isolated-5459794d.json`).
 
 ## Approach
 
@@ -66,8 +77,10 @@ requirement.
 
 ## Acceptance
 
-- [ ] Readiness no longer reports `ready=true` for a combination whose
-      execution deterministically refuses.
-- [ ] The refusal carries a stable content-free reason distinct from runtime
-      invocation failures.
-- [ ] A focused test covers the isolated-profile agency-mode combination.
+- [x] Readiness no longer reports `ready=true` for a combination whose
+      execution deterministically refuses (the combination now executes
+      through plain `execute()`).
+- [x] The refusal carries a stable content-free reason distinct from runtime
+      invocation failures (`host_child_collection_reason` =
+      `unsupported_profile_scope`).
+- [x] A focused test covers the isolated-profile agency-mode combination.

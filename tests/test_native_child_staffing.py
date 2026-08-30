@@ -2182,3 +2182,48 @@ def test_store_activation_policy_guard_rolls_back_change_after_route_insert(
         )
     finally:
         conn.close()
+
+
+def test_team_scope_narrows_judge_candidates_and_still_commits(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # ADR-0194 regression: the 2026-08-30 live canary failed every guarded
+    # commit with native_child_routing_state_changed because the decision
+    # fingerprint hashed the scoped catalog while the commit re-check hashed
+    # the unscoped one. The fingerprint is a routing-authority digest; the
+    # scope only narrows what the judge may select.
+    prompts = {
+        "alpha-reviewer": "Alpha exact specialist prompt.",
+        "beta-reviewer": "Beta exact specialist prompt.",
+    }
+    catalog = [
+        _agent("alpha-reviewer", prompts["alpha-reviewer"]),
+        _agent("beta-reviewer", prompts["beta-reviewer"]),
+    ]
+    store = _Store(catalog, prompts)
+    observed: list[list[str]] = []
+
+    def judge(_task: str, candidates: list[dict[str, Any]], **_kwargs: Any) -> dict[str, Any]:
+        observed.append([str(item["slug"]) for item in candidates])
+        return _judge_result(["alpha-reviewer"])
+
+    result = _invoke(monkeypatch, store, judge, team_scope=("alpha-reviewer",))
+
+    assert observed == [["alpha-reviewer"]]
+    assert result.staffed is True
+    assert result.selected_ids == ("alpha-reviewer",)
+
+
+def test_empty_team_scope_fails_closed_before_the_judge(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    prompts = {"alpha-reviewer": "Alpha exact specialist prompt."}
+    store = _Store([_agent("alpha-reviewer", prompts["alpha-reviewer"])], prompts)
+
+    def forbidden_judge(*_args: Any, **_kwargs: Any) -> dict[str, Any]:
+        raise AssertionError("the judge must not run over an empty scoped pool")
+
+    result = _invoke(monkeypatch, store, forbidden_judge, team_scope=("absent-slug",))
+
+    assert result.staffed is False
+    assert result.reason_code == "native_child_eligible_catalog_empty"

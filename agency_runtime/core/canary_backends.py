@@ -7,7 +7,8 @@ import json
 import os
 import re
 import stat
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Iterator, Mapping
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -42,6 +43,29 @@ from agency_runtime.core.private_paths import (
     private_temporary_directory,
 )
 
+
+@contextmanager
+def _private_child_umask() -> Iterator[None]:
+    """Launch host children under a private umask so their artifacts verify.
+
+    Host CLIs create project and rollout directories with the ambient umask;
+    a user-private-group default (002) yields group-writable parents that the
+    strict artifact guards refuse (AR-332). The canary flow is serial, so the
+    briefly process-global umask cannot race an unrelated write, and the
+    spawned child inherits the private mask for its lifetime. Windows has no
+    umask semantics; the launch proceeds unchanged there.
+    """
+
+    if os.name == "nt":
+        yield
+        return
+    previous = os.umask(0o077)
+    try:
+        yield
+    finally:
+        os.umask(previous)
+
+
 _CODEX_ROLLOUT_MAX_BYTES = 1024 * 1024
 _CODEX_ROLLOUT_MAX_LINES = 5_000
 _CODEX_ROLLOUT_CLOCK_SKEW_SECONDS = 2.0
@@ -68,6 +92,7 @@ _CODEX_STDOUT_HOST_NOTICE_BY_MESSAGE = {
     "to leave more room for the rest.": "skill_catalog_descriptions_shortened",
 }
 _CODEX_ROLLOUT_CONTRACTS = frozenset({"canary", "product"})
+_CODEX_HOOK_JOIN_DIAGNOSTICS_NAME = "agency-hook-join-diagnostics.jsonl"
 _CODEX_PRODUCT_COLLABORATION_SCHEMA = "agency.codex-product-collaboration.v2"
 _CODEX_PRODUCT_MAX_SPAWNS = 16
 _CODEX_PRODUCT_MAX_WAITS = 64
@@ -956,6 +981,94 @@ def _codex_child_v6_canary_delivery(
     return prompt_delivery, execution_delivery
 
 
+def _codex_child_host_encrypted_canary_delivery(
+    events: list[dict[str, Any]],
+    *,
+    parent_thread_id: str,
+    child_thread_id: str,
+    opaque_message: str,
+) -> tuple[dict[str, Any], dict[str, str]] | None:
+    """Project the sole 0.151 host-encrypted NEW_TASK canary delivery.
+
+    Codex 0.151 encrypts the inter-agent channel end to end, so the child
+    rollout can never carry a plaintext v6 envelope. The admitted proof is
+    byte equality between the parent's attested spawn payload and the sole
+    pre-speech NEW_TASK ciphertext the child received (ADR-0194).
+    """
+
+    from agency_runtime.core.activation_canary_contract import (
+        CODEX_ACTIVATION_CANARY_WORK_UNIT,
+    )
+    from agency_runtime.core.unit_assignment import (
+        work_unit_goal_hash,
+        work_unit_id_from_text,
+    )
+
+    if not isinstance(opaque_message, str) or not opaque_message:
+        return None
+    ciphertexts: list[str] = []
+    assistant_messages = 0
+    for event in events:
+        payload = event.get("payload")
+        if event.get("type") != "response_item" or not isinstance(payload, dict):
+            continue
+        item_type = payload.get("type")
+        role = str(payload.get("role") or "").strip().casefold()
+        if item_type == "agent_message" or (
+            item_type == "message" and role in {"assistant", "agent"}
+        ):
+            assistant_messages += 1
+        if (
+            item_type != "message"
+            or role
+            or str(payload.get("recipient") or "") != "/root/code_reviewer"
+        ):
+            continue
+        content = payload.get("content")
+        if not isinstance(content, list):
+            continue
+        preamble = "".join(
+            str(block.get("text"))
+            for block in content
+            if isinstance(block, dict)
+            and block.get("type") in {"input_text", "text"}
+            and isinstance(block.get("text"), str)
+        )
+        encrypted = [
+            str(block.get("encrypted_content"))
+            for block in content
+            if isinstance(block, dict)
+            and block.get("type") == "encrypted_content"
+            and isinstance(block.get("encrypted_content"), str)
+        ]
+        if preamble.startswith("Message Type: NEW_TASK") and len(encrypted) == 1:
+            ciphertexts.append(encrypted[0])
+    if len(ciphertexts) != 1 or assistant_messages < 1:
+        return None
+    if ciphertexts[0] != opaque_message:
+        raise ValueError(
+            "Codex host-encrypted canary delivery did not match the attested spawn payload"
+        )
+    work_unit_id = work_unit_id_from_text(CODEX_ACTIVATION_CANARY_WORK_UNIT)
+    prompt_delivery = {
+        "host": "codex",
+        "parent_session_id": parent_thread_id,
+        "launch_id": child_thread_id,
+        "work_unit_id": work_unit_id,
+        "specialist_slug": "code-reviewer",
+        "task_sha256": hashlib.sha256(
+            CODEX_ACTIVATION_CANARY_WORK_UNIT.encode("utf-8")
+        ).hexdigest(),
+        "delivery_channel": "host_encrypted",
+    }
+    execution_delivery = {
+        "work_unit_id": work_unit_id,
+        "native_task_name": "code_reviewer",
+        "goal_hash": work_unit_goal_hash(CODEX_ACTIVATION_CANARY_WORK_UNIT),
+    }
+    return prompt_delivery, execution_delivery
+
+
 def _codex_rollout_call_data(  # noqa: C901 - one pinned rollout projection
     events: list[dict[str, Any]],
 ) -> tuple[
@@ -1554,6 +1667,15 @@ def _codex_rollout_collaboration_evidence(
             parent_thread_id=parent_thread_id,
             child_thread_id=receiver_id,
         )
+        if v6_canary is None:
+            # Codex 0.151 encrypts the channel; the byte-equal ciphertext
+            # round trip is the admitted canary delivery proof (ADR-0194).
+            v6_canary = _codex_child_host_encrypted_canary_delivery(
+                child_events,
+                parent_thread_id=parent_thread_id,
+                child_thread_id=receiver_id,
+                opaque_message=str(spawn["arguments"].get("message") or ""),
+            )
         if v6_canary is not None:
             prompt_delivery, execution_delivery = v6_canary
             if native_task_name != "code_reviewer":
@@ -3331,9 +3453,15 @@ class SafeCodexCanaryBackend:
             else facade.CODEX_NATIVE_ONLY_CANARY_EXEC_OPTIONS
         )
 
-    def _configure_canary_environment(self, env: dict[str, str]) -> None:
+    def _configure_canary_environment(
+        self,
+        env: dict[str, str],
+        *,
+        workdir: str | None = None,
+    ) -> None:
         from agency_runtime.core.codex_activation_verification import (
             CODEX_ACTIVATION_EXISTING_STORE_ENV,
+            CODEX_HOOK_DIAGNOSTICS_PATH_ENV,
             CODEX_HOOK_EVENT_DIAGNOSTICS_ENV,
         )
 
@@ -3348,6 +3476,39 @@ class SafeCodexCanaryBackend:
             if not self.require_existing_store:
                 raise ValueError("hook event diagnostics require the existing Agency store")
             env[CODEX_HOOK_EVENT_DIAGNOSTICS_ENV] = "1"
+            if workdir:
+                # Codex 0.151 swallows hook stderr and encrypts hook stdout,
+                # so the join's content-free diagnostics need a host-side
+                # sink inside this invocation's private workspace (AR-334).
+                env[CODEX_HOOK_DIAGNOSTICS_PATH_ENV] = str(
+                    Path(workdir) / _CODEX_HOOK_JOIN_DIAGNOSTICS_NAME
+                )
+
+    def _collect_hook_join_diagnostics(
+        self,
+        record: dict[str, Any],
+        *,
+        workdir: str,
+    ) -> None:
+        """Surface the sink's sanitized join-diagnostic entries on the record."""
+
+        if not self.hook_event_diagnostics:
+            return
+        from agency_runtime.core.codex_activation_verification import (
+            MAX_CODEX_HOOK_JOIN_DIAGNOSTIC_BYTES,
+            sanitize_codex_hook_join_diagnostics,
+        )
+
+        sink = Path(workdir) / _CODEX_HOOK_JOIN_DIAGNOSTICS_NAME
+        try:
+            raw = sink.read_text(encoding="ascii", errors="replace")[
+                :MAX_CODEX_HOOK_JOIN_DIAGNOSTIC_BYTES
+            ]
+        except OSError:
+            return
+        entries = sanitize_codex_hook_join_diagnostics(raw)
+        if entries:
+            record["hook_join_diagnostics"] = entries
 
     def _project_activation_query_hash(self, env: dict[str, str], *, task: str) -> None:
         """Bind the restricted child hook to this exact canary invocation."""
@@ -3621,7 +3782,7 @@ class SafeCodexCanaryBackend:
                 runtime_home=None,
                 auth_source=self.child_judge_auth_source,
             )
-            self._configure_canary_environment(env)
+            self._configure_canary_environment(env, workdir=workdir)
             self._project_activation_query_hash(env, task=task)
             trust_failure = self._verify_current_profile_hook_trust(
                 workdir=workdir,
@@ -3639,35 +3800,35 @@ class SafeCodexCanaryBackend:
             rollout_not_before = (
                 facade.time.time() if self.require_exact_activation_rollout else None
             )
-            result = self.process_runner(
-                [
-                    self.executable,
-                    "exec",
-                    *self._exec_options(),
-                ],
-                timeout=timeout,
-                cwd=workdir,
-                env=self._execution_environment(env, workdir=workdir),
-                input_text=task,
-                max_output_chars=256_000,
-            )
-            return self._record_trust_mode(
-                facade._codex_canary_record(
-                    result,
-                    profile_scope=self.profile_scope,
-                    rollout_root=(
-                        self.auth_source.parent / "sessions"
-                        if self.require_exact_activation_rollout
-                        else None
-                    ),
-                    rollout_not_before=rollout_not_before,
-                    rollout_not_after=(
-                        facade.time.time() if self.require_exact_activation_rollout else None
-                    ),
-                    rollout_contract=self.rollout_contract,
+            with _private_child_umask():
+                result = self.process_runner(
+                    [
+                        self.executable,
+                        "exec",
+                        *self._exec_options(),
+                    ],
+                    timeout=timeout,
+                    cwd=workdir,
+                    env=self._execution_environment(env, workdir=workdir),
+                    input_text=task,
+                    max_output_chars=256_000,
+                )
+            record = facade._codex_canary_record(
+                result,
+                profile_scope=self.profile_scope,
+                rollout_root=(
+                    self.auth_source.parent / "sessions"
+                    if self.require_exact_activation_rollout
+                    else None
                 ),
-                invocation_attempted=True,
+                rollout_not_before=rollout_not_before,
+                rollout_not_after=(
+                    facade.time.time() if self.require_exact_activation_rollout else None
+                ),
+                rollout_contract=self.rollout_contract,
             )
+            self._collect_hook_join_diagnostics(record, workdir=workdir)
+            return self._record_trust_mode(record, invocation_attempted=True)
         with private_temporary_directory(prefix="codex-home") as runtime_home:
             codex_home = facade._prepare_private_host_home(
                 runtime_home,
@@ -3729,18 +3890,19 @@ class SafeCodexCanaryBackend:
             rollout_not_before = (
                 facade.time.time() if self.require_exact_activation_rollout else None
             )
-            result = self.process_runner(
-                [
-                    self.executable,
-                    "exec",
-                    *self._exec_options(),
-                ],
-                timeout=timeout,
-                cwd=workdir,
-                env=self._execution_environment(env, workdir=workdir),
-                input_text=task,
-                max_output_chars=256_000,
-            )
+            with _private_child_umask():
+                result = self.process_runner(
+                    [
+                        self.executable,
+                        "exec",
+                        *self._exec_options(),
+                    ],
+                    timeout=timeout,
+                    cwd=workdir,
+                    env=self._execution_environment(env, workdir=workdir),
+                    input_text=task,
+                    max_output_chars=256_000,
+                )
             record = facade._codex_canary_record(
                 result,
                 rollout_root=(
@@ -3915,36 +4077,37 @@ class SafeClaudeCanaryBackend:
                 return self._record_child_judge_provider(_timeout_record("claude")), None
             invocation_start = _start_private_host_invocation(collection)
             try:
-                result = self.process_runner(
-                    [
-                        self.executable,
-                        "-p",
-                        "--output-format",
-                        "json",
-                        # One bounded preamble turn before the final message; a
-                        # hard 1-turn cap kills responses that open with text.
-                        "--max-turns",
-                        "4" if accepted_outcome else "2",
-                        # Persist only inside the isolated, owner-private home so
-                        # the host-authored child transcript can be collected
-                        # before that home is deleted. The sole enabled tool is
-                        # Claude's native child boundary.
-                        "--setting-sources=",
-                        "--plugin-dir",
-                        str(self.plugin_dir),
-                        "--tools=Agent",
-                        "--disallowedTools",
-                        "mcp__*",
-                        "--strict-mcp-config",
-                        "--permission-mode",
-                        "dontAsk",
-                    ],
-                    timeout=timeout,
-                    cwd=workdir,
-                    env=env,
-                    input_text=task,
-                    max_output_chars=256_000,
-                )
+                with _private_child_umask():
+                    result = self.process_runner(
+                        [
+                            self.executable,
+                            "-p",
+                            "--output-format",
+                            "json",
+                            # One bounded preamble turn before the final message; a
+                            # hard 1-turn cap kills responses that open with text.
+                            "--max-turns",
+                            "4" if accepted_outcome else "2",
+                            # Persist only inside the isolated, owner-private home so
+                            # the host-authored child transcript can be collected
+                            # before that home is deleted. The sole enabled tool is
+                            # Claude's native child boundary.
+                            "--setting-sources=",
+                            "--plugin-dir",
+                            str(self.plugin_dir),
+                            "--tools=Agent",
+                            "--disallowedTools",
+                            "mcp__*",
+                            "--strict-mcp-config",
+                            "--permission-mode",
+                            "dontAsk",
+                        ],
+                        timeout=timeout,
+                        cwd=workdir,
+                        env=env,
+                        input_text=task,
+                        max_output_chars=256_000,
+                    )
             finally:
                 invocation = _finish_private_host_invocation(invocation_start)
             collection_reason = "collected"
@@ -4159,6 +4322,10 @@ def backend(  # noqa: C901 - one bounded validation and backend construction bou
         raise ValueError("unsupported canary parent-recruiter transport")
     if host == "codex":
         original_home = Path(source_env.get("CODEX_HOME") or (home / ".codex")).expanduser()
+        from agency_runtime.core.codex_activation_verification import (
+            CODEX_HOOK_EVENT_DIAGNOSTICS_ENV,
+        )
+
         return SafeCodexCanaryBackend(
             executable=executable,
             db_path=db_path,
@@ -4177,6 +4344,13 @@ def backend(  # noqa: C901 - one bounded validation and backend construction bou
             child_judge_transport=child_judge_transport,
             child_judge_auth_source=child_judge_auth_source,
             credential_environment_names=credential_environment_names,
+            # Content-free hook-stage markers are an operator-enabled
+            # diagnostic (AR-334): exporting the variable when launching the
+            # canary CLI forwards it to the restricted child hooks, and the
+            # backend requires the existing Store before honoring it.
+            hook_event_diagnostics=(
+                source_env.get(CODEX_HOOK_EVENT_DIAGNOSTICS_ENV) == "1" and require_existing_store
+            ),
         )
 
     original_home = Path(source_env.get("CLAUDE_CONFIG_DIR") or (home / ".claude")).expanduser()

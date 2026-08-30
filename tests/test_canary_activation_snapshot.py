@@ -805,12 +805,24 @@ def test_restricted_codex_child_hook_resolves_one_host_lineage_bound_parent(
             "agent_transcript_path": str(artifact),
         }
     ) == (_CODEX_LINEAGE_PARENT, "digest-trace")
+    # Codex 0.151 ships no transcript-path hints: the sole child-named
+    # canonical rollout is derivable, so a hint-free SubagentStop still joins
+    # (AR-334); two same-child candidates stay an unresolvable ambiguity.
+    assert bridge._restricted_codex_activation_child_parent_scope(
+        {**payload, "hook_event_name": "SubagentStop"}
+    ) == (_CODEX_LINEAGE_PARENT, "digest-trace")
+    decoy_day = root / "2026" / "01" / "01"
+    decoy_day.mkdir(parents=True)
+    decoy = decoy_day / f"rollout-2026-01-01T00-00-00-{_CODEX_LINEAGE_CHILD}.jsonl"
+    decoy.write_text("{}\n", encoding="utf-8")
     assert (
         bridge._restricted_codex_activation_child_parent_scope(
             {**payload, "hook_event_name": "SubagentStop"}
         )
         is None
     )
+    assert bridge._restricted_child_join_refusal == "child_artifact_unresolved"
+    decoy.unlink()
     assert (
         bridge._restricted_codex_activation_child_parent_scope(
             {**payload, "session_id": _CODEX_LINEAGE_WINDOW}

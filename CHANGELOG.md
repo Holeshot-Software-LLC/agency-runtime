@@ -3,7 +3,7 @@ title: "Changelog"
 status: active
 category: release
 created: 2026-07-10
-updated: 2026-08-29
+updated: 2026-08-30
 tags: [release, changelog]
 related:
   - docs/RELEASE_CHECKLIST.md
@@ -23,6 +23,10 @@ related:
   - docs/roadmap/issue-AR-326-admit-terminal-codex-host-artifact-collection.md
   - docs/roadmap/issue-AR-328-seal-hermes-install-tree.md
   - docs/roadmap/issue-AR-329-freeze-codex-inspector-bootstrap-as-persistent-input.md
+  - docs/roadmap/issue-AR-331-align-plan-policy-discovery-inventory-with-deterministic-oracle.md
+  - docs/roadmap/issue-AR-332-pin-private-umask-for-canary-child-launches.md
+  - docs/roadmap/issue-AR-333-report-unsupported-codex-isolated-agency-canary.md
+  - docs/roadmap/issue-AR-334-support-codex-0151-collaboration-and-hook-contract.md
   - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
   - docs/decisions/0178-project-config-declared-credentials-into-tool-reduced-canaries.md
   - docs/decisions/0181-use-litellm-aliases-as-host-inference-control-plane.md
@@ -53,6 +57,22 @@ changes rather than duplicating every commit.
 ## Unreleased
 
 ### Added
+
+- `agency battery` runs the change-triggered harness canary battery
+  (AR-337): per-harness version fingerprints gate the run, claude and codex
+  re-prove through their canary modes (codex attended-trust loss reported
+  as the distinct `attended_trust_required` outcome), hermes and openclaw
+  through staffing-complete ordinary checks, install trees are scanned
+  content-free for writable-permission regressions without unattended
+  remediation, receipts are sealed privately, and doctor surfaces the last
+  outcome per harness. `--baseline` adopts current versions as the proven
+  reference without running.
+- `agency battery --install-service` arms the owner-approved trigger
+  mechanism: a marker-owned refreshed shim plus three systemd-user units
+  (oneshot service, a path unit watching the resolved harness install
+  roots, and a persistent daily sweep timer), refusing foreign-unit
+  overwrites, seeding the baseline, and recording an ownership manifest;
+  `--uninstall-service` removes only marker-owned files (AR-337).
 
 - `agency install --production-container --config <path>` now accepts one exact
   validated Agency configuration and performs a fail-closed dedicated-container
@@ -202,6 +222,53 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
+- The restricted Codex activation child join survives the codex-cli 0.151 hook
+  contract: missing `transcript_path`/`agent_transcript_path` hints fall back
+  to the sole child-named rollout under the canonical sessions root, the
+  payload `session_id` is accepted under both the 0.150 parent-identity and
+  0.151 child-self-identity semantics with any third identity still refused,
+  every declined join records a content-free refusal slug, and
+  `AGENCY_CODEX_HOOK_EVENT_DIAGNOSTICS=1` names the declining branch (AR-334).
+- The restricted join absorbs the SubagentStart rollout-flush race with two
+  short bounded re-reads of the canonical child artifact before declining, and
+  the diagnostics-armed restricted canary now writes the join's content-free
+  outcome (payload field names, refusal slug, agent-type admission) to a
+  private host-side sink surfaced on the canary record as
+  `hook_join_diagnostics` — codex 0.151 swallows hook stderr and encrypts
+  hook stdout, so no host-observable channel existed for it (AR-334).
+- The restricted Codex activation canary works on the codex-cli 0.151
+  exec contract, which never emits `SubagentStart` and host-encrypts the
+  inter-agent channel: the recognized canary spawn stays with the
+  restricted flow at `PreToolUse`, the child-bound staffing decision is
+  created at the `SubagentStop` join, and child delivery verifies through
+  the host-encrypted task-delivery grade — byte equality between the
+  parent's attested spawn payload and the child's sole pre-speech
+  `NEW_TASK` ciphertext, bound by the same one-use atomic consumer as the
+  v6 plaintext path (AR-334, ADR-0194).
+- The restricted canary child dispatch inherits the parent's proven route:
+  the child judge infers over candidates scoped to the dispatched team
+  instead of re-sampling the open pool against the fixed code-reviewer
+  acceptance, the canary spawn recognizer carries bounded additive key
+  tolerance, and the diagnostics sink records the PreToolUse spawn-gate
+  and stop-staffing outcomes (AR-334, ADR-0194).
+- The team-scoped canary child staffing commits again: the routing-authority
+  context fingerprint is computed over the unscoped eligible catalog before
+  team scoping, so the guarded commit re-check hashes the same input
+  instead of deterministically refusing with
+  `native_child_routing_state_changed` (AR-334, ADR-0194).
+- Host-canary child launches now run under a pinned private `umask 077` on
+  POSIX hosts, so strict child-artifact trust no longer depends on the
+  invoking shell's umask (AR-332).
+- The isolated-profile Codex agency canary no longer fails before launch on
+  the restricted host-delivery contract: collection is gated on
+  current-profile scope and the isolated path runs plainly with the stable
+  reason `unsupported_profile_scope` (AR-333).
+- The plan policy's codebase-discovery inventory admits the deterministic
+  oracle's read-only `review-report` discovery units, the oracle emits the
+  same discovery predecessor for security-typed repository mutations, and the
+  repair guidance names an earlier read-only discovery unit in both admitted
+  built-in domains, so the oracle's repository-security plans pass the policy
+  they model (AR-331).
 - Codex children spawned by CLI releases newer than the newest proven contract
   (0.150.1) are no longer orphaned on version identity alone: shape-compatible
   child metadata is admitted under that contract with bounded additive

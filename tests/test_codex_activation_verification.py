@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import copy
 import io
+import json
 import os
 from datetime import datetime, timezone
 from hashlib import sha256
@@ -950,3 +951,526 @@ def test_exact_codex_subagent_start_staffs_the_real_child_uuid(
             "additionalContext": "[AGENCY INFERENCE TEAM v6]\nexact delivery",
         }
     }
+
+
+def _restricted_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("AGENCY_CANARY_MODE", "1")
+    monkeypatch.setenv("AGENCY_CANARY_REQUIRE_EXISTING_STORE", "1")
+    monkeypatch.delenv("AGENCY_CODEX_ACTIVATION_QUERY_HASH", raising=False)
+
+
+class _NoOpenTraceStore:
+    def get_open_traces_for_session(self, _session_id: str) -> list[str]:
+        return []
+
+
+def test_restricted_child_join_derives_artifact_when_hint_missing(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # AR-334: codex 0.151 ships no transcript path in the SubagentStart
+    # payload; the sole child-named artifact under the canonical root is the
+    # derivable fallback and the fail-closed parser stays the trust anchor.
+    _restricted_env(monkeypatch)
+    child_id = "01a04f93-7d59-75c1-a813-c3479e11cc16"
+    parent_id = "01a04f92-e63c-76a2-9147-ee0636137875"
+    root = tmp_path / "sessions"
+    day = root / "2026" / "08" / "30"
+    day.mkdir(parents=True)
+    artifact = day / f"rollout-2026-08-30T00-00-00-{child_id}.jsonl"
+    artifact.write_text("{}\n", encoding="utf-8")
+    seen: dict[str, Any] = {}
+
+    def fake_parser(path: Any, *, child_id: str, cwd: Any, root: Any = None) -> str:
+        seen["path"] = str(path)
+        seen["child"] = child_id
+        return parent_id
+
+    monkeypatch.setattr(
+        "agency_runtime.core.child_delivery_evidence.default_child_artifact_root",
+        lambda _host: root,
+    )
+    monkeypatch.setattr(
+        "agency_runtime.core.child_delivery_evidence.codex_v1491_child_parent_session",
+        fake_parser,
+    )
+    bridge = hooks.HookBridge(  # type: ignore[arg-type]
+        "codex",
+        store=_NoOpenTraceStore(),
+        _master={"enabled": True},
+    )
+
+    scope = bridge._restricted_codex_activation_child_parent_scope(
+        {
+            "hook_event_name": "SubagentStart",
+            "session_id": child_id,
+            "agent_id": child_id,
+            "cwd": str(tmp_path),
+        }
+    )
+
+    assert scope is None
+    assert seen["path"] == str(artifact)
+    assert seen["child"] == child_id
+    assert bridge._restricted_child_join_refusal == "parent_trace_ambiguous"
+
+
+def test_restricted_child_join_accepts_both_session_semantics(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # 0.150 SubagentStart carried the parent session; 0.151 carries the
+    # child's own session. Both must reach the parent-trace stage, while a
+    # third identity stays a mismatch.
+    _restricted_env(monkeypatch)
+    child_id = "01a04f93-7d59-75c1-a813-c3479e11cc16"
+    parent_id = "01a04f92-e63c-76a2-9147-ee0636137875"
+    other_id = "01a04f92-0000-7000-8000-000000000001"
+    monkeypatch.setattr(
+        "agency_runtime.core.child_delivery_evidence.codex_v1491_child_parent_session",
+        lambda _path, *, child_id, cwd, root=None: parent_id,
+    )
+    bridge = hooks.HookBridge(  # type: ignore[arg-type]
+        "codex",
+        store=_NoOpenTraceStore(),
+        _master={"enabled": True},
+    )
+
+    outcomes: dict[str, str] = {}
+    for label, session_value in (
+        ("parent-session", parent_id),
+        ("child-session", child_id),
+        ("third-party", other_id),
+    ):
+        scope = bridge._restricted_codex_activation_child_parent_scope(
+            {
+                "hook_event_name": "SubagentStart",
+                "session_id": session_value,
+                "agent_id": child_id,
+                "cwd": str(tmp_path),
+                "transcript_path": str(tmp_path / "rollout.jsonl"),
+            }
+        )
+        assert scope is None
+        outcomes[label] = bridge._restricted_child_join_refusal
+
+    assert outcomes["parent-session"] == "parent_trace_ambiguous"
+    assert outcomes["child-session"] == "parent_trace_ambiguous"
+    assert outcomes["third-party"] == "parent_session_mismatch"
+
+
+def test_unstaffed_codex_identity_names_the_join_refusal(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _restricted_env(monkeypatch)
+    child_id = "11111111-1111-4111-8111-111111111111"
+
+    class StartStore:
+        def record_native_child_started(self, **kwargs: Any) -> dict[str, Any]:
+            return dict(kwargs)
+
+    def declining_scope(self: Any, _payload: Any) -> None:
+        self._restricted_child_join_refusal = "parent_snapshot_contract_mismatch"
+        return None
+
+    monkeypatch.setattr(
+        hooks.HookBridge,
+        "_restricted_codex_activation_child_parent_scope",
+        declining_scope,
+    )
+    response = hooks.HookBridge(  # type: ignore[arg-type]
+        "codex",
+        store=StartStore(),
+        _master={"enabled": True},
+    ).handle(
+        {
+            "hook_event_name": "SubagentStart",
+            "session_id": child_id,
+            "turn_id": child_id,
+            "agent_id": child_id,
+            "agent_type": "default",
+        }
+    )
+
+    context = response["hookSpecificOutput"]["additionalContext"]
+    assert 'restricted_join_refusal="parent_snapshot_contract_mismatch"' in context
+
+
+def test_declined_join_writes_content_free_diagnostic_to_armed_sink(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # AR-334: codex 0.151 swallows hook stderr and encrypts hook stdout, so
+    # the armed diagnostics sink is the only host-observable record of which
+    # branch declined the restricted join.
+    _restricted_env(monkeypatch)
+    sink = tmp_path / "agency-hook-join-diagnostics.jsonl"
+    monkeypatch.setenv("AGENCY_CODEX_HOOK_EVENT_DIAGNOSTICS", "1")
+    monkeypatch.setenv("AGENCY_CODEX_HOOK_DIAGNOSTICS_PATH", str(sink))
+
+    class StartStore:
+        def record_native_child_started(self, **kwargs: Any) -> dict[str, Any]:
+            return dict(kwargs)
+
+    bridge = hooks.HookBridge(  # type: ignore[arg-type]
+        "codex",
+        store=StartStore(),
+        _master={"enabled": True},
+    )
+    bridge._handle_codex_subagent_start(
+        {
+            "hook_event_name": "SubagentStart",
+            "session_id": "11111111-1111-4111-8111-111111111111",
+            "turn_id": "11111111-1111-4111-8111-111111111111",
+            "agent_type": "default",
+            "cwd": str(tmp_path),
+        }
+    )
+
+    lines = sink.read_text(encoding="ascii").splitlines()
+    assert len(lines) == 1
+    entry = json.loads(lines[0])
+    assert entry["event"] == "SubagentStart"
+    assert entry["joined"] is False
+    assert entry["refusal"] == "child_correlation_invalid"
+    assert entry["agent_type_admitted"] is True
+    assert entry["fields"] == [
+        "agent_type",
+        "cwd",
+        "hook_event_name",
+        "session_id",
+        "turn_id",
+    ]
+
+
+def test_join_diagnostic_sink_stays_silent_without_diagnostics_env(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _restricted_env(monkeypatch)
+    sink = tmp_path / "agency-hook-join-diagnostics.jsonl"
+    monkeypatch.delenv("AGENCY_CODEX_HOOK_EVENT_DIAGNOSTICS", raising=False)
+    monkeypatch.setenv("AGENCY_CODEX_HOOK_DIAGNOSTICS_PATH", str(sink))
+
+    class StartStore:
+        def record_native_child_started(self, **kwargs: Any) -> dict[str, Any]:
+            return dict(kwargs)
+
+    hooks.HookBridge(  # type: ignore[arg-type]
+        "codex",
+        store=StartStore(),
+        _master={"enabled": True},
+    )._handle_codex_subagent_start(
+        {
+            "hook_event_name": "SubagentStart",
+            "session_id": "11111111-1111-4111-8111-111111111111",
+            "turn_id": "11111111-1111-4111-8111-111111111111",
+            "agent_type": "default",
+            "agent_id": "11111111-1111-4111-8111-111111111111",
+            "cwd": str(tmp_path),
+        }
+    )
+
+    assert not sink.exists()
+
+
+def test_sanitize_codex_hook_join_diagnostics_projects_only_exact_entries() -> None:
+    from agency_runtime.core.codex_activation_verification import (
+        sanitize_codex_hook_join_diagnostics,
+    )
+
+    valid = (
+        '{"event": "SubagentStart", "fields": ["cwd", "session_id"],'
+        ' "refusal": "parent_session_mismatch", "joined": false,'
+        ' "agent_type_admitted": true}'
+    )
+    lines = "\n".join(
+        [
+            "not json",
+            '{"event": "SubagentStart"}',
+            '{"event": "Bad Event!", "fields": [], "refusal": "", "joined": true,'
+            ' "agent_type_admitted": true}',
+            '{"event": "SubagentStart", "fields": ["x"], "refusal": "Invalid-Slug",'
+            ' "joined": true, "agent_type_admitted": true}',
+            valid,
+        ]
+    )
+
+    entries = sanitize_codex_hook_join_diagnostics(lines)
+
+    assert entries == [
+        {
+            "event": "SubagentStart",
+            "fields": ["cwd", "session_id"],
+            "refusal": "parent_session_mismatch",
+            "joined": False,
+            "agent_type_admitted": True,
+        }
+    ]
+    assert sanitize_codex_hook_join_diagnostics(None) == []
+
+
+def test_restricted_join_artifact_parent_retries_late_rollout_flush(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # The hook can outrun the host's rollout flush at SubagentStart; the
+    # bounded re-read admits the file once it lands without weakening the
+    # fail-closed parser.
+    _restricted_env(monkeypatch)
+    child_id = "01a04f93-7d59-75c1-a813-c3479e11cc16"
+    parent_id = "01a04f92-e63c-76a2-9147-ee0636137875"
+    artifact = tmp_path / f"rollout-2026-08-30T00-00-00-{child_id}.jsonl"
+    attempts: list[int] = []
+    sleeps: list[float] = []
+
+    def late_artifact(self: Any, _child: str) -> str | None:
+        attempts.append(1)
+        return str(artifact) if len(attempts) >= 3 else None
+
+    monkeypatch.setattr(hooks.HookBridge, "_sole_codex_child_artifact", late_artifact)
+    monkeypatch.setattr(hooks.time, "sleep", lambda value: sleeps.append(value))
+    monkeypatch.setattr(
+        "agency_runtime.core.child_delivery_evidence.codex_v1491_child_parent_session",
+        lambda _path, *, child_id, cwd, root=None: parent_id,
+    )
+    bridge = hooks.HookBridge(  # type: ignore[arg-type]
+        "codex",
+        store=_NoOpenTraceStore(),
+        _master={"enabled": True},
+    )
+
+    parent = bridge._restricted_join_artifact_parent(
+        {},
+        hint_field="transcript_path",
+        child_session_id=child_id,
+        cwd=str(tmp_path),
+    )
+
+    assert parent == parent_id
+    assert len(attempts) == 3
+    assert sleeps == [0.2, 0.2]
+
+
+def test_restricted_spawn_input_admits_hook_decrypted_canary_plaintext() -> None:
+    # Codex 0.151 hands the PreToolUse hook the decrypted channel payload;
+    # only the byte-exact fixed canary work unit is admitted in that form
+    # (ADR-0194), beside the unchanged 0.150 opaque shape.
+    base = {
+        "agent_type": "Code Reviewer",
+        "fork_turns": "none",
+        "task_name": "code_reviewer",
+    }
+    admit = hooks.HookBridge._restricted_codex_spawn_input
+    assert admit({**base, "message": CODEX_ACTIVATION_CANARY_WORK_UNIT}) is True
+    assert admit({**base, "message": CODEX_ACTIVATION_CANARY_WORK_UNIT + " "}) is False
+    assert admit({**base, "message": "review this repository please"}) is False
+    # ADR-0193 bounded additive tolerance: a few lowercase unknown keys are
+    # admitted around exact known values; anything beyond the bound is not.
+    assert admit({**base, "message": CODEX_ACTIVATION_CANARY_WORK_UNIT, "extra": "x"}) is True
+    assert (
+        admit(
+            {
+                **base,
+                "message": CODEX_ACTIVATION_CANARY_WORK_UNIT,
+                "a_one": 1,
+                "b_two": 2,
+                "c_three": 3,
+                "d_four": 4,
+                "e_five": 5,
+            }
+        )
+        is False
+    )
+    assert admit({**base, "message": CODEX_ACTIVATION_CANARY_WORK_UNIT, "BadKey": "x"}) is False
+    assert (
+        admit({**base, "message": CODEX_ACTIVATION_CANARY_WORK_UNIT, "fork_turns": "all"}) is False
+    )
+
+
+def test_pre_tool_leaves_recognized_canary_spawn_to_restricted_flow(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Inside the proven restricted parent scope, the recognized canary spawn
+    # must not be consumed by ordinary plaintext staffing on any admitted
+    # contract; the hook stays silent and non-blocking (ADR-0194).
+    def scope(self: Any, _payload: Any) -> tuple[str, str]:
+        return ("11111111-1111-7111-8111-111111111111", "trace-1")
+
+    def forbidden(self: Any, **_kwargs: Any) -> dict[str, Any]:
+        raise AssertionError("ordinary plaintext staffing must not run")
+
+    monkeypatch.setattr(
+        hooks.HookBridge,
+        "_restricted_codex_activation_parent_scope",
+        scope,
+    )
+    monkeypatch.setattr(hooks.HookBridge, "_staff_plaintext_native_child", forbidden)
+    bridge = hooks.HookBridge(  # type: ignore[arg-type]
+        "codex",
+        store=object(),
+        _master={"enabled": True},
+    )
+
+    response = bridge._handle_native_child_pre_tool_use(
+        {
+            "hook_event_name": "PreToolUse",
+            "tool_name": "functions.collaboration.spawn_agent",
+            "tool_input": {
+                "agent_type": "Code Reviewer",
+                "fork_turns": "none",
+                "task_name": "code_reviewer",
+                "message": CODEX_ACTIVATION_CANARY_WORK_UNIT,
+            },
+        }
+    )
+
+    assert response == {}
+
+
+def test_codex_stop_join_staffs_the_canary_child_when_no_route_exists(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Codex 0.151 exec never emits SubagentStart, so the stop join is the
+    # first hook carrying the real child UUID; the child-bound canary
+    # staffing decision is created there exactly once (ADR-0194).
+    child_id = "01a04f93-7d59-75c1-a813-c3479e11cc16"
+    parent_id = "01a04f92-e63c-76a2-9147-ee0636137875"
+    staffed: list[str] = []
+
+    def scope(self: Any, _payload: Any) -> tuple[str, str]:
+        return (parent_id, "trace-1")
+
+    def staff(self: Any, *, session_id: str, trace_id: str, identity: Any) -> str:
+        staffed.append(identity.worker_id)
+        return ""
+
+    class StopStore:
+        def record_native_child_stopped(self, **kwargs: Any) -> dict[str, Any]:
+            return dict(kwargs)
+
+    monkeypatch.setattr(
+        hooks.HookBridge,
+        "_restricted_codex_activation_child_parent_scope",
+        scope,
+    )
+    monkeypatch.setattr(
+        hooks.HookBridge,
+        "_staff_restricted_codex_activation_child",
+        staff,
+    )
+    routes: list[object] = [None, {"decision_id": "existing"}]
+    monkeypatch.setattr(
+        "agency_runtime.core.child_delivery_evidence._restricted_codex_canary_route",
+        lambda *_args, **_kwargs: routes.pop(0),
+    )
+    monkeypatch.setattr(
+        "agency_runtime.core.child_delivery_evidence."
+        "_collect_restricted_codex_canary_child_delivery",
+        lambda *_args, **_kwargs: None,
+    )
+    bridge = hooks.HookBridge(  # type: ignore[arg-type]
+        "codex",
+        store=StopStore(),
+        _master={"enabled": True},
+    )
+    payload = {
+        "hook_event_name": "SubagentStop",
+        "session_id": child_id,
+        "agent_id": child_id,
+        "agent_type": "Code Reviewer",
+        "cwd": "/tmp",
+    }
+
+    bridge._handle_codex_subagent_stop(payload)
+    assert staffed == [child_id]
+
+    bridge._handle_codex_subagent_stop(payload)
+    assert staffed == [child_id]
+
+
+def test_restricted_stop_staffing_scopes_candidates_to_the_parent_route(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # ADR-0194: the delegated canary unit inherits the parent's proven team;
+    # the child judge still infers, but only over the dispatched specialists.
+    captured: dict[str, Any] = {}
+
+    def fake_staff(store: Any, **kwargs: Any) -> Any:
+        captured.update(kwargs)
+        raise RuntimeError("stop after capture")
+
+    monkeypatch.setattr(
+        "agency_runtime.core.native_child_staffing.staff_native_child",
+        fake_staff,
+    )
+    bridge = hooks.HookBridge(  # type: ignore[arg-type]
+        "codex",
+        store=object(),
+        _master={"enabled": True},
+    )
+    from agency_runtime.core.native_child_activation import NativeChildRunIdentity
+
+    identity = NativeChildRunIdentity(
+        worker_kind="generic-worker",
+        worker_id="01a04f93-7d59-75c1-a813-c3479e11cc16",
+        native_run_id="codex-agent:01a04f93-7d59-75c1-a813-c3479e11cc16",
+    )
+    context = bridge._staff_restricted_codex_activation_child(
+        session_id="01a04f92-e63c-76a2-9147-ee0636137875",
+        trace_id="trace-1",
+        identity=identity,
+    )
+
+    assert context == ""
+    assert captured.get("team_scope") == ("code-reviewer",)
+    assert captured.get("binding_kind") == "child_id"
+
+
+def test_pre_tool_spawn_gate_records_content_free_census(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # The 2026-08-30 live isolation showed the spawn gate silently missing
+    # while PostToolUse matched; the sink census makes the gate observable.
+    _restricted_env(monkeypatch)
+    sink = tmp_path / "agency-hook-join-diagnostics.jsonl"
+    monkeypatch.setenv("AGENCY_CODEX_HOOK_EVENT_DIAGNOSTICS", "1")
+    monkeypatch.setenv("AGENCY_CODEX_HOOK_DIAGNOSTICS_PATH", str(sink))
+    monkeypatch.setattr(
+        hooks.HookBridge,
+        "_restricted_codex_activation_parent_scope",
+        lambda self, _payload: None,
+    )
+    monkeypatch.setattr(
+        hooks.HookBridge,
+        "_record_native_child_unstaffed",
+        lambda self, **_kwargs: None,
+    )
+    bridge = hooks.HookBridge(  # type: ignore[arg-type]
+        "codex",
+        store=object(),
+        _master={"enabled": True},
+    )
+
+    bridge._handle_native_child_pre_tool_use(
+        {
+            "hook_event_name": "PreToolUse",
+            "tool_name": "functions.collaboration.spawn_agent",
+            "tool_input": {
+                "agent_type": "Code Reviewer",
+                "fork_turns": "none",
+                "task_name": "code_reviewer",
+                "message": CODEX_ACTIVATION_CANARY_WORK_UNIT,
+                "surprise_key": "ignored",
+            },
+        }
+    )
+
+    lines = [json.loads(line) for line in sink.read_text(encoding="ascii").splitlines()]
+    spawn_lines = [line for line in lines if line["event"] == "PreToolUseSpawn"]
+    assert len(spawn_lines) == 1
+    assert spawn_lines[0]["refusal"] == "spawn_scope_unmatched"
+    assert spawn_lines[0]["joined"] is False
+    assert spawn_lines[0]["agent_type_admitted"] is True
+    assert "surprise_key" in spawn_lines[0]["fields"]
