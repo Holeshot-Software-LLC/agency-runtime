@@ -213,6 +213,13 @@ changes rather than duplicating every commit.
   0.151 child-self-identity semantics with any third identity still refused,
   every declined join records a content-free refusal slug, and
   `AGENCY_CODEX_HOOK_EVENT_DIAGNOSTICS=1` names the declining branch (AR-334).
+- The restricted join absorbs the SubagentStart rollout-flush race with two
+  short bounded re-reads of the canonical child artifact before declining, and
+  the diagnostics-armed restricted canary now writes the join's content-free
+  outcome (payload field names, refusal slug, agent-type admission) to a
+  private host-side sink surfaced on the canary record as
+  `hook_join_diagnostics` — codex 0.151 swallows hook stderr and encrypts
+  hook stdout, so no host-observable channel existed for it (AR-334).
 - Host-canary child launches now run under a pinned private `umask 077` on
   POSIX hosts, so strict child-artifact trust no longer depends on the
   invoking shell's umask (AR-332).

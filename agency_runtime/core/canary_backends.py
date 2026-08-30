@@ -92,6 +92,7 @@ _CODEX_STDOUT_HOST_NOTICE_BY_MESSAGE = {
     "to leave more room for the rest.": "skill_catalog_descriptions_shortened",
 }
 _CODEX_ROLLOUT_CONTRACTS = frozenset({"canary", "product"})
+_CODEX_HOOK_JOIN_DIAGNOSTICS_NAME = "agency-hook-join-diagnostics.jsonl"
 _CODEX_PRODUCT_COLLABORATION_SCHEMA = "agency.codex-product-collaboration.v2"
 _CODEX_PRODUCT_MAX_SPAWNS = 16
 _CODEX_PRODUCT_MAX_WAITS = 64
@@ -3355,9 +3356,15 @@ class SafeCodexCanaryBackend:
             else facade.CODEX_NATIVE_ONLY_CANARY_EXEC_OPTIONS
         )
 
-    def _configure_canary_environment(self, env: dict[str, str]) -> None:
+    def _configure_canary_environment(
+        self,
+        env: dict[str, str],
+        *,
+        workdir: str | None = None,
+    ) -> None:
         from agency_runtime.core.codex_activation_verification import (
             CODEX_ACTIVATION_EXISTING_STORE_ENV,
+            CODEX_HOOK_DIAGNOSTICS_PATH_ENV,
             CODEX_HOOK_EVENT_DIAGNOSTICS_ENV,
         )
 
@@ -3372,6 +3379,39 @@ class SafeCodexCanaryBackend:
             if not self.require_existing_store:
                 raise ValueError("hook event diagnostics require the existing Agency store")
             env[CODEX_HOOK_EVENT_DIAGNOSTICS_ENV] = "1"
+            if workdir:
+                # Codex 0.151 swallows hook stderr and encrypts hook stdout,
+                # so the join's content-free diagnostics need a host-side
+                # sink inside this invocation's private workspace (AR-334).
+                env[CODEX_HOOK_DIAGNOSTICS_PATH_ENV] = str(
+                    Path(workdir) / _CODEX_HOOK_JOIN_DIAGNOSTICS_NAME
+                )
+
+    def _collect_hook_join_diagnostics(
+        self,
+        record: dict[str, Any],
+        *,
+        workdir: str,
+    ) -> None:
+        """Surface the sink's sanitized join-diagnostic entries on the record."""
+
+        if not self.hook_event_diagnostics:
+            return
+        from agency_runtime.core.codex_activation_verification import (
+            MAX_CODEX_HOOK_JOIN_DIAGNOSTIC_BYTES,
+            sanitize_codex_hook_join_diagnostics,
+        )
+
+        sink = Path(workdir) / _CODEX_HOOK_JOIN_DIAGNOSTICS_NAME
+        try:
+            raw = sink.read_text(encoding="ascii", errors="replace")[
+                :MAX_CODEX_HOOK_JOIN_DIAGNOSTIC_BYTES
+            ]
+        except OSError:
+            return
+        entries = sanitize_codex_hook_join_diagnostics(raw)
+        if entries:
+            record["hook_join_diagnostics"] = entries
 
     def _project_activation_query_hash(self, env: dict[str, str], *, task: str) -> None:
         """Bind the restricted child hook to this exact canary invocation."""
@@ -3645,7 +3685,7 @@ class SafeCodexCanaryBackend:
                 runtime_home=None,
                 auth_source=self.child_judge_auth_source,
             )
-            self._configure_canary_environment(env)
+            self._configure_canary_environment(env, workdir=workdir)
             self._project_activation_query_hash(env, task=task)
             trust_failure = self._verify_current_profile_hook_trust(
                 workdir=workdir,
@@ -3676,23 +3716,22 @@ class SafeCodexCanaryBackend:
                     input_text=task,
                     max_output_chars=256_000,
                 )
-            return self._record_trust_mode(
-                facade._codex_canary_record(
-                    result,
-                    profile_scope=self.profile_scope,
-                    rollout_root=(
-                        self.auth_source.parent / "sessions"
-                        if self.require_exact_activation_rollout
-                        else None
-                    ),
-                    rollout_not_before=rollout_not_before,
-                    rollout_not_after=(
-                        facade.time.time() if self.require_exact_activation_rollout else None
-                    ),
-                    rollout_contract=self.rollout_contract,
+            record = facade._codex_canary_record(
+                result,
+                profile_scope=self.profile_scope,
+                rollout_root=(
+                    self.auth_source.parent / "sessions"
+                    if self.require_exact_activation_rollout
+                    else None
                 ),
-                invocation_attempted=True,
+                rollout_not_before=rollout_not_before,
+                rollout_not_after=(
+                    facade.time.time() if self.require_exact_activation_rollout else None
+                ),
+                rollout_contract=self.rollout_contract,
             )
+            self._collect_hook_join_diagnostics(record, workdir=workdir)
+            return self._record_trust_mode(record, invocation_attempted=True)
         with private_temporary_directory(prefix="codex-home") as runtime_home:
             codex_home = facade._prepare_private_host_home(
                 runtime_home,

@@ -1900,3 +1900,81 @@ def test_private_child_umask_applies_and_restores():
         assert after == baseline
     finally:
         os.umask(baseline)
+
+
+def test_collect_hook_join_diagnostics_surfaces_sanitized_sink(tmp_path, monkeypatch):
+    # AR-334: the diagnostics-armed backend reads the private sink the hook
+    # wrote and surfaces only sanitized content-free entries on the record.
+    from agency_runtime.core.canary_backends import SafeCodexCanaryBackend
+
+    backend = SafeCodexCanaryBackend(
+        executable="/bin/false",
+        db_path=tmp_path / "agency.db",
+        timeout=5.0,
+        marketplace=tmp_path,
+        auth_source=tmp_path / "auth.json",
+        process_runner=lambda *a, **k: None,
+        source_env={},
+        profile_scope="current-profile",
+        require_existing_store=True,
+        hook_event_diagnostics=True,
+    )
+    sink = tmp_path / "agency-hook-join-diagnostics.jsonl"
+    sink.write_text(
+        '{"event": "SubagentStart", "fields": ["cwd"], "refusal": "parent_session_mismatch",'
+        ' "joined": false, "agent_type_admitted": true}\n'
+        "garbage\n",
+        encoding="ascii",
+    )
+    record: dict = {}
+
+    backend._collect_hook_join_diagnostics(record, workdir=str(tmp_path))
+
+    assert record["hook_join_diagnostics"] == [
+        {
+            "event": "SubagentStart",
+            "fields": ["cwd"],
+            "refusal": "parent_session_mismatch",
+            "joined": False,
+            "agent_type_admitted": True,
+        }
+    ]
+
+    quiet = SafeCodexCanaryBackend(
+        executable="/bin/false",
+        db_path=tmp_path / "agency.db",
+        timeout=5.0,
+        marketplace=tmp_path,
+        auth_source=tmp_path / "auth.json",
+        process_runner=lambda *a, **k: None,
+        source_env={},
+        profile_scope="current-profile",
+    )
+    unarmed: dict = {}
+    quiet._collect_hook_join_diagnostics(unarmed, workdir=str(tmp_path))
+    assert "hook_join_diagnostics" not in unarmed
+
+
+def test_configure_canary_environment_arms_join_diagnostics_sink(tmp_path):
+    from agency_runtime.core.canary_backends import SafeCodexCanaryBackend
+
+    backend = SafeCodexCanaryBackend(
+        executable="/bin/false",
+        db_path=tmp_path / "agency.db",
+        timeout=5.0,
+        marketplace=tmp_path,
+        auth_source=tmp_path / "auth.json",
+        process_runner=lambda *a, **k: None,
+        source_env={},
+        profile_scope="current-profile",
+        require_existing_store=True,
+        hook_event_diagnostics=True,
+    )
+    env: dict = {}
+
+    backend._configure_canary_environment(env, workdir=str(tmp_path))
+
+    assert env["AGENCY_CODEX_HOOK_EVENT_DIAGNOSTICS"] == "1"
+    assert env["AGENCY_CODEX_HOOK_DIAGNOSTICS_PATH"] == str(
+        tmp_path / "agency-hook-join-diagnostics.jsonl"
+    )

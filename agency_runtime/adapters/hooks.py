@@ -12,6 +12,7 @@ import logging
 import os
 import re
 import sys
+import time
 from contextlib import suppress
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -1372,10 +1373,58 @@ class HookBridge:
         self._record_native_child_lifecycle(payload, event="stopped")
         return {}
 
+    def _emit_restricted_join_diagnostic(
+        self,
+        payload: dict[str, Any],
+        *,
+        joined: bool,
+    ) -> None:
+        """Append one content-free join-diagnostic line to the armed sink.
+
+        Codex 0.151 swallows hook stderr and encrypts hook stdout, so inside
+        the diagnostics-armed restricted canary the join records its outcome —
+        payload field names, the refusal slug, and the agent-type admission —
+        to the backend-owned private sink instead (AR-334). Values never leave
+        the hook; only fixed-vocabulary names and booleans are written.
+        """
+
+        with suppress(Exception):
+            from agency_runtime.core.activation_canary_contract import (
+                CODEX_ACTIVATION_CANARY_NATIVE_AGENT_TYPES,
+            )
+            from agency_runtime.core.codex_activation_verification import (
+                MAX_CODEX_HOOK_JOIN_DIAGNOSTIC_BYTES,
+                codex_hook_join_diagnostics_path,
+            )
+
+            sink = codex_hook_join_diagnostics_path(os.environ)
+            if not sink:
+                return
+            entry = json.dumps(
+                {
+                    "event": str(payload.get("hook_event_name") or ""),
+                    "fields": sorted(str(name) for name in payload)[:32],
+                    "refusal": getattr(self, "_restricted_child_join_refusal", ""),
+                    "joined": joined,
+                    "agent_type_admitted": payload.get("agent_type")
+                    in CODEX_ACTIVATION_CANARY_NATIVE_AGENT_TYPES,
+                },
+                ensure_ascii=True,
+            )
+            flags = os.O_WRONLY | os.O_CREAT | os.O_APPEND
+            flags |= getattr(os, "O_NOFOLLOW", 0)
+            descriptor = os.open(sink, flags, 0o600)
+            try:
+                if os.fstat(descriptor).st_size <= MAX_CODEX_HOOK_JOIN_DIAGNOSTIC_BYTES:
+                    os.write(descriptor, entry.encode("ascii") + b"\n")
+            finally:
+                os.close(descriptor)
+
     def _handle_codex_subagent_start(self, payload: dict[str, Any]) -> dict[str, Any]:
         """Inject one exact canary team or an unstaffed child identity."""
 
         restricted_parent = self._restricted_codex_activation_child_parent_scope(payload)
+        self._emit_restricted_join_diagnostic(payload, joined=restricted_parent is not None)
         if restricted_parent is not None:
             session_id, trace_id = restricted_parent
             try:
@@ -1574,29 +1623,38 @@ class HookBridge:
     ) -> str | None:
         """Derive the artifact-anchored parent session for one canary child."""
 
-        artifact_path = str(payload.get(hint_field) or "").strip() or None
-        if artifact_path is None:
-            artifact_path = self._sole_codex_child_artifact(child_session_id)
-        if artifact_path is None:
-            self._decline_restricted_child_join("child_artifact_unresolved")
-            return None
         from agency_runtime.core.child_delivery_evidence import (
             codex_v1491_child_parent_session,
         )
 
-        try:
-            parent_session_id = codex_v1491_child_parent_session(
-                artifact_path,
-                child_id=child_session_id,
-                cwd=cwd,
-            )
-        except Exception:
-            self._decline_restricted_child_join("child_metadata_unreadable")
-            return None
-        if not parent_session_id:
-            self._decline_restricted_child_join("parent_session_mismatch")
-            return None
-        return parent_session_id
+        hint_path = str(payload.get(hint_field) or "").strip() or None
+        parent_session_id = ""
+        refusal = "child_artifact_unresolved"
+        # The hook can outrun the host's rollout flush: at SubagentStart the
+        # child-named rollout may not yet exist or may not yet carry its
+        # session_meta lineage record. Two short bounded re-reads absorb that
+        # race without weakening the fail-closed parser (AR-334).
+        for attempt in range(3):
+            if attempt:
+                time.sleep(0.2)
+            artifact_path = hint_path or self._sole_codex_child_artifact(child_session_id)
+            if artifact_path is None:
+                refusal = "child_artifact_unresolved"
+                continue
+            try:
+                parent_session_id = codex_v1491_child_parent_session(
+                    artifact_path,
+                    child_id=child_session_id,
+                    cwd=cwd,
+                )
+            except Exception:
+                refusal = "child_metadata_unreadable"
+                continue
+            if parent_session_id:
+                return parent_session_id
+            refusal = "parent_session_mismatch"
+        self._decline_restricted_child_join(refusal)
+        return None
 
     def _restricted_codex_activation_child_parent_scope(
         self,
