@@ -1,6 +1,6 @@
 ---
 title: "AR-333: Report the unsupported Codex isolated-profile agency canary loudly"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-08-29
 updated: 2026-08-30
@@ -57,8 +57,10 @@ readiness report for the same flags says `ready=true`.
   refusing before launch. Readiness `ready=true` for the combination is now
   truthful because the combination executes. A focused test drives a real
   `SafeCodexCanaryBackend` through the collection gate and proves the plain
-  path plus the recorded reason. A live isolated-profile re-run rides the
-  next production install.
+  path plus the recorded reason. Live-proven 2026-08-30 on the `5459794d`
+  install: the isolated-profile agency canary launched a real turn (spawn
+  and accepted finalization) instead of refusing pre-launch
+  (`codex-canary-isolated-5459794d.json`).
 
 ## Approach
 

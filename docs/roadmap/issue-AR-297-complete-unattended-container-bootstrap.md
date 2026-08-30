@@ -1,9 +1,9 @@
 ---
 title: "AR-297: Complete unattended container bootstrap"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-08-25
-updated: 2026-08-29
+updated: 2026-08-30
 tags: [installation, containers, codex, hooks, automation, configuration]
 related:
   - README.md
@@ -3373,3 +3373,31 @@ current-profile canary: the parser and the parent canary snapshot are
 individually proven, yet the child-side delivery join still declines
 (post-hoc unobservable mid-turn state), so `verify-activation` remains
 failing closed; the AR-334 record carries the diagnostics-mode next step.
+
+On 2026-08-30 the codex formality closes. Four bounded iterations
+(PRs #356-#360, runtimes `5459794d` through `f081358d`) isolate and adapt
+the true codex-cli 0.151 exec contract: `SubagentStart` never fires, the
+inter-agent channel is host-encrypted end to end while `PreToolUse`
+observes decrypted plaintext, and the parent's attested spawn ciphertext is
+byte-identical to the child's received `NEW_TASK` payload. ADR-0194 admits
+that channel: the recognized canary spawn stays with the restricted flow at
+`PreToolUse`, the child-bound staffing decision is created at the
+`SubagentStop` join with the child judge scoped to the parent's proven
+team, and delivery verifies by ciphertext byte-equality bound through the
+one-use atomic consumer. Two of the runtime's own defenses caught real
+regressions on the way (a surviving conformance mutant, and the
+routing-authority fingerprint refusing a scoped-catalog hash). The final
+canary passes end to end with the attestation persisted, and
+`agency install --agent codex --verify-activation` exits 0; doctor reports
+the codex adapter `runtime-verified` with hook trust passing. On the same
+`f081358d` install, claude passes the full ordinary bar and its agency
+canary from an ambient umask 002 shell, and hermes and openclaw staff
+completely per their host contracts. The openclaw npm tree's self-update
+regressed to group-writable permissions mid-day (the third recurrence of
+that hazard class) and was re-tightened; a standing scheduled canary
+battery is proposed to the owner as the structural complement to the
+no-pins directive. openclaw/hermes one-shot finalization observability is
+accepted as a recorded limitation of their host contracts (capsule item
+12) rather than a separate tracker, per the owner's direction to log and
+concentrate. AR-297 closes on the retained four-host evidence under
+`~/.agency-runtime/evidence/ar297-live-harness-20260829/`.

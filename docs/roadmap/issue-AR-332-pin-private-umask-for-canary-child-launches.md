@@ -1,6 +1,6 @@
 ---
 title: "AR-332: Pin a private umask for host-canary child launches"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-08-29
 updated: 2026-08-30
@@ -56,8 +56,11 @@ canary then fails on an environmental default the runtime never pinned.
   launch (both codex `exec` sites and the claude `-p` site) in a restored
   POSIX `os.umask(0o077)` scope, a focused regression proves the wrapper
   applies and restores the mask, and troubleshooting documentation names the
-  umask precondition for releases without the pin. The ambient-umask live
-  Claude canary re-run rides the next production install.
+  umask precondition for releases without the pin. Live-proven 2026-08-30:
+  the Claude agency canary passed from a umask 002 shell with delivery
+  `collected` on the `5459794d` install and again on `f081358d`
+  (`claude-canary-ambient-umask-5459794d.json`,
+  `claude-canary-f081358d.json`).
 
 ## Approach
 
@@ -75,7 +78,7 @@ not the guard, is the defect.
 
 ## Acceptance
 
-- [ ] The Claude live canary passes from a shell with umask 002 without a
+- [x] The Claude live canary passes from a shell with umask 002 without a
       wrapper.
 - [x] A focused regression covers the child-launch umask pin (applied and
       restored around the launch sites artifact collection depends on).

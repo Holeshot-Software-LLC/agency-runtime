@@ -1,6 +1,6 @@
 ---
 title: "AR-334: Support Codex 0.151 collaboration and hook contract"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-08-29
 updated: 2026-08-30
@@ -134,6 +134,17 @@ succeeded, the parent spawns exactly one child, and the child completes.
   the sink env vars' fate inside codex 0.151 hook spawning is the open
   question. The next live canary exercises the delivery verifier chain for
   the first time with a committed canary decision.
+- CLOSED 2026-08-30 night on the `f081358d` install after fresh attended
+  trust: the restricted current-profile canary passed end to end
+  (`canary_passed=true`, delivery `collected` under the ADR-0194
+  host-encrypted grade, collaboration projection complete, attestation
+  persisted) and `agency install --agent codex --verify-activation` exits 0
+  with "Codex current-profile activation verified". Doctor reports the codex
+  adapter at `runtime-verified` with hook trust passing. Receipts:
+  `codex-canary-cp-f081358d.json` and `codex-verify-activation-f081358d.stdout`
+  under `~/.agency-runtime/evidence/ar297-live-harness-20260829/`. The
+  diagnostics-sink observability gap remains recorded above as a
+  non-blocking open note.
 
 ## Approach
 
@@ -160,10 +171,10 @@ short-term unblock for AR-297's Codex gates.
 
 ## Acceptance
 
-- [ ] Current-profile activation canary passes on codex-cli 0.151 with
+- [x] Current-profile activation canary passes on codex-cli 0.151 with
       verified child delivery evidence.
 - [x] Version-scoped fixtures from real 0.151 rollouts cover parent and child
       projections.
-- [ ] `agency install --agent codex --verify-activation` exits 0 with a fresh
+- [x] `agency install --agent codex --verify-activation` exits 0 with a fresh
       persisted attestation on 0.151.
 - [x] 0.150 contracts remain green.
