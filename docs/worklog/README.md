@@ -1454,8 +1454,12 @@ This registry connects repository history to the roadmap and to optional detail 
 | `f7b91364` | 2026-08-30 | fix(reliability): harden codex 0.151 child join and canary launch posture | [AR-334](../roadmap/issue-AR-334-support-codex-0151-collaboration-and-hook-contract.md) | Child-join hint fallback and dual session semantics with refusal slugs; umask 077 launch pin (AR-332); isolated codex canary plain path (AR-333); oracle discovery alignment with 167/167 conformance (AR-331) |
 | `5459794d` | 2026-08-30 | Merge pull request #356 from Holeshot-Software-LLC/claude/ar331-334-hardening-batch | null | null |
 | `c9642667` | 2026-08-30 | fix(reliability): record restricted join outcomes and absorb rollout-flush race | [AR-334](../roadmap/issue-AR-334-support-codex-0151-collaboration-and-hook-contract.md) | Private hook-join diagnostics sink surfaced as hook_join_diagnostics; bounded SubagentStart rollout-flush re-reads; live isolation recorded (ordinary-path staffing, verification_refused) |
+| `3b9b20be` | 2026-08-30 | Merge pull request #357 from Holeshot-Software-LLC/claude/ar334-join-diagnostics | null | null |
 | `2db42ce7` | 2026-08-30 | fix(reliability): admit host-encrypted codex canary task delivery | [AR-334](../roadmap/issue-AR-334-support-codex-0151-collaboration-and-hook-contract.md) | ADR-0194: PreToolUse canary-spawn recognition, SubagentStop staffing join, byte-equal ciphertext delivery grade; conformance mutation retargeted, 167/167 |
+| `d812e5d1` | 2026-08-30 | Merge pull request #358 from Holeshot-Software-LLC/claude/ar334-encrypted-channel-delivery | null | null |
 | `2e033084` | 2026-08-30 | fix(reliability): scope restricted canary child staffing to the parent route | [AR-334](../roadmap/issue-AR-334-support-codex-0151-collaboration-and-hook-contract.md) | team_scope narrows child-judge candidates to the parent route; additive spawn recognizer; spawn-gate and stop-staffing sink lines; mutation re-anchored 167/167 |
+| `552a56a3` | 2026-08-30 | Merge pull request #359 from Holeshot-Software-LLC/claude/ar334-encrypted-channel-delivery | null | null |
+| `83877fd0` | 2026-08-30 | fix(reliability): hash routing authority before team scoping | [AR-334](../roadmap/issue-AR-334-support-codex-0151-collaboration-and-hook-contract.md) | Fingerprint over unscoped catalog before team scoping; deterministic state-changed regression fixed with store-backed test |
 <!-- worklog:end -->
 
 ## Provenance notes
