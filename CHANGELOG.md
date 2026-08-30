@@ -67,6 +67,12 @@ changes rather than duplicating every commit.
   remediation, receipts are sealed privately, and doctor surfaces the last
   outcome per harness. `--baseline` adopts current versions as the proven
   reference without running.
+- `agency battery --install-service` arms the owner-approved trigger
+  mechanism: a marker-owned refreshed shim plus three systemd-user units
+  (oneshot service, a path unit watching the resolved harness install
+  roots, and a persistent daily sweep timer), refusing foreign-unit
+  overwrites, seeding the baseline, and recording an ownership manifest;
+  `--uninstall-service` removes only marker-owned files (AR-337).
 
 - `agency install --production-container --config <path>` now accepts one exact
   validated Agency configuration and performs a fail-closed dedicated-container

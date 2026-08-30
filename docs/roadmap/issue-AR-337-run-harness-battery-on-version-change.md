@@ -82,6 +82,18 @@ ordinary-turn budgets and runs only on change.
   claude battery ran a real passing canary with a sealed receipt and a
   clean posture scan. The systemd path/timer units and installer wiring are
   the remaining package.
+- Service package landed 2026-08-30 (second package): `agency battery
+  --install-service` writes a marker-owned shim
+  (`~/.agency-runtime/bin/agency-battery`, 0700, pointing at the installing
+  runtime) plus three systemd-user units — the oneshot service, a `.path`
+  unit watching the resolved harness install roots, and the daily
+  `Persistent` sweep timer — refuses to overwrite foreign units, enables
+  the triggers, seeds the baseline, and records an ownership manifest;
+  `--uninstall-service` removes only marker-owned files. Live-proven on
+  this machine: four watched roots resolved, both triggers enabled and
+  active, and a watched-root touch fired the path unit into the service
+  and shim end to end (the run itself completes once the first
+  battery-bearing runtime is installed, which refreshes the shim).
 
 ## Owner interview outcome (2026-08-30)
 
@@ -103,9 +115,9 @@ trigger/service mechanism. No new inference routes.
 
 ## Acceptance
 
-- [ ] A version fingerprint per supported harness is recorded at install and
-      after each battery pass (battery-pass recording landed; install-time
-      recording rides the service package).
+- [x] A version fingerprint per supported harness is recorded at install and
+      after each battery pass (`--install-service` seeds the baseline;
+      battery passes re-record).
 - [x] A battery run triggers when any harness version fingerprint changes,
       and not otherwise.
 - [x] The battery runs each host's proven canary mode where one exists and

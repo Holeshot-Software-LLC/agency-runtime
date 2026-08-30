@@ -461,6 +461,18 @@ def record_baseline(
 def run_battery_cli(args: Any) -> int:
     """CLI adapter for ``agency battery``."""
 
+    if getattr(args, "install_service", False):
+        from agency_runtime.core.battery_service import install_battery_service
+
+        report = install_battery_service()
+        print(json.dumps(report, indent=1, sort_keys=True))
+        return 0 if report["installed"] else 1
+    if getattr(args, "uninstall_service", False):
+        from agency_runtime.core.battery_service import uninstall_battery_service
+
+        report = uninstall_battery_service()
+        print(json.dumps(report, indent=1, sort_keys=True))
+        return 0
     hosts = (str(args.host),) if getattr(args, "host", None) else None
     if getattr(args, "baseline", False):
         report = record_baseline(hosts=hosts)

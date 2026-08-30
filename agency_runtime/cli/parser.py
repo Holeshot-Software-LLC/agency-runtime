@@ -1457,6 +1457,16 @@ def _register_delegation_and_evals(sub: Subparsers, handlers: Handlers) -> None:
         help="Adopt current harness versions as the proven baseline without running",
     )
     battery.add_argument(
+        "--install-service",
+        action="store_true",
+        help="Install and enable the systemd-user path and timer triggers",
+    )
+    battery.add_argument(
+        "--uninstall-service",
+        action="store_true",
+        help="Disable and remove the systemd-user battery triggers",
+    )
+    battery.add_argument(
         "--config",
         help="Explicit Agency configuration path",
     )
