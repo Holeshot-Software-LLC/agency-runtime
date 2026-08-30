@@ -1464,6 +1464,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `0ac646b9` | 2026-08-30 | docs(ar297): close the bootstrap epic on verified codex activation | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | Codex attestation verified on 0.151 (ADR-0194); AR-332/333/334 closed on live proofs; four-host evidence retained |
 | `effe1087` | 2026-08-30 | Merge pull request #361 from Holeshot-Software-LLC/claude/ar297-close-out | null | null |
 | `aa38e063` | 2026-08-30 | docs(ar337): file the change-triggered harness canary battery | [AR-337](../roadmap/issue-AR-337-run-harness-battery-on-version-change.md) | Owner-authorized change-triggered battery filed with tracker #362; roadmap index statuses caught up |
+| `85028544` | 2026-08-30 | Merge pull request #363 from Holeshot-Software-LLC/claude/ar337-harness-battery | null | null |
+| `7c0446eb` | 2026-08-30 | feat(reliability): add the change-triggered harness canary battery | [AR-337](../roadmap/issue-AR-337-run-harness-battery-on-version-change.md) | Core battery: fingerprint gating, canary/ordinary modes, posture counts, sealed receipts, doctor rows, --baseline; live-proven baseline + no-change gate + forced claude run |
 <!-- worklog:end -->
 
 ## Provenance notes
