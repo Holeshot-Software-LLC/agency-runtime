@@ -1467,6 +1467,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `85028544` | 2026-08-30 | Merge pull request #363 from Holeshot-Software-LLC/claude/ar337-harness-battery | null | null |
 | `7c0446eb` | 2026-08-30 | feat(reliability): add the change-triggered harness canary battery | [AR-337](../roadmap/issue-AR-337-run-harness-battery-on-version-change.md) | Core battery: fingerprint gating, canary/ordinary modes, posture counts, sealed receipts, doctor rows, --baseline; live-proven baseline + no-change gate + forced claude run |
 | `42c56d70` | 2026-08-30 | feat(reliability): arm the battery's systemd path and timer triggers | [AR-337](../roadmap/issue-AR-337-run-harness-battery-on-version-change.md) | Marker-owned shim + service/path/timer units, foreign-unit refusal, baseline seeding, manifest; live trigger fire proven |
+| `6cae921b` | 2026-08-30 | Merge pull request #364 from Holeshot-Software-LLC/claude/ar337-battery-core | null | null |
+| `c797789d` | 2026-08-30 | fix(reliability): write battery service files owner-private | [AR-337](../roadmap/issue-AR-337-run-harness-battery-on-version-change.md) | CodeQL py/overly-permissive-file on unit writes; all service files now 0600/0700 with a mode-pinning test |
 <!-- worklog:end -->
 
 ## Provenance notes
