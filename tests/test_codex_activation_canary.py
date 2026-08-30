@@ -2871,3 +2871,75 @@ def test_codex_process_timeout_remains_a_timeout() -> None:
     assert record["status"] == "timed_out"
     assert record["exit_code"] == 124
     assert record["failure_reason"] == "codex_exec_timed_out"
+
+
+def test_codex_host_encrypted_canary_delivery_projects_byte_equal_round_trip() -> None:
+    # ADR-0194: on the 0.151 encrypted channel the projection admits the sole
+    # pre-speech NEW_TASK envelope only when its ciphertext byte-equals the
+    # parent's attested spawn payload; a mismatch is tampering, not a miss.
+    from agency_runtime.core.canary_backends import (
+        _codex_child_host_encrypted_canary_delivery,
+    )
+
+    parent = "01a052d1-7b63-7982-bf77-736c6713df46"
+    child = "01a052d2-0e59-77d2-9a48-a3d33edccad0"
+    token = "gAAAAAB" + "q" * 120
+    events = [
+        {
+            "type": "response_item",
+            "payload": {
+                "type": "message",
+                "role": "developer",
+                "content": [{"type": "input_text", "text": "boot context"}],
+            },
+        },
+        {
+            "type": "response_item",
+            "payload": {
+                "type": "message",
+                "author": "/root",
+                "recipient": "/root/code_reviewer",
+                "content": [
+                    {"type": "input_text", "text": "Message Type: NEW_TASK\nPayload: "},
+                    {"type": "encrypted_content", "encrypted_content": token},
+                ],
+            },
+        },
+        {
+            "type": "response_item",
+            "payload": {
+                "type": "agent_message",
+                "content": [{"type": "text", "text": "done"}],
+            },
+        },
+    ]
+
+    projected = _codex_child_host_encrypted_canary_delivery(
+        events,
+        parent_thread_id=parent,
+        child_thread_id=child,
+        opaque_message=token,
+    )
+    assert projected is not None
+    prompt_delivery, execution_delivery = projected
+    assert prompt_delivery["delivery_channel"] == "host_encrypted"
+    assert prompt_delivery["specialist_slug"] == "code-reviewer"
+    assert execution_delivery["native_task_name"] == "code_reviewer"
+
+    with pytest.raises(ValueError):
+        _codex_child_host_encrypted_canary_delivery(
+            events,
+            parent_thread_id=parent,
+            child_thread_id=child,
+            opaque_message="gAAAAAB" + "z" * 120,
+        )
+
+    assert (
+        _codex_child_host_encrypted_canary_delivery(
+            events[:1] + events[2:],
+            parent_thread_id=parent,
+            child_thread_id=child,
+            opaque_message=token,
+        )
+        is None
+    )

@@ -981,6 +981,94 @@ def _codex_child_v6_canary_delivery(
     return prompt_delivery, execution_delivery
 
 
+def _codex_child_host_encrypted_canary_delivery(
+    events: list[dict[str, Any]],
+    *,
+    parent_thread_id: str,
+    child_thread_id: str,
+    opaque_message: str,
+) -> tuple[dict[str, Any], dict[str, str]] | None:
+    """Project the sole 0.151 host-encrypted NEW_TASK canary delivery.
+
+    Codex 0.151 encrypts the inter-agent channel end to end, so the child
+    rollout can never carry a plaintext v6 envelope. The admitted proof is
+    byte equality between the parent's attested spawn payload and the sole
+    pre-speech NEW_TASK ciphertext the child received (ADR-0194).
+    """
+
+    from agency_runtime.core.activation_canary_contract import (
+        CODEX_ACTIVATION_CANARY_WORK_UNIT,
+    )
+    from agency_runtime.core.unit_assignment import (
+        work_unit_goal_hash,
+        work_unit_id_from_text,
+    )
+
+    if not isinstance(opaque_message, str) or not opaque_message:
+        return None
+    ciphertexts: list[str] = []
+    assistant_messages = 0
+    for event in events:
+        payload = event.get("payload")
+        if event.get("type") != "response_item" or not isinstance(payload, dict):
+            continue
+        item_type = payload.get("type")
+        role = str(payload.get("role") or "").strip().casefold()
+        if item_type == "agent_message" or (
+            item_type == "message" and role in {"assistant", "agent"}
+        ):
+            assistant_messages += 1
+        if (
+            item_type != "message"
+            or role
+            or str(payload.get("recipient") or "") != "/root/code_reviewer"
+        ):
+            continue
+        content = payload.get("content")
+        if not isinstance(content, list):
+            continue
+        preamble = "".join(
+            str(block.get("text"))
+            for block in content
+            if isinstance(block, dict)
+            and block.get("type") in {"input_text", "text"}
+            and isinstance(block.get("text"), str)
+        )
+        encrypted = [
+            str(block.get("encrypted_content"))
+            for block in content
+            if isinstance(block, dict)
+            and block.get("type") == "encrypted_content"
+            and isinstance(block.get("encrypted_content"), str)
+        ]
+        if preamble.startswith("Message Type: NEW_TASK") and len(encrypted) == 1:
+            ciphertexts.append(encrypted[0])
+    if len(ciphertexts) != 1 or assistant_messages < 1:
+        return None
+    if ciphertexts[0] != opaque_message:
+        raise ValueError(
+            "Codex host-encrypted canary delivery did not match the attested spawn payload"
+        )
+    work_unit_id = work_unit_id_from_text(CODEX_ACTIVATION_CANARY_WORK_UNIT)
+    prompt_delivery = {
+        "host": "codex",
+        "parent_session_id": parent_thread_id,
+        "launch_id": child_thread_id,
+        "work_unit_id": work_unit_id,
+        "specialist_slug": "code-reviewer",
+        "task_sha256": hashlib.sha256(
+            CODEX_ACTIVATION_CANARY_WORK_UNIT.encode("utf-8")
+        ).hexdigest(),
+        "delivery_channel": "host_encrypted",
+    }
+    execution_delivery = {
+        "work_unit_id": work_unit_id,
+        "native_task_name": "code_reviewer",
+        "goal_hash": work_unit_goal_hash(CODEX_ACTIVATION_CANARY_WORK_UNIT),
+    }
+    return prompt_delivery, execution_delivery
+
+
 def _codex_rollout_call_data(  # noqa: C901 - one pinned rollout projection
     events: list[dict[str, Any]],
 ) -> tuple[
@@ -1579,6 +1667,15 @@ def _codex_rollout_collaboration_evidence(
             parent_thread_id=parent_thread_id,
             child_thread_id=receiver_id,
         )
+        if v6_canary is None:
+            # Codex 0.151 encrypts the channel; the byte-equal ciphertext
+            # round trip is the admitted canary delivery proof (ADR-0194).
+            v6_canary = _codex_child_host_encrypted_canary_delivery(
+                child_events,
+                parent_thread_id=parent_thread_id,
+                child_thread_id=receiver_id,
+                opaque_message=str(spawn["arguments"].get("message") or ""),
+            )
         if v6_canary is not None:
             prompt_delivery, execution_delivery = v6_canary
             if native_task_name != "code_reviewer":

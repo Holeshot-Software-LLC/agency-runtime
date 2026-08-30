@@ -2226,3 +2226,325 @@ def test_an_unsupported_host_is_refused(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="unsupported"):
         child_delivery_evidence(artifact, host="openclaw")
+
+
+_ENC_PARENT = "01a052d1-7b63-7982-bf77-736c6713df46"
+_ENC_CHILD = "01a052d2-0e59-77d2-9a48-a3d33edccad0"
+_ENC_TOKEN = "gAAAAAB" + "q" * 300
+
+
+def _encrypted_child_records(
+    *,
+    token: str = _ENC_TOKEN,
+    parent: str = _ENC_PARENT,
+    child: str = _ENC_CHILD,
+) -> list[dict]:
+    return [
+        {
+            "timestamp": "2026-08-30T14:07:55.590Z",
+            "type": "session_meta",
+            "payload": {
+                "id": child,
+                "timestamp": "2026-08-30T14:07:55.590Z",
+                "cwd": "/home/holeshot/.agency-runtime/ephemeral/canary-x",
+                "originator": "codex_exec",
+                "cli_version": "0.151.0",
+                "source": {
+                    "subagent": {
+                        "thread_spawn": {
+                            "parent_thread_id": parent,
+                            "depth": 1,
+                            "agent_path": "/root/code_reviewer",
+                            "agent_nickname": "Mill",
+                            "agent_role": "Code Reviewer",
+                        }
+                    }
+                },
+            },
+        },
+        {
+            "timestamp": "2026-08-30T14:07:55.600Z",
+            "type": "response_item",
+            "payload": {
+                "type": "message",
+                "role": "developer",
+                "id": "msg-dev-1",
+                "content": [{"type": "input_text", "text": "# AGENTS.md instructions"}],
+            },
+        },
+        {
+            "timestamp": "2026-08-30T14:07:55.700Z",
+            "type": "response_item",
+            "payload": {
+                "type": "message",
+                "author": "/root",
+                "recipient": "/root/code_reviewer",
+                "id": "msg-new-task",
+                "content": [
+                    {
+                        "type": "input_text",
+                        "text": (
+                            "Message Type: NEW_TASK\nTask name: /root/code_reviewer\n"
+                            "Sender: /root\nPayload: "
+                        ),
+                    },
+                    {"type": "encrypted_content", "encrypted_content": token},
+                ],
+                "internal_chat_message_metadata_passthrough": {"turn_id": "t-1"},
+            },
+        },
+        {
+            "timestamp": "2026-08-30T14:08:01.000Z",
+            "type": "response_item",
+            "payload": {
+                "type": "agent_message",
+                "id": "msg-child-1",
+                "content": [{"type": "text", "text": "Review complete."}],
+            },
+        },
+    ]
+
+
+def _encrypted_parent_records(
+    *,
+    token: str = _ENC_TOKEN,
+    parent: str = _ENC_PARENT,
+) -> list[dict]:
+    return [
+        {
+            "timestamp": "2026-08-30T14:07:35.000Z",
+            "type": "session_meta",
+            "payload": {"id": parent, "cwd": "/home/holeshot"},
+        },
+        {
+            "timestamp": "2026-08-30T14:07:55.500Z",
+            "type": "response_item",
+            "payload": {
+                "type": "function_call",
+                "namespace": "collaboration",
+                "name": "spawn_agent",
+                "id": "fc-1",
+                "call_id": "call-1",
+                "arguments": json.dumps(
+                    {
+                        "agent_type": "Code Reviewer",
+                        "fork_turns": "none",
+                        "message": token,
+                        "task_name": "code_reviewer",
+                    }
+                ),
+                "internal_chat_message_metadata_passthrough": {"turn_id": "t-0"},
+            },
+        },
+        {
+            "timestamp": "2026-08-30T14:07:55.950Z",
+            "type": "response_item",
+            "payload": {
+                "type": "function_call_output",
+                "id": "fco-1",
+                "call_id": "call-1",
+                "output": json.dumps({"task_name": "/root/code_reviewer"}),
+            },
+        },
+    ]
+
+
+def _write_encrypted_rollouts(root: Path) -> tuple[Path, Path]:
+    day = root / "2026" / "08" / "30"
+    day.mkdir(parents=True)
+    child = day / f"rollout-2026-08-30T14-07-55-{_ENC_CHILD}.jsonl"
+    parent = day / f"rollout-2026-08-30T14-07-35-{_ENC_PARENT}.jsonl"
+    child.write_text(
+        "".join(json.dumps(record) + "\n" for record in _encrypted_child_records()),
+        encoding="utf-8",
+    )
+    parent.write_text(
+        "".join(json.dumps(record) + "\n" for record in _encrypted_parent_records()),
+        encoding="utf-8",
+    )
+    return child, parent
+
+
+def _encrypted_route() -> dict:
+    return {
+        "decision_id": "native-child-abc123",
+        "host": "codex",
+        "parent_session_id": _ENC_PARENT,
+        "parent_trace_id": "trace-enc-1",
+        "launch_id": _ENC_CHILD,
+        "binding_kind": "child_id",
+        "binding_id": _ENC_CHILD,
+        "provider_receipt_digest": "d" * 64,
+        "task_sha256": "a" * 64,
+        "team_digest": "b" * 64,
+        "candidate_digest": "c" * 64,
+        "runtime_digest": "e" * 64,
+        "install_id": "install-1",
+        "bundle_digest": "f" * 64,
+        "issued_at": "2026-08-30T14:07:55Z",
+        "expires_at": "2026-08-30T14:37:55Z",
+        "nonce": "n" * 32,
+        "cards": [
+            {
+                "specialist_slug": "code-reviewer",
+                "specialist_version": "1.0.0",
+                "specialist_prompt_hash": "9" * 64,
+                "body_character_length": 512,
+            }
+        ],
+    }
+
+
+class _EncryptedDeliveryStore:
+    def __init__(self) -> None:
+        self.receipt: dict | None = None
+        self.consumed: list[dict] = []
+
+    def get_native_child_staffing_decision(self, _decision_id: str) -> None:
+        return None
+
+    def get_native_child_delivery_verification(self, _decision_id: str) -> dict | None:
+        return self.receipt
+
+    def _record_native_child_delivery_verification(self, **kwargs: object) -> dict:
+        self.consumed.append(dict(kwargs))
+        return {
+            "verified_delivery": True,
+            "decision_id": kwargs["decision_id"],
+            "nonce": kwargs["nonce"],
+            "artifact_digest": kwargs["artifact_digest"],
+        }
+
+
+def test_host_encrypted_canary_evidence_admits_byte_equal_task_delivery(
+    tmp_path: Path,
+    codex_v1491_artifact_trust: None,
+) -> None:
+    # ADR-0194: the proof is byte equality between the parent's attested
+    # spawn payload and the sole pre-speech NEW_TASK ciphertext, bound to the
+    # Store decision through the one-use atomic consumer.
+    root = tmp_path / "sessions"
+    child, _parent = _write_encrypted_rollouts(root)
+    store = _EncryptedDeliveryStore()
+
+    evidence = subject._host_encrypted_canary_evidence(
+        store,
+        artifact=child,
+        route=_encrypted_route(),
+        child_id=_ENC_CHILD,
+        parent_session_id=_ENC_PARENT,
+        root=root,
+    )
+
+    assert evidence is not None
+    assert evidence.verified_delivery is True
+    assert evidence.staffed is True
+    assert evidence.v6_delivery is False
+    assert evidence.verification_reason == "host_encrypted_task_delivery"
+    assert evidence.child_id == _ENC_CHILD
+    assert evidence.binding_kind == "child_id"
+    assert evidence.cards[0].specialist_slug == "code-reviewer"
+    assert len(store.consumed) == 1
+    assert store.consumed[0]["child_id"] == _ENC_CHILD
+
+
+def test_host_encrypted_canary_evidence_refuses_ciphertext_mismatch(
+    tmp_path: Path,
+    codex_v1491_artifact_trust: None,
+) -> None:
+    root = tmp_path / "sessions"
+    child, parent = _write_encrypted_rollouts(root)
+    tampered = [
+        (
+            {
+                **record,
+                "payload": {
+                    **record["payload"],
+                    "arguments": json.dumps(
+                        {
+                            "agent_type": "Code Reviewer",
+                            "fork_turns": "none",
+                            "message": "gAAAAAB" + "z" * 300,
+                            "task_name": "code_reviewer",
+                        }
+                    ),
+                },
+            }
+            if record["payload"].get("type") == "function_call"
+            else record
+        )
+        for record in _encrypted_parent_records()
+    ]
+    parent.write_text(
+        "".join(json.dumps(record) + "\n" for record in tampered),
+        encoding="utf-8",
+    )
+    store = _EncryptedDeliveryStore()
+
+    evidence = subject._host_encrypted_canary_evidence(
+        store,
+        artifact=child,
+        route=_encrypted_route(),
+        child_id=_ENC_CHILD,
+        parent_session_id=_ENC_PARENT,
+        root=root,
+    )
+
+    assert evidence is None
+    assert store.consumed == []
+
+
+def test_host_encrypted_canary_evidence_replays_persisted_receipt_read_only(
+    tmp_path: Path,
+    codex_v1491_artifact_trust: None,
+) -> None:
+    root = tmp_path / "sessions"
+    child, _parent = _write_encrypted_rollouts(root)
+    store = _EncryptedDeliveryStore()
+    first = subject._host_encrypted_canary_evidence(
+        store,
+        artifact=child,
+        route=_encrypted_route(),
+        child_id=_ENC_CHILD,
+        parent_session_id=_ENC_PARENT,
+        root=root,
+    )
+    assert first is not None and len(store.consumed) == 1
+    store.receipt = {
+        "verified_delivery": True,
+        "nonce": "n" * 32,
+        "artifact_digest": first.artifact_digest,
+        "child_id": _ENC_CHILD,
+        "binding_kind": "child_id",
+        "binding_id": _ENC_CHILD,
+    }
+
+    replay = subject._host_encrypted_canary_evidence(
+        store,
+        artifact=child,
+        route=_encrypted_route(),
+        child_id=_ENC_CHILD,
+        parent_session_id=_ENC_PARENT,
+        root=root,
+    )
+
+    assert replay is not None and replay.verified_delivery is True
+    assert len(store.consumed) == 1
+
+
+def test_codex_host_encrypted_task_delivery_requires_one_envelope(
+    tmp_path: Path,
+) -> None:
+    records = _encrypted_child_records()
+    text = "".join(json.dumps(record) + "\n" for record in records)
+    parsed = subject._codex_host_encrypted_task_delivery(text)
+    assert parsed is not None and parsed[0] == _ENC_TOKEN
+
+    duplicated = [*records[:3], records[2], *records[3:]]
+    text = "".join(json.dumps(record) + "\n" for record in duplicated)
+    assert subject._codex_host_encrypted_task_delivery(text) is None
+
+    wrong_preamble = json.loads(json.dumps(records))
+    wrong_preamble[2]["payload"]["content"][0]["text"] = "Message Type: OTHER"
+    text = "".join(json.dumps(record) + "\n" for record in wrong_preamble)
+    assert subject._codex_host_encrypted_task_delivery(text) is None

@@ -12,6 +12,7 @@ related:
   - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
   - docs/decisions/0179-admit-exact-codex-canary-delivery-at-subagent-start.md
   - docs/decisions/0193-admit-newer-codex-releases-under-the-newest-proven-child-contract.md
+  - docs/decisions/0194-admit-host-encrypted-codex-canary-task-delivery.md
   - agency_runtime/core/canary_backends.py
   - agency_runtime/core/child_delivery_evidence.py
   - docs/worklog/README.md
@@ -103,6 +104,20 @@ succeeded, the parent spawns exactly one child, and the child completes.
   bounded re-reads. The complete real 0.151 child rollout replays to its
   exact parent through `codex_v1491_child_parent_session` with the recorded
   session cwd, so the artifact contract itself holds.
+- Root cause isolated and adapted 2026-08-30 (ADR-0194): codex 0.151 exec
+  never emits `SubagentStart` (`SubagentStop` still fires, live-proven by a
+  stop-created lifecycle row with simultaneous start and end), and the
+  inter-agent channel is host-encrypted end to end while the PreToolUse hook
+  observes the decrypted plaintext. The restricted flow now recognizes the
+  canary spawn in both observed forms at `PreToolUse` and leaves it to the
+  restricted path, creates the child-bound canary staffing decision at the
+  `SubagentStop` join, and admits the host-encrypted task-delivery grade:
+  byte equality between the parent's attested spawn payload and the child's
+  sole pre-speech `NEW_TASK` ciphertext (verified byte-equal on the real
+  2026-08-30 rollouts), bound through the same one-use atomic verification
+  consumer, with the collaboration projection carrying a matching
+  host-encrypted branch. The curated decision-conformance mutation moved to
+  the new gate and the catalog passes 167/167.
 
 ## Approach
 

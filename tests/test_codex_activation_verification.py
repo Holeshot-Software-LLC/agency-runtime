@@ -1250,3 +1250,120 @@ def test_restricted_join_artifact_parent_retries_late_rollout_flush(
     assert parent == parent_id
     assert len(attempts) == 3
     assert sleeps == [0.2, 0.2]
+
+
+def test_restricted_spawn_input_admits_hook_decrypted_canary_plaintext() -> None:
+    # Codex 0.151 hands the PreToolUse hook the decrypted channel payload;
+    # only the byte-exact fixed canary work unit is admitted in that form
+    # (ADR-0194), beside the unchanged 0.150 opaque shape.
+    base = {
+        "agent_type": "Code Reviewer",
+        "fork_turns": "none",
+        "task_name": "code_reviewer",
+    }
+    admit = hooks.HookBridge._restricted_codex_spawn_input
+    assert admit({**base, "message": CODEX_ACTIVATION_CANARY_WORK_UNIT}) is True
+    assert admit({**base, "message": CODEX_ACTIVATION_CANARY_WORK_UNIT + " "}) is False
+    assert admit({**base, "message": "review this repository please"}) is False
+    assert admit({**base, "message": CODEX_ACTIVATION_CANARY_WORK_UNIT, "extra": "x"}) is False
+
+
+def test_pre_tool_leaves_recognized_canary_spawn_to_restricted_flow(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Inside the proven restricted parent scope, the recognized canary spawn
+    # must not be consumed by ordinary plaintext staffing on any admitted
+    # contract; the hook stays silent and non-blocking (ADR-0194).
+    def scope(self: Any, _payload: Any) -> tuple[str, str]:
+        return ("11111111-1111-7111-8111-111111111111", "trace-1")
+
+    def forbidden(self: Any, **_kwargs: Any) -> dict[str, Any]:
+        raise AssertionError("ordinary plaintext staffing must not run")
+
+    monkeypatch.setattr(
+        hooks.HookBridge,
+        "_restricted_codex_activation_parent_scope",
+        scope,
+    )
+    monkeypatch.setattr(hooks.HookBridge, "_staff_plaintext_native_child", forbidden)
+    bridge = hooks.HookBridge(  # type: ignore[arg-type]
+        "codex",
+        store=object(),
+        _master={"enabled": True},
+    )
+
+    response = bridge._handle_native_child_pre_tool_use(
+        {
+            "hook_event_name": "PreToolUse",
+            "tool_name": "functions.collaboration.spawn_agent",
+            "tool_input": {
+                "agent_type": "Code Reviewer",
+                "fork_turns": "none",
+                "task_name": "code_reviewer",
+                "message": CODEX_ACTIVATION_CANARY_WORK_UNIT,
+            },
+        }
+    )
+
+    assert response == {}
+
+
+def test_codex_stop_join_staffs_the_canary_child_when_no_route_exists(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Codex 0.151 exec never emits SubagentStart, so the stop join is the
+    # first hook carrying the real child UUID; the child-bound canary
+    # staffing decision is created there exactly once (ADR-0194).
+    child_id = "01a04f93-7d59-75c1-a813-c3479e11cc16"
+    parent_id = "01a04f92-e63c-76a2-9147-ee0636137875"
+    staffed: list[str] = []
+
+    def scope(self: Any, _payload: Any) -> tuple[str, str]:
+        return (parent_id, "trace-1")
+
+    def staff(self: Any, *, session_id: str, trace_id: str, identity: Any) -> str:
+        staffed.append(identity.worker_id)
+        return ""
+
+    class StopStore:
+        def record_native_child_stopped(self, **kwargs: Any) -> dict[str, Any]:
+            return dict(kwargs)
+
+    monkeypatch.setattr(
+        hooks.HookBridge,
+        "_restricted_codex_activation_child_parent_scope",
+        scope,
+    )
+    monkeypatch.setattr(
+        hooks.HookBridge,
+        "_staff_restricted_codex_activation_child",
+        staff,
+    )
+    routes: list[object] = [None, {"decision_id": "existing"}]
+    monkeypatch.setattr(
+        "agency_runtime.core.child_delivery_evidence._restricted_codex_canary_route",
+        lambda *_args, **_kwargs: routes.pop(0),
+    )
+    monkeypatch.setattr(
+        "agency_runtime.core.child_delivery_evidence."
+        "_collect_restricted_codex_canary_child_delivery",
+        lambda *_args, **_kwargs: None,
+    )
+    bridge = hooks.HookBridge(  # type: ignore[arg-type]
+        "codex",
+        store=StopStore(),
+        _master={"enabled": True},
+    )
+    payload = {
+        "hook_event_name": "SubagentStop",
+        "session_id": child_id,
+        "agent_id": child_id,
+        "agent_type": "Code Reviewer",
+        "cwd": "/tmp",
+    }
+
+    bridge._handle_codex_subagent_stop(payload)
+    assert staffed == [child_id]
+
+    bridge._handle_codex_subagent_stop(payload)
+    assert staffed == [child_id]

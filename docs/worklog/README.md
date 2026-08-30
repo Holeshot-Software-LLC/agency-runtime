@@ -1454,6 +1454,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `f7b91364` | 2026-08-30 | fix(reliability): harden codex 0.151 child join and canary launch posture | [AR-334](../roadmap/issue-AR-334-support-codex-0151-collaboration-and-hook-contract.md) | Child-join hint fallback and dual session semantics with refusal slugs; umask 077 launch pin (AR-332); isolated codex canary plain path (AR-333); oracle discovery alignment with 167/167 conformance (AR-331) |
 | `5459794d` | 2026-08-30 | Merge pull request #356 from Holeshot-Software-LLC/claude/ar331-334-hardening-batch | null | null |
 | `c9642667` | 2026-08-30 | fix(reliability): record restricted join outcomes and absorb rollout-flush race | [AR-334](../roadmap/issue-AR-334-support-codex-0151-collaboration-and-hook-contract.md) | Private hook-join diagnostics sink surfaced as hook_join_diagnostics; bounded SubagentStart rollout-flush re-reads; live isolation recorded (ordinary-path staffing, verification_refused) |
+| `2db42ce7` | 2026-08-30 | fix(reliability): admit host-encrypted codex canary task delivery | [AR-334](../roadmap/issue-AR-334-support-codex-0151-collaboration-and-hook-contract.md) | ADR-0194: PreToolUse canary-spawn recognition, SubagentStop staffing join, byte-equal ciphertext delivery grade; conformance mutation retargeted, 167/167 |
 <!-- worklog:end -->
 
 ## Provenance notes

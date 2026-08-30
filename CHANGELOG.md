@@ -220,6 +220,15 @@ changes rather than duplicating every commit.
   private host-side sink surfaced on the canary record as
   `hook_join_diagnostics` — codex 0.151 swallows hook stderr and encrypts
   hook stdout, so no host-observable channel existed for it (AR-334).
+- The restricted Codex activation canary works on the codex-cli 0.151
+  exec contract, which never emits `SubagentStart` and host-encrypts the
+  inter-agent channel: the recognized canary spawn stays with the
+  restricted flow at `PreToolUse`, the child-bound staffing decision is
+  created at the `SubagentStop` join, and child delivery verifies through
+  the host-encrypted task-delivery grade — byte equality between the
+  parent's attested spawn payload and the child's sole pre-speech
+  `NEW_TASK` ciphertext, bound by the same one-use atomic consumer as the
+  v6 plaintext path (AR-334, ADR-0194).
 - Host-canary child launches now run under a pinned private `umask 077` on
   POSIX hosts, so strict child-artifact trust no longer depends on the
   invoking shell's umask (AR-332).

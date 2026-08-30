@@ -2136,6 +2136,293 @@ def _restricted_codex_canary_artifact(
     return matches[0] if len(matches) == 1 else None
 
 
+_CODEX_NEW_TASK_PREFIX = "Message Type: NEW_TASK"
+
+
+def _codex_host_encrypted_task_delivery(text: str) -> tuple[str, str] | None:
+    """Extract the sole pre-speech NEW_TASK ciphertext from one child rollout.
+
+    Codex 0.151 encrypts the inter-agent channel: the spawn payload reaches the
+    child as one input envelope whose content pairs a fixed NEW_TASK preamble
+    with an ``encrypted_content`` block (ADR-0194). Anything after the child
+    speaks is ignored; a second envelope is an ambiguity, not a choice.
+    """
+
+    envelopes: list[tuple[str, str]] = []
+    for record in _records(text):
+        if record.get("type") != "response_item":
+            continue
+        item = record.get("payload")
+        if not isinstance(item, Mapping):
+            continue
+        item_type = str(item.get("type") or "")
+        role = str(item.get("role") or "").strip().casefold()
+        recipient = str(item.get("recipient") or "")
+        if item_type == "message" and role in _CODEX_INPUT_ROLES:
+            continue
+        if item_type == "message" and not role and recipient:
+            content = item.get("content")
+            if not isinstance(content, Sequence) or isinstance(content, str):
+                return None
+            preamble = ""
+            ciphertext = ""
+            for block in content:
+                if not isinstance(block, Mapping):
+                    return None
+                block_type = block.get("type")
+                if block_type in _CODEX_TEXT_TYPES and isinstance(block.get("text"), str):
+                    preamble += str(block.get("text"))
+                elif block_type == "encrypted_content" and isinstance(
+                    block.get("encrypted_content"), str
+                ):
+                    if ciphertext:
+                        return None
+                    ciphertext = str(block.get("encrypted_content"))
+                else:
+                    return None
+            if not preamble.startswith(_CODEX_NEW_TASK_PREFIX) or not ciphertext:
+                return None
+            envelopes.append((ciphertext, str(record.get("timestamp") or "")))
+            continue
+        # Reasoning, tool calls, or any spoken output end the pre-speech
+        # window; a verifier may miss evidence safely but never invent it.
+        break
+    return envelopes[0] if len(envelopes) == 1 else None
+
+
+def _attested_parent_spawn_ciphertext(
+    root: Path,
+    *,
+    parent_session_id: str,
+) -> str:
+    """Return the sole canary spawn ciphertext from the parent rollout.
+
+    The parent's own rollout records the ``spawn_agent`` call with the opaque
+    channel payload as its ``message``. Exactly one canary-shaped spawn with
+    the identity-free canary response is admitted; anything else returns "".
+    """
+
+    from agency_runtime.core.activation_canary_contract import (
+        CODEX_ACTIVATION_CANARY_NATIVE_AGENT_TYPE,
+    )
+
+    try:
+        canonical_root = absolute_path(root)
+        matches = list(canonical_root.glob(f"*/*/*/rollout-*-{parent_session_id}.jsonl"))
+    except (OSError, RuntimeError, ValueError):
+        return ""
+    if len(matches) != 1:
+        return ""
+    material = _trusted_launch_material(
+        matches[0],
+        label="Codex parent rollout",
+        artifact_parent=True,
+    )
+    if material is None:
+        return ""
+    text, _digest = material
+    spawns: list[str] = []
+    responded: list[str] = []
+    for record in _records(text):
+        if record.get("type") != "response_item":
+            continue
+        item = record.get("payload")
+        if not isinstance(item, Mapping):
+            continue
+        if (
+            item.get("type") == "function_call"
+            and item.get("name") == "spawn_agent"
+            and str(item.get("namespace") or "") == "collaboration"
+        ):
+            try:
+                arguments = json.loads(str(item.get("arguments") or ""))
+            except ValueError:
+                return ""
+            if not isinstance(arguments, Mapping):
+                return ""
+            message = arguments.get("message")
+            if not (
+                arguments.get("task_name") == "code_reviewer"
+                and arguments.get("fork_turns") == "none"
+                and arguments.get("agent_type") in {None, CODEX_ACTIVATION_CANARY_NATIVE_AGENT_TYPE}
+                and isinstance(message, str)
+                and message
+            ):
+                return ""
+            spawns.append(message)
+        elif item.get("type") == "function_call_output":
+            output = item.get("output")
+            try:
+                parsed = json.loads(output) if isinstance(output, str) else output
+            except ValueError:
+                continue
+            if isinstance(parsed, Mapping) and parsed.get("task_name") == "/root/code_reviewer":
+                responded.append("code_reviewer")
+    return spawns[0] if len(spawns) == 1 and len(responded) == 1 else ""
+
+
+def _host_encrypted_canary_evidence(
+    store: object,
+    *,
+    artifact: Path,
+    route: Mapping[str, Any],
+    child_id: str,
+    parent_session_id: str,
+    root: Path,
+) -> ChildDeliveryEvidence | None:
+    """Admit the ADR-0194 host-encrypted task-delivery grade for one child.
+
+    The proof is the byte equality of the parent's attested spawn payload and
+    the child's received NEW_TASK ciphertext, bound to the Store decision by
+    the same one-use atomic consumer the v6 plaintext path uses. ``cards``
+    reflect the Store-staffed team; the encrypted channel carries only the
+    parent-authored task, and the verification reason names the grade.
+    """
+
+    material = _trusted_launch_material(
+        artifact,
+        label="Codex child rollout",
+        artifact_parent=True,
+    )
+    if material is None:
+        return None
+    text, artifact_digest = material
+    meta = next(_records(text), None)
+    payload = meta.get("payload") if isinstance(meta, Mapping) else None
+    if not (
+        isinstance(meta, Mapping)
+        and meta.get("type") == "session_meta"
+        and isinstance(payload, Mapping)
+        and str(payload.get("id") or "") == child_id
+    ):
+        return None
+    source = payload.get("source")
+    subagent = source.get("subagent") if isinstance(source, Mapping) else None
+    spawn = subagent.get("thread_spawn") if isinstance(subagent, Mapping) else None
+    if not (
+        isinstance(spawn, Mapping)
+        and str(spawn.get("parent_thread_id") or "") == parent_session_id
+        and str(spawn.get("agent_path") or "") == "/root/code_reviewer"
+    ):
+        return None
+    envelope = _codex_host_encrypted_task_delivery(text)
+    if envelope is None:
+        return None
+    ciphertext, host_event_at = envelope
+    attested = _attested_parent_spawn_ciphertext(
+        root,
+        parent_session_id=parent_session_id,
+    )
+    if not attested or attested != ciphertext:
+        return None
+    expected = _expected_delivery_from_store_decision(
+        route,
+        decision_id=str(route.get("decision_id") or ""),
+        child_id=child_id,
+        artifact_digest=artifact_digest,
+    )
+    if expected is None:
+        return None
+    _decision_getter, receipt_getter = _store_delivery_methods(store)
+    receipt = receipt_getter(expected.decision_id)
+    if isinstance(receipt, Mapping):
+        if not (
+            receipt.get("verified_delivery") is True
+            and receipt.get("nonce") == expected.nonce
+            and receipt.get("artifact_digest") == artifact_digest
+            and receipt.get("child_id") == child_id
+            and receipt.get("binding_kind") == expected.binding_kind
+            and receipt.get("binding_id") == expected.binding_id
+        ):
+            return None
+    else:
+        reason = _consume_exact_verification(
+            _store_native_child_delivery_consumer(store),
+            _verification_request(
+                expected,
+                host="codex",
+                child_id=child_id,
+                artifact_digest=artifact_digest,
+                host_event_at=host_event_at,
+                structural_hook_output=True,
+            ),
+        )
+        if reason != "verified":
+            return None
+    return ChildDeliveryEvidence(
+        host="codex",
+        artifact=str(artifact),
+        child_id=child_id,
+        host_parent_id=parent_session_id,
+        envelope_parent_id=expected.parent_session_id,
+        correlated=expected.parent_session_id == parent_session_id,
+        cards=expected.cards,
+        legacy_delivery=False,
+        v6_delivery=False,
+        verified_delivery=True,
+        verification_reason="host_encrypted_task_delivery",
+        artifact_digest=artifact_digest,
+        decision_id=expected.decision_id,
+        team_digest=expected.team_digest,
+        candidate_digest=expected.candidate_digest,
+        runtime_digest=expected.runtime_digest,
+        install_id=expected.install_id,
+        bundle_digest=expected.bundle_digest,
+        pre_speech=True,
+        parent_trace_id=expected.parent_trace_id,
+        launch_id=expected.launch_id,
+        provider_receipt_digest=expected.provider_receipt_digest,
+        task_sha256=expected.task_sha256,
+        issued_at=expected.issued_at,
+        expires_at=expected.expires_at,
+        nonce=expected.nonce,
+        binding_kind=expected.binding_kind,
+        binding_id=expected.binding_id,
+        host_event_at=host_event_at,
+    )
+
+
+def _admit_host_encrypted_canary_delivery(
+    store: object,
+    *,
+    artifact: Path,
+    route: Mapping[str, Any],
+    child_id: str,
+    parent_session_id: str,
+    root: Path,
+    started_at_ns: int | None,
+    finished_at_ns: int | None,
+) -> ChildDeliveryEvidence | None:
+    """Gate one ADR-0194 admission through trust and the invocation window."""
+
+    encrypted = _host_encrypted_canary_evidence(
+        store,
+        artifact=artifact,
+        route=route,
+        child_id=child_id,
+        parent_session_id=parent_session_id,
+        root=root,
+    )
+    if encrypted is None or not _canonical_host_artifact_is_trusted(
+        artifact,
+        host="codex",
+        root=root,
+        evidence=encrypted,
+    ):
+        return None
+    if started_at_ns is not None and finished_at_ns is not None:
+        observed = _utc_timestamp(encrypted.host_event_at)
+        if observed is None:
+            return None
+        observed_ns = int(observed.timestamp() * 1_000_000_000)
+        if not (
+            observed_ns + 1_000_000_000 >= started_at_ns
+            and observed_ns <= finished_at_ns + 1_000_000_000
+        ):
+            return None
+    return encrypted if encrypted.staffed else None
+
+
 def _verify_restricted_codex_canary_child_delivery(
     store: object,
     *,
@@ -2205,7 +2492,19 @@ def _verify_restricted_codex_canary_child_delivery(
             evidence=diagnostic,
         )
     ):
-        return None
+        # Codex 0.151 encrypts the inter-agent channel, so no plaintext v6
+        # envelope can exist in the child rollout; the host-encrypted
+        # task-delivery grade is the admitted alternative (ADR-0194).
+        return _admit_host_encrypted_canary_delivery(
+            store,
+            artifact=artifact,
+            route=route,
+            child_id=child_id,
+            parent_session_id=parent_session_id,
+            root=root,
+            started_at_ns=started_at_ns,
+            finished_at_ns=finished_at_ns,
+        )
     if started_at_ns is not None and finished_at_ns is not None:
         observed = _utc_timestamp(diagnostic.host_event_at)
         if observed is None:
