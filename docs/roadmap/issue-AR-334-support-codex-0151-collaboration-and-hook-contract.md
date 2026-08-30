@@ -86,6 +86,23 @@ succeeded, the parent spawns exactly one child, and the child completes.
   Focused tests cover derivation-when-hint-missing, both session semantics,
   and refusal naming. Live `verify-activation` rides the next production
   install and the operator's fresh attended trust.
+- 2026-08-30 live isolation after the `5459794d` install and fresh attended
+  trust: the join fixes advanced the restricted canary past the silent
+  declines — the SubagentStart handler now runs to a staffing decision — but
+  the child was staffed through the ordinary native-child path
+  (`native_child_inference`, child-judge selection) instead of the pinned
+  canary team, so delivery verification refuses the decision
+  (`host_child_collection_reason=verification_refused`) and the parent
+  projection reports `native_collaboration_topology_invalid` with
+  `child_interaction_count` 0. Every prior refusal channel is unobservable on
+  0.151 (hook stderr swallowed, hook stdout encrypted into the child
+  rollout), so the diagnostics-armed canary now writes the join outcome —
+  payload field-name census, refusal slug, agent-type admission — to a
+  private host-side sink surfaced as `hook_join_diagnostics` on the canary
+  record, and the join absorbs the SubagentStart rollout-flush race with two
+  bounded re-reads. The complete real 0.151 child rollout replays to its
+  exact parent through `codex_v1491_child_parent_session` with the recorded
+  session cwd, so the artifact contract itself holds.
 
 ## Approach
 

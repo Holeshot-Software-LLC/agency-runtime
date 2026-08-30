@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import copy
 import io
+import json
 import os
 from datetime import datetime, timezone
 from hashlib import sha256
@@ -1093,3 +1094,159 @@ def test_unstaffed_codex_identity_names_the_join_refusal(
 
     context = response["hookSpecificOutput"]["additionalContext"]
     assert 'restricted_join_refusal="parent_snapshot_contract_mismatch"' in context
+
+
+def test_declined_join_writes_content_free_diagnostic_to_armed_sink(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # AR-334: codex 0.151 swallows hook stderr and encrypts hook stdout, so
+    # the armed diagnostics sink is the only host-observable record of which
+    # branch declined the restricted join.
+    _restricted_env(monkeypatch)
+    sink = tmp_path / "agency-hook-join-diagnostics.jsonl"
+    monkeypatch.setenv("AGENCY_CODEX_HOOK_EVENT_DIAGNOSTICS", "1")
+    monkeypatch.setenv("AGENCY_CODEX_HOOK_DIAGNOSTICS_PATH", str(sink))
+
+    class StartStore:
+        def record_native_child_started(self, **kwargs: Any) -> dict[str, Any]:
+            return dict(kwargs)
+
+    bridge = hooks.HookBridge(  # type: ignore[arg-type]
+        "codex",
+        store=StartStore(),
+        _master={"enabled": True},
+    )
+    bridge._handle_codex_subagent_start(
+        {
+            "hook_event_name": "SubagentStart",
+            "session_id": "11111111-1111-4111-8111-111111111111",
+            "turn_id": "11111111-1111-4111-8111-111111111111",
+            "agent_type": "default",
+            "cwd": str(tmp_path),
+        }
+    )
+
+    lines = sink.read_text(encoding="ascii").splitlines()
+    assert len(lines) == 1
+    entry = json.loads(lines[0])
+    assert entry["event"] == "SubagentStart"
+    assert entry["joined"] is False
+    assert entry["refusal"] == "child_correlation_invalid"
+    assert entry["agent_type_admitted"] is True
+    assert entry["fields"] == [
+        "agent_type",
+        "cwd",
+        "hook_event_name",
+        "session_id",
+        "turn_id",
+    ]
+
+
+def test_join_diagnostic_sink_stays_silent_without_diagnostics_env(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _restricted_env(monkeypatch)
+    sink = tmp_path / "agency-hook-join-diagnostics.jsonl"
+    monkeypatch.delenv("AGENCY_CODEX_HOOK_EVENT_DIAGNOSTICS", raising=False)
+    monkeypatch.setenv("AGENCY_CODEX_HOOK_DIAGNOSTICS_PATH", str(sink))
+
+    class StartStore:
+        def record_native_child_started(self, **kwargs: Any) -> dict[str, Any]:
+            return dict(kwargs)
+
+    hooks.HookBridge(  # type: ignore[arg-type]
+        "codex",
+        store=StartStore(),
+        _master={"enabled": True},
+    )._handle_codex_subagent_start(
+        {
+            "hook_event_name": "SubagentStart",
+            "session_id": "11111111-1111-4111-8111-111111111111",
+            "turn_id": "11111111-1111-4111-8111-111111111111",
+            "agent_type": "default",
+            "agent_id": "11111111-1111-4111-8111-111111111111",
+            "cwd": str(tmp_path),
+        }
+    )
+
+    assert not sink.exists()
+
+
+def test_sanitize_codex_hook_join_diagnostics_projects_only_exact_entries() -> None:
+    from agency_runtime.core.codex_activation_verification import (
+        sanitize_codex_hook_join_diagnostics,
+    )
+
+    valid = (
+        '{"event": "SubagentStart", "fields": ["cwd", "session_id"],'
+        ' "refusal": "parent_session_mismatch", "joined": false,'
+        ' "agent_type_admitted": true}'
+    )
+    lines = "\n".join(
+        [
+            "not json",
+            '{"event": "SubagentStart"}',
+            '{"event": "Bad Event!", "fields": [], "refusal": "", "joined": true,'
+            ' "agent_type_admitted": true}',
+            '{"event": "SubagentStart", "fields": ["x"], "refusal": "Invalid-Slug",'
+            ' "joined": true, "agent_type_admitted": true}',
+            valid,
+        ]
+    )
+
+    entries = sanitize_codex_hook_join_diagnostics(lines)
+
+    assert entries == [
+        {
+            "event": "SubagentStart",
+            "fields": ["cwd", "session_id"],
+            "refusal": "parent_session_mismatch",
+            "joined": False,
+            "agent_type_admitted": True,
+        }
+    ]
+    assert sanitize_codex_hook_join_diagnostics(None) == []
+
+
+def test_restricted_join_artifact_parent_retries_late_rollout_flush(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # The hook can outrun the host's rollout flush at SubagentStart; the
+    # bounded re-read admits the file once it lands without weakening the
+    # fail-closed parser.
+    _restricted_env(monkeypatch)
+    child_id = "01a04f93-7d59-75c1-a813-c3479e11cc16"
+    parent_id = "01a04f92-e63c-76a2-9147-ee0636137875"
+    artifact = tmp_path / f"rollout-2026-08-30T00-00-00-{child_id}.jsonl"
+    attempts: list[int] = []
+    sleeps: list[float] = []
+
+    def late_artifact(self: Any, _child: str) -> str | None:
+        attempts.append(1)
+        return str(artifact) if len(attempts) >= 3 else None
+
+    monkeypatch.setattr(hooks.HookBridge, "_sole_codex_child_artifact", late_artifact)
+    monkeypatch.setattr(hooks.time, "sleep", lambda value: sleeps.append(value))
+    monkeypatch.setattr(
+        "agency_runtime.core.child_delivery_evidence.codex_v1491_child_parent_session",
+        lambda _path, *, child_id, cwd, root=None: parent_id,
+    )
+    bridge = hooks.HookBridge(  # type: ignore[arg-type]
+        "codex",
+        store=_NoOpenTraceStore(),
+        _master={"enabled": True},
+    )
+
+    parent = bridge._restricted_join_artifact_parent(
+        {},
+        hint_field="transcript_path",
+        child_session_id=child_id,
+        cwd=str(tmp_path),
+    )
+
+    assert parent == parent_id
+    assert len(attempts) == 3
+    assert sleeps == [0.2, 0.2]

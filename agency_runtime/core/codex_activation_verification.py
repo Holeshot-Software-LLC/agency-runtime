@@ -15,8 +15,13 @@ from collections.abc import Mapping
 CODEX_ACTIVATION_EXISTING_STORE_ENV = "AGENCY_CANARY_REQUIRE_EXISTING_STORE"
 CODEX_ACTIVATION_QUERY_HASH_ENV = "AGENCY_CANARY_REQUEST_SHA256"
 CODEX_HOOK_EVENT_DIAGNOSTICS_ENV = "AGENCY_CODEX_HOOK_EVENT_DIAGNOSTICS"
+CODEX_HOOK_DIAGNOSTICS_PATH_ENV = "AGENCY_CODEX_HOOK_DIAGNOSTICS_PATH"
 CODEX_HOOK_EVENT_DIAGNOSTIC_STAGES = ("accepted", "completed", "failed")
 MAX_CODEX_HOOK_EVENT_DIAGNOSTIC_COUNT = 999
+MAX_CODEX_HOOK_JOIN_DIAGNOSTIC_BYTES = 16_384
+MAX_CODEX_HOOK_JOIN_DIAGNOSTIC_ENTRIES = 8
+_JOIN_DIAGNOSTIC_NAME = re.compile(r"[A-Za-z0-9_]{1,64}\Z")
+_JOIN_DIAGNOSTIC_SLUG = re.compile(r"[a-z_]{1,64}\Z")
 CODEX_RECONCILIATION_DIAGNOSTIC_REASONS = frozenset(
     {
         "boundary_mismatch",
@@ -121,6 +126,75 @@ def sanitize_codex_hook_event_diagnostics(value: object) -> dict[str, dict[str, 
     return projected
 
 
+def codex_hook_join_diagnostics_path(
+    environ: Mapping[str, str] | None = None,
+) -> str:
+    """Return the private join-diagnostics sink path, or "" when not armed.
+
+    The sink is honored only inside the restricted canary with hook-event
+    diagnostics enabled, and only for an absolute path, because codex swallows
+    hook stderr and encrypts hook stdout on 0.151: without a host-side sink
+    the join's content-free refusal evidence is unobservable (AR-334).
+    """
+
+    values = os.environ if environ is None else environ
+    if not is_codex_hook_event_diagnostics_environment(values):
+        return ""
+    candidate = values.get(CODEX_HOOK_DIAGNOSTICS_PATH_ENV) or ""
+    return candidate if os.path.isabs(candidate) else ""
+
+
+def sanitize_codex_hook_join_diagnostics(lines: object) -> list[dict[str, object]]:
+    """Project bounded content-free join-diagnostic entries from raw JSONL."""
+
+    import json
+
+    if not isinstance(lines, str):
+        return []
+    entries: list[dict[str, object]] = []
+    for line in lines.splitlines():
+        if len(entries) >= MAX_CODEX_HOOK_JOIN_DIAGNOSTIC_ENTRIES:
+            break
+        line = line.strip()
+        if not line or len(line) > 4096:
+            continue
+        try:
+            candidate = json.loads(line)
+        except ValueError:
+            continue
+        if not isinstance(candidate, Mapping):
+            continue
+        event = candidate.get("event")
+        refusal = candidate.get("refusal")
+        joined = candidate.get("joined")
+        agent_type_admitted = candidate.get("agent_type_admitted")
+        fields = candidate.get("fields")
+        if not (
+            isinstance(event, str)
+            and _JOIN_DIAGNOSTIC_NAME.fullmatch(event)
+            and isinstance(refusal, str)
+            and (refusal == "" or _JOIN_DIAGNOSTIC_SLUG.fullmatch(refusal))
+            and type(joined) is bool
+            and type(agent_type_admitted) is bool
+            and isinstance(fields, list)
+            and len(fields) <= 32
+            and all(
+                isinstance(name, str) and _JOIN_DIAGNOSTIC_NAME.fullmatch(name) for name in fields
+            )
+        ):
+            continue
+        entries.append(
+            {
+                "event": event,
+                "fields": sorted(fields),
+                "refusal": refusal,
+                "joined": joined,
+                "agent_type_admitted": agent_type_admitted,
+            }
+        )
+    return entries
+
+
 def is_exact_codex_activation_verification(namespace: object) -> bool:
     """Return whether ``namespace`` is the reviewed verification-only form."""
 
@@ -159,13 +233,18 @@ def is_exact_codex_activation_verification(namespace: object) -> bool:
 __all__ = [
     "CODEX_ACTIVATION_EXISTING_STORE_ENV",
     "CODEX_ACTIVATION_QUERY_HASH_ENV",
+    "CODEX_HOOK_DIAGNOSTICS_PATH_ENV",
     "CODEX_HOOK_EVENT_DIAGNOSTICS_ENV",
     "CODEX_HOOK_EVENT_DIAGNOSTIC_STAGES",
     "CODEX_RECONCILIATION_DIAGNOSTIC_REASONS",
     "MAX_CODEX_HOOK_EVENT_DIAGNOSTIC_COUNT",
+    "MAX_CODEX_HOOK_JOIN_DIAGNOSTIC_BYTES",
+    "MAX_CODEX_HOOK_JOIN_DIAGNOSTIC_ENTRIES",
+    "codex_hook_join_diagnostics_path",
     "is_codex_hook_event_diagnostics_environment",
     "is_exact_codex_activation_verification",
     "is_restricted_codex_activation_canary_environment",
     "restricted_codex_activation_query_hash",
     "sanitize_codex_hook_event_diagnostics",
+    "sanitize_codex_hook_join_diagnostics",
 ]
