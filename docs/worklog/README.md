@@ -1460,6 +1460,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `2e033084` | 2026-08-30 | fix(reliability): scope restricted canary child staffing to the parent route | [AR-334](../roadmap/issue-AR-334-support-codex-0151-collaboration-and-hook-contract.md) | team_scope narrows child-judge candidates to the parent route; additive spawn recognizer; spawn-gate and stop-staffing sink lines; mutation re-anchored 167/167 |
 | `552a56a3` | 2026-08-30 | Merge pull request #359 from Holeshot-Software-LLC/claude/ar334-encrypted-channel-delivery | null | null |
 | `83877fd0` | 2026-08-30 | fix(reliability): hash routing authority before team scoping | [AR-334](../roadmap/issue-AR-334-support-codex-0151-collaboration-and-hook-contract.md) | Fingerprint over unscoped catalog before team scoping; deterministic state-changed regression fixed with store-backed test |
+| `f081358d` | 2026-08-30 | Merge pull request #360 from Holeshot-Software-LLC/claude/ar334-scope-fingerprint | null | null |
+| `0ac646b9` | 2026-08-30 | docs(ar297): close the bootstrap epic on verified codex activation | [AR-297](../roadmap/issue-AR-297-complete-unattended-container-bootstrap.md) | Codex attestation verified on 0.151 (ADR-0194); AR-332/333/334 closed on live proofs; four-host evidence retained |
 <!-- worklog:end -->
 
 ## Provenance notes
