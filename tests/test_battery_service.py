@@ -162,3 +162,22 @@ def test_install_requires_at_least_one_watchable_root(tmp_path: Path) -> None:
             command_runner=runner,
             baseline_recorder=lambda: {},
         )
+
+
+def test_all_written_files_are_owner_private(tmp_path: Path) -> None:
+    resolver = _harness_tree(tmp_path)
+    _calls, runner = _runner_log()
+    subject.install_battery_service(
+        runtime_python=tmp_path / "python",
+        unit_root=tmp_path / "systemd",
+        shim_path=tmp_path / "bin" / "agency-battery",
+        manifest_path=tmp_path / "services" / "battery-service.json",
+        resolver=resolver,
+        command_runner=runner,
+        baseline_recorder=lambda: {},
+    )
+
+    for name in subject.BATTERY_UNITS:
+        assert subject.battery_service_mode(tmp_path / "systemd" / name) == 0o600
+    assert subject.battery_service_mode(tmp_path / "bin" / "agency-battery") == 0o700
+    assert subject.battery_service_mode(tmp_path / "services" / "battery-service.json") == 0o600

@@ -157,8 +157,16 @@ def _refuse_foreign(path: Path) -> None:
         raise RuntimeError(f"refusing to overwrite a foreign systemd unit: {path.name}")
 
 
-def _write_owned(path: Path, content: str, *, mode: int) -> None:
+def _write_owned(path: Path, content: str, *, executable: bool = False) -> None:
+    """Write one owner-private marker-owned file (0700 executable, else 0600).
+
+    systemd reads user units as the owning user, so nothing this module
+    writes needs group or world bits; the repo posture is owner-private by
+    default.
+    """
+
     _refuse_foreign(path)
+    mode = 0o700 if executable else 0o600
     descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, mode)
     try:
         os.write(descriptor, content.encode("utf-8"))
@@ -192,10 +200,10 @@ def install_battery_service(
         raise RuntimeError("no harness install roots resolved; nothing to watch")
 
     ensure_private_directory(shim.parent)
-    _write_owned(shim, _shim_content(python), mode=0o700)
-    _write_owned(units_root / BATTERY_SERVICE_UNIT, _service_unit(shim), mode=0o644)
-    _write_owned(units_root / BATTERY_PATH_UNIT, _path_unit(roots), mode=0o644)
-    _write_owned(units_root / BATTERY_TIMER_UNIT, _timer_unit(), mode=0o644)
+    _write_owned(shim, _shim_content(python), executable=True)
+    _write_owned(units_root / BATTERY_SERVICE_UNIT, _service_unit(shim))
+    _write_owned(units_root / BATTERY_PATH_UNIT, _path_unit(roots))
+    _write_owned(units_root / BATTERY_TIMER_UNIT, _timer_unit())
 
     commands = [_run(["systemctl", "--user", "daemon-reload"], command_runner=command_runner)]
     commands.extend(
