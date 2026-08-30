@@ -1,0 +1,56 @@
+{
+  "_comment": "ADR-0087 / AR-119 enrichment overlay. Supplements bundled specialists with typed stacks/domains and user-facing scope_qualifiers the deterministic verifier scores (many specialists declare neither and rely on division fallbacks). Enrichment only supplements; declared typed metadata always wins. Maintained by scripts/enrich_workforce_contracts.py. Provenance: human-curated representative subset (FluxUI/Livewire/Laravel + smoke-relevant specialists); full 263-agent batch is a release follow-up.",
+  "_version": "1",
+  "_generated_by": "manual-curation",
+  "senior-developer": {
+    "scope_qualifiers": [
+      "build a FluxUI dashboard",
+      "add a Livewire component",
+      "implement a Laravel feature"
+    ],
+    "stacks": ["laravel", "livewire", "fluxui", "php"]
+  },
+  "python-application-engineer": {
+    "scope_qualifiers": [
+      "fix a Python bug",
+      "implement a Python service"
+    ],
+    "stacks": ["python"]
+  },
+  "code-reviewer": {
+    "scope_qualifiers": [
+      "review code for correctness"
+    ],
+    "stacks": []
+  },
+  "ai-generated-code-security-auditor": {
+    "scope_qualifiers": [
+      "audit AI-generated code for security",
+      "review a security patch for exploitability"
+    ],
+    "stacks": [],
+    "task_types": ["threat-modeling", "audit", "verification"]
+  },
+  "application-security-engineer": {
+    "scope_qualifiers": [
+      "review application security",
+      "threat-model an application"
+    ],
+    "stacks": [],
+    "task_types": ["threat-modeling", "audit", "verification", "risk-analysis"]
+  },
+  "senior-secops-engineer": {
+    "scope_qualifiers": [
+      "review SecOps and operational security"
+    ],
+    "stacks": [],
+    "task_types": ["threat-modeling", "audit", "verification"]
+  },
+  "software-test-engineer": {
+    "scope_qualifiers": [
+      "write unit tests",
+      "add automated tests"
+    ],
+    "stacks": []
+  }
+}

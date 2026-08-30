@@ -6,7 +6,8 @@ When Hermes is the host, this adapter:
 - reports actual skills loaded via Hermes skill loader events;
 - uses delegate_task, delegate_async, and Agency tools where available;
 - integrates with pre_verify or equivalent final response gate;
-- records delegation events and exact failures.
+- records delegation events and exact failures;
+- captures model receipts from response data (not SpendLogs).
 """
 
 from __future__ import annotations
@@ -15,7 +16,6 @@ import logging
 from typing import Any
 
 from agency_runtime.adapters.base import BaseAdapter
-from agency_runtime.core.store.sqlite import Store
 
 logger = logging.getLogger("agency_runtime.adapters.hermes")
 
@@ -26,68 +26,85 @@ class HermesAdapter(BaseAdapter):
     host_name = "hermes"
 
     def is_available(self) -> bool:
-        """Check if Hermes is the current host."""
-        import sys
-        return any("hermes" in module for module in sys.modules)
+        """Return canonical executable or native-state discovery for Hermes."""
 
-    def report_skills_loaded(self, session_id: str) -> list[str]:
-        return self.store.get_skills_for_session(session_id)
+        from agency_runtime.core.installer import detect_installed_agents
 
-    def report_specialists_loaded(self, session_id: str) -> list[str]:
-        conn = self.store._connect()
-        try:
-            cur = conn.execute(
-                "SELECT agent_slug FROM specialists_loaded WHERE session_id = ? ORDER BY loaded_at",
-                (session_id,),
-            )
-            return [row["agent_slug"] for row in cur.fetchall()]
-        finally:
-            conn.close()
+        return "hermes" in detect_installed_agents()
 
-    def get_delegate_backend(self) -> str | None:
-        return "delegate_task"
+    # BaseAdapter.post_api_request_handler records the canonical host receipt
+    # for all host adapters, including honest unavailable receipts when the
+    # hook lacks model telemetry.
 
-    def expose_model_telemetry(self, session_id: str) -> dict[str, Any]:
-        return {}
+    def _suggested_delegations(
+        self,
+        session_id: str,
+        trace_id: str,
+    ) -> list[dict[str, Any]]:
+        from agency_runtime.core.delegation.events import suggested_delegations
 
-    def pre_llm_call_handler(self, session_id: str, user_message: str, model: str = "") -> dict[str, Any] | None:
-        """Pre-LLM call handler for Hermes plugin system."""
-        from agency_runtime.adapters.litellm.callback import litellm_health_check
-        from agency_runtime.core.selector.pipeline import is_trivial, route_and_build_context
+        return suggested_delegations(self.store, session_id, trace_id=trace_id)
 
-        if litellm_health_check():
-            return None  # LiteLLM callback handles it
+    def post_tool_call_handler(self, **kwargs: Any) -> None:
+        """Record skills, specialist loads, and actual delegation tool use."""
+        self.record_tool_call(**kwargs)
 
-        if is_trivial(user_message):
-            return None
+    def pre_llm_call_handler(
+        self,
+        session_id: str,
+        user_message: str,
+        model: str = "",
+        trace_id: str = "",
+        *,
+        reservation_token: str = "",
+        origin_receipt: Any | None = None,
+        parent_session_id: str = "",
+        parent_trace_id: str = "",
+        native_worker_id: str = "",
+        native_run_id: str = "",
+    ) -> dict[str, Any] | None:
+        """Pre-LLM call handler for Hermes plugin system.
 
-        catalog = self.store.get_active_roster_as_catalog()
-        context = route_and_build_context(session_id, user_message, catalog)
-        return {"context": context} if context else None
+        ALWAYS runs routing and injects specialist suggestions, even when
+        LiteLLM is healthy. The LiteLLM callback handles request-level
+        routing (model selection), but the agent still needs specialist-
+        loading context to know which agents to call.
 
-    def pre_verify_handler(self, final_response: str, session_id: str = "", model: str = "", attempt: int = 0) -> dict[str, Any] | None:
-        """Pre-verify handler — gate response completion on agency header."""
-        import re
+        This is the critical path: without this injection, the agent never
+        sees [AGENCY PREFLIGHT] suggestions and writes 'loaded: none' on
+        every turn — making the entire plugin broken from the start.
+        """
+        return self.build_preflight_context(
+            session_id,
+            user_message,
+            model,
+            trace_id,
+            reservation_token=reservation_token,
+            origin_receipt=origin_receipt,
+            parent_session_id=parent_session_id,
+            parent_trace_id=parent_trace_id,
+            native_worker_id=native_worker_id,
+            native_run_id=native_run_id,
+        )
 
-        if attempt >= 2:
-            return None
+    def pre_verify_handler(
+        self,
+        final_response: str,
+        session_id: str = "",
+        model: str = "",
+        attempt: int = 0,
+        trace_id: str = "",
+    ) -> dict[str, Any] | None:
+        """Pre-verify handler — gate response completion on agency header.
 
-        from agency_runtime.core.header.contract import validate_header
-        valid, missing = validate_header(final_response)
-        if valid:
-            return None
-
-        skills = ", ".join(self.report_skills_loaded(session_id)) or "none"
-        return {
-            "action": "continue",
-            "message": (
-                "AGENCY HEADER REQUIRED: Your response must begin with this complete "
-                "Agency observability header before any other content:\n\n"
-                "Agency/Agencies loaded: <agent-id> (or 'none')\n"
-                "Agency/Agencies delegated: <agent-id> (or 'none')\n"
-                f"Skills loaded: {skills}\n"
-                "Actual Model selected: <model>\n"
-                "Why: <one line>\n"
-                "How it shaped outcome: <one line>\n"
-            ),
-        }
+        Two checks:
+        1. Header exists and is complete (all six fields present)
+        2. The header matches authoritative state-aware current-turn evidence
+        """
+        return self.enforce_pre_verify(
+            final_response,
+            session_id,
+            model,
+            attempt,
+            trace_id,
+        )

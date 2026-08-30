@@ -2,12 +2,22 @@
 # These defaults work for a fresh install with Ollama but no API keys.
 # Override by creating ~/.agency-runtime/agency.yaml or setting env vars.
 #
+# The 'providers' list is the judge fallback chain. The judge tries each
+# provider in order until one succeeds. If no providers are configured,
+# it falls back to 'judge' (legacy), then 'ollama', then token-only.
+#
+# Provider types: openai-compatible, anthropic, ollama, litellm, cli
+# Auth: api_key, api_key_env, OAuth session (cli), or none (loopback local)
+#
 # Env var overrides (highest precedence):
 #   AGENCY_JUDGE_MODEL, AGENCY_JUDGE_BASE_URL, AGENCY_JUDGE_API_KEY,
 #   AGENCY_JUDGE_TIMEOUT, AGENCY_MAX_SELECTED, AGENCY_BYPASS_THRESHOLD,
 #   OLLAMA_BASE_URL, AGENCY_OLLAMA_FALLBACK_MODEL,
-#   LITELLM_BASE_URL, LITELLM_API_KEY,
-#   AGENCY_CONFIG_PATH, AGENCY_DB_PATH
+#   LITELLM_API_KEY,
+#   AGENCY_CONFIG_PATH, AGENCY_DB_PATH, AGENCY_DASHBOARD_PORT
+
+# Provider fallback chain — empty by default, populated by `agency configure`
+providers: []
 
 judge:
   model: qwen3.5:2b
@@ -25,9 +35,125 @@ ollama:
   model: qwen3.5:2b
 
 selector:
-  min_confidence: 0.4
+  min_confidence: 0.8
   max_user_msg_len: 4000
-  trivial_msg_threshold: 12
+  # Deprecated compatibility value; state-aware turn intent owns bypass policy.
+  trivial_msg_threshold: 0
+
+# Native hosts remain the scheduler. Observe emits optional plans without a
+# Stop correction; prefer applies the bounded strength thresholds below;
+# strong marks every eligible multi-unit plan strongly preferred.
+delegation:
+  mode: prefer
+  preferred_min_units: 2
+  strongly_preferred_min_units: 4
+  strongly_preferred_min_confidence: 0.8
+  # Parent-scoped protection for native children that were not pre-planned.
+  child_inference_budget: 4
+  child_inference_concurrency: 2
+  child_cache_ttl_seconds: 900
+
+# Live proof may pin each canary host's child judge to one named provider from
+# the provider chain. Empty by default: an operator must choose each pin.
+canary:
+  child_judge_provider_by_host: {}
+  # The accepted-outcome parent recruiter is a separate role. Empty by
+  # default; when set, only that canary's recruiter and repair use this pin.
+  accepted_outcome_parent_recruiter_provider_by_host: {}
+
+# Planning uses configured inference whenever any provider is available. Every
+# mode searches the complete local capability index through an inference planner
+# and recruiter. Fast and balanced fund one bounded repair for each stage;
+# strict also funds an independent critic. Per-stage model ownership lives
+# under ``inference`` below (ADR-0153 / AR-235 §3).
+workforce:
+  mode: strict
+  dense_recall_mode: shadow   # evidence-only until explicitly set to additive
+  provider: ""                  # blank = use the configured provider chain
+  fast_call_budget: 4
+  balanced_call_budget: 4
+  strict_call_budget: 5
+  hiring_call_budget: 6
+  max_work_units: 16
+  max_selected_per_unit: 4
+  max_selected_total: 16
+  min_confidence: 0.8
+  min_margin: 0.1
+  max_hires_per_task: 1
+  max_hires_per_day: 3
+  max_hires_per_turn: 16          # soft per-turn bound; amend-first is the real guard (AR-241)
+  daily_hire_alert_threshold: 50  # soft daily warning; never rejects (AR-241)
+  auto_promote_successes: 3     # three verified successes auto-promote a contractor (AR-242)
+  contractor_review_days: 7     # first-batch review window before auto-promotion (AR-242)
+  hiring_repair_budget: 3       # bounded safety-repair turns after an unsafe verdict (AR-238)
+  amend_overlap_threshold: 0.7  # amend-first: overlap required to amend vs hire distinct (AR-240)
+
+# Per-stage inference profile routes. Mirrors the conveyor project shape
+# (conveyor/src/config/types.ts:294-310). When a route is missing, the resolver
+# falls back to default_profile. Reference:
+# docs/roadmap/reference-workforce-inference-stages.md.
+inference:
+  default_profile: "agency-default"
+  strict_independence: false
+  routes:
+    workforce.planner: "agency-planner"
+    workforce.recruiter: "agency-recruiter"
+    workforce.recruiter.critic: "agency-recruiter-critic"
+    workforce.recruiter.repair.json: "agency-recruiter"
+    workforce.hiring: "agency-hiring"
+    workforce.hiring.critic: "agency-hiring-critic"
+    workforce.hiring.repair.json: "agency-hiring"
+    workforce.hiring.repair.json.critic: "agency-hiring-critic"
+    workforce.hiring.security_review: "agency-security"
+    workforce.hiring.safety_repair: "agency-hiring"
+  profiles:
+    agency-default:
+      adapter: litellm
+      model: gpt5.6-luna
+      thinking_level: medium
+      base_url: http://127.0.0.1:4000
+      api_key_env: LITELLM_API_KEY
+    agency-planner:
+      adapter: litellm
+      model: gpt5.6-luna-medium
+      thinking_level: medium
+      base_url: http://127.0.0.1:4000
+      api_key_env: LITELLM_API_KEY
+    agency-recruiter:
+      adapter: litellm
+      model: gpt5.6-luna-medium
+      thinking_level: medium
+      base_url: http://127.0.0.1:4000
+      api_key_env: LITELLM_API_KEY
+    agency-recruiter-critic:
+      adapter: litellm
+      model: gpt5.6-luna-medium
+      thinking_level: high
+      base_url: http://127.0.0.1:4000
+      api_key_env: LITELLM_API_KEY
+    agency-hiring:
+      adapter: litellm
+      model: gpt5.6-luna-low
+      thinking_level: low
+      base_url: http://127.0.0.1:4000
+      api_key_env: LITELLM_API_KEY
+    agency-hiring-critic:
+      adapter: litellm
+      model: gpt5.6-luna-medium
+      thinking_level: high
+      base_url: http://127.0.0.1:4000
+      api_key_env: LITELLM_API_KEY
+    agency-security:
+      adapter: litellm
+      model: gpt5.6-luna-high
+      thinking_level: high
+      base_url: http://127.0.0.1:4000
+      api_key_env: LITELLM_API_KEY
+
+# Reversible selection policy. Definitions and version history remain in the
+# roster while listed specialists are unavailable to routing and new loads.
+agents:
+  disabled: []
 
 store:
   db_path: ~/.agency-runtime/agency.db
@@ -36,6 +162,13 @@ server:
   host: 127.0.0.1
   port: 7800
   max_body_size: 16777216
+
+dashboard:
+  port: 7810
+
+observability:
+  capture_content: false
+  retention_days: 30
 
 adapters:
   litellm:
@@ -52,6 +185,8 @@ adapters:
   codex:
     enabled: auto
   claude:
+    enabled: auto
+  zcode:
     enabled: auto
 
 profile: standard

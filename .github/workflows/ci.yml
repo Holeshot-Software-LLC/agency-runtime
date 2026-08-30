@@ -1,0 +1,844 @@
+name: CI
+
+on:
+  # Push to main deliberately does NOT trigger CI: this repository is developed
+  # direct-to-main, so every commit started a 7-10 minute hosted run and the
+  # concurrency group then cancelled the previous one mid-flight, billing both.
+  # Run `python scripts/run_local_gates.py` before pushing instead. Pull
+  # requests and manual dispatch still run the full hosted gate.
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHONDONTWRITEBYTECODE: "1"
+  PYTHONUTF8: "1"
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+
+jobs:
+  quality-contracts:
+    name: static quality, documentation, and dashboard UI
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    outputs:
+      code_required: ${{ steps.change-scope.outputs.code_required }}
+      scope_reason: ${{ steps.change-scope.outputs.scope_reason }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Classify the complete event delta
+        id: change-scope
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          EVENT_NAME: ${{ github.event_name }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          if [[ "${EVENT_NAME}" != "pull_request" ]]; then
+            {
+              echo "code_required=true"
+              echo "scope_reason=event_requires_full_verification"
+            } >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          classifier_path="scripts/classify_ci_change.py"
+          classifier_entry="$(git ls-tree "${BASE_SHA}" -- "${classifier_path}")"
+          read -r classifier_mode classifier_type classifier_object classifier_name \
+            <<< "${classifier_entry//$'\t'/ }"
+          if [[
+            "${classifier_mode:-}" != "100644" ||
+            "${classifier_type:-}" != "blob" ||
+            ! "${classifier_object:-}" =~ ^[0-9a-f]{40}$ ||
+            "${classifier_name:-}" != "${classifier_path}"
+          ]]; then
+            {
+              echo "code_required=true"
+              echo "scope_reason=trusted_classifier_unavailable"
+            } >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          trusted_classifier="$(
+            mktemp "${RUNNER_TEMP}/agency-ci-scope.XXXXXXXX.py"
+          )"
+          trap 'rm -f -- "${trusted_classifier}"' EXIT
+          git cat-file blob "${classifier_object}" > "${trusted_classifier}"
+          chmod 600 "${trusted_classifier}"
+          python -I "${trusted_classifier}" \
+            --root "${GITHUB_WORKSPACE}" \
+            --event "${EVENT_NAME}" \
+            --base-sha "${BASE_SHA}" \
+            --head-sha "${HEAD_SHA}"
+      - name: Set up Node.js
+        if: steps.change-scope.outputs.code_required == 'true'
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: "24"
+      - name: Install development dependencies
+        if: steps.change-scope.outputs.code_required == 'true'
+        run: python -m pip install -e ".[dev]"
+      - name: Prepare private quality runtime
+        if: steps.change-scope.outputs.code_required == 'true'
+        shell: bash
+        env:
+          AGENCY_CI_RUN_ATTEMPT: ${{ github.run_attempt }}
+          AGENCY_CI_RUN_ID: ${{ github.run_id }}
+        run: >-
+          python -m scripts.prepare_ci_runtime
+          --label "quality-${AGENCY_CI_RUN_ID}-${AGENCY_CI_RUN_ATTEMPT}"
+      - name: Install documentation dependencies
+        if: steps.change-scope.outputs.code_required == 'false'
+        run: python -m pip install .
+      - name: Check dependency consistency
+        if: steps.change-scope.outputs.code_required == 'true'
+        run: python -m pip check
+      - name: Check Python code quality
+        if: steps.change-scope.outputs.code_required == 'true'
+        run: |
+          ruff check agency_runtime tests scripts
+          ruff format --check agency_runtime tests scripts
+      - name: Check patch whitespace
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          BEFORE_SHA: ${{ github.event.before }}
+          EVENT_NAME: ${{ github.event_name }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          whitespace_path="scripts/check_ci_whitespace.py"
+          trusted_ref=""
+          if [[ "${EVENT_NAME}" == "pull_request" ]]; then
+            trusted_ref="${BASE_SHA}"
+          elif [[
+            "${EVENT_NAME}" == "push" &&
+            "${BEFORE_SHA}" =~ ^[0-9a-f]{40}$ &&
+            "${BEFORE_SHA}" != "0000000000000000000000000000000000000000"
+          ]]; then
+            trusted_ref="${BEFORE_SHA}"
+          fi
+
+          if [[ -n "${trusted_ref}" ]]; then
+            whitespace_entry="$(git ls-tree "${trusted_ref}" -- "${whitespace_path}")"
+            read -r whitespace_mode whitespace_type whitespace_object whitespace_name \
+              <<< "${whitespace_entry//$'\t'/ }"
+          fi
+          if [[
+            "${whitespace_mode:-}" == "100644" &&
+            "${whitespace_type:-}" == "blob" &&
+            "${whitespace_object:-}" =~ ^[0-9a-f]{40}$ &&
+            "${whitespace_name:-}" == "${whitespace_path}"
+          ]]; then
+            trusted_whitespace="$(
+              mktemp "${RUNNER_TEMP}/agency-ci-whitespace.XXXXXXXX.py"
+            )"
+            trap 'rm -f -- "${trusted_whitespace}"' EXIT
+            git cat-file blob "${whitespace_object}" > "${trusted_whitespace}"
+            chmod 600 "${trusted_whitespace}"
+            python -I "${trusted_whitespace}" \
+              --root "${GITHUB_WORKSPACE}" \
+              --event "${EVENT_NAME}" \
+              --base-sha "${BASE_SHA}" \
+              --before-sha "${BEFORE_SHA}" \
+              --head-sha "${HEAD_SHA}"
+            exit 0
+          fi
+
+          if [[ ! "${HEAD_SHA}" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::CI head SHA is malformed."
+            exit 1
+          fi
+          git cat-file -e "${HEAD_SHA}^{commit}"
+          case "${EVENT_NAME}" in
+            pull_request)
+              if [[ ! "${BASE_SHA}" =~ ^[0-9a-f]{40}$ ]]; then
+                echo "::error::CI base SHA is malformed."
+                exit 1
+              fi
+              git cat-file -e "${BASE_SHA}^{commit}"
+              comparison="${BASE_SHA}...${HEAD_SHA}"
+              ;;
+            push)
+              if [[ "${BEFORE_SHA}" == "0000000000000000000000000000000000000000" ]]; then
+                comparison="4b825dc642cb6eb9a060e54bf8d69288fbee4904..${HEAD_SHA}"
+              elif [[ "${BEFORE_SHA}" =~ ^[0-9a-f]{40}$ ]]; then
+                git cat-file -e "${BEFORE_SHA}^{commit}"
+                comparison="${BEFORE_SHA}..${HEAD_SHA}"
+              else
+                echo "::error::CI before SHA is malformed."
+                exit 1
+              fi
+              ;;
+            workflow_dispatch)
+              comparison="4b825dc642cb6eb9a060e54bf8d69288fbee4904..${HEAD_SHA}"
+              ;;
+            *)
+              echo "::error::Unsupported CI event."
+              exit 1
+              ;;
+          esac
+          if ! git diff --check "${comparison}" -- >/dev/null 2>&1; then
+            echo "::error::Committed whitespace check failed."
+            exit 1
+          fi
+      - name: Check tracked release inputs
+        run: python scripts/verify_release_hygiene.py
+      - name: Verify fast workflow contracts
+        if: steps.change-scope.outputs.code_required == 'true'
+        run: |
+          export TMPDIR="${AGENCY_CI_TEMP}"
+          "${AGENCY_CI_PYTHON}" -m pytest tests/test_ci_change_scope.py tests/test_ci_sharding.py \
+            tests/test_ci_session_pair.py tests/test_release_packaging.py -q -W error \
+            -p no:cacheprovider --basetemp "${AGENCY_CI_TEMP}/pytest-workflow"
+      - name: Run fast Python production spine
+        if: steps.change-scope.outputs.code_required == 'true'
+        run: |
+          export TMPDIR="${AGENCY_CI_TEMP}"
+          "${AGENCY_CI_PYTHON}" -m pytest \
+            tests/test_senior_audit_hardening.py \
+            tests/test_configuration_namespace_security.py \
+            tests/test_executable_namespace_security.py \
+            tests/test_storage_file_trust.py \
+            tests/test_dashboard_auth_boundary_regression.py \
+            tests/test_dashboard_transaction_refactors.py \
+            tests/test_routing_correctness.py \
+            tests/test_workforce_hiring_contract.py \
+            tests/test_workforce_selection_safety.py \
+            tests/test_workforce_dynamic_hiring.py \
+            tests/test_upstream_selection_eval.py \
+            tests/test_decision_conformance.py \
+            tests/test_delegation_p1_correctness.py \
+            tests/test_store_turn_atomicity.py \
+            tests/test_roster_snapshot_generation.py \
+            tests/test_mcp_protocol_hardening.py \
+            tests/test_cli_parser_contract.py \
+            tests/test_cli_upgrade.py \
+            tests/test_update_service.py \
+            tests/test_native_installer.py \
+            tests/test_host_uninstall.py \
+            tests/test_cli_uninstall.py \
+            tests/test_host_boundary_hardening.py \
+            tests/test_cli_owner_authority.py \
+            tests/test_security_turn_boundaries.py \
+            tests/test_canary_coverage_complete.py \
+            tests/test_complexity_refactors.py \
+            -q -W error -p no:cacheprovider \
+            --basetemp "${AGENCY_CI_TEMP}/pytest-production-spine"
+      - name: Run AR-119 matrix evidence
+        # Every test file the rule-and-host evidence matrix cites. A cited file
+        # that runs nowhere lets a proven layer rot in silence: R4 claude sat
+        # red for a day behind a green pipeline for exactly that reason. The
+        # release-packaging contract derives this list from the matrix itself,
+        # so adding a citation without adding it here fails that contract.
+        if: steps.change-scope.outputs.code_required == 'true'
+        run: |
+          export TMPDIR="${AGENCY_CI_TEMP}"
+          "${AGENCY_CI_PYTHON}" -m pytest \
+            tests/test_accepted_outcomes.py \
+            tests/test_adapter_parity.py \
+            tests/test_child_delivery_evidence.py \
+            tests/test_codex_plaintext_hook.py \
+            tests/test_codex_spawn_provenance.py \
+            tests/test_completion_policy_boundary.py \
+            tests/test_contractor_minting_host_parity.py \
+            tests/test_host_canary.py \
+            tests/test_host_hooks.py \
+            tests/test_host_parity_eval.py \
+            tests/test_jit_staffing_host_parity.py \
+            tests/test_native_child_adapter_staffing.py \
+            tests/test_native_child_host_boundary_staffing.py \
+            tests/test_parent_caller_card_delivery.py \
+            tests/test_spawn_origin_absence.py \
+            -q -W error -p no:cacheprovider \
+            --basetemp "${AGENCY_CI_TEMP}/pytest-matrix-evidence"
+      - name: Prove decision-conformance mutations
+        if: steps.change-scope.outputs.code_required == 'true'
+        run: >-
+          "${AGENCY_CI_PYTHON}" -m agency_runtime.cli eval decision-conformance
+          --repository . --json
+      - name: Run dashboard UI tests with coverage
+        if: steps.change-scope.outputs.code_required == 'true'
+        run: >-
+          node --test --experimental-test-coverage
+          --test-coverage-lines=95 --test-coverage-branches=86
+          --test-coverage-functions=93 tests/dashboard_ui.test.mjs
+      - name: Check out canonical documentation history
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Verify documentation ledgers
+        env:
+          EXPECTED_HISTORY_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          test "$(git rev-parse --is-shallow-repository)" = "false"
+          test "$(git rev-parse HEAD)" = "${EXPECTED_HISTORY_HEAD}"
+          python scripts/docs_metadata.py --check
+          python scripts/update_policy_availability.py --check
+          python scripts/update_worklog.py --check
+          python scripts/verify_docs.py
+
+  coverage:
+    name: integration coverage / pair ${{ matrix.label }} of 2 / shards ${{ matrix.shard_a }}+${{ matrix.shard_b }}
+    needs: quality-contracts
+    if: >-
+      github.event_name == 'workflow_dispatch' &&
+      needs.quality-contracts.result == 'success' &&
+      needs.quality-contracts.outputs.code_required == 'true'
+    runs-on: ubuntu-24.04
+    # Two sequential preparation envelopes plus the bounded sessions and cleanup.
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {pair: 0, label: 1, shard_a: 0, shard_b: 1}
+          - {pair: 1, label: 2, shard_a: 2, shard_b: 3}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        id: coverage-python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install development dependencies
+        shell: bash
+        env:
+          AGENCY_CI_PYTHON: ${{ steps.coverage-python.outputs.python-path }}
+        run: '"${AGENCY_CI_PYTHON}" -m pip install -e ".[dev]"'
+      - name: Run paired coverage sessions
+        shell: bash
+        env:
+          AGENCY_CI_PAIR: ${{ matrix.pair }}
+          AGENCY_CI_PYTHON: ${{ steps.coverage-python.outputs.python-path }}
+          AGENCY_CI_RUN_LABEL: ${{ github.run_id }}-${{ github.run_attempt }}-p${{ matrix.pair }}
+          AGENCY_CI_SHARD_A: ${{ matrix.shard_a }}
+          AGENCY_CI_SHARD_B: ${{ matrix.shard_b }}
+        run: >-
+          "${AGENCY_CI_PYTHON}" -m scripts.run_ci_session_pair coverage
+          --python "${AGENCY_CI_PYTHON}"
+          --shard-a "${AGENCY_CI_SHARD_A}"
+          --shard-b "${AGENCY_CI_SHARD_B}"
+          --run-label "${AGENCY_CI_RUN_LABEL}"
+          --output-root "${RUNNER_TEMP}/agency-coverage-pair-${AGENCY_CI_PAIR}"
+      - name: Upload coverage pair
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: coverage-pair-${{ matrix.pair }}
+          path: ${{ runner.temp }}/agency-coverage-pair-${{ matrix.pair }}/.coverage.*
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 1
+
+  coverage-complete:
+    name: integration coverage / combined
+    needs: coverage
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Check out source
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.13"
+      - name: Install coverage
+        run: python -m pip install "coverage[toml]==7.15.0"
+      - name: Download coverage shards
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: coverage-pair-*
+          path: ${{ runner.temp }}/coverage-shards
+          merge-multiple: true
+      - name: Require combined 97% line and branch coverage
+        run: |
+          python -m coverage combine "${RUNNER_TEMP}/coverage-shards"
+          python -m coverage report --fail-under=97
+
+  performance:
+    name: uninstrumented wall-clock performance
+    needs: quality-contracts
+    if: >-
+      needs.quality-contracts.result == 'success' &&
+      needs.quality-contracts.outputs.code_required == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out source
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install development dependencies
+        run: python -m pip install -e ".[dev]"
+      - name: Prepare private performance runtime
+        shell: bash
+        env:
+          AGENCY_CI_RUN_ATTEMPT: ${{ github.run_attempt }}
+          AGENCY_CI_RUN_ID: ${{ github.run_id }}
+        run: >-
+          python -m scripts.prepare_ci_runtime
+          --label "performance-${AGENCY_CI_RUN_ID}-${AGENCY_CI_RUN_ATTEMPT}"
+      - name: Run uninstrumented wall-clock performance gates
+        shell: bash
+        run: |
+          export HOME="${AGENCY_CI_HOME}"
+          export USERPROFILE="${AGENCY_CI_HOME}"
+          export TMPDIR="${AGENCY_CI_TEMP}"
+          unset AGENCY_CONFIG_PATH AGENCY_DB_PATH
+          "${AGENCY_CI_PYTHON}" -m pytest \
+            tests/test_candidate_narrow_scaling.py \
+            tests/test_routing_eval_suite.py \
+            -q -W error -p no:cacheprovider \
+            -m performance \
+            --basetemp "${AGENCY_CI_TEMP}/pytest-performance"
+
+  test:
+    name: integration / full compatibility / ${{ matrix.label }} / py${{ matrix.python_a }}+py${{ matrix.python_b }}
+    needs: quality-contracts
+    if: >-
+      github.event_name == 'workflow_dispatch' &&
+      needs.quality-contracts.result == 'success' &&
+      needs.quality-contracts.outputs.code_required == 'true'
+    runs-on: ${{ matrix.os }}
+    # Two sequential preparation envelopes plus the 42m session bound and cleanup.
+    timeout-minutes: 70
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {os: ubuntu-24.04, platform: linux, label: ubuntu-310-311, python_a: "3.10", python_b: "3.11"}
+          - {os: ubuntu-24.04, platform: linux, label: ubuntu-312-314, python_a: "3.12", python_b: "3.14"}
+          - {os: windows-2022, platform: windows, label: windows-310-314, python_a: "3.10", python_b: "3.14"}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+      - name: Set up first Python
+        id: python-a
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: ${{ matrix.python_a }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Set up second Python
+        id: python-b
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: ${{ matrix.python_b }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install test dependencies for both interpreters
+        shell: bash
+        env:
+          AGENCY_CI_PYTHON_A: ${{ steps.python-a.outputs.python-path }}
+          AGENCY_CI_PYTHON_B: ${{ steps.python-b.outputs.python-path }}
+        run: |
+          "${AGENCY_CI_PYTHON_A}" -m pip install -e ".[dev]"
+          "${AGENCY_CI_PYTHON_B}" -m pip install -e ".[dev]"
+      - name: Run paired compatibility sessions
+        shell: bash
+        env:
+          AGENCY_CI_PAIR_LABEL: ${{ matrix.label }}
+          AGENCY_CI_PLATFORM: ${{ matrix.platform }}
+          AGENCY_CI_PYTHON_A: ${{ steps.python-a.outputs.python-path }}
+          AGENCY_CI_PYTHON_B: ${{ steps.python-b.outputs.python-path }}
+          AGENCY_CI_RUN_LABEL: ${{ matrix.label }}-${{ github.run_id }}-${{ github.run_attempt }}
+          AGENCY_CI_VERSION_A: ${{ matrix.python_a }}
+          AGENCY_CI_VERSION_B: ${{ matrix.python_b }}
+        run: >-
+          "${AGENCY_CI_PYTHON_A}" -m scripts.run_ci_session_pair compatibility
+          --platform "${AGENCY_CI_PLATFORM}"
+          --python-a "${AGENCY_CI_PYTHON_A}"
+          --version-a "${AGENCY_CI_VERSION_A}"
+          --python-b "${AGENCY_CI_PYTHON_B}"
+          --version-b "${AGENCY_CI_VERSION_B}"
+          --run-label "${AGENCY_CI_RUN_LABEL}"
+          --output-root "${RUNNER_TEMP}/agency-compatibility-${AGENCY_CI_PAIR_LABEL}"
+
+  windows-portability-contract:
+    name: portability contract / windows / py${{ matrix.python }}
+    needs: quality-contracts
+    if: >-
+      needs.quality-contracts.result == 'success' &&
+      needs.quality-contracts.outputs.code_required == 'true'
+    runs-on: windows-2022
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.12", "3.13"]
+    steps:
+      - name: Check out source
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install test dependencies
+        run: python -m pip install -e ".[dev]"
+      - name: Prepare private test runtime
+        shell: bash
+        env:
+          AGENCY_CI_MATRIX_PYTHON: ${{ matrix.python }}
+          AGENCY_CI_RUN_ATTEMPT: ${{ github.run_attempt }}
+          AGENCY_CI_RUN_ID: ${{ github.run_id }}
+        run: >-
+          python -m scripts.prepare_ci_runtime
+          --label "portability-py${AGENCY_CI_MATRIX_PYTHON}-${AGENCY_CI_RUN_ID}-${AGENCY_CI_RUN_ATTEMPT}"
+      - name: Exercise canonical archives and atomic Windows processes
+        shell: bash
+        run: |
+          export HOME="${AGENCY_CI_HOME}"
+          export USERPROFILE="${AGENCY_CI_HOME}"
+          export TMPDIR="${AGENCY_CI_TEMP}"
+          unset AGENCY_CONFIG_PATH AGENCY_DB_PATH
+          "${AGENCY_CI_PYTHON}" -m pytest \
+            tests/test_canonicalize_distributions.py \
+            tests/test_owned_binary_process.py \
+            tests/test_owned_process_core_hardening.py \
+            tests/test_owned_process_windows_atomic.py \
+            -q -W error -p no:cacheprovider \
+            --basetemp "${AGENCY_CI_TEMP}/pytest-portability"
+
+  artifacts:
+    name: build and verify unsigned review distributions / ${{ matrix.os }}
+    needs: quality-contracts
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {os: ubuntu-24.04, artifact_set: portable}
+          - {os: windows-2022, artifact_set: windows-x64}
+    env:
+      AGENCY_ARTIFACT_SET: ${{ matrix.artifact_set }}
+      AGENCY_RELEASE_COMMIT: ${{ github.sha }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install release tools
+        run: python -m pip install "build==1.5.0" "twine==6.2.0"
+      - name: Smoke release modules without installing the project
+        run: |
+          python -m scripts.build_distributions --help
+          python -m scripts.verify_distribution --help
+      - name: Prepare private release runtime
+        shell: bash
+        env:
+          AGENCY_CI_MATRIX_OS: ${{ matrix.os }}
+          AGENCY_CI_RUN_ATTEMPT: ${{ github.run_attempt }}
+          AGENCY_CI_RUN_ID: ${{ github.run_id }}
+        run: >-
+          python -m scripts.prepare_ci_runtime
+          --label "artifacts-${AGENCY_CI_MATRIX_OS}-${AGENCY_CI_RUN_ID}-${AGENCY_CI_RUN_ATTEMPT}"
+      - name: Bind private release output
+        id: release-output
+        shell: bash
+        run: printf 'path=%s\n' "${AGENCY_CI_TEMP}/dist" >> "${GITHUB_OUTPUT}"
+      - name: Check tracked release inputs
+        run: python scripts/verify_release_hygiene.py
+      - name: Prove clean CRLF checkout uses canonical Git blobs
+        shell: bash
+        run: >-
+          "${AGENCY_CI_PYTHON}" -m scripts.prove_autocrlf_checkout
+          --expected-commit "${AGENCY_RELEASE_COMMIT}"
+      - name: Build wheel and source distribution
+        shell: bash
+        run: >-
+          "${AGENCY_CI_PYTHON}" -m scripts.build_distributions "${AGENCY_CI_TEMP}/dist"
+          --expected-commit "${AGENCY_RELEASE_COMMIT}"
+      - name: Verify metadata and artifact contents
+        shell: bash
+        run: |
+          "${AGENCY_CI_PYTHON}" -m twine check --strict "${AGENCY_CI_TEMP}"/dist/*
+          "${AGENCY_CI_PYTHON}" -m scripts.verify_distribution "${AGENCY_CI_TEMP}/dist" \
+            --expected-commit "${AGENCY_RELEASE_COMMIT}" \
+            --artifact-set "${AGENCY_ARTIFACT_SET}"
+      - name: Set up minimum supported Python for installed smoke
+        id: smoke-python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.10"
+      - name: Set up Node.js for generated OpenClaw syntax validation
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: "24"
+      - name: Install and smoke-test the platform wheel and source distribution
+        working-directory: ${{ runner.temp }}
+        shell: bash
+        env:
+          AGENCY_CI_SMOKE_PYTHON: ${{ steps.smoke-python.outputs.python-path }}
+        run: |
+          EXPECTED_VERSION="$("${AGENCY_CI_PYTHON}" "${GITHUB_WORKSPACE}/scripts/read_release_version.py" "${GITHUB_WORKSPACE}/agency_runtime/__init__.py")"
+          wheel_artifacts=("${AGENCY_CI_TEMP}"/dist/*.whl)
+          sdist_artifacts=("${AGENCY_CI_TEMP}"/dist/*.tar.gz)
+          if [ "${#wheel_artifacts[@]}" -ne 1 ] || [ ! -f "${wheel_artifacts[0]}" ]; then
+            exit 1
+          fi
+          if [ "${#sdist_artifacts[@]}" -ne 1 ] || [ ! -f "${sdist_artifacts[0]}" ]; then
+            exit 1
+          fi
+
+          "${AGENCY_CI_SMOKE_PYTHON}" -m venv --copies "${AGENCY_CI_TEMP}/wheel-smoke"
+          "${AGENCY_CI_SMOKE_PYTHON}" -m venv --copies "${AGENCY_CI_TEMP}/sdist-smoke"
+          if [ "${RUNNER_OS}" = "Windows" ]; then
+            WHEEL_PYTHON="${AGENCY_CI_TEMP}/wheel-smoke/Scripts/python.exe"
+            WHEEL_AGENCY="${AGENCY_CI_TEMP}/wheel-smoke/Scripts/agency.exe"
+            SDIST_PYTHON="${AGENCY_CI_TEMP}/sdist-smoke/Scripts/python.exe"
+            SDIST_AGENCY="${AGENCY_CI_TEMP}/sdist-smoke/Scripts/agency.exe"
+          else
+            WHEEL_PYTHON="${AGENCY_CI_TEMP}/wheel-smoke/bin/python"
+            WHEEL_AGENCY="${AGENCY_CI_TEMP}/wheel-smoke/bin/agency"
+            SDIST_PYTHON="${AGENCY_CI_TEMP}/sdist-smoke/bin/python"
+            SDIST_AGENCY="${AGENCY_CI_TEMP}/sdist-smoke/bin/agency"
+          fi
+
+          smoke_distribution() {
+            local label="$1"
+            local python="$2"
+            local agency="$3"
+            local artifact="$4"
+            export AGENCY_CONFIG_PATH="${AGENCY_CI_TEMP}/agency-${label}/agency.yaml"
+            export AGENCY_DB_PATH="${AGENCY_CI_TEMP}/agency-${label}/agency.db"
+            export HOME="${AGENCY_CI_HOME}/${label}"
+            export USERPROFILE="${AGENCY_CI_HOME}/${label}"
+            export TMPDIR="${AGENCY_CI_TEMP}"
+            mkdir -p "${HOME}"
+            chmod 700 "${HOME}"
+            "${python}" -m pip install --no-cache-dir --only-binary=:all: "${artifact}"
+            "${python}" -I -c "from importlib.metadata import version; from importlib.resources import files; import agency_runtime; from agency_runtime.core.canary import run_canary; assert callable(run_canary); assert version('agency-runtime') == agency_runtime.__version__; assert files('agency_runtime.dashboard').joinpath('index.html').is_file(); assert files('agency_runtime.core').joinpath('canary.py').is_file(); assert files('agency_runtime.core.evals.data').joinpath('routing_v1.py').is_file()"
+            "${python}" -I "${GITHUB_WORKSPACE}/scripts/smoke_installed_distribution.py" \
+              --expected-version "${EXPECTED_VERSION}" \
+              --artifact-set "${AGENCY_ARTIFACT_SET}"
+            "${python}" -I -c 'import subprocess, sys; result = subprocess.run([sys.argv[1], "--version"], capture_output=True, text=True, check=False); expected = f"agency {sys.argv[2]}\n"; assert (result.returncode, result.stdout, result.stderr) == (0, expected, ""), (result.returncode, result.stdout, result.stderr)' "${agency}" "${EXPECTED_VERSION}"
+            "${agency}" --help
+            "${agency}" host-canary --help
+            "${agency}" smoke --all --json
+            "${agency}" config show
+            "${python}" -m pip check
+          }
+
+          smoke_distribution wheel "${WHEEL_PYTHON}" "${WHEEL_AGENCY}" "${wheel_artifacts[0]}"
+          smoke_distribution sdist "${SDIST_PYTHON}" "${SDIST_AGENCY}" "${sdist_artifacts[0]}"
+      - name: Upload platform unsigned review distributions for byte-parity verification
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: python-distributions-unsigned-review-${{ matrix.os }}
+          path: ${{ steps.release-output.outputs.path }}/*
+          if-no-files-found: error
+          retention-days: 7
+  artifact-parity:
+    name: assemble platform-honest unsigned review artifacts
+    needs: artifacts
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      AGENCY_RELEASE_COMMIT: ${{ github.sha }}
+    steps:
+      - name: Check out reviewed release policy
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+      - name: Set up release verifier Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.13"
+      - name: Install verifier dependencies
+        run: python -m pip install "build==1.5.0"
+      - name: Download Linux distributions
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: python-distributions-unsigned-review-ubuntu-24.04
+          path: ${{ runner.temp }}/agency-dist-linux
+      - name: Download Windows distributions
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: python-distributions-unsigned-review-windows-2022
+          path: ${{ runner.temp }}/agency-dist-windows
+      - name: Require one byte-identical sdist and assemble the unsigned review set
+        shell: bash
+        run: |
+          test "$(find "${RUNNER_TEMP}/agency-dist-linux" -maxdepth 1 -type f | wc -l)" -eq 2
+          test "$(find "${RUNNER_TEMP}/agency-dist-windows" -maxdepth 1 -type f | wc -l)" -eq 2
+          linux_wheels=("${RUNNER_TEMP}"/agency-dist-linux/*-py3-none-any.whl)
+          windows_wheels=("${RUNNER_TEMP}"/agency-dist-windows/*-py3-none-win_amd64.whl)
+          linux_sdists=("${RUNNER_TEMP}"/agency-dist-linux/*.tar.gz)
+          windows_sdists=("${RUNNER_TEMP}"/agency-dist-windows/*.tar.gz)
+          test "${#linux_wheels[@]}" -eq 1 && test -f "${linux_wheels[0]}"
+          test "${#windows_wheels[@]}" -eq 1 && test -f "${windows_wheels[0]}"
+          test "${#linux_sdists[@]}" -eq 1 && test -f "${linux_sdists[0]}"
+          test "${#windows_sdists[@]}" -eq 1 && test -f "${windows_sdists[0]}"
+          test "$(sha256sum "${linux_sdists[0]}" | cut -d ' ' -f 1)" = \
+            "$(sha256sum "${windows_sdists[0]}" | cut -d ' ' -f 1)"
+          cmp --silent "${linux_sdists[0]}" "${windows_sdists[0]}"
+          mkdir "${RUNNER_TEMP}/agency-dist-release"
+          cp --no-clobber "${linux_wheels[0]}" "${RUNNER_TEMP}/agency-dist-release/"
+          cp --no-clobber "${windows_wheels[0]}" "${RUNNER_TEMP}/agency-dist-release/"
+          cp --no-clobber "${linux_sdists[0]}" "${RUNNER_TEMP}/agency-dist-release/"
+          test "$(find "${RUNNER_TEMP}/agency-dist-release" -maxdepth 1 -type f | wc -l)" -eq 3
+      - name: Verify the combined three-artifact unsigned review contract
+        run: >-
+          python -m scripts.verify_distribution "${RUNNER_TEMP}/agency-dist-release"
+          --expected-commit "${AGENCY_RELEASE_COMMIT}"
+          --artifact-set release
+      - name: Upload verified canonical unsigned review distributions
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: python-distributions-unsigned-review
+          path: ${{ runner.temp }}/agency-dist-release/*
+          if-no-files-found: error
+          retention-days: 7
+
+  security:
+    name: deterministic source checks and dependency audit
+    needs: quality-contracts
+    if: >-
+      needs.quality-contracts.result == 'success' &&
+      needs.quality-contracts.outputs.code_required == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out source
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install package and pinned security tools
+        run: python -m pip install ".[security]"
+      - name: Check tracked files and high-severity source findings
+        run: |
+          python scripts/verify_release_hygiene.py
+          python -m bandit -q -r agency_runtime scripts -lll
+          zizmor --pedantic --strict-collection --offline .
+      - name: Audit the exact installed runtime dependency
+        run: python scripts/audit_runtime_dependencies.py
+
+  quality:
+    # Keep one stable aggregate job; hosted enforcement is tracked by AR-159.
+    name: automatic gates; integration suites are manual
+    if: always()
+    needs:
+      - quality-contracts
+      - coverage-complete
+      - performance
+      - test
+      - windows-portability-contract
+      - artifact-parity
+      - security
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Require every applicable production gate
+        env:
+          CODE_REQUIRED: ${{ needs.quality-contracts.outputs.code_required }}
+          EVENT_NAME: ${{ github.event_name }}
+          NEEDS_JSON: ${{ toJSON(needs) }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+
+          code_required_text = os.environ.get("CODE_REQUIRED", "")
+          event_name = os.environ.get("EVENT_NAME", "")
+          needs = json.loads(os.environ["NEEDS_JSON"])
+          if not isinstance(needs, dict):
+              raise SystemExit("production gate results must be a JSON object")
+
+          if code_required_text not in {"true", "false"}:
+              raise SystemExit("change scope did not produce a governed boolean")
+          code_required = code_required_text == "true"
+          if event_name not in {"pull_request", "push", "workflow_dispatch"}:
+              raise SystemExit(f"unsupported workflow event: {event_name!r}")
+          if not code_required and event_name != "pull_request":
+              raise SystemExit("only pull requests may use the documentation-only lane")
+
+          if code_required:
+              manual_integration = event_name == "workflow_dispatch"
+              expected = {
+                  "quality-contracts": "success",
+                  "coverage-complete": (
+                      "success" if manual_integration else "skipped"
+                  ),
+                  "performance": "success",
+                  "test": "success" if manual_integration else "skipped",
+                  "windows-portability-contract": "success",
+                  "artifact-parity": "success",
+                  "security": "success",
+              }
+          else:
+              expected = {
+                  "quality-contracts": "success",
+                  "coverage-complete": "skipped",
+                  "performance": "skipped",
+                  "test": "skipped",
+                  "windows-portability-contract": "skipped",
+                  "artifact-parity": "success",
+                  "security": "skipped",
+              }
+          actual = {
+              name: detail.get("result") if isinstance(detail, dict) else None
+              for name, detail in needs.items()
+          }
+          failed = {
+              name: {"expected": result, "actual": actual.get(name)}
+              for name, result in expected.items()
+              if actual.get(name) != result
+          }
+          unexpected = sorted(set(actual) - set(expected))
+          if unexpected:
+              failed["unexpected_jobs"] = {"expected": [], "actual": unexpected}
+          if failed:
+              raise SystemExit(
+                  "production gates did not pass: " + json.dumps(failed, sort_keys=True)
+              )
+          PY

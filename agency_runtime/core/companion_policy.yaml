@@ -1,0 +1,1524 @@
+actions:
+  CODING:
+    description: Code is written, changed, fixed, refactored, or deployed
+    triggers:
+    - code
+    - function
+    - class
+    - method
+    - implement
+    - fix
+    - refactor
+    - bug
+    - patch
+    - write
+    - deploy
+    - build
+    - compile
+    - lint
+    - typecheck
+    - python
+    - bash
+    - yaml
+    - json
+    - typescript
+    - sql
+    - plugin
+    - hook
+    - skill
+    - script
+    - install
+    - pip
+    - npm
+    - import
+    - def
+    - async
+    - api
+    - endpoint
+    - config
+    always_include:
+    - slug: code-reviewer
+      reason: Review for correctness, security, performance
+    - slug: senior-developer
+      reason: Premium implementation expertise
+    conditional:
+    - slug: reality-checker
+      when: certification or certify
+    - slug: application-security-engineer
+      when: new endpoints, auth, or data handling
+    - slug: codebase-onboarding-engineer
+      when: reading unfamiliar source code
+    - slug: minimal-change-engineer
+      when: change should be surgical
+    - slug: prompt-engineer
+      when: code involves LLM prompts/system prompts
+    - slug: api-tester
+      when: API endpoints changed or added
+    - slug: software-architect
+      when: architectural decisions in the change
+    - slug: lsp-index-engineer
+      when: code intelligence/LSP work
+    - slug: git-workflow-master
+      when: branching or commit decisions
+    - slug: internationalization-engineer
+      when: expert i18n engineer for icu messageformat, cldr plural rules, rtl and
+        bidirecti
+    - slug: payments-billing-engineer
+      when: expert payments engineer for psp integrations (stripe, adyen, braintree,
+        paypal)
+    - slug: cms-developer
+      when: Drupal and WordPress specialist for theme development, custom plugins/modules,
+        content architecture,
+    - slug: drupal-shopping-cart-engineer
+      when: Expert Drupal e-commerce engineer specializing in Drupal Commerce for
+        product catalog management, pa
+    - slug: email-intelligence-engineer
+      when: Expert in extracting structured, reasoning-ready data from raw email threads
+        for AI agents and autom
+    - slug: embedded-firmware-engineer
+      when: Specialist in bare-metal and RTOS firmware - ESP32/ESP-IDF, PlatformIO,
+        Arduino, ARM Cortex-M, STM32
+    - slug: feishu-integration-developer
+      when: Full-stack integration expert specializing in the Feishu (Lark) Open Platform
+        — proficient in Feishu
+    - slug: filament-optimization-specialist
+      when: Expert in restructuring and optimizing Filament PHP admin interfaces for
+        maximum usability and effic
+    - slug: mobile-app-builder
+      when: Specialized mobile application developer with expertise in native iOS/Android
+        development and cross-
+    - slug: orgscript-engineer
+      when: Expert in designing, parsing, and implementing OrgScript grammar, AST
+        validation, and business logic
+    - slug: solidity-smart-contract-engineer
+      when: Expert Solidity developer specializing in EVM smart contract architecture,
+        gas optimization, upgrade
+    - slug: voice-ai-integration-engineer
+      when: Expert in building end-to-end speech transcription pipelines using Whisper-style
+        models and cloud AS
+    - slug: wechat-mini-program-developer
+      when: 'Expert WeChat Mini Program developer specializing in 小程序 development
+        with WXML/WXSS/WXS, WeChat API '
+    - slug: wordpress-shopping-cart-engineer
+      when: Expert WordPress e-commerce engineer specializing in WooCommerce for product
+        catalog management, pay
+  PERFORMANCE:
+    description: Performance optimization, profiling, latency, speed
+    triggers:
+    - performance
+    - performant
+    - latency
+    - speed
+    - slow
+    - fast
+    - optimize
+    - optimization
+    - profil
+    - benchmark
+    - throughput
+    - bottleneck
+    - cache
+    - memory leak
+    - cpu
+    - gpu usage
+    always_include:
+    - slug: performance-benchmarker
+      reason: Measure, analyze, PROVE the improvement
+    - slug: autonomous-optimization-architect
+      reason: System-level optimization governance
+    conditional:
+    - slug: database-optimizer
+      when: DB queries involved
+    - slug: codebase-onboarding-engineer
+      when: must read source to optimize
+    - slug: software-architect
+      when: architectural changes needed
+    - slug: senior-developer
+      when: implementation expertise
+    - slug: test-automation-engineer
+      when: expert end-to-end test automation engineer for playwright and cypress
+        — resilien
+  GITHUB_WRITE:
+    description: Creating PRs, commits, issues, or writing to GitHub
+    triggers:
+    - github
+    - pull request
+    - pr
+    - commit
+    - push
+    - merge
+    - issue
+    - branch
+    - git
+    - fork
+    - release
+    - mcp_github
+    always_include:
+    - slug: technical-writer
+      reason: PR descriptions, commit messages, issue clarity
+    - slug: git-workflow-master
+      reason: Branching strategy, commit hygiene
+    - slug: code-reviewer
+      reason: Review before merge
+    conditional:
+    - slug: jira-workflow-steward
+      when: Jira-linked Git workflows
+  ARCHITECTURE:
+    description: System design, architectural decisions, design patterns
+    triggers:
+    - architect
+    - design pattern
+    - system design
+    - scalab
+    - ddd
+    - domain-driven
+    - microservice
+    - monolith
+    - data flow
+    - api design
+    - schema design
+    - refactor architecture
+    always_include:
+    - slug: software-architect
+      reason: System design, DDD, trade-off analysis
+    - slug: workflow-architect
+      reason: Map complete workflow trees
+    conditional:
+    - slug: multi-agent-systems-architect
+      when: multi-agent coordination
+    - slug: backend-architect
+      when: backend/API architecture
+    - slug: rapid-prototyper
+      when: POC/MVP needed
+    - slug: internationalization-engineer
+      when: expert i18n engineer for icu messageformat, cldr plural rules, rtl and
+        bidirecti
+    - slug: payments-billing-engineer
+      when: expert payments engineer for psp integrations (stripe, adyen, braintree,
+        paypal)
+  ORCHESTRATION:
+    description: Conveyor, pipeline, agent orchestration, task scheduling
+    triggers:
+    - conveyor
+    - pipeline
+    - orchestrat
+    - workflow
+    - schedule
+    - delegate
+    - spawn
+    - worker
+    - task queue
+    - cron
+    - openclaw
+    - nexus
+    - async
+    - background process
+    always_include:
+    - slug: workflow-architect
+      reason: Map complete workflow trees
+    conditional:
+    - slug: product-manager
+      when: scope and priority decisions
+    - slug: senior-project-manager
+      when: task breakdown, realistic scope
+    - slug: project-shepherd
+      when: cross-functional coordination
+    - slug: infrastructure-maintainer
+      when: system reliability for the pipeline
+    - slug: automation-governance-architect
+      when: automation audit needed
+    - slug: multi-agent-systems-architect
+      when: multi-agent
+  DEBUGGING:
+    description: Debugging, troubleshooting, incident response
+    triggers:
+    - debug
+    - troubleshoot
+    - error
+    - exception
+    - traceback
+    - crash
+    - fail
+    - broken
+    - not working
+    - timeout
+    - incident
+    - outage
+    - 5xx
+    - panic
+    - segfault
+    always_include:
+    - slug: codebase-onboarding-engineer
+      reason: Read source, trace the failing path
+    - slug: code-reviewer
+      reason: Review the fix for correctness
+    conditional:
+    - slug: incident-response-commander
+      when: production incident management
+    - slug: sre-site-reliability-engineer
+      when: observability, SLOs, error budgets
+    - slug: senior-secops-engineer
+      when: security-related incident
+    - slug: reality-checker
+      when: verify the fix actually works
+  DEVOPS_INFRA:
+    description: DevOps, infrastructure, deployment, CI/CD
+    triggers:
+    - deploy
+    - deployment
+    - ci/cd
+    - cicd
+    - systemd
+    - nginx
+    - docker
+    - kubernetes
+    - k8s
+    - terraform
+    - ansible
+    - service
+    - systemctl
+    - journalctl
+    - monitor
+    - uptime
+    always_include:
+    - slug: devops-automator
+      reason: Infrastructure automation, CI/CD
+    - slug: infrastructure-maintainer
+      reason: Reliability, performance, operations
+    conditional:
+    - slug: sre-site-reliability-engineer
+      when: SLOs, observability, chaos engineering
+    - slug: network-engineer
+      when: network infrastructure
+    - slug: it-service-manager
+      when: ITIL service management
+    - slug: internationalization-engineer
+      when: expert i18n engineer for icu messageformat, cldr plural rules, rtl and
+        bidirecti
+    - slug: payments-billing-engineer
+      when: expert payments engineer for psp integrations (stripe, adyen, braintree,
+        paypal)
+    - slug: support-responder
+      when: Expert customer support specialist delivering exceptional customer service,
+        issue resolution, and us
+  IDEATION:
+    description: Feature suggestions, ideation, product planning
+    triggers:
+    - suggest
+    - idea
+    - feature
+    - roadmap
+    - what if
+    - could we
+    - should we
+    - brainstorm
+    - explore
+    - recommend
+    always_include:
+    - slug: trend-researcher
+      reason: Market intelligence, emerging trends
+    - slug: developer-advocate
+      reason: Developer community perspective
+    - slug: product-manager
+      reason: Product lifecycle, discovery
+    conditional:
+    - slug: sprint-prioritizer
+      when: feature prioritization
+    - slug: business-strategist
+      when: competitive analysis
+    - slug: growth-hacker
+      when: growth strategy
+    - slug: feedback-synthesizer
+      when: user feedback integration
+    - slug: behavioral-nudge-engine
+      when: Behavioral psychology specialist that adapts software interaction cadences
+        and styles to maximize us
+  DOCUMENTATION:
+    description: Writing docs, README, API references, guides
+    triggers:
+    - document
+    - docs
+    - readme
+    - guide
+    - tutorial
+    - api reference
+    - wiki
+    - manual
+    - write up
+    always_include:
+    - slug: technical-writer
+      reason: Developer documentation, API references
+    conditional:
+    - slug: document-generator
+      when: PDF/PPTX/DOCX/XLSX files needed
+    - slug: zk-steward
+      when: knowledge base/Zettelkasten
+    - slug: grant-writer
+      when: grant proposals
+  SECURITY:
+    description: Security audit, vulnerability check, compliance
+    triggers:
+    - security
+    - authentication
+    - authorization
+    - vulnerab
+    - cve
+    - exploit
+    - inject
+    - xss
+    - csrf
+    - secret
+    - credential
+    - compliance
+    - audit
+    always_include:
+    - slug: application-security-engineer
+      reason: SDLC security, SAST/DAST
+    - slug: security-architect
+      reason: Threat modeling, defense-in-depth
+    conditional:
+    - slug: penetration-tester
+      when: offensive testing
+    - slug: compliance-auditor
+      when: SOC2, ISO27001, HIPAA, PCI
+    - slug: senior-secops-engineer
+      when: secrets scanning
+    - slug: cloud-security-architect
+      when: cloud security
+    - slug: threat-intelligence-analyst
+      when: threat tracking
+    - slug: incident-responder
+      when: breach response
+    - slug: blockchain-security-auditor
+      when: smart contracts
+    - slug: data-privacy-officer
+      when: GDPR, CCPA
+    - slug: threat-detection-engineer
+      when: SIEM rules, MITRE ATT&CK
+  TESTING_QA:
+    description: Test writing, QA, validation
+    triggers:
+    - test
+    - qa
+    - quality
+    - validate
+    - verify
+    - assert
+    - coverage
+    - fixture
+    - mock
+    - pytest
+    - unittest
+    - jest
+    always_include:
+    - slug: reality-checker
+      reason: Stops fantasy approvals, evidence-based certification
+    - slug: evidence-collector
+      reason: Screenshot-obsessed QA, visual evidence required
+    conditional:
+    - slug: performance-benchmarker
+      when: performance testing
+    - slug: api-tester
+      when: API testing
+    - slug: accessibility-auditor
+      when: WCAG/accessibility
+    - slug: test-results-analyzer
+      when: test result analysis
+    - slug: tool-evaluator
+      when: tool evaluation
+    - slug: workflow-optimizer
+      when: process optimization
+    - slug: model-qa-specialist
+      when: ML model QA
+    - slug: test-automation-engineer
+      when: expert end-to-end test automation engineer for playwright and cypress
+        — resilien
+  UI_UX:
+    description: Frontend, design, user experience
+    triggers:
+    - ui
+    - ux
+    - visual design
+    - interface design
+    - interaction design
+    - product design
+    - web design
+    - dashboard design
+    - frontend
+    - react
+    - vue
+    - angular
+    - css
+    - tailwind
+    - layout
+    - user experience
+    - wireframe
+    - prototype
+    always_include:
+    - slug: ui-designer
+      reason: Visual design systems, component libraries
+    - slug: ux-architect
+      reason: Technical architecture and UX foundations
+    conditional:
+    - slug: ux-researcher
+      when: user research
+    - slug: frontend-developer
+      when: implementation
+    - slug: visual-storyteller
+      when: visual narratives
+    - slug: brand-guardian
+      when: brand consistency
+    - slug: whimsy-injector
+      when: delight and personality
+    - slug: persona-walkthrough-specialist
+      when: cognitive walkthroughs
+    - slug: inclusive-visuals-specialist
+      when: representation and bias
+    - slug: accessibility-auditor
+      when: WCAG compliance
+    - slug: image-prompt-engineer
+      when: image generation prompts
+  DATA_ML:
+    description: Data engineering, ML, analytics
+    triggers:
+    - data
+    - ml
+    - machine learning
+    - model
+    - dataset
+    - analytics
+    - embedding
+    - vector
+    - training
+    - fine-tune
+    - rag
+    - llm
+    - tokeni
+    always_include:
+    - slug: ai-engineer
+      reason: ML model development, deployment, integration
+    - slug: data-engineer
+      reason: Reliable data pipelines, lakehouse architectures
+    conditional:
+    - slug: autonomous-optimization-architect
+      when: system optimization
+    - slug: model-qa-specialist
+      when: model auditing
+    - slug: analytics-reporter
+      when: dashboards and reporting
+    - slug: prompt-engineer
+      when: prompt optimization
+    - slug: ai-data-remediation-engineer
+      when: self-healing data pipelines
+  BUSINESS:
+    description: Finance, sales, marketing, product, legal
+    triggers:
+    - finance
+    - financial
+    - stonks
+    - trade
+    - portfolio
+    - investment
+    - revenue
+    - budget
+    - cost
+    - pricing
+    - sales
+    - marketing
+    - seo
+    - content strategy
+    - social media
+    - legal
+    - contract
+    - compliance
+    - proposal
+    - crm
+    always_include:
+    - slug: business-strategist
+      reason: Competitive analysis, market entry, business models
+    - slug: financial-analyst
+      reason: Financial modeling, forecasting, scenario analysis
+    conditional:
+    - slug: investment-researcher
+      when: market research, due diligence
+    - slug: bookkeeper-controller
+      when: accounting operations
+    - slug: fp-a-analyst
+      when: budgeting, variance analysis
+    - slug: tax-strategist
+      when: tax optimization
+    - slug: chief-financial-officer
+      when: capital allocation
+    - slug: finance-tracker
+      when: budget management
+    - slug: sales-engineer
+      when: pre-sales technical
+    - slug: deal-strategist
+      when: MEDDPICC qualification
+    - slug: account-strategist
+      when: post-sale account management
+    - slug: pricing-analyst
+      when: pricing models
+    - slug: sales-outreach
+      when: B2B outreach
+    - slug: sales-coach
+      when: rep development
+    - slug: discovery-coach
+      when: discovery methodology
+    - slug: offer-lead-gen-strategist
+      when: lead generation
+    - slug: outbound-strategist
+      when: outbound prospecting
+    - slug: pipeline-analyst
+      when: pipeline health
+    - slug: proposal-strategist
+      when: RFPs and proposals
+    - slug: content-creator
+      when: multi-platform campaigns
+    - slug: brand-guardian
+      when: brand identity
+    - slug: seo-specialist
+      when: SEO
+    - slug: social-media-strategist
+      when: social strategy
+    - slug: pr-communications-manager
+      when: PR and media relations
+    - slug: growth-hacker
+      when: growth experiments
+    - slug: legal-compliance-checker
+      when: legal compliance
+    - slug: legal-document-review
+      when: contract review
+    - slug: compliance-auditor
+      when: regulatory compliance
+    - slug: data-privacy-officer
+      when: GDPR, CCPA
+    - slug: ai-citation-strategist
+      when: expert in ai recommendation engine optimization (aeo/geo) — audits brand
+        visibil
+    - slug: aeo-foundations-architect
+      when: Expert in AI Engine Optimization infrastructure — implements llms.txt,
+        AI-aware robots.txt, token-bu
+    - slug: app-store-optimizer
+      when: Expert app store marketing specialist focused on App Store Optimization
+        (ASO), conversion rate optim
+    - slug: baidu-seo-specialist
+      when: Expert Baidu search optimization specialist focused on Chinese search
+        engine ranking, Baidu ecosyste
+    - slug: bilibili-content-strategist
+      when: Expert Bilibili marketing specialist focused on UP主 growth, danmaku culture
+        mastery, B站 algorithm op
+    - slug: book-co-author
+      when: Strategic thought-leadership book collaborator for founders, experts,
+        and operators turning voice no
+    - slug: carousel-growth-engine
+      when: Autonomous TikTok and Instagram carousel generation specialist. Analyzes
+        any website URL with Playwr
+    - slug: china-e-commerce-operator
+      when: Expert China e-commerce operations specialist covering Taobao, Tmall,
+        Pinduoduo, and JD ecosystems w
+    - slug: china-market-localization-strategist
+      when: Full-stack China market localization expert who transforms real-time trend
+        signals into executable g
+    - slug: cross-border-e-commerce-specialist
+      when: Full-funnel cross-border e-commerce strategist covering Amazon, Shopee,
+        Lazada, AliExpress, Temu, an
+    - slug: douyin-strategist
+      when: Short-video marketing expert specializing in the Douyin platform, with
+        deep expertise in recommendat
+    - slug: email-marketing-strategist
+      when: Expert email marketing strategist for CRM-driven campaigns, lifecycle
+        automation, segmentation archi
+    - slug: global-podcast-strategist
+      when: Expert podcast growth specialist focused on show positioning, audience
+        development, content strategy
+    - slug: instagram-curator
+      when: Expert Instagram marketing specialist focused on visual storytelling,
+        community building, and multi-
+    - slug: kuaishou-strategist
+      when: Expert Kuaishou marketing strategist specializing in short-video content
+        for China's lower-tier city
+    - slug: linkedin-content-creator
+      when: Expert LinkedIn content strategist focused on thought leadership, personal
+        brand building, and high-
+    - slug: livestream-commerce-coach
+      when: Veteran livestream e-commerce coach specializing in host training and
+        live room operations across Do
+    - slug: multi-platform-publisher
+      when: Expert orchestrator for one-click Chinese blog publishing. Routes a single
+        article to 知乎 / 小红书 / CSD
+    - slug: podcast-strategist
+      when: Content strategy and operations expert for the Chinese podcast market,
+        with deep expertise in Xiaoyu
+    - slug: private-domain-operator
+      when: 'Expert in building enterprise WeChat (WeCom) private domain ecosystems,
+        with deep expertise in SCRM '
+    - slug: reddit-community-builder
+      when: Expert Reddit marketing specialist focused on authentic community engagement,
+        value-driven content c
+    - slug: short-video-editing-coach
+      when: Hands-on short-video editing coach covering the full post-production pipeline,
+        with mastery of CapCu
+    - slug: tiktok-strategist
+      when: Expert TikTok marketing specialist focused on viral content creation,
+        algorithm optimization, and co
+    - slug: twitter-engager
+      when: Expert Twitter marketing specialist focused on real-time engagement, thought
+        leadership building, an
+    - slug: video-optimization-specialist
+      when: Video marketing strategist specializing in YouTube algorithm optimization,
+        audience retention, chapt
+    - slug: wechat-official-account-manager
+      when: Expert WeChat Official Account (OA) strategist specializing in content
+        marketing, subscriber engagem
+    - slug: weibo-strategist
+      when: Full-spectrum operations expert for Sina Weibo, with deep expertise in
+        trending topic mechanics, Sup
+    - slug: x-twitter-intelligence-analyst
+      when: Social intelligence specialist for X/Twitter research, trend detection,
+        account monitoring, and evid
+    - slug: xiaohongshu-specialist
+      when: Expert Xiaohongshu marketing specialist focused on lifestyle content,
+        trend-driven strategies, and a
+    - slug: zhihu-strategist
+      when: Expert Zhihu marketing specialist focused on thought leadership, community
+        credibility, and knowledg
+    - slug: ad-creative-strategist
+      when: 'Paid media creative specialist focused on ad copywriting, RSA optimization,
+        asset group design, and '
+    - slug: paid-media-auditor
+      when: Comprehensive paid media auditor who systematically evaluates Google Ads,
+        Microsoft Ads, and Meta ac
+    - slug: paid-social-strategist
+      when: Cross-platform paid social advertising specialist covering Meta (Facebook/Instagram),
+        LinkedIn, TikT
+    - slug: ppc-campaign-strategist
+      when: Senior paid media strategist specializing in large-scale search, shopping,
+        and performance max campa
+    - slug: programmatic-display-buyer
+      when: Display advertising and programmatic media buying specialist covering
+        managed placements, Google Dis
+    - slug: search-query-analyst
+      when: Specialist in search term analysis, negative keyword architecture, and
+        query-to-intent mapping. Turn
+    - slug: tracking-measurement-specialist
+      when: Expert in conversion tracking architecture, tag management, and attribution
+        modeling across Google T
+  PROJECT_MGMT:
+    description: Project planning, coordination, tracking
+    triggers:
+    - project
+    - plan
+    - timeline
+    - milestone
+    - sprint
+    - backlog
+    - epic
+    - story
+    - task breakdown
+    - gantt
+    - kanban
+    - agile
+    - scum
+    always_include:
+    - slug: senior-project-manager
+      reason: Task breakdown, realistic scope, previous project memory
+    - slug: project-shepherd
+      reason: Cross-functional coordination, timeline management
+    conditional:
+    - slug: product-manager
+      when: product lifecycle
+    - slug: studio-producer
+      when: creative/technical orchestration
+    - slug: studio-operations
+      when: day-to-day operations
+    - slug: experiment-tracker
+      when: experiment tracking
+    - slug: meeting-notes-specialist
+      when: meeting extraction
+    - slug: operations-manager
+      when: process optimization
+  DEFAULT:
+    description: No deterministic worker fallback; valid inference owns staffing
+    triggers:
+    - _fallback_
+    always_include: []
+    conditional:
+    - slug: executive-summary-generator
+      when: summarizing status
+    - slug: strategy-duel-agent
+      when: weighing options
+    - slug: business-strategist
+      when: business context needed
+    - slug: agentic-search-optimizer
+      when: expert in webmcp readiness and agentic task completion — audits whether
+        ai agent
+    - slug: blender-add-on-engineer
+      when: Blender tooling specialist - Builds Python add-ons, asset validators,
+        exporters, and pipeline automa
+    - slug: godot-multiplayer-engineer
+      when: Godot 4 networking specialist - Masters the MultiplayerAPI, scene replication,
+        ENet/WebRTC transport
+    - slug: godot-shader-developer
+      when: Godot 4 visual effects specialist - Masters the Godot Shading Language
+        (GLSL-like), VisualShader edi
+    - slug: roblox-avatar-creator
+      when: Roblox UGC and avatar pipeline specialist - Masters Roblox's avatar system,
+        UGC item creation, acces
+    - slug: roblox-experience-designer
+      when: Roblox platform UX and monetization specialist - Masters engagement loop
+        design, DataStore-driven pr
+    - slug: roblox-systems-scripter
+      when: Roblox platform engineering specialist - Masters Luau, the client-server
+        security model, RemoteEvent
+    - slug: unity-editor-tool-developer
+      when: Unity editor automation specialist - Masters custom EditorWindows, PropertyDrawers,
+        AssetPostprocess
+    - slug: unity-multiplayer-engineer
+      when: Networked gameplay specialist - Masters Netcode for GameObjects, Unity
+        Gaming Services (Relay/Lobby)
+    - slug: unity-shader-graph-artist
+      when: Visual effects and material specialist - Masters Unity Shader Graph, HLSL,
+        URP/HDRP rendering pipeli
+    - slug: unreal-multiplayer-architect
+      when: Unreal Engine networking specialist - Masters Actor replication, GameMode/GameState
+        architecture, se
+    - slug: unreal-technical-artist
+      when: Unreal Engine visual pipeline specialist - Masters the Material Editor,
+        Niagara VFX, Procedural Cont
+    - slug: unreal-world-builder
+      when: 'Open-world and environment specialist - Masters UE5 World Partition,
+        Landscape, procedural foliage, '
+    - slug: 3d-scene-developer
+      when: Web 3D visualization specialist who creates immersive 3D scenes, terrain
+        models, point cloud visuali
+    - slug: bim-gis-specialist
+      when: 'Integration specialist who bridges Building Information Modeling and
+        Geographic Information Systems '
+    - slug: drone-reality-mapping-specialist
+      when: Photogrammetry and reality capture expert who processes drone imagery
+        into orthomosaics, digital ter
+    - slug: geoai-ml-engineer
+      when: Geospatial machine learning specialist who builds models for feature extraction,
+        object detection, i
+    - slug: geoprocessing-specialist
+      when: ArcPy and Python toolbox expert who automates spatial workflows — builds
+        .pyt toolboxes, Model Build
+    - slug: gis-qa-engineer
+      when: Quality assurance specialist who validates geospatial data integrity —
+        topology checks, metadata aud
+    - slug: solution-engineer
+      when: Hands-on GIS prototype builder who takes strategy from Technical Consultant
+        and turns it into workin
+    - slug: technical-consultant
+      when: Strategic GIS advisor who translates business problems into geospatial
+        solutions — gap analysis, tec
+    - slug: terminal-integration-specialist
+      when: Terminal emulation, text rendering optimization, and SwiftTerm integration
+        for modern Swift applicat
+    - slug: xr-cockpit-interaction-specialist
+      when: Specialist in designing and developing immersive cockpit-based control
+        systems for XR environments
+    - slug: accounts-payable-agent
+      when: Autonomous payment processing specialist that executes vendor payments,
+        contractor invoices, and rec
+    - slug: agentic-identity-trust-architect
+      when: 'Designs identity, authentication, and trust verification systems for
+        autonomous AI agents operating '
+    - slug: change-management-consultant
+      when: Expert change management specialist using ADKAR, Kotter, and Prosci frameworks
+        to guide organization
+    - slug: cultural-intelligence-strategist
+      when: CQ specialist that detects invisible exclusion, researches global context,
+        and ensures software reso
+    - slug: customer-success-manager
+      when: Strategic customer success specialist for onboarding, health scoring,
+        QBR facilitation, churn preven
+    - slug: data-consolidation-agent
+      when: 'AI agent that consolidates extracted sales data into live reporting dashboards
+        with territory, rep, '
+    - slug: esg-sustainability-officer
+      when: Corporate sustainability strategist and ESG reporting specialist who builds
+        environmental, social, a
+    - slug: french-consulting-market-navigator
+      when: Navigate the French ESN/SI freelance ecosystem — margin models, platform
+        mechanics (Malt, collective
+    - slug: government-digital-presales-consultant
+      when: Presales expert for China's government digital transformation market (ToG),
+        proficient in policy int
+    - slug: healthcare-customer-service
+      when: Empathetic healthcare customer service specialist for patient support,
+        billing inquiries, appointmen
+    - slug: healthcare-marketing-compliance-specialist
+      when: Expert in healthcare marketing compliance in China, proficient in the
+        Advertising Law, Medical Adver
+    - slug: hospitality-guest-services
+      when: Comprehensive hospitality guest services specialist for hotels, resorts,
+        restaurants, and event venu
+    - slug: identity-graph-operator
+      when: Operates a shared identity graph that multiple AI agents resolve against.
+        Ensures every agent in a m
+    - slug: korean-business-navigator
+      when: Korean business culture for foreign professionals — 품의 decision process,
+        nunchi reading, KakaoTalk b
+    - slug: language-translator
+      when: Real-time Spanish ↔ English translation specialist with cultural context,
+        regional dialect awareness
+    - slug: legal-billing-time-tracking
+      when: Comprehensive legal billing and time tracking specialist for accurate
+        time capture, invoice generati
+    - slug: legal-client-intake
+      when: 'Comprehensive legal client intake specialist for qualifying prospects,
+        collecting case information, '
+    - slug: loan-officer-assistant
+      when: Comprehensive loan officer assistant for mortgage and lending professionals
+        — covering borrower inta
+    - slug: m-a-integration-manager
+      when: Mergers and acquisitions integration specialist who designs and executes
+        post-merger integration pro
+    - slug: medical-billing-coding-specialist
+      when: Expert medical billing and coding specialist for ICD-10-CM/PCS, CPT, and
+        HCPCS coding, claim submiss
+    - slug: organizational-psychologist
+      when: Applied organizational psychologist who diagnoses team dynamics, psychological
+        safety, burnout risk,
+    - slug: personal-growth-mentor
+      when: Cross-domain personal development mentor for goal clarity, habit design,
+        strategic decisions, and ac
+    - slug: report-distribution-agent
+      when: AI agent that automates distribution of consolidated sales reports to
+        representatives based on terri
+    - slug: retail-customer-returns
+      when: Comprehensive retail customer returns specialist for processing returns,
+        exchanges, and refunds acro
+    - slug: sales-data-extraction-agent
+      when: AI agent specialized in monitoring Excel files and extracting key sales
+        metrics (MTD, YTD, Year End)
+    - slug: study-abroad-advisor
+      when: Full-spectrum study abroad planning expert covering the US, UK, Canada,
+        Australia, Europe, Hong Kong
+division_anchors:
+  game-development:
+    anchor: game-designer
+    keywords:
+    - game
+    - unity
+    - unreal
+    - godot
+    - roblox
+    - blender
+    - shader
+    - level design
+    conditional:
+    - - unity-architect
+      - unity
+    - - unreal-systems-engineer
+      - unreal
+    - - godot-gameplay-scripter
+      - godot
+    - - narrative-designer
+      - story or dialogue
+    - - level-designer
+      - level
+    - - technical-artist
+      - art pipeline
+    - - game-audio-engineer
+      - audio
+    - - blender-add-on-engineer
+      - Blender tooling specialist - Builds Python add-ons
+    - - godot-multiplayer-engineer
+      - Godot 4 networking specialist - Masters the Multip
+    - - godot-shader-developer
+      - Godot 4 visual effects specialist - Masters the Go
+    - - roblox-avatar-creator
+      - Roblox UGC and avatar pipeline specialist - Master
+    - - roblox-experience-designer
+      - Roblox platform UX and monetization specialist - M
+    - - roblox-systems-scripter
+      - Roblox platform engineering specialist - Masters L
+    - - unity-editor-tool-developer
+      - Unity editor automation specialist - Masters custo
+    - - unity-multiplayer-engineer
+      - Networked gameplay specialist - Masters Netcode fo
+    - - unity-shader-graph-artist
+      - Visual effects and material specialist - Masters U
+    - - unreal-multiplayer-architect
+      - Unreal Engine networking specialist - Masters Acto
+    - - unreal-technical-artist
+      - Unreal Engine visual pipeline specialist - Masters
+    - - unreal-world-builder
+      - Open-world and environment specialist - Masters UE
+  gis:
+    anchor: gis-analyst
+    keywords:
+    - gis
+    - map
+    - spatial
+    - geospatial
+    - cartograph
+    - coordinate
+    - projection
+    conditional:
+    - - web-gis-developer
+      - web map
+    - - spatial-data-engineer
+      - data
+    - - cartography-designer
+      - aesthetics
+    - - spatial-data-scientist
+      - analytics
+    - - 3d-scene-developer
+      - Web 3D visualization specialist who creates immers
+    - - bim-gis-specialist
+      - Integration specialist who bridges Building Inform
+    - - drone-reality-mapping-specialist
+      - Photogrammetry and reality capture expert who proc
+    - - geoai-ml-engineer
+      - 'Geospatial machine learning specialist who builds '
+    - - geoprocessing-specialist
+      - ArcPy and Python toolbox expert who automates spat
+    - - gis-qa-engineer
+      - Quality assurance specialist who validates geospat
+    - - solution-engineer
+      - 'Hands-on GIS prototype builder who takes strategy '
+    - - technical-consultant
+      - Strategic GIS advisor who translates business prob
+  healthcare:
+    anchor: clinical-evidence-agent
+    keywords:
+    - health
+    - medical
+    - clinical
+    - patient
+    - diagnosis
+    - treatment
+    conditional:
+    - - sovereign-health-systems-agent
+      - government health
+  spatial-computing:
+    anchor: xr-interface-architect
+    keywords:
+    - xr
+    - vr
+    - ar
+    - visionos
+    - spatial computing
+    - immersive
+    - metal
+    conditional:
+    - - visionos-spatial-engineer
+      - visionos
+    - - xr-immersive-developer
+      - webxr
+    - - macos-spatial-metal-engineer
+      - metal
+    - - terminal-integration-specialist
+      - Terminal emulation, text rendering optimization, a
+    - - xr-cockpit-interaction-specialist
+      - Specialist in designing and developing immersive c
+  academic:
+    anchor: zk-steward
+    keywords:
+    - research
+    - academic
+    - theory
+    - analysis
+    - scholarly
+    - citation
+    conditional:
+    - - historian
+      - historical
+    - - anthropologist
+      - cultural
+    - - psychologist
+      - behavioral
+    - - narratologist
+      - narrative
+    - - geographer
+      - geographic
+  specialized:
+    anchor: operations-manager
+    keywords:
+    - operations
+    - supply chain
+    - logistics
+    - training
+    - hr
+    - recruitment
+    - real estate
+    - hospitality
+    conditional:
+    - - supply-chain-strategist
+      - supply chain
+    - - operations-manager
+      - operations
+    - - corporate-training-designer
+      - training
+    - - hr-onboarding
+      - onboarding
+    - - recruitment-specialist
+      - hiring
+    - - real-estate-buyer-seller
+      - real estate
+    - - customer-service
+      - customer service
+    - - mcp-builder
+      - mcp or model context protocol
+    - - salesforce-architect
+      - salesforce
+    - - civil-engineer
+      - structural or civil engineering
+    - - accounts-payable-agent
+      - Autonomous payment processing specialist that exec
+    - - agentic-identity-trust-architect
+      - Designs identity, authentication, and trust verifi
+    - - change-management-consultant
+      - Expert change management specialist using ADKAR, K
+    - - cultural-intelligence-strategist
+      - CQ specialist that detects invisible exclusion, re
+    - - customer-success-manager
+      - Strategic customer success specialist for onboardi
+    - - data-consolidation-agent
+      - AI agent that consolidates extracted sales data in
+    - - esg-sustainability-officer
+      - Corporate sustainability strategist and ESG report
+    - - french-consulting-market-navigator
+      - Navigate the French ESN/SI freelance ecosystem — m
+    - - government-digital-presales-consultant
+      - Presales expert for China's government digital tra
+    - - healthcare-customer-service
+      - 'Empathetic healthcare customer service specialist '
+    - - healthcare-marketing-compliance-specialist
+      - Expert in healthcare marketing compliance in China
+    - - hospitality-guest-services
+      - Comprehensive hospitality guest services specialis
+    - - identity-graph-operator
+      - 'Operates a shared identity graph that multiple AI '
+    - - korean-business-navigator
+      - 'Korean business culture for foreign professionals '
+    - - language-translator
+      - Real-time Spanish ↔ English translation specialist
+    - - legal-billing-time-tracking
+      - Comprehensive legal billing and time tracking spec
+    - - legal-client-intake
+      - Comprehensive legal client intake specialist for q
+    - - loan-officer-assistant
+      - 'Comprehensive loan officer assistant for mortgage '
+    - - m-a-integration-manager
+      - Mergers and acquisitions integration specialist wh
+    - - medical-billing-coding-specialist
+      - Expert medical billing and coding specialist for I
+    - - organizational-psychologist
+      - 'Applied organizational psychologist who diagnoses '
+    - - personal-growth-mentor
+      - 'Cross-domain personal development mentor for goal '
+    - - report-distribution-agent
+      - AI agent that automates distribution of consolidat
+    - - retail-customer-returns
+      - Comprehensive retail customer returns specialist f
+    - - sales-data-extraction-agent
+      - AI agent specialized in monitoring Excel files and
+    - - study-abroad-advisor
+      - Full-spectrum study abroad planning expert coverin
+nightly_categorization_rules:
+- division: engineering
+  action: CODING
+  description_keywords:
+  - code
+  - develop
+  - implement
+  - engineer
+  - build
+  - deploy
+  also_try:
+  - ARCHITECTURE
+  - DEVOPS_INFRA
+- division: testing
+  action: TESTING_QA
+  description_keywords:
+  - test
+  - qa
+  - quality
+  - validate
+  - benchmark
+  - performance
+  also_try:
+  - PERFORMANCE
+- division: security
+  action: SECURITY
+  description_keywords:
+  - security
+  - vulnerability
+  - compliance
+  - threat
+  - audit
+  also_try:
+  - CODING
+- division: product
+  action: IDEATION
+  description_keywords:
+  - product
+  - trend
+  - feedback
+  - feature
+  - prioritize
+  also_try:
+  - BUSINESS
+- division: project-management
+  action: PROJECT_MGMT
+  description_keywords:
+  - project
+  - sprint
+  - coordinate
+  - manage
+  - plan
+  also_try:
+  - ORCHESTRATION
+- division: design
+  action: UI_UX
+  description_keywords:
+  - design
+  - ui
+  - ux
+  - brand
+  - visual
+  - interface
+  also_try: []
+- division: finance
+  action: BUSINESS
+  description_keywords:
+  - finance
+  - financial
+  - budget
+  - tax
+  - investment
+  - accounting
+  also_try: []
+- division: sales
+  action: BUSINESS
+  description_keywords:
+  - sales
+  - deal
+  - pipeline
+  - outreach
+  - account
+  also_try: []
+- division: marketing
+  action: BUSINESS
+  description_keywords:
+  - marketing
+  - seo
+  - content
+  - social
+  - brand
+  - campaign
+  also_try: []
+- division: support
+  action: DEVOPS_INFRA
+  description_keywords:
+  - infrastructure
+  - analytics
+  - finance
+  - legal
+  - support
+  also_try:
+  - BUSINESS
+- division: specialized
+  action: DEFAULT
+  description_keywords:
+  - orchestrat
+  - workflow
+  - operations
+  - mcp
+  - document
+  also_try:
+  - ORCHESTRATION
+  - PROJECT_MGMT
+- division: game-development
+  action: DEFAULT
+  description_keywords:
+  - game
+  - unity
+  - unreal
+  - godot
+  - blender
+  also_try: []
+- division: gis
+  action: DEFAULT
+  description_keywords:
+  - gis
+  - map
+  - spatial
+  - geospatial
+  also_try: []
+- division: healthcare
+  action: DEFAULT
+  description_keywords:
+  - health
+  - clinical
+  - medical
+  also_try: []
+- division: spatial-computing
+  action: DEFAULT
+  description_keywords:
+  - xr
+  - vr
+  - spatial
+  - visionos
+  also_try: []
+- division: academic
+  action: DEFAULT
+  description_keywords:
+  - research
+  - academic
+  - theory
+  also_try: []
+- division: '*'
+  action: DEFAULT
+  description_keywords: []
+  also_try: []
+
+# BEGIN GENERATED SPECIALIST AVAILABILITY
+specialist_availability:
+  schema_version: 1
+  enabled:
+  - 3d-scene-developer
+  - accessibility-auditor
+  - account-strategist
+  - accounts-payable-agent
+  - ad-creative-strategist
+  - aeo-foundations-architect
+  - agentic-identity-trust-architect
+  - agentic-search-optimizer
+  - ai-citation-strategist
+  - ai-data-remediation-engineer
+  - ai-engineer
+  - analytics-reporter
+  - anthropologist
+  - api-tester
+  - app-store-optimizer
+  - application-security-engineer
+  - automation-governance-architect
+  - autonomous-optimization-architect
+  - backend-architect
+  - baidu-seo-specialist
+  - behavioral-nudge-engine
+  - bilibili-content-strategist
+  - bim-gis-specialist
+  - blender-add-on-engineer
+  - blockchain-security-auditor
+  - book-co-author
+  - bookkeeper-controller
+  - brand-guardian
+  - business-strategist
+  - carousel-growth-engine
+  - cartography-designer
+  - change-management-consultant
+  - chief-financial-officer
+  - china-e-commerce-operator
+  - china-market-localization-strategist
+  - civil-engineer
+  - clinical-evidence-agent
+  - cloud-security-architect
+  - cms-developer
+  - code-reviewer
+  - codebase-onboarding-engineer
+  - compliance-auditor
+  - content-creator
+  - corporate-training-designer
+  - cross-border-e-commerce-specialist
+  - cultural-intelligence-strategist
+  - customer-service
+  - customer-success-manager
+  - data-consolidation-agent
+  - data-engineer
+  - data-privacy-officer
+  - database-optimizer
+  - deal-strategist
+  - developer-advocate
+  - devops-automator
+  - discovery-coach
+  - document-generator
+  - douyin-strategist
+  - drone-reality-mapping-specialist
+  - drupal-shopping-cart-engineer
+  - email-intelligence-engineer
+  - email-marketing-strategist
+  - embedded-firmware-engineer
+  - esg-sustainability-officer
+  - evidence-collector
+  - executive-summary-generator
+  - experiment-tracker
+  - feedback-synthesizer
+  - feishu-integration-developer
+  - filament-optimization-specialist
+  - finance-tracker
+  - financial-analyst
+  - fp-a-analyst
+  - french-consulting-market-navigator
+  - frontend-developer
+  - game-audio-engineer
+  - game-designer
+  - geoai-ml-engineer
+  - geographer
+  - geoprocessing-specialist
+  - gis-analyst
+  - gis-qa-engineer
+  - git-workflow-master
+  - global-podcast-strategist
+  - godot-gameplay-scripter
+  - godot-multiplayer-engineer
+  - godot-shader-developer
+  - government-digital-presales-consultant
+  - grant-writer
+  - growth-hacker
+  - healthcare-customer-service
+  - healthcare-marketing-compliance-specialist
+  - historian
+  - hospitality-guest-services
+  - hr-onboarding
+  - identity-graph-operator
+  - image-prompt-engineer
+  - incident-responder
+  - incident-response-commander
+  - inclusive-visuals-specialist
+  - infrastructure-maintainer
+  - instagram-curator
+  - internationalization-engineer
+  - investment-researcher
+  - it-service-manager
+  - jira-workflow-steward
+  - korean-business-navigator
+  - kuaishou-strategist
+  - language-translator
+  - legal-billing-time-tracking
+  - legal-client-intake
+  - legal-compliance-checker
+  - legal-document-review
+  - level-designer
+  - linkedin-content-creator
+  - livestream-commerce-coach
+  - loan-officer-assistant
+  - lsp-index-engineer
+  - m-a-integration-manager
+  - macos-spatial-metal-engineer
+  - mcp-builder
+  - medical-billing-coding-specialist
+  - meeting-notes-specialist
+  - minimal-change-engineer
+  - mobile-app-builder
+  - model-qa-specialist
+  - multi-agent-systems-architect
+  - multi-platform-publisher
+  - narrative-designer
+  - narratologist
+  - network-engineer
+  - offer-lead-gen-strategist
+  - operations-manager
+  - organizational-psychologist
+  - orgscript-engineer
+  - outbound-strategist
+  - paid-media-auditor
+  - paid-social-strategist
+  - payments-billing-engineer
+  - penetration-tester
+  - performance-benchmarker
+  - persona-walkthrough-specialist
+  - personal-growth-mentor
+  - pipeline-analyst
+  - podcast-strategist
+  - ppc-campaign-strategist
+  - pr-communications-manager
+  - pricing-analyst
+  - private-domain-operator
+  - product-manager
+  - programmatic-display-buyer
+  - project-shepherd
+  - prompt-engineer
+  - proposal-strategist
+  - psychologist
+  - rapid-prototyper
+  - real-estate-buyer-seller
+  - reality-checker
+  - recruitment-specialist
+  - reddit-community-builder
+  - report-distribution-agent
+  - retail-customer-returns
+  - roblox-avatar-creator
+  - roblox-experience-designer
+  - roblox-systems-scripter
+  - sales-coach
+  - sales-data-extraction-agent
+  - sales-engineer
+  - sales-outreach
+  - salesforce-architect
+  - search-query-analyst
+  - security-architect
+  - senior-developer
+  - senior-project-manager
+  - senior-secops-engineer
+  - seo-specialist
+  - short-video-editing-coach
+  - social-media-strategist
+  - software-architect
+  - solidity-smart-contract-engineer
+  - solution-engineer
+  - sovereign-health-systems-agent
+  - spatial-data-engineer
+  - spatial-data-scientist
+  - sprint-prioritizer
+  - sre-site-reliability-engineer
+  - strategy-duel-agent
+  - studio-operations
+  - studio-producer
+  - study-abroad-advisor
+  - supply-chain-strategist
+  - support-responder
+  - tax-strategist
+  - technical-artist
+  - technical-consultant
+  - technical-writer
+  - terminal-integration-specialist
+  - test-automation-engineer
+  - test-results-analyzer
+  - threat-detection-engineer
+  - threat-intelligence-analyst
+  - tiktok-strategist
+  - tool-evaluator
+  - tracking-measurement-specialist
+  - trend-researcher
+  - twitter-engager
+  - ui-designer
+  - unity-architect
+  - unity-editor-tool-developer
+  - unity-multiplayer-engineer
+  - unity-shader-graph-artist
+  - unreal-multiplayer-architect
+  - unreal-systems-engineer
+  - unreal-technical-artist
+  - unreal-world-builder
+  - ux-architect
+  - ux-researcher
+  - video-optimization-specialist
+  - visionos-spatial-engineer
+  - visual-storyteller
+  - voice-ai-integration-engineer
+  - web-gis-developer
+  - wechat-mini-program-developer
+  - wechat-official-account-manager
+  - weibo-strategist
+  - whimsy-injector
+  - wordpress-shopping-cart-engineer
+  - workflow-architect
+  - workflow-optimizer
+  - x-twitter-intelligence-analyst
+  - xiaohongshu-specialist
+  - xr-cockpit-interaction-specialist
+  - xr-immersive-developer
+  - xr-interface-architect
+  - zhihu-strategist
+  - zk-steward
+  roster_gated:
+    reason: "No governed active definition is available; this route is enabled only after approved roster activation."
+    slugs: []
+# END GENERATED SPECIALIST AVAILABILITY

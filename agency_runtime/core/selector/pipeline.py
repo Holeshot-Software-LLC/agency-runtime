@@ -1,70 +1,1668 @@
-"""Full 8-layer routing pipeline — the core selector.
+"""Inference-owned routing with deterministic classification and verification.
 
-Uses centralized config for all tunable values.
-
-Layer 0: Companion policy (deterministic action→agent mapping, <1ms)
-Layer 1: Domain context expansion
-Layer 2: LRU cache (content-hash + TTL)
-Layer 3: Session stickiness (token overlap reuse)
-Layer 4: Confidence bypass (skip LLM when token score ≥ threshold)
-Layer 5: Token pre-narrow + LLM judge
-Layer 6: Token-only fallback (if LLM unavailable)
-Layer 7: Union companion policy results with semantic results
+Deterministic code may classify a turn, enforce eligibility and compatibility,
+or replay an exact durable inference decision. It never adds or reorders a
+specialist. Fresh selection-requiring turns therefore fail closed when their
+configured inference path is unavailable or invalid.
 """
 
 from __future__ import annotations
 
+import hashlib
 import logging
+import math
 import re
-from typing import Any
+import uuid
+import warnings
+from collections.abc import Mapping
+from contextlib import suppress
+from dataclasses import dataclass, field
+from functools import partial
+from pathlib import Path
+from typing import TYPE_CHECKING, Any
 
-from agency_runtime.core.config import AgencyConfig, load_config
-from agency_runtime.core.selector.cache import cache_get, cache_key, cache_put
+from agency_runtime.core.activation_canary_contract import (
+    CODEX_ACTIVATION_CANARY_ROUTE_SOURCE,
+    CODEX_ACTIVATION_CANARY_WORK_UNIT,
+    CODEX_ACTIVATION_CANARY_WORK_UNIT_SOURCE,
+    is_exact_codex_activation_canary_task,
+)
+from agency_runtime.core.agent_identity import agent_identity
+from agency_runtime.core.bounded_values import bounded_unique_strings
+from agency_runtime.core.config import AgencyConfig
+from agency_runtime.core.config_binding import config_for_store
+from agency_runtime.core.delegation.events import (
+    MAX_SUGGESTED_WORK_UNITS,
+    MAX_WORK_UNIT_CHARS,
+    work_unit_id_from_text,
+)
+from agency_runtime.core.host_capabilities import (
+    HostCapabilityReceipt,
+    current_host_capability_receipt,
+)
+from agency_runtime.core.host_guidance import (
+    SPECIALIST_TOOL_GUIDANCE,
+)
+from agency_runtime.core.roster.limits import MAX_ACTIVE_ROSTER_SIZE
+from agency_runtime.core.selector import policy as policy_module
+from agency_runtime.core.selector.cache import (
+    cache_get,
+    cache_key,
+    cache_put,
+    catalog_active_ids,
+    routing_fingerprint,
+)
+from agency_runtime.core.selector.compatibility import (
+    COMPATIBILITY_CONTRACT_VERSION,
+    MAX_COMPATIBLE_SPECIALISTS,
+    enforce_compatible_set,
+    filter_eligible_catalog,
+)
 from agency_runtime.core.selector.delegation_detection import detect_work_units
 from agency_runtime.core.selector.domain_expansion import expand_query
-from agency_runtime.core.selector.candidate_narrow import tokenize
-from agency_runtime.core.selector.policy import detect_actions
+from agency_runtime.core.selector.intent_text import affirmative_intent
+from agency_runtime.core.selector.judge import inference_is_configured, query_judge
+from agency_runtime.core.selector.policy import (
+    detect_actions,
+    detect_fallback_companions,
+    policy_path_for_config,
+    validate_policy,
+)
+from agency_runtime.core.selector.semantic_retrieval import RevisionedCatalog
 from agency_runtime.core.selector.stickiness import session_check, session_put
-from agency_runtime.core.selector.judge import query_judge
+from agency_runtime.core.turn_intent import (
+    TurnClassification,
+    TurnState,
+    authoritative_turn_classification,
+    classify_turn_intent,
+)
+from agency_runtime.core.turn_routing_context import (
+    project_turn_routing_context,
+    turn_routing_context_revision,
+)
 
 logger = logging.getLogger("agency_runtime.selector.pipeline")
 
+MAX_ROUTING_SIGNAL_CHARS = 16_384
+MAX_ROUTING_CONTEXT_CHARS = 8_000
+MAX_ROUTING_SIGNAL_ITEMS = 32
+MAX_ROUTING_TOKEN_CHARS = 128
+_EXPLICIT_REVIEW_RE = re.compile(
+    r"\b(?:audit|critiqu|inspect|review|validat|verif)\w*\b",
+    re.IGNORECASE,
+)
 
-def _get_config(config: AgencyConfig | None = None) -> AgencyConfig:
-    return config or load_config()
+if TYPE_CHECKING:
+    from agency_runtime.core.roster.workforce import WorkforceIndexSnapshot
+    from agency_runtime.core.store.sqlite import Store
+
+
+def load_policy(policy_path: Path | None = None) -> dict[str, Any]:
+    """Keep the historic patch seam while resolving the live policy module."""
+
+    if policy_path is None:
+        return policy_module.load_policy()
+    return policy_module.load_policy(policy_path)
+
+
+def _get_config(
+    config: AgencyConfig | None = None,
+    store: Store | None = None,
+) -> AgencyConfig:
+    return config_for_store(store, config)
+
+
+def _bounded_signal_text(value: Any, limit: int = MAX_ROUTING_SIGNAL_CHARS) -> str:
+    return str(value or "")[: max(0, limit)]
+
+
+_bounded_unique_strings = partial(
+    bounded_unique_strings,
+    limit=MAX_ROUTING_SIGNAL_ITEMS,
+    chars=MAX_ROUTING_TOKEN_CHARS,
+    collapse_whitespace=True,
+)
+
+
+def _bounded_work_units(value: Any) -> dict[str, Any]:
+    if not isinstance(value, dict):
+        return {
+            "count": 1,
+            "confidence": "low",
+            "source": "unknown",
+            "units": [""],
+            "delegate": False,
+        }
+    units = _bounded_unique_strings(
+        value.get("units"),
+        limit=MAX_SUGGESTED_WORK_UNITS,
+        chars=MAX_WORK_UNIT_CHARS,
+    )
+    try:
+        raw_count = value.get("count", 1)
+        declared_count = int(1 if raw_count is None else raw_count)
+    except (TypeError, ValueError, OverflowError):
+        declared_count = 1
+    bounded_count = (
+        len(units)
+        if units
+        else 0
+        if declared_count == 0
+        else max(1, min(declared_count, MAX_SUGGESTED_WORK_UNITS))
+    )
+    return {
+        "count": bounded_count,
+        "confidence": _bounded_signal_text(value.get("confidence") or "low", 32),
+        "source": _bounded_signal_text(value.get("source") or "unknown", 64),
+        "units": units or ([] if bounded_count == 0 else [""]),
+        "delegate": bool(value.get("delegate") is True and bounded_count >= 1),
+    }
 
 
 def refine_query(user_message: str, config: AgencyConfig | None = None) -> str:
     """Lightweight query refinement without an LLM call."""
     cfg = _get_config(config)
-    msg = user_message.strip()
+    hard_limit = min(max(1, int(cfg.selector.max_user_msg_len)), MAX_ROUTING_SIGNAL_CHARS)
+    msg = _bounded_signal_text(user_message, hard_limit).strip()
     msg = re.sub(r"^(?:Hermes|Mentor|Nexus|OpenClaw)\s*[:,-]?\s*", "", msg, flags=re.IGNORECASE)
     msg = re.sub(r"https?://\S+", "", msg)
     msg = re.sub(r"/(?:home|usr|opt|var|tmp)/\S+", "", msg)
     msg = re.sub(r"\s+", " ", msg).strip()
-    max_len = cfg.selector.max_user_msg_len
-    if len(msg) > max_len:
-        msg = msg[:max_len]
     return msg
 
 
-def is_trivial(message: str, config: AgencyConfig | None = None) -> bool:
-    """Check if a message is too trivial to warrant agency routing."""
-    cfg = _get_config(config)
-    msg = message.strip()
-    if len(msg) < cfg.selector.trivial_msg_threshold:
-        return True
-    return bool(_TRIVIAL_PATTERNS.match(msg))
+def is_trivial(
+    message: str,
+    config: AgencyConfig | None = None,
+    *,
+    turn_state: TurnState | Mapping[str, Any] | None = None,
+) -> bool:
+    """Compatibility alias for callers that have not adopted turn intent yet.
+
+    The selector threshold is intentionally ignored. This projection is not an
+    authority boundary; only the state-aware classifier decides whether
+    specialist selection is required. Missing state is conservative, so only
+    only exact controls or a proven pure acknowledgement under explicitly
+    current, no-pending state can return true.
+    """
+
+    del config
+    return not classify_turn_intent(
+        _bounded_signal_text(message),
+        turn_state,
+    ).selection_required
 
 
-_TRIVIAL_PATTERNS = re.compile(
-    r"^(?:yes|no|ok|okay|sure|thanks|done|got ?it|cool|nice|great|"
-    r"perfect|exactly|right|correct|yep|nope|true|false|"
-    r"continue|proceed|go|stop|wait|hold|skip|next|retry|"
-    r"hello|hi|hey|sup|yo|test|ping|status|heartbeat"
-    r"|/\w+|ack|k|thx|ty|np|lol|haha|👍|❤️|🙌|✅|💀|😂)\s*[!.?]*$",
-    re.IGNORECASE,
-)
+def _turn_classification(
+    user_message: str,
+    *,
+    turn_classification: TurnClassification | None,
+    turn_state: TurnState | Mapping[str, Any] | None,
+) -> TurnClassification:
+    """Resolve one classifier result without mixing state and precomputed evidence."""
+
+    if turn_classification is not None and turn_state is not None:
+        raise ValueError("turn_classification and turn_state are mutually exclusive")
+    if turn_classification is not None:
+        authoritative = authoritative_turn_classification(turn_classification, user_message)
+        if authoritative is None:
+            raise ValueError("turn_classification is not authoritative for this message")
+        return authoritative
+    return classify_turn_intent(user_message, turn_state)
+
+
+def _available_companions(
+    companion_ids: list[str], active_slugs: set[str] | frozenset[str]
+) -> tuple[list[str], list[str]]:
+    """Split policy companion slugs into active-roster and unavailable lists."""
+    available: list[str] = []
+    unavailable: list[str] = []
+    for companion_id in _bounded_unique_strings(companion_ids):
+        if companion_id in active_slugs:
+            available.append(companion_id)
+        else:
+            unavailable.append(companion_id)
+    return available, unavailable
+
+
+def _explicit_review_requested(message: str) -> bool:
+    """Return whether affirmative user intent explicitly asks for review."""
+
+    return bool(_EXPLICIT_REVIEW_RE.search(affirmative_intent(message)))
+
+
+def _refresh_reused_routing(
+    routing: dict[str, Any],
+    *,
+    active_ids: set[str] | frozenset[str],
+    matched_actions: list[str],
+    companion_ids: list[str],
+    available_companion_ids: list[str],
+    unavailable_companion_ids: list[str],
+    work_units: dict[str, Any],
+    catalog: list[dict[str, Any]] | None = None,
+    max_selected: int = MAX_COMPATIBLE_SPECIALISTS,
+    user_message: str = "",
+) -> dict[str, Any] | None:
+    """Validate reusable state and attach signals from the current message."""
+    if routing.get("fallback_applied"):
+        # A no-match decision is safe for an identical cache hit, but must not
+        # become sticky evidence that a related message also has no match.
+        return None
+    semantic_ids = routing.get("semantic_ids")
+    if not isinstance(semantic_ids, list):
+        previous_companions = set(routing.get("available_companion_ids", []))
+        semantic_ids = [
+            slug for slug in routing.get("selected_ids", []) if slug not in previous_companions
+        ]
+    validated_semantic_ids = [
+        slug for slug in _bounded_unique_strings(semantic_ids) if slug in active_ids
+    ]
+    if semantic_ids and not validated_semantic_ids:
+        # The cached decision no longer exists in this catalog. Re-run routing
+        # instead of turning a stale selection into a misleading abstention.
+        return None
+
+    merged = list(dict.fromkeys(validated_semantic_ids))
+    for companion_id in available_companion_ids:
+        if companion_id not in merged:
+            merged.append(companion_id)
+    compatibility: dict[str, Any] | None = None
+    if catalog is not None:
+        compatibility = enforce_compatible_set(
+            merged,
+            catalog,
+            limit=max_selected,
+            review_overflow_ids=(
+                available_companion_ids if _explicit_review_requested(user_message) else ()
+            ),
+        )
+        merged = list(compatibility["selected_ids"])
+    if not merged:
+        return None
+
+    routing["semantic_ids"] = [slug for slug in validated_semantic_ids if slug in merged]
+    routing["selected_ids"] = merged
+    routing["selected_companion_ids"] = [slug for slug in available_companion_ids if slug in merged]
+    if compatibility is not None:
+        routing["compatibility"] = compatibility
+    routing["companion_actions"] = _bounded_unique_strings(matched_actions)
+    routing["companion_ids"] = _bounded_unique_strings(companion_ids)
+    routing["available_companion_ids"] = _bounded_unique_strings(available_companion_ids)
+    routing["unavailable_companion_ids"] = _bounded_unique_strings(unavailable_companion_ids)
+    routing["work_units"] = _bounded_work_units(work_units)
+    return routing
+
+
+def _finalize_decision(
+    routing: dict[str, Any],
+    *,
+    session_id: str,
+    user_message: str,
+    context_fingerprint: str,
+    store: Store | None,
+    trace_id: str | None,
+    record_intent: bool = False,
+) -> dict[str, Any]:
+    """Attach per-request identity and optionally persist a safe projection."""
+    decision_trace_id = trace_id or str(uuid.uuid4())
+    routing["trace_id"] = decision_trace_id
+    routing["context_fingerprint"] = context_fingerprint
+    query_hash = hashlib.sha256(user_message.encode("utf-8")).hexdigest()
+    routing["query_hash"] = query_hash
+    if store is not None:
+        try:
+            routing["decision_id"] = store.record_routing_decision(
+                trace_id=decision_trace_id,
+                session_id=session_id,
+                query_hash=query_hash,
+                context_fingerprint=context_fingerprint,
+                decision=routing,
+            )
+        except Exception as exc:  # routing must survive an observability outage
+            logger.warning("failed to persist routing decision: %s", type(exc).__name__)
+        if record_intent:
+            # Retention is the operator's explicit choice, and auditing is never
+            # worth failing a turn for -- so this follows the decision write and
+            # swallows its own failure exactly as that one does.
+            try:
+                store.record_routing_intent(
+                    routing,
+                    trace_id=decision_trace_id,
+                    session_id=session_id,
+                )
+            except Exception as exc:
+                logger.warning("failed to retain routing intent: %s", type(exc).__name__)
+    return routing
+
+
+@dataclass(frozen=True, slots=True)
+class _RouteRequest:
+    session_id: str
+    trace_id: str
+    user_message: str
+    catalog: list[dict[str, Any]]
+    workforce_catalog: list[dict[str, Any]]
+    config: AgencyConfig
+    policy: dict[str, Any]
+    context_fingerprint: str
+    routing_query: str
+    cache_key: str
+    source_message_hash: str
+    active_ids: frozenset[str]
+    policy_active_ids: frozenset[str] = field(default_factory=frozenset)
+    surface: str = "unknown"
+    host: str = "unknown"
+    inference_surface: str = ""
+    platform: str = "unknown"
+    available_tools: tuple[str, ...] = ()
+    capability_status: str = "unknown"
+    capability_receipt: dict[str, Any] = field(default_factory=dict)
+    eligibility_rejections: tuple[dict[str, str], ...] = ()
+    semantic_root_ids: frozenset[str] | None = None
+    workforce_snapshot: WorkforceIndexSnapshot | None = None
+    turn_routing_context: dict[str, Any] = field(default_factory=dict)
+    turn_routing_context_revision: str = ""
+
+
+@dataclass(frozen=True, slots=True)
+class _RouteSignals:
+    policy_validation: dict[str, Any]
+    matched_actions: list[str]
+    companion_ids: list[str]
+    available_companion_ids: list[str]
+    unavailable_companion_ids: list[str]
+    work_units: dict[str, Any]
+    fallback_companion_ids: list[str] = field(default_factory=list)
+    available_fallback_companion_ids: list[str] = field(default_factory=list)
+    unavailable_fallback_companion_ids: list[str] = field(default_factory=list)
+
+
+def _route_request(
+    session_id: str,
+    user_message: str,
+    catalog: list[dict[str, Any]],
+    config: AgencyConfig,
+    *,
+    host: str = "unknown",
+    platform: str = "unknown",
+    available_tools: tuple[str, ...] | None = None,
+    trace_id: str = "",
+    capability_receipt: HostCapabilityReceipt | None = None,
+    capability_session_id: str = "",
+    capability_trace_id: str = "",
+    allow_installation_diagnostic: bool = False,
+    semantic_root_ids: tuple[str, ...] | None = None,
+    workforce_snapshot: WorkforceIndexSnapshot | None = None,
+    turn_routing_context: Mapping[str, Any] | None = None,
+) -> _RouteRequest:
+    user_message = _bounded_signal_text(user_message)
+    projected_turn_context = project_turn_routing_context(turn_routing_context)
+    if projected_turn_context is None:
+        raise ValueError("turn_routing_context is malformed or unbounded")
+    turn_context_revision = turn_routing_context_revision(projected_turn_context)
+    capabilities = current_host_capability_receipt(
+        capability_receipt,
+        surface=host,
+        platform=platform,
+        session_id=capability_session_id or session_id or "route",
+        trace_id=capability_trace_id or trace_id or "route",
+        allow_installation_diagnostic=allow_installation_diagnostic,
+    )
+    receipt = capabilities.as_dict()
+    normalized_host = capabilities.execution_host or "unknown"
+    normalized_platform = capabilities.platform
+    normalized_tools = capabilities.capabilities
+    eligibility = filter_eligible_catalog(
+        catalog,
+        host=normalized_host,
+        platform=normalized_platform,
+        available_tools=normalized_tools,
+        inference_surface=capabilities.inference_surface,
+        capability_status=capabilities.status,
+    )
+    eligible_catalog = list(eligibility.eligible)
+    eligible_slugs = set(eligibility.eligible_ids)
+    bounded_semantic_roots = (
+        None
+        if semantic_root_ids is None
+        else frozenset(
+            slug
+            for item in semantic_root_ids[:MAX_ACTIVE_ROSTER_SIZE]
+            if (slug := str(item or "").strip()[:MAX_ROUTING_TOKEN_CHARS])
+            and slug in eligible_slugs
+        )
+    )
+    policy_active_ids = (
+        frozenset(eligible_slugs)
+        if len(eligible_catalog) == len(catalog)
+        else frozenset(
+            slug
+            for agent in catalog[:MAX_ACTIVE_ROSTER_SIZE]
+            if (slug := agent_identity(agent)[:MAX_ROUTING_TOKEN_CHARS])
+        )
+    )
+    policy = load_policy(policy_path_for_config(config))
+    base_fingerprint = routing_fingerprint(
+        eligible_catalog,
+        config,
+        policy,
+        _catalog_validation_token=eligibility._catalog_validation_token,
+    )
+    fingerprint = hashlib.sha256(
+        "\0".join(
+            (
+                base_fingerprint,
+                capabilities.surface,
+                normalized_host,
+                capabilities.inference_surface,
+                normalized_platform,
+                capabilities.status,
+                ",".join(sorted(policy_active_ids)),
+                "*" if bounded_semantic_roots is None else ",".join(sorted(bounded_semantic_roots)),
+                ("" if workforce_snapshot is None else workforce_snapshot.contract_fingerprint),
+                "" if workforce_snapshot is None else str(workforce_snapshot.generation),
+                *normalized_tools,
+                *capabilities.unknown_tools,
+            )
+        ).encode("utf-8")
+    ).hexdigest()
+    refined = refine_query(user_message, config)
+    if projected_turn_context:
+        subject = projected_turn_context.get("workforce_subject_hints", {})
+        subject_tokens = [
+            str(item)
+            for field in ("domains", "languages", "frameworks", "capability_ids", "platforms")
+            for item in subject.get(field, [])
+        ]
+        specialist_tokens = [
+            str(item.get("slug") or "")
+            for item in projected_turn_context.get("specialists", [])
+            if isinstance(item, Mapping)
+        ]
+        context_tokens = " ".join((*subject_tokens, *specialist_tokens))
+        if context_tokens:
+            refined = f"{refined} {context_tokens}"[:MAX_ROUTING_SIGNAL_CHARS]
+    routing_query = expand_query(affirmative_intent(refined))
+    return _RouteRequest(
+        session_id=session_id,
+        trace_id=trace_id or "route",
+        user_message=user_message,
+        catalog=eligible_catalog,
+        workforce_catalog=list(catalog),
+        config=config,
+        policy=policy,
+        context_fingerprint=fingerprint,
+        routing_query=routing_query,
+        cache_key=cache_key(routing_query, context_fingerprint=fingerprint),
+        source_message_hash=hashlib.sha256(user_message.encode("utf-8")).hexdigest(),
+        active_ids=catalog_active_ids(eligible_catalog, context_fingerprint=fingerprint),
+        policy_active_ids=policy_active_ids,
+        surface=capabilities.surface,
+        host=normalized_host,
+        inference_surface=capabilities.inference_surface,
+        platform=normalized_platform,
+        available_tools=normalized_tools,
+        capability_status=capabilities.status,
+        capability_receipt=receipt,
+        eligibility_rejections=eligibility.rejected,
+        semantic_root_ids=bounded_semantic_roots,
+        workforce_snapshot=workforce_snapshot,
+        turn_routing_context=projected_turn_context,
+        turn_routing_context_revision=turn_context_revision,
+    )
+
+
+def routing_context_fingerprint(
+    catalog: list[dict[str, Any]],
+    config: AgencyConfig,
+    *,
+    session_id: str = "fingerprint",
+    trace_id: str = "fingerprint",
+    host: str = "unknown",
+    platform: str = "unknown",
+    available_tools: tuple[str, ...] | None = None,
+    capability_receipt: HostCapabilityReceipt | None = None,
+    workforce_snapshot: WorkforceIndexSnapshot | None = None,
+) -> str:
+    """Return the exact policy/config/catalog identity used by routing."""
+
+    return _route_request(
+        session_id,
+        "fingerprint",
+        catalog,
+        config,
+        trace_id=trace_id,
+        host=host,
+        platform=platform,
+        available_tools=available_tools,
+        capability_receipt=capability_receipt,
+        workforce_snapshot=workforce_snapshot,
+    ).context_fingerprint
+
+
+def build_route_request(
+    session_id: str,
+    user_message: str,
+    catalog: list[dict[str, Any]],
+    config: AgencyConfig,
+    *,
+    trace_id: str | None = None,
+    host: str = "unknown",
+    platform: str = "unknown",
+    available_tools: tuple[str, ...] | None = None,
+    capability_receipt: HostCapabilityReceipt | None = None,
+    capability_session_id: str = "",
+    capability_trace_id: str = "",
+    allow_installation_diagnostic: bool = False,
+    semantic_root_ids: tuple[str, ...] | None = None,
+    workforce_snapshot: WorkforceIndexSnapshot | None = None,
+    turn_routing_context: Mapping[str, Any] | None = None,
+) -> _RouteRequest:
+    """Build a ``_RouteRequest`` for reuse across one routing turn.
+
+    This is the public seam for callers (notably ``run_preflight``) that need
+    both the routing context fingerprint and the request itself, so that
+    ``route()`` can skip rebuilding it via the ``request=`` kwarg. The caller
+    is responsible for ensuring the request is built from the same catalog and
+    config that will be passed to ``route()``; a request built from a different
+    config (e.g. a deterministic offline config) must not be reused.
+    """
+
+    return _route_request(
+        session_id,
+        user_message,
+        catalog,
+        config,
+        trace_id=trace_id,
+        host=host,
+        platform=platform,
+        available_tools=available_tools,
+        capability_receipt=capability_receipt,
+        capability_session_id=capability_session_id,
+        capability_trace_id=capability_trace_id,
+        allow_installation_diagnostic=allow_installation_diagnostic,
+        semantic_root_ids=semantic_root_ids,
+        workforce_snapshot=workforce_snapshot,
+        turn_routing_context=turn_routing_context,
+    )
+
+
+def _route_signals(request: _RouteRequest) -> _RouteSignals:
+    validation = validate_policy(
+        request.policy,
+        request.policy_active_ids or request.active_ids,
+    )
+    matched_actions, companion_ids = detect_actions(
+        request.user_message,
+        request.policy,
+        active_slugs=request.active_ids,
+    )
+    matched_actions = _bounded_unique_strings(matched_actions)
+    companion_ids = _bounded_unique_strings(companion_ids)
+    fallback_ids = _bounded_unique_strings(detect_fallback_companions(request.policy))
+    available, unavailable = _available_companions(
+        companion_ids,
+        request.active_ids,
+    )
+    available_fallbacks, unavailable_fallbacks = _available_companions(
+        fallback_ids,
+        request.active_ids,
+    )
+    return _RouteSignals(
+        policy_validation=validation,
+        matched_actions=matched_actions,
+        companion_ids=companion_ids,
+        available_companion_ids=available,
+        unavailable_companion_ids=unavailable,
+        work_units=_bounded_work_units(detect_work_units(request.user_message)),
+        fallback_companion_ids=fallback_ids,
+        available_fallback_companion_ids=available_fallbacks,
+        unavailable_fallback_companion_ids=unavailable_fallbacks,
+    )
+
+
+def _finalize_request(
+    routing: dict[str, Any],
+    request: _RouteRequest,
+    *,
+    store: Store | None,
+    trace_id: str | None,
+) -> dict[str, Any]:
+    return _finalize_decision(
+        routing,
+        session_id=request.session_id,
+        user_message=request.user_message,
+        context_fingerprint=request.context_fingerprint,
+        store=store,
+        trace_id=trace_id,
+        record_intent=bool(
+            getattr(getattr(request.config, "selector", None), "record_routing_intent", False)
+        ),
+    )
+
+
+def _finalize_classified_request(
+    routing: dict[str, Any],
+    request: _RouteRequest,
+    classification: TurnClassification,
+    *,
+    store: Store | None,
+    trace_id: str | None,
+) -> dict[str, Any]:
+    """Attach current-turn intent without mutating cached routing evidence."""
+
+    classified = dict(routing)
+    reused = bool(classified.get("cache_hit") or classified.get("session_reused"))
+    if reused:
+        # A valid continuation may reuse a prior decision, but the provider
+        # attempts belong to the earlier turn and must not become current-turn
+        # evidence merely because the selection was cached.
+        classified.update(
+            inference_required=False,
+            inference_attempted=False,
+            inference_mode="cached",
+            provider_attempts=[],
+            inference_failures=[],
+        )
+    turn_context_applied = bool(
+        request.turn_routing_context
+        and classification.selection_required
+        and classification.reroute_required
+        and (
+            not classification.execution_decision_required
+            or classification.turn_kind in {"continuation", "revision"}
+        )
+    )
+    classified.update(
+        turn_kind=classification.turn_kind,
+        selection_required=classification.selection_required,
+        reroute_required=classification.reroute_required,
+        execution_decision_required=classification.execution_decision_required,
+        continuation_of=classification.continuation_of,
+        classifier_version=classification.classifier_version,
+        state_revision=classification.state_revision,
+        turn_context_applied=turn_context_applied,
+    )
+    if turn_context_applied:
+        classified.update(
+            turn_context_source_trace_id=request.turn_routing_context["source_trace_id"],
+            turn_context_revision=request.turn_routing_context_revision,
+        )
+    return _finalize_request(classified, request, store=store, trace_id=trace_id)
+
+
+def _exact_cached_routing(
+    cached: dict[str, Any] | None,
+    request: _RouteRequest,
+) -> dict[str, Any] | None:
+    if cached is None or cached.get("source_message_hash") != request.source_message_hash:
+        return None
+    cached_ids = cached.get("selected_ids", [])
+    return cached if all(str(slug) in request.active_ids for slug in cached_ids) else None
+
+
+def _compatibility_projection_is_current(
+    routing: dict[str, Any],
+    request: _RouteRequest,
+) -> bool:
+    """Prove an exact cache hit already satisfies the live set contract."""
+
+    if str(routing.get("source") or "").startswith("workforce_"):
+        snapshot = request.workforce_snapshot
+        return bool(
+            snapshot is not None
+            and routing.get("workforce_contract_fingerprint") == snapshot.contract_fingerprint
+            and all(
+                slug in request.policy_active_ids
+                for slug in _bounded_unique_strings(routing.get("selected_ids"))
+            )
+        )
+    receipt = routing.get("compatibility")
+    if not isinstance(receipt, dict):
+        return False
+    if receipt.get("contract_version") != COMPATIBILITY_CONTRACT_VERSION:
+        return False
+    if receipt.get("selection_limit") != max(
+        0,
+        min(int(request.config.judge.max_selected), MAX_COMPATIBLE_SPECIALISTS),
+    ):
+        return False
+    selected_ids = _bounded_unique_strings(routing.get("selected_ids"))
+    compatible_ids = _bounded_unique_strings(receipt.get("selected_ids"))
+    if routing.get("fallback_applied"):
+        fallback_ids = set(_bounded_unique_strings(routing.get("fallback_companion_ids")))
+        return (
+            not compatible_ids and bool(selected_ids) and set(selected_ids).issubset(fallback_ids)
+        )
+    return selected_ids == compatible_ids
+
+
+def _reuse_routing(
+    routing: dict[str, Any] | None,
+    request: _RouteRequest,
+    signals: _RouteSignals,
+) -> dict[str, Any] | None:
+    if routing is None:
+        return None
+    if str(routing.get("source") or "").startswith("workforce_"):
+        # Similar asks must be replanned. Exact cache and durable continuation
+        # reuse are separately bound to the current request identity.
+        return None
+    refreshed = _refresh_reused_routing(
+        routing,
+        active_ids=request.active_ids,
+        matched_actions=signals.matched_actions,
+        companion_ids=signals.companion_ids,
+        available_companion_ids=signals.available_companion_ids,
+        unavailable_companion_ids=signals.unavailable_companion_ids,
+        work_units=signals.work_units,
+        catalog=request.catalog,
+        max_selected=request.config.judge.max_selected,
+        user_message=request.user_message,
+    )
+    if refreshed is not None:
+        refreshed["source_message_hash"] = request.source_message_hash
+    return refreshed
+
+
+def _semantic_catalog(
+    request: _RouteRequest,
+    signals: _RouteSignals,
+) -> RevisionedCatalog:
+    """Exclude DEFAULT-only identities from ordinary semantic selection."""
+    fallback_ids = set(signals.fallback_companion_ids)
+    return RevisionedCatalog(
+        (
+            agent
+            for agent in request.catalog
+            if (
+                (slug := agent_identity(agent)) not in fallback_ids
+                and (request.semantic_root_ids is None or slug in request.semantic_root_ids)
+            )
+        ),
+        revision=request.context_fingerprint,
+    )
+
+
+def _merge_computed_routing(
+    routing: dict[str, Any],
+    request: _RouteRequest,
+    signals: _RouteSignals,
+) -> dict[str, Any]:
+    semantic_status = str(routing.get("status") or "unknown")
+    inference_failed = semantic_status in {"inference_unavailable", "inference_invalid"}
+    fallback_ids = set(signals.fallback_companion_ids)
+    proposed_semantic_ids = (
+        []
+        if inference_failed
+        else [
+            slug
+            for slug in _bounded_unique_strings(routing.get("selected_ids"))
+            if slug in request.active_ids and slug not in fallback_ids
+        ]
+    )
+    proposed_ids = list(proposed_semantic_ids)
+    if not inference_failed:
+        for companion_id in signals.available_companion_ids:
+            if companion_id not in proposed_ids:
+                proposed_ids.append(companion_id)
+    routing["selected_ids"] = proposed_ids
+    routing = _apply_compatible_selection(
+        routing,
+        request.catalog,
+        limit=request.config.judge.max_selected,
+        user_message=request.user_message,
+        config=request.config,
+        review_overflow_ids=(
+            tuple(signals.available_companion_ids)
+            if not inference_failed and _explicit_review_requested(request.user_message)
+            else ()
+        ),
+    )
+    merged_ids = list(routing["selected_ids"])
+    semantic_ids = [slug for slug in proposed_semantic_ids if slug in merged_ids]
+    selected_companion_ids = [
+        slug for slug in signals.available_companion_ids if slug in merged_ids
+    ]
+    fallback_considered = (
+        bool(signals.fallback_companion_ids) and not inference_failed and not merged_ids
+    )
+    fallback_applied = fallback_considered and bool(signals.available_fallback_companion_ids)
+    if fallback_applied:
+        merged_ids.extend(
+            slug for slug in signals.available_fallback_companion_ids if slug not in merged_ids
+        )
+
+    companion_ids = [] if inference_failed else list(signals.companion_ids)
+    available_companion_ids = [] if inference_failed else list(signals.available_companion_ids)
+    unavailable_companion_ids = [] if inference_failed else list(signals.unavailable_companion_ids)
+    if fallback_considered:
+        companion_ids.extend(
+            slug for slug in signals.available_fallback_companion_ids if slug not in companion_ids
+        )
+        available_companion_ids.extend(
+            slug
+            for slug in signals.available_fallback_companion_ids
+            if slug not in available_companion_ids
+        )
+        unavailable_companion_ids.extend(
+            slug
+            for slug in signals.unavailable_fallback_companion_ids
+            if slug not in unavailable_companion_ids
+        )
+    if fallback_applied:
+        routing["semantic_status"] = semantic_status
+        routing["status"] = "policy_fallback"
+        routing["source"] = "policy_fallback"
+    validation = signals.policy_validation
+    routing.update(
+        selected_ids=merged_ids,
+        semantic_ids=semantic_ids,
+        companion_actions=_bounded_unique_strings(signals.matched_actions),
+        companion_ids=_bounded_unique_strings(companion_ids),
+        available_companion_ids=_bounded_unique_strings(available_companion_ids),
+        unavailable_companion_ids=_bounded_unique_strings(unavailable_companion_ids),
+        selected_companion_ids=_bounded_unique_strings(selected_companion_ids),
+        fallback_companion_ids=(
+            [] if inference_failed else _bounded_unique_strings(signals.fallback_companion_ids)
+        ),
+        fallback_considered=fallback_considered,
+        fallback_applied=fallback_applied,
+        policy_validation={
+            "valid": validation["valid"],
+            "errors": _bounded_unique_strings(
+                validation["errors"],
+                limit=16,
+                chars=160,
+            ),
+            "enabled_count": len(validation["enabled_slugs"]),
+            "disabled_count": validation["disabled_count"],
+        },
+        work_units=_bounded_work_units(signals.work_units),
+        source_message_hash=request.source_message_hash,
+        execution_context=dict(request.capability_receipt),
+        eligibility_rejections=[dict(item) for item in request.eligibility_rejections],
+    )
+    return routing
+
+
+def _apply_selection_confidence_floor(
+    routing: dict[str, Any],
+    *,
+    minimum: float,
+) -> dict[str, Any]:
+    """Turn an uncertain proposal into a real abstention before hydration.
+
+    The confidence threshold used to affect only explanatory text. That made a
+    low-confidence candidate look optional to the parent while the preflight
+    recipe still loaded its prompt. Selection safety must be decided before
+    policy fallback, caching, durable references, or specialist activation.
+    """
+
+    selected = _bounded_unique_strings(routing.get("selected_ids"))
+    try:
+        confidence = float(routing.get("confidence", 0.0))
+    except (TypeError, ValueError, OverflowError):
+        confidence = 0.0
+    confidence = confidence if math.isfinite(confidence) else 0.0
+    if not selected or confidence >= max(0.0, min(float(minimum), 1.0)):
+        return routing
+    return {
+        **routing,
+        "selected_ids": [],
+        "semantic_ids": [],
+        "status": "abstained_low_confidence",
+        "error": "selection confidence below configured minimum",
+    }
+
+
+def _attach_workforce_signals(
+    routing: dict[str, Any],
+    request: _RouteRequest,
+    signals: _RouteSignals,
+) -> dict[str, Any]:
+    """Attach policy and host evidence without altering verified staffing.
+
+    The workforce planner and verifier are authoritative whenever this path is
+    active. Legacy keyword companions belong to the pre-workforce router and
+    must not appear beside an inferred team: one generic policy token such as
+    "contract" can otherwise make an unrelated business role look selected.
+    Legacy fallback fields remain as bounded compatibility telemetry but cannot
+    add a worker to an inference-owned team.
+    """
+
+    validation = signals.policy_validation
+    routing.update(
+        companion_actions=[],
+        companion_ids=[],
+        available_companion_ids=[],
+        unavailable_companion_ids=[],
+        selected_companion_ids=[],
+        fallback_companion_ids=_bounded_unique_strings(signals.fallback_companion_ids),
+        policy_validation={
+            "valid": validation["valid"],
+            "errors": _bounded_unique_strings(validation["errors"], limit=16, chars=160),
+            "enabled_count": len(validation["enabled_slugs"]),
+            "disabled_count": validation["disabled_count"],
+        },
+        work_units=_bounded_work_units(routing.get("work_units")),
+        source_message_hash=request.source_message_hash,
+        execution_context=dict(request.capability_receipt),
+        eligible_catalog_count=len(request.catalog),
+        eligibility_rejections=[dict(item) for item in request.eligibility_rejections],
+    )
+    return routing
+
+
+def _activation_canary_projection(
+    routing: dict[str, Any],
+    request: _RouteRequest,
+) -> dict[str, Any]:
+    """Bind an inference-selected diagnostic worker to the recoverable canary goal.
+
+    Codex encrypts the parent collaboration message before current-profile hook
+    delivery. The package-owned diagnostic goal is therefore fixed and
+    recoverable, but the specialist decision remains entirely inference-owned.
+    This verifier may reject or rebind identity metadata; it never adds a worker.
+    """
+
+    if not is_exact_codex_activation_canary_task(
+        request.user_message,
+        host=request.host,
+        capability_status=request.capability_status,
+    ):
+        return routing
+
+    bindings = routing.get("workforce_unit_bindings")
+    assignments = routing.get("unit_assignment_agents")
+    selected = routing.get("selected_ids")
+    violations: list[str] = []
+    checks = (
+        (routing.get("source") == "workforce_inference", "source"),
+        (routing.get("status") == "accepted", "status"),
+        (routing.get("inference_required") is True, "inference_required"),
+        (routing.get("inference_attempted") is True, "inference_attempted"),
+        (
+            isinstance(routing.get("provider_attempts"), list)
+            and bool(routing["provider_attempts"]),
+            "provider_attempts",
+        ),
+        (isinstance(selected, list) and len(selected) == 1, "selected_count"),
+        (isinstance(bindings, list) and len(bindings) == 1, "binding_count"),
+        (isinstance(assignments, list) and len(assignments) == 1, "assignment_count"),
+    )
+    violations.extend(code for passed, code in checks if not passed)
+    valid = not violations
+    binding = dict(bindings[0]) if valid and isinstance(bindings[0], Mapping) else {}
+    assignment = dict(assignments[0]) if valid and isinstance(assignments[0], Mapping) else {}
+    if valid:
+        checks = (
+            (binding.get("selected") == selected, "binding_selection"),
+            (binding.get("delivery") == "delegate", "delivery"),
+            (binding.get("timing") == "immediate", "timing"),
+            (binding.get("depends_on") == [], "dependencies"),
+            (binding.get("mutation_scope") == "read_only", "mutation_scope"),
+            (binding.get("artifact_kind") == "review-report", "artifact_kind"),
+            (assignment.get("slug") == selected[0], "assignment_identity"),
+        )
+        violations.extend(code for passed, code in checks if not passed)
+        valid = not violations
+    if not valid:
+        return {
+            **routing,
+            "selected_ids": [],
+            "semantic_ids": [],
+            "status": "inference_invalid",
+            "source": "workforce_inference_failure",
+            "error": "activation_canary_contract_invalid:" + ",".join(violations),
+            "work_units": {
+                "count": 0,
+                "confidence": "none",
+                "source": CODEX_ACTIVATION_CANARY_WORK_UNIT_SOURCE,
+                "units": [],
+                "delegate": False,
+            },
+            "workforce_unit_bindings": [],
+            "workforce_unit_descriptors": [],
+            "unit_assignment_agents": [],
+        }
+
+    work_unit_id = work_unit_id_from_text(CODEX_ACTIVATION_CANARY_WORK_UNIT)
+    binding["work_unit_id"] = work_unit_id
+    binding["parallelization"] = "sequential"
+    binding["required_tools"] = []
+    assignment["matched_work_unit_ids"] = [work_unit_id]
+    assignment["primary_work_unit_ids"] = [work_unit_id]
+    projected = {
+        **routing,
+        "source": CODEX_ACTIVATION_CANARY_ROUTE_SOURCE,
+        "work_units": {
+            "count": 1,
+            "confidence": "high",
+            "source": CODEX_ACTIVATION_CANARY_WORK_UNIT_SOURCE,
+            "units": [CODEX_ACTIVATION_CANARY_WORK_UNIT],
+            "delegate": True,
+        },
+        "workforce_unit_bindings": [binding],
+        "unit_assignment_agents": [assignment],
+    }
+    projected.pop("workforce_unit_descriptors", None)
+    return projected
+
+
+def _advisory_projection(
+    routing: dict[str, Any],
+    classification: TurnClassification,
+) -> dict[str, Any]:
+    """Reject any executable authority inferred for a parent-only advisory turn."""
+
+    if classification.execution_decision_required or routing.get("status") != "accepted":
+        return routing
+    descriptors = routing.get("workforce_unit_descriptors")
+    bindings = routing.get("workforce_unit_bindings")
+    assignments = routing.get("unit_assignment_agents")
+    selected = routing.get("selected_ids")
+    work_units = routing.get("work_units")
+    violations: list[str] = []
+    checks = (
+        (isinstance(selected, list) and bool(selected), "selected"),
+        (isinstance(descriptors, list) and len(descriptors) == 1, "descriptor_count"),
+        (isinstance(bindings, list) and len(bindings) == 1, "binding_count"),
+        (isinstance(assignments, list), "assignments"),
+        (isinstance(work_units, Mapping), "work_units"),
+    )
+    violations.extend(code for passed, code in checks if not passed)
+    descriptor = (
+        dict(descriptors[0]) if not violations and isinstance(descriptors[0], Mapping) else {}
+    )
+    binding = dict(bindings[0]) if not violations and isinstance(bindings[0], Mapping) else {}
+    if not violations:
+        assignment_slugs = {
+            str(item.get("slug") or "").strip().casefold()
+            for item in assignments
+            if isinstance(item, Mapping)
+        }
+        checks = (
+            (descriptor.get("ordinal") == 1, "descriptor_ordinal"),
+            (descriptor.get("artifact_kind") == "analysis", "descriptor_artifact"),
+            (descriptor.get("lifecycle_phase") == "discovery", "descriptor_lifecycle"),
+            (descriptor.get("authority") == "advise", "descriptor_authority"),
+            (descriptor.get("mutation_scope") == "read_only", "descriptor_mutation"),
+            (binding.get("selected") == selected, "binding_selection"),
+            (binding.get("delivery") == "load", "binding_delivery"),
+            (binding.get("depends_on") == [], "binding_dependencies"),
+            (binding.get("mutation_scope") == "read_only", "binding_mutation"),
+            (binding.get("artifact_kind") == "analysis", "binding_artifact"),
+            (assignment_slugs == set(selected), "assignment_selection"),
+            (work_units.get("count") == 1, "work_unit_count"),
+            (
+                isinstance(work_units.get("units"), list) and len(work_units["units"]) == 1,
+                "work_unit_payload",
+            ),
+            (work_units.get("delegate") is False, "work_unit_delegation"),
+        )
+        violations.extend(code for passed, code in checks if not passed)
+    if not violations:
+        return routing
+    return {
+        **routing,
+        "selected_ids": [],
+        "semantic_ids": [],
+        "status": "inference_invalid",
+        "source": "workforce_inference_failure",
+        "error": "advisory_contract_invalid:" + ",".join(violations),
+        "work_units": {
+            "count": 0,
+            "confidence": "none",
+            "source": "advisory-contract",
+            "units": [],
+            "delegate": False,
+        },
+        "workforce_unit_bindings": [],
+        "workforce_unit_descriptors": [],
+        "unit_assignment_agents": [],
+    }
+
+
+def _workforce_planning_options(
+    classification: TurnClassification,
+    *,
+    activation_canary: bool,
+) -> dict[str, object]:
+    """Return bounded planner constraints for special turn contracts."""
+
+    if activation_canary:
+        return {
+            "max_planned_units": 1,
+            "required_planned_artifact_kind": "review-report",
+            "required_delivery": "delegate",
+        }
+    if not classification.execution_decision_required:
+        # Contextual work inquiries need fresh expertise in the parent, not an
+        # inferred action plan. The analysis artifact deterministically maps to
+        # advise authority and read_only mutation scope.
+        return {
+            "max_planned_units": 1,
+            "required_planned_artifact_kind": "analysis",
+        }
+    return {}
+
+
+def _conflict_provider(config: Any) -> Any:
+    """Return the first attemptable provider, or None to skip the check."""
+
+    from agency_runtime.core.selector.judge import _provider_is_attemptable
+
+    providers = getattr(config, "providers", None) or ()
+    for provider in providers:
+        try:
+            if _provider_is_attemptable(provider):
+                return provider
+        except Exception:
+            continue
+    return None
+
+
+def _resolve_undeclared_conflicts(
+    routing: dict[str, Any],
+    catalog: list[dict[str, Any]],
+    *,
+    user_message: str,
+    config: Any,
+) -> None:
+    """Ask inference whether plural cards actually contradict for this task.
+
+    The deterministic pass above only sees declared conflicts, which cover a
+    fraction of a percent of real pairings. Two cards can therefore be
+    "compatible" and still pull in opposite directions. This is the check the
+    vision specifies for that case; it demotes the card least suited to the job.
+
+    Entirely advisory: any failure leaves the deterministic selection alone.
+    """
+
+    selected = list(routing.get("selected_ids", []))
+    if len(selected) < 2:
+        return
+    from agency_runtime.core.selector.card_conflict import (
+        declared_companion_pairs,
+        resolve_card_conflicts,
+    )
+    from agency_runtime.core.structured_provider import invoke_structured_provider_result
+
+    by_slug = {slug: agent for agent in catalog if (slug := agent_identity(agent))}
+    # Policy companions were put together deliberately, so they are declared.
+    declared = declared_companion_pairs(
+        by_slug,
+        policy_groups=[routing.get("available_companion_ids") or ()],
+    )
+    resolution = resolve_card_conflicts(
+        selected,
+        by_slug,
+        user_message=user_message,
+        provider=_conflict_provider(config),
+        invoker=invoke_structured_provider_result,
+        declared=declared,
+    )
+    routing["card_conflict"] = resolution
+    if resolution["selected_ids"] and resolution["selected_ids"] != selected:
+        demoted = {row["slug"] for row in resolution["demoted"]}
+        routing["selected_ids"] = list(resolution["selected_ids"])
+        routing["semantic_ids"] = [
+            slug for slug in routing.get("semantic_ids", []) if slug not in demoted
+        ]
+        routing["selected_companion_ids"] = [
+            slug for slug in routing.get("selected_companion_ids", []) if slug not in demoted
+        ]
+
+
+def _apply_compatible_selection(
+    routing: dict[str, Any],
+    catalog: list[dict[str, Any]],
+    *,
+    limit: int = MAX_COMPATIBLE_SPECIALISTS,
+    review_overflow_ids: tuple[str, ...] = (),
+    user_message: str = "",
+    config: Any = None,
+) -> dict[str, Any]:
+    """Enforce explicit requirements and conflicts on one judge proposal."""
+
+    compatible = enforce_compatible_set(
+        routing.get("selected_ids", []),
+        catalog,
+        limit=limit,
+        review_overflow_ids=review_overflow_ids,
+    )
+    routing["selected_ids"] = list(compatible["selected_ids"])
+    routing["compatibility"] = compatible
+    if compatible["requested_ids"] and not compatible["selected_ids"]:
+        routing["status"] = "abstained"
+        routing["error"] = "selected specialists failed compatibility constraints"
+        return routing
+    if config is not None:
+        _resolve_undeclared_conflicts(
+            routing,
+            catalog,
+            user_message=user_message,
+            config=config,
+        )
+    return routing
+
+
+def _remember_routing(
+    routing: dict[str, Any],
+    request: _RouteRequest,
+    *,
+    store: Store | None = None,
+) -> None:
+    if not routing.get("selected_ids"):
+        return
+    cache_put(request.cache_key, routing)
+    _persist_routing_for_reuse(routing, request, store=store)
+    if routing.get("fallback_applied"):
+        return
+    session_put(
+        request.session_id,
+        request.routing_query,
+        routing,
+        context_fingerprint=request.context_fingerprint,
+    )
+
+
+def _persist_routing_for_reuse(
+    routing: dict[str, Any],
+    request: _RouteRequest,
+    *,
+    store: Store | None,
+) -> None:
+    """Persist a decision so the next hook process can reuse it.
+
+    The in-memory cache above cannot survive: each hook event is its own
+    process, so it is populated and destroyed on the same turn and has never
+    once been read back. Persisting is what gives it the lifetime the hook
+    model actually provides.
+
+    Advisory, exactly like the in-memory cache: a failure here costs a later
+    turn some latency and must never fail the turn that produced the decision.
+    """
+
+    recorder = getattr(store, "put_cached_routing", None)
+    if not callable(recorder):
+        return
+    with suppress(Exception):
+        recorder(
+            request.cache_key,
+            routing,
+            context_fingerprint=request.context_fingerprint,
+        )
+
+
+def _reusable_routing(
+    request: _RouteRequest,
+    *,
+    store: Store | None,
+    fresh_selection_required: bool,
+) -> dict[str, Any] | None:
+    """Return a reusable decision from memory, then from the store.
+
+    Memory first because it is free when it happens to be warm -- a CLI or a
+    test running several routes in one process. The store is what makes reuse
+    possible at all under hooks, where every event is its own process.
+    """
+
+    if fresh_selection_required:
+        return None
+    return cache_get(request.cache_key) or _reusable_persisted_routing(request, store=store)
+
+
+def _reusable_persisted_routing(
+    request: _RouteRequest,
+    *,
+    store: Store | None,
+) -> dict[str, Any] | None:
+    """Return a persisted decision for this exact request, or None.
+
+    Only the persistable subset of a routing decision is stored, so the entry
+    deliberately arrives without its compatibility receipt. That is what sends
+    it through the ordinary reuse path, which revalidates every selected id
+    against the live catalog and recomputes compatibility locally -- the same
+    checks a same-process cache hit already had to pass.
+    """
+
+    reader = getattr(store, "get_cached_routing", None)
+    if not callable(reader):
+        return None
+    try:
+        cached = reader(request.cache_key)
+    except Exception:
+        return None
+    if not isinstance(cached, dict):
+        return None
+    return dict(cached)
+
+
+def _requires_fresh_selection(classification: TurnClassification) -> bool:
+    """Return whether current intent must bypass cache and session stickiness."""
+
+    rerouted_intent = classification.reroute_required or classification.turn_kind in {
+        "new_intent",
+        "revision",
+    }
+    return bool(classification.selection_required and rerouted_intent)
+
+
+def _record_workforce_model_receipts(
+    store: Store | None,
+    outcome: Any,
+    *,
+    session_id: str,
+    trace_id: str,
+    host: str,
+) -> None:
+    """Persist each correlated provider attempt without upgrading its authority."""
+
+    recorder = getattr(store, "record_model_receipt", None)
+    if not callable(recorder):
+        return
+    attempts = tuple(getattr(outcome, "attempts", ()) or ())
+    for fallback_count, attempt in enumerate(attempts):
+        attempt_status = str(getattr(attempt, "status", "")).strip().casefold()
+        status = "success" if attempt_status == "applied" else "failed"
+        recorder(
+            trace_id=trace_id,
+            session_id=session_id,
+            host=host,
+            requested_model=str(getattr(attempt, "requested_model", "") or ""),
+            model_group=str(getattr(attempt, "model_group", "") or ""),
+            resolved_provider=str(
+                getattr(attempt, "provider_name", "") or getattr(attempt, "provider", "") or ""
+            ),
+            resolved_model=str(getattr(attempt, "actual_model", "") or ""),
+            attempted_fallbacks=fallback_count,
+            source="wrapper",
+            # The provider layer already measured this call and the attempt has
+            # carried it all along; dropping it here is what left every receipt
+            # with started_at == ended_at and made the cost of a turn readable
+            # only as one opaque total.
+            latency_ms=int(getattr(attempt, "latency_ms", 0) or 0),
+            status=status,
+        )
+
+
+def _hireable_gap_units(outcome: Any) -> tuple[str, ...]:
+    """Return inference-declared uncovered units whose verifier evidence is clean."""
+
+    allowed = {
+        "coverage_evidence_mismatch",
+        "independent_assurance_missing",
+        "no_safe_sufficient_team",
+        "required_agents_missing",
+        "recruiter_abstained",
+    }
+    reasons = tuple(getattr(getattr(outcome, "staffing", None), "abstention_reasons", ()) or ())
+    global_codes = {
+        str(getattr(item, "code", "") or "")
+        for item in reasons
+        if not str(getattr(item, "unit_id", "") or "")
+    }
+    if global_codes - allowed:
+        return ()
+    declared_gap_units = {
+        str(getattr(row, "unit_id", "") or "")
+        for row in tuple(getattr(getattr(outcome, "proposal", None), "units", ()) or ())
+        if "inference-declared-gap" in tuple(getattr(row, "abstention_reasons", ()) or ())
+    }
+    plan = getattr(outcome, "plan", None)
+    plan_units = tuple(getattr(plan, "units", ()) or ())
+    result: list[str] = []
+    for unit in plan_units:
+        unit_id = str(getattr(unit, "unit_id", "") or "")
+        unit_codes = {
+            str(getattr(item, "code", "") or "")
+            for item in reasons
+            if str(getattr(item, "unit_id", "") or "") == unit_id
+        }
+        if (
+            unit_id in declared_gap_units
+            and "no_safe_sufficient_team" in unit_codes
+            and unit_codes <= allowed
+        ):
+            result.append(unit_id)
+    return tuple(result)
+
+
+def _gap_unit_reason_codes(outcome: Any, unit_id: str) -> tuple[str, ...]:
+    """Return stable verifier reason codes for one gap without free-form detail."""
+
+    reasons = tuple(getattr(getattr(outcome, "staffing", None), "abstention_reasons", ()) or ())
+    return tuple(
+        dict.fromkeys(
+            str(getattr(item, "code", "") or "")
+            for item in reasons
+            if str(getattr(item, "unit_id", "") or "") == unit_id
+            and str(getattr(item, "code", "") or "")
+        )
+    )
+
+
+def _hiring_event(
+    unit_id: str,
+    hiring: Any | None = None,
+    *,
+    status: str = "not_attempted",
+    reason_codes: tuple[str, ...] = (),
+) -> dict[str, Any]:
+    """Project one bounded, content-free workforce-gap outcome."""
+
+    if hiring is None:
+        return {
+            "unit_id": unit_id,
+            "status": status,
+            "reason_codes": list(reason_codes),
+            "case_id": "",
+            "worker": "",
+            "version": "",
+            "notification": "",
+            "calls_used": 0,
+        }
+    return {
+        "unit_id": unit_id,
+        "status": str(hiring.status),
+        "reason_codes": list(hiring.reason_codes),
+        "case_id": "" if hiring.hiring_case is None else str(hiring.hiring_case["id"]),
+        "worker": "" if hiring.worker is None else str(hiring.worker["agent_slug"]),
+        "version": "" if hiring.worker is None else str(hiring.worker["current_version"]),
+        "notification": str(hiring.notification),
+        "calls_used": len(hiring.attempts),
+    }
+
+
+def _all_gap_units(outcome: Any) -> tuple[str, ...]:
+    reasons = tuple(getattr(getattr(outcome, "staffing", None), "abstention_reasons", ()) or ())
+    gap_ids = {
+        str(getattr(reason, "unit_id", "") or "")
+        for reason in reasons
+        if str(getattr(reason, "code", "") or "") == "no_safe_sufficient_team"
+    }
+    plan = getattr(outcome, "plan", None)
+    return tuple(
+        unit_id
+        for unit in tuple(getattr(plan, "units", ()) or ())
+        if (unit_id := str(getattr(unit, "unit_id", "") or "")) in gap_ids
+    )
+
+
+def _complete_gap_hiring_events(
+    outcome: Any,
+    initial_gap_units: tuple[str, ...],
+    events_by_unit: dict[str, dict[str, Any]],
+    *,
+    hiring_allowed: bool,
+    daily_limit_reached: bool,
+    max_hires: int,
+    workforce_changes: int,
+    store_available: bool,
+) -> list[dict[str, Any]]:
+    current_hireable = set(_hireable_gap_units(outcome))
+    for unit_id in initial_gap_units:
+        if unit_id in events_by_unit:
+            continue
+        reason_codes = _gap_unit_reason_codes(outcome, unit_id)
+        if not hiring_allowed:
+            if not store_available:
+                reasons = ("hiring_store_unavailable",)
+            elif outcome.inference_mode != "inferred":
+                reasons = ("hiring_requires_inferred_gap",)
+            else:
+                reasons = ("hiring_inference_not_applied",)
+        elif unit_id not in current_hireable:
+            reasons = (
+                ("gap_resolved_by_prior_hire",)
+                if not reason_codes
+                else ("gap_evidence_not_hireable", *reason_codes)
+            )
+        elif daily_limit_reached:
+            reasons = ("daily_hiring_limit_reached",)
+        elif workforce_changes >= max_hires:
+            reasons = ("task_hiring_limit_reached",)
+        else:
+            reasons = ("gap_evidence_not_hireable", *reason_codes)
+        events_by_unit[unit_id] = _hiring_event(unit_id, reason_codes=reasons)
+    return [events_by_unit[unit_id] for unit_id in initial_gap_units]
+
+
+def _run_gap_hiring(
+    outcome: Any,
+    request: _RouteRequest,
+    config: AgencyConfig,
+    store: Store | None,
+    active_snapshot: WorkforceIndexSnapshot,
+    active_catalog: list[dict[str, Any]],
+    *,
+    defer_commits: bool = False,
+) -> tuple[Any, WorkforceIndexSnapshot, list[dict[str, Any]], list[dict[str, Any]]]:
+    from agency_runtime.core.roster.workforce import (
+        workforce_index_snapshot,
+        workforce_snapshot_with_contract,
+    )
+    from agency_runtime.core.workforce.hiring import (
+        hire_contractor_for_gap,
+        restaff_after_hire,
+    )
+    from agency_runtime.core.workforce.staffing_verifier import StaffingContext
+
+    initial_gap_units = _all_gap_units(outcome)
+    events_by_unit: dict[str, dict[str, Any]] = {}
+    attempted_units: set[str] = set()
+    workforce_changes = 0
+    applied_inference = any(
+        str(getattr(item, "status", "") or "") == "applied" for item in outcome.attempts
+    )
+    hiring_allowed = bool(
+        store is not None
+        and outcome.inference_mode == "inferred"
+        and outcome.plan is not None
+        and applied_inference
+    )
+    daily_limit_reached = False
+    while hiring_allowed:
+        hireable = tuple(
+            unit_id for unit_id in _hireable_gap_units(outcome) if unit_id not in attempted_units
+        )
+        if not hireable or workforce_changes >= config.workforce.max_hires_per_turn:
+            break
+        unit_id = hireable[0]
+        attempted_units.add(unit_id)
+        unit = next(item for item in outcome.plan.units if item.unit_id == unit_id)
+        from agency_runtime.core.workspace_stacks import detect_workspace_stacks
+
+        staffing_context = StaffingContext(
+            request.host,
+            request.platform,
+            frozenset(request.available_tools),
+            active_snapshot.generation,
+            None,
+            detected_stacks=detect_workspace_stacks(),
+        )
+        hiring = hire_contractor_for_gap(
+            request.user_message,
+            unit,
+            active_snapshot.contracts,
+            store=store,
+            config=config,
+            session_id=request.session_id,
+            trace_id=request.trace_id,
+            defer_commit=defer_commits,
+            staffing_context=staffing_context,
+            gap_reason_codes=(
+                "inference_declared_gap",
+                *_gap_unit_reason_codes(outcome, unit_id),
+            ),
+            # Inherit the amend-first default from hire_contractor_for_gap.
+            # Pinning this False here kept AR-240's amend path unreachable at
+            # runtime: a near-match worker could never be extended, so every
+            # gap aborted to task_gap_requires_distinct_specialist instead of
+            # amending. The overlap gate is workforce.amend_overlap_threshold.
+        )
+        event = _hiring_event(unit_id, hiring)
+        if hiring.pending_commit is not None:
+            event["_pending_commit"] = hiring.pending_commit
+        events_by_unit[unit_id] = event
+        if not defer_commits:
+            _record_workforce_model_receipts(
+                store,
+                hiring,
+                session_id=request.session_id,
+                trace_id=request.trace_id,
+                host=request.host,
+            )
+        if "daily_hiring_limit_reached" in hiring.reason_codes:
+            daily_limit_reached = True
+            break
+        if not hiring.workforce_changed or hiring.worker is None:
+            continue
+        workforce_changes += 1
+        active_snapshot = (
+            workforce_snapshot_with_contract(
+                active_snapshot,
+                hiring.pending_commit.workforce_contract,
+            )
+            if defer_commits and hiring.pending_commit is not None
+            else workforce_index_snapshot(
+                store,
+                disabled_agents=frozenset(config.agents.disabled),
+            )
+        )
+        outcome = restaff_after_hire(
+            outcome,
+            active_snapshot.contracts,
+            hired_agent_id=str(hiring.worker["agent_slug"]),
+            causing_unit_id=unit_id,
+            context=staffing_context,
+            config=config,
+        )
+        if defer_commits and hiring.pending_commit is not None:
+            pending_agent = hiring.pending_commit.agent
+            active_catalog = [
+                item
+                for item in active_catalog
+                if str(item.get("slug") or item.get("name") or "").strip().casefold()
+                != str(pending_agent.get("slug") or "").strip().casefold()
+            ]
+            active_catalog.append(dict(pending_agent))
+        else:
+            active_catalog = store.get_active_roster_as_catalog(disabled_agents=())
+    events = _complete_gap_hiring_events(
+        outcome,
+        initial_gap_units,
+        events_by_unit,
+        hiring_allowed=hiring_allowed,
+        daily_limit_reached=daily_limit_reached,
+        max_hires=config.workforce.max_hires_per_turn,
+        workforce_changes=workforce_changes,
+        store_available=store is not None,
+    )
+    return outcome, active_snapshot, active_catalog, events
 
 
 def route(
@@ -73,6 +1671,22 @@ def route(
     catalog: list[dict[str, Any]] | None = None,
     *,
     config: AgencyConfig | None = None,
+    store: Store | None = None,
+    trace_id: str | None = None,
+    turn_classification: TurnClassification | None = None,
+    turn_state: TurnState | Mapping[str, Any] | None = None,
+    host: str = "unknown",
+    platform: str = "unknown",
+    available_tools: tuple[str, ...] | None = None,
+    capability_receipt: HostCapabilityReceipt | None = None,
+    capability_session_id: str = "",
+    capability_trace_id: str = "",
+    allow_installation_diagnostic: bool = False,
+    semantic_root_ids: tuple[str, ...] | None = None,
+    workforce_snapshot: WorkforceIndexSnapshot | None = None,
+    turn_routing_context: Mapping[str, Any] | None = None,
+    request: _RouteRequest | None = None,
+    preflight_atomic: bool = False,
 ) -> dict[str, Any]:
     """Run the full 8-layer routing pipeline.
 
@@ -81,80 +1695,285 @@ def route(
         user_message: The user's raw message text.
         catalog: Agent catalog to route against. If None, caller must provide.
         config: Optional config override.
+        turn_classification: Precomputed classification from the owning turn lifecycle.
+        turn_state: Durable state used only when no precomputed classification is supplied.
+        request: Optional pre-built ``_RouteRequest`` mirroring the caller's
+            catalog/config/capability inputs. When supplied, the expensive
+            request build (catalog eligibility walk, policy load, context
+            fingerprint) is skipped. The caller is responsible for ensuring
+            the request was built from the same catalog/config/inputs being
+            passed in; a request built from a *different* config (e.g. a
+            deterministic offline config) must not be reused.
 
     Returns:
         Routing dict with keys: selected_ids, confidence, latency_ms, status,
         companion_actions, companion_ids, work_units, and possibly cache_hit,
         session_reused.
     """
-    cfg = _get_config(config)
-    if catalog is None:
-        catalog = []
+    cfg = _get_config(config, store)
+    evidence_store = None if preflight_atomic else store
+    trace_id = trace_id or str(uuid.uuid4())
+    classification = _turn_classification(
+        user_message,
+        turn_classification=turn_classification,
+        turn_state=turn_state,
+    )
+    request = (
+        request
+        if request is not None
+        else _route_request(
+            session_id,
+            user_message,
+            catalog if catalog is not None else [],
+            cfg,
+            trace_id=trace_id or "route",
+            host=host,
+            platform=platform,
+            available_tools=available_tools,
+            capability_receipt=capability_receipt,
+            capability_session_id=capability_session_id,
+            capability_trace_id=capability_trace_id,
+            allow_installation_diagnostic=allow_installation_diagnostic,
+            semantic_root_ids=semantic_root_ids,
+            workforce_snapshot=workforce_snapshot,
+            turn_routing_context=turn_routing_context,
+        )
+    )
+    if not classification.selection_required:
+        # Exact controls and a proven pure acknowledgement backed by explicitly
+        # current, no-pending state do not require semantic specialist
+        # selection. Pure social conversation also stays with the resident
+        # steward. Resolve deterministic policy directly without spending a
+        # provider call or inheriting stale session stickiness.
+        routing = _merge_computed_routing(
+            {
+                "selected_ids": [],
+                "confidence": 0.0,
+                "latency_ms": 0,
+                "status": "abstained",
+                "error": "turn kind does not require semantic specialist selection",
+                "candidate_count": 0,
+                "top_score": 0.0,
+                "inference_configured": inference_is_configured(cfg),
+                "inference_required": False,
+                "inference_attempted": False,
+                "inference_mode": "deterministic",
+                "provider_attempts": [],
+                "inference_failures": [],
+            },
+            request,
+            _route_signals(request),
+        )
+        return _finalize_classified_request(
+            routing,
+            request,
+            classification,
+            store=evidence_store,
+            trace_id=trace_id,
+        )
+    fresh_selection_required = _requires_fresh_selection(classification)
+    cached = _reusable_routing(
+        request,
+        store=evidence_store,
+        fresh_selection_required=fresh_selection_required,
+    )
+    exact = _exact_cached_routing(cached, request)
+    signals: _RouteSignals | None = None
+    if exact is not None:
+        if _compatibility_projection_is_current(exact, request):
+            return _finalize_classified_request(
+                exact,
+                request,
+                classification,
+                store=evidence_store,
+                trace_id=trace_id,
+            )
+        signals = _route_signals(request)
+        exact = _reuse_routing(exact, request, signals)
+        if exact is not None:
+            if not preflight_atomic:
+                _remember_routing(exact, request, store=evidence_store)
+            return _finalize_classified_request(
+                exact,
+                request,
+                classification,
+                store=evidence_store,
+                trace_id=trace_id,
+            )
+    signals = signals or _route_signals(request)
+    reused = _reuse_routing(cached, request, signals)
+    if reused is not None:
+        return _finalize_classified_request(
+            reused,
+            request,
+            classification,
+            store=evidence_store,
+            trace_id=trace_id,
+        )
+    session_result = None
+    if not fresh_selection_required:
+        session_result = session_check(
+            request.session_id,
+            request.routing_query,
+            context_fingerprint=request.context_fingerprint,
+            valid_ids=request.active_ids,
+        )
+    reused = _reuse_routing(session_result, request, signals)
+    if reused is not None:
+        return _finalize_classified_request(
+            reused,
+            request,
+            classification,
+            store=evidence_store,
+            trace_id=trace_id,
+        )
+    # A workforce snapshot uses the inference-owned workforce router below.
+    # Deterministic code may recall and reject candidates but cannot select one;
+    # missing or invalid inference therefore returns an explicit empty failure.
+    # The legacy judge branch preserves the same rule for hosts without a
+    # workforce snapshot. Both branches operate on fresh intent.
+    if request.workforce_snapshot is not None:
+        from agency_runtime.core.workforce.inference import plan_and_staff_workforce
+        from agency_runtime.core.workforce.routing_projection import (
+            project_workforce_routing,
+        )
+        from agency_runtime.core.workforce.staffing_verifier import StaffingContext
+        from agency_runtime.core.workspace_stacks import detect_workspace_stacks
 
-    # Layer 0: Companion policy + work unit decomposition
-    matched_actions, companion_ids = detect_actions(user_message)
-    work_units = detect_work_units(user_message)
+        staffing_context = StaffingContext(
+            request.host,
+            request.platform,
+            frozenset(request.available_tools),
+            request.workforce_snapshot.generation,
+            # Workforce contracts are independently audited and prove
+            # host, platform, task tools, authority, and scope per unit.
+            # Do not re-gate them through the legacy selector catalog,
+            # whose broad required-tool metadata can include optional
+            # surfaces unrelated to this exact work unit.
+            None,
+            detected_stacks=detect_workspace_stacks(),
+        )
+        activation_canary = is_exact_codex_activation_canary_task(
+            request.user_message,
+            host=request.host,
+            capability_status=request.capability_status,
+        )
+        planning_options = _workforce_planning_options(
+            classification,
+            activation_canary=activation_canary,
+        )
+        outcome = plan_and_staff_workforce(
+            request.user_message,
+            request.workforce_snapshot,
+            config=cfg,
+            context=staffing_context,
+            routing_context_fingerprint=request.context_fingerprint,
+            turn_routing_context=(
+                request.turn_routing_context
+                if request.turn_routing_context
+                and classification.reroute_required
+                and (
+                    not classification.execution_decision_required
+                    or classification.turn_kind in {"continuation", "revision"}
+                )
+                else None
+            ),
+            **planning_options,
+        )
+        _record_workforce_model_receipts(
+            evidence_store,
+            outcome,
+            session_id=request.session_id,
+            trace_id=request.trace_id,
+            host=request.host,
+        )
+        active_snapshot = request.workforce_snapshot
+        active_catalog = request.workforce_catalog
+        if activation_canary:
+            hiring_events = []
+        else:
+            # Advisory turns may found an internal specialist when the verified
+            # roster has a real capability gap. That workforce mutation does
+            # not widen the turn's authority: the projection below still
+            # enforces one read-only parent analysis unit, load delivery, and
+            # no native child/workspace/external execution.
+            outcome, active_snapshot, active_catalog, hiring_events = _run_gap_hiring(
+                outcome,
+                request,
+                cfg,
+                store,
+                active_snapshot,
+                active_catalog,
+                defer_commits=preflight_atomic,
+            )
+        routing = project_workforce_routing(
+            outcome,
+            active_catalog,
+            request=request.user_message,
+            roster_count=active_snapshot.worker_count,
+            contract_fingerprint=active_snapshot.contract_fingerprint,
+        )
+        routing = _activation_canary_projection(routing, request)
+        routing = _advisory_projection(routing, classification)
+        if hiring_events:
+            pending_commits = [
+                event.pop("_pending_commit")
+                for event in hiring_events
+                if event.get("_pending_commit") is not None
+            ]
+            if pending_commits:
+                routing["_pending_hiring_commits"] = pending_commits
+            routing["hiring_events"] = hiring_events
+            # Preserve the original single-event surface for existing API/UI
+            # clients while the plural field carries the complete task outcome.
+            routing["hiring_event"] = hiring_events[0]
+        routing = _attach_workforce_signals(routing, request, signals)
+        if not preflight_atomic:
+            _remember_routing(routing, request, store=evidence_store)
+        return _finalize_classified_request(
+            routing,
+            request,
+            classification,
+            store=evidence_store,
+            trace_id=trace_id,
+        )
 
-    refined = expand_query(refine_query(user_message, cfg))
-
-    # Layer 2: Cache
-    key = cache_key(refined)
-    cached = cache_get(key)
-    if cached is not None:
-        cached_ids = cached.get("selected_ids", [])
-        merged = list(cached_ids)
-        for cid in companion_ids:
-            if cid not in merged:
-                merged.append(cid)
-        if len(merged) > len(cached_ids):
-            cached["selected_ids"] = merged
-            cached["companion_actions"] = matched_actions
-        return cached
-
-    # Layer 3: Session stickiness
-    session_result = session_check(session_id, refined)
-    if session_result is not None:
-        session_ids = session_result.get("selected_ids", [])
-        merged = list(session_ids)
-        for cid in companion_ids:
-            if cid not in merged:
-                merged.append(cid)
-        if len(merged) > len(session_ids):
-            session_result["selected_ids"] = merged
-            session_result["companion_actions"] = matched_actions
-        return session_result
-
-    # Layer 4-6: Pre-narrow + LLM judge + fallback
-    routing = query_judge(refined, catalog, config=cfg)
-
-    # Layer 7: Union companion policy with semantic results
-    semantic_ids = routing.get("selected_ids", [])
-    merged_ids = list(semantic_ids)
-    for cid in companion_ids:
-        if cid not in merged_ids:
-            merged_ids.append(cid)
-    routing["selected_ids"] = merged_ids
-    routing["companion_actions"] = matched_actions
-    routing["companion_ids"] = companion_ids
-    routing["work_units"] = work_units
-
-    if routing.get("selected_ids"):
-        cache_put(key, routing)
-        session_put(session_id, refined, routing)
-
-    return routing
+    semantic_catalog = _semantic_catalog(request, signals)
+    routing = query_judge(
+        request.routing_query,
+        semantic_catalog,
+        config=cfg,
+    )
+    routing = _apply_selection_confidence_floor(
+        routing,
+        minimum=cfg.selector.min_confidence,
+    )
+    routing = _merge_computed_routing(routing, request, signals)
+    if not preflight_atomic:
+        _remember_routing(routing, request, store=evidence_store)
+    return _finalize_classified_request(
+        routing,
+        request,
+        classification,
+        store=evidence_store,
+        trace_id=trace_id,
+    )
 
 
 def build_routing_context(routing: dict[str, Any], config: AgencyConfig | None = None) -> str:
     """Build the [AGENCY PREFLIGHT] context string from a routing result."""
     cfg = _get_config(config)
-    selected = routing.get("selected_ids", [])
-    confidence = routing.get("confidence", 0.0)
+    selected = _bounded_unique_strings(routing.get("selected_ids"), limit=16)
+    try:
+        confidence = float(routing.get("confidence", 0.0))
+    except (TypeError, ValueError, OverflowError):
+        confidence = 0.0
+    confidence = confidence if math.isfinite(confidence) else 0.0
     cache_hit = routing.get("cache_hit", False)
     session_reused = routing.get("session_reused", False)
-    status = routing.get("status", "unknown")
+    status = _bounded_signal_text(routing.get("status") or "unknown", 64)
 
-    source = "llm"
+    source = _bounded_signal_text(routing.get("source") or "llm", 64)
     if cache_hit:
         source = "cache"
     elif session_reused:
@@ -162,43 +1981,49 @@ def build_routing_context(routing: dict[str, Any], config: AgencyConfig | None =
 
     parts: list[str] = []
 
-    if not selected or confidence < cfg.selector.min_confidence:
+    if status in {"inference_unavailable", "inference_invalid"}:
         parts.append(
-            f"[AGENCY PREFLIGHT] No high-confidence specialist match found "
-            f"(status={status}). You must still query "
-            "agency_agents_search before any non-trivial work and include "
-            "the Agency header in your response."
+            "[AGENCY PREFLIGHT FAILURE] Specialist routing stopped with "
+            f"{status}. No specialist was selected, recommended, activated, delegated, "
+            "or hired. Configure or repair the inference provider and rerun this request; "
+            "the resident steward records the failure but cannot answer the domain request."
         )
-        parts.append(HEADER_INSTRUCTION)
-        return "\n".join(parts)
-
-    agents_list = ", ".join(selected)
-    parts.append(
-        f"[AGENCY PREFLIGHT] Specialist routing suggestion "
-        f"(confidence={confidence:.1f}, source={source}): {agents_list}"
-    )
-
-    work_units = routing.get("work_units", {})
-    if work_units.get("delegate", False) and work_units.get("count", 1) >= 2:
-        unit_count = work_units["count"]
-        unit_source = work_units.get("source", "unknown")
-        unit_confidence = work_units.get("confidence", "low")
-        units_list = work_units.get("units", [])
-
-        nudge = (
-            f"\n\n[DELEGATION OPPORTUNITY] {unit_count} independent work units "
-            f"detected (confidence={unit_confidence}, source={unit_source}). "
-            "PRIORITY: delegate parallel work via delegate_task or delegate_async. "
-            "Keep the main session available for the user."
+    elif not selected or confidence < cfg.selector.min_confidence:
+        if selected:
+            agents_list = ", ".join(selected)
+            parts.append(
+                f"[AGENCY PREFLIGHT] Default specialist routing suggestion "
+                f"(confidence={confidence:.1f}, source={source}, status={status}): {agents_list}"
+            )
+        else:
+            parts.append(
+                f"[AGENCY PREFLIGHT] No high-confidence specialist match found "
+                f"(status={status}). Preserve this explicit abstention unless materially "
+                f"new expertise is needed; if it is, {SPECIALIST_TOOL_GUIDANCE}, then "
+                "include the Agency header in your response."
+            )
+    else:
+        agents_list = ", ".join(selected)
+        parts.append(
+            f"[AGENCY PREFLIGHT] Specialist routing suggestion "
+            f"(confidence={confidence:.1f}, source={source}): {agents_list}"
         )
-        if units_list:
-            nudge += "\n  Detected work units:"
-            for i, unit in enumerate(units_list, 1):
-                nudge += f"\n    {i}. {unit}"
-        parts.append(nudge)
 
+    if (
+        routing.get("selection_required") is True
+        and routing.get("execution_decision_required") is False
+    ):
+        parts.append(
+            "[AGENCY ADVISORY TURN] Use the selected specialist context only for a "
+            "read-only parent assessment. Do not infer workspace mutation, external action, "
+            "or native-child delegation from this turn."
+        )
+
+    # No delegation nudge. Agency does not tell the host what to spawn or how
+    # many workers to run -- the harness owns that decision, and Agency only
+    # staffs whoever exists (rules 5 and 8).
     parts.append(HEADER_INSTRUCTION)
-    return "\n".join(parts)
+    return "\n".join(parts)[:MAX_ROUTING_CONTEXT_CHARS]
 
 
 def route_and_build_context(
@@ -206,23 +2031,47 @@ def route_and_build_context(
     user_message: str,
     catalog: list[dict[str, Any]] | None = None,
     config: AgencyConfig | None = None,
-) -> str | None:
-    """Run the full pipeline and return the context string. None if trivial."""
-    cfg = _get_config(config)
-    if is_trivial(user_message, cfg):
-        return None
-    routing = route(session_id, user_message, catalog, config=cfg)
+    store: Store | None = None,
+    trace_id: str | None = None,
+    turn_classification: TurnClassification | None = None,
+    turn_state: TurnState | Mapping[str, Any] | None = None,
+) -> str:
+    """Deprecated compatibility wrapper for the former combined selector API."""
+
+    warnings.warn(
+        (
+            "route_and_build_context() is deprecated; call route() and then "
+            "build_routing_context(). It will not be removed before agency-runtime 0.3.0."
+        ),
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    cfg = _get_config(config, store)
+    routing = route(
+        session_id,
+        user_message,
+        catalog,
+        config=cfg,
+        store=store,
+        trace_id=trace_id,
+        turn_classification=turn_classification,
+        turn_state=turn_state,
+    )
     return build_routing_context(routing, cfg)
 
 
 HEADER_INSTRUCTION = (
-    "\n  You MUST call agency_agents_search and/or agency_agents_load "
-    "for the relevant specialist(s) before starting non-trivial work, "
-    "and include the Agency header in your response:\n"
+    "\n  Treat the current [AGENCY LOADED] capsule as the authoritative "
+    "specialist context for this turn. Earlier-turn specialist capsules are "
+    "expired. Only use the host's installed Agency specialist tools "
+    "(`agency.search_agents` and `agency.load_specialist` on MCP surfaces) when "
+    "the current capsule is absent or additional expertise is materially needed. "
+    "Include the Agency header in your response:\n"
     "  Agency/Agencies loaded: <agent-id>\n"
     "  Agency/Agencies delegated: <agent-id>\n"
     "  Skills loaded: <skill-id[, skill-id...] or none>\n"
-    "  Actual Model selected: <requested alias> -> <resolved provider/model>\n"
+    "  Actual Model selected: <observed model identities, or none observed>\n"
+    "  Recruited via: <inference | cached | none>\n"
     "  Why: <one line>\n"
     "  How it shaped outcome: <one line>"
 )

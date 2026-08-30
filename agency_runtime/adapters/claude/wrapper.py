@@ -1,15 +1,13 @@
-"""Claude Code adapter — optional, skipped if not installed.
+"""Claude Code adapter — observes a host Agency never drives.
 
-Two modes when available:
-1. Enforced wrapper mode: agency claude -p "task..."
-2. Interactive hook/MCP mode: best-effort audit only.
+Agency reaches Claude through its native hooks and MCP. It does not run
+`claude -p` itself: rule 5 says the host alone decides whether to spawn.
 """
 
 from __future__ import annotations
 
 import logging
-import subprocess
-from typing import Any
+import shutil
 
 from agency_runtime.adapters.base import BaseAdapter
 from agency_runtime.core.store.sqlite import Store
@@ -28,66 +26,4 @@ class ClaudeAdapter(BaseAdapter):
 
     def is_available(self) -> bool:
         """Check if Claude Code CLI is installed."""
-        try:
-            result = subprocess.run(
-                ["which", self.claude_cmd],
-                capture_output=True, text=True, timeout=2,
-            )
-            return result.returncode == 0
-        except Exception:
-            return False
-
-    def report_skills_loaded(self, session_id: str) -> list[str]:
-        return self.store.get_skills_for_session(session_id)
-
-    def report_specialists_loaded(self, session_id: str) -> list[str]:
-        return []
-
-    def get_delegate_backend(self) -> str | None:
-        return "claude_exec"
-
-    def expose_model_telemetry(self, session_id: str) -> dict[str, Any]:
-        return {}
-
-    def exec(self, task: str, workdir: str | None = None, specialist_prompt: str = "") -> dict[str, Any]:
-        """Execute a task via claude -p --output-format json.
-
-        Collects modelUsage/cost/session id for receipt tracking.
-        """
-        import os
-        workdir = workdir or os.getcwd()
-
-        full_prompt = task
-        if specialist_prompt:
-            full_prompt = f"{specialist_prompt}\n\nTask: {task}"
-
-        try:
-            result = subprocess.run(
-                [self.claude_cmd, "-p", "--output-format", "json", full_prompt],
-                capture_output=True, text=True, timeout=300,
-                cwd=workdir,
-            )
-            return {
-                "exit_code": result.returncode,
-                "stdout": result.stdout,
-                "stderr": result.stderr,
-                "backend": "claude_exec",
-                "workdir": workdir,
-            }
-        except FileNotFoundError:
-            logger.info("Claude Code: not installed, adapter skipped")
-            return {
-                "exit_code": -1,
-                "stdout": "",
-                "stderr": f"claude not found: {self.claude_cmd}",
-                "backend": "claude_exec",
-                "workdir": workdir,
-            }
-        except subprocess.TimeoutExpired:
-            return {
-                "exit_code": -1,
-                "stdout": "",
-                "stderr": "claude exec timed out after 300s",
-                "backend": "claude_exec",
-                "workdir": workdir,
-            }
+        return bool(shutil.which(self.claude_cmd))

@@ -1,1001 +1,568 @@
-"""Argparse command line interface for Agency Runtime.
+"""Compatibility facade and entry point for the Agency Runtime CLI.
 
-Commands:
-    agency install          — Install starter roster + profile
-    agency configure        — Guided setup wizard (writes agency.yaml)
-    agency doctor           — Health diagnostics
-    agency config show      — Display effective config
-    agency config set       — Set a config value
-    agency config validate  — Validate config
-    agency config path      — Print config file path
-    agency roster list      — List active roster
-    agency search <query>   — Search roster
-    agency route <task>     — Route a task to agents
-    agency delegate         — Delegate to a backend
-    agency sync             — Download/activate agents from sources
-    agency source add       — Add a roster source
-    agency serve            — Start HTTP server
+Command implementations live in cohesive sibling modules.  The facade keeps the
+historical import surface stable and constructs dependency bundles at invocation
+time so applications and tests can still replace process boundaries safely.
 """
 
 from __future__ import annotations
 
 import argparse
-import json
+import getpass
 import os
-import shutil
-import sqlite3
 import sys
-import urllib.request
-from pathlib import Path
-from typing import Any, Sequence
+from collections.abc import Sequence
+from typing import Any
 
-import yaml
+from agency_runtime.core.config import load_config
+from agency_runtime.core.detect import ProviderDetection, detect_all
+from agency_runtime.core.display import safe_display_token
+from agency_runtime.core.http_safety import open_no_redirect
+from agency_runtime.core.provider_validation import validate_provider
+from agency_runtime.core.selector.policy import load_policy
 
-from agency_runtime.core.config import (
-    AgencyConfig,
-    config_to_yaml,
-    load_config,
-    reset_config_cache,
-)
-from agency_runtime.core.detect import (
-    ProviderDetection,
-    detect_all,
-    generate_config_from_detection,
-)
-from agency_runtime.core.doctor import format_report_human, run_doctor
-from agency_runtime.core.policy.defaults import STARTER_ROSTER
-from agency_runtime.core.policy.profiles import PROFILES, get_profile
-from agency_runtime.core.roster.sync import (
-    activate_snapshot,
-    approve_snapshot,
-    create_roster_diff,
-    download_from_source,
-    quarantine_candidate,
-    validate_agent,
-)
-from agency_runtime.core.selector.candidate_narrow import pre_narrow
-from agency_runtime.core.store.sqlite import Store
+from . import _common
+from . import config_commands as _config
+from . import config_wizard as _wizard
+from . import eval_commands as _evals
+from . import evidence_commands as _evidence
+from . import install_commands as _install
+from . import parser as _parser
+from . import roster_commands as _roster
+from . import service_commands as _services
+from . import setup_commands as _setup
+from . import workforce_commands as _workforce
 
-
-def _store(config: AgencyConfig | None = None) -> Store:
-    return Store(config.store.db_path if config else None)
-
-
-def _print_json(data: Any) -> None:
-    print(json.dumps(data, indent=2, sort_keys=True))
+_REDACTED = _common.REDACTED
+_SECRET_KEY_PARTS = _common.SECRET_KEY_PARTS
+_config_display_value = _common.config_display_value
+_configure_console_output = _common.configure_console_output
+_enforce_local_only_config = _common.enforce_local_only_config
+_format_config_value = _common.format_config_value
+_is_loopback_url = _common.is_loopback_url
+_is_secret_config_part = _common.is_secret_config_part
+_nested_config_value = _common.nested_config_value
+_print_json = _common.print_json
+_store = _common.store
 
 
-# ── Install ──────────────────────────────────────────────────
+_MAX_MODEL_DISCOVERY_BYTES = _wizard.MAX_MODEL_DISCOVERY_BYTES
+_MAX_DISCOVERED_MODELS = _wizard.MAX_DISCOVERED_MODELS
+_MAX_MODEL_ID_CHARS = _wizard.MAX_MODEL_ID_CHARS
 
 
-def _seed_starter_roster(store: Store) -> int:
-    count = 0
-    for agent in STARTER_ROSTER:
-        store.activate_agent(dict(agent))
-        count += 1
-    store.record_import_event("starter_roster_installed", "", f"count={count}")
-    return count
+def _wizard_dependencies(
+    *,
+    include_model_fetcher: bool = True,
+) -> _wizard.WizardDependencies:
+    """Capture the facade's current patchable wizard dependencies."""
+    return _wizard.WizardDependencies(
+        detect=detect_all,
+        secret_prompt=getpass.getpass,
+        open_url=open_no_redirect,
+        provider_validator=validate_provider,
+        model_fetcher=_fetch_models_custom if include_model_fetcher else None,
+    )
 
 
-def cmd_install(args: argparse.Namespace) -> int:
-    cfg = load_config()
-    profile = get_profile(args.profile)
-    store = _store(cfg)
-    count = _seed_starter_roster(store)
-    print(f"Installed Agency Runtime profile: {profile.name}")
-    print(f"Starter roster activated: {count} agents")
-    print(f"Network enabled: {profile.network_enabled}")
-    print(f"Auto-sync: {profile.auto_sync}")
-    print(f"Auto-enable new agents: {profile.auto_enable_new_agents}")
-    if profile.sync_schedule:
-        print(f"Sync schedule: {profile.sync_schedule}")
-    print(f"\nConfig: {cfg.config_path or '(defaults only)'}")
-    print(f"Judge model: {cfg.judge.model} ({cfg.judge.base_url})")
-    return 0
-
-
-# ── Configure wizard ─────────────────────────────────────────
-
-
-def cmd_configure(args: argparse.Namespace) -> int:
-    """Guided setup wizard or non-interactive config generation."""
-    import os
-
-    config_path = Path(os.environ.get("AGENCY_CONFIG_PATH", str(Path.home() / ".agency-runtime" / "agency.yaml")))
-
-    if config_path.exists() and not args.force:
-        print(f"Config already exists at {config_path}")
-        if not args.non_interactive:
-            resp = input("Overwrite? [y/N] ").strip().lower()
-            if resp != "y":
-                print("Aborted.")
-                return 0
-        else:
-            print("Use --force to overwrite in non-interactive mode.")
-            return 1
-
-    print("\nDetecting available providers...")
-    detection = detect_all()
-    p = detection.providers
-    a = detection.adapters
-
-    print(f"  {'✅' if p.ollama_available else '❌'} Ollama: {p.ollama_base_url}" +
-          (f" ({len(p.ollama_models)} models)" if p.ollama_models else ""))
-    print(f"  {'✅' if p.openai_key else '❌'} OpenAI API key: {'found' if p.openai_key else 'not set'}")
-    print(f"  {'✅' if p.anthropic_key else '❌'} Anthropic API key: {'found' if p.anthropic_key else 'not set'}")
-    print(f"  {'✅' if p.litellm_available else '❌'} LiteLLM proxy: {p.litellm_base_url}")
-    print()
-    print(f"  {'✅' if a.hermes else '❌'} Hermes adapter")
-    print(f"  {'✅' if a.openclaw else '❌'} OpenClaw adapter")
-    print(f"  {'✅' if a.codex else '❌'} Codex CLI")
-    print(f"  {'✅' if a.claude else '❌'} Claude Code CLI")
-    print()
-
-    # Determine profile
-    profile = args.profile or "standard"
-    if args.profile == "local-only":
-        pass  # user explicitly chose it
-    elif not detection.has_any_provider and not args.non_interactive:
-        print("No LLM providers detected. Recommend local-only profile.")
-        resp = input("Use local-only profile? [Y/n] ").strip().lower()
-        if resp != "n":
-            profile = "local-only"
-
-    if args.non_interactive:
-        config_data = generate_config_from_detection(detection, profile=profile)
-    else:
-        config_data = _interactive_wizard(detection, profile)
-
-    # Write config
-    config_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(config_path, "w") as f:
-        yaml.dump(config_data, f, default_flow_style=False, sort_keys=False)
-
-    print(f"\n✅ Config written to {config_path}")
-
-    # Install starter roster
-    reset_config_cache()
-    cfg = load_config(reload=True)
-    store = _store(cfg)
-    count = _seed_starter_roster(store)
-    print(f"✅ Starter roster installed: {count} agents")
-    print(f"✅ SQLite database initialized: {cfg.store.resolved_path()}")
-    print(f"\nNext steps:")
-    print(f"  agency doctor              — verify everything is working")
-    print(f"  agency search \"code review\" — test the selector")
-    print(f"  agency route \"review this PR\" — see routing in action")
-    return 0
+def _detect_for_profile(profile: str):
+    return _wizard._detect_for_profile(
+        profile,
+        dependencies=_wizard_dependencies(),
+    )
 
 
 def _interactive_wizard(detection, profile: str) -> dict[str, Any]:
-    """Interactive wizard — prompts for each decision with full model discovery."""
-    p = detection.providers
-
-    print("Step 1: Judge Model")
-    print("━" * 40)
-
-    # ── Build provider menu ────────────────────────────────────
-    # Each entry: (menu_label, handler_fn)
-    # The handler returns a judge_cfg dict
-    providers: list[tuple[str, str]] = []
-
-    if p.ollama_available:
-        n = len(p.ollama_models)
-        providers.append(("ollama", f"Ollama (free, local) — {n} model(s) available"))
-
-    if p.openai_key_present:
-        n = len(p.openai_models)
-        suffix = f" — {n} model(s) discovered" if n else " (model list unavailable)"
-        providers.append(("openai", f"OpenAI API (key detected){suffix}"))
-
-    if p.anthropic_key_present:
-        providers.append(("anthropic", "Anthropic API (key detected)"))
-
-    if p.litellm_available:
-        n = len(p.litellm_models)
-        suffix = f" — {n} model group(s) discovered" if n else " (model list unavailable)"
-        providers.append(("litellm", f"LiteLLM proxy{suffix}"))
-
-    providers.append(("custom", "Custom OpenAI-compatible endpoint (OpenRouter, Together, Groq, LM Studio, etc.)"))
-
-    print("\nWhich provider should the Agency selector use for routing?\n")
-    for i, (_, label) in enumerate(providers, 1):
-        print(f"  [{i}] {label}")
-
-    choice_idx = _prompt_choice(len(providers), default=1) - 1
-    provider_key = providers[choice_idx][0]
-
-    # ── Per-provider model selection ──────────────────────────
-
-    if provider_key == "ollama":
-        judge_cfg = _pick_ollama_model(p)
-    elif provider_key == "openai":
-        judge_cfg = _pick_openai_model(p)
-    elif provider_key == "anthropic":
-        judge_cfg = _pick_anthropic_model()
-    elif provider_key == "litellm":
-        judge_cfg = _pick_litellm_model(p)
-    else:
-        judge_cfg = _pick_custom_endpoint()
-
-    # Step 2: Profile
-    print("\nStep 2: Install Profile")
-    print("━" * 40)
-    print("  [1] local-only — No network, no auto-sync, bundled roster only (safest)")
-    print("  [2] standard   — Network enabled, no auto-sync (recommended)")
-    print("  [3] power      — Network enabled, manual sync")
-    profile_choice = _prompt_choice(3, default=2)
-    profile = ["local-only", "standard", "power"][profile_choice - 1]
-
-    # Step 3: Adapters
-    print("\nStep 3: Host Adapters")
-    print("━" * 40)
-    a = detection.adapters
-    adapters_cfg: dict[str, Any] = {}
-
-    # LiteLLM adapter config
-    litellm_detected = p.litellm_available
-    icon = "✅" if litellm_detected else "❌"
-    print(f"  {icon} LiteLLM proxy: {'detected' if litellm_detected else 'not detected'}")
-    litellm_skip = ["complexity_router", "auto_router/"]
-    # If we chose LiteLLM as judge, add the model to skip_models to prevent recursion
-    if judge_cfg.get("base_url") == p.litellm_base_url and judge_cfg.get("model"):
-        if judge_cfg["model"] not in litellm_skip:
-            litellm_skip.append(judge_cfg["model"])
-    adapters_cfg["litellm"] = {
-        "enabled": "true" if litellm_detected else ("false" if profile == "local-only" else "auto"),
-        "base_url": p.litellm_base_url,
-        "api_key_env": "LITELLM_API_KEY",
-        "skip_models": litellm_skip,
-    }
-
-    for name, detected in [
-        ("hermes", a.hermes),
-        ("openclaw", a.openclaw),
-        ("codex", a.codex),
-        ("claude", a.claude),
-    ]:
-        icon = "✅" if detected else "❌"
-        print(f"  {icon} {name}: {'detected' if detected else 'not detected'}")
-        adapters_cfg[name] = {
-            "enabled": "true" if detected and profile != "local-only" else "auto"
-        }
-
-    # Step 4: Tuning
-    print("\nStep 4: Advanced Tuning")
-    print("━" * 40)
-    print("Use default tuning values? (confidence=0.4, timeout=15s, max_selected=3)")
-    resp = input("  [Y/n] ").strip().lower()
-    if resp == "n":
-        timeout = float(input("  Judge timeout (seconds): ") or "15")
-        max_sel = int(input("  Max selected agents: ") or "3")
-        threshold = float(input("  Confidence bypass threshold: ") or "15")
-    else:
-        timeout, max_sel, threshold = 15.0, 3, 15.0
-
-    judge_cfg["timeout"] = timeout
-    judge_cfg["max_selected"] = max_sel
-    judge_cfg["confidence_bypass_threshold"] = threshold
-
-    # Step 5: Review
-    print("\nStep 5: Review")
-    print("━" * 40)
-
-    config_data = {
-        "judge": judge_cfg,
-        "ollama": {
-            "enabled": p.ollama_available,
-            "base_url": p.ollama_base_url,
-        },
-        "selector": {"min_confidence": 0.4, "max_user_msg_len": 4000, "trivial_msg_threshold": 12},
-        "store": {"db_path": "~/.agency-runtime/agency.db"},
-        "server": {"host": "127.0.0.1", "port": 7800},
-        "adapters": adapters_cfg,
-        "profile": profile,
-        "companion_policy_path": None,
-    }
-
-    # Show summary
-    _print_config_summary(config_data)
-
-    return config_data
+    return _wizard._interactive_wizard(
+        detection,
+        profile,
+        dependencies=_wizard_dependencies(),
+    )
 
 
-def _pick_ollama_model(p: ProviderDetection) -> dict[str, Any]:
-    """Let user pick from discovered Ollama models or enter a custom one."""
-    if not p.ollama_models:
-        print("\nNo Ollama models discovered. Enter manually.")
-        model = input("Model name (e.g. qwen3.5:2b): ").strip()
-        if not model:
-            model = "qwen3.5:2b"
-        return {
-            "model": model,
-            "base_url": p.ollama_base_url,
-            "api_key": "",
-            "ollama_mode": True,
-        }
-
-    print(f"\nOllama models available ({len(p.ollama_models)}):")
-    for i, model in enumerate(p.ollama_models[:15], 1):
-        print(f"  [{i}] {model}")
-    if len(p.ollama_models) > 15:
-        print(f"  ... and {len(p.ollama_models) - 15} more")
-    print(f"  [{min(len(p.ollama_models) + 1, 16)}] Enter custom model name")
-
-    choice = _prompt_choice(min(len(p.ollama_models) + 1, 16), default=1)
-    if choice <= len(p.ollama_models):
-        model = p.ollama_models[choice - 1]
-    else:
-        model = input("Model name: ").strip() or "qwen3.5:2b"
-
-    return {
-        "model": model,
-        "base_url": p.ollama_base_url,
-        "api_key": "",
-        "ollama_mode": True,
-    }
+def _guided_provider_chain(detection, profile: str) -> list[dict[str, Any]]:
+    return _wizard._guided_provider_chain(
+        detection,
+        profile,
+        dependencies=_wizard_dependencies(),
+    )
 
 
-def _pick_openai_model(p: ProviderDetection) -> dict[str, Any]:
-    """Let user pick from discovered OpenAI models or enter a custom one."""
-    from agency_runtime.core.detect import _OPENAI_SUGGESTIONS
+def _new_provider_entry(detection, profile: str) -> dict[str, Any] | None:
+    return _wizard._new_provider_entry(
+        detection,
+        profile,
+        dependencies=_wizard_dependencies(),
+    )
 
-    base_url = "https://api.openai.com/v1"
 
-    # Merge discovered + suggestions, dedup, preserve order
-    all_models: list[str] = []
-    seen = set()
-    for m in p.openai_models + _OPENAI_SUGGESTIONS:
-        if m not in seen:
-            all_models.append(m)
-            seen.add(m)
+def _validate_interactive_provider_chain(
+    providers: list[dict[str, Any]],
+) -> bool:
+    return _wizard._validate_interactive_provider_chain(
+        providers,
+        dependencies=_wizard_dependencies(),
+    )
 
-    print(f"\nOpenAI models available:")
-    for i, model in enumerate(all_models[:15], 1):
-        discovered = "✅" if model in p.openai_models else "  "
-        print(f"  [{i}] {discovered} {model}")
-    if len(all_models) > 15:
-        print(f"  ... and {len(all_models) - 15} more")
-    print(f"  [{min(len(all_models) + 1, 16)}] Enter custom model name")
 
-    choice = _prompt_choice(min(len(all_models) + 1, 16), default=1)
-    if choice <= len(all_models):
-        model = all_models[choice - 1]
-    else:
-        model = input("Model name (e.g. gpt-4o-mini): ").strip()
-        if not model:
-            model = "gpt-4o-mini"
-
-    return {
-        "model": model,
-        "base_url": base_url,
-        "api_key_env": "OPENAI_API_KEY",
-        "ollama_mode": False,
-    }
+def _pick_openai_model(provider: ProviderDetection) -> dict[str, Any]:
+    return _wizard._pick_openai_model(
+        provider,
+        dependencies=_wizard_dependencies(),
+    )
 
 
 def _pick_anthropic_model() -> dict[str, Any]:
-    """Let user pick an Anthropic model."""
-    from agency_runtime.core.detect import _ANTHROPIC_SUGGESTIONS
-
-    print(f"\nAnthropic models:")
-    for i, model in enumerate(_ANTHROPIC_SUGGESTIONS, 1):
-        print(f"  [{i}] {model}")
-    print(f"  [{len(_ANTHROPIC_SUGGESTIONS) + 1}] Enter custom model name")
-
-    choice = _prompt_choice(len(_ANTHROPIC_SUGGESTIONS) + 1, default=1)
-    if choice <= len(_ANTHROPIC_SUGGESTIONS):
-        model = _ANTHROPIC_SUGGESTIONS[choice - 1]
-    else:
-        model = input("Model name: ").strip()
-        if not model:
-            model = "claude-3-5-sonnet-20241022"
-
-    return {
-        "model": model,
-        "base_url": "https://api.anthropic.com/v1",
-        "api_key_env": "ANTHROPIC_API_KEY",
-        "ollama_mode": False,
-    }
+    return _wizard._pick_anthropic_model(dependencies=_wizard_dependencies())
 
 
-def _pick_litellm_model(p: ProviderDetection) -> dict[str, Any]:
-    """Let user pick from discovered LiteLLM model groups or enter one."""
-    if p.litellm_models:
-        print(f"\nLiteLLM model groups available ({len(p.litellm_models)}):")
-        for i, model in enumerate(p.litellm_models[:15], 1):
-            print(f"  [{i}] {model}")
-        if len(p.litellm_models) > 15:
-            print(f"  ... and {len(p.litellm_models) - 15} more")
-        print(f"  [{min(len(p.litellm_models) + 1, 16)}] Enter custom model group name")
+def _pick_litellm_model(provider: ProviderDetection) -> dict[str, Any]:
+    return _wizard._pick_litellm_model(
+        provider,
+        dependencies=_wizard_dependencies(),
+    )
 
-        choice = _prompt_choice(min(len(p.litellm_models) + 1, 16), default=1)
-        if choice <= len(p.litellm_models):
-            model = p.litellm_models[choice - 1]
-        else:
-            model = input("Model group name: ").strip()
-    else:
-        print("\nCouldn't discover LiteLLM models (proxy may need an API key).")
-        print("Enter your LiteLLM model group name.")
-        print("Common patterns: task-general, gpt-4o-mini, claude-sonnet, etc.")
-        model = input("Model group name: ").strip()
-        if not model:
-            model = "task-general"
 
-    # Verify API key situation
-    key_env = "LITELLM_API_KEY"
-    litellm_key = os.environ.get("LITELLM_API_KEY", "")
-    if not litellm_key:
-        print("\n⚠️  LITELLM_API_KEY not set in environment.")
-        print("LiteLLM proxy may require a key. You can:")
-        print("  [1] Use a different env var name")
-        print("  [2] Enter the key directly (stored in config)")
-        print("  [3] Skip — my LiteLLM doesn't need a key")
-        key_choice = _prompt_choice(3, default=3)
-        if key_choice == 1:
-            key_env = input("Env var name: ").strip() or "LITELLM_API_KEY"
-        elif key_choice == 2:
-            direct_key = input("API key: ").strip()
-            return {
-                "model": model,
-                "base_url": p.litellm_base_url,
-                "api_key": direct_key,
-                "ollama_mode": False,
-            }
-
-    return {
-        "model": model,
-        "base_url": p.litellm_base_url,
-        "api_key_env": key_env,
-        "ollama_mode": False,
-    }
+def _prompt_provider_auth(
+    *,
+    default_env: str,
+    base_url: str,
+) -> tuple[dict[str, str], str]:
+    return _wizard._prompt_provider_auth(
+        default_env=default_env,
+        base_url=base_url,
+        dependencies=_wizard_dependencies(),
+    )
 
 
 def _pick_custom_endpoint() -> dict[str, Any]:
-    """Let user configure any OpenAI-compatible endpoint."""
-    print("\nCustom OpenAI-compatible endpoint")
-    print("Works with: OpenRouter, Together AI, Groq, LM Studio, Ollama")
-    print("             (via OpenAI compat), Azure OpenAI, etc.\n")
-
-    # Common presets
-    presets = [
-        ("OpenRouter", "https://openrouter.ai/api/v1", "OPENROUTER_API_KEY"),
-        ("Together AI", "https://api.together.xyz/v1", "TOGETHER_API_KEY"),
-        ("Groq", "https://api.groq.com/openai/v1", "GROQ_API_KEY"),
-        ("LM Studio (local)", "http://127.0.0.1:1234/v1", ""),
-        ("Enter manually", "", ""),
-    ]
-
-    print("Choose a provider preset or enter manually:\n")
-    for i, (name, _, _) in enumerate(presets, 1):
-        print(f"  [{i}] {name}")
-
-    choice = _prompt_choice(len(presets), default=len(presets))
-
-    if choice <= len(presets) - 1:
-        _, base_url, default_key_env = presets[choice - 1]
-        base_url = base_url or input("Base URL: ").strip()
-    else:
-        base_url = input("Base URL (e.g. https://api.example.com/v1): ").strip()
-
-    # Try to discover models at this endpoint
-    print(f"\nDiscovering models at {base_url}...")
-    key_env = default_key_env or ""
-    api_key = os.environ.get(key_env, "") if key_env else ""
-    models = _fetch_models_custom(base_url, api_key)
-
-    if models:
-        print(f"Found {len(models)} models:")
-        for i, model in enumerate(models[:15], 1):
-            print(f"  [{i}] {model}")
-        if len(models) > 15:
-            print(f"  ... and {len(models) - 15} more")
-        print(f"  [{min(len(models) + 1, 16)}] Enter custom model name")
-
-        model_choice = _prompt_choice(min(len(models) + 1, 16), default=1)
-        if model_choice <= len(models):
-            model = models[model_choice - 1]
-        else:
-            model = input("Model name: ").strip()
-    else:
-        print("Could not discover models (endpoint may need an API key).")
-        model = input("Enter model name: ").strip()
-
-    # API key
-    if key_env and api_key:
-        print(f"\nUsing API key from ${key_env}")
-    elif key_env:
-        print(f"\n⚠️  ${key_env} not set in environment.")
-        key_choice = input(f"Press Enter to use ${key_env} env var, or type key directly: ").strip()
-        if key_choice:
-            return {
-                "model": model,
-                "base_url": base_url,
-                "api_key": key_choice,
-                "ollama_mode": False,
-            }
-    else:
-        key_input = input("API key env var name (blank for no key): ").strip()
-        if key_input:
-            key_env = key_input
-
-    result: dict[str, Any] = {
-        "model": model,
-        "base_url": base_url,
-        "ollama_mode": False,
-    }
-    if key_env:
-        result["api_key_env"] = key_env
-    else:
-        result["api_key"] = ""
-
-    return result
+    return _wizard._pick_custom_endpoint(dependencies=_wizard_dependencies())
 
 
-def _fetch_models_custom(base_url: str, api_key: str | None = None) -> list[str]:
-    """Fetch models from a custom OpenAI-compatible endpoint."""
-    headers: dict[str, str] = {}
-    if api_key:
-        headers["Authorization"] = f"Bearer {api_key}"
-    try:
-        req = urllib.request.Request(
-            f"{base_url.rstrip('/')}/models",
-            headers=headers,
-        )
-        with urllib.request.urlopen(req, timeout=5) as resp:
-            import json
-            data = json.loads(resp.read().decode("utf-8"))
-        return sorted([
-            m.get("id", m.get("model", ""))
-            for m in data.get("data", [])
-            if m.get("id") or m.get("model")
-        ])
-    except Exception:
-        return []
+def _fetch_models_custom(
+    base_url: str,
+    api_key: str | None = None,
+) -> list[str]:
+    return _wizard._fetch_models_custom(
+        base_url,
+        api_key,
+        dependencies=_wizard_dependencies(include_model_fetcher=False),
+    )
 
 
-def _print_config_summary(config_data: dict[str, Any]) -> None:
-    """Print a human-readable summary of the generated config."""
-    j = config_data.get("judge", {})
-    print(f"\n  Judge model:  {j.get('model', '?')}")
-    print(f"  Base URL:     {j.get('base_url', '?')}")
-    if j.get("api_key_env"):
-        print(f"  API key:      from ${j['api_key_env']}")
-    elif j.get("api_key"):
-        print(f"  API key:      (stored in config)")
-    else:
-        print(f"  API key:      none (free/local)")
-    print(f"  Ollama mode:  {j.get('ollama_mode', False)}")
-    print(f"  Profile:      {config_data.get('profile', 'standard')}")
+_prompt_install_profile = _wizard._prompt_install_profile
+_legacy_judge_from_chain = _wizard._legacy_judge_from_chain
+_provider_entry = _wizard._provider_entry
+_pick_ollama_model = _wizard._pick_ollama_model
+_print_config_summary = _wizard._print_config_summary
+_prompt_choice = _wizard._prompt_choice
 
 
-def _prompt_choice(max_val: int, default: int = 1) -> int:
-    while True:
-        raw = input(f"> ").strip()
-        if not raw:
-            return default
-        try:
-            val = int(raw)
-            if 1 <= val <= max_val:
-                return val
-        except ValueError:
-            pass
-        print(f"  Enter a number 1-{max_val}")
+_seed_starter_roster = _install._seed_starter_roster
+_print_install_result = _install._print_install_result
+_resolve_control_agents = _install._resolve_control_agents
 
 
-# ── Doctor ───────────────────────────────────────────────────
+def _install_dependencies() -> _install.InstallDependencies:
+    """Capture the facade's current patchable installation dependencies."""
+    return _install.InstallDependencies(
+        load_config=load_config,
+        store_factory=_store,
+        emit_json=_print_json,
+        readiness_probe=lambda: _wait_dashboard_ready(),
+    )
+
+
+def cmd_install(args: argparse.Namespace) -> int:
+    return _install.cmd_install(args, dependencies=_install_dependencies())
+
+
+def cmd_uninstall(args: argparse.Namespace) -> int:
+    from .uninstall_commands import cmd_uninstall as command
+
+    return command(args)
+
+
+def _cmd_host_control(args: argparse.Namespace, *, enabled: bool) -> int:
+    return _install._cmd_host_control(
+        args,
+        enabled=enabled,
+        dependencies=_install_dependencies(),
+    )
+
+
+def cmd_on(args: argparse.Namespace) -> int:
+    return _install.cmd_on(args, dependencies=_install_dependencies())
+
+
+def cmd_off(args: argparse.Namespace) -> int:
+    return _install.cmd_off(args, dependencies=_install_dependencies())
+
+
+def cmd_status(args: argparse.Namespace) -> int:
+    return _install.cmd_status(args, dependencies=_install_dependencies())
+
+
+def cmd_host_canary(args: argparse.Namespace) -> int:
+    return _install.cmd_host_canary(args, dependencies=_install_dependencies())
+
+
+def cmd_battery(args: argparse.Namespace) -> int:
+    from agency_runtime.core.harness_battery import run_battery_cli
+
+    return run_battery_cli(args)
+
+
+def _configuration_dependencies() -> _config.ConfigurationDependencies:
+    """Capture the facade's current patchable configuration dependencies."""
+    return _config.ConfigurationDependencies(
+        load_config=load_config,
+        store_factory=_store,
+        seed_starter_roster=_seed_starter_roster,
+        detect_for_profile=_detect_for_profile,
+        interactive_wizard=_interactive_wizard,
+        validate_chain=_validate_interactive_provider_chain,
+        secret_prompt=getpass.getpass,
+        configure_console=_configure_console_output,
+    )
+
+
+def cmd_configure(args: argparse.Namespace) -> int:
+    return _config.cmd_configure(
+        args,
+        dependencies=_configuration_dependencies(),
+    )
 
 
 def cmd_doctor(args: argparse.Namespace) -> int:
-    cfg = load_config()
-    report = run_doctor(cfg)
-    if args.json:
-        _print_json(report.to_dict())
-    else:
-        print(format_report_human(report))
-    return report.exit_code
-
-
-# ── Config subcommands ───────────────────────────────────────
+    return _config.cmd_doctor(args, dependencies=_configuration_dependencies())
 
 
 def cmd_config_show(args: argparse.Namespace) -> int:
-    cfg = load_config()
-    print(config_to_yaml(cfg, redact=not args.raw))
-    return 0
+    return _config.cmd_config_show(args, dependencies=_configuration_dependencies())
 
 
 def cmd_config_path(args: argparse.Namespace) -> int:
-    cfg = load_config()
-    print(cfg.config_path or "(no config file — using bundled defaults)")
-    return 0
+    return _config.cmd_config_path(args)
 
 
 def cmd_config_get(args: argparse.Namespace) -> int:
-    cfg = load_config()
-    # Navigate dotted path: judge.model, ollama.enabled, etc.
-    parts = args.key.split(".")
-    val: Any = cfg
-    for part in parts:
-        if hasattr(val, part):
-            val = getattr(val, part)
-        elif hasattr(val, "__getitem__"):
-            try:
-                val = val[part]
-            except (KeyError, TypeError):
-                print(f"Key not found: {args.key}", file=sys.stderr)
-                return 1
-        else:
-            print(f"Key not found: {args.key}", file=sys.stderr)
-            return 1
-    print(json.dumps(val) if isinstance(val, (list, tuple)) else val)
-    return 0
+    return _config.cmd_config_get(args, dependencies=_configuration_dependencies())
 
 
 def cmd_config_set(args: argparse.Namespace) -> int:
-    cfg = load_config()
-    config_path = Path(cfg.config_path) if cfg.config_path else Path.home() / ".agency-runtime" / "agency.yaml"
+    return _config.cmd_config_set(args, dependencies=_configuration_dependencies())
 
-    # Load existing YAML or defaults
-    if config_path.exists():
-        with open(config_path) as f:
-            data = yaml.safe_load(f) or {}
-    else:
-        data = {}
 
-    # Navigate dotted path and set value
-    parts = args.key.split(".")
-    target = data
-    for part in parts[:-1]:
-        if part not in target or not isinstance(target[part], dict):
-            target[part] = {}
-        target = target[part]
+def cmd_config_provider_list(args: argparse.Namespace) -> int:
+    return _config.cmd_config_provider_list(args)
 
-    # Try to parse as number/bool/yaml
-    try:
-        value = yaml.safe_load(args.value)
-    except yaml.YAMLError:
-        value = args.value
 
-    target[parts[-1]] = value
+def cmd_config_provider_models(args: argparse.Namespace) -> int:
+    return _config.cmd_config_provider_models(args)
 
-    config_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(config_path, "w") as f:
-        yaml.dump(data, f, default_flow_style=False, sort_keys=False)
-    print(f"Set {args.key} = {value}")
-    return 0
+
+def cmd_config_provider_set(args: argparse.Namespace) -> int:
+    return _config.cmd_config_provider_set(args)
+
+
+def cmd_config_provider_remove(args: argparse.Namespace) -> int:
+    return _config.cmd_config_provider_remove(args)
 
 
 def cmd_config_validate(args: argparse.Namespace) -> int:
-    """Validate config by running doctor checks."""
-    cfg = load_config()
-    report = run_doctor(cfg)
-    if report.exit_code == 0:
-        print("✅ Config valid — all checks passed")
-    elif report.exit_code == 2:
-        print("⚠️  Config valid — degraded (some features unavailable)")
-    else:
-        print("❌ Config has issues — see doctor output")
-    # Print only the failed/warned checks
-    for check in report.checks:
-        if check.status in ("warn", "fail"):
-            icon = "⚠️ " if check.status == "warn" else "❌"
-            print(f"  {icon} {check.name}: {check.message}")
-    return report.exit_code
+    return _config.cmd_config_validate(
+        args,
+        dependencies=_configuration_dependencies(),
+    )
 
 
 def cmd_config_reset(args: argparse.Namespace) -> int:
-    """Reset config to defaults."""
-    cfg = load_config()
-    config_path = Path(cfg.config_path) if cfg.config_path else Path.home() / ".agency-runtime" / "agency.yaml"
-    if config_path.exists():
-        resp = input(f"Delete {config_path} and reset to defaults? [y/N] ").strip().lower()
-        if resp != "y":
-            print("Aborted.")
-            return 0
-        config_path.unlink()
-    print(f"Config reset. Run `agency configure` to set up again.")
-    return 0
+    return _config.cmd_config_reset(
+        args,
+        dependencies=_configuration_dependencies(),
+    )
 
 
-# ── Sync ─────────────────────────────────────────────────────
+cmd_sync = _roster.cmd_sync
+cmd_source_add = _roster.cmd_source_add
+cmd_source_list = _roster.cmd_source_list
+cmd_roster_list = _roster.cmd_roster_list
+cmd_roster_diff = _roster.cmd_roster_diff
+cmd_roster_approve = _roster.cmd_roster_approve
+cmd_roster_activate = _roster.cmd_roster_activate
+cmd_roster_scans = _roster.cmd_roster_scans
+cmd_roster_remediation_queue = _roster.cmd_roster_remediation_queue
+cmd_roster_retire = _roster.cmd_roster_retire
+cmd_roster_rollback = _roster.cmd_roster_rollback
+cmd_roster_upstream_status = _roster.cmd_roster_upstream_status
+cmd_roster_upstream_import = _roster.cmd_roster_upstream_import
+cmd_roster_candidate_audit = _roster.cmd_roster_candidate_audit
+cmd_roster_candidate_findings = _roster.cmd_roster_candidate_findings
+cmd_roster_candidate_reject = _roster.cmd_roster_candidate_reject
+cmd_roster_candidate_compare = _roster.cmd_roster_candidate_compare
+cmd_agents_list = _roster.cmd_agents_list
+cmd_agent_enable = _roster.cmd_agent_enable
+cmd_agent_disable = _roster.cmd_agent_disable
+_search = _roster._search
+cmd_search = _roster.cmd_search
+cmd_route = _roster.cmd_route
+cmd_explain = _roster.cmd_explain
+cmd_eval_host_parity = _roster.cmd_eval_host_parity
+cmd_eval_spawn_authority = _roster.cmd_eval_spawn_authority
+cmd_eval_staffing = _roster.cmd_eval_staffing
+cmd_eval_routing = _roster.cmd_eval_routing
+cmd_eval_compare = _evals.cmd_eval_compare
+cmd_eval_decision_conformance = _evals.cmd_eval_decision_conformance
+cmd_eval_full_roster = _evals.cmd_eval_full_roster
+cmd_eval_shadow_recall = _evals.cmd_eval_shadow_recall
+cmd_eval_product = _evals.cmd_eval_product
+cmd_eval_upstream_architecture = _evals.cmd_eval_upstream_architecture
+cmd_eval_upstream_selection = _evals.cmd_eval_upstream_selection
+cmd_eval_workforce = _evals.cmd_eval_workforce
+cmd_smoke = _roster.cmd_smoke
+cmd_db_stats = _roster.cmd_db_stats
+cmd_db_trim = _roster.cmd_db_trim
 
 
-def cmd_sync(args: argparse.Namespace) -> int:
-    store = _store()
-    sources = store.list_agent_sources()
-    if not sources:
-        print("No enabled sources configured. Add one with: agency source add <url>", file=sys.stderr)
-        return 1
-    quarantined: list[str] = []
-    errors: list[dict[str, str]] = []
-    for source in sources:
-        try:
-            candidates = download_from_source(source["url"])
-        except Exception as exc:
-            errors.append({"source": source["url"], "error": str(exc)})
-            continue
-        for agent in candidates:
-            ok, reason = validate_agent(agent)
-            if not ok:
-                errors.append({"source": source["url"], "agent": agent.get("slug", ""), "error": reason})
-                continue
-            if args.dry_run:
-                quarantined.append(agent["slug"])
-            else:
-                candidate_id = quarantine_candidate(agent, source["id"], store)
-                quarantined.append(candidate_id)
-    if args.dry_run:
-        _print_json({"dry_run": True, "valid_candidates": quarantined, "errors": errors})
-        return 0 if not errors else 2
-    diff = create_roster_diff(store)
-    if args.review or args.auto_approve:
-        _print_json(diff["diff"])
-    if args.auto_approve:
-        approve_snapshot(store, diff["snapshot_id"])
-        activate_snapshot(store, diff["snapshot_id"])
-        print(f"Activated snapshot {diff['snapshot_id']}")
-    else:
-        print(f"Created snapshot {diff['snapshot_id']} from {len(quarantined)} candidates")
-        print("Approve with: agency roster approve " + diff["snapshot_id"])
-    if errors:
-        _print_json({"errors": errors})
-        return 2
-    return 0
+def cmd_setup(args: argparse.Namespace) -> int:
+    """Run setup through facade callbacks so historical monkeypatching remains valid."""
+
+    return _setup.cmd_setup(
+        args,
+        dependencies=_setup.SetupDependencies(
+            configure=cmd_configure,
+            validate=cmd_config_validate,
+            install=cmd_install,
+            dashboard_service=cmd_dashboard_service,
+            doctor=cmd_doctor,
+            smoke=cmd_smoke,
+        ),
+    )
 
 
-def cmd_source_add(args: argparse.Namespace) -> int:
-    source_id = _store().add_agent_source(args.url, args.name or args.url)
-    print(source_id)
-    return 0
+def _workforce_dependencies() -> _workforce.WorkforceDependencies:
+    return _workforce.WorkforceDependencies(store_factory=_store, emit_json=_print_json)
 
 
-def cmd_source_list(args: argparse.Namespace) -> int:
-    del args
-    _print_json(_store().list_agent_sources())
-    return 0
+def cmd_workforce_list(args: argparse.Namespace) -> int:
+    return _workforce.cmd_workforce_list(args, dependencies=_workforce_dependencies())
 
 
-def cmd_roster_list(args: argparse.Namespace) -> int:
-    del args
-    roster = _store().get_active_roster_as_catalog()
-    for agent in roster:
-        print(f"{agent['slug']}\t{agent.get('name', '')}\t{agent.get('division', '')}\t{agent.get('description', '')}")
-    return 0
+def cmd_workforce_search(args: argparse.Namespace) -> int:
+    return _workforce.cmd_workforce_search(args, dependencies=_workforce_dependencies())
 
 
-def cmd_roster_diff(args: argparse.Namespace) -> int:
-    diff = create_roster_diff(_store())
-    _print_json(diff if args.json else diff["diff"])
-    return 0
+def cmd_workforce_duplicates(args: argparse.Namespace) -> int:
+    return _workforce.cmd_workforce_duplicates(args, dependencies=_workforce_dependencies())
 
 
-def cmd_roster_approve(args: argparse.Namespace) -> int:
-    approve_snapshot(_store(), args.snapshot_id)
-    print(f"Approved snapshot {args.snapshot_id}")
-    return 0
+def cmd_workforce_consolidate(args: argparse.Namespace) -> int:
+    return _workforce.cmd_workforce_consolidate(args, dependencies=_workforce_dependencies())
 
 
-def cmd_roster_activate(args: argparse.Namespace) -> int:
-    activate_snapshot(_store(), args.snapshot_id)
-    print(f"Activated snapshot {args.snapshot_id}")
-    return 0
+def cmd_workforce_show(args: argparse.Namespace) -> int:
+    return _workforce.cmd_workforce_show(args, dependencies=_workforce_dependencies())
 
 
-def _search(query: str, limit: int) -> list[dict[str, Any]]:
-    catalog = _store().get_active_roster_as_catalog()
-    candidates, scores = pre_narrow(query, catalog, limit=limit)
-    return [{**agent, "score": score} for agent, score in zip(candidates, scores)]
+def cmd_workforce_prompt(args: argparse.Namespace) -> int:
+    return _workforce.cmd_workforce_prompt(args, dependencies=_workforce_dependencies())
 
 
-def cmd_search(args: argparse.Namespace) -> int:
-    results = _search(args.query, args.limit)
-    if args.json:
-        _print_json(results)
-    else:
-        for agent in results:
-            print(f"{agent['score']:.1f}\t{agent['slug']}\t{agent.get('name', '')}\t{agent.get('description', '')}")
-    return 0
+def cmd_workforce_transition(args: argparse.Namespace) -> int:
+    return _workforce.cmd_workforce_transition(args, dependencies=_workforce_dependencies())
 
 
-def cmd_route(args: argparse.Namespace) -> int:
-    results = _search(args.task, args.limit)
-    if not results:
-        print("No active agents available", file=sys.stderr)
-        return 1
-    top = results[0]
-    if args.json:
-        _print_json({"task": args.task, "selected": top, "candidates": results})
-    else:
-        print(f"selected: {top['slug']} ({top.get('name', '')}) score={top['score']:.1f}")
-        for agent in results[1:]:
-            print(f"candidate: {agent['slug']} score={agent['score']:.1f}")
-    return 0
+def cmd_contractor_list(args: argparse.Namespace) -> int:
+    return _workforce.cmd_contractor_list(args, dependencies=_workforce_dependencies())
 
 
-def _run_command(command: list[str]) -> int:
-    if not command:
-        print("No command supplied", file=sys.stderr)
-        return 2
-    import subprocess
-    proc = subprocess.run(command, text=True)  # noqa: S603
-    return int(proc.returncode)
+def cmd_hiring_list(args: argparse.Namespace) -> int:
+    return _workforce.cmd_hiring_list(args, dependencies=_workforce_dependencies())
 
 
-def cmd_delegate(args: argparse.Namespace) -> int:
-    backend = args.backend
-    task = args.task
-    agent = args.agent
-    store = _store()
-    trace_id = f"cli-delegate-{agent or 'auto'}"
-    event_id = store.record_delegation(trace_id=trace_id, recommended_agent=agent or "", status="started", backend=backend)
-    if backend == "codex":
-        command = ["codex", "exec", task]
-    elif backend == "claude":
-        command = ["claude", task]
-    elif backend == "hermes":
-        command = ["hermes", task]
-    else:
-        print(f"Delegation recorded for backend={backend} agent={agent}: {task}")
-        store.update_delegation(event_id, status="suggested", backend=backend)
-        return 0
-    executable = shutil.which(command[0])
-    if not executable:
-        error = f"backend executable not found: {command[0]}"
-        store.update_delegation(event_id, status="skipped", backend=backend, error=error)
-        print(error, file=sys.stderr)
-        return 127
-    command[0] = executable
-    code = _run_command(command)
-    store.update_delegation(event_id, status="completed" if code == 0 else "failed", backend=backend, error="" if code == 0 else f"exit={code}")
-    return code
+def cmd_hiring_show(args: argparse.Namespace) -> int:
+    return _workforce.cmd_hiring_show(args, dependencies=_workforce_dependencies())
 
 
-def cmd_serve(args: argparse.Namespace) -> int:
-    from agency_runtime.server.http import serve
-    serve()
-    return 0
+def cmd_hiring_approve(args: argparse.Namespace) -> int:
+    return _workforce.cmd_hiring_approve(args, dependencies=_workforce_dependencies())
 
 
-def cmd_codex_exec(args: argparse.Namespace) -> int:
-    return _run_command(["codex", "exec", *args.args])
+def cmd_policy(args: argparse.Namespace) -> int:
+    dependencies = _roster.RosterDependencies(
+        store_factory=_store,
+        emit_json=_print_json,
+        policy_loader=load_policy,
+    )
+    return _roster.cmd_policy(args, dependencies=dependencies)
 
 
-def cmd_run(args: argparse.Namespace) -> int:
-    return _run_command(args.args)
+cmd_evidence_children = _evidence.cmd_evidence_children
+cmd_evidence_child_launches = _evidence.cmd_evidence_child_launches
+cmd_evidence_latency = _evidence.cmd_evidence_latency
+cmd_evidence_intent = _evidence.cmd_evidence_intent
+cmd_evidence_rejections = _evidence.cmd_evidence_rejections
+cmd_evidence_selections = _evidence.cmd_evidence_selections
+cmd_evidence_wiring = _evidence.cmd_evidence_wiring
+
+cmd_serve = _services.cmd_serve
+cmd_mcp = _services.cmd_mcp
+cmd_hook = _services.cmd_hook
+cmd_dashboard = _services.cmd_dashboard
+_wait_dashboard_ready = _services._wait_dashboard_ready
+cmd_dashboard_service = _services.cmd_dashboard_service
 
 
-# ── Parser ───────────────────────────────────────────────────
+def cmd_version(args: argparse.Namespace) -> int:
+    from .upgrade_commands import cmd_version as command
+
+    return command(args)
+
+
+def cmd_upgrade(args: argparse.Namespace) -> int:
+    from .upgrade_commands import cmd_upgrade as command
+
+    return command(args)
+
+
+_positive_int = _parser._positive_int
+
+_COMMAND_NAMES = (
+    "cmd_agent_disable",
+    "cmd_agent_enable",
+    "cmd_agents_list",
+    "cmd_config_get",
+    "cmd_config_path",
+    "cmd_config_provider_list",
+    "cmd_config_provider_models",
+    "cmd_config_provider_remove",
+    "cmd_config_provider_set",
+    "cmd_config_reset",
+    "cmd_config_set",
+    "cmd_config_show",
+    "cmd_config_validate",
+    "cmd_configure",
+    "cmd_contractor_list",
+    "cmd_dashboard",
+    "cmd_dashboard_service",
+    "cmd_db_stats",
+    "cmd_db_trim",
+    "cmd_doctor",
+    "cmd_eval_compare",
+    "cmd_eval_decision_conformance",
+    "cmd_eval_full_roster",
+    "cmd_eval_shadow_recall",
+    "cmd_eval_product",
+    "cmd_eval_upstream_architecture",
+    "cmd_eval_upstream_selection",
+    "cmd_eval_host_parity",
+    "cmd_eval_spawn_authority",
+    "cmd_eval_staffing",
+    "cmd_eval_routing",
+    "cmd_eval_workforce",
+    "cmd_evidence_child_launches",
+    "cmd_evidence_children",
+    "cmd_evidence_intent",
+    "cmd_evidence_latency",
+    "cmd_evidence_rejections",
+    "cmd_evidence_selections",
+    "cmd_evidence_wiring",
+    "cmd_explain",
+    "cmd_hook",
+    "cmd_hiring_approve",
+    "cmd_hiring_list",
+    "cmd_hiring_show",
+    "cmd_host_canary",
+    "cmd_battery",
+    "cmd_install",
+    "cmd_uninstall",
+    "cmd_mcp",
+    "cmd_off",
+    "cmd_on",
+    "cmd_policy",
+    "cmd_roster_activate",
+    "cmd_roster_approve",
+    "cmd_roster_diff",
+    "cmd_roster_list",
+    "cmd_roster_remediation_queue",
+    "cmd_roster_retire",
+    "cmd_roster_rollback",
+    "cmd_roster_scans",
+    "cmd_roster_upstream_status",
+    "cmd_roster_upstream_import",
+    "cmd_roster_candidate_audit",
+    "cmd_roster_candidate_findings",
+    "cmd_roster_candidate_reject",
+    "cmd_roster_candidate_compare",
+    "cmd_route",
+    "cmd_search",
+    "cmd_serve",
+    "cmd_smoke",
+    "cmd_setup",
+    "cmd_source_add",
+    "cmd_source_list",
+    "cmd_status",
+    "cmd_sync",
+    "cmd_upgrade",
+    "cmd_version",
+    "cmd_workforce_list",
+    "cmd_workforce_prompt",
+    "cmd_workforce_consolidate",
+    "cmd_workforce_duplicates",
+    "cmd_workforce_search",
+    "cmd_workforce_show",
+    "cmd_workforce_transition",
+)
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="agency", description="Agency Runtime Control Plane")
-    sub = parser.add_subparsers(dest="command", required=True)
-
-    # install
-    install = sub.add_parser("install", help="Install starter roster and policy profile")
-    install.add_argument("--profile", choices=sorted(PROFILES), default="standard")
-    install.set_defaults(func=cmd_install)
-
-    # configure
-    configure = sub.add_parser("configure", help="Guided setup wizard — writes agency.yaml")
-    configure.add_argument("--non-interactive", action="store_true", help="Write detected config without prompts")
-    configure.add_argument("--profile", choices=["local-only", "standard", "power"], default=None)
-    configure.add_argument("--force", action="store_true", help="Overwrite existing config")
-    configure.set_defaults(func=cmd_configure)
-
-    # doctor
-    doctor = sub.add_parser("doctor", help="Check DB, config, providers, and adapter availability")
-    doctor.add_argument("--json", action="store_true", help="JSON output")
-    doctor.add_argument("--verbose", action="store_true")
-    doctor.set_defaults(func=cmd_doctor)
-
-    # config
-    config = sub.add_parser("config", help="Non-interactive config helpers")
-    config_sub = config.add_subparsers(dest="config_command", required=True)
-
-    config_show = config_sub.add_parser("show", help="Print effective config")
-    config_show.add_argument("--raw", action="store_true", help="Show secrets")
-    config_show.set_defaults(func=cmd_config_show)
-
-    config_path = config_sub.add_parser("path", help="Print config file location")
-    config_path.set_defaults(func=cmd_config_path)
-
-    config_get = config_sub.add_parser("get", help="Get a config value")
-    config_get.add_argument("key", help="Dotted key (e.g. judge.model)")
-    config_get.set_defaults(func=cmd_config_get)
-
-    config_set = config_sub.add_parser("set", help="Set a config value")
-    config_set.add_argument("key", help="Dotted key (e.g. judge.model)")
-    config_set.add_argument("value", help="Value to set")
-    config_set.set_defaults(func=cmd_config_set)
-
-    config_validate = config_sub.add_parser("validate", help="Validate config + reachability")
-    config_validate.set_defaults(func=cmd_config_validate)
-
-    config_reset = config_sub.add_parser("reset", help="Reset to defaults")
-    config_reset.set_defaults(func=cmd_config_reset)
-
-    # sync
-    sync = sub.add_parser("sync", help="Download sources into quarantine and create a roster snapshot")
-    sync.add_argument("--dry-run", action="store_true")
-    sync.add_argument("--review", action="store_true")
-    sync.add_argument("--auto-approve", action="store_true")
-    sync.set_defaults(func=cmd_sync)
-
-    # source
-    source = sub.add_parser("source", help="Manage roster sources")
-    source_sub = source.add_subparsers(dest="source_command", required=True)
-    source_add = source_sub.add_parser("add", help="Add a roster source")
-    source_add.add_argument("url")
-    source_add.add_argument("--name", default="")
-    source_add.set_defaults(func=cmd_source_add)
-    source_list = source_sub.add_parser("list", help="List roster sources")
-    source_list.set_defaults(func=cmd_source_list)
-
-    # roster
-    roster = sub.add_parser("roster", help="Inspect and activate roster snapshots")
-    roster_sub = roster.add_subparsers(dest="roster_command", required=True)
-    roster_list = roster_sub.add_parser("list", help="List active roster")
-    roster_list.set_defaults(func=cmd_roster_list)
-    roster_diff = roster_sub.add_parser("diff", help="Create/show diff for quarantined candidates")
-    roster_diff.add_argument("--json", action="store_true")
-    roster_diff.set_defaults(func=cmd_roster_diff)
-    roster_approve = roster_sub.add_parser("approve", help="Approve snapshot")
-    roster_approve.add_argument("snapshot_id")
-    roster_approve.set_defaults(func=cmd_roster_approve)
-    roster_activate = roster_sub.add_parser("activate", help="Activate approved snapshot")
-    roster_activate.add_argument("snapshot_id")
-    roster_activate.set_defaults(func=cmd_roster_activate)
-
-    # search
-    search = sub.add_parser("search", help="Search active roster")
-    search.add_argument("query")
-    search.add_argument("--limit", type=int, default=10)
-    search.add_argument("--json", action="store_true")
-    search.set_defaults(func=cmd_search)
-
-    # route
-    route = sub.add_parser("route", help="Route a task to candidate agents")
-    route.add_argument("task")
-    route.add_argument("--limit", type=int, default=5)
-    route.add_argument("--json", action="store_true")
-    route.set_defaults(func=cmd_route)
-
-    # delegate
-    delegate = sub.add_parser("delegate", help="Delegate a task to a backend")
-    delegate.add_argument("--backend", default="generic")
-    delegate.add_argument("--agent", default="")
-    delegate.add_argument("--task", required=True)
-    delegate.set_defaults(func=cmd_delegate)
-
-    # serve
-    serve_p = sub.add_parser("serve", help="Start HTTP server")
-    serve_p.set_defaults(func=cmd_serve)
-
-    # codex
-    codex = sub.add_parser("codex", help="Codex adapter commands")
-    codex_sub = codex.add_subparsers(dest="codex_command", required=True)
-    codex_exec = codex_sub.add_parser("exec", help="Run codex exec")
-    codex_exec.add_argument("args", nargs=argparse.REMAINDER)
-    codex_exec.set_defaults(func=cmd_codex_exec)
-
-    # run
-    run = sub.add_parser("run", help="Run an arbitrary command")
-    run.add_argument("args", nargs=argparse.REMAINDER)
-    run.set_defaults(func=cmd_run)
-
-    return parser
+    """Build the parser against facade callbacks to preserve monkeypatching."""
+    handlers = {name: globals()[name] for name in _COMMAND_NAMES}
+    return _parser.build_parser(handlers)
 
 
 def main(argv: Sequence[str] | None = None) -> int:
+    """Run the CLI and translate expected command errors into exit status 1."""
+    _configure_console_output()
     parser = build_parser()
     args = parser.parse_args(argv)
+    _print_cached_update_notice(args)
     try:
         return int(args.func(args))
-    except (KeyError, ValueError, RuntimeError) as exc:
-        print(f"agency: error: {exc}", file=sys.stderr)
+    except (KeyError, OSError, ValueError, RuntimeError) as exc:
+        print(f"agency: error: {safe_display_token(str(exc), limit=500)}", file=sys.stderr)
         return 1
+
+
+def _print_cached_update_notice(args: argparse.Namespace) -> None:
+    """Notify interactive human commands from cache without network or Git work."""
+
+    if not sys.stderr.isatty() or bool(getattr(args, "json", False)):
+        return
+    command = getattr(args, "command", "")
+    if not isinstance(command, str) or command in {
+        "codex",
+        "dashboard",
+        "hook",
+        "mcp",
+        "run",
+        "serve",
+        "upgrade",
+        "version",
+    }:
+        return
+    setting = os.environ.get("AGENCY_UPDATE_NOTICES", "1").strip().casefold()
+    if setting in {"0", "false", "no", "off"}:
+        return
+    try:
+        from agency_runtime.core.update_service import cached_startup_notice
+
+        notice = cached_startup_notice()
+    except (OSError, PermissionError, RuntimeError, TypeError, ValueError):
+        return
+    if notice:
+        print(notice, file=sys.stderr)
 
 
 if __name__ == "__main__":  # pragma: no cover

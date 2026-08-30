@@ -1,14 +1,13 @@
-"""Generic adapter — wraps any agent CLI.
+"""Generic adapter — evidence for a host with no dedicated adapter.
 
-For runtimes that don't have a dedicated adapter, the generic wrapper
-provides best-effort routing and delegation via subprocess.
+Records the same turn evidence as the named adapters. It does not execute
+anything: rule 5 says the host alone decides whether to spawn.
 """
 
 from __future__ import annotations
 
 import logging
-import subprocess
-from typing import Any
+import shutil
 
 from agency_runtime.adapters.base import BaseAdapter
 from agency_runtime.core.store.sqlite import Store
@@ -28,59 +27,4 @@ class GenericAdapter(BaseAdapter):
     def is_available(self) -> bool:
         if not self.cli_cmd:
             return False
-        try:
-            result = subprocess.run(
-                ["which", self.cli_cmd],
-                capture_output=True, text=True, timeout=2,
-            )
-            return result.returncode == 0
-        except Exception:
-            return False
-
-    def report_skills_loaded(self, session_id: str) -> list[str]:
-        return self.store.get_skills_for_session(session_id)
-
-    def report_specialists_loaded(self, session_id: str) -> list[str]:
-        return []
-
-    def get_delegate_backend(self) -> str | None:
-        return "generic_command" if self.is_available() else None
-
-    def expose_model_telemetry(self, session_id: str) -> dict[str, Any]:
-        return {}
-
-    def exec(self, task: str, args: list[str] | None = None, workdir: str | None = None) -> dict[str, Any]:
-        """Execute a task via a generic CLI command."""
-        import os
-        workdir = workdir or os.getcwd()
-        cmd = [self.cli_cmd] + (args or []) + [task]
-
-        try:
-            result = subprocess.run(
-                cmd,
-                capture_output=True, text=True, timeout=300,
-                cwd=workdir,
-            )
-            return {
-                "exit_code": result.returncode,
-                "stdout": result.stdout,
-                "stderr": result.stderr,
-                "backend": "generic_command",
-                "workdir": workdir,
-            }
-        except FileNotFoundError:
-            return {
-                "exit_code": -1,
-                "stdout": "",
-                "stderr": f"command not found: {self.cli_cmd}",
-                "backend": "generic_command",
-                "workdir": workdir,
-            }
-        except subprocess.TimeoutExpired:
-            return {
-                "exit_code": -1,
-                "stdout": "",
-                "stderr": f"{self.cli_cmd} timed out after 300s",
-                "backend": "generic_command",
-                "workdir": workdir,
-            }
+        return bool(shutil.which(self.cli_cmd))

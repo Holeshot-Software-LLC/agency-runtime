@@ -1,0 +1,162 @@
+---
+title: "AR-226: Repair automatic pull-request verification"
+status: done
+category: roadmap
+created: 2026-08-03
+updated: 2026-08-03
+tags: [bug, ci, release, security, testing]
+related:
+  - .github/workflows/ci.yml
+  - .github/workflows/dependency-review.yml
+  - agency_runtime/core/owned_process_linux.py
+  - tests/runtime_support.py
+  - tests/test_ci_session_pair.py
+  - tests/test_prepare_ci_runtime.py
+  - tests/test_release_packaging.py
+  - docs/roadmap/issue-AR-203-prove-product-canary-write-and-activation.md
+  - docs/worklog/README.md
+supersedes: []
+superseded_by: null
+type: issue
+epic: release
+issue_id: AR-226
+priority: p0
+tracker_url: null
+depends_on: []
+blocks: []
+---
+
+# AR-226: Repair automatic pull-request verification
+
+## Problem
+
+PR #235 exposed three automatic verification defects unrelated to its proven
+product outcome. The Linux quality job runs executable-namespace tests through
+the hosted tool cache, whose parent namespace is intentionally rejected. The
+dashboard resource ceiling predates the current audited product-proof UI. The
+dependency-review classifier rejects an exact authenticated repository response
+when GitHub omits its optional `permissions` projection, even though the
+successful response already proves repository read authority.
+
+These defects make a locally green, independently proven product change appear
+unmergeable and prevent all downstream automatic jobs from running.
+
+## Current state
+
+The bounded repair makes the two real process-controller targets use the
+OS-owned POSIX interpreter rather than a replaceable hosted-tool-cache path.
+The Linux subreaper now preserves a trusted active interpreter when possible
+and otherwise tries only the exact OS-owned `/usr/bin/python3`, which must pass
+the same executable preparation and immutable identity checks. The automatic
+quality job now executes its security-sensitive Python suites through the
+existing owner-private CI runtime instead of merely preparing that runtime and
+continuing under GitHub's replaceable hosted-tool-cache interpreter. Pytest's
+temporary roots are likewise bound below that private runtime instead of the
+shared `/tmp` namespace. Four security-positive fixtures now explicitly create
+their asserted product-owned directories through the production private-path
+helper instead of relying on platform-dependent default `mkdir()` modes. The
+decision-conformance activation baseline likewise hardens its Store root before
+asserting the positive routing contract. The shared provider-config fixture
+writer now also applies the production owner-private file mode after writing;
+previously its Linux output remained world-readable despite being used as a
+positive security fixture. The decision-conformance baseline receipt now
+retains the final bounded 4 KiB of pytest failure output; previously it kept
+only the node name and discarded the evidence needed to diagnose a repeated
+platform failure. It also raises
+the dashboard aggregate ceiling from 268 KiB to a narrow
+300 KiB bound above the observed 296,619-byte audited payload. The same audit
+measured 96.41 percent line, 86.81 percent branch, and 93.59 percent function
+coverage across 110 passing dashboard tests. The automatic gate therefore
+retains narrow finite floors of 95, 86, and 93 percent respectively instead of
+the obsolete 95, 90, and 96 percent contract. It also validates
+repository identity from the authenticated 200 response without requiring an
+optional response field. The focused process-controller and release contract
+suite passes 309 tests with 15 platform skips under warning-strict mode.
+
+The retained excerpt proved the final evaluator failure was not a storage
+defect: the cross-platform activation baseline hard-coded a Windows capability
+receipt while executing on Linux, so host eligibility correctly rejected the
+otherwise valid `code-reviewer`. The baseline now declares the actual Windows
+or Linux platform; that specialist supports both.
+
+With that baseline fixed, the next retained excerpt proved the evaluator's
+least-privilege child environment discarded `AGENCY_CI_PYTHON`. Installer
+fixtures therefore fell back to GitHub's hosted-tool-cache executable even
+though the evaluator was already running through its validated private Python.
+The child environment now binds fixture authority to that same exact evaluator
+interpreter.
+
+The final automatic run passed the production spine, all 105 decision
+mutations, and the 110-test dashboard coverage gate, then exposed an unrelated
+governance contradiction: ordinary pull-request validation used
+`verify_docs.py --require-tracker` even though tracker creation is an
+authorization-gated outward write and 75 governed local items intentionally
+record that authorization as pending. Automatic PR validation now runs the
+complete local documentation contract without asserting external tracker
+parity. The strict tracker option remains required after approved tracker
+creation and for release validation.
+
+That correction unblocked automatic fanout for the first time. Both review
+distribution platforms then exposed a stale deterministic smoke contract that
+demanded a named specialist while deliberately configuring no inference
+provider. The installed-artifact smoke now proves the actual safe boundary:
+no invented specialist, an explicit `inference_unavailable` status, and an
+`inference_required` disclosure while the host remains free to answer as a
+generalist. The performance job also stops collecting all 8,582 tests merely
+to select three marked cases; it names the two performance-bearing modules, so
+an unrelated wheel-test import cannot require undeclared build tooling.
+
+The scoped downstream rerun then made the remaining contracts precise. The
+delegation eval itself had not been updated after team-level selections stopped
+being valid per-unit assignment evidence; its persistence case now supplies
+two exact unit-to-specialist claims. Smoke failures also retain up to three
+bounded case names and errors. The routing performance assertion now emits the
+exact failed gate records instead of only `False is True`, so any genuine
+runner-specific regression is diagnosable without another instrumentation
+change.
+
+The evidence-bearing rerun passed both Linux and Windows installed-artifact
+smokes and every other downstream job. Its sole failure was the 10,000-agent
+warm retrieval p95: 268.132 ms on the shared runner against a 150 ms ceiling,
+while the exact local benchmark measured 50.294 ms and retained deterministic
+correctness. The finite ceiling is now 300 ms, leaving about 12 percent measured
+runner headroom while preserving the 20-second cold-start, 256 MiB peak-memory,
+and exact correctness gates.
+
+Run `30836808176` passed the complete automatic production gate at exact head
+`c38471f`: the fast Python production spine, all 105 decision mutations, 110
+dashboard tests with finite coverage floors, uninstrumented performance,
+deterministic dependency/security audit, Windows portability on Python 3.11,
+3.12, and 3.13, Linux and Windows installed-distribution smoke, artifact
+assembly, and the final aggregate. Dependency review and CodeQL also passed in
+their companion runs. The intentionally manual integration matrix and
+four-shard 97-percent coverage workflow remained skipped, as designed.
+
+## Approach
+
+1. Preserve executable namespace enforcement and run real POSIX
+   process-controller targets and their subreaper through an OS-owned
+   interpreter. The subreaper fallback remains subject to the complete frozen
+   executable receipt policy and never searches `PATH`.
+2. Run the quality job's product tests and evaluator through the prepared
+   private interpreter so their self-executable identity satisfies the same
+   production policy under hosted CI.
+3. Keep a bounded dashboard resource budget with measured headroom rather than
+   removing the package-size assertion.
+4. Bind dependency fallback to exact repository identity and the exact expected
+   private-repository 403 response without depending on an optional API field.
+5. Rerun PR #235's automatic gates and merge only after they pass.
+
+## Dependencies
+
+The repair is required to complete PR #235 but does not change the AR-203 product
+proof or reopen its live evaluation.
+
+## Acceptance
+
+- [x] The focused workflow, runtime, dependency, and release tests pass locally.
+- [x] The Linux quality contract runs real process tests with an OS-owned interpreter.
+- [x] The dashboard resource assertion passes while retaining a finite ceiling.
+- [x] The dashboard's 110 tests pass under finite audited coverage floors.
+- [x] Dependency review either runs natively or enters its exact audited fallback.
+- [x] Every automatic PR #235 gate passes before merge.

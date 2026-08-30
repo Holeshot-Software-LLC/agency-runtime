@@ -1,12 +1,43 @@
-"""Domain context expansion — enriches queries with discipline vocabulary.
-
-Ported from ~/.litellm/agency_preflight.py.
-"""
+"""Query expansion — adds domain context to improve specialist matching."""
 
 from __future__ import annotations
 
+import re
+from functools import lru_cache
+
 _DOMAIN_EXPANSIONS: dict[str, list[str]] = {
-    "conveyor": ["ci cd pipeline", "workflow automation", "task orchestration", "software delivery"],
+    "agency": [
+        "multi-agent system",
+        "agent orchestration",
+        "specialist routing",
+        "native delegation",
+    ],
+    "agent selection": [
+        "specialist routing",
+        "agent orchestration",
+        "specialist compatibility constraints",
+    ],
+    "response header": [
+        "developer experience",
+        "response telemetry",
+    ],
+    "dashboard": [
+        "runtime dashboard",
+        "configuration interface",
+        "runtime controls",
+    ],
+    "auth": [
+        "application security",
+        "authentication",
+        "authorization",
+        "identity access management",
+    ],
+    "conveyor": [
+        "ci cd pipeline",
+        "workflow automation",
+        "task orchestration",
+        "software delivery",
+    ],
     "openclaw": ["multi-agent system", "ai agent orchestration", "distributed system"],
     "nexus": ["multi-agent system", "ai agent orchestration", "distributed system"],
     "mentor": ["ai agent", "system architecture", "code review"],
@@ -23,17 +54,22 @@ _DOMAIN_EXPANSIONS: dict[str, list[str]] = {
     "slack": ["messaging platform", "real-time communication", "bot development"],
     "warden": ["ai assistant", "system monitoring", "automation"],
     "scout": ["ai agent", "workbench", "code assistance"],
-    "stonks": ["financial analysis", "trading", "data visualization"],
-    "holeshot": ["software product", "application architecture", "startup"],
+    "finance automation": ["financial analysis", "trading", "data visualization"],
 }
+
+
+@lru_cache(maxsize=len(_DOMAIN_EXPANSIONS))
+def _domain_pattern(term: str) -> re.Pattern[str]:
+    words = re.findall(r"[a-z0-9]+", term.lower())
+    phrase = r"[^a-z0-9]+".join(re.escape(word) for word in words)
+    return re.compile(rf"(?<![a-z0-9]){phrase}(?![a-z0-9])", re.IGNORECASE)
 
 
 def expand_query(query: str) -> str:
     """Expand domain-specific terms with discipline equivalents."""
-    query_lower = query.lower()
     expansions: list[str] = []
     for term, disciplines in _DOMAIN_EXPANSIONS.items():
-        if term in query_lower:
+        if _domain_pattern(term).search(query):
             expansions.extend(disciplines)
     if expansions:
         seen: set[str] = set()

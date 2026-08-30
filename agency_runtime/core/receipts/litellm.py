@@ -22,9 +22,7 @@ def _headers_to_dict(headers: Mapping[str, Any] | Any | None) -> dict[str, str]:
         return {}
 
     items: Any
-    if isinstance(headers, Mapping):
-        items = headers.items()
-    elif hasattr(headers, "items"):
+    if isinstance(headers, Mapping) or hasattr(headers, "items"):
         items = headers.items()
     else:
         return {}
@@ -62,9 +60,9 @@ def extract_litellm_receipt_headers(headers: Mapping[str, Any] | Any | None) -> 
 
 
 __all__ = [
-    "LITELLM_MODEL_GROUP_HEADER",
-    "LITELLM_MODEL_API_BASE_HEADER",
     "LITELLM_ATTEMPTED_FALLBACKS_HEADER",
+    "LITELLM_MODEL_API_BASE_HEADER",
+    "LITELLM_MODEL_GROUP_HEADER",
     "LITELLM_MODEL_ID_HEADER",
     "extract_litellm_receipt_headers",
 ]

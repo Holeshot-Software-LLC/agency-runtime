@@ -1,0 +1,250 @@
+name: Dependency review
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dependency-review-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dependency-review:
+    name: dependency review
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Check out source
+        id: checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+      - name: Probe repository identity and dependency review capability
+        id: dependency-review-probe
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          repository_response="$(mktemp "${RUNNER_TEMP}/dependency-review-repository.XXXXXX.json")"
+          comparison_response="$(mktemp "${RUNNER_TEMP}/dependency-review-comparison.XXXXXX.json")"
+          if ! repository_status="$(
+            curl --silent --show-error --connect-timeout 10 --max-time 30 \
+              --max-filesize 1048576 --output "${repository_response}" \
+              --write-out '%{http_code}' \
+              --header 'Accept: application/vnd.github+json' \
+              --header "Authorization: Bearer ${GH_TOKEN}" \
+              --header 'X-GitHub-Api-Version: 2022-11-28' \
+              "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}"
+          )"; then
+            echo '::error::Repository identity probe failed before dependency review classification.'
+            exit 1
+          fi
+          if ! comparison_status="$(
+            curl --silent --show-error --connect-timeout 10 --max-time 30 \
+              --max-filesize 1048576 --output "${comparison_response}" \
+              --write-out '%{http_code}' \
+              --header 'Accept: application/vnd.github+json' \
+              --header "Authorization: Bearer ${GH_TOKEN}" \
+              --header 'X-GitHub-Api-Version: 2022-11-28' \
+              "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/dependency-graph/compare/${BASE_SHA}...${HEAD_SHA}"
+          )"; then
+            echo '::error::Dependency review capability request failed before classification.'
+            exit 1
+          fi
+          {
+            printf 'repository_response=%s\n' "${repository_response}"
+            printf 'repository_http_status=%s\n' "${repository_status}"
+            printf 'comparison_response=%s\n' "${comparison_response}"
+            printf 'comparison_http_status=%s\n' "${comparison_status}"
+          } >> "${GITHUB_OUTPUT}"
+      - name: Classify dependency review capability
+        id: dependency-review-capability
+        env:
+          COMPARISON_HTTP_STATUS: ${{ steps.dependency-review-probe.outputs.comparison_http_status }}
+          COMPARISON_RESPONSE: ${{ steps.dependency-review-probe.outputs.comparison_response }}
+          EXPECTED_FORK: ${{ github.event.repository.fork }}
+          EXPECTED_REPOSITORY: ${{ github.repository }}
+          EXPECTED_VISIBILITY: ${{ github.event.repository.visibility }}
+          REPOSITORY_HTTP_STATUS: ${{ steps.dependency-review-probe.outputs.repository_http_status }}
+          REPOSITORY_RESPONSE: ${{ steps.dependency-review-probe.outputs.repository_response }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import re
+          import stat
+          from pathlib import Path
+
+          maximum_bytes = 1024 * 1024
+
+          def status(name):
+              value = os.environ.get(name, "")
+              if re.fullmatch(r"[1-5][0-9]{2}", value) is None:
+                  raise SystemExit(f"{name} is not an HTTP status")
+              return int(value)
+
+          def payload(name):
+              path = Path(os.environ.get(name, ""))
+              try:
+                  metadata = path.lstat()
+              except OSError as exc:
+                  raise SystemExit(f"{name} is unavailable: {exc}") from None
+              if (
+                  path.is_symlink()
+                  or not stat.S_ISREG(metadata.st_mode)
+                  or int(getattr(metadata, "st_nlink", 0) or 0) != 1
+                  or not 0 < metadata.st_size <= maximum_bytes
+              ):
+                  raise SystemExit(f"{name} failed its bounded regular-file contract")
+              try:
+                  return json.loads(path.read_text(encoding="utf-8"))
+              except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+                  raise SystemExit(f"{name} is not bounded UTF-8 JSON: {exc}") from None
+
+          repository_status = status("REPOSITORY_HTTP_STATUS")
+          comparison_status = status("COMPARISON_HTTP_STATUS")
+          repository = payload("REPOSITORY_RESPONSE")
+          comparison = payload("COMPARISON_RESPONSE")
+          expected_repository = os.environ.get("EXPECTED_REPOSITORY", "")
+          expected_visibility = os.environ.get("EXPECTED_VISIBILITY", "")
+          expected_fork_text = os.environ.get("EXPECTED_FORK", "").casefold()
+          if expected_fork_text not in {"true", "false"}:
+              raise SystemExit("repository fork identity is invalid")
+          expected_fork = expected_fork_text == "true"
+          if expected_visibility not in {"public", "private", "internal"}:
+              raise SystemExit("repository visibility is invalid")
+          if (
+              repository_status != 200
+              or not isinstance(repository, dict)
+              or repository.get("full_name") != expected_repository
+              or repository.get("visibility") != expected_visibility
+              or repository.get("fork") is not expected_fork
+              or repository.get("private") is not (expected_visibility != "public")
+          ):
+              raise SystemExit("repository identity and read authority were not proven")
+
+          if comparison_status == 200:
+              if not isinstance(comparison, (dict, list)):
+                  raise SystemExit("dependency comparison returned malformed success JSON")
+              available = True
+              reason = "repository_dependency_review_available"
+          else:
+              expected_forbidden = {
+                  "documentation_url": "https://docs.github.com/rest/dependency-graph/dependency-review#get-a-diff-of-the-dependencies-between-commits",
+                  "message": "Forbidden",
+                  "status": "403",
+              }
+              if not (
+                  comparison_status == 403
+                  and comparison == expected_forbidden
+                  and expected_visibility in {"private", "internal"}
+                  and expected_fork is False
+              ):
+                  raise SystemExit(
+                      "dependency review capability response was ambiguous; refusing fallback"
+                  )
+              available = False
+              reason = "private_or_internal_repository_dependency_review_unavailable"
+
+          with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8", newline="\n") as output:
+              output.write(f"available={str(available).lower()}\n")
+              output.write(f"http_status={comparison_status}\n")
+              output.write(f"reason={reason}\n")
+          if not available:
+              print(
+                  "::notice::Native dependency-diff review is unavailable at the exact "
+                  "authenticated private-repository capability boundary. The installed-runtime "
+                  "vulnerability audit is compensating evidence, not equivalent "
+                  "dependency-change review."
+              )
+          PY
+      - name: Reject vulnerable dependency changes
+        id: native-review
+        if: steps.dependency-review-capability.outputs.available == 'true'
+        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          fail-on-severity: moderate
+          retry-on-snapshot-warnings: true
+      - name: Set up fallback Python
+        id: fallback-python
+        if: steps.dependency-review-capability.outputs.available == 'false'
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install runtime and pinned fallback audit tool
+        id: fallback-install
+        if: steps.dependency-review-capability.outputs.available == 'false'
+        run: |
+          python -m pip install .
+          python -m pip install "pip-audit==2.10.1"
+      - name: Audit installed runtime dependencies as non-equivalent compensating evidence
+        id: installed-runtime-audit
+        if: steps.dependency-review-capability.outputs.available == 'false'
+        run: python scripts/audit_runtime_dependencies.py
+      - name: Require a coherent dependency review outcome
+        id: dependency-review-result
+        if: always()
+        env:
+          CAPABILITY_AVAILABLE: ${{ steps.dependency-review-capability.outputs.available }}
+          CAPABILITY_OUTCOME: ${{ steps.dependency-review-capability.outcome }}
+          CHECKOUT_OUTCOME: ${{ steps.checkout.outcome }}
+          FALLBACK_AUDIT_OUTCOME: ${{ steps.installed-runtime-audit.outcome }}
+          FALLBACK_INSTALL_OUTCOME: ${{ steps.fallback-install.outcome }}
+          FALLBACK_PYTHON_OUTCOME: ${{ steps.fallback-python.outcome }}
+          NATIVE_REVIEW_OUTCOME: ${{ steps.native-review.outcome }}
+          PROBE_OUTCOME: ${{ steps.dependency-review-probe.outcome }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+
+          actual = {
+              "capability": os.environ.get("CAPABILITY_OUTCOME", ""),
+              "checkout": os.environ.get("CHECKOUT_OUTCOME", ""),
+              "fallback_audit": os.environ.get("FALLBACK_AUDIT_OUTCOME", ""),
+              "fallback_install": os.environ.get("FALLBACK_INSTALL_OUTCOME", ""),
+              "fallback_python": os.environ.get("FALLBACK_PYTHON_OUTCOME", ""),
+              "native_review": os.environ.get("NATIVE_REVIEW_OUTCOME", ""),
+              "probe": os.environ.get("PROBE_OUTCOME", ""),
+          }
+          availability = os.environ.get("CAPABILITY_AVAILABLE", "")
+          common = {"capability": "success", "checkout": "success", "probe": "success"}
+          if availability == "true":
+              expected = {
+                  **common,
+                  "fallback_audit": "skipped",
+                  "fallback_install": "skipped",
+                  "fallback_python": "skipped",
+                  "native_review": "success",
+              }
+              message = "Native dependency-diff review completed successfully."
+          elif availability == "false":
+              expected = {
+                  **common,
+                  "fallback_audit": "success",
+                  "fallback_install": "success",
+                  "fallback_python": "success",
+                  "native_review": "skipped",
+              }
+              message = (
+                  "Native dependency-diff review was unavailable; exact installed-runtime "
+                  "vulnerability evidence passed but is not equivalent diff review."
+              )
+          else:
+              raise SystemExit(
+                  "dependency review capability produced an invalid availability value: "
+                  f"{availability or 'missing'}"
+              )
+          if actual != expected:
+              raise SystemExit(
+                  "dependency review prerequisites were incoherent: "
+                  + json.dumps({"actual": actual, "expected": expected}, sort_keys=True)
+              )
+          print(message)
+          PY

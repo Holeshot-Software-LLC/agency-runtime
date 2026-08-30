@@ -1,0 +1,186 @@
+---
+title: "AR-309: Restore Codex 0.149 activation proof"
+status: in_progress
+category: roadmap
+created: 2026-08-26
+updated: 2026-08-26
+tags: [codex, canary, native-child, evidence, headers]
+related:
+  - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
+  - docs/roadmap/issue-AR-325-restore-codex-first-complete-callback-reconciliation.md
+  - docs/roadmap/issue-AR-308-bind-activation-canary-delegation.md
+  - docs/roadmap/issue-AR-310-require-managed-codex-canary-store.md
+  - docs/roadmap/issue-AR-311-inject-exact-codex-canary-native-plan.md
+  - docs/roadmap/issue-AR-313-trust-normal-umask-codex-artifacts.md
+  - docs/roadmap/issue-AR-314-bind-codex-default-canary-role.md
+  - docs/roadmap/issue-AR-315-project-codex-canary-install-home.md
+  - docs/roadmap/handoffs/issue-AR-297.md
+  - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
+  - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
+  - docs/decisions/0179-admit-exact-codex-canary-delivery-at-subagent-start.md
+  - docs/decisions/0180-project-current-profile-canary-install-home.md
+  - agency_runtime/core/canary.py
+  - agency_runtime/core/canary_backends.py
+  - agency_runtime/core/child_delivery_evidence.py
+  - agency_runtime/adapters/hooks.py
+  - tests/test_codex_activation_canary.py
+  - tests/test_codex_activation_verification.py
+  - tests/test_canary_activation_snapshot.py
+  - tests/test_child_delivery_evidence.py
+  - tests/test_host_hooks.py
+  - docs/worklog/README.md
+supersedes: []
+superseded_by: null
+type: issue
+epic: host-integrations
+issue_id: AR-309
+priority: p0
+tracker_url: null
+depends_on: [AR-308]
+blocks: [AR-297, AR-310, AR-311, AR-313, AR-314, AR-315]
+---
+
+# AR-309: Restore Codex 0.149 activation proof
+
+## Problem
+
+The first exact post-AR-308 Codex 0.149.1 managed-policy canary now resolves
+the inference-owned route and executes one direct native child, but the
+installed proof boundary cannot admit the result. The forced
+`multi_agent_v2` rollout stores the child start inside the newer
+`event_msg/item_completed/SubAgentActivity` envelope, redacts the decrypted
+child launch text from the child rollout, and does not place Agency's
+post-wait header snapshot in the parent context. The parser therefore reports
+no collaboration projection, the host-authored card-delivery contract has no
+visible launch marker, and the parent copies the stale initial
+`Agency/Agencies delegated: none` line into a response that Stop rejects.
+
+## Current state
+
+- Exact candidate `1f32915d14a9760d8cd12d21fbc6e7f3d8940a66` uses
+  config SHA-256
+  `87551b5bc936a41742d6846523377e3cf869d8e5c2ce2e4941c447848e125628`.
+  The no-bypass managed-policy install JSON is mode 0600 at SHA-256
+  `72c4ba033bb87234db6f4470d88e52e3d2c2f2cd483fbb1b32a67a2747d6e4ab`;
+  stderr is empty and the command exits 1.
+- Session `01a03f83-bb05-7c43-b9b3-38cb8d9e30dd` and trace
+  `01a03f83-bb12-7d80-b95a-879bce00b338` prove one accepted
+  `code-reviewer` route, one loaded specialist, one delegated native task, one
+  completed child answer, one completed wait, and one finalization. The route
+  is `delivery=delegate`, so AR-308 crossed its exact former blocker.
+- Parent and child rollouts are retained mode 0600 at SHA-256
+  `5a548331ecd42e382510f9efbecf5b280e9195333c8f25ebf8290fbbb0412af2`
+  and
+  `4732afb2f94dadaed62bc6b0548bac3a6937b751eba8c583f85ab1ab8f0e225e`.
+  The parent records `spawn_agent`, `SubAgentActivity(kind=started)`,
+  `wait_agent`, and the child's conclusion. The child artifact contains no
+  workforce-card marker or work-unit text before first speech.
+- The parent final response carries a syntactically complete five-line header
+  but falsely retains `delegated: none`. Store finalization
+  `b5cf0953-e7b8-4700-8fa5-a319d420fb93` is therefore
+  `response_invalid` with missing `evidence_verification`; no attestation is
+  persisted.
+- Codex 0.149.1 reports both `multi_agent` and `multi_agent_v2` as stable,
+  with `multi_agent` enabled and `multi_agent_v2` disabled by default. The
+  current canary overrides that native default and forces V2.
+- The bounded supported-`multi_agent` comparison exits 0, but it cannot
+  replace V2. Session `01a03f94-156b-75f1-9022-ea7cef6ace55`, trace
+  `01a03f94-15cb-7192-bf4e-34f518c4798a`, and query SHA-256
+  `4d160cfe3770d67ea8246cc096d9d47c665cb589ad6b140970de6dfc67d0c652`
+  record the same accepted `code-reviewer` route with
+  `delivery=delegate`, but zero native routes, deliveries, delegations, or
+  worker runs. The injected host context carries only the generic instruction
+  to follow a plan, not an actual `[AGENCY DELEGATION PLAN]` row, so the
+  truthful first response reports `delegated: none` and does not spawn.
+- The stable diagnostic stdout, stderr, Store snapshot, and parent rollout are
+  retained mode 0600 at SHA-256
+  `356d36d14a66702a05f82c00997c0e90268e307a0a888cc4647aea7e4e306bc6`,
+  `dc6b65253c32f61f8551adfbf795546e6ed20d353aa0686024692d4415e73f5a`,
+  `bb518e7cd3157bee97c408c4b0d140f8b7928a5c94ecf7b7ebbbe5fff642b20d`,
+  and
+  `953295259aa29014719af67e930a7e4315cbdcc40eda226ca971bee3962790a3`.
+  Stderr contains only the Codex remote-plugin OAuth transport-close warning.
+- Tracker creation is prohibited by the active AR-297 task.
+- The bounded repair now recognizes the exact 0.149
+  `event_msg/item_completed/SubAgentActivity` start, resolves quiet parent
+  stdout from one invocation-window root rollout, and projects the single
+  spawn/wait topology. At the exact `code_reviewer` `SubagentStart`, it binds
+  the persisted fixed route to the real host child UUID, returns one complete
+  v6 delivery, and leaves every ordinary or mismatched child identity-only.
+- The private structural reader requires one distinct pre-speech v6 record,
+  the exact Store decision and install identity, an owner-private canonical
+  child rollout, the child/parent UUIDs, decision lifetime, invocation window,
+  and atomic receipt consumption. The public Codex parser still returns
+  `unsupported_opaque_interagent_channel` and repeated v6 records fail closed.
+- Post-spawn reconciliation joins the host response to the bound UUID and
+  exact fixed work unit. Receipt-backed completion snapshots may project the
+  delivered `code-reviewer` identity without rewriting the underlying
+  delegation row, and the completed wait refreshes the final Store header.
+- Warning-strict focused verification passes: 328 Codex delivery, canary,
+  hook, card-proof, and header tests; 109 activation-snapshot, activation
+  contract, Store atomicity, delegation, and turn-security tests; plus the
+  exact real-Store parent-resolution regression. A rebuilt live transaction
+  attempted the repair but stopped before Codex execution because the managed
+  installer omitted the exact existing-Store marker; AR-310 owns that bounded
+  call-contract defect, so no AR-309 attestation claim has advanced.
+- The next exact `c60678ef` transaction reaches the accepted route, but the
+  parent receives no concrete delegation row and tries invalid
+  `task_name=code-reviewer`; AR-311 owns that pre-child label defect. No
+  AR-309 host-delivery or attestation claim advances from the failed spawn.
+- Exact rebuilt candidate `49bf1190` proves AR-311 and crosses child execution:
+  child `01a04005-8353-7f42-9020-3453eed3b5b0` completes fixed unit
+  `unit-05d45f7553` with exit 0. Parent/child rollouts hash to
+  `8b93d005...1b668` and `6e18884f...f73a0`, but the child receives only the
+  identity context. Codex emits the omitted MultiAgentV2 role as `default`, not
+  the task path `code_reviewer`, and its normal-umask date directories are 0755.
+  AR-314 and AR-313 own those two later bounded compatibility repairs. There is
+  still no native delivery receipt or attestation claim.
+
+## Approach
+
+The supported stable surface does not restore the required delegation, so keep
+the only surface that executes the accepted native plan and repair the exact
+Codex 0.149 V2 evidence boundary. Update the rollout parser only for the exact
+allowlisted `event_msg/item_completed/SubAgentActivity` envelope and retain
+one-child cardinality plus invocation-window checks.
+
+Codex does persist `SubagentStart` `additionalContext` as one distinct
+host-written developer message before first child speech. Bind the exact
+already-persisted canary plan to the host-created child UUID at that event and
+deliver the complete v6 rewritten task as the sole message. Parse pre-speech
+messages individually and require exactly one complete Store-, install-, child-,
+and invocation-bound delivery. The successful wait must reconcile that receipt
+and actual child identity before rendering the final Store-backed header.
+ADR-0179 records this narrow authority; ordinary opaque Codex spawns remain
+unstaffed, Store state or parent prose remains insufficient by itself, and no
+trust bypass is activated.
+
+## Dependencies
+
+- ADR-0156 requires the native host, not Agency's Store, to originate card
+  delivery proof.
+- ADR-0173 requires a normal managed-policy invocation, exact native child,
+  valid first-pass response, and persisted attestation.
+- AR-308 supplies the now-live `delegate` execution contract.
+- Tracker creation requires separate outward-write authorization.
+
+## Acceptance
+
+- [x] One clean exact canary proves AR-308's accepted delegate route and sole
+      native spawn/wait before failing at the later Codex 0.149 boundary.
+- [x] Exact parent and child host artifacts, Store identifiers, exit, hashes,
+      and missing proof fields are retained without a secret.
+- [x] A bounded stable-surface diagnostic determines whether supported Codex
+      behavior restores visible pre-speech delivery and post-wait context.
+- [x] The exact Codex 0.149 rollout envelope is parsed without accepting an
+      ambiguous parent, child, tool sequence, or invocation window.
+- [ ] A host-authored artifact proves the exact selected workforce card reached
+      the sole child before speech; Store state and parent prose remain
+      insufficient by themselves.
+- [ ] The first parent final response carries current delegated evidence,
+      Stop accepts it without correction, and the managed canary persists an
+      attestation with no trust bypass.
+- [ ] Focused warning-strict tests, decision conformance, and every named
+      repository gate pass on the rebuilt exact candidate.
+- [ ] A same-repository tracker issue is created and linked after explicit
+      authorization.

@@ -1,0 +1,61 @@
+name: Bug report
+description: Report a reproducible Agency Runtime defect.
+title: "[Bug] "
+labels: [needs-grillme]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not include secrets, private prompts, credentials, or database contents.
+        Maintainers assign the stable `AR-NN` roadmap ID during triage.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What happened, and what did you expect instead?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: Include the smallest safe command sequence or code sample.
+    validations:
+      required: true
+  - type: dropdown
+    id: operating-system
+    attributes:
+      label: Operating system
+      options: [Windows, Linux, WSL, Other]
+    validations:
+      required: true
+  - type: input
+    id: python
+    attributes:
+      label: Python version
+      placeholder: "3.14.0"
+    validations:
+      required: true
+  - type: checkboxes
+    id: hosts
+    attributes:
+      label: Affected surfaces
+      options:
+        - label: Codex
+        - label: Claude Code
+        - label: Hermes
+        - label: OpenClaw
+        - label: Dashboard
+        - label: CLI or MCP
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Redacted diagnostics
+      description: Paste only sanitized `agency doctor --json` or error output.
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety check
+      options:
+        - label: I removed secrets, private content, credentials, and personal information.
+          required: true

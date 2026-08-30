@@ -7,239 +7,1714 @@ roster — lives here. No loose JSON files.
 from __future__ import annotations
 
 import json
+import logging
+import os
 import sqlite3
+import stat
+import threading
+import time
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-def _default_db_path() -> Path:
-    """Resolve DB path from centralized config."""
-    try:
-        from agency_runtime.core.config import load_config
-        return load_config().store.resolved_path()
-    except Exception:
-        return Path.home() / ".agency-runtime" / "agency.db"
+from agency_runtime.core.config import load_config
+from agency_runtime.core.configuration_persistence import resolve_config_path
+from agency_runtime.core.correlation import validate_correlation_id
+from agency_runtime.core.exception_notes import add_exception_note
+from agency_runtime.core.store.child_launch_join import ChildLaunchJoinStoreMixin
+from agency_runtime.core.store.child_routing import ChildRoutingStoreMixin
+from agency_runtime.core.store.delegation_activation import DelegationActivationStoreMixin
+from agency_runtime.core.store.evidence import EvidenceStoreMixin
+from agency_runtime.core.store.finalization_batch import FinalizationBatchStoreMixin
+from agency_runtime.core.store.initialization_lock import storage_initialization_lock
+from agency_runtime.core.store.maintenance import MaintenanceStoreMixin
+from agency_runtime.core.store.native_child import NativeChildStoreMixin
+from agency_runtime.core.store.observed_sqlite import ObservedSQLiteConnection
+from agency_runtime.core.store.preflight import (
+    _decode_preflight_failure_receipt,
+    _decode_preflight_recipe,
+)
+from agency_runtime.core.store.projections import (
+    API_BASE_LIMIT,
+    DELEGATION_DETAIL_LIMIT,
+    DIAGNOSTIC_REASON_LIMIT,
+    RUN_CONTENT_LIMIT,
+    bounded_text,
+    capture_content_enabled,
+    decode_run_metadata,
+    project_delegation_detail,
+    project_run_metadata,
+    redact_sensitive_text,
+    sanitize_api_base,
+)
+from agency_runtime.core.store.receipt_authority import MODEL_RECEIPT_AUTHORITY_ORDER_SQL
+from agency_runtime.core.store.roster import RosterStoreMixin
+from agency_runtime.core.store.schema import (
+    ALL_TABLES,
+    BOOLEAN_DOMAIN_TRIGGER_NAMES,
+    BOOLEAN_DOMAIN_TRIGGER_SQL,
+    CODEX_EXECUTION_TOOL_USE_INDEX_SQL,
+    CODEX_NATIVE_PLAN_SCOPE_TABLE_SQL,
+    CODEX_NATIVE_PLAN_SCOPE_TRIGGER_SQL,
+    DELEGATION_ACTIVATION_CONSUMPTION_TABLE_SQL,
+    DELEGATION_ACTIVATION_INVARIANT_TRIGGER_NAMES,
+    DELEGATION_ACTIVATION_INVARIANT_TRIGGER_SQL,
+    DELEGATION_ACTIVATION_RECEIPT_MIGRATED_COLUMNS,
+    MODEL_RECEIPT_MIGRATED_COLUMNS,
+    NATIVE_CHILD_DELIVERY_VERIFICATION_TABLE_SQL,
+    NATIVE_CHILD_DELIVERY_VERIFICATION_TRIGGER_SQL,
+    NATIVE_CHILD_PARENT_SCOPE_TABLE_SQL,
+    NATIVE_CHILD_PARENT_SCOPE_TRIGGER_NAME,
+    NATIVE_CHILD_PARENT_SCOPE_TRIGGER_SQL,
+    NATIVE_CHILD_TERMINAL_MIGRATED_COLUMNS,
+    NATIVE_WORKER_SCOPE_INDEX_SQL,
+    REMEDIATION_AUTHORITY_KEY_NAME,
+    RUNTIME_DELETE_ORDER,
+    RUNTIME_TABLE_TIMESTAMPS,
+    SCHEMA_V1,
+    SCHEMA_VERSION,
+    STORE_CLOCK_SQL,
+    _canonical_schema_sql,
+    agent_import_event_sequence_schema_is_current,
+    ensure_column,
+    ensure_remediation_authority_key_integrity,
+    migrate_private_projections,
+    migrate_schema,
+    migrate_trace_integrity,
+    remediation_authority_schema_is_current,
+    remediation_indexes_are_current,
+    remediation_receipt_has_dependency,
+    remediation_scan_id,
+    retired_barrier_integrity_error,
+    runs_trace_is_unique,
+    source_redaction_purge_pending,
+    trace_tombstone_turn_sequence_is_unique,
+    validate_stored_source_identities,
+    verify_remediation_authority,
+    workforce_schema_is_current,
+)
+from agency_runtime.core.store.security import (
+    CreatedStoragePath,
+    assert_storage_parent_chain,
+    capture_created_storage_path,
+    cleanup_created_storage_paths,
+    create_private_storage_parent,
+    default_db_path,
+    default_runtime_directory,
+    is_link_or_reparse_point,
+    metadata_is_link_or_reparse_point,
+    nearest_existing_storage_parent,
+    restrict_path_permissions,
+    restrict_windows_acl,
+    sqlite_storage_paths,
+    storage_creation_boundary_is_trusted,
+    storage_file_is_trusted,
+    storage_parent_is_trusted,
+)
+from agency_runtime.core.store.selection_distribution import SelectionDistributionStoreMixin
+from agency_runtime.core.store.trace_identity import (
+    correlation_digest,
+    ensure_correlation_key_integrity,
+)
+from agency_runtime.core.store.workforce import WorkforceStoreMixin
 
-_SCHEMA_V1 = """
--- Run tracking
-CREATE TABLE IF NOT EXISTS runs (
-    id TEXT PRIMARY KEY,
-    trace_id TEXT NOT NULL,
-    session_id TEXT,
-    host TEXT NOT NULL DEFAULT 'unknown',
-    started_at TEXT NOT NULL,
-    ended_at TEXT,
-    status TEXT NOT NULL DEFAULT 'active',
-    user_message TEXT,
-    metadata TEXT
-);
-
--- Model receipts (what actually ran)
-CREATE TABLE IF NOT EXISTS model_receipts (
-    id TEXT PRIMARY KEY,
-    trace_id TEXT NOT NULL,
-    session_id TEXT,
-    host TEXT NOT NULL DEFAULT 'unknown',
-    requested_model TEXT,
-    model_group TEXT,
-    resolved_provider TEXT,
-    resolved_model TEXT,
-    api_base TEXT,
-    attempted_fallbacks INTEGER DEFAULT 0,
-    model_id TEXT,
-    source TEXT NOT NULL DEFAULT 'unknown',
-    started_at TEXT,
-    ended_at TEXT,
-    status TEXT NOT NULL DEFAULT 'unknown',
-    FOREIGN KEY (trace_id) REFERENCES runs(trace_id)
-);
-
--- Skills loaded per session
-CREATE TABLE IF NOT EXISTS skills_loaded (
-    id TEXT PRIMARY KEY,
-    session_id TEXT NOT NULL,
-    skill_name TEXT NOT NULL,
-    loaded_at TEXT NOT NULL
-);
-
--- Specialists loaded per session
-CREATE TABLE IF NOT EXISTS specialists_loaded (
-    id TEXT PRIMARY KEY,
-    session_id TEXT NOT NULL,
-    agent_slug TEXT NOT NULL,
-    loaded_at TEXT NOT NULL
-);
-
--- Delegation events
-CREATE TABLE IF NOT EXISTS delegation_events (
-    id TEXT PRIMARY KEY,
-    trace_id TEXT NOT NULL,
-    session_id TEXT,
-    host TEXT NOT NULL DEFAULT 'unknown',
-    work_unit_id TEXT,
-    recommended_agent TEXT,
-    status TEXT NOT NULL DEFAULT 'suggested',
-    backend TEXT,
-    skip_reason TEXT,
-    error TEXT,
-    started_at TEXT,
-    completed_at TEXT,
-    FOREIGN KEY (trace_id) REFERENCES runs(trace_id)
-);
-
--- Worker runs (delegation execution records)
-CREATE TABLE IF NOT EXISTS worker_runs (
-    id TEXT PRIMARY KEY,
-    delegation_event_id TEXT,
-    backend TEXT NOT NULL,
-    workdir TEXT,
-    exit_code INTEGER,
-    stdout TEXT,
-    stderr TEXT,
-    started_at TEXT NOT NULL,
-    ended_at TEXT,
-    FOREIGN KEY (delegation_event_id) REFERENCES delegation_events(id)
-);
-
--- Finalization events
-CREATE TABLE IF NOT EXISTS finalization_events (
-    id TEXT PRIMARY KEY,
-    trace_id TEXT NOT NULL,
-    host TEXT NOT NULL,
-    action TEXT NOT NULL,
-    missing TEXT,
-    created_at TEXT NOT NULL
-);
-
--- Roster tables
-CREATE TABLE IF NOT EXISTS agent_sources (
-    id TEXT PRIMARY KEY,
-    url TEXT NOT NULL UNIQUE,
-    name TEXT,
-    added_at TEXT NOT NULL,
-    enabled INTEGER DEFAULT 1
-);
-
-CREATE TABLE IF NOT EXISTS agent_downloads (
-    id TEXT PRIMARY KEY,
-    source_id TEXT,
-    slug TEXT NOT NULL,
-    downloaded_at TEXT NOT NULL,
-    hash TEXT,
-    content TEXT,
-    status TEXT NOT NULL DEFAULT 'quarantined',
-    FOREIGN KEY (source_id) REFERENCES agent_sources(id)
-);
-
-CREATE TABLE IF NOT EXISTS agent_candidates (
-    id TEXT PRIMARY KEY,
-    download_id TEXT,
-    slug TEXT NOT NULL,
-    name TEXT,
-    division TEXT,
-    categories TEXT,
-    capabilities TEXT,
-    tool_affinity TEXT,
-    prompt_path TEXT,
-    source TEXT,
-    version TEXT,
-    hash TEXT,
-    status TEXT NOT NULL DEFAULT 'pending',
-    quarantined_at TEXT NOT NULL,
-    FOREIGN KEY (download_id) REFERENCES agent_downloads(id)
-);
-
-CREATE TABLE IF NOT EXISTS agent_versions (
-    id TEXT PRIMARY KEY,
-    agent_slug TEXT NOT NULL,
-    version TEXT NOT NULL,
-    hash TEXT NOT NULL,
-    content TEXT,
-    created_at TEXT NOT NULL,
-    UNIQUE(agent_slug, version)
-);
-
-CREATE TABLE IF NOT EXISTS agent_categories (
-    id TEXT PRIMARY KEY,
-    agent_slug TEXT NOT NULL,
-    category TEXT NOT NULL,
-    UNIQUE(agent_slug, category)
-);
-
-CREATE TABLE IF NOT EXISTS agent_embeddings (
-    id TEXT PRIMARY KEY,
-    agent_slug TEXT NOT NULL UNIQUE,
-    embedding TEXT,
-    model TEXT,
-    created_at TEXT NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS agent_snapshots (
-    id TEXT PRIMARY KEY,
-    snapshot_id TEXT NOT NULL UNIQUE,
-    created_at TEXT NOT NULL,
-    agent_count INTEGER,
-    manifest TEXT,
-    activated INTEGER DEFAULT 0
-);
-
-CREATE TABLE IF NOT EXISTS agent_active (
-    id TEXT PRIMARY KEY,
-    agent_slug TEXT NOT NULL UNIQUE,
-    name TEXT,
-    division TEXT,
-    description TEXT,
-    source TEXT,
-    version TEXT,
-    hash TEXT,
-    categories TEXT,
-    capabilities TEXT,
-    tool_affinity TEXT,
-    prompt_path TEXT,
-    activated_at TEXT NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS agent_import_events (
-    id TEXT PRIMARY KEY,
-    event_type TEXT NOT NULL,
-    agent_slug TEXT,
-    detail TEXT,
-    created_at TEXT NOT NULL
-);
-
--- Schema version
-CREATE TABLE IF NOT EXISTS schema_version (
-    version INTEGER PRIMARY KEY
-);
-"""
+_RUN_CONTENT_LIMIT = RUN_CONTENT_LIMIT
+_DELEGATION_DETAIL_LIMIT = DELEGATION_DETAIL_LIMIT
+_DIAGNOSTIC_REASON_LIMIT = DIAGNOSTIC_REASON_LIMIT
+_API_BASE_LIMIT = API_BASE_LIMIT
+_IS_WINDOWS = os.name == "nt"
+_STORAGE_PERMISSION_REPAIR_LOCK = threading.RLock()
+logger = logging.getLogger(__name__)
+# The store runs inside hook subprocesses whose stderr must stay clean; see the
+# matching note in agency_runtime.adapters.hooks.
+logger.addHandler(logging.NullHandler())
 
 
-class Store:
+def _enable_recursive_triggers(conn: sqlite3.Connection) -> None:
+    """Enable and verify trigger cascades required by the store invariants."""
+
+    conn.execute("PRAGMA recursive_triggers=ON")
+    setting = conn.execute("PRAGMA recursive_triggers").fetchone()
+    if setting is None or int(setting[0]) != 1:
+        raise RuntimeError("SQLite recursive triggers are unavailable")
+
+
+# Compatibility wrappers intentionally resolve dependencies through this module.
+# Existing embedders and tests monkeypatch these seams to exercise fail-closed
+# behavior without mutating process-wide configuration.
+def _capture_content_enabled(config_path: str | Path | None = None) -> bool:
+    return capture_content_enabled(config_path)
+
+
+def _bounded(value: object, limit: int) -> str:
+    return bounded_text(value, limit)
+
+
+def _sanitize_api_base(value: object) -> str:
+    return sanitize_api_base(value)
+
+
+def _redact_sensitive_text(value: object, limit: int) -> str:
+    return redact_sensitive_text(value, limit)
+
+
+def _project_delegation_detail(
+    value: object,
+    *,
+    field: str,
+    capture_content: bool | None = None,
+) -> str:
+    if capture_content is None:
+        capture_content = _capture_content_enabled()
+    return project_delegation_detail(
+        value,
+        field=field,
+        capture_content=capture_content,
+    )
+
+
+def _project_run_metadata(metadata: dict[str, Any] | None) -> str | None:
+    return project_run_metadata(metadata)
+
+
+def _bounded_run_metadata(value: object) -> dict[str, Any]:
+    return decode_run_metadata(value)
+
+
+def _merge_projected_run_metadata(
+    value: object,
+    updates: dict[str, Any],
+) -> str | None:
+    """Merge bounded content-free state into an existing run projection."""
+
+    metadata = _bounded_run_metadata(value)
+    metadata.update(updates)
+    return project_run_metadata(metadata)
+
+
+def _require_response_hash(value: object) -> str:
+    """Return one canonical SHA-256 response identity or reject it."""
+
+    normalized = str(value or "").strip()
+    if len(normalized) != 64 or any(
+        character not in "0123456789abcdef" for character in normalized
+    ):
+        raise ValueError("response_hash must be a lowercase SHA-256 digest")
+    return normalized
+
+
+def _optional_response_hash(value: object) -> str:
+    """Return an optional canonical SHA-256 identity or reject it."""
+
+    normalized = str(value or "").strip()
+    return _require_response_hash(normalized) if normalized else ""
+
+
+def _validate_terminal_finalization_inputs(
+    *,
+    session_id: str,
+    trace_id: str,
+    action: str,
+    normalized_action: str,
+    status: str,
+    normalized_status: str,
+    pending_interaction_kind: str,
+    normalized_pending: str,
+    normalized_pending_fingerprint: str,
+    expected_evidence_revision: object,
+) -> None:
+    """Reject a malformed terminal finalization before any transaction opens.
+
+    Split out of ``Store.commit_terminal_finalization`` to keep that method
+    under the complexity limit. Every check, its order, its log event name and
+    its message are unchanged -- callers and tests depend on the exact
+    ``ValueError`` text.
+    """
+
+    if not normalized_action:
+        logger.error(
+            "store_input_validation_failed: action_required",
+            extra={"session_id": session_id, "trace_id": trace_id, "action": action},
+        )
+        raise ValueError("action is required for terminal finalization")
+    if not normalized_status or normalized_status in {"active", "evidence_only"}:
+        logger.error(
+            "store_input_validation_failed: status_invalid",
+            extra={
+                "session_id": session_id,
+                "trace_id": trace_id,
+                "status": status,
+                "normalized_status": normalized_status,
+            },
+        )
+        raise ValueError("terminal finalization requires a terminal status")
+    if normalized_pending not in {"", "question", "authorization"}:
+        logger.error(
+            "store_input_validation_failed: pending_kind_invalid",
+            extra={
+                "session_id": session_id,
+                "trace_id": trace_id,
+                "pending_interaction_kind": pending_interaction_kind,
+            },
+        )
+        raise ValueError("pending_interaction_kind is invalid")
+    if bool(normalized_pending) != bool(normalized_pending_fingerprint):
+        logger.error(
+            "store_input_validation_failed: pending_fingerprint_mismatch",
+            extra={
+                "session_id": session_id,
+                "trace_id": trace_id,
+                "pending_present": bool(normalized_pending),
+                "fingerprint_present": bool(normalized_pending_fingerprint),
+            },
+        )
+        raise ValueError("pending interaction kind and fingerprint must be paired")
+    if normalized_pending_fingerprint:
+        _require_response_hash(normalized_pending_fingerprint)
+    if (
+        isinstance(expected_evidence_revision, bool)
+        or not isinstance(expected_evidence_revision, int)
+        or expected_evidence_revision <= 0
+    ):
+        logger.error(
+            "store_input_validation_failed: evidence_revision_invalid",
+            extra={
+                "session_id": session_id,
+                "trace_id": trace_id,
+                "expected_evidence_revision_type": type(expected_evidence_revision).__name__,
+                "expected_evidence_revision_value": str(expected_evidence_revision),
+            },
+        )
+        raise ValueError("expected_evidence_revision must be a positive integer")
+
+
+def _native_worker_scope_index_is_current(conn: sqlite3.Connection) -> bool:
+    row = conn.execute(
+        "SELECT sql FROM sqlite_master WHERE type = 'index' "
+        "AND name = 'idx_worker_runs_native_scope' AND tbl_name = 'worker_runs'"
+    ).fetchone()
+    indexes = {
+        str(index["name"]): int(index["unique"] or 0)
+        for index in conn.execute("PRAGMA index_list(worker_runs)")
+    }
+    sql = _normalized_schema_sql(row["sql"] if row is not None else "")
+    expected = _normalized_schema_sql(NATIVE_WORKER_SCOPE_INDEX_SQL)
+    return indexes.get("idx_worker_runs_native_scope") == 1 and sql.replace(
+        "ifnotexists", ""
+    ) == expected.replace("ifnotexists", "")
+
+
+def _codex_execution_tool_use_index_is_current(conn: sqlite3.Connection) -> bool:
+    """Verify one follow-up tool call cannot authorize two Codex workers."""
+
+    row = conn.execute(
+        "SELECT sql FROM sqlite_master WHERE type = 'index' "
+        "AND name = 'idx_worker_runs_codex_execution_tool_use' "
+        "AND tbl_name = 'worker_runs'"
+    ).fetchone()
+    indexes = {
+        str(index["name"]): int(index["unique"] or 0)
+        for index in conn.execute("PRAGMA index_list(worker_runs)")
+    }
+    sql = _normalized_schema_sql(row["sql"] if row is not None else "")
+    expected = _normalized_schema_sql(CODEX_EXECUTION_TOOL_USE_INDEX_SQL)
+    return indexes.get("idx_worker_runs_codex_execution_tool_use") == 1 and sql.replace(
+        "ifnotexists", ""
+    ) == expected.replace("ifnotexists", "")
+
+
+def _normalized_schema_sql(value: object) -> str:
+    return _canonical_schema_sql(value)
+
+
+def _v36_authority_schema_is_current(
+    conn: sqlite3.Connection,
+    triggers: dict[str, str],
+) -> bool:
+    expected_triggers = {
+        **DELEGATION_ACTIVATION_INVARIANT_TRIGGER_SQL,
+        **BOOLEAN_DOMAIN_TRIGGER_SQL,
+        NATIVE_CHILD_PARENT_SCOPE_TRIGGER_NAME: NATIVE_CHILD_PARENT_SCOPE_TRIGGER_SQL,
+    }
+    if not set(DELEGATION_ACTIVATION_INVARIANT_TRIGGER_NAMES).issubset(triggers):
+        return False
+    if not set(BOOLEAN_DOMAIN_TRIGGER_NAMES).issubset(triggers):
+        return False
+    if NATIVE_CHILD_PARENT_SCOPE_TRIGGER_NAME not in triggers:
+        return False
+    if any(
+        _normalized_schema_sql(triggers.get(name)) != _normalized_schema_sql(statement)
+        for name, statement in expected_triggers.items()
+    ):
+        return False
+    consumption_row = conn.execute(
+        "SELECT sql FROM sqlite_master WHERE type = 'table' "
+        "AND name = 'delegation_activation_consumptions'"
+    ).fetchone()
+    consumption_sql = _normalized_schema_sql(
+        consumption_row["sql"] if consumption_row is not None else ""
+    )
+    if consumption_sql != _normalized_schema_sql(DELEGATION_ACTIVATION_CONSUMPTION_TABLE_SQL):
+        return False
+    invalid_boolean = conn.execute(
+        "SELECT 1 FROM agent_sources WHERE enabled IS NULL OR enabled NOT IN (0, 1) "
+        "OR trusted_for_auto_approve IS NULL OR trusted_for_auto_approve NOT IN (0, 1) "
+        "UNION ALL SELECT 1 FROM agent_snapshots WHERE activated IS NULL "
+        "OR activated NOT IN (0, 1) OR approved IS NULL OR approved NOT IN (0, 1) "
+        "LIMIT 1"
+    ).fetchone()
+    return invalid_boolean is None
+
+
+def _codex_native_plan_scope_schema_is_current(conn: sqlite3.Connection) -> bool:
+    """Verify the private exact-path authority table, index, and triggers."""
+
+    row = conn.execute(
+        "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'codex_native_plan_scopes'"
+    ).fetchone()
+    observed_sql = _normalized_schema_sql(row["sql"] if row is not None else "").replace(
+        "ifnotexists", ""
+    )
+    expected_ddl = "CREATE TABLE" + CODEX_NATIVE_PLAN_SCOPE_TABLE_SQL.split("CREATE TABLE", 1)[1]
+    expected_sql = _normalized_schema_sql(expected_ddl).replace("ifnotexists", "")
+    columns = {
+        str(item["name"]) for item in conn.execute("PRAGMA table_info(codex_native_plan_scopes)")
+    }
+    index_columns = tuple(
+        str(item["name"])
+        for item in conn.execute("PRAGMA index_info(idx_codex_native_plan_scopes_trace)")
+    )
+    foreign_keys = {
+        (str(item["from"]), str(item["table"]), str(item["to"]))
+        for item in conn.execute("PRAGMA foreign_key_list(codex_native_plan_scopes)")
+    }
+    triggers = {
+        str(item["name"]): str(item["sql"] or "")
+        for item in conn.execute(
+            "SELECT name, sql FROM sqlite_master WHERE type = 'trigger' "
+            "AND tbl_name IN ('codex_native_plan_scopes', 'runs')"
+        ).fetchall()
+    }
+    return bool(
+        observed_sql.rstrip(";") == expected_sql.rstrip(";")
+        and {
+            "id",
+            "session_id",
+            "trace_id",
+            "work_unit_id",
+            "scope_payload",
+            "created_at",
+        }.issubset(columns)
+        and index_columns == ("trace_id", "work_unit_id")
+        and ("trace_id", "runs", "trace_id") in foreign_keys
+        and all(
+            _normalized_schema_sql(triggers.get(name)) == _normalized_schema_sql(statement)
+            for name, statement in CODEX_NATIVE_PLAN_SCOPE_TRIGGER_SQL.items()
+        )
+    )
+
+
+def _native_child_delivery_verification_schema_is_current(
+    conn: sqlite3.Connection,
+) -> bool:
+    """Verify the bounded, immutable one-use host-delivery ledger."""
+
+    row = conn.execute(
+        "SELECT sql FROM sqlite_master WHERE type = 'table' "
+        "AND name = 'native_child_delivery_verifications'"
+    ).fetchone()
+    observed_sql = _normalized_schema_sql(row["sql"] if row is not None else "").replace(
+        "ifnotexists", ""
+    )
+    expected_ddl = (
+        "CREATE TABLE" + NATIVE_CHILD_DELIVERY_VERIFICATION_TABLE_SQL.split("CREATE TABLE", 1)[1]
+    )
+    expected_sql = _normalized_schema_sql(expected_ddl).replace("ifnotexists", "")
+    table_info = list(conn.execute("PRAGMA table_info(native_child_delivery_verifications)"))
+    columns = {str(item["name"]) for item in table_info}
+    primary_keys = {str(item["name"]) for item in table_info if int(item["pk"] or 0) == 1}
+    unique_column_sets = {
+        tuple(
+            str(column["name"])
+            for column in conn.execute(
+                f"PRAGMA index_info({index['name']})"  # nosec B608
+            )
+        )
+        for index in conn.execute("PRAGMA index_list(native_child_delivery_verifications)")
+        if int(index["unique"] or 0) == 1
+    }
+    triggers = {
+        str(item["name"]): str(item["sql"] or "")
+        for item in conn.execute(
+            "SELECT name, sql FROM sqlite_master WHERE type = 'trigger' "
+            "AND tbl_name = 'native_child_delivery_verifications'"
+        ).fetchall()
+    }
+    foreign_keys = {
+        (
+            str(item["from"]),
+            str(item["table"]),
+            str(item["to"]),
+            str(item["on_delete"]).casefold(),
+        )
+        for item in conn.execute("PRAGMA foreign_key_list(native_child_delivery_verifications)")
+    }
+    return bool(
+        observed_sql.rstrip(";") == expected_sql.rstrip(";")
+        and columns
+        == {
+            "decision_id",
+            "nonce",
+            "artifact_digest",
+            "host",
+            "parent_session_id",
+            "parent_trace_id",
+            "launch_id",
+            "binding_kind",
+            "binding_id",
+            "child_id",
+            "verified_at",
+        }
+        and primary_keys == {"decision_id"}
+        and {
+            ("nonce",),
+            ("artifact_digest",),
+            (
+                "host",
+                "parent_session_id",
+                "parent_trace_id",
+                "launch_id",
+                "binding_kind",
+                "binding_id",
+            ),
+            ("host", "child_id"),
+        }.issubset(unique_column_sets)
+        and ("decision_id", "routing_decisions", "id", "cascade") in foreign_keys
+        and set(triggers) == set(NATIVE_CHILD_DELIVERY_VERIFICATION_TRIGGER_SQL)
+        and all(
+            _normalized_schema_sql(triggers.get(name)) == _normalized_schema_sql(statement)
+            for name, statement in NATIVE_CHILD_DELIVERY_VERIFICATION_TRIGGER_SQL.items()
+        )
+    )
+
+
+def _v20_receipt_schema_is_current(conn: sqlite3.Connection) -> bool:
+    """Verify the current schema contract.
+
+    The private name is retained for compatibility with downstream test seams
+    introduced with schema v20; v21 additionally requires host-control CAS
+    identity.
+    """
+
+    required_columns = {
+        # Migration-added columns come from the migration's own list, so a new
+        # one cannot land here stamped current and skip the migration that
+        # creates it.
+        "delegation_activation_receipts": {
+            "id",
+            "token_hash",
+            "session_id",
+            "trace_id",
+            "work_unit_id",
+            "specialist_slug",
+            "specialist_version",
+            "specialist_prompt_hash",
+            "worker_kind",
+            "worker_id",
+            "native_run_id",
+            "created_at",
+            "consumed_at",
+            "delegation_event_id",
+        }
+        | {name for name, _ in DELEGATION_ACTIVATION_RECEIPT_MIGRATED_COLUMNS},
+        "delegation_events": {
+            "executed_worker_kind",
+            "executed_worker_id",
+            "native_run_id",
+            "retrieved_specialist_slug",
+            "retrieved_specialist_version",
+            "retrieved_specialist_prompt_hash",
+            "activation_receipt_id",
+        },
+        "model_receipts": {name for name, _ in MODEL_RECEIPT_MIGRATED_COLUMNS},
+        # A table absent entirely reports no columns, so listing it here is what
+        # makes an existing database migrate to create it.
+        "routing_cache": {
+            "cache_key",
+            "context_fingerprint",
+            "source_message_hash",
+            "routing",
+            "created_at",
+        },
+        "routing_intent": {
+            "trace_id",
+            "session_id",
+            "query_hash",
+            "context_fingerprint",
+            "units",
+            "descriptors",
+            "selected_ids",
+            "source",
+            "created_at",
+        },
+        "specialists_loaded": {"activation_receipt_id"},
+        "finalization_events": {"policy_response_hash"},
+        "host_controls": {"generation"},
+        "host_canary_attestations": {"proof_contract", "proof_digest"},
+        "native_child_parent_scopes": {
+            "id",
+            "token_hash",
+            "host",
+            "parent_session_id",
+            "parent_trace_id",
+            "work_unit_id",
+            "worker_kind",
+            "worker_id",
+            "native_run_id",
+            "child_session_id",
+            "child_trace_id",
+            "issued_unix",
+            "expires_unix",
+            "created_at",
+            "consumed_at",
+            "consumed_unix",
+        },
+        "worker_runs": {
+            "execution_tool_use_id",
+            "execution_dispatched_at",
+            "tool_evidence_schema",
+            "tool_evidence",
+            "tool_evidence_source",
+            "tool_evidence_recorded_at",
+        }
+        | {name for name, _ in NATIVE_CHILD_TERMINAL_MIGRATED_COLUMNS},
+    }
+    for table, expected in required_columns.items():
+        table_row = conn.execute(
+            "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?",
+            (table,),
+        ).fetchone()
+        if table_row is None:
+            return False
+        observed = {str(row["name"]) for row in conn.execute(f"PRAGMA table_info({table})")}
+        if not expected.issubset(observed):
+            return False
+
+    scope_table_row = conn.execute(
+        "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'native_child_parent_scopes'"
+    ).fetchone()
+    observed_scope_sql = _normalized_schema_sql(
+        scope_table_row["sql"] if scope_table_row is not None else ""
+    ).replace("ifnotexists", "")
+    expected_scope_ddl = (
+        "CREATE TABLE" + NATIVE_CHILD_PARENT_SCOPE_TABLE_SQL.split("CREATE TABLE", 1)[1]
+    )
+    expected_scope_sql = _normalized_schema_sql(expected_scope_ddl).replace("ifnotexists", "")
+    if observed_scope_sql.rstrip(";") != expected_scope_sql.rstrip(";"):
+        return False
+
+    expected_indexes = {
+        "idx_activation_receipts_trace": (
+            "delegation_activation_receipts",
+            ("trace_id", "created_at"),
+        ),
+        "idx_activation_receipts_work_unit": (
+            "delegation_activation_receipts",
+            ("trace_id", "work_unit_id", "consumed_at"),
+        ),
+        "idx_finalization_trace_policy_response": (
+            "finalization_events",
+            ("trace_id", "action", "policy_response_hash"),
+        ),
+        "idx_routing_query_hash": (
+            "routing_decisions",
+            ("query_hash", "created_at"),
+        ),
+        "idx_worker_runs_native_scope": (
+            "worker_runs",
+            ("host", "session_id", "trace_id", "worker_id", "native_run_id"),
+        ),
+        "idx_worker_runs_codex_execution_tool_use": (
+            "worker_runs",
+            ("session_id", "trace_id", "execution_tool_use_id"),
+        ),
+        "idx_native_child_parent_scopes_expiry": (
+            "native_child_parent_scopes",
+            ("expires_unix", "consumed_unix"),
+        ),
+    }
+    for name, (table, columns) in expected_indexes.items():
+        index_row = conn.execute(
+            "SELECT 1 FROM sqlite_master WHERE type = 'index' AND name = ? AND tbl_name = ?",
+            (name, table),
+        ).fetchone()
+        if index_row is None:
+            return False
+        observed = tuple(
+            str(row["name"])
+            for row in conn.execute(f"PRAGMA index_info({name})")  # nosec B608
+        )
+        if observed != columns:
+            return False
+
+    if not _native_worker_scope_index_is_current(conn):
+        return False
+
+    unique_column_sets = {
+        tuple(
+            str(column["name"])
+            for column in conn.execute(
+                f"PRAGMA index_info({row['name']})"  # nosec B608
+            )
+        )
+        for row in conn.execute("PRAGMA index_list(delegation_activation_receipts)")
+        if int(row["unique"] or 0) == 1
+    }
+    if not {
+        ("token_hash",),
+        (
+            "trace_id",
+            "work_unit_id",
+            "specialist_slug",
+            "specialist_version",
+            "specialist_prompt_hash",
+        ),
+    }.issubset(unique_column_sets):
+        return False
+
+    scope_unique_column_sets = {
+        tuple(
+            str(column["name"])
+            for column in conn.execute(
+                f"PRAGMA index_info({row['name']})"  # nosec B608
+            )
+        )
+        for row in conn.execute("PRAGMA index_list(native_child_parent_scopes)")
+        if int(row["unique"] or 0) == 1
+    }
+    if not {
+        ("token_hash",),
+        ("host", "parent_trace_id", "worker_id", "native_run_id"),
+    }.issubset(scope_unique_column_sets):
+        return False
+
+    foreign_keys = {
+        (str(row["from"]), str(row["table"]), str(row["to"]))
+        for row in conn.execute("PRAGMA foreign_key_list(delegation_activation_receipts)")
+    }
+    if not {
+        ("trace_id", "runs", "trace_id"),
+        ("delegation_event_id", "delegation_events", "id"),
+    }.issubset(foreign_keys):
+        return False
+    scope_foreign_keys = {
+        (str(row["from"]), str(row["table"]), str(row["to"]))
+        for row in conn.execute("PRAGMA foreign_key_list(native_child_parent_scopes)")
+    }
+    if ("parent_trace_id", "runs", "trace_id") not in scope_foreign_keys:
+        return False
+
+    expected_activity_triggers = {
+        "agency_delegation_activation_receipts_insert_activity",
+        "agency_delegation_activation_receipts_update_activity",
+    }
+    trigger_rows = conn.execute(
+        "SELECT name, sql FROM sqlite_master WHERE type = 'trigger'"
+    ).fetchall()
+    triggers = {str(row["name"]): str(row["sql"] or "").casefold() for row in trigger_rows}
+    for name in expected_activity_triggers:
+        sql = triggers.get(name, "")
+        if not sql or "update runs set last_activity_at" not in sql or "new.trace_id" not in sql:
+            return False
+    return bool(
+        _v36_authority_schema_is_current(conn, triggers)
+        and _codex_native_plan_scope_schema_is_current(conn)
+        and _native_child_delivery_verification_schema_is_current(conn)
+        and _codex_execution_tool_use_index_is_current(conn)
+    )
+
+
+def _restrict_windows_acl(path: Path, *, directory: bool) -> bool:
+    return restrict_windows_acl(
+        path,
+        directory=directory,
+        is_windows=_IS_WINDOWS,
+    )
+
+
+def _restrict_path_permissions(path: Path, *, directory: bool) -> None:
+    restrict_path_permissions(
+        path,
+        directory=directory,
+        is_windows=_IS_WINDOWS,
+        link_checker=_is_link_or_reparse_point,
+        windows_acl=_restrict_windows_acl,
+    )
+
+
+def _default_db_path(config_path: str | Path | None = None) -> Path:
+    return default_db_path(config_path)
+
+
+def _default_runtime_directory() -> Path:
+    return default_runtime_directory()
+
+
+def _is_link_or_reparse_point(path: Path) -> bool:
+    return is_link_or_reparse_point(path)
+
+
+def _metadata_is_link_or_reparse_point(metadata: os.stat_result) -> bool:
+    return metadata_is_link_or_reparse_point(metadata)
+
+
+def _sqlite_storage_paths(db_path: Path) -> tuple[Path, ...]:
+    return sqlite_storage_paths(db_path)
+
+
+def _assert_storage_parent_chain(path: Path, *, allow_missing: bool) -> None:
+    assert_storage_parent_chain(path, allow_missing=allow_missing)
+
+
+def _storage_parent_is_trusted(path: Path) -> bool:
+    return storage_parent_is_trusted(path, is_windows=_IS_WINDOWS)
+
+
+def _storage_creation_boundary_is_trusted(boundary: Path, intended_parent: Path) -> bool:
+    return storage_creation_boundary_is_trusted(
+        boundary,
+        intended_parent,
+        is_windows=_IS_WINDOWS,
+    )
+
+
+def _create_private_storage_parent(
+    boundary: Path,
+    intended_parent: Path,
+    *,
+    created_paths: list[CreatedStoragePath] | None = None,
+) -> bool:
+    return create_private_storage_parent(
+        boundary,
+        intended_parent,
+        is_windows=_IS_WINDOWS,
+        created_paths=created_paths,
+    )
+
+
+def _storage_file_is_trusted(path: Path) -> bool:
+    """Revalidate file authority at every Store connection boundary."""
+
+    return storage_file_is_trusted(path, is_windows=_IS_WINDOWS)
+
+
+def _require_storage_target_trusted(
+    path: Path,
+    *,
+    directory: bool,
+    message: str,
+) -> None:
+    trusted = _storage_parent_is_trusted(path) if directory else _storage_file_is_trusted(path)
+    if not trusted:
+        raise PermissionError(message)
+
+
+def _nearest_existing_storage_parent(path: Path) -> Path:
+    return nearest_existing_storage_parent(path)
+
+
+_SCHEMA_VERSION = SCHEMA_VERSION
+
+
+_SCHEMA_V1 = SCHEMA_V1
+
+
+def _validate_roster_generation_counter(conn: sqlite3.Connection) -> None:
+    counter = conn.execute(
+        "SELECT value, typeof(value) AS value_type FROM store_counters "
+        "WHERE name = 'roster-generation'"
+    ).fetchone()
+    if counter is None or counter["value_type"] != "integer" or int(counter["value"]) < 0:
+        raise RuntimeError("roster generation counter integrity is invalid")
+
+
+def _validate_turn_sequence_counter(conn: sqlite3.Connection) -> None:
+    counter = conn.execute(
+        "SELECT value, typeof(value) AS value_type FROM store_counters WHERE name = 'turn-sequence'"
+    ).fetchone()
+    maximum = conn.execute(
+        "SELECT MAX(sequence) AS sequence FROM ("
+        "SELECT MAX(turn_sequence) AS sequence FROM runs UNION ALL "
+        "SELECT MAX(turn_sequence) AS sequence FROM trace_tombstones)"
+    ).fetchone()
+    if (
+        counter is None
+        or counter["value_type"] != "integer"
+        or int(counter["value"]) < 0
+        or int(counter["value"]) < int(maximum["sequence"] or 0)
+    ):
+        raise RuntimeError("turn sequence counter integrity is invalid")
+
+
+_ALL_TABLES = ALL_TABLES
+_RUNTIME_TABLE_TIMESTAMPS = RUNTIME_TABLE_TIMESTAMPS
+_RUNTIME_DELETE_ORDER = RUNTIME_DELETE_ORDER
+
+
+class Store(
+    FinalizationBatchStoreMixin,
+    ChildRoutingStoreMixin,
+    DelegationActivationStoreMixin,
+    NativeChildStoreMixin,
+    EvidenceStoreMixin,
+    ChildLaunchJoinStoreMixin,
+    SelectionDistributionStoreMixin,
+    MaintenanceStoreMixin,
+    RosterStoreMixin,
+    WorkforceStoreMixin,
+):
     """SQLite-backed canonical store for Agency Runtime."""
 
-    def __init__(self, db_path: str | Path | None = None):
-        self.db_path = Path(db_path) if db_path else _default_db_path()
-        self.db_path.parent.mkdir(parents=True, exist_ok=True)
-        self._init_schema()
+    _repair_storage_on_connect = True
+
+    def _capture_content_enabled(self) -> bool:
+        """Resolve the patchable content-capture compatibility seam."""
+
+        from agency_runtime.core.config_binding import (
+            StoreConfigBindingError,
+            assert_store_config_binding,
+        )
+
+        try:
+            assert_store_config_binding(self)
+        except StoreConfigBindingError:
+            raise
+        except Exception:
+            # Invalid live configuration is not an effective retarget. Preserve
+            # the established fail-private capture behavior while the frozen
+            # database identity remains intact.
+            pass
+        return _capture_content_enabled(getattr(self, "config_path", None))
+
+    def __init__(
+        self,
+        db_path: str | Path | None = None,
+        *,
+        config_path: str | Path | None = None,
+        require_existing_current: bool = False,
+    ):
+        if type(require_existing_current) is not bool:
+            raise TypeError("require_existing_current must be a boolean")
+        # Freeze and validate one configuration identity before creating a
+        # directory, database, journal, or schema. Live settings may reload
+        # from this same path, but a later file or environment change to the
+        # configured Store target fails closed until callers recreate Store.
+        self.config_path = resolve_config_path(config_path)
+        validated_config = load_config(self.config_path, reload=True)
+        self._configured_config_path = self.config_path
+        self._configured_store_path = Path(os.path.abspath(validated_config.store.resolved_path()))
+        self._store_path_config_derived = db_path is None
+        initial_capture_content = bool(validated_config.observability.capture_content)
+        selected_db_path = (
+            Path(os.path.expanduser(str(db_path))) if db_path else self._configured_store_path
+        )
+        # Freeze a lexical absolute identity without following a link. SQLite
+        # never gets a later-CWD-dependent or newly resolved path.
+        self.db_path = Path(os.path.abspath(selected_db_path))
+        self._frozen_db_path = self.db_path
+        self._permission_fingerprints: dict[Path, tuple[int, int]] = {}
+        self._repair_storage_on_connect = not require_existing_current
+        if require_existing_current:
+            if os.path.normcase(str(self.db_path)) != os.path.normcase(
+                str(self._configured_store_path)
+            ):
+                raise ValueError(
+                    "existing-current Store must use the exact configured database path"
+                )
+            self._harden_storage_parent = False
+            _assert_storage_parent_chain(self.db_path.parent, allow_missing=False)
+            if not _storage_parent_is_trusted(self.db_path.parent):
+                raise PermissionError(
+                    "Agency Runtime storage parent permits cross-account path substitution"
+                )
+            schema_current, journal_ready = self._current_schema_state()
+            if not schema_current or not journal_ready:
+                raise RuntimeError(
+                    "Agency Runtime activation verification requires an existing current WAL Store"
+                )
+            self._journal_ready = True
+            self._foreign_keys_ready = True
+            return
+        self._prepare_storage_parent()
+        with storage_initialization_lock(self.db_path):
+            created_paths: list[CreatedStoragePath] = []
+            try:
+                self._initialize_storage(
+                    initial_capture_content=initial_capture_content,
+                    created_paths=created_paths,
+                )
+            except BaseException as error:
+                # Rollback is part of the same path-scoped critical section as
+                # creation and schema initialization. No second constructor can
+                # adopt this inode before its creator either commits or removes it.
+                self._rollback_new_storage(created_paths, error=error)
+                raise
+
+    def _prepare_storage_parent(self) -> None:
+        """Create and harden the parent before opening its persistent path lock."""
+
+        _assert_storage_parent_chain(self.db_path.parent, allow_missing=True)
+        creation_boundary = _nearest_existing_storage_parent(self.db_path.parent)
+        if not _storage_creation_boundary_is_trusted(
+            creation_boundary,
+            self.db_path.parent,
+        ):
+            raise PermissionError(
+                "Agency Runtime storage ancestor permits cross-account path substitution"
+            )
+        created_parent = _create_private_storage_parent(
+            creation_boundary,
+            self.db_path.parent,
+        )
+        default_parent = Path(os.path.abspath(_default_runtime_directory()))
+        self._harden_storage_parent = bool(
+            created_parent
+            or (
+                not self.db_path.parent.is_symlink()
+                and os.path.abspath(self.db_path.parent) == os.path.abspath(default_parent)
+            )
+        )
+        _assert_storage_parent_chain(self.db_path.parent, allow_missing=False)
+        if not _storage_parent_is_trusted(self.db_path.parent):
+            raise PermissionError(
+                "Agency Runtime storage parent permits cross-account path substitution"
+            )
+        if self._harden_storage_parent:
+            with _STORAGE_PERMISSION_REPAIR_LOCK:
+                _restrict_path_permissions(self.db_path.parent, directory=True)
+        if not _storage_parent_is_trusted(self.db_path.parent):
+            raise PermissionError(
+                "Agency Runtime storage parent permits cross-account path substitution"
+            )
+
+    def _initialize_storage(
+        self,
+        *,
+        initial_capture_content: bool,
+        created_paths: list[CreatedStoragePath],
+    ) -> None:
+        """Initialize one locked Store while retaining exact rollback receipts."""
+
+        self._ensure_private_storage_file(created_paths=created_paths)
+        self._foreign_keys_ready = False
+        schema_current, journal_ready = self._current_schema_state()
+        self._journal_ready = journal_ready
+        if not schema_current:
+            self._init_schema(capture_content=initial_capture_content)
+        self._foreign_keys_ready = True
+        self._repair_storage_permissions()
+
+    def _rollback_new_storage(
+        self,
+        created_paths: list[CreatedStoragePath],
+        *,
+        error: BaseException,
+    ) -> None:
+        """Remove only unchanged storage created by this failed constructor."""
+
+        created_database = any(
+            not identity.directory and identity.path == self.db_path for identity in created_paths
+        )
+        if created_database:
+            for path in _sqlite_storage_paths(self.db_path):
+                if path == self.db_path or any(identity.path == path for identity in created_paths):
+                    continue
+                try:
+                    identity = capture_created_storage_path(path, directory=False)
+                except FileNotFoundError:
+                    continue
+                except (OSError, PermissionError) as sidecar_error:
+                    add_exception_note(
+                        error,
+                        f"Agency Runtime could not identify a new sidecar for rollback: {sidecar_error}",
+                    )
+                    continue
+                if not _storage_file_is_trusted(path):
+                    add_exception_note(
+                        error,
+                        f"Agency Runtime left an untrusted new sidecar for inspection: {path}",
+                    )
+                    continue
+                created_paths.append(identity)
+        try:
+            cleanup_created_storage_paths(created_paths, is_windows=_IS_WINDOWS)
+        except Exception as cleanup_error:
+            add_exception_note(
+                error,
+                f"Agency Runtime storage rollback failed: {cleanup_error}",
+            )
+
+    def _ensure_private_storage_file(
+        self,
+        *,
+        created_paths: list[CreatedStoragePath] | None = None,
+    ) -> None:
+        """Securely create the DB without taking ownership of arbitrary parents."""
+        self._assert_storage_paths_safe()
+        for path in _sqlite_storage_paths(self.db_path):
+            try:
+                metadata = path.lstat()
+            except FileNotFoundError:
+                continue
+            del metadata
+            self._require_stable_trusted_storage_file(
+                path,
+                optional_sidecar=path != self.db_path,
+            )
+        try:
+            self.db_path.lstat()
+        except FileNotFoundError:
+            flags = os.O_CREAT | os.O_EXCL | os.O_WRONLY | int(getattr(os, "O_CLOEXEC", 0))
+            if hasattr(os, "O_BINARY"):
+                flags |= os.O_BINARY
+            try:
+                fd = os.open(self.db_path, flags, stat.S_IRUSR | stat.S_IWUSR)
+            except FileExistsError:
+                if _is_link_or_reparse_point(self.db_path):
+                    raise PermissionError(
+                        "refusing Agency Runtime database symlink or reparse point"
+                    ) from None
+            else:
+                try:
+                    opened = os.fstat(fd)
+                    identity = capture_created_storage_path(self.db_path, directory=False)
+                    current = os.lstat(self.db_path)
+                    if not os.path.samestat(opened, current):
+                        raise PermissionError(
+                            "Agency Runtime database changed during exclusive creation"
+                        )
+                    if created_paths is not None:
+                        created_paths.append(identity)
+                finally:
+                    os.close(fd)
+        if _is_link_or_reparse_point(self.db_path):
+            raise PermissionError("refusing Agency Runtime database symlink or reparse point")
+        if not _storage_file_is_trusted(self.db_path):
+            raise PermissionError("Agency Runtime storage file is not a trusted single-link file")
+        with _STORAGE_PERMISSION_REPAIR_LOCK:
+            _restrict_path_permissions(self.db_path, directory=False)
+        if not _storage_file_is_trusted(self.db_path):
+            raise PermissionError("Agency Runtime storage file is unsafe after permission repair")
+
+    def _assert_storage_paths_safe(self) -> None:
+        """Reject links and non-files before permission repair or SQLite access."""
+
+        for path in _sqlite_storage_paths(self.db_path):
+            if _is_link_or_reparse_point(path):
+                raise PermissionError(
+                    "refusing Agency Runtime database or sidecar symlink or reparse point"
+                )
+            try:
+                metadata = path.lstat()
+            except FileNotFoundError:
+                continue
+            if not stat.S_ISREG(metadata.st_mode):
+                raise PermissionError(
+                    "refusing Agency Runtime database or sidecar non-regular file"
+                )
+
+    def _assert_storage_files_trusted(self) -> None:
+        """Reject unsafe database or sidecar identities before every SQLite open."""
+
+        for path in _sqlite_storage_paths(self.db_path):
+            self._require_stable_trusted_storage_file(
+                path,
+                optional_sidecar=path != self.db_path,
+            )
+
+    def _require_stable_trusted_storage_file(
+        self,
+        path: Path,
+        *,
+        optional_sidecar: bool,
+    ) -> None:
+        """Accept absent/churning sidecars but require one stable trusted identity."""
+
+        for _attempt in range(2):
+            before = self._storage_metadata(path, optional=optional_sidecar)
+            if before is None:
+                return
+            trusted = _storage_file_is_trusted(path)
+            after = self._storage_metadata(path, optional=optional_sidecar)
+            if after is None:
+                return
+            if os.path.samestat(before, after):
+                if trusted:
+                    return
+                raise PermissionError(
+                    "Agency Runtime database or sidecar is not a trusted single-link file"
+                )
+        raise PermissionError(
+            "Agency Runtime database or sidecar changed repeatedly during trust inspection"
+        )
+
+    @staticmethod
+    def _storage_metadata(path: Path, *, optional: bool) -> os.stat_result | None:
+        """Read one storage identity while tolerating only absent sidecars."""
+
+        try:
+            return path.lstat()
+        except FileNotFoundError:
+            if optional:
+                return None
+            raise
+
+    def _optional_sidecar_identity_changed(
+        self,
+        path: Path,
+        fingerprint: tuple[int, int],
+    ) -> bool:
+        """Distinguish transient sidecar churn from a stable unsafe object."""
+
+        observed = self._storage_metadata(path, optional=True)
+        if observed is None:
+            return True
+        if _metadata_is_link_or_reparse_point(observed):
+            raise PermissionError(
+                "refusing Agency Runtime database or sidecar symlink or reparse point"
+            )
+        return (int(observed.st_dev), int(observed.st_ino)) != fingerprint
+
+    def _validate_repaired_storage_target(
+        self,
+        path: Path,
+        *,
+        directory: bool,
+        optional_sidecar: bool,
+        fingerprint: tuple[int, int],
+    ) -> tuple[bool, tuple[int, int] | None]:
+        """Validate the post-repair identity and return churn plus fingerprint."""
+
+        repaired = self._storage_metadata(path, optional=optional_sidecar)
+        if repaired is None:
+            return True, None
+        if _metadata_is_link_or_reparse_point(repaired):
+            raise PermissionError(
+                "refusing Agency Runtime database or sidecar symlink or reparse point"
+            )
+        repaired_fingerprint = (int(repaired.st_dev), int(repaired.st_ino))
+        if repaired_fingerprint != fingerprint:
+            return True, None
+        try:
+            _require_storage_target_trusted(
+                path,
+                directory=directory,
+                message="Agency Runtime storage identity is unsafe after permission repair",
+            )
+        except PermissionError:
+            if not optional_sidecar:
+                raise
+            if self._optional_sidecar_identity_changed(path, fingerprint):
+                return True, None
+            # A Windows sidecar can briefly deny security-descriptor reads
+            # while another connection closes it. One stable recheck keeps
+            # that churn distinct from an actually broad ACL.
+            _require_storage_target_trusted(
+                path,
+                directory=False,
+                message="Agency Runtime storage identity is unsafe after permission repair",
+            )
+        return False, repaired_fingerprint
+
+    def _repair_storage_target_once(
+        self,
+        path: Path,
+        *,
+        directory: bool,
+        optional_sidecar: bool,
+    ) -> bool:
+        """Secure one target, returning whether its identity changed mid-repair."""
+
+        current = self._storage_metadata(path, optional=optional_sidecar)
+        if current is None:
+            return False
+        if _metadata_is_link_or_reparse_point(current):
+            raise PermissionError(
+                "refusing Agency Runtime database or sidecar symlink or reparse point"
+            )
+        fingerprint = (int(current.st_dev), int(current.st_ino))
+        try:
+            _require_storage_target_trusted(
+                path,
+                directory=directory,
+                message=("refusing Agency Runtime storage permission repair on an unsafe identity"),
+            )
+        except PermissionError:
+            if not optional_sidecar:
+                raise
+            if self._optional_sidecar_identity_changed(path, fingerprint):
+                return True
+            # Windows can briefly deny a sidecar security-descriptor read while
+            # another connection opens or closes the same stable identity. A
+            # single stable recheck tolerates that race without accepting a
+            # persistently broad ACL.
+            _require_storage_target_trusted(
+                path,
+                directory=False,
+                message=("refusing Agency Runtime storage permission repair on an unsafe identity"),
+            )
+        expected_mode = stat.S_IRWXU if directory else stat.S_IRUSR | stat.S_IWUSR
+        if not _IS_WINDOWS and stat.S_IMODE(current.st_mode) == expected_mode:
+            return False
+        if _IS_WINDOWS and self._permission_fingerprints.get(path) == fingerprint:
+            return False
+        try:
+            _restrict_path_permissions(path, directory=directory)
+        except FileNotFoundError:
+            # SQLite removes WAL sidecars when the final connection closes.
+            if optional_sidecar:
+                return True
+            raise
+        except PermissionError:
+            if not optional_sidecar:
+                raise
+            if self._optional_sidecar_identity_changed(path, fingerprint):
+                return True
+            # A stable object that still rejects owner-only permissions is a
+            # real hardening failure, not benign SQLite sidecar churn.
+            raise
+        changed, repaired_fingerprint = self._validate_repaired_storage_target(
+            path,
+            directory=directory,
+            optional_sidecar=optional_sidecar,
+            fingerprint=fingerprint,
+        )
+        if changed:
+            return True
+        if repaired_fingerprint is None:
+            raise RuntimeError("stable storage repair omitted its identity fingerprint")
+        self._permission_fingerprints[path] = repaired_fingerprint
+        return False
+
+    def _repair_storage_target(
+        self,
+        path: Path,
+        *,
+        directory: bool,
+        optional_sidecar: bool,
+    ) -> None:
+        """Secure one stable storage identity or fail before caching it."""
+
+        with _STORAGE_PERMISSION_REPAIR_LOCK:
+            changed = self._repair_storage_target_once(
+                path,
+                directory=directory,
+                optional_sidecar=optional_sidecar,
+            )
+            if not changed:
+                return
+            if not optional_sidecar:
+                raise PermissionError(
+                    "refusing Agency Runtime storage that changed during permission repair"
+                )
+            changed_again = self._repair_storage_target_once(
+                path,
+                directory=directory,
+                optional_sidecar=True,
+            )
+            if changed_again:
+                raise PermissionError(
+                    "refusing Agency Runtime storage that changed during permission repair"
+                )
+
+    def _repair_storage_permissions(self) -> None:
+        """Keep owned storage files and, when applicable, its directory private."""
+
+        if not self._repair_storage_on_connect:
+            return
+        targets = [(path, False) for path in _sqlite_storage_paths(self.db_path)]
+        if self._harden_storage_parent:
+            targets.insert(0, (self.db_path.parent, True))
+        for path, directory in targets:
+            self._repair_storage_target(
+                path,
+                directory=directory,
+                optional_sidecar=not directory and path != self.db_path,
+            )
 
     def _connect(self) -> sqlite3.Connection:
-        conn = sqlite3.connect(str(self.db_path))
-        conn.execute("PRAGMA journal_mode=WAL")
-        conn.execute("PRAGMA busy_timeout=5000")
-        conn.row_factory = sqlite3.Row
-        return conn
+        self._assert_storage_paths_safe()
+        self._assert_storage_files_trusted()
+        expected_identity = self._database_identity()
+        connect_target = str(self.db_path)
+        connect_kwargs: dict[str, Any] = {}
+        if not self._repair_storage_on_connect:
+            connect_target = f"{self.db_path.as_uri()}?mode=rw"
+            connect_kwargs["uri"] = True
+        conn = sqlite3.connect(
+            connect_target,
+            timeout=5.0,
+            factory=ObservedSQLiteConnection,
+            **connect_kwargs,
+        )
+        try:
+            self._require_database_identity(expected_identity)
+            _enable_recursive_triggers(conn)
+            secret_table = conn.execute(
+                "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'store_secrets'"
+            ).fetchone()
+            authority_key = b""
+            if secret_table is not None:
+                key_row = conn.execute(
+                    "SELECT secret, typeof(secret) FROM store_secrets WHERE name = ?",
+                    (REMEDIATION_AUTHORITY_KEY_NAME,),
+                ).fetchone()
+                if key_row is not None:
+                    if (
+                        str(key_row[1]) != "blob"
+                        or not isinstance(key_row[0], bytes)
+                        or len(key_row[0]) != 32
+                    ):
+                        raise RuntimeError("remediation resolution authority key is invalid")
+                    authority_key = key_row[0]
+            conn.create_function(
+                "agency_verify_remediation_authority",
+                10,
+                lambda *values: verify_remediation_authority(
+                    authority_key,
+                    *values,
+                ),
+                deterministic=True,
+            )
+            conn.create_function(
+                "agency_remediation_receipt_has_dependency",
+                4,
+                remediation_receipt_has_dependency,
+                deterministic=True,
+            )
+            conn.create_function(
+                "agency_remediation_scan_id",
+                1,
+                remediation_scan_id,
+                deterministic=True,
+            )
+            conn.execute("PRAGMA busy_timeout=5000")
+            secure_delete = conn.execute("PRAGMA secure_delete=ON").fetchone()
+            if secure_delete is None or int(secure_delete[0]) != 1:
+                raise RuntimeError("SQLite secure deletion is unavailable")
+            if not self._journal_ready:
+                attempt = 0
+                while True:
+                    try:
+                        journal = conn.execute("PRAGMA journal_mode=WAL").fetchone()
+                        self._journal_ready = bool(journal and str(journal[0]).casefold() == "wal")
+                        break
+                    except sqlite3.OperationalError as exc:
+                        if "locked" not in str(exc).casefold() or attempt == 19:
+                            raise
+                        time.sleep(min(0.02 * (attempt + 1), 0.25))
+                        attempt += 1
+            conn.execute("PRAGMA synchronous=NORMAL")
+            if self._foreign_keys_ready:
+                conn.execute("PRAGMA foreign_keys=ON")
+            conn.row_factory = sqlite3.Row
+            if self._repair_storage_on_connect:
+                self._repair_storage_permissions()
+            return conn
+        except BaseException:
+            conn.close()
+            raise
 
-    def _init_schema(self) -> None:
+    def _current_schema_state(self) -> tuple[bool, bool]:
+        """Inspect schema and journal state without taking a write lock."""
+        self._assert_storage_paths_safe()
+        self._assert_storage_files_trusted()
+        try:
+            metadata = self.db_path.lstat()
+        except FileNotFoundError:
+            return False, False
+        if not stat.S_ISREG(metadata.st_mode) or metadata.st_size == 0:
+            return False, False
+        expected_identity = (int(metadata.st_dev), int(metadata.st_ino))
+        try:
+            conn = sqlite3.connect(
+                self.db_path.as_uri() + "?mode=ro",
+                uri=True,
+                timeout=5.0,
+                factory=ObservedSQLiteConnection,
+            )
+            try:
+                self._require_database_identity(expected_identity)
+                _enable_recursive_triggers(conn)
+                conn.execute("PRAGMA busy_timeout=5000")
+                conn.row_factory = sqlite3.Row
+                journal_row = conn.execute("PRAGMA journal_mode").fetchone()
+                journal_ready = bool(journal_row and str(journal_row[0]).casefold() == "wal")
+                # Every integrity predicate must observe one SQLite snapshot.
+                # Without an explicit read transaction, a concurrent writer can
+                # commit between the counter and MAX(sequence) queries and make
+                # healthy state look corrupt during another Store's startup.
+                conn.execute("BEGIN")
+                table = conn.execute(
+                    "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'schema_version'"
+                ).fetchone()
+                if table is None:
+                    return False, journal_ready
+                version = conn.execute(
+                    "SELECT MAX(version) AS version FROM schema_version"
+                ).fetchone()
+                observed_version = int(version["version"] or 0)
+                if observed_version > _SCHEMA_VERSION:
+                    raise RuntimeError(
+                        "Agency Runtime database schema is newer than this "
+                        f"runtime ({observed_version} > {_SCHEMA_VERSION})"
+                    )
+                if observed_version == _SCHEMA_VERSION:
+                    if (
+                        not _v20_receipt_schema_is_current(conn)
+                        or not remediation_indexes_are_current(conn)
+                        or not remediation_authority_schema_is_current(conn)
+                        or not agent_import_event_sequence_schema_is_current(conn)
+                        or not workforce_schema_is_current(conn)
+                    ):
+                        return False, journal_ready
+                    ensure_correlation_key_integrity(
+                        conn,
+                        allow_initialize=False,
+                    )
+                    ensure_remediation_authority_key_integrity(
+                        conn,
+                        allow_initialize=False,
+                    )
+                    invalid_sequence = conn.execute(
+                        "SELECT 1 FROM runs WHERE typeof(turn_sequence) <> 'integer' "
+                        "OR turn_sequence <= 0 UNION ALL SELECT 1 FROM trace_tombstones "
+                        "WHERE typeof(turn_sequence) <> 'integer' OR turn_sequence <= 0 "
+                        "LIMIT 1"
+                    ).fetchone()
+                    if invalid_sequence is not None:
+                        raise RuntimeError("turn sequence integrity is invalid")
+                    invalid_revision = conn.execute(
+                        "SELECT 1 FROM runs WHERE typeof(evidence_revision) <> 'integer' "
+                        "OR evidence_revision <= 0 LIMIT 1"
+                    ).fetchone()
+                    if invalid_revision is not None:
+                        raise RuntimeError("evidence revision integrity is invalid")
+                    barrier_error = retired_barrier_integrity_error(conn)
+                    if barrier_error is not None:
+                        raise RuntimeError(barrier_error)
+                    if not trace_tombstone_turn_sequence_is_unique(conn):
+                        raise RuntimeError("retired-trace sequence index integrity is invalid")
+                    _validate_turn_sequence_counter(conn)
+                    _validate_roster_generation_counter(conn)
+                    validate_stored_source_identities(conn)
+                    if source_redaction_purge_pending(conn):
+                        return False, journal_ready
+                return observed_version == _SCHEMA_VERSION, journal_ready
+            finally:
+                if getattr(conn, "in_transaction", False):
+                    try:
+                        conn.rollback()
+                    finally:
+                        conn.close()
+                else:
+                    conn.close()
+        except PermissionError:
+            raise
+        except (OSError, sqlite3.Error):
+            return False, False
+
+    def _database_identity(self) -> tuple[int, int]:
+        """Return the stable regular-file identity SQLite is about to open."""
+
+        try:
+            metadata = self.db_path.lstat()
+        except FileNotFoundError as exc:
+            raise PermissionError("Agency Runtime database disappeared before open") from exc
+        if _metadata_is_link_or_reparse_point(metadata) or not stat.S_ISREG(metadata.st_mode):
+            raise PermissionError("Agency Runtime database must be one regular non-link file")
+        if int(getattr(metadata, "st_nlink", 0) or 0) != 1:
+            raise PermissionError("Agency Runtime database must have exactly one hard link")
+        identity = int(metadata.st_dev), int(metadata.st_ino)
+        if identity[1] <= 0:
+            raise PermissionError("Agency Runtime database identity is unavailable")
+        if not _storage_file_is_trusted(self.db_path):
+            raise PermissionError("Agency Runtime database is not a trusted current-user file")
+        return identity
+
+    def _require_database_identity(self, expected: tuple[int, int]) -> None:
+        """Fail if SQLite's path target changed across its pathname open."""
+
+        if self._database_identity() != expected:
+            raise PermissionError("Agency Runtime database changed during SQLite open")
+
+    def _init_schema(self, *, capture_content: bool | None = None) -> None:
         conn = self._connect()
         try:
-            conn.executescript(_SCHEMA_V1)
-            cur = conn.execute("SELECT version FROM schema_version WHERE version = 1")
-            if cur.fetchone() is None:
-                conn.execute("INSERT INTO schema_version (version) VALUES (1)")
+            capture_policy = (
+                self._capture_content_enabled
+                if capture_content is None
+                else lambda: capture_content
+            )
+            purge_required = migrate_schema(
+                conn,
+                now=self._now,
+                capture_content=capture_policy,
+            )
             conn.commit()
+            if purge_required:
+                self._purge_redacted_storage(conn)
+        except Exception:
+            conn.rollback()
+            raise
         finally:
             conn.close()
+
+    def _purge_redacted_storage(self, conn: sqlite3.Connection) -> None:
+        """Physically purge sensitive legacy bytes before clearing recovery state."""
+
+        expected_identity = self._database_identity()
+        conn.execute("VACUUM")
+        checkpoint = conn.execute("PRAGMA wal_checkpoint(TRUNCATE)").fetchone()
+        if (
+            checkpoint is None
+            or len(checkpoint) < 3
+            or any(
+                isinstance(value, bool) or not isinstance(value, int) for value in checkpoint[:3]
+            )
+            or int(checkpoint[0]) != 0
+            or int(checkpoint[1]) != 0
+            or int(checkpoint[2]) != 0
+        ):
+            raise RuntimeError("SQLite source redaction purge did not complete")
+        self._require_database_identity(expected_identity)
+        self._assert_storage_paths_safe()
+        self._assert_storage_files_trusted()
+        cleared = conn.execute(
+            "UPDATE store_counters SET value = 0 WHERE name = 'source-redaction-purge-pending'"
+        )
+        if cleared.rowcount != 1:
+            raise RuntimeError("source redaction purge state could not be completed")
+        conn.commit()
+        self._require_database_identity(expected_identity)
+        self._repair_storage_permissions()
+
+    @staticmethod
+    def _ensure_column(
+        conn: sqlite3.Connection,
+        table: str,
+        column: str,
+        definition: str,
+    ) -> None:
+        ensure_column(conn, table, column, definition)
+
+    @staticmethod
+    def _runs_trace_is_unique(conn: sqlite3.Connection) -> bool:
+        return runs_trace_is_unique(conn)
+
+    def _migrate_trace_integrity(self, conn: sqlite3.Connection) -> None:
+        migrate_trace_integrity(conn, now=self._now)
+
+    def _migrate_private_projections(self, conn: sqlite3.Connection) -> None:
+        migrate_private_projections(
+            conn,
+            capture_content=self._capture_content_enabled(),
+        )
+
+    def _ensure_run(
+        self,
+        conn: sqlite3.Connection,
+        *,
+        trace_id: str,
+        session_id: str | None = "",
+        host: str = "unknown",
+    ) -> None:
+        trace_id = validate_correlation_id(trace_id, field="trace_id")
+        if session_id is not None:
+            session_id = validate_correlation_id(
+                session_id,
+                field="session_id",
+                required=False,
+            )
+        existing = conn.execute(
+            "SELECT session_id, status FROM runs WHERE trace_id = ?",
+            (trace_id,),
+        ).fetchone()
+        if existing is not None:
+            existing_session = str(existing["session_id"] or "")
+            if session_id is not None and existing_session != str(session_id or ""):
+                raise ValueError("trace_id already belongs to a different session")
+            if str(existing["status"]) not in {"active", "evidence_only"}:
+                raise ValueError("trace_id belongs to a terminal turn")
+            conn.execute(
+                f"UPDATE runs SET last_activity_at = {STORE_CLOCK_SQL} "  # nosec B608
+                "WHERE trace_id = ?",
+                (trace_id,),
+            )
+            return
+        self._assert_trace_not_retired(conn, trace_id)
+        created_at = self._now()
+        conn.execute(
+            "INSERT INTO runs "
+            "(id, trace_id, session_id, host, started_at, last_activity_at, "
+            "status, user_message, metadata) "
+            f"VALUES (?, ?, ?, ?, ?, {STORE_CLOCK_SQL}, "  # nosec B608
+            "'evidence_only', '', ?)",
+            (
+                self._uuid(),
+                trace_id,
+                str(session_id or ""),
+                host or "unknown",
+                created_at,
+                json.dumps({"implicit": True}),
+            ),
+        )
+
+    def _require_open_run(
+        self,
+        conn: sqlite3.Connection,
+        *,
+        trace_id: str,
+        session_id: str | None = None,
+        touch: bool = True,
+    ) -> sqlite3.Row:
+        """Require one existing open parent without compatibility creation."""
+
+        normalized_trace = validate_correlation_id(trace_id, field="trace_id")
+        normalized_session = (
+            validate_correlation_id(session_id, field="session_id")
+            if session_id is not None
+            else None
+        )
+        run = conn.execute(
+            "SELECT * FROM runs WHERE trace_id = ?",
+            (normalized_trace,),
+        ).fetchone()
+        if run is None:
+            raise ValueError("correlated run does not exist")
+        if normalized_session is not None and str(run["session_id"] or "") != normalized_session:
+            raise ValueError("trace_id already belongs to a different session")
+        if str(run["status"] or "") not in {"active", "evidence_only"}:
+            raise ValueError("trace_id belongs to a terminal turn")
+        if touch:
+            conn.execute(
+                f"UPDATE runs SET last_activity_at = {STORE_CLOCK_SQL} "  # nosec B608
+                "WHERE id = ?",
+                (run["id"],),
+            )
+        return run
+
+    @staticmethod
+    def _assert_trace_not_retired(conn: sqlite3.Connection, trace_id: str) -> None:
+        trace_id = validate_correlation_id(trace_id, field="trace_id")
+        digest = correlation_digest(conn, trace_id, domain="trace")
+        row = conn.execute(
+            "SELECT 1 FROM trace_tombstones WHERE trace_digest = ? LIMIT 1",
+            (digest,),
+        ).fetchone()
+        if row is not None:
+            raise ValueError("trace_id was permanently retired by retention")
 
     @staticmethod
     def _now() -> str:
@@ -249,280 +1724,989 @@ class Store:
     def _uuid() -> str:
         return str(uuid.uuid4())
 
-    # ── Runs ───────────────────────────────────────────────────────
+    # ── Finalization ───────────────────────────────────────────────
 
-    def create_run(self, *, trace_id: str, session_id: str = "", host: str = "unknown",
-                   user_message: str = "", metadata: dict | None = None) -> str:
-        run_id = self._uuid()
-        conn = self._connect()
-        try:
-            conn.execute(
-                "INSERT INTO runs (id, trace_id, session_id, host, started_at, status, user_message, metadata) "
-                "VALUES (?, ?, ?, ?, ?, 'active', ?, ?)",
-                (run_id, trace_id, session_id, host, self._now(),
-                 user_message[:2000], json.dumps(metadata) if metadata else None),
-            )
-            conn.commit()
-            return run_id
-        finally:
-            conn.close()
-
-    def complete_run(self, run_id: str, status: str = "completed") -> None:
-        conn = self._connect()
-        try:
-            conn.execute(
-                "UPDATE runs SET ended_at = ?, status = ? WHERE id = ?",
-                (self._now(), status, run_id),
-            )
-            conn.commit()
-        finally:
-            conn.close()
-
-    # ── Model receipts ─────────────────────────────────────────────
-
-    def record_model_receipt(self, *, trace_id: str, session_id: str = "",
-                             host: str = "unknown", requested_model: str = "",
-                             model_group: str = "", resolved_provider: str = "",
-                             resolved_model: str = "", api_base: str = "",
-                             attempted_fallbacks: int = 0, model_id: str = "",
-                             source: str = "unknown", started_at: str = "",
-                             ended_at: str = "", status: str = "success") -> str:
-        receipt_id = self._uuid()
-        conn = self._connect()
-        try:
-            conn.execute(
-                "INSERT INTO model_receipts "
-                "(id, trace_id, session_id, host, requested_model, model_group, "
-                "resolved_provider, resolved_model, api_base, attempted_fallbacks, "
-                "model_id, source, started_at, ended_at, status) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (receipt_id, trace_id, session_id, host, requested_model, model_group,
-                 resolved_provider, resolved_model, api_base, attempted_fallbacks,
-                 model_id, source, started_at or self._now(), ended_at or self._now(), status),
-            )
-            conn.commit()
-            return receipt_id
-        finally:
-            conn.close()
-
-    def get_model_receipt(self, trace_id: str) -> dict[str, Any] | None:
-        conn = self._connect()
-        try:
-            cur = conn.execute(
-                "SELECT * FROM model_receipts WHERE trace_id = ? ORDER BY id DESC LIMIT 1",
-                (trace_id,),
-            )
-            row = cur.fetchone()
-            return dict(row) if row else None
-        finally:
-            conn.close()
-
-    # ── Skills ─────────────────────────────────────────────────────
-
-    def record_skill_loaded(self, session_id: str, skill_name: str) -> None:
-        conn = self._connect()
-        try:
-            conn.execute(
-                "INSERT INTO skills_loaded (id, session_id, skill_name, loaded_at) "
-                "VALUES (?, ?, ?, ?)",
-                (self._uuid(), session_id, skill_name, self._now()),
-            )
-            conn.commit()
-        finally:
-            conn.close()
-
-    def get_skills_for_session(self, session_id: str) -> list[str]:
-        conn = self._connect()
-        try:
-            cur = conn.execute(
-                "SELECT skill_name FROM skills_loaded WHERE session_id = ? ORDER BY loaded_at",
-                (session_id,),
-            )
-            return [row["skill_name"] for row in cur.fetchall()]
-        finally:
-            conn.close()
-
-    # ── Specialists ────────────────────────────────────────────────
-
-    def record_specialist_loaded(self, session_id: str, agent_slug: str) -> None:
-        conn = self._connect()
-        try:
-            conn.execute(
-                "INSERT INTO specialists_loaded (id, session_id, agent_slug, loaded_at) "
-                "VALUES (?, ?, ?, ?)",
-                (self._uuid(), session_id, agent_slug, self._now()),
-            )
-            conn.commit()
-        finally:
-            conn.close()
-
-    # ── Delegation events ──────────────────────────────────────────
-
-    def record_delegation(self, *, trace_id: str, session_id: str = "",
-                          host: str = "unknown", work_unit_id: str = "",
-                          recommended_agent: str = "", status: str = "suggested",
-                          backend: str = "", skip_reason: str = "",
-                          error: str = "") -> str:
+    def record_finalization(
+        self,
+        *,
+        trace_id: str,
+        host: str,
+        action: str,
+        missing: list[str] | None = None,
+        response_hash: str = "",
+    ) -> str:
         event_id = self._uuid()
+        trace_id = validate_correlation_id(trace_id, field="trace_id")
         conn = self._connect()
         try:
+            conn.execute("BEGIN IMMEDIATE")
+            self._require_open_run(
+                conn,
+                trace_id=trace_id,
+                session_id=None,
+            )
             conn.execute(
-                "INSERT INTO delegation_events "
-                "(id, trace_id, session_id, host, work_unit_id, recommended_agent, "
-                "status, backend, skip_reason, error, started_at) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (event_id, trace_id, session_id, host, work_unit_id,
-                 recommended_agent, status, backend, skip_reason, error, self._now()),
+                "INSERT INTO finalization_events "
+                "(id, trace_id, host, action, missing, response_hash, created_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (
+                    event_id,
+                    trace_id,
+                    host,
+                    action,
+                    json.dumps(missing) if missing else None,
+                    str(response_hash or "").strip() or None,
+                    self._now(),
+                ),
             )
             conn.commit()
             return event_id
+        except Exception:
+            conn.rollback()
+            raise
         finally:
             conn.close()
 
-    def update_delegation(self, event_id: str, *, status: str,
-                          backend: str = "", error: str = "") -> None:
+    def validate_pending_retry_receipt(
+        self,
+        session_id: str,
+        receipt_id: str,
+        *,
+        trace_id: str = "",
+    ) -> str | None:
+        """Resolve one authenticated retry receipt for the unique open turn."""
+        normalized_session = (
+            validate_correlation_id(session_id, field="session_id") if session_id else ""
+        )
+        normalized_receipt = str(receipt_id or "").strip()
+        normalized_trace = validate_correlation_id(
+            trace_id,
+            field="trace_id",
+            required=False,
+        )
+        if not normalized_session or not normalized_receipt:
+            return None
         conn = self._connect()
         try:
-            ended = self._now() if status in ("completed", "failed", "skipped") else None
+            row = conn.execute(
+                "SELECT run.trace_id FROM finalization_events AS event "
+                "JOIN runs AS run ON run.trace_id = event.trace_id "
+                "WHERE event.id = ? AND event.action = 'continue' "
+                "AND event.terminal_status IS NULL AND run.session_id = ? "
+                "AND run.status IN ('active', 'evidence_only') "
+                "AND run.ended_at IS NULL AND (? = '' OR run.trace_id = ?) "
+                "AND NOT EXISTS (SELECT 1 FROM runs AS other "
+                "WHERE other.session_id = run.session_id "
+                "AND other.status IN ('active', 'evidence_only') "
+                "AND other.ended_at IS NULL AND other.trace_id <> run.trace_id) "
+                "LIMIT 1",
+                (
+                    normalized_receipt,
+                    normalized_session,
+                    normalized_trace,
+                    normalized_trace,
+                ),
+            ).fetchone()
+            return str(row["trace_id"]) if row is not None else None
+        finally:
+            conn.close()
+
+    def resolve_pending_internal_retry(
+        self,
+        session_id: str,
+        trace_id: str,
+    ) -> str | None:
+        """Resolve an internal retry from exact durable lifecycle correlation.
+
+        Unlike the compatibility receipt validator, this authority decision
+        does not inspect assistant feedback or user-message content.
+        """
+
+        normalized_session = validate_correlation_id(session_id, field="session_id")
+        normalized_trace = validate_correlation_id(trace_id, field="trace_id")
+        conn = self._connect()
+        try:
+            row = conn.execute(
+                "SELECT run.trace_id FROM runs AS run "
+                "WHERE run.session_id = ? AND run.trace_id = ? "
+                "AND run.status IN ('active', 'evidence_only') "
+                "AND run.ended_at IS NULL "
+                "AND EXISTS (SELECT 1 FROM finalization_events AS event "
+                "WHERE event.trace_id = run.trace_id AND event.action = 'continue' "
+                "AND event.terminal_status IS NULL) "
+                "AND NOT EXISTS (SELECT 1 FROM runs AS other "
+                "WHERE other.session_id = run.session_id "
+                "AND other.status IN ('active', 'evidence_only') "
+                "AND other.ended_at IS NULL AND other.trace_id <> run.trace_id) "
+                "LIMIT 1",
+                (normalized_session, normalized_trace),
+            ).fetchone()
+            return str(row["trace_id"]) if row is not None else None
+        finally:
+            conn.close()
+
+    def has_finalization_action(
+        self,
+        trace_id: str,
+        action: str,
+        *,
+        response_hash: str = "",
+    ) -> bool:
+        """Return whether one exact turn has durably recorded an action."""
+        normalized_trace = validate_correlation_id(trace_id, field="trace_id") if trace_id else ""
+        normalized_action = str(action or "").strip()
+        if not normalized_trace or not normalized_action:
+            return False
+        conn = self._connect()
+        try:
+            normalized_hash = str(response_hash or "").strip()
+            if normalized_hash:
+                row = conn.execute(
+                    "SELECT 1 FROM finalization_events "
+                    "WHERE trace_id = ? AND action = ? AND response_hash = ? LIMIT 1",
+                    (normalized_trace, normalized_action, normalized_hash),
+                ).fetchone()
+            else:
+                row = conn.execute(
+                    "SELECT 1 FROM finalization_events WHERE trace_id = ? AND action = ? LIMIT 1",
+                    (normalized_trace, normalized_action),
+                ).fetchone()
+            return row is not None
+        finally:
+            conn.close()
+
+    def claim_continuation(
+        self,
+        *,
+        session_id: str,
+        trace_id: str,
+        host: str,
+        response_hash: str,
+        retry_active: bool = False,
+        missing: list[str] | None = None,
+    ) -> dict[str, str]:
+        """Atomically claim or classify one host continuation response."""
+
+        normalized_session = validate_correlation_id(session_id, field="session_id")
+        normalized_trace = validate_correlation_id(trace_id, field="trace_id")
+        normalized_host = str(host or "unknown").strip()[:64] or "unknown"
+        normalized_hash = _require_response_hash(response_hash)
+        if not isinstance(retry_active, bool):
+            raise ValueError("retry_active must be a boolean")
+
+        conn = self._connect()
+        try:
+            conn.execute("BEGIN IMMEDIATE")
+            self._require_open_run(
+                conn,
+                session_id=normalized_session,
+                trace_id=normalized_trace,
+            )
+            existing = conn.execute(
+                "SELECT id, response_hash FROM finalization_events "
+                "WHERE trace_id = ? AND action = 'continue' "
+                "AND terminal_status IS NULL AND length(response_hash) = 64 "
+                "AND response_hash NOT GLOB '*[^0-9a-f]*' "
+                "ORDER BY created_at, rowid LIMIT 1",
+                (normalized_trace,),
+            ).fetchone()
+            if retry_active:
+                outcome = "exhausted"
+                receipt_id = str(existing["id"] or "") if existing is not None else ""
+            elif existing is not None:
+                receipt_id = str(existing["id"] or "")
+                outcome = (
+                    "replay"
+                    if str(existing["response_hash"] or "") == normalized_hash
+                    else "exhausted"
+                )
+            else:
+                receipt_id = self._uuid()
+                conn.execute(
+                    "INSERT INTO finalization_events "
+                    "(id, trace_id, host, action, missing, response_hash, created_at) "
+                    "VALUES (?, ?, ?, 'continue', ?, ?, ?)",
+                    (
+                        receipt_id,
+                        normalized_trace,
+                        normalized_host,
+                        json.dumps(missing) if missing else None,
+                        normalized_hash,
+                        self._now(),
+                    ),
+                )
+                outcome = "claimed"
+            conn.commit()
+            return {
+                "outcome": outcome,
+                "receipt_id": receipt_id,
+                "response_hash": normalized_hash,
+            }
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
+
+    def get_completion_evidence_snapshot(
+        self,
+        session_id: str,
+        trace_id: str,
+    ) -> dict[str, Any]:
+        """Read one internally consistent, content-free completion snapshot."""
+
+        normalized_session = validate_correlation_id(session_id, field="session_id")
+        normalized_trace = validate_correlation_id(trace_id, field="trace_id")
+        conn = self._connect()
+        try:
+            conn.execute("BEGIN IMMEDIATE")
+            run = conn.execute(
+                "SELECT trace_id, session_id, host, status, ended_at, "
+                "terminal_finalization_id, evidence_revision, "
+                "preflight_state, preflight_result, "
+                "COALESCE(NULLIF(preflight_request_kind, ''), CASE "
+                "WHEN json_valid(metadata) THEN json_extract(metadata, '$.request_kind') "
+                "ELSE '' END, '') AS request_kind "
+                "FROM runs WHERE trace_id = ?",
+                (normalized_trace,),
+            ).fetchone()
+            if run is None:
+                raise ValueError("trace_id does not identify a recorded Agency turn")
+            if str(run["session_id"] or "") != normalized_session:
+                raise ValueError("trace_id does not belong to session_id")
+            if str(run["status"] or "") in {"active", "evidence_only"} and (
+                bool(run["ended_at"]) or bool(run["terminal_finalization_id"])
+            ):
+                raise RuntimeError("open Agency turn has inconsistent terminal state")
+            failure_row = conn.execute(
+                "SELECT id, session_id, trace_id, host, stage, reason_code, "
+                "invariant_code, exception_category, provider_attempts, staffing_reason_codes, "
+                "hiring_reason_codes, eligibility_reason_codes, recorded_at "
+                "FROM preflight_failure_receipts WHERE session_id = ? AND trace_id = ?",
+                (normalized_session, normalized_trace),
+            ).fetchone()
+            preflight_failure = (
+                None
+                if failure_row is None
+                else {
+                    **dict(failure_row),
+                    **_decode_preflight_failure_receipt(failure_row),
+                }
+            )
+            if str(run["status"] or "") == "preflight_failed" and preflight_failure is None:
+                raise RuntimeError("terminal preflight failure receipt is unavailable")
+            receipt = conn.execute(
+                "SELECT id, trace_id, session_id, host, requested_model, model_group, "
+                "resolved_provider, resolved_model, attempted_fallbacks, model_id, "
+                "source, recorded_at, started_at, ended_at, status "
+                "FROM model_receipts WHERE trace_id = ? AND session_id = ? "
+                f"ORDER BY {MODEL_RECEIPT_AUTHORITY_ORDER_SQL} LIMIT 1",  # nosec B608
+                (normalized_trace, normalized_session),
+            ).fetchone()
+            skills = [
+                str(row["skill_name"])
+                for row in conn.execute(
+                    "SELECT skill_name FROM skills_loaded "
+                    "WHERE session_id = ? AND trace_id = ? "
+                    "ORDER BY loaded_at, rowid",
+                    (normalized_session, normalized_trace),
+                ).fetchall()
+            ]
+            specialists = [
+                str(row["agent_slug"])
+                for row in conn.execute(
+                    "SELECT agent_slug FROM specialists_loaded "
+                    "WHERE session_id = ? AND trace_id = ? "
+                    "ORDER BY loaded_at, rowid",
+                    (normalized_session, normalized_trace),
+                ).fetchall()
+            ]
+            ready_preflight = str(run["preflight_state"] or "") == "ready"
+            recipe = (
+                _decode_preflight_recipe(
+                    run["preflight_result"],
+                    session_id=normalized_session,
+                    trace_id=normalized_trace,
+                )
+                if ready_preflight
+                else None
+            )
+            if ready_preflight and recipe is None:
+                raise RuntimeError("ready preflight recipe failed integrity validation")
+            if recipe is not None:
+                for reference in recipe["specialist_refs"]:
+                    self._reject_disabled_specialist(
+                        conn,
+                        session_id=normalized_session,
+                        trace_id=normalized_trace,
+                        specialist_slug=str(reference["slug"]),
+                    )
+            selected_specialists = (
+                [dict(reference) for reference in recipe["specialist_refs"]]
+                if recipe is not None
+                else []
+            )
+            specialist_activations = [
+                dict(row)
+                for row in conn.execute(
+                    "SELECT id, session_id, trace_id, work_unit_id, specialist_slug, "
+                    "specialist_version, specialist_prompt_hash, worker_kind, worker_id, "
+                    "native_run_id, launch_model, created_at, consumed_at, "
+                    "delegation_event_id "
+                    "FROM delegation_activation_receipts WHERE session_id = ? "
+                    "AND trace_id = ? AND consumed_at IS NOT NULL "
+                    "ORDER BY consumed_at, rowid",
+                    (normalized_session, normalized_trace),
+                ).fetchall()
+            ]
+            delegations = [
+                dict(row)
+                for row in conn.execute(
+                    "SELECT id, trace_id, session_id, host, work_unit_id, "
+                    "recommended_agent, status, backend, executed_worker_kind, "
+                    "executed_worker_id, native_run_id, retrieved_specialist_slug, "
+                    "retrieved_specialist_version, retrieved_specialist_prompt_hash, "
+                    "activation_receipt_id, skip_reason, error, "
+                    "started_at, completed_at FROM delegation_events "
+                    "WHERE trace_id = ? AND session_id = ? "
+                    "ORDER BY started_at, rowid",
+                    (normalized_trace, normalized_session),
+                ).fetchall()
+            ]
+            verified_native_specialists = self._verified_native_child_specialists_for_completion(
+                conn,
+                session_id=normalized_session,
+                trace_id=normalized_trace,
+            )
+            for delegation in delegations:
+                enrichment = verified_native_specialists.get(str(delegation.get("id") or ""))
+                if enrichment is not None:
+                    delegation.update(enrichment)
+            raw_classification = recipe.get("turn_classification") if recipe is not None else None
+            if isinstance(raw_classification, dict):
+                turn_classification = dict(raw_classification)
+            else:
+                selection_required = str(run["request_kind"] or "") == "nontrivial"
+                turn_classification = {
+                    "turn_kind": ("new_intent" if selection_required else "acknowledgement"),
+                    "selection_required": selection_required,
+                    "reroute_required": selection_required,
+                    "execution_decision_required": selection_required,
+                    "continuation_of": "",
+                    "confidence": 1.0,
+                    "reason_codes": ["legacy_request_kind_projection"],
+                    "state_revision": "",
+                    "classifier_version": 0,
+                }
+            raw_resident_binding = (
+                recipe.get("resident_manager_binding") if recipe is not None else None
+            )
+            resident_manager_binding = (
+                dict(raw_resident_binding) if isinstance(raw_resident_binding, dict) else None
+            )
+            raw_resident_kernel = (
+                resident_manager_binding.get("kernel")
+                if resident_manager_binding is not None
+                else (recipe.get("resident_manager_kernel") if recipe is not None else None)
+            )
+            resident_manager_kernel = (
+                dict(raw_resident_kernel) if isinstance(raw_resident_kernel, dict) else None
+            )
+            resident_managers = (
+                list(resident_manager_kernel.get("slugs", []))
+                if resident_manager_kernel is not None
+                else []
+            )
+            run_projection = dict(run)
+            run_projection.pop("preflight_result", None)
+            run_projection.update(turn_classification)
+            snapshot = {
+                "session_id": normalized_session,
+                "trace_id": normalized_trace,
+                "status": str(run["status"] or ""),
+                "request_kind": str(run["request_kind"] or ""),
+                **turn_classification,
+                "evidence_revision": int(run["evidence_revision"]),
+                "run": run_projection,
+                "model_receipt": dict(receipt) if receipt is not None else None,
+                "skills": skills,
+                "specialists": specialists,
+                "resident_managers": resident_managers,
+                "resident_manager_kernel": resident_manager_kernel,
+                "resident_manager_binding": resident_manager_binding,
+                "preflight_failure": preflight_failure,
+                "preflight_recipe_version": (
+                    int(recipe["recipe_version"]) if recipe is not None else 0
+                ),
+                "delivery_mode": str(recipe["delivery_mode"]) if recipe is not None else "",
+                "selected_specialists": selected_specialists,
+                "specialist_activations": specialist_activations,
+                "delegations": delegations,
+            }
+            conn.commit()
+            return snapshot
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
+
+    @staticmethod
+    def _terminal_finalization_result(
+        *,
+        outcome: str,
+        authoritative: bool,
+        session_id: str,
+        trace_id: str,
+        action: str,
+        response_hash: str,
+        status: str,
+        policy_response_hash: str = "",
+        event_id: str = "",
+    ) -> dict[str, Any]:
+        return {
+            "outcome": outcome,
+            "authoritative": authoritative,
+            "event_id": event_id,
+            "session_id": session_id,
+            "trace_id": trace_id,
+            "action": action,
+            "response_hash": response_hash,
+            "policy_response_hash": policy_response_hash,
+            "status": status,
+        }
+
+    def commit_terminal_finalization(
+        self,
+        *,
+        session_id: str,
+        trace_id: str,
+        host: str,
+        action: str,
+        response_hash: str,
+        status: str,
+        expected_evidence_revision: int,
+        policy_response_hash: str = "",
+        missing: list[str] | None = None,
+        pending_interaction_kind: str = "",
+        pending_interaction_fingerprint: str = "",
+    ) -> dict[str, Any]:
+        """Bind a terminal response only if its validated evidence is unchanged."""
+
+        normalized_session = validate_correlation_id(session_id, field="session_id")
+        normalized_trace = validate_correlation_id(trace_id, field="trace_id")
+        normalized_host = str(host or "unknown").strip()[:64] or "unknown"
+        normalized_action = str(action or "").strip()[:64]
+        normalized_hash = _require_response_hash(response_hash)
+        normalized_policy_hash = _optional_response_hash(policy_response_hash)
+        normalized_status = str(status or "").strip()[:64]
+        normalized_pending = str(pending_interaction_kind or "").strip()
+        normalized_pending_fingerprint = str(pending_interaction_fingerprint or "").strip()
+
+        # Validate input parameters early
+        _validate_terminal_finalization_inputs(
+            session_id=normalized_session,
+            trace_id=normalized_trace,
+            action=action,
+            normalized_action=normalized_action,
+            status=status,
+            normalized_status=normalized_status,
+            pending_interaction_kind=pending_interaction_kind,
+            normalized_pending=normalized_pending,
+            normalized_pending_fingerprint=normalized_pending_fingerprint,
+            expected_evidence_revision=expected_evidence_revision,
+        )
+
+        logger.debug(
+            "store_commit_terminal_finalization_start",
+            extra={
+                "session_id": normalized_session,
+                "trace_id": normalized_trace,
+                "host": normalized_host,
+                "action": normalized_action,
+                "status": normalized_status,
+                "expected_evidence_revision": expected_evidence_revision,
+            },
+        )
+
+        conn = self._connect()
+        try:
+            conn.execute("BEGIN IMMEDIATE")
+            run = conn.execute(
+                "SELECT id, session_id, status, ended_at, terminal_finalization_id, "
+                "evidence_revision, metadata "
+                "FROM runs WHERE trace_id = ?",
+                (normalized_trace,),
+            ).fetchone()
+            if run is None or str(run["session_id"] or "") != normalized_session:
+                logger.error(
+                    "store_run_validation_failed: not_found_or_session_mismatch",
+                    extra={
+                        "session_id": normalized_session,
+                        "trace_id": normalized_trace,
+                        "run_found": run is not None,
+                        "session_matches": run is not None
+                        and str(run["session_id"] or "") == normalized_session,
+                    },
+                )
+                conn.commit()
+                return self._terminal_finalization_result(
+                    outcome="not_active",
+                    authoritative=False,
+                    session_id=normalized_session,
+                    trace_id=normalized_trace,
+                    action=normalized_action,
+                    response_hash=normalized_hash,
+                    policy_response_hash=normalized_policy_hash,
+                    status=normalized_status,
+                )
+
+            binding = str(run["terminal_finalization_id"] or "")
+            if binding:
+                logger.debug(
+                    "store_replay_detection_start",
+                    extra={
+                        "session_id": normalized_session,
+                        "trace_id": normalized_trace,
+                        "terminal_finalization_id": binding,
+                    },
+                )
+                terminal_metadata = _bounded_run_metadata(run["metadata"])
+                event = conn.execute(
+                    "SELECT id, trace_id, action, response_hash, policy_response_hash, "
+                    "terminal_status "
+                    "FROM finalization_events WHERE id = ?",
+                    (binding,),
+                ).fetchone()
+
+                # Log detailed replay validation
+                if event is None:
+                    logger.error(
+                        "store_replay_validation_failed: event_not_found",
+                        extra={
+                            "session_id": normalized_session,
+                            "trace_id": normalized_trace,
+                            "terminal_finalization_id": binding,
+                        },
+                    )
+                else:
+                    event_trace_match = str(event["trace_id"] or "") == normalized_trace
+                    event_action_match = str(event["action"] or "") == normalized_action
+                    event_hash_match = str(event["response_hash"] or "") == normalized_hash
+                    event_policy_hash_match = (
+                        str(event["policy_response_hash"] or "") == normalized_policy_hash
+                    )
+                    event_status_match = str(event["terminal_status"] or "") == normalized_status
+                    run_status_match = str(run["status"] or "") == normalized_status
+                    run_ended = bool(run["ended_at"])
+                    pending_match = (
+                        str(terminal_metadata.get("pending_interaction") or "")
+                        == normalized_pending
+                    )
+                    pending_fingerprint_match = (
+                        str(terminal_metadata.get("pending_interaction_fingerprint") or "")
+                        == normalized_pending_fingerprint
+                    )
+
+                    if not all(
+                        [
+                            event_trace_match,
+                            event_action_match,
+                            event_hash_match,
+                            event_policy_hash_match,
+                            event_status_match,
+                            run_status_match,
+                            run_ended,
+                            pending_match,
+                            pending_fingerprint_match,
+                        ]
+                    ):
+                        logger.error(
+                            "store_replay_validation_failed: fields_mismatch",
+                            extra={
+                                "session_id": normalized_session,
+                                "trace_id": normalized_trace,
+                                "event_trace_match": event_trace_match,
+                                "event_action_match": event_action_match,
+                                "event_hash_match": event_hash_match,
+                                "event_policy_hash_match": event_policy_hash_match,
+                                "event_status_match": event_status_match,
+                                "run_status_match": run_status_match,
+                                "run_ended": run_ended,
+                                "pending_match": pending_match,
+                                "pending_fingerprint_match": pending_fingerprint_match,
+                            },
+                        )
+
+                exact_replay = bool(
+                    event is not None
+                    and str(event["trace_id"] or "") == normalized_trace
+                    and str(event["action"] or "") == normalized_action
+                    and str(event["response_hash"] or "") == normalized_hash
+                    and str(event["policy_response_hash"] or "") == normalized_policy_hash
+                    and str(event["terminal_status"] or "") == normalized_status
+                    and str(run["status"] or "") == normalized_status
+                    and bool(run["ended_at"])
+                    and str(terminal_metadata.get("pending_interaction") or "")
+                    == normalized_pending
+                    and str(terminal_metadata.get("pending_interaction_fingerprint") or "")
+                    == normalized_pending_fingerprint
+                )
+                conn.commit()
+                outcome = "replay" if exact_replay else "conflict"
+                logger.info(
+                    f"store_existing_finalization_detected_{outcome}",
+                    extra={
+                        "session_id": normalized_session,
+                        "trace_id": normalized_trace,
+                        "outcome": outcome,
+                    },
+                )
+                return self._terminal_finalization_result(
+                    outcome=outcome,
+                    authoritative=exact_replay,
+                    session_id=normalized_session,
+                    trace_id=normalized_trace,
+                    action=normalized_action,
+                    response_hash=normalized_hash,
+                    policy_response_hash=normalized_policy_hash,
+                    status=normalized_status,
+                    event_id=binding,
+                )
+
+            run_status = str(run["status"] or "")
+            if run_status not in {"active", "evidence_only"}:
+                logger.error(
+                    "store_run_validation_failed: status_not_active",
+                    extra={
+                        "session_id": normalized_session,
+                        "trace_id": normalized_trace,
+                        "run_status": run_status,
+                    },
+                )
+                conn.commit()
+                return self._terminal_finalization_result(
+                    outcome="not_active",
+                    authoritative=False,
+                    session_id=normalized_session,
+                    trace_id=normalized_trace,
+                    action=normalized_action,
+                    response_hash=normalized_hash,
+                    policy_response_hash=normalized_policy_hash,
+                    status=normalized_status,
+                )
+
+            if bool(run["ended_at"]):
+                logger.error(
+                    "store_run_validation_failed: lifecycle_conflict",
+                    extra={
+                        "session_id": normalized_session,
+                        "trace_id": normalized_trace,
+                        "ended_at_present": bool(run["ended_at"]),
+                    },
+                )
+                conn.commit()
+                return self._terminal_finalization_result(
+                    outcome="lifecycle_conflict",
+                    authoritative=False,
+                    session_id=normalized_session,
+                    trace_id=normalized_trace,
+                    action=normalized_action,
+                    response_hash=normalized_hash,
+                    policy_response_hash=normalized_policy_hash,
+                    status=normalized_status,
+                )
+
+            actual_evidence_revision = int(run["evidence_revision"])
+            if actual_evidence_revision != expected_evidence_revision:
+                logger.error(
+                    "store_evidence_validation_failed: revision_mismatch",
+                    extra={
+                        "session_id": normalized_session,
+                        "trace_id": normalized_trace,
+                        "expected_evidence_revision": expected_evidence_revision,
+                        "actual_evidence_revision": actual_evidence_revision,
+                    },
+                )
+                conn.commit()
+                return self._terminal_finalization_result(
+                    outcome="stale_evidence",
+                    authoritative=False,
+                    session_id=normalized_session,
+                    trace_id=normalized_trace,
+                    action=normalized_action,
+                    response_hash=normalized_hash,
+                    policy_response_hash=normalized_policy_hash,
+                    status=normalized_status,
+                )
+
+            event_id = self._uuid()
+            closed_at = self._now()
+            terminal_metadata = _merge_projected_run_metadata(
+                run["metadata"],
+                {
+                    "pending_interaction": normalized_pending,
+                    "pending_interaction_fingerprint": normalized_pending_fingerprint,
+                },
+            )
+
+            logger.debug(
+                "store_finalization_insert_start",
+                extra={
+                    "session_id": normalized_session,
+                    "trace_id": normalized_trace,
+                    "event_id": event_id,
+                    "action": normalized_action,
+                },
+            )
+
             conn.execute(
-                "UPDATE delegation_events SET status = ?, backend = ?, error = ?, completed_at = COALESCE(?, completed_at) WHERE id = ?",
-                (status, backend, error, ended, event_id),
+                "INSERT INTO finalization_events "
+                "(id, trace_id, host, action, missing, response_hash, "
+                "policy_response_hash, terminal_status, created_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (
+                    event_id,
+                    normalized_trace,
+                    normalized_host,
+                    normalized_action,
+                    json.dumps(missing) if missing else None,
+                    normalized_hash,
+                    normalized_policy_hash or None,
+                    normalized_status,
+                    closed_at,
+                ),
             )
-            conn.commit()
-        finally:
-            conn.close()
-
-    def get_delegations(self, trace_id: str) -> list[dict[str, Any]]:
-        conn = self._connect()
-        try:
-            cur = conn.execute(
-                "SELECT * FROM delegation_events WHERE trace_id = ? ORDER BY started_at",
-                (trace_id,),
+            closed = conn.execute(
+                "UPDATE runs SET ended_at = COALESCE(ended_at, ?), status = ?, "
+                "terminal_finalization_id = ?, metadata = ?, "
+                f"last_activity_at = {STORE_CLOCK_SQL} WHERE id = ? "  # nosec B608
+                "AND terminal_finalization_id IS NULL "
+                "AND status IN ('active', 'evidence_only')",
+                (closed_at, normalized_status, event_id, terminal_metadata, run["id"]),
             )
-            return [dict(row) for row in cur.fetchall()]
-        finally:
-            conn.close()
 
-    # ── Roster ─────────────────────────────────────────────────────
+            if closed.rowcount != 1:
+                logger.error(
+                    "store_finalization_update_failed: cas_mismatch",
+                    extra={
+                        "session_id": normalized_session,
+                        "trace_id": normalized_trace,
+                        "event_id": event_id,
+                        "expected_rowcount": 1,
+                        "actual_rowcount": closed.rowcount,
+                    },
+                )
+                raise RuntimeError("terminal finalization compare-and-swap failed")
 
-    def add_agent_source(self, url: str, name: str = "") -> str:
-        source_id = self._uuid()
-        conn = self._connect()
-        try:
             conn.execute(
-                "INSERT OR IGNORE INTO agent_sources (id, url, name, added_at) VALUES (?, ?, ?, ?)",
-                (source_id, url, name or url, self._now()),
+                "UPDATE specialists_loaded SET expired_at = ? "
+                "WHERE session_id = ? AND trace_id = ? AND expired_at IS NULL",
+                (closed_at, normalized_session, normalized_trace),
             )
             conn.commit()
-            return source_id
-        finally:
-            conn.close()
 
-    def list_agent_sources(self) -> list[dict[str, Any]]:
-        conn = self._connect()
-        try:
-            cur = conn.execute("SELECT * FROM agent_sources WHERE enabled = 1 ORDER BY added_at DESC")
-            return [dict(row) for row in cur.fetchall()]
-        finally:
-            conn.close()
-
-    def activate_agent(self, agent: dict[str, Any]) -> None:
-        conn = self._connect()
-        try:
-            conn.execute(
-                "INSERT OR REPLACE INTO agent_active "
-                "(id, agent_slug, name, division, description, source, version, hash, "
-                "categories, capabilities, tool_affinity, prompt_path, activated_at) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (self._uuid(), agent["slug"], agent.get("name", ""),
-                 agent.get("division", ""), agent.get("description", ""),
-                 agent.get("source", ""), agent.get("version", ""),
-                 agent.get("hash", ""),
-                 json.dumps(agent.get("categories", [])),
-                 json.dumps(agent.get("capabilities", [])),
-                 json.dumps(agent.get("tool_affinity", [])),
-                 agent.get("prompt_path", ""), self._now()),
+            logger.info(
+                "store_terminal_finalization_committed",
+                extra={
+                    "session_id": normalized_session,
+                    "trace_id": normalized_trace,
+                    "event_id": event_id,
+                    "action": normalized_action,
+                    "status": normalized_status,
+                },
             )
-            conn.commit()
-        finally:
-            conn.close()
 
-    def get_active_roster(self) -> list[dict[str, Any]]:
-        conn = self._connect()
-        try:
-            cur = conn.execute("SELECT * FROM agent_active ORDER BY agent_slug")
-            agents = []
-            for row in cur.fetchall():
-                d = dict(row)
-                d["categories"] = json.loads(d.get("categories") or "[]")
-                d["capabilities"] = json.loads(d.get("capabilities") or "[]")
-                d["tool_affinity"] = json.loads(d.get("tool_affinity") or "[]")
-                agents.append(d)
-            return agents
-        finally:
-            conn.close()
-
-    def get_active_roster_as_catalog(self) -> list[dict[str, Any]]:
-        """Return active roster in selector-compatible format."""
-        agents = self.get_active_roster()
-        catalog = []
-        for a in agents:
-            catalog.append({
-                "slug": a["agent_slug"],
-                "name": a.get("name", ""),
-                "description": a.get("description", ""),
-                "division": a.get("division", ""),
-                "categories": a.get("categories", []),
-                "capabilities": a.get("capabilities", []),
-            })
-        return catalog
-
-    def deactivate_agent(self, slug: str) -> None:
-        conn = self._connect()
-        try:
-            conn.execute("DELETE FROM agent_active WHERE agent_slug = ?", (slug,))
-            conn.commit()
-        finally:
-            conn.close()
-
-    def create_snapshot(self, snapshot_id: str, manifest: dict[str, Any]) -> None:
-        agents = self.get_active_roster()
-        conn = self._connect()
-        try:
-            conn.execute(
-                "INSERT INTO agent_snapshots (id, snapshot_id, created_at, agent_count, manifest, activated) "
-                "VALUES (?, ?, ?, ?, ?, 0)",
-                (self._uuid(), snapshot_id, self._now(), len(agents),
-                 json.dumps(manifest)),
+            return self._terminal_finalization_result(
+                outcome="committed",
+                authoritative=True,
+                session_id=normalized_session,
+                trace_id=normalized_trace,
+                action=normalized_action,
+                response_hash=normalized_hash,
+                policy_response_hash=normalized_policy_hash,
+                status=normalized_status,
+                event_id=event_id,
             )
-            conn.commit()
+        except Exception as exc:
+            logger.error(
+                "store_terminal_finalization_exception",
+                exc_info=True,
+                extra={
+                    "session_id": normalized_session,
+                    "trace_id": normalized_trace,
+                    "action": normalized_action,
+                    "status": normalized_status,
+                    "exception_type": type(exc).__name__,
+                    "exception_message": str(exc),
+                },
+            )
+            conn.rollback()
+            raise
         finally:
             conn.close()
 
-    def record_import_event(self, event_type: str, agent_slug: str = "", detail: str = "") -> None:
+    def get_authoritative_finalization(
+        self,
+        session_id: str,
+        trace_id: str,
+        *,
+        action: str = "",
+        response_hash: str = "",
+        policy_response_hash: str = "",
+    ) -> dict[str, Any] | None:
+        """Read only the terminal event explicitly bound to one exact run."""
+
+        normalized_session = (
+            validate_correlation_id(session_id, field="session_id") if session_id else ""
+        )
+        normalized_trace = validate_correlation_id(trace_id, field="trace_id") if trace_id else ""
+        normalized_action = str(action or "").strip()
+        normalized_hash = str(response_hash or "").strip()
+        normalized_policy_hash = str(policy_response_hash or "").strip()
+        if not normalized_session or not normalized_trace:
+            return None
         conn = self._connect()
         try:
-            conn.execute(
-                "INSERT INTO agent_import_events (id, event_type, agent_slug, detail, created_at) "
-                "VALUES (?, ?, ?, ?, ?)",
-                (self._uuid(), event_type, agent_slug, detail, self._now()),
-            )
-            conn.commit()
+            row = conn.execute(
+                "SELECT event.id, event.trace_id, event.host, event.action, "
+                "event.missing, event.response_hash, event.policy_response_hash, "
+                "event.terminal_status, "
+                "event.created_at, run.session_id, run.status, run.ended_at "
+                "FROM runs AS run JOIN finalization_events AS event "
+                "ON event.id = run.terminal_finalization_id "
+                "WHERE run.session_id = ? AND run.trace_id = ? "
+                "AND event.trace_id = run.trace_id "
+                "AND event.terminal_status = run.status AND run.ended_at IS NOT NULL "
+                "AND (? = '' OR event.action = ?) "
+                "AND (? = '' OR event.response_hash = ?) "
+                "AND (? = '' OR event.policy_response_hash = ?)",
+                (
+                    normalized_session,
+                    normalized_trace,
+                    normalized_action,
+                    normalized_action,
+                    normalized_hash,
+                    normalized_hash,
+                    normalized_policy_hash,
+                    normalized_policy_hash,
+                ),
+            ).fetchone()
+            if row is None:
+                return None
+            result = dict(row)
+            result["authoritative"] = True
+            return result
         finally:
             conn.close()
 
-    # ── Finalization ───────────────────────────────────────────────
+    def find_authoritative_trace(
+        self,
+        session_id: str,
+        *,
+        action: str = "accept",
+        response_hash: str,
+    ) -> str | None:
+        """Return one unambiguous bound trace for an exact session response."""
 
-    def record_finalization(self, *, trace_id: str, host: str,
-                            action: str, missing: list[str] | None = None) -> None:
+        return self._find_authoritative_trace_by_hash(
+            session_id,
+            action=action,
+            response_hash=response_hash,
+            use_policy_hash=False,
+        )
+
+    def find_authoritative_trace_by_policy_hash(
+        self,
+        session_id: str,
+        *,
+        action: str = "accept",
+        policy_response_hash: str,
+    ) -> str | None:
+        """Return the unambiguous latest trace bound to exact policy text."""
+
+        return self._find_authoritative_trace_by_hash(
+            session_id,
+            action=action,
+            response_hash=policy_response_hash,
+            use_policy_hash=True,
+        )
+
+    def _find_authoritative_trace_by_hash(
+        self,
+        session_id: str,
+        *,
+        action: str,
+        response_hash: str,
+        use_policy_hash: bool,
+    ) -> str | None:
+        """Resolve one exact terminal hash only when it names the latest turn."""
+
+        normalized_session = (
+            validate_correlation_id(session_id, field="session_id") if session_id else ""
+        )
+        normalized_action = str(action or "").strip()
+        normalized_hash = str(response_hash or "").strip()
+        if not normalized_session or not normalized_action or not normalized_hash:
+            return None
+        hash_query = (
+            "SELECT run.trace_id, run.turn_sequence FROM runs AS run "
+            "JOIN finalization_events AS event "
+            "ON event.id = run.terminal_finalization_id "
+            "WHERE run.session_id = ? "
+            "AND event.trace_id = run.trace_id AND event.action = ? "
+            "AND event.policy_response_hash = ? "
+            "AND event.terminal_status = run.status "
+            "AND run.ended_at IS NOT NULL "
+            "ORDER BY run.turn_sequence DESC LIMIT 1"
+            if use_policy_hash
+            else "SELECT run.trace_id, run.turn_sequence FROM runs AS run "
+            "JOIN finalization_events AS event "
+            "ON event.id = run.terminal_finalization_id "
+            "WHERE run.session_id = ? "
+            "AND event.trace_id = run.trace_id AND event.action = ? "
+            "AND event.response_hash = ? AND event.terminal_status = run.status "
+            "AND run.ended_at IS NOT NULL "
+            "ORDER BY run.turn_sequence DESC LIMIT 1"
+        )
         conn = self._connect()
         try:
-            conn.execute(
-                "INSERT INTO finalization_events (id, trace_id, host, action, missing, created_at) "
-                "VALUES (?, ?, ?, ?, ?, ?)",
-                (self._uuid(), trace_id, host, action,
-                 json.dumps(missing) if missing else None, self._now()),
+            latest = conn.execute(
+                "SELECT trace_id, turn_sequence FROM runs WHERE session_id = ? "
+                "ORDER BY turn_sequence DESC LIMIT 1",
+                (normalized_session,),
+            ).fetchone()
+            if latest is None:
+                return None
+            session_digest = correlation_digest(
+                conn,
+                normalized_session,
+                domain="session",
             )
-            conn.commit()
+            barrier = conn.execute(
+                "SELECT MAX(turn_sequence) AS turn_sequence FROM trace_tombstones "
+                "WHERE session_digest = ?",
+                (session_digest,),
+            ).fetchone()
+            if barrier is not None and int(barrier["turn_sequence"] or 0) >= int(
+                latest["turn_sequence"] or 0
+            ):
+                return None
+            rows = conn.execute(
+                hash_query,
+                (
+                    normalized_session,
+                    normalized_action,
+                    normalized_hash,
+                ),
+            ).fetchall()
+            if len(rows) != 1:
+                return None
+            row = rows[0]
+            if str(row["trace_id"]) != str(latest["trace_id"]) or int(
+                row["turn_sequence"] or 0
+            ) != int(latest["turn_sequence"] or 0):
+                return None
+            return str(row["trace_id"])
         finally:
             conn.close()

@@ -1,0 +1,774 @@
+"""Focused correctness tests for routing reuse and provider failover."""
+
+from __future__ import annotations
+
+import json
+import urllib.error
+from concurrent.futures import ThreadPoolExecutor
+
+import pytest
+
+from agency_runtime.core.config import (
+    AgencyConfig,
+    JudgeConfig,
+    OllamaConfig,
+    ProviderEntry,
+    SelectorConfig,
+)
+from agency_runtime.core.preflight import (
+    SubstantiveSpecialistUnavailable,
+    _require_substantive_specialist,
+)
+from agency_runtime.core.selector import judge as judge_module
+from agency_runtime.core.selector import pipeline as pipeline_module
+from agency_runtime.core.selector.cache import (
+    cache_get,
+    cache_key,
+    cache_put,
+    clear_cache,
+    routing_fingerprint,
+)
+from agency_runtime.core.selector.judge import query_judge
+from agency_runtime.core.selector.pipeline import route
+from agency_runtime.core.selector.stickiness import (
+    clear_session_routing,
+    session_check,
+    session_put,
+)
+from agency_runtime.core.turn_intent import classify_turn_intent
+
+CATALOG_A = [
+    {
+        "slug": "code-reviewer",
+        "name": "Code Reviewer",
+        "description": "Reviews authentication code and tests",
+    }
+]
+CATALOG_B = [
+    {
+        "slug": "security-auditor",
+        "name": "Security Auditor",
+        "description": "Audits authentication security",
+    }
+]
+
+
+class _Response:
+    def __init__(self, selected_ids: list[str], confidence: object) -> None:
+        content = json.dumps(
+            {
+                "selected_ids": selected_ids,
+                "confidence": confidence,
+            }
+        )
+        self._body = json.dumps(
+            {
+                "choices": [{"message": {"content": content}}],
+            }
+        ).encode("utf-8")
+
+    def __enter__(self) -> _Response:
+        return self
+
+    def __exit__(self, *args: object) -> None:
+        return None
+
+    def read(self, size: int = -1) -> bytes:
+        return self._body if size < 0 else self._body[:size]
+
+
+class _RawResponse:
+    def __init__(self, payload: dict[str, object]) -> None:
+        self._body = json.dumps(payload).encode("utf-8")
+
+    def __enter__(self) -> _RawResponse:
+        return self
+
+    def __exit__(self, *args: object) -> None:
+        return None
+
+    def read(self, size: int = -1) -> bytes:
+        return self._body if size < 0 else self._body[:size]
+
+
+def _offline_config(*, providers: tuple[ProviderEntry, ...] = ()) -> AgencyConfig:
+    return AgencyConfig(
+        providers=providers,
+        judge=JudgeConfig(model="", confidence_bypass_threshold=999.0),
+        ollama=OllamaConfig(enabled=False, model=""),
+    )
+
+
+def test_substantive_turn_without_a_specialist_reports_truthful_cause() -> None:
+    substantive = classify_turn_intent(
+        "Evaluate ChunkHound against CodeGraph for this repository.",
+        {"state_known": True},
+    )
+    # A substantive turn that produces only a resident manager raises
+    # SubstantiveSpecialistUnavailable carrying the exact persisted cause (the
+    # README "fails loudly" promise). run_preflight catches it to fail open with
+    # an honest "Recruited via: none" header rather than blocking the host, but
+    # the gate itself still records the truthful reason.
+    routing = {
+        "selected_ids": ["agency-steward"],
+        "status": "abstained",
+        "source": "workforce_inference",
+        "error": "recruiter_abstained",
+        "inference_failures": ["recruiter_unavailable"],
+        "inference_mode": "degraded",
+    }
+    with pytest.raises(SubstantiveSpecialistUnavailable, match="recruiter_abstained"):
+        _require_substantive_specialist(routing, substantive)
+
+    _require_substantive_specialist(
+        {
+            "selected_ids": ["code-intelligence-evaluator"],
+            "status": "accepted",
+            "source": "workforce_inference",
+        },
+        substantive,
+    )
+    acknowledgement = classify_turn_intent("ok", {"state_known": True})
+    _require_substantive_specialist({"selected_ids": []}, acknowledgement)
+
+
+def test_routing_fingerprint_covers_roster_config_and_policy() -> None:
+    base_config = _offline_config()
+    changed_config = AgencyConfig(
+        judge=base_config.judge,
+        ollama=base_config.ollama,
+        selector=SelectorConfig(min_confidence=0.7),
+    )
+    policy_a = {"actions": {"DEFAULT": {"always_include": []}}}
+    policy_b = {"actions": {"DEFAULT": {"always_include": [{"slug": "x"}]}}}
+
+    base = routing_fingerprint(CATALOG_A, base_config, policy_a)
+    assert routing_fingerprint(list(reversed(CATALOG_A)), base_config, policy_a) == base
+    assert routing_fingerprint(CATALOG_B, base_config, policy_a) != base
+    assert routing_fingerprint(CATALOG_A, changed_config, policy_a) != base
+    assert routing_fingerprint(CATALOG_A, base_config, policy_b) != base
+
+
+def test_routing_fingerprint_detects_in_place_policy_mutation() -> None:
+    clear_cache()
+    config = _offline_config()
+    policy = {"actions": {"DEFAULT": {"always_include": []}}}
+    initial = routing_fingerprint(CATALOG_A, config, policy)
+
+    policy["actions"]["DEFAULT"]["always_include"].append({"slug": "code-reviewer"})
+    after_policy = routing_fingerprint(CATALOG_A, config, policy)
+
+    assert after_policy != initial
+
+
+def test_pipeline_excludes_negated_terms_before_domain_expansion(monkeypatch) -> None:
+    clear_cache()
+    clear_session_routing()
+    observed: list[str] = []
+
+    def fake_query_judge(
+        task_description: str,
+        _catalog: list[dict[str, object]],
+        **_kwargs: object,
+    ) -> dict[str, object]:
+        observed.append(task_description)
+        return {
+            "selected_ids": [],
+            "confidence": 0.0,
+            "latency_ms": 0,
+            "status": "abstained",
+            "error": "no positive routing signal",
+        }
+
+    monkeypatch.setattr(pipeline_module, "query_judge", fake_query_judge)
+    route(
+        "negated-expansion",
+        "Do not configure Slack; implement Python retry backoff",
+        CATALOG_A,
+        config=_offline_config(),
+    )
+
+    assert len(observed) == 1
+    assert "Slack" not in observed[0]
+    assert "real-time communication" not in observed[0]
+    assert "implement Python retry backoff" in observed[0]
+
+
+def test_selection_confidence_floor_is_a_real_abstention() -> None:
+    rejected = pipeline_module._apply_selection_confidence_floor(
+        {
+            "selected_ids": ["minimal-change-engineer"],
+            "semantic_ids": ["minimal-change-engineer"],
+            "confidence": 0.76,
+            "status": "applied",
+        },
+        minimum=0.8,
+    )
+
+    assert rejected["selected_ids"] == []
+    assert rejected["semantic_ids"] == []
+    assert rejected["status"] == "abstained_low_confidence"
+    assert rejected["error"] == "selection confidence below configured minimum"
+
+    malformed = pipeline_module._apply_selection_confidence_floor(
+        {"selected_ids": ["code-reviewer"], "semantic_ids": ["code-reviewer"], "confidence": "bad"},
+        minimum=0.8,
+    )
+    assert malformed["selected_ids"] == []
+    assert malformed["status"] == "abstained_low_confidence"
+
+
+def test_cache_and_stickiness_reject_ids_outside_current_catalog(monkeypatch) -> None:
+    clear_cache()
+    clear_session_routing()
+    calls: list[str] = []
+
+    def fake_judge(
+        _task: str, catalog: list[dict[str, object]], **_kwargs: object
+    ) -> dict[str, object]:
+        slug = str(catalog[0]["slug"])
+        calls.append(slug)
+        return {
+            "selected_ids": [slug],
+            "confidence": 0.9,
+            "latency_ms": 0,
+            "status": "applied",
+        }
+
+    # Force a context collision to prove the defensive ID validation works even
+    # if a future fingerprint regression or hash collision occurs.
+    monkeypatch.setattr(
+        pipeline_module,
+        "routing_fingerprint",
+        lambda *_args, **_kwargs: "same",
+    )
+    monkeypatch.setattr(pipeline_module, "query_judge", fake_judge)
+    monkeypatch.setattr(pipeline_module, "load_policy", lambda *_args: {})
+    config = _offline_config()
+
+    first = route("session", "review authentication code", CATALOG_A, config=config)
+    second = route("session", "review authentication code", CATALOG_B, config=config)
+
+    assert first["selected_ids"] == ["code-reviewer"]
+    assert second["selected_ids"] == ["security-auditor"]
+    assert calls == ["code-reviewer", "security-auditor"]
+
+    # Exercise the stickiness path separately from the exact-query cache.
+    clear_cache()
+    third = route(
+        "sticky-session",
+        "review authentication code and tests",
+        CATALOG_A,
+        config=config,
+    )
+    clear_cache()
+    fourth = route(
+        "sticky-session",
+        "carefully review authentication code and tests",
+        CATALOG_B,
+        config=config,
+    )
+    assert third["selected_ids"] == ["code-reviewer"]
+    assert fourth["selected_ids"] == ["security-auditor"]
+
+
+def test_detailed_followup_recomputes_work_units_without_sticky_reuse(monkeypatch) -> None:
+    clear_cache()
+    clear_session_routing()
+    monkeypatch.setattr(pipeline_module, "load_policy", lambda *_args: {})
+    monkeypatch.setattr(
+        pipeline_module,
+        "query_judge",
+        lambda *_args, **_kwargs: {
+            "selected_ids": ["code-reviewer"],
+            "confidence": 0.9,
+            "latency_ms": 0,
+            "status": "applied",
+        },
+    )
+    config = _offline_config()
+
+    first = route(
+        "work-session",
+        "review authentication code tests documentation",
+        CATALOG_A,
+        config=config,
+    )
+    clear_cache()
+    second = route(
+        "work-session",
+        "review authentication code tests documentation\n"
+        "1. Review authentication code\n"
+        "2. Review authentication tests\n"
+        "3. Review authentication documentation",
+        CATALOG_A,
+        config=config,
+    )
+
+    assert first["work_units"]["count"] == 1
+    assert second.get("session_reused") is not True
+    assert second["work_units"]["count"] == 3
+    assert second["work_units"]["delegate"] is True
+
+
+def test_cache_and_session_state_are_thread_safe_and_bounded() -> None:
+    clear_cache()
+    clear_session_routing()
+
+    def write(index: int) -> None:
+        key = cache_key(f"query {index}")
+        cache_put(key, {"selected_ids": [str(index)]}, max_entries=8)
+        cache_get(key)
+        session_put(
+            f"session-{index}",
+            f"query {index}",
+            {"selected_ids": [str(index)]},
+            max_entries=8,
+        )
+
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        list(executor.map(write, range(64)))
+
+    assert sum(cache_get(cache_key(f"query {index}")) is not None for index in range(64)) <= 8
+    assert (
+        sum(session_check(f"session-{index}", f"query {index}") is not None for index in range(64))
+        <= 8
+    )
+
+
+def test_zero_signal_without_inference_fails_loudly() -> None:
+    result = query_judge(
+        "unrelated gibberish xyzzy",
+        CATALOG_A,
+        config=_offline_config(),
+    )
+
+    assert result["selected_ids"] == []
+    assert result["confidence"] == 0.0
+    assert result["status"] == "inference_unavailable"
+    assert result["inference_required"] is True
+
+
+def test_low_signal_without_inference_fails_instead_of_loading_noise() -> None:
+    result = query_judge(
+        "explain a runtime header and dashboard",
+        [
+            {
+                "slug": "clinical-evidence-agent",
+                "description": "Review clinical evidence and medical literature",
+            },
+            {
+                "slug": "geographer",
+                "description": "Analyze physical and human geography",
+            },
+        ],
+        config=_offline_config(),
+    )
+
+    assert result["top_score"] < 2.0
+    assert result["selected_ids"] == []
+    assert result["status"] == "inference_unavailable"
+
+
+def test_no_inference_never_selects_even_a_strong_lexical_candidate() -> None:
+    catalog = [
+        {
+            "slug": "technical-writer",
+            "name": "Technical Writer",
+            "description": "Writes README documentation and runbooks",
+        },
+        {
+            "slug": "database-optimizer",
+            "name": "Database Optimizer",
+            "description": "Profiles SQL queries and database indexes",
+        },
+    ]
+
+    result = query_judge(
+        "write README documentation",
+        catalog,
+        config=_offline_config(),
+    )
+
+    assert result["status"] == "inference_unavailable"
+    assert result["selected_ids"] == []
+
+
+def test_full_route_never_repopulates_inference_failure_from_policy() -> None:
+    clear_cache()
+    clear_session_routing()
+    catalog = [
+        {
+            "slug": "application-security-engineer",
+            "name": "Application Security Engineer",
+            "description": "Reviews authentication security",
+        },
+        {
+            "slug": "code-reviewer",
+            "name": "Code Reviewer",
+            "description": "Reviews code",
+        },
+    ]
+
+    result = route(
+        "terminal-inference-failure",
+        "Review this authentication design for security risks",
+        catalog,
+        config=_offline_config(),
+    )
+
+    assert result["status"] == "inference_unavailable"
+    assert result["source"] == "inference_failure"
+    assert result["companion_actions"] == ["SECURITY"]
+    for field in (
+        "selected_ids",
+        "semantic_ids",
+        "companion_ids",
+        "available_companion_ids",
+        "unavailable_companion_ids",
+        "selected_companion_ids",
+        "fallback_companion_ids",
+    ):
+        assert result[field] == []
+    assert result["fallback_considered"] is False
+    assert result["fallback_applied"] is False
+
+
+def test_no_inference_never_promotes_a_strong_match_over_an_incidental_match() -> None:
+    catalog = [
+        {
+            "slug": "performance-benchmarker",
+            "name": "Performance Benchmarker",
+            "capabilities": ["CPU profiling", "load testing", "memory profiling"],
+        },
+        {
+            "slug": "general-developer",
+            "name": "General Developer",
+            "description": "Can profile code when needed",
+        },
+    ]
+
+    result = query_judge(
+        "Profile CPU and memory usage under load testing",
+        catalog,
+        config=_offline_config(),
+    )
+
+    assert result["status"] == "inference_unavailable"
+    assert result["selected_ids"] == []
+
+
+def test_no_inference_never_selects_comparable_multi_domain_matches() -> None:
+    catalog = [
+        {
+            "slug": "security-specialist",
+            "name": "Security Specialist",
+            "capabilities": ["authentication security"],
+        },
+        {
+            "slug": "database-specialist",
+            "name": "Database Specialist",
+            "capabilities": ["database optimization"],
+        },
+    ]
+
+    result = query_judge(
+        "Review authentication security and database optimization",
+        catalog,
+        config=_offline_config(),
+        max_selected=2,
+    )
+
+    assert result["status"] == "inference_unavailable"
+    assert result["selected_ids"] == []
+
+
+def test_no_inference_never_turns_negation_filtering_into_selection() -> None:
+    catalog = [
+        {
+            "slug": "ui-specialist",
+            "name": "UI Specialist",
+            "capabilities": ["dashboard UI design", "component layout"],
+        },
+        {
+            "slug": "security-specialist",
+            "name": "Security Specialist",
+            "capabilities": ["authentication security"],
+        },
+        {
+            "slug": "technical-writer",
+            "name": "Technical Writer",
+            "capabilities": ["documentation writing", "runbook writing"],
+        },
+    ]
+
+    result = query_judge(
+        (
+            "Do not redesign the dashboard UI; "
+            "audit authentication security and document the runbook"
+        ),
+        catalog,
+        config=_offline_config(),
+        max_selected=3,
+    )
+
+    assert result["status"] == "inference_unavailable"
+    assert result["selected_ids"] == []
+
+
+def test_agent_slug_only_catalog_still_requires_inference() -> None:
+    catalog = [
+        {
+            "agent_slug": "technical-writer",
+            "name": "Technical Writer",
+            "description": "Writes README documentation and runbooks",
+        }
+    ]
+
+    result = query_judge(
+        "write README documentation",
+        catalog,
+        config=_offline_config(),
+    )
+
+    assert result["status"] == "inference_unavailable"
+    assert result["selected_ids"] == []
+
+
+@pytest.mark.parametrize("max_selected", [0, -1, 51, True, 1.5])
+def test_query_judge_rejects_invalid_max_selected(max_selected: object) -> None:
+    with pytest.raises((TypeError, ValueError), match="max_selected"):
+        query_judge(
+            "review authentication code",
+            CATALOG_A,
+            config=_offline_config(),
+            max_selected=max_selected,  # type: ignore[arg-type]
+        )
+
+
+def test_query_judge_rejects_non_text_tasks() -> None:
+    with pytest.raises(TypeError, match="task_description"):
+        query_judge(  # type: ignore[arg-type]
+            None,
+            CATALOG_A,
+            config=_offline_config(),
+        )
+
+
+def test_provider_cannot_select_candidate_omitted_from_bounded_prompt(
+    monkeypatch,
+) -> None:
+    catalog = [
+        {
+            "slug": f"agent-{index:02d}",
+            "name": f"Agent {index:02d}",
+            "description": "Reviews authentication security",
+        }
+        for index in range(judge_module._MAX_JUDGE_CANDIDATES + 1)
+    ]
+    provider = ProviderEntry(
+        name="judge",
+        model="judge-model",
+        base_url="https://judge.invalid",
+        api_key="key",
+    )
+    monkeypatch.setattr(
+        judge_module,
+        "open_no_redirect",
+        lambda *_args, **_kwargs: _Response(
+            [f"agent-{judge_module._MAX_JUDGE_CANDIDATES:02d}"],
+            0.9,
+        ),
+    )
+
+    result = query_judge(
+        "review authentication security",
+        catalog,
+        config=_offline_config(providers=(provider,)),
+    )
+
+    assert result["status"] == "inference_unavailable"
+    assert f"agent-{judge_module._MAX_JUDGE_CANDIDATES:02d}" not in result["selected_ids"]
+
+
+def test_complete_candidate_scope_keeps_low_rank_card_beyond_twenty_inference_selectable(
+    monkeypatch,
+) -> None:
+    target = f"agent-{judge_module._MAX_JUDGE_CANDIDATES + 4:02d}"
+    catalog = [
+        {
+            "slug": f"agent-{index:02d}",
+            "name": f"Agent {index:02d}",
+            "description": (
+                "Reviews authentication security"
+                if index < judge_module._MAX_JUDGE_CANDIDATES
+                else "Low deterministic-rank unrelated metadata"
+            ),
+        }
+        for index in range(judge_module._MAX_JUDGE_CANDIDATES + 5)
+    ]
+    provider = ProviderEntry(
+        name="judge",
+        model="judge-model",
+        base_url="https://judge.invalid",
+        api_key="key",
+    )
+    prompted_slugs: list[str] = []
+
+    def respond(request, **_kwargs):
+        body = json.loads(request.data)
+        prompt = body["messages"][1]["content"]
+        candidate_block = prompt.split(
+            "Candidate cards (one JSON object per line):\n",
+            1,
+        )[1].split("\n\nReturn:", 1)[0]
+        prompted_slugs.extend(json.loads(line)["slug"] for line in candidate_block.splitlines())
+        return _Response([target], 0.91)
+
+    monkeypatch.setattr(judge_module, "open_no_redirect", respond)
+
+    result = query_judge(
+        "review authentication security",
+        catalog,
+        config=_offline_config(providers=(provider,)),
+        candidate_scope="complete",
+    )
+
+    assert result["status"] == "applied"
+    assert result["selected_ids"] == [target]
+    assert prompted_slugs == [item["slug"] for item in catalog]
+    assert result["retrieval"] == {
+        "mode": "complete-candidate-universe",
+        "full_roster_count": len(catalog),
+        "candidate_union_count": len(catalog),
+        "lexical_count": 0,
+        "semantic_count": 0,
+        "hard_negative_count": 0,
+        "candidate_rows_complete": True,
+    }
+
+
+def test_malformed_provider_content_fails_without_a_fallback_team(monkeypatch) -> None:
+    provider = ProviderEntry(
+        name="judge",
+        model="judge-model",
+        base_url="https://judge.invalid",
+        api_key="key",
+    )
+    monkeypatch.setattr(
+        judge_module,
+        "open_no_redirect",
+        lambda *_args, **_kwargs: _RawResponse(
+            {"choices": [{"message": {"content": ["not", "text"]}}]}
+        ),
+    )
+
+    result = query_judge(
+        "review authentication security",
+        CATALOG_A,
+        config=_offline_config(providers=(provider,)),
+    )
+
+    assert result["status"] == "inference_unavailable"
+    assert result["selected_ids"] == []
+    assert "deterministic_candidate_ids" not in result
+
+
+def test_blank_candidate_identity_is_never_selected() -> None:
+    result = query_judge(
+        "review authentication security",
+        [
+            {
+                "name": "Security Reviewer",
+                "description": "Reviews authentication security",
+            }
+        ],
+        config=_offline_config(),
+    )
+
+    assert result["selected_ids"] == []
+    assert result["status"] == "inference_unavailable"
+
+
+def test_semantically_invalid_provider_fails_over_and_bounds_confidence(monkeypatch) -> None:
+    providers = (
+        ProviderEntry(
+            name="first",
+            model="judge-a",
+            base_url="https://first.invalid",
+            api_key="key",
+        ),
+        ProviderEntry(
+            name="second",
+            model="judge-b",
+            base_url="https://second.invalid",
+            api_key="key",
+        ),
+    )
+    responses = iter(
+        [
+            _Response(["hallucinated-agent"], 0.9),
+            _Response(["code-reviewer"], 7.5),
+        ]
+    )
+    calls: list[str] = []
+
+    def fake_urlopen(request: object, **_kwargs: object) -> _Response:
+        calls.append(str(getattr(request, "full_url", "")))
+        return next(responses)
+
+    monkeypatch.setattr(judge_module, "open_no_redirect", fake_urlopen)
+    result = query_judge(
+        "review authentication code",
+        CATALOG_A,
+        config=_offline_config(providers=providers),
+    )
+
+    assert len(calls) == 2
+    assert result["selected_ids"] == ["code-reviewer"]
+    assert result["confidence"] == 1.0
+    assert result["provider"] == "second (openai-compatible)"
+
+
+def test_provider_latency_is_cumulative_and_duplicate_ollama_retry_is_skipped(monkeypatch) -> None:
+    provider = ProviderEntry(
+        name="configured-ollama",
+        type="ollama",
+        model="judge",
+        base_url="http://127.0.0.1:11434",
+        ollama_mode=True,
+    )
+    config = AgencyConfig(
+        providers=(provider,),
+        judge=JudgeConfig(
+            model="judge",
+            base_url="http://127.0.0.1:11434",
+            ollama_mode=True,
+            confidence_bypass_threshold=999.0,
+        ),
+        ollama=OllamaConfig(
+            enabled=True,
+            model="judge",
+            base_url="http://127.0.0.1:11434",
+        ),
+    )
+    calls = 0
+
+    def failing_urlopen(*_args: object, **_kwargs: object) -> _Response:
+        nonlocal calls
+        calls += 1
+        raise urllib.error.URLError("offline")
+
+    clock = iter([0.0, 0.0, 0.0, 0.25])
+    monkeypatch.setattr(judge_module, "open_no_redirect", failing_urlopen)
+    monkeypatch.setattr(judge_module.time, "monotonic", lambda: next(clock))
+
+    result = query_judge(
+        "review authentication code",
+        CATALOG_A,
+        config=config,
+    )
+
+    assert calls == 1
+    assert result["status"] == "inference_unavailable"
+    assert result["latency_ms"] == 250

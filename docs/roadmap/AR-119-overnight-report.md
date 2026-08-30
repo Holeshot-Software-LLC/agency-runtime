@@ -1,0 +1,394 @@
+---
+title: "AR-119 overnight report for 2026-08-17"
+status: draft
+category: roadmap
+created: 2026-08-16
+updated: 2026-08-16
+tags: [roadmap, report, autonomous, AR-119, AR-255, AR-258]
+related:
+  - docs/roadmap/AR-119-overnight-autonomous-brief.md
+  - docs/roadmap/handoffs/issue-AR-119.md
+  - docs/roadmap/AR-119-rule-host-evidence-matrix.md
+  - docs/roadmap/AR-255-child-parity-design.md
+supersedes: []
+superseded_by: null
+type: reference
+issue_id: AR-119
+---
+
+# AR-119 overnight report
+
+**Your machine is running main's build: all three hosts (claude, codex, zcode)
+pin runtime digest `8a429a54ef1d…` — main tip `227ab06b`, the merge of PR
+#277 — verified by reading every `current-<host>.json` after the final
+install, with the installing tree verified identical to main's.**
+AR-258's one-digest property held all night through three installs:
+`16f1e720` (main `c6df1449`) → `2cd298158584` (merge `c77c67a4`) →
+`8a429a54` (merge `227ab06b`). At no point was branch-only code installed.
+`~/.agency-runtime/overnight-runtime-state.json` carries the same facts.
+The matrix's Installed/Live evidence was measured on `2cd298158584`; the
+final build adds only the flag-gated capture wiring, which **does not work —
+see the section 2 defect note.** The flag has been on since Aug 11, but the
+store's content-free projection allowlist strips `captured_task` before the
+row is written, so no child assignment is ever persisted.
+
+**Merged to main tonight, under the standing authorization** (full spine green
+locally — 1,462 then 793 post-fix — CI green 13/13 on the exact head, docs
+valid): AR-255 P2 (`966e8bae`) and the hiring verdict repair (`e41ac039`),
+via merge commit `c77c67a4` on [PR #275].
+
+This report is written incrementally through the night so a crash cannot erase
+it; the DRAFT marker leaves only when the session ends.
+
+**Resolved before morning:** the overnight sweep found your uncommitted
+`eval_commands.py` WIP hunks absent from the primary's working tree (present
+01:57 UTC, gone 06:15 UTC) and raised it as the report's lead warning; you
+confirmed from your phone that clearing them was fine ("you can clear
+hunks"), so the warning is retired. This session ran no mutating git command
+in the primary at any point, and your three untracked JSON outputs are
+intact.
+
+## 1. Proven
+
+- **AR-258 one digest, again.** codex was at `530f6df6`, zcode at `980eb2d1`;
+  both now run `16f1e720f15d` alongside claude. Store schema 46 == launcher
+  schema 46; the doctor drift check passes. Evidence: the three
+  `current-<host>.json` files, install output, runs recorded post-install.
+- **The repaired runtime records.** Claude baseline canary run 1
+  (2026-08-17T02:08Z) wrote its run row and its own failure receipt; run 2
+  (02:15Z) staffed the parent fully.
+- **Parent staffing live on the main build** (claude baseline run 2, trace
+  `17d236b3`): routing decision `3721c950` accepted with
+  `code-reviewer + application-security-engineer`, both loaded,
+  `receipt_proven: true`, latency 104,972 ms (the known AR-253 overrun band).
+
+## 1a. Stage 0 sweep: which layers the child judge actually blocks
+
+Fifteen analysis agents swept R1–R8 acceptance criteria against the matrix,
+AR-256's layer definitions, the code anchors, the live store, and the host
+artifacts on disk; every "reachable" claim was then adversarially verified.
+Result, for claude:
+
+| Rule | Installed w/o child judge | Live w/o child judge | Verdict |
+|---|---|---|---|
+| R1 | **no** | **no** | both-no (v6 envelope is the only hash-carrying artifact; its only writer is a judge-accepted child staffing) |
+| R2 | yes | yes | CONFIRMED |
+| R3 | yes | yes | REFUTED as stated → corrected: claude-only, and only after the matrix candidate advances to the installed commit |
+| R4 | **no** | **no** | both-no (as expected) |
+| R5 | yes | yes | CONFIRMED |
+| R6 | yes | yes | CONFIRMED (parent-path hiring ladder) |
+| R7 | yes | yes | CONFIRMED (two consecutive parent turns) |
+| R8 | yes | yes | CONFIRMED (declines are generative: an unstaffed turn that proceeds is the evidence) |
+
+- **The brief's "R1 is parent-side" lead is refuted.** Every R1 anchor is the
+  native-child staffing path; the parent capsule carries no hash and no
+  decision id, and no shipped code computes a parent-side join. **P2 therefore
+  unlocks R1 and R4 together**, doubling its value.
+- The single `v6` marker among retained child transcripts is a **false
+  positive** (an analysis agent's grep output quoted inside a tool result, not
+  launch text). Genuine v6 envelopes ever delivered here: still zero.
+- codex generalization: uncertain until hook trust advances (bypass path
+  authorized tonight); zcode: the sweep's verifier called it not reachable
+  unattended — to be tested against the brief's zcode-CLI instruction before
+  accepting.
+- Cross-cutting precondition from the verifier: **advance the matrix
+  `candidate_commit` to the installed commit and re-run the source-evaluation
+  baseline before greening any cell**; the `source_unchanged` carry-forward
+  does not apply across ~1,070 runtime insertions.
+
+## 2. Refuted / narrowed
+
+- **Child task size does not explain the declines, further.** Decline #12
+  (decision `4c1f3350`, 02:15:13Z) carries `task_chars: 3040` — beyond the
+  previous 541–2,408 range — with `code-reviewer` offered (digest
+  `b5b83ecc699e`), `confidence: 0.9`, 5.8 s. Decline #13 (`19f89c78`,
+  02:20:43Z) at 1,867 chars, confidence 0.95. The size axis is excluded up to
+  3,040 characters.
+- Baseline (pre-P2) claude series is complete at n=3 on digest `16f1e720f15d`:
+  parent staffed 2/3 (the miss is the known recruiter stage,
+  `workforce_inference_failed`/`inference_invalid`; successes routed
+  `code-reviewer + application-security-engineer` at 105.0 s and 90.0 s);
+  child: 2 decisions, 2 declines, 0 staffed. Decisions-to-declines, not
+  runs-to-runs.
+- **Found in passing, verified against the store: passing contractor security
+  reviews are recorded `verdict: "unsafe"`.** `hiring.py:2091` computes
+  `"unsafe" if security_reasons else "safe"`, but reviewers now annotate
+  passes with reasons — all three applied hires since 08-16 15:39 carry 7–9
+  pass-shaped reasons and the mislabel. Evidence-integrity bug only (the gate
+  uses a different signal); flagged for a daytime fix, and every R6 citation
+  tonight carries this caveat.
+- **DEFECT in my own capture wiring: it records nothing, and my test could
+  not see that.** Measured 2026-08-17 13:18:57Z on the installed
+  `8a429a54` build with the flag on: decision `47b98520`, reason
+  `native_child_no_specialist_needed`, `task_chars: 2798`, 70 candidates —
+  and **no `captured_task` key in the persisted row**. Cause:
+  `store/queries.py::project_routing_decision` projects each decision through
+  the strict `_ROUTING_DECISION_FIELDS` allowlist, which is the mechanism that
+  keeps routing decisions content-free; `captured_task` is not in it, so the
+  key is stripped before the row is written. My unit tests asserted
+  `result.routing_decision["captured_task"]`, the **pre-projection** dict, so
+  they passed while the real path persisted nothing. This is the same failure
+  shape the matrix has now recorded five times — a test proving a layer the
+  live path does not use — and it means PR #277 shipped an inert change.
+  Excluded by measurement, not inference: config is not the cause
+  (`load_config` and the store-bound config both report
+  `capture_content=True`), and the launcher does contain the code (10
+  `captured_task` occurrences in the installed tree). Repair options are in
+  section 4 item 1; the choice is the owner's because it touches a privacy
+  boundary.
+- **RETRACTED, one of my own claims: "the flag is off."** The overnight
+  report asserted in two places that `observability.capture_content` was
+  disabled — that the `captured_task` key was absent "because the flag is
+  off," and that enabling it was an open morning decision. **I never read the
+  value.** `agency.yaml` has carried `capture_content: true` since
+  2026-08-11 18:55, and a `config get` on 2026-08-17 confirms it; my own
+  `config set … true` this morning was a no-op that did not even change the
+  file's mtime. What the wiring's absence overnight actually reflects is
+  install order: the capture code merged and installed last, after every
+  measurement. Consequence worth stating plainly: the parent path has been
+  storing redacted user messages under this flag since Aug 11 (238 of 238
+  runs), which is your own opt-in and predates this work, and child
+  assignments now join them. Falsification of the corrected claim: a
+  `capture_content: false` in any config layer the hook actually reads, or a
+  post-install decline that records no `captured_task`.
+- **The brief's Stage 4 ("drive zcode through the zcode CLI") is refuted for
+  this box, by measurement.** No `zcode` executable exists on PATH or in
+  `C:\agency-cli`, and the zcode canary readiness itself reports "host
+  executable not discovered" and "host has no proven read-only, bounded
+  native-child noninteractive canary mode". zcode therefore gets install
+  parity only tonight (same digest as claude/codex); installed *activation*
+  and every Live cell need your own zcode session in the morning.
+
+## 1b. Post-P2 series (per-run split, running)
+
+Digest `2cd298158584` (post-merge main `c77c67a4`); the installed projection
+verified to contain the P2 code (`repair_abstention_task` and the confirmed
+reason are in the launcher tree).
+
+| Run | Parent | Child decisions (per-run split) |
+|---|---|---|
+| 1 | staffed `code-reviewer + application-security-engineer`, routing 123.3 s | 1 decision: abstained under **legacy** `native_child_no_specialist_needed` — under P2 semantics the repair could not produce a valid answer. task_chars 1,278, 67 candidates, conf 0.95, first-call 5.0 s (decision `e78ee5de`, 03:17:47Z) |
+| 2 | staffed, routing 88.6 s | 1 decision: abstained under **legacy** code again. task_chars 1,369, conf 0.9, first-call 7.0 s (decision `b8fa9526`, 03:28:19Z) |
+| 3 | staffed, routing 101.3 s | 1 decision: **`native_child_abstention_confirmed`** — the first confirmed row ever. task_chars 3,431, conf 0.87, 9.5 s (decision `d6b514f7`, 03:36:59Z) |
+
+One repair-failure hypothesis already refuted deterministically: the repair
+preamble adds 477 chars against a 1.25 MiB complete-universe prompt budget
+(`_MAX_COMPLETE_CANDIDATE_PROMPT_BYTES`), so over-budget preflight failure is
+excluded. Remaining candidates — provider/contract rejection on the second
+call, or a response-shape violation elicited by the repair phrasing — are
+indistinguishable from the store (the gap above).
+
+**Series verdict (n=3, decisions-to-declines 3/3, 0 staffed):**
+
+1. **The P2 repair path is proven live** — run 3's confirmed code can only be
+   written by the repair branch of the installed `2cd298158584` runtime.
+2. Runs 1–2 show the repair transport is as intermittent as the recruiter:
+   repair attempted, no valid answer, abstention stood unconfirmed.
+3. **AR-255's falsification clause fires**: P1 and P2 both shipped and the
+   child still declines across a comparable series, including once after
+   testing its own abstention against the concrete candidate set. The judge
+   declines **on the merits**; the fault is upstream in what the parent
+   chooses to delegate. The remaining instrument is the owner-gated
+   `observability.capture_content` pointed at the child assignment — wiring
+   it (flag untouched) is authorized tonight; enabling the flag is the
+   owner's morning decision.
+
+- **P2 observability gap, found on run 1:** the persisted decision drops
+  `provider_attempts`, and the child judge's calls mint no `model_receipts`
+  rows (only the parent planner/recruiter do). The store therefore cannot
+  distinguish "repair reached the provider and failed" from "repair raised
+  before any call". If the series ends with only legacy-code abstentions and
+  zero `native_child_abstention_confirmed`, that gap is the first thing to
+  instrument — a receipt row for the repair call, or the owner-gated content
+  capture.
+
+## 1c. R2–R8 battery (in progress)
+
+- **R5 Installed: evidence in hand.** `eval spawn-authority` run with the
+  analyzed package root literally the installed launcher tree
+  (`runtime-sha256-2cd2981585843…/site-packages/agency_runtime`): 5/5 cases
+  pass, including both injected-violation controls. Note the case list is 5
+  at this candidate where the matrix's `e216670a` narrative described 8.
+- **New live failure mode found by the first R2/R3 measurement run** (`claude
+  -p`, real profile, fresh session on the new launcher, session `2b4b19d4`):
+  the UserPromptSubmit hook was **cancelled by the host after 486 s**
+  (`hook_cancelled` attachment 03:51:48Z against the 03:43:42Z user record) —
+  an extreme AR-253 recruiter-overrun draw outliving the host's hook window.
+  The turn proceeded unstaffed and answered both work units; the store has
+  the run row (terminal `response_invalid`) and **zero** routing or failure
+  rows — the hook died before it could write any receipt. Three lessons:
+  (a) this transcript is candidate **R8 Live** evidence (host artifact showing
+  an unstaffed turn that proceeded), with two caveats recorded: the
+  unstaffing came from host cancellation rather than Agency's own fail-open
+  branch, and the run terminalized `response_invalid` while the answer was
+  still delivered; (b) AR-253's overrun is not merely latency — past the hook
+  window it erases the turn's staffing AND its evidence, and only the host
+  artifact shows why (a third sibling for the unrun-vs-fail-open lesson:
+  cancelled-mid-flight); (c) the R2/R3 vehicle needs a routing draw inside
+  the window (90–125 s draws fit; retry in flight).
+
+- **R2 and R3 Live+Installed evidence secured on claude, exact candidate.**
+  Fresh real-profile `claude -p` session `aa740d50` (started 03:55Z, after the
+  `2cd298158584` installs; the plugin's `hooks.json` pins
+  `runtime-sha256-2cd298158584`, closing the binding chain). The host
+  artifact — the session transcript plus its persisted side file
+  `aa740d50…/tool-results/hook-4a16f3ce…-additionalContext.txt` (18,310
+  bytes) — carries `[AGENCY LOADED] Complete current-turn specialist
+  instruction capsule` with entries and **whole instruction bodies for four
+  specialists** (`application-security-engineer`,
+  `codebase-onboarding-engineer`, `security-implementation-engineer`,
+  `software-test-engineer`; `Instructions:` ×4), attached 04:02:48.098Z,
+  strictly before the first assistant record 04:02:53.769Z, by both
+  timestamp and file order. Store join: accepted routing decision (283.2 s —
+  the AR-253 overrun band, inside the hook window this time), four
+  `specialists_loaded` rows on the same trace, **zero** delegation events
+  (no child existed that could have received the cards). Recorded caveat:
+  the decision selected seven specialists and four were loaded; the loaded
+  set is what the artifact proves, and the 7→4 narrowing is noted, not
+  hidden. Matrix cells move only after the candidate advances (section 1a's
+  cross-cutting precondition).
+
+- **R7 complete on claude, exact candidate, one artifact.** Same session
+  `aa740d50`, turn 2 (04:06:44Z): the capsule side file carries
+  `[AGENCY SPECIALIST EXPIRY] … no longer loaded:` naming **all four** turn-1
+  specialists; none is re-delivered (turn 2 loaded `code-reviewer` and
+  `function-naming-advisor` instead); the store shows every turn-1 card's
+  `expired_at == run 1's ended_at` (04:04:04Z) and turn 2's cards expiring at
+  run 2's end. Held in its own turn, absent from the next, expiry stated —
+  both halves of the authority in the host artifact plus the store join.
+- **R6 fired organically on the exact candidate.** Turn 2's rename request
+  found a roster gap and minted `function-naming-advisor` mid-turn: hiring
+  case `6c04ac6e` (04:11:13Z) status `applied`, worker filed
+  `origin='agency'`, `employment_class='contractor'`, and the new card —
+  entry plus whole instruction body — dealt into the very turn whose gap
+  created it, pre-first-speech, in the host artifact. The pool-reuse half
+  ("next turn reuses it and hires nobody") is being measured with a third
+  turn now.
+- **The hiring verdict fix is proven live.** Case `6c04ac6e`, hired on the
+  post-fix runtime, records `verdict: "safe"` with **6 annotation reasons** —
+  the exact shape that recorded `"unsafe"` on every applied hire yesterday.
+- **R6's pool-reuse half held on turn 3** (trace `fb45d24e`, 04:15:24Z): the
+  same-domain request loaded `function-naming-advisor` again from the pool —
+  one worker row ever, zero further hiring cases for that slug. Hired once,
+  reused without re-hiring, in the same session's host artifact. R6 is
+  complete on claude at the exact candidate. (A second organic mint,
+  `contractor-reuse-system-analyst` at 04:20:24Z, occurred in the steward
+  session itself — Rule 6 firing twice in one night, unprompted.)
+
+## 2a. Repaired tonight
+
+- **The hiring verdict mislabel is fixed on the branch** (`e41ac039`): the
+  recorded `critic_evidence.security_review.verdict` now carries the
+  reviewer's own gate signal — the same field the hire gate and the
+  safety-repair loop branch on — instead of re-deriving from reason-list
+  emptiness. Regression test added for an annotated pass; the unsafe-rejects
+  path was already pinned. No runtime reader consumed the recorded string, so
+  the change is evidence-integrity only. Note: the task chip for this fix was
+  also started separately; if a duplicate branch/worktree appears for it, this
+  branch already carries the fix.
+
+## 3. Decisions taken in the owner's absence
+
+1. **Installed from the clean session worktree, not the primary checkout.**
+   The primary carries your WIP in `agency_runtime/cli/eval_commands.py`; an
+   install from there would have baked uncommitted WIP into the published
+   projection. The worktree sits at the identical commit `c6df1449` with a
+   clean tree, so the projection is a pure main build. Falsification: if a
+   clean-tree install from the primary at `c6df1449` yields a digest other
+   than `16f1e720f15d`, the "content-determined digest" premise is wrong and
+   the runtime-state file must be corrected.
+2. **AR-255 P2 reason-code split settled** (see the design doc):
+   `native_child_abstention_confirmed` = repair ran and reaffirmed;
+   `native_child_no_specialist_needed` (legacy) = abstention stood because the
+   repair could not produce a valid answer. Falsification recorded in the
+   design doc.
+3. **Canary series serialized, never concurrent.** Concurrent host canaries
+   would contend on the same inference providers and could depress staffing
+   rates; rates measured under contention would not be comparable to the
+   existing series.
+4. **Commit trailer names Fable 5**, the model actually driving this session,
+   where the brief's template said Opus 5.
+
+## 4. Morning decisions for the owner
+
+1. **RETRACTED 2026-08-17 13:2x: this decision was already made — by you, on
+   Aug 11.** The item read "enable `observability.capture_content`, or not…
+   one flip of the flag and the next decline records what the child was
+   asked." **`agency.yaml` has carried `capture_content: true` since
+   2026-08-11 18:55**, so no flip was ever needed: the wiring shipped armed,
+   and the first child decline on the wired build records the assignment with
+   no action from you. The remaining decision is narrower — **whether the
+   child-assignment capture stays**, given your store already holds redacted
+   parent prompts (238 of 238 runs since Aug 11) — and **whether to repair the
+   child-assignment capture at all**, because as shipped it records nothing
+   (section 2 defect note). Two repair paths, both needing your call because
+   the blocker is a deliberate privacy boundary:
+   - **(a) Allowlist it.** Add `captured_task` to `_ROUTING_DECISION_FIELDS`
+     with a bounded-string projector. Smallest diff, but it puts content into
+     a structure whose whole purpose is to be content-free, and every reader
+     of routing decisions inherits that.
+   - **(b) Keep the decision content-free and store the assignment in the
+     lane captured content already uses.** `runs.user_message` is the only
+     existing captured-content column; a host-spawned child has no run row of
+     its own, so this needs a column or table of its own — a larger change,
+     but it leaves the privacy boundary intact. **Recommended.**
+   Doing nothing is also coherent: the child's assignment is recoverable from
+   the host transcript by hand for a one-off diagnosis.
+2. **Codex attended trust.** The bypass path proves the runtime records on
+   codex but activation failed twice at the recruiter stage and the exec turn
+   returned empty. Your fresh codex TUI (`Trust all and continue` over the 8
+   hook events) plus one real turn is the unblocked path.
+3. **zcode session.** Projection installed at the one digest; open your zcode
+   app fresh and run one turn to give it installed-activation evidence.
+4. **R8's candidate artifact** (session `2b4b19d4`: host cancelled the hook
+   at 486 s, turn proceeded unstaffed, run terminalized `response_invalid`):
+   decide whether that satisfies R8's "unstaffed turn proceeded" or whether
+   you want a receipt-backed organic routing failure instead.
+5. **Repair-call receipt instrumentation** (evidence-only change): unstaffed
+   decisions drop `provider_attempts` and child-judge calls mint no
+   `model_receipts` rows, so a failed repair is invisible. Small fix, big
+   diagnostic value; spine-covered code, so a daytime change.
+6. **`function-naming-advisor` and `contractor-reuse-system-analyst`** were
+   minted into your roster overnight (both passed critic + security review;
+   both recorded verdict "safe" on the fixed runtime). Keep or cull.
+7. **openclaw/hermes**: run the verification packet on your boxes when ready.
+
+## 5. Still blocked, and whose hands it needs
+
+- **openclaw / hermes**: not installed here by your instruction; their
+  Installed/Live cells cannot move. Verification packet: see section 7.
+- **Rule 9**: cannot close while two hosts are out of reach by construction.
+
+## 6. Caveats
+
+- Any codex result produced tonight uses the authorized
+  `install --agent codex --verify-activation --autonomous` surface and carries
+  `trust_bypass_used: true`. Every such matrix cell is labeled bypass-derived
+  and none satisfies an attended-trust criterion.
+
+## 7. Branch and state
+
+- Branch: `claude/remote-control-14de96` (session worktree
+  `remote-control-7efcd5`). PR #275 merged to main as `c77c67a4`; the
+  follow-up docs increment (matrix candidate advance, evidence document,
+  capsule refresh, this report) merges as its own PR.
+- Nothing committed in the primary checkout; your WIP untouched. Nothing was
+  ever installed from unmerged code: `16f1e720` was pre-merge main content,
+  `2cd298158584` is post-merge main content, both from clean trees verified
+  tree-identical to main.
+- Matrix: candidate `f2f3ca88`, Installed 5/45 and Live 4/45 proven (all on
+  claude), every new layer citing the candidate evidence document. No
+  provisional cells exist — nothing was measured on unmerged code.
+- Child assignment content capture: **wired tonight as the final increment**
+  (PR #277) after the ledger reached a clean merged state — redacted through
+  `redact_content`, local store only, recorded only when
+  `observability.capture_content` is already true, and on the abstention and
+  staffed outcomes alike. **No capture flag was touched at any point** —
+  verified: `agency.yaml` still carries its Aug 11 18:55 mtime. The
+  `captured_task` key is absent from every decision written overnight because
+  the **wiring was not installed until the final build**, after all
+  measurements — *not* because the flag was off. See the section 2
+  retraction.
+- The capsule is 180 lines, current, and points at the true remaining
+  blockers: the child judge's merits-declines (instrument: capture wiring +
+  repair receipts) and the AR-253 hook-window edge.

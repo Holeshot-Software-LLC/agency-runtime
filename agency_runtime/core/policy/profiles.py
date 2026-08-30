@@ -48,12 +48,23 @@ POWER = InstallProfile(
     sync_schedule="manual",
 )
 
+YOLO = InstallProfile(
+    name="yolo",
+    network_enabled=True,
+    # Agency Runtime does not install a scheduler. Operators may invoke sync
+    # from their own scheduler; the package never promises a hidden job.
+    auto_sync=False,
+    auto_enable_new_agents=True,
+    sync_schedule=None,
+)
+
 DEFAULT_PROFILE = STANDARD
 
 PROFILES: dict[str, InstallProfile] = {
     LOCAL_ONLY.name: LOCAL_ONLY,
     STANDARD.name: STANDARD,
     POWER.name: POWER,
+    YOLO.name: YOLO,
 }
 
 

@@ -1,0 +1,125 @@
+---
+title: "Use learned embeddings only for additive workforce recall"
+status: accepted
+category: decisions
+created: 2026-08-24
+updated: 2026-08-25
+tags: [workforce, embeddings, retrieval, inference, privacy]
+related:
+  - docs/roadmap/issue-AR-266-dense-hybrid-workforce-recall.md
+  - docs/roadmap/issue-AR-286-configure-bounded-embedding-dimensions.md
+  - docs/roadmap/issue-AR-289-native-reranker-transports.md
+  - docs/roadmap/issue-AR-303-bound-full-roster-embedding-requests.md
+  - docs/roadmap/handoffs/issue-AR-266.md
+  - docs/decisions/0083-use-capability-indexed-recall-and-bounded-inference.md
+  - docs/decisions/0118-require-inference-owned-staffing.md
+  - docs/decisions/0121-gate-deterministic-recall-without-selection-authority.md
+  - docs/decisions/0163-resolve-contextual-turns-from-transcript-free-subjects.md
+  - docs/decisions/0171-separate-native-and-structured-reranker-transports.md
+  - docs/decisions/0175-batch-complete-embedding-input-sets.md
+  - SECURITY.md
+  - docs/THREAT_MODEL.md
+  - docs/worklog/README.md
+supersedes: []
+superseded_by: null
+id: ADR-0164
+type: decision
+deciders: [maintainers]
+---
+
+# ADR-0164: Use learned embeddings only for additive workforce recall
+
+## Context
+
+The workforce recruiter currently sees at most 24 typed candidates per work
+unit. That bound protects inference context but can hide a relevant specialist
+whose terminology does not overlap the typed requirement vocabulary. Sending
+every governed card to the recruiter recreates the prompt-size and spurious-gap
+failures that motivated bounded recall. The existing dependency-free sparse
+semantic selector does not provide learned semantic recall and is not on the
+active workforce route.
+
+Embeddings can improve recall, but their similarity scores are not staffing
+decisions, calibrated confidence, safety filters, or execution authority.
+Remote embeddings also create an additional provider-egress boundary, and the
+legacy Store table cannot prove which exact cards and model produced its rows.
+
+## Decision
+
+Use learned embeddings only as an additive candidate-recall lane. Preserve the
+existing typed candidates and their order, fuse lexical and dense discoveries
+through deterministic reciprocal-rank fusion, and pass the byte-bounded union
+to the existing inference recruiter. A separately configured recall-reranker
+profile may order only the complete offered discovery set: it cannot drop,
+invent, select, or hire a worker. The existing recruiter remains the sole
+staffing selection authority; the unchanged staffing verifier remains the
+final eligibility and safety veto.
+
+Require separately and explicitly mapped `workforce.recall.embedding` and
+`workforce.recall.reranker` routes. The former declares the `embeddings`
+capability and the latter declares `text`; neither inherits a generic default
+route. Provide `off`, `shadow`, and `additive` modes, with shadow as the initial
+default. Recall uses an independent fixed two-call evidence budget, so shadow
+cannot consume planner, recruiter, repair, or critic capacity. Provider
+failure or invalid evidence degrades to the existing typed behavior and cannot
+generate a hiring gap.
+
+ADR-0171 subsequently refines the reranker transport clause: the route may
+continue to declare structured `text` or explicitly declare a stage-scoped
+native `rerank` capability. All additive-authority and fallback constraints in
+this decision remain unchanged.
+
+ADR-0175 subsequently refines the fixed recall-call budget for a complete
+logical input set that exceeds the existing aggregate scalar bound. A cold
+catalog may use at most two ordered scalar-safe embedding calls before its one
+reranker call; a warm catalog retains one embedding plus one reranker. This is
+input batching, not vector slicing: the scalar limit, exact dimension checks,
+typed-only fallback, and prohibition on vector reshaping remain unchanged.
+
+Embedding profiles may request a provider-native output projection through a
+bounded `dimensions` value. Zero omits the request field. A nonzero value is
+valid only for an `embeddings` profile using Ollama, OpenAI-compatible, or
+LiteLLM transport, and the returned vectors must match it exactly. The requested
+dimension is part of catalog identity. A rejected, unsupported, stripped, or
+mismatched request degrades to typed-only recall; Agency never slices, pads, or
+otherwise reshapes vectors. Existing per-vector and aggregate scalar bounds
+remain unchanged.
+
+Embed only a versioned allowlist of positive governed card fields. Keep
+negative suitability, authority, host, platform, tool, audit, employment,
+composition, version, and hash data as exact filters or identity. Never embed
+raw prompts, instructions, prior messages, trace metadata, source URLs, audit
+findings, or stored outcomes. Current-turn queries may use the current request,
+typed unit fields, and the closed AR-265 subject projection, but no transcript
+or sticky specialist identity.
+
+At current scale, use exact cosine scan and a bounded process cache. Bind every
+cached catalog to the full roster digest, recruiter fingerprint, contract card
+hashes, projection version, provider, exact actual-model revision, dimensions,
+and normalization. A missing actual-model receipt is typed-only and cannot
+populate or reuse the cache. Do not reuse the legacy `agent_embeddings` table;
+persistence requires a future schema whose manifest enforces the same identity.
+
+## Consequences
+
+The recruiter can see semantically relevant specialists beyond the original
+24-card typed window without paying the full-roster prompt cost. Contextual
+questions are rerouted against the subject of the active work on every turn,
+while roster vectors are reused only under exact identity.
+
+Embedding availability becomes optional infrastructure with explicit egress,
+latency, cache, and evidence obligations. Shadow evaluation is required before
+additive mode may affect active detail cards. Dense scores are diagnostic
+source ranks only and must not be described as selection proof.
+
+## Alternatives
+
+Sending the complete roster to inference was rejected because it restores the
+context and spurious-gap failure. Selecting the nearest vector directly was
+rejected because it transfers staffing authority to an uncalibrated retrieval
+score. Reusing the sparse legacy selector was rejected because it duplicates
+lexical metadata matching rather than adding learned semantics. Bundling a
+local embedding runtime was rejected for the first slice because its model,
+licensing, platform, and Python-version burden is disproportionate. Reusing
+the legacy Store table was rejected because its rows lack sufficient identity
+and staleness controls.

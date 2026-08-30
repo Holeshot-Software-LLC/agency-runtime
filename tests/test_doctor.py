@@ -3,31 +3,55 @@
 from __future__ import annotations
 
 import os
+import sqlite3
 import tempfile
+import time
+from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
 
+from agency_runtime.core import doctor as doctor_module
 from agency_runtime.core.config import (
     AgencyConfig,
     JudgeConfig,
+    ProviderEntry,
     StoreConfig,
-    load_config,
     reset_config_cache,
 )
-from agency_runtime.core.doctor import run_doctor, DoctorReport
+from agency_runtime.core.doctor import (
+    CheckResult,
+    DoctorReport,
+    _validate_provider_entries,
+    format_report_human,
+    run_doctor,
+)
 from agency_runtime.core.policy.defaults import STARTER_ROSTER
+from agency_runtime.core.provider_validation import ProviderValidationResult
 from agency_runtime.core.store.sqlite import Store
+from tests.runtime_support import is_agency_product_environment_key
 
 
 @pytest.fixture(autouse=True)
-def _clean_env():
+def _clean_env(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
     for key in list(os.environ):
-        if key.startswith("AGENCY_") or key == "LITELLM_API_KEY":
-            os.environ.pop(key, None)
+        if is_agency_product_environment_key(key) or key == "LITELLM_API_KEY":
+            monkeypatch.delenv(key, raising=False)
+    monkeypatch.setattr(doctor_module, "inspect_host_installations", lambda **_kwargs: [])
+    monkeypatch.setattr(
+        doctor_module,
+        "_http_check",
+        lambda *_args, **_kwargs: (False, "offline test boundary"),
+    )
     reset_config_cache()
     yield
     reset_config_cache()
+
+
+def _activate_one_agent(store: Store) -> None:
+    """Satisfy doctor's non-empty count contract without seeding the full roster."""
+
+    store._activate_prevalidated_agent(dict(STARTER_ROSTER[0]))
 
 
 def test_doctor_returns_report():
@@ -35,20 +59,98 @@ def test_doctor_returns_report():
     with tempfile.TemporaryDirectory() as tmp:
         cfg = AgencyConfig(
             store=StoreConfig(db_path=f"{tmp}/test.db"),
-            judge=JudgeConfig(model="test", ollama_mode=False, base_url="http://127.0.0.1:1"),
+            judge=JudgeConfig(
+                model="test",
+                ollama_mode=False,
+                base_url="http://127.0.0.1:1",
+            ),
         )
-        # Seed roster
         store = Store(cfg.store.resolved_path())
-        for agent in STARTER_ROSTER:
-            store.activate_agent(dict(agent))
+        _activate_one_agent(store)
 
         report = run_doctor(cfg)
+
         assert isinstance(report, DoctorReport)
         assert len(report.checks) > 0
-        # DB checks should pass
-        check_names = [c.name for c in report.checks]
+        check_names = [check.name for check in report.checks]
         assert "db_integrity" in check_names
         assert "db_roster" in check_names
+
+
+def test_doctor_escapes_terminal_controls_in_names_and_messages() -> None:
+    report = DoctorReport(
+        [
+            CheckResult("provider_\x1b[31m", "warn", "model=\x9bhostile"),
+        ]
+    )
+
+    rendered = format_report_human(report)
+    payload = report.to_dict()
+
+    assert "\x1b" not in rendered
+    assert "\x9b" not in rendered
+    assert "\\u001b" in rendered
+    assert "\x1b" not in payload["checks"][0]["name"]
+
+
+def test_doctor_keeps_safe_endpoint_when_sentence_punctuation_follows_port() -> None:
+    report = DoctorReport(
+        [
+            CheckResult(
+                "judge_provider",
+                "fail",
+                "Ollama unreachable at http://127.0.0.1:11434: network error",
+            )
+        ]
+    )
+
+    message = report.to_dict()["checks"][0]["message"]
+
+    assert message == "Ollama unreachable at http://127.0.0.1:11434: network error"
+    assert "<invalid endpoint>" not in message
+
+
+@pytest.mark.parametrize(
+    ("provider_type", "header"),
+    [("openai-compatible", "Authorization"), ("anthropic", "X-api-key")],
+)
+def test_doctor_legacy_authenticated_probe_uses_redirect_refusing_opener(
+    provider_type: str,
+    header: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict[str, object] = {}
+
+    class Response:
+        status = 200
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args: object) -> None:
+            return None
+
+    def open_request(request, **kwargs):
+        captured["request"] = request
+        captured.update(kwargs)
+        return Response()
+
+    monkeypatch.setattr(doctor_module, "open_no_redirect", open_request)
+
+    ok, message = doctor_module._http_check_authed(
+        "https://provider.invalid/v1/models",
+        "secret",
+        timeout=1,
+        provider_type=provider_type,
+    )
+
+    assert ok is True
+    assert message == "HTTP 200"
+    assert captured["timeout"] == 1
+    assert captured["request"].headers[header] in {
+        "Bearer secret",
+        "secret",
+    }
 
 
 def test_doctor_detects_empty_roster():
@@ -58,25 +160,83 @@ def test_doctor_detects_empty_roster():
             store=StoreConfig(db_path=f"{tmp}/test.db"),
             judge=JudgeConfig(model="test", ollama_mode=False, base_url="http://127.0.0.1:1"),
         )
-        Store(cfg.store.resolved_path())  # create DB but no agents
+        Store(cfg.store.resolved_path())
 
         report = run_doctor(cfg)
-        roster_check = [c for c in report.checks if c.name == "db_roster"][0]
+        roster_check = next(c for c in report.checks if c.name == "db_roster")
         assert roster_check.status == "fail"
+
+
+def test_doctor_fails_when_the_store_is_newer_than_this_runtime():
+    """A store ahead of the runtime disables everything, so doctor must say so.
+
+    On 2026-08-14 this check reported ``Schema version: 46`` with a green tick
+    while the running launcher was 45 and refused that exact store. Every hook
+    on the machine failed open for over an hour, staffing nothing, and the one
+    diagnostic meant to catch it agreed that all was well.
+    """
+
+    from agency_runtime.core.store.schema import SCHEMA_VERSION
+
+    with tempfile.TemporaryDirectory() as tmp:
+        cfg = AgencyConfig(
+            store=StoreConfig(db_path=f"{tmp}/test.db"),
+            judge=JudgeConfig(model="test", ollama_mode=False, base_url="http://127.0.0.1:1"),
+        )
+        store = Store(cfg.store.resolved_path())
+        for agent in STARTER_ROSTER:
+            store._activate_prevalidated_agent(agent)
+        conn = sqlite3.connect(cfg.store.resolved_path())
+        try:
+            conn.execute("UPDATE schema_version SET version = ?", (SCHEMA_VERSION + 1,))
+            conn.commit()
+        finally:
+            conn.close()
+
+        report = run_doctor(cfg)
+
+    schema_check = next(c for c in report.checks if c.name == "db_schema")
+    assert schema_check.status == "fail"
+    assert str(SCHEMA_VERSION + 1) in schema_check.message
+    assert "Reinstall" in schema_check.message
+    assert report.exit_code == 1
+
+
+def test_doctor_warns_when_the_store_still_trails_this_runtime():
+    """The window before the first open is exactly when drift is preventable."""
+
+    from agency_runtime.core.store.schema import SCHEMA_VERSION
+
+    with tempfile.TemporaryDirectory() as tmp:
+        cfg = AgencyConfig(
+            store=StoreConfig(db_path=f"{tmp}/test.db"),
+            judge=JudgeConfig(model="test", ollama_mode=False, base_url="http://127.0.0.1:1"),
+        )
+        store = Store(cfg.store.resolved_path())
+        for agent in STARTER_ROSTER:
+            store._activate_prevalidated_agent(agent)
+        conn = sqlite3.connect(cfg.store.resolved_path())
+        try:
+            conn.execute("UPDATE schema_version SET version = ?", (SCHEMA_VERSION - 1,))
+            conn.commit()
+        finally:
+            conn.close()
+
+        report = run_doctor(cfg)
+
+    schema_check = next(c for c in report.checks if c.name == "db_schema")
+    assert schema_check.status == "warn"
+    assert str(SCHEMA_VERSION - 1) in schema_check.message
 
 
 def test_doctor_exit_codes():
     """Exit code is 0 (healthy), 1 (failed), or 2 (degraded)."""
+    from agency_runtime.core.doctor import CheckResult
+
     report = DoctorReport()
     assert report.exit_code == 0
 
-    report.checks.append(type(report.checks[0] if report.checks else None)(
-        name="test", status="warn", message="test"
-    )) if False else None
-
-    # Build manually
     report2 = DoctorReport()
-    from agency_runtime.core.doctor import CheckResult
     report2.checks = [
         CheckResult("ok", "pass", "fine"),
         CheckResult("maybe", "warn", "watch"),
@@ -98,8 +258,7 @@ def test_doctor_json_serializable():
             judge=JudgeConfig(model="test", ollama_mode=False, base_url="http://127.0.0.1:1"),
         )
         store = Store(cfg.store.resolved_path())
-        for agent in STARTER_ROSTER:
-            store.activate_agent(dict(agent))
+        _activate_one_agent(store)
 
         report = run_doctor(cfg)
         data = report.to_dict()
@@ -107,3 +266,113 @@ def test_doctor_json_serializable():
         assert "exit_code" in data
         assert "checks" in data
         assert isinstance(data["checks"], list)
+
+
+def test_doctor_distinguishes_host_discovery_from_native_registration(monkeypatch):
+    """A discovered host is not reported as a working Agency integration."""
+    with tempfile.TemporaryDirectory() as tmp:
+        cfg = AgencyConfig(
+            store=StoreConfig(db_path=f"{tmp}/test.db"),
+            judge=JudgeConfig(model="test", ollama_mode=False, base_url="http://127.0.0.1:1"),
+        )
+        store = Store(cfg.store.resolved_path())
+        _activate_one_agent(store)
+
+        monkeypatch.setattr(
+            "agency_runtime.core.doctor.inspect_host_installations",
+            lambda **_kwargs: [
+                {
+                    "host": "openclaw",
+                    "discovered": True,
+                    "registered": False,
+                    "enabled": None,
+                    "loaded": None,
+                    "stale_config": False,
+                    "maturity": "host-discovered",
+                }
+            ],
+        )
+        report = run_doctor(cfg)
+        openclaw_check = next(c for c in report.checks if c.name == "adapter_openclaw")
+        assert openclaw_check.status == "warn"
+        assert "not natively registered" in openclaw_check.message
+
+
+def test_doctor_accepts_yolo_profile():
+    with tempfile.TemporaryDirectory() as tmp:
+        cfg = AgencyConfig(
+            store=StoreConfig(db_path=f"{tmp}/test.db"),
+            judge=JudgeConfig(model="test", ollama_mode=False, base_url="http://127.0.0.1:1"),
+            profile="yolo",
+        )
+        store = Store(cfg.store.resolved_path())
+        _activate_one_agent(store)
+
+        report = run_doctor(cfg)
+        profile_check = next(c for c in report.checks if c.name == "config_profile")
+    assert profile_check.status == "pass"
+
+
+def test_provider_validation_is_parallel_and_preserves_order(monkeypatch):
+    providers = tuple(
+        ProviderEntry(
+            name=f"provider-{index}",
+            type="ollama",
+            model="model",
+            base_url="http://127.0.0.1:11434",
+        )
+        for index in range(8)
+    )
+
+    def validate(provider, **_kwargs):
+        time.sleep(0.04)
+        return ProviderValidationResult(
+            provider.name,
+            provider.type,
+            True,
+            True,
+        )
+
+    monkeypatch.setattr("agency_runtime.core.doctor.validate_provider", validate)
+    started = time.monotonic()
+    results = _validate_provider_entries(providers)
+
+    assert time.monotonic() - started < 0.2
+    assert [result.name for result in results] == [f"provider-{index}" for index in range(8)]
+
+
+def test_smoke_all_exercises_generated_host_plugins_with_fresh_roster(
+    private_installer_launcher,
+):
+    """Smoke --all validates every plugin from its own isolated fresh Store."""
+    from agency_runtime.core.smoke import run_smoke
+
+    report = run_smoke(all_hosts=True)
+
+    assert report["passed"] is True, [
+        check for check in report["checks"] if check["status"] != "pass"
+    ]
+    check_names = {check["name"] for check in report["checks"]}
+    assert {"plugin_hermes", "plugin_openclaw", "plugin_codex", "plugin_claude"} <= check_names
+    roster_check = next(
+        check for check in report["checks"] if check["name"] == "routing_roster_available"
+    )
+    assert roster_check["detail"]["source"] == "starter_roster"
+
+
+def test_openclaw_smoke_uses_static_validation_when_node_is_unavailable(
+    monkeypatch, tmp_path, private_installer_launcher
+):
+    from agency_runtime.core import smoke
+    from agency_runtime.core.installer import install_agent_adapter
+
+    (tmp_path / ".openclaw").mkdir()
+    installed = install_agent_adapter("openclaw", home_dir=tmp_path)
+    assert installed["ok"] is True
+
+    monkeypatch.delenv("AGENCY_CI_NODE", raising=False)
+    monkeypatch.setattr(smoke.shutil, "which", lambda _name: None)
+    detail = smoke._smoke_openclaw_plugin("openclaw", Path(installed["plugin_path"]))
+
+    assert detail["format"] == "openclaw-js"
+    assert detail["syntax_check"] == "skipped: node unavailable"
