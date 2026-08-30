@@ -1265,7 +1265,27 @@ def test_restricted_spawn_input_admits_hook_decrypted_canary_plaintext() -> None
     assert admit({**base, "message": CODEX_ACTIVATION_CANARY_WORK_UNIT}) is True
     assert admit({**base, "message": CODEX_ACTIVATION_CANARY_WORK_UNIT + " "}) is False
     assert admit({**base, "message": "review this repository please"}) is False
-    assert admit({**base, "message": CODEX_ACTIVATION_CANARY_WORK_UNIT, "extra": "x"}) is False
+    # ADR-0193 bounded additive tolerance: a few lowercase unknown keys are
+    # admitted around exact known values; anything beyond the bound is not.
+    assert admit({**base, "message": CODEX_ACTIVATION_CANARY_WORK_UNIT, "extra": "x"}) is True
+    assert (
+        admit(
+            {
+                **base,
+                "message": CODEX_ACTIVATION_CANARY_WORK_UNIT,
+                "a_one": 1,
+                "b_two": 2,
+                "c_three": 3,
+                "d_four": 4,
+                "e_five": 5,
+            }
+        )
+        is False
+    )
+    assert admit({**base, "message": CODEX_ACTIVATION_CANARY_WORK_UNIT, "BadKey": "x"}) is False
+    assert (
+        admit({**base, "message": CODEX_ACTIVATION_CANARY_WORK_UNIT, "fork_turns": "all"}) is False
+    )
 
 
 def test_pre_tool_leaves_recognized_canary_spawn_to_restricted_flow(
@@ -1367,3 +1387,90 @@ def test_codex_stop_join_staffs_the_canary_child_when_no_route_exists(
 
     bridge._handle_codex_subagent_stop(payload)
     assert staffed == [child_id]
+
+
+def test_restricted_stop_staffing_scopes_candidates_to_the_parent_route(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # ADR-0194: the delegated canary unit inherits the parent's proven team;
+    # the child judge still infers, but only over the dispatched specialists.
+    captured: dict[str, Any] = {}
+
+    def fake_staff(store: Any, **kwargs: Any) -> Any:
+        captured.update(kwargs)
+        raise RuntimeError("stop after capture")
+
+    monkeypatch.setattr(
+        "agency_runtime.core.native_child_staffing.staff_native_child",
+        fake_staff,
+    )
+    bridge = hooks.HookBridge(  # type: ignore[arg-type]
+        "codex",
+        store=object(),
+        _master={"enabled": True},
+    )
+    from agency_runtime.core.native_child_activation import NativeChildRunIdentity
+
+    identity = NativeChildRunIdentity(
+        worker_kind="generic-worker",
+        worker_id="01a04f93-7d59-75c1-a813-c3479e11cc16",
+        native_run_id="codex-agent:01a04f93-7d59-75c1-a813-c3479e11cc16",
+    )
+    context = bridge._staff_restricted_codex_activation_child(
+        session_id="01a04f92-e63c-76a2-9147-ee0636137875",
+        trace_id="trace-1",
+        identity=identity,
+    )
+
+    assert context == ""
+    assert captured.get("team_scope") == ("code-reviewer",)
+    assert captured.get("binding_kind") == "child_id"
+
+
+def test_pre_tool_spawn_gate_records_content_free_census(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # The 2026-08-30 live isolation showed the spawn gate silently missing
+    # while PostToolUse matched; the sink census makes the gate observable.
+    _restricted_env(monkeypatch)
+    sink = tmp_path / "agency-hook-join-diagnostics.jsonl"
+    monkeypatch.setenv("AGENCY_CODEX_HOOK_EVENT_DIAGNOSTICS", "1")
+    monkeypatch.setenv("AGENCY_CODEX_HOOK_DIAGNOSTICS_PATH", str(sink))
+    monkeypatch.setattr(
+        hooks.HookBridge,
+        "_restricted_codex_activation_parent_scope",
+        lambda self, _payload: None,
+    )
+    monkeypatch.setattr(
+        hooks.HookBridge,
+        "_record_native_child_unstaffed",
+        lambda self, **_kwargs: None,
+    )
+    bridge = hooks.HookBridge(  # type: ignore[arg-type]
+        "codex",
+        store=object(),
+        _master={"enabled": True},
+    )
+
+    bridge._handle_native_child_pre_tool_use(
+        {
+            "hook_event_name": "PreToolUse",
+            "tool_name": "functions.collaboration.spawn_agent",
+            "tool_input": {
+                "agent_type": "Code Reviewer",
+                "fork_turns": "none",
+                "task_name": "code_reviewer",
+                "message": CODEX_ACTIVATION_CANARY_WORK_UNIT,
+                "surprise_key": "ignored",
+            },
+        }
+    )
+
+    lines = [json.loads(line) for line in sink.read_text(encoding="ascii").splitlines()]
+    spawn_lines = [line for line in lines if line["event"] == "PreToolUseSpawn"]
+    assert len(spawn_lines) == 1
+    assert spawn_lines[0]["refusal"] == "spawn_scope_unmatched"
+    assert spawn_lines[0]["joined"] is False
+    assert spawn_lines[0]["agent_type_admitted"] is True
+    assert "surprise_key" in spawn_lines[0]["fields"]

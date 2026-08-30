@@ -870,6 +870,7 @@ def staff_native_child(  # noqa: C901 - one ordered fail-open native-child bound
     ttl_seconds: int = NATIVE_CHILD_STAFFING_TTL_SECONDS,
     delivery_validator: Callable[[str], bool] | None = None,
     final_delivery_validator: Callable[[], bool] | None = None,
+    team_scope: tuple[str, ...] | None = None,
 ) -> NativeChildStaffingResult:
     """Return one exact inference-selected v6 team or an unstaffed diagnostic.
 
@@ -1011,6 +1012,13 @@ def staff_native_child(  # noqa: C901 - one ordered fail-open native-child bound
             capability_status=resolved_capability_status,
         )
         eligible_catalog = list(eligibility.eligible)
+        if team_scope is not None:
+            # A delegated unit dispatched under an inference-owned parent
+            # route inherits that route's team: the child judge still infers
+            # (or abstains) over real candidates, but only the parent's
+            # dispatched specialists are eligible (ADR-0194).
+            scoped = frozenset(team_scope)
+            eligible_catalog = [item for item in eligible_catalog if agent_identity(item) in scoped]
         context_fingerprint = _context_fingerprint(
             host=normalized_host,
             platform=normalized_platform,

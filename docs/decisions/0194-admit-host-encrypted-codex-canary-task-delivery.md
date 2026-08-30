@@ -54,7 +54,14 @@ host-encrypted (ADR-0193 dispatch, 0.151 and newer):
 2. The child-bound canary staffing decision moves to the first hook that
    still carries the real child UUID: the `SubagentStop` join (artifact-
    anchored through the ADR-0193 parser). Staffing, promotion of the pending
-   synthetic dispatch, and delivery collection run there.
+   synthetic dispatch, and delivery collection run there. The delegated unit
+   inherits the parent's proven route: the child judge still runs a real
+   inference (and may abstain), but its eligible candidates are scoped to the
+   parent's dispatched team, because the canary contract already requires the
+   child cards to equal the parent route and an open-pool re-sample against a
+   fixed acceptance is a coin flip, not a decision. The spawn recognizer
+   carries ADR-0193's bounded additive key tolerance, and the diagnostics
+   sink records the spawn-gate and stop-staffing outcomes.
 3. Child delivery verification admits a host-encrypted grade: the child
    artifact must carry exactly one pre-speech `NEW_TASK` envelope whose
    ciphertext byte-equals the `message` of the sole attested parent spawn

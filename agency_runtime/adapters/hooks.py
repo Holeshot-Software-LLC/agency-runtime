@@ -1290,9 +1290,16 @@ class HookBridge:
         if not isinstance(task, str) or not task:
             raise HookInputError(f"{tool_name} tool_input.{task_field} is required")
         if self.host == "codex":
-            if self._restricted_codex_activation_parent_scope(
-                payload
-            ) is not None and self._restricted_codex_spawn_input(args):
+            spawn_scope_matched = (
+                self._restricted_codex_activation_parent_scope(payload) is not None
+            )
+            spawn_input_matched = self._restricted_codex_spawn_input(args)
+            self._emit_restricted_spawn_diagnostic(
+                args,
+                scope_matched=spawn_scope_matched,
+                input_matched=spawn_input_matched,
+            )
+            if spawn_scope_matched and spawn_input_matched:
                 # The proven restricted canary parent's one recognized spawn
                 # belongs to the restricted flow on every admitted contract:
                 # 0.150 delivers it opaque and 0.151 hands the hook the
@@ -1414,6 +1421,54 @@ class HookBridge:
                     "joined": joined,
                     "agent_type_admitted": payload.get("agent_type")
                     in CODEX_ACTIVATION_CANARY_NATIVE_AGENT_TYPES,
+                },
+                ensure_ascii=True,
+            )
+            flags = os.O_WRONLY | os.O_CREAT | os.O_APPEND
+            flags |= getattr(os, "O_NOFOLLOW", 0)
+            descriptor = os.open(sink, flags, 0o600)
+            try:
+                if os.fstat(descriptor).st_size <= MAX_CODEX_HOOK_JOIN_DIAGNOSTIC_BYTES:
+                    os.write(descriptor, entry.encode("ascii") + b"\n")
+            finally:
+                os.close(descriptor)
+
+    def _emit_restricted_spawn_diagnostic(
+        self,
+        args: dict[str, Any],
+        *,
+        scope_matched: bool,
+        input_matched: bool,
+    ) -> None:
+        """Record one content-free PreToolUse spawn-gate outcome to the sink.
+
+        The 2026-08-30 live isolation showed the spawn gate silently missing
+        while PostToolUse recognition matched; the census of tool-input field
+        names plus the two gate booleans makes the divergence observable
+        without retaining any payload content (AR-334, ADR-0194).
+        """
+
+        with suppress(Exception):
+            from agency_runtime.core.codex_activation_verification import (
+                MAX_CODEX_HOOK_JOIN_DIAGNOSTIC_BYTES,
+                codex_hook_join_diagnostics_path,
+            )
+
+            sink = codex_hook_join_diagnostics_path(os.environ)
+            if not sink:
+                return
+            refusal = ""
+            if not scope_matched:
+                refusal = "spawn_scope_unmatched"
+            elif not input_matched:
+                refusal = "spawn_input_unmatched"
+            entry = json.dumps(
+                {
+                    "event": "PreToolUseSpawn",
+                    "fields": sorted(str(name) for name in args)[:32],
+                    "refusal": refusal,
+                    "joined": scope_matched and input_matched,
+                    "agent_type_admitted": input_matched,
                 },
                 ensure_ascii=True,
             )
@@ -1816,6 +1871,7 @@ class HookBridge:
                 launch_id=identity.worker_id,
                 binding_kind="child_id",
                 binding_id=identity.worker_id,
+                team_scope=("code-reviewer",),
                 install_identity=current_runtime_managed_host_install_identity("codex"),
                 install_identity_reader=current_runtime_managed_host_install_identity,
                 maximum_delivery_bytes=MAX_CONTEXT_CHARS,
@@ -1880,11 +1936,18 @@ class HookBridge:
         )
 
         args = _dict_or_empty(tool_input)
+        known = {"agent_type", "fork_turns", "message", "task_name"}
+        extras = frozenset(args) - known
         legacy = set(args) == {"fork_turns", "message", "task_name"}
-        explicit = set(args) == {"agent_type", "fork_turns", "message", "task_name"}
+        # ADR-0193's bounded additive tolerance: an admitted newer release may
+        # surround the exact known fields with a few unknown additive keys,
+        # but every known field must still hold its exact proven value.
+        explicit = "agent_type" in args and "message" in args and "task_name" in args
         message = args.get("message")
         return bool(
             (legacy or explicit)
+            and len(extras) <= 4
+            and all(re.fullmatch(r"[a-z_]{1,64}", name) for name in extras)
             and (legacy or args.get("agent_type") == CODEX_ACTIVATION_CANARY_NATIVE_AGENT_TYPE)
             and args.get("fork_turns") == "none"
             and args.get("task_name") == "code_reviewer"
@@ -1999,10 +2062,17 @@ class HookBridge:
                     # join is the first hook carrying the real child UUID; the
                     # child-bound canary staffing decision is created here and
                     # the pending synthetic dispatch is promoted (ADR-0194).
-                    self._staff_restricted_codex_activation_child(
+                    staffed_context = self._staff_restricted_codex_activation_child(
                         session_id=session_id,
                         trace_id=trace_id,
                         identity=identity,
+                    )
+                    self._emit_restricted_join_diagnostic(
+                        {
+                            "hook_event_name": "SubagentStopStaffing",
+                            "agent_type": payload.get("agent_type"),
+                        },
+                        joined=bool(staffed_context),
                     )
             except Exception:
                 logger.debug(
