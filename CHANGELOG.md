@@ -229,6 +229,12 @@ changes rather than duplicating every commit.
   parent's attested spawn payload and the child's sole pre-speech
   `NEW_TASK` ciphertext, bound by the same one-use atomic consumer as the
   v6 plaintext path (AR-334, ADR-0194).
+- The restricted canary child dispatch inherits the parent's proven route:
+  the child judge infers over candidates scoped to the dispatched team
+  instead of re-sampling the open pool against the fixed code-reviewer
+  acceptance, the canary spawn recognizer carries bounded additive key
+  tolerance, and the diagnostics sink records the PreToolUse spawn-gate
+  and stop-staffing outcomes (AR-334, ADR-0194).
 - Host-canary child launches now run under a pinned private `umask 077` on
   POSIX hosts, so strict child-artifact trust no longer depends on the
   invoking shell's umask (AR-332).

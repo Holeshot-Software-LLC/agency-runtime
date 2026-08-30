@@ -602,12 +602,8 @@ class _NominationSemantics:""",
             "failure route."
         ),
         source_path="agency_runtime/adapters/hooks.py",
-        before="""            if self._restricted_codex_activation_parent_scope(
-                payload
-            ) is not None and self._restricted_codex_spawn_input(args):""",
-        after="""            if False and self._restricted_codex_activation_parent_scope(
-                payload
-            ) is not None and self._restricted_codex_spawn_input(args):""",
+        before="""            if spawn_scope_matched and spawn_input_matched:""",
+        after="""            if False and spawn_scope_matched and spawn_input_matched:""",
         test_node=(
             "tests/test_canary_activation_snapshot.py::"
             "test_restricted_codex_opaque_spawn_preserves_the_proven_parent_route"
