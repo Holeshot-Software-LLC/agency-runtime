@@ -39,7 +39,13 @@ from agency_runtime.core.workforce.staffing_verifier import StaffingContext
 
 
 def _eval_staffing_context(args: argparse.Namespace, generation: int) -> StaffingContext:
-    """Build one canonical fail-closed capability context for an eval case."""
+    """Build one canonical fail-closed capability context for an eval case.
+
+    The workforce selection eval tests inference-driven team composition, whose
+    delivery model is native delegation. ``native-delegation`` is therefore a
+    baseline capability for every workforce eval case, independent of any
+    additional ``--available-tool`` overrides the caller supplies.
+    """
 
     available, unknown = canonicalize_tool_capabilities(args.available_tool)
     if unknown:
@@ -47,7 +53,7 @@ def _eval_staffing_context(args: argparse.Namespace, generation: int) -> Staffin
     return StaffingContext(
         args.host,
         args.platform,
-        frozenset(available),
+        frozenset(available) | {"native-delegation"},
         generation,
     )
 
