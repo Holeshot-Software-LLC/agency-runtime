@@ -1508,6 +1508,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `523c31fc` | 2026-08-31 | docs(ar341): rule out native plugin registration as the missing piece | null | null |
 | `c8eaa7af` | 2026-08-31 | Merge pull request #389 from Holeshot-Software-LLC/claude/ar341-native-plugin-datapoint | null | null |
 | `b892bb4d` | 2026-08-31 | fix(hermes): raise the host bounded-hook budget above the bridge timeout | null | null |
+| `0aa495f5` | 2026-08-31 | Merge pull request #390 from Holeshot-Software-LLC/claude/ar341-hermes-hook-budget | null | null |
+| `122ec970` | 2026-08-31 | docs(ar341): record the hook-budget resolution and the compliance residual | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
