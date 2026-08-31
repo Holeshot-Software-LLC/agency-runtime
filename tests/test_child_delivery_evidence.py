@@ -376,6 +376,117 @@ def test_codex_forward_release_tolerates_bounded_additive_metadata(
     )
 
 
+def _codex_role_less_meta(*, cwd: Path, cli_version: str) -> dict[str, object]:
+    """Model an account-gated host whose spawn tool exposes no agent_type.
+
+    Mirrors the retained real 2026-08-31 AR-338 Windows children on codex-cli
+    0.150.1 and 0.151.0: the exact role-less 0.149.1 metadata shape (no
+    top-level ``agent_role``, nested spawn role null) under a newer version
+    string (ADR-0195).
+    """
+
+    meta = copy.deepcopy(_codex_v1491_meta(cwd=cwd))
+    payload = meta["payload"]
+    assert isinstance(payload, dict)
+    payload["cli_version"] = cli_version
+    return meta
+
+
+@pytest.mark.parametrize("cli_version", ["0.150.1", "0.151.0", "0.152.3"])
+def test_codex_role_less_child_metadata_resolves_on_gated_accounts(
+    tmp_path: Path,
+    codex_v1491_artifact_trust: None,
+    cli_version: str,
+) -> None:
+    root = tmp_path / "sessions"
+    cwd = tmp_path / "canary-work"
+    cwd.mkdir()
+    artifact = _codex_v1491_artifact(
+        root,
+        cwd=cwd,
+        meta=_codex_role_less_meta(cwd=cwd, cli_version=cli_version),
+    )
+
+    assert (
+        codex_v1491_child_parent_session(
+            artifact,
+            child_id=CODEX_V1491_CHILD_SESSION,
+            cwd=cwd,
+            root=root,
+        )
+        == CODEX_V1491_PARENT_SESSION
+    )
+
+
+def test_codex_role_less_forward_release_keeps_bounded_additive_tolerance(
+    tmp_path: Path,
+    codex_v1491_artifact_trust: None,
+) -> None:
+    root = tmp_path / "sessions"
+    cwd = tmp_path / "canary-work"
+    cwd.mkdir()
+    meta = _codex_role_less_meta(cwd=cwd, cli_version="0.152.3")
+    payload = meta["payload"]
+    assert isinstance(payload, dict)
+    payload["collaboration_mode_kind"] = "default"
+    artifact = _codex_v1491_artifact(root, cwd=cwd, meta=meta)
+
+    assert (
+        codex_v1491_child_parent_session(
+            artifact,
+            child_id=CODEX_V1491_CHILD_SESSION,
+            cwd=cwd,
+            root=root,
+        )
+        == CODEX_V1491_PARENT_SESSION
+    )
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    ["present_null_top_level_role", "stringly_spawn_role", "unknown_key_flood"],
+)
+def test_codex_role_less_variant_stays_fail_closed_on_drift(
+    tmp_path: Path,
+    codex_v1491_artifact_trust: None,
+    mutation: str,
+) -> None:
+    """ADR-0195 admits only the consistent role-less pair, never a hybrid."""
+
+    root = tmp_path / "sessions"
+    cwd = tmp_path / "canary-work"
+    cwd.mkdir()
+    meta = _codex_role_less_meta(cwd=cwd, cli_version="0.151.0")
+    payload = meta["payload"]
+    assert isinstance(payload, dict)
+    source = payload["source"]
+    assert isinstance(source, dict)
+    subagent = source["subagent"]
+    assert isinstance(subagent, dict)
+    spawn = subagent["thread_spawn"]
+    assert isinstance(spawn, dict)
+    if mutation == "present_null_top_level_role":
+        payload["agent_role"] = None
+    elif mutation == "stringly_spawn_role":
+        spawn["agent_role"] = "Code Reviewer"
+    elif mutation == "unknown_key_flood":
+        for index in range(9):
+            payload[f"additive_key_{index}"] = index
+    else:  # pragma: no cover - the parameter list is closed above
+        raise AssertionError(f"unhandled mutation: {mutation}")
+    artifact = _codex_v1491_artifact(root, cwd=cwd, meta=meta)
+
+    assert (
+        codex_v1491_child_parent_session(
+            artifact,
+            child_id=CODEX_V1491_CHILD_SESSION,
+            cwd=cwd,
+            root=root,
+        )
+        == ""
+    )
+
+
 @pytest.mark.parametrize(
     "mutation",
     [

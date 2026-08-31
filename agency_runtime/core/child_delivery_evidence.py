@@ -872,6 +872,14 @@ def _codex_v1491_parent_from_record(  # noqa: C901 - exact closed host schema
         expected_payload_keys = _CODEX_V1501_PAYLOAD_KEYS
         expected_agent_role = _CODEX_V1501_CANARY_AGENT_ROLE
         payload_keys_admitted = set(payload) == expected_payload_keys
+        if set(payload) == _CODEX_V1491_PAYLOAD_KEYS:
+            # ADR-0195: an account-gated host exposes no spawn agent_type,
+            # so the child is born with the exact role-less 0.149.1 metadata
+            # shape under a newer version string. The pair must stay
+            # consistent - the nested spawn role check below then requires
+            # None, so a role on either side alone still fails closed.
+            payload_keys_admitted = True
+            expected_agent_role = None
     elif (
         forward := _codex_forward_cli_version(cli_version)
     ) is not None and forward > _CODEX_FORWARD_BASELINE_CLI_VERSION:
@@ -888,6 +896,18 @@ def _codex_v1491_parent_from_record(  # noqa: C901 - exact closed host schema
             and len(unknown_keys) <= _CODEX_FORWARD_UNKNOWN_PAYLOAD_KEY_CEILING
             and not (unknown_keys & _CODEX_FORWARD_DISALLOWED_PAYLOAD_KEYS)
         )
+        if not payload_keys_admitted and "agent_role" not in payload:
+            # ADR-0195 role-less variant under the same bounded additive
+            # tolerance: the exact 0.149.1 key set, never a present-but-null
+            # top-level role.
+            unknown_keys = set(payload) - _CODEX_V1491_PAYLOAD_KEYS
+            if (
+                set(payload) >= _CODEX_V1491_PAYLOAD_KEYS
+                and len(unknown_keys) <= _CODEX_FORWARD_UNKNOWN_PAYLOAD_KEY_CEILING
+                and not (unknown_keys & _CODEX_FORWARD_DISALLOWED_PAYLOAD_KEYS)
+            ):
+                payload_keys_admitted = True
+                expected_agent_role = None
     else:
         return ""
     if (

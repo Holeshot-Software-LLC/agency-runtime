@@ -797,17 +797,28 @@ def _codex_rollout_events(
         legacy_shape = set(spawn) == {"agent_path", "depth", "parent_thread_id"}
         role = spawn.get("agent_role")
         nickname = spawn.get("agent_nickname")
+        modern_spawn_keys = {
+            "agent_nickname",
+            "agent_path",
+            "agent_role",
+            "depth",
+            "parent_thread_id",
+        }
         explicit_shape = (
-            set(spawn)
-            == {
-                "agent_nickname",
-                "agent_path",
-                "agent_role",
-                "depth",
-                "parent_thread_id",
-            }
+            set(spawn) == modern_spawn_keys
             and isinstance(role, str)
             and role == expected_agent_role
+            and isinstance(nickname, str)
+            and 0 < len(nickname) <= 128
+        )
+        # ADR-0195: an account-gated host exposes no spawn agent_type, so a
+        # role-less parent spawn call produces the modern five-key child
+        # spawn with a null role. Admitted only when the parent's attested
+        # call was equally role-less (expected_agent_role is None); a role on
+        # either side alone still fails closed.
+        role_less_shape = (
+            set(spawn) == modern_spawn_keys
+            and role is None
             and isinstance(nickname, str)
             and 0 < len(nickname) <= 128
         )
@@ -817,7 +828,7 @@ def _codex_rollout_events(
             or spawn.get("depth") != 1
             or spawn.get("agent_path") != expected_agent_path
             or not (
-                (expected_agent_role is None and legacy_shape)
+                (expected_agent_role is None and (legacy_shape or role_less_shape))
                 or (expected_agent_role is not None and explicit_shape)
             )
         ):

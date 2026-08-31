@@ -147,6 +147,7 @@ Status meanings:
 | [ADR-0179](0179-admit-exact-codex-canary-delivery-at-subagent-start.md) | Admit exact Codex canary delivery at SubagentStart | Accepted |
 | [ADR-0193](0193-admit-newer-codex-releases-under-the-newest-proven-child-contract.md) | Admit newer Codex releases under the newest proven child contract | Accepted |
 | [ADR-0194](0194-admit-host-encrypted-codex-canary-task-delivery.md) | Admit host-encrypted Codex canary task delivery | Accepted |
+| [ADR-0195](0195-admit-role-null-codex-canary-child-lineage.md) | Admit role-null Codex canary child lineage under the ciphertext anchor | Accepted |
 | [ADR-0182](0182-bound-codex-activation-child-wait.md) | Bound the Codex activation child wait above observed latency | Superseded |
 | [ADR-0183](0183-honor-pinned-canary-judge-timeout.md) | Honor the pinned canary judge profile timeout | Accepted |
 | [ADR-0184](0184-bound-codex-wait-to-full-child-staffing.md) | Bound the Codex wait to the full child staffing path | Accepted |
