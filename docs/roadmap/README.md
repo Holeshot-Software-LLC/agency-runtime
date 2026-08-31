@@ -350,7 +350,8 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-334` | [Support Codex 0.151 collaboration and hook contract](issue-AR-334-support-codex-0151-collaboration-and-hook-contract.md) | done | p0 | host-integrations | [#349](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/349) |
 | `AR-335` | [Make content-invalid completions reach the different-provider fallback](issue-AR-335-make-content-invalid-completions-reach-fallback.md) | open | p0 | reliability | [#350](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/350) |
 | `AR-336` | [Requalify the recruiter route for ordinary tasks](issue-AR-336-requalify-the-recruiter-route-for-ordinary-tasks.md) | open | p0 | reliability | [#353](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/353) |
-| `AR-337` | [Run the harness canary battery on any host version change](issue-AR-337-run-harness-battery-on-version-change.md) | open | p1 | reliability | [#362](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/362) |
+| `AR-337` | [Run the harness canary battery on any host version change](issue-AR-337-run-harness-battery-on-version-change.md) | in_progress | p1 | reliability | [#362](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/362) |
+| `AR-338` | [Verify the Windows harness set (codex, claude, zcode)](issue-AR-338-verify-windows-harness-set.md) | open | p1 | host-integrations | [#368](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/368) |
 
 ## Traceability
 
