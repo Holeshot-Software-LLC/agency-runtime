@@ -910,7 +910,27 @@ def test_safe_claude_backend_collects_host_artifact_before_home_cleanup(
     )
 
     def runner(argv: list[str], **kwargs: object) -> BoundedProcessResult:
-        assert "--tools=Agent" in argv
+        if argv[1:2] == ["plugin"]:
+            # The AR-338 staging pair runs through the CLI's own plugin
+            # machinery before the -p invocation.
+            staging_environment = kwargs["env"]
+            assert isinstance(staging_environment, dict)
+            if argv[2:3] == ["install"]:
+                state = Path(staging_environment["CLAUDE_CONFIG_DIR"]) / "plugins"
+                state.mkdir(parents=True, exist_ok=True)
+                (state / "installed_plugins.json").write_text(
+                    json.dumps(
+                        {
+                            "version": 2,
+                            "plugins": {"agency-preflight@agency-runtime": [{"scope": "user"}]},
+                        }
+                    ),
+                    encoding="utf-8",
+                )
+            return BoundedProcessResult(0, "staged", "")
+        if "--tools=Agent" not in argv:
+            # The AR-338 warm-up turn: a plain -p session with no tools.
+            return BoundedProcessResult(0, json.dumps({"result": "ok"}), "")
         assert "--no-session-persistence" not in argv
         environment = kwargs["env"]
         assert isinstance(environment, dict)
@@ -1362,7 +1382,25 @@ def test_claude_canary_loads_managed_plugin_without_safe_mode_or_profile_setting
         assert (isolated / ".credentials.json").read_text(encoding="utf-8") == json.dumps(
             {"token": secret}
         )
+        # The isolated home never receives the operator's own settings; plugin
+        # activation is staged through the CLI's own plugin machinery because
+        # --plugin-dir stopped activating hooks on 2.1.250 (AR-338).
         assert not (isolated / "settings.json").exists()
+        if argv[1:3] == ["plugin", "marketplace"]:
+            return BoundedProcessResult(0, "marketplace added", "")
+        if argv[1:3] == ["plugin", "install"]:
+            state = isolated / "plugins"
+            state.mkdir(parents=True, exist_ok=True)
+            (state / "installed_plugins.json").write_text(
+                json.dumps(
+                    {
+                        "version": 2,
+                        "plugins": {"agency-preflight@agency-runtime": [{"scope": "user"}]},
+                    }
+                ),
+                encoding="utf-8",
+            )
+            return BoundedProcessResult(0, "plugin installed", "")
         return BoundedProcessResult(
             0,
             json.dumps({"result": _valid_header()}),
@@ -1395,24 +1433,35 @@ def test_claude_canary_loads_managed_plugin_without_safe_mode_or_profile_setting
     assert result["profile_scope"] == "isolated-profile"
     assert result["isolated_plugin"] == {
         "load_requested": True,
-        "registered": None,
-        "enabled": None,
+        "registered": True,
+        "enabled": True,
     }
-    argv = calls[0]["argv"]
+    assert calls[0]["argv"][1:] == ["plugin", "marketplace", "add", str(marketplace)]
+    assert calls[1]["argv"][1:] == [
+        "plugin",
+        "install",
+        "agency-preflight@agency-runtime",
+    ]
+    # The bounded warm-up makes the canary turn the home's second session,
+    # where a freshly installed plugin's prompt hooks actually fire (AR-338).
+    assert "-p" in calls[2]["argv"]
+    assert "--tools=Agent" not in calls[2]["argv"]
+    argv = calls[3]["argv"]
     assert "--safe-mode" not in argv
-    assert argv[argv.index("--plugin-dir") + 1] == str(plugin_dir)
-    # =-joined values avoid empty argv items while allowing only Claude's
-    # native child boundary inside the isolated profile.
-    assert "--setting-sources=" in argv
+    # Plugin activation rides the staged registration, not launch flags:
+    # --plugin-dir stopped activating hooks and --setting-sources= would
+    # suppress the staged settings (2.1.250, AR-338).
+    assert "--plugin-dir" not in argv
+    assert "--setting-sources=" not in argv
     assert "--tools=Agent" in argv
     assert "" not in argv
     assert "mcp__*" in argv
     assert "--strict-mcp-config" in argv
     assert "--no-session-persistence" not in argv
-    assert "ANTHROPIC_API_KEY" not in calls[0]["env"]
-    assert calls[0]["env"]["AGENCY_CANARY_MODE"] == "1"
-    assert calls[0]["env"]["AGENCY_CANARY_MASTER_ENABLED"] == "1"
-    assert Path(calls[0]["env"]["AGENCY_CANARY_CONTROL_PATH"]).parts[-3:] == (
+    assert "ANTHROPIC_API_KEY" not in calls[3]["env"]
+    assert calls[3]["env"]["AGENCY_CANARY_MODE"] == "1"
+    assert calls[3]["env"]["AGENCY_CANARY_MASTER_ENABLED"] == "1"
+    assert Path(calls[3]["env"]["AGENCY_CANARY_CONTROL_PATH"]).parts[-3:] == (
         ".agency-runtime",
         "run",
         "control.json",

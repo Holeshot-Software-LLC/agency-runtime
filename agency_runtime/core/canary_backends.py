@@ -4006,6 +4006,107 @@ class SafeClaudeCanaryBackend:
             record["parent_recruiter_provider_requested"] = self.parent_recruiter_provider
         return record
 
+    def _stage_isolated_plugin(
+        self,
+        *,
+        claude_home: Path,
+        workdir: str,
+        env: dict[str, str],
+        deadline: float,
+    ) -> tuple[bool | None, dict[str, Any] | None]:
+        """Install the plugin into the isolated home through the CLI itself.
+
+        Claude 2.1.250 activates a plugin's hooks only for plugins installed
+        in the config directory's own plugin state; neither --plugin-dir nor
+        a hand-staged settings.json materializes that state in -p mode
+        (measured 2026-08-31, AR-338). Staging through the CLI's own plugin
+        machinery runs the same activation path as the real profile, and the
+        operator's own settings never leak in.
+        """
+
+        facade = _facade()
+        marketplace_root = self.plugin_dir.parents[1]
+        for staging_argv in (
+            [self.executable, "plugin", "marketplace", "add", str(marketplace_root)],
+            [self.executable, "plugin", "install", "agency-preflight@agency-runtime"],
+        ):
+            staging_timeout = min(120.0, facade._remaining_canary_timeout(deadline))
+            if staging_timeout <= 0:
+                return None, _timeout_record("claude")
+            staged = self.process_runner(
+                staging_argv,
+                timeout=staging_timeout,
+                cwd=workdir,
+                env=env,
+                max_output_chars=16_384,
+            )
+            if getattr(staged, "returncode", 1) != 0:
+                return None, {
+                    "backend": "claude",
+                    "profile_scope": "isolated-profile",
+                    "isolated_plugin": {
+                        "load_requested": True,
+                        "registered": None,
+                        "enabled": None,
+                    },
+                    "status": "failed",
+                    "exit_code": getattr(staged, "returncode", 1),
+                    "stdout_truncated": False,
+                    "stderr_truncated": False,
+                    "failure_reason": "claude_plugin_staging_failed",
+                }
+        plugin_state_path = claude_home / "plugins" / "installed_plugins.json"
+        try:
+            staged_document = json.loads(plugin_state_path.read_text(encoding="utf-8"))
+            registered = bool(
+                isinstance(staged_document, dict)
+                and staged_document.get("plugins", {}).get("agency-preflight@agency-runtime")
+            )
+        except (OSError, ValueError):
+            registered = None
+        # A freshly installed plugin's UserPromptSubmit and PreToolUse hooks
+        # do not fire in the first session after installation (SessionStart
+        # and Stop do); they fire from the second session onward. One bounded
+        # warm-up turn makes the canary session the second one (measured
+        # 2026-08-31, AR-338).
+        warmup_timeout = min(300.0, facade._remaining_canary_timeout(deadline))
+        if warmup_timeout <= 0:
+            return None, _timeout_record("claude")
+        warmup = self.process_runner(
+            [
+                self.executable,
+                "-p",
+                "--output-format",
+                "json",
+                "--max-turns",
+                "1",
+                "--strict-mcp-config",
+                "--permission-mode",
+                "dontAsk",
+            ],
+            timeout=warmup_timeout,
+            cwd=workdir,
+            env=env,
+            input_text="Reply with one word: ok",
+            max_output_chars=16_384,
+        )
+        if getattr(warmup, "returncode", 1) != 0:
+            return registered, {
+                "backend": "claude",
+                "profile_scope": "isolated-profile",
+                "isolated_plugin": {
+                    "load_requested": True,
+                    "registered": registered,
+                    "enabled": registered,
+                },
+                "status": "failed",
+                "exit_code": getattr(warmup, "returncode", 1),
+                "stdout_truncated": False,
+                "stderr_truncated": False,
+                "failure_reason": "claude_plugin_warmup_failed",
+            }
+        return registered, None
+
     def _execute(
         self,
         *,
@@ -4083,6 +4184,14 @@ class SafeClaudeCanaryBackend:
                 source_env=self.source_env,
                 names=self.credential_environment_names,
             )
+            staged_registered, staging_failure = self._stage_isolated_plugin(
+                claude_home=claude_home,
+                workdir=workdir,
+                env=env,
+                deadline=deadline,
+            )
+            if staging_failure is not None:
+                return self._record_child_judge_provider(staging_failure), None
             timeout = facade._remaining_canary_timeout(deadline)
             if timeout <= 0:
                 return self._record_child_judge_provider(_timeout_record("claude")), None
@@ -4102,10 +4211,11 @@ class SafeClaudeCanaryBackend:
                             # Persist only inside the isolated, owner-private home so
                             # the host-authored child transcript can be collected
                             # before that home is deleted. The sole enabled tool is
-                            # Claude's native child boundary.
-                            "--setting-sources=",
-                            "--plugin-dir",
-                            str(self.plugin_dir),
+                            # Claude's native child boundary. Plugin activation
+                            # comes from the staged marketplace registration in the
+                            # isolated home's settings.json: --plugin-dir stopped
+                            # activating hooks and --setting-sources= would suppress
+                            # the staged registration (2.1.250, AR-338).
                             "--tools=Agent",
                             "--disallowedTools",
                             "mcp__*",
@@ -4147,6 +4257,10 @@ class SafeClaudeCanaryBackend:
                     collected_evidence = None
                     collection_reason = "collector_raised"
             record = facade._claude_canary_record(result)
+            # The CLI's own install receipt in the isolated home is the
+            # registration proof for this invocation (AR-338).
+            record["isolated_plugin"]["registered"] = staged_registered
+            record["isolated_plugin"]["enabled"] = staged_registered
             self._record_child_judge_provider(record)
             if accepted_outcome:
                 self._record_parent_recruiter_provider(record)

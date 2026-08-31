@@ -75,47 +75,23 @@ canary so the AR-337 change gate tracks 0.151.0.
 
 ## exact-blocker
 
-One attended owner action: `claude login` — the claude CLI OAuth session
-is expired and cannot refresh (`claude -p` fails machine-wide; doctor:
-claude-subscription `cli unavailable`). Then rerun the claude live canary:
-`agency host-canary claude --execute --mode agency --confirm
-"RUN LIVE claude CANARY"`.
+None on this machine. The sole remaining AR-338 item is cross-machine:
+the Linux `dist-0abe4a77` hash confirmation (sdist must equal
+`15d87f7dda21...29a3ee`) and the combined-set
+`verify_distribution --artifact-set release` once its portable wheel sits
+beside the Windows pair.
 
-Codex is DONE (2026-08-31): after the ADR-0195 merge, the fresh trust
-round, and the codex-cli 0.151.0 upgrade, `verify-activation` exits 0
-("Codex current-profile activation verified") and the live
-current-profile canary passes with a persisted attestation
-(`codex-canary-9521a4a4.json`: code-reviewer delivered through the
-spawn+wait chain, header valid, zero corrections). Use `--timeout 600`
-for the full codex canary protocol — the 120s default times out on
-gpt-5.6-sol at max effort. The battery baseline is re-adopted at claude
-2.1.250 / codex-cli 0.151.0.
-
-Two Windows defects found, filed, and fixed by this package the same day
-(AR-339 tracker #372, AR-340 tracker #373). AR-340 is done and live-proven:
-the baseline adopted claude and codex through the shim-aware trust walk and
-doctor's battery rows read green. AR-339's worker fix is live-proven in the
-foreground (HTTP 200 under the credentialed user environment); its one open
-box is the registered-service refresh through `agency install --all`, held
-for the next anchored install so host projections keep their exact-main
-provenance. Historical failure detail:
-
-- **Dashboard service env guard (AR-339)**: the fresh worker
-  (`run_dashboard`, server/dashboard.py:3164) refuses to start when any
-  config-declared credential env name (here `JINA_API_KEY` from the jina
-  profiles) is present in its environment; a schtasks worker always
-  inherits the user-registry env — the sanctioned secret location — so
-  the fresh-runtime dashboard can never become ready. Rollback restored
-  the 08-26 task (old runtime `b60cbe5d...`, running on 127.0.0.1:7810).
-  Fix direction: on nt treat process values byte-equal to the HKCU
-  user-scope value as reboot-durable, or scrub configured credential
-  names at service start instead of refusing.
-- **Battery baseline shim blindness (AR-340)**: `agency battery --baseline`
-  adopts nothing on Windows (exit 0, empty baseline) —
-  `observe_harness_version` resolves claude/codex to npm `.cmd` shims and
-  execs them without a shell, which CreateProcess cannot do, so every
-  host is silently skipped. Fix direction: resolve shims to node.exe +
-  cli.js as the canary launcher already does; make empty adoption loud.
+Claude went live 2026-08-31 after three measured host-behavior fixes in
+the isolated canary staging: claude 2.1.250 stopped activating
+`--plugin-dir` hooks (and `--setting-sources=` suppresses staged
+settings), so the isolated home is now staged through the CLI's own
+`plugin marketplace add` + `plugin install`; and a freshly installed
+plugin's prompt hooks skip the first session, so one bounded warm-up turn
+makes the canary the home's second session. The passing receipt
+(`claude-canary-9521a4a4.json`) carries a valid header, fully proven
+isolated plugin, and a hash-bound `minimal-change-engineer` card
+delivered to the host-authored child. Codex passed the same day
+(verify-activation exit 0 plus an attested current-profile canary).
 
 ## same-task-continuity
 

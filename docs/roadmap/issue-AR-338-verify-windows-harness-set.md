@@ -124,8 +124,11 @@ harness-auth and service constraints. No new inference routes.
 - [x] Codex attended trust completes and `verify-activation` exits 0 on the
       Windows profile (2026-08-31, post-ADR-0195 on runtime `d2fd5aa2...`:
       "Codex current-profile activation verified").
-- [ ] Live canaries pass for the hosts exposing a canary mode; zcode proves
-      its supported readiness surface.
+- [x] Live canaries pass for the hosts exposing a canary mode; zcode proves
+      its supported readiness surface (2026-08-31: codex current-profile
+      canary attested; claude isolated canary passed with a hash-bound
+      minimal-change-engineer card delivered to the host-authored child;
+      zcode smoke 4/4 with readiness receipt).
 - [x] `agency battery --baseline` records the Windows harness fingerprints
       (2026-08-31, post-AR-340: claude 2.1.250, codex-cli 0.150.1); the
       trigger-service gap is logged under AR-337.
