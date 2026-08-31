@@ -8,6 +8,8 @@ tags: [handoff, windows, codex, claude, zcode, release]
 related:
   - docs/roadmap/issue-AR-338-verify-windows-harness-set.md
   - docs/roadmap/issue-AR-337-run-harness-battery-on-version-change.md
+  - docs/roadmap/issue-AR-339-admit-durable-user-scope-credentials-in-dashboard-service-guard.md
+  - docs/roadmap/issue-AR-340-observe-npm-shim-harness-versions-in-battery.md
   - docs/decisions/0193-admit-newer-codex-releases-under-the-newest-proven-child-contract.md
   - docs/decisions/0194-admit-host-encrypted-codex-canary-task-delivery.md
   - docs/RELEASE_CHECKLIST.md
@@ -79,10 +81,10 @@ Two attended owner actions, one sitting:
    (codex-cli 0.150.1 is inside main's admitted 0.149–0.151 contract
    range; no upgrade prerequisite).
 
-Two Windows defects found by this package, filing pending owner
-authorization for new trackers:
+Two Windows defects found by this package, filed 2026-08-31 with owner
+authorization as AR-339 (tracker #372) and AR-340 (tracker #373):
 
-- **Dashboard service env guard**: the fresh worker
+- **Dashboard service env guard (AR-339)**: the fresh worker
   (`run_dashboard`, server/dashboard.py:3164) refuses to start when any
   config-declared credential env name (here `JINA_API_KEY` from the jina
   profiles) is present in its environment; a schtasks worker always
@@ -92,7 +94,7 @@ authorization for new trackers:
   Fix direction: on nt treat process values byte-equal to the HKCU
   user-scope value as reboot-durable, or scrub configured credential
   names at service start instead of refusing.
-- **Battery baseline shim blindness**: `agency battery --baseline`
+- **Battery baseline shim blindness (AR-340)**: `agency battery --baseline`
   adopts nothing on Windows (exit 0, empty baseline) —
   `observe_harness_version` resolves claude/codex to npm `.cmd` shims and
   execs them without a shell, which CreateProcess cannot do, so every
@@ -121,10 +123,9 @@ AR-331/333 fixes are superseded by main's 0.149–0.151 parser range.
    `agency install --agent codex --verify-activation` exit 0; then
    `agency host-canary codex --profile-scope current-profile --execute
    --mode agency`.
-3. File and fix the two Windows defects above (owner authorizes
-   trackers); re-run `agency battery --baseline` once the observer
-   handles shims, and re-run the dashboard service install once the env
-   guard distinguishes durable user-scope values.
+3. Fix AR-339 and AR-340; re-run `agency battery --baseline` once the
+   observer handles shims, and re-run the dashboard service install once
+   the env guard admits durable user-scope values.
 4. Close the parity trail: Linux `dist-0abe4a77` sdist hash must equal
    `15d87f7dda21...29a3ee`; record the portable-wheel hash; when both
    wheels sit on one machine run `verify_distribution --artifact-set
