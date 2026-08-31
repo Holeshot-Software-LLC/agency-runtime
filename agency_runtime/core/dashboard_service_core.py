@@ -151,21 +151,76 @@ def _configured_secret_environment_names(config: object | None) -> set[str]:
     return set(configured_credential_environment_names(config))
 
 
+def _windows_durable_environment_value(name: str) -> str | None:
+    """Return the persisted user- or machine-scope value for one name, or None.
+
+    A Windows service worker launched by the per-user Task Scheduler inherits
+    the registry-persisted environment, so a value stored there survives a
+    reboot. The value is read only for the in-process equality check in
+    :func:`dashboard_service_environment_overrides`; it is never returned to
+    callers of the public surface, logged, or copied anywhere (AR-339).
+    """
+
+    if not _IS_WINDOWS:
+        return None
+    try:
+        import winreg
+    except ImportError:  # pragma: no cover - non-Windows interpreter
+        return None
+    locations = (
+        (winreg.HKEY_CURRENT_USER, "Environment"),
+        (
+            winreg.HKEY_LOCAL_MACHINE,
+            r"SYSTEM\CurrentControlSet\Control\Session Manager\Environment",
+        ),
+    )
+    for hive, key_path in locations:
+        try:
+            with winreg.OpenKey(hive, key_path) as key:
+                value, kind = winreg.QueryValueEx(key, name)
+        except OSError:
+            continue
+        if kind in (winreg.REG_SZ, winreg.REG_EXPAND_SZ) and isinstance(value, str):
+            return value
+    return None
+
+
 def dashboard_service_environment_overrides(
     config: object | None = None,
     *,
     environ: Mapping[str, str] | None = None,
+    durable_reader: Callable[[str], str | None] | None = None,
 ) -> tuple[str, ...]:
     """List active process-only settings that cannot survive service restart.
 
     ``AGENCY_CONFIG_PATH`` is intentionally absent: its resolved identity is
     embedded in the service argv.  Values are never returned or copied into a
     unit, task, manifest, diagnostic, or command line.
+
+    A config-declared credential whose process value is byte-equal to its
+    registry-persisted Windows user- or machine-scope value is reboot-durable
+    and is not an override: the sanctioned home for a secret is exactly that
+    persisted environment, never agency.yaml (AR-339). The static
+    ``AGENCY_*`` runtime overrides stay flagged regardless of persistence -
+    their durable home is agency.yaml, and a persisted copy silently
+    diverging from the configuration file is the hazard this guard exists to
+    stop.
     """
 
     environment = os.environ if environ is None else environ
-    candidates = _dashboard_service_environment_names(config)
-    return tuple(sorted(name for name in candidates if environment.get(name)))
+    reader = _windows_durable_environment_value if durable_reader is None else durable_reader
+    flagged: set[str] = set()
+    for name in _NON_DURABLE_SERVICE_ENVIRONMENT_NAMES:
+        if environment.get(name):
+            flagged.add(name)
+    for name in _configured_secret_environment_names(config):
+        value = environment.get(name)
+        if not value or name in flagged:
+            continue
+        durable = reader(name)
+        if durable is None or durable != value:
+            flagged.add(name)
+    return tuple(sorted(flagged))
 
 
 def _dashboard_service_environment_names(config: object | None = None) -> set[str]:
@@ -202,8 +257,9 @@ def dashboard_service_environment_error(names: Sequence[str]) -> str:
     return (
         "dashboard service installation is blocked because process-local runtime "
         f"overrides are not reboot-durable: {listed}. Unset them and persist "
-        "non-secret settings in agency.yaml before retrying; secret values are never "
-        "copied into the service definition"
+        "non-secret settings in agency.yaml before retrying; persist a configured "
+        "credential in the user-scope environment so it matches the process value; "
+        "secret values are never copied into the service definition"
     )
 
 
