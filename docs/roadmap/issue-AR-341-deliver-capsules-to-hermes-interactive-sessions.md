@@ -64,6 +64,36 @@ venv at f91541c3, inference operational, roster fix #382 live:
   the defect is inside the plugin's interactive-session delivery or the
   finalization correlation for gateway chat turns.
 
+## Resolution (2026-08-31) — delivery fixed, one residual
+
+Root cause: hermes bounds ``pre_llm_call`` (with the other agent-turn
+hooks) by ``plugins.hook_callback_timeout`` — default 30s — and abandons
+the callback on timeout without joining it. The rendered bridge takes
+17–72s to staff a turn on this box, so every interactive staffing hook
+was abandoned: the orphaned worker still recorded accepted routing while
+the capsule never reached the session. ``~/.hermes-nexus/logs/errors.log``
+shows ``Hook 'pre_llm_call' callback _pre_llm_call timed out after 30s —
+skipping`` on every interactive turn, ending the moment the budget was
+raised; the next turn's first API call grew from ~13K to 25,830 input
+tokens, and the model then quoted the injected ``[Agency
+resident-steward kernel v4]`` header verbatim from its context.
+
+Fix (PR #390, deployed): hermes registration reads the deployed plugin's
+own ``_TIMEOUT_SECONDS`` (ceiling 600) and ensures
+``plugins.hook_callback_timeout`` covers it plus a 5s margin via the
+hermes config CLI (600 live), recording ``hook_budget_read`` /
+``hook_budget_write`` evidence steps and failing loudly when the write
+is refused.
+
+Residual (the only unmet acceptance item): finalization still blocks a
+draft whose header block is complete and correct but preceded by a
+preamble sentence — observed live with the full five-line header plus
+Why/How and the actually-staffed specialists, rejected solely for not
+being first. That is header-contract compliance of the local
+``qwen3-coder-30b`` chat model against the exact-start rule, not
+delivery; remediation is a stronger interactive model (``hermes model``)
+or a deliberate finalization-policy decision, tracked here.
+
 ## Expected
 
 An interactive hermes turn that staffs successfully must receive the same
