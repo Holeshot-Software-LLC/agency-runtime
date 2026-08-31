@@ -3,7 +3,7 @@ title: "AR-338 Windows bring-up capsule"
 status: active
 category: roadmap
 created: 2026-08-30
-updated: 2026-08-30
+updated: 2026-08-31
 tags: [handoff, windows, codex, claude, zcode, release]
 related:
   - docs/roadmap/issue-AR-338-verify-windows-harness-set.md
@@ -26,89 +26,121 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/368
 
 # AR-338 Windows bring-up capsule
 
-Start here on the Windows machine (codex, claude, zcode installed).
+Windows machine (codex, claude, zcode installed). Build, smoke, and
+cross-OS parity are done; install and live proof remain.
 
 ## checkpoint
 
-Linux is fully verified at exact main `0abe4a77`: four harnesses
-live-green, codex activation attested on codex-cli 0.151 under ADR-0194,
-`verify-activation` exit 0, AR-337 battery armed with all doctor rows
-passing. Windows work has not started; this capsule is its zero point.
+Windows release evidence is complete as of 2026-08-31. A clean clone at
+exact main `0abe4a77` built per the release checklist on trusted
+`C:\Python313`: twine strict and `verify_distribution` pass; win_amd64
+wheel `54524be19ebd...1cb012`, sdist `15d87f7dda21...29a3ee`. Isolated
+wheel and sdist smokes both pass (packaged imports, windows-x64 smoke
+battery, `agency smoke --all`, `pip check`). Cross-OS byte-parity is
+measured, not inferred: this machine rebuilt PR #365's synthetic merge
+commit (same tree `49955b2f` as `0abe4a77`, committer time `1788116558`)
+and reproduced the hosted CI artifacts byte-for-byte — sdist
+`88692195bb4f...e8d876` equal to the hosted ubuntu and windows sdists,
+wheel `eaded9bdfa17...4490bd` equal to the hosted windows wheel. Artifact
+container timestamps are the commit's committer time, so hashes only
+compare between builds of the same commit; payload members at real
+`0abe4a77` are member-for-member identical to the hosted set.
+
+Two capsule premises are corrected. First, repository Actions is running
+again — PR #369's rollup is green including both artifact producers and
+the artifact-parity merge gate — so the hosted gate does produce per-PR
+cross-OS proof at synthetic merge commits; this machine's contribution is
+the exact-commit evidence and the live harness set. Second, this machine
+was not at a zero point: a 2026-08-28 install from
+`codex/windows-harness-release-go` (20 commits ahead of then-main, now
+200 behind) already registered codex, claude, and zcode at generation 56,
+store schema 48 == current main, digests claude/zcode `4b496fe2ae31...`,
+codex `0cfec2186f4d...`, codex hook trust `unverified`.
 
 ## completed-evidence
 
-- Linux receipts: `~/.agency-runtime/evidence/ar297-live-harness-20260829/`
-  (`codex-canary-cp-0abe4a77.json`, `codex-verify-activation-0abe4a77.stdout`,
-  `claude-canary-0abe4a77.json`, `*-ordinary-receipt.json`,
-  `host-install-0abe4a77.json`).
-- Linux release artifacts for byte-parity comparison:
-  `~/.agency-runtime/release-artifacts/dist-0abe4a77…` (sdist + portable
-  wheel, twine strict pass, verify_distribution pass).
-- Windows portability is CI-proven per merge (py3.11-3.13 portability
-  contract; win_amd64 build job on windows-2022).
+- Windows receipt with the full hash chain:
+  `~/.agency-runtime/evidence/ar338-windows-20260831/windows-build-0abe4a77.json`.
+- Exact-main artifacts: `~/.agency-runtime/release-artifacts/dist-0abe4a77...`;
+  synthetic-replica artifacts under
+  `~/.agency-runtime/candidate-0abe4a77-buildenv/synthetic-dist`.
+- Verified wheel venv (the step-1 install source):
+  `~/.agency-runtime/candidate-0abe4a77-runenv`.
+- Hosted comparison set: CI run 33329754684/33329754685 artifacts for PR
+  #365 (ubuntu sdist == windows sdist; artifact-parity job green).
+- Linux receipts unchanged on the Linux box:
+  `~/.agency-runtime/evidence/ar297-live-harness-20260829/` and
+  `~/.agency-runtime/release-artifacts/dist-0abe4a77...`.
 
 ## exact-blocker
 
-One owner decision gates install: the LiteLLM control-plane endpoint for
-the Windows machine — the Linux box's LiteLLM over the LAN, or a local
-instance. The v4 configuration pattern (`ar297-litellm-v4-*.yaml`:
-planner/recruiter `content_fallback_routes`, `strict_call_budget: 8`)
-carries over unchanged either way. Set referenced environment variables in
-the Windows user environment; never copy key values into files.
+Unchanged: the owner's LiteLLM control-plane endpoint decision for this
+machine — the Linux box's LiteLLM over the LAN, or a local instance —
+gates `agency install --all --config`. The machine's current config is
+the pre-AR-317 per-harness pattern (claude/codex CLI adapters, z.ai for
+zcode, Jina recall routes), so the install is also the v4 alias cutover
+(`content_fallback_routes`, `strict_call_budget: 8`). Set referenced
+environment variables in the Windows user environment; never copy key
+values into files.
 
 ## same-task-continuity
 
-The generated codex hooks carry `commandWindows` forms and the ADR-0194
-parser is path-neutral under `CODEX_HOME`, so the 0.151 contracts proven on
-Linux apply as-is. The POSIX `umask 077` canary pin is a deliberate no-op
-on nt (private-path host-authority descendant logic applies); the npm
-group-writable hazard is POSIX-specific and its Windows analog would
-surface through the same content-free posture probes as ACL causes.
-Diagnosis discipline carries over: only hook turns are faithful for
-staffing diagnosis (bare `run_preflight` fabricates
-`agent_host_unsupported`), and every validity probe must nonce-bust
-(the LiteLLM response cache returns cached hits on identical prompts).
+Do not re-run the build, parity, or smoke steps; reuse
+`candidate-0abe4a77-runenv`. The running install's source branch carried
+divergent AR-331/AR-333 fixes (0.150.1 lineage admission); main's
+AR-334/ADR-0194 path supersedes them, so confirm local codex-cli >= 0.151
+before replacing the projections. Host CLIs must resolve from
+`C:\agency-cli`: the machine PATH's npm entry outranks the entire user
+PATH, and a process without the prepend reads every host `native
+unverified`. The POSIX `umask 077` canary pin is a deliberate no-op on nt
+(private-path host-authority logic applies); the npm group-writable
+hazard is POSIX-specific. Diagnosis discipline carries over: only hook
+turns are faithful for staffing diagnosis (bare `run_preflight`
+fabricates `agent_host_unsupported`), and every validity probe must
+nonce-bust (the LiteLLM response cache returns cached hits on identical
+prompts). Smoke isolation pattern when needed: override
+`AGENCY_CONFIG_PATH`, `AGENCY_DB_PATH`, `HOME`, `USERPROFILE` per CI's
+`smoke_distribution`.
 
 ## next-bounded-work-package
 
-1. PowerShell, clean clone at `0abe4a77` or later, per
-   `docs/RELEASE_CHECKLIST.md`: capture `AGENCY_RELEASE_COMMIT`, run
-   `python -m scripts.build_distributions <dist> --create-private-parent
-   --expected-commit <commit>`, then `twine check --strict` and
-   `python -m scripts.verify_distribution`.
-2. Compare against the Linux artifacts: the sdist must be byte-identical
-   and the win_amd64/portable wheel pair must share payloads. Record both
-   hash sets — this is the cross-OS release proof the hosted gate cannot
-   produce while repository Actions billing is disabled.
-3. Create a venv from the verified wheel; `agency smoke` must pass.
-4. `agency install --all --config <config>` — codex, claude, and zcode
-   register (no hermes/openclaw on this machine).
-5. Codex attended trust (fresh terminal, `codex`, Trust all with all 8
+1. Owner interview: choose the LiteLLM endpoint (LAN vs local), set the
+   env vars, compose the v4 config; then `agency install --all --config
+   <config>` from `candidate-0abe4a77-runenv` — codex, claude, and zcode
+   re-register on exact main, replacing the windows-go projections.
+2. Codex attended trust (fresh terminal, `codex`, Trust all with all 8
    Agency hook events), then
    `agency install --agent codex --verify-activation` must exit 0.
-6. Live proof: `agency host-canary claude --execute --mode agency`;
+3. Live proof: `agency host-canary claude --execute --mode agency`;
    `agency host-canary codex --profile-scope current-profile --execute
    --mode agency`; zcode readiness plus `agency smoke --agent zcode`.
-7. `agency battery --baseline` records this machine's fingerprints. Do not
-   run `--install-service` here: the trigger service is systemd-only and
-   the scheduled-task analog is follow-up under AR-337.
-8. Retain receipts under a machine-local evidence namespace and record the
+4. `agency battery --baseline` records this machine's fingerprints. Do
+   not run `--install-service` here: the trigger service is systemd-only
+   and the scheduled-task analog is follow-up under AR-337.
+5. Close the parity trail: the Linux `dist-0abe4a77` sdist hash must
+   equal `15d87f7dda21...29a3ee`; record its portable-wheel hash, and
+   when both wheel files sit on one machine run
+   `python -m scripts.verify_distribution --artifact-set release` on the
+   combined trio at real `0abe4a77`.
+6. Retain receipts under
+   `~/.agency-runtime/evidence/ar338-windows-20260831/` and record the
    ledger row.
 
 ## verification
 
 Acceptance mirrors the roadmap doc: byte-identical sdist and
-shared-payload wheel pair; install --all green for codex/claude/zcode with
-the dashboard healthy; codex trust plus verify-activation exit 0; live
-canaries for canary-capable hosts and zcode's supported surface; battery
-baseline recorded; receipts retained and the ledger updated.
+shared-payload wheel pair (tree-level proof recorded; Linux-hash
+confirmation outstanding); install --all green for codex/claude/zcode
+with the dashboard healthy; codex trust plus verify-activation exit 0;
+live canaries for canary-capable hosts and zcode's supported surface;
+battery baseline recorded; receipts retained and the ledger updated.
 
 ## constraints
 
-All inference behind LiteLLM aliases; zero deployment retries; no Jina; no
-Spark; never print or persist credentials; do not bypass Codex activation;
-new trackers need owner authorization; owner interview before any new
-model/endpoint/embedding/reranker/thinking/judge/harness-auth/service
-choice; do not tag, sign, publish, or release without the owner's explicit
-release decision (AR-161 requires a signed delivery payload and legal
-disposition first).
+All inference behind LiteLLM aliases; zero deployment retries; no Jina;
+no Spark; never print or persist credentials; do not bypass Codex
+activation; new trackers need owner authorization; owner interview before
+any new model/endpoint/embedding/reranker/thinking/judge/harness-auth/
+service choice; do not tag, sign, publish, or release without the owner's
+explicit release decision (AR-161 requires a signed delivery payload and
+legal disposition first).

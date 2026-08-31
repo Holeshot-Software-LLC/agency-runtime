@@ -3,7 +3,7 @@ title: "AR-338: Verify the Windows harness set (codex, claude, zcode)"
 status: open
 category: roadmap
 created: 2026-08-30
-updated: 2026-08-30
+updated: 2026-08-31
 tags: [host-integrations, windows, codex, claude, zcode, release]
 related:
   - docs/roadmap/handoffs/issue-AR-338.md
@@ -50,6 +50,28 @@ deliberate no-op on nt (private-path host-authority logic applies), the
 battery core works but its trigger service is systemd-only (the scheduled
 task analog is follow-up under AR-337), and the npm group-writable hazard
 is POSIX-specific.
+
+## Current state (2026-08-31)
+
+The release-evidence half is done on the Windows machine. A clean clone at
+exact main `0abe4a77` built per the checklist (twine strict and
+`verify_distribution` pass; wheel `54524be19ebd...1cb012`, sdist
+`15d87f7dda21...29a3ee`), and isolated wheel plus sdist smokes pass. The
+cross-OS claim is measured: rebuilding PR #365's synthetic merge commit
+(identical tree `49955b2f`, its committer timestamp) on this machine
+reproduced the hosted ubuntu and windows CI artifacts byte-for-byte, and
+artifact container timestamps were shown to derive from the committer
+time, which is why only same-commit builds hash-compare. Two premises
+changed since filing: repository Actions runs again (PR #369's rollup is
+green including the artifact-parity gate), and the machine was not at a
+zero point — a 2026-08-28 install from `codex/windows-harness-release-go`
+already registered codex, claude, and zcode at store schema 48 with codex
+hook trust `unverified`. Remaining: the owner's LiteLLM endpoint decision
+and v4 config cutover, the exact-main reinstall from the verified wheel
+venv, codex attended trust plus `verify-activation`, live canaries, the
+battery baseline, and Linux-side hash confirmation of the retained
+`dist-0abe4a77` set. Details in the capsule and the machine-local receipt
+`~/.agency-runtime/evidence/ar338-windows-20260831/windows-build-0abe4a77.json`.
 
 ## Dependencies
 
