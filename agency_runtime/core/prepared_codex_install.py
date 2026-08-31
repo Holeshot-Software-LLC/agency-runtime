@@ -675,8 +675,22 @@ def _strict_native_state(
     if len(market_candidates) != 1:
         raise PreparedCodexInstallError("Codex Agency marketplace inventory is ambiguous")
     market = market_candidates[0]
-    if set(market) != {"name", "root"} or _path_key(str(market.get("root", ""))) != _path_key(
-        target
+    # Codex 0.151 added `marketplaceSource` to `plugin marketplace list` rows.
+    # Accept it only in the exact local shape the plugin row already requires;
+    # any other extra key or shape still fails closed.
+    market_source = market.get("marketplaceSource")
+    if (
+        set(market) - {"marketplaceSource"} != {"name", "root"}
+        or _path_key(str(market.get("root", ""))) != _path_key(target)
+        or (
+            market_source is not None
+            and (
+                not isinstance(market_source, dict)
+                or set(market_source) != {"sourceType", "source"}
+                or market_source.get("sourceType") != "local"
+                or _path_key(str(market_source.get("source", ""))) != _path_key(target)
+            )
+        )
     ):
         raise PreparedCodexInstallError("Codex Agency marketplace root is not exact")
     market_digest = _sha256_json(market)

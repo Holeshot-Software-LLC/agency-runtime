@@ -1603,3 +1603,46 @@ def test_compensation_stops_on_conflicting_native_state(
     assert result["compensated"] is False
     assert result["manual_recovery_required"] is True
     assert "conflicts" in result["error"]
+
+
+def test_strict_native_state_accepts_codex_marketplace_source_row(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    # Codex 0.151 adds `marketplaceSource` to `plugin marketplace list` rows.
+    target = tmp_path / "marketplace"
+    argv = SimpleNamespace(with_arguments=lambda arguments: arguments)
+    rows = [
+        {
+            "name": "agency-runtime",
+            "root": str(target),
+            "marketplaceSource": {"sourceType": "local", "source": str(target)},
+        }
+    ]
+    results = iter(_native_inventory_results(target, marketplace_rows=rows))
+    monkeypatch.setattr(prepared_install, "_run_prepared", lambda *_a, **_k: next(results))
+
+    state = prepared_install._strict_native_state(argv, environment={}, target=target)
+
+    assert state.plugin_present is True
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        {"sourceType": "git", "source": "https://example.invalid"},
+        {"sourceType": "local", "source": "/elsewhere"},
+        {"sourceType": "local"},
+        "local",
+    ],
+)
+def test_strict_native_state_rejects_foreign_marketplace_source(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, source: object
+) -> None:
+    target = tmp_path / "marketplace"
+    argv = SimpleNamespace(with_arguments=lambda arguments: arguments)
+    rows = [{"name": "agency-runtime", "root": str(target), "marketplaceSource": source}]
+    results = iter(_native_inventory_results(target, marketplace_rows=rows))
+    monkeypatch.setattr(prepared_install, "_run_prepared", lambda *_a, **_k: next(results))
+
+    with pytest.raises(prepared_install.PreparedCodexInstallError):
+        prepared_install._strict_native_state(argv, environment={}, target=target)
