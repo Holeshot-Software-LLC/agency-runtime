@@ -117,8 +117,10 @@ harness-auth and service constraints. No new inference routes.
 
 - [ ] Windows-built exact-main sdist is byte-identical to the Linux sdist
       and the wheel pair satisfies the shared-payload release contract.
-- [ ] `agency install --all` registers codex, claude, and zcode on Windows
-      with the dashboard healthy.
+- [x] `agency install --all` registers codex, claude, and zcode on Windows
+      with the dashboard healthy (2026-08-31: all three hosts and the
+      dashboard service on exact-main runtime `d2fd5aa2...`, service
+      ready on 127.0.0.1:7810 post-AR-339).
 - [ ] Codex attended trust completes and `verify-activation` exits 0 on the
       Windows profile.
 - [ ] Live canaries pass for the hosts exposing a canary mode; zcode proves

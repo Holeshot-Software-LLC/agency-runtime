@@ -1,6 +1,6 @@
 ---
 title: "AR-339: Admit reboot-durable user-scope credentials in the dashboard service guard"
-status: open
+status: done
 category: roadmap
 created: 2026-08-31
 updated: 2026-08-31
@@ -50,7 +50,7 @@ on 127.0.0.1:7810 meanwhile. Receipt:
 never hits the guard because its secrets live in the LiteLLM proxy and the
 systemd user-manager environment is clean.
 
-## Resolution (2026-08-31, worker fix landed; registered refresh pending)
+## Resolution (2026-08-31, complete)
 
 `dashboard_service_environment_overrides` now admits a config-declared
 credential whose process value is byte-equal to its registry-persisted
@@ -61,10 +61,10 @@ the in-process equality check. Live on the AR-338 Windows machine: the
 fixed worker was started in the foreground under the exact environment
 that made the pre-fix worker raise instantly (`JINA_API_KEY` inherited
 from the user scope) and it served `HTTP 200` on `127.0.0.1:7810` with
-zero stderr. The old-runtime scheduled task was restored afterwards; the
-remaining acceptance box is the registered-service refresh through
-`agency install --all`, which waits for the next anchored install so the
-AR-338 host projections keep their exact-main provenance. Receipt:
+zero stderr. Later the same day the registered refresh landed: after ADR-0195
+merged as exact main `9521a4a4`, `agency install --agent codex` (with the
+configured credential names unset in the installing process) registered and
+started the dashboard service on the fresh runtime, closing the final box. Receipt:
 `~/.agency-runtime/evidence/ar338-windows-20260831/windows-build-0abe4a77.json`
 (`fixes_verified_20260831.ar339_dashboard_env_guard`).
 
@@ -92,5 +92,8 @@ its Windows durability semantics.
       scope) still fails closed with the existing names-only diagnostic.
 - [x] No credential value is copied into the service definition, manifest,
       task XML, diagnostics, or logs.
-- [ ] AR-338's `agency install --all` acceptance reaches "dashboard
-      healthy" on the Windows machine.
+- [x] AR-338's `agency install --all` acceptance reaches "dashboard
+      healthy" on the Windows machine (2026-08-31: the installer registered
+      and started the service on runtime `d2fd5aa2...` with the readiness
+      probe passing; the manifest pins the fresh runtime and the worker
+      serves on 127.0.0.1:7810).
