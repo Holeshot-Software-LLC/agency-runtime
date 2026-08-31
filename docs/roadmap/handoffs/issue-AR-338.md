@@ -75,11 +75,14 @@ canary so the AR-337 change gate tracks 0.151.0.
 
 ## exact-blocker
 
-None on this machine. The sole remaining AR-338 item is cross-machine:
-the Linux `dist-0abe4a77` hash confirmation (sdist must equal
-`15d87f7dda21...29a3ee`) and the combined-set
-`verify_distribution --artifact-set release` once its portable wheel sits
-beside the Windows pair.
+None. AR-338 is complete (2026-08-31): the owner-reported Linux
+`dist-0abe4a77` sdist hash equals the Windows build byte-for-byte, the
+win_amd64/portable pair shares all 592 payload members (measured against
+the tree-identical hosted portable wheel; Linux portable wheel
+`afb419a3...` recorded), and every acceptance box on the roadmap doc is
+checked. Optional strengthening whenever both wheel files sit on one
+machine: `verify_distribution --artifact-set release` on the combined
+trio.
 
 Claude went live 2026-08-31 after three measured host-behavior fixes in
 the isolated canary staging: claude 2.1.250 stopped activating

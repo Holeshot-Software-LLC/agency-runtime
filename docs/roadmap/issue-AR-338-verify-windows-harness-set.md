@@ -1,6 +1,6 @@
 ---
 title: "AR-338: Verify the Windows harness set (codex, claude, zcode)"
-status: open
+status: done
 category: roadmap
 created: 2026-08-30
 updated: 2026-08-31
@@ -115,8 +115,13 @@ harness-auth and service constraints. No new inference routes.
 
 ## Acceptance
 
-- [ ] Windows-built exact-main sdist is byte-identical to the Linux sdist
-      and the wheel pair satisfies the shared-payload release contract.
+- [x] Windows-built exact-main sdist is byte-identical to the Linux sdist
+      and the wheel pair satisfies the shared-payload release contract
+      (2026-08-31: the owner-reported Linux sdist hash `15d87f7d...` equals
+      the Windows build byte-for-byte; the win_amd64/portable pair shares
+      all 592 payload members with zero one-sided files, measured against
+      the tree-identical hosted portable wheel; Linux portable wheel hash
+      `afb419a3...` recorded).
 - [x] `agency install --all` registers codex, claude, and zcode on Windows
       with the dashboard healthy (2026-08-31: all three hosts and the
       dashboard service on exact-main runtime `d2fd5aa2...`, service
@@ -132,4 +137,6 @@ harness-auth and service constraints. No new inference routes.
 - [x] `agency battery --baseline` records the Windows harness fingerprints
       (2026-08-31, post-AR-340: claude 2.1.250, codex-cli 0.150.1); the
       trigger-service gap is logged under AR-337.
-- [ ] Receipts are retained and the ledger records the verification.
+- [x] Receipts are retained and the ledger records the verification
+      (`~/.agency-runtime/evidence/ar338-windows-20260831/`, worklog rows
+      per advance).
