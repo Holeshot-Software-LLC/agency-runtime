@@ -291,12 +291,14 @@ def test_openclaw_policy_rollback_retains_final_only_when_disable_is_unproven(
             responses=[
                 _result(),
                 _result(stdout="agency-preflight enabled"),
+                _result(stdout="605"),
             ],
             commands=[
                 ["hermes", "plugins", "enable", "agency-preflight"],
                 ["hermes", "plugins", "list"],
+                ["hermes", "config", "get", "plugins.hook_callback_timeout"],
             ],
-            steps=["enable", "inventory"],
+            steps=["enable", "inventory", "hook_budget_read"],
         ),
         _SuccessCase(
             host="openclaw",
@@ -585,7 +587,11 @@ def test_codex_preinstall_inventory_failure_stops_before_mutation(
     [
         (
             "hermes",
-            [_result(), _result(stdout="agency-preflight\n")],
+            [
+                _result(),
+                _result(stdout="agency-preflight\n"),
+                _result(stdout="605"),
+            ],
             "inventory_unproven",
         ),
         (
@@ -821,9 +827,20 @@ def test_openclaw_gateway_gate_accepts_explicit_nested_stopped_status() -> None:
         ),
         _FailureCase(
             host="hermes",
-            responses=[_result(), _result(returncode=1)],
-            steps=["enable", "inventory"],
+            responses=[_result(), _result(returncode=1), _result(stdout="605")],
+            steps=["enable", "inventory", "hook_budget_read"],
             failed_step="inventory_unproven",
+        ),
+        _FailureCase(
+            host="hermes",
+            responses=[
+                _result(),
+                _result(stdout="agency-preflight enabled"),
+                _result(stdout="30"),
+                _result(returncode=1),
+            ],
+            steps=["enable", "inventory", "hook_budget_read", "hook_budget_write"],
+            failed_step="hook_budget_write",
         ),
         _FailureCase(
             host="openclaw",
@@ -1073,10 +1090,55 @@ def test_registration_resolves_native_runner_through_facade_at_call_time(
 
     assert proven is True
     assert failed_step is None
-    assert [step["name"] for step in steps] == ["enable", "inventory"]
+    assert [step["name"] for step in steps] == [
+        "enable",
+        "inventory",
+        "hook_budget_read",
+        "hook_budget_write",
+    ]
     assert [command for command, _kwargs in calls] == [
         ["hermes", "plugins", "enable", "agency-preflight"],
         ["hermes", "plugins", "list"],
+        ["hermes", "config", "get", "plugins.hook_callback_timeout"],
+        ["hermes", "config", "set", "plugins.hook_callback_timeout", "605"],
     ]
     assert all(kwargs["host"] == "hermes" for _command, kwargs in calls)
     assert all(kwargs["timeout"] == 30 for _command, kwargs in calls)
+
+
+def test_hermes_hook_budget_follows_deployed_bridge_timeout(tmp_path: Path) -> None:
+    # The rendered plugin's own _TIMEOUT_SECONDS, not the documented ceiling,
+    # sets the floor when the deployed file is readable (AR-341).
+    (tmp_path / "__init__.py").write_text("_TIMEOUT_SECONDS = 120\n", encoding="utf-8")
+    runner = _SequenceRunner(
+        [
+            _result(),
+            _result(stdout="agency-preflight enabled"),
+            _result(stdout="30"),
+            _result(),
+        ]
+    )
+
+    steps, proven, failed_step = native_registration_steps(
+        "hermes",
+        tmp_path,
+        home_dir=tmp_path,
+        command_runner=runner,
+    )
+
+    assert proven is True
+    assert failed_step is None
+    assert [step["name"] for step in steps] == [
+        "enable",
+        "inventory",
+        "hook_budget_read",
+        "hook_budget_write",
+    ]
+    assert runner.commands[-1] == [
+        "hermes",
+        "config",
+        "set",
+        "plugins.hook_callback_timeout",
+        "125",
+    ]
+    assert runner.exhausted
