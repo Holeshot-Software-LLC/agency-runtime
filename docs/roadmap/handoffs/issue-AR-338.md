@@ -51,12 +51,16 @@ backing inside those sections, never a repo-global constraint. LAN reuse
 of the Linux LiteLLM was rejected (loopback-only at 127.0.0.1:4000).
 
 Install (2026-08-31): `agency install --all` from the verified wheel venv
-registered codex, claude, and zcode on runtime digest `c4815c3a6931...`
-with the standing agency.yaml (15 governed contractors already current;
-per-host backups retained). Codex is `activation-required` with hook
-trust `unverified`; claude and zcode are `enabled-runtime-unverified`
-until fresh sessions. zcode smoke passes 4/4 and its readiness receipt is
-retained; zcode exposes no noninteractive canary mode by design.
+first registered codex, claude, and zcode on exact-main `0abe4a77`
+(digest `c4815c3a6931...`); after ADR-0195 merged the same day, all three
+hosts and the dashboard service were re-pinned to exact main `9521a4a4`
+(digest `d2fd5aa2d3ef...`), which carries the AR-339/AR-340 fixes and the
+role-null lineage admission. The dashboard service is registered and
+serving on the fresh runtime (AR-339 closed). zcode smoke passes 4/4 and
+its readiness receipt is retained; zcode exposes no noninteractive canary
+mode by design. The battery baseline records claude 2.1.250 and codex-cli
+0.150.1 (pre-upgrade); re-adopt it after the upgraded codex's first green
+canary so the AR-337 change gate tracks 0.151.0.
 
 ## completed-evidence
 
@@ -73,13 +77,21 @@ retained; zcode exposes no noninteractive canary mode by design.
 
 Two attended owner actions, one sitting:
 
-1. `claude login` — the claude CLI OAuth session is expired and cannot
+1. Fresh terminal, `codex`, Trust all with all 8 Agency hook events (the
+   ADR-0195 reinstall re-wrote the hook hashes, resetting trust:
+   status=modified observed=8 trusted=0), new session, then
+   `agency install --agent codex --verify-activation`. The prior
+   `codex_collaboration_projection_unavailable` cause is fixed: this
+   machine's codex account exposes `spawn_agent` without `agent_type`
+   (server-side account-scoped rollout gate, measured on 0.150.1 and
+   0.151.0 with identical binaries and configs to the Linux GO box), and
+   ADR-0195 now admits the consistent role-less child lineage under the
+   ADR-0194 ciphertext anchor — both retained real canary children resolve
+   their exact parents through the merged parser. codex-cli was upgraded
+   to 0.151.0 (the Linux-proven line).
+2. `claude login` — the claude CLI OAuth session is expired and cannot
    refresh (`claude -p` fails machine-wide; doctor: claude-subscription
    `cli unavailable`). Then rerun the claude live canary.
-2. Fresh terminal, `codex`, Trust all with all 8 Agency hook events, new
-   session, then `agency install --agent codex --verify-activation`
-   (codex-cli 0.150.1 is inside main's admitted 0.149–0.151 contract
-   range; no upgrade prerequisite).
 
 Two Windows defects found, filed, and fixed by this package the same day
 (AR-339 tracker #372, AR-340 tracker #373). AR-340 is done and live-proven:
