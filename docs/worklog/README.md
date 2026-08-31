@@ -1475,6 +1475,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `5fcc4942` | 2026-08-31 | docs(ar338): record Windows release evidence and machine state | [AR-338](../roadmap/issue-AR-338-verify-windows-harness-set.md) | Exact-main 0abe4a77 Windows build verified; synthetic-merge replica proves hosted ubuntu/windows byte-parity from this machine; wheel+sdist smokes pass; stale zero-point and Actions-billing premises corrected; LiteLLM endpoint decision still gates install |
 | `901038bb` | 2026-08-31 | Merge pull request #370 from Holeshot-Software-LLC/claude/ar338-windows-build-evidence | null | null |
 | `ec4b6d96` | 2026-08-31 | docs(ar338): record the owner split-config decision and exact-main install | [AR-338](../roadmap/issue-AR-338-verify-windows-harness-set.md) | Split inference backing (Windows per-harness + Jina, no LiteLLM; Linux LiteLLM aliases); install --all on c4815c3a for codex/claude/zcode; zcode smoke 4/4; claude OAuth expired blocks canary; dashboard env-guard and battery shim defects isolated |
+| `5280e36f` | 2026-08-31 | Merge pull request #371 from Holeshot-Software-LLC/claude/ar338-windows-install-evidence | null | null |
+| `89a8b461` | 2026-08-31 | docs(ar339,ar340): file the Windows dashboard-guard and battery-shim defects | [AR-339](../roadmap/issue-AR-339-admit-durable-user-scope-credentials-in-dashboard-service-guard.md), [AR-340](../roadmap/issue-AR-340-observe-npm-shim-harness-versions-in-battery.md) | Owner-authorized filings from AR-338: dashboard env guard cannot admit reboot-durable HKCU credentials (tracker #372); battery version observer cannot exec npm .cmd shims and adopts an empty baseline silently (tracker #373) |
 <!-- worklog:end -->
 
 ## Provenance notes
