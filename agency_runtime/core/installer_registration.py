@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
 from typing import Any
@@ -226,6 +227,63 @@ def _openclaw_policy_runner(
     return run
 
 
+_HERMES_HOOK_BUDGET_KEY = "plugins.hook_callback_timeout"
+_HERMES_HOOK_BUDGET_MARGIN_SECONDS = 5
+# hook_timeout_seconds() documents 600 as the hard ceiling any rendered bridge
+# may carry; used only when the deployed plugin's own constant is unreadable.
+_HERMES_BRIDGE_TIMEOUT_CEILING_SECONDS = 600
+_HERMES_BRIDGE_TIMEOUT = re.compile(r"^_TIMEOUT_SECONDS = (\d{1,4})$", re.MULTILINE)
+
+
+def _deployed_hermes_bridge_timeout(target: Path) -> int:
+    """Return the rendered plugin's own bridge timeout, or the documented ceiling."""
+
+    try:
+        text = (target / "__init__.py").read_text(encoding="utf-8")
+    except (OSError, UnicodeError):
+        return _HERMES_BRIDGE_TIMEOUT_CEILING_SECONDS
+    match = _HERMES_BRIDGE_TIMEOUT.search(text)
+    if match is None:
+        return _HERMES_BRIDGE_TIMEOUT_CEILING_SECONDS
+    return min(int(match.group(1)), _HERMES_BRIDGE_TIMEOUT_CEILING_SECONDS)
+
+
+def _ensure_hermes_hook_budget(session: _RegistrationSession) -> str | None:
+    """Raise the host's bounded-hook budget above the bridge's own timeout.
+
+    Hermes bounds ``pre_llm_call`` (with the other agent-turn hooks) by
+    ``plugins.hook_callback_timeout`` — default 30s — and abandons the callback
+    on timeout without joining it (fail-open skip). The rendered plugin's
+    bridge may legitimately take up to its ``_TIMEOUT_SECONDS`` to staff a
+    turn, so a host budget below that abandons every staffing hook: the
+    orphaned worker still records routing evidence while the capsule never
+    reaches the interactive session, and finalization then blocks the drafts
+    it cannot correlate (AR-341). A raised value applies to fresh agent
+    processes immediately and to a running gateway on its next restart.
+    """
+
+    required = _deployed_hermes_bridge_timeout(session.target) + (
+        _HERMES_HOOK_BUDGET_MARGIN_SECONDS
+    )
+    observed = session.run(
+        "hook_budget_read",
+        [session.binary, "config", "get", _HERMES_HOOK_BUDGET_KEY],
+    )
+    current = 0.0
+    if observed.ok:
+        try:
+            current = float(observed.stdout.strip().splitlines()[0])
+        except (IndexError, ValueError):
+            current = 0.0
+    if current >= required:
+        return None
+    written = session.run(
+        "hook_budget_write",
+        [session.binary, "config", "set", _HERMES_HOOK_BUDGET_KEY, str(required)],
+    )
+    return None if written.ok else "hook_budget_write"
+
+
 def _register_hermes(
     session: _RegistrationSession,
     _force_refresh: bool,
@@ -237,6 +295,9 @@ def _register_hermes(
     verify = session.run("inventory", [session.binary, "plugins", "list"])
     if not enabled.ok:
         return session.result(False, "enable")
+    budget_failure = _ensure_hermes_hook_budget(session)
+    if budget_failure is not None:
+        return session.result(False, budget_failure)
     record = _hermes_text_plugin_record(verify.stdout) if verify.ok else None
     proven = record is not None and _bool_field(record, "enabled") is True
     return session.result(proven, None if proven else "inventory_unproven")
