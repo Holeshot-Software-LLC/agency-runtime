@@ -52,6 +52,17 @@ venv at f91541c3, inference operational, roster fix #382 live:
   `/new` session, fresh gateway).
 - Battery receipt the same hour: `hermes: passed` with staffed rows —
   headless injection works.
+- Ruled out (same evening): the full discovery `agency install` registered
+  the native gateway plugin at
+  `~/.hermes-nexus/plugins/agency-preflight/` and `hermes plugins list`
+  shows it `enabled` (0.1.0, user source); the gateway was restarted
+  after the registration (plugin mtime 21:58:55Z, gateway
+  ActiveEnter 22:11:22Z) and imported it (`__pycache__` present).
+  A fresh client turn after all of that still staffed, received nothing
+  (`HERMES_CONTEXT_HEADERS` empty, HEADER-ABSENT), and was blocked at
+  finalization — so registration and loading are not the missing piece;
+  the defect is inside the plugin's interactive-session delivery or the
+  finalization correlation for gateway chat turns.
 
 ## Expected
 
