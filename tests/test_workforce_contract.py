@@ -172,9 +172,7 @@ def test_review_report_task_type_grants_review_artifact_and_lifecycle() -> None:
     # review-flavored. They must cover artifact:review-report and the review
     # lifecycle, or the recruiter reports staff_without_safe_team on the
     # artifact axis for every review-flavored unit that ranks them first.
-    source = dict(
-        next(agent for agent in _manifest_agents() if agent["slug"] == "code-reviewer")
-    )
+    source = dict(next(agent for agent in _manifest_agents() if agent["slug"] == "code-reviewer"))
     source["task_types"] = ["review-report"]
     contract = project_workforce_contract(source)
 
