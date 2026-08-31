@@ -1045,11 +1045,16 @@ def test_codex_direct_rollout_rejects_stale_activation_wait_timeout(
         _codex_exact_direct_rollout_calls(calls, outputs, [])
 
 
-@pytest.mark.parametrize("explicit_role", (False, True), ids=("codex-0149", "codex-0150"))
+@pytest.mark.parametrize(
+    "spawn_mode",
+    ("legacy", "explicit", "role_less"),
+    ids=("codex-0149", "codex-0150", "codex-gated-0151"),
+)
 def test_codex_direct_rollout_projects_one_spawn_and_terminal_wait(
     tmp_path: Path,
-    explicit_role: bool,
+    spawn_mode: str,
 ) -> None:
+    explicit_role = spawn_mode == "explicit"
     parent_id = "019fa6a6-9432-7c70-a594-68ccdf7e4988"
     receiver_id = "019fa6a6-a197-7a83-b3fb-d2c20411f608"
     tool_use_id = "call-native-spawn"
@@ -1084,6 +1089,10 @@ def test_codex_direct_rollout_projects_one_spawn_and_terminal_wait(
     }
     if explicit_role:
         child_source.update({"agent_nickname": "Hilbert", "agent_role": "Code Reviewer"})
+    elif spawn_mode == "role_less":
+        # ADR-0195: an account-gated host offers no spawn agent_type; the
+        # child carries the modern five-key spawn source with a null role.
+        child_source.update({"agent_nickname": "Hilbert", "agent_role": None})
     terminal_activity = (
         [
             {
