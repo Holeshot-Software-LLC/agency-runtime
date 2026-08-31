@@ -34,7 +34,15 @@ def _fast_settle(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(subject.time, "sleep", lambda _seconds: None)
 
 
-def test_version_observation_is_first_line_bounded_and_fail_closed() -> None:
+def _passthrough_preparer(command: tuple[str, ...], resolver) -> tuple[str, ...]:
+    located = resolver(command[0]) or command[0]
+    return (located, *command[1:])
+
+
+def test_version_observation_is_first_line_bounded_and_fail_closed(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(subject, "_prepare_version_argv", _passthrough_preparer)
     runner_calls: list[tuple[str, ...]] = []
 
     def runner(command: tuple[str, ...], *, timeout: float) -> SimpleNamespace:
@@ -48,7 +56,7 @@ def test_version_observation_is_first_line_bounded_and_fail_closed() -> None:
     )
 
     assert observed == "codex-cli 0.151.0"
-    assert runner_calls == [("codex", "--version")]
+    assert runner_calls == [("/bin/codex", "--version")]
     assert subject.observe_harness_version("codex", resolver=_resolver({}), runner=runner) == ""
     assert (
         subject.observe_harness_version(
@@ -58,6 +66,71 @@ def test_version_observation_is_first_line_bounded_and_fail_closed() -> None:
         )
         == ""
     )
+
+
+def test_version_observation_executes_the_prepared_argv_not_the_bare_command() -> None:
+    """AR-340: a Windows npm shim is unlaunchable bare; the observer must run
+    whatever the shim-aware preparer resolved (native exe, or node + script)."""
+
+    runner_calls: list[tuple[str, ...]] = []
+
+    def runner(command: tuple[str, ...], *, timeout: float) -> SimpleNamespace:
+        runner_calls.append(tuple(command))
+        return _completed("2.1.250 (Claude Code)")
+
+    version, reason = subject.observe_harness_version_detail(
+        "claude",
+        resolver=_resolver({"claude": r"C:\agency-cli\claude.cmd"}),
+        runner=runner,
+        preparer=lambda command, resolver: (
+            r"C:\agency-cli\node.exe",
+            r"C:\agency-cli\node_modules\@anthropic-ai\claude-code\cli.js",
+            *command[1:],
+        ),
+    )
+
+    assert (version, reason) == ("2.1.250 (Claude Code)", "")
+    assert runner_calls == [
+        (
+            r"C:\agency-cli\node.exe",
+            r"C:\agency-cli\node_modules\@anthropic-ai\claude-code\cli.js",
+            "--version",
+        )
+    ]
+
+
+def test_version_observation_detail_names_every_skip_reason() -> None:
+    detail = subject.observe_harness_version_detail
+    resolver = _resolver({"claude": r"C:\agency-cli\claude.cmd"})
+
+    assert detail("zcode", resolver=resolver) == ("", "unsupported battery harness")
+    assert detail("claude", resolver=_resolver({})) == ("", "command not discovered")
+
+    def raising_preparer(command, resolver):
+        raise OSError("unlaunchable shim")
+
+    assert detail("claude", resolver=resolver, preparer=raising_preparer) == (
+        "",
+        "version command is not launchable (OSError)",
+    )
+    assert detail(
+        "claude",
+        resolver=resolver,
+        runner=lambda *a, **k: (_ for _ in ()).throw(subprocess.TimeoutExpired("claude", 30)),
+        preparer=_passthrough_preparer,
+    ) == ("", "version command failed (TimeoutExpired)")
+    assert detail(
+        "claude",
+        resolver=resolver,
+        runner=lambda *a, **k: _completed("boom", returncode=7),
+        preparer=_passthrough_preparer,
+    ) == ("", "version command exited 7")
+    assert detail(
+        "claude",
+        resolver=resolver,
+        runner=lambda *a, **k: _completed("   \n"),
+        preparer=_passthrough_preparer,
+    ) == ("", "version output was empty")
 
 
 def test_changed_harnesses_trigger_only_on_observed_version_drift() -> None:
@@ -176,6 +249,7 @@ def test_run_battery_gates_on_change_updates_proof_and_seals_receipts(
         "ensure_private_directory",
         lambda path, **_kwargs: Path(path).mkdir(parents=True, exist_ok=True) or Path(path),
     )
+    monkeypatch.setattr(subject, "_prepare_version_argv", _passthrough_preparer)
     fingerprint_path = tmp_path / "harness-battery.json"
     receipts = tmp_path / "receipts"
     versions = {
@@ -186,7 +260,7 @@ def test_run_battery_gates_on_change_updates_proof_and_seals_receipts(
     }
 
     def runner(command: tuple[str, ...], *, timeout: float) -> SimpleNamespace:
-        return versions[command[0]]
+        return versions[Path(command[0]).name]
 
     canary_calls: list[str] = []
 
@@ -247,6 +321,7 @@ def test_failed_battery_keeps_prior_proof_and_reports_not_ok(
         "ensure_private_directory",
         lambda path, **_kwargs: Path(path).mkdir(parents=True, exist_ok=True) or Path(path),
     )
+    monkeypatch.setattr(subject, "_prepare_version_argv", _passthrough_preparer)
     fingerprint_path = tmp_path / "harness-battery.json"
     fingerprint_path.write_text(
         json.dumps(
@@ -356,15 +431,20 @@ def test_baseline_adopts_observed_versions_without_running(
         "ensure_private_directory",
         lambda path, **_kwargs: Path(path).mkdir(parents=True, exist_ok=True) or Path(path),
     )
+    monkeypatch.setattr(subject, "_prepare_version_argv", _passthrough_preparer)
     fingerprint_path = tmp_path / "harness-battery.json"
 
     report = subject.record_baseline(
         fingerprint_path=fingerprint_path,
         resolver=_resolver({"codex": "/bin/codex", "claude": "/bin/claude"}),
-        runner=lambda command, *, timeout: _completed(f"{command[0]} 1.0.0"),
+        runner=lambda command, *, timeout: _completed(f"{Path(command[0]).name} 1.0.0"),
     )
 
     assert report["baseline"] == {"codex": "codex 1.0.0", "claude": "claude 1.0.0"}
+    assert report["skipped"] == {
+        "hermes": "command not discovered",
+        "openclaw": "command not discovered",
+    }
     document = json.loads(fingerprint_path.read_text(encoding="utf-8"))
     assert document["harnesses"]["codex"]["proven_version"] == "codex 1.0.0"
     # A subsequent unchanged observation triggers nothing.
@@ -372,3 +452,42 @@ def test_baseline_adopts_observed_versions_without_running(
         subject.changed_harnesses({"codex": "codex 1.0.0", "claude": "claude 1.0.0"}, document)
         == ()
     )
+
+
+def test_baseline_with_nothing_adoptable_is_loud_not_silent(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """AR-340: an empty adoption exits nonzero and names the skipped hosts."""
+
+    fingerprint_path = tmp_path / "harness-battery.json"
+    empty = subject.record_baseline(
+        fingerprint_path=fingerprint_path,
+        resolver=_resolver({}),
+        runner=lambda command, *, timeout: _completed("never called"),
+    )
+    assert empty["baseline"] == {}
+    assert set(empty["skipped"]) == set(subject.BATTERY_HOSTS)
+    assert not fingerprint_path.exists()
+
+    monkeypatch.setattr(subject, "record_baseline", lambda hosts=None: empty)
+    args = SimpleNamespace(
+        baseline=True,
+        json=False,
+        host=None,
+        install_service=False,
+        uninstall_service=False,
+    )
+    exit_code = subject.run_battery_cli(args)
+    output = capsys.readouterr().out
+    assert exit_code == 1
+    assert "no harness version could be adopted" in output
+    assert "claude: skipped (command not discovered)" in output
+
+    adopted = dict(empty, baseline={"claude": "claude 1.0.0"})
+    monkeypatch.setattr(subject, "record_baseline", lambda hosts=None: adopted)
+    assert subject.run_battery_cli(args) == 0
+    output = capsys.readouterr().out
+    assert "claude: baseline claude 1.0.0" in output
+    assert "codex: skipped (command not discovered)" in output

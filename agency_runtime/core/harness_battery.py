@@ -28,6 +28,7 @@ from pathlib import Path
 from typing import Any
 
 from agency_runtime.core.private_paths import ensure_private_directory
+from agency_runtime.core.process_argv import prepare_process_argv
 
 BATTERY_SCHEMA = "agency.harness-battery.v1"
 BATTERY_HOSTS = ("claude", "codex", "hermes", "openclaw")
@@ -79,26 +80,74 @@ def _bounded_process(
     )
 
 
+def _prepare_version_argv(
+    command: tuple[str, ...],
+    resolver: Callable[[str], str | None],
+) -> tuple[str, ...]:
+    """Freeze one version probe through the shim-aware executable trust walk.
+
+    On Windows the harness CLIs are npm command shims (``claude.cmd``), which
+    CreateProcess cannot launch directly; :func:`prepare_process_argv` resolves
+    them to their native executable or ``node`` plus the allowlisted CLI
+    script, exactly as the canary launch path does (AR-340).
+    """
+
+    return tuple(prepare_process_argv(command, resolver=resolver))
+
+
+def observe_harness_version_detail(
+    host: str,
+    *,
+    resolver: Callable[[str], str | None] = shutil.which,
+    runner: Callable[..., Any] = _bounded_process,
+    preparer: Callable[..., tuple[str, ...]] | None = None,
+) -> tuple[str, str]:
+    """Return ``(version, skip_reason)``; exactly one side is nonempty.
+
+    The reason is a short names-only category so an empty battery baseline
+    can say which hosts were skipped and why instead of succeeding silently.
+    """
+
+    prepare = _prepare_version_argv if preparer is None else preparer
+    command = _VERSION_COMMANDS.get(host)
+    if command is None:
+        return "", "unsupported battery harness"
+    if not resolver(command[0]):
+        return "", "command not discovered"
+    try:
+        argv = tuple(prepare(command, resolver))
+    except Exception as error:
+        return "", f"version command is not launchable ({type(error).__name__})"
+    try:
+        completed = runner(argv, timeout=_VERSION_TIMEOUT_SECONDS)
+    except Exception as error:
+        return "", f"version command failed ({type(error).__name__})"
+    returncode = getattr(completed, "returncode", 1)
+    if returncode != 0:
+        return "", f"version command exited {returncode}"
+    first_line = str(getattr(completed, "stdout", "") or "").strip().splitlines()
+    observed = first_line[0].strip() if first_line else ""
+    if not observed:
+        return "", "version output was empty"
+    return observed[:_MAX_VERSION_CHARS], ""
+
+
 def observe_harness_version(
     host: str,
     *,
     resolver: Callable[[str], str | None] = shutil.which,
     runner: Callable[..., Any] = _bounded_process,
+    preparer: Callable[..., tuple[str, ...]] | None = None,
 ) -> str:
     """Return the first observed version line for one harness, or ""."""
 
-    command = _VERSION_COMMANDS.get(host)
-    if command is None or not resolver(command[0]):
-        return ""
-    try:
-        completed = runner(command, timeout=_VERSION_TIMEOUT_SECONDS)
-    except Exception:
-        return ""
-    if getattr(completed, "returncode", 1) != 0:
-        return ""
-    first_line = str(getattr(completed, "stdout", "") or "").strip().splitlines()
-    observed = first_line[0].strip() if first_line else ""
-    return observed[:_MAX_VERSION_CHARS]
+    version, _reason = observe_harness_version_detail(
+        host,
+        resolver=resolver,
+        runner=runner,
+        preparer=preparer,
+    )
+    return version
 
 
 def read_fingerprints(path: Path | None = None) -> dict[str, Any]:
@@ -426,7 +475,10 @@ def record_baseline(
 
     The battery proves change; the baseline is the reference point. The
     installer records it after a verified install, and the operator can
-    re-adopt explicitly after proving harnesses by other means.
+    re-adopt explicitly after proving harnesses by other means. Hosts whose
+    version cannot be observed are reported under ``skipped`` with a
+    names-only reason so an empty adoption is diagnosable, never silent
+    (AR-340).
     """
 
     selected = tuple(hosts) if hosts else BATTERY_HOSTS
@@ -436,10 +488,12 @@ def record_baseline(
     fingerprint_file = fingerprint_path or default_fingerprint_path()
     document = read_fingerprints(fingerprint_file)
     adopted: dict[str, str] = {}
+    skipped: dict[str, str] = {}
     stamp = _now()
     for host in selected:
-        version = observe_harness_version(host, resolver=resolver, runner=runner)
+        version, reason = observe_harness_version_detail(host, resolver=resolver, runner=runner)
         if not version:
+            skipped[host] = reason
             continue
         entry = dict(document["harnesses"].get(host) or {})
         entry.update(
@@ -455,7 +509,7 @@ def record_baseline(
         adopted[host] = version
     if adopted:
         _write_fingerprints(document, fingerprint_file)
-    return {"schema": BATTERY_SCHEMA, "baseline": adopted}
+    return {"schema": BATTERY_SCHEMA, "baseline": adopted, "skipped": skipped}
 
 
 def run_battery_cli(args: Any) -> int:
@@ -481,7 +535,11 @@ def run_battery_cli(args: Any) -> int:
         else:
             for host, version in sorted(report["baseline"].items()):
                 print(f"{host}: baseline {version}")
-        return 0
+            for host, reason in sorted(report.get("skipped", {}).items()):
+                print(f"{host}: skipped ({reason})")
+            if not report["baseline"]:
+                print("harness battery: no harness version could be adopted")
+        return 0 if report["baseline"] else 1
     report = run_battery(
         hosts=hosts,
         force=bool(getattr(args, "force", False)),
