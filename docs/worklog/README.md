@@ -3,7 +3,7 @@ title: Worklog
 status: active
 category: worklog
 created: 2026-07-10
-updated: 2026-08-30
+updated: 2026-08-31
 tags: []
 related: []
 supersedes: []
@@ -1471,6 +1471,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `c797789d` | 2026-08-30 | fix(reliability): write battery service files owner-private | [AR-337](../roadmap/issue-AR-337-run-harness-battery-on-version-change.md) | CodeQL py/overly-permissive-file on unit writes; all service files now 0600/0700 with a mode-pinning test |
 | `0abe4a77` | 2026-08-30 | Merge pull request #365 from Holeshot-Software-LLC/claude/ar337-unit-modes | null | null |
 | `51660e3c` | 2026-08-30 | docs(ar338): file the Windows harness bring-up with its capsule | [AR-338](../roadmap/issue-AR-338-verify-windows-harness-set.md) | Windows capsule with zero-point checkpoint, LiteLLM-endpoint owner decision, byte-parity release evidence package; tracker #368 |
+| `3817ecb2` | 2026-08-30 | Merge pull request #369 from Holeshot-Software-LLC/claude/ar338-windows-handoff | null | null |
+| `5fcc4942` | 2026-08-31 | docs(ar338): record Windows release evidence and machine state | [AR-338](../roadmap/issue-AR-338-verify-windows-harness-set.md) | Exact-main 0abe4a77 Windows build verified; synthetic-merge replica proves hosted ubuntu/windows byte-parity from this machine; wheel+sdist smokes pass; stale zero-point and Actions-billing premises corrected; LiteLLM endpoint decision still gates install |
 <!-- worklog:end -->
 
 ## Provenance notes
