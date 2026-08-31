@@ -3,7 +3,7 @@ title: "AR-297 active recovery capsule"
 status: active
 category: roadmap
 created: 2026-08-25
-updated: 2026-08-29
+updated: 2026-08-30
 tags: [handoff, containers, unattended, codex, claude, hermes, openclaw, release]
 related:
   - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
@@ -28,6 +28,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/335
 ---
 
 # AR-297 active recovery capsule
+
+> Retired 2026-08-30: AR-297 closed on the verified four-host exact-main
+> rollout (codex activation attested under ADR-0194). Successor context
+> lives in the AR-338 Windows bring-up capsule and the AR-337 battery.
 
 ## checkpoint
 

@@ -1469,6 +1469,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `42c56d70` | 2026-08-30 | feat(reliability): arm the battery's systemd path and timer triggers | [AR-337](../roadmap/issue-AR-337-run-harness-battery-on-version-change.md) | Marker-owned shim + service/path/timer units, foreign-unit refusal, baseline seeding, manifest; live trigger fire proven |
 | `6cae921b` | 2026-08-30 | Merge pull request #364 from Holeshot-Software-LLC/claude/ar337-battery-core | null | null |
 | `c797789d` | 2026-08-30 | fix(reliability): write battery service files owner-private | [AR-337](../roadmap/issue-AR-337-run-harness-battery-on-version-change.md) | CodeQL py/overly-permissive-file on unit writes; all service files now 0600/0700 with a mode-pinning test |
+| `0abe4a77` | 2026-08-30 | Merge pull request #365 from Holeshot-Software-LLC/claude/ar337-unit-modes | null | null |
+| `51660e3c` | 2026-08-30 | docs(ar338): file the Windows harness bring-up with its capsule | [AR-338](../roadmap/issue-AR-338-verify-windows-harness-set.md) | Windows capsule with zero-point checkpoint, LiteLLM-endpoint owner decision, byte-parity release evidence package; tracker #368 |
 <!-- worklog:end -->
 
 ## Provenance notes
