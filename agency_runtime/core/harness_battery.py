@@ -286,7 +286,10 @@ def _run_canary_battery(
 
 _ORDINARY_COMMANDS: dict[str, tuple[str, ...]] = {
     "hermes": ("hermes", "-z", _ORDINARY_TASK),
-    "openclaw": ("openclaw", "agent", "-m", _ORDINARY_TASK, "--json"),
+    # `--session-key main` scopes to the configured default agent. The bare
+    # form relies on a gateway-memory routing binding that a gateway restart
+    # discards, after which it exits 1 with "No target session selected".
+    "openclaw": ("openclaw", "agent", "--session-key", "main", "-m", _ORDINARY_TASK, "--json"),
 }
 
 
