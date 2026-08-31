@@ -121,8 +121,9 @@ harness-auth and service constraints. No new inference routes.
       with the dashboard healthy (2026-08-31: all three hosts and the
       dashboard service on exact-main runtime `d2fd5aa2...`, service
       ready on 127.0.0.1:7810 post-AR-339).
-- [ ] Codex attended trust completes and `verify-activation` exits 0 on the
-      Windows profile.
+- [x] Codex attended trust completes and `verify-activation` exits 0 on the
+      Windows profile (2026-08-31, post-ADR-0195 on runtime `d2fd5aa2...`:
+      "Codex current-profile activation verified").
 - [ ] Live canaries pass for the hosts exposing a canary mode; zcode proves
       its supported readiness surface.
 - [x] `agency battery --baseline` records the Windows harness fingerprints

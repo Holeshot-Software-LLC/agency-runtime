@@ -75,23 +75,21 @@ canary so the AR-337 change gate tracks 0.151.0.
 
 ## exact-blocker
 
-Two attended owner actions, one sitting:
+One attended owner action: `claude login` — the claude CLI OAuth session
+is expired and cannot refresh (`claude -p` fails machine-wide; doctor:
+claude-subscription `cli unavailable`). Then rerun the claude live canary:
+`agency host-canary claude --execute --mode agency --confirm
+"RUN LIVE claude CANARY"`.
 
-1. Fresh terminal, `codex`, Trust all with all 8 Agency hook events (the
-   ADR-0195 reinstall re-wrote the hook hashes, resetting trust:
-   status=modified observed=8 trusted=0), new session, then
-   `agency install --agent codex --verify-activation`. The prior
-   `codex_collaboration_projection_unavailable` cause is fixed: this
-   machine's codex account exposes `spawn_agent` without `agent_type`
-   (server-side account-scoped rollout gate, measured on 0.150.1 and
-   0.151.0 with identical binaries and configs to the Linux GO box), and
-   ADR-0195 now admits the consistent role-less child lineage under the
-   ADR-0194 ciphertext anchor — both retained real canary children resolve
-   their exact parents through the merged parser. codex-cli was upgraded
-   to 0.151.0 (the Linux-proven line).
-2. `claude login` — the claude CLI OAuth session is expired and cannot
-   refresh (`claude -p` fails machine-wide; doctor: claude-subscription
-   `cli unavailable`). Then rerun the claude live canary.
+Codex is DONE (2026-08-31): after the ADR-0195 merge, the fresh trust
+round, and the codex-cli 0.151.0 upgrade, `verify-activation` exits 0
+("Codex current-profile activation verified") and the live
+current-profile canary passes with a persisted attestation
+(`codex-canary-9521a4a4.json`: code-reviewer delivered through the
+spawn+wait chain, header valid, zero corrections). Use `--timeout 600`
+for the full codex canary protocol — the 120s default times out on
+gpt-5.6-sol at max effort. The battery baseline is re-adopted at claude
+2.1.250 / codex-cli 0.151.0.
 
 Two Windows defects found, filed, and fixed by this package the same day
 (AR-339 tracker #372, AR-340 tracker #373). AR-340 is done and live-proven:
