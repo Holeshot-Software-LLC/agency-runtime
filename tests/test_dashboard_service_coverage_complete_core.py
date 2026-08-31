@@ -321,6 +321,67 @@ def test_service_environment_override_detection_is_names_only_and_allows_config_
     assert all(name in diagnostic for name in names)
 
 
+def test_reboot_durable_user_scope_credentials_are_not_overrides():
+    """AR-339: a config-declared credential whose process value matches its
+    registry-persisted scope value is reboot-durable; a service worker
+    inheriting the user environment must be allowed to start under it."""
+
+    config = SimpleNamespace(
+        judge=SimpleNamespace(api_key_env=""),
+        providers=(SimpleNamespace(api_key_env="JINA_API_KEY"),),
+    )
+    environment = {"JINA_API_KEY": "secret-value"}
+
+    durable = subject.dashboard_service_environment_overrides(
+        config,
+        environ=environment,
+        durable_reader=lambda name: {"JINA_API_KEY": "secret-value"}.get(name),
+    )
+    assert durable == ()
+
+    mismatched = subject.dashboard_service_environment_overrides(
+        config,
+        environ=environment,
+        durable_reader=lambda name: {"JINA_API_KEY": "different-value"}.get(name),
+    )
+    assert mismatched == ("JINA_API_KEY",)
+
+    process_local_only = subject.dashboard_service_environment_overrides(
+        config,
+        environ=environment,
+        durable_reader=lambda name: None,
+    )
+    assert process_local_only == ("JINA_API_KEY",)
+
+
+def test_static_runtime_overrides_stay_flagged_even_when_persisted():
+    """The AGENCY_* runtime overrides belong in agency.yaml; registry
+    persistence does not excuse them, or the config file silently forks."""
+
+    environment = {"AGENCY_DB_PATH": "persisted-elsewhere.db"}
+
+    names = subject.dashboard_service_environment_overrides(
+        None,
+        environ=environment,
+        durable_reader=lambda name: {"AGENCY_DB_PATH": "persisted-elsewhere.db"}.get(name),
+    )
+    assert names == ("AGENCY_DB_PATH",)
+
+
+def test_windows_durable_environment_reader_is_names_only_and_platform_gated():
+    if os.name != "nt":
+        assert subject._windows_durable_environment_value("JINA_API_KEY") is None
+        return
+    # Never write the registry from a test: an unset GUID-shaped name reads
+    # as absent on any machine.
+    assert (
+        subject._windows_durable_environment_value(
+            "AGENCY_TEST_2B7A0C1DDE4E4F5B9A5C_ABSENT",
+        )
+        is None
+    )
+
+
 def test_context_unsupported_windows_linux_and_xdg(tmp_path, monkeypatch):
     assert (
         subject._context(

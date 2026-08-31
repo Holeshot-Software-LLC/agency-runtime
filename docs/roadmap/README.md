@@ -353,7 +353,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-337` | [Run the harness canary battery on any host version change](issue-AR-337-run-harness-battery-on-version-change.md) | in_progress | p1 | reliability | [#362](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/362) |
 | `AR-338` | [Verify the Windows harness set (codex, claude, zcode)](issue-AR-338-verify-windows-harness-set.md) | open | p1 | host-integrations | [#368](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/368) |
 | `AR-339` | [Admit reboot-durable user-scope credentials in the dashboard service guard](issue-AR-339-admit-durable-user-scope-credentials-in-dashboard-service-guard.md) | open | p1 | dashboard | [#372](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/372) |
-| `AR-340` | [Observe npm command-shim harness versions in the battery](issue-AR-340-observe-npm-shim-harness-versions-in-battery.md) | open | p1 | reliability | [#373](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/373) |
+| `AR-340` | [Observe npm command-shim harness versions in the battery](issue-AR-340-observe-npm-shim-harness-versions-in-battery.md) | done | p1 | reliability | [#373](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/373) |
 
 ## Traceability
 

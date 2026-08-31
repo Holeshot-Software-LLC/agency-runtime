@@ -1,6 +1,6 @@
 ---
 title: "AR-340: Observe npm command-shim harness versions in the battery"
-status: open
+status: done
 category: roadmap
 created: 2026-08-31
 updated: 2026-08-31
@@ -45,6 +45,22 @@ from `C:\agency-cli` (as `.cmd` shims). Receipt:
 otherwise cross-platform; its trigger service remains systemd-only with the
 Windows scheduled-task analog tracked under AR-337.
 
+## Resolution (2026-08-31)
+
+Fixed on the filing day. `observe_harness_version` now freezes the version
+probe through `prepare_process_argv` -- the same shim-aware executable trust
+walk the canary launch path uses -- so npm `.cmd` shims resolve to their
+native executable or `node` plus the allowlisted CLI script.
+`record_baseline` reports every unobservable host under `skipped` with a
+names-only reason, and `agency battery --baseline` exits nonzero when
+nothing was adopted. Live on the AR-338 Windows machine: the baseline
+adopted `claude 2.1.250 (Claude Code)` and `codex-cli 0.150.1` with
+hermes/openclaw skipped as `command not discovered`, and the pre-fix
+0abe4a77 runenv's `agency doctor` reads the recorded rows green, proving
+the fingerprint file contract across versions. Receipt:
+`~/.agency-runtime/evidence/ar338-windows-20260831/windows-build-0abe4a77.json`
+(`fixes_verified_20260831.ar340_battery_shim_observer`).
+
 ## Approach
 
 Resolve npm command shims to their underlying `node.exe` plus `cli.js`
@@ -61,11 +77,11 @@ machinery; the loud-empty-adoption change is local to the battery CLI.
 
 ## Acceptance
 
-- [ ] On Windows, `agency battery --baseline` adopts observed versions for
+- [x] On Windows, `agency battery --baseline` adopts observed versions for
       every installed battery harness whose CLI is an npm command shim.
-- [ ] Doctor's battery rows report the recorded baseline on the AR-338
+- [x] Doctor's battery rows report the recorded baseline on the AR-338
       Windows machine.
-- [ ] `--baseline` with zero adoptable harnesses exits nonzero and names
+- [x] `--baseline` with zero adoptable harnesses exits nonzero and names
       the skipped hosts with reasons.
-- [ ] The version observation path still refuses executables that fail the
+- [x] The version observation path still refuses executables that fail the
       executable-trust walk.

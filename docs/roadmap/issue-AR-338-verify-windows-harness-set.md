@@ -123,6 +123,7 @@ harness-auth and service constraints. No new inference routes.
       Windows profile.
 - [ ] Live canaries pass for the hosts exposing a canary mode; zcode proves
       its supported readiness surface.
-- [ ] `agency battery --baseline` records the Windows harness fingerprints;
-      the trigger-service gap is logged under AR-337.
+- [x] `agency battery --baseline` records the Windows harness fingerprints
+      (2026-08-31, post-AR-340: claude 2.1.250, codex-cli 0.150.1); the
+      trigger-service gap is logged under AR-337.
 - [ ] Receipts are retained and the ledger records the verification.

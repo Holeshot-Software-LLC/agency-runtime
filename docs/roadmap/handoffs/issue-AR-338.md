@@ -81,8 +81,14 @@ Two attended owner actions, one sitting:
    (codex-cli 0.150.1 is inside main's admitted 0.149–0.151 contract
    range; no upgrade prerequisite).
 
-Two Windows defects found by this package, filed 2026-08-31 with owner
-authorization as AR-339 (tracker #372) and AR-340 (tracker #373):
+Two Windows defects found, filed, and fixed by this package the same day
+(AR-339 tracker #372, AR-340 tracker #373). AR-340 is done and live-proven:
+the baseline adopted claude and codex through the shim-aware trust walk and
+doctor's battery rows read green. AR-339's worker fix is live-proven in the
+foreground (HTTP 200 under the credentialed user environment); its one open
+box is the registered-service refresh through `agency install --all`, held
+for the next anchored install so host projections keep their exact-main
+provenance. Historical failure detail:
 
 - **Dashboard service env guard (AR-339)**: the fresh worker
   (`run_dashboard`, server/dashboard.py:3164) refuses to start when any
@@ -123,9 +129,9 @@ AR-331/333 fixes are superseded by main's 0.149–0.151 parser range.
    `agency install --agent codex --verify-activation` exit 0; then
    `agency host-canary codex --profile-scope current-profile --execute
    --mode agency`.
-3. Fix AR-339 and AR-340; re-run `agency battery --baseline` once the
-   observer handles shims, and re-run the dashboard service install once
-   the env guard admits durable user-scope values.
+3. At the next anchored install, let `agency install --all` register the
+   dashboard service on a fixed runtime (closes AR-339's last box and the
+   dashboard-healthy acceptance).
 4. Close the parity trail: Linux `dist-0abe4a77` sdist hash must equal
    `15d87f7dda21...29a3ee`; record the portable-wheel hash; when both
    wheels sit on one machine run `verify_distribution --artifact-set
@@ -140,8 +146,9 @@ confirmation outstanding); install --all green for codex/claude/zcode
 with the dashboard healthy (hosts green; dashboard blocked by the env
 guard defect); codex trust plus verify-activation exit 0; live canaries
 for canary-capable hosts and zcode's supported surface (zcode smoke 4/4
-recorded); battery baseline recorded (blocked by the shim defect);
-receipts retained and the ledger updated.
+recorded); battery baseline recorded (done
+2026-08-31: claude 2.1.250, codex-cli 0.150.1); receipts retained and the
+ledger updated.
 
 ## constraints
 
