@@ -1498,6 +1498,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `0759549a` | 2026-08-31 | fix(workforce): map review-report task type to review artifact coverage | null | null |
 | `d4ff9726` | 2026-08-31 | Merge pull request #382 from Holeshot-Software-LLC/claude/roster-review-report-artifact | null | null |
 | `0ca2f5cb` | 2026-08-31 | style(tests): ruff-format the review-report contract test | null | null |
+| `b9a5a7ff` | 2026-08-31 | Merge pull request #383 from Holeshot-Software-LLC/claude/format-workforce-contract-test | null | null |
+| `0d9d73dc` | 2026-08-31 | fix(codex): accept marketplaceSource in codex marketplace list rows | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
