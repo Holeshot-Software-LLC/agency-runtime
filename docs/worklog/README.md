@@ -1502,6 +1502,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `0d9d73dc` | 2026-08-31 | fix(codex): accept marketplaceSource in codex marketplace list rows | null | null |
 | `6cb6792e` | 2026-08-31 | Merge pull request #384 from Holeshot-Software-LLC/claude/codex-marketplace-source-key | null | null |
 | `f6c53a2c` | 2026-08-31 | fix(battery): target the default-agent main session in the openclaw drill | null | null |
+| `f91541c3` | 2026-08-31 | Merge pull request #385 from Holeshot-Software-LLC/claude/openclaw-battery-session-key | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
