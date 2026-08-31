@@ -50,6 +50,24 @@ on 127.0.0.1:7810 meanwhile. Receipt:
 never hits the guard because its secrets live in the LiteLLM proxy and the
 systemd user-manager environment is clean.
 
+## Resolution (2026-08-31, worker fix landed; registered refresh pending)
+
+`dashboard_service_environment_overrides` now admits a config-declared
+credential whose process value is byte-equal to its registry-persisted
+Windows user-scope (or machine-scope) value; a process-local-only or
+mismatched value still fails closed, the static `AGENCY_*` runtime
+overrides stay flagged regardless of persistence, and no value ever leaves
+the in-process equality check. Live on the AR-338 Windows machine: the
+fixed worker was started in the foreground under the exact environment
+that made the pre-fix worker raise instantly (`JINA_API_KEY` inherited
+from the user scope) and it served `HTTP 200` on `127.0.0.1:7810` with
+zero stderr. The old-runtime scheduled task was restored afterwards; the
+remaining acceptance box is the registered-service refresh through
+`agency install --all`, which waits for the next anchored install so the
+AR-338 host projections keep their exact-main provenance. Receipt:
+`~/.agency-runtime/evidence/ar338-windows-20260831/windows-build-0abe4a77.json`
+(`fixes_verified_20260831.ar339_dashboard_env_guard`).
+
 ## Approach
 
 Keep the guard's intent — a reboot-durable service must not depend on
@@ -67,12 +85,12 @@ its Windows durability semantics.
 
 ## Acceptance
 
-- [ ] On Windows, with a config-declared credential persisted in the HKCU
+- [x] On Windows, with a config-declared credential persisted in the HKCU
       user environment, the fresh dashboard service worker starts and the
       readiness probe passes.
-- [ ] A credential present only process-locally (absent from the durable
+- [x] A credential present only process-locally (absent from the durable
       scope) still fails closed with the existing names-only diagnostic.
-- [ ] No credential value is copied into the service definition, manifest,
+- [x] No credential value is copied into the service definition, manifest,
       task XML, diagnostics, or logs.
 - [ ] AR-338's `agency install --all` acceptance reaches "dashboard
       healthy" on the Windows machine.
