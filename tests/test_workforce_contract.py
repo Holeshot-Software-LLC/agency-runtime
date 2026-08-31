@@ -166,6 +166,22 @@ def test_discovery_worker_accepts_analysis_artifacts_from_inference_plans() -> N
     assert contract.artifact_kinds == ("documentation", "analysis", "review-report")
 
 
+def test_review_report_task_type_grants_review_artifact_and_lifecycle() -> None:
+    # Synced rosters (not the bundled manifest) declare the artifact itself as a
+    # task type: 11 active contracts carry "review-report" and nothing else
+    # review-flavored. They must cover artifact:review-report and the review
+    # lifecycle, or the recruiter reports staff_without_safe_team on the
+    # artifact axis for every review-flavored unit that ranks them first.
+    source = dict(
+        next(agent for agent in _manifest_agents() if agent["slug"] == "code-reviewer")
+    )
+    source["task_types"] = ["review-report"]
+    contract = project_workforce_contract(source)
+
+    assert "review-report" in contract.artifact_kinds
+    assert "review" in contract.lifecycle_phases
+
+
 def test_projection_preserves_typed_relationships_without_promoting_conflicts() -> None:
     source = next(agent for agent in _manifest_agents() if agent["slug"] == "reality-checker")
     contract = project_workforce_contract(source)

@@ -272,7 +272,12 @@ def _artifact_kinds(agent: Mapping[str, Any], archetype: str) -> tuple[str, ...]
         result.append("plan")
     if {"analysis", "research"} & tasks:
         result.append("analysis")
-    if "review" in tasks:
+    # 2026-08-31: synced rosters declare the artifact itself as a task type
+    # ("review-report", 11 active contracts). Without this synonym the top-ranked
+    # auditor on a review-flavored unit derives only "analysis" and the recruiter
+    # reports staff_without_safe_team on the artifact axis (hermes/openclaw
+    # preflight receipts, unit-context-assessment).
+    if {"review", "review-report"} & tasks:
         result.append("review-report")
     if not result:
         result.append("analysis")
@@ -290,6 +295,7 @@ def _lifecycle_phases(agent: Mapping[str, Any], archetype: str) -> tuple[str, ..
         "design": "design",
         "implementation": "implementation",
         "review": "review",
+        "review-report": "review",
         "testing": "testing",
         "documentation": "documentation",
         "writing": "documentation",
