@@ -1494,6 +1494,10 @@ This registry connects repository history to the roadmap and to optional detail 
 | `ae17a53f` | 2026-08-31 | docs(ar338): complete the Windows harness verification | [AR-338](../roadmap/issue-AR-338-verify-windows-harness-set.md) | Owner-reported Linux sdist hash equals the Windows build byte-for-byte and the wheel pair shares all 592 payload members; every acceptance box checked; AR-338 done |
 | `14782e30` | 2026-08-31 | Merge pull request #380 from Holeshot-Software-LLC/claude/ar338-complete | null | null |
 | `380d72e6` | 2026-08-31 | feat(evals): treat native delegation as a baseline workforce eval capability | null | Owner WIP landed: the workforce selection eval tests inference-driven team composition whose delivery model is native delegation, so every eval case's staffing context carries native-delegation regardless of --available-tool overrides |
+| `044a3f57` | 2026-08-31 | Merge pull request #381 from Holeshot-Software-LLC/claude/eval-native-delegation-baseline | null | null |
+| `0759549a` | 2026-08-31 | fix(workforce): map review-report task type to review artifact coverage | null | null |
+| `d4ff9726` | 2026-08-31 | Merge pull request #382 from Holeshot-Software-LLC/claude/roster-review-report-artifact | null | null |
+| `0ca2f5cb` | 2026-08-31 | style(tests): ruff-format the review-report contract test | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
