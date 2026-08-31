@@ -19,7 +19,7 @@ epic: host-integrations
 issue_id: AR-338
 priority: p1
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/368
-depends_on: []
+depends_on: [AR-339, AR-340]
 blocks: []
 ---
 
