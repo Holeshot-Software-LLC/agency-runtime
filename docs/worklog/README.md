@@ -1506,6 +1506,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `7c35df00` | 2026-08-31 | docs(ar341,ar342): file the hermes delivery and codex canary defects | null | null |
 | `a2bd70a1` | 2026-08-31 | Merge pull request #388 from Holeshot-Software-LLC/claude/ar341-ar342-filing | null | null |
 | `523c31fc` | 2026-08-31 | docs(ar341): rule out native plugin registration as the missing piece | null | null |
+| `c8eaa7af` | 2026-08-31 | Merge pull request #389 from Holeshot-Software-LLC/claude/ar341-native-plugin-datapoint | null | null |
+| `b892bb4d` | 2026-08-31 | fix(hermes): raise the host bounded-hook budget above the bridge timeout | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
