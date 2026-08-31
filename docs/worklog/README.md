@@ -1473,6 +1473,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `51660e3c` | 2026-08-30 | docs(ar338): file the Windows harness bring-up with its capsule | [AR-338](../roadmap/issue-AR-338-verify-windows-harness-set.md) | Windows capsule with zero-point checkpoint, LiteLLM-endpoint owner decision, byte-parity release evidence package; tracker #368 |
 | `3817ecb2` | 2026-08-30 | Merge pull request #369 from Holeshot-Software-LLC/claude/ar338-windows-handoff | null | null |
 | `5fcc4942` | 2026-08-31 | docs(ar338): record Windows release evidence and machine state | [AR-338](../roadmap/issue-AR-338-verify-windows-harness-set.md) | Exact-main 0abe4a77 Windows build verified; synthetic-merge replica proves hosted ubuntu/windows byte-parity from this machine; wheel+sdist smokes pass; stale zero-point and Actions-billing premises corrected; LiteLLM endpoint decision still gates install |
+| `901038bb` | 2026-08-31 | Merge pull request #370 from Holeshot-Software-LLC/claude/ar338-windows-build-evidence | null | null |
+| `ec4b6d96` | 2026-08-31 | docs(ar338): record the owner split-config decision and exact-main install | [AR-338](../roadmap/issue-AR-338-verify-windows-harness-set.md) | Split inference backing (Windows per-harness + Jina, no LiteLLM; Linux LiteLLM aliases); install --all on c4815c3a for codex/claude/zcode; zcode smoke 4/4; claude OAuth expired blocks canary; dashboard env-guard and battery shim defects isolated |
 <!-- worklog:end -->
 
 ## Provenance notes
