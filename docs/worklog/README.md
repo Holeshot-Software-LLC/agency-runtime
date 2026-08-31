@@ -1490,6 +1490,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `ccd17977` | 2026-08-31 | Merge pull request #378 from Holeshot-Software-LLC/claude/ar338-codex-verified | null | null |
 | `51366085` | 2026-08-31 | fix(claude): stage marketplace registration into the isolated canary home | [AR-338](../roadmap/issue-AR-338-verify-windows-harness-set.md) | Claude 2.1.250 stopped activating --plugin-dir hooks and first-session prompt hooks; the isolated canary home is now staged via the CLI's plugin marketplace add + install with one bounded warm-up turn, and the record proves registration from the CLI's own receipt |
 | `5aac9534` | 2026-08-31 | docs(ar338): record the passing claude live canary and close the local surface | [AR-338](../roadmap/issue-AR-338-verify-windows-harness-set.md) | Claude live canary passed (valid header, fully proven isolated plugin, hash-bound minimal-change-engineer card in the host-authored child); live-canary acceptance checked; only the cross-machine Linux hash confirmation remains |
+| `1a990bee` | 2026-08-31 | Merge pull request #379 from Holeshot-Software-LLC/claude/ar338-claude-canary-staging | null | null |
+| `ae17a53f` | 2026-08-31 | docs(ar338): complete the Windows harness verification | [AR-338](../roadmap/issue-AR-338-verify-windows-harness-set.md) | Owner-reported Linux sdist hash equals the Windows build byte-for-byte and the wheel pair shares all 592 payload members; every acceptance box checked; AR-338 done |
 <!-- worklog:end -->
 
 ## Provenance notes
