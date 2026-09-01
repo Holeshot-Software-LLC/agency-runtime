@@ -3,7 +3,7 @@ title: "AR-338 Windows bring-up capsule"
 status: active
 category: roadmap
 created: 2026-08-30
-updated: 2026-08-31
+updated: 2026-09-01
 tags: [handoff, windows, codex, claude, zcode, release]
 related:
   - docs/roadmap/issue-AR-338-verify-windows-harness-set.md
@@ -126,6 +126,63 @@ AR-331/333 fixes are superseded by main's 0.149–0.151 parser range.
    wheels sit on one machine run `verify_distribution --artifact-set
    release` on the combined trio.
 5. Record the ledger row for each advance.
+
+## 2026-09-01 re-pass: bring the three hosts to current main
+
+Written from the Linux session that closed AR-341/AR-342. This machine
+last verified codex, claude, and zcode on exact-main `9521a4a4` (runtime
+digest `d2fd5aa2...`); main has since moved to `ec6c4b49` with changes
+this machine inherits: PR #382 (typed roster coverage for
+`review-report` contracts — staffing correctness on every host), PR #392
+(`verify-activation` failures now print their named unmet prerequisites
+instead of one generic sentence), and PR #384 (codex ≥0.151 adds
+`marketplaceSource` to marketplace rows; required the moment this
+machine's codex updates past 0.150.1). PRs #385/#390 touch only
+openclaw/hermes and are no-ops here. GitHub Actions is disabled
+repo-wide by owner decision: every gate is proven locally (ruff format
++ check, pytest, `verify_docs.py`, `update_worklog.py --check`) before
+merge, and this machine verifies its own build per the release
+checklist as before.
+
+Steps, in order:
+
+1. Build and install exact-main `ec6c4b49` per the release checklist
+   into the runenv (verified-wheel venv; this machine never installs
+   from a git URL). Confirm `agency version` and the parity hashes.
+2. `agency install --all` — restages hooks for all three hosts; expect
+   codex to report activation-required (hook bytes changed, trust flips
+   to `modified` on every restage).
+3. Codex: open a fresh terminal TUI, accept `Trust all and continue`
+   for the 8 hook events, then `agency install --agent codex
+   --verify-activation`. Failures now name their blocker; the pattern
+   "host invocation did not return a nonempty response" while
+   `codex login status` still claims a login means a burned refresh
+   token — `codex logout && codex login`, then rerun.
+4. Claude: it auto-updates itself, so expect version drift from the
+   recorded 2.1.250. Run `agency battery --baseline` to adopt the
+   observed versions, then `agency install --agent claude` to re-prove
+   the host version. If the version probe stays unproven, inspect the
+   updater's install tree ACLs — the AR-340 shim-aware probe refuses an
+   executable whose parent namespace permits cross-account substitution
+   (the Linux twin of this failure was a group-writable npm tree).
+5. zcode: `agency smoke --agent zcode` — 4/4 with a retained readiness
+   receipt remains its supported proof surface (no canary mode).
+6. Batteries: `agency battery --host <host> --force` one host at a
+   time, not concurrently — simultaneous drills contend on the judge
+   route and throw transient rejections that vanish solo. On the Linux
+   machine the spawned-claude canary also failed until the invoking
+   shell stopped leaking permissive file modes into canary artifacts
+   (`artifact_not_trusted`); the Windows analog is the ACL trust probe,
+   so treat that reason code as a permissions symptom, not a code bug.
+7. Retain receipts under `~/.agency-runtime/evidence/` and record a
+   worklog ledger row per advance (`python scripts/update_worklog.py`
+   before each docs commit; the quality gate now runs locally).
+
+Re-pass acceptance: all three hosts and the dashboard pinned to
+exact-main `ec6c4b49`; codex `verify-activation` exit 0; claude
+isolated canary passed; zcode smoke 4/4; battery baseline re-recorded
+at the currently observed versions; receipts retained and ledger rows
+written.
 
 ## verification
 
