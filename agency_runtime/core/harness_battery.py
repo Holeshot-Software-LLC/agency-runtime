@@ -41,6 +41,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from agency_runtime.core.deployed_fix_witness import WITNESS_FAILURE_STATUSES, attest_host
 from agency_runtime.core.host_capabilities import EXECUTION_HOSTS
 from agency_runtime.core.private_paths import ensure_private_directory
 from agency_runtime.core.process_argv import prepare_process_argv
@@ -692,6 +693,24 @@ def _fingerprint_entry(
     return entry
 
 
+def _witness_detail(host: str) -> dict[str, Any]:
+    """Attest the host's invoked projection against the fix registry (AR-363).
+
+    Never raises: the battery must still seal its receipt when the witness
+    layer itself fails, and that failure is reported as unavailable rather
+    than counted as a pass.
+    """
+
+    try:
+        return attest_host(host).as_dict()
+    except Exception as error:
+        return {
+            "status": "unavailable",
+            "reason_code": "witness_error",
+            "reason": type(error).__name__,
+        }
+
+
 def run_battery(
     *,
     hosts: tuple[str, ...] | None = None,
@@ -746,6 +765,12 @@ def run_battery(
         )
         outcome, detail = _run_graded_probe(host, trials=trials_per_probe, probe=probe)
         detail["posture"] = posture
+        # A passing canary on stale hooks proves nothing about the shipped
+        # fixes; the witness verdict fails the host (AR-363).
+        detail["witness"] = witness = _witness_detail(host)
+        if outcome == "passed" and witness.get("status") in WITNESS_FAILURE_STATUSES:
+            outcome = detail["outcome"] = "failed"
+            detail["reason"] = "deployed_fix_witness_failed"
         detail["observed_version"] = observed[host]
         detail["ran_at"] = _now()
         receipt = _write_receipt(receipts, host, detail)

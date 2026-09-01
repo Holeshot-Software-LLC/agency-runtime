@@ -38,6 +38,23 @@ def _fast_settle(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(subject.time, "sleep", lambda _seconds: None)
 
 
+class _Witness:
+    """A stand-in for the AR-363 host witness with one chosen verdict."""
+
+    def __init__(self, status: str) -> None:
+        self.status = status
+
+    def as_dict(self) -> dict[str, Any]:
+        return {"status": self.status, "reason_code": self.status}
+
+
+@pytest.fixture(autouse=True)
+def _attested_witness(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Keep the battery's witness attestation off the operator's real install."""
+
+    monkeypatch.setattr(subject, "attest_host", lambda host, **_kwargs: _Witness("attested"))
+
+
 def _passthrough_preparer(command: tuple[str, ...], resolver) -> tuple[str, ...]:
     located = resolver(command[0]) or command[0]
     return (located, *command[1:])
@@ -516,6 +533,73 @@ def test_failed_battery_keeps_prior_proof_and_reports_not_ok(
     assert entry["last_outcome"] == "attended_trust_required"
     assert entry["proven_at"] == "2026-08-30T00:00:00+00:00"
     assert entry["last_trials"] == {"requested": 3, "run": 1, "passed": 0}
+
+
+def _run_claude_battery(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    *,
+    witness_status: str,
+) -> tuple[dict[str, Any], Path]:
+    """Run a passing claude canary under one chosen witness verdict (AR-363)."""
+
+    monkeypatch.setattr(
+        subject,
+        "ensure_private_directory",
+        lambda path, **_kwargs: Path(path).mkdir(parents=True, exist_ok=True) or Path(path),
+    )
+    monkeypatch.setattr(subject, "_prepare_version_argv", _passthrough_preparer)
+    monkeypatch.setattr(subject, "attest_host", lambda host, **_kwargs: _Witness(witness_status))
+    fingerprint_path = tmp_path / "harness-battery.json"
+    fingerprint_path.write_text(
+        json.dumps({"schema": subject.BATTERY_SCHEMA, "harnesses": {}}),
+        encoding="utf-8",
+    )
+    report = subject.run_battery(
+        hosts=("claude",),
+        fingerprint_path=fingerprint_path,
+        receipt_root=tmp_path / "receipts",
+        resolver=_resolver({"claude": "/bin/claude"}),
+        runner=lambda command, *, timeout: _completed("2.1.252 (Claude Code)"),
+        canary_runner=lambda host, **kwargs: {"canary_passed": True},
+        store_factory=lambda: _ActivityStore([{}, {}]),
+    )
+    return report, fingerprint_path
+
+
+def test_witness_drift_fails_a_host_whose_canary_passed(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A passing canary on stale hooks is not proof; the witness verdict wins."""
+
+    report, fingerprint_path = _run_claude_battery(tmp_path, monkeypatch, witness_status="drift")
+
+    assert report["ok"] is False
+    assert report["failed"] == ["claude"]
+    detail = report["results"]["claude"]
+    assert detail["outcome"] == "failed"
+    assert detail["reason"] == "deployed_fix_witness_failed"
+    assert detail["witness"]["status"] == "drift"
+    entry = json.loads(fingerprint_path.read_text(encoding="utf-8"))["harnesses"]["claude"]
+    assert entry["last_outcome"] == "failed"
+    assert entry["proven_version"] == ""
+
+
+def test_an_unavailable_witness_never_flips_a_passing_host(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Missing witness evidence is reported, not treated as a failure or a pass."""
+
+    report, _fingerprint_path = _run_claude_battery(
+        tmp_path, monkeypatch, witness_status="unavailable"
+    )
+
+    assert report["ok"] is True
+    detail = report["results"]["claude"]
+    assert detail["outcome"] == "passed"
+    assert detail["witness"]["status"] == "unavailable"
 
 
 def test_unsupported_host_is_refused() -> None:
