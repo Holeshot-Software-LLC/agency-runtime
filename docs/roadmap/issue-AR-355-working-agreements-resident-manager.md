@@ -135,9 +135,17 @@ ECC's `context-budget` skill.
       changeable through owner config without a code release
       (delivered via the shipped `operator_policy` block; live-verified
       2026-09-01).
-- [ ] The steward carries the roster-awareness line and still never
-      implies delegation; the anti-self-staffing language is unchanged.
-- [ ] Kernel v5 lands through the version-change discipline (re-wire +
-      battery), with the binding line reporting both managers and
-      their hashes.
+- [x] The steward carries the roster-awareness line and still never
+      implies delegation; the anti-self-staffing language is unchanged
+      (live-observed 2026-09-01 ~21:55Z: a persistent claude session
+      rebound to `rmb-ab4a5952…` with `kernel=v5:62c94d87…`,
+      `delivery=injected`, and the delivered kernel text carries the
+      approved line between delegation-neutrality and
+      anti-self-staffing).
+- [x] Kernel v5 lands through the version-change discipline (re-wire +
+      battery), with the binding line reporting the manager and kernel
+      hash (v5 rode the 2026-09-01 deploy cycles with all four
+      batteries green; the "both managers" wording resolved to steward
+      kernel + separately-hashed operator_policy block per the
+      implementation section).
 - [ ] Per-turn token cost of the addition is measured and recorded.

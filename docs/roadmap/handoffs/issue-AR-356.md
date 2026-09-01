@@ -38,27 +38,23 @@ end every turn with exactly one question.
 
 ## checkpoint
 
-Main is fully green at `72b035c9` (verify_docs --require-tracker 961 files;
-strict verify_tracker 356 items, 2 PR-tracked skips). The runtime is deployed
-at that same commit: all four hosts wired to the launcher projection carrying
-kernel v5, AR-346, and the AR-365 hotfix; all four batteries green and the
-baseline adopted (claude 2.1.257, codex 0.152.0, hermes 0.21.0/7cd91114,
-openclaw 2026.8.2).
+Main is fully green (both strict gates). The runtime is deployed at the
+current main: all four hosts wired to the projection carrying kernel v5,
+AR-346, AR-365, and AR-366's all-host Rule-8 gate; all four batteries green
+and the baseline adopted (claude 2.1.257, codex 0.152.0, hermes
+0.21.0/7cd91114, openclaw 2026.8.2).
 
-The AR-353 intermittent staffing window is the dominant live failure. On
+The AR-353 intermittent staffing window is the dominant live failure: on
 2026-09-01 ~20:29Z it hit four sessions in minutes
 (`workforce_inference_failed`; reasons `inference_invalid`,
-`selection_confidence_too_low`, `staffing_critic_rejected`); a well-shaped
-owner UniFi request on openclaw failed open with the roster's
-`network-engineer` unreached — the planner died before ranking. That is
-AR-356's exact case: the turn context never said staffing failed.
+`selection_confidence_too_low`, `staffing_critic_rejected`), and a
+well-shaped owner UniFi request failed open with `network-engineer`
+unreached — AR-356's exact case: the turn never said staffing failed.
 
 Deploy lore that recurs: claude `marketplace_add` needs the chmod dance
-after host auto-updates (plugin dirs 700, `@anthropic-ai` npm tree g-w
-stripped); the openclaw installer's `gateway_status` step always fails while
-the gateway is deliberately stopped — diagnostic only; hermes restarts tend
-to duplicate the dashboard process (kill by PID, never `pkill -f` with a
-pattern your own shell contains, then one single start).
+after host auto-updates; the openclaw installer's `gateway_status` step
+always fails while the gateway is deliberately stopped — diagnostic only;
+hermes restarts duplicate the dashboard (kill by PID, one single start).
 
 ## completed-evidence
 
@@ -76,13 +72,14 @@ pattern your own shell contains, then one single start).
 ## exact-blocker
 
 None mechanical; the only waits are observational (a live fail-open turn
-per delivery path for AR-365/AR-366, a fresh claude session for AR-355).
+per delivery path for AR-365/AR-366 — AR-355's v5 binding was observed
+live 2026-09-01 ~21:55Z, leaving only its token-cost box).
 
 ## same-task-continuity
 
-Continue on `main`; no work-in-progress branches are open. One branch per
-work package, ledger dance per commit; rebase-merges rewrite SHAs, so
-repoint the annotated ledger row in a follow-up docs(worklog) tick.
+Continue on `main`; no WIP branches. One branch per work package, ledger
+dance per commit; rebase-merges rewrite SHAs — repoint the annotated
+ledger row in a follow-up docs(worklog) tick.
 
 ## next-bounded-work-package
 
@@ -110,9 +107,9 @@ Implementation queue, owner-approved order:
    operator policy with its line breaks), AR-358 trust-chain self-healing
    (#428; add the openclaw `--accept-capabilities` consent step), AR-354
    host-CLI coverage tests (#420).
-9. **AR-355 (#422) finish** — fresh persistent claude session, verify
-   `kernel_version = 5` in `resident_manager_bindings`, measure per-turn
-   token cost via the context-budget method in the doc, flip boxes, close.
+9. **AR-355 (#422) finish** — v5 binding observed live (boxes checked);
+   measure per-turn token cost via the context-budget method in the doc,
+   flip the last box, close.
 
 Backlog triage — owner-directed dispositions (verify before closing, cite
 receipts in every close):
@@ -163,9 +160,12 @@ Owner-set definition of done for this goal (2026-09-01):
    single-process restart, openclaw gateway stop/install/start with
    `--accept-capabilities`, four batteries, `agency battery --baseline`),
    then smoke test each host directly with a live turn.
-5. Then exercise the live channels end to end (hermes; openclaw Telegram)
-   and verify on every host: the Agency header lines render, staffing
-   selection runs, and hiring occurs — unattended, with receipts.
+5. Then verify end to end, unattended, with receipts: load every host CLI
+   into `herdr` tabs (the tmux workspace manager at `~/.local/bin/herdr`)
+   and monitor live turns for the Agency header lines, staffing selection,
+   and hiring on each; and exercise the Telegram bots on this machine —
+   nexus (openclaw) and mentor (hermes), sendable via `openclaw message
+   send` — confirming replies deliver with the same evidence.
 6. Finish honest: registry statuses flipped with receipts, the triage
    closes executed, and main green on both strict tracker gates.
 
