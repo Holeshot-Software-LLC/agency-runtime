@@ -309,15 +309,44 @@ def _turn_closed_without_bound_response(
     semantics.
     """
 
+    if not session_id:
+        return False
+    run: Mapping[str, Any] | None = None
     getter = getattr(adapter.store, "get_run", None)
-    if not callable(getter) or not session_id or not trace_id:
-        return False
-    try:
-        run = getter(trace_id)
-    except Exception:
-        return False
-    if not isinstance(run, Mapping) or str(run.get("session_id") or "") != session_id:
-        return False
+    if callable(getter) and trace_id:
+        try:
+            candidate = getter(trace_id)
+        except Exception:
+            candidate = None
+        if isinstance(candidate, Mapping) and str(candidate.get("session_id") or "") == session_id:
+            run = candidate
+    if run is None:
+        # A live fail-open turn cannot name its own run: the authoritative
+        # composite trace is minted inside preflight and only returned to the
+        # host wiring on success, so a rejected turn correlates with the
+        # host's raw trace or with nothing (measured 2026-09-01, hermes turns
+        # 899/900). Fall back to the session's latest turn parent, bound to
+        # the provided trace when one exists.
+        latest = getattr(adapter.store, "get_latest_run_for_session", None)
+        if not callable(latest):
+            return False
+        try:
+            candidate = latest(session_id)
+        except Exception:
+            return False
+        if (
+            not isinstance(candidate, Mapping)
+            or str(candidate.get("session_id") or "") != session_id
+        ):
+            return False
+        stored_trace = str(candidate.get("trace_id") or "")
+        if (
+            trace_id
+            and stored_trace != trace_id
+            and not stored_trace.startswith(f"{session_id}:{trace_id}:")
+        ):
+            return False
+        run = candidate
     return str(run.get("status") or "") in _FAIL_OPEN_RUN_STATUSES
 
 

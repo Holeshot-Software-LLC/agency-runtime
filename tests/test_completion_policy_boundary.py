@@ -379,6 +379,146 @@ def test_hermes_transform_passes_fail_open_draft_through_unchanged(
     assert not run.get("terminal_finalization_id")
 
 
+def test_hermes_transform_passes_fail_open_draft_with_host_raw_trace(
+    tmp_path: Path,
+) -> None:
+    """AR-346 live shape: preflight mints the composite turn trace and only
+    returns it on success, so a fail-open turn's transform call carries the
+    host's raw trace. The gate must still find the closed run (measured
+    2026-09-01: hermes Telegram turns blocked despite preflight_failed runs)."""
+
+    store = Store(tmp_path / "hermes-fail-open-raw.db")
+    composite = "hermes-session:host-raw-turn:aabbccdd"
+    _create_turn(
+        store,
+        session_id="hermes-session",
+        trace_id=composite,
+        request_kind="nontrivial",
+    )
+    store.close_turn_evidence(
+        session_id="hermes-session",
+        trace_id=composite,
+        status="preflight_failed",
+    )
+
+    draft = "The answer the model drafted while Agency ran blind."
+    transformed = hermes_bridge.handle(
+        {
+            "action": "transform_llm_output",
+            "session_id": "hermes-session",
+            "trace_id": "host-raw-turn",
+            "response_text": draft,
+        },
+        adapter=HermesAdapter(store),
+    )
+
+    assert transformed == draft
+    run = store.get_run(composite)
+    assert run["status"] == "preflight_failed"
+    assert not run.get("terminal_finalization_id")
+
+
+def test_hermes_transform_passes_fail_open_draft_with_no_trace(
+    tmp_path: Path,
+) -> None:
+    """AR-346 live shape: with no host trace at all, the closed fail-open run
+    is invisible to open-trace resolution; the session-latest fallback must
+    carry the pass-through."""
+
+    store = Store(tmp_path / "hermes-fail-open-notrace.db")
+    composite = "hermes-session:hermes-session:aabbccdd"
+    _create_turn(
+        store,
+        session_id="hermes-session",
+        trace_id=composite,
+        request_kind="nontrivial",
+    )
+    store.close_turn_evidence(
+        session_id="hermes-session",
+        trace_id=composite,
+        status="preflight_failed",
+    )
+
+    draft = "The answer the model drafted while Agency ran blind."
+    transformed = hermes_bridge.handle(
+        {
+            "action": "transform_llm_output",
+            "session_id": "hermes-session",
+            "trace_id": "",
+            "response_text": draft,
+        },
+        adapter=HermesAdapter(store),
+    )
+
+    assert transformed == draft
+
+
+def test_hermes_transform_still_blocks_when_latest_run_bears_a_verdict(
+    tmp_path: Path,
+) -> None:
+    """The session-latest fallback must not weaken evaluated rejections: a
+    latest run closed with a response verdict keeps the withhold semantics."""
+
+    store = Store(tmp_path / "hermes-verdict-latest.db")
+    composite = "hermes-session:judged-turn:aabbccdd"
+    _create_turn(
+        store,
+        session_id="hermes-session",
+        trace_id=composite,
+        request_kind="nontrivial",
+    )
+    store.close_turn_evidence(
+        session_id="hermes-session",
+        trace_id=composite,
+        status="response_invalid",
+    )
+
+    transformed = hermes_bridge.handle(
+        {
+            "action": "transform_llm_output",
+            "session_id": "hermes-session",
+            "trace_id": "judged-turn",
+            "response_text": "A draft that must stay withheld.",
+        },
+        adapter=HermesAdapter(store),
+    )
+
+    assert transformed == hermes_bridge.FINALIZATION_BLOCK_RESPONSE
+
+
+def test_hermes_transform_fallback_requires_trace_binding(
+    tmp_path: Path,
+) -> None:
+    """A provided trace that does not bind to the session's latest run must
+    not inherit its fail-open pass-through."""
+
+    store = Store(tmp_path / "hermes-unbound-trace.db")
+    composite = "hermes-session:other-turn:aabbccdd"
+    _create_turn(
+        store,
+        session_id="hermes-session",
+        trace_id=composite,
+        request_kind="nontrivial",
+    )
+    store.close_turn_evidence(
+        session_id="hermes-session",
+        trace_id=composite,
+        status="preflight_failed",
+    )
+
+    transformed = hermes_bridge.handle(
+        {
+            "action": "transform_llm_output",
+            "session_id": "hermes-session",
+            "trace_id": "unrelated-turn",
+            "response_text": "A draft with no binding to the failed run.",
+        },
+        adapter=HermesAdapter(store),
+    )
+
+    assert transformed == hermes_bridge.FINALIZATION_BLOCK_RESPONSE
+
+
 def test_hermes_transform_rejects_unfinalized_natural_response_without_repair(
     tmp_path: Path,
 ) -> None:

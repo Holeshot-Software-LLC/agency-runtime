@@ -2966,6 +2966,31 @@ class EvidenceStoreMixin(PreflightStoreMixin):
         finally:
             conn.close()
 
+    def get_latest_run_for_session(self, session_id: str) -> dict[str, Any] | None:
+        """Return the most recently started turn parent for one session.
+
+        A turn's authoritative trace is minted inside preflight, so a caller
+        that only holds the host's raw correlation (or none at all) cannot
+        always name the run it is standing in — a fail-open turn never returns
+        its trace to the host wiring. This read lets such a caller reason
+        about the session's current turn without guessing the composite key.
+        """
+        if not session_id:
+            return None
+        session_id = validate_correlation_id(session_id, field="session_id")
+        conn = self._connect()
+        try:
+            row = conn.execute(
+                "SELECT id, trace_id, session_id, host, started_at, last_activity_at, "
+                "turn_sequence, ended_at, status, preflight_state "
+                "FROM runs WHERE session_id = ? "
+                "ORDER BY started_at DESC, rowid DESC LIMIT 1",
+                (session_id,),
+            ).fetchone()
+            return dict(row) if row else None
+        finally:
+            conn.close()
+
     def get_withheld_and_published_runs(
         self,
         *,
