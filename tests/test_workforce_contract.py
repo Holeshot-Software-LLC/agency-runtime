@@ -278,6 +278,27 @@ def test_projection_rejects_unbounded_or_invalid_contracts() -> None:
         project_workforce_contract({**source, "capability_ids": ["unreviewed-upstream-skill"]})
 
 
+def test_explicitly_empty_artifact_kinds_is_rejected_not_wildcarded() -> None:
+    source = _manifest_agents()[0]
+
+    with pytest.raises(ValueError, match="must not be explicitly empty"):
+        project_workforce_contract({**source, "artifact_kinds": []})
+    with pytest.raises(ValueError, match="must not be explicitly empty"):
+        project_workforce_contract({**source, "artifact_kinds": None})
+
+
+def test_explicit_artifact_kinds_need_at_least_one_vocabulary_member() -> None:
+    source = _manifest_agents()[0]
+
+    with pytest.raises(ValueError, match="at least one artifact-vocabulary kind"):
+        project_workforce_contract({**source, "artifact_kinds": ["scene-change"]})
+
+    mixed = project_workforce_contract(
+        {**source, "artifact_kinds": ["implementation-change", "scene-change"]}
+    )
+    assert mixed.artifact_kinds == ("implementation-change", "scene-change")
+
+
 def test_agency_contractor_can_extend_the_versioned_capability_ontology() -> None:
     source = _manifest_agents()[0]
     contractor = project_workforce_contract(
@@ -300,7 +321,7 @@ def test_explicit_normalized_fields_override_conservative_derivation() -> None:
         {
             **source,
             "archetype": "spatial-implementer",
-            "artifact_kinds": ["scene-change"],
+            "artifact_kinds": ["implementation-change", "scene-change"],
             "lifecycle_phases": ["implementation", "verification"],
             "domains": ["geospatial"],
             "stacks": ["cesium"],

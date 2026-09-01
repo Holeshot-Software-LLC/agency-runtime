@@ -983,3 +983,45 @@ def test_margin_compares_complete_alternative_teams_not_partial_near_neighbors()
     assert proposal.units[0].selected == ("complete-reviewer",)
     assert proposal.units[0].margin == 0.9
     assert decision.accepted
+
+
+def test_wildcard_coverage_is_reserved_for_truly_untyped_contracts() -> None:
+    """AR-343: only a contract with no typed fields at all may wildcard-cover.
+
+    The projection layer now rejects an explicitly empty ``artifact_kinds``
+    declaration (see test_workforce_contract), so the untyped state below is
+    reachable only for un-enriched roster contracts, never for an author's
+    positive "produces nothing" declaration.
+    """
+
+    from agency_runtime.core.workforce.staffing_verifier import (
+        is_wildcard_coverage,
+        typed_staffing_coverage,
+        typed_staffing_requirements,
+    )
+
+    unit = _plan(
+        _unit(
+            "unit-wildcard-boundary",
+            artifact="implementation-change",
+            lifecycle="implementation",
+            authority="modify",
+            mutation="workspace_write",
+        )
+    ).units[0]
+    typed = _contract("typed-analyst", outcomes=("Analysis delivered",))
+    untyped = replace(
+        typed,
+        artifact_kinds=(),
+        lifecycle_phases=(),
+        domains=(),
+        stacks=(),
+    )
+
+    assert is_wildcard_coverage(unit, untyped)
+    assert typed_staffing_coverage(unit, untyped) == frozenset(typed_staffing_requirements(unit))
+    # A contract with any typed field keeps exact per-axis matching: the same
+    # unit is NOT blanket-covered by a typed contract that fails its axes.
+    mismatched = replace(untyped, artifact_kinds=("review-report",))
+    assert not is_wildcard_coverage(unit, mismatched)
+    assert "artifact:implementation-change" not in typed_staffing_coverage(unit, mismatched)

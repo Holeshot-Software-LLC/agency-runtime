@@ -18,6 +18,7 @@ from typing import Any
 from agency_runtime.core.agent_identity import agent_identity
 from agency_runtime.core.resident_managers import RESIDENT_MANAGER_SLUG_SET
 from agency_runtime.core.workforce.capability_ontology import (
+    ARTIFACT_CAPABILITY,
     CORE_CAPABILITY_IDS,
     normalize_capability_ids,
 )
@@ -255,7 +256,28 @@ def _archetype(agent_id: str, authority: str, division: str, agent: Mapping[str,
 
 def _artifact_kinds(agent: Mapping[str, Any], archetype: str) -> tuple[str, ...]:
     if "artifact_kinds" in agent:
-        return _items(agent["artifact_kinds"], field="artifact_kinds", identifiers=True)
+        explicit = _items(agent["artifact_kinds"], field="artifact_kinds", identifiers=True)
+        if not explicit:
+            # An author's positive "produces nothing" must not collapse into
+            # the untyped-contract wildcard that covers every staffing
+            # requirement (AR-343). Omitting the field entirely is the way to
+            # request derivation.
+            raise ValueError(
+                "workforce artifact_kinds must not be explicitly empty; "
+                "omit the field to derive artifact kinds"
+            )
+        if not any(item in ARTIFACT_CAPABILITY for item in explicit):
+            # Hired contractors legitimately carry model-authored artifact
+            # names alongside the causing unit's ontology kind, so novel
+            # members are allowed. A set with no ontology member at all,
+            # however, is a typed contract that can never match any unit's
+            # artifact axis while still suppressing wildcard coverage —
+            # reject it instead of letting it silently never match (AR-343).
+            raise ValueError(
+                "workforce artifact_kinds must include at least one "
+                "artifact-vocabulary kind; got only: " + ", ".join(sorted(explicit))
+            )
+        return explicit
     tasks = {str(item).casefold() for item in agent.get("task_types", ())}
     result: list[str] = []
     if archetype == "writer":
