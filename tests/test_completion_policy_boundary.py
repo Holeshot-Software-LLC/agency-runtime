@@ -519,6 +519,124 @@ def test_hermes_transform_fallback_requires_trace_binding(
     assert transformed == hermes_bridge.FINALIZATION_BLOCK_RESPONSE
 
 
+class _RejectingOpenClawAdapter:
+    """Minimal adapter double: policy always rejects, store is real."""
+
+    def __init__(self, store: Store) -> None:
+        self.store = store
+
+    def runtime_enabled(self) -> bool:
+        return True
+
+    def resolve_turn_trace(self, session_id: str, trace_id: str) -> str:
+        del session_id
+        return trace_id
+
+    def evaluate_completion_policy(
+        self,
+        final_response: str,
+        *,
+        session_id: str = "",
+        model: str = "",
+        trace_id: str = "",
+    ) -> dict[str, Any]:
+        del final_response, session_id, model, trace_id
+        return {
+            "action": "continue",
+            "evidence_revision": 1,
+            "missing": [
+                "agencies_loaded",
+                "agencies_delegated",
+                "skills_loaded",
+                "actual_model_selected",
+                "recruited_via",
+            ],
+        }
+
+
+def _openclaw_pre_verify(store: Store, *, session_id: str, trace_id: str) -> dict[str, Any]:
+    from agency_runtime.adapters.openclaw import node_bridge
+
+    return node_bridge._handle_pre_verify(
+        _RejectingOpenClawAdapter(store),
+        {"finalResponse": "The reply the model finished."},
+        session_id=session_id,
+        trace_id=trace_id,
+        model="",
+    )
+
+
+def test_openclaw_pre_verify_publishes_fail_open_closed_turn(tmp_path: Path) -> None:
+    """AR-366: a run Agency's own lifecycle closed fail-open has no bound
+    response to defend; the reply publishes instead of a terminal mismatch."""
+
+    store = Store(tmp_path / "openclaw-fail-open.db")
+    store.create_run(
+        trace_id="openclaw-turn",
+        session_id="openclaw-session",
+        host="openclaw",
+        metadata={"request_kind": "nontrivial"},
+    )
+    store.close_turn_evidence(
+        session_id="openclaw-session",
+        trace_id="openclaw-turn",
+        status="preflight_failed",
+    )
+
+    result = _openclaw_pre_verify(store, session_id="openclaw-session", trace_id="openclaw-turn")
+
+    assert result == {}
+
+
+def test_openclaw_pre_verify_publishes_response_that_raced_preflight(
+    tmp_path: Path,
+) -> None:
+    """AR-366 measured shape: the reply arrived while this turn's preflight was
+    still in progress, so the model never saw the contract it is judged
+    against; rejecting it withholds a finished answer for Agency's own delay."""
+
+    import sqlite3
+
+    store = Store(tmp_path / "openclaw-raced.db")
+    store.create_run(
+        trace_id="openclaw-turn",
+        session_id="openclaw-session",
+        host="openclaw",
+        metadata={"request_kind": "nontrivial"},
+    )
+    with sqlite3.connect(tmp_path / "openclaw-raced.db") as conn:
+        conn.execute(
+            "UPDATE runs SET preflight_state = 'in_progress' WHERE trace_id = 'openclaw-turn'"
+        )
+
+    result = _openclaw_pre_verify(store, session_id="openclaw-session", trace_id="openclaw-turn")
+
+    assert result == {}
+
+
+def test_openclaw_pre_verify_still_rejects_after_contract_delivery(
+    tmp_path: Path,
+) -> None:
+    """A staffed turn (preflight ready) keeps its withhold semantics — the
+    race bypass must not weaken evaluated rejections on healthy turns."""
+
+    import sqlite3
+
+    store = Store(tmp_path / "openclaw-staffed.db")
+    store.create_run(
+        trace_id="openclaw-turn",
+        session_id="openclaw-session",
+        host="openclaw",
+        metadata={"request_kind": "nontrivial"},
+    )
+    with sqlite3.connect(tmp_path / "openclaw-staffed.db") as conn:
+        conn.execute("UPDATE runs SET preflight_state = 'ready' WHERE trace_id = 'openclaw-turn'")
+
+    result = _openclaw_pre_verify(store, session_id="openclaw-session", trace_id="openclaw-turn")
+
+    assert result != {}
+
+
 def test_hermes_transform_rejects_unfinalized_natural_response_without_repair(
     tmp_path: Path,
 ) -> None:

@@ -1,6 +1,6 @@
 ---
 title: "AR-366: OpenClaw withholds fail-open replies — evaluated rejection fires on turns staffing never reached"
-status: open
+status: in_progress
 category: roadmap
 created: 2026-09-01
 updated: 2026-09-01
@@ -63,19 +63,47 @@ or on recorded preflight-failure receipts for the turn, never on mere
 incompleteness. AR-356's disclosure line then makes the delivered
 fail-open reply honest about being unstaffed.
 
+## Implementation (2026-09-01, all-host sweep by owner directive)
+
+Owner directive: "rule 8 needs to be applied for all harnesses … I need
+to know it failed, but it can't get in the way." The gate now lives once
+in `core/rule8_evidence.py` (`FAIL_OPEN_RUN_STATUSES`,
+`turn_closed_without_bound_response` with the AR-365 session-latest
+fallback, and `turn_never_received_staffing_contract`, which fires only
+for an `active` run whose `preflight_state` is exactly `in_progress` —
+live data confirms staffed turns on all four hosts read `ready`, so
+verification keeps its teeth) and is applied at every rejection outlet:
+
+- hermes `bridge._turn_closed_without_bound_response` delegates to it
+  (AR-365 semantics unchanged);
+- openclaw `node_bridge` publishes via `_publish_unverified` when a
+  closed run is fail-open (was: terminal mismatch) and via
+  `_agency_fault_pass_through` before `_finish_policy_rejection` (the
+  measured 20:32Z race shape);
+- the shared claude/codex/zcode Stop path (`adapters/hooks.py`) gates
+  both the `_is_terminal_turn` branch — the AR-344 `continue:false`
+  terminal-exit shape — and the evaluated-rejection branch, publishing
+  with reasons `turn_closed_fail_open` / `turn_unverifiable_fail_open`.
+
+"I need to know it failed" stays AR-356's half: the pass-through records
+receipts today, and the capsule disclosure line makes it visible in-turn.
+Four pre-existing failures in `test_turn_scoped_evidence.py` /
+`test_owned_adapter_surface_coverage_final.py` reproduce identically on
+clean main (the AR-354 family) and are untouched by this change.
+
 ## Dependencies
 
-- AR-365 (the shared gate to extract and reuse).
+- AR-365 (the shared gate, now extracted and reused).
 
 ## Acceptance
 
-- [ ] A fail-open openclaw turn delivers the model's reply (with
+- [x] A fail-open openclaw turn delivers the model's reply (with
       fail-open receipts recorded), never silence; pinned by a
       regression test at the node_bridge boundary.
-- [ ] Evaluated rejections on staffed turns keep their withhold
+- [x] Evaluated rejections on staffed turns keep their withhold
       semantics; a response racing preflight on a healthy turn is not
       granted a bypass (regression tests).
-- [ ] The gate implementation is shared with the hermes bridge, not a
-      third copy.
+- [x] The gate implementation is shared with the hermes bridge, not a
+      third copy (and now also covers the claude/codex/zcode Stop path).
 - [ ] Live: an owner-visible openclaw fail-open turn delivers its reply
       on this installation.

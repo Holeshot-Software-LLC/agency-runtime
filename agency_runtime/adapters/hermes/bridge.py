@@ -280,74 +280,22 @@ def _pre_verify(adapter: HermesAdapter, payload: Mapping[str, Any]) -> dict[str,
 # through a response verdict. A run in one of these states has no bound
 # response an evaluated rejection could be defending; unknown or verdict
 # statuses stay outside the set so the withhold path remains fail-closed.
-_FAIL_OPEN_RUN_STATUSES = frozenset(
-    {
-        "abandoned",
-        "canary_failed",
-        "interrupted",
-        "preflight_failed",
-        "preflight_skipped",
-        "verification_failed",
-    }
-)
-
-
 def _turn_closed_without_bound_response(
     adapter: HermesAdapter,
     session_id: str,
     trace_id: str,
 ) -> bool:
-    """Return whether this turn ended before any response was bound to it.
+    """Rule-8 pass-through gate, shared with the OpenClaw bridge (AR-366).
 
-    A run that Agency's own lifecycle closed (fail-open: ``preflight_failed``
-    and kin) has no accepted response an evaluated rejection could be
-    defending; withholding the host's draft there is Agency punishing its own
-    failure. Rule 8 requires pass-through — the same reasoning
-    ``_publish_unverified`` applies on the Stop path (AR-346, sibling of
-    AR-344). A run bearing a response verdict (``completed``,
-    ``response_invalid``, ``delegation_declined``) keeps its withhold/replay
-    semantics.
+    The same reasoning ``_publish_unverified`` applies on the Stop path
+    (AR-346, sibling of AR-344); the run-resolution semantics live in
+    ``agency_runtime.core.rule8_evidence`` so the policy cannot drift apart
+    per host again.
     """
 
-    if not session_id:
-        return False
-    run: Mapping[str, Any] | None = None
-    getter = getattr(adapter.store, "get_run", None)
-    if callable(getter) and trace_id:
-        try:
-            candidate = getter(trace_id)
-        except Exception:
-            candidate = None
-        if isinstance(candidate, Mapping) and str(candidate.get("session_id") or "") == session_id:
-            run = candidate
-    if run is None:
-        # A live fail-open turn cannot name its own run: the authoritative
-        # composite trace is minted inside preflight and only returned to the
-        # host wiring on success, so a rejected turn correlates with the
-        # host's raw trace or with nothing (measured 2026-09-01, hermes turns
-        # 899/900). Fall back to the session's latest turn parent, bound to
-        # the provided trace when one exists.
-        latest = getattr(adapter.store, "get_latest_run_for_session", None)
-        if not callable(latest):
-            return False
-        try:
-            candidate = latest(session_id)
-        except Exception:
-            return False
-        if (
-            not isinstance(candidate, Mapping)
-            or str(candidate.get("session_id") or "") != session_id
-        ):
-            return False
-        stored_trace = str(candidate.get("trace_id") or "")
-        if (
-            trace_id
-            and stored_trace != trace_id
-            and not stored_trace.startswith(f"{session_id}:{trace_id}:")
-        ):
-            return False
-        run = candidate
-    return str(run.get("status") or "") in _FAIL_OPEN_RUN_STATUSES
+    from agency_runtime.core.rule8_evidence import turn_closed_without_bound_response
+
+    return turn_closed_without_bound_response(adapter.store, session_id, trace_id)
 
 
 def _transform_output(adapter: HermesAdapter, payload: Mapping[str, Any]) -> str:
