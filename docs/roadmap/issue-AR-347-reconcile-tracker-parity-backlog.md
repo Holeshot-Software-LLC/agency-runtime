@@ -93,13 +93,12 @@ Applied on this branch and on the live tracker:
   `verify_docs --require-tracker` and by `verify_tracker`'s
   `missing_remote` check; both gates fail on stale entries that later
   gain a `tracker_url`. `verify_docs --require-tracker` now **passes**.
-- **Blocked on the automation permission classifier** (not on
-  authorization — the owner authorized these; the six `gh issue
-  close` calls were denied): #272 (AR-254), #335 (AR-297), #345
-  (AR-331), #346 (AR-332), #347 (AR-333), #349 (AR-334) remain OPEN
-  with docs done. `--allow-open-complete` reports them as warnings.
-  The owner (or a session with a close permission rule) runs the six
-  closes.
+- **Six done-doc trackers closed** (initially denied by the automation
+  permission classifier, then completed after the owner's direct
+  go-ahead): #272 (AR-254), #335 (AR-297), #345 (AR-331), #346
+  (AR-332), #347 (AR-333), #349 (AR-334) — each closed as completed
+  with an AR-347 reconciliation comment. The
+  closure-pending-authorization warnings are gone.
 - **Deliberately NOT flipped to done**: AR-115, AR-120, AR-127,
   AR-199, AR-235, AR-237, AR-250, AR-251, AR-261 — their trackers
   were closed COMPLETED, but every doc still has unchecked Acceptance
@@ -119,9 +118,10 @@ Applied on this branch and on the live tracker:
 - [ ] The owner disposition for each of the 20 state/label/URL
       mismatches is recorded and applied (docs and trackers agree, or
       the divergence is explicitly annotated). (2026-09-01: labels,
-      URLs, the #155 collision, and PR-tracked items done; six closes
-      classifier-blocked; nine done-flips await acceptance
-      verification — see the reconciliation pass above.)
+      URLs, the #155 collision, PR-tracked items, and all six
+      done-doc closes applied; only the nine done-flips awaiting
+      per-item acceptance verification remain — see the
+      reconciliation pass above.)
 - [x] The historical no-tracker items are either backfilled with
       trackers, or the gate gains an explicit, versioned allow-list of
       pre-tracker history so `--require-tracker` is meaningful for new
