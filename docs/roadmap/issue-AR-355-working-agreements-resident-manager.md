@@ -1,6 +1,6 @@
 ---
 title: "AR-355: Deliver the owner's working agreements as a second resident manager and make the steward roster-aware"
-status: open
+status: in_progress
 category: roadmap
 created: 2026-09-01
 updated: 2026-09-01
@@ -88,11 +88,38 @@ AR-265 exist to prevent).
 
 - Owner review of the two text blocks above before implementation.
 
+## Implementation (2026-09-01)
+
+Discovery changed the shape, in the direction the design wanted: the
+runtime already ships the exact owner channel — `operator_policy`
+(config field, bounded 2048 chars / 40 lines, rendered with its own
+header/footer, content-hashed separately from the kernel, injected
+every turn beside the steward). The "second resident manager" is
+realized by that shipped block rather than new manager plumbing: the
+five working agreements are now set as this installation's operator
+policy (`agency config set operator_policy --stdin`), live-verified in
+a fresh preflight capsule (policy block, agreement text, and
+never-blocks footer all present) with no deploy required, and
+owner-editable exactly as specified. One rendering note: the YAML set
+flattened the numbered list onto one line; content is intact and the
+numbering keeps it readable.
+
+The steward roster-awareness line landed as kernel v4 → v5
+(`resident_managers.py`): version 5, budget 1024 → 1280 chars (the
+kernel sat at 1014/1024), the approved line added after the
+delegation-neutrality sentences, and the v5 pins extended so the
+awareness line and the anti-self-staffing guarantees must both survive
+any later trim. Binding reuse re-injects automatically on contract
+change (`_row_uses_current_contract`), so v5 needs only the ordinary
+runtime deploy, riding the next cycle together with AR-346.
+
 ## Acceptance
 
-- [ ] Every staffed and unstaffed turn on all four hosts carries the
-      working-agreements manager alongside the steward, and its text is
-      changeable through owner config without a code release.
+- [x] Every staffed and unstaffed turn on all four hosts carries the
+      working agreements alongside the steward, and the text is
+      changeable through owner config without a code release
+      (delivered via the shipped `operator_policy` block; live-verified
+      2026-09-01).
 - [ ] The steward carries the roster-awareness line and still never
       implies delegation; the anti-self-staffing language is unchanged.
 - [ ] Kernel v5 lands through the version-change discipline (re-wire +
