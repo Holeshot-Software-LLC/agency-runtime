@@ -1550,6 +1550,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `800f7961` | 2026-09-01 | docs(ar352,ar353): file the battery-scoping and staffing-window defects from the deploy | [AR-352](../roadmap/issue-AR-352-scope-battery-deltas-by-session.md), [AR-353](../roadmap/issue-AR-353-intermittent-staffing-verdict-window-linux.md) | Deploy-surfaced with receipts: battery global delta absorbs foreign sessions' failures (gh #416); AR-338's intermittent staffing window measurable on Linux via LiteLLM routes, now the dominant fail-open source post-AR-345 (gh #417) |
 | `47324c80` | 2026-09-01 | Merge pull request #418 from Holeshot-Software-LLC/claude/ar352-ar353-filings | null | null |
 | `830f2a92` | 2026-09-01 | docs(ar355): file the working-agreements resident manager design | [AR-355](../roadmap/issue-AR-355-working-agreements-resident-manager.md) | Owner-agreed: second resident manager with the five working agreements (config-sourced, own hash) + one roster-awareness steward line (kernel v5, awareness not delegation); proposed text blocks await owner review; gh #422 |
+| `4afc2522` | 2026-09-01 | Merge pull request #423 from Holeshot-Software-LLC/claude/ar355-working-agreements-manager | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
