@@ -358,8 +358,8 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-342` | [Codex activation canary route unsatisfiable after typed-coverage enrichment](issue-AR-342-codex-activation-canary-route-unsatisfiable.md) | done | p1 | reliability | [#387](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/387) |
 | `AR-343` | [Reject explicitly empty artifact_kinds instead of granting wildcard coverage](issue-AR-343-reject-explicit-empty-artifact-kinds.md) | open | p2 | reliability | [#398](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/398) |
 | `AR-344` | [Codex fail-open turn ends in Stop replay-mismatch and TUI exit](issue-AR-344-codex-fail-open-stop-terminal-exit.md) | open | p1 | reliability | [#399](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/399) |
-| `AR-345` | [Release-verification plan matcher rejects natural planner phrasing, forcing fail-open turns](issue-AR-345-release-verification-matcher-rejects-natural-plans.md) | open | p1 | reliability | pending |
-| `AR-346` | [Hermes fail-open turns replace the host's answer with the finalization block message](issue-AR-346-hermes-fail-open-draft-replacement.md) | open | p1 | reliability | pending |
+| `AR-345` | [Release-verification plan matcher rejects natural planner phrasing, forcing fail-open turns](issue-AR-345-release-verification-matcher-rejects-natural-plans.md) | open | p1 | reliability | [#402](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/402) |
+| `AR-346` | [Hermes fail-open turns replace the host's answer with the finalization block message](issue-AR-346-hermes-fail-open-draft-replacement.md) | open | p1 | reliability | [#403](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/403) |
 
 ## Traceability
 
