@@ -763,13 +763,34 @@ def _provider_chain_checks(
     return checks
 
 
+def _battery_trial_detail(entry: dict[str, Any]) -> str:
+    """Names-only grading tally from one fingerprint entry (AR-360), or "".
+
+    Entries written before trial grading carry no tally and render exactly
+    as before; a malformed tally is ignored rather than trusted.
+    """
+
+    from agency_runtime.core.harness_battery import grading_label
+
+    mode = entry.get("last_grading_mode")
+    trials = entry.get("last_trials")
+    if not isinstance(mode, str) or not isinstance(trials, dict):
+        return ""
+    counts = [trials.get(key) for key in ("requested", "run", "passed")]
+    if any(type(count) is not int for count in counts):
+        return ""
+    requested, run, passed = counts
+    return f"{grading_label(mode, requested)}: {passed}/{run} trials"
+
+
 def _harness_battery_checks() -> list[CheckResult]:
     """Surface the last change-triggered battery outcome per harness (AR-337).
 
     The check reads only the private fingerprint document: doctor never
     spawns host CLIs. A failed battery is loud, a lost codex attended trust
     is named distinctly, and a harness with no recorded baseline warns until
-    its first battery pass.
+    its first battery pass. The grading tally (pass^k / pass@k, AR-360) rides
+    along as the check detail so the message contract stays unchanged.
     """
 
     from agency_runtime.core.harness_battery import BATTERY_HOSTS, read_fingerprints
@@ -784,12 +805,13 @@ def _harness_battery_checks() -> list[CheckResult]:
             continue
         outcome = str(entry.get("last_outcome"))
         version = str(entry.get("observed_version") or "")
+        detail = _battery_trial_detail(entry)
         if outcome == "passed":
-            checks.append(CheckResult(name, "pass", version))
+            checks.append(CheckResult(name, "pass", version, detail))
         elif outcome == "attended_trust_required":
-            checks.append(CheckResult(name, "warn", f"attended trust required ({version})"))
+            checks.append(CheckResult(name, "warn", f"attended trust required ({version})", detail))
         else:
-            checks.append(CheckResult(name, "fail", f"battery failed ({version})"))
+            checks.append(CheckResult(name, "fail", f"battery failed ({version})", detail))
     return checks
 
 

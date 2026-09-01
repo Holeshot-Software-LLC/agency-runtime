@@ -11,6 +11,7 @@ from agency_runtime.core.child_launch_outcomes import MAX_CHILD_LAUNCHES
 from agency_runtime.core.evals.product_scenarios import PRODUCT_SCENARIOS_BY_ID
 from agency_runtime.core.evals.upstream_selection import CASES as UPSTREAM_SELECTION_CASES
 from agency_runtime.core.evals.workforce_selection import CASES
+from agency_runtime.core.harness_battery import BATTERY_DEFAULT_TRIALS, BATTERY_MAX_TRIALS
 from agency_runtime.core.host_capabilities import EXECUTION_HOSTS
 from agency_runtime.core.installer_contracts import HOSTS
 from agency_runtime.core.policy.profiles import PROFILES
@@ -72,6 +73,16 @@ def _search_limit(value: str) -> int:
     parsed = _positive_int(value)
     if parsed > 100:
         raise argparse.ArgumentTypeError("must be an integer from 1 through 100")
+    return parsed
+
+
+def _battery_trials(value: str) -> int:
+    """Per-probe trial count for ``agency battery`` (AR-360); k stays small
+    because every trial is a real host turn with real model spend."""
+
+    parsed = _positive_int(value)
+    if parsed > BATTERY_MAX_TRIALS:
+        raise argparse.ArgumentTypeError(f"must be an integer from 1 through {BATTERY_MAX_TRIALS}")
     return parsed
 
 
@@ -1465,6 +1476,16 @@ def _register_delegation_and_evals(sub: Subparsers, handlers: Handlers) -> None:
         "--uninstall-service",
         action="store_true",
         help="Disable and remove the systemd-user battery triggers",
+    )
+    battery.add_argument(
+        "--trials",
+        type=_battery_trials,
+        default=None,
+        help=(
+            f"Trials per host probe, 1 through {BATTERY_MAX_TRIALS} "
+            f"(default {BATTERY_DEFAULT_TRIALS}); canaries grade pass^k, "
+            "ordinary checks pass@k"
+        ),
     )
     battery.add_argument(
         "--config",
