@@ -289,7 +289,19 @@ _ORDINARY_COMMANDS: dict[str, tuple[str, ...]] = {
     # `--session-key main` scopes to the configured default agent. The bare
     # form relies on a gateway-memory routing binding that a gateway restart
     # discards, after which it exits 1 with "No target session selected".
-    "openclaw": ("openclaw", "agent", "--session-key", "main", "-m", _ORDINARY_TASK, "--json"),
+    # OpenClaw 2026.8 requires an explicit --agent owner when multiple agents
+    # are configured; without it the CLI refuses the turn before any send.
+    "openclaw": (
+        "openclaw",
+        "agent",
+        "--agent",
+        "openclaw",
+        "--session-key",
+        "main",
+        "-m",
+        _ORDINARY_TASK,
+        "--json",
+    ),
 }
 
 

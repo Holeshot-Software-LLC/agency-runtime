@@ -24,7 +24,9 @@ CODEX_CANARY_PROOF_CONTRACTS = frozenset(
         CODEX_AUTOMATION_CANARY_PROOF_CONTRACT,
     }
 )
-MINIMUM_OPENCLAW_VERSION = "2026.7.1"
+# 2026-09-01: owner adopted the OpenClaw 2026.8 line (2026.8.2); the live
+# post-install harness battery on this version is the line's hook-compat audit.
+MINIMUM_OPENCLAW_VERSION = "2026.8.2"
 OPENCLAW_REQUIRED_HOOKS = frozenset(
     {
         "gateway_start",
