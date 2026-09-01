@@ -1145,12 +1145,40 @@ def _codex_activation_identity(value: object) -> dict[str, str] | None:
     return identity
 
 
+_MAX_UNMET_PREREQUISITES = 8
+_MAX_UNMET_PREREQUISITE_BYTES = 256
+
+
 def _bounded_unmet_prerequisites(value: object) -> list[str]:
+    """Project the child report's unmet reasons without widening its trust.
+
+    The fresh verification runs in a subprocess whose report is untrusted, so
+    reasons pass through only as bounded printable ASCII. Collapsing every
+    non-empty list to one generic sentence (the previous behavior) hid the
+    named blocker — the canary proof already said "the sole routed canary unit
+    was not the expected code-reviewer" while operators saw only "reported
+    unmet prerequisites" (AR-342).
+    """
+
     if value == []:
         return []
     if not isinstance(value, list) or not all(isinstance(item, str) for item in value):
         return ["fresh current-profile verification returned an invalid result"]
-    return ["fresh current-profile canary reported unmet prerequisites"]
+    bounded: list[str] = []
+    for item in value[:_MAX_UNMET_PREREQUISITES]:
+        text = " ".join(item.split())
+        if (
+            not text
+            or len(text.encode("utf-8")) > _MAX_UNMET_PREREQUISITE_BYTES
+            or not text.isascii()
+            or not text.isprintable()
+        ):
+            return ["fresh current-profile canary reported unmet prerequisites"]
+        bounded.append(text)
+    remainder = len(value) - _MAX_UNMET_PREREQUISITES
+    if remainder > 0:
+        bounded.append(f"... and {remainder} more unmet prerequisites")
+    return bounded
 
 
 def _activation_verification_now() -> datetime:

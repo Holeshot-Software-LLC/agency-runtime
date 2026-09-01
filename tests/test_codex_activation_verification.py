@@ -1474,3 +1474,35 @@ def test_pre_tool_spawn_gate_records_content_free_census(
     assert spawn_lines[0]["joined"] is False
     assert spawn_lines[0]["agent_type_admitted"] is True
     assert "surprise_key" in spawn_lines[0]["fields"]
+
+
+def test_unmet_prerequisites_pass_through_bounded_named_reasons() -> None:
+    # AR-342: the generic sentence hid the named blocker while the canary
+    # proof already said which prerequisite failed.
+    reasons = [
+        "the sole routed canary unit was not the expected code-reviewer",
+        "activation canary route is not the exact delegated contract",
+    ]
+
+    assert install_commands._bounded_unmet_prerequisites(reasons) == reasons
+
+
+def test_unmet_prerequisites_fail_closed_on_unbounded_or_unprintable_items() -> None:
+    oversized = ["x" * 300]
+    unprintable = ["route\x00failed"]
+    non_ascii = ["roûte failed"]
+
+    for value in (oversized, unprintable, non_ascii):
+        assert install_commands._bounded_unmet_prerequisites(value) == [
+            "fresh current-profile canary reported unmet prerequisites"
+        ]
+
+
+def test_unmet_prerequisites_truncate_beyond_the_item_budget() -> None:
+    reasons = [f"reason {index}" for index in range(12)]
+
+    projected = install_commands._bounded_unmet_prerequisites(reasons)
+
+    assert projected[:8] == reasons[:8]
+    assert projected[8] == "... and 4 more unmet prerequisites"
+    assert len(projected) == 9
