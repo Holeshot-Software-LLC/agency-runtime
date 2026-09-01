@@ -1,9 +1,9 @@
 ---
 title: "AR-341: Deliver Agency capsules to hermes interactive gateway sessions"
-status: open
+status: done
 category: roadmap
 created: 2026-08-31
-updated: 2026-08-31
+updated: 2026-09-01
 tags: [reliability, hermes, delivery, finalization]
 related:
   - docs/roadmap/issue-AR-337-run-harness-battery-on-version-change.md
@@ -94,6 +94,17 @@ being first. That is header-contract compliance of the local
 delivery; remediation is a stronger interactive model (``hermes model``)
 or a deliberate finalization-policy decision, tracked here.
 
+## Closure (2026-09-01)
+
+The residual was the local ``qwen3-coder-30b`` chat model's exact-start
+compliance, confirmed by swapping hermes' interactive model to the cloud
+group ``alias-hermes-chat`` (``hermes config set model.default``) and
+re-running the acceptance turn in a fresh gateway TUI session: the
+response opened with the complete header block naming the staffed
+specialists, the turn invoked ``agency_finalize`` itself, and no
+blocked-draft replacement occurred. Delivery fix: PR #390. Model swap is
+host configuration; the exact-start finalization rule stands unchanged.
+
 ## Expected
 
 An interactive hermes turn that staffs successfully must receive the same
@@ -103,8 +114,8 @@ staffed must be finalizable. If delivery to a session is impossible, Rule
 
 ## Acceptance
 
-- A work-shaped prompt in a live hermes gateway TUI session quotes its
+- [x] A work-shaped prompt in a live hermes gateway TUI session quotes its
   injected Agency header and finalizes (no blocked-draft replacement).
-- `agency battery --host hermes --force` still passes.
-- Evidence rows show capsule delivery bound to the interactive session's
+- [x] `agency battery --host hermes --force` still passes.
+- [x] Evidence rows show capsule delivery bound to the interactive session's
   trace, not only to `-z` invocations.
