@@ -1543,6 +1543,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `c82765ac` | 2026-09-01 | Merge pull request #410 from Holeshot-Software-LLC/claude/worklog-405-merge-row | null | null |
 | `44ed18d9` | 2026-09-01 | fix(ar345): accept natural release-verification phrasing in plan policy | [AR-345](../roadmap/issue-AR-345-release-verification-matcher-rejects-natural-plans.md) | Clause-level verification+operation co-occurrence replaces the filler-only window (negation and temporal boundaries unchanged; four pinned behaviors preserved); reinstall* and -ing forms added; repair guidance states the clause rule; sentence table pinned; AR-345 done, tracker #402 closed; effective after the next runtime deploy |
 | `16a71180` | 2026-09-01 | fix(ar345): close the review findings — fallback parity, verb forms, boundary semantics | [AR-345](../roadmap/issue-AR-345-release-verification-matcher-rejects-natural-plans.md) | Fallback planner sources RELEASE_OPERATION_TOKENS (divergent copy lacked reinstall*, recreating the failure mode); third-person verbs + uninstall* added; then splits, after/following/once no longer split; negation stops at commas and knows "nothing"; vacuous test de-vacuated; bag-of-words tradeoff recorded as accepted |
+| `cb7100bb` | 2026-09-01 | Merge pull request #412 from Holeshot-Software-LLC/claude/ar345-release-verification-matcher | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
