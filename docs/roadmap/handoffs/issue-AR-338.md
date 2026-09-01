@@ -3,7 +3,7 @@ title: "AR-338 Windows bring-up capsule"
 status: active
 category: roadmap
 created: 2026-08-30
-updated: 2026-08-31
+updated: 2026-09-01
 tags: [handoff, windows, codex, claude, zcode, release]
 related:
   - docs/roadmap/issue-AR-338-verify-windows-harness-set.md
@@ -111,21 +111,44 @@ AR-331/333 fixes are superseded by main's 0.149–0.151 parser range.
 
 ## next-bounded-work-package
 
-1. Owner: `claude login`; then rerun
-   `agency host-canary claude --execute --mode agency --confirm
-   "RUN LIVE claude CANARY"` from the runenv and retain the receipt.
-2. Owner: codex attended trust, then
-   `agency install --agent codex --verify-activation` exit 0; then
-   `agency host-canary codex --profile-scope current-profile --execute
-   --mode agency`.
-3. At the next anchored install, let `agency install --all` register the
-   dashboard service on a fixed runtime (closes AR-339's last box and the
-   dashboard-healthy acceptance).
-4. Close the parity trail: Linux `dist-0abe4a77` sdist hash must equal
-   `15d87f7dda21...29a3ee`; record the portable-wheel hash; when both
-   wheels sit on one machine run `verify_distribution --artifact-set
-   release` on the combined trio.
-5. Record the ledger row for each advance.
+2026-09-01 re-pass, written from the Linux session that closed
+AR-341/AR-342: bring the three verified hosts from exact-main `9521a4a4`
+(runtime digest `d2fd5aa2...`) to current exact-main `ec6c4b49`. This
+machine inherits PR #382 (typed roster coverage for `review-report`
+contracts), PR #392 (`verify-activation` failures now print named unmet
+prerequisites), and PR #384 (codex ≥0.151 emits `marketplaceSource`;
+required once codex updates past 0.150.1). PRs #385/#390 touch only
+openclaw/hermes — no-ops here. GitHub Actions is disabled repo-wide by
+owner decision: prove every gate locally (ruff format + check, pytest,
+`verify_docs.py`, `update_worklog.py --check`).
+
+1. Build and install exact-main `ec6c4b49` per the release checklist
+   into the runenv (verified-wheel venv, never a git URL), then
+   `agency install --all`. Hooks restage, so codex trust flips to
+   `modified`: fresh terminal TUI, `Trust all and continue` (8 events),
+   then `agency install --agent codex --verify-activation`. "Host
+   invocation did not return a nonempty response" while `codex login
+   status` still claims a login means a burned refresh token —
+   `codex logout && codex login` and rerun.
+2. Claude auto-updates, so expect drift from 2.1.250: `agency battery
+   --baseline` to adopt observed versions, then `agency install --agent
+   claude` to re-prove the host version. A stuck version probe means
+   updater-tree ACLs: the AR-340 shim-aware probe refuses an executable
+   whose parent namespace permits cross-account substitution.
+3. zcode: `agency smoke --agent zcode` 4/4 with retained readiness
+   receipt (no canary mode by design).
+4. Batteries one host at a time, never concurrently — simultaneous
+   drills contend on the judge route and throw transient rejections
+   that vanish solo. Read `artifact_not_trusted` as a canary-artifact
+   permissions symptom (the ACL analog of the Linux umask leak), not a
+   code bug.
+5. Retain receipts under `~/.agency-runtime/evidence/` and write a
+   worklog ledger row per advance.
+
+Acceptance: all three hosts and the dashboard pinned to `ec6c4b49`;
+codex `verify-activation` exit 0; claude isolated canary passed; zcode
+smoke 4/4; battery baseline re-recorded at observed versions; receipts
+and ledger rows written.
 
 ## verification
 
