@@ -39,6 +39,15 @@ expectation lives in N superseding snapshots; the finalization
 verifier's actual requirement set is not stated anywhere the model can
 read it.
 
+Second measured case (2026-09-01 evening, same session): a turn in
+which no header snapshot was delivered at all — the model reused the
+latest prior-turn snapshot verbatim, and the final response was
+withheld with "did not satisfy the exact current-turn evidence header
+contract. The turn is terminal; no correction was requested or
+accepted." The operator lost that turn's summary and re-asked the
+question. This adds the no-snapshot-delivered shape to the defect: the
+contract can demand a snapshot the turn never provided.
+
 ## Approach
 
 Investigate the claude-adapter verifier first (the miss may be

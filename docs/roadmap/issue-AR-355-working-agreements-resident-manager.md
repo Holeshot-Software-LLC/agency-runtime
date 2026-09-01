@@ -113,6 +113,21 @@ any later trim. Binding reuse re-injects automatically on contract
 change (`_row_uses_current_contract`), so v5 needs only the ordinary
 runtime deploy, riding the next cycle together with AR-346.
 
+Deploy update (2026-09-01 evening): the combined cycle ran — venv
+respun at main `c887190d`, all four hosts re-wired to launcher
+projection `eed132308c55` (verified to carry the v5 kernel header and
+the AR-346 status set), codex hooks re-trusted (`runtime_verified`),
+hermes and the openclaw gateway restarted, and all four harness
+batteries passed with the baseline adopted (claude 2.1.257, codex
+0.152.0, hermes 0.21.0/7cd91114, openclaw 2026.8.2). Stage-complete;
+the remaining boxes await a live v5 binding observation from a fresh
+persistent session (existing sessions keep their pre-deploy hooks by
+design — the deploy session itself still binds v4) and the token-cost
+measurement. Measurement method note (owner-approved lift, 2026-09-01):
+use a context-budget audit — per-component token estimates for kernel +
+operator policy + capsule + header snapshots per turn — in the shape of
+ECC's `context-budget` skill.
+
 ## Acceptance
 
 - [x] Every staffed and unstaffed turn on all four hosts carries the

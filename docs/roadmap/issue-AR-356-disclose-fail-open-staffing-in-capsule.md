@@ -46,6 +46,15 @@ unstaffed, proceeding under the steward alone." Source the reason
 class from the recorded preflight failure receipt; never include
 provider internals. Zero cost on staffed turns.
 
+Scope note (2026-09-01, owner-approved lift): the same honesty rule
+extends to specialist tooling — a card's requested capability is not
+proof its tools were available (cards already say "availability must be
+proven before use"). When a loaded specialist's required tool is
+absent, the turn should disclose the degradation rather than let the
+model imply capability it lacks (principle stated independently in
+ECC's gan-evaluator: report the degraded mode instead of silently
+scoring the requested one).
+
 ## Dependencies
 
 - None; complements AR-353's measurement.

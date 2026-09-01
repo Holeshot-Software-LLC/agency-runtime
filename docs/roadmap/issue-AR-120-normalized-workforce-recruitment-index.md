@@ -3,7 +3,7 @@ title: "AR-120: Normalize and audit the complete workforce recruitment index"
 status: open
 category: roadmap
 created: 2026-07-21
-updated: 2026-08-12
+updated: 2026-09-01
 tags: [roster, taxonomy, audit, ingestion]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
@@ -37,6 +37,12 @@ are highly fragmented and `conflicts_with` overloads several distinct meanings.
 Build and version a compact contract for every worker, audit each projection
 against its source prompt, normalize vocabularies and typed relationships, and
 maintain independent confusion groups and ingestion evaluations.
+
+Scope note (2026-09-01, owner-approved lift): pair the index with a
+monotone-decreasing discoverability baseline (pattern from ruflo's
+ADR-112 tool-description audit) — every card description meets minimum
+guidance/length/uniqueness rules, and a card's routing reachability may
+only shrink through a deliberate baseline change, never silently.
 
 ## Dependencies
 

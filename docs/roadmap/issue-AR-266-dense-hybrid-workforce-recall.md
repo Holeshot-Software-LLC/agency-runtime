@@ -3,7 +3,7 @@ title: "AR-266: Recall the complete workforce with dense hybrid retrieval"
 status: in_progress
 category: roadmap
 created: 2026-08-24
-updated: 2026-08-25
+updated: 2026-09-01
 tags: [workforce, routing, embeddings, retrieval, inference]
 related:
   - docs/roadmap/handoffs/issue-AR-266.md
@@ -85,6 +85,11 @@ specialists before inference decides the final staffing plan.
   and merge `042b5ed9`.
 
 ## Approach
+
+Reference implementation note (2026-09-01): RAGLite's hybrid pipeline
+(semantic + keyword matching + reranking; see awesome-llm-apps
+`rag_tutorials/hybrid_search_rag` and `local_hybrid_search_rag`) is a
+concrete, local-capable shape for the fusion lane described below.
 
 Preserve the existing 24-card typed result as a guaranteed lane, not the
 complete recruiter universe. Build a positive-only, versioned search document

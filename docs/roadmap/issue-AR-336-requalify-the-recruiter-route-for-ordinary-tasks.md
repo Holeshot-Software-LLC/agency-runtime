@@ -3,7 +3,7 @@ title: "AR-336: Requalify the recruiter route for ordinary tasks"
 status: in_progress
 category: roadmap
 created: 2026-08-29
-updated: 2026-08-29
+updated: 2026-09-01
 tags: [bug, reliability, workforce, recruiter, litellm, routes]
 related:
   - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
@@ -81,6 +81,14 @@ contract's evidence requirements need repair or the recruiter models need
 replacement, following the AR-297 bakeoff pattern with bounded zero-retry
 calls. Replace or remove the dead luna order-2 deployment. Re-enable master
 control only after the four ordinary host turns pass.
+
+Scope note (2026-09-01, owner-approved lift): qualification should
+include trigger/routing evals over card descriptions — positive request
+fixtures must rank their own card first against near-miss negatives,
+and no two card descriptions may near-collide (pattern from
+awesome-llm-apps `agent_skills/evals` tier 2). Routing today has no
+description-level proof; this makes requalification testable instead of
+anecdotal.
 
 ## Dependencies
 
