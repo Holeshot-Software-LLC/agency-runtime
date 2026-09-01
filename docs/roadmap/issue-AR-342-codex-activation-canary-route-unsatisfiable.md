@@ -61,6 +61,32 @@ prints only the circular unmet-prerequisites sentence with a hook-trust
 remediation that no longer applies. The blocked route (or whatever
 prerequisite actually failed) should be named in the report.
 
+## Progress (2026-09-01) — observability fixed; live blocker is host auth
+
+The secondary defect is resolved (PR #392, deployed): the verification
+report now passes the child report's real unmet reasons through as
+bounded printable ASCII instead of collapsing them to one generic
+sentence. Live-proven immediately — successive runs named their actual
+blockers layer by layer: first ``route_not_found`` with
+``codex_hook_trust_not_ready`` (hooks restaged by the deploy, trust
+stale), then after trust re-acceptance ``host invocation did not
+complete successfully`` / ``did not return a nonempty response``.
+
+That last reason traces to genuine host auth breakage, not Agency:
+``codex exec`` fails with "Your access token could not be refreshed
+because your refresh token was already used. Please log out and sign in
+again" (401 on the responses websocket) while ``codex login status``
+still claims a valid ChatGPT login. Every canary invocation therefore
+returns empty. Owner action required: ``codex logout && codex login``,
+then rerun ``agency install --agent codex --verify-activation``.
+
+The primary question — whether routing reliably selects
+``code-reviewer`` for the canary work unit — remains open and can only
+be re-measured against a live canary once host auth is restored;
+offline ``agency route`` runs on the unit text still fail
+(``inference_invalid``, finance-heavy recruiter rankings on some runs,
+critic rejection on others), so the selection investigation stands.
+
 ## Direction
 
 Either the canary contract must tolerate the roster's real selection for
