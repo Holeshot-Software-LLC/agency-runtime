@@ -14,6 +14,8 @@ from agency_runtime.core.workforce.intent import (
 )
 from agency_runtime.core.workforce.lifecycle_roles import role_anchors
 from agency_runtime.core.workforce.plan_policy import (
+    _RELEASE_OPERATIONS,
+    _outcome_verifies_operation,
     plan_policy_violations,
     regulated_assurance_requirements,
 )
@@ -748,6 +750,81 @@ def test_release_evidence_matches_the_requested_positive_operation(
 
     plan = _compile(value, request="Build and deploy the service.")
     violations = plan_policy_violations("Build and deploy the service.", plan)
+
+    assert ("plan_missing_release_verification" in violations) is release_violation_expected
+
+
+@pytest.mark.parametrize(
+    ("outcome", "verifies_installation"),
+    (
+        # AR-345: natural planner phrasings must pass...
+        ("Verify the installation succeeded", True),
+        ("Confirm the installed plugin loads in the gateway after restart", True),
+        ("Test evidence confirming the plugin is correctly installed and loaded", True),
+        ("Run the harness battery and confirm the reinstalled plugin passes", True),
+        ("Confirm the plugin installation completed and the gateway loads it", True),
+        ("Verify that the install completed successfully", True),
+        ("Verify the plugin was installed", True),
+        ("Independently verify successful installation of the openclaw plugin", True),
+        ("Test evidence verifying the installation and gateway load of the plugin", True),
+        # ...while outcomes that never name the operation, negate it, or only
+        # verify something temporally before it still fail.
+        ("Verify gateway restart and confirm plugin registration is active", False),
+        ("Verify the unit tests pass without installing anything", False),
+        ("Does not verify the installation", False),
+        ("Verify the test results before installation", False),
+        # AR-345 review reproductions: third-person forms and post-operation
+        # phrasing pass; performed-next actions, leading negated scopes, and
+        # "nothing" negation fail.
+        ("The battery verifies the installation end to end", True),
+        ("Harness run confirms the reinstalled plugin works", True),
+        ("Installation tests pass on all three hosts", True),
+        ("Verify the plugin loads after installation", True),
+        ("Without manual steps, confirm the installation succeeds", True),
+        ("Confirm the uninstalled plugin no longer loads", True),
+        ("Verify the unit tests and then install the plugin", False),
+        ("Verify nothing was installed", False),
+    ),
+)
+def test_natural_release_verification_phrasings_match_the_operation(
+    outcome: str,
+    verifies_installation: bool,
+) -> None:
+    """AR-345: the filler-only adjacency rule rejected 6 of the first 9 rows,
+    making release-shaped requests deterministically fail workforce inference."""
+
+    vocabulary = _RELEASE_OPERATIONS["installation"]
+
+    assert _outcome_verifies_operation(outcome, vocabulary) is verifies_installation
+
+
+@pytest.mark.parametrize(
+    ("evidence_outcome", "release_violation_expected"),
+    (
+        ("Confirm the reinstalled plugin passes its harness battery", False),
+        ("Verify the unrelated documentation is complete", True),
+    ),
+)
+def test_reinstall_requests_are_release_shaped_and_satisfiable(
+    evidence_outcome: str,
+    release_violation_expected: bool,
+) -> None:
+    """AR-345: "reinstall" was absent from the release vocabulary. The request
+    carries mutation and code tokens so the release gate actually evaluates —
+    a bare "Reinstall the plugin." is not code-mutation-shaped and imposes no
+    requirement, which the first review round proved made this test vacuous."""
+
+    value = _intent(
+        artifact="test-evidence",
+        domains=["quality-assurance"],
+        stacks=[],
+        capabilities=["verification"],
+    )
+    value["units"][0]["outcome"] = evidence_outcome  # type: ignore[index]
+    request = "Fix the runtime and reinstall the gateway plugin."
+
+    plan = _compile(value, request=request)
+    violations = plan_policy_violations(request, plan)
 
     assert ("plan_missing_release_verification" in violations) is release_violation_expected
 

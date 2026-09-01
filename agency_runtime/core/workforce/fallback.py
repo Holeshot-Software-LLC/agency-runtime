@@ -14,6 +14,7 @@ from agency_runtime.core.config import AgencyConfig
 from agency_runtime.core.workforce.capability_ontology import artifact_capability
 from agency_runtime.core.workforce.contract import WorkforceContract
 from agency_runtime.core.workforce.lifecycle_roles import role_anchors
+from agency_runtime.core.workforce.plan_policy import RELEASE_OPERATION_TOKENS
 from agency_runtime.core.workforce.planning_contracts import (
     WorkUnit,
     WorkUnitPlan,
@@ -125,7 +126,10 @@ _REVIEW = frozenset({"audit", "inspect", "review", "validate", "verify"})
 _SECURITY = frozenset(
     {"auth", "authentication", "authorization", "credential", "exploit", "security", "threat"}
 )
-_RELEASE = frozenset({"deploy", "deployment", "install", "installer", "package", "release", "ship"})
+# Sourced from plan_policy so the fallback planner's release-shaping can never
+# desynchronize from the policy that judges its plans (AR-345 review);
+# "package" is a fallback-only extra the policy does not require.
+_RELEASE = RELEASE_OPERATION_TOKENS | frozenset({"package"})
 _ANALYSIS = frozenset(
     {"analyze", "assess", "diagnose", "evaluate", "explain", "investigate", "question", "why"}
 )
