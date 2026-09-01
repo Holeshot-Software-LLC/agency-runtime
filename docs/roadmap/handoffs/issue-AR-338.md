@@ -28,8 +28,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/368
 
 # AR-338 Windows bring-up capsule
 
-Release evidence and the exact-main install are done; what remains is two
-attended owner actions and two filed-pending Windows defects.
+Release evidence, the 2026-08-31 bring-up, and the 2026-09-01 `ec6c4b49`
+re-pass are recorded below; outcomes live in next-bounded-work-package.
 
 ## checkpoint
 
@@ -111,44 +111,45 @@ AR-331/333 fixes are superseded by main's 0.149–0.151 parser range.
 
 ## next-bounded-work-package
 
-2026-09-01 re-pass, written from the Linux session that closed
-AR-341/AR-342: bring the three verified hosts from exact-main `9521a4a4`
-(runtime digest `d2fd5aa2...`) to current exact-main `ec6c4b49`. This
-machine inherits PR #382 (typed roster coverage for `review-report`
-contracts), PR #392 (`verify-activation` failures now print named unmet
-prerequisites), and PR #384 (codex ≥0.151 emits `marketplaceSource`;
-required once codex updates past 0.150.1). PRs #385/#390 touch only
-openclaw/hermes — no-ops here. GitHub Actions is disabled repo-wide by
-owner decision: prove every gate locally (ruff format + check, pytest,
-`verify_docs.py`, `update_worklog.py --check`).
+Re-pass executed 2026-09-01 on this machine: all three hosts and the
+dashboard service moved from exact-main `9521a4a4` to exact-main
+`ec6c4b49` (runtime digest `23ebce86d6f4...`) through the checklist
+wheel path — build, strict twine, `verify_distribution`, and `pip check`
+pass; wheel `c401048c...5bca2`, sdist `79ae0de4...e1663`; store schema
+48 on both pins, no migration. Codex attended trust re-done and
+`verify-activation` exit 0 ("Codex current-profile activation
+verified"); the burned-refresh-token and ACL-probe branches never fired.
+zcode smoke 4/4 with retained receipt. Battery baseline re-adopted at
+observed claude 2.1.250 / codex-cli 0.151.0 (no drift, so the change
+gate owes no drills). Claude isolated canary: passed on attempt 5
+(~13:05Z) — header valid, `code-reviewer` selected and loaded, and a
+hash-bound `minimal-change-engineer` card delivered pre-speech to the
+host-authored child, bound to candidate digest `23ebce86d6f4`. Earlier
+attempts: one killed by the default 120 s timeout, two critic-rejected,
+one killed by the launcher's own tool cap; receipts retained. Evidence:
+`~/.agency-runtime/evidence/ar338-windows-20260901/`.
 
-1. Build and install exact-main `ec6c4b49` per the release checklist
-   into the runenv (verified-wheel venv, never a git URL), then
-   `agency install --all`. Hooks restage, so codex trust flips to
-   `modified`: fresh terminal TUI, `Trust all and continue` (8 events),
-   then `agency install --agent codex --verify-activation`. "Host
-   invocation did not return a nonempty response" while `codex login
-   status` still claims a login means a burned refresh token —
-   `codex logout && codex login` and rerun.
-2. Claude auto-updates, so expect drift from 2.1.250: `agency battery
-   --baseline` to adopt observed versions, then `agency install --agent
-   claude` to re-prove the host version. A stuck version probe means
-   updater-tree ACLs: the AR-340 shim-aware probe refuses an executable
-   whose parent namespace permits cross-account substitution.
-3. zcode: `agency smoke --agent zcode` 4/4 with retained readiness
-   receipt (no canary mode by design).
-4. Batteries one host at a time, never concurrently — simultaneous
-   drills contend on the judge route and throw transient rejections
-   that vanish solo. Read `artifact_not_trusted` as a canary-artifact
-   permissions symptom (the ACL analog of the Linux umask leak), not a
-   code bug.
-5. Retain receipts under `~/.agency-runtime/evidence/` and write a
-   worklog ledger row per advance.
-
-Acceptance: all three hosts and the dashboard pinned to `ec6c4b49`;
-codex `verify-activation` exit 0; claude isolated canary passed; zcode
-smoke 4/4; battery baseline re-recorded at observed versions; receipts
-and ledger rows written.
+Findings the next session needs: claude 2.1.250 `-p` turns now run
+hooks — a staffed preflight alone ran 76 s, so the canary's default
+120 s timeout cannot fit a staffed turn; pass `--timeout 600` (the
+cap). The canary receipt's `new_ids` delta absorbs concurrent sessions'
+store writes (it matched another session's turn-ends to the
+millisecond); join receipts to `runs.session_id` and keep only the
+isolated-home sessions before diagnosing. Since 2026-08-31 ~16:48Z the
+box shows intermittent claude-harness staffing-verdict failures
+(`staffing_critic_rejected`, `required_composition_agent_missing`,
+`inference_invalid`, `selection_confidence_too_low`) interleaved with
+confidence-1.0 acceptances on both the old and new runtimes — the
+pattern predates this re-pass (this session's own first turn failed at
+11:46:58Z, before the install finished), and codex-side inference
+passed cleanly in the same window, so it is shaped like the claude
+inference route, not the re-pin. The standing noise source is the
+owner's long-running Claude desktop-app session (embedded CLI 2.1.247,
+alive since 2026-08-29 on retired launcher `4b496fe2`, 184 preflight
+failures at a ~4-minute automated cadence) — the owner restarted it
+2026-09-01 ~12:59Z, every launcher-bound process on the box now runs
+`23ebce86d6f4`, and the canary passed on the very next attempt in that
+cleaned-up window.
 
 ## verification
 
