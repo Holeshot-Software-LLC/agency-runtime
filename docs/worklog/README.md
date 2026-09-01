@@ -1539,6 +1539,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `71e002dc` | 2026-09-01 | fix(ar343): keep stored legacy contracts readable and close the review findings | [AR-343](../roadmap/issue-AR-343-reject-explicit-empty-artifact-kinds.md), [AR-351](../roadmap/issue-AR-351-close-sibling-axis-empty-declarations.md) | Review-confirmed retroactivity fixed: parse re-derives degenerate stored kinds (round-trip test); underscore aliases normalize; wildcard test docstring corrected; AR-343 done with tracker #398 closed; sibling-axes class filed as AR-351 (gh #409) |
 | `e2f04223` | 2026-09-01 | Merge pull request #401 from Holeshot-Software-LLC/claude/ar343-artifact-kinds-validation | null | null |
 | `a38fd640` | 2026-09-01 | Merge remote-tracking branch 'origin/main' into claude/ar347-tracker-parity-backlog | null | null |
+| `272c82d7` | 2026-09-01 | Merge pull request #405 from Holeshot-Software-LLC/claude/ar347-tracker-parity-backlog | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
