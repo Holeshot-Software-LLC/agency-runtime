@@ -1551,6 +1551,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `47324c80` | 2026-09-01 | Merge pull request #418 from Holeshot-Software-LLC/claude/ar352-ar353-filings | null | null |
 | `830f2a92` | 2026-09-01 | docs(ar355): file the working-agreements resident manager design | [AR-355](../roadmap/issue-AR-355-working-agreements-resident-manager.md) | Owner-agreed: second resident manager with the five working agreements (config-sourced, own hash) + one roster-awareness steward line (kernel v5, awareness not delegation); proposed text blocks await owner review; gh #422 |
 | `4afc2522` | 2026-09-01 | Merge pull request #423 from Holeshot-Software-LLC/claude/ar355-working-agreements-manager | null | null |
+| `3c52ec9f` | 2026-09-01 | docs(ar356,ar357,ar358,ar359): file the resident-surface and operations improvements | [AR-356](../roadmap/issue-AR-356-disclose-fail-open-staffing-in-capsule.md), [AR-357](../roadmap/issue-AR-357-canonical-response-contract-statement.md), [AR-358](../roadmap/issue-AR-358-installer-doctor-trust-chain-self-healing.md), [AR-359](../roadmap/issue-AR-359-preserve-operator-policy-newlines.md) | Owner-directed: honest fail-open disclosure (queue-first, gh #426); canonical per-turn response contract (gh #427); installer/doctor trust-chain self-healing (gh #428); stdin newline preservation (gh #429) |
 <!-- worklog:end -->
 
 ## Provenance notes
