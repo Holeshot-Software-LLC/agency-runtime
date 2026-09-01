@@ -1,6 +1,6 @@
 ---
 title: "AR-343: Reject explicitly empty artifact_kinds instead of granting wildcard coverage"
-status: open
+status: done
 category: roadmap
 created: 2026-09-01
 updated: 2026-09-01
@@ -67,12 +67,39 @@ accepted at confidence 1.0, trace `23315857-…`) during the 2026-09-01
 Windows live-header demo on runtime `ec6c4b49`; claims verified against
 source before filing.
 
+## Resolution (2026-09-01, this PR)
+
+`_artifact_kinds` rejects explicit empty/null declarations and explicit
+sets with no `ARTIFACT_CAPABILITY` member; underscore alias spellings of
+ontology kinds normalize instead of rejecting. Mixed sets deliberately
+keep model-authored members: dynamic hiring merges the causing unit's
+ontology kind with novel `artifacts_produced` names (`hiring.py`), and
+full out-of-vocabulary rejection measurably breaks hire compilation
+(`test_workforce_dynamic_hiring.py::test_hire_compiles_schema_maximum_lists`),
+so "no vocabulary member at all" is the strictest rule that does not
+regress live hires — that is the never-matching hazard this issue names.
+The strict checks guard fresh authorship only: `parse_workforce_contract`
+re-derives degenerate stored legacy rows so one historical row cannot
+fail every roster read, index snapshot, self-heal reconciliation, or
+sync (review finding on PR #401). The sibling axes hole
+(explicit-empty `stacks`/`lifecycle_phases`/`domains`) is filed
+separately as AR-351.
+
 ## Acceptance
 
-- [ ] An explicitly empty or null `artifact_kinds` value is rejected at
+- [x] An explicitly empty or null `artifact_kinds` value is rejected at
       contract validation (or documented-and-normalized to derivation),
       and can no longer produce wildcard coverage.
-- [ ] Explicit artifact kinds outside the `ARTIFACT_CAPABILITY`
-      vocabulary fail validation instead of silently never matching.
-- [ ] A regression test covers both paths, including the
-      `staffing_verifier` wildcard boundary.
+      (`contract.py::_artifact_kinds`;
+      `test_explicitly_empty_artifact_kinds_is_rejected_not_wildcarded`.)
+- [x] Explicit artifact kinds with no `ARTIFACT_CAPABILITY` member fail
+      validation instead of silently never matching; mixed sets keep
+      their novel members (see Resolution — full rejection breaks
+      shipped dynamic hiring), and alias spellings normalize.
+      (`test_explicit_artifact_kinds_need_at_least_one_vocabulary_member`,
+      `test_underscore_alias_spellings_of_ontology_kinds_are_normalized`.)
+- [x] A regression test covers both paths, including the
+      `staffing_verifier` wildcard boundary and the stored-contract
+      round-trip.
+      (`test_wildcard_coverage_is_reserved_for_truly_untyped_contracts`,
+      `test_stored_legacy_degenerate_artifact_kinds_stay_parseable`.)

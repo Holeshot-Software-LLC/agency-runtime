@@ -10,6 +10,7 @@ from agency_runtime.core.workforce import contract as workforce_contract
 from agency_runtime.core.workforce.capability_ontology import CORE_CAPABILITY_IDS
 from agency_runtime.core.workforce.contract import (
     WORKFORCE_CONTRACT_SCHEMA_VERSION,
+    parse_workforce_contract,
     project_workforce_contract,
     workforce_index_fingerprint,
 )
@@ -278,6 +279,56 @@ def test_projection_rejects_unbounded_or_invalid_contracts() -> None:
         project_workforce_contract({**source, "capability_ids": ["unreviewed-upstream-skill"]})
 
 
+def test_explicitly_empty_artifact_kinds_is_rejected_not_wildcarded() -> None:
+    source = _manifest_agents()[0]
+
+    with pytest.raises(ValueError, match="must not be explicitly empty"):
+        project_workforce_contract({**source, "artifact_kinds": []})
+    with pytest.raises(ValueError, match="must not be explicitly empty"):
+        project_workforce_contract({**source, "artifact_kinds": None})
+
+
+def test_explicit_artifact_kinds_need_at_least_one_vocabulary_member() -> None:
+    source = _manifest_agents()[0]
+
+    with pytest.raises(ValueError, match="at least one artifact-vocabulary kind"):
+        project_workforce_contract({**source, "artifact_kinds": ["scene-change"]})
+
+    mixed = project_workforce_contract(
+        {**source, "artifact_kinds": ["implementation-change", "scene-change"]}
+    )
+    assert mixed.artifact_kinds == ("implementation-change", "scene-change")
+
+
+def test_underscore_alias_spellings_of_ontology_kinds_are_normalized() -> None:
+    source = _manifest_agents()[0]
+
+    contract = project_workforce_contract(
+        {**source, "artifact_kinds": ["test_evidence", "scene_change"]}
+    )
+
+    assert contract.artifact_kinds == ("test-evidence", "scene-change")
+
+
+def test_stored_legacy_degenerate_artifact_kinds_stay_parseable() -> None:
+    """AR-343 guards fresh authorship only: a stored legacy row with empty or
+    vocabulary-free kinds must re-derive instead of failing every roster read."""
+
+    source = _manifest_agents()[0]
+    stored = project_workforce_contract(source).to_dict()
+
+    for degenerate in ([], ["scene-change"], None):
+        document = {**stored, "artifact_kinds": degenerate}
+        parsed = parse_workforce_contract(document)
+        assert parsed.artifact_kinds, "degenerate stored kinds must re-derive"
+        assert all(kind for kind in parsed.artifact_kinds)
+
+    # A stored row with at least one ontology member keeps its explicit kinds.
+    document = {**stored, "artifact_kinds": ["implementation-change", "scene-change"]}
+    parsed = parse_workforce_contract(document)
+    assert parsed.artifact_kinds == ("implementation-change", "scene-change")
+
+
 def test_agency_contractor_can_extend_the_versioned_capability_ontology() -> None:
     source = _manifest_agents()[0]
     contractor = project_workforce_contract(
@@ -300,7 +351,7 @@ def test_explicit_normalized_fields_override_conservative_derivation() -> None:
         {
             **source,
             "archetype": "spatial-implementer",
-            "artifact_kinds": ["scene-change"],
+            "artifact_kinds": ["implementation-change", "scene-change"],
             "lifecycle_phases": ["implementation", "verification"],
             "domains": ["geospatial"],
             "stacks": ["cesium"],
