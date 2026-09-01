@@ -1514,6 +1514,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `89f9e829` | 2026-08-31 | fix(ar342): surface the canary's named unmet prerequisites | null | null |
 | `df8312a5` | 2026-08-31 | Merge pull request #392 from Holeshot-Software-LLC/claude/ar342-canary-observability | null | null |
 | `ec52242c` | 2026-08-31 | docs(ar342): record the observability fix and the live auth blocker | null | null |
+| `49f2de0c` | 2026-08-31 | Merge pull request #393 from Holeshot-Software-LLC/claude/ar342-status | null | null |
+| `fddc2ef6` | 2026-08-31 | docs(ar342): close the codex activation canary issue | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
