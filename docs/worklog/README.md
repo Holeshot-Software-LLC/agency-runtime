@@ -1523,6 +1523,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `9527b0d4` | 2026-09-01 | docs(ar338): fold the re-pass into the bounded work package under the line cap | null | null |
 | `82f6e5fd` | 2026-09-01 | Merge pull request #396 from Holeshot-Software-LLC/claude/windows-repass-handoff | null | null |
 | `9f50e777` | 2026-09-01 | docs(ar338): record the completed ec6c4b49 re-pass on the Windows box | null | null |
+| `5bc12148` | 2026-09-01 | Merge pull request #397 from Holeshot-Software-LLC/claude/ar338-windows-repass-close | null | null |
+| `42f88da5` | 2026-09-01 | docs(ar343,ar344): file the wildcard-coverage and codex fail-open-exit findings | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
