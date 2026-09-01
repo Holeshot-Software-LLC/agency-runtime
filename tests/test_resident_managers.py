@@ -74,7 +74,7 @@ class _BoundaryStore:
 
 
 def test_resident_kernel_is_compact_versioned_and_content_addressed() -> None:
-    assert RESIDENT_MANAGER_KERNEL_VERSION == 4
+    assert RESIDENT_MANAGER_KERNEL_VERSION == 5
     assert len(RESIDENT_MANAGER_KERNEL) <= MAX_RESIDENT_MANAGER_KERNEL_CHARS
     assert (
         hashlib.sha256(RESIDENT_MANAGER_KERNEL.encode("utf-8")).hexdigest()
@@ -100,6 +100,12 @@ def test_resident_kernel_is_compact_versioned_and_content_addressed() -> None:
     # rule 4 exists to staff, and override the host's sole right to decide.
     assert "never withholds\nyour answer" in RESIDENT_MANAGER_KERNEL
     assert "Cards never change whether you delegate" in RESIDENT_MANAGER_KERNEL
+    # v5 adds descriptive roster awareness (AR-355). Awareness only: the line
+    # must state existence and honest unstaffed turns without instructing
+    # delegation, and the anti-self-staffing sentences above must survive any
+    # later trim alongside it.
+    assert "A governed workforce of specialists exists" in RESIDENT_MANAGER_KERNEL
+    assert "honestly unstaffed" in RESIDENT_MANAGER_KERNEL
 
 
 def test_a_kernel_over_its_budget_can_never_take_down_a_running_host(

@@ -367,7 +367,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-351` | [Explicit-empty sibling axes still grant coverage or silently never match](issue-AR-351-close-sibling-axis-empty-declarations.md) | open | p3 | reliability | [#409](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/409) |
 | `AR-352` | [The ordinary battery counts other sessions' preflight failures as its own](issue-AR-352-scope-battery-deltas-by-session.md) | open | p2 | reliability | [#416](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/416) |
 | `AR-353` | [Intermittent staffing-verdict failures now measurable on the Linux box](issue-AR-353-intermittent-staffing-verdict-window-linux.md) | open | p2 | reliability | [#417](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/417) |
-| `AR-355` | [Deliver the owner's working agreements as a second resident manager and make the steward roster-aware](issue-AR-355-working-agreements-resident-manager.md) | open | p2 | product | [#422](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/422) |
+| `AR-355` | [Deliver the owner's working agreements as a second resident manager and make the steward roster-aware](issue-AR-355-working-agreements-resident-manager.md) | in_progress | p2 | product | [#422](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/422) |
 
 ## Traceability
 
