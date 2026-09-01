@@ -1074,6 +1074,44 @@ def _outbound_evaluated_decision(
     return _outbound_denial(digest)
 
 
+def _agency_fault_pass_through(
+    adapter: Any,
+    *,
+    attempt: int,
+    policy_response: str,
+    session_id: str,
+    trace_id: str,
+) -> dict[str, Any] | None:
+    """Publish when the rejection defends evidence Agency itself never bound.
+
+    Either the run closed fail-open, or the response was authored while this
+    turn's staffing contract was still being delivered (preflight in
+    progress) — the model never saw the requirements it is being judged
+    against. Withholding there is Agency punishing its own failure (AR-366,
+    measured 2026-09-01: an owner reply arrived two seconds into an
+    in-progress preflight and was withheld as response_invalid).
+    """
+
+    from agency_runtime.core.rule8_evidence import (
+        turn_closed_without_bound_response,
+        turn_never_received_staffing_contract,
+    )
+
+    try:
+        agency_fault = turn_closed_without_bound_response(
+            adapter.store, session_id, trace_id
+        ) or turn_never_received_staffing_contract(adapter.store, session_id, trace_id)
+    except Exception:
+        agency_fault = False
+    if not agency_fault:
+        return None
+    return _publish_unverified(
+        attempt=attempt,
+        final_response=policy_response,
+        trace_id=trace_id,
+    )
+
+
 def _handle_pre_verify(
     adapter: Any,
     payload: dict[str, Any],
@@ -1150,6 +1188,18 @@ def _handle_pre_verify(
             trace_id=effective_trace,
         )
     if closed_status:
+        from agency_runtime.core.rule8_evidence import FAIL_OPEN_RUN_STATUSES
+
+        if closed_status in FAIL_OPEN_RUN_STATUSES:
+            # The run was closed by Agency's own lifecycle (fail-open), so no
+            # accepted response exists for this rejection to defend. Rule 8:
+            # the reply publishes; the fail-open receipts carry the
+            # diagnostics (AR-366, sibling of the hermes AR-365 gate).
+            return _publish_unverified(
+                attempt=attempt,
+                final_response=policy_response,
+                trace_id=effective_trace,
+            )
         return _terminal_rejection_result(
             status=closed_status,
             message=_TERMINAL_MISMATCH_MESSAGE,
@@ -1180,6 +1230,15 @@ def _handle_pre_verify(
             if revision is not None
             else _revision()
         )
+    fail_open = _agency_fault_pass_through(
+        adapter,
+        attempt=attempt,
+        policy_response=policy_response,
+        session_id=session_id,
+        trace_id=effective_trace,
+    )
+    if fail_open is not None:
+        return fail_open
     return _finish_policy_rejection(
         adapter,
         decision=decision,

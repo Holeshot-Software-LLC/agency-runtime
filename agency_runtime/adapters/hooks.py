@@ -2889,6 +2889,19 @@ class HookBridge:
             if terminal is not None:
                 return self._terminal_completion_result(str(terminal["action"]))
             if self._is_terminal_turn(correlation.session_id, trace_id):
+                from agency_runtime.core.rule8_evidence import (
+                    turn_closed_without_bound_response,
+                )
+
+                if turn_closed_without_bound_response(self.store, correlation.session_id, trace_id):
+                    # The run was closed by Agency's own lifecycle (fail-open),
+                    # so there is no accepted response for this reply to
+                    # mismatch. Rule 8: the answer publishes and the fail-open
+                    # receipts carry the diagnostics (AR-344/AR-366 — this
+                    # branch produced codex's continue:false terminal exits).
+                    return self._publish_unverified(
+                        correlation.session_id, trace_id, "turn_closed_fail_open"
+                    )
                 return self._reject_completion(
                     (
                         "AGENCY TURN TERMINAL: The submitted response does not match the "
@@ -2916,6 +2929,27 @@ class HookBridge:
                 correlation.session_id, trace_id, "verification_unavailable"
             )
         if verification.get("action") == "continue":
+            from agency_runtime.core.rule8_evidence import (
+                turn_closed_without_bound_response,
+                turn_never_received_staffing_contract,
+            )
+
+            try:
+                agency_fault = turn_closed_without_bound_response(
+                    self.store, correlation.session_id, trace_id
+                ) or turn_never_received_staffing_contract(
+                    self.store, correlation.session_id, trace_id
+                )
+            except Exception:
+                agency_fault = False
+            if agency_fault:
+                # The evidence this rejection demands is missing because
+                # Agency's own staffing failed or never delivered the turn's
+                # contract — not because the host misbehaved. Rule 8: publish
+                # and record, never obstruct (AR-366, all-host sweep).
+                return self._publish_unverified(
+                    correlation.session_id, trace_id, "turn_unverifiable_fail_open"
+                )
             return self._handle_terminal_rejection(
                 correlation=correlation,
                 trace_id=trace_id,

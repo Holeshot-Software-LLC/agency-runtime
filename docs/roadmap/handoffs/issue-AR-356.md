@@ -28,13 +28,13 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/426
 
 # AR-356 research-lifts implementation and backlog-triage capsule
 
-Start-here capsule for a fresh session, anchored on AR-356 as the head of the
-owner-approved implementation queue. Owner scope (2026-09-01): implement the
-ten research lifts (AR-360..AR-364 plus the scope notes on
-AR-120/266/336/355/356/357) and disposition the open backlog per the triage
-below. Standing rules: attack every finding before reporting it; findings go
-in repo docs, not the reply; prove gates locally (Actions is off); worklog
-ledger dance on every change; end every turn with exactly one question.
+Start-here capsule for a fresh session, anchored on AR-356 as the head of
+the owner-approved queue. Owner scope (2026-09-01): implement the ten
+research lifts and disposition the open backlog per the triage below; the
+verification section is the owner-set definition of done. Standing rules:
+attack every finding before reporting it; findings go in repo docs, not the
+reply; prove gates locally (Actions is off); ledger dance on every change;
+end every turn with exactly one question.
 
 ## checkpoint
 
@@ -46,85 +46,73 @@ baseline adopted (claude 2.1.257, codex 0.152.0, hermes 0.21.0/7cd91114,
 openclaw 2026.8.2).
 
 The AR-353 intermittent staffing window is the dominant live failure. On
-2026-09-01 ~20:29Z it hit four sessions within minutes
-(`workforce_inference_failed`; staffing reasons `inference_invalid`,
-`selection_confidence_too_low`, `staffing_critic_rejected`). A well-shaped
-owner request (a UniFi client-drop investigation on openclaw) failed open
-with the roster's `network-engineer` unreached — the planner call died before
-any card ranking ran, and the reply went out unstaffed and headerless. That
-is AR-356's exact case: the turn context never said staffing failed.
+2026-09-01 ~20:29Z it hit four sessions in minutes
+(`workforce_inference_failed`; reasons `inference_invalid`,
+`selection_confidence_too_low`, `staffing_critic_rejected`); a well-shaped
+owner UniFi request on openclaw failed open with the roster's
+`network-engineer` unreached — the planner died before ranking. That is
+AR-356's exact case: the turn context never said staffing failed.
 
-Deploy lore that recurs: claude `marketplace_add` needs the chmod dance after
-host auto-updates (plugin dirs to 700, `@anthropic-ai` npm tree g-w
-stripped); openclaw 2026.8.2 native install requires `openclaw plugins
-install <path> --force --accept-capabilities` when the bundle digest changes
-(fold into AR-358); the openclaw installer's `gateway_status` step always
-fails while the gateway is deliberately stopped — diagnostic only; hermes
-restarts tend to duplicate the dashboard process (kill by PID, never
-`pkill -f` with a pattern your own shell contains, then one single start).
+Deploy lore that recurs: claude `marketplace_add` needs the chmod dance
+after host auto-updates (plugin dirs 700, `@anthropic-ai` npm tree g-w
+stripped); the openclaw installer's `gateway_status` step always fails while
+the gateway is deliberately stopped — diagnostic only; hermes restarts tend
+to duplicate the dashboard process (kill by PID, never `pkill -f` with a
+pattern your own shell contains, then one single start).
 
 ## completed-evidence
 
-- The fail-open family is fixed and deployed: AR-345/344/343/346 landed, and
-  AR-365 root-caused AR-346's live gap (fail-open turns never learn the
-  preflight-minted composite trace) — PR #441, tick #442, battery-proven.
-- AR-355 stage-complete: operator policy live every turn, kernel v5 deployed;
-  remaining boxes need a fresh-session v5 binding observation and the
-  token-cost measurement.
+- The fail-open family is fixed: AR-345/344/343/346 landed; AR-365 (PR
+  #441/#442) root-caused AR-346's live gap; AR-366's all-host Rule-8 gate is
+  merged. AR-355 is stage-complete (operator policy live, kernel v5
+  deployed) pending a fresh-session v5 binding check and token-cost
+  measurement.
 - The ten lifts are filed and merged: AR-360 #433, AR-361 #434, AR-362 #435,
-  AR-363 #436, AR-364 #437 (PR #438, tick #439), AR-365 #440 (PR #441/#442).
+  AR-363 #436, AR-364 #437 (PR #438, tick #439), AR-365 #440, AR-366 #444.
 - Session memory `fail-open-family-20260901.md` and
   `repo-research-lifts-20260901.md` carry deploy ledgers, provenance, and
   the rejected-on-doctrine list.
 
 ## exact-blocker
 
-None mechanical. The queue below is unblocked; the only waits are
-observational (a live AR-353 window turn for AR-365's last box, a fresh
-persistent claude session for AR-355's v5 binding line).
+None mechanical; the only waits are observational (a live fail-open turn
+per delivery path for AR-365/AR-366, a fresh claude session for AR-355).
 
 ## same-task-continuity
 
-Continue on `main`; no work-in-progress branches are open. Every item below
-is filed with a tracker and an issue doc; create one branch per work package
-and keep the ledger dance per commit. Rebase-merges rewrite SHAs — repoint
-the annotated ledger row in a follow-up docs(worklog) tick (the #438→#439
-pattern).
+Continue on `main`; no work-in-progress branches are open. One branch per
+work package, ledger dance per commit; rebase-merges rewrite SHAs, so
+repoint the annotated ledger row in a follow-up docs(worklog) tick.
 
 ## next-bounded-work-package
 
 Implementation queue, owner-approved order:
 
 1. **AR-356 (#426, p1)** — honest fail-open capsule disclosure, including the
-   scope note's tool-degradation extension — and **AR-366 (#444, p1)**, its
-   delivery-side sibling: openclaw withheld an owner reply entirely on
-   2026-09-01 (evaluated rejection on an unstaffed turn); fix with the gate
-   shared from AR-365, never a third copy.
+   scope note's tool-degradation extension. AR-366's code is DONE (the shared
+   Rule-8 gate now covers all four hosts' rejection outlets); what remains is
+   its live box plus AR-365's — observe one real fail-open turn per delivery
+   path publishing the reply.
 2. **Reliability cluster vs the AR-353 window** — AR-353 measurement (#417),
    AR-360 pass^k/pass@k battery grading (#433), AR-362 chaos harness with
    oracles (#435). Receipts already name three distinct staffing reason
    codes; chaos injection should pin each shape.
 3. **AR-352 (#416)** — scope battery deltas by session (foreign-session
    contamination measured during both 2026-09-01 deploy sweeps).
-4. **AR-365 (#440) final box** — observe one live fail-open hermes turn
-   delivering the model's draft.
-5. **AR-361 (#434)** — builder evidence + isolated single-check verification.
-6. **AR-363 (#436)** — per-host deployed-fix witness manifests (would have
+4. **AR-361 (#434)** — builder evidence + isolated single-check verification.
+5. **AR-363 (#436)** — per-host deployed-fix witness manifests (would have
    caught the day's stale-hook drift and the AR-365 code-drift same-day).
-7. **AR-364 (#437)** — audit `silent-failure-hunter` and
+6. **AR-364 (#437)** — audit `silent-failure-hunter` and
    `type-design-analyzer` (affaan-m/ECC) into the roster; then the
-   AR-336/AR-120 scope notes (trigger/routing evals, monotone
-   discoverability baseline).
-8. **AR-357 (#427)** — canonical per-turn response contract; three receipts
-   (two in the doc plus a third withheld header-following reply, 2026-09-01
-   evening).
-9. **Small fixes** — AR-359 stdin newlines (#429; then re-set the live
+   AR-336/AR-120 scope notes (trigger/routing evals, monotone baseline).
+7. **AR-357 (#427)** — canonical per-turn response contract; three receipts.
+8. **Small fixes** — AR-359 stdin newlines (#429; then re-set the live
    operator policy with its line breaks), AR-358 trust-chain self-healing
    (#428; add the openclaw `--accept-capabilities` consent step), AR-354
    host-CLI coverage tests (#420).
-10. **AR-355 (#422) finish** — fresh persistent claude session, verify
-    `kernel_version = 5` in `resident_manager_bindings`, measure per-turn
-    token cost via the context-budget method in the doc, flip boxes, close.
+9. **AR-355 (#422) finish** — fresh persistent claude session, verify
+   `kernel_version = 5` in `resident_manager_bindings`, measure per-turn
+   token cost via the context-budget method in the doc, flip boxes, close.
 
 Backlog triage — owner-directed dispositions (verify before closing, cite
 receipts in every close):
@@ -157,17 +145,29 @@ AR-178 into AR-125 when picked up.
 
 ## verification
 
-- Local gates for every change: focused tests, the named fast Python spine
-  (AGENTS.md lists the files; `-W error`), ruff check + format (binary under
-  `~/.cache/agency-runtime-ar281-trusted-venv/bin/`), both docs gates
-  (`verify_docs.py --require-tracker`, `verify_tracker.py`), and the worklog
-  dance. Decision-conformance eval needs copies-venv + umask 077; routing
-  evals via `agency eval routing --json`.
-- Any runtime deploy follows AR-337: venv pip-reinstall from the local git
-  checkout pinned to the exact SHA with `--no-deps --force-reinstall
-  --no-cache-dir`, `agency install` + per-agent, codex tmux re-trust
-  (send-keys `2` + Enter), hermes single-process restart, openclaw gateway
-  stop/install/start, four batteries, `agency battery --baseline`.
+Owner-set definition of done for this goal (2026-09-01):
+
+1. All ten lifts implemented with regression tests (AR-360..364 complete;
+   scope notes on AR-120/266/336/355/356/357 honored), plus AR-356 and the
+   AR-365/AR-366 live boxes.
+2. Every change proves the local gates: focused tests, the named fast Python
+   spine (`-W error`), ruff check+format (binary under
+   `~/.cache/agency-runtime-ar281-trusted-venv/bin/`), both docs gates, the
+   worklog dance; routing + decision-conformance evals whenever routing or
+   policy surfaces changed (copies-venv + umask 077).
+3. All four harness batteries pass on this machine.
+4. Only if all pass: deploy to every harness here per AR-337 (venv
+   pip-reinstall of the exact SHA with `--no-deps --force-reinstall
+   --no-cache-dir`, `agency install` + per-agent, codex tmux re-trust
+   (send-keys `2`+Enter — the one attended step, recorded), hermes
+   single-process restart, openclaw gateway stop/install/start with
+   `--accept-capabilities`, four batteries, `agency battery --baseline`),
+   then smoke test each host directly with a live turn.
+5. Then exercise the live channels end to end (hermes; openclaw Telegram)
+   and verify on every host: the Agency header lines render, staffing
+   selection runs, and hiring occurs — unattended, with receipts.
+6. Finish honest: registry statuses flipped with receipts, the triage
+   closes executed, and main green on both strict tracker gates.
 
 ## constraints
 
