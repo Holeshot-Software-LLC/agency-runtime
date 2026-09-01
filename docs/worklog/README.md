@@ -1525,6 +1525,9 @@ This registry connects repository history to the roadmap and to optional detail 
 | `9f50e777` | 2026-09-01 | docs(ar338): record the completed ec6c4b49 re-pass on the Windows box | null | null |
 | `5bc12148` | 2026-09-01 | Merge pull request #397 from Holeshot-Software-LLC/claude/ar338-windows-repass-close | null | null |
 | `42f88da5` | 2026-09-01 | docs(ar343,ar344): file the wildcard-coverage and codex fail-open-exit findings | null | null |
+| `a2919e71` | 2026-09-01 | Merge pull request #400 from Holeshot-Software-LLC/claude/ar343-ar344-filing | null | null |
+| `9220059e` | 2026-09-01 | fix(ar343): reject explicit-empty artifact_kinds and vocabulary-free typed sets | [AR-343](../roadmap/issue-AR-343-reject-explicit-empty-artifact-kinds.md) | Explicit empty/null artifact_kinds and all-out-of-vocabulary sets now fail projection; mixed sets keep model-authored members because dynamic hiring merges novel artifacts_produced with the unit's ontology kind (full vocabulary rejection measurably breaks hire compilation); regression tests cover both rejections and the staffing_verifier wildcard boundary |
+| `29777eaa` | 2026-09-01 | docs(ar344,ar345,ar346): record fail-open findings from the Linux instrumented reproduction | [AR-344](../roadmap/issue-AR-344-codex-fail-open-stop-terminal-exit.md), [AR-345](../roadmap/issue-AR-345-release-verification-matcher-rejects-natural-plans.md), [AR-346](../roadmap/issue-AR-346-hermes-fail-open-draft-replacement.md) | AR-344 clean-0.152.0 repro with captured Stop I/O (continue:false session stop; Linux TUI survives; no accepted response exists on fail-open turns); AR-345 files the release-verification matcher brittleness driving deterministic fail-open turns; AR-346 files the hermes fail-open draft replacement; trackers await owner authorization |
 <!-- worklog:end -->
 
 ## Provenance notes
