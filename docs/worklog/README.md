@@ -1551,6 +1551,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `47324c80` | 2026-09-01 | Merge pull request #418 from Holeshot-Software-LLC/claude/ar352-ar353-filings | null | null |
 | `830f2a92` | 2026-09-01 | docs(ar355): file the working-agreements resident manager design | [AR-355](../roadmap/issue-AR-355-working-agreements-resident-manager.md) | Owner-agreed: second resident manager with the five working agreements (config-sourced, own hash) + one roster-awareness steward line (kernel v5, awareness not delegation); proposed text blocks await owner review; gh #422 |
 | `4afc2522` | 2026-09-01 | Merge pull request #423 from Holeshot-Software-LLC/claude/ar355-working-agreements-manager | null | null |
+| `05d70176` | 2026-09-01 | feat(ar355): steward kernel v5 roster awareness; working agreements live via operator policy | [AR-355](../roadmap/issue-AR-355-working-agreements-resident-manager.md) | Five agreements set as operator_policy (shipped channel — no new plumbing), live-verified in a fresh capsule with no deploy; kernel v5 adds the approved roster line (budget 1280) with pins guarding awareness + anti-self-staffing; v5 rides the next deploy with AR-346 |
 <!-- worklog:end -->
 
 ## Provenance notes
