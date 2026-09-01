@@ -1546,6 +1546,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `cb7100bb` | 2026-09-01 | Merge pull request #412 from Holeshot-Software-LLC/claude/ar345-release-verification-matcher | null | null |
 | `2a5d52cd` | 2026-09-01 | fix(openclaw): adopt the OpenClaw 2026.8 line at 2026.8.2 | [AR-347](../roadmap/issue-AR-347-reconcile-tracker-parity-backlog.md) | Owner adopted 2026.8.2 after OpenClaw self-upgraded past the audited 2026.7 line; gate keeps exact-line semantics; fixtures moved; the live post-install battery on 2026.8.2 is the line's hook-compat audit (passed) |
 | `9f2e0ede` | 2026-09-01 | fix(battery): name the explicit agent owner in the OpenClaw ordinary send | [AR-337](../roadmap/issue-AR-337-run-harness-battery-on-version-change.md) | OpenClaw 2026.8 refuses multi-agent turns without --agent; battery send now names --agent openclaw with the shape pinned by test; battery passed on 2026.8.2 after the fix |
+| `1e8fd51d` | 2026-09-01 | Merge pull request #414 from Holeshot-Software-LLC/claude/openclaw-2026-8-line | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
