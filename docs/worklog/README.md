@@ -1540,6 +1540,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `e2f04223` | 2026-09-01 | Merge pull request #401 from Holeshot-Software-LLC/claude/ar343-artifact-kinds-validation | null | null |
 | `a38fd640` | 2026-09-01 | Merge remote-tracking branch 'origin/main' into claude/ar347-tracker-parity-backlog | null | null |
 | `272c82d7` | 2026-09-01 | Merge pull request #405 from Holeshot-Software-LLC/claude/ar347-tracker-parity-backlog | null | null |
+| `c82765ac` | 2026-09-01 | Merge pull request #410 from Holeshot-Software-LLC/claude/worklog-405-merge-row | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
