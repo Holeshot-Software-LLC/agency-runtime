@@ -96,8 +96,10 @@ pattern).
 Implementation queue, owner-approved order:
 
 1. **AR-356 (#426, p1)** — honest fail-open capsule disclosure, including the
-   scope note's tool-degradation extension. Every fail-open case above is
-   the motivation.
+   scope note's tool-degradation extension — and **AR-366 (#444, p1)**, its
+   delivery-side sibling: openclaw withheld an owner reply entirely on
+   2026-09-01 (evaluated rejection on an unstaffed turn); fix with the gate
+   shared from AR-365, never a third copy.
 2. **Reliability cluster vs the AR-353 window** — AR-353 measurement (#417),
    AR-360 pass^k/pass@k battery grading (#433), AR-362 chaos harness with
    oracles (#435). Receipts already name three distinct staffing reason
@@ -175,5 +177,4 @@ AR-178 into AR-125 when picked up.
 - Never name the legacy sibling repository in roadmap docs (verify_docs
   rejects it). sqlite3 CLI is absent (use the python3 module); bare
   foreground `sleep` is blocked (use a python time.sleep one-liner).
-- Findings in repo docs; end every turn with exactly one question; never let
-  Agency's own failure block an owner-visible answer (Rule 8).
+- Findings in repo docs; one question per turn; Rule 8 always.
