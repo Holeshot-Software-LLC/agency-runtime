@@ -108,7 +108,7 @@ class FakeNativeRunner:
         gateway_live: bool = False,
         gateway_result: dict[str, Any] | None = None,
         runtime_payload: Any = None,
-        openclaw_version: str = "OpenClaw 2026.7.1",
+        openclaw_version: str = "OpenClaw 2026.8.2",
     ) -> None:
         self.commands: list[list[str]] = []
         self.fail_token = fail_token
@@ -1604,16 +1604,18 @@ def test_openclaw_refuses_install_that_would_silently_restart_live_gateway(
 @pytest.mark.parametrize(
     ("version", "supported"),
     [
-        ("OpenClaw 2026.7.1", True),
-        ("OpenClaw 2026.7.1-2 (0790d9f)", True),
-        ("openclaw v2026.7.2+build.9", True),
-        ("OpenClaw 2026.7.999", True),
-        ("OpenClaw 2026.8.0", False),
+        ("OpenClaw 2026.8.2", True),
+        ("OpenClaw 2026.8.2-1 (0965053)", True),
+        ("openclaw v2026.8.3+build.9", True),
+        ("OpenClaw 2026.8.999", True),
+        ("OpenClaw 2026.8.1", False),
+        ("OpenClaw 2026.9.0", False),
         ("2027.1.0", False),
-        ("OpenClaw 2026.7.1-rc.1", False),
-        ("OpenClaw 2026.7.1rc1", False),
-        ("OpenClaw 2026.7.1.1", False),
-        ("OpenClaw 2026.6.9", False),
+        ("OpenClaw 2026.8.2-rc.1", False),
+        ("OpenClaw 2026.8.2rc1", False),
+        ("OpenClaw 2026.8.2.1", False),
+        ("OpenClaw 2026.7.1", False),
+        ("OpenClaw 2026.7.1-2 (0790d9f)", False),
         ("unknown", False),
     ],
 )
@@ -1625,8 +1627,10 @@ def test_openclaw_minimum_hook_version_contract(version: str, supported: bool) -
     "version",
     [
         "OpenClaw 2026.6.9",
-        "OpenClaw 2026.7.1-rc.1",
-        "OpenClaw 2026.8.0",
+        "OpenClaw 2026.7.1",
+        "OpenClaw 2026.8.2-rc.1",
+        "OpenClaw 2026.8.1",
+        "OpenClaw 2026.9.0",
         "OpenClaw 2027.1.0",
         "unknown",
     ],
