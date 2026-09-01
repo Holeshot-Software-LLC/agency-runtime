@@ -1559,6 +1559,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `2bf0383c` | 2026-09-01 | Merge pull request #421 from Holeshot-Software-LLC/claude/ar346-hermes-fail-open-passthrough | null | null |
 | `dafe17a5` | 2026-09-01 | Merge remote-tracking branch 'origin/main' into claude/ar355-implementation | null | null |
 | `218c3b14` | 2026-09-01 | Merge pull request #425 from Holeshot-Software-LLC/claude/ar355-implementation | null | null |
+| `f00fc3e5` | 2026-09-01 | docs(roadmap): file the owner-approved research lifts as AR-360..AR-364 with scope notes | [AR-360](../roadmap/issue-AR-360-battery-pass-k-grading.md), [AR-361](../roadmap/issue-AR-361-builder-evidence-isolated-verification.md), [AR-362](../roadmap/issue-AR-362-agent-chaos-harness-oracles.md), [AR-363](../roadmap/issue-AR-363-deployed-fix-witness-manifests.md), [AR-364](../roadmap/issue-AR-364-audit-external-review-cards.md) | Owner approved all ten research lifts (ECC, awesome-llm-apps, LobeHub, ruflo): battery pass^k grading (gh #433), builder-evidence/isolated verification (gh #434), agent-chaos oracles (gh #435), deployed-fix witness manifests (gh #436), external review-card audits (gh #437); scope notes on AR-120/266/336/355/356/357 incl. the kernel-v5+AR-346 deploy record (projection eed13230, four batteries green, baseline adopted) and the second AR-357 withheld-response receipt |
 <!-- worklog:end -->
 
 ## Provenance notes
