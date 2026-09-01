@@ -9,10 +9,24 @@ staffing-complete ordinary check where none does (hermes, openclaw), and a
 content-free posture scan of the harness install tree. Receipts are
 retained privately and doctor surfaces the last outcome per harness.
 
+Two refinements keep the verdict honest on a busy box:
+
+* The ordinary check judges only the battery turn's own session. Its
+  before/after store delta is split into own-session rows (joined through
+  the new ``runs`` rows for the battery's host) and foreign-session
+  activity, so another session's preflight failure in the same window is
+  reported, never absorbed (AR-352).
+* Every probe runs ``k`` trials and is graded. Canary probes prove wiring
+  trust, hook activation, and the finalization round-trip, so they grade
+  pass^k (every trial must pass); ordinary probes overlap the intermittent
+  staffing window (AR-353) and grade pass@k (any passing trial proves the
+  harness). Every trial is persisted so a flap is data (AR-360).
+
 The battery never mutates host-owned trees and never bypasses attended
 trust: a codex canary refused at the trust boundary is reported as the
 distinct loud outcome ``attended_trust_required`` (owner interview,
-2026-08-30).
+2026-08-30), and that outcome short-circuits the remaining trials because
+retrying an attended step cannot change its answer.
 """
 
 from __future__ import annotations
@@ -22,21 +36,37 @@ import os
 import shutil
 import subprocess
 import time
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Mapping, Sequence
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from agency_runtime.core.host_capabilities import EXECUTION_HOSTS
 from agency_runtime.core.private_paths import ensure_private_directory
 from agency_runtime.core.process_argv import prepare_process_argv
 
 BATTERY_SCHEMA = "agency.harness-battery.v1"
 BATTERY_HOSTS = ("claude", "codex", "hermes", "openclaw")
 BATTERY_OUTCOMES = frozenset({"passed", "failed", "attended_trust_required"})
+# AR-360 grading modes. The data tokens are plain ASCII identifiers;
+# ``pass_all_k`` is documented as pass^k (every trial must pass) and
+# ``pass_any_k`` as pass@k (any passing trial proves the harness).
+GRADING_PASS_ALL_K = "pass_all_k"
+GRADING_PASS_ANY_K = "pass_any_k"
+BATTERY_GRADING_MODES = frozenset({GRADING_PASS_ALL_K, GRADING_PASS_ANY_K})
+BATTERY_DEFAULT_TRIALS = 2
+BATTERY_MAX_TRIALS = 5
+_GRADING_LABEL_PREFIXES = {GRADING_PASS_ALL_K: "pass^", GRADING_PASS_ANY_K: "pass@"}
 _VERSION_TIMEOUT_SECONDS = 30.0
 _TURN_TIMEOUT_SECONDS = 420.0
 _MAX_POSTURE_ENTRIES = 4000
 _MAX_VERSION_CHARS = 200
+# ``recent_runtime_activity`` clamps to 200 rows per collection; the battery
+# asks for the whole window so a busy box cannot push its own rows out.
+_ACTIVITY_LIMIT = 200
+_MAX_OWN_SESSIONS = 16
+_MAX_SESSION_ID_CHARS = 128
+_KNOWN_ROW_HOSTS = frozenset(EXECUTION_HOSTS) | frozenset(BATTERY_HOSTS)
 _ORDINARY_TASK = (
     "Review the error handling in this project's configuration loader and "
     "report the single highest risk you can justify from the code."
@@ -305,11 +335,113 @@ _ORDINARY_COMMANDS: dict[str, tuple[str, ...]] = {
 }
 
 
+def _row_identity(name: str, index: int, row: Mapping[str, Any]) -> str:
+    """Stable identity for one activity row; positional when it has no id."""
+
+    return str(row.get("id") or f"{name}-{index}")
+
+
 def _store_activity_index(store: Any) -> dict[str, set[str]]:
-    activity = store.recent_runtime_activity(limit=200)
+    activity = store.recent_runtime_activity(limit=_ACTIVITY_LIMIT)
     return {
-        name: {str(row.get("id") or f"{name}-{index}") for index, row in enumerate(rows)}
+        name: {_row_identity(name, index, row) for index, row in enumerate(rows)}
         for name, rows in activity.items()
+    }
+
+
+def _new_activity_rows(
+    before: Mapping[str, set[str]],
+    after: Mapping[str, Sequence[Mapping[str, Any]]],
+) -> dict[str, list[Mapping[str, Any]]]:
+    """Rows present in the after snapshot that the before index never saw."""
+
+    fresh: dict[str, list[Mapping[str, Any]]] = {}
+    for name, rows in after.items():
+        prior = before.get(name, set())
+        new_rows = [
+            row for index, row in enumerate(rows) if _row_identity(name, index, row) not in prior
+        ]
+        if new_rows:
+            fresh[name] = new_rows
+    return fresh
+
+
+def _own_turn_keys(
+    host: str,
+    new_rows: Mapping[str, Sequence[Mapping[str, Any]]],
+) -> tuple[set[str], set[str]]:
+    """Session and trace ids of the battery turn's own runs (AR-352).
+
+    The harness CLI never tells the battery which session it opened, so the
+    turn is identified from the new ``runs`` rows for the battery's host.
+    Both keys are kept: ``finalizations`` carry only a trace id, and every
+    row of the turn shares its trace even when written before the run row.
+    Concurrent new sessions of the same host in the same window remain
+    indistinguishable; that residue is why the ordinary probe grades pass@k.
+    """
+
+    sessions: set[str] = set()
+    traces: set[str] = set()
+    for row in new_rows.get("runs", ()):
+        if str(row.get("host") or "") != host:
+            continue
+        session = str(row.get("session_id") or "")
+        trace = str(row.get("trace_id") or "")
+        if session:
+            sessions.add(session)
+        if trace:
+            traces.add(trace)
+    return sessions, traces
+
+
+def _row_is_own(row: Mapping[str, Any], sessions: set[str], traces: set[str]) -> bool:
+    session = str(row.get("session_id") or "")
+    trace = str(row.get("trace_id") or "")
+    return (bool(session) and session in sessions) or (bool(trace) and trace in traces)
+
+
+def _foreign_host_label(value: object) -> str:
+    """Bound one foreign row's host to a known token; never echo free text."""
+
+    host = str(value or "")
+    if not host:
+        return "unknown"
+    return host if host in _KNOWN_ROW_HOSTS else "other"
+
+
+def _scope_activity_delta(
+    host: str,
+    new_rows: Mapping[str, Sequence[Mapping[str, Any]]],
+) -> dict[str, Any]:
+    """Split the window's new rows into the turn's own and foreign ones.
+
+    Only bounded counts and the own session ids leave. ``own_session_row_counts``
+    drives the verdict; ``foreign_session_activity`` (per collection) and
+    ``foreign_session_hosts`` (per known host) are informational so an
+    operator can see what the window absorbed; ``new_row_counts`` keeps its
+    pre-AR-352 meaning of every new row in the window regardless of session.
+    """
+
+    sessions, traces = _own_turn_keys(host, new_rows)
+    own_counts: dict[str, int] = {}
+    foreign_counts: dict[str, int] = {}
+    foreign_hosts: dict[str, int] = {}
+    for name, rows in new_rows.items():
+        for row in rows:
+            if _row_is_own(row, sessions, traces):
+                own_counts[name] = own_counts.get(name, 0) + 1
+                continue
+            foreign_counts[name] = foreign_counts.get(name, 0) + 1
+            label = _foreign_host_label(row.get("host"))
+            foreign_hosts[label] = foreign_hosts.get(label, 0) + 1
+    return {
+        "own_sessions": [
+            session[:_MAX_SESSION_ID_CHARS] for session in sorted(sessions)[:_MAX_OWN_SESSIONS]
+        ],
+        "own_session_row_counts": own_counts,
+        "foreign_session_activity": foreign_counts,
+        "foreign_session_hosts": foreign_hosts,
+        "new_row_counts": {name: len(rows) for name, rows in new_rows.items()},
     }
 
 
@@ -320,7 +452,13 @@ def _run_ordinary_battery(
     resolver: Callable[[str], str | None],
     runner: Callable[..., Any],
 ) -> tuple[str, dict[str, Any]]:
-    """Staffing-complete ordinary check for hosts without a canary mode."""
+    """Staffing-complete ordinary check for hosts without a canary mode.
+
+    The verdict is judged on the battery turn's own session only (AR-352):
+    the turn must produce its own run, routing decision, and loaded
+    specialist, and none of its own preflight failures. Foreign-session rows
+    in the same window are counted in the detail, never judged.
+    """
 
     command = _ORDINARY_COMMANDS[host]
     if not resolver(command[0]):
@@ -338,27 +476,16 @@ def _run_ordinary_battery(
         timed_out = True
         exit_code = None
     time.sleep(3)
-    after = store.recent_runtime_activity(limit=200)
-    fresh: dict[str, int] = {}
-    zero_preflight = True
-    for name, rows in after.items():
-        prior = before.get(name, set())
-        new_rows = [
-            row
-            for index, row in enumerate(rows)
-            if str(row.get("id") or f"{name}-{index}") not in prior
-        ]
-        if new_rows:
-            fresh[name] = len(new_rows)
-        if name == "preflight_failures" and new_rows:
-            zero_preflight = False
+    after = store.recent_runtime_activity(limit=_ACTIVITY_LIMIT)
+    scoped = _scope_activity_delta(host, _new_activity_rows(before, after))
+    own = scoped["own_session_row_counts"]
     staffed = (
         not timed_out
         and exit_code == 0
-        and fresh.get("runs", 0) >= 1
-        and fresh.get("routing", 0) >= 1
-        and fresh.get("specialists", 0) >= 1
-        and zero_preflight
+        and own.get("runs", 0) >= 1
+        and own.get("routing", 0) >= 1
+        and own.get("specialists", 0) >= 1
+        and own.get("preflight_failures", 0) == 0
     )
     outcome = "passed" if staffed else "failed"
     return outcome, {
@@ -367,7 +494,113 @@ def _run_ordinary_battery(
         "reason": "" if staffed else "ordinary_turn_not_staffing_complete",
         "timed_out": timed_out,
         "exit_code": exit_code,
-        "new_row_counts": fresh,
+        **scoped,
+    }
+
+
+def probe_mode(host: str) -> str:
+    """``canary`` for hosts with a proven canary mode, else ``ordinary``."""
+
+    return "canary" if host in _CANARY_CONFIRMATIONS else "ordinary"
+
+
+def probe_grading_mode(host: str) -> str:
+    """Grading mode per probe (AR-360).
+
+    Canary probes are safety-critical (wiring trust, hook activation, the
+    finalization round-trip) and grade pass^k; ordinary probes overlap the
+    known-flaky staffing window (AR-353) and grade pass@k.
+    """
+
+    return GRADING_PASS_ALL_K if probe_mode(host) == "canary" else GRADING_PASS_ANY_K
+
+
+def grading_label(mode: str, trials: int) -> str:
+    """Human label for one grading mode and trial count: ``pass^k`` or ``pass@k``."""
+
+    prefix = _GRADING_LABEL_PREFIXES.get(mode, "trials:")
+    return f"{prefix}{trials}"
+
+
+def validated_trials(trials: int | None) -> int:
+    """Bound the per-probe trial count; ``None`` selects the default.
+
+    ``k`` stays small because every trial is a real host turn with real model
+    spend; a single trial remains valid for cheap deterministic probes.
+    """
+
+    if trials is None:
+        return BATTERY_DEFAULT_TRIALS
+    if type(trials) is not int or not 1 <= trials <= BATTERY_MAX_TRIALS:
+        raise ValueError(f"battery trials must be an integer from 1 through {BATTERY_MAX_TRIALS}")
+    return trials
+
+
+def grade_trials(mode: str, trials: Sequence[Mapping[str, Any]]) -> tuple[str, str]:
+    """Fold per-trial outcomes into one graded outcome and names-only reason.
+
+    ``attended_trust_required`` is never a flap: one such trial grades the
+    whole series with that distinct outcome and its reason. Under pass^k any
+    failed trial fails the series; under pass@k only a series without a
+    passing trial does. The reason names the failing trial numbers so the
+    receipt says which trial to read.
+    """
+
+    if mode not in BATTERY_GRADING_MODES:
+        raise ValueError(f"unsupported battery grading mode: {mode}")
+    if not trials:
+        return "failed", "no_trials_run"
+    for trial in trials:
+        if trial.get("outcome") == "attended_trust_required":
+            return "attended_trust_required", str(trial.get("reason") or "attended_trust_required")
+    failed = [
+        str(number) for number, trial in enumerate(trials, 1) if trial.get("outcome") != "passed"
+    ]
+    if mode == GRADING_PASS_ALL_K and failed:
+        return "failed", "pass_all_k_trial_failed:" + ",".join(failed)
+    if mode == GRADING_PASS_ANY_K and len(failed) == len(trials):
+        return "failed", "pass_any_k_all_trials_failed:" + ",".join(failed)
+    return "passed", ""
+
+
+def _run_graded_probe(
+    host: str,
+    *,
+    trials: int,
+    probe: Callable[[], tuple[str, dict[str, Any]]],
+) -> tuple[str, dict[str, Any]]:
+    """Run one host's probe ``trials`` times and grade the series (AR-360).
+
+    Every requested trial runs, because a flap is exactly the measurement
+    AR-353 needs, and each trial computes its own store delta so foreign
+    activity is never counted twice. Only ``attended_trust_required``
+    short-circuits: retrying an attended step cannot change its answer.
+    """
+
+    grading_mode = probe_grading_mode(host)
+    recorded: list[dict[str, Any]] = []
+    for number in range(1, trials + 1):
+        outcome, detail = probe()
+        detail["trial"] = number
+        detail["ran_at"] = _now()
+        recorded.append(detail)
+        if outcome == "attended_trust_required":
+            break
+    outcome, reason = grade_trials(grading_mode, recorded)
+    passed = [trial["trial"] for trial in recorded if trial["outcome"] == "passed"]
+    failed = [trial["trial"] for trial in recorded if trial["outcome"] != "passed"]
+    return outcome, {
+        "mode": probe_mode(host),
+        "outcome": outcome,
+        "reason": reason,
+        "grading": {
+            "mode": grading_mode,
+            "trials_requested": trials,
+            "trials_run": len(recorded),
+            "passed_trials": passed,
+            "failed_trials": failed,
+        },
+        "trials": recorded,
     }
 
 
@@ -389,6 +622,76 @@ def _write_receipt(
     return str(target)
 
 
+def _default_store_factory(config_path: str | None) -> Callable[[], Any]:
+    from agency_runtime.core.config import load_config
+    from agency_runtime.core.store.sqlite import Store
+
+    database = Path(load_config(config_path).store.db_path).expanduser()
+
+    def _open_store(path: Path = database) -> Any:
+        return Store(path)
+
+    return _open_store
+
+
+def _host_probe(
+    host: str,
+    *,
+    canary_runner: Callable[..., Mapping[str, Any]],
+    config_path: str | None,
+    store_factory: Callable[[], Any] | None,
+    resolver: Callable[[str], str | None],
+    runner: Callable[..., Any],
+) -> Callable[[], tuple[str, dict[str, Any]]]:
+    """Bind one host's single-trial probe so the grader can repeat it.
+
+    The store is opened once per host and shared by every trial, exactly as
+    the single-shot battery opened it once.
+    """
+
+    if probe_mode(host) == "canary":
+        return lambda: _run_canary_battery(
+            host,
+            canary_runner=canary_runner,
+            config_path=config_path,
+        )
+    store = (store_factory or _default_store_factory(config_path))()
+    return lambda: _run_ordinary_battery(host, store=store, resolver=resolver, runner=runner)
+
+
+def _fingerprint_entry(
+    previous: Any,
+    *,
+    outcome: str,
+    detail: Mapping[str, Any],
+    observed_version: str,
+    receipt: str,
+) -> dict[str, Any]:
+    """Fingerprint row for one host; proof advances only on a passed battery."""
+
+    grading = detail["grading"]
+    entry: dict[str, Any] = {
+        "last_outcome": outcome,
+        "last_run_at": detail["ran_at"],
+        "last_receipt": receipt,
+        "observed_version": observed_version,
+        "posture_group_writable": detail["posture"]["group_writable"],
+        "last_grading_mode": grading["mode"],
+        "last_trials": {
+            "requested": grading["trials_requested"],
+            "run": grading["trials_run"],
+            "passed": len(grading["passed_trials"]),
+        },
+    }
+    proven = previous.get("proven_version") if isinstance(previous, Mapping) else ""
+    entry["proven_version"] = observed_version if outcome == "passed" else proven or ""
+    if outcome == "passed":
+        entry["proven_at"] = detail["ran_at"]
+    elif isinstance(previous, Mapping) and previous.get("proven_at"):
+        entry["proven_at"] = previous["proven_at"]
+    return entry
+
+
 def run_battery(
     *,
     hosts: tuple[str, ...] | None = None,
@@ -400,11 +703,18 @@ def run_battery(
     runner: Callable[..., Any] = _bounded_process,
     canary_runner: Callable[..., Mapping[str, Any]] | None = None,
     store_factory: Callable[[], Any] | None = None,
+    trials: int | None = None,
 ) -> dict[str, Any]:
-    """Observe versions, run the battery for changed harnesses, seal receipts."""
+    """Observe versions, run the graded battery for changed harnesses, seal receipts.
+
+    Version observation and the posture scan stay single-shot and
+    deterministic; only the host turn (canary or ordinary) is the graded,
+    repeated check. ``trials`` is the per-probe ``k`` (AR-360).
+    """
 
     if canary_runner is None:
         from agency_runtime.core.canary import run_canary as canary_runner
+    trials_per_probe = validated_trials(trials)
     selected = tuple(hosts) if hosts else BATTERY_HOSTS
     for host in selected:
         if host not in BATTERY_HOSTS:
@@ -423,48 +733,29 @@ def run_battery(
     results: dict[str, Any] = {}
     for host in due:
         posture = posture_regressions(host, resolver=resolver)
-        if host in _CANARY_CONFIRMATIONS:
-            outcome, detail = _run_canary_battery(
-                host,
-                canary_runner=canary_runner,
-                config_path=config_path,
-            )
-        else:
-            if store_factory is None:
-                from agency_runtime.core.config import load_config
-                from agency_runtime.core.store.sqlite import Store
-
-                database = Path(load_config(config_path).store.db_path).expanduser()
-
-                def _open_store(path: Path = database) -> Any:
-                    return Store(path)
-
-                store_factory = _open_store
-            outcome, detail = _run_ordinary_battery(
-                host,
-                store=store_factory(),
-                resolver=resolver,
-                runner=runner,
-            )
+        if store_factory is None and probe_mode(host) == "ordinary":
+            # Load the configuration once for every ordinary host in this run.
+            store_factory = _default_store_factory(config_path)
+        probe = _host_probe(
+            host,
+            canary_runner=canary_runner,
+            config_path=config_path,
+            store_factory=store_factory,
+            resolver=resolver,
+            runner=runner,
+        )
+        outcome, detail = _run_graded_probe(host, trials=trials_per_probe, probe=probe)
         detail["posture"] = posture
         detail["observed_version"] = observed[host]
         detail["ran_at"] = _now()
         receipt = _write_receipt(receipts, host, detail)
-        entry = {
-            "last_outcome": outcome,
-            "last_run_at": detail["ran_at"],
-            "last_receipt": receipt,
-            "observed_version": observed[host],
-            "posture_group_writable": posture["group_writable"],
-        }
-        previous = document["harnesses"].get(host)
-        proven = previous.get("proven_version") if isinstance(previous, Mapping) else ""
-        entry["proven_version"] = observed[host] if outcome == "passed" else proven or ""
-        if outcome == "passed":
-            entry["proven_at"] = detail["ran_at"]
-        elif isinstance(previous, Mapping) and previous.get("proven_at"):
-            entry["proven_at"] = previous["proven_at"]
-        document["harnesses"][host] = entry
+        document["harnesses"][host] = _fingerprint_entry(
+            document["harnesses"].get(host),
+            outcome=outcome,
+            detail=detail,
+            observed_version=observed[host],
+            receipt=receipt,
+        )
         results[host] = detail
     if due:
         _write_fingerprints(document, fingerprint_file)
@@ -473,6 +764,7 @@ def run_battery(
         "schema": BATTERY_SCHEMA,
         "observed": observed,
         "ran": list(due),
+        "trials": trials_per_probe,
         "results": results,
         "failed": failed,
         "ok": not failed,
@@ -527,6 +819,28 @@ def record_baseline(
     return {"schema": BATTERY_SCHEMA, "baseline": adopted, "skipped": skipped}
 
 
+def describe_result(host: str, detail: Mapping[str, Any]) -> str:
+    """One human line per host: outcome, grading tally, reason, and version.
+
+    Example: ``hermes: passed (pass@2: 1/2 trials) (Hermes Agent v0.21.0)``.
+    """
+
+    grading = detail.get("grading")
+    notes: list[str] = []
+    if isinstance(grading, Mapping):
+        label = grading_label(
+            str(grading.get("mode") or ""),
+            int(grading.get("trials_requested") or 0),
+        )
+        passed = len(grading.get("passed_trials") or ())
+        notes.append(f"{label}: {passed}/{int(grading.get('trials_run') or 0)} trials")
+    reason = str(detail.get("reason") or "")
+    if reason:
+        notes.append(reason)
+    summary = f" ({'; '.join(notes)})" if notes else ""
+    return f"{host}: {detail['outcome']}{summary} ({detail['observed_version']})"
+
+
 def run_battery_cli(args: Any) -> int:
     """CLI adapter for ``agency battery``."""
 
@@ -559,6 +873,7 @@ def run_battery_cli(args: Any) -> int:
         hosts=hosts,
         force=bool(getattr(args, "force", False)),
         config_path=getattr(args, "config", None),
+        trials=getattr(args, "trials", None),
     )
     if getattr(args, "json", False):
         print(json.dumps(report, indent=1, sort_keys=True))
@@ -566,6 +881,5 @@ def run_battery_cli(args: Any) -> int:
         print("harness battery: no harness version change detected")
     else:
         for host in report["ran"]:
-            detail = report["results"][host]
-            print(f"{host}: {detail['outcome']} ({detail['observed_version']})")
+            print(describe_result(host, report["results"][host]))
     return 0 if report["ok"] else 1

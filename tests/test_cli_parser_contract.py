@@ -315,7 +315,7 @@ EXPECTED_BINDINGS = {
     "agency workforce show": "cmd_workforce_show",
     "agency workforce suspend": "cmd_workforce_transition",
 }
-EXPECTED_MANIFEST_SHA256 = "58bf391ee3e0ba6f536735f2eac03d40bd2f69361f21b7d6594293e062ee2ec4"
+EXPECTED_MANIFEST_SHA256 = "2c2b08e6e231ecd8cdf3d0f27dd5a20faeeda22f26f84482a8785b589ba971d8"
 
 
 def _handler(name: str):
@@ -500,6 +500,26 @@ def test_install_parser_exposes_durable_production_container_mode() -> None:
     assert parsed.config == "/etc/agency/agency.yaml"
     assert parsed.autonomous is False
     assert parsed.verify_activation is False
+
+
+def test_battery_parser_bounds_trials_per_probe() -> None:
+    """AR-360: ``--trials`` is the per-probe k, bounded 1 through 5; absent it
+    leaves the battery's own default in force."""
+
+    parsed = _parser().parse_args(["battery", "--host", "hermes", "--trials", "3"])
+
+    assert parsed.trials == 3
+    assert parsed.host == "hermes"
+    assert parsed.func.__name__ == "cmd_battery"
+    assert _parser().parse_args(["battery"]).trials is None
+    assert parser_module._battery_trials("1") == 1
+    assert parser_module._battery_trials("5") == 5
+    with pytest.raises(argparse.ArgumentTypeError, match="positive integer"):
+        parser_module._battery_trials("0")
+    with pytest.raises(argparse.ArgumentTypeError, match="1 through 5"):
+        parser_module._battery_trials("6")
+    with pytest.raises(SystemExit):
+        _parser().parse_args(["battery", "--trials", "6"])
 
 
 def test_child_evidence_parser_exposes_no_receipt_writing_mode() -> None:
