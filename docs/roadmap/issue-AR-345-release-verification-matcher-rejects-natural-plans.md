@@ -1,6 +1,6 @@
 ---
 title: "AR-345: Release-verification plan matcher rejects natural planner phrasing, forcing fail-open turns"
-status: open
+status: done
 category: roadmap
 created: 2026-09-01
 updated: 2026-09-01
@@ -86,15 +86,40 @@ defects: the codex Stop terminal replay-mismatch (AR-344) and the
 hermes draft replacement (AR-346). An agency-runtime operations session
 (install, wire, battery) is release-shaped almost every turn.
 
+## Resolution (2026-09-01)
+
+`_outcome_verifies_operation` now accepts a clause that contains both a
+verification token and an operation token, dropping the filler-only
+adjacency window; negation stripping and the clause boundaries
+(punctuation plus temporal words) are unchanged, so negated outcomes
+("Does not verify the installation", "…without installing anything")
+and temporally-scoped ones ("Verify the test results before
+installation") still fail, as do outcomes that never name the
+operation. One correction to the measured table: row 10 ("Verify
+gateway restart and confirm plugin registration is active") contains
+no installation token and is correctly rejected under any sound rule —
+9 of 10 rows pass, the 6 previously-failing natural phrasings among
+them. `reinstall*` joins the release and installation vocabularies on
+both sides, `-ing` verification forms (verifying/confirming/validating/
+proving) are recognized, and the repair guidance plus the planner
+acceptance contract now state the clause rule with an example so a
+rejected plan repairs in one pass. Note: fail-open turns stop only
+after a runtime deploy at a commit containing this fix (venv rebuild +
+`agency install`, per the standing deploy runbook).
+
 ## Acceptance
 
-- [ ] A plan whose test-evidence outcome verifies the requested
-      operation in natural phrasing (including the 6 failing rows
-      above) passes `_release_verification_covers_request`, without
-      admitting negated or unrelated-verification outcomes.
-- [ ] `reinstall`/`reinstalled`/`reinstalling` count as installation
+- [x] A plan whose test-evidence outcome verifies the requested
+      operation in natural phrasing passes
+      `_release_verification_covers_request`, without admitting
+      negated, temporally-scoped, or unrelated-verification outcomes
+      (9/10 measured rows pass; row 10 never names the operation and
+      is correctly rejected — see Resolution).
+- [x] `reinstall`/`reinstalled`/`reinstalling` count as installation
       vocabulary on both the request and outcome sides.
-- [ ] Planner repair guidance states the actual acceptance contract for
+- [x] Planner repair guidance states the actual acceptance contract for
       release verification so a rejected plan can be repaired in one
       pass.
-- [ ] Regression coverage pins the sentence table above.
+- [x] Regression coverage pins the sentence table above
+      (`tests/test_workforce_intent.py::test_natural_release_verification_phrasings_match_the_operation`
+      plus the reinstall request/outcome round-trip).

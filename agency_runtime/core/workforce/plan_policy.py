@@ -95,6 +95,11 @@ _RELEASE = frozenset(
         "installer",
         "installers",
         "installing",
+        "reinstall",
+        "reinstallation",
+        "reinstalled",
+        "reinstalling",
+        "reinstalls",
         "release",
         "released",
         "releases",
@@ -116,6 +121,11 @@ _RELEASE_OPERATIONS = {
             "installer",
             "installers",
             "installing",
+            "reinstall",
+            "reinstallation",
+            "reinstalled",
+            "reinstalling",
+            "reinstalls",
         }
     ),
     "release": frozenset(
@@ -126,42 +136,21 @@ _POSITIVE_VERIFICATION = frozenset(
     {
         "confirm",
         "confirmed",
+        "confirming",
         "evidence",
         "prove",
         "proven",
+        "proving",
         "test",
         "tested",
         "validate",
         "validated",
+        "validating",
         "validation",
         "verification",
         "verified",
         "verify",
-    }
-)
-_VERIFICATION_RELATION_FILLERS = frozenset(
-    {
-        "a",
-        "actual",
-        "an",
-        "and",
-        "application",
-        "been",
-        "complete",
-        "completed",
-        "cross",
-        "for",
-        "has",
-        "in",
-        "is",
-        "of",
-        "on",
-        "platform",
-        "successful",
-        "successfully",
-        "that",
-        "the",
-        "was",
+        "verifying",
     }
 )
 _ASSURANCE_TERMS = frozenset(
@@ -244,8 +233,10 @@ _PLAN_REPAIR_REQUIREMENTS = {
         "distinct from the security review."
     ),
     "plan_missing_release_verification": (
-        "Add downstream test-evidence whose outcome explicitly verifies the requested install, "
-        "deployment, or release."
+        "Add downstream test-evidence whose outcome names the requested operation "
+        "(install/deploy/release words) in the same clause as a verification word "
+        '(verify/confirm/validate/test/evidence), e.g. "Confirm the plugin is '
+        'installed and loaded".'
     ),
     "plan_missing_documentation_change": (
         "Add a documentation unit for the requested prose or documentation mutation."
@@ -313,7 +304,8 @@ def planner_acceptance_contract() -> dict[str, object]:
         "documentation_mutation": {"required_artifact_kinds": ["documentation", "review-report"]},
         "install_deploy_or_release": {
             "required_downstream_artifact": (
-                "test-evidence whose outcome explicitly verifies install, deployment, or release"
+                "test-evidence whose outcome names the install/deploy/release operation in "
+                "the same clause as a verification word"
             )
         },
         "ordering": "Every depends_on ID must name an earlier unit in the same response.",
@@ -395,20 +387,22 @@ def _unit_tokens(unit: object) -> frozenset[str]:
 
 
 def _outcome_verifies_operation(outcome: str, vocabulary: frozenset[str]) -> bool:
+    """Return whether one clause both verifies and names the operation.
+
+    Negated scopes are stripped first, and clause boundaries (punctuation and
+    temporal words) keep "verify the tests before deployment" from counting as
+    deployment verification. Within a surviving clause, a verification token
+    plus an operation token is the signal; demanding a fixed filler-only token
+    window between them rejected most natural planner phrasings ("Verify the
+    plugin was installed") and made release-shaped requests deterministically
+    unstaffable (AR-345).
+    """
+
     actionable = _NEGATED_EVIDENCE_SCOPE.sub(" ", outcome).casefold()
-    relation_tokens = _VERIFICATION_RELATION_FILLERS | _POSITIVE_VERIFICATION | _RELEASE
     for clause in _VERIFICATION_CLAUSE_BOUNDARY.split(actionable):
-        tokens = _TOKENS.findall(clause)
-        verification_indexes = [
-            index for index, token in enumerate(tokens) if token in _POSITIVE_VERIFICATION
-        ]
-        operation_indexes = [index for index, token in enumerate(tokens) if token in vocabulary]
-        for verification_index in verification_indexes:
-            for operation_index in operation_indexes:
-                left, right = sorted((verification_index, operation_index))
-                between = tokens[left + 1 : right]
-                if len(between) <= 8 and all(token in relation_tokens for token in between):
-                    return True
+        tokens = frozenset(_TOKENS.findall(clause))
+        if tokens & _POSITIVE_VERIFICATION and tokens & vocabulary:
+            return True
     return False
 
 
