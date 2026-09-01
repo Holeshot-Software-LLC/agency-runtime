@@ -1541,6 +1541,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `a38fd640` | 2026-09-01 | Merge remote-tracking branch 'origin/main' into claude/ar347-tracker-parity-backlog | null | null |
 | `272c82d7` | 2026-09-01 | Merge pull request #405 from Holeshot-Software-LLC/claude/ar347-tracker-parity-backlog | null | null |
 | `c82765ac` | 2026-09-01 | Merge pull request #410 from Holeshot-Software-LLC/claude/worklog-405-merge-row | null | null |
+| `44ed18d9` | 2026-09-01 | fix(ar345): accept natural release-verification phrasing in plan policy | [AR-345](../roadmap/issue-AR-345-release-verification-matcher-rejects-natural-plans.md) | Clause-level verification+operation co-occurrence replaces the filler-only window (negation and temporal boundaries unchanged; four pinned behaviors preserved); reinstall* and -ing forms added; repair guidance states the clause rule; sentence table pinned; AR-345 done, tracker #402 closed; effective after the next runtime deploy |
 <!-- worklog:end -->
 
 ## Provenance notes
