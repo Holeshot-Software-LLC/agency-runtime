@@ -356,6 +356,8 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-340` | [Observe npm command-shim harness versions in the battery](issue-AR-340-observe-npm-shim-harness-versions-in-battery.md) | done | p1 | reliability | [#373](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/373) |
 | `AR-341` | [Deliver Agency capsules to hermes interactive gateway sessions](issue-AR-341-deliver-capsules-to-hermes-interactive-sessions.md) | done | p1 | reliability | [#386](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/386) |
 | `AR-342` | [Codex activation canary route unsatisfiable after typed-coverage enrichment](issue-AR-342-codex-activation-canary-route-unsatisfiable.md) | done | p1 | reliability | [#387](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/387) |
+| `AR-343` | [Reject explicitly empty artifact_kinds instead of granting wildcard coverage](issue-AR-343-reject-explicit-empty-artifact-kinds.md) | open | p2 | reliability | [#398](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/398) |
+| `AR-344` | [Codex fail-open turn ends in Stop replay-mismatch and TUI exit](issue-AR-344-codex-fail-open-stop-terminal-exit.md) | open | p1 | reliability | [#399](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/399) |
 
 ## Traceability
 
