@@ -71,6 +71,45 @@ AR-339 needs an `epic:dashboard` label that may not exist yet) and
 stays in item 2 below. AR-345/AR-346 read as `missing_local` only
 until PR #401 merges their docs.
 
+## Reconciliation pass (2026-09-01, owner-authorized)
+
+Applied on this branch and on the live tracker:
+
+- **Labels backfilled** on all ten label-missing trackers (#362 #368
+  #372 #373 #386 #387 #398 #399 from the epic front matter; #246
+  `epic:operations`; #372's `epic:dashboard` label already existed).
+- **AR-220** doc `tracker_url` fixed to #263 (doc already `wont_do`,
+  tracker CLOSED NOT_PLANNED — now consistent).
+- **AR-180 is an ID collision, not a pairing**: tracker #155 "Bound
+  automatic Windows portability fan-out" carried a stale `[AR-180]`
+  tag while the roadmap's AR-180 is the codex activation canary; no
+  doc covers #155's subject. #155 was retitled to drop the colliding
+  tag; the AR-180 doc stays open and untracked (allow-listed).
+- **AR-227/AR-228 are PR-tracked** (merged #236/#237, docs done):
+  `verify_tracker` now skips items whose `tracker_url` is a pull
+  request — `gh issue list` can never match them.
+- **Pre-tracker allow-list implemented**:
+  `docs/roadmap/pre-tracker-history.txt` (132 IDs), honored by
+  `verify_docs --require-tracker` and by `verify_tracker`'s
+  `missing_remote` check; both gates fail on stale entries that later
+  gain a `tracker_url`. `verify_docs --require-tracker` now **passes**.
+- **Blocked on the automation permission classifier** (not on
+  authorization — the owner authorized these; the six `gh issue
+  close` calls were denied): #272 (AR-254), #335 (AR-297), #345
+  (AR-331), #346 (AR-332), #347 (AR-333), #349 (AR-334) remain OPEN
+  with docs done. `--allow-open-complete` reports them as warnings.
+  The owner (or a session with a close permission rule) runs the six
+  closes.
+- **Deliberately NOT flipped to done**: AR-115, AR-120, AR-127,
+  AR-199, AR-235, AR-237, AR-250, AR-251, AR-261 — their trackers
+  were closed COMPLETED, but every doc still has unchecked Acceptance
+  boxes and `verify_docs` correctly refuses `done` without them. Each
+  needs per-item acceptance verification (or an explicit owner
+  decision) before the doc-side flip; this is the remaining
+  substantive work, not a mechanical sync.
+- Branch skew note: `missing_local=[AR-345, AR-346]` clears once PR
+  #401 lands their docs (proven by a local test merge).
+
 ## Acceptance
 
 - [x] `verify_tracker`'s ID matching recognizes the current `AR-NNN:`
@@ -79,10 +118,16 @@ until PR #401 merges their docs.
       false-positive `missing_remote` rows for tracked issues.
 - [ ] The owner disposition for each of the 20 state/label/URL
       mismatches is recorded and applied (docs and trackers agree, or
-      the divergence is explicitly annotated).
-- [ ] The 134 historical no-tracker items are either backfilled with
+      the divergence is explicitly annotated). (2026-09-01: labels,
+      URLs, the #155 collision, and PR-tracked items done; six closes
+      classifier-blocked; nine done-flips await acceptance
+      verification — see the reconciliation pass above.)
+- [x] The historical no-tracker items are either backfilled with
       trackers, or the gate gains an explicit, versioned allow-list of
       pre-tracker history so `--require-tracker` is meaningful for new
       work.
 - [ ] Both strict gates pass on main (or fail only on changes under
       test), restoring them as usable release-validation gates.
+      (`verify_docs --require-tracker` passes; `verify_tracker` is
+      blocked only on the six pending closes and nine acceptance
+      verifications above.)

@@ -1175,6 +1175,20 @@ def validate_links_and_boundaries(doc: Document, errors: list[str]) -> None:
             errors.append(f"{doc.relative}: contains {label}")
 
 
+def load_pre_tracker_history(root: Path) -> set[str]:
+    """Return roadmap IDs exempt from tracker requirements (AR-347)."""
+
+    path = root / "docs" / "roadmap" / "pre-tracker-history.txt"
+    if not path.is_file():
+        return set()
+    entries = set()
+    for line in path.read_text(encoding="utf-8").splitlines():
+        entry = line.strip()
+        if entry and not entry.startswith("#"):
+            entries.add(entry)
+    return entries
+
+
 def validate_roadmap(docs: list[Document], require_tracker: bool, errors: list[str]) -> None:
     registry = next((doc for doc in docs if doc.relative == "docs/roadmap/README.md"), None)
     issues = [doc for doc in docs if doc.meta.get("type") == "issue"]
@@ -1194,8 +1208,23 @@ def validate_roadmap(docs: list[Document], require_tracker: bool, errors: list[s
     present_urls = [url for url in tracker_urls if url]
     if len(present_urls) != len(set(present_urls)):
         errors.append("docs/roadmap: tracker URLs must be unique")
+    pre_tracker = load_pre_tracker_history(ROOT)
+    stale_exemptions = sorted(
+        issue_id
+        for index, issue_id in enumerate(ids)
+        if issue_id in pre_tracker and tracker_urls[index]
+    )
+    if stale_exemptions:
+        errors.append(
+            "docs/roadmap/pre-tracker-history.txt: entries now carry tracker URLs "
+            f"and must be removed: {', '.join(stale_exemptions)}"
+        )
     if require_tracker:
-        missing = [ids[index] for index, value in enumerate(tracker_urls) if not value]
+        missing = [
+            ids[index]
+            for index, value in enumerate(tracker_urls)
+            if not value and ids[index] not in pre_tracker
+        ]
         if missing:
             errors.append(f"docs/roadmap: items missing tracker URLs: {', '.join(missing)}")
 

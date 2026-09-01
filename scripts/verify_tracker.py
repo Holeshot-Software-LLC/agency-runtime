@@ -18,6 +18,22 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 ROADMAP = ROOT / "docs" / "roadmap"
+PRE_TRACKER_HISTORY = ROADMAP / "pre-tracker-history.txt"
+
+
+def pre_tracker_history() -> set[str]:
+    """Return roadmap IDs exempt from the remote-tracker requirement (AR-347)."""
+
+    if not PRE_TRACKER_HISTORY.is_file():
+        return set()
+    entries = set()
+    for line in PRE_TRACKER_HISTORY.read_text(encoding="utf-8").splitlines():
+        entry = line.strip()
+        if entry and not entry.startswith("#"):
+            entries.add(entry)
+    return entries
+
+
 # Trackers carry either the historical "[AR-NNN] Title" style or the current
 # "AR-NNN: Title" style (every filing since AR-337); both identify the issue.
 ID_RE = re.compile(r"^(?:\[(AR-\d{2,})\]|(AR-\d{2,}):)\s+.+")
@@ -71,17 +87,29 @@ def _remote_issue_objects(value: object) -> list[dict[str, object]]:
     return issues
 
 
-def main(argv: list[str] | None = None) -> int:
-    args = _parse_args(argv)
-    errors: list[str] = []
-    warnings: list[str] = []
+def _local_issue_metadata(errors: list[str]) -> dict[str, dict[str, object]]:
+    """Collect issue-tracked roadmap metadata, skipping PR-tracked items."""
+
     local: dict[str, dict[str, object]] = {}
     for path in sorted(ROADMAP.glob("issue-*.md")):
         meta = front_matter(path)
         issue_id = str(meta.get("issue_id", ""))
         if issue_id in local:
             errors.append(f"duplicate local issue ID {issue_id}")
+        if "/pull/" in str(meta.get("tracker_url") or ""):
+            # A few historical items (AR-227, AR-228) are tracked by a merged
+            # pull request rather than an issue; `gh issue list` can never
+            # match them, so they are outside issue-parity scope (AR-347).
+            continue
         local[issue_id] = meta
+    return local
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = _parse_args(argv)
+    errors: list[str] = []
+    warnings: list[str] = []
+    local = _local_issue_metadata(errors)
 
     remote_items = _remote_issue_objects(
         gh(
@@ -105,11 +133,13 @@ def main(argv: list[str] | None = None) -> int:
             errors.append(f"tracker has duplicate issues for {issue_id}")
         remote[issue_id] = item
 
-    if set(local) != set(remote):
+    missing_remote = sorted(set(local) - set(remote) - pre_tracker_history())
+    missing_local = sorted(set(remote) - set(local))
+    if missing_remote or missing_local:
         errors.append(
             "roadmap/tracker ID mismatch: "
-            f"missing_remote={sorted(set(local) - set(remote))}, "
-            f"missing_local={sorted(set(remote) - set(local))}"
+            f"missing_remote={missing_remote}, "
+            f"missing_local={missing_local}"
         )
 
     for issue_id in sorted(set(local) & set(remote)):

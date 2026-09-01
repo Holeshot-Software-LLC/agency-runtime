@@ -64,6 +64,66 @@ def test_tracker_verifier_rejects_malformed_remote_issue_collections(payload) ->
         verifier._remote_issue_objects(payload)
 
 
+def test_tracker_verifier_exempts_pre_tracker_history_from_missing_remote(
+    tmp_path,
+    monkeypatch,
+    capsys,
+) -> None:
+    """AR-347: allow-listed pre-tracker docs do not fail the ID parity check."""
+
+    verifier = _load_verifier()
+    (tmp_path / "issue-AR-01-historic.md").write_text(
+        """---
+issue_id: AR-01
+status: open
+epic: testing
+tracker_url: null
+---
+""",
+        encoding="utf-8",
+    )
+    history = tmp_path / "pre-tracker-history.txt"
+    history.write_text("# comment line\nAR-01\n", encoding="utf-8")
+    monkeypatch.setattr(verifier, "ROADMAP", tmp_path)
+    monkeypatch.setattr(verifier, "PRE_TRACKER_HISTORY", history)
+    monkeypatch.setattr(verifier, "gh", lambda *_args: [])
+
+    assert verifier.main([]) == 0
+    output = capsys.readouterr()
+    assert "tracker validation passed for 1 roadmap items" in output.out
+
+    # Without the exemption the same layout fails the parity check.
+    monkeypatch.setattr(verifier, "PRE_TRACKER_HISTORY", tmp_path / "absent.txt")
+    assert verifier.main([]) == 1
+    assert "missing_remote=['AR-01']" in capsys.readouterr().err
+
+
+def test_tracker_verifier_skips_pull_request_tracked_items(
+    tmp_path,
+    monkeypatch,
+    capsys,
+) -> None:
+    """AR-347: a doc tracked by a merged PR is outside issue-parity scope."""
+
+    verifier = _load_verifier()
+    (tmp_path / "issue-AR-01-pr-tracked.md").write_text(
+        """---
+issue_id: AR-01
+status: done
+epic: testing
+tracker_url: https://example.test/pull/236
+---
+""",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(verifier, "ROADMAP", tmp_path)
+    monkeypatch.setattr(verifier, "PRE_TRACKER_HISTORY", tmp_path / "absent.txt")
+    monkeypatch.setattr(verifier, "gh", lambda *_args: [])
+
+    assert verifier.main([]) == 0
+    assert "tracker validation passed for 0 roadmap items" in capsys.readouterr().out
+
+
 def test_tracker_verifier_matches_both_bracketed_and_colon_title_styles(
     tmp_path,
     monkeypatch,
