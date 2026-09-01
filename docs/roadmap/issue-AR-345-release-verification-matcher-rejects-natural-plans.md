@@ -107,6 +107,39 @@ rejected plan repairs in one pass. Note: fail-open turns stop only
 after a runtime deploy at a commit containing this fix (venv rebuild +
 `agency install`, per the standing deploy runbook).
 
+## Review round (2026-09-01, PR #412)
+
+The PR's code review reproduced nine follow-on defects; all confirmed
+ones are fixed in-branch:
+
+- The deterministic fallback planner kept a divergent `_RELEASE` copy
+  without `reinstall*`, so its own plan for a reinstall code-mutation
+  request violated the policy that judges it — the AR-345 failure mode
+  through the untouched path. `fallback._RELEASE` now sources
+  `RELEASE_OPERATION_TOKENS` (itself derived as the union of the
+  per-operation vocabularies, killing the third hand-kept copy), plus
+  its fallback-only `package` extra, with a parity + end-to-end
+  regression test.
+- Third-person verification forms (`verifies`/`confirms`/`validates`/
+  `proves`/`tests`/`testing`) are recognized; `uninstall*` joins the
+  installation vocabulary for symmetry.
+- Clause-boundary semantics corrected: `then` now splits (an outcome
+  that merely performs the operation next no longer counts as
+  verification) while `after`/`following`/`once` no longer split —
+  verifying behavior after the install/deploy IS release evidence.
+- Negated scopes stop at commas ("Without manual steps, confirm the
+  installation succeeds" passes) and recognize "nothing" ("Verify
+  nothing was installed" fails).
+- The reinstall round-trip test was vacuous (its request carried no
+  mutation/code token so the gate never evaluated); it now uses a
+  code-mutation request and pins both arms.
+
+Known accepted tradeoff (review finding, unfixed by design): within a
+clause the match is bag-of-words, so an outcome that verifies something
+unrelated while mentioning an operation word can over-satisfy the gate;
+the gate's job is forcing plans to include release evidence, and
+over-demanding was the epidemic.
+
 ## Acceptance
 
 - [x] A plan whose test-evidence outcome verifies the requested

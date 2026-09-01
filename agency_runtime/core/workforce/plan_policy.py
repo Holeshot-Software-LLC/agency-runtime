@@ -14,11 +14,16 @@ _NEGATED_SCOPE = re.compile(
     re.IGNORECASE,
 )
 _NEGATED_EVIDENCE_SCOPE = re.compile(
-    r"\b(?:do(?:es)?\s+not|don't|doesn't|must\s+not|never|without)\b[^.;\n]*",
+    r"\b(?:do(?:es)?\s+not|don't|doesn't|must\s+not|never|nothing|without)\b[^.;,\n]*",
     re.IGNORECASE,
 )
+# "before"/"prior to"/"without"/"then" split because they scope the
+# verification away from the operation (earlier state, or merely performing
+# the operation next). "after"/"following"/"once" deliberately do NOT split:
+# verifying behavior after the install/deploy IS release evidence (AR-345
+# review).
 _VERIFICATION_CLAUSE_BOUNDARY = re.compile(
-    r"(?:[.;,\n]|\b(?:after|before|following|once|prior\s+to|without)\b)",
+    r"(?:[.;,\n]|\b(?:before|prior\s+to|then|without)\b)",
     re.IGNORECASE,
 )
 _MUTATION = frozenset(
@@ -81,35 +86,6 @@ _SECURITY = frozenset(
         "vulnerabilities",
     }
 )
-_RELEASE = frozenset(
-    {
-        "deploy",
-        "deployed",
-        "deploying",
-        "deployment",
-        "deployments",
-        "install",
-        "installation",
-        "installations",
-        "installed",
-        "installer",
-        "installers",
-        "installing",
-        "reinstall",
-        "reinstallation",
-        "reinstalled",
-        "reinstalling",
-        "reinstalls",
-        "release",
-        "released",
-        "releases",
-        "releasing",
-        "ship",
-        "shipped",
-        "shipping",
-        "ships",
-    }
-)
 _RELEASE_OPERATIONS = {
     "deployment": frozenset({"deploy", "deployed", "deploying", "deployment", "deployments"}),
     "installation": frozenset(
@@ -126,29 +102,46 @@ _RELEASE_OPERATIONS = {
             "reinstalled",
             "reinstalling",
             "reinstalls",
+            "uninstall",
+            "uninstallation",
+            "uninstalled",
+            "uninstalling",
+            "uninstalls",
         }
     ),
     "release": frozenset(
         {"release", "released", "releases", "releasing", "ship", "shipped", "shipping", "ships"}
     ),
 }
+# Request-shaping tokens are exactly the union of the per-operation
+# vocabularies; deriving it keeps the two views from desynchronizing, and
+# RELEASE_OPERATION_TOKENS is the public constant other planners (the
+# deterministic fallback) source instead of keeping a divergent copy.
+_RELEASE = frozenset().union(*_RELEASE_OPERATIONS.values())
+RELEASE_OPERATION_TOKENS = _RELEASE
 _POSITIVE_VERIFICATION = frozenset(
     {
         "confirm",
         "confirmed",
         "confirming",
+        "confirms",
         "evidence",
         "prove",
         "proven",
+        "proves",
         "proving",
         "test",
         "tested",
+        "testing",
+        "tests",
         "validate",
         "validated",
+        "validates",
         "validating",
         "validation",
         "verification",
         "verified",
+        "verifies",
         "verify",
         "verifying",
     }

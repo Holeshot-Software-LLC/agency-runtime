@@ -20,6 +20,7 @@ from agency_runtime.core.roster.workforce import WorkforceIndexSnapshot
 from agency_runtime.core.selector.pipeline import _record_workforce_model_receipts
 from agency_runtime.core.selector.receipt_projection import project_nomination_failures
 from agency_runtime.core.structured_provider import StructuredProviderResult
+from agency_runtime.core.workforce import fallback as fallback_module
 from agency_runtime.core.workforce import hybrid_recall as hybrid_recall_module
 from agency_runtime.core.workforce.contract import (
     WORKFORCE_CONTRACT_SCHEMA_VERSION,
@@ -53,7 +54,10 @@ from agency_runtime.core.workforce.inference import (
     configured_workforce_providers,
     plan_and_staff_workforce,
 )
-from agency_runtime.core.workforce.plan_policy import plan_policy_violations
+from agency_runtime.core.workforce.plan_policy import (
+    RELEASE_OPERATION_TOKENS,
+    plan_policy_violations,
+)
 from agency_runtime.core.workforce.planning_contracts import (
     MAX_LABEL_CHARS,
     MAX_TEXT_CHARS,
@@ -3441,6 +3445,22 @@ def test_no_provider_declines_without_selecting_or_calling_the_model() -> None:
     assert outcome.plan is None
     assert outcome.proposal is None
     assert outcome.staffing.units == ()
+
+
+def test_deterministic_fallback_plan_satisfies_release_policy_for_reinstall() -> None:
+    """AR-345 review: the fallback planner kept a divergent release vocabulary
+    without reinstall*, so its own plan for a reinstall code-mutation request
+    violated the policy that judges it — deterministic unstaffability through
+    the untouched path. The vocabulary is now sourced from plan_policy."""
+
+    assert RELEASE_OPERATION_TOKENS <= fallback_module._RELEASE
+
+    request = "Fix the runtime and reinstall the gateway plugin."
+    plan, reasons = deterministic_work_plan(request, context=_context())
+
+    assert reasons == ()
+    assert plan is not None
+    assert plan_policy_violations(request, plan) == ()
 
 
 def test_deterministic_plan_prioritizes_explicit_security_review_over_generic_code_terms() -> None:
