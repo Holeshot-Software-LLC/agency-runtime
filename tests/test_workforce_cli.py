@@ -199,6 +199,12 @@ def test_hiring_list_and_show_render_card_and_tabular_outputs(
 
     assert cli.main(["hiring", "show", case_id, "--no-card"]) == 0
     plain = capsys.readouterr().out
+    # AR-237 acceptance names six summary fields; the header line must carry
+    # them all, work_unit_id included.
+    header = plain.splitlines()[0].split("\t")
+    assert header[0] == case_id
+    assert len(header) == 6
+    assert header[5]
     assert "contract\t" in plain
     assert "gap\t" in plain
     assert "critic\t" in plain

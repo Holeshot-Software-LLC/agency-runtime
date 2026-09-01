@@ -3,7 +3,7 @@ title: "AR-220: Make product gap hiring evidence converge"
 status: wont_do
 category: roadmap
 created: 2026-08-01
-updated: 2026-08-01
+updated: 2026-09-01
 tags: [bug, product, inference, workforce, hiring, evidence, multi-harness]
 related:
   - README.md
@@ -25,7 +25,7 @@ type: issue
 epic: product
 issue_id: AR-220
 priority: p0
-tracker_url: pending authorization
+tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/263
 depends_on: [AR-218]
 blocks: [AR-203, AR-204, AR-219, AR-221]
 ---

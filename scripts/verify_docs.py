@@ -1175,6 +1175,12 @@ def validate_links_and_boundaries(doc: Document, errors: list[str]) -> None:
             errors.append(f"{doc.relative}: contains {label}")
 
 
+if __package__:
+    from .roadmap_history import load_pre_tracker_history, pre_tracker_entry_errors
+else:
+    from roadmap_history import load_pre_tracker_history, pre_tracker_entry_errors
+
+
 def validate_roadmap(docs: list[Document], require_tracker: bool, errors: list[str]) -> None:
     registry = next((doc for doc in docs if doc.relative == "docs/roadmap/README.md"), None)
     issues = [doc for doc in docs if doc.meta.get("type") == "issue"]
@@ -1194,8 +1200,18 @@ def validate_roadmap(docs: list[Document], require_tracker: bool, errors: list[s
     present_urls = [url for url in tracker_urls if url]
     if len(present_urls) != len(set(present_urls)):
         errors.append("docs/roadmap: tracker URLs must be unique")
+    pre_tracker = load_pre_tracker_history(ROOT / "docs" / "roadmap")
+    urls_by_id = dict(zip(ids, tracker_urls, strict=True))
+    errors.extend(
+        "docs/roadmap/" + message
+        for message in pre_tracker_entry_errors(pre_tracker, set(ids), urls_by_id)
+    )
     if require_tracker:
-        missing = [ids[index] for index, value in enumerate(tracker_urls) if not value]
+        missing = [
+            issue_id
+            for issue_id, url in zip(ids, tracker_urls, strict=True)
+            if not url and issue_id not in pre_tracker
+        ]
         if missing:
             errors.append(f"docs/roadmap: items missing tracker URLs: {', '.join(missing)}")
 

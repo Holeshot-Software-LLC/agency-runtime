@@ -1,9 +1,9 @@
 ---
 title: "AR-237: Hiring list and show parity (sub-issue 1 of AR-236)"
-status: open
+status: done
 category: roadmap
 created: 2026-08-04
-updated: 2026-08-12
+updated: 2026-09-01
 tags: [cli, dashboard, parity, hiring, ops, sub-issue]
 related:
   - docs/roadmap/issue-AR-236-achieve-full-cli-dashboard-parity.md
@@ -114,37 +114,61 @@ dedicated ADR. The `rich` decision is not part of this slice.
 
 ## Acceptance
 
-- [ ] Dashboard's `GET /api/hiring` accepts `?status=` and
+- [x] Dashboard's `GET /api/hiring` accepts `?status=` and
       `?risk_tier=`, returns the same bounded projection the CLI
       reads, and `404`s on an unknown `case_id`.
-- [ ] Dashboard's hiring section has a status + risk_tier filter
+- [x] Dashboard's hiring section has a status + risk_tier filter
       form. Applying the filter refreshes the count and the panel
       status row. Clearing the filter restores the unfiltered view.
-- [ ] CLI's `hiring list` and `hiring show` print the same fields
+- [x] CLI's `hiring list` and `hiring show` print the same fields
       the dashboard renders (id, case_type, status, proposed_slug,
       risk_tier, work_unit_id; plus gap, duplicate, contract, critic,
       and model evidence in the show detail).
-- [ ] CLI's `hiring list --card` and `hiring show --card` render a
+- [x] CLI's `hiring list --card` and `hiring show --card` render a
       bounded card layout mirroring the dashboard's card. The card
       mode is on by default when stdout is a TTY, off by default
       when piping, and never on when `--json` is set.
-- [ ] The new `agency_runtime/cli/_render.py` module is consumed by
+- [x] The new `agency_runtime/cli/_render.py` module is consumed by
       this slice and is ready for sub-issues 2-4 to grow on top of
       it.
-- [ ] Focused tests pass: server endpoint tests
+- [x] Focused tests pass: server endpoint tests
       (`tests/test_dashboard.py`), CLI output tests
       (`tests/test_workforce_cli.py`), and render module tests
       (`tests/test_cli_render.py`).
-- [ ] No existing test weakened. Named fast spine (`test_inference_profiles`,
+- [x] No existing test weakened. Named fast spine (`test_inference_profiles`,
       `test_workforce_dynamic_hiring`, `test_workforce_hiring_contract`,
       `test_workforce_selection_safety`, `test_routing_correctness`) plus
       the new and existing workforce CLI / dashboard / render tests
       all pass under `-W error`.
-- [ ] `ruff check`, `ruff format --check`, `docs_metadata --check`,
+- [x] `ruff check`, `ruff format --check`, `docs_metadata --check`,
       `verify_docs`, `update_worklog --check`, and `git diff --check`
       all pass locally.
-- [ ] PR opened against `main`. PR URL posted back to the operator
+- [x] PR opened against `main`. PR URL posted back to the operator
       for review and merge.
+
+## AR-347 completion verification (2026-09-01)
+
+AR-256 reopened this issue claiming "the required pull-request gate has
+no PR evidence"; that claim was wrong — merged PR
+[#247](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/247)
+(merged 2026-08-05, merge commit `2efdf26f`, slice commit `5dc59259`)
+carries the entire slice. A per-criterion code audit verified every
+acceptance item against current source: endpoint filters + 404
+(`server/dashboard.py:2297-2354`, `core/store/workforce.py:1492-1568`),
+dashboard filter form (`dashboard/index.html`, `dashboard-live.js:1554-1804`,
+`dashboard-render.js:2241-2268`), CLI field parity
+(`cli/workforce_commands.py:399-411, 443-452`), card modes with
+TTY/json resolution (`cli/_render.py:40-53`, `cli/parser.py:1127-1145`),
+`_render.py` consumed by the slice and by AR-251's `workforce list
+--card`, and the three test modules. One real gap was found and fixed
+in this pass: the plain `hiring show` header line omitted
+`work_unit_id`; it now prints all six named fields with a strengthened
+regression assertion (`tests/test_workforce_cli.py`). Gates re-proven
+2026-09-01: focused CLI/render/dashboard suites, named fast spine
+(864 passed), dashboard UI node suite (fail 0), ruff, and the docs
+gates. Known cosmetic note: the "Decisions" section says card mode is
+not TTY-auto-detected, while Acceptance (and the code) use TTY
+auto-detection; the Acceptance wording is authoritative.
 
 ## Out of scope (per sub-issue 1)
 
