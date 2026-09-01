@@ -18,7 +18,9 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 ROADMAP = ROOT / "docs" / "roadmap"
-ID_RE = re.compile(r"^\[(AR-\d{2,})\]\s+.+")
+# Trackers carry either the historical "[AR-NNN] Title" style or the current
+# "AR-NNN: Title" style (every filing since AR-337); both identify the issue.
+ID_RE = re.compile(r"^(?:\[(AR-\d{2,})\]|(AR-\d{2,}):)\s+.+")
 
 
 def gh(*args: str) -> object:
@@ -98,7 +100,7 @@ def main(argv: list[str] | None = None) -> int:
         match = ID_RE.match(str(item.get("title", "")))
         if not match:
             continue
-        issue_id = match.group(1)
+        issue_id = match.group(1) or match.group(2)
         if issue_id in remote:
             errors.append(f"tracker has duplicate issues for {issue_id}")
         remote[issue_id] = item

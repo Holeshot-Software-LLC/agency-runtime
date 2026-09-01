@@ -56,9 +56,24 @@ Measured 2026-09-01 on main `a2919e71`:
 AR-345 (#402) and AR-346 (#403), filed 2026-09-01 on the PR #401
 branch, pass both gates; they are unaffected by this backlog.
 
+## Matcher fix (2026-09-01, this branch)
+
+`verify_tracker.py` now matches both title styles (regression test
+pins bracketed, colon, and no-separator titles). Re-measured after the
+fix: `missing_remote` drops 142 → exactly the 134 pre-tracker docs;
+AR-337..AR-347 get real comparisons, which surfaced that **every
+colon-style tracker was filed without its `epic:` label** (AR-337..
+AR-344 plus this issue's own trio). The three trackers filed this
+session were corrected immediately (#402/#403 `epic:reliability`,
+#404 `epic:documentation`); the AR-337..AR-344 label backfill is
+mechanical (each doc's `epic:` front matter is authoritative — note
+AR-339 needs an `epic:dashboard` label that may not exist yet) and
+stays in item 2 below. AR-345/AR-346 read as `missing_local` only
+until PR #401 merges their docs.
+
 ## Acceptance
 
-- [ ] `verify_tracker`'s ID matching recognizes the current `AR-NNN:`
+- [x] `verify_tracker`'s ID matching recognizes the current `AR-NNN:`
       tracker title style alongside `[AR-NNN]` (or all tracker titles
       are normalized to one recognized style), eliminating the
       false-positive `missing_remote` rows for tracked issues.
