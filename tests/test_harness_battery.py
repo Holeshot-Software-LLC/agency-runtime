@@ -491,3 +491,15 @@ def test_baseline_with_nothing_adoptable_is_loud_not_silent(
     output = capsys.readouterr().out
     assert "claude: baseline claude 1.0.0" in output
     assert "codex: skipped (command not discovered)" in output
+
+
+def test_openclaw_ordinary_command_names_an_explicit_agent_owner() -> None:
+    """OpenClaw 2026.8 refuses multi-agent turns without --agent; the battery
+    send must name its owner or it fails before any staffing occurs."""
+
+    from agency_runtime.core.harness_battery import _ORDINARY_COMMANDS
+
+    command = _ORDINARY_COMMANDS["openclaw"]
+    assert "--agent" in command
+    assert command[command.index("--agent") + 1] == "openclaw"
+    assert "--session-key" in command
