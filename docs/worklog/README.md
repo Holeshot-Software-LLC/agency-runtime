@@ -1512,6 +1512,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `122ec970` | 2026-08-31 | docs(ar341): record the hook-budget resolution and the compliance residual | null | null |
 | `c8db6dd3` | 2026-08-31 | Merge pull request #391 from Holeshot-Software-LLC/claude/ar341-resolution | null | null |
 | `89f9e829` | 2026-08-31 | fix(ar342): surface the canary's named unmet prerequisites | null | null |
+| `df8312a5` | 2026-08-31 | Merge pull request #392 from Holeshot-Software-LLC/claude/ar342-canary-observability | null | null |
+| `ec52242c` | 2026-08-31 | docs(ar342): record the observability fix and the live auth blocker | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
