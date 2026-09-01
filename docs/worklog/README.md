@@ -1527,6 +1527,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `42f88da5` | 2026-09-01 | docs(ar343,ar344): file the wildcard-coverage and codex fail-open-exit findings | null | null |
 | `a2919e71` | 2026-09-01 | Merge pull request #400 from Holeshot-Software-LLC/claude/ar343-ar344-filing | null | null |
 | `2636de57` | 2026-09-01 | docs(ar347): file the tracker parity backlog with its owner-authorized tracker | [AR-347](../roadmap/issue-AR-347-reconcile-tracker-parity-backlog.md) | Owner-authorized filing (gh #404): 134 no-tracker roadmap items, 142 registry IDs invisible to the bracketed-title matcher (tracked AR-337..AR-344 included), 20 state/label/URL mismatches; acceptance restores both strict gates as usable |
+| `c7dee392` | 2026-09-01 | fix(ar347): match both tracker title styles in verify_tracker | [AR-347](../roadmap/issue-AR-347-reconcile-tracker-parity-backlog.md) | ID matcher accepts both "[AR-NNN]" and "AR-NNN:" tracker titles with regression coverage; missing_remote 142 -> 134 (exactly the pre-tracker docs); newly compared trackers revealed missing epic labels — #402/#403/#404 labeled now, AR-337..AR-344 backfill remains in acceptance |
 <!-- worklog:end -->
 
 ## Provenance notes
