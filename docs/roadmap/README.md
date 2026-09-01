@@ -365,6 +365,8 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-349` | [Repair-budget exhaustion persists no rejected hiring case](issue-AR-349-persist-rejected-hiring-cases.md) | open | p2 | reliability | [#407](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/407) |
 | `AR-350` | [classify_contractor_risk still acts as a binding verdict, not a hint](issue-AR-350-risk-classifier-verdict-vs-hint.md) | open | p3 | reliability | [#408](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/408) |
 | `AR-351` | [Explicit-empty sibling axes still grant coverage or silently never match](issue-AR-351-close-sibling-axis-empty-declarations.md) | open | p3 | reliability | [#409](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/409) |
+| `AR-352` | [The ordinary battery counts other sessions' preflight failures as its own](issue-AR-352-scope-battery-deltas-by-session.md) | open | p2 | reliability | [#416](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/416) |
+| `AR-353` | [Intermittent staffing-verdict failures now measurable on the Linux box](issue-AR-353-intermittent-staffing-verdict-window-linux.md) | open | p2 | reliability | [#417](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/417) |
 
 ## Traceability
 
