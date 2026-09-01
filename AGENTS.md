@@ -59,7 +59,10 @@ Whenever a session surfaces a new feature, enhancement, or bug:
 2. Create `docs/roadmap/issue-AR-NN-slug.md` with Problem, Current state,
    Approach, Dependencies, and Acceptance sections.
 3. Add the item and its epic to `docs/roadmap/README.md`.
-4. Create one same-repository tracker issue titled `[AR-NN] <title>` and label
+4. Create one same-repository tracker issue titled `[AR-NN] <title>` (the
+   colon style `AR-NN: <title>` used by many 2026-09 filings is also
+   recognized by `scripts/verify_tracker.py`, but new trackers use the
+   bracketed canonical form) and label
    it `epic:<slug>`.
 5. Write the tracker URL into the issue document and the registry mapping table.
 6. Put governing decision paths in the issue document's `related` list and add

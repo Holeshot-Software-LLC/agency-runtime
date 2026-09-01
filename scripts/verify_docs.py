@@ -1175,18 +1175,10 @@ def validate_links_and_boundaries(doc: Document, errors: list[str]) -> None:
             errors.append(f"{doc.relative}: contains {label}")
 
 
-def load_pre_tracker_history(root: Path) -> set[str]:
-    """Return roadmap IDs exempt from tracker requirements (AR-347)."""
-
-    path = root / "docs" / "roadmap" / "pre-tracker-history.txt"
-    if not path.is_file():
-        return set()
-    entries = set()
-    for line in path.read_text(encoding="utf-8").splitlines():
-        entry = line.strip()
-        if entry and not entry.startswith("#"):
-            entries.add(entry)
-    return entries
+if __package__:
+    from .roadmap_history import load_pre_tracker_history, pre_tracker_entry_errors
+else:
+    from roadmap_history import load_pre_tracker_history, pre_tracker_entry_errors
 
 
 def validate_roadmap(docs: list[Document], require_tracker: bool, errors: list[str]) -> None:
@@ -1208,22 +1200,17 @@ def validate_roadmap(docs: list[Document], require_tracker: bool, errors: list[s
     present_urls = [url for url in tracker_urls if url]
     if len(present_urls) != len(set(present_urls)):
         errors.append("docs/roadmap: tracker URLs must be unique")
-    pre_tracker = load_pre_tracker_history(ROOT)
-    stale_exemptions = sorted(
-        issue_id
-        for index, issue_id in enumerate(ids)
-        if issue_id in pre_tracker and tracker_urls[index]
+    pre_tracker = load_pre_tracker_history(ROOT / "docs" / "roadmap")
+    urls_by_id = dict(zip(ids, tracker_urls, strict=True))
+    errors.extend(
+        "docs/roadmap/" + message
+        for message in pre_tracker_entry_errors(pre_tracker, set(ids), urls_by_id)
     )
-    if stale_exemptions:
-        errors.append(
-            "docs/roadmap/pre-tracker-history.txt: entries now carry tracker URLs "
-            f"and must be removed: {', '.join(stale_exemptions)}"
-        )
     if require_tracker:
         missing = [
-            ids[index]
-            for index, value in enumerate(tracker_urls)
-            if not value and ids[index] not in pre_tracker
+            issue_id
+            for issue_id, url in zip(ids, tracker_urls, strict=True)
+            if not url and issue_id not in pre_tracker
         ]
         if missing:
             errors.append(f"docs/roadmap: items missing tracker URLs: {', '.join(missing)}")

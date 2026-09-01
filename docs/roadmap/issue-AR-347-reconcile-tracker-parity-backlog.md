@@ -56,6 +56,29 @@ Measured 2026-09-01 on main `a2919e71`:
 AR-345 (#402) and AR-346 (#403), filed 2026-09-01 on the PR #401
 branch, pass both gates; they are unaffected by this backlog.
 
+## Current state
+
+Both gates are runnable and pass locally on this branch (with PR #401's
+docs present for `verify_tracker`); the reconciliation, matcher, and
+allow-list work below is complete, and the remaining open work is the
+per-item acceptance evidence for the eight deliberately-open docs named
+in the verdict table.
+
+## Approach
+
+Fix the gates' false positives first (title-style matcher, PR-tracked
+scope), bound the historical debt behind a shared, self-shrinking
+allow-list, then disposition every real mismatch with tracker-side
+actions (labels, closes, reopens) and doc-side evidence, refusing any
+`done` flip whose acceptance boxes are not honestly checkable.
+
+## Dependencies
+
+- docs/roadmap/AR-256-done-acceptance-reconciliation.md — the recorded
+  reopen decisions this reconciliation completes.
+- PR #401 (AR-343/AR-344/AR-345/AR-346 docs) — `verify_tracker`'s
+  `missing_local` rows clear when it merges.
+
 ## Matcher fix (2026-09-01, this branch)
 
 `verify_tracker.py` now matches both title styles (regression test
