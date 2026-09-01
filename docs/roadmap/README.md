@@ -355,7 +355,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-339` | [Admit reboot-durable user-scope credentials in the dashboard service guard](issue-AR-339-admit-durable-user-scope-credentials-in-dashboard-service-guard.md) | done | p1 | dashboard | [#372](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/372) |
 | `AR-340` | [Observe npm command-shim harness versions in the battery](issue-AR-340-observe-npm-shim-harness-versions-in-battery.md) | done | p1 | reliability | [#373](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/373) |
 | `AR-341` | [Deliver Agency capsules to hermes interactive gateway sessions](issue-AR-341-deliver-capsules-to-hermes-interactive-sessions.md) | open | p1 | reliability | [#386](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/386) |
-| `AR-342` | [Codex activation canary route unsatisfiable after typed-coverage enrichment](issue-AR-342-codex-activation-canary-route-unsatisfiable.md) | open | p1 | reliability | [#387](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/387) |
+| `AR-342` | [Codex activation canary route unsatisfiable after typed-coverage enrichment](issue-AR-342-codex-activation-canary-route-unsatisfiable.md) | done | p1 | reliability | [#387](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/387) |
 
 ## Traceability
 

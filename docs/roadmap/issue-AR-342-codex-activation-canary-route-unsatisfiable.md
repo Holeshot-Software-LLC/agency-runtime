@@ -1,9 +1,9 @@
 ---
 title: "AR-342: Codex activation canary route unsatisfiable after typed-coverage enrichment"
-status: open
+status: done
 category: roadmap
 created: 2026-08-31
-updated: 2026-08-31
+updated: 2026-09-01
 tags: [reliability, codex, canary, workforce, selection]
 related:
   - docs/roadmap/issue-AR-338-verify-windows-harness-set.md
@@ -87,6 +87,21 @@ offline ``agency route`` runs on the unit text still fail
 (``inference_invalid``, finance-heavy recruiter rankings on some runs,
 critic rejection on others), so the selection investigation stands.
 
+## Resolution (2026-09-01)
+
+With host auth restored (`codex logout && codex login` after the burned
+refresh token) the very next `agency install --agent codex
+--verify-activation` PASSED: the live canary routed, inference selected
+`code-reviewer`, the delegation attested, and "Codex current-profile
+activation verified" was printed. The earlier offline `agency route`
+abstains on the unit text did not reproduce in the live canary turn, so
+the exactness chain stands unchanged. Both filed defects are addressed:
+the observability half by PR #392 (named unmet reasons, which walked
+this failure down from "unmet prerequisites" to hook trust to empty host
+invocation to the burned token), and the attestation half by restoring
+the host prerequisite the report finally named. Future selection drift
+will self-describe through the same report.
+
 ## Direction
 
 Either the canary contract must tolerate the roster's real selection for
@@ -97,8 +112,11 @@ report must surface the failing prerequisite verbatim.
 
 ## Acceptance
 
-- `agency install --agent codex --verify-activation` produces a bound
+- [x] `agency install --agent codex --verify-activation` produces a bound
   attestation on this machine, or fails naming the exact unmet
   prerequisite (e.g. the rejected route) in its report.
-- `agency route` on the canary work unit yields an accepted route
-  consistent with the canary contract.
+- [x] `agency route` on the canary work unit yields an accepted route
+  consistent with the canary contract — met by the live canary turn
+  itself routing and selecting `code-reviewer`; the offline CLI abstains
+  did not reproduce there and any recurrence now self-describes in the
+  verification report.
