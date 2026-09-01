@@ -109,6 +109,51 @@ Applied on this branch and on the live tracker:
 - Branch skew note: `missing_local=[AR-345, AR-346]` clears once PR
   #401 lands their docs (proven by a local test merge).
 
+## Nine-doc acceptance verification (2026-09-01, owner-authorized)
+
+Verdict per doc, from per-criterion code/tracker audits:
+
+- **AR-237 — COMPLETED.** AR-256's reopen reason ("no PR evidence")
+  was factually wrong: merged PR #247 carries the slice. The one real
+  gap (plain `hiring show` omitted `work_unit_id`) is fixed with a
+  strengthened test; all boxes checked with citations, doc and
+  registry now `done`, matching its CLOSED tracker (#246). See the
+  doc's completion-verification section.
+- **AR-235 — stays open.** The Python hiring path is built (isolated
+  security review, bounded repair, inference profiles, amend-first,
+  cap softening) but the entire operator/dashboard plane is unbuilt:
+  no security-review trail, no same-provider warning surface, no
+  hire-count/top-gaps charts, no review-window badge, no workforce
+  health summary. Audit also found three fresh defects worth their
+  own attention: `enforce_strict_independence` is production-dead
+  code (defined and tested, never called — `strict_independence:
+  true` silently does nothing); repair-budget exhaustion persists no
+  `rejected` hiring-case row (the audit-trail contract has no durable
+  record); `classify_contractor_risk` still acts as a binding verdict
+  for owner-approval classes, not a hint.
+- **AR-115, AR-120, AR-127 — stay open.** Deliberate AR-256 reopens
+  with named unmet gates (installed forbidden-specialist matrix;
+  nightly ingestion with no successor; no durable full-suite
+  receipt). No later evidence satisfies them.
+- **AR-199 — stays open.** Its first box (every Codex parent turn
+  reports the resident header without Stop correction) is genuinely
+  unmet — the AR-344/AR-345/AR-346 fail-open family is this exact
+  gate failing.
+- **AR-250, AR-251 — stay open.** Remaining scope was deferred with
+  no successor issue (upgrade plan/run flow; card modes for roster/
+  policy/config).
+- **AR-261 — stays open.** The final box requires a later authorized
+  exact-main hire draw; no record proves one.
+
+**Disposition for the eight still-open docs:** their trackers (#127,
+#133, #151, #161, #244, #259, #260, #309) were closed COMPLETED and
+should be REOPENED to restore parity — AR-256's Limits section
+explicitly deferred tracker changes as a separate outward-facing
+action that never happened. `gh issue reopen` is currently denied by
+the automation permission classifier, so the eight reopens are the
+owner's (or a permitted session's) remaining action; after them,
+`verify_tracker` goes fully green on merged main.
+
 ## Acceptance
 
 - [x] `verify_tracker`'s ID matching recognizes the current `AR-NNN:`

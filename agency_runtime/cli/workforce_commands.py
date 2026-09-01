@@ -441,7 +441,8 @@ def cmd_hiring_show(
         print(_hiring_detail_card(case).render())
         return 0
     print(
-        f"{case['id']}\t{case['case_type']}\t{case['status']}\t{case['proposed_slug']}\t{case['risk_tier']}"
+        f"{case['id']}\t{case['case_type']}\t{case['status']}\t{case['proposed_slug']}"
+        f"\t{case['risk_tier']}\t{case['work_unit_id']}"
     )
     print("gap\t" + json.dumps(case["gap_evidence"], ensure_ascii=False, sort_keys=True))
     print(
