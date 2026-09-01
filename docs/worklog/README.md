@@ -1520,6 +1520,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `c24707ef` | 2026-08-31 | docs(ar341): close the hermes interactive delivery issue | null | null |
 | `ec6c4b49` | 2026-08-31 | Merge pull request #395 from Holeshot-Software-LLC/claude/ar341-close | null | null |
 | `a4358ce1` | 2026-09-01 | docs(ar338): hand off the Windows three-host re-pass on current main | null | null |
+| `9527b0d4` | 2026-09-01 | docs(ar338): fold the re-pass into the bounded work package under the line cap | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
