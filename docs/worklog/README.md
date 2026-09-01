@@ -1549,6 +1549,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `1e8fd51d` | 2026-09-01 | Merge pull request #414 from Holeshot-Software-LLC/claude/openclaw-2026-8-line | null | null |
 | `800f7961` | 2026-09-01 | docs(ar352,ar353): file the battery-scoping and staffing-window defects from the deploy | [AR-352](../roadmap/issue-AR-352-scope-battery-deltas-by-session.md), [AR-353](../roadmap/issue-AR-353-intermittent-staffing-verdict-window-linux.md) | Deploy-surfaced with receipts: battery global delta absorbs foreign sessions' failures (gh #416); AR-338's intermittent staffing window measurable on Linux via LiteLLM routes, now the dominant fail-open source post-AR-345 (gh #417) |
 | `47324c80` | 2026-09-01 | Merge pull request #418 from Holeshot-Software-LLC/claude/ar352-ar353-filings | null | null |
+| `82f9a909` | 2026-09-01 | fix(ar346): pass hermes fail-open drafts through per Rule 8 | [AR-346](../roadmap/issue-AR-346-hermes-fail-open-draft-replacement.md), [AR-354](../roadmap/issue-AR-354-host-cli-coverage-suite-failing-on-main.md) | Explicit fail-open status set gates pass-through; verdict-bearing and unknown statuses keep withhold/replay (first cut keyed on an unprojected field, caught by pinned tests); AR-346 done, #403 closed, live after next deploy; AR-354 filed (gh #420) for four pre-existing coverage failures on main |
 <!-- worklog:end -->
 
 ## Provenance notes
