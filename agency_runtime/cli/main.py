@@ -405,6 +405,7 @@ cmd_evidence_intent = _evidence.cmd_evidence_intent
 cmd_evidence_rejections = _evidence.cmd_evidence_rejections
 cmd_evidence_selections = _evidence.cmd_evidence_selections
 cmd_evidence_wiring = _evidence.cmd_evidence_wiring
+cmd_evidence_witness = _evidence.cmd_evidence_witness
 
 cmd_serve = _services.cmd_serve
 cmd_mcp = _services.cmd_mcp
@@ -468,6 +469,7 @@ _COMMAND_NAMES = (
     "cmd_evidence_rejections",
     "cmd_evidence_selections",
     "cmd_evidence_wiring",
+    "cmd_evidence_witness",
     "cmd_explain",
     "cmd_hook",
     "cmd_hiring_approve",

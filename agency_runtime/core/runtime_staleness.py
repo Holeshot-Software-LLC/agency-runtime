@@ -467,6 +467,18 @@ def source_runtime_drift(bootstrap_path: str | Path) -> str:
         return ""
 
 
+def recorded_hosts() -> tuple[str, ...]:
+    """Return every host with a recorded install pointer, sorted by name.
+
+    The public view of the per-host pointer scan, for callers that attest
+    each installed host separately (AR-363).  Sorted by name because the
+    pointers carry no install ordering, and inventing one would misdirect a
+    bisect.
+    """
+
+    return _recorded_hosts()
+
+
 __all__ = [
     "InstallDrift",
     "RuntimeStaleness",
@@ -474,6 +486,7 @@ __all__ = [
     "cli_install_drift_reports",
     "installed_runtime_pointer",
     "record_installed_runtime",
+    "recorded_hosts",
     "runtime_staleness",
     "source_runtime_drift",
 ]

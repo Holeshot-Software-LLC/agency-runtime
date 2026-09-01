@@ -367,6 +367,13 @@ def test_every_stale_host_is_reported_not_just_the_first(
     assert runtime_staleness.cli_install_drift() == reports[0]
 
 
+def test_recorded_hosts_lists_every_host_with_a_pointer_by_name(pointer_root: Path) -> None:
+    runtime_staleness.record_installed_runtime(_projection_bootstrap(_DIGEST_A), host="codex")
+    runtime_staleness.record_installed_runtime(_projection_bootstrap(_DIGEST_B), host="claude")
+
+    assert runtime_staleness.recorded_hosts() == ("claude", "codex")
+
+
 def test_a_hook_compares_against_its_own_hosts_pointer(
     monkeypatch: pytest.MonkeyPatch,
     pointer_root: Path,

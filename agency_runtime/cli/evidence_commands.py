@@ -19,6 +19,7 @@ from agency_runtime.core.child_launch_outcomes import (
     resolve_child_launch_outcomes,
 )
 from agency_runtime.core.config import load_config
+from agency_runtime.core.deployed_fix_witness import HostWitness, attest_host
 from agency_runtime.core.host_capabilities import EXECUTION_HOSTS
 from agency_runtime.core.host_wiring_drift import host_wiring
 from agency_runtime.core.native_child_staffing import (
@@ -32,6 +33,7 @@ from agency_runtime.core.rule8_evidence import (
     bounded_rule8_limit,
     rule8_evidence_projection,
 )
+from agency_runtime.core.runtime_staleness import recorded_hosts
 from agency_runtime.core.store.sqlite import Store
 
 from ._common import print_json as _print_json
@@ -66,6 +68,56 @@ def cmd_evidence_wiring(args: argparse.Namespace) -> int:
             print(f"  staged: {result.staged_projection[:12] or '(none)'}  {result.staged_path}")
             print(f"  wired : {result.wired_projection[:12] or '(none)'}  {result.wired_path}")
     return 0 if all(result.wired for result in results) else 1
+
+
+def cmd_evidence_witness(args: argparse.Namespace) -> int:
+    """Attest that each host's invoked projection carries every documented fix.
+
+    `evidence wiring` proves a host invokes the projection the installer
+    staged; this proves that projection carries the load-bearing code of each
+    registered fix, and records the verdict in Agency's own private witness
+    manifest and history so later drift can be bisected (AR-363). Nothing
+    under a host's tree is touched. Exit status is 1 unless every host is
+    attested, so this is usable as a gate.
+    """
+
+    hosts = (args.host,) if getattr(args, "host", None) else recorded_hosts()
+    results = [attest_host(host) for host in hosts]
+    if getattr(args, "json", False):
+        _print_json({"hosts": [result.as_dict() for result in results]})
+    elif not results:
+        print("no host has a recorded install pointer; nothing to attest")
+    else:
+        for result in results:
+            _print_witness(result)
+    return 0 if all(result.status == "attested" for result in results) else 1
+
+
+def _print_witness(result: HostWitness) -> None:
+    """Print one host's verdict, naming where its wired identity came from."""
+
+    present = sum(1 for item in result.fixes if item.present)
+    via = f"wired via {result.wired_source}"
+    if result.status == "attested":
+        print(
+            f"{result.host}: attested — projection {result.wired_digest[:12]} carries "
+            f"{present}/{len(result.fixes)} registered fixes ({via}) ✅"
+        )
+        return
+    labels = {"drift": "DRIFT", "missing_fix": "MISSING FIX"}
+    print(f"{result.host}: {labels.get(result.status, 'unavailable')} — {result.reason}")
+    print(
+        f"  published: {result.published_digest[:12] or '(none)'}  "
+        f"wired: {result.wired_digest[:12] or '(none)'}  ({via})"
+    )
+    for item in result.fixes:
+        if item.checked and not item.present:
+            print(
+                f"  missing {item.fix.fix_id}: {item.fix.summary} "
+                f"[{item.state}] {item.fix.relative_path}"
+            )
+    if result.record_error:
+        print(f"  witness record not written ({result.record_error})")
 
 
 def cmd_evidence_rejections(args: argparse.Namespace) -> int:

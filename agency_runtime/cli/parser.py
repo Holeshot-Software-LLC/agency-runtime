@@ -1806,6 +1806,18 @@ def _register_evidence(sub: Subparsers, handlers: Handlers) -> None:
     )
     wiring.add_argument("--json", action="store_true", help="Print JSON")
     _bind(wiring, handlers, "cmd_evidence_wiring")
+    witness = evidence_sub.add_parser(
+        "witness",
+        help="Attest that each host's invoked projection carries every documented fix",
+    )
+    witness.add_argument(
+        "--host",
+        choices=tuple(HOSTS),
+        default=None,
+        help="Attest one host only (default: every host with a recorded install)",
+    )
+    witness.add_argument("--json", action="store_true", help="Print JSON")
+    _bind(witness, handlers, "cmd_evidence_witness")
 
 
 def build_parser(handlers: Handlers) -> argparse.ArgumentParser:
