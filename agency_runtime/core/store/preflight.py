@@ -97,6 +97,18 @@ _TURN_KINDS = frozenset(
 )
 
 
+# Capability receipt statuses whose ``capabilities`` list is proof, not a guess
+# (AR-356 tool-degradation disclosure). Unproven and unknown receipts prove
+# nothing, so a load compares against ``None`` and discloses that instead.
+_PROVEN_CAPABILITY_STATUSES = frozenset(
+    {
+        "native-contract-verified",
+        "native-installation-verified",
+        "explicit-tools-without-execution-host",
+    }
+)
+
+
 @dataclass(frozen=True, slots=True)
 class _PreflightRequest:
     session_id: str
@@ -2026,6 +2038,57 @@ class PreflightStoreMixin(ResidentManagerBindingStoreMixin):
             }
         finally:
             conn.close()
+
+    def get_turn_proven_capabilities(
+        self,
+        session_id: str,
+        trace_id: str,
+    ) -> list[str] | None:
+        """Return the host capabilities this turn's ready recipe proved, or ``None``.
+
+        AR-356: a specialist loaded mid-turn through ``agency_load_specialist``
+        never passes the eligibility filter that keeps unproven tools away from
+        selected cards, so the load has to compare the card's required tools
+        against what the turn actually proved. ``None`` means nothing was
+        proven for this turn — no ready recipe, no capability receipt, or a
+        receipt whose status is unproven — and the caller discloses exactly
+        that. A verified receipt returns its (possibly empty) capability list.
+        """
+
+        if not session_id or not trace_id:
+            return None
+        session_id = validate_correlation_id(session_id, field="session_id")
+        trace_id = validate_correlation_id(trace_id, field="trace_id")
+        conn = self._connect()
+        try:
+            row = conn.execute(
+                "SELECT status, preflight_state, preflight_result FROM runs "
+                "WHERE session_id = ? AND trace_id = ?",
+                (session_id, trace_id),
+            ).fetchone()
+        finally:
+            conn.close()
+        if (
+            row is None
+            or str(row["status"] or "") not in {"active", "evidence_only"}
+            or str(row["preflight_state"] or "") != "ready"
+        ):
+            return None
+        recipe = _decode_preflight_recipe(
+            row["preflight_result"],
+            session_id=session_id,
+            trace_id=trace_id,
+        )
+        routing = recipe.get("routing") if isinstance(recipe, Mapping) else None
+        receipt = routing.get("execution_context") if isinstance(routing, Mapping) else None
+        if not isinstance(receipt, Mapping):
+            return None
+        if str(receipt.get("status") or "") not in _PROVEN_CAPABILITY_STATUSES:
+            return None
+        capabilities = receipt.get("capabilities")
+        if not isinstance(capabilities, list):
+            return None
+        return [str(item) for item in capabilities if isinstance(item, str)]
 
     def get_ready_preflight_result(
         self,

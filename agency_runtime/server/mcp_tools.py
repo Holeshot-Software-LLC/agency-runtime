@@ -7,6 +7,7 @@ from typing import Any
 from uuid import uuid4
 
 from agency_runtime.core.correlation import validate_correlation_id
+from agency_runtime.core.fail_open_disclosure import render_tool_degradation
 from agency_runtime.core.host_capabilities import EXECUTION_HOSTS
 from agency_runtime.core.resident_managers import resident_manager_boundary_error
 from agency_runtime.core.routing_snapshot import (
@@ -231,6 +232,13 @@ def _load_specialist(arguments: dict[str, Any], store: Any) -> dict[str, Any]:
                 "no specialist evidence was recorded"
             )
         }
+    degradation = _tool_degradation_notice(
+        store, session_id=session_id, trace_id=trace_id, slug=slug
+    )
+    if degradation and len(prompt) + len(degradation) + 2 <= MAX_SPECIALIST_PROMPT_CHARS:
+        # The card is the product the model reads; the disclosure rides inside
+        # it so the degraded mode cannot be skimmed past (AR-356 scope note).
+        prompt = f"{prompt}\n\n{degradation}"
     store.record_specialist_loaded(session_id, slug, trace_id=trace_id)
     return {
         "trace_id": trace_id,
@@ -242,7 +250,39 @@ def _load_specialist(arguments: dict[str, Any], store: Any) -> dict[str, Any]:
         "prompt_hash": row.get("prompt_hash") or row.get("hash") or "",
         "prompt": prompt,
         "prompt_truncated": False,
+        "tool_degradation": degradation,
     }
+
+
+def _tool_degradation_notice(store: Any, *, session_id: str, trace_id: str, slug: str) -> str:
+    """Disclose required tools this turn has not proven for a loaded card.
+
+    Cards selected by preflight already passed host eligibility, but a card
+    loaded by slug mid-turn never did. Read the card's required tools from the
+    governed roster entry and the turn's proven capabilities from its ready
+    recipe; render nothing when the card needs no tools or every tool is
+    proven, so ordinary loads are byte-identical to before. Any read failure
+    is treated as "nothing proven" rather than hidden.
+    """
+
+    entry_reader = getattr(store, "get_roster_entry", None)
+    if not callable(entry_reader):
+        return ""
+    try:
+        entry = entry_reader(slug)
+    except Exception:
+        entry = None
+    required = entry.get("required_tools") if isinstance(entry, Mapping) else None
+    if not isinstance(required, (list, tuple)) or not required:
+        return ""
+    proven: list[str] | None = None
+    capability_reader = getattr(store, "get_turn_proven_capabilities", None)
+    if callable(capability_reader):
+        try:
+            proven = capability_reader(session_id, trace_id)
+        except Exception:
+            proven = None
+    return render_tool_degradation(slug, required, proven_capabilities=proven)
 
 
 def _record_skill_loaded(arguments: dict[str, Any], store: Any) -> dict[str, Any]:

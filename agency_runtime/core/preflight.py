@@ -18,10 +18,12 @@ from typing import Any
 from agency_runtime.core.config import AgencyConfig
 from agency_runtime.core.content_redaction import redact_content
 from agency_runtime.core.correlation import validate_correlation_id
+from agency_runtime.core.fail_open_disclosure import render_fail_open_disclosure
 from agency_runtime.core.host_capabilities import (
     HostCapabilityReceipt,
     current_host_capability_receipt,
 )
+from agency_runtime.core.operator_policy import render_operator_policy
 from agency_runtime.core.preflight_failure import (
     PREFLIGHT_FAILURE_RECEIPT_SCHEMA,
     default_preflight_failure_reason,
@@ -928,6 +930,10 @@ def _fail_open_preflight_result(
     inference_mode: str = "degraded",
     routing_error: str = "",
     inference_failures: tuple[str, ...] = (),
+    config: AgencyConfig | None = None,
+    context_limit: int = MAX_PREFLIGHT_CONTEXT_CHARS,
+    failure_reason_code: str = "",
+    staffing_reason_codes: tuple[str, ...] = (),
 ) -> PreflightResult:
     """Build the honest zero-specialist result returned on a fail-open turn.
 
@@ -937,9 +943,26 @@ def _fail_open_preflight_result(
     carries the real ``inference_attempted``/``inference_mode`` from the
     SubstantiveSpecialistUnavailable exception so the header and dashboard stay
     truthful about why no specialist was selected.
+
+    AR-356: the capsule itself now says what happened. The operator policy
+    follows Agency's frame exactly as on a staffed turn (fail-open turns used
+    to drop the house rules silently), and one bounded disclosure line closes
+    the capsule with the persisted reason class so the model knows it is
+    unstaffed. Staffed turns never pass through here, so their bytes are
+    untouched.
     """
 
     resident_managers = RESIDENT_MANAGER_SLUGS
+    policy_context = _combine_context(
+        resident_context,
+        render_operator_policy(config.operator_policy if config is not None else ""),
+        maximum_chars=context_limit,
+    )
+    context = _combine_context(
+        policy_context,
+        render_fail_open_disclosure(failure_reason_code, staffing_reason_codes),
+        maximum_chars=context_limit,
+    )
     error_detail = ", ".join(s for s in (routing_error, *inference_failures) if s.strip())
     routing = {
         "selected_ids": [],
@@ -977,7 +1000,7 @@ def _fail_open_preflight_result(
         session_id=session_id,
         trace_id=trace_id,
         routing=routing,
-        context=resident_context,
+        context=context,
         loaded_specialists=resident_managers,
         selected_specialists=(),
         trivial=False,
@@ -1687,6 +1710,13 @@ def run_preflight(
                 inference_mode=error.inference_mode,
                 routing_error=error.routing_error,
                 inference_failures=error.inference_failures,
+                # Both names are bound before routing can raise: the config and
+                # delivery policy resolve at the top of the attempt, and the
+                # fail-open exception only originates inside routing.
+                config=cfg,
+                context_limit=context_limit,
+                failure_reason_code=diagnostics.reason_code,
+                staffing_reason_codes=tuple(diagnostics.staffing_reason_codes),
             )
         raise
 
