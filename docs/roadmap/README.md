@@ -359,7 +359,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-343` | [Reject explicitly empty artifact_kinds instead of granting wildcard coverage](issue-AR-343-reject-explicit-empty-artifact-kinds.md) | done | p2 | reliability | [#398](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/398) |
 | `AR-344` | [Codex fail-open turn ends in Stop replay-mismatch and TUI exit](issue-AR-344-codex-fail-open-stop-terminal-exit.md) | open | p1 | reliability | [#399](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/399) |
 | `AR-345` | [Release-verification plan matcher rejects natural planner phrasing, forcing fail-open turns](issue-AR-345-release-verification-matcher-rejects-natural-plans.md) | done | p1 | reliability | [#402](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/402) |
-| `AR-346` | [Hermes fail-open turns replace the host's answer with the finalization block message](issue-AR-346-hermes-fail-open-draft-replacement.md) | open | p1 | reliability | [#403](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/403) |
+| `AR-346` | [Hermes fail-open turns replace the host's answer with the finalization block message](issue-AR-346-hermes-fail-open-draft-replacement.md) | done | p1 | reliability | [#403](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/403) |
 | `AR-347` | [Reconcile the tracker parity backlog so the strict tracker gates can pass](issue-AR-347-reconcile-tracker-parity-backlog.md) | open | p2 | documentation | [#404](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/404) |
 | `AR-348` | [strict_independence is enforced nowhere in production](issue-AR-348-enforce-strict-independence-in-production.md) | open | p2 | reliability | [#406](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/406) |
 | `AR-349` | [Repair-budget exhaustion persists no rejected hiring case](issue-AR-349-persist-rejected-hiring-cases.md) | open | p2 | reliability | [#407](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/407) |
@@ -367,6 +367,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-351` | [Explicit-empty sibling axes still grant coverage or silently never match](issue-AR-351-close-sibling-axis-empty-declarations.md) | open | p3 | reliability | [#409](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/409) |
 | `AR-352` | [The ordinary battery counts other sessions' preflight failures as its own](issue-AR-352-scope-battery-deltas-by-session.md) | open | p2 | reliability | [#416](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/416) |
 | `AR-353` | [Intermittent staffing-verdict failures now measurable on the Linux box](issue-AR-353-intermittent-staffing-verdict-window-linux.md) | open | p2 | reliability | [#417](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/417) |
+| `AR-354` | [Four host-CLI coverage tests fail on main outside the fast spine](issue-AR-354-host-cli-coverage-suite-failing-on-main.md) | open | p2 | reliability | [#420](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/420) |
 
 ## Traceability
 

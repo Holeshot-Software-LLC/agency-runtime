@@ -1,6 +1,6 @@
 ---
 title: "AR-346: Hermes fail-open turns replace the host's answer with the finalization block message"
-status: open
+status: done
 category: roadmap
 created: 2026-09-01
 updated: 2026-09-01
@@ -65,13 +65,31 @@ Distinct from AR-341 (closed): capsule delivery and finalization
 correlation work on staffed hermes turns — same session, turn 685
 (01:33Z) staffed, finalized, and accepted normally.
 
+## Resolution (2026-09-01)
+
+`_transform_output` now passes the host's draft through unchanged when
+the run was closed by Agency's own lifecycle (`preflight_failed`,
+`preflight_skipped`, `verification_failed`, `interrupted`,
+`abandoned`, `canary_failed` — the explicit `_FAIL_OPEN_RUN_STATUSES`
+set) without committing a terminal rejection against the failed run;
+the fail-open receipts already carry the diagnostics. Runs bearing a
+response verdict (`completed`, `response_invalid`,
+`delegation_declined`) and unknown statuses keep the withhold/replay
+semantics — the first implementation keyed on a field `get_run` does
+not project, and the pinned staffed-rejection tests caught it before
+it could weaken the withhold path. Live effect requires the next
+runtime deploy; with AR-345 deployed, fail-open turns are now rare
+(the AR-353 window) rather than deterministic.
+
 ## Acceptance
 
-- [ ] A hermes turn whose run is `preflight_failed` (or otherwise
+- [x] A hermes turn whose run is `preflight_failed` (or otherwise
       fail-open with no bound accepted response) passes the host's
       draft through unchanged, per Rule 8, while still recording the
-      rejection diagnostics.
-- [ ] An evaluated policy rejection on a *staffed* turn still withholds
+      rejection diagnostics (the fail-open receipts).
+- [x] An evaluated policy rejection on a *staffed* turn still withholds
       exactly as today (the block replacement is reserved for turns
-      Agency actually verified).
-- [ ] Regression coverage for the hermes fail-open transform path.
+      Agency actually verified) — pinned by the pre-existing
+      pre-verify/transform tests.
+- [x] Regression coverage for the hermes fail-open transform path
+      (`test_hermes_transform_passes_fail_open_draft_through_unchanged`).

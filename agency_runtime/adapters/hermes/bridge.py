@@ -276,6 +276,51 @@ def _pre_verify(adapter: HermesAdapter, payload: Mapping[str, Any]) -> dict[str,
     return None
 
 
+# Statuses that close a run through Agency's own lifecycle failures, never
+# through a response verdict. A run in one of these states has no bound
+# response an evaluated rejection could be defending; unknown or verdict
+# statuses stay outside the set so the withhold path remains fail-closed.
+_FAIL_OPEN_RUN_STATUSES = frozenset(
+    {
+        "abandoned",
+        "canary_failed",
+        "interrupted",
+        "preflight_failed",
+        "preflight_skipped",
+        "verification_failed",
+    }
+)
+
+
+def _turn_closed_without_bound_response(
+    adapter: HermesAdapter,
+    session_id: str,
+    trace_id: str,
+) -> bool:
+    """Return whether this turn ended before any response was bound to it.
+
+    A run that Agency's own lifecycle closed (fail-open: ``preflight_failed``
+    and kin) has no accepted response an evaluated rejection could be
+    defending; withholding the host's draft there is Agency punishing its own
+    failure. Rule 8 requires pass-through — the same reasoning
+    ``_publish_unverified`` applies on the Stop path (AR-346, sibling of
+    AR-344). A run bearing a response verdict (``completed``,
+    ``response_invalid``, ``delegation_declined``) keeps its withhold/replay
+    semantics.
+    """
+
+    getter = getattr(adapter.store, "get_run", None)
+    if not callable(getter) or not session_id or not trace_id:
+        return False
+    try:
+        run = getter(trace_id)
+    except Exception:
+        return False
+    if not isinstance(run, Mapping) or str(run.get("session_id") or "") != session_id:
+        return False
+    return str(run.get("status") or "") in _FAIL_OPEN_RUN_STATUSES
+
+
 def _transform_output(adapter: HermesAdapter, payload: Mapping[str, Any]) -> str:
     response_text = _bounded_text(payload.get("response_text"))
     session_id = _bounded_text(payload.get("session_id"), maximum_bytes=512)
@@ -306,6 +351,12 @@ def _transform_output(adapter: HermesAdapter, payload: Mapping[str, Any]) -> str
             trace_id=effective_trace,
         )
         if decision.get("action") != "accept":
+            if _turn_closed_without_bound_response(adapter, session_id, effective_trace):
+                # Fail-open turn: the missing staffing/header evidence is
+                # missing because Agency's own preflight failed, not because
+                # the host misbehaved. The fail-open receipts already carry
+                # the diagnostics; the draft publishes unchanged (Rule 8).
+                return response_text
             _terminalize_policy_rejection(
                 adapter,
                 response_text,

@@ -342,6 +342,43 @@ def test_generated_hermes_finalizer_rejects_missing_native_correlation(
     assert store.get_authoritative_finalization("hermes-session", "hermes-turn") is None
 
 
+def test_hermes_transform_passes_fail_open_draft_through_unchanged(
+    tmp_path: Path,
+) -> None:
+    """AR-346: a turn preflight already closed fail-open has no bound response
+    an evaluated rejection could defend; the host's draft publishes unchanged
+    and no terminal finalization is committed against the failed run."""
+
+    store = Store(tmp_path / "hermes-fail-open.db")
+    _create_turn(
+        store,
+        session_id="hermes-session",
+        trace_id="hermes-fail-open-turn",
+        request_kind="nontrivial",
+    )
+    store.close_turn_evidence(
+        session_id="hermes-session",
+        trace_id="hermes-fail-open-turn",
+        status="preflight_failed",
+    )
+
+    draft = "The answer the model drafted while Agency ran blind."
+    transformed = hermes_bridge.handle(
+        {
+            "action": "transform_llm_output",
+            "session_id": "hermes-session",
+            "trace_id": "hermes-fail-open-turn",
+            "response_text": draft,
+        },
+        adapter=HermesAdapter(store),
+    )
+
+    assert transformed == draft
+    run = store.get_run("hermes-fail-open-turn")
+    assert run["status"] == "preflight_failed"
+    assert not run.get("terminal_finalization_id")
+
+
 def test_hermes_transform_rejects_unfinalized_natural_response_without_repair(
     tmp_path: Path,
 ) -> None:
