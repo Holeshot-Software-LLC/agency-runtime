@@ -1517,6 +1517,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `49f2de0c` | 2026-08-31 | Merge pull request #393 from Holeshot-Software-LLC/claude/ar342-status | null | null |
 | `fddc2ef6` | 2026-08-31 | docs(ar342): close the codex activation canary issue | null | null |
 | `a06cd950` | 2026-08-31 | Merge pull request #394 from Holeshot-Software-LLC/claude/ar342-close | null | null |
+| `c24707ef` | 2026-08-31 | docs(ar341): close the hermes interactive delivery issue | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
