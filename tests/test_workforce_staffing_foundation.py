@@ -20,7 +20,12 @@ from agency_runtime.core.workforce.contract import (
     CompositionContract,
     WorkforceContract,
 )
-from agency_runtime.core.workforce.staffing_verifier import build_deterministic_proposal
+from agency_runtime.core.workforce.staffing_verifier import (
+    build_deterministic_proposal,
+    is_wildcard_coverage,
+    typed_staffing_coverage,
+    typed_staffing_requirements,
+)
 
 _HASH = "sha256:" + "a" * 64
 _GENERATION = 7
@@ -988,17 +993,13 @@ def test_margin_compares_complete_alternative_teams_not_partial_near_neighbors()
 def test_wildcard_coverage_is_reserved_for_truly_untyped_contracts() -> None:
     """AR-343: only a contract with no typed fields at all may wildcard-cover.
 
-    The projection layer now rejects an explicitly empty ``artifact_kinds``
-    declaration (see test_workforce_contract), so the untyped state below is
-    reachable only for un-enriched roster contracts, never for an author's
-    positive "produces nothing" declaration.
+    No projection path can produce this state: derivation always yields
+    non-empty artifact_kinds/lifecycle_phases/domains, and the projection
+    layer now rejects an explicitly empty ``artifact_kinds`` declaration
+    (see test_workforce_contract). The hand-built instance below pins the
+    verifier's fallback semantics for any future producer that bypasses
+    projection; it is not reachable from stored or synced contracts today.
     """
-
-    from agency_runtime.core.workforce.staffing_verifier import (
-        is_wildcard_coverage,
-        typed_staffing_coverage,
-        typed_staffing_requirements,
-    )
 
     unit = _plan(
         _unit(

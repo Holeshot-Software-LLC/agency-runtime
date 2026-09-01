@@ -257,6 +257,10 @@ def _archetype(agent_id: str, authority: str, division: str, agent: Mapping[str,
 def _artifact_kinds(agent: Mapping[str, Any], archetype: str) -> tuple[str, ...]:
     if "artifact_kinds" in agent:
         explicit = _items(agent["artifact_kinds"], field="artifact_kinds", identifiers=True)
+        # The capability ontology treats "_" and "-" as the same spelling
+        # (normalize_capability_id); accept alias spellings of real ontology
+        # kinds instead of hard-rejecting a semantically typed contract.
+        explicit = tuple(dict.fromkeys(item.replace("_", "-") for item in explicit))
         if not explicit:
             # An author's positive "produces nothing" must not collapse into
             # the untyped-contract wildcard that covers every staffing
@@ -587,36 +591,45 @@ def parse_workforce_contract(value: object) -> WorkforceContract:
         raise ValueError("stored workforce composition has an unsupported shape")
     if not isinstance(audit, Mapping) or set(audit) != set(AuditContract.__dataclass_fields__):
         raise ValueError("stored workforce audit has an unsupported shape")
+    # The strict artifact_kinds rejections guard fresh authorship. A stored
+    # legacy row that predates them (empty or vocabulary-free kinds) must stay
+    # readable: re-derive its kinds instead of failing every roster read,
+    # index snapshot, self-heal reconciliation, and sync that parses it.
+    stored_kinds = tuple(
+        str(item).replace("_", "-") for item in (document.get("artifact_kinds") or ())
+    )
+    projection_source: dict[str, Any] = {
+        "slug": document["agent_id"],
+        "worker_id": document["worker_id"],
+        "display_name": document["display_name"],
+        "division": "specialized",
+        "archetype": document["archetype"],
+        "outcomes": document["outcomes"],
+        "capability_ids": document["capability_ids"],
+        "lifecycle_phases": document["lifecycle_phases"],
+        "domains": document["domains"],
+        "stacks": document["stacks"],
+        "scope_qualifiers": document["scope_qualifiers"],
+        "not_for": document["not_for"],
+        "authority": document["authority"],
+        "context_mode": document["context_mode"],
+        "tool_classes": document["tool_classes"],
+        "supported_hosts": document["hosts"],
+        "supported_platforms": document["platforms"],
+        "composition": composition,
+        "audit_status": audit["status"],
+        "audit_revision": audit["revision"],
+        "routing_contract_valid": audit["contract_valid"],
+        "version": document["version"],
+        "version_hash": document["version_hash"],
+        "enabled": document["enabled"],
+        "employment": document["employment"],
+        "origin": document["origin"],
+    }
+    if any(item in ARTIFACT_CAPABILITY for item in stored_kinds):
+        projection_source["artifact_kinds"] = list(stored_kinds)
     projected = project_workforce_contract(
-        {
-            "slug": document["agent_id"],
-            "worker_id": document["worker_id"],
-            "display_name": document["display_name"],
-            "division": "specialized",
-            "archetype": document["archetype"],
-            "outcomes": document["outcomes"],
-            "capability_ids": document["capability_ids"],
-            "artifact_kinds": document["artifact_kinds"],
-            "lifecycle_phases": document["lifecycle_phases"],
-            "domains": document["domains"],
-            "stacks": document["stacks"],
-            "scope_qualifiers": document["scope_qualifiers"],
-            "not_for": document["not_for"],
-            "authority": document["authority"],
-            "context_mode": document["context_mode"],
-            "tool_classes": document["tool_classes"],
-            "supported_hosts": document["hosts"],
-            "supported_platforms": document["platforms"],
-            "composition": composition,
-            "audit_status": audit["status"],
-            "audit_revision": audit["revision"],
-            "routing_contract_valid": audit["contract_valid"],
-            "version": document["version"],
-            "version_hash": document["version_hash"],
-            "enabled": document["enabled"],
-            "employment": document["employment"],
-            "origin": document["origin"],
-        },
+        projection_source,
         origin=str(document["origin"]),
     )
     if projected.schema_version != document["schema_version"]:
