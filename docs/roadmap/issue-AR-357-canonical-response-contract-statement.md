@@ -1,11 +1,12 @@
 ---
 title: "AR-357: State the response contract once per turn instead of via superseding snapshots"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-09-01
 updated: 2026-09-02
 tags: [finalization, header-contract, hooks, claude]
 related:
+  - docs/roadmap/acceptance/issue-AR-357.md
   - docs/roadmap/issue-AR-344-codex-fail-open-stop-terminal-exit.md
   - docs/roadmap/issue-AR-366-openclaw-fail-open-withhold.md
 supersedes: []
