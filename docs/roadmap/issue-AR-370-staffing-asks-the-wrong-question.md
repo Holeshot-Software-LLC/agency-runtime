@@ -85,6 +85,41 @@ The measurement tables above are therefore diagnostic, not a proposal. They
 establish that retrieval responds correctly once the query states the work —
 which is exactly what an inference step can produce and a lookup table cannot.
 
+### The mechanism already exists; it runs one turn too late
+
+Traced 2026-09-02. Agency already derives a typed work statement and already
+feeds it to retrieval -- just never in time to help the turn that produced it.
+
+- `workforce_subject_hints_from_plan` (`core/turn_routing_context.py:123`)
+  extracts typed identifiers from a verified workforce plan: `domains`,
+  `languages`, `frameworks`, `capability_ids` (from the plan's
+  `required_capabilities`) and `platforms`. Identifiers only -- no prose, no
+  keywords, nothing stack-specific.
+- `core/selector/pipeline.py:470-486` appends exactly those hints to the
+  retrieval query before `expand_query(affirmative_intent(refined))`.
+
+So the pipeline is already built to retrieve on a typed statement of the
+work rather than the user's words. The defect is ordering: on a fresh turn
+retrieval runs *before* the planner, so the query is the raw message, and the
+plan's typed subject only enriches the *following* turn's retrieval. A first
+turn -- which is every turn the operator noticed -- never benefits.
+
+That reframes the work. It is not "add an inference step and a vocabulary";
+it is "use the typed subject we already compute, early enough to matter". The
+options differ in cost, and the choice is real:
+
+- **Re-retrieve after planning.** No new inference call: plan first on the
+  bounded index, derive hints, retrieve again. Costs one extra retrieval,
+  which is cheap and local.
+- **A short classification pass before retrieval.** One small inference call
+  that emits only the typed fields. Costs latency on every turn.
+- **Retrieve twice only when the first attempt is empty or weak.** Pays
+  nothing on turns that already route well, and pays once on the turns that
+  are currently lost.
+
+The third is the cheapest defensible default and is the one this issue
+proposes, with the first as its fallback shape.
+
 1. **Inference forms the retrieval query.** Today retrieval runs on the user's
    literal text. It should run on a work statement the planner derives from
    the turn: the action, the artifact, the platform, the domain. "install
@@ -119,6 +154,8 @@ would keep shipping one stack's nouns to everyone.
 - [ ] Retrieval runs on an inference-derived work statement, not the user's
       literal text; `configure the gateway` and `install this: <url>` both
       retrieve a relevant specialist without the user supplying vocabulary.
+- [ ] The typed subject hints the planner already produces reach the turn
+      that produced them, not only the next one.
 - [ ] `_DOMAIN_EXPANSIONS` is retired, so no installation ships another
       operator's stack vocabulary.
 - [ ] A request whose subject is a bare reference resolves that reference
