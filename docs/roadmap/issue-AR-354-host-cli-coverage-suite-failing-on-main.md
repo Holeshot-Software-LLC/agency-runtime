@@ -1,6 +1,6 @@
 ---
 title: "AR-354: Four host-CLI coverage tests fail on main outside the fast spine"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-09-01
 updated: 2026-09-02
