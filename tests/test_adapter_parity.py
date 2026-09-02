@@ -1160,16 +1160,20 @@ def test_openclaw_bridge_routes_user_prompts_and_terminalizes_first_invalid_resp
     enabled_status = handle({"action": "control", "command": "status"})
 
     assert "managers=agency-steward" in routed["context"]
-    assert "[AGENCY FIRST-PASS FINALIZATION CONTRACT]\n" in routed["context"]
+    # AR-357: one canonical contract at turn start, then values-only snapshots.
+    assert "[AGENCY RESPONSE CONTRACT v1]\n" in routed["context"]
+    assert routed["context"].count("[AGENCY RESPONSE CONTRACT v1]") == 1
+    assert "[AGENCY OPENCLAW DELIVERY RULES]\n" in routed["context"]
     assert "[AGENCY INITIAL HEADER SNAPSHOT v2]" in routed["context"]
-    assert "first and only natural final response" in routed["context"]
     assert "Do not call a finalizer tool" in routed["context"]
     assert "do not emit NO_REPLY" in routed["context"]
-    assert routed["context"].endswith("There is no correction pass.")
+    assert "There is no correction pass." in routed["context"]
     assert correlated["context"]
     assert ordinary["context"]
     assert recorded["runtimeEnabled"] is True
     assert "[AGENCY UPDATED HEADER SNAPSHOT v2]" in recorded["context"]
+    # A refreshed snapshot carries values, never a second contract.
+    assert "[AGENCY RESPONSE CONTRACT v1]" not in recorded["context"]
     assert (
         "Agency/Agencies loaded: agency-steward, code-reviewer, technical-writer"
         in recorded["context"]

@@ -29,6 +29,12 @@ from agency_runtime.core.delegation.native_labels import (
 from agency_runtime.core.header.finalize import (
     TERMINAL_ACTION_STATUS,
     TERMINAL_OUTCOME_MESSAGES,
+    stored_missing_requirements,
+    terminal_rejection_reason,
+)
+from agency_runtime.core.header.response_contract import (
+    header_snapshot_unavailable_context,
+    response_contract_context,
 )
 from agency_runtime.core.header.snapshot import (
     HEADER_SNAPSHOT_INSTRUCTIONS,
@@ -2568,10 +2574,17 @@ class HookBridge:
             marker="INITIAL",
             instruction=HEADER_SNAPSHOT_INSTRUCTIONS["INITIAL"],
         )
+        if not header_context and self.host in {"codex", "claude", "zcode"}:
+            # AR-357: a turn whose snapshot could not render used to receive
+            # nothing, so the model reused an earlier turn's header and lost the
+            # turn. Say the values are missing instead of staying silent.
+            header_context = header_snapshot_unavailable_context("INITIAL")
         context_segments = [context.rstrip()]
         if plan_context:
             context_segments.append(plan_context)
         if header_context:
+            # The contract is stated once, here, beside the turn's first values.
+            context_segments.append(response_contract_context())
             context_segments.append(header_context)
         combined_context = "\n\n".join(context_segments)
         if len(combined_context) > MAX_CONTEXT_CHARS:
@@ -2878,7 +2891,10 @@ class HookBridge:
                 final_response,
             )
             if terminal is not None:
-                return self._terminal_completion_result(str(terminal["action"]))
+                return self._terminal_completion_result(
+                    str(terminal["action"]),
+                    stored_missing_requirements(terminal.get("missing")),
+                )
             if self._is_terminal_turn(correlation.session_id, trace_id):
                 from agency_runtime.core.rule8_evidence import (
                     turn_closed_without_bound_response,
@@ -3030,7 +3046,7 @@ class HookBridge:
                 "status": status,
             },
         )
-        return self._terminal_completion_result(action)
+        return self._terminal_completion_result(action, missing)
 
     def _verification_failed(self, session_id: str, trace_id: str) -> dict[str, Any]:
         logger.error(
@@ -3312,15 +3328,23 @@ class HookBridge:
             raise RuntimeError("terminal response belongs to an inconsistent Agency turn")
         return run
 
-    def _terminal_completion_result(self, action: str) -> dict[str, Any]:
-        """Return an idempotent non-corrective envelope for one terminal action."""
+    def _terminal_completion_result(
+        self,
+        action: str,
+        missing: list[str] | None = None,
+    ) -> dict[str, Any]:
+        """Return an idempotent non-corrective envelope for one terminal action.
+
+        AR-357: when the rejection names unmet requirements, say which ones. The
+        fixed sentence alone left the operator unable to tell which contract line
+        the response missed.
+        """
 
         if action == "accept":
             return {}
-        message = TERMINAL_OUTCOME_MESSAGES.get(action)
-        if message is None:
+        if TERMINAL_OUTCOME_MESSAGES.get(action) is None:
             raise RuntimeError("terminal response action is invalid")
-        return self._reject_completion(message, retry=True)
+        return self._reject_completion(terminal_rejection_reason(action, missing), retry=True)
 
     def _is_terminal_turn(self, session_id: str, trace_id: str) -> bool:
         """Return exact terminal state, failing closed on unreadable correlation."""

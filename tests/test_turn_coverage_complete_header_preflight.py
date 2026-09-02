@@ -341,12 +341,17 @@ def test_finalization_helpers_reject_unverifiable_acceptance(
         {"session_id": "session", "trace_id": "trace", "host": "codex"},
         recorder,
     )
+    # AR-357: the caller is told nothing is missing, because nothing it was
+    # given is missing -- Agency could not read its own evidence. The recorded
+    # observation still keeps the verifier's diagnostic code.
     assert result == {
         "action": "continue",
         "text": "Body",
-        "missing": ["evidence_verification"],
+        "missing": [],
+        "verification_unavailable": True,
     }
     assert recorder.calls[0]["action"] == "continue"
+    assert recorder.calls[0]["missing"] == ["evidence_verification"]
 
     assert (
         finalizer._commit_terminal_finalization(
@@ -1215,9 +1220,10 @@ def test_finalization_rejects_unverifiable_replay_and_activation_evidence(
             "accepted_response_run",
             lambda *_args: (_ for _ in ()).throw(contract.EvidenceCorrelationError("offline")),
         )
-        assert finalizer.finalize_response("Body", metadata, object())["missing"] == [
-            "evidence_verification"
-        ]
+        unverifiable = finalizer.finalize_response("Body", metadata, object())
+        # AR-357: an unreadable replay names no requirement; it publishes.
+        assert unverifiable["missing"] == []
+        assert unverifiable["verification_unavailable"] is True
 
     with monkeypatch.context() as patch:
         patch.setattr(
@@ -1230,9 +1236,10 @@ def test_finalization_rejects_unverifiable_replay_and_activation_evidence(
                 "status": "completed",
             },
         )
-        assert finalizer.finalize_response("Body", metadata, object())["missing"] == [
-            "evidence_verification"
-        ]
+        unverifiable = finalizer.finalize_response("Body", metadata, object())
+        # AR-357: an unreadable replay names no requirement; it publishes.
+        assert unverifiable["missing"] == []
+        assert unverifiable["verification_unavailable"] is True
 
     with monkeypatch.context() as patch:
         patch.setattr(finalizer, "accepted_response_run", lambda *_args: None)
@@ -1243,9 +1250,11 @@ def test_finalization_rejects_unverifiable_replay_and_activation_evidence(
                 contract.EvidenceCorrelationError("specialist activation is incomplete")
             ),
         )
-        assert finalizer.finalize_response("Body", metadata, object())["missing"] == [
-            "specialist_activation"
-        ]
+        unverifiable = finalizer.finalize_response("Body", metadata, object())
+        # Malformed specialist rows are Agency failing to read the turn, never a
+        # requirement the caller was told about (AR-357).
+        assert unverifiable["missing"] == []
+        assert unverifiable["verification_unavailable"] is True
 
 
 class _DelegationRows:

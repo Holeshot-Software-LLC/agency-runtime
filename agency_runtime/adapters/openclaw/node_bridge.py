@@ -9,7 +9,7 @@ from __future__ import annotations
 import json
 import re
 import sys
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
 from uuid import uuid4
@@ -21,6 +21,13 @@ from agency_runtime.core.header.finalize import (
     TERMINAL_ACTION_STATUS,
     TERMINAL_OUTCOME_MESSAGES,
     response_hash,
+    stored_missing_requirements,
+    terminal_rejection_reason,
+    terminal_response_run,
+)
+from agency_runtime.core.header.response_contract import (
+    SNAPSHOT_VALUES_ONLY_NOTE,
+    response_contract_context,
 )
 
 MAX_INPUT_BYTES = 1_048_576
@@ -207,6 +214,7 @@ def _header_snapshot_context(
     session_id: str,
     trace_id: str,
     model: str,
+    marker: str = "INITIAL",
 ) -> str:
     """Render exact first-pass header guidance from current-turn Store evidence."""
 
@@ -218,20 +226,19 @@ def _header_snapshot_context(
     )
     if not header:
         return ""
+    # The contract is stated once per turn, above the values. Later refreshes
+    # reuse this renderer with marker="UPDATED" and carry values only, so no
+    # snapshot can read as a second contract (AR-357).
+    contract = f"{response_contract_context()}\n" if marker == "INITIAL" else ""
     return (
-        "[AGENCY FIRST-PASS FINALIZATION CONTRACT]\n"
-        "MANDATORY: the first and only natural final response must begin with the "
-        "latest exact Store-backed header snapshot for this turn.\n"
-        "[AGENCY INITIAL HEADER SNAPSHOT v2]\n"
-        "Copy the exact five header lines below byte-for-byte as the first lines of "
-        "your natural final response. The newest snapshot for this turn supersedes "
-        "every earlier snapshot. After any tool call, use the latest "
-        "[AGENCY UPDATED HEADER SNAPSHOT v2] appended to that tool result. Do not call "
-        "a finalizer tool, do not emit NO_REPLY, and never guess changed values.\n"
-        f"{header}\n"
-        "[AGENCY FINALIZATION GATE]\n"
-        "Emit one natural final response from the latest snapshot. There is no "
-        "correction pass."
+        f"{contract}"
+        "[AGENCY OPENCLAW DELIVERY RULES]\n"
+        "Emit one natural final response beginning with the header lines below. Do not "
+        "call a finalizer tool, do not emit NO_REPLY, and never guess changed values. "
+        "There is no correction pass.\n"
+        f"[AGENCY {marker} HEADER SNAPSHOT v2]\n"
+        f"{SNAPSHOT_VALUES_ONLY_NOTE}\n"
+        f"{header}"
     )
 
 
@@ -444,15 +451,44 @@ def _exact_policy_terminal_state(
     return matches[0] if matches else ""
 
 
-def _terminal_pre_verify_result(action: str, final_response: str, trace_id: str) -> dict[str, Any]:
-    """Return a non-corrective exact terminal result for OpenClaw."""
+def _stored_terminal_missing(
+    adapter: Any,
+    session_id: str,
+    trace_id: str,
+    final_response: str,
+) -> list[str]:
+    """Return the requirement codes recorded on an already-terminal turn.
 
-    message = TERMINAL_OUTCOME_MESSAGES.get(action)
-    if message is None:
+    A replayed rejection must name the same unmet contract lines the original
+    rejection named; an unreadable row simply names none (AR-357).
+    """
+
+    try:
+        run = terminal_response_run(adapter.store, session_id, trace_id, final_response)
+    except Exception:
+        return []
+    if not isinstance(run, Mapping):
+        return []
+    return stored_missing_requirements(run.get("missing"))
+
+
+def _terminal_pre_verify_result(
+    action: str,
+    final_response: str,
+    trace_id: str,
+    missing: object = None,
+) -> dict[str, Any]:
+    """Return a non-corrective exact terminal result for OpenClaw.
+
+    AR-357: the reason names the unmet contract lines when the rejection carries
+    any, so the operator is not left with the outcome sentence alone.
+    """
+
+    if TERMINAL_OUTCOME_MESSAGES.get(action) is None:
         raise RuntimeError("terminal rejection action is invalid")
     return _terminal_rejection_result(
         status=action,
-        message=message,
+        message=terminal_rejection_reason(action, missing),
         final_response=final_response,
         trace_id=trace_id,
     )
@@ -698,7 +734,12 @@ def _finish_policy_rejection(
     )
     if committed != "committed":
         return _revision()
-    return _terminal_pre_verify_result(rejection_action, response_binding, trace_id)
+    return _terminal_pre_verify_result(
+        rejection_action,
+        response_binding,
+        trace_id,
+        _missing_fields(decision),
+    )
 
 
 def _outbound_denial(
@@ -1177,6 +1218,7 @@ def _handle_pre_verify(
             terminal_state,
             final_response,
             effective_trace,
+            _stored_terminal_missing(adapter, session_id, effective_trace, final_response),
         )
 
     try:
@@ -1835,13 +1877,9 @@ def _handle_observation_action(
                 session_id=session_id,
                 trace_id=effective_trace,
                 model=_bounded_string(payload, "model", limit=MAX_MODEL_CHARS),
+                marker="UPDATED",
             )
             if context:
-                context = context.replace(
-                    "[AGENCY INITIAL HEADER SNAPSHOT v2]",
-                    "[AGENCY UPDATED HEADER SNAPSHOT v2]",
-                    1,
-                )
                 return {"context": context, "runtimeEnabled": True}
         return {}
 

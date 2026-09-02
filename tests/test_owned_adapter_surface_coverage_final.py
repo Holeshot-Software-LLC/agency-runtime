@@ -467,14 +467,14 @@ def test_hook_terminal_rejection_stop_and_closure_edge_paths(monkeypatch) -> Non
     monkeypatch.setattr(
         bridge,
         "_terminal_completion_result",
-        lambda action: {"terminal": action},
+        lambda action, missing=None: {"terminal": action, "missing": missing},
     )
     assert bridge._handle_terminal_rejection(
         correlation=correlation,
         trace_id="trace",
         final_response="draft",
         verification={"action": "continue", "evidence_revision": 1},
-    ) == {"terminal": "response_invalid"}
+    ) == {"terminal": "response_invalid", "missing": []}
     assert bridge._handle_terminal_rejection(
         correlation=correlation,
         trace_id="trace",
@@ -484,7 +484,7 @@ def test_hook_terminal_rejection_stop_and_closure_edge_paths(monkeypatch) -> Non
             "delegation_strength": "strongly_preferred",
             "evidence_revision": 1,
         },
-    ) == {"terminal": "delegation_declined"}
+    ) == {"terminal": "delegation_declined", "missing": []}
 
     monkeypatch.setattr(bridge, "_correlation", lambda _payload: correlation)
     monkeypatch.setattr(bridge, "_acknowledge_resident_manager_delivery", lambda **_kwargs: None)
