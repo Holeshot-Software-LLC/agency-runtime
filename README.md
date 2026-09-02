@@ -790,6 +790,8 @@ agency config validate
 
 For each `--stdin` command, send one YAML or JSON mapping and then end standard
 input. Dotted route names belong inside the complete `inference.routes` map.
+Text-valued keys such as `operator_policy` are the exception: `--stdin` stores
+them exactly as piped, line breaks included, dropping only the final newline.
 Put only an environment-variable name such as `JINA_API_KEY` in a profile. If
 a direct profile key is unavoidable, use
 `agency config set inference.profiles.<name>.api_key --prompt`; direct keys are

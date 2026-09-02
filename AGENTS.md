@@ -178,6 +178,8 @@ python -m pytest \
   tests/test_security_turn_boundaries.py \
   tests/test_canary_coverage_complete.py \
   tests/test_complexity_refactors.py \
+  tests/test_coverage_final_host_cli.py \
+  tests/test_resident_manager_lifecycle.py \
   -q -W error
 node --test tests/dashboard_ui.test.mjs
 agency eval routing --json --no-details

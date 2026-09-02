@@ -103,6 +103,12 @@ def _apply_inference_profile(
     profiles[name] = updated
 
 
+_CANARY_PROVIDER_FIELDS = (
+    "child_judge_provider_by_host",
+    "accepted_outcome_parent_recruiter_provider_by_host",
+)
+_CANARY_HOSTS = ("claude", "codex", "hermes", "openclaw", "zcode")
+
 _SET_VALIDATORS = {
     "profile": lambda item: _choice(item, "profile", _PROFILES),
     "providers": _providers_for_operation,
@@ -227,11 +233,8 @@ _SET_VALIDATORS = {
                 maximum=80,
             ).strip()
         )
-        for field_name in (
-            "child_judge_provider_by_host",
-            "accepted_outcome_parent_recruiter_provider_by_host",
-        )
-        for host in ("claude", "codex", "hermes", "openclaw", "zcode")
+        for field_name in _CANARY_PROVIDER_FIELDS
+        for host in _CANARY_HOSTS
     },
     "agents.disabled": lambda item: list(normalize_disabled_agents(item)),
     "store.db_path": lambda item: _string(item, "store.db_path", allow_empty=False, maximum=4096),
@@ -261,6 +264,46 @@ _SET_VALIDATORS = {
     ),
     "operator_policy": lambda item: _operator_policy(item),
 }
+
+# Set paths whose validator accepts nothing but text. `agency config set --stdin`
+# keeps the piped bytes as one literal string for these instead of loading them
+# as a YAML document: YAML folds a multi-line plain scalar into a single line,
+# which is how a five-line operator policy was stored as one (AR-359). Every
+# other path needs YAML to be typed at all -- booleans, numbers, lists, and
+# mappings -- so YAML stays the parser there. Kept next to `_SET_VALIDATORS`
+# because it is a projection of that table; the CLI contract test proves each
+# entry still names a text-only validator.
+TEXT_SET_PATHS: frozenset[str] = frozenset(
+    {
+        "profile",
+        "judge.model",
+        "judge.base_url",
+        "judge.api_key_env",
+        "ollama.base_url",
+        "ollama.model",
+        "delegation.mode",
+        "workforce.mode",
+        "workforce.dense_recall_mode",
+        "workforce.provider",
+        "store.db_path",
+        "server.host",
+        "adapters.litellm.base_url",
+        "adapters.litellm.api_key_env",
+        "companion_policy_path",
+        "operator_policy",
+    }
+    | {
+        f"canary.{field_name}.{host}"
+        for field_name in _CANARY_PROVIDER_FIELDS
+        for host in _CANARY_HOSTS
+    }
+)
+
+
+def is_text_set_path(path: str) -> bool:
+    """Return whether ``config set`` stores ``path`` as literal text (AR-359)."""
+
+    return path in TEXT_SET_PATHS
 
 
 def _set_validator(path: str, value: Any) -> Any:

@@ -128,6 +128,51 @@ def test_config_set_bounds_standard_input_before_parsing_or_writing(
     assert not path.exists()
 
 
+_FIVE_LINE_POLICY = (
+    "1. Never commit to main.\n"
+    "2. Open a pull request for every change.\n"
+    "3. Keep the worktree clean.\n"
+    "4. Record findings in the issue doc.\n"
+    "5. Run the fast spine before handoff.\n"
+)
+
+
+def test_config_set_stdin_keeps_line_structure_for_text_keys(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """AR-359: a piped operator policy keeps its five lines; YAML folded them into one."""
+
+    path = tmp_path / "agency.yaml"
+    monkeypatch.setenv("AGENCY_CONFIG_PATH", str(path))
+    monkeypatch.setattr(sys, "stdin", io.StringIO(_FIVE_LINE_POLICY))
+
+    assert cli.main(["config", "set", "operator_policy", "--stdin"]) == 0
+
+    stored = yaml.safe_load(path.read_text(encoding="utf-8"))["operator_policy"]
+    assert stored == _FIVE_LINE_POLICY.rstrip("\n")
+    assert stored.count("\n") == 4
+    assert "Set operator_policy" in capsys.readouterr().out
+
+
+def test_config_set_stdin_still_parses_yaml_for_non_text_keys(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    path = tmp_path / "agency.yaml"
+    monkeypatch.setenv("AGENCY_CONFIG_PATH", str(path))
+
+    monkeypatch.setattr(sys, "stdin", io.StringIO("7915\n"))
+    assert cli.main(["config", "set", "dashboard.port", "--stdin"]) == 0
+    monkeypatch.setattr(sys, "stdin", io.StringIO("[alpha, beta]\n"))
+    assert cli.main(["config", "set", "adapters.litellm.skip_models", "--stdin"]) == 0
+
+    document = yaml.safe_load(path.read_text(encoding="utf-8"))
+    assert document["dashboard"]["port"] == 7915
+    assert document["adapters"]["litellm"]["skip_models"] == ["alpha", "beta"]
+
+
 def test_config_set_reports_restart_required_paths(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

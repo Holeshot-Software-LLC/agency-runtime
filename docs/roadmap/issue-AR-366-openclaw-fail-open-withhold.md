@@ -87,9 +87,9 @@ verification keeps its teeth) and is applied at every rejection outlet:
 
 "I need to know it failed" stays AR-356's half: the pass-through records
 receipts today, and the capsule disclosure line makes it visible in-turn.
-Four pre-existing failures in `test_turn_scoped_evidence.py` /
-`test_owned_adapter_surface_coverage_final.py` reproduce identically on
-clean main (the AR-354 family) and are untouched by this change.
+Four pre-existing failures in `tests/test_coverage_final_host_cli.py`
+reproduce identically on clean main (the AR-354 family) and are untouched
+by this change.
 
 ## Dependencies
 

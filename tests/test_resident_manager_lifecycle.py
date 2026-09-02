@@ -20,6 +20,7 @@ from agency_runtime.core.resident_managers import RESIDENT_MANAGER_KERNEL
 from agency_runtime.core.runtime_control import RuntimeControlSnapshot
 from agency_runtime.core.store import resident_binding as resident_binding_store
 from agency_runtime.core.store.sqlite import Store
+from agency_runtime.core.turn_origin import native_adapter_turn_origin
 
 
 @pytest.fixture(autouse=True)
@@ -88,13 +89,30 @@ def _commit_binding(
         connection.close()
 
 
+def _origin(trace_id: str, *, session_id: str = "session"):
+    """Seal the external-user origin the hook bridge would carry for a turn.
+
+    A direct ``run_preflight`` call without one is rerouted as an untrusted
+    origin and forced substantive, which fails open offline (AR-354); the
+    ready-replay tests below need the trivial ready recipe a real turn gets.
+    """
+
+    return native_adapter_turn_origin(
+        "external_user",
+        host="claude",
+        event="adapter_preflight",
+        session_id=session_id,
+        trace_id=trace_id,
+    )
+
+
 def _prompt(bridge: HookBridge, *, session_id: str, turn_id: str) -> dict:
     result = bridge.handle(
         {
             "hook_event_name": "UserPromptSubmit",
             "session_id": session_id,
             "turn_id": turn_id,
-            "prompt": "ping",
+            "prompt": "ok",
         }
     )
     return result["hookSpecificOutput"]
@@ -593,7 +611,11 @@ def test_stop_acknowledges_a_pending_persistent_delivery(tmp_path: Path) -> None
         }
     )
 
-    assert blocked["decision"] == "block"
+    # The verifier evaluated and rejected the draft (a real finding, not an
+    # Agency fault), so the rejection is the terminal continue:false shape
+    # (AR-357 family); the pending delivery was acknowledged first.
+    assert blocked["continue"] is False
+    assert "AGENCY RESPONSE INVALID" in blocked["stopReason"]
     assert (
         store.plan_resident_manager_binding(
             session_id="session",
@@ -603,10 +625,17 @@ def test_stop_acknowledges_a_pending_persistent_delivery(tmp_path: Path) -> None
     )
 
 
-def test_stop_fails_closed_when_persistent_delivery_cannot_be_acknowledged(
+def test_stop_publishes_when_persistent_delivery_cannot_be_acknowledged(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """Rule 8 (AR-366): a lifecycle failure is Agency's fault, so the turn publishes.
+
+    This used to assert the fail-closed ``continue: false`` shape; the all-host
+    Rule-8 sweep made every Agency-side failure on the Stop path publish the
+    host's answer and close the run ``verification_failed`` instead.
+    """
+
     store = _persistent_store(tmp_path / "stop-ack-failure.db")
     bridge = HookBridge("claude", store=store)
     _prompt(bridge, session_id="session", turn_id="turn-one")
@@ -625,8 +654,8 @@ def test_stop_fails_closed_when_persistent_delivery_cannot_be_acknowledged(
         }
     )
 
-    assert blocked["continue"] is False
-    assert "could not verify or persist" in blocked["stopReason"]
+    assert blocked == {}
+    assert store.get_run("turn-one")["status"] == "verification_failed"
 
 
 def test_ready_replay_fails_after_compaction_invalidates_its_binding(tmp_path: Path) -> None:
@@ -636,7 +665,8 @@ def test_ready_replay_fails_after_compaction_invalidates_its_binding(tmp_path: P
         session_id="session",
         trace_id="turn-one",
         host="claude",
-        user_message="ping",
+        user_message="ok",
+        origin_receipt=_origin("turn-one"),
     )
     assert _ack(store, session_id="session", trace_id="turn-one")
     assert store.mark_resident_manager_restore_required(
@@ -650,7 +680,8 @@ def test_ready_replay_fails_after_compaction_invalidates_its_binding(tmp_path: P
             session_id="session",
             trace_id="turn-one",
             host="claude",
-            user_message="ping",
+            user_message="ok",
+            origin_receipt=_origin("turn-one"),
         )
 
 
@@ -681,7 +712,8 @@ def test_ready_replay_fails_after_control_epoch_changes(
         session_id="session",
         trace_id="turn-one",
         host="claude",
-        user_message="ping",
+        user_message="ok",
+        origin_receipt=_origin("turn-one"),
     )
     assert _ack(store, session_id="session", trace_id="turn-one")
 
@@ -692,7 +724,8 @@ def test_ready_replay_fails_after_control_epoch_changes(
             session_id="session",
             trace_id="turn-one",
             host="claude",
-            user_message="ping",
+            user_message="ok",
+            origin_receipt=_origin("turn-one"),
         )
 
 
@@ -780,7 +813,7 @@ def test_binding_conflict_replans_exactly_once(
         routing_recipe={},
         specialist_refs=[],
         codex_native_plan_scopes=[],
-        user_message="ping",
+        user_message="ok",
         config=AgencyConfig(),
         pipeline=object(),
     )
