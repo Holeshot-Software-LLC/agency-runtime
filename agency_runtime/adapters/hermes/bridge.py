@@ -344,6 +344,10 @@ def _transform_output(adapter: HermesAdapter, payload: Mapping[str, Any]) -> str
                 # the host misbehaved. The fail-open receipts already carry
                 # the diagnostics; the draft publishes unchanged (Rule 8).
                 return response_text
+            if decision.get("verification_unavailable") is True:
+                # Agency could not read this turn's evidence (AR-357). That is
+                # Agency's fault, never a finding about the response.
+                return response_text
             _terminalize_policy_rejection(
                 adapter,
                 response_text,

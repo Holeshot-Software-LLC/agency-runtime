@@ -3,7 +3,7 @@ title: "AR-366: OpenClaw withholds fail-open replies — evaluated rejection fir
 status: in_progress
 category: roadmap
 created: 2026-09-01
-updated: 2026-09-01
+updated: 2026-09-02
 tags: [openclaw, fail-open, rule8, delivery, bug]
 related:
   - docs/roadmap/issue-AR-365-hermes-fail-open-gate-trace-resolution.md
@@ -94,6 +94,21 @@ by this change.
 ## Dependencies
 
 - AR-365 (the shared gate, now extracted and reused).
+
+## Follow-through (2026-09-02): the hermes outlet also honors AR-357
+
+The shared gate covered *fail-open* turns. AR-357 added a second shape the
+same reasoning covers: a decision whose only complaint is that Agency could
+not read its own evidence (`verification_unavailable`). The claude Stop path
+already routed that to publish-unverified; the hermes `transform_llm_output`
+outlet still checked only `action != "accept"` and replaced the operator's
+reply with the block message. It now publishes the draft unchanged, which is
+what rule 8 says about Agency's own blindness.
+
+Measured on this box while deploying `48881d1d`: hermes closed 13
+`response_invalid` turns in 24 h. Those specific turns were staffed and ready
+with all five header fields missing -- an evaluated negative, which keeps its
+withhold -- but the blind-verifier shape shares the same outlet and must not.
 
 ## Acceptance
 
