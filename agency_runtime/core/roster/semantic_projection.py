@@ -293,7 +293,7 @@ Known audit constraints:
 {_bullets(list(contract["findings"]))}
 
 Provenance:
-- Source: {SOURCE_REPOSITORY}/blob/{contract["source_revision"]}/{contract["relative_path"]}
+- Source: {contract.get("source_repository") or SOURCE_REPOSITORY}/blob/{contract["source_revision"]}/{contract["relative_path"]}
 - Source SHA-256: {contract["content_hash"]}
 - Audit revision: {contract["audit_revision"]}
 

@@ -1056,19 +1056,19 @@ def test_every_bundled_agent_bootstraps_one_worker_and_lineage_record(tmp_path: 
     store = Store(tmp_path / "agency.db")
     agents = [dict(agent) for agent in BundledRoster()]
 
-    assert store.activate_agents_if_missing(agents) == 263
-    assert store.count_enabled_roster(disabled_agents=()) == 263
+    assert store.activate_agents_if_missing(agents) == 265
+    assert store.count_enabled_roster(disabled_agents=()) == 265
     with closing(store._connect()) as conn:
-        assert conn.execute("SELECT COUNT(*) FROM agent_workers").fetchone()[0] == 263
-        assert conn.execute("SELECT COUNT(*) FROM agent_version_lineage").fetchone()[0] == 263
+        assert conn.execute("SELECT COUNT(*) FROM agent_workers").fetchone()[0] == 265
+        assert conn.execute("SELECT COUNT(*) FROM agent_version_lineage").fetchone()[0] == 265
         assert (
             conn.execute(
                 "SELECT COUNT(DISTINCT current_agent_version_id) FROM agent_workers"
             ).fetchone()[0]
-            == 263
+            == 265
         )
     snapshot = workforce_index_snapshot(store, disabled_agents={"code-reviewer"})
-    assert snapshot.worker_count == 263
+    assert snapshot.worker_count == 265
     assert snapshot.contract_fingerprint.startswith("sha256:")
     assert snapshot.recruiter_fingerprint.startswith("sha256:")
     assert len(snapshot.recruiter_index.encode("utf-8")) <= 256 * 1024

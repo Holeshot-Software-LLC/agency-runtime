@@ -26,8 +26,6 @@ from agency_runtime.core.roster.bundled import (
     MAX_LICENSE_BYTES,
     MAX_MANIFEST_BYTES,
     MAX_PROMPT_BYTES,
-    SOURCE_LICENSE,
-    SOURCE_LICENSE_FILE,
     SOURCE_REPOSITORY,
 )
 from agency_runtime.core.roster.ingress import download_from_source, parse_agent_file
@@ -54,7 +52,7 @@ SOURCE_ID = "agency-agents"
 OFFICIAL_SOURCE_ORIGIN = f"{SOURCE_REPOSITORY}.git"
 DEFAULT_AUDIT_DIR = Path("docs/roster-audit")
 AUDIT_MANIFEST_NAME = "audit-manifest.json"
-AUDIT_MANIFEST_SCHEMA = 2
+AUDIT_MANIFEST_SCHEMA = 3
 MAX_AUDIT_BYTES = 4 * 1024 * 1024
 MAX_AUDIT_REVIEW_BYTES = 128 * 1024
 MAX_SOURCE_METADATA_BYTES = 64 * 1024
@@ -100,6 +98,9 @@ CONTRACT_LIST_FIELDS = (
     "findings",
 )
 CONTRACT_OPTIONAL_LIST_FIELDS = ("optional_tools",)
+# AR-364: an audited contract names the pinned source it was reviewed from; the
+# primary catalog is the default so every existing batch stays valid.
+CONTRACT_OPTIONAL_TEXT_FIELDS = ("source",)
 CONTRACT_TEXT_FIELDS = (
     "relative_path",
     "slug",
@@ -148,6 +149,7 @@ _AUDIT_MANIFEST_FIELDS = (
     "schema_version",
     "audit_revision",
     "source",
+    "sources",
     "expected",
     "enums",
     "nonempty_list_fields",
@@ -420,6 +422,93 @@ def _normalize_manifest_source(raw: object) -> dict[str, str]:
     }
 
 
+_SOURCE_ID_RE = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*\Z")
+_REPOSITORY_URL_RE = re.compile(r"https://[a-z0-9.-]+(?:/[A-Za-z0-9._-]+){2,8}\Z")
+_SOURCE_INVENTORIES = ("divisions", "explicit")
+_ACCEPTED_SOURCE_LICENSES = frozenset({"MIT"})
+MAX_AUDIT_SOURCES = 8
+# Curated overlays that live beside the generated bundle but are maintained by
+# other tools (the ADR-0087 enrichment overlay). A rebuild carries them forward
+# byte-for-byte instead of publishing a bundle without them.
+SIDECAR_FILES = ("scope_qualifiers.json",)
+MAX_SIDECAR_BYTES = 1_048_576
+
+
+def _normalize_manifest_sources(
+    raw: object, primary: Mapping[str, str]
+) -> dict[str, dict[str, str]]:
+    """Normalize every pinned source the audit draws from (AR-364).
+
+    The primary catalog keeps its strict shape and must repeat under
+    ``sources`` unchanged with a ``divisions`` inventory; any further source
+    is a separately licensed, revision-pinned checkout whose inventory is
+    exactly the audited paths (``explicit``), because such repositories are
+    not roster catalogs and carry no division manifest.
+    """
+
+    if not isinstance(raw, dict) or not 1 <= len(raw) <= MAX_AUDIT_SOURCES:
+        raise BundleBuildError("audit manifest sources must be a bounded object")
+    if SOURCE_ID not in raw:
+        raise BundleBuildError("audit manifest sources must include the primary catalog")
+    sources: dict[str, dict[str, str]] = {}
+    for source_id, block in raw.items():
+        if not isinstance(source_id, str) or _SOURCE_ID_RE.fullmatch(source_id) is None:
+            raise BundleBuildError(f"audit manifest source id is invalid: {source_id!r}")
+        if not isinstance(block, dict):
+            raise BundleBuildError(f"audit manifest source must be an object: {source_id}")
+        fields = ["repository", "origin", "revision", "license", "inventory"]
+        inventory = _string(block.get("inventory"), label=f"{source_id} inventory")
+        if inventory not in _SOURCE_INVENTORIES:
+            raise BundleBuildError(f"audit manifest source inventory is unsupported: {source_id}")
+        if inventory == "divisions":
+            fields += ["division_manifest", "division_manifest_sha256"]
+        _require_exact_fields(block, fields, label=f"audit manifest source {source_id}")
+        repository = _string(block["repository"], label=f"{source_id} repository")
+        origin = _string(block["origin"], label=f"{source_id} origin")
+        license_name = _string(block["license"], label=f"{source_id} license")
+        if (
+            _REPOSITORY_URL_RE.fullmatch(repository) is None
+            or repository.endswith(".git")
+            or origin != f"{repository}.git"
+            or license_name not in _ACCEPTED_SOURCE_LICENSES
+        ):
+            raise BundleBuildError(f"audit manifest source provenance is unexpected: {source_id}")
+        normalized: dict[str, str] = {
+            "id": source_id,
+            "repository": repository,
+            "origin": origin,
+            "revision": _hex_digest(
+                block["revision"], label=f"{source_id} revision", pattern=_HEX_40
+            ),
+            "license": license_name,
+            "inventory": inventory,
+        }
+        if inventory == "divisions":
+            normalized["division_manifest"] = _safe_source_path(block["division_manifest"])
+            normalized["division_manifest_sha256"] = _hex_digest(
+                block["division_manifest_sha256"],
+                label=f"{source_id} division manifest hash",
+                pattern=_HEX_64,
+            )
+        sources[source_id] = normalized
+    primary_block = sources[SOURCE_ID]
+    if primary_block["inventory"] != "divisions" or any(
+        primary_block[field] != primary[field]
+        for field in (
+            "repository",
+            "origin",
+            "revision",
+            "division_manifest",
+            "division_manifest_sha256",
+        )
+    ):
+        raise BundleBuildError("audit manifest primary source must repeat under sources unchanged")
+    repositories = [block["repository"] for block in sources.values()]
+    if len(repositories) != len(set(repositories)):
+        raise BundleBuildError("audit manifest source repositories must be unique")
+    return sources
+
+
 def _normalize_manifest_batch(filename: str, raw: object) -> dict[str, Any]:
     if not re.fullmatch(r"batch-[a-z0-9-]+\.json", filename):
         raise BundleBuildError(f"invalid audit batch filename: {filename}")
@@ -669,10 +758,12 @@ def _load_audit_manifest(audit_dir: Path) -> dict[str, Any]:
     }
     if nonempty != [field for field in CONTRACT_LIST_FIELDS if field not in optional]:
         raise BundleBuildError("nonempty list fields do not match the routing contract")
+    source = _normalize_manifest_source(parsed["source"])
     return {
         "schema_version": schema,
         "audit_revision": _string(parsed["audit_revision"], label="audit revision"),
-        "source": _normalize_manifest_source(parsed["source"]),
+        "source": source,
+        "sources": _normalize_manifest_sources(parsed["sources"], source),
         "expected": expected,
         "enums": enums,
         "nonempty_list_fields": nonempty,
@@ -764,20 +855,28 @@ def _canonical_upstream_license(source: Path, revision: str) -> bytes:
 
 
 def _validate_source_checkout(source: Path, audit: Mapping[str, Any]) -> str:
+    """Validate the primary catalog checkout against the audited official origin."""
+
+    return _validate_checkout(source, audit["source"], official=True)
+
+
+def _validate_checkout(source: Path, block: Mapping[str, str], *, official: bool) -> str:
+    """Validate one pinned checkout: exact revision, exact origin, clean tree."""
+
     source = _real_directory_chain(source, label="source checkout")
     revision = _single_git_line(
         source,
         ("rev-parse", "--verify", "HEAD^{commit}"),
         label="revision",
     ).casefold()
-    if not _HEX_40.fullmatch(revision) or revision != audit["source"]["revision"]:
+    if not _HEX_40.fullmatch(revision) or revision != block["revision"]:
         raise BundleBuildError("source checkout revision does not match the tracked audit")
     origin = _single_git_line(
         source,
         ("config", "--get", "remote.origin.url"),
         label="origin",
     )
-    if origin != audit["source"]["origin"] or origin != OFFICIAL_SOURCE_ORIGIN:
+    if origin != block["origin"] or (official and origin != OFFICIAL_SOURCE_ORIGIN):
         raise BundleBuildError("source checkout origin does not match the official audited remote")
     status = _run_git(
         source,
@@ -873,9 +972,17 @@ def _validate_contract_identity(contract: Mapping[str, Any], manifest: Mapping[s
     for field in ("slug", "division"):
         if not _SAFE_SLUG.fullmatch(contract[field]):
             raise BundleBuildError(f"audit {field} is not canonical: {contract[field]}")
-    if PurePosixPath(relative_path).parts[0] != contract["division"]:
+    source = manifest["sources"].get(contract["source"])
+    if source is None:
+        raise BundleBuildError(f"audit source is not a manifest source: {relative_path}")
+    # The primary catalog lays agents out by division directory; an explicit
+    # inventory source is not a catalog, so its paths carry no division prefix.
+    if (
+        source["inventory"] == "divisions"
+        and PurePosixPath(relative_path).parts[0] != contract["division"]
+    ):
         raise BundleBuildError(f"audit path and division disagree: {relative_path}")
-    if contract["source_revision"] != manifest["source"]["revision"]:
+    if contract["source_revision"] != source["revision"]:
         raise BundleBuildError(f"source revision does not match manifest: {relative_path}")
     if not _HEX_64.fullmatch(contract["content_hash"]):
         raise BundleBuildError(f"source hash is not canonical: {relative_path}")
@@ -947,7 +1054,12 @@ def _normalize_audit_contract(
     manifest: Mapping[str, Any],
 ) -> dict[str, Any]:
     missing = set(CONTRACT_FIELDS) - set(raw)
-    unexpected = set(raw) - set(CONTRACT_FIELDS) - set(CONTRACT_OPTIONAL_LIST_FIELDS)
+    unexpected = (
+        set(raw)
+        - set(CONTRACT_FIELDS)
+        - set(CONTRACT_OPTIONAL_LIST_FIELDS)
+        - set(CONTRACT_OPTIONAL_TEXT_FIELDS)
+    )
     if missing or unexpected:
         raise BundleBuildError(
             f"audit entry in {filename} fields must match the contract; "
@@ -965,6 +1077,11 @@ def _normalize_audit_contract(
                 raw[field],
                 label=f"{contract['relative_path']}:{field}",
             )
+    contract["source"] = (
+        _string(raw["source"], label=f"{contract['relative_path']}:source")
+        if "source" in raw
+        else SOURCE_ID
+    )
     _validate_contract_identity(contract, manifest)
     _validate_contract_values(contract, manifest)
     _validate_contract_execution(contract)
@@ -1086,8 +1203,19 @@ def _validate_division_manifest(source: Path, audit: Mapping[str, Any]) -> None:
         maximum_bytes=MAX_SOURCE_METADATA_BYTES,
         label="source division manifest",
     )
-    if _sha256(data) != audit["source"]["division_manifest_sha256"]:
+    # Pin the immutable Git blob, not the working-tree bytes: a checkout with
+    # autocrlf rewrites line endings, and the tracked pin once carried the
+    # CRLF hash of a Windows checkout, so an LF checkout could never rebuild
+    # the same roster (found 2026-09-02 while adding a second source, AR-364).
+    blob = _run_git(
+        source,
+        ("cat-file", "blob", f"{audit['source']['revision']}:{relative_path}"),
+        label="division manifest blob",
+    )
+    if _sha256(blob) != audit["source"]["division_manifest_sha256"]:
         raise BundleBuildError("source division manifest hash does not match the tracked audit")
+    if len(blob) > MAX_SOURCE_METADATA_BYTES:
+        raise BundleBuildError("source division manifest blob exceeds the safety bound")
     parsed = _parse_json(
         data,
         path=source / PurePosixPath(relative_path),
@@ -1315,6 +1443,62 @@ def _validate_source_entry(
         raise BundleBuildError(f"approved source did not produce a candidate: {relative_path}")
 
 
+_FRONT_MATTER_NAME_RE = re.compile(r"^name:\s*([A-Za-z0-9][A-Za-z0-9._-]*)\s*$", re.MULTILINE)
+
+
+def _validate_explicit_inventory(
+    source: Path,
+    revision: str,
+    audit: Mapping[str, Any],
+    contracts: Mapping[str, Mapping[str, Any]],
+) -> None:
+    """Validate an explicit-inventory source: only the audited paths exist for it.
+
+    Such a repository is not a roster catalog (AR-364: ECC ships review cards
+    beside tooling and docs), so the inventory is exactly the audited paths.
+    Every one must be tracked at the pinned revision, hash to the audited
+    content, carry no unaudited encoding evidence, and name the audited slug
+    in its front matter; quarantine and remediation are not supported here.
+    """
+
+    # A non-catalog repository can be large; read the audited blobs at the
+    # pinned revision instead of inventorying the whole tree, which also makes
+    # the content hash independent of checkout line-ending settings.
+    _run_git(source, ("cat-file", "-e", f"{revision}:LICENSE"), label="explicit license blob")
+    for relative_path, contract in contracts.items():
+        if relative_path in audit["quarantines"] or relative_path in audit["remediations"]:
+            raise BundleBuildError(f"explicit sources do not support quarantine: {relative_path}")
+        if contract["audit_status"] != "approved":
+            raise BundleBuildError(f"explicit source entries must be approved: {relative_path}")
+        raw = _run_git(
+            source,
+            ("cat-file", "blob", f"{revision}:{relative_path}"),
+            label=f"explicit source blob {relative_path}",
+        )
+        if len(raw) > MAX_SOURCE_FILE_BYTES:
+            raise BundleBuildError(f"explicit source definition exceeds the bound: {relative_path}")
+        if _read_source_definition(source, relative_path) != raw:
+            raise BundleBuildError(
+                f"explicit source checkout differs from its blob: {relative_path}"
+            )
+        if _sha256(raw) != contract["content_hash"]:
+            raise BundleBuildError(f"source hash does not match audit for {relative_path}")
+        if contract["source_revision"] != revision:
+            raise BundleBuildError(f"source revision does not match audit for {relative_path}")
+        _validate_quarantine_evidence(
+            raw,
+            relative_path=relative_path,
+            contract=contract,
+            outcome=None,
+            expected=None,
+        )
+        match = _FRONT_MATTER_NAME_RE.search(raw.decode("utf-8"))
+        if match is None or match.group(1) != contract["slug"]:
+            raise BundleBuildError(
+                f"source front matter name does not match audit: {relative_path}"
+            )
+
+
 def _validate_inventory(
     source: Path,
     revision: str,
@@ -1344,7 +1528,13 @@ def _governed_prompt(contract: Mapping[str, Any]) -> str:
 
 def _manifest_entry(
     contract: Mapping[str, Any],
+    sources: Mapping[str, Mapping[str, str]] | None = None,
 ) -> tuple[dict[str, Any], bytes | None]:
+    repository = (
+        sources[contract["source"]]["repository"]
+        if sources is not None and contract.get("source") in sources
+        else SOURCE_REPOSITORY
+    )
     entry: dict[str, Any] = {
         "relative_path": contract["relative_path"],
         "slug": contract["slug"],
@@ -1356,6 +1546,7 @@ def _manifest_entry(
         "context_mode": contract["context_mode"],
         "independence_group": contract["independence_group"],
         "expected_output_contract": contract["expected_output_contract"],
+        "source_repository": repository,
         "source_revision": contract["source_revision"],
         "source_content_hash": contract["content_hash"],
         "audit_revision": contract["audit_revision"],
@@ -1369,7 +1560,7 @@ def _manifest_entry(
         revision_input = {
             **entry,
             "name": entry["display_name"],
-            "source": SOURCE_REPOSITORY,
+            "source": repository,
             "prompt_path": "",
             "source_version": entry["source_revision"],
             "tool_affinity": [
@@ -1385,15 +1576,16 @@ def _manifest_entry(
             prompt_hash=None,
         )
         return entry, None
-    prompt = _governed_prompt(contract).encode("utf-8")
+    source_id = str(contract.get("source") or SOURCE_ID)
+    prompt = _governed_prompt({**contract, "source_repository": repository}).encode("utf-8")
     if len(prompt) > MAX_PROMPT_BYTES:
         raise BundleBuildError(f"governed prompt exceeds package limit: {entry['slug']}")
     prompt_hash = _sha256(prompt)
     revision_input = {
         **entry,
         "name": entry["display_name"],
-        "source": SOURCE_REPOSITORY,
-        "prompt_path": f"bundled://agency-agents/{entry['slug']}",
+        "source": repository,
+        "prompt_path": f"bundled://{source_id}/{entry['slug']}",
         "source_version": entry["source_revision"],
         "tool_affinity": [
             *entry["required_tools"],
@@ -1442,34 +1634,86 @@ def _validate_relationships(entries: Sequence[Mapping[str, Any]]) -> None:
         visit(slug)
 
 
+def _source_checkouts(
+    source: Path | Mapping[str, Path], audit: Mapping[str, Any]
+) -> dict[str, Path]:
+    """Map every audited source id to its pinned checkout; a bare path is the primary."""
+
+    if isinstance(source, Mapping):
+        checkouts = {str(key): Path(value).absolute() for key, value in source.items()}
+    else:
+        checkouts = {SOURCE_ID: Path(source).absolute()}
+    expected = set(audit["sources"])
+    if set(checkouts) != expected:
+        raise BundleBuildError(
+            "source checkouts must cover exactly the audited sources; "
+            f"missing={sorted(expected - set(checkouts))} extra={sorted(set(checkouts) - expected)}"
+        )
+    return checkouts
+
+
+def _validate_source_inventories(
+    checkouts: Mapping[str, Path],
+    revisions: Mapping[str, str],
+    audit: Mapping[str, Any],
+    contracts: Mapping[str, Mapping[str, Any]],
+) -> None:
+    for source_id, checkout in checkouts.items():
+        block = audit["sources"][source_id]
+        own = {path: item for path, item in contracts.items() if item["source"] == source_id}
+        if block["inventory"] == "divisions":
+            candidates, outcomes = _source_inventory(checkout)
+            _validate_inventory(checkout, revisions[source_id], audit, own, candidates, outcomes)
+        else:
+            _validate_explicit_inventory(checkout, revisions[source_id], audit, own)
+
+
 def build_bundle(
-    source: Path,
+    source: Path | Mapping[str, Path],
     audit_dir: Path = DEFAULT_AUDIT_DIR,
     expected_revision: str = "",
 ) -> dict[str, bytes]:
-    source = source.absolute()
     audit_dir = _resolve_audit_directory(audit_dir)
     audit = _load_audit_manifest(audit_dir)
-    revision = _validate_source_checkout(source, audit)
+    checkouts = _source_checkouts(source, audit)
+    revisions = {
+        source_id: _validate_checkout(
+            checkout,
+            audit["sources"][source_id],
+            official=source_id == SOURCE_ID,
+        )
+        for source_id, checkout in checkouts.items()
+    }
+    revision = revisions[SOURCE_ID]
     if expected_revision and expected_revision.casefold() != revision:
         raise BundleBuildError(
             f"source revision {revision} does not match expected {expected_revision}"
         )
     contracts = _load_audits(audit_dir, audit)
-    candidates, outcomes = _source_inventory(source)
-    _validate_inventory(source, revision, audit, contracts, candidates, outcomes)
+    _validate_source_inventories(checkouts, revisions, audit, contracts)
 
     entries: list[dict[str, Any]] = []
     files: dict[str, bytes] = {}
     for _relative_path, contract in sorted(contracts.items(), key=lambda item: item[1]["slug"]):
-        entry, prompt = _manifest_entry(contract)
+        entry, prompt = _manifest_entry(contract, audit["sources"])
         entries.append(entry)
         if prompt is not None:
             files[str(entry["prompt_file"])] = prompt
     _validate_relationships(entries)
 
-    license_bytes = _canonical_upstream_license(source, revision)
-    files[SOURCE_LICENSE_FILE] = license_bytes
+    packaged_sources: dict[str, dict[str, str]] = {}
+    for source_id, checkout in checkouts.items():
+        block = audit["sources"][source_id]
+        license_bytes = _canonical_upstream_license(checkout, revisions[source_id])
+        license_file = f"LICENSE.{source_id}.txt"
+        files[license_file] = license_bytes
+        packaged_sources[source_id] = {
+            "repository": block["repository"],
+            "revision": revisions[source_id],
+            "license": block["license"],
+            "license_file": license_file,
+            "license_hash": _sha256(license_bytes),
+        }
     counts = {
         "total": len(entries),
         "approved": sum(entry["audit_status"] == "approved" for entry in entries),
@@ -1486,13 +1730,8 @@ def build_bundle(
         raise BundleBuildError("generated roster counts do not match the tracked audit")
     manifest = {
         "schema_version": BUNDLED_ROSTER_SCHEMA,
-        "source": {
-            "repository": SOURCE_REPOSITORY,
-            "revision": revision,
-            "license": SOURCE_LICENSE,
-            "license_file": SOURCE_LICENSE_FILE,
-            "license_hash": _sha256(license_bytes),
-        },
+        "source": packaged_sources[SOURCE_ID],
+        "sources": dict(sorted(packaged_sources.items())),
         "counts": counts,
         "agents": entries,
     }
@@ -1501,8 +1740,13 @@ def build_bundle(
         raise BundleBuildError("generated manifest exceeds the package limit")
     files["manifest.json"] = manifest_bytes
     files["manifest.sha256"] = (_sha256(manifest_bytes) + "\n").encode("ascii")
-    if _validate_source_checkout(source, audit) != revision:
-        raise BundleBuildError("source checkout changed during bundle generation")
+    for source_id, checkout in checkouts.items():
+        block = audit["sources"][source_id]
+        if (
+            _validate_checkout(checkout, block, official=source_id == SOURCE_ID)
+            != revisions[source_id]
+        ):
+            raise BundleBuildError("source checkout changed during bundle generation")
     return files
 
 
@@ -1790,7 +2034,15 @@ def _write_bundle(output: Path, files: Mapping[str, bytes]) -> None:
 
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--source", type=Path, required=True, help="pinned agency-agents checkout")
+    parser.add_argument(
+        "--source",
+        action="append",
+        required=True,
+        help=(
+            "pinned checkout, repeatable: a bare path is the primary catalog; "
+            "<source-id>=<path> names any audited source (AR-364)"
+        ),
+    )
     parser.add_argument("--audit-dir", type=Path, default=DEFAULT_AUDIT_DIR)
     parser.add_argument(
         "--output",
@@ -1802,9 +2054,53 @@ def _parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _parse_sources(values: Sequence[str]) -> dict[str, Path]:
+    checkouts: dict[str, Path] = {}
+    for value in values:
+        source_id, separator, path = str(value).partition("=")
+        if not separator:
+            source_id, path = SOURCE_ID, str(value)
+        if source_id in checkouts:
+            raise BundleBuildError(f"source checkout named twice: {source_id}")
+        checkouts[source_id] = Path(path)
+    return checkouts
+
+
+def _carry_sidecar_files(output: Path) -> dict[str, bytes]:
+    """Read the curated sidecar overlays already published under ``output``."""
+
+    carried: dict[str, bytes] = {}
+    for relative_path in SIDECAR_FILES:
+        path = output / relative_path
+        try:
+            metadata = os.lstat(path)
+        except FileNotFoundError:
+            continue
+        except OSError as exc:
+            raise BundleBuildError(
+                f"sidecar overlay could not be inspected: {relative_path}"
+            ) from exc
+        if _metadata_is_link_or_reparse(metadata) or not stat.S_ISREG(metadata.st_mode):
+            raise BundleBuildError(f"sidecar overlay has an unsafe identity: {relative_path}")
+        raw = _read_regular_bytes(path, maximum_bytes=MAX_SIDECAR_BYTES, label="sidecar overlay")
+        overlay = safe_load_bounded_json(
+            raw, maximum_bytes=MAX_SIDECAR_BYTES, maximum_depth=6, maximum_nodes=100_000
+        )
+        if not isinstance(overlay, dict):
+            raise BundleBuildError(f"sidecar overlay must be a JSON object: {relative_path}")
+        carried[relative_path] = raw
+    return carried
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     args = _parser().parse_args(argv)
-    files = build_bundle(args.source, args.audit_dir, str(args.expected_revision))
+    files = build_bundle(_parse_sources(args.source), args.audit_dir, str(args.expected_revision))
+    for relative_path, raw in _carry_sidecar_files(args.output).items():
+        if relative_path in files:
+            raise BundleBuildError(
+                f"sidecar overlay collides with generated output: {relative_path}"
+            )
+        files[relative_path] = raw
     if args.check:
         failures = _check_bundle(args.output, files)
         if failures:
@@ -1820,10 +2116,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     counts = manifest["counts"]
     revision = manifest["source"]["revision"]
+    sources = ",".join(
+        f"{source_id}@{block['revision'][:8]}" for source_id, block in manifest["sources"].items()
+    )
     print(
         "bundled roster "
-        f"revision={revision} total={counts['total']} approved={counts['approved']} "
-        f"quarantined={counts['quarantined']} retired={counts['retired']}"
+        f"revision={revision} sources={sources} total={counts['total']} "
+        f"approved={counts['approved']} quarantined={counts['quarantined']} "
+        f"retired={counts['retired']}"
     )
     return 0
 

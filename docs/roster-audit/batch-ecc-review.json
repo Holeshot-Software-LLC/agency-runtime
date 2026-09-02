@@ -1,0 +1,142 @@
+[
+  {
+    "relative_path": "agents/silent-failure-hunter.md",
+    "slug": "silent-failure-hunter",
+    "display_name": "Silent Failure Hunter",
+    "division": "engineering",
+    "description": "Reviews code for silent failures: swallowed exceptions, dangerous fallbacks, lost stack traces, and missing error propagation, and reports each as a located, rated finding",
+    "categories": [
+      "engineering",
+      "code-review",
+      "error-handling"
+    ],
+    "capabilities": [
+      "find empty or swallowed exception handlers and errors turned into empty values",
+      "flag default values and fallbacks that hide a real failure from callers",
+      "trace lost stack traces, generic rethrows, and unhandled async paths",
+      "spot missing timeout, error, and rollback handling around network, file, and database work"
+    ],
+    "anti_capabilities": [
+      "implementing the fixes it recommends",
+      "approving a change as safe to merge",
+      "reviewing anything other than error handling and failure propagation"
+    ],
+    "task_types": [
+      "review",
+      "analysis"
+    ],
+    "preferred_when": [
+      "a change touches exception handling, retries, fallbacks, or failure logging",
+      "a fail-open or swallowed-error defect is suspected and needs an independent finding"
+    ],
+    "avoid_when": [
+      "the task asks for an implementation or a merge decision rather than a findings list"
+    ],
+    "required_tools": [],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "review",
+    "context_mode": "direct_safe",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "engineering-silent-failure-review",
+    "expected_output_contract": "A findings list, one entry per silent failure: location, severity, issue, impact, and fix recommendation.",
+    "evidence_requirements": [
+      "cite the exact file and line for every finding",
+      "state severity and impact for every finding",
+      "never report absent evidence as a pass"
+    ],
+    "model_requirements": [
+      "code-reasoning",
+      "strong-analysis"
+    ],
+    "source_revision": "ca185ef5f7667078a1e70a763bd3a9c71c48acf0",
+    "content_hash": "e5e2094c6f50cc515a77376331c78e4955d5ff16c7a0e5d8f6edec692b7ebd8d",
+    "audit_revision": "2",
+    "audit_status": "approved",
+    "findings": [
+      "prompt-defense baseline block stripped: host policy, not specialist expertise",
+      "upstream model and tool pins (sonnet; Read, Grep, Glob, Bash) dropped: tools must be proven by the host, never assumed",
+      "review authority only: the card never edits, executes, or approves"
+    ],
+    "source": "ecc"
+  },
+  {
+    "relative_path": "agents/type-design-analyzer.md",
+    "slug": "type-design-analyzer",
+    "display_name": "Type Design Analyzer",
+    "division": "engineering",
+    "description": "Analyzes type design for encapsulation, invariant expression, invariant usefulness, and enforcement, scoring whether types make illegal states harder or impossible to represent",
+    "categories": [
+      "engineering",
+      "code-review",
+      "type-design"
+    ],
+    "capabilities": [
+      "evaluate encapsulation and whether invariants can be violated from outside a type",
+      "judge whether types encode business rules and keep impossible states unrepresentable",
+      "score invariant usefulness against the real bugs it prevents",
+      "find escape hatches that bypass type-level enforcement"
+    ],
+    "anti_capabilities": [
+      "implementing type changes",
+      "approving a design as complete",
+      "reviewing runtime behaviour rather than type design"
+    ],
+    "task_types": [
+      "review",
+      "analysis"
+    ],
+    "preferred_when": [
+      "a change introduces or reshapes types, states, or invariants",
+      "an illegal-state or representable-invalid-state defect is suspected and needs a scored review"
+    ],
+    "avoid_when": [
+      "the task asks for an implementation or an approval decision rather than a scored type review"
+    ],
+    "required_tools": [],
+    "supported_hosts": [
+      "codex",
+      "claude",
+      "openclaw",
+      "hermes"
+    ],
+    "supported_platforms": [
+      "windows",
+      "linux"
+    ],
+    "authority": "review",
+    "context_mode": "direct_safe",
+    "conflicts_with": [],
+    "requires": [],
+    "independence_group": "engineering-type-design-review",
+    "expected_output_contract": "A per-type review: name and location, scores for encapsulation, invariant expression, usefulness, and enforcement, an overall assessment, and specific improvements.",
+    "evidence_requirements": [
+      "name each reviewed type and its location",
+      "score all four dimensions with reasons",
+      "tie every improvement to a concrete illegal state it removes"
+    ],
+    "model_requirements": [
+      "code-reasoning",
+      "strong-analysis"
+    ],
+    "source_revision": "ca185ef5f7667078a1e70a763bd3a9c71c48acf0",
+    "content_hash": "753908aadd759d4710e07ac1a0ba8a6fbc0bc35fe369cadd3ede9655da5d1c49",
+    "audit_revision": "2",
+    "audit_status": "approved",
+    "findings": [
+      "prompt-defense baseline block stripped: host policy, not specialist expertise",
+      "upstream model and tool pins (sonnet; Read, Grep, Glob) dropped: tools must be proven by the host, never assumed",
+      "review authority only: the card never edits, executes, or approves"
+    ],
+    "source": "ecc"
+  }
+]

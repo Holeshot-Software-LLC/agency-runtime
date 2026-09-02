@@ -50,6 +50,7 @@ def _entry(
         "context_mode": "direct_safe",
         "independence_group": "review",
         "expected_output_contract": "Return evidence-backed findings.",
+        "source_repository": subject.SOURCE_REPOSITORY,
         "source_revision": "a" * 40,
         "source_content_hash": "b" * 64,
         "audit_revision": "audit-v1",
@@ -80,15 +81,17 @@ def _files(entries_with_prompts: list[tuple[dict[str, Any], bytes | None]]) -> d
         (entry for entry, _prompt in entries_with_prompts), key=lambda item: item["slug"]
     )
     license_bytes = b"MIT License\n"
+    source = {
+        "repository": subject.SOURCE_REPOSITORY,
+        "revision": "a" * 40,
+        "license": subject.SOURCE_LICENSE,
+        "license_file": subject.SOURCE_LICENSE_FILE,
+        "license_hash": _digest(license_bytes),
+    }
     manifest = {
         "schema_version": subject.BUNDLED_ROSTER_SCHEMA,
-        "source": {
-            "repository": subject.SOURCE_REPOSITORY,
-            "revision": "a" * 40,
-            "license": subject.SOURCE_LICENSE,
-            "license_file": subject.SOURCE_LICENSE_FILE,
-            "license_hash": _digest(license_bytes),
-        },
+        "source": source,
+        "sources": {subject.PRIMARY_SOURCE_ID: dict(source)},
         "counts": {
             "total": len(entries),
             "approved": sum(item["audit_status"] == "approved" for item in entries),
@@ -134,7 +137,7 @@ def _rewrite_approved_entry(
         entry["version"] = immutable_revision_version(
             subject._revision_input(
                 entry,
-                manifest["source"],
+                {**manifest["source"], "id": subject.PRIMARY_SOURCE_ID},
                 prompt_body=prompt_body,
                 content_hash=entry["prompt_hash"],
             )

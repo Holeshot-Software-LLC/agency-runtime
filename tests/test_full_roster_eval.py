@@ -43,13 +43,13 @@ def test_full_roster_eval_is_truthfully_contract_only(report: dict[str, Any]) ->
             "superiority over a native host or another router."
         ),
     }
-    assert report["roster"]["manifest_total"] == 263
-    assert report["roster"]["manifest_approved"] == 263
+    assert report["roster"]["manifest_total"] == 265
+    assert report["roster"]["manifest_approved"] == 265
     assert report["roster"]["manifest_quarantined"] == 0
     assert report["roster"]["manifest_retired"] == 0
     assert report["roster"]["packaged_contractors"] == 15
-    assert report["roster"]["workforce_total"] == 278
-    assert report["roster"]["approved_enabled"] == 278
+    assert report["roster"]["workforce_total"] == 280
+    assert report["roster"]["approved_enabled"] == 280
     assert report["roster"]["division_count"] == 17
 
 
@@ -57,12 +57,12 @@ def test_every_approved_enabled_agent_participates_in_both_retrievers(
     report: dict[str, Any],
 ) -> None:
     participation = report["metrics"]["participation"]
-    assert participation["approved_enabled_count"] == 278
+    assert participation["approved_enabled_count"] == 280
     assert participation["prompt_body_field_count"] == 0
-    assert participation["lexical_participation_count"] == 278
+    assert participation["lexical_participation_count"] == 280
     assert participation["lexical_participation_rate"] == 1.0
     assert participation["lexical_missing_agent_ids"] == []
-    assert participation["semantic_participation_count"] == 278
+    assert participation["semantic_participation_count"] == 280
     assert participation["semantic_participation_rate"] == 1.0
     assert participation["semantic_missing_agent_ids"] == []
     assert "field-access instrumentation" in participation["proof_method"]
@@ -73,14 +73,14 @@ def test_identity_free_probes_report_agent_and_category_gaps(
 ) -> None:
     metrics = report["metrics"]["probe_retrieval"]
     details = report["details"]["probe_retrieval"]
-    assert metrics["probe_count"] == 278
-    assert metrics["unique_probe_count"] == 278
-    assert metrics["target_hits"] == 278
+    assert metrics["probe_count"] == 280
+    assert metrics["unique_probe_count"] == 280
+    assert metrics["target_hits"] == 280
     assert metrics["target_candidate_recall"] == 1.0
     assert metrics["target_recall_at_10"] >= THRESHOLDS["target_recall_at_10"][1]
-    assert metrics["positive_candidate_identity_count"] == 278
+    assert metrics["positive_candidate_identity_count"] == 280
     assert metrics["positive_candidate_identity_coverage"] == 1.0
-    assert metrics["complete_candidate_identity_count"] == 278
+    assert metrics["complete_candidate_identity_count"] == 280
     assert metrics["complete_candidate_identity_coverage"] == 1.0
     assert metrics["identity_leak_count"] == 0
     assert metrics["preferred_sentence_copy_count"] == 0
@@ -112,8 +112,8 @@ def test_curated_retrieval_covers_hard_negatives_multi_intent_and_abstention(
     metrics = report["metrics"]["curated_retrieval"]
     details = {detail["id"]: detail for detail in report["details"]["curated_retrieval"]}
     assert metrics == {
-        "cases": 7,
-        "passed_cases": 7,
+        "cases": 9,
+        "passed_cases": 9,
         "curated_case_accuracy": 1.0,
         "abstention_cases": 1,
         "abstention_accuracy": 1.0,
@@ -130,7 +130,7 @@ def test_curated_retrieval_covers_hard_negatives_multi_intent_and_abstention(
         "performance-benchmarker",
     }
     assert details["out-of-domain-abstention"]["positive_candidate_ids"] == []
-    assert details["out-of-domain-abstention"]["candidate_union"]["full_roster_count"] == 278
+    assert details["out-of-domain-abstention"]["candidate_union"]["full_roster_count"] == 280
 
 
 def test_compatibility_eval_enforces_conflicts_requirements_and_isolation(
@@ -164,10 +164,10 @@ def test_every_packaged_worker_pair_produces_a_conflict_free_team(
     report: dict[str, Any],
 ) -> None:
     assert report["metrics"]["pairwise_composition"] == {
-        "worker_count": 278,
-        "pair_count": 38_503,
+        "worker_count": 280,
+        "pair_count": 39_060,
         "direct_conflict_pairs": 29,
-        "passed_pairs": 38_503,
+        "passed_pairs": 39_060,
         "failed_pairs": 0,
         "pairwise_composition_accuracy": 1.0,
     }

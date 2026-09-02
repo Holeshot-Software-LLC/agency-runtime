@@ -1,22 +1,40 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "audit_revision": "2",
   "source": {
     "repository": "https://github.com/msitarzewski/agency-agents",
     "origin": "https://github.com/msitarzewski/agency-agents.git",
     "revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
     "division_manifest": "divisions.json",
-    "division_manifest_sha256": "d145c4e2ad4fa59340d22f99d312700a8ed8d05f7e3deed26b16bdedeb31ef5c"
+    "division_manifest_sha256": "15136bcf43ff95dd2ef827519c96cfee3fa3ebe35057d69ff1cd49a1a9e48add"
+  },
+  "sources": {
+    "agency-agents": {
+      "repository": "https://github.com/msitarzewski/agency-agents",
+      "origin": "https://github.com/msitarzewski/agency-agents.git",
+      "revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
+      "license": "MIT",
+      "inventory": "divisions",
+      "division_manifest": "divisions.json",
+      "division_manifest_sha256": "15136bcf43ff95dd2ef827519c96cfee3fa3ebe35057d69ff1cd49a1a9e48add"
+    },
+    "ecc": {
+      "repository": "https://github.com/affaan-m/ECC",
+      "origin": "https://github.com/affaan-m/ECC.git",
+      "revision": "ca185ef5f7667078a1e70a763bd3a9c71c48acf0",
+      "license": "MIT",
+      "inventory": "explicit"
+    }
   },
   "expected": {
-    "total_agents": 263,
+    "total_agents": 265,
     "status_counts": {
-      "approved": 263
+      "approved": 265
     },
     "division_counts": {
       "academic": 6,
       "design": 9,
-      "engineering": 54,
+      "engineering": 56,
       "finance": 5,
       "game-development": 20,
       "gis": 13,
@@ -81,6 +99,15 @@
         "review": "batch-specialized-review.md",
         "artifact_sha256": "714a9c24705fb99899498807e8db6bd73d36ab52247f7b6f1ff48395d846152f",
         "review_sha256": "0d1c2ad2528a35a1da2b2e94940c0dd6dede7044364469f0bcc17529d00bfd98"
+      },
+      "batch-ecc-review.json": {
+        "count": 2,
+        "division_counts": {
+          "engineering": 2
+        },
+        "review": "batch-ecc-review-review.md",
+        "artifact_sha256": "f5a89afe0f76cbe9a4ec4f52d064d55ccd08afcfbe6bec554ed6e84014914b6f",
+        "review_sha256": "e7cc33eade4baeb4418a9e3402adfd47e86c093747f328f34e6514493411c6ba"
       }
     }
   },
