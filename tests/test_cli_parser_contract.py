@@ -49,10 +49,12 @@ HANDLER_NAMES = (
     "cmd_eval_workforce",
     "cmd_evidence_child_launches",
     "cmd_evidence_children",
+    "cmd_evidence_context_budget",
     "cmd_evidence_intent",
     "cmd_evidence_latency",
     "cmd_evidence_rejections",
     "cmd_evidence_selections",
+    "cmd_evidence_staffing",
     "cmd_evidence_wiring",
     "cmd_evidence_witness",
     "cmd_explain",
@@ -152,10 +154,12 @@ EXPECTED_PATHS = (
     "agency evidence",
     "agency evidence child-launches",
     "agency evidence children",
+    "agency evidence context-budget",
     "agency evidence intent",
     "agency evidence latency",
     "agency evidence rejections",
     "agency evidence selections",
+    "agency evidence staffing",
     "agency evidence wiring",
     "agency evidence witness",
     "agency explain",
@@ -264,6 +268,8 @@ EXPECTED_BINDINGS = {
     "agency evidence latency": "cmd_evidence_latency",
     "agency evidence rejections": "cmd_evidence_rejections",
     "agency evidence selections": "cmd_evidence_selections",
+    "agency evidence staffing": "cmd_evidence_staffing",
+    "agency evidence context-budget": "cmd_evidence_context_budget",
     "agency evidence wiring": "cmd_evidence_wiring",
     "agency evidence witness": "cmd_evidence_witness",
     "agency explain": "cmd_explain",
@@ -318,7 +324,7 @@ EXPECTED_BINDINGS = {
     "agency workforce show": "cmd_workforce_show",
     "agency workforce suspend": "cmd_workforce_transition",
 }
-EXPECTED_MANIFEST_SHA256 = "8032322ce5f94b312489f1be51ddd1d5085055f7cb817c33eb1f3ffea9893e51"
+EXPECTED_MANIFEST_SHA256 = "11ac2e40fe5689f83dc73fe7bd806f5259e527a08a0877c99efa0f58331652b3"
 
 
 def _handler(name: str):

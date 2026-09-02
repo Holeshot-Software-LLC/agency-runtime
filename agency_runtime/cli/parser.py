@@ -1794,6 +1794,69 @@ def _register_evidence(sub: Subparsers, handlers: Handlers) -> None:
     )
     intent.add_argument("--json", action="store_true", help="Print JSON")
     _bind(intent, handlers, "cmd_evidence_intent")
+    staffing = evidence_sub.add_parser(
+        "staffing",
+        help="Measure the staffing-verdict window: turns, fail-open rate, dominant stage",
+    )
+    staffing.add_argument(
+        "--host",
+        choices=EXECUTION_HOSTS,
+        default=None,
+        help="Measure one host only (default: every host)",
+    )
+    staffing.add_argument(
+        "--since",
+        default=None,
+        help="Window start as an ISO-8601 instant (default: the last --hours)",
+    )
+    staffing.add_argument(
+        "--hours",
+        type=_positive_int,
+        default=None,
+        help="Window length in hours when --since is absent (default: 24, max: 720)",
+    )
+    staffing.add_argument(
+        "--limit",
+        type=_positive_int,
+        default=None,
+        help="Most recent N failure receipts to read (default: 500, max: 2000)",
+    )
+    staffing.add_argument(
+        "--db",
+        default=None,
+        help="Read this evidence store instead of the configured one",
+    )
+    staffing.add_argument("--json", action="store_true", help="Print JSON")
+    _bind(staffing, handlers, "cmd_evidence_staffing")
+    context_budget = evidence_sub.add_parser(
+        "context-budget",
+        help="Size Agency's per-turn frame (kernel, policy, snapshots, capsule) in tokens",
+    )
+    context_budget.add_argument(
+        "--host",
+        choices=EXECUTION_HOSTS,
+        default="claude",
+        help="Host whose delivery shape to size (default: claude)",
+    )
+    context_budget.add_argument(
+        "--sample",
+        type=_positive_int,
+        default=None,
+        help="Newest ready turns to replay for the staffed capsule size (default: 100)",
+    )
+    context_budget.add_argument(
+        "--estimator",
+        choices=("auto", "chars", "tiktoken"),
+        default="auto",
+        help="Token estimator: chars/4 heuristic, tiktoken if importable, or auto",
+    )
+    context_budget.add_argument(
+        "--db",
+        default=None,
+        help="Read this evidence store instead of the configured one",
+    )
+    context_budget.add_argument("--json", action="store_true", help="Print JSON")
+    _bind(context_budget, handlers, "cmd_evidence_context_budget")
     wiring = evidence_sub.add_parser(
         "wiring",
         help="Check that each host invokes the projection the installer staged",

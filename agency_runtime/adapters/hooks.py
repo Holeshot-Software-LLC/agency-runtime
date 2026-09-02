@@ -30,6 +30,10 @@ from agency_runtime.core.header.finalize import (
     TERMINAL_ACTION_STATUS,
     TERMINAL_OUTCOME_MESSAGES,
 )
+from agency_runtime.core.header.snapshot import (
+    HEADER_SNAPSHOT_INSTRUCTIONS,
+    format_header_snapshot,
+)
 from agency_runtime.core.installer_contracts import (
     CODEX_HOOK_EVENTS,
     CODEX_NATIVE_FOLLOWUP_HOOK_TOOL_NAMES,
@@ -2419,12 +2423,7 @@ class HookBridge:
                 trace_id=trace_id,
                 model=model,
                 marker="UPDATED",
-                instruction=(
-                    "Agency recorded the preceding tool observation. Start the next "
-                    "substantive or final parent response with these exact five lines, "
-                    "unchanged, then add the response body. A later Agency header snapshot "
-                    "for this turn supersedes this one."
-                ),
+                instruction=HEADER_SNAPSHOT_INSTRUCTIONS["UPDATED"],
             )
         if not context:
             return {}
@@ -2482,11 +2481,7 @@ class HookBridge:
             trace_id=trace_id,
             model=model,
             marker="FINAL",
-            instruction=(
-                "The native wait completed. Start the next substantive or final parent "
-                "response with these exact five lines, unchanged, then add the response "
-                "body. This is current-turn Store evidence, not a suggested draft."
-            ),
+            instruction=HEADER_SNAPSHOT_INSTRUCTIONS["FINAL"],
         )
 
     def _header_snapshot_context(
@@ -2523,7 +2518,7 @@ class HookBridge:
             )
         except (EvidenceCorrelationError, KeyError, RuntimeError, ValueError):
             return ""
-        return f"[AGENCY {marker} HEADER SNAPSHOT v1]\n{instruction}\n{header}"
+        return format_header_snapshot(marker, instruction, header)
 
     def _handle_user_prompt_submit(self, payload: dict[str, Any]) -> dict[str, Any]:
         prompt = _required_string(payload, "prompt")
@@ -2571,11 +2566,7 @@ class HookBridge:
             trace_id=trace_id,
             model=correlation.model,
             marker="INITIAL",
-            instruction=(
-                "Start each substantive progress update and the final parent response "
-                "with these exact five lines, unchanged, then add the response body. "
-                "A later Agency header snapshot for this turn supersedes this one."
-            ),
+            instruction=HEADER_SNAPSHOT_INSTRUCTIONS["INITIAL"],
         )
         context_segments = [context.rstrip()]
         if plan_context:

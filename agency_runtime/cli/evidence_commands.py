@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -19,6 +20,12 @@ from agency_runtime.core.child_launch_outcomes import (
     resolve_child_launch_outcomes,
 )
 from agency_runtime.core.config import load_config
+from agency_runtime.core.context_budget import (
+    DEFAULT_CAPSULE_SAMPLE,
+    context_budget_report,
+    measure_staffed_capsules,
+    token_estimator,
+)
 from agency_runtime.core.deployed_fix_witness import HostWitness, attest_host
 from agency_runtime.core.host_capabilities import EXECUTION_HOSTS
 from agency_runtime.core.host_wiring_drift import host_wiring
@@ -34,7 +41,15 @@ from agency_runtime.core.rule8_evidence import (
     rule8_evidence_projection,
 )
 from agency_runtime.core.runtime_staleness import recorded_hosts
+from agency_runtime.core.staffing_window import (
+    DEFAULT_STAFFING_WINDOW_RECEIPTS,
+    bounded_staffing_window_limit,
+    staffing_window_cutoff,
+    staffing_window_projection,
+    store_timestamp,
+)
 from agency_runtime.core.store.sqlite import Store
+from agency_runtime.core.store.turn_window import turn_window_host
 
 from ._common import print_json as _print_json
 
@@ -551,3 +566,140 @@ def _print_child_launch_report(report: dict[str, Any]) -> None:
     for item in report["launches"]:
         if item["outcome"] == "unrecorded":
             print(f"  no record: child {item['child_id']} launched {item['launched_at']}")
+
+
+def _ranked_line(rows: list[dict[str, Any]], *, limit: int = 4) -> str:
+    return ", ".join(f"{row['value']} x{row['count']}" for row in rows[:limit]) or "-"
+
+
+def cmd_evidence_staffing(args: argparse.Namespace) -> int:
+    """Measure the staffing-verdict window instead of describing it (AR-353).
+
+    Per host over a bounded window: turns started, turns that closed
+    ``preflight_failed``, the failure rate, and which provider stage and reason
+    codes dominate the failure receipts. Every value is a count over a closed
+    vocabulary; no prompt, response, or provider identity leaves the store.
+    Exit status is 0: this is a measurement, not a gate.
+    """
+
+    cutoff = staffing_window_cutoff(
+        since=str(getattr(args, "since", None) or ""),
+        hours=getattr(args, "hours", None),
+    )
+    raw_limit = getattr(args, "limit", None)
+    limit = bounded_staffing_window_limit(
+        DEFAULT_STAFFING_WINDOW_RECEIPTS if raw_limit is None else raw_limit
+    )
+    host = turn_window_host(getattr(args, "host", None))
+    store = Store(getattr(args, "db", None))
+    window = store.get_staffing_window(cutoff=cutoff, host=host, limit=limit)
+    projection = staffing_window_projection(
+        window,
+        now=store_timestamp(datetime.now(timezone.utc)),
+    )
+    if getattr(args, "json", False):
+        _print_json(projection)
+        return 0
+
+    meta = projection["window"]
+    scope = f" (host {meta['host']})" if meta["host"] else ""
+    truncated = " (truncated)" if meta["receipts_truncated"] else ""
+    print(
+        f"staffing window since {meta['cutoff'][:19]}Z{scope}: "
+        f"{meta['receipts_returned']} failure receipts read{truncated}"
+    )
+    for name, host_projection in projection["hosts"].items():
+        started = host_projection["turns_started"]
+        failed = host_projection["turns_preflight_failed"]
+        if not started and not host_projection["receipts"]:
+            print(f"  {name:<9} no turns")
+            continue
+        rate = host_projection["failure_rate"]
+        rate_text = f"{rate:.1%}" if rate is not None else "-"
+        dominant = host_projection["dominant"]
+        print(
+            f"  {name:<9} {started} turns, {failed} preflight_failed ({rate_text}); "
+            f"failing stage {dominant['failing_stage'] or '-'}; "
+            f"reason {dominant['reason_code'] or '-'}; "
+            f"staffing {dominant['staffing_reason_code'] or '-'}"
+        )
+        print(
+            f"            staffing codes: {_ranked_line(host_projection['staffing_reason_codes'])}"
+        )
+        print(f"            failing stages: {_ranked_line(host_projection['failing_stage'])}")
+    totals = projection["totals"]
+    rate = totals["failure_rate"]
+    rate_text = f"{rate:.1%}" if rate is not None else "-"
+    print(
+        f"  all hosts {totals['turns_started']} turns, "
+        f"{totals['turns_preflight_failed']} preflight_failed ({rate_text}); "
+        f"dominant provider outcome: {totals['dominant']['provider_outcome'] or '-'}"
+    )
+    latency = projection["latency"]
+    if latency.get("recorded"):
+        print(f"  attempt latency p50 {latency.get('p50_ms')} ms, p95 {latency.get('p95_ms')} ms")
+    else:
+        print(f"  latency: {latency.get('note')}")
+    return 0
+
+
+def cmd_evidence_context_budget(args: argparse.Namespace) -> int:
+    """Size what Agency's frame costs per turn, and what AR-355 added.
+
+    Renders each component with the code that renders it for a host, sizes
+    it in characters and estimated tokens, and replays the newest ready turns'
+    specialist capsules from their exact immutable versions when a store is
+    available. Estimates are labelled with the method used.
+    """
+
+    config = load_config()
+    estimator = token_estimator(str(getattr(args, "estimator", None) or "auto"))
+    host = str(getattr(args, "host", None) or "claude")
+    sample = int(getattr(args, "sample", None) or DEFAULT_CAPSULE_SAMPLE)
+    capsules: dict[str, Any]
+    try:
+        capsules = measure_staffed_capsules(
+            Store(getattr(args, "db", None)),
+            config,
+            host=host if host in EXECUTION_HOSTS else "",
+            limit=sample,
+            estimator=estimator,
+        )
+    except Exception as error:  # the store is optional for the fixed components
+        capsules = {"measured": False, "reason": f"store unavailable: {type(error).__name__}"}
+    report = context_budget_report(config, host=host, estimator=estimator, capsules=capsules)
+    if getattr(args, "json", False):
+        _print_json(report)
+        return 0
+
+    print(f"context budget for host {report['host']} ({report['estimator']['method']})")
+    print(f"  {'component':<28} {'chars':>7} {'lines':>6} {'tokens':>7}")
+    for name, component in report["components"].items():
+        print(
+            f"  {name:<28} {component['chars']:>7} {component['lines']:>6} "
+            f"{component['estimated_tokens']:>7}"
+        )
+    delta = report["ar355_delta"]
+    print(
+        f"  AR-355 delta per ready turn: {delta['per_ready_turn']['chars']} chars, "
+        f"~{delta['per_ready_turn']['estimated_tokens']} tokens "
+        f"(kernel v5 line {delta['kernel_v5_addition']['chars']} chars + operator policy "
+        f"{delta['operator_policy_block']['chars']} chars); per fail-open turn "
+        f"{delta['per_fail_open_turn']['chars']} chars"
+    )
+    for name, turn in report["per_turn"].items():
+        total = turn.get("estimated_tokens")
+        bound = turn.get("bound_estimated_tokens")
+        size = f"~{total} tokens" if total is not None else f"<= ~{bound} tokens (bound)"
+        chars = turn["chars"] if turn.get("chars") is not None else "-"
+        print(f"  {name:<28} {chars:>7} chars  {size}")
+    staffed = report["staffed_capsule"]
+    if staffed.get("measured"):
+        print(
+            f"  staffed capsule sample: {staffed['staffed_replayed']} replayed of "
+            f"{staffed['ready_runs_read']} ready turns; p50 "
+            f"{staffed['specialist_capsule_chars']['p50']} chars"
+        )
+    else:
+        print(f"  staffed capsule sample: not measured ({staffed.get('reason')})")
+    return 0

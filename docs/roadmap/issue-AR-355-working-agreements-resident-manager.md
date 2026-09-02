@@ -3,7 +3,7 @@ title: "AR-355: Deliver the owner's working agreements as a second resident mana
 status: in_progress
 category: roadmap
 created: 2026-09-01
-updated: 2026-09-01
+updated: 2026-09-02
 tags: [resident-managers, steward, prompt-surface, governance]
 related:
   - docs/roadmap/issue-AR-265-contextual-turn-classification.md
@@ -148,4 +148,18 @@ ECC's `context-budget` skill.
       batteries green; the "both managers" wording resolved to steward
       kernel + separately-hashed operator_policy block per the
       implementation section).
-- [ ] Per-turn token cost of the addition is measured and recorded.
+- [x] Per-turn token cost of the addition is measured and recorded —
+      `agency evidence context-budget` (this change) sizes each component
+      with the code that renders it; measured 2026-09-02 on this
+      installation (tiktoken cl100k_base as the proxy tokenizer, chars/4
+      otherwise): steward kernel v5 1187 chars / ~254 tokens; the v5
+      roster-awareness line 173 chars / ~35 tokens; the live five-line
+      operator policy block 1456 chars / ~290 tokens; binding line 292 /
+      ~120; routing context (two specialists) 818 / ~183; UserPromptSubmit
+      header snapshot 523 / ~114; the AR-356 disclosure line 291 / ~59.
+      The AR-355 addition therefore costs ~325 estimated tokens per ready
+      turn (kernel line plus policy block) on claude/codex/zcode; a whole
+      fail-open turn is ~837 tokens with the kernel injected and ~583 once
+      the binding is reused (AR-367), and a staffed turn ~1552 tokens with
+      the median replayed specialist capsule (2895 chars, 5 staffed ready
+      turns replayed from the newest 52).
