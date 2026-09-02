@@ -72,12 +72,19 @@ were deliberately induced and both fail the guard with an actionable message.
 
 ## exact-blocker
 
-None on the tools axis. On a real host context the tools gate is clear.
+None on the tools axis, and the planner can no longer put one there.
+`plan_policy_violations` now raises `plan_unit_required_tools_unproven` when a
+unit demands a tool the host has not proven, wired at parse time so the
+existing repair loop feeds the planner a named correction, and again after
+staffing so a cache-replayed plan is re-checked against this turn's host.
 
-The live blocker now is the recruiter: `provider_no_valid_response` on one
-run and `provider_response_contract_invalid` on another, with the AR-373 fix
-confirmed present in the installed venv. That is a provider or contract
-problem and needs its own issue, not this one.
+The live blocker for an ordinary install turn is now the critic. With the real
+nine the planner is applied, the recruiter is applied, and the critic rejects
+the staffing with `missing-installation-executor`,
+`wrong-routine-installation-staffing` and `missing-implementation-lifecycle`:
+the plan has advise, plan and review units and nothing with modify authority
+that actually performs the install. That is a planner-shape defect and needs
+its own issue.
 
 ## same-task-continuity
 
@@ -107,19 +114,19 @@ Traps: a bare harness without `LITELLM_API_KEY` reports
 
 ## next-bounded-work-package
 
-The owner picks one; they have different blast radii and the issue records
-all three. Smallest first:
+The planner-validation option is done. Two of the three original directions
+remain open and are still owner calls:
 
-1. Validate the planner's `required_tools` against `host_context.available_tools`
-   so an out-of-floor value never becomes a roster-shaped abstention.
-2. Collapse the tool-class vocabulary to what a host can prove, moving
+1. Collapse the tool-class vocabulary to what a host can prove, moving
    specialism terms off the eligibility axis.
-3. Feed real capability detection into `available_tools`.
+2. Feed real capability detection into `available_tools` so the union path in
+   `native_adapter_capability_receipt` stops being inert.
 
-Two follow-ups are recorded in the issue and have no internal ID yet: the
-unvalidated planner `required_tools`, and the upstream selection eval
-filtering on `contract.tool_classes` so it cannot reach 82 percent of the
-roster.
+Four follow-ups are recorded in the issue with no internal ID yet: the
+upstream selection eval reaching only 18 percent of the roster, the planner
+writing no executor for an install request, an intermittent recruiter provider
+failure, and the decision-conformance eval's interpreter resolution on this
+box.
 
 ## verification
 
@@ -127,12 +134,18 @@ roster.
 2. Unstaffable share stated per host with responsible classes. **Done.**
 3. Drift guard pinning the two vocabularies together. **Done**, both
    directions proven to fail.
-4. Local gates on every change: focused tests, the named fast Python spine
-   under `-W error`, ruff check and format, both docs gates, the worklog
-   dance, plus routing and decision-conformance evals if a routing or policy
-   surface changed.
+4. Planner `required_tools` held to the host floor. **Done**, with a live
+   receipt on both an under-provisioned and a real host context.
 5. An ordinary install request staffs a specialist, or the reason it should
-   not is recorded. **Open** — blocked on the recruiter provider failure.
+   not is recorded. **Open** — now blocked at the critic on plan shape.
+
+Gates on every change: focused tests, the named fast Python spine under
+`-W error`, ruff check and format, both docs gates, the worklog dance, plus
+the routing and decision-conformance evals for a policy surface. The
+conformance eval needs a `venv --copies` whose site-packages carries a `.pth`
+to the user site; a symlinked venv resolves to the system interpreter, whose
+isolated baseline cannot import `pytest`, and that failure reproduces on a
+clean `main`.
 
 ## constraints
 
