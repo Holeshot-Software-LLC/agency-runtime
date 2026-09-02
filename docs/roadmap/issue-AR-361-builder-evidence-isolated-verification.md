@@ -1,6 +1,6 @@
 ---
 title: "AR-361: Split acceptance into builder evidence and isolated single-check verification"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-09-01
 updated: 2026-09-02
@@ -124,9 +124,20 @@ to extend to workforce completion criteria later.
 
 ## Acceptance
 
-- [ ] A done flip requires per-criterion builder evidence records, not
-      just checked boxes.
-- [ ] Each criterion's verdict comes from an isolated single-check
-      verifier run, recorded with the evidence it judged.
-- [ ] A criterion with absent or contradicted evidence fails verification
-      and blocks the done flip, covered by regression tests.
+- [x] A done flip requires per-criterion builder evidence records, not
+      just checked boxes — `validate_acceptance_verification` /
+      `_acceptance_done_errors` in `scripts/verify_docs.py`;
+      `test_done_flip_requires_acceptance_record_unless_grandfathered`,
+      `test_acceptance_missing_verdict_or_builder_row_blocks_done_flip`.
+- [x] Each criterion's verdict comes from an isolated single-check
+      verifier run, recorded with the evidence it judged —
+      `scripts/verify_acceptance.py` (`verify_criterion`, `_invoke_verifier`,
+      `record_verdict`), digest binding via `acceptance_evidence_digest`;
+      `test_runner_records_isolated_satisfied_verdicts_that_unlock_the_done_flip`,
+      `test_acceptance_verifier_run_must_judge_exactly_one_criterion`.
+- [x] A criterion with absent or contradicted evidence fails verification
+      and blocks the done flip, covered by regression tests —
+      `test_acceptance_absent_or_contradicted_verdict_blocks_done_flip`,
+      `test_runner_records_contradicted_verdicts_that_block_the_done_flip`,
+      `test_runner_records_absent_builder_evidence_without_calling_a_model`;
+      measured live on AR-356 criterion 2 (`docs/roadmap/acceptance/issue-AR-356.md`).
