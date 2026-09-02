@@ -93,10 +93,13 @@ def test_default_inspector_requests_only_the_selected_host(monkeypatch: pytest.M
     monkeypatch.setattr(
         canary,
         "inspect_host_installations",
-        lambda *, hosts: seen.append(hosts) or [{"host": hosts[0]}],
+        lambda *, hosts, normalize_trust_chains=False: (
+            seen.append((hosts, normalize_trust_chains)) or [{"host": hosts[0]}]
+        ),
     )
     assert canary._default_inspector("codex") == {"host": "codex"}
-    assert seen == [["codex"]]
+    # AR-368: the canary probe runs the host, so it asks for normalization.
+    assert seen == [(["codex"], True)]
 
 
 @pytest.mark.parametrize(
