@@ -303,15 +303,22 @@ def test_hook_lazy_store_task_resolution_and_work_unit_injection(monkeypatch) ->
 
 
 def test_hook_stdio_constructs_explicit_store(monkeypatch) -> None:
-    created: list[tuple[Any, Any]] = []
+    # bc6589b0 added `require_existing_current` to the production Store call.
+    # A fixture that cannot accept it raises TypeError inside the boundary,
+    # which the Stop path swallowed into "response publication blocked" with
+    # no store constructed at all (AR-354).
+    created: list[tuple[Any, Any, Any]] = []
     store = object()
-    monkeypatch.setattr(
-        hooks,
-        "Store",
-        lambda db_path=None, config_path=None: created.append((db_path, config_path)) or store,
-    )
+
+    def fake_store(db_path=None, config_path=None, require_existing_current=False):
+        created.append((db_path, config_path, require_existing_current))
+        return store
+
+    monkeypatch.delenv("AGENCY_CANARY_MODE", raising=False)
+    monkeypatch.setattr(hooks, "Store", fake_store)
     monkeypatch.setattr(hooks.HookBridge, "handle", lambda self, payload: {})
     output = io.BytesIO()
+    errors = io.StringIO()
     assert (
         hooks.run_hook_stdio(
             "codex",
@@ -319,10 +326,14 @@ def test_hook_stdio_constructs_explicit_store(monkeypatch) -> None:
             config_path="agency.yaml",
             input_stream=io.BytesIO(b'{"hook_event_name":"Stop"}'),
             output_stream=output,
+            error_stream=errors,
         )
         == 0
     )
-    assert created == [("db.sqlite", "agency.yaml")]
+    assert created == [("db.sqlite", "agency.yaml", False)]
+    # A boundary failure is reported on stderr, not raised: keep it loud here
+    # so the next signature drift fails on its cause rather than on `created`.
+    assert errors.getvalue() == ""
 
 
 def test_litellm_lazy_store_master_off_and_request_context(monkeypatch) -> None:
@@ -449,9 +460,15 @@ def test_install_control_rendering_and_failure_paths(monkeypatch, capsys) -> Non
 
 def test_install_preflight_human_error_and_per_host_exception(monkeypatch, capsys) -> None:
     cfg = config_module.AgencyConfig()
+    # f5ca1729 made `agency install` run every applicable component and report
+    # a failed dashboard preflight in the summary instead of returning before
+    # the store was touched, so the starter-roster seed now runs first and a
+    # bare object() store crashed it (AR-354). The stub answers the one seed
+    # call the installer makes on a store without the workforce surface.
+    roster_store = SimpleNamespace(reconcile_bundled_agents=lambda _roster: 0)
     dependencies = install_commands.InstallDependencies(
         load_config=lambda: cfg,
-        store_factory=lambda _cfg: object(),
+        store_factory=lambda _cfg: roster_store,
         emit_json=lambda _payload: None,
         readiness_probe=lambda: True,
     )
@@ -470,6 +487,8 @@ def test_install_preflight_human_error_and_per_host_exception(monkeypatch, capsy
         install_commands, "dashboard_service_environment_overrides", lambda _cfg: ("X",)
     )
     monkeypatch.setattr(install_commands, "resolve_config_path", lambda: Path("agency.yaml"))
+    # Drift is projected from the box's live installation; keep the test hermetic.
+    monkeypatch.setattr(install_commands, "_cli_install_drift_projection", lambda: None)
     monkeypatch.setattr("agency_runtime.core.installer.detect_installed_agents", lambda: [])
     monkeypatch.setattr("agency_runtime.core.installer.plan_agent_adapter", lambda *_args: {})
     monkeypatch.setattr(
@@ -879,15 +898,30 @@ def test_openclaw_terminal_recovery_and_acceptance_validation() -> None:
 
 
 def test_openclaw_finish_commit_and_outbound_state_fail_closed(monkeypatch) -> None:
+    # 3ec69c7f replaced `_finish_exhausted_retry` with `_finish_policy_rejection`
+    # and e80cb40c made `_commit_terminal_outcome` answer with a state string.
+    # A binding that did not hold, whether the store was unreachable or it
+    # refused the revision, must not be reported as an evaluated rejection of
+    # the draft (AR-354).
     common = {
         "adapter": SimpleNamespace(),
         "decision": {"action": "continue", "evidence_revision": 1},
-        "final_response": "draft",
+        "policy_response": "draft",
+        "response_binding": "draft",
         "session_id": "s",
         "trace_id": "t",
     }
-    monkeypatch.setattr(node_bridge, "_commit_terminal_outcome", lambda *_args, **_kw: False)
-    assert node_bridge._finish_exhausted_retry(**common)["action"] == "continue"
+    for state in ("unavailable", "conflict"):
+        monkeypatch.setattr(
+            node_bridge, "_commit_terminal_outcome", lambda *_args, _state=state, **_kw: _state
+        )
+        result = node_bridge._finish_policy_rejection(**common)
+        assert result == node_bridge._revision()
+        assert result["terminalStatus"] == "verification_failed"
+    monkeypatch.setattr(node_bridge, "_commit_terminal_outcome", lambda *_args, **_kw: "committed")
+    committed = node_bridge._finish_policy_rejection(**common)
+    assert committed["action"] == "terminal"
+    assert committed["terminalStatus"] == "response_invalid"
 
     assert (
         node_bridge._exact_outbound_terminal_state(
@@ -1002,19 +1036,11 @@ def test_openclaw_outbound_gate_error_and_decision_matrix(monkeypatch) -> None:
 
 
 def test_openclaw_persistence_runtime_disabled_and_constructor_matrix(monkeypatch) -> None:
-    decision = {"action": "continue", "evidence_revision": 0}
-    assert (
-        node_bridge._persist_continuation_decision(
-            SimpleNamespace(),
-            decision,
-            final_response="draft",
-            session_id="s",
-            attempt=0,
-            trace_id="t",
-        )["action"]
-        == "continue"
-    )
-
+    # The continuation-persistence half of this test exercised
+    # `_persist_continuation_decision`, which 3ec69c7f removed together with
+    # the continuation-claim protocol; the name is kept so the AR-354 record
+    # and the AR-366 citation still resolve. The disabled-runtime and
+    # constructor matrix below is what remains under test.
     monkeypatch.setattr("agency_runtime.core.runtime_control.master_enabled", lambda: False)
     disabled_outbound = node_bridge._runtime_disabled_result(
         {"outboundPayload": "", "finalResponse": "draft"}, "outbound_gate"
@@ -1030,10 +1056,12 @@ def test_openclaw_persistence_runtime_disabled_and_constructor_matrix(monkeypatc
 
     monkeypatch.setattr("agency_runtime.core.runtime_control.master_enabled", lambda: True)
     monkeypatch.setattr(node_bridge, "OpenClawAdapter", BrokenAdapter)
-    assert (
-        node_bridge.handle({"action": "pre_verify", "finalResponse": "draft"})["action"]
-        == "continue"
-    )
+    # 3ec69c7f turned the verification-failure envelope from a revision
+    # request ("continue") into a non-corrective terminal; an adapter that
+    # cannot be constructed on pre_verify still answers with that envelope.
+    unavailable = node_bridge.handle({"action": "pre_verify", "finalResponse": "draft"})
+    assert unavailable == node_bridge._revision()
+    assert unavailable["terminalStatus"] == "verification_failed"
 
     adapter = SimpleNamespace(runtime_enabled=lambda: False, store=object())
     assert node_bridge.handle({"action": "preflight", "userMessage": "work"}, adapter=adapter) == {

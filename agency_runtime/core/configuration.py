@@ -155,6 +155,7 @@ _validate_adapter_entry = _schema._validate_adapter_entry
 _validate_adapters = _schema._validate_adapters
 _TOP_LEVEL_VALIDATORS = _schema._TOP_LEVEL_VALIDATORS
 validate_config_document = _schema.validate_config_document
+is_text_set_path = _patch.is_text_set_path
 
 # Preserve operation helpers for downstream tests and integrations.
 _set_validator = _patch._set_validator
@@ -383,6 +384,7 @@ __all__ = [
     "ConfigurationError",
     "apply_config_operations",
     "config_read_lock",
+    "is_text_set_path",
     "read_config_revision",
     "read_config_state",
     "replace_config_document",

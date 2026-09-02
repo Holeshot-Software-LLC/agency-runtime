@@ -22,6 +22,7 @@ from agency_runtime.core.config import (
 )
 from agency_runtime.core.configuration import (
     apply_config_operations,
+    is_text_set_path,
     read_config_revision,
     read_config_state,
     replace_config_document,
@@ -313,21 +314,42 @@ def _normalize_config_set_value(key: str, value: Any) -> Any:
     return value
 
 
+def _literal_stdin_text(raw_value: str) -> str:
+    """Keep piped text as written, minus the one newline that ends a text stream.
+
+    YAML folds a multi-line plain scalar into one line, which is how a five-line
+    operator policy came back as one (AR-359). A text-valued key never needs YAML
+    to be typed, so its ``--stdin`` bytes are the value: internal line breaks
+    survive, and only the single trailing newline that ``echo`` or a heredoc
+    appends is dropped. The key's own validator still applies its normalization.
+    """
+    if raw_value.endswith("\r\n"):
+        return raw_value[:-2]
+    return raw_value.removesuffix("\n")
+
+
+def _parse_config_set_yaml(raw_value: str) -> Any:
+    """Load one bounded YAML value, reporting any parse failure as a CLI error."""
+    try:
+        return safe_load_bounded(raw_value)
+    except (BoundedYAMLError, yaml.YAMLError) as exc:
+        raise ValueError("config value is not valid YAML") from exc
+
+
 def _plain_config_set_operation(args: argparse.Namespace) -> dict[str, Any]:
     """Parse a bounded non-secret value and build its set operation."""
     if getattr(args, "prompt", False):
         raise ValueError("--prompt and --clear are valid only for secret keys")
-    if getattr(args, "stdin", False) and args.value is not None:
+    from_stdin = bool(getattr(args, "stdin", False))
+    if from_stdin and args.value is not None:
         raise ValueError("provide either a positional value or --stdin, not both")
-    raw_value = (
-        _read_stdin_bounded(limit=MAX_CONFIG_BYTES) if getattr(args, "stdin", False) else args.value
-    )
+    raw_value = _read_stdin_bounded(limit=MAX_CONFIG_BYTES) if from_stdin else args.value
     if raw_value is None:
         raise ValueError("config set requires a value or --stdin")
-    try:
-        parsed_value = safe_load_bounded(raw_value)
-    except (BoundedYAMLError, yaml.YAMLError) as exc:
-        raise ValueError("config value is not valid YAML") from exc
+    if from_stdin and is_text_set_path(args.key):
+        parsed_value: Any = _literal_stdin_text(raw_value)
+    else:
+        parsed_value = _parse_config_set_yaml(raw_value)
     return {
         "op": "set",
         "path": args.key,

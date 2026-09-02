@@ -286,6 +286,47 @@ def test_config_set_operation_validation_and_channels(monkeypatch):
     assert subject._normalize_config_set_value("profile", True) is True
 
 
+def test_config_set_stdin_is_literal_for_text_keys_and_yaml_otherwise(monkeypatch):
+    """AR-359: text-valued keys keep piped line structure; other keys stay YAML."""
+
+    policy = "1. one\n2. two\n3. three\n4. four\n5. five\n"
+    monkeypatch.setattr(subject.sys, "stdin", io.StringIO(policy))
+    operation = subject._plain_config_set_operation(args(key="operator_policy", stdin=True))
+    assert operation == {"op": "set", "path": "operator_policy", "value": policy[:-1]}
+    assert operation["value"].count("\n") == 4
+
+    monkeypatch.setattr(subject.sys, "stdin", io.StringIO("7915\n"))
+    assert (
+        subject._plain_config_set_operation(args(key="dashboard.port", stdin=True))["value"] == 7915
+    )
+
+    # Only the one newline that ends a text stream is dropped; nothing else moves.
+    assert subject._literal_stdin_text("a\n\n") == "a\n"
+    assert subject._literal_stdin_text("a\r\n") == "a"
+    assert subject._literal_stdin_text("a") == "a"
+    # A positional value is still YAML even for a text key.
+    assert subject._plain_config_set_operation(args(key="judge.model", value="123"))["value"] == 123
+
+
+def test_text_set_paths_name_only_text_validators():
+    """Every literal-text path must still be a `config set` path that rejects non-text."""
+
+    from agency_runtime.core.configuration_patch import (
+        _SET_VALIDATORS,
+        TEXT_SET_PATHS,
+        _set_validator,
+        is_text_set_path,
+    )
+
+    assert "operator_policy" in TEXT_SET_PATHS
+    assert set(_SET_VALIDATORS) >= TEXT_SET_PATHS
+    for path in sorted(TEXT_SET_PATHS):
+        assert is_text_set_path(path)
+        with pytest.raises(ValueError):
+            _set_validator(path, 7)
+    assert not is_text_set_path("dashboard.port")
+
+
 def test_config_set_applies_revision_and_reports_effects(monkeypatch, capsys):
     operations = []
     monkeypatch.setattr(subject, "read_config_state", lambda: SimpleNamespace(revision="revision"))

@@ -70,6 +70,10 @@ PRODUCTION_SPINE = (
     # because neither ran here.
     "tests/test_canary_coverage_complete.py",
     "tests/test_complexity_refactors.py",
+    # AR-354: the host-CLI coverage suite and the persistent-host lifecycle
+    # suite sat red on main for weeks because neither ran here.
+    "tests/test_coverage_final_host_cli.py",
+    "tests/test_resident_manager_lifecycle.py",
 )
 
 # Kept identical to the "Run AR-119 matrix evidence" step in ci.yml. That list

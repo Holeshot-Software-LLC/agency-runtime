@@ -1357,9 +1357,17 @@ def test_openclaw_outbound_rejection_preverify_and_native_child_matrix(monkeypat
 
     calls: list[tuple[str, dict[str, Any]]] = []
 
+    # f5b60fde/d04d1d6b: a started receipt is read back after it is recorded
+    # so the plugin learns the work unit the child was bound to, and both
+    # receipts answer with what was recorded instead of an empty object; the
+    # uncorrelated cases still decline without touching the store (AR-354).
     class NativeStore:
         def record_native_child_started(self, **kwargs: Any) -> None:
             calls.append(("started", kwargs))
+
+        def get_native_child_run(self, **kwargs: Any) -> dict[str, Any]:
+            calls.append(("read", kwargs))
+            return {"work_unit_id": "unit"}
 
         def record_native_child_ended(self, **kwargs: Any) -> None:
             calls.append(("ended", kwargs))
@@ -1375,20 +1383,17 @@ def test_openclaw_outbound_rejection_preverify_and_native_child_matrix(monkeypat
         )
         == {}
     )
-    assert (
-        node_bridge._handle_observation_action(
-            native_adapter,
-            {
-                "action": "native_child_started",
-                "workerId": "worker",
-                "nativeRunId": "run",
-            },
-            action="native_child_started",
-            session_id="session",
-            trace_id="trace",
-        )
-        == {}
-    )
+    assert node_bridge._handle_observation_action(
+        native_adapter,
+        {
+            "action": "native_child_started",
+            "workerId": "worker",
+            "nativeRunId": "run",
+        },
+        action="native_child_started",
+        session_id="session",
+        trace_id="trace",
+    ) == {"recorded": True, "launchBound": False, "workUnitId": "unit"}
     assert (
         node_bridge._handle_observation_action(
             native_adapter,
@@ -1399,22 +1404,19 @@ def test_openclaw_outbound_rejection_preverify_and_native_child_matrix(monkeypat
         )
         == {}
     )
-    assert (
-        node_bridge._handle_observation_action(
-            native_adapter,
-            {
-                "action": "native_child_ended",
-                "workerId": "worker",
-                "nativeRunId": "run",
-                "outcome": "completed",
-            },
-            action="native_child_ended",
-            session_id="session",
-            trace_id="trace",
-        )
-        == {}
-    )
-    assert [name for name, _kwargs in calls] == ["started", "ended"]
+    assert node_bridge._handle_observation_action(
+        native_adapter,
+        {
+            "action": "native_child_ended",
+            "workerId": "worker",
+            "nativeRunId": "run",
+            "outcome": "completed",
+        },
+        action="native_child_ended",
+        session_id="session",
+        trace_id="trace",
+    ) == {"recorded": True}
+    assert [name for name, _kwargs in calls] == ["started", "read", "ended"]
 
 
 @pytest.mark.parametrize(
