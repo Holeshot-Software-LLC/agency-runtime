@@ -1,6 +1,6 @@
 ---
 title: "AR-356: Disclose fail-open staffing honestly in the turn capsule"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-09-01
 updated: 2026-09-02
@@ -113,14 +113,14 @@ scoring the requested one).
 
 ## Verification status (2026-09-02)
 
-The AR-361 isolated verifier judged criteria 1 and 3 `satisfied` and
-criterion 2 `absent` (record: `docs/roadmap/acceptance/issue-AR-356.md`):
-the cited tests prove the marker is absent from a staffed capsule and that
-the staffed builder never imports the disclosure module, but nothing cited
-pins the prior kernel hash or prior capsule bytes. The status returns to
-`in_progress` until a follow-up pins the kernel hash literal
-(`62c94d87…`) and the staffed-capsule assembly in a regression test and the
-criterion is re-verified against that candidate.
+First pass of the AR-361 isolated verifier (candidate `9a940eb0`): criteria
+1 and 3 `satisfied`, criterion 2 `absent` — nothing cited pinned the prior
+kernel hash or prior capsule bytes, so the status went back to
+`in_progress`. `54755999` then pinned the kernel hash literal
+(`test_kernel_hash_literal_is_the_one_bound_before_the_disclosure_landed`)
+and the record was re-pointed at that candidate with the staffed-capsule
+assembly cited; all three criteria are now `satisfied`
+(`docs/roadmap/acceptance/issue-AR-356.md`).
 
 ## Dependencies
 
