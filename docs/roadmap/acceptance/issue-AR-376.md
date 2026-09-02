@@ -11,17 +11,17 @@ supersedes: []
 superseded_by: null
 type: acceptance-verification
 issue_id: AR-376
-candidate_commit: pending
+candidate_commit: 8447eb76092327d22d3e10fab57e4ecc3679c32b
 evidence_cutoff: 2026-09-02
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/550
 ---
 
 # AR-376 acceptance verification record
 
-Pending draft. Builder evidence for the bounded hiring workforce projection,
-cited against the working tree; the record freezes to the implementation
-commit once that commit is an ancestor of `HEAD`, and verification rows are
-written only then.
+Builder evidence for the bounded hiring workforce projection, cited against
+the AR-376 implementation commit `8447eb76`; every verdict below comes from
+one isolated single-check verifier run (`scripts/verify_acceptance.py`, codex
+transport) that saw only that criterion and its own builder rows.
 
 ## Builder evidence
 
@@ -45,3 +45,6 @@ written only then.
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
+| 1 | satisfied | `AR-376.1-20260902-45a220f7` | `a33d38f90bd718539ccae0fe8f279f25066f15e25d5a4b4c0779e41d9de587b3` | 2026-09-02 | The excerpts show a 12-field projection with a comment tying every field to duplicate detection or amend-overlap, applied to all contracts in roster order; tests verify disabled workers and both hiring prompts receive it. |
+| 2 | satisfied | `AR-376.2-20260902-f79c86c6` | `3b86bc04d9949e3e5d808b33b0b5f30c8a8af0dc9aa548603eb28cd412ffd416` | 2026-09-02 | The cited evidence file records 291 workers, 115,745 to 44,067 prompt tokens, 441,982 to 208,654 bytes, a 2.63x reduction, and states both payloads used the same unit, gap, system prompt, and route. |
+| 3 | satisfied | `AR-376.3-20260902-c32a1ffb` | `3859669726e18c91c67b6c739f0ea0ddeb14d198f47bf4c27af3ff90659a0316` | 2026-09-02 | The cited excerpts show four passing tests pinning the exact projection fields, duplicate-rule axes, dropped contract fields, all workers including disabled, and exclusion of incumbent revision identity from both prompts. |

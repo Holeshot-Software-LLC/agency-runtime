@@ -1,6 +1,6 @@
 ---
 title: "AR-376: Hiring sends every worker's full contract, 132k tokens per call"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-09-02
 updated: 2026-09-02
