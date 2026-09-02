@@ -13,25 +13,21 @@ from __future__ import annotations
 
 from typing import Final
 
+from agency_runtime.core.header.response_contract import SNAPSHOT_VALUES_ONLY_NOTE
+
 HEADER_SNAPSHOT_VERSION: Final[int] = 1
 
+# AR-357: a snapshot carries values, never a requirement. Each instruction says
+# so explicitly, because the earlier "supersedes this one" wording read as a
+# fresh contract per observation and let the turn's stated expectation drift
+# from what the finalizer actually checks.
 HEADER_SNAPSHOT_INSTRUCTIONS: Final[dict[str, str]] = {
     "INITIAL": (
-        "Start each substantive progress update and the final parent response "
-        "with these exact five lines, unchanged, then add the response body. "
-        "A later Agency header snapshot for this turn supersedes this one."
+        "These are this turn's current header values, from Store evidence. "
+        f"{SNAPSHOT_VALUES_ONLY_NOTE}"
     ),
-    "UPDATED": (
-        "Agency recorded the preceding tool observation. Start the next "
-        "substantive or final parent response with these exact five lines, "
-        "unchanged, then add the response body. A later Agency header snapshot "
-        "for this turn supersedes this one."
-    ),
-    "FINAL": (
-        "The native wait completed. Start the next substantive or final parent "
-        "response with these exact five lines, unchanged, then add the response "
-        "body. This is current-turn Store evidence, not a suggested draft."
-    ),
+    "UPDATED": (f"Agency recorded the preceding tool observation. {SNAPSHOT_VALUES_ONLY_NOTE}"),
+    "FINAL": (f"The native wait completed. {SNAPSHOT_VALUES_ONLY_NOTE}"),
 }
 
 

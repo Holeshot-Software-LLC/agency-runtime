@@ -321,12 +321,15 @@ def test_codex_user_prompt_maps_to_native_additional_context() -> None:
         }
     )
 
-    assert result == {
-        "hookSpecificOutput": {
-            "hookEventName": "UserPromptSubmit",
-            "additionalContext": "Use the security reviewer.",
-        }
-    }
+    output = result["hookSpecificOutput"]
+    assert output["hookEventName"] == "UserPromptSubmit"
+    context = output["additionalContext"]
+    assert context.startswith("Use the security reviewer.\n\n")
+    # AR-357: this fake store cannot render a header, so the turn is told the
+    # values are unavailable instead of being left to reuse an earlier turn's.
+    assert "[AGENCY RESPONSE CONTRACT v1]" in context
+    assert "[AGENCY INITIAL HEADER SNAPSHOT v1]" in context
+    assert "Do not reuse header values from an earlier turn" in context
     origin_receipt = adapter.preflight_calls[0].pop("origin_receipt")
     assert origin_receipt.origin == "external_user"
     assert origin_receipt.host == "codex"

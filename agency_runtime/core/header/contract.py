@@ -45,6 +45,21 @@ _EMPTY_VALUES = {
 _EVIDENCE_CODE = re.compile(r"^[a-z0-9][a-z0-9_.:+-]{0,95}$")
 _MAX_HEADER_CODES = 12
 
+# AR-357: the ``missing`` vocabulary, classified once. A rejection may only
+# name requirements the turn-start [AGENCY RESPONSE CONTRACT v1] delivered --
+# the five header fields and, for the public finalizer, a non-empty body.
+# ``VERIFIER_EVIDENCE_CODES`` are the verifier reporting that it could not read
+# Agency's own evidence; rule 8 makes that Agency's problem, never a finding
+# about the response, so those codes turn a decision into
+# ``verification_unavailable`` instead of a rejection. Correlation codes are a
+# definite answer from the store about turn identity (terminal, misbound, or
+# unnamed trace), so they stay precise and never publish an altered replay.
+DELIVERED_REQUIREMENTS: tuple[str, ...] = (*_REQUIRED_KEYS, "response_body", "draft_text")
+CORRELATION_REQUIREMENTS: tuple[str, ...] = ("session_id", "trace_id", "correlation")
+VERIFIER_EVIDENCE_CODES: tuple[str, ...] = ("evidence_verification", "specialist_activation")
+_MAX_MISSING_ITEMS = 64
+_MAX_MISSING_CHARS = 128
+
 
 class EvidenceCorrelationError(ValueError):
     """Raised when authoritative header evidence cannot identify one turn."""
@@ -58,13 +73,63 @@ class CompletionPolicyViolation(TypedDict):
 
 
 class CompletionPolicyDecision(TypedDict, total=False):
-    """Internal accept-or-revise decision bound to one evidence revision."""
+    """Internal accept-or-revise decision bound to one evidence revision.
+
+    ``verification_unavailable`` marks a ``continue`` that is Agency's own
+    blindness rather than a verdict: the verifier could not read this turn's
+    evidence, ``missing`` is empty because nothing the model was told about is
+    missing, and every host publishes the response unverified (AR-357).
+    """
 
     action: str
     message: str
     missing: list[str]
     evidence_revision: int
     delegation_strength: str
+    verification_unavailable: bool
+
+
+def split_missing_requirements(missing: object) -> tuple[list[str], list[str]]:
+    """Split one ``missing`` list into contract-named requirements and other codes.
+
+    Bounded and order-preserving; non-string, blank, and duplicate entries are
+    dropped. The first list is what a rejection may carry; the second is
+    Agency-side or caller-side diagnostics that never describe the response.
+    """
+
+    if not isinstance(missing, list):
+        return [], []
+    delivered: list[str] = []
+    other: list[str] = []
+    seen: set[str] = set()
+    for item in missing[:_MAX_MISSING_ITEMS]:
+        if not isinstance(item, str):
+            continue
+        name = item.strip()[:_MAX_MISSING_CHARS]
+        if not name or name in seen:
+            continue
+        seen.add(name)
+        (delivered if name in DELIVERED_REQUIREMENTS else other).append(name)
+    return delivered, other
+
+
+def requirement_labels(missing: object) -> list[str]:
+    """Return the contract labels, in header order, for the requirements in ``missing``."""
+
+    delivered, _other = split_missing_requirements(missing)
+    labels = [label for key, label in HEADER_FIELDS if key in delivered]
+    if any(name in {"response_body", "draft_text"} for name in delivered):
+        labels.append("a non-empty body")
+    return labels
+
+
+def verification_is_unavailable(missing: object) -> bool:
+    """Return whether ``missing`` only says the verifier could not read evidence."""
+
+    delivered, other = split_missing_requirements(missing)
+    if delivered or not other:
+        return False
+    return all(name in VERIFIER_EVIDENCE_CODES for name in other)
 
 
 def _validate_snapshot_collections(snapshot: Mapping[str, Any]) -> None:
@@ -1048,11 +1113,7 @@ def evaluate_completion_policy(
         )
     except EvidenceCorrelationError as error:
         violation = _completion_snapshot_violation(error)
-        return {
-            "action": "continue",
-            "message": violation["message"],
-            "missing": violation["missing"],
-        }
+        return _unverifiable_decision(violation)
     violation = validate_completion_policy(
         response_text,
         session_id=session_id,
@@ -1061,6 +1122,10 @@ def evaluate_completion_policy(
         model=model,
         evidence_snapshot=snapshot,
     )
+    if violation is not None and verification_is_unavailable(violation["missing"]):
+        decision = _unverifiable_decision(violation)
+        decision["evidence_revision"] = int(snapshot["evidence_revision"])
+        return decision
     decision: CompletionPolicyDecision = {
         "action": "continue" if violation is not None else "accept",
         "missing": violation["missing"] if violation is not None else [],
@@ -1071,6 +1136,29 @@ def evaluate_completion_policy(
         if "delegation_execution" in violation["missing"]:
             decision["delegation_strength"] = "strongly_preferred"
     return decision
+
+
+def _unverifiable_decision(violation: CompletionPolicyViolation) -> CompletionPolicyDecision:
+    """Translate a violation into the decision every host reads (AR-357).
+
+    A violation that names only verifier evidence codes becomes an explicit
+    ``verification_unavailable`` decision with an empty ``missing`` list: the
+    model is never told it failed a requirement it could not have known about.
+    Correlation violations keep their precise code because the store answered.
+    """
+
+    if verification_is_unavailable(violation["missing"]):
+        return {
+            "action": "continue",
+            "message": violation["message"],
+            "missing": [],
+            "verification_unavailable": True,
+        }
+    return {
+        "action": "continue",
+        "message": violation["message"],
+        "missing": violation["missing"],
+    }
 
 
 def fill_header_fields(
@@ -1203,7 +1291,10 @@ def finalize_header(
 
 
 __all__ = [
+    "CORRELATION_REQUIREMENTS",
+    "DELIVERED_REQUIREMENTS",
     "HEADER_FIELDS",
+    "VERIFIER_EVIDENCE_CODES",
     "CompletionPolicyDecision",
     "CompletionPolicyViolation",
     "EvidenceCorrelationError",
@@ -1214,6 +1305,9 @@ __all__ = [
     "format_header",
     "parse_header",
     "read_completion_evidence_snapshot",
+    "requirement_labels",
+    "split_missing_requirements",
     "validate_completion_policy",
     "validate_header",
+    "verification_is_unavailable",
 ]

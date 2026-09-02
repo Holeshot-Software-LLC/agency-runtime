@@ -1605,8 +1605,14 @@ class _NominationSemantics:""",
             "model-visible correction prompt."
         ),
         source_path="agency_runtime/adapters/hooks.py",
-        before="        return self._reject_completion(message, retry=True)",
-        after="        return self._reject_completion(message, retry=False)",
+        before=(
+            "        return self._reject_completion("
+            "terminal_rejection_reason(action, missing), retry=True)"
+        ),
+        after=(
+            "        return self._reject_completion("
+            "terminal_rejection_reason(action, missing), retry=False)"
+        ),
         test_node=(
             "tests/test_host_hooks.py::"
             "test_identical_codex_invalid_stop_is_terminal_and_exactly_replayed"

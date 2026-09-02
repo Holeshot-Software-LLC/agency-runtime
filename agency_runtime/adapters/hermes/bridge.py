@@ -19,6 +19,10 @@ from agency_runtime.core.bounded_json import BoundedJSONError, safe_load_bounded
 from agency_runtime.core.config import load_config
 from agency_runtime.core.configuration_persistence import resolve_config_path
 from agency_runtime.core.header.finalize import response_hash
+from agency_runtime.core.header.response_contract import (
+    SNAPSHOT_VALUES_ONLY_NOTE,
+    response_contract_context,
+)
 from agency_runtime.core.host_control import handle_host_control_command
 from agency_runtime.core.store.sqlite import Store
 
@@ -84,19 +88,25 @@ def _header_snapshot_context(
         ValueError,
     ):
         return ""
+    # AR-357: the contract is stated once, verbatim, and the snapshot below it
+    # carries values only. The old instruction promised "seven lines" the
+    # finalizer had long stopped checking, which is exactly the drift the
+    # canonical statement exists to end. The Hermes delivery rules stay here
+    # because they are how this host emits a response, not what Agency checks.
     return (
-        "[AGENCY INITIAL HEADER SNAPSHOT v1]\n"
-        "Use these exact seven lines for substantive progress until Agency evidence "
-        "changes. Immediately before the natural final response, invoke the local "
-        "finalizer exactly once. If `agency_finalize` is visible, call it directly with "
-        "only draft_text, kept at or below 3,000 characters. If `tool_search` is visible "
+        f"{response_contract_context()}\n"
+        "[AGENCY HERMES DELIVERY RULES]\n"
+        "Immediately before the natural final response, invoke the local finalizer "
+        "exactly once. If `agency_finalize` is visible, call it directly with only "
+        "draft_text, kept at or below 3,000 characters. If `tool_search` is visible "
         "instead, call it once with query=`agency_finalize`, then invoke the discovered "
         "tool with only draft_text. Otherwise call Hermes `tool_call` once with "
         "name=`agency_finalize` and arguments containing only draft_text. Do not use "
-        "`tool_describe`. Emit the tool result byte-for-byte. That "
-        "local "
-        "tool constructs the first visible header from current Store evidence. Never "
-        "guess changed values and never wait for a host correction.\n"
+        "`tool_describe`. Emit the tool result byte-for-byte. That local tool "
+        "constructs the first visible header from current Store evidence. Never guess "
+        "changed values and never wait for a host correction.\n"
+        "[AGENCY INITIAL HEADER SNAPSHOT v1]\n"
+        f"{SNAPSHOT_VALUES_ONLY_NOTE}\n"
         f"{header}"
     )
 

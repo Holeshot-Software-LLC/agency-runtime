@@ -1112,17 +1112,15 @@ if (registeredToolResultMiddlewares.length !== 1) process.exit(234);
 const registration = registeredToolResultMiddlewares[0];
 if (JSON.stringify(registration.options?.runtimes) !== JSON.stringify(["openclaw"])) process.exit(235);
 toolHeaderContext = [
-  "[AGENCY FIRST-PASS FINALIZATION CONTRACT]",
-  "MANDATORY: the first and only natural final response must begin with the latest exact Store-backed header snapshot for this turn.",
+  "[AGENCY OPENCLAW DELIVERY RULES]",
+  "Emit one natural final response beginning with the header lines below. Do not call a finalizer tool, do not emit NO_REPLY, and never guess changed values. There is no correction pass.",
   "[AGENCY UPDATED HEADER SNAPSHOT v2]",
-  "Copy the exact five header lines below byte-for-byte as the first lines of your natural final response. The newest snapshot for this turn supersedes every earlier snapshot. After any tool call, use the latest [AGENCY UPDATED HEADER SNAPSHOT v2] appended to that tool result. Do not call a finalizer tool, do not emit NO_REPLY, and never guess changed values.",
+  "Values only; the contract stated at turn start is unchanged. Use these newest values.",
   "Agency/Agencies loaded: agency-steward",
   "Agency/Agencies delegated: none",
   "Skills loaded: openclaw-operations",
   "Actual Model selected: requested execution alias: task-general",
   "Recruited via: deterministic",
-  "[AGENCY FINALIZATION GATE]",
-  "Emit one natural final response from the latest snapshot. There is no correction pass.",
 ].join("\\n");
 const nativeText = "x".repeat(100000);
 const originalResult = {

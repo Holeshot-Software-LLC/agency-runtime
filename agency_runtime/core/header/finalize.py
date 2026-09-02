@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import warnings
 from collections.abc import Mapping
 from hashlib import sha256
@@ -14,20 +15,38 @@ from .contract import (
     format_header,
     parse_header,
     read_completion_evidence_snapshot,
+    requirement_labels,
     validate_completion_policy,
     validate_header,
+    verification_is_unavailable,
 )
 
 
-class FinalizationResult(TypedDict):
+class _FinalizationOutcome(TypedDict):
     action: str
     text: str
     missing: list[str]
 
 
+class FinalizationResult(_FinalizationOutcome, total=False):
+    """One finalizer outcome.
+
+    ``verification_unavailable`` marks a ``continue`` in which Agency could not
+    read this turn's evidence. ``missing`` is empty there because nothing the
+    caller was told about is missing; the draft should publish unverified
+    rather than be reworked (AR-357, rule 8).
+    """
+
+    verification_unavailable: bool
+
+
 class FinalizationBatchResult(FinalizationResult):
     evidence_receipt: dict[str, Any] | None
 
+
+# One stored JSON array of short requirement codes; anything larger is a
+# corrupt row rather than a rejection this replay should describe.
+_MAX_STORED_MISSING_CHARS = 4096
 
 TERMINAL_ACTION_STATUS = {
     "accept": "completed",
@@ -58,6 +77,54 @@ def _clean(value: Any) -> str:
     if value is None:
         return ""
     return str(value).strip()
+
+
+def _unverifiable_result(draft_text: str) -> FinalizationResult:
+    """Return the ``continue`` shape for a turn whose evidence Agency could not read."""
+
+    return {
+        "action": "continue",
+        "text": draft_text,
+        "missing": [],
+        "verification_unavailable": True,
+    }
+
+
+def stored_missing_requirements(value: object) -> list[str]:
+    """Decode the ``missing`` column of one terminal finalization row.
+
+    The store writes ``json.dumps(missing)`` or NULL, so a replayed rejection
+    has to parse the column to name the same unmet contract lines the original
+    rejection named (AR-357). Anything unparsable is simply no names.
+    """
+
+    if isinstance(value, list):
+        return [item for item in value if isinstance(item, str)]
+    if not isinstance(value, str) or len(value) > _MAX_STORED_MISSING_CHARS:
+        return []
+    try:
+        decoded = json.loads(value)
+    except (TypeError, ValueError):
+        return []
+    if not isinstance(decoded, list):
+        return []
+    return [item for item in decoded if isinstance(item, str)]
+
+
+def terminal_rejection_reason(action: str, missing: object = None) -> str:
+    """Return the host-visible reason for one terminal rejection.
+
+    The fixed outcome sentence alone was what the operator saw on 2026-09-01
+    ("did not satisfy the exact current-turn evidence header contract") with no
+    way to tell which contract line was unmet. Name the unmet lines when the
+    rejection carries any; they are always requirements the turn delivered.
+    """
+
+    message = TERMINAL_OUTCOME_MESSAGES.get(action, "")
+    labels = requirement_labels(missing)
+    if not message or not labels:
+        return message
+    return f"{message} Unmet [AGENCY RESPONSE CONTRACT v1] lines: {', '.join(labels)}."
 
 
 def response_hash(response_text: str) -> str:
@@ -154,6 +221,65 @@ def _correlation_missing(
     return []
 
 
+def _accepted_replay_result(
+    store: Any,
+    session_id: str,
+    trace_id: str,
+    draft_text: str,
+) -> FinalizationResult | None:
+    """Return the result for an exact replay of an already-accepted response.
+
+    ``None`` means this is not a replay and the turn must still be verified.
+    """
+
+    try:
+        replay = accepted_response_run(store, session_id, trace_id, draft_text)
+    except EvidenceCorrelationError:
+        return _unverifiable_result(draft_text)
+    if replay is None:
+        return None
+    if (
+        replay.get("authoritative") is not True
+        or str(replay.get("action") or "") != "accept"
+        or str(replay.get("terminal_status") or "") != "completed"
+        or str(replay.get("status") or "") != "completed"
+    ):
+        return _unverifiable_result(draft_text)
+    return {"action": "accept", "text": draft_text, "missing": []}
+
+
+def _unreadable_snapshot_result(
+    error: EvidenceCorrelationError,
+    draft_text: str,
+) -> FinalizationResult:
+    """Classify one unreadable evidence snapshot (AR-357).
+
+    A correlation failure is a definite answer about turn identity, so it keeps
+    its precise code. Every other unreadable shape -- malformed specialist rows
+    included -- is Agency failing to read the turn, never a requirement the
+    caller was told about and missed.
+    """
+
+    detail = _clean(error)
+    correlation_failure = any(
+        marker in detail
+        for marker in (
+            "session_id is required",
+            "trace_id is required",
+            "trace_id does not identify",
+            "trace_id does not belong",
+            "terminal Agency turn",
+        )
+    )
+    if correlation_failure:
+        return {
+            "action": "continue",
+            "text": draft_text,
+            "missing": ["correlation"],
+        }
+    return _unverifiable_result(draft_text)
+
+
 def finalize_response(
     draft_text: str,
     trace_metadata: Mapping[str, Any] | None = None,
@@ -164,9 +290,10 @@ def finalize_response(
 ) -> FinalizationResult:
     """Apply the Agency header finalization gate.
 
-    Returns ``action='accept'`` when the response is finalizable, ``rewrite``
-    when any of the seven required header fields remain missing after attempted
-    auto-fill, and ``continue`` when there is no substantive draft body yet.
+    Returns ``action='accept'`` when the response is finalizable and
+    ``continue`` when a stated requirement is unmet, when there is no
+    substantive draft body yet, or -- with ``verification_unavailable`` set and
+    an empty ``missing`` -- when Agency could not read this turn's evidence.
     A host whose terminal boundary binds a richer outbound envelope may set
     ``commit_terminal=False`` while constructing the response, but it must
     atomically commit that complete envelope before delivery.
@@ -186,27 +313,9 @@ def finalize_response(
             "text": draft_text,
             "missing": correlation_missing,
         }
-    try:
-        replay = accepted_response_run(store, session_id, trace_id, draft_text)
-    except EvidenceCorrelationError:
-        return {
-            "action": "continue",
-            "text": draft_text,
-            "missing": ["evidence_verification"],
-        }
-    if replay is not None:
-        if (
-            replay.get("authoritative") is not True
-            or str(replay.get("action") or "") != "accept"
-            or str(replay.get("terminal_status") or "") != "completed"
-            or str(replay.get("status") or "") != "completed"
-        ):
-            return {
-                "action": "continue",
-                "text": draft_text,
-                "missing": ["evidence_verification"],
-            }
-        return {"action": "accept", "text": draft_text, "missing": []}
+    accepted_replay = _accepted_replay_result(store, session_id, trace_id, draft_text)
+    if accepted_replay is not None:
+        return accepted_replay
     try:
         evidence_snapshot = read_completion_evidence_snapshot(
             store,
@@ -214,28 +323,7 @@ def finalize_response(
             trace_id,
         )
     except EvidenceCorrelationError as error:
-        detail = _clean(error)
-        if "specialist activation" in detail:
-            return {
-                "action": "continue",
-                "text": draft_text,
-                "missing": ["specialist_activation"],
-            }
-        correlation_failure = any(
-            marker in detail
-            for marker in (
-                "session_id is required",
-                "trace_id is required",
-                "trace_id does not identify",
-                "trace_id does not belong",
-                "terminal Agency turn",
-            )
-        )
-        return {
-            "action": "continue",
-            "text": draft_text,
-            "missing": ["correlation" if correlation_failure else "evidence_verification"],
-        }
+        return _unreadable_snapshot_result(error, draft_text)
 
     if not _clean(draft_text):
         result: FinalizationResult = {
@@ -265,17 +353,20 @@ def finalize_response(
             evidence_snapshot=evidence_snapshot,
         )
     except EvidenceCorrelationError as error:
-        result = {
-            "action": "continue",
-            "text": draft_text,
-            "missing": (
-                ["specialist_activation"]
+        # The observation row keeps the verifier's own diagnostic code; the
+        # result returned to the caller names no requirement (AR-357).
+        _record_finalization(
+            store,
+            trace_id,
+            host,
+            "continue",
+            [
+                "specialist_activation"
                 if "specialist activation" in _clean(error)
-                else ["evidence_verification"]
-            ),
-        }
-        _record_finalization(store, trace_id, host, result["action"], result["missing"])
-        return result
+                else "evidence_verification"
+            ],
+        )
+        return _unverifiable_result(draft_text)
     header = format_header(fields)
     text = f"{header}\n\n{body}" if body else header
 
@@ -299,10 +390,13 @@ def finalize_response(
             evidence_snapshot=evidence_snapshot,
         )
         if violation is not None:
+            if verification_is_unavailable(violation["missing"]):
+                _record_finalization(store, trace_id, host, "continue", violation["missing"])
+                return _unverifiable_result(draft_text)
             action = "continue"
             missing = violation["missing"]
 
-    result = {"action": action, "text": text, "missing": missing}
+    result: FinalizationResult = {"action": action, "text": text, "missing": missing}
     if action == "accept" and commit_terminal:
         commit_failure = _commit_terminal_finalization(
             store,
@@ -375,12 +469,15 @@ def finalize_response_batch(
         finalizer=finalize_in_transaction,
     )
     finalization = dict(envelope["finalization"])
-    return {
+    result: FinalizationBatchResult = {
         "action": finalization["action"],
         "text": finalization["text"],
         "missing": list(finalization["missing"]),
         "evidence_receipt": envelope["receipt"],
     }
+    if finalization.get("verification_unavailable") is True:
+        result["verification_unavailable"] = True
+    return result
 
 
 def finalize(
@@ -486,5 +583,7 @@ __all__ = [
     "finalize_response",
     "finalize_response_batch",
     "response_hash",
+    "stored_missing_requirements",
+    "terminal_rejection_reason",
     "terminal_response_run",
 ]
