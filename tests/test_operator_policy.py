@@ -185,6 +185,49 @@ def test_configured_policy_reaches_the_turn_after_agencys_own_frame() -> None:
     assert context.index(RESIDENT_MANAGER_KERNEL) < context.index(OPERATOR_POLICY_HEADER)
 
 
+@pytest.mark.parametrize("host", ("codex", "claude", "hermes", "openclaw"))
+def test_policy_reaches_staffed_and_unstaffed_turns_on_every_host(host: str) -> None:
+    """AR-355: the working agreements ride every turn on every host.
+
+    A trivial turn takes the ready-recipe path; a substantive turn with no
+    inference configured fails open. Both capsules carry the operator policy
+    after Agency's own frame, on each of the four hosts.
+    """
+
+    from agency_runtime.adapters.claude.wrapper import ClaudeAdapter
+    from agency_runtime.adapters.codex.wrapper import CodexAdapter
+    from agency_runtime.adapters.hermes.plugin import HermesAdapter
+    from agency_runtime.adapters.openclaw.plugin import OpenClawAdapter
+
+    adapters = {
+        "codex": CodexAdapter,
+        "claude": ClaudeAdapter,
+        "hermes": HermesAdapter,
+        "openclaw": OpenClawAdapter,
+    }
+    with tempfile.TemporaryDirectory() as tmpdir:
+        store = Store(Path(tmpdir) / f"{host}-policy.db")
+        config = dataclasses.replace(AgencyConfig(), operator_policy=POLICY)
+        adapter = adapters[host](store=store)
+        staffed = adapter.build_preflight_context(
+            f"{host}-policy-session", "ok", trace_id=f"{host}-staffed", config=config
+        )
+        unstaffed = adapter.build_preflight_context(
+            f"{host}-policy-session",
+            "Investigate this unusual request thoroughly and produce a durable implementation.",
+            trace_id=f"{host}-unstaffed",
+            config=config,
+        )
+
+    assert staffed is not None and unstaffed is not None
+    assert staffed["routing"]["status"] != "no_specialist_fail_open"
+    assert unstaffed["routing"]["status"] == "no_specialist_fail_open"
+    for result in (staffed, unstaffed):
+        context = str(result["context"])
+        assert POLICY in context
+        assert context.index(RESIDENT_MANAGER_KERNEL) < context.index(OPERATOR_POLICY_HEADER)
+
+
 def test_unset_policy_adds_nothing_at_all_to_a_turn() -> None:
     """Agency ships no opinion about anyone's conventions."""
 
