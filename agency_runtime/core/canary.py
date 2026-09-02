@@ -225,7 +225,10 @@ def _read_control_without_writes(db_path: Path, host: str) -> dict[str, Any]:
 
 
 def _default_inspector(host: str) -> dict[str, Any]:
-    return inspect_host_installations(hosts=[host])[0]
+    # AR-368: this inspection runs the host, and Claude Code rewrites its own
+    # npm tree group-writable on every run, so the chain must be normalized
+    # here -- immediately before the probe reads it -- not only at install.
+    return inspect_host_installations(hosts=[host], normalize_trust_chains=True)[0]
 
 
 # Credential-isolated backend compatibility surface.

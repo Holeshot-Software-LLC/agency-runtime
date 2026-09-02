@@ -125,6 +125,12 @@ def _isolate_doctor_inventory_failure(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(doctor, "_provider_validation_map", lambda _cfg: {})
     monkeypatch.setattr(doctor, "_judge_checks", lambda *_args: [])
     monkeypatch.setattr(doctor, "_provider_chain_checks", lambda *_args: [])
+    # These assertions are about one inventory failure's status, so every check
+    # that reads this machine is isolated too. Without this the verdict depends
+    # on the operator's recorded battery outcomes and trust-chain modes, which
+    # made the suite fail on a box whose last battery failed.
+    monkeypatch.setattr(doctor, "_harness_battery_checks", lambda: [])
+    monkeypatch.setattr(doctor, "_trust_chain_checks", lambda **_kwargs: [])
     monkeypatch.setattr(doctor, "_http_check", lambda *_args, **_kwargs: (False, "offline"))
     monkeypatch.setattr(
         doctor,

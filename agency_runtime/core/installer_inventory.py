@@ -891,6 +891,43 @@ def _apply_codex_managed_policy_projection(result: dict[str, Any]) -> None:
     )
 
 
+def _normalized_chain_evidence(
+    host: str,
+    executable: str | None,
+    home_dir: str | Path | None,
+) -> str | None:
+    """Repair this host's own trust chains right before an executing probe (AR-368).
+
+    Claude Code rewrites its npm package tree group-writable on every
+    invocation, so a chain normalized at install time is broken again by the
+    first probe that runs the host -- measured 2026-09-02, ctime moving to each
+    invocation. Repairing here, immediately before the probe, is the only point
+    where the chain is provably trusted when it is read. The repair is the same
+    bounded, owner-only, registry-limited one AR-358 shipped, and it is recorded
+    as evidence so it is never silent.
+    """
+
+    try:
+        from agency_runtime.core.trust_chain_repair import (
+            TRUST_CHAIN_HOSTS,
+            repair_trust_chains,
+            scan_trust_chains,
+        )
+
+        if host not in TRUST_CHAIN_HOSTS:
+            return None
+        inputs = {"home_dir": home_dir, "executables": {host: executable}}
+        findings = scan_trust_chains(host, **inputs)
+        if not findings:
+            return None
+        report = repair_trust_chains(findings, consent=True, **inputs)
+    except Exception:
+        return "trust-chain:unrepairable"
+    if not report.applied:
+        return "trust-chain:unrepairable"
+    return f"trust-chain:normalized:{report.changed}"
+
+
 def _inspect_host(
     host: str,
     *,
@@ -899,15 +936,19 @@ def _inspect_host(
     command_runner: CommandRunner | None,
     probe_runtime: bool,
     can_execute: bool,
+    normalize_trust_chains: bool = False,
 ) -> dict[str, Any]:
     state = _initial_inspection(
         host,
         home_dir=home_dir,
         binary_resolver=binary_resolver,
     )
+    normalized: str | None = None
     if host == "zcode":
         _probe_zcode_config(state, home_dir=home_dir)
     elif state.executable and can_execute:
+        if normalize_trust_chains:
+            normalized = _normalized_chain_evidence(host, state.executable, home_dir)
         _probe_native_host(
             state,
             home_dir=home_dir,
@@ -932,6 +973,8 @@ def _inspect_host(
         status = "stale"
         stale_reasons = [*stale_reasons, "launcher_artifacts"]
         attestation = None
+    if normalized is not None:
+        state.evidence.append(normalized)
     if status != "absent":
         state.evidence.append(f"canary-attestation:{status}")
     result = _serialize_inspection(
@@ -1002,6 +1045,7 @@ def inspect_host_installations(
     command_runner: CommandRunner | None = None,
     probe_runtime: bool = False,
     hosts: Iterable[str] | None = None,
+    normalize_trust_chains: bool = False,
 ) -> list[dict[str, Any]]:
     """Inspect hosts concurrently and return results in canonical host order.
 
@@ -1019,6 +1063,7 @@ def inspect_host_installations(
         "command_runner": command_runner,
         "probe_runtime": probe_runtime,
         "can_execute": can_execute,
+        "normalize_trust_chains": normalize_trust_chains,
     }
     if len(selected_hosts) == 1:
         return [_safe_inspect_host(selected_hosts[0], **kwargs)]
@@ -1047,6 +1092,7 @@ def inspect_host_installation(
     binary_resolver: BinaryResolver | None = None,
     command_runner: CommandRunner | None = None,
     probe_runtime: bool = False,
+    normalize_trust_chains: bool = False,
 ) -> dict[str, Any]:
     """Inspect one host with the same evidence semantics as the bulk API."""
     return inspect_host_installations(
@@ -1055,4 +1101,5 @@ def inspect_host_installation(
         command_runner=command_runner,
         probe_runtime=probe_runtime,
         hosts=(host,),
+        normalize_trust_chains=normalize_trust_chains,
     )[0]

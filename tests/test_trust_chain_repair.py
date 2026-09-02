@@ -253,3 +253,59 @@ def test_doctor_cli_passes_consent_through(monkeypatch: pytest.MonkeyPatch) -> N
         dependencies=dependencies,  # type: ignore[arg-type]
     )
     assert seen["fix_perms"] is False
+
+
+def test_an_executing_probe_normalizes_the_chain_first(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """AR-368: the host rewrites its own tree, so the probe must repair first.
+
+    Claude Code chmods its npm package tree group-writable on every
+    invocation (measured 2026-09-02: the tree's ctime moved to each probe),
+    so an install-time repair is already undone by the time the canary reads
+    the chain. Normalization therefore runs immediately before the executing
+    probe, and only when the caller asked for it.
+    """
+
+    from agency_runtime.core import installer_inventory
+
+    tree = _npm_tree(tmp_path, "openclaw", "openclaw")
+    tree.chmod(_mode(tree) | stat.S_IWGRP)
+    executable = str(tree / "cli" / "openclaw")
+    observed: list[int] = []
+
+    def _probe(state: object, **_kwargs: object) -> None:
+        observed.append(_mode(tree))
+
+    monkeypatch.setattr(installer_inventory, "_probe_native_host", _probe)
+
+    evidence = installer_inventory._normalized_chain_evidence("openclaw", executable, tmp_path)
+    assert evidence is not None and evidence.startswith("trust-chain:normalized:")
+    assert not _mode(tree) & stat.S_IWGRP
+    # A clean chain records nothing; there is no repair to report.
+    assert installer_inventory._normalized_chain_evidence("openclaw", executable, tmp_path) is None
+    # A host with no registered chains is never touched.
+    assert installer_inventory._normalized_chain_evidence("codex", executable, tmp_path) is None
+
+
+def test_a_read_only_inspection_never_chmods(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """`agency status` and `doctor` inspect; only the canary opts into repair."""
+
+    from agency_runtime.core import installer_inventory
+
+    calls: list[tuple[str, str | None]] = []
+
+    def _record(host: str, executable: str | None, _home: object) -> str | None:
+        calls.append((host, executable))
+        return "trust-chain:normalized:1"
+
+    monkeypatch.setattr(installer_inventory, "_normalized_chain_evidence", _record)
+    monkeypatch.setattr(installer_inventory, "_can_execute_native", lambda **_kwargs: True)
+    monkeypatch.setattr(installer_inventory, "_probe_native_host", lambda *_a, **_k: None)
+
+    installer_inventory.inspect_host_installations(home_dir=tmp_path, hosts=["openclaw"])
+    assert calls == []
