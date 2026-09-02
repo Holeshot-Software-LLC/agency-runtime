@@ -15,6 +15,10 @@ related:
   - docs/roadmap/issue-AR-365-hermes-fail-open-gate-trace-resolution.md
   - docs/roadmap/issue-AR-353-intermittent-staffing-verdict-window-linux.md
   - docs/roadmap/issue-AR-367-fail-open-resident-binding-claim.md
+  - docs/roadmap/issue-AR-368-normalize-trust-chains-before-executing-probes.md
+  - docs/roadmap/issue-AR-357-canonical-response-contract-statement.md
+  - docs/roadmap/issue-AR-358-installer-doctor-trust-chain-self-healing.md
+  - docs/roadmap/issue-AR-366-openclaw-fail-open-withhold.md
   - docs/roadmap/acceptance/README.md
   - docs/worklog/README.md
 supersedes: []
@@ -22,8 +26,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-356
 branch: main
-evidence_commit: c39e1ccf2b7ad579d31ce3fbc704e18bcc80c8e4
-minimum_ledger_commit: 5e5f9dac9132acac3ceecf9503482f706f09a757
+evidence_commit: f9321bdde6bf8dc2e07dae5009d3bdb525259c0f
+minimum_ledger_commit: 48881d1d6af3363941b752753ece264d4b6a3dad
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/426
 ---
@@ -40,99 +44,95 @@ end every turn with exactly one question; no subagents on this account.
 
 ## checkpoint
 
-Main is green on both strict gates at `5e5f9dac` (2026-09-02 ~05:00Z). The
-runtime deployed on this box is still the 2026-09-01 night build
-(`6ba65aa9`, projection carrying kernel v5 + AR-346/365/366); nothing from
-this session is deployed yet. Merged since the previous capsule, each with
-its ledger row: AR-356 (#452, #462), AR-352+AR-360 (#451), AR-363 (#453),
-AR-361 (#457, #459, #460), AR-367 (#465, new p1 defect found live), AR-359+
-AR-354 (#467), AR-353+AR-355 (#469), AR-362 (#473), plus the per-host policy
-proof (#471) and the AR-355 close (#475).
+Main is green on both strict gates at `f9321bdd` (2026-09-02 ~12:35Z) and the
+runtime deployed on this box is that same SHA: venv pip-reinstalled with
+`--no-deps --force-reinstall --no-cache-dir`, all four host plugins
+reinstalled, hermes dashboard restarted, openclaw gateway stopped/installed
+with `--accept-capabilities`/started.
 
-Done with isolated verdicts (AR-361 records under
-`docs/roadmap/acceptance/`): AR-352, AR-355, AR-356, AR-360, AR-361,
-AR-362, AR-363. In progress: AR-353 (Linux measured; Windows half open),
-AR-354 (criterion 2 satisfied; criterion 1 waits on a re-verification
-against a candidate that carries the regenerated pytest evidence file),
-AR-359 (live policy re-set is a deploy step), AR-367 (live box after
-deploy), AR-365/AR-366 (live boxes).
+All ten research lifts are now implemented. Closed this session with
+acceptance records and isolated codex verdicts, tracker issues closed:
+AR-364 (#482, #483, #484, #485, #486, #487), AR-357 (#488..#492), AR-358
+(#494 and its follow-ups). Merged earlier in the goal: AR-352, AR-353,
+AR-355, AR-356, AR-359, AR-360, AR-361, AR-362, AR-363, AR-367.
 
-Live receipts this session: AR-365 observed — `hermes -z` turn 946
-(2026-09-01 23:01:57Z, trace `…:866e938b`) closed `preflight_failed` and the
-full draft was delivered, no block message. AR-366 not yet observed: three
-openclaw probes all staffed. The AR-353 window measured on this box:
-273 turns / 69.2% fail-open in 24 h (84.4% in the last 6 h), dominated by the
-recruiter rejecting its own structured output (`staff_without_safe_team`
-×408, `invalid_candidate` ×166); see `agency evidence staffing`.
+Three defects were found *by* the deploy and fixed in it, all AR-368
+(#500): Claude Code rewrites its own npm tree group-writable on every
+invocation, so AR-358's install-time repair is undone by the next probe
+(chains are now normalized immediately before any executing probe, opt-in so
+`status`/`doctor` stay read-only); `~/.claude/projects` is now a registered
+chain, because the canary proves a delivered child card by reading those
+transcripts; and the claude marketplace registration normalized *after* the
+inventory probes that launch the host. Two doctor tests that were failing on
+main -- they let `run_doctor` read this machine's battery outcomes -- were
+isolated.
 
 ## completed-evidence
 
-- Ten-lift status: AR-360 done, AR-361 done (the gate is live: every done
-  flip needs a record with isolated codex verdicts; grandfather list frozen
-  at AR-346), AR-362 done (both experiments pass live, receipts under
-  `~/.agency-runtime/evidence/chaos/`), AR-363 done (witness manifests;
-  claude wiring measured, other hosts attest their pointer), AR-364 open
-  (worktree has a partial multi-source schema in `roster/bundled.py` only).
-  Scope notes: AR-356 done incl. tool degradation; AR-355 token cost
-  measured (~325 tokens per ready turn); AR-357 open (worktree carries
-  `header/response_contract.py` + partial contract/finalize edits); AR-336/
-  AR-120 routing-eval notes untouched; AR-266 unchanged.
-- Fail-open family: AR-367 fixed and merged (fail-open turns now claim and
-  acknowledge the resident binding; next turn plans `reused`); lifecycle
-  suite green; `test_coverage_final_host_cli.py` and
-  `test_resident_manager_lifecycle.py` joined the fast spine.
-- Measurement tools shipped: `agency evidence staffing`, `agency evidence
-  context-budget`, `agency evidence witness`, `agency chaos run`,
-  `agency battery --trials`.
+- Ten-lift status: AR-360, AR-361, AR-362, AR-363 done; AR-364 done (path A,
+  multi-source audit pipeline, schema-3 manifest, ECC cards pinned at
+  `ca185ef5`, roster 263 -> 265); AR-356 done incl. tool degradation; AR-355
+  measured; AR-357 done; scope notes on AR-120/AR-266/AR-336 recorded and
+  unchanged.
+- Batteries on the deployed build: hermes and openclaw pass (openclaw passes
+  both trials); codex reports `attended_trust_required`; claude fails its
+  canary. Both remaining failures are attended, not code: codex needs a fresh
+  terminal TUI with "Trust all and continue", and claude's live canary now
+  reaches the invocation (the two permission blockers are gone) but reports
+  `host invocation did not complete successfully` and
+  `multiple_child_artifacts`.
+- Live AR-358 receipts: `agency doctor --fix-perms` repaired 29 entries under
+  the Agency marketplaces chain; the openclaw install carried
+  `--accept-capabilities` on both install and enable and came back
+  `loaded=True enabled=True`.
 
 ## exact-blocker
 
-None mechanical. AR-354 criterion 1 needs one more re-verification after
-the regenerated evidence file is on main (its candidate must contain the
-file). AR-366's live box still needs one real fail-open openclaw turn.
+The hermes withhold is destroying real answers and needs an owner decision,
+written up under "Open owner decision" in
+`docs/roadmap/issue-AR-366-openclaw-fail-open-withhold.md`: the mentor bot's
+ready turns close `response_invalid` with all five header lines missing
+(13 such turns against 5 completed in 24 h), so `transform_llm_output`
+replaces the whole reply. The obvious repair was implemented and backed out
+because it hid an open delegation. Three options are recorded; option 2
+needs the delegation guard widened beyond `strongly_preferred` first.
 
 ## same-task-continuity
 
 Continue on `main`; one branch per package in its own worktree under the
-session scratchpad (`wt-ar357`, `wt-ar358`, `wt-ar364` hold partial work,
-uncommitted). Feature PR (single commit) rebase-merged, then a
+session scratchpad. Feature PR (single commit) rebase-merged, then a
 `docs(worklog):` tick PR with the post-merge SHA; done flips land in a
-follow-up docs PR carrying the acceptance record (a commit cannot cite its
-own SHA). Verifier runs use `--provider codex` to spare the Claude window.
-Clear stale `tests/__pycache__` after same-length constant edits.
+follow-up docs PR carrying the AR-361 acceptance record. Verifier runs use
+`--provider codex`. The local spine cannot run under the trusted ruff venv
+(not an OS-protected interpreter, exit 4); run ruff from
+`~/.cache/agency-runtime-ar281-trusted-venv/bin/` and pytest with the system
+`python3` over `WORKFLOW_CONTRACTS + PRODUCTION_SPINE`.
 
 ## next-bounded-work-package
 
-1. AR-354 final re-verification and done flip (candidate = the merge of the
-   regenerated evidence file); then AR-364 (path A: multi-source audit
-   pipeline; the primary roster upstream pinned at `459dce83` per
-   `docs/roster-audit/audit-manifest.json`, ECC cards at `ca185ef5`, MIT),
-   AR-357 (finish contract delivery in hooks/bridges +
-   tests), AR-358 (doctor `--fix-perms`, tests), then the AR-336/AR-120
-   scope notes.
-2. Gates + all four batteries (`agency battery --force --trials 2`), then
-   deploy per AR-337 (venv pip-reinstall of the exact SHA with
-   `--no-deps --force-reinstall --no-cache-dir`, `agency install` + per
-   agent incl. the AR-358 openclaw consent, codex tmux re-trust, hermes
-   single-process restart, openclaw gateway stop/install/start), re-set the
-   live operator policy with its five lines (AR-359), batteries, baseline.
-3. Live verification: herdr tabs for every host CLI (headers, staffing,
-   hiring), the Telegram bots nexus (openclaw) and mentor (hermes), the
-   AR-356 disclosure line and AR-367 `delivery=reused` on a fail-open
-   claude turn, AR-366 on openclaw.
-4. Triage closes with receipts (list below), tracker closes for every done
-   item, registry statuses, and main green on both strict gates.
+1. The hermes owner decision above, then implement whichever option is
+   chosen with the delegation guard it needs.
+2. Finish the claude canary: `host invocation did not complete successfully`
+   and `multiple_child_artifacts` are no longer permission defects and need
+   their own diagnosis; then `agency battery --force --trials 2` and
+   `agency battery --baseline`.
+3. Attended: open a fresh terminal, run `codex`, choose "Trust all and
+   continue" for all 8 Agency hook events, then re-run the codex battery.
+4. Live verification still open: herdr tabs for every host CLI (headers,
+   staffing, hiring) and the Telegram bots nexus (openclaw) and mentor
+   (hermes) end to end.
+5. Triage closes with receipts (list below), and AR-368's remaining box.
 
-Backlog triage — owner-directed dispositions (verify before closing, cite
+Backlog triage -- owner-directed dispositions (verify before closing, cite
 receipts in every close): close with evidence AR-347 #404, AR-337 #362,
 AR-298 #336, AR-265 #317 (finish or waive the last box), AR-127 #151
 (parked until zcode exists, owner sign-off), AR-119 #132 (superseded by the
 inference-first system; file a residual). Verify-then-close-or-finish:
 AR-199 #161 (re-verify open boxes on live codex turns), AR-344 #399 (the
-codex Stop gap is fixed by AR-366 — close after a live fail-open codex turn),
-AR-261 #309 / AR-262 #311 / AR-264 #313, AR-115 #127 (overlaps AR-357).
-Keep open: AR-266 #320, AR-335 #350, AR-336 #353, AR-200/201/207/208/209,
-AR-235/236/250/251, AR-125 #138, AR-178 #153, AR-348..351, AR-353, AR-367.
+codex Stop gap is fixed by AR-366 -- close after a live fail-open codex turn),
+AR-261 #309 / AR-262 #311 / AR-264 #313, AR-115 #127. Keep open: AR-266 #320,
+AR-335 #350, AR-336 #353, AR-200/201/207/208/209, AR-235/236/250/251,
+AR-125 #138, AR-178 #153, AR-348..351, AR-353, AR-366, AR-367, AR-368.
 
 ## verification
 
