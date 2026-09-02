@@ -1,11 +1,12 @@
 ---
 title: "AR-364: Audit two external review cards into the governed roster"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-09-01
 updated: 2026-09-02
 tags: [roster, audit, specialists, review]
 related:
+  - docs/roadmap/acceptance/issue-AR-364.md
   - docs/roadmap/issue-AR-120-normalized-workforce-recruitment-index.md
   - docs/roadmap/issue-AR-336-requalify-the-recruiter-route-for-ordinary-tasks.md
   - docs/roster-audit/batch-ecc-review-review.md
