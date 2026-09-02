@@ -16,11 +16,24 @@ from agency_runtime.core.installer_contracts import (
     BinaryResolver,
     CommandRunner,
     NativeCommandResult,
+    parse_openclaw_version,
 )
 from agency_runtime.core.openclaw_streaming_policy import (
     enforce_final_only_delivery,
     restore_prior_delivery,
 )
+from agency_runtime.core.trust_chain_repair import (
+    TrustChainFinding,
+    repair_trust_chains,
+    scan_trust_chains,
+)
+
+# OpenClaw 2026.8 withholds a changed bundle's hooks until capabilities are
+# accepted at install and enable time; without the flags the plugin stays
+# disabled-in-config (measured 2026-09-01 20:26-20:34Z, AR-358).
+_OPENCLAW_CAPABILITY_CONSENT_VERSION = (2026, 8)
+_OPENCLAW_ACCEPT_CAPABILITIES = "--accept-capabilities"
+_TRUST_CHAIN_FIX_HINT = "run `agency doctor --fix-perms`, then rerun install"
 
 
 def _facade():
@@ -177,12 +190,18 @@ class _RegistrationSession:
         *,
         home_dir: str | Path | None,
         command_runner: CommandRunner | None,
+        executable: str | None = None,
+        host_version: str | None = None,
     ) -> None:
         self.host = host
         self.binary = str(HOSTS[host]["binary"])
         self.target = target
         self.home_dir = home_dir
         self.command_runner = command_runner
+        # The executable this install resolved, so trust-chain work resolves
+        # the npm tree of that binary and never consults PATH on its own.
+        self.executable = executable
+        self.host_version = host_version
         self.steps: list[dict[str, Any]] = []
 
     def run(
@@ -225,6 +244,99 @@ def _openclaw_policy_runner(
         return result
 
     return run
+
+
+def _trust_chain_inputs(session: _RegistrationSession) -> dict[str, Any]:
+    return {
+        "home_dir": session.home_dir,
+        "executables": {session.host: session.executable},
+    }
+
+
+def _installer_may_repair(session: _RegistrationSession) -> bool:
+    """Only an explicit home or a real native run may normalize modes.
+
+    An injected runner against the ambient home is the embedding/test
+    boundary: it must observe the real trees without ever chmod-ing them.
+    """
+
+    return session.home_dir is not None or session.command_runner is None
+
+
+def _trust_chain_summary(findings: Sequence[TrustChainFinding]) -> str:
+    parts = [
+        f"{finding.count} {finding.kind.replace('_', ' ')} under {finding.root}"
+        for finding in findings
+    ]
+    return "; ".join(parts)
+
+
+def _normalize_host_trust_chains(session: _RegistrationSession) -> None:
+    """Leave this host's registered trust chains trusted before wiring it (AR-358).
+
+    The installer owns these trees for its wiring, so its consent is its own.
+    Clean chains record nothing; a repair records content-free counts.
+    """
+
+    findings = scan_trust_chains(session.host, **_trust_chain_inputs(session))
+    if not findings:
+        return
+    if not _installer_may_repair(session):
+        session.steps.append(
+            {
+                "name": "trust_chain_findings",
+                "ok": False,
+                "repaired": False,
+                "findings": [finding.as_dict() for finding in findings],
+                "error": f"untrusted trust chain: {_trust_chain_summary(findings)}",
+            }
+        )
+        return
+    report = repair_trust_chains(findings, consent=True, **_trust_chain_inputs(session))
+    session.steps.append(
+        {
+            "name": "trust_chain_repair",
+            "consent": "installer",
+            "repaired": report.applied,
+            "findings": [finding.as_dict() for finding in findings],
+            **report.as_dict(),
+        }
+    )
+
+
+def _explain_trust_chain_failure(session: _RegistrationSession) -> None:
+    """Name the untrusted chain instead of the host's opaque failure text."""
+
+    findings = scan_trust_chains(session.host, **_trust_chain_inputs(session))
+    if not findings:
+        return
+    step = session.steps[-1]
+    step["native_error"] = step.get("error")
+    step["trust_chain_findings"] = [finding.as_dict() for finding in findings]
+    step["error"] = (
+        f"{session.host} {step['name']} failed while its trust chain is untrusted "
+        f"({_trust_chain_summary(findings)}); {_TRUST_CHAIN_FIX_HINT}"
+    )
+
+
+def _openclaw_capability_consent(session: _RegistrationSession) -> bool:
+    """Return whether this OpenClaw needs ``--accept-capabilities`` on install/enable.
+
+    The install preflight already observed the version; only a caller that
+    did not (rollback refresh, direct registration) probes it here. An
+    unparseable version keeps today's commands.
+    """
+
+    observed = session.host_version
+    if observed is None:
+        probe = session.run(
+            "host_capability_version",
+            [session.binary, "--version"],
+            timeout=8,
+        )
+        observed = probe.stdout if probe.ok else ""
+    version = parse_openclaw_version(observed)
+    return version is not None and version[:2] >= _OPENCLAW_CAPABILITY_CONSENT_VERSION
 
 
 _HERMES_HOOK_BUDGET_KEY = "plugins.hook_callback_timeout"
@@ -325,6 +437,7 @@ def _install_openclaw_plugin(
     session: _RegistrationSession,
     *,
     force_refresh: bool,
+    accept_capabilities: bool,
 ) -> str | None:
     existing = session.run(
         "inspect_existing",
@@ -335,8 +448,14 @@ def _install_openclaw_plugin(
     command = [session.binary, "plugins", "install", str(session.target)]
     if existing.ok:
         command.append("--force")
+    if accept_capabilities:
+        command.append(_OPENCLAW_ACCEPT_CAPABILITIES)
+    _normalize_host_trust_chains(session)
     installed = session.run("install", command, timeout=60)
-    return None if installed.ok else "install"
+    if installed.ok:
+        return None
+    _explain_trust_chain_failure(session)
+    return "install"
 
 
 def _verify_openclaw_runtime(session: _RegistrationSession) -> _RegistrationResult:
@@ -526,16 +645,18 @@ def _register_openclaw(
     session.steps.append({"name": "final_only_delivery_policy", **policy})
     if not policy["ok"]:
         return session.result(False, "final_only_delivery_policy")
+    accept_capabilities = _openclaw_capability_consent(session)
     if failed_step := _install_openclaw_plugin(
         session,
         force_refresh=force_refresh,
+        accept_capabilities=accept_capabilities,
     ):
         return _rollback_openclaw_policy(session, failed_step)
 
-    enabled = session.run(
-        "enable",
-        [session.binary, "plugins", "enable", PLUGIN_ID],
-    )
+    enable_command = [session.binary, "plugins", "enable", PLUGIN_ID]
+    if accept_capabilities:
+        enable_command.append(_OPENCLAW_ACCEPT_CAPABILITIES)
+    enabled = session.run("enable", enable_command)
     if not enabled.ok:
         return _rollback_openclaw_policy(session, "enable")
     access = session.run(
@@ -735,10 +856,14 @@ def _register_marketplace_host(
     plugin_present, market_present, failed_step = _marketplace_state(session)
     if failed_step:
         return session.result(False, failed_step)
+    if session.host == "claude":
+        _normalize_host_trust_chains(session)
     if failed_step := _ensure_marketplace(
         session,
         market_present=market_present,
     ):
+        if session.host == "claude":
+            _explain_trust_chain_failure(session)
         return session.result(False, failed_step)
     plugin_present, failed_step = _remove_plugin_for_refresh(
         session,
@@ -781,12 +906,16 @@ def native_registration_steps(
     home_dir: str | Path | None,
     command_runner: CommandRunner | None,
     force_refresh: bool = False,
+    executable: str | None = None,
+    host_version: str | None = None,
 ) -> tuple[list[dict[str, Any]], bool, str | None]:
     session = _RegistrationSession(
         host,
         target,
         home_dir=home_dir,
         command_runner=command_runner,
+        executable=executable,
+        host_version=host_version,
     )
     return _REGISTRATION_HANDLERS[host](session, force_refresh)
 
@@ -845,6 +974,12 @@ def native_command_plan(host: str, target: Path) -> list[dict[str, Any]]:
                 "kind": "transactional_config_policy",
             },
             {
+                "name": "host_capability_version",
+                "argv": [binary, "--version"],
+                "condition": "only when the install preflight did not already observe the version",
+                "kind": "capability_probe",
+            },
+            {
                 "name": "inspect_existing",
                 "argv": [binary, "plugins", "inspect", PLUGIN_ID, "--json"],
             },
@@ -858,7 +993,26 @@ def native_command_plan(host: str, target: Path) -> list[dict[str, Any]]:
                 "argv": [*install_argv, "--force"],
                 "condition": "inspect_existing reports present",
             },
-            {"name": "enable", "argv": [binary, "plugins", "enable", PLUGIN_ID]},
+            {
+                "name": "install",
+                "argv": [*install_argv, _OPENCLAW_ACCEPT_CAPABILITIES],
+                "condition": "inspect_existing reports absent; OpenClaw 2026.8 or newer",
+            },
+            {
+                "name": "install",
+                "argv": [*install_argv, "--force", _OPENCLAW_ACCEPT_CAPABILITIES],
+                "condition": "inspect_existing reports present; OpenClaw 2026.8 or newer",
+            },
+            {
+                "name": "enable",
+                "argv": [binary, "plugins", "enable", PLUGIN_ID],
+                "condition": "OpenClaw older than 2026.8",
+            },
+            {
+                "name": "enable",
+                "argv": [binary, "plugins", "enable", PLUGIN_ID, _OPENCLAW_ACCEPT_CAPABILITIES],
+                "condition": "OpenClaw 2026.8 or newer",
+            },
             {
                 "name": "conversation_access",
                 "argv": [

@@ -9,7 +9,7 @@ import pytest
 from agency_runtime.core import installer_orchestration as orchestration
 from agency_runtime.core import installer_registration as registration
 from agency_runtime.core.config import AgencyConfig
-from agency_runtime.core.installer_contracts import NativeCommandResult
+from agency_runtime.core.installer_contracts import MINIMUM_OPENCLAW_VERSION, NativeCommandResult
 
 
 def _native_result(*, ok: bool = True, stdout: str = "", stderr: str = "") -> NativeCommandResult:
@@ -70,16 +70,23 @@ def test_openclaw_install_guard_allows_only_proven_stopped_gateway(
         "_openclaw_gateway_live",
         lambda **_kwargs: (False, _native_result()),
     )
-    monkeypatch.setattr(
-        orchestration,
-        "_run_native",
-        lambda *_args, **_kwargs: NativeCommandResult(
-            ("openclaw", "--version"),
-            0,
-            "OpenClaw 2026.7.1",
-            "",
-        ),
-    )
+
+    # The version this guard accepts is the audited line, not a fixed literal:
+    # this fixture pinned 2026.7.1 and went stale when 2a5d52cd adopted the
+    # 2026.8 line, so the suite asserted the opposite of the shipped rule.
+    def _version(version: str) -> None:
+        monkeypatch.setattr(
+            orchestration,
+            "_run_native",
+            lambda *_args, **_kwargs: NativeCommandResult(
+                ("openclaw", "--version"),
+                0,
+                f"OpenClaw {version}",
+                "",
+            ),
+        )
+
+    _version(MINIMUM_OPENCLAW_VERSION)
     assert (
         orchestration._install_gateway_guard(
             "openclaw",
@@ -91,6 +98,18 @@ def test_openclaw_install_guard_allows_only_proven_stopped_gateway(
         )
         is None
     )
+
+    _version("2026.7.1")
+    refused = orchestration._install_gateway_guard(
+        "openclaw",
+        "openclaw",
+        tmp_path,
+        "plugin.json",
+        home_dir=tmp_path,
+        command_runner=lambda *_args, **_kwargs: None,
+    )
+    assert refused is not None
+    assert MINIMUM_OPENCLAW_VERSION in str(refused["error"])
 
 
 def _stub_install_inputs(

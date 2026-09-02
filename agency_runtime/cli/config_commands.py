@@ -206,7 +206,7 @@ def cmd_doctor(
     dependencies: ConfigurationDependencies = DEFAULT_DEPENDENCIES,
 ) -> int:
     cfg = dependencies.load_config()
-    report = run_doctor(cfg)
+    report = run_doctor(cfg, fix_perms=bool(getattr(args, "fix_perms", False)))
     if args.json:
         _print_json(report.to_dict())
     else:

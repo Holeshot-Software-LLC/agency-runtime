@@ -51,6 +51,14 @@ def _openclaw_runtime_payload() -> dict[str, Any]:
     }
 
 
+# AR-358: every OpenClaw registration probes the host version once so it can
+# decide whether install/enable need --accept-capabilities. These fixtures
+# answer with a version older than the consent requirement, which keeps the
+# commands they assert unchanged; the consent path has its own test.
+_OPENCLAW_VERSION_RESPONSE = _result(stdout="2026.7.9\n")
+_OPENCLAW_VERSION_COMMAND = ["openclaw", "--version"]
+
+
 class _SequenceRunner:
     def __init__(self, responses: list[dict[str, Any]]) -> None:
         self._responses = list(responses)
@@ -305,6 +313,7 @@ def test_openclaw_policy_rollback_retains_final_only_when_disable_is_unproven(
             responses=[
                 _json_result({"running": False}),
                 *_OPENCLAW_POLICY_RESPONSES,
+                _OPENCLAW_VERSION_RESPONSE,
                 _result(returncode=1),
                 _result(),
                 _result(),
@@ -322,6 +331,7 @@ def test_openclaw_policy_rollback_retains_final_only_when_disable_is_unproven(
                     "--json",
                 ],
                 *_OPENCLAW_POLICY_COMMANDS,
+                _OPENCLAW_VERSION_COMMAND,
                 [
                     "openclaw",
                     "plugins",
@@ -362,6 +372,7 @@ def test_openclaw_policy_rollback_retains_final_only_when_disable_is_unproven(
             steps=[
                 "gateway_status",
                 *_OPENCLAW_POLICY_STEPS,
+                "host_capability_version",
                 "inspect_existing",
                 "install",
                 "enable",
@@ -717,6 +728,7 @@ def test_openclaw_existing_plugin_install_condition_is_exact(
     responses = [
         _json_result({"running": False}),
         *_OPENCLAW_POLICY_RESPONSES,
+        _OPENCLAW_VERSION_RESPONSE,
         _json_result({"id": "agency-preflight", "enabled": True}),
     ]
     if force_refresh:
@@ -847,6 +859,7 @@ def test_openclaw_gateway_gate_accepts_explicit_nested_stopped_status() -> None:
             responses=[
                 _json_result({"running": False}),
                 *_OPENCLAW_POLICY_RESPONSES,
+                _OPENCLAW_VERSION_RESPONSE,
                 _result(returncode=1),
                 _result(returncode=1),
                 *_OPENCLAW_POLICY_RESTORE_RESPONSES,
@@ -854,6 +867,7 @@ def test_openclaw_gateway_gate_accepts_explicit_nested_stopped_status() -> None:
             steps=[
                 "gateway_status",
                 *_OPENCLAW_POLICY_STEPS,
+                "host_capability_version",
                 "inspect_existing",
                 "install",
                 *_OPENCLAW_POLICY_RESTORE_STEPS,
@@ -865,6 +879,7 @@ def test_openclaw_gateway_gate_accepts_explicit_nested_stopped_status() -> None:
             responses=[
                 _json_result({"running": False}),
                 *_OPENCLAW_POLICY_RESPONSES,
+                _OPENCLAW_VERSION_RESPONSE,
                 _json_result({"id": "agency-preflight"}),
                 _result(returncode=1),
                 *_OPENCLAW_POLICY_RESTORE_RESPONSES,
@@ -872,6 +887,7 @@ def test_openclaw_gateway_gate_accepts_explicit_nested_stopped_status() -> None:
             steps=[
                 "gateway_status",
                 *_OPENCLAW_POLICY_STEPS,
+                "host_capability_version",
                 "inspect_existing",
                 "enable",
                 *_OPENCLAW_POLICY_RESTORE_STEPS,
@@ -883,6 +899,7 @@ def test_openclaw_gateway_gate_accepts_explicit_nested_stopped_status() -> None:
             responses=[
                 _json_result({"running": False}),
                 *_OPENCLAW_POLICY_RESPONSES,
+                _OPENCLAW_VERSION_RESPONSE,
                 _json_result({"id": "agency-preflight"}),
                 _result(),
                 _result(returncode=1),
@@ -891,6 +908,7 @@ def test_openclaw_gateway_gate_accepts_explicit_nested_stopped_status() -> None:
             steps=[
                 "gateway_status",
                 *_OPENCLAW_POLICY_STEPS,
+                "host_capability_version",
                 "inspect_existing",
                 "enable",
                 "conversation_access",
@@ -903,6 +921,7 @@ def test_openclaw_gateway_gate_accepts_explicit_nested_stopped_status() -> None:
             responses=[
                 _json_result({"running": False}),
                 *_OPENCLAW_POLICY_RESPONSES,
+                _OPENCLAW_VERSION_RESPONSE,
                 _json_result({"id": "agency-preflight"}),
                 _result(),
                 _result(),
@@ -912,6 +931,7 @@ def test_openclaw_gateway_gate_accepts_explicit_nested_stopped_status() -> None:
             steps=[
                 "gateway_status",
                 *_OPENCLAW_POLICY_STEPS,
+                "host_capability_version",
                 "inspect_existing",
                 "enable",
                 "conversation_access",
@@ -925,6 +945,7 @@ def test_openclaw_gateway_gate_accepts_explicit_nested_stopped_status() -> None:
             responses=[
                 _json_result({"running": False}),
                 *_OPENCLAW_POLICY_RESPONSES,
+                _OPENCLAW_VERSION_RESPONSE,
                 _json_result({"id": "agency-preflight"}),
                 _result(),
                 _result(),
@@ -935,6 +956,7 @@ def test_openclaw_gateway_gate_accepts_explicit_nested_stopped_status() -> None:
             steps=[
                 "gateway_status",
                 *_OPENCLAW_POLICY_STEPS,
+                "host_capability_version",
                 "inspect_existing",
                 "enable",
                 "conversation_access",
@@ -1062,6 +1084,76 @@ def test_registration_failure_matrix_preserves_stop_point(
     assert failed_step == case.failed_step
     assert [step["name"] for step in steps] == case.steps
     assert runner.exhausted
+
+
+def test_openclaw_2026_8_install_and_enable_carry_capability_consent(tmp_path: Path) -> None:
+    """AR-358: OpenClaw 2026.8 withholds a changed bundle's hooks without consent.
+
+    Measured 2026-09-01 20:26-20:34Z: install and enable both succeeded while
+    the plugin stayed disabled-in-config, because the capability prompt was
+    never answered. The flag is added only for versions that require it.
+    """
+
+    runner = _SequenceRunner(
+        [
+            _json_result({"running": False}),
+            *_OPENCLAW_POLICY_RESPONSES,
+            _result(stdout="2026.8.2\n"),
+            _result(returncode=1),
+            _result(),
+            _result(),
+            _result(),
+            _result(),
+            _json_result(_openclaw_runtime_payload()),
+        ]
+    )
+
+    steps, proven, failed_step = native_registration_steps(
+        "openclaw",
+        _TARGET,
+        home_dir=tmp_path,
+        command_runner=runner,
+    )
+
+    assert proven is True and failed_step is None
+    install = next(step for step in steps if step["name"] == "install")
+    enable = next(step for step in steps if step["name"] == "enable")
+    assert install["command"][-1] == "--accept-capabilities"
+    assert enable["command"] == [
+        "openclaw",
+        "plugins",
+        "enable",
+        "agency-preflight",
+        "--accept-capabilities",
+    ]
+    assert runner.exhausted
+
+
+def test_openclaw_before_2026_8_keeps_todays_commands(tmp_path: Path) -> None:
+    runner = _SequenceRunner(
+        [
+            _json_result({"running": False}),
+            *_OPENCLAW_POLICY_RESPONSES,
+            _result(stdout="2026.7.9\n"),
+            _result(returncode=1),
+            _result(),
+            _result(),
+            _result(),
+            _result(),
+            _json_result(_openclaw_runtime_payload()),
+        ]
+    )
+
+    steps, proven, _failed = native_registration_steps(
+        "openclaw",
+        _TARGET,
+        home_dir=tmp_path,
+        command_runner=runner,
+    )
+
+    assert proven is True
+    commands = [step.get("command") for step in steps]
+    assert not any("--accept-capabilities" in (command or []) for command in commands)
 
 
 def test_registration_resolves_native_runner_through_facade_at_call_time(
