@@ -1,6 +1,6 @@
 ---
 title: "AR-362: Add an agent-chaos harness with explicit failure oracles"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-09-01
 updated: 2026-09-02
