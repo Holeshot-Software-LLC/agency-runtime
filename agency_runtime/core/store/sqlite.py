@@ -2130,6 +2130,20 @@ class Store(
                 if resident_manager_kernel is not None
                 else []
             )
+            if not resident_managers:
+                # AR-371: a fail-open turn was answered by the capsule that
+                # carries the kernel, so the steward was loaded into it. The
+                # recipe is gone and the pending claim may be pinned to a
+                # stalled trace, so read the durable binding row instead of
+                # reporting a turn as unmanaged when it was not.
+                resident_managers = list(
+                    self.delivered_resident_manager_slugs(
+                        conn,
+                        session_id=normalized_session,
+                        host=str(run["host"] or ""),
+                        run_status=str(run["status"] or ""),
+                    )
+                )
             run_projection = dict(run)
             run_projection.pop("preflight_result", None)
             run_projection.update(turn_classification)
