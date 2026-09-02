@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Sequence
+from collections.abc import Collection, Sequence
 from dataclasses import dataclass
 
 from agency_runtime.core.workforce.planning_contracts import WorkUnit, WorkUnitPlan
@@ -257,6 +257,11 @@ _PLAN_REPAIR_REQUIREMENTS = {
     "plan_dependency_not_earlier": (
         "Topologically order the complete plan and allow each depends_on entry to reference "
         "only an exact unit ID that appears earlier."
+    ),
+    "plan_unit_required_tools_unproven": (
+        "Use only exact values from host_context.available_tools for required_tools. Remove or "
+        "replace every tool this host has not proven; a unit that demands an unproven tool "
+        "cannot be staffed by any worker, however well the plan reads."
     ),
 }
 
@@ -557,6 +562,7 @@ def plan_policy_violations(
     plan: WorkUnitPlan,
     *,
     explicit_indivisible_unit: bool = False,
+    available_tools: Collection[str] | None = None,
 ) -> tuple[str, ...]:
     """Reject incomplete plans while preserving an explicit one-unit topology."""
 
@@ -607,6 +613,18 @@ def plan_policy_violations(
                     requirement not in review_capabilities for requirement in assurance_requirements
                 ):
                     codes.append("plan_missing_regulated_assurance_requirement")
+    # AR-374: the planner is told to draw required_tools from
+    # host_context.available_tools and nothing used to enforce it. One
+    # unproven tool fails the unit-scoped eligibility gate against every
+    # worker at once, so staffing abstains with agent_tools_missing and the
+    # receipt reads as a roster problem rather than a plan defect. An empty
+    # proven set means the host proved nothing rather than that it can do
+    # nothing, so it cannot distinguish a bad plan and is left to the
+    # downstream staffing gate.
+    if available_tools and any(
+        tool not in available_tools for unit in plan.units for tool in unit.required_tools
+    ):
+        codes.append("plan_unit_required_tools_unproven")
     if any(item.mutation_scope == "external_write" for item in plan.units):
         codes.append("plan_external_write_requires_separate_authorization")
     return tuple(dict.fromkeys(codes))

@@ -148,19 +148,37 @@ which reads as a roster problem and is what sent this issue after the roster.
 
 ## Approach
 
-The drift guard in Acceptance 4 is landed. The remaining decision is which of
-these to take, and that is an owner call because they have different blast
-radii:
+Owner chose the first option: validate the planner's `required_tools` against
+the host floor. Landed.
 
-- **Validate the planner's `required_tools` against the host context** and
-  fail or repair explicitly, so an out-of-floor tool never becomes a silent
-  roster-shaped abstention. Smallest change; fixes the misleading receipt.
-- **Collapse the tool-class vocabulary** to what a host can prove, moving
-  specialism terms onto an axis that is not an eligibility gate. Largest
-  change; addresses hypothesis 3 at the root and unblocks the eval.
-- **Feed real capability detection** into `available_tools` so the union path
-  stops being inert. Addresses hypothesis 2 and is the only option that makes
-  a browser-requiring card genuinely staffable.
+`plan_policy_violations` now takes the host's proven tools and raises
+`plan_unit_required_tools_unproven` when any unit demands one the host has not
+proven. The code is registered through `_PLAN_REPAIR_REQUIREMENTS`, so the
+existing planner repair loop feeds it back with a named correction and the
+planner gets one bounded chance to author a plan this host can staff. It is
+wired at both call sites: parse time, which is what reaches the repair loop,
+and the post-staffing check, which is the only place a cache-replayed plan is
+re-checked against this turn's host.
+
+The rule is deliberately topology-independent — an explicit one-unit plan is
+held to it too — and deliberately inert when the host proved nothing, because
+an empty proven set means the host proved nothing rather than that it can do
+nothing. That case still fails at the downstream staffing gate.
+
+Live evidence, worktree code against the real installation:
+
+- With the capsule's three-tool context, where the planner asks for
+  `test-execution`, the plan is now rejected as
+  `plan_unit_required_tools_unproven` and repaired once. The planner did not
+  recover, so the turn still fails — but it fails naming the plan, not the
+  roster. That is the whole point of the change.
+- With the real nine, the planner is applied unchanged, the recruiter is
+  applied, and the turn now reaches the critic. No regression on the path a
+  real host takes.
+
+The other two options are untouched and remain open: collapsing the tool-class
+vocabulary to what a host can prove, and feeding real capability detection into
+`available_tools`.
 
 ## Dependencies
 
@@ -178,8 +196,11 @@ radii:
       (2) confirmed and inert, (3) confirmed and dominant.
 - [ ] An ordinary install request staffs a specialist on this installation,
       or the reason it should not is recorded. Partially: the tools axis is
-      cleared on a real host context, and the residual blocker is a recruiter
-      provider failure, not eligibility. It needs its own issue.
+      cleared on a real host context and the turn now reaches the critic,
+      which rejects the staffing with `missing-installation-executor`,
+      `wrong-routine-installation-staffing` and
+      `missing-implementation-lifecycle`. That is a planner-shape defect, not
+      an eligibility one, and it needs its own issue.
 - [x] Whatever the fix, a regression test pins that the capabilities a host
       proves and the tool classes the roster demands cannot silently drift
       apart again. `tests/test_host_capability_vocabulary_drift.py` with
@@ -188,16 +209,30 @@ radii:
 
 ## Follow-ups
 
-Two defects were found while establishing the above and are not in this
-issue's scope. Neither has an internal ID or tracker row yet; both need
-owner authorization before an outward-facing tracker write.
+Found while establishing the above and out of this issue's scope. None has an
+internal ID or tracker row yet; each needs owner authorization before an
+outward-facing tracker write.
 
-1. **Unvalidated planner `required_tools`.** The planner is instructed to
-   draw `required_tools` from `host_context.available_tools` and nothing
-   enforces it. One out-of-floor value makes a unit unstaffable by the whole
-   roster and reports it as `agent_tools_missing`.
-2. **The upstream selection eval cannot reach 82 percent of the roster.** It
+1. **The upstream selection eval cannot reach 82 percent of the roster.** It
    filters candidates on `contract.tool_classes` against the host's nine
    (`core/evals/upstream_selection.py:604`), a gate the staffing path
    deliberately does not apply, so the eval scores a roster far smaller than
    the one production selects from.
+2. **The planner writes no executor for an install request.** With the real
+   nine, the install request planned advise, plan and review units and no
+   unit with modify authority. The critic correctly rejected the staffing
+   with `missing-installation-executor`,
+   `wrong-routine-installation-staffing` and
+   `missing-implementation-lifecycle`. This is now the live blocker for an
+   ordinary install turn.
+3. **The recruiter fails intermittently at the provider.** Observed
+   `provider_no_valid_response` on one run and
+   `provider_response_contract_invalid` on another for the same request, with
+   the AR-373 fix confirmed present. A third run succeeded, so it is a
+   flake rather than a contract defect.
+4. **The decision-conformance eval cannot run on this box as documented.** It
+   resolves `sys.executable` through symlinks and runs its baseline isolated,
+   so a symlinked venv lands on the system interpreter, which cannot see
+   user-site `pytest`. The same failure reproduces on a clean `main`
+   checkout, so it is environmental. A `venv --copies` with the user site
+   added by `.pth` runs it correctly.

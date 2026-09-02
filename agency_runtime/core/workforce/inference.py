@@ -1530,6 +1530,7 @@ def _parse_compact_plan(
         request,
         primary,
         explicit_indivisible_unit=explicit_indivisible_unit,
+        available_tools=context.available_tools,
     )
     if violations:
         raise _PlanPolicyValidationError(violations)
@@ -3545,6 +3546,7 @@ def plan_and_staff_workforce(
         ask,
         plan,
         explicit_indivisible_unit=explicit_indivisible_unit,
+        available_tools=context.available_tools,
     )
     if policy_violations:
         return _inference_failure(
