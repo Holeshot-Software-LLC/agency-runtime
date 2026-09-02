@@ -1029,3 +1029,40 @@ def test_hermes_runtime_disabled_remains_intentional_passthrough(tmp_path: Path)
         )
         == long_draft
     )
+
+
+def test_hermes_publishes_unchanged_when_agency_cannot_verify(tmp_path: Path) -> None:
+    """AR-357: Agency being unable to verify never costs the operator a reply."""
+
+    store = Store(tmp_path / "hermes-unverifiable.db")
+    composite = "hermes-session:blind-turn:aabbccdd"
+    _create_turn(
+        store,
+        session_id="hermes-session",
+        trace_id=composite,
+        request_kind="nontrivial",
+    )
+
+    class _BlindAdapter(HermesAdapter):
+        def evaluate_completion_policy(
+            self, *_args: object, **_kwargs: object
+        ) -> dict[str, object]:
+            return {
+                "action": "continue",
+                "message": "unavailable",
+                "missing": [],
+                "verification_unavailable": True,
+            }
+
+    draft = "An answer Agency could not check."
+    transformed = hermes_bridge.handle(
+        {
+            "action": "transform_llm_output",
+            "session_id": "hermes-session",
+            "trace_id": "blind-turn",
+            "response_text": draft,
+        },
+        adapter=_BlindAdapter(store),
+    )
+
+    assert transformed == draft
