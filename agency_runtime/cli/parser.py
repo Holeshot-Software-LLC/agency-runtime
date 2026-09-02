@@ -453,6 +453,14 @@ def _register_configuration(sub: Subparsers, handlers: Handlers) -> None:
     doctor = sub.add_parser("doctor", help="Check DB, config, providers, and adapter availability")
     doctor.add_argument("--json", action="store_true", help="JSON output")
     doctor.add_argument("--verbose", action="store_true", help="Include passing checks and detail")
+    doctor.add_argument(
+        "--fix-perms",
+        action="store_true",
+        help=(
+            "Repair permission breaks on Agency's known trust chains "
+            "(without it, doctor only lists them)"
+        ),
+    )
     _bind(doctor, handlers, "cmd_doctor")
 
     config = sub.add_parser("config", help="Non-interactive config helpers")

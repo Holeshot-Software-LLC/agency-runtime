@@ -1034,6 +1034,7 @@ Agency as unloaded from already-running sessions. See
 ```bash
 agency status                 # system + host status
 agency doctor --json          # what's installed and verified
+agency doctor --fix-perms     # repair permission breaks on Agency's known trust chains
 agency smoke --all --json     # canary readiness check (see 🩺 below)
 agency agents list            # roster
 agency roster list

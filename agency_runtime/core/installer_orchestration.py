@@ -675,6 +675,7 @@ def _install_agent_adapter_unlocked(
         home_dir=home_dir,
         command_runner=command_runner,
         force_refresh=bundle_changed,
+        executable=executable,
     )
     result["native_steps"] = steps
     if not native_ok:
@@ -902,6 +903,7 @@ def _refresh_rollback_registration(
         home_dir=home_dir,
         command_runner=command_runner,
         force_refresh=True,
+        executable=executable,
     )
     result["native_steps"] = steps
     result["native_refreshed"] = native_ok

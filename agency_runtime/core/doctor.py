@@ -8,6 +8,7 @@ from __future__ import annotations
 import re
 import sqlite3
 import urllib.request
+from collections.abc import Sequence
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -815,7 +816,74 @@ def _harness_battery_checks() -> list[CheckResult]:
     return checks
 
 
-def run_doctor(config: AgencyConfig | None = None) -> DoctorReport:
+def _trust_chain_summary(findings: Sequence[Any]) -> str:
+    return "; ".join(f"{finding.count} {finding.kind.replace('_', ' ')}" for finding in findings)
+
+
+def _trust_chain_checks(*, fix_perms: bool = False) -> list[CheckResult]:
+    """Report -- and with consent repair -- the known trust chains (AR-358).
+
+    Plain ``agency doctor`` is the dry run: it names each chain, its break
+    kinds, and the repair command. ``--fix-perms`` is the operator's explicit
+    consent to apply the minimal mode change on those same chains.
+    """
+
+    from agency_runtime.core.trust_chain_repair import repair_trust_chains, scan_trust_chains
+
+    try:
+        findings = scan_trust_chains()
+    except Exception as error:  # pragma: no cover - defensive: never fail doctor
+        return [CheckResult("trust_chains", "warn", "chain scan unavailable", str(error))]
+    if not findings:
+        return [CheckResult("trust_chains", "pass", "known chains are trusted")]
+
+    by_chain: dict[tuple[str, str, str], list[Any]] = {}
+    for finding in findings:
+        by_chain.setdefault((finding.host, finding.chain, finding.root), []).append(finding)
+    if not fix_perms:
+        return [
+            CheckResult(
+                f"trust_chain_{host}_{chain}",
+                "warn",
+                f"{_trust_chain_summary(items)} under {root}",
+                "run `agency doctor --fix-perms` to repair this chain",
+            )
+            for (host, chain, root), items in by_chain.items()
+        ]
+
+    report = repair_trust_chains(findings, consent=True)
+    repairs = {(repair.host, repair.chain, repair.root): repair for repair in report.chains}
+    checks: list[CheckResult] = []
+    for key, items in by_chain.items():
+        host, chain, root = key
+        repair = repairs.get(key)
+        name = f"trust_chain_{host}_{chain}"
+        if repair is None or repair.refused is not None:
+            reason = "not repairable" if repair is None else repair.refused
+            checks.append(CheckResult(name, "fail", f"{reason} ({root})"))
+            continue
+        detail = f"changed {repair.changed}, skipped {repair.skipped_unowned} not owned by you"
+        if repair.failed or repair.skipped_unowned:
+            checks.append(
+                CheckResult(
+                    name,
+                    "warn",
+                    f"{repair.failed} unrepaired under {root}",
+                    detail,
+                )
+            )
+        else:
+            checks.append(
+                CheckResult(name, "pass", f"repaired {_trust_chain_summary(items)}", detail)
+            )
+    return checks
+
+
+def run_doctor(
+    config: AgencyConfig | None = None,
+    *,
+    fix_perms: bool = False,
+) -> DoctorReport:
     """Run all health checks and return a structured report."""
     cfg = config or load_config()
     report = DoctorReport()
@@ -830,6 +898,7 @@ def run_doctor(config: AgencyConfig | None = None) -> DoctorReport:
 
     report.checks.extend(_provider_chain_checks(cfg, provider_validations))
     report.checks.extend(_harness_battery_checks())
+    report.checks.extend(_trust_chain_checks(fix_perms=fix_perms))
     return report
 
 
