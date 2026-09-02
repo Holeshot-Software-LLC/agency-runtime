@@ -3,7 +3,7 @@ title: Worklog
 status: active
 category: worklog
 created: 2026-07-10
-updated: 2026-09-01
+updated: 2026-09-02
 tags: []
 related: []
 supersedes: []
@@ -1568,6 +1568,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `9a940eb0` | 2026-09-01 | feat(ar356): disclose fail-open staffing and unproven tools in the turn capsule | [AR-356](../roadmap/issue-AR-356-disclose-fail-open-staffing-in-capsule.md) | Fail-open capsules now end with a hash-pinned disclosure naming the persisted reason class (workforce_inference_failed; staffing: ...), carry the operator policy the fail-open path had been dropping, and agency_load_specialist discloses required tools the turn never proved; staffed capsules byte-identical; 22 pinned tests; PR #452 |
 | `2a389452` | 2026-09-01 | feat(ar352,ar360): scope battery deltas by session and grade probes with pass^k/pass@k trials | [AR-352](../roadmap/issue-AR-352-scope-battery-deltas-by-session.md), [AR-360](../roadmap/issue-AR-360-battery-pass-k-grading.md) | Ordinary battery verdicts now judge only the battery turn's own session (foreign preflight failures reported, never absorbed) and every probe runs k graded trials — canary pass^k, ordinary pass@k — with each trial persisted in the receipt and fingerprint; agency battery --trials; PR #451 |
 | `07043c0a` | 2026-09-01 | feat(ar363): attest deployed fixes per host with witness manifests and history | [AR-363](../roadmap/issue-AR-363-deployed-fix-witness-manifests.md) | Per-host deployed-fix witness: a registry of documented fixes pinned to load-bearing markers, attested against the projection each host invokes (claude wiring measured; other hosts against the published pointer, stated as such), manifests + append-only history under ~/.agency-runtime/witness, agency evidence witness, and a battery host fails on drift or a missing marker; PR #453 |
+| `197bcae4` | 2026-09-02 | feat(ar361): require builder evidence and isolated single-check verdicts for done flips | [AR-361](../roadmap/issue-AR-361-builder-evidence-isolated-verification.md), [AR-352](../roadmap/issue-AR-352-scope-battery-deltas-by-session.md), [AR-356](../roadmap/issue-AR-356-disclose-fail-open-staffing-in-capsule.md), [AR-360](../roadmap/issue-AR-360-battery-pass-k-grading.md), [AR-363](../roadmap/issue-AR-363-deployed-fix-witness-manifests.md) | Done flips now need docs/roadmap/acceptance records: builder evidence per criterion (closed kinds, sources resolved at a frozen candidate) plus one isolated single-check verdict per criterion recorded by scripts/verify_acceptance.py and digest-bound; grandfather list pinned at AR-346; records for the four same-day flips judged by isolated codex runs (12/13 satisfied; AR-356 criterion 2 absent, so AR-356 returns to in_progress pending a kernel-hash pin); PR #457 |
 <!-- worklog:end -->
 
 ## Provenance notes
