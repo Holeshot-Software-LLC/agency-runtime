@@ -84,10 +84,10 @@ nine the planner is applied, the recruiter is applied, and the critic rejects
 the staffing with `missing-installation-executor`,
 `wrong-routine-installation-staffing` and `missing-implementation-lifecycle`:
 the plan has advise, plan and review units and nothing with modify authority
-that actually performs the install. Filed as AR-375: the planner is not at
-fault, because the artifact-kind ontology cannot express a host operation —
-only three of eight kinds grant modify authority and all three are
-`workspace_write`.
+that actually performs the install. Filed as AR-375: every planned unit was
+read-only, so `cross-platform-installer-engineer` — enabled on all five
+hosts, `modify` authority, tools inside the nine — could not be matched,
+because it declares only the `implementation-change` artifact kind.
 
 ## same-task-continuity
 
