@@ -105,8 +105,9 @@ Clear stale `tests/__pycache__` after same-length constant edits.
 
 1. AR-354 final re-verification and done flip (candidate = the merge of the
    regenerated evidence file); then AR-364 (path A: multi-source audit
-   pipeline; clone msitarzewski/agency-agents at `459dce83`, ECC cards at
-   `ca185ef5`, MIT), AR-357 (finish contract delivery in hooks/bridges +
+   pipeline; the primary roster upstream pinned at `459dce83` per
+   `docs/roster-audit/audit-manifest.json`, ECC cards at `ca185ef5`, MIT),
+   AR-357 (finish contract delivery in hooks/bridges +
    tests), AR-358 (doctor `--fix-perms`, tests), then the AR-336/AR-120
    scope notes.
 2. Gates + all four batteries (`agency battery --force --trials 2`), then
