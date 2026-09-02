@@ -1,6 +1,6 @@
 ---
 title: "AR-355: Deliver the owner's working agreements as a second resident manager and make the steward roster-aware"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-09-01
 updated: 2026-09-02

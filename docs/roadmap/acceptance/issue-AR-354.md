@@ -43,3 +43,4 @@ that saw only that criterion and its own rows.
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
 | 2 | satisfied | `AR-354.2-20260902-83179452` | `7b5d5ca201f7e7ca9ec188da5293a9ef9db0860cc039a1c06a2bd304edfdc5c3` | 2026-09-02 | The excerpts show both named suites in scripts/run_local_gates.py and the AGENTS.md validation block, while the roadmap implementation explicitly records the fast-spine decision. |
+| 1 | absent | `AR-354.1-20260902-221c78a3` | `e7a9ca02ce663c7ce2ee2ac904eac0bd4f48fe7bbdb2bbd1741534d6cfca934c` | 2026-09-02 | The excerpts show repaired fixtures and commit-pinned drift diagnoses, but provide no test-run output demonstrating that the four tests pass at the candidate commit. |
