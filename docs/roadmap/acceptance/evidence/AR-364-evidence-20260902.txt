@@ -1,0 +1,19 @@
+# AR-364 acceptance evidence: ECC review cards, captured 2026-09-02T05:44:59Z
+# run at commit 487a0183c19dc7817c8299f4433f496aefa924fc (main); the cited tests, curated cases, packaged manifest, and audit batch were last modified at commit d024add478a7b4242cd5ddd4e24e80d61d39273e (AR-364 merge) and are byte-identical from that commit to this run's commit (git diff --stat prints nothing):
+# git diff --stat d024add4..HEAD -- tests/test_ecc_review_cards.py tests/test_full_roster_eval.py agency_runtime/core/evals/full_roster_cases.py agency_runtime/core/roster/data/manifest.json docs/roster-audit/batch-ecc-review.json => ''
+# command: python3 -m pytest tests/test_ecc_review_cards.py tests/test_full_roster_eval.py tests/test_bundled_roster_loader.py tests/test_bundled_roster_build.py -q -W error -p no:cacheprovider -rA (PASSED/FAILED lines and the summary)
+PASSED tests/test_ecc_review_cards.py::test_cards_are_pinned_to_the_ecc_source_and_review_only
+PASSED tests/test_ecc_review_cards.py::test_cards_have_direct_retrieval_probes_in_the_curated_eval
+PASSED tests/test_ecc_review_cards.py::test_cards_cannot_staff_implementation_authority_work[silent-failure-hunter]
+PASSED tests/test_ecc_review_cards.py::test_cards_cannot_staff_implementation_authority_work[type-design-analyzer]
+PASSED tests/test_full_roster_eval.py::test_every_approved_enabled_agent_participates_in_both_retrievers
+PASSED tests/test_full_roster_eval.py::test_curated_retrieval_covers_hard_negatives_multi_intent_and_abstention
+94 passed in 2.56s
+# command: python3 -c 'run_full_roster_selection_eval()' summarizing the curated retrieval details for the two AR-364 probes
+schema: agency-runtime.full-roster-selection-eval version: 2.0.0
+roster manifest_total: 265
+curated_retrieval metrics: {"abstention_accuracy": 1.0, "abstention_cases": 1, "cases": 9, "curated_case_accuracy": 1.0, "passed_cases": 9}
+case silent-failure-review: passed=True required_ranks={'silent-failure-hunter': 1} max_required_rank=10 forbidden_above_required=[]
+  top candidates: ['silent-failure-hunter', 'change-management-consultant', 'minimal-change-engineer', 'report-distribution-agent', 'senior-secops-engineer', 'senior-developer']
+case type-design-review: passed=True required_ranks={'type-design-analyzer': 1} max_required_rank=10 forbidden_above_required=[]
+  top candidates: ['type-design-analyzer', 'change-management-consultant', 'ui-designer', 'ux-researcher', 'minimal-change-engineer', 'solidity-smart-contract-engineer']
