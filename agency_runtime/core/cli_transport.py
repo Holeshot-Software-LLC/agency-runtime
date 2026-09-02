@@ -46,6 +46,13 @@ from agency_runtime.core.process_argv import (
 SUPPORTED_CLI_TRANSPORTS = frozenset({"codex", "claude"})
 _MAX_CLI_OUTPUT_CHARS = 64 * 1024
 _MAX_CLI_PROMPT_BYTES = 1_280 * 1024
+# AR-361: the only tools an isolated verifier may be granted. Each is read-only
+# in Claude Code, and --restricted confines them to the private working
+# directory plus the explicit read-only roots, so a verifier can inspect a
+# candidate snapshot without any way to write, run, or fetch.
+_READ_ONLY_CLI_TOOLS = frozenset({"Read", "Grep", "Glob"})
+_MAX_CLI_TURNS = 32
+_MAX_CLI_READ_ONLY_ROOTS = 4
 _STATUS_OUTPUT_CHARS = 32 * 1024
 _CLAUDE_MINIMUM_VERSION = (2, 1, 205)
 _CODEX_REQUIRED_FLAGS = (
@@ -878,6 +885,138 @@ def _codex_reasoning_arguments(effort: str | None) -> list[str]:
     return ["-c", f'model_reasoning_effort="{effort}"']
 
 
+def _valid_investigation_options(
+    transport: str,
+    tools: Sequence[str],
+    max_turns: int | None,
+    read_only_roots: Sequence[str | Path],
+) -> bool:
+    """Bound the AR-361 read-only investigation options before they reach argv.
+
+    Only the three read-only Claude Code tools may be granted, every extra root
+    must be an existing absolute directory, and Codex accepts neither: its
+    shell tool stays off, so a Codex verifier judges inlined excerpts only
+    instead of silently downgrading a tool request.
+    """
+
+    if isinstance(tools, str) or isinstance(read_only_roots, (str, Path)):
+        return False
+    tool_names = list(tools)
+    roots = list(read_only_roots)
+    if transport == "codex" and (tool_names or roots):
+        return False
+    if any(not isinstance(name, str) or name not in _READ_ONLY_CLI_TOOLS for name in tool_names):
+        return False
+    if len(set(tool_names)) != len(tool_names) or (roots and not tool_names):
+        return False
+    if max_turns is not None and (
+        isinstance(max_turns, bool)
+        or not isinstance(max_turns, int)
+        or not 1 <= max_turns <= _MAX_CLI_TURNS
+    ):
+        return False
+    if len(roots) > _MAX_CLI_READ_ONLY_ROOTS:
+        return False
+    for root in roots:
+        try:
+            candidate = Path(root)
+        except TypeError:
+            return False
+        if not candidate.is_absolute() or "\x00" in str(candidate) or not candidate.is_dir():
+            return False
+    return True
+
+
+def _codex_structured_arguments(
+    schema_path: Path,
+    provider: ProviderEntry,
+    reasoning_effort: str | None,
+) -> list[str]:
+    """Build the ephemeral read-only Codex exec argv for one structured call."""
+
+    arguments = [
+        "exec",
+        "--json",
+        "--color",
+        "never",
+        "--ephemeral",
+        "--ignore-user-config",
+        "--ignore-rules",
+        "--strict-config",
+        "--sandbox",
+        "read-only",
+        "-c",
+        "features.shell_tool=false",
+        "-c",
+        "features.unified_exec=false",
+        "-c",
+        'web_search="disabled"',
+        "-c",
+        "tools.web_search=false",
+        "-c",
+        "apps._default.enabled=false",
+        "--skip-git-repo-check",
+        "--output-schema",
+        str(schema_path),
+    ]
+    if provider.model:
+        arguments.extend(["--model", provider.model])
+    arguments.extend(_codex_reasoning_arguments(reasoning_effort))
+    arguments.append("-")
+    return arguments
+
+
+def _claude_structured_arguments(
+    schema_json: str,
+    provider: ProviderEntry,
+    *,
+    tools: Sequence[str],
+    max_turns: int | None,
+    read_only_roots: Sequence[str | Path],
+) -> list[str]:
+    """Build the safe-mode, session-free Claude argv for one structured call."""
+
+    arguments = [
+        "--safe-mode",
+        "-p",
+        "--output-format",
+        "json",
+        "--json-schema",
+        schema_json,
+        # Structured output arrives via a forced tool call; models sometimes
+        # emit one or two text turns first, which a hard 1-turn cap kills
+        # mid-response (error_max_turns). Three turns tolerates the preamble
+        # on large recruiter prompts while staying bounded and tool-free; an
+        # investigating verifier (AR-361) asks for a bounded larger cap.
+        "--max-turns",
+        str(max_turns if max_turns is not None else 3),
+        "--no-session-persistence",
+    ]
+    if tools:
+        # AR-361: a read-only investigation toolset, confined by --restricted
+        # to the private working directory and the explicit read-only roots.
+        arguments.extend(["--tools=" + ",".join(tools), "--restricted"])
+        for root in read_only_roots:
+            arguments.extend(["--add-dir", str(root)])
+    else:
+        # "--tools ''" is the CLI's documented all-tools-off value, but the
+        # owned-process runner rejects empty argv items; the =-joined spelling
+        # parses identically and stays non-empty.
+        arguments.append("--tools=")
+    arguments.extend(
+        [
+            "--disallowedTools",
+            "mcp__*",
+            "--strict-mcp-config",
+            "--permission-mode",
+            "dontAsk",
+        ]
+    )
+    if provider.model:
+        arguments.extend(["--model", provider.model])
+    return arguments
+
+
 def invoke_cli_structured(
     provider: ProviderEntry,
     prompt: str,
@@ -888,8 +1027,16 @@ def invoke_cli_structured(
     resolver: BinaryResolver = shutil.which,
     runner: ProcessRunner = run_bounded_process,
     environ: Mapping[str, str] | None = None,
+    tools: Sequence[str] = (),
+    max_turns: int | None = None,
+    read_only_roots: Sequence[str | Path] = (),
 ) -> dict[str, Any] | None:
-    """Invoke one supported CLI provider with an explicit bounded JSON schema."""
+    """Invoke one supported CLI provider with an explicit bounded JSON schema.
+
+    ``tools``, ``max_turns``, and ``read_only_roots`` are the AR-361 verifier
+    options: a read-only investigation toolset over explicit snapshot roots.
+    The defaults keep every existing caller tool-free and byte-identical.
+    """
 
     transport = provider.transport.strip().lower()
     reasoning_effort = _codex_reasoning_effort(provider, transport)
@@ -899,7 +1046,7 @@ def invoke_cli_structured(
         reasoning_effort,
         timeout,
         schema,
-    ):
+    ) or not _valid_investigation_options(transport, tools, max_turns, read_only_roots):
         return None
     timeout = float(timeout)
     if not isinstance(prompt, str) or not isinstance(system_prompt, str):
@@ -944,63 +1091,15 @@ def invoke_cli_structured(
             if transport == "codex":
                 schema_path = Path(temporary) / "selection.schema.json"
                 schema_path.write_text(schema_json, encoding="utf-8")
-                arguments = [
-                    "exec",
-                    "--json",
-                    "--color",
-                    "never",
-                    "--ephemeral",
-                    "--ignore-user-config",
-                    "--ignore-rules",
-                    "--strict-config",
-                    "--sandbox",
-                    "read-only",
-                    "-c",
-                    "features.shell_tool=false",
-                    "-c",
-                    "features.unified_exec=false",
-                    "-c",
-                    'web_search="disabled"',
-                    "-c",
-                    "tools.web_search=false",
-                    "-c",
-                    "apps._default.enabled=false",
-                    "--skip-git-repo-check",
-                    "--output-schema",
-                    str(schema_path),
-                ]
-                if provider.model:
-                    arguments.extend(["--model", provider.model])
-                arguments.extend(_codex_reasoning_arguments(reasoning_effort))
-                arguments.append("-")
+                arguments = _codex_structured_arguments(schema_path, provider, reasoning_effort)
             else:
-                arguments = [
-                    "--safe-mode",
-                    "-p",
-                    "--output-format",
-                    "json",
-                    "--json-schema",
+                arguments = _claude_structured_arguments(
                     schema_json,
-                    # Structured output arrives via a forced tool call; models
-                    # sometimes emit one or two text turns first, which a hard
-                    # 1-turn cap kills mid-response (error_max_turns). Three
-                    # turns tolerates the preamble on large recruiter prompts
-                    # while staying bounded and tool-free.
-                    "--max-turns",
-                    "3",
-                    "--no-session-persistence",
-                    # "--tools ''" is the CLI's documented all-tools-off value,
-                    # but the owned-process runner rejects empty argv items;
-                    # the =-joined spelling parses identically and stays non-empty.
-                    "--tools=",
-                    "--disallowedTools",
-                    "mcp__*",
-                    "--strict-mcp-config",
-                    "--permission-mode",
-                    "dontAsk",
-                ]
-                if provider.model:
-                    arguments.extend(["--model", provider.model])
+                    provider,
+                    tools=tools,
+                    max_turns=max_turns,
+                    read_only_roots=read_only_roots,
+                )
 
             argv = _prepared_cli_command(executable, *arguments)
 
