@@ -137,14 +137,24 @@ in the installed venv.
 
 ### Why the receipt misleads
 
-`_PLANNER_SYSTEM` instructs the planner to "Use only exact values from
-host_context.available_tools for required_tools". Nothing enforces it:
-`required_tools` is shape-validated as an identifier array
-(`planning_contracts.py:315`) and never checked against the host context.
-When a planner does emit a tool outside the floor, the unit-scoped gate fails
-it against *every* worker at once, staffing abstains
-`no_safe_sufficient_team`, and the receipt reports `agent_tools_missing` —
-which reads as a roster problem and is what sent this issue after the roster.
+A unit's `required_tools` are **derived**, not authored. In the production
+compact-intent path the planner supplies only `unit_id`, `outcome`,
+`artifact_kind`, `domains`, `stacks`, `capability_ids`, `novel_capability`
+and `depends_on`; `authority`, `mutation_scope`, `lifecycle_phase` and
+`required_tools` all follow from `artifact_kind` through `_ARTIFACT_FACTS`
+and `_required_tools` in `core/workforce/intent.py`. The
+`_PLANNER_SYSTEM` sentence about drawing `required_tools` from
+`host_context.available_tools` applies to the legacy `PLAN_RESPONSE_SCHEMA`,
+not to the path production takes.
+
+Nothing checked the derived result against the host. When a unit's artifact
+kind implies a tool outside the floor, the unit-scoped gate fails it against
+*every* worker at once, staffing abstains `no_safe_sufficient_team`, and the
+receipt reports `agent_tools_missing` — which reads as a roster problem and
+is what sent this issue after the roster.
+
+This correction was found while filing AR-375 and it revises the earlier
+statement here that the planner emitted an unenforced `required_tools`.
 
 ## Approach
 
@@ -152,13 +162,19 @@ Owner chose the first option: validate the planner's `required_tools` against
 the host floor. Landed.
 
 `plan_policy_violations` now takes the host's proven tools and raises
-`plan_unit_required_tools_unproven` when any unit demands one the host has not
+`plan_unit_required_tools_unproven` when any unit needs one the host has not
 proven. The code is registered through `_PLAN_REPAIR_REQUIREMENTS`, so the
 existing planner repair loop feeds it back with a named correction and the
-planner gets one bounded chance to author a plan this host can staff. It is
+planner gets one bounded chance to produce a plan this host can staff. It is
 wired at both call sites: parse time, which is what reaches the repair loop,
 and the post-staffing check, which is the only place a cache-replayed plan is
 re-checked against this turn's host.
+
+The repair guidance names `artifact_kind`, the field the planner actually
+authors, because the tools themselves are derived from it. The first version
+of this guidance asked the planner to edit `required_tools` directly, which
+it cannot do, and that is why the live repair below failed twice on the same
+violation.
 
 The rule is deliberately topology-independent — an explicit one-unit plan is
 held to it too — and deliberately inert when the host proved nothing, because
@@ -167,11 +183,12 @@ nothing. That case still fails at the downstream staffing gate.
 
 Live evidence, worktree code against the real installation:
 
-- With the capsule's three-tool context, where the planner asks for
-  `test-execution`, the plan is now rejected as
-  `plan_unit_required_tools_unproven` and repaired once. The planner did not
-  recover, so the turn still fails — but it fails naming the plan, not the
-  roster. That is the whole point of the change.
+- With the capsule's three-tool context, where the verification unit's
+  `test-evidence` artifact derives `test-execution`, the plan is now rejected
+  as `plan_unit_required_tools_unproven` and repaired once. The planner did
+  not recover, because that first guidance named a field it does not author;
+  the turn still fails, but it fails naming the plan, not the roster. That is
+  the point of the change.
 - With the real nine, the planner is applied unchanged, the recruiter is
   applied, and the turn now reaches the critic. No regression on the path a
   real host takes.
@@ -213,18 +230,16 @@ Found while establishing the above and out of this issue's scope. None has an
 internal ID or tracker row yet; each needs owner authorization before an
 outward-facing tracker write.
 
+0. **Filed as AR-375.** The planner writing no executor for an install
+   request is now
+   `docs/roadmap/issue-AR-375-planner-cannot-express-host-operations.md`:
+   the artifact-kind ontology cannot express a host operation at all.
+
 1. **The upstream selection eval cannot reach 82 percent of the roster.** It
    filters candidates on `contract.tool_classes` against the host's nine
    (`core/evals/upstream_selection.py:604`), a gate the staffing path
    deliberately does not apply, so the eval scores a roster far smaller than
    the one production selects from.
-2. **The planner writes no executor for an install request.** With the real
-   nine, the install request planned advise, plan and review units and no
-   unit with modify authority. The critic correctly rejected the staffing
-   with `missing-installation-executor`,
-   `wrong-routine-installation-staffing` and
-   `missing-implementation-lifecycle`. This is now the live blocker for an
-   ordinary install turn.
 3. **The recruiter fails intermittently at the provider.** Observed
    `provider_no_valid_response` on one run and
    `provider_response_contract_invalid` on another for the same request, with
