@@ -298,13 +298,27 @@ def _host_chains(
     from agency_runtime.core.installer_native import host_root, runtime_home
 
     if host == "claude":
-        plugins = host_root("claude", home_dir=home_dir) / "plugins"
+        root = host_root("claude", home_dir=home_dir)
         return [
             _chain(
                 "claude",
                 "claude_plugins",
                 "plugin_cache",
-                plugins,
+                root / "plugins",
+                policy=POLICY_PRIVATE,
+                recursive=True,
+                home=home,
+            ),
+            # Where Claude writes its child transcripts. The child-delivery
+            # evidence read requires an owner-private final parent and no
+            # group-writable ancestor, and the host creates these directories
+            # group-writable, so the canary could not prove a delivered card
+            # (measured 2026-09-02: artifact_not_trusted with projects at 0775).
+            _chain(
+                "claude",
+                "claude_child_artifacts",
+                "child_artifacts",
+                root / "projects",
                 policy=POLICY_PRIVATE,
                 recursive=True,
                 home=home,
