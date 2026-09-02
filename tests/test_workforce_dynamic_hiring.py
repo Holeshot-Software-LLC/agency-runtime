@@ -39,10 +39,12 @@ from agency_runtime.core.workforce.contract import (
     WorkforceContract,
 )
 from agency_runtime.core.workforce.hiring import (
+    HIRING_WORKFORCE_PROJECTION_FIELDS,
     ContractorHiringOutcome,
     apply_approved_hiring_case,
     commit_pending_contractor_hiring,
     hire_contractor_for_gap,
+    hiring_workforce_projection,
     restaff_after_hire,
 )
 from agency_runtime.core.workforce.inference import (
@@ -2862,3 +2864,140 @@ def test_calls_used_excludes_attempts_that_never_spent_a_call() -> None:
     )
 
     assert _hiring_event("unit-1", outcome)["calls_used"] == 1
+
+
+# --- AR-376: every worker, not every field ----------------------------------
+
+# The two deterministic duplicate rules a hire can be rejected by read exactly
+# these axes: `_obvious_duplicate` compares authority, artifact_kinds,
+# lifecycle_phases, domains, stacks and outcomes; `_duplicate_role_identity`
+# compares display_name and authority, skipping self by agent_id. A projection
+# that drops any of them leaves the generator unable to predict its own
+# rejection, which is how this roster grew two workers named "Request
+# Clarification Specialist".
+_DUPLICATE_RULE_AXES = frozenset(
+    {
+        "agent_id",
+        "display_name",
+        "authority",
+        "artifact_kinds",
+        "lifecycle_phases",
+        "domains",
+        "stacks",
+        "outcomes",
+    }
+)
+
+_DROPPED_FIELDS = frozenset(
+    {
+        "schema_version",
+        "worker_id",
+        "archetype",
+        "context_mode",
+        "tool_classes",
+        "hosts",
+        "platforms",
+        "composition",
+        "audit",
+        "version",
+        "version_hash",
+        "employment",
+        "origin",
+    }
+)
+
+
+def _disabled_incumbent() -> WorkforceContract:
+    return replace(
+        _existing(),
+        worker_id="worker:retired-quantum-specialist",
+        agent_id="retired-quantum-specialist",
+        display_name="Retired Quantum Specialist",
+        enabled=False,
+    )
+
+
+def test_hiring_projection_is_pinned_to_the_axes_its_own_rules_read() -> None:
+    """A silent addition or removal here changes what hiring can be judged on."""
+
+    assert HIRING_WORKFORCE_PROJECTION_FIELDS == (
+        "agent_id",
+        "display_name",
+        "authority",
+        "enabled",
+        "artifact_kinds",
+        "lifecycle_phases",
+        "domains",
+        "stacks",
+        "outcomes",
+        "capability_ids",
+        "scope_qualifiers",
+        "not_for",
+    )
+    fields = set(HIRING_WORKFORCE_PROJECTION_FIELDS)
+    # Every axis a deterministic duplicate rejection turns on must survive.
+    assert fields >= _DUPLICATE_RULE_AXES
+    # "If a disabled worker covers the gap, abstain" needs this one.
+    assert "enabled" in fields
+    assert not fields & _DROPPED_FIELDS
+    # The dropped names must still exist on the contract: this pins that they
+    # were dropped deliberately, not renamed away underneath the projection.
+    assert set(_existing().to_dict()) >= _DROPPED_FIELDS
+
+
+def test_hiring_projection_carries_every_worker_including_disabled() -> None:
+    """Completeness is the reason the roster is sent at all."""
+
+    contracts = (_existing(), _disabled_incumbent())
+    rows = hiring_workforce_projection(contracts)
+
+    assert [row["agent_id"] for row in rows] == [item.agent_id for item in contracts]
+    assert [row["enabled"] for row in rows] == [True, False]
+    assert all(set(row) == set(HIRING_WORKFORCE_PROJECTION_FIELDS) for row in rows)
+
+
+def test_hiring_prompt_sends_the_projection_and_not_the_full_contract(
+    tmp_path: Path,
+) -> None:
+    """The generator and its critic both see bounded rows for every worker."""
+
+    store = Store(tmp_path / "agency.db")
+    calls: list[dict[str, str]] = []
+    contracts = (_existing(), _disabled_incumbent())
+
+    outcome = hire_contractor_for_gap(
+        "Implement the missing quantum compiler build integration.",
+        _unit(),
+        contracts,
+        store=store,
+        config=_config(),
+        invoker=_recording_invoker(
+            _hiring_response(),
+            {"approved": True, "reason_codes": []},
+            calls=calls,
+        ),
+    )
+
+    assert outcome.hired is True
+    generator, critic = json.loads(calls[0]["prompt"]), json.loads(calls[1]["prompt"])
+    seen = (
+        generator["complete_workforce"],
+        critic["runtime_gap_evidence"]["complete_workforce"],
+    )
+    for rows in seen:
+        assert [row["agent_id"] for row in rows] == [item.agent_id for item in contracts]
+        assert all(set(row) == set(HIRING_WORKFORCE_PROJECTION_FIELDS) for row in rows)
+    assert generator["workforce_count"] == len(contracts)
+    # The revision identity of an incumbent reaches neither prompt.
+    assert _HASH.removeprefix("sha256:") not in calls[0]["prompt"]
+    assert _HASH.removeprefix("sha256:") not in calls[1]["prompt"]
+
+
+def test_hiring_projection_is_smaller_than_the_full_contract() -> None:
+    """The point of the projection: the same workers, fewer bytes."""
+
+    contracts = (_existing(), _disabled_incumbent())
+    full = json.dumps([item.to_dict() for item in contracts], separators=(",", ":"))
+    scoped = json.dumps(hiring_workforce_projection(contracts), separators=(",", ":"))
+
+    assert len(scoped) < len(full)
