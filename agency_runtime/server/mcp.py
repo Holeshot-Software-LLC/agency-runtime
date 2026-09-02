@@ -27,6 +27,7 @@ from agency_runtime.core.observability import (
     current_observation_context,
     mark_current_observation,
 )
+from agency_runtime.core.owned_process_registry import forget_process, register_process
 from agency_runtime.core.stdio_lifetime import StdioLifetimeBound
 
 logger = logging.getLogger("agency_runtime.server.mcp")
@@ -631,11 +632,18 @@ def run_stdio(
     )
     bound = StdioLifetimeBound() if lifetime is None else lifetime
     bound.start()
+    # AR-372: record ownership so `agency off` can end exactly the processes
+    # Agency started. Advisory -- a registry that cannot be written never
+    # stops a server from serving.
+    with suppress(Exception):
+        register_process("mcp-stdio")
 
     while True:
         raw = source.readline(MAX_INPUT_BYTES + 1)
         if raw in (b"", ""):
             bound.stop()
+            with suppress(Exception):
+                forget_process()
             return 0
         bound.record_activity()
         raw_bytes = raw.encode("utf-8") if isinstance(raw, str) else raw

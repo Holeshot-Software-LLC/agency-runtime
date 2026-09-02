@@ -172,6 +172,12 @@ class StdioLifetimeBound:
 
 def _default_expire(reason: str) -> None:  # pragma: no cover - process exit
     print(f"agency mcp server exiting: {reason}", file=sys.stderr, flush=True)
+    try:
+        from agency_runtime.core.owned_process_registry import forget_process
+
+        forget_process()
+    except Exception:
+        pass
     os._exit(0)
 
 

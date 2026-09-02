@@ -116,8 +116,39 @@ the pipe open and never speaks exits at the bound with `rc=0` and
 `agency mcp server exiting: idle_timeout` on stderr. Closing stdin still
 exits immediately.
 
-Steps 2 and 3 (auditing every Windows spawn path for Job Object ownership,
-and a ceiling on live owned children) remain open.
+## Implementation (2026-09-02), step 2: off means off
+
+`agency off` flipped a control flag and left every long-lived process Agency
+had started still running -- hooks became no-ops while MCP servers slept on
+their pipes. Nothing in the codebase reaped an Agency process. That is why
+the leak had no operator lever at all.
+
+`agency_runtime/core/owned_process_registry.py` records ownership rather than
+guessing it: a long-lived server writes one entry when it starts and removes
+it when it exits, and `agency off` ends exactly that roll. Two properties
+make ending them safe, both pinned by tests:
+
+- **A reused process id is never signalled.** Each entry carries the
+  process's start time, re-verified on every read, so an id that now belongs
+  to a stranger is skipped rather than killed. This matters most on Windows,
+  which reuses ids aggressively -- the operator's census showed an Agency
+  launcher whose recorded parent was `svchost.exe` after exactly that.
+- **An unreaped exit counts as gone.** A zombie answers `os.kill(pid, 0)`
+  successfully because its id is still allocated, so signalling alone
+  reported a finished process as running and would have kept it on the roll
+  forever. Found by the tests, not in production.
+
+The roll is advisory throughout: a registry that cannot be read or written
+never blocks a server from starting, because losing the ability to record
+ownership is Agency's problem and not a reason to deny the operator a
+runtime.
+
+`agency on` deliberately does not respawn anything. Hosts spawn their own
+MCP servers per session, so the honest instruction after re-enabling is the
+one the command already prints: start a fresh host session.
+
+Step 3 (a ceiling that refuses to spawn beyond a bounded number of live owned
+children) and the Windows Job Object audit remain open.
 
 ## Acceptance
 
@@ -128,6 +159,12 @@ and a ceiling on live owned children) remain open.
       is never ended and that an unevaluable parent check never ends one).
 - [ ] A suite run on Windows leaves no growing population of live agency
       processes; the count returns to its pre-run baseline.
+- [x] `agency off` ends the long-lived processes Agency started, and only
+      those. Evidence: `agency_runtime/core/owned_process_registry.py`, the
+      `_global_control_result` reaping, and
+      `tests/test_owned_process_registry.py` (8 tests, including that a
+      reused process id is never signalled and an unreaped exit counts as
+      gone).
 - [ ] Every Windows spawn path Agency owns creates its child inside a Job
       Object, pinned by a test.
 - [ ] Exceeding a bounded number of live owned children is refused and
