@@ -1,0 +1,29 @@
+# AR-377 acceptance evidence: hiring critic payload, captured 2026-09-02T20:10:14Z
+# run in the AR-377 worktree, base origin/main c51bc24a, against the installed 291-worker roster
+# command: build the generator and critic prompts exactly as hiring.py builds them, POST each to
+#          http://127.0.0.1:4000/v1/chat/completions with max_tokens 16, and read usage.prompt_tokens
+#          (generator on task-agency-hiring-generator-v2, critic on task-agency-critic-v2)
+workers: 291
+legacy generator             bytes= 441982 prompt_tokens= 115745 cached=0
+legacy critic                bytes= 445164 prompt_tokens= 115937 cached=0
+after AR-376 generator       bytes= 208654 prompt_tokens=  44067 cached=0
+after AR-377 critic          bytes=  14881 prompt_tokens=   5341 cached=0
+critic with no worker rows   bytes=   6424 prompt_tokens=   3419 cached=0
+
+one hire, the two calls that carried the roster:
+  before AR-376:  115745 + 115937 = 231682 prompt_tokens
+  after  AR-376:   44067 +  44143 =  88210 prompt_tokens
+  after  AR-377:   44067 +   5341 =  49408 prompt_tokens   (4.69x below the start, 1.79x below AR-376)
+the cited rows cost 5341 - 3419 = 1922 tokens, against 40840 for the second full roster copy
+the third call, the isolated security review, has never carried worker rows (AR-238)
+# command: python3 -m pytest tests/test_workforce_dynamic_hiring.py -q -W error -p no:cacheprovider -rA -k 'critic or three_calls'
+PASSED tests/test_workforce_dynamic_hiring.py::test_critic_can_independently_validate_runtime_gap_evidence
+PASSED tests/test_workforce_dynamic_hiring.py::test_critic_rejection_gets_one_inferred_replacement_and_fresh_approval
+PASSED tests/test_workforce_dynamic_hiring.py::test_two_call_budget_never_starts_an_uncriticizable_replacement
+PASSED tests/test_workforce_dynamic_hiring.py::test_second_critic_rejection_is_terminal_content_free_and_mutation_free
+PASSED tests/test_workforce_dynamic_hiring.py::test_disabled_covering_worker_prevents_duplicate_before_critic_or_write
+PASSED tests/test_workforce_dynamic_hiring.py::test_failed_critic_call_names_its_failure_class
+PASSED tests/test_workforce_dynamic_hiring.py::test_critic_receives_only_the_rows_its_verdict_turns_on
+PASSED tests/test_workforce_dynamic_hiring.py::test_critic_sees_every_worker_agency_coverage_rows_name
+PASSED tests/test_workforce_dynamic_hiring.py::test_one_hire_makes_three_calls_and_carries_the_roster_once
+9 passed, 57 deselected in 1.20s
