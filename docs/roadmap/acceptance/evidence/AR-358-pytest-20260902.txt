@@ -1,0 +1,16 @@
+# AR-358 acceptance evidence: trust-chain scan, repair, and OpenClaw consent, captured 2026-09-02T11:07:59Z
+# run at commit 1af9ad9fffdd6185da7c4ec67fea58efe0a5a60e (main); the cited implementation and tests were last modified at commit 0b04e00d323e210973b1dae5ab74c049609140a8 and are byte-identical from that commit to this run's commit (git diff --stat prints nothing):
+# git diff --stat 0b04e00d..HEAD -- tests/test_trust_chain_repair.py tests/test_installer_registration.py agency_runtime/core/trust_chain_repair.py agency_runtime/core/doctor.py agency_runtime/core/installer_registration.py => ''
+# command: python3 -m pytest tests/test_trust_chain_repair.py tests/test_installer_registration.py -q -W error -p no:cacheprovider -rA (AR-358 nodes and the summary)
+PASSED tests/test_trust_chain_repair.py::test_the_claude_npm_self_update_break_is_found_and_repaired
+PASSED tests/test_trust_chain_repair.py::test_the_openclaw_global_install_break_is_found_and_repaired
+PASSED tests/test_trust_chain_repair.py::test_the_plugin_cache_break_requires_owner_private_directories
+PASSED tests/test_trust_chain_repair.py::test_a_group_writable_ancestor_breaks_the_chain_and_is_repaired
+PASSED tests/test_trust_chain_repair.py::test_repair_refuses_without_consent_and_outside_the_registry
+PASSED tests/test_trust_chain_repair.py::test_a_symlinked_entry_is_never_chmod_ed_through
+PASSED tests/test_trust_chain_repair.py::test_an_executable_outside_its_npm_package_registers_no_chain
+PASSED tests/test_trust_chain_repair.py::test_doctor_lists_breaks_and_repairs_them_only_with_consent
+PASSED tests/test_trust_chain_repair.py::test_doctor_cli_passes_consent_through
+PASSED tests/test_installer_registration.py::test_openclaw_2026_8_install_and_enable_carry_capability_consent
+PASSED tests/test_installer_registration.py::test_openclaw_before_2026_8_keeps_todays_commands
+59 passed in 0.46s
