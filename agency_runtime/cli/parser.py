@@ -1498,6 +1498,29 @@ def _register_delegation_and_evals(sub: Subparsers, handlers: Handlers) -> None:
     )
     _bind(battery, handlers, "cmd_battery")
 
+
+def _register_chaos(sub: Subparsers, handlers: Handlers) -> None:
+    from agency_runtime.core.chaos import CHAOS_EXPERIMENT_NAMES
+
+    chaos = sub.add_parser(
+        "chaos",
+        help="Inject one owned fault into a dedicated runtime and judge it with an oracle",
+    )
+    chaos_sub = chaos.add_subparsers(dest="chaos_command", required=True)
+    run = chaos_sub.add_parser(
+        "run",
+        help="Run chaos experiments in a rolled-back dedicated runtime and seal receipts",
+    )
+    run.add_argument(
+        "--experiment",
+        action="append",
+        choices=CHAOS_EXPERIMENT_NAMES,
+        default=None,
+        help="Run one named experiment (repeatable; default: every experiment)",
+    )
+    run.add_argument("--json", action="store_true", help="Print the machine-readable report")
+    _bind(run, handlers, "cmd_chaos_run")
+
     smoke = sub.add_parser("smoke", help="Run deterministic local smoke checks")
     smoke.add_argument(
         "--all",
@@ -1905,6 +1928,7 @@ def build_parser(handlers: Handlers) -> argparse.ArgumentParser:
     _register_selection(sub, handlers)
     _register_delegation_and_evals(sub, handlers)
     _register_evidence(sub, handlers)
+    _register_chaos(sub, handlers)
     _register_database(sub, handlers)
     _register_native_protocols(sub, handlers)
     _register_services(sub, handlers)

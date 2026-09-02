@@ -213,6 +213,12 @@ def cmd_battery(args: argparse.Namespace) -> int:
     return run_battery_cli(args)
 
 
+def cmd_chaos_run(args: argparse.Namespace) -> int:
+    from agency_runtime.core.chaos import run_chaos_cli
+
+    return run_chaos_cli(args)
+
+
 def _configuration_dependencies() -> _config.ConfigurationDependencies:
     """Capture the facade's current patchable configuration dependencies."""
     return _config.ConfigurationDependencies(
@@ -481,6 +487,7 @@ _COMMAND_NAMES = (
     "cmd_hiring_show",
     "cmd_host_canary",
     "cmd_battery",
+    "cmd_chaos_run",
     "cmd_install",
     "cmd_uninstall",
     "cmd_mcp",
