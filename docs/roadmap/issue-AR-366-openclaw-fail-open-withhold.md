@@ -110,6 +110,42 @@ Measured on this box while deploying `48881d1d`: hermes closed 13
 with all five header fields missing -- an evaluated negative, which keeps its
 withhold -- but the blind-verifier shape shares the same outlet and must not.
 
+## Open owner decision (2026-09-02): the hermes block destroys real answers
+
+Measured on this box after `cbd54581` was deployed and every host reinstalled.
+The mentor bot's own session closed two turns `response_invalid` at 12:10:25Z
+and 12:10:56Z, both `preflight_state=ready`, both with the same missing list:
+
+    ["agencies_loaded", "agencies_delegated", "skills_loaded",
+     "actual_model_selected", "recruited_via"]
+
+All five header lines absent means the model answered without calling
+`agency_finalize` and without copying the snapshot. That is an evaluated
+negative under the current contract, so `transform_llm_output` replaces the
+whole reply with `FINALIZATION_BLOCK_RESPONSE` and the operator loses the
+answer. Over the preceding 24 h this shape closed 13 hermes turns against 5
+completed.
+
+Agency holds the evidence for that header and could build it -- that is
+exactly what the finalizer call would have produced. Two tests deliberately
+pin the opposite (`test_hermes_transform_rejects_unfinalized_natural_response_without_repair`
+and `test_generated_hermes_output_hook_rejects_open_delegation`), and the
+second one matters: an open delegation the host ignored is a real finding
+that a silent header repair would hide.
+
+So the choice is the owner's, not the implementer's:
+
+1. Keep withholding. The delivery contract stays enforced and the operator
+   keeps losing replies whenever the model skips the finalizer.
+2. Repair the header when the *only* unmet requirements are header lines,
+   there is a non-empty body, and no delegation finding is open --
+   preserving the answer while keeping every delegation verdict withheld.
+3. Repair, but mark the reply as header-repaired so the miss stays visible.
+
+Option 2 was implemented and backed out during this session precisely
+because it weakened the open-delegation test; a sanctioned version needs the
+delegation guard widened beyond `strongly_preferred` first.
+
 ## Acceptance
 
 - [x] A fail-open openclaw turn delivers the model's reply (with
