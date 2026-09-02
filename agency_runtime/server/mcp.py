@@ -27,7 +27,12 @@ from agency_runtime.core.observability import (
     current_observation_context,
     mark_current_observation,
 )
-from agency_runtime.core.owned_process_registry import forget_process, register_process
+from agency_runtime.core.owned_process_registry import (
+    OwnedProcessCeilingExceeded,
+    forget_process,
+    refuse_beyond_ceiling,
+    register_process,
+)
 from agency_runtime.core.stdio_lifetime import StdioLifetimeBound
 
 logger = logging.getLogger("agency_runtime.server.mcp")
@@ -635,6 +640,14 @@ def run_stdio(
     # AR-372: record ownership so `agency off` can end exactly the processes
     # Agency started. Advisory -- a registry that cannot be written never
     # stops a server from serving.
+    # AR-372: refuse to deepen a population that is already a defect. Only a
+    # readable roll that is over the ceiling refuses; anything unreadable
+    # counts zero and serves.
+    try:
+        refuse_beyond_ceiling("mcp-stdio")
+    except OwnedProcessCeilingExceeded as exc:
+        print(f"agency mcp server refusing to start: {exc}", file=sys.stderr, flush=True)
+        return 1
     with suppress(Exception):
         register_process("mcp-stdio")
 

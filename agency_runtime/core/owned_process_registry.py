@@ -36,6 +36,12 @@ REGISTRY_FILENAME = "owned-processes.json"
 # One entry per long-lived server; a machine with more than this has a defect
 # the ceiling should already have refused.
 MAX_REGISTERED_PROCESSES = 512
+# A machine legitimately runs a handful of host sessions, each with one
+# server. Reaching this many live owned processes is a defect, not demand,
+# and the operator's box reached roughly 2,100 before anything objected.
+# Refusing here costs one session its Agency tools; not refusing costs the
+# machine its ability to start processes at all.
+MAX_LIVE_OWNED_PROCESSES = 64
 MAX_REGISTRY_BYTES = 256 * 1024
 MAX_KIND_CHARS = 64
 _START_TIME_TOLERANCE_SECONDS = 2.0
@@ -205,6 +211,36 @@ def live_processes(*, home_dir: str | Path | None = None) -> list[OwnedProcess]:
     ]
 
 
+class OwnedProcessCeilingExceeded(RuntimeError):
+    """Raised when starting another owned process would deepen a known leak."""
+
+
+def live_process_count(*, home_dir: str | Path | None = None) -> int:
+    return len(live_processes(home_dir=home_dir))
+
+
+def refuse_beyond_ceiling(
+    kind: str,
+    *,
+    home_dir: str | Path | None = None,
+    ceiling: int = MAX_LIVE_OWNED_PROCESSES,
+) -> None:
+    """Raise rather than add to a population that is already a defect.
+
+    Fail-open by construction: the count comes from the roll, and an
+    unreadable roll counts zero, so a registry problem never denies a
+    runtime. Only a roll that can be read and is already over the ceiling
+    refuses.
+    """
+
+    if live_process_count(home_dir=home_dir) >= int(ceiling):
+        raise OwnedProcessCeilingExceeded(
+            f"refusing to start another {kind}: {ceiling} Agency-owned processes are "
+            "already live on this machine. Run `agency off` to end them, then start a "
+            "fresh host session."
+        )
+
+
 def register_process(
     kind: str,
     *,
@@ -302,14 +338,18 @@ def registered_kinds(*, home_dir: str | Path | None = None) -> Iterator[str]:
 
 
 __all__ = [
+    "MAX_LIVE_OWNED_PROCESSES",
     "MAX_REGISTERED_PROCESSES",
     "MAX_REGISTRY_BYTES",
     "REGISTRY_SCHEMA",
     "OwnedProcess",
+    "OwnedProcessCeilingExceeded",
     "forget_process",
+    "live_process_count",
     "live_processes",
     "process_is_alive",
     "process_start_time",
+    "refuse_beyond_ceiling",
     "register_process",
     "registered_kinds",
     "registry_path",
