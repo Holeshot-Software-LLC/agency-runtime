@@ -2201,6 +2201,7 @@ class PreflightStoreMixin(ResidentManagerBindingStoreMixin):
         attempt_token: str,
         status: str = "preflight_failed",
         failure_receipt: Mapping[str, Any] | None = None,
+        resident_manager_binding: object | None = None,
     ) -> bool:
         session_id = validate_correlation_id(session_id, field="session_id")
         trace_id = validate_correlation_id(trace_id, field="trace_id")
@@ -2270,6 +2271,17 @@ class PreflightStoreMixin(ResidentManagerBindingStoreMixin):
                     )
                     if inserted.rowcount != 1:
                         raise RuntimeError("preflight failure receipt lost turn correlation")
+                if resident_manager_binding is not None and normalized_status == "preflight_failed":
+                    # The kernel already went out with the fail-open capsule;
+                    # claim the planned delivery exactly as a ready commit would
+                    # so the persistent-host lifecycle can acknowledge it and
+                    # plan ``reused`` next turn (AR-367). Never fails the close.
+                    self.claim_resident_manager_binding_on_failure(
+                        conn,
+                        session_id=session_id,
+                        trace_id=trace_id,
+                        binding=resident_manager_binding,
+                    )
                 conn.execute(
                     "UPDATE specialists_loaded SET expired_at = ? "
                     "WHERE session_id = ? AND trace_id = ? AND expired_at IS NULL",

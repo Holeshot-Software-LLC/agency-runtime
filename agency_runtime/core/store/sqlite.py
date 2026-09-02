@@ -2104,6 +2104,17 @@ class Store(
             resident_manager_binding = (
                 dict(raw_resident_binding) if isinstance(raw_resident_binding, dict) else None
             )
+            if resident_manager_binding is None:
+                # A turn that failed open has no ready recipe, but the kernel
+                # was delivered and its planned binding was claimed with the
+                # close (AR-367); project that claim so the Stop path can
+                # acknowledge it exactly like a ready turn's.
+                resident_manager_binding = self._pending_resident_manager_binding_projection(
+                    conn,
+                    session_id=normalized_session,
+                    host=str(run["host"] or ""),
+                    trace_id=normalized_trace,
+                )
             raw_resident_kernel = (
                 resident_manager_binding.get("kernel")
                 if resident_manager_binding is not None

@@ -261,6 +261,115 @@ class ResidentManagerBindingStoreMixin:
         finally:
             conn.close()
 
+    def _pending_resident_manager_binding_projection(
+        self,
+        conn: Any,
+        *,
+        session_id: str,
+        host: str,
+        trace_id: str,
+    ) -> dict[str, Any] | None:
+        """Rebuild the binding one pending delivery claimed for exactly this turn.
+
+        A ready recipe carries its binding, but a turn that failed open never
+        wrote one (AR-367): the kernel was delivered and the row was claimed
+        by ``fail_preflight_attempt``, so the acknowledgement path needs the
+        same content-free projection from the row itself. The binding id is
+        a function of session, host, and control epoch, so the rebuilt value
+        is byte-for-byte what the ready path would have persisted. Any state
+        that fails the row's own integrity checks projects as ``None``.
+        """
+
+        canonical_host = canonical_resident_manager_host(host)
+        if resident_manager_host_mode(canonical_host) == "request_scoped":
+            return None
+        try:
+            row = _binding_row(conn, session_id=session_id, host=canonical_host)
+        except Exception:
+            return None
+        if row is None or not _row_uses_current_contract(row):
+            return None
+        if str(row["delivery_state"] or "") != "pending":
+            return None
+        if _validated_optional_trace(row["pending_trace_id"], field="pending_trace_id") != trace_id:
+            return None
+        try:
+            epoch = build_resident_control_epoch(
+                master_generation=(
+                    None
+                    if row["master_control_generation"] is None
+                    else int(row["master_control_generation"])
+                ),
+                master_materialized=bool(int(row["master_control_materialized"])),
+                host_generation=int(row["host_control_generation"]),
+                host_materialized=bool(int(row["host_control_materialized"])),
+            )
+            binding = build_resident_manager_binding(
+                session_id=session_id,
+                host=canonical_host,
+                delivery_mode=str(row["pending_delivery_mode"] or ""),
+                control_epoch=epoch,
+            )
+            _validate_current_row(row, binding)
+        except (RuntimeError, TypeError, ValueError, OverflowError):
+            return None
+        return binding.as_dict()
+
+    def pending_resident_manager_binding(
+        self,
+        *,
+        session_id: str,
+        host: str,
+        trace_id: str,
+    ) -> dict[str, Any] | None:
+        """Return the pending delivery claimed for ``trace_id``, or ``None``."""
+
+        normalized_session = validate_correlation_id(session_id, field="session_id")
+        normalized_trace = validate_correlation_id(trace_id, field="trace_id")
+        conn = self._connect()
+        try:
+            return self._pending_resident_manager_binding_projection(
+                conn,
+                session_id=normalized_session,
+                host=host,
+                trace_id=normalized_trace,
+            )
+        finally:
+            conn.close()
+
+    def claim_resident_manager_binding_on_failure(
+        self,
+        conn: Any,
+        *,
+        session_id: str,
+        trace_id: str,
+        binding: object,
+    ) -> bool:
+        """Claim a planned delivery for a turn that is closing fail-open (AR-367).
+
+        The kernel already went out with the capsule, so the persistent-host
+        lifecycle must see the same claim a ready commit would have made;
+        otherwise every later turn plans ``injected`` again and the session
+        never reaches ``reused``. Bookkeeping never fails the close: the claim
+        runs under a savepoint and any conflict or invalid state rolls back to
+        it, leaving the run's own terminal update intact.
+        """
+
+        conn.execute("SAVEPOINT resident_binding_claim")
+        try:
+            claimed = self._commit_resident_manager_binding(
+                conn,
+                session_id=session_id,
+                trace_id=trace_id,
+                binding=binding,
+            )
+        except (RuntimeError, TypeError, ValueError):
+            claimed = False
+        if not claimed:
+            conn.execute("ROLLBACK TO SAVEPOINT resident_binding_claim")
+        conn.execute("RELEASE SAVEPOINT resident_binding_claim")
+        return claimed
+
     def mark_resident_manager_restore_required(
         self,
         *,
