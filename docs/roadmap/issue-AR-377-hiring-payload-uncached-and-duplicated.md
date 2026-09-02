@@ -1,6 +1,6 @@
 ---
 title: "AR-377: The hiring workforce payload is uncached and sent again to the critic"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-09-02
 updated: 2026-09-02

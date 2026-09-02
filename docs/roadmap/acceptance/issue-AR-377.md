@@ -11,17 +11,17 @@ supersedes: []
 superseded_by: null
 type: acceptance-verification
 issue_id: AR-377
-candidate_commit: pending
+candidate_commit: 65ec644de4c6f2c3fff4b78eaae1cf070e0a8064
 evidence_cutoff: 2026-09-02
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/551
 ---
 
 # AR-377 acceptance verification record
 
-Pending draft. Builder evidence for bounding the hiring critic's copy of the
-roster, cited against the working tree; the record freezes to the
-implementation commit once that commit is an ancestor of `HEAD`, and
-verification rows are written only then.
+Builder evidence for bounding the hiring critic's copy of the roster, cited
+against the AR-377 implementation commit `65ec644d`; every verdict below comes
+from one isolated single-check verifier run (`scripts/verify_acceptance.py`,
+codex transport) that saw only that criterion and its own builder rows.
 
 ## Builder evidence
 
@@ -44,3 +44,6 @@ verification rows are written only then.
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
+| 1 | satisfied | `AR-377.1-20260902-3c7b28eb` | `79ea5e4b8ef1716e228849a21a85cca2e5c1f2e0152a90b2c80bfd283aab1e96` | 2026-09-02 | The measured table and raw evidence report generator and critic prompt tokens for a complete hire before and after, with totals of 231,682 and 49,408 on the 291-worker roster. |
+| 2 | satisfied | `AR-377.2-20260902-af092c6c` | `7c210e4b7bd9a2a11dd96840688ec1cfeca2e0f6d12af2623d01b746d1abe417` | 2026-09-02 | The excerpts show `_critic_prompt` supplies only `cited_workforce`, while `_CRITIC_SYSTEM` explicitly names prior rejection of role-identity duplicates, axis-subset duplicates, and unknown relationship targets. |
+| 3 | satisfied | `AR-377.3-20260902-1e4565c9` | `c7796273b1e163907d8eb20e37d8910f81ea7ff5fcca8091512c244ba75a5570` | 2026-09-02 | The three cited tests directly assert exactly three calls, the full roster only in the generator prompt, exclusion of an uncited non-covering worker from critic input, and inclusion of all coverage-named workers; the cited run shows all three passed. |
