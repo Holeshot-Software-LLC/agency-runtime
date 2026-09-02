@@ -572,7 +572,7 @@ def test_critic_can_independently_validate_runtime_gap_evidence(tmp_path: Path) 
             return _result(_SAFE_SECURITY_REVIEW, provider)
         document = json.loads(prompt)
         evidence = document.get("runtime_gap_evidence", {})
-        workforce = evidence.get("complete_workforce", [])
+        workforce = evidence.get("cited_workforce", [])
         verified = evidence.get("verified_gap", {})
         approved = bool(
             verified.get("inference_declared") is True
@@ -767,7 +767,7 @@ def test_critic_rejection_gets_one_inferred_replacement_and_fresh_approval(
         assert verified_gap["coverage_rows_complete"] is True
         assert critic_prompt["runtime_gap_evidence"]["workforce_count"] == 1
         assert [
-            item["agent_id"] for item in critic_prompt["runtime_gap_evidence"]["complete_workforce"]
+            item["agent_id"] for item in critic_prompt["runtime_gap_evidence"]["cited_workforce"]
         ] == ["general-build-reviewer"]
         assert "RAW-REQUEST-MARKER" not in critic_call["prompt"]
         assert "runtime_gap_evidence" in critic_call["system_prompt"]
@@ -2980,14 +2980,14 @@ def test_hiring_prompt_sends_the_projection_and_not_the_full_contract(
 
     assert outcome.hired is True
     generator, critic = json.loads(calls[0]["prompt"]), json.loads(calls[1]["prompt"])
-    seen = (
-        generator["complete_workforce"],
-        critic["runtime_gap_evidence"]["complete_workforce"],
-    )
-    for rows in seen:
-        assert [row["agent_id"] for row in rows] == [item.agent_id for item in contracts]
-        assert all(set(row) == set(HIRING_WORKFORCE_PROJECTION_FIELDS) for row in rows)
+    rows = generator["complete_workforce"]
+    assert [row["agent_id"] for row in rows] == [item.agent_id for item in contracts]
+    assert all(set(row) == set(HIRING_WORKFORCE_PROJECTION_FIELDS) for row in rows)
     assert generator["workforce_count"] == len(contracts)
+    # AR-377 bounds which rows the critic gets; they are the same shape.
+    cited = critic["runtime_gap_evidence"]["cited_workforce"]
+    assert {row["agent_id"] for row in cited} <= {item.agent_id for item in contracts}
+    assert all(set(row) == set(HIRING_WORKFORCE_PROJECTION_FIELDS) for row in cited)
     # The revision identity of an incumbent reaches neither prompt.
     assert _HASH.removeprefix("sha256:") not in calls[0]["prompt"]
     assert _HASH.removeprefix("sha256:") not in calls[1]["prompt"]
@@ -3001,3 +3001,129 @@ def test_hiring_projection_is_smaller_than_the_full_contract() -> None:
     scoped = json.dumps(hiring_workforce_projection(contracts), separators=(",", ":"))
 
     assert len(scoped) < len(full)
+
+
+# --- AR-377: the critic gets the rows its verdict turns on, not the roster --
+
+
+def _unrelated_incumbent() -> WorkforceContract:
+    """A worker this unit's candidate never cites and Agency finds no coverage for."""
+
+    return replace(
+        _existing(),
+        worker_id="worker:sonnet-form-reviewer",
+        agent_id="sonnet-form-reviewer",
+        display_name="Sonnet Form Reviewer",
+        outcomes=("verse critique",),
+        capability_ids=("versify",),
+        artifact_kinds=("poem",),
+        lifecycle_phases=("draft",),
+        domains=("poetry",),
+        # An empty stacks tuple covers every stack, so name one that does not
+        # match or this worker still lands in Agency's coverage rows.
+        stacks=("cobol",),
+        scope_qualifiers=("sonnet form",),
+        not_for=("software",),
+    )
+
+
+def _hire_capturing_prompts(store: Store, contracts: tuple[WorkforceContract, ...]):
+    calls: list[dict[str, str]] = []
+    outcome = hire_contractor_for_gap(
+        "Implement the missing quantum compiler build integration.",
+        _unit(),
+        contracts,
+        store=store,
+        config=_config(),
+        invoker=_recording_invoker(
+            _hiring_response(),
+            {"approved": True, "reason_codes": []},
+            calls=calls,
+        ),
+    )
+    return outcome, calls
+
+
+def test_critic_receives_only_the_rows_its_verdict_turns_on(tmp_path: Path) -> None:
+    """The second full copy of the roster was 93% of the critic's prompt."""
+
+    store = Store(tmp_path / "agency.db")
+    contracts = (_existing(), _unrelated_incumbent())
+
+    outcome, calls = _hire_capturing_prompts(store, contracts)
+
+    assert outcome.hired is True
+    generator = json.loads(calls[0]["prompt"])
+    critic = json.loads(calls[1]["prompt"])
+    assert [row["agent_id"] for row in generator["complete_workforce"]] == [
+        "general-build-reviewer",
+        "sonnet-form-reviewer",
+    ]
+    # The candidate cites general-build-reviewer; nothing cites the other, and
+    # Agency's own coverage rows do not name it either.
+    assert [row["agent_id"] for row in critic["runtime_gap_evidence"]["cited_workforce"]] == [
+        "general-build-reviewer"
+    ]
+    # The roster size it is not being shown in full is still stated.
+    assert critic["runtime_gap_evidence"]["workforce_count"] == 2
+    assert len(critic["runtime_gap_evidence"]["cited_workforce"]) < len(
+        generator["complete_workforce"]
+    )
+
+
+def test_critic_sees_every_worker_agency_coverage_rows_name(tmp_path: Path) -> None:
+    """A worker the candidate never mentions still has to be judgeable."""
+
+    store = Store(tmp_path / "agency.db")
+    covering = replace(
+        _existing(),
+        worker_id="worker:quiet-quantum-implementer",
+        agent_id="quiet-quantum-implementer",
+        display_name="Quiet Quantum Implementer",
+        authority="modify",
+        artifact_kinds=("implementation-change",),
+        lifecycle_phases=("implementation",),
+        domains=("quantum-build-systems",),
+        stacks=("typescript",),
+        capability_ids=("implementation",),
+    )
+    contracts = (_existing(), covering)
+
+    _outcome, calls = _hire_capturing_prompts(store, contracts)
+
+    critic = json.loads(calls[1]["prompt"])
+    coverage = {
+        row["agent_id"] for row in critic["runtime_gap_evidence"]["verified_gap"]["coverage_rows"]
+    }
+    cited = {row["agent_id"] for row in critic["runtime_gap_evidence"]["cited_workforce"]}
+    assert "quiet-quantum-implementer" in coverage
+    assert coverage <= cited
+
+
+def test_one_hire_makes_three_calls_and_carries_the_roster_once(tmp_path: Path) -> None:
+    """Per-hire call count, and which of those calls pays for the roster."""
+
+    store = Store(tmp_path / "agency.db")
+    contracts = (_existing(), _unrelated_incumbent())
+
+    outcome, calls = _hire_capturing_prompts(store, contracts)
+
+    assert outcome.hired is True
+    assert [item.stage for item in outcome.attempts] == [
+        "hiring",
+        "hiring-critic",
+        "security_review",
+    ]
+    assert len(calls) == 3
+    everyone = {item.agent_id for item in contracts}
+    carried = [
+        {row["agent_id"] for row in json.loads(call["prompt"]).get("complete_workforce", ())}
+        for call in calls
+    ]
+    # Only the generator is handed the whole roster.
+    assert carried == [everyone, set(), set()]
+    # The isolated security reviewer is handed no worker rows at all (AR-238).
+    security = json.loads(calls[2]["prompt"])
+    assert "cited_workforce" not in security["runtime_gap_evidence"]
+    assert "complete_workforce" not in security["runtime_gap_evidence"]
+    assert security["runtime_gap_evidence"]["workforce_count"] == 2
