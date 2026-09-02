@@ -117,6 +117,7 @@ from agency_runtime.core.store.trace_identity import (
     correlation_digest,
     ensure_correlation_key_integrity,
 )
+from agency_runtime.core.store.turn_window import TurnWindowStoreMixin
 from agency_runtime.core.store.workforce import WorkforceStoreMixin
 
 _RUN_CONTENT_LIMIT = RUN_CONTENT_LIMIT
@@ -870,6 +871,7 @@ class Store(
     EvidenceStoreMixin,
     ChildLaunchJoinStoreMixin,
     SelectionDistributionStoreMixin,
+    TurnWindowStoreMixin,
     MaintenanceStoreMixin,
     RosterStoreMixin,
     WorkforceStoreMixin,
