@@ -1,6 +1,6 @@
 ---
 title: "AR-378: A failed hiring call records zero attempts, so the receipt has nothing to debug"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-09-02
 updated: 2026-09-02

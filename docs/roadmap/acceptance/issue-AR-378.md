@@ -11,16 +11,17 @@ supersedes: []
 superseded_by: null
 type: acceptance-verification
 issue_id: AR-378
-candidate_commit: pending
+candidate_commit: 9ce98b3b8ef30a93aa5c13d2feb7ab34c3ddab10
 evidence_cutoff: 2026-09-02
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/552
 ---
 
 # AR-378 acceptance verification record
 
-Pending draft. Builder evidence for the hiring failure receipt, cited against
-the working tree; the record freezes to the implementation commit once that
-commit is an ancestor of `HEAD`, and verification rows are written only then.
+Builder evidence for the hiring failure receipt, cited against the AR-378
+implementation commit `9ce98b3b`; every verdict below comes from one isolated
+single-check verifier run (`scripts/verify_acceptance.py`) that saw only that
+criterion and its own builder rows.
 
 ## Builder evidence
 
@@ -47,3 +48,6 @@ commit is an ancestor of `HEAD`, and verification rows are written only then.
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
+| 1 | satisfied | `AR-378.1-20260902-890d71bf` | `0a59c2921cb225bb78ff1d63ba6f3fc5bb5d1b8175660c8979425eba6cb3c261` | 2026-09-02 | The cited implementation and test show one failed hiring attempt records provider, requested_model, latency_ms, and the distinguishable reason_code provider_call_failed, with timeout separately classified as provider_call_timed_out. |
+| 2 | satisfied | `AR-378.2-20260902-c729c549` | `54eab7d0a55e9e447193c279a1fab15abf8816ab6f0181b91b8056b4c80265b0` | 2026-09-02 | The cited command output shows an abstention with reason_codes ('hiring_inference_failed', 'provider_call_failed') in that order and exactly one failed hiring attempt carrying provider_call_failed. |
+| 3 | satisfied | `AR-378.3-20260902-dee9e358` | `342c8e9184a2cec3384140fa3cbc1a3ea5c679c3686be239be6d9e372673aad1` | 2026-09-02 | The cited test excerpts pin a non-empty failed-provider attempt, both skip classes, applied-only durable receipts, and calls_used, while the pytest artifact shows the seven targeted AR-378 cases passed under -W error. |
