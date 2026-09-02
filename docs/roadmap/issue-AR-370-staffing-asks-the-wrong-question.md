@@ -73,21 +73,42 @@ the recruiter a candidate set that no judgement could rescue.
 
 ## Approach
 
-Three layers, cheapest first, each independently measurable:
+Owner direction (2026-09-02, after reviewing the measurements above): do not
+solve this with keywords. The expansion table is the wrong architecture and
+`_DOMAIN_EXPANSIONS` is already product debt — it ships one operator's
+vocabulary (`openclaw`, `hermes`, `litellm`, `nexus`, `mentor`, `systemd`) to
+every installation, and no user should have to phrase a request in card
+vocabulary to get staffed. Inference is why this system exists; the fix is to
+use it one stage earlier, not to grow a lexicon.
 
-1. **Operational-verb expansion.** Give install, deploy, configure, upgrade,
-   provision, migrate, restart, troubleshoot the same treatment `auth` and
-   `systemd` already get. The table already exists; this is data, and the
-   measurements above show it moves the right specialist from absent to
-   top-two.
-2. **Deixis and reference resolution.** "install **this**: <url>" should
-   resolve its subject before retrieval — at minimum contribute the URL's
-   host and path as subject tokens rather than tokenizing them as noise.
-3. **An empty candidate set is its own signal.** Three cards at 0.193, or
-   none at all, should report that the request was too underspecified to
-   route, not hand the recruiter garbage and let it abstain with
-   `no_safe_sufficient_team`. The operator currently cannot tell "I could not
-   understand the request" from "no team is safe".
+The measurement tables above are therefore diagnostic, not a proposal. They
+establish that retrieval responds correctly once the query states the work —
+which is exactly what an inference step can produce and a lookup table cannot.
+
+1. **Inference forms the retrieval query.** Today retrieval runs on the user's
+   literal text. It should run on a work statement the planner derives from
+   the turn: the action, the artifact, the platform, the domain. "install
+   this: <url>" becomes something like "install a CLI tool on linux from a
+   downloaded distribution" — stated by the model that read the turn, not
+   matched from a table. Retrieval quality then rides on inference, which is
+   the intended architecture and is stack-neutral by construction.
+2. **Resolve the reference before retrieving.** A request whose subject is a
+   bare deictic ("this", "that", "it") or a bare URL has no retrievable
+   subject. The work statement must resolve it — from the turn's own context,
+   or from the URL itself — and the routing receipt must record what it
+   resolved it to, so a wrong resolution is visible rather than silent.
+3. **Distinguish the three ways a turn goes unstaffed.** The operator
+   currently cannot tell them apart, which is why this read as a recruiter
+   defect for weeks. Each needs its own reason code in the receipt:
+   `request_underspecified` (no retrievable subject — nothing to rank),
+   `no_relevant_candidate` (retrieval ran and found nothing above the floor),
+   and the existing `no_safe_sufficient_team` (a real candidate set the
+   recruiter judged unsafe or insufficient). Only the third is a recruiter
+   verdict.
+
+Retiring `_DOMAIN_EXPANSIONS` belongs to step 1: once the query states the
+work, a hand-curated synonym table has nothing left to add, and keeping it
+would keep shipping one stack's nouns to everyone.
 
 ## Dependencies
 
@@ -95,8 +116,11 @@ Three layers, cheapest first, each independently measurable:
 
 ## Acceptance
 
-- [ ] Operational-verb requests retrieve a relevant specialist in the top
-      three; `configure the gateway` never returns an empty candidate set.
+- [ ] Retrieval runs on an inference-derived work statement, not the user's
+      literal text; `configure the gateway` and `install this: <url>` both
+      retrieve a relevant specialist without the user supplying vocabulary.
+- [ ] `_DOMAIN_EXPANSIONS` is retired, so no installation ships another
+      operator's stack vocabulary.
 - [ ] A request whose subject is a bare reference resolves that reference
       before retrieval, with the resolution recorded in the routing receipt.
 - [ ] An underspecified request is reported as underspecified, distinctly
