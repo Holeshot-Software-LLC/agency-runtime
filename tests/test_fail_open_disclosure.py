@@ -40,7 +40,10 @@ from agency_runtime.core.host_capabilities import native_adapter_capability_rece
 from agency_runtime.core.operator_policy import OPERATOR_POLICY_HEADER
 from agency_runtime.core.preflight import run_preflight
 from agency_runtime.core.preflight_failure import PREFLIGHT_FAILURE_REASONS
-from agency_runtime.core.resident_managers import RESIDENT_MANAGER_KERNEL
+from agency_runtime.core.resident_managers import (
+    RESIDENT_MANAGER_KERNEL,
+    RESIDENT_MANAGER_KERNEL_HASH,
+)
 from agency_runtime.core.store.sqlite import Store
 from agency_runtime.server import mcp_tools
 
@@ -259,6 +262,17 @@ def test_workforce_inference_failure_discloses_its_staffing_codes_without_detail
     )
     assert "workforce_inference_failed; staffing: staffing_critic_rejected" in result.context
     assert provider_detail not in result.context
+
+
+def test_kernel_hash_literal_is_the_one_bound_before_the_disclosure_landed() -> None:
+    # Pinned as a literal (the kernel test recomputes it) so a change to the
+    # kernel bytes is visible here: this is the v5 hash recorded live in the
+    # AR-355 binding receipt on 2026-09-01, before AR-356 landed, and it is
+    # unchanged after it.
+    assert (
+        RESIDENT_MANAGER_KERNEL_HASH
+        == "62c94d87e5beb88cecb711fb5a95c7c4eb56feaa17419cf021e3cb68220f5ed6"
+    )
 
 
 def test_staffed_turns_never_carry_the_disclosure() -> None:
