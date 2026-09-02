@@ -84,10 +84,10 @@ nine the planner is applied, the recruiter is applied, and the critic rejects
 the staffing with `missing-installation-executor`,
 `wrong-routine-installation-staffing` and `missing-implementation-lifecycle`:
 the plan has advise, plan and review units and nothing with modify authority
-that actually performs the install. Filed as AR-375: every planned unit was
-read-only, so `cross-platform-installer-engineer` — enabled on all five
-hosts, `modify` authority, tools inside the nine — could not be matched,
-because it declares only the `implementation-change` artifact kind.
+that actually performs the install. Filed as AR-375 and closed not
+reproducible: every fresh re-run planned an `implementation-change` unit and
+staffed `cross-platform-installer-engineer`, with the turn accepted. The
+original read-only plan was planner output variance from a single sample.
 
 ## same-task-continuity
 

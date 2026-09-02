@@ -230,11 +230,11 @@ Found while establishing the above and out of this issue's scope. None has an
 internal ID or tracker row yet; each needs owner authorization before an
 outward-facing tracker write.
 
-0. **Filed as AR-375.** The planner writing no executor for an install
-   request is now
-   `docs/roadmap/issue-AR-375-planner-cannot-express-host-operations.md`:
-   every planned unit was read-only, so the eligible installer specialist
-   could not be matched.
+0. **Filed as AR-375, then closed not reproducible.** The planner writing no
+   executor for an install request was one sample; every fresh re-run staffed
+   `cross-platform-installer-engineer` in an `implementation-change` unit and
+   the turn was accepted. See
+   `docs/roadmap/issue-AR-375-planner-cannot-express-host-operations.md`.
 
 1. **The upstream selection eval cannot reach 82 percent of the roster.** It
    filters candidates on `contract.tool_classes` against the host's nine

@@ -1,6 +1,6 @@
 ---
 title: "AR-375: An actionable install is planned as a read-only unit, so the eligible installer specialist is never staffed"
-status: open
+status: wont_do
 category: roadmap
 created: 2026-09-02
 updated: 2026-09-02
@@ -22,99 +22,82 @@ blocks: []
 
 # AR-375: An actionable install is planned as a read-only unit, so the eligible installer specialist is never staffed
 
+**Closed not reproducible, 2026-09-02.** The behaviour this issue describes was
+observed exactly once and did not recur. Kept as a record because the
+investigation corrected two other claims, and because the negative result is
+worth not rediscovering.
+
 ## Problem
 
-With AR-374's tools axis cleared, an ordinary install request reaches the
-critic, which rejects the staffing with `missing-installation-executor`,
-`wrong-routine-installation-staffing` and `missing-implementation-lifecycle`.
-The critic is right.
-
-For `install this: https://zcode.z.ai/en` the planner produced three units:
-
-| unit | artifact kind | authority |
-|---|---|---|
-| `unit-install-discovery` | `analysis` | advise |
-| `unit-install-operation` | `plan` | plan |
-| `unit-install-verification` | `test-evidence` | review |
-
-Every one is read-only. Nothing represents the work the host would actually
-perform, so no specialist is staffed to guide it.
-
-The roster is ready and waiting. `cross-platform-installer-engineer` is
-enabled on all five hosts, declares `modify` authority, sits in the
-`implementation` and `release` lifecycle phases, and needs only
-`package-management`, `repository-read` and `shell-execution` — all inside
-the nine capabilities every host proves. It cannot be reached because a
-contract only covers a unit whose `artifact_kind` is among the contract's
-declared kinds, and this specialist declares exactly one:
-`implementation-change`. A `plan` unit can never match it.
-
-So the defect is the plan's shape, not the ontology and not eligibility.
-`implementation-change` is how this roster expresses install work; the
-planner simply did not choose it.
+As filed: for `install this: https://zcode.z.ai/en` the planner produced three
+units — `analysis`, `plan`, `test-evidence` — all read-only. Nothing
+represented the work the host would perform, so no executor specialist was
+staffed and the critic rejected the staffing with
+`missing-installation-executor`, `wrong-routine-installation-staffing` and
+`missing-implementation-lifecycle`.
 
 ## Current state
 
-**Agency is advisory and never executes.** The README states it "does not
-execute specialists" (README.md:1063), ADR-0110 describes Agency Runtime as
-"primarily an advisory plugin integration", and ADR-0107 records that
-"Agency never executes either step" for install commands. The host performs
-the work; Agency supplies the expertise the host applies.
+That was one sample, and the generalisation drawn from it does not hold.
 
-That is why a unit's `artifact_kind` and derived `mutation_scope` describe
-the work the **host** will carry out under staffed expertise, not something
-Agency performs. An earlier revision of this issue argued that the
-artifact-kind table could not express a host operation and asked whether
-Agency should be allowed to perform one. That framing was wrong and is
-retracted: the question does not arise, and `implementation-change` already
-carries exactly this meaning — the installer specialist declares it.
+Re-measured against the same installation and the same request:
 
-The derivation facts remain accurate and are worth keeping, because they
-explain why the planner's single choice decides everything: in the compact
-intent path the planner authors only `unit_id`, `outcome`, `artifact_kind`,
-`domains`, `stacks`, `capability_ids`, `novel_capability` and `depends_on`.
-`authority`, `mutation_scope`, `lifecycle_phase` and `required_tools` all
-follow from `artifact_kind` through `_ARTIFACT_FACTS` and `_required_tools`.
-Choosing `plan` instead of `implementation-change` therefore removes the
-authority, the lifecycle phase and the specialist match in one step.
+| run | host | fresh | plan | executor unit | status |
+|---|---|---|---|---|---|
+| original | codex | yes | 3 units, all read-only | no | critic rejected |
+| A | claude | yes | 5 units | yes | `accepted` |
+| B | claude | cached | 5 units | yes | `accepted` |
+| C | claude | cached | 5 units | yes | `accepted` |
+| D | codex | yes | 5 units | yes | `inference_invalid` |
 
-**The reproduction is not the full production path.** The AR-374 capsule's
-script calls `plan_and_staff_workforce` directly with `turn_routing_context={}`,
-which bypasses `selector.pipeline._workforce_planning_options`. That function
-constrains the planner for special turn contracts — a turn whose
-classification has `execution_decision_required` false is forced to exactly
-one `analysis` unit. Whether a real install turn is additionally constrained
-that way is unverified, and it must be established before any planner change,
-because the two causes need different fixes:
+Every fresh run after the original produced the executor unit. The accepted
+runs planned `analysis`, `implementation-change`, `test-code`,
+`review-report`, `test-evidence` and staffed seven specialists:
+`codebase-onboarding-engineer` for discovery,
+`cross-platform-installer-engineer` and `devops-automator` for the
+implementation, `software-test-engineer` for tests, `code-reviewer` for
+review, and `cross-platform-release-verifier` with `test-results-analyzer`
+for evidence.
 
-- If the planner is unconstrained and still chooses `plan`, the fix is
-  planner guidance.
-- If classification forces a single `analysis` unit, the fix is in the
-  classifier and no planner change would help.
+So the pipeline does staff an install correctly. The single read-only plan was
+planner output variance, not a structural defect, and it is not a defect this
+issue can characterise from one observation.
+
+Two facts established here are worth keeping:
+
+- **Turn classification does not foreclose an executor.**
+  `classify_turn_intent` returns `execution_decision_required=True` for
+  `install this: <url>`, so `_workforce_planning_options` applies no
+  constraint and the planner is free to choose any artifact kind. The
+  planner-versus-classifier question this issue raised is answered: the
+  classifier is not involved.
+- **Repeat runs are not independent samples.** The plan and recruiter stages
+  cache, so runs B and C replayed run A. Measuring how often the planner omits
+  an executor needs cache-busting across varied requests, not repetition of
+  one.
 
 ## Approach
 
-Not decided; the disambiguation above comes first.
+None. Closed without a change.
 
-If it is planner guidance, the candidate is `_PLANNER_SYSTEM`'s "Do not
-invent implementation, release, or deployment work beyond the request",
-which is meant to stop the planner inflating a read-only request into
-delivery work. For a request whose entire content *is* an operation, that
-sentence may be suppressing the one unit the request needs. Any change here
-must not reintroduce the inflation it was written to prevent, so it needs a
-regression case in both directions.
+If the omission is seen again, the thing to measure first is its rate across
+distinct operational requests with the cache bypassed. A single occurrence is
+not enough to justify touching `_PLANNER_SYSTEM`, whose "Do not invent
+implementation, release, or deployment work beyond the request" sentence
+exists to prevent the opposite failure.
 
 ## Dependencies
 
 - AR-374 cleared the tools axis, which is what let the turn reach the critic
-  and made this visible.
+  and made the original observation possible.
 
 ## Acceptance
 
-- [ ] It is established, on the full pipeline path, whether the planner is
-      free to choose `implementation-change` for an actionable install and
-      declines to, or whether turn classification forecloses it.
-- [ ] An ordinary install request produces a unit the installer specialist
-      can cover, and that specialist is staffed, with a live receipt.
-- [ ] A regression case pins both directions: an actionable operation gets an
-      executor unit, and a read-only request is not inflated into one.
+Not applicable; closed not reproducible.
+
+## Unresolved observation
+
+Run D planned correctly and still ended `inference_invalid` /
+`workforce_inference_failed` on the codex host. That is a later-stage failure
+and is not this issue's subject; it may be the intermittent recruiter provider
+failure recorded as a follow-up in AR-374.
