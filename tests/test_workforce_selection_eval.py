@@ -211,8 +211,17 @@ def test_live_workforce_eval_canonicalizes_tool_aliases() -> None:
         19,
     )
 
+    # 380d72e6 made native-delegation a baseline capability for every workforce
+    # eval case, because that is the delivery model these cases exercise; the
+    # expectation here was never updated and had been failing on main since.
     assert context.available_tools == frozenset(
-        {"repository-read", "shell-execution", "test-execution", "package-management"}
+        {
+            "repository-read",
+            "shell-execution",
+            "test-execution",
+            "package-management",
+            "native-delegation",
+        }
     )
     assert context.roster_generation == 19
 
