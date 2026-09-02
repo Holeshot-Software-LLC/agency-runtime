@@ -1,11 +1,12 @@
 ---
 title: "AR-358: Installers leave their trust chains trusted; doctor offers the fix"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-09-01
 updated: 2026-09-02
 tags: [installer, doctor, trust-chain, operations]
 related:
+  - docs/roadmap/acceptance/issue-AR-358.md
   - docs/roadmap/issue-AR-337-run-harness-battery-on-version-change.md
 supersedes: []
 superseded_by: null
