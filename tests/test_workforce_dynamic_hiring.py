@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import time
 from copy import deepcopy
 from dataclasses import asdict, replace
 from pathlib import Path
@@ -19,10 +20,17 @@ from agency_runtime.core.config import (
 from agency_runtime.core.evals.product_scenarios import product_scenario
 from agency_runtime.core.host_capabilities import native_adapter_capability_receipt
 from agency_runtime.core.roster.workforce import workforce_index_snapshot
-from agency_runtime.core.selector.pipeline import _hireable_gap_units, route
+from agency_runtime.core.selector.pipeline import (
+    _hireable_gap_units,
+    _hiring_event,
+    route,
+)
 from agency_runtime.core.selector.receipt_projection import project_durable_routing_receipt
 from agency_runtime.core.store.sqlite import Store
-from agency_runtime.core.structured_provider import StructuredProviderResult
+from agency_runtime.core.structured_provider import (
+    MAX_STRUCTURED_PROMPT_BYTES,
+    StructuredProviderResult,
+)
 from agency_runtime.core.workforce import hiring as hiring_module
 from agency_runtime.core.workforce.contract import (
     WORKFORCE_CONTRACT_SCHEMA_VERSION,
@@ -31,6 +39,7 @@ from agency_runtime.core.workforce.contract import (
     WorkforceContract,
 )
 from agency_runtime.core.workforce.hiring import (
+    ContractorHiringOutcome,
     apply_approved_hiring_case,
     commit_pending_contractor_hiring,
     hire_contractor_for_gap,
@@ -2635,3 +2644,221 @@ def test_second_contractor_for_an_existing_role_is_refused_and_names_the_incumbe
     assert f"duplicate_role_identity:{incumbent.agent_id}" in outcome.reason_codes
     assert outcome.worker is None
     assert store.list_hiring_cases(limit=10) == []
+
+
+# --- AR-378: a hiring call that fails leaves a readable receipt --------------
+
+
+def _refusing_invoker(*, latency_seconds: float = 0.0):
+    """Stand in for a provider that returns no structured result."""
+
+    def invoke(_provider, _prompt, _schema, **_kwargs):
+        if latency_seconds:
+            time.sleep(latency_seconds)
+        return None
+
+    return invoke
+
+
+def _chain_config() -> AgencyConfig:
+    """Two interchangeable providers, so a chain can outlive one failure."""
+
+    config = _config()
+    primary = config.providers[0]
+    return replace(
+        config,
+        providers=(replace(primary, name="primary"), replace(primary, name="fallback")),
+        workforce=replace(config.workforce, provider=""),
+    )
+
+
+def test_failed_hiring_call_records_the_provider_model_and_latency(tmp_path: Path) -> None:
+    """AR-378: `hiring_inference_failed` used to be the entire receipt."""
+
+    store = Store(tmp_path / "agency.db")
+
+    outcome = hire_contractor_for_gap(
+        "Implement the missing quantum compiler build integration.",
+        _unit(),
+        (_existing(),),
+        store=store,
+        config=_config(),
+        invoker=_refusing_invoker(),
+    )
+
+    assert outcome.status == "abstained"
+    # The stable stage code still leads, so existing readers keep working.
+    assert outcome.reason_codes == ("hiring_inference_failed", "provider_call_failed")
+    assert len(outcome.attempts) == 1
+    attempt = outcome.attempts[0]
+    assert attempt.stage == "hiring"
+    assert attempt.provider == "task-agency-router"
+    assert attempt.requested_model == "hiring-model"
+    assert attempt.status == "failed"
+    assert attempt.reason_code == "provider_call_failed"
+    assert attempt.latency_ms >= 0
+    assert attempt.actual_model == ""
+    assert attempt.model_receipt_source == "unavailable"
+    assert store.list_hiring_cases(limit=10) == []
+
+
+def test_call_that_reaches_its_deadline_is_recorded_as_a_timeout(tmp_path: Path) -> None:
+    """The deadline handed to the transport is never raised, so this is a fact."""
+
+    store = Store(tmp_path / "agency.db")
+    config = _config()
+    config = replace(config, providers=(replace(config.providers[0], timeout=0.01),))
+
+    outcome = hire_contractor_for_gap(
+        "Implement the missing quantum compiler build integration.",
+        _unit(),
+        (_existing(),),
+        store=store,
+        config=config,
+        invoker=_refusing_invoker(latency_seconds=0.05),
+    )
+
+    assert outcome.reason_codes == ("hiring_inference_failed", "provider_call_timed_out")
+    assert outcome.attempts[0].reason_code == "provider_call_timed_out"
+    assert outcome.attempts[0].latency_ms >= 10
+
+
+def test_failed_critic_call_names_its_failure_class(tmp_path: Path) -> None:
+    """The generator's applied attempt must not hide the critic's failure."""
+
+    store = Store(tmp_path / "agency.db")
+    responses = iter((_hiring_response(),))
+
+    def invoke(provider, _prompt, _schema, **_kwargs):
+        value = next(responses, None)
+        return None if value is None else _result(value, provider)
+
+    outcome = hire_contractor_for_gap(
+        "Implement the missing quantum compiler build integration.",
+        _unit(),
+        (_existing(),),
+        store=store,
+        config=_config(),
+        invoker=invoke,
+    )
+
+    assert outcome.status == "abstained"
+    assert outcome.reason_codes == ("hiring_critic_unavailable", "provider_call_failed")
+    assert [(item.stage, item.status) for item in outcome.attempts] == [
+        ("hiring", "applied"),
+        ("hiring-critic", "failed"),
+    ]
+    assert store.list_workforce_workers(limit=10) == []
+
+
+def test_oversized_hiring_prompt_is_refused_before_any_provider_call() -> None:
+    """A prompt the transport will refuse fails the chain without spending it."""
+
+    provider = _config().providers[0]
+    budget = hiring_module._CallBudget(6)
+
+    def invoke(*_args, **_kwargs):
+        raise AssertionError("the transport must not be called")
+
+    result, attempt, failures = hiring_module._invoke(
+        (provider,),
+        prompt="x" * (MAX_STRUCTURED_PROMPT_BYTES + 1),
+        schema={},
+        system="system",
+        stage="hiring",
+        invoker=invoke,
+        budget=budget,
+    )
+
+    assert (result, attempt) == (None, None)
+    assert budget.used == 0
+    assert [(item.status, item.reason_code) for item in failures] == [
+        ("skipped", "provider_prompt_exceeds_transport_limit")
+    ]
+    assert failures[0].requested_model == "hiring-model"
+
+
+def test_exhausted_call_budget_is_recorded_as_a_skipped_attempt() -> None:
+    """A zero budget was one of the wrong diagnoses this silence allowed."""
+
+    provider = _config().providers[0]
+    budget = hiring_module._CallBudget(1)
+    assert budget.consume() is True
+
+    def invoke(*_args, **_kwargs):
+        raise AssertionError("no budget remains")
+
+    result, attempt, failures = hiring_module._invoke(
+        (provider,),
+        prompt="hire",
+        schema={},
+        system="system",
+        stage="hiring-critic",
+        invoker=invoke,
+        budget=budget,
+    )
+
+    assert (result, attempt) == (None, None)
+    assert [(item.stage, item.status, item.reason_code) for item in failures] == [
+        ("hiring-critic", "skipped", "hiring_call_budget_exhausted")
+    ]
+
+
+def test_durable_model_receipts_exclude_the_failed_attempt(tmp_path: Path) -> None:
+    """Receipts replay as `record_model_receipt(status="success")` (preflight)."""
+
+    store = Store(tmp_path / "agency.db")
+    responses = iter(
+        (_hiring_response(), {"approved": True, "reason_codes": []}, _SAFE_SECURITY_REVIEW)
+    )
+    calls: list[str] = []
+
+    def invoke(provider, _prompt, _schema, **_kwargs):
+        calls.append(provider.name)
+        if len(calls) == 1:
+            return None
+        return _result(next(responses), provider)
+
+    outcome = hire_contractor_for_gap(
+        "Implement the missing quantum compiler build integration.",
+        _unit(),
+        (_existing(),),
+        store=store,
+        config=_chain_config(),
+        invoker=invoke,
+    )
+
+    assert outcome.hired is True
+    assert calls == ["primary", "fallback", "primary", "primary"]
+    assert [(item.stage, item.status) for item in outcome.attempts] == [
+        ("hiring", "failed"),
+        ("hiring", "applied"),
+        ("hiring-critic", "applied"),
+        ("security_review", "applied"),
+    ]
+    receipts = outcome.hiring_case["model_evidence"]["receipts"]
+    assert len(receipts) == 3
+    assert all(item["actual_model"] == "resolved-hiring-model" for item in receipts)
+
+
+def test_calls_used_excludes_attempts_that_never_spent_a_call() -> None:
+    """`calls_used` is a budget count, so an unspent try must not inflate it."""
+
+    provider = _config().providers[0]
+    outcome = ContractorHiringOutcome(
+        "abstained",
+        ("hiring_inference_failed", "provider_call_failed"),
+        attempts=(
+            hiring_module._failed_attempt(
+                "hiring", provider, reason_code="provider_call_failed", latency_ms=12
+            ),
+            hiring_module._failed_attempt(
+                "hiring",
+                provider,
+                reason_code="hiring_call_budget_exhausted",
+                status="skipped",
+            ),
+        ),
+    )
+
+    assert _hiring_event("unit-1", outcome)["calls_used"] == 1

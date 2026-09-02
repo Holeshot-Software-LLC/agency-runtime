@@ -1,6 +1,6 @@
 ---
 title: "AR-378: A failed hiring call records zero attempts, so the receipt has nothing to debug"
-status: open
+status: in_progress
 category: roadmap
 created: 2026-09-02
 updated: 2026-09-02
@@ -69,12 +69,46 @@ prompt sizes. None of that was visible from the receipt.
 
 ## Approach
 
-Not decided. The obvious shape is for `_invoke` to record an attempt on
-failure as well as success, carrying at least the provider name, requested
-model, elapsed time and failure class, matching what the workforce stages
-already emit. Whether the failure class can be distinguished depends on what
-`invoke_structured_provider_result` surfaces when it returns `None`, which
-needs checking before promising a taxonomy.
+Taken. The filing asked for `invoke_structured_provider_result` to be checked
+before promising a taxonomy. It was: that function returns a bare `None` for
+every cause -- unusable prompt, unserializable schema, non-positive timeout,
+transport error, deadline, schema rejection -- and surfaces nothing else. No
+taxonomy can be read off it. So the recorded failure class is confined to what
+`_invoke` witnesses for itself, and hiring does not guess at the rest.
+
+`_invoke` now returns `(result, applied_attempt, failures)`. Every try that
+produced no structured result is recorded as a `HiringInferenceAttempt`
+carrying stage, provider, requested model, elapsed milliseconds, a status and
+a reason code, in the `WorkforceInferenceAttempt` vocabulary:
+
+| reason code | status | what was witnessed |
+|---|---|---|
+| `provider_call_failed` | `failed` | a call was made, nothing came back |
+| `provider_call_timed_out` | `failed` | the same, at or past its own deadline |
+| `provider_prompt_exceeds_transport_limit` | `skipped` | over `MAX_STRUCTURED_PROMPT_BYTES`; no call is possible |
+| `hiring_call_budget_exhausted` | `skipped` | the budget ended the chain first |
+
+`provider_call_timed_out` is a fact, not an inference: the deadline handed to
+the transport is `_bounded_timeout(provider.timeout)`, which only ever lowers
+it, so an elapsed time at or past `provider.timeout` means the call spent its
+whole deadline.
+
+Failures that precede a success in the same chain are recorded too, so a hire
+that only succeeded on its fallback says so.
+
+Two consequences were handled rather than left implied:
+
+- **Durable model evidence stays applied-only.**
+  `_commit_pending_hiring_evidence` (`core/store/preflight.py`) replays each
+  receipt as `record_model_receipt(status="success")`, so a failed try in that
+  list would assert a model that never answered. The failure rows live on the
+  outcome, not in `model_evidence`.
+- **`calls_used` counts spent calls.** `_hiring_event`
+  (`core/selector/pipeline.py`) excludes `skipped` attempts, which spend none.
+
+Finer causes stay unavailable. Separating transport error from schema
+rejection requires `invoke_structured_provider_result` to report why it gave
+up; that is a change to its contract and belongs to its own filing.
 
 ## Dependencies
 
@@ -82,8 +116,14 @@ needs checking before promising a taxonomy.
 
 ## Acceptance
 
-- [ ] A failed hiring call records at least one attempt with provider,
+- [x] A failed hiring call records at least one attempt with provider,
       requested model, elapsed time and a distinguishable failure class.
-- [ ] `hiring_inference_failed` no longer stands alone as the only evidence.
-- [ ] A regression test pins that a failing provider yields a non-empty
-      attempts tuple.
+- [x] `hiring_inference_failed` no longer stands alone as the only evidence.
+      The abstention now reads
+      `reason_codes=('hiring_inference_failed', 'provider_call_failed')` with
+      the stable stage code still first, and one attempt behind it.
+- [x] A regression test pins that a failing provider yields a non-empty
+      attempts tuple. Seven cases in
+      `tests/test_workforce_dynamic_hiring.py` cover both failure statuses,
+      both skip classes, the applied-only receipt filter and the `calls_used`
+      count.
