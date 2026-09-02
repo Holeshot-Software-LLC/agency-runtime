@@ -853,11 +853,17 @@ def _register_marketplace_host(
     session: _RegistrationSession,
     force_refresh: bool,
 ) -> _RegistrationResult:
+    if session.host == "claude":
+        # Before the first probe, not after it: the inventory commands launch
+        # the host executable, so a chain the host itself broke fails them
+        # (measured 2026-09-02: inventory_before and marketplace_inventory both
+        # raised the namespace error while the install still reported success).
+        _normalize_host_trust_chains(session)
     plugin_present, market_present, failed_step = _marketplace_state(session)
     if failed_step:
+        if session.host == "claude":
+            _explain_trust_chain_failure(session)
         return session.result(False, failed_step)
-    if session.host == "claude":
-        _normalize_host_trust_chains(session)
     if failed_step := _ensure_marketplace(
         session,
         market_present=market_present,
