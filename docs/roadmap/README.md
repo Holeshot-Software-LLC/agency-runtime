@@ -385,6 +385,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-369` | [A stale host process keeps serving a superseded kernel after deploy](issue-AR-369-stale-host-process-serves-a-superseded-kernel.md) | in_progress | p1 | install | [#513](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/513) |
 | `AR-370` | [Staffing asks the wrong question, so operational requests retrieve nothing](issue-AR-370-staffing-asks-the-wrong-question.md) | open | p1 | reliability | [#518](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/518) |
 | `AR-371` | [A stalled binding acknowledgement makes every later turn report 'loaded: none'](issue-AR-371-stalled-binding-makes-the-header-claim-none.md) | in_progress | p1 | reliability | [#521](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/521) |
+| `AR-372` | [Windows accumulates live agency MCP/CLI processes until spawning fails](issue-AR-372-windows-agency-process-leak.md) | open | p0 | install | [#526](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/526) |
 
 ## Traceability
 
