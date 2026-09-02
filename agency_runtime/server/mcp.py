@@ -27,6 +27,7 @@ from agency_runtime.core.observability import (
     current_observation_context,
     mark_current_observation,
 )
+from agency_runtime.core.stdio_lifetime import StdioLifetimeBound
 
 logger = logging.getLogger("agency_runtime.server.mcp")
 
@@ -613,8 +614,14 @@ def run_stdio(
     config_path: str | None = None,
     input_stream: BinaryIO | TextIO | None = None,
     output_stream: BinaryIO | TextIO | None = None,
+    lifetime: StdioLifetimeBound | None = None,
 ) -> int:
-    """Serve newline-delimited MCP JSON-RPC until stdin closes."""
+    """Serve newline-delimited MCP JSON-RPC until stdin closes or the client goes.
+
+    Closing stdin is the clean exit. AR-372: a client that keeps the pipe open
+    and stops talking used to leave this process asleep forever -- thousands of
+    them on one machine -- so a bounded lifetime ends an abandoned server too.
+    """
     source = input_stream or sys.stdin.buffer
     sink = output_stream or sys.stdout.buffer
     server = MCPServer(
@@ -622,11 +629,15 @@ def run_stdio(
         db_path=db_path,
         config_path=config_path,
     )
+    bound = StdioLifetimeBound() if lifetime is None else lifetime
+    bound.start()
 
     while True:
         raw = source.readline(MAX_INPUT_BYTES + 1)
         if raw in (b"", ""):
+            bound.stop()
             return 0
+        bound.record_activity()
         raw_bytes = raw.encode("utf-8") if isinstance(raw, str) else raw
         if len(raw_bytes) > MAX_INPUT_BYTES:
             with RuntimeBoundary(surface="mcp", operation="decode"):

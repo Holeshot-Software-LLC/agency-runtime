@@ -1,6 +1,6 @@
 ---
 title: "AR-372: Windows accumulates live agency MCP/CLI processes until spawning fails"
-status: open
+status: in_progress
 category: roadmap
 created: 2026-09-02
 updated: 2026-09-02
@@ -41,6 +41,28 @@ This is filed p0 because the failure mode is the operator's machine, not a
 turn: once process creation fails, everything on the box fails, including the
 tools needed to diagnose it.
 
+## Reproduced (2026-09-02)
+
+The leak is not Windows-specific and not the host's: it reproduced on the
+maintainer's Linux box, in Agency's own process. Two
+`agency_runtime.server.mcp --stdio` processes were alive **16h13m** and
+**15h28m**, each still parented by a running host session, each pinned to a
+launcher tree two deploys old, each asleep on a stdin socket nobody would
+write to again.
+
+The operator's Windows census showed the same pairing -- Agency launcher
+processes under a live `claude.exe`, plus one adopted by `svchost.exe` after
+losing its parent.
+
+Mechanism: the stdio server exits correctly when stdin closes (verified,
+`rc=0`, and hook processes exit in 0.3-1.3s). It has no answer for a client
+that **keeps the pipe open and stops talking**, which leaks one server per
+abandoned session. At a suite run's spawn rate that reaches thousands.
+
+Both bounds were needed. Parent liveness alone would not have caught the
+measured leaks, because their parents were alive -- long-running sessions
+that had simply stopped using their server.
+
 ## Current state
 
 Not yet reproduced by the maintainer — this box is Linux, and the report is
@@ -74,8 +96,36 @@ Windows-specific. What is known about the spawn surfaces Agency owns:
 
 - None. This is independent of the staffing and header work.
 
+## Implementation (2026-09-02), step 1
+
+`agency_runtime/core/stdio_lifetime.py` gives the stdio server a bounded
+lifetime, and `run_stdio` starts it. Two independent bounds, both advisory
+and fail-open -- a bound that cannot be evaluated never ends a server:
+
+- **Idle timeout**, default 4 hours, operator-overridable within 60s..24h via
+  `AGENCY_MCP_IDLE_TIMEOUT_SECONDS`. Deliberately far above any real gap
+  between turns, because a server is bound to one session and ending it early
+  would break the next tool call in a session the user still holds open.
+- **Parent liveness**, asserted only on POSIX, where an orphan is reparented
+  so a changed ppid is proof. Windows does not reparent and reuses process
+  ids, so a pid comparison there can answer about a stranger; it declines to
+  answer and leaves the work to the idle bound.
+
+Verified end to end against the measured shape: a server whose client holds
+the pipe open and never speaks exits at the bound with `rc=0` and
+`agency mcp server exiting: idle_timeout` on stderr. Closing stdin still
+exits immediately.
+
+Steps 2 and 3 (auditing every Windows spawn path for Job Object ownership,
+and a ceiling on live owned children) remain open.
+
 ## Acceptance
 
+- [x] A stdio server whose client keeps the pipe open and stops talking ends
+      itself rather than sleeping forever. Evidence:
+      `agency_runtime/core/stdio_lifetime.py`, its `run_stdio` wiring, and
+      `tests/test_stdio_lifetime.py` (13 tests, including that a slow client
+      is never ended and that an unevaluable parent check never ends one).
 - [ ] A suite run on Windows leaves no growing population of live agency
       processes; the count returns to its pre-run baseline.
 - [ ] Every Windows spawn path Agency owns creates its child inside a Job
