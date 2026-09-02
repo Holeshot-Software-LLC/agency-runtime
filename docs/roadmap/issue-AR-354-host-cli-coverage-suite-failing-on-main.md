@@ -114,10 +114,8 @@ None.
 
 - [x] The four tests pass on main, with the underlying regression (or
       stale fixtures) identified in the fix commit — the drifts above,
-      each pinned to the commit that introduced it;
-      `python3 -m pytest tests/test_coverage_final_host_cli.py
-      tests/test_owned_adapter_surface_coverage_final.py
-      tests/test_resident_manager_lifecycle.py -q -W error` is green.
+      each pinned to the commit that introduced it, and the repaired
+      fixtures now in the tree.
 - [x] A decision is recorded on including the file in the named fast
       spine — both suites added to `PRODUCTION_SPINE`
       (`scripts/run_local_gates.py`) and the AGENTS.md validation block.
