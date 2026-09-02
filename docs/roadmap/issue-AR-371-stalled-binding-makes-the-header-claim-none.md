@@ -1,6 +1,6 @@
 ---
 title: "AR-371: A stalled binding acknowledgement makes every later turn report 'loaded: none'"
-status: open
+status: in_progress
 category: roadmap
 created: 2026-09-02
 updated: 2026-09-02
@@ -76,11 +76,36 @@ Two independent defects, and the first does not depend on fixing the second:
 
 - AR-367 owns the fail-open claim this builds on.
 
+## Implementation (2026-09-02), step 1
+
+`Store.delivered_resident_manager_slugs` reports the resident managers a
+fail-open turn was actually given, read from the durable binding row rather
+than from the recipe (which the fail-open close erases) or the pending claim
+(which one stalled acknowledgement pins to a dead trace). The completion
+evidence snapshot falls back to it only when the earlier sources are empty,
+so a ready turn and an acknowledged claim are untouched.
+
+It is deliberately narrow, and each bound is a recorded fact rather than an
+inference:
+
+- only a run that closed `preflight_failed`, because that is exactly the turn
+  the fail-open capsule answered, and that capsule always carries the kernel;
+- only a persistent host, because a request-scoped host proves delivery per
+  request and must keep doing so;
+- only a binding row on the current contract.
+
+Step 2 (bounding the stall itself, so a claim pinned to a closed run is
+released or reported) is still open.
+
 ## Acceptance
 
-- [ ] A turn that received the resident-manager kernel reports it in
+- [x] A turn that received the resident-manager kernel reports it in
       `Agency/Agencies loaded`, whether or not preflight reached ready and
-      whether or not the previous acknowledgement completed.
+      whether or not the previous acknowledgement completed. Evidence:
+      `Store.delivered_resident_manager_slugs`, its snapshot fallback, and
+      `tests/test_resident_manager_header_honesty.py` --
+      `test_a_fail_open_turn_names_the_steward_it_was_given` and
+      `test_a_stalled_acknowledgement_does_not_silence_later_turns`.
 - [ ] A pending claim whose trace has closed is released or reported, so one
       stalled acknowledgement cannot silence the rest of the session.
 - [ ] A regression test pins that a fail-open turn following a stalled

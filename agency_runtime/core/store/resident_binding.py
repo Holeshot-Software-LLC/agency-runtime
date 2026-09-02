@@ -16,7 +16,10 @@ from agency_runtime.core.resident_manager_binding import (
     resident_manager_host_mode,
     validate_resident_manager_binding,
 )
-from agency_runtime.core.resident_managers import RESIDENT_MANAGER_KERNEL_REFERENCE
+from agency_runtime.core.resident_managers import (
+    RESIDENT_MANAGER_KERNEL_REFERENCE,
+    RESIDENT_MANAGER_SLUGS,
+)
 from agency_runtime.core.runtime_control import (
     RuntimeControlError,
     read_effective_runtime_control_snapshot,
@@ -314,6 +317,44 @@ class ResidentManagerBindingStoreMixin:
         except (RuntimeError, TypeError, ValueError, OverflowError):
             return None
         return binding.as_dict()
+
+    def delivered_resident_manager_slugs(
+        self,
+        conn: Any,
+        *,
+        session_id: str,
+        host: str,
+        run_status: str,
+    ) -> tuple[str, ...]:
+        """Return the resident managers a fail-open turn was actually given.
+
+        A turn that closed ``preflight_failed`` was answered by the fail-open
+        capsule, and that capsule always carries the resident-manager kernel --
+        ``_fail_open_preflight_result`` builds it before anything else. So the
+        steward was loaded into that turn, and the header must say so.
+
+        It cannot be read back from the recipe: the fail-open close erases
+        ``preflight_result``. AR-367's pending projection covers the turn that
+        claimed the binding, but it matches one exact trace, so a stalled
+        acknowledgement pins the claim to a dead run and silences every later
+        turn in the session (AR-371). This reads the durable binding row
+        instead, and only for the persistent hosts that deliver the kernel on
+        every turn; a request-scoped host proves delivery per request and is
+        left alone.
+        """
+
+        if str(run_status or "").strip() != "preflight_failed":
+            return ()
+        canonical_host = canonical_resident_manager_host(host)
+        if resident_manager_host_mode(canonical_host) != "persistent":
+            return ()
+        try:
+            row = _binding_row(conn, session_id=session_id, host=canonical_host)
+        except Exception:
+            return ()
+        if row is None or not _row_uses_current_contract(row):
+            return ()
+        return tuple(RESIDENT_MANAGER_SLUGS)
 
     def pending_resident_manager_binding(
         self,
