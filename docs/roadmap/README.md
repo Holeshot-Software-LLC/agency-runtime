@@ -383,6 +383,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-367` | [Fail-open turns never claim their resident binding; persistent hosts re-inject the kernel every turn](issue-AR-367-fail-open-resident-binding-claim.md) | in_progress | p1 | reliability | [#464](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/464) |
 | `AR-368` | [Normalize a host's trust chains before the probe that runs it](issue-AR-368-normalize-trust-chains-before-executing-probes.md) | in_progress | p2 | install | [#500](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/500) |
 | `AR-369` | [A stale host process keeps serving a superseded kernel after deploy](issue-AR-369-stale-host-process-serves-a-superseded-kernel.md) | in_progress | p1 | install | [#513](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/513) |
+| `AR-370` | [Staffing asks the wrong question, so operational requests retrieve nothing](issue-AR-370-staffing-asks-the-wrong-question.md) | open | p1 | reliability | [#518](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/518) |
 
 ## Traceability
 
