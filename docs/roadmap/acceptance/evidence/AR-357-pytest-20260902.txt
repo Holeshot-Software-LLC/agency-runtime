@@ -1,0 +1,16 @@
+# AR-357 acceptance evidence: the response-contract regression suite, captured 2026-09-02T10:55:05Z
+# run at commit 60d622b9c2a303629a11b5bfabbdf570d2a7c816 (main); the cited implementation and tests were last modified at commit c1a5fbd6443a429c8e92d16ced84f2e1c7c45843 and are byte-identical from that commit to this run's commit (git diff --stat prints nothing):
+# git diff --stat c1a5fbd6..HEAD -- tests/test_response_contract.py agency_runtime/core/header/response_contract.py agency_runtime/core/header/contract.py agency_runtime/core/header/finalize.py agency_runtime/core/header/snapshot.py agency_runtime/adapters/hooks.py => ''
+# command: python3 -m pytest tests/test_response_contract.py -q -W error -p no:cacheprovider -rA
+PASSED tests/test_response_contract.py::test_the_contract_text_is_pinned_and_states_only_what_is_verified
+PASSED tests/test_response_contract.py::test_every_snapshot_instruction_says_it_carries_values_only
+PASSED tests/test_response_contract.py::test_missing_vocabulary_splits_delivered_requirements_from_agency_faults
+PASSED tests/test_response_contract.py::test_a_rejection_names_only_requirements_the_contract_stated
+PASSED tests/test_response_contract.py::test_a_replayed_rejection_names_the_same_lines_as_the_original
+PASSED tests/test_response_contract.py::test_unreadable_evidence_publishes_unverified_instead_of_naming_a_requirement[selected specialist activation evidence is invalid]
+PASSED tests/test_response_contract.py::test_unreadable_evidence_publishes_unverified_instead_of_naming_a_requirement[completion evidence snapshot could not be verified]
+PASSED tests/test_response_contract.py::test_a_correlation_failure_keeps_its_precise_code
+PASSED tests/test_response_contract.py::test_the_contract_is_delivered_once_beside_the_turns_first_values[codex]
+PASSED tests/test_response_contract.py::test_the_contract_is_delivered_once_beside_the_turns_first_values[zcode]
+PASSED tests/test_response_contract.py::test_a_turn_whose_snapshot_cannot_render_is_told_so
+11 passed in 3.69s
