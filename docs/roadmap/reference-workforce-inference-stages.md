@@ -3,7 +3,7 @@ title: "Workforce inference stages and profile routes"
 status: active
 category: roadmap
 created: 2026-08-04
-updated: 2026-08-25
+updated: 2026-09-02
 tags: [workforce, inference, configuration, reference]
 related:
   - docs/roadmap/issue-AR-235-autonomous-gap-hiring-with-isolated-security-review.md
@@ -407,34 +407,46 @@ the conflicting profile names.
 
 ## Receipt contents per stage
 
-Every `_invoke` call records the following in the case's `attempts`
-array (or in `hiring_case.attempts` for the hiring path):
+Every hiring `_invoke` records one `HiringInferenceAttempt` per try on the
+outcome's `attempts` tuple, including the tries that produced nothing
+(AR-378):
 
 ```jsonc
 {
-  "stage": "workforce.hiring",
-  "attempt": 1,
-  "provider": "litellm",
-  "provider_name": "agency-hiring",
-  "requested_model": "gpt5.6-luna-low",
-  "actual_model": "gpt5.6-luna-low-2026-07-12",
-  "thinking_level_configured": "low",
-  "thinking_level_consumed": "low",
-  "model_receipt_source": "litellm.routed",
-  "receipt_id": "sha256:...",
-  "session_isolated": true,        // for security_review only
-  "same_provider_as_creator": false,
-  "status": "ok" | "schema_invalid" | "provider_unavailable" | "abstained",
-  "started_at": "...",
-  "duration_ms": 412,
-  "tokens_in": 1820,
-  "tokens_out": 540
+  "stage": "hiring",             // or hiring-critic, security_review, safety_repair, ...
+  "provider": "agency-hiring",
+  "requested_model": "task-agency-hiring-generator-v2",
+  "actual_model": "gpt5.6-luna-low-2026-07-12",   // "" when nothing answered
+  "model_receipt_source": "litellm.routed",       // "unavailable" when nothing answered
+  "receipt_id": "<sha256 hex>",
+  "status": "applied",
+  "reason_code": "structured_response_applied",
+  "latency_ms": 412
 }
 ```
 
-`session_isolated` is `true` only for the `security_review` stage. The
-other stages share the parent's session context (or have no session
-context at all if invoked at the route layer).
+`status` separates a try that produced a model (`applied`) from one that was
+made and returned nothing (`failed`) and one that was never made (`skipped`).
+`reason_code` carries the class, which is bounded by what the hiring stage can
+witness for itself -- `invoke_structured_provider_result` returns a bare
+`None` and never says why:
+
+| `reason_code` | `status` |
+|---|---|
+| `structured_response_applied` | `applied` |
+| `provider_call_failed` | `failed` |
+| `provider_call_timed_out` | `failed` |
+| `provider_prompt_exceeds_transport_limit` | `skipped` |
+| `hiring_call_budget_exhausted` | `skipped` |
+
+Only `applied` attempts reach the durable hiring case's
+`model_evidence.receipts`, because preflight replays each of those as
+`record_model_receipt(status="success")`. `calls_used` on the routing receipt
+counts every attempt except the `skipped` ones, which spend no budget.
+
+The `security_review` stage runs on a fresh isolated session (AR-238); the
+other stages share the parent's session context, or have none at all when
+invoked at the route layer.
 
 ## Migration shape
 

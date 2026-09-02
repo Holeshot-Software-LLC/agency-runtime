@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+import time
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import asdict, dataclass, replace
 from datetime import datetime, timezone
@@ -12,6 +13,7 @@ from typing import Any
 
 from agency_runtime.core.config import AgencyConfig, ProviderEntry
 from agency_runtime.core.structured_provider import (
+    MAX_STRUCTURED_PROMPT_BYTES,
     StructuredProviderResult,
     invoke_structured_provider_result,
 )
@@ -525,6 +527,10 @@ class HiringInferenceAttempt:
     model_receipt_source: str
     receipt_id: str
     status: str
+    # AR-378: a try that produced no structured result still has to say
+    # what it cost and why it stopped.
+    reason_code: str = ""
+    latency_ms: int = 0
 
     def as_receipt(self) -> dict[str, Any]:
         return asdict(self)
@@ -570,6 +576,9 @@ class _SecurityVerdict:
     required_changes: tuple[str, ...]
     same_provider_as_creator: bool
     attempt: HiringInferenceAttempt | None
+    # AR-378: tries that produced no verdict, recorded so an unavailable
+    # reviewer is distinguishable from one that was never reached.
+    failed_attempts: tuple[HiringInferenceAttempt, ...] = ()
 
 
 class _CandidateValidationFailure(ValueError):
@@ -661,6 +670,17 @@ def _bounded_additive(
     return list(dict.fromkeys((*existing, *additions)))[:maximum]
 
 
+# AR-378: the provider seam returns a bare ``None``, so these are the only
+# failure classes hiring can witness for itself. Distinguishing transport
+# error from schema rejection would need
+# ``invoke_structured_provider_result`` to surface why it gave up.
+_APPLIED_REASON = "structured_response_applied"
+_BUDGET_EXHAUSTED_REASON = "hiring_call_budget_exhausted"
+_PROMPT_TOO_LARGE_REASON = "provider_prompt_exceeds_transport_limit"
+_CALL_FAILED_REASON = "provider_call_failed"
+_CALL_TIMED_OUT_REASON = "provider_call_timed_out"
+
+
 def _attempt(
     stage: str, provider: ProviderEntry, result: StructuredProviderResult
 ) -> HiringInferenceAttempt:
@@ -683,6 +703,44 @@ def _attempt(
         model_receipt_source=source,
         receipt_id=_digest(evidence),
         status="applied",
+        reason_code=_APPLIED_REASON,
+        latency_ms=int(result.latency_ms),
+    )
+
+
+def _failed_attempt(
+    stage: str,
+    provider: ProviderEntry,
+    *,
+    reason_code: str,
+    status: str = "failed",
+    latency_ms: int = 0,
+) -> HiringInferenceAttempt:
+    """Record one try that produced no structured result (AR-378).
+
+    ``status`` separates a call that was made and returned nothing
+    (``failed``) from one this stage refused to make (``skipped``), so a
+    reader can tell a spent call from an unspent one.
+    """
+
+    evidence = {
+        "stage": stage,
+        "provider": provider.name,
+        "requested_model": provider.model,
+        "status": status,
+        "reason_code": reason_code,
+        "latency_ms": latency_ms,
+    }
+    return HiringInferenceAttempt(
+        stage=stage,
+        provider=provider.name,
+        requested_model=provider.model,
+        actual_model="",
+        model_receipt_source="unavailable",
+        receipt_id=_digest(evidence),
+        status=status,
+        reason_code=reason_code,
+        latency_ms=latency_ms,
     )
 
 
@@ -696,12 +754,43 @@ def _invoke(
     invoker: StructuredInvoker,
     budget: _CallBudget,
     reserve: int = 0,
-) -> tuple[StructuredProviderResult | None, HiringInferenceAttempt | None]:
+) -> tuple[
+    StructuredProviderResult | None,
+    HiringInferenceAttempt | None,
+    tuple[HiringInferenceAttempt, ...],
+]:
+    """Invoke one provider chain, recording the failures as well as the win.
+
+    AR-378: a hiring call that produced no structured result used to leave
+    nothing behind, so ``hiring_inference_failed`` was the whole receipt.
+    The third element carries every try that yielded no result, including
+    the ones preceding a later success, and the caller appends it to the
+    outcome's attempts.
+    """
+
+    # The prompt is identical for every provider in the chain, so a prompt
+    # the transport will refuse fails all of them without spending budget.
+    if providers and len(prompt.encode("utf-8")) > MAX_STRUCTURED_PROMPT_BYTES:
+        refused = _failed_attempt(
+            stage,
+            providers[0],
+            reason_code=_PROMPT_TOO_LARGE_REASON,
+            status="skipped",
+        )
+        return None, None, (refused,)
+    failures: list[HiringInferenceAttempt] = []
     for provider in providers:
-        if budget.remaining <= reserve:
+        if budget.remaining <= reserve or not budget.consume():
+            failures.append(
+                _failed_attempt(
+                    stage,
+                    provider,
+                    reason_code=_BUDGET_EXHAUSTED_REASON,
+                    status="skipped",
+                )
+            )
             break
-        if not budget.consume():
-            break
+        started = time.monotonic()
         result = invoker(
             provider,
             prompt,
@@ -709,9 +798,39 @@ def _invoke(
             system_prompt=system,
             timeout=provider.timeout,
         )
+        latency_ms = int((time.monotonic() - started) * 1000)
         if result is not None:
-            return result, _attempt(stage, provider, result)
-    return None, None
+            return result, _attempt(stage, provider, result), tuple(failures)
+        # The deadline handed to the transport is never raised above
+        # ``provider.timeout``, so reaching it is a fact, not a guess.
+        failures.append(
+            _failed_attempt(
+                stage,
+                provider,
+                reason_code=(
+                    _CALL_TIMED_OUT_REASON
+                    if latency_ms >= int(provider.timeout * 1000)
+                    else _CALL_FAILED_REASON
+                ),
+                latency_ms=latency_ms,
+            )
+        )
+    return None, None, tuple(failures)
+
+
+def _failure_reason_codes(attempts: Sequence[HiringInferenceAttempt]) -> tuple[str, ...]:
+    """Name each recorded failure class once for the outcome's reason codes.
+
+    AR-378: the stable stage code (``hiring_inference_failed`` and its
+    siblings) stays first so existing readers keep working; these follow it
+    so the stage code no longer stands alone as the only evidence.
+    """
+
+    return tuple(
+        dict.fromkeys(
+            item.reason_code for item in attempts if item.status != "applied" and item.reason_code
+        )
+    )
 
 
 def _bounded_reason_codes(value: object) -> tuple[str, ...]:
@@ -869,7 +988,7 @@ def _repair_rejected_candidate(
         return ContractorHiringOutcome(
             "rejected", reasons, contract=candidate.contract, attempts=attempts
         )
-    repair_result, repair_attempt = _invoke(
+    repair_result, repair_attempt, repair_failures = _invoke(
         providers,
         prompt=_json(
             {
@@ -885,10 +1004,15 @@ def _repair_rejected_candidate(
         budget=budget,
         reserve=1,
     )
+    attempts = (*attempts, *repair_failures)
     if repair_result is None or repair_attempt is None:
         return ContractorHiringOutcome(
             "abstained",
-            ("hiring_repair_inference_failed", *reasons)[:MAX_ITEMS],
+            (
+                "hiring_repair_inference_failed",
+                *_failure_reason_codes(repair_failures),
+                *reasons,
+            )[:MAX_ITEMS],
             contract=candidate.contract,
             attempts=attempts,
         )
@@ -910,7 +1034,7 @@ def _repair_rejected_candidate(
             attempts=repair_attempts,
         )
     # AR-241: daily hire cap removal — no rejection, only visibility.
-    critic_result, critic_attempt = _invoke(
+    critic_result, critic_attempt, critic_failures = _invoke(
         critic_providers,
         prompt=_critic_prompt(request, unit, repaired, hiring_input=hiring_input),
         schema=HIRING_CRITIC_SCHEMA,
@@ -919,14 +1043,18 @@ def _repair_rejected_candidate(
         invoker=invoker,
         budget=budget,
     )
-    all_attempts = repair_attempts if critic_attempt is None else (*repair_attempts, critic_attempt)
+    all_attempts = (*repair_attempts, *critic_failures)
     if critic_result is None or critic_attempt is None:
         return ContractorHiringOutcome(
             "abstained",
-            ("hiring_repair_critic_unavailable",),
+            (
+                "hiring_repair_critic_unavailable",
+                *_failure_reason_codes(critic_failures),
+            )[:MAX_ITEMS],
             contract=repaired.contract,
             attempts=all_attempts,
         )
+    all_attempts = (*all_attempts, critic_attempt)
     critic = critic_result.value
     if critic.get("approved") is not True:
         reasons = _bounded_reason_codes(critic.get("reason_codes")) or (
@@ -1029,7 +1157,7 @@ def _security_review(
     if not review_providers:
         return None
     same_provider = _providers_share_model(creator_providers, review_providers)
-    result, attempt = _invoke(
+    result, attempt, failures = _invoke(
         review_providers,
         prompt=_security_review_prompt(
             request, unit, candidate, hiring_input=hiring_input, compiled=compiled
@@ -1043,10 +1171,11 @@ def _security_review(
     if result is None or attempt is None:
         return _SecurityVerdict(
             "unsafe",
-            ("security_review_unavailable",),
+            ("security_review_unavailable", *_failure_reason_codes(failures))[:MAX_ITEMS],
             (),
             same_provider,
             None,
+            failures,
         )
     value = result.value
     verdict = str(value.get("verdict") or "unsafe").casefold()
@@ -1062,6 +1191,7 @@ def _security_review(
         )[:8],
         bool(value.get("same_provider_as_creator_warning", same_provider)) or same_provider,
         attempt,
+        failures,
     )
 
 
@@ -1126,7 +1256,7 @@ def _safety_repair_loop(
                 contract=candidate.contract,
                 attempts=all_attempts,
             )
-        repair_result, repair_attempt = _invoke(
+        repair_result, repair_attempt, repair_failures = _invoke(
             repair_providers,
             prompt=_json(
                 {
@@ -1146,10 +1276,15 @@ def _safety_repair_loop(
             invoker=invoker,
             budget=budget,
         )
+        all_attempts = (*all_attempts, *repair_failures)
         if repair_result is None or repair_attempt is None:
             return ContractorHiringOutcome(
                 "rejected",
-                ("safety_repair_inference_failed", *reasons)[:MAX_ITEMS],
+                (
+                    "safety_repair_inference_failed",
+                    *_failure_reason_codes(repair_failures),
+                    *reasons,
+                )[:MAX_ITEMS],
                 contract=candidate.contract,
                 attempts=all_attempts,
             )
@@ -1190,8 +1325,10 @@ def _safety_repair_loop(
                 contract=repaired.contract,
                 attempts=all_attempts,
             )
-        all_attempts = all_attempts + (
-            () if next_verdict.attempt is None else (next_verdict.attempt,)
+        all_attempts = (
+            *all_attempts,
+            *next_verdict.failed_attempts,
+            *(() if next_verdict.attempt is None else (next_verdict.attempt,)),
         )
         if next_verdict.verdict == "safe":
             return repaired, compiled, next_verdict, all_attempts
@@ -2029,7 +2166,7 @@ def hire_contractor_for_gap(
         "complete_workforce": workforce,
     }
     prompt = _json(hiring_input)
-    result, hire_attempt = _invoke(
+    result, hire_attempt, hire_failures = _invoke(
         providers,
         prompt=prompt,
         schema=HIRING_RESPONSE_SCHEMA,
@@ -2039,7 +2176,11 @@ def hire_contractor_for_gap(
         budget=budget,
     )
     if result is None or hire_attempt is None:
-        return ContractorHiringOutcome("abstained", ("hiring_inference_failed",))
+        return ContractorHiringOutcome(
+            "abstained",
+            ("hiring_inference_failed", *_failure_reason_codes(hire_failures))[:MAX_ITEMS],
+            attempts=hire_failures,
+        )
     candidate = _validated_candidate(
         result.value,
         unit,
@@ -2051,7 +2192,9 @@ def hire_contractor_for_gap(
         amend_overlap_threshold=config.workforce.amend_overlap_threshold,
     )
     if isinstance(candidate, ContractorHiringOutcome):
-        return candidate
+        # Carry the tries that preceded the accepted one so a rejected
+        # candidate still shows what the chain cost to produce it.
+        return replace(candidate, attempts=(*hire_failures, *candidate.attempts))
     # AR-241: the daily hire count is recorded for dashboard visibility but no
     # longer rejects. The amend-first default (AR-240) is the real guard.
     daily_hire_count = _today_hires(store) if candidate.action == "hire" else 0
@@ -2059,7 +2202,7 @@ def hire_contractor_for_gap(
     critic_providers = configured_workforce_providers(
         config, stage="critic", route_key="workforce.hiring.critic", harness=harness
     )
-    critic_result, critic_attempt = _invoke(
+    critic_result, critic_attempt, critic_failures = _invoke(
         critic_providers,
         prompt=_critic_prompt(request, unit, candidate, hiring_input=hiring_input),
         schema=HIRING_CRITIC_SCHEMA,
@@ -2068,14 +2211,15 @@ def hire_contractor_for_gap(
         invoker=invoker,
         budget=budget,
     )
-    attempts = (hire_attempt,) if critic_attempt is None else (hire_attempt, critic_attempt)
+    attempts = (*hire_failures, hire_attempt, *critic_failures)
     if critic_result is None or critic_attempt is None:
         return ContractorHiringOutcome(
             "abstained",
-            ("hiring_critic_unavailable",),
+            ("hiring_critic_unavailable", *_failure_reason_codes(critic_failures))[:MAX_ITEMS],
             contract=candidate.contract,
             attempts=attempts,
         )
+    attempts = (*attempts, critic_attempt)
     critic = critic_result.value
     if critic.get("approved") is not True:
         repair = _repair_rejected_candidate(
@@ -2130,7 +2274,11 @@ def hire_contractor_for_gap(
             contract=contract,
             attempts=attempts,
         )
-    attempts = attempts + (() if security_verdict.attempt is None else (security_verdict.attempt,))
+    attempts = (
+        *attempts,
+        *security_verdict.failed_attempts,
+        *(() if security_verdict.attempt is None else (security_verdict.attempt,)),
+    )
     same_provider_as_creator = security_verdict.same_provider_as_creator
     if security_verdict.verdict != "safe":
         repair = _safety_repair_loop(
@@ -2169,7 +2317,11 @@ def hire_contractor_for_gap(
             "model_receipt_source": item.model_receipt_source,
             "receipt_id": item.receipt_id,
         }
+        # Durable model evidence is replayed into ``record_model_receipt``
+        # with status "success", so only tries that actually produced a
+        # model belong here. The AR-378 failure rows stay on the outcome.
         for item in attempts
+        if item.status == "applied"
     ]
     contract_document = workforce_contract.to_dict()
     # The security reviewer gates contract safety (AR-238); the compiled

@@ -1473,7 +1473,10 @@ def _hiring_event(
         "worker": "" if hiring.worker is None else str(hiring.worker["agent_slug"]),
         "version": "" if hiring.worker is None else str(hiring.worker["current_version"]),
         "notification": str(hiring.notification),
-        "calls_used": len(hiring.attempts),
+        # AR-378 also records tries that never spent a call (status
+        # "skipped"), so the budget count stays the number of provider
+        # calls actually made.
+        "calls_used": sum(1 for item in hiring.attempts if item.status != "skipped"),
     }
 
 
