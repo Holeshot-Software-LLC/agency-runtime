@@ -16,8 +16,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-374
 branch: main
-evidence_commit: 430e8832edf919572d3c6d732dd0de91d4cc18df
-minimum_ledger_commit: 430e8832edf919572d3c6d732dd0de91d4cc18df
+evidence_commit: 2d47e405ce505b8df38d316acd3283d7b460302d
+minimum_ledger_commit: 2d47e405ce505b8df38d316acd3283d7b460302d
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/540
 ---
@@ -30,131 +30,109 @@ earlier blocker in the chain is fixed?
 
 ## checkpoint
 
-Main is green on both strict gates and deployed on this box. The staffing
-chain was chased end to end on 2026-09-02 and four distinct defects were
-found and fixed in sequence; this is the fifth and last one standing.
+The measurement this issue was filed on is exact and reproduces. The
+conclusion drawn from it was wrong, and the issue now records the correction.
 
-What the chain looked like, in the order it failed:
+`agent_tools_missing` compares the **work unit's** `required_tools` against
+the host's proven tools. It never reads `contract.tool_classes`. So the
+"219 of 291 workers are permanently ineligible" framing describes no gate in
+the staffing path: measured, **0 of those 219** raise `agent_tools_missing`
+for a unit that requires no tools, while a worker declaring *no* tools at all
+is rejected when the unit demands one the host lacks.
 
-1. **Model names.** `~/.agency-runtime/agency.yaml` pointed at
-   `gpt5.6-luna-medium`; litellm serves `gpt-5.6-luna-medium`. The planner
-   never ran, so every turn was steward-only. Repointed to the purpose-built
-   `task-agency-*-v2` routes (backup: `agency.yaml.bak-ar370-20260902-102611`).
-   **This is operator config, not code, and it is not in git.**
-2. **AR-373 (fixed, merged).** `typed_staffing_requirements` shows the
-   recruiter `artifact:plan`, `domain:platform`; the nomination validator
-   required hyphens only, so entire nominations were discarded as
-   `provider_response_contract_invalid` -- 475 times in 24 h. Widened the
-   evidence charset only; the shared identifier schema is untouched.
-3. **AR-374 (this issue, open).** With the contract failure gone the
-   recruiter reaches a real judgement and abstains, because the candidates it
-   wants are ineligible on tools.
-
-After 1 and 2, the same request now behaves like this:
-
-    planner            applied   structured_response_applied
-    recall_embedding   applied   dense_recall_applied
-    recall_reranker    applied   structured_response_applied
-    recruiter          applied   structured_response_applied   <- was: rejected
-    staffing           abstained no_safe_sufficient_team
+The capsule's own reproduction over-constrained the host. It passed three
+tools and omitted `test-execution`, which every real host proves and which
+the planner asks for. Re-run with the real nine, the install request planned
+three units needing only `repository-read` and `test-execution` — no
+`agent_tools_missing` anywhere.
 
 ## completed-evidence
 
-The measurement that defines this issue, taken against the shipped
-291-worker index:
+Against the bundled 265-card manifest and the live 291-worker store:
 
-- `_NATIVE_HOST_CAPABILITIES` grants every execution host the same nine
-  capabilities: `code-execution`, `native-delegation`,
-  `package-management`, `repository-read`, `repository-write`,
-  `runtime-evidence`, `shell-execution`, `source-control`,
-  `test-execution`.
-- The roster demands **246 distinct tool classes**.
-- **219 of 291 workers (75%) are permanently ineligible**; 72 are eligible.
-- Top blockers: `browser-interaction` 55, `web-research` 43,
+- All five execution hosts prove the identical nine capabilities.
+- The roster demands 246 distinct tool classes; **238 (97%) are unprovable
+  by any host**. `native-delegation` is demanded by no card.
+- 218/265 bundled cards (82%) and 219/291 live workers (75%) demand at least
+  one unprovable class. Top: `browser-interaction` 55, `web-research` 43,
   `analytics-reader` 27, `database-access` 19.
 
-The planner is not the problem and should not be re-litigated. On
-`install this: https://zcode.z.ai/en` it produced: *"Install the software
-available from the provided Zcode website on the Linux host and verify that
-the installation works"*, decomposed into discovery / operation /
-verification, all `linux`, with sane typed domains and capabilities. It
-resolves the pronoun and the URL correctly.
+Hypotheses, all three answered in the issue:
 
-AR-370's original premise -- that lexical retrieval was losing the turn --
-is **wrong and the issue records the correction**: `semantic_retrieve` and
-`_DOMAIN_EXPANSIONS` belong to the legacy selector branch, which the
-workforce path never uses. Do not restart there.
+1. Roster over-declares — **rejected as a cause**; produces no ineligibility.
+2. Host under-declares — **confirmed and inert**. The floor is a floor:
+   `native_adapter_capability_receipt` unions adapter-reported tools onto it
+   (`host_capabilities.py:776`), but every production caller omits
+   `available_tools` and no detection exists.
+3. Vocabulary mis-scaled — **confirmed and dominant**.
+
+Landed: `tests/test_host_capability_vocabulary_drift.py` and
+`tests/data/ar374_capability_vocabulary_baseline.json`. Both drift directions
+were deliberately induced and both fail the guard with an actionable message.
 
 ## exact-blocker
 
-`agent_tools_missing`. Establish which of AR-374's three hypotheses holds --
-the roster over-declares, the hosts under-declare, or the vocabulary is
-mis-scaled -- before changing anything. They need opposite fixes.
+None on the tools axis. On a real host context the tools gate is clear.
+
+The live blocker now is the recruiter: `provider_no_valid_response` on one
+run and `provider_response_contract_invalid` on another, with the AR-373 fix
+confirmed present in the installed venv. That is a provider or contract
+problem and needs its own issue, not this one.
 
 ## same-task-continuity
 
-Reproduce in about 70 seconds, no host needed:
+Deterministic, no host and no key needed. Run with cwd outside the checkout
+or the working tree shadows the venv:
 
 ```bash
-set -a; . /home/holeshot/.config/ai-secrets/common.env; set +a   # LITELLM_API_KEY
 V=/home/holeshot/.local/share/agency-runtime/venvs/0abe4a77c87af87cf0d2789df77d40d4a6f80a44
-$V/bin/python - <<'PY'
-from agency_runtime.core.config import load_config
-from agency_runtime.core.store.sqlite import Store
+cd /tmp && $V/bin/python - <<'PY'
+from agency_runtime.core.host_capabilities import _NATIVE_HOST_CAPABILITIES
 from agency_runtime.core.roster.workforce import workforce_index_snapshot
-from agency_runtime.core.workforce.inference import plan_and_staff_workforce
-from agency_runtime.core.workforce.staffing_verifier import StaffingContext
-from agency_runtime.core.workspace_stacks import detect_workspace_stacks
-cfg = load_config(); snap = workforce_index_snapshot(Store())
-ctx = StaffingContext("codex", "linux",
-    frozenset({"native-delegation","repository-read","shell-execution"}),
-    snap.generation, None, detected_stacks=detect_workspace_stacks())
-out = plan_and_staff_workforce("install this: https://zcode.z.ai/en", snap,
-    config=cfg, context=ctx, turn_routing_context={})
-print(out.status, out.abstention_codes)
-for a in out.attempts:
-    print(a.stage, a.status, a.reason_code, a.validation_detail[:200])
+from agency_runtime.core.store.sqlite import Store
+snap = workforce_index_snapshot(Store())
+nine = set(_NATIVE_HOST_CAPABILITIES["claude"])
+blocked = [c for c in snap.contracts if not set(c.tool_classes) <= nine]
+print(len(blocked), "of", len(snap.contracts), "demand an unprovable class")
 PY
 ```
 
-Widen the `frozenset` to include `package-management`, `ci-runner`,
-`infrastructure-tooling`, `test-execution`, `build-toolchain` and the
-recruiter's nomination is accepted -- that contrast is the whole issue.
+To see that this does not gate staffing, pass one of those blocked contracts
+and a no-tool unit to `typed_staffing_ineligibility`: the result is `()`.
 
-Traps worth knowing: a bare harness without the key in the environment
-reports `workforce_provider_unavailable` and looks like a code fault;
-`configured_workforce_providers(cfg, stage=...)` is a legacy accessor and
-does not report what the real path uses -- read `out.attempts[*].requested_model`
-instead. Never run `python -c` importing `agency_runtime` with the cwd
-inside the checkout; the working tree shadows the venv.
+Traps: a bare harness without `LITELLM_API_KEY` reports
+`workforce_provider_unavailable` and looks like a code fault;
+`configured_workforce_providers(cfg, stage=...)` is a legacy accessor — read
+`out.attempts[*].requested_model` instead.
 
 ## next-bounded-work-package
 
-1. Answer the three hypotheses with evidence: sample the blocked cards and
-   judge whether each declared tool class is genuinely required; check what
-   each host could prove if detection existed.
-2. Whichever way it falls, add the drift guard AR-374's last acceptance box
-   asks for, so the two vocabularies cannot separate silently again.
-3. Then re-run the reproduction above and, if it staffs, take one live
-   ordinary turn per host as the receipt.
+The owner picks one; they have different blast radii and the issue records
+all three. Smallest first:
+
+1. Validate the planner's `required_tools` against `host_context.available_tools`
+   so an out-of-floor value never becomes a roster-shaped abstention.
+2. Collapse the tool-class vocabulary to what a host can prove, moving
+   specialism terms off the eligibility axis.
+3. Feed real capability detection into `available_tools`.
+
+Two follow-ups are recorded in the issue and have no internal ID yet: the
+unvalidated planner `required_tools`, and the upstream selection eval
+filtering on `contract.tool_classes` so it cannot reach 82 percent of the
+roster.
 
 ## verification
 
-Done, for this handoff's subject, means:
-
-1. The three hypotheses in AR-374 are each confirmed or rejected against
-   measured evidence, and the answer is recorded in the issue.
-2. The structurally-unstaffable share is stated per host with the tool
-   classes responsible, not just the aggregate 219/291 measured here.
-3. Whatever the fix, a regression test pins that the capabilities a host
-   proves and the tool classes the roster demands cannot drift apart
-   silently again.
-4. Every change proves the local gates: focused tests, the named fast Python
-   spine under `-W error`, ruff check and format, both docs gates, the
-   worklog dance, and the routing plus decision-conformance evals if a
-   routing or policy surface changed.
-5. An ordinary install request staffs a specialist on this installation with
-   a live receipt, or the reason it correctly should not is recorded.
+1. Hypotheses each confirmed or rejected against measured evidence. **Done.**
+2. Unstaffable share stated per host with responsible classes. **Done.**
+3. Drift guard pinning the two vocabularies together. **Done**, both
+   directions proven to fail.
+4. Local gates on every change: focused tests, the named fast Python spine
+   under `-W error`, ruff check and format, both docs gates, the worklog
+   dance, plus routing and decision-conformance evals if a routing or policy
+   surface changed.
+5. An ordinary install request staffs a specialist, or the reason it should
+   not is recorded. **Open** — blocked on the recruiter provider failure.
 
 ## constraints
 
