@@ -886,6 +886,7 @@ def _persist_preflight_failure(
     attempt_token: str,
     attempt_owner: bool,
     reservation_token: str,
+    resident_manager_binding: Any = None,
 ) -> None:
     """Persist the failure receipt for a terminal preflight attempt.
 
@@ -903,6 +904,10 @@ def _persist_preflight_failure(
                 attempt_token=attempt_token,
                 status="preflight_failed",
                 failure_receipt=diagnostics.receipt(error),
+                # AR-367: a fail-open turn still delivered the kernel, so the
+                # planned binding is claimed with the close (persistent hosts
+                # would otherwise re-inject every turn and never acknowledge).
+                resident_manager_binding=resident_manager_binding,
             )
         elif not attempt_token and reservation_token:
             store.abandon_preflight_reservation(
@@ -1405,6 +1410,7 @@ def run_preflight(
     normalized_reservation_token = str(reservation_token or "").strip()
     attempt_token = ""
     attempt_owner = False
+    resident_binding: Any = None
     diagnostics = _PreflightFailureDiagnostics()
     try:
         diagnostics.enter("routing_snapshot")
@@ -1688,6 +1694,7 @@ def run_preflight(
             attempt_token=attempt_token,
             attempt_owner=attempt_owner,
             reservation_token=normalized_reservation_token,
+            resident_manager_binding=resident_binding,
         )
         if isinstance(error, SubstantiveSpecialistUnavailable):
             # ADR-0122 update: a substantive turn that produced no accepted

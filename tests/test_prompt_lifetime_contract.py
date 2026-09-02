@@ -69,12 +69,14 @@ def test_persistent_host_turns_never_inject_specialist_bodies_into_parent_histor
     """A blind turn is still published, and still adds no body to the history.
 
     No provider is configured here, so preflight cannot run. Rule 8 says the
-    turn goes out anyway -- but a turn that produced no evidence recipe carries
-    no resident-manager binding, so there is nothing to acknowledge and the
-    kernel is re-injected next turn rather than reused. The acknowledge-and-
-    reuse contract is proven in
-    `test_persistent_host_reuses_an_acknowledged_kernel_on_the_next_turn`,
-    where inference exists to make preflight succeed.
+    turn goes out anyway. The kernel it delivered is claimed as a pending
+    binding with the fail-open close (AR-367), so the completion snapshot can
+    hand it to the Stop acknowledgement; until a Stop acknowledges it, the
+    next turn re-injects rather than reuses. The acknowledge-and-reuse
+    contract is proven in
+    `test_persistent_host_reuses_an_acknowledged_kernel_on_the_next_turn`
+    (ready turns) and `tests/test_fail_open_binding_lifecycle.py` (fail-open
+    turns).
     """
 
     host = "claude"
@@ -114,11 +116,13 @@ def test_persistent_host_turns_never_inject_specialist_bodies_into_parent_histor
         ]
     finally:
         connection.close()
-    # Nothing to acknowledge: preflight failed, so no recipe and no binding.
-    assert (
-        store.get_completion_evidence_snapshot(session_id, "turn-one")["resident_manager_binding"]
-        is None
-    )
+    # Preflight failed, so there is no recipe -- but the kernel went out, and
+    # the claimed binding is projected from its pending row (AR-367).
+    claimed = store.get_completion_evidence_snapshot(session_id, "turn-one")[
+        "resident_manager_binding"
+    ]
+    assert claimed is not None
+    assert claimed["delivery_mode"] == "injected"
 
     second = bridge.handle(
         {
@@ -132,8 +136,9 @@ def test_persistent_host_turns_never_inject_specialist_bodies_into_parent_histor
 
     assert first_context.startswith(RESIDENT_MANAGER_KERNEL)
     assert "delivery=injected" in first_context
-    # Unacknowledged, so the second turn pays for the kernel again. That cost is
-    # the honest consequence of Agency being blind, not a reuse failure.
+    # No Stop acknowledged turn-one, so the second turn pays for the kernel
+    # again. That cost is the honest consequence of an unacknowledged delivery,
+    # not a reuse failure.
     assert second_context.startswith(RESIDENT_MANAGER_KERNEL)
     assert "delivery=injected" in second_context
     assert "delivery=reused" not in second_context

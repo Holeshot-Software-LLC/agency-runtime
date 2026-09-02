@@ -380,6 +380,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-364` | [Audit two external review cards into the governed roster](issue-AR-364-audit-external-review-cards.md) | open | p3 | roster-governance | [#437](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/437) |
 | `AR-365` | [Hermes fail-open pass-through unreachable live — gate cannot resolve the closed run](issue-AR-365-hermes-fail-open-gate-trace-resolution.md) | in_progress | p1 | reliability | [#440](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/440) |
 | `AR-366` | [OpenClaw withholds fail-open replies — evaluated rejection fires on turns staffing never reached](issue-AR-366-openclaw-fail-open-withhold.md) | in_progress | p1 | reliability | [#444](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/444) |
+| `AR-367` | [Fail-open turns never claim their resident binding; persistent hosts re-inject the kernel every turn](issue-AR-367-fail-open-resident-binding-claim.md) | in_progress | p1 | reliability | [#464](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/464) |
 
 ## Traceability
 
