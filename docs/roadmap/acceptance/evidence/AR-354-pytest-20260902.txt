@@ -1,11 +1,13 @@
-# AR-354 acceptance evidence: the repaired suites at commit 0b54eab3ed6a98bf8e52e6260c2928138540f7c6 (main), captured 2026-09-02T04:59:20Z
+# AR-354 acceptance evidence: the repaired suites, captured 2026-09-02T05:03:12Z
+# run at commit 5e5f9dac9132acac3ceecf9503482f706f09a757 (main); the three test files were last modified at commit 1cdc79ff4715ee981a0f8ffed6bfe25d22daf5e8 and are byte-identical from that commit to this run's commit (git diff --stat prints nothing):
+# git diff --stat 1cdc79ff..HEAD -- tests/test_coverage_final_host_cli.py tests/test_owned_adapter_surface_coverage_final.py tests/test_resident_manager_lifecycle.py => ''
 # command: python3 -m pytest tests/test_coverage_final_host_cli.py tests/test_owned_adapter_surface_coverage_final.py tests/test_resident_manager_lifecycle.py -q -W error -p no:cacheprovider
 ........................................................................ [ 66%]
 ....................................                                     [100%]
-108 passed in 23.66s
+108 passed in 22.34s
 # command: python3 -m pytest tests/test_coverage_final_host_cli.py -v -W error -p no:cacheprovider -k 'hook_stdio_constructs_explicit_store or install_preflight_human_error or openclaw_finish_commit_and_outbound or openclaw_persistence_runtime_disabled'
 tests/test_coverage_final_host_cli.py::test_hook_stdio_constructs_explicit_store PASSED [ 25%]
 tests/test_coverage_final_host_cli.py::test_install_preflight_human_error_and_per_host_exception PASSED [ 50%]
 tests/test_coverage_final_host_cli.py::test_openclaw_finish_commit_and_outbound_state_fail_closed PASSED [ 75%]
 tests/test_coverage_final_host_cli.py::test_openclaw_persistence_runtime_disabled_and_constructor_matrix PASSED [100%]
-======================= 4 passed, 35 deselected in 1.42s =======================
+======================= 4 passed, 35 deselected in 1.43s =======================

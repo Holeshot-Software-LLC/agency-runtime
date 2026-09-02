@@ -3,7 +3,7 @@ title: "AR-356 research-lifts implementation and backlog-triage capsule"
 status: active
 category: roadmap
 created: 2026-09-01
-updated: 2026-09-01
+updated: 2026-09-02
 tags: [handoff, research-lifts, triage, reliability, fail-open]
 related:
   - docs/roadmap/issue-AR-356-disclose-fail-open-staffing-in-capsule.md
@@ -14,14 +14,16 @@ related:
   - docs/roadmap/issue-AR-364-audit-external-review-cards.md
   - docs/roadmap/issue-AR-365-hermes-fail-open-gate-trace-resolution.md
   - docs/roadmap/issue-AR-353-intermittent-staffing-verdict-window-linux.md
+  - docs/roadmap/issue-AR-367-fail-open-resident-binding-claim.md
+  - docs/roadmap/acceptance/README.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-356
 branch: main
-evidence_commit: 72b035c9b4143a50dcde5de64ea35076262ea472
-minimum_ledger_commit: 72b035c9b4143a50dcde5de64ea35076262ea472
+evidence_commit: c39e1ccf2b7ad579d31ce3fbc704e18bcc80c8e4
+minimum_ledger_commit: 5e5f9dac9132acac3ceecf9503482f706f09a757
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/426
 ---
@@ -34,111 +36,102 @@ research lifts and disposition the open backlog per the triage below; the
 verification section is the owner-set definition of done. Standing rules:
 attack every finding before reporting it; findings go in repo docs, not the
 reply; prove gates locally (Actions is off); ledger dance on every change;
-end every turn with exactly one question.
+end every turn with exactly one question; no subagents on this account.
 
 ## checkpoint
 
-Main is fully green (both strict gates). The runtime is deployed at the
-current main: all four hosts wired to the projection carrying kernel v5,
-AR-346, AR-365, and AR-366's all-host Rule-8 gate; all four batteries green
-and the baseline adopted (claude 2.1.257, codex 0.152.0, hermes
-0.21.0/7cd91114, openclaw 2026.8.2).
+Main is green on both strict gates at `5e5f9dac` (2026-09-02 ~05:00Z). The
+runtime deployed on this box is still the 2026-09-01 night build
+(`6ba65aa9`, projection carrying kernel v5 + AR-346/365/366); nothing from
+this session is deployed yet. Merged since the previous capsule, each with
+its ledger row: AR-356 (#452, #462), AR-352+AR-360 (#451), AR-363 (#453),
+AR-361 (#457, #459, #460), AR-367 (#465, new p1 defect found live), AR-359+
+AR-354 (#467), AR-353+AR-355 (#469), AR-362 (#473), plus the per-host policy
+proof (#471) and the AR-355 close (#475).
 
-The AR-353 intermittent staffing window is the dominant live failure: on
-2026-09-01 ~20:29Z it hit four sessions in minutes
-(`workforce_inference_failed`; reasons `inference_invalid`,
-`selection_confidence_too_low`, `staffing_critic_rejected`), and a
-well-shaped owner UniFi request failed open with `network-engineer`
-unreached — AR-356's exact case: the turn never said staffing failed.
+Done with isolated verdicts (AR-361 records under
+`docs/roadmap/acceptance/`): AR-352, AR-355, AR-356, AR-360, AR-361,
+AR-362, AR-363. In progress: AR-353 (Linux measured; Windows half open),
+AR-354 (criterion 2 satisfied; criterion 1 waits on a re-verification
+against a candidate that carries the regenerated pytest evidence file),
+AR-359 (live policy re-set is a deploy step), AR-367 (live box after
+deploy), AR-365/AR-366 (live boxes).
 
-Deploy lore that recurs: claude `marketplace_add` needs the chmod dance
-after host auto-updates; the openclaw installer's `gateway_status` step
-always fails while the gateway is deliberately stopped — diagnostic only;
-hermes restarts duplicate the dashboard (kill by PID, one single start).
+Live receipts this session: AR-365 observed — `hermes -z` turn 946
+(2026-09-01 23:01:57Z, trace `…:866e938b`) closed `preflight_failed` and the
+full draft was delivered, no block message. AR-366 not yet observed: three
+openclaw probes all staffed. The AR-353 window measured on this box:
+273 turns / 69.2% fail-open in 24 h (84.4% in the last 6 h), dominated by the
+recruiter rejecting its own structured output (`staff_without_safe_team`
+×408, `invalid_candidate` ×166); see `agency evidence staffing`.
 
 ## completed-evidence
 
-- The fail-open family is fixed: AR-345/344/343/346 landed; AR-365 (PR
-  #441/#442) root-caused AR-346's live gap; AR-366's all-host Rule-8 gate is
-  merged. AR-355 is stage-complete (operator policy live, kernel v5
-  deployed) pending a fresh-session v5 binding check and token-cost
-  measurement.
-- The ten lifts are filed and merged: AR-360 #433, AR-361 #434, AR-362 #435,
-  AR-363 #436, AR-364 #437 (PR #438, tick #439), AR-365 #440, AR-366 #444.
-- Session memory `fail-open-family-20260901.md` and
-  `repo-research-lifts-20260901.md` carry deploy ledgers, provenance, and
-  the rejected-on-doctrine list.
+- Ten-lift status: AR-360 done, AR-361 done (the gate is live: every done
+  flip needs a record with isolated codex verdicts; grandfather list frozen
+  at AR-346), AR-362 done (both experiments pass live, receipts under
+  `~/.agency-runtime/evidence/chaos/`), AR-363 done (witness manifests;
+  claude wiring measured, other hosts attest their pointer), AR-364 open
+  (worktree has a partial multi-source schema in `roster/bundled.py` only).
+  Scope notes: AR-356 done incl. tool degradation; AR-355 token cost
+  measured (~325 tokens per ready turn); AR-357 open (worktree carries
+  `header/response_contract.py` + partial contract/finalize edits); AR-336/
+  AR-120 routing-eval notes untouched; AR-266 unchanged.
+- Fail-open family: AR-367 fixed and merged (fail-open turns now claim and
+  acknowledge the resident binding; next turn plans `reused`); lifecycle
+  suite green; `test_coverage_final_host_cli.py` and
+  `test_resident_manager_lifecycle.py` joined the fast spine.
+- Measurement tools shipped: `agency evidence staffing`, `agency evidence
+  context-budget`, `agency evidence witness`, `agency chaos run`,
+  `agency battery --trials`.
 
 ## exact-blocker
 
-None mechanical; the only waits are observational (a live fail-open turn
-per delivery path for AR-365/AR-366 — AR-355's v5 binding was observed
-live 2026-09-01 ~21:55Z, leaving only its token-cost box).
+None mechanical. AR-354 criterion 1 needs one more re-verification after
+the regenerated evidence file is on main (its candidate must contain the
+file). AR-366's live box still needs one real fail-open openclaw turn.
 
 ## same-task-continuity
 
-Continue on `main`; no WIP branches. One branch per work package, ledger
-dance per commit; rebase-merges rewrite SHAs — repoint the annotated
-ledger row in a follow-up docs(worklog) tick.
+Continue on `main`; one branch per package in its own worktree under the
+session scratchpad (`wt-ar357`, `wt-ar358`, `wt-ar364` hold partial work,
+uncommitted). Feature PR (single commit) rebase-merged, then a
+`docs(worklog):` tick PR with the post-merge SHA; done flips land in a
+follow-up docs PR carrying the acceptance record (a commit cannot cite its
+own SHA). Verifier runs use `--provider codex` to spare the Claude window.
+Clear stale `tests/__pycache__` after same-length constant edits.
 
 ## next-bounded-work-package
 
-Implementation queue, owner-approved order:
-
-1. **AR-356 (#426, p1)** — honest fail-open capsule disclosure, including the
-   scope note's tool-degradation extension. AR-366's code is DONE (the shared
-   Rule-8 gate now covers all four hosts' rejection outlets); what remains is
-   its live box plus AR-365's — observe one real fail-open turn per delivery
-   path publishing the reply.
-2. **Reliability cluster vs the AR-353 window** — AR-353 measurement (#417),
-   AR-360 pass^k/pass@k battery grading (#433), AR-362 chaos harness with
-   oracles (#435). Receipts already name three distinct staffing reason
-   codes; chaos injection should pin each shape.
-3. **AR-352 (#416)** — scope battery deltas by session (foreign-session
-   contamination measured during both 2026-09-01 deploy sweeps).
-4. **AR-361 (#434)** — builder evidence + isolated single-check verification.
-5. **AR-363 (#436)** — per-host deployed-fix witness manifests (would have
-   caught the day's stale-hook drift and the AR-365 code-drift same-day).
-6. **AR-364 (#437)** — audit `silent-failure-hunter` and
-   `type-design-analyzer` (affaan-m/ECC) into the roster; then the
-   AR-336/AR-120 scope notes (trigger/routing evals, monotone baseline).
-7. **AR-357 (#427)** — canonical per-turn response contract; three receipts.
-8. **Small fixes** — AR-359 stdin newlines (#429; then re-set the live
-   operator policy with its line breaks), AR-358 trust-chain self-healing
-   (#428; add the openclaw `--accept-capabilities` consent step), AR-354
-   host-CLI coverage tests (#420).
-9. **AR-355 (#422) finish** — v5 binding observed live (boxes checked);
-   measure per-turn token cost via the context-budget method in the doc,
-   flip the last box, close.
+1. AR-354 final re-verification and done flip (candidate = the merge of the
+   regenerated evidence file); then AR-364 (path A: multi-source audit
+   pipeline; clone msitarzewski/agency-agents at `459dce83`, ECC cards at
+   `ca185ef5`, MIT), AR-357 (finish contract delivery in hooks/bridges +
+   tests), AR-358 (doctor `--fix-perms`, tests), then the AR-336/AR-120
+   scope notes.
+2. Gates + all four batteries (`agency battery --force --trials 2`), then
+   deploy per AR-337 (venv pip-reinstall of the exact SHA with
+   `--no-deps --force-reinstall --no-cache-dir`, `agency install` + per
+   agent incl. the AR-358 openclaw consent, codex tmux re-trust, hermes
+   single-process restart, openclaw gateway stop/install/start), re-set the
+   live operator policy with its five lines (AR-359), batteries, baseline.
+3. Live verification: herdr tabs for every host CLI (headers, staffing,
+   hiring), the Telegram bots nexus (openclaw) and mentor (hermes), the
+   AR-356 disclosure line and AR-367 `delivery=reused` on a fail-open
+   claude turn, AR-366 on openclaw.
+4. Triage closes with receipts (list below), tracker closes for every done
+   item, registry statuses, and main green on both strict gates.
 
 Backlog triage — owner-directed dispositions (verify before closing, cite
-receipts in every close):
-
-Close with evidence: AR-347 #404 (4/4 boxes; both strict gates green on main
-since `c887190d`), AR-337 #362 (6/6; discipline shipped, exercised three
-times on 2026-09-01), AR-298 #336 (9/9), AR-265 #317 (24/25; finish or waive
-the last box), AR-127 #151 (zcode not registered on any host — close as
-parked-until-zcode-exists with owner sign-off), AR-119 #132 (6/39 but
-superseded by the shipped inference-first system — close as superseded and
-file a residual for any concrete remaining gap).
-
-Verify-then-close-or-finish: AR-199 #161 (25/28; its reopen gate was the
-fail-open family, now fixed and deployed — re-verify the open boxes on live
-codex turns), AR-344 #399 (before closing, check the codex Stop path for the
-same trace-resolution gap AR-365 fixed on hermes — `_is_terminal_turn`,
-adapters/hooks.py:3300 — a fail-open codex turn must not see "does not match
-the exact response accepted"; fix if present), AR-261 #309 / AR-262 #311 /
-AR-264 #313 (7/8, 7/9, 9/10 — finish honestly or record why they wait),
-AR-115 #127 (9/12; overlaps AR-357 — fold or finish).
-
-Keep open as active backlog: AR-266 #320 (p0, additive live, RAGLite
-reference in-doc), AR-335 #350, AR-336 #353 (boxes checked; the scope note
-carries the routing-evals work), AR-200 #175, AR-201 #180, AR-207 #196,
-AR-208 #200, AR-209 #203, and the reopened operator-plane/parity family
-AR-235 #244 / AR-236 #245 / AR-250 #259 / AR-251 #260 (AR-361 supplies
-AR-235's isolated-review mechanism; schedule after the reliability cluster).
-Evaluation epics AR-125 #138 and AR-178 #153 stay open; consider folding
-AR-178 into AR-125 when picked up.
+receipts in every close): close with evidence AR-347 #404, AR-337 #362,
+AR-298 #336, AR-265 #317 (finish or waive the last box), AR-127 #151
+(parked until zcode exists, owner sign-off), AR-119 #132 (superseded by the
+inference-first system; file a residual). Verify-then-close-or-finish:
+AR-199 #161 (re-verify open boxes on live codex turns), AR-344 #399 (the
+codex Stop gap is fixed by AR-366 — close after a live fail-open codex turn),
+AR-261 #309 / AR-262 #311 / AR-264 #313, AR-115 #127 (overlaps AR-357).
+Keep open: AR-266 #320, AR-335 #350, AR-336 #353, AR-200/201/207/208/209,
+AR-235/236/250/251, AR-125 #138, AR-178 #153, AR-348..351, AR-353, AR-367.
 
 ## verification
 
@@ -153,28 +146,22 @@ Owner-set definition of done for this goal (2026-09-01):
    worklog dance; routing + decision-conformance evals whenever routing or
    policy surfaces changed (copies-venv + umask 077).
 3. All four harness batteries pass on this machine.
-4. Only if all pass: deploy to every harness here per AR-337 (venv
-   pip-reinstall of the exact SHA with `--no-deps --force-reinstall
-   --no-cache-dir`, `agency install` + per-agent, codex tmux re-trust
-   (send-keys `2`+Enter — the one attended step, recorded), hermes
-   single-process restart, openclaw gateway stop/install/start with
-   `--accept-capabilities`, four batteries, `agency battery --baseline`),
-   then smoke test each host directly with a live turn.
-5. Then verify end to end, unattended, with receipts: load every host CLI
-   into `herdr` tabs (the tmux workspace manager at `~/.local/bin/herdr`)
-   and monitor live turns for the Agency header lines, staffing selection,
-   and hiring on each; and exercise the Telegram bots on this machine —
-   nexus (openclaw) and mentor (hermes), sendable via `openclaw message
-   send` — confirming replies deliver with the same evidence.
-6. Finish honest: registry statuses flipped with receipts, the triage
-   closes executed, and main green on both strict tracker gates.
+4. Only if all pass: deploy to every harness here per AR-337, then smoke
+   test each host directly with a live turn.
+5. Then verify end to end, unattended, with receipts: herdr tabs for every
+   host CLI (Agency header lines, staffing selection, hiring), and the
+   Telegram bots nexus (openclaw) and mentor (hermes), confirming replies
+   deliver with the same evidence.
+6. Finish honest: registry statuses flipped with receipts, the triage closes
+   executed, and main green on both strict tracker gates.
 
 ## constraints
 
 - GitHub Actions is off — never claim CI ran; prove gates locally.
 - The pre-tracker allow-list is frozen (AR-227/228 PR-tracked); new docs
-  always carry `tracker_url`.
-- Never name the legacy sibling repository in roadmap docs (verify_docs
-  rejects it). sqlite3 CLI is absent (use the python3 module); bare
-  foreground `sleep` is blocked (use a python time.sleep one-liner).
+  always carry `tracker_url`; done flips need an AR-361 record.
+- Never name the legacy sibling repository in roadmap docs. sqlite3 CLI is
+  absent (python3 module); bare foreground `sleep` is blocked.
+- No subagents or forked skills on this account (they burned the usage
+  window); work sequentially, one worktree at a time.
 - Findings in repo docs; one question per turn; Rule 8 always.
