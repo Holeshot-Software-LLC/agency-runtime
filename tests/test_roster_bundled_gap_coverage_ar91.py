@@ -30,6 +30,14 @@ def _approved_agent() -> tuple[dict[str, Any], dict[str, str]]:
     return copy.deepcopy(entry), copy.deepcopy(manifest["source"])
 
 
+def _raw_source() -> dict[str, str]:
+    """The primary source block as packaged (the validated copy also carries ``id``)."""
+
+    source = copy.deepcopy(subject.bundled_manifest()["source"])
+    source.pop("id", None)
+    return source
+
+
 def _remediated_agent() -> tuple[dict[str, Any], dict[str, Any]]:
     entry = next(item for item in subject.bundled_manifest()["agents"] if "remediation" in item)
     return copy.deepcopy(entry), copy.deepcopy(entry)
@@ -50,13 +58,16 @@ def _install_manifest_payload(
     monkeypatch.setattr(subject, "safe_load_bounded_json", lambda *_args, **_kwargs: manifest)
     monkeypatch.setattr(
         subject,
-        "_validate_source",
-        lambda _source: {
-            "repository": subject.SOURCE_REPOSITORY,
-            "revision": "a" * 40,
-            "license": subject.SOURCE_LICENSE,
-            "license_file": subject.SOURCE_LICENSE_FILE,
-            "license_hash": "b" * 64,
+        "_validate_sources",
+        lambda _manifest: {
+            subject.PRIMARY_SOURCE_ID: {
+                "id": subject.PRIMARY_SOURCE_ID,
+                "repository": subject.SOURCE_REPOSITORY,
+                "revision": "a" * 40,
+                "license": subject.SOURCE_LICENSE,
+                "license_file": subject.SOURCE_LICENSE_FILE,
+                "license_hash": "b" * 64,
+            }
         },
     )
 
@@ -86,17 +97,17 @@ def test_package_list_and_source_provenance_reject_untrusted_values() -> None:
     with pytest.raises(subject.BundledRosterError, match="contains duplicates"):
         subject._string_list({"capabilities": ["review", "review"]}, "capabilities")
 
-    source = copy.deepcopy(subject.bundled_manifest()["source"])
+    source = _raw_source()
     source["revision"] = "not-a-revision"
     with pytest.raises(subject.BundledRosterError, match="source revision is invalid"):
         subject._validate_source(source)
 
-    source = copy.deepcopy(subject.bundled_manifest()["source"])
+    source = _raw_source()
     source["license_hash"] = "not-a-hash"
     with pytest.raises(subject.BundledRosterError, match="license hash is invalid"):
         subject._validate_source(source)
 
-    source = copy.deepcopy(subject.bundled_manifest()["source"])
+    source = _raw_source()
     source["license_hash"] = "f" * 64
     with pytest.raises(subject.BundledRosterError, match="license hash does not match"):
         subject._validate_source(source)
@@ -174,14 +185,14 @@ def test_agent_validation_rejects_invalid_identity_and_prompt_contracts(
     entry[field] = value
 
     with pytest.raises(subject.BundledRosterError, match=message):
-        subject._validate_agent(entry, source=source)
+        subject._validate_agent(entry, sources={subject.PRIMARY_SOURCE_ID: source})
 
 
 def test_agent_validation_rejects_inactive_prompt_and_version_mismatch() -> None:
     entry, source = _approved_agent()
     entry["audit_status"] = "quarantined"
     with pytest.raises(subject.BundledRosterError, match=r"inactive.*prompt"):
-        subject._validate_agent(entry, source=source)
+        subject._validate_agent(entry, sources={subject.PRIMARY_SOURCE_ID: source})
 
     entry, source = _approved_agent()
     entry["audit_status"] = "quarantined"
@@ -190,7 +201,7 @@ def test_agent_validation_rejects_inactive_prompt_and_version_mismatch() -> None
     entry["version"] = "sha256:" + "f" * 64
     entry.pop("remediation", None)
     with pytest.raises(subject.BundledRosterError, match="immutable version does not match"):
-        subject._validate_agent(entry, source=source)
+        subject._validate_agent(entry, sources={subject.PRIMARY_SOURCE_ID: source})
 
 
 def test_relationship_validation_rejects_missing_dependencies() -> None:
@@ -232,6 +243,7 @@ def test_manifest_rejects_invalid_json_and_inventory(
         {
             "schema_version": subject.BUNDLED_ROSTER_SCHEMA,
             "source": {},
+            "sources": {},
             "counts": {},
             "agents": [],
         },
@@ -269,11 +281,12 @@ def test_manifest_rejects_noncanonical_agent_inventory(
         {
             "schema_version": subject.BUNDLED_ROSTER_SCHEMA,
             "source": {},
+            "sources": {},
             "counts": {},
             "agents": agents,
         },
     )
-    monkeypatch.setattr(subject, "_validate_agent", lambda item, *, source: item)
+    monkeypatch.setattr(subject, "_validate_agent", lambda item, *, sources: item)
 
     with pytest.raises(subject.BundledRosterError, match=message):
         subject._validated_manifest()

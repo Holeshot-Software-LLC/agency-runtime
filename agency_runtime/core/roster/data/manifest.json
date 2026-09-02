@@ -57,6 +57,7 @@
       "requires": [],
       "slug": "3d-scene-developer",
       "source_content_hash": "56f753732d35e54f0527a2cbdc60c73c9215463d4704cc66242e3bbaa1c744e7",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -139,6 +140,7 @@
       "requires": [],
       "slug": "accessibility-auditor",
       "source_content_hash": "982a14c0d0a9b30834ecd6e04811e4f900baf7950e18c68cc97142354cc803e7",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -218,6 +220,7 @@
       "requires": [],
       "slug": "account-strategist",
       "source_content_hash": "dd9b2c37c41827286ef91d64057a5b0ff4795c2e57bd44695436feeb5a3f0423",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -294,6 +297,7 @@
       "requires": [],
       "slug": "accounts-payable-agent",
       "source_content_hash": "3b943d48884c7ef13cdd6a354714be1a22bc2aae0b17ccbe6daffeb3744a90d2",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -372,6 +376,7 @@
       "requires": [],
       "slug": "ad-creative-strategist",
       "source_content_hash": "a24a303228178eb23d514fee63831cf7e1a3d7e5276c54ce5b58dce566700c41",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -448,6 +453,7 @@
       "requires": [],
       "slug": "aeo-foundations-architect",
       "source_content_hash": "b7ef7e1188c924833974bab5cc57f166a7eb6b681d63ccd22eb05c91c25a3c8b",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -523,6 +529,7 @@
       "requires": [],
       "slug": "agentic-identity-trust-architect",
       "source_content_hash": "55de131a5c790dfb84edd9855d8fd2911d4d676d07f7f6c8e90d36705e73427b",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -600,6 +607,7 @@
       "requires": [],
       "slug": "agentic-search-optimizer",
       "source_content_hash": "9e9cbbc763b3ad82f664d80ff9b7965ffadb225998a708f386f47aff7bcee87d",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -674,6 +682,7 @@
       "requires": [],
       "slug": "agents-orchestrator",
       "source_content_hash": "3f900ee286eba5a809388ecc22ad860c4a3ef9ed7ff25488e80eac18f3a0f317",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -750,6 +759,7 @@
       "requires": [],
       "slug": "ai-citation-strategist",
       "source_content_hash": "1d23c94aced61beb0e7a3151ad4c14ccb8205a95e48d4bc6c0fda6739c2e356d",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -829,6 +839,7 @@
       "requires": [],
       "slug": "ai-data-remediation-engineer",
       "source_content_hash": "5aa193052f15283493eeb9749bc346d09c02407f26760fe0d08f8bd9242ede79",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -908,6 +919,7 @@
       "requires": [],
       "slug": "ai-engineer",
       "source_content_hash": "f25a69aad25acd35dd1d62e33d5a814f4a26b075d90f968b4d778452e53924d8",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -992,6 +1004,7 @@
       "requires": [],
       "slug": "ai-generated-code-security-auditor",
       "source_content_hash": "ac2196a914bfb00dddfef93edb9eef1860f924f9582d814cd303ab45e4fc71bc",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -1073,6 +1086,7 @@
       "requires": [],
       "slug": "analytics-reporter",
       "source_content_hash": "8d4a4d0835f9ecb577d81dacbafcb96841b9b0d1f2af1f9273359502a14fcb5c",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -1146,6 +1160,7 @@
       "requires": [],
       "slug": "anthropologist",
       "source_content_hash": "2668602164abf574cb4e432a0cd40727a943de0b59864abb5b73956a0eb26146",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -1223,6 +1238,7 @@
       "requires": [],
       "slug": "api-platform-engineer",
       "source_content_hash": "278798c42d7a7cf4f42d3973795765403105ce60d518d647abfdaa522d862d8e",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -1305,6 +1321,7 @@
       "requires": [],
       "slug": "api-tester",
       "source_content_hash": "c89d7ae592523f4799426a8b09700ec4b9d99bf2fcae2d1b0dd2900d5f770127",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -1554,6 +1571,7 @@
       "requires": [],
       "slug": "app-store-optimizer",
       "source_content_hash": "1987be72f8fd43ca694f9145cb0dbe37eabc5b1f04439425d7b59185db9263c9",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "claude",
@@ -1637,6 +1655,7 @@
       "requires": [],
       "slug": "application-security-engineer",
       "source_content_hash": "f3ee22350c9e0e7289d2d4747e7c1a8fe196d70340feec7b176b13bacc3deb77",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -1710,6 +1729,7 @@
       "requires": [],
       "slug": "automation-governance-architect",
       "source_content_hash": "8aab89104fec352f1f601ec5e6db11c9628d0b2072e6324484fd7e4c8462f55e",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -1789,6 +1809,7 @@
       "requires": [],
       "slug": "autonomous-optimization-architect",
       "source_content_hash": "6904f627eff4a2035ecc245b3ee65f326b484083a08c3e284ad4106bdc57d2d8",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -1866,6 +1887,7 @@
       "requires": [],
       "slug": "backend-architect",
       "source_content_hash": "18f237d054fa91f72a5dcda46a52ddcf7354ea3a3e39e0247629f4ea0f446917",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -1945,6 +1967,7 @@
       "requires": [],
       "slug": "baidu-seo-specialist",
       "source_content_hash": "895a5e8440066ad0b8fa6fe79a91c7750d246a233b01bf7932584b74e9c5becb",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -2022,6 +2045,7 @@
       "requires": [],
       "slug": "behavioral-nudge-engine",
       "source_content_hash": "61f8a4a6a502ac0239c1a555d859051f0ecc83189f5f26048e2a448becf1c722",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -2099,6 +2123,7 @@
       "requires": [],
       "slug": "bilibili-content-strategist",
       "source_content_hash": "4268a7b51025967fbb4a80c0aeb5e4a80abaad9344f5dec164a8d1fb6ea62d06",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -2174,6 +2199,7 @@
       "requires": [],
       "slug": "bim-gis-specialist",
       "source_content_hash": "724609ec55d1b83c88672ada351763ac6c219adca2d36faea0790bdda953e567",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -2250,6 +2276,7 @@
       "requires": [],
       "slug": "blender-add-on-engineer",
       "source_content_hash": "f6bf42625647999d9ebc606c6e7c9c57a8c9a6d20c65a9e96918dbfbb063dcd9",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -2330,6 +2357,7 @@
       "requires": [],
       "slug": "blockchain-security-auditor",
       "source_content_hash": "b35bcd083889ccea487535e30c66bde83f0d06527ae4dd12acec32b285c5ec66",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -2403,6 +2431,7 @@
       "requires": [],
       "slug": "book-co-author",
       "source_content_hash": "09ea2fb4770180b072c92100be84b808367c40ef8a3f2119cfd059206aa4c717",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -2481,6 +2510,7 @@
       "requires": [],
       "slug": "bookkeeper-controller",
       "source_content_hash": "5510a24274d8f7897ca3f4df2c3318262138a2c82827b37dd2489dcfca8de75a",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -2556,6 +2586,7 @@
       "requires": [],
       "slug": "brand-guardian",
       "source_content_hash": "d1d5c78af85d4d35be94b93d5c011d17e3cf5dcb69b2037a3ebf3059803b893e",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -2627,6 +2658,7 @@
       "requires": [],
       "slug": "business-strategist",
       "source_content_hash": "9314906805d8dee81c3e2d10cb93513a391731d9fceb2e4c936257005a144b92",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -2706,6 +2738,7 @@
       "requires": [],
       "slug": "carousel-growth-engine",
       "source_content_hash": "04ef895d1d9f1dd539d7d03403616b892609a9fb8a844496b36bbecf7f3e57c7",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -2777,6 +2810,7 @@
       "requires": [],
       "slug": "cartography-designer",
       "source_content_hash": "2223d403dfdd863d42c0aa29c912cba0c91ffdc9ad8192630f7b08e4b4c7e804",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -2851,6 +2885,7 @@
       "requires": [],
       "slug": "change-management-consultant",
       "source_content_hash": "1feb05dfd0bb4d0942a24a8abb409090ffbc252623e15daa09f5bc8c838b0e5a",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -2928,6 +2963,7 @@
       "requires": [],
       "slug": "chief-financial-officer",
       "source_content_hash": "05efa4015fc7feac9bb41942fa6e9eb2b79e2219bf1280b290c754fd16e15a08",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -3002,6 +3038,7 @@
       "requires": [],
       "slug": "chief-of-staff",
       "source_content_hash": "c0d053f19f32d369b6e9a4ded3a3b93efd792648b88b28f0ecd37a899b91b7b3",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -3079,6 +3116,7 @@
       "requires": [],
       "slug": "china-e-commerce-operator",
       "source_content_hash": "aa6743c68cce9dd00fd31751e9e3c2bea3987857cad332c68c7f68e683e98ba7",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -3156,6 +3194,7 @@
       "requires": [],
       "slug": "china-market-localization-strategist",
       "source_content_hash": "7f6351003b0d6525c7f44870078252d4616287953e33dcace3c8b7da2e9e4325",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -3231,6 +3270,7 @@
       "requires": [],
       "slug": "civil-engineer",
       "source_content_hash": "37c9c37511345799235dcb41a4bd92c5577614c392b9a1fa3a1afee112e5de3b",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -3304,6 +3344,7 @@
       "requires": [],
       "slug": "clinical-evidence-agent",
       "source_content_hash": "5fd6223b0fb17c7625b2ca8ba9f1f6fb649560c074a39b0d72e22e984487a688",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -3382,6 +3423,7 @@
       "requires": [],
       "slug": "cloud-security-architect",
       "source_content_hash": "d541b4041d47c512ef5223985aba682249ce2416244e147959641fc6d193aa71",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -3460,6 +3502,7 @@
       "requires": [],
       "slug": "cms-developer",
       "source_content_hash": "e072ac6e3d485483818880846b145c85b5224045a68c45dddc4e087940d57ba4",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -3535,6 +3578,7 @@
       "requires": [],
       "slug": "code-reviewer",
       "source_content_hash": "7509fcc3ea1dda46511b2801996305bf3d4a125576f9655ff0b63df25602f446",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -3609,6 +3653,7 @@
       "requires": [],
       "slug": "codebase-archaeologist",
       "source_content_hash": "c1b2c22711cb6e74dd834f831d6a8b3f10c93cd462722073b01acae9d0a40700",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -3688,6 +3733,7 @@
       "requires": [],
       "slug": "codebase-onboarding-engineer",
       "source_content_hash": "07aa548b45887c3ad768efad5fdbf6e57bea639df4f1b74c7e383142f454e2a1",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -3764,6 +3810,7 @@
       "requires": [],
       "slug": "compliance-auditor",
       "source_content_hash": "ebb550ceef8011be23fe5a6fab0a7b3f77c2433f4d6aa22617a7eb87db97274f",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -3840,6 +3887,7 @@
       "requires": [],
       "slug": "content-creator",
       "source_content_hash": "26ddce44f057068a3935c13d53becd3c57385fb47fcdcfdd891b80269070b3d5",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -3914,6 +3962,7 @@
       "requires": [],
       "slug": "corporate-training-designer",
       "source_content_hash": "e70733229e87dde01bd404f502d2f5b491821f681d7230b314b18d98111b898c",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -3993,6 +4042,7 @@
       "requires": [],
       "slug": "cross-border-e-commerce-specialist",
       "source_content_hash": "073dba84e8159c763c073fcf16f14d57685611c50555a7cde346df85a25c6293",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -4069,6 +4119,7 @@
       "requires": [],
       "slug": "cultural-intelligence-strategist",
       "source_content_hash": "91f1d2ef19bcf05f8d3b2758049d2dee909939a18ec2d086f192358179455abc",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -4143,6 +4194,7 @@
       "requires": [],
       "slug": "customer-service",
       "source_content_hash": "71d5b8ccd6fb6c5861230169a708ec5d8c0af628de44fc293ae256181573424f",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -4218,6 +4270,7 @@
       "requires": [],
       "slug": "customer-success-manager",
       "source_content_hash": "2fc5ebc10734a621d65d1bfe0a253158f0a7418ee39b7c93a18efe6b26661cfe",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -4295,6 +4348,7 @@
       ],
       "slug": "data-consolidation-agent",
       "source_content_hash": "7e7de097ff27e3aa2732a9f1ab0bd7acaaef73dabf53fc7be6c90c8ab6afab11",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -4374,6 +4428,7 @@
       "requires": [],
       "slug": "data-engineer",
       "source_content_hash": "d46e5ebdb81f5f3e7e0296fa8355583f13693e47cce0e1c8e834c6ff956e861a",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -4452,6 +4507,7 @@
       "requires": [],
       "slug": "data-privacy-officer",
       "source_content_hash": "77e495853a6ef839c8a2f87dae1c8de7b41e11d5e187828fa42c1d9a1e1ae00f",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -4530,6 +4586,7 @@
       "requires": [],
       "slug": "database-optimizer",
       "source_content_hash": "a58860b44590ed643ca02b6faf738b889c99bd889df78c695f519b5288ea018d",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -4608,6 +4665,7 @@
       "requires": [],
       "slug": "database-reliability-engineer",
       "source_content_hash": "a25e100eb5ada1b26a9b01ce82822c967dfabc09772bd4e3803dfc0a4382a247",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -4687,6 +4745,7 @@
       "requires": [],
       "slug": "deal-strategist",
       "source_content_hash": "fdd92f2ced04ad842e25fd9ebcc341372ce2630d4ec152a29c53f7b8535b855e",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -4765,6 +4824,7 @@
       "requires": [],
       "slug": "desktop-app-engineer",
       "source_content_hash": "01b103bae349f127726e2a37a06502aad9be64793e72331c5ff01db9b8fffd55",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -4840,6 +4900,7 @@
       "requires": [],
       "slug": "developer-advocate",
       "source_content_hash": "92617477989c99f57cda5d6d91ac5fea3a56db422a3f3825c4a438ad244079d3",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -4918,6 +4979,7 @@
       "requires": [],
       "slug": "developer-tooling-engineer",
       "source_content_hash": "da81449e9bbaf957df34a358fbac7cc8b539b52710022f2c201ddf8f66a03d9b",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -4998,6 +5060,7 @@
       "requires": [],
       "slug": "devops-automator",
       "source_content_hash": "5d3c3d12c605a8c07fadfd109697249f98bc8e3d1901247c390641ef9fb013e8",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -5077,6 +5140,7 @@
       "requires": [],
       "slug": "discovery-coach",
       "source_content_hash": "8244a25e5b8785058b19ef92dca9e543a2c990e4dde1166d194f14514e3ae278",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -5152,6 +5216,7 @@
       "requires": [],
       "slug": "document-generator",
       "source_content_hash": "cd2ca961e0f7baa18942aaaa315e333ea4315604bbb6a182d7daa31b76dfc3a3",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -5230,6 +5295,7 @@
       "requires": [],
       "slug": "douyin-strategist",
       "source_content_hash": "87e3b91287fc97ad0dedb2f407a49d551b52b8513c8c61d06c1a93d837a7ae46",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -5305,6 +5371,7 @@
       "requires": [],
       "slug": "drone-reality-mapping-specialist",
       "source_content_hash": "2e670d99f491e1b4b76d4a5a91e33eb7a5a9ddfd9e67dda1d3c24cd57faea1f2",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -5383,6 +5450,7 @@
       "requires": [],
       "slug": "drupal-performance-engineer",
       "source_content_hash": "544942f460b76e15c2cd6e9a820b4048e3344186db3a7123d99adfbdf6c41d09",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -5463,6 +5531,7 @@
       "requires": [],
       "slug": "drupal-shopping-cart-engineer",
       "source_content_hash": "cbd06e6d27363029dbbc6638297d47608c78d3b93b3e4a6ff52d16757199ee50",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -5542,6 +5611,7 @@
       "requires": [],
       "slug": "email-intelligence-engineer",
       "source_content_hash": "bef84b77b2ce3f2cbe29faa72ec0d58576bbcad390ee2c1bdcccaca38b4b125f",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -5621,6 +5691,7 @@
       "requires": [],
       "slug": "email-marketing-strategist",
       "source_content_hash": "605c98066a4a1b5538d76476a11316247316ecb8da88beda68a21f2c8918f19b",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -5699,6 +5770,7 @@
       "requires": [],
       "slug": "embedded-firmware-engineer",
       "source_content_hash": "8453982bc1ae4b5c43244fd1b702279b5a7a00ecf6d471b9a75a7a01433e5327",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -5774,6 +5846,7 @@
       "requires": [],
       "slug": "esg-sustainability-officer",
       "source_content_hash": "a8feee4c7b9687ee89ec5ea0879ff98b4cc4451431052369bf00f90d9382b7dd",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -5857,6 +5930,7 @@
       "requires": [],
       "slug": "evidence-collector",
       "source_content_hash": "d7e95b64033230aa07c386546d24fca68e4f606c47be1a7698cafc09d4ef5b12",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -5928,6 +6002,7 @@
       "requires": [],
       "slug": "executive-summary-generator",
       "source_content_hash": "298891fcf297de5d9b343e9ab9b63864317de63256b15c0c72e6cec172f8f0ff",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -6006,6 +6081,7 @@
       "requires": [],
       "slug": "experiment-tracker",
       "source_content_hash": "8f1410bfa054c8ac2eee3084b9bfdb3adb1e8a2f3e015c2876d0ecf07136c22f",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -6081,6 +6157,7 @@
       "requires": [],
       "slug": "fedramp-rmf-compliance-engineer",
       "source_content_hash": "3269ca423abba6405b074ddff80da26ff1d73ae01787cc34bc7a1d45732936b0",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -6159,6 +6236,7 @@
       "requires": [],
       "slug": "feedback-synthesizer",
       "source_content_hash": "9f7bc1474bf8bf95c0573c20df5e3d8ae70c3b9659ec5ea7958cc4692b958270",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -6238,6 +6316,7 @@
       "requires": [],
       "slug": "feishu-integration-developer",
       "source_content_hash": "836667ab301da70a2da5d6241c44f2134fe059f839b4efeac7f6ceece632b76a",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -6317,6 +6396,7 @@
       "requires": [],
       "slug": "filament-optimization-specialist",
       "source_content_hash": "428f6a6be2318a123678b2838600e33c5e193afecbe8f828fa97c779eaf85fbf",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -6397,6 +6477,7 @@
       "requires": [],
       "slug": "finance-tracker",
       "source_content_hash": "73b83d0b0ec4ce53c0335f57473b0e1dcb3b46af22ecd58d9680465b9717b5d9",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -6474,6 +6555,7 @@
       "requires": [],
       "slug": "financial-analyst",
       "source_content_hash": "3547907cd52e6108a4c666fd576d5e42715ac337586a3958a722deee4c1f77bb",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -6551,6 +6633,7 @@
       "requires": [],
       "slug": "finops-engineer",
       "source_content_hash": "54134b5d3e3bf59db0de7a42b1246ea3a6ad771133d946670f4211e424c33aba",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -6628,6 +6711,7 @@
       "requires": [],
       "slug": "fp-a-analyst",
       "source_content_hash": "5fa9137c80e0b91fbe62815e7981d7b6a2ca5bafe43013c56d1b847a3c963141",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -6703,6 +6787,7 @@
       "requires": [],
       "slug": "french-consulting-market-navigator",
       "source_content_hash": "68ebd164a0b3e0493d8deec43f4122e24b293c0a8f77786b2c3a4c8f3924c045",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -6781,6 +6866,7 @@
       "requires": [],
       "slug": "frontend-developer",
       "source_content_hash": "35961da50f408e00eb6189c87825ac5e62e6b1bf9de3dee198a95536c6d2619e",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -6856,6 +6942,7 @@
       "requires": [],
       "slug": "game-audio-engineer",
       "source_content_hash": "d7a2eebd8c20021e543222bc962cb5a111924c5438e9f771a6db42d74cd19232",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -6927,6 +7014,7 @@
       "requires": [],
       "slug": "game-designer",
       "source_content_hash": "203c4d7f0358a628ea21e3b9c16980f28003bd035b5cfd41a2daec04f6b84e5a",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -7004,6 +7092,7 @@
       "requires": [],
       "slug": "gaussdb-expert-engineer",
       "source_content_hash": "db3e2fbd178e4df20885c5d5f27b0a552061c7736374f9977807fc374ff99e07",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -7079,6 +7168,7 @@
       "requires": [],
       "slug": "geoai-ml-engineer",
       "source_content_hash": "6323600aecb9a1867a90158b10fa066280d1ffc77411c2b453248d125a505448",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -7153,6 +7243,7 @@
       "requires": [],
       "slug": "geographer",
       "source_content_hash": "4acf4a6ee6ae96ce562323c8ce508db9f2eb0ece016fc754214be9587c071c0d",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -7228,6 +7319,7 @@
       "requires": [],
       "slug": "geoprocessing-specialist",
       "source_content_hash": "28efb48c3c4312ac7a662c8f2da69cc013d74e5d59880a04a71a40783e0ba424",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -7303,6 +7395,7 @@
       "requires": [],
       "slug": "gis-analyst",
       "source_content_hash": "db86d14315eb0ee9fc4cc4699c3844b40f2004a988370f32fe55dadfac2c40a7",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -7378,6 +7471,7 @@
       "requires": [],
       "slug": "gis-qa-engineer",
       "source_content_hash": "f7247c7df478d963db720562af361394454c20b6af3fc78a02791ec6624bfc38",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -7455,6 +7549,7 @@
       "requires": [],
       "slug": "git-workflow-master",
       "source_content_hash": "b2ab151fa5dc31035ba5f40f9b104f61cc8ef45dab8a8249ad15675141550d77",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -7534,6 +7629,7 @@
       "requires": [],
       "slug": "global-podcast-strategist",
       "source_content_hash": "98416e338db666c5cc1d6bfd37c35daffa00532010623fdb4a92ed7dce76a7aa",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -7610,6 +7706,7 @@
       "requires": [],
       "slug": "godot-gameplay-scripter",
       "source_content_hash": "0cce0fc75b3a7eeec7221f4a6ac0ff7876fb2468cdb8fab5931951c26f18d539",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -7686,6 +7783,7 @@
       "requires": [],
       "slug": "godot-multiplayer-engineer",
       "source_content_hash": "d72e7798c03e6fa27b3b38147857c10c50a9b1b86ce4c3865f473ea5c860f137",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -7762,6 +7860,7 @@
       "requires": [],
       "slug": "godot-shader-developer",
       "source_content_hash": "1362da1ba227aea6dadf5373455bdbb989f10f172731b47243cedc52db406415",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -7837,6 +7936,7 @@
       "requires": [],
       "slug": "government-digital-presales-consultant",
       "source_content_hash": "0676fd83a462828901c64df516034b0912468c85abb751d3e484038d3288b848",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -7912,6 +8012,7 @@
       "requires": [],
       "slug": "grant-writer",
       "source_content_hash": "eb35ab7f6bc1c1401a04104b998224af60293e9669751662c6a4f20aabd59eec",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -7989,6 +8090,7 @@
       "requires": [],
       "slug": "growth-hacker",
       "source_content_hash": "6938b4fccaf4447e8c4b8fd071ce383a484cd3fb72583d87ac9835fa9741a7c7",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -8064,6 +8166,7 @@
       "requires": [],
       "slug": "healthcare-customer-service",
       "source_content_hash": "b2e4117a8b449a94409235f74315b52909716985dd94b82b87413a54ca471d73",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -8142,6 +8245,7 @@
       "requires": [],
       "slug": "healthcare-innovation-strategist",
       "source_content_hash": "e1bd8f9f8c5ac7db333632d482e017c6086519eee310da6879db5c121129fbbd",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -8217,6 +8321,7 @@
       "requires": [],
       "slug": "healthcare-marketing-compliance-specialist",
       "source_content_hash": "942cc3b43da5f0e6103b7e5087941df4247c602228b2c4b0c6487140e89b176e",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -8290,6 +8395,7 @@
       "requires": [],
       "slug": "historian",
       "source_content_hash": "2c59c10dceec033d9e92990b6156553471b7b94dd8e0c64fe27148f612be8955",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -8364,6 +8470,7 @@
       "requires": [],
       "slug": "hospitality-guest-services",
       "source_content_hash": "1c5819c560d3902eca44a4fb372bae9e882e5b9e8455e51aa3e8d9662a5d184a",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -8439,6 +8546,7 @@
       "requires": [],
       "slug": "hr-onboarding",
       "source_content_hash": "28a52c26f27ab24d7fe11f5e48cfe712f6d27da142ec97911683b4a3ad92332c",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -8518,6 +8626,7 @@
       "requires": [],
       "slug": "identity-access-engineer",
       "source_content_hash": "f37ea9df4e87d468fe2e34e29fc78fc508e717ae69d5bf4187a09375e842eedf",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -8596,6 +8705,7 @@
       "requires": [],
       "slug": "identity-graph-operator",
       "source_content_hash": "f37b705283147e3b92b76d61a3a60bdfe67bad9d6e364d11565329b8a107b3b4",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -8669,6 +8779,7 @@
       "requires": [],
       "slug": "image-prompt-engineer",
       "source_content_hash": "63a564d01dc5812c494cd8aa034ce1217031d8fe8b3eca1323316879769ff13f",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -8748,6 +8859,7 @@
       "requires": [],
       "slug": "incident-responder",
       "source_content_hash": "a648cf5a0b40d8726ccb61ea48f1dee2797691f1b52395c59af91c7a5f511278",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -8835,6 +8947,7 @@
       "requires": [],
       "slug": "incident-response-commander",
       "source_content_hash": "1df5c8f558f99a8d3e6455cf6a6badbd1e0c2b2cccb02682843ee7ca11a13929",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -8914,6 +9027,7 @@
       "requires": [],
       "slug": "inclusive-visuals-specialist",
       "source_content_hash": "b1c535f1b18bc64865eee0b4a1b58d019e92762e5dd995e30417f63d86b95583",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -8999,6 +9113,7 @@
       "requires": [],
       "slug": "infrastructure-maintainer",
       "source_content_hash": "64d705a9e58f73868136d781f83ceaf12dfc1721cdb5bfb31b2c03441d69bf5c",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -9076,6 +9191,7 @@
       "requires": [],
       "slug": "instagram-curator",
       "source_content_hash": "bab95910975a95409eca10e28c44cf762cd46f9d8b7d551bcb347ef0f39e68fd",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -9155,6 +9271,7 @@
       "requires": [],
       "slug": "internationalization-engineer",
       "source_content_hash": "913c72b65eca4af13d2edadf4b53acff63df91715c7c446a63cea75a9a14f007",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -9233,6 +9350,7 @@
       "requires": [],
       "slug": "investment-researcher",
       "source_content_hash": "4851318dcd82fdfd68403656450761b439a01c6071b8755e49dbd215149bc2c1",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -9312,6 +9430,7 @@
       "requires": [],
       "slug": "iot-fleet-engineer",
       "source_content_hash": "90cfb3b713d0cd11e9529f6158ed72ac99fe1d945a838d9d740009a51e9d3421",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -9391,6 +9510,7 @@
       "requires": [],
       "slug": "it-service-manager",
       "source_content_hash": "26c23ef51726da346dcdf5b9eb004e7c03cfae4ad6a995ed46a26ec6cd5520e6",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -9472,6 +9592,7 @@
       "requires": [],
       "slug": "jira-workflow-steward",
       "source_content_hash": "e45c68423c1df0c20452916a5caafe7f41a97b56ca5af8872af966212ccbf389",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -9547,6 +9668,7 @@
       "requires": [],
       "slug": "korean-business-navigator",
       "source_content_hash": "71eb41ef3705fe155eee87d99e0ec7a52a237af442dd66e3421e225b76580f21",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -9625,6 +9747,7 @@
       "requires": [],
       "slug": "kuaishou-strategist",
       "source_content_hash": "d28742e505fa7bf6b39a88ccb6c2052ee5b4f569d17cebb81401fa8810a5ad49",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -9696,6 +9819,7 @@
       "requires": [],
       "slug": "language-translator",
       "source_content_hash": "afd1e4b5fb1bb8fa9b8b5770774e0d7b003722681f664147ce7b9dddbcd52a4c",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -9771,6 +9895,7 @@
       "requires": [],
       "slug": "legal-billing-time-tracking",
       "source_content_hash": "27f84055643150459f4de3102ba05c17696e5967a0efc64426fb600ab3c5d12c",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -9846,6 +9971,7 @@
       "requires": [],
       "slug": "legal-client-intake",
       "source_content_hash": "b0b1cce8a30f08ada6d630b010b1af99f765f5eca667436af6592545667f4c79",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -9925,6 +10051,7 @@
       "requires": [],
       "slug": "legal-compliance-checker",
       "source_content_hash": "0544f2219d52742f9ba436c193b34eb48c47cee8fcba38aef2b478dcb5e19284",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -9999,6 +10126,7 @@
       "requires": [],
       "slug": "legal-document-review",
       "source_content_hash": "02bf51dbc9d8ffc93a8b053a09ec61ee2a3a9905e395fbd24389a532d20d1dba",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -10070,6 +10198,7 @@
       "requires": [],
       "slug": "level-designer",
       "source_content_hash": "79c1d41b7dfc477f6f364ba8b6dec02dc0c081235fe8f8b61c8b062b5dc3b344",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -10144,6 +10273,7 @@
       "requires": [],
       "slug": "linkedin-content-creator",
       "source_content_hash": "344896bff33acf0b5107bbba3c84ee1fb310f3652b44c7e53553c934c735ed4f",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -10222,6 +10352,7 @@
       "requires": [],
       "slug": "livestream-commerce-coach",
       "source_content_hash": "2d53e67cd70d825aeeddc9fd8b3b4a496887893b64df85c19903a2e7dbcb101f",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -10298,6 +10429,7 @@
       "requires": [],
       "slug": "loan-officer-assistant",
       "source_content_hash": "3d6bfdb598187fb19fba6ab4b50ff357870cda04ea846aa975649d04788df84b",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -10373,6 +10505,7 @@
       "requires": [],
       "slug": "lsp-index-engineer",
       "source_content_hash": "3f720a81cdcdaa63136b6fd7817f198d95a517ca1dfcfaa9ec81a5469a1cff95",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -10449,6 +10582,7 @@
       "requires": [],
       "slug": "m-a-integration-manager",
       "source_content_hash": "007dcfaee61d45e852a95c37a4529b1d162a178551f1a7f963ee558f1ace6fb5",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -10524,6 +10658,7 @@
       "requires": [],
       "slug": "macos-spatial-metal-engineer",
       "source_content_hash": "b0bdd78da0cdbd1ee0055401ddaba4d7cb750e3107d219b6f12794c1a023e69f",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -10599,6 +10734,7 @@
       "requires": [],
       "slug": "mcp-builder",
       "source_content_hash": "3880031674ae2458552ad3c4da99c122469e85351ed57969db7f6f767befd7cb",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -10675,6 +10811,7 @@
       "requires": [],
       "slug": "medical-billing-coding-specialist",
       "source_content_hash": "e9f597ef3a214d886a2b861347183c3674b6e24278c9308ed998a02972e7007c",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -10748,6 +10885,7 @@
       "requires": [],
       "slug": "meeting-notes-specialist",
       "source_content_hash": "53a6efaa379b70cbc3276b44544ecf569789fffe892ba82eb68e8672407de91f",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -10828,6 +10966,7 @@
       "requires": [],
       "slug": "minimal-change-engineer",
       "source_content_hash": "9999cc74e7b3936af892ef2c2793d105bb92f6c47789aa23db6df92bf68b45e5",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -11088,6 +11227,7 @@
       "requires": [],
       "slug": "mobile-app-builder",
       "source_content_hash": "1a3e043f806b0b7c071d58b2ee3ab3c58c8342e2727c1ca9e6e5175f86986caf",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "claude",
@@ -11166,6 +11306,7 @@
       "requires": [],
       "slug": "mobile-release-engineer",
       "source_content_hash": "9ec73eb4effdefa4858b444d29bbd66b57e717c1d4cab39f53adcb21c07ca9a4",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -11241,6 +11382,7 @@
       "requires": [],
       "slug": "model-qa-specialist",
       "source_content_hash": "835a26b93003cfb8819201001dad37267971f5702320abcf1720f697e00cf4bd",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -11320,6 +11462,7 @@
       "requires": [],
       "slug": "multi-agent-systems-architect",
       "source_content_hash": "d93dd20fef67bf85a537ba0f869fad1a17d0e589f20899d1bbe1f095a7bcb91b",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -11399,6 +11542,7 @@
       "requires": [],
       "slug": "multi-platform-publisher",
       "source_content_hash": "adfc6c481c0c1e1c03df21a17ccb5fb4d4c56a84193249abb27cb3d44e4f1f5e",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -11470,6 +11614,7 @@
       "requires": [],
       "slug": "narrative-designer",
       "source_content_hash": "7a5489c7b0502aa167030018137e3f349d2c32505c0ad7b9ec1de066a9a93f0d",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -11543,6 +11688,7 @@
       "requires": [],
       "slug": "narratologist",
       "source_content_hash": "12d7a6fa6134c014e3734f8203f0b8634e627cffe5985fa1b69d25c4a69094b5",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -11621,6 +11767,7 @@
       "requires": [],
       "slug": "network-engineer",
       "source_content_hash": "d4c65a148af24cec08e14ab2bee3a0a3699cc966c8d170eea196f00df3e87d98",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -11702,6 +11849,7 @@
       "requires": [],
       "slug": "offer-lead-gen-strategist",
       "source_content_hash": "75a12987fb2a205ac029c2ebf43d1ae1a1502d1707ab4921923928489ff3778c",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -11773,6 +11921,7 @@
       "requires": [],
       "slug": "operations-manager",
       "source_content_hash": "3c133a31ae1542922444d77d7c8f9964127704ba94638dde12e37a9ad0fd35bd",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -11850,6 +11999,7 @@
       "requires": [],
       "slug": "organizational-psychologist",
       "source_content_hash": "b7e523e1557ef9e98d5a0b515809996c6bbc0de6a49b1dc355d803e3bae09be2",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -11927,6 +12077,7 @@
       "requires": [],
       "slug": "orgscript-engineer",
       "source_content_hash": "f8426369743ff0086e32cb9facfc3935488d99a1c2de92961917f9b27d401427",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -12006,6 +12157,7 @@
       "requires": [],
       "slug": "outbound-strategist",
       "source_content_hash": "4f6c8abf9c936fbe5f4b66fc8044096e3dd5199f8f8ae9d0309ad92bc0653174",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -12083,6 +12235,7 @@
       "requires": [],
       "slug": "paid-media-auditor",
       "source_content_hash": "ce0346ba6a1b1652e350733cd3c124ab200e869c116fd85bcd0225d9764b0c56",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -12162,6 +12315,7 @@
       "requires": [],
       "slug": "paid-social-strategist",
       "source_content_hash": "c8004c7f640dfef9c7c698f69c4c3712d063df06c8d391c809df92ba420af3db",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -12244,6 +12398,7 @@
       "requires": [],
       "slug": "payments-billing-engineer",
       "source_content_hash": "b07c4e97ee1c23aec7fdacc79ffd39a0fcee73fef46700f82970be240dad9f5e",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -12326,6 +12481,7 @@
       "requires": [],
       "slug": "penetration-tester",
       "source_content_hash": "f52c2524309fb048250b412daa6a2ad0a906b5daff01f64f195052d024b9e1a0",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -12408,6 +12564,7 @@
       "requires": [],
       "slug": "performance-benchmarker",
       "source_content_hash": "24dbd3a55cf6ca36c5f8af4081e87859914131199d87b6f90d129643fcfba43e",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -12487,6 +12644,7 @@
       "requires": [],
       "slug": "persona-walkthrough-specialist",
       "source_content_hash": "8def8c73df7f79a61704e7353b85b915afa31c4a9fa1100fbb9220c50d6a1c55",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -12559,6 +12717,7 @@
       "requires": [],
       "slug": "personal-growth-mentor",
       "source_content_hash": "623c1ef061d98fedbb941245a39fa5b8c5236ef94194724bfe5c54b8050143d4",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -12638,6 +12797,7 @@
       "requires": [],
       "slug": "pipeline-analyst",
       "source_content_hash": "d105ed717423298d754e58300566003ef464d79268183a43b5853cf67d11f61c",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -12716,6 +12876,7 @@
       "requires": [],
       "slug": "podcast-strategist",
       "source_content_hash": "37fb126529afb4aa6f4409ca02307330d26b01f695dfbaade017d569169d936b",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -12794,6 +12955,7 @@
       "requires": [],
       "slug": "ppc-campaign-strategist",
       "source_content_hash": "3e172aa58ad7f9ea3bad947def69dfe26d66134c0aa88dca60e5aea4b8e25f67",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -12872,6 +13034,7 @@
       "requires": [],
       "slug": "pr-communications-manager",
       "source_content_hash": "e255a9ebf00a0db0dc12e72fe2a647195ceacf3c0e63f38788e077966d69b800",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -12947,6 +13110,7 @@
       "requires": [],
       "slug": "pricing-analyst",
       "source_content_hash": "fb8a63681615666bb2efe45b7fd2d9ad8a072ab9066efae6b61d454a58039f85",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -13025,6 +13189,7 @@
       "requires": [],
       "slug": "private-domain-operator",
       "source_content_hash": "7d8372b562324d4cca9765ee95dfc9e31b52287306e8a8e1dafdd1ded10744d4",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -13106,6 +13271,7 @@
       "requires": [],
       "slug": "product-manager",
       "source_content_hash": "4a3fe4661e72e5173877bcba7c362392181774b20efc27ac1789171e98676c9d",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -13185,6 +13351,7 @@
       "requires": [],
       "slug": "programmatic-display-buyer",
       "source_content_hash": "c2a54b847823906485bed6e704fc7a013e3d9cf1340045354aae9a9e0c96e7e1",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -13264,6 +13431,7 @@
       "requires": [],
       "slug": "project-shepherd",
       "source_content_hash": "0feb647366d78b61c1633b12e370ffb1dea52facb9d750ef6c952de1e996031c",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -13342,6 +13510,7 @@
       "requires": [],
       "slug": "prompt-engineer",
       "source_content_hash": "625b066e01fca23222b71331833f7851941a6ba800857481ead4ea2420d40081",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -13422,6 +13591,7 @@
       "requires": [],
       "slug": "proposal-strategist",
       "source_content_hash": "84c42e0ae7e11e6b239b7f921bdb0c33398102f94998c2eaa41114a3a46dc4c9",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -13495,6 +13665,7 @@
       "requires": [],
       "slug": "psychologist",
       "source_content_hash": "193b7dba6d04346d15ee21753fd1cdb69dc1a21a5ac30d5d62726654820a5633",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -13574,6 +13745,7 @@
       "requires": [],
       "slug": "rag-pipeline-engineer",
       "source_content_hash": "a87135cd8a852aeec3da7edf00d2a019cbe30ee9cd9394ea00bd62a4668ca8c7",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -13655,6 +13827,7 @@
       "requires": [],
       "slug": "rapid-prototyper",
       "source_content_hash": "327598e2cee41b78866720e20ee76d84e674b4a95ed92773b40c942153cba88a",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -13731,6 +13904,7 @@
       "requires": [],
       "slug": "real-estate-buyer-seller",
       "source_content_hash": "00e2f54e76be38c85c4eb406135a0944a3f610d287e6747fbfac37a12c82920a",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -13815,6 +13989,7 @@
       "requires": [],
       "slug": "reality-checker",
       "source_content_hash": "748334839b21f5b2b1f746153f7e8921feaf676333191bcd9e45b8e6f75d322b",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -13894,6 +14069,7 @@
       "requires": [],
       "slug": "realtime-collaboration-engineer",
       "source_content_hash": "08ab1a6a421a435fd5fffa9f03720566bd95fcda17c06eeff6e056d482e96a2a",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -13969,6 +14145,7 @@
       "requires": [],
       "slug": "recruitment-specialist",
       "source_content_hash": "fa1349988c278d0ecf652d7e286b3cac6acd388e10ba2e7d92c59d448303ccf8",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -14046,6 +14223,7 @@
       "requires": [],
       "slug": "reddit-community-builder",
       "source_content_hash": "03bb723420800754bcbf23994cba707c45123f7eefe3e1964188cf92ecc2b7d7",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -14123,6 +14301,7 @@
       ],
       "slug": "report-distribution-agent",
       "source_content_hash": "f5796b3cb693123e6c59f7058c100fe817b744f819d3e281442964714f72bac5",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -14194,6 +14373,7 @@
       "requires": [],
       "slug": "resume-tailor",
       "source_content_hash": "be3d173ce4807d49671c7956f107029a4cb4061651882a0a3ea8c4f20738273f",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -14270,6 +14450,7 @@
       "requires": [],
       "slug": "retail-customer-returns",
       "source_content_hash": "5cd60860a6ea57a95ec6d14246d6b0032e0e13ba0220ec4a79527fdc0ccd0f9c",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -14347,6 +14528,7 @@
       "requires": [],
       "slug": "roblox-avatar-creator",
       "source_content_hash": "6bdb5af6fe5c390da43f7bdcc4d73b6fbdef2a8b19bd6d30bf1fef6b4258f16a",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -14423,6 +14605,7 @@
       "requires": [],
       "slug": "roblox-experience-designer",
       "source_content_hash": "569f75a1b6448a30159d3ca7323eb590bc45e2355e3ee89a733d45a5d8986793",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -14500,6 +14683,7 @@
       "requires": [],
       "slug": "roblox-systems-scripter",
       "source_content_hash": "6d7e11b07aba99eecc45a8b031c5b8618f96f36699a5e1d3409d05323d7feab6",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -14578,6 +14762,7 @@
       "requires": [],
       "slug": "sales-coach",
       "source_content_hash": "83f0be3daa7e78b24bfb41c7514d5f2936e9690c42ab7a0d8b5bc66a8b829f62",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -14653,6 +14838,7 @@
       "requires": [],
       "slug": "sales-data-extraction-agent",
       "source_content_hash": "202a6f04df452385fd1185a6bb23a0c9a47e624088eac14179bed4975f0b268a",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -14733,6 +14919,7 @@
       "requires": [],
       "slug": "sales-engineer",
       "source_content_hash": "355014b3ecf52aaa1209a5d7b089e5e65c3aad7874eef513e60b6da79fec572e",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -14808,6 +14995,7 @@
       "requires": [],
       "slug": "sales-outreach",
       "source_content_hash": "84d4ca90d4bed4649904c8f239f8e13f373274c8bceb6fd7eb2479e6f9e28c90",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -14884,6 +15072,7 @@
       "requires": [],
       "slug": "salesforce-architect",
       "source_content_hash": "756fd2dc09f76422dfecb8104e2334f8876f8b95cb6734f8f044c36c641b22e1",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -14961,6 +15150,7 @@
       "requires": [],
       "slug": "search-query-analyst",
       "source_content_hash": "bfd792539f93515118429f20c528fdaee320a172ca861fbc7ffb0209dffb723e",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -15040,6 +15230,7 @@
       "requires": [],
       "slug": "search-relevance-engineer",
       "source_content_hash": "5562f37cbb561dce6dac47b1dd4e75cb7bde6c0c48045198db346ba7d6d790af",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -15119,6 +15310,7 @@
       "requires": [],
       "slug": "secrets-credential-hygiene-engineer",
       "source_content_hash": "5a52e4c1045d8805c74414cfb334bb80da429fd191b987bdd8889ee60ca7561b",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -15201,6 +15393,7 @@
       "requires": [],
       "slug": "section-508-accessibility-specialist",
       "source_content_hash": "d4fb7139c69e270fd626cfc1410b7412bd864d010903b459f9eb90c8359809f9",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -15278,6 +15471,7 @@
       "requires": [],
       "slug": "security-architect",
       "source_content_hash": "b1a68e9614f7adb43938f5bd9964f6e41250febc9a57f691eefcbab58d5b1df1",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -15360,6 +15554,7 @@
       "requires": [],
       "slug": "senior-developer",
       "source_content_hash": "63b8da6c12b95f54bbdbcd0666abeb9519a98b35395233e1b1d8e5c102c82599",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -15442,6 +15637,7 @@
       "requires": [],
       "slug": "senior-project-manager",
       "source_content_hash": "70fb27cab174c97375293311211d5563c5ac257fba274450d1ca9c05b540ef2d",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -15523,6 +15719,7 @@
       "requires": [],
       "slug": "senior-secops-engineer",
       "source_content_hash": "90b535077cff7253bf18355ec99d5205dbe09c9f3e93f5b85222183460f2b879",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -15605,6 +15802,7 @@
       "requires": [],
       "slug": "seo-specialist",
       "source_content_hash": "b2aa467176bb3489f9098e0c79399f9de162aee17a54cb0d30ed2163024e661f",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -15683,6 +15881,7 @@
       "requires": [],
       "slug": "short-video-editing-coach",
       "source_content_hash": "4634520ab5e84b26bb6658f4f8c0f737ed7dd0b5c631b9211482a4cf4037ccbf",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -15700,6 +15899,79 @@
         "review"
       ],
       "version": "sha256:cdd6e7b0db293341dfd8bb76bbb72c62d83652d99d3c32847c921f8281eee8d9"
+    },
+    {
+      "anti_capabilities": [
+        "implementing the fixes it recommends",
+        "approving a change as safe to merge",
+        "reviewing anything other than error handling and failure propagation"
+      ],
+      "audit_revision": "2",
+      "audit_status": "approved",
+      "authority": "review",
+      "avoid_when": [
+        "the task asks for an implementation or a merge decision rather than a findings list"
+      ],
+      "capabilities": [
+        "find empty or swallowed exception handlers and errors turned into empty values",
+        "flag default values and fallbacks that hide a real failure from callers",
+        "trace lost stack traces, generic rethrows, and unhandled async paths",
+        "spot missing timeout, error, and rollback handling around network, file, and database work"
+      ],
+      "categories": [
+        "engineering",
+        "code-review",
+        "error-handling"
+      ],
+      "conflicts_with": [],
+      "context_mode": "direct_safe",
+      "description": "Reviews code for silent failures: swallowed exceptions, dangerous fallbacks, lost stack traces, and missing error propagation, and reports each as a located, rated finding",
+      "display_name": "Silent Failure Hunter",
+      "division": "engineering",
+      "evidence_requirements": [
+        "cite the exact file and line for every finding",
+        "state severity and impact for every finding",
+        "never report absent evidence as a pass"
+      ],
+      "expected_output_contract": "A findings list, one entry per silent failure: location, severity, issue, impact, and fix recommendation.",
+      "findings": [
+        "prompt-defense baseline block stripped: host policy, not specialist expertise",
+        "upstream model and tool pins (sonnet; Read, Grep, Glob, Bash) dropped: tools must be proven by the host, never assumed",
+        "review authority only: the card never edits, executes, or approves"
+      ],
+      "independence_group": "engineering-silent-failure-review",
+      "model_requirements": [
+        "code-reasoning",
+        "strong-analysis"
+      ],
+      "preferred_when": [
+        "a change touches exception handling, retries, fallbacks, or failure logging",
+        "a fail-open or swallowed-error defect is suspected and needs an independent finding"
+      ],
+      "prompt_file": "prompts/silent-failure-hunter.txt",
+      "prompt_hash": "e85eea6b703152d9370916be7269cb2dba9ff4cc3842b6c1d0ddf39722263672",
+      "relative_path": "agents/silent-failure-hunter.md",
+      "required_tools": [],
+      "requires": [],
+      "slug": "silent-failure-hunter",
+      "source_content_hash": "e5e2094c6f50cc515a77376331c78e4955d5ff16c7a0e5d8f6edec692b7ebd8d",
+      "source_repository": "https://github.com/affaan-m/ECC",
+      "source_revision": "ca185ef5f7667078a1e70a763bd3a9c71c48acf0",
+      "supported_hosts": [
+        "codex",
+        "claude",
+        "openclaw",
+        "hermes"
+      ],
+      "supported_platforms": [
+        "windows",
+        "linux"
+      ],
+      "task_types": [
+        "review",
+        "analysis"
+      ],
+      "version": "sha256:baa298f7e741f6c0ab6042c4c232c4f158ac758fa6542a1548146f88a79d6087"
     },
     {
       "anti_capabilities": [
@@ -15761,6 +16033,7 @@
       "requires": [],
       "slug": "social-media-strategist",
       "source_content_hash": "7c698a9280872666b2726b7ca305c6d4890fcb95a098c7c316beb9bf5fdb4274",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -15837,6 +16110,7 @@
       "requires": [],
       "slug": "software-architect",
       "source_content_hash": "b85121691776147bacde26673e68fbbacd6a7f0816d1ca8e203c264d25ce1d30",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -15917,6 +16191,7 @@
       "requires": [],
       "slug": "solidity-smart-contract-engineer",
       "source_content_hash": "9e6f96fb29cc71faf2638bce3a5aa06ff15b4c674ca4ec039e5e4515a7844839",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -15995,6 +16270,7 @@
       ],
       "slug": "solution-engineer",
       "source_content_hash": "a871691ed7e305047281238eb225f64df4b03274fe82278879788de3c839f054",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -16074,6 +16350,7 @@
       "requires": [],
       "slug": "sovereign-health-systems-agent",
       "source_content_hash": "8e846a8643def597e351719853da63b4b6d9f0bf41978ac25e896750427989fa",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -16150,6 +16427,7 @@
       "requires": [],
       "slug": "spatial-data-engineer",
       "source_content_hash": "b8f0e43cee6538aa7880168335ceac8e1a4700965b49f3b6c227b0f13d399e5f",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -16225,6 +16503,7 @@
       "requires": [],
       "slug": "spatial-data-scientist",
       "source_content_hash": "03254a9fa2a9522800eddf743b8305bc2d4b2093e233e6c9b593da6f0746c657",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -16305,6 +16584,7 @@
       "requires": [],
       "slug": "sprint-prioritizer",
       "source_content_hash": "da5233770ca85a3931b72d80b37dd09616a54fd24075c607667853acf65b000a",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -16386,6 +16666,7 @@
       "requires": [],
       "slug": "sre-site-reliability-engineer",
       "source_content_hash": "85b305e495506913f50c7cb28de42444a85fbc4898cd3ad4e1dc9b358b4ab5e8",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -16461,6 +16742,7 @@
       "requires": [],
       "slug": "statistician",
       "source_content_hash": "4b023595c59becec2026cab38807f835e48e280885f9cd381bab7845cbf4280c",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -16532,6 +16814,7 @@
       "requires": [],
       "slug": "strategy-duel-agent",
       "source_content_hash": "3012369325bd06ec6e73f980d4e28947fe1f3dd0121e8ccd5ffb5834b50f3911",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -16611,6 +16894,7 @@
       "requires": [],
       "slug": "studio-operations",
       "source_content_hash": "8a2e5098d94688d191a128b6b2fdbbf3724bfcd2f4944766de6e25a0709f1517",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -16689,6 +16973,7 @@
       "requires": [],
       "slug": "studio-producer",
       "source_content_hash": "d942feab0f50ea7b8e98cb73bdaf05226d2a6c53c6359c7380149f7545bb199d",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -16764,6 +17049,7 @@
       "requires": [],
       "slug": "study-abroad-advisor",
       "source_content_hash": "afd4b1033e76671b4d7a17a74329d7d81f491351004c77876a2615137140b84f",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -16839,6 +17125,7 @@
       "requires": [],
       "slug": "supply-chain-strategist",
       "source_content_hash": "4e3c93bcfefd72b958432d8dbe562c6ca5add80d39a5eec061a83e9e0fe984c3",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -16920,6 +17207,7 @@
       "requires": [],
       "slug": "support-responder",
       "source_content_hash": "4dcd962743e940d1cdd119dcc748d4a434b6b32775aa11ea68fbd2209ee0852c",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -16998,6 +17286,7 @@
       "requires": [],
       "slug": "tax-strategist",
       "source_content_hash": "37ea1a246e1290f473ef59abe1bba9ecc4f346c9867522fefcc11d37cd0265ab",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -17074,6 +17363,7 @@
       "requires": [],
       "slug": "technical-artist",
       "source_content_hash": "8a669de1fa3455c456092feefbf945d3b0ae18072b873d002d190b16ed1f678d",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -17145,6 +17435,7 @@
       "requires": [],
       "slug": "technical-consultant",
       "source_content_hash": "f0228896fc57ea0b8fcf3c3fab188a6d4063ba6bf704aa93b0e46e27ba096736",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -17224,6 +17515,7 @@
       "requires": [],
       "slug": "technical-writer",
       "source_content_hash": "70c8a29cddf7de486b41185693b4961af3fcccbc632b8df13ec43572859edc43",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -17299,6 +17591,7 @@
       "requires": [],
       "slug": "terminal-integration-specialist",
       "source_content_hash": "3082737f766821cf1c5372b9067ff67c873916de8c30b173478fe8bbc9a10087",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -17383,6 +17676,7 @@
       "requires": [],
       "slug": "test-automation-engineer",
       "source_content_hash": "479ba12efa5c19e87b60e3b154170c124ac38c46b95c342f0e3b62537113c0a7",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -17467,6 +17761,7 @@
       "requires": [],
       "slug": "test-results-analyzer",
       "source_content_hash": "f080e1e8a5ddadc90dbcb845317afcf56e9889e0ed6568732605d37851cf21d8",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -17545,6 +17840,7 @@
       "requires": [],
       "slug": "threat-detection-engineer",
       "source_content_hash": "83bfaabe485d51965ba6474de3eb6e00f67fd7f76e5b34ca1d3fb385a8fa3d97",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -17623,6 +17919,7 @@
       "requires": [],
       "slug": "threat-intelligence-analyst",
       "source_content_hash": "777b26397ae7aeb246259736327f9f76e435eee378a1435bed9d18699ec8d666",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -17701,6 +17998,7 @@
       "requires": [],
       "slug": "tiktok-strategist",
       "source_content_hash": "980ca09138f63ec2d934e111af4fa59d76a483bb23220a5f862aa4e9f0c9124a",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -17784,6 +18082,7 @@
       "requires": [],
       "slug": "tool-evaluator",
       "source_content_hash": "98e9a2b4491ffa1979d45ca5e1ddb9233fe35b98cc44c66c9d8a0b258ee9a2f4",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -17865,6 +18164,7 @@
       "requires": [],
       "slug": "tracking-measurement-specialist",
       "source_content_hash": "8caa9bbc8f5a8aaeb5ac156dbb27818f27e79512472053b824484496b0ca5b96",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -17943,6 +18243,7 @@
       "requires": [],
       "slug": "trend-researcher",
       "source_content_hash": "69c8e54a9413ba411195e8d5274ee3cd88fa8cda18486db70c0f19ce374550a2",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -18020,6 +18321,7 @@
       "requires": [],
       "slug": "twitter-engager",
       "source_content_hash": "df58c7df04fb808d282d7a551c84e039bebdf4a17318a09b84fa285a118f54ab",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -18037,6 +18339,79 @@
         "review"
       ],
       "version": "sha256:0fed3de8fa36de12d2af839ee1622100c476cb93663322cc8b40c1b18ddad9f1"
+    },
+    {
+      "anti_capabilities": [
+        "implementing type changes",
+        "approving a design as complete",
+        "reviewing runtime behaviour rather than type design"
+      ],
+      "audit_revision": "2",
+      "audit_status": "approved",
+      "authority": "review",
+      "avoid_when": [
+        "the task asks for an implementation or an approval decision rather than a scored type review"
+      ],
+      "capabilities": [
+        "evaluate encapsulation and whether invariants can be violated from outside a type",
+        "judge whether types encode business rules and keep impossible states unrepresentable",
+        "score invariant usefulness against the real bugs it prevents",
+        "find escape hatches that bypass type-level enforcement"
+      ],
+      "categories": [
+        "engineering",
+        "code-review",
+        "type-design"
+      ],
+      "conflicts_with": [],
+      "context_mode": "direct_safe",
+      "description": "Analyzes type design for encapsulation, invariant expression, invariant usefulness, and enforcement, scoring whether types make illegal states harder or impossible to represent",
+      "display_name": "Type Design Analyzer",
+      "division": "engineering",
+      "evidence_requirements": [
+        "name each reviewed type and its location",
+        "score all four dimensions with reasons",
+        "tie every improvement to a concrete illegal state it removes"
+      ],
+      "expected_output_contract": "A per-type review: name and location, scores for encapsulation, invariant expression, usefulness, and enforcement, an overall assessment, and specific improvements.",
+      "findings": [
+        "prompt-defense baseline block stripped: host policy, not specialist expertise",
+        "upstream model and tool pins (sonnet; Read, Grep, Glob) dropped: tools must be proven by the host, never assumed",
+        "review authority only: the card never edits, executes, or approves"
+      ],
+      "independence_group": "engineering-type-design-review",
+      "model_requirements": [
+        "code-reasoning",
+        "strong-analysis"
+      ],
+      "preferred_when": [
+        "a change introduces or reshapes types, states, or invariants",
+        "an illegal-state or representable-invalid-state defect is suspected and needs a scored review"
+      ],
+      "prompt_file": "prompts/type-design-analyzer.txt",
+      "prompt_hash": "1760b7654a12bed172e6aeb76675f0fca4c409b4edf7dfbbe27c779292973817",
+      "relative_path": "agents/type-design-analyzer.md",
+      "required_tools": [],
+      "requires": [],
+      "slug": "type-design-analyzer",
+      "source_content_hash": "753908aadd759d4710e07ac1a0ba8a6fbc0bc35fe369cadd3ede9655da5d1c49",
+      "source_repository": "https://github.com/affaan-m/ECC",
+      "source_revision": "ca185ef5f7667078a1e70a763bd3a9c71c48acf0",
+      "supported_hosts": [
+        "codex",
+        "claude",
+        "openclaw",
+        "hermes"
+      ],
+      "supported_platforms": [
+        "windows",
+        "linux"
+      ],
+      "task_types": [
+        "review",
+        "analysis"
+      ],
+      "version": "sha256:aa7643dc05b8f8e4fba10bdc086b6368305796c70ca687be9c1ba4bc809c91e4"
     },
     {
       "anti_capabilities": [
@@ -18101,6 +18476,7 @@
       ],
       "slug": "ui-designer",
       "source_content_hash": "3130768958d3b3d38178aaec91cf789e01ecca4984c8674d4aaea446b6cba240",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -18178,6 +18554,7 @@
       "requires": [],
       "slug": "unity-architect",
       "source_content_hash": "15502fbcd46fcd7559bcd85d15b512317ceed27ffb90fc54e79f3c32bf682c1a",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -18255,6 +18632,7 @@
       "requires": [],
       "slug": "unity-editor-tool-developer",
       "source_content_hash": "8b368fe6ee0a4c0c71d10324cd8de4378c7bdaae9bc871a5561199b4a802b5dc",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -18332,6 +18710,7 @@
       "requires": [],
       "slug": "unity-multiplayer-engineer",
       "source_content_hash": "61561d24650216ef1907979e1b25e2f77e33537ad2694e8264a1fcdeeeed3a89",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -18409,6 +18788,7 @@
       "requires": [],
       "slug": "unity-shader-graph-artist",
       "source_content_hash": "3e2033f179a95da207627d1d7521395d434ac76c30a3b20f08f90a05b7405c52",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -18486,6 +18866,7 @@
       "requires": [],
       "slug": "unreal-multiplayer-architect",
       "source_content_hash": "666a4d07a6cfaf9d7fb2278dd8eb9de832599d4bb6f65743f305eb6a6546c044",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -18563,6 +18944,7 @@
       "requires": [],
       "slug": "unreal-systems-engineer",
       "source_content_hash": "ca34c6be64ee4f60f926a823bee626ab92dced93042a730f99f6fe08c4b7636f",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -18640,6 +19022,7 @@
       "requires": [],
       "slug": "unreal-technical-artist",
       "source_content_hash": "54bdd46bc872ba21fbcf7e02492c9f5bef82a6d3a35ee3de757d3b678edd6b82",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -18717,6 +19100,7 @@
       "requires": [],
       "slug": "unreal-world-builder",
       "source_content_hash": "7d2bf21ac77089b99f1fa36f6102fa938c9014c3107e9dcb9069b896e2b4001e",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -18799,6 +19183,7 @@
       "requires": [],
       "slug": "uswds-developer",
       "source_content_hash": "d3c46e2340d50a97cec536edd985abd2fe6b5f012c3c02e5e9187cd061b27ca7",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -18879,6 +19264,7 @@
       "requires": [],
       "slug": "ux-architect",
       "source_content_hash": "151f7386682b77a6c1455374d427237a3d46eadfa1248964466b0412848f7117",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -18952,6 +19338,7 @@
       "requires": [],
       "slug": "ux-researcher",
       "source_content_hash": "25f59c4333df2d0f1170ff7a1b11ea8415fd3d0ef80c3e0985209aeb4018680f",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -19026,6 +19413,7 @@
       "requires": [],
       "slug": "video-optimization-specialist",
       "source_content_hash": "9cf82969be8898c96192617becf5e38e8de6b79650c362d840c53d2c10f2e8b9",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -19105,6 +19493,7 @@
       "requires": [],
       "slug": "video-streaming-engineer",
       "source_content_hash": "a07dca52d7882ac55af9128fffd66c8a753d4c44170da19abffc51710dea9a11",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -19180,6 +19569,7 @@
       "requires": [],
       "slug": "visionos-spatial-engineer",
       "source_content_hash": "8d154bb42d6952056b0eb3fd0d030e6e22a638f11c16c04b59326973ee08b20d",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -19260,6 +19650,7 @@
       "requires": [],
       "slug": "visual-storyteller",
       "source_content_hash": "f4950c9d65b5d105ec48ebce4b7621154e3bf89871dbbf07af245476930eb4dd",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -19340,6 +19731,7 @@
       "requires": [],
       "slug": "voice-ai-integration-engineer",
       "source_content_hash": "de80469db772d96f3d6d55d3e040360e3a19b45197b2dbd446cb3fcd5a4645f6",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -19415,6 +19807,7 @@
       "requires": [],
       "slug": "web-gis-developer",
       "source_content_hash": "dbf3ceea4bb8fdc2f2fc61bf96806adeb89f725c8d67a01cd103d256e56909a7",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -19495,6 +19888,7 @@
       "requires": [],
       "slug": "webassembly-engineer",
       "source_content_hash": "013afbdab6688dfd278815e0ded8f2ce38580de2ee7e3b09d5974ca2f72c0b44",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -19576,6 +19970,7 @@
       "requires": [],
       "slug": "wechat-mini-program-developer",
       "source_content_hash": "dcda22b2d93c1bbfb5d29a78bba031ad40552af54713d89c49ece2d70d08a02c",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -19654,6 +20049,7 @@
       "requires": [],
       "slug": "wechat-official-account-manager",
       "source_content_hash": "b74a42aff9b960cb2a221e362d2006865924ffece9e3514df81f1116322d2dce",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -19732,6 +20128,7 @@
       "requires": [],
       "slug": "weibo-strategist",
       "source_content_hash": "7a79f1ec3894ab2e32cb0b0b729b77fda176defaffdb59f4feae29e56a767917",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -19817,6 +20214,7 @@
       ],
       "slug": "whimsy-injector",
       "source_content_hash": "d517c959118a25ce8514c086603d5990f70a901832af8ac29fece80d9e445ff0",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -19897,6 +20295,7 @@
       "requires": [],
       "slug": "wordpress-performance-engineer",
       "source_content_hash": "58ed429ace903aac3a2c9e190ecae5b61966b7330e9e51ea66aa03eb4112854f",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -19980,6 +20379,7 @@
       "requires": [],
       "slug": "wordpress-shopping-cart-engineer",
       "source_content_hash": "a2ef45cebe1cf03175b16ef48a2a01acdd2b7e8eda289114f568ebe0f1ae4112",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -20057,6 +20457,7 @@
       "requires": [],
       "slug": "workflow-architect",
       "source_content_hash": "74d46f03dcdd769163ce73ea8ac025bae48ae2356792a7aff3619c92f802a8ef",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -20139,6 +20540,7 @@
       "requires": [],
       "slug": "workflow-optimizer",
       "source_content_hash": "021ba71e2455071983ce1a6044783bec224b025b864757ce76b2bd4d40c00211",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -20216,6 +20618,7 @@
       "requires": [],
       "slug": "x-twitter-intelligence-analyst",
       "source_content_hash": "e3dd504765e720f0dce0c5b68254ab65c440798edccfe6af6aafd0d3925d6dcb",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -20294,6 +20697,7 @@
       "requires": [],
       "slug": "xiaohongshu-specialist",
       "source_content_hash": "c0afe07b77d7795ff6c5ea928360f0e545d51a6df231d42d6282168ace027154",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -20369,6 +20773,7 @@
       "requires": [],
       "slug": "xr-cockpit-interaction-specialist",
       "source_content_hash": "c8473bd555ad22da7d4978e94a3aec07ae9519b2080572b409639deb9a8e7110",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -20444,6 +20849,7 @@
       "requires": [],
       "slug": "xr-immersive-developer",
       "source_content_hash": "a9aa13187bfb774f3eb734ae9869ef249ec3290674f0bb3c1368b69bfa25a2b0",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -20515,6 +20921,7 @@
       "requires": [],
       "slug": "xr-interface-architect",
       "source_content_hash": "995b459992ab42162269a3bc607131371206742df9c55a4ef614e0171f34e92b",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -20592,6 +20999,7 @@
       "requires": [],
       "slug": "zhihu-strategist",
       "source_content_hash": "35f6fd759a67860f92d1ae5245bdf45f5eb524277453a28011899aeb450f5c4c",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -20667,6 +21075,7 @@
       "requires": [],
       "slug": "zk-steward",
       "source_content_hash": "01fdb11cc8df0ada78aa31007c1565a3d118d64e9e97ff86b8dd838782a44082",
+      "source_repository": "https://github.com/msitarzewski/agency-agents",
       "source_revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
       "supported_hosts": [
         "codex",
@@ -20687,17 +21096,33 @@
     }
   ],
   "counts": {
-    "approved": 263,
+    "approved": 265,
     "quarantined": 0,
     "retired": 0,
-    "total": 263
+    "total": 265
   },
-  "schema_version": 2,
+  "schema_version": 3,
   "source": {
     "license": "MIT",
     "license_file": "LICENSE.agency-agents.txt",
     "license_hash": "9a45258434d5cedf0af73c9ad4771373701225038d246c49219026c33677f66f",
     "repository": "https://github.com/msitarzewski/agency-agents",
     "revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1"
+  },
+  "sources": {
+    "agency-agents": {
+      "license": "MIT",
+      "license_file": "LICENSE.agency-agents.txt",
+      "license_hash": "9a45258434d5cedf0af73c9ad4771373701225038d246c49219026c33677f66f",
+      "repository": "https://github.com/msitarzewski/agency-agents",
+      "revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1"
+    },
+    "ecc": {
+      "license": "MIT",
+      "license_file": "LICENSE.ecc.txt",
+      "license_hash": "326146379f01bb137c0a5d3c54770c1aa31076705c8b88a7f6b26a460f6221b2",
+      "repository": "https://github.com/affaan-m/ECC",
+      "revision": "ca185ef5f7667078a1e70a763bd3a9c71c48acf0"
+    }
   }
 }

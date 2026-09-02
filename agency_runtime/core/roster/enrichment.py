@@ -30,7 +30,7 @@ from agency_runtime.core.bounded_json import safe_load_bounded_json
 from agency_runtime.core.roster.bundled import BundledRosterError, _resource
 
 _OVERLAY_RELATIVE_PATH = "scope_qualifiers.json"
-_OVERLAY_BYTE_LIMIT = 1_048_576  # 1 MiB: a full 263-agent overlay is well under this.
+_OVERLAY_BYTE_LIMIT = 1_048_576  # 1 MiB: a full 265-agent overlay is well under this.
 _TOKEN = __import__("re").compile(r"[a-z0-9][a-z0-9._+-]{0,63}\Z")
 
 

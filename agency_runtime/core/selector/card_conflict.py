@@ -7,7 +7,7 @@ exclusive authority, and required separate context. What it cannot see is two
 cards whose *prompts* pull in opposite directions without either card having
 declared anything about the other.
 
-Measured against the shipped roster, the declarative rules resolve 30 of 34,453
+Measured against the shipped 263-agent roster (2026-08), the declarative rules resolve 30 of 34,453
 possible pairs -- 0.087%. Independence groups are near-unique (251 groups across
 263 agents), so the authority rule fires on a single pair. For essentially every
 real pairing, nothing was asking whether the two cards actually agree.

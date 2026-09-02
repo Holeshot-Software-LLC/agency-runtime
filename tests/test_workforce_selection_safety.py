@@ -108,7 +108,11 @@ def test_ar227_complete_recruiter_index_fits_measured_finite_envelope() -> None:
     # frontend-developer from code-reviewer on the one dimension meant to
     # separate them. That is a change in what the roster means, which is what
     # this pin exists to make someone justify.
-    assert len(payload) == 264_087
+    #
+    # 2026-09-02, 264_087 -> 266_264 (+2,177, +0.82%): AR-364 audited the two
+    # ECC review cards (silent-failure-hunter, type-design-analyzer) into the
+    # roster as review-authority specialists; 278 -> 280 workers.
+    assert len(payload) == 266_264
     assert len(payload) <= MAX_RECRUITER_INDEX_BYTES
     assert MAX_RECRUITER_INDEX_BYTES == 288 * 1024
     # The exact figure above is a change detector; this is the budget. Asserting
@@ -1334,7 +1338,7 @@ def test_captured_typescript_plan_forms_exact_safe_lifecycle_team_from_full_work
         budget=staffing_budget_for_config(config),
     )
 
-    assert snapshot.worker_count == 278
+    assert snapshot.worker_count == 280
     assert decision.accepted
     assert {unit.unit_id: unit.selected for unit in decision.units} == {
         unit_id: (agent_id,) for unit_id, agent_id in expected.items()
@@ -1741,5 +1745,5 @@ def test_every_worker_contract_has_positive_negative_shadow_and_eligibility_evid
         if unavailable.selected or "agent_not_live_eligible" not in unavailable_reasons:
             failures.append((contract.agent_id, "live-eligibility", unavailable))
 
-    assert snapshot.worker_count == 278
+    assert snapshot.worker_count == 280
     assert failures == []

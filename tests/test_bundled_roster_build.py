@@ -57,6 +57,7 @@ def _write_test_audit(tmp_path: Path, contracts: list[dict[str, object]]) -> dic
     return {
         "audit_revision": "1",
         "source": {"revision": "a" * 40},
+        "sources": {"agency-agents": {"revision": "a" * 40, "inventory": "divisions"}},
         "expected": {
             "total_agents": len(contracts),
             "status_counts": {"approved": len(contracts)},
@@ -369,28 +370,46 @@ def test_tracked_audit_is_complete_exact_and_reproducible() -> None:
     manifest = subject._load_audit_manifest(audit_dir)
     contracts = subject._load_audits(audit_dir, manifest)
 
+    # The division manifest is pinned by its immutable Git blob hash; the
+    # earlier pin was the CRLF hash of a Windows checkout and could not be
+    # rebuilt from an LF checkout (found while adding the second source, AR-364).
     assert manifest["source"] == {
         "repository": "https://github.com/msitarzewski/agency-agents",
         "origin": "https://github.com/msitarzewski/agency-agents.git",
         "revision": "459dce837db3bdfdc4763d3fefd1fd854e73c8f1",
         "division_manifest": "divisions.json",
-        "division_manifest_sha256": "d145c4e2ad4fa59340d22f99d312700a8ed8d05f7e3deed26b16bdedeb31ef5c",
+        "division_manifest_sha256": "15136bcf43ff95dd2ef827519c96cfee3fa3ebe35057d69ff1cd49a1a9e48add",
     }
-    assert manifest["expected"]["total_agents"] == len(contracts) == 263
+    assert set(manifest["sources"]) == {"agency-agents", "ecc"}
+    assert manifest["sources"]["agency-agents"]["inventory"] == "divisions"
+    assert manifest["sources"]["ecc"] == {
+        "id": "ecc",
+        "repository": "https://github.com/affaan-m/ECC",
+        "origin": "https://github.com/affaan-m/ECC.git",
+        "revision": "ca185ef5f7667078a1e70a763bd3a9c71c48acf0",
+        "license": "MIT",
+        "inventory": "explicit",
+    }
+    assert manifest["expected"]["total_agents"] == len(contracts) == 265
     assert len(manifest["expected"]["division_counts"]) == 17
-    assert manifest["expected"]["status_counts"] == {"approved": 263}
+    assert manifest["expected"]["status_counts"] == {"approved": 265}
+    assert {path for path, item in contracts.items() if item["source"] == "ecc"} == {
+        "agents/silent-failure-hunter.md",
+        "agents/type-design-analyzer.md",
+    }
     assert set(manifest["remediations"]) == {
         "engineering/engineering-mobile-app-builder.md",
         "marketing/marketing-app-store-optimizer.md",
     }
     assert set(manifest["expected"]["batches"]) == {
         "batch-a.json",
+        "batch-ecc-review.json",
         "batch-engineering.json",
         "batch-marketing-security.json",
         "batch-specialized.json",
     }
     assert (
-        sum(descriptor["count"] for descriptor in manifest["expected"]["batches"].values()) == 263
+        sum(descriptor["count"] for descriptor in manifest["expected"]["batches"].values()) == 265
     )
     for review in audit_dir.glob("batch-*-review.md"):
         text = review.read_text(encoding="utf-8")
@@ -456,7 +475,9 @@ def test_audit_hashes_canonicalize_lf_while_source_hashes_remain_raw(
     artifact.write_bytes(artifact_crlf)
     review.write_bytes(review_crlf)
 
-    assert subject._load_audits(tmp_path, manifest) == {"engineering/alpha.md": contract}
+    assert subject._load_audits(tmp_path, manifest) == {
+        "engineering/alpha.md": {**contract, "source": subject.SOURCE_ID}
+    }
     assert subject._sha256(artifact_lf) != subject._sha256(artifact_crlf)
     assert subject._sha256(review_lf) != subject._sha256(review_crlf)
 

@@ -45,12 +45,12 @@ superseded_by: null
 
 <h1 align="center">Agency Runtime</h1>
 
-<p align="center">Give your coding agent a bench of 263 audited specialists — without bloating every conversation into a giant prompt.</p>
+<p align="center">Give your coding agent a bench of 265 audited specialists — without bloating every conversation into a giant prompt.</p>
 
 <p align="center">
   <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue.svg"/></a>
   <img alt="Python 3.10+" src="https://img.shields.io/badge/python-3.10%2B-blue.svg"/>
-  <img alt="Specialists" src="https://img.shields.io/badge/specialists-263-6366f1.svg"/>
+  <img alt="Specialists" src="https://img.shields.io/badge/specialists-265-6366f1.svg"/>
   <img alt="Hosts" src="https://img.shields.io/badge/hosts-5-38bdf8.svg"/>
   <img alt="Status: prerelease" src="https://img.shields.io/badge/status-prerelease-orange.svg"/>
   <img alt="Platforms" src="https://img.shields.io/badge/platform-windows%20%7C%20linux-lightgrey.svg"/>
@@ -357,7 +357,7 @@ specialists that your main agent recruits per turn.
 ## 🧒 How it works (ELI5)
 
 Imagine your main agent can staff from an unlimited catalog of possible roles,
-with 263 audited specialists already on payroll.
+with 265 audited specialists already on payroll.
 
 1. You ask the main agent for something.
 2. Agency classifies the turn — new task, follow-up, approval, control command,
@@ -1191,7 +1191,7 @@ model to repair the header or count a repaired response as success.
 
 ## 📂 Roster & the upstream project
 
-Agency Runtime ships a **263-specialist audited roster** sourced from an
+Agency Runtime ships a **265-specialist audited roster** sourced from an
 upstream open-source specialist-pool project (MIT, pinned revision). Credit and
 thanks to that project — the audited pool of specialists is the upstream asset
 worth borrowing. (Provenance — repository, exact revision, and license — is

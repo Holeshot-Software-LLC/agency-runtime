@@ -33,10 +33,10 @@ def _manifest_agents() -> list[dict[str, object]]:
 def test_every_bundled_agent_projects_to_an_immutable_compact_contract() -> None:
     contracts = [project_workforce_contract(agent) for agent in _manifest_agents()]
 
-    assert len(contracts) == 263
+    assert len(contracts) == 265
     assert {item.schema_version for item in contracts} == {WORKFORCE_CONTRACT_SCHEMA_VERSION}
-    assert len({item.agent_id for item in contracts}) == 263
-    assert len({item.worker_id for item in contracts}) == 263
+    assert len({item.agent_id for item in contracts}) == 265
+    assert len({item.worker_id for item in contracts}) == 265
     assert all(item.outcomes and item.capability_ids and item.artifact_kinds for item in contracts)
     observed_capabilities = {item for contract in contracts for item in contract.capability_ids}
     assert observed_capabilities <= CORE_CAPABILITY_IDS
@@ -402,7 +402,7 @@ def test_terse_recruiter_index_contains_every_bundled_worker_and_required_field(
     serialized = serialize_recruiter_index(records)
     payload = json.loads(serialized)
 
-    assert len(payload["workers"]) == 263
+    assert len(payload["workers"]) == 265
     assert tuple(payload["fields"]) == RECRUITER_INDEX_FIELDS
     assert tuple(payload["composition_fields"]) == COMPOSITION_INDEX_FIELDS
     assert all(len(row) == len(RECRUITER_INDEX_FIELDS) for row in payload["workers"])

@@ -23,14 +23,20 @@ from agency_runtime.core.roster.semantic_projection import (
 )
 from agency_runtime.core.roster.source_safety import scan_source_text
 
-BUNDLED_ROSTER_SCHEMA: Final[int] = 2
+BUNDLED_ROSTER_SCHEMA: Final[int] = 3
 MAX_BUNDLED_AGENTS: Final[int] = 512
+# AR-364: the packaged roster may be assembled from more than one pinned upstream.
+# Every source is a separately licensed, revision-pinned checkout with its own
+# packaged license copy; the official agency-agents catalog stays the primary
+# source that every package must carry.
+MAX_BUNDLED_SOURCES: Final[int] = 8
 MAX_MANIFEST_BYTES: Final[int] = 4 * 1024 * 1024
 MAX_PROMPT_BYTES: Final[int] = 256 * 1024
 MAX_LICENSE_BYTES: Final[int] = 64 * 1024
 SOURCE_REPOSITORY: Final[str] = "https://github.com/msitarzewski/agency-agents"
 SOURCE_LICENSE: Final[str] = "MIT"
 SOURCE_LICENSE_FILE: Final[str] = "LICENSE.agency-agents.txt"
+PRIMARY_SOURCE_ID: Final[str] = "agency-agents"
 
 _DATA_DIRECTORY = "data"
 _MANIFEST_FILE = "manifest.json"
@@ -38,6 +44,12 @@ _MANIFEST_DIGEST_FILE = "manifest.sha256"
 _SLUG = re.compile(r"[a-z0-9][a-z0-9._-]{1,127}\Z")
 _SHA256 = re.compile(r"[a-f0-9]{64}\Z")
 _SOURCE_REVISION = re.compile(r"[a-f0-9]{40,64}\Z")
+_SOURCE_ID = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*\Z")
+# A source repository is the canonical https browse URL (no trailing slash and
+# no ``.git`` suffix) so the provenance line rendered into every governed
+# prompt links to the exact reviewed blob.
+_REPOSITORY_URL = re.compile(r"https://[a-z0-9.-]+(?:/[A-Za-z0-9._-]+){2,8}\Z")
+_ACCEPTED_LICENSES = frozenset({"MIT"})
 _MANIFEST_LAYOUT_CONTROL = re.compile(r"[\t\n\r]")
 _STATUS = frozenset({"approved", "quarantined", "retired"})
 _AUTHORITY = frozenset({"advise", "plan", "modify", "review", "approve"})
@@ -79,6 +91,7 @@ _TEXT_FIELDS = (
     "context_mode",
     "independence_group",
     "expected_output_contract",
+    "source_repository",
     "source_revision",
     "source_content_hash",
     "audit_revision",
@@ -88,7 +101,7 @@ _TEXT_FIELDS = (
 _AGENT_FIELDS = frozenset((*_TEXT_FIELDS, *_LIST_FIELDS, "prompt_file", "prompt_hash"))
 _AGENT_OPTIONAL_FIELDS = frozenset({"optional_tools", "remediation"})
 _SOURCE_FIELDS = frozenset({"repository", "revision", "license", "license_file", "license_hash"})
-_MANIFEST_FIELDS = frozenset({"schema_version", "source", "counts", "agents"})
+_MANIFEST_FIELDS = frozenset({"schema_version", "source", "sources", "counts", "agents"})
 _COUNT_FIELDS = frozenset({"total", "approved", "quarantined", "retired"})
 
 
@@ -208,7 +221,14 @@ def _validate_routing_contract(result: Mapping[str, Any]) -> None:
     # specialist is loadable into the caller like any other.
 
 
-def _validate_source(source: object) -> dict[str, str]:
+def _validate_source_block(
+    source: object,
+    *,
+    source_id: str,
+    repository: str | None = None,
+) -> dict[str, str]:
+    """Validate one packaged source's provenance and bind it to its license copy."""
+
     if not isinstance(source, dict) or set(source) != _SOURCE_FIELDS:
         raise BundledRosterError("bundled roster source provenance is invalid")
     required = ("repository", "revision", "license", "license_file", "license_hash")
@@ -217,16 +237,74 @@ def _validate_source(source: object) -> dict[str, str]:
         raise BundledRosterError("bundled roster source revision is invalid")
     if not _SHA256.fullmatch(result["license_hash"]):
         raise BundledRosterError("bundled roster license hash is invalid")
-    if result["repository"] != SOURCE_REPOSITORY or result["license"] != SOURCE_LICENSE:
+    if (
+        result["license"] not in _ACCEPTED_LICENSES
+        or _REPOSITORY_URL.fullmatch(result["repository"]) is None
+        or result["repository"].endswith(".git")
+        or (repository is not None and result["repository"] != repository)
+    ):
         raise BundledRosterError("bundled roster source provenance is unexpected")
     license_path = _safe_relative_path(result["license_file"], label="bundled roster license")
-    if license_path != SOURCE_LICENSE_FILE:
+    if license_path != f"LICENSE.{source_id}.txt":
         raise BundledRosterError("bundled roster license path is not canonical")
     license_bytes = _resource(license_path, limit=MAX_LICENSE_BYTES, label="bundled roster license")
     if _sha256(license_bytes) != result["license_hash"]:
         raise BundledRosterError("bundled roster license hash does not match")
     result["license_file"] = license_path
+    result["id"] = source_id
     return result
+
+
+def _validate_source(source: object) -> dict[str, str]:
+    """Validate the primary agency-agents source that every package must carry."""
+
+    return _validate_source_block(
+        source,
+        source_id=PRIMARY_SOURCE_ID,
+        repository=SOURCE_REPOSITORY,
+    )
+
+
+def _validate_sources(manifest: Mapping[str, Any]) -> dict[str, dict[str, str]]:
+    """Validate every packaged source; the primary block must repeat under ``sources``."""
+
+    # The primary block is validated first so a defect in it is reported as
+    # such rather than as an inconsistency with its repeat under ``sources``.
+    sources = {PRIMARY_SOURCE_ID: _validate_source(manifest.get("source"))}
+    raw = manifest.get("sources")
+    if (
+        not isinstance(raw, dict)
+        or not 1 <= len(raw) <= MAX_BUNDLED_SOURCES
+        or PRIMARY_SOURCE_ID not in raw
+    ):
+        raise BundledRosterError("bundled roster sources provenance is invalid")
+    if raw[PRIMARY_SOURCE_ID] != manifest.get("source"):
+        raise BundledRosterError("bundled roster primary source provenance is inconsistent")
+    for source_id, block in raw.items():
+        if source_id == PRIMARY_SOURCE_ID:
+            continue
+        if not isinstance(source_id, str) or _SOURCE_ID.fullmatch(source_id) is None:
+            raise BundledRosterError("bundled roster source id is invalid")
+        sources[source_id] = _validate_source_block(block, source_id=source_id)
+    repositories = [source["repository"] for source in sources.values()]
+    if len(repositories) != len(set(repositories)):
+        raise BundledRosterError("bundled roster source repositories must be unique")
+    return sources
+
+
+def _agent_source(
+    entry: Mapping[str, Any],
+    sources: Mapping[str, Mapping[str, str]],
+) -> Mapping[str, str]:
+    """Resolve the packaged source an agent entry was audited from."""
+
+    repository = entry.get("source_repository")
+    for source in sources.values():
+        if source["repository"] == repository:
+            return source
+    raise BundledRosterError(
+        f"bundled roster source repository is unknown for {entry.get('slug')!r}"
+    )
 
 
 def _revision_input(
@@ -241,7 +319,7 @@ def _revision_input(
         "name": entry["display_name"],
         "source": source["repository"],
         "prompt_path": (
-            f"bundled://agency-agents/{entry['slug']}"
+            f"bundled://{source['id']}/{entry['slug']}"
             if entry["audit_status"] == "approved"
             else ""
         ),
@@ -276,6 +354,9 @@ def _validate_remediation(entry: Mapping[str, Any], result: dict[str, Any]) -> N
         "context_mode": contract["context_mode"],
         "independence_group": contract["independence_group"],
         "expected_output_contract": contract["expected_output_contract"],
+        # Remediation profiles predate multi-source packaging and only ever
+        # cover the primary catalog.
+        "source_repository": contract.get("source_repository", SOURCE_REPOSITORY),
         "source_revision": contract["source_revision"],
         "audit_revision": contract["audit_revision"],
         "audit_status": contract["audit_status"],
@@ -316,7 +397,11 @@ def _optional_tools(entry: Mapping[str, Any], required_tools: list[str]) -> list
     return optional_tools
 
 
-def _validate_agent(entry: object, *, source: Mapping[str, str]) -> dict[str, Any]:
+def _validate_agent(
+    entry: object,
+    *,
+    sources: Mapping[str, Mapping[str, str]],
+) -> dict[str, Any]:
     if (
         not isinstance(entry, dict)
         or not set(entry) >= _AGENT_FIELDS
@@ -334,6 +419,7 @@ def _validate_agent(entry: object, *, source: Mapping[str, str]) -> dict[str, An
     result["relative_path"] = _safe_relative_path(
         result["relative_path"], label=f"source path for {slug}"
     )
+    source = _agent_source(result, sources)
     if result["source_revision"] != source["revision"]:
         raise BundledRosterError(f"source revision does not match for {slug}")
     if not _SHA256.fullmatch(result["source_content_hash"]):
@@ -438,11 +524,12 @@ def _validated_manifest() -> dict[str, Any]:
         or manifest.get("schema_version") != BUNDLED_ROSTER_SCHEMA
     ):
         raise BundledRosterError("bundled roster manifest schema is unsupported")
-    source = _validate_source(manifest.get("source"))
+    sources = _validate_sources(manifest)
+    source = sources[PRIMARY_SOURCE_ID]
     raw_agents = manifest.get("agents")
     if not isinstance(raw_agents, list) or not 1 <= len(raw_agents) <= MAX_BUNDLED_AGENTS:
         raise BundledRosterError("bundled roster agent inventory is invalid")
-    agents = [_validate_agent(item, source=source) for item in raw_agents]
+    agents = [_validate_agent(item, sources=sources) for item in raw_agents]
     slugs = [item["slug"] for item in agents]
     paths = [item["relative_path"] for item in agents]
     if slugs != sorted(slugs) or len(slugs) != len(set(slugs)):
@@ -472,7 +559,7 @@ def _validated_manifest() -> dict[str, Any]:
             immutable_revision_version(
                 _revision_input(
                     entry,
-                    source,
+                    _agent_source(entry, sources),
                     prompt_body=prompt_body,
                     content_hash=entry["prompt_hash"],
                 )
@@ -480,7 +567,13 @@ def _validated_manifest() -> dict[str, Any]:
             != entry["version"]
         ):
             raise BundledRosterError(f"immutable version does not match for {entry['slug']}")
-    return {**manifest, "source": source, "agents": agents, "counts": expected_counts}
+    return {
+        **manifest,
+        "source": source,
+        "sources": sources,
+        "agents": agents,
+        "counts": expected_counts,
+    }
 
 
 @lru_cache(maxsize=MAX_BUNDLED_AGENTS)
@@ -513,11 +606,12 @@ def bundled_roster() -> list[dict[str, Any]]:
     from agency_runtime.core.roster.enrichment import apply_enrichment
 
     manifest = _validated_manifest()
-    source = manifest["source"]
+    sources = manifest["sources"]
     result: list[dict[str, Any]] = []
     for entry in manifest["agents"]:
         if entry["audit_status"] != "approved":
             continue
+        source = _agent_source(entry, sources)
         prompt_body = _prompt_text(entry["prompt_file"], entry["prompt_hash"])
         agent = {
             "slug": entry["slug"],
@@ -552,11 +646,11 @@ def bundled_roster() -> list[dict[str, Any]]:
                 *entry.get("optional_tools", []),
             ],
             "source": source["repository"],
-            "source_id": "agency-agents",
+            "source_id": source["id"],
             "source_version": source["revision"],
             "version": entry["version"],
             "hash": entry["prompt_hash"],
-            "prompt_path": f"bundled://agency-agents/{entry['slug']}",
+            "prompt_path": f"bundled://{source['id']}/{entry['slug']}",
             "prompt_body": prompt_body,
         }
         if "remediation" in entry:
@@ -649,9 +743,11 @@ def clear_bundled_roster_cache() -> None:
 __all__ = [
     "BUNDLED_ROSTER_SCHEMA",
     "MAX_BUNDLED_AGENTS",
+    "MAX_BUNDLED_SOURCES",
     "MAX_LICENSE_BYTES",
     "MAX_MANIFEST_BYTES",
     "MAX_PROMPT_BYTES",
+    "PRIMARY_SOURCE_ID",
     "SOURCE_LICENSE",
     "SOURCE_LICENSE_FILE",
     "SOURCE_REPOSITORY",

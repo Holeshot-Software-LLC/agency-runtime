@@ -22,6 +22,30 @@ RETRIEVAL_CASES: Final[tuple[dict[str, object], ...]] = (
         "max_required_rank": 10,
     },
     {
+        "id": "silent-failure-review",
+        "kind": "direct",
+        "query": (
+            "Review this change's error handling for swallowed exceptions, fallbacks "
+            "that hide failures from callers, and lost stack traces. Report located, "
+            "rated findings only; do not implement fixes."
+        ),
+        "required": ("silent-failure-hunter",),
+        "forbidden_above_required": ("technical-writer",),
+        "max_required_rank": 10,
+    },
+    {
+        "id": "type-design-review",
+        "kind": "direct",
+        "query": (
+            "Score the type design in this module: encapsulation, whether the "
+            "invariants keep illegal states unrepresentable, and where escape "
+            "hatches bypass enforcement. Findings only; do not change the types."
+        ),
+        "required": ("type-design-analyzer",),
+        "forbidden_above_required": ("technical-writer",),
+        "max_required_rank": 10,
+    },
+    {
         "id": "short-auth-repair",
         "kind": "short_indirect",
         "query": "fix auth",

@@ -51,7 +51,7 @@ jobs:
         # regenerate the enrichment overlay (scope_qualifiers + typed stacks)
         # so newly-ingested specialists carry typed coverage the deterministic
         # verifier scores. This step needs the roster-audit provider secrets
-        # below; the bundled 263-agent roster ships a pre-built overlay at
+        # below; the bundled 265-agent roster ships a pre-built overlay at
         # agency_runtime/core/roster/data/scope_qualifiers.json.
         env:
           AGENCY_CONFIG_PATH: ${{ runner.temp }}/agency-runtime/agency.yaml
