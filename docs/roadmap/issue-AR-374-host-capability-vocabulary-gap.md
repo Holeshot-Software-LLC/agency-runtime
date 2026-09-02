@@ -233,7 +233,8 @@ outward-facing tracker write.
 0. **Filed as AR-375.** The planner writing no executor for an install
    request is now
    `docs/roadmap/issue-AR-375-planner-cannot-express-host-operations.md`:
-   the artifact-kind ontology cannot express a host operation at all.
+   every planned unit was read-only, so the eligible installer specialist
+   could not be matched.
 
 1. **The upstream selection eval cannot reach 82 percent of the roster.** It
    filters candidates on `contract.tool_classes` against the host's nine

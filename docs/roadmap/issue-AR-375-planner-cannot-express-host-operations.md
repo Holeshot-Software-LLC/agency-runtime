@@ -1,13 +1,14 @@
 ---
-title: "AR-375: The planner ontology cannot express a host operation, so an install request plans no executor"
+title: "AR-375: An actionable install is planned as a read-only unit, so the eligible installer specialist is never staffed"
 status: open
 category: roadmap
 created: 2026-09-02
 updated: 2026-09-02
-tags: [workforce, planning, ontology, staffing]
+tags: [workforce, planning, staffing]
 related:
   - docs/roadmap/issue-AR-374-host-capability-vocabulary-gap.md
   - docs/roadmap/issue-AR-336-requalify-the-recruiter-route-for-ordinary-tasks.md
+  - docs/decisions/0110-remove-agency-owned-windows-hello.md
 supersedes: []
 superseded_by: null
 type: issue
@@ -19,100 +20,89 @@ depends_on: []
 blocks: []
 ---
 
-# AR-375: The planner ontology cannot express a host operation, so an install request plans no executor
+# AR-375: An actionable install is planned as a read-only unit, so the eligible installer specialist is never staffed
 
 ## Problem
 
 With AR-374's tools axis cleared, an ordinary install request reaches the
 critic, which rejects the staffing with `missing-installation-executor`,
 `wrong-routine-installation-staffing` and `missing-implementation-lifecycle`.
-Those are model-authored codes, not constants in the tree.
+The critic is right.
 
-The planner is not at fault. In the production compact-intent path the
-planner authors only `unit_id`, `outcome`, `artifact_kind`, `domains`,
-`stacks`, `capability_ids`, `novel_capability` and `depends_on`
-(`_COMPACT_UNIT_SCHEMA`). Everything that decides what a unit may *do* —
-`authority`, `mutation_scope`, `lifecycle_phase` and `required_tools` — is
-derived from `artifact_kind` by `_ARTIFACT_FACTS` and `_required_tools` in
-`core/workforce/intent.py`.
+For `install this: https://zcode.z.ai/en` the planner produced three units:
 
-Measured against that table:
+| unit | artifact kind | authority |
+|---|---|---|
+| `unit-install-discovery` | `analysis` | advise |
+| `unit-install-operation` | `plan` | plan |
+| `unit-install-verification` | `test-evidence` | review |
 
-| artifact kind | lifecycle | authority | mutation | derived required_tools |
-|---|---|---|---|---|
-| `analysis` | discovery | advise | read_only | repository-read |
-| `architecture-record` | design | plan | read_only | repository-read |
-| `documentation` | documentation | modify | workspace_write | repository-read, repository-write |
-| `implementation-change` | implementation | modify | workspace_write | repository-read, repository-write, code-execution |
-| `plan` | planning | plan | read_only | repository-read |
-| `review-report` | review | review | read_only | repository-read |
-| `test-code` | testing | modify | workspace_write | repository-read, repository-write, code-execution, test-execution |
-| `test-evidence` | testing | review | read_only | repository-read, test-execution |
+Every one is read-only. Nothing represents the work the host would actually
+perform, so no specialist is staffed to guide it.
 
-Three of the eight grant `modify`, and **all three are `workspace_write`**.
-No artifact kind expresses an operation on the host — installing software,
-deploying, configuring, changing system state.
+The roster is ready and waiting. `cross-platform-installer-engineer` is
+enabled on all five hosts, declares `modify` authority, sits in the
+`implementation` and `release` lifecycle phases, and needs only
+`package-management`, `repository-read` and `shell-execution` — all inside
+the nine capabilities every host proves. It cannot be reached because a
+contract only covers a unit whose `artifact_kind` is among the contract's
+declared kinds, and this specialist declares exactly one:
+`implementation-change`. A `plan` unit can never match it.
 
-So for `install this: https://zcode.z.ai/en` the planner's only honest
-options are:
-
-- `plan` — read_only, no executor. This is what it chose, and the critic
-  correctly observed nothing performs the install.
-- `implementation-change` — asserts a workspace/repository change that an
-  install is not, scoped `workspace_write`, carrying an
-  `implementation-complete` claim.
-
-Neither is right, so the turn cannot succeed however good the plan.
+So the defect is the plan's shape, not the ontology and not eligibility.
+`implementation-change` is how this roster expresses install work; the
+planner simply did not choose it.
 
 ## Current state
 
-Measured 2026-09-02 against the shipped index and the bundled ontology.
+**Agency is advisory and never executes.** The README states it "does not
+execute specialists" (README.md:1063), ADR-0110 describes Agency Runtime as
+"primarily an advisory plugin integration", and ADR-0107 records that
+"Agency never executes either step" for install commands. The host performs
+the work; Agency supplies the expertise the host applies.
 
-**`external_write` is unreachable.** It exists in the legacy
-`PLAN_RESPONSE_SCHEMA` enum (`external_write`, `read_only`,
-`workspace_write`), but no entry in `_ARTIFACT_FACTS` maps to it and
-`mutation_scope` is derived, never authored. The reachable set is exactly
-`{read_only, workspace_write}`. Consequently
-`plan_external_write_requires_separate_authorization` in
-`core/workforce/plan_policy.py` cannot fire from the compact path.
+That is why a unit's `artifact_kind` and derived `mutation_scope` describe
+the work the **host** will carry out under staffed expertise, not something
+Agency performs. An earlier revision of this issue argued that the
+artifact-kind table could not express a host operation and asked whether
+Agency should be allowed to perform one. That framing was wrong and is
+retracted: the question does not arise, and `implementation-change` already
+carries exactly this meaning — the installer specialist declares it.
 
-That dead policy is the most informative evidence in this issue. Someone
-deliberately decided an external write requires separate authorization. The
-ontology then made external writes unexpressible, which enforces that
-decision absolutely — at the cost of making an install request fail
-confusingly rather than declining it clearly.
+The derivation facts remain accurate and are worth keeping, because they
+explain why the planner's single choice decides everything: in the compact
+intent path the planner authors only `unit_id`, `outcome`, `artifact_kind`,
+`domains`, `stacks`, `capability_ids`, `novel_capability` and `depends_on`.
+`authority`, `mutation_scope`, `lifecycle_phase` and `required_tools` all
+follow from `artifact_kind` through `_ARTIFACT_FACTS` and `_required_tools`.
+Choosing `plan` instead of `implementation-change` therefore removes the
+authority, the lifecycle phase and the specialist match in one step.
 
-**The roster is not the constraint.** 87 of 291 workers declare
-`implementation-change`, so an executor unit would staff if one could be
-planned. Nine declared artifact kinds sit outside the planner ontology
-entirely (`evidence-checklist` 4, `validation-notes` 3,
-`redaction-findings-log`, `memory-assessment-report`, `evidence-notes`,
-`retention-recommendation`, `memory-update-plan`,
-`governed-no-op-confirmation`); the planner can never request them. That is
-a separate smell, recorded here only so it is not lost.
+**The reproduction is not the full production path.** The AR-374 capsule's
+script calls `plan_and_staff_workforce` directly with `turn_routing_context={}`,
+which bypasses `selector.pipeline._workforce_planning_options`. That function
+constrains the planner for special turn contracts — a turn whose
+classification has `execution_decision_required` false is forced to exactly
+one `analysis` unit. Whether a real install turn is additionally constrained
+that way is unverified, and it must be established before any planner change,
+because the two causes need different fixes:
+
+- If the planner is unconstrained and still chooses `plan`, the fix is
+  planner guidance.
+- If classification forces a single `analysis` unit, the fix is in the
+  classifier and no planner change would help.
 
 ## Approach
 
-Not decided. Whether Agency should perform host operations at all is a
-governance question, and the three answers need different work:
+Not decided; the disambiguation above comes first.
 
-1. **Decline the request clearly.** Recognise an operational request the
-   ontology cannot express and abstain with an explicit reason, instead of
-   planning a unit the critic then rejects with model-authored codes.
-   Smallest change, honours the existing external-write policy, and admits
-   Agency does not install software.
-2. **Add an operational artifact kind** mapping to (`operations`, `modify`,
-   `external_write`). This alone makes things worse: no roster worker
-   declares such a kind, so `artifact:<new>` is uncovered for all 291 and the
-   unit becomes unstaffable. It requires roster enrichment *and* revisiting
-   `plan_external_write_requires_separate_authorization`, which currently
-   refuses exactly this.
-3. **Treat installs as `implementation-change`.** Cheapest, and wrong: it
-   misstates the blast radius as `workspace_write` and attaches an
-   `implementation-complete` claim to work that changed no repository.
-
-Recommendation is (1) unless the owner wants Agency executing host
-operations, in which case (2) is the honest but much larger path.
+If it is planner guidance, the candidate is `_PLANNER_SYSTEM`'s "Do not
+invent implementation, release, or deployment work beyond the request",
+which is meant to stop the planner inflating a read-only request into
+delivery work. For a request whose entire content *is* an operation, that
+sentence may be suppressing the one unit the request needs. Any change here
+must not reintroduce the inflation it was written to prevent, so it needs a
+regression case in both directions.
 
 ## Dependencies
 
@@ -121,11 +111,10 @@ operations, in which case (2) is the honest but much larger path.
 
 ## Acceptance
 
-- [ ] The decision on whether Agency may perform host operations is recorded,
-      with an ADR if it changes the external-write posture.
-- [ ] An ordinary install request either staffs an executor or is declined
-      with an explicit, deterministic reason that names the ontology limit
-      rather than surfacing model-authored critic codes.
-- [ ] Whichever way it falls, a regression test pins that the reachable
-      mutation scopes and the artifact-kind table cannot drift apart from the
-      policy that governs them.
+- [ ] It is established, on the full pipeline path, whether the planner is
+      free to choose `implementation-change` for an actionable install and
+      declines to, or whether turn classification forecloses it.
+- [ ] An ordinary install request produces a unit the installer specialist
+      can cover, and that specialist is staffed, with a live receipt.
+- [ ] A regression case pins both directions: an actionable operation gets an
+      executor unit, and a read-only request is not inflated into one.
