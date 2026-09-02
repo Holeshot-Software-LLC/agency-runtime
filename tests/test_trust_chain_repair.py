@@ -90,6 +90,35 @@ def test_the_openclaw_global_install_break_is_found_and_repaired(tmp_path: Path)
     assert subject.scan_trust_chains("openclaw", home_dir=tmp_path, executables=executables) == []
 
 
+def test_the_child_artifact_root_must_be_owner_private(tmp_path: Path) -> None:
+    """AR-368: the canary reads Claude's child transcripts to prove delivery.
+
+    The host creates `~/.claude/projects` and its per-project directories
+    group-writable, and the child-delivery evidence read requires an
+    owner-private final parent with no group-writable ancestor. Measured
+    2026-09-02: the live canary returned `artifact_not_trusted` with
+    `projects` at 0775.
+    """
+
+    projects = tmp_path / ".claude" / "projects" / "-home-holeshot-code"
+    projects.mkdir(parents=True)
+    (projects / "session.jsonl").write_text("{}\n", encoding="utf-8")
+    (tmp_path / ".claude" / "projects").chmod(0o775)
+    projects.chmod(0o755)
+
+    findings = subject.scan_trust_chains("claude", home_dir=tmp_path, executables={"claude": None})
+
+    assert _kinds(findings, "claude_child_artifacts") == {"final_dir_not_private"}
+    subject.repair_trust_chains(
+        findings, consent=True, home_dir=tmp_path, executables={"claude": None}
+    )
+    assert _mode(tmp_path / ".claude" / "projects") == 0o700
+    assert _mode(projects) == 0o700
+    assert (
+        subject.scan_trust_chains("claude", home_dir=tmp_path, executables={"claude": None}) == []
+    )
+
+
 def test_the_plugin_cache_break_requires_owner_private_directories(tmp_path: Path) -> None:
     plugins = _claude_home(tmp_path)
     # `claude plugin update` recreated the cache directories world-readable.

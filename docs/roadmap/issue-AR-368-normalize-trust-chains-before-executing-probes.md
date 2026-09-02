@@ -73,4 +73,16 @@ battery passed. Both now isolate the machine-reading checks.
       `tests/test_trust_chain_repair.py::test_an_executing_probe_normalizes_the_chain_first`.
 - [x] A read-only inspection never chmods. Evidence:
       `tests/test_trust_chain_repair.py::test_a_read_only_inspection_never_chmods`.
+- [x] The claude child-artifact root is a registered chain, so a delivered
+      card can be proven. Evidence: the `claude_child_artifacts` chain in
+      `agency_runtime/core/trust_chain_repair.py` and
+      `tests/test_trust_chain_repair.py::test_the_child_artifact_root_must_be_owner_private`;
+      live, `inventory_error` went to `None` and `artifact_not_trusted`
+      stopped being reported.
 - [ ] The claude battery passes on this machine with the normalization live.
+      Remaining blockers measured 2026-09-02 after both repairs landed, both
+      outside the permission surface: the attended live canary reports `host
+      invocation did not complete successfully` and, now that the previously
+      unreadable transcripts are trusted, `multiple_child_artifacts` — the
+      canary cannot pick one artifact from the window. Needs its own
+      investigation; it is no longer a trust-chain defect.
