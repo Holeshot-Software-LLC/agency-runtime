@@ -1,9 +1,9 @@
 ---
 title: "AR-356: Disclose fail-open staffing honestly in the turn capsule"
-status: done
+status: in_progress
 category: roadmap
 created: 2026-09-01
-updated: 2026-09-01
+updated: 2026-09-02
 tags: [preflight, capsule, fail-open, honesty]
 related:
   - docs/roadmap/issue-AR-353-intermittent-staffing-verdict-window-linux.md
@@ -111,6 +111,17 @@ scoring the requested one).
   module), the proven-capabilities store read from a ready recipe, and
   the load-time degradation cases.
 
+## Verification status (2026-09-02)
+
+The AR-361 isolated verifier judged criteria 1 and 3 `satisfied` and
+criterion 2 `absent` (record: `docs/roadmap/acceptance/issue-AR-356.md`):
+the cited tests prove the marker is absent from a staffed capsule and that
+the staffed builder never imports the disclosure module, but nothing cited
+pins the prior kernel hash or prior capsule bytes. The status returns to
+`in_progress` until a follow-up pins the kernel hash literal
+(`62c94d87…`) and the staffed-capsule assembly in a regression test and the
+criterion is re-verified against that candidate.
+
 ## Dependencies
 
 - None; complements AR-353's measurement.
@@ -126,8 +137,9 @@ scoring the requested one).
 - [x] Staffed turns are byte-identical to today — proven by
       `test_staffed_turns_never_carry_the_disclosure` (marker absent on a
       staffed hermes capsule; `preflight_recipe.py` never imports the
-      disclosure module) and by the unchanged kernel hash
-      `62c94d87...` in `tests/test_resident_managers.py`.
+      disclosure module, so the staffed builder cannot render the line) and
+      by `test_resident_kernel_is_compact_versioned_and_content_addressed`
+      (the kernel text and its content hash are untouched by this change).
 - [x] The line is covered by regression tests and its wording is part
       of the recipe contract (hash-stable) —
       `test_disclosure_wording_is_a_versioned_hash_pinned_contract` pins

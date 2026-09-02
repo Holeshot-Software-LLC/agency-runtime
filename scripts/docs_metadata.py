@@ -70,6 +70,10 @@ def classification(path: Path) -> tuple[str, str]:
         return "overview", "active"
     if relative == "AGENTS.md":
         return "governance", "active"
+    if relative.startswith("docs/roadmap/acceptance/"):
+        # AR-361 acceptance verification records and their README are general
+        # documents; only canonical issue docs default to the issue lifecycle.
+        return "roadmap", "active"
     if relative.startswith("docs/roadmap/"):
         status = "open" if path.name.startswith("issue-") else "active"
         return "roadmap", status
@@ -83,6 +87,17 @@ def classification(path: Path) -> tuple[str, str]:
 
 def variant_fields(path: Path) -> list[str]:
     relative = path.relative_to(ROOT).as_posix()
+    record = re.fullmatch(r"docs/roadmap/acceptance/issue-(AR-\d+)\.md", relative)
+    if record:
+        # A fresh record is a pending draft: the builder freezes candidate_commit
+        # once the cited evidence exists in an ancestor commit (AR-361).
+        return [
+            "type: acceptance-verification",
+            f"issue_id: {record.group(1)}",
+            "candidate_commit: pending",
+            f"evidence_cutoff: {date.today().isoformat()}",
+            "tracker_url: null",
+        ]
     issue = re.fullmatch(r"docs/roadmap/issue-(AR-\d+)-(.+)\.md", relative)
     if issue:
         return [

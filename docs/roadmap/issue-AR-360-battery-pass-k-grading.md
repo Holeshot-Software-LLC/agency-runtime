@@ -3,7 +3,7 @@ title: "AR-360: Grade harness batteries with pass@k and pass^k trial semantics"
 status: done
 category: roadmap
 created: 2026-09-01
-updated: 2026-09-01
+updated: 2026-09-02
 tags: [battery, reliability, flakiness, grading]
 related:
   - docs/roadmap/issue-AR-352-scope-battery-deltas-by-session.md
@@ -132,9 +132,11 @@ same branch as AR-352.
       `test_flaky_ordinary_probe_passes_under_pass_any_k_and_records_every_trial`).
 - [x] Every trial outcome is persisted in the battery report (the `trials`
       array in the host detail and sealed receipt, `last_trials` in the
-      fingerprint; asserted in both flaky tests and
-      `test_run_battery_gates_on_change_updates_proof_and_seals_receipts`).
+      fingerprint; the sealed-receipt trials are asserted in
+      `test_flaky_ordinary_probe_passes_under_pass_any_k_and_records_every_trial`
+      and `test_run_battery_gates_on_change_updates_proof_and_seals_receipts`,
+      the host-detail trials and fingerprint `last_trials` in
+      `test_flaky_canary_probe_fails_under_pass_all_k_and_names_the_failing_trial`).
 - [x] A simulated 50%-flaky check is graded correctly under both modes
       in regression tests (the alternating fail/pass runner in the two
-      flaky tests plus `test_grade_trials_folds_outcomes_per_mode`;
-      `python3 -m pytest tests/test_harness_battery.py -q -W error`).
+      flaky tests plus `test_grade_trials_folds_outcomes_per_mode`).

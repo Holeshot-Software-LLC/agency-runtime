@@ -67,6 +67,13 @@ Whenever a session surfaces a new feature, enhancement, or bug:
 5. Write the tracker URL into the issue document and the registry mapping table.
 6. Put governing decision paths in the issue document's `related` list and add
    the issue path back to each decision record.
+7. Before flipping an item to `done`, write its acceptance verification
+   record at `docs/roadmap/acceptance/issue-AR-NN.md` (AR-361): the builder
+   cites evidence per Acceptance criterion and never judges, then
+   `python scripts/verify_acceptance.py --issue AR-NN --all` records one
+   isolated single-check verdict per criterion. `scripts/verify_docs.py`
+   blocks the flip until every verdict is `satisfied`; issues done before the
+   gate landed are listed in `docs/roadmap/pre-verification-history.txt`.
 
 Obtain any authorization required for an outward-facing tracker write. Lack of
 authorization is a visible blocker to report, not permission to omit the local

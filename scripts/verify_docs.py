@@ -5,9 +5,11 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import json
 import re
 import subprocess
 import sys
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
@@ -116,6 +118,56 @@ AR119_LAYER_AUTHORITY_KINDS = {
     "Installed": "installed-host",
     "Live": "live-host",
 }
+# AR-361: a done flip needs a per-issue acceptance verification record beside
+# the checked boxes. Builders cite evidence per column-0 criterion and never
+# judge; an isolated verifier judges exactly one criterion per run, and its
+# verdict is bound to the digest of the candidate, the criterion text, and the
+# builder rows it judged. Every vocabulary here is closed.
+ACCEPTANCE_RECORD_DIR = "docs/roadmap/acceptance"
+ACCEPTANCE_PENDING_CANDIDATE = "pending"
+ACCEPTANCE_BUILDER_COLUMNS = ("Criterion", "Kind", "Artifact", "Observed", "Source")
+ACCEPTANCE_VERIFICATION_COLUMNS = (
+    "Criterion",
+    "Verdict",
+    "Verifier run",
+    "Evidence digest",
+    "Observed",
+    "Reason",
+)
+ACCEPTANCE_EVIDENCE_KINDS = frozenset(
+    {"command-output", "file", "receipt", "tracker", "test", "absent"}
+)
+ACCEPTANCE_VERDICTS = frozenset({"satisfied", "contradicted", "absent"})
+ACCEPTANCE_MAX_ROWS_PER_CRITERION = 8
+ACCEPTANCE_MAX_CELL_CHARS = 400
+# Which Source forms each evidence kind may cite. A test cites tests/; a
+# tracker cites this repository's tracker; a receipt cites a bounded run id;
+# absent evidence cites nothing at all.
+ACCEPTANCE_SOURCE_FORMS: dict[str, frozenset[str]] = {
+    "absent": frozenset({"none"}),
+    "command-output": frozenset({"path"}),
+    "file": frozenset({"path", "commit"}),
+    "receipt": frozenset({"run-id"}),
+    "test": frozenset({"path"}),
+    "tracker": frozenset({"tracker"}),
+}
+ACCEPTANCE_SOURCE_FORM_LABELS = {
+    "none": "`none`",
+    "path": "path:line[-line] or path#heading",
+    "commit": "a full commit SHA",
+    "tracker": "a same-repository tracker URL",
+    "run-id": "a receipt or run id",
+}
+ACCEPTANCE_RUN_ID_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:-]{3,63}")
+ACCEPTANCE_TRACKER_URL_RE = re.compile(
+    r"https://github\.com/Holeshot-Software-LLC/agency-runtime/(?:issues|pull)/\d+"
+)
+ACCEPTANCE_PATH_SOURCE_RE = re.compile(
+    r"(?P<path>[A-Za-z0-9_./-]+)"
+    r"(?::(?P<start>\d+)(?:-(?P<end>\d+))?|#(?P<anchor>[a-z0-9][a-z0-9-]*))"
+)
+_ACCEPTANCE_CRITERION_RE = re.compile(r"^(?:[-*+]|\d+[.)])\s+\[[ xX]\](?:\s+(?P<text>.*))?$")
+_ACCEPTANCE_ANY_MARKER_RE = re.compile(r"^\s*(?:[-*+]|\d+[.)])\s+\[[ xX]\](?:\s+|$)")
 # This is intentionally code-bound rather than a front-matter escape hatch.
 # AR-161's delivery surface was removed by AR-197 before the remaining gates
 # could apply. Any change to its preserved Acceptance section invalidates the
@@ -342,10 +394,38 @@ def _handoff_schema_errors(doc: Document) -> list[str]:
     return errors
 
 
+def _acceptance_verification_schema_errors(doc: Document) -> list[str]:
+    errors = _missing_field_errors(
+        doc,
+        {"issue_id", "candidate_commit", "evidence_cutoff", "tracker_url"},
+    )
+    meta = doc.meta
+    if meta.get("status") != "active":
+        errors.append(f"{doc.relative}: acceptance-verification status must be 'active'")
+    if not re.fullmatch(r"AR-\d{2,}", str(meta.get("issue_id", ""))):
+        errors.append(f"{doc.relative}: acceptance-verification issue_id must match AR-NN")
+    candidate = meta.get("candidate_commit")
+    if candidate != ACCEPTANCE_PENDING_CANDIDATE and not re.fullmatch(
+        r"[0-9a-f]{40}", str(candidate)
+    ):
+        errors.append(
+            f"{doc.relative}: candidate_commit must be a full lowercase Git SHA or "
+            f"'{ACCEPTANCE_PENDING_CANDIDATE}'"
+        )
+    if not is_date(meta.get("evidence_cutoff")):
+        errors.append(f"{doc.relative}: evidence_cutoff must be YYYY-MM-DD")
+    tracker_url = meta.get("tracker_url")
+    if tracker_url is not None and not isinstance(tracker_url, str):
+        errors.append(f"{doc.relative}: tracker_url must be a string or null")
+    return errors
+
+
 def _variant_schema_errors(doc: Document) -> list[str]:
     doc_type = doc.meta.get("type")
     if doc_type == "issue":
         return _issue_schema_errors(doc)
+    if doc_type == "acceptance-verification":
+        return _acceptance_verification_schema_errors(doc)
     if doc_type == "worklog":
         return _worklog_schema_errors(doc)
     if doc_type == "decision":
@@ -735,32 +815,39 @@ def _canonical_vision_block(body: str) -> str | None:
     return "\n".join(lines[starts[0] : ends[0]]) + "\n"
 
 
-def _matrix_rows(body: str) -> list[dict[str, str]] | None:
-    section = _level_two_section(body, "Canonical matrix")
+def _strict_table_rows(
+    body: str,
+    heading: str,
+    columns: Sequence[str],
+) -> list[dict[str, str]] | None:
+    """Parse exactly one visible pipe table with the given header under one H2.
+
+    Fenced, commented, and indented tables are invisible, a duplicated header
+    is ambiguous, and any row with the wrong cell count rejects the table, so a
+    spoofed or malformed table reads as absent rather than as partial authority.
+    """
+
+    section = _level_two_section(body, heading)
     if section is None:
         return None
     lines = section.splitlines()
     visible = _markdown_visibility(lines)
-    expected_header = list(AR119_MATRIX_COLUMNS)
-    header_indexes: list[int] = []
-    for index, line in enumerate(lines):
-        if not visible[index]:
-            continue
-        if not re.match(r"^ {0,3}\|", line):
-            continue
-        header = [cell.strip() for cell in line.strip().strip("|").split("|")]
-        if header == expected_header:
-            header_indexes.append(index)
+    expected_header = list(columns)
+    header_indexes = [
+        index
+        for index, line in enumerate(lines)
+        if visible[index]
+        and re.match(r"^ {0,3}\|", line)
+        and [cell.strip() for cell in line.strip().strip("|").split("|")] == expected_header
+    ]
     if len(header_indexes) != 1:
         return None
     index = header_indexes[0]
+    separator = r"\s*\|(?:\s*:?-+:?\s*\|){" + str(len(expected_header) - 1) + r"}\s*:?-+:?\s*\|?\s*"
     if (
         index + 1 >= len(lines)
         or not visible[index + 1]
-        or not re.fullmatch(
-            r"\s*\|(?:\s*:?-+:?\s*\|){11}\s*:?-+:?\s*\|?\s*",
-            lines[index + 1],
-        )
+        or not re.fullmatch(separator, lines[index + 1])
     ):
         return None
     rows: list[dict[str, str]] = []
@@ -773,44 +860,14 @@ def _matrix_rows(body: str) -> list[dict[str, str]] | None:
             return None
         rows.append(dict(zip(expected_header, cells, strict=True)))
     return rows
+
+
+def _matrix_rows(body: str) -> list[dict[str, str]] | None:
+    return _strict_table_rows(body, "Canonical matrix", AR119_MATRIX_COLUMNS)
 
 
 def _layer_evidence_rows(body: str) -> list[dict[str, str]] | None:
-    section = _level_two_section(body, "Layer evidence")
-    if section is None:
-        return None
-    lines = section.splitlines()
-    visible = _markdown_visibility(lines)
-    expected_header = list(AR119_LAYER_EVIDENCE_COLUMNS)
-    header_indexes: list[int] = []
-    for index, line in enumerate(lines):
-        if not visible[index] or not re.match(r"^ {0,3}\|", line):
-            continue
-        header = [cell.strip() for cell in line.strip().strip("|").split("|")]
-        if header == expected_header:
-            header_indexes.append(index)
-    if len(header_indexes) != 1:
-        return None
-    index = header_indexes[0]
-    if (
-        index + 1 >= len(lines)
-        or not visible[index + 1]
-        or not re.fullmatch(
-            r"\s*\|(?:\s*:?-+:?\s*\|){7}\s*:?-+:?\s*\|?\s*",
-            lines[index + 1],
-        )
-    ):
-        return None
-    rows: list[dict[str, str]] = []
-    for row_index in range(index + 2, len(lines)):
-        row_line = lines[row_index]
-        if not visible[row_index] or not re.match(r"^ {0,3}\|", row_line):
-            break
-        cells = [cell.strip() for cell in row_line.strip().strip("|").split("|")]
-        if len(cells) != len(expected_header):
-            return None
-        rows.append(dict(zip(expected_header, cells, strict=True)))
-    return rows
+    return _strict_table_rows(body, "Layer evidence", AR119_LAYER_EVIDENCE_COLUMNS)
 
 
 def _aggregate_evidence_states(states: list[str]) -> str:
@@ -1068,6 +1125,514 @@ def _validate_ar119_matrix(doc: Document, vision_digest: str, errors: list[str])
         )
 
 
+@dataclass
+class AcceptanceRecordState:
+    """What one parsed acceptance record establishes for the done gate."""
+
+    criteria: list[str]
+    builder_rows: dict[int, list[dict[str, str]]]
+    verdicts: dict[int, dict[str, str]]
+    candidate_commit: str | None
+
+
+def acceptance_record_path(issue_id: str) -> str:
+    """Return the one canonical record path for an issue (AR-361)."""
+
+    return f"{ACCEPTANCE_RECORD_DIR}/issue-{issue_id}.md"
+
+
+def acceptance_criteria(section: str) -> tuple[list[str], list[str]]:
+    """Return the column-0 Acceptance criteria and the structural problems.
+
+    Only a task marker starting at column 0 is a criterion (AR-361); indented
+    continuation lines join its text. A nested or indented marker is not a
+    criterion and is reported, because one verdict per top-level box cannot
+    cover sub-boxes that a builder could add or drop unnoticed.
+    """
+
+    criteria: list[str] = []
+    problems: list[str] = []
+    lines = section.splitlines()
+    visible = _markdown_visibility(lines)
+    continuing = False
+    for index, line in enumerate(lines):
+        expanded = line.expandtabs(4)
+        if not visible[index] or not expanded.strip():
+            continuing = False
+            continue
+        match = _ACCEPTANCE_CRITERION_RE.match(expanded)
+        if match:
+            criteria.append((match.group("text") or "").strip())
+            continuing = True
+            continue
+        if _ACCEPTANCE_ANY_MARKER_RE.match(expanded):
+            problems.append(
+                f"nests a task marker after criterion {len(criteria)}; "
+                "only column-0 markers are criteria"
+            )
+            continuing = False
+            continue
+        if continuing and expanded.startswith(" "):
+            criteria[-1] = f"{criteria[-1]} {expanded.strip()}".strip()
+            continue
+        continuing = False
+    if not criteria:
+        problems.append("has no column-0 task marker")
+    problems.extend(
+        f"criterion {index} has no text" for index, text in enumerate(criteria, 1) if not text
+    )
+    return criteria, problems
+
+
+def acceptance_evidence_digest(
+    candidate_commit: str,
+    index: int,
+    text: str,
+    rows: Sequence[Mapping[str, str]],
+) -> str:
+    """Digest what one verifier run judged: candidate, criterion, builder rows."""
+
+    payload = {
+        "candidate_commit": candidate_commit,
+        "criterion": index,
+        "text": " ".join(text.split()),
+        "rows": [
+            {
+                "kind": row["Kind"],
+                "artifact": row["Artifact"],
+                "observed": row["Observed"],
+                "source": row["Source"],
+            }
+            for row in rows
+        ],
+    }
+    serialized = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
+    return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
+
+
+def acceptance_source_form(source: str) -> tuple[str, re.Match[str] | None]:
+    """Classify one Source cell into its closed form vocabulary."""
+
+    normalized = source.strip().strip("`")
+    if normalized.casefold() == "none":
+        return "none", None
+    if re.fullmatch(r"[0-9a-f]{40}", normalized):
+        return "commit", None
+    if ACCEPTANCE_TRACKER_URL_RE.fullmatch(normalized):
+        return "tracker", None
+    match = ACCEPTANCE_PATH_SOURCE_RE.fullmatch(normalized)
+    if match:
+        return "path", match
+    if ACCEPTANCE_RUN_ID_RE.fullmatch(normalized):
+        return "run-id", None
+    return "invalid", None
+
+
+def acceptance_source_content(path: str, candidate_commit: str) -> str | None:
+    """Read one cited path at the frozen candidate, or on disk while pending."""
+
+    if candidate_commit == ACCEPTANCE_PENDING_CANDIDATE:
+        target = ROOT / path
+        try:
+            target.resolve().relative_to(ROOT.resolve())
+            return target.read_text(encoding="utf-8") if target.is_file() else None
+        except (OSError, UnicodeDecodeError, ValueError):
+            return None
+    try:
+        return git("show", f"{candidate_commit}:{path}")
+    except subprocess.CalledProcessError:
+        return None
+
+
+def _validate_acceptance_path_source(
+    relative: str,
+    label: str,
+    kind: str,
+    match: re.Match[str],
+    candidate_commit: str,
+) -> list[str]:
+    path = match.group("path")
+    candidate = Path(path)
+    if candidate.is_absolute() or ".." in candidate.parts or "\\" in path:
+        return [f"{relative}: {label} Source escapes the repository"]
+    if kind == "test" and not path.startswith("tests/"):
+        return [f"{relative}: {label} test evidence must cite tests/"]
+    content = acceptance_source_content(path, candidate_commit)
+    if content is None:
+        where = (
+            "the working tree"
+            if candidate_commit == ACCEPTANCE_PENDING_CANDIDATE
+            else "candidate_commit"
+        )
+        return [f"{relative}: {label} Source is absent from {where}"]
+    start = match.group("start")
+    if start is not None:
+        first = int(start)
+        last = int(match.group("end") or start)
+        if first < 1 or last < first or last > len(content.splitlines()):
+            return [f"{relative}: {label} Source has an invalid line range"]
+        return []
+    anchor = match.group("anchor")
+    # A Markdown source normally carries front matter; one without it (a plain
+    # README, a fixture) is still citable by heading, so fall back to the text.
+    body = _markdown_body(content) if path.casefold().endswith(".md") else None
+    if anchor not in headings(content if body is None else body):
+        return [f"{relative}: {label} Source heading is absent"]
+    return []
+
+
+def _validate_acceptance_source(
+    relative: str,
+    label: str,
+    kind: str,
+    source: str,
+    candidate_commit: str,
+) -> list[str]:
+    form, match = acceptance_source_form(source)
+    allowed = ACCEPTANCE_SOURCE_FORMS.get(kind, frozenset())
+    if form not in allowed:
+        expected = " or ".join(ACCEPTANCE_SOURCE_FORM_LABELS[name] for name in sorted(allowed))
+        return [f"{relative}: {label} Source must be {expected} for kind {kind!r}"]
+    if form == "path" and match is not None:
+        return _validate_acceptance_path_source(relative, label, kind, match, candidate_commit)
+    if form == "commit":
+        try:
+            git("merge-base", "--is-ancestor", source.strip().strip("`"), "HEAD")
+        except subprocess.CalledProcessError:
+            return [f"{relative}: {label} Source commit is not an ancestor of HEAD"]
+    return []
+
+
+def _acceptance_candidate(record: Document, errors: list[str]) -> str | None:
+    """Return the usable candidate (a reachable SHA or pending), else None."""
+
+    candidate = record.meta.get("candidate_commit")
+    if candidate == ACCEPTANCE_PENDING_CANDIDATE:
+        return candidate
+    if not isinstance(candidate, str) or not re.fullmatch(r"[0-9a-f]{40}", candidate):
+        return None
+    try:
+        git("cat-file", "-e", f"{candidate}^{{commit}}")
+    except subprocess.CalledProcessError:
+        errors.append(f"{record.relative}: candidate_commit does not identify a Git commit")
+        return None
+    try:
+        git("merge-base", "--is-ancestor", candidate, "HEAD")
+    except subprocess.CalledProcessError:
+        errors.append(f"{record.relative}: candidate_commit must be an ancestor of HEAD")
+        return None
+    return candidate
+
+
+def _criterion_index(cell: str, count: int) -> int | None:
+    if not re.fullmatch(r"[1-9]\d*", cell) or int(cell) > count:
+        return None
+    return int(cell)
+
+
+def _validate_builder_rows(
+    record: Document,
+    criteria: list[str],
+    rows: list[dict[str, str]],
+    candidate_commit: str | None,
+    evidence_cutoff: date | None,
+    errors: list[str],
+) -> dict[int, list[dict[str, str]]]:
+    relative = record.relative
+    by_criterion: dict[int, list[dict[str, str]]] = {}
+    for row in rows:
+        index = _criterion_index(row["Criterion"], len(criteria))
+        if index is None:
+            errors.append(
+                f"{relative}: builder row criterion {row['Criterion']!r} is not a "
+                f"column-0 criterion 1..{len(criteria)}"
+            )
+            continue
+        label = f"criterion {index} builder"
+        by_criterion.setdefault(index, []).append(row)
+        if any(len(value) > ACCEPTANCE_MAX_CELL_CHARS for value in row.values()):
+            errors.append(f"{relative}: {label} cell exceeds {ACCEPTANCE_MAX_CELL_CHARS} chars")
+            continue
+        kind = row["Kind"]
+        if kind not in ACCEPTANCE_EVIDENCE_KINDS:
+            errors.append(f"{relative}: {label} Kind {kind!r} is outside the closed vocabulary")
+            continue
+        artifact = row["Artifact"].strip("`").casefold()
+        if kind == "absent" and artifact != "none":
+            errors.append(f"{relative}: {label} absent evidence must name Artifact `none`")
+        elif kind != "absent" and artifact in {"", "none"}:
+            errors.append(f"{relative}: {label} needs a non-none Artifact")
+        observed = as_date(row["Observed"])
+        if observed is None:
+            errors.append(f"{relative}: {label} Observed must be YYYY-MM-DD")
+        elif evidence_cutoff and observed > evidence_cutoff:
+            errors.append(f"{relative}: {label} observation exceeds evidence_cutoff")
+        if candidate_commit is not None:
+            errors.extend(
+                _validate_acceptance_source(relative, label, kind, row["Source"], candidate_commit)
+            )
+    for index, group in sorted(by_criterion.items()):
+        if len(group) > ACCEPTANCE_MAX_ROWS_PER_CRITERION:
+            errors.append(
+                f"{relative}: criterion {index} has more than "
+                f"{ACCEPTANCE_MAX_ROWS_PER_CRITERION} builder rows"
+            )
+        if len(group) > 1 and any(row["Kind"] == "absent" for row in group):
+            errors.append(
+                f"{relative}: criterion {index} absent evidence must be its only builder row"
+            )
+    return by_criterion
+
+
+def _verification_row_errors(
+    relative: str,
+    label: str,
+    row: dict[str, str],
+    builder: list[dict[str, str]] | None,
+    criterion: tuple[int, str],
+    candidate_commit: str | None,
+    evidence_cutoff: date | None,
+) -> list[str]:
+    """Check one verdict row against the builder rows it claims to have judged."""
+
+    errors: list[str] = []
+    if row["Verdict"] not in ACCEPTANCE_VERDICTS:
+        errors.append(
+            f"{relative}: {label} Verdict {row['Verdict']!r} is outside the closed vocabulary"
+        )
+    if builder is None:
+        errors.append(f"{relative}: {label} has no builder evidence to judge")
+    elif candidate_commit == ACCEPTANCE_PENDING_CANDIDATE:
+        errors.append(
+            f"{relative}: {label} needs a frozen candidate_commit; a verdict binds to a commit"
+        )
+    elif candidate_commit is not None:
+        expected = acceptance_evidence_digest(candidate_commit, criterion[0], criterion[1], builder)
+        digest = row["Evidence digest"].strip("`")
+        if digest != expected:
+            errors.append(
+                f"{relative}: {label} Evidence digest mismatch (expected {expected}, got {digest})"
+            )
+        if all(item["Kind"] == "absent" for item in builder) and row["Verdict"] != "absent":
+            errors.append(
+                f"{relative}: {label} must be absent because the builder evidence is absent"
+            )
+    observed = as_date(row["Observed"])
+    if observed is None:
+        errors.append(f"{relative}: {label} Observed must be YYYY-MM-DD")
+    elif evidence_cutoff and observed > evidence_cutoff:
+        errors.append(f"{relative}: {label} observation exceeds evidence_cutoff")
+    if not row["Reason"]:
+        errors.append(f"{relative}: {label} needs a Reason")
+    return errors
+
+
+def _validate_verification_rows(
+    record: Document,
+    criteria: list[str],
+    rows: list[dict[str, str]],
+    builder_rows: dict[int, list[dict[str, str]]],
+    candidate_commit: str | None,
+    evidence_cutoff: date | None,
+    errors: list[str],
+) -> dict[int, dict[str, str]]:
+    relative = record.relative
+    verdicts: dict[int, dict[str, str]] = {}
+    runs: dict[str, int] = {}
+    for row in rows:
+        index = _criterion_index(row["Criterion"], len(criteria))
+        if index is None:
+            errors.append(
+                f"{relative}: verification row criterion {row['Criterion']!r} is not a "
+                f"column-0 criterion 1..{len(criteria)}"
+            )
+            continue
+        label = f"criterion {index} verification"
+        if index in verdicts:
+            errors.append(f"{relative}: {label} row is duplicated; one verdict per criterion")
+            continue
+        verdicts[index] = row
+        if any(len(value) > ACCEPTANCE_MAX_CELL_CHARS for value in row.values()):
+            errors.append(f"{relative}: {label} cell exceeds {ACCEPTANCE_MAX_CELL_CHARS} chars")
+            continue
+        run_id = row["Verifier run"].strip("`")
+        if not ACCEPTANCE_RUN_ID_RE.fullmatch(run_id):
+            errors.append(f"{relative}: {label} Verifier run must be a bounded run id")
+        elif run_id in runs:
+            errors.append(
+                f"{relative}: {label} Verifier run {run_id} also judged criterion "
+                f"{runs[run_id]}; one run judges one criterion"
+            )
+        else:
+            runs[run_id] = index
+        errors.extend(
+            _verification_row_errors(
+                relative,
+                label,
+                row,
+                builder_rows.get(index),
+                (index, criteria[index - 1]),
+                candidate_commit,
+                evidence_cutoff,
+            )
+        )
+    return verdicts
+
+
+def _issue_criteria(issue: Document, errors: list[str]) -> list[str] | None:
+    """Return the issue's column-0 criteria, reporting structural problems."""
+
+    section = _level_two_section(issue.body, "Acceptance")
+    if section is None:
+        errors.append(f"{issue.relative}: issue needs exactly one real ## Acceptance section")
+        return None
+    criteria, problems = acceptance_criteria(section)
+    errors.extend(f"{issue.relative}: Acceptance {problem}" for problem in problems)
+    return None if problems else criteria
+
+
+def validate_acceptance_record(
+    record: Document,
+    issue: Document,
+    errors: list[str],
+    *,
+    verification: bool = True,
+) -> AcceptanceRecordState | None:
+    """Validate one record's binding, tables, sources, and digests (AR-361).
+
+    Returns the parsed state for the done gate, or None when the record is too
+    malformed to gate anything. ``verification=False`` skips the verdict rows
+    so the runner can re-verify a criterion whose row it is about to rewrite.
+    """
+
+    relative = record.relative
+    issue_id = str(issue.meta.get("issue_id"))
+    if relative != acceptance_record_path(issue_id):
+        errors.append(
+            f"{relative}: acceptance record for {issue_id} must live at "
+            f"{acceptance_record_path(issue_id)}"
+        )
+    if issue.relative not in record.meta.get("related", []):
+        errors.append(f"{relative}: related must include canonical issue {issue.relative}")
+    if record.meta.get("tracker_url") != issue.meta.get("tracker_url"):
+        errors.append(f"{relative}: tracker_url must match {issue.relative}")
+    criteria = _issue_criteria(issue, errors)
+    if criteria is None:
+        return None
+    candidate_commit = _acceptance_candidate(record, errors)
+    evidence_cutoff = as_date(record.meta.get("evidence_cutoff"))
+    builder_rows = _strict_table_rows(record.body, "Builder evidence", ACCEPTANCE_BUILDER_COLUMNS)
+    verification_rows = _strict_table_rows(
+        record.body, "Verification", ACCEPTANCE_VERIFICATION_COLUMNS
+    )
+    if builder_rows is None:
+        errors.append(f"{relative}: missing or malformed Builder evidence table")
+    if verification_rows is None:
+        errors.append(f"{relative}: missing or malformed Verification table")
+    if builder_rows is None or verification_rows is None:
+        return None
+    by_criterion = _validate_builder_rows(
+        record, criteria, builder_rows, candidate_commit, evidence_cutoff, errors
+    )
+    verdicts = (
+        _validate_verification_rows(
+            record,
+            criteria,
+            verification_rows,
+            by_criterion,
+            candidate_commit,
+            evidence_cutoff,
+            errors,
+        )
+        if verification
+        else {}
+    )
+    return AcceptanceRecordState(criteria, by_criterion, verdicts, candidate_commit)
+
+
+def _acceptance_done_errors(
+    issue: Document,
+    record: Document,
+    state: AcceptanceRecordState,
+) -> list[str]:
+    """Return why a done issue's record does not yet allow the flip."""
+
+    errors: list[str] = []
+    if state.candidate_commit == ACCEPTANCE_PENDING_CANDIDATE:
+        errors.append(
+            f"{issue.relative}: done flip requires a frozen candidate_commit in {record.relative}"
+        )
+    for index in range(1, len(state.criteria) + 1):
+        if index not in state.builder_rows:
+            errors.append(
+                f"{issue.relative}: criterion {index} has no builder evidence in {record.relative}"
+            )
+        row = state.verdicts.get(index)
+        if row is None:
+            errors.append(
+                f"{issue.relative}: criterion {index} has no verifier verdict in {record.relative}"
+            )
+        elif row["Verdict"] != "satisfied":
+            errors.append(
+                f"{issue.relative}: criterion {index} verdict is {row['Verdict']!r}; "
+                "the done flip is blocked"
+            )
+    return errors
+
+
+def validate_acceptance_verification(
+    docs: list[Document],
+    errors: list[str],
+    *,
+    grandfathered: set[str] | None = None,
+) -> None:
+    """Gate done flips on builder evidence and isolated verdicts (AR-361).
+
+    Every done issue outside the frozen pre-verification history needs its one
+    record, every column-0 criterion needs builder rows and a satisfied verdict
+    bound to their digest, and a record present for any done issue is
+    authoritative even when the issue is grandfathered.
+    """
+
+    issues = {str(doc.meta.get("issue_id")): doc for doc in docs if doc.meta.get("type") == "issue"}
+    if grandfathered is None:
+        grandfathered = load_pre_verification_history(ROOT / "docs" / "roadmap")
+        statuses = {issue_id: doc.meta.get("status") for issue_id, doc in issues.items()}
+        errors.extend(
+            "docs/roadmap/" + message
+            for message in pre_verification_entry_errors(grandfathered, statuses)
+        )
+    records: dict[str, list[Document]] = {}
+    for doc in docs:
+        if doc.meta.get("type") == "acceptance-verification":
+            records.setdefault(str(doc.meta.get("issue_id", "")), []).append(doc)
+    states: dict[str, AcceptanceRecordState | None] = {}
+    for issue_id, matches in sorted(records.items()):
+        if len(matches) > 1:
+            errors.append(f"{ACCEPTANCE_RECORD_DIR}: multiple acceptance records for {issue_id}")
+            continue
+        issue = issues.get(issue_id)
+        if issue is None:
+            errors.append(
+                f"{matches[0].relative}: unknown acceptance-verification issue_id {issue_id!r}"
+            )
+            continue
+        states[issue_id] = validate_acceptance_record(matches[0], issue, errors)
+    for issue_id, issue in sorted(issues.items()):
+        if issue.meta.get("status") != "done":
+            continue
+        if issue_id in records:
+            state = states.get(issue_id)
+            if state is not None:
+                errors.extend(_acceptance_done_errors(issue, records[issue_id][0], state))
+        elif issue_id not in grandfathered:
+            _issue_criteria(issue, errors)
+            errors.append(
+                f"{issue.relative}: done flip requires the acceptance record "
+                f"{acceptance_record_path(issue_id)} (AR-361)"
+            )
+
+
 def validate_ar119_authorities(docs: list[Document], errors: list[str]) -> None:
     marked = [doc for doc in docs if "ar119_authority" in doc.meta]
     by_role: dict[str, list[Document]] = {}
@@ -1176,9 +1741,19 @@ def validate_links_and_boundaries(doc: Document, errors: list[str]) -> None:
 
 
 if __package__:
-    from .roadmap_history import load_pre_tracker_history, pre_tracker_entry_errors
+    from .roadmap_history import (
+        load_pre_tracker_history,
+        load_pre_verification_history,
+        pre_tracker_entry_errors,
+        pre_verification_entry_errors,
+    )
 else:
-    from roadmap_history import load_pre_tracker_history, pre_tracker_entry_errors
+    from roadmap_history import (
+        load_pre_tracker_history,
+        load_pre_verification_history,
+        pre_tracker_entry_errors,
+        pre_verification_entry_errors,
+    )
 
 
 def validate_roadmap(docs: list[Document], require_tracker: bool, errors: list[str]) -> None:
@@ -1441,6 +2016,7 @@ def main() -> int:
         validate_links_and_boundaries(doc, errors)
     validate_roadmap(docs, args.require_tracker, errors)
     validate_issue_acceptance(docs, errors)
+    validate_acceptance_verification(docs, errors)
     validate_ar119_authorities(docs, errors)
     validate_handoffs(docs, errors)
     validate_worklog(docs, errors)

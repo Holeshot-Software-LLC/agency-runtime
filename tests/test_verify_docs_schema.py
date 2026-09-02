@@ -10,7 +10,7 @@ from typing import Any
 
 import pytest
 
-from scripts import update_worklog, verify_docs
+from scripts import roadmap_history, update_worklog, verify_docs
 from scripts.worklog_history import stable_short_shas
 
 
@@ -1350,4 +1350,486 @@ def test_ar119_layer_evidence_rejects_unrelated_source_authority_path(
     assert any(
         "R2/claude/Implementation source authority must cite agency_runtime/" in error
         for error in errors
+    )
+
+
+# --- AR-361: builder evidence records and isolated single-check verdicts ---
+
+_ACCEPTANCE_CANDIDATE = "c" * 40
+_ACCEPTANCE_ISSUE_PATH = "docs/roadmap/issue-AR-999-fixture.md"
+_ACCEPTANCE_RECORD_PATH = "docs/roadmap/acceptance/issue-AR-999.md"
+_ACCEPTANCE_CRITERIA = ("First criterion continues here.", "Second criterion.")
+
+
+def _acceptance_issue(status: str = "done", body: str | None = None) -> verify_docs.Document:
+    default_body = (
+        "# Issue\n\n## Acceptance\n\n"
+        "- [x] First criterion\n      continues here.\n"
+        "- [x] Second criterion.\n"
+    )
+    return _issue_with_acceptance(
+        body if body is not None else default_body,
+        status=status,
+        relative=_ACCEPTANCE_ISSUE_PATH,
+    )
+
+
+def _builder_row(
+    index: int,
+    *,
+    kind: str = "test",
+    artifact: str = "`test_fixture`",
+    observed: str = "2026-09-01",
+    source: str = "`tests/test_fixture.py:1-2`",
+) -> dict[str, str]:
+    return {
+        "Criterion": str(index),
+        "Kind": kind,
+        "Artifact": artifact,
+        "Observed": observed,
+        "Source": source,
+    }
+
+
+def _verification_row(
+    index: int,
+    verdict: str,
+    *,
+    run: str,
+    rows: list[dict[str, str]],
+    candidate: str = _ACCEPTANCE_CANDIDATE,
+    observed: str = "2026-09-01",
+    reason: str = "cited test exists at the candidate",
+) -> dict[str, str]:
+    digest = verify_docs.acceptance_evidence_digest(
+        candidate, index, _ACCEPTANCE_CRITERIA[index - 1], rows
+    )
+    return {
+        "Criterion": str(index),
+        "Verdict": verdict,
+        "Verifier run": f"`{run}`",
+        "Evidence digest": f"`{digest}`",
+        "Observed": observed,
+        "Reason": reason,
+    }
+
+
+def _table(columns: tuple[str, ...], rows: list[dict[str, str]]) -> str:
+    header = "| " + " | ".join(columns) + " |\n|" + "|".join("---" for _ in columns) + "|\n"
+    return header + "".join(
+        "| " + " | ".join(row[column] for column in columns) + " |\n" for row in rows
+    )
+
+
+def _acceptance_record(
+    builder: list[dict[str, str]],
+    verification: list[dict[str, str]],
+    *,
+    candidate: str = _ACCEPTANCE_CANDIDATE,
+    cutoff: str = "2026-09-01",
+    body: str | None = None,
+    **overrides: Any,
+) -> verify_docs.Document:
+    meta = _base_meta(
+        type="acceptance-verification",
+        issue_id="AR-999",
+        candidate_commit=candidate,
+        evidence_cutoff=cutoff,
+        tracker_url=None,
+        related=[_ACCEPTANCE_ISSUE_PATH],
+    )
+    meta.update(overrides)
+    doc = _document(meta, relative=_ACCEPTANCE_RECORD_PATH)
+    doc.body = (
+        body
+        if body is not None
+        else "# Record\n\n## Builder evidence\n\n"
+        + _table(verify_docs.ACCEPTANCE_BUILDER_COLUMNS, builder)
+        + "\n## Verification\n\n"
+        + _table(verify_docs.ACCEPTANCE_VERIFICATION_COLUMNS, verification)
+    )
+    return doc
+
+
+def _complete_acceptance_record(**overrides: Any) -> verify_docs.Document:
+    first = [_builder_row(1)]
+    second = [_builder_row(2, kind="file", source="`README.md#fixture`")]
+    return _acceptance_record(
+        first + second,
+        [
+            _verification_row(1, "satisfied", run="AR-999.1-20260901-aa", rows=first),
+            _verification_row(2, "satisfied", run="AR-999.2-20260901-bb", rows=second),
+        ],
+        **overrides,
+    )
+
+
+@pytest.fixture
+def _acceptance_git(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Every candidate exists and is an ancestor; every cited path has two lines."""
+
+    def fake_git(*args: str) -> str:
+        if args[0] == "show":
+            return "line one\n## Fixture\nline three" if args[1].endswith(".md") else "one\ntwo"
+        return ""
+
+    monkeypatch.setattr(verify_docs, "git", fake_git)
+
+
+def _acceptance_errors(
+    *docs: verify_docs.Document, grandfathered: set[str] = frozenset()
+) -> list[str]:
+    errors: list[str] = []
+    verify_docs.validate_acceptance_verification(
+        list(docs), errors, grandfathered=set(grandfathered)
+    )
+    return errors
+
+
+def test_acceptance_verification_schema_reports_its_fields_and_candidate_forms() -> None:
+    doc = _document(
+        _base_meta(
+            type="acceptance-verification",
+            status="draft",
+            issue_id="AR-1",
+            candidate_commit="abc",
+            evidence_cutoff="soon",
+            tracker_url=[],
+        ),
+        relative=_ACCEPTANCE_RECORD_PATH,
+    )
+
+    assert _errors(doc) == [
+        f"{doc.relative}: acceptance-verification status must be 'active'",
+        f"{doc.relative}: acceptance-verification issue_id must match AR-NN",
+        f"{doc.relative}: candidate_commit must be a full lowercase Git SHA or 'pending'",
+        f"{doc.relative}: evidence_cutoff must be YYYY-MM-DD",
+        f"{doc.relative}: tracker_url must be a string or null",
+    ]
+    assert _errors(_complete_acceptance_record()) == []
+    assert _errors(_complete_acceptance_record(candidate="pending")) == []
+
+
+def test_done_flip_requires_acceptance_record_unless_grandfathered(_acceptance_git: None) -> None:
+    issue = _acceptance_issue()
+
+    assert _acceptance_errors(issue) == [
+        f"{issue.relative}: done flip requires the acceptance record "
+        f"{_ACCEPTANCE_RECORD_PATH} (AR-361)"
+    ]
+    assert _acceptance_errors(issue, grandfathered={"AR-999"}) == []
+    assert _acceptance_errors(_acceptance_issue(status="in_progress")) == []
+
+
+def test_acceptance_record_with_satisfied_verdicts_allows_done_flip(_acceptance_git: None) -> None:
+    assert _acceptance_errors(_acceptance_issue(), _complete_acceptance_record()) == []
+
+
+@pytest.mark.parametrize("verdict", ["absent", "contradicted"])
+def test_acceptance_absent_or_contradicted_verdict_blocks_done_flip(
+    _acceptance_git: None,
+    verdict: str,
+) -> None:
+    first = [_builder_row(1)]
+    second = [_builder_row(2)]
+    record = _acceptance_record(
+        first + second,
+        [
+            _verification_row(1, "satisfied", run="run-one", rows=first),
+            _verification_row(2, verdict, run="run-two", rows=second),
+        ],
+    )
+    issue = _acceptance_issue()
+
+    assert _acceptance_errors(issue, record) == [
+        f"{issue.relative}: criterion 2 verdict is {verdict!r}; the done flip is blocked"
+    ]
+    assert _acceptance_errors(_acceptance_issue(status="in_progress"), record) == []
+
+
+def test_acceptance_missing_verdict_or_builder_row_blocks_done_flip(_acceptance_git: None) -> None:
+    first = [_builder_row(1)]
+    record = _acceptance_record(
+        first, [_verification_row(1, "satisfied", run="run-one", rows=first)]
+    )
+    issue = _acceptance_issue()
+
+    assert _acceptance_errors(issue, record) == [
+        f"{issue.relative}: criterion 2 has no builder evidence in {record.relative}",
+        f"{issue.relative}: criterion 2 has no verifier verdict in {record.relative}",
+    ]
+
+
+def test_acceptance_digest_drift_and_criterion_rewording_are_errors(_acceptance_git: None) -> None:
+    record = _complete_acceptance_record()
+    drifted = _complete_acceptance_record()
+    drifted.body = drifted.body.replace(
+        "`tests/test_fixture.py:1-2`", "`tests/test_fixture.py:1-1`"
+    )
+    reworded = _acceptance_issue(
+        body=(
+            "# Issue\n\n## Acceptance\n\n- [x] First criterion\n      reworded here.\n"
+            "- [x] Second criterion.\n"
+        )
+    )
+
+    assert _acceptance_errors(_acceptance_issue(), drifted) == [
+        f"{record.relative}: criterion 1 verification Evidence digest mismatch (expected "
+        + verify_docs.acceptance_evidence_digest(
+            _ACCEPTANCE_CANDIDATE,
+            1,
+            _ACCEPTANCE_CRITERIA[0],
+            [_builder_row(1, source="`tests/test_fixture.py:1-1`")],
+        )
+        + ", got "
+        + verify_docs.acceptance_evidence_digest(
+            _ACCEPTANCE_CANDIDATE, 1, _ACCEPTANCE_CRITERIA[0], [_builder_row(1)]
+        )
+        + ")"
+    ]
+    assert any(
+        "criterion 1 verification Evidence digest mismatch" in error
+        for error in _acceptance_errors(reworded, record)
+    )
+
+
+def test_acceptance_verifier_run_must_judge_exactly_one_criterion(_acceptance_git: None) -> None:
+    first = [_builder_row(1)]
+    second = [_builder_row(2)]
+    record = _acceptance_record(
+        first + second,
+        [
+            _verification_row(1, "satisfied", run="shared-run", rows=first),
+            _verification_row(2, "satisfied", run="shared-run", rows=second),
+            _verification_row(2, "satisfied", run="other-run", rows=second),
+        ],
+    )
+
+    assert _acceptance_errors(_acceptance_issue(), record) == [
+        f"{record.relative}: criterion 2 verification Verifier run shared-run also judged "
+        "criterion 1; one run judges one criterion",
+        f"{record.relative}: criterion 2 verification row is duplicated; one verdict per criterion",
+    ]
+
+
+def test_acceptance_rejects_nested_checkbox_criteria_in_done_issue(_acceptance_git: None) -> None:
+    nested = _acceptance_issue(
+        body=(
+            "# Issue\n\n## Acceptance\n\n- [x] First criterion\n      continues here.\n"
+            "  - [x] Sub-item.\n- [x] Second criterion.\n"
+        )
+    )
+    message = (
+        f"{nested.relative}: Acceptance nests a task marker after criterion 1; "
+        "only column-0 markers are criteria"
+    )
+
+    assert _acceptance_errors(nested, _complete_acceptance_record()) == [message]
+    assert _acceptance_errors(nested) == [
+        message,
+        f"{nested.relative}: done flip requires the acceptance record "
+        f"{_ACCEPTANCE_RECORD_PATH} (AR-361)",
+    ]
+
+
+def test_acceptance_criteria_are_column_zero_markers_with_continuations() -> None:
+    section = (
+        "## Acceptance\n\n- [ ] One\n      more.\n\n"
+        "```md\n- [x] Fenced.\n```\n<!-- - [x] Commented. -->\n"
+        "2. [x] Two\n> - [ ] Quoted.\n- [x]\n"
+    )
+
+    assert verify_docs.acceptance_criteria(section) == (
+        ["One more.", "Two", ""],
+        ["criterion 3 has no text"],
+    )
+
+
+@pytest.mark.parametrize(
+    "wrapper",
+    [("```md\n", "```\n"), ("<!--\n", "-->\n"), ("    ", "")],
+)
+def test_acceptance_spoofed_tables_are_invisible(
+    _acceptance_git: None,
+    wrapper: tuple[str, str],
+) -> None:
+    record = _complete_acceptance_record()
+    prefix, suffix = wrapper
+    heading, tables = record.body.split("## Builder evidence\n\n", 1)
+    if prefix == "    ":
+        tables = "\n".join(prefix + line for line in tables.splitlines()) + "\n"
+        record.body = heading + "## Builder evidence\n\n" + tables
+    else:
+        record.body = heading + "## Builder evidence\n\n" + prefix + tables + suffix
+    issue = _acceptance_issue()
+
+    errors = _acceptance_errors(issue, record)
+
+    assert f"{record.relative}: missing or malformed Builder evidence table" in errors
+    assert not any("done flip requires the acceptance record" in error for error in errors)
+
+
+def test_acceptance_pending_candidate_validates_on_disk_and_cannot_flip_done(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(verify_docs, "ROOT", tmp_path)
+    monkeypatch.setattr(
+        verify_docs, "git", lambda *_args: pytest.fail("pending records never consult git")
+    )
+    (tmp_path / "tests").mkdir()
+    (tmp_path / "tests" / "test_fixture.py").write_text("one\ntwo\n", encoding="utf-8")
+    first = [_builder_row(1)]
+    second = [_builder_row(2, source="`tests/test_fixture.py:1-9`")]
+    record = _acceptance_record(
+        first + second,
+        [_verification_row(1, "satisfied", run="run-one", rows=first, candidate="pending")],
+        candidate="pending",
+    )
+    issue = _acceptance_issue()
+
+    assert _acceptance_errors(issue, record) == [
+        f"{record.relative}: criterion 2 builder Source has an invalid line range",
+        f"{record.relative}: criterion 1 verification needs a frozen candidate_commit; "
+        "a verdict binds to a commit",
+        f"{issue.relative}: done flip requires a frozen candidate_commit in {record.relative}",
+        f"{issue.relative}: criterion 2 has no verifier verdict in {record.relative}",
+    ]
+    assert (
+        _acceptance_errors(
+            _acceptance_issue(status="in_progress"),
+            _acceptance_record([*first, _builder_row(2)], [], candidate="pending"),
+        )
+        == []
+    )
+
+
+def test_acceptance_absent_builder_evidence_forces_absent_verdict(_acceptance_git: None) -> None:
+    absent = [_builder_row(1, kind="absent", artifact="none", source="none")]
+    second = [_builder_row(2)]
+    record = _acceptance_record(
+        absent + second,
+        [
+            _verification_row(1, "satisfied", run="run-one", rows=absent),
+            _verification_row(2, "satisfied", run="run-two", rows=second),
+        ],
+    )
+    issue = _acceptance_issue()
+
+    assert _acceptance_errors(issue, record) == [
+        f"{record.relative}: criterion 1 verification must be absent because the builder "
+        "evidence is absent",
+    ]
+
+
+def test_acceptance_builder_rows_enforce_kinds_sources_and_bounds(
+    _acceptance_git: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fake_git(*args: str) -> str:
+        if args[0] == "merge-base" and args[2] == "d" * 40:
+            raise verify_docs.subprocess.CalledProcessError(1, ["git", *args])
+        return "one\ntwo"
+
+    monkeypatch.setattr(verify_docs, "git", fake_git)
+    rows = [
+        _builder_row(1, kind="wish"),
+        _builder_row(1, kind="test", source="`agency_runtime/core/x.py:1`"),
+        _builder_row(1, kind="tracker", source="`tests/test_fixture.py:1`"),
+        _builder_row(
+            1,
+            kind="receipt",
+            source="https://github.com/Holeshot-Software-LLC/agency-runtime/issues/9",
+        ),
+        _builder_row(1, kind="file", source="`" + "d" * 40 + "`"),
+        _builder_row(1, kind="file", source="`../secrets:1`"),
+        _builder_row(1, kind="file", artifact="none"),
+        _builder_row(1, observed="2026-09-02"),
+        _builder_row(1, kind="absent", artifact="none", source="none"),
+        _builder_row(3),
+    ]
+    record = _acceptance_record(rows, [])
+    relative = record.relative
+
+    assert _acceptance_errors(_acceptance_issue(status="in_progress"), record) == [
+        f"{relative}: criterion 1 builder Kind 'wish' is outside the closed vocabulary",
+        f"{relative}: criterion 1 builder test evidence must cite tests/",
+        f"{relative}: criterion 1 builder Source must be a same-repository tracker URL for kind 'tracker'",
+        f"{relative}: criterion 1 builder Source must be a receipt or run id for kind 'receipt'",
+        f"{relative}: criterion 1 builder Source commit is not an ancestor of HEAD",
+        f"{relative}: criterion 1 builder Source escapes the repository",
+        f"{relative}: criterion 1 builder needs a non-none Artifact",
+        f"{relative}: criterion 1 builder observation exceeds evidence_cutoff",
+        f"{relative}: builder row criterion '3' is not a column-0 criterion 1..2",
+        f"{relative}: criterion 1 has more than 8 builder rows",
+        f"{relative}: criterion 1 absent evidence must be its only builder row",
+    ]
+
+
+def test_acceptance_record_binding_path_related_and_candidate_are_checked(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def missing_commit(*args: str) -> str:
+        raise verify_docs.subprocess.CalledProcessError(1, ["git", *args])
+
+    monkeypatch.setattr(verify_docs, "git", missing_commit)
+    record = _complete_acceptance_record(
+        related=[], tracker_url="https://github.com/Holeshot-Software-LLC/agency-runtime/issues/1"
+    )
+    record.path = verify_docs.ROOT / "docs/roadmap/acceptance/issue-AR-999-extra.md"
+    issue = _acceptance_issue()
+
+    errors = _acceptance_errors(issue, record)
+
+    assert errors[:4] == [
+        f"{record.relative}: acceptance record for AR-999 must live at {_ACCEPTANCE_RECORD_PATH}",
+        f"{record.relative}: related must include canonical issue {issue.relative}",
+        f"{record.relative}: tracker_url must match {issue.relative}",
+        f"{record.relative}: candidate_commit does not identify a Git commit",
+    ]
+    duplicate = _complete_acceptance_record()
+    orphan = _complete_acceptance_record(issue_id="AR-1000")
+    assert _acceptance_errors(issue, duplicate, _complete_acceptance_record(), orphan) == [
+        f"{orphan.relative}: unknown acceptance-verification issue_id 'AR-1000'",
+        "docs/roadmap/acceptance: multiple acceptance records for AR-999",
+    ]
+
+
+def test_pre_verification_history_rejects_stale_orphan_out_of_range_and_widening() -> None:
+    entries = {"AR-100", "AR-101", "AR-102", "AR-400"}
+    statuses = {"AR-100": "done", "AR-101": "open", "AR-346": "wont_do"}
+    digest = roadmap_history.verification_history_digest(entries)
+
+    assert roadmap_history.pre_verification_entry_errors(
+        entries, statuses, expected_digest=digest
+    ) == [
+        "pre-verification-history.txt: entry AR-101 is no longer done or wont_do and must be removed",
+        "pre-verification-history.txt: entry AR-102 matches no roadmap issue doc",
+        "pre-verification-history.txt: entry AR-400 is outside pre-verification history "
+        "(must be AR-01..AR-346)",
+    ]
+    widened = roadmap_history.pre_verification_entry_errors(
+        {"AR-100", "AR-346"}, statuses, expected_digest=digest
+    )
+    assert widened == [
+        "pre-verification-history.txt: frozen entry set digest is "
+        + roadmap_history.verification_history_digest({"AR-100", "AR-346"})
+        + f", expected {digest}; the list changes only together with "
+        "PRE_VERIFICATION_HISTORY_SHA256"
+    ]
+
+
+def test_repository_pre_verification_history_is_frozen_and_consistent() -> None:
+    roadmap = verify_docs.ROOT / "docs" / "roadmap"
+    entries = roadmap_history.load_pre_verification_history(roadmap)
+    statuses: dict[str, object] = {}
+    for path in roadmap.glob("issue-AR-*.md"):
+        doc = verify_docs.parse_document(path, [])
+        assert doc is not None
+        statuses[str(doc.meta.get("issue_id"))] = doc.meta.get("status")
+
+    assert entries
+    assert roadmap_history.pre_verification_entry_errors(entries, statuses) == []
+    assert max(int(entry.split("-")[1]) for entry in entries) == (
+        roadmap_history.PRE_VERIFICATION_MAX_ID
     )
