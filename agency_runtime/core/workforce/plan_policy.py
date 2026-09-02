@@ -259,9 +259,9 @@ _PLAN_REPAIR_REQUIREMENTS = {
         "only an exact unit ID that appears earlier."
     ),
     "plan_unit_required_tools_unproven": (
-        "Use only exact values from host_context.available_tools for required_tools. Remove or "
-        "replace every tool this host has not proven; a unit that demands an unproven tool "
-        "cannot be staffed by any worker, however well the plan reads."
+        "A unit needs a tool this host has not proven, so no worker can staff it. A unit's tools "
+        "follow from its artifact_kind and are not authored directly, so change that unit to an "
+        "artifact_kind this host can support, or drop the unit."
     ),
 }
 
@@ -613,14 +613,16 @@ def plan_policy_violations(
                     requirement not in review_capabilities for requirement in assurance_requirements
                 ):
                     codes.append("plan_missing_regulated_assurance_requirement")
-    # AR-374: the planner is told to draw required_tools from
-    # host_context.available_tools and nothing used to enforce it. One
-    # unproven tool fails the unit-scoped eligibility gate against every
-    # worker at once, so staffing abstains with agent_tools_missing and the
-    # receipt reads as a roster problem rather than a plan defect. An empty
-    # proven set means the host proved nothing rather than that it can do
-    # nothing, so it cannot distinguish a bad plan and is left to the
-    # downstream staffing gate.
+    # AR-374: a unit's required_tools are derived from its artifact_kind by
+    # intent._required_tools, and nothing used to check the result against the
+    # host. One unproven tool fails the unit-scoped eligibility gate against
+    # every worker at once, so staffing abstains with agent_tools_missing and
+    # the receipt reads as a roster problem rather than a plan defect. The
+    # repair guidance therefore names artifact_kind, which the planner does
+    # author, rather than required_tools, which it does not. An empty proven
+    # set means the host proved nothing rather than that it can do nothing, so
+    # it cannot distinguish a bad plan and is left to the downstream staffing
+    # gate.
     if available_tools and any(
         tool not in available_tools for unit in plan.units for tool in unit.required_tools
     ):

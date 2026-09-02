@@ -1,8 +1,9 @@
 """AR-374: a planned unit may only require tools this host has proven.
 
-``_PLANNER_SYSTEM`` tells the planner to "Use only exact values from
-host_context.available_tools for required_tools" and, until this rule, nothing
-enforced it. The cost of skipping the check is disproportionate: eligibility on
+A unit's ``required_tools`` are derived from its ``artifact_kind`` by
+``intent._required_tools``; the compact planner never authors them. Until this
+rule nothing checked the derived result against the host, and the cost of
+skipping that check is disproportionate: eligibility on
 this axis is unit-scoped, so one unproven tool fails ``unit.required_tools <=
 context.available_tools`` against *every* worker at once. Staffing then
 abstains with ``no_safe_sufficient_team`` and the receipt carries
@@ -112,4 +113,6 @@ def test_the_rejection_is_repairable_by_the_planner() -> None:
         row["code"]: row["required_correction"] for row in plan_policy_repair_guidance((_CODE,))
     }
 
-    assert "host_context.available_tools" in guidance[_CODE]
+    # The planner authors artifact_kind, never required_tools (those are derived
+    # by intent._required_tools), so guidance naming required_tools is unactionable.
+    assert "artifact_kind" in guidance[_CODE]

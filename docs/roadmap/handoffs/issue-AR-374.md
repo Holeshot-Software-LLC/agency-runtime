@@ -7,6 +7,7 @@ updated: 2026-09-02
 tags: [handoff, workforce, eligibility, staffing]
 related:
   - docs/roadmap/issue-AR-374-host-capability-vocabulary-gap.md
+  - docs/roadmap/issue-AR-375-planner-cannot-express-host-operations.md
   - docs/roadmap/issue-AR-373-recruiter-evidence-vocabulary.md
   - docs/roadmap/issue-AR-336-requalify-the-recruiter-route-for-ordinary-tasks.md
   - docs/roadmap/issue-AR-370-staffing-asks-the-wrong-question.md
@@ -83,8 +84,10 @@ nine the planner is applied, the recruiter is applied, and the critic rejects
 the staffing with `missing-installation-executor`,
 `wrong-routine-installation-staffing` and `missing-implementation-lifecycle`:
 the plan has advise, plan and review units and nothing with modify authority
-that actually performs the install. That is a planner-shape defect and needs
-its own issue.
+that actually performs the install. Filed as AR-375: the planner is not at
+fault, because the artifact-kind ontology cannot express a host operation —
+only three of eight kinds grant modify authority and all three are
+`workspace_write`.
 
 ## same-task-continuity
 
@@ -122,11 +125,10 @@ remain open and are still owner calls:
 2. Feed real capability detection into `available_tools` so the union path in
    `native_adapter_capability_receipt` stops being inert.
 
-Four follow-ups are recorded in the issue with no internal ID yet: the
-upstream selection eval reaching only 18 percent of the roster, the planner
-writing no executor for an install request, an intermittent recruiter provider
-failure, and the decision-conformance eval's interpreter resolution on this
-box.
+The planner-executor follow-up is filed as AR-375. Three remain in the issue
+with no internal ID: the upstream selection eval reaching only 18 percent of
+the roster, an intermittent recruiter provider failure, and the
+decision-conformance eval's interpreter resolution on this box.
 
 ## verification
 
