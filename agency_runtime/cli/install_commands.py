@@ -2266,7 +2266,7 @@ def _global_control_result(
         )
         if master["enabled"] is not enabled or int(master["generation"]) != expected_generation:
             raise ValueError("master-control response is internally inconsistent")
-    return {
+    result = {
         "ok": True,
         "exit_code": 0,
         "scope": "global",
@@ -2278,6 +2278,22 @@ def _global_control_result(
         "master": master,
         "fresh_session_required": not dry_run,
     }
+    if not enabled and not dry_run:
+        # AR-372: off means off. Flipping the flag left every long-lived
+        # process Agency had started still running -- hooks became no-ops
+        # while MCP servers slept on their pipes -- which is how a machine
+        # reaches thousands of them. Only the recorded roll is ended, and
+        # only entries whose start time still matches, so a reused process
+        # id can never cost an unrelated process its life.
+        from agency_runtime.core.owned_process_registry import terminate_owned_processes
+
+        try:
+            result["processes"] = terminate_owned_processes()
+        except Exception as exc:  # pragma: no cover - advisory, never fails off
+            result["processes"] = {
+                "error": safe_display_token(str(exc).strip() or type(exc).__name__, limit=200)
+            }
+    return result
 
 
 def _print_global_control_result(result: dict[str, Any]) -> None:
@@ -2290,6 +2306,16 @@ def _print_global_control_result(result: dict[str, Any]) -> None:
         return
     state = "enabled" if result.get("enabled") else "disabled"
     print(f"✅ Agency Runtime globally {state} through {result.get('transport', 'direct')} control")
+    processes = result.get("processes")
+    if isinstance(processes, dict):
+        ended = processes.get("ended")
+        if isinstance(ended, list) and ended:
+            print(f"   Ended {len(ended)} Agency-owned process(es) recorded on this machine.")
+        failed = processes.get("failed")
+        if isinstance(failed, list) and failed:
+            print(f"   {len(failed)} could not be ended; they are still recorded.")
+        if processes.get("error"):
+            print(f"   Owned-process cleanup was unavailable: {processes['error']}")
     print("   Start a fresh host session before comparing Agency-on and Agency-off behavior.")
 
 
