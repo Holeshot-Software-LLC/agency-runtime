@@ -106,6 +106,8 @@ _HOST_BOUNDARY_MODULES: Final[frozenset[str]] = frozenset(
 # process-capable module fails this eval until it is classified here.
 _DECLARED_PROCESS_PURPOSES: Final[dict[str, str]] = {
     "agency_runtime.core.canary_backends": "host canary probe",
+    "agency_runtime.core.battery_service": "battery trigger service",
+    "agency_runtime.core.chaos.experiments": "chaos experiment injection",
     "agency_runtime.core.cli_transport": "inference provider call",
     "agency_runtime.core.codex_hook_trust": "host hook-trust inspection",
     "agency_runtime.core.dashboard_service_core": "operator dashboard",
@@ -116,6 +118,7 @@ _DECLARED_PROCESS_PURPOSES: Final[dict[str, str]] = {
     "agency_runtime.core.evals.product_host": "evaluation harness",
     "agency_runtime.core.evals.product_validation": "evaluation harness",
     "agency_runtime.core.git_runner": "git command",
+    "agency_runtime.core.harness_battery": "harness battery probe",
     "agency_runtime.core.installed_config_compatibility": "installed config probe",
     "agency_runtime.core.installer_native": "host adapter install",
     "agency_runtime.core.installer_uninstall": "host adapter uninstall",

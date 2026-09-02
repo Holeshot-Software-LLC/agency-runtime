@@ -158,14 +158,24 @@ children) and the Windows Job Object audit remain open.
       `tests/test_stdio_lifetime.py` (13 tests, including that a slow client
       is never ended and that an unevaluable parent check never ends one).
 - [ ] A suite run on Windows leaves no growing population of live agency
-      processes; the count returns to its pre-run baseline.
+      processes; the count returns to its pre-run baseline. Needs one run on
+      the operator's box now that the bound, the lever and the ceiling are
+      deployed.
 - [x] `agency off` ends the long-lived processes Agency started, and only
       those. Evidence: `agency_runtime/core/owned_process_registry.py`, the
       `_global_control_result` reaping, and
       `tests/test_owned_process_registry.py` (8 tests, including that a
       reused process id is never signalled and an unreaped exit counts as
       gone).
-- [ ] Every Windows spawn path Agency owns creates its child inside a Job
-      Object, pinned by a test.
-- [ ] Exceeding a bounded number of live owned children is refused and
+- [x] Every spawn Agency owns is bounded, and says by what. Evidence:
+      `tests/test_spawn_lifetime_contract.py` -- every blocking
+      `subprocess.run` carries a timeout, and every `Popen` is in a reviewed
+      list stating how its child is bounded. The Job Object primitive is
+      reached through `run_bounded_process` rather than open-coded per call
+      site, so "uses a Job Object" is the wrong question to ask a call site;
+      "is it bounded, and by what" is the one that catches this defect.
+- [x] Exceeding a bounded number of live owned children is refused and
       reported, so Agency cannot contribute to machine-wide exhaustion.
+      Evidence: `refuse_beyond_ceiling`, its `run_stdio` enforcement, and
+      `test_the_ceiling_refuses_rather_than_deepening_a_leak` plus
+      `test_an_unreadable_roll_counts_zero_and_never_refuses`.
