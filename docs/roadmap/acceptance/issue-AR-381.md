@@ -12,7 +12,7 @@ supersedes: []
 superseded_by: null
 type: acceptance-verification
 issue_id: AR-381
-candidate_commit: 9a2e45d00f8cbcbf495c36647db93923b8bc805b
+candidate_commit: b99cdfd37482b10f08de3d5d4cd3b9aa39b3d953
 evidence_cutoff: 2026-09-02
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/568
 ---
@@ -57,3 +57,7 @@ spelling.
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
+| 3 | satisfied | `AR-381.3-20260902-280ed40e` | `aa0a0dd97f7187f586f9ebfa90cab77634f8df036a576e99fe6b35e6afb564f0` | 2026-09-02 | The corpus-wide parametrized test scans all five rendered sections across every packaged card for 11 listed proper nouns, and the cited run passed with 256 bullets scanned and zero lowercased hits. |
+| 1 | satisfied | `AR-381.1-20260902-ba065b70` | `4a70c6373af683a3f3c089ba30bdb40cd37c43999ff59e0856c5be91ac2ca938` | 2026-09-02 | The parser applies case preservation to all nine enumerated prose fields at schema v4, and the parametrized test asserts each field retains its mixed-case authored value; packaged-card output also shows preserved casing. |
+| 2 | satisfied | `AR-381.2-20260902-ffec0346` | `cf427ed4d658bd5287ae9ee13242b43fa35f0cf42cb71c83f6ba0ab649d8fb28` | 2026-09-02 | The cited tests exhaustively partition string-tuple fields, name allowlist, routing, and duplicate-check consumers, and assert casefolding for contract fields, projected outcomes, and artifact identifiers. |
+| 4 | satisfied | `AR-381.4-20260902-fbb6db4b` | `08fa58dbd5386428236e3dcc7a809c6256113c41366ddc847e07dd0d96e7a95c` | 2026-09-02 | The cited replay artifact reports zero prompt-hash mismatches for all 15 packaged contracts under both v2 and v3, and the v3 regression test pins an exact historical prompt hash. |
