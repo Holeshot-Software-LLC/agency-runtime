@@ -406,6 +406,50 @@ def test_a_reply_that_is_not_a_units_object_is_recorded_per_unit_and_repairable(
     assert proposal.units[0].selected == ("operations-manager",)
 
 
+def test_every_rejection_the_recruiter_parser_can_raise_is_classified() -> None:
+    """Every path out of the parser projects onto the receipt; none is a bare error."""
+
+    plan = _typed_plan()
+    replies: list[object] = [
+        {},
+        [],
+        "prose",
+        None,
+        {"units": "x"},
+        {"units": []},
+        {"units": [{}]},
+        {"units": [{"$text": "fragment"}]},
+        {"units": [{"unit_id": _UNIT}]},
+        {"units": [{"unit_id": _UNIT, "decision": "maybe", "ranked_semantic": []}]},
+        {"units": [{"unit_id": _UNIT, "decision": "staff", "ranked_semantic": []}]},
+        {
+            "units": [
+                {"unit_id": _UNIT, "decision": "staff", "ranked_semantic": [{"agent_id": "nobody"}]}
+            ]
+        },
+        {
+            "units": [
+                {
+                    "unit_id": _UNIT,
+                    "decision": "staff",
+                    "ranked_semantic": [_required_row(score="high")],
+                }
+            ]
+        },
+    ]
+    for reply in replies:
+        parser = _NominationAccumulator(
+            plan, _snapshot(*_roster()), config=_config(), context=_context()
+        )
+        with pytest.raises(_NominationValidationError) as excinfo:
+            parser.parse(reply)  # type: ignore[arg-type]
+        rows = project_nomination_failures(str(excinfo.value))
+        assert rows, reply
+        assert all(row["unit_id"] == _UNIT for row in rows)
+        codes = [failure.diagnostic_code for failure in excinfo.value.failures]
+        assert all(code in RECRUITER_VALIDATION_REASON_CODES for code in codes if code)
+
+
 def test_an_empty_object_reply_is_repaired_before_the_turn_dies() -> None:
     # Captured from turn 204: the repair reply was {} and the attempt reached
     # the durable receipt with no validation record and no truncation record.

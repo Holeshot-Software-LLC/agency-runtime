@@ -32,14 +32,17 @@ agency.db.branch-copy, generation 307); the live store was not written.
     string, an empty array or one over four times the unit count as no rows; _NominationAccumulator.parse
     records missing_work_unit with recruiter_response_shape_invalid per planned (or repairing) unit instead
     of raising a bare error. RECRUITER_VALIDATION_REASON_CODES and the repair guidance carry the new code.
-  preflight_failure.py: the recruiter validation-code allowlist admits recruiter_response_shape_invalid.
+    The parser's one remaining bare error, a repair answering for a planned unit outside the recorded failed set, is
+    refused as before but recorded per listed unit under recruiter_repair_row_outside_failed_set.
+  preflight_failure.py: the recruiter validation-code allowlist admits both new diagnoses.
   receipt_projection.py: project_nomination_failures accepts the verifier's detail prefix and projects its
     unit=code rows (global for whole-team findings), bounded to 16 rows and the [a-z][a-z0-9_]{1,95} charset.
 
 == 3. Tests ==
-  tests/test_recruiter_reply_residue.py: 13 passed, built from the captured rows above (the four deployment
+  tests/test_recruiter_reply_residue.py: 16 passed, built from the captured rows above (the four deployment
     shapes staffed first time end to end; {} recorded per unit and repaired end to end; the verifier's
-    rows on the projected attempt; the projection closed and bounded; every row bound still enforced).
+    rows on the projected attempt and on read-back; the projection closed to the verifier's vocabulary
+    and bounded; every malformed reply shape the parser can meet projects; every row bound still enforced).
   tests/test_recruiter_evidence_vocabulary.py: the underscore pin flipped and the schema pattern re-pinned.
   Curated decision-conformance mutation verifier-rejection-left-blank-on-the-attempt added; the pre-existing
     recruiter-failure-sensitive-unit-id-not-sanitized anchor refreshed to the extracted row helper.
@@ -90,3 +93,16 @@ Counts over the eleven turns:
   A rows-without-unit_id refinement (unit-row diagnosis for a reply whose rows name no unit) was tried and reverted:
   tests/test_reply_budget_truncation.py pins that a row cut before its unit_id leaves the unit missing without a
   diagnosis, because the cut, not the shape, is the cause and the truncation record already says so.
+
+== 6. The isolated verifier's first pass on AR-385 at 760d631e, and the response ==
+  scripts/verify_acceptance.py --issue AR-385 --all --provider codex (record frozen at 760d631e):
+    criterion 1 satisfied (AR-385.1-20260903-6e394007); criterion 2 satisfied (AR-385.2-20260903-7bbb3bbf);
+    criterion 3 CONTRADICTED (AR-385.3-20260903-69a23a29): "In preflight_failure.py:227-273, a rejected recruiter
+    attempt is appended even when both projected validation_failures and truncation are absent, so the projection
+    still permits a blank rejected attempt."
+  Read structurally, the objection is fair: the projection carries what the runtime classified, so the guarantee
+  has to live in the parser. One bare error remained there (a repair answering for a planned unit outside the
+  recorded failed set); it is now recorded under recruiter_repair_row_outside_failed_set, and
+  test_every_rejection_the_recruiter_parser_can_raise_is_classified drives thirteen malformed reply shapes through
+  _NominationAccumulator.parse and asserts every exception projects onto the receipt. The record is re-frozen at
+  the commit that carries this and re-verified.

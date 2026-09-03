@@ -154,7 +154,13 @@ a reply that is not a units object is recorded per unit as
 and the verifier's `unit=code` rows project onto the attempt as
 `validation_failures` through the same function both receipts read. A
 `failed` attempt with no valid response (turn 304's structurally malformed
-reply) is not a rejected one and carries its own reason code.
+reply) is not a rejected one and carries its own reason code. The isolated
+verifier's first pass on the ADR-0202 code read the criterion structurally
+and found the projection still able to append a blank rejected attempt; the
+one parser path that could still raise a bare error, a repair answering for a
+unit outside the recorded failed set, is now recorded under
+`recruiter_repair_row_outside_failed_set`, and a test drives every malformed
+reply shape through the parser and asserts each one projects.
 Live on the same eleven wordings under the ADR-0202 runtime, two rejected
 recruiter attempts occurred and both carry `validation_failures` on the
 durable receipt: turn 206's first reply was not a units object (recorded as

@@ -92,7 +92,12 @@ The AR-385 record could not honestly be frozen while they stood.
    `recruiter_response_shape_invalid`, so both receipts carry the units and
    the diagnosis, and the repair prompt asks for the whole object again. The
    reply bound moves from the unit count to four times it, because rows for
-   unknown units were already dropped by identity.
+   unknown units were already dropped by identity. The one other bare error
+   the parser could raise, a repair answering for a planned unit outside the
+   recorded failed set, is refused exactly as before but recorded the same
+   way under `recruiter_repair_row_outside_failed_set`, so no path out of the
+   recruiter parser leaves an attempt blank; a test drives every malformed
+   shape through the parser and asserts each projects.
 5. **A verifier rejection projects onto the attempt row.**
    `project_nomination_failures` accepts the verifier's detail prefix and its
    `unit=code` rows, with `global` for a finding that names no unit, bounded

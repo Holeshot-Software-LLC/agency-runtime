@@ -169,6 +169,7 @@ RECRUITER_VALIDATION_REASON_CODES = frozenset(
         "recruiter_candidate_positive_evidence_missing",
         "recruiter_candidate_row_shape_invalid",
         "recruiter_candidate_score_invalid",
+        "recruiter_repair_row_outside_failed_set",
         "recruiter_response_shape_invalid",
         "recruiter_unit_row_shape_invalid",
     }
@@ -181,10 +182,15 @@ RECRUITER_VALIDATION_REASON_CODES = frozenset(
 # bare list), so every planned unit is missing for the same one reason
 # (ADR-0202).
 _RESPONSE_SHAPE_INVALID = "recruiter_response_shape_invalid"
+# A repair that answers for a unit outside the recorded failed set is refused
+# whole, so the listed units stay missing for that one reason (ADR-0202).
+_REPAIR_ROW_OUTSIDE_FAILED_SET = "recruiter_repair_row_outside_failed_set"
+_MISSING_UNIT_DIAGNOSES = frozenset(
+    {"recruiter_unit_row_shape_invalid", _RESPONSE_SHAPE_INVALID, _REPAIR_ROW_OUTSIDE_FAILED_SET}
+)
 _DIAGNOSTIC_CODES_BY_FAILURE = {
-    "invalid_candidate": RECRUITER_VALIDATION_REASON_CODES
-    - frozenset({"recruiter_unit_row_shape_invalid", _RESPONSE_SHAPE_INVALID}),
-    "missing_work_unit": frozenset({"recruiter_unit_row_shape_invalid", _RESPONSE_SHAPE_INVALID}),
+    "invalid_candidate": RECRUITER_VALIDATION_REASON_CODES - _MISSING_UNIT_DIAGNOSES,
+    "missing_work_unit": _MISSING_UNIT_DIAGNOSES,
 }
 CRITIC_VALIDATION_REASON_CODES = frozenset(
     {
@@ -255,6 +261,11 @@ _NOMINATION_DIAGNOSTIC_REPAIR_REQUIREMENTS = {
     "recruiter_unit_row_shape_invalid": (
         "The unit's row could not be read: return exactly unit_id, decision, and "
         "ranked_semantic for it, complete."
+    ),
+    "recruiter_repair_row_outside_failed_set": (
+        "The repair answered for a unit outside the listed failed set, so the whole reply was "
+        "refused and the listed units are still missing. Return rows only for the listed "
+        "units, in listed order, and omit every other planned unit."
     ),
     "recruiter_response_shape_invalid": (
         "The reply was not a units object. Return exactly one JSON object of the form "
@@ -3158,7 +3169,18 @@ class _NominationAccumulator:
                 unreadable.add(unit_id)
                 continue
             if repairing and unit_id not in repairing:
-                raise ValueError("workforce nomination repair rows do not match failed units")
+                # ADR-0202: refused whole, as before, but recorded per listed
+                # unit so neither receipt is blank and the repair is told why.
+                raise _NominationValidationError(
+                    tuple(
+                        _NominationFailure(
+                            failed_id,
+                            "missing_work_unit",
+                            diagnostic_code=_REPAIR_ROW_OUTSIDE_FAILED_SET,
+                        )
+                        for failed_id in self._repair_unit_ids
+                    )
+                )
             response_ids.append(unit_id)
             response_rows.append((unit_id, row))
         for unit_id, row in response_rows:

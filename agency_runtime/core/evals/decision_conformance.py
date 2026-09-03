@@ -308,9 +308,9 @@ class _NominationSemantics:""",
         ),
         source_path="agency_runtime/core/workforce/inference.py",
         before="""            if repairing and unit_id not in repairing:
-                raise ValueError("workforce nomination repair rows do not match failed units")""",
+                # ADR-0202: refused whole, as before, but recorded per listed""",
         after="""            if False and repairing and unit_id not in repairing:
-                raise ValueError("workforce nomination repair rows do not match failed units")""",
+                # ADR-0202: refused whole, as before, but recorded per listed""",
         test_node=(
             "tests/test_workforce_inference.py::"
             "test_recruiter_repair_rejects_rows_outside_recorded_failure_set"

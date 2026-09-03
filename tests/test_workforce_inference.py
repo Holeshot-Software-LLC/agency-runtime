@@ -837,7 +837,7 @@ def test_recruiter_repair_rejects_rows_outside_recorded_failure_set() -> None:
         parser.parse({"units": [first_row]})
     assert [failure.unit_id for failure in initial.value.failures] == ["unit-analyze-second"]
 
-    with pytest.raises(ValueError, match="repair rows do not match failed units"):
+    with pytest.raises(_NominationValidationError, match="missing_work_unit"):
         parser.parse({"units": [replacement_first, second_row]})
 
     proposal = parser.parse({"units": [second_row]})
