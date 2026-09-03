@@ -396,6 +396,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-380` | [Execution-profile prose is casefolded, so a card cannot name a case-sensitive identifier](issue-AR-380-execution-profile-prose-is-casefolded.md) | done | p2 | workforce | [#564](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/564) |
 | `AR-381` | [Contract prose outside the execution profile is still casefolded, so a v3 card says python source and clis](issue-AR-381-contract-prose-outside-the-execution-profile-is-casefolded.md) | done | p2 | workforce | [#568](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/568) |
 | `AR-382` | [A predecessor package projects today's prose case, so no installed contractor can ever advance](issue-AR-382-predecessor-projection-keeps-the-current-version-case.md) | done | p1 | install | [#573](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/573) |
+| `AR-383` | [The inferred subject context fails its own projection, so dense recall is silently skipped](issue-AR-383-inferred-subject-context-fails-its-own-projection.md) | open | p1 | reliability | [#581](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/581) |
 
 ## Traceability
 
