@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import re
 from dataclasses import replace
 
 import pytest
@@ -38,6 +39,23 @@ EXPECTED_SLUGS = {
     "policy-guardrail-architect",
     "selection-safety-critic",
 }
+
+
+def _merge(*groups: tuple[str, ...]) -> tuple[str, ...]:
+    """Mirror the template's case-insensitive section merge."""
+
+    merged: dict[str, str] = {}
+    for group in groups:
+        for item in group:
+            merged.setdefault(item.casefold(), item)
+    return tuple(merged.values())
+
+
+def _section_bullets(prompt: str, heading: str) -> list[str]:
+    """Return the bullet lines the compiled card renders under one heading."""
+
+    body = prompt.split(f"\n{heading}\n", 1)[1].split("\n\n", 1)[0]
+    return [line.removeprefix("- ") for line in body.splitlines() if line.startswith("- ")]
 
 
 def _folded(values: tuple[str, ...]) -> set[str]:
@@ -782,6 +800,13 @@ _PROSE_FIELDS = (
 )
 
 
+# preferred_scenarios and avoided_scenarios are selection metadata: they are
+# validated as prose but the reviewed template has no section for them.
+_RENDERED_PROSE_FIELDS = tuple(
+    field for field in _PROSE_FIELDS if field not in {"preferred_scenarios", "avoided_scenarios"}
+)
+
+
 @pytest.mark.parametrize("field", _PROSE_FIELDS)
 def test_contract_prose_keeps_its_authored_case_at_v4(field: str) -> None:
     """AR-381 acceptance 1: prose no matcher compares keeps the case it was written in."""
@@ -827,14 +852,133 @@ def test_v3_contract_compiles_through_the_v3_template() -> None:
 
 
 def test_packaged_cards_render_prose_in_its_authored_case() -> None:
-    """AR-381 acceptance 3: no packaged section renders a lowercased proper noun."""
+    """AR-381 acceptance 3: no packaged card lowercases prose in any section.
 
+    Proven by equality, not by a blocklist: for all fifteen cards, the bullets
+    the template actually renders in each prose section are compared, in order,
+    against the contract's own stored values. A section that lowercased anything
+    -- a whole item or one proper noun inside it -- would not compare equal.
+    """
+
+    mixed_case_items = 0
     for contract in KNOWN_CONTRACTOR_CONTRACTS:
         prompt = compile_contractor(contract).prompt
-        for wrong in ("- python source", "- async python design", "services, and clis"):
-            assert wrong not in prompt
+        profile = contract.execution_profile
+        assert profile is not None
+        expected = {
+            "Capabilities and owned outcomes": _merge(
+                contract.outcomes_owned, contract.capabilities
+            ),
+            "Expected artifacts": contract.artifacts_produced,
+            "Verification and required evidence": _merge(
+                profile.verification_steps, contract.evidence_requirements
+            ),
+            "Required operating inputs and tools": _merge(contract.requirements, contract.tools),
+            "Role boundaries": _merge(contract.anti_capabilities, contract.forbidden_scenarios),
+        }
+        for heading, items in expected.items():
+            assert _section_bullets(prompt, heading) == list(items), (
+                f"{contract.slug}: {heading} does not render its authored values"
+            )
+            mixed_case_items += sum(item.casefold() != item for item in items)
+    # Guard the guard: a vacuous pass would mean nothing carried mixed case.
+    assert mixed_case_items >= 40
 
-    python = compile_contractor(KNOWN_CONTRACTORS_BY_SLUG["python-application-engineer"]).prompt
-    assert "- Python source" in python
-    assert "- Async Python design" in python
-    assert "services, and CLIs" in python
+
+def test_allowlisted_identifier_lists_are_still_checked_against_their_allowlist() -> None:
+    """AR-381 acceptance 2: names the consumer that requires normalized casing.
+
+    `platforms`, `hosts` and `lifecycle_phases` are validated by membership in a
+    fixed lowercase allowlist inside `parse_employment_contract`. If they stopped
+    casefolding, an authored `Windows` would fail that membership test outright.
+    """
+
+    for field in ("platforms", "hosts", "lifecycle_phases"):
+        raw = _raw()
+        raw[field] = [item.upper() for item in raw[field]]
+
+        parsed = parse_employment_contract(raw)
+
+        assert getattr(parsed, field) == tuple(item.casefold() for item in raw[field])
+
+        unknown = _raw()
+        unknown[field] = ["Not-In-The-Allowlist"]
+        with pytest.raises(ValueError, match="contains an unsupported value"):
+            parse_employment_contract(unknown)
+
+
+_CASEFOLDED_FIELDS = ("platforms", "hosts", "lifecycle_phases", "tools")
+_PROPER_NOUNS = (
+    "Python",
+    "TypeScript",
+    "Node.js",
+    "CLI",
+    "CLIs",
+    "Windows",
+    "Linux",
+    "AI",
+    "API",
+    "UI",
+    "IANA",
+)
+
+
+def test_every_contract_list_field_is_either_case_preserved_or_casefolded() -> None:
+    """AR-381 acceptance 2, exhaustively: the split covers every list field.
+
+    Asserted as a partition rather than field by field, so a list field added
+    later cannot quietly land in neither set. The casefolded half names its
+    consumer: `platforms`, `hosts` and `lifecycle_phases` are allowlist-checked
+    inside `parse_employment_contract`, and `tools` shares the lowercase-only
+    routing-identifier extraction with `artifacts_produced`.
+    """
+
+    contract = KNOWN_CONTRACTORS_BY_SLUG["python-application-engineer"]
+    list_fields = {
+        name
+        for name in contract.__dataclass_fields__
+        if isinstance((value := getattr(contract, name)), tuple)
+        and value
+        and all(isinstance(item, str) for item in value)
+    }
+
+    assert set(_PROSE_FIELDS) | set(_CASEFOLDED_FIELDS) == list_fields
+
+    for field in _CASEFOLDED_FIELDS:
+        raw = _raw()
+        raw[field] = [item.upper() for item in raw[field]]
+        parsed = parse_employment_contract(raw)
+        assert getattr(parsed, field) == tuple(item.casefold() for item in raw[field]), field
+
+
+@pytest.mark.parametrize("noun", _PROPER_NOUNS)
+def test_no_packaged_card_renders_a_lowercased_proper_noun(noun: str) -> None:
+    """AR-381 acceptance 3: checked against the corpus, not against one card.
+
+    Every prose bullet of every rendered section of every packaged card is
+    scanned for the lowercased spelling of each proper noun the corpus uses, as
+    a standalone word. `tools` bullets are excluded by identity, not by skipping
+    their section: a tool id such as `python` is an identifier and is lowercase
+    by design, so the section is still covered for its `requirements` half.
+    """
+
+    pattern = re.compile(rf"\b{re.escape(noun.casefold())}\b")
+    scanned = 0
+    for contract in KNOWN_CONTRACTOR_CONTRACTS:
+        prompt = compile_contractor(contract).prompt
+        identifiers = {item.casefold() for item in contract.tools}
+        for heading in (
+            "Capabilities and owned outcomes",
+            "Expected artifacts",
+            "Verification and required evidence",
+            "Required operating inputs and tools",
+            "Role boundaries",
+        ):
+            for bullet in _section_bullets(prompt, heading):
+                if bullet.casefold() in identifiers:
+                    continue
+                assert not pattern.search(bullet), (
+                    f"{contract.slug}: lowercased {noun!r} in {bullet!r}"
+                )
+                scanned += 1
+    assert scanned >= 100

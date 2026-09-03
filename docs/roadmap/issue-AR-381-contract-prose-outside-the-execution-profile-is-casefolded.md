@@ -1,6 +1,6 @@
 ---
 title: "AR-381: Contract prose outside the execution profile is still casefolded, so a v3 card says python source and clis"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-09-02
 updated: 2026-09-02
@@ -106,9 +106,9 @@ workers keep replaying the render they were minted under.
 
 ## Acceptance
 
-- [ ] Every prose field that no matcher compares keeps its authored case end
+- [x] Every prose field that no matcher compares keeps its authored case end
       to end, proven by test.
-- [ ] Every field that is matched, deduped or persisted still casefolds,
+- [x] Every field that is matched, deduped or persisted still casefolds,
       proven by test naming the consumer that requires it.
-- [ ] A packaged card renders no lowercased proper noun in any section.
-- [ ] Contracts minted under earlier versions replay byte-identically.
+- [x] A packaged card renders no lowercased proper noun in any section.
+- [x] Contracts minted under earlier versions replay byte-identically.
