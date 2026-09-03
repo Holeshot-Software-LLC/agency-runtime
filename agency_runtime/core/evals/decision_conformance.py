@@ -1438,6 +1438,20 @@ class _NominationSemantics:""",
         ),
     ),
     DecisionMutation(
+        mutation_id="subject-inference-trigger-loosened",
+        invariant=(
+            "The typed subject call is bought only when retrieval scored nothing, "
+            "never when it scored lowish."
+        ),
+        source_path="agency_runtime/core/selector/candidate_narrow.py",
+        before="""    return bool(scores) and max(scores) > 0.0""",
+        after="""    return bool(scores) and max(scores) > 5.0""",
+        test_node=(
+            "tests/test_workforce_subject_inference.py::"
+            "test_the_trigger_is_a_zero_floor_not_a_tunable_threshold"
+        ),
+    ),
+    DecisionMutation(
         mutation_id="contractor-outcomes-overflow-workforce-schema",
         invariant="Employment outcomes are capped to the smaller workforce projection.",
         source_path="agency_runtime/core/workforce/hiring.py",

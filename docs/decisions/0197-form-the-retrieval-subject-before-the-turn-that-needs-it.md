@@ -1,6 +1,6 @@
 ---
 title: "Form the retrieval subject before the turn that needs it"
-status: proposed
+status: accepted
 category: decisions
 created: 2026-09-03
 updated: 2026-09-03
@@ -20,9 +20,10 @@ deciders: [owner]
 
 ## Status
 
-**Proposed.** AR-370 records owner direction on the shape of the fix but not a
-choice between the three costed options. This ADR exists to make that choice
-decidable; it should not be marked accepted until the owner picks an option.
+**Accepted 2026-09-03.** The owner first chose option C; the amendment below
+showed C cannot reach the filed defect, and the owner then confirmed the revised
+recommendation: **option B, gated on the zero-signal trigger**. That is what is
+implemented.
 
 ## Context
 
@@ -77,7 +78,11 @@ So the gap is in exactly two places, both upstream of the typed recall:
 
 ## Decision
 
-*To be chosen by the owner. This ADR recommends option C.*
+**Option B, gated on the zero-signal trigger.** A short typed classification
+call runs immediately before the planner, and only when lexical narrowing
+scored nothing for the message. The options below are retained as the costing
+that produced that choice; the amendment after them records why C, the option
+first chosen, could not reach the defect.
 
 ### Option A — always plan first, then retrieve
 
