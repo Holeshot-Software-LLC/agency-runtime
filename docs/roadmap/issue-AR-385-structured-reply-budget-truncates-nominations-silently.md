@@ -1,6 +1,6 @@
 ---
 title: "AR-385: A fixed 2048-token reply budget truncates recruiter nominations, and the truncation is rejected as a contract failure with no record"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-09-03
 updated: 2026-09-03
@@ -161,6 +161,13 @@ one parser path that could still raise a bare error, a repair answering for a
 unit outside the recorded failed set, is now recorded under
 `recruiter_repair_row_outside_failed_set`, and a test drives every malformed
 reply shape through the parser and asserts each one projects.
+
+**Verification (2026-09-03).** The record is frozen at `1c1bf079`; the
+isolated codex verifier returned satisfied on all three criteria on its
+second pass (runs `AR-385.1-20260903-326a18ff`, `AR-385.2-20260903-66fa65ea`,
+`AR-385.3-20260903-0c34dab3`), after the first pass at `760d631e` had
+contradicted criterion 3 on the parser path recorded above. The issue is
+done.
 Live on the same eleven wordings under the ADR-0202 runtime, two rejected
 recruiter attempts occurred and both carry `validation_failures` on the
 durable receipt: turn 206's first reply was not a units object (recorded as
