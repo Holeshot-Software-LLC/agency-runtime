@@ -4,22 +4,24 @@ status: active
 category: roadmap
 created: 2026-09-03
 updated: 2026-09-03
-tags: [handoff, workforce, recall, staffing, hiring, recruiter]
+tags: [handoff, workforce, recall, staffing, hiring, recruiter, critic]
 related:
   - docs/roadmap/issue-AR-383-inferred-subject-context-fails-its-own-projection.md
   - docs/roadmap/issue-AR-384-staff-decisions-die-on-uncoverable-typed-requirements.md
   - docs/roadmap/issue-AR-385-structured-reply-budget-truncates-nominations-silently.md
+  - docs/roadmap/issue-AR-386-strict-critic-vetoes-verifier-accepted-install-turns.md
   - docs/roadmap/issue-AR-373-recruiter-evidence-vocabulary.md
   - docs/roadmap/issue-AR-370-staffing-asks-the-wrong-question.md
+  - docs/decisions/0198-waive-the-typed-requirements-the-roster-declares-but-cannot-serve.md
   - docs/decisions/0197-form-the-retrieval-subject-before-the-turn-that-needs-it.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-383
-branch: claude/ar373-recruiter-payload
-evidence_commit: 827a46c2cf465d28c853a9c50df913a67e727d6c
-minimum_ledger_commit: 152bdf0b430810dd0bd9deeb6abc6e976a478ffb
+branch: claude/ar384-coverage-gaps
+evidence_commit: 1711bcaa8d507fd7489ea3f454785e51f29c05d7
+minimum_ledger_commit: 0530ed961457091c88efc2b799ea7ce50a61ee82
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/581
 ---
@@ -27,147 +29,123 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/581
 # AR-383 inferred subject projection handoff
 
 > **This capsule is not on `main`.** It lives on branch
-> `claude/ar373-recruiter-payload`, which stacks on `claude/ar370-acceptance`
-> (PR #582). The AR-383, AR-384 and AR-385 issue documents it cites are on the
-> same branches. Merge the open PRs or `git checkout claude/ar373-recruiter-payload`
-> before relying on any of them. If you are reading this from `main`, the PRs
-> have merged and this note is spent.
+> `claude/ar384-coverage-gaps`, which stacks on `claude/ar373-recruiter-payload`
+> (PR #583) and then `claude/ar370-acceptance` (PR #582). ADR-0198 and the
+> AR-383, AR-384, AR-385 and AR-386 documents it cites are on the same stack.
+> Merge the open PRs in order or check out `claude/ar384-coverage-gaps` before
+> relying on any of them. If you are reading this from `main`, the PRs have
+> merged and this note is spent.
 
-Start-here capsule. The staffing investigation now has three filed defects in
-front of AR-383, in a known order of weight.
+Start-here capsule. The staffing investigation has moved one gate: the verifier
+no longer kills install turns, the strict critic does.
 
 ## checkpoint
 
-Item 1 of the previous package is answered. The recruiter's double contract
-failure was captured in process, request and raw reply, on five fresh turns
-(`827a46c2`). It is three defects wearing one reason code, and only one of
-them is the model's.
+Item 1 of the previous package is done. AR-384 is implemented per ADR-0198 on
+`claude/ar384-coverage-gaps`: tokens the roster declares but cannot serve for a
+unit are waived from team sufficiency and recorded as `roster_coverage_gap`;
+tokens nobody declares stay mandatory; the `operations` capability reads the
+`operations` domain. Two departures from option 1 as filed are in the ADR: a
+blanket waiver broke the regulated-assurance doctrine, and the waiver alone
+left the captured helix reply dead on `capability:operations`.
 
-| share of 48 rejected recruiter attempts (45-turn smoke) | code | owner | who is wrong |
-|---|---|---|---|
-| 31 | `staff_without_safe_team` | **AR-384**, filed | the planner-to-verifier contract: the unit named a typed token no eligible contract covers, so no `staff` answer could validate |
-| 8 | none recorded | **AR-385**, filed | the runtime: replies cut at the hardcoded 2048-token budget, rejected as a plain `ValueError`, blank on the receipt |
-| 9 | `invalid_candidate` | AR-373, updated | the contract charset again (underscore codes Agency itself shows), forbidden rows without `positive_evidence`, prose after a misleading retry |
+| nine fresh install turns, branch runtime, strict mode | turns |
+|---|---|
+| verifier accepted the install unit with `roster_coverage_gap`; strict critic vetoed | 4 (203, 204, 205, 209) |
+| recruiter reply cut at the 2048-token budget, **AR-385** | 4 first attempts, 2 turns lost |
+| evidence charset residue, **AR-373** | 2 turns lost |
+| `staff_without_safe_team:domain` on coverable `domain:platform` (AR-384 residue) | 3 turns |
+| verifier rejected a staff decision on a waived token | 0 |
 
-AR-384 and AR-385 carry `tracker_url: null` and `pending authorization` in
-the roadmap index; `verify_tracker.py` is red until the owner authorizes the
-GitHub issues, exactly as AR-383 was between filing and mapping.
+The captured helix reply replays offline to an accepted decision with
+`operations-manager` selected. Live turn 203 reaches the same verifier decision
+and dies at the critic. **AR-386** is filed for the critic; it carries
+`tracker_url: null` like AR-384 and AR-385 until the owner authorizes.
 
 ## completed-evidence
 
-**Capture method, reusable.** `capture.py` in the session scratchpad hooks
-`structured_provider.open_no_redirect` and `_read_http_response` (exact HTTP
-request, response headers, raw body), `invoke_structured_provider_result`
-(provider, stage, prompt, schema, parsed value), and the constructors of
-`_NominationValidationError`, `_StaffingVerificationError` and
-`_CriticValidationError` (every failure with its `diagnostic_code` and repair
-contract). Output: `raw/<id>-calls.json`; `analyze.py` cross-references a
-turn's plan, `typed_recall`, response rows and failures. Nothing in the
-runtime records the raw reply, so this is the only way to see it.
+**On the branch (`1711bcaa8d507fd7489ea3f454785e51f29c05d7`).** `typed_staffing_coverage_gaps` in
+`staffing_verifier.py` is the one rule for uncovered, waived and unknown;
+`_typed_shortlists`, `build_deterministic_proposal`, `_selection` and
+`_validate_nomination_decisions` all read it. The receipt projection carries
+`coverage_gaps` per unit. `tests/test_roster_coverage_gap.py` pins the contract
+(10 tests). The conformance anchor for `_validate_nomination_decisions` was
+refreshed. Acceptance record drafted at `candidate_commit: pending` with
+evidence in `docs/roadmap/acceptance/evidence/AR-384-evidence-20260903.txt`.
 
-**Which deployment answered.** The `x-litellm-model-id` response header and
-the gateway's Postgres `LiteLLM_SpendLogs` table (`model`, `model_group`,
-`completion_tokens`, `cache_hit`) name it. The recruiter route was served by
-`anthropic/MiniMax-M3` on 55 of 60 smoke calls and 8 of 9 captured calls; the
-one captured turn the gateway handed to `chatgpt/gpt-5.5` (after a fallback
-the gateway did not log) returned clean codes on every row and was accepted.
+**Capture recipe, branch code.** Run the AR-383 `capture.py` with
+`PYTHONPATH=<worktree>` and the installed venv python
+(`~/.local/share/agency-runtime/venvs/0abe4a77.../bin/python`); the installed
+`agency` CLI is `main`, not the branch. Session scratchpad: `capture384.py`,
+`capture384b.py`, `replay103.py` (offline replay of a captured reply against
+the store snapshot), `timing.py`, `raw/2NN-calls.json`.
 
-**AR-384 instance.** helix-install turn, `unit-install-operation` (plan
-authority, domains `desktop`+`operations`): `typed_recall.uncovered_requirements`
-said `domain:desktop` before the recruiter spoke; the only `desktop` contract
-has modify authority; `capability:operations` is carried by 6 of 291
-contracts. The roster has 0 untyped contracts, so the wildcard coverage escape
-in `_coverage` no longer exists. The repair contract listed the sole coverer
-as `excluded` and asked for a covering complement.
-
-**AR-385 instance.** Three of nine MiniMax replies stopped at exactly 2048
-completion tokens with closed JSON whose last unit row lacked `unit_id`; the
-gateway maps `reasoning_effort: medium` to a thinking budget capped at
-`max_tokens - 1`, so thinking and answer share the budget. Spend log: 5 of 55
-smoke calls at the cap.
-
-**AR-383 status.** Unchanged: filed, traced, reproduced, not fixed. Its
-correction ledger in the issue document still stands and must not be
-re-introduced.
+**Critic verdicts.** `wrong-neighbor-selection` and `planner-domain-mismatch`
+are fair; `selected-team-lacks-live-installation-authority` and
+`missing-implementation-lifecycle-assurance` on a plan-only install contradict
+the advisory doctrine. Details and codes in AR-386.
 
 ## exact-blocker
 
-AR-384. Until a `staff` decision on a unit with a roster-wide uncovered token
-can validate, every install-flavoured request and every review unit carrying
-a scarce domain dies at the recruiter regardless of model, and hiring is
-never reached. The fix is an owner decision between three approaches recorded
-in the issue; option 1 (advisory roster-wide gaps, conjunctive rule kept for
-coverable tokens) is the smallest and matches what the prompt already
-promises.
+AR-386 and AR-385 together. Every install turn that reaches the critic is
+vetoed, and four of nine first recruiter replies were cut at the hardcoded
+2048-token budget. Until both move, no install turn completes and hiring is
+never reached. AR-385 is small and independent; AR-386 is a contract change
+to the critic document and system prompt.
 
 ## same-task-continuity
 
-The four traps from the previous capsule still hold; two more from this
-session:
+The six traps from the previous capsule hold. Three more:
 
-1. **`LITELLM_API_KEY` must be in the invoking shell**; every inline
-   `api_key` in `~/.agency-runtime/agency.yaml` is empty. Source only that
-   variable from `~/.openclaw/.env`.
-2. **`agency route` passes `store=None`**; never read hiring from it.
-3. **`run_preflight` needs a `capability_receipt`** from
-   `native_adapter_capability_receipt(host, platform=..., session_id=...,
-   trace_id=...)` or everything is `execution_host_unproven`.
-4. **Gateway response caching replays identical prompts** in 0.01s with
-   `total_inference_calls: 0`; five receipts at 16:15 UTC are one cached
-   answer. Fresh wording every time.
-5. **`actual_model` on receipts is the route alias**, never the deployment.
-   Read the header or the spend log. gpt-5.5 spend rows show zero tokens
-   because the gateway's cost tracking fails for that model; the rows are
-   real calls.
-6. **A blank rejected recruiter attempt on a receipt is not "no information"**;
-   it is AR-385's plain `ValueError` path. Check `completion_tokens` in the
-   spend log before reading anything else into it.
+1. **The decision-conformance eval fingerprints the tree.** Editing any
+   package or test file while it runs yields `source_unchanged: false` and
+   `passed: false` even with 168 of 168 killed. Rerun on a quiet tree.
+2. **`domain:platform` is a vocabulary collision.** The planner means the
+   operating system; the roster's `platform` domain is API platforms and its
+   only eligible coverer is `api-platform-engineer`. It is coverable, so it
+   stays mandatory and the recruiter is pushed to a wrong neighbour. This is
+   AR-384's option 2 and is not fixed.
+3. **A unit whose required pick is ineligible is now staffed from its
+   acceptable set** once unserved tokens are waived. The strict critic caught
+   one such wrong neighbour; balanced and fast modes have no critic.
 
-Store backups: `agency.db.pre-preflight-smoke` (previous session scratchpad)
-and `agency.db.pre-capture-123724` (this session's). Five more preflight turns
-were persisted; no hire landed (`agent_workers` 291, `agent_hiring_cases` 41).
+Store backups: `agency.db.pre-ar384-132820` (this session's scratchpad) plus
+the earlier two. Nine more preflight turns persisted; no hire landed
+(`agent_workers` 291).
 
 ## next-bounded-work-package
 
 In this order.
 
-1. **Owner decision on AR-384's approach**, then implement it. Code on the
-   verifier path: fast Python spine under `-W error`, `ruff check`, `ruff
-   format --check`, `agency eval routing`, `agency eval decision-conformance`.
-   Re-measure with fresh wording; acceptance is the helix turn staffing
-   `unit-install-operation`.
-2. **AR-385**: stage-owned reply budget and a truncation record on the
-   receipt. Independent of 1; small.
-3. **AR-373 residue**: admit `_` in nomination evidence (the ineligibility
-   vocabulary Agency shows), default absent evidence arrays on forbidden
-   rows. Then re-run the live criterion.
-4. **Fix AR-383** per its Approach. Carry the hints beside the turn context,
-   preserve the rejected projection's reason, keep the all-or-nothing rule.
-5. **Explain the 4-of-5 gap divergence** (`_all_gap_units` /
-   `_hireable_gap_units` in `selector/pipeline.py`), then re-measure hiring.
-6. **Decide AR-370**; the drafted acceptance record from the previous session
-   scratchpad is honest about criteria 3, 5 and 6 having nothing implemented.
+1. **AR-385**: stage-owned reply budget and a truncation record on the receipt.
+   Four of nine first attempts hit the cap this session.
+2. **AR-386**: state the advisory doctrine and the waived-gap semantics in the
+   critic contract and system prompt; record critic codes on the receipt;
+   re-measure the nine wordings. Acceptance is one install turn completing.
+3. **AR-384 closure**: second PR freezing `candidate_commit` to `1711bcaa8d507fd7489ea3f454785e51f29c05d7`,
+   `scripts/verify_acceptance.py --issue AR-384 --all`, flip to `done`.
+   Criterion 2 is evidenced at the verifier; say so if the verifier balks.
+4. **AR-373 residue**: admit `_` in nomination evidence, default absent
+   evidence arrays on forbidden rows.
+5. **AR-384 option 2**: constrain planner domains to what the roster serves,
+   starting with the `platform` collision.
+6. **Fix AR-383** per its Approach; then the 4-of-5 gap divergence; then AR-370.
 
 ## verification
 
-Docs-only work: `docs_metadata.py --check`, `update_worklog.py --check`,
-`update_policy_availability.py --check` (needs the package importable: run
-with the installed venv's python and `PYTHONPATH` at the checkout),
-`verify_docs.py`, `git diff --check`. All green at `152bdf0b`.
-`verify_tracker.py` reports `missing_remote=['AR-384', 'AR-385']` by design
-until the tracker mapping is authorized.
-
-The installed runtime (`venvs/0abe4a77...`) is byte-identical to `main` for
-the whole package, verified by directory diff, so every measurement here is of
-current code.
+At `1711bcaa8d507fd7489ea3f454785e51f29c05d7`: ruff check and format clean; `tests/test_roster_coverage_gap.py`
+10 passed; affected suites 633 passed, 2 skipped; named fast spine 1004 passed,
+3 skipped under `-W error`; `agency eval routing` passed; decision-conformance
+168 killed, 0 survived, `source_unchanged: true`; `docs_metadata.py --check`,
+`update_worklog.py --check`, `update_policy_availability.py --check`,
+`verify_docs.py`, `git diff --check` all green. `verify_tracker.py` reports
+`missing_remote=['AR-384', 'AR-385', 'AR-386']` by design.
 
 ## constraints
 
-- `agency-hiring-critic.timeout_ms` is still **120000**, unevaluated; backup
-  `agency.yaml.pre-critic-timeout` in the previous session scratchpad.
-- `agency.yaml` is operator configuration. Reordering the recruiter route's
-  deployments (gpt-5.5 before MiniMax) would likely raise the staffed rate,
-  and is the owner's call, not a branch change.
+- `agency-hiring-critic.timeout_ms` is still **120000**, unevaluated.
+- `agency.yaml` is operator configuration; recruiter deployment order and
+  `workforce.mode: strict` are the owner's call, not branch changes.
 - `max_hires_per_day` is the default 3.
 - Never commit to `main`; branch in a worktree, PR, merge with `--merge`.
   Ledger dance on every substantive commit. Tracker writes need authorization.
