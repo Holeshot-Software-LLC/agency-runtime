@@ -88,12 +88,14 @@ from agency_runtime.core.workforce.reranker_provider import (
 )
 from agency_runtime.core.workforce.staffing_verifier import (
     REQUIREMENT_AXES,
+    ROSTER_COVERAGE_GAP,
     StaffingBudget,
     StaffingContext,
     StaffingDecision,
     build_verified_proposal,
     is_wildcard_coverage,
     typed_staffing_coverage,
+    typed_staffing_coverage_gaps,
     typed_staffing_ineligibility,
     typed_staffing_requirements,
     verify_staffing,
@@ -198,7 +200,9 @@ _NOMINATION_REPAIR_REQUIREMENTS = {
     "staff_without_safe_team": (
         "Return staff only when the classifications admit a safe team: every required candidate "
         "plus zero or more acceptable candidates, no forbidden candidates, and no more than "
-        "maximum_selected_per_unit must cover every exact typed requirement. Required is a "
+        "maximum_selected_per_unit must cover every exact typed requirement outside "
+        "safe_team_contract.roster_uncovered_requirement_ids, which the runtime waives and "
+        "records. Required is a "
         "mandatory-selection constraint, not an emphasis label. Reclassify nonessential "
         "candidates as acceptable and add faithful coverage complements when needed. Declare gap "
         "only when no supplied candidate or combination is semantically faithful."
@@ -293,9 +297,12 @@ _RECRUITER_SYSTEM = (
     "of stack enrichment is not evidence of incapability; judge their stack fit semantically; "
     "execution_eligible is a hard boundary. Candidate rows are a bounded coverage-first recall "
     "sample and need not repeat every detail card, so omission is not exclusion. Do not guess "
-    "typed coverage from a display name or prose card. uncovered_requirements lists what the "
-    "roster's declared typed data does not cover — it is honest evidence of enrichment limits, "
-    "not proof the unit cannot be staffed, and it never mandates a gap on its own. Candidates marked "
+    "typed coverage from a display name or prose card. uncovered_requirements lists what no "
+    "eligible worker's declared typed data covers. Its waived_requirements subset is declared by "
+    "some worker the runtime cannot serve for this unit; the runtime waives those from team "
+    "sufficiency and records them on the receipt, so they never mandate a gap. An uncovered "
+    "requirement outside waived_requirements is declared by no typed worker at all; unless an "
+    "untyped_candidate faithfully fits, a gap is the honest answer for that unit. Candidates marked "
     "untyped_candidate have no audited typed coverage fields; their covers list is empty because "
     "their fit cannot be proven or disproven deterministically — judge them from their outcomes, "
     "scope_qualifiers, and not_for card fields, not from typed coverage.\n\n"
@@ -317,7 +324,9 @@ _RECRUITER_SYSTEM = (
     "The runtime derives selected from these classifications. Before returning staff, verify that "
     "some subset of required and acceptable candidates contains every required candidate, uses "
     "no more than response_contract.maximum_selected_per_unit slots, and covers every exact "
-    "typed_recall requirement. Do not label every strong candidate required; use acceptable for "
+    "typed_recall requirement outside waived_requirements; those are recorded on the receipt as "
+    "roster coverage gaps and never held against the team. Do not label every strong candidate "
+    "required; use acceptable for "
     "optional alternatives and complements. Do not mark a necessary "
     "coverage complement forbidden merely because it is secondary. A gap decision must not "
     "leave a semantically faithful candidate behind.\n"
@@ -343,7 +352,8 @@ _RECRUITER_REPAIR_SYSTEM = (
     "the runtime retains its previously validated row.\n\n"
     "For each listed unit, use typed_recall as bounded, non-ranked coverage evidence whose "
     "requirements and uncovered_requirements are exact over the full roster. "
-    "uncovered_requirements records declared-data limits honestly; it never mandates a gap. A "
+    "uncovered_requirements records declared-data limits honestly; its waived_requirements "
+    "subset is waived from team sufficiency by the runtime and never mandates a gap. A "
     "staff response should include every semantically faithful coverage complement needed "
     "within the per-unit limit. Then reason "
     "from the ideal specialist in an open-ended pool and rank "
@@ -354,7 +364,8 @@ _RECRUITER_REPAIR_SYSTEM = (
     "selected: every required candidate is mandatory, acceptable candidates are optional team "
     "members, and forbidden candidates are excluded. A staff decision must admit a subset that "
     "contains every required candidate, stays within maximum_selected_per_unit, and covers every "
-    "exact requirement. A gap decision must leave no safe team. Required and "
+    "exact requirement outside waived_requirements, which the runtime waives and records. "
+    "A gap decision must leave no safe team. Required and "
     "acceptable candidates need positive_evidence as unique lowercase hyphenated reason codes, "
     "and forbidden candidates need negative_evidence in the same code format; never return "
     "evidence prose. Return score as a JSON number from 0 through 1, never a Boolean, string, "
@@ -666,6 +677,10 @@ class _SafeTeamRepairContract:
     uncovered_requirement_ids: tuple[str, ...]
     uncovered_after_required_ids: tuple[str, ...]
     candidate_rows: tuple[tuple[str, str, tuple[str, ...]], ...]
+    # Tokens no eligible contract covers (ADR-0198). They are waived from the
+    # team search and never listed as uncovered above, so a repair is not asked
+    # to find a complement that cannot exist (AR-384).
+    roster_uncovered_requirement_ids: tuple[str, ...] = ()
 
     def as_prompt_dict(self) -> dict[str, Any]:
         required_count = len(self.required_agent_ids)
@@ -680,6 +695,7 @@ class _SafeTeamRepairContract:
             "ranked_team_search_agent_ids": list(self.team_search_agent_ids),
             "uncovered_requirement_ids": list(self.uncovered_requirement_ids),
             "uncovered_after_required_ids": list(self.uncovered_after_required_ids),
+            "roster_uncovered_requirement_ids": list(self.roster_uncovered_requirement_ids),
             "ranked_candidates": [
                 {
                     "agent_id": agent_id,
@@ -1557,7 +1573,9 @@ def _typed_shortlists(
     for unit in plan.units:
         required = typed_staffing_requirements(unit)
         candidates: list[tuple[str, frozenset[str], tuple[str, ...]]] = []
-        eligible_coverage: set[str] = set()
+        # One rule for "the roster cannot cover this": the verifier records and
+        # waives exactly the tokens the recruiter is told are waived (ADR-0198).
+        gaps = typed_staffing_coverage_gaps(unit, contracts, context)
         for contract in contracts:
             # ADR-0118 / settled inference-only contract: do not exclude
             # candidates by a deterministic domain-overlap filter. Most roster
@@ -1584,15 +1602,14 @@ def _typed_shortlists(
             ineligibility = (
                 () if context is None else typed_staffing_ineligibility(unit, contract, context)
             )
-            if not ineligibility and not wildcard:
-                eligible_coverage.update(coverage)
             candidates.append((contract.agent_id, declared, ineligibility, wildcard))
         selected = _bounded_typed_candidates(required, candidates)
         result.append(
             {
                 "unit_id": unit.unit_id,
                 "requirements": list(required),
-                "uncovered_requirements": sorted(set(required) - eligible_coverage),
+                "uncovered_requirements": sorted(gaps.uncovered),
+                "waived_requirements": sorted(gaps.waived),
                 "role_anchors": [],
                 "candidate_count": len(candidates),
                 "candidate_rows_complete": len(selected) == len(candidates),
@@ -2407,6 +2424,8 @@ def _semantic_staffing_classes(
 def _uncoverable_requirement_axis(
     unit: WorkUnit,
     contracts: Sequence[WorkforceContract],
+    *,
+    waived: frozenset[str] = frozenset(),
 ) -> str:
     """Return the first requirement axis the supplied contracts cannot cover.
 
@@ -2419,15 +2438,16 @@ def _uncoverable_requirement_axis(
     which is why this reported nothing on every live failure until 2026-08-16.
 
     Pass the ranked contracts to get the actionable answer; a bounded repair can
-    then name the axis to add. Roster-wide uncoverability is a strict subset: if
-    no contract anywhere covers an axis, no ranking covers it either.
+    then name the axis to add. A token no eligible contract anywhere covers is
+    ``waived`` (ADR-0198): the verifier never holds it against a team, so it is
+    never the axis a repair is asked to cover.
     """
 
     covered: set[str] = set()
     for contract in contracts:
         covered |= typed_staffing_coverage(unit, contract)
     for requirement in typed_staffing_requirements(unit):
-        if requirement not in covered:
+        if requirement not in covered and requirement not in waived:
             return requirement.split(":", 1)[0]
     return ""
 
@@ -2439,6 +2459,7 @@ def _failure_axis(
     context: Any,
     *,
     excluded: Sequence[str] = (),
+    waived: frozenset[str] = frozenset(),
 ) -> str:
     """Return the axis the team search could not cover, over the set it searched.
 
@@ -2462,7 +2483,7 @@ def _failure_axis(
         except Exception:
             return ""
         scope = executable or scope
-    return _uncoverable_requirement_axis(unit, scope)
+    return _uncoverable_requirement_axis(unit, scope, waived=waived)
 
 
 def _top_ranked_ineligibility(
@@ -2498,6 +2519,8 @@ def _missing_typed_requirements(
     unit: WorkUnit,
     agent_ids: Sequence[str],
     contracts_by_id: Mapping[str, WorkforceContract],
+    *,
+    waived: frozenset[str] = frozenset(),
 ) -> tuple[str, ...]:
     requirements = typed_staffing_requirements(unit)
     covered: set[str] = set()
@@ -2505,7 +2528,11 @@ def _missing_typed_requirements(
         contract = contracts_by_id.get(agent_id)
         if contract is not None:
             covered.update(typed_staffing_coverage(unit, contract))
-    return tuple(requirement for requirement in requirements if requirement not in covered)
+    return tuple(
+        requirement
+        for requirement in requirements
+        if requirement not in covered and requirement not in waived
+    )
 
 
 def _safe_team_repair_contract(
@@ -2514,6 +2541,7 @@ def _safe_team_repair_contract(
     contracts: Sequence[WorkforceContract],
     *,
     maximum_selected_per_unit: int,
+    waived: frozenset[str] = frozenset(),
 ) -> _SafeTeamRepairContract:
     contracts_by_id = {item.agent_id: item for item in contracts}
     requirements = typed_staffing_requirements(unit)
@@ -2545,9 +2573,16 @@ def _safe_team_repair_contract(
         requirements=requirements,
         required_agent_ids=required,
         team_search_agent_ids=team_search,
-        uncovered_requirement_ids=_missing_typed_requirements(unit, team_search, contracts_by_id),
-        uncovered_after_required_ids=_missing_typed_requirements(unit, required, contracts_by_id),
+        uncovered_requirement_ids=_missing_typed_requirements(
+            unit, team_search, contracts_by_id, waived=waived
+        ),
+        uncovered_after_required_ids=_missing_typed_requirements(
+            unit, required, contracts_by_id, waived=waived
+        ),
         candidate_rows=tuple(candidate_rows),
+        roster_uncovered_requirement_ids=tuple(
+            requirement for requirement in requirements if requirement in waived
+        ),
     )
 
 
@@ -2572,11 +2607,15 @@ def _validate_nomination_decisions(
             # The record is bounded at 8 for receipt size; scoring the prefix
             # would report an axis the ninth candidate covers as uncoverable,
             # which is the one direction this field must never be wrong in.
+            # Tokens the roster cannot cover were waived by the team search
+            # (ADR-0198), so they are neither the axis nor a repair target.
+            waived = frozenset(typed_staffing_coverage_gaps(unit, contracts, context).waived)
             repair_contract = _safe_team_repair_contract(
                 unit,
                 proposal_row,
                 contracts,
                 maximum_selected_per_unit=maximum_selected_per_unit,
+                waived=waived,
             )
             axis = _failure_axis(
                 unit,
@@ -2584,6 +2623,7 @@ def _validate_nomination_decisions(
                 contracts,
                 context,
                 excluded=(semantic_forbidden or {}).get(unit.unit_id, ()),
+                waived=waived,
             )
             failures.append(
                 _NominationFailure(
@@ -2972,6 +3012,8 @@ _INFERRED_GAP_VERIFIER_CODES = frozenset(
         "no_safe_sufficient_team",
         "required_agents_missing",
         "recruiter_abstained",
+        # ADR-0198: the honest reason a gap is real, never a verifier defect.
+        ROSTER_COVERAGE_GAP,
     }
 )
 

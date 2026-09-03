@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import itertools
 import re
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import asdict, dataclass
 from functools import lru_cache
 from typing import Any
@@ -111,9 +111,19 @@ class VerifiedUnitStaffing:
     unavailable_shadows: tuple[ShadowEvidence, ...]
 
 
+# A typed requirement some enabled typed contract declares but none covers
+# eligibly for this unit. Team sufficiency waives it (ADR-0198, AR-384): no
+# ranking could ever have satisfied it, so holding it against the team only
+# turned a coverable specialty into a mandatory gap. The decision records the
+# token instead. A token no contract declares at all is not waived: that is a
+# genuine missing specialty, and hiring owns it.
+ROSTER_COVERAGE_GAP = "roster_coverage_gap"
+
 # Verifier findings that annotate an accepted staffing decision instead of
 # vetoing it (staff-first doctrine). Everything not listed here stays fatal.
-ADVISORY_STAFFING_CODES: frozenset[str] = frozenset({"independent_assurance_missing"})
+ADVISORY_STAFFING_CODES: frozenset[str] = frozenset(
+    {"independent_assurance_missing", ROSTER_COVERAGE_GAP}
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -221,8 +231,13 @@ def _investigation_rule(_contract: WorkforceContract, lifecycle, _artifacts) -> 
     return bool(lifecycle & {"discovery", "review", "testing"})
 
 
-def _operations_rule(_contract: WorkforceContract, lifecycle, _artifacts) -> bool:
-    return bool(lifecycle & {"coordination", "release"})
+def _operations_rule(contract: WorkforceContract, lifecycle, _artifacts) -> bool:
+    # AR-384: the planner names `operations` on every install-flavoured plan
+    # unit, and the lifecycle reading alone admitted 6 of 291 contracts, none of
+    # them an operations planner. A contract whose audited domain is operations
+    # owns that capability as surely as a release-phase contract does; the
+    # lifecycle reading predates domain enrichment and never saw that field.
+    return bool(lifecycle & {"coordination", "release"}) or "operations" in contract.domains
 
 
 def _planning_rule(contract: WorkforceContract, lifecycle, _artifacts) -> bool:
@@ -409,7 +424,10 @@ REQUIREMENT_AXES: frozenset[str] = frozenset(
     }
 )
 """Every axis `_requirements` can name. Team sufficiency is conjunctive across
-all of them, so one uncovered axis defeats every possible team."""
+every token the roster can serve, so one such token left uncovered defeats
+every possible team. A token some contract declares but no eligible contract
+covers for this unit is waived and recorded as `roster_coverage_gap` instead
+(ADR-0198); a token no contract declares stays mandatory."""
 
 
 def _requirements(unit: WorkUnit) -> tuple[str, ...]:
@@ -480,10 +498,77 @@ def is_wildcard_coverage(unit: WorkUnit, contract: WorkforceContract) -> bool:
     )
 
 
+@dataclass(frozen=True, slots=True)
+class RosterCoverageGaps:
+    """Requirement tokens the roster leaves uncovered for one unit (ADR-0198).
+
+    ``uncovered`` is the rule the recruiter is shown as
+    ``typed_recall.uncovered_requirements``: no enabled contract that passes
+    eligibility covers the token, wildcards excluded because their coverage is
+    not positive evidence. ``waived`` is the subset some enabled typed contract
+    declares anyway: the roster has the specialty but cannot serve it under
+    this unit's authority, host, platform or tools. The verifier drops those
+    from team sufficiency and records them as ``roster_coverage_gap``. The
+    remainder, tokens no contract declares at all, stay mandatory so a named
+    specialty nobody has still becomes a gap for hiring rather than a generic
+    staffing.
+    """
+
+    uncovered: tuple[str, ...]
+    waived: tuple[str, ...]
+
+    @property
+    def unknown(self) -> tuple[str, ...]:
+        return tuple(item for item in self.uncovered if item not in self.waived)
+
+
+def _roster_coverage_gaps(
+    unit: WorkUnit,
+    contracts: Iterable[WorkforceContract],
+    context: StaffingContext | None,
+) -> RosterCoverageGaps:
+    """Split the unit's requirements the roster cannot cover into waived and unknown.
+
+    AR-384: the planner draws tokens from the roster vocabulary, not from what
+    the roster can cover for this unit's authority and host. When the only
+    contract declaring ``domain:desktop`` carries modify authority, a plan unit
+    naming that domain is provably unstaffable before the recruiter speaks, and
+    a conjunctive sufficiency check rejected every honest ``staff`` answer.
+    Without a context eligibility is not applied, exactly as the recall block
+    does, so nothing is waived and ``uncovered`` is what no contract declares.
+    """
+
+    declared: set[str] = set()
+    covered: set[str] = set()
+    for contract in contracts:
+        if not contract.enabled or is_wildcard_coverage(unit, contract):
+            continue
+        coverage = _coverage(unit, contract)
+        declared.update(coverage)
+        if context is not None and _eligibility(unit, contract, context):
+            continue
+        covered.update(coverage)
+    uncovered = tuple(item for item in _requirements(unit) if item not in covered)
+    return RosterCoverageGaps(
+        uncovered=uncovered,
+        waived=tuple(item for item in uncovered if item in declared),
+    )
+
+
 def typed_staffing_requirements(unit: WorkUnit) -> tuple[str, ...]:
     """Expose the deterministic requirements used to prove team sufficiency."""
 
     return _requirements(unit)
+
+
+def typed_staffing_coverage_gaps(
+    unit: WorkUnit,
+    contracts: Iterable[WorkforceContract],
+    context: StaffingContext | None = None,
+) -> RosterCoverageGaps:
+    """Expose the roster-wide coverage gaps the verifier records and waives."""
+
+    return _roster_coverage_gaps(unit, contracts, context)
 
 
 def typed_staffing_coverage(
@@ -510,8 +595,10 @@ def _minimum_team(
     ranked_ids: tuple[str, ...],
     contracts: dict[str, WorkforceContract],
     maximum: int,
+    *,
+    waived: frozenset[str] = frozenset(),
 ) -> tuple[str, ...]:
-    required = set(_requirements(unit))
+    required = set(_requirements(unit)).difference(waived)
     for size in range(1, min(maximum, len(ranked_ids)) + 1):
         for combination in itertools.combinations(ranked_ids, size):
             combined: set[str] = set()
@@ -528,14 +615,17 @@ def _minimum_team_with_required(
     contracts: dict[str, WorkforceContract],
     required_ids: frozenset[str],
     maximum: int,
+    *,
+    waived: frozenset[str] = frozenset(),
 ) -> tuple[str, ...]:
     if not required_ids:
-        return _minimum_team(unit, ranked_ids, contracts, maximum)
+        return _minimum_team(unit, ranked_ids, contracts, maximum, waived=waived)
     if not required_ids <= set(ranked_ids) or len(required_ids) > maximum:
         return ()
     ordered_required = tuple(item for item in ranked_ids if item in required_ids)
     covered = set().union(*(_coverage(unit, contracts[item]) for item in ordered_required))
-    missing = set(_requirements(unit)).difference(covered)
+    requirements = set(_requirements(unit)).difference(waived)
+    missing = requirements.difference(covered)
     if not missing:
         return ordered_required
     remaining = tuple(item for item in ranked_ids if item not in required_ids)
@@ -544,7 +634,7 @@ def _minimum_team_with_required(
             combined = set(covered)
             for agent_id in additions:
                 combined.update(_coverage(unit, contracts[agent_id]))
-            if set(_requirements(unit)) <= combined:
+            if requirements <= combined:
                 chosen = {*ordered_required, *additions}
                 return tuple(item for item in ranked_ids if item in chosen)
     return ()
@@ -657,6 +747,12 @@ def _selection(
         _reason(reasons, "forbidden_agent_selected", unit_id=unit.unit_id)
     if set(row.runner_up) & (set(row.selected) | set(row.forbidden)):
         _reason(reasons, "runner_up_set_invalid", unit_id=unit.unit_id)
+    # ADR-0198 / AR-384: a token the roster declares but cannot serve for this
+    # unit cannot be held against any team. Record each one and prove
+    # sufficiency over the rest.
+    waived = _roster_coverage_gaps(unit, roster.values(), context).waived
+    for token in waived:
+        _reason(reasons, ROSTER_COVERAGE_GAP, unit_id=unit.unit_id, detail=token)
     # ADR-0087: the model's eligible required nomination is the selection
     # authority. Role anchors can order recall and drive the offline-only floor,
     # but determinism must NOT re-derive required from role_anchors in an online
@@ -668,6 +764,7 @@ def _selection(
         roster,
         frozenset(row.required),
         budget.max_selected_per_unit,
+        waived=frozenset(waived),
     )
     if row.selected != expected:
         _reason(reasons, "selected_not_deterministic_minimum", unit_id=unit.unit_id)
@@ -1112,12 +1209,16 @@ def build_deterministic_proposal(
             for agent_id, score in semantic
             if agent_id not in forbidden_ids and not _eligibility(unit, roster[agent_id], context)
         ]
+        # ADR-0198 / AR-384: the same waiver the verifier applies, so the
+        # proposal it recomputes agrees with the one built here.
+        waived = frozenset(_roster_coverage_gaps(unit, roster.values(), context).waived)
         selected = _minimum_team_with_required(
             unit,
             tuple(agent_id for agent_id, _score in executable),
             roster,
             required_ids,
             active_budget.max_selected_per_unit,
+            waived=waived,
         )
         runner_up = tuple(agent_id for agent_id, _score in executable if agent_id not in selected)[
             :2
@@ -1178,6 +1279,7 @@ def build_deterministic_proposal(
                 roster,
                 invariant_ids,
                 active_budget.max_selected_per_unit,
+                waived=waived,
             )
             if alternative == selected:
                 alternative = ()
@@ -1187,6 +1289,7 @@ def build_deterministic_proposal(
                 tuple(agent_id for agent_id, _score in executable if agent_id not in selected),
                 roster,
                 active_budget.max_selected_per_unit,
+                waived=waived,
             )
         alternative_score = min(
             (score_by_id[item] for item in alternative),
@@ -1260,6 +1363,7 @@ build_verified_proposal = build_deterministic_proposal
 
 __all__ = [
     "AbstentionReason",
+    "RosterCoverageGaps",
     "StaffingBudget",
     "StaffingContext",
     "StaffingDecision",
@@ -1267,6 +1371,7 @@ __all__ = [
     "build_deterministic_proposal",
     "build_verified_proposal",
     "typed_staffing_coverage",
+    "typed_staffing_coverage_gaps",
     "typed_staffing_ineligibility",
     "typed_staffing_requirements",
     "verify_staffing",
