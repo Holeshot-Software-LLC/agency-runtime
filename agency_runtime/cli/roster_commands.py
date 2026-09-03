@@ -1011,11 +1011,11 @@ def _routing_operation(*, session_id: str, task: str, limit: int) -> _RoutingOpe
             ) from direct_error
 
 
-def _single_verified_route_host(store: Any) -> dict[str, Any]:
-    """Return one exact installation-backed host context for CLI diagnostics."""
+def _verified_route_hosts(store: Any) -> list[dict[str, Any]]:
+    """Return every installation-backed host context available to a CLI route."""
 
     if store is None:
-        return {}
+        return []
     from agency_runtime.core.host_capabilities import (
         diagnostic_installation_capability_receipt,
     )
@@ -1027,31 +1027,56 @@ def _single_verified_route_host(store: Any) -> dict[str, Any]:
         # This proof only narrows a diagnostic result. Any inventory or
         # compatibility failure must remove the optional authority rather than
         # make the otherwise read-only CLI route unavailable.
-        return {}
-    verified = [
-        item
-        for item in statuses
-        if item.get("effective_enabled") is True
-        and isinstance(item.get("execution_capabilities"), dict)
-        and item["execution_capabilities"].get("status") == "native-installation-verified"
-    ]
-    if len(verified) != 1:
-        return {}
-    selected = verified[0]
-    host = str(selected.get("host") or "")
-    platform = str(selected["execution_capabilities"].get("platform") or "")
-    receipt = diagnostic_installation_capability_receipt(
-        selected["execution_capabilities"],
-        surface=host,
-        platform=platform,
-    )
-    if receipt is None:
-        return {}
-    return {
-        "host": host,
-        "platform": platform,
-        "capability_receipt": receipt,
-    }
+        return []
+    contexts: list[dict[str, Any]] = []
+    for selected in statuses:
+        if selected.get("effective_enabled") is not True:
+            continue
+        capabilities = selected.get("execution_capabilities")
+        if (
+            not isinstance(capabilities, dict)
+            or capabilities.get("status") != "native-installation-verified"
+        ):
+            continue
+        host = str(selected.get("host") or "")
+        platform = str(capabilities.get("platform") or "")
+        receipt = diagnostic_installation_capability_receipt(
+            capabilities,
+            surface=host,
+            platform=platform,
+        )
+        if receipt is None:
+            continue
+        contexts.append({"host": host, "platform": platform, "capability_receipt": receipt})
+    return sorted(contexts, key=lambda item: item["host"])
+
+
+def _route_host_context(store: Any, requested: str = "") -> tuple[dict[str, Any], dict[str, Any]]:
+    """Resolve one host context for a CLI route, and say why when there is none.
+
+    AR-374: this previously proved a host only when *exactly one* was verified,
+    so an ordinary multi-host installation proved none and every candidate was
+    rejected `execution_host_unproven`. More installation meant less capability.
+    A caller now disambiguates with `--host`; the single-host case is unchanged.
+    """
+
+    verified = _verified_route_hosts(store)
+    available = [item["host"] for item in verified]
+    wanted = str(requested or "").strip().casefold()
+    if wanted:
+        for item in verified:
+            if item["host"] == wanted:
+                return item, {"host_proof": "requested", "verified_hosts": available}
+        return {}, {
+            "host_proof": "requested_host_unverified",
+            "requested_host": wanted,
+            "verified_hosts": available,
+        }
+    if len(verified) == 1:
+        return verified[0], {"host_proof": "single_verified", "verified_hosts": available}
+    if not verified:
+        return {}, {"host_proof": "no_verified_host", "verified_hosts": []}
+    return {}, {"host_proof": "ambiguous_host", "verified_hosts": available}
 
 
 def cmd_route(args: argparse.Namespace) -> int:
@@ -1113,7 +1138,9 @@ def cmd_route(args: argparse.Namespace) -> int:
             else:
                 print("No active agents available", file=sys.stderr)
             return 1
-        host_context = _single_verified_route_host(operation.store)
+        host_context, host_proof = _route_host_context(
+            operation.store, getattr(args, "host", "") or ""
+        )
         routing = route(
             "cli",
             args.task,
@@ -1138,6 +1165,7 @@ def cmd_route(args: argparse.Namespace) -> int:
                 "task": args.task,
                 "routing": routing,
                 "candidates": candidate_rows,
+                "host_proof": host_proof,
             }
         )
     else:
@@ -1146,6 +1174,7 @@ def cmd_route(args: argparse.Namespace) -> int:
             print(f"selected: {', '.join(selected)}")
         else:
             _print_no_selection_diagnostic(routing)
+        _print_host_proof(host_proof)
         print(
             f"confidence={float(routing.get('confidence', 0.0)):.3f} "
             f"source={routing.get('provider', 'deterministic')} "
@@ -1158,6 +1187,32 @@ def cmd_route(args: argparse.Namespace) -> int:
             print(f"companion actions: {', '.join(routing['companion_actions'])}")
         _print_disabled_candidate_shadows(routing)
     return 0
+
+
+def _print_host_proof(host_proof: dict[str, Any]) -> None:
+    """Say which host, if any, the ranking was proven against.
+
+    AR-374: without this the caller cannot tell a ranking that survived
+    eligibility from one where every candidate was rejected
+    `execution_host_unproven` and the list is score order alone.
+    """
+
+    proof = str(host_proof.get("host_proof") or "")
+    hosts = ", ".join(host_proof.get("verified_hosts") or ()) or "none"
+    if proof in {"requested", "single_verified"}:
+        return
+    if proof == "ambiguous_host":
+        print(
+            f"host: not proven — {hosts} are all verified; pass --host to rank against one of them"
+        )
+    elif proof == "requested_host_unverified":
+        print(
+            f"host: not proven — requested {host_proof.get('requested_host', '')!r} "
+            f"is not verified; verified hosts: {hosts}"
+        )
+    else:
+        print("host: not proven — no verified host on this installation")
+    print("      every candidate is ineligible, so the list below is score order only")
 
 
 def _print_no_selection_diagnostic(routing: dict[str, Any]) -> None:
@@ -1253,16 +1308,24 @@ def cmd_explain(args: argparse.Namespace) -> int:
     if operation.receipt is not None:
         payload = operation.receipt
     elif operation.snapshot is not None:
-        host_context = _single_verified_route_host(operation.store)
-        payload = explain_route(
-            args.session_id,
-            args.task,
-            operation.snapshot.catalog,
-            limit=args.limit,
-            config=operation.snapshot.config,
-            store=operation.store,
-            **host_context,
+        host_context, host_proof = _route_host_context(
+            operation.store, getattr(args, "host", "") or ""
         )
+        payload = {
+            **explain_route(
+                args.session_id,
+                args.task,
+                operation.snapshot.catalog,
+                limit=args.limit,
+                config=operation.snapshot.config,
+                store=operation.store,
+                **host_context,
+            ),
+            # AR-374: an explanation that cannot say which host it was proven
+            # against reads the same whether eligibility passed or rejected
+            # every candidate.
+            "host_proof": host_proof,
+        }
     else:
         raise RuntimeError("routing operation returned no direct or brokered result")
     _print_json(payload)

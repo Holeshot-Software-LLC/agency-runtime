@@ -1,0 +1,23 @@
+AR-374 evidence — a multi-host installation can now prove a host
+captured 2026-09-03 on the Linux box, all five hosts installed and enabled
+
+Verified hosts on this installation:
+   ['codex', 'hermes', 'openclaw']
+
+BEFORE: _single_verified_route_host required len(verified) == 1, so three
+verified hosts proved none and every candidate was rejected:
+  conf=0.0  rejections=257  {'execution_host_unproven': 257}
+
+$ agency route --json --limit 3 "Add a typed async Python CLI ..."   # no --host
+  host_proof: {'host_proof': 'ambiguous_host', 'verified_hosts': ['codex', 'hermes', 'openclaw']}
+  rejections: 257 {'execution_host_unproven': 257}
+
+$ agency route --json --limit 3 --host codex "Add a typed async Python CLI ..."
+  host_proof : {'host_proof': 'requested', 'verified_hosts': ['codex', 'hermes', 'openclaw']}
+  rejections : 219 (was 257 blanket execution_host_unproven)
+  eligible   : 72 of 291
+  now real   : ['missing_capabilities:gis-sdk,scene-profiler,web-3d-toolchain', 'missing_capabilities:axe,browser-interaction,lighthouse,screen-reader', 'missing_capabilities:crm-reader,product-analytics-reader,web-research']
+  status     : inference_unavailable | inference_unavailable, workforce_provider_unavailable
+
+The remaining blocker is operator configuration, reported honestly:
+  status=inference_unavailable error=inference_unavailable, workforce_provider_unavailable

@@ -214,8 +214,11 @@ def test_cli_explain_json(
     reset_config_cache()
     monkeypatch.setattr(
         roster_commands,
-        "_single_verified_route_host",
-        lambda _store: _verified_diagnostic_context(),
+        "_route_host_context",
+        lambda _store, _requested="": (
+            _verified_diagnostic_context(),
+            {"host_proof": "single_verified", "verified_hosts": ["codex"]},
+        ),
     )
     _seed_store(db)
 

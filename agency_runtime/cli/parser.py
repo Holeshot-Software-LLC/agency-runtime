@@ -918,6 +918,11 @@ def _register_selection(sub: Subparsers, handlers: Handlers) -> None:
     route.add_argument("task", help="Task description to route")
     route.add_argument("--limit", type=_positive_int, default=5, help="Maximum specialists")
     route.add_argument("--json", action="store_true", help="Print machine-readable results")
+    route.add_argument(
+        "--host",
+        default="",
+        help="Rank against one verified execution host (AR-374)",
+    )
     _bind(route, handlers, "cmd_route")
 
     policy_p = sub.add_parser(
@@ -935,6 +940,11 @@ def _register_selection(sub: Subparsers, handlers: Handlers) -> None:
         type=_positive_int,
         default=10,
         help="Number of candidates to include",
+    )
+    explain.add_argument(
+        "--host",
+        default="",
+        help="Explain against one verified execution host (AR-374)",
     )
     _bind(explain, handlers, "cmd_explain")
 
