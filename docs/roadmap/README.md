@@ -399,7 +399,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-383` | [The inferred subject context fails its own projection, so dense recall is silently skipped](issue-AR-383-inferred-subject-context-fails-its-own-projection.md) | open | p1 | reliability | [#581](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/581) |
 | `AR-384` | [The recruiter is told to staff units the roster cannot cover, then rejected for staffing them](issue-AR-384-staff-decisions-die-on-uncoverable-typed-requirements.md) | done | p1 | reliability | pending authorization |
 | `AR-385` | [A fixed 2048-token reply budget truncates recruiter nominations, and the truncation is rejected as a contract failure with no record](issue-AR-385-structured-reply-budget-truncates-nominations-silently.md) | in_progress | p1 | reliability | pending authorization |
-| `AR-386` | [The strict critic vetoes every verifier-accepted install turn](issue-AR-386-strict-critic-vetoes-verifier-accepted-install-turns.md) | in_progress | p1 | reliability | pending authorization |
+| `AR-386` | [The strict critic vetoes every verifier-accepted install turn](issue-AR-386-strict-critic-vetoes-verifier-accepted-install-turns.md) | done | p1 | reliability | pending authorization |
 
 ## Traceability
 
@@ -740,7 +740,7 @@ not stable internal identifiers.
 | [AR-118](issue-AR-118-reconcile-native-child-activation-evidence.md) | `795deef`, `78afe96` | [ADR-0079](../decisions/0079-route-native-children-once-and-bound-unplanned-reroutes.md) |
 | [AR-384](issue-AR-384-staff-decisions-die-on-uncoverable-typed-requirements.md) | [`1711bcaa`](../worklog/README.md) (option 1, verifier waiver), [`7c67b524`](../worklog/README.md) (option 2, planner served-domain constraint), [`e44a240c`](../worklog/README.md) (frozen record, four satisfied verdicts, done flip) | [ADR-0198](../decisions/0198-waive-the-typed-requirements-the-roster-declares-but-cannot-serve.md), [ADR-0201](../decisions/0201-constrain-the-planner-domains-to-what-the-roster-serves.md) |
 | [AR-385](issue-AR-385-structured-reply-budget-truncates-nominations-silently.md) | [`0f70496c`](../worklog/README.md) | [ADR-0199](../decisions/0199-give-each-inference-stage-its-own-reply-budget.md) |
-| [AR-386](issue-AR-386-strict-critic-vetoes-verifier-accepted-install-turns.md) | [`6b79736c`](../worklog/README.md) | [ADR-0200](../decisions/0200-bind-the-strict-critic-to-the-advisory-doctrine.md) |
+| [AR-386](issue-AR-386-strict-critic-vetoes-verifier-accepted-install-turns.md) | [`6b79736c`](../worklog/README.md), [`b6b2f6e4`](../worklog/README.md) (frozen record, three satisfied verdicts, done flip) | [ADR-0200](../decisions/0200-bind-the-strict-critic-to-the-advisory-doctrine.md) |
 
 ## Dependency summary
 
