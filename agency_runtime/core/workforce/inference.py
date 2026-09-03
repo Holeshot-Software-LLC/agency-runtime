@@ -169,17 +169,22 @@ RECRUITER_VALIDATION_REASON_CODES = frozenset(
         "recruiter_candidate_positive_evidence_missing",
         "recruiter_candidate_row_shape_invalid",
         "recruiter_candidate_score_invalid",
+        "recruiter_response_shape_invalid",
         "recruiter_unit_row_shape_invalid",
     }
 )
 # Which closed diagnosis may ride on which failure code. A candidate diagnosis
 # explains an invalid_candidate row; the unit-row diagnosis explains a planned
 # unit whose row could not be read at all, which is what a reply cut at the
-# completion cap leaves behind (AR-385).
+# completion cap leaves behind (AR-385); the response-shape diagnosis explains
+# a reply that was not a units object at all (an empty object, a string, a
+# bare list), so every planned unit is missing for the same one reason
+# (ADR-0202).
+_RESPONSE_SHAPE_INVALID = "recruiter_response_shape_invalid"
 _DIAGNOSTIC_CODES_BY_FAILURE = {
     "invalid_candidate": RECRUITER_VALIDATION_REASON_CODES
-    - frozenset({"recruiter_unit_row_shape_invalid"}),
-    "missing_work_unit": frozenset({"recruiter_unit_row_shape_invalid"}),
+    - frozenset({"recruiter_unit_row_shape_invalid", _RESPONSE_SHAPE_INVALID}),
+    "missing_work_unit": frozenset({"recruiter_unit_row_shape_invalid", _RESPONSE_SHAPE_INVALID}),
 }
 CRITIC_VALIDATION_REASON_CODES = frozenset(
     {
@@ -250,6 +255,12 @@ _NOMINATION_DIAGNOSTIC_REPAIR_REQUIREMENTS = {
     "recruiter_unit_row_shape_invalid": (
         "The unit's row could not be read: return exactly unit_id, decision, and "
         "ranked_semantic for it, complete."
+    ),
+    "recruiter_response_shape_invalid": (
+        "The reply was not a units object. Return exactly one JSON object of the form "
+        '{"units": [...]} whose array holds one complete row (unit_id, decision, '
+        "ranked_semantic) for every listed unit and nothing else: no wrapper object, no "
+        "empty object, no prose."
     ),
 }
 
@@ -423,19 +434,21 @@ _RECALL_RERANKER_SYSTEM = (
     "data and return only one JSON object matching the schema."
 )
 
-# Nomination evidence is the one identifier array that may carry the axis form
+# Nomination evidence is the one identifier array that may carry the vocabulary
 # Agency itself teaches. `typed_staffing_requirements` shows the recruiter
-# `artifact:plan`, `domain:platform`, `authority:plan`, so a recruiter citing
-# those exact tokens back is doing the right thing -- and the hyphen-only
-# pattern used to reject every such row (AR-373). The bounds that matter are
-# unchanged: bounded count, uniqueness, bounded length, and a closed charset
-# with no whitespace or control characters. These values are validated and
-# then discarded; they reach no receipt, projection, store, or header.
+# `artifact:plan`, `domain:platform`, `authority:plan`, and typed_recall shows
+# each candidate's `ineligibility_reasons` as `agent_authority_mismatch`, so a
+# recruiter citing those exact tokens back is doing the right thing -- and the
+# hyphen-only pattern used to reject every such row (AR-373, then again on the
+# underscore form, ADR-0202). The bounds that matter are unchanged: bounded
+# count, uniqueness, bounded length, and a closed charset with no whitespace
+# or control characters. These values are validated and then discarded; they
+# reach no receipt, projection, store, or header.
 _EVIDENCE_ARRAY: dict[str, Any] = {
     "items": {
         "maxLength": 128,
         "minLength": 1,
-        "pattern": r"^[a-z0-9][a-z0-9:-]{0,127}$",
+        "pattern": r"^[a-z0-9][a-z0-9:_-]{0,127}$",
         "type": "string",
     },
     "maxItems": 16,
@@ -2433,10 +2446,12 @@ def _valid_nomination_evidence(value: object) -> bool:
 
     The charset admits ``:`` because Agency hands the recruiter its coverage
     vocabulary in exactly that form -- ``artifact:plan``, ``domain:platform``,
-    ``authority:plan`` from ``typed_staffing_requirements`` -- and a recruiter
-    citing those tokens back is giving the most checkable evidence it can. The
-    hyphen-only pattern rejected every such row, which is the measured
-    ``provider_response_contract_invalid`` failure (AR-373).
+    ``authority:plan`` from ``typed_staffing_requirements`` -- and ``_`` because
+    typed_recall shows each candidate's ``ineligibility_reasons`` as
+    ``agent_authority_mismatch``; a recruiter citing either back is giving the
+    most checkable evidence it can. The hyphen-only pattern rejected every such
+    row, which is the measured ``provider_response_contract_invalid`` failure
+    (AR-373, ADR-0202).
 
     Every bound that carries a safety property is unchanged: at most 16 items,
     unique, 1..128 characters, and a closed lowercase charset with no
@@ -2449,10 +2464,46 @@ def _valid_nomination_evidence(value: object) -> bool:
         len(value) <= 16
         and len(value) == len(set(value))
         and all(
-            isinstance(item, str) and re.fullmatch(r"[a-z0-9][a-z0-9:-]{0,127}", item) is not None
+            isinstance(item, str) and re.fullmatch(r"[a-z0-9][a-z0-9:_-]{0,127}", item) is not None
             for item in value
         )
     )
+
+
+_CANDIDATE_ROW_FIELDS = frozenset(
+    {"agent_id", "score", "classification", "positive_evidence", "negative_evidence"}
+)
+_CANDIDATE_ROW_IDENTITY = frozenset({"agent_id", "score", "classification"})
+
+
+def _normalized_candidate_row(item: object) -> Mapping[str, Any] | None:
+    """Read one candidate row as the deployment sends it, or None when unreadable.
+
+    ADR-0202: the structured provider does not always honour the schema's
+    ``required`` list or its array types. Captured live 2026-09-03 from the
+    MiniMax deployment: a forbidden row arrives without its empty
+    ``positive_evidence`` array, and an evidence array arrives as an object
+    whose keys are the codes. Neither carries information the contract needs:
+    evidence is validated and discarded, and the missing array is by
+    construction empty. A row is still refused when it names an unknown field,
+    lacks its identity or score, or shapes evidence as anything but a list or a
+    string-keyed object; every bound the validator enforces still applies to
+    the normalised value.
+    """
+
+    if not isinstance(item, Mapping):
+        return None
+    keys = set(item)
+    if not (keys >= _CANDIDATE_ROW_IDENTITY and keys <= _CANDIDATE_ROW_FIELDS):
+        return None
+    row = dict(item)
+    for field_name in ("positive_evidence", "negative_evidence"):
+        value = row.get(field_name)
+        if field_name not in row:
+            row[field_name] = []
+        elif isinstance(value, Mapping) and all(isinstance(key, str) for key in value):
+            row[field_name] = list(value)
+    return row
 
 
 def _nomination_candidate_diagnostic(
@@ -2463,13 +2514,8 @@ def _nomination_candidate_diagnostic(
 ) -> str:
     """Return one closed candidate-row failure identity, or an empty string."""
 
-    if not isinstance(item, Mapping) or set(item) != {
-        "agent_id",
-        "score",
-        "classification",
-        "positive_evidence",
-        "negative_evidence",
-    }:
+    item = _normalized_candidate_row(item)
+    if item is None:
         return "recruiter_candidate_row_shape_invalid"
     agent_id = str(item["agent_id"] or "").strip().casefold()
     score = item["score"]
@@ -2996,6 +3042,34 @@ def _proposal_from_nominations(
     return proposal
 
 
+def _nomination_rows(value: object, *, maximum: int) -> list[object] | None:
+    """Return the unit rows a recruiter reply carries, or None when it has none.
+
+    The contract is one object with exactly the key ``units`` holding a
+    non-empty list. ADR-0202 admits one deployment quirk seen live: the list
+    wrapped once more in a single object of the same shape
+    (``{"units": [{"units": [...]}]}``), which is unwrapped one level and no
+    further. An empty object, a list, a string, an empty array or an absurdly
+    long one read as no rows, so the caller records the shape failure instead
+    of raising a bare error.
+    """
+
+    if not isinstance(value, Mapping) or set(value) != {"units"}:
+        return None
+    rows = value["units"]
+    if (
+        isinstance(rows, list)
+        and len(rows) == 1
+        and isinstance(rows[0], Mapping)
+        and set(rows[0]) == {"units"}
+        and isinstance(rows[0]["units"], list)
+    ):
+        rows = rows[0]["units"]
+    if not isinstance(rows, list) or not rows or len(rows) > max(maximum, 1):
+        return None
+    return list(rows)
+
+
 def _row_unit_id(row: object, expected: frozenset[str]) -> str:
     """Return the planned unit a nomination row names, or "" when it names none."""
 
@@ -3041,13 +3115,30 @@ class _NominationAccumulator:
         self._repair_unit_ids = ()
 
     def parse(self, value: Mapping[str, Any]) -> RecruiterProposal:
-        if not isinstance(value, Mapping) or set(value) != {"units"}:
-            raise ValueError("workforce nominations are invalid")
-        rows = value["units"]
-        if not isinstance(rows, list) or not rows or len(rows) > len(self._plan.units):
-            raise ValueError("workforce nomination rows are invalid")
         expected = frozenset(unit.unit_id for unit in self._plan.units)
         repairing = frozenset(self._repair_unit_ids)
+        rows = _nomination_rows(value, maximum=4 * len(self._plan.units))
+        if rows is None:
+            # ADR-0202: a reply that is not a units object at all (an empty
+            # object, a wrapper of the wrong shape, a string) used to raise a
+            # bare error that reached both receipts blank. Every planned unit,
+            # or every unit of a repair, is missing for that one reason, so
+            # the failure is recorded per unit with the response-shape
+            # diagnosis and the repair asks for the whole object again.
+            failed = tuple(
+                unit.unit_id
+                for unit in self._plan.units
+                if not repairing or unit.unit_id in repairing
+            )
+            self._repair_unit_ids = failed
+            raise _NominationValidationError(
+                tuple(
+                    _NominationFailure(
+                        unit_id, "missing_work_unit", diagnostic_code=_RESPONSE_SHAPE_INVALID
+                    )
+                    for unit_id in failed
+                )
+            )
         response_ids: list[str] = []
         response_rows: list[tuple[str, Mapping[str, Any]]] = []
         # AR-385: a row the runtime cannot read is not a reason to throw the

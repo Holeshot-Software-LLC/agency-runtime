@@ -21,17 +21,18 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-383
-branch: claude/ar384-flip
+branch: claude/ar373-residue
 evidence_commit: 7c67b524bcbad9a00bcf269d6fbbe20c27810879
-minimum_ledger_commit: 8fde90dfcf746eb84abe288d7272c3db3441d2dd
+minimum_ledger_commit: 04a0b96b3fa98cbb6d0a90a9c9b8c1a1d7d8d66e
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/581
 ---
 
 # AR-383 inferred subject projection handoff
 
-> **This capsule is not on `main`.** It lives on branch `claude/ar384-flip`,
-> the top of a stack: `claude/ar384-planner-domains` (PR #588) on
+> **This capsule is not on `main`.** It lives on branch `claude/ar373-residue`,
+> the top of a stack: `claude/ar386-flip` (PR #590) on `claude/ar384-flip`
+> (PR #589) on `claude/ar384-planner-domains` (PR #588) on
 > `claude/ar384-closure` (PR #587) on `claude/ar386-critic-contract` (PR #586) on
 > `claude/ar385-reply-budget` (PR #585) on `claude/ar384-coverage-gaps` (PR
 > #584) on `claude/ar373-recruiter-payload` (PR #583) on
@@ -41,13 +42,16 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/581
 > them. If you are reading this from `main`, the PRs have merged and this
 > note is spent.
 
-Start-here capsule. The platform collision is closed at the planner; what
-remains on the install path is recruiter-side residue.
+Start-here capsule. The planner side is closed, the recruiter's reply is
+read where no safety property lives, and the losses that remain are the
+recruiter's judgment and the critic's.
 
 ## checkpoint
 
-Items 1 and 3 of the previous package are done on this branch; item 2
-(AR-373 residue) is untouched and now the largest loss.
+Of the previous package: AR-386 is done (PR #590); the AR-373 residue is
+fixed on this branch (ADR-0202); AR-385 is re-cited and pending its freeze
+at this branch's implementation commit, because its third criterion was
+contradicted live until ADR-0202.
 
 - **AR-384 option 2** (ADR-0201): `platform-engineering` no longer promotes
   the API platform card into `platform`, so under plan authority `platform`
@@ -58,119 +62,116 @@ Items 1 and 3 of the previous package are done on this branch; item 2
   planner repair. Weak rule: one served domain suffices. Exempt: a kind with
   nothing proven, compiler-chosen domains, a declared `novel_capability`
   domain.
-- **AR-384 is done.** Criterion 2 reworded to the unit shape (plan
-  authority, `operations` among its domains, any unit id), criterion 4 added
-  for option 2, record re-frozen at `7c67b524`, isolated codex verifier
-  satisfied on all four criteria, status flipped. `verify_tracker.py` still
-  reports `missing_remote` for AR-384, AR-385 and AR-386 by design.
+- **AR-384 and AR-386 are done** (PRs #589, #590): records frozen at
+  `7c67b524` and `6b79736c`, isolated codex verifier satisfied on every
+  criterion. `verify_tracker.py` still reports `missing_remote` for AR-384,
+  AR-385 and AR-386 by design.
+- **ADR-0202 (this branch)**: a candidate row is read as the deployment sends
+  it where no safety property lives (missing evidence array is empty, a
+  string-keyed object is its keys, identity and score stay mandatory); the
+  evidence charset admits `_`; one `units` wrapper is unwrapped; a reply that
+  is not a units object is recorded per unit as `missing_work_unit` with
+  `recruiter_response_shape_invalid` and repaired; a verifier rejection's
+  `unit=code` rows project onto the attempt on both receipts, from the closed
+  `STAFFING_VERIFIER_REASON_CODES`, and survive the read-back re-projection.
 - An installed store gets the vocabulary fix only through `agency install`'s
-  packaged-contract reconciliation (one re-projection of 280). The live
-  measurement ran against a reconciled **copy** of the store; the live store
-  was not written.
+  reconciliation (one re-projection of 280); every measurement ran against a
+  reconciled **copy**, and the live store was not written.
 
-| eleven install wordings, strict mode, ADR-0201 runtime, store copy | turns |
+| eleven install wordings, strict mode, ADR-0202 runtime, store copy | turns |
 |---|---|
-| completed, critic approved, `operations-manager` on every install plan | 3 (205, 206, 305) |
-| recruiter contract residue (AR-373 shapes, `{}` repair reply, malformed 941-token reply) | 4 (202, 203, 204, 304) |
-| coverable token left unranked (`domain:software-engineering` 201, `capability:risk-analysis` 204) | 2 |
-| verifier confidence or margin too low | 1 (207) |
-| critic `wrong-neighbor-selection`, not on a platform selection | 2 (208, 209) |
-| `staff_without_safe_team` on `domain:platform`; `api-platform-engineer` anywhere; first plan naming `platform`/`desktop` on a plan unit | **0, 0, 0** (were 3, 2, 6) |
+| completed, critic approved | 4 (204, 206, 207, 209); ADR-0201 run 3, AR-386 run 2 |
+| reply shape recorded and repaired (206 not a units object; 304 rows without `score`) | 2, one of them completed |
+| transport could not read the reply (`failed`, not rejected) | 1 (201) |
+| verifier confidence too low | 1 (202) |
+| critic `wrong-neighbor-selection` | 4 (203, 205, 208, 304); 205's team was approved on the ADR-0201 run |
+| recruiter gap, hiring ran, no hire | 1 (305) |
+| rejected attempts blank on the receipt | 0 with the final code (202's were captured before the re-projection fix; its detail round-trips offline) |
 
 ## completed-evidence
 
-**On the stack, `7c67b524` (PR #588) and the flip commit.** `contract.py`
-(`_CATEGORY_DOMAINS`), `intent.py` (`served_domains_by_artifact_kind`,
-taxonomy field, prompt paragraph), `plan_policy.py`
-(`_unserved_domain_violations`, guidance), `inference.py` wiring,
-`tests/test_planner_domain_service.py` (13 tests), the recruiter-index pin
-(266_264 to 266_253), one curated conformance mutation, ADR-0201, the issue,
-the pending acceptance record, CHANGELOG, the inference-stages reference and
-`docs/roadmap/acceptance/evidence/AR-384-option2-evidence-20260903.txt`.
+**On this branch, uncommitted at the time of writing.** `inference.py`
+(`_normalized_candidate_row`, `_nomination_rows`, the accumulator's recorded
+shape failure, the `_` charset, the new diagnosis), `receipt_projection.py`
+(verifier rows, `_nomination_failure_row`), `staffing_verifier.py`
+(`STAFFING_VERIFIER_REASON_CODES`), `preflight_failure.py` allowlist,
+`tests/test_recruiter_reply_residue.py` (15 tests), one curated mutation and
+one refreshed anchor, ADR-0202, the AR-373 and AR-385 issues, the re-cited
+pending AR-385 record, `AR-373-AR-385-residue-evidence-20260903.txt`.
 
-**Capture recipe.** Session scratchpad `capture387.py` (capture386 plus a
-`_PlanPolicyValidationError` hook and `Store(db_path=<copy>)`), `raw387/`,
-`capture387_results.jsonl`, `capture387.log`; store copies
-`agency.db.ro-copy` (pristine) and `agency.db.branch-copy` (reconciled,
-generation 307). Runtime: `PYTHONPATH=<worktree>` with the installed venv
-python (`~/.local/share/agency-runtime/venvs/0abe4a77.../bin/python`).
+**On the stack.** ADR-0201 at `7c67b524` (PR #588) with
+`tests/test_planner_domain_service.py` and
+`AR-384-option2-evidence-20260903.txt`; the AR-384 and AR-386 flips (PRs
+#589, #590). **Capture recipe.** Scratchpad `capture387.py` / `capture388.py`
+(capture386 plus a `_PlanPolicyValidationError` hook and
+`Store(db_path=<copy>)`), `raw387/`, `raw388/`; store copies
+`agency.db.ro-copy` and `agency.db.branch-copy` (reconciled, generation 307);
+`PYTHONPATH=<worktree>` with the installed venv python.
 
-**Live facts worth keeping.** The planner, shown the served view, stopped
-naming `platform` and `desktop` on plan units without a single live
-`plan_unit_domains_unserved`; it now sometimes pairs `software-engineering`
-with `operations` (201), which is staffable but forces a two-domain team the
-recruiter did not rank. 304's malformed recruiter reply is the AR-385 one
-token for token and carried no gateway cache key: the deployment reproduces
-it. 209 completed under AR-386 and is vetoed here because the recruiter put
-`desktop-app-engineer` on an `[operations]` environment check.
+**Live facts worth keeping.** The planner has not named `platform` or
+`desktop` on a plan unit in 22 turns. The recruiter deployment still omits a
+candidate's `score` (304) or returns no JSON object (201); both are recorded,
+neither readable. The critic's verdict on an identical team differs between
+runs (205). The recruiter ranks modify-authority implementers on plan units,
+leaves eligible dual-domain planners unranked, and on 305 declared a gap.
 
 ## exact-blocker
 
-Nothing blocks the planner side and AR-384 is closed. The install path now
-loses turns only at the recruiter: AR-373's row-shape and evidence residue
-plus two structural reply errors (four of eleven), coverable tokens the
-recruiter leaves unranked while ranking ineligible implementers (two), scores
-under the confidence floor (one), and two semantic wrong-neighbour vetoes. A
-strict turn that needs both a planner repair and a recruiter repair now
-exhausts the five-call budget before the critic (none did live).
+Nothing blocks at the contract level any more: every rejected recruiter
+attempt is recorded, and the reply shapes the deployment sends are read where
+they can be. What remains is judgment: four critic wrong-neighbour vetoes of
+eleven, one recruiter gap hiring did not fill, one confidence floor, and one
+reply the transport could not read. AR-385's flip waits only for its freeze
+at this branch's implementation commit and the verifier run.
 
 ## same-task-continuity
 
-The twelve traps from the previous capsules hold. Three more:
+The previous capsules' traps hold. Three more:
 
 1. **A stored contract does not re-project itself.** `_CATEGORY_DOMAINS`
-   changes reach a store only through
-   `reconcile_packaged_workforce_contracts` (run by `agency install`);
-   `workforce_index_snapshot` reads the stored projection. Measure on a
-   reconciled copy, never assume the live store carries branch vocabulary.
-2. **`plan_policy_violations` must receive `known_domains`** beside
-   `served_domains`, or a declared `novel_capability` unit naming its own
-   domain is bounced back to the planner instead of reaching hiring.
-3. **The recruiter-index size pin** in `test_workforce_selection_safety`
-   changes whenever a domain promotion changes; update it with a dated note.
+   changes reach a store only through `reconcile_packaged_workforce_contracts`
+   (`agency install`); measure on a reconciled copy.
+2. **`plan_policy_violations` needs `known_domains`** beside `served_domains`,
+   or a declared `novel_capability` unit is bounced back to the planner.
+3. **Receipts re-project on read.** A row admitted only from a detail string
+   vanishes when the receipt is read back; the list path must admit it too.
 
 ## next-bounded-work-package
 
 In this order.
 
-1. **AR-385 and AR-386 freeze and flip**: set each record's
-   `candidate_commit` (`0f70496c`, `6b79736c`), run
-   `scripts/verify_acceptance.py --issue AR-38N --all --provider codex`,
-   flip to `done`, one PR each on this stack. Then merge the stack in order
-   with `--merge` and run `agency install` so the store re-projects the
+1. **AR-385 freeze and flip**: on a branch stacked on this one, set
+   `candidate_commit` to this branch's implementation commit, run
+   `scripts/verify_acceptance.py --issue AR-385 --all --provider codex`, flip
+   to `done`. Then merge the stack #582 to the top in order with `--merge`
+   and run `agency install` under `umask 077` so the store re-projects the
    API platform card.
-2. **AR-373 residue**: `recruiter_candidate_row_shape_invalid` and evidence
-   charset on first attempts, the `{}` repair reply (204) and the malformed
-   941-token reply (304); the MiniMax deployment does not honour the strict
-   `json_schema` `required` list.
-3. **Recruiter authority blindness**: on plan units it ranks modify-authority
-   implementers marked `execution_eligible: false` and leaves the eligible
-   dual-domain planners unranked (201, 204); a prompt or repair-contract
-   change, measured on the same eleven wordings.
-4. **Recruiter timeout**: `agency-recruiter.timeout_ms` is the owner's; no
-   call hit it this run (longest 17.9 s).
+2. **AR-373 closure**: its four criteria are checked; write its acceptance
+   record (none exists), freeze, verify, flip; tracker #537 closure needs
+   authorization.
+3. **Recruiter authority blindness**: it ranks modify-authority implementers
+   on plan units and leaves eligible dual-domain planners unranked; a prompt
+   or repair-contract change measured on the eleven wordings, with the
+   critic's run-to-run variance on an identical team (205) alongside.
+4. **Unreadable deployment residue** (omitted `score`, no JSON object):
+   operator territory at the LiteLLM alias; recorded, not fixed.
 5. **Fix AR-383** per its Approach; then the 4-of-5 gap divergence; then
    AR-370.
 
 ## verification
 
-On the working tree before commit: ruff check and format clean on
-`agency_runtime/core/workforce`, the evals module and the changed tests;
-`tests/test_planner_domain_service.py` 13 passed; the twelve affected
-workforce, receipt, intent and conformance suites 346 passed, 1 skipped
-(before the novel-domain exemption; 120 passed on the three suites touched
-after it); named fast spine 1004 passed, 3 skipped under `-W error`; `eval
-routing` passed (1.4.0); decision-conformance rerun on the final tree
-recorded in the ledger row; `docs_metadata.py --check`, `verify_docs.py`
-green with the pending record, then with the frozen record and four
-`satisfied` rows. Pre-existing failures on the base are unchanged.
+On the working tree before commit: ruff clean on every changed file (one
+pre-existing RUF024 on main); `tests/test_recruiter_reply_residue.py` 15
+passed; the receipt, inference, truncation, bounds and conformance suites 258
+passed, 1 skipped; named fast spine 1004 passed, 3 skipped under `-W error`;
+decision-conformance rerun on the final tree recorded in the ledger row;
+`docs_metadata.py --check`, `verify_docs.py` green with the pending AR-385
+record. The AR-384 and AR-386 flips each verified `--all` satisfied.
 
 ## constraints
 
-- `agency.yaml` is operator configuration: `strict_call_budget`, the
-  recruiter `timeout_ms`, the deployment order and `workforce.mode` are the
-  owner's call.
-- Never commit to `main`; branch in a worktree, PR, merge with `--merge`.
-  Ledger dance on every substantive commit. Tracker writes need
-  authorization; AR-384, AR-385 and AR-386 carry `tracker_url: null`.
+- `agency.yaml` is operator configuration (`strict_call_budget`, recruiter
+  `timeout_ms`, deployment order, `workforce.mode`).
+- Never commit to `main`; worktree branch, PR, merge with `--merge`; ledger
+  dance on every substantive commit; tracker writes need authorization.
 - The live store was not written by this session; a reconciled copy was.

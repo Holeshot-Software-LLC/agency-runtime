@@ -336,6 +336,22 @@ class _NominationSemantics:""",
         ),
     ),
     DecisionMutation(
+        mutation_id="verifier-rejection-left-blank-on-the-attempt",
+        invariant=(
+            "A recruiter attempt the staffing verifier rejected carries the verifier's "
+            "unit=code rows as validation_failures on both receipts (ADR-0202)."
+        ),
+        source_path="agency_runtime/core/selector/receipt_projection.py",
+        before="""        if value.startswith(_STAFFING_VERIFICATION_PREFIX):
+            return _staffing_verification_failures(value)""",
+        after="""        if value.startswith(_STAFFING_VERIFICATION_PREFIX):
+            return []""",
+        test_node=(
+            "tests/test_recruiter_reply_residue.py::"
+            "test_a_verifier_rejection_projects_onto_the_attempt_row"
+        ),
+    ),
+    DecisionMutation(
         mutation_id="cut-reply-recorded-as-contract-failure",
         invariant=(
             "A rejected reply that reached the completion cap is recorded as "
@@ -425,10 +441,10 @@ class _NominationSemantics:""",
         mutation_id="recruiter-failure-sensitive-unit-id-not-sanitized",
         invariant=("A durable recruiter failure hashes a sensitive planner-derived unit identity."),
         source_path="agency_runtime/core/selector/receipt_projection.py",
-        before="""        projected_unit_id = _identity(unit_id)
-        failure: dict[str, Any] = {"unit_id": projected_unit_id, "reason_code": reason_code}""",
-        after="""        projected_unit_id = unit_id
-        failure: dict[str, Any] = {"unit_id": projected_unit_id, "reason_code": reason_code}""",
+        before="""    projected_unit_id = _identity(unit_id)
+    failure: dict[str, Any] = {"unit_id": projected_unit_id, "reason_code": reason_code}""",
+        after="""    projected_unit_id = unit_id
+    failure: dict[str, Any] = {"unit_id": projected_unit_id, "reason_code": reason_code}""",
         test_node=(
             "tests/test_routing_receipt_header.py::"
             "test_routing_receipt_is_bounded_content_free_and_idempotent"

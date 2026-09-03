@@ -12,6 +12,9 @@ from typing import Any
 from agency_runtime.core.workforce.staffing_verifier import (
     REQUIREMENT_AXES as _REQUIREMENT_AXES,
 )
+from agency_runtime.core.workforce.staffing_verifier import (
+    STAFFING_VERIFIER_REASON_CODES as _STAFFING_VERIFIER_REASON_CODES,
+)
 
 RECEIPT_DESCRIPTION_BYTES = 4096
 ROUTING_RECEIPT_VERSION = 1
@@ -53,6 +56,14 @@ _NOMINATION_FAILURE_CODES = frozenset(
     }
 )
 _NOMINATION_FAILURE_PREFIX = "workforce nomination failures: "
+# ADR-0202: a recruiter attempt the verifier rejected used to reach both
+# receipts blank, because only nomination-contract failures were projected.
+# The verifier's detail carries ``unit=code`` rows in the same wire form with
+# a global row for whole-team findings; a code is admitted only from the
+# verifier's own closed vocabulary, on the detail path and again on the
+# re-projection every reader applies.
+_STAFFING_VERIFICATION_PREFIX = "workforce staffing verification failures: "
+_GLOBAL_UNIT = "global"
 # A waived typed requirement (ADR-0198) is, by construction, an identifier some
 # audited contract declares: roster vocabulary, never model prose. The closed
 # axis prefix and identifier charset keep anything else off the receipt.
@@ -261,75 +272,120 @@ def project_nomination_failures(value: object) -> list[dict[str, Any]]:
 
     Both the routing receipt and the terminal preflight-failure receipt need
     this answer, and they must agree, so the rule lives here once rather than
-    being restated per receipt.
+    being restated per receipt. A verifier rejection projects through the same
+    entry point (ADR-0202) so a rejected attempt is never blank on either.
     """
 
     raw: object = value
     if isinstance(value, str):
-        if len(value.encode("utf-8")) > RECEIPT_DESCRIPTION_BYTES or not value.startswith(
-            _NOMINATION_FAILURE_PREFIX
-        ):
+        if len(value.encode("utf-8")) > RECEIPT_DESCRIPTION_BYTES:
             return []
-        parsed = _parse_nomination_detail(value)
-        if parsed is None:
+        if value.startswith(_STAFFING_VERIFICATION_PREFIX):
+            return _staffing_verification_failures(value)
+        if not value.startswith(_NOMINATION_FAILURE_PREFIX):
             return []
-        raw = parsed
+        raw = _parse_nomination_detail(value)
     if not isinstance(raw, (list, tuple)) or not 1 <= len(raw) <= _MAX_STAFFING_UNITS:
         return []
     failures: list[dict[str, Any]] = []
     for item in raw:
-        if not isinstance(item, Mapping) or not {"unit_id", "reason_code"} <= set(item) <= {
-            "unit_id",
-            "reason_code",
-            "requirement_axis",
-            "ranked_agent_ids",
-            "top_ranked_ineligibility",
-            "required_agent_count",
-            "ranked_executable_count",
-            "maximum_selected_per_unit",
-        }:
-            return []
-        unit_id = str(item.get("unit_id") or "").strip().casefold()
-        reason_code = _code(item.get("reason_code"))
-        axis = _code(item.get("requirement_axis")) if "requirement_axis" in item else ""
-        ranked = _nomination_ranked_ids(item.get("ranked_agent_ids"))
-        if ranked is None:
-            return []
-        unit_id_is_digest = unit_id.startswith("sha256:") and _DIGEST.fullmatch(
-            unit_id.removeprefix("sha256:")
-        )
-        if (
-            (_NOMINATION_UNIT_ID.fullmatch(unit_id) is None and not unit_id_is_digest)
-            or reason_code not in _NOMINATION_FAILURE_CODES
-            or ("requirement_axis" in item and axis not in _REQUIREMENT_AXES)
-        ):
-            return []
-        projected_unit_id = _identity(unit_id)
-        failure: dict[str, Any] = {"unit_id": projected_unit_id, "reason_code": reason_code}
-        if axis:
-            failure["requirement_axis"] = axis
-        ineligibility = (
-            _code(item.get("top_ranked_ineligibility"))
-            if "top_ranked_ineligibility" in item
-            else ""
-        )
-        if "top_ranked_ineligibility" in item and not ineligibility:
-            return []
-        counts = _nomination_team_counts(item, reason_code)
-        if counts is None:
-            return []
-        if ranked:
-            # Flat, not nested. A list here pushes the preflight-failure receipt
-            # past its bounded-JSON depth of 4, and one over-deep row makes
-            # recent_runtime_activity raise, which reads to every caller as
-            # "runtime evidence store is unavailable" and blocks the canary.
-            failure["ranked_agent_ids"] = "~".join(ranked)
-        if ineligibility:
-            failure["top_ranked_ineligibility"] = ineligibility
-        failure.update(counts)
-        if not projected_unit_id or failure in failures:
+        failure = _nomination_failure_row(item)
+        if failure is None or not failure["unit_id"] or failure in failures:
             return []
         failures.append(failure)
+    return failures
+
+
+def _nomination_failure_row(item: object) -> dict[str, Any] | None:
+    """Project one nomination failure row, or None when a field is outside the contract."""
+
+    if not isinstance(item, Mapping) or not {"unit_id", "reason_code"} <= set(item) <= {
+        "unit_id",
+        "reason_code",
+        "requirement_axis",
+        "ranked_agent_ids",
+        "top_ranked_ineligibility",
+        "required_agent_count",
+        "ranked_executable_count",
+        "maximum_selected_per_unit",
+    }:
+        return None
+    unit_id = str(item.get("unit_id") or "").strip().casefold()
+    reason_code = _code(item.get("reason_code"))
+    axis = _code(item.get("requirement_axis")) if "requirement_axis" in item else ""
+    ranked = _nomination_ranked_ids(item.get("ranked_agent_ids"))
+    if ranked is None:
+        return None
+    unit_id_is_digest = unit_id.startswith("sha256:") and _DIGEST.fullmatch(
+        unit_id.removeprefix("sha256:")
+    )
+    # ADR-0202: a verifier row projected from the detail string must survive
+    # the re-projection every reader applies, so a bare unit=code row whose
+    # code is in the verifier charset is admitted here as well; the nomination
+    # vocabulary still governs every row that carries nomination fields.
+    verifier_row = set(item) == {"unit_id", "reason_code"} and (
+        reason_code in _STAFFING_VERIFIER_REASON_CODES
+    )
+    if (
+        (
+            _NOMINATION_UNIT_ID.fullmatch(unit_id) is None
+            and not unit_id_is_digest
+            and not (verifier_row and unit_id == _GLOBAL_UNIT)
+        )
+        or (reason_code not in _NOMINATION_FAILURE_CODES and not verifier_row)
+        or ("requirement_axis" in item and axis not in _REQUIREMENT_AXES)
+    ):
+        return None
+    projected_unit_id = _identity(unit_id)
+    failure: dict[str, Any] = {"unit_id": projected_unit_id, "reason_code": reason_code}
+    if axis:
+        failure["requirement_axis"] = axis
+    ineligibility = (
+        _code(item.get("top_ranked_ineligibility")) if "top_ranked_ineligibility" in item else ""
+    )
+    if "top_ranked_ineligibility" in item and not ineligibility:
+        return None
+    counts = _nomination_team_counts(item, reason_code)
+    if counts is None:
+        return None
+    if ranked:
+        # Flat, not nested. A list here pushes the preflight-failure receipt
+        # past its bounded-JSON depth of 4, and one over-deep row makes
+        # recent_runtime_activity raise, which reads to every caller as
+        # "runtime evidence store is unavailable" and blocks the canary.
+        failure["ranked_agent_ids"] = "~".join(ranked)
+    if ineligibility:
+        failure["top_ranked_ineligibility"] = ineligibility
+    failure.update(counts)
+    return failure
+
+
+def _staffing_verification_failures(value: str) -> list[dict[str, Any]]:
+    """Project the verifier's ``unit=code`` rows, bounded and content-free.
+
+    The rows come from ``_StaffingVerificationError``, which writes ``global``
+    for a finding that names no unit; a code is admitted only from the
+    verifier's closed vocabulary and a unit id only in the planned form. The
+    receipt keeps at most the first ``_MAX_STAFFING_UNITS`` rows so a long
+    verifier detail bounds rather than blanks the attempt.
+    """
+
+    failures: list[dict[str, Any]] = []
+    for item in value.removeprefix(_STAFFING_VERIFICATION_PREFIX).split(","):
+        unit_id, separator, code = item.partition("=")
+        unit_id = unit_id.strip().casefold()
+        code = code.strip().casefold()
+        if (
+            not separator
+            or (unit_id != _GLOBAL_UNIT and _NOMINATION_UNIT_ID.fullmatch(unit_id) is None)
+            or code not in _STAFFING_VERIFIER_REASON_CODES
+        ):
+            return []
+        failure = {"unit_id": unit_id, "reason_code": code}
+        if failure not in failures:
+            failures.append(failure)
+        if len(failures) == _MAX_STAFFING_UNITS:
+            break
     return failures
 
 

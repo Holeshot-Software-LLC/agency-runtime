@@ -119,7 +119,8 @@ def test_every_safety_bound_survives() -> None:
 
     assert not _valid_nomination_evidence(["has devops experience"])  # whitespace
     assert not _valid_nomination_evidence(["Artifact:Plan"])  # uppercase
-    assert not _valid_nomination_evidence(["artifact_plan"])  # underscore
+    # The underscore form is the ineligibility vocabulary Agency shows (ADR-0202).
+    assert _valid_nomination_evidence(["agent_authority_mismatch"])
     assert not _valid_nomination_evidence(["artifact:plan\n"])  # control character
     assert not _valid_nomination_evidence([":leading-colon"])  # must start alphanumeric
     assert not _valid_nomination_evidence(["a" * 129])  # length bound
@@ -130,9 +131,9 @@ def test_every_safety_bound_survives() -> None:
 
 
 def test_typed_identifier_fields_are_not_widened() -> None:
-    """Only evidence gained the colon; identifiers are matched against contracts."""
+    """Only evidence gained the colon and underscore; identifiers match contracts."""
 
-    assert _EVIDENCE_ARRAY["items"]["pattern"] == r"^[a-z0-9][a-z0-9:-]{0,127}$"
+    assert _EVIDENCE_ARRAY["items"]["pattern"] == r"^[a-z0-9][a-z0-9:_-]{0,127}$"
     assert _IDENTIFIER_ARRAY["items"]["pattern"] == r"^[a-z0-9][a-z0-9-]{0,127}$"
     for bound in ("maxItems", "uniqueItems"):
         assert _EVIDENCE_ARRAY[bound] == _IDENTIFIER_ARRAY[bound]

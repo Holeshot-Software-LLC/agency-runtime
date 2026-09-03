@@ -125,6 +125,48 @@ ADVISORY_STAFFING_CODES: frozenset[str] = frozenset(
     {"independent_assurance_missing", ROSTER_COVERAGE_GAP}
 )
 
+# Every reason code the verifier can put on a staffing decision. The receipts
+# admit a verifier finding on a rejected recruiter attempt only from this set
+# (ADR-0202), so a typo or a new finding shows up here first;
+# tests/test_recruiter_reply_residue.py scans the module for the literals.
+STAFFING_VERIFIER_REASON_CODES: frozenset[str] = frozenset(
+    {
+        "context_binding_mismatch",
+        "delegated_agent_budget_exceeded",
+        "delegated_context_not_distinct",
+        "disabled_shadow_mismatch",
+        "duplicate_roster_agent",
+        "forbidden_agent_selected",
+        "forbidden_set_mismatch",
+        "independent_assurance_missing",
+        "invalid_roster_snapshot",
+        "loaded_agent_budget_exceeded",
+        "no_safe_sufficient_team",
+        "plan_hash_mismatch",
+        "ranked_enabled_mismatch",
+        "ranked_executable_mismatch",
+        "recruiter_abstained",
+        "redundant_substitution_group",
+        "required_agents_missing",
+        "roster_count_mismatch",
+        "roster_coverage_gap",
+        "roster_fingerprint_mismatch",
+        "roster_generation_mismatch",
+        "runner_up_order_mismatch",
+        "runner_up_set_invalid",
+        "selected_agent_budget_exceeded",
+        "selected_agents_outside_allowed_set",
+        "selected_not_deterministic_minimum",
+        "selection_confidence_too_low",
+        "selection_margin_too_low",
+        "unavailable_shadow_mismatch",
+        "unit_agent_budget_exceeded",
+        "unknown_claimed_agent",
+        "unknown_ranked_agent",
+        "work_unit_budget_exceeded",
+    }
+)
+
 
 @dataclass(frozen=True, slots=True)
 class StaffingDecision:

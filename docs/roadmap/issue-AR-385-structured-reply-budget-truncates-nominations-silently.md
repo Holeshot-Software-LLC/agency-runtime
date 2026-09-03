@@ -10,6 +10,7 @@ related:
   - docs/roadmap/reference-workforce-inference-stages.md
   - docs/roadmap/issue-AR-373-recruiter-evidence-vocabulary.md
   - docs/roadmap/issue-AR-384-staff-decisions-die-on-uncoverable-typed-requirements.md
+  - docs/decisions/0202-read-the-recruiter-reply-where-no-safety-property-lives.md
   - docs/roadmap/issue-AR-304-preserve-recruiter-critic-validation-diagnostics.md
   - docs/roadmap/issue-AR-383-inferred-subject-context-fails-its-own-projection.md
 supersedes: []
@@ -138,6 +139,34 @@ change.
 
 The planner, critic, reranker, subject and hiring stages carry their own
 figures now; none of them had hit the old cap in the captures.
+
+**Two blank attempt classes found on the ADR-0201 run, 2026-09-03.** The
+first freeze of this record was held back because two rejected recruiter
+attempts on the durable receipt carried neither `validation_failures` nor a
+truncation record, which the third criterion forbids: turn 204's repair reply
+was exactly `{}` and the accumulator raised a bare error, and turn 207's two
+replies were rejected by the staffing verifier, whose codes rode on the
+turn-level `staffing_reason_codes` but never on the attempt row. Neither is
+a truncation; both are recorded now per
+[ADR-0202](../decisions/0202-read-the-recruiter-reply-where-no-safety-property-lives.md):
+a reply that is not a units object is recorded per unit as
+`missing_work_unit` with the `recruiter_response_shape_invalid` diagnosis,
+and the verifier's `unit=code` rows project onto the attempt as
+`validation_failures` through the same function both receipts read. A
+`failed` attempt with no valid response (turn 304's structurally malformed
+reply) is not a rejected one and carries its own reason code.
+Live on the same eleven wordings under the ADR-0202 runtime, two rejected
+recruiter attempts occurred and both carry `validation_failures` on the
+durable receipt: turn 206's first reply was not a units object (recorded as
+`missing_work_unit` on all four units with `recruiter_response_shape_invalid`,
+repaired, and the turn completed) and turn 304's first reply omitted every
+candidate's `score` (six `invalid_candidate` rows with
+`recruiter_candidate_row_shape_invalid`, repaired). Turn 202's two
+verifier-rejected attempts were captured blank because the run predated the
+re-projection fix: the rows projected on write were dropped on read until the
+row projection admitted the verifier's closed vocabulary; 202's captured
+detail now round-trips identically offline (evidence sections 4 and 5 of
+`docs/roadmap/acceptance/evidence/AR-373-AR-385-residue-evidence-20260903.txt`).
 
 ## Approach
 
