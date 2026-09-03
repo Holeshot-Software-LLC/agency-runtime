@@ -32,18 +32,25 @@ dense hybrid recall entirely and the typed subject never reaches the recall
 query it was built to enrich.
 
 Measured 2026-09-03 on the installed runtime (`agency route --host codex`,
-credential sourced), over the first 24 prompts of the thirty-prompt smoke:
+credential sourced), over the complete thirty-prompt smoke:
 
 | | count |
 |---|---|
-| turns that ran the `subject` stage | 14 |
-| of those, `subject` returned `status: applied` | 14 |
-| of those, failed `dense_recall_projection_invalid` | **14** |
+| prompts | 30 |
+| turns that ran the `subject` stage | 17 |
+| of those, `subject` returned `status: applied` | 17 |
+| of those, failed `dense_recall_projection_invalid` | **17** |
 | turns that failed that way *without* the subject stage | **0** |
 
-The correlation is total in both directions. Running the subject stage is
-sufficient to lose dense recall, and nothing else on this box causes that
-failure.
+The correlation is total in both directions: 17 of 17, and 0 of the other 13.
+Running the subject stage is sufficient to lose dense recall, and nothing else
+on this box causes that failure.
+
+For scale, 22 of the 30 turns did not staff at all, and 21 of those 22 abstained
+on an inference-stage failure rather than a recruiter judgement
+(`inference_invalid` 14, `inference_unavailable` 7, against one
+`no_safe_sufficient_team` and one `recruiter_abstained`). This defect accounts
+for 17 of them.
 
 ## Mechanism
 
@@ -129,7 +136,7 @@ plumbing depends on it.
 
 ## Secondary observation, not diagnosed here
 
-The subject stage fired on **14 of 24** measured turns. ADR-0197 costed the
+The subject stage fired on **17 of 30** turns. ADR-0197 costed the
 gate at **7 of 30** against the roster-wide lexical scorer, and turns that
 score normally against the full 291-card roster still ran the stage. The
 pipeline gate reads `request.catalog`, which is not necessarily the catalog the
