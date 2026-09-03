@@ -11,7 +11,7 @@ supersedes: []
 superseded_by: null
 type: acceptance-verification
 issue_id: AR-269
-candidate_commit: 74d6d966e079bba6ba5459baca86d35923c567e3
+candidate_commit: c4d615043f227196081da262deea8ba02366400c
 evidence_cutoff: 2026-09-02
 tracker_url: null
 ---
@@ -41,3 +41,4 @@ against `85ad8d88^` (`4a326773`).
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
+| 1 | satisfied | `AR-269.1-20260902-7539ce8b` | `f2314f8fd82c769d01f0c5f8754b0f7a286d68a949525508b9e3dc5d5571a005` | 2026-09-02 | The pre-fix command output at 4a326773 shows test_openclaw_bridge_main_accepts_a_null_error_field expected exit 0 for error None but main returned 2, with the regression failing as assert 2 == 0. |
