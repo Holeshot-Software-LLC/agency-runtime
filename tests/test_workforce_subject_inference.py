@@ -177,29 +177,33 @@ def test_an_honest_empty_answer_keeps_its_attempts_and_changes_nothing(
     assert attempts == ["attempt"]
 
 
-def test_the_trigger_is_a_zero_floor_not_a_tunable_threshold() -> None:
+def test_the_trigger_is_a_zero_floor_not_a_tunable_threshold(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """ADR-0197: the gate must stay "scored nothing", never "scored lowish".
 
     A loosened trigger would spend a classification call on turns that already
-    retrieve, which is the cost the option was chosen to avoid. This pins the
-    boundary at exactly zero from both sides.
+    retrieve, which is the cost this option was chosen to avoid. The lexical
+    scorer is coarse -- a real card scores 0 or roughly 30, nothing between --
+    so the boundary is pinned against the predicate directly rather than hoping
+    some card lands in the gap a threshold would open.
     """
 
-    barely = [
-        {
-            "slug": "developer-tooling-engineer",
-            "name": "Developer Tooling Engineer",
-            "description": "Install developer tooling",
-            "capabilities": ["developer tooling"],
-            "task_types": ["implementation-change"],
-        }
-    ]
-    from agency_runtime.core.selector.candidate_narrow import pre_narrow
+    from agency_runtime.core.selector import candidate_narrow
 
-    _, scores = pre_narrow("install developer tooling", barely, limit=1)
-    assert scores and max(scores) > 0.0
-    assert retrieval_has_signal("install developer tooling", barely)
+    def _scoring(score: float):
+        def _stub(*_args: object, **_kwargs: object) -> tuple[list[dict[str, Any]], list[float]]:
+            return [{"slug": "any"}], [score]
 
-    _, zero_scores = pre_narrow("zzzqqq", barely, limit=1)
-    assert not zero_scores or max(zero_scores) == 0.0
-    assert not retrieval_has_signal("zzzqqq", barely)
+        return _stub
+
+    monkeypatch.setattr(candidate_narrow, "pre_narrow", _scoring(0.0))
+    assert not candidate_narrow.retrieval_has_signal("q", _CATALOG)
+
+    # The value that separates a zero floor from any threshold above it. A gate
+    # written as `> 5.0` returns False here and the turn wrongly buys a call.
+    monkeypatch.setattr(candidate_narrow, "pre_narrow", _scoring(0.5))
+    assert candidate_narrow.retrieval_has_signal("q", _CATALOG)
+
+    monkeypatch.setattr(candidate_narrow, "pre_narrow", _scoring(31.75))
+    assert candidate_narrow.retrieval_has_signal("q", _CATALOG)
