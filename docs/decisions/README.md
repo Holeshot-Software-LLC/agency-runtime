@@ -149,6 +149,7 @@ Status meanings:
 | [ADR-0194](0194-admit-host-encrypted-codex-canary-task-delivery.md) | Admit host-encrypted Codex canary task delivery | Accepted |
 | [ADR-0195](0195-admit-role-null-codex-canary-child-lineage.md) | Admit role-null Codex canary child lineage under the ciphertext anchor | Accepted |
 | [ADR-0196](0196-carry-governed-method-and-an-output-exemplar-in-the-contractor-card.md) | Carry governed method and an output exemplar in the contractor card | Accepted |
+| [ADR-0197](0197-form-the-retrieval-subject-before-the-turn-that-needs-it.md) | Form the retrieval subject before the turn that needs it | Proposed |
 | [ADR-0182](0182-bound-codex-activation-child-wait.md) | Bound the Codex activation child wait above observed latency | Superseded |
 | [ADR-0183](0183-honor-pinned-canary-judge-timeout.md) | Honor the pinned canary judge profile timeout | Accepted |
 | [ADR-0184](0184-bound-codex-wait-to-full-child-staffing.md) | Bound the Codex wait to the full child staffing path | Accepted |
