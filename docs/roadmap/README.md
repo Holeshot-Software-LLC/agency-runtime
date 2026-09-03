@@ -392,8 +392,8 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-376` | [Hiring sends every worker's full contract, 132k tokens per call](issue-AR-376-hiring-sends-the-entire-workforce.md) | done | p1 | workforce | [#550](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/550) |
 | `AR-377` | [The hiring workforce payload is uncached and sent again to the critic](issue-AR-377-hiring-payload-uncached-and-duplicated.md) | done | p1 | performance | [#551](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/551) |
 | `AR-378` | [A failed hiring call records zero attempts, so the receipt has nothing to debug](issue-AR-378-hiring-failure-records-no-attempt.md) | done | p1 | observability | [#552](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/552) |
-| `AR-379` | [The hire schema has no home for domain procedure, so generated cards are governed but generic](issue-AR-379-hire-schema-has-no-home-for-domain-procedure.md) | in_progress | p2 | workforce | [#553](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/553) |
-| `AR-380` | [Execution-profile prose is casefolded, so a card cannot name a case-sensitive identifier](issue-AR-380-execution-profile-prose-is-casefolded.md) | in_progress | p2 | workforce | [#564](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/564) |
+| `AR-379` | [The hire schema has no home for domain procedure, so generated cards are governed but generic](issue-AR-379-hire-schema-has-no-home-for-domain-procedure.md) | done | p2 | workforce | [#553](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/553) |
+| `AR-380` | [Execution-profile prose is casefolded, so a card cannot name a case-sensitive identifier](issue-AR-380-execution-profile-prose-is-casefolded.md) | done | p2 | workforce | [#564](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/564) |
 | `AR-381` | [Contract prose outside the execution profile is still casefolded, so a v3 card says python source and clis](issue-AR-381-contract-prose-outside-the-execution-profile-is-casefolded.md) | open | p2 | workforce | — |
 
 ## Traceability

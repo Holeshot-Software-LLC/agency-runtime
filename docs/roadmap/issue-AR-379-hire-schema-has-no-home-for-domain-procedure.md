@@ -1,6 +1,6 @@
 ---
 title: "AR-379: The hire schema has no home for domain procedure, so generated cards are governed but generic"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-09-02
 updated: 2026-09-02
