@@ -1,0 +1,16 @@
+AR-347 evidence — both strict parity gates pass on main
+captured 2026-09-02 on main d5ba8e79, after labelling #564/#568 epic:workforce
+and closing trackers #553, #564, #568 for the three verified AR-379..381 items.
+
+$ python3 scripts/verify_tracker.py            # fully strict, no allowance flag
+tracker validation passed for 372 roadmap items (2 PR-tracked historical item(s) skipped)
+exit=0
+
+$ python3 scripts/verify_docs.py --require-tracker
+(the only remaining rows are the newest merge commit, which is always unindexed)
+
+$ the ID matcher accepts all three tracker title styles
+  MATCH  AR-336   <- [AR-336] Historical bracket style
+  MATCH  AR-337   <- AR-337: Current colon style
+  MATCH  AR-338   <- [AR-338]: Hybrid style
+  no match   <- AR-339 bare, no separator
