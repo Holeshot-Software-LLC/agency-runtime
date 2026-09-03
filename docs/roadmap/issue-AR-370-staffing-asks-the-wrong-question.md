@@ -98,6 +98,35 @@ distinguish it from a real ranking.
 See [AR-374](issue-AR-374-host-capability-vocabulary-gap.md) for the
 eligibility half of the same smoke run.
 
+## Partial fix (2026-09-03): the zero-signal result now says so
+
+The retrieval half of this issue is untouched — `configure the gateway` and
+`install ripgrep on this machine` still score **0.0 against every card**, and
+the owner-directed fix for that (re-retrieve on a typed subject when the first
+attempt is weak) is an ordering change in the selector pipeline that needs its
+own decision record. `workforce_subject_hints_from_plan` is fed from a
+*completed* turn's `workforce_plan` through `preflight_recipe.py:140`, so
+producing hints on a fresh turn means inverting plan and retrieval — a hot-path
+architecture change, not a patch.
+
+What is fixed is the half that actively misleads. An all-zero retrieval was
+returned as a ranked list, indistinguishable from a real one:
+
+```
+$ agency route --limit 2 --host codex "Install ripgrep on this machine"
+retrieval: no signal — every card scored 0.0 for this wording, so the
+           candidates below are slug order, not a ranking
+candidate: 3d-scene-developer score=0.000
+candidate: accessibility-auditor score=0.000
+```
+
+A scored query prints nothing extra. `retrieval_signal` and `max_score` ride in
+the JSON payload, so a caller can branch on it rather than inferring from the
+scores.
+
+This does not close the issue. It stops a zero-signal answer from being read as
+a confident one while the retrieval fix is decided.
+
 ## Approach
 
 Owner direction (2026-09-02, after reviewing the measurements above): do not

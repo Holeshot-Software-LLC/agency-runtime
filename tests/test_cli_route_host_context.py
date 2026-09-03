@@ -234,3 +234,41 @@ def test_route_and_explain_forward_the_verified_diagnostic_context(
     assert explain_kwargs["host"] == "codex"
     assert explain_kwargs["platform"] == "windows"
     assert explain_kwargs["capability_receipt"] is receipt
+
+
+def test_zero_score_retrieval_is_labelled_rather_than_ranked(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """AR-370: an all-zero retrieval must not read as a ranking.
+
+    `configure the gateway` and `install ripgrep on this machine` score 0.0
+    against every card, so the list degenerates to slug order. Without a marker
+    that is indistinguishable from a real ranking.
+    """
+
+    zero = [
+        {"slug": "3d-scene-developer", "score": 0.0},
+        {"slug": "accessibility-auditor", "score": 0.0},
+    ]
+    scored = [{"slug": "python-application-engineer", "score": 24.0}]
+
+    assert roster_commands._retrieval_signal(zero) == {"retrieval_signal": "none", "max_score": 0.0}
+    assert roster_commands._retrieval_signal(scored) == {
+        "retrieval_signal": "scored",
+        "max_score": 24.0,
+    }
+    assert roster_commands._retrieval_signal([]) == {
+        "retrieval_signal": "empty",
+        "max_score": 0.0,
+    }
+
+    roster_commands._print_retrieval_signal(roster_commands._retrieval_signal(zero))
+    out = capsys.readouterr().out
+    assert "retrieval: no signal" in out
+    assert "not a ranking" in out
+
+    roster_commands._print_retrieval_signal(roster_commands._retrieval_signal(scored))
+    assert capsys.readouterr().out == ""
+
+    roster_commands._print_retrieval_signal(roster_commands._retrieval_signal([]))
+    assert "no signal" in capsys.readouterr().out

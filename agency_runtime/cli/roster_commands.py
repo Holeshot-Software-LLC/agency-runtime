@@ -1166,6 +1166,7 @@ def cmd_route(args: argparse.Namespace) -> int:
                 "routing": routing,
                 "candidates": candidate_rows,
                 "host_proof": host_proof,
+                **_retrieval_signal(candidate_rows),
             }
         )
     else:
@@ -1175,6 +1176,7 @@ def cmd_route(args: argparse.Namespace) -> int:
         else:
             _print_no_selection_diagnostic(routing)
         _print_host_proof(host_proof)
+        _print_retrieval_signal(_retrieval_signal(candidate_rows))
         print(
             f"confidence={float(routing.get('confidence', 0.0)):.3f} "
             f"source={routing.get('provider', 'deterministic')} "
@@ -1187,6 +1189,35 @@ def cmd_route(args: argparse.Namespace) -> int:
             print(f"companion actions: {', '.join(routing['companion_actions'])}")
         _print_disabled_candidate_shadows(routing)
     return 0
+
+
+def _retrieval_signal(candidate_rows: list[dict[str, Any]]) -> dict[str, Any]:
+    """Report whether retrieval scored anything at all.
+
+    AR-370: an operational request such as `configure the gateway` scores 0.0
+    against every card, so the ranked list degenerates to the head of the slug
+    list in score order -- `3d-scene-developer`, `accessibility-auditor`,
+    `account-strategist`. Presented without a marker that is indistinguishable
+    from a real ranking, which is worse than returning nothing.
+    """
+
+    scores = [float(row.get("score") or 0.0) for row in candidate_rows]
+    if not scores:
+        return {"retrieval_signal": "empty", "max_score": 0.0}
+    top = max(scores)
+    return {
+        "retrieval_signal": "none" if top <= 0.0 else "scored",
+        "max_score": round(top, 4),
+    }
+
+
+def _print_retrieval_signal(signal: dict[str, Any]) -> None:
+    if signal.get("retrieval_signal") == "scored":
+        return
+    print(
+        "retrieval: no signal — every card scored 0.0 for this wording, so the "
+        "candidates below are slug order, not a ranking"
+    )
 
 
 def _print_host_proof(host_proof: dict[str, Any]) -> None:
