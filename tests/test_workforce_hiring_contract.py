@@ -40,6 +40,23 @@ EXPECTED_SLUGS = {
 }
 
 
+def _merge(*groups: tuple[str, ...]) -> tuple[str, ...]:
+    """Mirror the template's case-insensitive section merge."""
+
+    merged: dict[str, str] = {}
+    for group in groups:
+        for item in group:
+            merged.setdefault(item.casefold(), item)
+    return tuple(merged.values())
+
+
+def _section_bullets(prompt: str, heading: str) -> list[str]:
+    """Return the bullet lines the compiled card renders under one heading."""
+
+    body = prompt.split(f"\n{heading}\n", 1)[1].split("\n\n", 1)[0]
+    return [line.removeprefix("- ") for line in body.splitlines() if line.startswith("- ")]
+
+
 def _folded(values: tuple[str, ...]) -> set[str]:
     """Compare prose by content, not case.
 
@@ -836,31 +853,35 @@ def test_v3_contract_compiles_through_the_v3_template() -> None:
 def test_packaged_cards_render_prose_in_its_authored_case() -> None:
     """AR-381 acceptance 3: no packaged card lowercases prose in any section.
 
-    Checked exhaustively rather than by sampling: for all fifteen cards, every
-    item of every prose field must appear in the compiled prompt exactly as
-    authored, and no item whose casefolded form differs may appear as a bullet in
-    that lowercased form.
+    Proven by equality, not by a blocklist: for all fifteen cards, the bullets
+    the template actually renders in each prose section are compared, in order,
+    against the contract's own stored values. A section that lowercased anything
+    -- a whole item or one proper noun inside it -- would not compare equal.
     """
 
-    checked = 0
+    mixed_case_items = 0
     for contract in KNOWN_CONTRACTOR_CONTRACTS:
         prompt = compile_contractor(contract).prompt
-        for field in _PROSE_FIELDS:
-            for item in getattr(contract, field):
-                if field in _RENDERED_PROSE_FIELDS:
-                    assert f"- {item}\n" in prompt, (
-                        f"{contract.slug}.{field}: {item!r} not rendered"
-                    )
-                folded = item.casefold()
-                if folded != item:
-                    # Scoped to the bullet form: the same words may legitimately
-                    # appear lowercased mid-sentence inside execution prose.
-                    assert f"- {folded}\n" not in prompt, (
-                        f"{contract.slug}.{field}: lowercased {folded!r}"
-                    )
-                    checked += 1
+        profile = contract.execution_profile
+        assert profile is not None
+        expected = {
+            "Capabilities and owned outcomes": _merge(
+                contract.outcomes_owned, contract.capabilities
+            ),
+            "Expected artifacts": contract.artifacts_produced,
+            "Verification and required evidence": _merge(
+                profile.verification_steps, contract.evidence_requirements
+            ),
+            "Required operating inputs and tools": _merge(contract.requirements, contract.tools),
+            "Role boundaries": _merge(contract.anti_capabilities, contract.forbidden_scenarios),
+        }
+        for heading, items in expected.items():
+            assert _section_bullets(prompt, heading) == list(items), (
+                f"{contract.slug}: {heading} does not render its authored values"
+            )
+            mixed_case_items += sum(item.casefold() != item for item in items)
     # Guard the guard: a vacuous pass would mean nothing carried mixed case.
-    assert checked >= 40
+    assert mixed_case_items >= 40
 
 
 def test_allowlisted_identifier_lists_are_still_checked_against_their_allowlist() -> None:
