@@ -1,6 +1,6 @@
 ---
 title: "AR-384: The recruiter is told to staff units the roster cannot cover, then rejected for staffing them"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-09-03
 updated: 2026-09-03
@@ -210,14 +210,18 @@ with `roster_coverage_gap domain:desktop`, and the turn then died at the strict
 critic (`wrong-neighbor-selection`, `missing-implementation-lifecycle-assurance`),
 which is AR-386.
 
-**Verification (2026-09-03).** The acceptance record is frozen at
-`1711bcaa`; the isolated verifier found criteria 1 and 3 satisfied and
-criterion 2 contradicted, because the criterion names `unit-install-operation`
-literally while the fresh-wording turn's planner named the captured-shape unit
-`unit-install-plan`. Under the AR-386 runtime turn 304 (`Get the helix text
-editor working in my shell on this box`) staffed `operations-manager` on both
-plan-authority install units of that shape and completed. Whether the
-criterion should name the shape rather than the id is the owner's call.
+**Verification (2026-09-03).** The record was first frozen at `1711bcaa`;
+the isolated verifier found criteria 1 and 3 satisfied and criterion 2
+contradicted, because the criterion named `unit-install-operation` literally
+while the fresh-wording turn's planner named the captured-shape unit
+`unit-install-plan`, and no fresh planner run reproduces a unit id. Criterion
+2 was reworded to the unit shape and criterion 4 added for option 2; the
+record was re-frozen at `7c67b524` and the isolated verifier returned
+**satisfied on all four criteria** (runs `AR-384.1-20260903-68c6c116`,
+`AR-384.2-20260903-42531a9c`, `AR-384.3-20260903-61d83a9d`,
+`AR-384.4-20260903-ccdd16e3`), so the issue is done. The recruiter-side
+residue recorded above belongs to AR-373 and to the recruiter's ranking of
+ineligible implementers, not to this issue.
 
 **Residue after option 1.** The planner names `domain:platform` for
 the operating system; the roster's `platform` domain was served under plan
