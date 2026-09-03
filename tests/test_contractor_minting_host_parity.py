@@ -73,7 +73,7 @@ def _result(value: dict[str, Any]) -> StructuredProviderResult:
 
 def _employment_contract() -> dict[str, Any]:
     return {
-        "schema_version": 2,
+        "schema_version": 3,
         "slug": _CONTRACTOR,
         "role": "Quantum Build Engineer",
         "narrow_scope": "Portable TypeScript build plugins for quantum compiler toolchains.",
@@ -119,12 +119,16 @@ def _employment_contract() -> dict[str, Any]:
                 "rationale": "A general code reviewer is the safer specialist.",
             }
         ],
+        "output_exemplar": (
+            "Changed: plugins/quantum/emit.ts:142 -- deterministic module order, temp artifact removed in finally; plugin.config.json -- targets win32-x64 and linux-x64. Verified: vitest plugins/quantum 9 passed incl. 3 invalid-IR rejections; tsc --noEmit clean; build twice -> identical sha256 4b81d0..a19c on both platforms. Open: cross-compile from linux to win32 unproven."
+        ),
         "execution_profile": {
             "inspect_before_acting": [
                 "Inspect package metadata, compiler interfaces, supported platforms, and repository policy."
             ],
             "working_principles": [
-                "Keep build integration deterministic, typed, portable, and bounded to the assigned plugin."
+                "Keep build integration deterministic, typed, portable, and bounded to the assigned plugin.",
+                "Emit artifacts in a stable order so a repeated build is byte-identical.",
             ],
             "failure_modes_to_check": [
                 "Check module drift, invalid compiler input, partial output, and platform path differences."

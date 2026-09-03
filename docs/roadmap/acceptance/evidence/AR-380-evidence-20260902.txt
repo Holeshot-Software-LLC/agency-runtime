@@ -1,0 +1,17 @@
+AR-380 evidence — execution-profile prose keeps its authored case
+captured 2026-09-02 in the AR-379/AR-380 worktree
+
+$ python3 -m pytest tests/test_workforce_hiring_contract.py -q -W error -k 'case or casefold or unique or generic'
+............                                                             [100%]
+12 passed, 49 deselected in 0.08s
+
+$ compile the packaged python-application-engineer card at v3 and grep the prose
+rendered: - Name zones in IANA form, for example America/Chicago, never an abbreviation.
+america/chicago present: False
+
+$ identifier lists still casefold at v3
+capabilities: ('async python design', 'typing and tests')
+tools: ('repository', 'python')
+lifecycle_phases: ('implementation', 'testing')
+platforms: ('windows', 'linux')
+hosts: ('codex', 'claude')

@@ -346,6 +346,60 @@ _EXECUTION_PROFILES: dict[str, dict[str, list[str]]] = {
 }
 
 
+# ADR-0196: one literal example of a finished answer in each role's own form,
+# shown rather than described.  These render verbatim into the compiled
+# contractor prompt under "Answer shape", so they keep the case they are
+# authored in and must stay concrete enough that another role's card could not
+# borrow them.
+_OUTPUT_EXEMPLARS: dict[str, str] = {
+    "ai-evaluation-engineer": (
+        "S3 stale-index citation, row 3/12, P1, from INC-2291 (7 escalations) | rag-v3 vs rag-v4, n=180, blinded, judge temp 0 | groundedness (0-2 rubric) 1.42 -> 1.71 gate >=1.65 MET; abstain-on-thin-evidence 61% -> 88% gate >=85% MET; p95 3.4s gate <=2.5s FAILED; $0.019/item | 12/180 runs invalid (timeout, malformed args), excluded not imputed | judge-human kappa 0.72, n=40 | VERDICT: not release-ready, latency gate | limits: 2026-Q2 tickets only, no live replay, judge shares rag-v4 family"
+    ),
+    "ai-governance-auditor": (
+        "READINESS: CONDITIONAL, 2 of 9 controls unevidenced. Boundary: svc-triage-agent v4.2, tool grants config/router.yaml:31, model changes via deploy/agents.tf. GAP-1 CONFIRMED unowned decision -- auto-close at handlers/triage.py:212 has no named owner; impact high, likelihood likely; fix: name an approver in the triage RACI; residual moderate. GAP-2 EVIDENCE MISSING -- prompt-version audit log not produced. ASSUMPTION: 4h escalation SLA per ops/escalation.md:18, unconfirmed."
+    ),
+    "ai-observability-engineer": (
+        "SIGNAL INVENTORY 11 signals, 4 spans. gen_ai.refusal_reason | llm.generate | src/agent/router.py:212 | asks: which prompt version regressed refusals? | 100% sampled, 30d. rag.doc_ids | hashed, chunk text dropped at exporter | 7d. ALERT validator_fail_rate > 2% / 15m, p95 1.8s. LINKAGE 5 of 5 branches replay run_id: retrieval -> generate -> tool -> validate; GAP src/agent/fallback.py:88 emits no validator span. BLIND SPOT correctness needs a graded eval set. COST +2.1% spend."
+    ),
+    "application-integration-verifier": (
+        "Integration verification -- artifact 4f1c9ab on compose, postgres 16 | install PASS: clean clone + make setup, install-4f1c9ab.txt | auth-to-ui PASS: login cookie renders /dashboard, 401 anon | config-to-api FAIL: POST /v1/sessions 500 if APP_BASE_URL lacks a scheme, config/settings.py:212, repro make serve APP_BASE_URL=example.test | restart FAIL: session row gone after restart | UNVERIFIED webhook seam, no receiver | UNTESTED 1.2.x upgrade | 2 of 6 seams passing"
+    ),
+    "application-observability-engineer": (
+        "checkout-service telemetry | span checkout.submit +tenant.id (12 values) src/checkout/handler.py:184; counter checkout_fail_total{reason} 6 enum src/obs/metrics.py:41; trace_id on all log records src/obs/logging.py:77; /readyz fails on pool saturation, /healthz liveness-only, src/obs/health.py:52. Verified: 3 of 3 failure paths carry reason+trace_id (tests/obs/test_signals.py, 14 passed); auth_token masked in 240 records, 0 leaks; customer_email label dropped. Open: pool alert owner unset."
+    ),
+    "backend-service-engineer": (
+        "Changed path: POST /v1/orders -> orders/handlers.py:212, orders/repo.py:88 -- commit keyed on Idempotency-Key, retry bounded to 3, 409 on key reuse | Success receipt: test_commit_once -- 201, 1 order + 1 ledger row | Failure receipt: ledger timeout injected -- rolled back, 0 orphan rows, 503 Retry-After 2, replay returns the first 201 | AuthZ: tenant scope enforced pre-write, cross-tenant probe 404 (test_authz 4 of 4) | Config: commit_timeout_ms 800 -> 1500, config/orders.yaml:31"
+    ),
+    "cross-platform-installer-engineer": (
+        "Changed: packaging/windows/install.ps1:118 quote install root at service create; packaging/linux/postinst:47 idempotent unit reinstall; install.defaults.toml +retain_user_data. Flows win11/ubuntu24.04 -- fresh PASS/PASS exit 0; repeat PASS/PASS, no duplicate unit; upgrade 1.4.2->1.5.0 PASS/PASS, 6 of 6 keys migrated; interrupted upgrade PASS/PASS, rolls back to 1.4.2; uninstall PASS/PASS, 41 owned files gone, %ProgramData%/Acme kept. Open: locked-binary retry unproven on win."
+    ),
+    "cross-platform-release-verifier": (
+        "RELEASE VERDICT: BLOCKED, 1 of 2 platforms clean | ARTIFACTS: runtime-2.4.0-win-x64.msi sha256 9f3ac1..7d2e, runtime_2.4.0_amd64.deb sha256 4b81d0..a19c, build 4471, not rebuilt | WIN 11 23H2 VM: install PASS 41s, smoke 12 of 12 PASS, upgrade 2.3.1 to 2.4.0 FAIL, AgencyRuntimeSvc Stopped, profile db renamed not migrated (win-upgrade-4471.log:118), uninstall leaves 3 registry keys | UBUNTU 24.04: lifecycle 5 of 5 PASS, 0 leftovers | UNTESTED: macOS, offline install"
+    ),
+    "documentation-evidence-researcher": (
+        "Q: httpx.AsyncClient 5xx retry defaults. Target httpx 0.27.2. | C1 REFUTED, conf high -- HTTPTransport(retries=0) = connect errors only; api.md#httptransport, Transports guide. | C2 CONFIRMED, conf high -- default Timeout(5.0), all 4 phases; CHANGELOG 0.23.0 (was None). | C3 CONFLICT -- posts show retries=3, stale since 0.20. | C4 UNDOCUMENTED, conf low -- HTTP/2 GOAWAY retry. | DEPRECATED: proxies= dropped 0.28.0 for proxy=. | RV-1: 503 stub, assert 1 transport attempt."
+    ),
+    "hallucination-root-cause-investigator": (
+        "FAILING CASE run 8f21c4 t3 -- claimed a 45-day refund window vs refunds-policy.md:88 (30). BOUNDARIES: retriever 6 chunks, reranker dropped that chunk (0.31 vs 0.34 cutoff), prompt carried 2 of 6, billing.lookup 504 coerced to empty at agent/answer.py:212. ROOT CAUSE: rerank cutoff (primary) + swallowed tool error; not stale, index rebuilt 2026-08-30. FIX: fail closed on 5xx. REGRESSION hc-047: abstain on 504. RESIDUAL RISK medium, 3 of 7 policy families unprobed."
+    ),
+    "policy-guardrail-architect": (
+        "GR-04 refund over-scope | path: agent calls refunds.issue above tier cap | prevent: allowlist blocks tool below tier 2, schema rejects over 2000 (guards/args.py:88) | confirm: human gate 500-2000 | detect: audit flags 3+ splits/10m (audit/rules.py:57) | fallback: typed refusal + escalation | tests: prevent 9/9, confirm 6/6, detect 12/14 (2 FN on splits), fallback 4/4, bypass 5/6 | FP 1.2% on 250 benign, p95 +38ms | residual: GR-07 prompt-only, owner platform-tools"
+    ),
+    "python-application-engineer": (
+        "Changed: src/ingest/pool.py:184 -- asyncio.TaskGroup replaces gather, CancelledError re-raised after aclose; :231 transport closed in finally; pyproject.toml -- requires-python >=3.11, [project.scripts] ingest = ingest.cli:main. Verified: pytest tests/test_pool.py -> 14 passed, 5 failure paths incl. cancel-mid-write; mypy --strict -> 0 errors; ruff check clean; ingest --dry-run -> exit 0, 1.2s, POSIX + Windows path fixtures. Open: fd reuse at pool.py:247 untested."
+    ),
+    "selection-safety-critic": (
+        "VERDICT reject -- unit u3 | universe sha256:9f4c1e2b, 41 offered / 6 ranked | coverage 7 of 8 typed requirements, uncovered artifact:runbook | margin 0.04 vs min 0.10: migration-planner 0.71 over runner-up release-coordinator 0.67 | lifecycle: incident-triage-responder covers release, not planning | near neighbor docs-site-editor 0.63 is not documentation-evidence-researcher | reason_codes selection-margin-too-low, uncovered-typed-requirement | unresolved: 2 disabled candidates absent"
+    ),
+    "software-test-engineer": (
+        "Added -- tests/unit/test_pool.py::test_release_rejects_foreign_handle (pins the double-release at src/pool.py:184); tests/integration/test_pool.py::test_recycle_under_concurrent_checkout (12 workers x 200 iters, seed 7); tests/property/test_pool.py::test_leased_plus_idle_eq_capacity (300 cases). All 3 fail at a91c3f2, pass at HEAD. Verified -- pytest -q -k pool: 41 passed, 2 skipped, 6.4s; full suite 812 passed. Gap -- fsync durability has no deterministic seam."
+    ),
+    "typescript-application-engineer": (
+        "Changed | src/cli/parseArgs.ts:112 -- argv parsed by a zod schema, `as ParsedFlags` cast dropped; src/writeReport.ts:48 -- awaited stream close, temp unlink in finally; package.json -- ./client export subpath + types. Verified | tsc --noEmit and eslint clean (3 errors gone); vitest src/cli 14 passed, 5 invalid-input rejections; tsup emits ESM + CJS + .d.ts, green on node 20.11.1 + 22.4.0; node dist/cli.js --limit abc exits 2 with `expected integer, received string`."
+    ),
+}
+
+
 def _definition(
     slug: str,
     role: str,
@@ -369,7 +423,7 @@ def _definition(
     relationship_target: str | None = None,
 ) -> dict[str, Any]:
     return {
-        "schema_version": 2,
+        "schema_version": 3,
         "slug": slug,
         "role": role,
         "narrow_scope": scope,
@@ -416,6 +470,7 @@ def _definition(
             }
         ],
         "execution_profile": _EXECUTION_PROFILES[slug],
+        "output_exemplar": _OUTPUT_EXEMPLARS[slug],
     }
 
 
