@@ -13,7 +13,7 @@ supersedes: []
 superseded_by: null
 type: acceptance-verification
 issue_id: AR-385
-candidate_commit: pending
+candidate_commit: 1c1bf0797307f628992dfaba5ea977aa4b6e0205
 evidence_cutoff: 2026-09-03
 tracker_url: null
 ---
@@ -67,3 +67,6 @@ below cite the recording code, its tests, and the live and offline evidence.
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
+| 1 | satisfied | `AR-385.1-20260903-326a18ff` | `5e21fdb93c79c911a35d810ddfd704999c71eef961adfe17c620892b3576da61` | 2026-09-03 | The inference and receipt excerpts record recruiter attempts as provider_response_truncated with completion_cap_tokens, while the retry test confirms feedback says the reply was cut off at the completion cap. |
+| 2 | satisfied | `AR-385.2-20260903-66fa65ea` | `877fadb47206b3afc664e0fbea45329e75dd389f6bae7cf7b48861d4390dd32a` | 2026-09-03 | The budget code and payload test show recruiter and hiring requests use 16,384 reply tokens, while live turn 301 completed the six-unit throttle nomination on the cited MiniMax deployment at 2,277 of an 18,432-token cap without truncation. |
+| 3 | satisfied | `AR-385.3-20260903-0c34dab3` | `4f99f544e52fc2512f8544acf57fd733a9a8930096c6a5f9bf8e23c3cab95bec` | 2026-09-03 | Parser excerpts classify invalid recruiter replies, verifier failures project and survive re-projection, and cited tests cover malformed reply and verifier rejection paths, ensuring each rejected attempt receives validation_failures unless truncation is recorded. |
