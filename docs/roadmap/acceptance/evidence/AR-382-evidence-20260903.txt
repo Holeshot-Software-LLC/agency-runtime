@@ -26,3 +26,8 @@ AFTER the fix, same box, same Store:
   $ python3 -m pytest tests/test_known_contractor_install.py -q -W error
   ............................                                             [100%]
   28 passed in 13.09s
+
+  $ criterion 3: every predecessor prompt identity is unchanged by the fix
+  (each builder raises RuntimeError if its pinned hash table drifts)
+    predecessor packages built: 60   prompt-hash drift: 0
+    pinned tables: v1=15 v2=15 v3=15
