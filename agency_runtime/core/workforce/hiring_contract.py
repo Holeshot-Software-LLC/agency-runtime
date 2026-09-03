@@ -11,10 +11,24 @@ from typing import Any
 
 from agency_runtime.core.workforce.identity import stable_worker_id
 
-HIRING_CONTRACT_SCHEMA_VERSION = 2
+# ADR-0196 took the contract to v3 to give a card a case-preserving home for
+# the shape of its answer. v1 (no execution profile) and v2 stay parseable so
+# already-registered workers replay unchanged; only live hiring requires the
+# current version.
+HIRING_CONTRACT_SCHEMA_VERSION = 3
 LEGACY_HIRING_CONTRACT_SCHEMA_VERSION = 1
-CONTRACTOR_PROMPT_TEMPLATE_VERSION = 2
+SUPPORTED_HIRING_CONTRACT_SCHEMA_VERSIONS = (1, 2, 3)
+# The version at which execution-profile prose stopped being casefolded (AR-380).
+# Frozen deliberately: a worker minted under v3 must keep compiling the way v3
+# compiled, so this must not follow HIRING_CONTRACT_SCHEMA_VERSION to v4.
+CASE_PRESERVING_SCHEMA_VERSION = 3
+# The version at which working_principles became an ordered decision procedure
+# rather than a motto (ADR-0196).  Frozen for the same replay reason.
+PROCEDURAL_SCHEMA_VERSION = 3
+MIN_WORKING_PRINCIPLES = 2
+CONTRACTOR_PROMPT_TEMPLATE_VERSION = 3
 LEGACY_CONTRACTOR_PROMPT_TEMPLATE_VERSION = 1
+SUPPORTED_CONTRACTOR_PROMPT_TEMPLATE_VERSIONS = (1, 2, 3)
 MAX_TEXT = 512
 MAX_ITEMS = 12
 
@@ -239,9 +253,27 @@ Fixed operating rules
 4. Abstain and report the boundary when the assignment exceeds the narrow scope or available authority.
 5. Produce the required evidence with every completed assignment.
 """
-CONTRACTOR_PROMPT_TEMPLATE_HASH = (
+CONTRACTOR_PROMPT_TEMPLATE_HASH_V2 = (
     "sha256:" + hashlib.sha256(_TEMPLATE_V2.encode("utf-8")).hexdigest()
 )
+
+# v3 is v2 plus one section: the shape of a finished answer, shown rather
+# than described (ADR-0196).
+_TEMPLATE_V3 = _TEMPLATE_V2.replace(
+    "Expected artifacts\n{artifacts_produced}\n",
+    "Expected artifacts\n{artifacts_produced}\n\nAnswer shape\n{answer_shape}\n",
+    1,
+)
+if "{answer_shape}" not in _TEMPLATE_V3:  # pragma: no cover - construction guard
+    raise RuntimeError("contractor template v3 lost its answer-shape section")
+CONTRACTOR_PROMPT_TEMPLATE_HASH = (
+    "sha256:" + hashlib.sha256(_TEMPLATE_V3.encode("utf-8")).hexdigest()
+)
+_TEMPLATE_HASH_BY_VERSION = {
+    LEGACY_CONTRACTOR_PROMPT_TEMPLATE_VERSION: LEGACY_CONTRACTOR_PROMPT_TEMPLATE_HASH,
+    2: CONTRACTOR_PROMPT_TEMPLATE_HASH_V2,
+    CONTRACTOR_PROMPT_TEMPLATE_VERSION: CONTRACTOR_PROMPT_TEMPLATE_HASH,
+}
 
 
 @dataclass(frozen=True, slots=True)
@@ -301,13 +333,19 @@ class EmploymentContract:
     positive_evaluations: tuple[ContractorEvalCase, ...]
     hard_negative_evaluations: tuple[ContractorEvalCase, ...]
     execution_profile: ExecutionProfile | None = None
+    output_exemplar: str = ""
 
     def to_dict(self) -> dict[str, Any]:
+        # Round-trips exactly: a document only carries the fields its own
+        # schema version declares, so re-parsing it never trips `_closed`.
         result = asdict(self)
         profile = result.pop("execution_profile")
+        exemplar = result.pop("output_exemplar")
         if self.schema_version == LEGACY_HIRING_CONTRACT_SCHEMA_VERSION and profile is None:
             return result
         result["execution_profile"] = profile
+        if "output_exemplar" in _FIELDS_BY_VERSION.get(self.schema_version, _FIELDS_V3):
+            result["output_exemplar"] = exemplar
         return result
 
 
@@ -355,6 +393,12 @@ _FIELDS_V1 = frozenset(
     }
 )
 _FIELDS_V2 = _FIELDS_V1 | {"execution_profile"}
+_FIELDS_V3 = _FIELDS_V2 | {"output_exemplar"}
+_FIELDS_BY_VERSION = {
+    LEGACY_HIRING_CONTRACT_SCHEMA_VERSION: _FIELDS_V1,
+    2: _FIELDS_V2,
+    HIRING_CONTRACT_SCHEMA_VERSION: _FIELDS_V3,
+}
 _EXECUTION_PROFILE_FIELDS = frozenset(
     {
         "inspect_before_acting",
@@ -420,7 +464,16 @@ def _text(value: object, label: str, *, maximum: int = MAX_TEXT) -> str:
     return result
 
 
-def _items(value: object, label: str, *, allowed: frozenset[str] | None = None) -> tuple[str, ...]:
+def _items(
+    value: object,
+    label: str,
+    *,
+    allowed: frozenset[str] | None = None,
+    casefold: bool = True,
+) -> tuple[str, ...]:
+    # AR-380: casefolding is right for the identifier lists this guards, where
+    # normalized casing is load-bearing for matching and dedup, and wrong for
+    # execution-profile prose, which has to be able to name `America/Chicago`.
     if (
         not isinstance(value, Sequence)
         or isinstance(value, (str, bytes, bytearray))
@@ -428,8 +481,9 @@ def _items(value: object, label: str, *, allowed: frozenset[str] | None = None) 
         or len(value) > MAX_ITEMS
     ):
         raise ValueError(f"{label} must be a nonempty bounded list")
-    result = tuple(_text(item, f"{label} item", maximum=160).casefold() for item in value)
-    if len(set(result)) != len(result):
+    validated = tuple(_text(item, f"{label} item", maximum=160) for item in value)
+    result = tuple(item.casefold() for item in validated) if casefold else validated
+    if len({item.casefold() for item in result}) != len(result):
         raise ValueError(f"{label} must contain unique values")
     if allowed is not None and not set(result) <= allowed:
         raise ValueError(f"{label} contains an unsupported value")
@@ -486,33 +540,64 @@ def _eval_case(value: object, *, positive: bool) -> ContractorEvalCase:
     )
 
 
-def _execution_items(value: object, label: str) -> tuple[str, ...]:
-    result = _items(value, label)
+def _execution_items(
+    value: object, label: str, *, preserve_case: bool, minimum: int = 1
+) -> tuple[str, ...]:
+    """Validate execution-profile prose, keeping its case from v3 onward.
+
+    AR-380: a principle that says `America/Chicago` has to survive as a valid
+    IANA identifier, so v3 stops casefolding. v1 and v2 keep it, because a
+    worker minted under those versions stored a `prompt_hash` computed from
+    the casefolded render -- changing how they compile would turn every one of
+    those stored hashes into a lie. How a version renders is frozen once a
+    worker is minted under it.
+
+    The filler blocklist and the uniqueness check compare case-insensitively
+    either way, so neither weakens.
+    """
+
+    result = _items(value, label, casefold=not preserve_case)
+    if len(result) < minimum:
+        raise ValueError(f"{label} must contain at least {minimum} items")
     if any(
-        item in _GENERIC_EXECUTION_GUIDANCE or len(item.split()) < 3 or len(item) < 12
+        item.casefold() in _GENERIC_EXECUTION_GUIDANCE or len(item.split()) < 3 or len(item) < 12
         for item in result
     ):
         raise ValueError(f"{label} must contain concrete role-specific guidance")
     return result
 
 
-def _execution_profile(value: object) -> ExecutionProfile:
+def _execution_profile(value: object, *, preserve_case: bool, procedural: bool) -> ExecutionProfile:
     raw = _closed(value, _EXECUTION_PROFILE_FIELDS, "execution_profile")
     return ExecutionProfile(
         inspect_before_acting=_execution_items(
-            raw["inspect_before_acting"], "execution_profile.inspect_before_acting"
+            raw["inspect_before_acting"],
+            "execution_profile.inspect_before_acting",
+            preserve_case=preserve_case,
         ),
         working_principles=_execution_items(
-            raw["working_principles"], "execution_profile.working_principles"
+            raw["working_principles"],
+            "execution_profile.working_principles",
+            preserve_case=preserve_case,
+            # ADR-0196: from v3 the principles are the role's ordered decision
+            # procedure, so a single maxim is rejected structurally rather than
+            # left to the critic's judgement.
+            minimum=MIN_WORKING_PRINCIPLES if procedural else 1,
         ),
         failure_modes_to_check=_execution_items(
-            raw["failure_modes_to_check"], "execution_profile.failure_modes_to_check"
+            raw["failure_modes_to_check"],
+            "execution_profile.failure_modes_to_check",
+            preserve_case=preserve_case,
         ),
         verification_steps=_execution_items(
-            raw["verification_steps"], "execution_profile.verification_steps"
+            raw["verification_steps"],
+            "execution_profile.verification_steps",
+            preserve_case=preserve_case,
         ),
         stop_conditions=_execution_items(
-            raw["stop_conditions"], "execution_profile.stop_conditions"
+            raw["stop_conditions"],
+            "execution_profile.stop_conditions",
+            preserve_case=preserve_case,
         ),
     )
 
@@ -521,15 +606,15 @@ def parse_employment_contract(value: object) -> EmploymentContract:
     """Validate inference output as bounded descriptive data, never as instructions."""
 
     if not isinstance(value, Mapping):
-        _closed(value, _FIELDS_V2, "employment contract")
+        _closed(value, _FIELDS_V3, "employment contract")
         raise AssertionError("unreachable")
     schema_version = value.get("schema_version")
-    if isinstance(schema_version, bool) or schema_version not in {
-        LEGACY_HIRING_CONTRACT_SCHEMA_VERSION,
-        HIRING_CONTRACT_SCHEMA_VERSION,
-    }:
+    if (
+        isinstance(schema_version, bool)
+        or schema_version not in SUPPORTED_HIRING_CONTRACT_SCHEMA_VERSIONS
+    ):
         raise ValueError("employment contract schema_version is unsupported")
-    fields = _FIELDS_V1 if schema_version == LEGACY_HIRING_CONTRACT_SCHEMA_VERSION else _FIELDS_V2
+    fields = _FIELDS_BY_VERSION[schema_version]
     raw = _closed(value, fields, "employment contract")
     slug = _identifier(raw["slug"], "slug")
     if _SLUG.fullmatch(slug) is None:
@@ -561,7 +646,14 @@ def parse_employment_contract(value: object) -> EmploymentContract:
     execution_profile = (
         None
         if schema_version == LEGACY_HIRING_CONTRACT_SCHEMA_VERSION
-        else _execution_profile(raw["execution_profile"])
+        else _execution_profile(
+            raw["execution_profile"],
+            preserve_case=schema_version >= CASE_PRESERVING_SCHEMA_VERSION,
+            procedural=schema_version >= PROCEDURAL_SCHEMA_VERSION,
+        )
+    )
+    output_exemplar = (
+        _text(raw["output_exemplar"], "output_exemplar") if "output_exemplar" in fields else ""
     )
     return EmploymentContract(
         schema_version=schema_version,
@@ -589,6 +681,7 @@ def parse_employment_contract(value: object) -> EmploymentContract:
         positive_evaluations=positive,
         hard_negative_evaluations=negative,
         execution_profile=execution_profile,
+        output_exemplar=output_exemplar,
     )
 
 
@@ -635,6 +728,13 @@ def classify_contractor_risk(contract: EmploymentContract) -> tuple[str, ...]:
     risk_scope = (
         *base_risk_scope,
         *execution_guidance,
+        # ADR-0196: the exemplar is a positive claim about what this role hands
+        # back and it renders into the compiled prompt, so it must raise a risk
+        # class.  It stays out of base_risk_scope deliberately: that tuple also
+        # feeds the technical-context test that *de-escalates* medical, and an
+        # exemplar full of file paths and test names would suppress the class it
+        # is supposed to be screened for.
+        contract.output_exemplar,
     )
     classes = []
     for name, markers in _HIGH_RISK_MARKERS:
@@ -704,10 +804,13 @@ def contractor_prompt_version(
     digest = str(prompt_hash or "").removeprefix("sha256:")[:CONTRACTOR_VERSION_DIGEST_CHARS]
     if _CONTRACTOR_VERSION_DIGEST.fullmatch(digest) is None:
         raise ValueError("contractor prompt hash must be a lowercase sha256 hex digest")
-    if isinstance(template_version, bool) or template_version not in {
-        LEGACY_CONTRACTOR_PROMPT_TEMPLATE_VERSION,
-        CONTRACTOR_PROMPT_TEMPLATE_VERSION,
-    }:
+    # Every already-registered contractor carries a `contractor-<template>-<digest>`
+    # identity, so a superseded template version must stay resolvable or those
+    # workers become unreferenceable.
+    if (
+        isinstance(template_version, bool)
+        or template_version not in SUPPORTED_CONTRACTOR_PROMPT_TEMPLATE_VERSIONS
+    ):
         raise ValueError("contractor prompt template version is unsupported")
     return f"contractor-{template_version}-{digest}"
 
@@ -728,36 +831,71 @@ def _compile_v1_prompt(contract: EmploymentContract, *, worker_id: str) -> str:
     )
 
 
-def _compile_v2_prompt(contract: EmploymentContract, *, worker_id: str) -> str:
+def _merged(*groups: tuple[str, ...]) -> tuple[str, ...]:
+    """Concatenate bullet groups, dropping repeats that differ only in case.
+
+    Several template sections render execution-profile prose beside contract
+    prose.  Before AR-380 both sides arrived casefolded, so ``dict.fromkeys``
+    collapsed an identical pair; from v3 the profile side keeps its authored
+    case and an exact-match dedup would render the same line twice.  The first
+    spelling wins, so the cased one survives when a pair collides.
+    """
+
+    merged: dict[str, str] = {}
+    for group in groups:
+        for item in group:
+            merged.setdefault(item.casefold(), item)
+    return tuple(merged.values())
+
+
+def _profile_prompt_fields(contract: EmploymentContract, *, worker_id: str) -> dict[str, str]:
+    """Build the fields every execution-profile template renders."""
+
     profile = contract.execution_profile
     if profile is None:
-        raise ValueError("v2 employment contracts require an execution profile")
-    return _TEMPLATE_V2.format(
-        worker_id=worker_id,
-        slug=contract.slug,
-        role=contract.role,
-        narrow_scope=contract.narrow_scope,
-        authority=contract.authority,
-        context_mode=contract.context_mode,
-        external_mutation="yes" if contract.external_mutation else "no",
-        capabilities_and_outcomes=_bullets(
-            tuple(dict.fromkeys((*contract.outcomes_owned, *contract.capabilities)))
+        raise ValueError("employment contracts after v1 require an execution profile")
+    return {
+        "worker_id": worker_id,
+        "slug": contract.slug,
+        "role": contract.role,
+        "narrow_scope": contract.narrow_scope,
+        "authority": contract.authority,
+        "context_mode": contract.context_mode,
+        "external_mutation": "yes" if contract.external_mutation else "no",
+        "capabilities_and_outcomes": _bullets(
+            _merged(contract.outcomes_owned, contract.capabilities)
         ),
-        inspect_before_acting=_bullets(profile.inspect_before_acting),
-        working_principles=_bullets(profile.working_principles),
-        failure_modes_to_check=_bullets(profile.failure_modes_to_check),
-        artifacts_produced=_bullets(contract.artifacts_produced),
-        verification_and_evidence=_bullets(
-            tuple(dict.fromkeys((*profile.verification_steps, *contract.evidence_requirements)))
+        "inspect_before_acting": _bullets(profile.inspect_before_acting),
+        "working_principles": _bullets(profile.working_principles),
+        "failure_modes_to_check": _bullets(profile.failure_modes_to_check),
+        "artifacts_produced": _bullets(contract.artifacts_produced),
+        "verification_and_evidence": _bullets(
+            _merged(profile.verification_steps, contract.evidence_requirements)
         ),
-        requirements_and_tools=_bullets(
-            tuple(dict.fromkeys((*contract.requirements, *contract.tools)))
+        "requirements_and_tools": _bullets(_merged(contract.requirements, contract.tools)),
+        "role_boundaries": _bullets(
+            _merged(contract.anti_capabilities, contract.forbidden_scenarios)
         ),
-        role_boundaries=_bullets(
-            tuple(dict.fromkeys((*contract.anti_capabilities, *contract.forbidden_scenarios)))
-        ),
-        stop_conditions=_bullets(profile.stop_conditions),
+        "stop_conditions": _bullets(profile.stop_conditions),
+    }
+
+
+def _compile_v2_prompt(contract: EmploymentContract, *, worker_id: str) -> str:
+    return _TEMPLATE_V2.format(**_profile_prompt_fields(contract, worker_id=worker_id))
+
+
+def _compile_v3_prompt(contract: EmploymentContract, *, worker_id: str) -> str:
+    return _TEMPLATE_V3.format(
+        **_profile_prompt_fields(contract, worker_id=worker_id),
+        answer_shape=contract.output_exemplar,
     )
+
+
+_PROMPT_COMPILERS = {
+    LEGACY_CONTRACTOR_PROMPT_TEMPLATE_VERSION: _compile_v1_prompt,
+    2: _compile_v2_prompt,
+    CONTRACTOR_PROMPT_TEMPLATE_VERSION: _compile_v3_prompt,
+}
 
 
 def compile_contractor(contract: EmploymentContract) -> CompiledContractor:
@@ -766,14 +904,11 @@ def compile_contractor(contract: EmploymentContract) -> CompiledContractor:
     # Revalidate manually constructed dataclasses at the compiler boundary.
     contract = parse_employment_contract(contract.to_dict())
     worker_id = stable_worker_id(contract.slug)
-    if contract.schema_version == LEGACY_HIRING_CONTRACT_SCHEMA_VERSION:
-        template_version = LEGACY_CONTRACTOR_PROMPT_TEMPLATE_VERSION
-        template_hash = LEGACY_CONTRACTOR_PROMPT_TEMPLATE_HASH
-        prompt = _compile_v1_prompt(contract, worker_id=worker_id)
-    else:
-        template_version = CONTRACTOR_PROMPT_TEMPLATE_VERSION
-        template_hash = CONTRACTOR_PROMPT_TEMPLATE_HASH
-        prompt = _compile_v2_prompt(contract, worker_id=worker_id)
+    # Contract version and template version move together, so a contract
+    # replays through the exact template it was minted under.
+    template_version = contract.schema_version
+    template_hash = _TEMPLATE_HASH_BY_VERSION[template_version]
+    prompt = _PROMPT_COMPILERS[template_version](contract, worker_id=worker_id)
     prompt_hash = "sha256:" + hashlib.sha256(prompt.encode("utf-8")).hexdigest()
     risks = classify_contractor_risk(contract)
     return CompiledContractor(
@@ -792,14 +927,20 @@ def compile_contractor(contract: EmploymentContract) -> CompiledContractor:
 
 
 __all__ = [
+    "CASE_PRESERVING_SCHEMA_VERSION",
     "CONTRACTOR_PROMPT_TEMPLATE_HASH",
+    "CONTRACTOR_PROMPT_TEMPLATE_HASH_V2",
     "CONTRACTOR_PROMPT_TEMPLATE_VERSION",
     "CONTRACTOR_VERSION_DIGEST_CHARS",
     "HIRING_CONTRACT_SCHEMA_VERSION",
     "LEGACY_CONTRACTOR_PROMPT_TEMPLATE_HASH",
     "LEGACY_CONTRACTOR_PROMPT_TEMPLATE_VERSION",
     "LEGACY_HIRING_CONTRACT_SCHEMA_VERSION",
+    "MIN_WORKING_PRINCIPLES",
     "OWNER_APPROVAL_RISK_CLASSES",
+    "PROCEDURAL_SCHEMA_VERSION",
+    "SUPPORTED_CONTRACTOR_PROMPT_TEMPLATE_VERSIONS",
+    "SUPPORTED_HIRING_CONTRACT_SCHEMA_VERSIONS",
     "ClosestWorker",
     "CompiledContractor",
     "ContractorEvalCase",

@@ -1,6 +1,6 @@
 ---
 title: "AR-379: The hire schema has no home for domain procedure, so generated cards are governed but generic"
-status: open
+status: in_progress
 category: roadmap
 created: 2026-09-02
 updated: 2026-09-02
@@ -15,7 +15,7 @@ epic: workforce
 issue_id: AR-379
 priority: p2
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/553
-depends_on: []
+depends_on: [AR-380]
 blocks: []
 ---
 
@@ -91,8 +91,8 @@ host does the work. It should be chosen deliberately rather than by omission.
 
 ## Acceptance
 
-- [ ] The decision is recorded, with an ADR if the closed-profile posture
+- [x] The decision is recorded, with an ADR if the closed-profile posture
       changes.
-- [ ] If specificity is required, a generated card for a procedural role
+- [x] If specificity is required, a generated card for a procedural role
       carries its ordered procedure, and a regression case pins that a
       single-maxim principle set is rejected for such a role.

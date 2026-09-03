@@ -1,0 +1,24 @@
+AR-379 evidence — a contractor card carries governed method and an answer shape
+captured 2026-09-02 in the AR-379/AR-380 worktree
+
+$ a packaged v3 card renders its ordered procedure and its answer shape
+Working principles
+- Make retries bounded and idempotent while preserving transaction and authorization semantics
+- Return contract-safe errors and keep partial failure observable and recoverable
+Answer shape
+Changed path: POST /v1/orders -> orders/handlers.py:212, orders/repo.py:88 -- commit keyed on Idempotency-Key, retry bounded to 3, 409 on key reuse | Success receipt: test_commit_once -- 201, 1 order + 1 ledger row | Failure receipt: ledger timeout injected -- rolled back, 0 orphan rows, 503 Retry-After 2, replay returns the first 201 | AuthZ: tenant scope enforced pre-write, cross-tenant probe 404 (test_authz 4 of 4) | Config: commit_timeout_ms 800 -> 1500, config/orders.yaml:31
+
+$ a single-maxim principle set is rejected at v3, and still replays at v2
+v3 rejected: execution_profile.working_principles must contain at least 2 items
+v2 replay principles: 1
+
+$ all 15 packaged exemplars are distinct and reach the compiled prompt
+packaged: 15 | distinct exemplars: 15
+all rendered: True
+
+$ already-registered v1 and v2 workers replay byte-identically
+v2 prompt-hash mismatches across all 15: 0
+
+$ python3 -m pytest <spine> -q -W error
+......................................................                   [100%]
+1131 passed, 3 skipped in 58.16s

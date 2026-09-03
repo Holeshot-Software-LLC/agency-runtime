@@ -70,7 +70,7 @@ def test_hiring_prompts_pin_closed_values_and_non_echo_semantics() -> None:
     assert "schema_version belongs only inside contract" in hiring_module._HIRE_SYSTEM
     assert "Every schema field declared as an array" in hiring_module._HIRE_SYSTEM
     assert "all five execution_profile fields" in hiring_module._HIRE_SYSTEM
-    assert '"working_principles":["one nonempty principle"]' in hiring_module._HIRE_SYSTEM
+    assert '"inspect_before_acting":["one nonempty target"]' in hiring_module._HIRE_SYSTEM
     assert "every array element must be nonempty" in hiring_module._HIRE_SYSTEM
     assert "gap_evidence must be a complete seven-key record" in hiring_module._HIRE_SYSTEM
     assert "never return a partial gap_evidence object" in hiring_module._HIRE_SYSTEM
@@ -203,7 +203,7 @@ def _unit() -> WorkUnit:
 
 def _contract(*, external_mutation: bool = False) -> dict[str, Any]:
     return {
-        "schema_version": 2,
+        "schema_version": 3,
         "slug": "quantum-build-engineer",
         "role": "Quantum Build Engineer",
         "narrow_scope": "Portable TypeScript build plugins for quantum compiler toolchains.",
@@ -247,12 +247,16 @@ def _contract(*, external_mutation: bool = False) -> dict[str, Any]:
                 "rationale": "A general build reviewer is the safer specialist.",
             }
         ],
+        "output_exemplar": (
+            "Changed: plugins/quantum/emit.ts:142 -- deterministic module order, temp artifact removed in finally; plugin.config.json -- targets win32-x64 and linux-x64. Verified: vitest plugins/quantum 9 passed incl. 3 invalid-IR rejections; tsc --noEmit clean; build twice -> identical sha256 4b81d0..a19c on both platforms. Open: cross-compile from linux to win32 unproven."
+        ),
         "execution_profile": {
             "inspect_before_acting": [
                 "Inspect package metadata, compiler interfaces, supported platforms, and repository policy."
             ],
             "working_principles": [
-                "Keep build integration deterministic, typed, portable, and bounded to the assigned plugin."
+                "Keep build integration deterministic, typed, portable, and bounded to the assigned plugin.",
+                "Emit artifacts in a stable order so a repeated build is byte-identical.",
             ],
             "failure_modes_to_check": [
                 "Check module drift, invalid compiler input, partial output, and platform path differences."
@@ -521,11 +525,11 @@ def test_hiring_prompts_preserve_instruction_and_mutation_boundaries(tmp_path: P
     assert "explicit prohibitions are not granted authority" in calls[1]["system_prompt"]
 
 
-def test_hiring_schema_requires_closed_v2_execution_guidance() -> None:
+def test_hiring_schema_requires_closed_v3_execution_guidance() -> None:
     contract = hiring_module.HIRING_RESPONSE_SCHEMA["properties"]["contract"]["anyOf"][0]
     profile = contract["properties"]["execution_profile"]
 
-    assert contract["properties"]["schema_version"]["const"] == 2
+    assert contract["properties"]["schema_version"]["const"] == 3
     assert "execution_profile" in contract["required"]
     assert profile["additionalProperties"] is False
     assert profile["required"] == [
@@ -544,6 +548,7 @@ def test_live_hiring_rejects_legacy_contracts_while_replay_remains_supported(
     response = deepcopy(_hiring_response())
     response["contract"]["schema_version"] = 1
     response["contract"].pop("execution_profile")
+    response["contract"].pop("output_exemplar")
 
     outcome = hire_contractor_for_gap(
         "Implement the missing quantum compiler build integration.",
@@ -3127,3 +3132,43 @@ def test_one_hire_makes_three_calls_and_carries_the_roster_once(tmp_path: Path) 
     assert "cited_workforce" not in security["runtime_gap_evidence"]
     assert "complete_workforce" not in security["runtime_gap_evidence"]
     assert security["runtime_gap_evidence"]["workforce_count"] == 2
+
+
+def test_adr0196_card_quality_rules_reach_every_gate() -> None:
+    """The generator authors the procedure; the critic and reviewer both refuse without it."""
+
+    assert "ordered steps a competent practitioner would follow" in hiring_module._HIRE_SYSTEM
+    assert "output_exemplar is one short literal example" in hiring_module._HIRE_SYSTEM
+    assert "preserved as authored" in hiring_module._HIRE_SYSTEM
+
+    # ADR-0196 decision 4 names the hiring critic, not only the isolated reviewer.
+    assert "governed but generic (ADR-0196)" in hiring_module._CRITIC_SYSTEM
+    assert "ordered decision procedure rather than a single maxim" in hiring_module._CRITIC_SYSTEM
+    assert "must be resolved by one of those principles" in hiring_module._CRITIC_SYSTEM
+
+    assert "single maxim rather than a decision procedure" in hiring_module._SECURITY_REVIEW_SYSTEM
+    # The reviewer is told which fields carry positive risk markers; the new
+    # field renders into the compiled prompt and has to be in that list.
+    assert "scenarios, or output_exemplar" in hiring_module._SECURITY_REVIEW_SYSTEM
+
+
+def test_live_hiring_rejects_the_adjacent_superseded_schema_version(tmp_path: Path) -> None:
+    """v2 stays parseable for replay, but a live hire must be minted at the current version."""
+
+    store = Store(tmp_path / "agency.db")
+    response = deepcopy(_hiring_response())
+    response["contract"]["schema_version"] = 2
+    response["contract"].pop("output_exemplar")
+
+    outcome = hire_contractor_for_gap(
+        "Implement the missing quantum compiler build integration.",
+        _unit(),
+        (_existing(),),
+        store=store,
+        config=_config(),
+        invoker=_recording_invoker(response, calls=[]),
+    )
+
+    assert outcome.status == "abstained"
+    assert outcome.reason_codes == ("contract_invalid:employment_schema_version",)
+    assert store.list_hiring_cases(limit=10) == []

@@ -7,6 +7,7 @@ import pytest
 
 from agency_runtime.core.workforce.hiring_contract import (
     CONTRACTOR_PROMPT_TEMPLATE_HASH,
+    CONTRACTOR_PROMPT_TEMPLATE_HASH_V2,
     CONTRACTOR_PROMPT_TEMPLATE_VERSION,
     HIRING_CONTRACT_SCHEMA_VERSION,
     LEGACY_CONTRACTOR_PROMPT_TEMPLATE_HASH,
@@ -121,7 +122,10 @@ def test_schema_is_closed_versioned_normalized_and_bounded() -> None:
 
 def test_execution_profile_rejects_generic_guidance() -> None:
     raw = _raw()
-    raw["execution_profile"]["working_principles"] = ["Follow best practices"]
+    raw["execution_profile"]["working_principles"] = [
+        "Follow best practices",
+        "Use good judgment",
+    ]
 
     with pytest.raises(ValueError, match="concrete role-specific guidance"):
         parse_employment_contract(raw)
@@ -150,7 +154,7 @@ def test_compiler_is_fixed_deterministic_and_hashes_exact_prompt_bytes() -> None
     second = compile_contractor(contract)
 
     assert first == second
-    assert CONTRACTOR_PROMPT_TEMPLATE_VERSION == 2
+    assert CONTRACTOR_PROMPT_TEMPLATE_VERSION == 3
     assert CONTRACTOR_PROMPT_TEMPLATE_HASH.startswith("sha256:")
     assert first.template_version == CONTRACTOR_PROMPT_TEMPLATE_VERSION
     assert first.template_hash == CONTRACTOR_PROMPT_TEMPLATE_HASH
@@ -517,3 +521,231 @@ def test_contract_text_rejects_invisible_and_bidi_characters() -> None:
         raw["narrow_scope"] = hidden
         with pytest.raises(ValueError, match="empty or exceeds its bound"):
             parse_employment_contract(raw)
+
+
+# --- AR-380: execution-profile prose keeps its authored case -----------------
+
+
+def test_execution_profile_prose_keeps_its_authored_case_end_to_end() -> None:
+    """AR-380 acceptance 1: authored case survives parse and compile."""
+
+    raw = _raw()
+    raw["execution_profile"]["working_principles"] = [
+        "Name zones in IANA form, for example America/Chicago, never an abbreviation.",
+        "Report the offset alongside the zone so a reader can check it.",
+    ]
+
+    parsed = parse_employment_contract(raw)
+
+    assert parsed.execution_profile is not None
+    assert parsed.execution_profile.working_principles[0] == (
+        "Name zones in IANA form, for example America/Chicago, never an abbreviation."
+    )
+    assert "America/Chicago" in compile_contractor(parsed).prompt
+    assert "america/chicago" not in compile_contractor(parsed).prompt
+
+
+def test_v1_and_v2_execution_prose_still_casefolds() -> None:
+    """The render of a superseded version is frozen once a worker is minted."""
+
+    raw = _raw()
+    raw["schema_version"] = 2
+    raw.pop("output_exemplar")
+    raw["execution_profile"]["working_principles"] = [
+        "Name zones in IANA form, for example America/Chicago, never an abbreviation.",
+        "Report the offset alongside the zone so a reader can check it.",
+    ]
+
+    parsed = parse_employment_contract(raw)
+
+    assert parsed.execution_profile is not None
+    assert parsed.execution_profile.working_principles[0] == (
+        "name zones in iana form, for example america/chicago, never an abbreviation."
+    )
+
+
+@pytest.mark.parametrize(
+    "field",
+    ["capabilities", "tools", "lifecycle_phases", "platforms", "hosts"],
+)
+def test_identifier_lists_still_casefold_at_v3(field: str) -> None:
+    """AR-380 acceptance 2: normalized casing stays load-bearing for matching."""
+
+    raw = _raw()
+    raw[field] = [item.upper() for item in raw[field]]
+
+    parsed = parse_employment_contract(raw)
+
+    assert getattr(parsed, field) == tuple(item.casefold() for item in raw[field])
+
+
+def test_generic_guidance_rejection_fires_on_case_varied_input() -> None:
+    """AR-380 acceptance 3: the filler blocklist is case-insensitive."""
+
+    raw = _raw()
+    raw["execution_profile"]["working_principles"] = [
+        "FOLLOW BEST PRACTICES",
+        "Use Good Judgment",
+    ]
+
+    with pytest.raises(ValueError, match="concrete role-specific guidance"):
+        parse_employment_contract(raw)
+
+
+def test_uniqueness_rejection_fires_on_case_varied_input() -> None:
+    """AR-380 acceptance 3: two principles differing only in case stay duplicates."""
+
+    raw = _raw()
+    raw["execution_profile"]["working_principles"] = [
+        "Preserve explicit types, deterministic cleanup, and exception boundaries",
+        "PRESERVE EXPLICIT TYPES, DETERMINISTIC CLEANUP, AND EXCEPTION BOUNDARIES",
+    ]
+
+    with pytest.raises(ValueError, match="must contain unique values"):
+        parse_employment_contract(raw)
+
+
+# --- ADR-0196: output_exemplar and the versioned template ---------------------
+
+
+def test_template_hashes_are_pinned_per_version() -> None:
+    """A superseded template's bytes are frozen: editing one is a breaking change.
+
+    Every registered worker stores a ``prompt_hash`` computed from the template
+    it was minted under, so a literal pin is the only thing that turns an edit
+    to ``_TEMPLATE_V1``/``_TEMPLATE_V2`` into a failing test rather than a
+    silent invalidation of already-registered contractors.
+    """
+
+    assert LEGACY_CONTRACTOR_PROMPT_TEMPLATE_HASH == (
+        "sha256:d8513d2fa618d6dee96be7a2c3ceb242d0adc0732300fe5c5a4c05976688b6df"
+    )
+    assert CONTRACTOR_PROMPT_TEMPLATE_HASH_V2 == (
+        "sha256:cf4f7eeac1ffc39594cdb1e25d8c8ec7d56bb961ee10b9dc59df70d8aadedcb2"
+    )
+    assert CONTRACTOR_PROMPT_TEMPLATE_HASH == (
+        "sha256:7d4e81649e190a8097a8bcb685760e01060e3f317d8ea0273ddf1c8120871405"
+    )
+    assert (
+        len(
+            {
+                LEGACY_CONTRACTOR_PROMPT_TEMPLATE_HASH,
+                CONTRACTOR_PROMPT_TEMPLATE_HASH_V2,
+                CONTRACTOR_PROMPT_TEMPLATE_HASH,
+            }
+        )
+        == 3
+    )
+
+
+def test_v2_contract_compiles_through_the_v2_template_not_the_current_one() -> None:
+    """An already-registered v2 worker must replay its exact stored identity."""
+
+    current = KNOWN_CONTRACTORS_BY_SLUG["typescript-application-engineer"]
+    v2 = replace(current, schema_version=2, output_exemplar="")
+
+    compiled = compile_contractor(v2)
+
+    assert compiled.template_version == 2
+    assert compiled.template_hash == CONTRACTOR_PROMPT_TEMPLATE_HASH_V2
+    assert compiled.prompt_hash == (
+        "sha256:6b0d5cae3b65a44d56b22f51f5301bbd04f02bee7cdac9fe66bd9081b561c20f"
+    )
+    assert "Answer shape" not in compiled.prompt
+
+
+def test_output_exemplar_is_required_bounded_and_rendered() -> None:
+    raw = _raw()
+
+    assert "Answer shape" in compile_contractor(parse_employment_contract(raw)).prompt
+
+    missing = _raw()
+    missing.pop("output_exemplar")
+    with pytest.raises(ValueError, match="employment contract must contain exactly"):
+        parse_employment_contract(missing)
+
+    empty = _raw()
+    empty["output_exemplar"] = "   "
+    with pytest.raises(ValueError, match="output_exemplar is empty or exceeds its bound"):
+        parse_employment_contract(empty)
+
+    oversized = _raw()
+    oversized["output_exemplar"] = "x " * 300
+    with pytest.raises(ValueError, match="output_exemplar is empty or exceeds its bound"):
+        parse_employment_contract(oversized)
+
+
+def test_output_exemplar_round_trips_only_at_its_own_version() -> None:
+    parsed = parse_employment_contract(_raw())
+
+    assert parsed.to_dict()["output_exemplar"] == parsed.output_exemplar
+    assert parse_employment_contract(parsed.to_dict()) == parsed
+
+    legacy = replace(parsed, schema_version=1, execution_profile=None)
+    assert "output_exemplar" not in legacy.to_dict()
+
+
+def test_output_exemplar_raises_a_risk_class() -> None:
+    """The exemplar reaches the compiled prompt, so it is screened like other claims."""
+
+    raw = _raw()
+    raw["output_exemplar"] = (
+        "Wire transfer receipt -- fund transfer TXN-4471 settled, 2 of 2 approvals on file."
+    )
+
+    assert "financial" in classify_contractor_risk(parse_employment_contract(raw))
+
+
+def test_single_maxim_working_principles_is_rejected_at_v3() -> None:
+    """AR-379: a card that names failure modes owes an ordered procedure, not a motto."""
+
+    raw = _raw()
+    raw["execution_profile"]["working_principles"] = [
+        "Preserve explicit types, deterministic cleanup, and exception boundaries"
+    ]
+
+    with pytest.raises(ValueError, match="at least 2 items"):
+        parse_employment_contract(raw)
+
+
+def test_a_single_working_principle_still_replays_at_v2() -> None:
+    raw = _raw()
+    raw["schema_version"] = 2
+    raw.pop("output_exemplar")
+    raw["execution_profile"]["working_principles"] = [
+        "Preserve explicit types, deterministic cleanup, and exception boundaries"
+    ]
+
+    parsed = parse_employment_contract(raw)
+
+    assert parsed.execution_profile is not None
+    assert len(parsed.execution_profile.working_principles) == 1
+
+
+def test_packaged_exemplars_are_distinct_and_reach_every_prompt() -> None:
+    """A placeholder pasted into all 15 cards must not satisfy the migration."""
+
+    exemplars = [item.output_exemplar for item in KNOWN_CONTRACTOR_CONTRACTS]
+
+    assert len(set(exemplars)) == len(KNOWN_CONTRACTOR_CONTRACTS)
+    assert all(len(item) >= 200 for item in exemplars)
+    for contract in KNOWN_CONTRACTOR_CONTRACTS:
+        prompt = compile_contractor(contract).prompt
+        assert f"Answer shape\n{contract.output_exemplar}\n" in prompt
+
+
+def test_merged_template_sections_dedupe_case_insensitively() -> None:
+    """Case-preserved profile prose must not double-render beside contract prose."""
+
+    raw = _raw()
+    shared = "Run focused success and failure tests plus the repository lint checks"
+    raw["execution_profile"]["verification_steps"] = [
+        shared,
+        "Exercise the changed entry point through its packaged boundary",
+    ]
+    raw["evidence_requirements"] = [shared.casefold()]
+
+    prompt = compile_contractor(parse_employment_contract(raw)).prompt
+
+    assert prompt.count(shared) == 1
+    assert shared.casefold() not in prompt.replace(shared, "")

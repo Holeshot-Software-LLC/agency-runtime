@@ -113,6 +113,29 @@ _LEGACY_KNOWN_CONTRACTOR_PROMPT_HASHES: dict[str, str] = {
     "typescript-application-engineer": "sha256:5e6a02cdaaf0bfdea4dcb4e8ec9c5a493ada09258a47554a0f7aa917344cd412",
 }
 
+
+# The package-v2 prompt hashes that shipped between AR-264 and ADR-0196. An
+# install performed while the package was v2 carries one of these identities and
+# must still be recognised as a governed predecessor, or ADR-0196 reaches only
+# fresh installs and every existing contractor is preserved at v2 forever.
+_V2_KNOWN_CONTRACTOR_PROMPT_HASHES: dict[str, str] = {
+    "ai-evaluation-engineer": "sha256:2ff75a11258a5d4c21d045d04dee0c7bf40339260b1d904b6a3fdf8f0a522fa8",
+    "ai-governance-auditor": "sha256:279ff326c23328bcb27c78063e157c47525c7ac67f9485eeab301ec0cfef3208",
+    "ai-observability-engineer": "sha256:4b053a410ffc925b7cf6f07be172a4f8a41de1ee09a54af579d5a02dc47d4f28",
+    "application-integration-verifier": "sha256:fbaee9fb727d35eb7a3f1ec7aa77449363257aab5dc90f234e3212e425bd9c33",
+    "application-observability-engineer": "sha256:b5ba9099358b3ec08c23bc3555c2035610d78206705b0b0138aee00acebfacfa",
+    "backend-service-engineer": "sha256:d79fa540b807accfa4350e8fd899e7d1fd379b4d575fadb8688c7439b23e755d",
+    "cross-platform-installer-engineer": "sha256:73c252767eb2ac15fb0d157765a44085921428c145b18198e0b9ae93ec7a37ff",
+    "cross-platform-release-verifier": "sha256:b2f33ccf10802c356331e9641f7b32f20529a45e333cbd0930470477aa5cbe73",
+    "documentation-evidence-researcher": "sha256:1c4941a6aeab45831382b40a6be69ee4761641540e4c7c4bdd6dc2c2ec26fec3",
+    "hallucination-root-cause-investigator": "sha256:4d5996cc5fe2dcdd5955be46d3196dcb93f30da6f017b90b56681a36108899bf",
+    "policy-guardrail-architect": "sha256:c73dd094d363e2ae1e4f8d955b42c0f9f498235818e8cf31f1b2493d261fe83f",
+    "python-application-engineer": "sha256:3979eb011d8f353995a7b9dbf3bbfdbbe56d8ecaa821e31040eba7a01d3fde3d",
+    "selection-safety-critic": "sha256:979ee67a6c1f4dd4e32eff0b2523efccad18645d63ba5266a94a6a7c2b32fbc9",
+    "software-test-engineer": "sha256:c73e53de97c1042fe75ee09851eb251040dd6efa5ddf8813eb2bb5df042729ee",
+    "typescript-application-engineer": "sha256:6b0d5cae3b65a44d56b22f51f5301bbd04f02bee7cdac9fe66bd9081b561c20f",
+}
+
 _LEGACY_BACKEND_CAPABILITIES = (
     "api execution paths",
     "persistence integration",
@@ -295,6 +318,25 @@ def _legacy_known_contractor_package(slug: str) -> KnownContractorPackage:
     return KnownContractorPackage(contract, compiled, agent, workforce)
 
 
+def _v2_known_contractor_package(slug: str) -> KnownContractorPackage:
+    """Reconstruct the exact package-v2 predecessor eligible for a governed advance."""
+
+    normalized = str(slug or "").strip().casefold()
+    current = KNOWN_CONTRACTORS_BY_SLUG.get(normalized)
+    if current is None:
+        raise KeyError("known contractor is not packaged")
+    # v2 declared no output_exemplar and casefolded its execution prose; both
+    # follow from re-parsing the current definition at schema version 2.
+    contract = replace(current, schema_version=2, output_exemplar="")
+    compiled = compile_contractor(contract)
+    expected_hash = _V2_KNOWN_CONTRACTOR_PROMPT_HASHES.get(normalized)
+    if compiled.prompt_hash != expected_hash:
+        raise RuntimeError(f"package-v2 known contractor snapshot drifted: {normalized}")
+    agent = _known_contractor_agent(contract)
+    workforce = project_workforce_contract(agent, origin="agency")
+    return KnownContractorPackage(contract, compiled, agent, workforce)
+
+
 def _malformed_legacy_known_contractor_package(slug: str) -> KnownContractorPackage:
     """Reconstruct package v1 before the August 6 version-identity repair."""
 
@@ -315,7 +357,7 @@ def _malformed_legacy_known_contractor_package(slug: str) -> KnownContractorPack
 
 
 def _known_contractor_predecessor_packages(slug: str) -> tuple[KnownContractorPackage, ...]:
-    """Return the two exact package-v1 identities that shipped before v2."""
+    """Return every exact packaged identity that shipped before the current one."""
 
     normalized = str(slug or "").strip().casefold()
     if normalized not in _LEGACY_KNOWN_CONTRACTOR_PROMPT_HASHES:
@@ -323,6 +365,7 @@ def _known_contractor_predecessor_packages(slug: str) -> tuple[KnownContractorPa
     return (
         _legacy_known_contractor_package(normalized),
         _malformed_legacy_known_contractor_package(normalized),
+        _v2_known_contractor_package(normalized),
     )
 
 
