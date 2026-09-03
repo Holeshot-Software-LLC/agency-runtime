@@ -1,6 +1,6 @@
 ---
 title: "AR-268: Create nested config parents privately"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-08-21
 updated: 2026-08-21

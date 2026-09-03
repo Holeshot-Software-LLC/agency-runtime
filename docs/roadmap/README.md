@@ -281,8 +281,8 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-265` | [Separate contextual inquiry from execution authority](issue-AR-265-contextual-turn-classification.md) | in_progress | p0 | routing | [#317](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/317) |
 | `AR-266` | [Recall the complete workforce with dense hybrid retrieval](issue-AR-266-dense-hybrid-workforce-recall.md) | in_progress | p0 | workforce | [#320](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/320) |
 | `AR-267` | [Accept OpenClaw numeric package revisions](issue-AR-267-accept-openclaw-numeric-package-revision.md) | in_progress | p0 | install | None (tracker creation pending explicit authorization) |
-| `AR-268` | [Create nested config parents privately](issue-AR-268-create-nested-config-parents-privately.md) | in_progress | p0 | security | None (tracker creation pending explicit authorization) |
-| `AR-269` | [Accept null OpenClaw control errors](issue-AR-269-accept-null-openclaw-control-errors.md) | in_progress | p0 | reliability | None (tracker creation pending explicit authorization) |
+| `AR-268` | [Create nested config parents privately](issue-AR-268-create-nested-config-parents-privately.md) | done | p0 | security | None (tracker creation pending explicit authorization) |
+| `AR-269` | [Accept null OpenClaw control errors](issue-AR-269-accept-null-openclaw-control-errors.md) | done | p0 | reliability | None (tracker creation pending explicit authorization) |
 | `AR-270` | [Bind OpenClaw installed-copy provenance](issue-AR-270-bind-openclaw-installed-copy-provenance.md) | open | p0 | install | None (tracker creation pending explicit authorization) |
 | `AR-271` | [Accept stopped OpenClaw uninstall status](issue-AR-271-accept-stopped-openclaw-uninstall-status.md) | open | p0 | install | None (tracker creation pending explicit authorization) |
 | `AR-272` | [Preserve OpenClaw model receipt fields](issue-AR-272-preserve-openclaw-model-receipt-fields.md) | in_progress | p0 | reliability | None (tracker creation pending explicit authorization) |
