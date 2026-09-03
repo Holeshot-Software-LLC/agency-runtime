@@ -25,3 +25,9 @@ $ --require-tracker loads and applies the shared pre-tracker allow-list
   allow-list entries: 132   bound: AR-01..AR-330
   newest exempt id:   AR-330
   verify_docs.validate_roadmap skips exactly these when require_tracker is set
+
+$ criterion 4: the three verify_docs rows name only this branch's own commits
+  9acf5f1e  docs(ar347): bind the acceptance record to tracker #404  on-branch=YES
+  ac1a5223  docs(ar347): stage the acceptance record and resync the work  on-branch=YES
+  origin/main tip: d5ba8e79
+  => every unindexed commit is a change under test on claude/ar347-close, not a pre-existing failure
