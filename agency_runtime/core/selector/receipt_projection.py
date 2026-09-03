@@ -57,6 +57,10 @@ _NOMINATION_FAILURE_PREFIX = "workforce nomination failures: "
 # audited contract declares: roster vocabulary, never model prose. The closed
 # axis prefix and identifier charset keep anything else off the receipt.
 _MAX_COVERAGE_GAPS = 4
+# AR-385: a cut reply's accounting. Token counts are bounded so a hostile
+# attempt cannot smuggle a large integer through the receipt.
+_MAX_REPLY_TOKENS = 1_048_576
+_TRUNCATION_KEYS = ("reply_budget_tokens", "completion_cap_tokens", "completion_tokens")
 _REQUIREMENT_IDENTIFIER = re.compile(r"^[a-z0-9][a-z0-9+.-]{0,63}$")
 _COVERAGE_GAP_CODE = "roster_coverage_gap"
 
@@ -351,8 +355,32 @@ def _provider_attempts(value: object) -> list[dict[str, Any]]:
         )
         if validation_failures:
             attempt["validation_failures"] = validation_failures
+        truncation = project_reply_truncation(item.get("truncation", item))
+        if truncation is not None:
+            attempt["truncation"] = truncation
         attempts.append(attempt)
     return attempts
+
+
+def project_reply_truncation(value: object) -> dict[str, int] | None:
+    """Project the content-free record of a reply cut at the completion cap.
+
+    Both receipts carry the same three counts, and a normalized receipt must
+    round-trip, so the projection accepts either a raw attempt (``reply_truncated``
+    plus the flat counts) or an already projected ``truncation`` mapping. Every
+    figure comes from the transport's own accounting; none is model text.
+    """
+
+    if not isinstance(value, Mapping):
+        return None
+    if "reply_truncated" in value:
+        if value.get("reply_truncated") is not True:
+            return None
+    elif not set(_TRUNCATION_KEYS) <= set(value):
+        return None
+    return {
+        key: _bounded_count(value.get(key), maximum=_MAX_REPLY_TOKENS) for key in _TRUNCATION_KEYS
+    }
 
 
 def project_model_receipt_attempts(value: object) -> list[dict[str, Any]] | None:

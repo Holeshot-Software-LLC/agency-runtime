@@ -303,17 +303,56 @@ class _NominationSemantics:""",
     DecisionMutation(
         mutation_id="recruiter-repair-allows-unlisted-row-overwrite",
         invariant=(
-            "A recruiter repair must match the ordered failed-unit set before it can "
-            "replace any accumulated row."
+            "A recruiter repair may answer only for units in the recorded failed set; a "
+            "row for any other unit is refused before it can replace an accumulated row."
         ),
         source_path="agency_runtime/core/workforce/inference.py",
-        before="""        if self._repair_unit_ids and tuple(response_ids) != self._repair_unit_ids:
-            raise ValueError("workforce nomination repair rows do not match failed units")""",
-        after="""        if False and self._repair_unit_ids and tuple(response_ids) != self._repair_unit_ids:
-            raise ValueError("workforce nomination repair rows do not match failed units")""",
+        before="""            if repairing and unit_id not in repairing:
+                raise ValueError("workforce nomination repair rows do not match failed units")""",
+        after="""            if False and repairing and unit_id not in repairing:
+                raise ValueError("workforce nomination repair rows do not match failed units")""",
         test_node=(
             "tests/test_workforce_inference.py::"
             "test_recruiter_repair_rejects_rows_outside_recorded_failure_set"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="cut-reply-recorded-as-contract-failure",
+        invariant=(
+            "A rejected reply that reached the completion cap is recorded as "
+            "provider_response_truncated, never as a contract failure (ADR-0199)."
+        ),
+        source_path="agency_runtime/core/workforce/inference.py",
+        before="""                        reason_code=(
+                            PROVIDER_RESPONSE_TRUNCATED
+                            if truncated
+                            else "provider_response_contract_invalid"
+                        ),""",
+        after="""                        reason_code=(
+                            "provider_response_contract_invalid"
+                            if truncated
+                            else "provider_response_contract_invalid"
+                        ),""",
+        test_node=(
+            "tests/test_reply_budget_truncation.py::"
+            "test_the_stage_records_a_cut_reply_as_truncated_and_names_the_cut_on_the_retry"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="unreadable-nomination-row-refuses-the-whole-reply",
+        invariant=(
+            "A nomination row the runtime cannot read costs only its own unit, which "
+            "surfaces as missing_work_unit; the rows before it are kept (ADR-0199)."
+        ),
+        source_path="agency_runtime/core/workforce/inference.py",
+        before="""            if set(row) != {"unit_id", "decision", "ranked_semantic"}:
+                unreadable.add(unit_id)
+                continue""",
+        after="""            if set(row) != {"unit_id", "decision", "ranked_semantic"}:
+                raise ValueError("workforce nomination row is invalid")""",
+        test_node=(
+            "tests/test_reply_budget_truncation.py::"
+            "test_a_row_cut_mid_way_loses_only_its_own_unit_and_the_repair_completes_it"
         ),
     ),
     DecisionMutation(

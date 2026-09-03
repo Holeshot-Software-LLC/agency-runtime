@@ -37,6 +37,7 @@ _RECRUITER_VALIDATION_REASON_CODES = frozenset(
         "recruiter_candidate_positive_evidence_missing",
         "recruiter_candidate_row_shape_invalid",
         "recruiter_candidate_score_invalid",
+        "recruiter_unit_row_shape_invalid",
     }
 )
 _CRITIC_VALIDATION_REASON_CODES = frozenset(
@@ -228,6 +229,7 @@ def project_preflight_provider_attempts(value: object) -> list[dict[str, Any]] |
     from agency_runtime.core.selector.receipt_projection import (
         project_model_receipt_attempts,
         project_nomination_failures,
+        project_reply_truncation,
     )
 
     projected = project_model_receipt_attempts(value)
@@ -260,6 +262,12 @@ def project_preflight_provider_attempts(value: object) -> list[dict[str, Any]] |
         )
         if validation_reason_codes:
             entry["validation_reason_codes"] = validation_reason_codes
+        # AR-385: a rejected attempt whose reply was cut at the completion cap
+        # says so with the transport's own counts, so the receipt is never
+        # blank on the most common silent recruiter failure.
+        truncation = project_reply_truncation(source.get("truncation", source))
+        if truncation is not None:
+            entry["truncation"] = truncation
         result.append(entry)
     return result
 

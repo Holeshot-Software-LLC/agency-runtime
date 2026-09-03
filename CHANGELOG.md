@@ -3,7 +3,7 @@ title: "Changelog"
 status: active
 category: release
 created: 2026-07-10
-updated: 2026-08-30
+updated: 2026-09-03
 tags: [release, changelog]
 related:
   - docs/RELEASE_CHECKLIST.md
@@ -27,6 +27,7 @@ related:
   - docs/roadmap/issue-AR-332-pin-private-umask-for-canary-child-launches.md
   - docs/roadmap/issue-AR-333-report-unsupported-codex-isolated-agency-canary.md
   - docs/roadmap/issue-AR-334-support-codex-0151-collaboration-and-hook-contract.md
+  - docs/roadmap/issue-AR-385-structured-reply-budget-truncates-nominations-silently.md
   - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
   - docs/decisions/0178-project-config-declared-credentials-into-tool-reduced-canaries.md
   - docs/decisions/0181-use-litellm-aliases-as-host-inference-control-plane.md
@@ -37,6 +38,7 @@ related:
   - docs/decisions/0188-separate-codex-hook-parent-and-child-identities.md
   - docs/decisions/0189-admit-only-accepted-terminal-codex-parents-for-post-return-collection.md
   - docs/decisions/0191-seal-managed-hermes-python-bundles.md
+  - docs/decisions/0199-give-each-inference-stage-its-own-reply-budget.md
   - docs/roadmap/README.md
   - docs/worklog/README.md
   - THIRD_PARTY_NOTICES.md
@@ -58,6 +60,16 @@ changes rather than duplicating every commit.
 
 ### Added
 
+- Each workforce inference stage owns its reply budget (AR-385, ADR-0199):
+  the recruiter and hiring stages request 16384 visible-reply tokens instead
+  of the fixed 2048 the transport sent every stage, the cap adds the
+  adapter's thinking allowance so a thinking-enabled deployment no longer
+  spends its reasoning inside the reply's budget, and `reply_budget_tokens`
+  on an inference profile or provider entry overrides the stage figure. A
+  reply that reaches the cap is recorded as `provider_response_truncated`
+  with a `truncation` object on the routing and preflight-failure receipts,
+  the retry is told it was cut, and a nomination reply cut mid-row loses
+  only the units whose rows could not be read.
 - `agency battery` runs the change-triggered harness canary battery
   (AR-337): per-harness version fingerprints gate the run, claude and codex
   re-prove through their canary modes (codex attended-trust loss reported

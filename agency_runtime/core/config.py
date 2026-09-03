@@ -146,6 +146,10 @@ class ProviderEntry:
     # Zero means the provider's native embedding width. Nonzero values are
     # valid only for explicit embedding-capability inference profiles.
     dimensions: int = 0
+    # Zero means the calling stage's own reply budget (AR-385). A stated
+    # figure is the visible-reply allowance in tokens; the structured transport
+    # adds the adapter's thinking allowance on top of it.
+    reply_budget_tokens: int = 0
 
     def resolve_api_key(self) -> str:
         """Return the API key: direct value first, then env var."""
@@ -238,6 +242,10 @@ INFERENCE_ADAPTER_TYPES = frozenset(
     {"openai-compatible", "anthropic", "ollama", "litellm", "cli", "jina"}
 )
 INFERENCE_THINKING_LEVELS = frozenset({"low", "medium", "high", "xhigh"})
+# A stated reply budget (AR-385): zero means the calling stage's own figure,
+# otherwise a visible-reply allowance in tokens, thinking excluded.
+MIN_REPLY_BUDGET_TOKENS = 256
+MAX_REPLY_BUDGET_TOKENS = 131_072
 INFERENCE_CAPABILITY_CLASSES = frozenset({"text", "embeddings", "rerank", "code"})
 INFERENCE_CLI_TRANSPORTS = frozenset({"codex", "claude"})
 # Harness sections scope inference routes to the host that owns the turn.
@@ -310,6 +318,7 @@ class InferenceProfile:
     timeout_ms: int = 30_000
     transport: str = ""  # cli adapter only: one of INFERENCE_CLI_TRANSPORTS
     dimensions: int = 0  # embedding profiles only; zero uses the provider default
+    reply_budget_tokens: int = 0  # zero uses the calling stage's own figure (AR-385)
 
     def uses_thinking(self) -> bool:
         return bool(self.thinking_level)
@@ -528,6 +537,27 @@ def _normalize_enabled(value: Any) -> str:
     return "auto"
 
 
+def _reply_budget_tokens(value: object, *, path: str) -> int:
+    """Materialize one stated reply budget, refusing a figure the transport cannot honour."""
+
+    if isinstance(value, bool):
+        raise ValueError(f"{path}: must be an integer token count")
+    try:
+        budget = int(value)
+    except (TypeError, ValueError):
+        raise ValueError(f"{path}: must be an integer token count") from None
+    if budget == 0:
+        return 0
+    if not MIN_REPLY_BUDGET_TOKENS <= budget <= MAX_REPLY_BUDGET_TOKENS:
+        # A silently clamped budget would cut replies at a figure the operator
+        # never wrote, which is the defect this setting exists to remove.
+        raise ValueError(
+            f"{path}: must be 0 or between {MIN_REPLY_BUDGET_TOKENS} and "
+            f"{MAX_REPLY_BUDGET_TOKENS}, got {budget}"
+        )
+    return budget
+
+
 def _build_provider_entry(raw: dict[str, Any]) -> ProviderEntry:
     token_parameter = str(raw.get("token_parameter", "")).strip()
     if token_parameter not in TOKEN_PARAMETERS:
@@ -550,6 +580,9 @@ def _build_provider_entry(raw: dict[str, Any]) -> ProviderEntry:
         timeout=float(raw.get("timeout", 15.0)),
         reasoning_effort=str(raw.get("reasoning_effort", "")),
         token_parameter=token_parameter,
+        reply_budget_tokens=_reply_budget_tokens(
+            raw.get("reply_budget_tokens", 0), path="providers.reply_budget_tokens"
+        ),
     )
 
 
@@ -575,6 +608,10 @@ def _build_inference_profile(name: str, raw: Any) -> InferenceProfile:
         timeout_ms=int(raw.get("timeout_ms", 30_000)),
         transport=str(raw.get("transport", "")).strip().casefold(),
         dimensions=int(raw.get("dimensions", 0)),
+        reply_budget_tokens=_reply_budget_tokens(
+            raw.get("reply_budget_tokens", 0),
+            path=f"inference.profiles.{name}.reply_budget_tokens",
+        ),
     )
 
 
@@ -1431,6 +1468,7 @@ def config_to_yaml(cfg: AgencyConfig, *, redact: bool = True) -> str:
                     "timeout_ms": profile.timeout_ms,
                     "transport": profile.transport,
                     "dimensions": profile.dimensions,
+                    "reply_budget_tokens": profile.reply_budget_tokens,
                 }
                 for name, profile in cfg.inference.profiles.items()
             },

@@ -3,7 +3,7 @@ title: "Workforce inference stages and profile routes"
 status: active
 category: roadmap
 created: 2026-08-04
-updated: 2026-09-02
+updated: 2026-09-03
 tags: [workforce, inference, configuration, reference]
 related:
   - docs/roadmap/issue-AR-235-autonomous-gap-hiring-with-isolated-security-review.md
@@ -12,6 +12,8 @@ related:
   - docs/decisions/0164-use-dense-embeddings-only-for-workforce-recall.md
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-122-contractor-hiring-and-lifecycle.md
+  - docs/roadmap/issue-AR-385-structured-reply-budget-truncates-nominations-silently.md
+  - docs/decisions/0199-give-each-inference-stage-its-own-reply-budget.md
   - agency_runtime/core/workforce/inference.py
   - agency_runtime/core/workforce/hiring.py
   - agency_runtime/core/config_defaults.yaml
@@ -353,6 +355,7 @@ inference:
       api_key_env: "<env-var-name>"    # preferred over api_key
       api_key: "<literal>"             # last resort; redacted in receipts
       timeout_ms: 30000
+      reply_budget_tokens: 0           # 0 = the calling stage's own figure (AR-385)
 ```
 
 A nonzero `dimensions` value is accepted only when `capability_class` is
@@ -368,6 +371,52 @@ aggregate scalar bounds are unchanged; Agency never slices or pads vectors.
 `workforce.recall.reranker`. That route also continues to accept
 `capability_class: text` for structured local, LiteLLM, direct-API, and
 subscription rerankers.
+
+**`reply_budget_tokens`** (AR-385, ADR-0199). Each workforce stage owns
+the visible-reply allowance it asks the provider for; the structured
+transport used to send every stage with a fixed `max_tokens: 2048` and a
+thinking-enabled deployment behind the gateway spent its reasoning inside
+that same figure. A profile or legacy provider entry may state
+`reply_budget_tokens` (0, the default, means the stage's own figure;
+otherwise 256 through 131072). The stage stamps its budget on the provider
+entry it calls with unless the operator stated one:
+
+| Stage | Reply budget (tokens) |
+|---|---|
+| `planner` | 4096 |
+| `subject` | 1024 |
+| `recruiter`, `recruiter-repair` | 16384 |
+| `critic` | 2048 |
+| `recall-reranker` | 4096 |
+| `hiring`, `hiring-repair`, `safety_repair` | 16384 |
+| `hiring-critic`, `hiring-repair-critic` | 2048 |
+| `security_review` | 4096 |
+| any other structured caller | 2048 (`anthropic`: 8192), the historical transport figures |
+
+The cap actually sent (`max_tokens`, `max_completion_tokens`, or ollama
+`num_predict`) is the reply budget plus the thinking allowance the adapter
+forwards, so the reply and the thinking no longer share one figure: for
+`litellm` and `openai-compatible` a forwarded `low`/`medium`/`high`/`xhigh`
+adds 1024/2048/4096/8192 tokens, mirroring the gateway's
+`reasoning_effort` to thinking-budget mapping (which it caps at
+`max_tokens - 1`); other adapters add nothing. The cap is bounded at
+131072.
+
+A reply is **truncated** when the provider reports `length` (or Anthropic
+`max_tokens`), or when its usage shows exactly the cap spent even though it
+reports `stop`, which is how the captured MiniMax replies presented. The
+attempt is then recorded as `provider_response_truncated` instead of
+`provider_response_contract_invalid`, the routing and preflight-failure
+receipts carry a `truncation` object with the transport's own
+`reply_budget_tokens`, `completion_cap_tokens` and `completion_tokens`, and
+the bounded retry is told it was cut off rather than wrong. A nomination
+reply cut mid-row loses only the units whose rows could not be read: each
+surfaces as `missing_work_unit` with the `recruiter_unit_row_shape_invalid`
+diagnosis, and the repair asks for exactly those units. A cut reply that
+holds no complete JSON object is returned with an empty value and the
+truncation flag, so the stage records the cut instead of
+`provider_no_valid_response`; the hiring `_invoke` records the same case as
+`provider_response_truncated`.
 
 **`thinking_level` adapter mapping** (the
 `structured_provider` translates per-adapter):
@@ -438,6 +487,7 @@ witness for itself -- `invoke_structured_provider_result` returns a bare
 | `provider_call_timed_out` | `failed` |
 | `provider_prompt_exceeds_transport_limit` | `skipped` |
 | `hiring_call_budget_exhausted` | `skipped` |
+| `provider_response_truncated` | `failed` (the reply reached the completion cap with no JSON object to parse; AR-385) |
 
 Only `applied` attempts reach the durable hiring case's
 `model_evidence.receipts`, because preflight replays each of those as

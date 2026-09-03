@@ -1,11 +1,13 @@
 ---
 title: "AR-385: A fixed 2048-token reply budget truncates recruiter nominations, and the truncation is rejected as a contract failure with no record"
-status: open
+status: in_progress
 category: roadmap
 created: 2026-09-03
 updated: 2026-09-03
 tags: [workforce, recruiter, inference, provider, receipts]
 related:
+  - docs/decisions/0199-give-each-inference-stage-its-own-reply-budget.md
+  - docs/roadmap/reference-workforce-inference-stages.md
   - docs/roadmap/issue-AR-373-recruiter-evidence-vocabulary.md
   - docs/roadmap/issue-AR-384-staff-decisions-die-on-uncoverable-typed-requirements.md
   - docs/roadmap/issue-AR-304-preserve-recruiter-critic-validation-diagnostics.md
@@ -89,10 +91,53 @@ records never hit it. A visible reply of about 1000 tokens leaving 2048 in
 
 ## Current state
 
-Not fixed. The budget is the same for the planner, critic, reranker, subject
-and hiring stages, so any stage whose reply plus thinking exceeds 2048 tokens
-on a thinking-enabled deployment is exposed the same way. The recruiter is
-where it shows because its reply is the largest.
+**Implemented on branch `claude/ar385-reply-budget` (2026-09-03)** per
+[ADR-0199](../decisions/0199-give-each-inference-stage-its-own-reply-budget.md).
+`core/reply_budget.py` names each stage's visible-reply budget (recruiter and
+hiring stages 16384, planner 4096, critics 2048, subject 1024, reranker and
+security review 4096); `_invoke_stage` and the hiring `_invoke` stamp it on
+the provider entry they call with, and `reply_budget_tokens` on a profile or
+provider entry overrides it (0 keeps the stage figure; 256 through 131072).
+The transport adds the adapter's thinking allowance (1024/2048/4096/8192 for
+a forwarded `low`/`medium`/`high`/`xhigh` on `litellm` and
+`openai-compatible`) to the cap, reads the reply's usage and finish reason,
+and flags a reply that reports `length` or spends exactly the cap. A flagged
+reply that fails validation is recorded as `provider_response_truncated`
+with a `truncation` object (`reply_budget_tokens`, `completion_cap_tokens`,
+`completion_tokens`) on the routing and preflight-failure receipts, the
+retry feedback carries `reply_truncation`, and a cut reply with no JSON
+object comes back as the truncation rather than `None`. The accumulator
+drops a unit row it cannot read: that unit surfaces as `missing_work_unit`
+with the `recruiter_unit_row_shape_invalid` diagnosis and the repair asks for
+exactly the lost units; a row for a unit outside the failed set is still
+refused. `tests/test_reply_budget_truncation.py` (43 tests) pins the contract
+and two curated decision-conformance mutations guard it.
+
+Live re-measurement, five fresh wordings through `run_preflight` on the
+branch runtime, recruiter served by the same MiniMax deployment
+(`x-litellm-model-id b0b6f29c`), critic by `10729e08`, cap 18432 (evidence in
+`docs/roadmap/acceptance/evidence/AR-385-evidence-20260903.txt`):
+
+| turn | request | recruiter completion tokens | truncated | how the turn ended |
+|---|---|---|---|---|
+| 301 | token-bucket rate limiter, six units | **2277** first, 1620 repair | no | AR-373 evidence charset on every unit, then `staff_without_safe_team:domain` (AR-384 residue) |
+| 302 | Node worker memory climb | 941 | no | structurally malformed JSON below the cap, `provider_no_valid_response`; not this issue |
+| 303 | sign-in endpoint audit | none in 30.1 s | n/a | the recruiter profile's 30000 ms timeout, `provider_no_valid_response` |
+| 304 | helix in my shell | 1433 | no | verifier accepted, strict critic vetoed (AR-386) |
+| 305 | ripgrep, fd and bat | 1129 | no | verifier accepted, strict critic vetoed (AR-386) |
+
+Turn 301 is the throttle criterion: a six-unit nomination completed at 2277
+completion tokens, above the old 2048 cap, on the deployment that cut the
+captured one. No live reply was cut under the new budgets. Two observations
+belong to other work: turn 302's reply closed the `units` array early and
+then continued, which is a structural model error the transport rightly
+refuses and this issue does not claim; and turn 303 shows that once the cap
+no longer bounds a long reply the profile's 30 s timeout does, which is the
+operator's `timeout_ms` (see the AR-383 capsule constraints), not a branch
+change.
+
+The planner, critic, reranker, subject and hiring stages carry their own
+figures now; none of them had hit the old cap in the captures.
 
 ## Approach
 
@@ -121,11 +166,11 @@ where it shows because its reply is the largest.
 
 ## Acceptance
 
-- [ ] A recruiter reply that reaches the provider's completion cap is
+- [x] A recruiter reply that reaches the provider's completion cap is
       recorded on the receipt as truncated, with the stage and the cap, and
       the retry feedback names the cause.
-- [ ] The recruiter and hiring stages request a reply budget large enough
+- [x] The recruiter and hiring stages request a reply budget large enough
       that the captured six-unit throttle nomination completes on the
       deployment that served it.
-- [ ] No rejected recruiter attempt on a preflight receipt is blank: every
+- [x] No rejected recruiter attempt on a preflight receipt is blank: every
       one carries either `validation_failures` or a truncation record.
