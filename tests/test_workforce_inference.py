@@ -3152,6 +3152,24 @@ def test_strict_mode_critic_can_only_veto_an_already_verified_team() -> None:
     assert prompts[2]["critic_contract"] == {
         "review_scope": "pre_execution_semantic_staffing",
         "verified_staffing_hard_checks_passed": True,
+        "workforce_is_advisory": True,
+        "execution_authority_holder": "host",
+        "selected_authority_bound_by_eligibility": True,
+        "roster_coverage_gaps_are_runtime_waivers": True,
+        "plan_authority_units_for_host_side_work_are_intended": True,
+        "veto_grounds": [
+            "wrong-neighbor-selection",
+            "missing-lifecycle-assurance-the-plan-calls-for",
+            "unsafe-selected-team-composition",
+            "unsupported-confidence",
+        ],
+        "never_veto_for": [
+            "execution-or-installation-authority",
+            "waived-roster-coverage-gaps",
+            "plan-authority-units-for-host-side-work",
+            "implementation-units-the-planner-did-not-plan",
+            "completed-task-evidence",
+        ],
         "composition_uses_selected_workers_only": True,
         "unselected_categories": [
             "acceptable",

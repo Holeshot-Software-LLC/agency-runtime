@@ -209,7 +209,12 @@ _STAFFING_SHAPES: tuple[StaffingShape, ...] = (
         description="Planner and recruiter succeed; the strict critic rejects the staffing.",
         build_invoker=_critic_rejected_invoker,
         expected_reason_code="workforce_inference_failed",
-        expected_staffing_codes=("staffing_critic_rejected",),
+        # ADR-0200: the critic's own code rides beside the class code in
+        # projected form, so the receipt says why the critic vetoed.
+        expected_staffing_codes=(
+            "staffing_critic_rejected",
+            "critic_" + _CRITIC_REJECTION_CODE.replace("-", "_"),
+        ),
         expected_inference_mode="invalid",
         expected_attempt_statuses=("applied", "applied", "applied"),
     ),

@@ -1,11 +1,13 @@
 ---
 title: "AR-386: The strict critic vetoes every verifier-accepted install turn"
-status: open
+status: in_progress
 category: roadmap
 created: 2026-09-03
 updated: 2026-09-03
 tags: [workforce, critic, staffing, inference, receipts]
 related:
+  - docs/decisions/0200-bind-the-strict-critic-to-the-advisory-doctrine.md
+  - docs/roadmap/reference-workforce-inference-stages.md
   - docs/roadmap/issue-AR-384-staff-decisions-die-on-uncoverable-typed-requirements.md
   - docs/roadmap/issue-AR-306-bind-strict-critic-semantics.md
   - docs/roadmap/issue-AR-304-preserve-recruiter-critic-validation-diagnostics.md
@@ -67,11 +69,45 @@ facts rather than defects, or that a plan-only install is a legitimate shape.
 
 ## Current state
 
-Filed from the AR-384 live re-measurement. Not fixed. AR-306 bound the critic
-to the configured thresholds and selected-only composition; it did not bind it
-to the advisory doctrine. Every critic verdict above is a legitimate contract
-response (approved false, unique hyphenated codes), so no validation path
-records it as a defect; the turn simply fails open.
+**Implemented on branch `claude/ar386-critic-contract` (2026-09-03)** per
+[ADR-0200](../decisions/0200-bind-the-strict-critic-to-the-advisory-doctrine.md).
+`critic_contract` now states `workforce_is_advisory`,
+`execution_authority_holder: host`, `selected_authority_bound_by_eligibility`,
+`roster_coverage_gaps_are_runtime_waivers` and
+`plan_authority_units_for_host_side_work_are_intended`, and lists
+`veto_grounds` and `never_veto_for`; `_CRITIC_SYSTEM` says the same in words
+and narrows the lifecycle ground to assurance the plan calls for. On a veto
+the staffing decision carries each critic code as `critic_<code>` (hyphens
+folded, at most sixteen, at most 56 characters) beside
+`staffing_critic_rejected`, so `staffing_reason_codes` on the preflight-failure
+receipt, `global_reason_codes` on the routing receipt and the fail-open
+disclosure line all name the veto. `tests/test_strict_critic_doctrine.py`
+pins the contract and two curated decision-conformance mutations guard it.
+
+Live re-measurement, the nine wordings above plus AR-385's two install
+wordings, branch runtime, installed `workforce.mode: strict`, critic served by
+the same deployment as before (evidence in
+`docs/roadmap/acceptance/evidence/AR-386-evidence-20260903.txt`):
+
+| turn | reached the critic | verdict | outcome |
+|---|---|---|---|
+| 201, 202, 206, 207 | no | - | recruiter or verifier: AR-384 and AR-373 residue |
+| 203 | no | - | recruiter declared a gap; hiring ran, no hire landed |
+| 204, 205, 208, 305 | yes | `wrong-neighbor-selection` | `staffing_critic_rejected`, receipt `['staffing_critic_rejected', 'critic_wrong_neighbor_selection']` |
+| **209** | yes | approved | **accepted**: six specialists staffed |
+| **304** (fresh wording, vetoed under the old prompt this morning) | yes | approved | **accepted**: four specialists staffed |
+
+Two install turns completed with a staffed team under strict mode. Four
+vetoes, each on the one fair ground the contract names; the two
+doctrine-breaking codes of the AR-384 measurement did not recur, and no veto
+carried an execution-authority code. The turns that never reached the critic
+are AR-384's `domain:platform` residue, AR-373's row-shape residue, and one
+gap that hiring did not fill; none is this issue.
+
+The critic document previously carried `verified_staffing` including the
+`roster_coverage_gap` reasons but nothing that said the workforce is
+advisory; AR-306 had bound the critic to the configured thresholds and
+selected-only composition only.
 
 ## Approach
 
@@ -99,10 +135,10 @@ or changing the critic route.
 
 ## Acceptance
 
-- [ ] The critic contract and system prompt state that the workforce is
+- [x] The critic contract and system prompt state that the workforce is
       advisory, that waived coverage gaps are runtime facts, and that a
       plan-authority unit for host-side work is a legitimate shape.
-- [ ] A fresh-wording helix install turn completes with a staffed team under
+- [x] A fresh-wording helix install turn completes with a staffed team under
       `workforce.mode: strict`.
-- [ ] No strict-critic veto on the nine 2026-09-03 wordings carries an
+- [x] No strict-critic veto on the nine 2026-09-03 wordings carries an
       execution-authority code.

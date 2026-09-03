@@ -121,6 +121,7 @@ Status meanings:
 | [ADR-0185](0185-enforce-child-judge-schema-at-litellm-alias.md) | Enforce the child-judge schema at the LiteLLM alias | Accepted |
 | [ADR-0192](0192-route-content-invalid-completions-to-a-content-fallback-profile.md) | Route content-invalid completions to a content-fallback profile | Accepted |
 | [ADR-0199](0199-give-each-inference-stage-its-own-reply-budget.md) | Give each inference stage its own reply budget and name a cut reply on the receipt | Accepted |
+| [ADR-0200](0200-bind-the-strict-critic-to-the-advisory-doctrine.md) | Bind the strict critic to the advisory doctrine and name its veto on the receipts | Accepted |
 
 ## Evidence and observability
 

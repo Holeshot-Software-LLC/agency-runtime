@@ -28,6 +28,7 @@ related:
   - docs/roadmap/issue-AR-333-report-unsupported-codex-isolated-agency-canary.md
   - docs/roadmap/issue-AR-334-support-codex-0151-collaboration-and-hook-contract.md
   - docs/roadmap/issue-AR-385-structured-reply-budget-truncates-nominations-silently.md
+  - docs/roadmap/issue-AR-386-strict-critic-vetoes-verifier-accepted-install-turns.md
   - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
   - docs/decisions/0178-project-config-declared-credentials-into-tool-reduced-canaries.md
   - docs/decisions/0181-use-litellm-aliases-as-host-inference-control-plane.md
@@ -39,6 +40,7 @@ related:
   - docs/decisions/0189-admit-only-accepted-terminal-codex-parents-for-post-return-collection.md
   - docs/decisions/0191-seal-managed-hermes-python-bundles.md
   - docs/decisions/0199-give-each-inference-stage-its-own-reply-budget.md
+  - docs/decisions/0200-bind-the-strict-critic-to-the-advisory-doctrine.md
   - docs/roadmap/README.md
   - docs/worklog/README.md
   - THIRD_PARTY_NOTICES.md
@@ -70,6 +72,16 @@ changes rather than duplicating every commit.
   with a `truncation` object on the routing and preflight-failure receipts,
   the retry is told it was cut, and a nomination reply cut mid-row loses
   only the units whose rows could not be read.
+- The strict staffing critic is bound to the advisory doctrine (AR-386,
+  ADR-0200): its contract and system prompt state that Agency supplies
+  expertise and the host executes, that a selected worker's authority was
+  already bound by eligibility, that `roster_coverage_gap` entries are
+  runtime waivers, and that a plan-authority unit for host-side work is the
+  intended shape, with the veto grounds and the grounds ruled out listed.
+  A veto's codes now reach the staffing decision as `critic_<code>` beside
+  `staffing_critic_rejected`, so the preflight-failure receipt's
+  `staffing_reason_codes`, the routing receipt's `global_reason_codes` and
+  the fail-open disclosure name why the turn died.
 - `agency battery` runs the change-triggered harness canary battery
   (AR-337): per-harness version fingerprints gate the run, claude and codex
   re-prove through their canary modes (codex attended-trust loss reported
