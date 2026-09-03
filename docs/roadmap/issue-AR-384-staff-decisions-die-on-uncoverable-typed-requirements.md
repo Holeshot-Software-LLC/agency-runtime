@@ -209,6 +209,15 @@ with `roster_coverage_gap domain:desktop`, and the turn then died at the strict
 critic (`wrong-neighbor-selection`, `missing-implementation-lifecycle-assurance`),
 which is AR-386.
 
+**Verification (2026-09-03).** The acceptance record is frozen at
+`1711bcaa`; the isolated verifier found criteria 1 and 3 satisfied and
+criterion 2 contradicted, because the criterion names `unit-install-operation`
+literally while the fresh-wording turn's planner named the captured-shape unit
+`unit-install-plan`. Under the AR-386 runtime turn 304 (`Get the helix text
+editor working in my shell on this box`) staffed `operations-manager` on both
+plan-authority install units of that shape and completed. Whether the
+criterion should name the shape rather than the id is the owner's call.
+
 **Residue, this issue's option 2.** The planner names `domain:platform` for
 the operating system; the roster's `platform` domain means API platforms and
 its only eligible coverer is `api-platform-engineer`. The token is coverable,

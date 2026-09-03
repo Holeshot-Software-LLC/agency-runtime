@@ -12,14 +12,14 @@ supersedes: []
 superseded_by: null
 type: acceptance-verification
 issue_id: AR-384
-candidate_commit: pending
+candidate_commit: 1711bcaa8d507fd7489ea3f454785e51f29c05d7
 evidence_cutoff: 2026-09-03
 tracker_url: null
 ---
 
 # AR-384 acceptance verification record
 
-Pending draft. The verifier waives the typed requirements some contract
+Frozen at `1711bcaa`. The verifier waives the typed requirements some contract
 declares but none covers eligibly for the unit, records each as
 `roster_coverage_gap`, and keeps every other token mandatory; the `operations`
 capability also reads the `operations` domain. Criterion 2 is evidenced at the
@@ -59,3 +59,6 @@ issue (filed as AR-386).
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
+| 1 | satisfied | `AR-384.1-20260903-00bb54b2` | `ade6febe096a3f49661f0fef0f777a3bf7784113f1c24e251ef883122b945e85` | 2026-09-03 | The verifier waives only roster-declared but ineligible tokens, tests show eligible coverable requirements remain mandatory and the resulting staff decision is accepted, and receipt projection exposes the exact waived token in coverage_gaps. |
+| 2 | contradicted | `AR-384.2-20260903-f84826d2` | `43c76ae806a78b455206703405434896c3b75281dbc65ac4234792119ca4400e` | 2026-09-03 | The replay selects operations-manager for unit-install-operation, but live turn 203 selects operations-manager for unit-install-plan and api-platform-engineer for unit-install-operation, so it does not reach the same decision. |
+| 3 | satisfied | `AR-384.3-20260903-ff0bb474` | `467ca037d6068d55c8d4ebc009a796af7684885fea6ede58d156c2cccd0c6a47` | 2026-09-03 | The cited inference paths derive waived tokens from typed_staffing_coverage_gaps and exclude them from failure-axis and repair targeting, while the tests and live-turn evidence show domain failures only for coverable tokens absent from typed_recall.uncovered_requirements. |
