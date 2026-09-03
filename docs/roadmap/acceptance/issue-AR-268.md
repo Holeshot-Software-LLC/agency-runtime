@@ -11,7 +11,7 @@ supersedes: []
 superseded_by: null
 type: acceptance-verification
 issue_id: AR-268
-candidate_commit: pending
+candidate_commit: 74d6d966e079bba6ba5459baca86d35923c567e3
 evidence_cutoff: 2026-09-02
 tracker_url: null
 ---
@@ -32,10 +32,12 @@ against `85ad8d88^` (`4a326773`).
 
 | Criterion | Kind | Artifact | Observed | Source |
 |---|---|---|---|---|
-| 1 | command-output | `at 85ad8d88^ the regression raises ConfigurationError: configuration parent permits cross-account path substitution, the fail-closed namespace error` | 2026-09-02 | `docs/roadmap/acceptance/evidence/AR-268-AR-269-prefix-20260902.txt:15-19` |
+| 1 | command-output | `under umask 0002 the superseded mkdir(parents=True) leaves every component 0775` | 2026-09-02 | `docs/roadmap/acceptance/evidence/AR-268-AR-269-prefix-20260902.txt:25-31` |
+| 1 | command-output | `and the resulting namespace predicate then fails closed with ConfigurationError: configuration parent permits cross-account path substitution` | 2026-09-02 | `docs/roadmap/acceptance/evidence/AR-268-AR-269-prefix-20260902.txt:15-19` |
 | 1 | test | `test_config_parent_creates_nested_components_privately_under_permissive_umask sets umask 0002, creates a three-deep parent, and asserts every component is 0700` | 2026-09-02 | `tests/test_config_policy_namespace_runtime.py:137-162` |
 | 2 | file | `_create_config_parent creates each missing component and restricts it before the next pathname operation` | 2026-09-02 | `agency_runtime/core/configuration_persistence.py:300-316` |
-| 2 | file | `_ensure_private_config_parent is the per-component private creation helper the POSIX path delegates to` | 2026-09-02 | `agency_runtime/core/configuration_persistence.py:287-297` |
+| 2 | file | `_ensure_private_config_parent delegates POSIX ancestor creation to ensure_private_directory` | 2026-09-02 | `agency_runtime/core/configuration_persistence.py:287-297` |
+| 2 | file | `ensure_private_directory creates and verifies each component owner-private` | 2026-09-02 | `agency_runtime/core/private_paths.py:624-660` |
 | 2 | file | `ensure_config_parent refuses a symlinked parent, asserts the namespace, then creates the parent privately` | 2026-09-02 | `agency_runtime/core/configuration_persistence.py:319-358` |
 
 ## Verification

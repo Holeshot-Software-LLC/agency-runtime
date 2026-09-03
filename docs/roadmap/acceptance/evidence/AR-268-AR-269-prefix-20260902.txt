@@ -21,3 +21,11 @@ FAILED tests/test_config_policy_namespace_runtime.py::test_config_parent_creates
 $ the same two tests at HEAD
 ..                                                                       [100%]
 2 passed in 0.16s
+
+$ AR-268: the unsafe intermediate modes the pre-fix path produced, before the namespace error
+$ umask 0002, then mkdir(parents=True) as the superseded implementation did
+  0o775  runtime
+  0o775  runtime/openclaw
+  0o775  runtime/openclaw/config-identities
+  0o775  runtime/openclaw/config-identities/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+  every component is group- and world-readable; the namespace predicate then fails closed
