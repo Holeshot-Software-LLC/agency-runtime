@@ -3,12 +3,14 @@ title: "AR-373: The recruiter is rejected for citing the coverage vocabulary Age
 status: in_progress
 category: roadmap
 created: 2026-09-02
-updated: 2026-09-02
+updated: 2026-09-03
 tags: [workforce, recruiter, inference, staffing]
 related:
   - docs/roadmap/issue-AR-336-requalify-the-recruiter-route-for-ordinary-tasks.md
   - docs/roadmap/issue-AR-370-staffing-asks-the-wrong-question.md
   - docs/roadmap/issue-AR-353-intermittent-staffing-verdict-window-linux.md
+  - docs/roadmap/issue-AR-384-staff-decisions-die-on-uncoverable-typed-requirements.md
+  - docs/roadmap/issue-AR-385-structured-reply-budget-truncates-nominations-silently.md
 supersedes: []
 superseded_by: null
 type: issue
@@ -67,6 +69,42 @@ references them, so they never reach a receipt, projection, store or header.
 They are a discipline device: they make the model justify each nomination,
 and are then dropped.
 
+## Captured live, 2026-09-03
+
+The widening is deployed (the installed runtime is byte-identical to `main`)
+and it works: a repair attempt on the helix-install turn cited
+`artifact:plan`, `authority:plan`, `domain:operations` as `positive_evidence`
+and those rows passed. The live criterion below still fails, for three reasons
+that were only visible once the exact request and reply were captured in
+process rather than read back from the receipt. All three came from
+`anthropic/MiniMax-M3`, which serves this route first; the one turn the
+gateway handed to `chatgpt/gpt-5.5` returned clean hyphenated codes on every
+row and was accepted.
+
+1. **The same defect, one vocabulary over.** `typed_recall` shows the
+   recruiter each candidate's `ineligibility_reasons`, in underscore form
+   (`agent_authority_mismatch`, `agent_lifecycle_mismatch`). A recruiter that
+   cites those back as `negative_evidence` is rejected
+   `recruiter_candidate_negative_evidence_invalid`, because the charset admits
+   `:` and `-` but not `_`. Seen on two of five captured turns; the same shape
+   as the original filing.
+2. **Forbidden rows without `positive_evidence`.** The provider does not
+   enforce the JSON schema's `required` list, so a forbidden candidate arrives
+   with `negative_evidence` only and fails
+   `recruiter_candidate_row_shape_invalid`. Three units on one captured turn;
+   7 of 48 rejected recruiter attempts in the smoke carry that diagnostic. An
+   absent evidence array on a forbidden row carries no information the
+   contract needs.
+3. **Prose after a misleading retry.** When the first reply was truncated
+   (AR-385) the generic feedback sent the retry through the ordinary system
+   prompt, and the model answered with `"repository-read mapping"`,
+   `"not_for: implementation rather than review"`. Two of five turns.
+
+The counts that matter: of 48 rejected recruiter attempts in the smoke, 9
+carry `invalid_candidate` and this issue owns them; 31 carry
+`staff_without_safe_team` and belong to AR-384; 8 carry nothing and belong to
+AR-385. The dominant staffing failure is not the evidence charset.
+
 ## Approach
 
 Accept the vocabulary Agency teaches. Widen only the nomination evidence
@@ -98,7 +136,8 @@ gain.
 - [x] Every safety bound survives, and typed identifier fields are not
       widened. Evidence: `test_every_safety_bound_survives` and
       `test_typed_identifier_fields_are_not_widened`.
-- [ ] Live: an ordinary staffed turn on this installation. The recruiter now
+- [ ] Live: an ordinary staffed turn on this installation. Not met as of
+      2026-09-03 (see "Captured live" above). The recruiter now
       returns `structured_response_applied` on the first attempt with
       `decision_source: inferred` instead of a discarded nomination, and then
       makes its own judgement; the remaining abstention is AR-336's subject,
