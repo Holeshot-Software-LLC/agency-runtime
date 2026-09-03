@@ -223,6 +223,43 @@ vocabulary to what a host can prove, and feeding real capability detection into
 - AR-373 removed the contract failure that masked this; the recruiter now
   reaches a real judgement, which is what made this visible.
 
+## Fix (2026-09-03): a multi-host installation can prove a host
+
+The 30-prompt smoke found the live blocker, and it was not the vocabulary gap
+this issue was filed about. `_single_verified_route_host` proved a host only
+when **exactly one** was `native-installation-verified`:
+
+    if len(verified) != 1:
+        return {}
+
+On this box three hosts are verified, so it proved none, and every candidate
+was rejected `execution_host_unproven` — 257 rejections on every prompt, all
+thirty at `confidence: 0.0`. More installation meant less capability.
+
+Replaced with `_route_host_context`, which keeps the single-host behaviour,
+lets a caller disambiguate with `agency route --host` / `agency explain
+--host`, and reports why when it still cannot prove one. Measured on the same
+box:
+
+| | rejections | shape |
+|---|---|---|
+| before / no `--host` | 257 | blanket `execution_host_unproven` |
+| `--host codex` | 219 | real per-worker `missing_capabilities:...` |
+
+That leaves **72 of 291 eligible**, reproducing this issue's own measured
+figure exactly, and the rejections are now the documented vocabulary gap
+rather than a missing host.
+
+The output also states the proof. Without a proven host the CLI now prints
+`host: not proven — … every candidate is ineligible, so the list below is
+score order only`, so a degenerate ranking can no longer be mistaken for a
+real one, and `host_proof` rides in the JSON payload for both commands.
+
+Criterion 3 stays open. With the tools axis cleared the turn now reaches
+`status=inference_unavailable, workforce_provider_unavailable` — operator
+configuration, reported honestly — and behind that the planner-shape defect
+already recorded above.
+
 ## Acceptance
 
 - [x] The share of the roster that is structurally unstaffable is stated,
