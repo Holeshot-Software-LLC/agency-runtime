@@ -392,14 +392,27 @@ _CRITIC_SYSTEM = (
     "demand completed task evidence, tool output, or manual testing. The runtime has already "
     "hard-verified eligibility, typed requirement coverage, authority, and deterministic "
     "composition. Review semantic fit and lifecycle assurance without contradicting those hard "
-    "facts. Only proposal.selected workers compose the team; acceptable, runner_up, forbidden, "
+    "facts.\n\n"
+    "Agency is advisory. It supplies specialist expertise and never executes anything; the "
+    "host applies the selected team's expertise and alone holds every execution, installation, "
+    "and mutation authority. No worker can or need hold live authority of any kind, so a "
+    "plan-authority or review-authority unit for host-side work such as installing software is "
+    "the intended shape, never a defect, and a team is never short of authority it could not "
+    "hold. Each selected worker's authority, artifact kinds, host, platform, and tools were "
+    "already bound by eligibility. verified_staffing.abstention_reasons entries coded "
+    "roster_coverage_gap are typed requirements the roster declares but cannot serve for that "
+    "unit: the runtime waived and recorded them, and they are runtime facts about the roster, "
+    "never a team defect. Do not demand an implementation unit the planner did not plan, nor "
+    "lifecycle assurance for work the plan does not call for.\n\n"
+    "Only proposal.selected workers compose the team; acceptable, runner_up, forbidden, "
     "and shadow workers are not selected. Confidence is supported when the supplied confidence "
     "and margin meet the exact critic_contract thresholds. Reject only a specific wrong-neighbor "
-    "selection, missing lifecycle assurance, unsafe selected-team composition beyond the hard "
-    "checks, or unsupported confidence. Approve when none applies. You may veto but never add or "
-    "replace workers. When approved is true, reason_codes must be exactly an empty JSON array. "
-    "When approved is false, reason_codes must contain one or more unique lowercase hyphenated "
-    "staffing-defect codes. Return only one JSON object matching the supplied schema."
+    "selection, lifecycle assurance the plan calls for and the team lacks, unsafe selected-team "
+    "composition beyond the hard checks, or unsupported confidence. Approve when none applies. "
+    "You may veto but never add or replace workers. When approved is true, reason_codes must be "
+    "exactly an empty JSON array. When approved is false, reason_codes must contain one or more "
+    "unique lowercase hyphenated staffing-defect codes. Return only one JSON object matching the "
+    "supplied schema."
 )
 _RECALL_RERANKER_SYSTEM = (
     "You rank only the supplied novel workforce-recall candidates for each work unit. "
@@ -3432,6 +3445,67 @@ def _inference_failure(
     )
 
 
+# AR-386 / ADR-0200. The critic's grounds, stated in its contract so a veto
+# names one of them or explains a defect of the same kind, and the grounds
+# the advisory doctrine rules out.
+_CRITIC_VETO_GROUNDS: Final[tuple[str, ...]] = (
+    "wrong-neighbor-selection",
+    "missing-lifecycle-assurance-the-plan-calls-for",
+    "unsafe-selected-team-composition",
+    "unsupported-confidence",
+)
+_CRITIC_NEVER_VETO_FOR: Final[tuple[str, ...]] = (
+    "execution-or-installation-authority",
+    "waived-roster-coverage-gaps",
+    "plan-authority-units-for-host-side-work",
+    "implementation-units-the-planner-did-not-plan",
+    "completed-task-evidence",
+)
+# A critic code projected for the receipts: ``critic_`` plus the code with
+# its hyphens folded, so it satisfies the preflight receipt's underscore
+# vocabulary and the fail-open disclosure's 512-character line beside the
+# verifier's own codes. The bound keeps four such codes inside that line.
+_CRITIC_RECEIPT_CODE_PREFIX: Final[str] = "critic_"
+_CRITIC_RECEIPT_CODE = re.compile(r"^[a-z][a-z0-9_]{1,55}$")
+_MAX_CRITIC_RECEIPT_CODES: Final[int] = 16
+
+
+def _critic_receipt_codes(critic_codes: Sequence[str]) -> tuple[str, ...]:
+    """Project the strict critic's schema-bound codes into the receipt vocabulary."""
+
+    projected: list[str] = []
+    for code in critic_codes:
+        normalized = str(code).strip().casefold()
+        if _CRITIC_REASON_CODE.fullmatch(normalized) is None:
+            continue
+        candidate = _CRITIC_RECEIPT_CODE_PREFIX + normalized.replace("-", "_")
+        if _CRITIC_RECEIPT_CODE.fullmatch(candidate) is None or candidate in projected:
+            continue
+        projected.append(candidate)
+        if len(projected) >= _MAX_CRITIC_RECEIPT_CODES:
+            break
+    return tuple(projected)
+
+
+def _critic_rejected_staffing(critic_reasons: Sequence[str]) -> StaffingDecision:
+    """Return the abstained decision a strict-critic veto leaves behind (AR-386).
+
+    Before this the veto left one ``staffing_critic_rejected`` reason and the
+    critic's own codes survived only in the routing result's error string, so
+    no durable receipt could say why the turn died. The codes were validated by
+    ``parse_critic`` (unique, lowercase, hyphenated, bounded), and each rides
+    beside the class code in projected form so ``staffing_reason_codes`` on the
+    preflight-failure receipt, ``global_reason_codes`` on the routing receipt,
+    and the fail-open disclosure all name the veto.
+    """
+
+    from agency_runtime.core.workforce.staffing_verifier import AbstentionReason
+
+    reasons = [AbstentionReason("staffing_critic_rejected")]
+    reasons.extend(AbstentionReason(code) for code in _critic_receipt_codes(critic_reasons[1:]))
+    return StaffingDecision("abstained", (), tuple(reasons))
+
+
 def _strict_critic(
     *,
     request: str,
@@ -3451,6 +3525,17 @@ def _strict_critic(
             "critic_contract": {
                 "review_scope": "pre_execution_semantic_staffing",
                 "verified_staffing_hard_checks_passed": staffing.accepted,
+                # AR-386 / ADR-0200: the advisory doctrine, stated where the
+                # critic reads its contract. Agency never executes; the host
+                # does. Waived coverage gaps are roster facts, and a
+                # plan-authority unit for host-side work is the intended shape.
+                "workforce_is_advisory": True,
+                "execution_authority_holder": "host",
+                "selected_authority_bound_by_eligibility": True,
+                "roster_coverage_gaps_are_runtime_waivers": True,
+                "plan_authority_units_for_host_side_work_are_intended": True,
+                "veto_grounds": list(_CRITIC_VETO_GROUNDS),
+                "never_veto_for": list(_CRITIC_NEVER_VETO_FOR),
                 "composition_uses_selected_workers_only": True,
                 "unselected_categories": [
                     "acceptable",
@@ -3951,7 +4036,7 @@ def plan_and_staff_workforce(
                 attempts=attempts,
                 detail_codes=critic_reasons,
                 calls_used=_total_calls_used(budget, attempts),
-                staffing=_empty_staffing(critic_reasons[0]),
+                staffing=_critic_rejected_staffing(critic_reasons),
                 cache_hits=cache_hits,
             )
 

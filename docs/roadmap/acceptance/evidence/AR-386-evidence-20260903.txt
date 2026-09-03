@@ -1,0 +1,58 @@
+AR-386 evidence, 2026-09-03. Branch claude/ar386-critic-contract on top of claude/ar385-reply-budget (PR #585) -> claude/ar384-coverage-gaps (PR #584).
+Runtime under test: the branch checkout via PYTHONPATH, run by the installed venv python
+(~/.local/share/agency-runtime/venvs/0abe4a77c87af87cf0d2789df77d40d4a6f80a44). Store: the live ~/.agency-runtime/agency.db
+(backed up earlier this session as agency.db.pre-ar385-141812). Installed workforce.mode: strict. Harness: capture386.py
+(run_preflight, codex capability receipt, the durable preflight-failure receipt read back with store.get_preflight_failure_receipt).
+Raw calls in raw386/<id>-calls.json. Critic served by one deployment on every critic call (x-litellm-model-id 10729e08-a962-5f82-bcf0-1b35b4adcf47),
+the same deployment that vetoed all four verifier-accepted install turns on the AR-384 measurement.
+
+== 1. The nine 2026-09-03 install wordings (201-209) plus the two AR-385 install wordings (304, 305), re-run under the bound critic ==
+
+id  | request (first words)                                        | reached the critic | critic verdict                               | how the turn ended
+----|--------------------------------------------------------------|--------------------|----------------------------------------------|-------------------
+201 | Get the Helix editor from github set up on this machine      | no                 | -                                            | staff_without_safe_team twice (capability, artifact axes; AR-384 residue)
+202 | I want helix (the modal text editor) installed and runnable  | no                 | -                                            | recruiter_candidate_row_shape_invalid on three units (AR-373), repair staff_without_safe_team
+203 | Please make the helix-editor/helix release usable            | no                 | -                                            | recruiter declared a gap after repair; hiring ran (cap 17408, 1667 tokens), no hire landed: substantive_specialist_unavailable
+204 | Set up the Zed editor on this workstation                    | yes                | rejected: wrong-neighbor-selection           | staffing_critic_rejected
+205 | Install ripgrep and fd on this machine                       | yes                | rejected: wrong-neighbor-selection           | staffing_critic_rejected
+206 | Bring the helix editor onto this laptop                      | no                 | -                                            | staff_without_safe_team twice (AR-384 residue)
+207 | Can you sort out getting helix installed here?               | no                 | -                                            | row_shape_invalid on three units (AR-373), repair selection_confidence_too_low
+208 | Add the Helix editor to this Linux system                    | yes                | rejected: wrong-neighbor-selection           | staffing_critic_rejected
+209 | Put helix-editor/helix on this computer without touching     | yes                | approved                                     | ACCEPTED: desktop-app-engineer, infrastructure-maintainer, devops-automator, software-test-engineer, code-reviewer, test-results-analyzer
+304 | Get the helix text editor working in my shell on this box    | yes                | approved                                     | ACCEPTED: desktop-app-engineer, operations-manager, cross-platform-release-verifier, application-integration-verifier
+305 | Set up ripgrep, fd and bat on this workstation               | yes                | rejected: wrong-neighbor-selection           | staffing_critic_rejected
+
+Six turns reached the critic. Two install turns completed with a staffed team under strict mode: 209 and 304, the latter a
+wording first used today under AR-385, where the old critic vetoed it (verification-evidence-worker-misfit was not returned;
+the AR-385 run's 304 veto is in that evidence file). Four vetoes, every one carrying exactly wrong-neighbor-selection, a ground
+the contract names. No veto on any of the nine wordings, nor on 304 or 305, carried an execution-authority code; the four
+codes of the AR-384 measurement that did (selected-team-lacks-live-installation-authority, missing-implementation-lifecycle-assurance)
+did not recur. The five turns that never reached the critic died at the recruiter or verifier on AR-384 and AR-373 residue,
+which this issue does not claim.
+
+== 2. The veto is named on the durable receipt (store.get_preflight_failure_receipt, verbatim per turn) ==
+204: reason=workforce_inference_failed staffing_reason_codes=['staffing_critic_rejected', 'critic_wrong_neighbor_selection']
+205: reason=workforce_inference_failed staffing_reason_codes=['staffing_critic_rejected', 'critic_wrong_neighbor_selection']
+208: reason=workforce_inference_failed staffing_reason_codes=['staffing_critic_rejected', 'critic_wrong_neighbor_selection']
+305: reason=workforce_inference_failed staffing_reason_codes=['staffing_critic_rejected', 'critic_wrong_neighbor_selection']
+Before this change the same receipts carried ['staffing_critic_rejected'] alone (AR-384 evidence, turns 203, 204, 205, 209).
+
+== 3. What the critic was told (critic prompt, turn 209, critic_contract) ==
+  review_scope pre_execution_semantic_staffing; verified_staffing_hard_checks_passed true; workforce_is_advisory true;
+  execution_authority_holder host; selected_authority_bound_by_eligibility true; roster_coverage_gaps_are_runtime_waivers true;
+  plan_authority_units_for_host_side_work_are_intended true;
+  veto_grounds [wrong-neighbor-selection, missing-lifecycle-assurance-the-plan-calls-for, unsafe-selected-team-composition, unsupported-confidence];
+  never_veto_for [execution-or-installation-authority, waived-roster-coverage-gaps, plan-authority-units-for-host-side-work,
+                  implementation-units-the-planner-did-not-plan, completed-task-evidence];
+  composition_uses_selected_workers_only true; minimum_confidence 0.8; minimum_margin 0.1; response_semantics unchanged.
+
+== 4. Gates on the final tree ==
+  ruff check / ruff format --check: clean on every changed file (the pre-existing RUF024 in tests/test_workforce_subject_inference.py is untouched).
+  tests/test_strict_critic_doctrine.py: 5 passed. Critic, receipt, chaos and disclosure suites: 486 passed, 1 skipped.
+  Named fast Python production spine (WORKFLOW_CONTRACTS + PRODUCTION_SPINE): 1165 passed, 3 skipped, -W error.
+  python -m agency_runtime.cli eval routing --json --no-details (branch code): passed, version 1.4.0.
+  agency eval decision-conformance --repository . --json (copies venv, umask 077): status passed, source_unchanged true,
+    172 mutations, 172 killed, baseline passed; critic-veto-codes-dropped-from-the-receipts and
+    critic-contract-drops-the-advisory-doctrine both killed.
+  docs_metadata.py --check, update_policy_availability.py --check, verify_docs.py, git diff --check: green.
+  The chaos harness's critic_rejected shape now expects the projected code beside the class code.

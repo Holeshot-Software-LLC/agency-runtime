@@ -339,6 +339,37 @@ class _NominationSemantics:""",
         ),
     ),
     DecisionMutation(
+        mutation_id="critic-veto-codes-dropped-from-the-receipts",
+        invariant=(
+            "A strict-critic veto carries the critic's projected codes beside "
+            "staffing_critic_rejected on the staffing decision, so both durable receipts "
+            "name why the turn died (ADR-0200)."
+        ),
+        source_path="agency_runtime/core/workforce/inference.py",
+        before="""    reasons.extend(AbstentionReason(code) for code in _critic_receipt_codes(critic_reasons[1:]))""",
+        after="""    _critic_receipt_codes(critic_reasons[1:])""",
+        test_node=(
+            "tests/test_strict_critic_doctrine.py::"
+            "test_a_veto_reaches_both_receipts_and_the_disclosure_beside_the_verifier_codes"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="critic-contract-drops-the-advisory-doctrine",
+        invariant=(
+            "The strict critic's contract states that the workforce is advisory and the "
+            "host executes (ADR-0200)."
+        ),
+        source_path="agency_runtime/core/workforce/inference.py",
+        before="""                "workforce_is_advisory": True,
+                "execution_authority_holder": "host",""",
+        after="""                "workforce_is_advisory": False,
+                "execution_authority_holder": "workforce",""",
+        test_node=(
+            "tests/test_strict_critic_doctrine.py::"
+            "test_the_critic_contract_and_system_prompt_state_the_advisory_doctrine"
+        ),
+    ),
+    DecisionMutation(
         mutation_id="unreadable-nomination-row-refuses-the-whole-reply",
         invariant=(
             "A nomination row the runtime cannot read costs only its own unit, which "
