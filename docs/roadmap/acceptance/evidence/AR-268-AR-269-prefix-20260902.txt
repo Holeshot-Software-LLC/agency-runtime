@@ -1,0 +1,23 @@
+AR-268 / AR-269 pre-fix reproduction
+The AR-361 acceptance flow binds evidence to one commit, so a retrospective
+close cannot put new artifacts in the historical implementation commit.
+This file records the pre-fix runs; the fix itself shipped in 85ad8d88.
+
+$ git worktree at 85ad8d88^ (4a326773) with only the two new tests grafted in
+$ python3 -m pytest <the two AR-268/AR-269 regressions> -q
+>       assert node_bridge.main() == 0
+E       AssertionError: assert 2 == 0
+E        +  where 2 = <function main at 0x781562581760>()
+E        +    where <function main at 0x781562581760> = <module 'agency_runtime.adapters.openclaw.node_bridge' from '/tmp/claude-1000/-home-holeshot-code-agency-runtime/1ac81a29-09d5-4415-a5d3-246dbd7cb684/scratchpad/wt-prefix/agency_runtime/adapters/openclaw/node_bridge.py'>.main
+FAILED tests/test_host_boundary_hardening.py::test_openclaw_bridge_main_accepts_a_null_error_field
+1 failed in 0.15s
+
+>           raise ConfigurationError("configuration parent permits cross-account path substitution")
+E           agency_runtime.core.configuration_contracts.ConfigurationError: configuration parent permits cross-account path substitution
+agency_runtime/core/configuration_persistence.py:152: ConfigurationError
+FAILED tests/test_config_policy_namespace_runtime.py::test_config_parent_creates_nested_components_privately_under_permissive_umask
+1 failed in 0.14s
+
+$ the same two tests at HEAD
+..                                                                       [100%]
+2 passed in 0.16s
