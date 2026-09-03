@@ -120,6 +120,79 @@ here is that the trigger is no longer a judgement call: the zero-signal
 predicate landed on 2026-09-03 and is already measured to fire on exactly the
 seven prompts that need it and none of the twenty-three that do not.
 
+## Amendment (2026-09-03, before implementation)
+
+The owner chose option C. Tracing it to an implementation point showed the
+recommendation was made against an incomplete map, and **option C is a no-op
+for the failure this issue was filed about**. Recording that before writing
+code rather than after.
+
+### `routing_query` never reaches staffing
+
+The query this ADR proposed to rebuild has exactly three consumers, confirmed
+by reading every `request.routing_query` reference in
+`core/selector/pipeline.py`:
+
+| line | consumer | on the staffing path? |
+|---|---|---|
+| 1266 | `session_put` — stickiness cache | no |
+| 1820 | `session_check` — stickiness reuse | no |
+| 1946 | `_semantic_catalog` → `query_judge` | only when `workforce_snapshot is None` |
+
+`plan_and_staff_workforce` is called with `request.user_message`, never with
+`routing_query`. On a workforce-enabled install — the normal case — the
+workforce branch returns before line 1946, so `routing_query` affects session
+stickiness alone.
+
+### The measured scores are a different scorer
+
+The 30-prompt smoke and this issue's own table both measure `pre_narrow`
+(`core/selector/candidate_narrow.py:433`), the lexical scorer behind CLI
+`route` and `search`, MCP `agency_search_agents`, the HTTP surface, the
+dashboard and `explain`. Re-running this issue's table against it reproduces
+its winners exactly: `install this: <url>` scores nothing, `install the zcode
+CLI on linux from this url` and `set up and install developer tooling on linux`
+both put `developer-tooling-engineer` first, and `configure the gateway`
+retrieves zero. Different normalization, same ranking.
+
+`pre_narrow` is a browse and diagnostic surface. It is not what staffs a turn.
+
+### Why C therefore does nothing here
+
+Option C is "when the first retrieval has no signal, plan and retrieve again on
+the typed subject". On the staffing path there is no second query to form: the
+planner **is** what produces the typed subject, it already runs on the raw
+message, and `_run_hybrid_recall` already retrieves on the plan it returns.
+Re-running retrieval after planning would re-run a query staffing does not
+read.
+
+Option A collapses for the same reason. Of the three, only **option B** — a
+short typed classification pass *before* the planner — changes what the planner
+sees, which is the only input that can improve a plan derived from
+`install this: <url>`.
+
+### Revised recommendation
+
+Re-decide between:
+
+- **B, scoped to the planner's input.** One small typed classification call
+  ahead of `plan_and_staff_workforce`, not ahead of retrieval. Cost is an
+  inference call per staffed turn; it is the only option that reaches the
+  filed defect.
+- **B gated on the same zero-signal trigger.** Run the classification pass only
+  when `pre_narrow` over the eligible catalog returns no signal for the
+  message. This keeps C's "pay nothing on turns that already work" property
+  while targeting the stage that matters. Measured on this box, that trigger
+  fires on 7 of 30 prompts.
+- **Split the issue.** The browse surfaces (`pre_narrow`) and the staffing
+  planner are two defects with one symptom. AR-370's narrative is the staffing
+  one; its measurements are the browse one.
+
+The second is the closest honest descendant of the option that was chosen, and
+is what this ADR now recommends. It should not be implemented until the owner
+confirms, because it moves the cost from retrieval to the planner and that was
+the axis the original three options were costed on.
+
 ## Consequences
 
 - A turn that currently returns slug order gets one more plan-and-retrieve and
