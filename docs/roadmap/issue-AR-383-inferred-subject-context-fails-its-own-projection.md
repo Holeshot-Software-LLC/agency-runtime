@@ -46,11 +46,33 @@ The correlation is total in both directions: 17 of 17, and 0 of the other 13.
 Running the subject stage is sufficient to lose dense recall, and nothing else
 on this box causes that failure.
 
-For scale, 22 of the 30 turns did not staff at all, and 21 of those 22 abstained
-on an inference-stage failure rather than a recruiter judgement
-(`inference_invalid` 14, `inference_unavailable` 7, against one
-`no_safe_sufficient_team` and one `recruiter_abstained`). This defect accounts
-for 17 of them.
+### What this defect does *not* explain
+
+An earlier revision of this issue claimed the defect accounted for 17 of the 22
+turns that failed to staff. That was wrong, and the correction matters more than
+the claim did.
+
+Losing dense recall is **fail-open by construction** — the attempt is recorded
+`skipped` and the turn continues on typed recall alone. Measured on the same run:
+
+| | count |
+|---|---|
+| lost dense recall | 17 |
+| of those, still reached `inference_mode: inferred` | **4** (ids 3, 6, 8, 19) |
+| of those four, staffed successfully | **3** (ids 6, 8, 19) |
+| died at an inference stage *without* losing dense recall | **8** |
+
+So dense-recall loss is neither necessary nor sufficient for a turn to fail.
+The honest overlap is that 13 of the 21 inference-stage deaths also lost dense
+recall; the causal claim does not follow from that and is not made here.
+
+The abstention split, stated on one axis rather than two: by staffing abstention
+code, **19 of the 22** carry only an inference-stage code and **3** carry a
+judgement code (ids 2 and 11 `staffing_critic_rejected`, id 3
+`no_safe_sufficient_team` + `recruiter_abstained`). The routing *status* axis
+reads 21 of 22, because ids 2 and 11 have status `inference_invalid` while their
+staffing code is a critic judgement. Mixing the two axes is what produced the
+retracted number.
 
 ## Mechanism
 
@@ -142,6 +164,24 @@ score normally against the full 291-card roster still ran the stage. The
 pipeline gate reads `request.catalog`, which is not necessarily the catalog the
 ADR measured. That discrepancy is recorded here as an observation and needs its
 own investigation; this issue does not claim a cause for it.
+
+**Measurement surface.** These numbers come from `agency route`, which passes
+`store=None` (`cli/roster_commands.py:1147`) because it is a read-only
+diagnostic that must not mutate the roster. Gap hiring is therefore structurally
+`not_attempted` on this surface, and nothing here should be read as evidence
+about hiring. Exactly one turn reached the hiring gate at all — id 3,
+`install this: https://zcode.z.ai/en`, the literal turn AR-370 was filed from —
+and it recorded `unit-install-operation` / `not_attempted` /
+`hiring_store_unavailable` over a `recruiter_abstained` whose detail is
+`inference-declared-gap`. That is the gate behaving correctly for a diagnostic
+call, not a hiring defect.
+
+What *is* surface-independent: only **9 of 30** turns reached
+`inference_mode: inferred`, and `_run_gap_hiring` gates on exactly that
+(`selector/pipeline.py:1563-1568`). On any surface, hiring can only be
+considered on those nine, so inference-stage failures suppress the hiring path
+before a gap can be judged. Whether that ceiling is correct belongs to AR-132
+and AR-235, not here.
 
 ## Dependencies
 
