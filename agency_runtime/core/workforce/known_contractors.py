@@ -433,9 +433,10 @@ def _definition(
         "anti_capabilities": anti,
         "preferred_scenarios": [positive],
         "avoided_scenarios": [negative],
-        # AR-381: only the leading character is lowered so the sentence reads as
-        # one clause; casefolding the whole scope would mangle CLIs and Python.
-        "forbidden_scenarios": [f"Act outside {scope[:1].lower()}{scope[1:]}"],
+        # AR-381: the scope is carried verbatim. Casefolding it mangled CLIs and
+        # Python, and lowering only the leading character mangled the roles whose
+        # scope opens on a proper noun, such as Windows and Linux installation.
+        "forbidden_scenarios": [f"Act outside {scope}"],
         "lifecycle_phases": phases,
         "authority": authority,
         "context_mode": "isolated_only",

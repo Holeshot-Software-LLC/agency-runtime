@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import re
 from dataclasses import replace
 
 import pytest
@@ -904,3 +905,73 @@ def test_allowlisted_identifier_lists_are_still_checked_against_their_allowlist(
         unknown[field] = ["Not-In-The-Allowlist"]
         with pytest.raises(ValueError, match="contains an unsupported value"):
             parse_employment_contract(unknown)
+
+
+_CASEFOLDED_FIELDS = ("platforms", "hosts", "lifecycle_phases", "tools")
+_PROPER_NOUNS = (
+    "Python",
+    "TypeScript",
+    "Node.js",
+    "CLI",
+    "CLIs",
+    "Windows",
+    "Linux",
+    "AI",
+    "API",
+    "UI",
+    "IANA",
+)
+
+
+def test_every_contract_list_field_is_either_case_preserved_or_casefolded() -> None:
+    """AR-381 acceptance 2, exhaustively: the split covers every list field.
+
+    Asserted as a partition rather than field by field, so a list field added
+    later cannot quietly land in neither set. The casefolded half names its
+    consumer: `platforms`, `hosts` and `lifecycle_phases` are allowlist-checked
+    inside `parse_employment_contract`, and `tools` shares the lowercase-only
+    routing-identifier extraction with `artifacts_produced`.
+    """
+
+    contract = KNOWN_CONTRACTORS_BY_SLUG["python-application-engineer"]
+    list_fields = {
+        name
+        for name in contract.__dataclass_fields__
+        if isinstance((value := getattr(contract, name)), tuple)
+        and value
+        and all(isinstance(item, str) for item in value)
+    }
+
+    assert set(_PROSE_FIELDS) | set(_CASEFOLDED_FIELDS) == list_fields
+
+    for field in _CASEFOLDED_FIELDS:
+        raw = _raw()
+        raw[field] = [item.upper() for item in raw[field]]
+        parsed = parse_employment_contract(raw)
+        assert getattr(parsed, field) == tuple(item.casefold() for item in raw[field]), field
+
+
+@pytest.mark.parametrize("noun", _PROPER_NOUNS)
+def test_no_packaged_card_renders_a_lowercased_proper_noun(noun: str) -> None:
+    """AR-381 acceptance 3: checked against the corpus, not against one card.
+
+    Every prose bullet of every packaged card is scanned for the lowercased
+    spelling of each proper noun the corpus actually uses, as a standalone word.
+    """
+
+    pattern = re.compile(rf"\b{re.escape(noun.casefold())}\b")
+    seen = 0
+    for contract in KNOWN_CONTRACTOR_CONTRACTS:
+        prompt = compile_contractor(contract).prompt
+        for heading in (
+            "Capabilities and owned outcomes",
+            "Expected artifacts",
+            "Verification and required evidence",
+            "Role boundaries",
+        ):
+            for bullet in _section_bullets(prompt, heading):
+                assert not pattern.search(bullet), (
+                    f"{contract.slug}: lowercased {noun!r} in {bullet!r}"
+                )
+                seen += noun.casefold() in bullet.casefold()
+    assert seen or noun in {"IANA", "UI"}
