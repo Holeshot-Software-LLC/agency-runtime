@@ -21,8 +21,8 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-383
-branch: claude/ar384-planner-domains
-evidence_commit: 6b79736c0116331094630f7f252fa68992a1fb8d
+branch: claude/ar384-flip
+evidence_commit: 7c67b524bcbad9a00bcf269d6fbbe20c27810879
 minimum_ledger_commit: 8fde90dfcf746eb84abe288d7272c3db3441d2dd
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/581
@@ -30,9 +30,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/581
 
 # AR-383 inferred subject projection handoff
 
-> **This capsule is not on `main`.** It lives on branch
-> `claude/ar384-planner-domains`, the top of a stack: `claude/ar384-closure`
-> (PR #587) on `claude/ar386-critic-contract` (PR #586) on
+> **This capsule is not on `main`.** It lives on branch `claude/ar384-flip`,
+> the top of a stack: `claude/ar384-planner-domains` (PR #588) on
+> `claude/ar384-closure` (PR #587) on `claude/ar386-critic-contract` (PR #586) on
 > `claude/ar385-reply-budget` (PR #585) on `claude/ar384-coverage-gaps` (PR
 > #584) on `claude/ar373-recruiter-payload` (PR #583) on
 > `claude/ar370-acceptance` (PR #582). ADR-0198 to ADR-0201 and the AR-384,
@@ -58,11 +58,11 @@ Items 1 and 3 of the previous package are done on this branch; item 2
   planner repair. Weak rule: one served domain suffices. Exempt: a kind with
   nothing proven, compiler-chosen domains, a declared `novel_capability`
   domain.
-- **AR-384 criterion 2** reworded to the unit shape (plan authority,
-  `operations` among its domains, any unit id); **criterion 4** added for
-  option 2 and evidenced live. The acceptance record is a pending draft
-  again with re-cited rows; freezing and `verify_acceptance.py --all` are
-  the next PR.
+- **AR-384 is done.** Criterion 2 reworded to the unit shape (plan
+  authority, `operations` among its domains, any unit id), criterion 4 added
+  for option 2, record re-frozen at `7c67b524`, isolated codex verifier
+  satisfied on all four criteria, status flipped. `verify_tracker.py` still
+  reports `missing_remote` for AR-384, AR-385 and AR-386 by design.
 - An installed store gets the vocabulary fix only through `agency install`'s
   packaged-contract reconciliation (one re-projection of 280). The live
   measurement ran against a reconciled **copy** of the store; the live store
@@ -79,7 +79,7 @@ Items 1 and 3 of the previous package are done on this branch; item 2
 
 ## completed-evidence
 
-**On this branch, uncommitted at the time of writing.** `contract.py`
+**On the stack, `7c67b524` (PR #588) and the flip commit.** `contract.py`
 (`_CATEGORY_DOMAINS`), `intent.py` (`served_domains_by_artifact_kind`,
 taxonomy field, prompt paragraph), `plan_policy.py`
 (`_unserved_domain_violations`, guidance), `inference.py` wiring,
@@ -106,14 +106,13 @@ it. 209 completed under AR-386 and is vetoed here because the recruiter put
 
 ## exact-blocker
 
-Nothing blocks the planner side. The install path now loses turns only at
-the recruiter: AR-373's row-shape and evidence residue plus two structural
-reply errors (four of eleven), coverable tokens the recruiter leaves unranked
-while ranking ineligible implementers (two), scores under the confidence
-floor (one), and two semantic wrong-neighbour vetoes. AR-384's done flip
-needs the freeze-and-verify PR on this branch's code; a strict turn that
-needs both a planner repair and a recruiter repair now exhausts the five-call
-budget before the critic (none did live).
+Nothing blocks the planner side and AR-384 is closed. The install path now
+loses turns only at the recruiter: AR-373's row-shape and evidence residue
+plus two structural reply errors (four of eleven), coverable tokens the
+recruiter leaves unranked while ranking ineligible implementers (two), scores
+under the confidence floor (one), and two semantic wrong-neighbour vetoes. A
+strict turn that needs both a planner repair and a recruiter repair now
+exhausts the five-call budget before the critic (none did live).
 
 ## same-task-continuity
 
@@ -134,11 +133,12 @@ The twelve traps from the previous capsules hold. Three more:
 
 In this order.
 
-1. **AR-384 freeze and flip**: commit this branch, open the PR on #587,
-   then in a second PR set `candidate_commit` to the implementation SHA,
-   run `scripts/verify_acceptance.py --issue AR-384 --all --provider codex`,
-   flip to `done`. AR-385 and AR-386 likewise (freeze to `0f70496c` and
-   `6b79736c`).
+1. **AR-385 and AR-386 freeze and flip**: set each record's
+   `candidate_commit` (`0f70496c`, `6b79736c`), run
+   `scripts/verify_acceptance.py --issue AR-38N --all --provider codex`,
+   flip to `done`, one PR each on this stack. Then merge the stack in order
+   with `--merge` and run `agency install` so the store re-projects the
+   API platform card.
 2. **AR-373 residue**: `recruiter_candidate_row_shape_invalid` and evidence
    charset on first attempts, the `{}` repair reply (204) and the malformed
    941-token reply (304); the MiniMax deployment does not honour the strict
@@ -162,8 +162,8 @@ workforce, receipt, intent and conformance suites 346 passed, 1 skipped
 after it); named fast spine 1004 passed, 3 skipped under `-W error`; `eval
 routing` passed (1.4.0); decision-conformance rerun on the final tree
 recorded in the ledger row; `docs_metadata.py --check`, `verify_docs.py`
-green with the pending record. Pre-existing failures on the base are
-unchanged.
+green with the pending record, then with the frozen record and four
+`satisfied` rows. Pre-existing failures on the base are unchanged.
 
 ## constraints
 

@@ -13,7 +13,7 @@ supersedes: []
 superseded_by: null
 type: acceptance-verification
 issue_id: AR-384
-candidate_commit: pending
+candidate_commit: 7c67b524bcbad9a00bcf269d6fbbe20c27810879
 evidence_cutoff: 2026-09-03
 tracker_url: null
 ---
@@ -76,3 +76,7 @@ plan-authority install units carrying `operations`.
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
+| 1 | satisfied | `AR-384.1-20260903-68c6c116` | `705db49aa2cfccca66536ccc5f66770fcda03900a3b008b10cff629afce88056` | 2026-09-03 | The staffing verifier waives only declared-but-ineligible tokens, still requires all eligible-coverable requirements, accepts the tested sufficient team, and receipt projection exposes the waived token in coverage_gaps. |
+| 2 | satisfied | `AR-384.2-20260903-42531a9c` | `9ea5911a637bef67c410823abeb79ec1071446e88086796957f62508a44bf47b` | 2026-09-03 | AR-384 evidence lines 18-25 show the captured reply accepted with operations-manager, while lines 48-54 show fresh turn 203 staffing operations-manager on an artifact=plan unit with desktop and operations domains and verifier status accepted. |
+| 3 | satisfied | `AR-384.3-20260903-61d83a9d` | `629628ac5735193a85d72ea883310d129905fa41d0b5267b9fb4aaa026f6680b` | 2026-09-03 | The shared coverage-gap helper marks domain:desktop uncovered and waived, validation excludes waived tokens from failure-axis and repair targeting, and the test shows the remaining domain failure is for domain:quality-assurance instead. |
+| 4 | satisfied | `AR-384.4-20260903-ccdd16e3` | `28fb4b569b9bbb3487a7bbf415f116813a9142a46ce83697daf285372d766fe4` | 2026-09-03 | The cited implementation and tests show per-artifact served-domain prompting, plan_unit_domains_unserved rejection, and planner repair before recruiting; the eleven-turn strict-mode artifact records zero domain:platform recruiter failures and zero api-platform-engineer rankings or selections. |
