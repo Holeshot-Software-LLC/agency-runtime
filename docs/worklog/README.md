@@ -3,7 +3,7 @@ title: Worklog
 status: active
 category: worklog
 created: 2026-07-10
-updated: 2026-09-02
+updated: 2026-09-03
 tags: []
 related: []
 supersedes: []
@@ -1651,6 +1651,10 @@ This registry connects repository history to the roadmap and to optional detail 
 | `9acf5f1e` | 2026-09-02 | docs(ar347): bind the acceptance record to tracker #404 | null | null |
 | `a9f1719a` | 2026-09-02 | docs(ar347): evidence both gates with explicit exit codes and the applied dispositions | null | null |
 | `1bf7a2ed` | 2026-09-02 | docs(ar347): cite the per-mismatch dispositions and prove the changes under test | [AR-347](../roadmap/issue-AR-347-reconcile-tracker-parity-backlog.md) | Closed AR-347: both strict parity gates now pass on main. The matcher and allow-list work had already landed under AR-347 itself (c7dee392, then 22a2dad9), so ID_RE accepts the bracket, colon and hybrid tracker title styles and rejects a bare AR-NNN. What remained on 2026-09-02 was two missing epic:workforce labels on trackers #564 and #568 and three trackers left open for merged, verified work; with those applied and #553/#564/#568 closed, verify_tracker.py exits 0 for 372 items with no allowance flag, zero errors and zero warnings, and verify_docs --require-tracker reports zero tracker errors. Four isolated single-criterion verdicts, all satisfied. |
+| `b3d00e73` | 2026-09-02 | docs(ar347): close the tracker parity backlog with both gates green | null | null |
+| `b1f030f2` | 2026-09-02 | Merge pull request #572 from Holeshot-Software-LLC/claude/ar347-close | null | null |
+| `f2a67fbf` | 2026-09-03 | fix(ar382): re-parse each predecessor package at its own schema version | [AR-382](../roadmap/issue-AR-382-predecessor-projection-keeps-the-current-version-case.md), [AR-370](../roadmap/issue-AR-370-staffing-asks-the-wrong-question.md), [AR-374](../roadmap/issue-AR-374-host-capability-vocabulary-gap.md) | A 30-prompt smoke run against the freshly installed runtime found that AR-379 and AR-381 were reaching fresh installs only. install_known_contractors advances a worker only when its stored identity byte-matches a predecessor, and the last of the seven clauses is the projected recruitment contract. Every predecessor builder relabelled the version with replace(current, schema_version=N) instead of re-parsing; compile_contractor re-parses internally so the prompt was right, but _known_contractor_agent reads the dataclass, so the projection kept v4's case-preserved prose. A real install reported 0 installed, 0 upgraded, 15 preserved, with the v2 predecessor matching six of seven clauses and failing only on not_for and scope_qualifiers. Re-parsing each predecessor at its own version fixes it: the same box now reports 15 upgraded and agency route serves package-v4-7d4e81649e190a80 with Async Python design and Act outside Production Python applications, services, and CLIs. The v1 builder carried the same latent defect. The same smoke run corroborated AR-374 and AR-370: all thirty prompts returned confidence 0.0 with 7,710 eligibility rejections, 100% execution_host_unproven, and operational prompts scored 0.0 across the whole roster and fell back to the alphabetical head of the slug list, with 3d-scene-developer in the top three of 20 of 30 prompts. |
+| `c88cdaed` | 2026-09-03 | docs(ar382): record the live before-and-after upgrade evidence | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
