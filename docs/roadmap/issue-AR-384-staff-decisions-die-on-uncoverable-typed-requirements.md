@@ -7,6 +7,7 @@ updated: 2026-09-03
 tags: [workforce, recruiter, staffing, inference, planner, receipts]
 related:
   - docs/decisions/0198-waive-the-typed-requirements-the-roster-declares-but-cannot-serve.md
+  - docs/decisions/0201-constrain-the-planner-domains-to-what-the-roster-serves.md
   - docs/roadmap/issue-AR-373-recruiter-evidence-vocabulary.md
   - docs/roadmap/issue-AR-374-host-capability-vocabulary-gap.md
   - docs/roadmap/issue-AR-370-staffing-asks-the-wrong-question.md
@@ -218,12 +219,69 @@ editor working in my shell on this box`) staffed `operations-manager` on both
 plan-authority install units of that shape and completed. Whether the
 criterion should name the shape rather than the id is the owner's call.
 
-**Residue, this issue's option 2.** The planner names `domain:platform` for
-the operating system; the roster's `platform` domain means API platforms and
-its only eligible coverer is `api-platform-engineer`. The token is coverable,
-so it stays mandatory, the recruiter is pushed to rank a wrong neighbour, and
-the critic then objects. Constraining the planner's vocabulary to what the
-roster can serve is the remaining fix, and it is not small.
+**Residue after option 1.** The planner names `domain:platform` for
+the operating system; the roster's `platform` domain was served under plan
+authority by one card only, `api-platform-engineer`. The token was coverable,
+so it stayed mandatory, the recruiter was pushed to rank a wrong neighbour, and
+the critic then objected.
+
+**Option 2 implemented on branch `claude/ar384-planner-domains` (2026-09-03)**
+per [ADR-0201](../decisions/0201-constrain-the-planner-domains-to-what-the-roster-serves.md),
+in two halves. The collision itself: `_CATEGORY_DOMAINS` promoted both the
+`infrastructure` category (three modify-authority cards) and the
+`platform-engineering` category (the one API platform planner) to `platform`,
+so the API card was the roster's only plan-authority coverer of the operating
+system's platform. `platform-engineering` is no longer promoted;
+`api-platform-engineer` keeps `software-engineering` and `backend`, and under
+plan authority `platform` is now unserved, which ADR-0198 waives. An installed
+store receives this through the packaged-contract reconciliation `agency
+install` runs (one re-projection of 280 inspected on the measurement copy).
+The planner side: `planning_taxonomy.domains_by_artifact_kind` lists, per
+artifact kind, the known domains on which some worker passes the verifier's
+eligibility for a probe unit of that kind on this host (13 ms over 291
+contracts); the system prompt says a domain names the specialist and never
+the machine; and `plan_policy_violations` rejects a unit none of whose domains
+is served as `plan_unit_domains_unserved`, repaired through the existing
+planner repair loop. One served domain suffices, so the captured helix shape
+(`desktop` beside `operations`) still passes and its waiver is still recorded.
+A kind with nothing proven, a unit of compiler-chosen domains, and a declared
+`novel_capability` unit naming its own domain are exempt.
+
+Offline replay of the eleven captured planner replies against the reconciled
+roster: turns 201, 203, 206 and 208 are rejected for planner repair on exactly
+the plan unit that named only `desktop` and `platform`; the other seven compile
+unchanged. Under strict mode the five-call budget already covers the subject
+stage, the planner, the recruiter, one recruiter repair and the critic, so a
+turn that needs both a planner repair and a recruiter repair now ends
+`workforce_call_budget_exhausted`; the served view in the prompt exists to make
+the first plan right, and the live repair rate is recorded below.
+
+Live re-measurement, the same eleven wordings under strict mode on the branch
+runtime against a reconciled copy of the installed store (evidence in
+`docs/roadmap/acceptance/evidence/AR-384-option2-evidence-20260903.txt`):
+
+| outcome | turns |
+|---|---|
+| completed with a staffed team, critic approved (`operations-manager` on every plan-authority install unit) | 3 (205, 206, 305) |
+| recruiter contract residue: AR-373 row shape and evidence, an empty-object repair reply, a structurally malformed reply | 4 (202, 203, 204, 304) |
+| `staff_without_safe_team` on a coverable token the recruiter left unranked: `domain:software-engineering` beside `operations` (201), `capability:risk-analysis` on a review unit (204) | 2 |
+| verifier confidence or margin too low | 1 (207) |
+| strict critic `wrong-neighbor-selection`, neither on a platform-domain selection | 2 (208, 209) |
+| recruiter attempts failing `staff_without_safe_team` on `domain:platform` | **0** (was 3) |
+| `api-platform-engineer` ranked or selected anywhere | **0** (was selected on 205 and 208) |
+| first plans naming `platform` or `desktop` on a plan-authority unit | **0** (was 6 of 11) |
+| `plan_unit_domains_unserved` raised live | 0: the served view steered every first plan; one planner repair was spent, on 208's pre-existing code-mutation completeness rules |
+
+Three turns completed against two in the AR-386 run; 209 moved from approved
+to a wrong-neighbour veto because the recruiter put `desktop-app-engineer` on
+the environment check of an `[operations]` plan, and 304 was lost to the
+recruiter deployment's malformed 941-token reply, the same structural error
+the AR-385 session saw. The planner now sometimes pairs `software-engineering`
+with `operations` on an install plan (201); both are served, so the unit is
+staffable, but the recruiter must then rank a planner declaring both, such as
+`sre-site-reliability-engineer` or `it-service-manager`, and it ranked
+implementers instead. That is a coverable-token miss on the recruiter's side
+and is recorded as residue, not claimed by this issue.
 
 ## Approach
 
@@ -232,6 +290,16 @@ advisory; tokens no contract declares stay mandatory; the `operations`
 capability also reads the `operations` domain. The reasoning, the alternatives
 and the two departures from the option as filed are in
 [ADR-0198](../decisions/0198-waive-the-typed-requirements-the-roster-declares-but-cannot-serve.md).
+
+**Second decision, 2026-09-03: option 2, bounded.** The `domain:platform`
+residue was measured to be out of option 1's reach, because the token was
+served by one wrong card rather than unserved. The planner is shown what the
+roster serves per artifact kind and a unit with no served domain is rejected
+for planner repair; the `platform-engineering` category stops promoting the
+API platform card into `platform`. The weak form (one served domain suffices)
+keeps ADR-0198's waivers and hiring signal. Reasoning, exemptions and the
+alternatives not taken are in
+[ADR-0201](../decisions/0201-constrain-the-planner-domains-to-what-the-roster-serves.md).
 The options as filed follow.
 
 1. **Make roster-wide uncovered requirements advisory.** When
@@ -269,11 +337,20 @@ property.
 - [x] A `staff` decision whose ranked team covers every requirement some
       eligible contract can cover is accepted, and the receipt names the
       roster-wide uncovered tokens instead of rejecting the team.
-- [x] The captured helix-install turn, re-run with fresh wording, staffs
-      `unit-install-operation` with `operations-manager` selected. Evidenced
-      at the verifier: the captured reply replays to an accepted decision, and
-      live turn 203 reaches the same decision before the strict critic vetoes
-      the turn (AR-386).
+- [x] The captured helix-install turn, re-run with fresh wording, staffs the
+      plan-authority install unit of the captured shape (artifact `plan`,
+      `operations` among its domains, whatever unit id the fresh planner run
+      assigns; the captured planner called it `unit-install-operation`) with
+      `operations-manager` selected. Evidenced at the verifier: the captured
+      reply replays to an accepted decision, and a fresh-wording live turn
+      reaches the same verifier decision on a unit of that shape.
 - [x] `staff_without_safe_team` on the `domain` axis no longer appears on any
       receipt whose `typed_recall.uncovered_requirements` names that same
       domain token.
+- [x] The planner is shown, per artifact kind, the domains the roster serves
+      under that kind's authority on the host, and a unit none of whose
+      domains is served is rejected as `plan_unit_domains_unserved` and
+      repaired by the planner before the recruiter sees it. On the eleven
+      2026-09-03 install wordings re-run under strict mode, no recruiter
+      attempt fails `staff_without_safe_team` on `domain:platform` and no
+      plan-authority unit selects `api-platform-engineer`.

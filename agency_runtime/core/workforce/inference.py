@@ -64,6 +64,7 @@ from agency_runtime.core.workforce.intent import (
     compact_intent_response_schema,
     compact_intent_taxonomy,
     compile_intent_plan,
+    served_domains_by_artifact_kind,
 )
 from agency_runtime.core.workforce.plan_policy import (
     plan_policy_repair_guidance,
@@ -1614,10 +1615,14 @@ def _compact_planner_prompt(
             "host": context.host,
             "platform": context.platform,
         },
+        # ADR-0201: the planner sees which domains the roster can staff under
+        # each artifact kind's authority on this host, not only the union of
+        # every declared domain; the compiler holds the plan to the same view.
         "planning_taxonomy": compact_intent_taxonomy(
             domains,
             stacks,
             capabilities,
+            served_domains=served_domains_by_artifact_kind(snapshot.contracts, context),
         ),
         "constraints": {
             "max_primary_units": min(max_work_units, MAX_PRIMARY_UNITS),
@@ -1666,6 +1671,8 @@ def _parse_compact_plan(
         primary,
         explicit_indivisible_unit=explicit_indivisible_unit,
         available_tools=context.available_tools,
+        served_domains=served_domains_by_artifact_kind(snapshot.contracts, context),
+        known_domains=frozenset(domains),
     )
     if violations:
         raise _PlanPolicyValidationError(violations)

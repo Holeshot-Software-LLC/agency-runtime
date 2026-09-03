@@ -1,0 +1,95 @@
+AR-384 option 2 evidence, 2026-09-03. Branch claude/ar384-planner-domains on top of claude/ar384-closure
+(PR #587). Runtime under test: the branch checkout via PYTHONPATH, run by the installed venv python
+(~/.local/share/agency-runtime/venvs/0abe4a77c87af87cf0d2789df77d40d4a6f80a44). Store: a COPY of the live
+~/.agency-runtime/agency.db (scratchpad agency.db.branch-copy), reconciled with branch code; the live store
+was not written by this measurement.
+
+== 1. The collision, measured on the installed roster (291 contracts, generation 306) ==
+  platform domain: network-engineer (modify), infrastructure-maintainer (modify), devops-automator (modify),
+    api-platform-engineer (plan). Under plan authority the token was served by the API card alone.
+  api-platform-engineer categories: engineering, api-design, platform-engineering. _CATEGORY_DOMAINS promoted
+    api-design -> backend and platform-engineering -> platform; the three infrastructure cards reach platform
+    through the infrastructure category.
+  desktop domain: desktop-app-engineer (modify) only. operations domain: six plan cards and one advise card.
+
+== 2. Vocabulary fix and reconciliation on the store copy ==
+  Store(copy).reconcile_packaged_workforce_contracts(): inspected=280 updated=1 divergent=() ; generation 306 -> 307.
+  api-platform-engineer domains after re-projection: ('software-engineering', 'backend').
+  Recruiter index (bundled roster + known contractors): 266_264 -> 266_253 bytes (-11, the platform token).
+
+== 3. Served view on the reconciled copy, host codex, platform linux, the captured available_tools ==
+  served_domains_by_artifact_kind over 291 contracts: 12.9 ms.
+  plan                   platform served: False  desktop: False  operations: True   (24 of 30 domains served)
+  implementation-change  platform served: True   desktop: True   operations: False
+  review-report          platform served: False  desktop: False  operations: False
+  analysis               platform served: True   desktop: True   operations: True   (30 of 30)
+
+== 4. Offline replay of the eleven captured planner replies (raw386, AR-386 run) through compile_intent_plan
+      and plan_policy_violations with the served view ==
+  201: ['plan_unit_domains_unserved']  unit-setup-helix            plan ['desktop', 'platform']
+  202: []                              (unit-install-plan carries operations)
+  203: ['plan_unit_domains_unserved']  unit-helix-terminal-setup   plan ['desktop', 'platform']
+  204: []
+  205: []
+  206: ['plan_unit_domains_unserved']  unit-install-helix          plan ['desktop', 'platform']
+  207: []
+  208: ['plan_unit_domains_unserved']  unit-install-plan           plan ['platform']
+  209: []   304: []   305: []
+  Four of eleven captured plans would now be repaired at the planner; the other seven compile unchanged.
+
+== 5. Live preflight turns, the same eleven wordings, strict mode, capture387.py (run_preflight, codex receipt),
+      branch runtime against the reconciled store copy ==
+Every turn was served by the same planner deployment (x-litellm-model-id c2692490-cc91-5363-95f5-954745830cbb), the same
+recruiter deployment (b0b6f29c-a0f7-534c-9830-5148ec64b142, the MiniMax route) and the same critic deployment
+(10729e08-a962-5f82-bcf0-1b35b4adcf47). No turn reached hiring. The planner prompt changed (the served view), so every
+planner call was a gateway cache miss and every plan below is a fresh reply.
+
+id  | first plan: plan-authority unit domains         | plan_unit_domains_unserved | platform / api-platform-engineer | how the turn ended
+----|--------------------------------------------------|----------------------------|----------------------------------|-------------------
+201 | unit-install-approach [operations, software-engineering] | no                  | none / never ranked              | staff_without_safe_team:domain twice, missing domain:software-engineering (coverable; the recruiter ranked three modify-authority implementers and operations-manager, never an eligible software-engineering planner)
+202 | unit-install-plan [operations]                   | no                         | none / never ranked              | recruiter_candidate_row_shape_invalid, then recruiter_candidate_negative_evidence_invalid (AR-373)
+203 | unit-terminal-release-enable [operations]        | no                         | none / never ranked              | missing_work_unit on three units, then recruiter_candidate_positive_evidence_invalid (AR-373)
+204 | unit-installation-plan [operations]              | no                         | none / never ranked              | staff_without_safe_team:capability on unit-plan-review (review-report), missing capability:risk-analysis; the repair reply was an empty JSON object
+205 | unit-install-tools [operations]                  | no                         | none / never ranked              | ACCEPTED: operations-manager on discovery and on the install plan; application-integration-verifier, reality-checker, cross-platform-release-verifier on evidence; critic approved
+206 | unit-helix-install-operation [operations]        | no                         | none / never ranked              | ACCEPTED: operations-manager on discovery and on the install plan; reality-checker, evidence-collector on evidence; critic approved
+207 | unit-install-helix [operations]                  | no                         | none / never ranked              | verifier selection_margin_too_low, retry selection_confidence_too_low (recruiter scores)
+208 | unit-install-helix [operations]                  | no                         | platform on the repaired implementation-change and test-code units (served under modify) / never ranked | first plan rejected plan_missing_implementation, plan_missing_test_implementation, plan_missing_independent_review (the wording reads as a code mutation); the repaired five-unit plan staffed devops-automator on the install and codebase-onboarding-engineer on the path map; critic rejected wrong-neighbor-selection
+209 | unit-install-plan [operations]                   | no                         | none / never ranked              | operations-manager on the install plan, desktop-app-engineer on the environment check, test-results-analyzer on the install review; critic rejected wrong-neighbor-selection
+304 | unit-install-plan [operations]                   | no                         | none / never ranked              | recruiter reply structurally malformed at 941 completion tokens (no JSON object; no gateway cache key on the response), provider_no_valid_response, turn ended workforce_provider_unavailable
+305 | unit-install-search-tools [operations]           | no                         | none / never ranked              | ACCEPTED: operations-manager on the install plan, reality-checker on evidence; critic approved
+
+Counts over the eleven turns:
+  recruiter attempts failing staff_without_safe_team on domain:platform: 0   (AR-384 run: 3 turns)
+  api-platform-engineer ranked or selected on any unit:                  0   (AR-386 run: selected on 205 and 208)
+  first plans naming platform or desktop on a plan-authority unit:       0   (AR-386 run: 6 of 11)
+  plan_unit_domains_unserved raised live:                                0   (the served view steered every first plan; the offline
+                                                                            replay in section 4 shows the rule catching four old plans)
+  planner repairs spent:                                                 1   (208, on the pre-existing code-mutation completeness rules)
+  turns completed with a staffed team under strict mode:                 3   (205, 206, 305; AR-386 run: 2, 209 and 304)
+  strict-critic vetoes:                                                  2   (208, 209; AR-386 run: 4), both wrong-neighbor-selection, neither on a platform-domain selection
+  turns lost to recruiter contract residue (AR-373 shapes, an empty
+    object reply, a structurally malformed reply):                       4   (202, 203, 204 second attempt, 304)
+
+== 6. Observations outside this issue's claim ==
+  a. The planner now pairs software-engineering with operations on some install plan units (201). Both are served under plan
+     authority, so the unit is staffable, but the conjunctive rule then needs a team covering both, and the recruiter ranked
+     modify-authority implementers (ineligible on a plan unit) instead of sre-site-reliability-engineer or it-service-manager,
+     which declare both domains. This is a coverable-token miss on the recruiter's side, not the platform collision.
+  b. 204: the planner named risk-analysis on a review-report unit; only four cards cover it and the recruiter ranked none.
+  c. 209 completed in the AR-386 run and was vetoed here: the recruiter put desktop-app-engineer on the environment check of a
+     [operations] plan. The planner's first plan no longer names desktop, but the recruiter still reaches for it.
+  d. 304's 941-token malformed recruiter reply matches the AR-385 observation token for token; the response carried no
+     x-litellm-cache-key, so it is the deployment reproducing the same structural error on the same prompt, not a replay.
+  e. Cache note: the subject stage's prompt did not change and replayed from the gateway on every turn (34 tokens in ~2 s).
+
+== 7. Gates on the final tree ==
+  ruff check / ruff format --check: clean on agency_runtime/core/workforce, the evals module and the changed tests
+    (one pre-existing RUF024 finding in tests/test_workforce_subject_inference.py:59 is on main and untouched here).
+  tests/test_planner_domain_service.py: 13 passed. Twelve affected workforce, intent, receipt and conformance suites:
+    346 passed, 1 skipped, -W error. Named fast Python production spine: 1004 passed, 3 skipped, -W error.
+  agency eval routing --json --no-details (branch code, installed venv): passed (version 1.4.0).
+  agency eval decision-conformance --repository . --json (conformance venv, umask 077): status passed,
+    source_unchanged true, mutations 173, killed 173, survived 0, baseline passed; the curated mutation
+    planner-domains-unserved-for-authority-accepted is killed by
+    tests/test_planner_domain_service.py::test_a_unit_none_of_whose_domains_is_served_is_rejected.
+  docs_metadata.py --check, update_policy_availability.py --check, verify_docs.py, git diff --check: green.

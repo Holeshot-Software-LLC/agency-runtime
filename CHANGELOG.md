@@ -29,6 +29,8 @@ related:
   - docs/roadmap/issue-AR-334-support-codex-0151-collaboration-and-hook-contract.md
   - docs/roadmap/issue-AR-385-structured-reply-budget-truncates-nominations-silently.md
   - docs/roadmap/issue-AR-386-strict-critic-vetoes-verifier-accepted-install-turns.md
+  - docs/roadmap/issue-AR-384-staff-decisions-die-on-uncoverable-typed-requirements.md
+  - docs/decisions/0201-constrain-the-planner-domains-to-what-the-roster-serves.md
   - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
   - docs/decisions/0178-project-config-declared-credentials-into-tool-reduced-canaries.md
   - docs/decisions/0181-use-litellm-aliases-as-host-inference-control-plane.md
@@ -82,6 +84,15 @@ changes rather than duplicating every commit.
   `staffing_critic_rejected`, so the preflight-failure receipt's
   `staffing_reason_codes`, the routing receipt's `global_reason_codes` and
   the fail-open disclosure name why the turn died.
+- The planner is shown, and held to, what the roster can staff (AR-384,
+  ADR-0201): `planning_taxonomy.domains_by_artifact_kind` lists per artifact
+  kind the domains on which some worker is eligible under that kind's
+  authority on this host, a unit none of whose domains is served is rejected
+  as `plan_unit_domains_unserved` and repaired by the planner before the
+  recruiter sees it, and the `platform-engineering` category no longer
+  promotes the API platform card into the `platform` domain, which had made it
+  the roster's only plan-authority coverer of the operating system's platform
+  and forced it onto every install plan.
 - `agency battery` runs the change-triggered harness canary battery
   (AR-337): per-harness version fingerprints gate the run, claude and codex
   re-prove through their canary modes (codex attended-trust loss reported

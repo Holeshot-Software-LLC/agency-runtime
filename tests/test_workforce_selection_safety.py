@@ -112,7 +112,14 @@ def test_ar227_complete_recruiter_index_fits_measured_finite_envelope() -> None:
     # 2026-09-02, 264_087 -> 266_264 (+2,177, +0.82%): AR-364 audited the two
     # ECC review cards (silent-failure-hunter, type-design-analyzer) into the
     # roster as review-authority specialists; 278 -> 280 workers.
-    assert len(payload) == 266_264
+    #
+    # 2026-09-03, 266_264 -> 266_253 (-11): AR-384 / ADR-0201 stopped promoting
+    # the platform-engineering category to the platform domain. Its one card,
+    # api-platform-engineer, was the roster's only plan-authority coverer of
+    # platform, so every plan unit naming the operating system's platform was
+    # forced onto an API planner. platform now means its three infrastructure
+    # cards; the API card keeps software-engineering and backend.
+    assert len(payload) == 266_253
     assert len(payload) <= MAX_RECRUITER_INDEX_BYTES
     assert MAX_RECRUITER_INDEX_BYTES == 288 * 1024
     # The exact figure above is a change detector; this is the budget. Asserting

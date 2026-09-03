@@ -73,6 +73,17 @@ candidates; `_recruiter_prompt` (`inference.py:1027`) refuses to
 embed the roster directly, so the planner/recruiter model must
 reason from the typed index.
 
+**Planner taxonomy** (`_compact_planner_prompt` in `inference.py`; AR-384 /
+ADR-0201): beside `known_domains`, `known_stacks` and `known_capability_ids`,
+`planning_taxonomy.domains_by_artifact_kind` lists, for each artifact kind,
+the known domains on which some enabled worker passes the verifier's
+eligibility for a probe unit of that kind on this host
+(`served_domains_by_artifact_kind` in `intent.py`). A compiled unit none of
+whose domains is in the list for its artifact kind is rejected as
+`plan_unit_domains_unserved` and repaired through the planner repair loop;
+a kind with an empty list, a unit of compiler-chosen domains, and a declared
+`novel_capability` unit are exempt.
+
 **Recruiter system prompt** (the planner shares the same call shape
 without a system prompt):
 none — the prompt is the JSON dictionary. The recruiter model
