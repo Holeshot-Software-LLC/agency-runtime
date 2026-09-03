@@ -15,9 +15,9 @@ from agency_runtime.core.workforce.identity import stable_worker_id
 # the shape of its answer. v1 (no execution profile) and v2 stay parseable so
 # already-registered workers replay unchanged; only live hiring requires the
 # current version.
-HIRING_CONTRACT_SCHEMA_VERSION = 3
+HIRING_CONTRACT_SCHEMA_VERSION = 4
 LEGACY_HIRING_CONTRACT_SCHEMA_VERSION = 1
-SUPPORTED_HIRING_CONTRACT_SCHEMA_VERSIONS = (1, 2, 3)
+SUPPORTED_HIRING_CONTRACT_SCHEMA_VERSIONS = (1, 2, 3, 4)
 # The version at which execution-profile prose stopped being casefolded (AR-380).
 # Frozen deliberately: a worker minted under v3 must keep compiling the way v3
 # compiled, so this must not follow HIRING_CONTRACT_SCHEMA_VERSION to v4.
@@ -26,9 +26,15 @@ CASE_PRESERVING_SCHEMA_VERSION = 3
 # rather than a motto (ADR-0196).  Frozen for the same replay reason.
 PROCEDURAL_SCHEMA_VERSION = 3
 MIN_WORKING_PRINCIPLES = 2
-CONTRACTOR_PROMPT_TEMPLATE_VERSION = 3
+# The version at which contract prose outside the execution profile stopped being
+# casefolded (AR-381).  The allowlisted identifier lists -- platforms, hosts and
+# lifecycle_phases -- and `tools` are excluded, because their normalized casing is
+# load-bearing for allowlist membership and routing-identifier extraction.  Frozen
+# for the same replay reason as the thresholds above.
+PROSE_CASE_PRESERVING_SCHEMA_VERSION = 4
+CONTRACTOR_PROMPT_TEMPLATE_VERSION = 4
 LEGACY_CONTRACTOR_PROMPT_TEMPLATE_VERSION = 1
-SUPPORTED_CONTRACTOR_PROMPT_TEMPLATE_VERSIONS = (1, 2, 3)
+SUPPORTED_CONTRACTOR_PROMPT_TEMPLATE_VERSIONS = (1, 2, 3, 4)
 MAX_TEXT = 512
 MAX_ITEMS = 12
 
@@ -272,6 +278,10 @@ CONTRACTOR_PROMPT_TEMPLATE_HASH = (
 _TEMPLATE_HASH_BY_VERSION = {
     LEGACY_CONTRACTOR_PROMPT_TEMPLATE_VERSION: LEGACY_CONTRACTOR_PROMPT_TEMPLATE_HASH,
     2: CONTRACTOR_PROMPT_TEMPLATE_HASH_V2,
+    3: CONTRACTOR_PROMPT_TEMPLATE_HASH,
+    # AR-381 changed which bytes the template is filled with, not the template
+    # itself, so v4 shares v3's layout and therefore its template hash.  The
+    # prompt_hash still moves, which is what identifies a card.
     CONTRACTOR_PROMPT_TEMPLATE_VERSION: CONTRACTOR_PROMPT_TEMPLATE_HASH,
 }
 
@@ -344,7 +354,7 @@ class EmploymentContract:
         if self.schema_version == LEGACY_HIRING_CONTRACT_SCHEMA_VERSION and profile is None:
             return result
         result["execution_profile"] = profile
-        if "output_exemplar" in _FIELDS_BY_VERSION.get(self.schema_version, _FIELDS_V3):
+        if "output_exemplar" in _FIELDS_BY_VERSION.get(self.schema_version, _FIELDS_V4):
             result["output_exemplar"] = exemplar
         return result
 
@@ -394,10 +404,12 @@ _FIELDS_V1 = frozenset(
 )
 _FIELDS_V2 = _FIELDS_V1 | {"execution_profile"}
 _FIELDS_V3 = _FIELDS_V2 | {"output_exemplar"}
+_FIELDS_V4 = _FIELDS_V3
 _FIELDS_BY_VERSION = {
     LEGACY_HIRING_CONTRACT_SCHEMA_VERSION: _FIELDS_V1,
     2: _FIELDS_V2,
-    HIRING_CONTRACT_SCHEMA_VERSION: _FIELDS_V3,
+    3: _FIELDS_V3,
+    HIRING_CONTRACT_SCHEMA_VERSION: _FIELDS_V4,
 }
 _EXECUTION_PROFILE_FIELDS = frozenset(
     {
@@ -606,7 +618,7 @@ def parse_employment_contract(value: object) -> EmploymentContract:
     """Validate inference output as bounded descriptive data, never as instructions."""
 
     if not isinstance(value, Mapping):
-        _closed(value, _FIELDS_V3, "employment contract")
+        _closed(value, _FIELDS_V4, "employment contract")
         raise AssertionError("unreachable")
     schema_version = value.get("schema_version")
     if (
@@ -625,6 +637,10 @@ def parse_employment_contract(value: object) -> EmploymentContract:
         raise ValueError("employment authority or context mode is unsupported")
     if not isinstance(raw["external_mutation"], bool):
         raise ValueError("external_mutation must be a boolean")
+    # AR-381: the allowlisted lists below and `tools` keep casefolding at every
+    # version.  Allowlist membership and the lowercase-only routing-identifier
+    # extraction in hiring.py both depend on it.
+    fold_prose = schema_version < PROSE_CASE_PRESERVING_SCHEMA_VERSION
     platforms = _items(raw["platforms"], "platforms", allowed=_PLATFORMS)
     hosts = _items(raw["hosts"], "hosts", allowed=_HOSTS)
     phases = _items(raw["lifecycle_phases"], "lifecycle_phases", allowed=_LIFECYCLE_PHASES)
@@ -660,13 +676,23 @@ def parse_employment_contract(value: object) -> EmploymentContract:
         slug=slug,
         role=_text(raw["role"], "role", maximum=128),
         narrow_scope=_text(raw["narrow_scope"], "narrow_scope"),
-        outcomes_owned=_items(raw["outcomes_owned"], "outcomes_owned"),
-        artifacts_produced=_items(raw["artifacts_produced"], "artifacts_produced"),
-        capabilities=_items(raw["capabilities"], "capabilities"),
-        anti_capabilities=_items(raw["anti_capabilities"], "anti_capabilities"),
-        preferred_scenarios=_items(raw["preferred_scenarios"], "preferred_scenarios"),
-        avoided_scenarios=_items(raw["avoided_scenarios"], "avoided_scenarios"),
-        forbidden_scenarios=_items(raw["forbidden_scenarios"], "forbidden_scenarios"),
+        outcomes_owned=_items(raw["outcomes_owned"], "outcomes_owned", casefold=fold_prose),
+        artifacts_produced=_items(
+            raw["artifacts_produced"], "artifacts_produced", casefold=fold_prose
+        ),
+        capabilities=_items(raw["capabilities"], "capabilities", casefold=fold_prose),
+        anti_capabilities=_items(
+            raw["anti_capabilities"], "anti_capabilities", casefold=fold_prose
+        ),
+        preferred_scenarios=_items(
+            raw["preferred_scenarios"], "preferred_scenarios", casefold=fold_prose
+        ),
+        avoided_scenarios=_items(
+            raw["avoided_scenarios"], "avoided_scenarios", casefold=fold_prose
+        ),
+        forbidden_scenarios=_items(
+            raw["forbidden_scenarios"], "forbidden_scenarios", casefold=fold_prose
+        ),
         lifecycle_phases=phases,
         authority=authority,
         context_mode=context_mode,
@@ -674,9 +700,11 @@ def parse_employment_contract(value: object) -> EmploymentContract:
         tools=_items(raw["tools"], "tools"),
         platforms=platforms,
         hosts=hosts,
-        requirements=_items(raw["requirements"], "requirements"),
+        requirements=_items(raw["requirements"], "requirements", casefold=fold_prose),
         relationships=relationships,
-        evidence_requirements=_items(raw["evidence_requirements"], "evidence_requirements"),
+        evidence_requirements=_items(
+            raw["evidence_requirements"], "evidence_requirements", casefold=fold_prose
+        ),
         closest_workers=closest,
         positive_evaluations=positive,
         hard_negative_evaluations=negative,
@@ -894,6 +922,9 @@ def _compile_v3_prompt(contract: EmploymentContract, *, worker_id: str) -> str:
 _PROMPT_COMPILERS = {
     LEGACY_CONTRACTOR_PROMPT_TEMPLATE_VERSION: _compile_v1_prompt,
     2: _compile_v2_prompt,
+    3: _compile_v3_prompt,
+    # v4 fills the v3 layout with case-preserved prose (AR-381); the compiler is
+    # the same function because only the parsed values differ.
     CONTRACTOR_PROMPT_TEMPLATE_VERSION: _compile_v3_prompt,
 }
 
@@ -939,6 +970,7 @@ __all__ = [
     "MIN_WORKING_PRINCIPLES",
     "OWNER_APPROVAL_RISK_CLASSES",
     "PROCEDURAL_SCHEMA_VERSION",
+    "PROSE_CASE_PRESERVING_SCHEMA_VERSION",
     "SUPPORTED_CONTRACTOR_PROMPT_TEMPLATE_VERSIONS",
     "SUPPORTED_HIRING_CONTRACT_SCHEMA_VERSIONS",
     "ClosestWorker",

@@ -73,7 +73,7 @@ def _result(value: dict[str, Any]) -> StructuredProviderResult:
 
 def _employment_contract() -> dict[str, Any]:
     return {
-        "schema_version": 3,
+        "schema_version": 4,
         "slug": _CONTRACTOR,
         "role": "Quantum Build Engineer",
         "narrow_scope": "Portable TypeScript build plugins for quantum compiler toolchains.",

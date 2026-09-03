@@ -47,6 +47,7 @@ from agency_runtime.core.workforce.hiring import (
     hiring_workforce_projection,
     restaff_after_hire,
 )
+from agency_runtime.core.workforce.hiring_contract import parse_employment_contract
 from agency_runtime.core.workforce.inference import (
     WorkforceInferenceAttempt,
     WorkforceRoutingOutcome,
@@ -203,7 +204,7 @@ def _unit() -> WorkUnit:
 
 def _contract(*, external_mutation: bool = False) -> dict[str, Any]:
     return {
-        "schema_version": 3,
+        "schema_version": 4,
         "slug": "quantum-build-engineer",
         "role": "Quantum Build Engineer",
         "narrow_scope": "Portable TypeScript build plugins for quantum compiler toolchains.",
@@ -525,11 +526,11 @@ def test_hiring_prompts_preserve_instruction_and_mutation_boundaries(tmp_path: P
     assert "explicit prohibitions are not granted authority" in calls[1]["system_prompt"]
 
 
-def test_hiring_schema_requires_closed_v3_execution_guidance() -> None:
+def test_hiring_schema_requires_closed_v4_execution_guidance() -> None:
     contract = hiring_module.HIRING_RESPONSE_SCHEMA["properties"]["contract"]["anyOf"][0]
     profile = contract["properties"]["execution_profile"]
 
-    assert contract["properties"]["schema_version"]["const"] == 3
+    assert contract["properties"]["schema_version"]["const"] == 4
     assert "execution_profile" in contract["required"]
     assert profile["additionalProperties"] is False
     assert profile["required"] == [
@@ -958,7 +959,7 @@ def test_hire_binds_natural_language_contract_to_exact_causing_unit(tmp_path: Pa
     assert contract["tool_classes"][0] == "repository-read"
     assert contract["platforms"][0] == "windows"
     assert contract["hosts"][0] == "codex"
-    assert outcome.contract.anti_capabilities == ("do not change drivers without human approval.",)
+    assert outcome.contract.anti_capabilities == ("Do not change drivers without human approval.",)
 
 
 def test_hire_compiles_schema_maximum_lists_into_bounded_workforce_contract(
@@ -3157,8 +3158,7 @@ def test_live_hiring_rejects_the_adjacent_superseded_schema_version(tmp_path: Pa
 
     store = Store(tmp_path / "agency.db")
     response = deepcopy(_hiring_response())
-    response["contract"]["schema_version"] = 2
-    response["contract"].pop("output_exemplar")
+    response["contract"]["schema_version"] = 3
 
     outcome = hire_contractor_for_gap(
         "Implement the missing quantum compiler build integration.",
@@ -3172,3 +3172,33 @@ def test_live_hiring_rejects_the_adjacent_superseded_schema_version(tmp_path: Pa
     assert outcome.status == "abstained"
     assert outcome.reason_codes == ("contract_invalid:employment_schema_version",)
     assert store.list_hiring_cases(limit=10) == []
+
+
+def test_projected_outcomes_are_normalized_for_duplicate_detection() -> None:
+    """AR-381 acceptance 2: the exact-set duplicate check still sees one spelling.
+
+    `_axis_subset` compares `set(candidate.outcomes) <= set(existing.outcomes)`,
+    so case-preserved capabilities must be normalized at the projection boundary
+    or an identical worker stops reading as a duplicate.
+    """
+
+    contract = parse_employment_contract(_contract())
+    agent = hiring_module._agent_document(contract, domains=("software-engineering",), stacks=())
+
+    assert agent["outcomes"] == [item.casefold() for item in agent["outcomes"]]
+    assert agent["artifact_kinds"] == [item.casefold() for item in agent["artifact_kinds"]]
+
+
+def test_routing_identifiers_survive_case_preserved_artifacts() -> None:
+    """A routing identifier is lowercase by definition, whatever case it was authored in."""
+
+    raw = _contract()
+    raw["artifacts_produced"] = ["Implementation-Change", "A prose artifact, not an identifier"]
+    contract = parse_employment_contract(raw)
+
+    assert contract.artifacts_produced[0] == "Implementation-Change"
+
+    agent = hiring_module._agent_document(contract, domains=("software-engineering",), stacks=())
+
+    assert "implementation-change" in agent["artifact_kinds"]
+    assert "Implementation-Change" not in agent["artifact_kinds"]

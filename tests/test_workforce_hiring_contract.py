@@ -40,6 +40,16 @@ EXPECTED_SLUGS = {
 }
 
 
+def _folded(values: tuple[str, ...]) -> set[str]:
+    """Compare prose by content, not case.
+
+    AR-381 stopped casefolding contract prose at v4, so these boundary checks
+    assert which boundary exists rather than how it is spelled.
+    """
+
+    return {item.casefold() for item in values}
+
+
 def _raw(slug: str = "python-application-engineer") -> dict:
     return KNOWN_CONTRACTORS_BY_SLUG[slug].to_dict()
 
@@ -70,7 +80,7 @@ def test_known_contractor_set_is_exact_bounded_and_immediately_enabled() -> None
 def test_ar227_specialists_are_distinct_evidence_bound_and_nonduplicative() -> None:
     assert "backend-implementation-engineer" not in KNOWN_CONTRACTORS_BY_SLUG
     backend = KNOWN_CONTRACTORS_BY_SLUG["backend-service-engineer"]
-    assert "idempotency, retry, and rollback behavior" in backend.capabilities
+    assert "idempotency, retry, and rollback behavior" in _folded(backend.capabilities)
     assert any("authorization" in item.casefold() for item in backend.evidence_requirements)
 
     for slug in {
@@ -154,7 +164,7 @@ def test_compiler_is_fixed_deterministic_and_hashes_exact_prompt_bytes() -> None
     second = compile_contractor(contract)
 
     assert first == second
-    assert CONTRACTOR_PROMPT_TEMPLATE_VERSION == 3
+    assert CONTRACTOR_PROMPT_TEMPLATE_VERSION == 4
     assert CONTRACTOR_PROMPT_TEMPLATE_HASH.startswith("sha256:")
     assert first.template_version == CONTRACTOR_PROMPT_TEMPLATE_VERSION
     assert first.template_hash == CONTRACTOR_PROMPT_TEMPLATE_HASH
@@ -352,17 +362,17 @@ def test_known_roles_preserve_the_issue_narrow_scope_boundaries() -> None:
     release = KNOWN_CONTRACTORS_BY_SLUG["cross-platform-release-verifier"]
     critic = KNOWN_CONTRACTORS_BY_SLUG["selection-safety-critic"]
 
-    assert "machine-learning model design" in python.anti_capabilities
-    assert "visual frontend design" in typescript.anti_capabilities
-    assert "architecture-only recommendations" in backend.anti_capabilities
-    assert {"unit tests", "integration tests", "contract tests", "property tests"} <= set(
+    assert "machine-learning model design" in _folded(python.anti_capabilities)
+    assert "visual frontend design" in _folded(typescript.anti_capabilities)
+    assert "architecture-only recommendations" in _folded(backend.anti_capabilities)
+    assert {"unit tests", "integration tests", "contract tests", "property tests"} <= _folded(
         testing.capabilities
     )
-    assert "test-result interpretation" in testing.anti_capabilities
-    assert "ui and api seam validation" in integration.capabilities
+    assert "test-result interpretation" in _folded(testing.anti_capabilities)
+    assert "ui and api seam validation" in _folded(integration.capabilities)
     assert release.platforms == ("windows", "linux")
-    assert "installed-artifact smoke testing" in release.capabilities
-    assert "forbidden-candidate detection" in critic.capabilities
+    assert "installed-artifact smoke testing" in _folded(release.capabilities)
+    assert "forbidden-candidate detection" in _folded(critic.capabilities)
     assert critic.authority == "review"
 
 
@@ -566,10 +576,16 @@ def test_v1_and_v2_execution_prose_still_casefolds() -> None:
 
 @pytest.mark.parametrize(
     "field",
-    ["capabilities", "tools", "lifecycle_phases", "platforms", "hosts"],
+    ["tools", "lifecycle_phases", "platforms", "hosts"],
 )
-def test_identifier_lists_still_casefold_at_v3(field: str) -> None:
-    """AR-380 acceptance 2: normalized casing stays load-bearing for matching."""
+def test_identifier_lists_still_casefold(field: str) -> None:
+    """AR-380 acceptance 2: normalized casing stays load-bearing for matching.
+
+    AR-381 moved `capabilities` off this list -- it is prose that no matcher
+    compares, and the projected `outcomes` tuple that *is* compared as an exact
+    set is normalized at the projection boundary instead.  `tools` stays here
+    because the routing-identifier extraction is lowercase-only.
+    """
 
     raw = _raw()
     raw[field] = [item.upper() for item in raw[field]]
@@ -749,3 +765,76 @@ def test_merged_template_sections_dedupe_case_insensitively() -> None:
 
     assert prompt.count(shared) == 1
     assert shared.casefold() not in prompt.replace(shared, "")
+
+
+# --- AR-381: contract prose outside the execution profile keeps its case ------
+
+_PROSE_FIELDS = (
+    "outcomes_owned",
+    "artifacts_produced",
+    "capabilities",
+    "anti_capabilities",
+    "preferred_scenarios",
+    "avoided_scenarios",
+    "forbidden_scenarios",
+    "requirements",
+    "evidence_requirements",
+)
+
+
+@pytest.mark.parametrize("field", _PROSE_FIELDS)
+def test_contract_prose_keeps_its_authored_case_at_v4(field: str) -> None:
+    """AR-381 acceptance 1: prose no matcher compares keeps the case it was written in."""
+
+    raw = _raw()
+    raw[field] = ["Ship a Python CLI that emits ISO-8601 stamps in America/Chicago"]
+
+    parsed = parse_employment_contract(raw)
+
+    assert getattr(parsed, field) == (
+        "Ship a Python CLI that emits ISO-8601 stamps in America/Chicago",
+    )
+
+
+@pytest.mark.parametrize("field", _PROSE_FIELDS)
+def test_contract_prose_still_casefolds_at_v3(field: str) -> None:
+    """A worker minted before AR-381 keeps compiling the way its version compiled."""
+
+    raw = _raw()
+    raw["schema_version"] = 3
+    raw[field] = ["Ship a Python CLI that emits ISO-8601 stamps in America/Chicago"]
+
+    parsed = parse_employment_contract(raw)
+
+    assert getattr(parsed, field) == (
+        "ship a python cli that emits iso-8601 stamps in america/chicago",
+    )
+
+
+def test_v3_contract_compiles_through_the_v3_template() -> None:
+    """An already-registered v3 worker must replay its exact stored identity."""
+
+    v3 = replace(KNOWN_CONTRACTORS_BY_SLUG["typescript-application-engineer"], schema_version=3)
+
+    compiled = compile_contractor(v3)
+
+    assert compiled.template_version == 3
+    assert compiled.prompt_hash == (
+        "sha256:e1e9fe262a5ef488c7fd99ab00e4cc9d0124eda50403e64201a7b905b7e9100f"
+    )
+    assert "Answer shape" in compiled.prompt
+    assert "- typescript source" in compiled.prompt
+
+
+def test_packaged_cards_render_prose_in_its_authored_case() -> None:
+    """AR-381 acceptance 3: no packaged section renders a lowercased proper noun."""
+
+    for contract in KNOWN_CONTRACTOR_CONTRACTS:
+        prompt = compile_contractor(contract).prompt
+        for wrong in ("- python source", "- async python design", "services, and clis"):
+            assert wrong not in prompt
+
+    python = compile_contractor(KNOWN_CONTRACTORS_BY_SLUG["python-application-engineer"]).prompt
+    assert "- Python source" in python
+    assert "- Async Python design" in python
+    assert "services, and CLIs" in python
