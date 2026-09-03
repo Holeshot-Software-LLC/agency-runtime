@@ -12,7 +12,7 @@ supersedes: []
 superseded_by: null
 type: acceptance-verification
 issue_id: AR-381
-candidate_commit: 853a12c9e473faa3d57d108e2584b91cdb870190
+candidate_commit: 9a2e45d00f8cbcbf495c36647db93923b8bc805b
 evidence_cutoff: 2026-09-02
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/568
 ---
@@ -43,8 +43,11 @@ spelling.
 | 2 | test | `test_routing_identifiers_survive_case_preserved_artifacts names the routing extraction as the consumer for tools and artifacts` | 2026-09-02 | `tests/test_workforce_dynamic_hiring.py:3192-3204` |
 | 2 | command-output | `workforce outcomes and artifact_kinds stay normalized while platforms and hosts stay casefolded` | 2026-09-02 | `docs/roadmap/acceptance/evidence/AR-381-evidence-20260902.txt:29-32` |
 | 3 | test | `test_packaged_cards_render_prose_in_its_authored_case compares every rendered prose section of all 15 cards against the stored values by equality` | 2026-09-02 | `tests/test_workforce_hiring_contract.py:854-885` |
-| 3 | test | `test_no_packaged_card_renders_a_lowercased_proper_noun scans every prose bullet of every card for each proper noun the corpus uses` | 2026-09-02 | `tests/test_workforce_hiring_contract.py:954-977` |
+| 3 | file | `_PROPER_NOUNS lists the proper nouns the packaged corpus uses` | 2026-09-02 | `tests/test_workforce_hiring_contract.py:911-923` |
+| 3 | test | `test_no_packaged_card_renders_a_lowercased_proper_noun scans all five rendered sections of every card, excluding tool ids by identity` | 2026-09-02 | `tests/test_workforce_hiring_contract.py:954-984` |
 | 3 | command-output | `Python source, Async Python design and CLIs all render with their authored case` | 2026-09-02 | `docs/roadmap/acceptance/evidence/AR-381-evidence-20260902.txt:5-20` |
+| 3 | command-output | `the 23 case tests pass under -W error` | 2026-09-02 | `docs/roadmap/acceptance/evidence/AR-381-evidence-20260902.txt:42-44` |
+| 3 | command-output | `corpus-wide scan: 15 cards x 5 sections, 256 bullets, 11 proper nouns, 0 lowercased hits` | 2026-09-02 | `docs/roadmap/acceptance/evidence/AR-381-evidence-20260902.txt:46-47` |
 | 4 | file | `the package-v3 predecessor keeps an already-installed v3 contractor upgradable` | 2026-09-02 | `agency_runtime/core/workforce/known_installer.py:366-383` |
 | 4 | test | `test_contract_prose_still_casefolds_at_v3` | 2026-09-02 | `tests/test_workforce_hiring_contract.py:823-835` |
 | 4 | test | `test_v3_contract_compiles_through_the_v3_template pins the v3 prompt hash as a literal` | 2026-09-02 | `tests/test_workforce_hiring_contract.py:838-850` |
@@ -54,7 +57,3 @@ spelling.
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
-| 1 | satisfied | `AR-381.1-20260902-e5a3419e` | `164de1dcf20f4e6553394f9bb88f87c6d9b6f39a7d14d5ccc38263dabc008a2c` | 2026-09-02 | The parser applies case preservation to all nine identified non-matcher prose fields, and the parametrized test asserts authored mixed case survives parsing for each field at schema v4. |
-| 2 | satisfied | `AR-381.2-20260902-44acb1c9` | `cd5151f1f01d82b11de69e70f460dea12b6d6a1f6b32cfc9b1d9a1f01ac98ae0` | 2026-09-02 | The partition test covers every string-tuple field and names allowlist/routing consumers, while projection tests name duplicate detection and routing consumers and assert casefolded outcomes and artifact identifiers. |
-| 3 | absent | `AR-381.3-20260902-f7037f29` | `940a8795b9394d6d9d69911ec4da1120440993134cdd2738536e439df3cc61c0` | 2026-09-02 | The excerpts show authored-case equality, but the proper-noun list is not provided and its scan omits the “Required operating inputs and tools” section, so coverage of every proper noun in every section is not demonstrated. |
-| 4 | satisfied | `AR-381.4-20260902-d77fd8c0` | `6a6f9831bc70a920fbc0c87b10042408754a2a9f540ffab6b2d2fedf52255251` | 2026-09-02 | The cited replay artifact reports zero prompt-hash mismatches for all 15 packaged contracts under both v2 and v3, corroborated by the pinned v3 hash test and version-specific reconstruction code. |

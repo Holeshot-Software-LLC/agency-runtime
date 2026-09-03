@@ -38,3 +38,10 @@ v3 prompt-hash mismatches across all 15: 0
 $ python3 -m pytest <spine> -q -W error
 ...                                                                      [100%]
 1152 passed, 3 skipped in 57.22s
+
+$ python3 -m pytest tests/test_workforce_hiring_contract.py -q -W error -k 'proper_noun or authored_case or case_preserved'
+.......................                                                  [100%]
+23 passed, 70 deselected in 0.51s
+
+$ corpus-wide scan: every rendered prose bullet of all 15 cards, every proper noun
+cards=15 sections=5 bullets_scanned=256 nouns=11 lowercased_hits=0
