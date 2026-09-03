@@ -740,6 +740,7 @@ not stable internal identifiers.
 | [AR-118](issue-AR-118-reconcile-native-child-activation-evidence.md) | `795deef`, `78afe96` | [ADR-0079](../decisions/0079-route-native-children-once-and-bound-unplanned-reroutes.md) |
 | [AR-384](issue-AR-384-staff-decisions-die-on-uncoverable-typed-requirements.md) | [`1711bcaa`](../worklog/README.md) | [ADR-0198](../decisions/0198-waive-the-typed-requirements-the-roster-declares-but-cannot-serve.md) |
 | [AR-385](issue-AR-385-structured-reply-budget-truncates-nominations-silently.md) | [`0f70496c`](../worklog/README.md) | [ADR-0199](../decisions/0199-give-each-inference-stage-its-own-reply-budget.md) |
+| [AR-386](issue-AR-386-strict-critic-vetoes-verifier-accepted-install-turns.md) | [`6b79736c`](../worklog/README.md) | [ADR-0200](../decisions/0200-bind-the-strict-critic-to-the-advisory-doctrine.md) |
 
 ## Dependency summary
 
