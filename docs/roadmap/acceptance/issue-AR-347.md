@@ -11,7 +11,7 @@ supersedes: []
 superseded_by: null
 type: acceptance-verification
 issue_id: AR-347
-candidate_commit: a9f1719a2a55fe2ab2cb8b8d3b0c6e279a4378c5
+candidate_commit: 1bf7a2edaf6ff4af63526a753652456481ff7426
 evidence_cutoff: 2026-09-02
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/404
 ---
@@ -47,3 +47,7 @@ trackers left open for merged, verified work. With those applied,
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
+| 1 | satisfied | `AR-347.1-20260902-66f78235` | `aee765395b8e4572f920865102d4cc0d4b65e5fb3e5099d2ea9d123d1d1796c1` | 2026-09-02 | The cited ID_RE in scripts/verify_tracker.py accepts bracket, colon, and hybrid tracker titles, and the cited matcher output confirms all three styles match while the bare form does not. |
+| 2 | satisfied | `AR-347.2-20260902-25bc3d76` | `aa9ea7dcdf0b05122865eb30a4bc658608ef58643500b6853a56e469334d9f16` | 2026-09-02 | The reconciliation and nine-doc audit excerpts record the owner-authorized label, URL, collision, PR-tracking, closure, completion, and reopen dispositions, and the cited strict verifier reports 372 items with zero errors and warnings. |
+| 3 | satisfied | `AR-347.3-20260902-74fc42ac` | `f4eb6bc2a8495500e915a134b95faf812bf65d69cc6c29f917eab2720036a636` | 2026-09-02 | The versioned pre-tracker-history.txt allow-list is enforced by verify_docs.py, while roadmap_history.py rejects exemptions newer than AR-330, making --require-tracker applicable to new work. |
+| 4 | satisfied | `AR-347.4-20260902-c0ead455` | `ee6ef1e9ea2e7239252d85b0f8c0a2eead7ad413dd0110c065814efdb1022744` | 2026-09-02 | The cited output shows verify_tracker exited 0 with 372 items and no errors or warnings, while verify_docs had zero tracker errors and failed only on two commits explicitly identified as changes under test on the branch. |
