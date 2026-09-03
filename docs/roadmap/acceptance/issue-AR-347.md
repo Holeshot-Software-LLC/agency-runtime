@@ -11,9 +11,9 @@ supersedes: []
 superseded_by: null
 type: acceptance-verification
 issue_id: AR-347
-candidate_commit: pending
+candidate_commit: ac1a5223548493f127922b0ae9b28b7f7cd91008
 evidence_cutoff: 2026-09-02
-tracker_url: null
+tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/404
 ---
 
 # AR-347 acceptance verification record
