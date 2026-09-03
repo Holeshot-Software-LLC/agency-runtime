@@ -16,7 +16,10 @@ from agency_runtime.core.roster.selector_projection import selector_roster_proje
 from agency_runtime.core.roster.workforce import workforce_index_snapshot
 from agency_runtime.core.selector.compatibility import filter_eligible_catalog
 from agency_runtime.core.store.sqlite import Store
-from agency_runtime.core.workforce.hiring_contract import CONTRACTOR_PROMPT_TEMPLATE_HASH
+from agency_runtime.core.workforce.hiring_contract import (
+    CONTRACTOR_PROMPT_TEMPLATE_HASH,
+    PROSE_CASE_PRESERVING_SCHEMA_VERSION,
+)
 from agency_runtime.core.workforce.identity import stable_worker_id
 from agency_runtime.core.workforce.known_contractors import KNOWN_CONTRACTORS_BY_SLUG
 from agency_runtime.core.workforce.known_installer import (
@@ -891,3 +894,37 @@ def test_contractor_show_stays_quiet_for_an_unamended_worker(
 
     assert code == 0
     assert "packaged-divergence" not in capsys.readouterr().out
+
+
+def test_predecessor_projections_reparse_at_their_own_version() -> None:
+    """AR-382: a relabelled contract keeps the current version's prose case.
+
+    `compile_contractor` re-parses internally, so the predecessor prompt was
+    always right. `_known_contractor_agent` reads the dataclass directly, so a
+    predecessor built with `replace(..., schema_version=2)` alone projected
+    v4-cased `not_for` and `scope_qualifiers` into its recruitment contract.
+    That is the document `install_known_contractors` compares against the stored
+    one, so every packaged contractor fell through to `preserved` and no
+    already-installed worker could ever advance.
+    """
+
+    from agency_runtime.core.workforce.known_installer import (
+        _known_contractor_predecessor_packages,
+    )
+
+    for slug in sorted(KNOWN_CONTRACTORS_BY_SLUG):
+        for package in _known_contractor_predecessor_packages(slug):
+            version = package.employment_contract.schema_version
+            if version >= PROSE_CASE_PRESERVING_SCHEMA_VERSION:
+                continue
+            for field in ("avoided_scenarios", "forbidden_scenarios", "preferred_scenarios"):
+                for item in getattr(package.employment_contract, field):
+                    assert item == item.casefold(), (
+                        f"{slug} v{version}.{field}: {item!r} kept a newer version's case"
+                    )
+            contract = package.workforce_contract.to_dict()
+            for field in ("not_for", "scope_qualifiers"):
+                for item in contract[field]:
+                    assert item == item.casefold(), (
+                        f"{slug} v{version} projected {field}: {item!r} kept a newer case"
+                    )

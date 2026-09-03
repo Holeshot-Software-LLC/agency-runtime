@@ -20,6 +20,7 @@ from agency_runtime.core.workforce.hiring_contract import (
     EmploymentContract,
     compile_contractor,
     contractor_prompt_version,
+    parse_employment_contract,
 )
 from agency_runtime.core.workforce.known_contractors import KNOWN_CONTRACTORS_BY_SLUG
 
@@ -329,7 +330,10 @@ def _legacy_known_contractor_package(slug: str) -> KnownContractorPackage:
             capabilities=_LEGACY_BACKEND_CAPABILITIES,
             evidence_requirements=_LEGACY_BACKEND_EVIDENCE_REQUIREMENTS,
         )
-    contract = replace(current, **changes)
+    # AR-382: re-parse at v1 for the same reason as the v2 and v3 predecessors --
+    # the projection reads the dataclass, so a relabelled contract would carry
+    # today's case-preserved prose into the historical recruitment contract.
+    contract = parse_employment_contract(replace(current, **changes).to_dict())
     compiled = compile_contractor(contract)
     expected_hash = _LEGACY_KNOWN_CONTRACTOR_PROMPT_HASHES.get(normalized)
     if compiled.prompt_hash != expected_hash:
@@ -353,7 +357,15 @@ def _v2_known_contractor_package(slug: str) -> KnownContractorPackage:
         raise KeyError("known contractor is not packaged")
     # v2 declared no output_exemplar and casefolded its execution prose; both
     # follow from re-parsing the current definition at schema version 2.
-    contract = replace(current, schema_version=2, output_exemplar="")
+    # AR-382: re-parse at the older version rather than only relabelling it.
+    # compile_contractor re-parses internally, so the prompt was already correct,
+    # but `_known_contractor_agent` reads the dataclass directly -- a relabelled
+    # contract kept v4's case-preserved prose in `not_for` and `scope_qualifiers`,
+    # so the projected recruitment_contract never matched the stored one and the
+    # advance fell through to `preserved`.
+    contract = parse_employment_contract(
+        replace(current, schema_version=2, output_exemplar="").to_dict()
+    )
     compiled = compile_contractor(contract)
     expected_hash = _V2_KNOWN_CONTRACTOR_PROMPT_HASHES.get(normalized)
     if compiled.prompt_hash != expected_hash:
@@ -372,7 +384,13 @@ def _v3_known_contractor_package(slug: str) -> KnownContractorPackage:
         raise KeyError("known contractor is not packaged")
     # v3 casefolded contract prose; re-parsing the current definition at schema
     # version 3 reproduces that render exactly.
-    contract = replace(current, schema_version=3)
+    # AR-382: re-parse at the older version rather than only relabelling it.
+    # compile_contractor re-parses internally, so the prompt was already correct,
+    # but `_known_contractor_agent` reads the dataclass directly -- a relabelled
+    # contract kept v4's case-preserved prose in `not_for` and `scope_qualifiers`,
+    # so the projected recruitment_contract never matched the stored one and the
+    # advance fell through to `preserved`.
+    contract = parse_employment_contract(replace(current, schema_version=3).to_dict())
     compiled = compile_contractor(contract)
     expected_hash = _V3_KNOWN_CONTRACTOR_PROMPT_HASHES.get(normalized)
     if compiled.prompt_hash != expected_hash:
