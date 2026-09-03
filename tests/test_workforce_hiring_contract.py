@@ -955,23 +955,30 @@ def test_every_contract_list_field_is_either_case_preserved_or_casefolded() -> N
 def test_no_packaged_card_renders_a_lowercased_proper_noun(noun: str) -> None:
     """AR-381 acceptance 3: checked against the corpus, not against one card.
 
-    Every prose bullet of every packaged card is scanned for the lowercased
-    spelling of each proper noun the corpus actually uses, as a standalone word.
+    Every prose bullet of every rendered section of every packaged card is
+    scanned for the lowercased spelling of each proper noun the corpus uses, as
+    a standalone word. `tools` bullets are excluded by identity, not by skipping
+    their section: a tool id such as `python` is an identifier and is lowercase
+    by design, so the section is still covered for its `requirements` half.
     """
 
     pattern = re.compile(rf"\b{re.escape(noun.casefold())}\b")
-    seen = 0
+    scanned = 0
     for contract in KNOWN_CONTRACTOR_CONTRACTS:
         prompt = compile_contractor(contract).prompt
+        identifiers = {item.casefold() for item in contract.tools}
         for heading in (
             "Capabilities and owned outcomes",
             "Expected artifacts",
             "Verification and required evidence",
+            "Required operating inputs and tools",
             "Role boundaries",
         ):
             for bullet in _section_bullets(prompt, heading):
+                if bullet.casefold() in identifiers:
+                    continue
                 assert not pattern.search(bullet), (
                     f"{contract.slug}: lowercased {noun!r} in {bullet!r}"
                 )
-                seen += noun.casefold() in bullet.casefold()
-    assert seen or noun in {"IANA", "UI"}
+                scanned += 1
+    assert scanned >= 100

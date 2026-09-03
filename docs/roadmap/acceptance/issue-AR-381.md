@@ -12,7 +12,7 @@ supersedes: []
 superseded_by: null
 type: acceptance-verification
 issue_id: AR-381
-candidate_commit: 56f5394aee1e50b7d89f6edc1b725f592c5e8b5a
+candidate_commit: 853a12c9e473faa3d57d108e2584b91cdb870190
 evidence_cutoff: 2026-09-02
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/568
 ---
@@ -37,11 +37,13 @@ spelling.
 | 1 | command-output | `every prose section of the packaged card renders its authored case` | 2026-09-02 | `docs/roadmap/acceptance/evidence/AR-381-evidence-20260902.txt:4-27` |
 | 2 | file | `the projected outcomes tuple is normalized for the exact-set duplicate check` | 2026-09-02 | `agency_runtime/core/workforce/hiring.py:1519-1526` |
 | 2 | file | `routing identifiers are normalized before the lowercase-only pattern match` | 2026-09-02 | `agency_runtime/core/workforce/hiring.py:1505-1514` |
-| 2 | test | `test_allowlisted_identifier_lists_are_still_checked_against_their_allowlist names the allowlist consumer for platforms, hosts and lifecycle_phases` | 2026-09-02 | `tests/test_workforce_hiring_contract.py:887-906` |
+| 2 | test | `test_every_contract_list_field_is_either_case_preserved_or_casefolded asserts the split is a partition over every string-tuple field` | 2026-09-02 | `tests/test_workforce_hiring_contract.py:926-952` |
+| 2 | file | `_CASEFOLDED_FIELDS names the four fields that keep normalized casing` | 2026-09-02 | `tests/test_workforce_hiring_contract.py:910-924` |
 | 2 | test | `test_projected_outcomes_are_normalized_for_duplicate_detection names _axis_subset as the consumer` | 2026-09-02 | `tests/test_workforce_dynamic_hiring.py:3177-3189` |
 | 2 | test | `test_routing_identifiers_survive_case_preserved_artifacts names the routing extraction as the consumer for tools and artifacts` | 2026-09-02 | `tests/test_workforce_dynamic_hiring.py:3192-3204` |
 | 2 | command-output | `workforce outcomes and artifact_kinds stay normalized while platforms and hosts stay casefolded` | 2026-09-02 | `docs/roadmap/acceptance/evidence/AR-381-evidence-20260902.txt:29-32` |
-| 3 | test | `test_packaged_cards_render_prose_in_its_authored_case compares every rendered prose section of all 15 cards against the stored values by equality, with a floor so a vacuous pass fails` | 2026-09-02 | `tests/test_workforce_hiring_contract.py:853-884` |
+| 3 | test | `test_packaged_cards_render_prose_in_its_authored_case compares every rendered prose section of all 15 cards against the stored values by equality` | 2026-09-02 | `tests/test_workforce_hiring_contract.py:854-885` |
+| 3 | test | `test_no_packaged_card_renders_a_lowercased_proper_noun scans every prose bullet of every card for each proper noun the corpus uses` | 2026-09-02 | `tests/test_workforce_hiring_contract.py:954-977` |
 | 3 | command-output | `Python source, Async Python design and CLIs all render with their authored case` | 2026-09-02 | `docs/roadmap/acceptance/evidence/AR-381-evidence-20260902.txt:5-20` |
 | 4 | file | `the package-v3 predecessor keeps an already-installed v3 contractor upgradable` | 2026-09-02 | `agency_runtime/core/workforce/known_installer.py:366-383` |
 | 4 | test | `test_contract_prose_still_casefolds_at_v3` | 2026-09-02 | `tests/test_workforce_hiring_contract.py:823-835` |
@@ -52,7 +54,7 @@ spelling.
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
-| 1 | satisfied | `AR-381.1-20260902-c41c3ed6` | `5b454b39b7484d9e203d8259eba5c015b4cb10d37507df1fd766cb8e3eaac108` | 2026-09-02 | The v4 parser disables casefolding for all nine enumerated prose fields, and the parametrized test parses and asserts the exact mixed-case authored value for each field. |
-| 2 | absent | `AR-381.2-20260902-895c007d` | `570d502832240ba6d1143e1935257e83d10dfd0949fe125712817f40a3911df5` | 2026-09-02 | The excerpts prove casefolding for allowlisted platforms, hosts, lifecycle phases, projected outcomes, and routing artifacts, but provide no exhaustive evidence that every persisted field casefolds or a test naming its persistence consumer. |
-| 3 | absent | `AR-381.3-20260902-c2219caa` | `376bdac5a68b6b84be72f0d3cae94cb12f057333b985032fabf61c7d3a61d40c` | 2026-09-02 | The test proves rendered text preserves stored casing, but neither it nor the single rendered excerpt establishes that every stored proper noun across all packaged cards is correctly capitalized. |
-| 4 | satisfied | `AR-381.4-20260902-7f24e456` | `ab75561da3e0e8b36813e46eaca409fcf26ae27159a8eb82ade1f57c349dc849` | 2026-09-02 | The cited acceptance output reports zero prompt-hash mismatches for all 15 packaged contracts under both v2 and v3, corroborated by the pinned v3 prompt-hash test. |
+| 1 | satisfied | `AR-381.1-20260902-e5a3419e` | `164de1dcf20f4e6553394f9bb88f87c6d9b6f39a7d14d5ccc38263dabc008a2c` | 2026-09-02 | The parser applies case preservation to all nine identified non-matcher prose fields, and the parametrized test asserts authored mixed case survives parsing for each field at schema v4. |
+| 2 | satisfied | `AR-381.2-20260902-44acb1c9` | `cd5151f1f01d82b11de69e70f460dea12b6d6a1f6b32cfc9b1d9a1f01ac98ae0` | 2026-09-02 | The partition test covers every string-tuple field and names allowlist/routing consumers, while projection tests name duplicate detection and routing consumers and assert casefolded outcomes and artifact identifiers. |
+| 3 | absent | `AR-381.3-20260902-f7037f29` | `940a8795b9394d6d9d69911ec4da1120440993134cdd2738536e439df3cc61c0` | 2026-09-02 | The excerpts show authored-case equality, but the proper-noun list is not provided and its scan omits the “Required operating inputs and tools” section, so coverage of every proper noun in every section is not demonstrated. |
+| 4 | satisfied | `AR-381.4-20260902-d77fd8c0` | `6a6f9831bc70a920fbc0c87b10042408754a2a9f540ffab6b2d2fedf52255251` | 2026-09-02 | The cited replay artifact reports zero prompt-hash mismatches for all 15 packaged contracts under both v2 and v3, corroborated by the pinned v3 hash test and version-specific reconstruction code. |
