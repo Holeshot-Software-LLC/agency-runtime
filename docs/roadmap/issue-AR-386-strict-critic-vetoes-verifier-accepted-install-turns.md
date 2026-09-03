@@ -1,6 +1,6 @@
 ---
 title: "AR-386: The strict critic vetoes every verifier-accepted install turn"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-09-03
 updated: 2026-09-03
@@ -108,6 +108,13 @@ The critic document previously carried `verified_staffing` including the
 `roster_coverage_gap` reasons but nothing that said the workforce is
 advisory; AR-306 had bound the critic to the configured thresholds and
 selected-only composition only.
+
+**Verification (2026-09-03).** The acceptance record is frozen at
+`6b79736c`; the isolated codex verifier returned satisfied on all three
+criteria (runs `AR-386.1-20260903-c6a70036`, `AR-386.2-20260903-e29d950c`,
+`AR-386.3-20260903-95476868`), so the issue is done. Under the ADR-0201
+runtime the same eleven wordings produced two vetoes (208, 209), both
+`wrong-neighbor-selection`, neither on a platform-domain selection.
 
 ## Approach
 

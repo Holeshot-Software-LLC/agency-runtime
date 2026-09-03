@@ -12,7 +12,7 @@ supersedes: []
 superseded_by: null
 type: acceptance-verification
 issue_id: AR-386
-candidate_commit: pending
+candidate_commit: 6b79736c0116331094630f7f252fa68992a1fb8d
 evidence_cutoff: 2026-09-03
 tracker_url: null
 ---
@@ -52,3 +52,6 @@ vetoed every install turn on the AR-384 measurement.
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
+| 1 | satisfied | `AR-386.1-20260903-c6a70036` | `ba5766527a5bece42f48c0807ec46696b57d2716af352c2f10453f52eefa9885` | 2026-09-03 | The cited inference.py excerpts explicitly state in both _CRITIC_SYSTEM and critic_contract that Agency is advisory, waived roster coverage gaps are runtime facts, and plan-authority units for host-side work are intended. |
+| 2 | satisfied | `AR-386.2-20260903-e29d950c` | `6e6cf866a70ee53b72c7f5dde6e6411cda4fe723c68fa88b604e9e35c2fda4b0` | 2026-09-03 | The AR-386 evidence excerpt records turn 304 as fresh wording first used that day and ending ACCEPTED with four named specialists under strict mode. |
+| 3 | satisfied | `AR-386.3-20260903-95476868` | `51df9e3b8bb283ef55397d8d170ed70b1dd92cc15a5785410838c9ca1850eeba` | 2026-09-03 | AR-386 evidence lines 9-31 show that the only strict-critic vetoes among wordings 201-209 were 204, 205, and 208, each carrying only wrong-neighbor-selection and no execution-authority code. |

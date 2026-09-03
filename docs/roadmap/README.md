@@ -399,7 +399,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-383` | [The inferred subject context fails its own projection, so dense recall is silently skipped](issue-AR-383-inferred-subject-context-fails-its-own-projection.md) | open | p1 | reliability | [#581](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/581) |
 | `AR-384` | [The recruiter is told to staff units the roster cannot cover, then rejected for staffing them](issue-AR-384-staff-decisions-die-on-uncoverable-typed-requirements.md) | done | p1 | reliability | pending authorization |
 | `AR-385` | [A fixed 2048-token reply budget truncates recruiter nominations, and the truncation is rejected as a contract failure with no record](issue-AR-385-structured-reply-budget-truncates-nominations-silently.md) | in_progress | p1 | reliability | pending authorization |
-| `AR-386` | [The strict critic vetoes every verifier-accepted install turn](issue-AR-386-strict-critic-vetoes-verifier-accepted-install-turns.md) | in_progress | p1 | reliability | pending authorization |
+| `AR-386` | [The strict critic vetoes every verifier-accepted install turn](issue-AR-386-strict-critic-vetoes-verifier-accepted-install-turns.md) | done | p1 | reliability | pending authorization |
 
 ## Traceability
 
