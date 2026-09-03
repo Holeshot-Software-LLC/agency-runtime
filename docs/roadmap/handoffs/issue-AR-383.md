@@ -24,6 +24,13 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/581
 
 # AR-383 inferred subject projection handoff
 
+> **This capsule is not on `main`.** It lives on branch
+> `claude/ar370-acceptance` (PR #582, open), together with the AR-383 filing it
+> describes. A session working a default `main` checkout cannot see this file or
+> the issue document it cites. Merge PR #582 or
+> `git checkout claude/ar370-acceptance` before relying on either. If you are
+> reading this from `main`, the PR has merged and this note is spent.
+
 Start-here capsule. AR-383 is filed and tracked; the work it opened up is
 larger than the defect, and the ordering below matters.
 
