@@ -446,3 +446,20 @@ def pre_narrow(
         _compiled_catalog_score_inputs(catalog),
         limit,
     )
+
+
+def retrieval_has_signal(query: str, catalog: list[dict[str, Any]]) -> bool:
+    """Return whether lexical narrowing scored any card above zero.
+
+    AR-370 / ADR-0197: an operational wording such as ``configure the gateway``
+    scores 0.0 against every card, so the ranked list degenerates to slug order.
+    That zero is the exact, non-inferential trigger for spending one typed
+    classification call before planning; a query that already scores pays
+    nothing. Kept here so the CLI diagnostic and the routing pipeline cannot
+    drift apart on what "no signal" means.
+    """
+
+    if not catalog:
+        return False
+    _, scores = pre_narrow(query, catalog, limit=1)
+    return bool(scores) and max(scores) > 0.0

@@ -18,6 +18,7 @@ from agency_runtime.core.canary_parent_recruiter_provider import (
 )
 from agency_runtime.core.config import AgencyConfig, ProviderEntry
 from agency_runtime.core.configuration_contracts import ConfigValidationError
+from agency_runtime.core.host_capabilities import SUPPORTED_PLATFORMS
 from agency_runtime.core.inference_profiles import (
     resolve as resolve_inference_route,
 )
@@ -32,6 +33,7 @@ from agency_runtime.core.structured_provider import (
 )
 from agency_runtime.core.turn_routing_context import (
     project_turn_routing_context,
+    project_workforce_subject_hints,
     turn_routing_context_revision,
 )
 from agency_runtime.core.workforce.cache import (
@@ -3361,6 +3363,160 @@ def _strict_critic(
     return attempts, () if approved else ("staffing_critic_rejected", *critic_reasons)
 
 
+# --- ADR-0197: typed work subject before planning ---------------------------
+
+_SUBJECT_SYSTEM = (
+    "You classify one request into typed identifiers so a planner can retrieve "
+    "against the work rather than the wording. Return only the closed JSON object. "
+    "Every value must be an exact identifier from the supplied vocabulary; never "
+    "invent one, never echo the request, never emit prose, names, URLs or free text. "
+    "An identifier belongs in the answer only when the request's work plainly "
+    "requires it. Prefer an empty array to a guess: an empty answer is a truthful "
+    "statement that the request does not name recognisable work, and is more useful "
+    "than a plausible wrong subject."
+)
+
+_SUBJECT_HINT_FIELDS = ("domains", "languages", "frameworks", "capability_ids", "platforms")
+MAX_SUBJECT_HINTS_PER_FIELD = 6
+
+
+def _subject_response_schema(
+    domains: Sequence[str],
+    stacks: Sequence[str],
+    capabilities: Sequence[str],
+) -> dict[str, Any]:
+    """Close the subject answer over the roster's own vocabulary."""
+
+    def _enum(values: Sequence[str]) -> dict[str, Any]:
+        return {
+            "type": "array",
+            "items": {"type": "string", "enum": list(values)},
+            "maxItems": MAX_SUBJECT_HINTS_PER_FIELD,
+            "uniqueItems": True,
+        }
+
+    return {
+        "type": "object",
+        "additionalProperties": False,
+        "required": list(_SUBJECT_HINT_FIELDS),
+        "properties": {
+            "domains": _enum(domains),
+            "languages": _enum(stacks),
+            "frameworks": _enum(stacks),
+            "capability_ids": _enum(capabilities),
+            "platforms": _enum(SUPPORTED_PLATFORMS),
+        },
+    }
+
+
+def _parse_subject_hints(value: Mapping[str, Any]) -> dict[str, list[str]]:
+    """Project one classification answer through the same guard a plan uses."""
+
+    projected = project_workforce_subject_hints(
+        {field: list(value.get(field, []) or []) for field in _SUBJECT_HINT_FIELDS}
+    )
+    if projected is None:
+        raise ValueError("subject hints are malformed")
+    if not any(projected.values()):
+        # An honest empty answer is not an error, but it is also not worth
+        # carrying: an all-empty subject changes no query.
+        raise ValueError("subject hints are empty")
+    return projected
+
+
+def _subject_prompt(request: str, snapshot: WorkforceIndexSnapshot) -> str:
+    domains, stacks, capabilities = _known_intent_vocabulary(snapshot)
+    return json.dumps(
+        {
+            "request": request,
+            "vocabulary": compact_intent_taxonomy(domains, stacks, capabilities),
+            "platforms": list(SUPPORTED_PLATFORMS),
+            "constraints": {
+                "identifiers_only": True,
+                "max_per_field": MAX_SUBJECT_HINTS_PER_FIELD,
+                "empty_is_valid": True,
+            },
+        },
+        ensure_ascii=True,
+        separators=(",", ":"),
+        sort_keys=True,
+    )
+
+
+def infer_work_subject_hints(
+    request: str,
+    snapshot: WorkforceIndexSnapshot,
+    *,
+    config: AgencyConfig,
+    context: StaffingContext,
+    budget: _CallBudget,
+    invoker: StructuredInvoker,
+) -> tuple[dict[str, list[str]], list[WorkforceInferenceAttempt]]:
+    """Derive a typed work subject for a request retrieval could not read.
+
+    ADR-0197 option B, gated: this runs only when lexical narrowing scored
+    nothing for the message, so a request that already retrieves pays no call.
+    The answer is identifiers from the roster's own vocabulary -- never prose --
+    and rides to the planner, the recall query and the recruiter as
+    ``workforce_subject_hints``, exactly as a prior turn's plan-derived hints do.
+    """
+
+    domains, stacks, capabilities = _known_intent_vocabulary(snapshot)
+    providers = configured_workforce_providers(
+        config, stage="planner", route_key="workforce.planner", harness=context.host
+    )
+    if not providers:
+        return {}, []
+    parsed, attempts, _failure = _invoke_stage(
+        stage="subject",
+        providers=providers,
+        prompt=_subject_prompt(request, snapshot),
+        schema=_subject_response_schema(domains, stacks, capabilities),
+        system_prompt=_SUBJECT_SYSTEM,
+        budget=budget,
+        invoker=invoker,
+        parser=_parse_subject_hints,
+    )
+    return (parsed if isinstance(parsed, dict) else {}), attempts
+
+
+def _with_inferred_subject(
+    projected_turn_context: dict[str, Any],
+    turn_context_revision: str,
+    *,
+    request: str,
+    snapshot: WorkforceIndexSnapshot,
+    config: AgencyConfig,
+    context: StaffingContext,
+    budget: _CallBudget,
+    invoker: StructuredInvoker,
+    required: bool,
+) -> tuple[dict[str, Any], str, list[WorkforceInferenceAttempt]]:
+    """Supply the typed subject a request's wording withheld (ADR-0197).
+
+    When lexical narrowing scored nothing for the message the planner would
+    otherwise read `install this: <url>` and produce a plan whose typed recall
+    faithfully inherits the emptiness. One classification call ahead of it
+    supplies the subject. A request that already retrieves never asks for this,
+    so it pays nothing; a prior turn's plan-derived hints are never overwritten.
+    """
+
+    if not required or projected_turn_context.get("workforce_subject_hints"):
+        return projected_turn_context, turn_context_revision, []
+    hints, attempts = infer_work_subject_hints(
+        request,
+        snapshot,
+        config=config,
+        context=context,
+        budget=budget,
+        invoker=invoker,
+    )
+    if not hints:
+        return projected_turn_context, turn_context_revision, attempts
+    enriched = {**projected_turn_context, "workforce_subject_hints": hints}
+    return enriched, turn_routing_context_revision(enriched), attempts
+
+
 def plan_and_staff_workforce(
     request: str,
     snapshot: WorkforceIndexSnapshot,
@@ -3375,6 +3531,7 @@ def plan_and_staff_workforce(
     required_planned_artifact_kind: str | None = None,
     required_delivery: str | None = None,
     turn_routing_context: Mapping[str, Any] | None = None,
+    subject_inference_required: bool = False,
 ) -> WorkforceRoutingOutcome:
     """Plan, recruit, and verify one request without letting inference activate workers."""
 
@@ -3414,6 +3571,19 @@ def plan_and_staff_workforce(
         requested_limit=max_planned_units,
         explicit_indivisible_unit=explicit_indivisible_unit,
     )
+    projected_turn_context, turn_context_revision, subject_attempts = _with_inferred_subject(
+        projected_turn_context,
+        turn_context_revision,
+        request=ask,
+        snapshot=snapshot,
+        config=config,
+        context=context,
+        budget=budget,
+        invoker=invoker,
+        required=subject_inference_required,
+    )
+    attempts.extend(subject_attempts)
+
     _, _, planner_capability_ids = _known_intent_vocabulary(snapshot)
     planner_schema = compact_intent_response_schema(
         max_work_units=planning_unit_limit,

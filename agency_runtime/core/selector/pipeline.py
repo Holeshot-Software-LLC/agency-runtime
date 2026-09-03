@@ -52,6 +52,7 @@ from agency_runtime.core.selector.cache import (
     catalog_active_ids,
     routing_fingerprint,
 )
+from agency_runtime.core.selector.candidate_narrow import retrieval_has_signal
 from agency_runtime.core.selector.compatibility import (
     COMPATIBILITY_CONTRACT_VERSION,
     MAX_COMPATIBLE_SPECIALISTS,
@@ -1865,9 +1866,18 @@ def route(
             classification,
             activation_canary=activation_canary,
         )
+        # ADR-0197: the zero-signal trigger. `retrieval_has_signal` is the same
+        # predicate the CLI diagnostic prints, so the two cannot drift on what
+        # "no signal" means. Only a message lexical narrowing cannot read at all
+        # buys the typed classification call ahead of the planner.
+        subject_inference_required = not retrieval_has_signal(
+            request.routing_query,
+            request.catalog,
+        )
         outcome = plan_and_staff_workforce(
             request.user_message,
             request.workforce_snapshot,
+            subject_inference_required=subject_inference_required,
             config=cfg,
             context=staffing_context,
             routing_context_fingerprint=request.context_fingerprint,

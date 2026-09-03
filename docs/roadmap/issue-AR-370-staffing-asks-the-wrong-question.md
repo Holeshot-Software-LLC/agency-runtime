@@ -127,6 +127,36 @@ scores.
 This does not close the issue. It stops a zero-signal answer from being read as
 a confident one while the retrieval fix is decided.
 
+## Fix (2026-09-03): ADR-0197, option B gated on the zero-signal trigger
+
+The retrieval half is now implemented. `infer_work_subject_hints`
+(`core/workforce/inference.py`) asks one classification call for typed
+identifiers drawn from the roster's own vocabulary -- domains, languages,
+frameworks, capability_ids, platforms, never prose -- and
+`_with_inferred_subject` merges the answer into `workforce_subject_hints`
+before the planner prompt is built. From there the existing plumbing carries it
+to all three consumers: the planner document's `correlated_turn_context`, the
+per-unit recall query through `hybrid_recall._context_fields`, and the recruiter
+document.
+
+It is gated. `retrieval_has_signal` (`core/selector/candidate_narrow.py`) is the
+same predicate the CLI diagnostic prints, so the two cannot drift on what "no
+signal" means, and only a message lexical narrowing cannot read at all buys the
+call. Measured against the shipped roster over the thirty-prompt smoke set, it
+fires on **7 of 30** — `Install ripgrep on this machine`, `configure the
+gateway`, `Write a runbook for responding to a p95 latency alert` and four
+others — and the other twenty-three pay nothing.
+
+Three refusals are deliberate: a prior turn's plan-derived hints are never
+overwritten, an all-empty answer is discarded rather than carried, and the
+schema is closed over the roster vocabulary so the classifier cannot invent an
+identifier.
+
+ADR-0197 records why the first-chosen option could not work: `routing_query`
+reaches only session stickiness and the legacy judge branch, never
+`plan_and_staff_workforce`, so re-retrieving after planning would have re-run a
+query staffing does not read.
+
 ## Approach
 
 Owner direction (2026-09-02, after reviewing the measurements above): do not
