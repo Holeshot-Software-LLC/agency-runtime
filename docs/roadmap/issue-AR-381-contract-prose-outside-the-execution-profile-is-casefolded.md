@@ -1,6 +1,6 @@
 ---
 title: "AR-381: Contract prose outside the execution profile is still casefolded, so a v3 card says python source and clis"
-status: open
+status: in_progress
 category: roadmap
 created: 2026-09-02
 updated: 2026-09-02
@@ -15,7 +15,7 @@ type: issue
 epic: workforce
 issue_id: AR-381
 priority: p2
-tracker_url: null
+tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/568
 depends_on: []
 blocks: []
 ---
@@ -68,19 +68,41 @@ rendering a duplicate pair, but it cannot fix how the surviving line reads.
 
 ## Approach
 
-Decide per field, not wholesale. For each of the eight fields above, establish
-whether any matcher, allowlist, dedup or persistence key compares its value,
-and preserve case only where nothing does. `capabilities` is the cautionary
-example: it reads as prose but is matched against
-`unit.required_capabilities`, so it must keep casefolding.
+Decide per field, not wholesale. For each field, establish whether any matcher,
+allowlist, dedup or persistence key compares its value, and preserve case only
+where nothing does.
+
+**The audit corrected two of this issue's own premises.**
+
+`capabilities` is *not* matched against `unit.required_capabilities`. Typed
+matching reads `capability_ids`, which `contract.py:489` takes from the agent's
+`capability_ids` or `task_types`, never from the free-text `capabilities` list;
+`hiring.py` sets `capability_ids` from `unit.required_capabilities` directly.
+So `capabilities` is prose and can keep its case.
+
+The real constraints are two *projection* boundaries, not the stored fields:
+
+- `_axis_subset` (`hiring.py:1991`) compares `set(candidate.outcomes) <=
+  set(existing.outcomes)` for deterministic duplicate and amend-overlap
+  detection, and `outcomes` is built from `capabilities + outcomes_owned`.
+- `_ROUTING_IDENTIFIER` is `[a-z0-9][a-z0-9_-]{0,127}` — lowercase only — and
+  filters `artifacts_produced` into the routing `artifact_kinds`. An artifact
+  authored as `Implementation-Change` would silently stop routing.
+
+Both are fixed by normalizing at the projection rather than at the source, so
+the card renders the authored case while every matcher still sees one spelling.
+`platforms`, `hosts` and `lifecycle_phases` keep casefolding because they are
+allowlist-checked; `tools` keeps it because it shares the routing-identifier
+extraction.
 
 Gate the change on a schema version exactly as AR-380 did, so already-minted
 workers keep replaying the render they were minted under.
 
 ## Dependencies
 
-- Should land as one further version bump rather than piecemeal, because each
-  change moves `prompt_hash` for every newly minted card.
+- Landed as schema version 4. The template layout is unchanged, so v4 shares
+  v3's template bytes and hash; only the values filled in differ, which is
+  enough to move `prompt_hash`.
 
 ## Acceptance
 

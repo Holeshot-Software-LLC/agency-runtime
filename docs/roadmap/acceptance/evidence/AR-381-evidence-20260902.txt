@@ -1,0 +1,40 @@
+AR-381 evidence — contract prose keeps its authored case at schema v4
+captured 2026-09-02 in the AR-381 worktree
+
+$ the packaged python-application-engineer card, every prose section
+Capabilities and owned outcomes
+- Maintainable production Python behavior
+- Portable Python packaging
+- Async Python design
+- Typing and tests
+- CLI and service packaging
+
+Expected artifacts
+- Python source
+- Python package configuration
+
+Role boundaries
+- Machine-learning model design
+- Data-science analysis
+- Visual frontend design
+- Act outside production Python applications, services, and CLIs
+
+Required operating inputs and tools
+- Receive a bounded work unit and repository policy
+- repository
+- python
+- test-runner
+- package-manager
+
+$ the matched projections stay normalized
+workforce outcomes: ('maintainable production python behavior', 'portable python packaging', 'async python design')
+artifact_kinds: ('implementation-change',)
+platforms/hosts stay casefolded: ('windows', 'linux') ('codex', 'claude')
+
+$ v2 and v3 workers replay byte-identically
+v2 prompt-hash mismatches across all 15: 0
+v3 prompt-hash mismatches across all 15: 0
+
+$ python3 -m pytest <spine> -q -W error
+...                                                                      [100%]
+1152 passed, 3 skipped in 57.22s

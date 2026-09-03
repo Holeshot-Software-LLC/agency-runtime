@@ -136,6 +136,28 @@ _V2_KNOWN_CONTRACTOR_PROMPT_HASHES: dict[str, str] = {
     "typescript-application-engineer": "sha256:6b0d5cae3b65a44d56b22f51f5301bbd04f02bee7cdac9fe66bd9081b561c20f",
 }
 
+
+# The package-v3 prompt hashes that shipped with ADR-0196, before AR-381 stopped
+# casefolding contract prose. Same reason as the v2 table: an install performed
+# at v3 must still be recognised as a governed predecessor.
+_V3_KNOWN_CONTRACTOR_PROMPT_HASHES: dict[str, str] = {
+    "ai-evaluation-engineer": "sha256:af36111153158cf4e44d8a2b9d0313195c6b0270d4d3ebae41ebbe874da9fdaf",
+    "ai-governance-auditor": "sha256:07384eb054b0957a503f95dd67dc78366151058cd6a7e101ea00d62e4eea58d6",
+    "ai-observability-engineer": "sha256:a11cd9f48e14a6f368e3e88d5d215eadcfbc25c2341fa1d4f50121670ea71027",
+    "application-integration-verifier": "sha256:d9095164ed73c44ac64fb8313f015289a974c022eb313e9106a373fa09032c0f",
+    "application-observability-engineer": "sha256:62b55c47b38077102a9f161c44dc0c86b3bb0a6bdb3376a3496cccb0362649e6",
+    "backend-service-engineer": "sha256:94a61b34fe4deb9dbfc6b1773c94e3f0358f3aec52bd8c447b6756031778c58c",
+    "cross-platform-installer-engineer": "sha256:ab09719ece1894d2086ba674e93f3b11c8dc0585d7e9ac512c04e3a3077fee35",
+    "cross-platform-release-verifier": "sha256:e109d4515a200575bfdeda43731f1af59d7d2229ae317886bcf8baaf575801c2",
+    "documentation-evidence-researcher": "sha256:d499b4acf09c2c45ec532906372ceb761761897dee898a786b5a4cf2b755e214",
+    "hallucination-root-cause-investigator": "sha256:88b554a0a400d970ca2e5a8c4f97ddb24046b58dd85c1526a9d4a266a4353b23",
+    "policy-guardrail-architect": "sha256:0387dfb521771fb72c85527900c49f715180ea69fe844ffe59f6151af71fd94b",
+    "python-application-engineer": "sha256:c425a91f423b1598099f3c3ee50c9c0c3cee3271cfc94f32e4f014c928474171",
+    "selection-safety-critic": "sha256:990042f24b84561e1796cc7d04633665b7829ef850465d029b64a8d7e0228f1f",
+    "software-test-engineer": "sha256:2a98490a72c6767f5cb15f381ba1c25a570103bf44283b28d031b7a40b684834",
+    "typescript-application-engineer": "sha256:e1e9fe262a5ef488c7fd99ab00e4cc9d0124eda50403e64201a7b905b7e9100f",
+}
+
 _LEGACY_BACKEND_CAPABILITIES = (
     "api execution paths",
     "persistence integration",
@@ -240,7 +262,11 @@ def _known_contractor_agent(contract: EmploymentContract) -> dict[str, Any]:
         "expected_output_contract": "; ".join(contract.artifacts_produced),
         "evidence_requirements": list(contract.evidence_requirements),
         "model_requirements": [],
-        "outcomes": [*contract.outcomes_owned, *contract.capabilities],
+        # AR-381: normalized for the exact-set duplicate checks, matching the
+        # dynamic hiring projection; the card keeps the authored case.
+        "outcomes": [
+            item.casefold() for item in (*contract.outcomes_owned, *contract.capabilities)
+        ],
         "artifact_kinds": list(artifacts),
         "lifecycle_phases": list(lifecycle),
         "domains": list(domains),
@@ -337,6 +363,25 @@ def _v2_known_contractor_package(slug: str) -> KnownContractorPackage:
     return KnownContractorPackage(contract, compiled, agent, workforce)
 
 
+def _v3_known_contractor_package(slug: str) -> KnownContractorPackage:
+    """Reconstruct the exact package-v3 predecessor eligible for a governed advance."""
+
+    normalized = str(slug or "").strip().casefold()
+    current = KNOWN_CONTRACTORS_BY_SLUG.get(normalized)
+    if current is None:
+        raise KeyError("known contractor is not packaged")
+    # v3 casefolded contract prose; re-parsing the current definition at schema
+    # version 3 reproduces that render exactly.
+    contract = replace(current, schema_version=3)
+    compiled = compile_contractor(contract)
+    expected_hash = _V3_KNOWN_CONTRACTOR_PROMPT_HASHES.get(normalized)
+    if compiled.prompt_hash != expected_hash:
+        raise RuntimeError(f"package-v3 known contractor snapshot drifted: {normalized}")
+    agent = _known_contractor_agent(contract)
+    workforce = project_workforce_contract(agent, origin="agency")
+    return KnownContractorPackage(contract, compiled, agent, workforce)
+
+
 def _malformed_legacy_known_contractor_package(slug: str) -> KnownContractorPackage:
     """Reconstruct package v1 before the August 6 version-identity repair."""
 
@@ -366,6 +411,7 @@ def _known_contractor_predecessor_packages(slug: str) -> tuple[KnownContractorPa
         _legacy_known_contractor_package(normalized),
         _malformed_legacy_known_contractor_package(normalized),
         _v2_known_contractor_package(normalized),
+        _v3_known_contractor_package(normalized),
     )
 
 

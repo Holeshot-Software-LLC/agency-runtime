@@ -1501,17 +1501,29 @@ def _agent_document(
         compiled = compile_contractor(contract)
     except (TypeError, ValueError):
         raise _CandidateValidationFailure("contract_invalid:employment_revalidation") from None
+    # AR-381: artifacts_produced keeps its authored case from v4, but a routing
+    # identifier is lowercase by definition, so normalize before matching and
+    # store the normalized form.  Without this an artifact authored as
+    # `Implementation-Change` would silently stop routing.
     artifacts = tuple(
         dict.fromkeys(
-            item for item in contract.artifacts_produced if _ROUTING_IDENTIFIER.fullmatch(item)
+            folded
+            for item in contract.artifacts_produced
+            if _ROUTING_IDENTIFIER.fullmatch(folded := item.casefold())
         )
     )[:MAX_TAXONOMY_ITEMS]
     tools = tuple(
         dict.fromkeys(item for item in contract.tools if _ROUTING_IDENTIFIER.fullmatch(item))
     )[:MAX_TAXONOMY_ITEMS]
-    outcomes = tuple(dict.fromkeys((*contract.capabilities, *contract.outcomes_owned)))[
-        :MAX_OUTCOMES
-    ]
+    # AR-381: capabilities and outcomes_owned keep their authored case from v4 for
+    # the card, but the projected `outcomes` tuple is compared as an exact set in
+    # the deterministic duplicate and amend-overlap checks (`_axis_subset`), so it
+    # is normalized here rather than at the source.
+    outcomes = tuple(
+        dict.fromkeys(
+            item.casefold() for item in (*contract.capabilities, *contract.outcomes_owned)
+        )
+    )[:MAX_OUTCOMES]
     scope_qualifiers = contract.preferred_scenarios[:_MAX_SCOPE_QUALIFIERS]
     not_for = tuple(dict.fromkeys((*contract.avoided_scenarios, *contract.forbidden_scenarios)))[
         :_MAX_SCOPE_QUALIFIERS

@@ -1441,12 +1441,16 @@ class _NominationSemantics:""",
         mutation_id="contractor-outcomes-overflow-workforce-schema",
         invariant="Employment outcomes are capped to the smaller workforce projection.",
         source_path="agency_runtime/core/workforce/hiring.py",
-        before="""    outcomes = tuple(dict.fromkeys((*contract.capabilities, *contract.outcomes_owned)))[
-        :MAX_OUTCOMES
-    ]""",
-        after="""    outcomes = tuple(dict.fromkeys((*contract.capabilities, *contract.outcomes_owned)))[
-        :MAX_ITEMS
-    ]""",
+        before="""    outcomes = tuple(
+        dict.fromkeys(
+            item.casefold() for item in (*contract.capabilities, *contract.outcomes_owned)
+        )
+    )[:MAX_OUTCOMES]""",
+        after="""    outcomes = tuple(
+        dict.fromkeys(
+            item.casefold() for item in (*contract.capabilities, *contract.outcomes_owned)
+        )
+    )[:MAX_ITEMS]""",
         test_node=(
             "tests/test_workforce_dynamic_hiring.py::"
             "test_hire_compiles_schema_maximum_lists_into_bounded_workforce_contract"

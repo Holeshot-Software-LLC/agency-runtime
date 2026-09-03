@@ -423,7 +423,7 @@ def _definition(
     relationship_target: str | None = None,
 ) -> dict[str, Any]:
     return {
-        "schema_version": 3,
+        "schema_version": 4,
         "slug": slug,
         "role": role,
         "narrow_scope": scope,
@@ -433,7 +433,9 @@ def _definition(
         "anti_capabilities": anti,
         "preferred_scenarios": [positive],
         "avoided_scenarios": [negative],
-        "forbidden_scenarios": [f"Act outside {scope.casefold()}"],
+        # AR-381: only the leading character is lowered so the sentence reads as
+        # one clause; casefolding the whole scope would mangle CLIs and Python.
+        "forbidden_scenarios": [f"Act outside {scope[:1].lower()}{scope[1:]}"],
         "lifecycle_phases": phases,
         "authority": authority,
         "context_mode": "isolated_only",

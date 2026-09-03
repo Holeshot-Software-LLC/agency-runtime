@@ -394,7 +394,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-378` | [A failed hiring call records zero attempts, so the receipt has nothing to debug](issue-AR-378-hiring-failure-records-no-attempt.md) | done | p1 | observability | [#552](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/552) |
 | `AR-379` | [The hire schema has no home for domain procedure, so generated cards are governed but generic](issue-AR-379-hire-schema-has-no-home-for-domain-procedure.md) | done | p2 | workforce | [#553](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/553) |
 | `AR-380` | [Execution-profile prose is casefolded, so a card cannot name a case-sensitive identifier](issue-AR-380-execution-profile-prose-is-casefolded.md) | done | p2 | workforce | [#564](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/564) |
-| `AR-381` | [Contract prose outside the execution profile is still casefolded, so a v3 card says python source and clis](issue-AR-381-contract-prose-outside-the-execution-profile-is-casefolded.md) | open | p2 | workforce | — |
+| `AR-381` | [Contract prose outside the execution profile is still casefolded, so a v3 card says python source and clis](issue-AR-381-contract-prose-outside-the-execution-profile-is-casefolded.md) | in_progress | p2 | workforce | [#568](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/568) |
 
 ## Traceability
 
