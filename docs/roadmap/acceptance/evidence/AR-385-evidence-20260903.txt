@@ -1,0 +1,69 @@
+AR-385 evidence, 2026-09-03. Branch claude/ar385-reply-budget on top of claude/ar384-coverage-gaps (PR #584).
+Runtime under test: the branch checkout via PYTHONPATH, run by the installed venv python
+(~/.local/share/agency-runtime/venvs/0abe4a77c87af87cf0d2789df77d40d4a6f80a44). Store: the live
+~/.agency-runtime/agency.db, backed up first as agency.db.pre-ar385-141812 in the session scratchpad.
+Harnesses: capture385.py (shipped budgets), capture385b.py (recruiter budget forced to 256 in process),
+capture385c.py (budget 256 and the thinking allowance zeroed in process). Raw calls in raw385*/<id>-calls.json.
+
+== 1. What the transport now sends (completion_cap_tokens, offline) ==
+  recruiter, litellm, reasoning_effort medium, no operator figure: reply_budget 16384, cap 18432 (16384 + 2048)
+  recruiter, litellm, operator reply_budget_tokens 4096, medium:   reply_budget 4096,  cap 6144
+  planner, litellm, medium: 4096 + 2048 = 6144;   subject: 1024 + 2048 = 3072;   critic, high: 2048 + 4096 = 6144
+  unstamped caller, litellm, no effort: 2048 (the historical figure); anthropic direct: 8192 (unchanged)
+  Every workforce stage stamps its budget on the provider entry it calls with (inference._invoke_stage, hiring._invoke).
+
+== 2. Live preflight turns, shipped budgets, fresh wording (capture385.py, run_preflight, codex receipt, strict mode) ==
+Recruiter served by the same MiniMax deployment as the 2026-09-03 AR-384 turns (x-litellm-model-id b0b6f29c-a0f7-534c-9830-5148ec64b142),
+critic by 10729e08-a962-5f82-bcf0-1b35b4adcf47. Recruiter cap 18432 on every call.
+
+id  | request                                                          | recruiter completion tokens (cap 18432) | truncated | how the turn ended
+----|------------------------------------------------------------------|------------------------------------------|-----------|-------------------
+301 | Add a token-bucket rate limiter in front of the public REST API  | 2277 first attempt, 1620 repair           | no        | recruiter_candidate_positive_evidence_invalid on six units (AR-373), then staff_without_safe_team:domain (AR-384 residue)
+302 | Our Node worker's resident memory climbs for hours under load    | 941                                       | no        | reply closed the units array early and continued (json Extra data at char 1371): provider_no_valid_response, not this issue
+303 | Audit the sign-in endpoint for SQL injection and session fixation | none: the call ended at 30.1 s            | n/a       | recruiter profile timeout_ms 30000: provider_no_valid_response
+304 | Get the helix text editor working in my shell on this box        | 1433                                      | no        | verifier accepted; strict critic vetoed (AR-386)
+305 | Set up ripgrep, fd and bat on this workstation                   | 1129                                      | no        | verifier accepted; strict critic vetoed (AR-386)
+
+Turn 301 is the throttle criterion: a six-unit token-bucket nomination completed at 2277 completion tokens
+(finish_reason stop, usage.completion_tokens 2277 of 18432) on the deployment that cut the captured six-unit
+throttle nomination at exactly 2048. Under the old cap this reply would have been cut. No live reply was
+truncated under the shipped budgets. Six of six planner and subject calls stayed under 720 tokens.
+
+== 3. Live turns with the recruiter budget forced to 256 in process (capture385b.py; cap 256 + 2048 medium allowance = 2304) ==
+306 | Put a token-bucket limiter ahead of the public REST routes       | 1801 first, 508 repair (cap 2304)        | no        | staff_without_safe_team:domain, then recruiter_candidate_positive_evidence_invalid
+307 | Design and ship a leaky-bucket request throttle                  | 1473 first, 421 repair (cap 2304)        | no        | staff_without_safe_team:domain, then recruiter_candidate_row_shape_invalid
+The durable preflight-failure receipts of both carry validation_failures on every rejected recruiter attempt.
+
+== 4. Live truncated receipt: budget 256 and the thinking allowance zeroed in process (capture385c.py; cap 256) ==
+309 | Throttle the public HTTP API with a token bucket per client key; include tests and a rollout note
+  recruiter #2: cap 256, usage.completion_tokens 256, finish_reason stop, reply_truncated True; the closed JSON held one
+    complete unit row, seven planned units had no readable row
+  recruiter #3 (repair): cap 256, completion_tokens 256, reply_truncated True, no JSON object; recorded without a parse
+  Durable preflight-failure receipt, provider_attempts (store.get_preflight_failure_receipt, verbatim):
+    recruiter  rejected  provider_response_truncated  truncation={'reply_budget_tokens': 256, 'completion_cap_tokens': 256, 'completion_tokens': 256}
+      validation_failures=[{'unit_id': 'sha256:56e85dbc...', 'reason_code': 'missing_work_unit'}, {'unit_id': 'unit-author-throttle-tests', 'reason_code': 'missing_work_unit'},
+      {'unit_id': 'unit-write-rollout-note', 'reason_code': 'missing_work_unit'}, {'unit_id': 'unit-correctness-review', 'reason_code': 'missing_work_unit'},
+      {'unit_id': 'unit-security-review', 'reason_code': 'missing_work_unit'}, {'unit_id': 'unit-rollout-note-review', 'reason_code': 'missing_work_unit'},
+      {'unit_id': 'unit-verify-throttle-tests', 'reason_code': 'missing_work_unit'}]
+    recruiter  rejected  provider_response_truncated  truncation={'reply_budget_tokens': 256, 'completion_cap_tokens': 256, 'completion_tokens': 256}
+  Neither rejected recruiter attempt is blank: both carry the truncation record and the first also names the lost units.
+  (The hashed unit_id is unit-implement-token-bucket: the receipt projection digests any identity containing the marker
+  "token"; pre-existing behaviour of _identity, not this change.)
+308 | Wire a sliding-window rate limit onto the public REST API        | none: the call ended at 30.04 s (cap 256)  | n/a       | recruiter profile timeout_ms 30000: provider_no_valid_response
+
+== 5. Observations outside this issue ==
+  Two of twelve recruiter calls today (303, 308) ended at the profile's 30000 ms timeout with no reply. With the cap no longer
+  bounding a long reply, timeout_ms is the binding constraint; it is operator configuration (AR-383 capsule constraints).
+  Turn 302's reply was structurally malformed below the cap (units array closed early); the transport rightly returns None.
+  Turns 308 and 309 recorded recall_embedding skipped dense_recall_projection_invalid after the subject stage: AR-383 live.
+
+== 6. Gates on the final tree ==
+  ruff check / ruff format --check: clean on every changed file (one pre-existing RUF024 in tests/test_workforce_subject_inference.py, untouched).
+  tests/test_reply_budget_truncation.py: 43 passed. Affected workforce, receipt, config and eval suites: 727 passed, 1 skipped.
+  Named fast Python production spine (WORKFLOW_CONTRACTS + PRODUCTION_SPINE): 1165 passed, 3 skipped, -W error.
+  python -m agency_runtime.cli eval routing --json --no-details (branch code): passed, version 1.4.0.
+  agency eval decision-conformance --repository . --json (copies venv, umask 077): status passed, source_unchanged True, mutations 170, killed 170; baseline passed; AR-385 mutations: recruiter-repair-allows-unlisted-row-overwrite=killed, cut-reply-recorded-as-contract-failure=killed, unreadable-nomination-row-refuses-the-whole-reply=killed
+  docs_metadata.py --check, update_policy_availability.py --check, verify_docs.py, git diff --check: green.
+  Pre-existing failures on the base commit 7a08a3e9, unchanged by this branch: tests/test_public_api.py (legacy fallback
+  roster), tests/test_cli_judge_providers.py (claude judge argv), tests/test_durable_continuation.py (3),
+  tests/test_http_server.py (2), tests/test_native_child_delivery_verification_ledger.py (3).

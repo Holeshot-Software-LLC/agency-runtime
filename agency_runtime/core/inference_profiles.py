@@ -86,6 +86,7 @@ def provider_from_profile(profile: InferenceProfile) -> ProviderEntry:
         timeout=timeout_seconds,
         reasoning_effort=reasoning_effort,
         dimensions=profile.dimensions,
+        reply_budget_tokens=profile.reply_budget_tokens,
     )
 
 

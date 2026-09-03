@@ -21,6 +21,8 @@ from agency_runtime.core.config import (
     INFERENCE_THINKING_LEVELS,
     MAX_INFERENCE_EMBEDDING_DIMENSIONS,
     MAX_PROVIDER_CHAIN_ENTRIES,
+    MAX_REPLY_BUDGET_TOKENS,
+    MIN_REPLY_BUDGET_TOKENS,
     is_safe_cli_model_id,
     is_safe_credential_url,
 )
@@ -191,6 +193,7 @@ def _validate_provider(value: Any, index: int) -> dict[str, Any]:
         "timeout",
         "reasoning_effort",
         "token_parameter",
+        "reply_budget_tokens",
     }
     if set(entry) - allowed:
         raise _error(path, "contains unsupported fields")
@@ -229,6 +232,9 @@ def _validate_provider(value: Any, index: int) -> dict[str, Any]:
         )
         .strip()
         .lower(),
+        "reply_budget_tokens": _reply_budget_tokens(
+            entry.get("reply_budget_tokens", 0), f"{path}.reply_budget_tokens"
+        ),
     }
     if result["token_parameter"] not in TOKEN_PARAMETERS:
         raise _error(
@@ -688,6 +694,18 @@ def _validate_adapters(value: Any) -> dict[str, Any]:
     return {name: _validate_adapter_entry(item, name) for name, item in section.items()}
 
 
+def _reply_budget_tokens(value: Any, path: str) -> int:
+    """Validate one stated reply budget: zero, or a figure the transport can honour."""
+
+    budget = _integer(value, path, minimum=0, maximum=MAX_REPLY_BUDGET_TOKENS)
+    if 0 < budget < MIN_REPLY_BUDGET_TOKENS:
+        raise _error(
+            path,
+            f"must be 0 (the stage's own budget) or at least {MIN_REPLY_BUDGET_TOKENS} tokens",
+        )
+    return budget
+
+
 def _validate_native_reranker_profile(
     *,
     path: str,
@@ -728,6 +746,7 @@ def _validate_inference_profile(name: str, value: Any) -> dict[str, Any]:
         "timeout_ms",
         "transport",
         "dimensions",
+        "reply_budget_tokens",
     }
     if set(section) - allowed:
         raise _error(path, "contains unsupported fields")
@@ -813,6 +832,9 @@ def _validate_inference_profile(name: str, value: Any) -> dict[str, Any]:
         minimum=50,
         maximum=120_000,
     )
+    reply_budget_tokens = _reply_budget_tokens(
+        section.get("reply_budget_tokens", 0), f"{path}.reply_budget_tokens"
+    )
     transport = (
         _string(
             section.get("transport", ""),
@@ -857,6 +879,7 @@ def _validate_inference_profile(name: str, value: Any) -> dict[str, Any]:
         "timeout_ms": timeout_ms,
         "transport": transport,
         "dimensions": dimensions,
+        "reply_budget_tokens": reply_budget_tokens,
     }
 
 

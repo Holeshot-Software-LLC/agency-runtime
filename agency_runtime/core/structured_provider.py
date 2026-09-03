@@ -24,6 +24,7 @@ from agency_runtime.core.config import (
 )
 from agency_runtime.core.http_safety import open_no_redirect
 from agency_runtime.core.model_capabilities import requires_completion_token_parameter
+from agency_runtime.core.reply_budget import completion_cap_tokens
 
 MAX_STRUCTURED_PROMPT_BYTES = 1_280 * 1024
 MAX_STRUCTURED_SCHEMA_BYTES = 64 * 1024
@@ -103,6 +104,18 @@ class StructuredProviderResult:
     latency_ms: int
     thinking_level_configured: str = ""
     thinking_level_consumed: str = ""
+    # AR-385: what the transport asked for and what the provider reports it
+    # spent. ``reply_budget_tokens`` is the stage's or operator's visible-reply
+    # allowance; ``completion_cap_tokens`` adds the thinking allowance and is
+    # the figure actually sent. ``completion_tokens`` is None when the reply
+    # carried no usage. A reply is truncated when the provider says so or when
+    # it spent exactly the cap, which is how a gateway that reports ``stop``
+    # for a cut reply still shows its hand.
+    reply_budget_tokens: int = 0
+    completion_cap_tokens: int = 0
+    completion_tokens: int | None = None
+    finish_reason: str = ""
+    reply_truncated: bool = False
 
     def receipt(self) -> dict[str, Any]:
         return {
@@ -116,6 +129,11 @@ class StructuredProviderResult:
             "latency_ms": self.latency_ms,
             "thinking_level_configured": self.thinking_level_configured,
             "thinking_level_consumed": self.thinking_level_consumed,
+            "reply_budget_tokens": self.reply_budget_tokens,
+            "completion_cap_tokens": self.completion_cap_tokens,
+            "completion_tokens": self.completion_tokens,
+            "finish_reason": self.finish_reason,
+            "reply_truncated": self.reply_truncated,
         }
 
 
@@ -318,6 +336,83 @@ def _response_text(
     )
 
 
+_TRUNCATED_FINISH_REASONS = frozenset({"length", "max_tokens"})
+
+
+def _finish_reason(value: object) -> str:
+    if not isinstance(value, str):
+        return ""
+    normalized = value.strip().casefold()[:32]
+    return normalized if normalized.isidentifier() or normalized.isalnum() else ""
+
+
+def _token_count(value: object) -> int | None:
+    if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+        return None
+    return value
+
+
+def _response_usage(
+    data: Mapping[str, Any],
+    *,
+    provider_type: str,
+    ollama_mode: bool,
+) -> tuple[int | None, str]:
+    """Return ``(completion_tokens, finish_reason)`` from one provider reply.
+
+    Both values are read only from the reply's own accounting fields, never
+    from model text, and both stay bounded: a count is a non-negative int or
+    unknown, a finish reason is a short identifier or empty.
+    """
+
+    if ollama_mode:
+        return _token_count(data.get("eval_count")), _finish_reason(data.get("done_reason"))
+    usage = data.get("usage")
+    usage = usage if isinstance(usage, Mapping) else {}
+    if provider_type == "anthropic":
+        return _token_count(usage.get("output_tokens")), _finish_reason(data.get("stop_reason"))
+    choices = data.get("choices")
+    first = choices[0] if isinstance(choices, list) and choices else None
+    finish = first.get("finish_reason") if isinstance(first, Mapping) else None
+    return _token_count(usage.get("completion_tokens")), _finish_reason(finish)
+
+
+def _reply_truncated(completion_tokens: int | None, finish_reason: str, cap: int) -> bool:
+    """Whether the reply reached the requested completion cap (AR-385).
+
+    A provider that says ``length`` or ``max_tokens`` is believed. One that
+    reports ``stop`` while spending exactly the cap is not: the captured
+    MiniMax replies through the gateway did exactly that, with a closed JSON
+    object missing its last rows.
+    """
+
+    if finish_reason in _TRUNCATED_FINISH_REASONS:
+        return True
+    return completion_tokens is not None and cap > 0 and completion_tokens >= cap
+
+
+def _forwarded_thinking_level(provider: ProviderEntry) -> str:
+    """Return the reasoning effort the HTTP payload will carry, or empty."""
+
+    provider_type = provider.type.strip().casefold()
+    if (
+        provider_type == "openai-compatible"
+        and provider.reasoning_effort in _OPENAI_REASONING_EFFORTS
+    ):
+        return provider.reasoning_effort
+    if provider_type == "litellm" and provider.reasoning_effort in _LITELLM_REASONING_EFFORTS:
+        return provider.reasoning_effort
+    return ""
+
+
+def _requested_completion_cap(provider: ProviderEntry) -> tuple[int, int]:
+    """Return ``(reply_budget, completion_cap)`` for one provider entry."""
+
+    return completion_cap_tokens(
+        provider, thinking_level_forwarded=_forwarded_thinking_level(provider)
+    )
+
+
 def _join_api_path(base_url: str, path: str) -> str:
     base = base_url.rstrip("/")
     normalized = "/" + path.lstrip("/")
@@ -350,6 +445,9 @@ def _http_payload(
 ) -> tuple[dict[str, Any], str]:
     provider_type = provider.type.strip().casefold()
     ollama_mode = provider.ollama_mode or provider_type == "ollama"
+    # AR-385: the cap is the stage's or operator's reply budget plus the
+    # thinking allowance the adapter forwards, never a transport constant.
+    _reply_budget, completion_cap = _requested_completion_cap(provider)
     if ollama_mode:
         return (
             {
@@ -359,7 +457,7 @@ def _http_payload(
                     {"content": prompt, "role": "user"},
                 ],
                 "model": provider.model,
-                "options": {"num_ctx": 131072, "num_predict": 2048, "temperature": 0},
+                "options": {"num_ctx": 131072, "num_predict": completion_cap, "temperature": 0},
                 "stream": False,
                 "think": False,
             },
@@ -367,7 +465,7 @@ def _http_payload(
         )
     if provider_type == "anthropic":
         payload: dict[str, Any] = {
-            "max_tokens": 8192,
+            "max_tokens": completion_cap,
             "messages": [
                 {"content": prompt, "role": "user"},
             ],
@@ -399,15 +497,13 @@ def _http_payload(
             "type": "json_schema",
         }
     if requires_completion_token_parameter(provider.model, declared=provider.token_parameter):
-        payload["max_completion_tokens"] = 2048
+        payload["max_completion_tokens"] = completion_cap
         payload.pop("temperature", None)
     else:
-        payload["max_tokens"] = 2048
-    if (
-        provider_type == "openai-compatible"
-        and provider.reasoning_effort in _OPENAI_REASONING_EFFORTS
-    ) or (provider_type == "litellm" and provider.reasoning_effort in _LITELLM_REASONING_EFFORTS):
-        payload["reasoning_effort"] = provider.reasoning_effort
+        payload["max_tokens"] = completion_cap
+    forwarded = _forwarded_thinking_level(provider)
+    if forwarded:
+        payload["reasoning_effort"] = forwarded
     return payload, "/v1/chat/completions"
 
 
@@ -536,15 +632,22 @@ def invoke_structured_provider_result(
     response_object = _parse_json_object(raw)
     if response_object is None:
         return None
+    ollama_mode = provider.ollama_mode or provider_type == "ollama"
+    reply_budget, completion_cap = _requested_completion_cap(provider)
+    completion_tokens, finish_reason = _response_usage(
+        response_object, provider_type=provider_type, ollama_mode=ollama_mode
+    )
+    truncated = _reply_truncated(completion_tokens, finish_reason, completion_cap)
     value = _parse_model_text(
-        _response_text(
-            response_object,
-            provider_type=provider_type,
-            ollama_mode=provider.ollama_mode or provider_type == "ollama",
-        )
+        _response_text(response_object, provider_type=provider_type, ollama_mode=ollama_mode)
     )
     if value is None:
-        return None
+        if not truncated:
+            return None
+        # The reply was cut before a complete JSON object formed. Return the
+        # truncation as evidence rather than a bare None, so the stage can
+        # record why it has nothing to parse instead of "no valid response".
+        value = {}
     actual_model = _model_identity(response_object.get("model"))
     return StructuredProviderResult(
         value=value,
@@ -560,6 +663,11 @@ def invoke_structured_provider_result(
         thinking_level_consumed=_translate_thinking_level_for_adapter(
             provider_type, provider.reasoning_effort
         ),
+        reply_budget_tokens=reply_budget,
+        completion_cap_tokens=completion_cap,
+        completion_tokens=completion_tokens,
+        finish_reason=finish_reason,
+        reply_truncated=truncated,
     )
 
 

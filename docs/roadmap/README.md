@@ -398,7 +398,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-382` | [A predecessor package projects today's prose case, so no installed contractor can ever advance](issue-AR-382-predecessor-projection-keeps-the-current-version-case.md) | done | p1 | install | [#573](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/573) |
 | `AR-383` | [The inferred subject context fails its own projection, so dense recall is silently skipped](issue-AR-383-inferred-subject-context-fails-its-own-projection.md) | open | p1 | reliability | [#581](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/581) |
 | `AR-384` | [The recruiter is told to staff units the roster cannot cover, then rejected for staffing them](issue-AR-384-staff-decisions-die-on-uncoverable-typed-requirements.md) | in_progress | p1 | reliability | pending authorization |
-| `AR-385` | [A fixed 2048-token reply budget truncates recruiter nominations, and the truncation is rejected as a contract failure with no record](issue-AR-385-structured-reply-budget-truncates-nominations-silently.md) | open | p1 | reliability | pending authorization |
+| `AR-385` | [A fixed 2048-token reply budget truncates recruiter nominations, and the truncation is rejected as a contract failure with no record](issue-AR-385-structured-reply-budget-truncates-nominations-silently.md) | in_progress | p1 | reliability | pending authorization |
 | `AR-386` | [The strict critic vetoes every verifier-accepted install turn](issue-AR-386-strict-critic-vetoes-verifier-accepted-install-turns.md) | open | p1 | reliability | pending authorization |
 
 ## Traceability
@@ -739,6 +739,7 @@ not stable internal identifiers.
 | [AR-117](issue-AR-117-parallelize-pr-verification.md) | `49e8f99`, `e0870fa`, `1b28e89`, `e2cb50d`, `6f97dcc`, `aefeb28`, `afd7199`, `dca7af5`, `f64ba1e` | [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md), [ADR-0097](../decisions/0097-gate-expensive-ci-fanout-behind-quality-contracts.md) |
 | [AR-118](issue-AR-118-reconcile-native-child-activation-evidence.md) | `795deef`, `78afe96` | [ADR-0079](../decisions/0079-route-native-children-once-and-bound-unplanned-reroutes.md) |
 | [AR-384](issue-AR-384-staff-decisions-die-on-uncoverable-typed-requirements.md) | [`1711bcaa`](../worklog/README.md) | [ADR-0198](../decisions/0198-waive-the-typed-requirements-the-roster-declares-but-cannot-serve.md) |
+| [AR-385](issue-AR-385-structured-reply-budget-truncates-nominations-silently.md) | [`0f70496c`](../worklog/README.md) | [ADR-0199](../decisions/0199-give-each-inference-stage-its-own-reply-budget.md) |
 
 ## Dependency summary
 

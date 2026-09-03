@@ -27,6 +27,7 @@ from agency_runtime.core.inference_profiles import (
     resolve_explicit_capability_route,
     resolve_explicit_capability_route_any,
 )
+from agency_runtime.core.reply_budget import PROVIDER_RESPONSE_TRUNCATED, provider_for_stage
 from agency_runtime.core.structured_provider import (
     StructuredProviderResult,
     invoke_structured_provider_result,
@@ -167,8 +168,18 @@ RECRUITER_VALIDATION_REASON_CODES = frozenset(
         "recruiter_candidate_positive_evidence_missing",
         "recruiter_candidate_row_shape_invalid",
         "recruiter_candidate_score_invalid",
+        "recruiter_unit_row_shape_invalid",
     }
 )
+# Which closed diagnosis may ride on which failure code. A candidate diagnosis
+# explains an invalid_candidate row; the unit-row diagnosis explains a planned
+# unit whose row could not be read at all, which is what a reply cut at the
+# completion cap leaves behind (AR-385).
+_DIAGNOSTIC_CODES_BY_FAILURE = {
+    "invalid_candidate": RECRUITER_VALIDATION_REASON_CODES
+    - frozenset({"recruiter_unit_row_shape_invalid"}),
+    "missing_work_unit": frozenset({"recruiter_unit_row_shape_invalid"}),
+}
 CRITIC_VALIDATION_REASON_CODES = frozenset(
     {
         "critic_approval_invalid",
@@ -234,6 +245,10 @@ _NOMINATION_DIAGNOSTIC_REPAIR_REQUIREMENTS = {
     ),
     "recruiter_candidate_score_invalid": (
         "Return score as a JSON number from 0 through 1, never a Boolean, string, or percentage."
+    ),
+    "recruiter_unit_row_shape_invalid": (
+        "The unit's row could not be read: return exactly unit_id, decision, and "
+        "ranked_semantic for it, complete."
     ),
 }
 
@@ -655,6 +670,14 @@ class WorkforceInferenceAttempt:
     catalog_cache_hit: bool = False
     catalog_identity: str = ""
     provider_call_count: int = 0
+    # AR-385: the reply budget the stage asked for, the cap the transport
+    # sent, what the provider reports it spent, and whether the reply reached
+    # the cap. A rejected attempt that was cut is a transport fact, not a
+    # contract failure, and the receipt says so.
+    reply_budget_tokens: int = 0
+    completion_cap_tokens: int = 0
+    completion_tokens: int | None = None
+    reply_truncated: bool = False
 
 
 MAX_RECORDED_RANKED_CANDIDATES: Final[int] = 8
@@ -780,10 +803,8 @@ class _NominationValidationError(ValueError):
             or invalid_counts(failure)
             or (
                 failure.diagnostic_code
-                and (
-                    failure.code != "invalid_candidate"
-                    or failure.diagnostic_code not in RECRUITER_VALIDATION_REASON_CODES
-                )
+                and failure.diagnostic_code
+                not in _DIAGNOSTIC_CODES_BY_FAILURE.get(failure.code, frozenset())
             )
             for failure in unique
         ):
@@ -1136,6 +1157,7 @@ def _provider_cache_document(provider: ProviderEntry) -> dict[str, Any]:
         "timeout": provider.timeout,
         "reasoning_effort": provider.reasoning_effort,
         "dimensions": provider.dimensions,
+        "reply_budget_tokens": provider.reply_budget_tokens,
     }
 
 
@@ -1233,7 +1255,39 @@ def _attempt(
         latency_ms=0 if result is None else result.latency_ms,
         validation_detail=validation_detail,
         validation_reason_codes=tuple(validation_reason_codes),
+        reply_budget_tokens=(
+            provider.reply_budget_tokens
+            if result is None
+            else (result.reply_budget_tokens or provider.reply_budget_tokens)
+        ),
+        completion_cap_tokens=0 if result is None else result.completion_cap_tokens,
+        completion_tokens=None if result is None else result.completion_tokens,
+        reply_truncated=False if result is None else bool(result.reply_truncated),
     )
+
+
+_TRUNCATED_REPLY_DETAIL = "structured reply was cut at the completion cap"
+
+
+def _reply_truncation_feedback(result: StructuredProviderResult) -> dict[str, Any]:
+    """Tell the retry that the prior reply was cut, not wrong (AR-385).
+
+    The figures are the transport's own accounting, never model text. The
+    retry keeps the same budget: a recruiter repair asks only for the units
+    that were lost, and every other stage is asked for a compact reply.
+    """
+
+    return {
+        "reply_budget_tokens": result.reply_budget_tokens,
+        "completion_cap_tokens": result.completion_cap_tokens,
+        "completion_tokens": result.completion_tokens,
+        "required_action": (
+            "Your previous reply was cut off at the completion cap before it was complete, "
+            "so any invariant failure above may be an effect of the cut rather than a wrong "
+            "answer. Return the complete JSON object compactly: no prose, nothing beyond the "
+            "schema, and no more ranked rows than the unit needs."
+        ),
+    }
 
 
 def _validation_detail(error: BaseException) -> str:
@@ -1273,6 +1327,105 @@ def _validation_reason_codes(stage: str, error: BaseException) -> tuple[str, ...
     return ()
 
 
+def _semantic_retry_prompts(
+    *,
+    stage: str,
+    error: BaseException,
+    prompt: str,
+    system_prompt: str,
+    repair_system_prompt: str | None,
+    detail: str,
+    validation_reason_codes: Sequence[str],
+    truncation: Mapping[str, Any] | None,
+) -> tuple[str, str]:
+    """Return the ``(system_prompt, prompt)`` for one bounded semantic retry.
+
+    Each validation class gets the feedback shape its repair contract expects.
+    When the rejected reply was cut at the completion cap (AR-385) the same
+    feedback also names the cut, so the model is told it was interrupted
+    rather than wrong.
+    """
+
+    next_system_prompt = system_prompt
+    next_prompt = prompt
+    feedback: dict[str, Any] | None = None
+    if isinstance(error, _NominationValidationError):
+        next_system_prompt = repair_system_prompt or system_prompt
+        feedback = {
+            "failed_units": [
+                _nomination_repair_feedback_row(failure) for failure in error.failures
+            ],
+            "prior_response_status": "rejected",
+            "required_action": (
+                "Return corrected rows for every listed planned unit. "
+                "Omit unlisted units because the runtime retains their "
+                "validated rows. Do not add or reorder units."
+            ),
+        }
+    elif isinstance(error, _StaffingVerificationError):
+        next_system_prompt = system_prompt
+        feedback = {
+            "prior_response_status": "rejected",
+            "required_action": (
+                "Return one complete replacement recruiter response for "
+                "every planned unit. Preserve inference ownership while "
+                "satisfying the complete staffing budget, composition, "
+                "assurance, coverage, and execution contract."
+            ),
+            "staffing_violations": [
+                {
+                    "unit_id": failure.unit_id,
+                    "code": failure.code,
+                }
+                for failure in error.failures
+            ],
+        }
+    elif isinstance(error, _PlanPolicyValidationError):
+        next_system_prompt = COMPACT_INTENT_REPAIR_SYSTEM
+        feedback = {
+            "prior_plan_status": "rejected",
+            "required_action": (
+                "Return one complete replacement compact plan authored by "
+                "inference. Use only supplied-schema fields, preserve every "
+                "necessary valid unit, apply every required correction, and "
+                "make every dependency point to an earlier unit. Verify that "
+                "none of the listed codes remains before returning."
+            ),
+            "validation_reason_codes": list(error.violations),
+            "violations": list(plan_policy_repair_guidance(error.violations)),
+        }
+    elif stage == "planner":
+        next_system_prompt = COMPACT_INTENT_REPAIR_SYSTEM
+        feedback = {
+            "prior_plan_status": "rejected",
+            "validation_reason_codes": list(validation_reason_codes),
+            "deterministic_validation_detail": detail,
+            "violations": list(plan_policy_repair_guidance(validation_reason_codes)),
+            "required_action": (
+                "Return one complete replacement compact plan authored by "
+                "inference. Use only supplied-schema fields and correct the "
+                "deterministic semantic contract failure without weakening "
+                "the original plan acceptance contract."
+            ),
+        }
+    if feedback is not None:
+        if truncation is not None:
+            feedback["reply_truncation"] = truncation
+        next_prompt = f"{prompt}\n\n[RUNTIME VALIDATION FEEDBACK]\n" + _json_prompt(feedback)
+    else:
+        next_system_prompt = system_prompt
+        next_prompt = (
+            f"{prompt}\n\n[RUNTIME VALIDATION FEEDBACK]\n"
+            "Your previous JSON matched the transport schema but failed a "
+            f"deterministic semantic invariant: {detail}. Re-evaluate every "
+            "identifier, dependency, ordering, uniqueness, plan binding, staffing "
+            "decision, and typed coverage, then return one corrected JSON object only."
+        )
+        if truncation is not None:
+            next_prompt += " " + _json_prompt({"reply_truncation": truncation})
+    return next_system_prompt, next_prompt
+
+
 def _invoke_stage(
     *,
     stage: str,
@@ -1293,6 +1446,9 @@ def _invoke_stage(
     if not providers:
         return None, attempts, "workforce_provider_unavailable"
     for provider in providers:
+        # AR-385: the stage owns its reply budget. Stamp it on the entry the
+        # invoker sees unless the operator stated one on the profile.
+        provider = provider_for_stage(provider, stage)
         if before_provider is not None:
             before_provider()
         current_prompt = prompt
@@ -1317,6 +1473,31 @@ def _invoke_stage(
                     )
                 )
                 break
+            truncated = bool(result.reply_truncated)
+            if truncated and not result.value:
+                # The reply was cut before a complete JSON object formed, so
+                # there is nothing to hand the parser. Record the cut as the
+                # cause and, when a retry remains, ask again naming it.
+                attempts.append(
+                    _attempt(
+                        stage,
+                        provider,
+                        status="rejected",
+                        reason_code=PROVIDER_RESPONSE_TRUNCATED,
+                        result=result,
+                        validation_detail=_TRUNCATED_REPLY_DETAIL,
+                    )
+                )
+                if semantic_attempt + 1 < max_semantic_attempts:
+                    current_system_prompt = system_prompt
+                    current_prompt = f"{prompt}\n\n[RUNTIME VALIDATION FEEDBACK]\n" + _json_prompt(
+                        {
+                            "prior_response_status": "truncated",
+                            "reply_truncation": _reply_truncation_feedback(result),
+                        }
+                    )
+                    continue
+                break
             try:
                 parsed = parser(result.value)
             except (KeyError, TypeError, ValueError) as exc:
@@ -1327,104 +1508,27 @@ def _invoke_stage(
                         stage,
                         provider,
                         status="rejected",
-                        reason_code="provider_response_contract_invalid",
+                        reason_code=(
+                            PROVIDER_RESPONSE_TRUNCATED
+                            if truncated
+                            else "provider_response_contract_invalid"
+                        ),
                         result=result,
                         validation_detail=detail,
                         validation_reason_codes=validation_reason_codes,
                     )
                 )
                 if semantic_attempt + 1 < max_semantic_attempts:
-                    if isinstance(exc, _NominationValidationError):
-                        current_system_prompt = repair_system_prompt or system_prompt
-                        current_prompt = (
-                            f"{prompt}\n\n[RUNTIME VALIDATION FEEDBACK]\n"
-                            + _json_prompt(
-                                {
-                                    "failed_units": [
-                                        _nomination_repair_feedback_row(failure)
-                                        for failure in exc.failures
-                                    ],
-                                    "prior_response_status": "rejected",
-                                    "required_action": (
-                                        "Return corrected rows for every listed planned unit. "
-                                        "Omit unlisted units because the runtime retains their "
-                                        "validated rows. Do not add or reorder units."
-                                    ),
-                                }
-                            )
-                        )
-                    elif isinstance(exc, _StaffingVerificationError):
-                        current_system_prompt = system_prompt
-                        current_prompt = (
-                            f"{prompt}\n\n[RUNTIME VALIDATION FEEDBACK]\n"
-                            + _json_prompt(
-                                {
-                                    "prior_response_status": "rejected",
-                                    "required_action": (
-                                        "Return one complete replacement recruiter response for "
-                                        "every planned unit. Preserve inference ownership while "
-                                        "satisfying the complete staffing budget, composition, "
-                                        "assurance, coverage, and execution contract."
-                                    ),
-                                    "staffing_violations": [
-                                        {
-                                            "unit_id": failure.unit_id,
-                                            "code": failure.code,
-                                        }
-                                        for failure in exc.failures
-                                    ],
-                                }
-                            )
-                        )
-                    elif isinstance(exc, _PlanPolicyValidationError):
-                        current_system_prompt = COMPACT_INTENT_REPAIR_SYSTEM
-                        current_prompt = (
-                            f"{prompt}\n\n[RUNTIME VALIDATION FEEDBACK]\n"
-                            + _json_prompt(
-                                {
-                                    "prior_plan_status": "rejected",
-                                    "required_action": (
-                                        "Return one complete replacement compact plan authored by "
-                                        "inference. Use only supplied-schema fields, preserve every "
-                                        "necessary valid unit, apply every required correction, and "
-                                        "make every dependency point to an earlier unit. Verify that "
-                                        "none of the listed codes remains before returning."
-                                    ),
-                                    "validation_reason_codes": list(exc.violations),
-                                    "violations": list(plan_policy_repair_guidance(exc.violations)),
-                                }
-                            )
-                        )
-                    elif stage == "planner":
-                        current_system_prompt = COMPACT_INTENT_REPAIR_SYSTEM
-                        current_prompt = (
-                            f"{prompt}\n\n[RUNTIME VALIDATION FEEDBACK]\n"
-                            + _json_prompt(
-                                {
-                                    "prior_plan_status": "rejected",
-                                    "validation_reason_codes": list(validation_reason_codes),
-                                    "deterministic_validation_detail": detail,
-                                    "violations": list(
-                                        plan_policy_repair_guidance(validation_reason_codes)
-                                    ),
-                                    "required_action": (
-                                        "Return one complete replacement compact plan authored by "
-                                        "inference. Use only supplied-schema fields and correct the "
-                                        "deterministic semantic contract failure without weakening "
-                                        "the original plan acceptance contract."
-                                    ),
-                                }
-                            )
-                        )
-                    else:
-                        current_system_prompt = system_prompt
-                        current_prompt = (
-                            f"{prompt}\n\n[RUNTIME VALIDATION FEEDBACK]\n"
-                            "Your previous JSON matched the transport schema but failed a "
-                            f"deterministic semantic invariant: {detail}. Re-evaluate every "
-                            "identifier, dependency, ordering, uniqueness, plan binding, staffing "
-                            "decision, and typed coverage, then return one corrected JSON object only."
-                        )
+                    current_system_prompt, current_prompt = _semantic_retry_prompts(
+                        stage=stage,
+                        error=exc,
+                        prompt=prompt,
+                        system_prompt=system_prompt,
+                        repair_system_prompt=repair_system_prompt,
+                        detail=detail,
+                        validation_reason_codes=validation_reason_codes,
+                        truncation=_reply_truncation_feedback(result) if truncated else None,
+                    )
                     continue
                 break
             attempts.append(
@@ -2872,6 +2976,19 @@ def _proposal_from_nominations(
     return proposal
 
 
+def _row_unit_id(row: object, expected: frozenset[str]) -> str:
+    """Return the planned unit a nomination row names, or "" when it names none."""
+
+    if not isinstance(row, Mapping):
+        return ""
+    raw = row.get("unit_id")
+    if not isinstance(raw, str):
+        return ""
+    unit_id = raw.strip().casefold()
+    unit_id = _reconcile_unit_id(unit_id, expected) or unit_id
+    return unit_id if unit_id in expected else ""
+
+
 class _NominationAccumulator:
     """Merge validated transport rows across one provider's repair attempt.
 
@@ -2909,25 +3026,30 @@ class _NominationAccumulator:
         rows = value["units"]
         if not isinstance(rows, list) or not rows or len(rows) > len(self._plan.units):
             raise ValueError("workforce nomination rows are invalid")
-        expected = {unit.unit_id for unit in self._plan.units}
-        expected_frozen = frozenset(expected)
+        expected = frozenset(unit.unit_id for unit in self._plan.units)
+        repairing = frozenset(self._repair_unit_ids)
         response_ids: list[str] = []
         response_rows: list[tuple[str, Mapping[str, Any]]] = []
+        # AR-385: a row the runtime cannot read is not a reason to throw the
+        # whole reply away. A reply cut at the completion cap ends in exactly
+        # such a row, and the rows before it are complete. Each unreadable
+        # row is dropped and its unit surfaces below as missing_work_unit
+        # carrying the unit-row diagnosis, so the receipt names the unit and
+        # the repair asks only for what was lost. A repair that omits a listed
+        # unit leaves it missing the same way; one that answers for a unit
+        # outside the failed set still breaks the repair contract.
+        unreadable: set[str] = set()
         for row in rows:
-            if not isinstance(row, Mapping) or set(row) != {
-                "unit_id",
-                "decision",
-                "ranked_semantic",
-            }:
-                raise ValueError("workforce nomination row is invalid")
-            unit_id = str(row["unit_id"] or "").strip().casefold()
-            unit_id = _reconcile_unit_id(unit_id, expected_frozen) or unit_id
-            if unit_id not in expected or unit_id in response_ids:
-                raise ValueError("workforce nominations contain an invalid work unit")
+            unit_id = _row_unit_id(row, expected)
+            if not unit_id or unit_id in response_ids:
+                continue
+            if set(row) != {"unit_id", "decision", "ranked_semantic"}:
+                unreadable.add(unit_id)
+                continue
+            if repairing and unit_id not in repairing:
+                raise ValueError("workforce nomination repair rows do not match failed units")
             response_ids.append(unit_id)
             response_rows.append((unit_id, row))
-        if self._repair_unit_ids and tuple(response_ids) != self._repair_unit_ids:
-            raise ValueError("workforce nomination repair rows do not match failed units")
         for unit_id, row in response_rows:
             self._rows[unit_id] = row
         semantics = _collect_nomination_semantics(
@@ -2939,11 +3061,17 @@ class _NominationAccumulator:
             allowed_candidate_ids=self._allowed_candidate_ids,
         )
         if semantics.failures:
-            for failure in semantics.failures:
+            failures = tuple(
+                replace(failure, diagnostic_code="recruiter_unit_row_shape_invalid")
+                if failure.code == "missing_work_unit" and failure.unit_id in unreadable
+                else failure
+                for failure in semantics.failures
+            )
+            for failure in failures:
                 if failure.code != "missing_work_unit":
                     self._rows.pop(failure.unit_id, None)
-            self._repair_unit_ids = tuple(failure.unit_id for failure in semantics.failures)
-            raise _NominationValidationError(semantics.failures)
+            self._repair_unit_ids = tuple(failure.unit_id for failure in failures)
+            raise _NominationValidationError(failures)
         merged = {"units": [self._rows[unit.unit_id] for unit in self._plan.units]}
         try:
             proposal = _proposal_from_nominations(

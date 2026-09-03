@@ -12,6 +12,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from agency_runtime.core.config import AgencyConfig, ProviderEntry
+from agency_runtime.core.reply_budget import PROVIDER_RESPONSE_TRUNCATED, provider_for_stage
 from agency_runtime.core.structured_provider import (
     MAX_STRUCTURED_PROMPT_BYTES,
     StructuredProviderResult,
@@ -712,6 +713,9 @@ _BUDGET_EXHAUSTED_REASON = "hiring_call_budget_exhausted"
 _PROMPT_TOO_LARGE_REASON = "provider_prompt_exceeds_transport_limit"
 _CALL_FAILED_REASON = "provider_call_failed"
 _CALL_TIMED_OUT_REASON = "provider_call_timed_out"
+# AR-385: the transport now says when a reply was cut at the completion cap
+# before a JSON object formed; that is a fourth class, not a failed call.
+_TRUNCATED_REASON = PROVIDER_RESPONSE_TRUNCATED
 
 
 def _attempt(
@@ -813,6 +817,9 @@ def _invoke(
         return None, None, (refused,)
     failures: list[HiringInferenceAttempt] = []
     for provider in providers:
+        # AR-385: the hiring stages own their reply budgets; a compiled
+        # employment contract never fit the old transport constant.
+        provider = provider_for_stage(provider, stage)
         if budget.remaining <= reserve or not budget.consume():
             failures.append(
                 _failed_attempt(
@@ -832,6 +839,16 @@ def _invoke(
             timeout=provider.timeout,
         )
         latency_ms = int((time.monotonic() - started) * 1000)
+        if result is not None and result.reply_truncated and not result.value:
+            failures.append(
+                _failed_attempt(
+                    stage,
+                    provider,
+                    reason_code=_TRUNCATED_REASON,
+                    latency_ms=latency_ms,
+                )
+            )
+            continue
         if result is not None:
             return result, _attempt(stage, provider, result), tuple(failures)
         # The deadline handed to the transport is never raised above
