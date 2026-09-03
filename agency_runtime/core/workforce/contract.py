@@ -98,7 +98,14 @@ _CATEGORY_DOMAINS: dict[str, str] = {
     "operations": "operations",
     "performance": "performance",
     "pipelines": "data",
-    "platform-engineering": "platform",
+    # "platform-engineering" is deliberately absent (AR-384, ADR-0201). Its one
+    # card is the API platform planner, which "api-design" already promotes to
+    # backend. Promoting it to platform as well made that card the roster's only
+    # plan-authority coverer of platform, so every plan unit that named the
+    # operating system's platform had exactly one eligible coverer, and it was
+    # the wrong specialist: the recruiter was rejected for not ranking it and
+    # vetoed when it did. platform now means what its three infrastructure
+    # cards mean.
     "reliability": "operations",
     "web-development": "frontend",
     "wordpress": "cms",

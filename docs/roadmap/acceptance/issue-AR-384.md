@@ -8,25 +8,33 @@ tags: [acceptance, verification]
 related:
   - docs/roadmap/issue-AR-384-staff-decisions-die-on-uncoverable-typed-requirements.md
   - docs/decisions/0198-waive-the-typed-requirements-the-roster-declares-but-cannot-serve.md
+  - docs/decisions/0201-constrain-the-planner-domains-to-what-the-roster-serves.md
 supersedes: []
 superseded_by: null
 type: acceptance-verification
 issue_id: AR-384
-candidate_commit: 1711bcaa8d507fd7489ea3f454785e51f29c05d7
+candidate_commit: pending
 evidence_cutoff: 2026-09-03
 tracker_url: null
 ---
 
 # AR-384 acceptance verification record
 
-Frozen at `1711bcaa`. The verifier waives the typed requirements some contract
-declares but none covers eligibly for the unit, records each as
-`roster_coverage_gap`, and keeps every other token mandatory; the `operations`
-capability also reads the `operations` domain. Criterion 2 is evidenced at the
-verifier: the captured helix reply replays to an accepted decision selecting
-`operations-manager`, and a fresh-wording live turn reaches the same verifier
-decision before the strict critic vetoes the turn for reasons outside this
-issue (filed as AR-386).
+Pending draft, re-opened from the record frozen at `1711bcaa`. That freeze
+returned criteria 1 and 3 satisfied and criterion 2 contradicted on the
+literal unit id `unit-install-operation`, which no fresh planner run
+reproduces; criterion 2 has since been reworded to the unit shape and
+criterion 4 added for option 2 (ADR-0201), so every verdict is re-run on the
+next freeze. The verifier waives the typed requirements some contract
+declares but none covers eligibly for the unit and records each as
+`roster_coverage_gap` (ADR-0198); the planner is shown, per artifact kind,
+the domains the roster serves under that kind's authority and a unit none of
+whose domains is served is rejected for planner repair, while the
+`platform-engineering` category no longer promotes the API platform card into
+the `platform` domain (ADR-0201). Criterion 2 is evidenced at the verifier:
+the captured helix reply replays to an accepted decision selecting
+`operations-manager`, and fresh-wording live turns reach the same decision on
+plan-authority install units carrying `operations`.
 
 ## Builder evidence
 
@@ -36,29 +44,35 @@ issue (filed as AR-386).
 | 1 | file | `_minimum_team_with_required proves sufficiency over the requirements minus the waived set` | 2026-09-03 | `agency_runtime/core/workforce/staffing_verifier.py:612-641` |
 | 1 | file | `_selection records one roster_coverage_gap reason per waived token and passes the waiver to the team search` | 2026-09-03 | `agency_runtime/core/workforce/staffing_verifier.py:751-771` |
 | 1 | file | `roster_coverage_gap is advisory, so it rides on an accepted decision` | 2026-09-03 | `agency_runtime/core/workforce/staffing_verifier.py:114-126` |
-| 1 | file | `the routing receipt carries the waived tokens as coverage_gaps beside the unit reason codes` | 2026-09-03 | `agency_runtime/core/selector/receipt_projection.py:470-480` |
+| 1 | file | `the routing receipt carries the waived tokens as coverage_gaps beside the unit reason codes` | 2026-09-03 | `agency_runtime/core/selector/receipt_projection.py:495-507` |
 | 1 | test | `test_unserved_domain_is_waived_and_recorded_on_the_accepted_decision asserts the accepted decision, the selected team and the exact AbstentionReason` | 2026-09-03 | `tests/test_roster_coverage_gap.py:176-204` |
 | 1 | test | `test_a_coverable_token_still_needs_its_complement asserts the conjunctive rule still pulls in and demands an eligible complement` | 2026-09-03 | `tests/test_roster_coverage_gap.py:237-281` |
 | 1 | test | `test_routing_receipt_names_the_waived_token_and_drops_prose asserts the receipt names domain:desktop and drops prose` | 2026-09-03 | `tests/test_roster_coverage_gap.py:511-566` |
-| 2 | command-output | `offline replay of the captured helix recruiter reply: nomination validation accepted, unit-install-operation selected operations-manager, verify_staffing accepted with roster_coverage_gap domain:desktop` | 2026-09-03 | `docs/roadmap/acceptance/evidence/AR-384-evidence-20260903.txt:18-25` |
+| 2 | command-output | `offline replay of the captured helix recruiter reply: nomination validation accepted, the plan-authority install unit (desktop and operations) selected operations-manager, verify_staffing accepted with roster_coverage_gap domain:desktop` | 2026-09-03 | `docs/roadmap/acceptance/evidence/AR-384-evidence-20260903.txt:18-25` |
 | 2 | command-output | `the same replay with the waiver alone still failed on capability:operations, which is why the operations rule reads the operations domain` | 2026-09-03 | `docs/roadmap/acceptance/evidence/AR-384-evidence-20260903.txt:10-16` |
-| 2 | command-output | `live turn 203, fresh helix wording: the verifier accepted unit-install-plan (desktop+operations, plan authority) with operations-manager selected and roster_coverage_gap domain:desktop; the strict critic then vetoed the turn` | 2026-09-03 | `docs/roadmap/acceptance/evidence/AR-384-evidence-20260903.txt:48-54` |
-| 2 | command-output | `nine fresh live turns: the verifier accepted the install unit in four, and no turn was rejected by the verifier on a waived token` | 2026-09-03 | `docs/roadmap/acceptance/evidence/AR-384-evidence-20260903.txt:36-46` |
+| 2 | command-output | `live turn 203, fresh helix wording: the verifier accepted the plan-authority install unit the planner named unit-install-plan (desktop and operations) with operations-manager selected and roster_coverage_gap domain:desktop` | 2026-09-03 | `docs/roadmap/acceptance/evidence/AR-384-evidence-20260903.txt:48-54` |
+| 2 | command-output | `live turn 304 under the AR-386 runtime, fresh helix wording: the turn completed with operations-manager staffed on both plan-authority install units and the critic approved` | 2026-09-03 | `docs/roadmap/acceptance/evidence/AR-386-evidence-20260903.txt:11-25` |
+| 2 | command-output | `live turns 205, 206 and 305 under the ADR-0201 runtime: operations-manager selected on every plan-authority install unit (domains operations) and the turns completed; no fresh planner run reproduced the captured unit id` | 2026-09-03 | `docs/roadmap/acceptance/evidence/AR-384-option2-evidence-20260903.txt:47-71` |
 | 2 | file | `_operations_rule admits a contract whose declared domain is operations` | 2026-09-03 | `agency_runtime/core/workforce/staffing_verifier.py:234-240` |
 | 2 | test | `test_operations_capability_reads_the_operations_domain` | 2026-09-03 | `tests/test_roster_coverage_gap.py:327-334` |
 | 2 | test | `test_staff_decision_survives_an_unserved_requirement_end_to_end drives plan_and_staff_workforce with the captured shape and asserts operations-manager is staffed first time` | 2026-09-03 | `tests/test_roster_coverage_gap.py:438-509` |
-| 3 | file | `_typed_shortlists derives uncovered_requirements and waived_requirements from the same helper the verifier waives with` | 2026-09-03 | `agency_runtime/core/workforce/inference.py:1576-1614` |
-| 3 | file | `_validate_nomination_decisions computes the waived set from that helper before naming an axis or a repair target` | 2026-09-03 | `agency_runtime/core/workforce/inference.py:2606-2628` |
-| 3 | file | `_uncoverable_requirement_axis never names a waived token` | 2026-09-03 | `agency_runtime/core/workforce/inference.py:2424-2453` |
+| 3 | file | `_typed_shortlists derives uncovered_requirements and waived_requirements from the same helper the verifier waives with` | 2026-09-03 | `agency_runtime/core/workforce/inference.py:1682-1752` |
+| 3 | file | `_validate_nomination_decisions computes the waived set from that helper before naming an axis or a repair target` | 2026-09-03 | `agency_runtime/core/workforce/inference.py:2713-2768` |
+| 3 | file | `_uncoverable_requirement_axis never names a waived token` | 2026-09-03 | `agency_runtime/core/workforce/inference.py:2548-2576` |
 | 3 | test | `test_typed_recall_shows_the_same_waived_tokens_the_verifier_waives` | 2026-09-03 | `tests/test_roster_coverage_gap.py:314-325` |
 | 3 | test | `test_repair_contract_names_only_the_coverable_axis asserts the axis names the coverable domain and the waived token is listed separately` | 2026-09-03 | `tests/test_roster_coverage_gap.py:336-375` |
-| 3 | command-output | `the only live domain-axis failures name domain:platform, which typed_recall listed as covered (uncovered_requirements empty)` | 2026-09-03 | `docs/roadmap/acceptance/evidence/AR-384-evidence-20260903.txt:56-61` |
-| 3 | command-output | `turns 202, 205 and 207 in the live table: every staff_without_safe_team:domain names a coverable token` | 2026-09-03 | `docs/roadmap/acceptance/evidence/AR-384-evidence-20260903.txt:36-46` |
+| 3 | command-output | `the only live domain-axis failures of the AR-384 run name domain:platform, which typed_recall listed as covered (uncovered_requirements empty)` | 2026-09-03 | `docs/roadmap/acceptance/evidence/AR-384-evidence-20260903.txt:56-61` |
+| 3 | command-output | `the one live domain-axis failure of the ADR-0201 run (turn 201) names domain:software-engineering, a coverable token the recruiter left unranked among eligible planners` | 2026-09-03 | `docs/roadmap/acceptance/evidence/AR-384-option2-evidence-20260903.txt:47-71` |
+| 4 | file | `served_domains_by_artifact_kind builds a probe unit per artifact kind and admits every domain of a worker the verifier's eligibility accepts on this host` | 2026-09-03 | `agency_runtime/core/workforce/intent.py:397-458` |
+| 4 | file | `COMPACT_INTENT_SYSTEM states that every unit must name a domain from planning_taxonomy.domains_by_artifact_kind for its artifact_kind and that host_context.platform is not a domain` | 2026-09-03 | `agency_runtime/core/workforce/intent.py:329-337` |
+| 4 | file | `_unserved_domain_violations emits plan_unit_domains_unserved for a unit none of whose domains is served, exempting an unproven kind, compiler-chosen domains and a declared novel domain` | 2026-09-03 | `agency_runtime/core/workforce/plan_policy.py:568-603` |
+| 4 | file | `_CATEGORY_DOMAINS no longer promotes platform-engineering to platform, so the API platform card stops being the only plan-authority coverer of platform` | 2026-09-03 | `agency_runtime/core/workforce/contract.py:80-112` |
+| 4 | test | `test_an_unserved_plan_is_repaired_by_the_planner_before_the_recruiter_sees_it drives plan_and_staff_workforce: the first plan is rejected with the code, the repair prompt carries the served view, and the corrected plan staffs operations-manager` | 2026-09-03 | `tests/test_planner_domain_service.py:494-564` |
+| 4 | test | `test_a_unit_none_of_whose_domains_is_served_is_rejected asserts the code for desktop+platform and platform alone and its absence when operations is beside desktop` | 2026-09-03 | `tests/test_planner_domain_service.py:248-283` |
+| 4 | command-output | `eleven live turns under strict mode: zero recruiter attempts failed staff_without_safe_team on domain:platform, api-platform-engineer was never ranked or selected, no first plan named platform or desktop on a plan-authority unit, three turns completed` | 2026-09-03 | `docs/roadmap/acceptance/evidence/AR-384-option2-evidence-20260903.txt:40-71` |
+| 4 | command-output | `offline replay of the eleven captured plans: four rejected at the planner on exactly the plan unit naming only desktop and platform, the reconciled roster no longer serving platform under plan authority` | 2026-09-03 | `docs/roadmap/acceptance/evidence/AR-384-option2-evidence-20260903.txt:15-38` |
 
 ## Verification
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
-| 1 | satisfied | `AR-384.1-20260903-00bb54b2` | `ade6febe096a3f49661f0fef0f777a3bf7784113f1c24e251ef883122b945e85` | 2026-09-03 | The verifier waives only roster-declared but ineligible tokens, tests show eligible coverable requirements remain mandatory and the resulting staff decision is accepted, and receipt projection exposes the exact waived token in coverage_gaps. |
-| 2 | contradicted | `AR-384.2-20260903-f84826d2` | `43c76ae806a78b455206703405434896c3b75281dbc65ac4234792119ca4400e` | 2026-09-03 | The replay selects operations-manager for unit-install-operation, but live turn 203 selects operations-manager for unit-install-plan and api-platform-engineer for unit-install-operation, so it does not reach the same decision. |
-| 3 | satisfied | `AR-384.3-20260903-ff0bb474` | `467ca037d6068d55c8d4ebc009a796af7684885fea6ede58d156c2cccd0c6a47` | 2026-09-03 | The cited inference paths derive waived tokens from typed_staffing_coverage_gaps and exclude them from failure-axis and repair targeting, while the tests and live-turn evidence show domain failures only for coverable tokens absent from typed_recall.uncovered_requirements. |

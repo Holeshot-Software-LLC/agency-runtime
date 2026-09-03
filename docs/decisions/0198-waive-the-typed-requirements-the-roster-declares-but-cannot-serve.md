@@ -10,6 +10,7 @@ related:
   - docs/roadmap/issue-AR-383-inferred-subject-context-fails-its-own-projection.md
   - docs/roadmap/issue-AR-373-recruiter-evidence-vocabulary.md
   - docs/roadmap/issue-AR-374-host-capability-vocabulary-gap.md
+  - docs/decisions/0201-constrain-the-planner-domains-to-what-the-roster-serves.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
@@ -141,6 +142,11 @@ Supporting changes:
 
 - **Option 2, constrain the planner to coverable combinations.** Larger, and it
   moves the failure to the planner stage instead of removing it. Not chosen.
+  (Provenance note, 2026-09-03: the `domain:platform` residue this record
+  names below was measured to be unreachable by option 1, and
+  [ADR-0201](0201-constrain-the-planner-domains-to-what-the-roster-serves.md)
+  adopts option 2 in a bounded form beside this decision, not in place of
+  it.)
 - **Option 3 as roster work only.** Enriching `operations` onto the operations
   planners fixes this roster and this token; the next scarce token
   (`coordination` 4 contracts, `threat-modeling` 4, `test-code` 3) dies the

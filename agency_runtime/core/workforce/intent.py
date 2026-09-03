@@ -10,7 +10,7 @@ be weakened by a verbose model response.
 from __future__ import annotations
 
 import re
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import asdict, replace
 from typing import Any
 
@@ -18,6 +18,7 @@ from agency_runtime.core.workforce.capability_ontology import (
     artifact_capability,
     normalize_capability_id,
 )
+from agency_runtime.core.workforce.contract import WorkforceContract
 from agency_runtime.core.workforce.planning_contracts import (
     MAX_LABEL_CHARS,
     MAX_TEXT_CHARS,
@@ -26,7 +27,10 @@ from agency_runtime.core.workforce.planning_contracts import (
     WorkUnitPlan,
     parse_work_unit_plan,
 )
-from agency_runtime.core.workforce.staffing_verifier import StaffingContext
+from agency_runtime.core.workforce.staffing_verifier import (
+    StaffingContext,
+    typed_staffing_ineligibility,
+)
 
 MAX_PRIMARY_UNITS = MAX_WORK_UNITS
 _IDENTIFIER = re.compile(r"[a-z0-9][a-z0-9-]{0,127}")
@@ -107,6 +111,7 @@ _RUNTIME_DOMAINS = frozenset(_DOMAIN_ALIASES.values()) | {
     "software-engineering",
     "workforce-governance",
 }
+RUNTIME_DOMAINS = _RUNTIME_DOMAINS
 _SOFTWARE_TOKENS = frozenset(
     {
         "api",
@@ -321,6 +326,15 @@ COMPACT_INTENT_SYSTEM = (
     "Use the exact known stack and capability identifiers when they fit. "
     "Set novel_capability only for a genuine capability gap, not for a narrower "
     "synonym such as python-cli or json-storage.\n"
+    "planning_taxonomy.domains_by_artifact_kind lists, for each artifact_kind, the known "
+    "domains on which some worker can actually be staffed under that kind's authority on "
+    "this host. Every unit must name at least one domain from the list for its own "
+    "artifact_kind; a unit whose domains all fall outside that list can staff nobody and is "
+    "rejected. A domain names the specialist who owns the work, never where the work runs: "
+    "host_context.platform already states the machine and operating system, so do not "
+    "spend a domain restating it. An installation, setup or rollout plan is operations "
+    "work; name a desktop or platform domain only when the work is desktop-application or "
+    "platform engineering itself.\n"
     "Use plan for operational, recovery, migration, rollout, or decision plans. "
     "Use documentation only when prose or documentation itself is the requested "
     "artifact. Use implementation-change for code changes, review-report for artifact "
@@ -357,14 +371,91 @@ def compact_intent_taxonomy(
     known_domains: Sequence[str],
     known_stacks: Sequence[str],
     known_capability_ids: Sequence[str],
-) -> dict[str, list[str]]:
-    """Return the small controlled vocabulary supplied to synchronous inference."""
+    *,
+    served_domains: Mapping[str, Iterable[str]] | None = None,
+) -> dict[str, Any]:
+    """Return the small controlled vocabulary supplied to synchronous inference.
 
-    return {
+    ``served_domains`` (AR-384, ADR-0201) is the planner's view of what the
+    roster can staff: for each artifact kind, the known domains on which some
+    worker is eligible under that kind's authority on this host. The subject
+    stage, which names no artifact kinds, omits it.
+    """
+
+    taxonomy: dict[str, Any] = {
         "known_domains": sorted(set(known_domains)),
         "known_stacks": sorted(set(known_stacks)),
         "known_capability_ids": sorted(set(known_capability_ids)),
     }
+    if served_domains is not None:
+        taxonomy["domains_by_artifact_kind"] = {
+            artifact: sorted(set(domains)) for artifact, domains in sorted(served_domains.items())
+        }
+    return taxonomy
+
+
+def _probe_unit(artifact: str, platform: str) -> WorkUnit:
+    """A unit of one artifact kind with no domain, stack or capability of its own."""
+
+    lifecycle, authority, mutation = _ARTIFACT_FACTS[artifact]
+    return WorkUnit(
+        unit_id="unit-probe",
+        outcome="",
+        artifact_kind=artifact,
+        lifecycle_phase=lifecycle,
+        domains=(),
+        languages=(),
+        frameworks=(),
+        required_capabilities=(),
+        authority=authority,
+        mutation_scope=mutation,
+        risks=(),
+        trust_boundaries=(),
+        claims=(),
+        depends_on=(),
+        resources=(),
+        required_tools=_required_tools(artifact, mutation),
+        platforms=(platform,),
+        acceptance_evidence=(),
+        parallelization="unspecified",
+    )
+
+
+def served_domains_by_artifact_kind(
+    contracts: Iterable[WorkforceContract],
+    context: StaffingContext,
+) -> dict[str, tuple[str, ...]]:
+    """Return, per artifact kind, the domains some worker can be staffed on.
+
+    AR-384 / ADR-0201: the planner used to see the union of every declared
+    domain and nothing about which of them the roster can serve under a unit's
+    authority. On the 2026-09-03 install smoke every plan-authority unit that
+    named ``platform`` had exactly one eligible coverer, an API platform
+    planner, because the operating system's platform and the roster's platform
+    domain are homonyms; ``desktop`` had none. A domain is a conjunctive
+    staffing requirement and eligibility needs at least one shared domain, so a
+    unit none of whose domains is served here can be staffed by nobody.
+
+    The view is the verifier's own eligibility applied to a probe unit of each
+    artifact kind: authority (with its read-only special cases), host,
+    platform, the tools the kind derives, enablement and contract binding. The
+    probe names no domain, stack or capability, so those axes never narrow it;
+    a worker that passes contributes every domain it declares. A kind with no
+    eligible worker maps to an empty tuple, which callers treat as nothing
+    proven rather than as nothing possible.
+    """
+
+    roster = tuple(contracts)
+    result: dict[str, tuple[str, ...]] = {}
+    for artifact in sorted(_ARTIFACT_FACTS):
+        probe = _probe_unit(artifact, context.platform)
+        served: set[str] = set()
+        for contract in roster:
+            if not contract.domains or typed_staffing_ineligibility(probe, contract, context):
+                continue
+            served.update(contract.domains)
+        result[artifact] = tuple(sorted(served))
+    return result
 
 
 def _mapping(value: object, *, label: str, fields: frozenset[str]) -> Mapping[str, Any]:

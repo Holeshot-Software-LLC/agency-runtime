@@ -317,6 +317,25 @@ class _NominationSemantics:""",
         ),
     ),
     DecisionMutation(
+        mutation_id="planner-domains-unserved-for-authority-accepted",
+        invariant=(
+            "A planned unit none of whose domains any worker serves under the authority its "
+            "artifact kind implies is rejected for planner repair before the recruiter sees "
+            "it (ADR-0201)."
+        ),
+        source_path="agency_runtime/core/workforce/plan_policy.py",
+        before="""        if set(unit.domains) & set(served) or set(unit.domains) <= RUNTIME_DOMAINS:
+            continue
+        codes.append("plan_unit_domains_unserved")""",
+        after="""        if set(unit.domains) & set(served) or set(unit.domains) <= RUNTIME_DOMAINS or True:
+            continue
+        codes.append("plan_unit_domains_unserved")""",
+        test_node=(
+            "tests/test_planner_domain_service.py::"
+            "test_a_unit_none_of_whose_domains_is_served_is_rejected"
+        ),
+    ),
+    DecisionMutation(
         mutation_id="cut-reply-recorded-as-contract-failure",
         invariant=(
             "A rejected reply that reached the completion cap is recorded as "
