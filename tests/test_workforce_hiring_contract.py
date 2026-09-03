@@ -782,6 +782,13 @@ _PROSE_FIELDS = (
 )
 
 
+# preferred_scenarios and avoided_scenarios are selection metadata: they are
+# validated as prose but the reviewed template has no section for them.
+_RENDERED_PROSE_FIELDS = tuple(
+    field for field in _PROSE_FIELDS if field not in {"preferred_scenarios", "avoided_scenarios"}
+)
+
+
 @pytest.mark.parametrize("field", _PROSE_FIELDS)
 def test_contract_prose_keeps_its_authored_case_at_v4(field: str) -> None:
     """AR-381 acceptance 1: prose no matcher compares keeps the case it was written in."""
@@ -827,14 +834,52 @@ def test_v3_contract_compiles_through_the_v3_template() -> None:
 
 
 def test_packaged_cards_render_prose_in_its_authored_case() -> None:
-    """AR-381 acceptance 3: no packaged section renders a lowercased proper noun."""
+    """AR-381 acceptance 3: no packaged card lowercases prose in any section.
 
+    Checked exhaustively rather than by sampling: for all fifteen cards, every
+    item of every prose field must appear in the compiled prompt exactly as
+    authored, and no item whose casefolded form differs may appear as a bullet in
+    that lowercased form.
+    """
+
+    checked = 0
     for contract in KNOWN_CONTRACTOR_CONTRACTS:
         prompt = compile_contractor(contract).prompt
-        for wrong in ("- python source", "- async python design", "services, and clis"):
-            assert wrong not in prompt
+        for field in _PROSE_FIELDS:
+            for item in getattr(contract, field):
+                if field in _RENDERED_PROSE_FIELDS:
+                    assert f"- {item}\n" in prompt, (
+                        f"{contract.slug}.{field}: {item!r} not rendered"
+                    )
+                folded = item.casefold()
+                if folded != item:
+                    # Scoped to the bullet form: the same words may legitimately
+                    # appear lowercased mid-sentence inside execution prose.
+                    assert f"- {folded}\n" not in prompt, (
+                        f"{contract.slug}.{field}: lowercased {folded!r}"
+                    )
+                    checked += 1
+    # Guard the guard: a vacuous pass would mean nothing carried mixed case.
+    assert checked >= 40
 
-    python = compile_contractor(KNOWN_CONTRACTORS_BY_SLUG["python-application-engineer"]).prompt
-    assert "- Python source" in python
-    assert "- Async Python design" in python
-    assert "services, and CLIs" in python
+
+def test_allowlisted_identifier_lists_are_still_checked_against_their_allowlist() -> None:
+    """AR-381 acceptance 2: names the consumer that requires normalized casing.
+
+    `platforms`, `hosts` and `lifecycle_phases` are validated by membership in a
+    fixed lowercase allowlist inside `parse_employment_contract`. If they stopped
+    casefolding, an authored `Windows` would fail that membership test outright.
+    """
+
+    for field in ("platforms", "hosts", "lifecycle_phases"):
+        raw = _raw()
+        raw[field] = [item.upper() for item in raw[field]]
+
+        parsed = parse_employment_contract(raw)
+
+        assert getattr(parsed, field) == tuple(item.casefold() for item in raw[field])
+
+        unknown = _raw()
+        unknown[field] = ["Not-In-The-Allowlist"]
+        with pytest.raises(ValueError, match="contains an unsupported value"):
+            parse_employment_contract(unknown)
