@@ -11,7 +11,7 @@ supersedes: []
 superseded_by: null
 type: acceptance-verification
 issue_id: AR-382
-candidate_commit: 64470b63c1d45597d735faa5214dad79ffea1809
+candidate_commit: 4cb6a1634b65726d40b981cc1b3f8edcc57c9beb
 evidence_cutoff: 2026-09-03
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/573
 ---
@@ -35,7 +35,7 @@ folded. Proven live against the real Store: the same box that reported
 | 1 | test | `test_known_contractor_set_is_exact_bounded_and_immediately_enabled pins the packaged set at exactly 15` | 2026-09-03 | `tests/test_workforce_hiring_contract.py:75-95` |
 | 1 | command-output | `60 predecessor packages build across the 15 contractors, i.e. all four versions each` | 2026-09-03 | `docs/roadmap/acceptance/evidence/AR-382-evidence-20260903.txt:30-33` |
 | 2 | command-output | `before the fix a real install reported 0 upgraded and 15 preserved, with detail.recruitment_contract the only failing clause` | 2026-09-03 | `docs/roadmap/acceptance/evidence/AR-382-evidence-20260903.txt:5-15` |
-| 2 | file | `the reproducible demo seeds an isolated Store at package-v2 then runs install_known_contractors` | 2026-09-03 | `docs/roadmap/acceptance/evidence/AR-382-upgrade-demo.py:1-40` |
+| 2 | file | `the reproducible demo seeds an isolated Store at package-v2 then runs install_known_contractors` | 2026-09-03 | `docs/roadmap/acceptance/evidence/AR-382-upgrade-demo.py:1-33` |
 | 2 | command-output | `seeded at v2, the installer reports upgraded=15 preserved=0 and the workers end at v4` | 2026-09-03 | `docs/roadmap/acceptance/evidence/AR-382-evidence-20260903.txt:35-39` |
 | 2 | command-output | `the live roster serves package-v4-7d4e81649e190a80 with case-preserved prose` | 2026-09-03 | `docs/roadmap/acceptance/evidence/AR-382-evidence-20260903.txt:21-24` |
 | 3 | file | `each builder pins its historical prompt hashes and raises RuntimeError on drift: v1` | 2026-09-03 | `agency_runtime/core/workforce/known_installer.py:99-121` |
