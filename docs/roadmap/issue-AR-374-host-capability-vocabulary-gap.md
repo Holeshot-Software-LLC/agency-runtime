@@ -3,7 +3,7 @@ title: "AR-374: Most of the roster is permanently ineligible because hosts prove
 status: open
 category: roadmap
 created: 2026-09-02
-updated: 2026-09-02
+updated: 2026-09-03
 tags: [workforce, eligibility, host-capabilities, staffing]
 related:
   - docs/roadmap/issue-AR-373-recruiter-evidence-vocabulary.md
@@ -155,6 +155,27 @@ is what sent this issue after the roster.
 
 This correction was found while filing AR-375 and it revises the earlier
 statement here that the planner emitted an unenforced `required_tools`.
+
+## Live corroboration (2026-09-03, 30-prompt smoke)
+
+Measured on the Linux box with the runtime installed from `b1f030f2`, running
+thirty diverse prompts through `agency route --json`:
+
+- **All 30 returned `confidence: 0.0`.** Not one prompt produced an eligible
+  candidate.
+- **7,710 eligibility rejections, 100% `execution_host_unproven`** — every one
+  of the 291 candidates, on every prompt.
+- `agency explain --session-id ...` reports `selected: 0` for every prompt,
+  including ones whose scorer output is obviously right
+  (`python-application-engineer` at 24.0, `cross-platform-release-verifier`
+  at 14.0).
+
+This issue's title says *most* of the roster is permanently ineligible. On the
+CLI path it is **all** of it, and the failure is silent: `route` still returns a
+ranked list, so a caller cannot tell that nothing was eligible.
+
+See [AR-370](issue-AR-370-staffing-asks-the-wrong-question.md) for the
+retrieval half of the same smoke run.
 
 ## Approach
 

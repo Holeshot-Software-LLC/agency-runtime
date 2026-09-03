@@ -3,7 +3,7 @@ title: "AR-370: Staffing asks the wrong question, so operational requests retrie
 status: open
 category: roadmap
 created: 2026-09-02
-updated: 2026-09-02
+updated: 2026-09-03
 tags: [routing, staffing, retrieval, recruiter]
 related:
   - docs/roadmap/issue-AR-336-requalify-the-recruiter-route-for-ordinary-tasks.md
@@ -70,6 +70,33 @@ Every host shows staffing failures with different codes in the same minutes
 `inference_invalid`), and AR-353 measured 69% fail-open over 24 h. AR-336
 diagnosed the recruiter stage. This issue says the stage before it is feeding
 the recruiter a candidate set that no judgement could rescue.
+
+## Live corroboration (2026-09-03, 30-prompt smoke)
+
+Measured on the Linux box with the runtime installed from `b1f030f2`, running
+thirty diverse prompts through `agency route --json` and `agency explain`:
+
+- **Operational requests score 0.0 across the entire roster.** "Install ripgrep
+  on this machine" returns a top candidate with `score: 0.0`; so do "Restart the
+  dashboard service and confirm it is reachable", "Summarize what this
+  repository does", "Write a runbook for a p95 latency alert" and "Choose
+  between Postgres and DynamoDB".
+- **The zero-score result is not empty — it is alphabetical.** With no signal,
+  `route` returns `3d-scene-developer, accessibility-auditor,
+  account-strategist`: the first three slugs in the roster, presented as a
+  ranked answer. `3d-scene-developer` appeared in the top three of **20 of the
+  30 prompts** and was top-1 for **7**.
+- The scorer is healthy when the vocabulary matches: a Python CLI request scores
+  `python-application-engineer` at 24.0 and a release-verification request
+  scores `cross-platform-release-verifier` at 14.0.
+
+The degenerate fallback is worth treating as its own defect alongside the
+retrieval gap: returning the alphabetical head of the roster with no
+zero-signal marker is worse than returning nothing, because the caller cannot
+distinguish it from a real ranking.
+
+See [AR-374](issue-AR-374-host-capability-vocabulary-gap.md) for the
+eligibility half of the same smoke run.
 
 ## Approach
 

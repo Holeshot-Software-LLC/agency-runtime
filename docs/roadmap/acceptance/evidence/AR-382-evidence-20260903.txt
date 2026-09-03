@@ -1,0 +1,28 @@
+AR-382 evidence — an installed contractor advances instead of being preserved
+captured 2026-09-03 against the real Store on the Linux box
+
+BEFORE the fix (runtime installed from b1f030f2):
+  $ agency install --all
+  Governed contractors: 0 installed, 0 upgraded, 0 already current, 15 preserved
+
+  the v2 predecessor matched six of the seven exact_predecessor clauses:
+    worker.current_hash True | worker.current_version True | prompt.hash True
+    prompt.version True | prompt.prompt_body True | prompt.prompt_truncated True
+    detail.recruitment_contract FALSE  <- the only mismatch
+    not_for          stored  ["train and evaluate a specialized machine-learning model", ...]
+                     rebuilt ["Train and evaluate a specialized machine-learning model", ...]
+    scope_qualifiers stored  ["build a typed async python cli with packaging and failure-path tests"]
+                     rebuilt ["Build a typed async Python CLI with packaging and failure-path tests"]
+
+AFTER the fix, same box, same Store:
+  $ agency install --all
+  ✅ Governed contractors: 0 installed, 0 upgraded, 15 already current, 0 preserved
+
+  $ agency route --json --limit 1 "Add a typed async Python CLI with packaging and failure-path tests"
+  audit_revision: package-v4-7d4e81649e190a80
+  capabilities  : ['Maintainable production Python behavior', 'Portable Python packaging', 'Async Python design']
+  avoid_when    : ['Train and evaluate a specialized machine-learning model', 'Act outside Production Python applications, services, and CLIs']
+
+  $ python3 -m pytest tests/test_known_contractor_install.py -q -W error
+  ............................                                             [100%]
+  28 passed in 13.09s
