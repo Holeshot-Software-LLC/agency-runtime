@@ -37,6 +37,8 @@ _RECRUITER_VALIDATION_REASON_CODES = frozenset(
         "recruiter_candidate_positive_evidence_missing",
         "recruiter_candidate_row_shape_invalid",
         "recruiter_candidate_score_invalid",
+        "recruiter_repair_row_outside_failed_set",
+        "recruiter_response_shape_invalid",
         "recruiter_unit_row_shape_invalid",
     }
 )

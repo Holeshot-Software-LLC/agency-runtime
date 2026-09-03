@@ -31,6 +31,8 @@ related:
   - docs/roadmap/issue-AR-386-strict-critic-vetoes-verifier-accepted-install-turns.md
   - docs/roadmap/issue-AR-384-staff-decisions-die-on-uncoverable-typed-requirements.md
   - docs/decisions/0201-constrain-the-planner-domains-to-what-the-roster-serves.md
+  - docs/roadmap/issue-AR-373-recruiter-evidence-vocabulary.md
+  - docs/decisions/0202-read-the-recruiter-reply-where-no-safety-property-lives.md
   - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
   - docs/decisions/0178-project-config-declared-credentials-into-tool-reduced-canaries.md
   - docs/decisions/0181-use-litellm-aliases-as-host-inference-control-plane.md
@@ -93,6 +95,16 @@ changes rather than duplicating every commit.
   promotes the API platform card into the `platform` domain, which had made it
   the roster's only plan-authority coverer of the operating system's platform
   and forced it onto every install plan.
+- The recruiter's reply is read where no safety property lives, and a
+  rejected attempt is never blank (AR-373, AR-385, ADR-0202): a candidate
+  row missing its empty evidence array or carrying evidence as a string-keyed
+  object is read as the contract intends, the evidence charset admits the
+  underscore ineligibility vocabulary Agency shows, a `units` array wrapped
+  one level too deep is unwrapped, a reply that is not a units object is
+  recorded per unit as `missing_work_unit` with the new
+  `recruiter_response_shape_invalid` diagnosis and repaired, and a reply the
+  staffing verifier rejected carries the verifier's `unit=code` rows as
+  `validation_failures` on both receipts.
 - `agency battery` runs the change-triggered harness canary battery
   (AR-337): per-harness version fingerprints gate the run, claude and codex
   re-prove through their canary modes (codex attended-trust loss reported

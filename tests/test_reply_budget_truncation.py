@@ -599,7 +599,7 @@ def test_a_repair_cut_short_leaves_the_unit_missing_again_and_still_refuses_extr
         parser.parse({"units": [{"unit_id": _VERIFY, "decision": "staff"}]})
     assert [item.unit_id for item in again.value.failures] == [_VERIFY]
 
-    with pytest.raises(ValueError, match="repair rows do not match failed units"):
+    with pytest.raises(_NominationValidationError, match="missing_work_unit"):
         parser.parse({"units": [_row(_INSTALL, "operations-manager"), _row(_VERIFY, "qa-planner")]})
 
 

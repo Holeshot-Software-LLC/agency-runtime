@@ -1,0 +1,108 @@
+AR-373 / AR-385 residue evidence, 2026-09-03 (ADR-0202). Branch claude/ar373-residue on top of
+claude/ar386-flip (PR #590). Runtime under test: the branch checkout via PYTHONPATH, run by the installed
+venv python (~/.local/share/agency-runtime/venvs/0abe4a77c87af87cf0d2789df77d40d4a6f80a44). Store: the
+reconciled COPY of the live ~/.agency-runtime/agency.db from the ADR-0201 measurement (scratchpad
+agency.db.branch-copy, generation 307); the live store was not written.
+
+== 1. The captured shapes (raw387, ADR-0201 run, recruiter served by x-litellm-model-id b0b6f29c, MiniMax) ==
+  202 first reply, unit-install-helix, fifth row (verbatim):
+    {"agent_id": "backend-service-engineer", "classification": "forbidden",
+     "negative_evidence": ["out-of-domain-editor-installation"], "score": 0.1}
+    -> no positive_evidence key -> recruiter_candidate_row_shape_invalid on three units.
+  202 repair, forbidden row negative_evidence: ["agent_domain_mismatch", "desktop-binary-install-out-of-scope",
+     "wrong-target-environment"] -> the underscore ineligibility code Agency shows in typed_recall ->
+     recruiter_candidate_negative_evidence_invalid.
+  203 first reply (head): {"units": [{"units": [{"decision": "staff", "ranked_semantic": [...]}, ...]}]}
+    -> the array wrapped once more; no row named a unit; missing_work_unit on all four units, no diagnosis.
+  203 repair, positive_evidence as an object: {"linux-binary-handling": "", "terminal-environment-mapping": ""}
+    -> recruiter_candidate_positive_evidence_invalid on all four units.
+  204 repair reply: {} (586 completion tokens) -> bare ValueError; durable receipt attempt row:
+    {"stage": "recruiter", "status": "rejected", "reason_code": "provider_response_contract_invalid"} and
+    nothing else: no validation_failures, no validation_reason_codes, no truncation.
+  207 first and second replies rejected by the staffing verifier (selection_margin_too_low, then
+    selection_confidence_too_low): both attempt rows blank the same way; only the turn-level
+    staffing_reason_codes ['selection_confidence_too_low'] named the verifier.
+  304 recruiter reply structurally malformed at 941 completion tokens -> transport returned no value ->
+    attempt status failed, provider_no_valid_response (not a rejected attempt; unchanged by this change).
+
+== 2. What changed (ADR-0202) ==
+  inference.py: _normalized_candidate_row (identity and score mandatory, unknown fields refused, a missing
+    evidence array reads as [], a string-keyed object reads as its keys); _valid_nomination_evidence and
+    _EVIDENCE_ARRAY admit "_"; _nomination_rows unwraps one wrapper and reads an empty object, a list, a
+    string, an empty array or one over four times the unit count as no rows; _NominationAccumulator.parse
+    records missing_work_unit with recruiter_response_shape_invalid per planned (or repairing) unit instead
+    of raising a bare error. RECRUITER_VALIDATION_REASON_CODES and the repair guidance carry the new code.
+    The parser's one remaining bare error, a repair answering for a planned unit outside the recorded failed set, is
+    refused as before but recorded per listed unit under recruiter_repair_row_outside_failed_set.
+  preflight_failure.py: the recruiter validation-code allowlist admits both new diagnoses.
+  receipt_projection.py: project_nomination_failures accepts the verifier's detail prefix and projects its
+    unit=code rows (global for whole-team findings), bounded to 16 rows and the [a-z][a-z0-9_]{1,95} charset.
+
+== 3. Tests ==
+  tests/test_recruiter_reply_residue.py: 16 passed, built from the captured rows above (the four deployment
+    shapes staffed first time end to end; {} recorded per unit and repaired end to end; the verifier's
+    rows on the projected attempt and on read-back; the projection closed to the verifier's vocabulary
+    and bounded; every malformed reply shape the parser can meet projects; every row bound still enforced).
+  tests/test_recruiter_evidence_vocabulary.py: the underscore pin flipped and the schema pattern re-pinned.
+  Curated decision-conformance mutation verifier-rejection-left-blank-on-the-attempt added; the pre-existing
+    recruiter-failure-sensitive-unit-id-not-sanitized anchor refreshed to the extracted row helper.
+
+== 4. Live preflight turns, the same eleven wordings, strict mode, capture388.py (run_preflight, codex receipt),
+      residue runtime against the reconciled store copy ==
+Same planner (c2692490), recruiter (b0b6f29c, MiniMax) and critic (10729e08) deployments as the ADR-0201 run. The
+planner replies were fresh (no gateway cache key on any recruiter or planner response); every plan below differs from
+the ADR-0201 run's plan for the same wording, so the recruiter replies are fresh too.
+
+id  | recruiter reply shape and how the runtime read it                                   | how the turn ended
+----|-------------------------------------------------------------------------------------|-------------------
+201 | transport returned no JSON object (480 completion tokens)                           | attempt failed provider_no_valid_response; turn workforce_provider_unavailable
+202 | two valid replies, both rejected by the verifier (roster_coverage_gap,              | inference_invalid; the durable attempt rows were captured BLANK because this run
+    |   selection_confidence_too_low on unit-install-helix [operations, platform] plan)   |   predates the re-projection fix in section 5
+203 | valid reply, verifier accepted                                                      | critic rejected wrong-neighbor-selection (desktop-app-engineer on an [operations] environment check)
+204 | valid reply, verifier accepted                                                      | ACCEPTED: desktop-app-engineer, operations-manager x2 units, cross-platform-release-verifier, application-integration-verifier
+205 | valid reply, verifier accepted (operations-manager on both plan units, verifiers)   | critic rejected wrong-neighbor-selection (the same team the critic approved on the ADR-0201 run)
+206 | first reply not a units object: one proper row, one row without unit_id and         | recorded missing_work_unit x4 with recruiter_response_shape_invalid; repair accepted;
+    |   nineteen {"$text": ...} fragments (21 rows for 4 units)                            |   ACCEPTED: desktop-app-engineer, operations-manager, application-integration-verifier
+207 | valid reply, verifier accepted                                                      | ACCEPTED: developer-tooling-engineer, sre-site-reliability-engineer, cross-platform-release-verifier, application-integration-verifier
+208 | planner completeness repair (code-mutation reading of the wording), valid reply     | critic rejected wrong-neighbor-selection (devops-automator on the path analysis)
+209 | valid reply, verifier accepted                                                      | ACCEPTED: operations-manager, desktop-app-engineer, cross-platform-release-verifier, application-integration-verifier
+304 | first reply: every row of six units missing its score -> recruiter_candidate_row_shape_invalid x6 recorded with the diagnosis; repair valid | critic rejected wrong-neighbor-selection
+305 | valid reply, recruiter declared a gap; hiring ran four calls, no hire landed        | substantive_specialist_unavailable (no_safe_sufficient_team, recruiter_abstained)
+
+Counts over the eleven turns:
+  turns completed with a staffed team under strict mode:      4 (204, 206, 207, 209)   ADR-0201 run: 3; AR-386 run: 2
+  rejected recruiter attempts carrying validation_failures:   3 of 5 (206 first, 304 first; 202's two are the pre-fix blank case)
+  rejected recruiter attempts blank on the receipt:           2 (202, captured before the re-projection fix; see section 5)
+  failed attempts (no valid response, not rejected):          1 (201)
+  evidence-charset, evidence-object, missing-array, wrapper:  0 recurrences (fresh replies did not repeat those shapes)
+  critic wrong-neighbor-selection vetoes:                     4 (203, 205, 208, 304)
+  turns lost to the recruiter's own judgment (gap -> hiring): 1 (305)
+
+== 5. The re-projection finding, and the offline demonstration on 202's captured detail ==
+  The preflight-failure receipt projects attempt rows when written (preflight.py, project_preflight_provider_attempts)
+  and again when read back (project_preflight_failure_receipt). The verifier rows projected from the detail string on
+  write were dropped on read, because the list path admitted nomination codes only. Live 202 shows the symptom.
+  Fixed: _nomination_failure_row admits a bare unit=code row whose code is in STAFFING_VERIFIER_REASON_CODES, the
+  verifier's closed vocabulary (33 codes, derived from the module's own _reason literals plus roster_coverage_gap and
+  scanned by tests/test_recruiter_reply_residue.py); a charset was tried first and refused by
+  tests/test_preflight_failure_diagnosis.py, which pins that an invented nomination code never survives.
+  Offline, on 202's captured detail string, final code:
+    detail : workforce staffing verification failures: unit-install-helix=roster_coverage_gap,unit-install-helix=selection_confidence_too_low
+    written: [{'unit_id': 'unit-install-helix', 'reason_code': 'roster_coverage_gap'}, {'unit_id': 'unit-install-helix', 'reason_code': 'selection_confidence_too_low'}]
+    read   : identical; project_preflight_provider_attempts(written) == written
+  A rows-without-unit_id refinement (unit-row diagnosis for a reply whose rows name no unit) was tried and reverted:
+  tests/test_reply_budget_truncation.py pins that a row cut before its unit_id leaves the unit missing without a
+  diagnosis, because the cut, not the shape, is the cause and the truncation record already says so.
+
+== 6. The isolated verifier's first pass on AR-385 at 760d631e, and the response ==
+  scripts/verify_acceptance.py --issue AR-385 --all --provider codex (record frozen at 760d631e):
+    criterion 1 satisfied (AR-385.1-20260903-6e394007); criterion 2 satisfied (AR-385.2-20260903-7bbb3bbf);
+    criterion 3 CONTRADICTED (AR-385.3-20260903-69a23a29): "In preflight_failure.py:227-273, a rejected recruiter
+    attempt is appended even when both projected validation_failures and truncation are absent, so the projection
+    still permits a blank rejected attempt."
+  Read structurally, the objection is fair: the projection carries what the runtime classified, so the guarantee
+  has to live in the parser. One bare error remained there (a repair answering for a planned unit outside the
+  recorded failed set); it is now recorded under recruiter_repair_row_outside_failed_set, and
+  test_every_rejection_the_recruiter_parser_can_raise_is_classified drives thirteen malformed reply shapes through
+  _NominationAccumulator.parse and asserts every exception projects onto the receipt. The record is re-frozen at
+  the commit that carries this and re-verified.

@@ -554,6 +554,17 @@ The `security_review` stage runs on a fresh isolated session (AR-238); the
 other stages share the parent's session context, or have none at all when
 invoked at the route layer.
 
+A rejected **recruiter** attempt on the routing and preflight-failure receipts
+is never blank (AR-385, ADR-0202): it carries `validation_failures` rows
+(`unit_id`, `reason_code`, and for nomination failures the axis, ranked ids
+and counts), `validation_reason_codes` from the recruiter's closed diagnosis
+vocabulary (including `recruiter_response_shape_invalid` for a reply that was
+not a units object), or a `truncation` record when the reply was cut. A reply
+the staffing verifier rejected carries the verifier's `unit=code` rows, with
+`global` for a whole-team finding, drawn from `STAFFING_VERIFIER_REASON_CODES`
+so they survive the re-projection every reader applies. Both receipts read
+`project_nomination_failures`, so they agree.
+
 ## Migration shape
 
 The current `config_defaults.yaml:60-79` block is replaced wholesale:
