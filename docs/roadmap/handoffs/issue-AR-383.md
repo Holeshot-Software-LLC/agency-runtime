@@ -29,8 +29,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/581
 # AR-383 inferred subject projection handoff
 
 > **This capsule is not on `main`.** It lives on branch
-> `claude/ar384-coverage-gaps`, which stacks on `claude/ar373-recruiter-payload`
-> (PR #583) and then `claude/ar370-acceptance` (PR #582). ADR-0198 and the
+> `claude/ar384-coverage-gaps` (PR #584), which stacks on
+> `claude/ar373-recruiter-payload` (PR #583) and then `claude/ar370-acceptance`
+> (PR #582). ADR-0198 and the
 > AR-383, AR-384, AR-385 and AR-386 documents it cites are on the same stack.
 > Merge the open PRs in order or check out `claude/ar384-coverage-gaps` before
 > relying on any of them. If you are reading this from `main`, the PRs have
