@@ -1,6 +1,6 @@
 ---
 title: "AR-347: Reconcile the tracker parity backlog so the strict tracker gates can pass"
-status: open
+status: done
 category: roadmap
 created: 2026-09-01
 updated: 2026-09-01

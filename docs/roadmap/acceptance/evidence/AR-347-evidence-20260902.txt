@@ -1,0 +1,33 @@
+AR-347 evidence — both strict parity gates pass on main
+captured 2026-09-02 after labelling #564/#568 epic:workforce and closing
+trackers #553, #564, #568 for the three verified AR-379..381 items.
+
+$ python3 scripts/verify_tracker.py            # fully strict, no allowance flag
+tracker validation passed for 372 roadmap items (2 PR-tracked historical item(s) skipped)
+EXIT=0
+  errors=0  warnings=0
+
+$ python3 scripts/verify_docs.py --require-tracker
+  EXIT=1
+  tracker errors=0
+  all errors=3
+ERROR: docs/worklog/README.md: indexed commits do not match history (missing=['9acf5f1e', 'ac1a5223'], extra=[])
+ERROR: docs/worklog/README.md: inaccurate row for ac1a5223
+ERROR: docs/worklog/README.md: inaccurate row for 9acf5f1e
+
+$ the ID matcher accepts all three tracker title styles
+  MATCH  AR-336   <- [AR-336] Historical bracket style
+  MATCH  AR-337   <- AR-337: Current colon style
+  MATCH  AR-338   <- [AR-338]: Hybrid style
+  no match   <- AR-339 bare, no separator
+
+$ --require-tracker loads and applies the shared pre-tracker allow-list
+  allow-list entries: 132   bound: AR-01..AR-330
+  newest exempt id:   AR-330
+  verify_docs.validate_roadmap skips exactly these when require_tracker is set
+
+$ criterion 4: the three verify_docs rows name only this branch's own commits
+  9acf5f1e  docs(ar347): bind the acceptance record to tracker #404  on-branch=YES
+  ac1a5223  docs(ar347): stage the acceptance record and resync the work  on-branch=YES
+  origin/main tip: d5ba8e79
+  => every unindexed commit is a change under test on claude/ar347-close, not a pre-existing failure
