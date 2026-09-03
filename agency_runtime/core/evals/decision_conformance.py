@@ -198,11 +198,15 @@ def _typed_shortlists(""",
             # The record is bounded at 8 for receipt size; scoring the prefix
             # would report an axis the ninth candidate covers as uncoverable,
             # which is the one direction this field must never be wrong in.
+            # Tokens the roster cannot cover were waived by the team search
+            # (ADR-0198), so they are neither the axis nor a repair target.
+            waived = frozenset(typed_staffing_coverage_gaps(unit, contracts, context).waived)
             repair_contract = _safe_team_repair_contract(
                 unit,
                 proposal_row,
                 contracts,
                 maximum_selected_per_unit=maximum_selected_per_unit,
+                waived=waived,
             )
             axis = _failure_axis(
                 unit,
@@ -210,6 +214,7 @@ def _typed_shortlists(""",
                 contracts,
                 context,
                 excluded=(semantic_forbidden or {}).get(unit.unit_id, ()),
+                waived=waived,
             )
             failures.append(
                 _NominationFailure(

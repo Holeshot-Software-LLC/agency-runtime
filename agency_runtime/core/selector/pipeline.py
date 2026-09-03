@@ -1399,6 +1399,9 @@ def _hireable_gap_units(outcome: Any) -> tuple[str, ...]:
         "no_safe_sufficient_team",
         "required_agents_missing",
         "recruiter_abstained",
+        # ADR-0198: a token no eligible contract covers is exactly why the gap
+        # is real; it annotates the decision and never disqualifies the hire.
+        "roster_coverage_gap",
     }
     reasons = tuple(getattr(getattr(outcome, "staffing", None), "abstention_reasons", ()) or ())
     global_codes = {

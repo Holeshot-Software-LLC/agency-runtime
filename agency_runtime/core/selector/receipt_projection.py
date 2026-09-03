@@ -53,6 +53,12 @@ _NOMINATION_FAILURE_CODES = frozenset(
     }
 )
 _NOMINATION_FAILURE_PREFIX = "workforce nomination failures: "
+# A waived typed requirement (ADR-0198) is, by construction, an identifier some
+# audited contract declares: roster vocabulary, never model prose. The closed
+# axis prefix and identifier charset keep anything else off the receipt.
+_MAX_COVERAGE_GAPS = 4
+_REQUIREMENT_IDENTIFIER = re.compile(r"^[a-z0-9][a-z0-9+.-]{0,63}$")
+_COVERAGE_GAP_CODE = "roster_coverage_gap"
 
 
 def bounded_receipt_text(value: object, *, maximum_bytes: int) -> str:
@@ -117,6 +123,29 @@ def _ids(value: object, *, limit: int = _MAX_IDS) -> list[str]:
         identity = _identity(item)
         if identity and identity not in result:
             result.append(identity)
+            if len(result) >= limit:
+                break
+    return result
+
+
+def _requirement_token(value: object) -> str:
+    """Return one ``axis:identifier`` typed requirement, or "" when it is not one."""
+
+    text = str(value or "").strip().casefold()
+    axis, separator, identifier = text.partition(":")
+    if not separator or axis not in _REQUIREMENT_AXES:
+        return ""
+    return text if _REQUIREMENT_IDENTIFIER.fullmatch(identifier) is not None else ""
+
+
+def _requirement_tokens(value: object, *, limit: int = _MAX_COVERAGE_GAPS) -> list[str]:
+    if not isinstance(value, (list, tuple)):
+        return []
+    result: list[str] = []
+    for item in value:
+        token = _requirement_token(item)
+        if token and token not in result:
+            result.append(token)
             if len(result) >= limit:
                 break
     return result
@@ -404,6 +433,7 @@ def _staffing(routing: Mapping[str, Any]) -> dict[str, Any]:
     raw_reasons = staffing.get("abstention_reasons")
     reasons = raw_reasons if isinstance(raw_reasons, (list, tuple)) else []
     by_unit: dict[str, list[str]] = {}
+    gaps_by_unit: dict[str, list[object]] = {}
     global_reasons: list[str] = []
     for item in reasons:
         if not isinstance(item, Mapping):
@@ -415,6 +445,8 @@ def _staffing(routing: Mapping[str, Any]) -> dict[str, Any]:
         target = by_unit.setdefault(unit_id, []) if unit_id else global_reasons
         if code not in target and len(target) < 8:
             target.append(code)
+        if code == _COVERAGE_GAP_CODE and unit_id:
+            gaps_by_unit.setdefault(unit_id, []).append(item.get("detail"))
 
     raw_units = proposal.get("units")
     source_units = raw_units if isinstance(raw_units, (list, tuple)) else []
@@ -433,14 +465,18 @@ def _staffing(routing: Mapping[str, Any]) -> dict[str, Any]:
         ]
         proposal_reasons = _codes(item.get("abstention_reasons"), limit=4)
         verifier_reasons = by_unit.get(unit_id, [])
-        units.append(
-            {
-                "unit_id": unit_id,
-                "nominated_ids": _ids(nominated, limit=4),
-                "proposed_ids": _ids(item.get("selected"), limit=4),
-                "reason_codes": _codes([*proposal_reasons, *verifier_reasons], limit=8),
-            }
-        )
+        unit: dict[str, Any] = {
+            "unit_id": unit_id,
+            "nominated_ids": _ids(nominated, limit=4),
+            "proposed_ids": _ids(item.get("selected"), limit=4),
+            "reason_codes": _codes([*proposal_reasons, *verifier_reasons], limit=8),
+        }
+        # ADR-0198: the receipt names which typed requirement the roster could
+        # not serve, not only that one was waived.
+        coverage_gaps = _requirement_tokens(gaps_by_unit.get(unit_id))
+        if coverage_gaps:
+            unit["coverage_gaps"] = coverage_gaps
+        units.append(unit)
     return {
         "status": _code(staffing.get("status")) or "unavailable",
         "units": units,
@@ -463,14 +499,16 @@ def _normalize_staffing(value: object) -> dict[str, Any]:
         unit_id = _identity(item.get("unit_id"))
         if not unit_id:
             continue
-        units.append(
-            {
-                "unit_id": unit_id,
-                "nominated_ids": _ids(item.get("nominated_ids"), limit=4),
-                "proposed_ids": _ids(item.get("proposed_ids"), limit=4),
-                "reason_codes": _codes(item.get("reason_codes"), limit=8),
-            }
-        )
+        unit: dict[str, Any] = {
+            "unit_id": unit_id,
+            "nominated_ids": _ids(item.get("nominated_ids"), limit=4),
+            "proposed_ids": _ids(item.get("proposed_ids"), limit=4),
+            "reason_codes": _codes(item.get("reason_codes"), limit=8),
+        }
+        coverage_gaps = _requirement_tokens(item.get("coverage_gaps"))
+        if coverage_gaps:
+            unit["coverage_gaps"] = coverage_gaps
+        units.append(unit)
     return {
         "status": _code(raw.get("status")) or "unavailable",
         "units": units,

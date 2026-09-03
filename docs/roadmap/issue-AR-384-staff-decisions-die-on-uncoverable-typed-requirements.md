@@ -1,16 +1,18 @@
 ---
 title: "AR-384: The recruiter is told to staff units the roster cannot cover, then rejected for staffing them"
-status: open
+status: in_progress
 category: roadmap
 created: 2026-09-03
 updated: 2026-09-03
 tags: [workforce, recruiter, staffing, inference, planner, receipts]
 related:
+  - docs/decisions/0198-waive-the-typed-requirements-the-roster-declares-but-cannot-serve.md
   - docs/roadmap/issue-AR-373-recruiter-evidence-vocabulary.md
   - docs/roadmap/issue-AR-374-host-capability-vocabulary-gap.md
   - docs/roadmap/issue-AR-370-staffing-asks-the-wrong-question.md
   - docs/roadmap/issue-AR-383-inferred-subject-context-fails-its-own-projection.md
   - docs/roadmap/issue-AR-385-structured-reply-budget-truncates-nominations-silently.md
+  - docs/roadmap/issue-AR-386-strict-critic-vetoes-verifier-accepted-install-turns.md
 supersedes: []
 superseded_by: null
 type: issue
@@ -154,16 +156,74 @@ schema was satisfied, and the validator applied its rule exactly.
 
 ## Current state
 
-Filed from the AR-383 investigation. Not fixed. The prior-session receipts
-show the same shape on every install-flavoured prompt (`unit-install-plan`,
+Filed from the AR-383 investigation. The prior-session receipts show the same
+shape on every install-flavoured prompt (`unit-install-plan`,
 `unit-install-execution`, `unit-zed-install-operation`: `domain` axis, one
 required candidate, two or three executable, no team), and AR-373's own
 captured example, a `plan` unit carrying `domain:platform` with
 `devops-automator` required at 0.85, fits it as well.
 
+**Implemented on branch `claude/ar384-coverage-gaps` (2026-09-03)** per
+[ADR-0198](../decisions/0198-waive-the-typed-requirements-the-roster-declares-but-cannot-serve.md).
+`typed_staffing_coverage_gaps` splits a unit's uncovered tokens into `waived`
+(declared by some enabled typed contract, covered by none eligibly) and
+unknown (declared by nobody). The team search drops waived tokens and the
+verifier records each as `roster_coverage_gap` with the token as detail;
+unknown tokens stay mandatory. `typed_recall` rows carry
+`waived_requirements`, the prompts and repair contract say which tokens are
+waived, and `_operations_rule` reads the `operations` domain.
+
+Two findings changed the shape of option 1 during implementation:
+
+1. Waiving `domain:desktop` alone left the captured helix reply rejected on
+   `capability:operations`: its only eligible coverer was
+   `incident-response-commander`, which the recruiter had not ranked, because
+   `_operations_rule` never read the audited `operations` domain that
+   `operations-manager`, `sre-site-reliability-engineer` and
+   `it-service-manager` declare.
+2. A blanket waiver broke
+   `test_named_regulated_assurance_requires_explicit_contract_coverage`: a
+   named specialty nobody declares must stay a hiring gap.
+
+Offline replay of the captured helix recruiter reply (`raw/103-calls.json`
+from the AR-383 capture) through the branch verifier against the installed
+291-contract roster: nomination validation accepted, `unit-install-operation`
+selected `operations-manager`, `verify_staffing` accepted with one
+`roster_coverage_gap` for `domain:desktop`.
+
+Live re-measurement, nine fresh install-flavoured wordings through
+`run_preflight` on the branch runtime (evidence in
+`docs/roadmap/acceptance/evidence/AR-384-evidence-20260903.txt`):
+
+| outcome | turns |
+|---|---|
+| verifier accepted the install unit, `roster_coverage_gap` recorded, strict critic vetoed the turn | 4 (203, 204, 205, 209) |
+| recruiter reply cut at the 2048-token budget, AR-385 | 4 first attempts (201, 204, 206, 209), 2 turns lost (201, 206) |
+| evidence charset residue, AR-373 | 2 turns lost (202 repair, 208) |
+| `staff_without_safe_team:domain` on a coverable token | 3 turns (202, 205, 207), all `domain:platform` |
+| verifier rejected a staff decision on a waived token | 0 |
+
+Turn 203 is the helix criterion: `unit-install-plan` (domains `desktop` and
+`operations`, plan authority, the captured shape) selected `operations-manager`
+with `roster_coverage_gap domain:desktop`, and the turn then died at the strict
+critic (`wrong-neighbor-selection`, `missing-implementation-lifecycle-assurance`),
+which is AR-386.
+
+**Residue, this issue's option 2.** The planner names `domain:platform` for
+the operating system; the roster's `platform` domain means API platforms and
+its only eligible coverer is `api-platform-engineer`. The token is coverable,
+so it stays mandatory, the recruiter is pushed to rank a wrong neighbour, and
+the critic then objects. Constraining the planner's vocabulary to what the
+roster can serve is the remaining fix, and it is not small.
+
 ## Approach
 
-The owner decides which contract to keep; the options are not equivalent.
+**Decision, 2026-09-03: option 1, amended.** Roster-wide unserved tokens are
+advisory; tokens no contract declares stay mandatory; the `operations`
+capability also reads the `operations` domain. The reasoning, the alternatives
+and the two departures from the option as filed are in
+[ADR-0198](../decisions/0198-waive-the-typed-requirements-the-roster-declares-but-cannot-serve.md).
+The options as filed follow.
 
 1. **Make roster-wide uncovered requirements advisory.** When
    `_typed_shortlists` proves that no eligible contract covers a token, drop
@@ -187,6 +247,8 @@ property.
 
 ## Dependencies
 
+- AR-386 owns the strict critic vetoes that now end every verifier-accepted
+  install turn.
 - AR-373 owns the evidence-vocabulary residue seen on the repair attempt.
 - AR-385 owns the truncated first attempts that hide behind the same
   `provider_response_contract_invalid` code.
@@ -195,11 +257,14 @@ property.
 
 ## Acceptance
 
-- [ ] A `staff` decision whose ranked team covers every requirement some
+- [x] A `staff` decision whose ranked team covers every requirement some
       eligible contract can cover is accepted, and the receipt names the
       roster-wide uncovered tokens instead of rejecting the team.
-- [ ] The captured helix-install turn, re-run with fresh wording, staffs
-      `unit-install-operation` with `operations-manager` selected.
-- [ ] `staff_without_safe_team` on the `domain` axis no longer appears on any
+- [x] The captured helix-install turn, re-run with fresh wording, staffs
+      `unit-install-operation` with `operations-manager` selected. Evidenced
+      at the verifier: the captured reply replays to an accepted decision, and
+      live turn 203 reaches the same decision before the strict critic vetoes
+      the turn (AR-386).
+- [x] `staff_without_safe_team` on the `domain` axis no longer appears on any
       receipt whose `typed_recall.uncovered_requirements` names that same
       domain token.

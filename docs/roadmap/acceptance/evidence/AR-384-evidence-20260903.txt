@@ -1,0 +1,84 @@
+AR-384 evidence, 2026-09-03. Branch claude/ar384-coverage-gaps on top of claude/ar373-recruiter-payload.
+Runtime under test: the branch checkout via PYTHONPATH, run by the installed venv python
+(~/.local/share/agency-runtime/venvs/0abe4a77c87af87cf0d2789df77d40d4a6f80a44). Store: the live
+~/.agency-runtime/agency.db, backed up first as agency.db.pre-ar384-132820 in the session scratchpad.
+
+== 1. Offline replay of the captured helix recruiter reply (raw/103-calls.json from the AR-383 capture) ==
+Roster: installed store snapshot, 291 contracts, generation 306. Context: host codex, platform linux,
+the captured host_context.available_tools. Plan: the captured typed plan, three units.
+
+1a. Verifier waiver only (domain:desktop waived, _operations_rule unchanged):
+  unit-install-operation: uncovered=('domain:desktop',) waived=('domain:desktop',) unknown=()
+  eligible coverers of capability:operations for unit-install-operation: incident-response-commander only
+  operations-manager covers= artifact:plan authority:plan capability:planning domain:operations lifecycle:planning
+  REJECTED: workforce nomination failures: unit-install-operation=staff_without_safe_team:capability
+    ~operations-manager~sre-site-reliability-engineer~desktop-app-engineer~it-service-manager!1:3:4
+    uncovered_requirement_ids=['capability:operations'] roster_uncovered=['domain:desktop']
+
+1b. Verifier waiver plus _operations_rule reading the operations domain (the shipped change):
+  operations-manager covers= artifact:plan authority:plan capability:operations capability:planning domain:operations lifecycle:planning
+  nomination validation: ACCEPTED
+     unit-install-assessment selected= ('desktop-app-engineer',) abstention= ()
+     unit-install-operation selected= ('operations-manager',) abstention= ()
+     unit-install-verification selected= ('evidence-collector',) abstention= ()
+  verify_staffing: accepted
+     roster_coverage_gap unit-install-operation  domain:desktop
+
+== 2. Cost of the roster-wide pass on the installed roster (timing.py, same snapshot) ==
+  coverage_gaps per plan (3 units x 291): 10.3 ms
+  _typed_shortlists per plan: 21.3 ms
+
+== 3. Live preflight turns, fresh wording, capture384.py / capture384b.py (run_preflight, codex receipt) ==
+Every turn was served by the same recruiter deployment (x-litellm-model-id b0b6f29c-a0f7-534c-9830-5148ec64b142,
+the MiniMax route) and the same critic deployment (10729e08-a962-5f82-bcf0-1b35b4adcf47). No turn reached hiring;
+agent_workers stayed at 291. Installed workforce.mode is strict, so every verifier-accepted team met the critic.
+
+id  | prompt                                                              | verifier on the install unit                              | how the turn ended
+----|---------------------------------------------------------------------|-----------------------------------------------------------|-------------------
+201 | Get the Helix editor from https://github.com/helix-editor/helix set | never reached (no valid reply)                            | recruiter reply cut at the 2048-token budget (AR-385), retry rejected recruiter_candidate_row_shape_invalid (AR-373)
+202 | I want helix (the modal text editor at github.com/helix-editor/heli | rejected on a coverable token, not a waived one           | unit-install-plan staff_without_safe_team:domain on domain:platform (coverable: api-platform-engineer); repair rejected on evidence charset (AR-373)
+203 | Please make the helix-editor/helix release usable from my terminal  | unit-install-plan (desktop+operations, plan) -> operations-manager; roster_coverage_gap domain:desktop | verifier accepted; strict critic rejected: wrong-neighbor-selection, missing-implementation-lifecycle-assurance
+204 | Set up the Zed editor on this workstation from https://github.com/z | unit-install-plan (desktop+operations, plan) -> operations-manager + sre; roster_coverage_gap domain:desktop | first reply cut at the budget (AR-385); retry accepted by the verifier; strict critic rejected: verification-evidence-worker-misfit
+205 | Install ripgrep and fd on this machine so I can search the reposito | unit-install-plan/tools (platform+operations) -> operations-manager + api-platform-engineer; gap capability:implementation | staff_without_safe_team:domain on domain:platform for two units; repair accepted by the verifier; strict critic rejected: selected-team-lacks-live-installation-authority
+206 | Bring the helix editor onto this laptop from its GitHub project and | never reached (no valid reply)                            | two recruiter replies cut at the budget (AR-385); workforce_inference_failed
+207 | Can you sort out getting helix installed here? It's the editor at h | rejected on a coverable token, not a waived one           | unit-install-approach staff_without_safe_team:domain on domain:platform twice (first and repair)
+208 | Add the Helix editor to this Linux system from the upstream helix-e | never reached (charset residue)                           | recruiter and repair rejected on evidence charset (AR-373)
+209 | Put helix-editor/helix on this computer without touching my existin | unit-install-plan (desktop+platform, plan) -> api-platform-engineer; gaps domain:desktop, capability:operations | first reply cut at the budget (AR-385); retry accepted by the verifier; strict critic rejected: planner-domain-mismatch, test-authoring-mismatch, visual-evidence-mismatch
+
+Turn 203 in full (helix, 'Please make the helix-editor/helix release usable from my terminal here, config left alone'):
+  plan unit-install-plan: artifact=plan domains=['desktop', 'operations'] caps=['planning', 'plan', 'operations'] authority=plan
+  proposal unit-install-plan: selected=['operations-manager'] required=['operations-manager'] acceptable=['sre-site-reliability-engineer', 'desktop-app-engineer']
+  proposal unit-install-operation: selected=['api-platform-engineer'] required=[] acceptable=['devops-automator', 'api-platform-engineer']
+  verified_staffing status: accepted reasons: roster_coverage_gap unit-install-plan domain:desktop;
+    roster_coverage_gap unit-install-operation domain:desktop; capability:operations; capability:implementation
+  critic reply: {"approved": false, "reason_codes": ["wrong-neighbor-selection", "missing-implementation-lifecycle-assurance"]}
+
+Turn 202, the domain-axis failure that remains (unit-install-plan, domains operations+platform, authority plan):
+  typed_recall uncovered_requirements=[]  (domain:platform is covered eligibly by api-platform-engineer)
+  recruiter: devops-automator required (ineligible: agent_authority_mismatch), operations-manager, sre, desktop-app-engineer acceptable
+  VALIDATION: unit-install-plan=staff_without_safe_team:domain~devops-automator~operations-manager~sre-site-reliability-engineer~desktop-app-engineer!0:2:4|agent_authority_mismatch
+  MISSING for ranked team: ['domain:platform']   uncovered roster-wide (typed_recall): []
+  The axis names a coverable token; the planner's 'platform' (the OS) and the roster's platform domain (API platforms) collide.
+
+Turn 209, the truncated first reply (AR-385) seen from the raw response:
+  usage.completion_tokens=2048, finish_reason=stop, third unit row lacks unit_id; no validation record; retry succeeded.
+
+== 4. Receipt shape after the change ==
+  routing receipt staffing.units[].reason_codes carries roster_coverage_gap; staffing.units[].coverage_gaps carries the
+  axis:identifier tokens (at most 4, closed axis prefix and identifier charset); prose in detail is dropped.
+  workforce_staffing.abstention_reasons[].detail on the routing result holds the exact token.
+
+== 5. Gates on the final tree ==
+  ruff check / ruff format --check: clean on every changed file.
+  tests/test_roster_coverage_gap.py: 10 passed. Affected workforce, receipt and eval suites: 633 passed, 2 skipped.
+  Named fast Python production spine: 1004 passed, 3 skipped, -W error.
+  agency eval routing --json --no-details: passed (version 1.4.0).
+  agency eval decision-conformance --repository . --json: 168 mutations, 168 killed, 0 survived, baseline passed
+  (see section 6 for the rerun on the final tree).
+
+
+== 6. Decision-conformance rerun on the final tree ==
+  agency eval decision-conformance --repository . --json (copies venv, umask 077):
+  status passed, source_unchanged true, mutations 168, killed 168, survived 0, invalid 0, baseline passed.
+  A first run during the session reported source_unchanged false because files were edited while it ran;
+  it also killed 168 of 168. Only the rerun counts.
