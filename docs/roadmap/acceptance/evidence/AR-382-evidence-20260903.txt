@@ -31,3 +31,9 @@ AFTER the fix, same box, same Store:
   (each builder raises RuntimeError if its pinned hash table drifts)
     predecessor packages built: 60   prompt-hash drift: 0
     pinned tables: v1=15 v2=15 v3=15
+
+  $ criterion 2, captured on an isolated Store seeded at package-v2
+  $ PYTHONPATH=. python3 docs/roadmap/acceptance/evidence/AR-382-upgrade-demo.py
+    seeded workers at: ['2']
+    installed=0 upgraded=15 already_current=0 preserved=0
+    workers now at: ['4']
