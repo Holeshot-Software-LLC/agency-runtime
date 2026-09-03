@@ -11,7 +11,7 @@ supersedes: []
 superseded_by: null
 type: acceptance-verification
 issue_id: AR-269
-candidate_commit: c4d615043f227196081da262deea8ba02366400c
+candidate_commit: 84698a119dd5b724b07ceed5d568ebcbfff4f927
 evidence_cutoff: 2026-09-02
 tracker_url: null
 ---
@@ -41,4 +41,4 @@ against `85ad8d88^` (`4a326773`).
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
-| 1 | satisfied | `AR-269.1-20260902-7539ce8b` | `f2314f8fd82c769d01f0c5f8754b0f7a286d68a949525508b9e3dc5d5571a005` | 2026-09-02 | The pre-fix command output at 4a326773 shows test_openclaw_bridge_main_accepts_a_null_error_field expected exit 0 for error None but main returned 2, with the regression failing as assert 2 == 0. |
+| 1 | satisfied | `AR-269.1-20260902-c5827370` | `4f26d2560605cd0217761b9659ff16bca4b4121f2fea1f6604af38716d3b79f8` | 2026-09-02 | The cited pre-fix run at 4a326773, with the new regression test grafted in, failed because node_bridge.main() returned 2 instead of the asserted 0 for a handled result containing error None. |

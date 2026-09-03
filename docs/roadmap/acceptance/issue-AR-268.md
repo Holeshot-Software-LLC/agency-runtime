@@ -11,7 +11,7 @@ supersedes: []
 superseded_by: null
 type: acceptance-verification
 issue_id: AR-268
-candidate_commit: db0c76545adcc5f212f4f313d4054e5f94083b45
+candidate_commit: 84698a119dd5b724b07ceed5d568ebcbfff4f927
 evidence_cutoff: 2026-09-02
 tracker_url: null
 ---
@@ -46,3 +46,5 @@ against `85ad8d88^` (`4a326773`).
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
+| 1 | satisfied | `AR-268.1-20260902-d08614cf` | `0c145dc4f62a1b59521c7a6ba1f74c6c46dd9b08280bf53ae042815d51dd010c` | 2026-09-02 | The cited command output shows umask 0002 produced 0775 intermediate directories and the focused regression failed with the stated fail-closed ConfigurationError. |
+| 2 | satisfied | `AR-268.2-20260902-5e4a0cae` | `2f832e901205a336e26da8e7ef528595c124e948d582658536ad61176078fa6f` | 2026-09-02 | The cited loop creates each POSIX component with mode 0700, then calls _secure_storage_parent_component to validate, restrict, and revalidate it before assigning it as the base for the next component. |
