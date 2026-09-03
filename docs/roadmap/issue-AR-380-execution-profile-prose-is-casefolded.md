@@ -1,6 +1,6 @@
 ---
 title: "AR-380: Execution-profile prose is casefolded, so a card cannot name a case-sensitive identifier"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-09-02
 updated: 2026-09-02

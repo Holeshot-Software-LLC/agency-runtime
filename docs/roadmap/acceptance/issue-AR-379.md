@@ -12,7 +12,7 @@ supersedes: []
 superseded_by: null
 type: acceptance-verification
 issue_id: AR-379
-candidate_commit: pending
+candidate_commit: 328e8ef8911eeb39cff52bba4b8f02c5a670797f
 evidence_cutoff: 2026-09-02
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/553
 ---
@@ -49,3 +49,5 @@ than a critic-prompt assertion, because a model gate cannot be pinned by a test.
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
+| 1 | satisfied | `AR-379.1-20260902-1a39b3c4` | `0b987fb420884c43d2a6a5612845a4c4e48142cbdef8003ee9c69c8c473cc4ca` | 2026-09-02 | ADR-0196 is accepted, explicitly records the decision, and states that the closed-profile rule remains unchanged; the decisions register also lists ADR-0196 as Accepted. |
+| 2 | satisfied | `AR-379.2-20260902-c291a2dc` | `4f394c6de9fb3a258a27fb0c34e7122521652904c7f777d80d2df635e09c82d6` | 2026-09-02 | The packaged v3 output shows two ordered working-principle steps and a concrete answer shape, while the cited regression test and command output show a single-maxim set is rejected at v3. |
