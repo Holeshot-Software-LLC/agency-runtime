@@ -9,6 +9,7 @@ related:
   - docs/roadmap/issue-AR-370-staffing-asks-the-wrong-question.md
   - docs/roadmap/issue-AR-374-host-capability-vocabulary-gap.md
   - docs/roadmap/issue-AR-336-requalify-the-recruiter-route-for-ordinary-tasks.md
+  - docs/roadmap/issue-AR-383-inferred-subject-context-fails-its-own-projection.md
 supersedes: []
 superseded_by: null
 id: ADR-0197
