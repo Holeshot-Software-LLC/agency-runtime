@@ -1,6 +1,6 @@
 ---
 title: "AR-382: A predecessor package projects today's prose case, so no installed contractor can ever advance"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-09-03
 updated: 2026-09-03
@@ -82,10 +82,10 @@ so the dataclass the projection reads folds exactly as that version folded.
 
 ## Acceptance
 
-- [ ] Every predecessor package below the case-preserving version projects
+- [x] Every predecessor package below the case-preserving version projects
       casefolded `not_for` and `scope_qualifiers`, proven by test over all
       fifteen packaged contractors and every predecessor version.
-- [ ] An installed contractor at the previous packaged version advances rather
+- [x] An installed contractor at the previous packaged version advances rather
       than being preserved, proven against a real Store.
-- [ ] The predecessor prompt identities are unchanged, so no already-registered
+- [x] The predecessor prompt identities are unchanged, so no already-registered
       worker becomes unresolvable.

@@ -11,7 +11,7 @@ supersedes: []
 superseded_by: null
 type: acceptance-verification
 issue_id: AR-382
-candidate_commit: 4cb6a1634b65726d40b981cc1b3f8edcc57c9beb
+candidate_commit: 05b7f81b48d92ca1d71658d4c5558952d6c4a3bf
 evidence_cutoff: 2026-09-03
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/573
 ---
@@ -49,3 +49,6 @@ folded. Proven live against the real Store: the same box that reported
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
+| 1 | satisfied | `AR-382.1-20260903-6c675ecf` | `1323a95ab1a5459cca7341cc592e87d25efad50d7482773e90615bbe85840027` | 2026-09-03 | The test at tests/test_known_contractor_install.py:899-930 iterates all 15 packaged slugs and every returned predecessor package, asserting projected not_for and scope_qualifiers are casefolded below the case-preserving schema version. |
+| 2 | satisfied | `AR-382.2-20260903-e3ec571e` | `8723fe9dc1ca063852ecd6d384088d1275acb7505112189476de12c98302d2a5` | 2026-09-03 | The demo excerpt constructs a real SQLite Store, seeds every packaged contractor at v2, runs install_known_contractors, and records 15 upgraded, 0 preserved, with all workers at v4. |
+| 3 | satisfied | `AR-382.3-20260903-8d205d17` | `01796fbf14fbd30e25826ee4b123823051aa74b5ae8a9c43ff955a3f78c1ef44` | 2026-09-03 | The acceptance evidence reports 60 predecessor packages built with zero prompt-hash drift, while the cited v1, v2, and v3 tables preserve 15 identities each and the v2/v3 tests pin exact historical hashes. |
