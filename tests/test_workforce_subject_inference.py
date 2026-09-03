@@ -175,3 +175,31 @@ def test_an_honest_empty_answer_keeps_its_attempts_and_changes_nothing(
 
     assert (context, revision) == ({}, "rev-0")
     assert attempts == ["attempt"]
+
+
+def test_the_trigger_is_a_zero_floor_not_a_tunable_threshold() -> None:
+    """ADR-0197: the gate must stay "scored nothing", never "scored lowish".
+
+    A loosened trigger would spend a classification call on turns that already
+    retrieve, which is the cost the option was chosen to avoid. This pins the
+    boundary at exactly zero from both sides.
+    """
+
+    barely = [
+        {
+            "slug": "developer-tooling-engineer",
+            "name": "Developer Tooling Engineer",
+            "description": "Install developer tooling",
+            "capabilities": ["developer tooling"],
+            "task_types": ["implementation-change"],
+        }
+    ]
+    from agency_runtime.core.selector.candidate_narrow import pre_narrow
+
+    _, scores = pre_narrow("install developer tooling", barely, limit=1)
+    assert scores and max(scores) > 0.0
+    assert retrieval_has_signal("install developer tooling", barely)
+
+    _, zero_scores = pre_narrow("zzzqqq", barely, limit=1)
+    assert not zero_scores or max(zero_scores) == 0.0
+    assert not retrieval_has_signal("zzzqqq", barely)
