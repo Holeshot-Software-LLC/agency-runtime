@@ -12,7 +12,7 @@ supersedes: []
 superseded_by: null
 type: acceptance-verification
 issue_id: AR-392
-candidate_commit: 03e302a5280291d26c89412d786487d07f40204c
+candidate_commit: pending
 evidence_cutoff: 2026-09-04
 tracker_url: null
 ---
@@ -39,10 +39,12 @@ AR-385 suite already uses.
 |---|---|---|---|---|
 | 1 | file | `_invoke_stage times the call from the outside and splits a bare None into provider_call_timed_out or provider_call_failed, both carrying latency_ms` | 2026-09-04 | `agency_runtime/core/workforce/inference.py:1710-1765` |
 | 1 | file | `both stage loops read the two codes from reply_budget, so a code cannot be added to one half of the split and not the other` | 2026-09-04 | `agency_runtime/core/reply_budget.py:78-130` |
-| 1 | file | `the hiring loop's own outside-in split, unchanged, and its comment on why reaching the deadline is a fact` | 2026-09-04 | `agency_runtime/core/workforce/hiring.py:869-884` |
-| 1 | test | `test_the_staffing_loop_splits_a_bare_none_the_way_the_hiring_loop_does drives both loops with one invoker and one clock and asserts the same code and the same latency` | 2026-09-04 | `tests/test_transport_failure_causes.py:243-283` |
-| 1 | test | `test_a_call_that_returned_early_is_a_failed_call_not_a_deadline_abort pins the other side of the split` | 2026-09-04 | `tests/test_transport_failure_causes.py:286-298` |
-| 1 | command-output | `30.04s against the profile's own 30s deadline: both loops report provider_call_timed_out, latency_ms 30040` | 2026-09-04 | `docs/roadmap/acceptance/evidence/AR-392-evidence-20260904.txt:16-17` |
+| 1 | file | `WorkforceInferenceAttempt carries timeout_ms beside latency_ms, and _attempt fills it from the provider's effective deadline` | 2026-09-04 | `agency_runtime/core/workforce/inference.py:764-770` |
+| 1 | file | `HiringInferenceAttempt carries the same field, filled at both of its construction sites; it is deliberately absent from receipt_id, which identifies the call rather than the configuration around it` | 2026-09-04 | `agency_runtime/core/workforce/hiring.py:566-573` |
+| 1 | file | `project_model_receipt_attempts carries both durations onto the durable receipt, added only when present so a route stored before this change still re-projects to itself` | 2026-09-04 | `agency_runtime/core/selector/receipt_projection.py:468-483` |
+| 1 | test | `test_the_staffing_loop_splits_a_bare_none_the_way_the_hiring_loop_does drives both loops with one invoker and one clock and asserts the same code, the same latency and the same timeout_ms` | 2026-09-04 | `tests/test_transport_failure_causes.py:255-305` |
+| 1 | test | `test_both_figures_reach_the_durable_receipt asserts the projection carries 30040 against 30000, and the two fixed-point tests pin that an attempt without durations still projects exactly as it did` | 2026-09-04 | `tests/test_transport_failure_causes.py:308-396` |
+| 1 | command-output | `all 1289 attempts across the last 400 live receipts carried neither latency_ms nor timeout_ms before this change: the projection emitted eight fields and no duration` | 2026-09-04 | `docs/roadmap/acceptance/evidence/AR-392-evidence-20260904.txt:29-35` |
 | 2 | file | `_transport_exception_cause classifies the HTTPError open_no_redirect re-raises and keeps its status; the blanket except stays blanket and anything unrecognised stays on the residual code` | 2026-09-04 | `agency_runtime/core/structured_provider.py:634-653` |
 | 2 | file | `StructuredProviderResult.http_status carries the status onto the result and its receipt` | 2026-09-04 | `agency_runtime/core/structured_provider.py:136-142` |
 | 2 | test | `test_a_non_2xx_status_is_recorded_instead_of_discarded pins 401, 429 and 502 with their statuses` | 2026-09-04 | `tests/test_transport_failure_causes.py:118-141` |
@@ -69,11 +71,6 @@ AR-385 suite already uses.
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
-| 1 | contradicted | `AR-392.1-20260904-84cb1b2c` | `3633caa2a6a138ca1a44f1cec3590f7f870fb9d0809d06776045c3701b522e5f` | 2026-09-04 | Both loops do split a bare None identically (inference.py:1744-1762, hiring.py:877-890) and the test/evidence match, but neither attempt record carries the configured timeout: WorkforceInferenceAttempt (inference.py:754-780) and HiringInferenceAttempt (hiring.py:556-570) record only latency_ms. |
-| 2 | satisfied | `AR-392.2-20260904-d52aa84f` | `f9003b3bf429c31808f8f9fafbb4672a19e34179dd23aa67a14b82a39d8aa240` | 2026-09-04 | structured_provider.py:778-783 routes the still-blanket except through _transport_exception_cause (634-653), mapping HTTPError to PROVIDER_HTTP_STATUS_ERROR plus its code; the status reaches result and receipt (142, 175, 616), and tests/test_transport_failure_causes.py:117-137 pins 401, 429, 502. |
-| 3 | satisfied | `AR-392.3-20260904-e5b53233` | `488aa7a0aaa691cd3d99defb4c6c0c00a941ee96851fb87da5f86ea4431459f3` | 2026-09-04 | structured_provider.py:800-804 returns PROVIDER_MODEL_TEXT_NOT_JSON only when not truncated; reply_budget.py:92 defines it as its own code; test_transport_failure_causes.py:177-201 reproduces the capture391 turn 206 misplaced-brace body and asserts it differs from truncated and timed-out. |
-| 4 | satisfied | `AR-392.4-20260904-7c617903` | `d395554cc2675db0db9c232bd4fc24111b58dd620bcf7693ce1c96e3b8e61352` | 2026-09-04 | inference.py:1722-1743 sets called and keeps the spend when call_attempted, else releases; hiring.py:848-864 mirrors it; structured_provider.py:128-142 keeps failure_reason's meaning; reply_budget.py:98-130 has disjoint sets; tests 215-223 and 313-386 assert used 1 vs 0. |
-| 5 | satisfied | `AR-392.5-20260904-7c1c39c6` | `b4a6f03fd19cef89eab7b561cfeaae5294f17b0f2070930a002483366c5a8231` | 2026-09-04 | doctor.py:839-881 prints effective seconds per routed profile; run_doctor:1018 and cmd_doctor (config_commands.py:209-213) surface it in doctor output; test_transport_failure_causes.py:392-418 asserts each profile is named; AR-392 evidence lines 24-27 show it live on the installed config. |
 
 ## Builder notes
 

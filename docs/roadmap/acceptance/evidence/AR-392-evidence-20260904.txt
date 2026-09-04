@@ -25,3 +25,14 @@ non-2xx         : provider_http_status_error | http_status: 429
    (installed configuration, ~/.agency-runtime/agency.yaml, read-only)
 PASS workforce_profile_timeouts
   effective runtime deadline for 10 routed profile(s): agency-default=30s, agency-planner=30s, agency-recruiter=30s, agency-recruiter-critic=30s, agency-hiring=30s, agency-hiring-critic=120s, agency-security=30s, local-workforce-embedding=120s, local-workforce-reranker=120s, linux-task-agency-router=120s
+
+== 6. AR-392 c1 reopened: the durable receipt carried neither figure ==
+   Measured 2026-09-04 on a copy of the live store, read-only.
+   attempts examined across the last 400 receipts: 1289
+   latency_ms on the receipt: {'absent': 1289}
+   timeout_ms  on the receipt: {'absent': 1289}
+   cause: project_model_receipt_attempts projected eight fields and neither duration.
+
+== 7. after the change: both figures project, and the projection stays a fixed point ==
+..................                                                       [100%]
+18 passed in 0.16s

@@ -763,6 +763,11 @@ class WorkforceInferenceAttempt:
     status: str
     reason_code: str
     latency_ms: int
+    # AR-392: the deadline the call was given, beside the time it took. The
+    # elapsed figure alone cannot say whether this process aborted a call the
+    # gateway would have answered; the pair can, and that comparison is the
+    # whole point of separating provider_call_timed_out from its neighbours.
+    timeout_ms: int = 0
     validation_detail: str = ""
     validation_reason_codes: tuple[str, ...] = ()
     input_count: int = 0
@@ -1488,6 +1493,9 @@ def _attempt(
             if latency_ms is None
             else max(0, int(latency_ms))
         ),
+        # The effective deadline this call was given, after the transport's
+        # own bound is applied -- the same figure `agency doctor` prints.
+        timeout_ms=max(0, int(provider.timeout * 1000)),
         validation_detail=validation_detail,
         validation_reason_codes=tuple(validation_reason_codes),
         reply_budget_tokens=(

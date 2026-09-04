@@ -16,6 +16,9 @@ from agency_runtime.core.workforce.staffing_verifier import (
     STAFFING_VERIFIER_REASON_CODES as _STAFFING_VERIFIER_REASON_CODES,
 )
 
+#: An hour in milliseconds: the ceiling for a recorded duration (AR-392).
+_MAX_DURATION_MS = 3_600_000
+
 RECEIPT_DESCRIPTION_BYTES = 4096
 ROUTING_RECEIPT_VERSION = 1
 
@@ -463,6 +466,21 @@ def project_model_receipt_attempts(value: object) -> list[dict[str, Any]] | None
                 or _reason_family(item.get("reason")),
             }
         )
+        # AR-392: how long the call took and how long it was allowed. Both
+        # loops have measured the elapsed time since ADR-0209 and neither
+        # figure reached a durable receipt, so a reader could not tell an abort
+        # this process caused from one it did not.
+        #
+        # They are added only when present and non-zero, because
+        # `_native_child_route_projection_is_valid` revalidates a stored route
+        # by re-projecting it and requiring a fixed point. A key this
+        # projection always emitted would make every route stored before this
+        # change fail that check, and those routes carry the host delivery
+        # proofs. Absent still means absent, on an old row and a new one alike.
+        for field in ("latency_ms", "timeout_ms"):
+            duration = _bounded_count(item.get(field), maximum=_MAX_DURATION_MS)
+            if duration:
+                attempts[-1][field] = duration
     return attempts
 
 
