@@ -1782,6 +1782,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `423f2bb8` | 2026-09-04 | Merge pull request #625 from Holeshot-Software-LLC/claude/ar393-gap-account | null | null |
 | `afe1a92e` | 2026-09-04 | Merge pull request #626 from Holeshot-Software-LLC/claude/ar370-retrieval-subject | null | null |
 | `76ce57b2` | 2026-09-04 | docs(roadmap): record the AR-392/393/370 acceptance verdicts and live measurements | null | null |
+| `8a4ea67d` | 2026-09-04 | Merge pull request #627 from Holeshot-Software-LLC/claude/ar392-393-370-verification | null | null |
+| `d3f80ef0` | 2026-09-04 | docs(roadmap): file AR-394, AR-395 and AR-396 from the live staffing diagnosis | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
