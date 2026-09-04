@@ -1,0 +1,135 @@
+AR-392 / AR-393 / AR-370 verification evidence, 2026-09-04
+branch claude/ar392-393-370-verification, from main afe1a92e
+
+This file records the acceptance verification of the three merged issues and
+the three live criteria the builder evidence could not reach. Verifier runs
+used scripts/verify_acceptance.py --provider claude; live routing used the
+installed venv afe1a92e with LITELLM_API_KEY sourced from common.env.
+
+== 1. the trust chain re-breaks under the running system ==
+The claude CLI is refused as untrusted whenever a parent directory of the
+binary is group-writable, and verify_acceptance.py then records nothing and
+exits 0. The repair is not durable:
+
+  before any repair (4 findings)
+    claude_plugins          group_writable         410   ~/.claude/plugins
+    claude_plugins          final_dir_not_private  222   ~/.claude/plugins
+    claude_child_artifacts  group_writable           3   ~/.claude/projects
+    claude_npm_tree         group_writable          14   ~/.npm-global/lib/node_modules/@anthropic-ai/claude-code
+
+  after `agency doctor --fix-perms`: chain trusted, AR-392 verified 5/5.
+
+  after the AR-392 run and `agency install` (5 findings, chain broken again)
+    claude_plugins          group_writable           6
+    claude_plugins          final_dir_not_private    6
+    claude_npm_tree         group_writable          14
+    agency_marketplaces     group_writable          14   ~/.agency-runtime/marketplaces
+    agency_marketplaces     final_dir_not_private   15   ~/.agency-runtime/marketplaces
+
+AR-393's five criteria all reported "verifier unavailable or outside the
+vocabulary; nothing recorded" for this reason alone, and not because of any
+property of the criteria: invoke_cli_structured returned None before running
+the process, at _resolve_cli. Repairing the chain immediately before each
+verifier call turned the same five criteria into four satisfied and one
+contradicted. The installer writes ~/.agency-runtime/marketplaces at the
+caller's umask, which is 0002 in an ordinary shell; the driver used umask 077
+and called `agency doctor --fix-perms` before each criterion.
+
+== 2. install ==
+venv /home/holeshot/.local/share/agency-runtime/venvs/afe1a92e, built with
+`python3 -m venv --copies` + `pip install <repo>` from main afe1a92e, then
+`agency install` run with the key unset. claude registered
+(enabled-runtime-unverified); zcode and hermes registered; openclaw blocked on
+its live gateway (host_restart_consent_required); codex activation-required,
+still awaiting the attended `Trust all and continue`. The venv predecessor
+04adb230 carried none of the three merges, so no live measurement before this
+install could have observed them.
+
+== 3. AR-370 criterion 1, live, against the 291-contract roster ==
+Both wordings still retrieve nothing. `agency route`, key sourced:
+
+  "configure the gateway"
+    selected: none (status=abstained; inference_mode=inferred)
+    reason: roster_coverage_gap, no_safe_sufficient_team, recruiter_abstained
+    retrieval: no signal - every card scored 0.0 for this wording, so the
+               candidates are slug order, not a ranking
+    inference: planner=12020ms, recall_embedding=39653ms, recruiter=1334ms,
+               subject=4504ms, total_calls=4
+    trace c594faff-4516-4aef-ad6c-50e2ccfd2449
+
+  "install this: https://github.com/zed-industries/zed"
+    selected: none (status=abstained; inference_mode=inferred)
+    reason: roster_coverage_gap, no_safe_sufficient_team, recruiter_abstained
+    retrieval: no signal - every card scored 0.0 for this wording
+    inference: planner=13849ms, recall_embedding=36297ms, recruiter=13827ms,
+               subject=2005ms, total_calls=4
+    trace e33c4a9b-070b-4532-a460-2143ec77de40
+
+The roster is not empty of relevant expertise: `agency search "service
+operations"` returns it-service-manager (17.0), operations-manager (11.5),
+sre-site-reliability-engineer (5.5). The two specialists AR-370 criterion 6
+added -- service-operations-engineer and monitoring-engineer -- were added to
+the deterministic eval corpus (core/evals/data/routing_v1.py), which is what
+criterion 6 measures and where it passes; they are not in the 291 active
+contracts. Criterion 1 is about the live roster and is not met.
+
+== 4. AR-393 criterion 5, live ==
+The before-baseline reproduces exactly, read-only against the live store
+(preflight_failure_receipts):
+
+  receipts declaring no_safe_sufficient_team : 99
+    ...with EMPTY hiring_reason_codes        : 42
+    ...with a hiring account                 : 57
+  window: 2026-08-27T07:04:14Z .. 2026-09-03T18:42:33Z
+
+After the install (recorded_at >= 2026-09-04T17:06:42):
+
+  ALL preflight receipts after install          : 2
+    ...declaring no_safe_sufficient_team        : 0
+    ...of those with EMPTY hiring_reason_codes  : 0
+
+Zero of zero. The criterion is currently vacuous rather than proven: no
+post-install turn has declared a capability gap, so the fix has not been
+exercised on a live receipt. The 42 pre-existing empty receipts are the
+before-baseline and are not rewritten.
+
+== 5. AR-392, live ==
+Criterion 5's doctor check is live on the installed config:
+
+  workforce_profile_timeouts: effective runtime deadline for 10 routed
+  profile(s): agency-default=30s, agency-planner=30s, agency-recruiter=30s,
+  agency-recruiter-critic=30s, agency-hiring=30s, agency-hiring-critic=120s,
+  agency-security=30s, local-workforce-embedding=120s,
+  local-workforce-reranker=120s, linux-task-agency-router=120s
+
+The live criterion -- a receipt carrying provider_call_timed_out or
+provider_http_status_error -- is NOT met after the install. A store-wide scan
+of every table and column finds exactly one receipt carrying either code:
+
+  preflight_failure_receipts.hiring_reason_codes :: provider_call_timed_out = 1
+    recorded 2026-09-03T14:02:11Z
+
+That receipt predates the AR-392 merge and comes from the hiring loop, which
+already timed its own call before this issue; provider_http_status_error
+appears nowhere. The four live calls in section 3 completed well inside their
+deadlines (planner 12.0s and 13.8s, recruiter 1.3s and 13.8s against a 30s
+deadline; the 39.7s and 36.3s embedding calls run on a 120s profile), so none
+of them could produce a deadline abort.
+
+== 6. verdicts recorded ==
+  AR-392  1 contradicted, 2 satisfied, 3 satisfied, 4 satisfied, 5 satisfied
+  AR-393  1 satisfied, 2 satisfied, 3 satisfied, 4 satisfied, 5 contradicted
+  AR-370  3 satisfied, 4 satisfied, 5 satisfied, 6 satisfied
+          (1 and 2 carry no builder evidence; --all refuses the issue)
+
+AR-392 criterion 1 is contradicted on a specific reading: both loops do split
+a bare None identically, and the tests and evidence match, but neither attempt
+record carries the configured timeout -- WorkforceInferenceAttempt and
+HiringInferenceAttempt record only latency_ms.
+
+AR-393 criterion 5 is contradicted because the only live measurement in its
+evidence is the before-baseline (42, not zero); section 4 above confirms
+independently that the after-window contains no declaring receipt at all.
+
+No issue flips to done: each of the three has at least one criterion that is
+contradicted or unverified.

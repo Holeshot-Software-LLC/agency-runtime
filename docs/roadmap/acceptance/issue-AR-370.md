@@ -57,6 +57,10 @@ is required.
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
+| 3 | satisfied | `AR-370.3-20260904-51924b72` | `6bdef52ade61a1a333bf19439446d10411ca13cde04141c814d79f6b78187d03` | 2026-09-04 | Snapshot shows selector/domain_expansion.py absent, no _DOMAIN_EXPANSIONS or expand_query anywhere in agency_runtime source, pipeline.py:523 sets routing_query = affirmative_intent(refined) with no expansion, explain.py:194-199 reports retired true, and tests/test_selector.py:129-180 assert both. |
+| 4 | satisfied | `AR-370.4-20260904-2c5f8878` | `c888614ca02a71e5cb622f6d13676832d2f93ce8baed2fbd5f9e73d758d19962` | 2026-09-04 | Snapshot pipeline.py:512-523 resolves a bare URL or deictic and appends the subject to refined before routing_query is built for retrieval, and pipeline.py:534 plus 927 carry reference.receipt() into the routing receipt; test_retrieval_subject_resolution.py:121-137 pins this end to end. |
+| 5 | satisfied | `AR-370.5-20260904-8c35e650` | `ae475fc0f647960b0f695dd0db89224d2dfe225347d8a0e4412c05e4dfa6c3b6` | 2026-09-04 | Snapshot pipeline.py:1598-1676 defines request_underspecified distinctly from no_relevant_candidate and returns no code when the recruiter judged a real candidate set; wired in at :2137, with tests/test_retrieval_subject_resolution.py:167-262 and evidence file lines 76-80 pinning the cases apart. |
+| 6 | satisfied | `AR-370.6-20260904-c7bce342` | `b3aaf1443f5651729866aadddb0de6c6bb857ad635b47d5291558b0002ff3a56` | 2026-09-04 | routing_v1.py:244-301 defines eight verb-* cases and line 568 splices them into ROUTING_CASES (metrics show 45 vs main's 37); tests at test_retrieval_subject_resolution.py:263-310 pin the exact verb-id set and assert each retrieves its required specialist, so the table cannot silently regress. |
 
 ## Builder notes
 
