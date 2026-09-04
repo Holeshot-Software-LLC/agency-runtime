@@ -356,6 +356,22 @@ class _NominationSemantics:""",
         ),
     ),
     DecisionMutation(
+        mutation_id="recruiter-card-hides-outcomes-past-two",
+        invariant=(
+            "The card the recruiter reads carries every outcome the contract declares, so "
+            "the outcome that names the unit's work is never hidden (ADR-0206)."
+        ),
+        source_path="agency_runtime/core/workforce/inference.py",
+        before="""        "outcomes": list(contract.outcomes),
+        "scope_qualifiers": list(contract.scope_qualifiers),""",
+        after="""        "outcomes": list(contract.outcomes[:2]),
+        "scope_qualifiers": list(contract.scope_qualifiers),""",
+        test_node=(
+            "tests/test_card_outcomes_complete.py::"
+            "test_the_recruiter_card_carries_every_outcome_and_not_for_line"
+        ),
+    ),
+    DecisionMutation(
         mutation_id="critic-neighbourhood-ignores-eligibility",
         invariant=(
             "The critic's eligible_neighbourhood lists exactly the cards the verifier's "

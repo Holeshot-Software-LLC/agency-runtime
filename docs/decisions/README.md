@@ -127,6 +127,7 @@ Status meanings:
 | [ADR-0203](0203-show-the-recruiter-the-complete-eligible-card-set-per-unit.md) | Show the recruiter the complete eligible card set per unit | Accepted |
 | [ADR-0204](0204-name-the-credential-the-launching-environment-never-carried.md) | Name the credential the launching environment never carried | Accepted |
 | [ADR-0205](0205-show-the-critic-the-eligible-neighbourhood-it-judges-against.md) | Show the critic the eligible neighbourhood it judges against | Accepted |
+| [ADR-0206](0206-show-every-outcome-on-the-card.md) | Show every outcome on the card | Accepted |
 
 ## Evidence and observability
 
