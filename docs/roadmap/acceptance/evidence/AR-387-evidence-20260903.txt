@@ -72,3 +72,13 @@ Counts over the eleven turns:
     ADR-0202 run's critic prompt (vetoed live):      1 of 6 approved, 5 vetoed wrong-neighbor-selection (210 to 437 tokens)
   Same team, different plan wording and unit ids. The critic is mostly consistent per prompt; the flip between runs was
   the prompt, not sampling. The eligibility-view run's 205 (a two-unit plan) was vetoed again.
+
+== Verifier pass 1 (candidate 7af9c43b, 2026-09-03) ==
+criterion 1 satisfied, 2 satisfied, 4 satisfied; criterion 3 contradicted:
+  "The main prompt says outside cards can only be forbidden or omitted, but the
+   repair prompt only says to rank from the eligible list and cannot select other
+   cards, without stating forbidden-or-omitted treatment."
+Repair: _RECRUITER_REPAIR_SYSTEM now states the boundary in the criterion's own
+terms ("a card outside it can only be forbidden or omitted for that unit, never
+staffed"); test_both_prompts_state_the_eligibility_boundary pins both phrases in
+the repair prompt. No eligibility computation changed.
