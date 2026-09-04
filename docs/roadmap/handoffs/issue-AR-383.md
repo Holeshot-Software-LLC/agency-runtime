@@ -17,69 +17,65 @@ related:
   - docs/decisions/0200-bind-the-strict-critic-to-the-advisory-doctrine.md
   - docs/decisions/0201-constrain-the-planner-domains-to-what-the-roster-serves.md
   - docs/decisions/0203-show-the-recruiter-the-complete-eligible-card-set-per-unit.md
+  - docs/decisions/0204-name-the-credential-the-launching-environment-never-carried.md
+  - docs/roadmap/issue-AR-388-unset-credential-reads-as-provider-unavailable.md
   - docs/roadmap/issue-AR-387-recruiter-cards-carry-no-eligibility.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-383
-branch: claude/ar383-capsule-env
-evidence_commit: b349e59b4d27de609ea29a436273ff6353fe9800
-minimum_ledger_commit: 7e40380960cd8316726a358ae54ac592b2a0e22a
+branch: claude/ar388-flip
+evidence_commit: 13c483fbfa8646757ce9d51058da886a5a058b62
+minimum_ledger_commit: 73181675389d6e7063298d7919e9e74b7b0c133b
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/581
 ---
 
 # AR-383 inferred subject projection handoff
 
-> `main` at `7e403809` carries ADR-0198 to ADR-0203 and the done AR-373,
-> AR-384, AR-385, AR-386 and AR-387. This refresh records the verified codex
-> activation and the launch-environment cause behind tonight's failures.
+> `main` at `73181675` carries ADR-0198 to ADR-0204 and the done AR-373 and
+> AR-384 to AR-388 (AR-388's flip rides on this PR). This refresh records the
+> AR-388 close and the runtime reinstalled at that commit.
 
 Start-here capsule. The planner side is closed, the recruiter's reply is
 read where no safety property lives, every rejected attempt is recorded, the
-recruiter sees the eligibility boundary it is held to (AR-387 done), the
-merged runtime is installed and verified for claude and codex, and the
-losses that remain are the critic's judgment, replies the transport cannot
-read, and a launch environment that must carry the gateway key.
+recruiter sees the eligibility boundary it is held to (AR-387), an unset
+gateway key is named at every layer instead of read as an outage (AR-388),
+and the losses that remain are the critic's judgment and replies the
+transport cannot read.
 
 ## checkpoint
 
-**AR-387 is done** under **ADR-0203** (PRs #595, #596 and this flip): every
-recall row carries `eligible_candidate_ids` (the verifier's eligibility over
-the detail cards, complete and identity-sorted) and
-`eligible_candidates_without_card`, the safe-team repair contract carries
-`eligible_coverers_by_requirement`, and both prompts say a card outside the
-list can only be forbidden or omitted, never staffed. The isolated verifier
-contradicted criterion 3 at `7af9c43b` (the repair prompt stated the
-consequence, not the treatment); `b349e59b` states it in the criterion's
-terms and the second pass satisfied all four criteria.
+**AR-388 is done** under **ADR-0204** (PR #599, flip on this branch): a
+resolved planner or recruiter route is declared inference; the structured
+transport answers a provider whose credential variable is unset with
+`provider_credential_env_unset` instead of calling; the outcome, receipt and
+disclosure carry `workforce_credential_env_unset`; `agency doctor` warns by
+variable name listing the routed profiles. Verifier: four of four on the
+first pass. **AR-387 is done** under **ADR-0203** (PRs #595 to #597): every
+recall row carries the complete eligible card set, the safe-team repair
+names the eligible coverers, and both prompts state the boundary.
 
-- **AR-384 option 2** (ADR-0201): `platform-engineering` no longer promotes
-  into `platform`; the planner sees `planning_taxonomy.domains_by_artifact_kind`
-  and a unit with no served domain is bounced as `plan_unit_domains_unserved`
-  (exempt: nothing proven for the kind, compiler-chosen or novel domains).
-- **AR-373, AR-384, AR-385, AR-386 and AR-387 are done** (PRs #594, #589,
-  #592, #590, this one); `verify_tracker.py` reports `missing_remote` for
-  AR-384 to AR-387 until the owner authorizes their tracker issues, and #537
-  still needs its closure.
-- **Install**: venv `56e0b6dd` built at the AR-387 fix merge. claude complete
-  and wired (`agency evidence wiring`: staged and invoked projection both
-  `d1e25680`); codex `runtime-verified`, hooks trusted, attestation persisted,
-  after the owner's attended trust; hermes and openclaw not reinstalled.
+- **AR-384 option 2** (ADR-0201): the planner sees the served domains per
+  artifact kind and a unit with no served domain is bounced for repair.
+- **AR-373 and AR-384 to AR-388 are done**; `verify_tracker.py` reports
+  `missing_remote` for AR-384 to AR-388 until the owner authorizes their
+  tracker issues, and #537 still needs its closure.
+- **Install**: venv `73181675` built at the AR-388 merge. claude complete;
+  codex `activation-required` (the owner's attended `Trust all and continue`
+  in a fresh `codex` TUI, then `agency install --agent codex
+  --verify-activation` with `common.env` sourced). Run `agency install`
+  itself WITHOUT the key: the dashboard step refuses a service whose
+  credentials live only in the process environment. hermes and openclaw
+  not reinstalled.
 - **Launch environment**: every inference profile reads `LITELLM_API_KEY`
-  from the launching process's environment only (no file fallback) and
-  nothing on the host exports it. Every preflight of the 2026-09-03 claude
-  session and both first codex verifications failed `preflight_failed` with a
-  healthy gateway; the verification passed at once with
-  `~/.config/ai-secrets/common.env` sourced. Unavailable staffing is first a
-  missing key, not a gateway outage.
+  from the launching process's environment only, and nothing on the host
+  exports it; on 2026-09-03 every preflight and both first codex
+  verifications failed with a healthy gateway, passing at once with
+  `~/.config/ai-secrets/common.env` sourced. AR-388 now names this.
 - **Critic variance**: the turn-205 team replayed six times per prompt with
   the cache bypassed: 6 of 6 approved on one prompt, 1 of 6 on the other.
-- **ADR-0202**: a candidate row is read as the deployment sends it where no
-  safety property lives (identity and score stay mandatory); a reply that is
-  not a units object is recorded per unit and repaired; a verifier rejection's
-  `unit=code` rows project onto the attempt and survive the read-back.
 
 | eleven install wordings, strict mode, ADR-0203 runtime, store copy | turns |
 |---|---|
@@ -113,11 +109,12 @@ on every plan unit. The deployment still returns unreadable replies (209,
 
 ## exact-blocker
 
-Nothing blocks at the contract level. Waiting for the owner: tracker issues
-for AR-384 to AR-387 and closure of #537; the stale claude battery re-prove
-(`agency battery` from a shell with `common.env` sourced). What remains in
-the runtime is judgment and the deployment: three critic wrong-neighbour
-vetoes of eleven and two replies the transport could not read.
+Nothing blocks at the contract level. Waiting for the owner: the codex trust
+step and `--verify-activation` on venv `73181675`; tracker issues for AR-384
+to AR-388 and closure of #537; the stale claude battery re-prove (`agency
+battery` with `common.env` sourced). What remains in the runtime is judgment
+and the deployment: three critic wrong-neighbour vetoes of eleven and two
+replies the transport could not read.
 
 ## same-task-continuity
 
@@ -133,41 +130,37 @@ The previous capsules' traps hold. Three more:
 4. **The verifier reads "both prompts state X" literally.** Every prompt a
    criterion names must carry the criterion's phrase, not its consequence.
 5. **Live host invocations need the key**: prefix `verify-activation`,
-   `host-canary`, `battery` and the hosts with the `common.env` sourcing line.
+   `host-canary`, `battery` and the hosts with the `common.env` sourcing line;
+   run `agency install` without it.
+6. **Full-suite runs here carry ~93 pre-existing failures**; compare failing
+   files against `main` under the same umask before attributing any.
 
 ## next-bounded-work-package
 
 In this order.
 
-1. **Owner steps**: tracker issues for AR-384 to AR-387 and closure of #537;
-   re-prove the claude battery with `agency battery` (key sourced).
-2. **Name the unset key**: `agency doctor` and the preflight failure receipt
-   should say when the configured `api_key_env` is unset in the inspected
-   environment instead of only `workforce_provider_unavailable` or
-   `codex_collaboration_projection_unavailable`; file it, two-PR flow.
-3. **Critic wrong-neighbour judgment on install teams** (203, 205, 208): the
+1. **Owner steps**: codex `Trust all and continue`, then `agency install
+   --agent codex --verify-activation` with the key sourced; tracker issues
+   for AR-384 to AR-388 and closure of #537; `agency battery` (key sourced).
+2. **Critic wrong-neighbour judgment on install teams** (203, 205, 208): the
    critic's contract could carry the eligibility view too, so it does not
    veto the only eligible planners as wrong neighbours; measure on the
    eleven wordings with the cache-bypassing replay.
-4. **Unreadable deployment residue** (no JSON object, omitted `score`,
+3. **Unreadable deployment residue** (no JSON object, omitted `score`,
    `decision` outside staff/gap): operator territory at the LiteLLM alias;
    recorded, not fixed.
-5. **Fix AR-383** per its Approach; then the 4-of-5 gap divergence; then
+4. **Fix AR-383** per its Approach; then the 4-of-5 gap divergence; then
    AR-370.
 
 ## verification
 
-At `b349e59b`: ruff clean but for one pre-existing RUF024; affected suites
-197 passed, 1 skipped; named fast spine 1004 passed, 3 skipped under
-`-W error`; decision-conformance 175 of 175 killed, tree unchanged;
-`docs_metadata.py --check`, `update_worklog.py --check` and `verify_docs.py`
-green. Verifier: pass 1 at `7af9c43b` satisfied 1, 2, 4 and contradicted 3;
-pass 2 at `b349e59b` satisfied all four (runs `AR-387.N-20260903-*`, in the
-record). Every flip so far verified `--all` satisfied. Activation:
-`--verify-activation` with the key sourced returned `runtime-verified`,
-`canary_passed`, attestation persisted; without it, `host-canary codex
---execute` recorded `preflight_failed`, an empty header and
-`native_collaboration_topology_invalid`.
+At `13c483fb` (AR-388): new tests 7 passed; affected suites 267 passed, 1
+skipped; named fast spine 1004 passed, 3 skipped under `-W error`;
+decision-conformance 176 of 176 killed, tree unchanged; full suite in four
+chunks: 93 failures identical on `main`, none unique to the branch; verifier
+four of four on the first pass. AR-387's record verified on its second pass
+at `b349e59b`. Activation on venv `56e0b6dd` was `runtime-verified` with the
+key sourced; venv `73181675` awaits the owner's trust step.
 
 ## constraints
 

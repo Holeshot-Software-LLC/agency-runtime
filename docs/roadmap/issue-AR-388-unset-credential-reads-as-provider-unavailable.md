@@ -1,6 +1,6 @@
 ---
 title: "AR-388: An unset credential variable reads as a provider outage, and nothing names it"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-09-04
 updated: 2026-09-04
@@ -122,3 +122,9 @@ unchanged; this issue is about the current profile and the launching shell.
 - [x] `agency doctor` warns by variable name, naming the routed profiles,
       when the variable is unset in the inspected environment, and passes
       when it is set; shown live on the installed configuration.
+
+**Verification (2026-09-04).** The record is frozen at `13c483fb`; the
+isolated codex verifier returned satisfied on all four criteria on its first
+pass (runs `AR-388.1-20260904-9ee6ea3d`, `AR-388.2-20260904-25722b4c`,
+`AR-388.3-20260904-d87cb34e`, `AR-388.4-20260904-33eb1de9`). The issue is
+done.
