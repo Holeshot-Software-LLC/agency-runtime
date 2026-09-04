@@ -8,6 +8,7 @@ tags: [workforce, inference, transport, timeouts, receipts, observability]
 related:
   - docs/roadmap/issue-AR-388-unset-credential-reads-as-provider-unavailable.md
   - docs/roadmap/issue-AR-385-structured-reply-budget-truncates-nominations-silently.md
+  - docs/roadmap/issue-AR-378-hiring-failure-records-no-attempt.md
   - docs/roadmap/issue-AR-304-preserve-recruiter-critic-validation-diagnostics.md
   - docs/roadmap/issue-AR-383-inferred-subject-context-fails-its-own-projection.md
   - docs/roadmap/handoffs/issue-AR-383.md
@@ -15,6 +16,7 @@ related:
   - docs/decisions/0204-name-the-credential-the-launching-environment-never-carried.md
   - agency_runtime/core/structured_provider.py
   - agency_runtime/core/workforce/inference.py
+  - agency_runtime/core/workforce/hiring.py
 supersedes: []
 superseded_by: null
 type: issue
@@ -58,7 +60,7 @@ places for causes with nothing in common:
 - **the body was JSON, complete, and the model text inside it was not a JSON
   object** (`:692`, when `truncated` is false).
 
-The runtime already knows how to do better in two neighbouring cases, and
+The transport already knows how to do better in two neighbouring cases, and
 both were built for exactly this reason. ADR-0199 gives a reply cut by the
 completion cap its own code, `provider_response_truncated`, by returning
 evidence instead of `None` (`:692` is the branch that declines to). ADR-0204
@@ -104,11 +106,45 @@ Nothing on the receipt separates these. Both arrive as one
 `workforce_inference_failed` in both cases, because `called` is set at
 `inference.py:1717` before the `result is None` branch is reached.
 
+## The same transport, classified twice
+
+The hiring stage loop already draws the distinction the staffing stage loop
+cannot, over the same transport and without any change to it
+(`agency_runtime/core/workforce/hiring.py:833`, `:841`, `:854`). It times the
+call itself, and on a bare `None` it splits the outcome from the outside:
+`provider_call_timed_out` when the elapsed time reached the profile's
+timeout, `provider_call_failed` otherwise, with `latency_ms` on the failed
+attempt either way. Its own comment says why that is sound -- the deadline
+handed to the transport is never raised above `provider.timeout`, so reaching
+it is a fact and not a guess.
+
+`_invoke_stage` does none of this. It does not time the call, so it cannot
+even make the inference hiring makes, and its bare-`None` branch has no
+latency to record. Two stage loops over one transport report the same failure
+at different resolutions, and the coarser one is the one that staffs every
+turn.
+
+AR-378 recorded the residual limit in the tree as well, at `hiring.py:707`:
+the provider seam returns a bare `None`, so those are the only failure classes
+hiring can witness for itself, and distinguishing a transport error from a
+schema rejection would need `invoke_structured_provider_result` to surface why
+it gave up. That is this issue, asked for from the other side and standing
+since AR-378.
+
 ## Approach
 
 Proposed; an ADR accompanies the implementation.
 
-1. **Let the transport say the call was made and why it failed.**
+1. **Close the divergence first; it costs nothing.** Give `_invoke_stage` the
+   timing the hiring loop already has (`hiring.py:833`, `:841`) and the same
+   outside-in split: a bare `None` whose elapsed time reached the profile's
+   timeout is `provider_call_timed_out`, anything else is a failed call, and
+   both carry `latency_ms`. This needs no transport change, reuses a code the
+   runtime already has, and on its own separates the two live causes above --
+   `30.04 s against a 30 s deadline` becomes readable from the receipt
+   instead of from a capture harness.
+2. **Then let the transport say the call was made and why it failed**, which
+   is what AR-378 asked for and what the outside-in split cannot see.
    `failure_reason` today means "no call was made at all", and the stage acts
    on that meaning: it releases the call budget and does not set `called`
    (`inference.py:1702`). A timeout and an HTTP error did spend a call, so
@@ -116,17 +152,11 @@ Proposed; an ADR accompanies the implementation.
    "attempted" flag beside the reason, or add a second field for a failure
    after the request left; the invariant that `failure_reason` implies no
    call must stay true or move deliberately, not by accident.
-2. **Name the causes from a closed vocabulary**, each returned as a result
+3. **Name the causes from a closed vocabulary**, each returned as a result
    with an empty `value` rather than a bare `None`: the runtime deadline, an
    HTTP status the gateway returned (with the status on the attempt), a body
    that was not JSON, and model text that was not a JSON object. The last one
    is the sibling of `provider_response_truncated` and belongs beside it.
-3. **Record the elapsed time on a deadline abort.** The single fact that
-   distinguishes cause 1 from every other failure is that the abort landed on
-   the configured deadline. `latency_ms` is already on every successful
-   result; a timed-out attempt should carry it too, so `30.04 s against a
-   30 s deadline` is readable from the receipt instead of from a capture
-   harness.
 4. **Keep the blanket `except` blanket.** Nothing here should let an
    unexpected exception escape the transport; the change is to classify what
    is already caught, and to leave anything unrecognised on a residual code
@@ -145,13 +175,15 @@ the runtime says about why a call it made did not come back.
 
 None. AR-388 (ADR-0204) supplies the `failure_reason` channel this extends
 and the doctor-check precedent; AR-385 (ADR-0199) supplies the
-result-instead-of-`None` precedent. Both are merged.
+result-instead-of-`None` precedent; AR-378 supplies the hiring loop's timing
+and its standing request for the transport half. All three are merged.
 
 ## Acceptance
 
-- [ ] A call aborted by the runtime's own deadline is recorded as a failed
-      attempt naming the deadline, distinct from every other transport
-      failure, and carries the elapsed time and the configured timeout.
+- [ ] The staffing stage loop and the hiring stage loop classify an identical
+      transport failure identically: a call aborted by the runtime's own
+      deadline is `provider_call_timed_out` on both, distinct from every other
+      transport failure, carrying the elapsed time and the configured timeout.
 - [ ] A non-2xx response from the gateway is recorded with its HTTP status
       instead of being discarded by the blanket `except`.
 - [ ] A complete body whose model text is not a JSON object is recorded as
