@@ -51,3 +51,31 @@ silent window: 2026-08-29T13:54:10.563000+00:00 .. 2026-09-03T18:42:33.612000+00
 == 3. new suite ==
 ..........                                                               [100%]
 10 passed in 0.14s
+
+== 5. the after-install window, measured 2026-09-04 with the credential sourced ==
+   copy of ~/.agency-runtime/agency.db taken 2026-09-04T20:21Z; the live store was never opened for write.
+   d7106be1 (this fix) landed 2026-09-04T16:01:39Z; hooks run venv e12c1bdd, which carries it.
+   receipts in the store                          : 1041
+   declaring no_safe_sufficient_team, all time    : 99
+     ...with EMPTY hiring_reason_codes            : 42
+   last declaring receipt                         : 2026-09-03T18:42:33.612000+00:00
+   declaring receipts recorded after the fix      : 0
+     ...with EMPTY hiring_reason_codes            : 0
+
+   why the window is empty: 150 receipts since the last declaring one, by terminal shape:
+      131  routing:workforce_provider_unavailable
+       15  routing:workforce_inference_failed
+        3  ready_commit:ready_commit_failed
+        1  routing:substantive_specialist_unavailable
+   staffing_reason_codes across those receipts:
+      133  inference_unavailable
+       13  workforce_credential_env_unset
+        7  inference_invalid
+        5  staffing_critic_rejected
+        4  roster_coverage_gap
+        4  critic_wrong_neighbor_selection
+        1  no_safe_sufficient_team
+        1  recruiter_abstained
+        1  selection_confidence_too_low
+   the declaring path runs after an accepted recruiter proposal; none has been accepted
+   since 2026-09-03T18:42:33Z, so no receipt written by this code has had a gap to declare.
