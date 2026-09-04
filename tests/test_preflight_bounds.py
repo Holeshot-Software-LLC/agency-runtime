@@ -267,6 +267,9 @@ def test_preflight_failure_receipt_projects_provider_attempts_without_content(
             "model_receipt_source": "unavailable",
             "status": "failed",
             "reason_code": "provider_timeout",
+            # AR-392: this attempt carried neither duration, so neither key is
+            # emitted. Absent means absent, so a route stored before AR-392
+            # still re-projects to itself.
         }
     ]
     assert receipt["provider_attempts"][0]["provider_name"].startswith("sha256:")

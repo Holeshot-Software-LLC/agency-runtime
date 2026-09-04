@@ -144,6 +144,42 @@ _NOMINATION_FAILURE_CODES = frozenset(
         "staff_without_safe_team",
     }
 )
+# AR-394. `staff_without_safe_team` is the dominant terminal recruiter failure
+# -- 317 of the 484 unit rows in the last 400 live receipts -- and its three
+# recorded counts do not say *why* the team could not be formed. A reader had
+# to infer it from `ranked_executable_count` against the presence or absence of
+# `top_ranked_ineligibility`, and the two causes with opposite fixes look alike
+# under that inference: candidates the retrieval never surfaced, and candidates
+# it surfaced that deterministic eligibility then refused.
+#
+# These name the shortfall from facts the repair contract already computes. The
+# classification is total: every `staff_without_safe_team` carries exactly one.
+SAFE_TEAM_SHORTFALL_CODES = frozenset(
+    {
+        # More candidates were classified required than a unit may select.
+        "required_over_budget",
+        # Required exactly fills the unit's slots and still leaves a typed
+        # requirement uncovered, so no complement can be added to cover it.
+        "complement_slots_exhausted",
+        # The recruiter ranked nobody for a unit it decided to staff.
+        "no_ranked_candidate",
+        # It ranked candidates and deterministic eligibility refused every one.
+        "ranked_candidates_ineligible",
+        # An eligible card covering the uncovered requirement *was* shown to the
+        # recruiter and was not selected: retrieval did its job, the reply did
+        # not.
+        "retrieved_coverer_not_selected",
+        # No card shown to the recruiter covers it, but the roster holds an
+        # eligible contract that does: retrieval never surfaced the specialist.
+        "coverer_absent_from_retrieval",
+        # Nothing in the roster covers it eligibly. ADR-0198 waives tokens no
+        # eligible contract serves, so this is a waiver that did not fire.
+        "no_eligible_coverer_in_roster",
+        # Executable candidates, full typed coverage, and still no safe team:
+        # the search was exhausted by the classifications themselves.
+        "no_safe_combination",
+    }
+)
 
 
 def _required_delivery_contract(value: object) -> str | None:
@@ -763,6 +799,11 @@ class WorkforceInferenceAttempt:
     status: str
     reason_code: str
     latency_ms: int
+    # AR-392: the deadline the call was given, beside the time it took. The
+    # elapsed figure alone cannot say whether this process aborted a call the
+    # gateway would have answered; the pair can, and that comparison is the
+    # whole point of separating provider_call_timed_out from its neighbours.
+    timeout_ms: int = 0
     validation_detail: str = ""
     validation_reason_codes: tuple[str, ...] = ()
     input_count: int = 0
@@ -871,6 +912,9 @@ class _NominationFailure:
     # Closed runtime-owned diagnosis for broad invalid_candidate failures.
     # Provider-authored values never enter this field or any durable receipt.
     diagnostic_code: str = ""
+    # AR-394: which of the closed shortfall causes ended a `staff_without_safe_team`.
+    # Empty on every other code and on a failure built without a repair contract.
+    shortfall: str = ""
 
 
 class _NominationValidationError(ValueError):
@@ -916,13 +960,21 @@ class _NominationValidationError(ValueError):
                 and failure.diagnostic_code
                 not in _DIAGNOSTIC_CODES_BY_FAILURE.get(failure.code, frozenset())
             )
+            or (
+                failure.shortfall
+                and (
+                    failure.code != "staff_without_safe_team"
+                    or failure.shortfall not in SAFE_TEAM_SHORTFALL_CODES
+                )
+            )
             for failure in unique
         ):
             raise ValueError("nomination validation failure is not allowlisted")
         self.failures = unique
-        # "unit=code[:axis][~agent~agent][!required:executable:max][|reason]".
+        # "unit=code[:axis][~agent~agent][!required:executable:max][+shortfall][|reason]".
         # The delimiters appear in none of the closed identifiers, so the fields
-        # stay unambiguous and old details without counts remain readable.
+        # stay unambiguous and old details without counts or a shortfall remain
+        # readable.
         detail = ",".join(
             f"{failure.unit_id}={failure.code}"
             + (f":{failure.axis}" if failure.axis else "")
@@ -935,6 +987,7 @@ class _NominationValidationError(ValueError):
                 if failure.required_count is not None
                 else ""
             )
+            + (f"+{failure.shortfall}" if failure.shortfall else "")
             + (f"|{failure.ineligibility}" if failure.ineligibility else "")
             for failure in unique
         )
@@ -1488,6 +1541,9 @@ def _attempt(
             if latency_ms is None
             else max(0, int(latency_ms))
         ),
+        # The effective deadline this call was given, after the transport's
+        # own bound is applied -- the same figure `agency doctor` prints.
+        timeout_ms=max(0, int(provider.timeout * 1000)),
         validation_detail=validation_detail,
         validation_reason_codes=tuple(validation_reason_codes),
         reply_budget_tokens=(
@@ -3171,6 +3227,67 @@ def _safe_team_repair_contract(
     )
 
 
+def _safe_team_shortfall(
+    unit: WorkUnit,
+    proposal_row: UnitRecruitment,
+    contracts: Sequence[WorkforceContract],
+    repair_contract: _SafeTeamRepairContract,
+    context: Any,
+    *,
+    ranking: Sequence[str],
+) -> str:
+    """Name why no safe team could be formed, from the repair contract's facts.
+
+    AR-394 criterion 1. The three recorded counts say how short the team fell;
+    they never say why, and the two causes with opposite fixes are the ones the
+    counts cannot separate. A requirement no *shown* card covers but the roster
+    does is a retrieval failure -- the specialist exists and was never offered.
+    A requirement whose shown coverers were all refused by deterministic
+    eligibility is an eligibility failure. Both leave `ranked_executable_count`
+    short of what a safe team needed.
+
+    `eligible_coverers_by_requirement` is already scoped to the detail cards the
+    recruiter saw, so re-running the same coverage question over the whole
+    roster is what separates them. The classification is total whenever a
+    context is available; without one, eligibility is unknown and nothing is
+    claimed.
+    """
+
+    if len(repair_contract.required_agent_ids) > repair_contract.maximum_selected_per_unit:
+        return "required_over_budget"
+    if not ranking:
+        return "no_ranked_candidate"
+    if not proposal_row.ranked_executable:
+        return "ranked_candidates_ineligible"
+    uncovered = (
+        repair_contract.uncovered_requirement_ids or repair_contract.uncovered_after_required_ids
+    )
+    if not uncovered:
+        return "no_safe_combination"
+    if (
+        len(repair_contract.required_agent_ids) == repair_contract.maximum_selected_per_unit
+        and repair_contract.uncovered_after_required_ids
+    ):
+        # Required fills every slot, so a coverer for what it leaves uncovered
+        # could not be added however well retrieval surfaced one. Naming the
+        # coverage cause here would point the reader at the wrong fix.
+        return "complement_slots_exhausted"
+    if context is None:
+        # Eligibility is unknown without a context, so the two coverage causes
+        # cannot be told apart. Record nothing rather than assert the wrong one.
+        return ""
+    if any(coverers for _requirement, coverers in repair_contract.eligible_coverers_by_requirement):
+        return "retrieved_coverer_not_selected"
+    if any(
+        coverers
+        for _requirement, coverers in _eligible_coverers_by_requirement(
+            unit, uncovered, contracts, context, None
+        )
+    ):
+        return "coverer_absent_from_retrieval"
+    return "no_eligible_coverer_in_roster"
+
+
 def _validate_nomination_decisions(
     plan: WorkUnitPlan,
     proposal: RecruiterProposal,
@@ -3224,6 +3341,14 @@ def _validate_nomination_decisions(
                     len(proposal_row.ranked_executable),
                     maximum_selected_per_unit,
                     repair_contract,
+                    shortfall=_safe_team_shortfall(
+                        unit,
+                        proposal_row,
+                        contracts,
+                        repair_contract,
+                        context,
+                        ranking=ranking,
+                    ),
                 )
             )
         if decision == "gap" and proposal_row.selected:

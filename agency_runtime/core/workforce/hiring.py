@@ -565,6 +565,10 @@ class HiringInferenceAttempt:
     # what it cost and why it stopped.
     reason_code: str = ""
     latency_ms: int = 0
+    # AR-392: the deadline the call was given, beside the time it took. It is
+    # deliberately not part of ``receipt_id``: the digest identifies the call,
+    # and the deadline is configuration around it.
+    timeout_ms: int = 0
 
     def as_receipt(self) -> dict[str, Any]:
         return asdict(self)
@@ -748,6 +752,7 @@ def _attempt(
         status="applied",
         reason_code=_APPLIED_REASON,
         latency_ms=int(result.latency_ms),
+        timeout_ms=max(0, int(provider.timeout * 1000)),
     )
 
 
@@ -784,6 +789,7 @@ def _failed_attempt(
         status=status,
         reason_code=reason_code,
         latency_ms=latency_ms,
+        timeout_ms=max(0, int(provider.timeout * 1000)),
     )
 
 
