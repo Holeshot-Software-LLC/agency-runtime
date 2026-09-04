@@ -3444,7 +3444,9 @@ def test_invalid_primary_content_advances_to_the_content_fallback_provider() -> 
     assert failure == ""
     assert calls == ["agency-planner", "agency-planner-content-fallback"]
     assert [(item.stage, item.provider_name, item.reason_code) for item in attempts] == [
-        ("planner", "agency-planner", "provider_no_valid_response"),
+        # AR-392: the scripted invoker returns None immediately, far inside
+        # the profile's timeout, so the split names it a failed call.
+        ("planner", "agency-planner", "provider_call_failed"),
         ("planner", "agency-planner-content-fallback", "structured_response_applied"),
     ]
 

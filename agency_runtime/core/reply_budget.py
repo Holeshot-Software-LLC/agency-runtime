@@ -71,6 +71,64 @@ _ALLOWANCE_ADAPTERS: Final[frozenset[str]] = frozenset({"litellm", "openai-compa
 #: not be applied. It is a transport fact, not a contract failure.
 PROVIDER_RESPONSE_TRUNCATED: Final[str] = "provider_response_truncated"
 
+# AR-392. Every transport failure used to reach the receipt as one code,
+# ``provider_no_valid_response``, because the transport returned a bare
+# ``None`` from eleven places with nothing in common. These name the cause
+# instead, from a closed vocabulary, and both stage loops read them from here
+# so that an identical failure classifies identically wherever it is seen.
+#
+# Failures *after* the request left. The call was made and spent its budget.
+#: The runtime's own socket deadline aborted a call the gateway may well have
+#: answered. Sound because the deadline handed to the transport is never
+#: raised above ``provider.timeout``, so reaching it is a fact, not a guess.
+PROVIDER_CALL_TIMED_OUT: Final[str] = "provider_call_timed_out"
+#: The gateway answered with a non-2xx status, kept on the attempt.
+PROVIDER_HTTP_STATUS_ERROR: Final[str] = "provider_http_status_error"
+#: The response body was not a JSON object.
+PROVIDER_RESPONSE_NOT_JSON: Final[str] = "provider_response_not_json"
+#: The body was JSON and complete, and the model text inside it was not a JSON
+#: object. The sibling of ``PROVIDER_RESPONSE_TRUNCATED``: nothing was cut, the
+#: reply is simply not what the schema asked for.
+PROVIDER_MODEL_TEXT_NOT_JSON: Final[str] = "provider_model_text_not_json"
+#: The residual. Something the blanket ``except`` caught that none of the
+#: named causes above recognises; honestly distinct rather than silently
+#: folded into one of them.
+PROVIDER_CALL_FAILED: Final[str] = "provider_call_failed"
+
+# Refusals *before* any request left. ``failure_reason`` has meant exactly
+# this since ADR-0204, and it still does: no call was made, the stage gives
+# the call budget back, and the turn does not count as called.
+#: The request could never be built -- a prompt, system prompt, schema, body
+#: or timeout outside its bound.
+PROVIDER_REQUEST_INVALID: Final[str] = "provider_request_invalid"
+#: The provider is not safe to call as configured, so no call was made.
+PROVIDER_UNSAFE_CONFIGURATION: Final[str] = "provider_unsafe_configuration"
+#: An allowlisted CLI adapter ran and produced no object.
+PROVIDER_CLI_NO_OBJECT: Final[str] = "provider_cli_no_object"
+
+#: Codes that mean the request left the runtime. ``call_attempted`` on the
+#: result is the authority; this set is what the stage loops assert against so
+#: a new code cannot be added to one half of the split and not the other.
+TRANSPORT_FAILURE_AFTER_REQUEST: Final[frozenset[str]] = frozenset(
+    {
+        PROVIDER_CALL_TIMED_OUT,
+        PROVIDER_HTTP_STATUS_ERROR,
+        PROVIDER_RESPONSE_NOT_JSON,
+        PROVIDER_MODEL_TEXT_NOT_JSON,
+        PROVIDER_CALL_FAILED,
+    }
+)
+#: Codes that mean no request left the runtime. ``provider_credential_env_unset``
+#: (ADR-0204) belongs here too; ``structured_provider`` adds it, being where it
+#: is defined.
+TRANSPORT_REFUSAL_BEFORE_REQUEST: Final[frozenset[str]] = frozenset(
+    {
+        PROVIDER_REQUEST_INVALID,
+        PROVIDER_UNSAFE_CONFIGURATION,
+        PROVIDER_CLI_NO_OBJECT,
+    }
+)
+
 
 def stage_reply_budget_tokens(stage: str) -> int:
     """Return the reply budget one workforce stage owns."""
@@ -140,8 +198,18 @@ __all__ = [
     "ANTHROPIC_DEFAULT_REPLY_BUDGET_TOKENS",
     "DEFAULT_REPLY_BUDGET_TOKENS",
     "FALLBACK_STAGE_REPLY_BUDGET_TOKENS",
+    "PROVIDER_CALL_FAILED",
+    "PROVIDER_CALL_TIMED_OUT",
+    "PROVIDER_CLI_NO_OBJECT",
+    "PROVIDER_HTTP_STATUS_ERROR",
+    "PROVIDER_MODEL_TEXT_NOT_JSON",
+    "PROVIDER_REQUEST_INVALID",
+    "PROVIDER_RESPONSE_NOT_JSON",
     "PROVIDER_RESPONSE_TRUNCATED",
+    "PROVIDER_UNSAFE_CONFIGURATION",
     "STAGE_REPLY_BUDGET_TOKENS",
+    "TRANSPORT_FAILURE_AFTER_REQUEST",
+    "TRANSPORT_REFUSAL_BEFORE_REQUEST",
     "THINKING_ALLOWANCE_TOKENS",
     "bounded_reply_budget_tokens",
     "completion_cap_tokens",

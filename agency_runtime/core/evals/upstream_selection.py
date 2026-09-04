@@ -525,7 +525,8 @@ def _upstream_run(
         timeout=provider.timeout,
     )
     latency_ms = (time.perf_counter() - started) * 1000
-    if result is None:
+    # AR-392: a named transport failure arrives as a result, not a bare None.
+    if result is None or result.carries_no_answer:
         return SelectionRun(
             "upstream",
             "error",

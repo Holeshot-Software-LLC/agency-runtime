@@ -133,7 +133,7 @@ since AR-378.
 
 ## Approach
 
-Proposed; an ADR accompanies the implementation.
+Implemented under ADR-0209.
 
 1. **Close the divergence first; it costs nothing.** Give `_invoke_stage` the
    timing the hiring loop already has (`hiring.py:833`, `:841`) and the same
@@ -180,17 +180,17 @@ and its standing request for the transport half. All three are merged.
 
 ## Acceptance
 
-- [ ] The staffing stage loop and the hiring stage loop classify an identical
+- [x] The staffing stage loop and the hiring stage loop classify an identical
       transport failure identically: a call aborted by the runtime's own
       deadline is `provider_call_timed_out` on both, distinct from every other
       transport failure, carrying the elapsed time and the configured timeout.
-- [ ] A non-2xx response from the gateway is recorded with its HTTP status
+- [x] A non-2xx response from the gateway is recorded with its HTTP status
       instead of being discarded by the blanket `except`.
-- [ ] A complete body whose model text is not a JSON object is recorded as
+- [x] A complete body whose model text is not a JSON object is recorded as
       its own cause, distinct from both a truncated reply and a deadline
       abort, reproduced from the capture391 turn 206 body.
-- [ ] A transport failure after the request left spends its call budget and
+- [x] A transport failure after the request left spends its call budget and
       counts as `called`; a refusal before any call is made still releases
       the budget and does not, and `failure_reason` keeps one meaning.
-- [ ] `agency doctor` states the effective timeout of each routed workforce
+- [x] `agency doctor` states the effective timeout of each routed workforce
       profile, shown live on the installed configuration.

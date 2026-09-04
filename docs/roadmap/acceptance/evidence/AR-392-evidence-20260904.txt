@@ -1,0 +1,27 @@
+AR-392 evidence, 2026-09-04, branch claude/ar392-transport-causes
+(the candidate commit is named in docs/roadmap/acceptance/issue-AR-392.md)
+Branch runtime, PYTHONPATH=<worktree>. The installed configuration is read
+read-only; no live gateway call is made below and no key is required.
+
+== 1. the eleven bare-None returns are gone from the transport ==
+AST count of bare `return None` inside invoke_structured_provider_result:
+main  : 11
+branch: 0
+
+== 2. new suite ==
+..............                                                           [100%]
+14 passed in 0.15s
+
+== 3. the two stage loops classify one failure identically ==
+staffing _invoke_stage: reason_code=provider_call_timed_out latency_ms=30040
+hiring   _invoke: reason_code=provider_call_timed_out latency_ms=30040
+
+== 4. capture391 turn 206: a complete body whose model text is not an object ==
+failure_reason: provider_model_text_not_json | reply_truncated: False | call_attempted: True
+deadline abort  : provider_call_timed_out | call_attempted: True
+non-2xx         : provider_http_status_error | http_status: 429
+
+== 5. agency doctor states each routed profile's effective deadline ==
+   (installed configuration, ~/.agency-runtime/agency.yaml, read-only)
+PASS workforce_profile_timeouts
+  effective runtime deadline for 10 routed profile(s): agency-default=30s, agency-planner=30s, agency-recruiter=30s, agency-recruiter-critic=30s, agency-hiring=30s, agency-hiring-critic=120s, agency-security=30s, local-workforce-embedding=120s, local-workforce-reranker=120s, linux-task-agency-router=120s

@@ -755,6 +755,7 @@ not stable internal identifiers.
 | [AR-391](issue-AR-391-recruiter-prompt-misstates-how-its-ranking-becomes-the-team.md) | [`d3bea30f`](../worklog/README.md) (the team-derivation account), [`2c092cb8`](../worklog/README.md), [`606e70ea`](../worklog/README.md), [`3a94b8da`](../worklog/README.md) (repair-prompt phrases) | [ADR-0207](../decisions/0207-tell-the-recruiter-how-its-ranking-becomes-the-team.md) |
 | [AR-383](issue-AR-383-inferred-subject-context-fails-its-own-projection.md) | [`169220ce`](../worklog/README.md) (the subject beside the context) | [ADR-0208](../decisions/0208-carry-the-inferred-subject-beside-the-turn-context.md) |
 | [AR-386](issue-AR-386-strict-critic-vetoes-verifier-accepted-install-turns.md) | [`6b79736c`](../worklog/README.md), [`b6b2f6e4`](../worklog/README.md) (frozen record, three satisfied verdicts, done flip) | [ADR-0200](../decisions/0200-bind-the-strict-critic-to-the-advisory-doctrine.md) |
+| [AR-392](issue-AR-392-transport-failures-collapse-to-one-code.md) | [`03e302a5`](../worklog/README.md) (the named transport cause, the stage-loop split, the doctor timeout report) | [ADR-0209](../decisions/0209-name-the-transport-cause-instead-of-one-code.md) |
 
 ## Dependency summary
 

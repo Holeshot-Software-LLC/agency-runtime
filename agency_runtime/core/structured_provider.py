@@ -11,6 +11,7 @@ import json
 import math
 import os
 import time
+import urllib.error
 import urllib.request
 from collections.abc import Mapping
 from dataclasses import dataclass
@@ -25,7 +26,17 @@ from agency_runtime.core.config import (
 )
 from agency_runtime.core.http_safety import open_no_redirect
 from agency_runtime.core.model_capabilities import requires_completion_token_parameter
-from agency_runtime.core.reply_budget import completion_cap_tokens
+from agency_runtime.core.reply_budget import (
+    PROVIDER_CALL_FAILED,
+    PROVIDER_CALL_TIMED_OUT,
+    PROVIDER_CLI_NO_OBJECT,
+    PROVIDER_HTTP_STATUS_ERROR,
+    PROVIDER_MODEL_TEXT_NOT_JSON,
+    PROVIDER_REQUEST_INVALID,
+    PROVIDER_RESPONSE_NOT_JSON,
+    PROVIDER_UNSAFE_CONFIGURATION,
+    completion_cap_tokens,
+)
 
 MAX_STRUCTURED_PROMPT_BYTES = 1_280 * 1024
 MAX_STRUCTURED_SCHEMA_BYTES = 64 * 1024
@@ -117,9 +128,30 @@ class StructuredProviderResult:
     completion_tokens: int | None = None
     finish_reason: str = ""
     reply_truncated: bool = False
-    # AR-388 / ADR-0204: a non-empty value means the transport made no call at
-    # all and says why, from a closed vocabulary; ``value`` is then empty.
+    # AR-388 / ADR-0204: a non-empty value means the transport gave up and says
+    # why, from a closed vocabulary; ``value`` is then empty.
+    #
+    # AR-392 widened that vocabulary past refusals to failures of a call that
+    # was actually made, so the reason alone no longer says whether a call was
+    # spent. ``call_attempted`` is now what carries that, and the original
+    # meaning of ``failure_reason`` moved deliberately rather than by accident:
+    # a reader that treated a reason as "no call was made" must read this flag.
     failure_reason: str = ""
+    call_attempted: bool = False
+    #: The status a non-2xx answer carried, kept instead of discarded.
+    http_status: int = 0
+
+    @property
+    def carries_no_answer(self) -> bool:
+        """Whether this result names a failure instead of carrying a value.
+
+        AR-392. Before this, every one of these arrived as a bare ``None`` and
+        a caller could test for that. Now the cause travels with the result,
+        so a caller that only checked ``is None`` would read a named failure
+        as a successful empty answer; this is what it should ask instead.
+        """
+
+        return bool(self.failure_reason)
 
     def receipt(self) -> dict[str, Any]:
         return {
@@ -138,6 +170,9 @@ class StructuredProviderResult:
             "completion_tokens": self.completion_tokens,
             "finish_reason": self.finish_reason,
             "reply_truncated": self.reply_truncated,
+            "failure_reason": self.failure_reason,
+            "call_attempted": self.call_attempted,
+            "http_status": self.http_status,
         }
 
 
@@ -546,11 +581,22 @@ def provider_credential_env_unset(provider: ProviderEntry) -> bool:
     return not os.environ.get(provider.api_key_env)
 
 
-def _credential_unset_result(
+def _failure_result(
     provider: ProviderEntry,
     provider_type: str,
     started: float,
+    *,
+    reason: str,
+    call_attempted: bool,
+    http_status: int = 0,
 ) -> StructuredProviderResult:
+    """Name why the transport gave up instead of returning a bare ``None``.
+
+    AR-392. ``call_attempted`` says whether the request left the runtime, which
+    is what decides whether the caller gives its call budget back. The value is
+    always empty: this result carries a cause, never an answer.
+    """
+
     return StructuredProviderResult(
         value={},
         provider_name=provider.name,
@@ -565,8 +611,45 @@ def _credential_unset_result(
         thinking_level_consumed=_translate_thinking_level_for_adapter(
             provider_type, provider.reasoning_effort
         ),
-        failure_reason=PROVIDER_CREDENTIAL_ENV_UNSET,
+        failure_reason=reason,
+        call_attempted=call_attempted,
+        http_status=max(0, int(http_status)),
     )
+
+
+def _credential_unset_result(
+    provider: ProviderEntry,
+    provider_type: str,
+    started: float,
+) -> StructuredProviderResult:
+    return _failure_result(
+        provider,
+        provider_type,
+        started,
+        reason=PROVIDER_CREDENTIAL_ENV_UNSET,
+        call_attempted=False,
+    )
+
+
+def _transport_exception_cause(exc: BaseException) -> tuple[str, int]:
+    """Classify what the blanket ``except`` caught, without narrowing it.
+
+    ``open_no_redirect`` closes the socket-backed body of an ``HTTPError`` and
+    re-raises the status-bearing exception deliberately; discarding it here is
+    what made a 429, a 401 and a 502 one code with no status anywhere. Anything
+    unrecognised stays on the residual code rather than being folded into a
+    named one.
+    """
+
+    if isinstance(exc, urllib.error.HTTPError):
+        return PROVIDER_HTTP_STATUS_ERROR, int(getattr(exc, "code", 0) or 0)
+    if isinstance(exc, TimeoutError):
+        return PROVIDER_CALL_TIMED_OUT, 0
+    if isinstance(exc, urllib.error.URLError) and isinstance(
+        getattr(exc, "reason", None), TimeoutError
+    ):
+        return PROVIDER_CALL_TIMED_OUT, 0
+    return PROVIDER_CALL_FAILED, 0
 
 
 def _http_provider_is_safe(provider: ProviderEntry, api_key: str) -> bool:
@@ -598,8 +681,18 @@ def invoke_structured_provider_result(
     """Return bounded structured output with truthful provider-model evidence."""
 
     started = time.monotonic()
+    # AR-392: every refusal below happens before any request leaves the
+    # runtime, so each one names itself and says no call was made. The caller
+    # gives its call budget back on exactly these.
+    provider_type = provider.type.strip().casefold()
+
+    def _refused(reason: str) -> StructuredProviderResult:
+        return _failure_result(
+            provider, provider_type, started, reason=reason, call_attempted=False
+        )
+
     if not isinstance(prompt, str) or not isinstance(system_prompt, str):
-        return None
+        return _refused(PROVIDER_REQUEST_INVALID)
     try:
         invalid_text = (
             not prompt.strip()
@@ -610,14 +703,13 @@ def invoke_structured_provider_result(
             or len(system_prompt.encode("utf-8")) > MAX_STRUCTURED_SCHEMA_BYTES
         )
     except UnicodeError:
-        return None
+        return _refused(PROVIDER_REQUEST_INVALID)
     if invalid_text:
-        return None
+        return _refused(PROVIDER_REQUEST_INVALID)
     schema_bytes = _bounded_json(schema, maximum_bytes=MAX_STRUCTURED_SCHEMA_BYTES)
     request_timeout = _bounded_timeout(provider.timeout if timeout is None else timeout)
     if schema_bytes is None or request_timeout <= 0:
-        return None
-    provider_type = provider.type.strip().casefold()
+        return _refused(PROVIDER_REQUEST_INVALID)
     if provider_type == "cli":
         value = invoke_cli_structured(
             provider,
@@ -627,7 +719,7 @@ def invoke_structured_provider_result(
             system_prompt=system_prompt,
         )
         if value is None:
-            return None
+            return _refused(PROVIDER_CLI_NO_OBJECT)
         return StructuredProviderResult(
             value=value,
             provider_name=provider.name,
@@ -652,7 +744,7 @@ def invoke_structured_provider_result(
         return _credential_unset_result(provider, provider_type, started)
     api_key = provider.resolve_api_key()
     if not _http_provider_is_safe(provider, api_key):
-        return None
+        return _refused(PROVIDER_UNSAFE_CONFIGURATION)
     payload, path = _http_payload(
         provider,
         prompt,
@@ -661,7 +753,7 @@ def invoke_structured_provider_result(
     )
     body = _bounded_json(payload, maximum_bytes=MAX_STRUCTURED_REQUEST_BYTES)
     if body is None:
-        return None
+        return _refused(PROVIDER_REQUEST_INVALID)
     request = urllib.request.Request(
         _join_api_path(provider.base_url, path),
         data=body,
@@ -669,16 +761,32 @@ def invoke_structured_provider_result(
         method="POST",
     )
     deadline = time.monotonic() + request_timeout
+    # AR-392: from here the request has left the runtime, so every failure
+    # below spent a call and says so. The blanket ``except`` stays blanket --
+    # nothing unexpected escapes the transport -- and only the classification
+    # of what it already caught changes.
+    def _failed(reason: str, *, http_status: int = 0) -> StructuredProviderResult:
+        return _failure_result(
+            provider,
+            provider_type,
+            started,
+            reason=reason,
+            call_attempted=True,
+            http_status=http_status,
+        )
+
     try:
         with open_no_redirect(request, timeout=request_timeout) as response:
             raw = _read_http_response(response, deadline=deadline)
-    except Exception:
-        return None
+    except Exception as exc:  # noqa: BLE001 - classified, never propagated
+        reason, http_status = _transport_exception_cause(exc)
+        return _failed(reason, http_status=http_status)
     if raw is None:
-        return None
+        # ``_read_http_response`` ran past the runtime's own deadline.
+        return _failed(PROVIDER_CALL_TIMED_OUT)
     response_object = _parse_json_object(raw)
     if response_object is None:
-        return None
+        return _failed(PROVIDER_RESPONSE_NOT_JSON)
     ollama_mode = provider.ollama_mode or provider_type == "ollama"
     reply_budget, completion_cap = _requested_completion_cap(provider)
     completion_tokens, finish_reason = _response_usage(
@@ -690,7 +798,10 @@ def invoke_structured_provider_result(
     )
     if value is None:
         if not truncated:
-            return None
+            # The body was JSON and complete; the model text inside it was
+            # not a JSON object. The sibling of a truncated reply, and not
+            # the same thing: nothing was cut.
+            return _failed(PROVIDER_MODEL_TEXT_NOT_JSON)
         # The reply was cut before a complete JSON object formed. Return the
         # truncation as evidence rather than a bare None, so the stage can
         # record why it has nothing to parse instead of "no valid response".
@@ -735,7 +846,7 @@ def invoke_structured_provider(
         system_prompt=system_prompt,
         timeout=timeout,
     )
-    return None if result is None else result.value
+    return None if result is None or result.carries_no_answer else result.value
 
 
 __all__ = [

@@ -653,6 +653,12 @@ class _CallBudget:
         self.used += 1
         return True
 
+    def release(self) -> None:
+        """Return one unit for an attempt the transport never made (AR-388)."""
+
+        if self.used > 0:
+            self.used -= 1
+
     @property
     def remaining(self) -> int:
         return max(0, self.maximum - self.used)
@@ -839,6 +845,23 @@ def _invoke(
             timeout=provider.timeout,
         )
         latency_ms = int((time.monotonic() - started) * 1000)
+        if result is not None and result.carries_no_answer:
+            # AR-392: the transport now names why it gave up. A refusal before
+            # any request left gives the call budget back; a failure after it
+            # left keeps the spend. Either way the named cause is what the
+            # attempt records, in place of the outside-in guess below.
+            if not result.call_attempted:
+                budget.release()
+            failures.append(
+                _failed_attempt(
+                    stage,
+                    provider,
+                    reason_code=result.failure_reason,
+                    latency_ms=latency_ms if result.call_attempted else 0,
+                    status="failed" if result.call_attempted else "skipped",
+                )
+            )
+            continue
         if result is not None and result.reply_truncated and not result.value:
             failures.append(
                 _failed_attempt(

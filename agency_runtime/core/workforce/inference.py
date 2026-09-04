@@ -9,6 +9,7 @@ import math
 import os
 import re
 import secrets
+import time
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import asdict, dataclass, field, replace
 from typing import TYPE_CHECKING, Any, Final
@@ -27,7 +28,13 @@ from agency_runtime.core.inference_profiles import (
     resolve_explicit_capability_route,
     resolve_explicit_capability_route_any,
 )
-from agency_runtime.core.reply_budget import PROVIDER_RESPONSE_TRUNCATED, provider_for_stage
+from agency_runtime.core.reply_budget import (
+    PROVIDER_CALL_FAILED,
+    PROVIDER_CALL_TIMED_OUT,
+    PROVIDER_RESPONSE_TRUNCATED,
+    TRANSPORT_FAILURE_AFTER_REQUEST,
+    provider_for_stage,
+)
 from agency_runtime.core.roster.limits import MAX_ACTIVE_ROSTER_SIZE
 from agency_runtime.core.structured_provider import (
     PROVIDER_CREDENTIAL_ENV_UNSET,
@@ -1460,6 +1467,7 @@ def _attempt(
     result: StructuredProviderResult | None = None,
     validation_detail: str = "",
     validation_reason_codes: Sequence[str] = (),
+    latency_ms: int | None = None,
 ) -> WorkforceInferenceAttempt:
     return WorkforceInferenceAttempt(
         stage=stage,
@@ -1471,7 +1479,14 @@ def _attempt(
         model_receipt_source="unavailable" if result is None else result.model_receipt_source,
         status=status,
         reason_code=reason_code,
-        latency_ms=0 if result is None else result.latency_ms,
+        # AR-392: a failed call has no result to read the figure from, so the
+        # stage loop times it from the outside and passes it in. Anything the
+        # transport measured itself still wins.
+        latency_ms=(
+            (0 if result is None else result.latency_ms)
+            if latency_ms is None
+            else max(0, int(latency_ms))
+        ),
         validation_detail=validation_detail,
         validation_reason_codes=tuple(validation_reason_codes),
         reply_budget_tokens=(
@@ -1692,6 +1707,10 @@ def _invoke_stage(
         for semantic_attempt in range(max_semantic_attempts):
             if not budget.consume():
                 return None, attempts, "workforce_call_budget_exhausted"
+            # AR-392: time the call from the outside, exactly as the hiring
+            # stage loop has all along (``hiring.py``), so an identical
+            # transport failure classifies identically in both places.
+            started = time.monotonic()
             result = invoker(
                 provider,
                 current_prompt,
@@ -1699,11 +1718,17 @@ def _invoke_stage(
                 system_prompt=current_system_prompt,
                 timeout=provider.timeout,
             )
+            latency_ms = int((time.monotonic() - started) * 1000)
             if result is not None and result.failure_reason:
-                # AR-388: the transport made no call at all and named why (a
-                # credential the environment never carried). Give the budget
-                # back, record the answer, and move to the next provider.
-                budget.release()
+                # AR-388: the transport named why it gave up. AR-392 widened
+                # that vocabulary to failures after the request left, and
+                # those did spend a call: only a refusal before any request
+                # gives the budget back and leaves ``called`` alone.
+                attempted = bool(result.call_attempted)
+                if attempted:
+                    called = True
+                else:
+                    budget.release()
                 attempts.append(
                     _attempt(
                         stage,
@@ -1711,17 +1736,27 @@ def _invoke_stage(
                         status="failed",
                         reason_code=result.failure_reason,
                         result=result,
+                        latency_ms=latency_ms if attempted else None,
                     )
                 )
                 break
             called = True
             if result is None:
+                # The transport gave up without naming a cause. Split it the
+                # way the hiring loop does: the deadline handed to the
+                # transport is never raised above ``provider.timeout``, so
+                # reaching it is a fact, not a guess.
                 attempts.append(
                     _attempt(
                         stage,
                         provider,
                         status="failed",
-                        reason_code="provider_no_valid_response",
+                        reason_code=(
+                            PROVIDER_CALL_TIMED_OUT
+                            if latency_ms >= int(provider.timeout * 1000)
+                            else PROVIDER_CALL_FAILED
+                        ),
+                        latency_ms=latency_ms,
                     )
                 )
                 break
