@@ -31,6 +31,7 @@ related:
   - docs/roadmap/issue-AR-388-unset-credential-reads-as-provider-unavailable.md
   - docs/roadmap/issue-AR-389-critic-judges-neighbours-it-cannot-see.md
   - docs/roadmap/issue-AR-390-recruiter-cards-hide-the-outcomes-that-name-the-work.md
+  - docs/roadmap/issue-AR-391-recruiter-prompt-misstates-how-its-ranking-becomes-the-team.md
   - docs/roadmap/issue-AR-386-strict-critic-vetoes-verifier-accepted-install-turns.md
   - docs/roadmap/issue-AR-384-staff-decisions-die-on-uncoverable-typed-requirements.md
   - docs/decisions/0201-constrain-the-planner-domains-to-what-the-roster-serves.md
@@ -133,6 +134,12 @@ changes rather than duplicating every commit.
 - The cards the recruiter and the critic read carry every outcome and every
   `not_for` line the contract declares (AR-390, ADR-0206); the compact card
   used to cut outcomes at two, hiding the ones that name a unit's work.
+- The recruiter is told how its ranking becomes the team (AR-391, ADR-0207):
+  the contract carries the derivation with the verifier's own numbers, each
+  typed recall row names the requirements exactly one eligible card covers, both
+  prompts state that acceptable candidates join only for typed coverage and that
+  confidence is the lowest selected rank score, and a whole-team rejection
+  hands back the derived team beside a correction instead of a bare code.
 - `agency battery` runs the change-triggered harness canary battery
   (AR-337): per-harness version fingerprints gate the run, claude and codex
   re-prove through their canary modes (codex attended-trust loss reported

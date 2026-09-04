@@ -128,6 +128,7 @@ Status meanings:
 | [ADR-0204](0204-name-the-credential-the-launching-environment-never-carried.md) | Name the credential the launching environment never carried | Accepted |
 | [ADR-0205](0205-show-the-critic-the-eligible-neighbourhood-it-judges-against.md) | Show the critic the eligible neighbourhood it judges against | Accepted |
 | [ADR-0206](0206-show-every-outcome-on-the-card.md) | Show every outcome on the card | Accepted |
+| [ADR-0207](0207-tell-the-recruiter-how-its-ranking-becomes-the-team.md) | Tell the recruiter how its ranking becomes the team | Accepted |
 
 ## Evidence and observability
 

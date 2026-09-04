@@ -327,8 +327,9 @@ _RECRUITER_SYSTEM = (
     "worker, grants authority, or overrides the current plan.\n\n"
     "You see compact cards from a bounded complete-roster recall union: the guaranteed "
     "typed lane plus any separately validated lexical/dense discoveries. Read each "
-    "candidate's name, outcomes, and scope to understand what "
-    "they actually do. Pick a supplied specialist only when their real-world expertise "
+    "candidate's outcomes, scope_qualifiers and not_for lines to understand what "
+    "they actually do; a card whose not_for line names the unit's work is not a faithful "
+    "owner however well its name or domain matches. Pick a supplied specialist only when their real-world expertise "
     "faithfully matches the ideal, not merely because they are the least-wrong card or "
     "have the most keyword overlaps. If no supplied candidate faithfully fits, declare "
     "a gap so hiring inference can materialize the missing specialty. A gap may use an "
@@ -344,7 +345,10 @@ _RECRUITER_SYSTEM = (
     "can staff on that unit given its authority, this host, its platform and its tools, and "
     "eligible_candidates_without_card counts eligible workers that have no card here. A card "
     "outside that list can only be forbidden or omitted for that unit; the runtime cannot "
-    "select it, so classifying it required or acceptable wastes the row. When the ideal "
+    "select it, so classifying it required or acceptable wastes the row. Each row's "
+    "sole_eligible_coverers names every requirement that exactly one eligible card covers: "
+    "that card is on every safe team for the unit, so rank it directly after the team it "
+    "completes even when a better-fitting owner leads. When the ideal "
     "specialist is not eligible, staff the nearest eligible faithful candidate or declare a "
     "gap. Do not guess "
     "typed coverage from a display name or prose card. uncovered_requirements lists what no "
@@ -367,17 +371,32 @@ _RECRUITER_SYSTEM = (
     "unit, and gap only when no supplied specialist or combination is semantically appropriate "
     "— a gap hires a new contractor, so reserve it for genuinely missing specialties. Classify "
     "each candidate as required, acceptable, or forbidden:\n"
-    "- required: an essential specialist who must be in the derived selected team and consumes "
-    "one team slot\n"
-    "- acceptable: a valid alternative or complement that the runtime may add when needed\n"
+    "- required: a specialist who must be on the selected team; every required candidate is "
+    "selected and holds one team slot\n"
+    "- acceptable: a substitute the runtime adds only when the required candidates leave a "
+    "typed_recall requirement uncovered, taking the fewest such candidates in your rank order; "
+    "it never adds one for fit, so an acceptable candidate you consider part of the team will "
+    "not be on it\n"
     "- forbidden: an excluded candidate that cannot enter the team\n"
-    "The runtime derives selected from these classifications. Before returning staff, verify that "
+    "The runtime derives selected from these classifications: every required candidate, plus "
+    "acceptable candidates only as typed-coverage complements. It reads your ranking as order "
+    "alone: the first ranked candidate scores 1.0 and each later rank scores "
+    "response_contract.rank_score_step lower, whatever score you wrote. A unit's confidence is "
+    "the rank score of its lowest-ranked selected worker, a runtime-added coverage complement "
+    "included, and its margin is that confidence less the best alternative team's; the "
+    "verifier rejects the unit when confidence is below response_contract.minimum_confidence "
+    "or margin below response_contract.minimum_margin. So rank in team order: every worker "
+    "the team needs first, then substitutes. When a typed requirement is covered by one "
+    "eligible card that does not fit the outcome (typed_recall.sole_eligible_coverers), keep "
+    "the faithful owner required and rank that coverer directly after the team it completes, "
+    "required or acceptable, so the team the runtime derives keeps its confidence. Before "
+    "returning staff, verify that "
     "some subset of required and acceptable candidates contains every required candidate, uses "
     "no more than response_contract.maximum_selected_per_unit slots, and covers every exact "
     "typed_recall requirement outside waived_requirements; those are recorded on the receipt as "
-    "roster coverage gaps and never held against the team. Do not label every strong candidate "
-    "required; use acceptable for "
-    "optional alternatives and complements. Do not mark a necessary "
+    "roster coverage gaps and never held against the team. Required is the team, not an "
+    "emphasis label: classify required exactly the candidates the team needs, and acceptable "
+    "those the runtime may draw on for coverage. Do not mark a necessary "
     "coverage complement forbidden merely because it is secondary. A gap decision must not "
     "leave a semantically faithful candidate behind.\n"
     "Every required/acceptable candidate needs positive_evidence as one or more unique "
@@ -415,8 +434,13 @@ _RECRUITER_REPAIR_SYSTEM = (
     "gap may use an empty ranked_semantic list when no supplied candidate is relevant. "
     "Never invent a roster identity. Then "
     "classify each ranked candidate as required, acceptable, or forbidden. The runtime derives "
-    "selected: every required candidate is mandatory, acceptable candidates are optional team "
-    "members, and forbidden candidates are excluded. A staff decision must admit a subset that "
+    "selected: every required candidate is mandatory, acceptable candidates join only as "
+    "typed-coverage complements in your rank order, never for fit, and forbidden candidates are "
+    "excluded. It reads your ranking as order alone and takes a unit's confidence from the "
+    "rank score of its lowest-ranked selected worker, coverage complements included, so rank in "
+    "team order with every coverage complement directly after the team it completes; "
+    "typed_recall.sole_eligible_coverers names the cards every safe team must hold. A staff "
+    "decision must admit a subset that "
     "contains every required candidate, stays within maximum_selected_per_unit, and covers every "
     "exact requirement outside waived_requirements, which the runtime waives and records. "
     "A gap decision must leave no safe team. Required and "
@@ -904,6 +928,21 @@ class _NominationValidationError(ValueError):
         super().__init__(f"workforce nomination failures: {detail}")
 
 
+def _staffing_violation_feedback_row(
+    error: _StaffingVerificationError, failure: _StaffingFailure
+) -> dict[str, Any]:
+    """One verifier violation with what the recruiter can do about it (AR-391)."""
+
+    row: dict[str, Any] = {"unit_id": failure.unit_id, "code": failure.code}
+    correction = _STAFFING_VIOLATION_REPAIR_REQUIREMENTS.get(failure.code)
+    if correction:
+        row["required_correction"] = correction
+    derived = error.derived_rows.get(failure.unit_id)
+    if derived is not None:
+        row["derived_team"] = derived.as_prompt_dict()
+    return row
+
+
 def _nomination_repair_feedback_row(failure: _NominationFailure) -> dict[str, Any]:
     correction = _NOMINATION_REPAIR_REQUIREMENTS[failure.code]
     if failure.diagnostic_code:
@@ -956,10 +995,100 @@ class _StaffingFailure:
     code: str
 
 
+@dataclass(frozen=True, slots=True)
+class _DerivedTeamRow:
+    """The team the runtime derived for one rejected unit, as bounded facts.
+
+    AR-391 / ADR-0207: a whole-team rejection used to reach the recruiter
+    as a bare code. On 2026-09-04 the recruiter answered
+    ``selection_confidence_too_low`` by inverting the team, because nothing
+    told it that the coverage complement the runtime had added at rank
+    four was the member that set the confidence. Identities here are roster
+    identities the proposal already validated; no request or model content.
+    """
+
+    unit_id: str
+    selected: tuple[str, ...]
+    required: tuple[str, ...]
+    coverage_complements: tuple[str, ...]
+    confidence: float
+    margin: float
+    lowest_selected_agent_id: str
+    lowest_selected_rank: int
+    lowest_selected_score: float
+
+    @classmethod
+    def from_unit(cls, row: UnitRecruitment) -> _DerivedTeamRow:
+        selected_ranks = [item for item in row.ranked_semantic if item.agent_id in row.selected]
+        lowest = min(selected_ranks, key=lambda item: (item.score, -item.rank), default=None)
+        return cls(
+            unit_id=row.unit_id,
+            selected=tuple(row.selected),
+            required=tuple(row.required),
+            coverage_complements=tuple(item for item in row.selected if item not in row.required),
+            confidence=float(row.confidence),
+            margin=float(row.margin),
+            lowest_selected_agent_id="" if lowest is None else lowest.agent_id,
+            lowest_selected_rank=0 if lowest is None else int(lowest.rank),
+            lowest_selected_score=0.0 if lowest is None else float(lowest.score),
+        )
+
+    def as_prompt_dict(self) -> dict[str, Any]:
+        return {
+            "selected": list(self.selected),
+            "required": list(self.required),
+            "runtime_added_for_typed_coverage": list(self.coverage_complements),
+            "confidence": self.confidence,
+            "margin": self.margin,
+            "lowest_ranked_selected": {
+                "agent_id": self.lowest_selected_agent_id,
+                "rank": self.lowest_selected_rank,
+                "rank_score": self.lowest_selected_score,
+            },
+        }
+
+
+# AR-391 / ADR-0207: what the recruiter can do about a verifier code, stated
+# beside the code. Codes outside this map reach the recruiter bare, as before.
+_STAFFING_VIOLATION_REPAIR_REQUIREMENTS: Final[Mapping[str, str]] = {
+    "selection_confidence_too_low": (
+        "The unit's confidence is the rank score of its lowest-ranked selected worker, a "
+        "candidate the runtime added to cover a typed requirement included; the first rank "
+        "scores 1.0 and each later rank one rank_score_step lower. Rank every worker the team "
+        "needs, and every coverage complement, at the top in team order so the lowest selected "
+        "rank meets minimum_confidence."
+    ),
+    "selection_margin_too_low": (
+        "The unit's margin is its confidence less the best alternative team's; keep the team "
+        "at the top of the ranking and its substitutes below it."
+    ),
+    "no_safe_sufficient_team": (
+        "No subset of the required and acceptable candidates covers every typed requirement "
+        "within maximum_selected_per_unit; rank a faithful eligible coverer required or "
+        "acceptable, or declare gap."
+    ),
+    "unit_agent_budget_exceeded": (
+        "More candidates were required than maximum_selected_per_unit; keep required only the "
+        "workers the team needs."
+    ),
+    "selected_agent_budget_exceeded": (
+        "The derived teams together exceed maximum_selected_total; reduce required candidates "
+        "across units."
+    ),
+}
+
+
 class _StaffingVerificationError(ValueError):
     """Bounded whole-team verifier failures without model or request content."""
 
-    def __init__(self, staffing: StaffingDecision) -> None:
+    def __init__(
+        self,
+        staffing: StaffingDecision,
+        *,
+        derived_rows: Sequence[_DerivedTeamRow] = (),
+        minimum_confidence: float | None = None,
+        minimum_margin: float | None = None,
+    ) -> None:
         failures = tuple(
             dict.fromkeys(
                 _StaffingFailure(str(reason.unit_id or ""), str(reason.code or ""))
@@ -979,6 +1108,12 @@ class _StaffingVerificationError(ValueError):
             raise ValueError("staffing verification failure is not allowlisted")
         self.failures = failures
         self.staffing = staffing
+        failed_unit_ids = {failure.unit_id for failure in failures if failure.unit_id}
+        self.derived_rows: dict[str, _DerivedTeamRow] = {
+            row.unit_id: row for row in derived_rows if row.unit_id in failed_unit_ids
+        }
+        self.minimum_confidence = minimum_confidence
+        self.minimum_margin = minimum_margin
         detail = ",".join(f"{failure.unit_id or 'global'}={failure.code}" for failure in failures)
         super().__init__(f"workforce staffing verification failures: {detail}")
 
@@ -1452,12 +1587,20 @@ def _semantic_retry_prompts(
                 "assurance, coverage, and execution contract."
             ),
             "staffing_violations": [
-                {
-                    "unit_id": failure.unit_id,
-                    "code": failure.code,
-                }
-                for failure in error.failures
+                _staffing_violation_feedback_row(error, failure) for failure in error.failures
             ],
+            **(
+                {
+                    "team_derivation": {
+                        "minimum_confidence": error.minimum_confidence,
+                        "minimum_margin": error.minimum_margin,
+                        "confidence_is_the_lowest_selected_rank_score": True,
+                        "acceptable_candidates_join_only_for_typed_coverage": True,
+                    }
+                }
+                if error.minimum_confidence is not None
+                else {}
+            ),
         }
     elif isinstance(error, _PlanPolicyValidationError):
         next_system_prompt = COMPACT_INTENT_REPAIR_SYSTEM
@@ -2440,6 +2583,18 @@ def _annotate_eligible_candidates(
         with_card = [agent_id for agent_id in eligible if agent_id in card_ids]
         row["eligible_candidate_ids"] = with_card
         row["eligible_candidates_without_card"] = len(eligible) - len(with_card)
+        # AR-391 / ADR-0207: a requirement exactly one eligible card covers puts
+        # that card on every safe team for the unit. Live on 2026-09-04 the
+        # recruiter left such a card unranked or at rank five on a review unit
+        # in five of six cache-bypassed trials, because the fact was only
+        # implicit in twenty-four candidate rows. A coverage fact, not a rank.
+        row["sole_eligible_coverers"] = {
+            requirement: coverers[0]
+            for requirement, coverers in _eligible_coverers_by_requirement(
+                unit, list(row.get("requirements", ())), contracts, context, card_ids
+            )
+            if len(coverers) == 1
+        }
 
 
 def _apply_hybrid_recall(
@@ -2553,6 +2708,16 @@ def staffing_budget_for_config(config: AgencyConfig) -> StaffingBudget:
     )
 
 
+def _rank_score_step(minimum_margin: float) -> float:
+    """The score gap between adjacent ranks: the configured margin, at least 0.01.
+
+    AR-391 / ADR-0207: the recruiter document states this number, so the
+    scorer and the prompt cannot disagree about what a rank is worth.
+    """
+
+    return max(float(minimum_margin), 0.01)
+
+
 def _calibrated_rankings(
     scores: Mapping[str, float],
     *,
@@ -2561,7 +2726,7 @@ def _calibrated_rankings(
     """Preserve semantic order without treating model decimals as calibrated evidence."""
 
     ordered = sorted(scores.items(), key=lambda item: (-item[1], item[0]))
-    step = max(float(minimum_margin), 0.01)
+    step = _rank_score_step(minimum_margin)
     return tuple(
         (agent_id, round(max(0.0, 1.0 - (index * step)), 6))
         for index, (agent_id, _raw_score) in enumerate(ordered)
@@ -3496,7 +3661,13 @@ def _verified_recruiter_proposal(
     )
     if staffing.accepted or _valid_inferred_gap_proposal(proposal, staffing):
         return staffing
-    raise _StaffingVerificationError(staffing)
+    budget = staffing_budget_for_config(config)
+    raise _StaffingVerificationError(
+        staffing,
+        derived_rows=tuple(_DerivedTeamRow.from_unit(row) for row in proposal.units),
+        minimum_confidence=budget.min_confidence,
+        minimum_margin=budget.min_margin,
+    )
 
 
 def _recruit_ambiguous_plan(
@@ -3588,6 +3759,16 @@ def _recruit_ambiguous_plan(
             "acceptable_candidates_are_optional": True,
             "forbidden_candidates_are_excluded": True,
             "safe_team_must_include_all_required_within_limit": True,
+            # AR-391 / ADR-0207: how the ranking becomes the team, stated
+            # where the recruiter reads its contract, with the numbers the
+            # verifier applies rather than a paraphrase of them.
+            "acceptable_candidates_join_only_for_typed_coverage": True,
+            "ranking_is_read_as_order_only": True,
+            "rank_score_step": _rank_score_step(config.workforce.min_margin),
+            "confidence_is_the_lowest_selected_rank_score": True,
+            "margin_is_against_the_best_alternative_team": True,
+            "minimum_confidence": config.workforce.min_confidence,
+            "minimum_margin": config.workforce.min_margin,
             "candidate_ids_must_come_from_detail_cards": True,
             "typed_recall_is_non_ranked_evidence": True,
             "hybrid_recall_is_additive_candidate_evidence_only": True,

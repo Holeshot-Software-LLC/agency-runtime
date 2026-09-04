@@ -1,0 +1,111 @@
+AR-391 evidence, 2026-09-04 (ADR-0207). Branch claude/ar391-team-derivation-account on main 975344b2. Runtime under
+test: the branch checkout via PYTHONPATH, run by the installed venv python (~/.local/share/agency-runtime/venvs/e676e801).
+Store: the reconciled COPY used by the ADR-0201 to ADR-0206 measurements (scratchpad agency.db.branch-copy, generation
+307, 291 contracts). Gateway: task-agency-recruiter-v2 through the agency-recruiter profile; every offline replay sent
+cache: {"no-cache": true}. Offline derivations push each reply through inference._proposal_from_nominations and
+staffing_verifier.verify_staffing with the store copy, the captured plan and host context (scratchpad derive_h.py).
+
+== 1. The mechanism, read from the ADR-0206 run (capture391, 2026-09-04) ==
+  Turns 203 and 209, review-report units (authority review, domain quality-assurance, capabilities review and
+  risk-analysis): nine eligible cards; capability:risk-analysis covered by test-results-analyzer alone. Live, both
+  units were staffed test-results-analyzer alone (203 from the first reply; 209 after the verifier rejected the first
+  reply, release verifier required and the analyzer fifth, as selection_confidence_too_low, with the code alone as
+  feedback) and the strict critic vetoed both as wrong-neighbor-selection.
+  Runtime facts (unchanged by this change): the derived team is every required candidate plus, only for a typed
+  requirement still uncovered, the fewest acceptable candidates in rank order (_minimum_team_with_required); the
+  ranking is read as order alone (_calibrated_rankings: rank 1 = 1.0, each later rank one step lower, step =
+  max(min_margin, 0.01) = 0.1 here); a unit's confidence is the rank score of its lowest-ranked selected worker,
+  coverage complements included, and the verifier rejects below min_confidence (0.8). So a coverage complement at
+  rank four sinks any team, and a required sole coverer makes every acceptable card redundant.
+  Turn 305, plan unit (authority plan, domain operations): six eligible planners all covering every requirement;
+  operations-manager required alone (0.92, the SRE acceptable 0.55); verifier accepted; critic vetoed.
+
+== 2. Offline replays of the three recruiter calls, three trials each, derived through the verifier ==
+  Baseline (installed prompt and contract; scratchpad replay_<turn>_baseline.json):
+    203 review unit: verifier required + analyzer 4th -> invalid_ranking on another unit; verifier + reality checker
+        required, analyzer 4th -> selection_confidence_too_low (confidence 0.7); reality checker required, analyzer
+        2nd -> accepted (0.9). Verifier accepted 1 of 3.
+    209 review unit: verifier required, analyzer 5th -> selection_confidence_too_low (0.6); code reviewer required,
+        analyzer unranked -> staff_without_safe_team; verifier required, analyzer 4th -> selection_confidence_too_low
+        (0.7). Verifier accepted 0 of 3.
+    305 plan unit: operations-manager required 3 of 3 (SRE acceptable 0.78, 0.70, 0.70); accepted 3 of 3.
+    The recruiter's fit judgment on the review unit never required the analyzer (0 of 6); the losses are the account.
+  Prompt account and contract only (ADR-0207 decisions 1, 3, 4, 5; replay_<turn>_ar391.json):
+    203: [reality-checker + analyzer 3rd] 0.8 accepted; [verifier + analyzer 3rd] 0.8 accepted; analyzer required
+        alone 1.0 accepted. Verifier accepted 3 of 3.
+    209: reality checker required, analyzer unranked -> staff_without_safe_team; reality checker + verifier required,
+        analyzer unranked -> staff_without_safe_team; code reviewer required, analyzer 5th ->
+        selection_confidence_too_low (0.6). Verifier accepted 0 of 3: the recruiter still had to infer the sole
+        coverer from twenty-four candidate rows.
+    305: operations-manager required 3 of 3; the not_for sentence changed nothing measured.
+  Prompt account, contract and sole_eligible_coverers on the recall row (decision 2; replay_<turn>_ar391b.json):
+    203: [verifier + analyzer 3rd] 0.8; [verifier + analyzer 2nd] 0.9; [verifier + analyzer 3rd] 0.8. Accepted 3 of 3,
+        every team holding the faithful owner and the coverer.
+    209: analyzer required alone 1.0; analyzer required alone 1.0; [analyzer + reality checker] 0.9. Accepted 3 of 3;
+        two of three over-correct into the coverer alone (the critic's question, measured live below).
+    305: operations-manager required 3 of 3 (accepted 3 of 3).
+  Scripts: recruiter_replay_h.py (--system, --contract, --annotate), derive_h.py; per-trial rankings in the JSON files.
+
+== 3. Live, the same eleven wordings under strict mode on the branch runtime (capture392, store copy, 2026-09-04) ==
+  Baseline on the same store copy and wordings: the ADR-0206 run (capture391: completed 4 (202, 204, 207, 304);
+  critic reached 8, approved 4, vetoed 4 (203, 205, 209, 305); pre-critic losses 3 (201, 206, 208)).
+  This run: completed 9 (201, 202, 203, 204, 206, 207, 209, 304, 305); critic reached 9, approved 9, vetoed 0;
+  pre-critic losses 2 (205: the subject stage and the recruiter's reply could not be read, provider_no_valid_response;
+  208: a planner policy repair, a recruiter staff_without_safe_team rejection and a missing_work_unit repair exhausted
+  the strict call budget). 304 recovered from a staff_without_safe_team rejection through one repair.
+  Caveat: the planner answered afresh on this run (no gateway cache key on any of the 46 calls) and wrote different
+  plans on several turns; 203 and 209 carry no review-report unit this time, so the review-unit mechanism is measured
+  by section 2 and this run measures the whole path on this run's plans. 305's plan unit staffed operations-manager
+  again (confidence 0.8, the SRE left ranked) and the critic approved it this time.
+  Per turn, what the critic saw (selected (confidence) | eligible ranked cards left unselected, eligible count):
+  201 accepted                 approve                      calls: #0other:dom #1planner #2recruiter #3critic
+       environment-discovery[analy/advi]: devops-automator,developer-tooling-engineer (conf 0.9) | left: desktop-app-engineer (elig 68)
+       helix-setup[plan/plan]: operations-manager (conf 1.0) | left: sre-site-reliability-engineer (elig 6)
+       setup-verification[test-/revi]: cross-platform-release-verifier,reality-checker (conf 0.9) | left: evidence-collector (elig 9)
+  202 accepted                 approve                      calls: #0other:dom #1planner #2recruiter #3critic
+       environment-discovery[analy/advi]: desktop-app-engineer (conf 1.0) | left: devops-automator (elig 68)
+       install-helix[plan/plan]: sre-site-reliability-engineer (conf 0.9) | left: - (elig 6)
+       install-verification[test-/revi]: cross-platform-release-verifier,evidence-collector (conf 0.9) | left: - (elig 9)
+  203 accepted                 approve                      calls: #0other:dom #1planner #2recruiter #3critic
+       environment-discovery[analy/advi]: desktop-app-engineer (conf 1.0) | left: codebase-onboarding-engineer,developer-tooling-engineer,devops-automator (elig 68)
+       helix-installation[plan/plan]: sre-site-reliability-engineer (conf 0.9) | left: operations-manager (elig 6)
+       install-verification[test-/revi]: cross-platform-release-verifier,application-integration-verifier (conf 0.9) | left: accessibility-auditor,evidence-collector,reality-checker (elig 9)
+  204 accepted                 approve                      calls: #0other:dom #1planner #2recruiter #3critic
+       workstation-discovery[analy/advi]: operations-manager (conf 1.0) | left: it-service-manager,network-diagnostic-explanation-specialist,sre-site-reliability-engineer (elig 7)
+       zed-setup-plan[plan/plan]: operations-manager (conf 1.0) | left: incident-response-commander,it-service-manager,sre-site-reliability-engineer (elig 6)
+       zed-install-verification[test-/revi]: cross-platform-release-verifier,application-integration-verifier (conf 0.9) | left: evidence-collector,reality-checker (elig 9)
+  205 no_specialist_fail_open  -                            calls: #0other:dom! #1planner #2reranker #3recruiter!
+       receipt: reason=workforce_provider_unavailable staffing=['inference_unavailable'] attempts=[('unknown', 'failed', 'provider_no_valid_response'), ('planner', 'applied', 'structured_response_applied'), ('recall_embedding', 'applied', 'dense_recall_applied'), ('recall_reranker', 'applied', 'structured_response_applied'), ('recruiter', 'failed', 'provider_no_valid_response')]
+  206 accepted                 approve                      calls: #0other:dom #1planner #2recruiter #3critic
+       source-selection[analy/advi]: developer-tooling-engineer (conf 1.0) | left: codebase-onboarding-engineer,desktop-app-engineer,devops-automator (elig 68)
+       install-helix[plan/plan]: operations-manager (conf 1.0) | left: it-service-manager,sre-site-reliability-engineer (elig 6)
+       verify-hx-starts[test-/revi]: cross-platform-release-verifier,application-integration-verifier (conf 0.9) | left: evidence-collector (elig 9)
+  207 accepted                 approve                      calls: #0other:dom #1planner #2recruiter #3critic
+       install-options[analy/advi]: desktop-app-engineer,developer-tooling-engineer (conf 0.9) | left: codebase-onboarding-engineer,devops-automator (elig 68)
+       install-helix[plan/plan]: operations-manager (conf 1.0) | left: cross-border-e-commerce-specialist,database-reliability-engineer,incident-response-commander,it-service-manager,sre-site-reliability-engineer (elig 6)
+       verify-install[test-/revi]: cross-platform-release-verifier,evidence-collector (conf 0.9) | left: accessibility-auditor,application-integration-verifier,performance-benchmarker,reality-checker,test-results-analyzer,tool-evaluator (elig 9)
+  208 no_specialist_fail_open  -                            calls: #0other:dom #1planner/plan #2planner-r #3recruiter/staff_without_safe_team #4recruiter/missing_work_unit
+       receipt: reason=workforce_inference_failed staffing=['inference_invalid'] attempts=[('unknown', 'applied', 'structured_response_applied'), ('planner', 'rejected', 'provider_response_contract_invalid'), ('planner', 'applied', 'structured_response_applied'), ('recall_embedding', 'skipped', 'dense_recall_projection_invalid'), ('recruiter', 'rejected', 'provider_response_contract_invalid'), ('recruiter', 'rejected', 'provider_response_contract_invalid')]
+  209 accepted                 approve                      calls: #0other:dom #1planner #2recruiter #3critic
+       environment-check[analy/advi]: desktop-app-engineer (conf 1.0) | left: code-reviewer,codebase-onboarding-engineer,developer-tooling-engineer,devops-automator (elig 68)
+       install-plan[plan/plan]: sre-site-reliability-engineer (conf 0.9) | left: cross-border-e-commerce-specialist,it-service-manager,operations-manager (elig 6)
+       install-verification[test-/revi]: cross-platform-release-verifier,evidence-collector (conf 0.9) | left: performance-benchmarker,reality-checker,test-results-analyzer (elig 9)
+  304 accepted                 approve                      calls: #0other:dom #1planner #2recruiter/staff_without_safe_team #3recruiter #4critic
+       environment-discovery[analy/advi]: codebase-onboarding-engineer (conf 1.0) | left: - (elig 68)
+       installation-plan[plan/plan]: operations-manager,sre-site-reliability-engineer (conf 0.9) | left: incident-response-commander,it-service-manager (elig 6)
+       helix-shell-setup[imple/modi]: devops-automator (conf 1.0) | left: infrastructure-maintainer,network-engineer (elig 3)
+       install-verification[test-/revi]: cross-platform-release-verifier,application-integration-verifier (conf 0.9) | left: accessibility-auditor,evidence-collector,performance-benchmarker,reality-checker,test-results-analyzer,tool-evaluator (elig 9)
+  305 accepted                 approve                      calls: #0other:dom #1planner #2recruiter #3critic
+       environment-discovery[analy/advi]: developer-tooling-engineer (conf 1.0) | left: devops-automator (elig 68)
+       tooling-installation[plan/plan]: operations-manager (conf 0.8) | left: sre-site-reliability-engineer (elig 6)
+       install-verification[test-/revi]: cross-platform-release-verifier,application-integration-verifier (conf 0.9) | left: performance-benchmarker,reality-checker,test-results-analyzer,tool-evaluator (elig 9)
+  
+  completed 9 [201, 202, 203, 204, 206, 207, 209, 304, 305]; critic reached 9, approved 9 [201, 202, 203, 204, 206, 207, 209, 304, 305], vetoed 0 []; pre-critic losses 2 [205, 208]
+
+== 4. Gates ==
+  tests/test_team_derivation_account.py 6 passed; affected suites (team derivation account, card outcomes, critic and
+  recruiter eligibility views, critic doctrine, workforce inference, decision conformance, selection safety, reply
+  residue, reply budget, evidence vocabulary, credential env, planner domain service) 239 passed, 1 skipped; named fast
+  spine 1165 passed, 3 skipped under -W error; mutation snippets 180 checked, none stale; decision-conformance 180 of
+  180 killed with the tree unchanged and a clean baseline (curated mutations staffing-feedback-hides-the-derived-team
+  and recall-row-hides-the-sole-eligible-coverer, both killed).
