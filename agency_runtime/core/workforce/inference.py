@@ -442,7 +442,7 @@ _RECRUITER_REPAIR_SYSTEM = (
     "typed-coverage complements in your rank order, never for fit, and forbidden candidates are "
     "excluded. It reads your ranking as order alone and takes a unit's confidence from the "
     "rank score of its lowest-ranked selected worker, coverage complements included, so rank in "
-    "team order with every coverage complement directly after the team it completes; "
+    "team order with the sole coverer directly after the team it completes, as every coverage complement is; "
     "typed_recall.sole_eligible_coverers names the cards every safe team must hold. Required is "
     "the team, not an emphasis label: classify required exactly the candidates the team needs. A staff "
     "decision must admit a subset that "
