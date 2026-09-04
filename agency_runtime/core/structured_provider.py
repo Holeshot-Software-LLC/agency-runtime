@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import math
+import os
 import time
 import urllib.request
 from collections.abc import Mapping
@@ -116,6 +117,9 @@ class StructuredProviderResult:
     completion_tokens: int | None = None
     finish_reason: str = ""
     reply_truncated: bool = False
+    # AR-388 / ADR-0204: a non-empty value means the transport made no call at
+    # all and says why, from a closed vocabulary; ``value`` is then empty.
+    failure_reason: str = ""
 
     def receipt(self) -> dict[str, Any]:
         return {
@@ -524,6 +528,47 @@ def _http_headers(provider_type: str, api_key: str) -> dict[str, str]:
     return headers
 
 
+# AR-388 / ADR-0204. A provider whose configured credential variable the
+# launching environment never carried is a fault of that environment, not of
+# the gateway. The transport says so instead of sending an unauthenticated
+# request, so the stage records the cause before any call is made.
+PROVIDER_CREDENTIAL_ENV_UNSET = "provider_credential_env_unset"
+_KEYLESS_PROVIDER_TYPES = frozenset({"ollama", "cli"})
+
+
+def provider_credential_env_unset(provider: ProviderEntry) -> bool:
+    """Return whether the provider names a credential variable the environment lacks."""
+
+    if provider.api_key or not provider.api_key_env:
+        return False
+    if provider.type.strip().casefold() in _KEYLESS_PROVIDER_TYPES or provider.ollama_mode:
+        return False
+    return not os.environ.get(provider.api_key_env)
+
+
+def _credential_unset_result(
+    provider: ProviderEntry,
+    provider_type: str,
+    started: float,
+) -> StructuredProviderResult:
+    return StructuredProviderResult(
+        value={},
+        provider_name=provider.name,
+        provider_type=provider_type,
+        transport="",
+        requested_model=provider.model,
+        model_group=provider.model if provider_type == "litellm" else "",
+        actual_model="",
+        model_receipt_source="unavailable",
+        latency_ms=max(0, int((time.monotonic() - started) * 1000)),
+        thinking_level_configured=provider.reasoning_effort,
+        thinking_level_consumed=_translate_thinking_level_for_adapter(
+            provider_type, provider.reasoning_effort
+        ),
+        failure_reason=PROVIDER_CREDENTIAL_ENV_UNSET,
+    )
+
+
 def _http_provider_is_safe(provider: ProviderEntry, api_key: str) -> bool:
     provider_type = provider.type.strip().casefold()
     if provider_type not in _HTTP_PROVIDER_TYPES or not provider.model or not provider.base_url:
@@ -603,6 +648,8 @@ def invoke_structured_provider_result(
             ),
         )
 
+    if provider_credential_env_unset(provider):
+        return _credential_unset_result(provider, provider_type, started)
     api_key = provider.resolve_api_key()
     if not _http_provider_is_safe(provider, api_key):
         return None

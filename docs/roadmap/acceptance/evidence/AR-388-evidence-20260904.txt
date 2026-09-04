@@ -1,0 +1,71 @@
+AR-388 evidence, 2026-09-04 (ADR-0204). Branch claude/ar388-credential-env on main ec3d5963. Runtime under test:
+the branch checkout via PYTHONPATH, run by the installed venv python (~/.local/share/agency-runtime/venvs/56e0b6dd).
+Store: a read-only backup of the installed store (scratchpad agency.db.ro-copy-20260904, generation 312, 291 contracts).
+The installed configuration (~/.agency-runtime/agency.yaml) routes every workforce stage to a litellm profile with
+api_key_env LITELLM_API_KEY and has no legacy providers list.
+
+== 1. The environment, 2026-09-03 late evening ==
+  LITELLM_API_KEY in the Claude Code process (pid 1784007): absent. In ~/.bashrc, ~/.profile, ~/.zshrc,
+  /etc/environment, systemd --user show-environment: absent. In the Bash tool's shells: absent.
+  ~/.config/ai-secrets/common.env (mode 0600) carries it; only commands that sourced it had it.
+  Gateway: GET /health/liveliness 200; /v1/models 124 models incl. task-agency-recruiter-v2; a chat completion on
+  task-agency-recruiter-v2 answered "ok".
+
+== 2. What the installed runtime said (before this change) ==
+  preflight_failure_receipts, host claude, session 5037e0ca (two of many identical rows):
+    stage=routing reason_code=workforce_provider_unavailable exception_category=runtime_error provider_attempts=[]
+    staffing_reason_codes=["inference_unavailable"]  recorded_at 2026-09-04T04:21:52Z and 02:28:34Z
+  agency evidence rejections --host codex: 12 agency_blind runs, all preflight_failed, none with a cause.
+  agency install --agent codex --verify-activation (shell without the key):
+    activation.state=verification_failed canary_passed=False
+    invocation.failure_reason=codex_collaboration_projection_unavailable
+    unmet_prerequisites=["host invocation did not complete successfully", "host invocation did not return a nonempty response", "final response header was not proven", "exact Codex activation evidence was not proven (preflight_failed)"]
+  agency host-canary codex --execute --mode agency --profile-scope current-profile (same shell):
+    evidence.run.status=preflight_failed invocation.header={}
+    collaboration_diagnostic={"agent_message_count": 8, "child_interaction_count": 0, "child_start_count": 1, "followup_count": 0, "parent_rollout_observed": true, "proven": false, "reason": "native_collaboration_topology_invalid", "schema": "agency.codex-collaboration-diagnostic.v1", "spawn_count": 1, "tool_output_count": 2, "unexpected_item_count": 0, "wait_count": 1}
+  The same verification with common.env sourced:
+    activation.state=ready canary_passed=True attestation_persisted=True
+
+== 3. The mechanism, probed on the installed runtime 56e0b6dd (scratchpad probe_key.py) ==
+  WITHOUT key: cfg.providers=0  _inference_declared=False  planner -> agency-planner litellm LITELLM_API_KEY resolve=False is_available=True
+  WITH key:    cfg.providers=0  _inference_declared=True   planner -> agency-planner litellm LITELLM_API_KEY resolve=True  is_available=True
+  _inference_declared asked bool(config.providers) or _legacy_provider(config); the judge's api_key is filled from
+  LITELLM_API_KEY at config load (config.py _judge_env_replacements), so the answer tracked the environment.
+
+== 4. The branch runtime, routing probe without the key (scratchpad probe388.py, store copy, the real structured transport as invoker) ==
+  declared(claude): True
+  status: inference_unavailable | calls_used: 0
+  abstention_codes: ('inference_unavailable', 'workforce_provider_unavailable', 'workforce_credential_env_unset')
+  attempts: [('planner', 'agency-planner', 'failed', 'provider_credential_env_unset')]
+  receipt provider_attempts: [{"stage": "planner", "provider_name": "agency-planner", "provider_type": "litellm",
+    "requested_model": "task-agency-planner-v2", "model_group": "task-agency-planner-v2", "actual_model": "",
+    "model_receipt_source": "unavailable", "status": "failed", "reason_code": "provider_credential_env_unset"}]
+  receipt staffing_reason_codes: ['inference_unavailable', 'workforce_credential_env_unset']
+  disclosure: [Agency staffing failed this turn: workforce_provider_unavailable; staffing: inference_unavailable,
+    workforce_credential_env_unset] No specialist was staffed; ...
+
+== 5. The branch runtime, agency doctor --json on the installed configuration ==
+  WITHOUT key: {"detail": "export LITELLM_API_KEY or source the secrets file before launching claude, codex, agency host-canary, agency battery, or agency install --verify-activation", "message": "LITELLM_API_KEY is unset in this environment; inference profiles agency-default, agency-hiring, agency-hiring-critic, agency-planner, agency-recruiter, agency-recruiter-critic, agency-security, linux-task-agency-router cannot authenticate, and a host launched from a shell without it fails preflight as workforce_provider_unavailable (workforce_credential_env_unset)", "name": "inference_credential_litellm_api_key", "status": "warn"}
+  WITH key:    {"detail": "profiles=agency-default, agency-hiring, agency-hiring-critic, agency-planner, agency-recruiter, agency-recruiter-critic, agency-security, linux-task-agency-router", "message": "LITELLM_API_KEY is set in this environment for 8 inference profile(s)", "name": "inference_credential_litellm_api_key", "status": "pass"}
+
+== 6. Gates ==
+  tests/test_credential_env_unset.py 7 passed; affected suites (workforce inference, doctor, fail-open disclosure,
+  preflight diagnosis, activation canary contract, decision conformance, selection safety, eligibility view)
+  267 passed, 1 skipped; named fast spine 1004 passed, 3 skipped under -W error; decision-conformance 176 of 176
+  killed with the tree unchanged and a clean baseline (curated mutation
+  credential-env-unset-reported-as-generic-provider-failure on the transport check, killed; the two anchors on
+  the declared-inference check refreshed for the new call, both killed).
+  A first cut placed the credential check in the stage loop; the default inference profiles declare
+  LITELLM_API_KEY, so every stubbed provider in a test process without the variable was skipped and
+  tests/test_canary_activation_snapshot.py::test_restricted_codex_opaque_spawn_preserves_the_proven_parent_route
+  failed the eval's baseline. The check moved into the structured transport, where the credential is needed;
+  stubs that replace the transport never see it, and that test passes.
+  Full suite (376 files in four alphabetical chunks, umask 077, tests/test_ui_coverage.py and the uncollectable
+  tests/test_platform_wheel.py excluded), compared file-by-file against main ec3d5963 under identical conditions:
+  93 failures identical on both trees (storage trust, private venvs, shard profiles, retention timing, dashboard
+  routes, schema invariants, http server preflight), 0 main-only, and 2 branch-only, both
+  tests/test_no_match_fallback.py::test_isolated_nontrivial_turn_fails_open_without_a_specialist, which saw a
+  'code-reviewer' staffed: tests/test_mcp_server.py::_seed_store had replaced inference.invoke_structured_provider_result
+  on the module without restoring it, a leak the undeclared-inference short-circuit used to mask. An autouse fixture in
+  that module now restores the transport; with it the chunk prefix through test_no_match_fallback.py shows the same 14
+  pre-existing failures as main and both fail-open tests pass.

@@ -3,7 +3,7 @@ title: "Changelog"
 status: active
 category: release
 created: 2026-07-10
-updated: 2026-09-03
+updated: 2026-09-04
 tags: [release, changelog]
 related:
   - docs/RELEASE_CHECKLIST.md
@@ -28,6 +28,7 @@ related:
   - docs/roadmap/issue-AR-333-report-unsupported-codex-isolated-agency-canary.md
   - docs/roadmap/issue-AR-334-support-codex-0151-collaboration-and-hook-contract.md
   - docs/roadmap/issue-AR-385-structured-reply-budget-truncates-nominations-silently.md
+  - docs/roadmap/issue-AR-388-unset-credential-reads-as-provider-unavailable.md
   - docs/roadmap/issue-AR-386-strict-critic-vetoes-verifier-accepted-install-turns.md
   - docs/roadmap/issue-AR-384-staff-decisions-die-on-uncoverable-typed-requirements.md
   - docs/decisions/0201-constrain-the-planner-domains-to-what-the-roster-serves.md
@@ -114,6 +115,13 @@ changes rather than duplicating every commit.
   eligible cards covering each requirement the ranked team left uncovered;
   and both recruiter prompts say a card outside the list can be forbidden or
   omitted but never staffed.
+- An unset credential variable is named instead of read as a provider outage
+  (AR-388, ADR-0204): a resolved `workforce.planner` or `workforce.recruiter`
+  route counts as declared inference; a provider whose `api_key_env` variable
+  the environment lacks is recorded as `provider_credential_env_unset` before
+  any call; the failure outcome, the preflight receipt and the fail-open
+  disclosure carry `workforce_credential_env_unset`; and `agency doctor`
+  warns by variable name, listing the routed profiles, when it is unset.
 - `agency battery` runs the change-triggered harness canary battery
   (AR-337): per-harness version fingerprints gate the run, claude and codex
   re-prove through their canary modes (codex attended-trust loss reported

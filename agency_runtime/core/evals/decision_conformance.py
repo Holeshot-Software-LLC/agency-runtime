@@ -59,8 +59,8 @@ MUTATIONS: Final[tuple[DecisionMutation, ...]] = (
         mutation_id="configured-provider-bypasses-inference",
         invariant="A configured provider always owns online planning and specialist selection.",
         source_path="agency_runtime/core/workforce/inference.py",
-        before="    if not _inference_declared(config):",
-        after="    if _inference_declared(config):",
+        before="    if not _inference_declared(config, context.host):",
+        after="    if _inference_declared(config, context.host):",
         test_node=(
             "tests/test_workforce_inference.py::"
             "test_balanced_mode_always_uses_inference_for_planning_and_selection"
@@ -70,7 +70,7 @@ MUTATIONS: Final[tuple[DecisionMutation, ...]] = (
         mutation_id="missing-provider-restores-offline-staffing",
         invariant="Missing inference fails without a deterministic specialist team.",
         source_path="agency_runtime/core/workforce/inference.py",
-        before="""    if not _inference_declared(config):
+        before="""    if not _inference_declared(config, context.host):
         return _inference_failure(
             mode=mode,
             configured=False,
@@ -80,7 +80,7 @@ MUTATIONS: Final[tuple[DecisionMutation, ...]] = (
             detail_codes=("workforce_provider_unavailable",),
             calls_used=0,
         )""",
-        after="""    if not _inference_declared(config):
+        after="""    if not _inference_declared(config, context.host):
         from agency_runtime.core.workforce.fallback import deterministic_plan_and_staff
 
         offline = deterministic_plan_and_staff(
@@ -353,6 +353,23 @@ class _NominationSemantics:""",
         test_node=(
             "tests/test_recruiter_eligibility_view.py::"
             "test_every_recall_row_carries_the_complete_eligible_card_set"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="credential-env-unset-reported-as-generic-provider-failure",
+        invariant=(
+            "A provider whose configured credential variable the launching environment "
+            "lacks is recorded as provider_credential_env_unset before any call is made, "
+            "so the receipt, the disclosure line and doctor name the cause (ADR-0204)."
+        ),
+        source_path="agency_runtime/core/structured_provider.py",
+        before="""    if provider_credential_env_unset(provider):
+        return _credential_unset_result(provider, provider_type, started)""",
+        after="""    if False and provider_credential_env_unset(provider):
+        return _credential_unset_result(provider, provider_type, started)""",
+        test_node=(
+            "tests/test_credential_env_unset.py::"
+            "test_the_unset_variable_is_recorded_before_any_call"
         ),
     ),
     DecisionMutation(
