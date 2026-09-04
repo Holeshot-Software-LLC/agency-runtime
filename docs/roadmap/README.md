@@ -402,6 +402,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-386` | [The strict critic vetoes every verifier-accepted install turn](issue-AR-386-strict-critic-vetoes-verifier-accepted-install-turns.md) | done | p1 | reliability | pending authorization |
 | `AR-387` | [The recruiter sees cards without their eligibility, so it staffs implementers on plan units and misses the eligible planners](issue-AR-387-recruiter-cards-carry-no-eligibility.md) | done | p1 | reliability | pending authorization |
 | `AR-388` | [An unset credential variable reads as a provider outage, and nothing names it](issue-AR-388-unset-credential-reads-as-provider-unavailable.md) | done | p1 | reliability | pending authorization |
+| `AR-389` | [The strict critic vetoes wrong neighbours it cannot see](issue-AR-389-critic-judges-neighbours-it-cannot-see.md) | in_progress | p1 | reliability | pending authorization |
 
 ## Traceability
 
@@ -745,6 +746,7 @@ not stable internal identifiers.
 | [AR-373](issue-AR-373-recruiter-evidence-vocabulary.md) | [`760d631e`](../worklog/README.md) (deployment reply shapes read where no safety property lives), [`36c91dbd`](../worklog/README.md) (frozen record, four satisfied verdicts, done flip) | [ADR-0202](../decisions/0202-read-the-recruiter-reply-where-no-safety-property-lives.md) |
 | [AR-387](issue-AR-387-recruiter-cards-carry-no-eligibility.md) | [`7af9c43b`](../worklog/README.md) (eligibility view and repair coverers) | [ADR-0203](../decisions/0203-show-the-recruiter-the-complete-eligible-card-set-per-unit.md) |
 | [AR-388](issue-AR-388-unset-credential-reads-as-provider-unavailable.md) | [`13c483fb`](../worklog/README.md) (declared routes, transport credential answer, doctor check) | [ADR-0204](../decisions/0204-name-the-credential-the-launching-environment-never-carried.md) |
+| [AR-389](issue-AR-389-critic-judges-neighbours-it-cannot-see.md) | pending its implementation ledger row | [ADR-0205](../decisions/0205-show-the-critic-the-eligible-neighbourhood-it-judges-against.md) |
 | [AR-386](issue-AR-386-strict-critic-vetoes-verifier-accepted-install-turns.md) | [`6b79736c`](../worklog/README.md), [`b6b2f6e4`](../worklog/README.md) (frozen record, three satisfied verdicts, done flip) | [ADR-0200](../decisions/0200-bind-the-strict-critic-to-the-advisory-doctrine.md) |
 
 ## Dependency summary

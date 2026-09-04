@@ -3157,6 +3157,8 @@ def test_strict_mode_critic_can_only_veto_an_already_verified_team() -> None:
         "selected_authority_bound_by_eligibility": True,
         "roster_coverage_gaps_are_runtime_waivers": True,
         "plan_authority_units_for_host_side_work_are_intended": True,
+        "wrong_neighbor_must_name_an_eligible_card": True,
+        "eligible_neighbourhood_is_complete_per_unit": True,
         "veto_grounds": [
             "wrong-neighbor-selection",
             "missing-lifecycle-assurance-the-plan-calls-for",

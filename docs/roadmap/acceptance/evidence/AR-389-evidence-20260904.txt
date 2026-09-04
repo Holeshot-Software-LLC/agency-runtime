@@ -1,0 +1,66 @@
+AR-389 evidence, 2026-09-04 (ADR-0205). Branch claude/ar389-critic-neighbourhood on main 01028747. Runtime under test:
+the branch checkout via PYTHONPATH, run by the installed venv python (~/.local/share/agency-runtime/venvs/73181675).
+Store: the reconciled COPY used by the ADR-0201 to ADR-0203 measurements (scratchpad agency.db.branch-copy,
+generation 307, 291 contracts). Gateway: task-agency-critic-v2 through the agency-recruiter-critic profile; every
+replay sent cache: {"no-cache": true} so the LiteLLM response cache could not replay a verdict.
+
+== 1. The blindness, read from the ADR-0203 run (raw389, 2026-09-03, eleven install wordings, strict) ==
+  Verifier-accepted teams vetoed by the strict critic as wrong-neighbor-selection: turns 203, 205, 208 (three of eleven).
+  The critic document carried request, critic_contract, plan, proposal, verified_staffing and selected_worker_contracts:
+  nothing about the other cards the runtime could have staffed on each unit.
+  203: unit-enable-helix-terminal (implementation-change/modify) staffed devops-automator alone; the recruiter ranked
+       cross-platform-installer-engineer only acceptable. 42 cards were eligible for the unit.
+  205: unit-install-search-tools (plan/plan) staffed operations-manager; 6 cards eligible (operations-manager,
+       sre-site-reliability-engineer, it-service-manager, incident-response-commander, database-reliability-engineer,
+       cross-border-e-commerce-specialist).
+  208: unit-install-helix (implementation-change/modify) staffed cross-platform-installer-engineer and devops-automator;
+       43 cards eligible. Earlier the same day an identical 205 team replayed 6/6 approve on one wording, 1/6 on another.
+
+== 2. Offline replays of the three vetoed critic calls (six trials each, cache bypassed) ==
+  Fresh baselines, unchanged document: 203 approve 2/3; 205 (the b wording) 0/3; 208 1/3.
+  A. full eligible set per unit, first 16 cards by identity: 203 0/6; 205b 2/6; 208 6/6.
+  B. the recruiter's own carded eligible ids (ADR-0203 rows), first 16 as cards: 203 1/6; 205 6/6; 208 4/6.
+  C. the shipped shape (complete identity-sorted eligible ids, cap 64, + count; compact cards for the eligible workers the
+     recruiter ranked or selected, cap 16; selected_are_whole_neighbourhood; two contract flags; one prompt sentence):
+     203 0/6; 205 6/6; 208 3/6.
+  Reading: the team that holds the obvious eligible neighbour is approved (205, 208), the team that left it unselected
+  stays vetoed (203, defensibly), and the plan-unit coin flip becomes six of six. Scripts critic_replay_c/d/e/f.py;
+  per-trial values in critic205b/replay_neighbourhood.json and critic_<turn>-calls/replay_neighbourhood*.json.
+
+== 3. Document size under shape C (bytes, compact JSON) ==
+  203: base 20784 -> 29539; 205: base 12317 -> 16676; 208: base 23609 -> 33720.
+
+== 4. Live, the same eleven wordings under strict mode on the branch runtime (capture390, store copy, 2026-09-04) ==
+  Baseline is the ADR-0203 run of 2026-09-03 (capture389) on the same store copy and wordings: completed 5 (201, 204, 206,
+  207, 304); critic vetoes 3 (203, 205, 208); pre-critic losses 3 (202, 209 unreadable repair reply, 305).
+  This run: completed 6 (203, 204, 206, 207, 208, 304); critic reached on 9 turns, approved 6, vetoed 3 (202, 205, 209);
+  pre-critic losses 2 (201: the recruiter abstained after a staff_without_safe_team:capability repair and hiring found
+  nothing; 305: the transport could not read the reply).
+  Both baseline vetoes are approvals now: 203's team carries cross-platform-release-verifier on the verification unit and
+  208's helix unit is staffed devops-automator with a three-card neighbourhood. Every veto this run names an eligible card
+  the recruiter ranked and left unselected: 202 and 205 staffed the install-verification unit with evidence-collector
+  alone while cross-platform-release-verifier sat eligible and ranked; 209's critic wrote the neighbours into its codes:
+  ["wrong-neighbor-selection-infrastructure-maintainer", "wrong-neighbor-selection-test-automation-engineer"].
+  The planner and recruiter vary run to run (201 completed in the baseline and never reached the critic here), so the
+  completion count is the same measurement within noise; what changed is that every veto now points at a card the runtime
+  could have staffed.
+
+  Per turn, what the critic saw (selected | eligible ranked cards left unselected, eligible count):
+  turn status                   critic   units: selected | eligible ranked cards left unselected
+   201 no_specialist_fail_open  -        (critic not reached)
+   202 no_specialist_fail_open  veto     environment-check[analy/advi]: developer-tooling-engineer | left: codebase-onboarding-engineer,desktop-app-engineer,devops-automator (elig 68) || install-helix[plan/plan]: sre-site-reliability-engineer | left: cross-border-e-commerce-specialist,database-reliability-engineer,it-service-manager,operations-manager (elig 6) || install-verification[test-/revi]: evidence-collector | left: cross-platform-release-verifier,performance-benchmarker,reality-checker,test-results-analyzer (elig 9)
+   203 accepted                 approve  environment-discovery[analy/advi]: devops-automator | left: codebase-onboarding-engineer,desktop-app-engineer,developer-tooling-engineer (elig 68) || release-install-plan[plan/plan]: operations-manager | left: cross-border-e-commerce-specialist,incident-response-commander,it-service-manager (elig 6) || install-verification[test-/revi]: cross-platform-release-verifier,evidence-collector | left: accessibility-auditor,application-integration-verifier,reality-checker,tool-evaluator (elig 9)
+   204 accepted                 approve  environment-discovery[analy/advi]: desktop-app-engineer | left: codebase-onboarding-engineer,developer-tooling-engineer,devops-automator (elig 68) || installation-plan[plan/plan]: sre-site-reliability-engineer | left: operations-manager (elig 6) || setup-review[revie/revi]: code-reviewer,reality-checker | left: application-integration-verifier,cross-platform-release-verifier,evidence-collector (elig 9) || install-verification[test-/revi]: cross-platform-release-verifier,reality-checker | left: evidence-collector,test-results-analyzer (elig 9)
+   205 no_specialist_fail_open  veto     environment-check[analy/advi]: developer-tooling-engineer | left: codebase-onboarding-engineer,devops-automator,sre-site-reliability-engineer (elig 68) || install-tools[plan/plan]: operations-manager | left: database-reliability-engineer,it-service-manager,sre-site-reliability-engineer (elig 6) || install-verification[test-/revi]: evidence-collector | left: application-integration-verifier,cross-platform-release-verifier,reality-checker (elig 9)
+   206 accepted                 approve  install-plan[plan/plan]: operations-manager | left: cross-border-e-commerce-specialist,database-reliability-engineer,incident-response-commander,it-service-manager,sre-site-reliability-engineer (elig 6) || install-verification[test-/revi]: application-integration-verifier,cross-platform-release-verifier | left: accessibility-auditor,evidence-collector,performance-benchmarker,reality-checker,test-results-analyzer,tool-evaluator (elig 9)
+   207 accepted                 approve  environment-check[analy/advi]: operations-manager | left: cross-border-e-commerce-specialist,database-reliability-engineer,incident-response-commander,it-service-manager,network-diagnostic-explanation-specialist,sre-site-reliability-engineer (elig 7) || install-helix[plan/plan]: operations-manager | left: cross-border-e-commerce-specialist,database-reliability-engineer,incident-response-commander,it-service-manager,sre-site-reliability-engineer (elig 6) || install-verification[test-/revi]: cross-platform-release-verifier,evidence-collector | left: accessibility-auditor,application-integration-verifier,performance-benchmarker,reality-checker,test-results-analyzer,tool-evaluator (elig 9)
+   208 accepted                 approve  discover-helix-repo[analy/advi]: codebase-onboarding-engineer | left: developer-tooling-engineer,devops-automator (elig 65) || install-helix[imple/modi]: devops-automator | left: infrastructure-maintainer,network-engineer (elig 3) || install-test-code[test-/modi]: software-test-engineer | left: api-tester,test-automation-engineer (elig 3) || correctness-review[revie/revi]: code-reviewer | left: senior-secops-engineer,silent-failure-hunter (elig 12) || install-evidence[test-/revi]: cross-platform-release-verifier,test-results-analyzer | left: evidence-collector,reality-checker (elig 9)
+   209 no_specialist_fail_open  veto     install-plan[plan/plan]: operations-manager | left: cross-border-e-commerce-specialist,database-reliability-engineer,incident-response-commander,it-service-manager,sre-site-reliability-engineer (elig 6) || install-implementation[imple/modi]: devops-automator | left: infrastructure-maintainer,network-engineer (elig 3) || install-tests[test-/modi]: software-test-engineer | left: api-tester,test-automation-engineer (elig 3) || install-review[revie/revi]: code-reviewer | left: accessibility-auditor,application-integration-verifier,cross-platform-release-verifier,evidence-collector,performance-benchmarker,reality-checker,test-results-analyzer,tool-evaluator (elig 9) || install-evidence[test-/revi]: cross-platform-release-verifier,evidence-collector | left: accessibility-auditor,application-integration-verifier,performance-benchmarker,reality-checker,test-results-analyzer,tool-evaluator (elig 9)
+   304 accepted                 approve  discover-host-shell[analy/advi]: desktop-app-engineer | left: developer-tooling-engineer,devops-automator (elig 68) || plan-install-route[plan/plan]: operations-manager | left: sre-site-reliability-engineer (elig 6) || install-configure-helix[imple/modi]: cross-platform-installer-engineer,devops-automator | left: desktop-app-engineer,developer-tooling-engineer (elig 43) || author-verification[test-/modi]: software-test-engineer | left: api-tester,test-automation-engineer (elig 3) || review-install-correctness[revie/revi]: cross-platform-release-verifier,code-reviewer | left: evidence-collector,reality-checker (elig 20) || verify-helix-install[test-/revi]: cross-platform-release-verifier,test-results-analyzer | left: evidence-collector,reality-checker (elig 9)
+   305 no_specialist_fail_open  -        (critic not reached)
+
+== 5. Gates ==
+  tests/test_critic_eligibility_view.py 3 passed; affected suites (critic doctrine, workforce inference, decision
+  conformance, selection safety, eligibility view, credential env, fail-open disclosure, staffing window, dynamic hiring)
+  252 passed, 1 skipped; named fast spine 1004 passed, 3 skipped under -W error; decision-conformance 177 of 177 killed
+  with the tree unchanged and a clean baseline (curated mutation critic-neighbourhood-ignores-eligibility, killed).

@@ -447,10 +447,16 @@ _CRITIC_SYSTEM = (
     "and margin meet the exact critic_contract thresholds. Reject only a specific wrong-neighbor "
     "selection, lifecycle assurance the plan calls for and the team lacks, unsafe selected-team "
     "composition beyond the hard checks, or unsupported confidence. Approve when none applies. "
-    "You may veto but never add or replace workers. When approved is true, reason_codes must be "
-    "exactly an empty JSON array. When approved is false, reason_codes must contain one or more "
-    "unique lowercase hyphenated staffing-defect codes. Return only one JSON object matching the "
-    "supplied schema."
+    "You may veto but never add or replace workers. eligible_neighbourhood lists, per unit, every "
+    "card the runtime could staff on that unit (eligible_candidate_ids, complete and identity-sorted) "
+    "with compact cards for the eligible ones the recruiter ranked; a card outside that list was "
+    "ineligible for the unit (authority, artifact kind, host, platform or tools) and can never be the "
+    "right neighbor. A wrong-neighbor veto must point at a card in that unit's eligible_neighbourhood "
+    "that fits the unit better than a selected worker. When a unit's selected workers are its whole "
+    "eligible neighbourhood, wrong-neighbor selection cannot apply to it. When approved is true, "
+    "reason_codes must be exactly an empty JSON array. When approved is false, reason_codes must "
+    "contain one or more unique lowercase hyphenated staffing-defect codes. Return only one JSON "
+    "object matching the supplied schema."
 )
 _RECALL_RERANKER_SYSTEM = (
     "You rank only the supplied novel workforce-recall candidates for each work unit. "
@@ -3809,6 +3815,82 @@ def _critic_rejected_staffing(critic_reasons: Sequence[str]) -> StaffingDecision
     return StaffingDecision("abstained", (), tuple(reasons))
 
 
+# AR-389 / ADR-0205. The critic judges "wrong neighbor" against the cards the
+# runtime could actually have staffed on the unit. Identity-sorted and bounded:
+# a boundary, never a ranking.
+_MAX_CRITIC_NEIGHBOURHOOD_IDS: Final[int] = 64
+_MAX_CRITIC_NEIGHBOURHOOD_CARDS: Final[int] = 16
+_RECRUITMENT_RANK_FIELDS: Final[tuple[str, ...]] = (
+    "required",
+    "acceptable",
+    "runner_up",
+    "forbidden",
+)
+
+
+def _critic_neighbourhood_card(contract: WorkforceContract) -> dict[str, Any]:
+    return {
+        "agent_id": contract.agent_id,
+        "display_name": contract.display_name,
+        "archetype": contract.archetype,
+        "authority": contract.authority,
+        "domains": list(contract.domains),
+        "outcomes": list(contract.outcomes)[:2],
+        "not_for": list(contract.not_for)[:2],
+    }
+
+
+def _critic_eligible_neighbourhood(
+    plan: WorkUnitPlan,
+    proposal: RecruiterProposal,
+    staffing: StaffingDecision,
+    contracts: Sequence[WorkforceContract],
+    context: StaffingContext,
+) -> dict[str, dict[str, Any]]:
+    """Give the critic, per unit, the eligible cards a wrong-neighbor veto may name.
+
+    ``eligible_candidate_ids`` is the verifier's own eligibility over the enabled
+    roster, complete for the unit and identity-sorted; ``ranked_eligible_cards``
+    carries compact cards for the eligible workers the recruiter ranked or
+    selected, so the critic can compare fit where the recruiter looked;
+    ``selected_are_whole_neighbourhood`` says when no other eligible card exists.
+    Live on 2026-09-04 the critic vetoed teams as wrong neighbors on three of
+    eleven install wordings without a way to tell an ineligible implementer
+    from an eligible alternative; replayed with this view, the team holding the
+    obvious eligible neighbor approved six of six and the team missing it
+    stayed vetoed.
+    """
+
+    by_id = {contract.agent_id: contract for contract in contracts}
+    ranked: dict[str, set[str]] = {}
+    for unit in proposal.units:
+        names: set[str] = set()
+        for field_name in _RECRUITMENT_RANK_FIELDS:
+            names.update(str(item) for item in (getattr(unit, field_name, ()) or ()))
+        ranked[unit.unit_id] = names
+    selected = {unit.unit_id: set(unit.selected) for unit in staffing.units}
+    neighbourhood: dict[str, dict[str, Any]] = {}
+    for unit in plan.units:
+        eligible = sorted(
+            contract.agent_id
+            for contract in contracts
+            if contract.enabled and not typed_staffing_ineligibility(unit, contract, context)
+        )
+        shown = sorted(
+            agent_id
+            for agent_id in eligible
+            if agent_id in ranked.get(unit.unit_id, ())
+            or agent_id in selected.get(unit.unit_id, ())
+        )[:_MAX_CRITIC_NEIGHBOURHOOD_CARDS]
+        neighbourhood[unit.unit_id] = {
+            "eligible_candidate_ids": eligible[:_MAX_CRITIC_NEIGHBOURHOOD_IDS],
+            "eligible_count": len(eligible),
+            "ranked_eligible_cards": [_critic_neighbourhood_card(by_id[item]) for item in shown],
+            "selected_are_whole_neighbourhood": selected.get(unit.unit_id, set()) == set(eligible),
+        }
+    return neighbourhood
+
+
 def _strict_critic(
     *,
     request: str,
@@ -3819,6 +3901,7 @@ def _strict_critic(
     config: AgencyConfig,
     budget: _CallBudget,
     invoker: StructuredInvoker,
+    context: StaffingContext,
     harness: str = "",
 ) -> tuple[list[WorkforceInferenceAttempt], tuple[str, ...]]:
     selected = {agent_id for unit in staffing.units for agent_id in unit.selected}
@@ -3837,6 +3920,10 @@ def _strict_critic(
                 "selected_authority_bound_by_eligibility": True,
                 "roster_coverage_gaps_are_runtime_waivers": True,
                 "plan_authority_units_for_host_side_work_are_intended": True,
+                # AR-389 / ADR-0205: the neighborhood a wrong-neighbor veto
+                # may point at is the eligible one, stated per unit below.
+                "wrong_neighbor_must_name_an_eligible_card": True,
+                "eligible_neighbourhood_is_complete_per_unit": True,
                 "veto_grounds": list(_CRITIC_VETO_GROUNDS),
                 "never_veto_for": list(_CRITIC_NEVER_VETO_FOR),
                 "composition_uses_selected_workers_only": True,
@@ -3860,6 +3947,9 @@ def _strict_critic(
             "selected_worker_contracts": [
                 item.to_dict() for item in snapshot.contracts if item.agent_id in selected
             ],
+            "eligible_neighbourhood": _critic_eligible_neighbourhood(
+                plan, proposal, staffing, snapshot.contracts, context
+            ),
         }
     )
 
@@ -4327,6 +4417,7 @@ def plan_and_staff_workforce(
             config=config,
             budget=budget,
             invoker=invoker,
+            context=context,
             harness=context.host,
         )
         attempts.extend(stage_attempts)
