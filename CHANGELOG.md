@@ -73,6 +73,13 @@ changes rather than duplicating every commit.
 
 ### Added
 
+- Two packaged operations contractors, `service-operations-engineer` and
+  `monitoring-engineer`, authored through the `agency-runtime` source
+  (AR-370 criterion 1). The routing corpus had described both since
+  ADR-0211, but the live roster carried neither, so an operational request
+  such as restarting a service or setting up monitoring scored 0.0 against
+  every contract and fell back to slug order; `agency install` now adds
+  them to the roster.
 - Each workforce inference stage owns its reply budget (AR-385, ADR-0199):
   the recruiter and hiring stages request 16384 visible-reply tokens instead
   of the fixed 2048 the transport sent every stage, the cap adds the

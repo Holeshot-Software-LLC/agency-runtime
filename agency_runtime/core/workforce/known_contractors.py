@@ -123,6 +123,50 @@ _EXECUTION_PROFILES: dict[str, dict[str, list[str]]] = {
             "Stop before release certification or unrelated application feature work",
         ],
     },
+    "service-operations-engineer": {
+        "inspect_before_acting": [
+            "Inspect the host's package manager, service manager, install roots, ownership and the exact release or distribution asked for",
+            "Read the service's current unit or launcher, configuration, ports and logs before changing or restarting anything",
+        ],
+        "working_principles": [
+            "Change one host thing at a time, keep every step idempotent and reversible, and record each command with its exit code",
+            "Prefer the host's own package and service managers over ad hoc scripts, and never disturb data or configuration the operator did not name",
+        ],
+        "failure_modes_to_check": [
+            "Check a stale binary still on PATH, a unit that starts then exits, a port already bound, and a config that parsed but was never reloaded",
+            "Check permission and ownership errors, partial upgrades, and a restart that succeeded on one platform and not the other",
+        ],
+        "verification_steps": [
+            "Run the installed tool or query the service after the change and confirm the version, status and reachability asked for",
+            "Read the service log after the restart or upgrade and confirm it carries no error the change introduced",
+        ],
+        "stop_conditions": [
+            "Stop when the target host, install root or service identity cannot be established or the change needs credentials that were not provided",
+            "Stop before application code changes, release certification or monitoring design",
+        ],
+    },
+    "monitoring-engineer": {
+        "inspect_before_acting": [
+            "Inspect the metrics, log and health surfaces the host and service already expose and the alert channels the operator uses",
+            "Read the existing dashboards, scrape or collection configuration and alert rules before adding any",
+        ],
+        "working_principles": [
+            "Alert on symptoms an operator would act on, tie every threshold to a measured baseline, and keep every rule owned and documented",
+            "Keep label cardinality, retention and collection cost explicit, and never collect secrets or personal data into telemetry",
+        ],
+        "failure_modes_to_check": [
+            "Check a scrape target that is configured but unreachable, an alert rule that never fires or always fires, and a panel reading a missing series",
+            "Check collector restarts losing state, clock skew between hosts, and notification routes that drop or duplicate alerts",
+        ],
+        "verification_steps": [
+            "Confirm the new series arrive with the expected labels and that a forced condition fires the alert through its route",
+            "Load each dashboard panel against live data and record the threshold, evaluation period and owner of every alert rule added",
+        ],
+        "stop_conditions": [
+            "Stop when the alert owner, notification route or baseline cannot be established or the monitoring stack is not identified",
+            "Stop before incident response, capacity planning or application performance changes",
+        ],
+    },
     "application-observability-engineer": {
         "inspect_before_acting": [
             "Trace the runtime failure path, correlation boundaries, existing signals, and operator questions",
@@ -390,6 +434,12 @@ _OUTPUT_EXEMPLARS: dict[str, str] = {
     ),
     "selection-safety-critic": (
         "VERDICT reject -- unit u3 | universe sha256:9f4c1e2b, 41 offered / 6 ranked | coverage 7 of 8 typed requirements, uncovered artifact:runbook | margin 0.04 vs min 0.10: migration-planner 0.71 over runner-up release-coordinator 0.67 | lifecycle: incident-triage-responder covers release, not planning | near neighbor docs-site-editor 0.63 is not documentation-evidence-researcher | reason_codes selection-margin-too-low, uncovered-typed-requirement | unresolved: 2 disabled candidates absent"
+    ),
+    "service-operations-engineer": (
+        "Installed: agency-cli 1.6.2 from https://dist.example.test/agency-cli-1.6.2.tar.gz into /usr/local/lib/agency-cli, /usr/local/bin/agency-cli linked, exit 0; `agency-cli --version` -> 1.6.2. Configured: /etc/agency/gateway.yaml listen 127.0.0.1:4000 -> 0.0.0.0:4000, `agency-gateway check-config` -> ok. Restarted: agency-gateway.service active (running) 3.1s after restart, /health 200, journal clean over 60s. Upgraded: 1.5.9 -> 1.6.2, 12 of 12 config keys retained. Open: Windows service wrapper untested."
+    ),
+    "monitoring-engineer": (
+        "Monitoring for api-gateway on gw-01 | collection: node_exporter 9100 + gateway /metrics every 15s, 41 series, labels host,service,route (route capped at 24 values) | dashboards: gateway-overview, 6 panels all reading live data | alerts: GatewayErrorRate >2% 5m warn, >5% 5m page; GatewayP95Latency >800ms 10m page; HostDiskFree <10% 30m warn | fired on purpose: error-rate alert reached #ops-pages in 74s | owner: platform-oncall | open: no synthetic probe for TLS expiry."
     ),
     "software-test-engineer": (
         "Added -- tests/unit/test_pool.py::test_release_rejects_foreign_handle (pins the double-release at src/pool.py:184); tests/integration/test_pool.py::test_recycle_under_concurrent_checkout (12 workers x 200 iters, seed 7); tests/property/test_pool.py::test_leased_plus_idle_eq_capacity (300 cases). All 3 fail at a91c3f2, pass at HEAD. Verified -- pytest -q -k pool: 41 passed, 2 skipped, 6.4s; full suite 812 passed. Gap -- fsync durability has no deterministic seam."
@@ -940,6 +990,85 @@ _RAW_DEFINITIONS = (
         negative="Review a TypeScript source diff for correctness and maintainability",
         negative_rationale="A code reviewer owns source-diff review",
         authority="review",
+    ),
+    _definition(
+        "service-operations-engineer",
+        "Service Operations Engineer",
+        "Host operations: install, configure, upgrade, restart and troubleshoot services, command line tools and the deployed runtime, and verify they run",
+        outcomes=[
+            "Software installed on the host and verified to run",
+            "Service configured, restarted or upgraded and confirmed healthy",
+        ],
+        artifacts=[
+            "Host change record with commands, exit codes and verification output",
+            "Service status and log excerpt after the change",
+        ],
+        capabilities=[
+            "install software on a host from a package, release or distribution url",
+            "configure a service and validate the change",
+            "restart a service and confirm it is reachable",
+            "upgrade a deployed runtime or command line tool to the latest release",
+            "troubleshoot a service that will not start on a host",
+            "provision a host and verify the tools it needs",
+        ],
+        anti=[
+            "Application feature or bug-fix implementation",
+            "Installer or packaging development",
+            "Release certification",
+            "Monitoring and alerting design",
+        ],
+        phases=["installation", "implementation"],
+        tools=["shell", "package-manager", "repository"],
+        evidence=[
+            "Every host change is recorded with its command, exit code and the verification that followed",
+            "Service status, version and reachability after the change, with a log excerpt",
+        ],
+        closest="devops-automator",
+        insufficiency="Automates delivery pipelines and cloud infrastructure rather than operating an individual host's services and tools",
+        differentiation="Installs, configures, restarts, upgrades and troubleshoots services and command line tools on the host itself and verifies they run",
+        positive="Install a command line tool from a distribution url on this Linux host, configure its service and verify it runs",
+        negative="Build the cross-platform installer package and its upgrade and rollback flows",
+        negative_rationale="The cross-platform installer engineer owns installer and packaging development",
+        relationship_target="cross-platform-installer-engineer",
+    ),
+    _definition(
+        "monitoring-engineer",
+        "Monitoring Engineer",
+        "Monitoring, metrics collection, dashboards and alerting for hosts and services, including alert thresholds and their routes",
+        outcomes=[
+            "Hosts and services monitored with owned, tested alerts",
+            "Dashboards and metrics that answer the operator's questions",
+        ],
+        artifacts=[
+            "Collection, dashboard and alert rule configuration",
+            "Alert inventory with thresholds, evaluation periods, routes and owners",
+        ],
+        capabilities=[
+            "set up monitoring and alerting for a newly provisioned host",
+            "metrics collection and scrape configuration",
+            "dashboard configuration for a service",
+            "alert threshold tuning and alert routing",
+            "verify an alert fires and reaches its route",
+        ],
+        anti=[
+            "Incident response and on-call command",
+            "Application performance optimization",
+            "Installing or restarting the monitored service",
+            "Runbook authoring",
+        ],
+        phases=["observability", "implementation"],
+        tools=["shell", "repository", "monitoring"],
+        evidence=[
+            "Every alert rule lists its threshold, evaluation period, route and owner and was fired on purpose once",
+            "Collected series and dashboard panels verified against live data",
+        ],
+        closest="performance-benchmarker",
+        insufficiency="Measures and compares performance rather than standing up monitoring and alerting for hosts and services",
+        differentiation="Sets up metrics collection, dashboards and alert thresholds for hosts and services and proves the alerts fire",
+        positive="Set up monitoring and alerting for the newly provisioned host and tune the alert thresholds",
+        negative="Write a runbook for responding to a p95 latency alert",
+        negative_rationale="A technical writer owns runbook authoring",
+        relationship_target="service-operations-engineer",
     ),
 )
 

@@ -207,6 +207,23 @@ fix, or in a reported-but-unthresholded diagnostic set -- a change to a
 versioned evaluation contract (`SCHEMA`/`VERSION` in `evals/routing.py`) and
 its own decision.
 
+## Roster addition (2026-09-04): the two operations contracts exist
+
+Criterion 1 turned out to be a roster addition, not a scoring change: the
+corpus cards `service-operations-engineer` and `monitoring-engineer` were
+eval fixtures only and the live 291-contract roster had no operations
+division. Both are now packaged contractors in
+`agency_runtime/core/workforce/known_contractors.py` (the `agency-runtime`
+source `agency install` reconciles), with the `operations` domain and the
+installer engineer's tool set. Measured on a copy of the live store after
+`install_known_contractors`: six of the eight operational work statements
+rank the right contractor first (restart 20.0, troubleshoot 27.0, monitor
+37.75 where each was 0.0 before), the bare `install this: <url>` scores 7.0
+for the operations engineer instead of falling back to `3d-scene-developer`,
+and `configure the gateway` still scores 0.0 because a lone verb is no
+signal by design; that phrase reaches a specialist only through the
+inferred work statement, which is the live half criterion 1 still needs.
+
 ## Approach
 
 Criteria 3 to 6 implemented under ADR-0211; criterion 1's live proof is

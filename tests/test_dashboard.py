@@ -898,7 +898,7 @@ def test_dashboard_workforce_and_hiring_apis_share_revision_bound_lifecycle(
         token=token,
     )
     assert status == 200
-    assert workforce["counts"]["contractor"] == 15
+    assert workforce["counts"]["contractor"] == 17
     assert any(item["agent_slug"] == slug for item in workforce["workers"])
 
     status, detail, _headers = _json_response(
@@ -947,7 +947,7 @@ def test_dashboard_workforce_and_hiring_apis_share_revision_bound_lifecycle(
         token=token,
     )
     assert status == 200
-    assert hiring["count"] == 15
+    assert hiring["count"] == 17
     assert all(item["status"] == "applied" for item in hiring["hiring_cases"])
 
     status, promoted, _headers = _json_response(

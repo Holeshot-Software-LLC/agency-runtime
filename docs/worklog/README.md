@@ -1812,6 +1812,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `2a22b2f8` | 2026-09-04 | Merge remote-tracking branch 'origin/main' into claude/ar393-c5-after-window | null | null |
 | `e9ded946` | 2026-09-04 | Merge pull request #636 from Holeshot-Software-LLC/claude/ar393-c5-after-window | null | null |
 | `b628a03e` | 2026-09-04 | Merge remote-tracking branch 'origin/main' into claude/ar383-capsule-20260904b | null | null |
+| `c4959b8d` | 2026-09-04 | Merge pull request #637 from Holeshot-Software-LLC/claude/ar383-capsule-20260904b | null | null |
+| `e2b149e2` | 2026-09-04 | feat(workforce): package the two operations contracts | [AR-370](../roadmap/issue-AR-370-staffing-asks-the-wrong-question.md) | Criterion 1 of AR-370 was a roster addition: the corpus described a service operations engineer and a monitoring engineer as eval fixtures while the live roster had no operations division, so every operational verb scored 0.0 and fell back to slug order. Both are now packaged contractors in the agency-runtime source with the operations domain and the installer engineer's tool set; on a copy of the live store six of the eight operational work statements rank the right contractor first after install, and the recruiter index envelope moves from 266253 to 268835 bytes for 282 workers. |
 <!-- worklog:end -->
 
 ## Provenance notes
