@@ -38,10 +38,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/581
 
 # AR-383 inferred subject projection handoff
 
-> `main` at `4bba2ff2` carries ADR-0198 to ADR-0206 and the done AR-373 and
-> AR-384 to AR-390 (AR-390's flip follows in PR #608). This refresh records the
-> AR-390 close, the verified codex activation and the runtime reinstalled at
-> that commit.
+> `main` at `42916e4a` carries ADR-0198 to ADR-0206 and the done AR-373 and
+> AR-384 to AR-390. This refresh records the AR-390 close, the runtime
+> reinstalled at `e676e801` and the verified codex activation on it.
 
 Start-here capsule. The planner side is closed, the recruiter's reply is
 read where no safety property lives, every rejected attempt is recorded, the
@@ -69,12 +68,12 @@ the recruiter the same boundary.
 - **AR-373 and AR-384 to AR-390 are done**; `verify_tracker.py` reports
   `missing_remote` for AR-384 to AR-390 until the owner authorizes their
   tracker issues, and #537 still needs its closure.
-- **Install**: venv `4bba2ff2` built at the AR-390 close. claude
-  complete and wired; codex `activation-required` again (it was
-  `runtime-verified` on `3ed000d4` after the owner's trust; each reinstall
-  restages the hooks and needs the attended `Trust all and continue` in a
-  fresh `codex` TUI, then `agency install --agent codex --verify-activation`
-  with `common.env` sourced). Run `agency install` itself WITHOUT the key.
+- **Install**: venv `e676e801` built at the AR-390 close. claude complete
+  and wired; codex `runtime-verified` with the attestation persisted after
+  the owner's trust step. Each reinstall restages the hooks and needs the
+  attended `Trust all and continue` in a fresh `codex` TUI, then `agency
+  install --agent codex --verify-activation` with `common.env` sourced. Run
+  `agency install` itself WITHOUT the key.
 - **Launch environment**: every inference profile reads `LITELLM_API_KEY`
   from the launching process's environment only, and nothing on the host
   exports it; on 2026-09-03 every preflight and both first codex
@@ -116,9 +115,9 @@ deployment still returns unreadable replies (209, 305) and omits `score`.
 
 ## exact-blocker
 
-Nothing blocks at the contract level. Waiting for the owner: the codex trust
-step and `--verify-activation` on venv `4bba2ff2`; tracker issues for AR-384
-to AR-390 and closure of #537; the stale claude battery re-prove (`agency
+Nothing blocks at the contract level. Both hosts run `e676e801`. Waiting for
+the owner: tracker issues for AR-384 to AR-390 and closure of #537; the
+stale claude battery re-prove (`agency
 battery` with `common.env` sourced). What remains in the runtime is the
 recruiter's fit on review and plan units (four evidence-backed critic vetoes
 of eleven) and the deployment (two unreadable replies, one budget exhaustion).
@@ -146,9 +145,8 @@ The previous capsules' traps hold. Three more:
 
 In this order.
 
-1. **Owner steps**: codex `Trust all and continue`, then `agency install
-   --agent codex --verify-activation` with the key sourced; tracker issues
-   for AR-384 to AR-390 and closure of #537; `agency battery` (key sourced).
+1. **Owner steps**: tracker issues for AR-384 to AR-390 and closure of
+   #537; `agency battery` from a shell with the key sourced.
 2. **Recruiter fit on review and plan units**: 203 and 209 required
    `test-results-analyzer` alone on a review unit with `code-reviewer`
    ranked; 305 `operations-manager` on a plan unit with the SRE ranked.
