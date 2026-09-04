@@ -131,6 +131,7 @@ Status meanings:
 | [ADR-0207](0207-tell-the-recruiter-how-its-ranking-becomes-the-team.md) | Tell the recruiter how its ranking becomes the team | Accepted |
 | [ADR-0208](0208-carry-the-inferred-subject-beside-the-turn-context.md) | Carry the inferred subject beside the turn context | Accepted |
 | [ADR-0209](0209-name-the-transport-cause-instead-of-one-code.md) | Name the transport cause instead of one code | Accepted |
+| [ADR-0210](0210-account-for-every-declared-gap.md) | Account for every declared gap | Accepted |
 
 ## Evidence and observability
 
