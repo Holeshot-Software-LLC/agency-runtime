@@ -79,9 +79,8 @@ same boundary.
   verifications failed with a healthy gateway, passing at once with
   `~/.config/ai-secrets/common.env` sourced. AR-388 now names this.
 - **Critic judgment now has evidence**: the remaining vetoes name a card the
-  recruiter ranked below its selection (the cross-platform release verifier
-  on 202 and 205). The next lift is the recruiter's fit ranking, not the
-  critic.
+  recruiter ranked below its selection (the release verifier on 202 and
+  205); the next lift is the recruiter's fit ranking, not the critic.
 
 | eleven install wordings, strict mode, ADR-0203 runtime, store copy | turns |
 |---|---|
@@ -109,9 +108,8 @@ flips (PRs #589, #590). **Capture recipe.** Scratchpad `capture387.py` to
 store copy `agency.db.branch-copy` (generation 307), `PYTHONPATH=<worktree>`.
 
 **Live facts worth keeping.** No `platform` or `desktop` on a plan unit in
-33 turns; with the eligibility view the recruiter ranked only eligible cards
-on every plan unit. The deployment still returns unreadable replies (209,
-305), omits `score`, and once sent a `decision` outside staff/gap (304).
+33 turns; the recruiter ranked only eligible cards on every plan unit; the
+deployment still returns unreadable replies (209, 305) and omits `score`.
 
 ## exact-blocker
 
