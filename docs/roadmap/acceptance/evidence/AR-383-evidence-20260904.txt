@@ -78,3 +78,7 @@ in the launching shell.
   1165 passed, 3 skipped under -W error; mutation snippets 182 checked, none stale; decision-conformance 182 of 182
   killed with the tree unchanged and a clean baseline (curated mutations inferred-subject-merged-into-the-turn-context
   and refused-recall-projection-loses-its-code, both killed).
+
+== 4. Isolated verifier, pass 1 at 169220ce (2026-09-04, provider codex) ==
+  All five criteria satisfied (runs AR-383.1-20260904-4971ce44, AR-383.2-20260904-967f7538,
+  AR-383.3-20260904-3714d51a, AR-383.4-20260904-b0adffc7, AR-383.5-20260904-70466c20).

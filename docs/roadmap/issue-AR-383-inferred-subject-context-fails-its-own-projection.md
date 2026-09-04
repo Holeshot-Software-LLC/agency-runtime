@@ -1,6 +1,6 @@
 ---
 title: "AR-383: The inferred subject context fails its own projection, so dense recall is silently skipped"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-09-03
 updated: 2026-09-03
@@ -199,17 +199,17 @@ and AR-235, not here.
 
 ## Acceptance
 
-- [ ] A turn whose subject the runtime inferred projects its routing context
+- [x] A turn whose subject the runtime inferred projects its routing context
       successfully and runs dense recall: the subject travels beside the
       context, so the context a fresh turn projects stays the empty projection
       and no turn that runs the subject stage records
       `dense_recall_projection_invalid`.
-- [ ] The typed subject reaches the per-unit recall query, demonstrated by the
+- [x] The typed subject reaches the per-unit recall query, demonstrated by the
       rendered query text carrying the inferred fields.
-- [ ] A rejected projection records, in the attempt, which validation failed,
+- [x] A rejected projection records, in the attempt, which validation failed,
       without carrying request content.
-- [ ] A regression test pins the fresh-turn shape specifically: the context a
+- [x] A regression test pins the fresh-turn shape specifically: the context a
       fresh turn carries into recall is projectable and the subject reaches the
       query beside it, so this cannot silently return.
-- [ ] A smoke re-run over the same prompt set reports zero
+- [x] A smoke re-run over the same prompt set reports zero
       `dense_recall_projection_invalid` attempts.
