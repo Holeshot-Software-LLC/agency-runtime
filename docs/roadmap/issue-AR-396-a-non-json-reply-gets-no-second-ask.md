@@ -1,6 +1,6 @@
 ---
 title: "AR-396: A complete reply that is not JSON ends the stage on one call, while a cut one and a wrong one each get a second ask"
-status: open
+status: done
 category: roadmap
 created: 2026-09-04
 updated: 2026-09-04
@@ -89,21 +89,22 @@ This is a staffing turn thrown away for a fault the runtime already knows how
 to ask about, on a gateway that answers correctly ten times in a row. It is
 also the cheapest of the current staffing failures to remove.
 
-## Acceptance criteria
+## Acceptance
 
-1. `provider_model_text_not_json` gets one bounded second ask, on the same
-   provider, under the same `max_semantic_attempts` and the same call budget
-   as the truncation retry.
-2. The retry names the fault to the model the way the truncation retry names
-   the cut — the prior reply was complete and was not a JSON object.
-3. Every other member of `TRANSPORT_FAILURE_AFTER_REQUEST` — a timeout, an
-   HTTP status error, a body that was not JSON, the residual — still ends the
-   provider without a semantic retry.
-4. The first attempt is still recorded with `provider_model_text_not_json` and
-   `status: failed`, so the evidence a receipt carries today does not change.
-5. A test drives a provider that answers with non-JSON text once and valid
-   JSON on the second ask, and asserts the stage applies the second reply and
-   records both attempts.
+- [x] `provider_model_text_not_json` gets one bounded second ask, on the same
+      provider, under the same `max_semantic_attempts` and the same call
+      budget as the truncation retry.
+- [x] The retry names the fault to the model the way the truncation retry
+      names the cut: the prior reply was complete and was not a JSON object.
+- [x] Every other member of `TRANSPORT_FAILURE_AFTER_REQUEST` -- a timeout, an
+      HTTP status error, a body that was not JSON, the residual -- still ends
+      the provider without a semantic retry.
+- [x] The first attempt is still recorded with `provider_model_text_not_json`
+      and `status: failed`, so the evidence a receipt carries today does not
+      change.
+- [x] A test drives a provider that answers with non-JSON text once and valid
+      JSON on the second ask, and asserts the stage applies the second reply
+      and records both attempts.
 
 ## Rejected alternatives
 

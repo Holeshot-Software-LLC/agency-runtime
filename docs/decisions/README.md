@@ -133,6 +133,7 @@ Status meanings:
 | [ADR-0209](0209-name-the-transport-cause-instead-of-one-code.md) | Name the transport cause instead of one code | Accepted |
 | [ADR-0210](0210-account-for-every-declared-gap.md) | Account for every declared gap | Accepted |
 | [ADR-0211](0211-give-retrieval-a-subject-and-name-the-empty-turn.md) | Give retrieval a subject and name the empty turn | Accepted |
+| [ADR-0212](0212-ask-again-when-a-complete-reply-is-not-json.md) | Ask again when a complete reply is not JSON | Accepted |
 
 ## Evidence and observability
 
