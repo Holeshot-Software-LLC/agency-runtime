@@ -125,7 +125,11 @@ def test_a_non_2xx_status_is_recorded_instead_of_discarded(
             _raise_on_open(
                 patch,
                 urllib.error.HTTPError(
-                    "http://127.0.0.1:4000/v1/chat/completions", status, "no", {}, None  # type: ignore[arg-type]
+                    "http://127.0.0.1:4000/v1/chat/completions",
+                    status,
+                    "no",
+                    {},
+                    None,  # type: ignore[arg-type]
                 ),
             )
 
@@ -231,9 +235,7 @@ def test_the_compatibility_wrapper_still_returns_none_for_a_named_failure(
     _serve_raw(monkeypatch, None)
 
     assert (
-        invoke_structured_provider(
-            _litellm(), "prompt", {"type": "object"}, system_prompt="system"
-        )
+        invoke_structured_provider(_litellm(), "prompt", {"type": "object"}, system_prompt="system")
         is None
     )
 
@@ -293,6 +295,132 @@ def test_the_staffing_loop_splits_a_bare_none_the_way_the_hiring_loop_does(
     assert failures[0].reason_code == PROVIDER_CALL_TIMED_OUT
     assert failures[0].latency_ms == int(reached_the_deadline * 1000)
     assert attempts[0].reason_code == failures[0].reason_code
+
+    # AR-392: and the same deadline. Elapsed time alone cannot say whether
+    # this process aborted a call the gateway would have answered; the pair
+    # can, and a reader needs both on both loops to make the comparison.
+    expected_timeout_ms = int(_TIMEOUT_SECONDS * 1000)
+    assert attempts[0].timeout_ms == expected_timeout_ms
+    assert failures[0].timeout_ms == expected_timeout_ms
+    assert attempts[0].latency_ms >= attempts[0].timeout_ms
+
+
+def test_both_figures_reach_the_durable_receipt() -> None:
+    """AR-392 c1: the projection carries the pair, not just the classification.
+
+    Both loops have measured the elapsed time since ADR-0209 and neither
+    figure survived ``project_model_receipt_attempts``, so on the live store
+    every attempt in every receipt read as though nothing had been timed. The
+    30 s deadline against a 45 s deployment was therefore invisible in exactly
+    the receipts that recorded its consequence.
+    """
+
+    from agency_runtime.core.selector.receipt_projection import (
+        project_model_receipt_attempts,
+    )
+
+    projected = project_model_receipt_attempts(
+        [
+            {
+                "stage": "recruiter",
+                "provider_name": "agency-recruiter",
+                "provider_type": "litellm",
+                "requested_model": "task-agency-recruiter-v2",
+                "status": "failed",
+                "reason_code": PROVIDER_CALL_TIMED_OUT,
+                "latency_ms": 30040,
+                "timeout_ms": 30000,
+            }
+        ]
+    )
+    assert projected is not None
+    assert projected[0]["latency_ms"] == 30040
+    assert projected[0]["timeout_ms"] == 30000
+    # The abort is now legible without a live re-run: the call outlived the
+    # deadline this process gave it.
+    assert projected[0]["latency_ms"] > projected[0]["timeout_ms"]
+
+
+def test_an_attempt_without_durations_projects_exactly_as_it_did_before() -> None:
+    """AR-392: the addition is additive, so an older stored row is unchanged.
+
+    `_native_child_route_projection_is_valid` revalidates a stored inference
+    route by re-projecting it and requiring the result to equal what was
+    stored. Every host child delivery proof rests on that fixed point, so a
+    projection that always emitted the two new keys would invalidate every
+    route written before this change.
+    """
+
+    from agency_runtime.core.selector.receipt_projection import (
+        project_model_receipt_attempts,
+    )
+
+    source = {
+        "provider_name": "codex-subscription",
+        "provider_type": "cli",
+        "requested_model": "gpt-5.6-luna",
+        "model_group": "planning",
+        "actual_model": "gpt-5.6-luna",
+        "model_receipt_source": "cli.explicit_model_argument",
+        "status": "applied",
+        "reason_code": "",
+    }
+    projected = project_model_receipt_attempts([source])
+    assert projected == [source]
+    # And the fixed point holds: re-projecting the projection is a no-op.
+    assert project_model_receipt_attempts(projected) == projected
+
+
+def test_an_attempt_with_durations_is_also_a_fixed_point() -> None:
+    from agency_runtime.core.selector.receipt_projection import (
+        project_model_receipt_attempts,
+    )
+
+    projected = project_model_receipt_attempts(
+        [
+            {
+                "provider_name": "agency-recruiter",
+                "provider_type": "litellm",
+                "requested_model": "task-agency-recruiter-v2",
+                "model_group": "task-agency-recruiter-v2",
+                "actual_model": "",
+                "model_receipt_source": "unavailable",
+                "status": "failed",
+                "reason_code": PROVIDER_CALL_TIMED_OUT,
+                "latency_ms": 30040,
+                "timeout_ms": 30000,
+            }
+        ]
+    )
+    assert projected is not None
+    assert project_model_receipt_attempts(projected) == projected
+
+
+def test_a_duration_outside_the_bound_is_clamped_not_trusted() -> None:
+    """Both figures are bounded counts, never provider-authored content."""
+
+    from agency_runtime.core.selector.receipt_projection import (
+        project_model_receipt_attempts,
+    )
+
+    projected = project_model_receipt_attempts(
+        [
+            {
+                "provider_name": "p",
+                "provider_type": "litellm",
+                "status": "failed",
+                "reason_code": PROVIDER_CALL_TIMED_OUT,
+                "latency_ms": "not a number",
+                "timeout_ms": 10**12,
+            }
+        ]
+    )
+    assert projected is not None
+    # Unreadable is absent, not zero: a key this projection emitted
+    # unconditionally would break the fixed-point revalidation that every
+    # stored child route depends on.
+    assert "latency_ms" not in projected[0]
+    assert projected[0]["timeout_ms"] == 3_600_000
 
 
 def test_a_call_that_returned_early_is_a_failed_call_not_a_deadline_abort() -> None:
