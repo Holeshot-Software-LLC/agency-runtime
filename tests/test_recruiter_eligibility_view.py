@@ -244,6 +244,8 @@ def test_both_prompts_state_the_eligibility_boundary() -> None:
     assert "can only be forbidden or omitted" in _RECRUITER_SYSTEM
     assert "eligible_candidate_ids" in _RECRUITER_REPAIR_SYSTEM
     assert "eligible_coverers_by_requirement" in _RECRUITER_REPAIR_SYSTEM
+    assert "can only be forbidden or omitted" in _RECRUITER_REPAIR_SYSTEM
+    assert "never staffed" in _RECRUITER_REPAIR_SYSTEM
     assert (
         "eligible_coverers_by_requirement"
         in _NOMINATION_REPAIR_REQUIREMENTS["staff_without_safe_team"]
