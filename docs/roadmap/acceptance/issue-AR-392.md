@@ -12,7 +12,7 @@ supersedes: []
 superseded_by: null
 type: acceptance-verification
 issue_id: AR-392
-candidate_commit: pending
+candidate_commit: 0ff7d390c806dbfaae94a970b80aa3cabdaaf223
 evidence_cutoff: 2026-09-04
 tracker_url: null
 ---
@@ -71,6 +71,11 @@ AR-385 suite already uses.
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
+| 1 | satisfied | `AR-392.1-20260904-48397c06` | `cd7a746a879db7f54f8d2e5a8ef01f574247cce392492fe202ce800f661edd15` | 2026-09-04 | inference.py:1722-1794 and hiring.py:845-896 split a bare None on the same latency >= timeout test into the same distinct code provider_call_timed_out (reply_budget.py:84,112); both attempts carry latency_ms and timeout_ms, and test_transport_failure_causes.py:257-305 asserts all three match. |
+| 2 | satisfied | `AR-392.2-20260904-02ddd5a0` | `9a95539c172dbb0e1c69f6c9f84887dd0f674c9c46956cf46ca8b779d498d965` | 2026-09-04 | structured_provider.py:781-783 routes the still-blanket except through _transport_exception_cause (:634-653), mapping HTTPError to provider_http_status_error with exc.code; http_status rides on the result (:142) and receipt (:175), and tests/test_transport_failure_causes.py:117-141 pins 401/429/502. |
+| 3 | satisfied | `AR-392.3-20260904-d275c93b` | `439aefad3cca0b5bb4fa11033bb2b148e1d4d592133a859b0dfacbe3fe1f097c` | 2026-09-04 | structured_provider.py:799-808 returns PROVIDER_MODEL_TEXT_NOT_JSON only when not truncated; reply_budget.py:72,84,92 keep it distinct from truncation and timeout; test_transport_failure_causes.py:181-205 reproduces the capture391 turn 206 shape and pins that distinction with reply_truncated False. |
+| 4 | satisfied | `AR-392.4-20260904-6b11cb4b` | `6448181c7db410a833776668b9c262977b2a3b06aae5b0115a2e760ec4b0fade` | 2026-09-04 | inference.py:1731-1740 sets called and keeps the spend when call_attempted else releases; hiring.py:854-868 releases and marks skipped for a refusal; structured_provider.py:131-142 documents the split; snapshot tests at lines 441 and 484 assert used==1 vs 0, and 224-227 keeps the ADR-0204 meaning. |
+| 5 | satisfied | `AR-392.5-20260904-dbfa6c2f` | `d710d9af6f8fa9a3bb32cc0e7fdebbed9a2f6c178a5a9c1a9092b1bea342996a` | 2026-09-04 | doctor.py:839-881 emits workforce_profile_timeouts stating each routed profile's effective seconds, wired at doctor.py:1018 into run_doctor used by the CLI; tests/test_transport_failure_causes.py:520-546 asserts every profile name, and two evidence files record the live 10-profile output. |
 
 ## Builder notes
 
