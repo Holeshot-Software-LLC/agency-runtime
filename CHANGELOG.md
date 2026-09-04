@@ -32,6 +32,7 @@ related:
   - docs/roadmap/issue-AR-389-critic-judges-neighbours-it-cannot-see.md
   - docs/roadmap/issue-AR-390-recruiter-cards-hide-the-outcomes-that-name-the-work.md
   - docs/roadmap/issue-AR-391-recruiter-prompt-misstates-how-its-ranking-becomes-the-team.md
+  - docs/roadmap/issue-AR-383-inferred-subject-context-fails-its-own-projection.md
   - docs/roadmap/issue-AR-386-strict-critic-vetoes-verifier-accepted-install-turns.md
   - docs/roadmap/issue-AR-384-staff-decisions-die-on-uncoverable-typed-requirements.md
   - docs/decisions/0201-constrain-the-planner-domains-to-what-the-roster-serves.md
@@ -134,6 +135,11 @@ changes rather than duplicating every commit.
 - The cards the recruiter and the critic read carry every outcome and every
   `not_for` line the contract declares (AR-390, ADR-0206); the compact card
   used to cut outcomes at two, hiding the ones that name a unit's work.
+- The subject inferred for a turn whose wording retrieval cannot read travels
+  beside the turn's routing context instead of inside it (AR-383, ADR-0208);
+  merging it into a fresh turn's empty context made a mapping the context
+  projection refuses, so dense recall was skipped on exactly those turns, and a
+  refused projection now names the validation that refused it on the receipt.
 - The recruiter is told how its ranking becomes the team (AR-391, ADR-0207):
   the contract carries the derivation with the verifier's own numbers, each
   typed recall row names the requirements exactly one eligible card covers, both

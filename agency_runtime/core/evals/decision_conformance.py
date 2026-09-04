@@ -356,6 +356,44 @@ class _NominationSemantics:""",
         ),
     ),
     DecisionMutation(
+        mutation_id="inferred-subject-merged-into-the-turn-context",
+        invariant=(
+            "The subject inferred for a fresh turn rides beside the projected turn context, so "
+            "the context stays projectable and dense recall still runs (ADR-0208)."
+        ),
+        source_path="agency_runtime/core/workforce/inference.py",
+        before="""    return (
+        projected_turn_context,
+        _revision_with_inferred_subject(projected_turn_context, hints),
+        attempts,
+        hints,
+    )""",
+        after="""    return (
+        {**projected_turn_context, "workforce_subject_hints": hints},
+        _revision_with_inferred_subject(projected_turn_context, hints),
+        attempts,
+        hints,
+    )""",
+        test_node=(
+            "tests/test_inferred_subject_beside_context.py::"
+            "test_an_unreadable_request_keeps_dense_recall_and_both_documents_carry_the_subject"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="refused-recall-projection-loses-its-code",
+        invariant=(
+            "A dense recall skipped for a refused context projection names the validation "
+            "that refused it on the attempt (ADR-0208)."
+        ),
+        source_path="agency_runtime/core/workforce/inference.py",
+        before="""        refused = (exc.reason_code,) if isinstance(exc, RecallProjectionError) else ()""",
+        after="""        refused = ()""",
+        test_node=(
+            "tests/test_inferred_subject_beside_context.py::"
+            "test_a_refused_projection_names_the_validation_on_the_attempt_and_the_receipt"
+        ),
+    ),
+    DecisionMutation(
         mutation_id="staffing-feedback-hides-the-derived-team",
         invariant=(
             "A whole-team verifier rejection shows the recruiter the team the runtime derived "

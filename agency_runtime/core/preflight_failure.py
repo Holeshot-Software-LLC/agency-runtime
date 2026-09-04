@@ -211,6 +211,14 @@ def _project_validation_reason_codes(value: object, *, stage: str) -> list[str]:
         allowed = _RECRUITER_VALIDATION_REASON_CODES
     elif stage == "critic":
         allowed = _CRITIC_VALIDATION_REASON_CODES
+    elif stage in {"recall_embedding", "recall_reranker"}:
+        # AR-383 / ADR-0208: a skipped dense recall names the validation that
+        # refused its context projection, from the projection's own closed set.
+        from agency_runtime.core.turn_routing_context import (
+            TURN_ROUTING_CONTEXT_REJECTION_CODES,
+        )
+
+        allowed = TURN_ROUTING_CONTEXT_REJECTION_CODES
     else:
         return []
     result: list[str] = []

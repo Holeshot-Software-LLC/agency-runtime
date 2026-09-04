@@ -1,12 +1,13 @@
 ---
 title: "AR-383: The inferred subject context fails its own projection, so dense recall is silently skipped"
-status: open
+status: in_progress
 category: roadmap
 created: 2026-09-03
 updated: 2026-09-03
 tags: [workforce, recall, staffing, inference, receipts]
 related:
   - docs/decisions/0197-form-the-retrieval-subject-before-the-turn-that-needs-it.md
+  - docs/decisions/0208-carry-the-inferred-subject-beside-the-turn-context.md
   - docs/roadmap/issue-AR-370-staffing-asks-the-wrong-question.md
   - docs/roadmap/issue-AR-266-dense-hybrid-workforce-recall.md
   - docs/roadmap/issue-AR-304-preserve-recruiter-critic-validation-diagnostics.md
@@ -128,7 +129,14 @@ rejection is of the envelope, not the payload.
 
 ## Current state
 
-Filed from the AR-370 smoke re-run, not yet fixed. The failure is invisible in
+Fixed on the branch under ADR-0208: the inferred subject travels beside the
+projected context rather than inside it, so a fresh turn's context stays the
+empty projection and still projects; the subject reaches the planner document,
+the per-unit recall query and the recruiter document as `inferred_work_subject`;
+and a refused projection names the validation that refused it with a closed
+code the receipts keep. The measurements are in the acceptance evidence file.
+
+The original filing, kept for the record: filed from the AR-370 smoke re-run. The failure is invisible in
 normal operation: staffing continues, the turn returns, and only the attempt
 roll shows a `skipped` dense recall. It did not surface earlier because the
 prior smoke ran without a credential, so the subject stage never executed at
@@ -191,14 +199,17 @@ and AR-235, not here.
 
 ## Acceptance
 
-- [ ] A turn whose only context is an inferred subject projects successfully,
+- [ ] A turn whose subject the runtime inferred projects its routing context
+      successfully and runs dense recall: the subject travels beside the
+      context, so the context a fresh turn projects stays the empty projection
       and no turn that runs the subject stage records
       `dense_recall_projection_invalid`.
 - [ ] The typed subject reaches the per-unit recall query, demonstrated by the
       rendered query text carrying the inferred fields.
 - [ ] A rejected projection records, in the attempt, which validation failed,
       without carrying request content.
-- [ ] A regression test pins the fresh-turn shape specifically: the enrichment
-      of an empty context is projectable, so this cannot silently return.
+- [ ] A regression test pins the fresh-turn shape specifically: the context a
+      fresh turn carries into recall is projectable and the subject reaches the
+      query beside it, so this cannot silently return.
 - [ ] A smoke re-run over the same prompt set reports zero
       `dense_recall_projection_invalid` attempts.
