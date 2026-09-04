@@ -122,3 +122,10 @@ staffing_verifier.verify_staffing with the store copy, the captured plan and hos
   AR-391.4-20260904-0766e81b, AR-391.5-20260904-e04eabcf, AR-391.6-20260904-9d8c3890). Criterion 3 contradicted: the
   repair prompt said every coverage complement ranks directly after its team but not that the sole coverer does; the
   repair prompt now carries the criterion's phrase and the test asserts it in both prompts.
+
+== 7. Isolated verifier, pass 3 at 3a94b8da (2026-09-04, provider codex) ==
+  All six criteria satisfied (runs AR-391.1-20260904-35fda7be, AR-391.2-20260904-bf66f4d7,
+  AR-391.3-20260904-6429e0a2, AR-391.4-20260904-5453acf5, AR-391.5-20260904-f0ba24cb,
+  AR-391.6-20260904-b79553ee). Criterion 3 needed the repair prompt to carry each phrase the criterion names
+  literally, in the prompt itself and not only in its consequence: "Required is the team, not an emphasis label"
+  (pass 1) and "the sole coverer directly after the team it completes" (pass 2).

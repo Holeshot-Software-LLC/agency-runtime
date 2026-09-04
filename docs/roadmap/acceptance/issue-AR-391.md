@@ -19,7 +19,7 @@ tracker_url: null
 
 # AR-391 acceptance verification record
 
-Frozen at `3a94b8da`, the test-phrase correction on top of the repair-prompt fixes merged in PRs #612 and #614 and the implementation merged in PR #611. The recruiter document's contract states how a ranking becomes
+Verified on the third pass at `3a94b8da`. Frozen at `3a94b8da`, the test-phrase correction on top of the repair-prompt fixes merged in PRs #612 and #614 and the implementation merged in PR #611. The recruiter document's contract states how a ranking becomes
 the team with the verifier's own numbers, each typed recall row names the
 requirements exactly one eligible card covers, both prompts state the
 derivation, and a whole-team verifier rejection hands the recruiter the team
@@ -70,3 +70,9 @@ strict mode against the same reconciled store copy as the ADR-0206 run.
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
+| 1 | satisfied | `AR-391.1-20260904-35fda7be` | `708de373b99492dfe9fd07bef4ecc89bf659cf6fe5d64d8a631cf5e3d09d64f5` | 2026-09-04 | The cited contract includes every required statement and derives its three numbers from config.workforce and _rank_score_step; the scorer, budget binding, verifier confidence calculation, threshold checks, and tests corroborate those sources. |
+| 2 | satisfied | `AR-391.2-20260904-bf66f4d7` | `de1ddde0bbbbfab0e3fa67adc070fc6c336d09a7a1382fb0d38fa5a362021841` | 2026-09-04 | The inference excerpts populate each recall row from detail-card IDs filtered by typed coverage and typed ineligibility, retaining only requirements with exactly one coverer; the cited test verifies both unique-reviewer and unique-planner cases. |
+| 3 | satisfied | `AR-391.3-20260904-6429e0a2` | `d4246cfd886d4e0da5e8707bbcf8067180000b587ac60747569b6e996fb134e6` | 2026-09-04 | The cited recruiter excerpts state every required derivation element and name the not_for line, while the repair excerpt states the same team, complement, rank-order, confidence, and sole-coverer derivation. |
+| 4 | satisfied | `AR-391.4-20260904-5453acf5` | `9d276d2557603f7769afccabbc9494d9ff79b26b318d1fc09ae17c9a16c33545` | 2026-09-04 | The cited feedback builder conditionally adds mapped corrections and per-unit derived teams, while the error path supplies all derived rows and thresholds; the test verifies every required field, and unmapped plan_hash_mismatch remains bare. |
+| 5 | satisfied | `AR-391.5-20260904-f0ba24cb` | `e32a2a76ef9fbe62e90b0369a9d3e9c4580182e148f8dd67e4f5fc6431172f73` | 2026-09-04 | The regression test excerpts show the owner-first, sole-coverer-fourth shape rejected with selection_confidence_too_low and derived-team feedback, then the same selected team in team order accepted with confidence 0.9. |
+| 6 | satisfied | `AR-391.6-20260904-b79553ee` | `1f7435c1fc979f2bfaf4c23b19f48021515ca3eb4317a3354b641bd1d76892ac` | 2026-09-04 | The cited evidence records cache-bypassed verifier replays for 203 and 209, and per-turn strict live results for all eleven wordings on the reconciled store copy, alongside the capture391 baseline. |

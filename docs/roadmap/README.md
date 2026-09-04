@@ -404,7 +404,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-388` | [An unset credential variable reads as a provider outage, and nothing names it](issue-AR-388-unset-credential-reads-as-provider-unavailable.md) | done | p1 | reliability | pending authorization |
 | `AR-389` | [The strict critic vetoes wrong neighbours it cannot see](issue-AR-389-critic-judges-neighbours-it-cannot-see.md) | done | p1 | reliability | pending authorization |
 | `AR-390` | [The recruiter's cards hide the outcomes that name the unit's work](issue-AR-390-recruiter-cards-hide-the-outcomes-that-name-the-work.md) | done | p1 | reliability | pending authorization |
-| `AR-391` | [The recruiter's prompt misstates how its ranking becomes the team](issue-AR-391-recruiter-prompt-misstates-how-its-ranking-becomes-the-team.md) | in_progress | p1 | reliability | pending authorization |
+| `AR-391` | [The recruiter's prompt misstates how its ranking becomes the team](issue-AR-391-recruiter-prompt-misstates-how-its-ranking-becomes-the-team.md) | done | p1 | reliability | pending authorization |
 
 ## Traceability
 
@@ -750,7 +750,7 @@ not stable internal identifiers.
 | [AR-388](issue-AR-388-unset-credential-reads-as-provider-unavailable.md) | [`13c483fb`](../worklog/README.md) (declared routes, transport credential answer, doctor check) | [ADR-0204](../decisions/0204-name-the-credential-the-launching-environment-never-carried.md) |
 | [AR-389](issue-AR-389-critic-judges-neighbours-it-cannot-see.md) | [`2c0fc40a`](../worklog/README.md) (eligible neighbourhood in the critic document) | [ADR-0205](../decisions/0205-show-the-critic-the-eligible-neighbourhood-it-judges-against.md) |
 | [AR-390](issue-AR-390-recruiter-cards-hide-the-outcomes-that-name-the-work.md) | [`15c404f3`](../worklog/README.md) (every outcome on both cards) | [ADR-0206](../decisions/0206-show-every-outcome-on-the-card.md) |
-| [AR-391](issue-AR-391-recruiter-prompt-misstates-how-its-ranking-becomes-the-team.md) | pending its implementation ledger row | [ADR-0207](../decisions/0207-tell-the-recruiter-how-its-ranking-becomes-the-team.md) |
+| [AR-391](issue-AR-391-recruiter-prompt-misstates-how-its-ranking-becomes-the-team.md) | [`d3bea30f`](../worklog/README.md) (the team-derivation account), [`2c092cb8`](../worklog/README.md), [`606e70ea`](../worklog/README.md), [`3a94b8da`](../worklog/README.md) (repair-prompt phrases) | [ADR-0207](../decisions/0207-tell-the-recruiter-how-its-ranking-becomes-the-team.md) |
 | [AR-386](issue-AR-386-strict-critic-vetoes-verifier-accepted-install-turns.md) | [`6b79736c`](../worklog/README.md), [`b6b2f6e4`](../worklog/README.md) (frozen record, three satisfied verdicts, done flip) | [ADR-0200](../decisions/0200-bind-the-strict-critic-to-the-advisory-doctrine.md) |
 
 ## Dependency summary

@@ -1,6 +1,6 @@
 ---
 title: "AR-391: The recruiter's prompt misstates how its ranking becomes the team"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-09-04
 updated: 2026-09-04
@@ -140,34 +140,34 @@ the fix is to tell it the rule it is held to, not to select around it.
 
 ## Acceptance
 
-- [ ] The recruiter document's `response_contract` states that acceptable
+- [x] The recruiter document's `response_contract` states that acceptable
       candidates join only for typed coverage, that the ranking is read as
       order alone, the rank score step, that a unit's confidence is its lowest
       selected rank score, and the verifier's minimum confidence and margin,
       with every number taken from the same configuration and scorer the
       verifier applies.
-- [ ] Each typed recall row names, per requirement, the single eligible card
+- [x] Each typed recall row names, per requirement, the single eligible card
       that covers it when exactly one does (`sole_eligible_coverers`),
       computed from the verifier's own eligibility and coverage over the
       detail cards.
-- [ ] Both the recruiter prompt and the repair prompt state the derivation:
+- [x] Both the recruiter prompt and the repair prompt state the derivation:
       required is the team, an acceptable candidate joins only as a
       typed-coverage complement in rank order and never for fit, a unit's
       confidence is the rank score of its lowest-ranked selected worker, rank
       in team order with the sole coverer directly after the team it
       completes; and the recruiter prompt's account of fit names the `not_for`
       line.
-- [ ] A whole-team verifier rejection's feedback carries, per violated unit,
+- [x] A whole-team verifier rejection's feedback carries, per violated unit,
       the correction the recruiter can make and the derived team (selected,
       required, runtime-added coverage complements, confidence, margin, the
       lowest-ranked selected worker with its rank and rank score) with the
       thresholds, and a code outside the correction map reaches the recruiter
       bare as before.
-- [ ] A regression test drives the captured shape, the owner ranked first and
+- [x] A regression test drives the captured shape, the owner ranked first and
       the sole coverer fourth, to a `selection_confidence_too_low` rejection
       whose feedback shows the derived team, and the same team ranked in team
       order is accepted with confidence 0.9.
-- [ ] Offline replays of the captured 203 and 209 recruiter calls with the
+- [x] Offline replays of the captured 203 and 209 recruiter calls with the
       gateway cache bypassed, derived through the runtime's verifier, and the
       eleven install wordings run live under strict mode against the same
       reconciled store copy as capture391, are recorded per turn in the
