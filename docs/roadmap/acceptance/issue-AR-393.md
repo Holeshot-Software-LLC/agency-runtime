@@ -54,6 +54,11 @@ stand-in.
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
+| 1 | satisfied | `AR-393.1-20260904-3208aef8` | `e7a52ab6d3ff31dc23d815c9d84b1cf0a30e3f15956b040de194a83fcbf35a93` | 2026-09-04 | In the snapshot, pipeline.py:1472-1476 keeps declared gap ids outside the plan and assigns GAP_UNIT_ABSENT_FROM_PLAN (1417), _all_gap_units (1563) returns them, _complete_gap_hiring_events (1614) emits an event per unit, and routing["hiring_events"] is set (2011-2019); tests 102-119 pin this. |
+| 2 | satisfied | `AR-393.2-20260904-b4ae13da` | `dedd16fe56fe9508219ae39fa22e88ac05003c0c51a49d6c8f220c62b8cad72a` | 2026-09-04 | pipeline.py:1471-1491 gives each disqualified unit a verdict naming the failed test and appends the global code; 1596-1604 puts it on the event; test_declared_gap_hiring_account.py:146-167 and evidence lines 45-49 show gap_global_abstention_code with selection_confidence_too_low on both events. |
+| 3 | satisfied | `AR-393.3-20260904-242559cf` | `050328ad2fe0badb99d16c57d9b4fb0791468f62c5f23d74ab11108079195ff6` | 2026-09-04 | pipeline.py:1489-1490 is the only producer of GAP_EVIDENCE_NOT_HIREABLE (repo-wide grep) and emits it only when unit_codes - _HIREABLE_GAP_CODES is non-empty; lines 1600-1604 carry those codes onto the event, and tests at test_declared_gap_hiring_account.py:184-225 assert it. |
+| 4 | satisfied | `AR-393.4-20260904-33a2a442` | `acc6f8790b924af19e90985eff23112318761feb83db5ca4e7bd9418e2416198` | 2026-09-04 | Evidence file lines 13-49 replay the three shapes through the real receipt projection: each declared gap yields an event whose codes include one outside the hireable set; pipeline.py:1433-1615 and the test at tests/test_declared_gap_hiring_account.py:201-225 confirm the rule. |
+| 5 | contradicted | `AR-393.5-20260904-a59316f2` | `828000fef0f81a83707976c5ddea0b6f69494caf6a18e20aa66cd7834f275d4f` | 2026-09-04 | The only live measurement, AR-393-evidence-20260904.txt:6-10, re-measured read-only against the live store, reports 42 receipts declaring no_safe_sufficient_team with EMPTY hiring_reason_codes, not zero; the file states no credential was used, and sections 2-3 are simulated shapes and unit tests. |
 
 ## Builder notes
 
