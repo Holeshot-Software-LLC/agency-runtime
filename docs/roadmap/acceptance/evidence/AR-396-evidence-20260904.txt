@@ -1,0 +1,36 @@
+AR-396 evidence, 2026-09-04, main 8a4ea67d, candidate e12d721d
+======================================================================
+
+1. The two live staffing turns that ended on one planner call.
+   Read-only from ~/.agency-runtime/agency.db, session 0a53db90.
+
+   17:32:40Z  workforce_inference_failed  ["inference_invalid"]
+              unknown:provider_response_contract_invalid -> unknown:structured_response_applied -> planner:provider_model_text_not_json
+   17:44:25Z  workforce_provider_unavailable  ["inference_unavailable"]
+              planner:provider_model_text_not_json
+
+2. The same planner payload, replayed 10x with the gateway cache bypassed.
+   Deployment c2692490-cc91-5363-95f5-954745830cbb behind task-agency-planner-v2.
+
+   i= 1  latency= 13.38s  content_len=2698  completion_tokens=680  model_text_is_json=True
+   i= 2  latency= 16.84s  content_len=2909  completion_tokens=751  model_text_is_json=True
+   i= 3  latency= 22.83s  content_len=2653  completion_tokens=725  model_text_is_json=True
+   i= 4  latency= 15.00s  content_len=2801  completion_tokens=762  model_text_is_json=True
+   i= 5  latency= 22.36s  content_len=2993  completion_tokens=1114  model_text_is_json=True
+   i= 6  latency= 17.60s  content_len=2769  completion_tokens=769  model_text_is_json=True
+   i= 7  latency= 13.19s  content_len=2699  completion_tokens=641  model_text_is_json=True
+   i= 8  latency= 12.87s  content_len=2669  completion_tokens=647  model_text_is_json=True
+   i= 9  latency= 15.57s  content_len=2591  completion_tokens=752  model_text_is_json=True
+   i=10  latency= 16.12s  content_len=2756  completion_tokens=775  model_text_is_json=True
+   --- 10 calls, all parseable; min 12.87s max 22.83s; the runtime's own deadline is 30s ---
+
+3. The new suite, and the same suite against unfixed main.
+
+   .........                                                                [100%]
+   9 passed in 0.08s
+   against main (git stash of the fix): 4 failed, 5 passed
+
+4. Affected suites at the candidate.
+
+   ..............                                                           [100%]
+   158 passed in 0.94s
