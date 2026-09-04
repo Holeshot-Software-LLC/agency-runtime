@@ -31,6 +31,7 @@ from agency_runtime.core.inference_profiles import (
 from agency_runtime.core.reply_budget import (
     PROVIDER_CALL_FAILED,
     PROVIDER_CALL_TIMED_OUT,
+    PROVIDER_MODEL_TEXT_NOT_JSON,
     PROVIDER_RESPONSE_TRUNCATED,
     TRANSPORT_FAILURE_AFTER_REQUEST,
     provider_for_stage,
@@ -1739,6 +1740,30 @@ def _invoke_stage(
                         latency_ms=latency_ms if attempted else None,
                     )
                 )
+                # AR-396: one of these is not a transport give-up. A complete
+                # reply whose model text was not a JSON object is the sibling
+                # of a cut one -- an answer arrived and only its content was
+                # wrong -- so it earns the same second ask the cut branch
+                # below makes, on the same provider and the same budget. Every
+                # other cause here has already spent what a retry would need:
+                # a deadline, a status, a body that was not JSON.
+                if (
+                    result.failure_reason == PROVIDER_MODEL_TEXT_NOT_JSON
+                    and semantic_attempt + 1 < max_semantic_attempts
+                ):
+                    current_system_prompt = system_prompt
+                    current_prompt = f"{prompt}\n\n[RUNTIME VALIDATION FEEDBACK]\n" + _json_prompt(
+                        {
+                            "prior_response_status": "not_json",
+                            "required_action": (
+                                "The previous reply was received complete and was "
+                                "not a JSON object. Return only the single JSON "
+                                "object the schema asks for, starting with { and "
+                                "ending with }, with no prose and no markdown."
+                            ),
+                        }
+                    )
+                    continue
                 break
             called = True
             if result is None:
