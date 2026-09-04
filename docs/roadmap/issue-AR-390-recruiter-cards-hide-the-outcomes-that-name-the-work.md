@@ -1,6 +1,6 @@
 ---
 title: "AR-390: The recruiter's cards hide the outcomes that name the unit's work"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-09-04
 updated: 2026-09-04
@@ -98,3 +98,7 @@ ADR-0203 and ADR-0205 (the same cards). None blocking.
 - [x] Measured on the same eleven install wordings under strict mode against
       the same reconciled store copy: the verification units' rankings and
       the completed turns are recorded against the ADR-0205 run.
+
+**Verification (2026-09-04).** The record is frozen at `15c404f3`; the
+isolated codex verifier returned satisfied on all four criteria on its
+second pass (runs `AR-390.1-20260904-99046fe2`, `AR-390.2-20260904-4ab0b1ec`, `AR-390.3-20260904-25596405`, `AR-390.4-20260904-479476df`). The issue is done.
