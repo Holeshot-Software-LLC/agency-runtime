@@ -1793,6 +1793,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `242ab4cf` | 2026-09-04 | Merge pull request #630 from Holeshot-Software-LLC/claude/ar383-capsule-refresh | null | null |
 | `d757c3b9` | 2026-09-04 | Merge pull request #631 from Holeshot-Software-LLC/claude/capsule-ledger | null | null |
 | `0ff7d390` | 2026-09-04 | fix(receipts): carry the deadline beside the elapsed time | [AR-392](../roadmap/issue-AR-392-transport-failures-collapse-to-one-code.md) | The verifier contradicted criterion 1 because neither attempt record carried the configured timeout; the durable receipt turned out to carry no duration at all, on all 1289 attempts across the last 400 live receipts. Both records now carry timeout_ms and the projection carries both figures, added only when present because _native_child_route_projection_is_valid re-projects a stored route and requires a fixed point that every host child delivery proof rests on. |
+| `f3241502` | 2026-09-04 | docs(ar392): flip AR-392 to done on five satisfied verdicts | [AR-392](../roadmap/issue-AR-392-transport-failures-collapse-to-one-code.md) | The record was re-frozen at 0ff7d390 and every criterion re-verified, since a moved candidate re-binds every digest; five of five satisfied on the first pass, including the criterion the previous pass contradicted. |
 <!-- worklog:end -->
 
 ## Provenance notes
