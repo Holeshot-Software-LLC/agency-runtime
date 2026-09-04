@@ -1793,6 +1793,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `242ab4cf` | 2026-09-04 | Merge pull request #630 from Holeshot-Software-LLC/claude/ar383-capsule-refresh | null | null |
 | `d757c3b9` | 2026-09-04 | Merge pull request #631 from Holeshot-Software-LLC/claude/capsule-ledger | null | null |
 | `c2a923d4` | 2026-09-04 | fix(recruiter): say why no safe team could be formed | [AR-394](../roadmap/issue-AR-394-recruiter-teams-fail-or-mis-select.md) | staff_without_safe_team carried three counts and no cause, and the field a reader inferred one from was absent on 257 of the 317 rows in the last 400 live receipts; eight closed shortfall codes now name it, and the absent-from-retrieval against present-and-ineligible split is the same coverage question asked over the shown cards and then over the whole roster. ADR-0213 records that the verifier judges safety and retrieval judges fit, with the reranker's 20.4% contract-invalid rate as an accepted degradation that costs candidates rather than order. |
+| `f8cec26c` | 2026-09-04 | docs(ar394): flip AR-394 to done on five satisfied verdicts | [AR-394](../roadmap/issue-AR-394-recruiter-teams-fail-or-mis-select.md) | Five of five satisfied on the first pass at c2a923d4, so the p0 flips to done under ADR-0213; criterion 4 was an operator change made live, raising the six routed profiles from timeout_ms 30000 to 60000 above the 45s every deployment behind the six v2 aliases carries, with the previous agency.yaml retained as a dated backup. |
 <!-- worklog:end -->
 
 ## Provenance notes
