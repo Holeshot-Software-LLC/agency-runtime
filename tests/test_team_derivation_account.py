@@ -213,8 +213,11 @@ def test_both_prompts_state_how_the_ranking_becomes_the_team() -> None:
         "rank score of its lowest-ranked selected worker, coverage complements included",
         "rank in team order with every coverage complement directly after the team it completes",
         "typed_recall.sole_eligible_coverers names the cards every safe team must hold",
+        "Required is the team, not an emphasis label",
     ):
         assert phrase in _RECRUITER_REPAIR_SYSTEM, phrase
+    for prompt in (_RECRUITER_SYSTEM, _RECRUITER_REPAIR_SYSTEM):
+        assert "Required is the team, not an emphasis label" in prompt
     assert "Do not label every strong candidate required" not in _RECRUITER_SYSTEM
 
 
