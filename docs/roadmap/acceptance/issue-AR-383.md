@@ -19,7 +19,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/581
 
 # AR-383 acceptance verification record
 
-Frozen at `169220ce`, the implementation commit merged in PR #617. The subject the runtime infers for a turn whose wording
+Verified on the first pass at `169220ce`. Frozen at `169220ce`, the implementation commit merged in PR #617. The subject the runtime infers for a turn whose wording
 retrieval cannot read travels beside the turn's projected routing context
 rather than inside it, so the context a fresh turn projects stays the empty
 projection and dense recall still runs; the subject reaches the planner
@@ -59,3 +59,8 @@ runtime.
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
+| 1 | satisfied | `AR-383.1-20260904-4971ce44` | `621e43729c9f6b1dc3c45b8c36c70bb31f3afe4148f5d393c020ca3cb00ec7d3` | 2026-09-04 | The inference excerpt keeps the projected context unchanged while returning inferred hints separately, and the end-to-end test shows an empty fresh-turn projection with dense recall applied and no dense_recall_projection_invalid attempt. |
+| 2 | satisfied | `AR-383.2-20260904-967f7538` | `7db2f500f6a6343328b3d4a8d052b226b1047b77f1edcdaaefed73852076d844` | 2026-09-04 | The project_unit_query excerpt appends effective inferred-subject context fields to rendered text, and the cited test asserts the resulting query contains the inferred domain and language fields. |
+| 3 | satisfied | `AR-383.3-20260904-3714d51a` | `ef4c33d3bc981f7f95beba22c8f826e6e4d42576a52f0568edd4375c1e88051d` | 2026-09-04 | The projection returns closed validation codes, and the inference excerpt records only RecallProjectionError.reason_code in the skipped attempt’s validation_reason_codes; the cited test verifies this behavior. |
+| 4 | satisfied | `AR-383.4-20260904-b0adffc7` | `c700079392291175f819869e9d6387fc6820acb823c09c65546bb9b38a9ba12c` | 2026-09-04 | The cited tests assert that an empty fresh-turn context projects successfully while merged subject hints are rejected, and that inferred subject hints reach the per-unit recall query alongside the empty context. |
+| 5 | satisfied | `AR-383.5-20260904-70466c20` | `8d3ecfafac7ec8b8f7ac273c80f5fbcfa1351e79dcf43519f8242cfb7cafcdcc` | 2026-09-04 | The cited smoke output reports 34 prompts, zero harness errors, and branch invalid counts of 0 for every prompt, with 0 dense_recall_projection_invalid attempts overall. |
