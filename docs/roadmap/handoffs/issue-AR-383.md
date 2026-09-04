@@ -21,37 +21,34 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-383
-branch: claude/ar373-residue
-evidence_commit: 7c67b524bcbad9a00bcf269d6fbbe20c27810879
-minimum_ledger_commit: 04a0b96b3fa98cbb6d0a90a9c9b8c1a1d7d8d66e
+branch: claude/ar373-acceptance
+evidence_commit: 1c1bf0797307f628992dfaba5ea977aa4b6e0205
+minimum_ledger_commit: 4d0d7c1b66be8d2b847e6b4ce00534ea92a3040e
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/581
 ---
 
 # AR-383 inferred subject projection handoff
 
-> **This capsule is not on `main`.** It lives on branch `claude/ar373-residue`,
-> the top of a stack: `claude/ar386-flip` (PR #590) on `claude/ar384-flip`
-> (PR #589) on `claude/ar384-planner-domains` (PR #588) on
-> `claude/ar384-closure` (PR #587) on `claude/ar386-critic-contract` (PR #586) on
-> `claude/ar385-reply-budget` (PR #585) on `claude/ar384-coverage-gaps` (PR
-> #584) on `claude/ar373-recruiter-payload` (PR #583) on
-> `claude/ar370-acceptance` (PR #582). ADR-0198 to ADR-0201 and the AR-384,
-> AR-385 and AR-386 documents are on the same stack. Merge the open PRs in
-> order with `--merge`, or check out this branch before relying on any of
-> them. If you are reading this from `main`, the PRs have merged and this
-> note is spent.
+> The 2026-09-03 stack (PRs #582 to #592, plus the ledger resync #593) is
+> merged: `main` at `4d0d7c1b` carries ADR-0198 to ADR-0202 and the done
+> AR-384, AR-385 and AR-386. This capsule rides on `claude/ar373-acceptance`
+> with the AR-373 record; once that PR merges, read it from `main`.
 
 Start-here capsule. The planner side is closed, the recruiter's reply is
-read where no safety property lives, and the losses that remain are the
+read where no safety property lives, every rejected attempt is recorded, the
+merged runtime is installed for claude, and the losses that remain are the
 recruiter's judgment and the critic's.
 
 ## checkpoint
 
-Of the previous package: AR-386 is done (PR #590); the AR-373 residue is
-fixed on this branch (ADR-0202); AR-385 is re-cited and pending its freeze
-at this branch's implementation commit, because its third criterion was
-contradicted live until ADR-0202.
+Of the previous package: AR-386 done (#590), ADR-0202 merged (#591), AR-385
+done (#592) after one held freeze and one contradicted verifier pass, the
+stack merged in order and the ledger resynced (#593), the merged runtime
+installed (venv `4d0d7c1b`, launchers publish `9fb2db79e58d`), the live
+store reconciled (generation 307, the API platform card no longer in
+`platform`), and the AR-373 acceptance record frozen at `4d0d7c1b` on this
+branch.
 
 - **AR-384 option 2** (ADR-0201): `platform-engineering` no longer promotes
   the API platform card into `platform`, so under plan authority `platform`
@@ -62,10 +59,17 @@ contradicted live until ADR-0202.
   planner repair. Weak rule: one served domain suffices. Exempt: a kind with
   nothing proven, compiler-chosen domains, a declared `novel_capability`
   domain.
-- **AR-384 and AR-386 are done** (PRs #589, #590): records frozen at
-  `7c67b524` and `6b79736c`, isolated codex verifier satisfied on every
-  criterion. `verify_tracker.py` still reports `missing_remote` for AR-384,
-  AR-385 and AR-386 by design.
+- **AR-384, AR-385 and AR-386 are done** (PRs #589, #592, #590): records
+  frozen at `7c67b524`, `1c1bf079` and `6b79736c`, isolated codex verifier
+  satisfied on every criterion. `verify_tracker.py` reports `missing_remote`
+  for all three until the owner authorizes their tracker issues.
+- **Install**: `claude` complete (`agency install --agent claude`, umask
+  077); `codex` partial at `activation_required`, an attended step in a fresh
+  Codex terminal TUI then `agency install --agent codex --verify-activation`;
+  hermes and openclaw not reinstalled (openclaw's gateway is live and its
+  install fails closed). `agency doctor` fails only on the claude harness
+  battery, a stale 2026-09-02 record (0 of 2 `canary_failed` on Claude Code
+  2.1.258 against a proof on 2.1.257) that predates every change here.
 - **ADR-0202 (this branch)**: a candidate row is read as the deployment sends
   it where no safety property lives (missing evidence array is empty, a
   string-keyed object is its keys, identity and score stay mandatory); the
@@ -90,14 +94,12 @@ contradicted live until ADR-0202.
 
 ## completed-evidence
 
-**On this branch, uncommitted at the time of writing.** `inference.py`
-(`_normalized_candidate_row`, `_nomination_rows`, the accumulator's recorded
-shape failure, the `_` charset, the new diagnosis), `receipt_projection.py`
-(verifier rows, `_nomination_failure_row`), `staffing_verifier.py`
-(`STAFFING_VERIFIER_REASON_CODES`), `preflight_failure.py` allowlist,
-`tests/test_recruiter_reply_residue.py` (15 tests), one curated mutation and
-one refreshed anchor, ADR-0202, the AR-373 and AR-385 issues, the re-cited
-pending AR-385 record, `AR-373-AR-385-residue-evidence-20260903.txt`.
+**On `main`.** ADR-0202 at `760d631e` and `1c1bf079` (PR #591):
+`_normalized_candidate_row`, `_nomination_rows`, the accumulator's recorded
+shape and repair-set failures, the `_` charset, two new diagnoses,
+`STAFFING_VERIFIER_REASON_CODES`, the verifier rows on both receipts,
+`tests/test_recruiter_reply_residue.py` (16 tests), two curated mutations,
+`AR-373-AR-385-residue-evidence-20260903.txt`.
 
 **On the stack.** ADR-0201 at `7c67b524` (PR #588) with
 `tests/test_planner_domain_service.py` and
@@ -117,12 +119,13 @@ leaves eligible dual-domain planners unranked, and on 305 declared a gap.
 
 ## exact-blocker
 
-Nothing blocks at the contract level any more: every rejected recruiter
-attempt is recorded, and the reply shapes the deployment sends are read where
-they can be. What remains is judgment: four critic wrong-neighbour vetoes of
-eleven, one recruiter gap hiring did not fill, one confidence floor, and one
-reply the transport could not read. AR-385's flip waits only for its freeze
-at this branch's implementation commit and the verifier run.
+Nothing blocks at the contract level: every rejected recruiter attempt is
+recorded and the reply shapes the deployment sends are read where they can
+be. Two things wait for the owner: the codex attended trust step, and the
+tracker issues for AR-384, AR-385 and AR-386. What remains in the runtime is
+judgment: four critic wrong-neighbour vetoes of eleven, one recruiter gap
+hiring did not fill, one confidence floor, one reply the transport could not
+read, and the stale claude battery to re-prove with `agency battery`.
 
 ## same-task-continuity
 
@@ -140,15 +143,12 @@ The previous capsules' traps hold. Three more:
 
 In this order.
 
-1. **AR-385 freeze and flip**: on a branch stacked on this one, set
-   `candidate_commit` to this branch's implementation commit, run
-   `scripts/verify_acceptance.py --issue AR-385 --all --provider codex`, flip
-   to `done`. Then merge the stack #582 to the top in order with `--merge`
-   and run `agency install` under `umask 077` so the store re-projects the
-   API platform card.
-2. **AR-373 closure**: its four criteria are checked; write its acceptance
-   record (none exists), freeze, verify, flip; tracker #537 closure needs
-   authorization.
+1. **AR-373 flip**: merge this branch's record PR once its verdicts are
+   satisfied (the issue records them); tracker #537 closure and the AR-384,
+   AR-385, AR-386 tracker issues need the owner's authorization.
+2. **Owner steps**: complete codex activation in a fresh Codex terminal
+   (`Trust all and continue`, then `agency install --agent codex
+   --verify-activation`); re-prove the claude battery with `agency battery`.
 3. **Recruiter authority blindness**: it ranks modify-authority implementers
    on plan units and leaves eligible dual-domain planners unranked; a prompt
    or repair-contract change measured on the eleven wordings, with the
@@ -160,13 +160,13 @@ In this order.
 
 ## verification
 
-On the working tree before commit: ruff clean on every changed file (one
-pre-existing RUF024 on main); `tests/test_recruiter_reply_residue.py` 15
-passed; the receipt, inference, truncation, bounds and conformance suites 258
+At `1c1bf079` (now on `main`): ruff clean but for one pre-existing RUF024;
+`tests/test_recruiter_reply_residue.py` 16 passed; the affected suites 316
 passed, 1 skipped; named fast spine 1004 passed, 3 skipped under `-W error`;
-decision-conformance rerun on the final tree recorded in the ledger row;
-`docs_metadata.py --check`, `verify_docs.py` green with the pending AR-385
-record. The AR-384 and AR-386 flips each verified `--all` satisfied.
+decision-conformance 174 of 174 killed, `source_unchanged: true`;
+`docs_metadata.py --check`, `verify_docs.py`, `update_worklog.py --check`
+green on every branch before merge. Every flip verified `--all` satisfied
+(AR-385 on its second pass).
 
 ## constraints
 

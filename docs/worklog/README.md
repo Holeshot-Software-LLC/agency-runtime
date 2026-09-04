@@ -1705,6 +1705,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `9c0ca1e2` | 2026-09-03 | Merge pull request #590 from Holeshot-Software-LLC/claude/ar386-flip | null | null |
 | `941e5cf7` | 2026-09-03 | Merge pull request #591 from Holeshot-Software-LLC/claude/ar373-residue | null | null |
 | `360b6821` | 2026-09-03 | Merge pull request #592 from Holeshot-Software-LLC/claude/ar385-flip | null | null |
+| `4d0d7c1b` | 2026-09-03 | Merge pull request #593 from Holeshot-Software-LLC/claude/worklog-resync-ar38x | null | null |
+| `36c91dbd` | 2026-09-03 | docs(ar373): freeze the acceptance record at 4d0d7c1b and flip AR-373 to done | [AR-373](../roadmap/issue-AR-373-recruiter-evidence-vocabulary.md) | AR-373 had four checked criteria and no acceptance record. The record binds to the merge that brought the 2026-09-03 stack onto main, so its rows cite the widened evidence charset, the builder-derived vocabulary test, the safety-bound and identifier pins, the ADR-0202 row reader, and the completed install turns of both eleven-wording runs. The isolated codex verifier returned satisfied on all four; criterion 1 first came back absent because the cited excerpt began after the captured fixture rows the test reads, and was satisfied once the citation included them. The AR-383 capsule now describes the merged and installed state: venv 4d0d7c1b, claude installed, codex at its attended trust step, the store reconciled, the stale claude battery and the three unauthorized tracker issues waiting on the owner. |
 <!-- worklog:end -->
 
 ## Provenance notes
