@@ -1793,6 +1793,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `242ab4cf` | 2026-09-04 | Merge pull request #630 from Holeshot-Software-LLC/claude/ar383-capsule-refresh | null | null |
 | `d757c3b9` | 2026-09-04 | Merge pull request #631 from Holeshot-Software-LLC/claude/capsule-ledger | null | null |
 | `18c04e21` | 2026-09-04 | docs(ar393): measure the after-install window for criterion 5 | [AR-393](../roadmap/issue-AR-393-declared-gaps-leave-no-hiring-account.md) | Read with the credential sourced against a fresh copy of the live store: zero receipts declaring no_safe_sufficient_team since the fix landed and zero since 2026-09-03T18:42:33Z, because no recruiter proposal has been accepted since and the declaring path runs after one; criterion 5 is unmeasurable over an empty window rather than contradicted by the 42 pre-fix rows, and the record is set pending for re-freezing. |
+| `10c5121f` | 2026-09-04 | docs(ar393): re-freeze the record at 18c04e21 and record the verdicts | [AR-393](../roadmap/issue-AR-393-declared-gaps-leave-no-hiring-account.md) | Four of five satisfied again; criterion 5 contradicted because the verifier reads it literally: zero declaring receipts over an empty after-install window is not the live count of zero it asks for, and the 42 pre-fix rows remain unnamed. AR-393 stays open until a staffed turn declares a gap. |
 <!-- worklog:end -->
 
 ## Provenance notes
