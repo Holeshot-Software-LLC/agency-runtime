@@ -994,6 +994,8 @@ _RAW_DEFINITIONS = (
     _definition(
         "service-operations-engineer",
         "Service Operations Engineer",
+        # Rendered as "Act outside <scope>" in forbidden_scenarios, which
+        # hiring_contract caps at 160 characters: this scope has 3 to spare.
         "Host operations: install, configure, upgrade, restart and troubleshoot services, command line tools and the deployed runtime, and verify they run",
         outcomes=[
             "Software installed on the host and verified to run",

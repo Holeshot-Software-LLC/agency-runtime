@@ -912,8 +912,9 @@ def test_dashboard_workforce_and_hiring_apis_share_revision_bound_lifecycle(
         "typescript",
         "javascript",
     ]
+    # AR-381: contract prose is case-preserved from schema v4 on.
     assert detail["detail"]["recruitment_contract"]["evidence_requirements"] == [
-        "changed artifacts and focused verification results"
+        "Changed artifacts and focused verification results"
     ]
     definition = detail["detail"]["prompt_definition"]
     assert definition["definition_authority"] == "agency_store"
