@@ -12,14 +12,14 @@ supersedes: []
 superseded_by: null
 type: acceptance-verification
 issue_id: AR-388
-candidate_commit: pending
+candidate_commit: 13c483fbfa8646757ce9d51058da886a5a058b62
 evidence_cutoff: 2026-09-04
 tracker_url: null
 ---
 
 # AR-388 acceptance verification record
 
-Pending draft. A routed inference install is declared inference in any
+Verified on the first pass at `13c483fb`. A routed inference install is declared inference in any
 environment; the structured transport answers `provider_credential_env_unset`
 for a provider whose credential variable the launching environment lacks
 instead of calling, and the stage records it with no budget spent; the
@@ -60,3 +60,7 @@ against a read-only copy of the installed store.
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
+| 1 | satisfied | `AR-388.1-20260904-9ee6ea3d` | `502babe7d9fa0272afab27c575787a5cd680e303dd9886757d103ac53c626f3e` | 2026-09-04 | The cited implementation treats resolved planner or recruiter routes as declared regardless of credentials, and the cited test verifies this with the legacy key unset while confirming an empty AgencyConfig remains undeclared. |
+| 2 | satisfied | `AR-388.2-20260904-25722b4c` | `965456b616516cf32625026773d93d6d17728180cfee4ee5058ce804e0d4930f` | 2026-09-04 | The cited transport, stage, budget, outcome, and test excerpts demonstrate refusal with provider_credential_env_unset, a failed zero-budget attempt, workforce_credential_env_unset propagation, and all four stated exemptions. |
+| 3 | satisfied | `AR-388.3-20260904-d87cb34e` | `f0e5b60e673271b48713811f8bbfcfcc1a77ad3430f583d0ad067773e3f608a1` | 2026-09-04 | The test and runtime evidence show receipt attempt code provider_credential_env_unset, staffing code workforce_credential_env_unset, and a disclosure containing that staffing code while asserting the 512-character budget. |
+| 4 | satisfied | `AR-388.4-20260904-33eb1de9` | `3e703f97790ea221188a90496388b81b3ac189a3d40bec2f425a5677b90d08aa` | 2026-09-04 | The doctor implementation names each credential variable and routed profiles, warns when unset, passes when set, and the cited installed-configuration output demonstrates both LITELLM_API_KEY states across eight profiles. |
