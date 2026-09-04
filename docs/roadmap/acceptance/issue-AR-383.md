@@ -12,14 +12,14 @@ supersedes: []
 superseded_by: null
 type: acceptance-verification
 issue_id: AR-383
-candidate_commit: pending
+candidate_commit: 169220ce9978858b9101b348d35eeea2d776c094
 evidence_cutoff: 2026-09-04
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/581
 ---
 
 # AR-383 acceptance verification record
 
-Pending draft. The subject the runtime infers for a turn whose wording
+Frozen at `169220ce`, the implementation commit merged in PR #617. The subject the runtime infers for a turn whose wording
 retrieval cannot read travels beside the turn's projected routing context
 rather than inside it, so the context a fresh turn projects stays the empty
 projection and dense recall still runs; the subject reaches the planner
