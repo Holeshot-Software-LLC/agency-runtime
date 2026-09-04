@@ -214,6 +214,7 @@ def test_both_prompts_state_how_the_ranking_becomes_the_team() -> None:
         "rank in team order with every coverage complement directly after the team it completes",
         "typed_recall.sole_eligible_coverers names the cards every safe team must hold",
         "Required is the team, not an emphasis label",
+        "the sole coverer directly after the team it completes",
     ):
         assert phrase in _RECRUITER_REPAIR_SYSTEM, phrase
     for prompt in (_RECRUITER_SYSTEM, _RECRUITER_REPAIR_SYSTEM):
