@@ -401,12 +401,19 @@ def test_a_cut_reply_with_no_json_object_returns_the_truncation_instead_of_none(
     assert cut.value == {}
     assert cut.reply_truncated
 
-    # The same unreadable text below the cap is still no response at all.
+    # The same unreadable text below the cap carries no answer either, but it
+    # is a different cause and says so (AR-392): nothing was cut, the model
+    # text simply was not a JSON object.
     _serve(monkeypatch, _gateway_reply(unclosed, 500, "stop"))
-    assert (
-        invoke_structured_provider_result(provider, "prompt", {"type": "object"}, system_prompt="s")
-        is None
+    uncut = invoke_structured_provider_result(
+        provider, "prompt", {"type": "object"}, system_prompt="s"
     )
+    assert uncut is not None
+    assert uncut.carries_no_answer
+    assert uncut.failure_reason == "provider_model_text_not_json"
+    assert uncut.reply_truncated is False
+    # The request left the runtime, so this spent its call.
+    assert uncut.call_attempted is True
 
 
 def test_a_reply_without_usage_is_never_called_truncated(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -537,7 +544,10 @@ def test_a_no_response_attempt_still_carries_the_stamped_budget() -> None:
     )
 
     assert failure == "workforce_inference_failed"
-    assert attempts[0].reason_code == "provider_no_valid_response"
+    # AR-392: a bare None is split from the outside. This invoker returns at
+    # once, well inside the profile's timeout, so it is a failed call and not
+    # a deadline abort.
+    assert attempts[0].reason_code == "provider_call_failed"
     assert attempts[0].reply_budget_tokens == STAGE_REPLY_BUDGET_TOKENS["planner"]
     assert attempts[0].reply_truncated is False
 

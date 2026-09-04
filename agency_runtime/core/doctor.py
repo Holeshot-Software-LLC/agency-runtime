@@ -836,6 +836,51 @@ def _inference_credential_checks(
     return checks
 
 
+def _workforce_timeout_checks(cfg: AgencyConfig) -> list[CheckResult]:
+    """State the effective deadline the runtime gives each routed profile (AR-392).
+
+    The runtime's socket deadline and the gateway deployment's own timeout are
+    two separate figures, and only one of them is visible from here. When the
+    runtime's is the smaller, it aborts a call the deployment would have
+    answered and no body ever arrives -- observed at 30.04 s against a 30 s
+    deadline while the deployments behind the aliases allowed 45.
+
+    Which figure should be larger is operator configuration, and the runtime
+    cannot read the deployment's. What it can do is stop making the operator
+    derive its own number by hand: print the effective seconds per profile,
+    after the transport's bound is applied, so the comparison is made against
+    something written down.
+    """
+
+    from agency_runtime.core.inference_profiles import provider_from_profile
+
+    profiles = _routed_inference_profiles(cfg)
+    if not profiles:
+        return []
+    stated: list[str] = []
+    for profile in profiles:
+        provider = provider_from_profile(profile)
+        configured_ms = int(getattr(profile, "timeout_ms", 0) or 0)
+        effective = float(provider.timeout)
+        note = ""
+        if abs(effective * 1000.0 - configured_ms) >= 1.0:
+            # The transport bounds what a profile may ask for, so a stated
+            # figure and the one actually used can differ. Say both.
+            note = f" (stated {configured_ms}ms)"
+        stated.append(f"{provider.name}={effective:g}s{note}")
+    return [
+        CheckResult(
+            "workforce_profile_timeouts",
+            "pass",
+            f"effective runtime deadline for {len(profiles)} routed profile(s): "
+            + ", ".join(stated),
+            "each deployment behind these aliases carries its own timeout, which the runtime "
+            "cannot read; set the runtime's deadline above it so the gateway's answer is not "
+            "aborted by this process (a call cut here is recorded as provider_call_timed_out)",
+        )
+    ]
+
+
 def _battery_trial_detail(entry: dict[str, Any]) -> str:
     """Names-only grading tally from one fingerprint entry (AR-360), or "".
 
@@ -970,6 +1015,7 @@ def run_doctor(
 
     report.checks.extend(_provider_chain_checks(cfg, provider_validations))
     report.checks.extend(_inference_credential_checks(cfg))
+    report.checks.extend(_workforce_timeout_checks(cfg))
     report.checks.extend(_harness_battery_checks())
     report.checks.extend(_trust_chain_checks(fix_perms=fix_perms))
     return report

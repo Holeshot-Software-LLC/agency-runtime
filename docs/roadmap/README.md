@@ -405,7 +405,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-389` | [The strict critic vetoes wrong neighbours it cannot see](issue-AR-389-critic-judges-neighbours-it-cannot-see.md) | done | p1 | reliability | pending authorization |
 | `AR-390` | [The recruiter's cards hide the outcomes that name the unit's work](issue-AR-390-recruiter-cards-hide-the-outcomes-that-name-the-work.md) | done | p1 | reliability | pending authorization |
 | `AR-391` | [The recruiter's prompt misstates how its ranking becomes the team](issue-AR-391-recruiter-prompt-misstates-how-its-ranking-becomes-the-team.md) | done | p1 | reliability | pending authorization |
-| `AR-392` | [Every transport failure reads as one code, so a runtime timeout and a malformed reply are indistinguishable](issue-AR-392-transport-failures-collapse-to-one-code.md) | open | p1 | reliability | pending authorization |
+| `AR-392` | [Every transport failure reads as one code, so a runtime timeout and a malformed reply are indistinguishable](issue-AR-392-transport-failures-collapse-to-one-code.md) | done | p1 | reliability | pending authorization |
 | `AR-393` | [A declared capability gap can leave no hiring account at all, and when it leaves one the reasons need not explain it](issue-AR-393-declared-gaps-leave-no-hiring-account.md) | open | p1 | observability | pending authorization |
 
 ## Traceability

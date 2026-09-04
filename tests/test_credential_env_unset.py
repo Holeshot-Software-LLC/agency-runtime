@@ -158,7 +158,10 @@ def test_with_the_variable_set_the_transport_calls_the_provider(
 
     # The closed port refuses the connection the transport now makes, so the
     # attempt is the transport's ordinary failure and the budget was spent.
-    assert [item.reason_code for item in outcome.attempts] == ["provider_no_valid_response"]
+    # AR-392: a refused connection is not one of the named causes, so it stays
+    # on the residual code -- distinct from the deadline abort and from the
+    # credential refusal above, which never reaches the socket at all.
+    assert [item.reason_code for item in outcome.attempts] == ["provider_call_failed"]
     assert outcome.calls_used == 1
     assert WORKFORCE_CREDENTIAL_ENV_UNSET not in outcome.abstention_codes
 
