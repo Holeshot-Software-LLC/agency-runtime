@@ -1791,6 +1791,9 @@ This registry connects repository history to the roadmap and to optional detail 
 | `e12c1bdd` | 2026-09-04 | Merge pull request #629 from Holeshot-Software-LLC/claude/ar396-ledger | null | null |
 | `9ea0f2ad` | 2026-09-04 | docs(roadmap): refresh the AR-383 capsule for the recruiter blocker | null | null |
 | `242ab4cf` | 2026-09-04 | Merge pull request #630 from Holeshot-Software-LLC/claude/ar383-capsule-refresh | null | null |
+| `d757c3b9` | 2026-09-04 | Merge pull request #631 from Holeshot-Software-LLC/claude/capsule-ledger | null | null |
+| `eeb98653` | 2026-09-04 | fix(receipts): name every stage the runtime runs | [AR-395](../roadmap/issue-AR-395-preflight-stage-vocabulary-is-incomplete.md) | The receipt's stage allowlist rewrote every unlisted label to unknown, which is how 64 of the last 400 receipts' attempts were recorded under no name; the issue named three missing labels and the new test's AST scan of inference.py and hiring.py found six, the other three being the hyphenated hiring critic and repair stages that AR-385's STAGE_REPLY_BUDGET_TOKENS already enumerated. |
+| `a0527fd7` | 2026-09-04 | docs(ar395): flip AR-395 to done on four satisfied verdicts | [AR-395](../roadmap/issue-AR-395-preflight-stage-vocabulary-is-incomplete.md) | The isolated verifier returned four of four satisfied on the first pass at eeb98653, so AR-395 flips to done with the record frozen there; the ADR cell is null because completing the receipt's stage allowlist decides nothing, and the evidence file records the 8-of-10 split the same suite gives against unfixed main. |
 <!-- worklog:end -->
 
 ## Provenance notes

@@ -113,14 +113,27 @@ PREFLIGHT_FAILURE_EXCEPTION_CATEGORIES = frozenset(
     }
 )
 
+#: Every stage label a receipt may carry. A label the runtime passes but this
+#: set does not hold is rewritten to ``"unknown"`` by
+#: :func:`project_preflight_provider_attempts`, which is how the subject and
+#: hiring stages spent 64 of the last 400 receipts' attempts under no name at
+#: all (AR-395). ``STAGE_REPLY_BUDGET_TOKENS`` names the same stages from the
+#: transport side and ``tests/test_preflight_stage_vocabulary.py`` holds the
+#: two together, so a stage added later fails the suite instead of degrading.
 PREFLIGHT_PROVIDER_STAGES = frozenset(
     {
         "combined",
         "planner",
+        "subject",
         "recruiter",
         "recall_embedding",
         "recall_reranker",
         "hiring",
+        "hiring-critic",
+        "hiring-repair",
+        "hiring-repair-critic",
+        "security_review",
+        "safety_repair",
         "critic",
         "selector",
         "unknown",
