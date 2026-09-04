@@ -12,7 +12,7 @@ supersedes: []
 superseded_by: null
 type: acceptance-verification
 issue_id: AR-393
-candidate_commit: pending
+candidate_commit: 18c04e21585698756d76787abdad3b2e29ff8479
 evidence_cutoff: 2026-09-04
 tracker_url: null
 ---
@@ -55,6 +55,11 @@ stand-in.
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
+| 1 | satisfied | `AR-393.1-20260904-f3219542` | `2f592531bb004668bb3436822f9a2789ba4983f5707e859fb7f882e69caff3f6` | 2026-09-04 | In the snapshot, _gap_hiring_verdicts (pipeline.py:1499-1517) keeps gap ids outside the plan and labels them GAP_UNIT_ABSENT_FROM_PLAN, _all_gap_units returns all of them (1708-1720), and _complete_gap_hiring_events emits one event per id (1735-1772); tests at line 102-119 assert this. |
+| 2 | satisfied | `AR-393.2-20260904-240a5d35` | `628f0a15857eb50a7869cf81613ea1a2d84692c3cb9e98b72ce7a45fbc9d8931` | 2026-09-04 | Snapshot pipeline.py:1512-1531 gives every non-hireable unit a verdict naming the failed test, emitted onto the event at 1742-1761; the global case yields (gap_global_abstention_code, *global codes) at 1519-1520, pinned by tests at test_declared_gap_hiring_account.py:145-167 and evidence line 48. |
+| 3 | satisfied | `AR-393.3-20260904-e9e76fe0` | `b578f78c8725b266d2a09e017070e770f39c8dbee8a5385cb93518719eabe081` | 2026-09-04 | pipeline.py:1530-1531 is the only producer and writes GAP_EVIDENCE_NOT_HIREABLE only when own = unit_codes - _HIREABLE_GAP_CODES is non-empty; lines 1753-1761 emit those codes on the event, grep shows no other producer, and tests at test_declared_gap_hiring_account.py:184-225 pin the rule. |
+| 4 | satisfied | `AR-393.4-20260904-831e319e` | `ebcb71777b286b7bd6c0f9c9f028d64b5d3f9975df24d749db33e27e7315877d` | 2026-09-04 | tests/test_declared_gap_hiring_account.py:201-225 asserts the invariant over all three table shapes; pipeline.py:1708-1772 emits one event per declared gap unit with verdict codes outside _HIREABLE_GAP_CODES (:1436-1447); evidence file lines 32-49 shows matching branch output. |
+| 5 | contradicted | `AR-393.5-20260904-8b96b11f` | `9456a7d8b04788dbb1100ac8598602479de76d1c0b37a3315d3ac8e8e72790d0` | 2026-09-04 | AR-393-evidence-20260904.txt:59-63 shows the live store still holds 42 declaring receipts with empty hiring_reason_codes; the reported 0 is over an empty after-fix window (no declaring receipts since 2026-09-03), and issue-AR-393.md:88-92 says the condition behind the 42 is unnamed. |
 
 ## Builder notes
 
