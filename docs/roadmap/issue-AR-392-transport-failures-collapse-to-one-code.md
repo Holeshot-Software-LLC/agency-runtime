@@ -1,6 +1,6 @@
 ---
 title: "AR-392: Every transport failure reads as one code, so a runtime timeout and a malformed reply are indistinguishable"
-status: done
+status: open
 category: roadmap
 created: 2026-09-04
 updated: 2026-09-04
