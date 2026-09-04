@@ -12,14 +12,14 @@ supersedes: []
 superseded_by: null
 type: acceptance-verification
 issue_id: AR-387
-candidate_commit: pending
+candidate_commit: b349e59b4d27de609ea29a436273ff6353fe9800
 evidence_cutoff: 2026-09-03
 tracker_url: null
 ---
 
 # AR-387 acceptance verification record
 
-Pending draft. Every `typed_recall` row the recruiter receives carries the
+Verified on the second pass at `b349e59b`. Every `typed_recall` row the recruiter receives carries the
 complete, identity-sorted list of detail cards the verifier's eligibility
 admits for that unit and the count of eligible workers without a card; a
 `staff_without_safe_team` repair contract names the eligible cards covering
@@ -52,3 +52,7 @@ wordings under strict mode against the reconciled store copy.
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
+| 1 | satisfied | `AR-387.1-20260903-b1d3e81d` | `6d2509fc7fcfb068560dc2f12ca6eae1793166c04fdb067971453762a5a05cd1` | 2026-09-03 | The inference.py excerpts show each plan-unit recall row receives a sorted verifier-eligible intersection with detail-card IDs plus the exact eligible-without-card count, and the cited test verifies both fields across units. |
+| 2 | satisfied | `AR-387.2-20260903-b5d19e92` | `43e708770f46480e8075394d2ce095ae7da8537b9546b0d5f15c57328f8fa21f` | 2026-09-03 | The excerpts show the repair contract computes uncovered ranked-team requirements, maps each to eligible covering cards, exposes that map in the prompt, and a staff_without_safe_team test asserts the expected coverer. |
+| 3 | satisfied | `AR-387.3-20260903-4e61b243` | `532da78bdafb5832dedbb9a83ff148926f03aa13b14c84d87e0cf0bf8a8405bd` | 2026-09-03 | The excerpts at inference.py:336-348 and 399-408 state for both recruiter prompts that cards outside eligible_candidate_ids can only be forbidden or omitted and cannot be selected or staffed. |
+| 4 | satisfied | `AR-387.4-20260903-e19cca6e` | `6b5872f2abccf6d464710f469804dd0efde8194fddec5239fc38d085f4223996` | 2026-09-03 | The cited eleven-turn strict-mode summary reports zero staff_without_safe_team rejections on any unit, directly excluding the prohibited plan-authority outcome. |
