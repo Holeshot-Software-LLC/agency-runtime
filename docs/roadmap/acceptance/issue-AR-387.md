@@ -1,0 +1,54 @@
+---
+title: "AR-387 acceptance verification record"
+status: active
+category: roadmap
+created: 2026-09-03
+updated: 2026-09-03
+tags: [acceptance, verification]
+related:
+  - docs/roadmap/issue-AR-387-recruiter-cards-carry-no-eligibility.md
+  - docs/decisions/0203-show-the-recruiter-the-complete-eligible-card-set-per-unit.md
+supersedes: []
+superseded_by: null
+type: acceptance-verification
+issue_id: AR-387
+candidate_commit: pending
+evidence_cutoff: 2026-09-03
+tracker_url: null
+---
+
+# AR-387 acceptance verification record
+
+Pending draft. Every `typed_recall` row the recruiter receives carries the
+complete, identity-sorted list of detail cards the verifier's eligibility
+admits for that unit and the count of eligible workers without a card; a
+`staff_without_safe_team` repair contract names the eligible cards covering
+each requirement the ranked executable team left uncovered; both recruiter
+prompts state that a card outside the list can be forbidden or omitted but
+never staffed. Criterion 4 is evidenced live on the same eleven install
+wordings under strict mode against the reconciled store copy.
+
+## Builder evidence
+
+| Criterion | Kind | Artifact | Observed | Source |
+|---|---|---|---|---|
+| 1 | file | `_annotate_eligible_candidates gives each recall row eligible_candidate_ids, the verifier's eligibility over the detail cards, identity-sorted and complete for the unit, and eligible_candidates_without_card` | 2026-09-03 | `agency_runtime/core/workforce/inference.py:2352-2384` |
+| 1 | file | `_recruit_ambiguous_plan annotates the rows once the detail cards are final, before the recruiter document is assembled` | 2026-09-03 | `agency_runtime/core/workforce/inference.py:3495-3505` |
+| 1 | test | `test_every_recall_row_carries_the_complete_eligible_card_set asserts the plan unit lists exactly its two eligible planners, the implementation unit its one implementer, and an eligible worker without a card is counted rather than listed` | 2026-09-03 | `tests/test_recruiter_eligibility_view.py:189-211` |
+| 1 | command-output | `eleven live turns: on all eight plan-authority units the recruiter ranked only cards inside eligible_candidate_ids, with six eligible cards listed each time` | 2026-09-03 | `docs/roadmap/acceptance/evidence/AR-387-evidence-20260903.txt:41-67` |
+| 2 | file | `_eligible_coverers_by_requirement names the eligible detail cards covering each requirement, identity-sorted and bounded to eight, and nothing without a context` | 2026-09-03 | `agency_runtime/core/workforce/inference.py:2777-2811` |
+| 2 | file | `_safe_team_repair_contract computes the coverers for what the ranked executable team left uncovered, falling back to what the required set leaves, and _SafeTeamRepairContract projects them as eligible_coverers_by_requirement` | 2026-09-03 | `agency_runtime/core/workforce/inference.py:2814-2874` |
+| 2 | file | `_SafeTeamRepairContract carries eligible_coverers_by_requirement into the repair prompt beside the ranked candidates` | 2026-09-03 | `agency_runtime/core/workforce/inference.py:739-791` |
+| 2 | test | `test_eligible_coverers_are_facts_not_a_ranking asserts identity order, eligibility, the card restriction, the empty cases and the bound` | 2026-09-03 | `tests/test_recruiter_eligibility_view.py:214-239` |
+| 2 | test | `test_the_captured_blindness_is_repaired_with_the_eligible_coverer_named drives the captured turn-201 shape and asserts the repair contract names the eligible coverer of the missing domain and the corrected reply staffs it` | 2026-09-03 | `tests/test_recruiter_eligibility_view.py:306-401` |
+| 3 | file | `_RECRUITER_SYSTEM states that eligible_candidate_ids is the complete list of cards the runtime can staff on the unit and that any other card can only be forbidden or omitted` | 2026-09-03 | `agency_runtime/core/workforce/inference.py:336-348` |
+| 3 | file | `_RECRUITER_REPAIR_SYSTEM states the same rule for a repair and names eligible_coverers_by_requirement` | 2026-09-03 | `agency_runtime/core/workforce/inference.py:399-408` |
+| 3 | file | `the staff_without_safe_team repair guidance says an excluded candidate can be neither required nor acceptable and points at the coverers` | 2026-09-03 | `agency_runtime/core/workforce/inference.py:223-234` |
+| 3 | test | `test_both_prompts_state_the_eligibility_boundary pins the phrases in both prompts and the guidance` | 2026-09-03 | `tests/test_recruiter_eligibility_view.py:242-254` |
+| 4 | command-output | `eleven live turns under strict mode: zero staff_without_safe_team on any unit, zero ranked cards outside eligible_candidate_ids on the eight plan-authority units, five turns completed against four on the previous run` | 2026-09-03 | `docs/roadmap/acceptance/evidence/AR-387-evidence-20260903.txt:41-67` |
+| 4 | command-output | `the blindness as captured before the change: five staff_without_safe_team plan-unit failures across three runs, each with an eligible coverer unranked in the rows, and turn 201's document with 86 unflagged cards` | 2026-09-03 | `docs/roadmap/acceptance/evidence/AR-387-evidence-20260903.txt:6-25` |
+
+## Verification
+
+| Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
+|---|---|---|---|---|---|

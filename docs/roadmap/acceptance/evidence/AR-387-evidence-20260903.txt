@@ -1,0 +1,74 @@
+AR-387 evidence, 2026-09-03 (ADR-0203). Branch claude/ar387-recruiter-eligibility on main 736ffcfe. Runtime under
+test: the branch checkout via PYTHONPATH, run by the installed venv python
+(~/.local/share/agency-runtime/venvs/4d0d7c1b66be8d2b847e6b4ce00534ea92a3040e). Store: the reconciled COPY of the
+installed store used by the ADR-0201 and ADR-0202 measurements (scratchpad agency.db.branch-copy, generation 307).
+
+== 1. The blindness, read from the captured runs (raw386, raw387, raw388) ==
+  Plan-authority units the recruiter answered: 28; ranked rows on them: 112. Of the ranked rows, only 1 had an
+  execution_eligible=false flag in front of the recruiter, because 111 of the 112 rows named cards that were either in
+  the unit's bounded typed_recall rows as eligible or in detail_cards with no flag at all.
+  staff_without_safe_team on a plan unit: 5 (386/201 twice, 386/205, 386/206, 387/201). In all 5 an eligible coverer of
+  the missing token stood unranked in the unit's typed_recall rows; in 4 the ranked candidates included cards with no
+  eligibility flag anywhere in the document.
+  387/201 unit-install-approach [operations, software-engineering], plan authority, as the recruiter saw it:
+    typed_recall rows 24 of 291 (candidate_rows_complete false), 17 eligible; desktop-app-engineer,
+    cross-platform-installer-engineer and devops-automator NOT in the rows; operations-manager,
+    sre-site-reliability-engineer, it-service-manager in the rows, eligible.
+    detail_cards 86, fields agent_id, display_name, outcomes, scope_qualifiers, not_for: no authority, no eligibility.
+    reply: desktop-app-engineer (required), cross-platform-installer-engineer, devops-automator, operations-manager
+    -> staff_without_safe_team:domain, missing domain:software-engineering, twice.
+  Eligible cards per unit on the captured plans (verifier eligibility over detail_cards / over the roster):
+    387/201: advise 50/68, plan 17/17, modify 25/42, modify 3/3, review 20/20, review 9/9 ; prompt 82175 bytes
+    387/304: plan 6/6, modify 1/1, modify 3/3, review 9/9, review 9/9 ; prompt 75082 bytes
+    387/208: advise 40/68, modify 26/43, modify 3/3, review 20/20, review 9/9 ; prompt 67361 bytes
+  Listing the eligible cards costs 24 to 1350 bytes per unit, two to four kilobytes per plan.
+
+== 2. What changed (ADR-0203) ==
+  inference.py: _annotate_eligible_candidates gives each typed_recall row eligible_candidate_ids (verifier eligibility
+    over the detail cards, complete, identity-sorted) and eligible_candidates_without_card; _eligible_coverers_by_requirement
+    and the safe-team repair contract's eligible_coverers_by_requirement name the eligible cards covering each requirement
+    the ranked executable team left uncovered (bounded to 8 per token; falls back to what the required set leaves when
+    nothing ranked was executable); allowed_candidate_ids threads from the proposal builder to the repair contract; the
+    recruiter and repair system prompts and the staff_without_safe_team guidance state the boundary.
+  Nothing is filtered, ranked or recommended; the verifier's rule is unchanged.
+
+== 3. Tests ==
+  tests/test_recruiter_eligibility_view.py: 4 passed (the complete eligible card set and the without-card count; coverers
+    as identity-sorted, eligible-only, bounded, card-restricted facts; both prompts; the captured turn-201 blindness
+    repaired end to end with the coverer named). Curated conformance mutation recruiter-eligible-card-set-ignores-eligibility
+    added; the pre-existing implicit-staffing-failure-becomes-hiring-gap anchor refreshed for the two new arguments.
+
+== 4. Live preflight turns, the same eleven wordings, strict mode, capture389.py, eligibility-view runtime ==
+  Same planner (c2692490), recruiter (b0b6f29c, MiniMax) and critic (10729e08) deployments. The run started before the
+  coverers list was narrowed to the team-search uncovered set; no staff_without_safe_team repair occurred, so the repair
+  contract difference never reached a prompt.
+
+id  | plan-authority unit: eligible cards / ranked cards outside them          | how the turn ended
+----|--------------------------------------------------------------------------|-------------------
+201 | unit-helix-setup: 6 eligible cards, ranked 6 of them, 0 outside           | ACCEPTED: operations-manager, cross-platform-release-verifier, application-integration-verifier (ADR-0202 run: transport failure)
+202 | unit-install-plan: 6 eligible, ranked 3 of them, 0 outside                | recruiter_candidate_row_shape_invalid on three units, repair not a units object (both recorded)
+203 | (no plan-authority unit; a five-unit code-mutation reading of the wording) | critic rejected wrong-neighbor-selection
+204 | unit-installation-plan: 6 eligible, ranked 6, 0 outside                    | ACCEPTED: desktop-app-engineer, devops-automator, sre-site-reliability-engineer, cross-platform-release-verifier
+205 | unit-install-search-tools: 6 eligible, ranked 6, 0 outside                 | critic rejected wrong-neighbor-selection (operations-manager team; see section 5)
+206 | unit-helix-install-operation: 6 eligible, ranked 6, 0 outside              | ACCEPTED: operations-manager, reality-checker, application-integration-verifier
+207 | unit-install-helix: 6 eligible, ranked 6, 0 outside                        | ACCEPTED: operations-manager, cross-platform-release-verifier, reality-checker
+208 | first plan unit-install-plan; planner completeness repair replaced it      | critic rejected wrong-neighbor-selection on the five-unit repaired plan
+209 | (no plan-authority unit)                                                   | row shape invalid on one unit, four rows missing; repair reply not readable by the transport (provider_no_valid_response)
+304 | unit-install-plan: 6 eligible, ranked 4, 0 outside                         | first reply invalid_decision on every unit (recorded), repair valid; ACCEPTED: developer-tooling-engineer, sre-site-reliability-engineer, devops-automator, cross-platform-release-verifier (ADR-0202 run: critic veto)
+305 | unit-search-tooling-install-plan (first reply never parsed)                | recruiter reply not readable by the transport, workforce_provider_unavailable
+
+Counts over the eleven turns:
+  plan-authority units answered by the recruiter:                   8   ranked cards outside eligible_candidate_ids: 0
+  staff_without_safe_team, any unit:                                0   (AR-386 run 5 plan-unit failures; ADR-0201 run 2; ADR-0202 run 0 but 1 verifier confidence loss)
+  turns completed with a staffed team under strict mode:            5   (201, 204, 206, 207, 304; ADR-0202 run 4, ADR-0201 run 3, AR-386 run 2)
+  critic wrong-neighbor-selection vetoes:                           3   (203, 205, 208)
+  replies the transport could not read (no JSON object):            2   (209 repair, 305 first)
+  recruiter reply shapes recorded and repaired:                     3   (202 row shape then not a units object; 209 row shape; 304 invalid_decision)
+
+== 5. The strict critic's run-to-run variance on an identical team (critic_replay.py, gateway cache bypassed with
+      cache: {"no-cache": true}, six trials each, distinct completion token counts prove fresh generations) ==
+  Turn 205 team operations-manager (discovery + install plan) with verifiers:
+    ADR-0201 run's critic prompt (approved live):    6 of 6 approved     (139 to 373 completion tokens)
+    ADR-0202 run's critic prompt (vetoed live):      1 of 6 approved, 5 vetoed wrong-neighbor-selection (210 to 437 tokens)
+  Same team, different plan wording and unit ids. The critic is mostly consistent per prompt; the flip between runs was
+  the prompt, not sampling. The eligibility-view run's 205 (a two-unit plan) was vetoed again.

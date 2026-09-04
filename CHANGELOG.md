@@ -33,6 +33,8 @@ related:
   - docs/decisions/0201-constrain-the-planner-domains-to-what-the-roster-serves.md
   - docs/roadmap/issue-AR-373-recruiter-evidence-vocabulary.md
   - docs/decisions/0202-read-the-recruiter-reply-where-no-safety-property-lives.md
+  - docs/roadmap/issue-AR-387-recruiter-cards-carry-no-eligibility.md
+  - docs/decisions/0203-show-the-recruiter-the-complete-eligible-card-set-per-unit.md
   - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
   - docs/decisions/0178-project-config-declared-credentials-into-tool-reduced-canaries.md
   - docs/decisions/0181-use-litellm-aliases-as-host-inference-control-plane.md
@@ -105,6 +107,13 @@ changes rather than duplicating every commit.
   `recruiter_response_shape_invalid` diagnosis and repaired, and a reply the
   staffing verifier rejected carries the verifier's `unit=code` rows as
   `validation_failures` on both receipts.
+- The recruiter is shown the complete eligible card set per unit (AR-387,
+  ADR-0203): every `typed_recall` row carries `eligible_candidate_ids`, the
+  verifier's eligibility over the detail cards, and a count of eligible
+  workers without a card; a `staff_without_safe_team` repair names the
+  eligible cards covering each requirement the ranked team left uncovered;
+  and both recruiter prompts say a card outside the list can be forbidden or
+  omitted but never staffed.
 - `agency battery` runs the change-triggered harness canary battery
   (AR-337): per-harness version fingerprints gate the run, claude and codex
   re-prove through their canary modes (codex attended-trust loss reported
