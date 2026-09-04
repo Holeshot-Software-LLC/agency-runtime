@@ -1,0 +1,84 @@
+AR-370 evidence, 2026-09-04, branch claude/ar370-retrieval-subject
+(the candidate commit is named in docs/roadmap/acceptance/issue-AR-370.md)
+Branch runtime, PYTHONPATH=<worktree>. Deterministic throughout: no provider
+call is made below and no credential is required.
+
+== 1. the expansion table is gone ==
+agency_runtime/core/selector/domain_expansion.py: removed
+expand_query references in agency_runtime/: 0
+stack nouns remaining in the selector package (excluding provider-adapter names):
+  (none)
+
+== 2. the operational-verb table, before and after ==
+-- MAIN (before) --
+  catalog cards: 16   routing cases: 37
+  
+  -- the eight probes in the user's raw words --
+    install-url    signal=False top3=(none)
+    install-tool   signal=False top3=(none)
+    configure      signal=False top3=(none)
+    restart        signal=False top3=(none)
+    upgrade        signal=False top3=['technical-writer']
+    troubleshoot   signal=False top3=(none)
+    monitor        signal=False top3=(none)
+    runbook-alert  signal=True  top3=['technical-writer', 'performance-benchmarker', 'incident-response-commander']
+  
+  -- the same eight as work statements, which is what the corpus now carries --
+-- BRANCH (after) --
+  catalog cards: 18   routing cases: 45
+  
+  -- the eight probes in the user's raw words --
+    install-url    signal=False top3=(none)
+    install-tool   signal=False top3=(none)
+    configure      signal=False top3=(none)
+    restart        signal=True  top3=['service-operations-engineer', 'devops-automator', 'incident-response-commander']
+    upgrade        signal=True  top3=['service-operations-engineer', 'technical-writer', 'devops-automator']
+    troubleshoot   signal=False top3=['service-operations-engineer', 'devops-automator', 'incident-response-commander']
+    monitor        signal=True  top3=['monitoring-engineer', 'service-operations-engineer', 'performance-benchmarker']
+    runbook-alert  signal=True  top3=['technical-writer', 'performance-benchmarker', 'incident-response-commander']
+  
+  -- the same eight as work statements, which is what the corpus now carries --
+    verb-install-distribution  OK  top3=['service-operations-engineer', 'code-reviewer', 'senior-developer']
+    verb-install-tool          OK  top3=['service-operations-engineer', 'devops-automator', 'incident-response-commander']
+    verb-configure             OK  top3=['service-operations-engineer', 'mcp-integration-engineer', 'monitoring-engineer']
+    verb-restart               OK  top3=['service-operations-engineer', 'monitoring-engineer', 'performance-benchmarker']
+    verb-upgrade               OK  top3=['service-operations-engineer', 'technical-writer', 'devops-automator']
+    verb-troubleshoot          OK  top3=['service-operations-engineer', 'devops-automator', 'incident-response-commander']
+    verb-monitor               OK  top3=['monitoring-engineer', 'service-operations-engineer', 'performance-benchmarker']
+    verb-runbook               OK  top3=['technical-writer', 'performance-benchmarker', 'incident-response-commander']
+
+== 3. graded routing metrics, main vs branch ==
+  MAIN  : {'cases': 37, 'candidate_precision_at_3': 0.6071, 'required_candidate_recall_at_3': 1.0, 'required_candidate_case_recall_at_3': 1.0, 'candidate_top_1_relevance': 1.0, 'forbidden_candidate_rate': 0.0, 'candidate_abstain_accuracy': 1.0}
+  (measured from the main checkout as cwd: running it with cwd inside the
+   worktree resolves the corpus to the branch's copy and reports 45.)
+  BRANCH: {'cases': 45, 'candidate_precision_at_3': 0.6364, 'required_candidate_recall_at_3': 1.0, 'required_candidate_case_recall_at_3': 1.0, 'candidate_top_1_relevance': 1.0, 'forbidden_candidate_rate': 0.0, 'candidate_abstain_accuracy': 1.0}
+  thresholds:
+    PASS  candidate_precision_at_3=0.6364 vs 0.6
+    PASS  required_candidate_recall_at_3=1.0 vs 0.97
+    PASS  required_candidate_case_recall_at_3=1.0 vs 0.95
+    PASS  candidate_top_1_relevance=1.0 vs 0.9
+    PASS  forbidden_candidate_rate=0.0 vs 0.0
+    PASS  candidate_abstain_accuracy=1.0 vs 1.0
+
+== 4. a bare reference is resolved from the turn itself ==
+   (against the 18-card corpus catalog; with an empty eligible catalog
+    nothing has signal, so every deictic reads as a bare reference)
+  'install this: https://zcode.z.ai/en'
+    reference_resolution = {'detected': True, 'kind': 'url', 'resolved_from': 'url', 'resolved_subject': 'zcode'}
+    routing_query        = 'install this: zcode'
+  'Review this authentication diff for bugs'
+    reference_resolution = {'detected': False, 'kind': '', 'resolved_from': '', 'resolved_subject': ''}
+    routing_query        = 'Review this authentication diff for bugs'
+  'fix that'
+    reference_resolution = {'detected': True, 'kind': 'deictic', 'resolved_from': '', 'resolved_subject': ''}
+    routing_query        = 'fix that'
+
+== 5. the three ways a turn goes unstaffed ==
+  no retrievable subject       -> ('request_underspecified',)
+  real subject, empty roster   -> ('no_relevant_candidate',)
+  real candidate set, recruiter-> ()
+  inference never answered     -> ()
+
+== 6. suites ==
+.                                                                        [100%]
+73 passed in 7.87s

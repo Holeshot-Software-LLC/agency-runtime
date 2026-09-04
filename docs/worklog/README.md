@@ -1776,6 +1776,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `110cc09c` | 2026-09-04 | docs(roadmap): record the AR-392 acceptance evidence | null | null |
 | `d7106be1` | 2026-09-04 | fix(workforce): account for every declared gap | null | null |
 | `ea00e607` | 2026-09-04 | docs(roadmap): record the AR-393 declared-gap acceptance evidence | null | null |
+| `0e5a96f3` | 2026-09-04 | fix(selector): give retrieval a subject and name the empty turn | null | null |
+| `a10f6b11` | 2026-09-04 | docs(roadmap): record the AR-370 retrieval-subject acceptance evidence | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes

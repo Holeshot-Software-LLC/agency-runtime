@@ -757,6 +757,7 @@ not stable internal identifiers.
 | [AR-386](issue-AR-386-strict-critic-vetoes-verifier-accepted-install-turns.md) | [`6b79736c`](../worklog/README.md), [`b6b2f6e4`](../worklog/README.md) (frozen record, three satisfied verdicts, done flip) | [ADR-0200](../decisions/0200-bind-the-strict-critic-to-the-advisory-doctrine.md) |
 | [AR-392](issue-AR-392-transport-failures-collapse-to-one-code.md) | [`03e302a5`](../worklog/README.md) (the named transport cause, the stage-loop split, the doctor timeout report) | [ADR-0209](../decisions/0209-name-the-transport-cause-instead-of-one-code.md) |
 | [AR-393](issue-AR-393-declared-gaps-leave-no-hiring-account.md) | [`d7106be1`](../worklog/README.md) (every declared gap accounted for, the per-unit verdict) | [ADR-0210](../decisions/0210-account-for-every-declared-gap.md) |
+| [AR-370](issue-AR-370-staffing-asks-the-wrong-question.md) | [`0e5a96f3`](../worklog/README.md) (the retired expansion table, the resolved bare reference, the three unstaffed codes, the operational-verb corpus) | [ADR-0211](../decisions/0211-give-retrieval-a-subject-and-name-the-empty-turn.md) |
 
 ## Dependency summary
 

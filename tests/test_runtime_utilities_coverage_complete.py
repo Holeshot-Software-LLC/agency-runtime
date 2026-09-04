@@ -34,7 +34,7 @@ from agency_runtime.core.provider_validation import validate_provider
 from agency_runtime.core.receipts.host import extract_host_receipt
 from agency_runtime.core.receipts.litellm import extract_litellm_receipt_headers
 from agency_runtime.core.selector import stickiness
-from agency_runtime.core.selector.explain import _agent_summary, _clamp_limit, _domain_terms
+from agency_runtime.core.selector.explain import _agent_summary, _clamp_limit
 from agency_runtime.core.selector.intent_text import mask_excluded_intent
 from agency_runtime.core.store.sqlite import Store
 
@@ -397,8 +397,4 @@ def test_intent_and_explain_helpers_cover_validation_and_empty_terms() -> None:
         "description": "",
         "selected": False,
     }
-    assert _domain_terms("task", "task [domain context: security, , performance]") == [
-        "security",
-        "performance",
-    ]
-    assert _domain_terms("same", "same") == []
+

@@ -9,7 +9,7 @@ known harmful confusions.  An abstain case must produce no positive candidate.
 from __future__ import annotations
 
 SCHEMA = "agency-runtime.routing-corpus"
-VERSION = "1.4.0"
+VERSION = "1.5.0"
 
 CATALOG: list[dict[str, object]] = [
     {
@@ -184,6 +184,119 @@ CATALOG: list[dict[str, object]] = [
             "shell compatibility",
         ],
         "tool_affinity": ["powershell", "bash", "ci"],
+    },
+    # AR-370. The corpus carried no card covering the most common operational
+    # verbs, so a request to install, restart or monitor something retrieved
+    # nothing and the eval could not show the defect the issue describes. These
+    # two cards give those verbs a correct answer to find.
+    {
+        "slug": "service-operations-engineer",
+        "name": "Service Operations Engineer",
+        "division": "operations",
+        "description": (
+            "Installs, configures, upgrades and restarts services and command line tools "
+            "on hosts, and verifies they run afterwards."
+        ),
+        # The nouns here are deliberately host-side verbs rather than
+        # "installation": a bare "installation" also matches "rewrite the
+        # README installation guide", which is documentation work and belongs
+        # to the technical writer.
+        "categories": ["operations", "service management", "host administration"],
+        "capabilities": [
+            "installing software on hosts",
+            "service configuration",
+            "service restart",
+            "runtime upgrade",
+            "host provisioning",
+        ],
+        "tool_affinity": ["terminal", "systemd", "package manager"],
+    },
+    {
+        "slug": "monitoring-engineer",
+        "name": "Monitoring Engineer",
+        "division": "operations",
+        "description": (
+            "Sets up monitoring, metrics collection and alerting for hosts and services, "
+            "and tunes alert thresholds."
+        ),
+        "categories": ["monitoring", "observability", "alerting"],
+        "capabilities": [
+            "monitoring setup",
+            "alerting configuration",
+            "metrics collection",
+            "dashboard configuration",
+        ],
+        "tool_affinity": ["prometheus", "grafana", "alertmanager"],
+    },
+]
+
+# AR-370 criterion 6. One case per operational verb, so the table the issue
+# measured cannot silently regress.
+#
+# Each query is phrased as a *work statement* -- the action, the artifact and
+# the host -- because that is what the runtime retrieves on once ADR-0197's
+# zero-signal trigger and ADR-0208's inferred subject have run. This eval is
+# deterministic candidate recall and cannot make an inference call, so a case
+# written in the user's raw words ("install this: <url>") would measure the
+# inference stage's absence rather than retrieval's behaviour. What these cases
+# guard is the property the fix depends on: that retrieval answers correctly
+# once the query states the work.
+_OPERATIONAL_VERB_CASES: list[dict[str, object]] = [
+    {
+        "id": "verb-install-distribution",
+        "query": "Install the CLI tool at https://example.test/dist on this linux host",
+        "required": ["service-operations-engineer"],
+        "acceptable": ["devops-automator"],
+        "forbidden": ["technical-writer"],
+    },
+    {
+        "id": "verb-install-tool",
+        "query": "Install a command line tool on this linux host and verify it runs",
+        "required": ["service-operations-engineer"],
+        "acceptable": ["devops-automator", "incident-response-commander"],
+        "forbidden": ["ui-designer"],
+    },
+    {
+        "id": "verb-configure",
+        "query": "Configure the api gateway service and validate the change",
+        "required": ["service-operations-engineer"],
+        "acceptable": ["mcp-integration-engineer", "monitoring-engineer"],
+        "forbidden": ["financial-analyst"],
+    },
+    {
+        "id": "verb-restart",
+        "query": "Restart the dashboard service and confirm it is reachable",
+        "required": ["service-operations-engineer"],
+        "acceptable": ["monitoring-engineer", "incident-response-commander"],
+        "forbidden": ["technical-writer"],
+    },
+    {
+        "id": "verb-upgrade",
+        "query": "Upgrade the deployed runtime to the latest release",
+        "required": ["service-operations-engineer"],
+        "acceptable": ["devops-automator"],
+        "forbidden": ["ui-designer"],
+    },
+    {
+        "id": "verb-troubleshoot",
+        "query": "Troubleshoot why the service will not start on this host",
+        "required": ["service-operations-engineer"],
+        "acceptable": ["devops-automator", "incident-response-commander"],
+        "forbidden": ["product-manager"],
+    },
+    {
+        "id": "verb-monitor",
+        "query": "Set up monitoring and alerting for the newly provisioned host",
+        "required": ["monitoring-engineer"],
+        "acceptable": ["performance-benchmarker", "devops-automator"],
+        "forbidden": ["technical-writer"],
+    },
+    {
+        "id": "verb-runbook",
+        "query": "Write a runbook for responding to a p95 latency alert",
+        "required": ["technical-writer"],
+        "acceptable": ["performance-benchmarker", "incident-response-commander"],
+        "forbidden": ["ui-designer"],
     },
 ]
 
@@ -452,6 +565,7 @@ ROUTING_CASES: list[dict[str, object]] = [
         "forbidden": ["ui-designer"],
         "abstain": True,
     },
+    *_OPERATIONAL_VERB_CASES,
 ]
 
 POLICY_CASES: list[dict[str, object]] = [

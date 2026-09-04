@@ -132,6 +132,7 @@ Status meanings:
 | [ADR-0208](0208-carry-the-inferred-subject-beside-the-turn-context.md) | Carry the inferred subject beside the turn context | Accepted |
 | [ADR-0209](0209-name-the-transport-cause-instead-of-one-code.md) | Name the transport cause instead of one code | Accepted |
 | [ADR-0210](0210-account-for-every-declared-gap.md) | Account for every declared gap | Accepted |
+| [ADR-0211](0211-give-retrieval-a-subject-and-name-the-empty-turn.md) | Give retrieval a subject and name the empty turn | Accepted |
 
 ## Evidence and observability
 

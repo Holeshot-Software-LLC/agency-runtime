@@ -288,8 +288,10 @@ def test_routing_eval_meets_published_thresholds() -> None:
     report = run_routing_eval()
 
     assert report["schema"] == "agency-runtime.routing-eval"
-    assert report["version"] == "1.4.0"
-    assert report["corpus"]["version"] == "1.4.0"
+    # AR-370: the corpus gained two operational cards and one case per
+    # operational verb, so both versions moved together.
+    assert report["version"] == "1.5.0"
+    assert report["corpus"]["version"] == "1.5.0"
     assert report["routing_contract"] == "deterministic_candidate_recall_only"
     assert report["corpus"]["routing_contract"] == "deterministic_candidate_recall_only"
     failed_gates = [gate for gate in report["gates"] if not gate["passed"]]

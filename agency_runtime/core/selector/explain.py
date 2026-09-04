@@ -19,7 +19,7 @@ from agency_runtime.core.host_capabilities import (
 )
 from agency_runtime.core.selector.cache import cache_key, routing_fingerprint
 from agency_runtime.core.selector.candidate_narrow import pre_narrow
-from agency_runtime.core.selector.domain_expansion import expand_query
+
 from agency_runtime.core.selector.pipeline import refine_query, route
 from agency_runtime.core.selector.policy import (
     detect_actions,
@@ -80,12 +80,6 @@ def _agent_summary(
     return payload
 
 
-def _domain_terms(refined_query: str, expanded_query: str) -> list[str]:
-    marker = "[domain context:"
-    if marker not in expanded_query or expanded_query == refined_query:
-        return []
-    tail = expanded_query.split(marker, 1)[1].rstrip("] ")
-    return [term.strip() for term in tail.split(",") if term.strip()]
 
 
 def _rejection_reason(*, status: str, score: float, cache_hit: bool, session_reused: bool) -> str:
@@ -185,7 +179,7 @@ def _explanation_signals(
     status = str(routing.get("status", ""))
     cache_hit = bool(routing.get("cache_hit", False))
     session_reused = bool(routing.get("session_reused", False))
-    domain_terms = _domain_terms(refined_query, expanded_query)
+
     return {
         "policy": {
             "matched_actions": matched_actions,
@@ -194,11 +188,15 @@ def _explanation_signals(
             "fallback_companion_ids": list(routing.get("fallback_companion_ids", [])),
             "fallback_applied": bool(routing.get("fallback_applied", False)),
         },
+        # AR-370 / ADR-0211: the hand-curated expansion table is retired, so
+        # nothing is ever applied here. The block stays, reporting that
+        # honestly, rather than disappearing under readers of this payload.
         "domain_expansion": {
-            "applied": bool(domain_terms),
+            "applied": False,
             "refined_query": refined_query,
             "expanded_query": expanded_query,
-            "terms": domain_terms,
+            "terms": [],
+            "retired": True,
         },
         "cache": {
             "key": cache_key(
@@ -261,7 +259,9 @@ def explain_route(
     candidate_limit = _clamp_limit(limit)
 
     refined_query = refine_query(user_message, cfg)
-    expanded_query = expand_query(refined_query)
+    # AR-370 / ADR-0211: no expansion happens any more. The name is kept for
+    # one release so the explain payload's shape does not change under readers.
+    expanded_query = refined_query
     policy = load_policy(policy_path_for_config(cfg))
     active_slugs = {agent_identity(agent) for agent in catalog}
     matched_actions, companion_ids = detect_actions(

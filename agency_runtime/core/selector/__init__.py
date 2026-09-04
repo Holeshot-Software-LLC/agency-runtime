@@ -17,7 +17,7 @@ from agency_runtime.core.selector.cache import (
     routing_fingerprint,
 )
 from agency_runtime.core.selector.candidate_narrow import pre_narrow, score_agent, tokenize
-from agency_runtime.core.selector.domain_expansion import expand_query
+
 from agency_runtime.core.selector.judge import query_judge
 from agency_runtime.core.selector.pipeline import (
     build_routing_context,
@@ -53,7 +53,7 @@ __all__ = [
     "detect_actions",
     "detect_fallback_companions",
     "detect_work_units",
-    "expand_query",
+
     "is_pure_acknowledgement",
     "is_trivial",
     "load_policy",
