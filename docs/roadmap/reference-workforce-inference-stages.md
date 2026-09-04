@@ -162,8 +162,9 @@ selected-only composition contract. The document's
 `eligible_neighbourhood` (AR-389 / ADR-0205) carries, per plan unit, the
 verifier's complete identity-sorted `eligible_candidate_ids` (bounded only
 by the roster's size limit, with `eligible_count`), `ranked_eligible_cards`
-(compact cards for the
-eligible workers the recruiter ranked or selected, bounded to 16) and
+(compact cards for
+every eligible worker the recruiter ranked or selected, bounded by the
+nomination schema's per-unit ranking limit) and
 `selected_are_whole_neighbourhood`. A veto's codes reach the staffing
 decision as `critic_<code>` with hyphens folded to underscores, at most
 sixteen and at most 56 characters each, beside `staffing_critic_rejected`,

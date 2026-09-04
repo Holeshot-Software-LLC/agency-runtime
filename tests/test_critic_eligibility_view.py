@@ -19,10 +19,13 @@ import json
 from collections.abc import Callable
 from typing import Any
 
+from agency_runtime.core.roster.limits import MAX_ACTIVE_ROSTER_SIZE
 from agency_runtime.core.workforce.inference import (
     _CRITIC_SYSTEM,
     _MAX_CRITIC_NEIGHBOURHOOD_CARDS,
     _MAX_CRITIC_NEIGHBOURHOOD_IDS,
+    MAX_NOMINATION_RANKED_PER_UNIT,
+    NOMINATION_RESPONSE_SCHEMA,
     plan_and_staff_workforce,
 )
 from tests.test_strict_critic_doctrine import (
@@ -131,6 +134,17 @@ def test_unranked_eligible_cards_are_ids_only_and_the_list_is_complete() -> None
     assert 0 < len(cards) <= _MAX_CRITIC_NEIGHBOURHOOD_CARDS
     assert "desktop-app-engineer" not in cards
     assert unit["selected_are_whole_neighbourhood"] is False
+
+
+def test_the_bounds_are_the_roster_limit_and_the_recruiter_ranking_limit() -> None:
+    # The identity list can never be cut: its bound is the roster's own size
+    # limit. Every eligible worker the recruiter ranked or selected has a card:
+    # the card bound is the nomination schema's per-unit ranking bound, and the
+    # selection is drawn from the ranked rows.
+    assert _MAX_CRITIC_NEIGHBOURHOOD_IDS == MAX_ACTIVE_ROSTER_SIZE
+    assert _MAX_CRITIC_NEIGHBOURHOOD_CARDS == MAX_NOMINATION_RANKED_PER_UNIT
+    row_schema = NOMINATION_RESPONSE_SCHEMA["properties"]["units"]["items"]
+    assert row_schema["properties"]["ranked_semantic"]["maxItems"] == MAX_NOMINATION_RANKED_PER_UNIT
 
 
 def test_the_contract_and_the_prompt_state_the_neighbourhood_boundary() -> None:

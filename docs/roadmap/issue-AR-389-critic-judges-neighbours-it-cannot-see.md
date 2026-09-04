@@ -84,8 +84,9 @@ ADR-0205. The critic document gains `eligible_neighbourhood`, per plan unit:
    roster's own size limit, so no unranked neighbour is ever cut from it;
    `eligible_count` carries the size.
 2. `ranked_eligible_cards`: compact cards (identity, archetype, authority,
-   domains, two outcomes, two `not_for` lines) for the eligible workers the
-   recruiter ranked or selected on that unit, identity-sorted, bounded to 16.
+   domains, two outcomes, two `not_for` lines) for every eligible worker the
+   recruiter ranked or selected on that unit, identity-sorted; the bound is
+   the recruiter's own per-unit ranking bound, so no such worker is ever cut.
 3. `selected_are_whole_neighbourhood`: whether the selected workers are every
    eligible card, in which case wrong-neighbour selection cannot apply.
 4. `critic_contract` gains `wrong_neighbor_must_name_an_eligible_card` and
@@ -103,13 +104,13 @@ ADR-0203 (the recruiter's view of the same boundary). None blocking.
 ## Acceptance
 
 - [x] The critic document carries, per plan unit, the complete identity-sorted
-      eligible candidate list with its count, compact cards for the eligible
-      workers the recruiter ranked or selected, and whether the selected
-      workers are the whole neighbourhood; ineligible ranked cards appear in
-      neither list.
-- [x] The identity list is complete for the unit, bounded only by the
-      roster's own size limit, and the card list is bounded to 16; both hold
-      on a roster of seventy eligible workers.
+      eligible candidate list with its count, compact cards for every eligible
+      worker the recruiter ranked or selected (the recruiter's own per-unit
+      ranking bound bounds them), and whether the selected workers are the
+      whole neighbourhood; ineligible ranked cards appear in neither list.
+- [x] The identity list is bounded only by the roster's own size limit and
+      the card list only by the recruiter's per-unit ranking bound, both by
+      construction; a roster of seventy eligible workers lists all seventy.
 - [x] The critic contract and the system prompt state that a wrong-neighbour
       veto must name a card in the unit's eligible neighbourhood and that a
       card outside it can never be the right neighbour.
