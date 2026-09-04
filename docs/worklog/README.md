@@ -1791,6 +1791,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `e12c1bdd` | 2026-09-04 | Merge pull request #629 from Holeshot-Software-LLC/claude/ar396-ledger | null | null |
 | `9ea0f2ad` | 2026-09-04 | docs(roadmap): refresh the AR-383 capsule for the recruiter blocker | null | null |
 | `242ab4cf` | 2026-09-04 | Merge pull request #630 from Holeshot-Software-LLC/claude/ar383-capsule-refresh | null | null |
+| `d757c3b9` | 2026-09-04 | Merge pull request #631 from Holeshot-Software-LLC/claude/capsule-ledger | null | null |
+| `18c04e21` | 2026-09-04 | docs(ar393): measure the after-install window for criterion 5 | [AR-393](../roadmap/issue-AR-393-declared-gaps-leave-no-hiring-account.md) | Read with the credential sourced against a fresh copy of the live store: zero receipts declaring no_safe_sufficient_team since the fix landed and zero since 2026-09-03T18:42:33Z, because no recruiter proposal has been accepted since and the declaring path runs after one; criterion 5 is unmeasurable over an empty window rather than contradicted by the 42 pre-fix rows, and the record is set pending for re-freezing. |
 <!-- worklog:end -->
 
 ## Provenance notes
