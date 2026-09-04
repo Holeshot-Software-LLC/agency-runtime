@@ -1790,6 +1790,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `b2433867` | 2026-09-04 | Merge pull request #628 from Holeshot-Software-LLC/claude/ar394-staffing-blocker | null | null |
 | `e12c1bdd` | 2026-09-04 | Merge pull request #629 from Holeshot-Software-LLC/claude/ar396-ledger | null | null |
 | `9ea0f2ad` | 2026-09-04 | docs(roadmap): refresh the AR-383 capsule for the recruiter blocker | null | null |
+| `242ab4cf` | 2026-09-04 | Merge pull request #630 from Holeshot-Software-LLC/claude/ar383-capsule-refresh | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
