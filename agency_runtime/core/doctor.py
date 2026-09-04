@@ -5,10 +5,11 @@ Checks every subsystem and returns a structured report.
 
 from __future__ import annotations
 
+import os
 import re
 import sqlite3
 import urllib.request
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -764,6 +765,77 @@ def _provider_chain_checks(
     return checks
 
 
+def _routed_inference_profiles(cfg: AgencyConfig) -> list[Any]:
+    """Return every inference profile a route, default or harness section names."""
+
+    inference = cfg.inference
+    names: list[str] = []
+
+    def add(name: object) -> None:
+        text = str(name or "").strip()
+        if text and text in inference.profiles and text not in names:
+            names.append(text)
+
+    add(inference.default_profile)
+    for name in inference.routes.values():
+        add(name)
+    for harness in inference.harnesses.values():
+        add(harness.default_profile)
+        for name in harness.routes.values():
+            add(name)
+    return [inference.profiles[name] for name in names]
+
+
+def _inference_credential_checks(
+    cfg: AgencyConfig,
+    environ: Mapping[str, str] | None = None,
+) -> list[CheckResult]:
+    """Name a routed profile's credential variable this environment lacks (AR-388).
+
+    Hooks and canaries inherit the launching process's environment. When the
+    variable a profile's ``api_key_env`` names is unset there, every host
+    launched from that shell fails preflight as ``workforce_provider_unavailable``
+    while the gateway itself is healthy. One check per variable says so and
+    names the profiles that depend on it; a set variable passes.
+    """
+
+    env = os.environ if environ is None else environ
+    by_variable: dict[str, list[str]] = {}
+    for profile in _routed_inference_profiles(cfg):
+        if profile.api_key or not profile.api_key_env:
+            continue
+        if profile.adapter.strip().casefold() in {"ollama", "cli"}:
+            continue
+        by_variable.setdefault(profile.api_key_env, []).append(profile.name or "inference-profile")
+    checks: list[CheckResult] = []
+    for variable in sorted(by_variable):
+        profiles = ", ".join(sorted(by_variable[variable]))
+        name = "inference_credential_" + re.sub(r"[^a-z0-9_]", "_", variable.casefold())
+        if env.get(variable):
+            checks.append(
+                CheckResult(
+                    name,
+                    "pass",
+                    f"{variable} is set in this environment for "
+                    f"{len(by_variable[variable])} inference profile(s)",
+                    f"profiles={profiles}",
+                )
+            )
+            continue
+        checks.append(
+            CheckResult(
+                name,
+                "warn",
+                f"{variable} is unset in this environment; inference profiles {profiles} "
+                "cannot authenticate, and a host launched from a shell without it fails "
+                "preflight as workforce_provider_unavailable (workforce_credential_env_unset)",
+                f"export {variable} or source the secrets file before launching claude, codex, "
+                "agency host-canary, agency battery, or agency install --verify-activation",
+            )
+        )
+    return checks
+
+
 def _battery_trial_detail(entry: dict[str, Any]) -> str:
     """Names-only grading tally from one fingerprint entry (AR-360), or "".
 
@@ -897,6 +969,7 @@ def run_doctor(
     report.checks.extend(_adapter_checks(cfg))
 
     report.checks.extend(_provider_chain_checks(cfg, provider_validations))
+    report.checks.extend(_inference_credential_checks(cfg))
     report.checks.extend(_harness_battery_checks())
     report.checks.extend(_trust_chain_checks(fix_perms=fix_perms))
     return report

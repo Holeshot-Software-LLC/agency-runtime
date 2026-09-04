@@ -29,6 +29,7 @@ from agency_runtime.core.inference_profiles import (
 )
 from agency_runtime.core.reply_budget import PROVIDER_RESPONSE_TRUNCATED, provider_for_stage
 from agency_runtime.core.structured_provider import (
+    PROVIDER_CREDENTIAL_ENV_UNSET,
     StructuredProviderResult,
     invoke_structured_provider_result,
 )
@@ -1031,6 +1032,12 @@ class _CallBudget:
         self.used += 1
         return True
 
+    def release(self) -> None:
+        """Return one unit for an attempt the transport never made (AR-388)."""
+
+        if self.used > 0:
+            self.used -= 1
+
 
 def _total_calls_used(
     budget: _CallBudget,
@@ -1487,6 +1494,14 @@ def _semantic_retry_prompts(
     return next_system_prompt, next_prompt
 
 
+# AR-388 / ADR-0204. The structured transport refuses to call a provider whose
+# configured credential variable the launching environment never carried and
+# says so (``StructuredProviderResult.failure_reason``); the stage records that
+# answer as the attempt, spends no budget on it, and the outcome carries the
+# code below so the receipt and the fail-open disclosure name the same thing.
+WORKFORCE_CREDENTIAL_ENV_UNSET: Final[str] = "workforce_credential_env_unset"
+
+
 def _invoke_stage(
     *,
     stage: str,
@@ -1506,6 +1521,7 @@ def _invoke_stage(
         raise ValueError("workforce semantic attempt bound must be one or two")
     if not providers:
         return None, attempts, "workforce_provider_unavailable"
+    called = False
     for provider in providers:
         # AR-385: the stage owns its reply budget. Stamp it on the entry the
         # invoker sees unless the operator stated one on the profile.
@@ -1524,6 +1540,22 @@ def _invoke_stage(
                 system_prompt=current_system_prompt,
                 timeout=provider.timeout,
             )
+            if result is not None and result.failure_reason:
+                # AR-388: the transport made no call at all and named why (a
+                # credential the environment never carried). Give the budget
+                # back, record the answer, and move to the next provider.
+                budget.release()
+                attempts.append(
+                    _attempt(
+                        stage,
+                        provider,
+                        status="failed",
+                        reason_code=result.failure_reason,
+                        result=result,
+                    )
+                )
+                break
+            called = True
             if result is None:
                 attempts.append(
                     _attempt(
@@ -1602,7 +1634,11 @@ def _invoke_stage(
                 )
             )
             return parsed, attempts, ""
-    return None, attempts, "workforce_inference_failed"
+    return (
+        None,
+        attempts,
+        ("workforce_inference_failed" if called else "workforce_provider_unavailable"),
+    )
 
 
 def _json_prompt(value: Mapping[str, Any]) -> str:
@@ -3335,10 +3371,14 @@ class _NominationAccumulator:
         return proposal
 
 
-def _empty_staffing(code: str) -> StaffingDecision:
+def _empty_staffing(code: str, extra_codes: Sequence[str] = ()) -> StaffingDecision:
     from agency_runtime.core.workforce.staffing_verifier import AbstentionReason
 
-    return StaffingDecision("abstained", (), (AbstentionReason(code),))
+    return StaffingDecision(
+        "abstained",
+        (),
+        (AbstentionReason(code), *(AbstentionReason(extra) for extra in extra_codes)),
+    )
 
 
 def _abstained(
@@ -3631,8 +3671,26 @@ def _recruit_ambiguous_plan(
     return proposal, attempts, failure, False, terminal_rejected_staffing
 
 
-def _inference_declared(config: AgencyConfig) -> bool:
-    return bool(config.providers) or _legacy_provider(config) is not None
+def _inference_declared(config: AgencyConfig, harness: str = "") -> bool:
+    """Return whether the operator declared inference the workforce can use.
+
+    AR-388 / ADR-0204: only the legacy ``providers`` chain and the judge were
+    asked, and the judge's credential is borrowed from the environment, so an
+    install whose every stage route names a profile read as undeclared
+    whenever the launching shell lacked the gateway key. A resolved route is a
+    declared provider whether or not its credential is present; the stage loop
+    then records why a call could not be made.
+    """
+
+    if config.providers or _legacy_provider(config) is not None:
+        return True
+    return any(
+        configured_workforce_providers(config, stage=stage, route_key=route_key, harness=harness)
+        for stage, route_key in (
+            ("planner", "workforce.planner"),
+            ("recruiter", "workforce.recruiter"),
+        )
+    )
 
 
 def _inference_failure(
@@ -3649,6 +3707,12 @@ def _inference_failure(
 ) -> WorkforceRoutingOutcome:
     """Return the only safe result when inference cannot own staffing."""
 
+    # AR-388 / ADR-0204: an attempt refused for a credential the environment
+    # never carried names that cause on the outcome, the staffing decision
+    # and therefore the receipt and the disclosure line.
+    credential_unset = any(item.reason_code == PROVIDER_CREDENTIAL_ENV_UNSET for item in attempts)
+    if credential_unset:
+        detail_codes = (*detail_codes, WORKFORCE_CREDENTIAL_ENV_UNSET)
     invalid = bool(
         any(item.status == "rejected" for item in attempts)
         or any(
@@ -3657,6 +3721,7 @@ def _inference_failure(
                 "workforce_call_budget_exhausted",
                 "workforce_provider_unavailable",
                 "workforce_inference_failed",
+                WORKFORCE_CREDENTIAL_ENV_UNSET,
             }
             for code in detail_codes
             if code
@@ -3670,7 +3735,11 @@ def _inference_failure(
         inference_mode="invalid" if failure == "inference_invalid" else "unavailable",
         plan=plan,
         proposal=proposal,
-        staffing=staffing or _empty_staffing(failure),
+        staffing=staffing
+        or _empty_staffing(
+            failure,
+            (WORKFORCE_CREDENTIAL_ENV_UNSET,) if credential_unset else (),
+        ),
         attempts=tuple(attempts),
         abstention_codes=(failure, *details),
         calls_used=calls_used,
@@ -4037,7 +4106,7 @@ def plan_and_staff_workforce(
         raise ValueError("turn_routing_context is malformed or unbounded")
     turn_context_revision = turn_routing_context_revision(projected_turn_context)
     mode = config.workforce.mode
-    if not _inference_declared(config):
+    if not _inference_declared(config, context.host):
         return _inference_failure(
             mode=mode,
             configured=False,

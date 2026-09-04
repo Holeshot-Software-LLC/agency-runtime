@@ -10,6 +10,7 @@ import os
 import secrets
 import subprocess
 import sys
+from collections.abc import Iterator
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -33,6 +34,22 @@ from agency_runtime.server.mcp import (
     run_stdio,
 )
 from tests.runtime_support import stub_inference_invoker
+
+
+@pytest.fixture(autouse=True)
+def _restore_structured_transport() -> Iterator[None]:
+    """_seed_store stubs the workforce transport on the module; put it back.
+
+    AR-388: the stub used to leak into every later test of the process, masked
+    only because an install without a legacy provider read as undeclared
+    inference and never reached the transport. It no longer does.
+    """
+
+    from agency_runtime.core.workforce import inference
+
+    original = inference.invoke_structured_provider_result
+    yield
+    inference.invoke_structured_provider_result = original
 
 
 def _seed_store(tmp_path: Path) -> Store:
