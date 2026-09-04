@@ -28,6 +28,7 @@ from agency_runtime.core.inference_profiles import (
     resolve_explicit_capability_route_any,
 )
 from agency_runtime.core.reply_budget import PROVIDER_RESPONSE_TRUNCATED, provider_for_stage
+from agency_runtime.core.roster.limits import MAX_ACTIVE_ROSTER_SIZE
 from agency_runtime.core.structured_provider import (
     PROVIDER_CREDENTIAL_ENV_UNSET,
     StructuredProviderResult,
@@ -3816,9 +3817,12 @@ def _critic_rejected_staffing(critic_reasons: Sequence[str]) -> StaffingDecision
 
 
 # AR-389 / ADR-0205. The critic judges "wrong neighbor" against the cards the
-# runtime could actually have staffed on the unit. Identity-sorted and bounded:
-# a boundary, never a ranking.
-_MAX_CRITIC_NEIGHBOURHOOD_IDS: Final[int] = 64
+# runtime could actually have staffed on the unit. The identity list is complete
+# by construction: the eligible set is a subset of the enabled roster, which the
+# runtime already bounds at MAX_ACTIVE_ROSTER_SIZE, so no unranked neighbour is
+# ever cut from it. The compact cards are bounded; identity order throughout: a
+# boundary, never a ranking.
+_MAX_CRITIC_NEIGHBOURHOOD_IDS: Final[int] = MAX_ACTIVE_ROSTER_SIZE
 _MAX_CRITIC_NEIGHBOURHOOD_CARDS: Final[int] = 16
 _RECRUITMENT_RANK_FIELDS: Final[tuple[str, ...]] = (
     "required",

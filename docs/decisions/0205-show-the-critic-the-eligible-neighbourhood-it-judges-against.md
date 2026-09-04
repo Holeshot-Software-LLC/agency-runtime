@@ -49,8 +49,9 @@ verdict became evidence-based in both directions.
 
 1. **The critic document carries `eligible_neighbourhood`, per plan unit.**
    `eligible_candidate_ids` is the verifier's own eligibility over the
-   enabled roster, complete for the unit, identity-sorted and bounded to 64,
-   with `eligible_count` carrying the true size; `ranked_eligible_cards`
+   enabled roster, complete for the unit and identity-sorted, its only bound
+   the roster's own size limit (`MAX_ACTIVE_ROSTER_SIZE`), with
+   `eligible_count` carrying the size; `ranked_eligible_cards`
    carries compact cards (identity, archetype, authority, domains, two
    outcomes, two `not_for` lines) for the eligible workers the recruiter
    ranked or selected on that unit, identity-sorted and bounded to 16;
@@ -74,8 +75,9 @@ verdict became evidence-based in both directions.
   that name a real eligible neighbour persist, which is the critic doing its
   job; vetoes that named an ineligible implementer dissolve.
 - The critic prompt grows by the identity lists and the ranked cards, a few
-  kilobytes on documents of thirteen to twenty; the bounds keep the worst
-  case fixed.
+  kilobytes on documents of thirteen to twenty; the identity list grows with
+  the eligible set (68 ids on this roster's advise units), the cards are
+  bounded, and the roster's own size limit bounds the whole.
 - The recruiter (ADR-0203) and the critic now read the same boundary; a
   disagreement between them is about fit, not about who was eligible.
 - Measured live on the eleven install wordings (2026-09-04): six completions
@@ -92,5 +94,9 @@ verdict became evidence-based in both directions.
 - **Only the cards the recruiter ranked.** Rejected: the recruiter can leave
   the right neighbour unranked (turn 201 under AR-387); the complete identity
   list keeps that neighbour nameable.
+- **Cap the identity list at 64.** Rejected after the isolated verifier
+  contradicted it: advise units on this roster already have 65 to 68
+  eligible cards, and the ids a cap cuts are exactly the unranked
+  neighbours the list exists to name.
 - **Drop the wrong-neighbour ground.** Rejected: on turn 203 it named a real
   defect; the fix is to let the critic check its claim, not to remove it.

@@ -80,8 +80,9 @@ staffed.
 ADR-0205. The critic document gains `eligible_neighbourhood`, per plan unit:
 
 1. `eligible_candidate_ids`: the verifier's eligibility over the enabled
-   roster, complete for the unit, identity-sorted, bounded to 64;
-   `eligible_count` carries the true size.
+   roster, complete for the unit and identity-sorted; its only bound is the
+   roster's own size limit, so no unranked neighbour is ever cut from it;
+   `eligible_count` carries the size.
 2. `ranked_eligible_cards`: compact cards (identity, archetype, authority,
    domains, two outcomes, two `not_for` lines) for the eligible workers the
    recruiter ranked or selected on that unit, identity-sorted, bounded to 16.
@@ -106,8 +107,9 @@ ADR-0203 (the recruiter's view of the same boundary). None blocking.
       workers the recruiter ranked or selected, and whether the selected
       workers are the whole neighbourhood; ineligible ranked cards appear in
       neither list.
-- [x] The identity list and the card list are bounded (64 and 16) and the
-      bounds hold on a roster larger than both.
+- [x] The identity list is complete for the unit, bounded only by the
+      roster's own size limit, and the card list is bounded to 16; both hold
+      on a roster of seventy eligible workers.
 - [x] The critic contract and the system prompt state that a wrong-neighbour
       veto must name a card in the unit's eligible neighbourhood and that a
       card outside it can never be the right neighbour.

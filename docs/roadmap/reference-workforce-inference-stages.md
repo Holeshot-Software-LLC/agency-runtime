@@ -160,8 +160,9 @@ The `critic_contract` document carries the same doctrine as fields
 `veto_grounds` and `never_veto_for` lists, beside the thresholds and the
 selected-only composition contract. The document's
 `eligible_neighbourhood` (AR-389 / ADR-0205) carries, per plan unit, the
-verifier's complete identity-sorted `eligible_candidate_ids` (bounded to
-64, with `eligible_count`), `ranked_eligible_cards` (compact cards for the
+verifier's complete identity-sorted `eligible_candidate_ids` (bounded only
+by the roster's size limit, with `eligible_count`), `ranked_eligible_cards`
+(compact cards for the
 eligible workers the recruiter ranked or selected, bounded to 16) and
 `selected_are_whole_neighbourhood`. A veto's codes reach the staffing
 decision as `critic_<code>` with hyphens folded to underscores, at most

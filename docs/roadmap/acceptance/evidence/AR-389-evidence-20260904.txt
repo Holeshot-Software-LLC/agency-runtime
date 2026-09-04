@@ -64,3 +64,14 @@ replay sent cache: {"no-cache": true} so the LiteLLM response cache could not re
   conformance, selection safety, eligibility view, credential env, fail-open disclosure, staffing window, dynamic hiring)
   252 passed, 1 skipped; named fast spine 1004 passed, 3 skipped under -W error; decision-conformance 177 of 177 killed
   with the tree unchanged and a clean baseline (curated mutation critic-neighbourhood-ignores-eligibility, killed).
+
+== 6. Verifier passes on the 2c0fc40a candidate ==
+  pass 1: criteria 2, 3, 4 satisfied; criterion 1 absent ("candidate IDs and cards are capped by unseen constants, while the
+          test covers only one eligible worker, so completeness is not demonstrated"). The bounds constants and the 70-planner
+          test were then cited under criterion 1 as well.
+  pass 2: criteria 2, 3, 4 satisfied; criterion 1 contradicted ("inference.py truncates eligible_candidate_ids to 64, and
+          the cited 70-planner test confirms only the first 64 are carried despite eligible_count 70, contradicting the
+          required complete eligible candidate list"). The verifier was right: the live advise units had 65 to 68 eligible
+          cards, and the ids a cap of 64 cuts are exactly the unranked neighbours the list exists to name. The identity list
+          is now complete by construction, bounded only by MAX_ACTIVE_ROSTER_SIZE (the roster's own limit), the criterion and
+          ADR-0205 say so, and the 70-planner test asserts all seventy ids in identity order.
