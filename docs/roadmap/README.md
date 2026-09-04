@@ -407,6 +407,9 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-391` | [The recruiter's prompt misstates how its ranking becomes the team](issue-AR-391-recruiter-prompt-misstates-how-its-ranking-becomes-the-team.md) | done | p1 | reliability | pending authorization |
 | `AR-392` | [Every transport failure reads as one code, so a runtime timeout and a malformed reply are indistinguishable](issue-AR-392-transport-failures-collapse-to-one-code.md) | open | p1 | reliability | pending authorization |
 | `AR-393` | [A declared capability gap can leave no hiring account at all, and when it leaves one the reasons need not explain it](issue-AR-393-declared-gaps-leave-no-hiring-account.md) | open | p1 | observability | pending authorization |
+| `AR-394` | [The recruiter stage ends most staffing turns, and the turns it does not end can staff an unrelated specialist](issue-AR-394-recruiter-teams-fail-or-mis-select.md) | open | p0 | reliability | pending authorization |
+| `AR-395` | [Three real inference stages are not in the receipt's stage vocabulary, so their attempts are recorded as unknown](issue-AR-395-preflight-stage-vocabulary-is-incomplete.md) | open | p1 | observability | pending authorization |
+| `AR-396` | [A complete reply that is not JSON ends the stage on one call, while a cut one and a wrong one each get a second ask](issue-AR-396-a-non-json-reply-gets-no-second-ask.md) | open | p1 | reliability | pending authorization |
 
 ## Traceability
 
