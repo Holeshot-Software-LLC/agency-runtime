@@ -12,14 +12,14 @@ supersedes: []
 superseded_by: null
 type: acceptance-verification
 issue_id: AR-389
-candidate_commit: pending
+candidate_commit: ecde657481611dafc8a31a4fb6043dbdc9902dad
 evidence_cutoff: 2026-09-04
 tracker_url: null
 ---
 
 # AR-389 acceptance verification record
 
-Pending draft. The strict critic's document carries, per plan unit, the
+Verified on the fourth pass at `ecde6574`. The strict critic's document carries, per plan unit, the
 verifier's complete identity-sorted eligible candidate list with its count,
 compact cards for every eligible worker the recruiter ranked or selected, and
 whether the selected workers are the whole neighbourhood; the contract and
@@ -55,3 +55,7 @@ store copy as the baseline.
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
+| 1 | satisfied | `AR-389.1-20260904-f81e3dec` | `ade03124eee9890e8276234b0397012fa9febd9dcf36b2def75b2f2681d326c3` | 2026-09-04 | The cited implementation builds each unit’s sorted eligible IDs and count, filters ranked or selected cards through eligibility, uses recruiter and roster bounds, computes whole-neighbourhood equality, and the cited tests cover completeness, ordering, exclusion, cards, count, and flag. |
+| 2 | satisfied | `AR-389.2-20260904-57c9029e` | `14c052a03dabf424476c9d66969a4a1a3f62a78f6580999a5f3e6425fa25a36e` | 2026-09-04 | The inference constants equal the roster limit and nomination maxItems bound, while the cited test verifies all 70 eligible planner IDs are listed and cards stay within the recruiter bound. |
+| 3 | satisfied | `AR-389.3-20260904-9d9b5c2a` | `476ef40b22bab3c0a94cd38529b21e7ca15b79b593ea1ade145e785efee7739e` | 2026-09-04 | inference.py excerpts show both contract flags and the system prompt explicitly requiring an eligible-neighbourhood card and excluding outside cards, with a test pinning those statements. |
+| 4 | satisfied | `AR-389.4-20260904-9515af3e` | `4bb5443c2bca3ea76306e9d68086c893fa4be7bd635153c4a986629452ee9d7c` | 2026-09-04 | The cited live-run record states the same eleven strict-mode wordings and store copy, then records the ADR-0203 baseline of three critic vetoes and five completions against the new run's three vetoes and six completions. |

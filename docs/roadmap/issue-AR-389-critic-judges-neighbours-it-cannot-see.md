@@ -1,6 +1,6 @@
 ---
 title: "AR-389: The strict critic vetoes wrong neighbours it cannot see"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-09-04
 updated: 2026-09-04
@@ -118,3 +118,13 @@ ADR-0203 (the recruiter's view of the same boundary). None blocking.
       the same reconciled store copy as the ADR-0203 run: the critic's
       wrong-neighbour vetoes and the completed turns are recorded against the
       baseline of three vetoes and five completions.
+
+**Verification (2026-09-04).** The record is frozen at `ecde6574`; the
+isolated codex verifier returned satisfied on all four criteria on its fourth
+pass (runs `AR-389.1-20260904-f81e3dec`, `AR-389.2-20260904-57c9029e`, `AR-389.3-20260904-9d9b5c2a`, `AR-389.4-20260904-9515af3e`). The first pass at `2c0fc40a`
+found criterion 1 absent for want of the bounds citations; the second
+contradicted a cap of 64 on the identity list against "complete"; the third
+contradicted a bare 16 on the cards against "the workers the recruiter
+ranked or selected". `1bf3858d` bounds the list by the roster's own limit
+and `ecde6574` bounds the cards by the recruiter's own ranking limit, both
+by construction. The issue is done.
