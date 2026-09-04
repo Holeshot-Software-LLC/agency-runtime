@@ -3,7 +3,7 @@ title: "AR-370: Staffing asks the wrong question, so operational requests retrie
 status: open
 category: roadmap
 created: 2026-09-02
-updated: 2026-09-03
+updated: 2026-09-04
 tags: [routing, staffing, retrieval, recruiter]
 related:
   - docs/roadmap/issue-AR-336-requalify-the-recruiter-route-for-ordinary-tasks.md
@@ -156,6 +156,56 @@ ADR-0197 records why the first-chosen option could not work: `routing_query`
 reaches only session stickiness and the legacy judge branch, never
 `plan_and_staff_workforce`, so re-retrieving after planning would have re-run a
 query staffing does not read.
+
+## Measured (2026-09-04): the graded eval is blind to the class this issue is about
+
+The graded routing corpus carries 37 cases over a 16-agent catalog
+(`core/evals/data/routing_v1.py`). Every work case in it is already phrased in
+card vocabulary -- "Automate Kubernetes deployment with Docker and Terraform",
+"Build a GitHub Actions continuous delivery pipeline" -- and not one uses an
+operational verb. The failure this issue describes cannot appear in the eval,
+which is what acceptance criterion 6 exists to fix.
+
+Probed against that same corpus through the same call the eval makes
+(`retrieve_candidate_union(affirmative_intent(query), CATALOG,
+lexical_retriever=pre_narrow)`, `core/evals/routing.py:116`), top 3, on
+`ca11182d`:
+
+| probe | query | `retrieval_has_signal` | top-3 candidates |
+|---|---|---|---|
+| install-url | `install this: https://zcode.z.ai/en` | False | *(none)* |
+| install-tool | `Install ripgrep on this machine` | False | *(none)* |
+| configure | `configure the gateway` | False | *(none)* |
+| restart | `restart the service and check it came back` | False | *(none)* |
+| upgrade | `upgrade the runtime to the latest release` | False | `technical-writer` |
+| troubleshoot | `troubleshoot why the service will not start` | False | *(none)* |
+| monitor | `set up monitoring for the new host` | False | *(none)* |
+| runbook-alert | `Write a runbook for responding to a p95 latency alert` | True | `technical-writer`, `performance-benchmarker`, `incident-response-commander` |
+| *control* | `Automate Kubernetes deployment with Docker and Terraform` | True | `devops-automator`, `incident-response-commander` |
+| *control* | `Build a GitHub Actions continuous delivery pipeline` | True | `devops-automator`, `data-engineer`, `code-reviewer` |
+
+Seven of the eight operational-verb probes retrieve **nothing at all**; the
+eighth retrieves one wrong card. Both controls put `devops-automator` first,
+and `devops-automator` is in the catalog the whole time. This is the same
+shape as the live `install this: <url>` receipt above, reproduced
+deterministically with no provider involved.
+
+Two details worth keeping. `retrieval_has_signal` and an empty candidate list
+are not the same predicate: `upgrade the runtime to the latest release` reads
+as no signal and still returns a candidate, so the gate that buys the ADR-0197
+call and the recall that feeds staffing can disagree. And `Write a runbook for
+responding to a p95 latency alert`, one of the seven the shipped roster reports
+as zero-signal, *has* signal against this 16-agent corpus -- a corpus
+measurement bounds the eval's blindness, not the roster's, and the two must not
+be quoted for each other.
+
+**Why the cases are not added by this measurement.** Criterion 6 asks the
+corpus to carry a case per operational verb. Added as graded cases today they
+would encode a red gate: seven of eight fail on the current runtime, which is
+this issue and not a regression. They belong in the corpus together with the
+fix, or in a reported-but-unthresholded diagnostic set -- a change to a
+versioned evaluation contract (`SCHEMA`/`VERSION` in `evals/routing.py`) and
+its own decision.
 
 ## Approach
 
