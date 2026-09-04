@@ -227,7 +227,10 @@ _NOMINATION_REPAIR_REQUIREMENTS = {
         "safe_team_contract.roster_uncovered_requirement_ids, which the runtime waives and "
         "records. Required is a "
         "mandatory-selection constraint, not an emphasis label. Reclassify nonessential "
-        "candidates as acceptable and add faithful coverage complements when needed. Declare gap "
+        "candidates as acceptable and add faithful coverage complements when needed. Candidates "
+        "whose team_search_classification is excluded are ineligible for this unit and can be "
+        "neither required nor acceptable; safe_team_contract.eligible_coverers_by_requirement "
+        "names the eligible cards that cover each uncovered requirement. Declare gap "
         "only when no supplied candidate or combination is semantically faithful."
     ),
 }
@@ -334,7 +337,14 @@ _RECRUITER_SYSTEM = (
     "Workers that declare no stacks are counted as able to cover stack requirements — absence "
     "of stack enrichment is not evidence of incapability; judge their stack fit semantically; "
     "execution_eligible is a hard boundary. Candidate rows are a bounded coverage-first recall "
-    "sample and need not repeat every detail card, so omission is not exclusion. Do not guess "
+    "sample and need not repeat every detail card, so omission is not exclusion. Each row's "
+    "eligible_candidate_ids is different: it is the complete list of detail cards the runtime "
+    "can staff on that unit given its authority, this host, its platform and its tools, and "
+    "eligible_candidates_without_card counts eligible workers that have no card here. A card "
+    "outside that list can only be forbidden or omitted for that unit; the runtime cannot "
+    "select it, so classifying it required or acceptable wastes the row. When the ideal "
+    "specialist is not eligible, staff the nearest eligible faithful candidate or declare a "
+    "gap. Do not guess "
     "typed coverage from a display name or prose card. uncovered_requirements lists what no "
     "eligible worker's declared typed data covers. Its waived_requirements subset is declared by "
     "some worker the runtime cannot serve for this unit; the runtime waives those from team "
@@ -389,7 +399,11 @@ _RECRUITER_REPAIR_SYSTEM = (
     "for every listed failed unit, in listed order. Omit every unlisted planned unit because "
     "the runtime retains its previously validated row.\n\n"
     "For each listed unit, use typed_recall as bounded, non-ranked coverage evidence whose "
-    "requirements and uncovered_requirements are exact over the full roster. "
+    "requirements and uncovered_requirements are exact over the full roster. Its "
+    "eligible_candidate_ids is the complete list of cards the runtime can staff on that unit; "
+    "rank required and acceptable candidates only from it, because the runtime cannot select "
+    "any other card. safe_team_contract.eligible_coverers_by_requirement names, for each "
+    "requirement the prior team left uncovered, the eligible cards that cover it. "
     "uncovered_requirements records declared-data limits honestly; its waived_requirements "
     "subset is waived from team sufficiency by the runtime and never mandates a gap. A "
     "staff response should include every semantically faithful coverage complement needed "
@@ -742,6 +756,11 @@ class _SafeTeamRepairContract:
     # team search and never listed as uncovered above, so a repair is not asked
     # to find a complement that cannot exist (AR-384).
     roster_uncovered_requirement_ids: tuple[str, ...] = ()
+    # ADR-0203: for each requirement the ranked team left uncovered, the
+    # eligible detail cards that cover it, identity-sorted and bounded. Facts
+    # from the same typed coverage the recruiter already saw, never a ranking:
+    # the repair still chooses among them or declares a gap.
+    eligible_coverers_by_requirement: tuple[tuple[str, tuple[str, ...]], ...] = ()
 
     def as_prompt_dict(self) -> dict[str, Any]:
         required_count = len(self.required_agent_ids)
@@ -757,6 +776,10 @@ class _SafeTeamRepairContract:
             "uncovered_requirement_ids": list(self.uncovered_requirement_ids),
             "uncovered_after_required_ids": list(self.uncovered_after_required_ids),
             "roster_uncovered_requirement_ids": list(self.roster_uncovered_requirement_ids),
+            "eligible_coverers_by_requirement": {
+                requirement: list(agent_ids)
+                for requirement, agent_ids in self.eligible_coverers_by_requirement
+            },
             "ranked_candidates": [
                 {
                     "agent_id": agent_id,
@@ -2326,6 +2349,41 @@ def _typed_candidate_evidence(
     }
 
 
+def _annotate_eligible_candidates(
+    plan: WorkUnitPlan,
+    typed_recall: list[dict[str, Any]],
+    contracts: Sequence[WorkforceContract],
+    context: StaffingContext,
+    card_ids: frozenset[str],
+) -> None:
+    """Give each recall row the complete set of cards the runtime can staff (ADR-0203).
+
+    The detail cards are the union of every unit's bounded recall rows, so a
+    card can be present for one unit and ineligible for another without any
+    row saying so; live on 2026-09-03 the recruiter ranked modify-authority
+    implementers as required on plan units for exactly that reason while the
+    eligible planners sat unranked in the rows. ``eligible_candidate_ids`` is
+    the verifier's own eligibility over the cards, complete for the unit and
+    identity-sorted, so it is a boundary and not a ranking;
+    ``eligible_candidates_without_card`` says how many eligible workers the
+    bounded recall did not card.
+    """
+
+    rows_by_unit = {str(row.get("unit_id")): row for row in typed_recall}
+    for unit in plan.units:
+        row = rows_by_unit.get(unit.unit_id)
+        if row is None:
+            continue
+        eligible = sorted(
+            contract.agent_id
+            for contract in contracts
+            if contract.enabled and not typed_staffing_ineligibility(unit, contract, context)
+        )
+        with_card = [agent_id for agent_id in eligible if agent_id in card_ids]
+        row["eligible_candidate_ids"] = with_card
+        row["eligible_candidates_without_card"] = len(eligible) - len(with_card)
+
+
 def _apply_hybrid_recall(
     *,
     plan: WorkUnitPlan,
@@ -2716,6 +2774,43 @@ def _missing_typed_requirements(
     )
 
 
+MAX_ELIGIBLE_COVERERS_PER_REQUIREMENT: Final[int] = 8
+
+
+def _eligible_coverers_by_requirement(
+    unit: WorkUnit,
+    requirements: Sequence[str],
+    contracts: Sequence[WorkforceContract],
+    context: Any,
+    allowed_candidate_ids: frozenset[str] | None,
+) -> tuple[tuple[str, tuple[str, ...]], ...]:
+    """Name the eligible detail cards covering each uncovered requirement (ADR-0203).
+
+    Identity-sorted and bounded, so the list is a coverage fact and not a
+    ranking; without a context eligibility is unknown and nothing is named.
+    """
+
+    if context is None or not requirements:
+        return ()
+    rows: list[tuple[str, tuple[str, ...]]] = []
+    for requirement in requirements:
+        coverers: list[str] = []
+        for contract in sorted(contracts, key=lambda item: item.agent_id):
+            if not contract.enabled:
+                continue
+            if allowed_candidate_ids is not None and contract.agent_id not in allowed_candidate_ids:
+                continue
+            if requirement not in typed_staffing_coverage(unit, contract):
+                continue
+            if typed_staffing_ineligibility(unit, contract, context):
+                continue
+            coverers.append(contract.agent_id)
+            if len(coverers) == MAX_ELIGIBLE_COVERERS_PER_REQUIREMENT:
+                break
+        rows.append((requirement, tuple(coverers)))
+    return tuple(rows)
+
+
 def _safe_team_repair_contract(
     unit: WorkUnit,
     proposal_row: UnitRecruitment,
@@ -2723,6 +2818,8 @@ def _safe_team_repair_contract(
     *,
     maximum_selected_per_unit: int,
     waived: frozenset[str] = frozenset(),
+    context: Any = None,
+    allowed_candidate_ids: frozenset[str] | None = None,
 ) -> _SafeTeamRepairContract:
     contracts_by_id = {item.agent_id: item for item in contracts}
     requirements = typed_staffing_requirements(unit)
@@ -2749,20 +2846,30 @@ def _safe_team_repair_contract(
                 tuple(requirement for requirement in requirements if requirement in covers),
             )
         )
+    uncovered = _missing_typed_requirements(unit, team_search, contracts_by_id, waived=waived)
+    uncovered_after_required = _missing_typed_requirements(
+        unit, required, contracts_by_id, waived=waived
+    )
     return _SafeTeamRepairContract(
         maximum_selected_per_unit=maximum_selected_per_unit,
         requirements=requirements,
         required_agent_ids=required,
         team_search_agent_ids=team_search,
-        uncovered_requirement_ids=_missing_typed_requirements(
-            unit, team_search, contracts_by_id, waived=waived
-        ),
-        uncovered_after_required_ids=_missing_typed_requirements(
-            unit, required, contracts_by_id, waived=waived
-        ),
+        uncovered_requirement_ids=uncovered,
+        uncovered_after_required_ids=uncovered_after_required,
         candidate_rows=tuple(candidate_rows),
         roster_uncovered_requirement_ids=tuple(
             requirement for requirement in requirements if requirement in waived
+        ),
+        # Name coverers for what the executable ranked team left uncovered; only
+        # when that is empty (every ranked candidate ineligible) fall back to
+        # what the required set alone leaves, so the repair reads one short list.
+        eligible_coverers_by_requirement=_eligible_coverers_by_requirement(
+            unit,
+            uncovered or uncovered_after_required,
+            contracts,
+            context,
+            allowed_candidate_ids,
         ),
     )
 
@@ -2777,6 +2884,7 @@ def _validate_nomination_decisions(
     *,
     maximum_selected_per_unit: int = 4,
     semantic_forbidden: Mapping[str, Sequence[str]] | None = None,
+    allowed_candidate_ids: frozenset[str] | None = None,
 ) -> None:
     failures: list[_NominationFailure] = []
     for unit, proposal_row in zip(plan.units, proposal.units, strict=True):
@@ -2797,6 +2905,8 @@ def _validate_nomination_decisions(
                 contracts,
                 maximum_selected_per_unit=maximum_selected_per_unit,
                 waived=waived,
+                context=context,
+                allowed_candidate_ids=allowed_candidate_ids,
             )
             axis = _failure_axis(
                 unit,
@@ -3045,6 +3155,7 @@ def _proposal_from_nominations(
         context,
         maximum_selected_per_unit=config.workforce.max_selected_per_unit,
         semantic_forbidden=semantics.declared_forbidden,
+        allowed_candidate_ids=allowed_candidate_ids,
     )
     # ADR-0087: inference explicitly decides whether each unit should be
     # staffed or is a real semantic gap. Deterministic policy verifies that the
@@ -3388,6 +3499,9 @@ def _recruit_ambiguous_plan(
         reranked=reranked,
     )
     allowed_candidate_ids = frozenset(item["agent_id"] for item in detail_cards)
+    _annotate_eligible_candidates(
+        plan, typed_recall, snapshot.contracts, context, allowed_candidate_ids
+    )
     recruiter_document: dict[str, Any] = {
         "request": request,
         "plan": plan.as_dict(),

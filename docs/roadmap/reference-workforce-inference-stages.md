@@ -84,6 +84,14 @@ whose domains is in the list for its artifact kind is rejected as
 a kind with an empty list, a unit of compiler-chosen domains, and a declared
 `novel_capability` unit are exempt.
 
+**Recruiter eligibility view** (AR-387 / ADR-0203): every `typed_recall`
+row carries `eligible_candidate_ids`, the complete identity-sorted list of
+detail cards the verifier's eligibility admits for that unit, and
+`eligible_candidates_without_card`; a `staff_without_safe_team` repair's
+`safe_team_contract` carries `eligible_coverers_by_requirement`, the eligible
+cards covering each requirement the ranked executable team left uncovered.
+Both are facts from the verifier, never a ranking.
+
 **Recruiter system prompt** (the planner shares the same call shape
 without a system prompt):
 none — the prompt is the JSON dictionary. The recruiter model

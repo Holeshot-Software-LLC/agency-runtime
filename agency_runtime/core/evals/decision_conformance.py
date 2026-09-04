@@ -207,6 +207,8 @@ def _typed_shortlists(""",
                 contracts,
                 maximum_selected_per_unit=maximum_selected_per_unit,
                 waived=waived,
+                context=context,
+                allowed_candidate_ids=allowed_candidate_ids,
             )
             axis = _failure_axis(
                 unit,
@@ -333,6 +335,24 @@ class _NominationSemantics:""",
         test_node=(
             "tests/test_planner_domain_service.py::"
             "test_a_unit_none_of_whose_domains_is_served_is_rejected"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="recruiter-eligible-card-set-ignores-eligibility",
+        invariant=(
+            "Every recall row lists exactly the detail cards the verifier's eligibility admits "
+            "for that unit, so the recruiter is shown the boundary it is held to (ADR-0203)."
+        ),
+        source_path="agency_runtime/core/workforce/inference.py",
+        before="""            if contract.enabled and not typed_staffing_ineligibility(unit, contract, context)
+        )
+        with_card = [agent_id for agent_id in eligible if agent_id in card_ids]""",
+        after="""            if contract.enabled
+        )
+        with_card = [agent_id for agent_id in eligible if agent_id in card_ids]""",
+        test_node=(
+            "tests/test_recruiter_eligibility_view.py::"
+            "test_every_recall_row_carries_the_complete_eligible_card_set"
         ),
     ),
     DecisionMutation(

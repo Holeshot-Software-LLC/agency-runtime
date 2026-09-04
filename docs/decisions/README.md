@@ -124,6 +124,7 @@ Status meanings:
 | [ADR-0200](0200-bind-the-strict-critic-to-the-advisory-doctrine.md) | Bind the strict critic to the advisory doctrine and name its veto on the receipts | Accepted |
 | [ADR-0201](0201-constrain-the-planner-domains-to-what-the-roster-serves.md) | Constrain the planner's domains to what the roster serves under the unit's authority | Accepted |
 | [ADR-0202](0202-read-the-recruiter-reply-where-no-safety-property-lives.md) | Read the recruiter's reply where no safety property lives, and never leave a rejected attempt blank | Accepted |
+| [ADR-0203](0203-show-the-recruiter-the-complete-eligible-card-set-per-unit.md) | Show the recruiter the complete eligible card set per unit | Accepted |
 
 ## Evidence and observability
 
