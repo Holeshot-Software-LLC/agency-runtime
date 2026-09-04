@@ -29,6 +29,7 @@ related:
   - docs/roadmap/issue-AR-334-support-codex-0151-collaboration-and-hook-contract.md
   - docs/roadmap/issue-AR-385-structured-reply-budget-truncates-nominations-silently.md
   - docs/roadmap/issue-AR-388-unset-credential-reads-as-provider-unavailable.md
+  - docs/roadmap/issue-AR-389-critic-judges-neighbours-it-cannot-see.md
   - docs/roadmap/issue-AR-386-strict-critic-vetoes-verifier-accepted-install-turns.md
   - docs/roadmap/issue-AR-384-staff-decisions-die-on-uncoverable-typed-requirements.md
   - docs/decisions/0201-constrain-the-planner-domains-to-what-the-roster-serves.md
@@ -122,6 +123,12 @@ changes rather than duplicating every commit.
   any call; the failure outcome, the preflight receipt and the fail-open
   disclosure carry `workforce_credential_env_unset`; and `agency doctor`
   warns by variable name, listing the routed profiles, when it is unset.
+- The strict critic is shown the eligible neighbourhood it judges against
+  (AR-389, ADR-0205): the critic document carries, per plan unit, the
+  verifier's complete identity-sorted eligible candidate list with its count,
+  compact cards for the eligible workers the recruiter ranked or selected, and
+  whether the selected workers are the whole neighbourhood; the contract and
+  the prompt say a wrong-neighbour veto must name a card in that list.
 - `agency battery` runs the change-triggered harness canary battery
   (AR-337): per-harness version fingerprints gate the run, claude and codex
   re-prove through their canary modes (codex attended-trust loss reported

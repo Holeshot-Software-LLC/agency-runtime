@@ -126,6 +126,7 @@ Status meanings:
 | [ADR-0202](0202-read-the-recruiter-reply-where-no-safety-property-lives.md) | Read the recruiter's reply where no safety property lives, and never leave a rejected attempt blank | Accepted |
 | [ADR-0203](0203-show-the-recruiter-the-complete-eligible-card-set-per-unit.md) | Show the recruiter the complete eligible card set per unit | Accepted |
 | [ADR-0204](0204-name-the-credential-the-launching-environment-never-carried.md) | Name the credential the launching environment never carried | Accepted |
+| [ADR-0205](0205-show-the-critic-the-eligible-neighbourhood-it-judges-against.md) | Show the critic the eligible neighbourhood it judges against | Accepted |
 
 ## Evidence and observability
 

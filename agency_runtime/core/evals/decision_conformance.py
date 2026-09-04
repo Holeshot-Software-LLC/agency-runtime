@@ -356,6 +356,25 @@ class _NominationSemantics:""",
         ),
     ),
     DecisionMutation(
+        mutation_id="critic-neighbourhood-ignores-eligibility",
+        invariant=(
+            "The critic's eligible_neighbourhood lists exactly the cards the verifier's "
+            "eligibility admits for each unit, so a wrong-neighbor veto can only point at a card "
+            "the runtime could have staffed (ADR-0205)."
+        ),
+        source_path="agency_runtime/core/workforce/inference.py",
+        before="""            if contract.enabled and not typed_staffing_ineligibility(unit, contract, context)
+        )
+        shown = sorted(""",
+        after="""            if contract.enabled
+        )
+        shown = sorted(""",
+        test_node=(
+            "tests/test_critic_eligibility_view.py::"
+            "test_the_critic_sees_the_complete_eligible_neighbourhood_per_unit"
+        ),
+    ),
+    DecisionMutation(
         mutation_id="credential-env-unset-reported-as-generic-provider-failure",
         invariant=(
             "A provider whose configured credential variable the launching environment "
