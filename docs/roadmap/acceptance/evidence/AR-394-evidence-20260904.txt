@@ -1,0 +1,70 @@
+AR-394 evidence, captured 2026-09-04, ruff 0.15.20, python 3.12
+
+=== 1. live store, last 400 preflight receipts, read only ===
+    (copy of ~/.agency-runtime/agency.db; the live store was never opened for write)
+recruiter unit-failure rows:
+    317  staff_without_safe_team
+    158  invalid_candidate
+      7  missing_work_unit
+      2  gap_with_safe_team
+
+staff_without_safe_team rows, by whether an ineligibility was recorded:
+    257  no top_ranked_ineligibility
+     60  has top_ranked_ineligibility
+
+recruiter (529 attempts):
+    395  74.7%  provider_response_contract_invalid
+    100  18.9%  structured_response_applied
+     31   5.9%  provider_no_valid_response
+      2   0.4%  provider_response_truncated
+      1   0.2%  provider_call_timed_out
+recall_reranker (142 attempts):
+    109  76.8%  structured_response_applied
+     29  20.4%  provider_response_contract_invalid
+      4   2.8%  provider_no_valid_response
+recall_embedding (213 attempts):
+    160  75.1%  dense_recall_applied
+     53  24.9%  dense_recall_projection_invalid
+planner (286 attempts):
+    213  74.5%  structured_response_applied
+     29  10.1%  provider_no_valid_response
+     25   8.7%  provider_response_contract_invalid
+     13   4.5%  provider_credential_env_unset
+      5   1.7%  provider_model_text_not_json
+      1   0.3%  provider_call_timed_out
+critic (71 attempts):
+     71 100.0%  structured_response_applied
+
+=== 2. gateway deployment timeouts, live, GET /model/info ===
+  133 deployments
+  task-general                         deployment timeout [None]
+  task-agency-planner-v2               deployment timeout [45.0]
+  task-agency-recruiter-v2             deployment timeout [45.0]
+  task-agency-critic-v2                deployment timeout [45.0]
+  task-agency-hiring-generator-v2      deployment timeout [45.0]
+  task-agency-hiring-critic-v2         deployment timeout [45.0]
+  task-agency-security-review-v2       deployment timeout [45.0]
+  task-agency-router                   deployment timeout [None]
+
+=== 3. runtime deadline, agency.yaml, before and after ===
+  before: six routed profiles at timeout_ms 30000, four at 120000
+  after:  those six raised to 60000 (backup agency.yaml.bak-ar394-20260904T192436Z)
+  ✅ workforce_profile_timeouts: effective runtime deadline for 10 routed profile(s): agency-default=60s, agency-planner=60s, agency-recruiter=60s, agency-recruiter-critic=60s, agency-hiring=60s, agency-hiring-critic=120s, agency-security=60s, local-workforce-embedding=120s, local-workforce-reranker=120s, linux-task-agency-router=120s
+
+=== 4. new suites ===
+............................                                             [100%]
+28 passed in 0.23s
+
+=== 5. affected surface, branch vs clean main (identical) ===
+  branch: 10 failed of 1663 selected
+  main:   10 failed of 1663 selected
+  set difference (branch minus main), empty means parity:
+  [empty]
+
+=== 6. decision-conformance mutation eval ===
+decision conformance passed: killed=182/182 survived=0 invalid=0
+baseline	passed source-unchanged=True
+
+=== 7. ruff 0.15.20 tree-wide parity ===
+  main   findings=7  format: 11 files would be reformatted, 742 already formatted
+  branch findings=7  format: 11 files would be reformatted, 744 already formatted
