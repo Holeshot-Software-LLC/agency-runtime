@@ -39,7 +39,7 @@ from agency_runtime.core.selector.semantic_retrieval import (
 )
 
 SCHEMA = "agency-runtime.routing-eval"
-VERSION = "1.4.0"
+VERSION = "1.5.0"
 TOP_K = 3
 ROUTING_CONTRACT = "deterministic_candidate_recall_only"
 

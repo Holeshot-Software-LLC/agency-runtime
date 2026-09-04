@@ -16,7 +16,7 @@ import uuid
 import warnings
 from collections.abc import Mapping
 from contextlib import suppress
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Final
@@ -53,6 +53,12 @@ from agency_runtime.core.selector.cache import (
     routing_fingerprint,
 )
 from agency_runtime.core.selector.candidate_narrow import retrieval_has_signal
+from agency_runtime.core.selector.reference_resolution import (
+    ResolvedReference,
+    mentions_bare_reference,
+    resolve_bare_reference,
+    strip_bare_reference,
+)
 from agency_runtime.core.selector.compatibility import (
     COMPATIBILITY_CONTRACT_VERSION,
     MAX_COMPATIBLE_SPECIALISTS,
@@ -60,7 +66,7 @@ from agency_runtime.core.selector.compatibility import (
     filter_eligible_catalog,
 )
 from agency_runtime.core.selector.delegation_detection import detect_work_units
-from agency_runtime.core.selector.domain_expansion import expand_query
+
 from agency_runtime.core.selector.intent_text import affirmative_intent
 from agency_runtime.core.selector.judge import inference_is_configured, query_judge
 from agency_runtime.core.selector.policy import (
@@ -364,6 +370,10 @@ class _RouteRequest:
     workforce_snapshot: WorkforceIndexSnapshot | None = None
     turn_routing_context: dict[str, Any] = field(default_factory=dict)
     turn_routing_context_revision: str = ""
+    # AR-370 criterion 4: what a bare deictic or bare URL was resolved to, and
+    # from where, so a wrong resolution is visible on the receipt rather than
+    # silently steering retrieval.
+    reference_resolution: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass(frozen=True, slots=True)
@@ -484,7 +494,33 @@ def _route_request(
         context_tokens = " ".join((*subject_tokens, *specialist_tokens))
         if context_tokens:
             refined = f"{refined} {context_tokens}"[:MAX_ROUTING_SIGNAL_CHARS]
-    routing_query = expand_query(affirmative_intent(refined))
+    # AR-370 / ADR-0211: the hand-curated expansion table is retired. It shipped
+    # one operator's stack nouns (openclaw, hermes, litellm, systemd, telegram)
+    # to every installation and had no entry for any common operational verb,
+    # which is the case that actually failed. The typed work statement the
+    # planner derives (ADR-0197's zero-signal trigger, reaching recall as
+    # `inferred_work_subject` under ADR-0208) is what states the work now, and
+    # it is stack-neutral by construction.
+    # AR-370 criterion 4: a request whose subject is a bare deictic or a bare
+    # URL has nothing for retrieval to act on. Resolve it from the turn itself
+    # -- the URL's own distinctive labels, or the typed subject the previous
+    # turn derived -- before the query is built. Whether the request still
+    # names a subject is asked with the same predicate the zero-signal trigger
+    # uses, so nothing here needs a list of words that do not count.
+    # The predicate below is a full narrowing pass over the eligible catalog,
+    # so it is spent only on the turns where a resolution could apply at all.
+    reference = ResolvedReference()
+    if mentions_bare_reference(user_message):
+        reference = resolve_bare_reference(
+            user_message,
+            subject_is_retrievable=retrieval_has_signal(
+                strip_bare_reference(user_message), eligible_catalog
+            ),
+            turn_context=projected_turn_context,
+        )
+    if reference.resolved:
+        refined = f"{refined} {reference.subject}"[:MAX_ROUTING_SIGNAL_CHARS]
+    routing_query = affirmative_intent(refined)
     return _RouteRequest(
         session_id=session_id,
         trace_id=trace_id or "route",
@@ -495,6 +531,7 @@ def _route_request(
         policy=policy,
         context_fingerprint=fingerprint,
         routing_query=routing_query,
+        reference_resolution=reference.receipt(),
         cache_key=cache_key(routing_query, context_fingerprint=fingerprint),
         source_message_hash=hashlib.sha256(user_message.encode("utf-8")).hexdigest(),
         active_ids=catalog_active_ids(eligible_catalog, context_fingerprint=fingerprint),
@@ -884,6 +921,10 @@ def _merge_computed_routing(
         source_message_hash=request.source_message_hash,
         execution_context=dict(request.capability_receipt),
         eligibility_rejections=[dict(item) for item in request.eligibility_rejections],
+        # AR-370 criterion 4: bounded and content-free -- whether the subject
+        # was a bare reference, which kind, where it was resolved from, and the
+        # identifiers it resolved to. A wrong resolution is now readable.
+        reference_resolution=dict(request.reference_resolution),
     )
     return routing
 
@@ -1548,6 +1589,122 @@ def _hiring_event(
     }
 
 
+# AR-370 criterion 5. Three different things were all reported as one
+# unstaffed turn, which is why this read as a recruiter defect for weeks. Only
+# the third is a recruiter verdict.
+#: The turn states no retrievable subject at all, so there was nothing to rank
+#: -- neither the message nor the typed subject inference derived from it
+#: carried an identifier retrieval could use.
+REQUEST_UNDERSPECIFIED = "request_underspecified"
+#: Retrieval ran against a real subject and returned nothing above the floor.
+#: The roster, not the request, is what came up empty.
+NO_RELEVANT_CANDIDATE = "no_relevant_candidate"
+
+#: Typed identifier fields a plan carries. A plan with none of these states no
+#: subject retrieval can act on, however many words the message had.
+_SUBJECT_IDENTIFIER_FIELDS: Final[tuple[str, ...]] = (
+    "domains",
+    "languages",
+    "frameworks",
+    "platforms",
+    "required_capabilities",
+)
+
+
+def _plan_states_a_subject(plan: Any) -> bool:
+    """Whether the plan carries any typed identifier retrieval could act on."""
+
+    for unit in tuple(getattr(plan, "units", ()) or ()):
+        for field in _SUBJECT_IDENTIFIER_FIELDS:
+            if tuple(getattr(unit, field, ()) or ()):
+                return True
+    return False
+
+
+def _recalled_candidate_count(outcome: Any) -> int:
+    """How many candidates retrieval put in front of the recruiter."""
+
+    proposal_candidates = sum(
+        len(tuple(getattr(row, "candidates", ()) or ()))
+        for row in tuple(getattr(getattr(outcome, "proposal", None), "units", ()) or ())
+    )
+    if proposal_candidates:
+        return proposal_candidates
+    # A turn that never reached the recruiter still recorded what recall saw.
+    return max(
+        (
+            int(getattr(item, "candidate_count", 0) or 0)
+            for item in tuple(getattr(outcome, "attempts", ()) or ())
+            if str(getattr(item, "stage", "") or "") in {"recall_embedding", "recall_reranker"}
+        ),
+        default=0,
+    )
+
+
+def _unstaffed_retrieval_codes(outcome: Any, *, message_has_signal: bool) -> tuple[str, ...]:
+    """Say which of the three ways this turn went unstaffed (AR-370).
+
+    Returns nothing when the turn staffed someone, and nothing when retrieval
+    produced a real candidate set: an unsafe or insufficient team out of real
+    candidates is the recruiter's verdict, and it already has a code.
+    """
+
+    staffing = getattr(outcome, "staffing", None)
+    if staffing is None or getattr(staffing, "accepted", False):
+        return ()
+    if any(tuple(getattr(unit, "selected", ()) or ()) for unit in getattr(staffing, "units", ())):
+        return ()
+    # A turn where inference never answered, or answered invalidly, has no
+    # retrieval verdict to give: it already carries its own cause, and adding
+    # one of these would say the request or the roster was at fault when
+    # neither was ever consulted.
+    if str(getattr(outcome, "inference_mode", "") or "") in {"unavailable", "invalid"}:
+        return ()
+    existing = {
+        str(getattr(reason, "code", "") or "")
+        for reason in tuple(getattr(staffing, "abstention_reasons", ()) or ())
+    }
+    if "no_safe_sufficient_team" in existing:
+        # The recruiter judged a real candidate set. That is the third case and
+        # it already has a code.
+        return ()
+    if not message_has_signal and not _plan_states_a_subject(getattr(outcome, "plan", None)):
+        # Neither the words nor the derived subject named anything retrievable.
+        return (REQUEST_UNDERSPECIFIED,)
+    if _recalled_candidate_count(outcome) == 0:
+        return (NO_RELEVANT_CANDIDATE,)
+    return ()
+
+
+def _with_unstaffed_retrieval_codes(outcome: Any, *, message_has_signal: bool) -> Any:
+    """Put the retrieval-side unstaffed code on the decision the receipt reads.
+
+    The code rides on ``staffing.abstention_reasons``, which is the same route
+    ``workforce_credential_env_unset`` takes to the receipt and the fail-open
+    disclosure (ADR-0204). Nothing is added when the turn staffed someone or
+    when the recruiter judged a real candidate set.
+    """
+
+    from agency_runtime.core.workforce.staffing_verifier import AbstentionReason
+
+    codes = _unstaffed_retrieval_codes(outcome, message_has_signal=message_has_signal)
+    if not codes:
+        return outcome
+    staffing = outcome.staffing
+    existing = {reason.code for reason in staffing.abstention_reasons}
+    additions = tuple(AbstentionReason(code) for code in codes if code not in existing)
+    if not additions:
+        return outcome
+    return replace(
+        outcome,
+        staffing=replace(
+            staffing,
+            abstention_reasons=(*staffing.abstention_reasons, *additions),
+        ),
+        abstention_codes=tuple(dict.fromkeys((*outcome.abstention_codes, *codes))),
+    )
+
+
 def _all_gap_units(outcome: Any) -> tuple[str, ...]:
     """Return every unit the staffing decision declared an uncovered gap for.
 
@@ -1972,6 +2129,14 @@ def route(
                 else None
             ),
             **planning_options,
+        )
+        # AR-370 criterion 5: say which of the three ways this turn went
+        # unstaffed before anything projects the decision. `message_has_signal`
+        # is the same predicate the zero-signal trigger just used, so the two
+        # cannot disagree about whether the message named anything.
+        outcome = _with_unstaffed_retrieval_codes(
+            outcome,
+            message_has_signal=not subject_inference_required,
         )
         _record_workforce_model_receipts(
             evidence_store,

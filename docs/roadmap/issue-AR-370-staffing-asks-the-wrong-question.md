@@ -209,6 +209,9 @@ its own decision.
 
 ## Approach
 
+Criteria 3 to 6 implemented under ADR-0211; criterion 1's live proof is
+outstanding and criterion 2 was closed by ADR-0208.
+
 Owner direction (2026-09-02, after reviewing the measurements above): do not
 solve this with keywords. The expansion table is the wrong architecture and
 `_DOMAIN_EXPANSIONS` is already product debt — it ships one operator's
@@ -290,13 +293,13 @@ would keep shipping one stack's nouns to everyone.
 - [ ] Retrieval runs on an inference-derived work statement, not the user's
       literal text; `configure the gateway` and `install this: <url>` both
       retrieve a relevant specialist without the user supplying vocabulary.
-- [ ] The typed subject hints the planner already produces reach the turn
+- [x] The typed subject hints the planner already produces reach the turn
       that produced them, not only the next one.
-- [ ] `_DOMAIN_EXPANSIONS` is retired, so no installation ships another
+- [x] `_DOMAIN_EXPANSIONS` is retired, so no installation ships another
       operator's stack vocabulary.
-- [ ] A request whose subject is a bare reference resolves that reference
+- [x] A request whose subject is a bare reference resolves that reference
       before retrieval, with the resolution recorded in the routing receipt.
-- [ ] An underspecified request is reported as underspecified, distinctly
+- [x] An underspecified request is reported as underspecified, distinctly
       from an abstention over a real candidate set.
-- [ ] The routing eval carries a case per operational verb, so the table
+- [x] The routing eval carries a case per operational verb, so the table
       cannot silently regress.

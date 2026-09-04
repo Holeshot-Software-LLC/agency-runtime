@@ -274,10 +274,7 @@ def test_explanation_helpers_bound_invalid_limits_and_render_missing_agents() ->
         "description": "",
         "selected": False,
     }
-    assert explain._domain_terms(
-        "review code",
-        "review code [domain context: security, performance]",
-    ) == ["security", "performance"]
+
 
 
 def test_stickiness_rejects_stale_context_and_bounds_session_cache(

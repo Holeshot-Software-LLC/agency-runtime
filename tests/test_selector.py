@@ -15,7 +15,7 @@ from agency_runtime.core.config import AgencyConfig
 from agency_runtime.core.selector.cache import cache_get, cache_key, cache_put, clear_cache
 from agency_runtime.core.selector.candidate_narrow import pre_narrow, score_agent, tokenize
 from agency_runtime.core.selector.delegation_detection import detect_work_units
-from agency_runtime.core.selector.domain_expansion import expand_query
+
 from agency_runtime.core.selector.intent_text import (
     affirmative_intent,
     mask_excluded_intent,
@@ -123,35 +123,62 @@ def test_pre_narrow_pads_when_few_matches():
     assert len(candidates) == 3
 
 
-# ─── Domain expansion ───────────────────────────────────────────────
+# ─── Domain expansion, retired (AR-370 / ADR-0211) ───────────────────
 
 
-def test_expand_query_conveyor():
-    result = expand_query("fix the conveyor pipeline")
-    assert "[domain context:" in result
-    assert "ci cd pipeline" in result
+def test_the_domain_expansion_table_is_gone() -> None:
+    """No installation ships another operator's stack vocabulary.
+
+    The table held about 25 nouns, nearly all specific to one operator's stack
+    -- openclaw, hermes, litellm, systemd, telegram -- and had no entry for any
+    common operational verb, which is the case that actually failed. The typed
+    work statement the planner derives replaces it and is stack-neutral by
+    construction.
+    """
+
+    import importlib
+
+    with pytest.raises(ModuleNotFoundError):
+        importlib.import_module("agency_runtime.core.selector.domain_expansion")
+
+    import agency_runtime.core.selector as selector_package
+
+    assert not hasattr(selector_package, "expand_query")
+    assert "expand_query" not in selector_package.__all__
 
 
-def test_expand_query_no_match():
-    result = expand_query("hello world")
-    assert result == "hello world"
+def test_no_query_is_expanded_with_curated_discipline_vocabulary() -> None:
+    """The nouns are gone from the query, not merely the function that added them.
 
+    Asserted on the query the pipeline actually builds rather than by grepping
+    the package: ``litellm`` legitimately survives in the selector as the name
+    of a provider adapter, which is a transport identifier and not retrieval
+    vocabulary. What must not survive is a query enriched with one operator's
+    stack disciplines.
+    """
 
-def test_expand_query_requires_complete_domain_terms():
-    assert expand_query("slackened validation rules") == "slackened validation rules"
-    assert "real-time communication" in expand_query("Configure Slack alerts")
+    for message in (
+        "Configure Slack alerts for the conveyor pipeline",
+        "Restart the litellm gateway and the systemd unit",
+        "Explain the Agency response header, dashboard, and agent selection",
+    ):
+        request = build_route_request(
+            "expansion-retired",
+            message,
+            [],
+            AgencyConfig(),
+            trace_id="expansion-retired",
+        )
+        assert "[domain context:" not in request.routing_query
+        for discipline in (
+            "ci cd pipeline",
+            "real-time communication",
+            "agent orchestration",
+            "specialist routing",
+            "model serving",
+        ):
+            assert discipline not in request.routing_query.casefold()
 
-
-def test_expand_query_routes_agency_runtime_language_to_agent_system_domains():
-    expanded = expand_query("Explain the Agency response header, dashboard, and agent selection")
-
-    assert "agent orchestration" in expanded
-    assert "specialist routing" in expanded
-    assert "specialist compatibility constraints" in expanded
-    assert "compatibility analysis" not in expanded
-    assert "runtime dashboard" in expanded
-    assert "configuration interface" in expanded
-    assert "response telemetry" in expanded
 
 
 def test_affirmative_intent_masks_only_explicit_exclusions():
