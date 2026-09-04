@@ -152,11 +152,11 @@ The previous capsules' traps hold. Four more:
 
 In this order.
 
-1. **Owner steps**: tracker issues for AR-384 to AR-392, closure of #537, and
+1. **Owner steps**: tracker issues for AR-384 to AR-393, closure of #537, and
    `agency battery` with the key sourced.
-2. **Implement AR-392**, filed 2026-09-04 from the residue above: the receipt
-   cannot tell a runtime timeout from a malformed reply.
-3. **The 4-of-5 gap divergence**, then **AR-370**.
+2. **Implement AR-392** (transport failure causes) and **AR-393**, the 4-of-5
+   gap divergence: 42 of 99 gap-declaring receipts carry no hiring account.
+3. **AR-370**, and the live half of AR-393's last criterion.
 
 ## verification
 
