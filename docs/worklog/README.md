@@ -1752,6 +1752,9 @@ This registry connects repository history to the roadmap and to optional detail 
 | `606e70ea` | 2026-09-04 | fix(ar391): the repair prompt places the sole coverer directly after the team it completes | [AR-391](../roadmap/issue-AR-391-recruiter-prompt-misstates-how-its-ranking-becomes-the-team.md) | The isolated verifier's second pass at 2c092cb8 found criterion 3 contradicted because the repair prompt did not say the sole coverer ranks directly after the team it completes; the repair prompt now carries that phrase, the test asserts it in both prompts, the record's test citations are remapped and the pass-2 verdicts are appended to the evidence file. |
 | `bd69344b` | 2026-09-04 | Merge pull request #614 from Holeshot-Software-LLC/claude/ar391-repair-prompt-sole-coverer | null | null |
 | `3a94b8da` | 2026-09-04 | test(ar391): assert the repair prompt's sole-coverer phrase, not the one it replaced | [AR-391](../roadmap/issue-AR-391-recruiter-prompt-misstates-how-its-ranking-becomes-the-team.md) | PR #614 reworded the repair prompt's team-order sentence and the test kept asserting the previous wording, which a release chain piped through tail let through; the test now asserts the sentence the prompt carries. |
+| `9cc085c9` | 2026-09-04 | Merge pull request #615 from Holeshot-Software-LLC/claude/ar391-test-phrase | null | null |
+| `85b43864` | 2026-09-04 | docs(ar391): freeze the acceptance record at 3a94b8da | null | null |
+| `688f7970` | 2026-09-04 | docs(ar391): flip AR-391 to done on six satisfied verdicts | [AR-391](../roadmap/issue-AR-391-recruiter-prompt-misstates-how-its-ranking-becomes-the-team.md) | The isolated verifier's third pass at 3a94b8da returned all six criteria satisfied, so AR-391 flips to done under ADR-0207; the registry row names the implementation commit and the three repair-prompt corrections, and the evidence file records every pass with what criterion 3 needed. |
 <!-- worklog:end -->
 
 ## Provenance notes
