@@ -103,8 +103,8 @@ def test_the_critic_sees_the_complete_eligible_neighbourhood_per_unit() -> None:
     assert unit["selected_are_whole_neighbourhood"] is True
 
 
-def test_unranked_eligible_cards_are_ids_only_and_the_bounds_hold() -> None:
-    planners = [f"planner-{index:02d}" for index in range(_MAX_CRITIC_NEIGHBOURHOOD_IDS + 6)]
+def test_unranked_eligible_cards_are_ids_only_and_the_list_is_complete() -> None:
+    planners = [f"planner-{index:02d}" for index in range(70)]
     snapshot = _snapshot(*(_contract(agent_id) for agent_id in planners), _desktop_engineer())
     ranked: list[str] = []
 
@@ -121,9 +121,11 @@ def test_unranked_eligible_cards_are_ids_only_and_the_bounds_hold() -> None:
 
     assert len(prompts) == 3, [sorted(item)[:3] for item in prompts]
     unit = prompts[2]["eligible_neighbourhood"][_UNIT]
+    # Complete: every eligible planner is named, in identity order, with the
+    # count agreeing; the only bound on the list is the roster's own size.
     assert unit["eligible_count"] == len(planners)
-    assert len(unit["eligible_candidate_ids"]) == _MAX_CRITIC_NEIGHBOURHOOD_IDS
-    assert unit["eligible_candidate_ids"] == sorted(planners)[:_MAX_CRITIC_NEIGHBOURHOOD_IDS]
+    assert unit["eligible_candidate_ids"] == sorted(planners)
+    assert len(planners) <= _MAX_CRITIC_NEIGHBOURHOOD_IDS
     cards = [card["agent_id"] for card in unit["ranked_eligible_cards"]]
     assert cards == sorted(item for item in ranked if item != "desktop-app-engineer")
     assert 0 < len(cards) <= _MAX_CRITIC_NEIGHBOURHOOD_CARDS
