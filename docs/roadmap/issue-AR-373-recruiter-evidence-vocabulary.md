@@ -1,6 +1,6 @@
 ---
 title: "AR-373: The recruiter is rejected for citing the coverage vocabulary Agency teaches it"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-09-02
 updated: 2026-09-03
@@ -156,6 +156,13 @@ bare `unit=code` row from the verifier's closed vocabulary
 identically offline. What the recruiter deployment still does that the
 runtime cannot read: omit a candidate's `score` (304) and return no JSON
 object at all (201, and 304 on the previous run).
+
+**Verification (2026-09-03).** The acceptance record is frozen at
+`4d0d7c1b`, the merge that brought the stack onto `main`; the isolated codex
+verifier returned satisfied on all four criteria (runs
+`AR-373.1-20260903-b2e14f0d`, `AR-373.2-20260903-b3faa490`,
+`AR-373.3-20260903-fd37bf45`, `AR-373.4-20260903-d988bc79`), so the issue is
+done. Closing tracker #537 needs the owner's authorization.
 
 ## Approach
 
