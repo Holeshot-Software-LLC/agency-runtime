@@ -21,66 +21,69 @@ related:
   - docs/roadmap/issue-AR-388-unset-credential-reads-as-provider-unavailable.md
   - docs/decisions/0205-show-the-critic-the-eligible-neighbourhood-it-judges-against.md
   - docs/roadmap/issue-AR-389-critic-judges-neighbours-it-cannot-see.md
+  - docs/decisions/0206-show-every-outcome-on-the-card.md
+  - docs/roadmap/issue-AR-390-recruiter-cards-hide-the-outcomes-that-name-the-work.md
   - docs/roadmap/issue-AR-387-recruiter-cards-carry-no-eligibility.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-383
-branch: claude/ar389-flip
-evidence_commit: ecde657481611dafc8a31a4fb6043dbdc9902dad
-minimum_ledger_commit: 3ed000d42290f567b49fa65a54612c9f3b4268b9
+branch: claude/ar390-flip
+evidence_commit: 15c404f374ec1d5c59bc58f7b65a52304d7eb8be
+minimum_ledger_commit: 4bba2ff26bff11ab9b49eb8da009808796d98265
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/581
 ---
 
 # AR-383 inferred subject projection handoff
 
-> `main` at `3ed000d4` carries ADR-0198 to ADR-0205 and the done AR-373 and
-> AR-384 to AR-389 (AR-389's flip rides on this PR). This refresh records the
-> AR-389 close and the runtime reinstalled at that commit.
+> `main` at `4bba2ff2` carries ADR-0198 to ADR-0206 and the done AR-373 and
+> AR-384 to AR-390 (AR-390's flip follows in PR #608). This refresh records the
+> AR-390 close, the verified codex activation and the runtime reinstalled at
+> that commit.
 
 Start-here capsule. The planner side is closed, the recruiter's reply is
 read where no safety property lives, every rejected attempt is recorded, the
 recruiter and the critic both see the eligibility boundary they are held to
-(AR-387, AR-389), an unset gateway key is named at every layer instead of
-read as an outage (AR-388), and the losses that remain are the recruiter's
-fit judgment and replies the transport cannot read.
+(AR-387, AR-389), every card carries every outcome (AR-390), an unset
+gateway key is named at every layer (AR-388), and the losses that remain
+are the recruiter's fit on review and plan units and unreadable replies.
 
 ## checkpoint
 
-**AR-389 is done** under **ADR-0205** (PRs #601 to #603, flip on this
-branch): the critic document carries, per unit, the complete identity-sorted
-eligible candidate list (bounded only by the roster's own limit) with its
-count, compact cards for every eligible worker the recruiter ranked or
-selected (bounded by the recruiter's own ranking limit), and whether the
-selection is the whole neighbourhood; a
-wrong-neighbour veto must name a card in it. Live on the
-eleven wordings: completed 6 against 5, vetoes 3 against 3 on different
-turns, both earlier vetoes approved, every veto naming an eligible card left
-unselected. **AR-388** (ADR-0204, PR #599) names an unset credential at
-every layer; **AR-387** (ADR-0203, PRs #595 to #597) gave the recruiter the
-same boundary.
+**AR-390 is done** under **ADR-0206** (PR #606, flip on this branch): the
+compact recruiter card and the critic's neighbourhood card carry every
+outcome and every `not_for` line, bounded only by the contract's own limits;
+the card used to cut outcomes at two and every enabled contract declares at
+least three. Live on the eleven wordings: the release verifier on the
+verification unit in 7 of 8 critic-reached turns against 5 of 9; completed 4
+against 6 inside a 5, 6, 4 spread (two unreadable replies, one budget
+exhaustion, four vetoes now on review and plan units). **AR-389** (ADR-0205,
+PRs #601 to #604) gave the critic the eligible neighbourhood; **AR-388**
+(ADR-0204, PR #599) names an unset credential; **AR-387** (ADR-0203) gave
+the recruiter the same boundary.
 
 - **AR-384 option 2** (ADR-0201): the planner sees the served domains per
   artifact kind and a unit with no served domain is bounced for repair.
-- **AR-373 and AR-384 to AR-389 are done**; `verify_tracker.py` reports
-  `missing_remote` for AR-384 to AR-389 until the owner authorizes their
+- **AR-373 and AR-384 to AR-390 are done**; `verify_tracker.py` reports
+  `missing_remote` for AR-384 to AR-390 until the owner authorizes their
   tracker issues, and #537 still needs its closure.
-- **Install**: venv `3ed000d4` built at the AR-389 close. claude
-  complete and wired; codex `activation-required` (the
-  owner's attended `Trust all and continue` in a fresh `codex` TUI, then
-  `agency install --agent codex --verify-activation` with `common.env`
-  sourced). Run `agency install` itself WITHOUT the key: the dashboard step
-  refuses a service whose credentials live only in the process environment.
+- **Install**: venv `4bba2ff2` built at the AR-390 close. claude
+  complete and wired; codex `activation-required` again (it was
+  `runtime-verified` on `3ed000d4` after the owner's trust; each reinstall
+  restages the hooks and needs the attended `Trust all and continue` in a
+  fresh `codex` TUI, then `agency install --agent codex --verify-activation`
+  with `common.env` sourced). Run `agency install` itself WITHOUT the key.
 - **Launch environment**: every inference profile reads `LITELLM_API_KEY`
   from the launching process's environment only, and nothing on the host
   exports it; on 2026-09-03 every preflight and both first codex
   verifications failed with a healthy gateway, passing at once with
   `~/.config/ai-secrets/common.env` sourced. AR-388 now names this.
-- **Critic judgment now has evidence**: the remaining vetoes name a card the
-  recruiter ranked below its selection (the release verifier on 202 and
-  205); the next lift is the recruiter's fit ranking, not the critic.
+- **Where the vetoes point now**: review units staffed `test-results-analyzer`
+  alone with `code-reviewer` and the release verifier ranked (203, 209), and
+  plan units staffed `operations-manager` with the site reliability engineer
+  ranked (305); the recruiter's fit judgment on those units is what remains.
 
 | eleven install wordings, strict mode, ADR-0203 runtime, store copy | turns |
 |---|---|
@@ -114,11 +117,11 @@ deployment still returns unreadable replies (209, 305) and omits `score`.
 ## exact-blocker
 
 Nothing blocks at the contract level. Waiting for the owner: the codex trust
-step and `--verify-activation` on venv `3ed000d4`; tracker issues for AR-384
-to AR-389 and closure of #537; the stale claude battery re-prove (`agency
+step and `--verify-activation` on venv `4bba2ff2`; tracker issues for AR-384
+to AR-390 and closure of #537; the stale claude battery re-prove (`agency
 battery` with `common.env` sourced). What remains in the runtime is the
-recruiter's fit ranking (three evidence-backed critic vetoes of eleven) and
-the deployment (two replies the transport could not read).
+recruiter's fit on review and plan units (four evidence-backed critic vetoes
+of eleven) and the deployment (two unreadable replies, one budget exhaustion).
 
 ## same-task-continuity
 
@@ -145,28 +148,26 @@ In this order.
 
 1. **Owner steps**: codex `Trust all and continue`, then `agency install
    --agent codex --verify-activation` with the key sourced; tracker issues
-   for AR-384 to AR-388 and closure of #537; `agency battery` (key sourced).
-2. **Recruiter fit on verification units**: on 202 and 205 the recruiter
-   required `evidence-collector` alone and left `cross-platform-release-
-   verifier` acceptable; the critic now vetoes that with evidence. Measure
-   whether the recruiter's document should name the unit's artifact kind
-   against each card's artifact kinds more plainly; eleven wordings, replay.
+   for AR-384 to AR-390 and closure of #537; `agency battery` (key sourced).
+2. **Recruiter fit on review and plan units**: 203 and 209 required
+   `test-results-analyzer` alone on a review unit with `code-reviewer`
+   ranked; 305 `operations-manager` on a plan unit with the SRE ranked.
+   Replay with the cache bypassed first; the next candidate is the prompt's
+   account of required versus acceptable on multi-card units.
 3. **Unreadable deployment residue** (no JSON object, omitted `score`,
-   `decision` outside staff/gap): operator territory at the LiteLLM alias;
-   recorded, not fixed.
+   `decision` outside staff/gap; two of eleven turns this run): operator
+   territory at the LiteLLM alias; recorded, not fixed.
 4. **Fix AR-383** per its Approach; then the 4-of-5 gap divergence; then
    AR-370.
 
 ## verification
 
-At `ecde6574` (AR-389): new tests 4 passed; affected suites and the
-named fast spine green under `-W error`; decision-conformance 177 of 177
-killed, tree unchanged; live eleven wordings on the branch runtime against
-the baseline store copy (capture390); verifier four of four on the fourth
-pass (absent for want of citations, then a cap of 64 against "complete",
-then a bare 16 against "every ranked or selected worker"; both bounds are
-now the runtime's own limits). AR-388 at `13c483fb`: four of four on the
-first pass. Every flip so far verified `--all` satisfied.
+At `15c404f3` (AR-390): new tests 4 passed; affected suites 234 passed, 1
+skipped; named fast spine 1004 passed, 3 skipped under `-W error`;
+decision-conformance 178 of 178 killed, tree unchanged; live eleven wordings
+on the branch runtime against the baseline store copy (capture391); verifier
+four of four on the second pass. AR-389 at `ecde6574`: four of four on the
+fourth pass. Every flip so far verified `--all` satisfied.
 
 ## constraints
 
