@@ -12,14 +12,14 @@ supersedes: []
 superseded_by: null
 type: acceptance-verification
 issue_id: AR-391
-candidate_commit: pending
+candidate_commit: 3a94b8daf769d6213debc2f148802d09d4ea1b1e
 evidence_cutoff: 2026-09-04
 tracker_url: null
 ---
 
 # AR-391 acceptance verification record
 
-Pending draft. The recruiter document's contract states how a ranking becomes
+Frozen at `3a94b8da`, the test-phrase correction on top of the repair-prompt fixes merged in PRs #612 and #614 and the implementation merged in PR #611. The recruiter document's contract states how a ranking becomes
 the team with the verifier's own numbers, each typed recall row names the
 requirements exactly one eligible card covers, both prompts state the
 derivation, and a whole-team verifier rejection hands the recruiter the team
