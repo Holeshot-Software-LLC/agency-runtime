@@ -1785,6 +1785,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `8a4ea67d` | 2026-09-04 | Merge pull request #627 from Holeshot-Software-LLC/claude/ar392-393-370-verification | null | null |
 | `d3f80ef0` | 2026-09-04 | docs(roadmap): file AR-394, AR-395 and AR-396 from the live staffing diagnosis | null | null |
 | `e12d721d` | 2026-09-04 | fix(workforce): ask again when a complete reply is not JSON | null | null |
+| `551d08db` | 2026-09-04 | docs(roadmap): record the AR-396 acceptance evidence | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
