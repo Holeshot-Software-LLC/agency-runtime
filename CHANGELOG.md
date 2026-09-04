@@ -30,6 +30,7 @@ related:
   - docs/roadmap/issue-AR-385-structured-reply-budget-truncates-nominations-silently.md
   - docs/roadmap/issue-AR-388-unset-credential-reads-as-provider-unavailable.md
   - docs/roadmap/issue-AR-389-critic-judges-neighbours-it-cannot-see.md
+  - docs/roadmap/issue-AR-390-recruiter-cards-hide-the-outcomes-that-name-the-work.md
   - docs/roadmap/issue-AR-386-strict-critic-vetoes-verifier-accepted-install-turns.md
   - docs/roadmap/issue-AR-384-staff-decisions-die-on-uncoverable-typed-requirements.md
   - docs/decisions/0201-constrain-the-planner-domains-to-what-the-roster-serves.md
@@ -129,6 +130,9 @@ changes rather than duplicating every commit.
   compact cards for the eligible workers the recruiter ranked or selected, and
   whether the selected workers are the whole neighbourhood; the contract and
   the prompt say a wrong-neighbour veto must name a card in that list.
+- The cards the recruiter and the critic read carry every outcome and every
+  `not_for` line the contract declares (AR-390, ADR-0206); the compact card
+  used to cut outcomes at two, hiding the ones that name a unit's work.
 - `agency battery` runs the change-triggered harness canary battery
   (AR-337): per-harness version fingerprints gate the run, claude and codex
   re-prove through their canary modes (codex attended-trust loss reported

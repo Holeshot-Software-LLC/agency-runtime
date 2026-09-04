@@ -1,0 +1,65 @@
+AR-390 evidence, 2026-09-04 (ADR-0206). Branch claude/ar390-card-outcomes on main cb7bd2b8. Runtime under test: the
+branch checkout via PYTHONPATH, run by the installed venv python (~/.local/share/agency-runtime/venvs/3ed000d4). Store:
+the reconciled COPY used by the ADR-0201 to ADR-0205 measurements (scratchpad agency.db.branch-copy, generation 307,
+291 contracts). Gateway: task-agency-recruiter-v2 through the agency-recruiter profile; every replay sent
+cache: {"no-cache": true}.
+
+== 1. The cut, read from the ADR-0205 run (raw390, 2026-09-04) ==
+  Turns 202 and 205, unit unit-install-verification (test-evidence/review, domain quality-assurance): the recruiter
+  required evidence-collector alone (0.88) and left cross-platform-release-verifier acceptable (0.80, 0.78); the critic
+  vetoed both teams as wrong-neighbor-selection with the neighbourhood view, naming the verifier.
+  The compact card carried outcomes[:2]. Cards as the recruiter saw them:
+    evidence-collector: outcomes "capture reproducible UI evidence", "compare expected and observed states";
+      scope "a configured site and explicit acceptance contract need reproducible visual evidence".
+    cross-platform-release-verifier: outcomes "evidence-backed release readiness", "verified installed-product
+      portability"; scope "Independently install and smoke-test release artifacts on Windows and Linux".
+  The verifier's contract declares five outcomes; the third and fifth, "installed-artifact smoke testing" and "upgrade
+  and uninstall verification", name the unit's work and never reached the recruiter. Typed coverage on the row: the
+  collector covers all six requirement tokens, the verifier five (its lifecycle phase is release, the planner wrote
+  testing).
+  Roster: every one of the 291 enabled contracts declares at least three outcomes (median 3, maximum 8 = MAX_OUTCOMES);
+  showing all of them adds a median of 42 bytes per card (at most 431).
+
+== 2. Offline replays of the two recruiter calls with every outcome on every detail card (three trials each) ==
+  202: cards 65, all 65 gained outcomes; bytes 51603 -> 55175. release verifier required: augmented 3/3 (0.93, 0.88,
+       0.93), baseline 2/3 (the live turn itself had required the collector alone).
+  205: cards 65, all gained outcomes; bytes 52011 -> 55583. release verifier required: augmented 1/3, baseline 0/3; the
+       recruiter's replies on this turn vary widely under both variants (one baseline trial returned no rows for the
+       unit, one augmented trial ranked an ineligible card).
+  Scripts recruiter_replay_g.py; per-trial rankings in recruiter_202_full_outcomes.json and recruiter_205_full_outcomes.json.
+
+== 3. Live, the same eleven wordings under strict mode on the branch runtime (capture391, store copy, 2026-09-04) ==
+  Baselines on the same store copy and wordings: the ADR-0203 run (capture389: completed 5, critic vetoes 3, pre-critic
+  losses 3) and the ADR-0205 run (capture390: completed 6, critic reached 9, approved 6, vetoed 3, pre-critic losses 2;
+  release verifier selected on the verification unit in 5 of the 9 turns that reached the critic).
+  This run: completed 4 (202, 204, 207, 304); critic reached 8, approved 4, vetoed 4 (203, 205, 209, 305); pre-critic
+  losses 3 (201 and 206: the recruiter's reply could not be read, provider_no_valid_response; 208: a planner policy
+  repair and a recruiter row-shape repair exhausted the strict call budget).
+  The target moved: cross-platform-release-verifier is on the verification unit in 7 of the 8 turns that reached the
+  critic (all but 205, which staffed application-integration-verifier alone). The vetoes moved with it: 203 and 209
+  staffed the review unit with test-results-analyzer alone with code-reviewer and the release verifier left ranked,
+  305 staffed the plan unit with operations-manager with sre-site-reliability-engineer left ranked, 205 as above. The
+  completion count is inside the run-to-run variance the three runs show (5, 6, 4) and is dominated by transport and
+  repair losses; what the card change decides is which card the recruiter picks when the discriminating outcome is on
+  the card, and on the verification unit it now picks the release verifier.
+
+  Per turn, what the critic saw (selected | eligible ranked cards left unselected, eligible count):
+  turn status                   critic   units: selected | eligible ranked cards left unselected
+   201 no_specialist_fail_open  -        (critic not reached)
+   202 accepted                 approve  environment-discovery[analy/advi]: devops-automator | left: codebase-onboarding-engineer,desktop-app-engineer,developer-tooling-engineer,sre-site-reliability-engineer (elig 68) || install-helix[plan/plan]: sre-site-reliability-engineer | left: it-service-manager,operations-manager (elig 6) || install-review[revie/revi]: cross-platform-release-verifier,reality-checker | left: evidence-collector,tool-evaluator (elig 9) || install-verification[test-/revi]: cross-platform-release-verifier,reality-checker | left: evidence-collector,tool-evaluator (elig 9)
+   203 no_specialist_fail_open  veto     environment-discovery[analy/advi]: desktop-app-engineer | left: ai-data-remediation-engineer,ai-engineer,ai-generated-code-security-auditor,api-platform-engineer,codebase-onboarding-engineer,developer-tooling-engineer,devops-automator (elig 68) || installation-plan[plan/plan]: operations-manager | left: cross-border-e-commerce-specialist,database-reliability-engineer,incident-response-commander,it-service-manager,sre-site-reliability-engineer (elig 6) || installation-review[revie/revi]: test-results-analyzer | left: accessibility-auditor,application-integration-verifier,code-reviewer,evidence-collector,reality-checker,tool-evaluator (elig 9) || installation-verification[test-/revi]: cross-platform-release-verifier,test-results-analyzer | left: accessibility-auditor,application-integration-verifier,code-reviewer,evidence-collector,performance-benchmarker,reality-checker,tool-evaluator (elig 9)
+   204 accepted                 approve  workstation-install-discovery[analy/advi]: devops-automator,operations-manager | left: infrastructure-maintainer,sre-site-reliability-engineer (elig 10) || zed-install-plan[plan/plan]: sre-site-reliability-engineer | left: operations-manager (elig 6) || zed-install-verification[test-/revi]: cross-platform-release-verifier,application-integration-verifier | left: evidence-collector,reality-checker (elig 9)
+   205 no_specialist_fail_open  veto     environment-check[analy/advi]: codebase-onboarding-engineer | left: developer-tooling-engineer,devops-automator (elig 68) || install-tools[plan/plan]: operations-manager | left: it-service-manager,sre-site-reliability-engineer (elig 6) || install-verification[test-/revi]: application-integration-verifier | left: cross-platform-release-verifier,reality-checker,test-results-analyzer (elig 9)
+   206 no_specialist_fail_open  -        (critic not reached)
+   207 accepted                 approve  environment-discovery[analy/advi]: desktop-app-engineer | left: ai-data-remediation-engineer,ai-engineer,backend-architect,codebase-onboarding-engineer,developer-tooling-engineer,devops-automator (elig 68) || install-helix[plan/plan]: sre-site-reliability-engineer | left: cross-border-e-commerce-specialist,it-service-manager,operations-manager (elig 6) || install-verification[test-/revi]: cross-platform-release-verifier,evidence-collector | left: accessibility-auditor,application-integration-verifier,performance-benchmarker,reality-checker,test-results-analyzer,tool-evaluator (elig 9)
+   208 no_specialist_fail_open  -        (critic not reached)
+   209 no_specialist_fail_open  veto     environment-discovery[analy/advi]: devops-automator | left: desktop-app-engineer,developer-tooling-engineer,senior-secops-engineer (elig 68) || install-execution-plan[plan/plan]: operations-manager | left: database-reliability-engineer,it-service-manager,sre-site-reliability-engineer (elig 6) || install-review[revie/revi]: test-results-analyzer | left: application-integration-verifier,code-reviewer,cross-platform-release-verifier (elig 9) || install-verification[test-/revi]: cross-platform-release-verifier,evidence-collector | left: performance-benchmarker,reality-checker (elig 9)
+   304 accepted                 approve  environment-discovery[analy/advi]: devops-automator | left: desktop-app-engineer,developer-tooling-engineer (elig 68) || install-plan[plan/plan]: operations-manager | left: - (elig 6) || install-configure[imple/modi]: cross-platform-installer-engineer | left: desktop-app-engineer,developer-tooling-engineer,devops-automator (elig 42) || install-review[revie/revi]: senior-secops-engineer | left: code-reviewer,silent-failure-hunter (elig 12) || install-verification[test-/revi]: cross-platform-release-verifier,evidence-collector | left: reality-checker,test-results-analyzer (elig 9)
+   305 no_specialist_fail_open  veto     tooling-setup-plan[plan/plan]: operations-manager | left: cross-border-e-commerce-specialist,database-reliability-engineer,incident-response-commander,it-service-manager,sre-site-reliability-engineer (elig 6) || tooling-setup-verification[test-/revi]: cross-platform-release-verifier,evidence-collector | left: accessibility-auditor,application-integration-verifier,performance-benchmarker,reality-checker,test-results-analyzer,tool-evaluator (elig 9)
+
+== 4. Gates ==
+  tests/test_card_outcomes_complete.py 4 passed; affected suites (card outcomes, critic and recruiter eligibility views,
+  critic doctrine, workforce inference, decision conformance, selection safety, reply residue, reply budget, evidence
+  vocabulary, credential env, planner domain service) 234 passed, 1 skipped; named fast spine 1004 passed, 3 skipped
+  under -W error; decision-conformance 178 of 178 killed with the tree unchanged and a clean baseline (curated mutation
+  recruiter-card-hides-outcomes-past-two, killed).

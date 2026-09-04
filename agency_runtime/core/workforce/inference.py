@@ -2365,10 +2365,21 @@ def _run_hybrid_recall(
 
 
 def _compact_recruiter_card(contract: WorkforceContract) -> dict[str, Any]:
+    """Project the card the recruiter reads: every outcome, scope and not_for line.
+
+    AR-390 / ADR-0206: the card used to carry the first two outcomes only, and
+    every enabled contract declares at least three (median three, at most
+    MAX_OUTCOMES). Live on 2026-09-04 the release verifier's third and fifth
+    outcomes, installed-artifact smoke testing and upgrade and uninstall
+    verification, named the install-verification unit's work exactly and never
+    reached the recruiter, which required the evidence collector alone and lost
+    the turn to the critic. The contract's own outcome bound bounds the card.
+    """
+
     return {
         "agent_id": contract.agent_id,
         "display_name": contract.display_name,
-        "outcomes": list(contract.outcomes[:2]),
+        "outcomes": list(contract.outcomes),
         "scope_qualifiers": list(contract.scope_qualifiers),
         "not_for": list(contract.not_for),
     }
@@ -3839,14 +3850,17 @@ _RECRUITMENT_RANK_FIELDS: Final[tuple[str, ...]] = (
 
 
 def _critic_neighbourhood_card(contract: WorkforceContract) -> dict[str, Any]:
+    # AR-390 / ADR-0206: the critic reads the same outcomes and not_for lines
+    # the recruiter read, every one of them, bounded by the contract's own
+    # limits (MAX_OUTCOMES for outcomes, four for not_for).
     return {
         "agent_id": contract.agent_id,
         "display_name": contract.display_name,
         "archetype": contract.archetype,
         "authority": contract.authority,
         "domains": list(contract.domains),
-        "outcomes": list(contract.outcomes)[:2],
-        "not_for": list(contract.not_for)[:2],
+        "outcomes": list(contract.outcomes),
+        "not_for": list(contract.not_for),
     }
 
 
