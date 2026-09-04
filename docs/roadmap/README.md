@@ -402,7 +402,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-386` | [The strict critic vetoes every verifier-accepted install turn](issue-AR-386-strict-critic-vetoes-verifier-accepted-install-turns.md) | done | p1 | reliability | pending authorization |
 | `AR-387` | [The recruiter sees cards without their eligibility, so it staffs implementers on plan units and misses the eligible planners](issue-AR-387-recruiter-cards-carry-no-eligibility.md) | done | p1 | reliability | pending authorization |
 | `AR-388` | [An unset credential variable reads as a provider outage, and nothing names it](issue-AR-388-unset-credential-reads-as-provider-unavailable.md) | done | p1 | reliability | pending authorization |
-| `AR-389` | [The strict critic vetoes wrong neighbours it cannot see](issue-AR-389-critic-judges-neighbours-it-cannot-see.md) | in_progress | p1 | reliability | pending authorization |
+| `AR-389` | [The strict critic vetoes wrong neighbours it cannot see](issue-AR-389-critic-judges-neighbours-it-cannot-see.md) | done | p1 | reliability | pending authorization |
 
 ## Traceability
 
