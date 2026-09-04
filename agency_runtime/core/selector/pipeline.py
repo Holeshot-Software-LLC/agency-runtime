@@ -19,7 +19,7 @@ from contextlib import suppress
 from dataclasses import dataclass, field
 from functools import partial
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Final
 
 from agency_runtime.core.activation_canary_contract import (
     CODEX_ACTIVATION_CANARY_ROUTE_SOURCE,
@@ -1390,10 +1390,10 @@ def _record_workforce_model_receipts(
         )
 
 
-def _hireable_gap_units(outcome: Any) -> tuple[str, ...]:
-    """Return inference-declared uncovered units whose verifier evidence is clean."""
-
-    allowed = {
+#: The verifier codes that describe why a gap is real rather than why a unit
+#: cannot be hired for. A gap unit carrying only these is hireable.
+_HIREABLE_GAP_CODES: Final[frozenset[str]] = frozenset(
+    {
         "coverage_evidence_mismatch",
         "independent_assurance_missing",
         "no_safe_sufficient_team",
@@ -1403,36 +1403,100 @@ def _hireable_gap_units(outcome: Any) -> tuple[str, ...]:
         # is real; it annotates the decision and never disqualifies the hire.
         "roster_coverage_gap",
     }
+)
+
+# AR-393. The three tests a declared gap has to pass, each with a code that
+# names the test rather than relabelling the evidence that passed it. Before
+# these, a unit dropped by the first two was reported as
+# ``gap_evidence_not_hireable`` followed by its own codes -- all of which were
+# inside the hireable set, so the evidence printed on the event disqualified
+# nothing and the thing that actually disqualified the unit was named nowhere.
+#: The staffing decision named a unit the plan does not contain. Usually a
+#: repair re-planned the turn and the retained decision still refers to the
+#: first plan's ids; either way the receipt says so instead of omitting it.
+GAP_UNIT_ABSENT_FROM_PLAN = "gap_unit_absent_from_plan"
+#: One global abstention code outside the hireable set disqualified every unit
+#: on the turn. No unit's own evidence explains that, so the code travels onto
+#: each event it disqualified.
+GAP_GLOBAL_ABSTENTION = "gap_global_abstention_code"
+#: The proposal row for this unit does not carry ``inference-declared-gap``, so
+#: inference never declared the gap the verifier is reporting.
+GAP_NOT_DECLARED_BY_INFERENCE = "gap_not_declared_by_inference"
+#: The unit's own verifier codes include one outside the hireable set. This is
+#: the only case the old label ever described.
+GAP_EVIDENCE_NOT_HIREABLE = "gap_evidence_not_hireable"
+#: Reached with the unit still hireable and no limit met (AR-393 criterion 4).
+#: The old code contradicted the tuple it was computed from.
+GAP_HIRE_NOT_ATTEMPTED = "gap_hire_not_attempted"
+
+
+def _gap_hiring_verdicts(outcome: Any) -> dict[str, tuple[str, ...]]:
+    """Return, per declared gap unit, the test that disqualified it.
+
+    An empty tuple means the unit is hireable. Every unit the staffing decision
+    named with ``no_safe_sufficient_team`` appears, including one whose id
+    matches no plan unit: a declared gap may never be dropped silently, and the
+    caller needs the casualty as much as the survivor.
+
+    Ordering is the plan's, then any named unit the plan does not contain, so a
+    receipt reads in the order the turn was planned.
+    """
+
     reasons = tuple(getattr(getattr(outcome, "staffing", None), "abstention_reasons", ()) or ())
+    gap_ids = {
+        str(getattr(item, "unit_id", "") or "")
+        for item in reasons
+        if str(getattr(item, "code", "") or "") == "no_safe_sufficient_team"
+        and str(getattr(item, "unit_id", "") or "")
+    }
     global_codes = {
         str(getattr(item, "code", "") or "")
         for item in reasons
         if not str(getattr(item, "unit_id", "") or "")
     }
-    if global_codes - allowed:
-        return ()
+    disqualifying_global = tuple(sorted(global_codes - _HIREABLE_GAP_CODES))
     declared_gap_units = {
         str(getattr(row, "unit_id", "") or "")
         for row in tuple(getattr(getattr(outcome, "proposal", None), "units", ()) or ())
         if "inference-declared-gap" in tuple(getattr(row, "abstention_reasons", ()) or ())
     }
     plan = getattr(outcome, "plan", None)
-    plan_units = tuple(getattr(plan, "units", ()) or ())
-    result: list[str] = []
-    for unit in plan_units:
-        unit_id = str(getattr(unit, "unit_id", "") or "")
+    plan_order = [
+        unit_id
+        for unit in tuple(getattr(plan, "units", ()) or ())
+        if (unit_id := str(getattr(unit, "unit_id", "") or ""))
+    ]
+    in_plan = set(plan_order)
+
+    verdicts: dict[str, tuple[str, ...]] = {}
+    for unit_id in [item for item in plan_order if item in gap_ids] + sorted(
+        gap_ids - in_plan
+    ):
+        if unit_id not in in_plan:
+            verdicts[unit_id] = (GAP_UNIT_ABSENT_FROM_PLAN,)
+            continue
+        if disqualifying_global:
+            verdicts[unit_id] = (GAP_GLOBAL_ABSTENTION, *disqualifying_global)
+            continue
+        if unit_id not in declared_gap_units:
+            verdicts[unit_id] = (GAP_NOT_DECLARED_BY_INFERENCE,)
+            continue
         unit_codes = {
             str(getattr(item, "code", "") or "")
             for item in reasons
             if str(getattr(item, "unit_id", "") or "") == unit_id
         }
-        if (
-            unit_id in declared_gap_units
-            and "no_safe_sufficient_team" in unit_codes
-            and unit_codes <= allowed
-        ):
-            result.append(unit_id)
-    return tuple(result)
+        own = tuple(sorted(unit_codes - _HIREABLE_GAP_CODES))
+        verdicts[unit_id] = (GAP_EVIDENCE_NOT_HIREABLE, *own) if own else ()
+    return verdicts
+
+
+def _hireable_gap_units(outcome: Any) -> tuple[str, ...]:
+    """Return inference-declared uncovered units whose verifier evidence is clean."""
+
+    return tuple(
+        unit_id for unit_id, disqualifier in _gap_hiring_verdicts(outcome).items() if not disqualifier
+    )
 
 
 def _gap_unit_reason_codes(outcome: Any, unit_id: str) -> tuple[str, ...]:
@@ -1485,18 +1549,18 @@ def _hiring_event(
 
 
 def _all_gap_units(outcome: Any) -> tuple[str, ...]:
-    reasons = tuple(getattr(getattr(outcome, "staffing", None), "abstention_reasons", ()) or ())
-    gap_ids = {
-        str(getattr(reason, "unit_id", "") or "")
-        for reason in reasons
-        if str(getattr(reason, "code", "") or "") == "no_safe_sufficient_team"
-    }
-    plan = getattr(outcome, "plan", None)
-    return tuple(
-        unit_id
-        for unit in tuple(getattr(plan, "units", ()) or ())
-        if (unit_id := str(getattr(unit, "unit_id", "") or "")) in gap_ids
-    )
+    """Return every unit the staffing decision declared an uncovered gap for.
+
+    AR-393: this used to intersect the verifier's unit ids with the plan's, so
+    a decision naming a unit the plan does not contain produced no gap unit, no
+    hiring event, no ``hiring_events`` key on the routing projection and an
+    empty ``hiring_reason_codes`` on the receipt -- a turn that declared a
+    capability gap and said nothing whatsoever about hiring, indistinguishable
+    from a turn where hiring was never relevant. The unit is kept and carries
+    ``gap_unit_absent_from_plan`` instead.
+    """
+
+    return tuple(_gap_hiring_verdicts(outcome))
 
 
 def _complete_gap_hiring_events(
@@ -1510,11 +1574,15 @@ def _complete_gap_hiring_events(
     workforce_changes: int,
     store_available: bool,
 ) -> list[dict[str, Any]]:
-    current_hireable = set(_hireable_gap_units(outcome))
+    verdicts = _gap_hiring_verdicts(outcome)
     for unit_id in initial_gap_units:
         if unit_id in events_by_unit:
             continue
         reason_codes = _gap_unit_reason_codes(outcome, unit_id)
+        # AR-393: the test that disqualified this unit, not the evidence that
+        # passed every test. An empty tuple means the unit is still hireable;
+        # an absent key means the decision no longer declares the gap at all.
+        disqualifier = verdicts.get(unit_id, ())
         if not hiring_allowed:
             if not store_available:
                 reasons = ("hiring_store_unavailable",)
@@ -1522,18 +1590,27 @@ def _complete_gap_hiring_events(
                 reasons = ("hiring_requires_inferred_gap",)
             else:
                 reasons = ("hiring_inference_not_applied",)
-        elif unit_id not in current_hireable:
+        elif unit_id not in verdicts:
+            # The declaration is gone from the decision this loop restaffed.
+            reasons = ("gap_resolved_by_prior_hire",)
+        elif disqualifier:
+            # The unit's own verifier codes follow the verdict only when they
+            # are what disqualified it; otherwise they would be a list of codes
+            # that support the opposite conclusion.
             reasons = (
-                ("gap_resolved_by_prior_hire",)
-                if not reason_codes
-                else ("gap_evidence_not_hireable", *reason_codes)
+                disqualifier
+                if disqualifier[0] != GAP_EVIDENCE_NOT_HIREABLE
+                else (*disqualifier, *reason_codes)
             )
         elif daily_limit_reached:
             reasons = ("daily_hiring_limit_reached",)
         elif workforce_changes >= max_hires:
             reasons = ("task_hiring_limit_reached",)
         else:
-            reasons = ("gap_evidence_not_hireable", *reason_codes)
+            # Still hireable, no limit met, and no attempt was made. The old
+            # code here was gap_evidence_not_hireable, which contradicted the
+            # tuple it had just been computed from.
+            reasons = (GAP_HIRE_NOT_ATTEMPTED, *reason_codes)
         events_by_unit[unit_id] = _hiring_event(unit_id, reason_codes=reasons)
     return [events_by_unit[unit_id] for unit_id in initial_gap_units]
 

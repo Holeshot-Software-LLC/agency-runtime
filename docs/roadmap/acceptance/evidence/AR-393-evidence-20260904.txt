@@ -1,0 +1,53 @@
+AR-393 evidence, 2026-09-04, branch claude/ar393-gap-account
+(the candidate commit is named in docs/roadmap/acceptance/issue-AR-393.md)
+Branch runtime, PYTHONPATH=<worktree>. The three functions are pure over a
+duck-typed outcome, so no provider and no credential are involved below.
+
+== 1. the live baseline this issue was filed on, re-measured read-only ==
+receipts declaring no_safe_sufficient_team : 99
+  ...with EMPTY hiring_reason_codes        : 42
+  ...with a hiring account                 : 57
+silent window: 2026-08-29T13:54:10.563000+00:00 .. 2026-09-03T18:42:33.612000+00:00
+
+== 2. the three reproduced shapes, through the real receipt projection ==
+-- MAIN (before) --
+1. plan absent, reasons name the unit
+   _all_gap_units      = ()
+   _hireable_gap_units = ()
+   events              = []
+   receipt hiring_reason_codes = []
+
+2. proposal row not inference-declared-gap
+   _all_gap_units      = ('u1',)
+   _hireable_gap_units = ()
+   events              = [('u1', ('gap_evidence_not_hireable', 'no_safe_sufficient_team', 'recruiter_abstained'))]
+   receipt hiring_reason_codes = ['hiring_status_not_attempted', 'gap_evidence_not_hireable', 'no_safe_sufficient_team', 'recruiter_abstained']
+
+3. one global selection_confidence_too_low, two clean units
+   _all_gap_units      = ('u1', 'u2')
+   _hireable_gap_units = ()
+   events              = [('u1', ('gap_evidence_not_hireable', 'no_safe_sufficient_team', 'recruiter_abstained')), ('u2', ('gap_evidence_not_hireable', 'no_safe_sufficient_team', 'recruiter_abstained'))]
+   receipt hiring_reason_codes = ['hiring_status_not_attempted', 'gap_evidence_not_hireable', 'no_safe_sufficient_team', 'recruiter_abstained']
+
+-- BRANCH (after) --
+1. plan absent, reasons name the unit
+   _all_gap_units      = ('u1',)
+   _hireable_gap_units = ()
+   events              = [('u1', ('gap_unit_absent_from_plan',))]
+   receipt hiring_reason_codes = ['hiring_status_not_attempted', 'gap_unit_absent_from_plan']
+
+2. proposal row not inference-declared-gap
+   _all_gap_units      = ('u1',)
+   _hireable_gap_units = ()
+   events              = [('u1', ('gap_not_declared_by_inference',))]
+   receipt hiring_reason_codes = ['hiring_status_not_attempted', 'gap_not_declared_by_inference']
+
+3. one global selection_confidence_too_low, two clean units
+   _all_gap_units      = ('u1', 'u2')
+   _hireable_gap_units = ()
+   events              = [('u1', ('gap_global_abstention_code', 'selection_confidence_too_low')), ('u2', ('gap_global_abstention_code', 'selection_confidence_too_low'))]
+   receipt hiring_reason_codes = ['hiring_status_not_attempted', 'gap_global_abstention_code', 'selection_confidence_too_low']
+
+== 3. new suite ==
+..........                                                               [100%]
+10 passed in 0.14s
