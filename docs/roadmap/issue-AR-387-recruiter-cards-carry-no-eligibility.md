@@ -1,6 +1,6 @@
 ---
 title: "AR-387: The recruiter sees cards without their eligibility, so it staffs implementers on plan units and misses the eligible planners"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-09-03
 updated: 2026-09-03
@@ -126,3 +126,11 @@ without regard to the prompt size, are recorded in ADR-0203.
 - [x] On the same eleven install wordings under strict mode, no plan-authority
       unit is rejected `staff_without_safe_team` while an eligible coverer of
       the missing token was among the detail cards.
+
+**Verification (2026-09-03).** The record is frozen at `b349e59b`; the
+isolated codex verifier returned satisfied on all four criteria on its second
+pass (runs `AR-387.1-20260903-b1d3e81d`, `AR-387.2-20260903-b5d19e92`,
+`AR-387.3-20260903-4e61b243`, `AR-387.4-20260903-e19cca6e`), after the first
+pass at `7af9c43b` had contradicted criterion 3 because the repair prompt
+stated the consequence of the eligibility boundary and not its treatment. The
+issue is done.
