@@ -1,6 +1,6 @@
 ---
 title: "AR-394: The recruiter stage ends most staffing turns, and the turns it does not end can staff an unrelated specialist"
-status: open
+status: done
 category: roadmap
 created: 2026-09-04
 updated: 2026-09-04
@@ -112,19 +112,19 @@ criterion 1, AR-393 criterion 5, the install battery — is gated behind it.
 
 ## Acceptance
 
-- [ ] A recruiter rejection names which of the three shapes occurred and, for
+- [x] A recruiter rejection names which of the three shapes occurred and, for
       `staff_without_safe_team`, why the executable count fell short: whether
       the relevant candidates were absent from retrieval or present and
       ineligible.
-- [ ] A unit whose ranked candidates cannot form a safe team is separated in
+- [x] A unit whose ranked candidates cannot form a safe team is separated in
       the receipt from a unit whose recruiter reply was malformed.
-- [ ] Topical fit of an accepted team is measurable: a recorded, reproducible
+- [x] Topical fit of an accepted team is measurable: a recorded, reproducible
       check that would have rejected `roblox-systems-scripter` for a
       rate-limiting unit, or an explicit decision that fit is not the
       verifier's job and belongs to retrieval.
-- [ ] The recruiter profile's `timeout_ms` and its deployments' `timeout` are
+- [x] The recruiter profile's `timeout_ms` and its deployments' `timeout` are
       ordered, with the runtime's deadline no lower than the gateway's.
-- [ ] The reranker's `provider_response_contract_invalid` is either fixed or
+- [x] The reranker's `provider_response_contract_invalid` is either fixed or
       recorded as an accepted degradation with its effect on candidate order
       stated.
 

@@ -16,7 +16,7 @@ supersedes: []
 superseded_by: null
 type: acceptance-verification
 issue_id: AR-394
-candidate_commit: pending
+candidate_commit: c2a923d4021f2b68a1d40696d07ac6d5f5f842b1
 evidence_cutoff: 2026-09-04
 tracker_url: null
 ---
@@ -68,6 +68,11 @@ who failed to supply, which is exactly what the new vocabulary gives.
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
+| 1 | satisfied | `AR-394.1-20260904-5bee4fcc` | `7ac6d03102332cfe73b414ec5d7b3d388822227fc69f0cb8ac2b94c5f219bb85` | 2026-09-04 | Snapshot confirms _safe_team_shortfall (inference.py:3222-3280) separates coverer_absent_from_retrieval from the ineligibility causes, runs at the only staff_without_safe_team site (3336), projects beside reason_code (receipt_projection.py:373-390), tested in test_safe_team_shortfall.py:135-263. |
+| 2 | satisfied | `AR-394.2-20260904-7e9590a9` | `985567edbf393bd820b138b8c264c0c175cbea069bcb119b3404e71511d77de6` | 2026-09-04 | Snapshot confirms inference.py:958-964 refuses a shortfall on any code but staff_without_safe_team and receipt_projection.py:370-377 refuses it again at projection; test_safe_team_shortfall.py:281-316 asserts the short-team row carries the shortfall and counts, the malformed row neither. |
+| 3 | satisfied | `AR-394.3-20260904-38ecb645` | `37a5648fb6ab679d1293ffb6a8e33a3aea16f6ff649857ef5dc068730835b9e8` | 2026-09-04 | ADR-0213 (accepted) explicitly decides the verifier judges safety and retrieval judges fit, rejecting a fit floor; test_retrieval_owns_topical_fit.py:37-52 asserts no topical term among the codes, and staffing_verifier.py:132-168 confirms 33 structural codes including selection_confidence_too_low. |
+| 4 | satisfied | `AR-394.4-20260904-a496a6bb` | `89a6b2e5a6caa0f498ea78a584badb25728a291b59d8a6996451125aedd522ed` | 2026-09-04 | AR-394-evidence-20260904.txt:38-47 shows task-agency-recruiter-v2 deployments at timeout 45.0 live; lines 49-52 show doctor workforce_profile_timeouts reporting agency-recruiter=60s after the raise from 30000ms. config_defaults.yaml:100,122 confirms the mapping, so 60s is not below 45s. |
+| 5 | satisfied | `AR-394.5-20260904-cab13501` | `c5806c3c4190549380991418263356826857d739963b9377b6a6b39e938f7dcd` | 2026-09-04 | ADR-0213 (status accepted) lines 89-97 record the 29/142 contract-invalid rate as accepted and state its order effect: additive mode never reorders, so the cost is a smaller candidate set; inference.py:2742-2743 returns the baseline unchanged and the AR-394 c5 test asserts that. |
 
 ## Builder notes
 
