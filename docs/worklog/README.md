@@ -1791,6 +1791,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `e12c1bdd` | 2026-09-04 | Merge pull request #629 from Holeshot-Software-LLC/claude/ar396-ledger | null | null |
 | `9ea0f2ad` | 2026-09-04 | docs(roadmap): refresh the AR-383 capsule for the recruiter blocker | null | null |
 | `242ab4cf` | 2026-09-04 | Merge pull request #630 from Holeshot-Software-LLC/claude/ar383-capsule-refresh | null | null |
+| `d757c3b9` | 2026-09-04 | Merge pull request #631 from Holeshot-Software-LLC/claude/capsule-ledger | null | null |
+| `5e08435b` | 2026-09-04 | docs(ar370): record why criterion 1 is a roster addition | [AR-370](../roadmap/issue-AR-370-staffing-asks-the-wrong-question.md) | Both phrases score 0.0 against all 291 live contracts and fall back to slug order; the two cards the corpus retrieves for them are eval fixtures only and the live roster has no operations division, so criterion 1 is a roster addition through the agency-runtime source and then a staffed turn, both owner steps. |
 <!-- worklog:end -->
 
 ## Provenance notes
