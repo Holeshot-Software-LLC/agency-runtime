@@ -1,6 +1,6 @@
 ---
 title: "AR-395: Three real inference stages are not in the receipt's stage vocabulary, so their attempts are recorded as unknown"
-status: open
+status: done
 category: roadmap
 created: 2026-09-04
 updated: 2026-09-04
@@ -89,14 +89,14 @@ and attributes them to nothing.
 
 ## Acceptance
 
-- [ ] `PREFLIGHT_PROVIDER_STAGES` contains every label the runtime passes to
+- [x] `PREFLIGHT_PROVIDER_STAGES` contains every label the runtime passes to
       `_invoke_stage`, in `inference.py` and `hiring.py` alike.
-- [ ] A test asserts that set equality directly against the labels found in
+- [x] A test asserts that set equality directly against the labels found in
       the source, so a stage added later fails the suite rather than degrading
       into `unknown`.
-- [ ] A receipt written for a turn whose subject stage ran names `subject` on
+- [x] A receipt written for a turn whose subject stage ran names `subject` on
       those attempts.
-- [ ] `unknown` remains reachable, and still means a stage the projection
+- [x] `unknown` remains reachable, and still means a stage the projection
       could not read.
 
 ## Rejected alternatives

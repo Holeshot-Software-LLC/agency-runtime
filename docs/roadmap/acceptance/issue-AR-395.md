@@ -14,7 +14,7 @@ supersedes: []
 superseded_by: null
 type: acceptance-verification
 issue_id: AR-395
-candidate_commit: pending
+candidate_commit: eeb98653b9f33a1b6ccba3e307a9347476b67d3d
 evidence_cutoff: 2026-09-04
 tracker_url: null
 ---
@@ -62,6 +62,10 @@ measured.
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
+| 1 | satisfied | `AR-395.1-20260904-ee3939f4` | `88f86b6ead030b0a878de55979d0632efa6fe348edda28e19540995a7996b0f8` | 2026-09-04 | A snapshot scan of every literal stage= label in inference.py and hiring.py yields 12 labels, all in PREFLIGHT_PROVIDER_STAGES (preflight_failure.py:123-141); the only variable stage= sites forward the caller's literal, and tests/test_preflight_stage_vocabulary.py:92-95 pins set equality. |
+| 2 | satisfied | `AR-395.2-20260904-43237815` | `3c3a88c3f874da9e07d7e4a4676de5098dee93e0d93e36d6ca8cb7fd19401c25` | 2026-09-04 | tests/test_preflight_stage_vocabulary.py:95 asserts AST-scanned stage= labels from inference.py/hiring.py plus 3 named non-invocation members equal PREFLIGHT_PROVIDER_STAGES; I confirmed the 12 source labels plus 3 match the 15-member allowlist, and lines 84-89 guard the scan from passing vacuously. |
+| 3 | satisfied | `AR-395.3-20260904-d7a7ca4b` | `10fc69877a206948ff5fdf32fed7b77f6838ae28114b21f9e03a794b1de343fa` | 2026-09-04 | tests/test_preflight_stage_vocabulary.py:113-133 projects a "subject" attempt and asserts the stage is kept; preflight_failure.py:127 allowlists "subject" and lines 268-271 rewrite only non-allowlisted stages, while inference.py:4402 passes stage="subject". |
+| 4 | satisfied | `AR-395.4-20260904-df041ba7` | `6e813f2d260959c42a60ed7505514ea04b94d4d3990c65b593de9b66025257b7` | 2026-09-04 | Snapshot shows preflight_failure.py:123-141 lists "unknown" in PREFLIGHT_PROVIDER_STAGES and 268-270 rewrite any unreadable or non-allowlisted stage to "unknown"; test_preflight_stage_vocabulary.py:136-152 projects an undeclared stage and asserts it reads "unknown" and is a member. |
 
 ## Builder notes
 
