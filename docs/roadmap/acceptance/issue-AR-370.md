@@ -100,6 +100,19 @@ retrieve a relevant specialist from the live 291-contract roster without the
 user supplying vocabulary. That needs a staffed turn, and staffing was
 unavailable throughout this session.
 
+**Roster addition, not a scoring change.** Measured again on 2026-09-04
+(evidence section 7): both phrases score 0.0 against all 291 live contracts
+and fall back to slug order, `3d-scene-developer` first. The corpus retrieves
+`service-operations-engineer` and `monitoring-engineer` for these verbs, and
+neither exists live: they are eval fixtures in `routing_v1.py`, and the live
+roster has no operations division at all across its three sources. No change
+to scoring can retrieve a card that is not there, and the corpus already
+proves the scorer finds the right card once it exists. What criterion 1 needs
+is the two operations contracts in the live roster -- authored through the
+`agency-runtime` source the bundled roster already carries 26 contracts from
+-- and then a staffed turn. Both are owner steps: roster curation is governed
+content with an audit and a prompt, and staffing is gated on AR-394.
+
 The eight verb cases are measured against the 18-card corpus catalog, not the
 live roster. They guard the property the fix depends on; they are not a
 substitute for the live measurement.
