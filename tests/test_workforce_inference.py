@@ -2475,6 +2475,9 @@ def test_staff_decision_without_safe_team_gets_one_bounded_inference_repair() ->
     assert outcome.attempts[1].validation_detail == (
         "workforce nomination failures: unit-analyze=staff_without_safe_team:artifact"
         "~wrong-neighbor~technical-analyst~analysis-alternative!1:1:4"
+        # AR-394: slots remain and a shown card covers what the team left
+        # uncovered, so the shortfall names the reply, not retrieval.
+        "+retrieved_coverer_not_selected"
     )
     assert project_nomination_failures(outcome.attempts[1].validation_detail) == [
         {
@@ -2482,6 +2485,7 @@ def test_staff_decision_without_safe_team_gets_one_bounded_inference_repair() ->
             "reason_code": "staff_without_safe_team",
             "requirement_axis": "artifact",
             "ranked_agent_ids": "wrong-neighbor~technical-analyst~analysis-alternative",
+            "safe_team_shortfall": "retrieved_coverer_not_selected",
             "required_agent_count": 1,
             "ranked_executable_count": 1,
             "maximum_selected_per_unit": 4,
@@ -2576,6 +2580,9 @@ def test_repair_exposes_required_budget_starvation_without_selecting_a_team() ->
     assert outcome.attempts[1].validation_detail == (
         "workforce nomination failures: unit-analyze=staff_without_safe_team"
         "~partial-1~partial-2~partial-3~partial-4~technical-analyst!4:5:4"
+        # AR-394: required exactly fills the four slots, so no complement
+        # could be added however well retrieval surfaced one.
+        "+complement_slots_exhausted"
     )
     feedback = json.loads(prompts[2].partition("[RUNTIME VALIDATION FEEDBACK]\n")[2])
     safe_team = feedback["failed_units"][0]["safe_team_contract"]

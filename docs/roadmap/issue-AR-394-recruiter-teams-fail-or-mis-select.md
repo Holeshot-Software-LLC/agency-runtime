@@ -12,6 +12,7 @@ related:
   - docs/roadmap/issue-AR-395-preflight-stage-vocabulary-is-incomplete.md
   - docs/roadmap/issue-AR-396-a-non-json-reply-gets-no-second-ask.md
   - docs/decisions/0207-tell-the-recruiter-how-its-ranking-becomes-the-team.md
+  - docs/decisions/0213-the-verifier-judges-safety-retrieval-judges-fit.md
   - agency_runtime/core/workforce/staffing_verifier.py
   - agency_runtime/core/workforce/inference.py
 supersedes: []
@@ -109,22 +110,23 @@ unstaffed because the recruiter stage cannot produce a team the verifier will
 accept. Every downstream measurement that needs a staffed turn — AR-370
 criterion 1, AR-393 criterion 5, the install battery — is gated behind it.
 
-## Acceptance criteria
+## Acceptance
 
-1. A recruiter rejection names which of the three shapes occurred and, for
-   `staff_without_safe_team`, why the executable count fell short: whether the
-   relevant candidates were absent from retrieval or present and ineligible.
-2. A unit whose ranked candidates cannot form a safe team is separated in the
-   receipt from a unit whose recruiter reply was malformed.
-3. Topical fit of an accepted team is measurable: a recorded, reproducible
-   check that would have rejected `roblox-systems-scripter` for a rate-limiting
-   unit, or an explicit decision that fit is not the verifier's job and belongs
-   to retrieval.
-4. The recruiter profile's `timeout_ms` and its deployments' `timeout` are
-   ordered, with the runtime's deadline no lower than the gateway's.
-5. The reranker's `provider_response_contract_invalid` is either fixed or
-   recorded as an accepted degradation with its effect on candidate order
-   stated.
+- [ ] A recruiter rejection names which of the three shapes occurred and, for
+      `staff_without_safe_team`, why the executable count fell short: whether
+      the relevant candidates were absent from retrieval or present and
+      ineligible.
+- [ ] A unit whose ranked candidates cannot form a safe team is separated in
+      the receipt from a unit whose recruiter reply was malformed.
+- [ ] Topical fit of an accepted team is measurable: a recorded, reproducible
+      check that would have rejected `roblox-systems-scripter` for a
+      rate-limiting unit, or an explicit decision that fit is not the
+      verifier's job and belongs to retrieval.
+- [ ] The recruiter profile's `timeout_ms` and its deployments' `timeout` are
+      ordered, with the runtime's deadline no lower than the gateway's.
+- [ ] The reranker's `provider_response_contract_invalid` is either fixed or
+      recorded as an accepted degradation with its effect on candidate order
+      stated.
 
 ## Rejected alternatives
 
