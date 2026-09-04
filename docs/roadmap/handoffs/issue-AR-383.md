@@ -124,8 +124,8 @@ Both reach the receipt as one code. `structured_provider` catches every
 transport exception and returns `None`, and the stage loop records
 `provider_no_valid_response`, so a timeout the runtime itself caused is
 indistinguishable from a malformed reply. That is the AR-388 and AR-304 shape
-in a fourth place, and it is the next filing: name the timeout on the attempt,
-and set `timeout_ms` and the deployment timeout in the right order (operator
+in a fourth place, filed as AR-392: name the timeout on the attempt, and set
+`timeout_ms` and the deployment timeout in the right order (operator
 configuration either way).
 
 ## same-task-continuity
@@ -152,10 +152,10 @@ The previous capsules' traps hold. Four more:
 
 In this order.
 
-1. **Owner steps**: tracker issues for AR-384 to AR-391, closure of #537, and
+1. **Owner steps**: tracker issues for AR-384 to AR-392, closure of #537, and
    `agency battery` with the key sourced.
-2. **File the deployment-residue lift** above: the receipt cannot tell a
-   runtime timeout from a malformed reply.
+2. **Implement AR-392**, filed 2026-09-04 from the residue above: the receipt
+   cannot tell a runtime timeout from a malformed reply.
 3. **The 4-of-5 gap divergence**, then **AR-370**.
 
 ## verification
