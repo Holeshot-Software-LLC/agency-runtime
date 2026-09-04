@@ -1778,6 +1778,10 @@ This registry connects repository history to the roadmap and to optional detail 
 | `ea00e607` | 2026-09-04 | docs(roadmap): record the AR-393 declared-gap acceptance evidence | null | null |
 | `0e5a96f3` | 2026-09-04 | fix(selector): give retrieval a subject and name the empty turn | null | null |
 | `a10f6b11` | 2026-09-04 | docs(roadmap): record the AR-370 retrieval-subject acceptance evidence | null | null |
+| `e733f3cc` | 2026-09-04 | Merge pull request #624 from Holeshot-Software-LLC/claude/ar392-transport-causes | null | null |
+| `423f2bb8` | 2026-09-04 | Merge pull request #625 from Holeshot-Software-LLC/claude/ar393-gap-account | null | null |
+| `afe1a92e` | 2026-09-04 | Merge pull request #626 from Holeshot-Software-LLC/claude/ar370-retrieval-subject | null | null |
+| `76ce57b2` | 2026-09-04 | docs(roadmap): record the AR-392/393/370 acceptance verdicts and live measurements | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
