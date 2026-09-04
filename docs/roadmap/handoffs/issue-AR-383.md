@@ -75,10 +75,10 @@ keep.
 | thirty-prompt smoke: subject-stage turns | 17 | 17 |
 | of those, dense recall lost to a refused projection | 17 | **0** |
 
-- **Install**: venv `b1c2b557` built at the AR-383 close. Run `agency install`
-  itself WITHOUT the key; codex needs the attended `Trust all and continue` in
-  a fresh `codex` TUI, then `agency install --agent codex --verify-activation`
-  with `common.env` sourced.
+- **Install**: venv `04adb230` (merged main) built at the AR-383 close; claude
+  installed and wired. Run `agency install` itself WITHOUT the key; codex needs
+  the attended `Trust all and continue` in a fresh `codex` TUI, then `agency
+  install --agent codex --verify-activation` with `common.env` sourced.
 - **Launch environment**: still the first thing to check. `/clear` reuses the
   running process, so a key exported after launch never reaches the hooks; read
   `/proc/<pid>/environ` before suspecting the gateway. A session whose staffing

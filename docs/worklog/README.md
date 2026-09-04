@@ -1761,6 +1761,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `b1c2b557` | 2026-09-04 | Merge pull request #617 from Holeshot-Software-LLC/claude/ar383-subject-beside-context | null | null |
 | `217dc5a9` | 2026-09-04 | docs(ar383): freeze the acceptance record at 169220ce | null | null |
 | `e8a0c388` | 2026-09-04 | docs(ar383): flip AR-383 to done and refresh the capsule | [AR-383](../roadmap/issue-AR-383-inferred-subject-context-fails-its-own-projection.md) | The isolated verifier returned all five criteria satisfied on the first pass at 169220ce, so AR-383 flips to done under ADR-0208; the capsule is refreshed for the AR-391 and AR-383 closes, with the deployment residue split into the runtime timeout below the gateway's and one deployment's misplaced brace, both of which reach the receipt as provider_no_valid_response. |
+| `04adb230` | 2026-09-04 | Merge pull request #618 from Holeshot-Software-LLC/claude/ar383-flip | null | null |
+| `06542780` | 2026-09-04 | docs(ar383): name the installed venv in the capsule | [AR-383](../roadmap/issue-AR-383-inferred-subject-context-fails-its-own-projection.md) | The capsule named venv b1c2b557, which was main before its own flip merged; the venv built and installed is 04adb230 and its launcher publishes that source root for the claude host. The same slip was corrected for the AR-390 close in PR #610. |
 <!-- worklog:end -->
 
 ## Provenance notes
