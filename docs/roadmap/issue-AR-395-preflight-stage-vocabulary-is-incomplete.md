@@ -87,17 +87,17 @@ the one ADR-0197 and ADR-0208 added — that falls into it. Any per-stage
 measurement taken from receipts today undercounts the planner-provider calls
 and attributes them to nothing.
 
-## Acceptance criteria
+## Acceptance
 
-1. `PREFLIGHT_PROVIDER_STAGES` contains every label the runtime passes to
-   `_invoke_stage`, in `inference.py` and `hiring.py` alike.
-2. A test asserts that set equality directly against the labels found in the
-   source, so a stage added later fails the suite rather than degrading into
-   `unknown`.
-3. A receipt written for a turn whose subject stage ran names `subject` on
-   those attempts.
-4. `unknown` remains reachable, and still means a stage the projection could
-   not read.
+- [ ] `PREFLIGHT_PROVIDER_STAGES` contains every label the runtime passes to
+      `_invoke_stage`, in `inference.py` and `hiring.py` alike.
+- [ ] A test asserts that set equality directly against the labels found in
+      the source, so a stage added later fails the suite rather than degrading
+      into `unknown`.
+- [ ] A receipt written for a turn whose subject stage ran names `subject` on
+      those attempts.
+- [ ] `unknown` remains reachable, and still means a stage the projection
+      could not read.
 
 ## Rejected alternatives
 
