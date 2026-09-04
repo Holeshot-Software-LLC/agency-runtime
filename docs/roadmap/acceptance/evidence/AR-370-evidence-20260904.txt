@@ -82,3 +82,25 @@ stack nouns remaining in the selector package (excluding provider-adapter names)
 == 6. suites ==
 .                                                                        [100%]
 73 passed in 7.87s
+
+== 7. criterion 1 against the live roster, 2026-09-04, key-free ==
+   `agency search` from venv e12c1bdd (the hooks' runtime) against the installed
+   configuration and the live 291-contract roster; deterministic retrieval, no provider call.
+   $ agency search 'configure the gateway' --limit 3
+     0.0	3d-scene-developer
+     0.0	accessibility-auditor
+     0.0	account-strategist
+   $ agency search 'install this: https://example.com/tool' --limit 3
+     0.0	3d-scene-developer
+     0.0	accessibility-auditor
+     0.0	account-strategist
+   every score is 0.0 and the order is alphabetical: 3d-scene-developer leads both, which is
+   the slug-order fallback the issue describes.
+
+   live roster: 291 contracts; sources: https://github.com/msitarzewski/agency-agents=263, agency-runtime=26, https://github.com/affaan-m/ECC=2
+   the two cards the corpus retrieves for these verbs, in the live roster:
+     service-operations-engineer: 0
+     monitoring-engineer: 0
+   divisions live: specialized=82, engineering=56, marketing=36, game-development=20, gis=13, security=12, testing=9, sales=9, design=9, paid-media=7, project-management=7, support=6, academic=6, spatial-computing=6, product=5, finance=5, healthcare=3
+   there is no operations division; the corpus cards exist only as eval fixtures in
+   core/evals/data/routing_v1.py (7 and 4 cases name them), never as contracts.
