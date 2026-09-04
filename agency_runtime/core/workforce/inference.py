@@ -669,6 +669,10 @@ _NOMINATION_RANK_SCHEMA = _closed_object(
         "negative_evidence",
     ),
 )
+# The recruiter ranks at most this many candidates per unit; the selection is
+# drawn from them. The critic's compact cards (AR-389) are bounded by the same
+# figure, so every eligible worker the recruiter ranked or selected has a card.
+MAX_NOMINATION_RANKED_PER_UNIT: Final[int] = 16
 _NOMINATION_ROW_SCHEMA = _closed_object(
     {
         "unit_id": {
@@ -680,7 +684,7 @@ _NOMINATION_ROW_SCHEMA = _closed_object(
         "decision": {"enum": ["staff", "gap"], "type": "string"},
         "ranked_semantic": {
             "items": _NOMINATION_RANK_SCHEMA,
-            "maxItems": 16,
+            "maxItems": MAX_NOMINATION_RANKED_PER_UNIT,
             "type": "array",
         },
     },
@@ -3820,10 +3824,12 @@ def _critic_rejected_staffing(critic_reasons: Sequence[str]) -> StaffingDecision
 # runtime could actually have staffed on the unit. The identity list is complete
 # by construction: the eligible set is a subset of the enabled roster, which the
 # runtime already bounds at MAX_ACTIVE_ROSTER_SIZE, so no unranked neighbour is
-# ever cut from it. The compact cards are bounded; identity order throughout: a
-# boundary, never a ranking.
+# ever cut from it. The compact cards cover every eligible worker the recruiter
+# ranked or selected, because the recruiter's reply carries at most
+# MAX_NOMINATION_RANKED_PER_UNIT ranked rows per unit and the selection is drawn
+# from them. Identity order throughout: a boundary, never a ranking.
 _MAX_CRITIC_NEIGHBOURHOOD_IDS: Final[int] = MAX_ACTIVE_ROSTER_SIZE
-_MAX_CRITIC_NEIGHBOURHOOD_CARDS: Final[int] = 16
+_MAX_CRITIC_NEIGHBOURHOOD_CARDS: Final[int] = MAX_NOMINATION_RANKED_PER_UNIT
 _RECRUITMENT_RANK_FIELDS: Final[tuple[str, ...]] = (
     "required",
     "acceptable",

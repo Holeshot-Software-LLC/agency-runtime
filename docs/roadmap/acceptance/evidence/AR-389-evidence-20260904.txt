@@ -75,3 +75,9 @@ replay sent cache: {"no-cache": true} so the LiteLLM response cache could not re
           cards, and the ids a cap of 64 cuts are exactly the unranked neighbours the list exists to name. The identity list
           is now complete by construction, bounded only by MAX_ACTIVE_ROSTER_SIZE (the roster's own limit), the criterion and
           ADR-0205 say so, and the 70-planner test asserts all seventy ids in identity order.
+  pass 3 (candidate 1bf3858d): criteria 2, 3, 4 satisfied; criterion 1 contradicted ("slices ranked-or-selected eligible cards to
+          16, so it does not guarantee cards for every such worker as required"). The recruiter's reply carries at most 16
+          ranked rows per unit (the nomination schema's maxItems) and the selection is drawn from them, so a bound of 16 never
+          cut a card; the link was invisible because the two figures were unrelated literals. The schema bound is now the
+          named constant MAX_NOMINATION_RANKED_PER_UNIT, the card bound is that constant, a test pins both bounds to their
+          sources, and the criterion says the cards cover every eligible worker the recruiter ranked or selected.

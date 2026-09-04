@@ -53,8 +53,10 @@ verdict became evidence-based in both directions.
    the roster's own size limit (`MAX_ACTIVE_ROSTER_SIZE`), with
    `eligible_count` carrying the size; `ranked_eligible_cards`
    carries compact cards (identity, archetype, authority, domains, two
-   outcomes, two `not_for` lines) for the eligible workers the recruiter
-   ranked or selected on that unit, identity-sorted and bounded to 16;
+   outcomes, two `not_for` lines) for every eligible worker the recruiter
+   ranked or selected on that unit, identity-sorted, bounded by the
+   recruiter's own per-unit ranking bound (`MAX_NOMINATION_RANKED_PER_UNIT`,
+   the nomination schema's limit) so none is ever cut;
    `selected_are_whole_neighbourhood` says when no other eligible card exists.
 2. **The contract and the prompt state the boundary.** `critic_contract`
    gains `wrong_neighbor_must_name_an_eligible_card` and
@@ -76,8 +78,8 @@ verdict became evidence-based in both directions.
   job; vetoes that named an ineligible implementer dissolve.
 - The critic prompt grows by the identity lists and the ranked cards, a few
   kilobytes on documents of thirteen to twenty; the identity list grows with
-  the eligible set (68 ids on this roster's advise units), the cards are
-  bounded, and the roster's own size limit bounds the whole.
+  the eligible set (68 ids on this roster's advise units), the cards by the
+  recruiter's ranking bound, and the roster's own size limit bounds the whole.
 - The recruiter (ADR-0203) and the critic now read the same boundary; a
   disagreement between them is about fit, not about who was eligible.
 - Measured live on the eleven install wordings (2026-09-04): six completions
