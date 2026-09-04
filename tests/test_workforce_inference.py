@@ -38,6 +38,7 @@ from agency_runtime.core.workforce.hybrid_recall import clear_hybrid_recall_cach
 from agency_runtime.core.workforce.inference import (
     _RECRUITER_REPAIR_SYSTEM,
     _RECRUITER_SYSTEM,
+    _STAFFING_VIOLATION_REPAIR_REQUIREMENTS,
     NOMINATION_RESPONSE_SCHEMA,
     PLAN_RESPONSE_SCHEMA,
     WorkforceInferenceAttempt,
@@ -2656,7 +2657,13 @@ def test_whole_team_verifier_rejection_gets_one_bounded_recruiter_repair() -> No
     )
     feedback = json.loads(prompts[2].partition("[RUNTIME VALIDATION FEEDBACK]\n")[2])
     assert feedback["staffing_violations"] == [
-        {"unit_id": "", "code": "selected_agent_budget_exceeded"},
+        {
+            "unit_id": "",
+            "code": "selected_agent_budget_exceeded",
+            "required_correction": _STAFFING_VIOLATION_REPAIR_REQUIREMENTS[
+                "selected_agent_budget_exceeded"
+            ],
+        },
         {"unit_id": "", "code": "loaded_agent_budget_exceeded"},
     ]
     assert outcome.staffing.units[0].selected == ("technical-analyst",)

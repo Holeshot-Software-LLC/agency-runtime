@@ -92,6 +92,22 @@ detail cards the verifier's eligibility admits for that unit, and
 cards covering each requirement the ranked executable team left uncovered.
 Both are facts from the verifier, never a ranking.
 
+**Team derivation, as the prompt states it (AR-391 / ADR-0207).** The runtime
+derives each unit's team as every required candidate plus, only when a typed
+requirement is still uncovered, the fewest acceptable candidates in rank order
+that cover it; it never adds one for fit. The ranking is read as order alone
+(`_calibrated_rankings`: rank one scores 1.0, each later rank
+`_rank_score_step` lower), a unit's confidence is the rank score of its
+lowest-ranked selected worker, coverage complements included, and its margin
+is that confidence less the best alternative team's. `response_contract`
+carries those facts with the verifier's numbers (`rank_score_step`,
+`minimum_confidence`, `minimum_margin`); each typed recall row's
+`sole_eligible_coverers` names every requirement exactly one eligible card
+covers, the card every safe team must hold; and a whole-team verifier
+rejection's feedback carries per violated unit a `required_correction` and
+the `derived_team` (selected, required, `runtime_added_for_typed_coverage`,
+confidence, margin, `lowest_ranked_selected`) beside the code.
+
 **Recruiter system prompt** (the planner shares the same call shape
 without a system prompt):
 none — the prompt is the JSON dictionary. The recruiter model

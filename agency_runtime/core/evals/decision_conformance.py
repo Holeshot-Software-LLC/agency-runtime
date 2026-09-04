@@ -356,6 +356,44 @@ class _NominationSemantics:""",
         ),
     ),
     DecisionMutation(
+        mutation_id="staffing-feedback-hides-the-derived-team",
+        invariant=(
+            "A whole-team verifier rejection shows the recruiter the team the runtime derived "
+            "for the failed unit, so the member that set the confidence is named beside the "
+            "code (ADR-0207)."
+        ),
+        source_path="agency_runtime/core/workforce/inference.py",
+        before="""    derived = error.derived_rows.get(failure.unit_id)
+    if derived is not None:
+        row["derived_team"] = derived.as_prompt_dict()
+    return row""",
+        after="""    derived = error.derived_rows.get(failure.unit_id)
+    if derived is not None:
+        row["derived_team"] = {}
+    return row""",
+        test_node=(
+            "tests/test_team_derivation_account.py::"
+            "test_a_whole_team_rejection_shows_the_derived_team_and_the_correction"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="recall-row-hides-the-sole-eligible-coverer",
+        invariant=(
+            "Each typed recall row names the requirements exactly one eligible card covers, "
+            "so the card every safe team must hold is a stated fact and not an inference over "
+            "the candidate rows (ADR-0207)."
+        ),
+        source_path="agency_runtime/core/workforce/inference.py",
+        before="""            if len(coverers) == 1
+        }""",
+        after="""            if len(coverers) == 0
+        }""",
+        test_node=(
+            "tests/test_team_derivation_account.py::"
+            "test_each_recall_row_names_the_requirements_only_one_eligible_card_covers"
+        ),
+    ),
+    DecisionMutation(
         mutation_id="recruiter-card-hides-outcomes-past-two",
         invariant=(
             "The card the recruiter reads carries every outcome the contract declares, so "
