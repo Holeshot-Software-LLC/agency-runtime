@@ -20,7 +20,7 @@ staffing_verifier.verify_staffing with the store copy, the captured plan and hos
   Turn 305, plan unit (authority plan, domain operations): six eligible planners all covering every requirement;
   operations-manager required alone (0.92, the SRE acceptable 0.55); verifier accepted; critic vetoed.
 
-== 2. Offline replays of the three recruiter calls, three trials each, derived through the verifier ==
+== 2. Offline replays, three trials each, every call with the gateway cache bypassed (cache: no-cache), derived through the verifier ==
   Baseline (installed prompt and contract; scratchpad replay_<turn>_baseline.json):
     203 review unit: verifier required + analyzer 4th -> invalid_ranking on another unit; verifier + reality checker
         required, analyzer 4th -> selection_confidence_too_low (confidence 0.7); reality checker required, analyzer
@@ -109,3 +109,10 @@ staffing_verifier.verify_staffing with the store copy, the captured plan and hos
   spine 1165 passed, 3 skipped under -W error; mutation snippets 180 checked, none stale; decision-conformance 180 of
   180 killed with the tree unchanged and a clean baseline (curated mutations staffing-feedback-hides-the-derived-team
   and recall-row-hides-the-sole-eligible-coverer, both killed).
+
+== 5. Isolated verifier, pass 1 at d3bea30f (2026-09-04, provider codex) ==
+  Criteria 2, 4 and 5 satisfied (runs AR-391.2-20260904-5b0885ec, AR-391.4-20260904-77288403, AR-391.5-20260904-0f981d85).
+  Criterion 1 absent: the excerpts did not show the verifier applying its minimum confidence or margin; the record now
+  cites staffing_verifier._budgets. Criterion 3 absent: the repair prompt did not state that required is the team; the
+  phrase is now in both prompts and the test asserts it in both. Criterion 6 absent: the cited ranges did not establish
+  the cache bypass; the preamble and the section header now say it and the record cites them.
