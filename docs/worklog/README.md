@@ -1774,6 +1774,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `82a85f48` | 2026-09-04 | Merge pull request #623 from Holeshot-Software-LLC/claude/ar370-operational-verbs | null | null |
 | `03e302a5` | 2026-09-04 | fix(workforce): name the transport cause instead of one code | null | null |
 | `110cc09c` | 2026-09-04 | docs(roadmap): record the AR-392 acceptance evidence | null | null |
+| `d7106be1` | 2026-09-04 | fix(workforce): account for every declared gap | null | null |
+| `ea00e607` | 2026-09-04 | docs(roadmap): record the AR-393 declared-gap acceptance evidence | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
