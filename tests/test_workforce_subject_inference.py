@@ -87,7 +87,7 @@ def test_a_readable_request_never_buys_the_classification_call(
 ) -> None:
     monkeypatch.setattr(workforce_inference, "infer_work_subject_hints", _no_call)
 
-    context, revision, attempts = workforce_inference._with_inferred_subject(
+    context, revision, attempts, _subject = workforce_inference._with_inferred_subject(
         {},
         "rev-0",
         request="anything",
@@ -106,7 +106,7 @@ def test_a_prior_turn_subject_is_never_overwritten(monkeypatch: pytest.MonkeyPat
     monkeypatch.setattr(workforce_inference, "infer_work_subject_hints", _no_call)
     prior = {"workforce_subject_hints": {"domains": ["software-engineering"]}}
 
-    context, revision, attempts = workforce_inference._with_inferred_subject(
+    context, revision, attempts, _subject = workforce_inference._with_inferred_subject(
         prior,
         "rev-1",
         request="configure the gateway",
@@ -135,7 +135,7 @@ def test_an_unreadable_request_gains_the_typed_subject(monkeypatch: pytest.Monke
         lambda *_args, **_kwargs: (hints, ["attempt"]),
     )
 
-    context, revision, attempts = workforce_inference._with_inferred_subject(
+    context, revision, attempts, subject = workforce_inference._with_inferred_subject(
         {},
         "rev-0",
         request="configure the gateway",
@@ -147,7 +147,10 @@ def test_an_unreadable_request_gains_the_typed_subject(monkeypatch: pytest.Monke
         required=True,
     )
 
-    assert context["workforce_subject_hints"] == hints
+    # AR-383 / ADR-0208: the subject rides beside the context, which stays the
+    # fresh turn's empty projection rather than a single-key mapping.
+    assert context == {}
+    assert subject == hints
     assert revision != "rev-0"
     assert attempts == ["attempt"]
 
@@ -161,7 +164,7 @@ def test_an_honest_empty_answer_keeps_its_attempts_and_changes_nothing(
         lambda *_args, **_kwargs: ({}, ["attempt"]),
     )
 
-    context, revision, attempts = workforce_inference._with_inferred_subject(
+    context, revision, attempts, subject = workforce_inference._with_inferred_subject(
         {},
         "rev-0",
         request="configure the gateway",
@@ -173,7 +176,7 @@ def test_an_honest_empty_answer_keeps_its_attempts_and_changes_nothing(
         required=True,
     )
 
-    assert (context, revision) == ({}, "rev-0")
+    assert (context, revision, subject) == ({}, "rev-0", {})
     assert attempts == ["attempt"]
 
 

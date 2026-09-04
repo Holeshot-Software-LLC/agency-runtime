@@ -22,6 +22,8 @@ from agency_runtime.core.roster.limits import MAX_ACTIVE_ROSTER_SIZE
 from agency_runtime.core.roster.source_safety import scan_source_text
 from agency_runtime.core.turn_routing_context import (
     project_turn_routing_context,
+    project_workforce_subject_hints,
+    turn_routing_context_rejection,
 )
 from agency_runtime.core.workforce.contract import WorkforceContract
 from agency_runtime.core.workforce.embedding_provider import (
@@ -228,9 +230,35 @@ def project_contract_document(contract: WorkforceContract) -> RecallDocument:
     return RecallDocument(contract.agent_id, text, _hash(text))
 
 
-def _context_fields(context: Mapping[str, Any]) -> list[tuple[str, object]]:
-    fields: list[tuple[str, object]] = []
+class RecallProjectionError(ValueError):
+    """A recall query could not be projected; ``reason_code`` says which validation refused it."""
+
+    def __init__(self, reason_code: str) -> None:
+        self.reason_code = reason_code
+        super().__init__(f"turn_routing_context is malformed or unbounded: {reason_code}")
+
+
+def _effective_subject(
+    context: Mapping[str, Any], inferred_subject: Mapping[str, Any] | None
+) -> Mapping[str, Any] | None:
+    """The subject a query carries: the prior turn's, else the one inferred for this turn.
+
+    AR-383 / ADR-0208: an inferred subject rides beside the projected context
+    instead of inside it, so a fresh turn's context stays the empty projection
+    and the subject still reaches the query. A prior turn's plan-derived hints
+    are never overwritten.
+    """
+
     subject = context.get("workforce_subject_hints")
+    if isinstance(subject, Mapping) and subject:
+        return subject
+    if inferred_subject:
+        return project_workforce_subject_hints(inferred_subject)
+    return None
+
+
+def _context_fields(subject: Mapping[str, Any] | None) -> list[tuple[str, object]]:
+    fields: list[tuple[str, object]] = []
     if isinstance(subject, Mapping):
         for name in _SUBJECT_FIELDS:
             values = subject.get(name, [])
@@ -239,8 +267,7 @@ def _context_fields(context: Mapping[str, Any]) -> list[tuple[str, object]]:
     return fields
 
 
-def _subject_context_revision(context: Mapping[str, Any]) -> str:
-    subject = context.get("workforce_subject_hints")
+def _subject_context_revision(subject: Mapping[str, Any] | None) -> str:
     if not isinstance(subject, Mapping) or not subject:
         return ""
     encoded = json.dumps(
@@ -256,8 +283,14 @@ def project_unit_query(
     plan: WorkUnitPlan,
     unit: WorkUnit,
     turn_routing_context: Mapping[str, Any] | None = None,
+    *,
+    inferred_subject: Mapping[str, Any] | None = None,
 ) -> RecallQuery:
-    """Project one planned unit plus safe same-session subject context."""
+    """Project one planned unit plus safe same-session subject context.
+
+    ``inferred_subject`` is the typed subject the runtime classified for this
+    turn (ADR-0197); it is carried beside the context, never merged into it.
+    """
 
     if not isinstance(plan, WorkUnitPlan) or not isinstance(unit, WorkUnit):
         raise TypeError("hybrid recall query requires a work-unit plan and unit")
@@ -265,8 +298,9 @@ def project_unit_query(
         raise ValueError("hybrid recall query unit is absent from its plan")
     projected_context = project_turn_routing_context(turn_routing_context)
     if projected_context is None:
-        raise ValueError("turn_routing_context is malformed or unbounded")
-    context_revision = _subject_context_revision(projected_context)
+        raise RecallProjectionError(turn_routing_context_rejection(turn_routing_context))
+    subject = _effective_subject(projected_context, inferred_subject)
+    context_revision = _subject_context_revision(subject)
     fields: list[tuple[str, object]] = [
         ("unit identity", unit.unit_id),
         ("request summary", plan.request_summary),
@@ -282,7 +316,7 @@ def project_unit_query(
         ("required tools", _values(unit.required_tools)),
         ("platforms", _values(unit.platforms)),
     ]
-    fields.extend(_context_fields(projected_context))
+    fields.extend(_context_fields(subject))
     text = _render(fields)
     return RecallQuery(unit.unit_id, text, _hash(text), context_revision)
 
@@ -717,6 +751,7 @@ def discover_hybrid_recall(  # noqa: C901 - one bounded fail-open recall transac
     requested_model: str,
     embedding_dimensions: int = 0,
     turn_routing_context: Mapping[str, Any] | None = None,
+    inferred_subject: Mapping[str, Any] | None = None,
     embedding_invoker: EmbeddingInvoker | None = None,
     per_unit_limit: int = DEFAULT_HYBRID_ADDITIONS_PER_UNIT,
     per_plan_limit: int = DEFAULT_HYBRID_ADDITIONS_PER_PLAN,
@@ -813,7 +848,10 @@ def discover_hybrid_recall(  # noqa: C901 - one bounded fail-open recall transac
             provider_call_count=0,
         )
 
-    queries = tuple(project_unit_query(plan, unit, turn_routing_context) for unit in plan.units)
+    queries = tuple(
+        project_unit_query(plan, unit, turn_routing_context, inferred_subject=inferred_subject)
+        for unit in plan.units
+    )
     if not queries:
         return _typed_only_result(
             plan,

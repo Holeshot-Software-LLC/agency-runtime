@@ -151,44 +151,64 @@ def workforce_subject_hints_from_plan(value: object) -> dict[str, list[str]] | N
     return project_workforce_subject_hints(collected)
 
 
-def project_turn_routing_context(value: object) -> dict[str, Any] | None:
-    """Validate one transcript-free context projection or return ``None``."""
+# AR-383 / ADR-0208: the closed reasons a context projection refuses a value.
+# A refused projection used to surface as a bare ``dense_recall_projection_invalid``
+# with the exception discarded, so the field that failed was unknowable from
+# the receipt. These are runtime codes, never request content.
+TURN_ROUTING_CONTEXT_REJECTION_CODES: frozenset[str] = frozenset(
+    {
+        "turn_routing_context_shape_invalid",
+        "turn_routing_context_version_invalid",
+        "turn_routing_context_source_trace_invalid",
+        "turn_routing_context_specialists_invalid",
+        "turn_routing_context_descriptors_invalid",
+        "turn_routing_context_subject_hints_invalid",
+        "turn_routing_context_source_status_invalid",
+        "turn_routing_context_source_turn_kind_invalid",
+    }
+)
+
+
+def _project_turn_routing_context(value: object) -> tuple[dict[str, Any] | None, str]:
+    """Project one context or say, with a closed code, why it was refused."""
 
     from agency_runtime.core.workforce.routing_projection import (
         project_workforce_unit_descriptors,
     )
 
     if value in (None, {}):
-        return {}
-    context_version = value.get("context_version") if isinstance(value, Mapping) else None
+        return {}, ""
+    if not isinstance(value, Mapping) or set(value) != _TURN_ROUTING_CONTEXT_FIELDS:
+        return None, "turn_routing_context_shape_invalid"
+    context_version = value.get("context_version")
     if (
-        not isinstance(value, Mapping)
-        or set(value) != _TURN_ROUTING_CONTEXT_FIELDS
-        or isinstance(context_version, bool)
+        isinstance(context_version, bool)
         or not isinstance(context_version, int)
         or context_version != TURN_ROUTING_CONTEXT_VERSION
     ):
-        return None
+        return None, "turn_routing_context_version_invalid"
     try:
         source_trace_id = validate_correlation_id(
             str(value.get("source_trace_id") or ""),
             field="source_trace_id",
         )
     except ValueError:
-        return None
+        return None, "turn_routing_context_source_trace_invalid"
     specialists = _specialists(value.get("specialists", []))
+    if specialists is None:
+        return None, "turn_routing_context_specialists_invalid"
     descriptors = project_workforce_unit_descriptors(value.get("workforce_unit_descriptors", []))
+    if descriptors is None:
+        return None, "turn_routing_context_descriptors_invalid"
     subject_hints = project_workforce_subject_hints(value.get("workforce_subject_hints", {}))
+    if subject_hints is None:
+        return None, "turn_routing_context_subject_hints_invalid"
     source_status = _text(value.get("source_status"), 64).casefold()
+    if _RUN_STATUS_IDENTIFIER.fullmatch(source_status) is None:
+        return None, "turn_routing_context_source_status_invalid"
     source_turn_kind = _text(value.get("source_turn_kind"), 32).casefold()
-    if (
-        specialists is None
-        or descriptors is None
-        or subject_hints is None
-        or _RUN_STATUS_IDENTIFIER.fullmatch(source_status) is None
-        or source_turn_kind not in TURN_KINDS
-    ):
-        return None
+    if source_turn_kind not in TURN_KINDS:
+        return None, "turn_routing_context_source_turn_kind_invalid"
     return {
         "context_version": TURN_ROUTING_CONTEXT_VERSION,
         "source_trace_id": source_trace_id,
@@ -197,7 +217,19 @@ def project_turn_routing_context(value: object) -> dict[str, Any] | None:
         "specialists": specialists,
         "workforce_unit_descriptors": descriptors,
         "workforce_subject_hints": subject_hints,
-    }
+    }, ""
+
+
+def project_turn_routing_context(value: object) -> dict[str, Any] | None:
+    """Validate one transcript-free context projection or return ``None``."""
+
+    return _project_turn_routing_context(value)[0]
+
+
+def turn_routing_context_rejection(value: object) -> str:
+    """Return the closed code for why a context projection refuses ``value``, or ``""``."""
+
+    return _project_turn_routing_context(value)[1]
 
 
 def turn_routing_context_from_recipe(
@@ -328,12 +360,14 @@ def turn_routing_context_revision(value: object) -> str:
 __all__ = [
     "MAX_TURN_CONTEXT_SPECIALISTS",
     "TURN_ROUTING_CONTEXT_GUARD_VERSION",
+    "TURN_ROUTING_CONTEXT_REJECTION_CODES",
     "TURN_ROUTING_CONTEXT_VERSION",
     "project_turn_routing_context",
     "project_turn_routing_context_guard",
     "project_workforce_subject_hints",
     "terminal_turn_context_passthrough",
     "turn_routing_context_from_recipe",
+    "turn_routing_context_rejection",
     "turn_routing_context_revision",
     "workforce_subject_hints_from_plan",
 ]
