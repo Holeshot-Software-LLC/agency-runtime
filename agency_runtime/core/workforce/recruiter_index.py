@@ -12,8 +12,9 @@ from agency_runtime.core.workforce.contract import WorkforceContract
 
 RECRUITER_INDEX_SCHEMA_VERSION = "1"
 # AR-227: the complete governed index measured 263,616 bytes for 278 workers;
-# AR-364's two review cards took it to 266,264 bytes for 280 workers. Keep a
-# finite 288 KiB envelope (~10 percent measured headroom) so a handful of
+# AR-364's two review cards took it to 266,264 bytes for 280 workers, and
+# AR-370's two operations contracts to 268,859 bytes for 282. Keep a finite
+# 288 KiB envelope (~9 percent measured headroom) so a handful of
 # reviewed specialists does not disable all inference while still bounding the
 # exact provider payload.
 MAX_RECRUITER_INDEX_BYTES = 288 * 1024

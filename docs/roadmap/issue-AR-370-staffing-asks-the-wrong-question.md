@@ -217,8 +217,8 @@ division. Both are now packaged contractors in
 source `agency install` reconciles), with the `operations` domain and the
 installer engineer's tool set. Measured on a copy of the live store after
 `install_known_contractors`: six of the eight operational work statements
-rank the right contractor first (restart 20.0, troubleshoot 27.0, monitor
-37.75 where each was 0.0 before), the bare `install this: <url>` scores 7.0
+rank the right contractor first (restart 21.0, troubleshoot 28.0, monitor
+37.75 where each was 0.0 before), the bare `install this: <url>` scores 8.0
 for the operations engineer instead of falling back to `3d-scene-developer`,
 and `configure the gateway` still scores 0.0 because a lone verb is no
 signal by design; that phrase reaches a specialist only through the

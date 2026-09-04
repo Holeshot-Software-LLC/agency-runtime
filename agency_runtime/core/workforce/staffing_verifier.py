@@ -499,7 +499,7 @@ def _coverage(unit: WorkUnit, contract: WorkforceContract) -> frozenset[str]:
     else:
         # Per-axis wildcard: a contract that declares no stacks neither proves
         # nor disproves stack coverage. Nearly the whole roster predates stack
-        # enrichment (4/280 contracts declare stacks), so treating absence as
+        # enrichment (4/282 contracts declare stacks), so treating absence as
         # non-coverage made every stack-bearing unit provably unstaffable and
         # forced the recruiter into mandatory gaps. Declared stacks keep exact
         # matching; empty stacks defer the stack judgment to inference.
