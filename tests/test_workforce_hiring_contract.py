@@ -38,6 +38,8 @@ EXPECTED_SLUGS = {
     "hallucination-root-cause-investigator",
     "policy-guardrail-architect",
     "selection-safety-critic",
+    "service-operations-engineer",
+    "monitoring-engineer",
 }
 
 
@@ -73,7 +75,7 @@ def _raw(slug: str = "python-application-engineer") -> dict:
 
 
 def test_known_contractor_set_is_exact_bounded_and_immediately_enabled() -> None:
-    assert len(KNOWN_CONTRACTOR_CONTRACTS) == 15
+    assert len(KNOWN_CONTRACTOR_CONTRACTS) == 17
     assert set(KNOWN_CONTRACTORS_BY_SLUG) == EXPECTED_SLUGS
     assert all(
         item.schema_version == HIRING_CONTRACT_SCHEMA_VERSION for item in KNOWN_CONTRACTOR_CONTRACTS
@@ -92,7 +94,7 @@ def test_known_contractor_set_is_exact_bounded_and_immediately_enabled() -> None
     compiled = [compile_contractor(item) for item in KNOWN_CONTRACTOR_CONTRACTS]
     assert all(item.enabled and item.employment_status == "contractor" for item in compiled)
     assert all(item.display_name.startswith("Contractor · ") for item in compiled)
-    assert len({item.worker_id for item in compiled}) == 15
+    assert len({item.worker_id for item in compiled}) == 17
 
 
 def test_ar227_specialists_are_distinct_evidence_bound_and_nonduplicative() -> None:

@@ -37,6 +37,8 @@ _ARTIFACTS: dict[str, tuple[str, ...]] = {
     "policy-guardrail-architect": ("plan",),
     "cross-platform-release-verifier": ("test-evidence", "review-report"),
     "selection-safety-critic": ("review-report",),
+    "service-operations-engineer": ("implementation-change",),
+    "monitoring-engineer": ("implementation-change",),
 }
 _DOMAINS: dict[str, tuple[str, ...]] = {
     "ai-evaluation-engineer": ("software-engineering",),
@@ -49,6 +51,8 @@ _DOMAINS: dict[str, tuple[str, ...]] = {
     "policy-guardrail-architect": ("ai-governance",),
     "cross-platform-release-verifier": ("quality-assurance",),
     "selection-safety-critic": ("workforce-governance",),
+    "service-operations-engineer": ("operations",),
+    "monitoring-engineer": ("operations",),
 }
 _STACKS: dict[str, tuple[str, ...]] = {
     "python-application-engineer": ("python",),
@@ -76,6 +80,8 @@ _OPTIONAL_TOOLS: dict[str, frozenset[str]] = {
     "ai-observability-engineer": frozenset({"monitoring"}),
     "application-integration-verifier": frozenset({"browser"}),
     "documentation-evidence-researcher": frozenset({"web-research"}),
+    # AR-370 c1: a monitoring surface is affinity, not an eligibility gate.
+    "monitoring-engineer": frozenset({"monitoring"}),
 }
 _LIFECYCLES: dict[str, str] = {
     "design": "design",

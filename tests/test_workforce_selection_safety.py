@@ -119,7 +119,12 @@ def test_ar227_complete_recruiter_index_fits_measured_finite_envelope() -> None:
     # platform, so every plan unit naming the operating system's platform was
     # forced onto an API planner. platform now means its three infrastructure
     # cards; the API card keeps software-engineering and backend.
-    assert len(payload) == 266_253
+    #
+    # 2026-09-04, 266_253 -> 268_859 (+2,606, +0.98%): AR-370 criterion 1 added
+    # the two operations contracts (service-operations-engineer,
+    # monitoring-engineer) to the packaged agency-runtime source, so the
+    # operational verbs have a specialist to find; 280 -> 282 workers.
+    assert len(payload) == 268_859
     assert len(payload) <= MAX_RECRUITER_INDEX_BYTES
     assert MAX_RECRUITER_INDEX_BYTES == 288 * 1024
     # The exact figure above is a change detector; this is the budget. Asserting
@@ -1345,7 +1350,7 @@ def test_captured_typescript_plan_forms_exact_safe_lifecycle_team_from_full_work
         budget=staffing_budget_for_config(config),
     )
 
-    assert snapshot.worker_count == 280
+    assert snapshot.worker_count == 282
     assert decision.accepted
     assert {unit.unit_id: unit.selected for unit in decision.units} == {
         unit_id: (agent_id,) for unit_id, agent_id in expected.items()
@@ -1752,5 +1757,5 @@ def test_every_worker_contract_has_positive_negative_shadow_and_eligibility_evid
         if unavailable.selected or "agent_not_live_eligible" not in unavailable_reasons:
             failures.append((contract.agent_id, "live-eligibility", unavailable))
 
-    assert snapshot.worker_count == 280
+    assert snapshot.worker_count == 282
     assert failures == []
