@@ -25,7 +25,7 @@ superseded_by: null
 type: handoff
 issue_id: AR-383
 branch: main
-evidence_commit: 169220ce9978858b9101b348d35eeea2d776c094
+evidence_commit: e12c1bddd2cbdf0c9d7a26b09f3c963434375409
 minimum_ledger_commit: b1c2b5574c357224bbada8f303917a0154be3984
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/581
@@ -33,148 +33,148 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/581
 
 # AR-383 inferred subject projection handoff
 
-> `main` at `b1c2b557` carries ADR-0198 to ADR-0208. AR-383 and AR-391 both
-> closed on 2026-09-04; the recruiter's fit losses and the dense-recall loss
-> that named this capsule are fixed and measured.
+> `main` at `e12c1bdd` carries ADR-0198 to ADR-0212. AR-383, AR-391 and
+> AR-396 are closed. Staffing still fails, and the recruiter is where.
 
-Start-here capsule. The planner side is closed, the recruiter reads its own
-selection rule, the critic sees the neighbourhood it judges, every card
-carries every outcome, the inferred subject reaches recall, and what remains
-is the deployment behind the aliases and the owner's tracker steps.
+Start-here capsule. The planner side is closed, the inferred subject reaches
+recall, a complete reply that is not JSON now gets a second ask, and what
+remains is the recruiter itself.
 
 ## checkpoint
 
-**AR-391 is done** under **ADR-0207** (PRs #611 to #616). The recruiter
-classified one card required and the rest acceptable because its prompt called
-an acceptable card one "the runtime may add when needed" and told it not to
-label every strong candidate required. The runtime adds acceptable cards only
-as typed-coverage complements, reads the ranking as order alone, and takes a
-unit's confidence from the lowest selected rank score. On the review units the
-one eligible coverer of `capability:risk-analysis` sat at rank four or five,
-the verifier rejected the faithful team as `selection_confidence_too_low` with
-a bare code, and the repair inverted it into that coverer alone, which the
-critic vetoed correctly. Now the contract states the derivation with the
-verifier's own numbers, each recall row names its `sole_eligible_coverers`,
-both prompts state the rule, a whole-team rejection hands back the derived
-team beside a correction, and the fit account names `not_for`.
+**AR-391 / ADR-0207** (#611-#616): acceptable cards are added only as
+typed-coverage complements, the ranking is read as order alone, and a unit's
+confidence is the lowest selected rank score. **AR-383 / ADR-0208** (#617):
+the inferred subject rides beside the turn context and reaches the planner,
+the recall query and the recruiter as `inferred_work_subject`.
 
-**AR-383 is done** under **ADR-0208** (PRs #617 and its flip). ADR-0197 merged the
-inferred subject into the projected turn context; on a fresh turn that context
-is empty, so the merge made a single-key mapping the projection refuses, the
-per-unit recall query raised, and the exception was discarded. The subject now
-rides beside the context and reaches the planner document, the recall query and
-the recruiter document as `inferred_work_subject`; a refused projection names
-the validation that refused it with a closed code the attempt and the receipt
-keep.
+**AR-396 / ADR-0212** (#628, merged `b2433867`), five of five criteria
+satisfied on the first pass: `_invoke_stage` gave a *complete* reply that was
+not a JSON object no second ask, while a cut reply and a contract-invalid one
+each got one. Every route resolves to one provider profile, so that ended the
+stage on a single call with the attempt allowance and the call budget unspent.
+Two staffing turns died there on 2026-09-04 (receipts 17:32:40Z, 17:44:25Z)
+while the same planner payload, replayed ten times with the gateway cache
+bypassed, answered with valid JSON ten of ten in 12.87-22.83 s. **AR-394** and
+**AR-395** were filed in the same PR and are not fixed.
 
-| measurement | before | after |
-|---|---|---|
-| eleven install wordings: completed | 4 | 9 |
-| of the turns that reached the critic: approved | 4 of 8 | 9 of 9 |
-| offline review-unit replies the verifier accepts | 1 of 6 | 6 of 6 |
-| thirty-prompt smoke: subject-stage turns | 17 | 17 |
-| of those, dense recall lost to a refused projection | 17 | **0** |
-
-- **Install**: venv `04adb230` (merged main) built at the AR-383 close; claude
-  installed and wired. Run `agency install` itself WITHOUT the key; codex needs
+- **Install**: venv `e12c1bdd` is built and is **not** what the hooks run --
+  see exact-blocker. Run `agency install` itself WITHOUT the key; codex needs
   the attended `Trust all and continue` in a fresh `codex` TUI, then `agency
   install --agent codex --verify-activation` with `common.env` sourced.
-- **Launch environment**: still the first thing to check. `/clear` reuses the
-  running process, so a key exported after launch never reaches the hooks; read
-  `/proc/<pid>/environ` before suspecting the gateway. A session whose staffing
-  header reads unavailable with a healthy gateway is that, every time.
+- **Launch environment**: check it first, and mind two traps, both hit on
+  2026-09-04. `common.env` carries **no `export` keywords**, so `source
+  common.env && claude` leaves the key unexported; use `set -a && . ~/.config/ai-secrets/common.env
+  && set +a && claude`. And `pgrep -x claude | head -1` returns the **oldest**
+  of about nine `claude` processes: walk up from the shell's `$$` through `ps
+  -o ppid=` to the ancestor named `claude`, then read `/proc/<pid>/environ`.
+  `/clear` reuses the running process, so a post-launch export never lands.
 
 ## completed-evidence
 
-**On `main`.** ADR-0207 at `d3bea30f` (PR #611) with
-`tests/test_team_derivation_account.py` (6 tests) and two curated mutations,
-corrected at `2c092cb8` (#612), `606e70ea` (#614) and `3a94b8da` (#615), record
-rows recomputed in #613, flipped in #616. ADR-0208 at `169220ce` (PR #617) with
-`tests/test_inferred_subject_beside_context.py` (6 tests) and two curated
-mutations. **Capture recipe.** Scratchpad `capture392.py` (a copy of 391 reading
-`common.env`), `recruiter_replay_h.py` (`--system`, `--contract`, `--annotate`;
-sends `cache: {"no-cache": true}`), `derive_h.py` (a reply through
-`_proposal_from_nominations` and `verify_staffing` on the store copy),
-`smoke383.py` (the thirty-four prompt route smoke), store copy
-`agency.db.branch-copy` (generation 307), `PYTHONPATH=<worktree>`.
+**On `main`.** ADR-0207 at `d3bea30f` (#611) with corrections `2c092cb8`,
+`606e70ea`, `3a94b8da`, flipped in #616; ADR-0208 at `169220ce` (#617);
+ADR-0212 at `e12d721d` (#628) with `tests/test_non_json_reply_second_ask.py`,
+its acceptance record and evidence at `551d08db` and verdicts at `8059fade`.
+**Capture recipe.** Scratchpad `capture392.py`, `recruiter_replay_h.py`,
+`derive_h.py`, `smoke383.py`, store copy at generation 307,
+`PYTHONPATH=<worktree>`; for the 2026-09-04 recruiter runs, the real hook
+binary against a copied `agency.yaml` carrying `store.db_path`.
 
 ## exact-blocker
 
-Nothing blocks at the contract level. Waiting for the owner: tracker issues for
-AR-384 to AR-391, closure of #537, and `agency battery` from a shell with the
-key sourced. What remains in the runtime is the deployment behind the aliases.
+**AR-394: the recruiter stage.** With the key reaching the hooks and the
+gateway healthy (`/models` 200, 124 deployments, every `task-agency-*-v2`
+alias present), staffing still fails. Four live `UserPromptSubmit`
+reproductions against an isolated store copy on 2026-09-04: three failed, one
+staffed.
+
+| shape | detail |
+|---|---|
+| `selection_confidence_too_low` then `staff_without_safe_team` | `required_count=1`, `ranked_executable_count=2`, `maximum_selected_per_unit=4`, axis `domain` |
+| `invalid_candidate` then `staff_without_safe_team` | same repair outcome |
+| `provider_call_timed_out` | the runtime's 30 s deadline against the deployment's 45 s, on a 22,601-token prompt |
+
+A fifth run, instrumented at the verifier, was **accepted** with
+`roblox-systems-scripter` on a rate-limiting unit at confidence 0.9 against
+the 0.8 floor. Both halves are one problem: weak candidate sets are either
+rejected or staffed. Every failing run also carried `recall_reranker:
+provider_response_contract_invalid` from the local
+`qwen3-14b-abliterated:latest` profile.
+
+**The AR-396 fix is on `main` and is not live.** `agency install --agent
+claude` from the `e12c1bdd` venv registers the plugin, then reports *"the
+published projection still differs from this CLI; your hooks did not pick up
+this source"*: they stay staged from venv `afe1a92e`, and
+`install_commands.py:1799-1803` says a foreign-package report cannot survive
+an install from this package, so the pointer was not rewritten. Owner step;
+`agency upgrade --channel main` prints the intended command.
+
+Also owner-side: tracker issues AR-384 to AR-396, closure of #537, `agency
+battery` with the key sourced (`harness_battery_claude` fails in `agency
+doctor` today), and the attended codex trust.
 
 ## deployment-residue
 
-Two causes, separated on 2026-09-04 and previously read as one shape:
-
-1. **The runtime's timeout is below the gateway's.** Every workforce profile in
-   `agency.yaml` carries `timeout_ms: 30000`; every deployment behind
-   `task-agency-planner-v2`, `task-agency-recruiter-v2` and
-   `task-agency-critic-v2` carries `timeout: 45.0`. A call answered between 30
-   and 45 seconds is aborted by the runtime's own socket deadline, so no body
-   arrives. Seen at exactly 30.04 s on capture391 turn 201 and capture392 turn
-   205 (twice).
-2. **One deployment emits a misplaced brace.** capture391 turn 206: HTTP 200,
-   5330 characters from `b0b6f29c` (MiniMax-M3, order 1 behind the recruiter
-   alias), failing at character 257 because a candidate object closes before its
-   `score`. Not a completion-cap cut; the body ends complete.
-
-Both reach the receipt as one code. `structured_provider` catches every
-transport exception and returns `None`, and the stage loop records
-`provider_no_valid_response`, so a timeout the runtime itself caused is
-indistinguishable from a malformed reply. That is the AR-388 and AR-304 shape
-in a fourth place, filed as AR-392: name the timeout on the attempt, and set
-`timeout_ms` and the deployment timeout in the right order (operator
-configuration either way).
+Named, not gone. ADR-0209 split the causes; the configuration half stands:
+every workforce profile in `agency.yaml` carries `timeout_ms: 30000` while
+every deployment behind the three v2 aliases carries `timeout: 45.0`, so a
+call answered between 30 and 45 seconds is aborted by the runtime's own socket
+deadline. Seen live again on 2026-09-04 as a recruiter
+`provider_call_timed_out`. Operator configuration either way; AR-392 c1 is the
+code half and is still open.
 
 ## same-task-continuity
 
-The previous capsules' traps hold. Four more:
+Earlier capsules' traps hold (one `&&` chain, never `tail` on a gate; the
+verifier reads a criterion's phrase literally in every prompt it names; a
+phrase split across adjacent literals still counts; a live run and the
+conformance eval cannot share a tree). Four more, all from 2026-09-04:
 
-1. **Write a release chain as one `&&` chain and never pipe a gate through
-   `tail`.** Both slipped on 2026-09-04: a `;` after the docs gate merged PR
-   #612 without its record update, and a `tail` after pytest merged PR #614
-   with a failing test. Gate on the filtered error list with `test -z`.
-2. **The isolated verifier reads a criterion's phrase literally, in every
-   prompt the criterion names.** AR-391 needed three passes for one criterion:
-   "Required is the team" (pass 1) and "the sole coverer directly after the
-   team it completes" (pass 2) each had to appear in the repair prompt itself,
-   not only in its consequence.
-3. **A phrase split across adjacent string literals still counts**, both to the
-   verifier and to a test that asserts against the assembled constant; a check
-   that greps single source lines will report a false absence.
-4. **A long live run and the conformance eval cannot share a tree.** The eval
-   mutates sources in place; anything importing that checkout mid-run reads a
-   mutated module. Sequence them.
+1. **`git checkout <ref> -- .` inside a worktree silently reverts your working
+   tree** while leaving HEAD alone. Compare with `git show <ref>:<path>` or a
+   second worktree.
+2. **`ruff check` and `ruff format --check` do not pass on `main`**: pinned
+   0.15.20 reports 11 findings and 12 unformatted files tree-wide. Gate on
+   *parity* with that baseline, and format only what you touched.
+3. **Reproduce hooks against a copied store**: append `store: {db_path: <copy>}`
+   to a copied `agency.yaml` and drive the real hook binary.
+4. **LiteLLM caches completions in Redis**; send `cache: {"no-cache": true}`.
 
 ## next-bounded-work-package
 
-In this order.
+In this order; 4-6 are gated behind 1 and 2.
 
-1. **Owner steps**: tracker issues for AR-384 to AR-393, closure of #537, and
-   `agency battery` with the key sourced.
-2. **Implement AR-392** (transport causes) and **AR-393**, the 4-of-5 gap
-   divergence: 42 of 99 gap-declaring receipts carry no hiring account.
-3. **AR-370**: 7 of 8 operational verbs retrieve nothing; corpus carries none.
+1. **Make `e12c1bdd` live.** The AR-396 second ask cannot help a turn while
+   the hooks run `afe1a92e`.
+2. **AR-394**, the recruiter stage: what an unavailable header means today.
+3. **AR-395**, two lines plus a test: add `subject`, `security_review` and
+   `safety_repair` to `PREFLIGHT_PROVIDER_STAGES`. Take it before 4-6; it
+   makes every receipt they read legible.
+4. **AR-370 c1**: "configure the gateway" and "install this: <url>" score 0.0
+   against all 291 live contracts and fall back to slug order.
+   `service-operations-engineer` and `monitoring-engineer` are in
+   `core/evals/data/routing_v1.py` but not in the live roster.
+5. **AR-392 c1**, verifier-contradicted: attempts record `latency_ms`, not the
+   configured timeout. Every attempt in a fresh 2026-09-04 receipt has
+   `latency_ms: None`.
+6. **AR-393 c5**: the after-install window holds zero declaring receipts.
 
 ## verification
 
-At `169220ce` (AR-383): new tests 6; affected suites 493 passed, 10 skipped;
-named fast spine 1165 passed, 3 skipped under `-W error`; mutation snippets
-182; decision-conformance 182 of 182 killed, tree unchanged; the thirty-four
-prompt smoke re-run on the branch runtime through the same read-only `agency
-route` surface as the 2026-09-03 measurement. At `d3bea30f` and its three
-corrections (AR-391): new tests 6; affected 239; spine 1165; conformance 180 of
-180; the eleven install wordings live against the reconciled store copy;
-verifier six of six on the third pass.
+`169220ce` (AR-383): new tests 6; affected 493; spine 1165 under `-W error`;
+conformance 182 of 182. `d3bea30f` plus three corrections (AR-391): new tests
+6; affected 239; conformance 180 of 180; verifier six of six on pass three.
+`e12d721d` (AR-396): new tests 9, four of which fail on `main`; affected 201;
+docs, hygiene, metadata, ledger and whitespace gates pass; ruff at parity with
+`main`; verifier five of five on pass one.
 
 ## constraints
 
 - `agency.yaml` is operator configuration (`strict_call_budget`, recruiter
-  `timeout_ms`, deployment order, `workforce.mode`).
-- Never commit to `main`; worktree branch, PR, merge with `--merge`; ledger
-  dance on every substantive commit; tracker writes need authorization.
-- The live store was not written by this session; a reconciled copy was.
-- Any live host invocation runs from a shell with
-  `~/.config/ai-secrets/common.env` (mode 0600) sourced.
+  `timeout_ms`, deployment order, `workforce.mode`). Never commit to `main`;
+  worktree branch, PR, merge with `--merge`; ledger dance on every substantive
+  commit; tracker writes need authorization.
+- The live store is read-only to a session; reconcile a copy instead. Any live
+  host invocation runs from a shell with `~/.config/ai-secrets/common.env`
+  (mode 0600) sourced under `set -a`.
