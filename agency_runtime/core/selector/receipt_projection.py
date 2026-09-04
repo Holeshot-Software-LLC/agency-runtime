@@ -16,6 +16,23 @@ from agency_runtime.core.workforce.staffing_verifier import (
     STAFFING_VERIFIER_REASON_CODES as _STAFFING_VERIFIER_REASON_CODES,
 )
 
+# AR-394: the closed causes a `staff_without_safe_team` row may name. Kept
+# here rather than imported so a receipt projection never pulls in the whole
+# inference module; `tests/test_safe_team_shortfall.py` binds the two copies,
+# the same way the recruiter validation vocabulary is held together.
+_SAFE_TEAM_SHORTFALL_CODES = frozenset(
+    {
+        "required_over_budget",
+        "complement_slots_exhausted",
+        "no_ranked_candidate",
+        "ranked_candidates_ineligible",
+        "retrieved_coverer_not_selected",
+        "coverer_absent_from_retrieval",
+        "no_eligible_coverer_in_roster",
+        "no_safe_combination",
+    }
+)
+
 #: An hour in milliseconds: the ceiling for a recorded duration (AR-392).
 _MAX_DURATION_MS = 3_600_000
 
@@ -186,9 +203,10 @@ def _parse_nomination_detail(value: str) -> list[dict[str, Any]] | None:
     """Split the wire detail into rows, or None when it is malformed.
 
     Each row is
-    ``unit=code[:axis][~agent~agent][!required:executable:max][|reason]``.
-    The axis, counts, and reason are closed content-free values and the agents
-    are roster identities, so none carries request or model-authored prose.
+    ``unit=code[:axis][~agent~agent][!required:executable:max][+shortfall][|reason]``.
+    The axis, counts, shortfall, and reason are closed content-free values and
+    the agents are roster identities, so none carries request or model-authored
+    prose. A detail written before AR-394 carries no ``+`` and parses unchanged.
     """
 
     parsed: list[dict[str, Any]] = []
@@ -197,6 +215,7 @@ def _parse_nomination_detail(value: str) -> list[dict[str, Any]] | None:
         if not separator:
             return None
         remainder, _, ineligibility = remainder.partition("|")
+        remainder, _, shortfall = remainder.partition("+")
         remainder, counts_separator, counts_text = remainder.partition("!")
         remainder, _, ranked_text = remainder.partition("~")
         reason_code, _, axis = remainder.partition(":")
@@ -205,6 +224,8 @@ def _parse_nomination_detail(value: str) -> list[dict[str, Any]] | None:
             row["requirement_axis"] = axis
         if ranked_text:
             row["ranked_agent_ids"] = ranked_text
+        if shortfall:
+            row["safe_team_shortfall"] = shortfall
         if ineligibility:
             row["top_ranked_ineligibility"] = ineligibility
         if counts_separator:
@@ -308,6 +329,7 @@ def _nomination_failure_row(item: object) -> dict[str, Any] | None:
         "requirement_axis",
         "ranked_agent_ids",
         "top_ranked_ineligibility",
+        "safe_team_shortfall",
         "required_agent_count",
         "ranked_executable_count",
         "maximum_selected_per_unit",
@@ -348,6 +370,14 @@ def _nomination_failure_row(item: object) -> dict[str, Any] | None:
     )
     if "top_ranked_ineligibility" in item and not ineligibility:
         return None
+    # AR-394: the shortfall is a closed cause and rides only on the failure it
+    # explains, so a row that names one for any other code is refused whole
+    # rather than projected without it.
+    shortfall = _code(item.get("safe_team_shortfall")) if "safe_team_shortfall" in item else ""
+    if "safe_team_shortfall" in item and (
+        shortfall not in _SAFE_TEAM_SHORTFALL_CODES or reason_code != "staff_without_safe_team"
+    ):
+        return None
     counts = _nomination_team_counts(item, reason_code)
     if counts is None:
         return None
@@ -359,6 +389,8 @@ def _nomination_failure_row(item: object) -> dict[str, Any] | None:
         failure["ranked_agent_ids"] = "~".join(ranked)
     if ineligibility:
         failure["top_ranked_ineligibility"] = ineligibility
+    if shortfall:
+        failure["safe_team_shortfall"] = shortfall
     failure.update(counts)
     return failure
 

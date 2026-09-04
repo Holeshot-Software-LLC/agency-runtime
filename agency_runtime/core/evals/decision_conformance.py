@@ -229,6 +229,14 @@ def _typed_shortlists(""",
                     len(proposal_row.ranked_executable),
                     maximum_selected_per_unit,
                     repair_contract,
+                    shortfall=_safe_team_shortfall(
+                        unit,
+                        proposal_row,
+                        contracts,
+                        repair_contract,
+                        context,
+                        ranking=ranking,
+                    ),
                 )
             )""",
         after="""        if decision == "staff" and not proposal_row.selected:

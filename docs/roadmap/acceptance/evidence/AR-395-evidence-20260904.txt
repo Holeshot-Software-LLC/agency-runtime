@@ -1,0 +1,37 @@
+AR-395 evidence, captured 2026-09-04, ruff 0.15.20, python 3.12
+
+=== 1. new suite on the branch ===
+..........                                                               [100%]
+10 passed in 0.22s
+
+=== 2. the same suite against unfixed main (d757c3b9) ===
+tests/test_preflight_stage_vocabulary.py:133: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_preflight_stage_vocabulary.py::test_the_receipt_vocabulary_equals_the_stages_the_runtime_runs
+FAILED tests/test_preflight_stage_vocabulary.py::test_every_stage_the_transport_budgets_can_name_itself_on_a_receipt
+FAILED tests/test_preflight_stage_vocabulary.py::test_a_stage_the_runtime_runs_names_itself_on_the_receipt[subject]
+FAILED tests/test_preflight_stage_vocabulary.py::test_a_stage_the_runtime_runs_names_itself_on_the_receipt[security_review]
+FAILED tests/test_preflight_stage_vocabulary.py::test_a_stage_the_runtime_runs_names_itself_on_the_receipt[safety_repair]
+FAILED tests/test_preflight_stage_vocabulary.py::test_a_stage_the_runtime_runs_names_itself_on_the_receipt[hiring-critic]
+FAILED tests/test_preflight_stage_vocabulary.py::test_a_stage_the_runtime_runs_names_itself_on_the_receipt[hiring-repair]
+FAILED tests/test_preflight_stage_vocabulary.py::test_a_stage_the_runtime_runs_names_itself_on_the_receipt[hiring-repair-critic]
+8 failed, 2 passed in 0.20s
+
+=== 3. affected preflight surface, branch ===
+...............                                                          [100%]
+302 passed, 1 skipped in 54.43s
+
+=== 4. heavier affected files, branch then clean main (parity) ===
+FAILED tests/test_dashboard.py::test_dashboard_workforce_and_hiring_apis_share_revision_bound_lifecycle
+1 failed, 332 passed in 31.89s
+-- clean main --
+FAILED tests/test_dashboard.py::test_dashboard_workforce_and_hiring_apis_share_revision_bound_lifecycle
+1 failed, 332 passed in 32.00s
+
+=== 5. ruff 0.15.20, touched files ===
+All checks passed!
+2 files already formatted
+
+=== 6. tree-wide ruff parity with main ===
+main    format: 11 files would be reformatted, 742 files already formatted
+branch  format: 11 files would be reformatted, 743 files already formatted

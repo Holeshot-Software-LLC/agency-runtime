@@ -407,8 +407,8 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-391` | [The recruiter's prompt misstates how its ranking becomes the team](issue-AR-391-recruiter-prompt-misstates-how-its-ranking-becomes-the-team.md) | done | p1 | reliability | pending authorization |
 | `AR-392` | [Every transport failure reads as one code, so a runtime timeout and a malformed reply are indistinguishable](issue-AR-392-transport-failures-collapse-to-one-code.md) | done | p1 | reliability | pending authorization |
 | `AR-393` | [A declared capability gap can leave no hiring account at all, and when it leaves one the reasons need not explain it](issue-AR-393-declared-gaps-leave-no-hiring-account.md) | open | p1 | observability | pending authorization |
-| `AR-394` | [The recruiter stage ends most staffing turns, and the turns it does not end can staff an unrelated specialist](issue-AR-394-recruiter-teams-fail-or-mis-select.md) | open | p0 | reliability | pending authorization |
-| `AR-395` | [Three real inference stages are not in the receipt's stage vocabulary, so their attempts are recorded as unknown](issue-AR-395-preflight-stage-vocabulary-is-incomplete.md) | open | p1 | observability | pending authorization |
+| `AR-394` | [The recruiter stage ends most staffing turns, and the turns it does not end can staff an unrelated specialist](issue-AR-394-recruiter-teams-fail-or-mis-select.md) | done | p0 | reliability | pending authorization |
+| `AR-395` | [Three real inference stages are not in the receipt's stage vocabulary, so their attempts are recorded as unknown](issue-AR-395-preflight-stage-vocabulary-is-incomplete.md) | done | p1 | observability | pending authorization |
 | `AR-396` | [A complete reply that is not JSON ends the stage on one call, while a cut one and a wrong one each get a second ask](issue-AR-396-a-non-json-reply-gets-no-second-ask.md) | done | p1 | reliability | pending authorization |
 
 ## Traceability
@@ -762,6 +762,8 @@ not stable internal identifiers.
 | [AR-393](issue-AR-393-declared-gaps-leave-no-hiring-account.md) | [`d7106be1`](../worklog/README.md) (every declared gap accounted for, the per-unit verdict) | [ADR-0210](../decisions/0210-account-for-every-declared-gap.md) |
 | [AR-396](issue-AR-396-a-non-json-reply-gets-no-second-ask.md) | [`e12d721d`](../worklog/README.md) (the second ask for a complete reply that is not JSON) | [ADR-0212](../decisions/0212-ask-again-when-a-complete-reply-is-not-json.md) |
 | [AR-370](issue-AR-370-staffing-asks-the-wrong-question.md) | [`0e5a96f3`](../worklog/README.md) (the retired expansion table, the resolved bare reference, the three unstaffed codes, the operational-verb corpus) | [ADR-0211](../decisions/0211-give-retrieval-a-subject-and-name-the-empty-turn.md) |
+| [AR-395](issue-AR-395-preflight-stage-vocabulary-is-incomplete.md) | [`eeb98653`](../worklog/README.md) (every stage the runtime runs, named on the receipt) | null |
+| [AR-394](issue-AR-394-recruiter-teams-fail-or-mis-select.md) | [`c2a923d4`](../worklog/README.md) (eight closed shortfall causes, the retrieval/eligibility split) | [ADR-0213](../decisions/0213-the-verifier-judges-safety-retrieval-judges-fit.md) |
 
 ## Dependency summary
 
