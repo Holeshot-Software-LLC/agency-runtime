@@ -432,7 +432,7 @@ records only after checking relevance, current evidence and successor decisions.
 | `AR-403` | [Reuse roster embeddings across native hook processes](issue-AR-403-reuse-roster-embeddings-across-hook-processes.md) | done | p1 | reliability | [#668](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/668) |
 | `AR-404` | [Complete the backlog through evidence-led delivery packages](issue-AR-404-evidence-led-backlog-completion.md) | in_progress | p1 | reliability | [#672](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672) |
 | `AR-405` | [Make Windows directory-identity regressions portable](issue-AR-405-make-directory-identity-regressions-portable.md) | done | p1 | testing | [#675](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/675) |
-| `AR-406` | [Restore the configured dashboard UI function-coverage gate](issue-AR-406-restore-dashboard-function-coverage.md) | open | p2 | testing | [#682](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/682) |
+| `AR-406` | [Restore the configured dashboard UI function-coverage gate](issue-AR-406-restore-dashboard-function-coverage.md) | in_progress | p2 | testing | [#682](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/682) |
 
 ## Traceability
 

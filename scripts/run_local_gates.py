@@ -190,6 +190,7 @@ def gates() -> tuple[Gate, ...]:
                 "node",
                 "--test",
                 "--experimental-test-coverage",
+                "--test-coverage-include=agency_runtime/dashboard/**/*.js",
                 "--test-coverage-lines=95",
                 "--test-coverage-branches=86",
                 "--test-coverage-functions=93",

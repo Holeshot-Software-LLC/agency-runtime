@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import shlex
 import subprocess
 import sys
 from importlib.resources import files
@@ -18,7 +19,7 @@ except ModuleNotFoundError:  # pragma: no cover - exercised by the Python 3.10 m
 
 from scripts.read_release_version import read_release_version
 from scripts.release_contract import DISTRIBUTION_LICENSE_FILES
-from scripts.run_local_gates import PRODUCTION_SPINE
+from scripts.run_local_gates import PRODUCTION_SPINE, gates
 from scripts.verify_release_hygiene import SECRET_PATTERNS, generated_path_reason
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -314,6 +315,33 @@ def test_release_resources_are_addressable() -> None:
     # Keep that production behavior readable and branch-testable while retaining a
     # narrow ceiling above the audited 386,366-byte payload.
     assert dashboard_bytes < 378 * 1024, "dashboard assets exceeded the 378 KiB budget"
+
+
+@pytest.mark.parametrize("gate_source", ("local", "hosted"))
+def test_dashboard_coverage_gates_measure_all_production_javascript(gate_source: str) -> None:
+    expected = (
+        "node",
+        "--test",
+        "--experimental-test-coverage",
+        "--test-coverage-include=agency_runtime/dashboard/**/*.js",
+        "--test-coverage-lines=95",
+        "--test-coverage-branches=86",
+        "--test-coverage-functions=93",
+        "tests/dashboard_ui.test.mjs",
+    )
+    if gate_source == "local":
+        command = next(gate.command for gate in gates() if gate.name == "dashboard UI")
+    else:
+        workflow = yaml.safe_load((ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8"))
+        step = next(
+            item
+            for item in workflow["jobs"]["quality-contracts"]["steps"]
+            if item["name"] == "Run dashboard UI tests with coverage"
+        )
+        command = tuple(shlex.split(step["run"]))
+    # The recursive product-wide selector admits future dashboard modules too.
+    # Exact argv parity rejects narrower file lists, exclusions, and lower floors.
+    assert command == expected
 
 
 def test_release_metadata_is_single_source_and_cross_platform() -> None:
