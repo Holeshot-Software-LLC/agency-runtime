@@ -77,6 +77,14 @@ Current split: 44 actual open trackers plus 100 unfinished legacy records
 (144 local unfinished). Three old records completed; one obsolete requirement
 retired; AR-406 remains a separate current finding.
 
+Final first-batch verification: fresh routing passes; 138 UI cases pass;
+development-venv conformance passes its baseline and kills all 182 mutations
+with source unchanged. The first installed-interpreter attempt had no pytest
+and ran no mutations; that invocation mistake is retained in the capsule.
+AR-406's next bounded package corrects a measurement-scope error: the mixed
+aggregate includes fixtures, while all seven production modules already meet
+unchanged 95/86/93 floors. It will not manufacture callback tests for the score.
+
 A stale-hook warning prompted `agency install --agent codex` from the existing
 installed immutable runtime. Codex files refreshed; exit 1 honestly retains
 activation-required/unverified hook trust. A fresh attended local Codex terminal

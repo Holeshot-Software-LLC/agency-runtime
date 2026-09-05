@@ -117,8 +117,15 @@ exhaustive integration optional; it does not turn a failed UI coverage command
 into a pass. Strict docs/tracker and exact worklog checks govern parity.
 Fresh routing gates and all 138 UI cases pass. The first conformance invocation
 used the installed production interpreter, which has no pytest; baseline failed
-before any mutation ran. Rerun with the existing development venv, not by adding
-test dependencies to the user's installed runtime. Source is unchanged.
+before any mutation ran. The development-venv invocation passes its baseline
+(98.841s), kills all 182 mutations, and leaves source unchanged. No test
+dependency was added to the user's installed runtime.
+
+AR-406 follow-up diagnosis: mixed-scope coverage includes test-fixture functions.
+A diagnostic product-wide selector measures all seven shipped JS modules at
+96.92/86.62/95.71, passing unchanged floors. Separate owned branch
+codex/ar406-production-coverage records ADR-0220, pins local/CI scope, and will
+verify AR-152's existing listener repair. PR #683 does not yet change that gate.
 
 ## Constraints
 
