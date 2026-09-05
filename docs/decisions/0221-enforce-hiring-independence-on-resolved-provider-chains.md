@@ -59,6 +59,9 @@ the per-stage routing decision itself is not superseded.
 
 ## Consequences
 
+Implementation: c9b678a5, with red reproduction in 2e5454bc. The exact worklog
+and AR-348 acceptance record preserve source, tests and verification scope.
+
 - Strict deployments that previously silently allowed overlap now reject it.
   Configure disjoint creator/reviewer chains or explicitly retain non-strict
   warning-only policy. Do not make that choice on the owner's behalf.

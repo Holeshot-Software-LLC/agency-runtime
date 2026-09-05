@@ -6,6 +6,7 @@ created: 2026-09-01
 updated: 2026-09-05
 tags: [workforce, hiring, security, configuration]
 related:
+  - docs/roadmap/acceptance/issue-AR-348.md
   - docs/decisions/0153-adopt-per-stage-inference-profile-routes.md
   - docs/decisions/0221-enforce-hiring-independence-on-resolved-provider-chains.md
   - docs/roadmap/acceptance/evidence/AR-348-strict-independence-20260905.md
