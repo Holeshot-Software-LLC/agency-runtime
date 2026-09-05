@@ -1,11 +1,12 @@
 ---
 title: "AR-398: A gap turn whose hiring loop outruns the preflight lease leaves no receipt, no hiring case and a run stuck in progress"
-status: open
+status: in_progress
 category: roadmap
 created: 2026-09-05
 updated: 2026-09-05
 tags: [workforce, hiring, receipts, observability, staffing, preflight]
 related:
+  - docs/decisions/0214-close-a-preflight-attempt-on-its-token-not-its-lease.md
   - docs/roadmap/issue-AR-393-declared-gaps-leave-no-hiring-account.md
   - docs/roadmap/issue-AR-378-hiring-failure-records-no-attempt.md
   - docs/roadmap/issue-AR-392-transport-failures-collapse-to-one-code.md
@@ -76,9 +77,50 @@ trace: ten openclaw (`agent:nexus:*`, 2026-08-22 to 2026-08-29, 85 s and
 that was never written; the run rows left at `in_progress` with an expired
 lease are the durable trace to count.
 
+## Fix (2026-09-05): ADR-0214, approach items 1 and 2
+
+`Store.fail_preflight_attempt` is guarded by the attempt token alone. Recovery
+of an expired attempt replaces the token, so a matching token is proof that
+no other attempt owns the run; an expired lease no longer refuses the close
+and is written instead as the receipt's lifecycle invariant,
+`preflight_lease_expired_before_close`, unless the failure already names a
+stronger one. A token that no longer matches means another attempt holds
+the run and writes its own account; the close returns `False` and touches
+nothing, which the store's scope trigger (receipts belong to failed runs)
+requires anyway.
+
+`run_preflight` binds the lease instant to the route request
+(`hiring_deadline_monotonic`), and `_run_gap_hiring` starts another round
+only when the time left fits the longer of one hiring-provider deadline and
+the longest round measured this turn, plus a ten-second margin. Units left
+unproposed carry `hiring_lease_budget_exhausted` on their hiring event, so
+the receipt says that units were skipped and why (receipt codes are
+de-duplicated, so it does not carry a count). Schema 49 widens the
+receipt table's invariant CHECK and rebuilds older stores in place, rows
+copied verbatim and triggers recreated, the first time they are opened.
+
+The first replay of the shape through this code (2026-09-05T12:29Z, a PL/I
+batch request, six gap units, thirteen hiring calls in 469 s) closed inside
+the lease and left a receipt, and that receipt's hiring account was still
+empty. The cause is in the receipt projection, not the loop:
+`preflight_hiring_reason_codes` fed every event's codes to one identifier
+check and returned nothing at all when a single code failed it, and the
+hiring module's own candidate-validation codes spell their detail with a
+colon (`contract_invalid:causing_unit_coverage`). Each code is now
+normalised on its own, and one that still cannot be carried becomes
+`hiring_reason_code_invalid` instead of taking the account down with it.
+This is the first named condition behind AR-393's 42 silent rows.
+
+Items 3 and 4 below are not implemented: renewing the main attempt's lease
+was rejected in ADR-0214, and the `agency doctor` count of stuck runs is
+still open.
+
 ## Approach
 
-Proposed; not implemented.
+As proposed on filing. Item 1's receipt half and item 2 are implemented above;
+item 1's "the caller logs the `False`" is not: the only refusal left is a token
+another attempt now holds, and that attempt writes the turn's own account
+(ADR-0214), so the caller still discards the boolean.
 
 1. **The failure writer must not fail silently.** A refused close should be
    recorded somewhere the operator can read: at minimum the caller logs the
@@ -101,10 +143,12 @@ Proposed; not implemented.
 
 ## Acceptance
 
-- [ ] A turn whose fail-open close is refused by the lease guard still leaves
-      a receipt naming the refusal, and the run does not stay `in_progress`.
-- [ ] The hiring loop stops within the lease, and the receipt names how many
-      gap units were left unproposed and why.
+- [ ] A turn whose fail-open close arrives after its lease expired still
+      leaves a receipt naming the expiry, and the run does not stay
+      `in_progress`.
+- [ ] The hiring loop stops within the lease, and every gap unit left
+      unproposed carries `hiring_lease_budget_exhausted` on its hiring event,
+      so the receipt names that units were skipped and why.
 - [ ] Replaying the COBOL shape against a store copy produces a receipt with
-      a non-empty hiring account and a hiring case per proposed hire.
+      a non-empty hiring account and a hiring event per proposed hire.
 - [ ] `agency doctor` reports runs left at `in_progress` past their lease.

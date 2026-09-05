@@ -1,0 +1,57 @@
+AR-398 evidence, 2026-09-05, main 1e24da20, branch claude/ar398-lease-receipt
+======================================================================
+
+1. The loss this fixes, measured before any change (session 3a994fdc, 2026-09-05T03:46Z, venv c42fb0a5,
+   store copy b): a COBOL z/OS request declared six gap units; the hiring loop ran 15 requests over 613 s;
+   the 600 s lease expired at 03:56:02Z; store.fail_preflight_attempt's UPDATE required an unexpired lease,
+   matched nothing, returned False, and the caller discarded it. Store copy after the turn: no receipt,
+   no hiring case, runs row status active / preflight_state in_progress. The live control copy (03:59Z)
+   holds eleven runs in that shape (ten openclaw, one hermes), zero receipts for their traces.
+
+2. The new suite at the branch (system python3, -p no:cacheprovider): tests/test_gap_hiring_lease_budget.py
+   16 tests, all passing (store close after expiry, timely close, stronger invariant kept, superseded token,
+   schema-49 rebuild, closed vocabulary, lease-spent loop, roomy lease, no lease, measured round raises the
+   bar, round fit rule, request binding, foreign request, and the three projector cases).
+
+3. The neighbourhood (18 files: gap hiring, preflight bounds and store coverage, failure diagnosis, dynamic
+   hiring, canary contract, host control, native child lifecycle, roster adapter, selector, retrieval,
+   header suites, transport causes, second ask): 463 passed, 2 skipped in 38.34s.
+   Lint on the five edited modules: 1 finding on the branch (F402, pre-existing) against 2 on main;
+   pipeline.py's format state is main's own; schema.py is formatted.
+
+4. Live replays of the shape through the branch code (PYTHONPATH=<worktree>, venv c42fb0a5 python -P,
+   real UserPromptSubmit hook, credential sourced, each against a fresh copy of the live store; the live
+   store was never opened for write). Prompt: a PL/I batch reconciliation with JCL, IMS, DB2 and VSAM.
+
+   12:25Z copy e  134 s  recruiter timed out (provider_call_timed_out) before any gap was declared;
+                        receipt written inside the lease; the copy was migrated to schema 49 on open.
+   12:29Z copy f  469 s  six gap units, 13 hiring calls, closed inside the lease, receipt written,
+                        hiring_reason_codes [] -- the projector silence (section 5), pre-projector-fix code.
+   12:42Z copy g  482 s  instrumented, pre-projector-fix code: _complete_gap_hiring_events produced six events
+                        (two hired, four abstained on contract_invalid:employment_contract), and
+                        preflight_hiring_reason_codes returned [] for all of them. Receipt hiring [].
+   12:45Z copy h  390 s  final branch code, instrumented: six events, receipt below.
+
+   copy h run row: status preflight_failed, preflight_state '', ended 12:51:55Z (inside the lease; invariant '').
+   copy h events:
+     unit-discovery             hired         [] calls=3 worker=mainframe-repository-discovery-analyst
+     unit-implementation        abstained     ['safety_repair_invalid', 'contract_invalid:employment_contract'] calls=4 worker=-
+     unit-tests                 abstained     ['contract_invalid:employment_contract'] calls=1 worker=-
+     unit-correctness-review    abstained     ['contract_invalid:employment_contract'] calls=1 worker=-
+     unit-security-review       abstained     ['safety_repair_invalid', 'contract_invalid:employment_contract'] calls=6 worker=-
+     unit-test-evidence         not_attempted ['hiring_lease_budget_exhausted'] calls=0 worker=-
+   copy h receipt: stage=routing reason=substantive_specialist_unavailable invariant=''
+     staffing_reason_codes: ["no_safe_sufficient_team","recruiter_abstained"]
+     hiring_reason_codes  : ["hiring_status_hired","hiring_inference_attempted","hiring_status_abstained","safety_repair_invalid","contract_invalid_employment_contract","hiring_status_not_attempted","hiring_lease_budget_exhausted"]
+   hiring cases for the trace: 0 -- pending hires are committed only by a ready commit, so a fail-open
+   turn drops them by design; the receipt now names each hire and each skipped unit instead.
+
+5. The silence condition, named. preflight_hiring_reason_codes fed every event's codes to one identifier
+   check (^[a-z][a-z0-9_]{1,95}$) and returned [] for the whole turn when any code failed it; the hiring
+   module's candidate-validation codes carry a colon (contract_invalid:employment_contract above). Copy g
+   shows the input and the empty output side by side. Each code is now normalised on its own and one
+   that still cannot be carried becomes hiring_reason_code_invalid.
+
+6. Schema. copies e, f, g and h opened at schema 48 and were rebuilt to 49 on first open by the branch
+   code (max(version) = 49 read back from each); the migration test in section 2 pins the rebuild and the
+   survival of a pre-49 row.

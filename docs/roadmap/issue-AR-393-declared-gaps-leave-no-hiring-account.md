@@ -142,6 +142,14 @@ Criterion 5 as worded cannot be met by a code change (its second half asks the
 pre-fix rows to name their condition); the first half holds on the one receipt
 above. Rewording it to receipts written after the fix is an owner decision.
 
+**One silence condition demonstrated (2026-09-05, AR-398 branch).** A gap turn
+whose hiring loop ran thirteen calls closed with an empty `hiring_reason_codes`
+because `preflight_hiring_reason_codes` returned `[]` for the whole turn when any
+one code failed the identifier rule, and the hiring module raises
+`contract_invalid:<detail>` codes with a colon. That is a fourth condition beside
+the three in the table above and the first one shown to fire; the projector now
+normalises codes one at a time (see AR-398's fix section).
+
 ## Approach
 
 Proposed; an ADR accompanies the implementation.
