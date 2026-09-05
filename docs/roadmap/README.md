@@ -421,6 +421,10 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 
 ## Traceability
 
+| Issue | Implementation commits | Decisions |
+|---|---|---|
+| [AR-404](issue-AR-404-evidence-led-backlog-completion.md) | `e758f217` (backlog inventory and tracker reconciliation) | null |
+
 This table links local scope to implementation evidence and durable decisions.
 Tracker URLs are also retained in the mapping above because tracker numbers are
 not stable internal identifiers.
