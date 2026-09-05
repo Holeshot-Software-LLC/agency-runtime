@@ -43,3 +43,6 @@ tracker_url: null
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
+| 1 | satisfied | `AR-271.1-20260905-aaea78e6` | `4d7ae043fee1dc2448f4f8c2d989bb5a89feba740e43984a5bc9cfd58c9d2eeb` | 2026-09-05 | installer_registration.py:123-183 defines the shared classifier with truncation rejection, exit-1 stopped/inactive/dead handling, and legacy states; installer_uninstall.py imports and applies it, and test_host_uninstall.py:964-983 checks parity. |
+| 2 | satisfied | `AR-271.2-20260905-b9ab27a1` | `9370200e6e967edbb103afeab52fa0b54b849d2c0ed0db87d492c7637899c296` | 2026-09-05 | The eleven negative cases in tests/test_host_uninstall.py:864-909 assert blocked plans, zero native mutations and unchanged files; installer_registration.py:139-183 supplies rejection logic, and the cited acceptance log records passing tests. |
+| 3 | satisfied | `AR-271.3-20260905-dc532503` | `024a8569e5841b7920d2a9681fa0cb5e666a758bb846d3382e35b6f5dd8e5735` | 2026-09-05 | The cited test excerpts demonstrate write-free stopped-state planning, byte-preserving retirement with registration present or absent, and drift rejection; production excerpts enforce approval and revalidation, and the evidence document records passing tests without claiming real gateway operations. |

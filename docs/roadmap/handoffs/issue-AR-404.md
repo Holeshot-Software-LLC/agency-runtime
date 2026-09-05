@@ -20,8 +20,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-404
 branch: codex/ar271-stopped-uninstall
-evidence_commit: 4fdcd6a7b1ff3ae3ab8a666937adeb5d1111895b
-minimum_ledger_commit: c998f6f5f1a78b0d676e95561de651b0479482c6
+evidence_commit: 153a7c106cb024ea003cd1fb32914b7173913b90
+minimum_ledger_commit: 941df4823a77b77964c55e427f8bd043ce8cc69b
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -71,13 +71,15 @@ OpenClaw receipt while preserving all last-moment safety checks.
   Tests cover registered/already-detached plugins, write-free plans, retained
   byte equality, owner denial, launcher/environment/revalidation drift and
   live/unknown state after approval or immediately before commit.
-  Isolated acceptance, final conformance, PR delivery and installed smoke are
-  the remaining steps in this package, not claimed completed.
+  All three isolated criteria are satisfied against 4fdcd6a7 (runs aaea78e6,
+  b9ab27a1 and dc532503). Final conformance, PR #679 delivery and installed smoke
+  are the remaining steps in this package, not claimed completed.
 
 ## Exact blocker
 
 No code blocker for AR-271. Its real stopped receipt is now handled in tests;
-acceptance and delivery are pending. The package does not authorize a real
+isolated acceptance is satisfied and final verification/delivery are pending.
+The package does not authorize a real
 host uninstall, automatic gateway stop/restart, or native trust bypass.
 AR-285's historical receipt gap is separate and remains open.
 

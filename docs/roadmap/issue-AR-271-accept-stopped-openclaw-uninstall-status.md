@@ -47,8 +47,9 @@ uninstall, leaving native runners, immutable execution binding, owner authority,
 locked replanning, retained backups and native postconditions in place.
 Focused demo: 248 tests passed, two Windows-only skips in 7.38s, including
 owner denial and launcher/environment/revalidation drift refusal. Phase:
-fast_verification; isolated acceptance and delivery remain pending. The legacy
-null tracker URL remains pre-tracker history.
+fast_verification. All three isolated Codex criteria are satisfied against
+candidate 4fdcd6a7; protected conformance and PR #679 delivery remain pending.
+The legacy null tracker URL remains pre-tracker history.
 
 Historical incident:
 

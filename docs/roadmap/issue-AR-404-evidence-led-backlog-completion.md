@@ -43,8 +43,9 @@ AR-405 is merged at 78e501b7 through PR #678 and tracker #675 is closed.
 AR-271's separate runtime package now shares the install stopped-state
 classifier with uninstall. Regression-first result is seven fail/fifteen pass;
 the corrected focused suite returns 248 pass/two native Windows skips, including
-owner-denial, execution-identity and last-moment state-drift refusal. Its isolated
-acceptance, main delivery and installed-source smoke are pending. No real
+owner-denial, execution-identity and last-moment state-drift refusal. Its three
+isolated criteria are satisfied; final conformance, PR #679 main delivery and
+installed-source smoke are pending. No real
 gateway lifecycle change was performed. AR-404 remains implementing.
 
 Continuation: PR #676 and ledger #677 are confirmed on origin/main at 3ed51069.
