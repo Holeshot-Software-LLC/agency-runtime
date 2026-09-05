@@ -12,7 +12,7 @@ supersedes: []
 superseded_by: null
 type: acceptance-verification
 issue_id: AR-406
-candidate_commit: 12a62393613452fb322697b4cde48d8c74949422
+candidate_commit: d109b094be3bdefdff8a19998dc3566b24a0d93b
 evidence_cutoff: 2026-09-05
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/682
 ---
@@ -33,10 +33,17 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/682
 | 3 | test | `Unchanged lifecycle regression checks idempotent teardown, listener removal and pending-work cancellation` | 2026-09-05 | `tests/dashboard_ui.test.mjs:5777-5816` |
 | 3 | file | `Decision explicitly changes measurement only and preserves every product module, test and numeric floor` | 2026-09-05 | `docs/decisions/0220-measure-dashboard-coverage-over-production-modules.md#decision` |
 
+| 3 | command-output | `Baseline and candidate have identical entire production-tree and UI-test Git objects; scoped diff exits zero` | 2026-09-05 | `docs/roadmap/acceptance/evidence/AR-406-production-coverage-20260905.md#baseline-comparison` |
+
 ## Verification
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
-| 1 | satisfied | `AR-406.1-20260905-84e8334e` | `8f8cd5492cf96212ed5390436dc30443200150336aff973dcaf1fcc4718dd71f` | 2026-09-05 | The cited Current coverage verification excerpt records the configured command exiting 0 with 138 tests passing and coverage of 96.92% lines, 86.62% branches, and 95.71% functions, exceeding all 95/86/93 floors. |
-| 2 | satisfied | `AR-406.2-20260905-6cec4874` | `5fb1a59637269212cee49b2d229b79c85c8eec9293e2219c592c42a12188b008` | 2026-09-05 | scripts/run_local_gates.py and ci.yml use recursive dashboard JavaScript coverage with 95/86/93 floors; test_release_packaging.py enforces exact arguments for both gates, rejecting narrower scope and lower floors. |
-| 3 | absent | `AR-406.3-20260905-9cd821a6` | `97f4bd94636867cbf0748f4eb553e77a47b5b1e9583169bc8dd21adc11f31513` | 2026-09-05 | The coverage report records 138 passing UI tests, and the excerpts show soak and teardown assertions, but ADR-0220 provides no baseline comparison or diff demonstrating unchanged production semantics and behavioral tests. |
+
+## Prior verification
+
+Commit d109b094 preserves the first two satisfied verdicts and the third absent
+verdict with their exact reasons, run IDs and digests. The second candidate adds
+the requested concrete baseline comparison; it changes no acceptance criterion,
+production code or behavioral test. Re-freezing changes every evidence digest,
+so all three criteria are verified again against the complete evidence packet.
