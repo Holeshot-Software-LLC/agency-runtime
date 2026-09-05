@@ -6,6 +6,9 @@ created: 2026-09-05
 updated: 2026-09-05
 tags: [backlog, review, acceptance, delivery]
 related:
+  - docs/roadmap/AR-404-count-reconciliation-20260905.md
+  - docs/roadmap/issue-AR-149-fresh-dashboard-request-ids.md
+  - docs/roadmap/issue-AR-406-restore-dashboard-function-coverage.md
   - docs/roadmap/AR-404-backlog-dispositions-20260905.md
   - docs/decisions/0219-retire-removed-helper-release-obligations.md
   - docs/roadmap/issue-AR-405-make-directory-identity-regressions-portable.md
@@ -40,6 +43,17 @@ repeat work and risk reintroducing superseded behavior.
 
 ## Current state
 
+Owner clarification: work sequentially, close verified completed records,
+assess agent-written tickets against the current product rather than accepting
+their proposed designs, and leave Windows-specific work to the owner's machine.
+The starting 147 count was 43 open trackers plus 104 unfinished pre-tracker
+local records, not 147 demonstrated defects. The count reconciliation records
+the exact join. AR-149 is already implemented and now has current real HTTP
+verification; isolated acceptance is pending. AR-152's listener soak passes,
+but the separate current UI function-coverage gate fails (91.12 versus 93
+percent), recorded as AR-406/#682. Filing it adds one tracked issue; no old
+record has yet been closed in this package (44 tracked plus 104 legacy).
+
 Phase: implementing. The owner asked to push and continue after the first
 semantic record cleanup. That cleanup is on main through PR #676/#677 at
 3ed51069. Two bounded defect packages follow it:
@@ -63,7 +77,7 @@ semantic record cleanup. That cleanup is on main through PR #676/#677 at
   fourteen Claude package permissions under recorded consent; no OpenClaw
   stop/restart/uninstall or credential change occurred.
 
-Current accounting: 146 unfinished baseline records plus AR-404 (147 current
+Prior delivery accounting: 146 unfinished baseline records plus AR-404 (147 then-current
 unfinished records). The frozen inventory started with 155, the four accepted
 AR-400..403 fixes left 151, and four obsolete policies AR-132/167/169/267 left
 147. AR-271 removes one more baseline item; AR-405 was filed outside that
@@ -146,9 +160,11 @@ No exhaustive workflow dispatch or unattended restart is implied.
 
 ## Next bounded package
 
-PR #679 main installation and scoped all-host smoke are recorded. Next verify
-already-implemented inspection work (AR-298), reconcile explicit scope
-contradictions, and deliver genuine AR-348/349 hiring-safety fixes. AR-271 and
+Close the already-implemented AR-149 after isolated verification. Reconcile
+historical record relevance one by one, starting with the superseded AR-139
+asset ceiling and implemented AR-152 listener behavior; keep AR-406's current
+shared coverage failure visible. Then verify AR-298 and deliver genuine
+AR-348/349 hiring-safety fixes. Do not do Windows-specific work. AR-271 and
 AR-405 have their own satisfied acceptance; AR-285 still needs its two named
 evidence gaps, not a repeated classifier test. The full backlog remains open
 until every baseline record has a reviewed disposition and remaining

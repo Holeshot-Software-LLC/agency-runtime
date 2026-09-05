@@ -23,6 +23,13 @@ The current evidence-led cleanup is tracked by
 superseded proposals, verified completion candidates and real remaining work;
 the original inventory is a frozen baseline, not an implementation queue.
 
+At the 2026-09-05 e4255836 checkpoint, 43 tracker issues were open; another
+104 unfinished local records were exempt pre-tracker history. The 147 sum
+was a record-reconciliation count, not 147 established defects. See the
+[count reconciliation](AR-404-count-reconciliation-20260905.md). Windows-specific
+work is reserved for the owner's Windows machine; close or retire historical
+records only after checking relevance, current evidence and successor decisions.
+
 ## Items
 
 | Internal ID | Item | Status | Priority | Epic | Tracker mapping |
@@ -425,6 +432,7 @@ the original inventory is a frozen baseline, not an implementation queue.
 | `AR-403` | [Reuse roster embeddings across native hook processes](issue-AR-403-reuse-roster-embeddings-across-hook-processes.md) | done | p1 | reliability | [#668](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/668) |
 | `AR-404` | [Complete the backlog through evidence-led delivery packages](issue-AR-404-evidence-led-backlog-completion.md) | in_progress | p1 | reliability | [#672](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672) |
 | `AR-405` | [Make Windows directory-identity regressions portable](issue-AR-405-make-directory-identity-regressions-portable.md) | done | p1 | testing | [#675](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/675) |
+| `AR-406` | [Restore the configured dashboard UI function-coverage gate](issue-AR-406-restore-dashboard-function-coverage.md) | open | p2 | testing | [#682](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/682) |
 
 ## Traceability
 
@@ -786,6 +794,7 @@ not stable internal identifiers.
 | [AR-403](issue-AR-403-reuse-roster-embeddings-across-hook-processes.md) | `e9d8ecea`, `af366dd8`, `b389c638` | [ADR-0218](../decisions/0218-cache-only-roster-vectors-across-hook-processes.md) |
 | [AR-404](issue-AR-404-evidence-led-backlog-completion.md) | `e758f217` (inventory and tracker reconciliation), `e77b46cd` (verified review closures and next package), `16d0ec80` (PR #673 delivery); `f0f5c386` (backlog disposition/evidence), `8e9cb483` (release-checklist and verification checkpoint); `1d9dea1c` (isolated verdicts and PR #676 delivery); `c652736a` (PR #676 merged first cleanup); `a201ca8b` (AR-405/271 delivered, 147 unfinished, scoped installed smoke); `aa6c3f1e` (PR #680 evidence merge) | [ADR-0219](../decisions/0219-retire-removed-helper-release-obligations.md) |
 | [AR-405](issue-AR-405-make-directory-identity-regressions-portable.md) | Filed at `6edfa6d8`; `f0f5c386` (backlog disposition/evidence); `593f074f` (portable identity tests); `970293d7` (three isolated verdicts); `24e37e33` (verified closure); `78e501b7` (PR #678 merge; production unchanged) | [ADR-0074](../decisions/0074-build-byte-deterministic-release-artifacts.md) |
+| [AR-406](issue-AR-406-restore-dashboard-function-coverage.md) | Current failure observed at `e4255836`; 138 UI tests pass, function floor fails | [ADR-0105](../decisions/0105-bound-delivery-to-live-demo-checkpoints.md) |
 
 ## Dependency summary
 

@@ -3,9 +3,12 @@ title: "AR-149: Issue a fresh dashboard request ID per HTTP request"
 status: open
 category: roadmap
 created: 2026-07-26
-updated: 2026-07-27
+updated: 2026-09-05
 tags: [dashboard, observability, http, traceability]
 related:
+  - docs/roadmap/acceptance/issue-AR-149.md
+  - docs/roadmap/acceptance/evidence/AR-149-current-request-identity-20260905.md
+  - docs/decisions/0105-bound-delivery-to-live-demo-checkpoints.md
   - docs/decisions/0027-authoritative-runtime-evidence-traces.md
   - docs/roadmap/issue-AR-142-instrument-runtime-boundaries.md
   - agency_runtime/server/dashboard.py
@@ -31,8 +34,12 @@ independent response, log, and Store-boundary traces.
 
 ## Current state
 
-Single-request tests pass, but no regression sends two requests through one
-`HTTPConnection`. The second request can inherit the first request's ID.
+The original defect is repaired by 6a3bdaa0 and remains repaired at main
+e4255836. Four current real-HTTP correlation regressions pass; the complete
+dashboard/disconnect files return 180 passed. The linked evidence distinguishes
+this bounded source/loopback proof from a new installed-host or Windows claim.
+The item is awaiting isolated verification of the existing implementation,
+not another implementation of the historical problem description.
 
 ## Approach
 
@@ -47,10 +54,18 @@ evidence to remain attributable to the exact operation.
 
 ## Acceptance
 
-- Sequential requests on one keep-alive connection receive distinct request IDs.
-- Every boundary within one request uses the same ID.
-- Response headers, error paths, and Store instrumentation remain correlated.
-- The dashboard server and full warning-strict suites pass.
+- [ ] Sequential requests on one keep-alive connection receive distinct request IDs.
+- [ ] Every boundary within one request uses the same ID.
+- [ ] Response headers, error paths, and Store instrumentation remain correlated.
+- [ ] Focused dashboard server tests and the source-identical named production spine pass; exhaustive integration remains optional under ADR-0105.
+
+## Historical validation requirement
+
+The fourth original criterion was: "The dashboard server and full warning-strict
+suites pass." ADR-0105 superseded the complete-corpus per-issue closure
+requirement. The three product guarantees above are unchanged. The prior prose
+bullets are now checkboxes solely to expose all four criteria to the existing
+isolated-verification gate; no historical product requirement was discarded.
 
 ## Implementation evidence
 

@@ -6,6 +6,8 @@ created: 2026-07-27
 updated: 2026-07-27
 tags: [governance, delivery, testing, demo, cost]
 related:
+  - docs/roadmap/issue-AR-149-fresh-dashboard-request-ids.md
+  - docs/roadmap/issue-AR-406-restore-dashboard-function-coverage.md
   - docs/roadmap/issue-AR-186-bound-delivery-to-live-demo-checkpoints.md
   - docs/decisions/0101-run-exhaustive-python-verification-on-demand.md
   - AGENTS.md
