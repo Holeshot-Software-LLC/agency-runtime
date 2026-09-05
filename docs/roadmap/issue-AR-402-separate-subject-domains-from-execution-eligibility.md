@@ -1,6 +1,6 @@
 ---
 title: "AR-402: Separate subject domains from execution eligibility"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-09-05
 updated: 2026-09-05
@@ -37,7 +37,9 @@ PR #669 merged the implementation to main at 1de05aea; that immutable build is
 installed. Deterministic smoke passes for all five hosts and Claude's isolated
 native-child canary passes. Codex trust, OpenClaw restart consent and
 Hermes/ZCode live-mode limits remain explicit. Candidate-bound acceptance
-verification is underway; AR-403 separately records live recall timing.
+verification is complete: all three criteria are satisfied at the merged
+implementation. Native operator/platform limits remain explicit; AR-403
+separately records live recall timing.
 
 ## Approach
 
@@ -50,6 +52,6 @@ Existing native host trust and gateway credentials remain operator-owned.
 
 ## Acceptance
 
-- [ ] Subject domain mismatch alone neither rejects a candidate nor forces extra team members; domains remain visible to recall and the recruiter.
-- [ ] Audited planning-only specialists remain ineligible for implementation, and explicit safety constraints continue to reject invalid teams.
-- [ ] Representative backend, frontend, operations and review units have a faithful executable candidate or an inference-declared gap against the packaged roster, without a test-only authority upgrade.
+- [x] Subject domain mismatch alone neither rejects a candidate nor forces extra team members; domains remain visible to recall and the recruiter.
+- [x] Audited planning-only specialists remain ineligible for implementation, and explicit safety constraints continue to reject invalid teams.
+- [x] Representative backend, frontend, operations and review units have a faithful executable candidate or an inference-declared gap against the packaged roster, without a test-only authority upgrade.

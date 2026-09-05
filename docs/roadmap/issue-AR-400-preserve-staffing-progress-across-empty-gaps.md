@@ -1,6 +1,6 @@
 ---
 title: "AR-400: Preserve staffing progress across empty gaps"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-09-05
 updated: 2026-09-05
@@ -37,7 +37,9 @@ PR #669 merged the implementation to main at 1de05aea; that immutable build is
 installed. Deterministic smoke passes for all five hosts and Claude's isolated
 native-child canary passes. Codex trust, OpenClaw restart consent and
 Hermes/ZCode live-mode limits remain explicit. Candidate-bound acceptance
-verification is underway; AR-403 separately records live recall timing.
+verification is complete: all three criteria are satisfied at the merged
+implementation. Native operator/platform limits remain explicit; AR-403
+separately records live recall timing.
 
 ## Approach
 
@@ -50,6 +52,6 @@ Existing native host trust and gateway credentials remain operator-owned.
 
 ## Acceptance
 
-- [ ] One and two empty gaps retain every completed assignment with direct and deferred commits; a per-turn cap preserves the first assignment and names the remaining gap.
-- [ ] Amending a worker already nominated on another unit preserves that nomination and revalidates the full proposal.
-- [ ] The bounded package reaches main through a PR, is installed, and records deterministic smoke and a live attempt or explicit operator/platform blocker for each of the five harnesses.
+- [x] One and two empty gaps retain every completed assignment with direct and deferred commits; a per-turn cap preserves the first assignment and names the remaining gap.
+- [x] Amending a worker already nominated on another unit preserves that nomination and revalidates the full proposal.
+- [x] The bounded package reaches main through a PR, is installed, and records deterministic smoke and a live attempt or explicit operator/platform blocker for each of the five harnesses.

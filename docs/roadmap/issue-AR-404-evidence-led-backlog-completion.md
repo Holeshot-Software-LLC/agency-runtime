@@ -36,7 +36,7 @@ repeat work and risk reintroducing superseded behavior.
 
 ## Current state
 
-Phase: scoped. The four independent review findings are implemented and merged
+Phase: implementing. The four independent review findings are implemented and merged
 through PR #669. All-host deterministic smoke passes; one Claude native-child
 canary passes on the installed build. Codex trust, OpenClaw restart permission
 and Hermes/ZCode live-mode limitations are explicit, not successful live parity.
@@ -47,6 +47,22 @@ so dependency order and an observable outcome must drive packages. The strict
 tracker audit identified three concrete bookkeeping actions: map the missing
 AR-398 and AR-399 issues, and close verified AR-397. Existing historical
 tracker exemptions are not permission to create duplicate issues.
+
+Lane A now has twelve satisfied isolated acceptance verdicts. AR-397 (#654),
+AR-398 (#670) and AR-399 (#671) are closed against their existing verified
+records; strict tracker parity passed before the lane-A local status flips.
+Those four status flips await this delivery PR before their tracker closures.
+After lane A, 151 baseline items remain unfinished, plus this coordination issue.
+
+The next safety slice is not merely stale bookkeeping: a current offline
+production-path replay at 1de05aea set strict_independence=true on the supported
+legacy provider configuration, supplied valid creator/critic/security replies
+from that same provider, and returned status=hired with a worker. The temporary
+Store was discarded; no external model or production roster was used. AR-348
+still has no production caller of enforce_strict_independence. AR-349's current
+safety-repair exit still returns a rejected outcome without a hiring case, and
+its existing regression explicitly asserts hiring_case is None. Reproduce and
+fix these together with legacy, per-harness, fallback and safety-repair coverage.
 
 ## Approach
 

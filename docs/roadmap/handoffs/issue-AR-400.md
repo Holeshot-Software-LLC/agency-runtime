@@ -66,6 +66,11 @@ installed proof and isolated acceptance verification before closure.
 
 ## Exact blocker
 
+All twelve isolated acceptance criteria for AR-400 through AR-403 are now
+satisfied. Latest focused regression: 228 passed, one skipped. The bounded
+review package is done subject to merging these delivery records; the broader
+native rollout below remains waiting_for_operator, not an all-live pass.
+
 Runtime installed from non-editable commit-pinned venv 1de05aea; projection
 349f1ae7fc74. Dashboard restarted and is reachable. PATH launcher updated with
 its old launcher backed up. All-host deterministic smoke: eight checks passed,
@@ -87,11 +92,11 @@ Do not equate old implementation notes with acceptance or mass-close the queue.
 
 ## Next bounded work package
 
-1. Record acceptance for AR-400 through AR-403 with isolated criterion verifiers.
-2. Commit review/install evidence and backlog inventory/ordered completion plan.
-   Reconcile authorized AR-397/398/399 tracker bookkeeping against existing proof.
-3. Merge delivery through PR/ledger flow; complete native operator steps only
-   when available. Never retry a trust or restart-consent blocker unattended.
+1. Merge delivery records and close verified AR-400 through AR-403 trackers.
+2. Continue the committed AR-404 backlog plan; 151 baseline items remain after
+   this four-issue package. AR-397/398/399 tracker bookkeeping is reconciled.
+3. Complete native operator steps only when available. Never retry a trust or
+   restart-consent blocker unattended; do not call the entire backlog done.
 
 ## Verification
 

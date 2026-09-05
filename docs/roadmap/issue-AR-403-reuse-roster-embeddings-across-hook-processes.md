@@ -1,6 +1,6 @@
 ---
 title: "AR-403: Reuse roster embeddings across native hook processes"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-09-05
 updated: 2026-09-05
@@ -32,7 +32,8 @@ sample is a lead, not a current end-to-end benchmark.
 ## Current state
 
 The owner requested a performance pass that preserves staffing/hiring quality.
-Phase: demo_ready. Fixed-response fresh-process regression proves query-only
+Phase: done for the bounded cache implementation; all three isolated acceptance
+criteria are satisfied. Fixed-response fresh-process regression proves query-only
 reuse preserves exact candidates. A current live pair measured recall at
 63.620 s cold versus 8.804 s warm, with 283 versus one embedding input.
 The retained JSON under acceptance/evidence/AR-403-recall-performance-20260905.json
@@ -55,6 +56,6 @@ installation and all-harness smoke. No provider configuration change is implied.
 
 ## Acceptance
 
-- [ ] Fresh independent processes embed unchanged roster documents once, embed every new query, and return identical recall candidates from lossless vectors.
-- [ ] Changed identities, roster projections, expiry, corruption, model mismatch and unsafe filesystem targets cannot reuse stale or unsafe vectors; cache faults never block otherwise valid recall.
-- [ ] Current cold/warm provider measurements record stage timings, input counts, cache hits and limitations without claiming simulated or historical timing as live speedup; all existing staffing quality gates remain enabled.
+- [x] Fresh independent processes embed unchanged roster documents once, embed every new query, and return identical recall candidates from lossless vectors.
+- [x] Changed identities, roster projections, expiry, corruption, model mismatch and unsafe filesystem targets cannot reuse stale or unsafe vectors; cache faults never block otherwise valid recall.
+- [x] Current cold/warm provider measurements record stage timings, input counts, cache hits and limitations without claiming simulated or historical timing as live speedup; all existing staffing quality gates remain enabled.
