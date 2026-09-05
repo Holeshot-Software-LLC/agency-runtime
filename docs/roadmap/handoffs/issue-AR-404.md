@@ -41,8 +41,8 @@ No implementation agents were delegated. Umbrella remains implementing.
   was 43 mapped open trackers plus 104 unfinished local pre-tracker records.
   They are a reconciliation queue, not 104 proved extra defects. Full local
   counts were 240 done, 93 in_progress, 54 open, 11 wont_do (398 records).
-  New AR-406/#682 adds one tracked issue; no old item is closed in this package
-  yet. Current split: 44 tracked open plus 104 legacy unfinished.
+  New AR-406/#682 adds one tracked issue; AR-139 is now retired as superseded.
+  Current split: 44 tracked open plus 103 legacy unfinished.
 - Original-baseline reductions: AR-400..403 accepted; AR-132/167/169/267 retired
   through cited successors; AR-271 accepted. AR-405 was outside the baseline
   and is also accepted. Prior work merged via PRs #669/#673/#676..681. Never
@@ -54,22 +54,25 @@ No implementation agents were delegated. Umbrella remains implementing.
 - AR-149's 6a3bdaa0 fix is still present. Four real HTTP identity/error tests
   pass (1.21s); complete dashboard/disconnect files 180 pass (27.28s). Current
   acceptance exposes four old prose criteria as checkboxes and reconciles
-  only the obsolete complete-corpus condition with ADR-0105. Builder record
-  is pending; no isolated verdict or done flip is yet claimed.
+  only the obsolete complete-corpus condition with ADR-0105. Candidate b9d68e5d:
+  criteria 1/4 satisfied; 2/3 absent because nested-boundary/Store propagation
+  excerpts were omitted. Add those source citations, then recheck only 2/3.
 - AR-152's stable container listener, semantic buttons and 50-render soak are
   present and pass. Full UI suite 138 pass, but configured coverage exits 1 on
   Node v22.23.2: 97.80 lines, 88.43 branches, 91.12 functions versus 95/86/93
   floors. AR-406 owns this shared gap; no floor, exclusion or production code
   changed. Do not relabel it green.
-- AR-139's 263,168-byte historical budget differs from the later audited
-  378-KiB current test. Follow AR-295/298 source/history before retirement.
+- AR-139 is retired, not certified against its obsolete 263,168-byte ceiling.
+  AR-295 plus 3023f0557 explicitly audited required UI. Current ten assets total
+  386,366 bytes and pass the strict 378-KiB resource test (1 pass, 0.17s).
+  AR-148's existing signature guard and release/schema files pass 157 tests.
   AR-129/130 claim implementation but include Windows proof; leave that with
   the owner. AR-298 has source/tests and old installed visual evidence, but
   no isolated acceptance yet.
 
 ## Exact blocker
 
-AR-149 needs candidate-bound verdicts, then local closure and PR. There is no
+AR-149 needs missing evidence for criteria 2/3, then local closure in PR #683. There is no
 reproduced current request-ID defect. AR-152 remains open pending honest
 reconciliation of its aggregate coverage clause and current evidence. AR-406
 is a current verification gap, not a listener implementation gap.
@@ -91,7 +94,7 @@ No current header snapshot exists; no specialist staffing succeeded.
 
 ## Next bounded work package
 
-1. Finish AR-149's four isolated verdicts and closure, preserving the exact
+1. Finish AR-149's two missing isolated verdicts and closure, preserving the exact
    validation-scope reconciliation and current UI coverage failure.
 2. Continue historical records one by one: retire superseded proposals with
    reasons and reciprocal links; close implemented work with exact evidence.
@@ -112,5 +115,7 @@ Windows work stays open or explicitly deferred, never closed by Linux tests.
 Codex attended hook trust, OpenClaw stop/restart consent and fresh Hermes/ZCode
 session proof remain operator boundaries. The existing configured credential is
 absent from this shell; no current-build live Claude canary was attempted.
+Stale-hook warning: `agency install --agent codex` refreshed files, returned 1
+with activation-required/unverified hook trust; no unattended retry or bypass.
 No credential creation, trust bypass, service interruption, provider-policy
 change or exhaustive dispatch is authorized by this cleanup.

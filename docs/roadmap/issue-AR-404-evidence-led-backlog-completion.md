@@ -6,6 +6,7 @@ created: 2026-09-05
 updated: 2026-09-05
 tags: [backlog, review, acceptance, delivery]
 related:
+  - docs/roadmap/issue-AR-139-restore-release-asset-budget.md
   - docs/roadmap/AR-404-count-reconciliation-20260905.md
   - docs/roadmap/issue-AR-149-fresh-dashboard-request-ids.md
   - docs/roadmap/issue-AR-406-restore-dashboard-function-coverage.md
@@ -49,10 +50,20 @@ their proposed designs, and leave Windows-specific work to the owner's machine.
 The starting 147 count was 43 open trackers plus 104 unfinished pre-tracker
 local records, not 147 demonstrated defects. The count reconciliation records
 the exact join. AR-149 is already implemented and now has current real HTTP
-verification; isolated acceptance is pending. AR-152's listener soak passes,
+verification; first isolated acceptance satisfied criteria 1/4 and found
+missing nested-boundary/Store source evidence for 2/3. The original absent
+verdicts remain until that specific evidence is supplied. AR-139 is retired:
+AR-295 and 3023f0557 superseded its old ceiling with audited required UI;
+current 386,366-byte assets pass the strict 378 KiB guard. No guard is changed.
+AR-152's listener soak passes,
 but the separate current UI function-coverage gate fails (91.12 versus 93
-percent), recorded as AR-406/#682. Filing it adds one tracked issue; no old
-record has yet been closed in this package (44 tracked plus 104 legacy).
+percent), recorded as AR-406/#682. Filing it adds one tracked issue; retiring
+AR-139 removes one legacy item (44 tracked plus 103 unfinished legacy).
+
+A stale-hook warning prompted `agency install --agent codex` from the existing
+installed immutable runtime. Codex files refreshed; exit 1 honestly retains
+activation-required/unverified hook trust. A fresh attended local Codex terminal
+must grant hook trust; no trust bypass or repeated unattended retry occurred.
 
 Phase: implementing. The owner asked to push and continue after the first
 semantic record cleanup. That cleanup is on main through PR #676/#677 at
@@ -160,9 +171,10 @@ No exhaustive workflow dispatch or unattended restart is implied.
 
 ## Next bounded package
 
-Close the already-implemented AR-149 after isolated verification. Reconcile
-historical record relevance one by one, starting with the superseded AR-139
-asset ceiling and implemented AR-152 listener behavior; keep AR-406's current
+Close the already-implemented AR-149 after the two missing source citations
+are independently verified. AR-139's obsolete ceiling is retired. Reconcile
+historical record relevance one by one, including AR-148's implemented signature
+guard and AR-152's listener behavior; keep AR-406's current
 shared coverage failure visible. Then verify AR-298 and deliver genuine
 AR-348/349 hiring-safety fixes. Do not do Windows-specific work. AR-271 and
 AR-405 have their own satisfied acceptance; AR-285 still needs its two named

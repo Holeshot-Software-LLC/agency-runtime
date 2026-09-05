@@ -1,16 +1,19 @@
 ---
 title: "AR-139: Restore the installed release asset budget"
-status: open
+status: wont_do
 category: roadmap
 created: 2026-07-26
-updated: 2026-07-26
+updated: 2026-09-05
 tags: [release, packaging, dashboard, assets, performance]
 related:
+  - docs/roadmap/issue-AR-295-audit-guided-dashboard-asset-budget.md
+  - docs/roadmap/issue-AR-298-expose-complete-workforce-prompts.md
+  - docs/roadmap/AR-404-backlog-dispositions-20260905.md
   - docs/RELEASE_CHECKLIST.md
   - tests/test_release_packaging.py
   - agency_runtime/dashboard
 supersedes: []
-superseded_by: null
+superseded_by: docs/roadmap/issue-AR-295-audit-guided-dashboard-asset-budget.md
 type: issue
 epic: release
 issue_id: AR-139
@@ -21,6 +24,16 @@ blocks: []
 ---
 
 # AR-139: Restore the installed release asset budget
+
+> Superseded on 2026-09-05, not certified against the historical ceiling.
+> AR-295 explicitly audited required new UI and superseded the old asset-size
+> assumption. Commit 3023f0557 subsequently audited AR-297/298's policy and prompt
+> visibility at 386,366 bytes with a strict 378 KiB ceiling (387,072 bytes).
+> Current source still measures exactly 386,366 bytes; the existing
+> test_release_resources_are_addressable passes (1 test, 0.17s). Retain that
+> guard and required UI. Shrinking back to 263,168 bytes is not a current product
+> requirement. This retirement changes no source, resource membership, threshold
+> or release proof. The original problem and evidence below remain historical.
 
 ## Problem
 

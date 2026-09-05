@@ -172,7 +172,7 @@ records only after checking relevance, current evidence and successor decisions.
 | `AR-136` | [Persist native-child correlation and fail planned work closed](issue-AR-136-persist-native-child-correlation.md) | done | p0 | routing | pending authorization |
 | `AR-137` | [Make dashboard collections complete and paginated](issue-AR-137-complete-dashboard-collections.md) | done | p0 | dashboard | pending authorization |
 | `AR-138` | [Make dashboard refresh coherent, accessible, and observable](issue-AR-138-coherent-observable-dashboard-ui.md) | open | p1 | dashboard | pending authorization |
-| `AR-139` | [Restore the installed release asset budget](issue-AR-139-restore-release-asset-budget.md) | open | p0 | release | pending authorization |
+| `AR-139` | [Restore the installed release asset budget](issue-AR-139-restore-release-asset-budget.md) | wont_do | p0 | release | pre-tracker history; superseded by AR-295 |
 | `AR-140` | [Scale routing, retrieval, and CLI startup](issue-AR-140-scale-routing-and-retrieval.md) | open | p1 | performance | pending authorization |
 | `AR-141` | [Restore compatibility and consolidate runtime duplication](issue-AR-141-restore-compatibility-consolidate-runtime.md) | done | p1 | maintenance | pending authorization |
 | `AR-142` | [Instrument runtime boundaries and hiring outcomes](issue-AR-142-instrument-runtime-boundaries.md) | done | p1 | observability | pending authorization |

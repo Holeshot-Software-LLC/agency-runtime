@@ -3,9 +3,10 @@ title: "AR-295: Audit guided dashboard asset budget"
 status: done
 category: roadmap
 created: 2026-08-25
-updated: 2026-08-26
+updated: 2026-09-05
 tags: [testing, dashboard, packaging, release]
 related:
+  - docs/roadmap/issue-AR-139-restore-release-asset-budget.md
   - docs/roadmap/issue-AR-290-end-to-end-guided-setup.md
   - docs/roadmap/issue-AR-296-project-effective-inference-topology.md
   - docs/roadmap/handoffs/issue-AR-290.md
@@ -15,7 +16,8 @@ related:
   - agency_runtime/dashboard/app.js
   - agency_runtime/dashboard/dashboard-render.js
   - docs/worklog/README.md
-supersedes: []
+supersedes:
+  - docs/roadmap/issue-AR-139-restore-release-asset-budget.md
 superseded_by: null
 type: issue
 epic: testing
@@ -27,6 +29,12 @@ blocks: [AR-296]
 ---
 
 # AR-295: Audit guided dashboard asset budget
+
+> Backlog reconciliation (2026-09-05): this audit supersedes AR-139's fixed
+> historical ceiling. The August acceptance below remains its exact historical
+> result, not the current ceiling. Commit 3023f0557 later audited AR-297/298's
+> required policy/prompt UI at 386,366 bytes and set the current strict 378 KiB
+> guard. AR-139's retirement neither raises that guard nor certifies a new release.
 
 ## Problem
 

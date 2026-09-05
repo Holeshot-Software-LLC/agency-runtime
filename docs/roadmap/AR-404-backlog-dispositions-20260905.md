@@ -6,6 +6,10 @@ created: 2026-09-05
 updated: 2026-09-05
 tags: [backlog, review, evidence, supersession]
 related:
+  - docs/roadmap/issue-AR-139-restore-release-asset-budget.md
+  - docs/roadmap/issue-AR-149-fresh-dashboard-request-ids.md
+  - docs/roadmap/issue-AR-295-audit-guided-dashboard-asset-budget.md
+  - docs/roadmap/issue-AR-406-restore-dashboard-function-coverage.md
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
   - docs/roadmap/AR-404-backlog-inventory-20260905.md
   - docs/decisions/0219-retire-removed-helper-release-obligations.md
@@ -42,6 +46,23 @@ plus AR-404 and newly filed AR-405 (149 total unfinished current records).
 AR-285 is not counted closed: its isolated verdicts do not permit completion.
 Pre-tracker exemptions are retained; retiring an old unmapped item does not
 create a new external tracker or silently claim external parity.
+
+## Current historical-record reconciliation
+
+The separate count audit at e4255836 found 43 actual open trackers plus 104
+unfinished pre-tracker local records, not 147 demonstrated current bugs. These
+rows apply the owner's instruction to judge old agent-authored requirements
+against current product intent, without changing the frozen baseline inventory.
+
+| Issue | Disposition | Current evidence and retained responsibility |
+|---|---|---|
+| [AR-139](issue-AR-139-restore-release-asset-budget.md) | Retired, wont_do | Its fixed 263,168-byte ceiling was superseded by AR-295's explicit required-UI audit, then 3023f0557's AR-297/298 audit. Current ten assets total 386,366 bytes, below the strict 378 KiB ceiling; the current resource test passes (1 test, 0.17s). No UI removal, floor change, or new artifact/Windows proof is claimed. |
+| [AR-149](issue-AR-149-fresh-dashboard-request-ids.md) | Implemented; acceptance evidence incomplete | Four real HTTP regressions and 180 dashboard/disconnect tests pass. First isolated run satisfied criteria 1/4, but criteria 2/3 need the existing nested-boundary and Store propagation source cited explicitly. Retain the absent verdicts and add the missing evidence before a targeted recheck; do not rewrite criteria or declare completion. |
+| [AR-152](issue-AR-152-bound-dashboard-live-listeners.md) | Listener fix present; not closed | The 50-render delegated-listener soak passes in the 138-case UI suite. Its shared coverage clause currently fails and remains a distinct gap under AR-406, not an excuse to rebuild the working listener design. |
+
+After filing AR-406/#682 and retiring legacy AR-139: 44 tracked open issues
+plus 103 unfinished legacy records (147 total local unfinished). Retirement of
+an unmapped historical record cannot decrease the owner's tracker-open count.
 
 ## Reviewed candidates that are not safe closures
 
