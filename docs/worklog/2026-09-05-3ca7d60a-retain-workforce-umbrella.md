@@ -17,7 +17,7 @@ type: worklog
 commit: 3ca7d60aca65010a2070b05b830abe35cbadf7bf
 short: 3ca7d60a
 date: 2026-09-05
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/691
 related_issues:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
 ---
