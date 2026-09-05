@@ -24,9 +24,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-404
-branch: codex/ar404-published-closures
-evidence_commit: 853de3106ebc74f3ba6c977722d98f06a969c9c2
-minimum_ledger_commit: d17ffcea214a006ca6a986a638bd70bfc0e26d66
+branch: codex/ar348-strict-hiring-independence
+evidence_commit: 9835c2776b46d45843b366afc7ad4fd9524da642
+minimum_ledger_commit: 22c327d8033e9cef4d6c19ec36cd099021992213
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -39,11 +39,15 @@ Owner says continue one by one, leave Windows work to their Windows machine,
 close completed records, and judge old agent-authored tickets for present
 product relevance instead of treating their designs as instructions.
 Main 853de310 includes PRs #683/#684: five accepted completions, one retirement.
-Tracker #682 is closed; current package records publication and the next outcome.
+Tracker #682 is closed. Current package: enforce AR-348's strict hiring policy.
 No implementation agents were delegated. Umbrella remains implementing.
 
 ## Completed evidence
 
+- AR-348 fresh red reproduction at main 6307e17d: 20 failures, 23 passes
+  (14.14s). Strict mode silently allows all tested overlaps; controls pass.
+  Both reviewer routes, nine resolution sources and safety-repair creators are
+  covered through the public hiring entry point. No external inference ran.
 - The owner's 43 open tracker count is correct at e4255836. The reported 147
   was 43 mapped open trackers plus 104 unfinished local pre-tracker records.
   They are a reconciliation queue, not 104 proved extra defects. Full local
@@ -91,8 +95,8 @@ No implementation agents were delegated. Umbrella remains implementing.
 
 ## Exact blocker
 
-PRs #683/#684 are merged and #682 is closed. AR-406/152 have seven satisfied
-criteria. The original mixed-scope failure is preserved;
+AR-348 is implementing; regression tests are intentionally red, not accepted.
+Prior PRs #683..686 are merged and #682 is closed. The mixed-scope failure is preserved;
 the product scope is explicitly corrected, not relabeled as an original pass.
 Do not claim "most done" before relevance and evidence are examined. Do not
 reimplement a historical defect merely because status=open.
@@ -135,8 +139,8 @@ before any mutation ran. The development-venv invocation passes its baseline
 dependency was added to the user's installed runtime.
 
 PR #684 changes only the two coverage commands, their regression, and records.
-The publication branch changes records only. Protected conformance inputs remain identical to the preceding
-182-kill run; no repeat mutation battery is needed for an unrelated scope flag.
+The AR-348 branch starts with red public-path tests and records. The earlier
+182-kill receipt predates this runtime fix and is not its verification.
 
 ## Constraints
 

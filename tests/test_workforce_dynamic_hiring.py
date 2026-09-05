@@ -12,11 +12,13 @@ import pytest
 
 from agency_runtime.core.config import (
     AgencyConfig,
+    HarnessInferenceConfig,
     InferenceConfig,
     InferenceProfile,
     ProviderEntry,
     WorkforceConfig,
 )
+from agency_runtime.core.configuration_contracts import ConfigValidationError
 from agency_runtime.core.evals.product_scenarios import product_scenario
 from agency_runtime.core.host_capabilities import native_adapter_capability_receipt
 from agency_runtime.core.roster.workforce import workforce_index_snapshot
@@ -500,6 +502,201 @@ def test_inferred_gap_hires_registers_and_immediately_enables_contractor(tmp_pat
         "hiring-critic",
         "security_review",
     ]
+
+
+def _independence_config(*, strict: bool) -> AgencyConfig:
+    profiles = {
+        stage: InferenceProfile(
+            name=stage,
+            adapter="litellm",
+            model=f"{stage}-model",
+            capability_class="text",
+            base_url="https://router.example.test/v1",
+            api_key="fixture-secret",
+        )
+        for stage in ("hiring", "critic", "security_review", "safety_repair", "shared")
+    }
+    return replace(
+        _config(),
+        inference=InferenceConfig(
+            profiles=profiles,
+            routes={
+                "workforce.hiring": "hiring",
+                **{
+                    f"workforce.hiring.{stage}": stage
+                    for stage in ("critic", "security_review", "safety_repair")
+                },
+            },
+            strict_independence=strict,
+        ),
+    )
+
+
+@pytest.mark.parametrize("strict", [True, False])
+@pytest.mark.parametrize("reviewer", ["critic", "security_review"])
+@pytest.mark.parametrize(
+    "source",
+    [
+        "profile",
+        "default",
+        "harness",
+        "harness-env",
+        "legacy",
+        "all-legacy",
+        "creator-fallback",
+        "reviewer-fallback",
+        "shared-fallback",
+    ],
+)
+def test_hiring_strict_independence_checks_effective_provider_chains(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, strict: bool, reviewer: str, source: str
+) -> None:
+    monkeypatch.delenv("AGENCY_INFERENCE_HARNESS", raising=False)
+    config = _independence_config(strict=strict)
+    inference = config.inference
+    review_route = f"workforce.hiring.{reviewer}"
+    if source == "profile":
+        inference.profiles[reviewer] = replace(
+            inference.profiles[reviewer], model="hiring-model", thinking_level="high"
+        )
+    elif source == "default":
+        del inference.routes[review_route]
+        inference = replace(inference, default_profile="hiring")
+    elif source in {"harness", "harness-env"}:
+        host = "hermes" if source == "harness-env" else "codex"
+        inference.harnesses[host] = HarnessInferenceConfig(routes={review_route: "hiring"})
+        if source == "harness-env":
+            monkeypatch.setenv("AGENCY_INFERENCE_HARNESS", host)
+    elif source == "legacy":
+        del inference.routes[review_route]
+    elif source == "all-legacy":
+        inference = InferenceConfig(strict_independence=strict)
+    elif source == "creator-fallback":
+        inference.content_fallback_routes["workforce.hiring"] = reviewer
+    elif source == "reviewer-fallback":
+        inference.content_fallback_routes[review_route] = "hiring"
+    else:
+        inference.content_fallback_routes.update(
+            {"workforce.hiring": "shared", review_route: "shared"}
+        )
+    config = replace(config, inference=inference)
+    store = Store(tmp_path / "agency.db")
+    calls: list[dict[str, str]] = []
+
+    def hire():
+        return hire_contractor_for_gap(
+            "Implement the missing quantum compiler build integration.",
+            _unit(),
+            (_existing(),),
+            store=store,
+            config=config,
+            staffing_context=StaffingContext("codex", "linux", frozenset({"repository-read"}), 0),
+            invoker=_recording_invoker(
+                _hiring_response(), {"approved": True, "reason_codes": []}, calls=calls
+            ),
+        )
+
+    if strict:
+        with pytest.raises(ConfigValidationError, match="strict_independence:") as captured:
+            hire()
+        assert review_route in str(captured.value)
+        assert "shares provider/model with 'workforce.hiring'" in str(captured.value)
+        assert "fixture-secret" not in str(captured.value)
+        assert calls == []
+        assert store.list_hiring_cases(limit=10) == []
+        assert store.get_roster_entry("quantum-build-engineer") is None
+    else:
+        outcome = hire()
+        assert outcome.hired is True
+        assert len(calls) == 3
+        review = outcome.hiring_case["critic_evidence"]["security_review"]
+        assert review["same_provider_as_creator"] is (
+            reviewer == "security_review" or source == "all-legacy"
+        )
+        assert store.get_roster_entry("quantum-build-engineer") is not None
+
+
+@pytest.mark.parametrize("repair", ["none", "critic", "safety"])
+def test_hiring_strict_independence_allows_distinct_provider_chains(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, repair: str
+) -> None:
+    monkeypatch.delenv("AGENCY_INFERENCE_HARNESS", raising=False)
+    responses = [_hiring_response(), {"approved": True, "reason_codes": []}]
+    if repair == "critic":
+        responses[1] = {"approved": False, "reason_codes": ["scope_too_broad"]}
+        responses.extend([_hiring_response(), {"approved": True, "reason_codes": []}])
+    elif repair == "safety":
+        responses.extend(
+            [
+                {**_SAFE_SECURITY_REVIEW, "verdict": "unsafe", "reasons": ["scope_too_broad"]},
+                _hiring_response(),
+            ]
+        )
+    calls: list[dict[str, str]] = []
+    outcome = hire_contractor_for_gap(
+        "Implement the missing quantum compiler build integration.",
+        _unit(),
+        (_existing(),),
+        store=Store(tmp_path / "agency.db"),
+        config=_independence_config(strict=True),
+        invoker=_recording_invoker(*responses, calls=calls),
+    )
+    assert outcome.hired is True
+    assert len(calls) == (3 if repair == "none" else 5)
+    assert (
+        outcome.hiring_case["critic_evidence"]["security_review"]["same_provider_as_creator"]
+        is False
+    )
+
+
+@pytest.mark.parametrize("strict", [True, False])
+@pytest.mark.parametrize("fallback", [False, True])
+def test_hiring_strict_independence_checks_safety_repair_creator(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, strict: bool, fallback: bool
+) -> None:
+    monkeypatch.delenv("AGENCY_INFERENCE_HARNESS", raising=False)
+    config = _independence_config(strict=strict)
+    if fallback:
+        config.inference.content_fallback_routes["workforce.hiring.safety_repair"] = (
+            "security_review"
+        )
+    else:
+        config.inference.routes["workforce.hiring.safety_repair"] = "security_review"
+    store = Store(tmp_path / "agency.db")
+    calls: list[dict[str, str]] = []
+
+    def hire():
+        return hire_contractor_for_gap(
+            "Implement the missing quantum compiler build integration.",
+            _unit(),
+            (_existing(),),
+            store=store,
+            config=config,
+            invoker=_recording_invoker(
+                _hiring_response(),
+                {"approved": True, "reason_codes": []},
+                {**_SAFE_SECURITY_REVIEW, "verdict": "unsafe", "reasons": ["scope_too_broad"]},
+                _hiring_response(),
+                calls=calls,
+            ),
+        )
+
+    if strict:
+        with pytest.raises(ConfigValidationError, match="strict_independence:") as captured:
+            hire()
+        assert "workforce.hiring.safety_repair" in str(captured.value)
+        assert "workforce.hiring.security_review" in str(captured.value)
+        assert len(calls) == 3  # Do not spend a replacement call on an invalid pair.
+        assert store.get_roster_entry("quantum-build-engineer") is None
+        assert store.list_hiring_cases(limit=10) == []
+    else:
+        outcome = hire()
+        assert outcome.hired is True
+        assert len(calls) == 5
+        assert (
+            outcome.hiring_case["critic_evidence"]["security_review"]["same_provider_as_creator"]
+            is True
+        )
 
 
 def test_hiring_prompts_preserve_instruction_and_mutation_boundaries(tmp_path: Path) -> None:

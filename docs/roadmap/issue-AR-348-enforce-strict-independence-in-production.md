@@ -1,9 +1,9 @@
 ---
 title: "AR-348: strict_independence is enforced nowhere in production"
-status: open
+status: in_progress
 category: roadmap
 created: 2026-09-01
-updated: 2026-09-01
+updated: 2026-09-05
 tags: [workforce, hiring, security, configuration]
 related:
   - docs/roadmap/issue-AR-235-autonomous-gap-hiring-with-isolated-security-review.md
@@ -34,6 +34,15 @@ AR-235 specified.
 
 ## Current state
 
+Fresh reproduction against main 6307e17d: 43 new public-entry-point cases yield
+20 failures (strict=true does not raise), 23 passes, in 14.14 seconds. The
+negative cases cover both critic and security review across explicit/default
+profiles, harness routing, the environment harness override, legacy chains,
+creator/reviewer/shared content fallbacks, and safety-repair creators. Positive
+controls cover strict=false warnings and distinct-provider normal/repair hires.
+All provider calls are deterministic fakes; Store effects use temporary databases.
+No user configuration, credential, host trust, or Windows runtime is changed.
+
 Found by the AR-347 per-criterion audit of AR-235 (2026-09-01). The
 config field exists (`core/config.py:348`, `config_defaults.yaml:97`),
 `route_requires_independence` and `INDEPENDENCE_ROUTE_TOKENS` exist,
@@ -42,11 +51,18 @@ enforcement call is missing.
 
 ## Approach
 
-Call `enforce_strict_independence` where security-review providers are
-resolved (the `workforce.hiring.security_review` route resolution in
-`core/workforce/hiring.py`), surfacing the config error the function
-already produces; add a regression test that a same-provider pairing
-under `strict_independence: true` fails loudly.
+Keep the existing adapter-plus-model identity and warning-only default. Extend
+`enforce_strict_independence` to accept the actual resolved provider chains,
+including content fallbacks. Reject overlaps before initial hiring inference
+and before an otherwise-used safety-repair call; check the actual critic and
+security-review chains at their invocation boundaries. Use the existing
+ConfigValidationError, without selecting replacement providers or spending
+another model call. Preserve the two original acceptance criteria below.
+
+The original suggestion was a single call at security-review route resolution.
+That is insufficient: the helper re-resolves only global profiles, skips legacy
+resolution failures, ignores content fallbacks, and cannot identify a later
+safety-repair creator. This ticket's proposed implementation is not authoritative.
 
 ## Dependencies
 
