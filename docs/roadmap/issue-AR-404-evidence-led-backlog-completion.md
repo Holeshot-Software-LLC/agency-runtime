@@ -50,8 +50,8 @@ tracker exemptions are not permission to create duplicate issues.
 
 Lane A now has twelve satisfied isolated acceptance verdicts. AR-397 (#654),
 AR-398 (#670) and AR-399 (#671) are closed against their existing verified
-records; strict tracker parity passed before the lane-A local status flips.
-Those four status flips await this delivery PR before their tracker closures.
+records; the four accepted review issues close with the delivery-record PR.
+The worklog registry supplies its merge identity and strict parity result.
 After lane A, 151 baseline items remain unfinished, plus this coordination issue.
 
 The next safety slice is not merely stale bookkeeping: a current offline

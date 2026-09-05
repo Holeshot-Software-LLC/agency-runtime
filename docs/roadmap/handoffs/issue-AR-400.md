@@ -31,8 +31,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/665
 Owner requested self-implementation, PR merge to main, agency install and smoke
 tests of all five harnesses; then added a performance pass preserving quality.
 No implementation delegation. PR #669 merged the fixes and refreshed AR-383
-capsule to main at 1de05aea. Phase: live_demo. This delivery branch records
-installed proof and isolated acceptance verification before closure.
+capsule to main at 1de05aea. Phase: done for the bounded four-issue review.
+This delivery branch records installed proof and isolated acceptance. The
+worklog registry identifies the delivery PR merge without changing runtime.
 
 ## Completed evidence
 
@@ -68,7 +69,7 @@ installed proof and isolated acceptance verification before closure.
 
 All twelve isolated acceptance criteria for AR-400 through AR-403 are now
 satisfied. Latest focused regression: 228 passed, one skipped. The bounded
-review package is done subject to merging these delivery records; the broader
+review package is done at this checkpoint; the broader
 native rollout below remains waiting_for_operator, not an all-live pass.
 
 Runtime installed from non-editable commit-pinned venv 1de05aea; projection
@@ -92,9 +93,10 @@ Do not equate old implementation notes with acceptance or mass-close the queue.
 
 ## Next bounded work package
 
-1. Merge delivery records and close verified AR-400 through AR-403 trackers.
-2. Continue the committed AR-404 backlog plan; 151 baseline items remain after
+1. Continue the committed AR-404 backlog plan; 151 baseline items remain after
    this four-issue package. AR-397/398/399 tracker bookkeeping is reconciled.
+2. Reproduce and implement AR-348/349 with fallback, harness and atomicity
+   coverage; the current replay proves strict independence is still ineffective.
 3. Complete native operator steps only when available. Never retry a trust or
    restart-consent blocker unattended; do not call the entire backlog done.
 

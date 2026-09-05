@@ -30,8 +30,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 The owner asked to commit review artifacts, plan and implement the findings,
 then clean up and complete the backlog. This item owns the full baseline, not
 just the completed review slice. Phase: implementing. No implementation agents
-were delegated. The ordered plan and inventory are committed; delivery-record
-PR merge and tracker closures follow this checkpoint.
+were delegated. The ordered plan, inventory and accepted review records are
+committed; the worklog registry identifies their delivery PR merge.
 
 ## Completed evidence
 
@@ -50,8 +50,8 @@ PR merge and tracker closures follow this checkpoint.
 - Latest focused regression: 228 passed, one skipped. Previous named fast
   spine 1004 passed/three skipped, JS 138, routing pass, 182 mutation kills.
 - Missing AR-398/399 trackers mapped to #670/#671 and closed against existing
-  acceptance; stale-open AR-397 #654 also closed. Strict parity passed before
-  the four local completion flips, whose tracker closures wait for the PR.
+  acceptance; stale-open AR-397 #654 also closed. The four accepted review
+  issues close with the delivery PR; verify_tracker confirms resulting parity.
 - After the four review closures, 151 baseline items remain plus AR-404.
 
 ## Exact blocker
@@ -78,13 +78,12 @@ rewritten. The old PATH launcher was backed up before its interpreter changed.
 
 ## Next bounded work package
 
-1. Merge current delivery records and close the four verified review issues.
-2. Reproduce and repair AR-348/349 in a fresh bounded code package. Include
+1. Reproduce and repair AR-348/349 in a fresh bounded code package. Include
    supported legacy providers, per-harness profiles, fallback winners and
    safety-repair creators; prevent any unsafe worker and preserve atomicity.
-3. Follow lane C with a small retained multi-turn quality/latency corpus under
+2. Follow lane C with a small retained multi-turn quality/latency corpus under
    AR-253. Report full staffing p50/p95 and rejected trials, not only recall.
-4. Resolve AR-393 criterion 5's impossible retroactive receipt wording with the
+3. Resolve AR-393 criterion 5's impossible retroactive receipt wording with the
    owner; no historical data rewrite. Continue the remaining lanes without
    mass closure or automatic priority relabeling.
 
@@ -102,4 +101,3 @@ No direct main commits, native trust bypass, unattended service interruption,
 credential creation or hidden provider changes. Do not implement superseded
 proposals just to check boxes. Scope every claim and keep platform/operator
 exits visible. Never mark AR-404 done while any baseline item is unaccounted.
-
