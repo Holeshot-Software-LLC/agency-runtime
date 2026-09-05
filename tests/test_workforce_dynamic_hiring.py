@@ -699,6 +699,37 @@ def test_hiring_strict_independence_checks_safety_repair_creator(
         )
 
 
+@pytest.mark.parametrize("reviewer", ["critic", "security_review"])
+def test_hiring_strict_independence_rechecks_review_invocation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, reviewer: str
+) -> None:
+    monkeypatch.delenv("AGENCY_INFERENCE_HARNESS", raising=False)
+    config = _independence_config(strict=True)
+    store = Store(tmp_path / "agency.db")
+    calls: list[str] = []
+    responses = iter((_hiring_response(), {"approved": True, "reason_codes": []}))
+
+    def invoke(provider, _prompt, _schema, **_kwargs):
+        calls.append(provider.name)
+        # Preflight saw distinct profiles. The actual reviewer must still be
+        # checked if its route changes between creator and reviewer calls.
+        config.inference.routes[f"workforce.hiring.{reviewer}"] = "hiring"
+        return _result(next(responses), provider)
+
+    with pytest.raises(ConfigValidationError, match=f"workforce.hiring.{reviewer}"):
+        hire_contractor_for_gap(
+            "Implement the missing quantum compiler build integration.",
+            _unit(),
+            (_existing(),),
+            store=store,
+            config=config,
+            invoker=invoke,
+        )
+    assert calls == (["hiring"] if reviewer == "critic" else ["hiring", "critic"])
+    assert store.list_hiring_cases(limit=10) == []
+    assert store.get_roster_entry("quantum-build-engineer") is None
+
+
 def test_hiring_prompts_preserve_instruction_and_mutation_boundaries(tmp_path: Path) -> None:
     store = Store(tmp_path / "agency.db")
     calls: list[dict[str, str]] = []

@@ -17,14 +17,14 @@ isolation.
 Same-provider detection: when two profiles share the same ``adapter`` and
 ``model`` the caller (the case ledger / dashboard layer) records
 ``same_provider_as_creator: true``. ``strict_independence`` enforces a
-different provider for any profile whose route key contains
-``security_review`` or ``critic``; mismatched provider on
-config load raises ``ConfigurationError``.
+different adapter/model identity for routes containing ``security_review``
+or ``critic``. Hiring checks its resolved chains (including fallbacks) before
+inference and raises ``ConfigValidationError`` on an overlap.
 """
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Final
 
@@ -275,9 +275,24 @@ def shares_provider_with(
 ) -> bool:
     """Return True when two resolutions share the same adapter and model."""
 
-    return (
-        left.profile.adapter.strip().casefold() == right.profile.adapter.strip().casefold()
-        and left.profile.model == right.profile.model
+    return providers_share_model((left.provider,), (right.provider,))
+
+
+def providers_share_model(
+    left: Sequence[ProviderEntry],
+    right: Sequence[ProviderEntry],
+) -> bool:
+    """Compare every configured adapter/model identity, including fallbacks.
+
+    Names, thinking levels and endpoints do not establish model independence.
+    This is a configured-identity check, not proof of the serving backend.
+    """
+
+    return any(
+        left_entry.type.strip().casefold() == right_entry.type.strip().casefold()
+        and left_entry.model == right_entry.model
+        for left_entry in left
+        for right_entry in right
     )
 
 
@@ -364,34 +379,37 @@ def enforce_strict_independence(
     config: AgencyConfig,
     *,
     route_pairs: Mapping[str, str],
+    resolved_providers: Mapping[str, Sequence[ProviderEntry]] | None = None,
 ) -> None:
-    """Raise ``ConfigurationError`` when ``strict_independence`` is on and
+    """Raise ``ConfigValidationError`` when ``strict_independence`` is on and
     any (independence-required) route shares a provider with its creator.
 
     ``route_pairs`` maps a critique-style route key to the creator route key
     it must differ from. The call site (the case ledger on a hiring run)
-    owns which pairs to pass; this helper is the single enforcement point so
-    the dashboard and the case ledger cannot drift.
+    owns which pairs to pass. Production supplies ``resolved_providers`` from
+    the exact stage/harness resolver, including legacy and fallback entries;
+    those chains are authoritative and must contain both keys of every pair.
+    Omitting the mapping retains the profile-only validation API.
     """
     inference = config.inference
-    if not inference.strict_independence:
-        return
-    if not isinstance(inference, InferenceConfig):
+    if not isinstance(inference, InferenceConfig) or not inference.strict_independence:
         return
     offenders: list[str] = []
     for critique_route, creator_route in route_pairs.items():
         if not route_requires_independence(critique_route):
             continue
-        try:
-            critique = resolve(config, critique_route)
-            creator = resolve(config, creator_route)
-        except ConfigValidationError:
-            # The validation surface (missing route, missing default) is owned
-            # by the resolver and the call site; strict-independence is a
-            # separate, complementary check that runs only when both sides
-            # are resolvable.
-            continue
-        if shares_provider_with(critique, creator):
+        if resolved_providers is None:
+            try:
+                critique_chain = (resolve(config, critique_route).provider,)
+                creator_chain = (resolve(config, creator_route).provider,)
+            except ConfigValidationError:
+                # Profile-only callers do not own legacy route resolution.
+                # Production supplies its resolved chains instead of skipping.
+                continue
+        else:
+            critique_chain = resolved_providers[critique_route]
+            creator_chain = resolved_providers[creator_route]
+        if providers_share_model(critique_chain, creator_chain):
             offenders.append(f"{critique_route!r} shares provider/model with {creator_route!r}")
     if offenders:
         raise ConfigValidationError("strict_independence: " + "; ".join(offenders))
@@ -402,6 +420,7 @@ __all__ = [
     "ProfileResolution",
     "enforce_strict_independence",
     "provider_from_profile",
+    "providers_share_model",
     "resolve",
     "resolve_content_fallback",
     "resolve_explicit_capability_route",

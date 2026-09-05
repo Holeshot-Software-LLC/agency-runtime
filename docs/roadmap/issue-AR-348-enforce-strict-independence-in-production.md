@@ -6,6 +6,9 @@ created: 2026-09-01
 updated: 2026-09-05
 tags: [workforce, hiring, security, configuration]
 related:
+  - docs/decisions/0153-adopt-per-stage-inference-profile-routes.md
+  - docs/decisions/0221-enforce-hiring-independence-on-resolved-provider-chains.md
+  - docs/roadmap/acceptance/evidence/AR-348-strict-independence-20260905.md
   - docs/roadmap/issue-AR-235-autonomous-gap-hiring-with-isolated-security-review.md
   - docs/roadmap/issue-AR-347-reconcile-tracker-parity-backlog.md
 supersedes: []
@@ -33,6 +36,13 @@ same provider are never rejected, defeating the independence control
 AR-235 specified.
 
 ## Current state
+
+Implemented on the working branch under ADR-0221. Focused package: 413 passed,
+one existing skip (20.52s); named spine: 1075 passed, three existing skips
+(72.29s). The new boundary recheck tests supplement the original 43-case red
+matrix. UI/routing/Ruff pass. Two new curated mutations extend conformance to
+184 cases; its 17 catalog tests pass. Full protected run, isolated acceptance,
+main publication and installed smoke remain pending. Status is not done.
 
 Fresh reproduction against main 6307e17d: 43 new public-entry-point cases yield
 20 failures (strict=true does not raise), 23 passes, in 14.14 seconds. The

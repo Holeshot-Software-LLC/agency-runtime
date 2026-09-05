@@ -6,6 +6,7 @@ created: 2026-07-10
 updated: 2026-09-05
 tags: [release, changelog]
 related:
+  - docs/roadmap/issue-AR-348-enforce-strict-independence-in-production.md
   - docs/roadmap/issue-AR-271-accept-stopped-openclaw-uninstall-status.md
   - docs/RELEASE_CHECKLIST.md
   - docs/roadmap/issue-AR-290-end-to-end-guided-setup.md
@@ -353,6 +354,11 @@ changes rather than duplicating every commit.
   cycle, and will not be removed before 0.3.0.
 
 ### Fixed
+
+- Honor opt-in strict hiring independence across actual creator/reviewer
+  provider chains, including harness overrides, legacy providers, content
+  fallbacks and safety repair. Reject known-invalid pairs before spending
+  creator calls; retain non-strict warning-only behavior (AR-348).
 
 - The restricted Codex activation child join survives the codex-cli 0.151 hook
   contract: missing `transcript_path`/`agent_transcript_path` hints fall back
