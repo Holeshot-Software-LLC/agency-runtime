@@ -16,6 +16,7 @@ from types import SimpleNamespace
 from agency_runtime.core.config import AgencyConfig
 from agency_runtime.core.preflight import _with_hiring_deadline
 from agency_runtime.core.preflight_failure import (
+    HIRING_REASON_CODE_INVALID,
     PREFLIGHT_FAILURE_INVARIANTS,
     PREFLIGHT_LEASE_EXPIRED_BEFORE_CLOSE,
     default_preflight_failure_receipt,
@@ -420,3 +421,58 @@ def test_the_preflight_binds_its_lease_to_the_request() -> None:
 def test_a_request_of_another_shape_passes_through_untouched() -> None:
     foreign = SimpleNamespace(context_fingerprint="x")
     assert _with_hiring_deadline(foreign, 5.0) is foreign
+
+
+# --- the receipt carries every hiring code it can, one code at a time ----------
+
+
+def _event(*codes: object, status: str = "abstained", calls_used: int = 1) -> dict:
+    return {
+        "unit_id": "u1",
+        "status": status,
+        "reason_codes": list(codes),
+        "case_id": "",
+        "worker": "",
+        "version": "",
+        "notification": "",
+        "calls_used": calls_used,
+    }
+
+
+def test_a_colon_code_from_the_hiring_module_no_longer_silences_the_account() -> None:
+    codes = preflight_hiring_reason_codes(
+        {
+            "hiring_events": [
+                _event("hiring_inference_failed", "contract_invalid:causing_unit_coverage")
+            ]
+        }
+    )
+    assert codes == [
+        "hiring_status_abstained",
+        "hiring_inference_attempted",
+        "hiring_inference_failed",
+        "contract_invalid_causing_unit_coverage",
+    ]
+
+
+def test_a_code_that_cannot_be_carried_is_named_not_dropped_with_the_rest() -> None:
+    codes = preflight_hiring_reason_codes(
+        {"hiring_events": [_event("hiring_inference_failed", "", {"nested": 1}, "9lives")]}
+    )
+    assert codes == [
+        "hiring_status_abstained",
+        "hiring_inference_attempted",
+        "hiring_inference_failed",
+        HIRING_REASON_CODE_INVALID,
+    ]
+
+
+def test_clean_hiring_codes_project_exactly_as_before() -> None:
+    codes = preflight_hiring_reason_codes(
+        {
+            "hiring_events": [
+                _event("daily_hiring_limit_reached", status="not_attempted", calls_used=0)
+            ]
+        }
+    )
+    assert codes == ["hiring_status_not_attempted", "daily_hiring_limit_reached"]

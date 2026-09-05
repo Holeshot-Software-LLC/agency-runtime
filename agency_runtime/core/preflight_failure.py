@@ -380,11 +380,36 @@ def preflight_hiring_reason_codes(routing: Mapping[str, Any]) -> list[str]:
         raw_codes = event.get("reason_codes")
         if not isinstance(raw_codes, (list, tuple)):
             continue
-        codes.extend(raw_codes)
+        # AR-398 (the condition behind AR-393's 42 silent rows): one code the
+        # identifier rule refused, such as the hiring module's own
+        # ``contract_invalid:causing_unit_coverage``, used to drop every code
+        # of every event on the turn. Each code is now normalised on its own
+        # and a code that still cannot be carried is named as such, so the
+        # account degrades one code at a time and never to silence.
+        codes.extend(_hiring_reason_code(item) for item in raw_codes)
         if len(codes) >= MAX_PREFLIGHT_FAILURE_REASON_CODES:
             break
     projected = project_preflight_reason_codes(codes[:MAX_PREFLIGHT_FAILURE_REASON_CODES])
     return [] if projected is None else projected
+
+
+HIRING_REASON_CODE_INVALID = "hiring_reason_code_invalid"
+_HIRING_CODE_SEPARATORS = re.compile(r"[^a-z0-9_]+")
+
+
+def _hiring_reason_code(value: object) -> str:
+    """Return one hiring code the receipt can carry, or the marker for one it cannot.
+
+    Runtime-owned codes that spell a detail with ``:`` or ``-`` keep their
+    meaning with the separators folded to ``_``; anything that is still not
+    an identifier afterwards is replaced by ``hiring_reason_code_invalid``
+    rather than taking the whole account down with it.
+    """
+
+    if isinstance(value, (Mapping, list, tuple, set)) or value is None:
+        return HIRING_REASON_CODE_INVALID
+    folded = _HIRING_CODE_SEPARATORS.sub("_", str(value).strip().casefold()).strip("_")
+    return folded if _REASON_CODE.fullmatch(folded) else HIRING_REASON_CODE_INVALID
 
 
 def project_preflight_failure_receipt(value: object) -> dict[str, Any] | None:
@@ -458,6 +483,7 @@ def default_preflight_failure_receipt() -> dict[str, Any]:
 
 
 __all__ = [
+    "HIRING_REASON_CODE_INVALID",
     "MAX_PREFLIGHT_FAILURE_PROVIDER_ATTEMPTS_BYTES",
     "MAX_PREFLIGHT_FAILURE_REASON_CODES",
     "MAX_PREFLIGHT_FAILURE_REASON_CODES_BYTES",

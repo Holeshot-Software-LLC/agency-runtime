@@ -98,6 +98,18 @@ the receipt says how many were skipped and why. Schema 49 widens the
 receipt table's invariant CHECK and rebuilds older stores in place, rows
 copied verbatim and triggers recreated, the first time they are opened.
 
+The first replay of the shape through this code (2026-09-05T12:29Z, a PL/I
+batch request, six gap units, thirteen hiring calls in 469 s) closed inside
+the lease and left a receipt, and that receipt's hiring account was still
+empty. The cause is in the receipt projection, not the loop:
+`preflight_hiring_reason_codes` fed every event's codes to one identifier
+check and returned nothing at all when a single code failed it, and the
+hiring module's own candidate-validation codes spell their detail with a
+colon (`contract_invalid:causing_unit_coverage`). Each code is now
+normalised on its own, and one that still cannot be carried becomes
+`hiring_reason_code_invalid` instead of taking the account down with it.
+This is the first named condition behind AR-393's 42 silent rows.
+
 Items 3 and 4 below are not implemented: renewing the main attempt's lease
 was rejected in ADR-0214, and the `agency doctor` count of stuck runs is
 still open.
@@ -133,5 +145,5 @@ As proposed on filing; items 1 and 2 are implemented above.
 - [ ] The hiring loop stops within the lease, and the receipt names how many
       gap units were left unproposed and why.
 - [ ] Replaying the COBOL shape against a store copy produces a receipt with
-      a non-empty hiring account and a hiring case per proposed hire.
+      a non-empty hiring account and a hiring event per proposed hire.
 - [ ] `agency doctor` reports runs left at `in_progress` past their lease.
