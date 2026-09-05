@@ -39,6 +39,9 @@ observable artifacts; the isolated verifier alone supplies judgments.
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
+| 1 | satisfied | `AR-402.1-20260905-32019fe1` | `40be5ba2412add645424ffe27aca4758fd845e5087c572bb81769dd3229c2f67` | 2026-09-05 | tests/test_subject_domain_eligibility.py:23-126 asserts eligibility without domain requirements and single-member selection; inference.py:2110-2168 and 2260-2310 retain domains in recall evidence and recruiter inputs. |
+| 2 | satisfied | `AR-402.2-20260905-f90310bc` | `bf13a138e3cbe988ce3f2b8784c8bbb84c51cf3bd4da780c57938b1dfbb43c3b` | 2026-09-05 | tests/test_subject_domain_eligibility.py:23-57 verifies packaged planners retain plan authority and reject implementation across five hosts, while lines 129-135 verify explicit out-of-scope rejection. |
+| 3 | satisfied | `AR-402.3-20260905-d83f3224` | `c8df77df252c61664b00e4215ca1573a6a194e6472994a0a64b6eb9683943eb3` | 2026-09-05 | tests/test_subject_domain_eligibility.py:23-126 uses the seeded packaged roster without contract authority changes and verifies accepted backend, frontend, operations and review nominees through full proposal verification. |
 
 ## Builder notes
 
