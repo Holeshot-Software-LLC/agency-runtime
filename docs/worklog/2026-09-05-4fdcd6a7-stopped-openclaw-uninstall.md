@@ -51,12 +51,14 @@ Named production spine: 1030 passed, three skips (63.79s). UI: 138 passed.
 Ruff, format, metadata, policy, strict docs and diff checks pass. Acceptance and
 protected decision conformance were pending at implementation. Candidate
 4fdcd6a7 now has three isolated satisfied criteria, preserved in 8421e5f7;
-final conformance and PR #679 delivery remain. No real host was uninstalled or
+final conformance passed baseline (99.682s), killed all 182 mutations with zero
+survived/invalid and source unchanged. Routing gates and 104 docs/acceptance/
+tracker unit tests also pass. PR #679 carries the verified closure 7d4cd3bb.
+No real host was uninstalled or
 restarted, no trust bypass or credential change occurred, and no exhaustive
 workflow was dispatched.
 
 ## Follow-ups
 
-Freeze the candidate, run three isolated checks, complete final conformance,
-merge through a PR and record the exact installed-source smoke. AR-285 retains
+Merge through PR #679 and record the exact installed-source smoke. AR-285 retains
 its separate historical receipt gap; AR-348/349 retain hiring-safety work.
