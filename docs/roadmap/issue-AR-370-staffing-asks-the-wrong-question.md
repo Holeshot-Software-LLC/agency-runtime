@@ -224,6 +224,30 @@ and `configure the gateway` still scores 0.0 because a lone verb is no
 signal by design; that phrase reaches a specialist only through the
 inferred work statement, which is the live half criterion 1 still needs.
 
+## Platform decision (2026-09-04): the planner writes `operations`, not `platform`
+
+Whether the two operations contracts should also declare a `platform` domain
+was left open by PR #638's review until a real planner labelled an
+"install this: url" turn. Two such turns now exist, both driven through the
+real `UserPromptSubmit` hook against a copy of the live store with the
+credential sourced, and both read back from the copy's `runs.preflight_result`:
+
+| turn | wording | `workforce_subject_hints.domains` | `platforms` | outcome |
+|---|---|---|---|---|
+| 2026-09-04T21:22Z, venv `c4959b8d` | `Install the CLI tool at https://example.test/dist on this linux host and verify it runs` | `operations`, `quality-assurance` | `linux` | staffed, `operations-manager` on the install unit |
+| 2026-09-05T03:42Z, venv `c42fb0a5` | `install this: https://zcode.z.ai/en` (the literal AR-370 turn) | `desktop`, `operations`, `quality-assurance` | `linux` | staffed on all four units, critic approved |
+
+On the literal turn the planner's plan call put `operations` on the discovery,
+plan and execution units, the subject's own domain (`desktop`, from the URL)
+beside it, and `quality-assurance` on verification; the host reached the
+recruiter through the typed `platforms` field, never as a domain. The
+gpt-5.5 deployment answered both plan calls; no reply used `platform`.
+
+Decision: the contracts keep `operations` alone. Adding `platform` would
+reintroduce the homonym ADR-0201 removed from the planner's vocabulary and
+would answer a question the planner does not ask. The receipts from both turns
+were written to store copies only; the live store was not opened for write.
+
 ## Approach
 
 Criteria 3 to 6 implemented under ADR-0211; criterion 1's live proof is
