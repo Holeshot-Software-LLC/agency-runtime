@@ -31,8 +31,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/581
 
 > Everything below is on `main` at `e52f849e` and installed on all five hosts
 > from venv `e52f849e` (digest `769b06ad`); nothing is branch-only. The live
-> store is at schema 49. Two owner steps make it live: relaunch claude, and trust
-> the eight codex hook events again in a fresh TUI.
+> store is at schema 49, and a runtime still on `c42fb0a5` refuses it ("schema is
+> newer than this runtime (49 > 48)"), so until claude is relaunched and hermes
+> and zcode restarted their hooks fail at store open. Codex needs its trust step.
 
 Start-here capsule after the 2026-09-05 sessions (close, codex trust, two fixes).
 
@@ -43,7 +44,8 @@ measurement, AR-398 filing), #658 and #659 (capsule), then #661
 (`claude/ar398-lease-receipt`: token-guarded close, lease-bounded hiring loop,
 schema 49, hiring codes carried one at a time, ADR-0214) and #660
 (`claude/ar399-trailing-brace`: a plan object plus one stray brace is parsed and
-the repair named). Each PR had one Opus review before merge.
+the repair named). Each PR had one Opus review (a subagent, not recorded on
+GitHub) before merge.
 
 **Launch check held twice** on the same claude process (`c42fb0a5`, key in
 the environ, plugin digest `929576f2`, drift call empty from outside the
@@ -72,7 +74,7 @@ runs) not done.
 
 **AR-399 fixed (in_progress).** Every captured prose reply was a complete plan
 object plus one stray `}`; the parser keeps the first complete object when only
-brackets or whitespace follow and the applied attempt records
+closing brackets, fence ticks or whitespace follow and the applied attempt records
 `model_text_trailing_data_trimmed`. Ten tests; the neighbourhood's six failures
 are main's own. Pending record.
 
@@ -81,7 +83,7 @@ returned `[]` for a whole turn when one code failed the identifier rule, and the
 hiring module raises `contract_invalid:<detail>` with a colon; a replay showed six
 hiring events projecting to nothing. Fixed in #661 (codes carried one at a
 time, `hiring_reason_code_invalid` for the uncarriable). Not proven to explain all
-42 rows.
+43 rows.
 
 ## completed-evidence
 
@@ -98,21 +100,24 @@ input and output.
 
 **AR-393 criterion 5, measured on copies.** The first declaring receipt written by
 fix-carrying code (2026-09-05T00:28:19Z) carries a four-code hiring account; the
-42 silent rows all predate the fix; its second half asks pre-fix rows to name
+43 silent rows (the 43rd at 12:52Z, written by this session's un-relaunched
+`c42fb0a5` hooks) all come from runtimes without the projector fix; its second half asks pre-fix rows to name
 their condition, which no code change can do. Rewording is the owner's.
 
 ## exact-blocker
 
-**Nothing is code on a branch; the live proof waits on two owner steps and one
-authorization.** (1) This claude process still runs the `c42fb0a5` hooks: its
-13:25Z receipt shows the AR-399 shape twice (`provider_model_text_not_json`,
-`inference_unavailable`); a relaunch picks up `e52f849e`. (2) Codex hook trust,
-as above. (3) Tracker writes: closing #654 (AR-397 done) and creating issues for
-AR-398 and AR-399; the tracker gate is red until then, by design.
+**Nothing is code on a branch; the live proof waits on owner steps.** (1) The
+old runtime refuses the schema-49 store: this claude process (hooks on
+`c42fb0a5`) wrote nothing after 13:25Z, and the hermes kernel (started 09-04)
+and zcode processes (started 09-03) are in the same state; relaunch claude and
+restart hermes and zcode. (2) Codex hook trust, as above. (3) Tracker writes:
+closing #654 (AR-397 done) and creating issues for AR-398 and AR-399; the tracker
+gate is red until then, by design.
 
 ## same-task-continuity
 
-1. Import the installed package with cwd outside the checkout and `-P`; to run
+1. Import the installed package with cwd outside the checkout and `-P`
+   (`agency_runtime.core.runtime_staleness.cli_install_drift_reports`); to run
    branch code live, `PYTHONPATH=<worktree> <venv>/bin/python -P capture_*.py
    hook claude --event UserPromptSubmit --config <copy.yaml> < hook-in.json`,
    the config copy carrying a `store:` block (the live file has none).
@@ -140,14 +145,14 @@ AR-398 and AR-399; the tracker gate is red until then, by design.
 2. Owner: authorize closing #654 and creating the AR-398 and AR-399 tracker
    issues; then the "record the authorized tracker mapping" commit.
 3. AR-398 criterion 4: `agency doctor` reports runs left `in_progress` past their
-   lease (eleven live today); then freeze both pending records, run the isolated
+   lease (eleven live, all 2026-08-22 to 08-31, ten openclaw and one hermes); then freeze both pending records, run the isolated
    verifier, flip AR-398 and AR-399 to done.
 4. Owner decision: reword AR-393 criterion 5 to receipts written after the fix;
    then re-verify it. The projector condition is named; check whether the 42
    rows' turns carried `contract_invalid:` codes is not recoverable from receipts.
-5. Codex: drive one ordinary codex turn and read whether it staffs.
+5. Codex: after trust, drive one ordinary turn and read whether it staffs.
 6. Operator decision: glm-5-turbo cannot serve a plan call inside its 45 s
-   deployment timeout, so the planner alias has one working deployment.
+   deployment timeout (the planner alias has one working deployment).
 
 ## verification
 
@@ -163,10 +168,11 @@ their findings are folded in or recorded here.
 
 ## constraints
 
-- `agency.yaml` is operator configuration (timeouts 60000, dated backup);
+- `agency.yaml` is operator configuration (timeouts 60000 and 120000, dated
+  backup);
   deployment order and `workforce.mode` were not touched.
 - Never commit to `main`; worktree branch, PR, merge with `--merge`; ledger
   dance on every substantive commit; tracker writes need authorization.
-- The live store is read-only to a session; measure on copies. Live host
-  invocations need `common.env` sourced under `set -a`.
-- Review passes: exactly one reviewer, pinned to Opus, artifacts only.
+- The live store is read-only to a session; measure on copies. Live host calls
+  need `common.env` sourced under `set -a`.
+- Review passes: exactly one Opus reviewer per checkpoint, artifacts only.
