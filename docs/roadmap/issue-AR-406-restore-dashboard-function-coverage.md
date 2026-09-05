@@ -52,8 +52,9 @@ the complete selector, test invocation and unchanged floors. No UI source or
 behavioral test is changed. All three candidate-bound criteria are satisfied
 at d109b094. The first missing-baseline-comparison verdict remains in history;
 the second evidence packet supplies exact matching production-tree and UI-test
-Git objects without changing criteria or implementation. Tracker #682 closes
-after PR #684 merges; it is not silently counted closed while still open.
+Git objects without changing criteria or implementation. PR #684 merged on
+2026-09-05 at 853de3106ebc74f3ba6c977722d98f06a969c9c2. Tracker #682 was
+then closed as completed at 21:35:56 UTC; its closed state was read back.
 
 ```text
 node --test --experimental-test-coverage --test-coverage-lines=95 \

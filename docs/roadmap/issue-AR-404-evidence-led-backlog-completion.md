@@ -49,15 +49,28 @@ repeat work and risk reintroducing superseded behavior.
 ## Current state
 
 PR #683 is merged at cb7dca77: AR-148/149/323 done and AR-139 retired.
-The next AR-406/152 package implements ADR-0220's production-wide coverage
+PR #684 is merged at 853de310: the AR-406/152 package implements ADR-0220's production-wide coverage
 scope, preserving every product module and all 95/86/93 floors. Actual configured
 local command: 138 UI passes, coverage 96.92/86.62/95.71. Local/hosted scope
 regressions first fail, then the complete workflow-contract package passes 163
 tests. Existing listener code and UI behavioral tests are unchanged. Both
 acceptance records now have seven satisfied isolated criteria. AR-406 and
-AR-152 are locally done. Publication is PR #684 then closure of #682. Local
-unfinished count is 142 (43 mapped plus 99 legacy); the external open count
-remains 44 until #682 actually closes.
+AR-152 are done on main. Tracker #682 was closed as completed at 21:35:56 UTC
+on 2026-09-05 and its state was read back. Fresh tracker enumeration confirms
+43 open issues; local unfinished count is 142 (43 mapped plus 99 legacy).
+The first immediately-after-close REST enumeration briefly still returned 44;
+the subsequent issue listing and REST enumeration agree on 43. Never substitute
+the sum of these two distinct queues for a count of demonstrated defects.
+
+Next bounded package: AR-348's actual resolved-provider independence boundary,
+including legacy routing, harness overrides, fallback chains and safety repair.
+Its proposed single call to the declared-profile helper is not an implementation
+specification: that helper skips unresolved legacy routes, while production
+already compares actual provider chains for warning recording. Keep the current
+strict=false contract and inference-owned staffing choices. AR-349 follows as
+a separate rejected-hire persistence package. Windows work remains excluded.
+
+### Prior checkpoint history
 
 Owner clarification: work sequentially, close verified completed records,
 assess agent-written tickets against the current product rather than accepting
@@ -86,7 +99,7 @@ historical input versions and all behavioral assertions, and passes the complete
 401-test focused package. Fresh named production spine: 1030 passed, three
 existing skips (63.73s). AR-148/323 now have eight satisfied isolated criteria
 and are done; no new tracker was created for this existing issue family.
-Current split: 44 actual open trackers plus 100 unfinished legacy records
+First-batch split: 44 actual open trackers plus 100 unfinished legacy records
 (144 local unfinished). Three old records completed; one obsolete requirement
 retired; AR-406 remains a separate current finding.
 
@@ -94,7 +107,7 @@ Final first-batch verification: fresh routing passes; 138 UI cases pass;
 development-venv conformance passes its baseline and kills all 182 mutations
 with source unchanged. The first installed-interpreter attempt had no pytest
 and ran no mutations; that invocation mistake is retained in the capsule.
-AR-406's next bounded package corrects a measurement-scope error: the mixed
+AR-406's then-next bounded package corrects a measurement-scope error: the mixed
 aggregate includes fixtures, while all seven production modules already meet
 unchanged 95/86/93 floors. It will not manufacture callback tests for the score.
 
