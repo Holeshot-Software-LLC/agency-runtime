@@ -17,9 +17,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-400
-branch: codex/ar400-staffing-contracts
-evidence_commit: af366dd827dc9810e5c65f439ed88704b69f36d1
-minimum_ledger_commit: 91a460f92683bc6ef7be6b51c3c2f609c70d4ecf
+branch: codex/ar400-delivery
+evidence_commit: 1de05aead322dbbf359a0a5f3ab19dcbb7cdeff9
+minimum_ledger_commit: df1ace064a67eff357d7f364fdb4cfc805207154
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/665
 ---
@@ -30,9 +30,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/665
 
 Owner requested self-implementation, PR merge to main, agency install and smoke
 tests of all five harnesses; then added a performance pass preserving quality.
-No delegation. Branch includes the refreshed previously unpushed AR-383 capsule.
-Metadata names that clean starting point; this recovery commit carries code
-changes and its following ledger identifies it. Phase: demo_ready.
+No implementation delegation. PR #669 merged the fixes and refreshed AR-383
+capsule to main at 1de05aea. Phase: live_demo. This delivery branch records
+installed proof and isolated acceptance verification before closure.
 
 ## Completed evidence
 
@@ -66,30 +66,32 @@ changes and its following ledger identifies it. Phase: demo_ready.
 
 ## Exact blocker
 
-No implementation blocker. Acceptance records, merge, install and live host
-proof remain. OpenClaw's gateway is live; owner permission to briefly stop and
-restart it was requested. Reinstallation
-requires native Codex trust; never fabricate hashes. The parent lacks the gateway
-key; existing documented common.env loading is the live-test path, without new
-keys or printing secrets.
+Runtime installed from non-editable commit-pinned venv 1de05aea; projection
+349f1ae7fc74. Dashboard restarted and is reachable. PATH launcher updated with
+its old launcher backed up. All-host deterministic smoke: eight checks passed,
+zero failures/skips, five host parity cases passed. Claude isolated live canary
+passed at 16:51Z: code-reviewer delivered, runtime hash matched, header valid.
+No persistent current-profile attestation is claimed by that isolated proof.
+Codex activation attempt stopped before model invocation: eight hooks modified,
+zero trusted. Owner must review them in a fresh terminal TUI. OpenClaw install
+waits for permission to stop/restart its live gateway. Hermes and ZCode have no
+proven bounded native-child noninteractive canary; ZCode has no discovered CLI.
 
 ## Same-task continuity
 
-Continue on this branch; main remains e6531004. Preserve 45b51a20/cbbd2cff.
-Performance lead: the supplied September 2–5 failure snapshot has 11 timed
-embedding attempts, median 40.44 s, versus planner 50 samples median 8.37 s and
-recruiter 15 samples median 14.79 s. Small failure-biased samples, not a current
-benchmark. hybrid_recall.py caches roster vectors only inside one process while
-hooks start fresh processes. Verify fresh-process reuse before claiming speedup.
+Continue on the delivery branch; shared main is clean at 1de05aea. Later
+documentation-only merges need not replace the identical installed payload.
+The owner added backlog cleanup/completion: audit found 155 unfinished records
+(56 open, 99 in_progress), 153 without acceptance records before this package.
+Do not equate old implementation notes with acceptance or mass-close the queue.
 
 ## Next bounded work package
 
-1. Merge through a PR, fast-forward the clean main checkout and install an
-   immutable non-editable build from that commit; do not pin installed hooks to
-   the temporary source worktree or the editable development environment.
-2. Deterministic smoke all five hosts; bounded live canaries/ordinary turns where
-   supported. Record trust/platform blockers without unattended retry loops.
-3. Record acceptance and delivery evidence through the required PR/ledger flow.
+1. Record acceptance for AR-400 through AR-403 with isolated criterion verifiers.
+2. Commit review/install evidence and backlog inventory/ordered completion plan.
+   Reconcile authorized AR-397/398/399 tracker bookkeeping against existing proof.
+3. Merge delivery through PR/ledger flow; complete native operator steps only
+   when available. Never retry a trust or restart-consent blocker unattended.
 
 ## Verification
 
@@ -100,9 +102,9 @@ lint/format defects were mechanically corrected, the field-shadow and mutable
 test-fixture errors fixed, and deadline complexity factored without suppressions.
 Actual-preflight regression confirms terminal closure and explicit Store cache
 scope even while durable writes are deferred.
-Tracker checks still name pre-existing missing remote AR-398/AR-399 and the
-AR-397 closure pending authorization. AR-400 through AR-403 are linked correctly.
-Do not silently repair unrelated tracker state.
+Tracker checks identified missing remote AR-398/AR-399 and stale-open AR-397.
+The owner's subsequent backlog-cleanup request includes reconciling this record
+debt after checking existing acceptance. AR-400 through AR-403 are linked.
 
 ## Constraints
 
@@ -110,4 +112,4 @@ Self-implementation; no subagents. Branch/worktree and PR, never commit to main.
 Each substantive commit gets its immediately following worklog ledger.
 No secret printing, new keys, provider reconfiguration or native trust bypass.
 Do not weaken critics or authority for speed. Preserve historical evidence and
-do not close unrelated trackers.
+do not close items without applicable acceptance evidence.
