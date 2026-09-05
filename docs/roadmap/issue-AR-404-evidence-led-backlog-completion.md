@@ -6,6 +6,12 @@ created: 2026-09-05
 updated: 2026-09-05
 tags: [backlog, review, acceptance, delivery]
 related:
+  - docs/roadmap/issue-AR-148-fail-malformed-remediation-signatures-closed.md
+  - docs/roadmap/issue-AR-323-remove-stale-ledger-schema-literals.md
+  - docs/roadmap/issue-AR-139-restore-release-asset-budget.md
+  - docs/roadmap/AR-404-count-reconciliation-20260905.md
+  - docs/roadmap/issue-AR-149-fresh-dashboard-request-ids.md
+  - docs/roadmap/issue-AR-406-restore-dashboard-function-coverage.md
   - docs/roadmap/AR-404-backlog-dispositions-20260905.md
   - docs/decisions/0219-retire-removed-helper-release-obligations.md
   - docs/roadmap/issue-AR-405-make-directory-identity-regressions-portable.md
@@ -40,6 +46,50 @@ repeat work and risk reintroducing superseded behavior.
 
 ## Current state
 
+Owner clarification: work sequentially, close verified completed records,
+assess agent-written tickets against the current product rather than accepting
+their proposed designs, and leave Windows-specific work to the owner's machine.
+The starting 147 count was 43 open trackers plus 104 unfinished pre-tracker
+local records, not 147 demonstrated defects. The count reconciliation records
+the exact join. AR-149 is already implemented and now has current real HTTP
+verification; all four isolated criteria are satisfied and the record is done.
+The first absent 2/3 verdicts remain in f2e41b89; the targeted second check
+followed missing ContextVar/Store source citations, not criterion changes.
+AR-139 is retired:
+AR-295 and 3023f0557 superseded its old ceiling with audited required UI;
+current 386,366-byte assets pass the strict 378 KiB guard. No guard is changed.
+AR-152's listener soak passes,
+but the separate current UI function-coverage gate fails (91.12 versus 93
+percent), recorded as AR-406/#682. Filing it adds one tracked issue; retiring
+AR-139 and completing AR-149 remove two legacy items (44 tracked plus 102
+unfinished legacy at that checkpoint). No corresponding external trackers
+exist for those two.
+
+AR-148's signature repair is also present. Its wider validation uncovered the
+already-tracked AR-323 stale schema-literal defect: three native-child ledger
+cases and seven migration/credential tests expected 46 while schema is 49.
+The test-only correction removes copied current-version literals, preserves
+historical input versions and all behavioral assertions, and passes the complete
+401-test focused package. Fresh named production spine: 1030 passed, three
+existing skips (63.73s). AR-148/323 now have eight satisfied isolated criteria
+and are done; no new tracker was created for this existing issue family.
+Current split: 44 actual open trackers plus 100 unfinished legacy records
+(144 local unfinished). Three old records completed; one obsolete requirement
+retired; AR-406 remains a separate current finding.
+
+Final first-batch verification: fresh routing passes; 138 UI cases pass;
+development-venv conformance passes its baseline and kills all 182 mutations
+with source unchanged. The first installed-interpreter attempt had no pytest
+and ran no mutations; that invocation mistake is retained in the capsule.
+AR-406's next bounded package corrects a measurement-scope error: the mixed
+aggregate includes fixtures, while all seven production modules already meet
+unchanged 95/86/93 floors. It will not manufacture callback tests for the score.
+
+A stale-hook warning prompted `agency install --agent codex` from the existing
+installed immutable runtime. Codex files refreshed; exit 1 honestly retains
+activation-required/unverified hook trust. A fresh attended local Codex terminal
+must grant hook trust; no trust bypass or repeated unattended retry occurred.
+
 Phase: implementing. The owner asked to push and continue after the first
 semantic record cleanup. That cleanup is on main through PR #676/#677 at
 3ed51069. Two bounded defect packages follow it:
@@ -63,7 +113,7 @@ semantic record cleanup. That cleanup is on main through PR #676/#677 at
   fourteen Claude package permissions under recorded consent; no OpenClaw
   stop/restart/uninstall or credential change occurred.
 
-Current accounting: 146 unfinished baseline records plus AR-404 (147 current
+Prior delivery accounting: 146 unfinished baseline records plus AR-404 (147 then-current
 unfinished records). The frozen inventory started with 155, the four accepted
 AR-400..403 fixes left 151, and four obsolete policies AR-132/167/169/267 left
 147. AR-271 removes one more baseline item; AR-405 was filed outside that
@@ -146,9 +196,10 @@ No exhaustive workflow dispatch or unattended restart is implied.
 
 ## Next bounded package
 
-PR #679 main installation and scoped all-host smoke are recorded. Next verify
-already-implemented inspection work (AR-298), reconcile explicit scope
-contradictions, and deliver genuine AR-348/349 hiring-safety fixes. AR-271 and
+AR-149 is accepted and AR-139's obsolete ceiling is retired. Reconcile
+historical record relevance one by one, next AR-152's listener behavior; keep AR-406's current
+shared coverage failure visible. Then verify AR-298 and deliver genuine
+AR-348/349 hiring-safety fixes. Do not do Windows-specific work. AR-271 and
 AR-405 have their own satisfied acceptance; AR-285 still needs its two named
 evidence gaps, not a repeated classifier test. The full backlog remains open
 until every baseline record has a reviewed disposition and remaining

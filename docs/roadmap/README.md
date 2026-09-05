@@ -23,6 +23,13 @@ The current evidence-led cleanup is tracked by
 superseded proposals, verified completion candidates and real remaining work;
 the original inventory is a frozen baseline, not an implementation queue.
 
+At the 2026-09-05 e4255836 checkpoint, 43 tracker issues were open; another
+104 unfinished local records were exempt pre-tracker history. The 147 sum
+was a record-reconciliation count, not 147 established defects. See the
+[count reconciliation](AR-404-count-reconciliation-20260905.md). Windows-specific
+work is reserved for the owner's Windows machine; close or retire historical
+records only after checking relevance, current evidence and successor decisions.
+
 ## Items
 
 | Internal ID | Item | Status | Priority | Epic | Tracker mapping |
@@ -165,7 +172,7 @@ the original inventory is a frozen baseline, not an implementation queue.
 | `AR-136` | [Persist native-child correlation and fail planned work closed](issue-AR-136-persist-native-child-correlation.md) | done | p0 | routing | pending authorization |
 | `AR-137` | [Make dashboard collections complete and paginated](issue-AR-137-complete-dashboard-collections.md) | done | p0 | dashboard | pending authorization |
 | `AR-138` | [Make dashboard refresh coherent, accessible, and observable](issue-AR-138-coherent-observable-dashboard-ui.md) | open | p1 | dashboard | pending authorization |
-| `AR-139` | [Restore the installed release asset budget](issue-AR-139-restore-release-asset-budget.md) | open | p0 | release | pending authorization |
+| `AR-139` | [Restore the installed release asset budget](issue-AR-139-restore-release-asset-budget.md) | wont_do | p0 | release | pre-tracker history; superseded by AR-295 |
 | `AR-140` | [Scale routing, retrieval, and CLI startup](issue-AR-140-scale-routing-and-retrieval.md) | open | p1 | performance | pending authorization |
 | `AR-141` | [Restore compatibility and consolidate runtime duplication](issue-AR-141-restore-compatibility-consolidate-runtime.md) | done | p1 | maintenance | pending authorization |
 | `AR-142` | [Instrument runtime boundaries and hiring outcomes](issue-AR-142-instrument-runtime-boundaries.md) | done | p1 | observability | pending authorization |
@@ -174,8 +181,8 @@ the original inventory is a frozen baseline, not an implementation queue.
 | `AR-145` | [Restore the Python release coverage gate](issue-AR-145-restore-python-release-coverage.md) | open | p0 | testing | pending authorization |
 | `AR-146` | [Repair dashboard collection cursor validation](issue-AR-146-repair-dashboard-collection-cursor-validation.md) | done | p0 | dashboard | pending authorization |
 | `AR-147` | [Parse complete Windows ACL descriptors](issue-AR-147-parse-complete-windows-acl-descriptors.md) | open | p0 | security | pending authorization |
-| `AR-148` | [Fail malformed remediation signatures closed](issue-AR-148-fail-malformed-remediation-signatures-closed.md) | open | p1 | security | pending authorization |
-| `AR-149` | [Issue a fresh dashboard request ID per HTTP request](issue-AR-149-fresh-dashboard-request-ids.md) | open | p0 | observability | pending authorization |
+| `AR-148` | [Fail malformed remediation signatures closed](issue-AR-148-fail-malformed-remediation-signatures-closed.md) | done | p1 | security | pre-tracker history; verified acceptance |
+| `AR-149` | [Issue a fresh dashboard request ID per HTTP request](issue-AR-149-fresh-dashboard-request-ids.md) | done | p0 | observability | pre-tracker history; verified acceptance |
 | `AR-150` | [Coordinate dashboard refresh commit epochs](issue-AR-150-coordinate-dashboard-refresh-epochs.md) | open | p0 | dashboard | pending authorization |
 | `AR-151` | [Align Route Lab host eligibility with the server](issue-AR-151-align-route-lab-host-eligibility.md) | open | p1 | dashboard | pending authorization |
 | `AR-152` | [Bound dashboard live-listener retention](issue-AR-152-bound-dashboard-live-listeners.md) | open | p1 | performance | pending authorization |
@@ -342,7 +349,7 @@ the original inventory is a frozen baseline, not an implementation queue.
 | `AR-320` | [Bound the Codex wait to the full child staffing path](issue-AR-320-bound-codex-wait-to-full-child-staffing.md) | in_progress | p0 | host-integrations | None (tracker creation prohibited by active task) |
 | `AR-321` | [Select a reliable free LiteLLM child judge](issue-AR-321-select-reliable-free-litellm-child-judge.md) | in_progress | p0 | provider-runtime | None (tracker creation prohibited by active task) |
 | `AR-322` | [Bind Codex child sessions to the exact canary parent](issue-AR-322-bind-codex-child-session-to-canary-parent.md) | in_progress | p0 | host-integrations | None (tracker creation prohibited by active task) |
-| `AR-323` | [Remove stale native-child ledger schema literals](issue-AR-323-remove-stale-ledger-schema-literals.md) | open | p1 | testing | None (tracker creation prohibited by active task) |
+| `AR-323` | [Remove stale native-child ledger schema literals](issue-AR-323-remove-stale-ledger-schema-literals.md) | done | p1 | testing | pre-tracker history (AR-347); verified acceptance |
 | `AR-324` | [Bind the Codex canary child through host-authored lineage](issue-AR-324-bind-codex-canary-child-through-host-lineage.md) | in_progress | p0 | host-integrations | None (tracker creation prohibited by active task) |
 | `AR-325` | [Restore Codex first-complete-callback reconciliation](issue-AR-325-restore-codex-first-complete-callback-reconciliation.md) | in_progress | p0 | host-integrations | None (tracker creation prohibited by active task) |
 | `AR-326` | [Admit terminal Codex host-artifact collection](issue-AR-326-admit-terminal-codex-host-artifact-collection.md) | in_progress | p0 | host-integrations | None (tracker creation prohibited by active task) |
@@ -425,6 +432,7 @@ the original inventory is a frozen baseline, not an implementation queue.
 | `AR-403` | [Reuse roster embeddings across native hook processes](issue-AR-403-reuse-roster-embeddings-across-hook-processes.md) | done | p1 | reliability | [#668](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/668) |
 | `AR-404` | [Complete the backlog through evidence-led delivery packages](issue-AR-404-evidence-led-backlog-completion.md) | in_progress | p1 | reliability | [#672](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672) |
 | `AR-405` | [Make Windows directory-identity regressions portable](issue-AR-405-make-directory-identity-regressions-portable.md) | done | p1 | testing | [#675](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/675) |
+| `AR-406` | [Restore the configured dashboard UI function-coverage gate](issue-AR-406-restore-dashboard-function-coverage.md) | open | p2 | testing | [#682](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/682) |
 
 ## Traceability
 
@@ -570,7 +578,7 @@ not stable internal identifiers.
 | [AR-136](issue-AR-136-persist-native-child-correlation.md) | `a32e4e6`, `24948a0`, `c741b24`, `b95d78a` | [ADR-0094](../decisions/0094-durable-native-child-correlation.md) |
 | [AR-137](issue-AR-137-complete-dashboard-collections.md) | `a32e4e6`, `c741b24`, `0b9849c`, `b95d78a` | [ADR-0095](../decisions/0095-complete-paginated-dashboard-collections.md) |
 | [AR-138](issue-AR-138-coherent-observable-dashboard-ui.md) | `a32e4e6`, `c741b24`, `9aa317c`, `630db7b` | [ADR-0032](../decisions/0032-adaptive-authenticated-dashboard-polling.md) |
-| [AR-139](issue-AR-139-restore-release-asset-budget.md) | `a32e4e6`, `24948a0`, `c741b24`, `92adf2f` | [ADR-0037](../decisions/0037-layered-pinned-supply-chain-gates.md), [ADR-0074](../decisions/0074-build-byte-deterministic-release-artifacts.md) |
+| [AR-139](issue-AR-139-restore-release-asset-budget.md) | `a32e4e6`, `24948a0`, `c741b24`, `92adf2f`, `f2e41b89` (retired historical ceiling through AR-295 supersession) | [ADR-0037](../decisions/0037-layered-pinned-supply-chain-gates.md), [ADR-0074](../decisions/0074-build-byte-deterministic-release-artifacts.md) |
 | [AR-140](issue-AR-140-scale-routing-and-retrieval.md) | `a32e4e6`, `c741b24`, `0b9849c`, `0c0299a`, `eec5207`, `8236a16`, `1676f6a` | [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md) |
 | [AR-141](issue-AR-141-restore-compatibility-consolidate-runtime.md) | `a32e4e6`, `c741b24`, `a1efe31`, `4620204`, `bba2b43` | None; compatibility and mechanical consolidation |
 | [AR-142](issue-AR-142-instrument-runtime-boundaries.md) | `a32e4e6`, `c741b24`, `0b9849c`, `b95d78a` | [ADR-0027](../decisions/0027-authoritative-runtime-evidence-traces.md) |
@@ -579,8 +587,8 @@ not stable internal identifiers.
 | [AR-145](issue-AR-145-restore-python-release-coverage.md) | `c3ffe6a`, `4620204` | None; release-test determinism and behavioral coverage |
 | [AR-146](issue-AR-146-repair-dashboard-collection-cursor-validation.md) | `c3ffe6a`, `b95d78a` | [ADR-0095](../decisions/0095-complete-paginated-dashboard-collections.md) |
 | [AR-147](issue-AR-147-parse-complete-windows-acl-descriptors.md) | `63cf796` | [ADR-0039](../decisions/0039-fail-before-dacl-mutation-under-restricted-windows-tokens.md), [ADR-0055](../decisions/0055-freeze-executable-identity-before-launch.md) |
-| [AR-148](issue-AR-148-fail-malformed-remediation-signatures-closed.md) | `0932410` | [ADR-0012](../decisions/0012-canonical-sqlite-audit-store.md) |
-| [AR-149](issue-AR-149-fresh-dashboard-request-ids.md) | `2437068`, `4620204`, `6a3bdaa`, `90ce272` | [ADR-0027](../decisions/0027-authoritative-runtime-evidence-traces.md) |
+| [AR-148](issue-AR-148-fail-malformed-remediation-signatures-closed.md) | `0932410`, `11371cb6` (current 401-test evidence), `8d423e78` (candidate freeze), `5377a45e` (four satisfied criteria; done) | [ADR-0012](../decisions/0012-canonical-sqlite-audit-store.md) |
+| [AR-149](issue-AR-149-fresh-dashboard-request-ids.md) | `2437068`, `4620204`, `6a3bdaa`, `90ce272`, `b9d68e5d` (current evidence), `f980ad09` (candidate freeze), `f2e41b89` (first verdicts), `cfea40b1` (four satisfied criteria; done) | [ADR-0027](../decisions/0027-authoritative-runtime-evidence-traces.md), [ADR-0105](../decisions/0105-bound-delivery-to-live-demo-checkpoints.md) |
 | [AR-150](issue-AR-150-coordinate-dashboard-refresh-epochs.md) | `2437068`, `4620204`, `6a3bdaa`, `90ce272` | [ADR-0032](../decisions/0032-adaptive-authenticated-dashboard-polling.md) |
 | [AR-151](issue-AR-151-align-route-lab-host-eligibility.md) | `2437068`, `4620204`, `6a3bdaa`, `90ce272` | [ADR-0095](../decisions/0095-complete-paginated-dashboard-collections.md) |
 | [AR-152](issue-AR-152-bound-dashboard-live-listeners.md) | `2437068`, `4620204`, `6a3bdaa`, `90ce272` | [ADR-0032](../decisions/0032-adaptive-authenticated-dashboard-polling.md) |
@@ -727,7 +735,7 @@ not stable internal identifiers.
 | [AR-320](issue-AR-320-bound-codex-wait-to-full-child-staffing.md) | `761a279d`; `1989d111`; `74794970`; `04b6b1a5`; exact `c1cf1793` artifacts/images and 418 affected tests pass; fresh Codex parent `01a04143...04d4` waits once for 300 seconds, receives child exit 0 with `timed_out=false`, and then reaches the independent AR-321 judge blocker | [ADR-0184](../decisions/0184-bound-codex-wait-to-full-child-staffing.md); retain one spawn, one wait, no retry, and the 600-second outer ceiling |
 | [AR-321](issue-AR-321-select-reliable-free-litellm-child-judge.md) | `94741593`; `f8348ab0`; `cc24d403`; `e631d776`; `0baeb22f`; `ecac503c`; `b89a637f`; `bed213cd`; `8859bfc3`; `0f086498`; `17decade`; `d05a13ae`; `77cd30ae`; `e15d841f`; `4902da2e`; `21c735d8`; `c805b910`; `da906bfc`; `a0acac1a`; `c72e99b2`; `1bb2c659`; `5025390e`; `ced83631`; Qwen 3 32B passes repeated aliases and the fresh Codex run: sole `code-reviewer`, full delivery, exit-0 child, no timeout; only downstream AR-325 finalization remains | [ADR-0181](../decisions/0181-use-litellm-aliases-as-host-inference-control-plane.md), [ADR-0185](../decisions/0185-enforce-child-judge-schema-at-litellm-alias.md); preserve inference authority while enforcing only response shape |
 | [AR-322](issue-AR-322-bind-codex-child-session-to-canary-parent.md) | `a5c1ad53`; `77cd30ae`; `70516542`; `66b889a2`; the request digest is live-proven correct but not inherited by child hook sessions, so AR-324 supersedes its join while preserving the exact-route checks | [ADR-0179](../decisions/0179-admit-exact-codex-canary-delivery-at-subagent-start.md), [ADR-0186](../decisions/0186-bind-codex-child-session-with-canary-request-digest.md), [ADR-0187](../decisions/0187-bind-codex-canary-child-through-host-authored-lineage.md); never select an ambient open parent |
-| [AR-323](issue-AR-323-remove-stale-ledger-schema-literals.md) | `a5c1ad53`; unrelated known drift isolated during AR-322 review: 266 broader hook/child tests pass and three ledger assertions observe schema 48 while hard-coding 46; implementation deferred | None; tests should derive the current version from the canonical schema constant |
+| [AR-323](issue-AR-323-remove-stale-ledger-schema-literals.md) | `a5c1ad53` (historical failures), `11371cb6` (test-only repair; 401 focused and 1030 spine pass), `8d423e78` (candidate freeze), `5377a45e` (four satisfied criteria; done) | None; tests derive the current version from the canonical schema constant; tracker exemption already governed by AR-347 |
 | [AR-324](issue-AR-324-bind-codex-canary-child-through-host-lineage.md) | `66b889a2`; `b7f9d324`; `34f41532`; `7f760a59`; `c3493337`; `e15d841f`; `ced83631`; Qwen live-proves the separate parent/child lineage, complete v6 delivery, verified host artifact, and exit-0 child; AR-325 owns only the later dispatch join | [ADR-0156](../decisions/0156-host-artifacts-prove-native-child-delivery.md), [ADR-0179](../decisions/0179-admit-exact-codex-canary-delivery-at-subagent-start.md), [ADR-0187](../decisions/0187-bind-codex-canary-child-through-host-authored-lineage.md), [ADR-0188](../decisions/0188-separate-codex-hook-parent-and-child-identities.md); bind hook parent and child independently to the exact trusted host-authored lineage |
 | [AR-325](issue-AR-325-restore-codex-first-complete-callback-reconciliation.md) | `ced83631`; `8eb18009`; Regression-first repair passes five targeted cases, 149 affected tests, 17 evaluator tests, and two killed mutations; fresh exact `19e0210b` live proof accepts the first finalization with the real child and dispatch reconciled | [ADR-0144](../decisions/0144-claim-codex-spawn-execution-at-the-first-complete-callback.md), [ADR-0179](../decisions/0179-admit-exact-codex-canary-delivery-at-subagent-start.md), [ADR-0188](../decisions/0188-separate-codex-hook-parent-and-child-identities.md); restore callback-order independence without widening ordinary encrypted-spawn authority |
 | [AR-326](issue-AR-326-admit-terminal-codex-host-artifact-collection.md) | `8eb18009`; `592f4a6b`; `08264555`; `9061733d`; `70ff4ec4`; `61d29b65`; `4b6890ae`; committed source and exact rebuilt live install verify accepted-terminal collection, persisted attestation, and Store correlation; tracker parity remains | [ADR-0156](../decisions/0156-host-artifacts-prove-native-child-delivery.md), [ADR-0179](../decisions/0179-admit-exact-codex-canary-delivery-at-subagent-start.md), [ADR-0188](../decisions/0188-separate-codex-hook-parent-and-child-identities.md), [ADR-0189](../decisions/0189-admit-only-accepted-terminal-codex-parents-for-post-return-collection.md); hooks stay live-only while the bounded backend collector may admit only one exact accepted terminal parent |
@@ -784,8 +792,9 @@ not stable internal identifiers.
 | [AR-401](issue-AR-401-enforce-preflight-deadlines-at-provider-boundaries.md) | `47ab9fce`, `e9d8ecea`, `b389c638` | [ADR-0216](../decisions/0216-enforce-one-preflight-inference-deadline.md) |
 | [AR-402](issue-AR-402-separate-subject-domains-from-execution-eligibility.md) | `47ab9fce`, `e9d8ecea`, `af366dd8` | [ADR-0217](../decisions/0217-keep-subject-domains-out-of-execution-authority.md) |
 | [AR-403](issue-AR-403-reuse-roster-embeddings-across-hook-processes.md) | `e9d8ecea`, `af366dd8`, `b389c638` | [ADR-0218](../decisions/0218-cache-only-roster-vectors-across-hook-processes.md) |
-| [AR-404](issue-AR-404-evidence-led-backlog-completion.md) | `e758f217` (inventory and tracker reconciliation), `e77b46cd` (verified review closures and next package), `16d0ec80` (PR #673 delivery); `f0f5c386` (backlog disposition/evidence), `8e9cb483` (release-checklist and verification checkpoint); `1d9dea1c` (isolated verdicts and PR #676 delivery); `c652736a` (PR #676 merged first cleanup); `a201ca8b` (AR-405/271 delivered, 147 unfinished, scoped installed smoke); `aa6c3f1e` (PR #680 evidence merge) | [ADR-0219](../decisions/0219-retire-removed-helper-release-obligations.md) |
+| [AR-404](issue-AR-404-evidence-led-backlog-completion.md) | `e758f217` (inventory and tracker reconciliation), `e77b46cd` (verified review closures and next package), `16d0ec80` (PR #673 delivery); `f0f5c386` (backlog disposition/evidence), `8e9cb483` (release-checklist and verification checkpoint); `1d9dea1c` (isolated verdicts and PR #676 delivery); `c652736a` (PR #676 merged first cleanup); `a201ca8b` (AR-405/271 delivered, 147 unfinished, scoped installed smoke); `aa6c3f1e` (PR #680 evidence merge); `b9d68e5d` (43 tracked plus 104 legacy count correction; current evidence); `a6ab109d` (PR #683 final verification; three completed, one retired) | [ADR-0219](../decisions/0219-retire-removed-helper-release-obligations.md) |
 | [AR-405](issue-AR-405-make-directory-identity-regressions-portable.md) | Filed at `6edfa6d8`; `f0f5c386` (backlog disposition/evidence); `593f074f` (portable identity tests); `970293d7` (three isolated verdicts); `24e37e33` (verified closure); `78e501b7` (PR #678 merge; production unchanged) | [ADR-0074](../decisions/0074-build-byte-deterministic-release-artifacts.md) |
+| [AR-406](issue-AR-406-restore-dashboard-function-coverage.md) | `b9d68e5d` (current failure observed at `e4255836`; 138 UI tests pass, function floor fails) | [ADR-0105](../decisions/0105-bound-delivery-to-live-demo-checkpoints.md) |
 
 ## Dependency summary
 
