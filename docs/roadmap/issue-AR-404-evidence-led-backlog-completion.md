@@ -9,6 +9,7 @@ related:
   - docs/roadmap/AR-404-backlog-dispositions-20260905.md
   - docs/decisions/0219-retire-removed-helper-release-obligations.md
   - docs/roadmap/issue-AR-405-make-directory-identity-regressions-portable.md
+  - docs/roadmap/acceptance/evidence/AR-271-installed-delivery-20260905.md
   - docs/roadmap/AR-404-backlog-inventory-20260905.md
   - docs/roadmap/issue-AR-400-preserve-staffing-progress-across-empty-gaps.md
   - docs/roadmap/issue-AR-253-dynamic-team-dispatch-on-every-harness.md
@@ -47,15 +48,20 @@ semantic record cleanup. That cleanup is on main through PR #676/#677 at
   Its test-only correction turns 91 pass/two fail into 100 pass/one native
   Windows skip, without changing production identity semantics. Three isolated
   criteria are satisfied; portable real and synthetic assertions remain active.
-- AR-271 is done for its bounded contract outcome and delivered by PR #679.
+- AR-271 is done for its bounded contract outcome; PR #679 merged at 5434836e.
   Install and uninstall now share the exact bounded stopped-state classifier.
   Regression-first seven fail/fifteen pass becomes a 248-pass focused suite
   with two native Windows skips. Owner denial, execution-identity drift and
   live/unknown state after approval and before commit remain blocking.
   Three isolated criteria are satisfied; fast spine 1030 pass/three skips,
   UI 138, docs/acceptance/tracker tests 104, routing and protected conformance
-  baseline plus 182 mutation kills pass. Main install and smoke follow merge;
-  no real gateway stop/restart/uninstall is claimed from contract tests.
+  baseline plus 182 mutation kills pass. Exact merged-main non-editable install
+  and all eight deterministic smoke checks pass, covering five host contracts.
+  Native refresh remains partial: Codex needs attended hook trust and OpenClaw
+  is live. Claude/Hermes/ZCode registered/enabled, but no current-build live
+  session is claimed. The installer restarted its dashboard and repaired
+  fourteen Claude package permissions under recorded consent; no OpenClaw
+  stop/restart/uninstall or credential change occurred.
 
 Current accounting: 146 unfinished baseline records plus AR-404 (147 current
 unfinished records). The frozen inventory started with 155, the four accepted
@@ -140,7 +146,7 @@ No exhaustive workflow dispatch or unattended restart is implied.
 
 ## Next bounded package
 
-Finish PR #679 main installation and scoped all-host smoke, then verify
+PR #679 main installation and scoped all-host smoke are recorded. Next verify
 already-implemented inspection work (AR-298), reconcile explicit scope
 contradictions, and deliver genuine AR-348/349 hiring-safety fixes. AR-271 and
 AR-405 have their own satisfied acceptance; AR-285 still needs its two named

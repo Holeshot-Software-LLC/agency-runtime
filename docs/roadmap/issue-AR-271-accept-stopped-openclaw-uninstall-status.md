@@ -8,6 +8,7 @@ tags: [openclaw, uninstall, gateway, compatibility]
 related:
   - docs/roadmap/acceptance/issue-AR-271.md
   - docs/roadmap/acceptance/evidence/AR-271-stopped-uninstall-20260905.md
+  - docs/roadmap/acceptance/evidence/AR-271-installed-delivery-20260905.md
   - docs/decisions/0108-retire-only-owned-host-integrations.md
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
   - docs/roadmap/issue-AR-285-accept-openclaw-stopped-gateway-status.md
@@ -47,12 +48,18 @@ uninstall, leaving native runners, immutable execution binding, owner authority,
 locked replanning, retained backups and native postconditions in place.
 Focused demo: 248 tests passed, two Windows-only skips in 7.38s, including
 owner denial and launcher/environment/revalidation drift refusal. Phase:
-fast_verification. All three isolated Codex criteria are satisfied against
-candidate 4fdcd6a7. Protected conformance passed its baseline (99.682s) and
+done for the bounded contract. All three isolated Codex criteria are satisfied
+against candidate 4fdcd6a7. Protected conformance passed its baseline (99.682s) and
 killed all 182 mutations with zero survived/invalid and source unchanged.
-The bounded contract outcome is done; PR #679 carries main delivery, followed
-by the separate installed-source smoke checkpoint. The legacy null tracker URL
-remains pre-tracker history.
+PR #679 merged at 5434836e. That exact revision is installed non-editably;
+all eight deterministic smoke checks pass, including five host contracts.
+Integration refresh is partial: Codex needs attended hook trust and OpenClaw's
+live gateway prevented replacement. Claude/Hermes/ZCode registered and enabled,
+but current-build live sessions remain unproven. The separate installed
+delivery record retains dashboard restart, installer-managed Claude permission
+repair, credential preflight and all limitations. No real OpenClaw stop,
+restart or uninstall occurred. The legacy null tracker URL remains pre-tracker
+history.
 
 Historical incident:
 
