@@ -33,7 +33,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/581
 > from venv `1c1efa07` (digest `5059543c`); nothing is branch-only. The live
 > store is at schema 49, and a runtime still on `c42fb0a5` refuses it ("schema is
 > newer than this runtime (49 > 48)"): relaunch claude, restart hermes and
-> zcode, and trust the eight codex hook events once more in a fresh TUI.
+> zcode, and trust the eight codex hook events once more in a fresh TUI. The
+> install restarted the openclaw gateway (14:19:51Z); no host is live-proven yet.
 
 Start-here capsule after the 2026-09-05 sessions (close, codex trust, two fixes,
 doctor check, AR-398 and AR-399 done).
@@ -43,14 +44,14 @@ doctor check, AR-398 and AR-399 done).
 **Merged with merge commits:** PR #657 (AR-397 close, platform decision, AR-393
 measurement, AR-398 filing), #658 and #659 (capsule), then #661
 (`claude/ar398-lease-receipt`: token-guarded close, lease-bounded hiring loop,
-schema 49, hiring codes carried one at a time, ADR-0214) and #660
+schema 49, hiring codes carried one at a time, ADR-0214), #660
 (`claude/ar399-trailing-brace`: a plan object plus one stray brace is parsed and
-the repair named). Each PR had one Opus review (a subagent, not recorded on
-GitHub) before merge.
+the repair named), #662 (capsule), #663 (`claude/ar398-doctor-stuck-runs`: doctor
+check, records frozen and flipped). One Opus review per PR (transcripts: session
+`3a994fdc`'s `subagents/agent-*.jsonl` under `~/.claude/projects/`, not GitHub).
 
-**Launch check held twice** on the same claude process (`c42fb0a5`, key in
-the environ, plugin digest `929576f2`, drift call empty from outside the
-checkout; inside it, five foreign-package reports: the stale-import trap).
+**Launch check held twice** on the same claude process (`c42fb0a5`, key in the
+environ, plugin digest `929576f2`; drift empty from outside the checkout only).
 
 **Codex was `runtime-verified` at 11:35Z and is `activation-required` again**
 after each reinstall changed its eight hook hashes (`status=modified observed=8
@@ -87,15 +88,16 @@ time, `hiring_reason_code_invalid` for the uncarriable). Not proven to explain a
 ## completed-evidence
 
 Merged commits on `main`: AR-397 close `45432976`..`c9951209`; capsules
-`23ef5f01`, `257ebd39`, `eb035aaa`; AR-398 `b1cc2612` and `424e56be`; AR-399
-`cfc4e166`; each with its `docs(worklog):` row. Session `3a994fdc` scratchpad:
-`store-copy-b.db` holds the original 03:46Z loss (trace `66d5588b`, no receipt,
-run `in_progress`, lease expired 03:56:02Z); copies e, f, g, h hold the four AR-398
-replays, g with `payloads-plifix3/projector.jsonl` (six events in, `[]` out) and
-h with the fixed receipt; `payloads-notif1/2` hold the four stray-brace replies;
-`store-copy-c.db` (03:59Z) is the untouched control. `capture_full.py` keeps full
-provider replies; `capture_hiring.py` dumps hiring events and the projector's
-input and output.
+`23ef5f01`, `257ebd39`, `eb035aaa`, `769488e7`, `ba7acc86`; AR-398 `b1cc2612`,
+`424e56be`, `2ae2b9c2` (doctor check), `40e5ac76` (review fixes); AR-399
+`cfc4e166`, `894be044`; each with its `docs(worklog):` row. Scratchpad of
+session `3a994fdc`: `store-copy-b.db` holds the original 03:46Z loss (trace
+`66d5588b`, no receipt, run `in_progress`, lease expired 03:56:02Z); copies e, f,
+g, h hold the four AR-398 replays, g with `payloads-plifix3/projector.jsonl` (six
+events in, `[]` out) and h with the fixed receipt; `payloads-notif1/2` hold the
+four stray-brace replies; `store-copy-c.db` (03:59Z) is the untouched control.
+`capture_full.py` keeps full provider replies; `capture_hiring.py` dumps hiring
+events and the projector's input and output.
 
 **AR-393 criterion 5, measured on copies.** The first declaring receipt written by
 fix-carrying code (2026-09-05T00:28:19Z) carries a four-code hiring account; the
@@ -108,10 +110,11 @@ their condition, which no code change can do. Rewording is the owner's.
 **Nothing is code on a branch; the live proof waits on owner steps.** (1) The
 old runtime refuses the schema-49 store: this claude process (hooks on
 `c42fb0a5`) wrote nothing after 13:25Z, and the hermes kernel (started 09-04)
-and zcode processes (started 09-03) are in the same state; relaunch claude and
-restart hermes and zcode. (2) Codex hook trust, as above. (3) Tracker writes:
-closing #654 (AR-397 done) and creating issues for AR-398 and AR-399; the tracker
-gate is red until then, by design.
+and zcode processes (started 09-02) are in the same state; relaunch claude and
+restart hermes and zcode. The install restarted the openclaw gateway, which has
+no run since 09-02: unproven, not stuck. (2) Codex hook trust, as above. (3)
+Tracker writes: closing #654 (AR-397 done) and creating issues for AR-398 and
+AR-399; the tracker gate is red until then, by design.
 
 ## same-task-continuity
 
@@ -126,9 +129,9 @@ gate is red until then, by design.
    lease bound now ends it with a receipt, but budget the wall clock.
 4. `agency doctor --fix-perms` immediately before `verify_acceptance.py`; the
    npm tree goes group-writable again between sessions.
-5. A retrospective close binds `candidate_commit` to the evidence commit; a
-   pending record's rows are validated against the working tree, so compute
-   line ranges from the files, never from memory.
+5. A retrospective close binds `candidate_commit` to the evidence commit; rows
+   of a pending record are validated against the working tree, so compute line
+   ranges from the files; read a frozen record's ranges at its `candidate_commit`.
 6. Duck-typed requests (the canary path, tests) predate new request fields:
    read them with `getattr(..., None)`.
 7. One heredoc per shell call, printf commit messages to a file, `&&` after
@@ -137,38 +140,36 @@ gate is red until then, by design.
 
 ## next-bounded-work-package
 
-1. After the relaunch, read the first live receipts from a store copy: a rescued
-   plan carries `model_text_trailing_data_trimmed` on its planner attempt; a gap
-   turn carries a populated hiring account and, when the lease bound fires,
-   `hiring_lease_budget_exhausted`. `build/` is cleared again after this build.
+1. After the relaunches, read the first live receipts from a store copy, one per
+   host including openclaw: a rescued plan carries `model_text_trailing_data_trimmed`
+   on its planner attempt; a gap turn carries a populated hiring account and, when
+   the lease bound fires, `hiring_lease_budget_exhausted`. `build/` is clear.
 2. Owner: authorize closing #654 and creating the AR-398 and AR-399 tracker
    issues; then the "record the authorized tracker mapping" commit.
-3. Owner: authorize the tracker issues for AR-398 and AR-399 so their `done`
-   records can be mapped and #654 closed for AR-397.
-4. Owner decision: reword AR-393 criterion 5 to receipts written after the fix;
-   then re-verify it. The projector condition is named; check whether the 42
-   rows' turns carried `contract_invalid:` codes is not recoverable from receipts.
-5. Codex: after trust, drive one ordinary turn and read whether it staffs.
-6. Operator decision: glm-5-turbo cannot serve a plan call inside its 45 s
+3. Owner decision: reword AR-393 criterion 5 to receipts written after the fix;
+   then re-verify it. The projector condition is named; whether the 42 rows'
+   turns carried `contract_invalid:` codes is not recoverable from receipts.
+4. Codex: after trust, drive one ordinary turn and read whether it staffs.
+5. Operator decision: glm-5-turbo cannot serve a plan call inside its 45 s
    deployment timeout (the planner alias has one working deployment).
 
 ## verification
 
-Install: venvs `e52f849e` then `1c1efa07` built from the checkout in 5 s each, all
-five pointers and the claude plugin cache on digest `5059543c`, `cli_install_drift_reports()` empty
-from outside the checkout, the live store migrated 48 to 49 with 1122 receipts
-and all four triggers intact (safety copy `live-store-before-install-132442.db`).
+Install: venvs `e52f849e` then `1c1efa07` built from the checkout; all five
+pointers and the claude plugin cache on digest `5059543c`; drift call empty from
+outside the checkout; live store migrated 48 to 49 with 1122 receipts and the
+receipt table's four triggers (`immutable`, `scope_insert`, two `_activity`)
+intact; safety copy `live-store-before-install-132442.db`.
 Per PR at merge: #661 16 new tests, 463 passed across 18 files, lint 10
 findings repo-wide against main's 11; #660 10 new tests, 827 passed across
-33 files with six failures identical on main, lint identical to main; docs gates
-clean including worklog rows on both. Two Opus reviews (one per PR) before merge;
-their findings are folded in or recorded here.
+33 files with six failures identical on main, lint identical to main; #663 two
+doctor tests, its two failures pre-existing on main; docs gates clean including
+worklog rows on all. Review findings are folded in or recorded here.
 
 ## constraints
 
 - `agency.yaml` is operator configuration (timeouts 60000 and 120000, dated
-  backup);
-  deployment order and `workforce.mode` were not touched.
+  backup); deployment order and `workforce.mode` were not touched.
 - Never commit to `main`; worktree branch, PR, merge with `--merge`; ledger
   dance on every substantive commit; tracker writes need authorization.
 - The live store is read-only to a session; measure on copies. Live host calls
