@@ -1848,6 +1848,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `4516572c` | 2026-09-05 | Merge pull request #662 from Holeshot-Software-LLC/claude/ar383-capsule-20260905b | null | null |
 | `2ae2b9c2` | 2026-09-05 | feat(doctor): report preflight attempts left in_progress past their lease | [AR-398](../roadmap/issue-AR-398-a-gap-turn-that-outruns-its-lease-leaves-no-receipt.md) | Criterion 4: agency doctor gains db_preflight_stuck, a read-only per-host count of attempts left in_progress past their lease; against a live-store copy it names the eleven stuck openclaw and hermes attempts; two new tests, 91 passed with two pre-existing failures identical on main. |
 | `f9cf1aaf` | 2026-09-05 | docs(roadmap): record the AR-398 and AR-399 acceptance verdicts and flip both done | [AR-398](../roadmap/issue-AR-398-a-gap-turn-that-outruns-its-lease-leaves-no-receipt.md) | AR-398 and AR-399 closed through the AR-361 flow: records frozen at 2ae2b9c2 and 894be044, eight verdicts satisfied in one verifier round each, both issues flipped to done. |
+| `40e5ac76` | 2026-09-05 | docs(roadmap): apply the review of the doctor and close branch | [AR-398](../roadmap/issue-AR-398-a-gap-turn-that-outruns-its-lease-leaves-no-receipt.md) | Review fixes before merge: criterion 3 reworded to the six-unit mainframe shape the PL/I replay exercised and re-verified satisfied; the doctor check's unreachable None branch removed. |
 <!-- worklog:end -->
 
 ## Provenance notes
