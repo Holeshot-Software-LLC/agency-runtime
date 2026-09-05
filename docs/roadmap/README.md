@@ -411,12 +411,13 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-395` | [Three real inference stages are not in the receipt's stage vocabulary, so their attempts are recorded as unknown](issue-AR-395-preflight-stage-vocabulary-is-incomplete.md) | done | p1 | observability | [#652](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/652) |
 | `AR-396` | [A complete reply that is not JSON ends the stage on one call, while a cut one and a wrong one each get a second ask](issue-AR-396-a-non-json-reply-gets-no-second-ask.md) | done | p1 | reliability | [#653](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/653) |
 | `AR-397` | [A packaged contract that already shipped at the current template cannot be revised in place](issue-AR-397-packaged-contracts-cannot-be-revised-in-place.md) | done | p2 | workforce | [#654](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/654) |
-| `AR-398` | [A gap turn whose hiring loop outruns the preflight lease leaves no receipt, no hiring case and a run stuck in progress](issue-AR-398-a-gap-turn-that-outruns-its-lease-leaves-no-receipt.md) | done | p1 | observability | pending authorization |
-| `AR-399` | [A complete plan object followed by one stray closing brace reads as prose and costs the turn](issue-AR-399-a-plan-object-followed-by-a-stray-brace-reads-as-prose.md) | done | p1 | reliability | pending authorization |
-| `AR-400` | [Preserve staffing progress across empty gaps](issue-AR-400-preserve-staffing-progress-across-empty-gaps.md) | in_progress | p1 | reliability | [#665](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/665) |
-| `AR-401` | [Enforce preflight deadlines at provider boundaries](issue-AR-401-enforce-preflight-deadlines-at-provider-boundaries.md) | in_progress | p1 | reliability | [#666](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/666) |
-| `AR-402` | [Separate subject domains from execution eligibility](issue-AR-402-separate-subject-domains-from-execution-eligibility.md) | in_progress | p1 | reliability | [#667](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/667) |
-| `AR-403` | [Reuse roster embeddings across native hook processes](issue-AR-403-reuse-roster-embeddings-across-hook-processes.md) | in_progress | p1 | reliability | [#668](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/668) |
+| `AR-398` | [A gap turn whose hiring loop outruns the preflight lease leaves no receipt, no hiring case and a run stuck in progress](issue-AR-398-a-gap-turn-that-outruns-its-lease-leaves-no-receipt.md) | done | p1 | observability | [#670](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/670) |
+| `AR-399` | [A complete plan object followed by one stray closing brace reads as prose and costs the turn](issue-AR-399-a-plan-object-followed-by-a-stray-brace-reads-as-prose.md) | done | p1 | reliability | [#671](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/671) |
+| `AR-400` | [Preserve staffing progress across empty gaps](issue-AR-400-preserve-staffing-progress-across-empty-gaps.md) | done | p1 | reliability | [#665](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/665) |
+| `AR-401` | [Enforce preflight deadlines at provider boundaries](issue-AR-401-enforce-preflight-deadlines-at-provider-boundaries.md) | done | p1 | reliability | [#666](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/666) |
+| `AR-402` | [Separate subject domains from execution eligibility](issue-AR-402-separate-subject-domains-from-execution-eligibility.md) | done | p1 | reliability | [#667](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/667) |
+| `AR-403` | [Reuse roster embeddings across native hook processes](issue-AR-403-reuse-roster-embeddings-across-hook-processes.md) | done | p1 | reliability | [#668](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/668) |
+| `AR-404` | [Complete the backlog through evidence-led delivery packages](issue-AR-404-evidence-led-backlog-completion.md) | in_progress | p1 | reliability | [#672](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672) |
 
 ## Traceability
 
@@ -772,10 +773,11 @@ not stable internal identifiers.
 | [AR-395](issue-AR-395-preflight-stage-vocabulary-is-incomplete.md) | [`eeb98653`](../worklog/README.md) (every stage the runtime runs, named on the receipt) | null |
 | [AR-397](issue-AR-397-packaged-contracts-cannot-be-revised-in-place.md) | [`dda2c8a3`](../worklog/README.md) (superseded packaged definitions as predecessors, the monitoring release lifecycle), [`f67b718f`](../worklog/README.md) (review fixes: metadata authorities, up-front pin check) | null |
 | [AR-394](issue-AR-394-recruiter-teams-fail-or-mis-select.md) | [`c2a923d4`](../worklog/README.md) (eight closed shortfall causes, the retrieval/eligibility split) | [ADR-0213](../decisions/0213-the-verifier-judges-safety-retrieval-judges-fit.md) |
-| [AR-400](issue-AR-400-preserve-staffing-progress-across-empty-gaps.md) | `47ab9fce` | null |
+| [AR-400](issue-AR-400-preserve-staffing-progress-across-empty-gaps.md) | `47ab9fce`, `1de05aea` (PR #669), `87159dc0` (installed review evidence) | null |
 | [AR-401](issue-AR-401-enforce-preflight-deadlines-at-provider-boundaries.md) | `47ab9fce`, `e9d8ecea`, `b389c638` | [ADR-0216](../decisions/0216-enforce-one-preflight-inference-deadline.md) |
 | [AR-402](issue-AR-402-separate-subject-domains-from-execution-eligibility.md) | `47ab9fce`, `e9d8ecea`, `af366dd8` | [ADR-0217](../decisions/0217-keep-subject-domains-out-of-execution-authority.md) |
 | [AR-403](issue-AR-403-reuse-roster-embeddings-across-hook-processes.md) | `e9d8ecea`, `af366dd8`, `b389c638` | [ADR-0218](../decisions/0218-cache-only-roster-vectors-across-hook-processes.md) |
+| [AR-404](issue-AR-404-evidence-led-backlog-completion.md) | `e758f217` (inventory and tracker reconciliation), `e77b46cd` (verified review closures and next package) | null |
 
 ## Dependency summary
 

@@ -14,7 +14,7 @@ type: worklog
 commit: e9d8ecea1fe45e7ddcb2566c5433b71128c43822
 short: e9d8ecea
 date: 2026-09-05
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/669
 related_issues:
   - docs/roadmap/issue-AR-403-reuse-roster-embeddings-across-hook-processes.md
 ---
@@ -58,4 +58,3 @@ is corrected. Full fast-spine rerun, conformance and live timing remain due.
 
 AR-400 owns merge/install/all-host smoke; AR-403 owns current cold/warm timing.
 No live performance or deployed completion claim is made at this checkpoint.
-

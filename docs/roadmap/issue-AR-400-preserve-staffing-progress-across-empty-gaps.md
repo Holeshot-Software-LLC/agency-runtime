@@ -1,6 +1,6 @@
 ---
 title: "AR-400: Preserve staffing progress across empty gaps"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-09-05
 updated: 2026-09-05
@@ -17,7 +17,7 @@ issue_id: AR-400
 priority: p1
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/665
 depends_on: []
-blocks: []
+blocks: [AR-404]
 ---
 
 # AR-400: Preserve staffing progress across empty gaps
@@ -30,10 +30,16 @@ Valid recruiter gap rows may have empty rankings. Restaffing discarded each succ
 
 The independent 2026-09-05 review reproduced the defect at main `e6531004`.
 The owner requested implementation, PR merge, installation and smoke testing of
-all harnesses. Package phase: demo_ready. Focused regressions and the named fast
+all harnesses. Package phase: live_demo. Focused regressions and the named fast
 spine pass (1004 passed, three skipped); 182 curated conformance mutations are
 killed. Implementation checkpoints are `47ab9fce`, `e9d8ecea` and `af366dd8`.
-Installed/live host outcomes remain due; AR-403 separately records live recall timing.
+PR #669 merged the implementation to main at 1de05aea; that immutable build is
+installed. Deterministic smoke passes for all five hosts and Claude's isolated
+native-child canary passes. Codex trust, OpenClaw restart consent and
+Hermes/ZCode live-mode limits remain explicit. Candidate-bound acceptance
+verification is complete: all three criteria are satisfied at the merged
+implementation. Native operator/platform limits remain explicit; AR-403
+separately records live recall timing.
 
 ## Approach
 
@@ -46,6 +52,6 @@ Existing native host trust and gateway credentials remain operator-owned.
 
 ## Acceptance
 
-- [ ] One and two empty gaps retain every completed assignment with direct and deferred commits; a per-turn cap preserves the first assignment and names the remaining gap.
-- [ ] Amending a worker already nominated on another unit preserves that nomination and revalidates the full proposal.
-- [ ] The bounded package reaches main through a PR, is installed, and records deterministic smoke and a live attempt or explicit operator/platform blocker for each of the five harnesses.
+- [x] One and two empty gaps retain every completed assignment with direct and deferred commits; a per-turn cap preserves the first assignment and names the remaining gap.
+- [x] Amending a worker already nominated on another unit preserves that nomination and revalidates the full proposal.
+- [x] The bounded package reaches main through a PR, is installed, and records deterministic smoke and a live attempt or explicit operator/platform blocker for each of the five harnesses.
