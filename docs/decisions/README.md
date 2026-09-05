@@ -97,7 +97,8 @@ Status meanings:
 | [ADR-0070](0070-run-child-specific-agency-activation.md) | Run child-specific Agency activation through native host lifecycles | Accepted |
 | [ADR-0071](0071-bound-native-delegation-correction.md) | Bound native delegation correction to one evidence-checked pass | Superseded |
 | [ADR-0072](0072-compare-task-outcomes-with-paired-trials.md) | Compare task outcomes with evidence-labelled paired trials | Accepted |
-| [ADR-0078](0078-present-human-routing-evidence-and-abstain-on-noise.md) | Present human routing evidence and abstain on weak heuristic noise | Accepted |
+| [ADR-0078](0078-present-human-routing-evidence-and-abstain-on-noise.md) | Present human routing evidence and abstain on weak heuristic noise | Superseded by ADR-0222 |
+| [ADR-0222](0222-retire-superseded-live-routing-contract.md) | Retire the superseded live-routing contract without claiming live success | Accepted |
 | [ADR-0079](0079-route-native-children-once-and-bound-unplanned-reroutes.md) | Route native children once and bound unplanned reroutes | Accepted |
 | [ADR-0080](0080-plan-before-recruiting-from-the-whole-workforce.md) | Plan before recruiting from the whole workforce | Superseded |
 | [ADR-0083](0083-use-capability-indexed-recall-and-bounded-inference.md) | Use capability-indexed recall and bounded inference | Accepted |

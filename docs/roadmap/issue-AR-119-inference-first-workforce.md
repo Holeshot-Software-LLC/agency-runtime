@@ -3,9 +3,11 @@ title: "AR-119: Implement inference-first real-time workforce and contractor lif
 status: in_progress
 category: roadmap
 created: 2026-07-21
-updated: 2026-08-24
+updated: 2026-09-05
 tags: [routing, workforce, contractors, delegation, participation, evaluation, performance, multi-harness]
 related:
+  - docs/roadmap/issue-AR-115-live-routing-trust.md
+  - docs/decisions/0222-retire-superseded-live-routing-contract.md
   - docs/decisions/0080-plan-before-recruiting-from-the-whole-workforce.md
   - docs/decisions/0081-compile-contractors-from-governed-structured-contracts.md
   - docs/decisions/0082-schedule-assurance-by-artifact-lifecycle.md
@@ -74,18 +76,30 @@ related:
   - docs/roadmap/issue-AR-175-retire-dashboard-control-fallback.md
   - docs/roadmap/issue-AR-176-align-full-gate-contract-fixtures.md
   - docs/analysis/2026-07-26-production-readiness-review.md
-supersedes: []
+supersedes:
+  - docs/roadmap/issue-AR-115-live-routing-trust.md
 superseded_by: null
 type: issue
 epic: routing
 issue_id: AR-119
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132
-depends_on: [AR-115, AR-116, AR-118, AR-125, AR-179, AR-180, AR-185, AR-190, AR-228, AR-252, AR-253, AR-255, AR-256, AR-259, AR-260, AR-261, AR-262, AR-263, AR-264, AR-272, AR-273, AR-274, AR-275, AR-276, AR-277, AR-278, AR-279, AR-281, AR-282]
+depends_on: [AR-116, AR-118, AR-125, AR-179, AR-180, AR-185, AR-190, AR-228, AR-252, AR-253, AR-255, AR-256, AR-259, AR-260, AR-261, AR-262, AR-263, AR-264, AR-272, AR-273, AR-274, AR-275, AR-276, AR-277, AR-278, AR-279, AR-281, AR-282]
 blocks: [AR-178, AR-200, AR-201]
 ---
 
 # AR-119: Implement inference-first real-time workforce and contractor lifecycle
+
+## AR-115 successor responsibility (2026-09-05)
+
+ADR-0222 retires AR-115's contradictory heuristic-selection/six-field-header
+design, not its unresolved product problem. This umbrella now explicitly owns
+ordinary configured-inference staffing, no unrelated specialist activation,
+and truthful current-turn header/activation evidence through its canonical
+rule/host matrix. AR-125 retains independent selection/outcome and host proof.
+The current credential-unset, unstaffed/unverified session does not pass these
+obligations. Status remains in_progress; no live evidence or criterion changes
+are claimed by the record reconciliation. Historical AR-115 receipts stay there.
 
 ## Problem
 
@@ -433,8 +447,10 @@ not evidence that Agency is better.
 
 ## Dependencies
 
-AR-115 establishes trustworthy live selection, AR-116 bounds native-child
-routing and provider choice, and AR-118 reconciles activation evidence.
+This issue absorbs AR-115's surviving live-selection/evidence outcome under
+ADR-0222; it does not depend on the retired heuristic/header design. AR-116
+bounds native-child routing and provider choice, and AR-118 reconciles
+activation evidence. AR-125 remains the independent evaluation dependency.
 
 ## Historical execution record (superseded)
 

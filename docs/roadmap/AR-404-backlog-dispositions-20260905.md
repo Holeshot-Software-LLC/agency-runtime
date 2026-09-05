@@ -6,6 +6,7 @@ created: 2026-09-05
 updated: 2026-09-05
 tags: [backlog, review, evidence, supersession]
 related:
+  - docs/roadmap/AR-404-oldest-first-reconciliation-20260905.md
   - docs/roadmap/acceptance/evidence/AR-348-installed-delivery-20260905.md
   - docs/roadmap/issue-AR-139-restore-release-asset-budget.md
   - docs/roadmap/issue-AR-149-fresh-dashboard-request-ids.md
@@ -98,7 +99,12 @@ items subsequently completed. Only unfinished rows are future work.
 
 ## Next packages
 
-Next implement AR-349's rejected-hire persistence separately. AR-348 is merged
+The owner subsequently changed the order to oldest-first, one record/PR/merge
+at a time. The current queue and dispositions are in the
+[oldest-first ledger](AR-404-oldest-first-reconciliation-20260905.md), starting
+with AR-115. The AR-349-first ordering below is retained as a prior checkpoint.
+
+Previously, AR-349's rejected-hire persistence was next. AR-348 is merged
 and installed; it implements actual resolved
 chains, not its old declared-profile-only suggestion; strict=false warnings and
 inference-owned choices are preserved. AR-298 remains an implemented inspection

@@ -6,6 +6,8 @@ created: 2026-07-21
 updated: 2026-08-12
 tags: [evaluation, testing, portability, routing]
 related:
+  - docs/roadmap/issue-AR-115-live-routing-trust.md
+  - docs/decisions/0222-retire-superseded-live-routing-contract.md
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/decisions/0080-plan-before-recruiting-from-the-whole-workforce.md
   - docs/decisions/0082-schedule-assurance-by-artifact-lifecycle.md
@@ -31,6 +33,11 @@ Selection activity and unit tests do not prove that Agency assembles correct
 teams, improves matched outcomes, or runs portably through every supported host.
 
 ## Current state
+
+AR-115 retirement note (2026-09-05): ADR-0222 removes its obsolete heuristic/
+six-field-header design, not the need for configured, forbidden-selection and
+current-host evidence. Those live/evaluation obligations remain here and under
+AR-119. No old or current unstaffed/unverified session is counted as success.
 
 Every-worker semantic cases and pairwise/lifecycle-team properties are green.
 Exact candidate `29da6eca` now has clean Windows/Linux artifacts, fresh wheel

@@ -6,6 +6,8 @@ created: 2026-07-21
 updated: 2026-08-12
 tags: [routing, delegation, providers, dashboard, cli]
 related:
+  - docs/roadmap/issue-AR-115-live-routing-trust.md
+  - docs/decisions/0222-retire-superseded-live-routing-contract.md
   - README.md
   - agency_runtime/core/store/child_routing.py
   - agency_runtime/core/cli_transport.py
@@ -18,7 +20,7 @@ epic: routing
 issue_id: AR-116
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/128
-depends_on: [AR-115]
+depends_on: []
 blocks: [AR-118, AR-119]
 ---
 
@@ -53,6 +55,10 @@ bounded public metadata, and offer the result in the setup wizard and dashboard.
 Keep a manual field for CLI model IDs and LiteLLM router/model-group aliases.
 
 ## Dependencies
+
+AR-115 is now retired under ADR-0222; it is retained as historical provenance,
+not an active prerequisite to this already-recorded transport implementation.
+The original dependency statement below does not reauthorize heuristic staffing.
 
 AR-115 establishes trustworthy routing output and weak-signal abstention.
 ADR-0070 defines child-specific native activation and ADR-0067 keeps configured
