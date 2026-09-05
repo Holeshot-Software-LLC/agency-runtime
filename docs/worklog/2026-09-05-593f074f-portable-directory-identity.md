@@ -16,7 +16,7 @@ type: worklog
 commit: 593f074fc2e9e302efc9a20cdc2c82ce98637bb0
 short: 593f074f
 date: 2026-09-05
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/678
 related_issues:
   - docs/roadmap/issue-AR-405-make-directory-identity-regressions-portable.md
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
@@ -48,7 +48,11 @@ native-only skip (5.25s); wider seven files 452 passed, three skipped (11.68s).
 Named fast spine: 1004 passed, three skipped (63.23s). UI 138 passed. Ruff,
 format, metadata, policy, worklog and strict docs checks pass; deterministic
 routing gates pass. Decision conformance is running; isolated acceptance is
-pending. No host mutation, native Windows run or exhaustive workflow occurred.
+now satisfied for all three criteria at 970293d7. The first conformance run
+failed its copied baseline's private-directory setup under ambient umask 0002;
+source was unchanged and no mutations ran. The protected umask 077 rerun follows
+the existing AR-297 procedure. No existing permissions or trust policy changed.
+No host mutation, native Windows run or exhaustive workflow occurred.
 
 ## Follow-ups
 
