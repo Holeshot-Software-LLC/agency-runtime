@@ -6,6 +6,7 @@ created: 2026-09-05
 updated: 2026-09-05
 tags: [backlog, review, acceptance, delivery]
 related:
+  - docs/roadmap/acceptance/evidence/AR-348-installed-delivery-20260905.md
   - docs/decisions/0220-measure-dashboard-coverage-over-production-modules.md
   - docs/roadmap/acceptance/evidence/AR-406-production-coverage-20260905.md
   - docs/roadmap/issue-AR-148-fail-malformed-remediation-signatures-closed.md
@@ -51,9 +52,13 @@ repeat work and risk reintroducing superseded behavior.
 AR-348 is accepted and locally done under ADR-0221: both original criteria
 satisfied against c9b678a5, 413 focused passes/one skip, 1075 fast-spine passes/
 three skips, 138 UI passes, routing pass, and 184/184 protected mutation kills
-with source unchanged. PR #687 merge, tracker #406 closure and exact installed
-delivery are pending. Local unfinished: 141 (42 mapped plus 99 legacy); remote
-still has 43 open issues until the accepted change is merged and #406 closed.
+with source unchanged. PR #687 merged at 0309f251; tracker #406 closed at
+22:20:23Z on 2026-09-05 and read-back confirms CLOSED. Fresh enumeration:
+42 actual open issues; local unfinished: 141 (42 mapped plus 99 legacy).
+That exact immutable revision is installed. All 45 new hiring regressions pass
+against installed package bytes, and all eight deterministic smoke checks pass.
+Codex files are refreshed but attended trust remains; the running OpenClaw
+gateway is untouched. Claude/Hermes/ZCode registered/enabled, not live-proven.
 Strict=false warnings and inference-owned provider choices are unchanged.
 AR-349's rejected-hire persistence is the next separate implementation package;
 AR-298 remains implemented pending isolated verification. Windows is excluded.

@@ -6,6 +6,7 @@ created: 2026-09-05
 updated: 2026-09-05
 tags: [backlog, review, evidence, supersession]
 related:
+  - docs/roadmap/acceptance/evidence/AR-348-installed-delivery-20260905.md
   - docs/roadmap/issue-AR-139-restore-release-asset-budget.md
   - docs/roadmap/issue-AR-149-fresh-dashboard-request-ids.md
   - docs/roadmap/issue-AR-295-audit-guided-dashboard-asset-budget.md
@@ -61,7 +62,7 @@ against current product intent, without changing the frozen baseline inventory.
 | [AR-152](issue-AR-152-bound-dashboard-live-listeners.md) | Done; existing repair verified | Four isolated criteria satisfied at 12a62393. The unchanged 50-render soak and teardown cases pass. AR-406/ADR-0220 explicitly correct the coverage denominator to all seven product modules, retaining the 95/86/93 floors; no listener design or behavioral test was changed. |
 | [AR-406](issue-AR-406-restore-dashboard-function-coverage.md) | Done; measurement contract corrected | Three isolated criteria satisfied at d109b094. The initial mixed-scope 91.12 function score counted fixture callbacks; the exact production-wide configured gate passes 138 unchanged cases at 96.92/86.62/95.71. Both local/CI exact-command regressions pass in 163 workflow tests; fresh spine 1030 pass/three skips. Initial absent baseline-comparison verdict retained, then supplied exact equal Git objects. |
 | [AR-148](issue-AR-148-fail-malformed-remediation-signatures-closed.md), [AR-323](issue-AR-323-remove-stale-ledger-schema-literals.md) | Done; existing signature fix verified and stale schema tests corrected | The signature guard was already implemented. Three known ledger cases and seven migration/credential cases failed only on copied schema-46 literals. Those output assertions now use canonical SCHEMA_VERSION, retaining legacy 44/45 inputs and every behavioral guard. All 401 selected tests and fresh 1030-test spine pass; three existing spine skips. Eight isolated criteria satisfied. No production or schema change. AR-347's existing AR-323 tracker exemption supersedes its old future-tracker clause. |
-| [AR-348](issue-AR-348-enforce-strict-independence-in-production.md) | Done locally; real runtime defect repaired | ADR-0221 guards actual resolved creator/reviewer chains, including legacy, harness, fallback and safety-repair paths. Both unchanged criteria satisfied at c9b678a5; 413 focused passes/one skip, 1075 spine passes/three skips, 138 UI passes, routing pass, 184/184 mutation kills and source unchanged. PR #687 and installed delivery pending; no five-host live or latency claim. |
+| [AR-348](issue-AR-348-enforce-strict-independence-in-production.md) | Done, merged and installed; real runtime defect repaired | ADR-0221 guards actual resolved creator/reviewer chains, including legacy, harness, fallback and safety-repair paths. Both unchanged criteria satisfied at c9b678a5; 413 focused passes/one skip, 1075 spine passes/three skips, 138 UI passes, routing pass, 184/184 mutation kills and source unchanged. PR #687 merged at 0309f251; tracker #406 closed. Exact installed runtime passes all 45 new hiring regressions and eight smoke checks; no five-host live or latency claim. |
 
 After retiring AR-139 and completing AR-148/149/152/323/406, local unfinished
 records total 142: 43 mapped plus 99 legacy. PR #684 merged at 853de310 and
@@ -71,8 +72,10 @@ Closing an unmapped historical record cannot decrease the owner's tracker-open
 count. Five completions and one retirement are published in PRs #683/#684.
 
 AR-348's accepted repair reduces the local unfinished queue to 141 (42 mapped
-plus 99 legacy). Its tracker #406 remains open until PR #687 merges; remote
-enumeration therefore remains 43 at this pre-publication checkpoint.
+plus 99 legacy). PR #687 merged at 0309f251 and tracker #406 closed at
+22:20:23Z on 2026-09-05; read-back confirms CLOSED and fresh enumeration
+returns 42 actual open tracker issues. The exact merged runtime is installed,
+with 45 installed hiring regression passes and eight scoped smoke passes.
 
 ## Earlier candidate review and subsequent disposition
 
@@ -85,7 +88,7 @@ items subsequently completed. Only unfinished rows are future work.
 | [AR-337](issue-AR-337-run-harness-battery-on-version-change.md) | Much is implemented, but all checkboxes are not proof. BATTERY_HOSTS excludes ZCode and tests explicitly reject it, while acceptance says each supported harness. | Resolve and record the supported-battery versus supported-host scope, then verify the service, drift and receipt contract. Do not claim five-host battery parity. |
 | [AR-298](issue-AR-298-expose-complete-workforce-prompts.md) | Implemented Store/CLI/dashboard inspection and historical installed visual evidence; no isolated acceptance record. | Bind the nine criteria to exact current source/test and appropriately scoped visual evidence; close only after isolated verification. |
 | [AR-336](issue-AR-336-requalify-the-recruiter-route-for-ordinary-tasks.md) | Historical ordinary-route evidence exists, but a later owner-approved description-evaluation addition is outside its four checked criteria. Current configuration cannot be inferred from August receipts. | Reconcile that scope with AR-253/370/374, identify a fixed qualification corpus and retained receipts. |
-| [AR-348](issue-AR-348-enforce-strict-independence-in-production.md), [AR-349](issue-AR-349-persist-rejected-hiring-cases.md) | Real defects reproduced by the preceding review; not obsolete record debt. | AR-348 is now accepted; its PR #687 and installed delivery remain pending. AR-349's rejected repair-exhaustion persistence remains a separate fix. |
+| [AR-348](issue-AR-348-enforce-strict-independence-in-production.md), [AR-349](issue-AR-349-persist-rejected-hiring-cases.md) | Real defects reproduced by the preceding review; not obsolete record debt. | AR-348 is now accepted, merged and installed through PR #687. AR-349's rejected repair-exhaustion persistence remains a separate fix. |
 | [AR-350](issue-AR-350-risk-classifier-verdict-vs-hint.md) | Explicit product/authority choice, not a safe automatic closure. | Keep owner-approval gates until their authority is explicitly resolved; align the hint contract and marker count afterward. |
 | [AR-351](issue-AR-351-close-sibling-axis-empty-declarations.md) | Its domain-axis rejection conflicts with AR-402/ADR-0217's descriptive-domain semantics; the stack wildcard and lifecycle questions are separate. | Reconcile only the obsolete domain clause, then reproduce stack/lifecycle boundaries before deciding their remaining hardening. |
 | [AR-174](issue-AR-174-short-circuit-docs-only-ci.md), [AR-177](issue-AR-177-make-exhaustive-python-ci-manual.md) | Implemented contract tests coexist with explicit missing hosted measurement. | Distinguish deployment/measurement debt from code work; do not dispatch an exhaustive workflow or manufacture an old receipt during cleanup. |
@@ -95,8 +98,8 @@ items subsequently completed. Only unfinished rows are future work.
 
 ## Next packages
 
-Finish AR-348's PR #687 publication and exact installed smoke, then handle
-AR-349's rejected-hire persistence separately. AR-348 implements actual resolved
+Next implement AR-349's rejected-hire persistence separately. AR-348 is merged
+and installed; it implements actual resolved
 chains, not its old declared-profile-only suggestion; strict=false warnings and
 inference-owned choices are preserved. AR-298 remains an implemented inspection
 candidate awaiting isolated verification. Leave Windows work to the owner and
