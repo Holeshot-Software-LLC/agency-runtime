@@ -23,7 +23,7 @@ epic: release
 issue_id: AR-161
 priority: p0
 tracker_url: null
-depends_on: [AR-160]
+depends_on: []
 blocks: [AR-143, AR-196]
 ---
 

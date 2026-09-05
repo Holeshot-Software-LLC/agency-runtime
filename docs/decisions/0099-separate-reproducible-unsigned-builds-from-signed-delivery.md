@@ -1,11 +1,12 @@
 ---
 title: "Separate reproducible unsigned builds from signed delivery"
-status: accepted
+status: superseded
 category: decisions
 created: 2026-07-27
-updated: 2026-07-28
+updated: 2026-09-05
 tags: [release, security, windows, signing, reproducibility, supply-chain]
 related:
+  - docs/decisions/0219-retire-removed-helper-release-obligations.md
   - docs/roadmap/issue-AR-188-add-immutable-update-discovery.md
   - SECURITY.md
   - THIRD_PARTY_NOTICES.md
@@ -18,13 +19,16 @@ related:
   - docs/decisions/0074-build-byte-deterministic-release-artifacts.md
   - docs/decisions/0098-pair-portable-and-win-amd64-wheels.md
 supersedes: []
-superseded_by: null
+superseded_by: docs/decisions/0219-retire-removed-helper-release-obligations.md
 id: ADR-0099
 type: decision
 deciders: [maintainers]
 ---
 
 # ADR-0099: Separate reproducible unsigned builds from signed delivery
+
+> Historical helper-specific contract, retired by ADR-0219 after AR-197 removed
+> the helper. This record is not a current signing prerequisite or legal clearance.
 
 ## Context
 

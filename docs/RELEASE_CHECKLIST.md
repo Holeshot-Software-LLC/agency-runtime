@@ -6,6 +6,7 @@ created: 2026-07-10
 updated: 2026-08-13
 tags: [release, verification]
 related:
+  - docs/decisions/0219-retire-removed-helper-release-obligations.md
   - CHANGELOG.md
   - CONTRIBUTING.md
   - SECURITY.md
@@ -441,8 +442,8 @@ private parent, materializes the exact bounded release payload from reviewed Git
 blobs, and publishes one profile-specific wheel plus one governed source
 distribution only after a successful isolated build and pre-publication
 checkout revalidation. The merge gate, not either producer, assembles and
-uploads the verified unsigned review three-artifact set. AR-161's protected
-signing and delivery gate must produce the final release candidate separately.
+uploads the verified three-artifact set. ADR-0219 retires AR-161's removed-helper
+signing gate; existing publication and non-helper supply-chain controls remain.
 This avoids trusting physical worktree
 line endings or broadly inherited workspace ACLs while preserving the
 independently implemented and invoked Twine and distribution-verifier gates.

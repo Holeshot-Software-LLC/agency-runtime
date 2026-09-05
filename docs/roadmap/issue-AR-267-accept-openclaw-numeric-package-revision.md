@@ -1,18 +1,20 @@
 ---
 title: "AR-267: Accept OpenClaw numeric package revisions"
-status: in_progress
+status: wont_do
 category: roadmap
 created: 2026-08-21
-updated: 2026-08-21
+updated: 2026-09-05
 tags: [openclaw, installer, versioning, compatibility, AR-119, AR-264]
 related:
+  - docs/roadmap/issue-AR-347-reconcile-tracker-parity-backlog.md
+  - docs/roadmap/AR-404-backlog-dispositions-20260905.md
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md
   - docs/roadmap/AR-119-openclaw-hermes-verification-packet.md
   - docs/roadmap/issue-AR-285-accept-openclaw-stopped-gateway-status.md
   - docs/worklog/README.md
 supersedes: []
-superseded_by: null
+superseded_by: docs/roadmap/issue-AR-347-reconcile-tracker-parity-backlog.md
 type: issue
 epic: install
 issue_id: AR-267
@@ -23,6 +25,14 @@ blocks: []
 ---
 
 # AR-267: Accept OpenClaw numeric package revisions
+
+> Historical release-line contract retired on 2026-09-05, not newly verified as
+> complete. Owner-approved commit 2a5d52cd, traced under AR-347, moved the audited
+> minimum to 2026.8.2. The current parser still accepts wholly numeric revisions,
+> but the explicit 2026.7-only acceptance below is no longer wanted. Current
+> tests accept 2026.8.2-1 and reject 2026.7.1-2 and true prereleases. Do not
+> restore July support to check these historical boxes. Existing install and
+> native-host proof requirements are unchanged.
 
 ## Problem
 

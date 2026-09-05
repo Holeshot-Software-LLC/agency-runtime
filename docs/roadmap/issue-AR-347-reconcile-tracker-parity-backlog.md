@@ -6,8 +6,10 @@ created: 2026-09-01
 updated: 2026-09-01
 tags: [documentation, trackers, parity, governance]
 related:
+  - docs/roadmap/issue-AR-267-accept-openclaw-numeric-package-revision.md
   - docs/roadmap/issue-AR-254-reconcile-canonical-worklog-history.md
-supersedes: []
+supersedes:
+  - docs/roadmap/issue-AR-267-accept-openclaw-numeric-package-revision.md
 superseded_by: null
 type: issue
 epic: documentation

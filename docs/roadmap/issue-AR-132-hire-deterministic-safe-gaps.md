@@ -1,17 +1,21 @@
 ---
 title: "AR-132: Hire deterministic safe staffing gaps"
-status: open
+status: wont_do
 category: roadmap
 created: 2026-07-26
-updated: 2026-07-26
+updated: 2026-09-05
 tags: [routing, workforce, hiring, contractors, inference]
 related:
+  - docs/decisions/0118-require-inference-owned-staffing.md
+  - docs/roadmap/issue-AR-235-autonomous-gap-hiring-with-isolated-security-review.md
+  - docs/roadmap/issue-AR-393-declared-gaps-leave-no-hiring-account.md
+  - docs/roadmap/AR-404-backlog-dispositions-20260905.md
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-122-contractor-hiring-and-lifecycle.md
   - agency_runtime/core/selector/pipeline.py
   - agency_runtime/core/workforce/staffing_verifier.py
 supersedes: []
-superseded_by: null
+superseded_by: docs/roadmap/issue-AR-235-autonomous-gap-hiring-with-isolated-security-review.md
 type: issue
 epic: routing
 issue_id: AR-132
@@ -22,6 +26,14 @@ blocks: []
 ---
 
 # AR-132: Hire deterministic safe staffing gaps
+
+> Superseded on 2026-09-05, not certified complete. AR-235 replaces the original
+> hard hire-cap policy with autonomous, amend-first hiring; ADR-0118 reserves
+> every staffing/hiring choice to inference. Executing an accepted plan in its
+> stable order remains valid, but deterministic inference replacement does not.
+> Safe gap handling and durable outcomes remain requirements under AR-235,
+> AR-393 and the accepted AR-400 fix. The original proposal and evidence below
+> are retained; this disposition does not claim those successor items complete.
 
 ## Problem
 

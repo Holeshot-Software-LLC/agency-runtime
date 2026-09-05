@@ -17,6 +17,12 @@ superseded_by: null
 
 This registry is the canonical map from stable, repository-owned planning IDs to tracker-assigned issue numbers. Internal IDs never change and never inherit the tracker's number. When an issue is created, its title must begin with the internal ID in brackets, and its assigned URL must be written back to both this registry and the issue document.
 
+The current evidence-led cleanup is tracked by
+[AR-404](issue-AR-404-evidence-led-backlog-completion.md). Its
+[reviewed dispositions](AR-404-backlog-dispositions-20260905.md) distinguish
+superseded proposals, verified completion candidates and real remaining work;
+the original inventory is a frozen baseline, not an implementation queue.
+
 ## Items
 
 | Internal ID | Item | Status | Priority | Epic | Tracker mapping |
@@ -152,7 +158,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-129` | [Isolate subprocess environments](issue-AR-129-isolate-subprocess-environments.md) | open | p0 | security | pending authorization |
 | `AR-130` | [Revalidate Store trust at authoritative boundaries](issue-AR-130-revalidate-store-trust.md) | open | p0 | security | pending authorization |
 | `AR-131` | [Complete MCP and CLI host contracts](issue-AR-131-complete-mcp-cli-host-contracts.md) | open | p0 | host-integrations | pending authorization |
-| `AR-132` | [Hire deterministic safe staffing gaps](issue-AR-132-hire-deterministic-safe-gaps.md) | open | p0 | routing | pending authorization |
+| `AR-132` | [Hire deterministic safe staffing gaps](issue-AR-132-hire-deterministic-safe-gaps.md) | wont_do | p0 | routing | pending authorization |
 | `AR-133` | [Make finalization evidence atomic, complete, and bounded](issue-AR-133-atomic-finalization-evidence.md) | done | p0 | observability | pending authorization |
 | `AR-134` | [Enforce SQLite currentness and retention invariants](issue-AR-134-enforce-sqlite-currentness-invariants.md) | done | p0 | operations | pending authorization |
 | `AR-135` | [Complete ZCode native integration end to end](issue-AR-135-complete-zcode-integration.md) | open | p0 | host-integrations | pending authorization |
@@ -187,9 +193,9 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-164` | [Reject repository-ancestor PATH poisoning](issue-AR-164-reject-repository-ancestor-path-poisoning.md) | in_progress | p0 | security | pending authorization |
 | `AR-165` | [Fail ambiguous dependency-review capability probes closed](issue-AR-165-fail-ambiguous-dependency-review-capability-closed.md) | in_progress | p0 | security | pending authorization |
 | `AR-166` | [Keep dashboard disclosure and correlation truthful](issue-AR-166-truthful-dashboard-disclosure-and-correlation.md) | in_progress | p2 | dashboard | pending authorization |
-| `AR-167` | [Normalize Windows release-source modes](issue-AR-167-normalize-windows-release-source-modes.md) | in_progress | p0 | release | pending authorization |
+| `AR-167` | [Normalize Windows release-source modes](issue-AR-167-normalize-windows-release-source-modes.md) | wont_do | p0 | release | pending authorization |
 | `AR-168` | [Rebuild the canonical sdist source manifest](issue-AR-168-rebuild-canonical-sdist-source-manifest.md) | in_progress | p0 | release | pending authorization |
-| `AR-169` | [Exclude the native PE from portable wheels](issue-AR-169-exclude-native-pe-from-portable-wheel.md) | in_progress | p0 | release | pending authorization |
+| `AR-169` | [Exclude the native PE from portable wheels](issue-AR-169-exclude-native-pe-from-portable-wheel.md) | wont_do | p0 | release | pending authorization |
 | `AR-170` | [Fail dashboard response correlation closed](issue-AR-170-fail-dashboard-response-correlation-closed.md) | in_progress | p1 | dashboard | pending authorization |
 | `AR-171` | [Redact dashboard lifecycle reasons](issue-AR-171-redact-dashboard-lifecycle-reasons.md) | in_progress | p1 | dashboard | pending authorization |
 | `AR-172` | [Make roster pages snapshot-consistent](issue-AR-172-make-roster-pages-snapshot-consistent.md) | in_progress | p1 | operations | pending authorization |
@@ -280,7 +286,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-264` | [Compile actionable contractor execution profiles](issue-AR-264-compile-actionable-contractor-execution-profiles.md) | in_progress | p0 | roster-governance | [#313](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/313) |
 | `AR-265` | [Separate contextual inquiry from execution authority](issue-AR-265-contextual-turn-classification.md) | in_progress | p0 | routing | [#317](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/317) |
 | `AR-266` | [Recall the complete workforce with dense hybrid retrieval](issue-AR-266-dense-hybrid-workforce-recall.md) | in_progress | p0 | workforce | [#320](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/320) |
-| `AR-267` | [Accept OpenClaw numeric package revisions](issue-AR-267-accept-openclaw-numeric-package-revision.md) | in_progress | p0 | install | None (tracker creation pending explicit authorization) |
+| `AR-267` | [Accept OpenClaw numeric package revisions](issue-AR-267-accept-openclaw-numeric-package-revision.md) | wont_do | p0 | install | Pre-tracker history; obsolete release-line contract |
 | `AR-268` | [Create nested config parents privately](issue-AR-268-create-nested-config-parents-privately.md) | done | p0 | security | None (tracker creation pending explicit authorization) |
 | `AR-269` | [Accept null OpenClaw control errors](issue-AR-269-accept-null-openclaw-control-errors.md) | done | p0 | reliability | None (tracker creation pending explicit authorization) |
 | `AR-270` | [Bind OpenClaw installed-copy provenance](issue-AR-270-bind-openclaw-installed-copy-provenance.md) | open | p0 | install | None (tracker creation pending explicit authorization) |
@@ -418,6 +424,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-402` | [Separate subject domains from execution eligibility](issue-AR-402-separate-subject-domains-from-execution-eligibility.md) | done | p1 | reliability | [#667](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/667) |
 | `AR-403` | [Reuse roster embeddings across native hook processes](issue-AR-403-reuse-roster-embeddings-across-hook-processes.md) | done | p1 | reliability | [#668](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/668) |
 | `AR-404` | [Complete the backlog through evidence-led delivery packages](issue-AR-404-evidence-led-backlog-completion.md) | in_progress | p1 | reliability | [#672](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672) |
+| `AR-405` | [Make Windows directory-identity regressions portable](issue-AR-405-make-directory-identity-regressions-portable.md) | open | p1 | testing | [#675](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/675) |
 
 ## Traceability
 
@@ -778,6 +785,7 @@ not stable internal identifiers.
 | [AR-402](issue-AR-402-separate-subject-domains-from-execution-eligibility.md) | `47ab9fce`, `e9d8ecea`, `af366dd8` | [ADR-0217](../decisions/0217-keep-subject-domains-out-of-execution-authority.md) |
 | [AR-403](issue-AR-403-reuse-roster-embeddings-across-hook-processes.md) | `e9d8ecea`, `af366dd8`, `b389c638` | [ADR-0218](../decisions/0218-cache-only-roster-vectors-across-hook-processes.md) |
 | [AR-404](issue-AR-404-evidence-led-backlog-completion.md) | `e758f217` (inventory and tracker reconciliation), `e77b46cd` (verified review closures and next package), `16d0ec80` (PR #673 delivery) | null |
+| [AR-405](issue-AR-405-make-directory-identity-regressions-portable.md) | Filed during AR-404 at `6edfa6d8`: two pre-existing Windows-attribute fixture failures on Linux; no product change or passing release claim | [ADR-0074](../decisions/0074-build-byte-deterministic-release-artifacts.md) |
 
 ## Dependency summary
 

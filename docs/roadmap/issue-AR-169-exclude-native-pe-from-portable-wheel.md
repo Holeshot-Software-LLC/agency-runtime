@@ -1,11 +1,14 @@
 ---
 title: "AR-169: Exclude the native PE from portable wheels"
-status: in_progress
+status: wont_do
 category: roadmap
 created: 2026-07-27
-updated: 2026-07-27
+updated: 2026-09-05
 tags: [release, packaging, portability, windows, wheel]
 related:
+  - docs/decisions/0219-retire-removed-helper-release-obligations.md
+  - docs/roadmap/issue-AR-197-remove-agency-owned-windows-hello.md
+  - docs/roadmap/AR-404-backlog-dispositions-20260905.md
   - docs/roadmap/issue-AR-107-build-release-artifacts-from-canonical-git-blobs.md
   - docs/roadmap/issue-AR-160-publish-platform-honest-native-release-artifacts.md
   - docs/roadmap/issue-AR-183-normalize-private-posix-wheel-modes.md
@@ -15,17 +18,22 @@ related:
   - scripts/verify_distribution.py
   - tests/test_platform_wheel.py
 supersedes: []
-superseded_by: null
+superseded_by: docs/roadmap/issue-AR-197-remove-agency-owned-windows-hello.md
 type: issue
 epic: release
 issue_id: AR-169
 priority: p0
 tracker_url: null
 depends_on: [AR-107, AR-183, AR-184]
-blocks: [AR-160]
+blocks: []
 ---
 
 # AR-169: Exclude the native PE from portable wheels
+
+> Retired, not completed, on 2026-09-05 under ADR-0219 and AR-197. Both current
+> wheel profiles reject PE content; the old requirement to retain the helper in
+> the Windows wheel conflicts with the product. AR-160 retains cross-OS artifact
+> proof. Historical criteria below remain unchanged, including unproven gates.
 
 ## Problem
 

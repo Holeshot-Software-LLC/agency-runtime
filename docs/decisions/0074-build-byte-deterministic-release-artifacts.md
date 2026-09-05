@@ -6,6 +6,7 @@ created: 2026-07-20
 updated: 2026-07-27
 tags: [release, packaging, reproducibility, git, archives, portability]
 related:
+  - docs/roadmap/issue-AR-405-make-directory-identity-regressions-portable.md
   - docs/roadmap/issue-AR-107-build-release-artifacts-from-canonical-git-blobs.md
   - docs/roadmap/issue-AR-167-normalize-windows-release-source-modes.md
   - docs/roadmap/issue-AR-168-rebuild-canonical-sdist-source-manifest.md

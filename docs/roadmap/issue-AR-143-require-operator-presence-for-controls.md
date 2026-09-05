@@ -33,7 +33,7 @@ epic: security
 issue_id: AR-143
 priority: p0
 tracker_url: null
-depends_on: [AR-128, AR-160, AR-161]
+depends_on: [AR-128, AR-161]
 blocks: [AR-180, AR-196]
 ---
 
