@@ -84,7 +84,8 @@ changes rather than duplicating every commit.
   invariant, and the governed hiring loop stops proposing hires when the lease
   cannot fit another round, marking the units it skipped
   `hiring_lease_budget_exhausted`. Schema 49 widens the receipt invariant
-  vocabulary and rebuilds older stores in place on first open.
+  vocabulary and rebuilds older stores in place on first open. `agency doctor`
+  reports attempts left `in_progress` past their lease (`db_preflight_stuck`).
 - Packaged contracts can be revised in place (AR-397): a superseded definition
   is kept verbatim and its prompt hash pinned, so `agency install` advances a
   live worker from the exact identity it holds instead of preserving it at the

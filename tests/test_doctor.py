@@ -376,3 +376,74 @@ def test_openclaw_smoke_uses_static_validation_when_node_is_unavailable(
 
     assert detail["format"] == "openclaw-js"
     assert detail["syntax_check"] == "skipped: node unavailable"
+
+
+def _start_attempt(store, trace_id: str, host: str) -> str:
+    import hashlib
+
+    started = store.begin_preflight_attempt(
+        session_id="session",
+        trace_id=trace_id,
+        request_fingerprint=hashlib.sha256(trace_id.encode("utf-8")).hexdigest(),
+        request_kind="nontrivial",
+        host=host,
+    )
+    return str(started["attempt_token"])
+
+
+def test_database_checks_report_attempts_stuck_past_their_lease(tmp_path: Path) -> None:
+    """AR-398 criterion 4: a run left in_progress past its lease is named, per host."""
+
+    from agency_runtime.core import doctor
+    from agency_runtime.core.store.sqlite import Store
+
+    path = tmp_path / "agency.db"
+    store = Store(path)
+    _start_attempt(store, "stuck-one", "openclaw")
+    _start_attempt(store, "stuck-two", "openclaw")
+    _start_attempt(store, "still-running", "hermes")
+    connection = store._connect()
+    try:
+        connection.execute(
+            "UPDATE runs SET preflight_lease_expires_at = '2000-01-01T00:00:00.000000+00:00' "
+            "WHERE trace_id IN ('stuck-one', 'stuck-two')"
+        )
+        connection.commit()
+    finally:
+        connection.close()
+
+    cfg = AgencyConfig(store=StoreConfig(db_path=str(path)))
+    checks = doctor._database_checks(cfg)
+
+    stuck = next(c for c in checks if c.name == "db_preflight_stuck")
+    assert stuck.status == "warn"
+    assert stuck.message.startswith(
+        "2 preflight attempt(s) left in_progress past their lease (openclaw 2)"
+    )
+    assert "no receipt" in stuck.message
+    assert stuck.detail.startswith("oldest started 20")
+
+
+def test_database_checks_pass_when_no_attempt_is_stuck(tmp_path: Path) -> None:
+    from agency_runtime.core import doctor
+    from agency_runtime.core.store.sqlite import Store
+
+    path = tmp_path / "agency.db"
+    store = Store(path)
+    token = _start_attempt(store, "closed", "claude")
+    assert store.fail_preflight_attempt(
+        session_id="session", trace_id="closed", attempt_token=token
+    )
+    _start_attempt(store, "live", "claude")  # inside its lease
+
+    cfg = AgencyConfig(store=StoreConfig(db_path=str(path)))
+    checks = doctor._database_checks(cfg)
+
+    stuck = next(c for c in checks if c.name == "db_preflight_stuck")
+    assert stuck.status == "pass"
+    assert [c.name for c in checks] == [
+        "db_integrity",
+        "db_schema",
+        "db_roster",
+        "db_preflight_stuck",
+    ]
