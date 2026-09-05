@@ -6,6 +6,7 @@ created: 2026-07-11
 updated: 2026-07-11
 tags: [dashboard, live-updates, visualization, security, accessibility]
 related:
+  - docs/roadmap/issue-AR-152-bound-dashboard-live-listeners.md
   - docs/roadmap/issue-AR-175-retire-dashboard-control-fallback.md
   - docs/roadmap/issue-AR-14-live-signal-observatory.md
   - docs/decisions/0029-secure-local-dashboard-and-bounded-observability.md

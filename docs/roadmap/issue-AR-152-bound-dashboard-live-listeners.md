@@ -1,11 +1,15 @@
 ---
 title: "AR-152: Bound dashboard live-listener retention"
-status: open
+status: done
 category: roadmap
 created: 2026-07-26
-updated: 2026-07-26
+updated: 2026-09-05
 tags: [dashboard, performance, memory, ui]
 related:
+  - docs/decisions/0220-measure-dashboard-coverage-over-production-modules.md
+  - docs/roadmap/issue-AR-406-restore-dashboard-function-coverage.md
+  - docs/roadmap/acceptance/issue-AR-152.md
+  - docs/roadmap/acceptance/evidence/AR-406-production-coverage-20260905.md
   - docs/decisions/0032-adaptive-authenticated-dashboard-polling.md
   - docs/roadmap/issue-AR-138-coherent-observable-dashboard-ui.md
   - agency_runtime/dashboard/dashboard-render.js
@@ -30,8 +34,14 @@ dashboard teardown, causing listener and object growth on every polling cycle.
 
 ## Current state
 
-The live endpoint can update every 2.5 seconds. No soak assertion proves that
-listener or worker-card retention remains bounded across repeated revisions.
+The 6a3bdaa repair is present: one delegated container listener serves native
+worker buttons, and teardown drains its disposer exactly once. The existing
+50-revision soak verifies no per-card listeners, one stable container listener,
+working nested-label selection and no listener after teardown. All 138 UI cases
+pass. AR-406 corrects the shared coverage measurement to all seven production
+modules under ADR-0220; unchanged 95/86/93 floors pass at 96.92/86.62/95.71.
+No listener implementation change is needed. All four isolated criteria are
+satisfied at candidate 12a62393.
 
 ## Approach
 
@@ -45,10 +55,10 @@ AR-138 and ADR-0032 own dashboard refresh lifecycle and performance behavior.
 
 ## Acceptance
 
-- Repeated live revisions do not grow retained worker listeners or detached cards.
-- Worker-detail interaction remains keyboard and pointer accessible.
-- Dashboard teardown removes the bounded listener set exactly once.
-- The soak regression and exact dashboard UI coverage gate pass.
+- [x] Repeated live revisions do not grow retained worker listeners or detached cards.
+- [x] Worker-detail interaction remains keyboard and pointer accessible.
+- [x] Dashboard teardown removes the bounded listener set exactly once.
+- [x] The soak regression and exact dashboard UI coverage gate pass.
 
 ## Implementation evidence
 

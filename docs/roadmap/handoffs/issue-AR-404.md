@@ -6,6 +6,10 @@ created: 2026-09-05
 updated: 2026-09-05
 tags: [handoff, backlog, acceptance, delivery]
 related:
+  - docs/roadmap/acceptance/issue-AR-406.md
+  - docs/roadmap/acceptance/issue-AR-152.md
+  - docs/roadmap/acceptance/evidence/AR-406-production-coverage-20260905.md
+  - docs/decisions/0220-measure-dashboard-coverage-over-production-modules.md
   - docs/roadmap/acceptance/issue-AR-148.md
   - docs/roadmap/acceptance/issue-AR-323.md
   - docs/roadmap/acceptance/evidence/AR-323-current-schema-verification-20260905.md
@@ -20,9 +24,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-404
-branch: codex/ar404-close-proven-history
-evidence_commit: 11371cb6a14d91ebe998ea249f8c5545f49e5705
-minimum_ledger_commit: 2a8f832e210d11d788f998bb9562a68185113124
+branch: codex/ar406-production-coverage
+evidence_commit: cb7dca7733a8e1a3ff78791bf5e372dae64dafa4
+minimum_ledger_commit: 39cd636d99f5df10b9c2bfbac9fa1ba20e0af378
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -34,8 +38,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 Owner says continue one by one, leave Windows work to their Windows machine,
 close completed records, and judge old agent-authored tickets for present
 product relevance instead of treating their designs as instructions.
-Main e4255836 includes all previous delivery and merge-ledger records.
-Current package: reconcile counts and close already-shipped historical work.
+Main cb7dca77 includes PR #683: three accepted completions and one retirement.
+Current package: correct UI measurement scope and accept the existing listener fix.
 No implementation agents were delegated. Umbrella remains implementing.
 
 ## Completed evidence
@@ -45,13 +49,15 @@ No implementation agents were delegated. Umbrella remains implementing.
   They are a reconciliation queue, not 104 proved extra defects. Full local
   counts were 240 done, 93 in_progress, 54 open, 11 wont_do (398 records).
   New AR-406/#682 adds one tracked issue; AR-139 is now retired as superseded.
-  AR-148/149/323 accepted. Current split: 44 tracked open plus 100 legacy unfinished.
+  AR-148/149/152/323/406 accepted. Local unfinished: 43 mapped plus 99 legacy.
+  Remote still has 44 open until #682 is closed after PR #684 merges.
 - Original-baseline reductions: AR-400..403 accepted; AR-132/167/169/267 retired
   through cited successors; AR-271 accepted. AR-405 was outside the baseline
   and is also accepted. Prior work merged via PRs #669/#673/#676..681. Never
   rewrite the frozen original 155-item inventory.
 - Installed immutable build 0.1.0+g5434836eec4e, projection 1d617ca589a2,
-  matches current runtime/test/tool source. Eight deterministic smoke checks,
+  matches current production source. Test/gate changes are verified separately.
+  Eight prior deterministic smoke checks,
   five generated host contracts passed; native refresh is partial. Old runtime
   and launcher are retained. Installed evidence records actual side effects.
 - AR-149's 6a3bdaa0 fix is still present. Four real HTTP identity/error tests
@@ -61,11 +67,15 @@ No implementation agents were delegated. Umbrella remains implementing.
   all four criteria satisfied. The first absent 2/3 verdicts remain in f2e41b89;
   targeted rechecks passed after missing ContextVar/Store excerpts were added.
   Eight boundary/Store tests pass in 0.31s. No product criterion changed.
-- AR-152's stable container listener, semantic buttons and 50-render soak are
-  present and pass. Full UI suite 138 pass, but configured coverage exits 1 on
-  Node v22.23.2: 97.80 lines, 88.43 branches, 91.12 functions versus 95/86/93
-  floors. AR-406 owns this shared gap; no floor, exclusion or production code
-  changed. Do not relabel it green.
+- AR-152's stable container listener, semantic buttons and 50-render soak pass.
+  AR-406's original 91.12 function score included fixture functions. ADR-0220
+  explicitly measures all seven production JS modules, retaining 95/86/93 floors.
+  Actual configured local command: 138 pass, 96.92/86.62/95.71 coverage. Both
+  local/CI exact-command regressions first failed; 163 workflow-contract tests
+  now pass. Fresh spine 1030 pass/three skips (64.98s). Product and UI behavioral
+  tests unchanged. AR-406 has three satisfied criteria at d109b094; AR-152 has
+  four at 12a62393. Initial absent baseline-comparison verdict retained before
+  exact equal Git objects were supplied. No criterion or implementation changed.
 - AR-139 is retired, not certified against its obsolete 263,168-byte ceiling.
   AR-295 plus 3023f0557 explicitly audited required UI. Current ten assets total
   386,366 bytes and pass the strict 378-KiB resource test (1 pass, 0.17s).
@@ -80,10 +90,9 @@ No implementation agents were delegated. Umbrella remains implementing.
 
 ## Exact blocker
 
-PR #683 carries AR-148/149/323 accepted closures and AR-139's retirement.
-AR-152 remains open pending honest
-reconciliation of its aggregate coverage clause and current evidence. AR-406
-is a current verification gap, not a listener implementation gap.
+PR #683 is merged. AR-406/152 have seven satisfied criteria; PR #684 and tracker
+#682 closure remain to publish this package. The original mixed-scope failure is preserved;
+the product scope is explicitly corrected, not relabeled as an original pass.
 Do not claim "most done" before relevance and evidence are examined. Do not
 reimplement a historical defect merely because status=open.
 
@@ -102,10 +111,10 @@ No current header snapshot exists; no specialist staffing succeeded.
 
 ## Next bounded work package
 
-1. Deliver AR-148/149/323 accepted closures and AR-139 retirement through PR #683.
+1. Merge PR #684, close #682, and record exact publication/ledger state.
 2. Continue historical records one by one: retire superseded proposals with
    reasons and reciprocal links; close implemented work with exact evidence.
-3. Address AR-406 separately without lowering floors; verify AR-298, then the
+3. Verify AR-298, then the
    genuine AR-348/349 hiring defects. Keep Windows work excluded.
 
 ## Verification
@@ -121,11 +130,9 @@ before any mutation ran. The development-venv invocation passes its baseline
 (98.841s), kills all 182 mutations, and leaves source unchanged. No test
 dependency was added to the user's installed runtime.
 
-AR-406 follow-up diagnosis: mixed-scope coverage includes test-fixture functions.
-A diagnostic product-wide selector measures all seven shipped JS modules at
-96.92/86.62/95.71, passing unchanged floors. Separate owned branch
-codex/ar406-production-coverage records ADR-0220, pins local/CI scope, and will
-verify AR-152's existing listener repair. PR #683 does not yet change that gate.
+Current branch changes only the two coverage commands, their regression, and
+records. The protected conformance inputs remain identical to the preceding
+182-kill run; no repeat mutation battery is needed for an unrelated scope flag.
 
 ## Constraints
 

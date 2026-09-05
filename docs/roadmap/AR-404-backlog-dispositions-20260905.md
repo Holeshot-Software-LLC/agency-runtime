@@ -58,12 +58,14 @@ against current product intent, without changing the frozen baseline inventory.
 |---|---|---|
 | [AR-139](issue-AR-139-restore-release-asset-budget.md) | Retired, wont_do | Its fixed 263,168-byte ceiling was superseded by AR-295's explicit required-UI audit, then 3023f0557's AR-297/298 audit. Current ten assets total 386,366 bytes, below the strict 378 KiB ceiling; the current resource test passes (1 test, 0.17s). No UI removal, floor change, or new artifact/Windows proof is claimed. |
 | [AR-149](issue-AR-149-fresh-dashboard-request-ids.md) | Done; existing fix accepted | Four real HTTP regressions, 180 dashboard/disconnect tests and eight boundary/Store tests pass. All four isolated criteria are satisfied. The first absent 2/3 verdicts remain in f2e41b89; a targeted recheck followed the addition of actual ContextVar and Store source excerpts. No product criterion or implementation changed to obtain closure. |
-| [AR-152](issue-AR-152-bound-dashboard-live-listeners.md) | Listener fix present; not closed | The 50-render delegated-listener soak passes in the 138-case UI suite. Its shared coverage clause currently fails and remains a distinct gap under AR-406, not an excuse to rebuild the working listener design. |
+| [AR-152](issue-AR-152-bound-dashboard-live-listeners.md) | Done; existing repair verified | Four isolated criteria satisfied at 12a62393. The unchanged 50-render soak and teardown cases pass. AR-406/ADR-0220 explicitly correct the coverage denominator to all seven product modules, retaining the 95/86/93 floors; no listener design or behavioral test was changed. |
+| [AR-406](issue-AR-406-restore-dashboard-function-coverage.md) | Done; measurement contract corrected | Three isolated criteria satisfied at d109b094. The initial mixed-scope 91.12 function score counted fixture callbacks; the exact production-wide configured gate passes 138 unchanged cases at 96.92/86.62/95.71. Both local/CI exact-command regressions pass in 163 workflow tests; fresh spine 1030 pass/three skips. Initial absent baseline-comparison verdict retained, then supplied exact equal Git objects. |
 | [AR-148](issue-AR-148-fail-malformed-remediation-signatures-closed.md), [AR-323](issue-AR-323-remove-stale-ledger-schema-literals.md) | Done; existing signature fix verified and stale schema tests corrected | The signature guard was already implemented. Three known ledger cases and seven migration/credential cases failed only on copied schema-46 literals. Those output assertions now use canonical SCHEMA_VERSION, retaining legacy 44/45 inputs and every behavioral guard. All 401 selected tests and fresh 1030-test spine pass; three existing spine skips. Eight isolated criteria satisfied. No production or schema change. AR-347's existing AR-323 tracker exemption supersedes its old future-tracker clause. |
 
-After filing AR-406/#682, retiring AR-139 and completing AR-148/149/323: 44 tracked
-open issues plus 100 unfinished legacy records (144 total local unfinished). Closure of
-an unmapped historical record cannot decrease the owner's tracker-open count.
+After retiring AR-139 and completing AR-148/149/152/323/406, local unfinished
+records total 142: 43 mapped plus 99 legacy. External #682 closes after PR #684
+merges, reducing actual open trackers from 44 back to 43. Closing an unmapped
+historical record cannot decrease the owner's tracker-open count.
 
 ## Reviewed candidates that are not safe closures
 

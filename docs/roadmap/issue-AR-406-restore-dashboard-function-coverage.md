@@ -1,11 +1,14 @@
 ---
 title: "AR-406: Restore the configured dashboard UI function-coverage gate"
-status: open
+status: done
 category: roadmap
 created: 2026-09-05
 updated: 2026-09-05
 tags: [dashboard, testing, coverage]
 related:
+  - docs/decisions/0220-measure-dashboard-coverage-over-production-modules.md
+  - docs/roadmap/acceptance/issue-AR-406.md
+  - docs/roadmap/acceptance/evidence/AR-406-production-coverage-20260905.md
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
   - docs/roadmap/issue-AR-144-restore-dashboard-ui-release-coverage.md
   - docs/roadmap/issue-AR-152-bound-dashboard-live-listeners.md
@@ -39,6 +42,19 @@ branches 88.43 percent, functions 91.12 percent. Floors are 95/86/93.
 The AR-152 fifty-render listener regression passes. AR-144's July completed
 coverage repair remains historical evidence, not a current-build pass.
 
+Measurement audit: the failing aggregate includes the test file itself. Raw
+V8 output has 704 test-function entries, 86 unexecuted, including unused mock
+callbacks. All seven shipped product modules already pass unchanged floors:
+96.92 percent lines, 86.62 branches, 95.71 functions. ADR-0220 corrects the
+denominator using the same recursive production selector in local and CI gates.
+Two new exact-command regression cases first fail on missing scope, then guard
+the complete selector, test invocation and unchanged floors. No UI source or
+behavioral test is changed. All three candidate-bound criteria are satisfied
+at d109b094. The first missing-baseline-comparison verdict remains in history;
+the second evidence packet supplies exact matching production-tree and UI-test
+Git objects without changing criteria or implementation. Tracker #682 closes
+after PR #684 merges; it is not silently counted closed while still open.
+
 ```text
 node --test --experimental-test-coverage --test-coverage-lines=95 \
   --test-coverage-branches=86 --test-coverage-functions=93 tests/dashboard_ui.test.mjs
@@ -46,10 +62,11 @@ node --test --experimental-test-coverage --test-coverage-lines=95 \
 
 ## Approach
 
-Inspect the measurement scope and missing bound callbacks. Add behavioral
-assertions for meaningful user-visible state, failures and lifecycle cleanup;
-do not invoke callbacks only to raise a percentage, lower floors or exclude
-files to turn the gate green. Keep this separate from already-shipped defects.
+Measure the production JavaScript folder, including nested modules, in both
+configured gates. Keep all 138 UI cases, every shipped module and the 95/86/93
+floors. Pin local/CI command parity with a regression for each entry point.
+Retain the original mixed-scope failure and show the complete production-only
+report; this changes measurement scope, not product behavior or coverage quality.
 
 ## Dependencies
 
@@ -58,6 +75,18 @@ Windows run or exhaustive Python workflow is required for this Linux package.
 
 ## Acceptance
 
-- [ ] The exact configured dashboard UI coverage command passes all existing floors.
-- [ ] Added callback coverage asserts visible behavior and lifecycle cleanup, including relevant failures, rather than mere invocation.
-- [ ] Production semantics, coverage floors and exclusions remain unchanged.
+- [x] The exact configured dashboard UI coverage command passes all existing floors.
+- [x] Local and hosted gates include every production dashboard JavaScript module, with regression checks preventing narrower scope or lower floors.
+- [x] Production semantics and existing UI behavioral tests remain unchanged; all tests, including the listener soak and teardown checks, pass.
+
+## Superseded working assumption
+
+The initial proposal required added callback tests and unchanged exclusions.
+Its original second criterion was: "Added callback coverage asserts visible
+behavior and lifecycle cleanup, including relevant failures, rather than mere
+invocation." Its third was: "Production semantics, coverage floors and exclusions
+remain unchanged." Those provisional requirements assumed missing product
+coverage before the measurement scope was inspected. ADR-0220 replaces that
+assumption with an explicit production-wide measurement contract. Numeric floors
+and production scope are not reduced; test fixtures leave the denominator.
+No earlier isolated verdict or historical result is rewritten.

@@ -3,7 +3,7 @@ title: Decision registry
 status: active
 category: decisions
 created: 2026-07-10
-updated: 2026-08-30
+updated: 2026-09-05
 tags: [architecture, adr, governance]
 related:
   - docs/roadmap/README.md
@@ -248,6 +248,7 @@ Status meanings:
 | [ADR-0098](0098-pair-portable-and-win-amd64-wheels.md) | Pair portable and win_amd64 wheels for native delivery | Superseded |
 | [ADR-0099](0099-separate-reproducible-unsigned-builds-from-signed-delivery.md) | Separate reproducible unsigned builds from signed delivery | Superseded |
 | [ADR-0219](0219-retire-removed-helper-release-obligations.md) | Retire removed-helper release obligations without waiving artifact proof | Accepted |
+| [ADR-0220](0220-measure-dashboard-coverage-over-production-modules.md) | Measure dashboard coverage over all production modules, not test fixtures | Accepted |
 | [ADR-0100](0100-short-circuit-trusted-docs-only-pull-requests.md) | Short-circuit trusted documentation-only pull requests | Accepted |
 | [ADR-0101](0101-run-exhaustive-python-verification-on-demand.md) | Run exhaustive Python verification on demand | Superseded |
 | [ADR-0102](0102-defer-one-shot-application-evaluation.md) | Defer complete-application evaluation without weakening live release evidence | Accepted |

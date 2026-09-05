@@ -6,6 +6,8 @@ created: 2026-09-05
 updated: 2026-09-05
 tags: [backlog, review, acceptance, delivery]
 related:
+  - docs/decisions/0220-measure-dashboard-coverage-over-production-modules.md
+  - docs/roadmap/acceptance/evidence/AR-406-production-coverage-20260905.md
   - docs/roadmap/issue-AR-148-fail-malformed-remediation-signatures-closed.md
   - docs/roadmap/issue-AR-323-remove-stale-ledger-schema-literals.md
   - docs/roadmap/issue-AR-139-restore-release-asset-budget.md
@@ -45,6 +47,17 @@ behavior later decisions replaced. Treating all of them as new code fixes would
 repeat work and risk reintroducing superseded behavior.
 
 ## Current state
+
+PR #683 is merged at cb7dca77: AR-148/149/323 done and AR-139 retired.
+The next AR-406/152 package implements ADR-0220's production-wide coverage
+scope, preserving every product module and all 95/86/93 floors. Actual configured
+local command: 138 UI passes, coverage 96.92/86.62/95.71. Local/hosted scope
+regressions first fail, then the complete workflow-contract package passes 163
+tests. Existing listener code and UI behavioral tests are unchanged. Both
+acceptance records now have seven satisfied isolated criteria. AR-406 and
+AR-152 are locally done. Publication is PR #684 then closure of #682. Local
+unfinished count is 142 (43 mapped plus 99 legacy); the external open count
+remains 44 until #682 actually closes.
 
 Owner clarification: work sequentially, close verified completed records,
 assess agent-written tickets against the current product rather than accepting
