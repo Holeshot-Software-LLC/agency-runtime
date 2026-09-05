@@ -56,6 +56,30 @@ class _PytestRun:
 
 MUTATIONS: Final[tuple[DecisionMutation, ...]] = (
     DecisionMutation(
+        mutation_id="strict-hiring-independence-disabled",
+        invariant="Strict hiring rejects overlapping resolved reviewer and creator chains.",
+        source_path="agency_runtime/core/inference_profiles.py",
+        before="        if providers_share_model(critique_chain, creator_chain):",
+        after="        if False and providers_share_model(critique_chain, creator_chain):",
+        test_node=(
+            "tests/test_workforce_dynamic_hiring.py::"
+            "test_hiring_strict_independence_checks_effective_provider_chains"
+            "[profile-security_review-True]"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="strict-hiring-preflight-skipped",
+        invariant="A known-invalid hiring pair fails before spending the creator call.",
+        source_path="agency_runtime/core/workforce/hiring.py",
+        before="    _preflight_hiring_independence(config, providers, harness)",
+        after="    pass  # Mutant spends hiring calls before rejecting the reviewer.",
+        test_node=(
+            "tests/test_workforce_dynamic_hiring.py::"
+            "test_hiring_strict_independence_checks_effective_provider_chains"
+            "[profile-security_review-True]"
+        ),
+    ),
+    DecisionMutation(
         mutation_id="configured-provider-bypasses-inference",
         invariant="A configured provider always owns online planning and specialist selection.",
         source_path="agency_runtime/core/workforce/inference.py",

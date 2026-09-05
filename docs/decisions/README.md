@@ -289,6 +289,7 @@ Status meanings:
 | [ADR-0151](0151-route-codex-product-approvals-to-auto-review.md) | Route Codex product approvals to automatic review | Accepted |
 | [ADR-0152](0152-fail-open-with-honest-header-when-no-specialist.md) | Fail open with an honest header when no specialist is selected | Accepted |
 | [ADR-0153](0153-adopt-per-stage-inference-profile-routes.md) | Adopt per-stage inference profile routes | Accepted |
+| [ADR-0221](0221-enforce-hiring-independence-on-resolved-provider-chains.md) | Enforce hiring independence on resolved provider chains | Accepted |
 | [ADR-0154](0154-plain-text-cli-cards-over-rich-dependency.md) | Plain-text CLI cards over a rich dependency | Accepted |
 | [ADR-0165](0165-keep-litellm-inference-profiles-model-agnostic.md) | Keep LiteLLM inference profiles model-agnostic | Superseded |
 | [ADR-0166](0166-delegate-exact-schema-translation-to-litellm.md) | Delegate exact schema translation to LiteLLM | Accepted |
