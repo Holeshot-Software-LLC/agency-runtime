@@ -202,8 +202,9 @@ def test_current_schema_has_only_bounded_identity_and_one_use_guards(tmp_path: P
     store = Store(tmp_path / "agency.db")
     conn = store._connect()
     try:
-        assert conn.execute("SELECT MAX(version) FROM schema_version").fetchone()[0] == 46
-        assert SCHEMA_VERSION == 46
+        assert (
+            conn.execute("SELECT MAX(version) FROM schema_version").fetchone()[0] == SCHEMA_VERSION
+        )
         assert _native_child_delivery_verification_schema_is_current(conn) is True
         columns = {
             row["name"]
@@ -276,7 +277,9 @@ def test_migration_and_current_schema_repair_restore_the_ledger(
     repaired = Store(db_path)
     conn = repaired._connect()
     try:
-        assert conn.execute("SELECT MAX(version) FROM schema_version").fetchone()[0] == 46
+        assert (
+            conn.execute("SELECT MAX(version) FROM schema_version").fetchone()[0] == SCHEMA_VERSION
+        )
         assert _native_child_delivery_verification_schema_is_current(conn) is True
     finally:
         conn.close()

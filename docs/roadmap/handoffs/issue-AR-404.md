@@ -6,6 +6,9 @@ created: 2026-09-05
 updated: 2026-09-05
 tags: [handoff, backlog, acceptance, delivery]
 related:
+  - docs/roadmap/acceptance/issue-AR-148.md
+  - docs/roadmap/acceptance/issue-AR-323.md
+  - docs/roadmap/acceptance/evidence/AR-323-current-schema-verification-20260905.md
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
   - docs/roadmap/AR-404-count-reconciliation-20260905.md
   - docs/roadmap/AR-404-backlog-dispositions-20260905.md
@@ -66,14 +69,20 @@ No implementation agents were delegated. Umbrella remains implementing.
 - AR-139 is retired, not certified against its obsolete 263,168-byte ceiling.
   AR-295 plus 3023f0557 explicitly audited required UI. Current ten assets total
   386,366 bytes and pass the strict 378-KiB resource test (1 pass, 0.17s).
-  AR-148's existing signature guard and release/schema files pass 157 tests.
+  AR-148's signature guard is present. Wider checks exposed AR-323's known
+  schema-46 literals in three ledger cases plus seven migration/credential cases.
+  The test-only fix preserves legacy inputs and all behavioral checks: 401
+  focused pass, fresh 1030 spine pass/three skips (63.73s). Both builder records
+  await candidate freeze and isolated acceptance. No new tracker is needed.
   AR-129/130 claim implementation but include Windows proof; leave that with
   the owner. AR-298 has source/tests and old installed visual evidence, but
   no isolated acceptance yet.
 
 ## Exact blocker
 
-AR-149 is done; PR #683 carries its closure and AR-139's retirement. AR-152 remains open pending honest
+AR-149 is done; PR #683 carries its closure and AR-139's retirement. AR-148/323
+need candidate-bound isolated verdicts for the existing fix/test correction.
+AR-152 remains open pending honest
 reconciliation of its aggregate coverage clause and current evidence. AR-406
 is a current verification gap, not a listener implementation gap.
 Do not claim "most done" before relevance and evidence are examined. Do not
@@ -94,7 +103,7 @@ No current header snapshot exists; no specialist staffing succeeded.
 
 ## Next bounded work package
 
-1. Deliver AR-149's accepted closure and AR-139's retirement through PR #683.
+1. Complete AR-148/323 acceptance; deliver with AR-149/139 through PR #683.
 2. Continue historical records one by one: retire superseded proposals with
    reasons and reciprocal links; close implemented work with exact evidence.
 3. Address AR-406 separately without lowering floors; verify AR-298, then the

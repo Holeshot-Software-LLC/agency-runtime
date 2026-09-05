@@ -6,6 +6,8 @@ created: 2026-09-05
 updated: 2026-09-05
 tags: [backlog, review, acceptance, delivery]
 related:
+  - docs/roadmap/issue-AR-148-fail-malformed-remediation-signatures-closed.md
+  - docs/roadmap/issue-AR-323-remove-stale-ledger-schema-literals.md
   - docs/roadmap/issue-AR-139-restore-release-asset-budget.md
   - docs/roadmap/AR-404-count-reconciliation-20260905.md
   - docs/roadmap/issue-AR-149-fresh-dashboard-request-ids.md
@@ -61,6 +63,15 @@ but the separate current UI function-coverage gate fails (91.12 versus 93
 percent), recorded as AR-406/#682. Filing it adds one tracked issue; retiring
 AR-139 and completing AR-149 remove two legacy items (44 tracked plus 102
 unfinished legacy). No corresponding external trackers exist for those two.
+
+AR-148's signature repair is also present. Its wider validation uncovered the
+already-tracked AR-323 stale schema-literal defect: three native-child ledger
+cases and seven migration/credential tests expected 46 while schema is 49.
+The test-only correction removes copied current-version literals, preserves
+historical input versions and all behavioral assertions, and passes the complete
+401-test focused package. Fresh named production spine: 1030 passed, three
+existing skips (63.73s). AR-148/323 builder records await isolated verification;
+no new tracker was created for this existing issue family.
 
 A stale-hook warning prompted `agency install --agent codex` from the existing
 installed immutable runtime. Codex files refreshed; exit 1 honestly retains
@@ -174,8 +185,8 @@ No exhaustive workflow dispatch or unattended restart is implied.
 ## Next bounded package
 
 AR-149 is accepted and AR-139's obsolete ceiling is retired. Reconcile
-historical record relevance one by one, including AR-148's implemented signature
-guard and AR-152's listener behavior; keep AR-406's current
+historical record relevance one by one, first completing AR-148/323 isolated
+acceptance, then AR-152's listener behavior; keep AR-406's current
 shared coverage failure visible. Then verify AR-298 and deliver genuine
 AR-348/349 hiring-safety fixes. Do not do Windows-specific work. AR-271 and
 AR-405 have their own satisfied acceptance; AR-285 still needs its two named
