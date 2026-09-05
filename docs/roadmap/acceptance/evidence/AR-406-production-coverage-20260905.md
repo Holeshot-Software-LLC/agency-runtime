@@ -88,3 +88,25 @@ The source-identical protected conformance baseline and all 182 mutations pass.
 No new native browser, screen-reader, Windows, release-artifact, or host canary
 result is claimed. No exhaustive workflow was dispatched. The existing listener
 criteria are unchanged; coverage is interpreted through explicit ADR-0220 scope.
+
+## Baseline comparison
+
+Actual Git object comparison of merged baseline
+cb7dca7733a8e1a3ff78791bf5e372dae64dafa4 and implementation candidate
+12a62393613452fb322697b4cde48d8c74949422:
+
+| Object | Baseline | Candidate |
+|---|---|---|
+| Entire agency_runtime tree | cd002d40de2f2e552f13705548a0272294bcac7d | cd002d40de2f2e552f13705548a0272294bcac7d |
+| tests/dashboard_ui.test.mjs blob | c5afaa37778f3365d1d2a5a83a21eede35014978 | c5afaa37778f3365d1d2a5a83a21eede35014978 |
+
+`git diff --exit-code cb7dca7733a8e1a3ff78791bf5e372dae64dafa4
+12a62393613452fb322697b4cde48d8c74949422 -- agency_runtime
+tests/dashboard_ui.test.mjs` exits 0 with no output. Thus both production source
+and the entire behavioral test file are byte-identical, not merely described as
+unchanged. The complete 138-case UI invocation above passes on these same bytes.
+
+The first isolated AR-406 pass satisfied criteria 1/2 and reported criterion 3
+absent because its excerpts showed policy intent but lacked this baseline
+comparison. Preserve that result in Git, add this exact evidence, then re-freeze
+AR-406 for a second verification pass. No criterion or implementation changes.

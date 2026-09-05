@@ -37,3 +37,6 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/682
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
+| 1 | satisfied | `AR-406.1-20260905-84e8334e` | `8f8cd5492cf96212ed5390436dc30443200150336aff973dcaf1fcc4718dd71f` | 2026-09-05 | The cited Current coverage verification excerpt records the configured command exiting 0 with 138 tests passing and coverage of 96.92% lines, 86.62% branches, and 95.71% functions, exceeding all 95/86/93 floors. |
+| 2 | satisfied | `AR-406.2-20260905-6cec4874` | `5fb1a59637269212cee49b2d229b79c85c8eec9293e2219c592c42a12188b008` | 2026-09-05 | scripts/run_local_gates.py and ci.yml use recursive dashboard JavaScript coverage with 95/86/93 floors; test_release_packaging.py enforces exact arguments for both gates, rejecting narrower scope and lower floors. |
+| 3 | absent | `AR-406.3-20260905-9cd821a6` | `97f4bd94636867cbf0748f4eb553e77a47b5b1e9583169bc8dd21adc11f31513` | 2026-09-05 | The coverage report records 138 passing UI tests, and the excerpts show soak and teardown assertions, but ADR-0220 provides no baseline comparison or diff demonstrating unchanged production semantics and behavioral tests. |

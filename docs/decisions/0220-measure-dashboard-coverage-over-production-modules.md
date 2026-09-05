@@ -66,3 +66,10 @@ explicit measurement-contract update; no such change is part of this package.
 - Lower the function floor: unnecessary; all production floors already pass.
 - Exclude a poorly covered production module: rejected; all seven remain in scope.
 - Keep fixtures in the product score: continues unrelated denominator drift.
+
+## Implementation provenance
+
+Commit 12a62393 implements identical local/hosted selectors and the two
+exact-command regressions. The AR-406 evidence records equal baseline/candidate
+production tree and UI test Git objects. The worklog registry and related
+canonical issues preserve the implementation and verification sequence.

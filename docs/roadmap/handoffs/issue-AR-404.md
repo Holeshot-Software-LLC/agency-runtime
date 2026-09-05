@@ -72,7 +72,9 @@ No implementation agents were delegated. Umbrella remains implementing.
   Actual configured local command: 138 pass, 96.92/86.62/95.71 coverage. Both
   local/CI exact-command regressions first failed; 163 workflow-contract tests
   now pass. Fresh spine 1030 pass/three skips (64.98s). Product and UI behavioral
-  tests unchanged. Isolated records pending.
+  tests unchanged. First AR-406 pass: 1/2 satisfied, 3 absent for a missing
+  baseline comparison. Exact equal production-tree/UI-test Git objects now
+  recorded; re-freeze and verify without changing any criterion. AR-152 pending.
 - AR-139 is retired, not certified against its obsolete 263,168-byte ceiling.
   AR-295 plus 3023f0557 explicitly audited required UI. Current ten assets total
   386,366 bytes and pass the strict 378-KiB resource test (1 pass, 0.17s).
