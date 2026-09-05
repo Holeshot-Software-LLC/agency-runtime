@@ -145,6 +145,12 @@ partial result with the files retained.
 
 ## Consequences
 
+AR-271 commit 4fdcd6a7 shares the existing AR-285 stopped-service classifier
+between install and uninstall. Complete exit-1 stopped/inactive/dead evidence
+can satisfy the gateway precondition; native execution binding, owner authority,
+locked replanning and the final pre-mutation check remain unchanged. The linked
+issue and worklog retain the contract tests, limits and exact delivery.
+
 - Operators receive a discoverable all-host inverse without conflating host
   wiring with package or data lifecycle.
 - Marketplace-only residue is visible but cannot select an all-host mutation or

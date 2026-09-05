@@ -12,7 +12,7 @@ supersedes: []
 superseded_by: null
 type: acceptance-verification
 issue_id: AR-271
-candidate_commit: pending
+candidate_commit: 4fdcd6a7b1ff3ae3ab8a666937adeb5d1111895b
 evidence_cutoff: 2026-09-05
 tracker_url: null
 ---

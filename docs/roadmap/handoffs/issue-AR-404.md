@@ -20,8 +20,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-404
 branch: codex/ar271-stopped-uninstall
-evidence_commit: 78e501b7b17b6c270b5c2c7122b61bf454190749
-minimum_ledger_commit: 7eb3480b2e5f8cccb0b6b8590e8191639aad5128
+evidence_commit: 4fdcd6a7b1ff3ae3ab8a666937adeb5d1111895b
+minimum_ledger_commit: c998f6f5f1a78b0d676e95561de651b0479482c6
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
