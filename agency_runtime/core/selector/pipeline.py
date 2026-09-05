@@ -1794,6 +1794,11 @@ def _hiring_unit_floor_seconds(config: AgencyConfig, host: str) -> float:
     usually costs; requiring it would starve hiring on every turn. The floor is
     one full provider deadline, and the loop raises it to the longest round it
     has actually measured this turn.
+
+    2026-09-05: the floor follows the hiring providers' ``timeout`` (60 s today
+    against a 595 s lease); raising that timeout shrinks the rounds that fit,
+    and a host whose lease is shorter than one deadline plus the margin never
+    hires. Both are the intended reading, not a pin to defend.
     """
 
     from agency_runtime.core.workforce.inference import configured_workforce_providers

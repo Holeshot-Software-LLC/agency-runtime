@@ -1,9 +1,9 @@
 """AR-398: a gap turn that outruns its preflight lease still leaves a receipt.
 
 Two halves. The store's close is guarded by the attempt token alone and names
-an expired lease or a refused close on the receipt instead of dropping it. The
-hiring loop stops proposing hires when the lease cannot fit another round and
-says so per unit.
+an expired lease on the receipt instead of dropping it; a token another attempt
+holds is left to that attempt. The hiring loop stops proposing hires when the
+lease cannot fit another round and says so per unit.
 """
 
 from __future__ import annotations

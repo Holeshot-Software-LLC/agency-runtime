@@ -27,8 +27,8 @@ on the COBOL gap turn of 2026-09-05T03:46Z.
 
 ## Context
 
-A preflight attempt holds a lease equal to the host's hook timeout (600 s
-here). The fail-open close, `Store.fail_preflight_attempt`, wrote its receipt
+A preflight attempt holds a lease derived from the host's hook timeout (595 s
+from the budget plus the store's margin, 600 s in the runs table here). The fail-open close, `Store.fail_preflight_attempt`, wrote its receipt
 only inside an UPDATE that required the lease to be unexpired, and its caller
 discarded the `False` it returned. The governed hiring loop, meanwhile, ran
 one round per declared gap unit with no bound but the number of units. A

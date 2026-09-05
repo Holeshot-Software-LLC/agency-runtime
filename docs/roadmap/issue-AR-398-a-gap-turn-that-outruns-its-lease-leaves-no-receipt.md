@@ -94,7 +94,8 @@ requires anyway.
 only when the time left fits the longer of one hiring-provider deadline and
 the longest round measured this turn, plus a ten-second margin. Units left
 unproposed carry `hiring_lease_budget_exhausted` on their hiring event, so
-the receipt says how many were skipped and why. Schema 49 widens the
+the receipt says that units were skipped and why (receipt codes are
+de-duplicated, so it does not carry a count). Schema 49 widens the
 receipt table's invariant CHECK and rebuilds older stores in place, rows
 copied verbatim and triggers recreated, the first time they are opened.
 
@@ -116,7 +117,10 @@ still open.
 
 ## Approach
 
-As proposed on filing; items 1 and 2 are implemented above.
+As proposed on filing. Item 1's receipt half and item 2 are implemented above;
+item 1's "the caller logs the `False`" is not: the only refusal left is a token
+another attempt now holds, and that attempt writes the turn's own account
+(ADR-0214), so the caller still discards the boolean.
 
 1. **The failure writer must not fail silently.** A refused close should be
    recorded somewhere the operator can read: at minimum the caller logs the
@@ -142,8 +146,9 @@ As proposed on filing; items 1 and 2 are implemented above.
 - [ ] A turn whose fail-open close arrives after its lease expired still
       leaves a receipt naming the expiry, and the run does not stay
       `in_progress`.
-- [ ] The hiring loop stops within the lease, and the receipt names how many
-      gap units were left unproposed and why.
+- [ ] The hiring loop stops within the lease, and every gap unit left
+      unproposed carries `hiring_lease_budget_exhausted` on its hiring event,
+      so the receipt names that units were skipped and why.
 - [ ] Replaying the COBOL shape against a store copy produces a receipt with
       a non-empty hiring account and a hiring event per proposed hire.
 - [ ] `agency doctor` reports runs left at `in_progress` past their lease.
