@@ -1907,6 +1907,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `e22b5c32` | 2026-09-05 | docs(roadmap): complete verified hiring independence contract [AR-348] | null | null |
 | `0309f251` | 2026-09-05 | Merge pull request #687 from Holeshot-Software-LLC/codex/ar348-strict-hiring-independence | [AR-348](../roadmap/issue-AR-348-enforce-strict-independence-in-production.md) | [Detail](2026-09-05-c9b678a5-strict-hiring-independence.md) |
 | `35d7f9b4` | 2026-09-05 | docs(roadmap): publish installed hiring verification and backlog state [AR-348] [AR-404] | null | null |
+| `0a716813` | 2026-09-05 | Merge pull request #688 from Holeshot-Software-LLC/codex/ar348-installed-delivery | [AR-348](../roadmap/issue-AR-348-enforce-strict-independence-in-production.md), [AR-404](../roadmap/issue-AR-404-evidence-led-backlog-completion.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
