@@ -6,6 +6,7 @@ created: 2026-07-28
 updated: 2026-07-28
 tags: [installation, host-integrations, security, cli, operations]
 related:
+  - docs/roadmap/issue-AR-271-accept-stopped-openclaw-uninstall-status.md
   - docs/roadmap/issue-AR-189-add-owned-host-integration-uninstall.md
   - docs/roadmap/handoffs/issue-AR-189.md
   - docs/worklog/README.md

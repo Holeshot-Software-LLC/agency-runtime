@@ -39,6 +39,14 @@ repeat work and risk reintroducing superseded behavior.
 
 ## Current state
 
+AR-405 is merged at 78e501b7 through PR #678 and tracker #675 is closed.
+AR-271's separate runtime package now shares the install stopped-state
+classifier with uninstall. Regression-first result is seven fail/fifteen pass;
+the corrected focused suite returns 248 pass/two native Windows skips, including
+owner-denial, execution-identity and last-moment state-drift refusal. Its isolated
+acceptance, main delivery and installed-source smoke are pending. No real
+gateway lifecycle change was performed. AR-404 remains implementing.
+
 Continuation: PR #676 and ledger #677 are confirmed on origin/main at 3ed51069.
 The owner requested pushing and continuing. AR-405 now has a test-only repair
 with 100 passing build tests (one native Windows skip), preserved portable

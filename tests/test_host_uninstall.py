@@ -6,10 +6,12 @@ import json
 import os
 import uuid
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
 import pytest
 
+from agency_runtime.core import installer_registration as registration_subject
 from agency_runtime.core import installer_uninstall as uninstall_subject
 from agency_runtime.core import prepared_host_uninstall as prepared
 from agency_runtime.core.codex_global_guidance import install_codex_global_guidance
@@ -20,7 +22,7 @@ from agency_runtime.core.installer import (
     install_agent_adapter,
     plan_agent_uninstall,
 )
-from agency_runtime.core.installer_contracts import MARKETPLACE_ID, PLUGIN_ID
+from agency_runtime.core.installer_contracts import MARKETPLACE_ID, PLUGIN_ID, NativeCommandResult
 from agency_runtime.core.installer_uninstall import _commit_agent_uninstall
 from agency_runtime.core.installer_zcode import zcode_config_path
 from agency_runtime.core.prepared_host_uninstall import (
@@ -108,6 +110,7 @@ class UninstallNativeRunner:
         marketplace_record_count: int = 1,
         marketplace_binding: str = "exact",
         gateway_live: bool = False,
+        gateway_status: dict[str, Any] | None = None,
         sticky_plugin: bool = False,
         fail_mutation_secret: str | None = None,
         remove_marketplace_on_uninstall: bool = False,
@@ -126,6 +129,8 @@ class UninstallNativeRunner:
         self.marketplace_record_count = marketplace_record_count
         self.marketplace_binding = marketplace_binding
         self.gateway_live = gateway_live
+        self.gateway_status = gateway_status
+        self.gateway_probe_count = 0
         self.sticky_plugin = sticky_plugin
         self.fail_mutation_secret = fail_mutation_secret
         self.remove_marketplace_on_uninstall = remove_marketplace_on_uninstall
@@ -210,6 +215,9 @@ class UninstallNativeRunner:
             version = "OpenClaw 2026.7.1" if self.host == "openclaw" else f"{self.host} 1.0"
             return {"returncode": 0, "stdout": version}
         if command[1:4] == ["gateway", "status", "--deep"]:
+            self.gateway_probe_count += 1
+            if self.gateway_status is not None:
+                return dict(self.gateway_status)
             return {"returncode": 0, "stdout": json.dumps({"running": self.gateway_live})}
         if command[1:5] == ["plugin", "marketplace", "list", "--json"]:
             self.marketplace_list_count += 1
@@ -470,16 +478,23 @@ def test_prepared_uninstall_uses_retain_only_when_native_registration_is_absent(
     assert runner.mutation_commands == []
 
 
+@pytest.mark.parametrize("host", ["codex", "openclaw"])
 def test_prepared_verifier_denial_causes_zero_host_mutation(
     tmp_path: Path,
     private_installer_launcher: tuple[Path, Path],
     monkeypatch: pytest.MonkeyPatch,
+    host: str,
 ) -> None:
     del private_installer_launcher
-    installed = _stage_owned_bundle("codex", tmp_path)
+    installed = _stage_owned_bundle(host, tmp_path)
     target = Path(installed["target"])
-    runner = UninstallNativeRunner("codex", target)
-    plan = _plan("codex", tmp_path, runner)
+    runner = UninstallNativeRunner(
+        host,
+        target,
+        gateway_status=_stopped_openclaw_status() if host == "openclaw" else None,
+    )
+    plan = _plan(host, tmp_path, runner)
+    assert plan["ok"] is True, plan.get("error")
 
     def deny(_binding: object) -> None:
         raise PreparedHostUninstallError("operator denied prepared uninstall")
@@ -488,12 +503,12 @@ def test_prepared_verifier_denial_causes_zero_host_mutation(
 
     with pytest.raises(PreparedHostUninstallError, match="operator denied"):
         _apply_prepared_host_uninstall(
-            ["codex"],
+            [host],
             expected_plan_digest=_digest([plan]),
             operation_id=_operation_id("denied"),
             selected_by="agent",
             home_dir=tmp_path,
-            binary_resolver=_resolver("codex"),
+            binary_resolver=_resolver(host),
             command_runner=runner,
         )
 
@@ -781,6 +796,241 @@ def test_openclaw_live_gateway_refuses_plan_without_mutation(
     assert plan["error"] == "OpenClaw gateway is live; stop it before uninstall"
     assert runner.mutation_commands == []
     assert target.is_dir()
+
+
+def _stopped_openclaw_status(**overrides: Any) -> dict[str, Any]:
+    return {
+        "returncode": 1,
+        "stdout": json.dumps(
+            {
+                "service": {
+                    "runtime": {"status": "stopped", "state": "inactive", "subState": "dead"}
+                },
+                "rpc": {"ok": False},
+            }
+        ),
+        **overrides,
+    }
+
+
+@pytest.mark.parametrize("present", [True, False])
+def test_openclaw_stopped_exit_one_plans_and_retires_only_the_owned_bundle(
+    tmp_path: Path,
+    private_installer_launcher: tuple[Path, Path],
+    monkeypatch: pytest.MonkeyPatch,
+    present: bool,
+) -> None:
+    del private_installer_launcher
+    target = Path(_stage_owned_bundle("openclaw", tmp_path)["target"])
+    before = _tree_snapshot(tmp_path)
+    owned_before = _tree_snapshot(target)
+    runner = UninstallNativeRunner(
+        "openclaw", target, present=present, gateway_status=_stopped_openclaw_status()
+    )
+    plan = _plan("openclaw", tmp_path, runner)
+    assert plan["ok"] is True, plan.get("error")
+    assert runner.mutation_commands == []
+    assert _tree_snapshot(tmp_path) == before
+    gateway = next(step for step in plan["native_steps"] if step["name"] == "gateway_status")
+    assert gateway["returncode"] == 1
+    assert gateway["gateway_state"] == "stopped"
+
+    verified: list[Any] = []
+    monkeypatch.setattr(prepared, "_require_host_uninstall_authority", verified.append)
+    result = _apply_prepared_host_uninstall(
+        ["openclaw"],
+        expected_plan_digest=_digest([plan]),
+        operation_id=_operation_id(f"stopped-exit-one-{present}"),
+        selected_by="agent",
+        home_dir=tmp_path,
+        binary_resolver=_resolver("openclaw"),
+        command_runner=runner,
+    )[0]
+    assert len(verified) == 1
+    assert result["ok"] is True, result.get("error")
+    assert result["complete"] is True
+    assert result["status"] == "uninstalled"
+    assert not target.exists()
+    assert _tree_snapshot(Path(result["retained_path"])) == owned_before
+    assert len(runner.mutation_commands) == int(present)
+    assert runner.gateway_probe_count >= 4
+    assert all(
+        command[1:3] == ["gateway", "status"]
+        for command in runner.commands
+        if command[1] == "gateway"
+    )
+
+
+@pytest.mark.parametrize(
+    "status",
+    [
+        pytest.param(_stopped_openclaw_status(stdout_truncated=True), id="stdout-truncated"),
+        pytest.param(_stopped_openclaw_status(stderr_truncated=True), id="stderr-truncated"),
+        pytest.param(_stopped_openclaw_status(returncode=2), id="other-exit-code"),
+        pytest.param(_stopped_openclaw_status(returncode=124), id="timeout"),
+        pytest.param(_stopped_openclaw_status(stdout="{"), id="malformed"),
+        pytest.param(_stopped_openclaw_status(stdout="[]"), id="non-object"),
+        pytest.param(_stopped_openclaw_status(stdout="{}"), id="ambiguous"),
+        pytest.param(_stopped_openclaw_status(stdout='{"running":false}'), id="nonzero-legacy"),
+        pytest.param(
+            _stopped_openclaw_status(
+                stdout='{"service":{"runtime":{"status":"stopped","state":"inactive"}}}'
+            ),
+            id="partial-triple",
+        ),
+        pytest.param(
+            _stopped_openclaw_status(
+                stdout='{"running":true,"service":{"runtime":{"status":"stopped","state":"inactive","subState":"dead"}}}'
+            ),
+            id="contradictory-live",
+        ),
+        pytest.param(
+            _stopped_openclaw_status(
+                stdout='{"service":{"runtime":{"status":"running","state":"active","subState":"running"}}}'
+            ),
+            id="nested-live",
+        ),
+    ],
+)
+def test_openclaw_unproven_or_live_status_blocks_uninstall_without_writes(
+    tmp_path: Path,
+    private_installer_launcher: tuple[Path, Path],
+    status: dict[str, Any],
+) -> None:
+    del private_installer_launcher
+    target = Path(_stage_owned_bundle("openclaw", tmp_path)["target"])
+    before = _tree_snapshot(tmp_path)
+    runner = UninstallNativeRunner("openclaw", target, gateway_status=status)
+    plan = _plan("openclaw", tmp_path, runner)
+    assert plan["ok"] is False
+    assert plan["status"] == "blocked"
+    assert "gateway" in plan["error"]
+    assert runner.mutation_commands == []
+    assert _tree_snapshot(tmp_path) == before
+
+
+@pytest.mark.parametrize("change_at", ["after-approval", "before-commit"])
+@pytest.mark.parametrize(
+    "changed_status",
+    [{"returncode": 0, "stdout": '{"running":true}'}, {"returncode": 1, "stdout": "{}"}],
+    ids=["live", "unknown"],
+)
+def test_stopped_openclaw_is_rechecked_after_approval_and_immediately_before_commit(
+    tmp_path: Path,
+    private_installer_launcher: tuple[Path, Path],
+    monkeypatch: pytest.MonkeyPatch,
+    change_at: str,
+    changed_status: dict[str, Any],
+) -> None:
+    del private_installer_launcher
+    target = Path(_stage_owned_bundle("openclaw", tmp_path)["target"])
+    owned_before = _tree_snapshot(target)
+    runner = UninstallNativeRunner("openclaw", target, gateway_status=_stopped_openclaw_status())
+    plan = _plan("openclaw", tmp_path, runner)
+    assert plan["ok"] is True, plan.get("error")
+    verified: list[Any] = []
+
+    def approve(binding: object) -> None:
+        verified.append(binding)
+        if change_at == "after-approval":
+            runner.gateway_status = changed_status
+
+    def after_locked_revalidation() -> None:
+        runner.gateway_status = changed_status
+
+    monkeypatch.setattr(prepared, "_require_host_uninstall_authority", approve)
+    kwargs = {
+        "expected_plan_digest": _digest([plan]),
+        "operation_id": _operation_id(f"stopped-state-drift-{change_at}"),
+        "selected_by": "agent",
+        "home_dir": tmp_path,
+        "binary_resolver": _resolver("openclaw"),
+        "command_runner": runner,
+        "on_authorized": after_locked_revalidation if change_at == "before-commit" else None,
+    }
+    if change_at == "after-approval":
+        with pytest.raises(PreparedHostUninstallError, match="changed after operator verification"):
+            _apply_prepared_host_uninstall(["openclaw"], **kwargs)
+    else:
+        result = _apply_prepared_host_uninstall(["openclaw"], **kwargs)[0]
+        assert result["ok"] is False
+        assert result["status"] == "blocked"
+        assert "gateway" in result["error"]
+    assert len(verified) == 1
+    assert runner.mutation_commands == []
+    assert _tree_snapshot(target) == owned_before
+
+
+@pytest.mark.parametrize(
+    "status,expected",
+    [
+        (_stopped_openclaw_status(), False),
+        ({"returncode": 0, "stdout": '{"running":false}'}, False),
+        ({"returncode": 0, "stdout": '{"running":true}'}, True),
+        (_stopped_openclaw_status(stdout_truncated=True), None),
+        (_stopped_openclaw_status(returncode=2), None),
+    ],
+)
+def test_install_and_uninstall_share_the_bounded_gateway_classifier(
+    monkeypatch: pytest.MonkeyPatch, status: dict[str, Any], expected: bool | None
+) -> None:
+    probe = NativeCommandResult(("openclaw", "gateway", "status"), **status)
+    monkeypatch.setattr(registration_subject, "_run_native", lambda *args, **kwargs: probe)
+    assert registration_subject.openclaw_gateway_live(home_dir=None, command_runner=None) == (
+        expected,
+        probe,
+    )
+    assert uninstall_subject._openclaw_gateway_state(probe) is expected
+
+
+@pytest.mark.parametrize("drift", ["launcher", "environment", "revalidation"])
+def test_openclaw_bound_probe_refuses_execution_identity_drift_before_launch(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, drift: str
+) -> None:
+    from agency_runtime.core.delegation import backends
+
+    runtime_root = tmp_path / "runtime"
+    ensure_private_directory(runtime_root)
+    state = {"launcher": "original", "environment": "original", "revalidation": False}
+    launches: list[object] = []
+
+    def revalidate() -> None:
+        if state["revalidation"]:
+            raise PermissionError("test launcher namespace changed")
+
+    monkeypatch.setattr(uninstall_subject._facade(), "_runtime_home", lambda **kwargs: runtime_root)
+    monkeypatch.setattr(
+        uninstall_subject._facade(),
+        "_command_environment",
+        lambda *args, **kwargs: {"PATH": state["environment"]},
+    )
+    monkeypatch.setattr(
+        uninstall_subject,
+        "_prepared_launcher",
+        lambda *args, **kwargs: (
+            SimpleNamespace(revalidate=revalidate),
+            {"identity": state["launcher"]},
+        ),
+    )
+    monkeypatch.setattr(
+        backends, "run_bounded_process", lambda *args, **kwargs: launches.append(args)
+    )
+    command = [str(tmp_path / "openclaw"), "gateway", "status", "--deep", "--require-rpc", "--json"]
+    binding = uninstall_subject._execution_binding(
+        "openclaw", executable=command[0], home_dir=tmp_path, command_runner=None
+    )
+    state[drift] = True if drift == "revalidation" else "changed"
+    result = uninstall_subject._run_bound_native_command(
+        command,
+        host="openclaw",
+        binding=binding,
+        home_dir=tmp_path,
+        command_runner=None,
+        timeout=12,
+    )
+    assert result.returncode == 70
+    assert uninstall_subject._openclaw_gateway_state(result) is None
+    assert launches == []
 
 
 def test_native_mutation_failure_redacts_raw_output(

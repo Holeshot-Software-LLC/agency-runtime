@@ -20,6 +20,9 @@ from agency_runtime.core.installer_contracts import (
     CommandRunner,
     NativeCommandResult,
 )
+from agency_runtime.core.installer_registration import (
+    openclaw_gateway_state as _openclaw_gateway_state,
+)
 from agency_runtime.core.private_paths import (
     ensure_private_directory,
     validate_private_directory,
@@ -696,29 +699,6 @@ def _inventory_plugin_records(
             if (record := _dispatch("_hermes_text_plugin_record", line)) is not None
         ]
     return _plugin_records(_dispatch("_json_output", result))
-
-
-def _openclaw_gateway_state(result: NativeCommandResult) -> bool | None:
-    """Interpret only explicit live/stopped gateway signals from a bound probe."""
-
-    payload = _dispatch("_json_output", result)
-    if not result.ok or not isinstance(payload, dict):
-        return None
-    status = str(payload.get("status", "")).strip().lower()
-    signals = {
-        key: _dispatch("_bool_field", payload, key)
-        for key in ("running", "reachable", "healthy", "rpcHealthy", "active")
-    }
-    if any(value is True for value in signals.values()) or status in {
-        "running",
-        "healthy",
-        "ready",
-        "online",
-    }:
-        return True
-    if signals["running"] is False or status in {"stopped", "not-running", "not_running"}:
-        return False
-    return None
 
 
 def _native_preflight(
