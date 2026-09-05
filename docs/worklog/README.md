@@ -1909,6 +1909,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `35d7f9b4` | 2026-09-05 | docs(roadmap): publish installed hiring verification and backlog state [AR-348] [AR-404] | null | null |
 | `0a716813` | 2026-09-05 | Merge pull request #688 from Holeshot-Software-LLC/codex/ar348-installed-delivery | [AR-348](../roadmap/issue-AR-348-enforce-strict-independence-in-production.md), [AR-404](../roadmap/issue-AR-404-evidence-led-backlog-completion.md) | null |
 | `49764a97` | 2026-09-05 | docs(roadmap): retire superseded live-routing proposal [AR-115] | [AR-115](../roadmap/issue-AR-115-live-routing-trust.md) | [Detail](2026-09-05-49764a97-retire-legacy-routing.md) |
+| `d9ea419b` | 2026-09-05 | Merge pull request #690 from Holeshot-Software-LLC/codex/ar115-retire-superseded-routing-contract | [AR-115](../roadmap/issue-AR-115-live-routing-trust.md) | [Detail](2026-09-05-49764a97-retire-legacy-routing.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
