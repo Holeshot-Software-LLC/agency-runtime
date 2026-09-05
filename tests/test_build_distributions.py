@@ -528,26 +528,84 @@ def test_file_identity_agrees_between_a_path_and_its_open_handle(tmp_path: Path)
 
 
 def test_directory_identity_survives_the_directory_being_written_to(tmp_path: Path) -> None:
-    """A staging directory must not "change identity" by being used.
-
-    Windows sets 0x10000000 on a freshly created directory and clears it
-    permanently once the directory gains its first child; it does not return when
-    that child is removed. Comparing raw `st_file_attributes` therefore failed
-    every check in this module the moment a build wrote anything, which is the
-    single job a release staging directory has. That was the cause of a
-    13-failure cluster carried as un-root-caused for days.
-    """
+    """Ordinary staging I/O preserves the real directory on every platform."""
 
     identity = subject._directory_identity(tmp_path)
-    assert getattr(os.lstat(tmp_path), "st_file_attributes", 0) & 0x10000000, (
-        "expected a fresh directory to carry the volatile bit; if this platform "
-        "does not set it, this regression test is no longer meaningful here"
-    )
-
-    (tmp_path / "one.whl").write_bytes(b"wheel")
-
-    assert getattr(os.lstat(tmp_path), "st_file_attributes", 0) & 0x10000000 == 0
+    child = tmp_path / "one.whl"
+    child.write_bytes(b"wheel")
     assert subject._directory_identity(tmp_path) == identity
+    subject._require_directory_identity(tmp_path, identity)
+    child.unlink()
+    assert subject._directory_identity(tmp_path) == identity
+    subject._require_directory_identity(tmp_path, identity)
+
+
+def test_directory_identity_ignores_synthetic_volatile_windows_attribute(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Replay the measured Windows transition without requiring that filesystem."""
+
+    metadata = SimpleNamespace(
+        st_dev=1,
+        st_ino=2,
+        st_mode=stat.S_IFDIR | 0o700,
+        st_file_attributes=stat.FILE_ATTRIBUTE_DIRECTORY | 0x10000000,
+    )
+    monkeypatch.setattr(subject, "os", SimpleNamespace(lstat=lambda _path: metadata))
+    identity = subject._directory_identity(tmp_path)
+    assert identity.file_attributes == stat.FILE_ATTRIBUTE_DIRECTORY
+
+    metadata.st_file_attributes &= ~0x10000000
+    assert subject._directory_identity(tmp_path) == identity
+    subject._require_directory_identity(tmp_path, identity)
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "message"),
+    [
+        ("st_mode", stat.S_IFREG | 0o600, "must be a real directory"),
+        ("st_mode", stat.S_IFLNK | 0o700, "must be a real directory"),
+        (
+            "st_file_attributes",
+            stat.FILE_ATTRIBUTE_DIRECTORY | stat.FILE_ATTRIBUTE_REPARSE_POINT,
+            "must be a real directory",
+        ),
+        ("st_ino", 0, "has no stable identity"),
+        ("st_ino", 3, "changed identity"),
+        ("st_dev", 4, "changed identity"),
+    ],
+)
+def test_synthetic_directory_identity_rejects_kind_or_object_changes(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, field: str, value: int, message: str
+) -> None:
+    metadata = SimpleNamespace(
+        st_dev=1,
+        st_ino=2,
+        st_mode=stat.S_IFDIR | 0o700,
+        st_file_attributes=stat.FILE_ATTRIBUTE_DIRECTORY | 0x10000000,
+    )
+    monkeypatch.setattr(subject, "os", SimpleNamespace(lstat=lambda _path: metadata))
+    identity = subject._directory_identity(tmp_path)
+    setattr(metadata, field, value)
+    with pytest.raises(RuntimeError, match=message):
+        subject._require_directory_identity(tmp_path, identity)
+
+
+@pytest.mark.skipif(os.name != "nt", reason="native Windows file-attribute observation")
+def test_native_windows_directory_volatile_attribute_transition(tmp_path: Path) -> None:
+    """Retain the 71833c5c observation only where its filesystem premise holds."""
+
+    initial_attributes = os.lstat(tmp_path).st_file_attributes
+    assert initial_attributes & stat.FILE_ATTRIBUTE_DIRECTORY
+    if not initial_attributes & 0x10000000:
+        pytest.skip("this Windows filesystem does not set the observed fresh-directory bit")
+    identity = subject._directory_identity(tmp_path)
+    child = tmp_path / "one.whl"
+    child.write_bytes(b"wheel")
+    assert os.lstat(tmp_path).st_file_attributes & 0x10000000 == 0
+    subject._require_directory_identity(tmp_path, identity)
+    child.unlink()
+    assert os.lstat(tmp_path).st_file_attributes & 0x10000000 == 0
     subject._require_directory_identity(tmp_path, identity)
 
 
@@ -558,7 +616,7 @@ def test_directory_identity_still_pins_kind_and_exact_object(tmp_path: Path) -> 
     directory.mkdir()
     identity = subject._directory_identity(directory)
 
-    assert identity.file_attributes & stat.FILE_ATTRIBUTE_DIRECTORY
+    assert stat.S_ISDIR(identity.mode)
     assert identity.file_attributes & ~subject._IDENTITY_ATTRIBUTE_MASK == 0
     assert identity.inode > 0
 
@@ -568,6 +626,16 @@ def test_directory_identity_still_pins_kind_and_exact_object(tmp_path: Path) -> 
     assert subject._directory_identity(other) != identity
     with pytest.raises(RuntimeError, match="changed identity"):
         subject._require_directory_identity(other, identity)
+
+    # Replacement at the original path must also fail, including a kind change.
+    directory.rename(tmp_path / "original")
+    directory.mkdir()
+    with pytest.raises(RuntimeError, match="changed identity"):
+        subject._require_directory_identity(directory, identity)
+    directory.rmdir()
+    directory.write_bytes(b"not a directory")
+    with pytest.raises(RuntimeError, match="must be a real directory"):
+        subject._require_directory_identity(directory, identity)
 
 
 def test_artifact_contract_rejects_hardlinks(tmp_path: Path) -> None:

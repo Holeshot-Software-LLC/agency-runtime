@@ -1,11 +1,12 @@
 ---
 title: "AR-405: Make Windows directory-identity regressions portable"
-status: open
+status: in_progress
 category: roadmap
 created: 2026-09-05
 updated: 2026-09-05
 tags: [testing, portability, release, windows, linux]
 related:
+  - docs/roadmap/acceptance/issue-AR-405.md
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
   - docs/roadmap/issue-AR-160-publish-platform-honest-native-release-artifacts.md
   - docs/decisions/0074-build-byte-deterministic-release-artifacts.md
@@ -40,6 +41,16 @@ two failures in 11.73 seconds. The failing assumptions predate this review
 (git blame identifies 71833c5c). No product identity regression is established.
 Initial collection also required the repository-pinned setuptools 83.0.0 and
 wheel 0.47.0 in the isolated test environment, not merely build isolation.
+
+The next bounded package reproduces the two failures at main 3ed51069, then
+corrects only tests/test_build_distributions.py. Ordinary write/delete and
+same-path replacement assertions run on every platform. Synthetic metadata
+replays the volatile Windows bit and rejects file, link, reparse, missing-inode,
+different-inode and different-device cases. A separate native Windows test
+retains the historical filesystem observation, scoped to its actual premise.
+Focused result: 100 passed, one native-only skip on Linux. No production
+identity logic changed. Phase: fast_verification; isolated acceptance pending.
+The linked evidence preserves the red baseline and native-evidence limits.
 
 ## Approach
 

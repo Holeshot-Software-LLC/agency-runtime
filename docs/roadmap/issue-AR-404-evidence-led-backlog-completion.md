@@ -39,6 +39,13 @@ repeat work and risk reintroducing superseded behavior.
 
 ## Current state
 
+Continuation: PR #676 and ledger #677 are confirmed on origin/main at 3ed51069.
+The owner requested pushing and continuing. AR-405 now has a test-only repair
+with 100 passing build tests (one native Windows skip), preserved portable
+integrity checks, and a 452-pass wider focused run. Its isolated acceptance and
+delivery are pending; AR-271 is the next genuine runtime defect. This does not
+count an unverified closure or change the frozen baseline counts below.
+
 2026-09-05 backlog package: the owner explicitly requested disposition before
 more implementation. The linked first semantic review retires AR-132/167/169/267
 under already-replaced policies, reconciles AR-160's active no-helper release
