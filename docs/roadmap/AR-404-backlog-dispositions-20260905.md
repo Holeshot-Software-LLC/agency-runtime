@@ -57,11 +57,11 @@ against current product intent, without changing the frozen baseline inventory.
 | Issue | Disposition | Current evidence and retained responsibility |
 |---|---|---|
 | [AR-139](issue-AR-139-restore-release-asset-budget.md) | Retired, wont_do | Its fixed 263,168-byte ceiling was superseded by AR-295's explicit required-UI audit, then 3023f0557's AR-297/298 audit. Current ten assets total 386,366 bytes, below the strict 378 KiB ceiling; the current resource test passes (1 test, 0.17s). No UI removal, floor change, or new artifact/Windows proof is claimed. |
-| [AR-149](issue-AR-149-fresh-dashboard-request-ids.md) | Implemented; acceptance evidence incomplete | Four real HTTP regressions and 180 dashboard/disconnect tests pass. First isolated run satisfied criteria 1/4, but criteria 2/3 need the existing nested-boundary and Store propagation source cited explicitly. Retain the absent verdicts and add the missing evidence before a targeted recheck; do not rewrite criteria or declare completion. |
+| [AR-149](issue-AR-149-fresh-dashboard-request-ids.md) | Done; existing fix accepted | Four real HTTP regressions, 180 dashboard/disconnect tests and eight boundary/Store tests pass. All four isolated criteria are satisfied. The first absent 2/3 verdicts remain in f2e41b89; a targeted recheck followed the addition of actual ContextVar and Store source excerpts. No product criterion or implementation changed to obtain closure. |
 | [AR-152](issue-AR-152-bound-dashboard-live-listeners.md) | Listener fix present; not closed | The 50-render delegated-listener soak passes in the 138-case UI suite. Its shared coverage clause currently fails and remains a distinct gap under AR-406, not an excuse to rebuild the working listener design. |
 
-After filing AR-406/#682 and retiring legacy AR-139: 44 tracked open issues
-plus 103 unfinished legacy records (147 total local unfinished). Retirement of
+After filing AR-406/#682, retiring AR-139 and completing AR-149: 44 tracked open
+issues plus 102 unfinished legacy records (146 total local unfinished). Closure of
 an unmapped historical record cannot decrease the owner's tracker-open count.
 
 ## Reviewed candidates that are not safe closures

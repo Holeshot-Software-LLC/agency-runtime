@@ -182,7 +182,7 @@ records only after checking relevance, current evidence and successor decisions.
 | `AR-146` | [Repair dashboard collection cursor validation](issue-AR-146-repair-dashboard-collection-cursor-validation.md) | done | p0 | dashboard | pending authorization |
 | `AR-147` | [Parse complete Windows ACL descriptors](issue-AR-147-parse-complete-windows-acl-descriptors.md) | open | p0 | security | pending authorization |
 | `AR-148` | [Fail malformed remediation signatures closed](issue-AR-148-fail-malformed-remediation-signatures-closed.md) | open | p1 | security | pending authorization |
-| `AR-149` | [Issue a fresh dashboard request ID per HTTP request](issue-AR-149-fresh-dashboard-request-ids.md) | open | p0 | observability | pending authorization |
+| `AR-149` | [Issue a fresh dashboard request ID per HTTP request](issue-AR-149-fresh-dashboard-request-ids.md) | done | p0 | observability | pre-tracker history; verified acceptance |
 | `AR-150` | [Coordinate dashboard refresh commit epochs](issue-AR-150-coordinate-dashboard-refresh-epochs.md) | open | p0 | dashboard | pending authorization |
 | `AR-151` | [Align Route Lab host eligibility with the server](issue-AR-151-align-route-lab-host-eligibility.md) | open | p1 | dashboard | pending authorization |
 | `AR-152` | [Bound dashboard live-listener retention](issue-AR-152-bound-dashboard-live-listeners.md) | open | p1 | performance | pending authorization |

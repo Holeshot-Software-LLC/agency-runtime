@@ -50,15 +50,17 @@ their proposed designs, and leave Windows-specific work to the owner's machine.
 The starting 147 count was 43 open trackers plus 104 unfinished pre-tracker
 local records, not 147 demonstrated defects. The count reconciliation records
 the exact join. AR-149 is already implemented and now has current real HTTP
-verification; first isolated acceptance satisfied criteria 1/4 and found
-missing nested-boundary/Store source evidence for 2/3. The original absent
-verdicts remain until that specific evidence is supplied. AR-139 is retired:
+verification; all four isolated criteria are satisfied and the record is done.
+The first absent 2/3 verdicts remain in f2e41b89; the targeted second check
+followed missing ContextVar/Store source citations, not criterion changes.
+AR-139 is retired:
 AR-295 and 3023f0557 superseded its old ceiling with audited required UI;
 current 386,366-byte assets pass the strict 378 KiB guard. No guard is changed.
 AR-152's listener soak passes,
 but the separate current UI function-coverage gate fails (91.12 versus 93
 percent), recorded as AR-406/#682. Filing it adds one tracked issue; retiring
-AR-139 removes one legacy item (44 tracked plus 103 unfinished legacy).
+AR-139 and completing AR-149 remove two legacy items (44 tracked plus 102
+unfinished legacy). No corresponding external trackers exist for those two.
 
 A stale-hook warning prompted `agency install --agent codex` from the existing
 installed immutable runtime. Codex files refreshed; exit 1 honestly retains
@@ -171,8 +173,7 @@ No exhaustive workflow dispatch or unattended restart is implied.
 
 ## Next bounded package
 
-Close the already-implemented AR-149 after the two missing source citations
-are independently verified. AR-139's obsolete ceiling is retired. Reconcile
+AR-149 is accepted and AR-139's obsolete ceiling is retired. Reconcile
 historical record relevance one by one, including AR-148's implemented signature
 guard and AR-152's listener behavior; keep AR-406's current
 shared coverage failure visible. Then verify AR-298 and deliver genuine

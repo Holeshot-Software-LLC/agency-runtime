@@ -18,8 +18,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-404
 branch: codex/ar404-close-proven-history
-evidence_commit: e425583603a99debc5b6cdbe3c2c84f4f3e7954d
-minimum_ledger_commit: e425583603a99debc5b6cdbe3c2c84f4f3e7954d
+evidence_commit: b9d68e5d872046fcb207f5318d323eb63becb601
+minimum_ledger_commit: a271e721137005f79323d732158975676a6343ca
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -42,7 +42,7 @@ No implementation agents were delegated. Umbrella remains implementing.
   They are a reconciliation queue, not 104 proved extra defects. Full local
   counts were 240 done, 93 in_progress, 54 open, 11 wont_do (398 records).
   New AR-406/#682 adds one tracked issue; AR-139 is now retired as superseded.
-  Current split: 44 tracked open plus 103 legacy unfinished.
+  AR-149 is accepted. Current split: 44 tracked open plus 102 legacy unfinished.
 - Original-baseline reductions: AR-400..403 accepted; AR-132/167/169/267 retired
   through cited successors; AR-271 accepted. AR-405 was outside the baseline
   and is also accepted. Prior work merged via PRs #669/#673/#676..681. Never
@@ -55,8 +55,9 @@ No implementation agents were delegated. Umbrella remains implementing.
   pass (1.21s); complete dashboard/disconnect files 180 pass (27.28s). Current
   acceptance exposes four old prose criteria as checkboxes and reconciles
   only the obsolete complete-corpus condition with ADR-0105. Candidate b9d68e5d:
-  criteria 1/4 satisfied; 2/3 absent because nested-boundary/Store propagation
-  excerpts were omitted. Add those source citations, then recheck only 2/3.
+  all four criteria satisfied. The first absent 2/3 verdicts remain in f2e41b89;
+  targeted rechecks passed after missing ContextVar/Store excerpts were added.
+  Eight boundary/Store tests pass in 0.31s. No product criterion changed.
 - AR-152's stable container listener, semantic buttons and 50-render soak are
   present and pass. Full UI suite 138 pass, but configured coverage exits 1 on
   Node v22.23.2: 97.80 lines, 88.43 branches, 91.12 functions versus 95/86/93
@@ -72,8 +73,7 @@ No implementation agents were delegated. Umbrella remains implementing.
 
 ## Exact blocker
 
-AR-149 needs missing evidence for criteria 2/3, then local closure in PR #683. There is no
-reproduced current request-ID defect. AR-152 remains open pending honest
+AR-149 is done; PR #683 carries its closure and AR-139's retirement. AR-152 remains open pending honest
 reconciliation of its aggregate coverage clause and current evidence. AR-406
 is a current verification gap, not a listener implementation gap.
 Do not claim "most done" before relevance and evidence are examined. Do not
@@ -94,8 +94,7 @@ No current header snapshot exists; no specialist staffing succeeded.
 
 ## Next bounded work package
 
-1. Finish AR-149's two missing isolated verdicts and closure, preserving the exact
-   validation-scope reconciliation and current UI coverage failure.
+1. Deliver AR-149's accepted closure and AR-139's retirement through PR #683.
 2. Continue historical records one by one: retire superseded proposals with
    reasons and reciprocal links; close implemented work with exact evidence.
 3. Address AR-406 separately without lowering floors; verify AR-298, then the

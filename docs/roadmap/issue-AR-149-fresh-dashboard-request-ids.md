@@ -1,6 +1,6 @@
 ---
 title: "AR-149: Issue a fresh dashboard request ID per HTTP request"
-status: open
+status: done
 category: roadmap
 created: 2026-07-26
 updated: 2026-09-05
@@ -38,8 +38,10 @@ The original defect is repaired by 6a3bdaa0 and remains repaired at main
 e4255836. Four current real-HTTP correlation regressions pass; the complete
 dashboard/disconnect files return 180 passed. The linked evidence distinguishes
 this bounded source/loopback proof from a new installed-host or Windows claim.
-The item is awaiting isolated verification of the existing implementation,
-not another implementation of the historical problem description.
+All four candidate-bound isolated criteria are satisfied. The first run's
+missing nested-boundary/Store citations and the exact targeted recheck remain
+in Git and the acceptance record. This is closure of an existing repair, not
+another implementation of the historical problem description.
 
 ## Approach
 
@@ -54,10 +56,10 @@ evidence to remain attributable to the exact operation.
 
 ## Acceptance
 
-- [ ] Sequential requests on one keep-alive connection receive distinct request IDs.
-- [ ] Every boundary within one request uses the same ID.
-- [ ] Response headers, error paths, and Store instrumentation remain correlated.
-- [ ] Focused dashboard server tests and the source-identical named production spine pass; exhaustive integration remains optional under ADR-0105.
+- [x] Sequential requests on one keep-alive connection receive distinct request IDs.
+- [x] Every boundary within one request uses the same ID.
+- [x] Response headers, error paths, and Store instrumentation remain correlated.
+- [x] Focused dashboard server tests and the source-identical named production spine pass; exhaustive integration remains optional under ADR-0105.
 
 ## Historical validation requirement
 
