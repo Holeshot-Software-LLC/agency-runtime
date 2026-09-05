@@ -79,3 +79,61 @@ silent window: 2026-08-29T13:54:10.563000+00:00 .. 2026-09-03T18:42:33.612000+00
         1  selection_confidence_too_low
    the declaring path runs after an accepted recruiter proposal; none has been accepted
    since 2026-09-03T18:42:33Z, so no receipt written by this code has had a gap to declare.
+
+== 6. criterion 5 re-measured 2026-09-04 (late evening) on a fresh copy of the live store ==
+   copy of ~/.agency-runtime/agency.db taken 2026-09-05T03:31Z; the live store was never opened for write.
+   every host runs venv c42fb0a5 since 2026-09-05T01:01Z (claude relaunched at 03:21Z); the fix d7106be1
+   was already carried by venv e12c1bdd, which the claude hooks ran from 2026-09-04T18:34Z.
+   receipts in the store                          : 1079
+   declaring no_safe_sufficient_team, all time    : 100
+     ...with EMPTY hiring_reason_codes            : 42   (unchanged: every one predates the fix)
+   declaring receipts written by fix-carrying code: 1
+     ...with EMPTY hiring_reason_codes            : 0
+
+   the one declaring receipt after the fix, verbatim:
+     recorded_at   2026-09-05T00:28:19.927000+00:00   host claude   session 818faff7   trace 381f75c6
+     stage/reason  routing / substantive_specialist_unavailable
+     staffing      ["no_safe_sufficient_team", "recruiter_abstained"]
+     hiring        ["hiring_status_abstained", "hiring_inference_attempted", "hiring_inference_failed", "provider_model_text_not_json"]
+     attempts      planner x2 rejected (provider_response_contract_invalid) -> planner applied -> recall applied -> reranker applied -> recruiter applied
+   the declared gap reached the governed hiring path (hiring attempted) and the account names why it
+   ended: the hiring inference replied with text that was not JSON. Nothing about the turn was silent.
+
+   receipts since the c42fb0a5 install (11), by terminal shape:
+        7  routing:workforce_provider_unavailable
+        3  routing:workforce_inference_failed
+        1  ready_commit:ready_commit_failed
+   staffing_reason_codes across them: 7 inference_unavailable, 3 staffing_critic_rejected,
+   2 critic_wrong_neighbor_selection, 1 roster_coverage_gap, 1 critic_missing_adversarial_review_lifecycle_assurance.
+   none declares a gap, so the after-install window on the live store is still empty; the receipt above
+   is the first fix-carrying declaring receipt and it is accounted for.
+
+   what this does and does not settle: the first half of criterion 5 (zero declaring receipts with an
+   empty hiring account among those written after the fix) holds on one receipt. The second half asks
+   the condition behind the 42 to be named on the receipts that carried it; those rows predate the fix
+   and no code change rewrites stored receipts, so that half is unsatisfiable as worded and needs an
+   owner decision to reword it to receipts written after the fix.
+
+== 7. the first fix-carrying turn that declared a gap, driven 2026-09-05T03:46Z against the same store copy ==
+   real UserPromptSubmit hook from venv c42fb0a5, config copy with store.db_path pointing at the copy, credential sourced.
+   prompt: a COBOL z/OS batch reconciliation with JCL, DB2 and VSAM (no roster card covers it).
+   provider calls, in order: planner, reranker, recruiter (all six units -> gap), then the governed hiring loop:
+     hiring-generator x2, hiring-critic, security-review, hiring-generator, hiring-critic, security-review,
+     hiring-generator x2, hiring-critic, hiring-generator x2, hiring-critic, security-review  (17 calls, 613 s)
+   every generator reply was {"action": "hire", ...}; every critic reply {"approved": true}; every security review "safe".
+   what the host was told: [Agency staffing failed this turn: substantive_specialist_unavailable;
+                            staffing: no_safe_sufficient_team, recruiter_abstained]
+   what the store copy holds for the turn (trace 66d5588b):
+     preflight_failure_receipts : NO ROW
+     agent_hiring_cases         : NO ROW
+     runs                       : status active, preflight_state 'in_progress', attempt token still set,
+                                  preflight_lease_expires_at 2026-09-05T03:56:02.325Z, preflight_result empty
+   why: the run's preflight lease is hook_timeout_seconds (600 s here); it expired at 03:56:02Z while the
+   hiring loop was still running, and store.fail_preflight_attempt writes the receipt only inside a guarded
+   UPDATE that requires preflight_state = 'in_progress' AND preflight_lease_expires_at >= now. The UPDATE
+   matched no row, the function returned False, the caller in core/preflight.py:901 discards that return,
+   and no receipt, hiring event or hiring case was written. The renew() loop in core/preflight.py:227
+   serves child routes only. The live store was not opened for write at any point.
+
+   for criterion 5 this is the sharpest reading yet: a declared gap on a turn whose hiring loop outruns the
+   lease produces not an empty hiring account but no account at all, and the host is still told the gap.

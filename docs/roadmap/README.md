@@ -411,6 +411,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-395` | [Three real inference stages are not in the receipt's stage vocabulary, so their attempts are recorded as unknown](issue-AR-395-preflight-stage-vocabulary-is-incomplete.md) | done | p1 | observability | [#652](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/652) |
 | `AR-396` | [A complete reply that is not JSON ends the stage on one call, while a cut one and a wrong one each get a second ask](issue-AR-396-a-non-json-reply-gets-no-second-ask.md) | done | p1 | reliability | [#653](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/653) |
 | `AR-397` | [A packaged contract that already shipped at the current template cannot be revised in place](issue-AR-397-packaged-contracts-cannot-be-revised-in-place.md) | done | p2 | workforce | [#654](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/654) |
+| `AR-398` | [A gap turn whose hiring loop outruns the preflight lease leaves no receipt, no hiring case and a run stuck in progress](issue-AR-398-a-gap-turn-that-outruns-its-lease-leaves-no-receipt.md) | open | p1 | observability | pending authorization |
 
 ## Traceability
 
