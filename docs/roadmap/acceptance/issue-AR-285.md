@@ -12,7 +12,7 @@ supersedes: []
 superseded_by: null
 type: acceptance-verification
 issue_id: AR-285
-candidate_commit: pending
+candidate_commit: f0f5c386e705dae51e9ac912139692caf53821f5
 evidence_cutoff: 2026-09-05
 tracker_url: null
 ---
@@ -43,3 +43,12 @@ none. This does not assert current-version OpenClaw live activation.
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
+
+## Verification availability
+
+The first 2026-09-05 Claude verifier pass recorded no judgments. A subsequent
+read-only transport inspection reported executable refused as untrusted because
+its parent namespace permits substitution. No permissions were changed and no
+model success is inferred from that pre-transport failure. The supported Codex
+transport reports usable/authenticated and is the next bounded verifier; it
+judges the same per-criterion excerpts without repository browsing tools.

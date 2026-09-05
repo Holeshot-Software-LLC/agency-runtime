@@ -60,6 +60,14 @@ create a new external tracker or silently claim external parity.
 
 ## Next packages
 
+Verification checkpoint: 1004 named-spine tests pass (three skips), 138 UI tests
+pass, and 207 documentation/acceptance/tracker/distribution-verifier tests pass.
+The 181 focused installer checks and wider two-failure result are separate.
+Claude acceptance verification recorded no judgments because its executable
+parent namespace failed trust; the supported Codex excerpt-only verifier is
+the next bounded attempt. No runtime/test source, host permissions or trust
+settings changed in this batch.
+
 1. Finish this small record batch through independent AR-285 verification,
    documentation/tracker checks, PR merge and exact worklog.
 2. Verify implemented inspection/observability items such as AR-298, and resolve

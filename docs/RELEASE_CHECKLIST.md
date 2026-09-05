@@ -359,23 +359,14 @@ zizmor --pedantic --strict-collection --offline .
       or that exact runtime audit.
 - [ ] GitHub Actions use immutable SHAs, least-privilege permissions, and no
       persisted checkout credentials without an explicit need.
-- [ ] The deterministic unsigned native helper is rebuilt and independently
-      verified before signing; release provenance separately binds the signed
-      SHA-256, approved publisher certificate identity and chain, RFC 3161
-      timestamp, policy, and exact unsigned review digest.
-- [ ] Independent Windows Authenticode verification uses the default
-      authentication policy and rejects a missing signature, warning, wrong
-      publisher, invalid chain, altered bytes, absent/invalid timestamp, or
-      unresolved revocation state when policy requires it. Signing keys and
-      reusable credentials never enter the repository or ordinary CI artifacts.
-- [ ] `THIRD_PARTY_NOTICES.md` and the release artifacts include the exact local
-      C++/WinRT MIT and Microsoft STL Apache-2.0 WITH LLVM-exception/NOTICE
-      texts from their immutable official source revisions.
-- [ ] The owner and an authorized legal reviewer record the exact Visual Studio
-      edition/build-operator entitlement, MSVC and Windows SDK terms and redist
-      list, `/MT` static CRT/runtime disposition, upstream notices, publisher
-      identity, and final channel approval. Source-license provenance alone is
-      not legal clearance.
+- [ ] Release artifacts contain no retired Agency-owned Windows Hello helper,
+      executable, or disguised PE payload. ADR-0219 retires its Authenticode,
+      compiler/SDK redistribution and native-notice prerequisites; the original
+      requirements remain in superseded ADR-0099 and historical AR-161.
+- [ ] Signing keys and reusable credentials never enter the repository or
+      ordinary CI artifacts. Current third-party notices and publication
+      authorization cover the bytes actually distributed; helper retirement
+      does not establish legal clearance for unrelated components.
 
 ## 5. Documentation integrity
 
@@ -400,13 +391,14 @@ git diff --check
 
 The builder derives its wheel profile from the actual host: supported Windows
 x64 emits one `win_amd64` wheel/source pair and other hosts emit one portable
-wheel/source pair whose wheel excludes only the PE. Running these commands on
-one host does not create the complete unsigned review set. The hosted merge gate must
+wheel/source pair. Neither wheel profile admits executable or PE content.
+Running these commands on one host does not create the complete release set.
+The hosted merge gate must
 prove byte-identical producer source distributions and shared wheel payloads,
 assemble the two wheels plus one source distribution, and independently verify
 all three. Hosted cross-OS proof remains pending while repository Actions
-billing is disabled. AR-161 separately requires an approved signed delivery
-payload and legal disposition before publication.
+billing is disabled. ADR-0219 retires the removed helper's signed-delivery
+obligation, not cross-OS artifact proof or publication authorization.
 
 From a clean checkout:
 
@@ -579,6 +571,11 @@ outward-facing actions and require explicit authorization.
 - [ ] Start the next `Unreleased` changelog section.
 
 ## Current blockers
+
+The dated checkpoints below are historical evidence, not current-candidate
+release proof. References to helper signing describe the then-recorded gate;
+ADR-0219 has retired that obligation. AR-160 owns the current paired no-helper
+artifact contract, and AR-405 records two current Linux release-fixture failures.
 
 The 2026-08-26 AR-297 unsigned Linux checkpoint built and independently
 verified commit `987cee8ff01a4a16780eac15bb8120f828d4193d`. The portable wheel
