@@ -33,12 +33,12 @@ receipts are preserved; supersession is not a successful acceptance verdict.
 | [AR-167](issue-AR-167-normalize-windows-release-source-modes.md) | Retire helper-specific delivery; wont_do | AR-197 removed the helper. The special source-tar executable allowance must not return. General path/handle-mode tests remain; AR-160 owns current cross-OS artifact proof. |
 | [AR-169](issue-AR-169-exclude-native-pe-from-portable-wheel.md) | Retire conflicting PE split; wont_do | The original Windows-wheel criterion requires the helper. Both current profiles set includes_native_executable=false. ADR-0219 retains paired artifacts and no-PE verification. |
 | [AR-267](issue-AR-267-accept-openclaw-numeric-package-revision.md) | Retire old release-line contract; wont_do | Owner-approved 2a5d52cd (AR-347 worklog) moved the minimum to 2026.8.2. tests/test_native_installer.py accepts 2026.8.2-1 and intentionally rejects 2026.7.1-2. Numeric revision parsing remains implemented. |
-| [AR-285](issue-AR-285-accept-openclaw-stopped-gateway-status.md) | Builder evidence prepared; await isolated verification | Current production classifier accepts only the complete exit-1 stopped/inactive/dead triple. Source regression, current negative-case replay and existing stopped-host install receipts are cited separately in its acceptance record. No new live gateway stop is implied. |
+| [AR-285](issue-AR-285-accept-openclaw-stopped-gateway-status.md) | Retain in_progress: three satisfied, two absent criteria | Current regression and negative cases pass. The isolated verifier requires actual trusted-runner wiring citations and a successful changed-precondition dry-run receipt; historical real-install records do not supply the latter. The two unchecked criteria and full verdicts are retained. No live gateway mutation was performed. |
 | [AR-160](issue-AR-160-publish-platform-honest-native-release-artifacts.md) | Reconcile, retain in_progress | Replace the removed-helper acceptance with the existing no-PE paired-artifact contract. Historical checks move intact to their own section. Windows/Linux producer evidence remains required for release; no new evidence is claimed. |
 
 Four baseline records are retired in this checkpoint: 147 remain unfinished,
-plus AR-404 and newly filed AR-405. AR-285 is not counted closed until its
-isolated verdicts permit it.
+plus AR-404 and newly filed AR-405 (149 total unfinished current records).
+AR-285 is not counted closed: its isolated verdicts do not permit completion.
 Pre-tracker exemptions are retained; retiring an old unmapped item does not
 create a new external tracker or silently claim external parity.
 
@@ -64,12 +64,14 @@ Verification checkpoint: 1004 named-spine tests pass (three skips), 138 UI tests
 pass, and 207 documentation/acceptance/tracker/distribution-verifier tests pass.
 The 181 focused installer checks and wider two-failure result are separate.
 Claude acceptance verification recorded no judgments because its executable
-parent namespace failed trust; the supported Codex excerpt-only verifier is
-the next bounded attempt. No runtime/test source, host permissions or trust
-settings changed in this batch.
+parent namespace failed trust. The supported Codex excerpt-only verifier then
+satisfied three criteria and reported two absent; no second judgment pass was
+used to seek a green result. Decision conformance passes with source unchanged.
+No runtime/test source, host permissions or trust settings changed in this batch.
 
-1. Finish this small record batch through independent AR-285 verification,
-   documentation/tracker checks, PR merge and exact worklog.
+1. Deliver this record batch through PR #676 and its exact worklog. AR-285 stays
+   open for the two precisely named evidence gaps; do not repeat successful
+   checks or run a live service interruption to force closure.
 2. Verify implemented inspection/observability items such as AR-298, and resolve
    small scope contradictions before creating new implementation work.
 3. Deliver the genuine AR-271 and AR-348/349 safety fixes in separate bounded

@@ -396,8 +396,9 @@ Running these commands on one host does not create the complete release set.
 The hosted merge gate must
 prove byte-identical producer source distributions and shared wheel payloads,
 assemble the two wheels plus one source distribution, and independently verify
-all three. Hosted cross-OS proof remains pending while repository Actions
-billing is disabled. ADR-0219 retires the removed helper's signed-delivery
+all three. Current cross-OS evidence must identify an actual authorized producer
+run; the 2026-09-05 backlog reconciliation claims no new hosted run or current
+billing-state diagnosis. ADR-0219 retires the removed helper's signed-delivery
 obligation, not cross-OS artifact proof or publication authorization.
 
 From a clean checkout:

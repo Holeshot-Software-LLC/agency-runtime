@@ -42,10 +42,14 @@ repeat work and risk reintroducing superseded behavior.
 2026-09-05 backlog package: the owner explicitly requested disposition before
 more implementation. The linked first semantic review retires AR-132/167/169/267
 under already-replaced policies, reconciles AR-160's active no-helper release
-contract, and prepares AR-285's isolated verification. Original checklists and
-historical receipts remain intact. After four retirements, 147 baseline items
+contract, and records AR-285's isolated verification. Original retired
+checklists and historical receipts remain intact. After four retirements, 147 baseline items
 remain unfinished plus this coordinator and the newly reproduced AR-405
-Linux-incompatible Windows fixture issue. AR-285 remains open pending judgment.
+Linux-incompatible Windows fixture issue (149 current unfinished records).
+AR-285 remains open with three satisfied and two absent criteria: actual
+trusted-runner wiring citations and a successful changed-precondition dry-run
+receipt are missing from its evidence. Delivery is PR #676; the worklog supplies
+its exact merge identity. No runtime or test source changed in this package.
 
 The review does not support mass closure: AR-271 is still missing its uninstall
 classifier fix, AR-337's battery excludes ZCode despite its literal all-supported
@@ -135,9 +139,9 @@ No exhaustive workflow dispatch or unattended restart is implied.
 
 ## Next bounded package
 
-Finish AR-285 isolated verification and merge the first disposition batch.
-Then verify already-implemented inspection/observability work (AR-298), resolve
+Verify already-implemented inspection/observability work (AR-298), resolve
 explicit scope contradictions, and deliver genuine AR-271/348/349 fixes in
 separate bounded packages. AR-405 records the two Linux fixture failures without
-expanding this documentation batch. The full backlog remains open until every
+expanding this documentation batch. AR-285 needs its two named evidence gaps,
+not a repeated successful classifier test. The full backlog remains open until every
 baseline record has a reviewed disposition and remaining acceptance is met.

@@ -20,8 +20,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-404
 branch: codex/ar404-backlog-reconciliation
-evidence_commit: f0f5c386e705dae51e9ac912139692caf53821f5
-minimum_ledger_commit: 8d040b304df59cabe526822f746b2174439508ea
+evidence_commit: 8e9cb4830eb6882540272dd29f084d5209c46ee7
+minimum_ledger_commit: d047754ab4b4d97ce829a6ec6b62ea3e11738357
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -34,9 +34,11 @@ The owner asked to commit review artifacts, plan and implement the findings,
 then clean up and complete the backlog. This item owns the full baseline, not
 just the completed review slice. The latest request prioritizes semantically
 triaging done, contradictory and unwanted records before more implementation.
-Phase: fast_verification. No implementation agents were delegated. The current
+Umbrella phase: implementing. The first record package has passed its scoped
+review and fast verification; PR #676 is its delivery and worklog records the
+exact merge outcome. No implementation agents were delegated. The current
 batch retires four obsolete contracts, reconciles current no-helper release
-acceptance and prepares AR-285 verification. Worklog identifies delivery commits.
+acceptance and records AR-285's incomplete acceptance without closing it.
 
 ## Completed evidence
 
@@ -64,26 +66,29 @@ acceptance and prepares AR-285 verification. Worklog identifies delivery commits
 - AR-285 offline parent/current replay reproduces unknown before the repair and
   proven stopped now, plus eleven current negative/legacy cases. Focused
   installer/registration suite: 181 passed in 4.49 seconds. Builder record cites
-  historical stopped-host install receipts separately; isolated verdicts pending.
+  historical stopped-host install receipts separately. Isolated verifier: criteria
+  1/3/4 satisfied, 2/5 absent. Missing trusted-runner wiring citation and successful
+  changed-precondition dry-run receipt keep the issue open; its two boxes reopen.
 - Wider focused run: 443 passed, two skipped, two failed on Linux-only absence
   of Windows file attributes. Filed AR-405 (#675); no code was changed.
 - At this checkpoint: 147 unfinished baseline records plus AR-404 and AR-405.
 - Named fast spine: 1004 passed, three skipped in 64.18 seconds; UI 138 passed;
   docs/acceptance/tracker/distribution-verifier focused tests 207 passed.
   Ruff, format, metadata, policy, worklog and strict docs/tracker checks pass.
-  Routing passes. Decision-conformance evaluation is still running.
+  Routing and decision conformance pass; source remains unchanged.
 - Claude acceptance verification recorded nothing: read-only transport inspection
   reports an untrusted substitutable executable parent namespace. Codex transport
-  is usable/authenticated; next attempt uses its supported excerpt-only verifier.
+  supplied the supported excerpt-only verification above. No second judgment
+  pass was used to force a successful verdict.
   No host permissions, trust settings or credentials were changed.
 
 ## Exact blocker
 
-The current record batch awaits isolated AR-285 verdicts and final docs/PR
-gates. It does not require an exhaustive workflow, Windows machine or host
-restart. AR-405's two existing release-test failures remain a separate package.
-The initial verifier was unavailable before inference; this is not an absent,
-contradicted or satisfied criterion judgment.
+AR-285 is not done: its two absent evidence criteria are retained. AR-405's two
+existing Linux release-test failures remain a separate package. Neither blocks
+delivering the truthful record-reconciliation package through PR #676, but both
+block claiming their affected acceptance complete. No exhaustive workflow,
+Windows run, host trust bypass or service interruption was performed.
 
 The entire backlog is not complete. AR-348 was reproduced against current
 production hiring with fake valid replies in a disposable Store:
@@ -107,8 +112,9 @@ rewritten. The old PATH launcher was backed up before its interpreter changed.
 
 ## Next bounded work package
 
-1. Finish AR-285 isolated acceptance, final verification and PR merge for the
-   first disposition batch. Never count an absent/contradicted verdict as done.
+1. Preserve AR-285's two evidence gaps; add actual trusted-runner wiring citations
+   and recover the successful changed-precondition dry-run receipt or obtain
+   authority for a fresh bounded proof. Never turn absent verdicts into done.
 2. Verify implemented inspection/observability work such as AR-298; reconcile
    AR-337's four-host battery versus all-supported-harness wording and AR-351's
    obsolete domain-axis clause before implementing old proposals.

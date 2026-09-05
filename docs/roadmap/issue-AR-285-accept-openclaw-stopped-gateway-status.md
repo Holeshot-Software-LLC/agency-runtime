@@ -3,9 +3,11 @@ title: "AR-285: Accept OpenClaw stopped gateway status"
 status: in_progress
 category: roadmap
 created: 2026-08-21
-updated: 2026-08-21
+updated: 2026-09-05
 tags: [openclaw, installer, compatibility, security, AR-119, AR-264]
 related:
+  - docs/roadmap/acceptance/issue-AR-285.md
+  - docs/roadmap/AR-404-backlog-dispositions-20260905.md
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-264-compile-actionable-contractor-execution-profiles.md
   - docs/roadmap/AR-119-openclaw-hermes-verification-packet.md
@@ -36,6 +38,17 @@ the installer classified a safely stopped gateway as unknown and refused all
 mutation.
 
 ## Current state
+
+2026-09-05 reconciliation: current classifier replay and 181 focused tests
+pass. The isolated verifier satisfied criteria 1, 3 and 4, but found absent
+evidence for preserved executable/namespace trust (criterion 2 needs its actual
+runner-wiring citations) and a successful changed-precondition dry run
+(criterion 5). Real historical installs without restart are recorded, but an
+old checked box is not a dry-run receipt. Those two boxes are reopened and the
+issue stays in_progress. No native gateway mutation was performed for this
+review. The null tracker URL remains governed pre-tracker history.
+
+Original implementation observations:
 
 - The audited OpenClaw 2026.7.1-2 host was stopped through its native service
   lifecycle before installation.
@@ -72,10 +85,10 @@ Preserve the older successful top-level status contract unchanged.
 
 - [x] A focused regression first reproduces the real OpenClaw 2026.7.1-2
       nested stopped receipt and fails against the unmodified classifier.
-- [x] Complete exit-1 JSON with `stopped` / `inactive` / `dead` is classified
+- [ ] Complete exit-1 JSON with `stopped` / `inactive` / `dead` is classified
       as stopped without relaxing executable or namespace trust.
 - [x] Truncated, malformed, ambiguous, contradictory, and other nonzero native
       results remain unproven; explicit live states remain blocking.
 - [x] The changed checkout passes the focused OpenClaw installer suite.
-- [x] A changed-precondition dry run and real install pass while the gateway
+- [ ] A changed-precondition dry run and real install pass while the gateway
       remains stopped, and the installer does not restart it.
