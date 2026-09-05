@@ -21,7 +21,7 @@ superseded_by: null
 type: handoff
 issue_id: AR-383
 branch: main
-evidence_commit: e52f849e573f846201a5cf03b11fccb27ac2fa4a
+evidence_commit: 1c1efa0777a0c7388297e7302aa41174952de7a3
 minimum_ledger_commit: b1c2b5574c357224bbada8f303917a0154be3984
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/581
@@ -29,13 +29,14 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/581
 
 # AR-383 inferred subject projection handoff
 
-> Everything below is on `main` at `e52f849e` and installed on all five hosts
-> from venv `e52f849e` (digest `769b06ad`); nothing is branch-only. The live
+> Everything below is on `main` at `1c1efa07` and installed on all five hosts
+> from venv `1c1efa07` (digest `5059543c`); nothing is branch-only. The live
 > store is at schema 49, and a runtime still on `c42fb0a5` refuses it ("schema is
-> newer than this runtime (49 > 48)"), so until claude is relaunched and hermes
-> and zcode restarted their hooks fail at store open. Codex needs its trust step.
+> newer than this runtime (49 > 48)"): relaunch claude, restart hermes and
+> zcode, and trust the eight codex hook events once more in a fresh TUI.
 
-Start-here capsule after the 2026-09-05 sessions (close, codex trust, two fixes).
+Start-here capsule after the 2026-09-05 sessions (close, codex trust, two fixes,
+doctor check, AR-398 and AR-399 done).
 
 ## checkpoint
 
@@ -52,10 +53,12 @@ the environ, plugin digest `929576f2`, drift call empty from outside the
 checkout; inside it, five foreign-package reports: the stale-import trap).
 
 **Codex was `runtime-verified` at 11:35Z and is `activation-required` again**
-since the e52f849e install changed its eight hook hashes (`status=modified
-observed=8 trusted=0`); the owner's `Trust all and continue` in a fresh TUI,
+after each reinstall changed its eight hook hashes (`status=modified observed=8
+trusted=0` under 1c1efa07); the owner's `Trust all and continue` in a fresh TUI,
 then `agency install --agent codex --verify-activation` with the key, repeats
-the 11:35Z result. The only codex turn so far was the canary itself.
+the 11:35Z result. The only codex turn so far was the canary itself. Note the
+`agency` shim on PATH (`~/.local/bin/agency`) still runs venv `04adb230`; use
+`~/.local/share/agency-runtime/venvs/1c1efa07/bin/agency` for live commands.
 
 **AR-397 is done** (record at `45432976`, five verdicts, per-slug tables decided
 as identity). Tracker #654 stays open until the owner authorizes its closure.
@@ -63,20 +66,16 @@ as identity). Tracker #654 stays open until the owner authorizes its closure.
 **Platform settled:** two real planner turns wrote `operations` (plus the
 subject's own domain) with linux under `platforms`; no `platform` domain.
 
-**AR-398 fixed (in_progress; doctor count open).** The close is guarded by the
-attempt token alone and names an expired lease as `preflight_lease_expired_before_close`;
-the hiring loop stops when the lease cannot fit another round (floor one provider
-deadline, raised to the longest measured round, 10 s margin) and marks skipped
-units `hiring_lease_budget_exhausted`; schema 49 rebuilds pre-49 receipt tables.
-Four replays against store copies: the last closed at 390 s with seven hiring
-codes on its receipt. Pending record; criterion 4 (`agency doctor` counts stuck
-runs) not done.
+**AR-398 done** (PR #663): token-guarded close with `preflight_lease_expired_before_close`,
+lease-bounded hiring loop with `hiring_lease_budget_exhausted`, schema 49, hiring
+codes carried one at a time, and `agency doctor`'s `db_preflight_stuck`, which the
+installed 1c1efa07 CLI runs live against the real store: eleven attempts stuck
+since 2026-08-22 (ten openclaw, one hermes). Four verdicts satisfied; record
+frozen at `2ae2b9c2` with criterion 3 reworded and re-verified.
 
-**AR-399 fixed (in_progress).** Every captured prose reply was a complete plan
-object plus one stray `}`; the parser keeps the first complete object when only
-closing brackets, fence ticks or whitespace follow and the applied attempt records
-`model_text_trailing_data_trimmed`. Ten tests; the neighbourhood's six failures
-are main's own. Pending record.
+**AR-399 done** (PR #663): a complete plan object plus stray closing brackets is
+parsed and the attempt records `model_text_trailing_data_trimmed`; twelve tests;
+record frozen at `894be044`, four verdicts satisfied.
 
 **AR-393's silence, first condition named.** `preflight_hiring_reason_codes`
 returned `[]` for a whole turn when one code failed the identifier rule, and the
@@ -144,9 +143,8 @@ gate is red until then, by design.
    `hiring_lease_budget_exhausted`. `build/` is cleared again after this build.
 2. Owner: authorize closing #654 and creating the AR-398 and AR-399 tracker
    issues; then the "record the authorized tracker mapping" commit.
-3. AR-398 criterion 4: `agency doctor` reports runs left `in_progress` past their
-   lease (eleven live, all 2026-08-22 to 08-31, ten openclaw and one hermes); then freeze both pending records, run the isolated
-   verifier, flip AR-398 and AR-399 to done.
+3. Owner: authorize the tracker issues for AR-398 and AR-399 so their `done`
+   records can be mapped and #654 closed for AR-397.
 4. Owner decision: reword AR-393 criterion 5 to receipts written after the fix;
    then re-verify it. The projector condition is named; check whether the 42
    rows' turns carried `contract_invalid:` codes is not recoverable from receipts.
@@ -156,8 +154,8 @@ gate is red until then, by design.
 
 ## verification
 
-Install: venv `e52f849e` built from the checkout in 5 s, all five pointers and
-the claude plugin cache on digest `769b06ad`, `cli_install_drift_reports()` empty
+Install: venvs `e52f849e` then `1c1efa07` built from the checkout in 5 s each, all
+five pointers and the claude plugin cache on digest `5059543c`, `cli_install_drift_reports()` empty
 from outside the checkout, the live store migrated 48 to 49 with 1122 receipts
 and all four triggers intact (safety copy `live-store-before-install-132442.db`).
 Per PR at merge: #661 16 new tests, 463 passed across 18 files, lint 10
