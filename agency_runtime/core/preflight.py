@@ -8,7 +8,7 @@ import time
 import uuid
 from collections.abc import Mapping
 from contextlib import ExitStack
-from dataclasses import replace
+from dataclasses import is_dataclass, replace
 from hashlib import sha256
 from inspect import signature
 from math import ceil
@@ -876,6 +876,18 @@ def _resident_binding_for_preflight(
     )
 
 
+def _with_hiring_deadline(route_request: Any, deadline: float) -> Any:
+    """Bind the attempt lease to the request the hiring loop will read (AR-398).
+
+    A request built by another pipeline shape is returned untouched: the field
+    is the selector pipeline's, and its absence means no lease bounds hiring.
+    """
+
+    if not is_dataclass(route_request) or not hasattr(route_request, "hiring_deadline_monotonic"):
+        return route_request
+    return replace(route_request, hiring_deadline_monotonic=deadline)
+
+
 def _persist_preflight_failure(
     store: Store,
     *,
@@ -1470,6 +1482,10 @@ def run_preflight(
             redact_content(persisted_source) if cfg.observability.capture_content else ""
         )
         lease_seconds = hook_timeout_seconds(cfg, harness=normalized_host)
+        # AR-398: the hiring loop is bounded by this lease, not by the number of
+        # gap units. The instant is taken before the attempt starts so it can
+        # only be earlier than the store's own expiry, never later.
+        hiring_deadline = time.monotonic() + float(lease_seconds)
         diagnostics.enter("lifecycle")
         lifecycle = store.begin_preflight_attempt(
             trace_id=turn_trace_id,
@@ -1562,6 +1578,7 @@ def run_preflight(
             workforce_snapshot=workforce_snapshot,
             turn_routing_context=turn_routing_context,
         )
+        route_request = _with_hiring_deadline(route_request, hiring_deadline)
         routing_fingerprint = route_request.context_fingerprint
         policy_fingerprint = _context_policy_fingerprint(
             cfg,

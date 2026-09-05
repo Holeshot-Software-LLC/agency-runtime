@@ -3,7 +3,7 @@ title: "Changelog"
 status: active
 category: release
 created: 2026-07-10
-updated: 2026-09-04
+updated: 2026-09-05
 tags: [release, changelog]
 related:
   - docs/RELEASE_CHECKLIST.md
@@ -73,6 +73,13 @@ changes rather than duplicating every commit.
 
 ### Added
 
+- A gap turn that outruns its preflight lease no longer vanishes (AR-398,
+  ADR-0214): the fail-open close is guarded by the attempt token alone and
+  records an expired lease as the receipt's `preflight_lease_expired_before_close`
+  invariant, and the governed hiring loop stops proposing hires when the lease
+  cannot fit another round, marking the units it skipped
+  `hiring_lease_budget_exhausted`. Schema 49 widens the receipt invariant
+  vocabulary and rebuilds older stores in place on first open.
 - Packaged contracts can be revised in place (AR-397): a superseded definition
   is kept verbatim and its prompt hash pinned, so `agency install` advances a
   live worker from the exact identity it holds instead of preserving it at the

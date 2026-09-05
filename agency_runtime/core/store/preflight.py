@@ -25,6 +25,7 @@ from agency_runtime.core.preflight_failure import (
     MAX_PREFLIGHT_FAILURE_PROVIDER_ATTEMPTS_BYTES,
     MAX_PREFLIGHT_FAILURE_REASON_CODES_BYTES,
     PREFLIGHT_FAILURE_RECEIPT_SCHEMA,
+    PREFLIGHT_LEASE_EXPIRED_BEFORE_CLOSE,
     default_preflight_failure_receipt,
     project_preflight_failure_receipt,
 )
@@ -2221,21 +2222,38 @@ class PreflightStoreMixin(ResidentManagerBindingStoreMixin):
                     f"SELECT {STORE_CLOCK_SQL} AS now_value"  # nosec B608
                 ).fetchone()["now_value"]
             )
+            # AR-398: the close is guarded by the attempt token alone. A lease that
+            # expired while this attempt was still working proves nothing about
+            # ownership -- recovery replaces the token, so a matching token means no
+            # other attempt took the run -- and refusing the close on the lease was
+            # how a gap turn the host had been told about vanished from the store.
+            # The expiry is kept as the receipt's lifecycle invariant instead. A
+            # token that no longer matches means another attempt owns the run and
+            # writes its own account; this one returns False and touches nothing.
+            owner_row = conn.execute(
+                "SELECT preflight_lease_expires_at FROM runs "
+                "WHERE session_id = ? AND trace_id = ? AND status = 'active' "
+                "AND preflight_state = 'in_progress' AND preflight_attempt_token = ?",
+                (session_id, trace_id, attempt_token),
+            ).fetchone()
+            lease_expired = (
+                owner_row is not None
+                and str(owner_row["preflight_lease_expires_at"] or "") != ""
+                and str(owner_row["preflight_lease_expires_at"]) < now_value
+            )
             closed = conn.execute(
                 "UPDATE runs SET status = ?, ended_at = COALESCE(ended_at, ?), "
                 "preflight_state = '', preflight_attempt_token = NULL, "
                 "preflight_lease_expires_at = '', preflight_result = '', "
                 f"last_activity_at = {STORE_CLOCK_SQL} "  # nosec B608
                 "WHERE session_id = ? AND trace_id = ? AND status = 'active' "
-                "AND preflight_state = 'in_progress' AND preflight_attempt_token = ? "
-                "AND preflight_lease_expires_at >= ?",
+                "AND preflight_state = 'in_progress' AND preflight_attempt_token = ?",
                 (
                     normalized_status,
                     now_value,
                     session_id,
                     trace_id,
                     attempt_token,
-                    now_value,
                 ),
             )
             if closed.rowcount:
@@ -2247,6 +2265,11 @@ class PreflightStoreMixin(ResidentManagerBindingStoreMixin):
                         encoded_hiring,
                         encoded_eligibility,
                     ) = projected_failure
+                    if lease_expired and not receipt["invariant_code"]:
+                        receipt = {
+                            **receipt,
+                            "invariant_code": PREFLIGHT_LEASE_EXPIRED_BEFORE_CLOSE,
+                        }
                     inserted = conn.execute(
                         "INSERT INTO preflight_failure_receipts "
                         "(id, session_id, trace_id, host, stage, reason_code, invariant_code, "

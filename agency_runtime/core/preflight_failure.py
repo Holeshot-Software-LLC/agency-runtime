@@ -24,7 +24,13 @@ _HIRING_EVENT_STATUSES = frozenset(
     }
 )
 
-PREFLIGHT_FAILURE_INVARIANTS = frozenset({"", "native_plan_scope_invalid"})
+# AR-398: a fail-open close that arrives after the attempt lease expired still
+# leaves a receipt and names the lifecycle condition it met, so a turn the
+# host was told about cannot vanish from the store.
+PREFLIGHT_LEASE_EXPIRED_BEFORE_CLOSE = "preflight_lease_expired_before_close"
+PREFLIGHT_FAILURE_INVARIANTS = frozenset(
+    {"", "native_plan_scope_invalid", PREFLIGHT_LEASE_EXPIRED_BEFORE_CLOSE}
+)
 
 _RECRUITER_VALIDATION_REASON_CODES = frozenset(
     {
@@ -460,6 +466,7 @@ __all__ = [
     "PREFLIGHT_FAILURE_REASONS",
     "PREFLIGHT_FAILURE_RECEIPT_SCHEMA",
     "PREFLIGHT_FAILURE_STAGES",
+    "PREFLIGHT_LEASE_EXPIRED_BEFORE_CLOSE",
     "PreflightInvariantError",
     "default_preflight_failure_reason",
     "default_preflight_failure_receipt",

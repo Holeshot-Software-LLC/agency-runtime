@@ -12,6 +12,7 @@ import hashlib
 import logging
 import math
 import re
+import time
 import uuid
 import warnings
 from collections.abc import Mapping
@@ -53,12 +54,6 @@ from agency_runtime.core.selector.cache import (
     routing_fingerprint,
 )
 from agency_runtime.core.selector.candidate_narrow import retrieval_has_signal
-from agency_runtime.core.selector.reference_resolution import (
-    ResolvedReference,
-    mentions_bare_reference,
-    resolve_bare_reference,
-    strip_bare_reference,
-)
 from agency_runtime.core.selector.compatibility import (
     COMPATIBILITY_CONTRACT_VERSION,
     MAX_COMPATIBLE_SPECIALISTS,
@@ -66,7 +61,6 @@ from agency_runtime.core.selector.compatibility import (
     filter_eligible_catalog,
 )
 from agency_runtime.core.selector.delegation_detection import detect_work_units
-
 from agency_runtime.core.selector.intent_text import affirmative_intent
 from agency_runtime.core.selector.judge import inference_is_configured, query_judge
 from agency_runtime.core.selector.policy import (
@@ -74,6 +68,12 @@ from agency_runtime.core.selector.policy import (
     detect_fallback_companions,
     policy_path_for_config,
     validate_policy,
+)
+from agency_runtime.core.selector.reference_resolution import (
+    ResolvedReference,
+    mentions_bare_reference,
+    resolve_bare_reference,
+    strip_bare_reference,
 )
 from agency_runtime.core.selector.semantic_retrieval import RevisionedCatalog
 from agency_runtime.core.selector.stickiness import session_check, session_put
@@ -374,6 +374,10 @@ class _RouteRequest:
     # from where, so a wrong resolution is visible on the receipt rather than
     # silently steering retrieval.
     reference_resolution: dict[str, Any] = field(default_factory=dict)
+    # AR-398: the monotonic instant the preflight attempt's lease expires, when
+    # the caller holds one. The hiring loop stops proposing hires it cannot
+    # finish before it; None means no lease bounds this request.
+    hiring_deadline_monotonic: float | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -1469,6 +1473,12 @@ GAP_EVIDENCE_NOT_HIREABLE = "gap_evidence_not_hireable"
 #: Reached with the unit still hireable and no limit met (AR-393 criterion 4).
 #: The old code contradicted the tuple it was computed from.
 GAP_HIRE_NOT_ATTEMPTED = "gap_hire_not_attempted"
+#: AR-398: the unit was still hireable, but the attempt lease could not fit
+#: another hiring round, so no proposal was made. The hiring loop stops here
+#: rather than running past the lease and losing the whole receipt.
+HIRING_LEASE_BUDGET_EXHAUSTED = "hiring_lease_budget_exhausted"
+# The close, projection and receipt still have to fit after the last hire.
+_HIRING_LEASE_MARGIN_SECONDS = 10.0
 
 
 def _gap_hiring_verdicts(outcome: Any) -> dict[str, tuple[str, ...]]:
@@ -1730,6 +1740,7 @@ def _complete_gap_hiring_events(
     max_hires: int,
     workforce_changes: int,
     store_available: bool,
+    lease_budget_exhausted: bool = False,
 ) -> list[dict[str, Any]]:
     verdicts = _gap_hiring_verdicts(outcome)
     for unit_id in initial_gap_units:
@@ -1761,6 +1772,9 @@ def _complete_gap_hiring_events(
             )
         elif daily_limit_reached:
             reasons = ("daily_hiring_limit_reached",)
+        elif lease_budget_exhausted:
+            # AR-398: still hireable, but the lease could not fit another round.
+            reasons = (HIRING_LEASE_BUDGET_EXHAUSTED,)
         elif workforce_changes >= max_hires:
             reasons = ("task_hiring_limit_reached",)
         else:
@@ -1770,6 +1784,34 @@ def _complete_gap_hiring_events(
             reasons = (GAP_HIRE_NOT_ATTEMPTED, *reason_codes)
         events_by_unit[unit_id] = _hiring_event(unit_id, reason_codes=reasons)
     return [events_by_unit[unit_id] for unit_id in initial_gap_units]
+
+
+def _hiring_unit_floor_seconds(config: AgencyConfig, host: str) -> float:
+    """Return the least time one hiring round can need: one call at its deadline.
+
+    AR-398. A round makes up to ``hiring_call_budget`` provider calls, each bounded
+    by its provider's timeout, so the worst case is far above what a round
+    usually costs; requiring it would starve hiring on every turn. The floor is
+    one full provider deadline, and the loop raises it to the longest round it
+    has actually measured this turn.
+    """
+
+    from agency_runtime.core.workforce.inference import configured_workforce_providers
+
+    try:
+        providers = configured_workforce_providers(
+            config, stage="hiring", route_key="workforce.hiring", harness=host
+        )
+    except Exception:  # a budget estimate never fails the turn
+        return 0.0
+    return max((float(getattr(item, "timeout", 0.0) or 0.0) for item in providers), default=0.0)
+
+
+def _hiring_round_fits(deadline: float, *, floor_seconds: float, longest_seconds: float) -> bool:
+    """Return whether another hiring round can finish before the attempt lease."""
+
+    needed = max(floor_seconds, longest_seconds) + _HIRING_LEASE_MARGIN_SECONDS
+    return time.monotonic() + needed <= deadline
 
 
 def _run_gap_hiring(
@@ -1806,12 +1848,27 @@ def _run_gap_hiring(
         and applied_inference
     )
     daily_limit_reached = False
+    lease_budget_exhausted = False
+    # Duck-typed requests (the canary path, tests) may predate the field.
+    deadline = getattr(request, "hiring_deadline_monotonic", None)
+    unit_floor_seconds = (
+        _hiring_unit_floor_seconds(config, request.host) if deadline is not None else 0.0
+    )
+    longest_unit_seconds = 0.0
     while hiring_allowed:
         hireable = tuple(
             unit_id for unit_id in _hireable_gap_units(outcome) if unit_id not in attempted_units
         )
         if not hireable or workforce_changes >= config.workforce.max_hires_per_turn:
             break
+        if deadline is not None and not _hiring_round_fits(
+            deadline,
+            floor_seconds=unit_floor_seconds,
+            longest_seconds=longest_unit_seconds,
+        ):
+            lease_budget_exhausted = True
+            break
+        unit_started = time.monotonic()
         unit_id = hireable[0]
         attempted_units.add(unit_id)
         unit = next(item for item in outcome.plan.units if item.unit_id == unit_id)
@@ -1845,6 +1902,7 @@ def _run_gap_hiring(
             # gap aborted to task_gap_requires_distinct_specialist instead of
             # amending. The overlap gate is workforce.amend_overlap_threshold.
         )
+        longest_unit_seconds = max(longest_unit_seconds, time.monotonic() - unit_started)
         event = _hiring_event(unit_id, hiring)
         if hiring.pending_commit is not None:
             event["_pending_commit"] = hiring.pending_commit
@@ -1902,6 +1960,7 @@ def _run_gap_hiring(
         max_hires=config.workforce.max_hires_per_turn,
         workforce_changes=workforce_changes,
         store_available=store is not None,
+        lease_budget_exhausted=lease_budget_exhausted,
     )
     return outcome, active_snapshot, active_catalog, events
 

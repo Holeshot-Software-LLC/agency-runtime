@@ -41,7 +41,7 @@ from agency_runtime.core.store.trace_identity import (
     ensure_correlation_key_integrity,
 )
 
-SCHEMA_VERSION = 48
+SCHEMA_VERSION = 49
 
 # Columns an already-created activation receipts table gains by migration.
 #
@@ -975,7 +975,8 @@ CREATE TABLE IF NOT EXISTS preflight_failure_receipts (
         'direct_activation_failed'
     )),
     invariant_code TEXT NOT NULL DEFAULT ''
-        CHECK (invariant_code IN ('', 'native_plan_scope_invalid')),
+        CHECK (invariant_code IN ('', 'native_plan_scope_invalid',
+                                  'preflight_lease_expired_before_close')),
     exception_category TEXT NOT NULL CHECK (exception_category IN (
         'timeout', 'validation_error', 'permission_error', 'host_error',
         'runtime_error', 'internal_error', 'unavailable'
@@ -5020,6 +5021,73 @@ def create_activity_triggers(conn: sqlite3.Connection) -> None:
         )
 
 
+_PREFLIGHT_FAILURE_INVARIANT_LEGACY_CHECK = "IN ('', 'native_plan_scope_invalid'))"
+
+
+def _preflight_failure_receipts_statements() -> tuple[str, tuple[str, ...]]:
+    """Return the receipts table DDL and its trigger statements from the schema text."""
+
+    table = re.search(
+        r"CREATE TABLE IF NOT EXISTS preflight_failure_receipts \(.*?\n\);",
+        SCHEMA_V1,
+        flags=re.S,
+    )
+    if table is None:
+        raise RuntimeError("preflight failure receipts DDL is missing from the schema")
+    triggers = tuple(
+        re.findall(
+            r"CREATE TRIGGER IF NOT EXISTS agency_preflight_failure_\w+\s.*?\nEND;",
+            SCHEMA_V1,
+            flags=re.S,
+        )
+    )
+    if len(triggers) != 2:
+        raise RuntimeError("preflight failure receipt triggers are missing from the schema")
+    return table.group(0), triggers
+
+
+def migrate_preflight_failure_invariants(conn: sqlite3.Connection) -> bool:
+    """Widen the receipt invariant vocabulary on stores built before schema 49 (AR-398).
+
+    SQLite cannot alter a CHECK constraint, so a store whose receipts table
+    still carries the two-value invariant list is rebuilt in place: the rows
+    are copied verbatim into a table with the current DDL, and the scoping and
+    immutability triggers are recreated on it. Idempotent: a current table is
+    left untouched. Returns whether a rebuild happened.
+    """
+
+    row = conn.execute(
+        "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'preflight_failure_receipts'"
+    ).fetchone()
+    current_sql = str(row["sql"] if row is not None else "")
+    if _PREFLIGHT_FAILURE_INVARIANT_LEGACY_CHECK not in current_sql:
+        return False
+    table_sql, trigger_sql = _preflight_failure_receipts_statements()
+    conn.execute("DROP TABLE IF EXISTS preflight_failure_receipts_v2")
+    conn.execute(
+        table_sql.replace(
+            "CREATE TABLE IF NOT EXISTS preflight_failure_receipts (",
+            "CREATE TABLE preflight_failure_receipts_v2 (",
+            1,
+        )
+    )
+    conn.execute(
+        "INSERT INTO preflight_failure_receipts_v2 "
+        "(id, session_id, trace_id, host, stage, reason_code, invariant_code, "
+        "exception_category, provider_attempts, staffing_reason_codes, "
+        "hiring_reason_codes, eligibility_reason_codes, recorded_at) "
+        "SELECT id, session_id, trace_id, host, stage, reason_code, invariant_code, "
+        "exception_category, provider_attempts, staffing_reason_codes, "
+        "hiring_reason_codes, eligibility_reason_codes, recorded_at "
+        "FROM preflight_failure_receipts ORDER BY rowid"
+    )
+    conn.execute("DROP TABLE preflight_failure_receipts")
+    conn.execute("ALTER TABLE preflight_failure_receipts_v2 RENAME TO preflight_failure_receipts")
+    for statement in trigger_sql:
+        conn.execute(statement)
+    return True
+
+
 def migrate_schema(
     conn: sqlite3.Connection,
     *,
@@ -5370,7 +5438,8 @@ def migrate_schema(
         conn,
         "preflight_failure_receipts",
         "invariant_code",
-        "TEXT NOT NULL DEFAULT '' CHECK (invariant_code IN ('', 'native_plan_scope_invalid'))",
+        "TEXT NOT NULL DEFAULT '' CHECK (invariant_code IN ('', 'native_plan_scope_invalid', "
+        "'preflight_lease_expired_before_close'))",
     )
     ensure_column(
         conn,
@@ -5402,6 +5471,7 @@ def migrate_schema(
         "AND json_type(eligibility_reason_codes) = 'array' "
         "AND json_array_length(eligibility_reason_codes) <= 32)",
     )
+    migrate_preflight_failure_invariants(conn)
     conn.execute(
         "INSERT OR IGNORE INTO preflight_failure_receipts "
         "(id, session_id, trace_id, host, stage, reason_code, exception_category, "
