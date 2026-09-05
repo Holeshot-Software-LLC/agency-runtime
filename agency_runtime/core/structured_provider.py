@@ -15,7 +15,7 @@ import urllib.error
 import urllib.request
 from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Final
 
 from agency_runtime.core.bounded_json import safe_load_bounded_json
 from agency_runtime.core.cli_transport import invoke_cli_structured
@@ -128,6 +128,9 @@ class StructuredProviderResult:
     completion_tokens: int | None = None
     finish_reason: str = ""
     reply_truncated: bool = False
+    # AR-399: non-empty when the model text was accepted only after a named
+    # repair (today: trailing closing brackets after one complete object).
+    model_text_repair: str = ""
     # AR-388 / ADR-0204: a non-empty value means the transport gave up and says
     # why, from a closed vocabulary; ``value`` is then empty.
     #
@@ -293,9 +296,29 @@ def _read_http_response(response: object, *, deadline: float) -> bytes | None:
     return None
 
 
+#: AR-399: the reply was one complete JSON object followed only by stray
+#: closing brackets or whitespace; the object was kept and the tail dropped.
+MODEL_TEXT_TRAILING_DATA_TRIMMED: Final[str] = "model_text_trailing_data_trimmed"
+_TRAILING_DATA_CHARACTERS = frozenset("}] \t\r\n`")
+
+
 def _parse_model_text(value: object) -> dict[str, Any] | None:
+    parsed, _repair = _parse_model_text_with_repair(value)
+    return parsed
+
+
+def _parse_model_text_with_repair(value: object) -> tuple[dict[str, Any] | None, str]:
+    """Parse the model text as one JSON object, naming the one repair allowed.
+
+    AR-399: a planner that answers with a complete plan object followed by a
+    single stray ``}`` was read as prose and cost the turn. The first complete
+    object is accepted when everything after it is closing brackets, fence
+    ticks or whitespace; any other trailing text is still not JSON. The
+    repair is returned so the attempt can say the reply needed it.
+    """
+
     if not isinstance(value, str):
-        return None
+        return None, ""
     text = value.strip()
     if text.startswith("```"):
         lines = text.splitlines()
@@ -306,12 +329,31 @@ def _parse_model_text(value: object) -> dict[str, Any] | None:
         text = "\n".join(lines).strip()
     parsed = _parse_json_object(text)
     if parsed is not None:
-        return parsed
+        return parsed, ""
     start = text.find("{")
     end = text.rfind("}")
     if start < 0 or end <= start:
-        return None
-    return _parse_json_object(text[start : end + 1])
+        return None, ""
+    parsed = _parse_json_object(text[start : end + 1])
+    if parsed is not None:
+        return parsed, ""
+    return _parse_first_object_with_trailing_data(text, start)
+
+
+def _parse_first_object_with_trailing_data(
+    text: str, start: int
+) -> tuple[dict[str, Any] | None, str]:
+    try:
+        _value, stop = json.JSONDecoder().raw_decode(text, start)
+    except ValueError:
+        return None, ""
+    tail = text[stop:]
+    if not tail or set(tail) - _TRAILING_DATA_CHARACTERS:
+        return None, ""
+    parsed = _parse_json_object(text[start:stop])
+    if parsed is None:
+        return None, ""
+    return parsed, MODEL_TEXT_TRAILING_DATA_TRIMMED
 
 
 def _model_identity(value: object) -> str:
@@ -793,7 +835,7 @@ def invoke_structured_provider_result(
         response_object, provider_type=provider_type, ollama_mode=ollama_mode
     )
     truncated = _reply_truncated(completion_tokens, finish_reason, completion_cap)
-    value = _parse_model_text(
+    value, model_text_repair = _parse_model_text_with_repair(
         _response_text(response_object, provider_type=provider_type, ollama_mode=ollama_mode)
     )
     if value is None:
@@ -826,6 +868,7 @@ def invoke_structured_provider_result(
         completion_tokens=completion_tokens,
         finish_reason=finish_reason,
         reply_truncated=truncated,
+        model_text_repair=model_text_repair,
     )
 
 

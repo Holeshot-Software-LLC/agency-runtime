@@ -3,7 +3,7 @@ title: "Changelog"
 status: active
 category: release
 created: 2026-07-10
-updated: 2026-09-04
+updated: 2026-09-05
 tags: [release, changelog]
 related:
   - docs/RELEASE_CHECKLIST.md
@@ -73,6 +73,11 @@ changes rather than duplicating every commit.
 
 ### Added
 
+- A planner reply that is one complete object followed by a stray closing
+  brace is applied instead of read as prose (AR-399): the parser keeps the
+  first complete object when only closing brackets or whitespace follow it,
+  and the attempt records `model_text_trailing_data_trimmed` so a rescued
+  reply stays distinguishable from a clean one on the receipt.
 - Packaged contracts can be revised in place (AR-397): a superseded definition
   is kept verbatim and its prompt hash pinned, so `agency install` advances a
   live worker from the exact identity it holds instead of preserving it at the
