@@ -101,11 +101,13 @@ to the `release` lifecycle.
 
 ## Decision (2026-09-05): the per-slug tables are identity, pinned with the contract
 
-The open case above is settled with the close. `_DOMAINS`, `_ARTIFACTS` and
-`_OPTIONAL_TOOLS` feed `categories`, `task_types` and `optional_tools` in
-`_known_contractor_agent`, and all three are list fields of
-`revision_metadata`, so a table edit for a shipped slug moves the live
-worker's metadata identity exactly as a `hosts` or `platforms` edit does. The
+The open case above is settled with the close. `_DOMAINS` and `_ARTIFACTS`
+feed `categories` and `task_types` in `_known_contractor_agent`, and
+`_OPTIONAL_TOOLS` shapes `required_tools` through `_required_tools` (the
+packaged agent never carries an `optional_tools` key); all three land in
+list fields of `revision_metadata`, so a table edit for a shipped slug moves
+the live worker's metadata identity exactly as a `hosts` or `platforms` edit
+does. The
 superseded reconstruction, however, rebuilds a superseded contract through
 the *current* tables, so it cannot represent a table value that has since
 changed. The first table edit for a shipped slug must therefore ship the

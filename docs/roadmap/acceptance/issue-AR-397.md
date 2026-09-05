@@ -3,7 +3,7 @@ title: "AR-397 acceptance verification record"
 status: active
 category: roadmap
 created: 2026-09-04
-updated: 2026-09-04
+updated: 2026-09-05
 tags: [acceptance, verification]
 related:
   - docs/roadmap/issue-AR-397-packaged-contracts-cannot-be-revised-in-place.md
@@ -73,7 +73,9 @@ the release-lifecycle test fail on `dda2c8a3^`, so the suite pins the change.
 
 The live worker was installed at the current package, revision 0, so the live
 store proves criteria 2 and 5 as installed state rather than as a transition;
-the transition itself is the seeded-store test for criterion 2.
+the transition itself is the seeded-store test for criterion 2. Criteria 1, 3
+and 4 are stage-ready only: no live machine has performed a prompt-changing
+superseded advance, hit a drifted pin, or run a metadata-only repair.
 
 Decided with this close, recorded in the issue: the installer's per-slug
 tables are part of a packaged identity, and the first change to one of them

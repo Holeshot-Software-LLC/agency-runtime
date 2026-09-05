@@ -82,6 +82,9 @@ silent window: 2026-08-29T13:54:10.563000+00:00 .. 2026-09-03T18:42:33.612000+00
 
 == 6. criterion 5 re-measured 2026-09-04 (late evening) on a fresh copy of the live store ==
    copy of ~/.agency-runtime/agency.db taken 2026-09-05T03:31Z; the live store was never opened for write.
+   the counts below were taken before this session's three diag-* hook probes (bareurl, gapcobol in section 7, gapada) wrote into
+   the same copy; after them it holds one more receipt (diag-gap-gapada, 03:58:20Z, workforce_inference_failed)
+   and two more run rows, all synthetic. Re-derive from the copy taken 03:28Z or subtract those rows.
    every host runs venv c42fb0a5 since 2026-09-05T01:01Z (claude relaunched at 03:21Z); the fix d7106be1
    was already carried by venv e12c1bdd, which the claude hooks ran from 2026-09-04T18:34Z.
    receipts in the store                          : 1079
@@ -117,10 +120,14 @@ silent window: 2026-08-29T13:54:10.563000+00:00 .. 2026-09-03T18:42:33.612000+00
 == 7. the first fix-carrying turn that declared a gap, driven 2026-09-05T03:46Z against the same store copy ==
    real UserPromptSubmit hook from venv c42fb0a5, config copy with store.db_path pointing at the copy, credential sourced.
    prompt: a COBOL z/OS batch reconciliation with JCL, DB2 and VSAM (no roster card covers it).
-   provider calls, in order: planner, reranker, recruiter (all six units -> gap), then the governed hiring loop:
+   provider requests, in order: planner, reranker, recruiter (all six units -> gap), then the governed hiring loop:
      hiring-generator x2, hiring-critic, security-review, hiring-generator, hiring-critic, security-review,
-     hiring-generator x2, hiring-critic, hiring-generator x2, hiring-critic, security-review  (17 calls, 613 s)
-   every generator reply was {"action": "hire", ...}; every critic reply {"approved": true}; every security review "safe".
+     hiring-generator x2, hiring-critic, security-review (NO REPLY), hiring-generator x2, hiring-critic,
+     security-review  (18 requests, 17 replies, 613 s)
+   the 14th request, a security review sent 03:52:59Z, never returned; the next request left 60 s later,
+   which is the provider deadline, so one full minute of the 613 s is that hung call.
+   every generator reply was {"action": "hire", ...}; every critic reply {"approved": true}; every security review
+   that returned was "safe".
    what the host was told: [Agency staffing failed this turn: substantive_specialist_unavailable;
                             staffing: no_safe_sufficient_team, recruiter_abstained]
    what the store copy holds for the turn (trace 66d5588b):

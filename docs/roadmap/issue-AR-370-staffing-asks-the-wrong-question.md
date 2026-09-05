@@ -234,14 +234,17 @@ credential sourced, and both read back from the copy's `runs.preflight_result`:
 
 | turn | wording | `workforce_subject_hints.domains` | `platforms` | outcome |
 |---|---|---|---|---|
-| 2026-09-04T21:22Z, venv `c4959b8d` | `Install the CLI tool at https://example.test/dist on this linux host and verify it runs` | `operations`, `quality-assurance` | `linux` | staffed, `operations-manager` on the install unit |
+| 2026-09-04T21:22Z, venv `c4959b8d` per that session's driver | `Install the CLI tool at https://example.test/dist on this linux host and verify it runs` | `operations`, `quality-assurance` | `linux` | staffed, `operations-manager` on the install unit |
 | 2026-09-05T03:42Z, venv `c42fb0a5` | `install this: https://zcode.z.ai/en` (the literal AR-370 turn) | `desktop`, `operations`, `quality-assurance` | `linux` | staffed on all four units, critic approved |
 
 On the literal turn the planner's plan call put `operations` on the discovery,
 plan and execution units, the subject's own domain (`desktop`, from the URL)
 beside it, and `quality-assurance` on verification; the host reached the
-recruiter through the typed `platforms` field, never as a domain. The
-gpt-5.5 deployment answered both plan calls; no reply used `platform`.
+recruiter through the typed `platforms` field, never as a domain. The full
+replies of that turn are captured and none uses `platform`; for the earlier
+turn only the persisted hints and a 200-character reply head exist, and the
+hints are the union of the units' domains. Both calls went to the
+`task-agency-planner-v2` alias; the payloads do not name the deployment.
 
 Decision: the contracts keep `operations` alone. Adding `platform` would
 reintroduce the homonym ADR-0201 removed from the planner's vocabulary and

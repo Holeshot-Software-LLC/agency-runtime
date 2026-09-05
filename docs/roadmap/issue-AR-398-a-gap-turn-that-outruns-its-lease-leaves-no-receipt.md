@@ -49,9 +49,12 @@ Measured 2026-09-05 while re-measuring AR-393 criterion 5, on a copy of the
 live store with the real `UserPromptSubmit` hook from venv `c42fb0a5` and the
 credential sourced (evidence: `docs/roadmap/acceptance/evidence/AR-393-evidence-20260904.txt`,
 section 7). A COBOL z/OS batch request, which no roster card covers,
-produced six gap units. The hiring loop made fourteen calls over those units
-in 613 s: every generator reply was `hire`, every critic `approved`, every
-security review `safe`. The store copy then held, for trace `66d5588b`:
+produced six gap units. The hiring loop sent fifteen requests over those
+units in 613 s, fourteen of which returned: every generator reply was
+`hire`, every critic `approved`, every security review that answered
+`safe`. One security review, sent at 03:52:59Z, never returned and the next
+request left 60 s later, which is the provider deadline; that hung call is
+one full minute of the 613 s. The store copy then held, for trace `66d5588b`:
 
 | table | row |
 |---|---|
@@ -64,10 +67,14 @@ substantive_specialist_unavailable; staffing: no_safe_sufficient_team,
 recruiter_abstained]`. Nothing the host could read points at the six hire
 proposals or at the reason the turn has no account.
 
-Three receipts of this shape are also candidates for the 42 silent rows
-AR-393 counted, but that cannot be established from a receipt that was never
-written; the run rows left at `in_progress` with an expired lease are the
-durable trace to count.
+This is not a probe-only shape. A read-only copy of the live store taken at
+2026-09-05T03:59Z holds eleven `runs` rows at `status active`,
+`preflight_state 'in_progress'`, an expired lease and no receipt for their
+trace: ten openclaw (`agent:nexus:*`, 2026-08-22 to 2026-08-29, 85 s and
+10 min leases) and one hermes (2026-08-31, 10 min lease). Whether any of the
+42 silent AR-393 rows came this way cannot be established from a receipt
+that was never written; the run rows left at `in_progress` with an expired
+lease are the durable trace to count.
 
 ## Approach
 
