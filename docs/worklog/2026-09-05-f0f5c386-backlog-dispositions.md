@@ -15,7 +15,7 @@ type: worklog
 commit: f0f5c386e705dae51e9ac912139692caf53821f5
 short: f0f5c386
 date: 2026-09-05
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/676
 related_issues:
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
   - docs/roadmap/issue-AR-405-make-directory-identity-regressions-portable.md
@@ -58,11 +58,17 @@ the evidence directly. No implementation agents were delegated.
 Before this checkpoint: 181 focused installer/registration tests pass, Ruff and
 format pass, 138 UI tests pass, metadata/policy/docs checks pass. The wider
 focused release run retains 443 passed, two skipped, two failed as AR-405.
-Final named-spine and independent acceptance results follow in the delivery
-checkpoint. No exhaustive workflow or native service interruption was requested.
+Final delivery checkpoint 1d9dea1c: 1004 fast-spine passed/three skipped;
+207 focused docs/acceptance/tracker/distribution-verifier tests passed; routing
+and all 182 conformance mutations passed with source unchanged. Isolated Codex
+verification satisfied three AR-285 criteria and reported two absent; the
+Claude attempt produced no judgment because executable namespace trust failed.
+The two missing criteria remain unchecked/open. No exhaustive workflow or native
+service interruption was requested. PR #676 carries the batch.
 
 ## Follow-ups
 
-Finish isolated AR-285 verification and the PR delivery. AR-404's reviewed
+AR-285 needs trusted-runner wiring citations and a successful changed-precondition
+dry-run receipt, not a repeated successful classifier test. AR-404's reviewed
 disposition table supplies the next bounded packages and explicitly unreviewed
 remainder; AR-405 is not hidden by a green documentation gate.
