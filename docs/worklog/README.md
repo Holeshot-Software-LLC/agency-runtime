@@ -1906,6 +1906,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `510f9b8e` | 2026-09-05 | docs(acceptance): record strict hiring verdicts and conformance setup evidence [AR-348] | [AR-348](../roadmap/issue-AR-348-enforce-strict-independence-in-production.md), [AR-404](../roadmap/issue-AR-404-evidence-led-backlog-completion.md) | [PR #687](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/687); both original criteria satisfied at c9b678a5. Preserve full-gate and bounded diagnostic fixture failures under ambient umask 0002 (zero mutations, source unchanged); next run uses the already-documented process-local 0077 boundary. No verdict authored or criterion changed by builder. |
 | `e22b5c32` | 2026-09-05 | docs(roadmap): complete verified hiring independence contract [AR-348] | null | null |
 | `0309f251` | 2026-09-05 | Merge pull request #687 from Holeshot-Software-LLC/codex/ar348-strict-hiring-independence | [AR-348](../roadmap/issue-AR-348-enforce-strict-independence-in-production.md) | [Detail](2026-09-05-c9b678a5-strict-hiring-independence.md) |
+| `35d7f9b4` | 2026-09-05 | docs(roadmap): publish installed hiring verification and backlog state [AR-348] [AR-404] | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
