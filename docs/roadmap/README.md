@@ -421,10 +421,6 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 
 ## Traceability
 
-| Issue | Implementation commits | Decisions |
-|---|---|---|
-| [AR-404](issue-AR-404-evidence-led-backlog-completion.md) | `e758f217` (backlog inventory and tracker reconciliation) | null |
-
 This table links local scope to implementation evidence and durable decisions.
 Tracker URLs are also retained in the mapping above because tracker numbers are
 not stable internal identifiers.
@@ -781,6 +777,7 @@ not stable internal identifiers.
 | [AR-401](issue-AR-401-enforce-preflight-deadlines-at-provider-boundaries.md) | `47ab9fce`, `e9d8ecea`, `b389c638` | [ADR-0216](../decisions/0216-enforce-one-preflight-inference-deadline.md) |
 | [AR-402](issue-AR-402-separate-subject-domains-from-execution-eligibility.md) | `47ab9fce`, `e9d8ecea`, `af366dd8` | [ADR-0217](../decisions/0217-keep-subject-domains-out-of-execution-authority.md) |
 | [AR-403](issue-AR-403-reuse-roster-embeddings-across-hook-processes.md) | `e9d8ecea`, `af366dd8`, `b389c638` | [ADR-0218](../decisions/0218-cache-only-roster-vectors-across-hook-processes.md) |
+| [AR-404](issue-AR-404-evidence-led-backlog-completion.md) | `e758f217` (inventory and tracker reconciliation), `e77b46cd` (verified review closures and next package) | null |
 
 ## Dependency summary
 
