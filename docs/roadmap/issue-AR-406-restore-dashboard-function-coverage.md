@@ -1,6 +1,6 @@
 ---
 title: "AR-406: Restore the configured dashboard UI function-coverage gate"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-09-05
 updated: 2026-09-05
@@ -49,7 +49,11 @@ callbacks. All seven shipped product modules already pass unchanged floors:
 denominator using the same recursive production selector in local and CI gates.
 Two new exact-command regression cases first fail on missing scope, then guard
 the complete selector, test invocation and unchanged floors. No UI source or
-behavioral test is changed. Candidate-bound verification remains pending.
+behavioral test is changed. All three candidate-bound criteria are satisfied
+at d109b094. The first missing-baseline-comparison verdict remains in history;
+the second evidence packet supplies exact matching production-tree and UI-test
+Git objects without changing criteria or implementation. Tracker #682 closes
+after PR #684 merges; it is not silently counted closed while still open.
 
 ```text
 node --test --experimental-test-coverage --test-coverage-lines=95 \
@@ -71,9 +75,9 @@ Windows run or exhaustive Python workflow is required for this Linux package.
 
 ## Acceptance
 
-- [ ] The exact configured dashboard UI coverage command passes all existing floors.
-- [ ] Local and hosted gates include every production dashboard JavaScript module, with regression checks preventing narrower scope or lower floors.
-- [ ] Production semantics and existing UI behavioral tests remain unchanged; all tests, including the listener soak and teardown checks, pass.
+- [x] The exact configured dashboard UI coverage command passes all existing floors.
+- [x] Local and hosted gates include every production dashboard JavaScript module, with regression checks preventing narrower scope or lower floors.
+- [x] Production semantics and existing UI behavioral tests remain unchanged; all tests, including the listener soak and teardown checks, pass.
 
 ## Superseded working assumption
 

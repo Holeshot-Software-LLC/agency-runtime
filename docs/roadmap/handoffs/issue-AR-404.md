@@ -49,7 +49,8 @@ No implementation agents were delegated. Umbrella remains implementing.
   They are a reconciliation queue, not 104 proved extra defects. Full local
   counts were 240 done, 93 in_progress, 54 open, 11 wont_do (398 records).
   New AR-406/#682 adds one tracked issue; AR-139 is now retired as superseded.
-  AR-148/149/323 accepted. Current split: 44 tracked open plus 100 legacy unfinished.
+  AR-148/149/152/323/406 accepted. Local unfinished: 43 mapped plus 99 legacy.
+  Remote still has 44 open until #682 is closed after PR #684 merges.
 - Original-baseline reductions: AR-400..403 accepted; AR-132/167/169/267 retired
   through cited successors; AR-271 accepted. AR-405 was outside the baseline
   and is also accepted. Prior work merged via PRs #669/#673/#676..681. Never
@@ -72,9 +73,9 @@ No implementation agents were delegated. Umbrella remains implementing.
   Actual configured local command: 138 pass, 96.92/86.62/95.71 coverage. Both
   local/CI exact-command regressions first failed; 163 workflow-contract tests
   now pass. Fresh spine 1030 pass/three skips (64.98s). Product and UI behavioral
-  tests unchanged. First AR-406 pass: 1/2 satisfied, 3 absent for a missing
-  baseline comparison. Exact equal production-tree/UI-test Git objects now
-  recorded; re-freeze and verify without changing any criterion. AR-152 pending.
+  tests unchanged. AR-406 has three satisfied criteria at d109b094; AR-152 has
+  four at 12a62393. Initial absent baseline-comparison verdict retained before
+  exact equal Git objects were supplied. No criterion or implementation changed.
 - AR-139 is retired, not certified against its obsolete 263,168-byte ceiling.
   AR-295 plus 3023f0557 explicitly audited required UI. Current ten assets total
   386,366 bytes and pass the strict 378-KiB resource test (1 pass, 0.17s).
@@ -89,8 +90,8 @@ No implementation agents were delegated. Umbrella remains implementing.
 
 ## Exact blocker
 
-PR #683 is merged. AR-406/152 need candidate-bound isolated verdicts, then the
-new PR and tracker #682 closure. The original mixed-scope failure is preserved;
+PR #683 is merged. AR-406/152 have seven satisfied criteria; PR #684 and tracker
+#682 closure remain to publish this package. The original mixed-scope failure is preserved;
 the product scope is explicitly corrected, not relabeled as an original pass.
 Do not claim "most done" before relevance and evidence are examined. Do not
 reimplement a historical defect merely because status=open.
@@ -110,7 +111,7 @@ No current header snapshot exists; no specialist staffing succeeded.
 
 ## Next bounded work package
 
-1. Freeze and verify AR-406/152, then merge the bounded coverage package.
+1. Merge PR #684, close #682, and record exact publication/ledger state.
 2. Continue historical records one by one: retire superseded proposals with
    reasons and reciprocal links; close implemented work with exact evidence.
 3. Verify AR-298, then the

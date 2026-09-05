@@ -54,7 +54,10 @@ scope, preserving every product module and all 95/86/93 floors. Actual configure
 local command: 138 UI passes, coverage 96.92/86.62/95.71. Local/hosted scope
 regressions first fail, then the complete workflow-contract package passes 163
 tests. Existing listener code and UI behavioral tests are unchanged. Both
-acceptance records are pending; the open count remains 44 tracked/100 legacy.
+acceptance records now have seven satisfied isolated criteria. AR-406 and
+AR-152 are locally done. Publication is PR #684 then closure of #682. Local
+unfinished count is 142 (43 mapped plus 99 legacy); the external open count
+remains 44 until #682 actually closes.
 
 Owner clarification: work sequentially, close verified completed records,
 assess agent-written tickets against the current product rather than accepting
