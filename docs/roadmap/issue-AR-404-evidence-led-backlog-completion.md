@@ -48,6 +48,18 @@ repeat work and risk reintroducing superseded behavior.
 
 ## Current state
 
+AR-348 is accepted and locally done under ADR-0221: both original criteria
+satisfied against c9b678a5, 413 focused passes/one skip, 1075 fast-spine passes/
+three skips, 138 UI passes, routing pass, and 184/184 protected mutation kills
+with source unchanged. PR #687 merge, tracker #406 closure and exact installed
+delivery are pending. Local unfinished: 141 (42 mapped plus 99 legacy); remote
+still has 43 open issues until the accepted change is merged and #406 closed.
+Strict=false warnings and inference-owned provider choices are unchanged.
+AR-349's rejected-hire persistence is the next separate implementation package;
+AR-298 remains implemented pending isolated verification. Windows is excluded.
+
+### Previous published checkpoint
+
 PR #683 is merged at cb7dca77: AR-148/149/323 done and AR-139 retired.
 PR #684 is merged at 853de310: the AR-406/152 package implements ADR-0220's production-wide coverage
 scope, preserving every product module and all 95/86/93 floors. Actual configured
@@ -62,7 +74,7 @@ The first immediately-after-close REST enumeration briefly still returned 44;
 the subsequent issue listing and REST enumeration agree on 43. Never substitute
 the sum of these two distinct queues for a count of demonstrated defects.
 
-Next bounded package: AR-348's actual resolved-provider independence boundary,
+That checkpoint selected AR-348's actual resolved-provider independence boundary,
 including legacy routing, harness overrides, fallback chains and safety repair.
 Its proposed single call to the declared-profile helper is not an implementation
 specification: that helper skips unresolved legacy routes, while production

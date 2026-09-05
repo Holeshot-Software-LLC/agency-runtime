@@ -1,6 +1,6 @@
 ---
 title: "AR-348: strict_independence is enforced nowhere in production"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-09-01
 updated: 2026-09-05
@@ -38,18 +38,20 @@ AR-235 specified.
 
 ## Current state
 
-Both unchanged acceptance criteria are satisfied against c9b678a5. The protected
-conformance attempt stopped in fixture setup because it inherited umask 0002;
-zero mutations ran and source stayed unchanged. A targeted diagnostic reproduced
-the same known private-directory boundary. The documented process-local 0077
-rerun and merged installed smoke are pending; do not claim the failed gate passed.
+Both unchanged acceptance criteria are satisfied against c9b678a5. Protected
+conformance passes its baseline (98.879s) and kills all 184 mutations, including
+both new strict-hiring guards: zero survived/invalid, source unchanged. This
+run uses the documented process-local 0077 umask; the earlier 0002 fixture
+failures remain in the linked evidence and are not relabeled as passes.
 
-Implemented on the working branch under ADR-0221. Focused package: 413 passed,
-one existing skip (20.52s); named spine: 1075 passed, three existing skips
-(72.29s). The new boundary recheck tests supplement the original 43-case red
-matrix. UI/routing/Ruff pass. Two new curated mutations extend conformance to
-184 cases; its 17 catalog tests pass. Full protected run, isolated acceptance,
-main publication and installed smoke remain pending. Status is not done.
+Implemented under ADR-0221. Focused package: 413 passed, one existing skip
+(20.52s); named spine: 1075 passed, three existing skips (72.29s). The boundary
+recheck tests supplement the original 43-case red matrix. UI (138 cases),
+routing and Ruff pass; conformance catalog tests: 17 passed. The bounded
+production-path contract is complete. PR #687 publication and merged installed
+smoke are the next delivery steps, not evidence of five live native sessions.
+
+### Reproduction history
 
 Fresh reproduction against main 6307e17d: 43 new public-entry-point cases yield
 20 failures (strict=true does not raise), 23 passes, in 14.14 seconds. The
@@ -87,8 +89,8 @@ None; independent of the AR-235 dashboard plane.
 
 ## Acceptance
 
-- [ ] `strict_independence: true` with a same-provider reviewer/creator
+- [x] `strict_independence: true` with a same-provider reviewer/creator
       pairing fails the hiring attempt with the documented config
       error, proven by a focused test through the production call path.
-- [ ] `strict_independence: false` behavior is unchanged (warning
+- [x] `strict_independence: false` behavior is unchanged (warning
       recording only).

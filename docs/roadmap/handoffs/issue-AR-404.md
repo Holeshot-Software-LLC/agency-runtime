@@ -38,9 +38,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 Owner says continue one by one, leave Windows work to their Windows machine,
 close completed records, and judge old agent-authored tickets for present
 product relevance instead of treating their designs as instructions.
-Main 853de310 includes PRs #683/#684: five accepted completions, one retirement.
-Tracker #682 is closed. Current package: enforce AR-348's strict hiring policy.
-No implementation agents were delegated. Umbrella remains implementing.
+Main 6307e17d includes PRs #683..686: five accepted completions, one retirement.
+Tracker #682 is closed. AR-348 is accepted and locally done; PR #687 is ready
+for publication and installed demonstration. No implementation agents were
+delegated. Umbrella remains implementing.
 
 ## Completed evidence
 
@@ -50,23 +51,25 @@ No implementation agents were delegated. Umbrella remains implementing.
   covered through the public hiring entry point. No external inference ran.
   Runtime fix under ADR-0221: 413 focused passes/one skip, 1075 spine passes/
   three skips, UI/routing/Ruff pass. Two added curated mutations have 17 passing
-  catalog tests. Both original criteria satisfied against c9b678a5. Conformance
-  stopped in fixture setup under umask 0002, zero mutations, source unchanged;
-  targeted diagnostic agrees. Use documented process-local 0077 for rerun.
+  catalog tests. Both original criteria satisfied against c9b678a5. Protected
+  conformance: baseline passes (98.879s), 184/184 killed, zero survived/invalid,
+  source unchanged. Earlier umask-0002 fixture failures remain in evidence;
+  the successful run uses the documented process-local 0077 boundary.
 - The owner's 43 open tracker count is correct at e4255836. The reported 147
   was 43 mapped open trackers plus 104 unfinished local pre-tracker records.
   They are a reconciliation queue, not 104 proved extra defects. Full local
   counts were 240 done, 93 in_progress, 54 open, 11 wont_do (398 records).
   New AR-406/#682 adds one tracked issue; AR-139 is now retired as superseded.
-  AR-148/149/152/323/406 accepted. Local unfinished: 43 mapped plus 99 legacy.
+  AR-148/149/152/323/406 accepted. Before AR-348: 43 mapped plus 99 legacy.
   Remote #682 closed 2026-09-05 at 21:35:56 UTC; fresh enumeration confirms 43
-  open trackers. The first immediate REST count briefly lagged at 44.
+  open trackers. AR-348 is now locally done: 42 mapped plus 99 legacy remain;
+  tracker #406 stays open until PR #687 merges. Do not report remote closure yet.
 - Original-baseline reductions: AR-400..403 accepted; AR-132/167/169/267 retired
   through cited successors; AR-271 accepted. AR-405 was outside the baseline
   and is also accepted. Prior work merged via PRs #669/#673/#676..681. Never
   rewrite the frozen original 155-item inventory.
-- Installed immutable build 0.1.0+g5434836eec4e, projection 1d617ca589a2,
-  matches current production source. Test/gate changes are verified separately.
+- Prior installed immutable build 0.1.0+g5434836eec4e, projection 1d617ca589a2,
+  predates this AR-348 runtime fix. A new immutable installation is pending.
   Eight prior deterministic smoke checks,
   five generated host contracts passed; native refresh is partial. Old runtime
   and launcher are retained. Installed evidence records actual side effects.
@@ -100,13 +103,14 @@ No implementation agents were delegated. Umbrella remains implementing.
 
 ## Exact blocker
 
-AR-348 has two satisfied criteria. Protected conformance and install are pending.
-Prior PRs #683..686 are merged and #682 is closed. The mixed-scope failure is preserved;
-the product scope is explicitly corrected, not relabeled as an original pass.
+AR-348 has two satisfied criteria and current 184-case conformance passes.
+PR #687 merge, tracker #406 closure and installed smoke remain delivery steps.
+Prior PRs #683..686 are merged and #682 is closed. No verification failure is
+silently relabeled; failed receipts remain in their bounded evidence records.
 Do not claim "most done" before relevance and evidence are examined. Do not
 reimplement a historical defect merely because status=open.
 
-AR-348/349 are reproduced hiring gaps. AR-350 needs an owner-authority decision;
+AR-348 is fixed; AR-349 remains a reproduced hiring gap. AR-350 needs an owner-authority decision;
 AR-351's domain proposal conflicts with AR-402/ADR-0217. AR-285 has three
 satisfied/two absent historical proof criteria, separate from AR-271.
 
@@ -121,9 +125,9 @@ No current header snapshot exists; no specialist staffing succeeded.
 
 ## Next bounded work package
 
-1. Finish AR-348 protected conformance, freeze exact acceptance evidence and
-   obtain isolated verdicts, then merge and run installed smoke. Keep strict=false
-   warnings, inference ownership and current provider configuration unchanged.
+1. Merge accepted AR-348 through PR #687, close tracker #406, install the exact
+   merged revision and run scoped smoke. Keep strict=false warnings, inference
+   ownership, current provider configuration and attended trust unchanged.
 2. AR-349 follows as a separate rejected-hire persistence package. AR-298 remains
    implemented pending isolated verification. Keep Windows work excluded.
 3. Continue historical relevance review: retire superseded proposals with
@@ -131,20 +135,13 @@ No current header snapshot exists; no specialist staffing succeeded.
 
 ## Verification
 
-Current bounded tests above plus prior source-identical installed verification:
-1030 fast-spine tests, 138 UI cases, routing and 182 conformance mutation kills.
-No new exhaustive Python, cross-interpreter or Windows run. ADR-0105 makes
-exhaustive integration optional; it does not turn a failed UI coverage command
-into a pass. Strict docs/tracker and exact worklog checks govern parity.
-Fresh routing gates and all 138 UI cases pass. The first conformance invocation
-used the installed production interpreter, which has no pytest; baseline failed
-before any mutation ran. The development-venv invocation passes its baseline
-(98.841s), kills all 182 mutations, and leaves source unchanged. No test
-dependency was added to the user's installed runtime.
-
-PR #684 changes only the two coverage commands, their regression, and records.
-The AR-348 branch starts with red public-path tests and records. The earlier
-182-kill receipt predates this runtime fix and is not its verification.
+Current AR-348 source: 413 focused passes/one skip, 1075 named-spine passes/
+three skips, 138 UI cases, routing gates and 184 protected mutation kills.
+Both original isolated criteria are satisfied. The earlier installed 182-case
+receipt is not transferred to this runtime change. No new exhaustive Python,
+cross-interpreter or Windows run. No test dependency was added to the installed
+runtime. ADR-0105 makes exhaustive integration optional. Strict docs/tracker
+and exact worklog checks govern parity.
 
 ## Constraints
 

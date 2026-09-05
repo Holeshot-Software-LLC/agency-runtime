@@ -106,6 +106,20 @@ copied offline-config creation boundary. Source remained unchanged. A bounded
 two-mutation diagnostic reproduced the same fixture error (1.117s), again with
 zero mutations run and source unchanged. Shell umask is 0002; AR-297 and the
 prior AR-405 receipt already document protected 0077 execution for this gate.
-The next run sets umask only in the evaluation process. No existing filesystem
+The successful rerun sets umask only in the evaluation process. No existing filesystem
 permissions, validation check, test, or product behavior is altered by that fix.
-Protected conformance and installed delivery are still pending here.
+
+The complete protected rerun passes its baseline in 98.879s and kills all 184
+mutations: zero survived, zero invalid, source_unchanged=true. The new
+strict-hiring-independence-disabled mutation is killed in 1.448s and
+strict-hiring-preflight-skipped in 1.190s, both by the exact
+profile-security_review-True regression node. No runtime source changed after
+the c9b678a5 acceptance candidate. Command (with a test-equipped interpreter):
+
+```bash
+python -c 'import os; os.umask(0o077); from agency_runtime.cli.entrypoint import main; raise SystemExit(main())' \
+  eval decision-conformance --repository . --json
+```
+
+PR #687 main publication and merged installed delivery remain pending at this
+verification checkpoint. The failed receipts above remain part of the record.
