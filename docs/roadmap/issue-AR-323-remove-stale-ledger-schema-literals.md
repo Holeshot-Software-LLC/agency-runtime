@@ -1,6 +1,6 @@
 ---
 title: "AR-323: Remove stale native-child ledger schema literals"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-08-27
 updated: 2026-09-05
@@ -45,7 +45,8 @@ seven additional migration/credential-redaction cases have the identical stale
 Remove the copied current-version literals across these three test files while
 preserving explicit legacy input versions and every behavioral assertion.
 The seven-file storage/ledger/release package now passes all 401 tests. Production
-schema and migration code are unchanged. Isolated acceptance is pending.
+schema and migration code are unchanged. All four isolated acceptance criteria
+are satisfied at candidate 11371cb6.
 
 AR-347 already placed AR-323 in the guarded pre-tracker history list. The old
 active-task prohibition and future tracker-creation prerequisite are historical;
@@ -79,10 +80,10 @@ assert the canonical current version rather than another copied literal.
 
 ## Acceptance
 
-- [ ] Current-schema assertions derive from `SCHEMA_VERSION`.
-- [ ] Prior schema fixtures still prove repair of the delivery ledger.
-- [ ] Focused storage and native-child ledger tests pass warning-strict.
-- [ ] Existing pre-tracker exemption and canonical tracker mapping agree with AR-347.
+- [x] Current-schema assertions derive from `SCHEMA_VERSION`.
+- [x] Prior schema fixtures still prove repair of the delivery ledger.
+- [x] Focused storage and native-child ledger tests pass warning-strict.
+- [x] Existing pre-tracker exemption and canonical tracker mapping agree with AR-347.
 
 ## Historical tracker condition
 

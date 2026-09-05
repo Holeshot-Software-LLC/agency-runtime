@@ -37,3 +37,7 @@ tracker_url: null
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
+| 1 | satisfied | `AR-148.1-20260905-810e19b1` | `252ec8901c3ed9a8002eebfb9b4f56b0212c7eabc858445ea8d3ca5374f6f024` | 2026-09-05 | schema.py:2740-2805 returns 0 for non-string signatures or strings outside lowercase 64-hex before HMAC comparison; tests at lines 441-464 assert rejection of non-ASCII and oversized signatures. |
+| 2 | satisfied | `AR-148.2-20260905-5c903860` | `3d2f29c6e506bf51f47b0b70572e52d03ee6c61afd4aa8d5ad63b16735aa8151` | 2026-09-05 | schema.py:2697-2805 computes the expected SHA-256 HMAC for valid bounded inputs and compares canonical 64-character lowercase hexadecimal signatures using hmac.compare_digest. |
+| 3 | satisfied | `AR-148.3-20260905-c007da4a` | `b49c93213f6335380f4016ea77075beb50d4ee31f8b3ad4861aac1bb1fe15a6d` | 2026-09-05 | schema.py:2740-2805 enforces identity, chronology, receipt parsing and dependency counts; tests at lines 240-377 cover rejection of incomplete dependency closure and malformed receipts. |
+| 4 | satisfied | `AR-148.4-20260905-a9b9b7ac` | `72b9855012840e9d59702d0d3811cb55641653b5284ac4130eb4d823a8fff62e` | 2026-09-05 | The Current verification excerpt in AR-323-current-schema-verification-20260905.md records 401 passing warning-strict tests across seven files, including schema, Store, release packaging, and release contract suites. |

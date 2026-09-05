@@ -1,6 +1,6 @@
 ---
 title: "AR-148: Fail malformed remediation signatures closed"
-status: open
+status: done
 category: roadmap
 created: 2026-07-26
 updated: 2026-09-05
@@ -42,8 +42,9 @@ non-ASCII, non-hex, wrong-case, short, or oversized values. The repair in
 is needed. Fresh validation found unrelated stale schema-46 assertions in
 AR-323, not a signature defect. After that test-only repair, all 401 selected
 schema, Store, credential, ledger and release-contract tests pass. The original
-four acceptance criteria are exposed as checkboxes; isolated verification is
-pending. Legacy tracker exemption applies; no external issue is claimed.
+four acceptance criteria are exposed as checkboxes; all four isolated verdicts
+are satisfied at candidate 11371cb6. Legacy tracker exemption applies; no
+external issue is claimed.
 
 ## Approach
 
@@ -58,10 +59,10 @@ canonical evidence store and requires malformed durable state to fail closed.
 
 ## Acceptance
 
-- [ ] Malformed, non-ASCII, non-hex, wrong-length, or wrong-case signatures return invalid authority without raising.
-- [ ] Canonical valid signatures continue through constant-time comparison.
-- [ ] Dependency closure, identity, chronology, and receipt checks remain intact.
-- [ ] Integrated schema and release suites pass.
+- [x] Malformed, non-ASCII, non-hex, wrong-length, or wrong-case signatures return invalid authority without raising.
+- [x] Canonical valid signatures continue through constant-time comparison.
+- [x] Dependency closure, identity, chronology, and receipt checks remain intact.
+- [x] Integrated schema and release suites pass.
 
 ## Implementation evidence
 

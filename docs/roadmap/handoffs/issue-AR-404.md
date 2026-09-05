@@ -21,8 +21,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-404
 branch: codex/ar404-close-proven-history
-evidence_commit: b9d68e5d872046fcb207f5318d323eb63becb601
-minimum_ledger_commit: a271e721137005f79323d732158975676a6343ca
+evidence_commit: 11371cb6a14d91ebe998ea249f8c5545f49e5705
+minimum_ledger_commit: 2a8f832e210d11d788f998bb9562a68185113124
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -45,7 +45,7 @@ No implementation agents were delegated. Umbrella remains implementing.
   They are a reconciliation queue, not 104 proved extra defects. Full local
   counts were 240 done, 93 in_progress, 54 open, 11 wont_do (398 records).
   New AR-406/#682 adds one tracked issue; AR-139 is now retired as superseded.
-  AR-149 is accepted. Current split: 44 tracked open plus 102 legacy unfinished.
+  AR-148/149/323 accepted. Current split: 44 tracked open plus 100 legacy unfinished.
 - Original-baseline reductions: AR-400..403 accepted; AR-132/167/169/267 retired
   through cited successors; AR-271 accepted. AR-405 was outside the baseline
   and is also accepted. Prior work merged via PRs #669/#673/#676..681. Never
@@ -72,16 +72,15 @@ No implementation agents were delegated. Umbrella remains implementing.
   AR-148's signature guard is present. Wider checks exposed AR-323's known
   schema-46 literals in three ledger cases plus seven migration/credential cases.
   The test-only fix preserves legacy inputs and all behavioral checks: 401
-  focused pass, fresh 1030 spine pass/three skips (63.73s). Both builder records
-  await candidate freeze and isolated acceptance. No new tracker is needed.
+  focused pass, fresh 1030 spine pass/three skips (63.73s). Candidate 11371cb6:
+  all eight AR-148/323 isolated criteria satisfied, both done. No new tracker.
   AR-129/130 claim implementation but include Windows proof; leave that with
   the owner. AR-298 has source/tests and old installed visual evidence, but
   no isolated acceptance yet.
 
 ## Exact blocker
 
-AR-149 is done; PR #683 carries its closure and AR-139's retirement. AR-148/323
-need candidate-bound isolated verdicts for the existing fix/test correction.
+PR #683 carries AR-148/149/323 accepted closures and AR-139's retirement.
 AR-152 remains open pending honest
 reconciliation of its aggregate coverage clause and current evidence. AR-406
 is a current verification gap, not a listener implementation gap.
@@ -103,7 +102,7 @@ No current header snapshot exists; no specialist staffing succeeded.
 
 ## Next bounded work package
 
-1. Complete AR-148/323 acceptance; deliver with AR-149/139 through PR #683.
+1. Deliver AR-148/149/323 accepted closures and AR-139 retirement through PR #683.
 2. Continue historical records one by one: retire superseded proposals with
    reasons and reciprocal links; close implemented work with exact evidence.
 3. Address AR-406 separately without lowering floors; verify AR-298, then the
@@ -116,6 +115,10 @@ Current bounded tests above plus prior source-identical installed verification:
 No new exhaustive Python, cross-interpreter or Windows run. ADR-0105 makes
 exhaustive integration optional; it does not turn a failed UI coverage command
 into a pass. Strict docs/tracker and exact worklog checks govern parity.
+Fresh routing gates and all 138 UI cases pass. The first conformance invocation
+used the installed production interpreter, which has no pytest; baseline failed
+before any mutation ran. Rerun with the existing development venv, not by adding
+test dependencies to the user's installed runtime. Source is unchanged.
 
 ## Constraints
 

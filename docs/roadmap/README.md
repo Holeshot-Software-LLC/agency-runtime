@@ -181,7 +181,7 @@ records only after checking relevance, current evidence and successor decisions.
 | `AR-145` | [Restore the Python release coverage gate](issue-AR-145-restore-python-release-coverage.md) | open | p0 | testing | pending authorization |
 | `AR-146` | [Repair dashboard collection cursor validation](issue-AR-146-repair-dashboard-collection-cursor-validation.md) | done | p0 | dashboard | pending authorization |
 | `AR-147` | [Parse complete Windows ACL descriptors](issue-AR-147-parse-complete-windows-acl-descriptors.md) | open | p0 | security | pending authorization |
-| `AR-148` | [Fail malformed remediation signatures closed](issue-AR-148-fail-malformed-remediation-signatures-closed.md) | open | p1 | security | pending authorization |
+| `AR-148` | [Fail malformed remediation signatures closed](issue-AR-148-fail-malformed-remediation-signatures-closed.md) | done | p1 | security | pre-tracker history; verified acceptance |
 | `AR-149` | [Issue a fresh dashboard request ID per HTTP request](issue-AR-149-fresh-dashboard-request-ids.md) | done | p0 | observability | pre-tracker history; verified acceptance |
 | `AR-150` | [Coordinate dashboard refresh commit epochs](issue-AR-150-coordinate-dashboard-refresh-epochs.md) | open | p0 | dashboard | pending authorization |
 | `AR-151` | [Align Route Lab host eligibility with the server](issue-AR-151-align-route-lab-host-eligibility.md) | open | p1 | dashboard | pending authorization |
@@ -349,7 +349,7 @@ records only after checking relevance, current evidence and successor decisions.
 | `AR-320` | [Bound the Codex wait to the full child staffing path](issue-AR-320-bound-codex-wait-to-full-child-staffing.md) | in_progress | p0 | host-integrations | None (tracker creation prohibited by active task) |
 | `AR-321` | [Select a reliable free LiteLLM child judge](issue-AR-321-select-reliable-free-litellm-child-judge.md) | in_progress | p0 | provider-runtime | None (tracker creation prohibited by active task) |
 | `AR-322` | [Bind Codex child sessions to the exact canary parent](issue-AR-322-bind-codex-child-session-to-canary-parent.md) | in_progress | p0 | host-integrations | None (tracker creation prohibited by active task) |
-| `AR-323` | [Remove stale native-child ledger schema literals](issue-AR-323-remove-stale-ledger-schema-literals.md) | in_progress | p1 | testing | pre-tracker history (AR-347) |
+| `AR-323` | [Remove stale native-child ledger schema literals](issue-AR-323-remove-stale-ledger-schema-literals.md) | done | p1 | testing | pre-tracker history (AR-347); verified acceptance |
 | `AR-324` | [Bind the Codex canary child through host-authored lineage](issue-AR-324-bind-codex-canary-child-through-host-lineage.md) | in_progress | p0 | host-integrations | None (tracker creation prohibited by active task) |
 | `AR-325` | [Restore Codex first-complete-callback reconciliation](issue-AR-325-restore-codex-first-complete-callback-reconciliation.md) | in_progress | p0 | host-integrations | None (tracker creation prohibited by active task) |
 | `AR-326` | [Admit terminal Codex host-artifact collection](issue-AR-326-admit-terminal-codex-host-artifact-collection.md) | in_progress | p0 | host-integrations | None (tracker creation prohibited by active task) |
