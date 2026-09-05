@@ -20,8 +20,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-404
 branch: codex/ar405-portable-directory-identity
-evidence_commit: 593f074fc2e9e302efc9a20cdc2c82ce98637bb0
-minimum_ledger_commit: 4b23632b4ca87e3fdc29260d92a173e95bf0562a
+evidence_commit: 970293d7c315df955080635f88223e72734bdd72
+minimum_ledger_commit: 92b6f13cccbeb43f6a1043ea4f4fd6b09b0596ee
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -38,8 +38,9 @@ Umbrella phase: implementing. The first record package is pushed and merged
 through PR #676 and ledger #677; origin/main is 3ed51069. The owner asked to
 push and continue. The current AR-405 test-only package repairs the reproduced
 Linux failures and reaches its local observable demo; all three isolated
-acceptance criteria are satisfied against 593f074f. PR #678 delivery remains
-pending. No implementation agents were delegated.
+acceptance criteria are satisfied against 593f074f. Protected conformance passed
+its baseline and 182/182 mutations; PR #678 carries the completed outcome.
+AR-271 is next. No implementation agents were delegated.
 
 ## Completed evidence
 
@@ -82,8 +83,10 @@ pending. No implementation agents were delegated.
 - AR-405 Codex isolated runs 124a4504/c63ec485/346df944 satisfy all three
   criteria. The unmodified conformance command first failed its baseline's
   private-directory boundary under inherited umask 0002; no mutations ran and
-  source was unchanged. The documented protected umask 077 rerun is in progress.
-- At this checkpoint: 147 unfinished baseline records plus AR-404 and AR-405.
+  source was unchanged. The protected umask 077 rerun passed its baseline
+  (99.433s), killed 182/182 mutations with zero invalid/survived and no source drift.
+- First record checkpoint: 147 unfinished baseline records plus AR-404 and AR-405.
+- AR-405 completion: 147 unfinished baseline records plus AR-404 (148 total).
 - Named fast spine: 1004 passed, three skipped in 64.18 seconds; UI 138 passed;
   docs/acceptance/tracker/distribution-verifier focused tests 207 passed.
   Ruff, format, metadata, policy, worklog and strict docs/tracker checks pass.
@@ -98,7 +101,7 @@ pending. No implementation agents were delegated.
 
 AR-285 is not done: its two absent evidence criteria are retained. AR-405's
 Linux test repair is implemented, locally demonstrated and isolated-accepted;
-its final verification and PR delivery are still pending.
+its final verification passed and PR #678 carries its delivery.
 No exhaustive workflow, Windows run, host trust bypass or service interruption
 was performed. This turn's requested Codex install refresh found current files;
 attended hook trust remains unverified and the running process remains stale.

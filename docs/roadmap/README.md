@@ -424,7 +424,7 @@ the original inventory is a frozen baseline, not an implementation queue.
 | `AR-402` | [Separate subject domains from execution eligibility](issue-AR-402-separate-subject-domains-from-execution-eligibility.md) | done | p1 | reliability | [#667](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/667) |
 | `AR-403` | [Reuse roster embeddings across native hook processes](issue-AR-403-reuse-roster-embeddings-across-hook-processes.md) | done | p1 | reliability | [#668](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/668) |
 | `AR-404` | [Complete the backlog through evidence-led delivery packages](issue-AR-404-evidence-led-backlog-completion.md) | in_progress | p1 | reliability | [#672](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672) |
-| `AR-405` | [Make Windows directory-identity regressions portable](issue-AR-405-make-directory-identity-regressions-portable.md) | in_progress | p1 | testing | [#675](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/675) |
+| `AR-405` | [Make Windows directory-identity regressions portable](issue-AR-405-make-directory-identity-regressions-portable.md) | done | p1 | testing | [#675](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/675) |
 
 ## Traceability
 

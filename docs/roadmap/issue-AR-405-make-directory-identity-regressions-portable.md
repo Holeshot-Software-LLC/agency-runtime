@@ -1,6 +1,6 @@
 ---
 title: "AR-405: Make Windows directory-identity regressions portable"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-09-05
 updated: 2026-09-05
@@ -50,8 +50,9 @@ different-inode and different-device cases. A separate native Windows test
 retains the historical filesystem observation, scoped to its actual premise.
 Focused result: 100 passed, one native-only skip on Linux. No production
 identity logic changed. All three isolated Codex acceptance verdicts are
-satisfied against candidate 593f074f. Phase: demo_ready; PR #678 delivery and
-the final verification checkpoint remain pending. The linked evidence preserves
+satisfied against candidate 593f074f. Phase: done for the scoped local outcome;
+PR #678 carries delivery. Protected conformance passed its baseline and all 182
+mutations with source unchanged. The linked evidence preserves
 the red baseline and native-evidence limits.
 
 ## Approach
@@ -71,6 +72,6 @@ a separate bounded package from the documentation cleanup that discovered it.
 
 ## Acceptance
 
-- [ ] Synthetic tests prove that changing only the volatile Windows attribute does not alter directory identity, while directory kind or exact-object replacement still does.
-- [ ] The complete tests/test_build_distributions.py file passes on Linux without suppressing its portable identity assertions; native-only observations are explicitly scoped.
-- [ ] Relevant current Windows evidence is retained when available, and missing native Windows execution remains explicit rather than claimed from a simulation.
+- [x] Synthetic tests prove that changing only the volatile Windows attribute does not alter directory identity, while directory kind or exact-object replacement still does.
+- [x] The complete tests/test_build_distributions.py file passes on Linux without suppressing its portable identity assertions; native-only observations are explicitly scoped.
+- [x] Relevant current Windows evidence is retained when available, and missing native Windows execution remains explicit rather than claimed from a simulation.

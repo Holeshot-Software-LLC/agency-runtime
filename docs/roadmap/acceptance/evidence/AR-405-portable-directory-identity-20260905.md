@@ -83,5 +83,8 @@ test workspace. No mutation ran and source_unchanged was true. This is not a
 directory-identity regression or a successful conformance result. The existing
 AR-297 record documents protected umask 077 execution; a rerun with that scoped
 process setting is in progress. Existing filesystem permissions and trust
-policy were not modified. The candidate's evidence sections above are frozen
+policy were not modified. The protected rerun completed successfully: baseline
+passed in 99.433 seconds, 182/182 mutations killed, zero survived/invalid,
+source_unchanged=true. The ambient failure above remains retained. The
+candidate's evidence sections above are frozen
 and remain separate from this later checkpoint.
