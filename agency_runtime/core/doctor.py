@@ -347,11 +347,7 @@ def _database_checks(cfg: AgencyConfig) -> list[CheckResult]:
         if roster_count > 0
         else "No active agents — run `agency install`",
     )
-    checks = [integrity_check, schema_check, roster_check]
-    stuck_check = _stuck_preflight_check(db_path)
-    if stuck_check is not None:
-        checks.append(stuck_check)
-    return checks
+    return [integrity_check, schema_check, roster_check, _stuck_preflight_check(db_path)]
 
 
 def _read_stuck_preflight_runs(db_path: Path) -> list[tuple[str, str, str]]:
@@ -385,7 +381,7 @@ def _read_stuck_preflight_runs(db_path: Path) -> list[tuple[str, str, str]]:
     ]
 
 
-def _stuck_preflight_check(db_path: Path) -> CheckResult | None:
+def _stuck_preflight_check(db_path: Path) -> CheckResult:
     """Report preflight attempts left ``in_progress`` past their lease."""
 
     try:

@@ -149,6 +149,8 @@ another attempt now holds, and that attempt writes the turn's own account
 - [x] The hiring loop stops within the lease, and every gap unit left
       unproposed carries `hiring_lease_budget_exhausted` on its hiring event,
       so the receipt names that units were skipped and why.
-- [x] Replaying the COBOL shape against a store copy produces a receipt with
-      a non-empty hiring account and a hiring event per proposed hire.
+- [x] Replaying the six-unit mainframe gap shape (the COBOL turn that was lost,
+      or the PL/I turn of the same shape) against a store copy produces a
+      receipt with a non-empty hiring account and a hiring event per proposed
+      hire.
 - [x] `agency doctor` reports runs left at `in_progress` past their lease.
