@@ -10,6 +10,7 @@ related:
   - docs/roadmap/AR-404-backlog-inventory-20260905.md
   - docs/decisions/0219-retire-removed-helper-release-obligations.md
   - docs/roadmap/acceptance/issue-AR-285.md
+  - docs/roadmap/acceptance/evidence/AR-271-installed-delivery-20260905.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
@@ -59,6 +60,15 @@ create a new external tracker or silently claim external parity.
 | [AR-405](issue-AR-405-make-directory-identity-regressions-portable.md) (new, outside baseline) | The wider focused run returned 443 passed, two skipped, two failed: real Linux directories do not have the Windows attributes assumed by two pre-existing tests. | Separate portable synthetic identity coverage from native Windows observations; retain the red result and do not waive release validation. |
 
 ## Next packages
+
+Installed-delivery checkpoint: PR #679 merged at 5434836e; that exact immutable
+package is installed with the prior launcher/environment retained. All eight
+deterministic smoke checks passed, including five host contracts. Native
+refresh remains partial (Codex attended trust, OpenClaw live-gateway consent);
+Claude/Hermes/ZCode registered and enabled. The installed-delivery evidence
+records the managed dashboard restart and Claude package permission repair.
+No new live-session pass, credential change or OpenClaw lifecycle action is
+claimed. The 147 unfinished count is unchanged by delivery bookkeeping.
 
 Second bounded fix: AR-271 is implemented and accepted through PR #679.
 Install and uninstall share the bounded stopped-state classifier. The red
