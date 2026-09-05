@@ -47,15 +47,17 @@ Before: build-test file 91 passed, two failed (8.04s). After: 100 passed, one
 native-only skip (5.25s); wider seven files 452 passed, three skipped (11.68s).
 Named fast spine: 1004 passed, three skipped (63.23s). UI 138 passed. Ruff,
 format, metadata, policy, worklog and strict docs checks pass; deterministic
-routing gates pass. Decision conformance is running; isolated acceptance is
+routing gates pass. Isolated acceptance is
 now satisfied for all three criteria at 970293d7. The first conformance run
 failed its copied baseline's private-directory setup under ambient umask 0002;
 source was unchanged and no mutations ran. The protected umask 077 rerun follows
-the existing AR-297 procedure. No existing permissions or trust policy changed.
+the existing AR-297 procedure and passed baseline (99.433s) plus 182/182
+mutation kills, with zero invalid/survived and source unchanged. No existing
+permissions or trust policy changed.
 No host mutation, native Windows run or exhaustive workflow occurred.
 
 ## Follow-ups
 
-Freeze the builder candidate and obtain the three isolated verdicts, then merge
-through a PR and record its identity. AR-271 is the next genuine runtime fix.
+Candidate 593f074f has three satisfied isolated verdicts. PR #678 carries the
+verified closure recorded by 24e37e33. AR-271 is the next genuine runtime fix.
 The existing runtime payload is unchanged by this test-only package.
