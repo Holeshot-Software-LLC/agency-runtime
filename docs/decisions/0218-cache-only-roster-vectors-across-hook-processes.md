@@ -45,6 +45,8 @@ recall input-count, provider-call-count and cache-hit evidence in failure receip
 
 ## Consequences
 
+Implementation: `e9d8ecea`; benchmark: `af366dd8`, indexed in the worklog registry.
+
 A warm fresh process still calls the embedding provider for each current unit.
 Cold starts, profile/roster changes and hourly expiry still pay full catalog
 cost. Silent weight changes behind an unchanged model identity are undetectable;
@@ -59,4 +61,3 @@ Persisting whole staffing decisions risks stale intent or authority. Skipping
 strict review trades quality for speed. Parallelizing hiring changes call-budget
 and commit semantics. Float32 quantization can perturb ties. A daemon introduces
 a new lifecycle. Reuse the invariant inputs first and measure the remaining cost.
-

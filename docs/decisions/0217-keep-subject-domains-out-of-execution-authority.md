@@ -52,6 +52,8 @@ apply to actual execution requirements; its domain examples remain historical.
 
 ## Consequences
 
+Implementation: `47ab9fce`, `e9d8ecea` and `af366dd8`, indexed in the worklog registry.
+
 General software implementers are not excluded solely for lacking the backend
 category. No worker is deterministically selected. An inapt model nomination is
 still possible and live quality must be measured separately. Representative

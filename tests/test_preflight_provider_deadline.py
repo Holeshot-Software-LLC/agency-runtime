@@ -143,6 +143,7 @@ def test_hiring_clamps_each_call_and_records_exhaustion(tmp_path: Path, monkeypa
         )
 
         def invoke(provider, prompt, schema, *, timeout, **_kwargs):
+            assert remaining_provider_timeout(9999) == 1065 - clock[0]
             calls.append((clock[0], timeout))
             clock[0] += min(50.0, timeout)
             return fixtures._result(next(answers), provider) if timeout >= 50.0 else None
@@ -165,6 +166,39 @@ def test_hiring_clamps_each_call_and_records_exhaustion(tmp_path: Path, monkeypa
     assert "hiring_lease_budget_exhausted" in events[0]["reason_codes"]
     assert fixtures.workforce_index_snapshot(store, disabled_agents=()).worker_count == 1
     assert not events[0].get("_pending_commit")
+
+
+@pytest.mark.parametrize("preparation_seconds,expected_calls", [(2, [3]), (6, [])])
+def test_native_cli_rechecks_deadline_after_launch_preparation(
+    monkeypatch, preparation_seconds, expected_calls
+):
+    from agency_runtime.core import cli_transport
+    from agency_runtime.core.delegation.backends import BoundedProcessResult
+    from tests.runtime_support import trusted_test_interpreter
+
+    clock = [1000.0]
+    monkeypatch.setattr(hiring.time, "monotonic", lambda: clock[0])
+    calls = []
+
+    def environment(*_args):
+        clock[0] += preparation_seconds
+        return {}
+
+    def runner(_argv, *, timeout, **_kwargs):
+        calls.append(timeout)
+        return BoundedProcessResult(1, "", "")
+
+    monkeypatch.setattr(cli_transport, "_isolated_invocation_environment", environment)
+    with inference_deadline(1005):
+        cli_transport.invoke_cli_structured(
+            fixtures._config(provider_type="cli").providers[0],
+            "Return one object",
+            {"type": "object"},
+            timeout=60,
+            resolver=lambda *_a, **_k: str(trusted_test_interpreter()),
+            runner=runner,
+        )
+    assert calls == expected_calls
 
 
 @pytest.mark.parametrize("stage", ["planner", "recruiter", "critic", "recall_reranker"])

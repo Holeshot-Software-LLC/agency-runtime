@@ -14,6 +14,7 @@ from typing import Any
 from agency_runtime.core.config import AgencyConfig, ProviderEntry
 from agency_runtime.core.provider_deadline import (
     HIRING_DEADLINE_EXHAUSTED,
+    inference_deadline,
     remaining_provider_timeout,
 )
 from agency_runtime.core.reply_budget import PROVIDER_RESPONSE_TRUNCATED, provider_for_stage
@@ -857,13 +858,14 @@ def _invoke(
             )
             break
         started = time.monotonic()
-        result = invoker(
-            provider,
-            prompt,
-            schema,
-            system_prompt=system,
-            timeout=provider.timeout,
-        )
+        with inference_deadline(budget.deadline_monotonic):
+            result = invoker(
+                provider,
+                prompt,
+                schema,
+                system_prompt=system,
+                timeout=provider.timeout,
+            )
         latency_ms = int((time.monotonic() - started) * 1000)
         if remaining_provider_timeout(provider.timeout, deadline=budget.deadline_monotonic) <= 0:
             failures.append(

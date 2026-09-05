@@ -18,8 +18,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-400
 branch: codex/ar400-staffing-contracts
-evidence_commit: 47ab9fcebc1fe8106e7f776710db85e4be8c3e54
-minimum_ledger_commit: 556e0ebf361c09dc4ed1271f574bee0eba12ef57
+evidence_commit: af366dd827dc9810e5c65f439ed88704b69f36d1
+minimum_ledger_commit: 91a460f92683bc6ef7be6b51c3c2f609c70d4ecf
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/665
 ---
@@ -32,7 +32,7 @@ Owner requested self-implementation, PR merge to main, agency install and smoke
 tests of all five harnesses; then added a performance pass preserving quality.
 No delegation. Branch includes the refreshed previously unpushed AR-383 capsule.
 Metadata names that clean starting point; this recovery commit carries code
-changes and its following ledger identifies it. Phase: fast_verification.
+changes and its following ledger identifies it. Phase: demo_ready.
 
 ## Completed evidence
 
@@ -52,14 +52,23 @@ changes and its following ledger identifies it. Phase: fast_verification.
 - Targeted transport/deadline/cache/domain/hiring suites: 145 passed.
 - Preflight, receipt and conformance-manifest suites: 94 passed, one skipped.
 - JS: 138 passed. Routing evaluation passed. Ruff check/format now clean.
-- Fast spine: 1003 passed, three skipped, one stale domain-mutation anchor failed.
-  Anchor now tests that the superseded domain veto cannot return; focused
-  manifest check passes. Full fast spine rerun remains due.
+- Fast spine rerun: 1004 passed, three skipped.
+- Decision-conformance: baseline passed; all 182 mutations killed, zero invalid
+  or surviving; source unchanged at the recorded run.
+- Two fresh-process live recall observations: cold 63.620 s (49.759 embedding,
+  283 inputs), warm 8.804 s (2.804 embedding, one input, cache hit).
+  Evidence: docs/roadmap/acceptance/evidence/AR-403-recall-performance-20260905.json.
+  Fifteen of sixteen additions overlap; reranked lists differ. This proves
+  reduced embedding work, not total staffing latency or live quality equivalence.
+- Focused review adds a last CLI launch-time deadline check and propagates an
+  explicit direct-hiring deadline into its transport context.
+  Follow-up deadline/CLI/hiring/credential/conformance suites: 135 passed.
 
 ## Exact blocker
 
-No implementation blocker. Fast-spine rerun, live timing, acceptance records,
-merge, install and live proof remain. Reinstallation
+No implementation blocker. Acceptance records, merge, install and live host
+proof remain. OpenClaw's gateway is live; owner permission to briefly stop and
+restart it was requested. Reinstallation
 requires native Codex trust; never fabricate hashes. The parent lacks the gateway
 key; existing documented common.env loading is the live-test path, without new
 keys or printing secrets.
@@ -75,14 +84,12 @@ hooks start fresh processes. Verify fresh-process reuse before claiming speedup.
 
 ## Next bounded work package
 
-1. Run decision-conformance in the copied-interpreter dev venv with umask 077.
-   Ambient umask 0002 made the runner's scratch parents group-writable; the
-   initial system-python run also lacked pytest under the isolated home.
-2. Measure cold versus warm roster embeddings in fresh processes.
-3. Run named fast spine, JS, routing, docs and decision-conformance.
-4. Record acceptance, merge through a PR and install from main.
-5. Deterministic smoke all five hosts; bounded live canaries/ordinary turns where
+1. Merge through a PR, fast-forward the clean main checkout and install an
+   immutable non-editable build from that commit; do not pin installed hooks to
+   the temporary source worktree or the editable development environment.
+2. Deterministic smoke all five hosts; bounded live canaries/ordinary turns where
    supported. Record trust/platform blockers without unattended retry loops.
+3. Record acceptance and delivery evidence through the required PR/ledger flow.
 
 ## Verification
 
@@ -93,6 +100,9 @@ lint/format defects were mechanically corrected, the field-shadow and mutable
 test-fixture errors fixed, and deadline complexity factored without suppressions.
 Actual-preflight regression confirms terminal closure and explicit Store cache
 scope even while durable writes are deferred.
+Tracker checks still name pre-existing missing remote AR-398/AR-399 and the
+AR-397 closure pending authorization. AR-400 through AR-403 are linked correctly.
+Do not silently repair unrelated tracker state.
 
 ## Constraints
 

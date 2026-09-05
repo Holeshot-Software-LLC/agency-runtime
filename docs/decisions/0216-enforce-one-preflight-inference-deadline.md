@@ -41,6 +41,8 @@ ready commit. Do not renew the main lease.
 
 ## Consequences
 
+Implementation: `47ab9fce` and `e9d8ecea`, indexed in the worklog registry.
+
 Sequential stages cannot each spend the original full timeout. The reserved
 terminal interval is a budget, not an OS scheduling guarantee; non-provider
 setup remains separately measurable. Future background threads must explicitly

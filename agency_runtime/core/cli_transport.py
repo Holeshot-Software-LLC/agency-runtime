@@ -42,6 +42,7 @@ from agency_runtime.core.process_argv import (
 from agency_runtime.core.process_argv import (
     repository_forbidden_roots as _repository_forbidden_roots,
 )
+from agency_runtime.core.provider_deadline import require_provider_time
 
 SUPPORTED_CLI_TRANSPORTS = frozenset({"codex", "claude"})
 _MAX_CLI_OUTPUT_CHARS = 64 * 1024
@@ -1102,12 +1103,14 @@ def invoke_cli_structured(
                 )
 
             argv = _prepared_cli_command(executable, *arguments)
+            execution_env = _isolated_invocation_environment(transport, cwd, environ)
+            timeout = require_provider_time(timeout)
 
             result = runner(
                 argv,
                 timeout=timeout,
                 cwd=cwd,
-                env=_isolated_invocation_environment(transport, cwd, environ),
+                env=execution_env,
                 input_text=effective_prompt,
                 max_output_chars=_MAX_CLI_OUTPUT_CHARS,
             )

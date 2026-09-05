@@ -30,7 +30,10 @@ Valid recruiter gap rows may have empty rankings. Restaffing discarded each succ
 
 The independent 2026-09-05 review reproduced the defect at main `e6531004`.
 The owner requested implementation, PR merge, installation and smoke testing of
-all harnesses. Package phase: implementing. No live outcome is claimed yet.
+all harnesses. Package phase: demo_ready. Focused regressions and the named fast
+spine pass (1004 passed, three skipped); 182 curated conformance mutations are
+killed. Implementation checkpoints are `47ab9fce`, `e9d8ecea` and `af366dd8`.
+Installed/live host outcomes remain due; AR-403 separately records live recall timing.
 
 ## Approach
 

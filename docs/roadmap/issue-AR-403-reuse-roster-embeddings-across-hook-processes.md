@@ -32,8 +32,12 @@ sample is a lead, not a current end-to-end benchmark.
 ## Current state
 
 The owner requested a performance pass that preserves staffing/hiring quality.
-Phase: implementing. Deterministic fresh-process cold/warm regression proves
-query-only reuse returns identical candidates; current live timing remains due.
+Phase: demo_ready. Fixed-response fresh-process regression proves query-only
+reuse preserves exact candidates. A current live pair measured recall at
+63.620 s cold versus 8.804 s warm, with 283 versus one embedding input.
+The retained JSON under acceptance/evidence/AR-403-recall-performance-20260905.json
+includes all stage counts/times and limitations. Fifteen of sixteen live
+additions overlap; no end-to-end staffing or live quality-equivalence claim.
 
 ## Approach
 

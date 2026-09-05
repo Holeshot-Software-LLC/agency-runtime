@@ -1,0 +1,170 @@
+{
+  "schema": "agency.staffing-recall-performance.v1",
+  "observed": "2026-09-05",
+  "implementation_commit": "af366dd827dc9810e5c65f439ed88704b69f36d1",
+  "scope": "Two separate processes using configured live recall providers, packaged 282-worker roster, same single Python API review query; no staffing, hiring or native host execution.",
+  "cold": {
+    "attempts": [
+      {
+        "actual_model": "qwen3-embedding:latest",
+        "catalog_cache_hit": false,
+        "input_count": 283,
+        "latency_ms": 49759,
+        "provider_call_count": 1,
+        "reason_code": "dense_recall_applied",
+        "requested_model": "qwen3-embedding:latest",
+        "stage": "recall_embedding",
+        "status": "applied"
+      },
+      {
+        "actual_model": "qwen3-14b-abliterated:latest",
+        "catalog_cache_hit": false,
+        "input_count": 0,
+        "latency_ms": 13747,
+        "provider_call_count": 1,
+        "reason_code": "structured_response_applied",
+        "requested_model": "qwen3-14b-abliterated:latest",
+        "stage": "recall_reranker",
+        "status": "applied"
+      }
+    ],
+    "candidate_ids": {
+      "unit-api-review": [
+        "python-application-engineer",
+        "api-tester",
+        "technical-writer",
+        "developer-tooling-engineer",
+        "backend-service-engineer",
+        "orgscript-engineer",
+        "visual-storyteller",
+        "documentation-evidence-researcher",
+        "wordpress-performance-engineer",
+        "prompt-engineer",
+        "unity-multiplayer-engineer",
+        "paid-media-auditor",
+        "reality-checker",
+        "software-test-engineer",
+        "feishu-integration-developer",
+        "silent-failure-hunter"
+      ]
+    },
+    "elapsed_ms": 63620.13,
+    "host_context": "codex",
+    "receipt": {
+      "addition_count": 16,
+      "catalog_cache_hit": false,
+      "catalog_identity": "sha256:3e06e3b76ed9c7f230ca0a002c24c72c45f0960b213c5ee8198d5efdd0901ed8",
+      "embedding": {
+        "actual_model": "qwen3-embedding:latest",
+        "dimensions": 1024,
+        "input_count": 283,
+        "latency_ms": 49759,
+        "provider_name": "local-workforce-embedding",
+        "reason_code": "",
+        "requested_model": "qwen3-embedding:latest",
+        "status": "applied"
+      },
+      "projection_version": "1",
+      "provider_call_count": 1,
+      "reason_code": "",
+      "roster_count": 282,
+      "status": "applied",
+      "unit_count": 1
+    },
+    "reranked_ids": {
+      "unit-api-review": [
+        "reality-checker",
+        "silent-failure-hunter",
+        "documentation-evidence-researcher",
+        "paid-media-auditor"
+      ]
+    },
+    "roster_count": 282,
+    "scope": "live recall only; packaged roster, no staffing/hiring/host execution"
+  },
+  "warm": {
+    "attempts": [
+      {
+        "actual_model": "qwen3-embedding:latest",
+        "catalog_cache_hit": true,
+        "input_count": 1,
+        "latency_ms": 2804,
+        "provider_call_count": 1,
+        "reason_code": "dense_recall_applied",
+        "requested_model": "qwen3-embedding:latest",
+        "stage": "recall_embedding",
+        "status": "applied"
+      },
+      {
+        "actual_model": "qwen3-14b-abliterated:latest",
+        "catalog_cache_hit": false,
+        "input_count": 0,
+        "latency_ms": 5866,
+        "provider_call_count": 1,
+        "reason_code": "structured_response_applied",
+        "requested_model": "qwen3-14b-abliterated:latest",
+        "stage": "recall_reranker",
+        "status": "applied"
+      }
+    ],
+    "candidate_ids": {
+      "unit-api-review": [
+        "python-application-engineer",
+        "api-tester",
+        "technical-writer",
+        "developer-tooling-engineer",
+        "backend-service-engineer",
+        "orgscript-engineer",
+        "visual-storyteller",
+        "documentation-evidence-researcher",
+        "wordpress-performance-engineer",
+        "prompt-engineer",
+        "unity-multiplayer-engineer",
+        "reality-checker",
+        "paid-media-auditor",
+        "software-test-engineer",
+        "feishu-integration-developer",
+        "service-operations-engineer"
+      ]
+    },
+    "elapsed_ms": 8804.33,
+    "host_context": "codex",
+    "receipt": {
+      "addition_count": 16,
+      "catalog_cache_hit": true,
+      "catalog_identity": "sha256:3e06e3b76ed9c7f230ca0a002c24c72c45f0960b213c5ee8198d5efdd0901ed8",
+      "embedding": {
+        "actual_model": "qwen3-embedding:latest",
+        "dimensions": 1024,
+        "input_count": 1,
+        "latency_ms": 2804,
+        "provider_name": "local-workforce-embedding",
+        "reason_code": "",
+        "requested_model": "qwen3-embedding:latest",
+        "status": "applied"
+      },
+      "projection_version": "1",
+      "provider_call_count": 1,
+      "reason_code": "",
+      "roster_count": 282,
+      "status": "applied",
+      "unit_count": 1
+    },
+    "reranked_ids": {
+      "unit-api-review": [
+        "reality-checker",
+        "documentation-evidence-researcher",
+        "paid-media-auditor"
+      ]
+    },
+    "roster_count": 282,
+    "scope": "live recall only; packaged roster, no staffing/hiring/host execution"
+  },
+  "limitations": [
+    "One cold and one warm observation, not a latency distribution or causal estimate of total staffing speedup.",
+    "Provider warming, batching and response variability may contribute to timing and ranking differences.",
+    "Fifteen of sixteen live recall additions overlap; reranked lists differ. Do not claim live selection-equivalence from these observations.",
+    "Fixed-response regression proves exact cached float64 vectors preserve candidate results; live recruiter, strict critic and hiring quality checks remain unchanged.",
+    "Cold turns, roster/provider changes and one-hour expiry still incur catalog embedding cost."
+  ]
+}
