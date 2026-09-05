@@ -805,6 +805,13 @@ routes, provider failures,
 malformed vectors, absent actual-model receipts, or cache-identity mismatches
 fall back to the unchanged typed candidate lane.
 
+Roster vectors also survive fresh hook processes in two owner-private cache
+slots beside the configured Store, under `recall-vectors-v1`. Both cache layers
+expire after one hour and bind to the exact roster, projection and provider.
+Only lossless roster vectors are persisted, never queries or staffing decisions.
+Every query rechecks the provider's actual model and dimensions. Unsafe or
+unreadable cache paths are misses; no quality review is skipped (AR-403).
+
 `dimensions` is optional: zero (the default) omits the provider field. A
 nonzero value is valid only on an `embeddings` profile using `ollama`,
 `openai-compatible`, or `litellm`. Agency requires the provider to return that

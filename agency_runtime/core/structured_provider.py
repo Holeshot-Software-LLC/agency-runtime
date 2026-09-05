@@ -725,6 +725,22 @@ def _http_provider_is_safe(provider: ProviderEntry, api_key: str) -> bool:
     return bool(api_key or keyless_loopback)
 
 
+def _valid_request_text(prompt: object, system_prompt: object) -> bool:
+    if not isinstance(prompt, str) or not isinstance(system_prompt, str):
+        return False
+    try:
+        return bool(
+            prompt.strip()
+            and "\x00" not in prompt
+            and len(prompt.encode("utf-8")) <= MAX_STRUCTURED_PROMPT_BYTES
+            and system_prompt.strip()
+            and "\x00" not in system_prompt
+            and len(system_prompt.encode("utf-8")) <= MAX_STRUCTURED_SCHEMA_BYTES
+        )
+    except UnicodeError:
+        return False
+
+
 def invoke_structured_provider_result(
     provider: ProviderEntry,
     prompt: str,
@@ -746,20 +762,7 @@ def invoke_structured_provider_result(
             provider, provider_type, started, reason=reason, call_attempted=False
         )
 
-    if not isinstance(prompt, str) or not isinstance(system_prompt, str):
-        return _refused(PROVIDER_REQUEST_INVALID)
-    try:
-        invalid_text = (
-            not prompt.strip()
-            or "\x00" in prompt
-            or len(prompt.encode("utf-8")) > MAX_STRUCTURED_PROMPT_BYTES
-            or not system_prompt.strip()
-            or "\x00" in system_prompt
-            or len(system_prompt.encode("utf-8")) > MAX_STRUCTURED_SCHEMA_BYTES
-        )
-    except UnicodeError:
-        return _refused(PROVIDER_REQUEST_INVALID)
-    if invalid_text:
+    if not _valid_request_text(prompt, system_prompt):
         return _refused(PROVIDER_REQUEST_INVALID)
     schema_bytes = _bounded_json(schema, maximum_bytes=MAX_STRUCTURED_SCHEMA_BYTES)
     request_timeout = _bounded_timeout(provider.timeout if timeout is None else timeout)
@@ -849,6 +852,15 @@ def invoke_structured_provider_result(
     response_object = _parse_json_object(raw)
     if response_object is None:
         return _failed(PROVIDER_RESPONSE_NOT_JSON)
+    return _parsed_http_result(provider, provider_type, started, response_object)
+
+
+def _parsed_http_result(
+    provider: ProviderEntry,
+    provider_type: str,
+    started: float,
+    response_object: Mapping[str, Any],
+) -> StructuredProviderResult:
     ollama_mode = provider.ollama_mode or provider_type == "ollama"
     reply_budget, completion_cap = _requested_completion_cap(provider)
     completion_tokens, finish_reason = _response_usage(
@@ -863,7 +875,13 @@ def invoke_structured_provider_result(
             # The body was JSON and complete; the model text inside it was
             # not a JSON object. The sibling of a truncated reply, and not
             # the same thing: nothing was cut.
-            return _failed(PROVIDER_MODEL_TEXT_NOT_JSON)
+            return _failure_result(
+                provider,
+                provider_type,
+                started,
+                reason=PROVIDER_MODEL_TEXT_NOT_JSON,
+                call_attempted=True,
+            )
         # The reply was cut before a complete JSON object formed. Return the
         # truncation as evidence rather than a bare None, so the stage can
         # record why it has nothing to parse instead of "no valid response".

@@ -47,6 +47,13 @@ def remaining_provider_timeout(timeout: float, *, deadline: float | None = None)
     return float(timeout) if cutoff is None else max(0.0, min(timeout, cutoff - time.monotonic()))
 
 
+def require_provider_time(timeout: float) -> float:
+    remaining = remaining_provider_timeout(timeout)
+    if remaining <= 0:
+        raise TimeoutError(PROVIDER_DEADLINE_EXHAUSTED)
+    return remaining
+
+
 def bounded_preflight_route(function):
     """Apply the route request's lease to planning, recall, hiring and repairs."""
 

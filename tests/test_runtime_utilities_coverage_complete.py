@@ -397,4 +397,3 @@ def test_intent_and_explain_helpers_cover_validation_and_empty_terms() -> None:
         "description": "",
         "selected": False,
     }
-

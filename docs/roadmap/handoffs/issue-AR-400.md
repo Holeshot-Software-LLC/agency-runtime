@@ -9,6 +9,7 @@ related:
   - docs/roadmap/issue-AR-400-preserve-staffing-progress-across-empty-gaps.md
   - docs/roadmap/issue-AR-401-enforce-preflight-deadlines-at-provider-boundaries.md
   - docs/roadmap/issue-AR-402-separate-subject-domains-from-execution-eligibility.md
+  - docs/roadmap/issue-AR-403-reuse-roster-embeddings-across-hook-processes.md
   - docs/decisions/0216-enforce-one-preflight-inference-deadline.md
   - docs/decisions/0217-keep-subject-domains-out-of-execution-authority.md
   - docs/worklog/README.md
@@ -17,8 +18,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-400
 branch: codex/ar400-staffing-contracts
-evidence_commit: cbbd2cff58eec66b680ddd608d85c4ec4d296aa3
-minimum_ledger_commit: cbbd2cff58eec66b680ddd608d85c4ec4d296aa3
+evidence_commit: 47ab9fcebc1fe8106e7f776710db85e4be8c3e54
+minimum_ledger_commit: 556e0ebf361c09dc4ed1271f574bee0eba12ef57
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/665
 ---
@@ -31,7 +32,7 @@ Owner requested self-implementation, PR merge to main, agency install and smoke
 tests of all five harnesses; then added a performance pass preserving quality.
 No delegation. Branch includes the refreshed previously unpushed AR-383 capsule.
 Metadata names that clean starting point; this recovery commit carries code
-changes and its following ledger identifies it. Phase: focused_review.
+changes and its following ledger identifies it. Phase: fast_verification.
 
 ## Completed evidence
 
@@ -46,11 +47,19 @@ changes and its following ledger identifies it. Phase: focused_review.
 - Domains no longer veto eligibility or require extra teammates; audited
   authority, explicit exclusions and actual capabilities remain enforced.
 - Trackers: AR-400 #665, AR-401 #666, AR-402 #667.
+- AR-403 #668 implements fresh-process cache reuse, no query persistence,
+  lossless vectors, one-hour TTL, model/roster invalidation and private paths.
+- Targeted transport/deadline/cache/domain/hiring suites: 145 passed.
+- Preflight, receipt and conformance-manifest suites: 94 passed, one skipped.
+- JS: 138 passed. Routing evaluation passed. Ruff check/format now clean.
+- Fast spine: 1003 passed, three skipped, one stale domain-mutation anchor failed.
+  Anchor now tests that the superseded domain veto cannot return; focused
+  manifest check passes. Full fast spine rerun remains due.
 
 ## Exact blocker
 
-No implementation blocker. Transport/preflight integration coverage, full fast
-spine, acceptance records, merge, install and live proof remain. Reinstallation
+No implementation blocker. Fast-spine rerun, live timing, acceptance records,
+merge, install and live proof remain. Reinstallation
 requires native Codex trust; never fabricate hashes. The parent lacks the gateway
 key; existing documented common.env loading is the live-test path, without new
 keys or printing secrets.
@@ -66,9 +75,10 @@ hooks start fresh processes. Verify fresh-process reuse before claiming speedup.
 
 ## Next bounded work package
 
-1. Finish transport/actual-preflight deadline regressions and focused review.
-2. Measure cold versus warm roster embeddings in fresh processes; implement
-   bounded identity-bound reuse if privacy and quality are preserved.
+1. Run decision-conformance in the copied-interpreter dev venv with umask 077.
+   Ambient umask 0002 made the runner's scratch parents group-writable; the
+   initial system-python run also lacked pytest under the isolated home.
+2. Measure cold versus warm roster embeddings in fresh processes.
 3. Run named fast spine, JS, routing, docs and decision-conformance.
 4. Record acceptance, merge through a PR and install from main.
 5. Deterministic smoke all five hosts; bounded live canaries/ordinary turns where
@@ -78,10 +88,11 @@ hooks start fresh processes. Verify fresh-process reuse before claiming speedup.
 
 Checks above use real verification/hiring functions, scripted replies and
 temporary stores. No live provider call or live roster mutation by these tests.
-Fast spine and exhaustive integration gates not yet run this turn. The original
-review found baseline lint/format failures; distinguish those from new findings.
-Current deadline seams add complexity warnings in inference and structured
-transport; factor those during focused review before the merge gate.
+No exhaustive corpus, coverage or compatibility matrix was run. Baseline
+lint/format defects were mechanically corrected, the field-shadow and mutable
+test-fixture errors fixed, and deadline complexity factored without suppressions.
+Actual-preflight regression confirms terminal closure and explicit Store cache
+scope even while durable writes are deferred.
 
 ## Constraints
 

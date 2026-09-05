@@ -428,16 +428,10 @@ def served_domains_by_artifact_kind(
     contracts: Iterable[WorkforceContract],
     context: StaffingContext,
 ) -> dict[str, tuple[str, ...]]:
-    """Return, per artifact kind, the domains some worker can be staffed on.
+    """Return descriptive worker subject labels per eligible artifact kind.
 
-    AR-384 / ADR-0201: the planner used to see the union of every declared
-    domain and nothing about which of them the roster can serve under a unit's
-    authority. On the 2026-09-03 install smoke every plan-authority unit that
-    named ``platform`` had exactly one eligible coverer, an API platform
-    planner, because the operating system's platform and the roster's platform
-    domain are homonyms; ``desktop`` had none. A domain is a conjunctive
-    staffing requirement and eligibility needs at least one shared domain, so a
-    unit none of whose domains is served here can be staffed by nobody.
+    ADR-0217 supersedes ADR-0201's veto: the view informs inference, never
+    restricts the planner's subjects or asserts an execution boundary.
 
     The view is the verifier's own eligibility applied to a probe unit of each
     artifact kind: authority (with its read-only special cases), host,

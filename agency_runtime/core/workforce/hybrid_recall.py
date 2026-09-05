@@ -15,6 +15,7 @@ import re
 from collections import Counter, OrderedDict
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
+from pathlib import Path
 from threading import RLock
 from typing import Any
 
@@ -24,6 +25,15 @@ from agency_runtime.core.turn_routing_context import (
     project_turn_routing_context,
     project_workforce_subject_hints,
     turn_routing_context_rejection,
+)
+from agency_runtime.core.workforce.catalog_vector_cache import (
+    CatalogVectorEntry as _CatalogVectorEntry,
+)
+from agency_runtime.core.workforce.catalog_vector_cache import (
+    entry_is_fresh,
+    invalidate_catalog_vectors,
+    load_catalog_vectors,
+    save_catalog_vectors,
 )
 from agency_runtime.core.workforce.contract import WorkforceContract
 from agency_runtime.core.workforce.embedding_provider import (
@@ -152,16 +162,6 @@ class HybridRecallResult:
 
     units: tuple[UnitHybridRecall, ...]
     receipt: HybridRecallReceipt
-
-
-@dataclass(frozen=True, slots=True)
-class _CatalogVectorEntry:
-    catalog_fingerprint: str
-    document_vectors: tuple[tuple[float, ...], ...]
-    provider_name: str
-    requested_model: str
-    actual_model: str
-    dimensions: int
 
 
 _CatalogCacheKey = tuple[str, str, str, str]
@@ -477,7 +477,10 @@ def _catalog_cache_key(
     catalog_identity: str,
     provider_name: str,
     requested_model: str,
+    cache_directory: Path | None = None,
 ) -> _CatalogCacheKey:
+    if cache_directory is not None:
+        catalog_identity = _hash(str(cache_directory.absolute()) + "\0" + catalog_identity)
     return (
         catalog_identity,
         HYBRID_RECALL_PROJECTION_VERSION,
@@ -495,13 +498,19 @@ def _cached_catalog(
         entry = _CATALOG_VECTOR_CACHE.get(key)
         if entry is None:
             return None
+        if not entry_is_fresh(entry):
+            del _CATALOG_VECTOR_CACHE[key]
+            return None
         if entry.catalog_fingerprint != fingerprint:
             raise ValueError("catalog_identity was reused for a different recall projection")
         _CATALOG_VECTOR_CACHE.move_to_end(key)
         return entry
 
 
-def _store_cached_catalog(key: _CatalogCacheKey, entry: _CatalogVectorEntry) -> None:
+def _store_cached_catalog(
+    key: _CatalogCacheKey, entry: _CatalogVectorEntry, cache_directory: Path | None = None
+) -> None:
+    save_catalog_vectors(cache_directory, key, entry)
     with _CATALOG_VECTOR_CACHE_LOCK:
         existing = _CATALOG_VECTOR_CACHE.get(key)
         if existing is not None and existing.catalog_fingerprint != entry.catalog_fingerprint:
@@ -512,7 +521,10 @@ def _store_cached_catalog(key: _CatalogCacheKey, entry: _CatalogVectorEntry) -> 
             _CATALOG_VECTOR_CACHE.popitem(last=False)
 
 
-def _evict_cached_catalog(key: _CatalogCacheKey, entry: _CatalogVectorEntry) -> None:
+def _evict_cached_catalog(
+    key: _CatalogCacheKey, entry: _CatalogVectorEntry, cache_directory: Path | None = None
+) -> None:
+    invalidate_catalog_vectors(cache_directory, key)
     with _CATALOG_VECTOR_CACHE_LOCK:
         if _CATALOG_VECTOR_CACHE.get(key) is entry:
             del _CATALOG_VECTOR_CACHE[key]
@@ -756,6 +768,7 @@ def discover_hybrid_recall(  # noqa: C901 - one bounded fail-open recall transac
     per_unit_limit: int = DEFAULT_HYBRID_ADDITIONS_PER_UNIT,
     per_plan_limit: int = DEFAULT_HYBRID_ADDITIONS_PER_PLAN,
     retrieval_limit: int = DEFAULT_HYBRID_RETRIEVAL_LIMIT,
+    catalog_cache_directory: Path | None = None,
 ) -> HybridRecallResult:
     """Return bounded learned/lexical discoveries without changing typed recall.
 
@@ -873,8 +886,15 @@ def discover_hybrid_recall(  # noqa: C901 - one bounded fail-open recall transac
         catalog_identity=catalog_identity,
         provider_name=provider_name,
         requested_model=requested_model,
+        cache_directory=catalog_cache_directory,
     )
     cached = _cached_catalog(cache_key, fingerprint=fingerprint)
+    if cached is None:
+        cached = load_catalog_vectors(
+            catalog_cache_directory, cache_key, fingerprint=fingerprint, count=len(documents)
+        )
+        if cached is not None:
+            _store_cached_catalog(cache_key, cached)
     cache_hit = cached is not None
     document_texts = tuple(document.text for document in documents)
     query_texts = tuple(query.text for query in queries)
@@ -920,7 +940,7 @@ def discover_hybrid_recall(  # noqa: C901 - one bounded fail-open recall transac
         )
     if not embedding.receipt.actual_model:
         if cached is not None:
-            _evict_cached_catalog(cache_key, cached)
+            _evict_cached_catalog(cache_key, cached, catalog_cache_directory)
         failed = _failed_embedding(embedding.receipt, "embedding_model_identity_missing")
         return _typed_only_result(
             plan,
@@ -947,12 +967,13 @@ def discover_hybrid_recall(  # noqa: C901 - one bounded fail-open recall transac
                 actual_model=embedding.receipt.actual_model,
                 dimensions=embedding.receipt.dimensions,
             ),
+            catalog_cache_directory,
         )
     else:
         document_vectors = cached.document_vectors
         query_vectors = embedding.vectors
         if embedding.receipt.dimensions != cached.dimensions:
-            _evict_cached_catalog(cache_key, cached)
+            _evict_cached_catalog(cache_key, cached, catalog_cache_directory)
             failed = _failed_embedding(embedding.receipt, "embedding_dimension_mismatch")
             return _typed_only_result(
                 plan,
@@ -966,7 +987,7 @@ def discover_hybrid_recall(  # noqa: C901 - one bounded fail-open recall transac
             )
         cached_model = (cached.actual_model or cached.requested_model).casefold()
         if _effective_model(embedding.receipt) != cached_model:
-            _evict_cached_catalog(cache_key, cached)
+            _evict_cached_catalog(cache_key, cached, catalog_cache_directory)
             failed = _failed_embedding(embedding.receipt, "embedding_model_mismatch")
             return _typed_only_result(
                 plan,

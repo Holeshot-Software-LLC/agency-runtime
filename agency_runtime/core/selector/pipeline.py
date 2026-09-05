@@ -1629,8 +1629,8 @@ def _plan_states_a_subject(plan: Any) -> bool:
     """Whether the plan carries any typed identifier retrieval could act on."""
 
     for unit in tuple(getattr(plan, "units", ()) or ()):
-        for field in _SUBJECT_IDENTIFIER_FIELDS:
-            if tuple(getattr(unit, field, ()) or ()):
+        for identifier_field in _SUBJECT_IDENTIFIER_FIELDS:
+            if tuple(getattr(unit, identifier_field, ()) or ()):
                 return True
     return False
 
@@ -2187,6 +2187,9 @@ def route(
             request.user_message,
             request.workforce_snapshot,
             subject_inference_required=subject_inference_required,
+            catalog_cache_directory=(
+                store.db_path.parent / "recall-vectors-v1" if store is not None else None
+            ),
             config=cfg,
             context=staffing_context,
             routing_context_fingerprint=request.context_fingerprint,

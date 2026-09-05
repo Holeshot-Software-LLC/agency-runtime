@@ -255,6 +255,21 @@ def _project_validation_reason_codes(value: object, *, stage: str) -> list[str]:
     return result
 
 
+def _recall_performance_counts(source: Mapping[str, Any], stage: str) -> dict[str, Any]:
+    """Retain bounded transport work counts, never query/catalog content."""
+    if stage not in {"recall_embedding", "recall_reranker"}:
+        return {}
+    result: dict[str, Any] = {}
+    for name, maximum in (("input_count", 10016), ("provider_call_count", 3)):
+        value = source.get(name)
+        if type(value) is int and 0 <= value <= maximum:
+            result[name] = value
+    hit = source.get("catalog_cache_hit")
+    if stage == "recall_embedding" and isinstance(hit, bool):
+        result["catalog_cache_hit"] = hit
+    return result
+
+
 def project_preflight_provider_attempts(value: object) -> list[dict[str, Any]] | None:
     """Project model attempts while preserving only their allowlisted stage."""
 
@@ -278,6 +293,7 @@ def project_preflight_provider_attempts(value: object) -> list[dict[str, Any]] |
         if stage not in PREFLIGHT_PROVIDER_STAGES:
             stage = "unknown"
         entry: dict[str, Any] = {"stage": stage, **attempt}
+        entry.update(_recall_performance_counts(source, stage))
         # A rejected recruiter attempt is the most common terminal failure, and
         # its reason_code alone ("provider_response_contract_invalid") does not
         # say which units failed or why. The per-unit codes are an allowlisted

@@ -137,6 +137,7 @@ Status meanings:
 | [ADR-0213](0213-the-verifier-judges-safety-retrieval-judges-fit.md) | The verifier judges safety; retrieval judges fit | Superseded |
 | [ADR-0216](0216-enforce-one-preflight-inference-deadline.md) | Enforce one preflight inference deadline | Accepted |
 | [ADR-0217](0217-keep-subject-domains-out-of-execution-authority.md) | Keep subject domains out of execution authority | Accepted |
+| [ADR-0218](0218-cache-only-roster-vectors-across-hook-processes.md) | Cache only roster vectors across hook processes | Accepted |
 | [ADR-0214](0214-close-a-preflight-attempt-on-its-token-not-its-lease.md) | Close a preflight attempt on its token, not its lease, and bound hiring by the lease | Accepted |
 | [ADR-0215](0215-accept-one-complete-object-with-a-trailing-bracket.md) | Accept one complete object followed only by closing brackets, and name the repair | Accepted |
 

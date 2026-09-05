@@ -359,12 +359,11 @@ def test_a_declared_novel_domain_is_left_to_hiring_not_replanned() -> None:
         plan_policy_violations(_REQUEST, _plan(novel), served_domains=served, known_domains=known)
         == ()
     )
-    # A known but unserved domain is still the planner's to fix.
+    # Known but unserved subjects are not execution-eligibility failures.
     assert _CODE not in plan_policy_violations(
         _REQUEST, _plan(_unit(_UNIT)), served_domains=served, known_domains=known
     )
-    # A caller that does not know the vocabulary cannot tell the two apart and
-    # gets the plain rule.
+    # The same descriptive treatment applies without a vocabulary.
     assert _CODE not in plan_policy_violations(_REQUEST, _plan(novel), served_domains=served)
 
 
