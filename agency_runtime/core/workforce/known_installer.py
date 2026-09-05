@@ -22,7 +22,10 @@ from agency_runtime.core.workforce.hiring_contract import (
     contractor_prompt_version,
     parse_employment_contract,
 )
-from agency_runtime.core.workforce.known_contractors import KNOWN_CONTRACTORS_BY_SLUG
+from agency_runtime.core.workforce.known_contractors import (
+    KNOWN_CONTRACTORS_BY_SLUG,
+    SUPERSEDED_KNOWN_CONTRACTOR_CONTRACTS,
+)
 
 PACKAGED_CONTRACTOR_AUTHORITY = "agency.packaged-contractor.v1"
 
@@ -163,6 +166,16 @@ _V3_KNOWN_CONTRACTOR_PROMPT_HASHES: dict[str, str] = {
     "selection-safety-critic": "sha256:990042f24b84561e1796cc7d04633665b7829ef850465d029b64a8d7e0228f1f",
     "software-test-engineer": "sha256:2a98490a72c6767f5cb15f381ba1c25a570103bf44283b28d031b7a40b684834",
     "typescript-application-engineer": "sha256:e1e9fe262a5ef488c7fd99ab00e4cc9d0124eda50403e64201a7b905b7e9100f",
+}
+
+# AR-397: prompt identities of packaged definitions that shipped and were then
+# revised in place (known_contractors.SUPERSEDED_KNOWN_CONTRACTOR_CONTRACTS).
+# Pinned like the template tables above so the reconstruction cannot drift:
+# an install must advance a live worker only from the exact identity it holds.
+_SUPERSEDED_KNOWN_CONTRACTOR_PROMPT_HASHES: dict[str, tuple[str, ...]] = {
+    "monitoring-engineer": (
+        "sha256:a6b2d8cbe5df5cc1e0ebf794b4b168f486818c29661d9ba8e8dd2d908c6eb6ca",
+    ),
 }
 
 _LEGACY_BACKEND_CAPABILITIES = (
@@ -425,18 +438,38 @@ def _malformed_legacy_known_contractor_package(slug: str) -> KnownContractorPack
     )
 
 
+def _superseded_known_contractor_packages(slug: str) -> tuple[KnownContractorPackage, ...]:
+    """Reconstruct every in-place revision of a packaged contract that shipped before this one."""
+
+    normalized = str(slug or "").strip().casefold()
+    contracts = SUPERSEDED_KNOWN_CONTRACTOR_CONTRACTS.get(normalized, ())
+    expected = _SUPERSEDED_KNOWN_CONTRACTOR_PROMPT_HASHES.get(normalized, ())
+    if len(contracts) != len(expected):
+        raise RuntimeError(f"superseded known contractor snapshot is unpinned: {normalized}")
+    packages: list[KnownContractorPackage] = []
+    for contract, expected_hash in zip(contracts, expected, strict=True):
+        compiled = compile_contractor(contract)
+        if compiled.prompt_hash != expected_hash:
+            raise RuntimeError(f"superseded known contractor snapshot drifted: {normalized}")
+        agent = _known_contractor_agent(contract)
+        workforce = project_workforce_contract(agent, origin="agency")
+        packages.append(KnownContractorPackage(contract, compiled, agent, workforce))
+    return tuple(packages)
+
+
 def _known_contractor_predecessor_packages(slug: str) -> tuple[KnownContractorPackage, ...]:
     """Return every exact packaged identity that shipped before the current one."""
 
     normalized = str(slug or "").strip().casefold()
-    if normalized not in _LEGACY_KNOWN_CONTRACTOR_PROMPT_HASHES:
-        return ()
-    return (
-        _legacy_known_contractor_package(normalized),
-        _malformed_legacy_known_contractor_package(normalized),
-        _v2_known_contractor_package(normalized),
-        _v3_known_contractor_package(normalized),
-    )
+    template_predecessors: tuple[KnownContractorPackage, ...] = ()
+    if normalized in _LEGACY_KNOWN_CONTRACTOR_PROMPT_HASHES:
+        template_predecessors = (
+            _legacy_known_contractor_package(normalized),
+            _malformed_legacy_known_contractor_package(normalized),
+            _v2_known_contractor_package(normalized),
+            _v3_known_contractor_package(normalized),
+        )
+    return (*template_predecessors, *_superseded_known_contractor_packages(normalized))
 
 
 def known_contractor_revision_metadata_authorities(slug: str) -> tuple[str, ...]:

@@ -19,6 +19,7 @@ from agency_runtime.core.store.sqlite import Store
 from agency_runtime.core.workforce.hiring_contract import (
     CONTRACTOR_PROMPT_TEMPLATE_HASH,
     PROSE_CASE_PRESERVING_SCHEMA_VERSION,
+    compile_contractor,
 )
 from agency_runtime.core.workforce.identity import stable_worker_id
 from agency_runtime.core.workforce.known_contractors import KNOWN_CONTRACTORS_BY_SLUG
@@ -255,6 +256,155 @@ def test_package_advance_preserves_an_exact_prompt_with_amended_contract_metadat
     assert slug not in result.upgraded
     assert after["revision"] == 0
     assert after["current_version"] == legacy.agent["version"]
+
+
+def _seed_packaged_identity(store: Store, package: Any) -> None:
+    """Register one packaged identity the way a fresh install once did."""
+
+    slug = package.employment_contract.slug
+    version_id = store.stage_agency_workforce_agent(package.agent)
+    contract_document = package.workforce_contract.to_dict()
+    case = store.create_hiring_case(
+        case_type="hire",
+        proposed_slug=slug,
+        work_unit_id=f"known-{slug}",
+        request_hash=_contract_hash(package.employment_contract.to_dict()),
+        contract_evidence=contract_document,
+        contract_hash=_contract_hash(contract_document),
+        **packaged_hiring_evidence(package),
+    )
+    case = store.transition_hiring_case(case["id"], status="audited")
+    store.register_workforce_worker(
+        agent_slug=slug,
+        display_name=package.employment_contract.role,
+        origin="agency",
+        employment_class="contractor",
+        agent_version_id=version_id,
+        recruitment_contract=contract_document,
+        relation="generated",
+        hiring_case_id=case["id"],
+    )
+
+
+def test_a_lifecycle_revision_reaches_the_live_contract_on_install(tmp_path: Path) -> None:
+    """AR-397: the shipped monitoring identity keeps prompt and metadata, gains `release`.
+
+    Lifecycle phases live in the projected recruitment contract, not in the
+    prompt or the routing metadata, so the install identity pass sees an exact
+    revision and the repair pass carries the change.
+    """
+
+    from agency_runtime.core.workforce.known_installer import (
+        _superseded_known_contractor_packages,
+    )
+
+    store = Store(tmp_path / "agency.db")
+    slug = "monitoring-engineer"
+    (shipped,) = _superseded_known_contractor_packages(slug)
+    current = known_contractor_package(slug)
+    assert shipped.compiled.prompt_hash == current.compiled.prompt_hash
+    assert shipped.agent["lifecycle_phases"] == ["implementation"]
+    assert current.agent["lifecycle_phases"] == ["implementation", "release"]
+    assert serialized_revision_metadata(shipped.agent) == serialized_revision_metadata(
+        current.agent
+    )
+    _seed_packaged_identity(store, shipped)
+    before = store.get_workforce_worker_detail(
+        slug, evidence_limit=1, disabled_agents=(), include_history_documents=False
+    )
+    assert before["recruitment_contract"]["lifecycle_phases"] == ["implementation"]
+
+    # What `agency install` runs, in order: the identity pass, then the repair.
+    result = install_known_contractors(store)
+    assert slug in result.existing
+    assert result.upgraded == () and result.preserved == ()
+    assert store.packaged_workforce_divergence(slug) == ()
+    repaired = store.reconcile_packaged_workforce_contracts()
+    assert repaired.updated == 1
+
+    after = store.get_workforce_worker_detail(
+        slug, evidence_limit=1, disabled_agents=(), include_history_documents=False
+    )
+    assert after["recruitment_contract"]["lifecycle_phases"] == ["implementation", "release"]
+    assert after["worker"]["current_hash"] == current.compiled.prompt_hash
+    snapshot = workforce_index_snapshot(store)
+    contract = next(item for item in snapshot.contracts if item.agent_id == slug)
+    assert contract.lifecycle_phases == ("implementation", "release")
+
+
+def test_a_prompt_changing_revision_advances_from_its_superseded_identity(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """AR-397: a superseded definition whose prompt differs is an exact predecessor."""
+
+    from agency_runtime.core.workforce import known_contractors, known_installer
+    from agency_runtime.core.workforce.hiring_contract import parse_employment_contract
+
+    slug = "monitoring-engineer"
+    raw = known_contractors._monitoring_engineer_definition(["observability", "implementation"])
+    raw["capabilities"] = [*raw["capabilities"][:-1], "confirm an alert reaches its route"]
+    synthetic = parse_employment_contract(raw)
+    monkeypatch.setitem(known_installer.SUPERSEDED_KNOWN_CONTRACTOR_CONTRACTS, slug, (synthetic,))
+    monkeypatch.setitem(
+        known_installer._SUPERSEDED_KNOWN_CONTRACTOR_PROMPT_HASHES,
+        slug,
+        (compile_contractor(synthetic).prompt_hash,),
+    )
+    (superseded,) = known_installer._superseded_known_contractor_packages(slug)
+    current = known_contractor_package(slug)
+    assert superseded.compiled.prompt_hash != current.compiled.prompt_hash
+
+    store = Store(tmp_path / "agency.db")
+    _seed_packaged_identity(store, superseded)
+    result = install_known_contractors(store)
+    after = store.get_workforce_worker(slug, disabled_agents=())
+    historical = store.get_versioned_specialist_prompt(
+        slug,
+        superseded.agent["version"],
+        superseded.compiled.prompt_hash,
+        max_chars=262_144,
+        disabled_agents=(),
+    )
+
+    assert result.upgraded == (slug,)
+    assert result.preserved == ()
+    assert after["revision"] == 1
+    assert after["current_hash"] == current.compiled.prompt_hash
+    assert historical is not None and historical["prompt_body"] == superseded.compiled.prompt
+    repeated = install_known_contractors(store)
+    assert repeated.upgraded == ()
+    assert repeated.existing == tuple(sorted(KNOWN_CONTRACTORS_BY_SLUG))
+
+
+def test_superseded_packaged_identities_are_pinned_and_fail_closed(monkeypatch) -> None:
+    """AR-397: the reconstruction is checked against its pinned prompt hash."""
+
+    from agency_runtime.core.workforce import known_installer
+
+    packages = known_installer._superseded_known_contractor_packages("monitoring-engineer")
+    assert [item.compiled.prompt_hash for item in packages] == list(
+        known_installer._SUPERSEDED_KNOWN_CONTRACTOR_PROMPT_HASHES["monitoring-engineer"]
+    )
+    assert (
+        known_installer._superseded_known_contractor_packages("python-application-engineer") == ()
+    )
+
+    monkeypatch.setitem(
+        known_installer._SUPERSEDED_KNOWN_CONTRACTOR_PROMPT_HASHES,
+        "monitoring-engineer",
+        ("sha256:" + "0" * 64,),
+    )
+    with pytest.raises(RuntimeError, match="drifted"):
+        known_installer._superseded_known_contractor_packages("monitoring-engineer")
+    with pytest.raises(RuntimeError, match="drifted"):
+        known_installer._known_contractor_predecessor_packages("monitoring-engineer")
+
+    monkeypatch.setitem(
+        known_installer._SUPERSEDED_KNOWN_CONTRACTOR_PROMPT_HASHES, "monitoring-engineer", ()
+    )
+    with pytest.raises(RuntimeError, match="unpinned"):
+        known_installer._superseded_known_contractor_packages("monitoring-engineer")
 
 
 def test_legacy_backend_snapshot_retains_the_package_v1_prompt_identity() -> None:

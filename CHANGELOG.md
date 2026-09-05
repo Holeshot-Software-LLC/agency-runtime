@@ -73,6 +73,11 @@ changes rather than duplicating every commit.
 
 ### Added
 
+- Packaged contracts can be revised in place (AR-397): a superseded definition
+  is kept verbatim and its prompt hash pinned, so `agency install` advances a
+  live worker from the exact identity it holds instead of preserving it at the
+  old contract forever. First use: the `monitoring-engineer` contractor now
+  covers the `release` lifecycle, so a provisioning unit can reach it.
 - Two packaged operations contractors, `service-operations-engineer` and
   `monitoring-engineer`, authored through the `agency-runtime` source
   (AR-370 criterion 1). The routing corpus had described both since

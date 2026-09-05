@@ -410,6 +410,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-394` | [The recruiter stage ends most staffing turns, and the turns it does not end can staff an unrelated specialist](issue-AR-394-recruiter-teams-fail-or-mis-select.md) | done | p0 | reliability | pending authorization |
 | `AR-395` | [Three real inference stages are not in the receipt's stage vocabulary, so their attempts are recorded as unknown](issue-AR-395-preflight-stage-vocabulary-is-incomplete.md) | done | p1 | observability | pending authorization |
 | `AR-396` | [A complete reply that is not JSON ends the stage on one call, while a cut one and a wrong one each get a second ask](issue-AR-396-a-non-json-reply-gets-no-second-ask.md) | done | p1 | reliability | pending authorization |
+| `AR-397` | [A packaged contract that already shipped at the current template cannot be revised in place](issue-AR-397-packaged-contracts-cannot-be-revised-in-place.md) | in_progress | p2 | workforce | pending authorization |
 
 ## Traceability
 
