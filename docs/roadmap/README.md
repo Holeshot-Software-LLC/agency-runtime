@@ -774,8 +774,8 @@ not stable internal identifiers.
 | [AR-394](issue-AR-394-recruiter-teams-fail-or-mis-select.md) | [`c2a923d4`](../worklog/README.md) (eight closed shortfall causes, the retrieval/eligibility split) | [ADR-0213](../decisions/0213-the-verifier-judges-safety-retrieval-judges-fit.md) |
 | [AR-400](issue-AR-400-preserve-staffing-progress-across-empty-gaps.md) | `47ab9fce` | null |
 | [AR-401](issue-AR-401-enforce-preflight-deadlines-at-provider-boundaries.md) | `47ab9fce` | [ADR-0216](../decisions/0216-enforce-one-preflight-inference-deadline.md) |
-| [AR-402](issue-AR-402-separate-subject-domains-from-execution-eligibility.md) | `47ab9fce` | [ADR-0217](../decisions/0217-keep-subject-domains-out-of-execution-authority.md) |
-| [AR-403](issue-AR-403-reuse-roster-embeddings-across-hook-processes.md) | `e9d8ecea` | [ADR-0218](../decisions/0218-cache-only-roster-vectors-across-hook-processes.md) |
+| [AR-402](issue-AR-402-separate-subject-domains-from-execution-eligibility.md) | `47ab9fce`, `e9d8ecea`, `af366dd8` | [ADR-0217](../decisions/0217-keep-subject-domains-out-of-execution-authority.md) |
+| [AR-403](issue-AR-403-reuse-roster-embeddings-across-hook-processes.md) | `e9d8ecea`, `af366dd8` | [ADR-0218](../decisions/0218-cache-only-roster-vectors-across-hook-processes.md) |
 
 ## Dependency summary
 
