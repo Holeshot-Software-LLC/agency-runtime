@@ -547,10 +547,14 @@ dashboard case-detail view surfaces a warning badge:
 > `inference.strict_independence: true` to require a different
 > provider for this deployment."
 
-`strict_independence: true` enforces a different provider for any
-stage whose profile has an `independence` requirement. On config
-load, the offending profile raises a `ConfigurationError` listing
-the conflicting profile names.
+`strict_independence: true` enforces disjoint configured adapter/model identities
+across the effective creator and critic/security-review chains, including
+content fallbacks. AR-348 / ADR-0221 corrects the earlier unimplemented
+config-load claim: the hiring attempt raises `ConfigValidationError` with the
+conflicting route names after harness-aware resolution and before initial
+inference. Safety repair checks its own creator route. Distinct profile names,
+thinking levels or endpoints alone do not establish independence; different
+opaque aliases still do not prove different serving backends.
 
 ## Receipt contents per stage
 

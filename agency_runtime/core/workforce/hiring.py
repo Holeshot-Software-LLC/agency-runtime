@@ -12,6 +12,10 @@ from datetime import datetime, timezone
 from typing import Any
 
 from agency_runtime.core.config import AgencyConfig, ProviderEntry
+from agency_runtime.core.inference_profiles import (
+    enforce_strict_independence,
+    providers_share_model,
+)
 from agency_runtime.core.provider_deadline import (
     HIRING_DEADLINE_EXHAUSTED,
     inference_deadline,
@@ -1284,25 +1288,45 @@ def _repair_rejected_candidate(
     return repaired, critic, all_attempts
 
 
-def _providers_share_model(
-    left: Sequence[ProviderEntry],
-    right: Sequence[ProviderEntry],
-) -> bool:
-    """Return True when any creator provider shares adapter+model with a reviewer.
+def _preflight_hiring_independence(
+    config: AgencyConfig, providers: Sequence[ProviderEntry], harness: str
+) -> None:
+    """Reject known-invalid pairs before spending the first creator call."""
 
-    Used to flag ``same_provider_as_creator`` on the security review verdict
-    (AR-238). Compares resolved :class:`ProviderEntry` values so the check works
-    for both the inference-route profile path and the legacy provider chain.
-    """
+    if not config.inference.strict_independence:
+        return
+    review_routes = {f"workforce.hiring.{stage}": stage for stage in ("critic", "security_review")}
+    resolved = {
+        route: configured_workforce_providers(config, stage=stage, route_key=route, harness=harness)
+        for route, stage in review_routes.items()
+    }
+    enforce_strict_independence(
+        config,
+        route_pairs=dict.fromkeys(review_routes, "workforce.hiring"),
+        resolved_providers={"workforce.hiring": providers, **resolved},
+    )
 
-    for left_entry in left:
-        for right_entry in right:
-            if (
-                left_entry.type.strip().casefold() == right_entry.type.strip().casefold()
-                and left_entry.model == right_entry.model
-            ):
-                return True
-    return False
+
+def _review_providers(
+    config: AgencyConfig,
+    *,
+    stage: str,
+    creator_providers: Sequence[ProviderEntry],
+    harness: str,
+    creator_route: str = "workforce.hiring",
+) -> tuple[ProviderEntry, ...]:
+    """Enforce independence on the exact chains used by hiring (AR-348)."""
+
+    review_route = f"workforce.hiring.{stage}"
+    providers = configured_workforce_providers(
+        config, stage=stage, route_key=review_route, harness=harness
+    )
+    enforce_strict_independence(
+        config,
+        route_pairs={review_route: creator_route},
+        resolved_providers={review_route: providers, creator_route: creator_providers},
+    )
+    return providers
 
 
 def _security_review_prompt(
@@ -1357,6 +1381,7 @@ def _security_review(
     budget: _CallBudget,
     invoker: StructuredInvoker,
     harness: str = "",
+    creator_route: str = "workforce.hiring",
 ) -> _SecurityVerdict | None:
     """Run the isolated security review stage (AR-238).
 
@@ -1366,15 +1391,16 @@ def _security_review(
     silent fallback because the reviewer is the gate).
     """
 
-    review_providers = configured_workforce_providers(
+    review_providers = _review_providers(
         config,
         stage="security_review",
-        route_key="workforce.hiring.security_review",
+        creator_providers=creator_providers,
+        creator_route=creator_route,
         harness=harness,
     )
     if not review_providers:
         return None
-    same_provider = _providers_share_model(creator_providers, review_providers)
+    same_provider = providers_share_model(creator_providers, review_providers)
     result, attempt, failures = _invoke(
         review_providers,
         prompt=_security_review_prompt(
@@ -1474,6 +1500,14 @@ def _safety_repair_loop(
                 contract=candidate.contract,
                 attempts=all_attempts,
             )
+        if config.inference.strict_independence:
+            _review_providers(
+                config,
+                stage="security_review",
+                creator_providers=repair_providers,
+                creator_route="workforce.hiring.safety_repair",
+                harness=harness,
+            )
         repair_result, repair_attempt, repair_failures = _invoke(
             repair_providers,
             prompt=_json(
@@ -1532,6 +1566,7 @@ def _safety_repair_loop(
             compiled=compiled,
             config=config,
             creator_providers=repair_providers,
+            creator_route="workforce.hiring.safety_repair",
             budget=budget,
             invoker=invoker,
             harness=harness,
@@ -2374,6 +2409,7 @@ def hire_contractor_for_gap(
     )
     if not providers:
         return ContractorHiringOutcome("abstained", ("hiring_inference_unavailable",))
+    _preflight_hiring_independence(config, providers, harness)
     workforce = hiring_workforce_projection(contracts)
     verified_gap_reasons = tuple(
         dict.fromkeys(
@@ -2430,8 +2466,8 @@ def hire_contractor_for_gap(
     # longer rejects. The amend-first default (AR-240) is the real guard.
     daily_hire_count = _today_hires(store) if candidate.action == "hire" else 0
     daily_hire_alert = daily_hire_count >= config.workforce.daily_hire_alert_threshold
-    critic_providers = configured_workforce_providers(
-        config, stage="critic", route_key="workforce.hiring.critic", harness=harness
+    critic_providers = _review_providers(
+        config, stage="critic", creator_providers=providers, harness=harness
     )
     critic_result, critic_attempt, critic_failures = _invoke(
         critic_providers,

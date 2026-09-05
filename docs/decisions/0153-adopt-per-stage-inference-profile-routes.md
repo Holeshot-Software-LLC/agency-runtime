@@ -6,6 +6,8 @@ created: 2026-08-04
 updated: 2026-08-25
 tags: [routing, inference, workforce, configuration, security]
 related:
+  - docs/decisions/0221-enforce-hiring-independence-on-resolved-provider-chains.md
+  - docs/roadmap/issue-AR-348-enforce-strict-independence-in-production.md
   - docs/decisions/0118-require-inference-owned-staffing.md
   - docs/roadmap/issue-AR-235-autonomous-gap-hiring-with-isolated-security-review.md
   - docs/roadmap/issue-AR-253-dynamic-team-dispatch-on-every-harness.md
@@ -56,6 +58,12 @@ staffing intact; it only adds the per-stage addressability that
 AR-235's security-review isolation and same-provider warning require.
 
 ## Decision
+
+AR-348 / ADR-0221 implements the previously disconnected independence check
+over effective hiring provider chains. The historical config-load-error wording
+below is corrected to a hiring-attempt ConfigValidationError once the harness,
+legacy fallbacks and content-fallback chains are resolved. Routing policy and
+the opt-in adapter/model identity rule otherwise remain unchanged.
 
 Agency Runtime adopts a per-stage inference profile schema. Each profile
 declares `(adapter, model, thinking_level, capability_class, base_url,
