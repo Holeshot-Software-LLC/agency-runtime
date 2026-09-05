@@ -3,7 +3,7 @@ title: "AR-393: A declared capability gap can leave no hiring account at all, an
 status: open
 category: roadmap
 created: 2026-09-04
-updated: 2026-09-04
+updated: 2026-09-05
 tags: [workforce, hiring, receipts, observability, staffing]
 related:
   - docs/roadmap/issue-AR-378-hiring-failure-records-no-attempt.md
@@ -114,6 +114,33 @@ the turn, leaving the retained staffing decision referencing the first plan's
 unit ids while `outcome.plan` carries the second's. Separating that from an
 absent plan needs a live reproduction from a shell with the credential
 sourced; the receipt as it stands cannot answer it, which is the issue.
+
+## Measured (2026-09-05): one accounted receipt after the fix, and one turn with no receipt at all
+
+Read from copies of the live store; the live store was never opened for write.
+Details and the exact rows are in the evidence file, sections 6 and 7.
+
+- The first declaring receipt written by fix-carrying code (2026-09-05T00:28:19Z,
+  claude, trace `381f75c6`) carries `hiring_status_abstained`,
+  `hiring_inference_attempted`, `hiring_inference_failed`,
+  `provider_model_text_not_json`: the declared gap reached the governed hiring
+  path and the account names why it ended. Among declaring receipts written
+  after the fix, zero have an empty `hiring_reason_codes`; the 42 silent rows
+  all predate it, and no code change rewrites a stored receipt.
+- The first fix-carrying turn that declared a gap on the roster's true blind
+  spot (a COBOL z/OS batch job, driven through the real hook against a store
+  copy from venv `c42fb0a5`) ran the hiring loop over six gap units for 613 s,
+  every proposal `hire` and every critic `approved`, and then wrote **nothing**:
+  no receipt, no hiring case, and a run left at `in_progress` with an expired
+  lease. `store.fail_preflight_attempt` writes the receipt only inside an
+  UPDATE guarded by `preflight_lease_expires_at >= now`, the lease is the hook
+  timeout (600 s), and the caller discards the `False` it returns. That is a
+  narrower silence than this issue describes and is filed separately as
+  [AR-398](issue-AR-398-a-gap-turn-that-outruns-its-lease-leaves-no-receipt.md).
+
+Criterion 5 as worded cannot be met by a code change (its second half asks the
+pre-fix rows to name their condition); the first half holds on the one receipt
+above. Rewording it to receipts written after the fix is an owner decision.
 
 ## Approach
 

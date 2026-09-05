@@ -1,9 +1,9 @@
 ---
 title: "AR-397: A packaged contract that already shipped at the current template cannot be revised in place"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-09-04
-updated: 2026-09-04
+updated: 2026-09-05
 tags: [workforce, roster, packaging, install]
 related:
   - docs/roadmap/issue-AR-370-staffing-asks-the-wrong-question.md
@@ -99,23 +99,54 @@ and not an already applied case).
 First use: `monitoring-engineer` gains the `installation` phase, which projects
 to the `release` lifecycle.
 
+## Decision (2026-09-05): the per-slug tables are identity, pinned with the contract
+
+The open case above is settled with the close. `_DOMAINS` and `_ARTIFACTS`
+feed `categories` and `task_types` in `_known_contractor_agent`, and
+`_OPTIONAL_TOOLS` shapes `required_tools` through `_required_tools` (the
+packaged agent never carries an `optional_tools` key); all three land in
+list fields of `revision_metadata`, so a table edit for a shipped slug moves
+the live worker's metadata identity exactly as a `hosts` or `platforms` edit
+does. The
+superseded reconstruction, however, rebuilds a superseded contract through
+the *current* tables, so it cannot represent a table value that has since
+changed. The first table edit for a shipped slug must therefore ship the
+prior values beside the superseded contract (a per-slug snapshot of the three
+tables, pinned the way the prompt hash is) and the reconstruction must read
+the snapshot instead of the tables. Nothing is pinned today: no shipped
+slug's table entry has changed since the tables were introduced, so a pin
+now would compare against nothing. The historical optional-tools hook in
+`known_contractor_revision_metadata_authorities` stays as the one transition
+that predates this rule.
+
+The second remark stands as an accepted limit: `packaged_hiring_case_is_auditable`
+accepts an `amend` case for the current package only, so a second in-place
+revision de-audits the first revision's amend case. The audit gates the
+transition to `audited`, never an applied case, so this is forensic and is
+not reopened here.
+
+Closed 2026-09-05 through the AR-361 flow: five criteria verified by the
+isolated verifier against `45432976`, the two suites green at that tree, and
+the monitoring engineer covering `release` on a copy of the live store after
+the `c42fb0a5` install.
+
 ## Dependencies
 
 - AR-370 criterion 1, whose operations contracts this mechanism first revises.
 
 ## Acceptance
 
-- [ ] A live worker whose prompt-changing superseded revision is packaged
+- [x] A live worker whose prompt-changing superseded revision is packaged
       advances to the current package on `agency install`, is reported
       `upgraded`, and keeps the superseded prompt as history.
-- [ ] A live worker at the shipped monitoring identity is reported `existing`,
+- [x] A live worker at the shipped monitoring identity is reported `existing`,
       not divergent, and its recruitment contract carries the `release`
       lifecycle after the install's repair pass.
-- [ ] A superseded revision whose reconstruction no longer matches its pinned
+- [x] A superseded revision whose reconstruction no longer matches its pinned
       prompt hash makes `agency install` fail closed on every machine, including
       one whose worker is already current.
-- [ ] A live worker at a superseded revision that differs only in a
+- [x] A live worker at a superseded revision that differs only in a
       metadata-bearing field is reported `existing`, not divergent, and its
       recruitment contract carries the current metadata after the repair pass.
-- [ ] `monitoring-engineer` covers the `release` lifecycle on the live roster
+- [x] `monitoring-engineer` covers the `release` lifecycle on the live roster
       after install.
