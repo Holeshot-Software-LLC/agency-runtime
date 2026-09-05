@@ -775,7 +775,7 @@ not stable internal identifiers.
 | [AR-400](issue-AR-400-preserve-staffing-progress-across-empty-gaps.md) | `47ab9fce` | null |
 | [AR-401](issue-AR-401-enforce-preflight-deadlines-at-provider-boundaries.md) | `47ab9fce` | [ADR-0216](../decisions/0216-enforce-one-preflight-inference-deadline.md) |
 | [AR-402](issue-AR-402-separate-subject-domains-from-execution-eligibility.md) | `47ab9fce` | [ADR-0217](../decisions/0217-keep-subject-domains-out-of-execution-authority.md) |
-| [AR-403](issue-AR-403-reuse-roster-embeddings-across-hook-processes.md) | pending checkpoint | [ADR-0218](../decisions/0218-cache-only-roster-vectors-across-hook-processes.md) |
+| [AR-403](issue-AR-403-reuse-roster-embeddings-across-hook-processes.md) | `e9d8ecea` | [ADR-0218](../decisions/0218-cache-only-roster-vectors-across-hook-processes.md) |
 
 ## Dependency summary
 
