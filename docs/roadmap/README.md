@@ -773,9 +773,9 @@ not stable internal identifiers.
 | [AR-397](issue-AR-397-packaged-contracts-cannot-be-revised-in-place.md) | [`dda2c8a3`](../worklog/README.md) (superseded packaged definitions as predecessors, the monitoring release lifecycle), [`f67b718f`](../worklog/README.md) (review fixes: metadata authorities, up-front pin check) | null |
 | [AR-394](issue-AR-394-recruiter-teams-fail-or-mis-select.md) | [`c2a923d4`](../worklog/README.md) (eight closed shortfall causes, the retrieval/eligibility split) | [ADR-0213](../decisions/0213-the-verifier-judges-safety-retrieval-judges-fit.md) |
 
-| [AR-400](issue-AR-400-preserve-staffing-progress-across-empty-gaps.md) | pending checkpoint | null |
-| [AR-401](issue-AR-401-enforce-preflight-deadlines-at-provider-boundaries.md) | pending checkpoint | [ADR-0216](../decisions/0216-enforce-one-preflight-inference-deadline.md) |
-| [AR-402](issue-AR-402-separate-subject-domains-from-execution-eligibility.md) | pending checkpoint | [ADR-0217](../decisions/0217-keep-subject-domains-out-of-execution-authority.md) |
+| [AR-400](issue-AR-400-preserve-staffing-progress-across-empty-gaps.md) | `47ab9fce` | null |
+| [AR-401](issue-AR-401-enforce-preflight-deadlines-at-provider-boundaries.md) | `47ab9fce` | [ADR-0216](../decisions/0216-enforce-one-preflight-inference-deadline.md) |
+| [AR-402](issue-AR-402-separate-subject-domains-from-execution-eligibility.md) | `47ab9fce` | [ADR-0217](../decisions/0217-keep-subject-domains-out-of-execution-authority.md) |
 
 ## Dependency summary
 
