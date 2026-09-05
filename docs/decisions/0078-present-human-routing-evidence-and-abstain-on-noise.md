@@ -1,24 +1,30 @@
 ---
 title: "Present human routing evidence and abstain on weak heuristic noise"
-status: accepted
+status: superseded
 category: decisions
 created: 2026-07-21
-updated: 2026-07-21
+updated: 2026-09-05
 tags: [routing, observability, headers, heuristics]
 related:
+  - docs/decisions/0222-retire-superseded-live-routing-contract.md
   - docs/roadmap/issue-AR-115-live-routing-trust.md
   - docs/decisions/0001-layered-specialist-routing.md
   - docs/decisions/0027-authoritative-runtime-evidence-traces.md
   - docs/decisions/0030-versioned-quantitative-evaluation-gates.md
   - docs/worklog/README.md
 supersedes: []
-superseded_by: null
+superseded_by: docs/decisions/0222-retire-superseded-live-routing-contract.md
 id: ADR-0078
 type: decision
 deciders: [maintainers]
 ---
 
 # ADR-0078: Present human routing evidence and abstain on weak heuristic noise
+
+Superseded by ADR-0222. The original text below is historical: deterministic
+staffing fallback and the six-field header must not be restored. Current live
+selection and evidence obligations remain under AR-119/AR-125; this retirement
+does not certify their success.
 
 ## Context
 

@@ -1,163 +1,118 @@
 ---
-title: "AR-404 evidence-led backlog completion handoff"
+title: "AR-404 oldest-first backlog completion handoff"
 status: active
 category: roadmap
 created: 2026-09-05
 updated: 2026-09-05
 tags: [handoff, backlog, acceptance, delivery]
 related:
-  - docs/roadmap/acceptance/evidence/AR-348-installed-delivery-20260905.md
-  - docs/roadmap/acceptance/issue-AR-348.md
-  - docs/roadmap/acceptance/issue-AR-406.md
-  - docs/roadmap/acceptance/issue-AR-152.md
-  - docs/roadmap/acceptance/evidence/AR-406-production-coverage-20260905.md
-  - docs/decisions/0220-measure-dashboard-coverage-over-production-modules.md
-  - docs/roadmap/acceptance/issue-AR-148.md
-  - docs/roadmap/acceptance/issue-AR-323.md
-  - docs/roadmap/acceptance/evidence/AR-323-current-schema-verification-20260905.md
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
+  - docs/roadmap/AR-404-oldest-first-reconciliation-20260905.md
   - docs/roadmap/AR-404-count-reconciliation-20260905.md
   - docs/roadmap/AR-404-backlog-dispositions-20260905.md
-  - docs/roadmap/acceptance/issue-AR-149.md
-  - docs/roadmap/issue-AR-406-restore-dashboard-function-coverage.md
-  - docs/roadmap/acceptance/evidence/AR-271-installed-delivery-20260905.md
+  - docs/roadmap/issue-AR-115-live-routing-trust.md
+  - docs/roadmap/issue-AR-119-inference-first-workforce.md
+  - docs/decisions/0222-retire-superseded-live-routing-contract.md
+  - docs/roadmap/acceptance/evidence/AR-348-installed-delivery-20260905.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-404
-branch: codex/ar348-installed-delivery
-evidence_commit: 0309f251c6cf1c6c22b3a4458302c8b2cad78734
-minimum_ledger_commit: b2b80a2ceb1fa300669d6e8ec3a7ac4b8193d394
+branch: codex/ar115-retire-superseded-routing-contract
+evidence_commit: e5662d912537ec6d6dfda5310577c1175e615128
+minimum_ledger_commit: e5662d912537ec6d6dfda5310577c1175e615128
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
 
-# AR-404 evidence-led backlog completion handoff
+# AR-404 oldest-first backlog completion handoff
 
 ## Checkpoint
 
-Owner says continue one by one, leave Windows work to their Windows machine,
-close completed records, and judge old agent-authored tickets for present
-product relevance instead of treating their designs as instructions.
-Main 0309f251 includes PR #687's accepted AR-348 repair after PRs #683..686.
-Tracker #406 (AR-348) is closed; #682 was closed in the preceding package.
-Exact merged runtime is installed and scoped smoke passes. AR-348 is done;
-AR-349 is the next package. No implementation agents were delegated. Umbrella
-remains implementing; Windows work stays with the owner.
+The owner changed priority: clean the backlog oldest first, one record at a
+time, PR, merge, then next, without routine approval pauses. Windows stays with
+the owner. Judge agent-written proposals for current relevance; do not blindly
+implement them. Current work: AR-115 retirement, not live-runtime certification.
+The ordinary-session staffing/header diagnosis is set aside per owner request.
+Main e5662d91 is clean and includes the preceding AR-348 delivery.
 
 ## Completed evidence
 
-- AR-348 fresh red reproduction at main 6307e17d: 20 failures, 23 passes
-  (14.14s). Strict mode silently allows all tested overlaps; controls pass.
-  Both reviewer routes, nine resolution sources and safety-repair creators are
-  covered through the public hiring entry point. No external inference ran.
-  Runtime fix under ADR-0221: 413 focused passes/one skip, 1075 spine passes/
-  three skips, UI/routing/Ruff pass. Two added curated mutations have 17 passing
-  catalog tests. Both original criteria satisfied against c9b678a5. Protected
-  conformance: baseline passes (98.879s), 184/184 killed, zero survived/invalid,
-  source unchanged. Earlier umask-0002 fixture failures remain in evidence;
-  the successful run uses the documented process-local 0077 boundary.
-- The owner's 43 open tracker count is correct at e4255836. The reported 147
-  was 43 mapped open trackers plus 104 unfinished local pre-tracker records.
-  They are a reconciliation queue, not 104 proved extra defects. Full local
-  counts were 240 done, 93 in_progress, 54 open, 11 wont_do (398 records).
-  New AR-406/#682 adds one tracked issue; AR-139 is now retired as superseded.
-  AR-148/149/152/323/406 accepted. Before AR-348: 43 mapped plus 99 legacy.
-  Remote #682 closed 2026-09-05 at 21:35:56 UTC; fresh enumeration confirms 43
-  open trackers before AR-348. Tracker #406 closed at 22:20:23Z on 2026-09-05;
-  read-back confirms CLOSED and fresh enumeration returns 42 actual open
-  issues. Local unfinished is 141: 42 mapped plus 99 legacy, not 141 defects.
-- Original-baseline reductions: AR-400..403 accepted; AR-132/167/169/267 retired
-  through cited successors; AR-271 accepted. AR-405 was outside the baseline
-  and is also accepted. Prior work merged via PRs #669/#673/#676..681. Never
-  rewrite the frozen original 155-item inventory.
-- Installed immutable build 0.1.0+g0309f251c6cf matches every tracked runtime
-  byte. New projection 4329d76058d1; old environment/launcher retained. All 45
-  new hiring regressions pass against installed package bytes (11.94s). Eight
-  deterministic smoke checks pass, including five generated host contracts.
-  Native refresh is partial: Codex files refreshed, attended trust unverified;
-  Claude/Hermes/ZCode enabled but runtime unverified; OpenClaw untouched on old
-  projection. Dashboard restarted/reachable; installer reports consented repair
-  of fourteen Claude entries. No manual permissions or credentials changed.
-- AR-149's 6a3bdaa0 fix is still present. Four real HTTP identity/error tests
-  pass (1.21s); complete dashboard/disconnect files 180 pass (27.28s). Current
-  acceptance exposes four old prose criteria as checkboxes and reconciles
-  only the obsolete complete-corpus condition with ADR-0105. Candidate b9d68e5d:
-  all four criteria satisfied. The first absent 2/3 verdicts remain in f2e41b89;
-  targeted rechecks passed after missing ContextVar/Store excerpts were added.
-  Eight boundary/Store tests pass in 0.31s. No product criterion changed.
-- AR-152's stable container listener, semantic buttons and 50-render soak pass.
-  AR-406's original 91.12 function score included fixture functions. ADR-0220
-  explicitly measures all seven production JS modules, retaining 95/86/93 floors.
-  Actual configured local command: 138 pass, 96.92/86.62/95.71 coverage. Both
-  local/CI exact-command regressions first failed; 163 workflow-contract tests
-  now pass. Fresh spine 1030 pass/three skips (64.98s). Product and UI behavioral
-  tests unchanged. AR-406 has three satisfied criteria at d109b094; AR-152 has
-  four at 12a62393. Initial absent baseline-comparison verdict retained before
-  exact equal Git objects were supplied. No criterion or implementation changed.
-- AR-139 is retired, not certified against its obsolete 263,168-byte ceiling.
-  AR-295 plus 3023f0557 explicitly audited required UI. Current ten assets total
-  386,366 bytes and pass the strict 378-KiB resource test (1 pass, 0.17s).
-  AR-148's signature guard is present. Wider checks exposed AR-323's known
-  schema-46 literals in three ledger cases plus seven migration/credential cases.
-  The test-only fix preserves legacy inputs and all behavioral checks: 401
-  focused pass, fresh 1030 spine pass/three skips (63.73s). Candidate 11371cb6:
-  all eight AR-148/323 isolated criteria satisfied, both done. No new tracker.
-  AR-129/130 claim implementation but include Windows proof; leave that with
-  the owner. AR-298 has source/tests and old installed visual evidence, but
-  no isolated acceptance yet.
+- AR-115 is the oldest unfinished record. It still specifies heuristic
+  specialist fallback, a six-line Why/How header, and obsolete routine full-CI
+  gates. ADR-0118, implemented AR-357, and ADR-0105 already replaced those
+  contracts. ADR-0222 supersedes ADR-0078 and retires AR-115 as wont_do, not done.
+  Original checked/unchecked gates remain historical and unchanged.
+- AR-119 explicitly absorbs the surviving ordinary live selection/header
+  obligation; AR-125 retains independent selection/outcome and native evidence.
+  Both stay open. The current credential-unset/unstaffed/unverified session is
+  not a pass. No implementation, configuration, credential or trust change.
+- Fresh AR-115 focused routing/header/credential/resident-manager and document/
+  tracker package: 183 passed in 19.11s. Fresh named fast spine: 1075 passed,
+  three existing skips in 68.74s. Source is unchanged from installed 0309f251.
+- Starting this oldest-first pass: 42 actual open trackers plus 99 unfinished
+  legacy local records (141 total), not 141 demonstrated defects. The earlier
+  legacy population was 104: AR-148/149/152/323 completed and AR-139 retired.
+  AR-115 retirement reduces local unfinished to 140 (41 mapped plus 99 legacy).
+  Tracker #127 remains open until this package merges; do not claim closure yet.
+- Prior PRs #687/#688/#689 delivered AR-348: two unchanged satisfied criteria,
+  413 focused passes/one skip, 1075 spine passes/three skips, 138 UI cases,
+  routing pass, protected 184/184 mutation kills with source unchanged.
+  Exact immutable installed 0309f251: every tracked runtime byte matches,
+  45 installed hiring regressions pass and deterministic smoke passes 8/8.
+  Tracker #406 (AR-348) closed, read back. Earlier failed umask receipts remain.
+- Prior AR-404 batches completed AR-400..403, AR-405/271, AR-148/149/152/323/406
+  and retired AR-132/167/169/267/139 with successor ownership. The frozen original
+  inventory is not rewritten. Full details stay in canonical issues/evidence.
 
 ## Exact blocker
 
-AR-348 has no remaining bounded-contract blocker: accepted, merged and installed,
-with current conformance and scoped smoke. Native live-host limits below remain
-separate from that contract. No verification failure is silently relabeled;
-failed receipts remain in their bounded evidence records.
-Do not claim "most done" before relevance and evidence are examined. Do not
-reimplement a historical defect merely because status=open.
-
-AR-348 is fixed; AR-349 remains a reproduced hiring gap. AR-350 needs an owner-authority decision;
-AR-351's domain proposal conflicts with AR-402/ADR-0217. AR-285 has three
-satisfied/two absent historical proof criteria, separate from AR-271.
+No blocker to the scoped AR-115 record reconciliation. It still needs its
+substantive/ledger checkpoint, PR/merge, and authorized #127 not-planned closure.
+Retirement must not be misreported as repaired ordinary staffing or accepted
+live evidence. AR-119 remains an unfinished umbrella with its own dependencies.
+Do not force an umbrella complete to advance to the next oldest actionable item.
 
 ## Same-task continuity
 
-Owned worktree uses the named branch. Never commit main directly; substantive
-commit then immediate narrow docs(worklog) ledger. Freeze acceptance after
-evidence exists in an ancestor, run supported Codex excerpt-only single-criterion
-verification, and close only satisfied records. Keep legacy tracker exemptions;
-do not create duplicate external issues for pre-tracker history.
-No current header snapshot exists; no specialist staffing succeeded.
+Work in the named owned branch/worktree; never commit directly to main.
+Substantive commit then immediately narrow docs(worklog) ledger. Include exact
+merge history in the following owned worktree. Create one PR per disposition
+and merge before starting the next record. Preserve other workers' changes.
+Completed issues require real isolated acceptance; wont_do needs explicit
+supersession/relevance reasoning, not fabricated acceptance verdicts.
+At the 50-percent telemetry checkpoint, commit the smallest safe recovery pair
+and continue the same task. No empty commit or automatic task transfer.
 
 ## Next bounded work package
 
-1. Implement AR-349's rejected-hire persistence as a separate bounded package.
-   Reproduce all repair-exhaustion exits, retain safe no-worker behavior, then
-   prove durable rejected-case evidence. Do not broaden into staffing redesign.
-2. AR-298 remains implemented pending isolated verification. Keep Windows work
-   excluded and current provider configuration and attended trust unchanged.
-3. Continue historical relevance review: retire superseded proposals with
-   reciprocal links; close implemented work only with accepted evidence.
+1. Publish AR-115 retirement, close #127 as not planned, and read back parity.
+2. Review AR-119 next against its current nine-rule/host contract, not its large
+   superseded execution history. Retain unresolved dependent/live obligations.
+3. Then AR-120; thereafter continue by original creation date and AR-number tie
+   break. Skip Windows work, record exact operator/dependency holds, and move
+   to the next actionable record without requesting routine approval.
 
 ## Verification
 
-Current AR-348 source: 413 focused passes/one skip, 1075 named-spine passes/
-three skips, 138 UI cases, routing gates and 184 protected mutation kills.
-Both original isolated criteria are satisfied. Exact installed package: 45 new
-hiring cases and eight smoke checks pass; all tracked runtime bytes match. The
-earlier installed 182-case receipt is not transferred. No new exhaustive Python,
-cross-interpreter or Windows run. No test dependency was added to the installed
-runtime. ADR-0105 makes exhaustive integration optional. Strict docs/tracker
-and exact worklog checks govern parity.
+Current runtime/test/tool source is unchanged from merged and installed
+0309f251; new tests above exercise existing behavior only. No new live inference,
+Windows execution, exhaustive corpus/coverage or cross-interpreter matrix.
+Prior installed eight-check smoke is contract-only, not five live sessions.
+Run metadata, policy availability, exact worklog, strict docs/tracker and diff
+checks on each completed record package. Do not repeat six-minute unchanged
+mutation runs solely for a documentation-only retirement.
 
 ## Constraints
 
-Windows work stays open or explicitly deferred, never closed by Linux tests.
-Codex attended hook trust, OpenClaw stop/restart consent and fresh Hermes/ZCode
-session proof remain operator boundaries. The existing configured credential is
-absent from this shell; no current-build live Claude canary was attempted.
-Stale-hook warning: `agency install --agent codex` refreshed files, returned 1
-with activation-required/unverified hook trust; no unattended retry or bypass.
-No credential creation, trust bypass, unmanaged gateway interruption,
-provider-policy change or exhaustive dispatch is authorized by this cleanup.
+Do not create 99 trackers for exempt historical records. Keep acceptance
+failures and old subjects faithful. No specialist was staffed this turn; no
+native subagents were spawned. Header evidence is unavailable, not guessed.
+Codex files are refreshed but attended hook trust remains; Claude/Hermes/ZCode
+are registered/enabled, not fresh-live proven. OpenClaw remains on its prior
+projection because its running gateway must not be stopped or restarted.
+The previous install restarted the managed dashboard and reported consented
+repair of fourteen Claude entries; no new install is part of this docs slice.
+No credential creation, trust bypass, unmanaged gateway interruption, provider
+policy change or exhaustive workflow dispatch is authorized by backlog cleanup.

@@ -6,6 +6,7 @@ created: 2026-09-05
 updated: 2026-09-05
 tags: [backlog, review, acceptance, delivery]
 related:
+  - docs/roadmap/AR-404-oldest-first-reconciliation-20260905.md
   - docs/roadmap/acceptance/evidence/AR-348-installed-delivery-20260905.md
   - docs/decisions/0220-measure-dashboard-coverage-over-production-modules.md
   - docs/roadmap/acceptance/evidence/AR-406-production-coverage-20260905.md
@@ -49,6 +50,18 @@ repeat work and risk reintroducing superseded behavior.
 
 ## Current state
 
+The owner now requires oldest-first sequential delivery: one record, one PR,
+merge, then the next, without routine approval stops. Windows stays excluded.
+The [oldest-first ledger](AR-404-oldest-first-reconciliation-20260905.md) is the
+current ordering/disposition record. AR-115 is locally retired under ADR-0222
+as a superseded heuristic/six-field-header proposal, not accepted as working.
+Its surviving live obligation is explicitly owned by AR-119/AR-125. Focused
+checks: 183 passed; fresh named spine: 1075 passed/three skips. No runtime,
+configuration, credential or host state changed. Its PR/tracker #127 publication
+is pending; AR-119 is next. The earlier AR-349-first plan below is historical.
+
+### Previous published checkpoint
+
 AR-348 is accepted and locally done under ADR-0221: both original criteria
 satisfied against c9b678a5, 413 focused passes/one skip, 1075 fast-spine passes/
 three skips, 138 UI passes, routing pass, and 184/184 protected mutation kills
@@ -63,7 +76,7 @@ Strict=false warnings and inference-owned provider choices are unchanged.
 AR-349's rejected-hire persistence is the next separate implementation package;
 AR-298 remains implemented pending isolated verification. Windows is excluded.
 
-### Previous published checkpoint
+### Earlier published checkpoint
 
 PR #683 is merged at cb7dca77: AR-148/149/323 done and AR-139 retired.
 PR #684 is merged at 853de310: the AR-406/152 package implements ADR-0220's production-wide coverage

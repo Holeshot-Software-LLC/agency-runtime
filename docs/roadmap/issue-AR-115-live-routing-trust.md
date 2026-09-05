@@ -1,11 +1,16 @@
 ---
 title: "AR-115: Make live routing and Agency headers trustworthy"
-status: open
+status: wont_do
 category: roadmap
 created: 2026-07-21
-updated: 2026-08-12
+updated: 2026-09-05
 tags: [routing, headers, delegation, dashboard, testing]
 related:
+  - docs/decisions/0222-retire-superseded-live-routing-contract.md
+  - docs/decisions/0118-require-inference-owned-staffing.md
+  - docs/roadmap/issue-AR-119-inference-first-workforce.md
+  - docs/roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md
+  - docs/roadmap/issue-AR-357-canonical-response-contract-statement.md
   - README.md
   - agency_runtime/core/header/explanations.py
   - agency_runtime/core/selector/judge.py
@@ -13,14 +18,14 @@ related:
   - agency_runtime/server/mcp_tools.py
   - docs/decisions/0078-present-human-routing-evidence-and-abstain-on-noise.md
 supersedes: []
-superseded_by: null
+superseded_by: docs/roadmap/issue-AR-119-inference-first-workforce.md
 type: issue
 epic: routing
 issue_id: AR-115
 priority: p0
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/127
 depends_on: []
-blocks: [AR-116, AR-119]
+blocks: []
 ---
 
 # AR-115: Make live routing and Agency headers trustworthy
@@ -35,6 +40,21 @@ Passing synthetic evaluation scores did not catch this real prompt.
 
 ## Current state
 
+Retired as superseded under ADR-0222, not completed. The old heuristic-selection
+fallback and six-line Why/How header conflict with ADR-0118 and the implemented
+AR-357 five-field contract. AR-119 explicitly absorbs the current ordinary live
+selection/header obligation; AR-125 retains independent configured/held-out and
+host evidence. Both stay unfinished. This session's credential-unset staffing
+failure and unreadable header are not fixed or waived by this retirement.
+
+At source e5662d91, 183 focused routing/header/credential/resident-manager and
+documentation/tracker tests pass (19.11s). This is code/record evidence only;
+there is no new installed semantic matrix or native live pass. The original
+checked/unchecked criteria below remain unchanged and historical. Tracker #127
+is to close as not planned/superseded after this PR merges, not as completed.
+
+### Historical pre-retirement checkpoint
+
 Source and clean-distribution tests now reject the unrelated clinical,
 geography, translation, and generic-operations matches from the observed
 runtime/dashboard prompt. Configured Codex-subscription inference with an
@@ -45,6 +65,12 @@ still requires a fresh normal Codex task after plugin restart before this item
 can close.
 
 ## Approach
+
+Current disposition: stop maintaining a second, contradictory live-routing
+completion contract. Preserve relevant intent under AR-119/AR-125 with explicit
+links, supersede ADR-0078, and retain the old proposal below for provenance.
+
+### Historical proposal (not an implementation instruction)
 
 Keep raw reason and effect codes in the signed durable receipt and render a
 deterministic plain-English projection in the six-line response header. Require
@@ -64,11 +90,19 @@ live verification coverage.
 
 ## Dependencies
 
+Current authorities are ADR-0118, AR-357 and ADR-0222. AR-119 owns the surviving
+outcome and does not depend on implementing this retired design.
+
+Historical dependency description:
+
 ADR-0001 defines layered routing, ADR-0011 defines delegation evidence,
 ADR-0027 makes correlated receipts authoritative, and ADR-0030 requires
 quantitative routing gates.
 
 ## Acceptance
+
+Historical checklist only. Retirement is not an acceptance verdict; the three
+unchecked live gates were never proven and are not marked satisfied here.
 
 - [x] User-facing Why and How lines are readable prose.
 - [x] Raw reason and effect codes remain in durable routing receipts.

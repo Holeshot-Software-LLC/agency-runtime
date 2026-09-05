@@ -6,6 +6,7 @@ created: 2026-07-30
 updated: 2026-08-22
 tags: [evidence, finalization, headers, native-hosts, openclaw, hermes]
 related:
+  - docs/decisions/0222-retire-superseded-live-routing-contract.md
   - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
   - docs/roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md
   - docs/roadmap/issue-AR-278-keep-openclaw-finalization-first-pass.md
@@ -25,6 +26,10 @@ deciders: [maintainers]
 ---
 
 # ADR-0120: Construct evidence headers before first publication
+
+Schema note (2026-09-05, ADR-0222): the seven-field wording below is historical.
+AR-357's implemented canonical contract uses five HEADER_FIELDS; retain this
+ADR's first-publication/current-turn evidence principle, not the obsolete count.
 
 ## Context
 
