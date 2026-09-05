@@ -1,0 +1,55 @@
+AR-397 evidence, 2026-09-04, main 8f724248 (implementation dda2c8a3 and f67b718f, merged in PR #640)
+======================================================================
+
+1. The two suites at the candidate tree (system python3, -p no:cacheprovider).
+   tests/test_known_contractor_install.py tests/test_operations_contractors.py
+
+   ................................................                         [100%]
+   48 passed in 27.92s
+
+2. The five AR-397 tests by name, at the candidate tree.
+   -k "lifecycle_revision or prompt_changing_revision or metadata_only_revision or drifted_superseded_pin or superseded_packaged_identities"
+
+   .....                                                                    [100%]
+   5 passed, 28 deselected in 12.34s
+
+3. The same five tests grafted onto the pre-fix tree dda2c8a3^ (f94ef965, the merge of PR #639).
+   The mechanism does not exist there, so every one fails at import or at its first assertion.
+
+   FAILED tests/test_known_contractor_install.py::test_a_lifecycle_revision_reaches_the_live_contract_on_install
+   FAILED tests/test_known_contractor_install.py::test_a_prompt_changing_revision_advances_from_its_superseded_identity
+   FAILED tests/test_known_contractor_install.py::test_a_metadata_only_revision_is_repaired_from_its_superseded_identity
+   FAILED tests/test_known_contractor_install.py::test_a_drifted_superseded_pin_stops_the_install_on_a_current_machine
+   FAILED tests/test_known_contractor_install.py::test_superseded_packaged_identities_are_pinned_and_fail_closed
+   5 failed, 28 deselected in 1.87s
+
+4. The release-lifecycle test, at the candidate and on the pre-fix tree.
+   tests/test_operations_contractors.py -k covers_the_release_lifecycle
+
+   candidate : 1 passed, 14 deselected in 0.58s
+   pre-fix   : 1 failed, 14 deselected in 0.19s
+   pre-fix assertion: package.employment_contract.lifecycle_phases == ('observability', 'installation', 'implementation') fails;
+   the shipped definition carried ('observability', 'implementation') only.
+
+5. The live roster after install, read from a copy of ~/.agency-runtime/agency.db taken 2026-09-05T03:31Z.
+   The live store was never opened for write. Read with the c42fb0a5 venv's own package, cwd outside the checkout.
+   All five launchers/current-<host>.json name venv c42fb0a5 (runtime digest 929576f2), and
+   cli_install_drift_reports() from that venv returns an empty tuple: no host is drifted.
+
+   monitoring-engineer worker: current_hash == known_contractor_package(slug).compiled.prompt_hash -> True
+                               current_version contractor-4-a6b2d8cbe5df5cc1, revision 0, origin agency
+   store.packaged_workforce_divergence('monitoring-engineer')                     -> ()
+   get_workforce_worker_detail(...)['recruitment_contract']['lifecycle_phases']   -> ['implementation', 'release']
+   workforce_index_snapshot(store): monitoring-engineer lifecycle_phases          -> ('implementation', 'release'), 293 contracts
+   agent_hiring_cases for the slug: one case, type hire, status applied, created 2026-09-04T21:39:56,
+                                    packaged_hiring_case_is_auditable(row)          -> True
+
+   The worker was installed at the current package (revision 0), so the live store exercises
+   criteria 2 and 5 directly; criteria 1, 3 and 4 are exercised by the suite in sections 1 to 3,
+   whose stores are seeded at the superseded identity by _seed_packaged_identity.
+
+6. Pins that hold the mechanism closed, at the candidate tree.
+
+   _SUPERSEDED_KNOWN_CONTRACTOR_PROMPT_HASHES['monitoring-engineer'] == ('sha256:a6b2d8cbe5df5cc1e0ebf794b4b168f486818c29661d9ba8e8dd2d908c6eb6ca',)
+   which is the prompt hash the live worker carries (contractor-4-a6b2d8cbe5df5cc1 above): the shipped
+   and current prompts are identical, so the superseded revision differs only in its lifecycle phases.
