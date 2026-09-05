@@ -17,7 +17,7 @@ type: worklog
 commit: 47ab9fcebc1fe8106e7f776710db85e4be8c3e54
 short: 47ab9fce
 date: 2026-09-05
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/669
 related_issues:
   - docs/roadmap/issue-AR-400-preserve-staffing-progress-across-empty-gaps.md
   - docs/roadmap/issue-AR-401-enforce-preflight-deadlines-at-provider-boundaries.md
@@ -66,4 +66,3 @@ AR-401 needs transport and actual-preflight boundary regressions.
 AR-402 needs final safety review. The owner also requested a performance pass:
 test fresh-process roster-vector cache reuse without caching user prompts or
 changing inference quality.
-
