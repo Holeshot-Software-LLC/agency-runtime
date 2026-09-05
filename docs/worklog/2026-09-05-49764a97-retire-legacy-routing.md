@@ -18,7 +18,7 @@ type: worklog
 commit: 49764a978b1c023384fc77d92218e2cc616e4217
 short: 49764a97
 date: 2026-09-05
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/690
 related_issues:
   - docs/roadmap/issue-AR-115-live-routing-trust.md
 ---
