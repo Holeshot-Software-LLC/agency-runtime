@@ -377,6 +377,72 @@ def test_a_prompt_changing_revision_advances_from_its_superseded_identity(
     assert repeated.existing == tuple(sorted(KNOWN_CONTRACTORS_BY_SLUG))
 
 
+def test_a_metadata_only_revision_is_repaired_from_its_superseded_identity(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """AR-397: the positive scenario reaches routing metadata but not the prompt.
+
+    A revision touching only such a field leaves the live worker at the exact
+    packaged prompt with a superseded metadata identity; the repair pass must
+    still re-project it rather than classify the worker as amended.
+    """
+
+    from agency_runtime.core.workforce import known_contractors, known_installer
+    from agency_runtime.core.workforce.hiring_contract import parse_employment_contract
+
+    slug = "monitoring-engineer"
+    raw = known_contractors._monitoring_engineer_definition(
+        ["observability", "installation", "implementation"]
+    )
+    scenario = "Stand up monitoring and alerting for a host that was provisioned this week"
+    raw["preferred_scenarios"] = [scenario]
+    raw["positive_evaluations"][0]["scenario"] = scenario
+    synthetic = parse_employment_contract(raw)
+    monkeypatch.setitem(known_installer.SUPERSEDED_KNOWN_CONTRACTOR_CONTRACTS, slug, (synthetic,))
+    monkeypatch.setitem(
+        known_installer._SUPERSEDED_KNOWN_CONTRACTOR_PROMPT_HASHES,
+        slug,
+        (compile_contractor(synthetic).prompt_hash,),
+    )
+    (superseded,) = known_installer._superseded_known_contractor_packages(slug)
+    current = known_contractor_package(slug)
+    assert superseded.compiled.prompt_hash == current.compiled.prompt_hash
+    assert serialized_revision_metadata(superseded.agent) != serialized_revision_metadata(
+        current.agent
+    )
+
+    store = Store(tmp_path / "agency.db")
+    _seed_packaged_identity(store, superseded)
+    result = install_known_contractors(store)
+    assert slug in result.existing and result.upgraded == () and result.preserved == ()
+    assert store.packaged_workforce_divergence(slug) == ()
+    assert store.reconcile_packaged_workforce_contracts().updated == 1
+    snapshot = workforce_index_snapshot(store)
+    contract = next(item for item in snapshot.contracts if item.agent_id == slug)
+    assert contract.scope_qualifiers == current.workforce_contract.scope_qualifiers
+    assert scenario not in contract.scope_qualifiers
+
+
+def test_a_drifted_superseded_pin_stops_the_install_on_a_current_machine(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """AR-397: the pin is checked before the identity pass can report `existing`."""
+
+    from agency_runtime.core.workforce import known_installer
+
+    store = Store(tmp_path / "agency.db")
+    install_known_contractors(store)
+    monkeypatch.setitem(
+        known_installer._SUPERSEDED_KNOWN_CONTRACTOR_PROMPT_HASHES,
+        "monitoring-engineer",
+        ("sha256:" + "0" * 64,),
+    )
+    with pytest.raises(RuntimeError, match="drifted"):
+        install_known_contractors(store)
+
+
 def test_superseded_packaged_identities_are_pinned_and_fail_closed(monkeypatch) -> None:
     """AR-397: the reconstruction is checked against its pinned prompt hash."""
 

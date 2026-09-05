@@ -484,6 +484,15 @@ def known_contractor_revision_metadata_authorities(slug: str) -> tuple[str, ...]
             "required_tools": list(package.employment_contract.tools),
         }
         authorities.append(serialized_revision_metadata(legacy))
+    # AR-397: hosts, platforms and the positive and negative scenarios reach the
+    # routing metadata but not the compiled prompt, so a revision touching only
+    # them leaves the live worker at the exact packaged prompt with a superseded
+    # metadata identity. Naming that identity lets the repair pass re-project
+    # the recruitment contract instead of classifying the worker as amended.
+    authorities.extend(
+        serialized_revision_metadata(superseded.agent)
+        for superseded in _superseded_known_contractor_packages(slug)
+    )
     return tuple(dict.fromkeys(authorities))
 
 
@@ -589,6 +598,12 @@ def install_known_contractors(store: Any) -> KnownContractorInstallResult:
     existing: list[str] = []
     preserved: list[str] = []
     slugs = tuple(sorted(KNOWN_CONTRACTORS_BY_SLUG))
+    # AR-397: a drifted superseded pin must stop the install before any worker
+    # is judged. The identity pass below never consults predecessors for a
+    # worker that is already current, so a machine that is up to date would
+    # otherwise carry the rot silently until a machine that is behind hit it.
+    for slug in slugs:
+        _superseded_known_contractor_packages(slug)
     batch_reader = getattr(store, "get_workforce_workers_by_slugs", None)
     if callable(batch_reader):
         workers = batch_reader(slugs, disabled_agents=())
