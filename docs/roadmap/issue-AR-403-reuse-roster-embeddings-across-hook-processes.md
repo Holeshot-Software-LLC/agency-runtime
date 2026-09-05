@@ -16,7 +16,7 @@ issue_id: AR-403
 priority: p1
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/668
 depends_on: []
-blocks: []
+blocks: [AR-404]
 ---
 
 # AR-403: Reuse roster embeddings across native hook processes
