@@ -1676,10 +1676,7 @@ def test_a_staffing_failure_names_the_axis_only_when_the_roster_cannot_cover_it(
 
     assert _uncoverable_requirement_axis(unit, (analyst,)) == ""
     assert _uncoverable_requirement_axis(unit, ()) == "artifact"
-    assert (
-        _uncoverable_requirement_axis(unit, (replace(analyst, domains=("healthcare",)),))
-        == "domain"
-    )
+    assert _uncoverable_requirement_axis(unit, (replace(analyst, domains=("healthcare",)),)) == ""
     assert (
         _uncoverable_requirement_axis(
             replace(unit, required_capabilities=("automation",)), (analyst,)

@@ -327,22 +327,19 @@ class _NominationSemantics:""",
         ),
     ),
     DecisionMutation(
-        mutation_id="planner-domains-unserved-for-authority-accepted",
+        mutation_id="subject-domain-restored-as-execution-veto",
         invariant=(
-            "A planned unit none of whose domains any worker serves under the authority its "
-            "artifact kind implies is rejected for planner repair before the recruiter sees "
-            "it (ADR-0201)."
+            "Subject-domain labels cannot reject an otherwise execution-eligible specialist "
+            "or elevate a planning-only contract (ADR-0217 supersedes ADR-0201)."
         ),
-        source_path="agency_runtime/core/workforce/plan_policy.py",
-        before="""        if set(unit.domains) & set(served) or set(unit.domains) <= RUNTIME_DOMAINS:
-            continue
-        codes.append("plan_unit_domains_unserved")""",
-        after="""        if set(unit.domains) & set(served) or set(unit.domains) <= RUNTIME_DOMAINS or True:
-            continue
-        codes.append("plan_unit_domains_unserved")""",
+        source_path="agency_runtime/core/workforce/staffing_verifier.py",
+        before="""    # AR-402: division/category-derived subject labels are recall evidence,""",
+        after="""    if unit.domains and not set(unit.domains) & set(contract.domains):
+        reasons.append("agent_domain_mismatch")
+    # AR-402: division/category-derived subject labels are recall evidence,""",
         test_node=(
-            "tests/test_planner_domain_service.py::"
-            "test_a_unit_none_of_whose_domains_is_served_is_rejected"
+            "tests/test_subject_domain_eligibility.py::"
+            "test_backend_implementation_does_not_require_roblox"
         ),
     ),
     DecisionMutation(

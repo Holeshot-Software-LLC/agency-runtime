@@ -110,15 +110,15 @@ def _contract(
 
 
 def _desktop_engineer() -> WorkforceContract:
-    # The captured shape: the only desktop contract carries modify authority,
-    # so domain:desktop is a waived roster coverage gap on a plan unit.
+    # Preserve the waiver shape using a substantive capability (ADR-0217):
+    # its only declarer has modify authority, which cannot own the plan.
     return _contract(
         "desktop-app-engineer",
         authority="modify",
         artifact="implementation-change",
         lifecycle="implementation",
         domains=("software-engineering", "desktop"),
-        capabilities=("analysis", "implementation", "testing"),
+        capabilities=("analysis", "implementation", "testing", "simulation"),
     )
 
 
@@ -182,7 +182,7 @@ _PLAN = {
             "artifact_kind": "plan",
             "domains": ["desktop", "operations"],
             "stacks": [],
-            "capability_ids": ["planning", "operations"],
+            "capability_ids": ["planning", "operations", "simulation"],
             "novel_capability": "",
             "depends_on": [],
         }
@@ -273,7 +273,7 @@ def test_the_critic_contract_and_system_prompt_state_the_advisory_doctrine() -> 
     # The waived gap the critic is told about is the one the verifier recorded.
     reasons = critic_prompt["verified_staffing"]["abstention_reasons"]
     assert [(item["code"], item["detail"]) for item in reasons] == [
-        (ROSTER_COVERAGE_GAP, "domain:desktop")
+        (ROSTER_COVERAGE_GAP, "capability:simulation")
     ]
     # The system prompt says the same in words the critic reads first.
     for phrase in (
@@ -296,7 +296,7 @@ def test_an_approval_leaves_the_verified_decision_and_its_advisories_untouched()
     assert outcome.accepted
     assert outcome.staffing.units[0].selected == ("operations-manager",)
     assert outcome.staffing.abstention_reasons == (
-        AbstentionReason(ROSTER_COVERAGE_GAP, _UNIT, "", "domain:desktop"),
+        AbstentionReason(ROSTER_COVERAGE_GAP, _UNIT, "", "capability:simulation"),
     )
     assert outcome.abstention_codes == ()
 

@@ -19,7 +19,6 @@ from agency_runtime.core.host_capabilities import (
 )
 from agency_runtime.core.selector.cache import cache_key, routing_fingerprint
 from agency_runtime.core.selector.candidate_narrow import pre_narrow
-
 from agency_runtime.core.selector.pipeline import refine_query, route
 from agency_runtime.core.selector.policy import (
     detect_actions,
@@ -78,8 +77,6 @@ def _agent_summary(
         payload["score"] = round(float(score), 4)
     payload["selected"] = bool(selected)
     return payload
-
-
 
 
 def _rejection_reason(*, status: str, score: float, cache_hit: bool, session_reused: bool) -> str:

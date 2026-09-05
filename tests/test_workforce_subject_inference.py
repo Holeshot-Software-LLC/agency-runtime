@@ -56,7 +56,7 @@ def test_subject_answer_is_projected_through_the_same_guard_a_plan_uses() -> Non
 
 
 def test_an_all_empty_or_malformed_subject_answer_is_refused() -> None:
-    empty = dict.fromkeys(workforce_inference._SUBJECT_HINT_FIELDS, [])
+    empty = {name: [] for name in workforce_inference._SUBJECT_HINT_FIELDS}
     with pytest.raises(ValueError, match="empty"):
         workforce_inference._parse_subject_hints(empty)
 

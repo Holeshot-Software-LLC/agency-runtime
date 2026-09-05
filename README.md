@@ -805,6 +805,19 @@ routes, provider failures,
 malformed vectors, absent actual-model receipts, or cache-identity mismatches
 fall back to the unchanged typed candidate lane.
 
+Roster vectors also survive fresh hook processes in two owner-private cache
+slots beside the configured Store, under `recall-vectors-v1`. Both cache layers
+expire after one hour and bind to the exact roster, projection and provider.
+Only lossless roster vectors are persisted, never queries or staffing decisions.
+Every query rechecks the provider's actual model and dimensions. Unsafe or
+unreadable cache paths are misses; no quality review is skipped (AR-403).
+
+To measure this boundary from a development checkout, run
+`PYTHONPATH=. python scripts/benchmark_roster_recall.py --directory <private-benchmark-directory> --confirm-live-inference "RUN LIVE RECALL BENCHMARK"`
+twice as separate processes. It uses configured recall providers and a disposable
+packaged-roster Store, reporting cold/warm counts and times without staffing,
+hiring or host execution. This is a recall benchmark, not a host canary.
+
 `dimensions` is optional: zero (the default) omits the provider field. A
 nonzero value is valid only on an `embeddings` profile using `ollama`,
 `openai-compatible`, or `litellm`. Agency requires the provider to return that

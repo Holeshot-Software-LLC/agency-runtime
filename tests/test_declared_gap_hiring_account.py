@@ -102,7 +102,9 @@ def _codes(event: dict) -> tuple[str, ...]:
 def test_a_gap_unit_the_plan_does_not_contain_still_gets_an_event() -> None:
     # The leading candidate for the live 42: a repair re-planned the turn and
     # the retained staffing decision still refers to the first plan's unit ids.
-    outcome = _outcome(plan_units=(), reasons=(_reason(_GAP, "u1"), _reason(_ABSTAINED, "u1")), declared=("u1",))
+    outcome = _outcome(
+        plan_units=(), reasons=(_reason(_GAP, "u1"), _reason(_ABSTAINED, "u1")), declared=("u1",)
+    )
 
     assert _all_gap_units(outcome) == ("u1",)
     assert _hireable_gap_units(outcome) == ()
@@ -203,7 +205,11 @@ def test_no_event_lists_only_codes_that_support_the_opposite_conclusion() -> Non
 
     shapes = (
         _outcome(plan_units=(), reasons=(_reason(_GAP, "u1"),), declared=("u1",)),
-        _outcome(plan_units=("u1",), reasons=(_reason(_GAP, "u1"), _reason(_ABSTAINED, "u1")), declared=()),
+        _outcome(
+            plan_units=("u1",),
+            reasons=(_reason(_GAP, "u1"), _reason(_ABSTAINED, "u1")),
+            declared=(),
+        ),
         _outcome(
             plan_units=("u1",),
             reasons=(_reason("selection_confidence_too_low"), _reason(_GAP, "u1")),

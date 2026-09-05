@@ -190,10 +190,10 @@ def test_the_retry_never_outruns_the_call_budget() -> None:
 def test_the_codes_this_split_is_written_against_are_the_ones_that_exist() -> None:
     # A new code added to one half of the transport split must not silently
     # inherit either behaviour; this is the guard the parametrisation reads.
-    assert TRANSPORT_FAILURE_AFTER_REQUEST == {
+    assert {
         PROVIDER_CALL_TIMED_OUT,
         PROVIDER_HTTP_STATUS_ERROR,
         PROVIDER_RESPONSE_NOT_JSON,
         PROVIDER_MODEL_TEXT_NOT_JSON,
         PROVIDER_CALL_FAILED,
-    }
+    } == TRANSPORT_FAILURE_AFTER_REQUEST

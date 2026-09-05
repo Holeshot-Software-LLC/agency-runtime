@@ -374,8 +374,8 @@ def _domains(agent: Mapping[str, Any], division: str) -> tuple[str, ...]:
     if categories & {"code-intelligence", "lsp"} and "software-engineering" not in result:
         result.append("software-engineering")
     # Application-security and secure-code-review workers own software artifacts as well as
-    # security outcomes. Keeping them security-only makes an inferred unit that correctly names
-    # both domains impossible to staff, even when the exact specialist is present and eligible.
+    # security outcomes. Both subject labels help recall and inference recognize that scope;
+    # neither label is an execution-eligibility gate (ADR-0217).
     if (
         division == "security"
         and categories & {"application-security", "code-review"}

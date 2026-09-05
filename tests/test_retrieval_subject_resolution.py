@@ -158,9 +158,7 @@ def _outcome(
         proposal=SimpleNamespace(
             units=(SimpleNamespace(candidates=tuple(range(proposal_candidates))),)
         ),
-        attempts=(
-            SimpleNamespace(stage="recall_reranker", candidate_count=recall_candidates),
-        ),
+        attempts=(SimpleNamespace(stage="recall_reranker", candidate_count=recall_candidates),),
         abstention_codes=(),
     )
 
@@ -178,17 +176,13 @@ def test_a_real_subject_that_retrieved_nothing_is_not_underspecified() -> None:
     # and the operator could not tell them apart.
     outcome = _outcome(plan_units=({"domains": ("operations",)},))
 
-    assert _unstaffed_retrieval_codes(outcome, message_has_signal=False) == (
-        NO_RELEVANT_CANDIDATE,
-    )
+    assert _unstaffed_retrieval_codes(outcome, message_has_signal=False) == (NO_RELEVANT_CANDIDATE,)
 
 
 def test_a_message_that_named_something_is_never_underspecified() -> None:
     outcome = _outcome(plan_units=({"domains": ()},))
 
-    assert _unstaffed_retrieval_codes(outcome, message_has_signal=True) == (
-        NO_RELEVANT_CANDIDATE,
-    )
+    assert _unstaffed_retrieval_codes(outcome, message_has_signal=True) == (NO_RELEVANT_CANDIDATE,)
 
 
 def test_a_real_candidate_set_is_left_to_the_recruiters_own_verdict() -> None:
@@ -263,9 +257,7 @@ def test_the_code_reaches_the_decision_the_receipt_reads(
 def test_the_corpus_carries_a_case_for_every_operational_verb() -> None:
     from agency_runtime.core.evals.data.routing_v1 import ROUTING_CASES
 
-    verb_cases = {
-        str(case["id"]) for case in ROUTING_CASES if str(case["id"]).startswith("verb-")
-    }
+    verb_cases = {str(case["id"]) for case in ROUTING_CASES if str(case["id"]).startswith("verb-")}
 
     assert verb_cases == {
         "verb-install-distribution",

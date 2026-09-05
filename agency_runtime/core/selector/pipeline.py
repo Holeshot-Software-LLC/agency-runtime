@@ -44,6 +44,10 @@ from agency_runtime.core.host_capabilities import (
 from agency_runtime.core.host_guidance import (
     SPECIALIST_TOOL_GUIDANCE,
 )
+from agency_runtime.core.provider_deadline import (
+    PREFLIGHT_CLOSE_MARGIN_SECONDS,
+    bounded_preflight_route,
+)
 from agency_runtime.core.roster.limits import MAX_ACTIVE_ROSTER_SIZE
 from agency_runtime.core.selector import policy as policy_module
 from agency_runtime.core.selector.cache import (
@@ -1478,7 +1482,7 @@ GAP_HIRE_NOT_ATTEMPTED = "gap_hire_not_attempted"
 #: rather than running past the lease and losing the whole receipt.
 HIRING_LEASE_BUDGET_EXHAUSTED = "hiring_lease_budget_exhausted"
 # The close, projection and receipt still have to fit after the last hire.
-_HIRING_LEASE_MARGIN_SECONDS = 10.0
+_HIRING_LEASE_MARGIN_SECONDS = PREFLIGHT_CLOSE_MARGIN_SECONDS
 
 
 def _gap_hiring_verdicts(outcome: Any) -> dict[str, tuple[str, ...]]:
@@ -1520,9 +1524,7 @@ def _gap_hiring_verdicts(outcome: Any) -> dict[str, tuple[str, ...]]:
     in_plan = set(plan_order)
 
     verdicts: dict[str, tuple[str, ...]] = {}
-    for unit_id in [item for item in plan_order if item in gap_ids] + sorted(
-        gap_ids - in_plan
-    ):
+    for unit_id in [item for item in plan_order if item in gap_ids] + sorted(gap_ids - in_plan):
         if unit_id not in in_plan:
             verdicts[unit_id] = (GAP_UNIT_ABSENT_FROM_PLAN,)
             continue
@@ -1546,7 +1548,9 @@ def _hireable_gap_units(outcome: Any) -> tuple[str, ...]:
     """Return inference-declared uncovered units whose verifier evidence is clean."""
 
     return tuple(
-        unit_id for unit_id, disqualifier in _gap_hiring_verdicts(outcome).items() if not disqualifier
+        unit_id
+        for unit_id, disqualifier in _gap_hiring_verdicts(outcome).items()
+        if not disqualifier
     )
 
 
@@ -1625,8 +1629,8 @@ def _plan_states_a_subject(plan: Any) -> bool:
     """Whether the plan carries any typed identifier retrieval could act on."""
 
     for unit in tuple(getattr(plan, "units", ()) or ()):
-        for field in _SUBJECT_IDENTIFIER_FIELDS:
-            if tuple(getattr(unit, field, ()) or ()):
+        for identifier_field in _SUBJECT_IDENTIFIER_FIELDS:
+            if tuple(getattr(unit, identifier_field, ()) or ()):
                 return True
     return False
 
@@ -1901,6 +1905,9 @@ def _run_gap_hiring(
                 "inference_declared_gap",
                 *_gap_unit_reason_codes(outcome, unit_id),
             ),
+            deadline_monotonic=(
+                None if deadline is None else deadline - PREFLIGHT_CLOSE_MARGIN_SECONDS
+            ),
             # Inherit the amend-first default from hire_contractor_for_gap.
             # Pinning this False here kept AR-240's amend path unreachable at
             # runtime: a near-match worker could never be extended, so every
@@ -1970,6 +1977,7 @@ def _run_gap_hiring(
     return outcome, active_snapshot, active_catalog, events
 
 
+@bounded_preflight_route
 def route(
     session_id: str,
     user_message: str,
@@ -2179,6 +2187,9 @@ def route(
             request.user_message,
             request.workforce_snapshot,
             subject_inference_required=subject_inference_required,
+            catalog_cache_directory=(
+                store.db_path.parent / "recall-vectors-v1" if store is not None else None
+            ),
             config=cfg,
             context=staffing_context,
             routing_context_fingerprint=request.context_fingerprint,

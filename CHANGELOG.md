@@ -73,6 +73,19 @@ changes rather than duplicating every commit.
 
 ### Added
 
+- Staffing preserves completed gap fills while other units remain unfilled and
+  retains unrelated assignments during worker amendment (AR-400).
+- Every preflight inference stage shares an absolute deadline, including
+  repairs, fallback, embeddings and hiring reviews, with time reserved to
+  record the terminal result (AR-401).
+- Subject-domain tags inform recall and the recruiter without becoming
+  execution-authority or mandatory team-coverage gates (AR-402). Audited
+  authority, explicit exclusions and substantive requirements remain enforced.
+- Fresh hook processes reuse lossless, identity-bound roster embeddings from a
+  private, bounded one-hour cache (AR-403). Every current query is still embedded;
+  recruiter, critic and hiring reviews are unchanged. Failure receipts retain
+  bounded recall work counts.
+
 - A planner reply that is one complete object followed by a stray closing
   brace is applied instead of read as prose (AR-399): the parser keeps the
   first complete object when only closing brackets or whitespace follow it,

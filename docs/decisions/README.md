@@ -122,7 +122,7 @@ Status meanings:
 | [ADR-0192](0192-route-content-invalid-completions-to-a-content-fallback-profile.md) | Route content-invalid completions to a content-fallback profile | Accepted |
 | [ADR-0199](0199-give-each-inference-stage-its-own-reply-budget.md) | Give each inference stage its own reply budget and name a cut reply on the receipt | Accepted |
 | [ADR-0200](0200-bind-the-strict-critic-to-the-advisory-doctrine.md) | Bind the strict critic to the advisory doctrine and name its veto on the receipts | Accepted |
-| [ADR-0201](0201-constrain-the-planner-domains-to-what-the-roster-serves.md) | Constrain the planner's domains to what the roster serves under the unit's authority | Accepted |
+| [ADR-0201](0201-constrain-the-planner-domains-to-what-the-roster-serves.md) | Constrain the planner's domains to what the roster serves under the unit's authority | Superseded |
 | [ADR-0202](0202-read-the-recruiter-reply-where-no-safety-property-lives.md) | Read the recruiter's reply where no safety property lives, and never leave a rejected attempt blank | Accepted |
 | [ADR-0203](0203-show-the-recruiter-the-complete-eligible-card-set-per-unit.md) | Show the recruiter the complete eligible card set per unit | Accepted |
 | [ADR-0204](0204-name-the-credential-the-launching-environment-never-carried.md) | Name the credential the launching environment never carried | Accepted |
@@ -134,7 +134,10 @@ Status meanings:
 | [ADR-0210](0210-account-for-every-declared-gap.md) | Account for every declared gap | Accepted |
 | [ADR-0211](0211-give-retrieval-a-subject-and-name-the-empty-turn.md) | Give retrieval a subject and name the empty turn | Accepted |
 | [ADR-0212](0212-ask-again-when-a-complete-reply-is-not-json.md) | Ask again when a complete reply is not JSON | Accepted |
-| [ADR-0213](0213-the-verifier-judges-safety-retrieval-judges-fit.md) | The verifier judges safety; retrieval judges fit | Accepted |
+| [ADR-0213](0213-the-verifier-judges-safety-retrieval-judges-fit.md) | The verifier judges safety; retrieval judges fit | Superseded |
+| [ADR-0216](0216-enforce-one-preflight-inference-deadline.md) | Enforce one preflight inference deadline | Accepted |
+| [ADR-0217](0217-keep-subject-domains-out-of-execution-authority.md) | Keep subject domains out of execution authority | Accepted |
+| [ADR-0218](0218-cache-only-roster-vectors-across-hook-processes.md) | Cache only roster vectors across hook processes | Accepted |
 | [ADR-0214](0214-close-a-preflight-attempt-on-its-token-not-its-lease.md) | Close a preflight attempt on its token, not its lease, and bound hiring by the lease | Accepted |
 | [ADR-0215](0215-accept-one-complete-object-with-a-trailing-bracket.md) | Accept one complete object followed only by closing brackets, and name the repair | Accepted |
 

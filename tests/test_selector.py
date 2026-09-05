@@ -15,7 +15,6 @@ from agency_runtime.core.config import AgencyConfig
 from agency_runtime.core.selector.cache import cache_get, cache_key, cache_put, clear_cache
 from agency_runtime.core.selector.candidate_narrow import pre_narrow, score_agent, tokenize
 from agency_runtime.core.selector.delegation_detection import detect_work_units
-
 from agency_runtime.core.selector.intent_text import (
     affirmative_intent,
     mask_excluded_intent,
@@ -178,7 +177,6 @@ def test_no_query_is_expanded_with_curated_discipline_vocabulary() -> None:
             "model serving",
         ):
             assert discipline not in request.routing_query.casefold()
-
 
 
 def test_affirmative_intent_masks_only_explicit_exclusions():

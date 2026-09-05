@@ -593,7 +593,6 @@ def test_critic_can_independently_validate_runtime_gap_evidence(tmp_path: Path) 
             == [
                 "artifact:implementation-change",
                 "lifecycle:implementation",
-                "domain:quantum-build-systems",
                 "stack:typescript",
                 "capability:implementation",
                 "authority:modify",
@@ -679,7 +678,6 @@ def test_verified_gap_projection_excludes_ineligible_partial_coverage(
             "execution_eligible": False,
             "ineligibility_reasons": [
                 "agent_authority_mismatch",
-                "agent_domain_mismatch",
                 "agent_stack_mismatch",
                 "agent_capability_mismatch",
                 "agent_explicitly_out_of_scope",

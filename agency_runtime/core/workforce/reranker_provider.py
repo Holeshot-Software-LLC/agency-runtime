@@ -26,6 +26,8 @@ from agency_runtime.core.config import (
     is_safe_credential_url,
 )
 from agency_runtime.core.http_safety import open_no_redirect
+from agency_runtime.core.provider_deadline import remaining_provider_timeout
+from agency_runtime.core.structured_provider import _read_http_response
 
 MAX_RERANKER_DOCUMENTS = 64
 MAX_RERANKER_QUERY_BYTES = 256 * 1_024
@@ -332,11 +334,16 @@ def invoke_reranker_provider(
 
     bounded_query, bounded_documents = _bounded_inputs(query, documents)
     request, timeout = _provider_request(provider, bounded_query, bounded_documents)
+    timeout = remaining_provider_timeout(timeout)
+    if timeout <= 0:
+        raise TimeoutError("provider_deadline_exhausted")
     started = time.monotonic()
     with open_no_redirect(request, timeout=timeout) as response:
-        raw = response.read(MAX_RERANKER_RESPONSE_BYTES + 1)
-    if len(raw) > MAX_RERANKER_RESPONSE_BYTES:
-        raise ValueError("reranker provider response exceeds its size bound")
+        raw = _read_http_response(
+            response, deadline=started + timeout, maximum_bytes=MAX_RERANKER_RESPONSE_BYTES
+        )
+    if raw is None:
+        raise ValueError("reranker provider response exceeds its size or time bound")
     decoded = safe_load_bounded_json(
         raw,
         maximum_bytes=MAX_RERANKER_RESPONSE_BYTES,

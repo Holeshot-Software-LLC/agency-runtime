@@ -26,6 +26,10 @@ from agency_runtime.core.config import (
 )
 from agency_runtime.core.http_safety import open_no_redirect
 from agency_runtime.core.model_capabilities import requires_completion_token_parameter
+from agency_runtime.core.provider_deadline import (
+    PROVIDER_DEADLINE_EXHAUSTED,
+    remaining_provider_timeout,
+)
 from agency_runtime.core.reply_budget import (
     PROVIDER_CALL_FAILED,
     PROVIDER_CALL_TIMED_OUT,
@@ -251,7 +255,9 @@ def _set_response_read_timeout(response: object, timeout: float) -> bool:
     return updated
 
 
-def _read_http_response(response: object, *, deadline: float) -> bytes | None:
+def _read_http_response(
+    response: object, *, deadline: float, maximum_bytes: int = MAX_STRUCTURED_RESPONSE_BYTES
+) -> bytes | None:
     """Read one bounded response without allowing slow-drip deadline extension."""
 
     reader = getattr(response, "read1", None)
@@ -263,25 +269,25 @@ def _read_http_response(response: object, *, deadline: float) -> bytes | None:
         if remaining <= 0:
             return None
         _set_response_read_timeout(response, remaining)
-        value = reader(MAX_STRUCTURED_RESPONSE_BYTES + 1)
+        value = reader(maximum_bytes + 1)
         if time.monotonic() >= deadline or not isinstance(
             value,
             (bytes, bytearray, memoryview),
         ):
             return None
         raw = bytes(value)
-        return raw if len(raw) <= MAX_STRUCTURED_RESPONSE_BYTES else None
+        return raw if len(raw) <= maximum_bytes else None
 
     chunks: list[bytes] = []
     total = 0
-    while total <= MAX_STRUCTURED_RESPONSE_BYTES:
+    while total <= maximum_bytes:
         remaining = deadline - time.monotonic()
         if remaining <= 0:
             return None
         _set_response_read_timeout(response, remaining)
         requested = min(
             _STRUCTURED_READ_CHUNK_BYTES,
-            (MAX_STRUCTURED_RESPONSE_BYTES + 1) - total,
+            (maximum_bytes + 1) - total,
         )
         value = reader(requested)
         if not isinstance(value, (bytes, bytearray, memoryview)):
@@ -719,6 +725,22 @@ def _http_provider_is_safe(provider: ProviderEntry, api_key: str) -> bool:
     return bool(api_key or keyless_loopback)
 
 
+def _valid_request_text(prompt: object, system_prompt: object) -> bool:
+    if not isinstance(prompt, str) or not isinstance(system_prompt, str):
+        return False
+    try:
+        return bool(
+            prompt.strip()
+            and "\x00" not in prompt
+            and len(prompt.encode("utf-8")) <= MAX_STRUCTURED_PROMPT_BYTES
+            and system_prompt.strip()
+            and "\x00" not in system_prompt
+            and len(system_prompt.encode("utf-8")) <= MAX_STRUCTURED_SCHEMA_BYTES
+        )
+    except UnicodeError:
+        return False
+
+
 def invoke_structured_provider_result(
     provider: ProviderEntry,
     prompt: str,
@@ -740,25 +762,15 @@ def invoke_structured_provider_result(
             provider, provider_type, started, reason=reason, call_attempted=False
         )
 
-    if not isinstance(prompt, str) or not isinstance(system_prompt, str):
-        return _refused(PROVIDER_REQUEST_INVALID)
-    try:
-        invalid_text = (
-            not prompt.strip()
-            or "\x00" in prompt
-            or len(prompt.encode("utf-8")) > MAX_STRUCTURED_PROMPT_BYTES
-            or not system_prompt.strip()
-            or "\x00" in system_prompt
-            or len(system_prompt.encode("utf-8")) > MAX_STRUCTURED_SCHEMA_BYTES
-        )
-    except UnicodeError:
-        return _refused(PROVIDER_REQUEST_INVALID)
-    if invalid_text:
+    if not _valid_request_text(prompt, system_prompt):
         return _refused(PROVIDER_REQUEST_INVALID)
     schema_bytes = _bounded_json(schema, maximum_bytes=MAX_STRUCTURED_SCHEMA_BYTES)
     request_timeout = _bounded_timeout(provider.timeout if timeout is None else timeout)
     if schema_bytes is None or request_timeout <= 0:
         return _refused(PROVIDER_REQUEST_INVALID)
+    request_timeout = remaining_provider_timeout(request_timeout)
+    if request_timeout <= 0:
+        return _refused(PROVIDER_DEADLINE_EXHAUSTED)
     if provider_type == "cli":
         value = invoke_cli_structured(
             provider,
@@ -809,6 +821,9 @@ def invoke_structured_provider_result(
         headers=_http_headers(provider_type, api_key),
         method="POST",
     )
+    request_timeout = remaining_provider_timeout(request_timeout)
+    if request_timeout <= 0:
+        return _refused(PROVIDER_DEADLINE_EXHAUSTED)
     deadline = time.monotonic() + request_timeout
 
     # AR-392: from here the request has left the runtime, so every failure
@@ -828,7 +843,7 @@ def invoke_structured_provider_result(
     try:
         with open_no_redirect(request, timeout=request_timeout) as response:
             raw = _read_http_response(response, deadline=deadline)
-    except Exception as exc:  # noqa: BLE001 - classified, never propagated
+    except Exception as exc:
         reason, http_status = _transport_exception_cause(exc)
         return _failed(reason, http_status=http_status)
     if raw is None:
@@ -837,6 +852,15 @@ def invoke_structured_provider_result(
     response_object = _parse_json_object(raw)
     if response_object is None:
         return _failed(PROVIDER_RESPONSE_NOT_JSON)
+    return _parsed_http_result(provider, provider_type, started, response_object)
+
+
+def _parsed_http_result(
+    provider: ProviderEntry,
+    provider_type: str,
+    started: float,
+    response_object: Mapping[str, Any],
+) -> StructuredProviderResult:
     ollama_mode = provider.ollama_mode or provider_type == "ollama"
     reply_budget, completion_cap = _requested_completion_cap(provider)
     completion_tokens, finish_reason = _response_usage(
@@ -851,7 +875,13 @@ def invoke_structured_provider_result(
             # The body was JSON and complete; the model text inside it was
             # not a JSON object. The sibling of a truncated reply, and not
             # the same thing: nothing was cut.
-            return _failed(PROVIDER_MODEL_TEXT_NOT_JSON)
+            return _failure_result(
+                provider,
+                provider_type,
+                started,
+                reason=PROVIDER_MODEL_TEXT_NOT_JSON,
+                call_attempted=True,
+            )
         # The reply was cut before a complete JSON object formed. Return the
         # truncation as evidence rather than a bare None, so the stage can
         # record why it has nothing to parse instead of "no valid response".
