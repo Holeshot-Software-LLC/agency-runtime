@@ -25,8 +25,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-404
 branch: codex/ar348-strict-hiring-independence
-evidence_commit: 2e5454bc33fd9f908782e95bd5f33257e4e1b7b1
-minimum_ledger_commit: b5340642a53fdafa2baa5dcdb16c1e9b851c8b70
+evidence_commit: c9b678a57bf3626b816cfe368de74001292ec0da
+minimum_ledger_commit: 6812119f6962003a260ce8280c275479ef0349e3
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -50,7 +50,9 @@ No implementation agents were delegated. Umbrella remains implementing.
   covered through the public hiring entry point. No external inference ran.
   Runtime fix under ADR-0221: 413 focused passes/one skip, 1075 spine passes/
   three skips, UI/routing/Ruff pass. Two added curated mutations have 17 passing
-  catalog tests; the protected 184-case run and isolated acceptance are pending.
+  catalog tests. Both original criteria satisfied against c9b678a5. Conformance
+  stopped in fixture setup under umask 0002, zero mutations, source unchanged;
+  targeted diagnostic agrees. Use documented process-local 0077 for rerun.
 - The owner's 43 open tracker count is correct at e4255836. The reported 147
   was 43 mapped open trackers plus 104 unfinished local pre-tracker records.
   They are a reconciliation queue, not 104 proved extra defects. Full local
@@ -98,7 +100,7 @@ No implementation agents were delegated. Umbrella remains implementing.
 
 ## Exact blocker
 
-AR-348 implementation is green in focused tests, not yet accepted or installed.
+AR-348 has two satisfied criteria. Protected conformance and install are pending.
 Prior PRs #683..686 are merged and #682 is closed. The mixed-scope failure is preserved;
 the product scope is explicitly corrected, not relabeled as an original pass.
 Do not claim "most done" before relevance and evidence are examined. Do not

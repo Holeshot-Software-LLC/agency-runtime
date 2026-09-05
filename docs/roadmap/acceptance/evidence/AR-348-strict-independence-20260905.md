@@ -87,9 +87,25 @@ reviewer route after preflight and require the invocation guard to reject it.
   preflight. Their catalog/runner tests pass: 17 passed in 0.25s. The prior
   full spine preceded only this catalog addition; runtime source is unchanged.
 
-## Remaining verification
+## Verification at implementation checkpoint
 
 The new 184-case protected conformance run, isolated acceptance verdicts,
 merged-main delivery and installed smoke remain pending at this checkpoint.
 No old 182-case result is claimed as this package's evidence. No exhaustive
 Python/coverage matrix, live host canary, new credential or hook-trust change.
+
+## Post-candidate verification
+
+Both original criteria received satisfied isolated Codex verdicts against
+c9b678a5: AR-348.1-20260905-7e0a8723 and AR-348.2-20260905-161d16c3.
+No acceptance criterion was changed and no second judgment pass was needed.
+
+The first 184-case conformance attempt failed baseline fixture setup in 1.059s,
+before any mutation or test failure node: ensure_private_directory rejected the
+copied offline-config creation boundary. Source remained unchanged. A bounded
+two-mutation diagnostic reproduced the same fixture error (1.117s), again with
+zero mutations run and source unchanged. Shell umask is 0002; AR-297 and the
+prior AR-405 receipt already document protected 0077 execution for this gate.
+The next run sets umask only in the evaluation process. No existing filesystem
+permissions, validation check, test, or product behavior is altered by that fix.
+Protected conformance and installed delivery are still pending here.

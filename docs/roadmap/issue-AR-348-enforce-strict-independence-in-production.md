@@ -38,6 +38,12 @@ AR-235 specified.
 
 ## Current state
 
+Both unchanged acceptance criteria are satisfied against c9b678a5. The protected
+conformance attempt stopped in fixture setup because it inherited umask 0002;
+zero mutations ran and source stayed unchanged. A targeted diagnostic reproduced
+the same known private-directory boundary. The documented process-local 0077
+rerun and merged installed smoke are pending; do not claim the failed gate passed.
+
 Implemented on the working branch under ADR-0221. Focused package: 413 passed,
 one existing skip (20.52s); named spine: 1075 passed, three existing skips
 (72.29s). The new boundary recheck tests supplement the original 43-case red

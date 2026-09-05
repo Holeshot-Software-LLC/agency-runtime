@@ -43,3 +43,5 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/406
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
+| 1 | satisfied | `AR-348.1-20260905-7e0a8723` | `68796a078660432965f5f2e7d351a6858c47df0be34c78dbe598b8a437e43fa6` | 2026-09-05 | hiring.py:2400-2485 enforces strict independence before invocation; test_workforce_dynamic_hiring.py:507-617 exercises hire_contractor_for_gap and asserts the route-named ConfigValidationError and zero calls; the cited verification records 413 passing tests. |
+| 2 | satisfied | `AR-348.2-20260905-161d16c3` | `2c8608d9f7717f02db2d6122989c9dfcc32f99628a1ea7b0a777f3520cacfdfc` | 2026-09-05 | inference_profiles.py returns immediately when strict_independence is false; hiring.py preserves overlap warnings, and the non-strict hiring and safety-repair tests assert successful hiring with recorded warnings in the reported passing focused suite. |
