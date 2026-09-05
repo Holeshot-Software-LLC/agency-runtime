@@ -135,6 +135,7 @@ Status meanings:
 | [ADR-0211](0211-give-retrieval-a-subject-and-name-the-empty-turn.md) | Give retrieval a subject and name the empty turn | Accepted |
 | [ADR-0212](0212-ask-again-when-a-complete-reply-is-not-json.md) | Ask again when a complete reply is not JSON | Accepted |
 | [ADR-0213](0213-the-verifier-judges-safety-retrieval-judges-fit.md) | The verifier judges safety; retrieval judges fit | Accepted |
+| [ADR-0215](0215-accept-one-complete-object-with-a-trailing-bracket.md) | Accept one complete object followed only by closing brackets, and name the repair | Accepted |
 
 ## Evidence and observability
 

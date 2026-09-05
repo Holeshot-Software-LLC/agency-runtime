@@ -1,0 +1,56 @@
+AR-399 evidence, 2026-09-05, main 1e24da20, branch claude/ar399-trailing-brace
+======================================================================
+
+1. The four planner replies captured through the real UserPromptSubmit hook against a store copy
+   (session 3a994fdc, payloads-notif1 and payloads-notif2, capture_full.py keeping full replies).
+   Prompt shape: a system-notification text delivered as the user message. Every reply is a
+   complete plan object followed by one stray closing brace; json.loads fails with Extra data.
+
+   notif1 seq 1: finish=stop len=521 tail='}]} }' completion_tokens=270 -> Extra data: line 1 column 521 (char 520)
+   notif1 seq 2: finish=stop len=525 tail='}]}}\n' completion_tokens=230 -> Extra data: line 1 column 524 (char 523)
+   notif2 seq 1: finish=stop len=496 tail='}]} }' completion_tokens=321 -> Extra data: line 1 column 496 (char 495)
+   notif2 seq 2: finish=stop len=492 tail='}]} }' completion_tokens=260 -> Extra data: line 1 column 492 (char 491)
+
+   The hook reported both turns as: [Agency staffing failed this turn: workforce_provider_unavailable;
+   staffing: inference_unavailable]. Each planner reply was asked twice (ADR-0212's second ask) and
+   drew the same shape both times.
+
+2. The same four replies through the branch parser (_parse_model_text_with_repair), cwd outside the checkout:
+
+   notif1 seq 1: tail ']} }'  -> parsed units=1 repair=model_text_trailing_data_trimmed
+   notif1 seq 2: tail ']}}\n' -> parsed units=1 repair=model_text_trailing_data_trimmed
+   notif2 seq 1: tail ']} }'  -> parsed units=1 repair=model_text_trailing_data_trimmed
+   notif2 seq 2: tail ']} }'  -> parsed units=1 repair=model_text_trailing_data_trimmed
+   replies: 4
+
+3. Shapes from the branch smoke (value -> parsed, repair). The first-to-last-brace span runs first and
+   still accepts trailing prose after a complete object, exactly as main did; the new path only
+   admits a tail of closing brackets, fence ticks or whitespace after a stray bracket.
+
+   '{"a":1}} and that is the plan' -> (None, '')       -- a stray bracket followed by prose
+   'The plan is to triage it.'     -> (None, '')       -- prose
+   '} {'                           -> (None, '')
+   '[1, 2]}'                       -> (None, '')       -- no object
+   '{"a":1} and that is the plan'  -> ({'a': 1}, '')  -- accepted by the old span, no repair
+   '{"a":1}'                       -> ({'a': 1}, '')  -- a clean object needs no repair
+   '{"a":[[[...10000 deep...]]]}}'  -> (None, '')       -- past the recursion limit, not an error
+
+4. The new suite at the branch (system python3, -p no:cacheprovider).
+
+   tests/test_trailing_brace_reply.py: 10 passed in 0.17s
+
+5. The neighbourhood: every test file that imports structured_provider, the parser or the reply
+   budget, plus the planner second-ask and transport-cause suites (33 files).
+
+   6 failed, 827 passed, 18 skipped in 194.56s
+   the six failures rerun on the main checkout: 6 failed -- identical and pre-existing:
+     tests/test_durable_continuation.py (3), tests/test_http_server.py (2), tests/test_public_api.py (1)
+
+6. Lint on the three edited modules: identical to main (C901 and RUF100 in structured_provider.py,
+   F401 in inference.py, all pre-existing); structured_provider.py's format state is main's.
+
+7. Live window, read from the 03:59Z control copy of the live store: 14 receipts since the c42fb0a5
+   install; 10 end inference_unavailable. Five of those (all claude) carry two planner attempts each
+   reading provider_model_text_not_json (5.6 to 8.5 s, actual_model empty) -- the shape this fixes.
+   The other five are zcode receipts with no provider attempt at all, a different failure behind the
+   same staffing code, unchanged by this fix.

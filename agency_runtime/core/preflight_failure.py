@@ -26,6 +26,9 @@ _HIRING_EVENT_STATUSES = frozenset(
 
 PREFLIGHT_FAILURE_INVARIANTS = frozenset({"", "native_plan_scope_invalid"})
 
+# AR-399: runtime-owned repair codes the transport attaches to an applied
+# attempt; they are not model text and belong on the receipt for any stage.
+_TRANSPORT_REPAIR_REASON_CODES = frozenset({"model_text_trailing_data_trimmed"})
 _RECRUITER_VALIDATION_REASON_CODES = frozenset(
     {
         "recruiter_candidate_classification_conflict",
@@ -233,13 +236,13 @@ def _project_validation_reason_codes(value: object, *, stage: str) -> list[str]:
 
         allowed = TURN_ROUTING_CONTEXT_REJECTION_CODES
     else:
-        return []
+        allowed = frozenset()
     result: list[str] = []
     for item in value:
         if not isinstance(item, str):
             return []
         code = item.strip().casefold()
-        if code not in allowed:
+        if code not in allowed and code not in _TRANSPORT_REPAIR_REASON_CODES:
             return []
         if code not in result:
             result.append(code)

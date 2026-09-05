@@ -1906,6 +1906,11 @@ def _invoke_stage(
                     status="applied",
                     reason_code="structured_response_applied",
                     result=result,
+                    # AR-399: an applied reply that needed a repair says so, so
+                    # the receipt can tell a clean answer from a rescued one.
+                    validation_reason_codes=(
+                        (result.model_text_repair,) if result.model_text_repair else ()
+                    ),
                 )
             )
             return parsed, attempts, ""
