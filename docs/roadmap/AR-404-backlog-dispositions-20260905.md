@@ -60,6 +60,15 @@ create a new external tracker or silently claim external parity.
 
 ## Next packages
 
+Continuation after the first record batch: AR-405 is implemented and accepted
+through PR #678. The build-test file returns 100 passed/one native-only skip;
+the wider seven files return 452 passed/three skips. Three isolated criteria
+are satisfied. Protected conformance passes baseline plus 182 mutation kills;
+the initial ambient-umask private-boundary failure is retained in its evidence.
+No production identity code changed. Current unfinished count is 148: the same
+147 baseline records plus AR-404. AR-271 is the next runtime package; the
+first-batch table above remains a historical disposition checkpoint.
+
 Verification checkpoint: 1004 named-spine tests pass (three skips), 138 UI tests
 pass, and 207 documentation/acceptance/tracker/distribution-verifier tests pass.
 The 181 focused installer checks and wider two-failure result are separate.

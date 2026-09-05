@@ -19,9 +19,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-404
-branch: codex/ar404-backlog-reconciliation
-evidence_commit: 8e9cb4830eb6882540272dd29f084d5209c46ee7
-minimum_ledger_commit: d047754ab4b4d97ce829a6ec6b62ea3e11738357
+branch: codex/ar405-portable-directory-identity
+evidence_commit: 970293d7c315df955080635f88223e72734bdd72
+minimum_ledger_commit: 92b6f13cccbeb43f6a1043ea4f4fd6b09b0596ee
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -34,11 +34,13 @@ The owner asked to commit review artifacts, plan and implement the findings,
 then clean up and complete the backlog. This item owns the full baseline, not
 just the completed review slice. The latest request prioritizes semantically
 triaging done, contradictory and unwanted records before more implementation.
-Umbrella phase: implementing. The first record package has passed its scoped
-review and fast verification; PR #676 is its delivery and worklog records the
-exact merge outcome. No implementation agents were delegated. The current
-batch retires four obsolete contracts, reconciles current no-helper release
-acceptance and records AR-285's incomplete acceptance without closing it.
+Umbrella phase: implementing. The first record package is pushed and merged
+through PR #676 and ledger #677; origin/main is 3ed51069. The owner asked to
+push and continue. The current AR-405 test-only package repairs the reproduced
+Linux failures and reaches its local observable demo; all three isolated
+acceptance criteria are satisfied against 593f074f. Protected conformance passed
+its baseline and 182/182 mutations; PR #678 carries the completed outcome.
+AR-271 is next. No implementation agents were delegated.
 
 ## Completed evidence
 
@@ -71,7 +73,20 @@ acceptance and records AR-285's incomplete acceptance without closing it.
   changed-precondition dry-run receipt keep the issue open; its two boxes reopen.
 - Wider focused run: 443 passed, two skipped, two failed on Linux-only absence
   of Windows file attributes. Filed AR-405 (#675); no code was changed.
-- At this checkpoint: 147 unfinished baseline records plus AR-404 and AR-405.
+- Next AR-405 package reproduces 91 pass/two fail in the build-test file,
+  then returns 100 pass/one native-only skip after a test-only correction.
+  Portable real directory I/O and same-path replacement remain asserted;
+  synthetic volatile-bit, wrong-kind, reparse, inode and device cases run on Linux.
+  Wider focused run is now 452 pass/three skips. Named fast spine 1004 pass/three
+  skips (63.23s), UI 138 pass. Windows execution remains explicitly unavailable.
+  Production identity logic and installed runtime payload are unchanged.
+- AR-405 Codex isolated runs 124a4504/c63ec485/346df944 satisfy all three
+  criteria. The unmodified conformance command first failed its baseline's
+  private-directory boundary under inherited umask 0002; no mutations ran and
+  source was unchanged. The protected umask 077 rerun passed its baseline
+  (99.433s), killed 182/182 mutations with zero invalid/survived and no source drift.
+- First record checkpoint: 147 unfinished baseline records plus AR-404 and AR-405.
+- AR-405 completion: 147 unfinished baseline records plus AR-404 (148 total).
 - Named fast spine: 1004 passed, three skipped in 64.18 seconds; UI 138 passed;
   docs/acceptance/tracker/distribution-verifier focused tests 207 passed.
   Ruff, format, metadata, policy, worklog and strict docs/tracker checks pass.
@@ -84,11 +99,12 @@ acceptance and records AR-285's incomplete acceptance without closing it.
 
 ## Exact blocker
 
-AR-285 is not done: its two absent evidence criteria are retained. AR-405's two
-existing Linux release-test failures remain a separate package. Neither blocks
-delivering the truthful record-reconciliation package through PR #676, but both
-block claiming their affected acceptance complete. No exhaustive workflow,
-Windows run, host trust bypass or service interruption was performed.
+AR-285 is not done: its two absent evidence criteria are retained. AR-405's
+Linux test repair is implemented, locally demonstrated and isolated-accepted;
+its final verification passed and PR #678 carries its delivery.
+No exhaustive workflow, Windows run, host trust bypass or service interruption
+was performed. This turn's requested Codex install refresh found current files;
+attended hook trust remains unverified and the running process remains stale.
 
 The entire backlog is not complete. AR-348 was reproduced against current
 production hiring with fake valid replies in a disposable Store:
@@ -112,15 +128,16 @@ rewritten. The old PATH launcher was backed up before its interpreter changed.
 
 ## Next bounded work package
 
-1. Preserve AR-285's two evidence gaps; add actual trusted-runner wiring citations
+1. Finish AR-405 isolated acceptance and PR/ledger delivery, then implement the
+   genuine AR-271 uninstall classifier gap with last-moment safety regressions.
+2. Preserve AR-285's two evidence gaps; add actual trusted-runner wiring citations
    and recover the successful changed-precondition dry-run receipt or obtain
    authority for a fresh bounded proof. Never turn absent verdicts into done.
-2. Verify implemented inspection/observability work such as AR-298; reconcile
+3. Verify implemented inspection/observability work such as AR-298; reconcile
    AR-337's four-host battery versus all-supported-harness wording and AR-351's
    obsolete domain-axis clause before implementing old proposals.
-3. Deliver genuine AR-271 uninstall-classifier and AR-348/349 hiring-safety
-   gaps as separate packages; retain AR-405's Linux regression follow-up.
-4. Continue AR-253 quality/latency proof and explicitly reconcile AR-393's
+4. Deliver AR-348/349 hiring-safety gaps as separate packages.
+5. Continue AR-253 quality/latency proof and explicitly reconcile AR-393's
    impossible retroactive-receipt wording. No historical data rewrite.
 
 ## Verification
