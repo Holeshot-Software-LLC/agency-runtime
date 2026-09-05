@@ -19,7 +19,7 @@ type: issue
 epic: reliability
 issue_id: AR-396
 priority: p1
-tracker_url: null
+tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/653
 depends_on: []
 blocks: []
 ---
