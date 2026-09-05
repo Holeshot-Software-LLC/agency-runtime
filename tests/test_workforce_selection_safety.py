@@ -124,7 +124,11 @@ def test_ar227_complete_recruiter_index_fits_measured_finite_envelope() -> None:
     # the two operations contracts (service-operations-engineer,
     # monitoring-engineer) to the packaged agency-runtime source, so the
     # operational verbs have a specialist to find; 280 -> 282 workers.
-    assert len(payload) == 268_859
+    #
+    # 2026-09-04, 268_859 -> 268_869 (+10): AR-397 gave monitoring-engineer
+    # the installation phase, so its recruiter row carries the release lifecycle
+    # and a provisioning unit can reach it; worker count unchanged at 282.
+    assert len(payload) == 268_869
     assert len(payload) <= MAX_RECRUITER_INDEX_BYTES
     assert MAX_RECRUITER_INDEX_BYTES == 288 * 1024
     # The exact figure above is a change detector; this is the budget. Asserting

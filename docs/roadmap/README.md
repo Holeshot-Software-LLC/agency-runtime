@@ -410,6 +410,7 @@ This registry is the canonical map from stable, repository-owned planning IDs to
 | `AR-394` | [The recruiter stage ends most staffing turns, and the turns it does not end can staff an unrelated specialist](issue-AR-394-recruiter-teams-fail-or-mis-select.md) | done | p0 | reliability | pending authorization |
 | `AR-395` | [Three real inference stages are not in the receipt's stage vocabulary, so their attempts are recorded as unknown](issue-AR-395-preflight-stage-vocabulary-is-incomplete.md) | done | p1 | observability | pending authorization |
 | `AR-396` | [A complete reply that is not JSON ends the stage on one call, while a cut one and a wrong one each get a second ask](issue-AR-396-a-non-json-reply-gets-no-second-ask.md) | done | p1 | reliability | pending authorization |
+| `AR-397` | [A packaged contract that already shipped at the current template cannot be revised in place](issue-AR-397-packaged-contracts-cannot-be-revised-in-place.md) | in_progress | p2 | workforce | pending authorization |
 
 ## Traceability
 
@@ -761,8 +762,9 @@ not stable internal identifiers.
 | [AR-392](issue-AR-392-transport-failures-collapse-to-one-code.md) | [`03e302a5`](../worklog/README.md) (the named transport cause, the stage-loop split, the doctor timeout report), [`0ff7d390`](../worklog/README.md) (the deadline beside the elapsed time on the durable receipt) | [ADR-0209](../decisions/0209-name-the-transport-cause-instead-of-one-code.md) |
 | [AR-393](issue-AR-393-declared-gaps-leave-no-hiring-account.md) | [`d7106be1`](../worklog/README.md) (every declared gap accounted for, the per-unit verdict) | [ADR-0210](../decisions/0210-account-for-every-declared-gap.md) |
 | [AR-396](issue-AR-396-a-non-json-reply-gets-no-second-ask.md) | [`e12d721d`](../worklog/README.md) (the second ask for a complete reply that is not JSON) | [ADR-0212](../decisions/0212-ask-again-when-a-complete-reply-is-not-json.md) |
-| [AR-370](issue-AR-370-staffing-asks-the-wrong-question.md) | [`0e5a96f3`](../worklog/README.md) (the retired expansion table, the resolved bare reference, the three unstaffed codes, the operational-verb corpus), [`e2b149e2`](../worklog/README.md) (the two packaged operations contracts), [`ea2efe29`](../worklog/README.md) (review follow-up: full-roster test, corrected figures) | [ADR-0211](../decisions/0211-give-retrieval-a-subject-and-name-the-empty-turn.md) |
+| [AR-370](issue-AR-370-staffing-asks-the-wrong-question.md) | [`0e5a96f3`](../worklog/README.md) (the retired expansion table, the resolved bare reference, the three unstaffed codes, the operational-verb corpus), [`e2b149e2`](../worklog/README.md) (the two packaged operations contracts), [`ea2efe29`](../worklog/README.md) (review follow-up: full-roster test, corrected figures), [`dda2c8a3`](../worklog/README.md) (the monitoring engineer covers release) | [ADR-0211](../decisions/0211-give-retrieval-a-subject-and-name-the-empty-turn.md) |
 | [AR-395](issue-AR-395-preflight-stage-vocabulary-is-incomplete.md) | [`eeb98653`](../worklog/README.md) (every stage the runtime runs, named on the receipt) | null |
+| [AR-397](issue-AR-397-packaged-contracts-cannot-be-revised-in-place.md) | [`dda2c8a3`](../worklog/README.md) (superseded packaged definitions as predecessors, the monitoring release lifecycle), [`f67b718f`](../worklog/README.md) (review fixes: metadata authorities, up-front pin check) | null |
 | [AR-394](issue-AR-394-recruiter-teams-fail-or-mis-select.md) | [`c2a923d4`](../worklog/README.md) (eight closed shortfall causes, the retrieval/eligibility split) | [ADR-0213](../decisions/0213-the-verifier-judges-safety-retrieval-judges-fit.md) |
 
 ## Dependency summary

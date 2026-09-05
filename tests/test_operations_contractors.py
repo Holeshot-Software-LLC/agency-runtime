@@ -102,6 +102,18 @@ def test_service_operations_engineer_requires_the_installer_engineers_tools() ->
     assert set(operations["required_tools"]) == set(installer["required_tools"])
 
 
+def test_monitoring_engineer_covers_the_release_lifecycle() -> None:
+    """A provisioning unit labelled `release` can reach the monitoring specialist."""
+
+    package = known_contractor_package("monitoring-engineer")
+    assert package.employment_contract.lifecycle_phases == (
+        "observability",
+        "installation",
+        "implementation",
+    )
+    assert package.agent["lifecycle_phases"] == ["implementation", "release"]
+
+
 def test_monitoring_surface_is_affinity_not_an_eligibility_gate() -> None:
     package = known_contractor_package("monitoring-engineer")
     assert "monitoring" in package.employment_contract.tools

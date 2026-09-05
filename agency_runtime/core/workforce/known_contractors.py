@@ -527,6 +527,50 @@ def _definition(
     }
 
 
+def _monitoring_engineer_definition(phases: list[str]) -> dict[str, Any]:
+    # Shared by the current definition and its superseded revision below, so
+    # the predecessor `agency install` advances from is exact by construction.
+    return _definition(
+        "monitoring-engineer",
+        "Monitoring Engineer",
+        "Monitoring, metrics collection, dashboards and alerting for hosts and services, including alert thresholds and their routes",
+        outcomes=[
+            "Hosts and services monitored with owned, tested alerts",
+            "Dashboards and metrics that answer the operator's questions",
+        ],
+        artifacts=[
+            "Collection, dashboard and alert rule configuration",
+            "Alert inventory with thresholds, evaluation periods, routes and owners",
+        ],
+        capabilities=[
+            "set up monitoring and alerting for a newly provisioned host",
+            "metrics collection and scrape configuration",
+            "dashboard configuration for a service",
+            "alert threshold tuning and alert routing",
+            "verify an alert fires and reaches its route",
+        ],
+        anti=[
+            "Incident response and on-call command",
+            "Application performance optimization",
+            "Installing or restarting the monitored service",
+            "Runbook authoring",
+        ],
+        phases=phases,
+        tools=["shell", "repository", "monitoring"],
+        evidence=[
+            "Every alert rule lists its threshold, evaluation period, route and owner and was fired on purpose once",
+            "Collected series and dashboard panels verified against live data",
+        ],
+        closest="performance-benchmarker",
+        insufficiency="Measures and compares performance rather than standing up monitoring and alerting for hosts and services",
+        differentiation="Sets up metrics collection, dashboards and alert thresholds for hosts and services and proves the alerts fire",
+        positive="Set up monitoring and alerting for the newly provisioned host and tune the alert thresholds",
+        negative="Write a runbook for responding to a p95 latency alert",
+        negative_rationale="A technical writer owns runbook authoring",
+        relationship_target="service-operations-engineer",
+    )
+
+
 _RAW_DEFINITIONS = (
     _definition(
         "python-application-engineer",
@@ -1033,45 +1077,7 @@ _RAW_DEFINITIONS = (
         negative_rationale="The cross-platform installer engineer owns installer and packaging development",
         relationship_target="cross-platform-installer-engineer",
     ),
-    _definition(
-        "monitoring-engineer",
-        "Monitoring Engineer",
-        "Monitoring, metrics collection, dashboards and alerting for hosts and services, including alert thresholds and their routes",
-        outcomes=[
-            "Hosts and services monitored with owned, tested alerts",
-            "Dashboards and metrics that answer the operator's questions",
-        ],
-        artifacts=[
-            "Collection, dashboard and alert rule configuration",
-            "Alert inventory with thresholds, evaluation periods, routes and owners",
-        ],
-        capabilities=[
-            "set up monitoring and alerting for a newly provisioned host",
-            "metrics collection and scrape configuration",
-            "dashboard configuration for a service",
-            "alert threshold tuning and alert routing",
-            "verify an alert fires and reaches its route",
-        ],
-        anti=[
-            "Incident response and on-call command",
-            "Application performance optimization",
-            "Installing or restarting the monitored service",
-            "Runbook authoring",
-        ],
-        phases=["observability", "implementation"],
-        tools=["shell", "repository", "monitoring"],
-        evidence=[
-            "Every alert rule lists its threshold, evaluation period, route and owner and was fired on purpose once",
-            "Collected series and dashboard panels verified against live data",
-        ],
-        closest="performance-benchmarker",
-        insufficiency="Measures and compares performance rather than standing up monitoring and alerting for hosts and services",
-        differentiation="Sets up metrics collection, dashboards and alert thresholds for hosts and services and proves the alerts fire",
-        positive="Set up monitoring and alerting for the newly provisioned host and tune the alert thresholds",
-        negative="Write a runbook for responding to a p95 latency alert",
-        negative_rationale="A technical writer owns runbook authoring",
-        relationship_target="service-operations-engineer",
-    ),
+    _monitoring_engineer_definition(["observability", "installation", "implementation"]),
 )
 
 KNOWN_CONTRACTOR_CONTRACTS: tuple[EmploymentContract, ...] = tuple(
@@ -1079,4 +1085,22 @@ KNOWN_CONTRACTOR_CONTRACTS: tuple[EmploymentContract, ...] = tuple(
 )
 KNOWN_CONTRACTORS_BY_SLUG = {item.slug: item for item in KNOWN_CONTRACTOR_CONTRACTS}
 
-__all__ = ["KNOWN_CONTRACTORS_BY_SLUG", "KNOWN_CONTRACTOR_CONTRACTS"]
+# Packaged definitions that shipped and were then revised in place (AR-397).
+# `agency install` advances a live worker only from an exact packaged
+# identity, so every superseded revision is kept here verbatim and its
+# prompt hash is pinned in known_installer; a drift in either fails closed.
+_SUPERSEDED_RAW_DEFINITIONS: dict[str, tuple[dict[str, Any], ...]] = {
+    # be3702f7 (2026-09-04) covered the implementation lifecycle only, so a
+    # provisioning unit labelled `release` had no monitoring coverer.
+    "monitoring-engineer": (_monitoring_engineer_definition(["observability", "implementation"]),),
+}
+SUPERSEDED_KNOWN_CONTRACTOR_CONTRACTS: dict[str, tuple[EmploymentContract, ...]] = {
+    slug: tuple(parse_employment_contract(item) for item in items)
+    for slug, items in _SUPERSEDED_RAW_DEFINITIONS.items()
+}
+
+__all__ = [
+    "KNOWN_CONTRACTORS_BY_SLUG",
+    "KNOWN_CONTRACTOR_CONTRACTS",
+    "SUPERSEDED_KNOWN_CONTRACTOR_CONTRACTS",
+]
