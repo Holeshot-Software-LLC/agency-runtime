@@ -12,19 +12,19 @@ supersedes: []
 superseded_by: null
 type: acceptance-verification
 issue_id: AR-398
-candidate_commit: pending
+candidate_commit: 2ae2b9c2a212f96dddff593b0c6319259611e4c4
 evidence_cutoff: 2026-09-05
 tracker_url: null
 ---
 
 # AR-398 acceptance verification record
 
-Pending draft carried by the implementation branch (ADR-0214, approach items 1
-and 2). The close is guarded by the attempt token alone and names an expired
+Frozen at the commit that added the doctor check (ADR-0214, approach items 1,
+2 and 4). The close is guarded by the attempt token alone and names an expired
 lease on the receipt; the hiring loop stops inside the lease and marks the
 units it skipped; the receipt projector carries hiring codes one at a time.
-Criterion 4 (`agency doctor` reports stuck runs) is not implemented and is
-recorded absent.
+Criterion 4 (`agency doctor` reports stuck runs) landed on the same branch as
+`db_preflight_stuck`.
 
 ## Builder evidence
 
@@ -49,12 +49,21 @@ recorded absent.
 | 3 | file | `each hiring code is normalised on its own and one that cannot be carried becomes hiring_reason_code_invalid, so the account never collapses to nothing` | 2026-09-05 | `agency_runtime/core/preflight_failure.py:383-412` |
 | 3 | test | `a colon code no longer silences the account; an uncarriable code is named; clean codes project as before` | 2026-09-05 | `tests/test_gap_hiring_lease_budget.py:442-478` |
 | 3 | command-output | `copy g: six events in, an empty account out, on the pre-fix projector; copy h: the same shape yields seven hiring codes including one hire per hired unit` | 2026-09-05 | `docs/roadmap/acceptance/evidence/AR-398-evidence-20260905.txt:22-53` |
-| 4 | absent | `none` | 2026-09-05 | `none` |
+| 4 | file | `a read-only query returns the runs at status active and preflight_state in_progress whose lease has passed, ordered by start` | 2026-09-05 | `agency_runtime/core/doctor.py:357-385` |
+| 4 | file | `the db_preflight_stuck check warns per host with the oldest start when any attempt is stuck and passes when none is` | 2026-09-05 | `agency_runtime/core/doctor.py:388-415` |
+| 4 | file | `the database block appends the check beside integrity, schema and roster` | 2026-09-05 | `agency_runtime/core/doctor.py:350-353` |
+| 4 | test | `test_database_checks_report_attempts_stuck_past_their_lease expires two openclaw attempts beside a live hermes one and asserts the warn, the per-host count and the oldest start` | 2026-09-05 | `tests/test_doctor.py:394-424` |
+| 4 | test | `test_database_checks_pass_when_no_attempt_is_stuck asserts the pass and the four database checks in order` | 2026-09-05 | `tests/test_doctor.py:427-449` |
+| 4 | command-output | `the check against a copy of the live store names the eleven stuck attempts, ten openclaw and one hermes, matching a direct count` | 2026-09-05 | `docs/roadmap/acceptance/evidence/AR-398-evidence-20260905.txt:59-78` |
 
 ## Verification
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
+| 1 | satisfied | `AR-398.1-20260905-a8c68a8e` | `659133eca68d2c5dd9327326529b23563353333b7591be84260704b05ee41498` | 2026-09-05 | preflight.py:2233-2272 closes on the attempt token alone (no lease in the UPDATE), clears preflight_state to a terminal status, and stamps preflight_lease_expired_before_close on the receipt; schema.py:977-979 admits the code; tests/test_gap_hiring_lease_budget.py:104-124 asserts both halves. |
+| 2 | satisfied | `AR-398.2-20260905-55915700` | `50c03126a3acb9c954988da4f752cc54b606f16a4781e294c61c10d299e3d45e` | 2026-09-05 | pipeline.py:1863-1875 breaks the loop via _hiring_round_fits against the bound lease; 1775-1777 with _hiring_event marks unproposed units not_attempted with hiring_lease_budget_exhausted, projected by preflight_hiring_reason_codes; tests 364-407 and evidence copy h lines 33-47 confirm. |
+| 3 | satisfied | `AR-398.3-20260905-f68e5db0` | `17543f1f84c3b93c272a595adb2d42bfb05f8f4653e06c8266e4c0c701ea18ae` | 2026-09-05 | AR-398-evidence-20260905.txt:22-53 records copy h, a PL/I six-unit gap replay on a fresh store copy at branch code, giving one hiring event per gap unit and a non-empty receipt hiring account, versus empty on pre-fix copy g; preflight_failure.py:383-415 and the three projector tests match. |
+| 4 | satisfied | `AR-398.4-20260905-d1028121` | `23f7b8913198fa91239e03d94af6e7606021c0b1c151be18e5e0fe2d4f83b71d` | 2026-09-05 | doctor.py:357-415 adds db_preflight_stuck querying active runs with preflight_state in_progress past their lease, appended at 350-353 and reached by run_doctor at line 1074; tests/test_doctor.py:394-449 cover the warn and pass paths, and the evidence file records 11 such runs on a live-store copy. |
 
 ## Builder notes
 
@@ -65,5 +74,5 @@ Criterion 2 was reworded before any verdict from a count to a per-unit code,
 since receipt codes are de-duplicated. Criterion 3 originally asked for a hiring case per proposed hire; a fail-open
 turn commits no pending hire by design (only a ready commit does), so the
 criterion was reworded before any verdict to the hiring event each hire
-leaves. Criterion 4 is open: `agency doctor` does not yet count runs left
-`in_progress` past their lease.
+leaves. Criterion 4 is met by `db_preflight_stuck`, which named eleven stuck
+attempts on a copy of the live store.

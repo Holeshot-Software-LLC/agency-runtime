@@ -13,14 +13,14 @@ supersedes: []
 superseded_by: null
 type: acceptance-verification
 issue_id: AR-399
-candidate_commit: pending
+candidate_commit: 894be044077685fcfcfc2942e17f02ab0f0c4f1c
 evidence_cutoff: 2026-09-05
 tracker_url: null
 ---
 
 # AR-399 acceptance verification record
 
-Pending draft carried by the implementation branch. A planner reply that is
+Frozen at the review-fix commit of the implementation branch. A planner reply that is
 one complete object followed only by closing brackets or whitespace is now
 parsed on the first ask and the attempt names the repair; a stray bracket
 followed by anything else, or no object, is still not JSON, while trailing
@@ -53,6 +53,10 @@ were captured live and replay through the parser (evidence section 2).
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
+| 1 | satisfied | `AR-399.1-20260905-a18b4d84` | `8289d10e4a8427d57e6c7565193175e1aa82686d382f5e57fb8c4014240acbb2` | 2026-09-05 | structured_provider.py:312-363 keeps the first complete object when only brackets/whitespace follow and returns MODEL_TEXT_TRAILING_DATA_TRIMMED, wired via 846/879 onto the applied attempt at inference.py:1902-1914; tests/test_trailing_brace_reply.py:30-37,134-144 assert both. |
+| 2 | satisfied | `AR-399.2-20260905-7bc0fc33` | `9e31c891b6edf97735b57ba23d832920282a72102f9df922828fe58e0f4f8035` | 2026-09-05 | structured_provider.py:312-363 returns (None,"") for a stray bracket with non-bracket tail, for text with no object (start<0, pre-decode), and on RecursionError from raw_decode; lines 849-854 map None to PROVIDER_MODEL_TEXT_NOT_JSON, and tests/test_trailing_brace_reply.py:59-82 pin all three. |
+| 3 | satisfied | `AR-399.3-20260905-bd7b3d8b` | `5775324676d900154e380763ea7eb9ceca7781e3f8e0d44e9aac3caad41b7563` | 2026-09-05 | preflight_failure.py:31,245 admits the transport repair code alongside any stage vocabulary, and lines 271-288 route every stage (unknown included) through that gate; inference.py:1911-1913 with structured_provider.py:337 leaves a clean reply's codes empty, matching the cited tests. |
+| 4 | satisfied | `AR-399.4-20260905-0f9c1a6b` | `f11311fb21e1e43915e7bb1d4c3cbf7016a71cee1f057a752e2ff1fb07ffc567` | 2026-09-05 | AR-399-evidence-20260905.txt:18-24 records all four captured replies replayed through _parse_model_text_with_repair, each parsed units=1 with the trailing-data repair plus "replies: 4"; structured_provider.py:312-363 and tests/test_trailing_brace_reply.py:40-44 confirm both recorded tails parse. |
 
 ## Builder notes
 

@@ -1,6 +1,6 @@
 ---
 title: "AR-399: A complete plan object followed by one stray closing brace reads as prose and costs the turn"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-09-05
 updated: 2026-09-05
@@ -88,14 +88,14 @@ reply.
 
 ## Acceptance
 
-- [ ] A reply that is one complete object followed only by closing brackets or
+- [x] A reply that is one complete object followed only by closing brackets or
       whitespace is applied on the first ask, and the attempt carries
       `model_text_trailing_data_trimmed`.
-- [ ] A reply in which a stray closing bracket is followed by anything but
+- [x] A reply in which a stray closing bracket is followed by anything but
       closing brackets or whitespace, and a reply with no object at all, are
       still reported `provider_model_text_not_json`, and a reply nested past the
       interpreter's recursion limit is refused the same way rather than raising.
-- [ ] The repair code survives receipt projection for every stage, and a
+- [x] The repair code survives receipt projection for every stage, and a
       clean reply carries no repair code.
-- [ ] Replaying the four captured replies through the parser yields four plan
+- [x] Replaying the four captured replies through the parser yields four plan
       objects.

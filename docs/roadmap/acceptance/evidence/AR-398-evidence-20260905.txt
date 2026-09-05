@@ -55,3 +55,26 @@ AR-398 evidence, 2026-09-05, main 1e24da20, branch claude/ar398-lease-receipt
 6. Schema. copies e, f, g and h opened at schema 48 and were rebuilt to 49 on first open by the branch
    code (max(version) = 49 read back from each); the migration test in section 2 pins the rebuild and the
    survival of a pre-49 row.
+
+7. Criterion 4: `agency doctor` reports attempts left in_progress past their lease (branch claude/ar398-doctor-stuck-runs).
+   The database block gains db_preflight_stuck beside db_integrity, db_schema and db_roster: a read-only query for
+   runs at status active / preflight_state in_progress whose preflight_lease_expires_at is non-empty and older
+   than the store clock, warned per host with the oldest start, passed when none.
+
+   in-process against agency-copy-i.yaml (store-copy-i.db, a copy of the live store taken 2026-09-05T13:52Z, schema 49):
+     db_integrity           pass  | SQLite integrity OK
+     db_schema              pass  | Schema version: 49
+     db_roster              pass  | Roster: 293 agents active
+     db_preflight_stuck     warn  | 11 preflight attempt(s) left in_progress past their lease (hermes 1, openclaw 10);
+                                    each is a turn whose close never reached the store, so it has no receipt
+                                  | oldest started 2026-08-22T17:09:46; runs at status active with an expired preflight_lease_expires_at
+   the same eleven rows counted directly on the copy: openclaw 10, hermes 1, started 2026-08-22T17:09:46 to 2026-08-31T20:33:10.
+
+   tests: tests/test_doctor.py gains test_database_checks_report_attempts_stuck_past_their_lease (two expired attempts
+   on openclaw beside one live hermes attempt -> warn, "2 preflight attempt(s) ... (openclaw 2)") and
+   test_database_checks_pass_when_no_attempt_is_stuck (a closed attempt and a live one -> pass, four db_ checks in order).
+   tests/test_doctor.py tests/test_doctor_coverage_complete.py tests/test_senior_audit_hardening.py
+   tests/test_cli_coverage_complete_config.py: 91 passed, 2 failed; the two
+   (test_doctor_show_and_path_render_modes[True|False], a lambda predating the fix_perms keyword) fail identically on main.
+   ruff check and format clean on agency_runtime/core/doctor.py and tests/test_doctor.py.
+

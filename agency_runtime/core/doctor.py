@@ -347,7 +347,68 @@ def _database_checks(cfg: AgencyConfig) -> list[CheckResult]:
         if roster_count > 0
         else "No active agents — run `agency install`",
     )
-    return [integrity_check, schema_check, roster_check]
+    return [integrity_check, schema_check, roster_check, _stuck_preflight_check(db_path)]
+
+
+def _read_stuck_preflight_runs(db_path: Path) -> list[tuple[str, str, str]]:
+    """Return (host, started_at, lease_expires_at) for attempts left past their lease.
+
+    AR-398 criterion 4. A run at ``status='active'`` and
+    ``preflight_state='in_progress'`` whose lease has passed is a turn whose
+    attempt never closed: before ADR-0214 that was how a gap turn vanished
+    without a receipt, and eleven such rows sat on the live store unseen. The
+    store clock format sorts as text, so the comparison is a string one.
+    """
+
+    conn = sqlite3.connect(
+        db_path.resolve().as_uri() + "?mode=ro",
+        uri=True,
+        timeout=2,
+    )
+    try:
+        rows = conn.execute(
+            "SELECT host, started_at, preflight_lease_expires_at FROM runs "
+            "WHERE status = 'active' AND preflight_state = 'in_progress' "
+            "AND preflight_lease_expires_at != '' "
+            "AND preflight_lease_expires_at < STRFTIME('%Y-%m-%dT%H:%M:%f000+00:00', 'NOW') "
+            "ORDER BY started_at"
+        ).fetchall()
+    finally:
+        conn.close()
+    return [
+        (str(host or "unknown"), str(started or ""), str(lease or ""))
+        for host, started, lease in rows
+    ]
+
+
+def _stuck_preflight_check(db_path: Path) -> CheckResult:
+    """Report preflight attempts left ``in_progress`` past their lease."""
+
+    try:
+        stuck = _read_stuck_preflight_runs(db_path)
+    except sqlite3.Error as exc:
+        # A store without the preflight columns predates the lifecycle; say so
+        # instead of failing the whole database block on a schema this runtime
+        # would migrate on its next open.
+        return CheckResult(
+            "db_preflight_stuck", "warn", "Stuck preflight attempts not measurable", str(exc)
+        )
+    if not stuck:
+        return CheckResult(
+            "db_preflight_stuck", "pass", "No preflight attempt is stuck past its lease"
+        )
+    by_host: dict[str, int] = {}
+    for host, _started, _lease in stuck:
+        by_host[host] = by_host.get(host, 0) + 1
+    hosts = ", ".join(f"{host} {count}" for host, count in sorted(by_host.items()))
+    oldest = stuck[0][1][:19]
+    return CheckResult(
+        "db_preflight_stuck",
+        "warn",
+        f"{len(stuck)} preflight attempt(s) left in_progress past their lease ({hosts}); "
+        "each is a turn whose close never reached the store, so it has no receipt",
+        f"oldest started {oldest}; runs at status active with an expired preflight_lease_expires_at",
+    )
 
 
 def _provider_validation_map(cfg: AgencyConfig) -> ProviderValidations:
