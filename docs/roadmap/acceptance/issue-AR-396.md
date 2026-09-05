@@ -14,7 +14,7 @@ type: acceptance-verification
 issue_id: AR-396
 candidate_commit: 551d08db7faf3f5f3b8e85aebc6e0d0b74231811
 evidence_cutoff: 2026-09-04
-tracker_url: null
+tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/653
 ---
 
 # AR-396 acceptance verification record

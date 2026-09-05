@@ -21,7 +21,7 @@ type: issue
 epic: observability
 issue_id: AR-393
 priority: p1
-tracker_url: null
+tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/650
 depends_on: []
 blocks: []
 ---

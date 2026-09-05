@@ -18,7 +18,7 @@ type: acceptance-verification
 issue_id: AR-394
 candidate_commit: c2a923d4021f2b68a1d40696d07ac6d5f5f842b1
 evidence_cutoff: 2026-09-04
-tracker_url: null
+tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/651
 ---
 
 # AR-394 acceptance verification record
