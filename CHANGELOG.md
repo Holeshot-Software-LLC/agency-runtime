@@ -6,6 +6,7 @@ created: 2026-07-10
 updated: 2026-09-05
 tags: [release, changelog]
 related:
+  - docs/roadmap/issue-AR-271-accept-stopped-openclaw-uninstall-status.md
   - docs/RELEASE_CHECKLIST.md
   - docs/roadmap/issue-AR-290-end-to-end-guided-setup.md
   - docs/roadmap/issue-AR-296-project-effective-inference-topology.md
@@ -72,6 +73,11 @@ changes rather than duplicating every commit.
 ## Unreleased
 
 ### Added
+
+- OpenClaw uninstall recognizes the same complete stopped-service receipt as
+  installation, including the expected exit code 1 when stopped RPC is
+  unavailable. Live or uncertain gateway state, stale execution identity and
+  denied owner authority still prevent mutation (AR-271).
 
 - Staffing preserves completed gap fills while other units remain unfilled and
   retains unrelated assignments during worker amendment (AR-400).

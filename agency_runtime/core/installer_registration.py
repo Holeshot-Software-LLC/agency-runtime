@@ -133,9 +133,15 @@ def openclaw_gateway_live(
         command_runner=command_runner,
         timeout=12,
     )
+    return openclaw_gateway_state(probe), probe
+
+
+def openclaw_gateway_state(probe: NativeCommandResult) -> bool | None:
+    """Classify one bounded probe for install or uninstall without native I/O."""
+
     payload = _json_output(probe)
     if not isinstance(payload, dict) or probe.stdout_truncated or probe.stderr_truncated:
-        return None, probe
+        return None
 
     service = payload.get("service")
     runtime = service.get("runtime") if isinstance(service, Mapping) else None
@@ -155,14 +161,14 @@ def openclaw_gateway_live(
         or runtime_state in {"active", "activating", "deactivating", "reloading"}
         or runtime_substate == "running"
     ):
-        return True, probe
+        return True
     # Only an explicit process-state signal can prove the gateway stopped.
     # An unreachable or unhealthy gateway may still be a live process that a
     # plugin install would reload.
     if probe.ok and (
         signals["running"] is False or status in {"stopped", "not-running", "not_running"}
     ):
-        return False, probe
+        return False
     # OpenClaw 2026.7 reports a stopped systemd service as complete JSON while
     # --require-rpc exits 1 because no stopped process can answer RPC. Accept
     # only that exact, internally consistent process-state triple; every other
@@ -173,8 +179,8 @@ def openclaw_gateway_live(
         and runtime_state == "inactive"
         and runtime_substate == "dead"
     ):
-        return False, probe
-    return None, probe
+        return False
+    return None
 
 
 _RegistrationResult = tuple[list[dict[str, Any]], bool, str | None]

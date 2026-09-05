@@ -6,6 +6,7 @@ created: 2026-07-28
 updated: 2026-07-28
 tags: [installation, host-integrations, security, cli, operations]
 related:
+  - docs/roadmap/issue-AR-271-accept-stopped-openclaw-uninstall-status.md
   - docs/roadmap/issue-AR-189-add-owned-host-integration-uninstall.md
   - docs/roadmap/handoffs/issue-AR-189.md
   - docs/worklog/README.md
@@ -143,6 +144,12 @@ native identity, native state, or postcondition returns a nonzero blocked or
 partial result with the files retained.
 
 ## Consequences
+
+AR-271 commit 4fdcd6a7 shares the existing AR-285 stopped-service classifier
+between install and uninstall. Complete exit-1 stopped/inactive/dead evidence
+can satisfy the gateway precondition; native execution binding, owner authority,
+locked replanning and the final pre-mutation check remain unchanged. The linked
+issue and worklog retain the contract tests, limits and exact delivery.
 
 - Operators receive a discoverable all-host inverse without conflating host
   wiring with package or data lifecycle.

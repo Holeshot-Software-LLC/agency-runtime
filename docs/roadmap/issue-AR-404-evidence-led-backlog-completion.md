@@ -39,59 +39,51 @@ repeat work and risk reintroducing superseded behavior.
 
 ## Current state
 
-Continuation: PR #676 and ledger #677 are confirmed on origin/main at 3ed51069.
-The owner requested pushing and continuing. AR-405 now has a test-only repair
-with 100 passing build tests (one native Windows skip), preserved portable
-integrity checks, and a 452-pass wider focused run. Three isolated acceptance
-criteria are satisfied; PR #678 carries the completed test-only outcome, with
-protected conformance baseline and 182 mutation kills. AR-405 is done; 147
-baseline items plus AR-404 remain (148 current unfinished records). AR-271 is
-the next genuine runtime defect. The historical counts below are unchanged.
+Phase: implementing. The owner asked to push and continue after the first
+semantic record cleanup. That cleanup is on main through PR #676/#677 at
+3ed51069. Two bounded defect packages follow it:
 
-2026-09-05 backlog package: the owner explicitly requested disposition before
-more implementation. The linked first semantic review retires AR-132/167/169/267
-under already-replaced policies, reconciles AR-160's active no-helper release
-contract, and records AR-285's isolated verification. Original retired
-checklists and historical receipts remain intact. After four retirements, 147 baseline items
-remain unfinished plus this coordinator and the newly reproduced AR-405
-Linux-incompatible Windows fixture issue (149 current unfinished records).
-AR-285 remains open with three satisfied and two absent criteria: actual
+- AR-405 is done and merged through PR #678 at 78e501b7; tracker #675 is closed.
+  Its test-only correction turns 91 pass/two fail into 100 pass/one native
+  Windows skip, without changing production identity semantics. Three isolated
+  criteria are satisfied; portable real and synthetic assertions remain active.
+- AR-271 is done for its bounded contract outcome and delivered by PR #679.
+  Install and uninstall now share the exact bounded stopped-state classifier.
+  Regression-first seven fail/fifteen pass becomes a 248-pass focused suite
+  with two native Windows skips. Owner denial, execution-identity drift and
+  live/unknown state after approval and before commit remain blocking.
+  Three isolated criteria are satisfied; fast spine 1030 pass/three skips,
+  UI 138, docs/acceptance/tracker tests 104, routing and protected conformance
+  baseline plus 182 mutation kills pass. Main install and smoke follow merge;
+  no real gateway stop/restart/uninstall is claimed from contract tests.
+
+Current accounting: 146 unfinished baseline records plus AR-404 (147 current
+unfinished records). The frozen inventory started with 155, the four accepted
+AR-400..403 fixes left 151, and four obsolete policies AR-132/167/169/267 left
+147. AR-271 removes one more baseline item; AR-405 was filed outside that
+baseline and has since closed. The first semantic review and historical
+checkpoint counts remain in the linked disposition record.
+
+AR-160 retains current paired no-helper release artifact proof under ADR-0219.
+AR-285 remains in_progress with three satisfied and two absent criteria:
 trusted-runner wiring citations and a successful changed-precondition dry-run
-receipt are missing from its evidence. Delivery is PR #676; the worklog supplies
-its exact merge identity. No runtime or test source changed in this package.
+receipt. Its real historical installs do not fill both evidence gaps. Do not
+conflate its receipt-specific acceptance with AR-271's new bounded contract.
 
-The review does not support mass closure: AR-271 is still missing its uninstall
-classifier fix, AR-337's battery excludes ZCode despite its literal all-supported
-scope, and AR-348/349 remain real safety gaps. The prior implemented review and
-its installed evidence below remain valid within their stated scopes.
+Earlier lane A has twelve satisfied isolated verdicts for AR-400..403, merged
+through PR #669 at 1de05aea. AR-397/398/399 tracker debt is reconciled at
+#654/#670/#671. That immutable runtime's deterministic five-host smoke and
+one Claude native-child pass remain scoped to that build; Codex trust,
+OpenClaw restart consent and Hermes/ZCode ordinary-session proof remain visible.
 
-Phase: implementing. The four independent review findings are implemented and merged
-through PR #669. All-host deterministic smoke passes; one Claude native-child
-canary passes on the installed build. Codex trust, OpenClaw restart permission
-and Hermes/ZCode live-mode limitations are explicit, not successful live parity.
-
-The linked inventory accounts for all 155 records at the delivery checkpoint;
-it does not claim they have all been semantically reviewed. 105 are marked p0,
-so dependency order and an observable outcome must drive packages. The strict
-tracker audit identified three concrete bookkeeping actions: map the missing
-AR-398 and AR-399 issues, and close verified AR-397. Existing historical
-tracker exemptions are not permission to create duplicate issues.
-
-Lane A now has twelve satisfied isolated acceptance verdicts. AR-397 (#654),
-AR-398 (#670) and AR-399 (#671) are closed against their existing verified
-records; the four accepted review issues close with the delivery-record PR.
-The worklog registry supplies its merge identity and strict parity result.
-After lane A, 151 baseline items remain unfinished, plus this coordination issue.
-
-The next safety slice is not merely stale bookkeeping: a current offline
-production-path replay at 1de05aea set strict_independence=true on the supported
-legacy provider configuration, supplied valid creator/critic/security replies
-from that same provider, and returned status=hired with a worker. The temporary
-Store was discarded; no external model or production roster was used. AR-348
-still has no production caller of enforce_strict_independence. AR-349's current
-safety-repair exit still returns a rejected outcome without a hiring case, and
-its existing regression explicitly asserts hiring_case is None. Reproduce and
-fix these together with legacy, per-harness, fallback and safety-repair coverage.
+The review still does not support mass closure. AR-348 permits same-provider
+creator/reviewer hiring despite strict_independence=true in a current offline
+production-path replay; AR-349 still returns repair exhaustion without a durable
+rejected case. AR-350 needs an explicit authority decision. AR-337's literal
+all-supported-host wording disagrees with its four-host battery, and AR-351's
+domain-axis proposal conflicts with descriptive-domain semantics. These remain
+bounded packages, not assumptions that old checkboxes or inherited p0 labels
+are authoritative.
 
 ## Approach
 
@@ -148,9 +140,10 @@ No exhaustive workflow dispatch or unattended restart is implied.
 
 ## Next bounded package
 
-Verify already-implemented inspection/observability work (AR-298), resolve
-explicit scope contradictions, and deliver genuine AR-271/348/349 fixes in
-separate bounded packages. AR-405 records the two Linux fixture failures without
-expanding this documentation batch. AR-285 needs its two named evidence gaps,
-not a repeated successful classifier test. The full backlog remains open until every
-baseline record has a reviewed disposition and remaining acceptance is met.
+Finish PR #679 main installation and scoped all-host smoke, then verify
+already-implemented inspection work (AR-298), reconcile explicit scope
+contradictions, and deliver genuine AR-348/349 hiring-safety fixes. AR-271 and
+AR-405 have their own satisfied acceptance; AR-285 still needs its two named
+evidence gaps, not a repeated classifier test. The full backlog remains open
+until every baseline record has a reviewed disposition and remaining
+acceptance is met.
