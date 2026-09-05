@@ -3,7 +3,7 @@ title: Worklog
 status: active
 category: worklog
 created: 2026-07-10
-updated: 2026-09-04
+updated: 2026-09-05
 tags: []
 related: []
 supersedes: []
@@ -1825,6 +1825,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `089ede01` | 2026-09-04 | docs(roadmap): refresh the AR-383 capsule after the merge, install and review session | [AR-383](../roadmap/issue-AR-383-inferred-subject-context-fails-its-own-projection.md) | Refreshed after the 2026-09-04 evening session: PRs #632 to #640 and #655 merged, every host installed from c42fb0a5 with no drift report, the two operations contracts live with the monitoring engineer covering release, AR-397 filed and fixed, tracker issues #641 to #654 mapped and the tracker gate green, two Opus adversarial reviews run; the blocker is unchanged, staffing still ends at the planner and recruiter, and the capsule carries the codex trust step, the platform decision and the remaining traps. |
 | `8f724248` | 2026-09-04 | Merge pull request #656 from Holeshot-Software-LLC/claude/ar383-capsule-20260904c | null | null |
 | `45432976` | 2026-09-04 | docs(roadmap): record the AR-397 acceptance evidence | [AR-397](../roadmap/issue-AR-397-packaged-contracts-cannot-be-revised-in-place.md) | Builder evidence for the AR-361 close: 48 tests green at the candidate, the five AR-397 tests and the release-lifecycle test failing on the pre-fix tree, the superseded pin equal to the live worker's prompt hash, and the monitoring engineer covering release on a copy of the live store after the c42fb0a5 install. |
+| `32ab551a` | 2026-09-05 | docs(roadmap): record the AR-397 acceptance verdicts and flip it done | [AR-397](../roadmap/issue-AR-397-packaged-contracts-cannot-be-revised-in-place.md) | Closed through the AR-361 flow: the record freezes at 45432976 with five satisfied verdicts, the issue flips to done with every box checked, and the per-slug table case is decided as identity pinned beside the superseded contract. |
 <!-- worklog:end -->
 
 ## Provenance notes
