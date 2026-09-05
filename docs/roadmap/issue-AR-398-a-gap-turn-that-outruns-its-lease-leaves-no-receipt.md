@@ -1,6 +1,6 @@
 ---
 title: "AR-398: A gap turn whose hiring loop outruns the preflight lease leaves no receipt, no hiring case and a run stuck in progress"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-09-05
 updated: 2026-09-05
@@ -143,12 +143,12 @@ another attempt now holds, and that attempt writes the turn's own account
 
 ## Acceptance
 
-- [ ] A turn whose fail-open close arrives after its lease expired still
+- [x] A turn whose fail-open close arrives after its lease expired still
       leaves a receipt naming the expiry, and the run does not stay
       `in_progress`.
-- [ ] The hiring loop stops within the lease, and every gap unit left
+- [x] The hiring loop stops within the lease, and every gap unit left
       unproposed carries `hiring_lease_budget_exhausted` on its hiring event,
       so the receipt names that units were skipped and why.
-- [ ] Replaying the COBOL shape against a store copy produces a receipt with
+- [x] Replaying the COBOL shape against a store copy produces a receipt with
       a non-empty hiring account and a hiring event per proposed hire.
-- [ ] `agency doctor` reports runs left at `in_progress` past their lease.
+- [x] `agency doctor` reports runs left at `in_progress` past their lease.
