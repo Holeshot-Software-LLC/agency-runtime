@@ -63,15 +63,20 @@ against current product intent, without changing the frozen baseline inventory.
 | [AR-148](issue-AR-148-fail-malformed-remediation-signatures-closed.md), [AR-323](issue-AR-323-remove-stale-ledger-schema-literals.md) | Done; existing signature fix verified and stale schema tests corrected | The signature guard was already implemented. Three known ledger cases and seven migration/credential cases failed only on copied schema-46 literals. Those output assertions now use canonical SCHEMA_VERSION, retaining legacy 44/45 inputs and every behavioral guard. All 401 selected tests and fresh 1030-test spine pass; three existing spine skips. Eight isolated criteria satisfied. No production or schema change. AR-347's existing AR-323 tracker exemption supersedes its old future-tracker clause. |
 
 After retiring AR-139 and completing AR-148/149/152/323/406, local unfinished
-records total 142: 43 mapped plus 99 legacy. External #682 closes after PR #684
-merges, reducing actual open trackers from 44 back to 43. Closing an unmapped
-historical record cannot decrease the owner's tracker-open count.
+records total 142: 43 mapped plus 99 legacy. PR #684 merged at 853de310 and
+external #682 closed as completed on 2026-09-05 at 21:35:56 UTC. Read-back
+confirms closure; refreshed tracker enumeration confirms 43 actual open issues.
+Closing an unmapped historical record cannot decrease the owner's tracker-open
+count. Five completions and one retirement are published in PRs #683/#684.
 
-## Reviewed candidates that are not safe closures
+## Earlier candidate review and subsequent disposition
+
+This table retains the original findings; the publication column identifies
+items subsequently completed. Only unfinished rows are future work.
 
 | Issue or family | Finding | Next bounded outcome |
 |---|---|---|
-| [AR-271](issue-AR-271-accept-stopped-openclaw-uninstall-status.md) | Real implementation gap. installer_uninstall._openclaw_gateway_state still rejects nonzero probes; the install classifier's fix does not reach it. | Share the proven stopped-state classification while retaining last-moment uninstall safety. Test ambiguous/live/truncated probes; do not run a live uninstall as a test. |
+| [AR-271](issue-AR-271-accept-stopped-openclaw-uninstall-status.md) | The original review found a real install/uninstall classifier gap. | Subsequently done via PR #679 at 5434836e: shared classifier, three satisfied isolated criteria, 248 focused passes/two Windows skips, exact installed smoke recorded below. No longer an open candidate. |
 | [AR-337](issue-AR-337-run-harness-battery-on-version-change.md) | Much is implemented, but all checkboxes are not proof. BATTERY_HOSTS excludes ZCode and tests explicitly reject it, while acceptance says each supported harness. | Resolve and record the supported-battery versus supported-host scope, then verify the service, drift and receipt contract. Do not claim five-host battery parity. |
 | [AR-298](issue-AR-298-expose-complete-workforce-prompts.md) | Implemented Store/CLI/dashboard inspection and historical installed visual evidence; no isolated acceptance record. | Bind the nine criteria to exact current source/test and appropriately scoped visual evidence; close only after isolated verification. |
 | [AR-336](issue-AR-336-requalify-the-recruiter-route-for-ordinary-tasks.md) | Historical ordinary-route evidence exists, but a later owner-approved description-evaluation addition is outside its four checked criteria. Current configuration cannot be inferred from August receipts. | Reconcile that scope with AR-253/370/374, identify a fixed qualification corpus and retained receipts. |
@@ -81,9 +86,18 @@ historical record cannot decrease the owner's tracker-open count.
 | [AR-174](issue-AR-174-short-circuit-docs-only-ci.md), [AR-177](issue-AR-177-make-exhaustive-python-ci-manual.md) | Implemented contract tests coexist with explicit missing hosted measurement. | Distinguish deployment/measurement debt from code work; do not dispatch an exhaustive workflow or manufacture an old receipt during cleanup. |
 | [AR-359](issue-AR-359-preserve-operator-policy-newlines.md) | Code is implemented; one requirement rewrites the owner's exact policy. | Obtain the exact approved text or explicitly retire that operator-specific step. Do not invent policy text. |
 | [AR-393](issue-AR-393-declared-gaps-leave-no-hiring-account.md) | Four satisfied verdicts; one contradicted criterion demands causality from historical empty receipts. | Preserve the receipts and explicitly reconcile prospective accounting versus impossible retroactive reconstruction. |
-| [AR-405](issue-AR-405-make-directory-identity-regressions-portable.md) (new, outside baseline) | The wider focused run returned 443 passed, two skipped, two failed: real Linux directories do not have the Windows attributes assumed by two pre-existing tests. | Separate portable synthetic identity coverage from native Windows observations; retain the red result and do not waive release validation. |
+| [AR-405](issue-AR-405-make-directory-identity-regressions-portable.md) (new, outside baseline) | The original wider run returned 443 passed, two skipped, two failed: real Linux directories lack the Windows attributes assumed by two tests. | Subsequently done via PR #678: portable synthetic/native observations separated, three satisfied isolated criteria and 452 wider passes/three skips. Original red evidence retained; no native Windows pass claimed. |
 
 ## Next packages
+
+Current next package is AR-348: enforce independence over the actual resolved
+creator/reviewer chains, preserving strict=false warnings and inference-owned
+choices. Do not implement its old declared-profile-only suggestion blindly.
+Then handle AR-349's rejected-hire persistence separately. AR-298 remains an
+implemented inspection candidate awaiting isolated verification. Leave Windows
+work to the owner and preserve operator authority boundaries.
+
+### Prior delivery checkpoints
 
 Installed-delivery checkpoint: PR #679 merged at 5434836e; that exact immutable
 package is installed with the prior launcher/environment retained. All eight

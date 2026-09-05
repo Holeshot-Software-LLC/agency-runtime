@@ -24,9 +24,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-404
-branch: codex/ar406-production-coverage
-evidence_commit: cb7dca7733a8e1a3ff78791bf5e372dae64dafa4
-minimum_ledger_commit: 39cd636d99f5df10b9c2bfbac9fa1ba20e0af378
+branch: codex/ar404-published-closures
+evidence_commit: 853de3106ebc74f3ba6c977722d98f06a969c9c2
+minimum_ledger_commit: d17ffcea214a006ca6a986a638bd70bfc0e26d66
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -38,8 +38,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 Owner says continue one by one, leave Windows work to their Windows machine,
 close completed records, and judge old agent-authored tickets for present
 product relevance instead of treating their designs as instructions.
-Main cb7dca77 includes PR #683: three accepted completions and one retirement.
-Current package: correct UI measurement scope and accept the existing listener fix.
+Main 853de310 includes PRs #683/#684: five accepted completions, one retirement.
+Tracker #682 is closed; current package records publication and the next outcome.
 No implementation agents were delegated. Umbrella remains implementing.
 
 ## Completed evidence
@@ -50,7 +50,8 @@ No implementation agents were delegated. Umbrella remains implementing.
   counts were 240 done, 93 in_progress, 54 open, 11 wont_do (398 records).
   New AR-406/#682 adds one tracked issue; AR-139 is now retired as superseded.
   AR-148/149/152/323/406 accepted. Local unfinished: 43 mapped plus 99 legacy.
-  Remote still has 44 open until #682 is closed after PR #684 merges.
+  Remote #682 closed 2026-09-05 at 21:35:56 UTC; fresh enumeration confirms 43
+  open trackers. The first immediate REST count briefly lagged at 44.
 - Original-baseline reductions: AR-400..403 accepted; AR-132/167/169/267 retired
   through cited successors; AR-271 accepted. AR-405 was outside the baseline
   and is also accepted. Prior work merged via PRs #669/#673/#676..681. Never
@@ -90,8 +91,8 @@ No implementation agents were delegated. Umbrella remains implementing.
 
 ## Exact blocker
 
-PR #683 is merged. AR-406/152 have seven satisfied criteria; PR #684 and tracker
-#682 closure remain to publish this package. The original mixed-scope failure is preserved;
+PRs #683/#684 are merged and #682 is closed. AR-406/152 have seven satisfied
+criteria. The original mixed-scope failure is preserved;
 the product scope is explicitly corrected, not relabeled as an original pass.
 Do not claim "most done" before relevance and evidence are examined. Do not
 reimplement a historical defect merely because status=open.
@@ -111,11 +112,14 @@ No current header snapshot exists; no specialist staffing succeeded.
 
 ## Next bounded work package
 
-1. Merge PR #684, close #682, and record exact publication/ledger state.
-2. Continue historical records one by one: retire superseded proposals with
-   reasons and reciprocal links; close implemented work with exact evidence.
-3. Verify AR-298, then the
-   genuine AR-348/349 hiring defects. Keep Windows work excluded.
+1. AR-348: enforce strict independence over actual resolved creator/reviewer
+   chains, covering legacy, harness, fallback and repair paths; preserve
+   strict=false warnings. The ticket's declared-profile-only suggestion skips
+   legacy routes and is not the specification. Reproduce before changing code.
+2. AR-349 follows as a separate rejected-hire persistence package. AR-298 remains
+   implemented pending isolated verification. Keep Windows work excluded.
+3. Continue historical relevance review: retire superseded proposals with
+   reciprocal links; close implemented work only with accepted evidence.
 
 ## Verification
 
@@ -130,8 +134,8 @@ before any mutation ran. The development-venv invocation passes its baseline
 (98.841s), kills all 182 mutations, and leaves source unchanged. No test
 dependency was added to the user's installed runtime.
 
-Current branch changes only the two coverage commands, their regression, and
-records. The protected conformance inputs remain identical to the preceding
+PR #684 changes only the two coverage commands, their regression, and records.
+The publication branch changes records only. Protected conformance inputs remain identical to the preceding
 182-kill run; no repeat mutation battery is needed for an unrelated scope flag.
 
 ## Constraints
