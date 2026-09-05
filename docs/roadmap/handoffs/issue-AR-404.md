@@ -6,6 +6,9 @@ created: 2026-09-05
 updated: 2026-09-05
 tags: [handoff, backlog, acceptance, delivery]
 related:
+  - docs/roadmap/AR-404-backlog-dispositions-20260905.md
+  - docs/roadmap/acceptance/issue-AR-285.md
+  - docs/roadmap/issue-AR-405-make-directory-identity-regressions-portable.md
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
   - docs/roadmap/AR-404-backlog-inventory-20260905.md
   - docs/roadmap/handoffs/issue-AR-400.md
@@ -16,9 +19,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-404
-branch: codex/ar400-delivery
-evidence_commit: e758f217c810399100ebf2909e4561d6a243bdda
-minimum_ledger_commit: 969321f4a1ce22bac0e1a0eb9be3edb037d4fcfc
+branch: codex/ar404-backlog-reconciliation
+evidence_commit: 8e9cb4830eb6882540272dd29f084d5209c46ee7
+minimum_ledger_commit: d047754ab4b4d97ce829a6ec6b62ea3e11738357
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -29,9 +32,13 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 
 The owner asked to commit review artifacts, plan and implement the findings,
 then clean up and complete the backlog. This item owns the full baseline, not
-just the completed review slice. Phase: implementing. No implementation agents
-were delegated. The ordered plan, inventory and accepted review records are
-committed; the worklog registry identifies their delivery PR merge.
+just the completed review slice. The latest request prioritizes semantically
+triaging done, contradictory and unwanted records before more implementation.
+Umbrella phase: implementing. The first record package has passed its scoped
+review and fast verification; PR #676 is its delivery and worklog records the
+exact merge outcome. No implementation agents were delegated. The current
+batch retires four obsolete contracts, reconciles current no-helper release
+acceptance and records AR-285's incomplete acceptance without closing it.
 
 ## Completed evidence
 
@@ -53,8 +60,35 @@ committed; the worklog registry identifies their delivery PR merge.
   acceptance; stale-open AR-397 #654 also closed. The four accepted review
   issues close with the delivery PR; verify_tracker confirms resulting parity.
 - After the four review closures, 151 baseline items remain plus AR-404.
+- First semantic batch retires AR-132/167/169/267, preserves original criteria
+  and records successors. ADR-0219 retires helper-specific release/signing
+  obligations while keeping the existing two wheel profiles and cross-OS proof.
+- AR-285 offline parent/current replay reproduces unknown before the repair and
+  proven stopped now, plus eleven current negative/legacy cases. Focused
+  installer/registration suite: 181 passed in 4.49 seconds. Builder record cites
+  historical stopped-host install receipts separately. Isolated verifier: criteria
+  1/3/4 satisfied, 2/5 absent. Missing trusted-runner wiring citation and successful
+  changed-precondition dry-run receipt keep the issue open; its two boxes reopen.
+- Wider focused run: 443 passed, two skipped, two failed on Linux-only absence
+  of Windows file attributes. Filed AR-405 (#675); no code was changed.
+- At this checkpoint: 147 unfinished baseline records plus AR-404 and AR-405.
+- Named fast spine: 1004 passed, three skipped in 64.18 seconds; UI 138 passed;
+  docs/acceptance/tracker/distribution-verifier focused tests 207 passed.
+  Ruff, format, metadata, policy, worklog and strict docs/tracker checks pass.
+  Routing and decision conformance pass; source remains unchanged.
+- Claude acceptance verification recorded nothing: read-only transport inspection
+  reports an untrusted substitutable executable parent namespace. Codex transport
+  supplied the supported excerpt-only verification above. No second judgment
+  pass was used to force a successful verdict.
+  No host permissions, trust settings or credentials were changed.
 
 ## Exact blocker
+
+AR-285 is not done: its two absent evidence criteria are retained. AR-405's two
+existing Linux release-test failures remain a separate package. Neither blocks
+delivering the truthful record-reconciliation package through PR #676, but both
+block claiming their affected acceptance complete. No exhaustive workflow,
+Windows run, host trust bypass or service interruption was performed.
 
 The entire backlog is not complete. AR-348 was reproduced against current
 production hiring with fake valid replies in a disposable Store:
@@ -78,14 +112,16 @@ rewritten. The old PATH launcher was backed up before its interpreter changed.
 
 ## Next bounded work package
 
-1. Reproduce and repair AR-348/349 in a fresh bounded code package. Include
-   supported legacy providers, per-harness profiles, fallback winners and
-   safety-repair creators; prevent any unsafe worker and preserve atomicity.
-2. Follow lane C with a small retained multi-turn quality/latency corpus under
-   AR-253. Report full staffing p50/p95 and rejected trials, not only recall.
-3. Resolve AR-393 criterion 5's impossible retroactive receipt wording with the
-   owner; no historical data rewrite. Continue the remaining lanes without
-   mass closure or automatic priority relabeling.
+1. Preserve AR-285's two evidence gaps; add actual trusted-runner wiring citations
+   and recover the successful changed-precondition dry-run receipt or obtain
+   authority for a fresh bounded proof. Never turn absent verdicts into done.
+2. Verify implemented inspection/observability work such as AR-298; reconcile
+   AR-337's four-host battery versus all-supported-harness wording and AR-351's
+   obsolete domain-axis clause before implementing old proposals.
+3. Deliver genuine AR-271 uninstall-classifier and AR-348/349 hiring-safety
+   gaps as separate packages; retain AR-405's Linux regression follow-up.
+4. Continue AR-253 quality/latency proof and explicitly reconcile AR-393's
+   impossible retroactive-receipt wording. No historical data rewrite.
 
 ## Verification
 

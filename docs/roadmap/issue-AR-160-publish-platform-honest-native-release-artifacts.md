@@ -3,9 +3,11 @@ title: "AR-160: Publish platform-honest native release artifacts"
 status: in_progress
 category: roadmap
 created: 2026-07-27
-updated: 2026-07-27
+updated: 2026-09-05
 tags: [release, packaging, windows, portability, reproducibility]
 related:
+  - docs/decisions/0219-retire-removed-helper-release-obligations.md
+  - docs/roadmap/AR-404-backlog-dispositions-20260905.md
   - docs/roadmap/issue-AR-107-build-release-artifacts-from-canonical-git-blobs.md
   - docs/roadmap/issue-AR-143-require-operator-presence-for-controls.md
   - docs/roadmap/issue-AR-161-sign-and-license-windows-operator-presence-delivery.md
@@ -27,11 +29,21 @@ epic: release
 issue_id: AR-160
 priority: p0
 tracker_url: null
-depends_on: [AR-107, AR-167, AR-168, AR-169, AR-181, AR-183, AR-184]
-blocks: [AR-143, AR-161]
+depends_on: [AR-107, AR-168, AR-181, AR-183, AR-184]
+blocks: []
 ---
 
 # AR-160: Publish platform-honest native release artifacts
+
+## Current delivery scope (2026-09-05)
+
+ADR-0219 supersedes the helper-specific contract below. This issue remains open
+for current paired Windows/Linux artifact proof, not for restoring or signing
+the removed Windows Hello helper. Both wheel profiles are deliberately retained
+and neither admits executable or PE payloads. AR-167/169 are retired; their
+general integrity checks remain in the current build and verification tests.
+The following historical sections describe the original implementation, not
+the current product. Their checked boxes do not satisfy the new current gate.
 
 ## Problem
 
@@ -92,7 +104,7 @@ honest platform tag alone does not make the Windows payload production-ready.
 
 Creating the same-repository tracker item remains pending authorization.
 
-## Acceptance
+## Historical acceptance before helper removal
 
 - [x] One reviewed merged release set contains exactly one portable
   `py3-none-any` wheel, one `py3-none-win_amd64` wheel, and the explicitly
@@ -121,3 +133,11 @@ Creating the same-repository tracker item remains pending authorization.
   then assembles and verifies the exact three-artifact release set.
 - [ ] Fresh isolated wheel and source-distribution smoke, packaging, docs,
   warning-strict tests, and hosted Windows/Linux artifact gates pass.
+
+## Acceptance
+
+- [ ] An exact reviewed candidate produces the current portable and Windows x64 wheel/source pairs through canonical Git-blob construction on their respective platforms.
+- [ ] Both wheel profiles reject executable and structurally valid PE content; source, metadata, path/handle integrity and archive-mode checks remain fail-closed without a helper-specific exception.
+- [ ] The independent release verifier proves identical producer source distributions and shared wheel payloads, finite profile metadata differences, and exactly two wheels plus one source distribution from that candidate.
+- [ ] Fresh platform-appropriate wheel/source installs, supported-host smoke and the current release-checklist gates have retained candidate-bound evidence; platform-unavailable or publication-authority gaps remain explicit.
+- [ ] Current documentation, tracker history and artifact identity agree; no helper signing, legal clearance, Windows execution or optional exhaustive-suite pass is inferred from Linux tests or historical receipts.

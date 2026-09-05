@@ -6,6 +6,7 @@ created: 2026-07-30
 updated: 2026-08-12
 tags: [routing, inference, workforce, safety, failure]
 related:
+  - docs/roadmap/issue-AR-132-hire-deterministic-safe-gaps.md
   - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
   - docs/roadmap/issue-AR-205-make-default-manager-inference-safe.md
   - docs/roadmap/issue-AR-217-bind-gap-evidence-to-hiring-critics.md

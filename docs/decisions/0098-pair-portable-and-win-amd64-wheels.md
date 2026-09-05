@@ -1,11 +1,12 @@
 ---
 title: "Pair portable and win_amd64 wheels for native delivery"
-status: accepted
+status: superseded
 category: decisions
 created: 2026-07-27
-updated: 2026-07-27
+updated: 2026-09-05
 tags: [release, packaging, windows, portability, wheels]
 related:
+  - docs/decisions/0219-retire-removed-helper-release-obligations.md
   - docs/roadmap/issue-AR-107-build-release-artifacts-from-canonical-git-blobs.md
   - docs/roadmap/issue-AR-143-require-operator-presence-for-controls.md
   - docs/roadmap/issue-AR-160-publish-platform-honest-native-release-artifacts.md
@@ -17,13 +18,16 @@ related:
   - docs/RELEASE_CHECKLIST.md
   - docs/THREAT_MODEL.md
 supersedes: []
-superseded_by: null
+superseded_by: docs/decisions/0219-retire-removed-helper-release-obligations.md
 id: ADR-0098
 type: decision
 deciders: [maintainers]
 ---
 
 # ADR-0098: Pair portable and win_amd64 wheels for native delivery
+
+> Historical contract. ADR-0219 retains the paired artifact topology but retires
+> the removed helper payload. Both current wheel profiles reject PE content.
 
 ## Context
 

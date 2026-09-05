@@ -6,6 +6,7 @@ created: 2026-08-04
 updated: 2026-08-12
 tags: [workforce, hiring, security, routing, observability, inference]
 related:
+  - docs/roadmap/issue-AR-132-hire-deterministic-safe-gaps.md
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-122-contractor-hiring-and-lifecycle.md
   - docs/roadmap/issue-AR-228-eliminate-deterministic-staffing-authority.md
@@ -21,7 +22,8 @@ related:
   - agency_runtime/core/config_defaults.yaml
   - agency_runtime/core/structured_provider.py
   - agency_runtime/dashboard/dashboard-render.js
-supersedes: []
+supersedes:
+  - docs/roadmap/issue-AR-132-hire-deterministic-safe-gaps.md
 superseded_by: null
 type: issue
 epic: routing

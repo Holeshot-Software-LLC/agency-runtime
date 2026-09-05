@@ -1,28 +1,37 @@
 ---
 title: "AR-167: Normalize Windows release-source modes"
-status: in_progress
+status: wont_do
 category: roadmap
 created: 2026-07-27
-updated: 2026-07-27
+updated: 2026-09-05
 tags: [release, packaging, windows, reproducibility]
 related:
+  - docs/decisions/0219-retire-removed-helper-release-obligations.md
+  - docs/roadmap/issue-AR-197-remove-agency-owned-windows-hello.md
+  - docs/roadmap/AR-404-backlog-dispositions-20260905.md
   - docs/roadmap/issue-AR-107-build-release-artifacts-from-canonical-git-blobs.md
   - docs/roadmap/issue-AR-160-publish-platform-honest-native-release-artifacts.md
   - docs/decisions/0074-build-byte-deterministic-release-artifacts.md
   - scripts/build_distributions.py
   - tests/test_build_distributions.py
 supersedes: []
-superseded_by: null
+superseded_by: docs/roadmap/issue-AR-197-remove-agency-owned-windows-hello.md
 type: issue
 epic: release
 issue_id: AR-167
 priority: p0
 tracker_url: null
 depends_on: [AR-107]
-blocks: [AR-160]
+blocks: []
 ---
 
 # AR-167: Normalize Windows release-source modes
+
+> Retired, not completed, on 2026-09-05 under ADR-0219 and AR-197. The helper
+> and its archive-mode exception were removed. General Windows path/handle mode
+> integrity remains tested; current cross-OS release evidence remains AR-160's
+> responsibility. The historical problem, implementation and unchecked gates
+> below are preserved and no longer prescribe restoring an executable payload.
 
 ## Problem
 

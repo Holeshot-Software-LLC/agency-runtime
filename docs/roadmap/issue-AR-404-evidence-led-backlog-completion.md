@@ -6,6 +6,9 @@ created: 2026-09-05
 updated: 2026-09-05
 tags: [backlog, review, acceptance, delivery]
 related:
+  - docs/roadmap/AR-404-backlog-dispositions-20260905.md
+  - docs/decisions/0219-retire-removed-helper-release-obligations.md
+  - docs/roadmap/issue-AR-405-make-directory-identity-regressions-portable.md
   - docs/roadmap/AR-404-backlog-inventory-20260905.md
   - docs/roadmap/issue-AR-400-preserve-staffing-progress-across-empty-gaps.md
   - docs/roadmap/issue-AR-253-dynamic-team-dispatch-on-every-harness.md
@@ -35,6 +38,23 @@ behavior later decisions replaced. Treating all of them as new code fixes would
 repeat work and risk reintroducing superseded behavior.
 
 ## Current state
+
+2026-09-05 backlog package: the owner explicitly requested disposition before
+more implementation. The linked first semantic review retires AR-132/167/169/267
+under already-replaced policies, reconciles AR-160's active no-helper release
+contract, and records AR-285's isolated verification. Original retired
+checklists and historical receipts remain intact. After four retirements, 147 baseline items
+remain unfinished plus this coordinator and the newly reproduced AR-405
+Linux-incompatible Windows fixture issue (149 current unfinished records).
+AR-285 remains open with three satisfied and two absent criteria: actual
+trusted-runner wiring citations and a successful changed-precondition dry-run
+receipt are missing from its evidence. Delivery is PR #676; the worklog supplies
+its exact merge identity. No runtime or test source changed in this package.
+
+The review does not support mass closure: AR-271 is still missing its uninstall
+classifier fix, AR-337's battery excludes ZCode despite its literal all-supported
+scope, and AR-348/349 remain real safety gaps. The prior implemented review and
+its installed evidence below remain valid within their stated scopes.
 
 Phase: implementing. The four independent review findings are implemented and merged
 through PR #669. All-host deterministic smoke passes; one Claude native-child
@@ -104,8 +124,10 @@ fix these together with legacy, per-harness, fallback and safety-repair coverage
 ## Dependencies
 
 The current review closes first. Native trust, service interruption, missing
-approved operator text, platform availability, signing/publication and acceptance
-changes remain explicit operator decisions. Broad cleanup does not bypass them.
+approved operator text, platform availability and publication remain explicit
+operator decisions. The current owner-requested cleanup reconciles obsolete
+criteria through cited successor decisions; ADR-0219 retires only the removed
+helper's signing obligations. Broad cleanup does not waive current proof gates.
 No exhaustive workflow dispatch or unattended restart is implied.
 
 ## Acceptance
@@ -117,6 +139,9 @@ No exhaustive workflow dispatch or unattended restart is implied.
 
 ## Next bounded package
 
-Complete lane A and the three explicit tracker reconciliations; then reproduce
-AR-348/349 against current code and settle AR-393's historical-receipt criterion
-with the owner. The full backlog remains open until the acceptance above is met.
+Verify already-implemented inspection/observability work (AR-298), resolve
+explicit scope contradictions, and deliver genuine AR-271/348/349 fixes in
+separate bounded packages. AR-405 records the two Linux fixture failures without
+expanding this documentation batch. AR-285 needs its two named evidence gaps,
+not a repeated successful classifier test. The full backlog remains open until every
+baseline record has a reviewed disposition and remaining acceptance is met.

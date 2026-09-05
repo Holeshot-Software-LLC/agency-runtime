@@ -53,6 +53,7 @@ Status meanings:
 - ADR-0124 Grade product trials against the inferred unit graph → ADR-0133 Treat product specialist loads as turn-scoped
 - ADR-0165 Keep LiteLLM inference profiles model-agnostic → ADR-0166 Delegate exact schema translation to LiteLLM
 - ADR-0186 Bind Codex child sessions with a canary request digest → ADR-0187 Bind the Codex canary child through host-authored lineage → ADR-0188 Separate Codex hook parent and child identities
+- ADR-0098 Paired native wheels and ADR-0099 signed helper delivery → ADR-0219 Retire removed-helper obligations; retain paired artifact proof
 
 ## Architecture and integrations
 
@@ -244,8 +245,9 @@ Status meanings:
 | [ADR-0095](0095-complete-paginated-dashboard-collections.md) | Dashboard collection views expose complete paginated truth | Accepted |
 | [ADR-0096](0096-require-operator-presence-for-persistent-controls.md) | Require genuine operator presence for persistent controls | Superseded |
 | [ADR-0097](0097-gate-expensive-ci-fanout-behind-quality-contracts.md) | Gate expensive CI fanout behind same-revision quality contracts | Accepted |
-| [ADR-0098](0098-pair-portable-and-win-amd64-wheels.md) | Pair portable and win_amd64 wheels for native delivery | Accepted |
-| [ADR-0099](0099-separate-reproducible-unsigned-builds-from-signed-delivery.md) | Separate reproducible unsigned builds from signed delivery | Accepted |
+| [ADR-0098](0098-pair-portable-and-win-amd64-wheels.md) | Pair portable and win_amd64 wheels for native delivery | Superseded |
+| [ADR-0099](0099-separate-reproducible-unsigned-builds-from-signed-delivery.md) | Separate reproducible unsigned builds from signed delivery | Superseded |
+| [ADR-0219](0219-retire-removed-helper-release-obligations.md) | Retire removed-helper release obligations without waiving artifact proof | Accepted |
 | [ADR-0100](0100-short-circuit-trusted-docs-only-pull-requests.md) | Short-circuit trusted documentation-only pull requests | Accepted |
 | [ADR-0101](0101-run-exhaustive-python-verification-on-demand.md) | Run exhaustive Python verification on demand | Superseded |
 | [ADR-0102](0102-defer-one-shot-application-evaluation.md) | Defer complete-application evaluation without weakening live release evidence | Accepted |

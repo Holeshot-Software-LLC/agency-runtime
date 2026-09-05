@@ -6,6 +6,9 @@ created: 2026-07-28
 updated: 2026-07-28
 tags: [windows, security, operator-presence, host-integrations, simplification]
 related:
+  - docs/decisions/0219-retire-removed-helper-release-obligations.md
+  - docs/roadmap/issue-AR-167-normalize-windows-release-source-modes.md
+  - docs/roadmap/issue-AR-169-exclude-native-pe-from-portable-wheel.md
   - docs/decisions/0110-remove-agency-owned-windows-hello.md
   - docs/decisions/0096-require-operator-presence-for-persistent-controls.md
   - docs/decisions/0109-prepare-dashboard-service-repair-before-operator-presence.md
@@ -17,7 +20,9 @@ related:
   - docs/roadmap/handoffs/issue-AR-196.md
   - docs/roadmap/issue-AR-198-install-applicable-suite-by-default.md
   - docs/decisions/0111-install-the-applicable-suite-by-default.md
-supersedes: []
+supersedes:
+  - docs/roadmap/issue-AR-167-normalize-windows-release-source-modes.md
+  - docs/roadmap/issue-AR-169-exclude-native-pe-from-portable-wheel.md
 superseded_by: null
 type: issue
 epic: security
