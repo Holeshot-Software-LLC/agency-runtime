@@ -17,7 +17,7 @@ type: worklog
 commit: 4fdcd6a7b1ff3ae3ab8a666937adeb5d1111895b
 short: 4fdcd6a7
 date: 2026-09-05
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/679
 related_issues:
   - docs/roadmap/issue-AR-271-accept-stopped-openclaw-uninstall-status.md
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
@@ -49,7 +49,9 @@ historical evidence remains in its canonical issue and earlier worklog records.
 Focused installer/uninstall/CLI: 248 passed, two Windows-only skips (7.38s).
 Named production spine: 1030 passed, three skips (63.79s). UI: 138 passed.
 Ruff, format, metadata, policy, strict docs and diff checks pass. Acceptance and
-protected decision conformance remain pending. No real host was uninstalled or
+protected decision conformance were pending at implementation. Candidate
+4fdcd6a7 now has three isolated satisfied criteria, preserved in 8421e5f7;
+final conformance and PR #679 delivery remain. No real host was uninstalled or
 restarted, no trust bypass or credential change occurred, and no exhaustive
 workflow was dispatched.
 
