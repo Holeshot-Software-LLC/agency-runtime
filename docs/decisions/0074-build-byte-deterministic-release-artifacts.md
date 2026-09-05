@@ -91,6 +91,12 @@ identities remain unchanged.
 
 ## Consequences
 
+AR-405 commit 593f074f makes the directory-identity regression tests portable
+without changing this boundary. Real I/O/object replacement and synthetic
+Windows-attribute coverage remain active on Linux; native Windows observations
+are separately scoped. The reciprocal issue and worklog retain the exact
+test-only delivery and historical 71833c5c measurement.
+
 - Clean-checkout line-ending filters cannot change a release payload.
 - Backend line-ending defaults cannot change generated metadata or `RECORD`.
 - Canonical archive bytes do not depend on platform ZIP defaults or zlib

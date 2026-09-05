@@ -72,3 +72,16 @@ portable integrity assertions. The failing baseline, passing fixed run and
 test diff supply that bounded local demo. No real host uninstall, gateway
 stop/restart, artifact publication, exhaustive workflow or native Windows run
 was performed. Existing runtime installation is unaffected by a test-only fix.
+
+## Post-candidate verification checkpoint
+
+Candidate 593f074f supplied all three satisfied isolated Codex acceptance
+verdicts. PR #678 carries the test repair. The first decision-conformance command
+inherited shell umask 0002 and failed the baseline setup in
+ensure_private_directory with an untrusted creation boundary below the copied
+test workspace. No mutation ran and source_unchanged was true. This is not a
+directory-identity regression or a successful conformance result. The existing
+AR-297 record documents protected umask 077 execution; a rerun with that scoped
+process setting is in progress. Existing filesystem permissions and trust
+policy were not modified. The candidate's evidence sections above are frozen
+and remain separate from this later checkpoint.

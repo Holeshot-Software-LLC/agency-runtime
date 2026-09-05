@@ -12,7 +12,7 @@ supersedes: []
 superseded_by: null
 type: acceptance-verification
 issue_id: AR-405
-candidate_commit: pending
+candidate_commit: 593f074fc2e9e302efc9a20cdc2c82ce98637bb0
 evidence_cutoff: 2026-09-05
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/675
 ---
@@ -36,3 +36,6 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/675
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
+| 1 | satisfied | `AR-405.1-20260905-124a4504` | `5c23ff3f2472e3c80a2101f1d36a14a007b782d3b3b3f521dc7246319cbbcce0` | 2026-09-05 | tests/test_build_distributions.py:543-591 asserts identity survives clearing only 0x10000000 and rejects kind, inode, and device changes; lines 612-638 additionally cover same-path directory and file replacement. |
+| 2 | satisfied | `AR-405.2-20260905-c63ec485` | `137cfdbbb45505167ca58031c13382b77ebf7bd917b41fabb2d96a4e172cfc60` | 2026-09-05 | The cited evidence document records the complete Linux pytest run with 100 passed and one skip; test excerpts retain portable I/O and object identity assertions and explicitly scope the native Windows observation. |
+| 3 | satisfied | `AR-405.3-20260905-346df944` | `32944a0324ea4e834019befc929a49aed5e4af160ae3f6272623615109589905` | 2026-09-05 | The evidence document explicitly disclaims current native Windows execution and labels prior observations historical; the Windows-only test retains the filesystem observation with an explicit premise-based skip. |

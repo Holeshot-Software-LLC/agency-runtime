@@ -49,8 +49,10 @@ replays the volatile Windows bit and rejects file, link, reparse, missing-inode,
 different-inode and different-device cases. A separate native Windows test
 retains the historical filesystem observation, scoped to its actual premise.
 Focused result: 100 passed, one native-only skip on Linux. No production
-identity logic changed. Phase: fast_verification; isolated acceptance pending.
-The linked evidence preserves the red baseline and native-evidence limits.
+identity logic changed. All three isolated Codex acceptance verdicts are
+satisfied against candidate 593f074f. Phase: demo_ready; PR #678 delivery and
+the final verification checkpoint remain pending. The linked evidence preserves
+the red baseline and native-evidence limits.
 
 ## Approach
 
