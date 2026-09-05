@@ -6,6 +6,7 @@ created: 2026-07-21
 updated: 2026-09-05
 tags: [routing, workforce, contractors, delegation, participation, evaluation, performance, multi-harness]
 related:
+  - docs/roadmap/AR-404-oldest-first-reconciliation-20260905.md
   - docs/roadmap/issue-AR-115-live-routing-trust.md
   - docs/decisions/0222-retire-superseded-live-routing-contract.md
   - docs/decisions/0080-plan-before-recruiting-from-the-whole-workforce.md
@@ -124,6 +125,13 @@ current completion projection. It records selection authority, installed and
 live state, proof authority, exact artifacts, and limitations separately so a
 contract test or Store row cannot silently become a green host claim.
 
+### Dated host observations, not a current installation inventory
+
+The observations below predate the September reconciliation. Their relative
+terms (including "current" and "not installed") refer to their original
+candidate, not today's machine. Use Current state and the matrix's explicit
+candidate/cutoff for present completion decisions.
+
 Rule 4 — harness-spawned children receive specialist cards, plural — was first
 observed on a prior Claude candidate on 2026-08-11. Three host-authored child
 artifacts contain exact card identities before the child first spoke. None is
@@ -155,6 +163,37 @@ their bridge failure paths withhold the host response when Agency is
 unavailable.
 
 ## Current state
+
+**2026-09-05 oldest-first disposition: retain in_progress.** The nine-rule
+outcome remains relevant and is not complete. At reviewed main `d9ea419b`, the
+canonical matrix still evaluates `1bd7e37c` with an August 18 cutoff: three of
+45 rule/host cells are proven (R2/R3/R7 on Claude), and 42 are unproven. Those
+three are historical exact-candidate proofs, not current-install certification.
+This reconciliation changes no matrix cell, layer evidence, candidate identity,
+founding rule, latency floor, or acceptance criterion.
+
+The remaining work has existing owners: AR-252 for host-backed accepted
+outcomes/automatic promotion, AR-253 for exact-candidate host dispatch and cold
+latency, AR-255/281 for native-child proof, and AR-125 for matched value and
+independent evaluation. AR-256's completion-contract implementation is done;
+that does not satisfy this umbrella's live gates. AR-115's surviving ordinary
+staffing/header outcome is now owned here under ADR-0222.
+
+The September installed AR-348 deterministic eight-check smoke and passing
+production spine do not supply five live host proofs. The present session's
+unverified header is not contradicted by the dated August parent-success note
+below. A requested Codex-only hook refresh returned exit 1: files installed,
+activation required, hook trust unverified, and a projection mismatch reported
+against the separately retained OpenClaw package. No fresh-session activation
+or current live matrix proof followed; no trust was granted or gateway restarted.
+
+The refreshed capsule records the unresolved evidence and preserves the prior
+failed Hermes draw as provenance. Under AR-404's sequential backlog order,
+publish this record reconciliation, retain tracker #132 open, then inspect
+AR-120. Do not turn this umbrella into an unbounded live retry loop or close it
+to reduce the count.
+
+### Historical August operational checkpoint
 
 On 2026-08-19 the owner chose ADR-0160's Option A mechanism: persist one
 canary-only child-judge provider pin per harness, constrain both judge calls to

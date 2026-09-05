@@ -3,7 +3,7 @@ title: "AR-119 rule and host evidence matrix"
 status: active
 category: roadmap
 created: 2026-08-12
-updated: 2026-08-18
+updated: 2026-09-05
 tags: [vision, acceptance, evidence, hosts, parity]
 related:
   - docs/roadmap/AR-119-founding-vision.md
@@ -37,6 +37,14 @@ This is the sole current completion projection for the
 conservative: implementation or simulation evidence does not become installed
 or live proof, an unavailable host stays `unproven`, and a Store row or model
 claim never substitutes for the proof authority named below.
+
+**Freshness note (2026-09-05):** this remains the canonical completion
+projection, but its exact candidate and August 18 evidence cutoff have not
+advanced. Its three proven and 42 unproven rule/host cells are unchanged and
+are not a September installation certificate. Later source tests, installs,
+smokes, and historical operational notes do not silently advance a layer.
+This record-only reconciliation aligns the R1 narrative with the already
+recorded retraction; it does not rejudge any cell or alter the founding vision.
 
 `candidate_commit` is the exact source-evaluation baseline. `State` is derived
 from the four layer columns: any current negative layer makes the cell
@@ -845,9 +853,10 @@ satisfy a layer.
 ## Cross-cutting completion gates
 
 - **Inference authority:** implementation and simulation are proven on all five
-  host adapters at `211563c7`; the first installed and live card-hash join
-  exists on claude at this candidate (the live v6 envelope); codex, zcode,
-  hermes, and openclaw joins remain unproven.
+  host adapters at the recorded `211563c7` baseline. Claude's valid live v6
+  card-hash join is an existence proof only: the recorded R1 retraction leaves
+  its Installed/Live layers unproven, like those of the other four hosts.
+  Do not read the single envelope as a restored R1 pass.
 - **Automatic contractor promotion:** the rule that decides what may count, the
   recorder that applies it, and the readiness migration are proven at the source
   and in simulation (`agency_runtime/core/workforce/acceptance.py`,
@@ -855,9 +864,10 @@ satisfy a layer.
   producer and verifier proof in that evidence is constructed by the test, so
   installed and live proof is unproven on all five hosts. AR-252 remains P0 and
   blocks AR-119.
-- **Latency:** negative against the unchanged 15,000 ms cold gate. The latest
-  200-decision baseline reports computed p50 88.3 s and p95 195.9 s; AR-253
-  owns an exact-candidate remeasurement and repair.
+- **Latency:** the historical 200-decision baseline is negative against the
+  unchanged 15,000 ms cold gate (computed p50 88.3 s and p95 195.9 s). These
+  are not September latency measurements; AR-253 owns an exact-candidate
+  remeasurement and repair.
 - **Matched value:** unproven. AR-125 must produce a valid blinded Agency-on/off
   corpus; malformed and timed-out arms are invalid rather than losses.
 

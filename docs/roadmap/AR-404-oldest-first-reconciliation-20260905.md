@@ -10,6 +10,8 @@ related:
   - docs/roadmap/AR-404-count-reconciliation-20260905.md
   - docs/roadmap/AR-404-backlog-dispositions-20260905.md
   - docs/roadmap/issue-AR-115-live-routing-trust.md
+  - docs/roadmap/issue-AR-119-inference-first-workforce.md
+  - docs/roadmap/issue-AR-120-normalized-workforce-recruitment-index.md
   - docs/decisions/0222-retire-superseded-live-routing-contract.md
   - docs/worklog/README.md
 supersedes: []
@@ -45,9 +47,12 @@ not the 99 legacy count.
 
 | Order | Record | Disposition and evidence | Publication |
 |---|---|---|---|
-| 1 | AR-115 | Retire as superseded, not accepted. ADR-0222 replaces ADR-0078's heuristic staffing/six-field header with existing inference-only/canonical-five-field authorities. Original unchecked live gates retained; AR-119 explicitly absorbs the surviving outcome and AR-125 retains evaluation. Focused routing/header/credential/records: 183 passed (19.11s); fast spine: 1075 passed/three skips (68.74s). No runtime or live-state change. | Local retirement; PR/merge and tracker #127 not-planned closure pending. |
+| 1 | AR-115 | Retire as superseded, not accepted. ADR-0222 replaces ADR-0078's heuristic staffing/six-field header with existing inference-only/canonical-five-field authorities. Original unchecked live gates retained; AR-119 explicitly absorbs the surviving outcome and AR-125 retains evaluation. Focused routing/header/credential/records: 183 passed (19.11s); fast spine: 1075 passed/three skips (68.74s). No runtime or live-state change in the retirement. | [PR #690](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/690) merged at d9ea419b; #127 closed NOT_PLANNED at 2026-09-05T23:47:12Z, read back. |
+| 2 | AR-119 | Retain in_progress: relevant nine-rule/five-host umbrella with incomplete exact-candidate live evidence, AR-252 promotion, AR-253 dispatch/latency, AR-255/281 child proof, and AR-125 value/evaluation. Matrix still has three proven and 42 unproven cells at its August 18 candidate, not September certification. Reconcile stale current-state/capsule and R1 narrative; preserve all matrix rows, candidate, founding vision, criteria and failure history. | Record-reconciliation PR pending; #132 intentionally remains open. |
 
-After the local AR-115 retirement, 140 records remain unfinished: 41 mapped
-plus 99 legacy. The tracker remains at 42 until #127 is actually closed after
-merge. Next record is AR-119; keep its open live-proof obligations distinct
-from the retired AR-115 proposal. AR-120 follows in oldest-first order.
+After the merged AR-115 retirement, fresh enumeration confirms 41 open trackers
+and 140 unfinished local records (41 mapped plus 99 legacy). Retaining AR-119
+does not reduce either count. AR-120 is next after this disposition merges.
+The Codex-only hook refresh requested during AR-119 review returned exit 1
+with activation required, unverified trust and a reported projection mismatch;
+it did not supply live evidence or change any backlog disposition.

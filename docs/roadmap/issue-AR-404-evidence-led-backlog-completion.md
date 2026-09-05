@@ -53,12 +53,16 @@ repeat work and risk reintroducing superseded behavior.
 The owner now requires oldest-first sequential delivery: one record, one PR,
 merge, then the next, without routine approval stops. Windows stays excluded.
 The [oldest-first ledger](AR-404-oldest-first-reconciliation-20260905.md) is the
-current ordering/disposition record. AR-115 is locally retired under ADR-0222
-as a superseded heuristic/six-field-header proposal, not accepted as working.
-Its surviving live obligation is explicitly owned by AR-119/AR-125. Focused
-checks: 183 passed; fresh named spine: 1075 passed/three skips. No runtime,
-configuration, credential or host state changed. Its PR/tracker #127 publication
-is pending; AR-119 is next. The earlier AR-349-first plan below is historical.
+current ordering/disposition record. AR-115 was retired under ADR-0222 in
+PR #690, merged at d9ea419b; tracker #127 closed NOT_PLANNED at 23:47:12Z,
+read back. Its surviving live obligation is explicitly owned by AR-119/AR-125.
+Fresh counts are 41 open trackers plus 99 legacy records (140 unfinished).
+AR-119 remains a relevant incomplete umbrella: reconcile stale status/capsule
+and a narrative contradiction without changing any matrix cell, candidate,
+founding vision or acceptance criterion. Its tracker #132 stays open; AR-120
+is next after that reconciliation merges. The earlier AR-349-first plan below
+is historical. A requested Codex-only hook refresh returned exit 1 with trust
+unverified and a projection mismatch; it is not live completion evidence.
 
 ### Previous published checkpoint
 
