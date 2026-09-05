@@ -3,14 +3,14 @@ title: "AR-383 inferred subject projection handoff"
 status: active
 category: roadmap
 created: 2026-09-03
-updated: 2026-09-04
+updated: 2026-09-05
 tags: [handoff, workforce, recall, staffing, hiring, recruiter, critic, planner, install]
 related:
   - docs/roadmap/issue-AR-383-inferred-subject-context-fails-its-own-projection.md
   - docs/roadmap/issue-AR-370-staffing-asks-the-wrong-question.md
   - docs/roadmap/issue-AR-393-declared-gaps-leave-no-hiring-account.md
-  - docs/roadmap/issue-AR-394-recruiter-teams-fail-or-mis-select.md
   - docs/roadmap/issue-AR-397-packaged-contracts-cannot-be-revised-in-place.md
+  - docs/roadmap/issue-AR-398-a-gap-turn-that-outruns-its-lease-leaves-no-receipt.md
   - docs/decisions/0213-the-verifier-judges-safety-retrieval-judges-fit.md
   - docs/decisions/0211-give-retrieval-a-subject-and-name-the-empty-turn.md
   - docs/worklog/README.md
@@ -19,7 +19,7 @@ superseded_by: null
 type: handoff
 issue_id: AR-383
 branch: main
-evidence_commit: 573849767e46d2563fa82350eab951838de4033c
+evidence_commit: f706e8c60304578d381965b85b178ecf6071dbc3
 minimum_ledger_commit: b1c2b5574c357224bbada8f303917a0154be3984
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/581
@@ -27,120 +27,145 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/581
 
 # AR-383 inferred subject projection handoff
 
-> Everything below is on `main` at `57384976` and installed on all five
-> hosts from `c42fb0a5`. Nothing is branch-only. Staffing still dies at the
-> planner and recruiter most turns; that is the blocker, and it is not code on
-> any branch.
+> Everything below is on `main` at `f706e8c6` and installed on all five
+> hosts from `c42fb0a5`; nothing is branch-only. Staffing now completes on
+> plain requests through the real hook; the open defects are the codex trust
+> step (owner), the planner's prose replies, and a gap turn that loses its
+> receipt (AR-398).
 
-Start-here capsule after the 2026-09-04 evening session.
+Start-here capsule after the 2026-09-05 (early morning) session.
 
 ## checkpoint
 
-**Merged in order with merge commits:** #632 AR-395, #633 AR-394 (ADR-0213),
-#634 AR-392, #635 AR-370 c1 finding, #636 AR-393 c5, #637 capsule, then #638
-(the two operations contracts), #639 (its review follow-up), #640 (AR-397 plus
-the monitoring `release` lifecycle) and the tracker-mapping PR. Each merge-back
-of `main` carried a `docs(worklog):` row. The capsule's old conflict list was
-incomplete: #633 and #634 also met in `receipt_projection.py`; both kept.
+**Merged with a merge commit:** PR #657 (`claude/ar397-acceptance`, ten
+docs-only commits): the AR-397 close through the AR-361 flow, the platform
+decision in AR-370, the AR-393 criterion 5 measurement, the AR-398 filing and
+the review fixes. `main` did not move underneath it.
 
-**Install is live on every host.** `cli_install_drift_reports()` from the
-`c42fb0a5` venv returns no report, and every `launchers/current-<host>.json`
-names that venv. openclaw reads `runtime-verified`; hermes and zcode
-`enabled-runtime-unverified` until a live turn; codex `activation-required`
-because the new hook inventory (8 events, `status=modified trusted=0`) must be
-trusted in a fresh `codex` TUI. The claude session that did the work still runs
-the old runtime until relaunched: `hooks.json` embeds the digest path.
+**Launch check held.** The claude ancestor process carried `LITELLM_API_KEY`;
+every `launchers/current-<host>.json` names venv `c42fb0a5` (digest
+`929576f2`); this session's plugin embeds that digest and the claude process
+started after the install; `cli_install_drift_reports()` from the venv returns
+no report when run with cwd outside the checkout. Run inside the checkout it
+returns five foreign-package reports: the stale-import trap, not drift.
 
-**Roster.** 293 agents; `service-operations-engineer` and `monitoring-engineer`
-are packaged contractors with the `operations` domain. On the full roster six of
-eight operational work statements rank them first; the distribution-url phrasing
-is top-three behind `tool-evaluator`. The monitoring engineer covers
-`implementation` and `release` on a copy of the live store after install.
+**Codex is `activation-required`.** `agency install --agent codex
+--verify-activation` with the key entered the canary path (no model call was
+made) and stopped on `codex_hook_trust_not_ready`: hook trust
+`status=modified observed=8 trusted=0`. The owner step is unchanged: a fresh `codex` terminal TUI and
+`Trust all and continue`. One run failed the identity pre-check in 13 s
+without a canary; it did not reproduce in two later runs.
 
-**AR-397 (new, `in_progress`).** A packaged contract revised at the current
-template had no predecessor, so `agency install` would preserve a live worker
-forever. Superseded definitions are kept verbatim, pinned by prompt hash,
-returned as predecessors and as metadata authorities, and every pin is checked
-before the identity pass. Lifecycle phases are not identity; `hosts`,
-`platforms` and the two scenarios reach routing metadata but not the prompt;
-installer per-slug tables remain the open case.
+**AR-397 is done.** Record frozen at `45432976`, five `satisfied` verdicts in
+one verifier round, 48 tests green at the candidate, the five AR-397 tests and
+the release-lifecycle test failing on `dda2c8a3^`, and the monitoring engineer
+covering `release` on a copy of the live store. The per-slug table case is
+decided: `_DOMAINS`, `_ARTIFACTS`, `_OPTIONAL_TOOLS` are identity and the first
+change to one for a shipped slug must pin the prior values beside the
+superseded contract; nothing to pin today. Tracker #654 stays open until the
+owner authorizes its closure.
 
-**Tracker.** Issues #641 to #654 map AR-384 to AR-397; twelve `done` records
-have closed issues; #537 and #581 closed. `verify_tracker.py` names none of
-them. The older rows reading `pending authorization` were not authorized.
-
-**Review process.** One Opus reviewer per checkpoint, never a fork, never a
-fan-out: `~/.claude/agents/adversarial-reviewer.md` (`model: opus`,
-`effort: max`; visible after a claude restart). Two runs today: #638 after
-merge (false-green fixture, stale figures, unreachable pin) and #640 before
-merge (removed hook was needed, pin could not trip on a current machine,
-mechanism load-bearing for the live hire case). Each cost about 200k Opus tokens.
+**Platform question settled from evidence.** The literal `install this:
+https://zcode.z.ai/en` turn, driven through the real hook from `c42fb0a5`
+against a store copy, was staffed on all four units with the critic approving;
+the planner wrote `desktop`, `operations`, `quality-assurance` with `linux`
+under `platforms`. The earlier install-a-CLI turn read `operations`,
+`quality-assurance`, `linux`. No reply used `platform`; the contracts keep
+`operations` alone (AR-370 doc, dated section).
 
 ## completed-evidence
 
-Commits on `main`: `e2b149e2` contracts, `ea2efe29` follow-up, `dda2c8a3` and
-`f67b718f` AR-397, `a587fcce` tracker mappings. Live proofs: pointers and empty
-drift list above; store copies show 293 agents, 28 from `agency-runtime`, the
-monitoring recruiter row `("implementation", "release")`, no divergence, hire
-case auditable. Planner replay by deployment id with `cache: {"no-cache": true}`:
-gpt-5.5 (`c2692490`, order 1) JSON 20 of 20 across four prompt shapes;
-glm-5-turbo (`ed1b5bbc`, order 2) 0 of 5 plan calls, every one a 45 s gateway
-timeout, 2 of 2 on the small subject call. Route by id: `"model": "<model_info.id>"`.
+Merged commits: `45432976` evidence, `32ab551a` verdicts and flip, `c93e8ae3`
+platform decision, `57e4a265` AR-393 measurement and AR-398 filing,
+`c9951209` review fixes, each with its `docs(worklog):` row. Store copies: `store-copy-b.db` (03:31Z) holds the
+three hook probes; `store-copy-c.db` (03:59Z) proves the live store took no
+row from them. Captures with full provider replies under
+`scratchpad/payloads-{bareurl,gapcobol,gapada}` of session `3a994fdc`.
+
+**AR-393 criterion 5, measured on copies.** The first declaring receipt
+written by fix-carrying code (2026-09-05T00:28:19Z, trace `381f75c6`) carries
+`hiring_status_abstained`, `hiring_inference_attempted`,
+`hiring_inference_failed`, `provider_model_text_not_json`; the 42 silent rows
+all predate the fix; 11 receipts since the `c42fb0a5` install, none declaring.
+The criterion's second half asks pre-fix rows to name their condition, which
+no code change can do; rewording it is an owner decision.
+
+**AR-398 (new, `open`, p1, tracker pending).** A COBOL z/OS request declared
+six gap units; the hiring loop sent fifteen requests over 613 s (one security
+review never returned; its 60 s deadline is part of the 613), every proposal
+`hire`, every critic `approved`; the run's 600 s preflight lease expired at
+03:56:02Z; `Store.fail_preflight_attempt` writes the receipt only inside an
+UPDATE guarded by the lease, returned `False`, and `core/preflight.py:901`
+discards it. Result: no receipt, no hiring case, the run left `in_progress`,
+and the host told `no_safe_sufficient_team`. `renew()` serves child routes only.
+The live store already holds eleven runs in this shape (ten openclaw, one
+hermes), read from the 03:59Z control copy.
 
 ## exact-blocker
 
-**Staffing ends at inference.** 156 receipts since the last declaring one, 136
-of them `routing:workforce_provider_unavailable`; this session's own turns read
-`inference_unavailable`, `staffing_critic_rejected`, `roster_coverage_gap`,
-`inference_invalid`. Until a turn is staffed: AR-393 c5 stays unmeasurable
-(zero declaring receipts after the fix), AR-370 c1's live half is unproven, and
-the one open design question, whether a real planner labels "install this:
-url" as `operations` or `platform`, has no data. The prose planner replies from
-the afternoon did not reproduce; their prompts are not stored.
+**Three things, none of them code on a branch.** (1) Codex hook trust is an
+attended step in a fresh TUI. (2) The planner's prose replies reproduced: two
+task-notification turns in this session recorded `provider_model_text_not_json`
+twice on the planner (6 to 8 s, `actual_model` empty) and ended
+`inference_unavailable`; the receipts store no prompt, so the shape is known
+only as "system-notification text as the user message". (3) AR-398: any gap
+turn whose hiring loop outruns the lease vanishes from the store.
 
 ## same-task-continuity
 
-1. The install drift line names no host; read `cli_install_drift_reports()`
-   per host, the pointer, and the launcher tree under
-   `runtime-sha256-<digest>/site-packages/agency_runtime`. Relaunch to use it.
-2. Lifecycle phases travel through the repair pass; prose changes need the
-   superseded mechanism; a change to `_DOMAINS`/`_ARTIFACTS`/`_OPTIONAL_TOOLS`
-   is still not covered. Re-pin the recruiter envelope last, with a dated note.
-3. A fixture of only the 17 packaged contractors ranks them first trivially;
-   score retrieval against the full packaged roster.
-4. The classifier blocks one command that bundles push, `gh pr create` and
-   `gh pr merge`; push and create together, merge alone, and retry the merge,
-   which races GitHub's mergeability right after a push.
-5. Compare any failing test against `origin/main` before blaming a branch;
-   `test_dashboard...revision_bound_lifecycle` was fixed in #639.
-6. The repo's stale `build/` directory is why every venv carries the retired
-   `domain_expansion.py`; clear it before the next venv build.
+1. Import the installed package with cwd outside the checkout and `-P`
+   (`cd <scratchpad> && <venv>/bin/python -P ...`); inside it the repo shadows
+   the venv and every host reads as a foreign package.
+2. Drive the real hook against a copy: append `store:\n  db_path: <copy>` to a
+   copy of `agency.yaml` (the live file has no store block), pipe a hook JSON
+   with a `diag-*` session id, and patch `structured_provider._http_payload`
+   and `_read_http_response` to keep full replies (`capture_full.py`).
+3. `agency doctor --fix-perms` immediately before `verify_acceptance.py`; the
+   npm tree goes group-writable again between sessions and the verifier then
+   records nothing and exits 0.
+4. A retrospective close binds `candidate_commit` to the evidence commit and
+   cites the current tree; the verifier stamps the local date and bumps
+   `evidence_cutoff` itself.
+5. The codex identity pre-check can fail transiently on a cold inspector; run
+   `--verify-activation` twice before reading "could not be proven".
+6. Tracker gate is red between filing and mapping by design; run it with
+   `--allow-open-complete` and read the warning, do not create issues.
 7. One heredoc per shell call, printf commit messages to a file, `&&` after
-   every gate, and never pipe a gate through `tail`.
+   every gate, never pipe a gate through `tail`, merge with `--merge` only.
 
 ## next-bounded-work-package
 
-1. Owner: relaunch claude with the env sourced under `set -a`; open a fresh
-   `codex` TUI and choose `Trust all and continue`, then
+1. Owner: fresh `codex` TUI, `Trust all and continue`, then
    `agency install --agent codex --verify-activation` with the key.
-2. Capture one real "install this: <url>" turn once staffing works; decide
-   `platform` from what the planner writes, not by adding it.
-3. AR-397: close through the AR-361 flow (acceptance record, isolated verifier)
-   and decide the per-slug table case.
-4. AR-393 c5 on the first staffed turn that declares a gap; store copy only.
-5. Operator decision: glm-5-turbo cannot serve a plan call inside its 45 s
+2. Owner: authorize closing #654 (AR-397 done) and creating the AR-398 tracker
+   issue; then a "record the authorized tracker mapping" commit.
+3. AR-398: implement approach items 1 and 2 (a refused close still leaves a
+   receipt; the hiring loop stops inside the lease and says what it skipped),
+   with a replay of the COBOL shape against a store copy as the live proof.
+4. Capture one prose planner reply with its prompt: drive the hook with a
+   task-notification-shaped message through `capture_full.py` and keep the
+   payload; then decide whether the subject or plan prompt needs a JSON guard.
+5. Owner decision: reword AR-393 criterion 5 to receipts written after the fix,
+   then re-verify criterion 5 and flip AR-393.
+6. Operator decision: glm-5-turbo cannot serve a plan call inside its 45 s
    deployment timeout, so the planner alias has one working deployment.
-6. Clear `build/`, then rebuild the venv at the next merge and reinstall.
-7. Ask before creating issues for the older `pending authorization` rows.
+7. Nothing needs a venv rebuild: every merge this session was documentation.
+   `build/` is cleared. The `c42fb0a5` venv and launcher tree still carry the
+   retired `core/selector/domain_expansion.py` (nothing imports it, and the
+   drift check compares projections, not trees); the next code merge rebuilds
+   without it.
 
 ## verification
 
-Per PR: #638 116 tests on its neighbourhood, #639 116, #640 431 across fourteen
-suites, all green except the pre-existing failures also present on `main`;
-ruff clean on every changed file (the repository baseline is not clean);
-`verify_docs`, `docs_metadata`, `update_worklog --check` and the policy gate
-green on every branch; two Opus reviews with every finding either fixed or
-recorded as an open decision.
+Branch gates at `a042df1a`: `verify_docs` 0 non-worklog errors over 1056
+documents, `docs_metadata --check` clean, `update_worklog --check` current at
+1801 commits, `update_policy_availability --check` exit 0, the two AR-397
+suites 48 passed; no Python changed, so ruff was not run. Verifier run ids
+`AR-397.1..5-20260904-*`. One Opus review before the merge (186k tokens,
+129 tool calls, 22 minutes): eight findings, five fixed in the branch, three
+recorded here. `agency doctor --fix-perms` repaired 425 paths and still ends
+`FAILED` on `harness_battery_claude` and `adapter_claude: not natively
+registered` while the claude hooks were demonstrably running.
 
 ## constraints
 
