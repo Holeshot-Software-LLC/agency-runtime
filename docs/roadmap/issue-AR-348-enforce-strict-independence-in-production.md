@@ -10,6 +10,7 @@ related:
   - docs/decisions/0153-adopt-per-stage-inference-profile-routes.md
   - docs/decisions/0221-enforce-hiring-independence-on-resolved-provider-chains.md
   - docs/roadmap/acceptance/evidence/AR-348-strict-independence-20260905.md
+  - docs/roadmap/acceptance/evidence/AR-348-installed-delivery-20260905.md
   - docs/roadmap/issue-AR-235-autonomous-gap-hiring-with-isolated-security-review.md
   - docs/roadmap/issue-AR-347-reconcile-tracker-parity-backlog.md
 supersedes: []
@@ -48,8 +49,12 @@ Implemented under ADR-0221. Focused package: 413 passed, one existing skip
 (20.52s); named spine: 1075 passed, three existing skips (72.29s). The boundary
 recheck tests supplement the original 43-case red matrix. UI (138 cases),
 routing and Ruff pass; conformance catalog tests: 17 passed. The bounded
-production-path contract is complete. PR #687 publication and merged installed
-smoke are the next delivery steps, not evidence of five live native sessions.
+production-path contract is complete. PR #687 merged at 0309f251; tracker #406
+is closed. The exact immutable revision is installed: all 45 new hiring
+regressions pass against installed runtime bytes and all eight deterministic
+smoke checks pass, including five host contracts. Native refresh remains
+partial; the linked delivery receipt records trust, restart and live-session
+limitations separately. These are not five live native sessions.
 
 ### Reproduction history
 
