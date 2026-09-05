@@ -30,10 +30,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/581
 > Everything below is on `main` at `f706e8c6` and installed on all five
 > hosts from `c42fb0a5`; nothing is branch-only. One plain request staffed
 > four units through the real hook against a store copy; live traffic since
-> the install staffed nothing (14 of 14 runs `preflight_failed`). Open: the
-> codex trust step (owner), the planner's prose replies, and AR-398.
+> the install staffed nothing (14 of 14 runs `preflight_failed`). Codex is
+> `runtime-verified` since 11:35Z. Open: the planner's prose replies and AR-398.
 
-Start-here capsule after the 2026-09-05 (early morning) session.
+Start-here capsule after the 2026-09-05 session, updated after the codex trust step.
 
 ## checkpoint
 
@@ -49,12 +49,13 @@ install; `cli_install_drift_reports()` from the venv returns no report with cwd
 outside the checkout (inside it, five foreign-package reports: the stale-import
 trap, not drift).
 
-**Codex is `activation-required`.** `agency install --agent codex
---verify-activation` with the key entered the canary path (no model call was
-made) and stopped on `codex_hook_trust_not_ready`: hook trust
-`status=modified observed=8 trusted=0`. The owner step is unchanged: a fresh `codex` terminal TUI and
-`Trust all and continue`. One run failed the identity pre-check
-without a canary; it did not reproduce in two later runs.
+**Codex is `runtime-verified`.** After the owner trusted the eight hook events
+in a fresh TUI, `agency install --agent codex --verify-activation` with the
+key passed at 2026-09-05T11:35:10Z: live canary attempted and passed,
+attestation persisted (`current-profile`, plugin 0.1.0, codex-cli 0.153.2),
+`hook_trust_status trusted`, no stale reasons. Earlier the same command read
+`activation-required` on `codex_hook_trust_not_ready` (8 modified, 0 trusted),
+and one run failed the identity pre-check transiently.
 
 **AR-397 is done.** Record frozen at `45432976`, five `satisfied` verdicts in
 one verifier round, 48 tests green at the candidate, the six pinning tests
@@ -100,13 +101,13 @@ Eleven live runs already sit in this shape (ten openclaw, one hermes).
 
 ## exact-blocker
 
-**Three things, none of them code on a branch.** (1) Codex hook trust is an
-attended step in a fresh TUI. (2) The planner's prose replies reproduced: five
+**Two things, neither of them code on a branch.** (1) The planner's prose
+replies reproduced: five
 turns in this session (03:34Z to 03:58Z) recorded `provider_model_text_not_json`
 twice each on the planner (5.6 to 8.5 s, `actual_model` empty) and ended
 `inference_unavailable`, 10 of the 14 live receipts in the window; receipts
 store no prompt, so the shape is known only as "system-notification text as
-the user message". (3) AR-398: a gap turn that outruns its lease vanishes.
+the user message". (2) AR-398: a gap turn that outruns its lease vanishes.
 
 ## same-task-continuity
 
@@ -131,8 +132,8 @@ the user message". (3) AR-398: a gap turn that outruns its lease vanishes.
 
 ## next-bounded-work-package
 
-1. Owner: fresh `codex` TUI, `Trust all and continue`, then
-   `agency install --agent codex --verify-activation` with the key.
+1. Codex is verified; read its first live receipts after trust from a store
+   copy (session id, staffing codes) to see whether codex turns now staff.
 2. Owner: authorize closing #654 (AR-397 done) and creating the AR-398 tracker
    issue; then a "record the authorized tracker mapping" commit.
 3. AR-398: implement approach items 1 and 2 (a refused close still leaves a
