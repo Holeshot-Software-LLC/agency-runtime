@@ -17,7 +17,6 @@ from agency_runtime.core.preflight_failure import _project_validation_reason_cod
 from agency_runtime.core.structured_provider import (
     MODEL_TEXT_TRAILING_DATA_TRIMMED,
     StructuredProviderResult,
-    _parse_model_text,
     _parse_model_text_with_repair,
 )
 from agency_runtime.core.workforce.inference import _CallBudget, _invoke_stage
@@ -40,8 +39,9 @@ def test_one_stray_closing_brace_after_a_complete_object_is_trimmed_and_named() 
 
 def test_the_captured_reply_shapes_parse() -> None:
     # The two tails seen live on 2026-09-05: ``]} }`` and ``]}}\n``.
-    assert _parse_model_text(_PLAN + " }") is not None
-    assert _parse_model_text(_PLAN + "}\n") is not None
+    for tail in (" }", "}\n"):
+        parsed, repair = _parse_model_text_with_repair(_PLAN + tail)
+        assert parsed is not None and repair == MODEL_TEXT_TRAILING_DATA_TRIMMED
 
 
 def test_a_clean_object_needs_no_repair() -> None:
@@ -56,8 +56,8 @@ def test_a_fenced_object_with_a_stray_brace_is_repaired_too() -> None:
     assert repair == MODEL_TEXT_TRAILING_DATA_TRIMMED
 
 
-def test_trailing_prose_words_and_bare_prose_are_still_not_json() -> None:
-    # Only closing brackets and whitespace may follow the object.
+def test_a_stray_bracket_followed_by_prose_and_bare_prose_are_still_not_json() -> None:
+    # After a stray bracket only closing brackets and whitespace may follow.
     parsed, repair = _parse_model_text_with_repair(_PLAN + "} and that is the plan")
     assert parsed is None
     assert repair == ""
@@ -66,8 +66,20 @@ def test_trailing_prose_words_and_bare_prose_are_still_not_json() -> None:
     assert _parse_model_text_with_repair(None) == (None, "")
 
 
-def test_a_non_object_first_value_is_not_rescued() -> None:
+def test_trailing_prose_without_a_stray_bracket_is_accepted_as_before() -> None:
+    # Pre-existing behaviour: the first-to-last-brace span already resolved this
+    # shape on main, and it carries no repair because that span, not the new
+    # path, accepted it.
+    assert _parse_model_text_with_repair('{"a":1} and that is the plan') == ({"a": 1}, "")
+
+
+def test_a_text_without_an_object_is_refused_before_any_decode() -> None:
     assert _parse_model_text_with_repair("[1, 2]}") == (None, "")
+
+
+def test_a_reply_nested_past_the_recursion_limit_is_not_json_rather_than_an_error() -> None:
+    deep = '{"a":' + "[" * 10000 + "]" * 10000 + "}" + "}"
+    assert _parse_model_text_with_repair(deep) == (None, "")
 
 
 # --- the stage loop and the receipt --------------------------------------------

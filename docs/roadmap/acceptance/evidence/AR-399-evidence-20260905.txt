@@ -23,12 +23,17 @@ AR-399 evidence, 2026-09-05, main 1e24da20, branch claude/ar399-trailing-brace
    notif2 seq 2: tail ']} }'  -> parsed units=1 repair=model_text_trailing_data_trimmed
    replies: 4
 
-3. Shapes the parser still refuses, from the branch smoke (value -> parsed, repair):
+3. Shapes from the branch smoke (value -> parsed, repair). The first-to-last-brace span runs first and
+   still accepts trailing prose after a complete object, exactly as main did; the new path only
+   admits a tail of closing brackets, fence ticks or whitespace after a stray bracket.
 
-   '{"a":1} and that is the plan' -> (None, '')   -- trailing prose, not brackets
-   'The plan is to triage it.'    -> (None, '')   -- prose
-   '} {'                          -> (None, '')
-   '{"a":1}'                      -> ({'a': 1}, '')  -- a clean object needs no repair
+   '{"a":1}} and that is the plan' -> (None, '')       -- a stray bracket followed by prose
+   'The plan is to triage it.'     -> (None, '')       -- prose
+   '} {'                           -> (None, '')
+   '[1, 2]}'                       -> (None, '')       -- no object
+   '{"a":1} and that is the plan'  -> ({'a': 1}, '')  -- accepted by the old span, no repair
+   '{"a":1}'                       -> ({'a': 1}, '')  -- a clean object needs no repair
+   '{"a":[[[...10000 deep...]]]}}'  -> (None, '')       -- past the recursion limit, not an error
 
 4. The new suite at the branch (system python3, -p no:cacheprovider).
 
@@ -44,6 +49,8 @@ AR-399 evidence, 2026-09-05, main 1e24da20, branch claude/ar399-trailing-brace
 6. Lint on the three edited modules: identical to main (C901 and RUF100 in structured_provider.py,
    F401 in inference.py, all pre-existing); structured_provider.py's format state is main's.
 
-7. Live window the shape explains, read from the 03:59Z control copy of the live store: 10 of the
-   14 receipts since the c42fb0a5 install end inference_unavailable with two planner attempts each
-   reading provider_model_text_not_json (5.6 to 8.5 s, actual_model empty).
+7. Live window, read from the 03:59Z control copy of the live store: 14 receipts since the c42fb0a5
+   install; 10 end inference_unavailable. Five of those (all claude) carry two planner attempts each
+   reading provider_model_text_not_json (5.6 to 8.5 s, actual_model empty) -- the shape this fixes.
+   The other five are zcode receipts with no provider attempt at all, a different failure behind the
+   same staffing code, unchanged by this fix.

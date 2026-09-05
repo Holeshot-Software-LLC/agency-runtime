@@ -6,6 +6,7 @@ created: 2026-09-05
 updated: 2026-09-05
 tags: [workforce, planner, inference, transport, receipts, reliability]
 related:
+  - docs/decisions/0215-accept-one-complete-object-with-a-trailing-bracket.md
   - docs/roadmap/issue-AR-396-a-non-json-reply-gets-no-second-ask.md
   - docs/roadmap/issue-AR-392-transport-failures-collapse-to-one-code.md
   - docs/roadmap/handoffs/issue-AR-383.md
@@ -45,10 +46,12 @@ copy with `capture_full.py` keeping full replies (session `3a994fdc`,
 four planner replies, every one a valid object plus a single trailing `}`
 (`json.loads` fails with "Extra data" at the last character; content lengths
 492 to 525, `finish_reason stop`, 230 to 321 completion tokens). The same
-failure shape was the most common live failure in the window after the
-`c42fb0a5` install: 10 of 14 receipts carried `inference_unavailable` with two
-planner attempts each reading `provider_model_text_not_json` at 5.6 to 8.5 s,
-`actual_model` empty. The trigger seen so far is a system-notification text
+failure shape accounts for five of the 14 receipts since the `c42fb0a5`
+install: claude turns whose two planner attempts each read
+`provider_model_text_not_json` at 5.6 to 8.5 s with `actual_model` empty.
+Five more receipts in that window carry `inference_unavailable` from zcode with
+no provider attempt at all, a different failure this change does not touch.
+The trigger seen so far is a system-notification text
 arriving as the user message; the prompts include `response_format` with the
 plan JSON schema, so this is the model closing one brace too many rather than
 answering in prose.
@@ -64,12 +67,17 @@ named: `StructuredProviderResult.model_text_repair` carries
 `model_text_trailing_data_trimmed`, the applied attempt records it as a
 validation reason code, and the receipt projection admits that runtime-owned
 code for every stage, so a rescued reply is distinguishable from a clean one
-on the receipt. Any other trailing text is still not JSON, and prose is still
-prose.
+on the receipt. The first-to-last-brace span still runs first, so trailing
+prose after a complete object is accepted as it always was; a stray bracket
+followed by anything but brackets or whitespace, and a text with no object,
+are still not JSON. Only the HTTP transport parses model text this way; the
+CLI transport reads model text with the bounded loader directly and gets no
+repair, so the same shape from a codex or claude CLI provider still costs the
+turn (out of scope here). ADR-0215 records the contract change.
 
 ## Approach
 
-Parser-side tolerance for the one observed shape, recorded on the attempt;
+Parser-side tolerance for the one observed shape, recorded on the attempt (ADR-0215);
 no prompt change. A prompt-side guard cannot make the model stop emitting the
 brace, and the second ask already proved that asking again draws the same
 reply.
@@ -83,8 +91,10 @@ reply.
 - [ ] A reply that is one complete object followed only by closing brackets or
       whitespace is applied on the first ask, and the attempt carries
       `model_text_trailing_data_trimmed`.
-- [ ] A reply with any other trailing text, or no object at all, is still
-      reported `provider_model_text_not_json`.
+- [ ] A reply in which a stray closing bracket is followed by anything but
+      closing brackets or whitespace, and a reply with no object at all, are
+      still reported `provider_model_text_not_json`, and a reply nested past the
+      interpreter's recursion limit is refused the same way rather than raising.
 - [ ] The repair code survives receipt projection for every stage, and a
       clean reply carries no repair code.
 - [ ] Replaying the four captured replies through the parser yields four plan

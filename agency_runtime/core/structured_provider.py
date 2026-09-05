@@ -303,6 +303,8 @@ _TRAILING_DATA_CHARACTERS = frozenset("}] \t\r\n`")
 
 
 def _parse_model_text(value: object) -> dict[str, Any] | None:
+    """The plain form for callers that do not need the repair name."""
+
     parsed, _repair = _parse_model_text_with_repair(value)
     return parsed
 
@@ -311,10 +313,13 @@ def _parse_model_text_with_repair(value: object) -> tuple[dict[str, Any] | None,
     """Parse the model text as one JSON object, naming the one repair allowed.
 
     AR-399: a planner that answers with a complete plan object followed by a
-    single stray ``}`` was read as prose and cost the turn. The first complete
-    object is accepted when everything after it is closing brackets, fence
-    ticks or whitespace; any other trailing text is still not JSON. The
-    repair is returned so the attempt can say the reply needed it.
+    single stray ``}`` was read as prose and cost the turn, because the span
+    from the first ``{`` to the last ``}`` swallowed the stray brace. That span
+    still runs first, so trailing prose after a complete object is accepted as
+    it always was. When it fails, the first complete object is accepted only if
+    everything after it is closing brackets, fence ticks or whitespace; a stray
+    bracket followed by anything else, or no object at all, is still not JSON.
+    The repair is returned so the attempt can say the reply needed it.
     """
 
     if not isinstance(value, str):
@@ -345,7 +350,9 @@ def _parse_first_object_with_trailing_data(
 ) -> tuple[dict[str, Any] | None, str]:
     try:
         _value, stop = json.JSONDecoder().raw_decode(text, start)
-    except ValueError:
+    except (ValueError, RecursionError):
+        # raw_decode recurses per nesting level; a reply nested past the
+        # interpreter's limit is not JSON the bounded loader would accept anyway.
         return None, ""
     tail = text[stop:]
     if not tail or set(tail) - _TRAILING_DATA_CHARACTERS:
@@ -803,6 +810,7 @@ def invoke_structured_provider_result(
         method="POST",
     )
     deadline = time.monotonic() + request_timeout
+
     # AR-392: from here the request has left the runtime, so every failure
     # below spent a call and says so. The blanket ``except`` stays blanket --
     # nothing unexpected escapes the transport -- and only the classification
