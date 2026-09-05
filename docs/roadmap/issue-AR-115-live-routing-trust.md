@@ -50,8 +50,9 @@ failure and unreadable header are not fixed or waived by this retirement.
 At source e5662d91, 183 focused routing/header/credential/resident-manager and
 documentation/tracker tests pass (19.11s). This is code/record evidence only;
 there is no new installed semantic matrix or native live pass. The original
-checked/unchecked criteria below remain unchanged and historical. Tracker #127
-is to close as not planned/superseded after this PR merges, not as completed.
+checked/unchecked criteria below remain unchanged and historical. PR #690 merged
+at `d9ea419b`; tracker #127 closed as NOT_PLANNED at 2026-09-05T23:47:12Z,
+with its state read back. This is supersession, not accepted completion.
 
 ### Historical pre-retirement checkpoint
 
