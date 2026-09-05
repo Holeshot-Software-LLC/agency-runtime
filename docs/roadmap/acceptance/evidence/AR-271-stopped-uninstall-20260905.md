@@ -80,3 +80,13 @@ integration workflows are not claimed; AR-119/160 keep those evidence owners.
 Pre-candidate fast verification: the named Python production spine returned
 1030 passed, three skipped in 63.79s; UI returned 138 passed. Ruff check and
 format pass. These are distinct from a live installed-host acceptance claim.
+
+## Post-candidate final verification
+
+Candidate 4fdcd6a7 has three satisfied isolated Codex verdicts, retained at
+8421e5f7. Protected umask 077 decision conformance passed its baseline (99.682s),
+killed 182/182 mutations with zero invalid/survived, and returned
+source_unchanged=true. Routing gates passed in the deterministic recall-only
+scope. Documentation/acceptance/tracker unit tests returned 104 passed (0.71s),
+and strict tracker parity passed (396 mapped records, two PR-history skips).
+PR #679 carries this bounded code fix; installed-source smoke follows merge.

@@ -290,7 +290,7 @@ the original inventory is a frozen baseline, not an implementation queue.
 | `AR-268` | [Create nested config parents privately](issue-AR-268-create-nested-config-parents-privately.md) | done | p0 | security | None (tracker creation pending explicit authorization) |
 | `AR-269` | [Accept null OpenClaw control errors](issue-AR-269-accept-null-openclaw-control-errors.md) | done | p0 | reliability | None (tracker creation pending explicit authorization) |
 | `AR-270` | [Bind OpenClaw installed-copy provenance](issue-AR-270-bind-openclaw-installed-copy-provenance.md) | open | p0 | install | None (tracker creation pending explicit authorization) |
-| `AR-271` | [Accept stopped OpenClaw uninstall status](issue-AR-271-accept-stopped-openclaw-uninstall-status.md) | in_progress | p0 | install | None (pre-tracker history) |
+| `AR-271` | [Accept stopped OpenClaw uninstall status](issue-AR-271-accept-stopped-openclaw-uninstall-status.md) | done | p0 | install | None (pre-tracker history) |
 | `AR-272` | [Preserve OpenClaw model receipt fields](issue-AR-272-preserve-openclaw-model-receipt-fields.md) | in_progress | p0 | reliability | None (tracker creation pending explicit authorization) |
 | `AR-273` | [Expose OpenClaw native finalizer tool](issue-AR-273-expose-openclaw-native-finalizer-tool.md) | in_progress | p0 | reliability | None (tracker creation pending explicit authorization) |
 | `AR-274` | [Make structured inference profiles model-agnostic](issue-AR-274-model-agnostic-structured-inference-profiles.md) | in_progress | p0 | provider-runtime | None (tracker creation pending explicit authorization) |

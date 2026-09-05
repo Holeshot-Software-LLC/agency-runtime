@@ -60,7 +60,15 @@ create a new external tracker or silently claim external parity.
 
 ## Next packages
 
-Continuation after the first record batch: AR-405 is implemented and accepted
+Second bounded fix: AR-271 is implemented and accepted through PR #679.
+Install and uninstall share the bounded stopped-state classifier. The red
+regression yielded seven failures/fifteen passes; the final focused suite has
+248 passes/two native Windows skips. The named spine has 1030 passes/three
+skips, UI 138, isolated acceptance three satisfied, and protected conformance
+182/182 kills with source unchanged. No real gateway was stopped or uninstalled.
+Current unfinished count is 147: 146 baseline records plus AR-404.
+
+Earlier continuation after the first record batch: AR-405 is implemented and accepted
 through PR #678. The build-test file returns 100 passed/one native-only skip;
 the wider seven files return 452 passed/three skips. Three isolated criteria
 are satisfied. Protected conformance passes baseline plus 182 mutation kills;

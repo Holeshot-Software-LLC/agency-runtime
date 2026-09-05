@@ -1,6 +1,6 @@
 ---
 title: "Accept stopped OpenClaw uninstall status"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-08-21
 updated: 2026-09-05
@@ -48,8 +48,11 @@ locked replanning, retained backups and native postconditions in place.
 Focused demo: 248 tests passed, two Windows-only skips in 7.38s, including
 owner denial and launcher/environment/revalidation drift refusal. Phase:
 fast_verification. All three isolated Codex criteria are satisfied against
-candidate 4fdcd6a7; protected conformance and PR #679 delivery remain pending.
-The legacy null tracker URL remains pre-tracker history.
+candidate 4fdcd6a7. Protected conformance passed its baseline (99.682s) and
+killed all 182 mutations with zero survived/invalid and source unchanged.
+The bounded contract outcome is done; PR #679 carries main delivery, followed
+by the separate installed-source smoke checkpoint. The legacy null tracker URL
+remains pre-tracker history.
 
 Historical incident:
 
@@ -73,6 +76,6 @@ unknown receipts blocked.
 
 ## Acceptance
 
-- [ ] Installation and uninstall share the bounded gateway classifier: complete exit-1 stopped/inactive/dead receipts prove stopped, and successful legacy top-level stopped/live behavior is preserved.
-- [ ] Malformed, partial, ambiguous, truncated, contradictory/live and other nonzero receipts cannot authorize uninstall; blocked plans execute no native mutation and leave the owned files unchanged.
-- [ ] Disposable-home contract tests prove write-free planning and reversible owned-bundle retirement for a stopped gateway, with and without native plugin registration; owner approval, execution identity and final state revalidation remain enforced, and live/unknown drift after approval or immediately before commit blocks mutation. No real gateway restart or live uninstall is claimed from these tests.
+- [x] Installation and uninstall share the bounded gateway classifier: complete exit-1 stopped/inactive/dead receipts prove stopped, and successful legacy top-level stopped/live behavior is preserved.
+- [x] Malformed, partial, ambiguous, truncated, contradictory/live and other nonzero receipts cannot authorize uninstall; blocked plans execute no native mutation and leave the owned files unchanged.
+- [x] Disposable-home contract tests prove write-free planning and reversible owned-bundle retirement for a stopped gateway, with and without native plugin registration; owner approval, execution identity and final state revalidation remain enforced, and live/unknown drift after approval or immediately before commit blocks mutation. No real gateway restart or live uninstall is claimed from these tests.

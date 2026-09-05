@@ -20,8 +20,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-404
 branch: codex/ar271-stopped-uninstall
-evidence_commit: 153a7c106cb024ea003cd1fb32914b7173913b90
-minimum_ledger_commit: 941df4823a77b77964c55e427f8bd043ce8cc69b
+evidence_commit: 8421e5f7548222284c8e1703a50bc0b4bd382a29
+minimum_ledger_commit: 8452cef04d8500f3599d92c8eab9a29ae9c41803
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -42,7 +42,8 @@ OpenClaw receipt while preserving all last-moment safety checks.
 - Frozen baseline: 155 unfinished records. AR-400/401/402/403 accepted closures
   left 151; four obsolete contracts AR-132/167/169/267 retired through cited
   successors left 147. AR-405 was newly filed outside the baseline and is now
-  done: 147 baseline items plus AR-404 remain unfinished (148 current records).
+  done. With AR-271's accepted closure, 146 baseline items plus AR-404 remain
+  unfinished (147 current records).
 - AR-400..403 fixes: PR #669 at 1de05aea, immutable installed build, projection
   349f1ae7fc74; twelve satisfied isolated criteria. Earlier AR-397/398/399
   bookkeeping reconciled #654/#670/#671. Native evidence remains scoped below.
@@ -72,13 +73,15 @@ OpenClaw receipt while preserving all last-moment safety checks.
   byte equality, owner denial, launcher/environment/revalidation drift and
   live/unknown state after approval or immediately before commit.
   All three isolated criteria are satisfied against 4fdcd6a7 (runs aaea78e6,
-  b9ab27a1 and dc532503). Final conformance, PR #679 delivery and installed smoke
-  are the remaining steps in this package, not claimed completed.
+  b9ab27a1 and dc532503). Protected conformance passed baseline (99.682s), killed
+  all 182 mutations and preserved source. Routing and 104 docs/acceptance/tracker
+  tests pass; strict tracker parity passes. PR #679 delivery and installed smoke
+  remain; no live uninstall is claimed.
 
 ## Exact blocker
 
 No code blocker for AR-271. Its real stopped receipt is now handled in tests;
-isolated acceptance is satisfied and final verification/delivery are pending.
+isolated acceptance and final verification are satisfied; delivery is pending.
 The package does not authorize a real
 host uninstall, automatic gateway stop/restart, or native trust bypass.
 AR-285's historical receipt gap is separate and remains open.
