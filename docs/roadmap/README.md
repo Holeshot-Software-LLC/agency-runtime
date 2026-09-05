@@ -772,7 +772,7 @@ not stable internal identifiers.
 | [AR-395](issue-AR-395-preflight-stage-vocabulary-is-incomplete.md) | [`eeb98653`](../worklog/README.md) (every stage the runtime runs, named on the receipt) | null |
 | [AR-397](issue-AR-397-packaged-contracts-cannot-be-revised-in-place.md) | [`dda2c8a3`](../worklog/README.md) (superseded packaged definitions as predecessors, the monitoring release lifecycle), [`f67b718f`](../worklog/README.md) (review fixes: metadata authorities, up-front pin check) | null |
 | [AR-394](issue-AR-394-recruiter-teams-fail-or-mis-select.md) | [`c2a923d4`](../worklog/README.md) (eight closed shortfall causes, the retrieval/eligibility split) | [ADR-0213](../decisions/0213-the-verifier-judges-safety-retrieval-judges-fit.md) |
-| [AR-400](issue-AR-400-preserve-staffing-progress-across-empty-gaps.md) | `47ab9fce`, `1de05aea` (PR #669) | null |
+| [AR-400](issue-AR-400-preserve-staffing-progress-across-empty-gaps.md) | `47ab9fce`, `1de05aea` (PR #669), `87159dc0` (installed review evidence) | null |
 | [AR-401](issue-AR-401-enforce-preflight-deadlines-at-provider-boundaries.md) | `47ab9fce`, `e9d8ecea`, `b389c638` | [ADR-0216](../decisions/0216-enforce-one-preflight-inference-deadline.md) |
 | [AR-402](issue-AR-402-separate-subject-domains-from-execution-eligibility.md) | `47ab9fce`, `e9d8ecea`, `af366dd8` | [ADR-0217](../decisions/0217-keep-subject-domains-out-of-execution-authority.md) |
 | [AR-403](issue-AR-403-reuse-roster-embeddings-across-hook-processes.md) | `e9d8ecea`, `af366dd8`, `b389c638` | [ADR-0218](../decisions/0218-cache-only-roster-vectors-across-hook-processes.md) |
