@@ -1842,6 +1842,9 @@ This registry connects repository history to the roadmap and to optional detail 
 | `894be044` | 2026-09-05 | fix(transport): refuse a deeply nested reply as not JSON and state the accepted shape exactly | null | null |
 | `984c3942` | 2026-09-05 | Merge pull request #660 from Holeshot-Software-LLC/claude/ar399-trailing-brace | null | null |
 | `51c66159` | 2026-09-05 | Merge remote-tracking branch 'origin/main' into claude/ar398-lease-receipt | null | null |
+| `e52f849e` | 2026-09-05 | Merge pull request #661 from Holeshot-Software-LLC/claude/ar398-lease-receipt | null | null |
+| `769488e7` | 2026-09-05 | docs(roadmap): refresh the AR-383 capsule after the AR-398 and AR-399 merges and the e52f849e install | [AR-383](../roadmap/issue-AR-383-inferred-subject-context-fails-its-own-projection.md) | Refreshed after the fixes: PRs #660 and #661 merged, venv e52f849e installed on all five hosts with the live store at schema 49, codex activation-required again on its new hook hashes, claude awaiting a relaunch, the AR-393 silence condition named, tracker authorizations still pending. |
+| `ba7acc86` | 2026-09-05 | docs(roadmap): apply the capsule review and name the schema-49 refusal | [AR-383](../roadmap/issue-AR-383-inferred-subject-context-fails-its-own-projection.md) | Capsule review applied: the old runtime refuses the schema-49 store until claude, hermes and zcode restart; the AR-393 silent count is 43 with the newest row attributed to this session's un-relaunched hooks; parser tail, stuck-run dates, review attribution and the drift recipe corrected. |
 <!-- worklog:end -->
 
 ## Provenance notes
