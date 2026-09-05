@@ -73,6 +73,11 @@ changes rather than duplicating every commit.
 
 ### Added
 
+- A planner reply that is one complete object followed by a stray closing
+  brace is applied instead of read as prose (AR-399): the parser keeps the
+  first complete object when only closing brackets or whitespace follow it,
+  and the attempt records `model_text_trailing_data_trimmed` so a rescued
+  reply stays distinguishable from a clean one on the receipt.
 - A gap turn that outruns its preflight lease no longer vanishes (AR-398,
   ADR-0214): the fail-open close is guarded by the attempt token alone and
   records an expired lease as the receipt's `preflight_lease_expired_before_close`
