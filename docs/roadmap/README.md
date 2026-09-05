@@ -785,7 +785,7 @@ not stable internal identifiers.
 | [AR-402](issue-AR-402-separate-subject-domains-from-execution-eligibility.md) | `47ab9fce`, `e9d8ecea`, `af366dd8` | [ADR-0217](../decisions/0217-keep-subject-domains-out-of-execution-authority.md) |
 | [AR-403](issue-AR-403-reuse-roster-embeddings-across-hook-processes.md) | `e9d8ecea`, `af366dd8`, `b389c638` | [ADR-0218](../decisions/0218-cache-only-roster-vectors-across-hook-processes.md) |
 | [AR-404](issue-AR-404-evidence-led-backlog-completion.md) | `e758f217` (inventory and tracker reconciliation), `e77b46cd` (verified review closures and next package), `16d0ec80` (PR #673 delivery); `f0f5c386` (backlog disposition/evidence), `8e9cb483` (release-checklist and verification checkpoint); `1d9dea1c` (isolated verdicts and PR #676 delivery); `c652736a` (PR #676 merged first cleanup) | [ADR-0219](../decisions/0219-retire-removed-helper-release-obligations.md) |
-| [AR-405](issue-AR-405-make-directory-identity-regressions-portable.md) | Filed during AR-404 at `6edfa6d8`: two pre-existing Windows-attribute fixture failures on Linux; no product change or passing release claim; `f0f5c386` (backlog disposition/evidence) | [ADR-0074](../decisions/0074-build-byte-deterministic-release-artifacts.md) |
+| [AR-405](issue-AR-405-make-directory-identity-regressions-portable.md) | Filed at `6edfa6d8`; `f0f5c386` (backlog disposition/evidence); `593f074f` (portable real/synthetic identity tests, 100 pass/one native skip; production unchanged) | [ADR-0074](../decisions/0074-build-byte-deterministic-release-artifacts.md) |
 
 ## Dependency summary
 
