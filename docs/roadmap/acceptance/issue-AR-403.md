@@ -44,6 +44,7 @@ observable artifacts; the isolated verifier alone supplies judgments.
 |---|---|---|---|---|---|
 | 1 | satisfied | `AR-403.1-20260905-2cfc473d` | `0a7dd07006cd8dc3b67b4e5cc378f857b6979e0313de4753e714dbc118b8e753` | 2026-09-05 | The subprocess test in tests/test_persistent_hybrid_recall_cache.py asserts embedding counts of three then one and identical candidates; catalog_vector_cache.py decodes exact float64 vectors without renormalization. |
 | 2 | satisfied | `AR-403.2-20260905-af39a614` | `5f049d70acaf8b414bb48025511c5edf1c25c4a4ddb9b46e5b5c523e79ea2667` | 2026-09-05 | The invalidation and unsafe-target tests demonstrate rebuilding or rejecting stale vectors, while catalog_vector_cache.py catches read, write and invalidation faults so they do not block valid recall. |
+| 3 | satisfied | `AR-403.3-20260905-e65561cc` | `cdcecebd246080716ebb451392c2465235497c37c8748bebb33a5b153bec7dc6` | 2026-09-05 | AR-403-recall-performance-20260905.json records current live cold/warm timings, counts, cache hits and explicit limitations; inference.py and hiring.py retain staffing verification, policy checks, strict critic, hiring critic and security gates. |
 
 ## Builder notes
 

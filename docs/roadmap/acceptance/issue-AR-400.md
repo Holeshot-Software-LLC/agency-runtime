@@ -39,6 +39,7 @@ The builder supplies evidence only; operator/platform blockers are not live pass
 |---|---|---|---|---|---|
 | 1 | satisfied | `AR-400.1-20260905-f5378d28` | `36692970f1c442d3c373bf8a92b3588ae288e9cf1c21dc79afb754d2b48c9fca` | 2026-09-05 | tests/test_staffing_contract_boundaries.py:29-164 covers one and two empty gaps in both commit modes, asserts retained assignments, and identifies the remaining gap with task_hiring_limit_reached when capped. |
 | 3 | satisfied | `AR-400.3-20260905-647dc189` | `02a805a13c3253b14eb3587b9370f28fe7f6c391453cf8caa19fd8978c70f0ac` | 2026-09-05 | AR-400-installed-delivery-20260905.md:20-107 records PR #669 and main merge, the exact installed VCS package, passing deterministic smoke for all five harnesses, and a live attempt or explicit operator/platform blocker for each. |
+| 2 | satisfied | `AR-400.2-20260905-d8aa0e5d` | `c43287743834494aaa485c62e098d2a7604356dac7351255b99e03090161f260` | 2026-09-05 | The test in tests/test_staffing_contract_boundaries.py:167-226 asserts both nominations remain accepted, and hiring.py:2715-2830 preserves other-unit nominations and verifies the full rebuilt proposal against current contracts before acceptance. |
 
 ## Builder notes
 

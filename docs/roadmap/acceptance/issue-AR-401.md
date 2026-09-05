@@ -44,6 +44,7 @@ observable artifacts; the isolated verifier alone supplies judgments.
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
 | 1 | satisfied | `AR-401.1-20260905-e085b30d` | `88575b15da86a8cf5dea1f9cd191e52225d08fc5a9be37de4676b04e90c9fd5b` | 2026-09-05 | test_preflight_provider_deadline.py shows real hiring and fallback calls stop after two bounded calls and record hiring_lease_budget_exhausted; provider_deadline.py enforces a shared absolute cutoff. |
+| 2 | satisfied | `AR-401.2-20260905-cb90d3c9` | `686398a40dce50e684f2817ccc3adf350e203a3fa0415226cdf540ececdc5446` | 2026-09-05 | provider_deadline.py scopes and resets one routing cutoff; test_preflight_provider_deadline.py covers planning, semantic repair, structured, embedding and reranking transports, nested deadlines, thread isolation and exception cleanup. |
 
 ## Builder notes
 
