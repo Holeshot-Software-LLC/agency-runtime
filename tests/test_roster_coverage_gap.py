@@ -2,8 +2,8 @@
 
 The planner draws its tokens from the roster vocabulary, not from what the
 roster can cover for one unit's authority and host. On the 2026-09-03 install
-smoke the only contract declaring ``domain:desktop`` carried modify authority,
-so every plan unit naming that domain was provably unstaffable before the
+smoke the only contract declaring ``capability:simulation`` carried modify authority,
+so every plan unit requiring that capability was provably unstaffable before the
 recruiter spoke, and the conjunctive sufficiency rule rejected each honest
 ``staff`` answer. These tests pin the replacement contract: a token some
 enabled contract declares but none covers eligibly is waived from team
@@ -115,19 +115,23 @@ def _desktop_engineer(*, enabled: bool = True) -> WorkforceContract:
         lifecycle="implementation",
         authority="modify",
         domains=("software-engineering", "desktop"),
-        capabilities=("analysis", "implementation", "testing"),
+        capabilities=("analysis", "implementation", "testing", "simulation"),
         enabled=enabled,
     )
 
 
 def _qa_planner() -> WorkforceContract:
-    return _contract("qa-planner", domains=("quality-assurance", "operations"))
+    return _contract(
+        "qa-planner",
+        domains=("quality-assurance", "operations"),
+        capabilities=("planning", "automation"),
+    )
 
 
 def _plan(
     *,
     domains: tuple[str, ...] = ("desktop", "operations"),
-    capabilities: tuple[str, ...] = ("planning", "operations"),
+    capabilities: tuple[str, ...] = ("planning", "operations", "simulation"),
 ):
     return parse_work_unit_plan(
         {
@@ -173,13 +177,15 @@ def _codes(decision) -> set[str]:
     return {item.code for item in decision.abstention_reasons}
 
 
-def test_unserved_domain_is_waived_and_recorded_on_the_accepted_decision() -> None:
+def test_unserved_capability_is_waived_and_recorded_on_the_accepted_decision() -> None:
     plan = _plan()
     roster = (_operations_manager(), _desktop_engineer())
 
     gaps = typed_staffing_coverage_gaps(plan.units[0], roster, _context())
 
-    assert gaps == RosterCoverageGaps(uncovered=("domain:desktop",), waived=("domain:desktop",))
+    assert gaps == RosterCoverageGaps(
+        uncovered=("capability:simulation",), waived=("capability:simulation",)
+    )
     assert gaps.unknown == ()
 
     proposal = build_deterministic_proposal(
@@ -199,23 +205,23 @@ def test_unserved_domain_is_waived_and_recorded_on_the_accepted_decision() -> No
     # The gap rides on the accepted decision with the exact token, so the
     # receipt says which requirement the roster could not serve.
     assert decision.abstention_reasons == (
-        AbstentionReason(ROSTER_COVERAGE_GAP, _UNIT, "", "domain:desktop"),
+        AbstentionReason(ROSTER_COVERAGE_GAP, _UNIT, "", "capability:simulation"),
     )
     assert ROSTER_COVERAGE_GAP in ADVISORY_STAFFING_CODES
 
 
 def test_a_token_no_contract_declares_stays_mandatory() -> None:
-    # `simulation` is a core planner capability no fixture contract supports,
+    # `automation` is a core planner capability no fixture contract supports,
     # so the unit names a specialty the roster does not have at all. That is a
     # hiring gap, not a coverage gap to wave through.
-    plan = _plan(capabilities=("planning", "simulation"))
+    plan = _plan(capabilities=("planning", "simulation", "automation"))
     roster = (_operations_manager(), _desktop_engineer())
 
     gaps = typed_staffing_coverage_gaps(plan.units[0], roster, _context())
 
-    assert gaps.uncovered == ("domain:desktop", "capability:simulation")
-    assert gaps.waived == ("domain:desktop",)
-    assert gaps.unknown == ("capability:simulation",)
+    assert gaps.uncovered == ("capability:simulation", "capability:automation")
+    assert gaps.waived == ("capability:simulation",)
+    assert gaps.unknown == ("capability:automation",)
 
     proposal = build_deterministic_proposal(
         plan,
@@ -235,10 +241,13 @@ def test_a_token_no_contract_declares_stays_mandatory() -> None:
 
 
 def test_a_coverable_token_still_needs_its_complement() -> None:
-    # quality-assurance is served eligibly by qa-planner, so it stays in the
+    # automation is served eligibly by qa-planner, so it stays in the
     # sufficiency proof: the minimum team pulls the complement in, and a
-    # ranking that forbids it has no safe team even though desktop is waived.
-    plan = _plan(domains=("desktop", "operations", "quality-assurance"))
+    # ranking that forbids it has no safe team even though simulation is waived.
+    plan = _plan(
+        domains=("desktop", "operations", "quality-assurance"),
+        capabilities=("planning", "operations", "simulation", "automation"),
+    )
     roster = (_operations_manager(), _qa_planner(), _desktop_engineer())
     ranking = {
         _UNIT: (
@@ -249,7 +258,7 @@ def test_a_coverable_token_still_needs_its_complement() -> None:
     }
 
     assert typed_staffing_coverage_gaps(plan.units[0], roster, _context()).waived == (
-        "domain:desktop",
+        "capability:simulation",
     )
 
     complemented = build_deterministic_proposal(
@@ -296,13 +305,13 @@ def test_coverage_gaps_count_only_enabled_typed_contracts_under_eligibility() ->
     disabled = typed_staffing_coverage_gaps(
         unit, (manager, _desktop_engineer(enabled=False)), _context()
     )
-    assert disabled.uncovered == ("domain:desktop",)
+    assert disabled.uncovered == ("capability:simulation",)
     assert disabled.waived == ()
 
     # Wildcard coverage is not positive evidence, so it neither covers nor
     # declares anything here.
     assert typed_staffing_coverage_gaps(unit, (manager, wildcard), _context()).unknown == (
-        "domain:desktop",
+        "capability:simulation",
     )
 
     # Without a context nothing is judged ineligible, so nothing is waived and
@@ -317,8 +326,8 @@ def test_typed_recall_shows_the_same_waived_tokens_the_verifier_waives() -> None
 
     recall = _typed_shortlists(plan, roster, context=_context())
 
-    assert recall[0]["uncovered_requirements"] == ["domain:desktop"]
-    assert recall[0]["waived_requirements"] == ["domain:desktop"]
+    assert recall[0]["uncovered_requirements"] == ["capability:simulation"]
+    assert recall[0]["waived_requirements"] == ["capability:simulation"]
     assert recall[0]["waived_requirements"] == sorted(
         typed_staffing_coverage_gaps(plan.units[0], roster, _context()).waived
     )
@@ -334,7 +343,10 @@ def test_operations_capability_reads_the_operations_domain() -> None:
 
 
 def test_repair_contract_names_only_the_coverable_axis() -> None:
-    plan = _plan(domains=("desktop", "operations", "quality-assurance"))
+    plan = _plan(
+        domains=("desktop", "operations", "quality-assurance"),
+        capabilities=("planning", "operations", "simulation", "automation"),
+    )
     roster = (_operations_manager(), _qa_planner(), _desktop_engineer())
     ranking = {
         _UNIT: (
@@ -365,13 +377,13 @@ def test_repair_contract_names_only_the_coverable_axis() -> None:
         )
 
     failure = raised.value.failures[0]
-    assert (failure.code, failure.axis) == ("staff_without_safe_team", "domain")
+    assert (failure.code, failure.axis) == ("staff_without_safe_team", "capability")
     repair = failure.repair_contract.as_prompt_dict()
     # The waived token is named separately and never listed as something the
-    # repair must cover; the coverable domain is the only ask.
-    assert repair["roster_uncovered_requirement_ids"] == ["domain:desktop"]
-    assert repair["uncovered_requirement_ids"] == ["domain:quality-assurance"]
-    assert repair["uncovered_after_required_ids"] == ["domain:quality-assurance"]
+    # repair must cover; the coverable capability is the only ask.
+    assert repair["roster_uncovered_requirement_ids"] == ["capability:simulation"]
+    assert repair["uncovered_requirement_ids"] == ["capability:automation"]
+    assert repair["uncovered_after_required_ids"] == ["capability:automation"]
 
 
 def test_declared_gap_on_an_unserved_unit_stays_hireable() -> None:
@@ -440,7 +452,7 @@ def test_staff_decision_survives_an_unserved_requirement_end_to_end() -> None:
     # manager with the desktop implementer as an acceptable cousin. Before
     # ADR-0198 the runtime rejected it as staff_without_safe_team on the
     # domain axis and the turn died at the repair; now it is accepted first
-    # time and the receipt names the unserved domain.
+    # time and the receipt names the unserved capability.
     snapshot = _snapshot(_operations_manager(), _desktop_engineer())
     plan = {
         "request_summary": "Install the editor on the machine.",
@@ -451,7 +463,7 @@ def test_staff_decision_survives_an_unserved_requirement_end_to_end() -> None:
                 "artifact_kind": "plan",
                 "domains": ["desktop", "operations"],
                 "stacks": [],
-                "capability_ids": ["planning", "operations"],
+                "capability_ids": ["planning", "operations", "simulation"],
                 "novel_capability": "",
                 "depends_on": [],
             }
@@ -501,11 +513,11 @@ def test_staff_decision_survives_an_unserved_requirement_end_to_end() -> None:
     assert [attempt.status for attempt in outcome.attempts] == ["applied", "applied"]
     assert outcome.staffing.units[0].selected == ("operations-manager",)
     assert outcome.staffing.abstention_reasons == (
-        AbstentionReason(ROSTER_COVERAGE_GAP, _UNIT, "", "domain:desktop"),
+        AbstentionReason(ROSTER_COVERAGE_GAP, _UNIT, "", "capability:simulation"),
     )
     recall = json.loads(prompts[1])["typed_recall"][0]
-    assert recall["uncovered_requirements"] == ["domain:desktop"]
-    assert recall["waived_requirements"] == ["domain:desktop"]
+    assert recall["uncovered_requirements"] == ["capability:simulation"]
+    assert recall["waived_requirements"] == ["capability:simulation"]
 
 
 def test_routing_receipt_names_the_waived_token_and_drops_prose() -> None:
@@ -547,7 +559,7 @@ def test_routing_receipt_names_the_waived_token_and_drops_prose() -> None:
             "status": "accepted",
             "units": [],
             "abstention_reasons": [
-                {"code": ROSTER_COVERAGE_GAP, "unit_id": _UNIT, "detail": "domain:desktop"},
+                {"code": ROSTER_COVERAGE_GAP, "unit_id": _UNIT, "detail": "capability:simulation"},
                 {"code": ROSTER_COVERAGE_GAP, "unit_id": _UNIT, "detail": secret},
                 {"code": ROSTER_COVERAGE_GAP, "unit_id": _UNIT, "detail": "vibes:desktop"},
                 {"code": "independent_assurance_missing", "unit_id": _UNIT, "detail": secret},
@@ -561,6 +573,6 @@ def test_routing_receipt_names_the_waived_token_and_drops_prose() -> None:
     assert unit["reason_codes"] == [ROSTER_COVERAGE_GAP, "independent_assurance_missing"]
     # Only the axis-prefixed roster token survives; prose and an unknown axis
     # fail closed to omission rather than to an opaque value.
-    assert unit["coverage_gaps"] == ["domain:desktop"]
+    assert unit["coverage_gaps"] == ["capability:simulation"]
     assert secret not in json.dumps(receipt)
     assert normalize_durable_routing_receipt(receipt) == receipt

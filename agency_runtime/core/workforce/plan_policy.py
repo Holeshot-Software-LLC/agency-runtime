@@ -6,7 +6,6 @@ import re
 from collections.abc import Collection, Mapping, Sequence
 from dataclasses import dataclass
 
-from agency_runtime.core.workforce.intent import RUNTIME_DOMAINS
 from agency_runtime.core.workforce.planning_contracts import WorkUnit, WorkUnitPlan
 
 _TOKENS = re.compile(r"[a-z0-9]+")
@@ -565,44 +564,6 @@ def _has_codebase_discovery(inventory: _PlanInventory) -> bool:
     )
 
 
-def _unserved_domain_violations(
-    plan: WorkUnitPlan,
-    served_domains: Mapping[str, Collection[str]] | None,
-    known_domains: Collection[str] | None,
-) -> tuple[str, ...]:
-    """Name every unit no worker can serve under its artifact kind's authority.
-
-    AR-384 / ADR-0201: a domain is a conjunctive staffing requirement and
-    eligibility needs at least one shared domain, so a unit none of whose
-    domains any worker serves under the authority its ``artifact_kind`` implies
-    can be staffed by nobody; the recruiter's only honest answer would be a gap
-    for a specialty the roster has under another authority. ``served_domains``
-    is the verifier's own eligibility applied per artifact kind on this host.
-    An empty list for a kind means nothing is proven for it (no worker of that
-    authority, or the host proved no tool the kind needs), so it cannot
-    distinguish a bad plan and defers to the staffing gate exactly as the tools
-    rule does. Domains the compiler chooses by itself are exempt: asking the
-    planner to replan cannot change them. So is a unit naming a domain outside
-    ``known_domains``: the compiler admits one only beside a declared
-    ``novel_capability``, which is how the open-ended pool reaches the recruiter
-    and declares a hiring gap, and that gap is the honest outcome.
-    """
-
-    if not served_domains:
-        return ()
-    codes: list[str] = []
-    for unit in plan.units:
-        served = served_domains.get(unit.artifact_kind) or ()
-        if not served or not unit.domains:
-            continue
-        if known_domains is not None and any(item not in known_domains for item in unit.domains):
-            continue
-        if set(unit.domains) & set(served) or set(unit.domains) <= RUNTIME_DOMAINS:
-            continue
-        codes.append("plan_unit_domains_unserved")
-    return tuple(codes)
-
-
 def plan_policy_violations(
     request: str,
     plan: WorkUnitPlan,
@@ -675,7 +636,9 @@ def plan_policy_violations(
         tool not in available_tools for unit in plan.units for tool in unit.required_tools
     ):
         codes.append("plan_unit_required_tools_unproven")
-    codes.extend(_unserved_domain_violations(plan, served_domains, known_domains))
+    # AR-402: served_domains is descriptive recall evidence, not a planning
+    # veto. Keep the keyword arguments and legacy repair code readable for
+    # older callers/receipts, but actual eligibility is verified at staffing.
     if any(item.mutation_scope == "external_write" for item in plan.units):
         codes.append("plan_external_write_requires_separate_authorization")
     return tuple(dict.fromkeys(codes))

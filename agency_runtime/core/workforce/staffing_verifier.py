@@ -403,8 +403,9 @@ def _unit_compatibility_reasons(
     reasons: list[str] = []
     if not _authority_satisfies(unit, contract):
         reasons.append("agent_authority_mismatch")
-    if unit.domains and not set(unit.domains) & set(contract.domains):
-        reasons.append("agent_domain_mismatch")
+    # AR-402: division/category-derived subject labels are recall evidence,
+    # not execution authority. Their incomplete taxonomy must not reject an
+    # otherwise authorized implementer or force an unrelated domain coverer.
     if (
         unit.languages + unit.frameworks
         and contract.stacks
@@ -459,7 +460,7 @@ REQUIREMENT_AXES: frozenset[str] = frozenset(
     {
         "artifact",
         "lifecycle",
-        "domain",
+        "domain",  # Read historical receipt axes; new requirements omit subject labels.
         "stack",
         "capability",
         "authority",
@@ -476,7 +477,6 @@ def _requirements(unit: WorkUnit) -> tuple[str, ...]:
     values = [
         f"artifact:{unit.artifact_kind}",
         f"lifecycle:{unit.lifecycle_phase}",
-        *(f"domain:{item}" for item in unit.domains),
         *(f"stack:{item}" for item in unit.languages + unit.frameworks),
         *(f"capability:{item}" for item in unit.required_capabilities),
         f"authority:{unit.authority}",
@@ -491,7 +491,6 @@ def _coverage(unit: WorkUnit, contract: WorkforceContract) -> frozenset[str]:
         covered.add(f"artifact:{unit.artifact_kind}")
     if unit.lifecycle_phase in contract.lifecycle_phases:
         covered.add(f"lifecycle:{unit.lifecycle_phase}")
-    covered.update(f"domain:{item}" for item in unit.domains if item in contract.domains)
     if contract.stacks:
         covered.update(
             f"stack:{item}" for item in unit.languages + unit.frameworks if item in contract.stacks

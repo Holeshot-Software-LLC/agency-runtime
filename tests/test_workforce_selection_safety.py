@@ -294,17 +294,25 @@ def test_active_incident_plan_has_a_safe_sufficient_audited_team() -> None:
         snapshot.generation,
     )
 
-    result = deterministic_staff_plan(
-        "Contain an active credential-theft incident, preserve forensic evidence, and "
-        "prepare a reversible recovery plan. Do not probe the live target offensively.",
+    # AR-402: the inferred nominations, not domain conjunction, own the
+    # complementary recovery perspectives. Verify those exact nominations.
+    nominations = {
+        "unit-incident-investigation": (("incident-responder", 1.0),),
+        "unit-containment-plan": (("incident-responder", 1.0),),
+        "unit-recovery-plan": (("incident-responder", 1.0), ("incident-response-commander", 0.9)),
+    }
+    proposal = build_deterministic_proposal(
         plan,
-        snapshot,
-        config=AgencyConfig(),
+        snapshot.contracts,
+        nominations,
         context=context,
+        semantic_required={
+            key: frozenset(slug for slug, _score in values) for key, values in nominations.items()
+        },
     )
-
-    assert result.staffing.accepted
-    assert {row.unit_id: row.selected for row in result.staffing.units} == {
+    staffing = verify_staffing(plan, proposal, snapshot.contracts, context=context)
+    assert staffing.accepted
+    assert {row.unit_id: row.selected for row in staffing.units} == {
         "unit-incident-investigation": ("incident-responder",),
         "unit-containment-plan": ("incident-responder",),
         "unit-recovery-plan": (

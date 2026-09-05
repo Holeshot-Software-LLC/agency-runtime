@@ -1,11 +1,12 @@
 ---
 title: "Constrain the planner's domains to what the roster serves under the unit's authority"
-status: accepted
+status: superseded
 category: decisions
 created: 2026-09-03
 updated: 2026-09-03
 tags: [workforce, planner, staffing, recruiter, roster, inference]
 related:
+  - docs/decisions/0217-keep-subject-domains-out-of-execution-authority.md
   - docs/roadmap/issue-AR-384-staff-decisions-die-on-uncoverable-typed-requirements.md
   - docs/roadmap/issue-AR-386-strict-critic-vetoes-verifier-accepted-install-turns.md
   - docs/roadmap/issue-AR-374-host-capability-vocabulary-gap.md
@@ -14,7 +15,7 @@ related:
   - docs/decisions/0118-require-inference-owned-staffing.md
   - docs/worklog/README.md
 supersedes: []
-superseded_by: null
+superseded_by: docs/decisions/0217-keep-subject-domains-out-of-execution-authority.md
 id: ADR-0201
 type: decision
 deciders: [owner]

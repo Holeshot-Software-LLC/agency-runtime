@@ -12,6 +12,10 @@ from datetime import datetime, timezone
 from typing import Any
 
 from agency_runtime.core.config import AgencyConfig, ProviderEntry
+from agency_runtime.core.provider_deadline import (
+    HIRING_DEADLINE_EXHAUSTED,
+    remaining_provider_timeout,
+)
 from agency_runtime.core.reply_budget import PROVIDER_RESPONSE_TRUNCATED, provider_for_stage
 from agency_runtime.core.structured_provider import (
     MAX_STRUCTURED_PROMPT_BYTES,
@@ -650,6 +654,7 @@ StructuredInvoker = Callable[..., StructuredProviderResult | None]
 class _CallBudget:
     maximum: int
     used: int = 0
+    deadline_monotonic: float | None = None
 
     def consume(self) -> bool:
         if self.used >= self.maximum:
@@ -832,6 +837,15 @@ def _invoke(
         # AR-385: the hiring stages own their reply budgets; a compiled
         # employment contract never fit the old transport constant.
         provider = provider_for_stage(provider, stage)
+        timeout = remaining_provider_timeout(provider.timeout, deadline=budget.deadline_monotonic)
+        if timeout <= 0:
+            failures.append(
+                _failed_attempt(
+                    stage, provider, reason_code=HIRING_DEADLINE_EXHAUSTED, status="skipped"
+                )
+            )
+            break
+        provider = replace(provider, timeout=timeout)
         if budget.remaining <= reserve or not budget.consume():
             failures.append(
                 _failed_attempt(
@@ -851,6 +865,16 @@ def _invoke(
             timeout=provider.timeout,
         )
         latency_ms = int((time.monotonic() - started) * 1000)
+        if remaining_provider_timeout(provider.timeout, deadline=budget.deadline_monotonic) <= 0:
+            failures.append(
+                _failed_attempt(
+                    stage,
+                    provider,
+                    reason_code=HIRING_DEADLINE_EXHAUSTED,
+                    latency_ms=latency_ms,
+                )
+            )
+            break
         if result is not None and result.carries_no_answer:
             # AR-392: the transport now names why it gave up. A refusal before
             # any request left gives the call budget back; a failure after it
@@ -2331,6 +2355,7 @@ def hire_contractor_for_gap(
     gap_reason_codes: Sequence[str] = (),
     allow_existing_worker_amendment: bool = True,
     invoker: StructuredInvoker = invoke_structured_provider_result,
+    deadline_monotonic: float | None = None,
 ) -> ContractorHiringOutcome:
     """Prove, criticize, persist, and immediately enable one narrow contractor.
 
@@ -2356,7 +2381,7 @@ def hire_contractor_for_gap(
             and _ROUTING_IDENTIFIER.fullmatch(normalized) is not None
         )
     )
-    budget = _CallBudget(config.workforce.hiring_call_budget)
+    budget = _CallBudget(config.workforce.hiring_call_budget, deadline_monotonic=deadline_monotonic)
     hiring_input = {
         "request_hash": _digest(request),
         "uncovered_work_unit": asdict(unit),
@@ -2711,7 +2736,7 @@ def restaff_after_hire(
         prior = [
             (item.agent_id, min(float(item.score), 0.79) if target else float(item.score))
             for item in row.ranked_semantic
-            if item.agent_id in available and item.agent_id != hired_agent_id
+            if item.agent_id in available and (not target or item.agent_id != hired_agent_id)
         ]
         rankings[row.unit_id] = [(hired_agent_id, 1.0), *prior[:15]] if target else prior[:16]
         ranked_ids = frozenset(agent_id for agent_id, _score in rankings[row.unit_id])
@@ -2737,7 +2762,13 @@ def restaff_after_hire(
             if "inference-declared-gap" in row.abstention_reasons:
                 remaining_declared_gaps.add(row.unit_id)
         semantic_forbidden[row.unit_id] = forbidden_ids
-    if not all(rankings.values()):
+    # A declared gap is allowed to have no nominations. Keep each completed
+    # hire while the remaining gaps are processed; requiring every row to be
+    # nonempty here discarded all progress on multi-gap turns (AR-400).
+    if any(
+        not ranking and unit_id not in remaining_declared_gaps
+        for unit_id, ranking in rankings.items()
+    ):
         return outcome
     current_context = replace(context, roster_generation=context.roster_generation)
     budget = staffing_budget_for_config(config)
@@ -2777,17 +2808,6 @@ def restaff_after_hire(
             abstention_codes=tuple(item.code for item in staffing.abstention_reasons),
             calls_used=outcome.calls_used,
             decision_source="inferred+hiring",
-        )
-        return WorkforceRoutingOutcome(
-            status="abstained",
-            mode=outcome.mode,
-            inference_mode="inferred+hiring",
-            plan=outcome.plan,
-            proposal=proposal,
-            staffing=staffing,
-            attempts=outcome.attempts,
-            abstention_codes=tuple(item.code for item in staffing.abstention_reasons),
-            calls_used=outcome.calls_used,
         )
     return WorkforceRoutingOutcome(
         status="accepted",

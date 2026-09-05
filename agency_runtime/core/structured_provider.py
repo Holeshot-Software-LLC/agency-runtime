@@ -26,6 +26,10 @@ from agency_runtime.core.config import (
 )
 from agency_runtime.core.http_safety import open_no_redirect
 from agency_runtime.core.model_capabilities import requires_completion_token_parameter
+from agency_runtime.core.provider_deadline import (
+    PROVIDER_DEADLINE_EXHAUSTED,
+    remaining_provider_timeout,
+)
 from agency_runtime.core.reply_budget import (
     PROVIDER_CALL_FAILED,
     PROVIDER_CALL_TIMED_OUT,
@@ -251,7 +255,9 @@ def _set_response_read_timeout(response: object, timeout: float) -> bool:
     return updated
 
 
-def _read_http_response(response: object, *, deadline: float) -> bytes | None:
+def _read_http_response(
+    response: object, *, deadline: float, maximum_bytes: int = MAX_STRUCTURED_RESPONSE_BYTES
+) -> bytes | None:
     """Read one bounded response without allowing slow-drip deadline extension."""
 
     reader = getattr(response, "read1", None)
@@ -263,25 +269,25 @@ def _read_http_response(response: object, *, deadline: float) -> bytes | None:
         if remaining <= 0:
             return None
         _set_response_read_timeout(response, remaining)
-        value = reader(MAX_STRUCTURED_RESPONSE_BYTES + 1)
+        value = reader(maximum_bytes + 1)
         if time.monotonic() >= deadline or not isinstance(
             value,
             (bytes, bytearray, memoryview),
         ):
             return None
         raw = bytes(value)
-        return raw if len(raw) <= MAX_STRUCTURED_RESPONSE_BYTES else None
+        return raw if len(raw) <= maximum_bytes else None
 
     chunks: list[bytes] = []
     total = 0
-    while total <= MAX_STRUCTURED_RESPONSE_BYTES:
+    while total <= maximum_bytes:
         remaining = deadline - time.monotonic()
         if remaining <= 0:
             return None
         _set_response_read_timeout(response, remaining)
         requested = min(
             _STRUCTURED_READ_CHUNK_BYTES,
-            (MAX_STRUCTURED_RESPONSE_BYTES + 1) - total,
+            (maximum_bytes + 1) - total,
         )
         value = reader(requested)
         if not isinstance(value, (bytes, bytearray, memoryview)):
@@ -759,6 +765,9 @@ def invoke_structured_provider_result(
     request_timeout = _bounded_timeout(provider.timeout if timeout is None else timeout)
     if schema_bytes is None or request_timeout <= 0:
         return _refused(PROVIDER_REQUEST_INVALID)
+    request_timeout = remaining_provider_timeout(request_timeout)
+    if request_timeout <= 0:
+        return _refused(PROVIDER_DEADLINE_EXHAUSTED)
     if provider_type == "cli":
         value = invoke_cli_structured(
             provider,
@@ -809,6 +818,9 @@ def invoke_structured_provider_result(
         headers=_http_headers(provider_type, api_key),
         method="POST",
     )
+    request_timeout = remaining_provider_timeout(request_timeout)
+    if request_timeout <= 0:
+        return _refused(PROVIDER_DEADLINE_EXHAUSTED)
     deadline = time.monotonic() + request_timeout
 
     # AR-392: from here the request has left the runtime, so every failure
@@ -828,7 +840,7 @@ def invoke_structured_provider_result(
     try:
         with open_no_redirect(request, timeout=request_timeout) as response:
             raw = _read_http_response(response, deadline=deadline)
-    except Exception as exc:  # noqa: BLE001 - classified, never propagated
+    except Exception as exc:
         reason, http_status = _transport_exception_cause(exc)
         return _failed(reason, http_status=http_status)
     if raw is None:

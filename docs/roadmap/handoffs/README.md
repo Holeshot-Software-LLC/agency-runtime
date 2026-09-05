@@ -72,6 +72,7 @@ behavior.
 
 ## Active capsules
 
+- [AR-400 staffing correctness and performance](issue-AR-400.md)
 - [AR-119 inference-first workforce](issue-AR-119.md)
 - [AR-180 Codex 0.149 hook compatibility](issue-AR-180.md)
 - [AR-189 ownership-bound host uninstall](issue-AR-189.md)

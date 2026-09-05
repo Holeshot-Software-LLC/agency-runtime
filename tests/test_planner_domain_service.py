@@ -33,7 +33,6 @@ from agency_runtime.core.workforce.contract import (
 )
 from agency_runtime.core.workforce.inference import plan_and_staff_workforce
 from agency_runtime.core.workforce.intent import (
-    COMPACT_INTENT_REPAIR_SYSTEM,
     COMPACT_INTENT_SYSTEM,
     compact_intent_taxonomy,
     served_domains_by_artifact_kind,
@@ -245,13 +244,13 @@ def test_served_domains_respect_host_platform_tools_and_enablement() -> None:
     assert read_only_host["plan"] == ("operations", "specialist-services")
 
 
-def test_a_unit_none_of_whose_domains_is_served_is_rejected() -> None:
+def test_subject_domains_do_not_veto_a_plan() -> None:
     served = served_domains_by_artifact_kind(_roster(), _context())
 
-    assert _CODE in plan_policy_violations(
+    assert _CODE not in plan_policy_violations(
         _REQUEST, _plan(_unit(_UNIT, domains=("desktop", "platform"))), served_domains=served
     )
-    assert _CODE in plan_policy_violations(
+    assert _CODE not in plan_policy_violations(
         _REQUEST, _plan(_unit(_UNIT, domains=("platform",))), served_domains=served
     )
     # One served domain is enough: ADR-0198 waives the rest and records them,
@@ -290,7 +289,7 @@ def test_only_the_offending_unit_needs_to_be_wrong() -> None:
         _unit("unit-two", domains=("desktop", "platform")),
     )
 
-    assert _CODE in plan_policy_violations(_REQUEST, plan, served_domains=served)
+    assert _CODE not in plan_policy_violations(_REQUEST, plan, served_domains=served)
 
 
 def test_the_rule_is_topology_independent() -> None:
@@ -298,7 +297,7 @@ def test_the_rule_is_topology_independent() -> None:
 
     served = served_domains_by_artifact_kind(_roster(), _context())
 
-    assert _CODE in plan_policy_violations(
+    assert _CODE not in plan_policy_violations(
         _REQUEST,
         _plan(_unit(_UNIT)),
         served_domains=served,
@@ -343,7 +342,7 @@ def test_runtime_chosen_domains_are_never_the_planners_fault() -> None:
 
     assert plan_policy_violations(_REQUEST, _plan(evidence), served_domains=served) == ()
     assert plan_policy_violations(_REQUEST, _plan(governance), served_domains=served) == ()
-    assert _CODE in plan_policy_violations(
+    assert _CODE not in plan_policy_violations(
         _REQUEST, _plan(_unit(_UNIT, domains=("desktop",))), served_domains=served
     )
 
@@ -361,12 +360,12 @@ def test_a_declared_novel_domain_is_left_to_hiring_not_replanned() -> None:
         == ()
     )
     # A known but unserved domain is still the planner's to fix.
-    assert _CODE in plan_policy_violations(
+    assert _CODE not in plan_policy_violations(
         _REQUEST, _plan(_unit(_UNIT)), served_domains=served, known_domains=known
     )
     # A caller that does not know the vocabulary cannot tell the two apart and
     # gets the plain rule.
-    assert _CODE in plan_policy_violations(_REQUEST, _plan(novel), served_domains=served)
+    assert _CODE not in plan_policy_violations(_REQUEST, _plan(novel), served_domains=served)
 
 
 def test_the_rejection_is_repairable_by_the_planner() -> None:
@@ -491,7 +490,7 @@ def _nomination() -> dict[str, Any]:
     }
 
 
-def test_an_unserved_plan_is_repaired_by_the_planner_before_the_recruiter_sees_it() -> None:
+def test_descriptive_domain_difference_does_not_spend_a_planner_retry() -> None:
     # The captured 2026-09-03 shape: the planner names the machine (desktop,
     # platform) on the install plan; before ADR-0201 that unit reached the
     # recruiter, which was rejected for not ranking the API platform planner
@@ -502,7 +501,6 @@ def test_an_unserved_plan_is_repaired_by_the_planner_before_the_recruiter_sees_i
     responses = iter(
         (
             _result(_compact_plan(["desktop", "platform"])),
-            _result(_compact_plan(["operations"])),
             _result(_nomination()),
         )
     )
@@ -534,11 +532,8 @@ def test_an_unserved_plan_is_repaired_by_the_planner_before_the_recruiter_sees_i
     )
 
     assert outcome.accepted
-    assert [attempt.stage for attempt in outcome.attempts] == ["planner", "planner", "recruiter"]
-    assert [attempt.status for attempt in outcome.attempts] == ["rejected", "applied", "applied"]
-    rejected = outcome.attempts[0]
-    assert rejected.reason_code == "provider_response_contract_invalid"
-    assert rejected.validation_reason_codes == (_CODE,)
+    assert [attempt.stage for attempt in outcome.attempts] == ["planner", "recruiter"]
+    assert [attempt.status for attempt in outcome.attempts] == ["applied", "applied"]
 
     first_system, first_prompt = calls[0]
     taxonomy = json.loads(first_prompt)["planning_taxonomy"]
@@ -550,15 +545,7 @@ def test_an_unserved_plan_is_repaired_by_the_planner_before_the_recruiter_sees_i
         "software-engineering",
     ]
 
-    repair_system, repair_prompt = calls[1]
-    assert repair_system == COMPACT_INTENT_REPAIR_SYSTEM
-    assert "[RUNTIME VALIDATION FEEDBACK]" in repair_prompt
-    feedback = json.loads(repair_prompt.split("[RUNTIME VALIDATION FEEDBACK]\n", 1)[1])
-    assert feedback["validation_reason_codes"] == [_CODE]
-    assert feedback["violations"][0]["code"] == _CODE
-    assert "domains_by_artifact_kind" in feedback["violations"][0]["required_correction"]
-
-    recruiter_plan = json.loads(calls[2][1])["plan"]
-    assert [unit["domains"] for unit in recruiter_plan["units"]] == [["operations"]]
+    recruiter_plan = json.loads(calls[1][1])["plan"]
+    assert [unit["domains"] for unit in recruiter_plan["units"]] == [["desktop", "platform"]]
     assert outcome.staffing.units[0].selected == ("operations-manager",)
     assert outcome.staffing.abstention_reasons == ()

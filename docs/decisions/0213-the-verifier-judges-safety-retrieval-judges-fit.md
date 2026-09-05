@@ -1,11 +1,12 @@
 ---
 title: "The verifier judges safety; retrieval judges fit"
-status: accepted
+status: superseded
 category: decisions
 created: 2026-09-04
 updated: 2026-09-04
 tags: [workforce, recruiter, staffing, retrieval, verifier, reliability]
 related:
+  - docs/decisions/0217-keep-subject-domains-out-of-execution-authority.md
   - docs/roadmap/issue-AR-394-recruiter-teams-fail-or-mis-select.md
   - docs/roadmap/issue-AR-370-staffing-asks-the-wrong-question.md
   - docs/decisions/0211-give-retrieval-a-subject-and-name-the-empty-turn.md
@@ -13,7 +14,7 @@ related:
   - docs/decisions/0198-waive-the-typed-requirements-the-roster-declares-but-cannot-serve.md
   - docs/worklog/README.md
 supersedes: []
-superseded_by: null
+superseded_by: docs/decisions/0217-keep-subject-domains-out-of-execution-authority.md
 id: ADR-0213
 type: decision
 deciders: [owner]
