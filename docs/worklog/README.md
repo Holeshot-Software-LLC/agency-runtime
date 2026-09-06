@@ -1913,6 +1913,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `3ca7d60a` | 2026-09-05 | docs(roadmap): reconcile retained workforce umbrella [AR-119] | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | [detail](2026-09-05-3ca7d60a-retain-workforce-umbrella.md) |
 | `8b8b594e` | 2026-09-05 | Merge pull request #691 from Holeshot-Software-LLC/codex/ar119-oldest-first-disposition | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | [detail](2026-09-05-3ca7d60a-retain-workforce-umbrella.md) |
 | `d5ff0c94` | 2026-09-05 | docs(roadmap): separate implemented index from remaining audit work [AR-120] | [AR-120](../roadmap/issue-AR-120-normalized-workforce-recruitment-index.md) | [detail](2026-09-05-d5ff0c94-reconcile-index-work.md) |
+| `bc392228` | 2026-09-05 | Merge pull request #692 from Holeshot-Software-LLC/codex/ar120-oldest-first-reconciliation | [AR-120](../roadmap/issue-AR-120-normalized-workforce-recruitment-index.md) | [detail](2026-09-05-d5ff0c94-reconcile-index-work.md) |
+| `0418d0af` | 2026-09-05 | docs(roadmap): retain unmatched evaluation and live-proof obligations [AR-125] | [AR-125](../roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md) | [detail](2026-09-05-0418d0af-retain-matched-evaluation.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

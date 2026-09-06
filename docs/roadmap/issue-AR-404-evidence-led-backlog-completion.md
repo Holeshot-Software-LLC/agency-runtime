@@ -62,8 +62,12 @@ in PR #691 at 8b8b594e without changing any matrix cell, candidate, founding
 vision or acceptance criterion. Its tracker #132 stays open. AR-120's source
 review now separates implemented contracts/typed relationships/snapshots from
 missing enrichment-review, discoverability and scheduled artifact-refresh work.
-219 focused tests pass; #133 stays open with a bounded remaining plan. AR-125
-is next after the AR-120 disposition merges. The earlier AR-349-first plan below
+219 focused tests pass; PR #692 merged at bc392228 and #133 stays open with a
+bounded remaining plan. AR-125 likewise retains its real matched-selection/
+value and five-host live obligations; 33 evaluator regressions pass, not a live
+study. Historical candidate evidence is labeled and deferred one-shot work is
+not revived. #138 remains open; AR-127 is next after this disposition merges.
+The earlier AR-349-first plan below
 is historical. A requested Codex-only hook refresh returned exit 1 with trust
 unverified and a projection mismatch; it is not live completion evidence.
 

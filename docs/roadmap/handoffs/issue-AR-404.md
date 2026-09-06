@@ -14,6 +14,7 @@ related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-120-normalized-workforce-recruitment-index.md
   - docs/roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md
+  - docs/roadmap/issue-AR-127-zcode-stop-rejection-shape.md
   - docs/decisions/0222-retire-superseded-live-routing-contract.md
   - docs/roadmap/acceptance/evidence/AR-348-installed-delivery-20260905.md
   - docs/worklog/README.md
@@ -21,9 +22,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-404
-branch: codex/ar120-oldest-first-reconciliation
-evidence_commit: 8b8b594ec4b67c1c45ba68e647939c73ddfc1d00
-minimum_ledger_commit: 7334814d756ff472c4816cdc4991ba1cc7546282
+branch: codex/ar125-oldest-first-reconciliation
+evidence_commit: bc3922285ca695a8c4638c481d0b3fbb7b8835ae
+minimum_ledger_commit: b091a0265f2f49ef6a49661c6a5f457b7344b806
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -35,8 +36,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 Owner priority: oldest first, one record, PR, merge, next; no routine approval
 stops. Windows stays with the owner. Judge old agent proposals for relevance.
 AR-115 is merged and retired. AR-119 reconciliation merged in PR #691 at
-8b8b594e with its live obligations open. AR-120 reconciliation is current;
-retain its real index-quality gaps, then move to AR-125. Main is 8b8b594e.
+8b8b594e with its live obligations open. AR-120 reconciliation merged in
+PR #692 at bc392228 with real index-quality gaps open. AR-125 reconciliation
+is current; retain its unmet study/live requirements, then move to AR-127.
 
 ## Completed evidence
 
@@ -52,6 +54,10 @@ retain its real index-quality gaps, then move to AR-125. Main is 8b8b594e.
   enrichment-review evidence, the approved discoverability baseline, and
   proposed contract/confusion/evaluation refresh remain missing. The weekly
   schedule is deliberate. #133 stays open with a bounded remaining plan.
+- AR-125: configured/held-out matched selection, paired outcome lift and
+  five-host live evidence are unfinished. 33 focused evaluator regressions
+  pass (2.68s), not a live study. Old Windows/Linux candidate evidence is dated;
+  the deferred AR-178 one-shot corpus is not restored. #138 remains open.
 - Fresh external enumeration: 41 open trackers. Local unfinished: 140 records,
   41 mapped plus 99 legacy. Legacy was 104 before AR-148/149/152/323 completed
   and AR-139 retired. AR-115 changes mapped count, not the 99 legacy count.
@@ -72,10 +78,10 @@ retain its real index-quality gaps, then move to AR-125. Main is 8b8b594e.
 
 ## Exact blocker
 
-No blocker to the bounded AR-120 record reconciliation and its PR/merge.
-Its universal projection-review, discoverability and scheduled artifact-refresh
-work remains owned here, not implemented by existing structural tests. AR-119
-keeps its live/cold-latency/promotion/value dependencies. Do not invent closure.
+No blocker to the bounded AR-125 record reconciliation and its PR/merge.
+The matched study and live proofs are not provided by existing evaluator tests.
+AR-120 retains projection-review/discoverability/refresh work; AR-119 keeps
+its live/cold-latency/promotion/value dependencies. Do not invent closure.
 The ordinary-session staffing/header diagnosis remains set aside for backlog
 order; the hook refresh did not resolve or waive it.
 
@@ -90,9 +96,9 @@ At 50-percent telemetry make the smallest safe clean checkpoint, then continue.
 
 ## Next bounded work package
 
-1. Publish AR-120 record reconciliation; keep #133 open.
-2. Review AR-125's remaining workforce/portability/value obligations against
-   current source and successor decisions; distinguish deferred one-shot work.
+1. Publish AR-125 record reconciliation; keep #138 open.
+2. Review AR-127's ZCode Stop rejection against current protocol/source and
+   existing test/live evidence before treating the agent-written report as fact.
 3. Continue by original creation date and AR-number tie break. Retain genuine
    operator/dependency holds and move to the oldest actionable record.
    Skip Windows work; do not ask routine permission for the authorized PR loop.
