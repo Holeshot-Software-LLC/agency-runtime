@@ -57,10 +57,13 @@ current ordering/disposition record. AR-115 was retired under ADR-0222 in
 PR #690, merged at d9ea419b; tracker #127 closed NOT_PLANNED at 23:47:12Z,
 read back. Its surviving live obligation is explicitly owned by AR-119/AR-125.
 Fresh counts are 41 open trackers plus 99 legacy records (140 unfinished).
-AR-119 remains a relevant incomplete umbrella: reconcile stale status/capsule
-and a narrative contradiction without changing any matrix cell, candidate,
-founding vision or acceptance criterion. Its tracker #132 stays open; AR-120
-is next after that reconciliation merges. The earlier AR-349-first plan below
+AR-119 remains a relevant incomplete umbrella; its record reconciliation merged
+in PR #691 at 8b8b594e without changing any matrix cell, candidate, founding
+vision or acceptance criterion. Its tracker #132 stays open. AR-120's source
+review now separates implemented contracts/typed relationships/snapshots from
+missing enrichment-review, discoverability and scheduled artifact-refresh work.
+219 focused tests pass; #133 stays open with a bounded remaining plan. AR-125
+is next after the AR-120 disposition merges. The earlier AR-349-first plan below
 is historical. A requested Codex-only hook refresh returned exit 1 with trust
 unverified and a projection mismatch; it is not live completion evidence.
 

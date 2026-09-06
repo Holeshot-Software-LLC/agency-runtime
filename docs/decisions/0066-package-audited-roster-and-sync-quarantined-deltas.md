@@ -6,6 +6,7 @@ created: 2026-07-18
 updated: 2026-07-27
 tags: [roster, upstream, audit, quarantine, supply-chain]
 related:
+  - docs/roadmap/issue-AR-120-normalized-workforce-recruitment-index.md
   - docs/roadmap/issue-AR-176-align-full-gate-contract-fixtures.md
   - docs/roadmap/issue-AR-86-govern-complete-upstream-roster-lifecycle.md
   - docs/roadmap/issue-AR-95-bind-remediation-resolution-authority-to-complete-durable-evidence.md
