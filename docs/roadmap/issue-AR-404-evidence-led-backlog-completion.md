@@ -65,8 +65,13 @@ missing enrichment-review, discoverability and scheduled artifact-refresh work.
 219 focused tests pass; PR #692 merged at bc392228 and #133 stays open with a
 bounded remaining plan. AR-125 likewise retains its real matched-selection/
 value and five-host live obligations; 33 evaluator regressions pass, not a live
-study. Historical candidate evidence is labeled and deferred one-shot work is
-not revived. #138 remains open; AR-127 is next after this disposition merges.
+study. PR #693 merged at 79930464; #138 is read back OPEN. AR-127's shape fix is
+present, while its retry/unavailable/full-suite checklist contradicts later
+policies. Retire it under ADR-0223 with current ZCode responsibility in AR-135.
+Broader checks expose the same three legacy assertions already recorded in
+August; AR-176 explicitly owns their repair (133 pass/three failures, not green).
+Local unfinished is 139 (40 mapped plus 99 legacy); #151 remains externally
+open until retirement merges. AR-129 follows, with Windows work excluded.
 The earlier AR-349-first plan below
 is historical. A requested Codex-only hook refresh returned exit 1 with trust
 unverified and a projection mismatch; it is not live completion evidence.

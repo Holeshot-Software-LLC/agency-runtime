@@ -1,11 +1,17 @@
 ---
 title: "AR-127: Make ZCode Stop rejections actually block"
-status: open
+status: wont_do
 category: roadmap
 created: 2026-07-25
-updated: 2026-08-12
+updated: 2026-09-05
 tags: [governance, host-integrations, zcode, observability, reliability]
 related:
+  - docs/roadmap/issue-AR-135-complete-zcode-integration.md
+  - docs/roadmap/issue-AR-176-align-full-gate-contract-fixtures.md
+  - docs/roadmap/AR-404-oldest-first-reconciliation-20260905.md
+  - docs/decisions/0223-retire-superseded-zcode-stop-checklist.md
+  - docs/decisions/0105-bound-delivery-to-live-demo-checkpoints.md
+  - docs/decisions/0120-construct-first-pass-evidence-headers.md
   - AGENTS.md
   - agency_runtime/adapters/hooks.py
   - agency_runtime/core/header/contract.py
@@ -14,7 +20,7 @@ related:
   - docs/roadmap/issue-AR-27-authoritative-delegation-stop-enforcement.md
   - docs/roadmap/issue-AR-118-reconcile-native-child-activation-evidence.md
 supersedes: []
-superseded_by: null
+superseded_by: docs/roadmap/issue-AR-135-complete-zcode-integration.md
 type: issue
 epic: host-integrations
 issue_id: AR-127
@@ -27,6 +33,9 @@ blocks: []
 # AR-127: Make ZCode Stop rejections actually block
 
 ## Problem
+
+Historical report below, not a fresh diagnosis of current hooks. In particular,
+its truncated-preview explanation was a hypothesis, not a proven root cause.
 
 The Agency evidence header is enforced at the `Stop` hook via
 `validate_completion_policy`, which correctly classifies a response as
@@ -57,6 +66,31 @@ Dependencies).
 
 ## Current state
 
+Retired as superseded under ADR-0223, not accepted against its old checklist.
+The narrow output-shape fix is already present at reviewed main 79930464 in
+both rejection sites and was originally delivered in d9ce781a / PR #150.
+ADR-0089 remains accepted. ADR-0120 now requires terminal rejection and exact
+replay, not continuation claims; Rule 8 publishes when Agency cannot verify or
+persist its own evidence; malformed Stop envelopes still block. ADR-0105 also
+supersedes the old mandatory full-corpus gate cited in the reopening note.
+
+AR-135 explicitly owns the surviving current ZCode Stop/native/full-response
+outcome. Its status remains open. No code, original acceptance item, founding
+rule or matrix cell changes, and no new live session is claimed. Tracker #151
+is to be retired as NOT_PLANNED after this package merges.
+
+Focused current-contract checks pass **37 tests in 3.37s**: real-Store first
+terminal rejection/replay on all three hook hosts, ZCode unpersistable-pass
+behavior, malformed/oversized Stop shape, no legacy retry consultation and
+completion-policy boundaries. This is source/test evidence, not a live canary.
+
+The broader host-hook/policy/turn-evidence check is **133 passed, three failed**
+in 41.91s. All three failures are already-documented legacy public-delegate and
+Codex/Claude retry expectations, now explicitly owned by AR-176. They are not
+hidden, skipped or repaired by this retirement, and the run is not called green.
+
+### Historical pre-reconciliation diagnosis
+
 The detection layer (`validate_completion_policy`,
 `evaluate_completion_policy`) is correct and consistent; the defect is solely
 in the host output-translation branch. No prior roadmap item or ADR covers
@@ -65,6 +99,10 @@ and AR-118 owns a different family of Stop false-rejects (native-child
 activation evidence); neither addresses the output shape.
 
 ## Approach
+
+Current disposition: retain the implemented decision:block shape, retire the
+obsolete retry/unavailable/full-suite checklist, and keep current integration
+evidence under AR-135. The implementation proposal below remains provenance.
 
 Two rejection-emission sites needed the same zcode correction:
 
@@ -89,6 +127,10 @@ fallback also emits `decision:block` for zcode.
 
 ## Dependencies
 
+Current responsibility: AR-135 retains native Stop and full-response proof,
+including investigation of the historical turn-5 symptom if it recurs. The
+following original cause assertion is not accepted as present evidence.
+
 - The turn-5 "present header reported as missing" symptom is a **separate
   defect**. Its rejection message is emitted uniquely at
   `agency_runtime/core/header/contract.py:1026-1035` after `validate_header`
@@ -103,6 +145,9 @@ fallback also emits `decision:block` for zcode.
   question raised in the originating session.
 
 ## Acceptance
+
+Historical checklist, unchanged. Retirement does not mark these criteria
+satisfied or turn prior/live claims into current exact-candidate proof.
 
 - `_reject_completion` emits `{"decision": "block", "reason": ...}` for the
   `zcode` host on every in-bridge rejection path (first rejection,

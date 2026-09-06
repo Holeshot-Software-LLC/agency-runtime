@@ -15,6 +15,9 @@ related:
   - docs/roadmap/issue-AR-120-normalized-workforce-recruitment-index.md
   - docs/roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md
   - docs/roadmap/issue-AR-127-zcode-stop-rejection-shape.md
+  - docs/roadmap/issue-AR-129-isolate-subprocess-environments.md
+  - docs/roadmap/issue-AR-176-align-full-gate-contract-fixtures.md
+  - docs/decisions/0223-retire-superseded-zcode-stop-checklist.md
   - docs/decisions/0222-retire-superseded-live-routing-contract.md
   - docs/roadmap/acceptance/evidence/AR-348-installed-delivery-20260905.md
   - docs/worklog/README.md
@@ -22,9 +25,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-404
-branch: codex/ar125-oldest-first-reconciliation
-evidence_commit: bc3922285ca695a8c4638c481d0b3fbb7b8835ae
-minimum_ledger_commit: b091a0265f2f49ef6a49661c6a5f457b7344b806
+branch: codex/ar127-oldest-first-reconciliation
+evidence_commit: 7993046498114339b08a545f917514753047828a
+minimum_ledger_commit: dfc844944ae7390e06ba1135986e156b6a872bb2
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -38,7 +41,8 @@ stops. Windows stays with the owner. Judge old agent proposals for relevance.
 AR-115 is merged and retired. AR-119 reconciliation merged in PR #691 at
 8b8b594e with its live obligations open. AR-120 reconciliation merged in
 PR #692 at bc392228 with real index-quality gaps open. AR-125 reconciliation
-is current; retain its unmet study/live requirements, then move to AR-127.
+merged in PR #693 at 79930464 with study/live requirements open. Current package:
+retire AR-127's superseded checklist under ADR-0223, then inspect AR-129.
 
 ## Completed evidence
 
@@ -58,9 +62,16 @@ is current; retain its unmet study/live requirements, then move to AR-127.
   five-host live evidence are unfinished. 33 focused evaluator regressions
   pass (2.68s), not a live study. Old Windows/Linux candidate evidence is dated;
   the deferred AR-178 one-shot corpus is not restored. #138 remains open.
+- AR-127: both output-shape repairs exist; ADR-0089 stays accepted. Retire its
+  obsolete retry/unavailable/full-suite checklist, not the native wire contract.
+  AR-135 owns current ZCode integration. Focused current-contract tests: 37 pass
+  in 3.37s. The broader run has 133 pass/three known legacy failures (41.91s);
+  AR-176 explicitly owns those removed public-tool/old retry assertions.
 - Fresh external enumeration: 41 open trackers. Local unfinished: 140 records,
   41 mapped plus 99 legacy. Legacy was 104 before AR-148/149/152/323 completed
   and AR-139 retired. AR-115 changes mapped count, not the 99 legacy count.
+  AR-127 local retirement leaves 139 unfinished (40 mapped plus 99 legacy);
+  the remote count stays 41 until #151 is actually closed after merge.
 - AR-115 focused routing/header/credential/records: 183 passed (19.11s).
   Fresh named spine: 1075 passed/three skips (68.74s). UI: 138 passed.
   Runtime/test/tool source unchanged from installed 0309f251.
@@ -78,10 +89,10 @@ is current; retain its unmet study/live requirements, then move to AR-127.
 
 ## Exact blocker
 
-No blocker to the bounded AR-125 record reconciliation and its PR/merge.
-The matched study and live proofs are not provided by existing evaluator tests.
-AR-120 retains projection-review/discoverability/refresh work; AR-119 keeps
-its live/cold-latency/promotion/value dependencies. Do not invent closure.
+No blocker to the bounded AR-127 retirement and its PR/merge. The wider selected
+run is not green; the three already-known obsolete fixture assertions are
+recorded under AR-176 without changing or skipping them. Current ZCode live
+proof remains AR-135's responsibility. AR-119/120/125 stay incomplete.
 The ordinary-session staffing/header diagnosis remains set aside for backlog
 order; the hook refresh did not resolve or waive it.
 
@@ -96,9 +107,9 @@ At 50-percent telemetry make the smallest safe clean checkpoint, then continue.
 
 ## Next bounded work package
 
-1. Publish AR-125 record reconciliation; keep #138 open.
-2. Review AR-127's ZCode Stop rejection against current protocol/source and
-   existing test/live evidence before treating the agent-written report as fact.
+1. Publish AR-127 retirement, close #151 as NOT_PLANNED, read back state/count.
+2. Review AR-129's subprocess environment boundary against current source;
+   leave any Windows-specific execution for the owner.
 3. Continue by original creation date and AR-number tie break. Retain genuine
    operator/dependency holds and move to the oldest actionable record.
    Skip Windows work; do not ask routine permission for the authorized PR loop.
@@ -111,7 +122,9 @@ rows, identity and founding vision are unchanged against d9ea419b.
 
 Run metadata, policy availability, exact worklog, strict docs/tracker and diff
 checks on each package. AR-120 adds the 219-case focused source check above;
-no runtime/test/script/workflow changes. Reuse the fresh unchanged receipts
+AR-125 adds 33 and AR-127 adds 37 current-contract passes, with the wider three
+legacy failures explicitly retained. No runtime/test/script/workflow changes.
+Reuse the fresh unchanged receipts
 above; no repeated six-minute mutation run for record-only reconciliation.
 No new live inference, Windows execution, exhaustive corpus/coverage matrix,
 cross-interpreter matrix or hosted workflow dispatch.

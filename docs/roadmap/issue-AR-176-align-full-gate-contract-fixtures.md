@@ -6,6 +6,8 @@ created: 2026-07-27
 updated: 2026-07-27
 tags: [testing, security, isolation, traceability, performance]
 related:
+  - docs/roadmap/issue-AR-127-zcode-stop-rejection-shape.md
+  - tests/test_turn_scoped_evidence.py
   - docs/decisions/0027-authoritative-runtime-evidence-traces.md
   - docs/decisions/0031-optional-user-dashboard-service-and-shared-configuration.md
   - docs/decisions/0055-freeze-executable-identity-before-launch.md
@@ -51,6 +53,18 @@ time and would waste hosted budget if the same contract drift escaped fast
 quality gates.
 
 ## Current state
+
+September 5 recurrence captured during AR-127 reconciliation: the combined
+host-hook/completion-policy/turn-evidence run at 79930464 passes 133 tests and
+fails three in 41.91s. The failures are unchanged legacy expectations in
+`tests/test_turn_scoped_evidence.py`: `test_public_delegate_and_post_tool_hook_record_one_execution`
+expects the removed public agency.delegate tool, and both host variants of
+`test_stop_retry_terminally_stops_both_native_hosts_without_loop` expect the
+retired continuation/retry-exhausted protocol. The same three failures were
+already preserved in AR-119-vision-loop-status.md's August history. They remain
+owned here for a bounded test-contract repair; do not restore removed runtime
+behavior or call this combined run green. No test is changed or skipped in
+the AR-127 retirement. The earlier eleven-failure repair below is historical.
 
 Tests that require a file-owned Store identity opt out of the suite's synthetic
 `AGENCY_DB_PATH`. Executable-discovery doubles accept the hardened

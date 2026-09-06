@@ -6,12 +6,15 @@ created: 2026-07-26
 updated: 2026-08-19
 tags: [host-integrations, zcode, installer, hooks, evidence]
 related:
+  - docs/decisions/0089-zcode-stop-rejections-use-decision-block.md
+  - docs/decisions/0223-retire-superseded-zcode-stop-checklist.md
   - docs/roadmap/issue-AR-127-zcode-stop-rejection-shape.md
   - docs/decisions/0024-native-host-packages-and-minimal-bridges.md
   - agency_runtime/core/installer_payloads.py
   - agency_runtime/core/installer_registration.py
   - agency_runtime/adapters/hooks.py
-supersedes: []
+supersedes:
+  - docs/roadmap/issue-AR-127-zcode-stop-rejection-shape.md
 superseded_by: null
 type: issue
 epic: host-integrations
@@ -32,6 +35,18 @@ to Claude commands, and its post-tool path cannot consume or attribute the
 specialist prompt inserted by its pre-tool path.
 
 ## Current state
+
+September 5 successor responsibility (ADR-0223): AR-127's output-shape fix is
+implemented, but its retry/unavailable/full-corpus checklist is retired rather
+than certified. This issue owns current ZCode Stop integration: actual negative
+and malformed-envelope rejections use decision:block; terminal replay is exact;
+Agency-unavailable publication follows Rule 8. Current native/full-response
+proof remains separate from source tests and historical installed receipts.
+The old turn-5 truncated-preview assertion is a hypothesis to test if relevant,
+not an established cause. AR-135 remains open; retirement moves no live matrix
+cell and does not assert this issue's broader acceptance is complete.
+
+### Historical integration checkpoints
 
 The dedicated `zcode_hooks()` renderer is unreachable. ZCode is absent from
 activation-consumption host constraints and some canonical tool/worker maps.
