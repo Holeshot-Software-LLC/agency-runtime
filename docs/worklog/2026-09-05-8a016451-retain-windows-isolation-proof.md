@@ -15,7 +15,7 @@ type: worklog
 commit: 8a01645198308ee2b10cb342c95aabbb97aa1540
 short: 8a016451
 date: 2026-09-05
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/695
 related_issues:
   - docs/roadmap/issue-AR-129-isolate-subprocess-environments.md
 ---
