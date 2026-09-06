@@ -16,7 +16,7 @@ type: worklog
 commit: 513dd6f4ae0ea122dacd384d1382237e0f8f8a6a
 short: 513dd6f4
 date: 2026-09-05
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/696
 related_issues:
   - docs/roadmap/issue-AR-130-revalidate-store-trust.md
   - docs/roadmap/issue-AR-176-align-full-gate-contract-fixtures.md
