@@ -50,7 +50,12 @@ repeat work and risk reintroducing superseded behavior.
 
 ## Current state
 
-The owner now requires oldest-first sequential delivery: one record, one PR,
+**Paused by the owner to conserve credits.** Publish the saved AR-130 review
+and resume marker via PR #696, record the merge, then stop. AR-131 is next
+only when the owner explicitly resumes. No background work or polling.
+The oldest-first ledger and active capsule retain the exact evidence and holds.
+
+Before this pause, the owner required oldest-first sequential delivery: one record, one PR,
 merge, then the next, without routine approval stops. Windows stays excluded.
 The [oldest-first ledger](AR-404-oldest-first-reconciliation-20260905.md) is the
 current ordering/disposition record. AR-115 was retired under ADR-0222 in
@@ -74,8 +79,13 @@ PR #694 merged at 66282312 and #151 closed NOT_PLANNED at 00:23:39Z on
 September 6 UTC (September 5 local), read back. Fresh counts: 40 actual open
 trackers plus 99 legacy records (139 unfinished). AR-129's shared environment
 builder exists; 64 non-Windows tests pass with 12 Windows-named cases deselected.
-It retains its explicit Windows/installed evidence hold for the owner; AR-130
-follows after the disposition merges. No platform acceptance is fabricated.
+It retains its explicit Windows/installed evidence hold for the owner; PR #695
+merged at d38e9d13. AR-130's positive trust cache is also already removed:
+19 current trust-regression/file-integrity tests pass. Its broader non-Windows
+run has 40 pass/two confirmed stale fixtures/39 Windows-named cases deselected;
+AR-176 owns those fixtures. Retain native Windows and current hook-budget proof,
+without presenting old batching timings as current evidence. AR-131 follows
+after the disposition merges. No platform acceptance is fabricated.
 The earlier AR-349-first plan below
 is historical. A requested Codex-only hook refresh returned exit 1 with trust
 unverified and a projection mismatch; it is not live completion evidence.

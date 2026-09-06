@@ -3,10 +3,12 @@ title: "AR-176: Align full-gate fixtures with hardened runtime contracts"
 status: in_progress
 category: roadmap
 created: 2026-07-27
-updated: 2026-07-27
+updated: 2026-09-05
 tags: [testing, security, isolation, traceability, performance]
 related:
   - docs/roadmap/issue-AR-127-zcode-stop-rejection-shape.md
+  - docs/roadmap/issue-AR-130-revalidate-store-trust.md
+  - tests/test_storage_parent_trust.py
   - tests/test_turn_scoped_evidence.py
   - docs/decisions/0027-authoritative-runtime-evidence-traces.md
   - docs/decisions/0031-optional-user-dashboard-service-and-shared-configuration.md
@@ -53,6 +55,29 @@ time and would waste hosted budget if the same contract drift escaped fast
 quality gates.
 
 ## Current state
+
+AR-130 reconciliation adds two confirmed stale assertions at d38e9d13 in
+`tests/test_storage_parent_trust.py`. The non-Windows parent/file run records
+40 passed, two failed, 39 Windows-named cases deselected (0.84s):
+
+- `test_posix_parent_trust_requires_private_or_sticky_protected_chain` masks
+  `store.security.os.getxattr`, but the extracted `filesystem_trust` helper
+  still calls the real OS. Its synthetic final directory does not exist,
+  so ENOENT correctly fails closed. Supplying the intended absent-ACL double
+  at `store.security.posix_directory_has_default_acl` makes the unchanged
+  permission-chain assertions pass in a diagnostic; the original suite still
+  fails until its fixture is repaired. Preserve real ACL-denial coverage.
+- `test_storage_file_trust_requires_owner_mode_identity_and_single_link`
+  rejects 0644 even though `storage_file_is_trusted` explicitly allows an
+  owner-only-writable file inside a separately private Store namespace.
+  Align the read-bit expectation while retaining foreign-owner, writable,
+  link, invalid-inode and identity checks; do not weaken directory privacy.
+
+The narrower current trust-regression/file-integrity package passes 19 tests
+(0.23s). No tests or production code change in AR-130's record disposition.
+Repair these alongside the three already-owned legacy cases below when this
+record reaches its bounded implementation package; neither broader failure
+receipt is green, and neither warrants restoring removed runtime behavior.
 
 September 5 recurrence captured during AR-127 reconciliation: the combined
 host-hook/completion-policy/turn-evidence run at 79930464 passes 133 tests and
