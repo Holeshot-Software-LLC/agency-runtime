@@ -16,7 +16,7 @@ type: worklog
 commit: 0418d0afbd0cdd145346bca597f7595cb65dc788
 short: 0418d0af
 date: 2026-09-05
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/693
 related_issues:
   - docs/roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md
 ---
