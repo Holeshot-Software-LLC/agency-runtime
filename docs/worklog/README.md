@@ -1919,6 +1919,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `5e2e5e66` | 2026-09-05 | docs(roadmap): retire superseded ZCode Stop checklist [AR-127] | [AR-127](../roadmap/issue-AR-127-zcode-stop-rejection-shape.md) | [detail](2026-09-05-5e2e5e66-retire-zcode-stop-checklist.md) |
 | `66282312` | 2026-09-05 | Merge pull request #694 from Holeshot-Software-LLC/codex/ar127-oldest-first-reconciliation | [AR-127](../roadmap/issue-AR-127-zcode-stop-rejection-shape.md) | [detail](2026-09-05-5e2e5e66-retire-zcode-stop-checklist.md) |
 | `8a016451` | 2026-09-05 | docs(roadmap): retain Windows proof for implemented child isolation [AR-129] | [AR-129](../roadmap/issue-AR-129-isolate-subprocess-environments.md) | [detail](2026-09-05-8a016451-retain-windows-isolation-proof.md) |
+| `d38e9d13` | 2026-09-05 | Merge pull request #695 from Holeshot-Software-LLC/codex/ar129-oldest-first-reconciliation | [AR-129](../roadmap/issue-AR-129-isolate-subprocess-environments.md) | [detail](2026-09-05-8a016451-retain-windows-isolation-proof.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
