@@ -15,7 +15,7 @@ type: worklog
 commit: d5ff0c942666305842f9ac1b947282fa1c04f000
 short: d5ff0c94
 date: 2026-09-05
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/692
 related_issues:
   - docs/roadmap/issue-AR-120-normalized-workforce-recruitment-index.md
 ---
