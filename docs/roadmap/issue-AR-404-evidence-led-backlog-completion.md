@@ -50,7 +50,12 @@ repeat work and risk reintroducing superseded behavior.
 
 ## Current state
 
-The owner now requires oldest-first sequential delivery: one record, one PR,
+**Paused by the owner to conserve credits.** Publish the saved AR-130 review
+and resume marker via PR #696, record the merge, then stop. AR-131 is next
+only when the owner explicitly resumes. No background work or polling.
+The oldest-first ledger and active capsule retain the exact evidence and holds.
+
+Before this pause, the owner required oldest-first sequential delivery: one record, one PR,
 merge, then the next, without routine approval stops. Windows stays excluded.
 The [oldest-first ledger](AR-404-oldest-first-reconciliation-20260905.md) is the
 current ordering/disposition record. AR-115 was retired under ADR-0222 in

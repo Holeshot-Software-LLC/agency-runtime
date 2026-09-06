@@ -17,6 +17,7 @@ related:
   - docs/roadmap/issue-AR-127-zcode-stop-rejection-shape.md
   - docs/roadmap/issue-AR-129-isolate-subprocess-environments.md
   - docs/roadmap/issue-AR-130-revalidate-store-trust.md
+  - docs/roadmap/issue-AR-131-complete-mcp-cli-host-contracts.md
   - docs/roadmap/issue-AR-176-align-full-gate-contract-fixtures.md
   - docs/decisions/0223-retire-superseded-zcode-stop-checklist.md
   - docs/decisions/0222-retire-superseded-live-routing-contract.md
@@ -27,8 +28,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-404
 branch: codex/ar130-oldest-first-reconciliation
-evidence_commit: d38e9d1385d8ebde98499b32d9ffc68315504ec0
-minimum_ledger_commit: 0bc42e7994de5619615cf95c35b9fa5a6d3a08ce
+evidence_commit: 513dd6f4ae0ea122dacd384d1382237e0f8f8a6a
+minimum_ledger_commit: 9050be1dcc6f60d968aeb900165e08a2cfface02
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -37,15 +38,20 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 
 ## Checkpoint
 
-Owner priority: oldest first, one record, PR, merge, next; no routine approval
-stops. Windows stays with the owner. Judge old agent proposals for relevance.
+**Owner-requested pause:** publish the saved AR-130 disposition and this resume
+marker through PR #696, bring its exact merge ledger to main, then stop to
+conserve credits. Do not start AR-131 or resume automatically. Only a new owner
+request resumes the oldest-first, one-record/PR/merge loop. Windows stays with
+the owner. No outstanding work from another worktree is adopted by this pause.
 AR-115 is merged and retired. AR-119 reconciliation merged in PR #691 at
 8b8b594e with its live obligations open. AR-120 reconciliation merged in
 PR #692 at bc392228 with real index-quality gaps open. AR-125 reconciliation
 merged in PR #693 at 79930464 with study/live requirements open. AR-127 retired
 in PR #694 at 66282312; #151 is CLOSED/NOT_PLANNED. AR-129 reconciliation merged
-in PR #695 at d38e9d13 with Windows proof held for the owner. Current package:
-record AR-130's existing trust fix and remaining evidence; then AR-131.
+in PR #695 at d38e9d13 with Windows proof held for the owner. AR-130's saved
+review is 513dd6f4 with ledger 9050be1d, published in
+[PR #696](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/696).
+It remains open for evidence, not a new trust-fix implementation.
 
 ## Completed evidence
 
@@ -83,7 +89,7 @@ record AR-130's existing trust fix and remaining evidence; then AR-131.
   40 mapped plus 99 legacy. Legacy was 104 before AR-148/149/152/323 completed
   and AR-139 retired. AR-115 changes mapped count, not the 99 legacy count.
   #151 retirement is read back at 2026-09-06T00:23:39Z. AR-129/130 are retained and
-  changes neither count; it is exempt historical data, not a new tracker.
+  change neither count; both are exempt historical data, not new trackers.
 - AR-115 focused routing/header/credential/records: 183 passed (19.11s).
   Fresh named spine: 1075 passed/three skips (68.74s). UI: 138 passed.
   Runtime/test/tool source unchanged from installed 0309f251.
@@ -101,7 +107,8 @@ record AR-130's existing trust fix and remaining evidence; then AR-131.
 
 ## Exact blocker
 
-No blocker to the AR-130 disposition PR. Native Windows and
+Work is paused at the owner's request after publication, not technically
+blocked. Native Windows and
 relevant installed evidence are reserved for the owner; do not attempt or infer
 them. AR-176 retains five confirmed stale fixture cases from AR-127/130.
 Current Store hook-budget evidence remains open. Current ZCode live proof
@@ -120,12 +127,12 @@ At 50-percent telemetry make the smallest safe clean checkpoint, then continue.
 
 ## Next bounded work package
 
-1. Publish AR-130's implemented/evidence-hold disposition; keep Windows with
-   the owner and current latency evidence open. Do not claim the wider suite green.
-2. Review AR-131's MCP/CLI contract against current source after merging.
-3. Continue by original creation date and AR-number tie break. Retain genuine
+1. Wait for the owner to explicitly resume; do not poll or run background work.
+2. Then review AR-131's MCP/CLI contract against current source. AR-130's
+   disposition is the last reviewed item; Windows/current latency remain open.
+3. Resume by original creation date and AR-number tie break. Retain genuine
    operator/dependency holds and move to the oldest actionable record.
-   Skip Windows work; do not ask routine permission for the authorized PR loop.
+   Skip Windows work. The earlier continuous-work instruction is suspended.
 
 ## Verification
 
@@ -142,6 +149,8 @@ Reuse the fresh unchanged receipts
 above; no repeated six-minute mutation run for record-only reconciliation.
 No new live inference, Windows execution, exhaustive corpus/coverage matrix,
 cross-interpreter matrix or hosted workflow dispatch.
+Pause publication reruns documentation/tracker checks only; the source-test
+numbers above are prior receipts, not fresh tests from the pause turn.
 
 ## Constraints
 

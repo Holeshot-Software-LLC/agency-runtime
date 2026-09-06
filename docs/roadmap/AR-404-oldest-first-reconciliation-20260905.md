@@ -26,6 +26,14 @@ superseded_by: null
 
 # AR-404 oldest-first backlog reconciliation
 
+## Paused checkpoint
+
+The owner asked to conserve credits: publish the saved AR-130 review through
+[PR #696](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/696),
+record its merge, and stop. **Resume only on a new owner request, at AR-131.**
+This suspends the earlier continuous-work instruction below. No new backlog
+item, live test, install or Windows work is part of this publication checkpoint.
+
 ## Owner-directed order
 
 The owner requested: oldest first, one record at a time, PR, merge, then the
@@ -59,7 +67,7 @@ not the 99 legacy count.
 | 4 | AR-125 | Retain open: configured/held-out matched selection, paired outcome lift and five-host live evidence remain unproven. Evaluation machinery exists (33 focused regressions pass, 2.68s); it is not the study result. Label checked old-candidate Windows/Linux evidence as historical. One-shot application work already belongs to deferred AR-178 under ADR-0102; do not restore it as a gate. Six original acceptance states unchanged. | [PR #693](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/693) merged at 79930464; #138 read back OPEN. |
 | 5 | AR-127 | Retire obsolete checklist under ADR-0223, not accepted. The shape fix exists at both rejection sites; ADR-0089 stays accepted. Current first-pass/replay, Rule-8 availability, and bounded verification supersede the old retry/unavailable/full-suite assumptions. AR-135 owns current ZCode integration. Broader check: 133 pass/three known legacy failures, explicitly owned by AR-176; no runtime/test change or new live claim. | [PR #694](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/694) merged at 66282312; #151 closed NOT_PLANNED at 2026-09-06T00:23:39Z, read back. |
 | 6 | AR-129 | Shared least-privilege environment implementation exists. Non-Windows environment/discovery/namespace tests: 64 pass, 12 Windows-named cases deselected (0.43s). Retain the explicit native Windows/installed evidence hold for the owner, not a code-rebuild task. Original acceptance unchanged; no duplicate pre-tracker issue created. | [PR #695](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/695) merged at d38e9d13; legacy record remains open. |
-| 7 | AR-130 | Positive trust cache is already removed; Store connections revalidate. Current regression/file-integrity package: 19 pass (0.23s). Broader non-Windows run: 40 pass/two confirmed stale fixtures/39 Windows-named cases deselected (0.84s); AR-176 owns the wrong ACL-double boundary and obsolete 0644 expectation. Retain native Windows and current hook-budget evidence, not a trust-repair rewrite. Historical latency and original criteria preserved. | Disposition PR pending; legacy record remains open. |
+| 7 | AR-130 | Positive trust cache is already removed; Store connections revalidate. Current regression/file-integrity package: 19 pass (0.23s). Broader non-Windows run: 40 pass/two confirmed stale fixtures/39 Windows-named cases deselected (0.84s); AR-176 owns the wrong ACL-double boundary and obsolete 0644 expectation. Retain native Windows and current hook-budget evidence, not a trust-repair rewrite. Historical latency and original criteria preserved. | Published in [PR #696](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/696); legacy record remains open. Exact publication receipt belongs to the worklog. |
 
 After the merged AR-115 retirement, fresh enumeration confirms 41 open trackers
 and 140 unfinished local records (41 mapped plus 99 legacy) before AR-127.
