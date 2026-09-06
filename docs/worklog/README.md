@@ -1915,6 +1915,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `d5ff0c94` | 2026-09-05 | docs(roadmap): separate implemented index from remaining audit work [AR-120] | [AR-120](../roadmap/issue-AR-120-normalized-workforce-recruitment-index.md) | [detail](2026-09-05-d5ff0c94-reconcile-index-work.md) |
 | `bc392228` | 2026-09-05 | Merge pull request #692 from Holeshot-Software-LLC/codex/ar120-oldest-first-reconciliation | [AR-120](../roadmap/issue-AR-120-normalized-workforce-recruitment-index.md) | [detail](2026-09-05-d5ff0c94-reconcile-index-work.md) |
 | `0418d0af` | 2026-09-05 | docs(roadmap): retain unmatched evaluation and live-proof obligations [AR-125] | [AR-125](../roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md) | [detail](2026-09-05-0418d0af-retain-matched-evaluation.md) |
+| `79930464` | 2026-09-05 | Merge pull request #693 from Holeshot-Software-LLC/codex/ar125-oldest-first-reconciliation | [AR-125](../roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md) | [detail](2026-09-05-0418d0af-retain-matched-evaluation.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
