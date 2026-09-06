@@ -74,8 +74,13 @@ PR #694 merged at 66282312 and #151 closed NOT_PLANNED at 00:23:39Z on
 September 6 UTC (September 5 local), read back. Fresh counts: 40 actual open
 trackers plus 99 legacy records (139 unfinished). AR-129's shared environment
 builder exists; 64 non-Windows tests pass with 12 Windows-named cases deselected.
-It retains its explicit Windows/installed evidence hold for the owner; AR-130
-follows after the disposition merges. No platform acceptance is fabricated.
+It retains its explicit Windows/installed evidence hold for the owner; PR #695
+merged at d38e9d13. AR-130's positive trust cache is also already removed:
+19 current trust-regression/file-integrity tests pass. Its broader non-Windows
+run has 40 pass/two confirmed stale fixtures/39 Windows-named cases deselected;
+AR-176 owns those fixtures. Retain native Windows and current hook-budget proof,
+without presenting old batching timings as current evidence. AR-131 follows
+after the disposition merges. No platform acceptance is fabricated.
 The earlier AR-349-first plan below
 is historical. A requested Codex-only hook refresh returned exit 1 with trust
 unverified and a projection mismatch; it is not live completion evidence.

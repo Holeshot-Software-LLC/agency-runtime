@@ -26,9 +26,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-404
-branch: codex/ar129-oldest-first-reconciliation
-evidence_commit: 662823122ebd287281cc1367cbdd1ca6aebd38ef
-minimum_ledger_commit: 5381b03c1ccc93406155783b03f51fd5902899aa
+branch: codex/ar130-oldest-first-reconciliation
+evidence_commit: d38e9d1385d8ebde98499b32d9ffc68315504ec0
+minimum_ledger_commit: 0bc42e7994de5619615cf95c35b9fa5a6d3a08ce
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -43,8 +43,9 @@ AR-115 is merged and retired. AR-119 reconciliation merged in PR #691 at
 8b8b594e with its live obligations open. AR-120 reconciliation merged in
 PR #692 at bc392228 with real index-quality gaps open. AR-125 reconciliation
 merged in PR #693 at 79930464 with study/live requirements open. AR-127 retired
-in PR #694 at 66282312; #151 is CLOSED/NOT_PLANNED. Current package: record
-AR-129's implemented POSIX boundary and owner-held Windows evidence; then AR-130.
+in PR #694 at 66282312; #151 is CLOSED/NOT_PLANNED. AR-129 reconciliation merged
+in PR #695 at d38e9d13 with Windows proof held for the owner. Current package:
+record AR-130's existing trust fix and remaining evidence; then AR-131.
 
 ## Completed evidence
 
@@ -73,10 +74,15 @@ AR-129's implemented POSIX boundary and owner-held Windows evidence; then AR-130
   discovery/namespace tests pass (0.43s), 12 Windows-named cases deselected.
   Keep the explicit Windows/installed evidence hold for the owner, not a new
   implementation queue. No acceptance item, runtime or host state changes.
+- AR-130: positive trust cache removed; every Store connection revalidates.
+  Narrow current regression/file-integrity check: 19 pass (0.23s). Broader
+  non-Windows package: 40 pass/two stale fixtures/39 Windows-named deselections
+  (0.84s). AR-176 owns the wrong ACL-double boundary and obsolete 0644 assertion.
+  Keep native Windows/current hook-budget evidence open; old timings are dated.
 - Fresh external enumeration: 40 open trackers. Local unfinished: 139 records,
   40 mapped plus 99 legacy. Legacy was 104 before AR-148/149/152/323 completed
   and AR-139 retired. AR-115 changes mapped count, not the 99 legacy count.
-  #151 retirement is read back at 2026-09-06T00:23:39Z. AR-129 is retained and
+  #151 retirement is read back at 2026-09-06T00:23:39Z. AR-129/130 are retained and
   changes neither count; it is exempt historical data, not a new tracker.
 - AR-115 focused routing/header/credential/records: 183 passed (19.11s).
   Fresh named spine: 1075 passed/three skips (68.74s). UI: 138 passed.
@@ -95,9 +101,10 @@ AR-129's implemented POSIX boundary and owner-held Windows evidence; then AR-130
 
 ## Exact blocker
 
-No blocker to the AR-129 POSIX-review/Windows-handoff PR. Native Windows and
+No blocker to the AR-130 disposition PR. Native Windows and
 relevant installed evidence are reserved for the owner; do not attempt or infer
-them. AR-176 retains the three legacy test failures. Current ZCode live proof
+them. AR-176 retains five confirmed stale fixture cases from AR-127/130.
+Current Store hook-budget evidence remains open. Current ZCode live proof
 remains AR-135's responsibility. AR-119/120/125 stay incomplete.
 The ordinary-session staffing/header diagnosis remains set aside for backlog
 order; the hook refresh did not resolve or waive it.
@@ -113,10 +120,9 @@ At 50-percent telemetry make the smallest safe clean checkpoint, then continue.
 
 ## Next bounded work package
 
-1. Publish AR-129's implemented/POSIX-evidence disposition; keep Windows with
-   the owner and the record open.
-2. Review AR-130's authoritative Store-trust boundary against current source;
-   leave Windows-specific execution for the owner.
+1. Publish AR-130's implemented/evidence-hold disposition; keep Windows with
+   the owner and current latency evidence open. Do not claim the wider suite green.
+2. Review AR-131's MCP/CLI contract against current source after merging.
 3. Continue by original creation date and AR-number tie break. Retain genuine
    operator/dependency holds and move to the oldest actionable record.
    Skip Windows work; do not ask routine permission for the authorized PR loop.
@@ -130,7 +136,8 @@ rows, identity and founding vision are unchanged against d9ea419b.
 Run metadata, policy availability, exact worklog, strict docs/tracker and diff
 checks on each package. AR-120 adds the 219-case focused source check above;
 AR-125 adds 33 and AR-127 adds 37 current-contract passes, with the wider three
-legacy failures explicitly retained. No runtime/test/script/workflow changes.
+legacy failures explicitly retained; AR-130 adds 19 focused passes and two
+additional stale fixture failures in its wider check. No runtime/test/script/workflow changes.
 Reuse the fresh unchanged receipts
 above; no repeated six-minute mutation run for record-only reconciliation.
 No new live inference, Windows execution, exhaustive corpus/coverage matrix,
