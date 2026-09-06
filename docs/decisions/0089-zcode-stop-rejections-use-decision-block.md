@@ -6,6 +6,8 @@ created: 2026-07-25
 updated: 2026-07-30
 tags: [governance, host-integrations, zcode, observability, reliability]
 related:
+  - docs/roadmap/issue-AR-135-complete-zcode-integration.md
+  - docs/decisions/0223-retire-superseded-zcode-stop-checklist.md
   - AGENTS.md
   - agency_runtime/adapters/hooks.py
   - agency_runtime/core/header/contract.py
@@ -21,6 +23,11 @@ deciders: [maintainers]
 ---
 
 # ADR-0089: ZCode Stop rejections use decision:block
+
+September 5 scope note: ADR-0223 retires AR-127's obsolete checklist, not this
+wire contract. Actual negative/malformed Stop rejection still uses decision:block;
+Agency-unavailable publication is separately governed by vision Rule 8. Current
+integration and full-response evidence remain owned by AR-135.
 
 ## Context
 
