@@ -16,6 +16,7 @@ related:
   - docs/roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md
   - docs/roadmap/issue-AR-127-zcode-stop-rejection-shape.md
   - docs/roadmap/issue-AR-129-isolate-subprocess-environments.md
+  - docs/roadmap/issue-AR-130-revalidate-store-trust.md
   - docs/roadmap/issue-AR-176-align-full-gate-contract-fixtures.md
   - docs/decisions/0223-retire-superseded-zcode-stop-checklist.md
   - docs/decisions/0222-retire-superseded-live-routing-contract.md
@@ -25,9 +26,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-404
-branch: codex/ar127-oldest-first-reconciliation
-evidence_commit: 7993046498114339b08a545f917514753047828a
-minimum_ledger_commit: dfc844944ae7390e06ba1135986e156b6a872bb2
+branch: codex/ar129-oldest-first-reconciliation
+evidence_commit: 662823122ebd287281cc1367cbdd1ca6aebd38ef
+minimum_ledger_commit: 5381b03c1ccc93406155783b03f51fd5902899aa
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -41,8 +42,9 @@ stops. Windows stays with the owner. Judge old agent proposals for relevance.
 AR-115 is merged and retired. AR-119 reconciliation merged in PR #691 at
 8b8b594e with its live obligations open. AR-120 reconciliation merged in
 PR #692 at bc392228 with real index-quality gaps open. AR-125 reconciliation
-merged in PR #693 at 79930464 with study/live requirements open. Current package:
-retire AR-127's superseded checklist under ADR-0223, then inspect AR-129.
+merged in PR #693 at 79930464 with study/live requirements open. AR-127 retired
+in PR #694 at 66282312; #151 is CLOSED/NOT_PLANNED. Current package: record
+AR-129's implemented POSIX boundary and owner-held Windows evidence; then AR-130.
 
 ## Completed evidence
 
@@ -67,11 +69,15 @@ retire AR-127's superseded checklist under ADR-0223, then inspect AR-129.
   AR-135 owns current ZCode integration. Focused current-contract tests: 37 pass
   in 3.37s. The broader run has 133 pass/three known legacy failures (41.91s);
   AR-176 explicitly owns those removed public-tool/old retry assertions.
-- Fresh external enumeration: 41 open trackers. Local unfinished: 140 records,
-  41 mapped plus 99 legacy. Legacy was 104 before AR-148/149/152/323 completed
+- AR-129: shared least-privilege builder exists; 64 non-Windows environment/
+  discovery/namespace tests pass (0.43s), 12 Windows-named cases deselected.
+  Keep the explicit Windows/installed evidence hold for the owner, not a new
+  implementation queue. No acceptance item, runtime or host state changes.
+- Fresh external enumeration: 40 open trackers. Local unfinished: 139 records,
+  40 mapped plus 99 legacy. Legacy was 104 before AR-148/149/152/323 completed
   and AR-139 retired. AR-115 changes mapped count, not the 99 legacy count.
-  AR-127 local retirement leaves 139 unfinished (40 mapped plus 99 legacy);
-  the remote count stays 41 until #151 is actually closed after merge.
+  #151 retirement is read back at 2026-09-06T00:23:39Z. AR-129 is retained and
+  changes neither count; it is exempt historical data, not a new tracker.
 - AR-115 focused routing/header/credential/records: 183 passed (19.11s).
   Fresh named spine: 1075 passed/three skips (68.74s). UI: 138 passed.
   Runtime/test/tool source unchanged from installed 0309f251.
@@ -89,10 +95,10 @@ retire AR-127's superseded checklist under ADR-0223, then inspect AR-129.
 
 ## Exact blocker
 
-No blocker to the bounded AR-127 retirement and its PR/merge. The wider selected
-run is not green; the three already-known obsolete fixture assertions are
-recorded under AR-176 without changing or skipping them. Current ZCode live
-proof remains AR-135's responsibility. AR-119/120/125 stay incomplete.
+No blocker to the AR-129 POSIX-review/Windows-handoff PR. Native Windows and
+relevant installed evidence are reserved for the owner; do not attempt or infer
+them. AR-176 retains the three legacy test failures. Current ZCode live proof
+remains AR-135's responsibility. AR-119/120/125 stay incomplete.
 The ordinary-session staffing/header diagnosis remains set aside for backlog
 order; the hook refresh did not resolve or waive it.
 
@@ -107,9 +113,10 @@ At 50-percent telemetry make the smallest safe clean checkpoint, then continue.
 
 ## Next bounded work package
 
-1. Publish AR-127 retirement, close #151 as NOT_PLANNED, read back state/count.
-2. Review AR-129's subprocess environment boundary against current source;
-   leave any Windows-specific execution for the owner.
+1. Publish AR-129's implemented/POSIX-evidence disposition; keep Windows with
+   the owner and the record open.
+2. Review AR-130's authoritative Store-trust boundary against current source;
+   leave Windows-specific execution for the owner.
 3. Continue by original creation date and AR-number tie break. Retain genuine
    operator/dependency holds and move to the oldest actionable record.
    Skip Windows work; do not ask routine permission for the authorized PR loop.

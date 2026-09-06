@@ -30,9 +30,10 @@ was a record-reconciliation count, not 147 established defects. See the
 work is reserved for the owner's Windows machine; close or retire historical
 records only after checking relevance, current evidence and successor decisions.
 
-After PR #690's AR-115 supersession and tracker closure on 2026-09-05, fresh
-tracker enumeration is 41 open issues; the separate local unfinished queue is
-140 records (41 mapped plus 99 legacy). AR-119 remains a relevant unfinished
+After PR #694's AR-127 supersession and tracker closure (2026-09-06 UTC,
+September 5 local), fresh tracker enumeration is 40 open issues; the separate
+local unfinished queue is 139 records (40 mapped plus 99 legacy).
+AR-119 remains a relevant unfinished
 umbrella, not a completed defect. Current sequential dispositions and the next
 bounded package are in AR-404's
 [oldest-first ledger](AR-404-oldest-first-reconciliation-20260905.md).
@@ -573,9 +574,9 @@ not stable internal identifiers.
 | [AR-124](issue-AR-124-lifecycle-assurance-and-native-delegation.md) | `4e0b0a7`, `743a982` | [ADR-0082](../decisions/0082-schedule-assurance-by-artifact-lifecycle.md) |
 | [AR-125](issue-AR-125-workforce-and-one-shot-evaluation.md) | `4e0b0a7`, `743a982`, `ca893fe`, `9d415bb`, `86fba47`, `8af4cf0`, `e697f23`, `85afc03`, `a27f340`, `9c6c1ae`, `d692379`, `ef24960`, `2f2cfbb`, `c158210`, `71f7775`, `4687a7b`, `47ff115`, `8a0e75d`, `1c91945`, `978e02c`, `a5844dc`, `c1efcaf`, `1d3059d`, `a6007af`, `06d12cf`, `fc9c453`, `90179d8`, `b8c1eca`, `8918040`, `6049510`, `48e3022`, `0dfe777`, `518d227`, `90ce272`, `6cb8406`, `c2ebfc6`, `99b51bd`, `e0bbe70`, `64705f1`, `0418d0af`, `79930464` (PR #693 merge) | [ADR-0080](../decisions/0080-plan-before-recruiting-from-the-whole-workforce.md), [ADR-0082](../decisions/0082-schedule-assurance-by-artifact-lifecycle.md), [ADR-0083](../decisions/0083-use-capability-indexed-recall-and-bounded-inference.md), [ADR-0102](../decisions/0102-defer-one-shot-application-evaluation.md), [ADR-0103](../decisions/0103-bind-named-regulated-assurance-to-typed-staffing.md) |
 | [AR-126](issue-AR-126-bounded-idempotent-context-handoffs.md) | `355c05a`, `b927266`, `4a19e23`, `3d0ee63`, `4f850c7` | [ADR-0084](../decisions/0084-bounded-recovery-capsules-and-idempotent-task-dispatch.md), [ADR-0085](../decisions/0085-continue-in-task-after-context-checkpoints.md), [ADR-0086](../decisions/0086-use-checkpoint-only-context-telemetry.md) |
-| [AR-127](issue-AR-127-zcode-stop-rejection-shape.md) | `d9ce781`, `5001d78`, `5e2e5e66` (retired under ADR-0223; current outcome AR-135) | [ADR-0089](../decisions/0089-zcode-stop-rejections-use-decision-block.md) |
+| [AR-127](issue-AR-127-zcode-stop-rejection-shape.md) | `d9ce781`, `5001d78`, `5e2e5e66` (retired under ADR-0223; current outcome AR-135), `66282312` (PR #694 merge) | [ADR-0089](../decisions/0089-zcode-stop-rejections-use-decision-block.md) |
 | [AR-128](issue-AR-128-seal-model-facing-control-authority.md) | `a32e4e6`, `24948a0`, `4620204` | [ADR-0090](../decisions/0090-model-facing-control-paths-are-read-only.md), [ADR-0096](../decisions/0096-require-operator-presence-for-persistent-controls.md) |
-| [AR-129](issue-AR-129-isolate-subprocess-environments.md) | `a32e4e6`, `24948a0` | [ADR-0091](../decisions/0091-least-privilege-subprocess-environments.md) |
+| [AR-129](issue-AR-129-isolate-subprocess-environments.md) | `a32e4e6`, `24948a0`, `8a016451` | [ADR-0091](../decisions/0091-least-privilege-subprocess-environments.md) |
 | [AR-130](issue-AR-130-revalidate-store-trust.md) | `a32e4e6`, `24948a0`, `90ce272` | [ADR-0092](../decisions/0092-do-not-cache-positive-filesystem-trust.md) |
 | [AR-131](issue-AR-131-complete-mcp-cli-host-contracts.md) | `a32e4e6`, `24948a0` | [ADR-0090](../decisions/0090-model-facing-control-paths-are-read-only.md) |
 | [AR-132](issue-AR-132-hire-deterministic-safe-gaps.md) | `a32e4e6`, `24948a0`; `f0f5c386` (backlog disposition/evidence) | [ADR-0081](../decisions/0081-compile-contractors-from-governed-structured-contracts.md), [ADR-0083](../decisions/0083-use-capability-indexed-recall-and-bounded-inference.md); [ADR-0118](../decisions/0118-require-inference-owned-staffing.md) |
