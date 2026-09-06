@@ -18,7 +18,7 @@ type: worklog
 commit: 5e2e5e66707a31040902ef0ec6f24d297c363d06
 short: 5e2e5e66
 date: 2026-09-05
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/694
 related_issues:
   - docs/roadmap/issue-AR-127-zcode-stop-rejection-shape.md
 ---
