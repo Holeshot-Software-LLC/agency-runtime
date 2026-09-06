@@ -13,6 +13,7 @@ related:
   - docs/roadmap/issue-AR-115-live-routing-trust.md
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-120-normalized-workforce-recruitment-index.md
+  - docs/roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md
   - docs/decisions/0222-retire-superseded-live-routing-contract.md
   - docs/roadmap/acceptance/evidence/AR-348-installed-delivery-20260905.md
   - docs/worklog/README.md
@@ -20,9 +21,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-404
-branch: codex/ar119-oldest-first-disposition
-evidence_commit: d9ea419bb85f01108387e8eaae57396c636892b4
-minimum_ledger_commit: 4d0bd08c472de5160f767ac72bb7d7d0d414cf33
+branch: codex/ar120-oldest-first-reconciliation
+evidence_commit: 8b8b594ec4b67c1c45ba68e647939c73ddfc1d00
+minimum_ledger_commit: 7334814d756ff472c4816cdc4991ba1cc7546282
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -33,8 +34,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 
 Owner priority: oldest first, one record, PR, merge, next; no routine approval
 stops. Windows stays with the owner. Judge old agent proposals for relevance.
-AR-115 is merged and retired. AR-119 record reconciliation is current; retain
-its open live obligations and then move to AR-120. Shared main is d9ea419b.
+AR-115 is merged and retired. AR-119 reconciliation merged in PR #691 at
+8b8b594e with its live obligations open. AR-120 reconciliation is current;
+retain its real index-quality gaps, then move to AR-125. Main is 8b8b594e.
 
 ## Completed evidence
 
@@ -45,6 +47,11 @@ its open live obligations and then move to AR-120. Shared main is d9ea419b.
   Its August 18 matrix still has three proven and 42 unproven cells at 1bd7e37c.
   Reconcile stale status/capsule and R1 narrative without moving any cell,
   acceptance criterion, candidate, or founding rule. Tracker #132 stays open.
+- AR-120: contracts, typed relationships, atomic snapshots and quarantine
+  authority are present. 219 focused tests pass in 15.34s. Independent
+  enrichment-review evidence, the approved discoverability baseline, and
+  proposed contract/confusion/evaluation refresh remain missing. The weekly
+  schedule is deliberate. #133 stays open with a bounded remaining plan.
 - Fresh external enumeration: 41 open trackers. Local unfinished: 140 records,
   41 mapped plus 99 legacy. Legacy was 104 before AR-148/149/152/323 completed
   and AR-139 retired. AR-115 changes mapped count, not the 99 legacy count.
@@ -65,9 +72,10 @@ its open live obligations and then move to AR-120. Shared main is d9ea419b.
 
 ## Exact blocker
 
-No blocker to the bounded AR-119 record reconciliation and its PR/merge.
-Its underlying live/cold-latency/promotion/value requirements remain incomplete
-and owned by existing dependent records. Do not force an umbrella complete.
+No blocker to the bounded AR-120 record reconciliation and its PR/merge.
+Its universal projection-review, discoverability and scheduled artifact-refresh
+work remains owned here, not implemented by existing structural tests. AR-119
+keeps its live/cold-latency/promotion/value dependencies. Do not invent closure.
 The ordinary-session staffing/header diagnosis remains set aside for backlog
 order; the hook refresh did not resolve or waive it.
 
@@ -82,9 +90,9 @@ At 50-percent telemetry make the smallest safe clean checkpoint, then continue.
 
 ## Next bounded work package
 
-1. Publish AR-119 record reconciliation; keep #132 open.
-2. Review AR-120's original normalized-contract/index/ingestion criteria against
-   current source and successor decisions. Do not assume its old plan is wanted.
+1. Publish AR-120 record reconciliation; keep #133 open.
+2. Review AR-125's remaining workforce/portability/value obligations against
+   current source and successor decisions; distinguish deferred one-shot work.
 3. Continue by original creation date and AR-number tie break. Retain genuine
    operator/dependency holds and move to the oldest actionable record.
    Skip Windows work; do not ask routine permission for the authorized PR loop.
@@ -96,8 +104,8 @@ Markdown files; strict tracker parity passes for 397 mapped records. Matrix
 rows, identity and founding vision are unchanged against d9ea419b.
 
 Run metadata, policy availability, exact worklog, strict docs/tracker and diff
-checks on each package. For AR-119 verify all matrix/layer rows and founding
-vision/candidate/cutoff unchanged. Reuse the fresh unchanged runtime receipts
+checks on each package. AR-120 adds the 219-case focused source check above;
+no runtime/test/script/workflow changes. Reuse the fresh unchanged receipts
 above; no repeated six-minute mutation run for record-only reconciliation.
 No new live inference, Windows execution, exhaustive corpus/coverage matrix,
 cross-interpreter matrix or hosted workflow dispatch.

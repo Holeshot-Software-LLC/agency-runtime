@@ -12,6 +12,7 @@ related:
   - docs/roadmap/issue-AR-115-live-routing-trust.md
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-120-normalized-workforce-recruitment-index.md
+  - docs/roadmap/issue-AR-125-workforce-and-one-shot-evaluation.md
   - docs/decisions/0222-retire-superseded-live-routing-contract.md
   - docs/worklog/README.md
 supersedes: []
@@ -48,11 +49,21 @@ not the 99 legacy count.
 | Order | Record | Disposition and evidence | Publication |
 |---|---|---|---|
 | 1 | AR-115 | Retire as superseded, not accepted. ADR-0222 replaces ADR-0078's heuristic staffing/six-field header with existing inference-only/canonical-five-field authorities. Original unchecked live gates retained; AR-119 explicitly absorbs the surviving outcome and AR-125 retains evaluation. Focused routing/header/credential/records: 183 passed (19.11s); fast spine: 1075 passed/three skips (68.74s). No runtime or live-state change in the retirement. | [PR #690](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/690) merged at d9ea419b; #127 closed NOT_PLANNED at 2026-09-05T23:47:12Z, read back. |
-| 2 | AR-119 | Retain in_progress: relevant nine-rule/five-host umbrella with incomplete exact-candidate live evidence, AR-252 promotion, AR-253 dispatch/latency, AR-255/281 child proof, and AR-125 value/evaluation. Matrix still has three proven and 42 unproven cells at its August 18 candidate, not September certification. Reconcile stale current-state/capsule and R1 narrative; preserve all matrix rows, candidate, founding vision, criteria and failure history. | Record-reconciliation PR pending; #132 intentionally remains open. |
+| 2 | AR-119 | Retain in_progress: relevant nine-rule/five-host umbrella with incomplete exact-candidate live evidence, AR-252 promotion, AR-253 dispatch/latency, AR-255/281 child proof, and AR-125 value/evaluation. Matrix still has three proven and 42 unproven cells at its August 18 candidate, not September certification. Reconcile stale current-state/capsule and R1 narrative; preserve all matrix rows, candidate, founding vision, criteria and failure history. | [PR #691](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/691) merged at 8b8b594e; [disposition comment](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/132#issuecomment-5555649869); #132 intentionally remains open. |
+| 3 | AR-120 | Retain open, partially implemented: normalized contracts, typed relationships, atomic snapshots and quarantine authority exist (219 focused tests pass, 15.34s). Independent enrichment-review evidence, owner-approved discoverability baseline, and proposed contract/confusion/evaluation refresh remain real gaps. Weekly cadence is intentional; do not restore nightly spending or automatic activation. Original acceptance unchanged; bounded remaining plan recorded. | Record-reconciliation PR pending; #133 intentionally remains open. |
 
 After the merged AR-115 retirement, fresh enumeration confirms 41 open trackers
 and 140 unfinished local records (41 mapped plus 99 legacy). Retaining AR-119
-does not reduce either count. AR-120 is next after this disposition merges.
+and AR-120 does not reduce either count. AR-125 is next after this disposition
+merges. This is record reconciliation first, not a claim that retained
+implementation work is complete.
+
+Publication correction: GitHub interpreted the negated closing phrase in
+PR #691's original body as a closure directive and closed #132 at 23:59:38Z.
+Strict parity caught this during AR-120 review. The body was corrected, #132
+reopened, and OPEN state plus the 41-issue count read back. It never represented
+an acceptance verdict. Retained-item PRs use references without closing syntax.
+
 The Codex-only hook refresh requested during AR-119 review returned exit 1
 with activation required, unverified trust and a reported projection mismatch;
 it did not supply live evidence or change any backlog disposition.
