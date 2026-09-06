@@ -1911,6 +1911,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `49764a97` | 2026-09-05 | docs(roadmap): retire superseded live-routing proposal [AR-115] | [AR-115](../roadmap/issue-AR-115-live-routing-trust.md) | [Detail](2026-09-05-49764a97-retire-legacy-routing.md) |
 | `d9ea419b` | 2026-09-05 | Merge pull request #690 from Holeshot-Software-LLC/codex/ar115-retire-superseded-routing-contract | [AR-115](../roadmap/issue-AR-115-live-routing-trust.md) | [Detail](2026-09-05-49764a97-retire-legacy-routing.md) |
 | `3ca7d60a` | 2026-09-05 | docs(roadmap): reconcile retained workforce umbrella [AR-119] | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | [detail](2026-09-05-3ca7d60a-retain-workforce-umbrella.md) |
+| `8b8b594e` | 2026-09-05 | Merge pull request #691 from Holeshot-Software-LLC/codex/ar119-oldest-first-disposition | [AR-119](../roadmap/issue-AR-119-inference-first-workforce.md) | [detail](2026-09-05-3ca7d60a-retain-workforce-umbrella.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
