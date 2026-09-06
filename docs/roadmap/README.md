@@ -30,9 +30,10 @@ was a record-reconciliation count, not 147 established defects. See the
 work is reserved for the owner's Windows machine; close or retire historical
 records only after checking relevance, current evidence and successor decisions.
 
-After PR #690's AR-115 supersession and tracker closure on 2026-09-05, fresh
-tracker enumeration is 41 open issues; the separate local unfinished queue is
-140 records (41 mapped plus 99 legacy). AR-119 remains a relevant unfinished
+After PR #694's AR-127 supersession and tracker closure (2026-09-06 UTC,
+September 5 local), fresh tracker enumeration is 40 open issues; the separate
+local unfinished queue is 139 records (40 mapped plus 99 legacy).
+AR-119 remains a relevant unfinished
 umbrella, not a completed defect. Current sequential dispositions and the next
 bounded package are in AR-404's
 [oldest-first ledger](AR-404-oldest-first-reconciliation-20260905.md).

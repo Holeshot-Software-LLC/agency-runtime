@@ -76,8 +76,8 @@ supersedes the old mandatory full-corpus gate cited in the reopening note.
 
 AR-135 explicitly owns the surviving current ZCode Stop/native/full-response
 outcome. Its status remains open. No code, original acceptance item, founding
-rule or matrix cell changes, and no new live session is claimed. Tracker #151
-is to be retired as NOT_PLANNED after this package merges.
+rule or matrix cell changes, and no new live session is claimed. PR #694 merged
+at 66282312; tracker #151 closed NOT_PLANNED at 2026-09-06T00:23:39Z, read back.
 
 Focused current-contract checks pass **37 tests in 3.37s**: real-Store first
 terminal rejection/replay on all three hook hosts, ZCode unpersistable-pass

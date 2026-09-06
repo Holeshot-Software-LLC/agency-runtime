@@ -70,8 +70,12 @@ present, while its retry/unavailable/full-suite checklist contradicts later
 policies. Retire it under ADR-0223 with current ZCode responsibility in AR-135.
 Broader checks expose the same three legacy assertions already recorded in
 August; AR-176 explicitly owns their repair (133 pass/three failures, not green).
-Local unfinished is 139 (40 mapped plus 99 legacy); #151 remains externally
-open until retirement merges. AR-129 follows, with Windows work excluded.
+PR #694 merged at 66282312 and #151 closed NOT_PLANNED at 00:23:39Z on
+September 6 UTC (September 5 local), read back. Fresh counts: 40 actual open
+trackers plus 99 legacy records (139 unfinished). AR-129's shared environment
+builder exists; 64 non-Windows tests pass with 12 Windows-named cases deselected.
+It retains its explicit Windows/installed evidence hold for the owner; AR-130
+follows after the disposition merges. No platform acceptance is fabricated.
 The earlier AR-349-first plan below
 is historical. A requested Codex-only hook refresh returned exit 1 with trust
 unverified and a projection mismatch; it is not live completion evidence.
