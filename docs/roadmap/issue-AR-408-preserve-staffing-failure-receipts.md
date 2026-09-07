@@ -6,6 +6,7 @@ created: 2026-09-07
 updated: 2026-09-07
 tags: [workforce, inference, diagnostics, deadlines, reliability]
 related:
+  - docs/roadmap/acceptance/issue-AR-408.md
   - docs/roadmap/acceptance/evidence/AR-408-staffing-failure-receipts-20260907.md
   - docs/decisions/0209-name-the-transport-cause-instead-of-one-code.md
   - docs/roadmap/issue-AR-201-fund-default-workforce-repair.md
