@@ -58,3 +58,10 @@ Windows, hosted analyzer execution and exhaustive diagnostics are not claimed.
 Freeze nine builder rowsets at fcdcd6eb and require isolated acceptance before
 completion. Current count remains 40 actual trackers plus 89 unfinished legacy
 records. Publish one normal PR after acceptance, then the next oldest record.
+
+## Frozen review
+
+b3293188 freezes nine builder rowsets at fcdcd6eb, adds the exact implementation
+citation to ADR-0226 and advances the active capsule. Metadata and strict docs
+validation pass for 1173 Markdown files. The next step is isolated acceptance;
+no builder-assigned verdict or completion is recorded.
