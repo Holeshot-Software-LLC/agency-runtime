@@ -15,7 +15,7 @@ type: worklog
 commit: 7839abdb402c45bcbe4f468e44c895add46d75ac
 short: 7839abdb
 date: 2026-09-07
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/726
 related_issues:
   - docs/roadmap/issue-AR-177-make-exhaustive-python-ci-manual.md
 ---
