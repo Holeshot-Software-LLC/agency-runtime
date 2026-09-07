@@ -19,8 +19,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-404
 branch: codex/ar172-oldest-first-reconciliation
-evidence_commit: 8f9d9e4cf4b9720d9e00ff1b109683abb7c61ce3
-minimum_ledger_commit: 8f9d9e4cf4b9720d9e00ff1b109683abb7c61ce3
+evidence_commit: dec1bc512462285cf4d43742c3e666e6d776186e
+minimum_ledger_commit: b59f743a295cfd332eb3430050268990faddf527
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -80,7 +80,7 @@ No empty commits, staffing or restart. Preserve verdicts before corrections.
 
 ## Next bounded work package
 
-1. Finish record gates, commit AR-172's evidence and immediate ledger.
+1. Evidence candidate dec1bc51 and its immediate ledger are committed.
 2. Freeze that candidate and run its seven isolated checks, at most two passes.
 3. Publish one normal PR/merge/readback, then AR-173. No native Windows work.
 

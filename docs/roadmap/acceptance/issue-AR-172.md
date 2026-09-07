@@ -13,7 +13,7 @@ supersedes: []
 superseded_by: null
 type: acceptance-verification
 issue_id: AR-172
-candidate_commit: pending
+candidate_commit: dec1bc512462285cf4d43742c3e666e6d776186e
 evidence_cutoff: 2026-09-07
 tracker_url: null
 ---
@@ -66,4 +66,3 @@ committed and this record freezes their immutable candidate.
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
-
