@@ -58,6 +58,12 @@ or hosted analyzer pass. ADR-0226 explicitly makes only the old eighth measureme
 requirement claim-conditional; no speed or billing savings are claimed. All nine
 current criteria still require isolated verification.
 
+First isolated review at fcdcd6eb satisfies criteria 1–6 and 8. Criterion 7 is
+absent because the rowset lacks a prior trigger/concurrency comparison; criterion
+9 is absent because the old wording requires remote parity rather than the
+existing legacy exemption. Preserve this result before a revised evidence or
+requirements checkpoint. No implementation defect or completion is inferred.
+
 ## Approach
 
 Run one least-privilege, fail-closed capability preflight before matrix

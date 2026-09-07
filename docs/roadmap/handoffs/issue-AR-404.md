@@ -62,9 +62,11 @@ remain unchanged. Source changes only in codeql.yml and test_release_packaging.p
 
 ## Exact blocker
 
-No local implementation/test blocker. Repair/evidence fcdcd6eb and its immediate
-ledger f6444df4 are committed. Nine builder rowsets are frozen to that candidate
-in acceptance/issue-AR-162.md; isolated acceptance must precede closure.
+Repair/evidence fcdcd6eb is committed. First isolated review satisfies criteria
+1–6 and 8; criterion 7 lacks a cited prior trigger/concurrency comparison and
+criterion 9 conflicts with the existing pre-tracker exemption. Preserve all
+first verdicts, add comparison evidence and explicitly reconcile tracker scope
+before a new candidate/review. No implementation failure or closure is inferred.
 
 AR-159 retains hosted enforcement/check-app/bypass proof; main is unprotected
 with no current checks. Old billing cause is not freshly established; the extra
@@ -89,8 +91,9 @@ checkpoint, then continue the same task. No empty commits, restart or staffing.
 
 ## Next bounded work package
 
-1. Commit the frozen AR-162 acceptance record/capsule and its immediate ledger.
-2. Run nine isolated checks at unchanged fcdcd6eb.
+1. Preserve first AR-162 verdicts and immediately record their ledger.
+2. Add prior/current trigger comparison and reconcile the legacy tracker gate;
+   freeze a new candidate and rerun all nine isolated checks.
 3. On accepted completion, reconcile counts and publish one normal PR, then
    proceed to the next oldest unfinished non-Windows record.
 
