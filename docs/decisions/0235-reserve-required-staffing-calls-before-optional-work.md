@@ -6,6 +6,7 @@ created: 2026-09-07
 updated: 2026-09-07
 tags: [workforce, inference, budgets, reliability]
 related:
+  - docs/roadmap/acceptance/issue-AR-409.md
   - docs/roadmap/issue-AR-409-reserve-required-staffing-calls.md
   - docs/decisions/0132-fund-one-repair-per-workforce-inference-stage.md
   - docs/decisions/0197-form-the-retrieval-subject-before-the-turn-that-needs-it.md
@@ -95,6 +96,9 @@ repair budget and re-run security review. No new worker can bypass those
 checks. None of these paths gains calls, credentials or execution authority.
 
 ## Consequences
+
+Policy filing: `96a048d6`, indexed in the worklog. The separately reviewed
+implementation remains branch-only until AR-408 integration and delivery.
 
 The demonstrated subject2/planner1/recruiter2 exhaustion becomes at most
 subject1/planner1/recruiter2/critic1 under the same five-call strict cap, if the

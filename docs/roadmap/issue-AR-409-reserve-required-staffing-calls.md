@@ -6,6 +6,8 @@ created: 2026-09-07
 updated: 2026-09-07
 tags: [workforce, inference, budgets, reliability, performance]
 related:
+  - docs/roadmap/acceptance/issue-AR-409.md
+  - docs/roadmap/handoffs/issue-AR-409.md
   - docs/decisions/0132-fund-one-repair-per-workforce-inference-stage.md
   - docs/decisions/0197-form-the-retrieval-subject-before-the-turn-that-needs-it.md
   - docs/decisions/0216-enforce-one-preflight-inference-deadline.md
@@ -45,9 +47,9 @@ neither decision specified how those attempts share the earlier envelope.
 
 ## Current state
 
-The reviewed implementation is uncommitted on
+The reviewed implementation is checkpointed on
 `codex/ar409-reserve-required-staffing`, integrated through `d28ccc23`. It is not on main
-or installed. Package phase: focused_review; source review and the bounded
+or installed. Package phase: fast_verification; source review and the bounded
 receipt recheck are complete, but combined-candidate integration and delivery
 remain pending. Tracker #735 and the filing records are published separately
 from the reviewed implementation so tracker parity does not depend on its merge.

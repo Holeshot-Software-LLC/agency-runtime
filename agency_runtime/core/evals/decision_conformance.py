@@ -1612,6 +1612,50 @@ class _NominationSemantics:""",
         ),
     ),
     DecisionMutation(
+        mutation_id="staffing-subject-repair-spends-critic-call",
+        invariant="A subject stage spends at most one actual call across its provider chain.",
+        source_path="agency_runtime/core/workforce/inference.py",
+        before="        max_calls=1,",
+        after="        max_calls=2,",
+        test_node=(
+            "tests/test_staffing_call_reservations.py::"
+            "test_subject_repair_no_longer_spends_the_fifth_call_needed_by_the_critic"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="staffing-subject-spends-mandatory-stage-calls",
+        invariant="Optional subject inference preserves the initial mandatory staffing calls.",
+        source_path="agency_runtime/core/workforce/inference.py",
+        before='        reserve=2 + int(config.workforce.mode == "strict"),',
+        after="        reserve=0,",
+        test_node=(
+            "tests/test_staffing_call_reservations.py::"
+            "test_explicit_strict_cap_is_never_enlarged_or_spent_on_doomed_stages[3]"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="staffing-planner-spends-downstream-stage-calls",
+        invariant="Planner attempts preserve the initial recruiter and strict critic calls.",
+        source_path="agency_runtime/core/workforce/inference.py",
+        before='            reserve=1 + int(mode == "strict"),',
+        after="            reserve=0,",
+        test_node=(
+            "tests/test_staffing_call_reservations.py::"
+            "test_planner_fallback_cannot_spend_recruiter_and_critic_reservation"
+        ),
+    ),
+    DecisionMutation(
+        mutation_id="staffing-recruiter-spends-mandatory-critic-call",
+        invariant="Recruiter repair cannot spend the last call needed by a strict critic.",
+        source_path="agency_runtime/core/workforce/inference.py",
+        before='        reserve=int(config.workforce.mode == "strict"),',
+        after="        reserve=0,",
+        test_node=(
+            "tests/test_staffing_call_reservations.py::"
+            "test_subject_and_both_repairs_require_six_calls_without_weakening_validation[5-False]"
+        ),
+    ),
+    DecisionMutation(
         mutation_id="declined-hiring-analysis-consumes-hire-budget",
         invariant=(
             "A declined hiring analysis does not consume the task's workforce-change "
