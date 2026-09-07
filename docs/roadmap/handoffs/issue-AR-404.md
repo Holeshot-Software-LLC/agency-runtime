@@ -6,11 +6,10 @@ created: 2026-09-05
 updated: 2026-09-07
 tags: [handoff, backlog, acceptance, delivery]
 related:
-  - docs/roadmap/issue-AR-171-redact-dashboard-lifecycle-reasons.md
-  - docs/roadmap/acceptance/issue-AR-171.md
-  - docs/roadmap/acceptance/evidence/AR-171-lifecycle-redaction-20260907.md
+  - docs/roadmap/issue-AR-172-make-roster-pages-snapshot-consistent.md
+  - docs/roadmap/acceptance/issue-AR-172.md
+  - docs/roadmap/acceptance/evidence/AR-172-roster-snapshots-20260907.md
   - docs/roadmap/issue-AR-170-fail-dashboard-response-correlation-closed.md
-  - docs/roadmap/acceptance/issue-AR-170.md
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
   - docs/roadmap/AR-404-oldest-first-reconciliation-20260905.md
   - docs/roadmap/issue-AR-176-align-full-gate-contract-fixtures.md
@@ -19,9 +18,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-404
-branch: codex/ar171-oldest-first-reconciliation
-evidence_commit: 8a8db2aeeae788829ae7dfc641142d7c04376e6e
-minimum_ledger_commit: dc19f1f8d512e71203f1aa7507504d14a988cf48
+branch: codex/ar172-oldest-first-reconciliation
+evidence_commit: dec1bc512462285cf4d43742c3e666e6d776186e
+minimum_ledger_commit: b59f743a295cfd332eb3430050268990faddf527
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -31,33 +30,35 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ## Checkpoint
 
 Owner continues one oldest record, one PR, normal merge, then next. Native
-Windows remains with the owner. PR #719 merged AR-170's three tested response
-repairs at 29e76943, 12:18:00Z September 7. Main was clean and fast-forwarded
-before the separate AR-171 tree; 05d7696a records that merge.
+Windows remains with the owner. PR #720 merged accepted AR-171 at a846c88f,
+12:32:58Z September 7. Main was clean and fast-forwarded before the separate
+AR-172 tree; 8f9d9e4c records that merge and is the prior clean checkpoint.
 
 ## Completed evidence
 
-AR-171's privacy repair is present: reduced Store event metadata excludes raw
-reason, event document and reason-derived hashes, returning a bool. Full owner
-history retains the governed originals. HTTP explicitly selects reduced mode;
-production rendering uses only primitive true and fixed Reason recorded text.
+AR-172's Store/HTTP/JS implementation is present. One read transaction binds
+generation/count/limited rows; configuration and Store revisions bind dashboard
+paging. A mismatched control pair recaptures and persistent churn fails closed.
+The original three-attempt limit is unchanged, not a new behavior requirement.
 
-- New eight-value DOM test includes hostile note/HTML/hash/evidence fields;
-  no raw content, hash or IMG node renders.
-- Complete Store/workforce and real loopback HTTP: 199 pass, 48.66s.
-- UI 194 pass, zero skips/failures; 96.93/86.77/95.73 meets unchanged floors.
-- Fresh named spine: 1085 pass/three existing skips, 67.57s.
-- Metadata/policy/worklog, strict docs/tracker, Ruff and diff pass.
-  Raw transcripts are committed with the packet, not just summaries.
-- No runtime/script/workflow change. Only criterion 6 is reconciled under
-  ADR-0105; original wording and first five criteria remain.
-- All six criteria satisfy in the first isolated review at 8a8db2ae.
-- Queue becomes 40 actual trackers plus 83 legacy, 123 unfinished.
+- New 81-line table adds ten passing last-good-state tests: both refresh modes
+  across initial/primary/exact/operational-initial/operational-page config drift.
+- Complete Store/HTTP/activation: 278 pass, 59.46s.
+- UI 204 pass, zero skips/failures; 96.93/86.78/95.73 meets unchanged floors.
+- Fresh named spine: 1085 pass/three existing skips, 69.71s.
+- No production/script/workflow change. Only criterion 7 is reconciled under
+  ADR-0105; original wording and first six criteria remain.
+- Fresh routing passes 39 candidate-recall-only gates; not staffing evidence.
+- Raw transcripts and record gates pass: 1202 Markdown documents after detail,
+  397 mapped trackers/two historical PR exceptions, Ruff and diff clean.
+- All seven criteria satisfy at dec1bc51. First verdicts remain at 4c5acdcf;
+  only 6 needed a current handler citation and passes its unchanged-code recheck.
+- AR-172 done leaves 40 actual trackers plus 82 legacy, 122 unfinished.
 
 ## Exact blocker
 
-AR-171 has no scoped acceptance blocker. All six isolated verdicts satisfy;
-commit completion and its ledger, publish one normal PR, merge and read back.
+No AR-172 scoped blocker remains. Commit accepted completion and its ledger,
+publish one normal PR, merge and read back before beginning AR-173.
 
 AR-170 remains in_progress: first review at 662eb947 and final candidate
 91273e41 are preserved. Final 1/2/4/5/6/7/8 satisfy, 3/9 need complete collection
@@ -80,20 +81,21 @@ No empty commits, staffing or restart. Preserve verdicts before corrections.
 
 ## Next bounded work package
 
-1. Commit AR-171's accepted completion and immediate ledger.
+1. Commit AR-172 accepted completion and its immediate ledger.
 2. Publish its normal PR; no acceptance rerun.
-3. Publish one normal PR/merge/readback, then AR-172. No native Windows work.
+3. Publish one normal PR/merge/readback, then AR-173. No native Windows work.
 
 ## Verification
 
-Fresh Store/HTTP, UI/current coverage, named spine and strict documentation
-checks with raw output. No exhaustive corpus/coverage/matrix dispatch.
-AR-165's 184/184 curated decision receipt is earlier unchanged Python evidence,
-not a fresh run or a new JS mutation evaluation.
+Fresh Store/HTTP, UI/current coverage, named spine, routing and strict record
+checks pass before freeze. No exhaustive corpus/coverage/matrix dispatch.
+AR-165's 184/184 curated decision receipt is earlier unchanged Python evidence:
+Git comparison of package Python and scripts against 9effff3f exits zero.
+This is not a new conformance run or a JS mutation evaluation.
 
 ## Constraints
 
-No credentials, trust bypass or provider-policy changes. The last fresh
-stale-hook directive was followed once: refresh exits 1, activation required,
+No credentials, trust bypass or provider-policy changes. The new stale-hook
+directive was followed once again: refresh exits 1, activation required,
 hook trust unverified and mixed installed projections. No retry absent a new
 directive. Do not replace OpenClaw or claim normal-session activation.

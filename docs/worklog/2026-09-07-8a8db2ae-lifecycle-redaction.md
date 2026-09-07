@@ -73,3 +73,10 @@ and merge before reviewing the next oldest remaining record.
 
 PR #720 carries accepted completion. End telemetry is 12.3 percent at
 12:31:47Z; faa5bdb7/46aa5d66 form the clean substantive/ledger checkpoint.
+
+## Publication
+
+PR #720 merged normally as a846c88f at 2026-09-07T12:32:58Z, reviewed head
+419e24c5a2f1dd136cea7921bd6c24d44ee049e2. Main was clean and fast-forwarded
+before the separate AR-172 tree. AR-171 remains done with all six first-pass
+verdicts; no hosted green inferred from the empty check rollup.

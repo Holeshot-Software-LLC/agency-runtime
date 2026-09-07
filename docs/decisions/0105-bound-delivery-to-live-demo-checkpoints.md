@@ -6,6 +6,7 @@ created: 2026-07-27
 updated: 2026-09-07
 tags: [governance, delivery, testing, demo, cost]
 related:
+  - docs/roadmap/issue-AR-172-make-roster-pages-snapshot-consistent.md
   - docs/roadmap/issue-AR-171-redact-dashboard-lifecycle-reasons.md
   - docs/roadmap/issue-AR-170-fail-dashboard-response-correlation-closed.md
   - docs/decisions/0230-reconcile-response-correlation-with-owner-controls.md

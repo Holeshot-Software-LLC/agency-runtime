@@ -6678,6 +6678,87 @@ test("roster paging rejects activation-policy changes under a stable Store gener
   );
 });
 
+for (const refresh of ["refreshAll", "refreshControlPlane"]) {
+  for (const driftPath of ["initial", "primary-page", "exact", "operational-initial", "operational-page"]) {
+    test(`${refresh} retains last-good control state on config drift in ${driftPath}`, async () => {
+      let drift = false;
+      const calls = [];
+      const page = (overrides = {}) => ({
+        ...emptyRosterPage("stable-store-generation"),
+        agents: [{ agent_slug: "alpha-reviewer", capabilities: [], enabled: true }],
+        config_revision: "config-a",
+        ...overrides,
+      });
+      const harness = createAppHarness(async (path) => {
+        calls.push(path);
+        if (path === "/api/live?limit=100") {
+          return jsonResponse(200, { schema_version: 1, revision: drift ? "new-live" : "last-good-live" });
+        }
+        if (path === "/api/control") {
+          const snapshot = controlSnapshot({
+            config: { revision: "config-a", effective: {} },
+            hosts: [{ host: "codex", status: drift ? "new-host" : "last-good-host" }],
+            roster: page({
+              config_revision: drift && driftPath === "initial" ? "config-b" : "config-a",
+              truncated: drift && driftPath === "primary-page",
+              next_cursor: drift && driftPath === "primary-page" ? "alpha-reviewer" : null,
+            }),
+            governance: { snapshots: [], operations: page() },
+          });
+          snapshot.control_revision = drift ? "uncommitted-control" : "last-good-control";
+          return jsonResponse(200, snapshot);
+        }
+        if (path === "/api/roster?limit=200&after=alpha-reviewer") {
+          assert.equal(driftPath, "primary-page");
+          return jsonResponse(200, page({ config_revision: "config-b" }));
+        }
+        if (path === "/api/agents/lookup?slug=alpha-reviewer") {
+          assert.equal(driftPath, "exact");
+          return jsonResponse(200, page({
+            filter_slug: "alpha-reviewer",
+            config_revision: drift ? "config-b" : "config-a",
+          }));
+        }
+        if (path === "/api/roster/operations?limit=100&host=codex") {
+          const paged = drift && driftPath === "operational-page";
+          return jsonResponse(200, page({
+            config_revision: drift && driftPath === "operational-initial" ? "config-b" : "config-a",
+            truncated: paged,
+            next_cursor: paged ? "alpha-reviewer" : null,
+          }));
+        }
+        if (path === "/api/roster/operations?limit=100&host=codex&after=alpha-reviewer") {
+          assert.equal(driftPath, "operational-page");
+          return jsonResponse(200, page({ config_revision: "config-b" }));
+        }
+        throw new Error(`unexpected config-drift path ${path}`);
+      });
+      harness.api.state.activeView = "settings";
+      if (driftPath === "exact") harness.api.state.rosterFilter = "alpha-reviewer";
+      if (driftPath.startsWith("operational-")) harness.api.state.rosterFilters = { host: "codex" };
+      await harness.api[refresh]();
+      assert.equal(harness.api.state.control.stale, false);
+      assert.equal(harness.api.state.control.revision, "last-good-control");
+      const fields = ["config", "hosts", "roster", "rosterPage", "snapshots", "rosterReview", "rosterOperations"];
+      const lastGood = structuredClone(Object.fromEntries(fields.map((field) => [field, harness.api.state[field]])));
+      const liveRevision = harness.api.state.live.revision;
+      calls.length = 0;
+      drift = true;
+
+      await harness.api[refresh]();
+
+      assert.deepEqual(Object.fromEntries(fields.map((field) => [field, harness.api.state[field]])), lastGood);
+      assert.equal(harness.api.state.control.revision, "last-good-control");
+      assert.equal(harness.api.state.live.revision, liveRevision);
+      assert.equal(harness.api.state.control.stale, true);
+      assert.match(harness.node("notice").textContent, /retained the last good state/i);
+      const expectedCalls = (refresh === "refreshAll" ? 2 : 1)
+        + (driftPath === "initial" ? 0 : driftPath === "operational-page" ? 2 : 1);
+      assert.equal(calls.length, expectedCalls, "stop at the first mismatched revision");
+    });
+  }
+}
+
 test("roster search markup permits the normalization performed before lookup", () => {
   const searchInput = INDEX_SOURCE.match(/<input id="roster-search-slug"[^>]*>/)?.[0] || "";
   assert.doesNotMatch(searchInput, /\s(?:pattern|minlength)=/);

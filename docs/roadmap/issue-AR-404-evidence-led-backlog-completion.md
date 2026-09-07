@@ -266,10 +266,18 @@ DOM regression strengthens inert presence rendering; no runtime change.
 Store/HTTP 199, UI 194/current floors and fresh spine 1085/three existing skips
 pass. Raw transcripts are retained. Only stale criterion 6 is reconciled under
 ADR-0105, original wording preserved. All six current criteria satisfy in the
-first isolated review at 8a8db2ae; AR-171 is done, with normal publication next.
+first isolated review at 8a8db2ae; AR-171 is done. PR #720 merged a846c88f at
+12:32:58Z September 7 before the separate AR-172 tree.
 
-Current counts: 40 actual open trackers plus 83 unfinished legacy records,
-123 total after AR-171 completion; no duplicate tracker or false acceptance.
+AR-172's existing snapshot/paging implementation is confirmed with ten new
+state-preservation regressions. Store/HTTP/activation 278, UI 204/current floors
+and fresh spine 1085/three existing skips pass. Only obsolete criterion 7 is
+reconciled under ADR-0105. All seven criteria satisfy at dec1bc51; first verdicts
+remain at 4c5acdcf before the single criterion-6 call-site citation recheck.
+No production change or candidate retry. AR-172 is done; normal publication next.
+
+Current counts: 40 actual open trackers plus 82 unfinished legacy records,
+122 total after AR-172 completion; no duplicate tracker or false acceptance.
 The unchanged public-roster fixture belongs to AR-176. Windows stays excluded;
 the oldest-first ledger and capsule preserve all holds. Ordinary-session
 unverified Agency/header behavior remains a separate unfinished concern.

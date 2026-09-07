@@ -3,9 +3,10 @@ title: "Dashboard collection views expose complete paginated truth"
 status: accepted
 category: decisions
 created: 2026-07-26
-updated: 2026-07-26
+updated: 2026-09-07
 tags: [dashboard, pagination, ui, truth, operations]
 related:
+  - docs/worklog/README.md
   - docs/roadmap/issue-AR-154-fail-malformed-initial-pages-closed.md
   - docs/roadmap/issue-AR-153-complete-worker-detail-evidence.md
   - docs/decisions/0225-scope-route-lab-ambiguity-to-host-identity.md
@@ -59,3 +60,12 @@ requested limit were returned.
   that claim workforce and case completeness.
 - **Return the entire collection.** Rejected because bounded responses are a
   security and performance requirement.
+
+## Current verification
+
+AR-172 candidate dec1bc51 confirms the existing Store/configuration continuity
+boundary with ten direct retained-state regressions, 278 Store/HTTP/activation
+tests and all 204 UI cases. All seven acceptance criteria satisfy after one
+missing call-site citation is supplied; first verdicts remain at 4c5acdcf.
+No change to this decision or the original bounded control recapture behavior.
+Exact commits are recorded in the [worklog registry](../worklog/README.md).
