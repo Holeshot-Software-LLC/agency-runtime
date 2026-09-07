@@ -71,3 +71,11 @@ b2da6eb9; the complete packet is ready for five isolated checks.
 017dea36 freezes f4f5124ef6433db9cae18784c15cc76ba880b391 for all five isolated checks.
 No source/test changes follow the passing receipts. ADR-0231 reconciliation
 precedes any verdict and retains original wording.
+
+## First isolated review
+
+941b9025 preserves all five first-pass verdicts at f4f5124e: 1/3/4/5 satisfy,
+2 is contradicted because the observation carries the trace digest, not the
+raw response trace. This is a remaining wording defect, not a production
+failure. Preserve the original and explicitly supersede ADR-0231 for the
+representation clarification; then use one second/final all-criteria review.
