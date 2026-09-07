@@ -3,9 +3,11 @@ title: "AR-190: Make attended upgrade plans runnable in uv tools"
 status: in_progress
 category: roadmap
 created: 2026-07-28
-updated: 2026-07-28
+updated: 2026-09-07
 tags: [cli, updates, uv, packaging, security]
 related:
+  - docs/roadmap/acceptance/issue-AR-190.md
+  - docs/roadmap/acceptance/evidence/AR-190-installed-uv-plan-20260907.md
   - docs/roadmap/handoffs/issue-AR-190.md
   - docs/roadmap/issue-AR-188-add-immutable-update-discovery.md
   - docs/decisions/0107-resolve-updates-immutably-and-keep-application-attended.md
@@ -38,6 +40,20 @@ mutation occurred, but the plan was not operationally usable in the environment
 that owns the installed Agency launcher.
 
 ## Current state
+
+The implementation is already committed at
+`8c7d8df44aa35d4bb7ab7698abaf0f7b2a93e47b`. On September 7 the missing live
+installed-uv proof was captured safely in a disposable local container. A
+fresh clean detached build at `c64ce3ce54c6e51280292298b5e3600611cb72fc`
+passed strict Twine and the independent portable verifier. Installing that
+exact wheel through uv's legitimate default tool directories, then running
+`agency upgrade plan --ref c64ce3ce54c6e51280292298b5e3600611cb72fc --timeout 5 --json`,
+returned `installer=uv-tool`, exact-SHA commands without pip, and
+`mutation_performed=false`. No displayed upgrade or Codex refresh was executed.
+The [portable receipt](acceptance/evidence/AR-190-installed-uv-plan-20260907.md)
+preserves the complete raw outputs, candidate/target distinction, hashes,
+namespace failure provenance and isolation bounds. Status remains
+`in_progress` pending record integration and isolated acceptance verification.
 
 Planning now proves which installer the exact executing environment can use.
 A stable regular pip entry point inside the exact prefix retains an
@@ -91,6 +107,39 @@ pending explicit authorization for that outward-facing write.
 
 ## Implementation evidence
 
+### September 7 exact installed-candidate proof
+
+The final proof used a fresh canonical wheel from clean detached source
+`c64ce3ce54c6e51280292298b5e3600611cb72fc`, SHA-256
+`cbf2ce558636cc160c6f0656d6fb0760e0d368ca5d1619fc988596e306c91c7d`,
+and resolved the same exact full SHA through the official public GitHub API.
+The installed package correctly reports `source_revision=null` for a wheel;
+the independent artifact/source verification, not that self-report, binds its
+candidate identity. The real uv-generated receipt and in-prefix entrypoint
+symlink were unchanged after the plan, as were all 669 compared non-bytecode
+prefix files. uv 0.11.8 installed only Agency Runtime 0.1.0 and PyYAML 6.0.3,
+with no pip in the tool environment. No UV/XDG target override, HOME spoof,
+owner-home mount, owner credential, image pull or privileged container was used.
+
+The final plan exited zero at 23:31:01 UTC. An earlier successful plan used
+the verified `08fab1c4` wheel to resolve `c64ce3ce`; its narrower provenance is
+retained separately and not substituted for the final same-SHA candidate.
+Fresh focused update/CLI tests pass **67 tests in 0.83 seconds**; targeted
+Ruff lint and formatting pass. Normal merge-ledger reconciliation at
+`d28ccc23` restored passing docs, metadata, policy-availability and worklog
+checks. The pending builder contains evidence only, with no verdict or
+done-state change. Its later documentation candidate preserves identical
+runtime, producer, test and packaging-configuration Git objects; the receipt
+distinguishes that record-only candidate from the exact live c64ce3ce artifact.
+
+The ordinary owner installation is an AR-348 VCS package, not a uv tool;
+its identity was not relabeled to manufacture this proof. Both disposable
+containers were removed after capture, and owner Agency/uv wrapper hashes
+remained unchanged. The earlier bubblewrap uid-map failure is retained as a
+failed capability attempt, not retried or hidden.
+
+### Historical recovery evidence
+
 The recovery candidate passes 65 focused update/CLI tests in 2.68 seconds on
 Windows, with one intentional POSIX-only symlink test skipped. Targeted Ruff,
 format, and diff checks pass. Repository metadata/policy checks and the full
@@ -98,5 +147,9 @@ documentation validator pass for 487 Markdown files. Independent security and
 operational rereviews report no remaining blocker in this scope. A bounded
 read-only probe using this candidate against the actual uv 0.10.9 installation
 selects the expected uv-tool environment and emits valid PowerShell commands.
-Exact committed-install and Codex-refresh evidence remain before closure; see
-the [active recovery capsule](handoffs/issue-AR-190.md).
+At that historical checkpoint, exact committed-install and Codex-refresh
+evidence were still pending. The fresh proof above supplies the installed
+uv-plan criterion; it neither executes nor claims the separately displayed
+upgrade, refresh or host-activation steps. Those actions are not required to
+demonstrate this issue's nonexecuting plan. See the
+[active recovery capsule](handoffs/issue-AR-190.md) for the current boundary.

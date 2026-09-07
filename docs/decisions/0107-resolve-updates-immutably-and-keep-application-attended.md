@@ -3,11 +3,12 @@ title: "Resolve updates immutably and keep application attended"
 status: accepted
 category: decisions
 created: 2026-07-28
-updated: 2026-07-28
+updated: 2026-09-07
 tags: [release, security, cli, dashboard, operations]
 related:
   - docs/roadmap/issue-AR-188-add-immutable-update-discovery.md
   - docs/roadmap/issue-AR-190-make-upgrade-plans-runnable-in-uv-tools.md
+  - docs/roadmap/acceptance/evidence/AR-190-installed-uv-plan-20260907.md
   - docs/roadmap/issue-AR-211-bound-immutable-commit-resolution.md
   - docs/worklog/README.md
   - docs/decisions/0037-layered-pinned-supply-chain-gates.md
@@ -111,3 +112,13 @@ command for an owner terminal.
   latency, consumes API/process budget, and would contaminate hook hot paths.
 - **Treat every different `main` commit as an update.** Rejected because a
   local checkout may be ahead, diverged, or dirty; equality is not ancestry.
+
+## Implementation evidence
+
+AR-190 implementation `8c7d8df` binds the attended installer to the owning
+environment. The September 7 [installed uv-plan receipt](../roadmap/acceptance/evidence/AR-190-installed-uv-plan-20260907.md)
+uses an exact clean detached `c64ce3ce` wheel and the same immutable plan target.
+A legitimate default-directory uv environment without pip produced a usable
+nonexecuting plan, while all 669 compared prefix files, its entrypoint and uv
+receipt remained unchanged. The owner installation was untouched. This proves
+the existing planning boundary without adding package-mutation authority.
