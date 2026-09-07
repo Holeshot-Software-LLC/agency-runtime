@@ -2093,6 +2093,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `30214408` | 2026-09-07 | Merge pull request #733 from Holeshot-Software-LLC/codex/ar183-private-producer-evidence | [AR-183](../roadmap/issue-AR-183-normalize-private-posix-wheel-modes.md) | [Detail](2026-09-07-6cc0b176-detached-private-mode-producer.md) |
 | `81cf8000` | 2026-09-07 | docs(backlog): reconcile AR-184 with detached Linux producer proof | [AR-184](../roadmap/issue-AR-184-normalize-private-posix-sdist-modes.md) | [Detail](2026-09-07-81cf8000-sdist-producer-reconciliation.md) |
 | `c64ce3ce` | 2026-09-07 | Merge pull request #734 from Holeshot-Software-LLC/codex/ar184-linux-producer-reconciliation | [AR-184](../roadmap/issue-AR-184-normalize-private-posix-sdist-modes.md) | [Detail](2026-09-07-81cf8000-sdist-producer-reconciliation.md) |
+| `1adacdde` | 2026-09-07 | fix(workforce): preserve actual failure and effective timeout receipts | [AR-408](../roadmap/issue-AR-408-preserve-staffing-failure-receipts.md) | [Detail](2026-09-07-1adacdde-truthful-staffing-receipts.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
