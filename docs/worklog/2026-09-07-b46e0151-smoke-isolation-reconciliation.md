@@ -14,7 +14,7 @@ type: worklog
 commit: b46e015193b11e2ab4b62faa77e5e064506a247a
 short: b46e0151
 date: 2026-09-07
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/731
 related_issues:
   - docs/roadmap/issue-AR-181-bound-all-host-smoke-launcher-preparation.md
 ---
