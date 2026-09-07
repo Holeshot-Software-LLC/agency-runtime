@@ -2046,6 +2046,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `017dea36` | 2026-09-07 | docs(roadmap): freeze AR-173 acceptance evidence | [AR-173](../roadmap/issue-AR-173-correlate-route-lab-observations.md) | [Detail](2026-09-07-b2da6eb9-route-lab-correlation.md) |
 | `941b9025` | 2026-09-07 | docs(roadmap): preserve first AR-173 acceptance verdicts | [AR-173](../roadmap/issue-AR-173-correlate-route-lab-observations.md) | [Detail](2026-09-07-b2da6eb9-route-lab-correlation.md) |
 | `594bc4d3` | 2026-09-07 | docs(roadmap): clarify diagnostic trace representation | [AR-173](../roadmap/issue-AR-173-correlate-route-lab-observations.md) | [Detail](2026-09-07-b2da6eb9-route-lab-correlation.md) |
+| `7650cdf0` | 2026-09-07 | docs(roadmap): freeze final AR-173 acceptance candidate | [AR-173](../roadmap/issue-AR-173-correlate-route-lab-observations.md) | [Detail](2026-09-07-b2da6eb9-route-lab-correlation.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

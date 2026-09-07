@@ -89,3 +89,8 @@ remain. No product/test/script change versus f4f5124e (Git diff exits zero).
 Fresh strict records pass for 1207 Markdown files and 397 mapped/two historical
 PR exceptions. Staged whitespace checks caught an extra new-ADR EOF blank
 before commit; it was removed. All five criteria need new final verdicts.
+
+## Final review freeze
+
+7650cdf0 freezes 594bc4d3939d144440ae52f5acdf5f840c79f25e for the second/final review.
+The clean checkpoint precedes isolated evaluation; no third review by default.
