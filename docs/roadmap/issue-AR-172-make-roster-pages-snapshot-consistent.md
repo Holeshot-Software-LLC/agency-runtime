@@ -69,7 +69,10 @@ tests pass. Raw commands and results are in the
 The original implementation already allowed at most three capture attempts.
 One injected mismatch recovers on the second attempt, as criterion 6 describes;
 persistent churn fails at the unchanged bound. The criterion does not require
-reducing that bound. Isolated acceptance remains pending before completion.
+reducing that bound. First isolated review satisfies 1–5 and 7; criterion 6
+needs the existing control-handler call-site excerpt in its isolated packet.
+No production defect is reported. Preserve the verdict before one citation-only
+recheck at the unchanged candidate.
 
 The public handler uses one Store snapshot that reads roster generation, exact
 eligible total, and `limit + 1` rows inside one SQLite read transaction. SQL
@@ -111,9 +114,9 @@ behavioral criteria and the original verification wording remain preserved.
   configuration revision across the current control and collection paths.
 - [x] A configuration change during paging retains last-good UI state and fails
   the refresh closed.
-- [x] One control response never combines UI and operational roster generations;
+- [ ] One control response never combines UI and operational roster generations;
   a deterministic mismatch is recaptured once and persistent churn fails closed.
-- [ ] Focused Store, dashboard HTTP and UI regressions/current coverage floors,
+- [x] Focused Store, dashboard HTTP and UI regressions/current coverage floors,
   the named production spine, metadata, policy, worklog, strict docs/tracker,
   Ruff and diff checks pass; exhaustive integration remains optional.
 

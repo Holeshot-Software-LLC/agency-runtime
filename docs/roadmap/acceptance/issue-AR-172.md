@@ -61,8 +61,17 @@ tracker_url: null
 
 ## Verification
 
-Pending isolated checks after the source, test and actual gate transcripts are
-committed and this record freezes their immutable candidate.
+First isolated review at dec1bc512462285cf4d43742c3e666e6d776186e satisfies
+1–5 and 7. Criterion 6 needs the existing control-handler call-site excerpt;
+the helper and its deterministic tests are present. Preserve these verdicts
+before adding that citation and rechecking only criterion 6.
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
+| 1 | satisfied | `AR-172.1-20260907-208a98ce` | `378ed8b697b336f7f4ce38f7f2ea14c61a017266578a5b1106dd154c90b3b84b` | 2026-09-07 | roster.py:1850-1904 reads generation, total, and rows in one transaction; http.py:607-634 uses that snapshot, and test_roster_snapshot_generation.py:161-203 verifies consistency during concurrent activation. |
+| 2 | satisfied | `AR-172.2-20260907-72e89dd2` | `a1cab11fc8706c70c258d998b696a3b51f493045eec812d80718abd432e3eb6a` | 2026-09-07 | roster.py:1850-1904 applies disabled and cursor filters and limit + 1 in SQL with fixed-count bound parameters; agent_activation.py:9-41 bounds disabled inputs and protects coordinators, supported by the cited tests and passing transcript. |
+| 3 | satisfied | `AR-172.3-20260907-1fe39fff` | `01ed31d06c6b24387e7e26b361f635d30b07fc1e75a91e5647a60b459649c08d` | 2026-09-07 | The interleaving test in tests/test_roster_snapshot_generation.py:161-203 retains generation two while the writer reaches three, roster.py:1850-1904 reads within one transaction, and the cited transcript reports the suite passing. |
+| 4 | satisfied | `AR-172.4-20260907-a7e9e790` | `ba346fdd037392269bcf041b6ce66b338a3f936c731b2da248c1f6f5ad1c33fa` | 2026-09-07 | dashboard.py emits Store and configuration revisions, dashboard-live.js checks both during paging and configuration against control, and dashboard_ui.test.mjs plus the cited transcript demonstrate rejection of all five configuration drift paths. |
+| 5 | satisfied | `AR-172.5-20260907-d49e3f84` | `94b1f60967deb85fcb720fc26770c0b5eb28c1918191c9e37316397c5d8f6900` | 2026-09-07 | Tests at tests/dashboard_ui.test.mjs:6681-6761 and the config-drift regression transcript show both refresh paths preserve last-good state, mark control stale, and stop at revision mismatches during paging. |
+| 6 | absent | `AR-172.6-20260907-1e7cc5e3` | `cb0af6bd33f278ce9f7d71582001df53c1d62b543d942f10a469b58fe1078c64` | 2026-09-07 | dashboard.py:266-287 and tests:545-578 demonstrate bounded recapture and failure in the helper, but no excerpt shows the control response uses that helper before publishing UI and operational rosters. |
+| 7 | satisfied | `AR-172.7-20260907-c93eb38a` | `9d93ba652ac368209c43b36882a8faed956bab74336a01bb5ea0f7d653c85b3d` | 2026-09-07 | AR-172's cited transcripts show Store/HTTP, UI coverage floors, production spine and all record checks passing; ADR-0105 explicitly makes exhaustive verification optional. |

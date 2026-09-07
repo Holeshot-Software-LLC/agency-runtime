@@ -56,8 +56,9 @@ The original three-attempt limit is unchanged, not a new behavior requirement.
 
 ## Exact blocker
 
-No reproduced AR-172 production defect. Its first isolated acceptance review is
-pending the complete committed evidence packet. Do not flip status early.
+No reproduced AR-172 production defect. First review satisfies 1–5 and 7;
+criterion 6 needs the existing control-handler call-site excerpt. Preserve
+the verdicts before a citation-only recheck at unchanged dec1bc51. No done flip.
 
 AR-170 remains in_progress: first review at 662eb947 and final candidate
 91273e41 are preserved. Final 1/2/4/5/6/7/8 satisfy, 3/9 need complete collection
@@ -81,7 +82,7 @@ No empty commits, staffing or restart. Preserve verdicts before corrections.
 ## Next bounded work package
 
 1. Evidence candidate dec1bc51 and its immediate ledger are committed.
-2. Freeze that candidate and run its seven isolated checks, at most two passes.
+2. Preserve first verdicts, add the missing call-site citation, recheck only 6.
 3. Publish one normal PR/merge/readback, then AR-173. No native Windows work.
 
 ## Verification
