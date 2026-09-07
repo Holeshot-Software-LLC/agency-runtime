@@ -54,6 +54,9 @@ Owner selection survives re-render; invalid list state disables it and valid
 recovery restores it. No credentials or server permissions are granted.
 All six current criteria require isolated candidate-bound verdicts.
 
+Selector implementation and initial evidence: a4be59b0, with immediate ledger
+ebb471a8. Acceptance verdicts follow the final candidate, not this decision.
+
 ## Alternatives
 
 - Disable the whole dashboard: rejected as contrary to ADR-0117.

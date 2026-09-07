@@ -36,19 +36,25 @@ Stored keys never enter the JSON control. The test allows no fetch or persistenc
 
 Linux, checkout-local Python imports, no new skips/xfails or lowered thresholds:
 
-- Full UI: 189 passes, no skips/failures, 240.844917 ms.
+- Selector checkpoint UI: 189 passes, no skips/failures, 240.844917 ms.
+- After the null-error repair: full UI 190 passes, no skips/failures,
+  231.878074 ms. All three 401/403/503 null-body cases retain status and ID.
 - Production UI coverage: 96.93 percent lines, 86.71 branches, 95.71 functions;
   unchanged 95/86/93 thresholds and dashboard-JavaScript-only scope.
 - Warning-strict test_dashboard_auth_boundary_regression,
   test_dashboard_transaction_refactors, test_cli_owner_authority,
   test_workforce_cli and test_dashboard: 235 passes, no skips/failures, 46.37s.
-- Fresh named production spine: 1085 passes/three existing skips, 67.88s.
+- Named production spine: 1085 passes/three existing skips at the selector
+  checkpoint (67.88s), and again after the null-error correction (66.99s).
+- Focused dashboard/asset packaging contracts: three pass/187 deselected, 0.28s.
 - Ruff check/format: 766 files pass. Scoped diff check passes.
 
 UUIDv4 validation, safe errors, exact response correlation, validated Route Lab
 IDs, runtime-capture privacy labels and Store-backed definition provenance
 remain. No backend, authentication, broker policy, retention or capture setting
-changed. These tests are not native-host or real-provider staffing evidence.
+changed. Exact Git comparison against a4be59b0 of backend/core, their tested
+modules, scripts, pyproject and AGENTS returns zero bytes of diff. These tests
+are not native-host or real-provider staffing evidence.
 
 ## Requirement reconciliation
 
@@ -60,9 +66,28 @@ delivery proof. The governed legacy tracker exemption applies while unmapped.
 
 ## Browser checkpoint
 
-The focused source-served browser interaction is the next bounded check.
+The source-served selector fixture passes 18 checks at 1280/375 pixels on
+Chromium 152.0.7977.64, with zero POST requests. The served selector SHA-256
+matches a4be59b0: c75dc679ac2508d9c97fa10811620bb474bfc0aaaa64563ea24957eb74ff0dbf.
+An initial timeout and diagnostic run reached an authenticated dashboard but
+only one empty-list option: the fixture targeted the old standalone config
+endpoint. Injecting synthetic provider drafts into the current combined control
+snapshot fixes the fixture, without changing production code. The initial
+zero-check report remains in AR-166-browser-20260907/report.json.
+
 No installed-wheel, native Windows, attended-host or full accessibility claim.
-The builder records observations, never acceptance verdicts.
+The browser uses a private five-agent Store, stubbed host inspection, denied
+server outbound connections and synthetic provider drafts; no owner profile.
+
+## Null HTTP error correction
+
+Inspection of criterion 2 finds a second same-scope gap: valid JSON null with
+an HTTP error throws TypeError before APIError can retain status/request ID.
+The new 401/403/503 test fails against a4be59b0 on the first case, with
+TypeError reading error from null (one failure, 64.829985 ms). Optional chaining
+preserves the existing HTTP fallback message and safe browser request ID.
+This changes no response-correlation, authentication or broker policy.
+Refresh the UI checks and final source-served browser receipt before freezing.
 
 ## Publication validation
 
@@ -71,3 +96,8 @@ files. Strict tracker passes for 397 mapped records with two historical
 PR-tracked exceptions. Policy availability is current; the exact worklog
 indexes 1985 substantive commits before this repair. Diff check returns zero.
 AR-166 is governed pre-tracker history, not an unrecorded remote closure.
+
+After the null-error repair and builder record, metadata/strict docs pass 1190
+files; strict tracker still passes 397 mapped records/two historical PR items.
+Policy, exact worklog (1986 substantive commits before this checkpoint), Ruff
+766 files and diff checks pass.

@@ -6,6 +6,7 @@ created: 2026-07-27
 updated: 2026-09-07
 tags: [dashboard, security, privacy, observability, ui]
 related:
+  - docs/roadmap/acceptance/issue-AR-166.md
   - docs/roadmap/acceptance/evidence/AR-166-dashboard-authority-20260907.md
   - docs/decisions/0229-reconcile-dashboard-disclosure-with-owner-authority.md
   - docs/decisions/0117-unify-owner-control-authority.md
@@ -58,7 +59,10 @@ The nonempty-list renderer now enables selection and preserves the chosen
 provider. Empty/unparseable/non-array lists remain disabled; keys stay redacted.
 All 189 UI and 235 backend/owner cases pass, with 1085/three existing skips in
 the fresh named spine. ADR-0229 explicitly reconciles only criterion 1 before
-isolated review. Browser evidence and six verdicts remain the next checkpoint.
+isolated review. Eighteen source-served browser checks pass for the selector.
+Criterion 2 also exposed a null-JSON HTTP error throwing TypeError before
+retaining status/request identity. A null-safe error lookup and 401/403/503
+regression cover it. Final browser evidence and six verdicts remain next.
 
 Client request IDs are canonical UUIDv4 values;
 HTTP and transport failures append only a validated identifier to their inert

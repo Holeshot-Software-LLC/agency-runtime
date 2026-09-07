@@ -1,0 +1,9 @@
+{
+  "scope": "Source-served private/offline owner dashboard; config responses contain synthetic provider drafts. No installed-wheel, native-host or full accessibility claim.",
+  "checks": [],
+  "screenshots": [],
+  "post_requests": 0,
+  "browser": "152.0.7977.64",
+  "passed": false,
+  "error": "TimeoutError: page.waitForFunction: Timeout 15000ms exceeded."
+}

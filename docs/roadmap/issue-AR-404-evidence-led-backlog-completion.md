@@ -232,7 +232,11 @@ still incorrectly disables valid choices. The one-line repair passes 189 UI
 cases/current coverage floors, 235 backend/owner cases and the fresh named spine
 1085/three existing skips. ADR-0229 explicitly reconciles only criterion 1;
 the bounded complete prompt already belongs to AR-298. Browser proof and all
-six isolated verdicts remain before completion.
+six isolated verdicts remain before completion. The selector passes 18 real
+source-served browser checks after a fixture-endpoint correction. A second
+criterion-2 gap, null HTTP error JSON losing status/request ID through TypeError,
+is repaired with a null-safe lookup and 401/403/503 regression. Latest UI 190
+passes; fresh named spine 1085/three skips, 66.99s; asset checks three pass.
 
 Current counts: 40 actual open trackers plus 85 unfinished legacy records,
 125 total after AR-165 completion; no duplicate tracker or false acceptance.

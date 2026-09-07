@@ -27,8 +27,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-404
 branch: codex/ar166-oldest-first-reconciliation
-evidence_commit: 44c94c925f815cc18aefb1299f856cd19c844228
-minimum_ledger_commit: 44c94c925f815cc18aefb1299f856cd19c844228
+evidence_commit: a4be59b05d1918861f8d117e68c57331a681021b
+minimum_ledger_commit: ebb471a8da1fe6e2a63b82edbe7cea5e2e63b03b
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -52,10 +52,12 @@ ADR-0229 explicitly replaces only criterion 1 and preserves its original wording
 ## Completed evidence
 
 - Against baseline, two focused cases fail: expected enabled, actual disabled.
-- Repaired complete UI: 189 pass, no skips/failures, 240.844917 ms.
+- Selector checkpoint UI: 189 pass; null-error correction UI: 190 pass,
+  no skips/failures, 231.878074 ms.
   Current production coverage 96.93/86.71/95.71 passes unchanged 95/86/93 floors.
 - Current backend/owner five-module package: 235 pass, 46.37s.
-- Fresh named spine: 1085 pass/three existing skips, 67.88s. Ruff 766 files pass.
+- Fresh named spine after both fixes: 1085 pass/three existing skips, 66.99s.
+  Asset contracts three pass/187 deselected; Ruff 766 files pass.
 - New test preserves second-provider choice through re-render, stages only its
   secret operation, retains key redaction, disables four invalid/empty states,
   and recovers after stale selection removal.
@@ -65,10 +67,12 @@ ADR-0229 explicitly replaces only criterion 1 and preserves its original wording
 
 ## Exact blocker
 
-AR-166 still needs the focused source-served browser interaction and six
-candidate-bound isolated verdicts. Do not close it from DOM tests alone.
-The evidence SHA above is the clean merge baseline; this checkpoint contains
-the tested repair. Bind the browser/builder candidate in the next checkpoint.
+The selector passes 18 source-served browser checks after correcting the
+fixture's obsolete config endpoint; zero POSTs. Criterion 2 also exposes a
+null JSON HTTP error losing its status/request ID through TypeError. The
+null-safe lookup and 401/403/503 regression now need final browser proof and
+six candidate-bound verdicts. The repair remains in scope; no API authority
+or criterion change. Bind the final browser/builder candidate next.
 
 Retained holds: AR-159 hosted enforcement/check-app/bypass; AR-160 Windows/
 paired release/live publication; AR-156 Windows/profile and hosted topology;

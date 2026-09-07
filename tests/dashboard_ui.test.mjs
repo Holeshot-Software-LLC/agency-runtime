@@ -988,6 +988,24 @@ test("app.js API requests keep credentials in-memory and fail closed on malforme
   )));
 });
 
+test("HTTP null error bodies retain status and safe browser request identity", async () => {
+  for (const status of [401, 403, 503]) {
+    const harness = createAppHarness(async () => ({
+      ok: false,
+      status,
+      headers: { get: () => null },
+      json: async () => null,
+    }));
+    await assert.rejects(
+      harness.api.api("/null-error"),
+      (error) => error.name === "APIError"
+        && error.status === status
+        && error.requestId === "00000000-0000-4000-8000-000000000001"
+        && error.message === `HTTP ${status}. Request ID 00000000-0000-4000-8000-000000000001.`,
+    );
+  }
+});
+
 test("app.js typed confirmations trap focus and reject incorrect phrases", async () => {
   const harness = createAppHarness(() => {
     throw new Error("this test does not fetch");
