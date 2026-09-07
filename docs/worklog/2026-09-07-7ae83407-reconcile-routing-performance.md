@@ -16,7 +16,7 @@ type: worklog
 commit: 7ae8340752c4223422fd943184b255ebb459ae52
 short: 7ae83407
 date: 2026-09-07
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/701
 related_issues:
   - docs/roadmap/issue-AR-140-scale-routing-and-retrieval.md
 ---

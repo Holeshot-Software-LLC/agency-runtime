@@ -1946,6 +1946,7 @@ This registry connects repository history to the roadmap and to optional detail 
 
 ## Provenance notes
 
+- `ed93405d` added the governing ADR-0121 link in AR-140's roadmap decision cell alongside its reciprocal commit cell. The ledger rule permits only the latter outside `docs/worklog/**`; the extra cell should have accompanied the substantive disposition. Preserve the published branch history and this scope exception explicitly; do not repeat it in subsequent ledgers.
 - `2434f30` contains the name `Hermes` in its historical subject. The subject is retained exactly as committed for faithful provenance; the name does not create an active cross-repository link or dependency.
 - `8f6d320` records a handoff document that was later removed. The subject remains part of the immutable commit record; no deleted document was restored for this worklog.
 - `a183594` is a `docs(worklog):` ledger commit that also updated `docs/roadmap/handoffs/issue-AR-235.md`. The worklog-ledger exemption allows only `docs/worklog/**` and the reciprocal roadmap README cell. The capsule refresh should have been a separate `docs(roadmap):` commit. Retained as-is; no history rewrite.
