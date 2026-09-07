@@ -53,3 +53,10 @@ completion, with 40 actual open trackers plus 92 unfinished legacy records
 (132 local unfinished). PR #706 carries this bounded package; merge normally,
 then AR-155. Windows, exhaustive diagnostics and operator hook trust remain
 outside this package.
+
+## Publication
+
+PR #706 merged normally at 434175f03ecce2fdbcc4232c17450f49a22632d3 on
+2026-09-07T07:17:59Z. Clean main was fast-forwarded to that commit before the
+separate AR-155 worktree was created. No hosted checks were reported; scoped
+local checks and isolated verdicts are recorded above.
