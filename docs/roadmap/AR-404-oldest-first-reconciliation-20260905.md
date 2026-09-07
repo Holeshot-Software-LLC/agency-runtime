@@ -38,7 +38,8 @@ attended ZCode call; its retention merged in PR #699 at e2f7a5f2. AR-138 is now
 in fast verification: actual browser review found remaining accessibility and
 desktop clipping defects; four regressions and the fixes are in the current
 bounded package. Final packaged browser evidence passes 21 cases at three
-widths; all 142 UI tests pass. Isolated acceptance remains before closure.
+widths; all 142 UI tests pass. First isolated review satisfies 2–6 but finds a
+stale full-refresh error race in criterion 1; repair and reverify before closure.
 
 Previous pause: the owner asked to conserve credits and publish AR-130 through
 [PR #696](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/696),

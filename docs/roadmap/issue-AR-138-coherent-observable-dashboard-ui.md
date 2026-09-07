@@ -61,7 +61,11 @@ cards or unexpected console/HTTP errors. Actual control polls preserve focus,
 selection and open details; injected failures retain the last revision, show
 safe correlated IDs and recover. All 142 UI tests pass. Exact hashes, versions,
 screenshots, commands and limits are in the linked current evidence. The record
-stays open until all six isolated criteria pass; no full WCAG/native-host claim.
+stays open; no full WCAG/native-host claim. The first isolated review satisfies
+criteria 2–6 but contradicts criterion 1: full-refresh success is generation
+guarded, while a replaced request's late non-abort error can still overwrite a
+newer healthy connection. Preserve those verdicts and repair both success/error
+generation boundaries consistently before re-verification.
 
 ## Approach
 

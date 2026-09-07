@@ -50,8 +50,16 @@ tracker_url: null
 
 ## Verification
 
-Pending the isolated single-criterion runner. The builder has recorded evidence,
-not verdicts.
+The isolated runner supplied all six rows below. Criterion 1 is contradicted:
+a replaced full refresh can apply a late error to newer connection state. Five
+criteria are satisfied. Preserve this complete first review before repairing
+the remaining race and freezing a new candidate; no verdict is relabeled.
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
+| 1 | contradicted | `AR-138.1-20260907-a5bc06ef` | `92bce40266bd2aa17d231110077611bd1212926e9e2dbe8e4f15242b6b0ca6d1` | 2026-09-07 | dashboard-live.js:2068-2187 guards successful full-refresh responses but not its catch path, so a replaced request's late non-AbortError can overwrite newer connection state with Unavailable. |
+| 2 | satisfied | `AR-138.2-20260907-8c857f24` | `f3c3c70d864e969178b4bf151c334c8b369a222b1866384fa91530a480e335a6` | 2026-09-07 | dashboard-live.js marks failed control refreshes stale and displays a failure notice, dashboard_ui.test.mjs checks retained state and staleness, and the browser evidence records visible failure and recovery at three viewports. |
+| 3 | satisfied | `AR-138.3-20260907-7f391d96` | `5574cf5abd450c9c39f48512b234c9096769c02ba4ff40e9658d7e5a5cace13c` | 2026-09-07 | dashboard.py:1999-2077 binds related control data under one control_revision, and dashboard_ui.test.mjs:4350-4444 shows initial and polling refreshes update related panels from the single /api/control response. |
+| 4 | satisfied | `AR-138.4-20260907-99702c9a` | `4f1db4a75d5be08a4505642e1626fc0ebbabca3a899f757eed52222f07c1b85a` | 2026-09-07 | dashboard-core.js captures and restores focus, selection and open details; verify_dashboard_browser.mjs asserts preservation across a real control poll, and the browser evidence records passes at all three viewports. |
+| 5 | satisfied | `AR-138.5-20260907-e45df73d` | `08bb9dbe466a137a4d15f8b78420e008631442867e57bf0029ee354a0cc84778` | 2026-09-07 | AR-138-current-dashboard-20260907.md records exit 0 and 21 passing browser checks, including desktop and 375 px widths with zero axe violations, overflow or clipped metrics; verify_dashboard_browser.mjs shows the corresponding automated assertions. |
+| 6 | satisfied | `AR-138.6-20260907-b8fa4ebe` | `216b4a1e33a2f6bf80beeb57156bcc16a5e81ef988e29e12f5325cf9f5f93313` | 2026-09-07 | dashboard-core.js validates UUIDv4 IDs and includes them in console logs and API errors; browser checker assertions and recorded browser evidence show matching safe IDs in failure notices and console output. |

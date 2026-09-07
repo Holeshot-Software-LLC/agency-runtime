@@ -43,7 +43,10 @@ Current package: AR-138, live_demo complete and isolated acceptance pending. Exi
 remain; actual browser review found contrast, keyboard-scroll/semantic and
 desktop metric-clipping defects. Small HTML/CSS fixes and four regressions are
 are checkpointed at d7231df3/7892096d. Final view-loaded browser receipt passes
-21 checks at three widths, including 375 px. The six isolated verdicts remain.
+21 checks at three widths, including 375 px. First isolated review satisfies
+criteria 2–6 but contradicts 1: a replaced full refresh's late non-abort error
+can mark newer healthy connection state Unavailable. Preserve the first review,
+add failing regressions, then guard stale failure paths and reverify.
 
 ## Completed evidence
 
@@ -84,8 +87,8 @@ are checkpointed at d7231df3/7892096d. Final view-loaded browser receipt passes
 
 ## Exact blocker
 
-No operator blocker for AR-138: finish packaged QA and isolated acceptance;
-it remains open until then. AR-135 native proof is waiting_for_operator: one attended installed ZCode Agent
+AR-138 has a concrete stale-error race to repair before acceptance or merge;
+it remains open. AR-135 native proof is waiting_for_operator: one attended installed ZCode Agent
 success/failure and full parent Stop capture. Do not invent a headless backend
 or promote a stubbed hook test into native proof. This does not block the next
 independent backlog disposition.
@@ -105,9 +108,11 @@ the same task; do not spawn a replacement task or close an unfinished umbrella.
 ## Next bounded work package
 
 1. Final AR-138 evidence is committed at fa4d042b, ledger 6bc9ccb0. The isolated
-   candidate is pinned to fa4d042b. No source repair is pending.
-2. Freeze the six unchanged criteria's evidence and run isolated acceptance
-   with the available Codex transport. Never author verdicts or waive gaps.
+   candidate is pinned to fa4d042b. Preserve its first isolated review before
+   changing evidence; criteria 2–6 pass and criterion 1 contradicts.
+2. Repair stale failures in full/control polling with generation guards and
+   deferred-error regressions. Rebuild the wheel, rerun affected/browser checks,
+   then freeze a repaired candidate for the second isolated acceptance pass.
 3. If satisfied, update the legacy count, open one PR and merge normally.
    Review AR-140 next; AR-139 is already retired. Windows stays excluded.
 4. AR-135 later retains its attended installed Agent/record-zero/full-Stop plan;
