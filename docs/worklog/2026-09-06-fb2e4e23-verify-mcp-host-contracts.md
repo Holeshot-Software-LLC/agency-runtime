@@ -17,7 +17,7 @@ type: worklog
 commit: fb2e4e2379939c7525018a14b2c54f8f15b168fb
 short: fb2e4e23
 date: 2026-09-06
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/698
 related_issues:
   - docs/roadmap/issue-AR-131-complete-mcp-cli-host-contracts.md
 ---

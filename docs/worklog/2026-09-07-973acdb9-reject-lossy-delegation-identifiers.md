@@ -18,7 +18,7 @@ type: worklog
 commit: 973acdb991c10e54656990ef0a39db4262adb8be
 short: 973acdb9
 date: 2026-09-07
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/698
 related_issues:
   - docs/roadmap/issue-AR-131-complete-mcp-cli-host-contracts.md
 ---
@@ -77,3 +77,11 @@ Candidate freeze 333e6411 pins the repaired acceptance record to 973acdb9 and
 the active capsule to that evidence with minimum ledger d8656b05. Strict docs
 pass for 1129 Markdown files before isolated review; old verdicts remain at
 6a139e23, while this candidate's verification table awaits independent runs.
+
+Completion 61fbd6a5 records six satisfied, independent Codex verdicts against
+973acdb9, observed September 7. Original criteria are unchanged; only their
+checkboxes and issue state become complete after the verdicts exist. The first
+failure history remains intact. PR #698 carries the scoped repair/completion.
+Fresh enumeration is 40 actual open trackers and 98 unfinished legacy records
+(138 local unfinished). AR-131 has no tracker to close; do not manufacture one
+or close its live-host umbrella. Merge the PR, then AR-135 is next.
