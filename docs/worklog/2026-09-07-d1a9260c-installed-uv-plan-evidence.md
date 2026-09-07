@@ -70,3 +70,20 @@ pass at the evidence checkpoint. Isolated acceptance is not yet claimed.
 Freeze the AR-190 builder at this committed evidence candidate and run the five
 isolated verifiers. Parent serializes PR publication and merging; no owner
 upgrade or native host activation is part of this plan-only completion.
+
+## First isolated verification checkpoint
+
+Commit `a6efa01b` faithfully records four `satisfied` verdicts and one `absent`
+verdict from the first default all-five run. Criterion 5 rejected the link from
+live-tested c64ce3ce to later documentation candidate d1a9260c because the
+source-equivalence statement could not be verified inside its snapshot. No
+product failure or issue completion is inferred from that result. The exact
+first reasons and digests remain in that commit's acceptance record.
+
+The owner subsequently requested one bounded changed-evidence response: build
+and install exact d1a9260c, produce its same-SHA uv plan, rerun focused checks,
+and clarify final product-source identity without requiring a receipt commit
+to include its own future execution. A new receipt candidate changes every
+criterion digest, so the second and final review must run all five; it cannot
+reuse the first four verdicts under a different candidate SHA. No third review
+is authorized by this bounded package.
