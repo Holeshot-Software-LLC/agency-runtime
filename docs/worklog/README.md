@@ -1963,6 +1963,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `ea577285` | 2026-09-07 | docs(backlog): verify bounded worker-detail evidence [AR-153] | [AR-153](../roadmap/issue-AR-153-complete-worker-detail-evidence.md) | [detail](2026-09-07-ea577285-worker-detail-evidence.md) |
 | `342f9db0` | 2026-09-07 | docs(acceptance): freeze AR-153 worker-detail candidate | [AR-153](../roadmap/issue-AR-153-complete-worker-detail-evidence.md) | [detail](2026-09-07-ea577285-worker-detail-evidence.md) |
 | `b060e96a` | 2026-09-07 | docs(backlog): close verified worker-detail evidence [AR-153] | [AR-153](../roadmap/issue-AR-153-complete-worker-detail-evidence.md) | [detail](2026-09-07-ea577285-worker-detail-evidence.md) |
+| `8b36ea28` | 2026-09-07 | Merge pull request #705 from Holeshot-Software-LLC/codex/ar153-oldest-first-reconciliation | [AR-153](../roadmap/issue-AR-153-complete-worker-detail-evidence.md) | [detail](2026-09-07-ea577285-worker-detail-evidence.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
