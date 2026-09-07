@@ -16,7 +16,7 @@ type: worklog
 commit: a4be59b05d1918861f8d117e68c57331a681021b
 short: a4be59b0
 date: 2026-09-07
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/717
 related_issues:
   - docs/roadmap/issue-AR-166-truthful-dashboard-disclosure-and-correlation.md
 ---
