@@ -27,8 +27,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-404
 branch: codex/ar151-oldest-first-reconciliation
-evidence_commit: 460f319b56b0759cf466c4d40a88003c75bdbdaf
-minimum_ledger_commit: 35d153505af3f90a0312680de0d4c8b9aa990386
+evidence_commit: 99e05d1f46673068e65992fe6e60697c61b133d3
+minimum_ledger_commit: d0cb62fc3706a67f3915ceaddab0b382c88ffbce
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -55,7 +55,7 @@ ADR-0117; cache fixture lacks its stale deadline; inference fixture mislabels
 the configured legacy chain. Repair these fixtures for the original full-suite
 criterion. Fixture-only repair now passes all 274 dashboard cases (52.54s),
 nine focused (4.71s), named spine 1085/three skips (68.98s), routing and Ruff.
-Freeze the current candidate for four isolated verdicts; no runtime change.
+Candidate 99e05d1f is frozen for four isolated verdicts; no runtime change.
 
 ## Completed evidence
 
@@ -132,8 +132,8 @@ the same task; do not spawn a replacement task or close an unfinished umbrella.
 
 ## Next bounded work package
 
-1. Freeze AR-151's repaired dashboard evidence, then independently verify all
-   four criteria. Baseline failures remain at 58285009; no done/count flip yet.
+1. Independently verify all four AR-151 criteria against frozen 99e05d1f.
+   Baseline failures remain at 58285009; no done/count flip before satisfaction.
 2. Complete documentation/tracker checks and merge one AR-151 PR normally.
    Read back the actual merged head; update clean main by fast-forward only.
 3. Start an owned AR-153 worktree and record the prior merge. AR-152 is done;

@@ -11,6 +11,7 @@ related:
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
   - docs/roadmap/issue-AR-176-align-full-gate-contract-fixtures.md
   - docs/roadmap/acceptance/evidence/AR-151-host-eligibility-20260907.md
+  - docs/roadmap/acceptance/issue-AR-151.md
   - docs/decisions/0117-unify-owner-control-authority.md
   - docs/decisions/0118-require-inference-owned-staffing.md
   - docs/worklog/README.md
