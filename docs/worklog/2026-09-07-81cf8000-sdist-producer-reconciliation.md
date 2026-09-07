@@ -56,3 +56,5 @@ AR184 remains in_progress. Publish then AR185; future Windows comparison must
 use exactly08fab1c4 or rebuild both platforms from one newly frozen SHA.
 
 Substantive `81cf8000` records the shared real Linux producer against AR184 while preserving original acceptance states and exact cross-platform hold.
+
+Publication `c64ce3ce` merged PR #734 at2026-09-07T23:21:33Z. AR184 retains only same-SHA Windows comparison and merged-release-set proof; Linux evidence is durably linked.
