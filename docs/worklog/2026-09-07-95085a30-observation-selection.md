@@ -17,7 +17,7 @@ type: worklog
 commit: 95085a3008389fadf8c4c99123cf3eacfc8e1925
 short: 95085a30
 date: 2026-09-07
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/710
 related_issues:
   - docs/roadmap/issue-AR-158-disambiguate-multi-surface-observation-tests.md
 ---
@@ -72,3 +72,5 @@ completion, with all seven criteria satisfied and original first six unchanged.
 Current counts: 40 actual open trackers plus 89 unfinished legacy records,
 129 total. Strict docs/tracker, metadata and policy checks pass. Publish normally
 before starting AR-159; no new installation, corpus or native Windows claim.
+PR #710 carries accepted completion. Fresh enumeration confirms 129 unfinished
+records (89 legacy, 40 mapped); end telemetry is 8.7 percent with a clean pair.
