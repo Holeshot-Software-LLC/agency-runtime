@@ -3,7 +3,7 @@ title: "AR-178: Evaluate complete one-shot applications after production launch"
 status: open
 category: roadmap
 created: 2026-07-27
-updated: 2026-07-27
+updated: 2026-09-07
 tags: [evaluation, applications, post-production, testing]
 related:
   - docs/decisions/0102-defer-one-shot-application-evaluation.md
@@ -35,6 +35,19 @@ Agency-on/off execution after the runtime itself is production-ready.
 Product-evaluation validators exist, but no complete benchmark-valid six-
 application corpus has been run. ADR-0102 makes this research explicitly
 post-production and non-blocking for AR-119, AR-125, production GO, and release.
+
+September 7 reconciliation at cbe82aaf retains this intentional research
+backlog, not a missing runtime repair or superseded request. All six versioned
+scenario definitions exist in core/evals/product_scenarios.py; the live-trial
+validator in core/evals/product_one_shot.py requires completed execution,
+runtime contract and validation, and explicitly disclaims comparative
+superiority from one trial. Definitions and validators do not constitute six
+matched blind-graded results. AR-119's live acceptance remains incomplete.
+All six original acceptance states are preserved; tracker #153 remains open.
+
+Next bounded package remains post-production: predeclare corpus/grading/budget,
+then collect matched trials with exact activation evidence. No costly study
+or new release gate is introduced by this reconciliation.
 
 ## Approach
 

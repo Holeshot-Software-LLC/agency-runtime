@@ -6,6 +6,7 @@ created: 2026-09-07
 updated: 2026-09-07
 tags: [evidence, codex, activation, runtime, backlog]
 related:
+  - docs/roadmap/issue-AR-407-scope-install-drift-to-requested-hosts.md
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
   - docs/roadmap/issue-AR-388-unset-credential-reads-as-provider-unavailable.md
   - docs/roadmap/handoffs/issue-AR-383.md
@@ -14,6 +15,30 @@ superseded_by: null
 ---
 
 # Live Codex header and injection diagnostic
+
+## Latest correction: scoped refresh and process environment
+
+At approximately 22:29 UTC, the newly requested refresh
+`env -u PYTHONPATH agency install --agent codex` exits zero and reports Codex
+runtime-verified using the existing successful attestation. The residual
+AR-348/AR-271 mismatch warning is NOT evidence that this Codex refresh failed.
+Read-only fanout inspection finds current-codex.json, marketplace hook commands
+and plugin cache 0.1.0+codex.12e3315341c0 all pin the current
+4329d76058d18eaa6b02f0b5750ff5533462064028c1178a8b5e913364774fac projection.
+Only OpenClaw retains AR-271/1d617ca589a2. cmd_install's unfiltered first report
+misattributes that other host; AR-407 owns the bounded correction.
+
+The running parent still reports executing 5059543ccea4 in this turn's hook.
+Read-only initial-environment checks of Codex PID 1883778, its readable launch
+ancestors and a tool child show LITELLM_API_KEY absent. Eight configured LiteLLM
+profiles require that variable and contain no direct key; two local Ollama
+profiles require none. The existing private client file contains the assignment
+but hooks intentionally do not read it (AR-388/ADR-0204). No value was output.
+Thus current disk installation, cached process definitions and launch credentials
+are three separate facts. A fresh credential-bearing child can pass while this
+long-running parent remains unstaffed. Do not reinstall OpenClaw or add key-file
+fallback. Earlier diagnostics below retain their original timestamps/scope;
+the blanket residual-warning inference is corrected here.
 
 ## Scope
 

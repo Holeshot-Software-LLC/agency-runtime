@@ -337,6 +337,17 @@ hosted run failed whitespace validation, not accepted as green or billing proof.
 Original checkbox states remain unchanged. Current branch count: 40 actual open
 trackers plus 78 unfinished legacy records, 118 total; main remains 119 until
 AR-177 merges. No duplicate tracker, exhaustive dispatch or false acceptance.
+
+AR-177 merged PR #726/cbe82aaf at 22:32:47Z September 7. AR-178 remains
+relevant deferred post-production research, explicitly non-blocking under
+ADR-0102. Its six scenario definitions and strict validator are not six
+matched blind-graded application results; all original states remain.
+Owner-requested fanout separately established a real install-warning defect:
+AR-407/#727 scopes residual drift to the requested hosts while retaining global
+status. Filing adds one mapped issue, making 119 = 41 mapped + 78 legacy.
+The live audit corrects the earlier AR-271 warning inference: Codex disk/cache
+is current, the unfiltered warning is OpenClaw-only, and this running parent
+separately retains older hook definitions and lacks its credential variable.
 The unchanged public-roster fixture belongs to AR-176. Windows stays excluded;
 the oldest-first ledger and capsule preserve all holds. Ordinary-session
 unverified Agency/header behavior remains a separate unfinished concern.
