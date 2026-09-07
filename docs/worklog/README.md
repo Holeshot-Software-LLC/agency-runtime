@@ -2074,6 +2074,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `201d0cfc` | 2026-09-07 | docs(acceptance): bind final AR-176 evidence scope | [AR-176](../roadmap/issue-AR-176-align-full-gate-contract-fixtures.md) | [Detail](2026-09-07-6523b8df-current-fixture-contracts.md) |
 | `4a7b155d` | 2026-09-07 | docs(acceptance): preserve final AR-176 scoped verdicts | [AR-176](../roadmap/issue-AR-176-align-full-gate-contract-fixtures.md) | [Detail](2026-09-07-6523b8df-current-fixture-contracts.md) |
 | `b4edca75` | 2026-09-07 | docs(backlog): retain AR-176 limits and live harness readback | [AR-176](../roadmap/issue-AR-176-align-full-gate-contract-fixtures.md) | [Detail](2026-09-07-6523b8df-current-fixture-contracts.md) |
+| `d2125438` | 2026-09-07 | Merge pull request #725 from Holeshot-Software-LLC/codex/ar176-oldest-first-reconciliation | [AR-176](../roadmap/issue-AR-176-align-full-gate-contract-fixtures.md) | [Detail](2026-09-07-6523b8df-current-fixture-contracts.md) |
+| `7839abdb` | 2026-09-07 | docs(backlog): retire superseded AR-177 manual-CI checklist | [AR-177](../roadmap/issue-AR-177-make-exhaustive-python-ci-manual.md) | [Detail](2026-09-07-7839abdb-retire-manual-ci-checklist.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

@@ -100,3 +100,7 @@ acceptance and normal PR/merge. Continue oldest-first until the owner's cutoff.
 ## Publishable retained disposition
 
 b4edca75 (b4edca75f6e0a6c29fc9f3734997d68031688c59) retains AR-176 in_progress with six accepted/two absent criteria and publishes the actual native findings: Codex current-profile v4 activation passes at 22:04:41Z; OpenClaw ordinary staffing and five-field output pass, with limited prompt augmentation evidence; Hermes/Claude failures are traced to timed/invalid inference rather than assumed missing credentials. Existing client credential reuse is child-only, with no persistent credential or trust changes. Queue remains 119. Next after normal merge is AR-177.
+
+## Merge readback
+
+d2125438 (d2125438910d873a116a11b2ce2cb7f27209beeb) is PR #725, merged 2026-09-07T22:12:58Z from exact reviewed head 92bf06a2. Main was clean and fast-forwarded before the owned AR-177 tree was created. Hosted check rows were empty, not claimed green. The seven repairs are on main; AR-176 remains in_progress with two traceability criteria. Queue remains 119.

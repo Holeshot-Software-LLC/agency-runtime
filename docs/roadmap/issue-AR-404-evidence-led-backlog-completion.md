@@ -324,9 +324,19 @@ No native Windows or AR-170 completion claim. A separate fresh current-profile
 Codex canary actually ran but failed parent-spawn, response and header evidence;
 its missing-credential/transport observations are retained in the live audit.
 
-Current accepted branch count: 40 actual open trackers plus 79 unfinished legacy
-records, 119 total. Main remains 120 until AR-175's normal PR merge.
-No duplicate tracker or false acceptance.
+AR-175 merged through PR #724 at 891f0c32, 21:21:39Z September 7. AR-176's
+seven repaired stale cases and strict namespace doubles merged through PR #725
+at d2125438, 22:12:58Z. Its final focused package passes 525/one skip/64 Windows
+deselections and fresh spine 1085/three skips, but two inventory criteria remain
+unaccepted after two review passes. It stays in_progress.
+
+AR-177 retires only its superseded mandatory manual-run/release checklist under
+ADR-0234/AR-186. Manual-only CI, four shards, 97 percent and all six compatibility
+sessions remain intact; 222 focused contracts pass. The sole retained manual
+hosted run failed whitespace validation, not accepted as green or billing proof.
+Original checkbox states remain unchanged. Current branch count: 40 actual open
+trackers plus 78 unfinished legacy records, 118 total; main remains 119 until
+AR-177 merges. No duplicate tracker, exhaustive dispatch or false acceptance.
 The unchanged public-roster fixture belongs to AR-176. Windows stays excluded;
 the oldest-first ledger and capsule preserve all holds. Ordinary-session
 unverified Agency/header behavior remains a separate unfinished concern.

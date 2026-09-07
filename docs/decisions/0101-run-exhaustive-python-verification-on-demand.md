@@ -6,6 +6,7 @@ created: 2026-07-27
 updated: 2026-07-27
 tags: [ci, github-actions, cost, testing, coverage, release]
 related:
+  - docs/decisions/0234-retire-superseded-manual-ci-checklist.md
   - docs/roadmap/issue-AR-186-bound-delivery-to-live-demo-checkpoints.md
   - docs/decisions/0105-bound-delivery-to-live-demo-checkpoints.md
   - docs/roadmap/issue-AR-177-make-exhaustive-python-ci-manual.md
