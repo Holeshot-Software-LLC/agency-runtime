@@ -32,10 +32,11 @@ callback so its safe request ID survives. Keep refresh owners responsible for
 ignoring abort, lifecycle and obsolete-generation work; all eight cancellation
 cases already passed and still pass. No fallback or authority expansion.
 
-Add 24 corresponding schema/JSON fault-and-recovery cases to the reusable
+Initially add 24 corresponding schema/JSON fault-and-recovery cases to the reusable
 optional browser checker, across both refresh methods and all three existing
 viewport widths. Count zero POSTs and no legacy request fanout explicitly.
-The real browser is pending until the exact clean wheel is built.
+The later expanded run covers 36 cases, including 404/network failures; its
+exact installed-wheel evidence and accepted completion are recorded below.
 
 ## Verification
 
