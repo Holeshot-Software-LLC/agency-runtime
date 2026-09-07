@@ -112,3 +112,9 @@ Final strict docs/metadata pass 1190 files, tracker parity 397 mapped/two
 historical PR exceptions, policy/worklog/diff pass. Current queue: 40 mapped
 plus 84 legacy, 124 unfinished. No native Windows, installed-wheel or host
 activation claim. Publish one normal PR and merge before AR-168.
+
+## Publication
+
+PR #717 merged as c62524997cf4ee9619f1ff0850acc076ad790af3 at 2026-09-07T11:36:32Z, read back.
+Main was clean and fast-forwarded before the separate AR-168 worktree.
+Empty PR check rollup is not a hosted CI pass.
