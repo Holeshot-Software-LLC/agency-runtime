@@ -74,3 +74,13 @@ than the current legacy exemption. No product failure is reported. Add exact
 historical comparison evidence and explicitly reconcile the tracker criterion
 under the established AR-347 rule before freezing a new candidate and reviewing
 all nine again. The first verdicts remain immutable in Git; no closure yet.
+
+## Record correction
+
+d30b8ae0 retains exact pre-fan-out and repaired trigger/concurrency projections:
+the selected configurations are identical. ADR-0226 explicitly reconciles the
+ninth criterion to AR-347's established exemption, preserving its original text
+and absent verdict. Criteria 1–7 and all workflow/test/runtime bytes are unchanged.
+Metadata and strict docs pass for 1174 Markdown files; tracker parity passes
+397 mapped items/two historical exceptions. The second record is pending this
+new candidate freeze; every criterion receives a new verdict.
