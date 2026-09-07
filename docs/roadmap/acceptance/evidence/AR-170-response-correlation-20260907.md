@@ -52,6 +52,47 @@ the actual asset ceiling. Final assets are 387039 bytes, below unchanged
 Ruff check/format pass for 766 files.
 Fresh backend broker/lookup cases: 18 pass, 156 deselected, 2.96s.
 
+Fresh exact-source UI rerun after preserving the first review at 662eb947,
+from clean 07576a6a (exit zero):
+
+```text
+1..189
+# tests 193
+# suites 0
+# pass 193
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 195.681245
+```
+
+## Source identity
+
+The source-served browser ran at f1ff818c; the first isolated candidate was
+06aee2ed. Their commit IDs differ because of documentation/ledger commits,
+not executable or test changes. After preserving every first verdict at
+662eb947, run Git object checks from clean 07576a6a:
+
+```text
+$ git rev-parse f1ff818c:agency_runtime/dashboard 06aee2ed:agency_runtime/dashboard HEAD:agency_runtime/dashboard
+3c1ebc98978290931089d92aa45f52cde4cc1710
+3c1ebc98978290931089d92aa45f52cde4cc1710
+3c1ebc98978290931089d92aa45f52cde4cc1710
+$ git rev-parse f1ff818c:tests 06aee2ed:tests HEAD:tests
+fe9be82ff397408d31c50ef30252fecf672a2c9c
+fe9be82ff397408d31c50ef30252fecf672a2c9c
+fe9be82ff397408d31c50ef30252fecf672a2c9c
+$ git diff --exit-code f1ff818c HEAD -- agency_runtime tests scripts
+[empty output; exit 0]
+```
+
+These are tree-object identities, not an inference from similar filenames.
+The seven source/served SHA-256 pairs in the primary browser report bind its
+loaded assets. The second evidence candidate changes only documentation and
+acceptance records; it retains these exact dashboard/test trees. The packet now
+includes the primary JSON report directly, not merely this narrative.
+
 ## Browser checkpoint
 
 Private five-agent Store, source-served Chromium 152.0.7977.64, outbound
@@ -103,6 +144,10 @@ No exhaustive corpus, four-shard coverage or matrix dispatch.
 AR-165's earlier 184/184 curated decision receipt is reused for unchanged Python
 production code; it is not a fresh JS mutation run.
 
-Isolated review is next; no acceptance verdict is asserted by the builder.
+All first verdicts are preserved at 662eb947: seven satisfied, browser evidence
+7/8 absent. Supply raw report excerpts, actual UI output and tree identity to
+the second and final isolated pass without any code/test/criterion change.
+The candidate changes to include this evidence, so every criterion is rechecked;
+old satisfied verdicts are not copied to it.
 Windows stays with the owner.
 Counts remain 40 mapped plus 84 legacy = 124 unfinished.

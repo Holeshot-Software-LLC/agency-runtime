@@ -51,7 +51,9 @@ Initial browser: 16 desktop passes, zero POSTs/errors before deliberate
 injection, then wrong notice expectation times out. That report is preserved at
 90654955; the corrected exact-source browser passes all 34 desktop/mobile checks,
 zero POSTs. ADR-0230 reconciles only 6/7/9, preserving original wording.
-Backend broker/lookup 18 pass. Acceptance is not yet run.
+Backend broker/lookup 18 pass. First isolated review is preserved at 662eb947:
+1–6/9 satisfied, 7/8 absent for missing primary-report/source-identity excerpts.
+Raw JSON, exact tree equivalence and fresh UI stdout now complete the packet.
 
 AR-168 needs no generic manifest implementation change. Canonicalization
 rebuilds from unique validated members; verification independently derives
@@ -69,7 +71,7 @@ but generic normalization and actual cross-OS proof remain relevant.
 
 ## Exact blocker
 
-AR-170 still needs isolated acceptance at the frozen final evidence candidate.
+AR-170 needs its second and final isolated pass at the expanded evidence candidate.
 Source browser and explicit existing-authority criterion reconciliation are done.
 
 AR-168 remains in_progress with its five original criteria/states unchanged.
@@ -95,7 +97,8 @@ No empty commits, staffing or restart. Preserve first verdicts before correction
 ## Next bounded work package
 
 1. Commit AR-170 final browser/builder evidence and immediate ledger.
-2. Freeze the candidate, then run each of nine isolated checks once.
+2. Freeze the expanded candidate and recheck all nine criteria, without copying
+   earlier satisfied verdicts. Product/tests/criteria remain unchanged.
 3. Publish one normal PR/merge/readback, then AR-171. No native Windows work.
 
 ## Verification

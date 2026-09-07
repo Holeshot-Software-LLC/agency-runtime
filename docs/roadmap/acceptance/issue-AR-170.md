@@ -13,7 +13,7 @@ supersedes: []
 superseded_by: null
 type: acceptance-verification
 issue_id: AR-170
-candidate_commit: 06aee2ede122ce48362d532886e537bf5fd1d80a
+candidate_commit: pending
 evidence_cutoff: 2026-09-07
 tracker_url: null
 ---
@@ -56,13 +56,21 @@ tracker_url: null
 | 6 | test | Every broker mutation denies and leaves state unchanged | 2026-09-07 | tests/test_dashboard.py:392-413 |
 | 6 | command-output | Fresh backend and full UI pass | 2026-09-07 | docs/roadmap/acceptance/evidence/AR-170-response-correlation-20260907.md#fresh-verification |
 | 6 | command-output | Real browser hidden/layout invariants and owner controls after asynchronous refresh | 2026-09-07 | docs/roadmap/acceptance/evidence/AR-170-response-correlation-20260907.md#final-browser-sweep |
-| 7 | file | Only owner-maintenance wording replaces the retired attended-only policy | 2026-09-07 | docs/decisions/0230-reconcile-response-correlation-with-owner-controls.md#decision |
-| 7 | file | Ordinary in-page fragments remain intact while token fragments are scrubbed | 2026-09-07 | agency_runtime/dashboard/dashboard-core.js:405-420 |
-| 7 | test | Non-token navigation retains its native fragment | 2026-09-07 | tests/dashboard_ui.test.mjs:827-840 |
-| 7 | test | Current maintenance markup and owner action wiring agree | 2026-09-07 | tests/dashboard_ui.test.mjs:8157-8213 |
-| 7 | command-output | All views fit both widths; actual keyboard Enter focuses main content | 2026-09-07 | docs/roadmap/acceptance/evidence/AR-170-response-correlation-20260907.md#final-browser-sweep |
-| 8 | command-output | Full focused UI and current production-only floors pass | 2026-09-07 | docs/roadmap/acceptance/evidence/AR-170-response-correlation-20260907.md#fresh-verification |
-| 8 | command-output | Thirty-four source-served checks across all seven views/six tabs, zero ordinary sweep application errors | 2026-09-07 | docs/roadmap/acceptance/evidence/AR-170-response-correlation-20260907.md#final-browser-sweep |
+| 7 | file | Explicit owner-maintenance reconciliation preserves original wording | 2026-09-07 | docs/decisions/0230-reconcile-response-correlation-with-owner-controls.md#decision |
+| 7 | file | Token scrubbing preserves ordinary in-page fragments | 2026-09-07 | agency_runtime/dashboard/dashboard-core.js:405-420 |
+| 7 | test | Maintenance markup and real owner controls match actual authority | 2026-09-07 | tests/dashboard_ui.test.mjs:8157-8213 |
+| 7 | command-output | Primary desktop overview/routing/evidence heading dimensions and hidden invariants | 2026-09-07 | docs/roadmap/acceptance/evidence/AR-170-browser-20260907/final/report.json:1-63 |
+| 7 | command-output | Primary desktop remaining views and actual keyboard skip-link pass | 2026-09-07 | docs/roadmap/acceptance/evidence/AR-170-browser-20260907/final/report.json:121-182 |
+| 7 | command-output | Primary mobile settings layout, keyboard focus, exact source hashes and final pass | 2026-09-07 | docs/roadmap/acceptance/evidence/AR-170-browser-20260907/final/report.json:309-382 |
+| 7 | command-output | Git proves browser and candidate dashboard/test tree identity, with no source diff | 2026-09-07 | docs/roadmap/acceptance/evidence/AR-170-response-correlation-20260907.md#source-identity |
+| 7 | command-output | Exact scope and method of the source-served keyboard/layout sweep | 2026-09-07 | docs/roadmap/acceptance/evidence/AR-170-response-correlation-20260907.md#final-browser-sweep |
+| 8 | command-output | Fresh actual UI stdout, production coverage and focused verification | 2026-09-07 | docs/roadmap/acceptance/evidence/AR-170-response-correlation-20260907.md#fresh-verification |
+| 8 | command-output | Actual Git object equality binds the browser run to unchanged candidate source/tests | 2026-09-07 | docs/roadmap/acceptance/evidence/AR-170-response-correlation-20260907.md#source-identity |
+| 8 | command-output | Primary seven-view/six-tab sweep part one | 2026-09-07 | docs/roadmap/acceptance/evidence/AR-170-browser-20260907/final/report.json:1-100 |
+| 8 | command-output | Primary seven-view/six-tab sweep part two | 2026-09-07 | docs/roadmap/acceptance/evidence/AR-170-browser-20260907/final/report.json:101-200 |
+| 8 | command-output | Primary seven-view/six-tab sweep part three | 2026-09-07 | docs/roadmap/acceptance/evidence/AR-170-browser-20260907/final/report.json:201-300 |
+| 8 | command-output | Primary sweep completion, no ordinary application errors, asset hashes and final pass | 2026-09-07 | docs/roadmap/acceptance/evidence/AR-170-browser-20260907/final/report.json:301-382 |
+| 8 | command-output | Browser fixture scope and deliberately injected diagnostic separated from ordinary sweeps | 2026-09-07 | docs/roadmap/acceptance/evidence/AR-170-response-correlation-20260907.md#final-browser-sweep |
 | 9 | file | Explicit bounded verification reconciliation under existing ADR-0105 | 2026-09-07 | docs/decisions/0230-reconcile-response-correlation-with-owner-controls.md#decision |
 | 9 | command-output | UI/current floors, fresh named spine, focused backend, actual asset check and Ruff pass | 2026-09-07 | docs/roadmap/acceptance/evidence/AR-170-response-correlation-20260907.md#fresh-verification |
 | 9 | command-output | Current exact-source browser proof and stated limits | 2026-09-07 | docs/roadmap/acceptance/evidence/AR-170-response-correlation-20260907.md#final-browser-sweep |
@@ -70,16 +78,7 @@ tracker_url: null
 
 ## Verification
 
-Pending isolated checks at the frozen candidate.
+Pending second and final isolated pass; all first verdicts remain at 662eb947.
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
-| 1 | satisfied | `AR-170.1-20260907-86c822a9` | `8fa611434309e24c38257d5248cdfc3760300233388e4df85eff422a62e19bc3` | 2026-09-07 | dashboard-actions.js:38-65 enforces exact normalized requested-slug equality and valid worker identity; lines 358-378 validate before committing current-request detail, supported by rejection and retained-state tests in dashboard_ui.test.mjs. |
-| 2 | satisfied | `AR-170.2-20260907-b45447d7` | `2715a1366d5ce3a575e1e2f4059c1d7e4ced51c1749c949bb5001b5c8ea2fe9e` | 2026-09-07 | dashboard-actions.js:38-65 rejects unsafe or negative revisions and requires all four evidence arrays; dashboard_ui.test.mjs:5160-5214 verifies invalid evidence rejection and retention of last-good detail. |
-| 3 | satisfied | `AR-170.3-20260907-dcf8fdeb` | `2d9fdf818d54d06726936e3124cfcc78eef023526f21f50f2a7dc3f2eee5b336` | 2026-09-07 | dashboard-live.js validates the requested slug and every returned row before collection processing and rejects pagination; dashboard_ui.test.mjs verifies mismatches and blocks a wrong-worker second-page fetch. |
-| 4 | satisfied | `AR-170.4-20260907-857d635f` | `e79e5e0d0189ec1b865760ac255981b5c776d7fb55ab1593670fb5e4766da21d` | 2026-09-07 | dashboard-core.js:339-403 overwrites protected caller headers, validates the sent UUID, and rejects every present response ID unequal to it; dashboard_ui.test.mjs:909-1013 covers overrides and invalid response IDs. |
-| 5 | satisfied | `AR-170.5-20260907-de7960d8` | `47c7e33c4e3377dafcbac07424ec5772cff95b079113dcc64bf433289006cb3b` | 2026-09-07 | dashboard-actions.js guards stale commits, dashboard-core.js correlates validation errors, and dashboard-live.js reports retained state; the cited worker and roster tests assert preservation of last-good state. |
-| 6 | satisfied | `AR-170.6-20260907-8f352624` | `5d75268cecb8872c3ba75072d14b6494da9dc2aac7b3bf2e91840c3803134db2` | 2026-09-07 | dashboard-config.js preserves dirty drafts during refresh; dashboard_ui.test.mjs verifies hidden panels and truthful owner controls; test_dashboard.py verifies broker mutations are denied without state changes, corroborated by the browser sweep receipt. |
-| 7 | absent | `AR-170.7-20260907-0f20071a` | `11cb7c76a99d6dd1bd43c0748d2cd044d72b35dfc7ca58a8b597b413a060d8c5` | 2026-09-07 | The code and test excerpts support fragment preservation and owner controls, but the browser-sweep excerpt cites a different commit and an unavailable report; heading layout and actual keyboard focus at the candidate commit remain unverified. |
-| 8 | absent | `AR-170.8-20260907-04faa1a1` | `fc3213f8208d185d94d96af825eeacf693ea28b82d7e7e65328527b2fbfc918a` | 2026-09-07 | The cited Markdown summarizes passing runs at f1ff818, but final/report.json and focused-suite output are unavailable, and the excerpts do not establish those results at candidate 06aee2e. |
-| 9 | satisfied | `AR-170.9-20260907-a04c2de1` | `74da303532f7ad754f9d19772a6b80b6e9fcccb18f27518606db461b93e1d65e` | 2026-09-07 | AR-170 evidence sections Fresh verification, Final browser sweep and Publication validation record passing UI coverage floors, production spine, scoped browser and required checks; ADR-0230 keeps exhaustive gates optional. |
