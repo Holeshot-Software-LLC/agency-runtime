@@ -66,9 +66,10 @@ worker backends stay removed; native hosts own worker execution.
 
 ## Exact blocker
 
-AR-164 first review at 083ae8b5 satisfies 1–4 and 6–7. Criterion 5 lacks an
-actual candidate tree listing proving the described backend absence. Preserve
-the first verdicts, then add exact Git output and freeze a new evidence candidate.
+AR-164 first review at 083ae8b5 satisfies 1–4 and 6–7. Criterion 5 lacked an
+actual candidate tree listing. All first verdicts remain at 6ac3b1aa. A new
+receipt now retains complete candidate directory and exact deletion-status
+output, with identical product bytes. Freeze a new candidate and review all seven.
 No implementation defect, additional requirement change or completion is inferred.
 
 AR-159 retains hosted enforcement/check-app/bypass proof; main has no current

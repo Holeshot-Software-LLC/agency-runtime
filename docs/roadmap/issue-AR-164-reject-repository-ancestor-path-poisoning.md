@@ -62,7 +62,9 @@ Fresh discovery/launch/Git tests pass 38, 129 and 24 cases respectively. No code
 or test change was needed. First isolated review at 083ae8b5 satisfies criteria
 1–4 and 6–7. Criterion 5 is absent: current launch integrations are demonstrated,
 but the retirement claim needs an actual candidate tree listing rather than a
-description. Preserve that verdict before adding the missing Git evidence.
+description. All first verdicts remain preserved at 6ac3b1aa. The correction
+adds actual full candidate-directory and deletion-status output; no criteria,
+runtime or test changes. All seven require a new candidate-bound review.
 
 ## Approach
 
