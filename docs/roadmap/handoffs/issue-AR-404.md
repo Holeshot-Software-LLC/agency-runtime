@@ -17,8 +17,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-404
 branch: codex/ar175-oldest-first-reconciliation
-evidence_commit: 7f403ab73fc586a3b130c57e74c9da5d10ad609d
-minimum_ledger_commit: 7f403ab73fc586a3b130c57e74c9da5d10ad609d
+evidence_commit: 96f6b49b2a8e92f7b63704853eedcd06b5ebd0c1
+minimum_ledger_commit: 26b0135db7996cb1d063c95562319413b30ffe8b
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -53,6 +53,7 @@ The reusable browser checker now tests 24 schema/JSON faults across both
 refresh methods at three viewport widths, recording safe IDs, no legacy GETs,
 retained state, recovery and zero POSTs. It has not run yet. Commit clean source
 and ledger before building the exact wheel and executing this private fixture.
+Source 96f6b49b and ledger 26b0135d are now clean; browser QA is next.
 Only obsolete criterion 6 follows existing ADR-0105; originals preserved.
 
 ## Exact blocker
