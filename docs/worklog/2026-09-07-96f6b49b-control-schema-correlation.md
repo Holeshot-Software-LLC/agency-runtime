@@ -62,3 +62,7 @@ Stop cleanly at 9 p.m. Eastern September 7.
 96f6b49b (96f6b49b2a8e92f7b63704853eedcd06b5ebd0c1) records the reproduced control-boundary repair, direct tests,
 current gate receipts and optional browser-checker extension. This immediate
 ledger preserves the smallest tested source slice before exact-wheel QA.
+
+## Pre-browser checkpoint
+
+bab4b475 (bab4b475545ae5a044d198fd2b645f51313e2d25) pins the source repair and remaining installed-wheel browser evidence in the active capsule. The next bounded package builds that clean source and checks actual responses, correlation headers, retention, and recovery before any completion claim.
