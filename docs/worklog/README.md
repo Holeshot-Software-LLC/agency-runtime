@@ -2094,6 +2094,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `81cf8000` | 2026-09-07 | docs(backlog): reconcile AR-184 with detached Linux producer proof | [AR-184](../roadmap/issue-AR-184-normalize-private-posix-sdist-modes.md) | [Detail](2026-09-07-81cf8000-sdist-producer-reconciliation.md) |
 | `c64ce3ce` | 2026-09-07 | Merge pull request #734 from Holeshot-Software-LLC/codex/ar184-linux-producer-reconciliation | [AR-184](../roadmap/issue-AR-184-normalize-private-posix-sdist-modes.md) | [Detail](2026-09-07-81cf8000-sdist-producer-reconciliation.md) |
 | `96a048d6` | 2026-09-07 | docs(roadmap): file required staffing call reservations (AR-409) | AR-409 | [Detail](2026-09-07-96a048d6-ar409-reservation-filing.md) |
+| `9946461a` | 2026-09-07 | fix(workforce): reserve mandatory stages within owner budgets (AR-409) | AR-409 | [Detail](2026-09-07-9946461a-ar409-reservation-checkpoint.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
