@@ -84,3 +84,7 @@ and absent verdict. Criteria 1–7 and all workflow/test/runtime bytes are uncha
 Metadata and strict docs pass for 1174 Markdown files; tracker parity passes
 397 mapped items/two historical exceptions. The second record is pending this
 new candidate freeze; every criterion receives a new verdict.
+
+3916c2cd freezes that second record to d30b8ae0. Strict docs pass before
+the freeze; no first-candidate verdict is copied forward. All nine checks run
+again after the immediate clean ledger checkpoint.
