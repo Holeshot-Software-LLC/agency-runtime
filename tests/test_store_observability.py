@@ -17,7 +17,8 @@ def _observations(caplog: pytest.LogCaptureFixture) -> list[dict[str, object]]:
     return [
         json.loads(record.getMessage().split(" ", 1)[1])
         for record in caplog.records
-        if record.getMessage().startswith("agency_observation ")
+        if record.name == "agency_runtime.observation"
+        and record.getMessage().startswith("agency_observation ")
     ]
 
 
@@ -37,6 +38,8 @@ def test_slow_sqlite_observation_never_contains_sql_values_or_paths(
 ) -> None:
     caplog.set_level(logging.INFO, logger="agency_runtime.observation")
     secret = "Bearer-never-log-this"
+    with RuntimeBoundary(surface="store", operation="sqlite.select") as unrelated:
+        unrelated.set_outcome("degraded", "slow_query")
     private_path = r"C:\\Users\\private\\agency.db"
     conn = sqlite3.connect(":memory:", factory=ObservedSQLiteConnection)
     conn.create_function("agency_slow", 0, lambda: time.sleep(0.06) or secret)
@@ -54,8 +57,9 @@ def test_slow_sqlite_observation_never_contains_sql_values_or_paths(
         and item.get("operation") == "sqlite.select"
         and item.get("reason_code") == "slow_query"
     )
-    serialized = json.dumps(store_event)
+    serialized = json.dumps(_observations(caplog))
     assert store_event["request_id"] == boundary.request_id
+    assert store_event["request_id"] != unrelated.request_id
     assert store_event["operation"] == "sqlite.select"
     assert store_event["outcome"] == "degraded"
     assert store_event["reason_code"] == "slow_query"
@@ -68,6 +72,8 @@ def test_sqlite_busy_observation_is_bounded_and_value_free(
     caplog: pytest.LogCaptureFixture,
 ) -> None:
     caplog.set_level(logging.INFO, logger="agency_runtime.observation")
+    with RuntimeBoundary(surface="store", operation="sqlite.insert") as unrelated:
+        unrelated.set_outcome("error", "sqlite_busy")
     database = tmp_path / "private-busy.db"
     owner = sqlite3.connect(database, timeout=0.01, factory=ObservedSQLiteConnection)
     contender = sqlite3.connect(database, timeout=0.01, factory=ObservedSQLiteConnection)
@@ -77,7 +83,10 @@ def test_sqlite_busy_observation_is_bounded_and_value_free(
     owner.execute("INSERT INTO values_table(value) VALUES ('owner-secret')")
     contender.execute("PRAGMA busy_timeout=1")
     try:
-        with pytest.raises(sqlite3.OperationalError, match="locked"):
+        with (
+            RuntimeBoundary(surface="http", operation="status") as boundary,
+            pytest.raises(sqlite3.OperationalError, match="locked"),
+        ):
             contender.execute(
                 "INSERT INTO values_table(value) VALUES (?)",
                 ("contender-secret",),
@@ -89,13 +98,16 @@ def test_sqlite_busy_observation_is_bounded_and_value_free(
 
     event = next(
         item
-        for item in reversed(_observations(caplog))
+        for item in _observations(caplog)
         if item.get("surface") == "store"
+        and item.get("request_id") == boundary.request_id
         and item.get("operation") == "sqlite.insert"
         and item.get("outcome") == "error"
         and item.get("reason_code") == "sqlite_busy"
     )
-    serialized = json.dumps(event)
+    serialized = json.dumps(_observations(caplog))
+    assert event["request_id"] == boundary.request_id
+    assert event["request_id"] != unrelated.request_id
     assert event["operation"] == "sqlite.insert"
     assert event["outcome"] == "error"
     assert "owner-secret" not in serialized

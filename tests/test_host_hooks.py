@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import io
 import json
+import logging
 import os
 import subprocess
 import sys
@@ -25,6 +26,7 @@ from agency_runtime.adapters.hooks import (
 )
 from agency_runtime.core.header.contract import finalize_header
 from agency_runtime.core.header.finalize import finalize_response, response_hash
+from agency_runtime.core.observability import RuntimeBoundary
 from agency_runtime.core.resident_managers import RESIDENT_MANAGER_KERNEL
 from agency_runtime.core.store.sqlite import Store
 
@@ -2361,6 +2363,7 @@ def test_hook_boundary_allows_positively_identified_oversized_non_stop() -> None
 def test_hook_boundary_publishes_prompt_when_preflight_integrity_fails(
     host: str,
     monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
 ) -> None:
     # Rule 8: Agency never withholds a turn because Agency is unavailable.
     #
@@ -2377,7 +2380,17 @@ def test_hook_boundary_publishes_prompt_when_preflight_integrity_fails(
 
     class _FailingBridge:
         def handle(self, _payload: dict[str, Any]) -> dict[str, Any]:
-            raise RuntimeError("evidence store unavailable")
+            raise RuntimeError("private-hook-error")
+
+    # Capture this logger directly even when an earlier file sink stopped root
+    # propagation; monkeypatch restores its handlers and propagation afterward.
+    observation_logger = logging.getLogger("agency_runtime.observation")
+    monkeypatch.setattr(observation_logger, "handlers", [caplog.handler])
+    monkeypatch.setattr(observation_logger, "propagate", False)
+    monkeypatch.delenv("AGENCY_HOOK_LOG", raising=False)
+    caplog.set_level(logging.INFO, logger="agency_runtime.observation")
+    with RuntimeBoundary(surface="store", operation="sqlite.commit") as unrelated:
+        pass
 
     monkeypatch.setattr(
         hooks_module,
@@ -2397,7 +2410,7 @@ def test_hook_boundary_publishes_prompt_when_preflight_integrity_fails(
                         "hook_event_name": "UserPromptSubmit",
                         "session_id": "session",
                         "turn_id": "trace",
-                        "prompt": "Evaluate two unfamiliar code intelligence systems.",
+                        "prompt": "private-hook-prompt",
                     }
                 ).encode()
             ),
@@ -2411,13 +2424,30 @@ def test_hook_boundary_publishes_prompt_when_preflight_integrity_fails(
     assert json.loads(sink.getvalue()) == {}
     # Loud but not fatal -- stderr still names the fault so the operator can
     # diagnose it (README "fails loudly"); it simply no longer costs the turn.
-    # The exact cause also reaches the structured record, but that is asserted
-    # through the Store-backed `agency evidence rejections` surface rather than
-    # caplog: `install_hook_log_sink` sets `propagate = False` on the package
-    # logger process-wide and never restores it, so log capture here is
-    # order-dependent.
     assert "host operation continues" in errors.getvalue()
     assert "RuntimeError" in errors.getvalue()
+
+    messages = [
+        record.getMessage()
+        for record in caplog.records
+        if record.name == "agency_runtime.observation"
+        and record.getMessage().startswith("agency_observation ")
+    ]
+    assert all("private-hook-prompt" not in message for message in messages)
+    assert all("private-hook-error" not in message for message in messages)
+    observations = [json.loads(message.split(" ", 1)[1]) for message in messages]
+    assert observations[0]["request_id"] == unrelated.request_id
+    matches = [
+        item
+        for item in observations
+        if item["surface"] == "hook" and item["operation"] == f"{host}.userpromptsubmit"
+    ]
+    assert len(matches) == 1
+    assert matches[0]["request_id"] != unrelated.request_id
+    assert matches[0]["outcome"] == "degraded"
+    assert matches[0]["reason_code"] == "boundary_failure"
+    assert "private-hook-error" not in errors.getvalue()
+    assert "private-hook-prompt" not in errors.getvalue()
 
 
 def test_expected_stop_discriminator_blocks_when_event_field_is_beyond_input_bound() -> None:
