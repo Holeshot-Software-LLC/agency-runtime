@@ -49,16 +49,16 @@ The original three-attempt limit is unchanged, not a new behavior requirement.
 - No production/script/workflow change. Only criterion 7 is reconciled under
   ADR-0105; original wording and first six criteria remain.
 - Fresh routing passes 39 candidate-recall-only gates; not staffing evidence.
-- Raw transcripts and record gates pass: 1201 Markdown documents, 397 mapped
-  trackers/two historical PR exceptions, Ruff and diff clean. Freeze comes next.
-- AR-171 done leaves 40 actual trackers plus 83 legacy, 123 unfinished.
-  AR-172 remains in_progress until its isolated verdicts satisfy.
+- Raw transcripts and record gates pass: 1202 Markdown documents after detail,
+  397 mapped trackers/two historical PR exceptions, Ruff and diff clean.
+- All seven criteria satisfy at dec1bc51. First verdicts remain at 4c5acdcf;
+  only 6 needed a current handler citation and passes its unchanged-code recheck.
+- AR-172 done leaves 40 actual trackers plus 82 legacy, 122 unfinished.
 
 ## Exact blocker
 
-No reproduced AR-172 production defect. First review satisfies 1–5 and 7;
-criterion 6 needs the existing control-handler call-site excerpt. Preserve
-the verdicts before a citation-only recheck at unchanged dec1bc51. No done flip.
+No AR-172 scoped blocker remains. Commit accepted completion and its ledger,
+publish one normal PR, merge and read back before beginning AR-173.
 
 AR-170 remains in_progress: first review at 662eb947 and final candidate
 91273e41 are preserved. Final 1/2/4/5/6/7/8 satisfy, 3/9 need complete collection
@@ -81,8 +81,8 @@ No empty commits, staffing or restart. Preserve verdicts before corrections.
 
 ## Next bounded work package
 
-1. Evidence candidate dec1bc51 and its immediate ledger are committed.
-2. Preserve first verdicts, add the missing call-site citation, recheck only 6.
+1. Commit AR-172 accepted completion and its immediate ledger.
+2. Publish its normal PR; no acceptance rerun.
 3. Publish one normal PR/merge/readback, then AR-173. No native Windows work.
 
 ## Verification

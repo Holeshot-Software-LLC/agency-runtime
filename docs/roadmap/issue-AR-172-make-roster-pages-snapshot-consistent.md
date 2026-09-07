@@ -1,6 +1,6 @@
 ---
 title: "AR-172: Make roster pages snapshot-consistent"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-27
 updated: 2026-09-07
@@ -69,10 +69,11 @@ tests pass. Raw commands and results are in the
 The original implementation already allowed at most three capture attempts.
 One injected mismatch recovers on the second attempt, as criterion 6 describes;
 persistent churn fails at the unchanged bound. The criterion does not require
-reducing that bound. First isolated review satisfies 1–5 and 7; criterion 6
-needs the existing control-handler call-site excerpt in its isolated packet.
-No production defect is reported. Preserve the verdict before one citation-only
-recheck at the unchanged candidate.
+reducing that bound. All seven criteria satisfy at
+dec1bc512462285cf4d43742c3e666e6d776186e. First verdicts are preserved at 4c5acdcf;
+criterion 6 needed only the existing control-handler citation and satisfies on
+its single unchanged-candidate recheck. No production defect or code retry.
+AR-172 is done within this Store/HTTP/DOM scope; normal PR publication follows.
 
 The public handler uses one Store snapshot that reads roster generation, exact
 eligible total, and `limit + 1` rows inside one SQLite read transaction. SQL
@@ -114,7 +115,7 @@ behavioral criteria and the original verification wording remain preserved.
   configuration revision across the current control and collection paths.
 - [x] A configuration change during paging retains last-good UI state and fails
   the refresh closed.
-- [ ] One control response never combines UI and operational roster generations;
+- [x] One control response never combines UI and operational roster generations;
   a deterministic mismatch is recaptured once and persistent churn fails closed.
 - [x] Focused Store, dashboard HTTP and UI regressions/current coverage floors,
   the named production spine, metadata, policy, worklog, strict docs/tracker,

@@ -50,6 +50,7 @@ tracker_url: null
 | 5 | command-output | Ten direct state-preservation cases pass | 2026-09-07 | docs/roadmap/acceptance/evidence/AR-172-roster-snapshots-20260907.md#config-drift-regression-transcript |
 | 5 | command-output | Complete UI suite and coverage remain above current floors | 2026-09-07 | docs/roadmap/acceptance/evidence/AR-172-roster-snapshots-20260907.md#full-ui-and-coverage-transcript |
 | 6 | file | Generation comparison precedes publication, with bounded failure | 2026-09-07 | agency_runtime/server/dashboard.py:266-287 |
+| 6 | file | Control handler obtains both projections from the checked helper before publishing them under one control revision | 2026-09-07 | agency_runtime/server/dashboard.py:1998-2077 |
 | 6 | file | Original bounded capture limit is three total attempts | 2026-09-07 | agency_runtime/server/dashboard.py:180-185 |
 | 6 | test | A single mismatch recovers once; persistent churn raises at the bound | 2026-09-07 | tests/test_dashboard_server_coverage_complete.py:545-578 |
 | 6 | command-output | Full dashboard server suite includes both recapture branches | 2026-09-07 | docs/roadmap/acceptance/evidence/AR-172-roster-snapshots-20260907.md#store-and-http-transcript |
@@ -61,10 +62,10 @@ tracker_url: null
 
 ## Verification
 
-First isolated review at dec1bc512462285cf4d43742c3e666e6d776186e satisfies
-1–5 and 7. Criterion 6 needs the existing control-handler call-site excerpt;
-the helper and its deterministic tests are present. Preserve these verdicts
-before adding that citation and rechecking only criterion 6.
+All seven criteria satisfy at dec1bc512462285cf4d43742c3e666e6d776186e.
+First verdicts are preserved at 4c5acdcf before adding the existing control
+handler citation. Only criterion 6 was rechecked; it now satisfies. Candidate
+and other verdicts are unchanged. No production change or third review.
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
@@ -73,5 +74,5 @@ before adding that citation and rechecking only criterion 6.
 | 3 | satisfied | `AR-172.3-20260907-1fe39fff` | `01ed31d06c6b24387e7e26b361f635d30b07fc1e75a91e5647a60b459649c08d` | 2026-09-07 | The interleaving test in tests/test_roster_snapshot_generation.py:161-203 retains generation two while the writer reaches three, roster.py:1850-1904 reads within one transaction, and the cited transcript reports the suite passing. |
 | 4 | satisfied | `AR-172.4-20260907-a7e9e790` | `ba346fdd037392269bcf041b6ce66b338a3f936c731b2da248c1f6f5ad1c33fa` | 2026-09-07 | dashboard.py emits Store and configuration revisions, dashboard-live.js checks both during paging and configuration against control, and dashboard_ui.test.mjs plus the cited transcript demonstrate rejection of all five configuration drift paths. |
 | 5 | satisfied | `AR-172.5-20260907-d49e3f84` | `94b1f60967deb85fcb720fc26770c0b5eb28c1918191c9e37316397c5d8f6900` | 2026-09-07 | Tests at tests/dashboard_ui.test.mjs:6681-6761 and the config-drift regression transcript show both refresh paths preserve last-good state, mark control stale, and stop at revision mismatches during paging. |
-| 6 | absent | `AR-172.6-20260907-1e7cc5e3` | `cb0af6bd33f278ce9f7d71582001df53c1d62b543d942f10a469b58fe1078c64` | 2026-09-07 | dashboard.py:266-287 and tests:545-578 demonstrate bounded recapture and failure in the helper, but no excerpt shows the control response uses that helper before publishing UI and operational rosters. |
+| 6 | satisfied | `AR-172.6-20260907-fca25686` | `dc0a8a319aa1e602467f0a0c0a196c0e72649b02b54f0d4cff9dda97bf86dfd7` | 2026-09-07 | dashboard.py:266-287 checks matching generations before publication in _handle_control; test_dashboard_server_coverage_complete.py:545-578 verifies one recapture succeeds and persistent churn raises after three attempts. |
 | 7 | satisfied | `AR-172.7-20260907-c93eb38a` | `9d93ba652ac368209c43b36882a8faed956bab74336a01bb5ea0f7d653c85b3d` | 2026-09-07 | AR-172's cited transcripts show Store/HTTP, UI coverage floors, production spine and all record checks passing; ADR-0105 explicitly makes exhaustive verification optional. |

@@ -215,7 +215,7 @@ bounded package are in AR-404's
 | `AR-169` | [Exclude the native PE from portable wheels](issue-AR-169-exclude-native-pe-from-portable-wheel.md) | wont_do | p0 | release | Pre-tracker history; superseded by AR-197 |
 | `AR-170` | [Fail dashboard response correlation closed](issue-AR-170-fail-dashboard-response-correlation-closed.md) | in_progress | p1 | dashboard | pending authorization |
 | `AR-171` | [Redact dashboard lifecycle reasons](issue-AR-171-redact-dashboard-lifecycle-reasons.md) | done | p1 | dashboard | pending authorization |
-| `AR-172` | [Make roster pages snapshot-consistent](issue-AR-172-make-roster-pages-snapshot-consistent.md) | in_progress | p1 | operations | pending authorization |
+| `AR-172` | [Make roster pages snapshot-consistent](issue-AR-172-make-roster-pages-snapshot-consistent.md) | done | p1 | operations | pending authorization |
 | `AR-173` | [Correlate Route Lab observations](issue-AR-173-correlate-route-lab-observations.md) | in_progress | p1 | observability | pending authorization |
 | `AR-174` | [Short-circuit documentation-only CI](issue-AR-174-short-circuit-docs-only-ci.md) | in_progress | p1 | testing | pending authorization |
 | `AR-175` | [Retire the non-atomic dashboard control fallback](issue-AR-175-retire-dashboard-control-fallback.md) | in_progress | p1 | dashboard | pending authorization |
