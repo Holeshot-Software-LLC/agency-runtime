@@ -2023,6 +2023,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `37040b32` | 2026-09-07 | docs(release): retain AR-168 native comparison with current manifest evidence | [AR-168](../roadmap/issue-AR-168-rebuild-canonical-sdist-source-manifest.md) | [Detail](2026-09-07-37040b32-source-manifest-evidence.md) |
 | `790a01d7` | 2026-09-07 | Merge pull request #718 from Holeshot-Software-LLC/codex/ar168-oldest-first-reconciliation | [AR-168](../roadmap/issue-AR-168-rebuild-canonical-sdist-source-manifest.md) | [Detail](2026-09-07-37040b32-source-manifest-evidence.md) |
 | `90654955` | 2026-09-07 | fix(dashboard): close remaining response correlation gaps | [AR-170](../roadmap/issue-AR-170-fail-dashboard-response-correlation-closed.md) | [Detail](2026-09-07-90654955-response-correlation.md) |
+| `9419e688` | 2026-09-07 | docs(dashboard): reconcile AR-170 gates with verified browser evidence | [AR-170](../roadmap/issue-AR-170-fail-dashboard-response-correlation-closed.md) | [Detail](2026-09-07-90654955-response-correlation.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

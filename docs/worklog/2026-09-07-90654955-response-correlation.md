@@ -59,3 +59,13 @@ No Windows work, installed-host claim or issue completion yet.
 90654955 (90654955ff3107d5d76173fc04c9f233d5e5e3bc) and this immediate ledger preserve the real repair,
 focused/spine evidence and initial browser limitation at the 49.7% telemetry
 threshold. Continue the same task with corrected live verification.
+
+## Final browser and acceptance evidence
+
+9419e688 (9419e68899194057f6ae8697d0ca17101ec16205) freezes the final evidence candidate: corrected
+source browser passes 34 desktop/mobile checks, zero POSTs; exact source hashes
+and both reports remain. Fresh backend broker/lookup cases pass 18. ADR-0230
+explicitly reconciles only 6/7/9 before the first isolated review. All other
+criteria and product/test bytes remain unchanged; source repair stays 90654955.
+Strict docs now cover 1196 Markdown files, tracker parity 397/two historical PR
+exceptions. Nine builder packets are drafted; no verdict is asserted.
