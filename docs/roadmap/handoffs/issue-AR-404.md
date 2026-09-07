@@ -6,13 +6,10 @@ created: 2026-09-05
 updated: 2026-09-07
 tags: [handoff, backlog, acceptance, delivery]
 related:
-  - docs/decisions/0232-represent-route-lab-observations-by-trace-digest.md
-  - docs/roadmap/acceptance/issue-AR-173.md
-  - docs/roadmap/issue-AR-173-correlate-route-lab-observations.md
-  - docs/roadmap/acceptance/evidence/AR-173-route-lab-correlation-20260907.md
-  - docs/decisions/0231-separate-route-lab-correlation-from-turn-persistence.md
-  - docs/roadmap/issue-AR-170-fail-dashboard-response-correlation-closed.md
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
+  - docs/roadmap/issue-AR-174-short-circuit-docs-only-ci.md
+  - docs/roadmap/acceptance/issue-AR-174.md
+  - docs/roadmap/acceptance/evidence/AR-174-docs-only-ci-20260907.md
   - docs/roadmap/AR-404-oldest-first-reconciliation-20260905.md
   - docs/roadmap/issue-AR-176-align-full-gate-contract-fixtures.md
   - docs/worklog/README.md
@@ -20,9 +17,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-404
-branch: codex/ar173-oldest-first-reconciliation
-evidence_commit: 594bc4d3939d144440ae52f5acdf5f840c79f25e
-minimum_ledger_commit: 2856ac53cfd45933f5d4f10518c56670283333da
+branch: codex/ar174-oldest-first-reconciliation
+evidence_commit: d43dc92328bd10788c50e0bb1cd40622c475e23c
+minimum_ledger_commit: d43dc92328bd10788c50e0bb1cd40622c475e23c
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -31,79 +28,72 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 
 ## Checkpoint
 
-Owner resumed September 7 at 20:14 UTC, authorizing oldest-first sequential
-delivery until 21:00 America/New_York (September 8 at 01:00 UTC). Finish at a
-clean durable checkpoint by that cutoff. Native Windows remains with the owner.
-The accepted AR-173 pause checkpoint is 1f16f948. Main remains clean at 47d40fec,
-PR #721's AR-172 merge. Publish AR-173 first; 6afcbcb5 records the prior merge.
+Owner resumed September 7 at 20:14 UTC until 21:00 America/New_York,
+September 8 at 01:00 UTC. Finish at a clean durable checkpoint by that cutoff.
+One record, one normal PR/merge/readback, then the next. Native Windows excluded.
+AR-173 merged in PR #722 at 7ad0d33e, 20:18:19Z. Main was clean and fast-forwarded
+before this owned AR-174 worktree; d43dc923 records the merge.
+Current unfinished count: 121 (40 mapped plus 81 legacy).
 
 ## Completed evidence
 
-AR-173 already attaches its trace before explanation. The direct HTTP regression
-claimed by the issue is missing, and its durable-routing narrative is wrong:
-explanations are diagnostic-only since e5f4a8c2, before the issue was written.
+AR-174 is an existing relevant trusted-docs-only CI shortcut, not missing code.
+No runtime/test/workflow change. Current focused workflow suite passes 235,
+five Windows-named deselections. All 18 Bash steps parse. Release hygiene and
+pinned offline zizmor pass (one unchanged suppression). Fresh named spine:
+1085 passes/three existing skips, 69.45s. UI: 204 passes, 96.93/86.78/95.73.
 
-- New real HTTP test executes two social explanations, prohibits inference,
-  and checks UUID freshness, attachment before explanation, exact response/log
-  digest equality, bounded metadata and no task/session/bearer/prompt leakage.
-- No turn or routing-decision rows are created. Invalid and disabled calls
-  cannot allocate a routing trace; disabled mode still bypasses host/catalog.
-- Two focused HTTP tests pass; exact raw stdout is in the receipt.
-- Full dashboard/explanation/observability: 195 pass, 52.75s.
-- UI 204 pass; 96.93/86.78/95.73 meets unchanged floors. Named spine:
-  1085 pass/three existing skips, 69.18s. Raw transcripts are recorded.
-- No production change. ADR-0231 reconciled 1/4/5; explicit successor ADR-0232
-  also corrects criterion 2's raw-trace/digest confusion. Originals remain.
-- Draft record failures (missing transcript headings, then Node display padding)
-  are preserved. The final contract passes all record gates: 1207 Markdown
-  files, 397 mapped/two historical PR exceptions, Ruff and diff clean.
-- All five final-candidate verdicts satisfy at 594bc4d3. First review remains
-  at 941b9025; no copied verdicts or third review.
-- Accepted AR-173's branch has 40 mapped plus 81 legacy, 121 unfinished.
-  Main still has 40 mapped plus 82 legacy, 122, until publication resumes.
+The old hosted-allocation blocker narrative missed successful August 31
+PR #380, run 33426445699. Fresh read-only GitHub metadata plus exact Git delta
+proves four regular docs Markdown changes, trusted helper blobs identical
+to today, five allocated successful jobs and six skipped placeholders.
+Raw allocated times total 366 seconds / 6.10 runner-minutes. This is one
+historical measurement, not present billing health, matched savings, a fresh
+native Windows run, or completion of AR-156/159/platform release obligations.
+
+Only criterion 8 follows existing ADR-0105; original wording is preserved.
+Criteria 1–7 unchanged. Builder receipt and pending eight-criterion packet
+are prepared; no builder-authored verdict or done flip.
 
 ## Exact blocker
 
-No AR-173 technical acceptance blocker remains. All five criteria satisfy at
-594bc4d3; the explicit continue request lifts the owner pause. Publish the
-accepted completion and ledger without another acceptance pass. First verdicts
-and requirement changes remain preserved.
+AR-174 needs completed strict record receipts, a frozen candidate and eight
+isolated checks. No technical failure reproduced. Do not claim done prematurely.
 
-AR-170 remains in_progress: first review at 662eb947 and final candidate
-91273e41 are preserved. Final 1/2/4/5/6/7/8 satisfy, 3/9 need complete collection
-call sites and raw gate receipts. Two-pass limit reached; no third review.
-Its 34-check browser proof and three tested code repairs are on main.
-
-Other holds: AR-168/160 same-candidate native Windows/paired artifact proof;
-AR-159 hosted enforcement/check-app/bypass; AR-156 Windows/profile and hosted
-topology; AR-135 attended ZCode; AR-140 supported-runner performance;
+Retained AR-170 has two exhausted review passes: final 1/2/4/5/6/7/8 satisfy,
+3/9 need complete collection call sites and raw gate receipts. First/final
+verdicts and three code repairs remain on main.
+Other holds: AR-168/160 native producer comparison; AR-159 hosted enforcement;
+AR-156 Windows/profile/topology; AR-135 attended ZCode; AR-140 supported runner;
 AR-129/130/147 native Windows; AR-119/125 five-host/matched-value evidence.
-AR-176 keeps six stale fixtures; AR-151's nine and AR-157's two are repaired.
-Ordinary-session unverified Agency/header behavior remains open.
+AR-176 retains six stale fixtures. Ordinary-session Agency/header remains open.
 
 ## Same-task continuity
 
-Own one worktree per record; never stage others' work or commit to main.
+Use owned worktrees, never commit main or stage another worker's changes.
 Each substantive commit gets an immediate narrow docs(worklog) ledger.
-At 50 percent ensure a clean checkpoint and continue the same task.
-No empty commits, staffing or restart. Preserve verdicts before corrections.
+At/below 50 percent ensure clean durable state, then continue in the same task.
+Preserve first verdicts before corrections; two review passes by default.
 
 ## Next bounded work package
 
-1. Publish accepted AR-173 as one normal PR; no acceptance rerun needed.
-2. Stop at a clean checkpoint by September 8 at 01:00 UTC (9 p.m. Eastern).
-3. Merge/read back before inspecting AR-174. No native Windows work.
+1. Finish AR-174 strict receipts and commit candidate/ledger, then freeze.
+2. Run eight isolated criteria; handle only findings that invalidate its outcome.
+3. Publish one normal PR and merge/readback before inspecting AR-175.
+4. Stop with clean durable state by September 8 01:00 UTC.
 
 ## Verification
 
-Real loopback regression, full focused suites, UI/current floors, named spine
-and full strict record checks pass. No exhaustive corpus/coverage/matrix dispatch.
-AR-165's curated conformance and AR-172's routing results are earlier evidence,
-not new runs or live staffing proof.
+Actual commands/raw outputs and historical API/Git proof live in the receipt.
+No exhaustive corpus, coverage shards or compatibility dispatch. No native
+Windows execution, new artifact/activation proof or hosted-settings write.
+AR-165 curated conformance and AR-172 routing receipts are explicit earlier
+evidence; current product/test/script/workflow bytes match accepted AR-173.
 
 ## Constraints
 
-No credentials, trust bypass or provider-policy changes. The new stale-hook
-directive was followed once again: refresh exits 1, activation required,
-hook trust unverified and mixed installed projections. No retry absent a new
-directive. Do not replace OpenClaw or claim normal-session activation.
+No credentials, trust bypass, provider-policy or hosted billing/settings changes.
+Installed Codex refresh previously exited 1 with unverified trust and mixed
+package projections; do not retry absent a new directive. No OpenClaw replacement
+or ordinary-session activation claim. Current staffing failure grants no
+specialist evidence and does not authorize self-staffing.

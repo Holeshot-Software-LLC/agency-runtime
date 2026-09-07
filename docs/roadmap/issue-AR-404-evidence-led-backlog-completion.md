@@ -288,10 +288,21 @@ satisfy at 594bc4d3 in the second/final review. No production changes or third
 review; AR-173 is accepted locally. The owner paused at 13:38 UTC September 7
 before publication; clean local checkpoint 1f16f948 preserves it. At 20:14 UTC
 the owner explicitly resumed until 9 p.m. Eastern (September 8 at 01:00 UTC).
-Publish AR-173, then AR-174; finish at a clean checkpoint by that cutoff.
+AR-173 merged through PR #722 at 7ad0d33e on September 7 at 20:18:19Z;
+main was clean and fast-forwarded before the owned AR-174 tree and d43dc923 ledger.
+Finish at a clean checkpoint by the owner cutoff.
 
-Local accepted-branch counts: 40 actual open trackers plus 81 unfinished legacy
-records, 121 total. Main remains 40 plus 82 = 122 until AR-173 publication.
+AR-174's existing shortcut passes 235 focused workflow tests/five Windows-named
+deselections, all 18 Bash syntax checks, release hygiene, offline workflow
+security, UI 204/current floors and a fresh spine 1085/three existing skips.
+No source change. The old timing blocker missed August 31 PR #380's successful
+five-runner docs-only run: exact API/Git proof measures 366 raw runner-seconds.
+This is historical timing, not present billing health or measured savings.
+Only stale criterion 8 follows ADR-0105; original wording remains. Eight isolated
+criteria must still be judged before any done flip.
+
+Current main and branch counts: 40 actual open trackers plus 81 unfinished legacy
+records, 121 total; AR-174 has not yet been accepted.
 No duplicate tracker or false acceptance.
 The unchanged public-roster fixture belongs to AR-176. Windows stays excluded;
 the oldest-first ledger and capsule preserve all holds. Ordinary-session
@@ -524,7 +535,7 @@ No exhaustive workflow dispatch or unattended restart is implied.
 
 ## Next bounded package
 
-Publish accepted AR-173 through one normal PR/merge, then review AR-174.
+Finish AR-174's eight isolated criteria, one normal PR/merge, then review AR-175.
 The September 7 continuation ends at 9 p.m. Eastern (September 8, 01:00 UTC);
 leave a clean durable checkpoint. Windows-only work stays with the owner.
 The older AR-152/298/348-first ordering above is historical and does not override
