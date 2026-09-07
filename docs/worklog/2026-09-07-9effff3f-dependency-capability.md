@@ -60,3 +60,16 @@ reports unverified hook trust, activation required and mixed package projections
 c829216d freezes all nine rowsets at 9effff3f and binds the decision/capsule to
 that repair and immediate ledger b038cdb9. Strict docs pass 1186 Markdown files.
 The first isolated review follows a clean ledger; no builder verdicts exist.
+
+## Accepted completion
+
+5c5df187 records all nine satisfied criteria at 9effff3f in the first isolated
+review. Original wording and ADR-0228's explicit reconciliation remain intact.
+AR-165 is done, without asserting current hosted enforcement or cost savings.
+Fresh strict docs/metadata pass 1186 files, tracker parity 397 mapped/two
+historical PR exceptions, exact worklog and diff checks pass. Read-back queue:
+40 mapped plus 85 legacy, 125 unfinished. Publish one normal PR, then AR-166.
+
+Supplementary unchanged-source checks: fresh DOM 188 pass with no skips/failures
+(196.626705 ms); routing evaluation passes its deterministic candidate-recall
+contract. Neither is real-provider staffing quality or native activation proof.

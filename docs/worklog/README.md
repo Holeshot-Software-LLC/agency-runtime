@@ -2010,6 +2010,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `ba6e55cb` | 2026-09-07 | Merge pull request #715 from Holeshot-Software-LLC/codex/ar164-oldest-first-reconciliation | [AR-164](../roadmap/issue-AR-164-reject-repository-ancestor-path-poisoning.md) | [detail](2026-09-07-083ae8b5-executable-boundary.md) |
 | `9effff3f` | 2026-09-07 | fix(ci): reject ambiguous dependency-review JSON [AR-165] | [AR-165](../roadmap/issue-AR-165-fail-ambiguous-dependency-review-capability-closed.md) | [Detail](2026-09-07-9effff3f-dependency-capability.md) |
 | `c829216d` | 2026-09-07 | docs(acceptance): freeze AR-165 parser repair evidence | [AR-165](../roadmap/issue-AR-165-fail-ambiguous-dependency-review-capability-closed.md) | [Detail](2026-09-07-9effff3f-dependency-capability.md) |
+| `5c5df187` | 2026-09-07 | docs(backlog): complete verified dependency capability repair [AR-165] | [AR-165](../roadmap/issue-AR-165-fail-ambiguous-dependency-review-capability-closed.md) | [Detail](2026-09-07-9effff3f-dependency-capability.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
