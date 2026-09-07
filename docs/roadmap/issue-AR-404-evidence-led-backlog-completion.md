@@ -170,7 +170,17 @@ explanation is not a current diagnosis. All 104 focused aggregate/security
 contract tests pass. The original seven criteria are unchanged; an explicit
 owner-approved enforcement/check-identity/bypass/readback plan is recorded.
 No hosted setting, unsafe main probe, workflow dispatch or subscription change.
-Publish its separate retention PR, then AR-160's platform-artifact record;
+PR #711 merged b499e7fb at 08:57:15Z September 7 before the AR-160 tree.
+
+AR-160 retains the current no-helper paired-artifact contract under ADR-0219.
+Fresh Linux verification passes 258 focused cases, with one native-Windows
+case deselected. Clean f1c7d0b0 produces a canonical portable wheel/source pair;
+independent verification and strict Twine pass. Separate fresh wheel/source
+installs each pass CLI, pip check, packaged MCP/dashboard and all eight generated
+smoke checks across all five hosts, without skips. This is not native activation
+or Windows producer/assembled release-set proof. All five current criteria stay
+unchanged; historical helper prose is explicitly separated from current state.
+Publish its separate retention PR, then AR-162; AR-161 is already retired and
 native Windows remains owner work.
 
 Current counts: 40 actual open trackers plus 89 unfinished legacy records,
