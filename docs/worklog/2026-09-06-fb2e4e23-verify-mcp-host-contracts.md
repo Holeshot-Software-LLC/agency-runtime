@@ -69,3 +69,10 @@ are in the linked evidence record. No new live or Windows proof is claimed.
 Freeze candidate fb2e4e23 and run the isolated verifier. Do not flip done unless
 all six original criteria are satisfied. Then publish/merge and continue to
 AR-135, leaving Windows-specific work for the owner.
+
+Candidate freeze: 36af7429 binds the acceptance record to fb2e4e23 and the
+capsule to ledger 66e57194. The clean metadata/worklog/strict docs check passes
+for 1128 Markdown files before freeze publication. One earlier docs process
+overlapped creation of the substantive commit and reported its then-missing
+ledger row; no such race is used as a passing receipt. Subsequent verification
+waits for the docs process before changing Git history.
