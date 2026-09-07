@@ -14,7 +14,7 @@ type: worklog
 commit: 81cf80001d955f251b1ce2449a39cd2ed6b33081
 short: 81cf8000
 date: 2026-09-07
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/734
 related_issues:
   - docs/roadmap/issue-AR-184-normalize-private-posix-sdist-modes.md
 ---
