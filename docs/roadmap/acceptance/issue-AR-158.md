@@ -49,14 +49,19 @@ tracker_url: null
 | 7 | command-output | Focused 13 pass; all ten five-case repetitions pass; broad package 135 pass/five existing skips | 2026-09-07 | docs/roadmap/acceptance/evidence/AR-158-observation-selection-20260907.md#fresh-focused-verification |
 | 7 | command-output | Exact-byte binding reuses the unchanged named 29-module warning-strict spine | 2026-09-07 | docs/roadmap/acceptance/evidence/AR-158-observation-selection-20260907.md#exact-byte-broader-receipts |
 | 7 | command-output | Named spine receipt records 1085 passes and three existing skips | 2026-09-07 | docs/roadmap/acceptance/evidence/AR-156-verification-workflow-20260907.md#fresh-verification |
+| 7 | file | Frozen AGENTS definition names the exact 29-module production spine command and its -q -W error arguments | 2026-09-07 | AGENTS.md:153-191 |
+| 7 | file | Local pytest command constructor explicitly supplies warning-as-error arguments | 2026-09-07 | scripts/run_local_gates.py:124-140 |
+| 7 | file | The named production gate invokes that constructor with PRODUCTION_SPINE | 2026-09-07 | scripts/run_local_gates.py:177-181 |
 | 7 | file | Existing bounded-delivery policy makes exhaustive corpus/coverage/matrix optional diagnostics | 2026-09-07 | docs/decisions/0105-bound-delivery-to-live-demo-checkpoints.md#decision |
 
 ## Verification
 
-Initial isolated review satisfies criteria 1–6. Criterion 7 is absent because
-the cited reused-spine receipt omits its command and warning arguments. Preserve
-this result before repairing that citation; no code defect or new test failure
-is alleged and no acceptance criterion changes.
+809354be preserves the first review: criteria 1–6 satisfy, while criterion 7
+lacked a command/warning-settings citation. Only its builder rowset now adds
+the frozen AGENTS command definition and local command construction. Candidate
+95085a30, every criterion, and all six accepted rowsets/verdicts are unchanged.
+The old absent row is preserved in Git and removed here because its digest
+belongs to the old rowset; one isolated criterion-7 recheck remains.
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
@@ -66,4 +71,3 @@ is alleged and no acceptance criterion changes.
 | 4 | satisfied | `AR-158.4-20260907-2e26d692` | `e8a598e88e68f89928fd8eda2484bf52f9c5c98b5469aedceafee588486b9831` | 2026-09-07 | The MCP, HTTP, hook, and store test excerpts assert forbidden content is absent across all captured observations, and the cited fresh focused verification reports all 13 tests passed. |
 | 5 | satisfied | `AR-158.5-20260907-91bb1551` | `cf46c25b30644ac6a0e8b8e57c597ab72cbab98389c146bb78dcabdee3b78b77` | 2026-09-07 | All three test excerpts synchronously enter a Store sqlite.commit RuntimeBoundary before the target request; the hook test also verifies the injected event precedes and has a different request ID from the hook event. |
 | 6 | satisfied | `AR-158.6-20260907-8d65f9ae` | `01ee4515fcb273bb634e43c98e4d2aef135fef1a1da2b4d3953703116103d1dc` | 2026-09-07 | Store tests select exact boundary request IDs; runtime tests filter by request ID and assert Store-before-MCP ordering, with late-correlation and exception checks selecting exact boundaries rather than ambient positions. |
-| 7 | absent | `AR-158.7-20260907-e67923df` | `6cdbccfd7ced6707900c5529557cf00858399b2499bb7705f3feae00d17e9d38` | 2026-09-07 | AR-158's receipt records repeated focused passes and exact-byte reuse, but AR-156's named spine receipt omits its command and warning settings, so warning-strict execution is not demonstrated under ADR-0105. |

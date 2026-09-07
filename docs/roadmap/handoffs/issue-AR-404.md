@@ -21,7 +21,7 @@ type: handoff
 issue_id: AR-404
 branch: codex/ar158-oldest-first-reconciliation
 evidence_commit: 95085a3008389fadf8c4c99123cf3eacfc8e1925
-minimum_ledger_commit: ce37c21a6fed9d931a2205508615852cf92a2342
+minimum_ledger_commit: 55677053d3154129ce601ea1f312754de5dc0f76
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -49,6 +49,9 @@ Nested Store-before-MCP order remains exact-ID scoped. No runtime/script change.
 Only criterion 7 is reconciled under ADR-0105; first six stay unchanged.
 Candidate 95085a30 and ledger ce37c21a are committed; seven builder rowsets
 are frozen against that exact candidate in acceptance/issue-AR-158.md.
+809354be preserves the first review. Only criterion 7's rowset now adds frozen
+AGENTS/runner command definitions with -W error; the six accepted checks and
+candidate are unchanged. The stale absent digest remains in that prior commit.
 
 ## Completed evidence
 
