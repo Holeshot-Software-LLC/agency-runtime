@@ -84,3 +84,8 @@ parity passed. Preserve that checkpoint; the receipt now records this failure.
 All current strict gates now pass: 1196 Markdown, 397 mapped/two historical PR
 exceptions, metadata/policy/worklog/diff. Product/tests/criteria are unchanged.
 This corrected candidate replaces 9419e688 before the first isolated pass.
+
+## Ready for first review
+
+5b322e20 freezes 06aee2ede122ce48362d532886e537bf5fd1d80a after successful structural validation.
+No verifier verdict or source/criterion change preceded this correction.
