@@ -32,8 +32,10 @@ On September 6 the owner explicitly resumed at AR-131. Restore the oldest-first
 one-record/PR/merge loop; Windows work remains with the owner. AR-131's current
 MCP/CLI contract review found and repaired a public identifier-admission gap.
 All six isolated criteria satisfy at 973acdb9 on September 7; first verdicts
-remain preserved at 6a139e23. Deliver this completion through PR #698, then
-AR-135 because AR-132/133/134 are already retired or done.
+remain preserved at 6a139e23. PR #698 merged at ac1ce173. AR-135's current source
+and generated smoke pass, but native parent/child/Stop evidence still needs an
+attended ZCode call; retain it with that exact next proof package. AR-138 is
+next after the AR-135 disposition, because AR-136/137 are already done.
 
 Previous pause: the owner asked to conserve credits and publish AR-130 through
 [PR #696](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/696),
@@ -74,7 +76,8 @@ not the 99 legacy count.
 | 5 | AR-127 | Retire obsolete checklist under ADR-0223, not accepted. The shape fix exists at both rejection sites; ADR-0089 stays accepted. Current first-pass/replay, Rule-8 availability, and bounded verification supersede the old retry/unavailable/full-suite assumptions. AR-135 owns current ZCode integration. Broader check: 133 pass/three known legacy failures, explicitly owned by AR-176; no runtime/test change or new live claim. | [PR #694](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/694) merged at 66282312; #151 closed NOT_PLANNED at 2026-09-06T00:23:39Z, read back. |
 | 6 | AR-129 | Shared least-privilege environment implementation exists. Non-Windows environment/discovery/namespace tests: 64 pass, 12 Windows-named cases deselected (0.43s). Retain the explicit native Windows/installed evidence hold for the owner, not a code-rebuild task. Original acceptance unchanged; no duplicate pre-tracker issue created. | [PR #695](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/695) merged at d38e9d13; legacy record remains open. |
 | 7 | AR-130 | Positive trust cache is already removed; Store connections revalidate. Current regression/file-integrity package: 19 pass (0.23s). Broader non-Windows run: 40 pass/two confirmed stale fixtures/39 Windows-named cases deselected (0.84s); AR-176 owns the wrong ACL-double boundary and obsolete 0644 expectation. Retain native Windows and current hook-budget evidence, not a trust-repair rewrite. Historical latency and original criteria preserved. | Published in [PR #696](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/696); legacy record remains open. Exact publication receipt belongs to the worklog. |
-| 8 | AR-131 | Done: original MCP repair verified and remaining public identifier aliasing repaired. Six isolated criteria satisfy at 973acdb9; first verdicts preserved at 6a139e23. New public cases 13 pass; MCP/CLI 126/five skips; spine 1085/three skips; UI 138; routing pass; conformance 184/184 killed, source unchanged. Unchanged fallback fixture fails on main and belongs to AR-176, not hidden as green. | [PR #698](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/698), awaiting merge before AR-135. Legacy count 99 → 98; actual open trackers remain 40. |
+| 8 | AR-131 | Done: original MCP repair verified and remaining public identifier aliasing repaired. Six isolated criteria satisfy at 973acdb9; first verdicts preserved at 6a139e23. New public cases 13 pass; MCP/CLI 126/five skips; spine 1085/three skips; UI 138; routing pass; conformance 184/184 killed, source unchanged. Unchanged fallback fixture fails on main and belongs to AR-176, not hidden as green. | [PR #698](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/698) merged at ac1ce173. Legacy count 99 → 98; actual open trackers remain 40. |
+| 9 | AR-135 | Retain open: installer/rendering/correlation implementations exist. 16 installer/header, 13 selected hook/Stop and four child-adapter/delivery/profile cases pass. Generated ZCode smoke passes 4/4, including isolated SessionStart process, config preservation/idempotency/toggles. Installed inspection is enabled-runtime-unverified, no executable or canary; current native Agent/record-zero/full-Stop proof needs an attended call. Correct only the fixture docstring that called stubbed routing live proof. | Disposition awaiting publication; no production, user-profile, acceptance, matrix or count change. |
 
 After the merged AR-115 retirement, fresh enumeration confirms 41 open trackers
 and 140 unfinished local records (41 mapped plus 99 legacy) before AR-127.
@@ -82,7 +85,8 @@ After merged AR-127 retirement, fresh enumeration is **40 open trackers** and
 139 unfinished local records (40 mapped plus 99 legacy). Retained AR-129 leaves
 both counts unchanged, as does retained AR-130. Accepted AR-131 now reduces the
 local queue to **138** (40 mapped plus **98 legacy**) without a tracker closure.
-AR-135 follows PR #698's merge; Windows-specific work remains with the owner.
+Retained AR-135 leaves these counts unchanged; AR-138 follows its disposition.
+Windows-specific work remains with the owner.
 This is record reconciliation, not completion of retained implementation or
 platform-evidence work.
 

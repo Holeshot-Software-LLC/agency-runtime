@@ -1,7 +1,9 @@
-"""Proof that a live ZCode turn receives the Agency header.
+"""Contract checks for ZCode's header-context and host-identity boundary.
 
 Drives the real HookBridge entry point a ZCode UserPromptSubmit hook calls,
-with the true host=zcode identity. Before the WP11 fixes this path raised
+with host=zcode, a temporary Store and stubbed routing. This is not a live
+native ZCode, provider or host-delivered-child proof. Before the WP11 fixes
+this path raised
 ``ValueError("isolated specialist delivery is unsupported for host: zcode")``;
 these tests prove it now returns the Agency banner and a routed specialist team.
 """
@@ -159,8 +161,8 @@ def test_zcode_usersubmit_emits_agency_header_and_routed_team(
     assert "[AGENCY INITIAL HEADER SNAPSHOT v1]" in context, context[:300]
     assert "Agency/Agencies loaded: agency-steward, code-reviewer" in context
     assert "Actual Model selected: none observed" in context
-    # Isolated preflight preserves the routed team as durable evidence without
-    # falsely claiming either specialist was already loaded in the parent.
+    # The exact routed team is also retained in the temporary Store. This
+    # assertion does not establish delivery to a real native child.
     [routing] = store.recent_runtime_activity(limit=10)["routing"]
     assert routing["selected_ids"] == [
         "code-reviewer",

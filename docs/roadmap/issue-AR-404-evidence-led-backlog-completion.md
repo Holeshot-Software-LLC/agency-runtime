@@ -61,8 +61,13 @@ First verdicts are preserved at 6a139e23. The public admission repair now passes
 13 new regression cases, including the reproduced alias defect and exact
 Unicode limits; internal observation normalization remains unchanged. All six
 isolated criteria satisfy at repaired candidate 973acdb9 on September 7.
-AR-131 is locally done in PR #698; merge it before starting AR-135. Current
-counts: 40 actual open trackers plus 98 unfinished legacy records, 138 total.
+AR-131 merged in PR #698 at ac1ce173. Current counts: 40 actual open trackers
+plus 98 unfinished legacy records, 138 total. AR-135's implementation is
+present: 33 selected contracts and generated ZCode smoke 4/4 pass. Its current
+installed state remains enabled-runtime-unverified, with no executable/canary;
+retain the attended native Agent/record-zero/full-Stop proof rather than
+rewriting the old installer or claiming August evidence as current. Its
+disposition changes no count; AR-138 follows because AR-136/137 are done.
 An unrelated public-roster fixture also fails on untouched main and is recorded
 under AR-176, not erased. Windows work stays excluded. The oldest-first ledger and active capsule
 retain exact evidence and all earlier holds; ordinary-session header failure

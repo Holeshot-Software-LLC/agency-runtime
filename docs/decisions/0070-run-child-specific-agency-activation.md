@@ -3,9 +3,10 @@ title: "Run child-specific Agency activation through native host lifecycles"
 status: accepted
 category: decisions
 created: 2026-07-18
-updated: 2026-07-18
+updated: 2026-09-07
 tags: [delegation, children, hosts, activation, correlation]
 related:
+  - docs/roadmap/issue-AR-135-complete-zcode-integration.md
   - docs/roadmap/issue-AR-25-turn-scoped-specialist-evidence.md
   - docs/roadmap/issue-AR-58-unit-aware-delegation-assignment.md
   - docs/roadmap/issue-AR-82-full-roster-unit-routing.md

@@ -177,7 +177,7 @@ bounded package are in AR-404's
 | `AR-132` | [Hire deterministic safe staffing gaps](issue-AR-132-hire-deterministic-safe-gaps.md) | wont_do | p0 | routing | Pre-tracker history; superseded by AR-235 |
 | `AR-133` | [Make finalization evidence atomic, complete, and bounded](issue-AR-133-atomic-finalization-evidence.md) | done | p0 | observability | pending authorization |
 | `AR-134` | [Enforce SQLite currentness and retention invariants](issue-AR-134-enforce-sqlite-currentness-invariants.md) | done | p0 | operations | pending authorization |
-| `AR-135` | [Complete ZCode native integration end to end](issue-AR-135-complete-zcode-integration.md) | open | p0 | host-integrations | pending authorization |
+| `AR-135` | [Complete ZCode native integration end to end](issue-AR-135-complete-zcode-integration.md) | open | p0 | host-integrations | legacy (tracker-exempt) |
 | `AR-136` | [Persist native-child correlation and fail planned work closed](issue-AR-136-persist-native-child-correlation.md) | done | p0 | routing | pending authorization |
 | `AR-137` | [Make dashboard collections complete and paginated](issue-AR-137-complete-dashboard-collections.md) | done | p0 | dashboard | pending authorization |
 | `AR-138` | [Make dashboard refresh coherent, accessible, and observable](issue-AR-138-coherent-observable-dashboard-ui.md) | open | p1 | dashboard | pending authorization |
