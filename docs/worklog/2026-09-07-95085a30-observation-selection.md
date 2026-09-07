@@ -62,3 +62,13 @@ spine receipt named the result but omitted command/warning arguments from its
 citations. Repair only that rowset by citing the frozen command definition
 explicitly. Candidate 95085a30 and the six accepted rowsets remain unchanged;
 do not re-run accepted checks or treat a citation gap as a production defect.
+
+## Accepted completion
+
+b0d9efe8 adds the frozen AGENTS command and local constructor citations only to
+criterion 7. Its sole recheck satisfies at unchanged 95085a30; the six earlier
+accepted checks retain their original IDs and digests. 3da9cfd0 records accepted
+completion, with all seven criteria satisfied and original first six unchanged.
+Current counts: 40 actual open trackers plus 89 unfinished legacy records,
+129 total. Strict docs/tracker, metadata and policy checks pass. Publish normally
+before starting AR-159; no new installation, corpus or native Windows claim.
