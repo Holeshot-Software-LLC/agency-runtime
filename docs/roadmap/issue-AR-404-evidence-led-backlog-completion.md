@@ -203,6 +203,14 @@ Fresh local Store/API-projection tests pass 167 and DOM tests pass 188 with no
 failures/skips. All eight original criteria are unchanged; no runtime or test
 change is needed. Exact-byte named-spine reuse is explicit. All eight original
 criteria satisfy in the first isolated review at fd551fd4; AR-163 is complete.
+PR #714 merged 6d1ca01f at 10:04:47Z September 7 before the AR-164 tree.
+
+AR-164's ancestor boundary remains implemented. Fresh discovery/current-launch/
+surviving Git packages pass 38/129/24 cases without skips or failures; Windows
+deselections and portable spelling/PATHEXT simulations are explicit. ADR-0227
+reconciles only obsolete criterion 5's deleted worker backends to current
+CLI-provider, installer, dashboard and smoke launch paths. Original wording
+remains; no runtime or test change. Seven isolated criteria await review.
 
 Current counts: 40 actual open trackers plus 87 unfinished legacy records,
 127 total after AR-163 completion; no duplicate tracker or false acceptance.

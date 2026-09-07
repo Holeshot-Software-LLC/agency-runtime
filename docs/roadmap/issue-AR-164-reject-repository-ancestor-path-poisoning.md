@@ -3,9 +3,12 @@ title: "AR-164: Reject repository-ancestor PATH poisoning"
 status: in_progress
 category: roadmap
 created: 2026-07-27
-updated: 2026-07-27
+updated: 2026-09-07
 tags: [security, processes, executables, delegation, git]
 related:
+  - docs/roadmap/acceptance/issue-AR-164.md
+  - docs/roadmap/acceptance/evidence/AR-164-executable-boundary-20260907.md
+  - docs/decisions/0227-bind-executable-isolation-to-current-launch-surfaces.md
   - docs/roadmap/issue-AR-60-frozen-executable-identity.md
   - docs/roadmap/issue-AR-187-isolate-native-host-lifecycle-cwd.md
   - docs/decisions/0055-freeze-executable-identity-before-launch.md
@@ -50,9 +53,13 @@ repository ancestor while using a private launch directory, so a broad
 non-repository caller such as the user's home does not become a false recursive
 repository root.
 
-The contract is applied to direct Codex execution, generic command delegation,
-the first lifecycle Git call, native installation, dashboard service-manager
-commands, and smoke-test Node discovery.
+The contract remains applied to the first Git call, current CLI-provider
+inspection/inference, native installation, dashboard service-manager commands
+and smoke-test Node discovery. Job B removed the old Agency-owned direct host
+execution and generic command backends in fb34191f; they are not restored.
+ADR-0227 explicitly reconciles only criterion 5 to these current surfaces.
+Fresh discovery/launch/Git tests pass 38, 129 and 24 cases respectively. No code
+or test change was needed. Isolated candidate-bound acceptance remains pending.
 
 ## Approach
 
@@ -68,20 +75,33 @@ AR-60 and ADR-0055 own executable identity, namespace, and pre-launch
 revalidation. AR-164 strengthens their repository boundary from exact working
 directory to inertly discovered repository ancestors.
 
-Tracker creation remains pending owner authorization; no outward tracker write
-was performed in this local implementation session.
+AR-347's governed pre-tracker exemption applies; no duplicate tracker is needed.
+Native Windows and AR-187's attended activation remain separately owned work.
 
 ## Acceptance
 
-- [x] Nested working directories exclude sibling repository `PATH` entries.
-- [x] The first Git root-discovery invocation cannot select repository Git.
-- [x] Explicit argv and one-argument resolver results inside a forbidden root fail closed.
-- [x] Windows path spelling, case, PATHEXT wrappers, and resolved link aliases cannot bypass the boundary.
-- [x] Direct Codex, command backend, installer, dashboard, and smoke launch paths use the shared contract.
-- [x] Absolute non-repository `PATH` discovery remains supported.
-- [x] Focused tests, Ruff, documentation validation, and diff validation pass.
+- [ ] Nested working directories exclude sibling repository `PATH` entries.
+- [ ] The first Git root-discovery invocation cannot select repository Git.
+- [ ] Explicit argv and one-argument resolver results inside a forbidden root fail closed.
+- [ ] Windows path spelling, case, PATHEXT wrappers, and resolved link aliases cannot bypass the boundary.
+- [ ] Current CLI-provider, installer, dashboard, and smoke launch paths use the shared contract; retired Agency-owned execution backends remain absent.
+- [ ] Absolute non-repository `PATH` discovery remains supported.
+- [ ] Focused tests, Ruff, documentation validation, and diff validation pass.
 
-## Implementation evidence
+## Requirement reconciliation
+
+ADR-0227 preserves the original fifth criterion here: "Direct Codex, command
+backend, installer, dashboard, and smoke launch paths use the shared contract."
+The deliberate Job B removal is recorded in AR-236 and follows native-host
+ownership. Current CLI-provider inference is not an Agency-owned worker backend.
+Criteria 1–4 and 6–7 remain unchanged. Historical checked boxes are preserved in
+Git; the current record awaits isolated verification rather than copying them.
+
+Windows spelling/case/PATHEXT algorithms are exercised as portable simulations
+on Linux, alongside real Linux symlink rejection. No native Windows execution,
+PowerShell companion, filesystem/ACL certification or host activation is claimed.
+
+## Historical implementation evidence
 
 The executable-discovery security suite passes 37 tests with one platform
 symlink skip. Command/CLI delegation passes 64 tests, delegation backends pass
@@ -89,3 +109,13 @@ symlink skip. Command/CLI delegation passes 64 tests, delegation backends pass
 affected dashboard service core passes 47. Focused Ruff, documentation
 validation across 422 Markdown files, and scoped `git diff --check` pass. Full
 repository integration and tracker creation remain outside this local slice.
+
+## Current verification evidence
+
+The [September 7 receipt](acceptance/evidence/AR-164-executable-boundary-20260907.md)
+records 38 discovery passes/one native-Windows deselection (0.14s), 129 current
+launch passes/23 Windows-named deselections (3.39s), and 24 surviving Git/process
+passes/three Windows-named deselections (0.63s), all warning-strict with no skips
+or failures. Product/test/script/config bytes match fcdcd6eb; the named spine
+1085/three existing skips and unchanged 188-case DOM result are explicitly reused.
+No exhaustive diagnostics, new native Windows execution or trust bypass.

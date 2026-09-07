@@ -6,6 +6,10 @@ created: 2026-09-05
 updated: 2026-09-07
 tags: [handoff, backlog, acceptance, delivery]
 related:
+  - docs/roadmap/issue-AR-164-reject-repository-ancestor-path-poisoning.md
+  - docs/roadmap/acceptance/issue-AR-164.md
+  - docs/roadmap/acceptance/evidence/AR-164-executable-boundary-20260907.md
+  - docs/decisions/0227-bind-executable-isolation-to-current-launch-surfaces.md
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
   - docs/roadmap/AR-404-oldest-first-reconciliation-20260905.md
   - docs/roadmap/AR-404-count-reconciliation-20260905.md
@@ -22,9 +26,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-404
-branch: codex/ar163-oldest-first-reconciliation
-evidence_commit: fd551fd49bf535c939e66ba5c387fd872621ac67
-minimum_ledger_commit: d102b3cb9dfe33e7329653783573a28ca5d7aeaf
+branch: codex/ar164-oldest-first-reconciliation
+evidence_commit: 6d1ca01fb572e58bc5b1186bc9114ae0b7a789ba
+minimum_ledger_commit: 7e0dc5d9b064d51123f98127fa5dc716f9d65972
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -34,38 +38,36 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ## Checkpoint
 
 Owner continues one oldest record, one PR, normal merge, then next; no routine
-approval pauses. Native Windows remains with the owner. AR-162 is complete:
-all nine isolated criteria satisfy at d30b8ae0. Original criteria 8/9 and first
-absent verdicts remain preserved before explicit ADR-0226 reconciliation.
-PR #713 merged a01abe81 at 09:53:40Z September 7. Clean main was fast-forwarded
-before this separate AR-163 tree; 4103d1b8 records publication.
+approval pauses. Native Windows remains with the owner. AR-163 is complete:
+all eight original criteria satisfy at fd551fd4 without runtime/test changes.
+PR #714 merged 6d1ca01f at 10:04:47Z September 7. Main was clean and fast-forwarded
+before this AR-164 tree; 7e0dc5d9 records publication. AR-162 completion remains
+merged in PR #713 with original wording and first review preserved.
 
-AR-163's signed-authority repair already exists at current main. The security
-goal remains relevant, but no new runtime/test defect was found. Current
-eligibility gates signed history, reopening projects original events, and UI
-paging binds exact projection revision plus prefix. All eight original
-requirements remain unchanged; plain bullets are normalized to checkboxes.
+AR-164's ancestor executable boundary already exists. No runtime/test gap was
+found. The stale fifth criterion names deleted Agency-owned execution backends.
+ADR-0227 explicitly maps it to current CLI-provider, installer, dashboard and
+smoke launch paths, preserving original wording and all other criteria. Retired
+worker backends stay removed; native hosts own worker execution.
 
 ## Completed evidence
 
-- Fresh complete remediation/API-projection modules: 167 pass, no skips/failures,
-  14.39s. Rejection, signed replay, HMAC tamper, basis drift, event idempotency,
-  duplicate/malformed raw records, approval/activation and privacy checks execute.
-- Fresh whole DOM suite: 188 pass, no skips/failures, 197.292186 ms. Stable-prefix
-  preservation, reopening invalidation, overlap suppression and separate labels.
-- Product/test/script/config bytes match fcdcd6eb. Reuse AR-162's named spine,
-  1085 pass/three existing skips, 68.09s; no redundant spine rerun.
-- Dashboard bytes match dccb4e85. Existing 21 loaded-browser checks are broader
-  context, not a new browser or native-host claim.
-- All eight original criteria satisfy in the first isolated review at fd551fd4.
-  AR-163 is complete; no new code or acceptance requirement change.
-- Counts are 40 actual open trackers plus 87 unfinished legacy records,
-  127 local unfinished. AR-163 keeps its governed pre-tracker exemption.
+- Discovery: 38 pass/one native Windows deselection, 0.14s. Sibling-bin poisoning,
+  first Git selection, explicit/resolver rejection, links and safe external PATH.
+- Current six-module launch package: 129 pass/23 Windows-named deselections,
+  3.39s. Surviving Git/process package: 24 pass/three deselections, 0.63s.
+  All warning-strict, no failures/skips; no new skips or xfails.
+- Windows spelling/case/PATHEXT are portable Linux simulations, not native
+  Windows, PowerShell, ACL or host-activation evidence.
+- Product/test/script/config bytes match fcdcd6eb: reuse named spine 1085
+  pass/three existing skips, 68.09s. Same-byte AR-163 DOM 188 passes reused.
+  No redundant spine, browser or installation run is claimed.
+- Counts remain 40 actual trackers plus 87 legacy, 127 local unfinished.
 
 ## Exact blocker
 
-AR-163 has no remaining scoped blocker: all eight isolated verdicts satisfy at
-fd551fd4. Its accepted completion awaits one normal PR publication and merge.
+AR-164 needs seven isolated verdicts against a frozen candidate. Only criterion
+5 changes under ADR-0227. No completion or count reduction is claimed yet.
 
 AR-159 retains hosted enforcement/check-app/bypass proof; main has no current
 enforcement evidence. Old billing cause is not freshly established; the extra
@@ -90,9 +92,11 @@ continue the same task. No empty commits, restart or staffing.
 
 ## Next bounded work package
 
-1. Commit AR-163's accepted completion and immediate ledger; no acceptance rerun.
-2. Publish one normal PR and read back its merge before starting the next record.
-3. Next is AR-164's repository-ancestor PATH boundary, in its own worktree.
+1. Commit AR-164's current evidence and immediate ledger, then freeze its seven
+   builder rowsets to that candidate and run isolated checks once.
+2. If all satisfy, reconcile local completion/counts, publish one normal PR and
+   read back the merge before starting the next record.
+3. Next is AR-165's dependency-review capability boundary, in its own worktree.
 
 ## Verification
 
