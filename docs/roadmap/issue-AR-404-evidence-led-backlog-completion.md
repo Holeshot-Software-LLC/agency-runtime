@@ -75,7 +75,9 @@ Python checks pass 180; the named spine passes 1085/three skips (69.50s).
 The final loaded browser receipt now passes 21 cases across 1280/1024/375 px;
 UI tests pass 142. First isolated acceptance satisfies 2–6 but identifies a
 stale full-refresh error race under criterion 1. Preserve that failed review,
-repair the failure-path generation guard and reverify before closure.
+repair the failure-path generation guard and reverify before closure. That
+repair now passes 30 new late-error cases and all 172 UI tests; repeated named
+spine 1085/three skips (99.40s). Repaired-wheel proof and second review remain.
 An unrelated public-roster fixture also fails on untouched main and is recorded
 under AR-176, not erased. Windows work stays excluded. The oldest-first ledger and active capsule
 retain exact evidence and all earlier holds; ordinary-session header failure

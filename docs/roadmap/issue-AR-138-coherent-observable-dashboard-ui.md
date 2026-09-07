@@ -16,6 +16,7 @@ related:
   - docs/worklog/README.md
   - docs/roadmap/acceptance/issue-AR-138.md
   - docs/roadmap/acceptance/evidence/AR-138-current-dashboard-20260907.md
+  - docs/roadmap/acceptance/evidence/AR-138-repaired-dashboard-20260907.md
 supersedes: []
 superseded_by: null
 type: issue
@@ -65,7 +66,11 @@ stays open; no full WCAG/native-host claim. The first isolated review satisfies
 criteria 2–6 but contradicts criterion 1: full-refresh success is generation
 guarded, while a replaced request's late non-abort error can still overwrite a
 newer healthy connection. Preserve those verdicts and repair both success/error
-generation boundaries consistently before re-verification.
+generation boundaries consistently before re-verification. The complete first
+review is preserved at 25b9a67a. Thirty added late-failure cases now pass after
+repairing live/full/control failure guards and reconciliation cancellation;
+the full 172-test UI suite passes. Rebuild the wheel and repeat browser QA before
+the second acceptance pass. Current network/authentication failures still surface.
 
 ## Approach
 

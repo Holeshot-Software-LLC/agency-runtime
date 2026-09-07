@@ -7949,3 +7949,88 @@ test("authenticated dashboard exposes the owner control surface and mutation req
 		"Disable Agency Runtime globally",
 	);
 });
+
+function dashboardConnectionSnapshot(harness) {
+  return {
+    label: harness.node("connection-label").textContent,
+    notice: harness.node("notice").textContent,
+    terminal: harness.api.state.live.terminal,
+    failures: harness.api.state.live.failures,
+    controlRevision: harness.api.state.control.revision,
+    controlStale: harness.api.state.control.stale,
+    liveRevision: harness.api.state.live.revision,
+  };
+}
+
+function settleObsoleteFailure(pending, failure) {
+  if (failure === "network") pending.reject(new Error("obsolete network failure"));
+  else pending.resolve(jsonResponse(failure, { error: "obsolete HTTP failure" }));
+}
+
+for (const failure of ["network", 401, 503]) {
+  for (const surfaceErrors of [true, false]) {
+    test(`obsolete full refresh ${failure} cannot downgrade newer success (surfaceErrors=${surfaceErrors})`, async () => {
+      const oldResponse = deferred();
+      let liveCalls = 0;
+      const harness = createAppHarness((path) => {
+        if (path === "/api/control") return jsonResponse(200, controlSnapshot());
+        assert.equal(path, "/api/live?limit=100");
+        liveCalls += 1;
+        return liveCalls === 1 ? oldResponse.promise
+          : jsonResponse(200, { schema_version: 1, revision: "new-live" });
+      });
+      const oldRefresh = harness.api.refreshAll({ surfaceErrors });
+      assert.equal(await harness.api.refreshAll(), true);
+      const current = dashboardConnectionSnapshot(harness);
+      assert.equal(current.label, "Authenticated");
+      assert.equal(current.liveRevision, "new-live");
+      settleObsoleteFailure(oldResponse, failure);
+      assert.equal(await oldRefresh, false);
+      assert.deepEqual(dashboardConnectionSnapshot(harness), current);
+    });
+  }
+
+  for (const method of ["runLivePoll", "refreshRuntimeEvidence", "reconcileRuntimeEvidence", "reconcileAll"]) {
+    test(`obsolete ${method} ${failure} cannot downgrade newer success`, async () => {
+      const oldResponse = deferred();
+      let liveCalls = 0;
+      const harness = createAppHarness((path) => {
+        if (path === "/api/control") return jsonResponse(200, controlSnapshot());
+        assert.equal(path, "/api/live?limit=100");
+        liveCalls += 1;
+        return liveCalls === 1 ? oldResponse.promise
+          : jsonResponse(200, { schema_version: 1, revision: "new-live" });
+      });
+      const oldRefresh = harness.api[method]("Mutation finished.");
+      assert.equal(await harness.api.refreshAll(), true);
+      const current = dashboardConnectionSnapshot(harness);
+      assert.equal(current.label, "Authenticated");
+      settleObsoleteFailure(oldResponse, failure);
+      const oldResult = await oldRefresh;
+      if (method !== "runLivePoll") assert.equal(oldResult, false);
+      assert.deepEqual(dashboardConnectionSnapshot(harness), current);
+    });
+  }
+
+  for (const scope of ["control", "full"]) {
+    for (const generation of [scope, "commit"]) {
+      test(`obsolete ${scope} ${failure} respects ${generation} generation on its error path`, async () => {
+        const oldResponse = deferred();
+        const harness = createAppHarness((path) => {
+          if (path === "/api/control") return oldResponse.promise;
+          assert.equal(path, "/api/live?limit=100");
+          return jsonResponse(200, { schema_version: 1, revision: "pending-live" });
+        });
+        const oldRefresh = scope === "control"
+          ? harness.api.refreshControlPlane() : harness.api.refreshAll();
+        harness.api.state[generation].generation += 1;
+        harness.node("connection-label").textContent = "Authenticated";
+        harness.api.state.control.revision = "newer-control";
+        const current = dashboardConnectionSnapshot(harness);
+        settleObsoleteFailure(oldResponse, failure);
+        await oldRefresh;
+        assert.deepEqual(dashboardConnectionSnapshot(harness), current);
+      });
+    }
+  }
+}

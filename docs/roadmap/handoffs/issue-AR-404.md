@@ -45,8 +45,10 @@ desktop metric-clipping defects. Small HTML/CSS fixes and four regressions are
 are checkpointed at d7231df3/7892096d. Final view-loaded browser receipt passes
 21 checks at three widths, including 375 px. First isolated review satisfies
 criteria 2–6 but contradicts 1: a replaced full refresh's late non-abort error
-can mark newer healthy connection state Unavailable. Preserve the first review,
-add failing regressions, then guard stale failure paths and reverify.
+can mark newer healthy connection state Unavailable. First review preserved at
+25b9a67a, ledger 2f10b993. Thirty late-failure cases now pass after live/full/control
+error guards and cancellation propagation; full UI 172 pass. Repaired-wheel QA
+and second isolated acceptance remain, not another source fix.
 
 ## Completed evidence
 
@@ -87,8 +89,8 @@ add failing regressions, then guard stale failure paths and reverify.
 
 ## Exact blocker
 
-AR-138 has a concrete stale-error race to repair before acceptance or merge;
-it remains open. AR-135 native proof is waiting_for_operator: one attended installed ZCode Agent
+AR-138's stale-error repair needs its rebuilt-wheel proof and second isolated
+review before merge; it remains open. AR-135 native proof is waiting_for_operator: one attended installed ZCode Agent
 success/failure and full parent Stop capture. Do not invent a headless backend
 or promote a stubbed hook test into native proof. This does not block the next
 independent backlog disposition.
@@ -110,9 +112,9 @@ the same task; do not spawn a replacement task or close an unfinished umbrella.
 1. Final AR-138 evidence is committed at fa4d042b, ledger 6bc9ccb0. The isolated
    candidate is pinned to fa4d042b. Preserve its first isolated review before
    changing evidence; criteria 2–6 pass and criterion 1 contradicts.
-2. Repair stale failures in full/control polling with generation guards and
-   deferred-error regressions. Rebuild the wheel, rerun affected/browser checks,
-   then freeze a repaired candidate for the second isolated acceptance pass.
+2. Checkpoint the repaired source and empty second-candidate verification table.
+   Rebuild/install the wheel, repeat browser checks, then freeze the repaired
+   evidence candidate for the second isolated acceptance pass.
 3. If satisfied, update the legacy count, open one PR and merge normally.
    Review AR-140 next; AR-139 is already retired. Windows stays excluded.
 4. AR-135 later retains its attended installed Agent/record-zero/full-Stop plan;

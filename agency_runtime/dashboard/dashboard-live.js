@@ -1087,6 +1087,14 @@ export function createLiveController(core, config, renderer) {
 		try {
 			const payload = await api("/api/live?limit=100", { signal: controller.signal });
 			return generation === state.live.generation ? payload : null;
+		} catch (error) {
+			if (
+				generation !== state.live.generation
+				|| state.live.controller !== controller
+				|| controller.signal.aborted
+				|| lifecycleInactive()
+			) return null;
+			throw error;
 		} finally {
 			if (state.live.controller === controller) {
 				state.live.controller = null;
@@ -2099,6 +2107,9 @@ export function createLiveController(core, config, renderer) {
 		} catch (error) {
 			if (
 				state.control.controller === controller
+				&& state.control.generation === generation
+				&& state.commit.generation === commitGeneration
+				&& !controller.signal.aborted
 				&& !lifecycleInactive()
 				&& error?.name !== "AbortError"
 			) {
@@ -2166,7 +2177,13 @@ export function createLiveController(core, config, renderer) {
 			return true;
 		} catch (error) {
 			if (error?.name === "AbortError") return false;
-			if (lifecycleInactive()) return false;
+			if (
+				generation !== state.full.generation
+				|| state.full.controller !== controller
+				|| state.commit.generation !== commitGeneration
+				|| controller.signal.aborted
+				|| lifecycleInactive()
+			) return false;
 			setConnection(false, "Unavailable");
 			if (terminalLiveFailure(error)) handleLiveFailure(error);
 			else if (surfaceErrors) markControlStale(error);
@@ -2435,7 +2452,7 @@ export function createLiveController(core, config, renderer) {
 		if (lifecycleInactive()) return false;
 		showNotice(successMessage);
 		try {
-			await refreshRuntimeEvidence();
+			if (await refreshRuntimeEvidence() === false) return false;
 		} catch (error) {
 			if (lifecycleInactive()) return false;
 			if (terminalLiveFailure(error)) handleLiveFailure(error);
@@ -2448,7 +2465,7 @@ export function createLiveController(core, config, renderer) {
 		if (lifecycleInactive()) return false;
 		showNotice(successMessage);
 		try {
-			await refreshAll({ surfaceErrors: false });
+			if (await refreshAll({ surfaceErrors: false }) === false) return false;
 		} catch (error) {
 			if (!terminalLiveFailure(error)) {
 				showNotice(`${successMessage} The dashboard view could not refresh: ${error.message}`, true);
