@@ -6,6 +6,7 @@ created: 2026-09-05
 updated: 2026-09-05
 tags: [release, governance, backlog, supersession]
 related:
+  - docs/roadmap/issue-AR-168-rebuild-canonical-sdist-source-manifest.md
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
   - docs/roadmap/issue-AR-160-publish-platform-honest-native-release-artifacts.md
   - docs/roadmap/issue-AR-167-normalize-windows-release-source-modes.md

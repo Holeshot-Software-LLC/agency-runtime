@@ -240,7 +240,15 @@ passes; fresh named spine 1085/three skips, 66.99s; asset checks three pass.
 Final browser passes 20 exact-source checks at 1280/375, including terminal
 null-401 notices with safe IDs; no POSTs. All six criteria satisfy after one
 existing-implementation citation recheck; first verdicts remain at bc28bf66.
-AR-166 is done; one PR/normal merge follows before AR-168.
+AR-166 is done; PR #717 merged c6252499 at 11:36:32Z September 7 before AR-168.
+
+AR-168's generic manifest repair is present. Fresh 308 packaging tests pass,
+one native-Windows case deselected. Clean 6363a788 produces a Linux pair that
+passes independent verification and strict Twine; its source manifest has
+2,256 unique rows with exact membership/newline policy. Retain the unchanged
+five criteria/states: same-candidate native Windows/Linux source equality
+remains owner evidence under AR-160/ADR-0219. No code, acceptance or count change.
+Publish this retention, then AR-170; AR-169 is already retired.
 
 Current counts: 40 actual open trackers plus 84 unfinished legacy records,
 124 total after AR-166 completion; no duplicate tracker or false acceptance.

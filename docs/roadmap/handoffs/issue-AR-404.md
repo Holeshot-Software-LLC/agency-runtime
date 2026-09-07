@@ -6,29 +6,23 @@ created: 2026-09-05
 updated: 2026-09-07
 tags: [handoff, backlog, acceptance, delivery]
 related:
+  - docs/roadmap/issue-AR-168-rebuild-canonical-sdist-source-manifest.md
+  - docs/roadmap/acceptance/evidence/AR-168-source-manifest-20260907.md
   - docs/roadmap/issue-AR-166-truthful-dashboard-disclosure-and-correlation.md
   - docs/roadmap/acceptance/evidence/AR-166-dashboard-authority-20260907.md
-  - docs/decisions/0229-reconcile-dashboard-disclosure-with-owner-authority.md
-  - docs/roadmap/issue-AR-165-fail-ambiguous-dependency-review-capability-closed.md
-  - docs/roadmap/acceptance/issue-AR-165.md
-  - docs/roadmap/acceptance/evidence/AR-165-dependency-capability-20260907.md
-  - docs/decisions/0228-reconcile-dependency-review-evidence-gates.md
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
   - docs/roadmap/AR-404-oldest-first-reconciliation-20260905.md
   - docs/roadmap/AR-404-count-reconciliation-20260905.md
-  - docs/roadmap/issue-AR-164-reject-repository-ancestor-path-poisoning.md
-  - docs/roadmap/issue-AR-159-enforce-production-branch-protection.md
   - docs/roadmap/issue-AR-160-publish-platform-honest-native-release-artifacts.md
-  - docs/roadmap/issue-AR-156-restore-cost-bounded-verification.md
   - docs/roadmap/issue-AR-176-align-full-gate-contract-fixtures.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-404
-branch: codex/ar166-oldest-first-reconciliation
-evidence_commit: 4a24477669e1b773b27626f2cd67631fbe78f875
-minimum_ledger_commit: bd6e0f5c53212f5c74fa442f8757730f9f81864f
+branch: codex/ar168-oldest-first-reconciliation
+evidence_commit: c62524997cf4ee9619f1ff0850acc076ad790af3
+minimum_ledger_commit: 6363a788132b8419c69f26a1dd802534e57782cd
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -38,49 +32,40 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ## Checkpoint
 
 Owner continues one oldest record, one PR, normal merge, then next. Native
-Windows remains with the owner. AR-165 all nine criteria satisfy at 9effff3f;
-PR #716 merged 520a10e3 at 10:58:51Z September 7. Main was clean before this
-AR-166 tree; 44c94c92 records that merge. No next record before the current merge.
-
-AR-166 retains truthful correlation/privacy requirements, but its first
-criterion still mandates superseded read-only owner controls. ADR-0117 already
-restored owner controls. The provider-secret selector incorrectly stayed
-disabled for all valid providers. A one-line assignment repair and direct
-interaction test restore owner choice without changing broker/backend authority.
-ADR-0229 explicitly replaces only criterion 1 and preserves its original wording.
+Windows remains with the owner. AR-166's six current criteria satisfy at
+4a244776 after one citation-only recheck; first verdicts remain at bc28bf66.
+PR #717 merged c6252499 at 11:36:32Z September 7. Clean main was fast-forwarded
+before this AR-168 tree; 6363a788 records the merge. AR-167 is already retired.
 
 ## Completed evidence
 
-- Against baseline, two focused cases fail: expected enabled, actual disabled.
-- Selector checkpoint UI: 189 pass; null-error correction UI: 190 pass,
-  no skips/failures, 231.878074 ms.
-  Current production coverage 96.93/86.71/95.71 passes unchanged 95/86/93 floors.
-- Current backend/owner five-module package: 235 pass, 46.37s.
-- Fresh named spine after both fixes: 1085 pass/three existing skips, 66.99s.
-  Asset contracts three pass/187 deselected; Ruff 766 files pass.
-- New test preserves second-provider choice through re-render, stages only its
-  secret operation, retains key redaction, disables four invalid/empty states,
-  and recovers after stale selection removal.
-- The old 8192-character preview is historical; AR-298's complete bounded
-  Store definition is at most 262144 characters and is not runtime proof.
-- Queue is 40 actual trackers plus 84 legacy, 124 local unfinished.
+AR-168 needs no generic manifest implementation change. Canonicalization
+rebuilds from unique validated members; verification independently derives
+membership and exact bytes. The removed-helper license trigger is historical,
+but generic normalization and actual cross-OS proof remain relevant.
+
+- Fresh focused packaging: 308 pass, one native-Windows deselection, 33.83s.
+- Clean 6363a788 Linux wheel/source pair: independent portable verification and
+  strict Twine pass. Exact hashes are in the committed source-manifest receipt.
+- Source: 2,258 files, 2,256 unique manifest rows, self row present, root
+  PKG-INFO/setup.cfg excluded, no CR/trailing newline.
+- No runtime/test/script/workflow delta from accepted AR-166 4a244776.
+  Its 1085/three-skip spine, UI 190 and scoped browser receipts are reused.
+- Queue remains 40 actual trackers plus 84 legacy, 124 local unfinished.
 
 ## Exact blocker
 
-Both fixes pass 20 source-served browser checks at 1280/375 pixels, with zero
-POSTs and exact served config/core hashes. This includes null-401 terminal
-notices retaining safe IDs. The initial zero-check timeout is retained and
-explained by the fixture's obsolete config endpoint. All six criteria
-satisfy at 4a244776 after one citation-only criterion-2 recheck. The other five
-first verdicts remain unchanged; all first results are preserved at bc28bf66.
-No code/test/candidate/requirement change was needed for the recheck. AR-166
-has no scoped acceptance blocker; publish its one normal PR and merge.
+AR-168 remains in_progress with its five original criteria/states unchanged.
+Criterion 4 needs actual native Windows/Linux complete source equality at one
+clean candidate; it is owner platform work also required by AR-160/ADR-0219.
+Linux synthetic fixtures and an old Windows observation cannot supply it.
+This retention does not certify a new installed artifact, release set or host.
 
-Retained holds: AR-159 hosted enforcement/check-app/bypass; AR-160 Windows/
-paired release/live publication; AR-156 Windows/profile and hosted topology;
-AR-135 attended ZCode; AR-140 supported-runner performance; AR-129/130/147
-native Windows; AR-119/125 five-host/matched-value evidence. AR-176 keeps six
-stale fixtures; AR-151's nine and AR-157's two repaired fixtures are not pending.
+Other retained holds: AR-159 hosted enforcement/check-app/bypass; AR-160
+Windows/paired release/live publication; AR-156 Windows/profile and hosted
+topology; AR-135 attended ZCode; AR-140 supported-runner performance;
+AR-129/130/147 native Windows; AR-119/125 five-host/matched-value evidence.
+AR-176 keeps six stale fixtures; AR-151's nine and AR-157's two repairs are done.
 Ordinary-session unverified Agency/header behavior remains open.
 
 ## Same-task continuity
@@ -92,20 +77,20 @@ No empty commits, staffing or restart. Preserve first verdicts before correction
 
 ## Next bounded work package
 
-1. Commit accepted AR-166 completion and its immediate ledger.
-2. Publish one normal PR and read back the merge; no acceptance rerun.
-3. One PR/normal merge/readback, then AR-168 (AR-167 already retired).
+1. Commit AR-168's retention/evidence and immediate ledger; strict docs checks.
+2. Publish one normal PR, merge and read back before the next record.
+3. Review AR-170 next; AR-169 is already retired. No native Windows work.
 
 ## Verification
 
-Focused tests, named spine, metadata/policy, exact worklog, strict docs/tracker,
-Ruff and diff checks. No exhaustive corpus/coverage/matrix dispatch or native
-Windows. AR-165's 184/184 curated decision check is earlier Python evidence,
-not a fresh AR-166 run. Browser work must identify source vs installed scope.
+Fresh focused tests and canonical artifact verification; same-byte named spine
+reuse. Metadata/policy, exact worklog, strict docs/tracker, Ruff and diff checks.
+No exhaustive corpus/coverage/matrix dispatch or native Windows. AR-165's
+184/184 curated decision receipt is earlier Python evidence, not a new run.
 
 ## Constraints
 
-No credentials, trust bypass or provider-policy changes. The latest explicitly
-requested Codex refresh returns exit 1: activation required, hook trust unverified,
-mixed installed projections. No unattended retry absent a fresh directive.
-Do not replace OpenClaw or present registration as normal-session activation.
+No credentials, trust bypass or provider-policy changes. A fresh explicit
+stale-hook directive was followed once: refresh exits 1, activation required,
+hook trust unverified, mixed installed projections. No unattended retry absent
+a new directive. Do not replace OpenClaw or claim normal-session activation.
