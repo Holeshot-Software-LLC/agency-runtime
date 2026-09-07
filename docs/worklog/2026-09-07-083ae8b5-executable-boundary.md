@@ -49,3 +49,9 @@ No exhaustive dispatch, native Windows, trust bypass or attended host run.
 
 Freeze all seven rowsets at 083ae8b5 and require isolated candidate-bound
 verdicts before completion. Publish one PR and normal merge, then AR-165.
+
+## Frozen review
+
+48ac7535 freezes all seven rowsets at 083ae8b5 and records the decision's
+evidence candidate. Strict docs pass 1181 Markdown files before the freeze.
+The review starts only after the clean immediate ledger; no builder verdict.
