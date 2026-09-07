@@ -13,7 +13,7 @@ supersedes: []
 superseded_by: null
 type: acceptance-verification
 issue_id: AR-175
-candidate_commit: pending
+candidate_commit: 328c5634567e6b12a295bb5f8957c5541cc35dba
 evidence_cutoff: 2026-09-07
 tracker_url: null
 ---
