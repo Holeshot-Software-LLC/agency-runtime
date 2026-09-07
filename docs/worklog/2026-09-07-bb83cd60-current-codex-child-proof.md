@@ -14,7 +14,7 @@ type: worklog
 commit: bb83cd6034a20201943f501950fba0a991997d3a
 short: bb83cd60
 date: 2026-09-07
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/730
 related_issues:
   - docs/roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md
 ---
