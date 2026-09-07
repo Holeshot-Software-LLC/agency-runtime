@@ -2053,6 +2053,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `452639dd` | 2026-09-07 | docs(roadmap): verify AR-174 against actual docs-only runners | [AR-174](../roadmap/issue-AR-174-short-circuit-docs-only-ci.md) | [Detail](2026-09-07-452639dd-docs-only-ci.md) |
 | `a4c22d00` | 2026-09-07 | docs(roadmap): freeze AR-174 isolated acceptance evidence | [AR-174](../roadmap/issue-AR-174-short-circuit-docs-only-ci.md) | [Detail](2026-09-07-452639dd-docs-only-ci.md) |
 | `5d20ec28` | 2026-09-07 | docs(roadmap): preserve first AR-174 acceptance verdicts | [AR-174](../roadmap/issue-AR-174-short-circuit-docs-only-ci.md) | [Detail](2026-09-07-452639dd-docs-only-ci.md) |
+| `5a003a05` | 2026-09-07 | docs(roadmap): bind AR-174 timing to allocated hosted runs | [AR-174](../roadmap/issue-AR-174-short-circuit-docs-only-ci.md) | [Detail](2026-09-07-452639dd-docs-only-ci.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
