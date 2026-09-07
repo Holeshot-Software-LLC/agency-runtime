@@ -1,6 +1,6 @@
 ---
 title: "AR-155: Bound dashboard hiring evidence delivery"
-status: open
+status: done
 category: roadmap
 created: 2026-07-26
 updated: 2026-09-07
@@ -49,7 +49,10 @@ and rejects stale or mismatched results. No code/test edit is needed.
 Fresh bounded-collection/response tests pass four; complete workforce lifecycle
 passes 25; full UI passes 188/current production floors. Unchanged Python/source
 receipts supply 274 dashboard and 1085-spine/three-skip results as explicit reuse.
-Five isolated criteria remain. This is not constant-memory whole-store work:
+All five isolated criteria satisfy at 6ed24943 on September 7. The initial
+criterion-3 verifier failure is preserved at a3e00bd5; its one unchanged-candidate
+retry supplies the missing verdict. PR #707 carries completion. This is not
+constant-memory whole-store work:
 revision construction still reads collection metadata, not document bodies.
 
 ADR-0105 supersedes mandatory exhaustive diagnostics. Only criterion 5 is
@@ -72,11 +75,11 @@ same summary-versus-exact-evidence distinction for worker detail.
 
 ## Acceptance
 
-- [ ] Hiring collection rows contain no full evidence documents.
-- [ ] A maximum-size 200-row collection remains within an explicit response-byte budget.
-- [ ] Exact-case lookup retains every governed evidence document without truncation.
-- [ ] The UI fetches exact evidence only on explicit inspection and rejects stale responses.
-- [ ] Store, dashboard, UI production coverage, and the named warning-strict production spine pass.
+- [x] Hiring collection rows contain no full evidence documents.
+- [x] A maximum-size 200-row collection remains within an explicit response-byte budget.
+- [x] Exact-case lookup retains every governed evidence document without truncation.
+- [x] The UI fetches exact evidence only on explicit inspection and rejects stale responses.
+- [x] Store, dashboard, UI production coverage, and the named warning-strict production spine pass.
 
 ## Historical fifth criterion
 

@@ -64,7 +64,9 @@ cases and all 188 UI tests pass. All four original isolated criteria satisfy
 at e1c3069c; AR-154 is done, PR #706 merged at 434175f0. AR-155 confirms existing
 200-row/1 MiB metadata-only hiring pages and explicit exact-case evidence loading.
 Four focused Store/HTTP cases, 25 workforce tests and 188 UI tests pass. Only its
-stale fifth gate is reconciled under ADR-0105; five isolated criteria remain.
+stale fifth gate is reconciled under ADR-0105. All five criteria satisfy at
+6ed24943; initial criterion-3 unavailability is preserved at a3e00bd5, and its
+single unchanged-candidate retry passes. AR-155 is done; PR #707 publication remains.
 
 Previous pause: the owner asked to conserve credits and publish AR-130 through
 [PR #696](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/696),
@@ -114,7 +116,7 @@ not the 99 legacy count.
 | 14 | AR-151 | Done: existing host rejection verified by 13 direct UI-to-POST cases. Nine stale dashboard fixtures repaired; full six-module suite 274 pass, UI 176/current floors pass, named spine 1085/three skips. ADR-0225 explicitly revises only the old blanket duplicate criterion; original wording and first contradicted verdict remain at f954d1e9. All four second-pass criteria satisfy at 791820bb. No runtime change. | [PR #704](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/704) merged at 5a12f357. Legacy count 95 → 94; actual open trackers remain 40. |
 | 15 | AR-153 | Done: hiring filter precedes limit; lineage/evidence pages have exact totals/truncation and one read snapshot. HTTP detail is capped at 200 rows/collection and 2 MiB. Fresh targeted six, full workforce lifecycle 25 and UI 176 pass; byte-identical dashboard/spine receipts reused. ADR-0105 explicitly reconciles only the obsolete full-corpus criterion. All four isolated criteria satisfy at ea577285. No code/test change. | [PR #705](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/705) merged at 8b36ea28. Legacy count 94 → 93; actual open trackers remain 40. |
 | 16 | AR-154 | Done: existing initial-page admission is fail-closed. Twelve new full/control refresh cases directly retain last-good data/revisions for missing first cursor/revision in roster, snapshots and reviews. Focused cursor/activity/observation 13 pass; UI 188 pass current production floors. Python/source receipt reuse is explicit. All four original criteria satisfy at e1c3069c; no runtime or criterion change. | [PR #706](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/706) merged at 434175f0. Legacy count 93 → 92; actual open trackers remain 40. |
-| 17 | AR-155 | In verification: existing collection SQL omits every evidence document, Store/HTTP cap 200 rows at 1 MiB, exact lookup retains all five documents, and explicit UI inspection rejects stale responses. Fresh focused four, workforce 25 and UI 188 pass; unchanged Python/source receipts are reused. ADR-0105 reconciles only the obsolete fifth gate, preserving its original wording. | Owned branch; five isolated criteria pending, count unchanged. |
+| 17 | AR-155 | Done: collection SQL omits every evidence document, Store/HTTP cap 200 rows at 1 MiB, exact lookup retains all five documents, and explicit UI inspection rejects stale responses. Fresh focused four, workforce 25 and UI 188 pass; Python/source receipts are reused. ADR-0105 reconciles only the obsolete fifth gate. All five criteria satisfy at 6ed24943; initial criterion-3 unavailability is preserved at a3e00bd5 and its sole unchanged-candidate retry passes. | [PR #707](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/707) carries completion. Legacy count 92 → 91; actual open trackers remain 40. |
 
 After the merged AR-115 retirement, fresh enumeration confirms 41 open trackers
 and 140 unfinished local records (41 mapped plus 99 legacy) before AR-127.
@@ -135,6 +137,8 @@ Accepted AR-153 reduces the queue to **133** (40 mapped plus **93 legacy**),
 under ADR-0105's already-established bounded verification policy.
 Accepted AR-154 reduces the queue to **132** (40 mapped plus **92 legacy**),
 with all four original criteria unchanged and independently satisfied.
+Accepted AR-155 reduces the queue to **131** (40 mapped plus **91 legacy**),
+with ADR-0105's fifth-gate reconciliation explicitly recorded.
 Windows-specific work remains with the owner.
 This is record reconciliation, not completion of retained implementation or
 platform-evidence work.

@@ -63,8 +63,8 @@ supports explicit 274-dashboard/1085-spine receipt reuse from 99e05d1f.
 ADR-0105 reconciles only the stale mandatory-exhaustive fifth gate; original
 wording is preserved, and the first four criteria remain unchanged.
 Evidence: acceptance/evidence/AR-155-hiring-evidence-20260907.md.
-Candidate 6ed24943: criteria 1/2/4/5 satisfy. Criterion 3 returned verifier
-unavailable/outside vocabulary, no verdict. Retry only that check once unchanged.
+All five criteria satisfy at 6ed24943. Initial criterion-3 unavailability remains
+at a3e00bd5; its sole unchanged-candidate retry passes. PR #707 publication remains.
 
 ## Completed evidence
 
@@ -83,8 +83,8 @@ unavailable/outside vocabulary, no verdict. Retry only that check once unchanged
   184/184 protected mutations killed, zero survived/invalid, source unchanged.
   Broader 380-pass/one-failure/eight-skip run is not green: the unchanged
   fallback-roster fixture also fails on prior main and belongs to AR-176.
-- Current count: 40 actual open trackers plus 92 unfinished legacy records,
-  132 local unfinished after AR-154 completion. No duplicate tracker.
+- Current count: 40 actual open trackers plus 91 unfinished legacy records,
+  131 local unfinished after AR-155 completion. No duplicate tracker.
 - AR-135 source: independent ZCode renderer/config registration, exact seven
   hooks, idempotency, preservation, toggle/rollback/drift and host identity exist.
   Current tests: 16 installer/header (4.74s), 13 selected hook/Stop (5.80s),
@@ -123,7 +123,7 @@ unavailable/outside vocabulary, no verdict. Retry only that check once unchanged
 
 ## Exact blocker
 
-AR-155: four criteria satisfy; criterion 3 has no usable verifier result yet.
+AR-155: all five criteria satisfy; normal PR #707 publication remains.
 AR-140 retains isolated supported-runner proof, including the owner's Windows
 arm. Local passing developer-host numbers do not waive that explicit criterion.
 AR-135 native proof is waiting_for_operator: one attended installed ZCode Agent
@@ -145,8 +145,8 @@ the same task; do not spawn a replacement task or close an unfinished umbrella.
 
 ## Next bounded work package
 
-1. Preserve AR-155 partial verdicts; retry only criterion 3 against 6ed24943 once.
-2. Complete documentation/tracker checks and merge one AR-155 PR normally.
+1. AR-155 is accepted at 6ed24943; retain explicit fifth-gate reconciliation.
+2. Complete documentation/tracker checks and merge PR #707 normally.
    Read back the actual merged head; update clean main by fast-forward only.
 3. Start an owned AR-156 worktree and record the prior merge. AR-152 is done;
    Windows-only AR-147 stays with the owner and is not closed.

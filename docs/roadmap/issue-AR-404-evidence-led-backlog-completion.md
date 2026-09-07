@@ -127,10 +127,12 @@ AR-155 confirms the existing metadata-only 200-row/1 MiB hiring page and exact
 full-document endpoint, with explicit UI inspection and stale-response guards.
 Fresh Store/HTTP four, workforce 25 and UI 188 pass; Python/source receipts are
 explicit reuse. No code/test change; ADR-0105 reconciles only its obsolete fifth
-verification gate, preserving historical wording. Five isolated criteria remain.
+verification gate, preserving historical wording. All five criteria satisfy at
+6ed24943; initial criterion-3 unavailability is preserved at a3e00bd5 and its
+single unchanged-candidate retry passes. AR-155 is done; merge PR #707, then AR-156.
 
-Current counts: 40 actual open trackers plus 92 unfinished legacy records,
-132 total after AR-154 completion; no duplicate tracker or false acceptance.
+Current counts: 40 actual open trackers plus 91 unfinished legacy records,
+131 total after AR-155 completion; no duplicate tracker or false acceptance.
 The unchanged public-roster fixture belongs to AR-176. Windows stays excluded;
 the oldest-first ledger and capsule preserve all holds. Ordinary-session
 unverified Agency/header behavior remains a separate unfinished concern.
