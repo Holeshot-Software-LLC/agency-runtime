@@ -84,3 +84,10 @@ exceptions and 766 formatted files. Enumeration confirms 122 unfinished =
 
 PR #721 carries accepted completion. End telemetry is 55.0 percent at
 13:09:48Z; f9cdbd7f/c8591cf2 form the clean substantive/ledger checkpoint.
+
+## Publication
+
+PR #721 merged normally as 47d40fec at 2026-09-07T13:11:01Z, reviewed head
+257c742ff35118b002379f527e81958b4f9892b6. Main was clean and fast-forwarded before
+the separate AR-173 tree. AR-172 remains done with all seven satisfied verdicts;
+no hosted green inferred from the empty check rollup.
