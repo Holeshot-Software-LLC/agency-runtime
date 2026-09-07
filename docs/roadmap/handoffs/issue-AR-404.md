@@ -6,6 +6,7 @@ created: 2026-09-05
 updated: 2026-09-07
 tags: [handoff, backlog, acceptance, delivery]
 related:
+  - docs/roadmap/acceptance/issue-AR-173.md
   - docs/roadmap/issue-AR-173-correlate-route-lab-observations.md
   - docs/roadmap/acceptance/evidence/AR-173-route-lab-correlation-20260907.md
   - docs/decisions/0231-separate-route-lab-correlation-from-turn-persistence.md
@@ -19,8 +20,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-404
 branch: codex/ar173-oldest-first-reconciliation
-evidence_commit: 6afcbcb523d55f4beb2339f2fa5b06c9ecae8a01
-minimum_ledger_commit: 6afcbcb523d55f4beb2339f2fa5b06c9ecae8a01
+evidence_commit: f4f5124ef6433db9cae18784c15cc76ba880b391
+minimum_ledger_commit: a8f829c9a9f785668805eb2bd0c99b579f54f143
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -85,7 +86,7 @@ No empty commits, staffing or restart. Preserve verdicts before corrections.
 ## Next bounded work package
 
 1. Focused checkpoint b2da6eb9/b1f15941 is clean; broader suites pass.
-2. Finish raw record gates, commit complete evidence and ledger, freeze packet.
+2. Complete evidence f4f5124e and its immediate ledger are committed; freeze packet.
 3. Five isolated checks, one normal PR/merge/readback, then AR-174.
    No native Windows work and at most two review passes.
 
