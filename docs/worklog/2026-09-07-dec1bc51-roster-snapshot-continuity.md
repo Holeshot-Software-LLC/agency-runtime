@@ -16,7 +16,7 @@ type: worklog
 commit: dec1bc512462285cf4d43742c3e666e6d776186e
 short: dec1bc51
 date: 2026-09-07
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/721
 related_issues:
   - docs/roadmap/issue-AR-172-make-roster-pages-snapshot-consistent.md
 ---
@@ -81,3 +81,6 @@ before criterion 6's single recheck fca25686. No code/candidate retry.
 Strict records pass for 1202 Markdown files, 397 mapped/two historical PR
 exceptions and 766 formatted files. Enumeration confirms 122 unfinished =
 40 mapped plus 82 legacy. Publish and merge one normal PR before AR-173.
+
+PR #721 carries accepted completion. End telemetry is 55.0 percent at
+13:09:48Z; f9cdbd7f/c8591cf2 form the clean substantive/ledger checkpoint.
