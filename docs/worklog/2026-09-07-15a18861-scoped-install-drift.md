@@ -14,7 +14,7 @@ type: worklog
 commit: 15a18861b3d32fe55e3092d918bb63c494913e45
 short: 15a18861
 date: 2026-09-07
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/729
 related_issues:
   - docs/roadmap/issue-AR-407-scope-install-drift-to-requested-hosts.md
 ---
