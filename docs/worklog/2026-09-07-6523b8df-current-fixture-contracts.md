@@ -92,3 +92,7 @@ acceptance and normal PR/merge. Continue oldest-first until the owner's cutoff.
 ## Final verification packet
 
 201d0cfc (201d0cfc8ba1578b3eaf52dd35d94c8a6a3112be) binds all eight criteria to 8b4c1fca. All cited excerpts fit after dry-run validation; real Store authority replaces the deliberately isolated cache helper, and the exact six-failure summary is present. This is the second/final independent pass, not an erased first review.
+
+## Second and final isolated review
+
+4a7b155d (4a7b155d15a245b88fe9f44a06f3ec0060671b15) records six satisfied criteria. Criterion 2 remains absent because the packet does not enumerate every relevant original double and production argument; criterion 5 remains absent because it does not include the historical changed-module inventory. These are explicit traceability limits, not failed runtime tests. No third independent review is authorized by the default bounded workflow. Publish the seven repairs and stronger argument checks while retaining AR-176 in_progress, with these exact remaining criteria.
