@@ -47,7 +47,10 @@ the unchanged current 95/86/93 floors; dashboard server/auth/transaction tests
 pass 180 (28.82s). Source/test/script equality to 2ecde1a5 binds the existing
 21-case installed-wheel browser evidence, including real polling interaction
 preservation and stale-state recovery. Exact scope and citations are in the
-linked evidence. The four original criteria remain pending isolated acceptance.
+linked evidence. First isolated acceptance satisfies criteria 1, 3 and 4, but
+criterion 2 is absent: the cited tests do not directly demonstrate inverse
+refresh-response ordering. Preserve the supplied verdicts and add a direct
+deferred-response regression before a second pass; no code defect is asserted.
 
 The original report's absent-epoch state was pre-repair. The July implementation
 receipt below is historical; its blanket final aggregate-release requirement

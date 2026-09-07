@@ -48,8 +48,10 @@ Current package: AR-150 in verification. Shared refresh commit epoch and scope
 cancellation exist, with AR-138's late-error guards. Fresh UI coverage: 172 pass,
 96.93/86.58/95.71 above unchanged 95/86/93 floors. Server integration: 180 pass,
 28.82s. Product/test/script equality to 2ecde1a5 binds the existing installed-wheel
-browser proof. Evidence is frozen at 57c225c1 (ledger 1de0e21e); obtain four
-isolated verdicts against that candidate, then PR/merge.
+browser proof. First isolated review of 57c225c1 satisfies 1/3/4; criterion 2 is
+absent because the citations do not demonstrate inverse refresh-response order.
+Preserve those verdicts, add a direct deferred-response regression, freeze its
+proof and obtain a second pass. PR #703 stays draft. No code defect asserted.
 
 ## Completed evidence
 
@@ -104,7 +106,7 @@ isolated verdicts against that candidate, then PR/merge.
 
 ## Exact blocker
 
-AR-150 remains open pending its four isolated acceptance verdicts.
+AR-150 remains open: three criteria satisfied, inverse refresh-order proof absent.
 AR-140 retains isolated supported-runner proof, including the owner's Windows
 arm. Local passing developer-host numbers do not waive that explicit criterion.
 AR-135 native proof is waiting_for_operator: one attended installed ZCode Agent
@@ -126,8 +128,9 @@ the same task; do not spawn a replacement task or close an unfinished umbrella.
 
 ## Next bounded work package
 
-1. Commit/freeze AR-150's current evidence with its immediate exact ledger, then
-   run the four isolated acceptance checks. No done/count flip before satisfaction.
+1. Preserve AR-150's first verdicts and immediate ledger. Add direct inverse
+   refresh-order coverage, freeze new evidence and run the second isolated pass.
+   No done/count flip before satisfaction; PR #703 remains draft until then.
 2. Complete documentation/tracker checks and merge one PR normally.
    Read back the actual merged head; update clean main by fast-forward only.
 3. Start an owned AR-151 worktree and record the prior merge. AR-146/148/149
