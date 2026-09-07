@@ -16,7 +16,7 @@ type: worklog
 commit: 6ed2494345e2810741eec430700ebce540e9b4b4
 short: 6ed24943
 date: 2026-09-07
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/707
 related_issues:
   - docs/roadmap/issue-AR-155-bound-dashboard-hiring-evidence.md
 ---
@@ -45,6 +45,9 @@ wheel/conformance receipts are same-byte reuse, not new executions.
 
 ## Follow-ups
 
-Freeze this candidate, obtain five isolated verdicts and merge one PR normally,
-then continue at AR-156. No Windows execution, exhaustive workflow or hook-trust
-bypass.
+Initial verification satisfies criteria 1/2/4/5. Criterion 3 returned no usable
+verdict (unavailable/outside vocabulary), not a product finding. a3e00bd5 preserves
+that partial result. Retry only criterion 3 once against unchanged 6ed24943;
+do not reset or rerun the four accepted checks. PR #707 carries the package;
+continue at AR-156 after acceptance/normal merge. No Windows, exhaustive workflow
+or hook-trust bypass.
