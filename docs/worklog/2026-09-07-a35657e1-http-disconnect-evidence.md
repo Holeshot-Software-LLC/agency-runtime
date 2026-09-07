@@ -60,3 +60,12 @@ receipt from AR-156. No new install, aggregate coverage or exhaustive claim.
 Freeze six builder rowsets at a35657e1 and run isolated acceptance before closure.
 Publish one normal PR, read back the merge and continue at AR-158. Counts
 remain 40 actual open trackers plus 91 unfinished legacy records until accepted.
+
+## Accepted completion
+
+All six isolated checks satisfy at unchanged a35657e1; no failed or missing
+verdicts needed repair. e4a3731b records accepted completion with original first
+five criteria and explicitly reconciled sixth. Current count is 40 actual open
+trackers plus 90 unfinished legacy records (130 total). Strict documentation,
+tracker parity, metadata and policy checks pass; no duplicate tracker is created.
+Normal PR publication precedes the separate AR-158 package.
