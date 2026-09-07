@@ -502,18 +502,14 @@ export function createConfigController(core) {
 	function applyConfigSnapshot(snapshot, { force = false } = {}) {
 		if (!snapshot) return false;
 		applyServiceBinding(snapshot);
-		// The summary describes the effective runtime, not the editor baseline. It
-		// must advance even while dirty fields retain their older CAS revision.
+		// Refresh runtime evidence; preserve the dirty editor's CAS baseline.
 		projectConfigSummary(snapshot);
 		const currentRevision = String(state.config?.revision || "missing");
 		const nextRevision = String(snapshot.revision || "missing");
-		// Quick card controls may safely advance their own CAS token while the
-		// settings editor keeps its older baseline and revision for conflict-safe
-		// saves. Never rewrite dirty inputs merely to unblock an unrelated toggle.
+		// Quick controls use fresh CAS tokens without rewriting dirty editor inputs.
 		state.controlConfigRevision = nextRevision;
 		if (!force && state.activeView !== "settings" && !state.configDirty) {
-			// Quick controls need the latest CAS token even while settings inputs are
-			// off-screen. Keep the pending snapshot for deferred field rendering.
+			// Refresh off-screen controls; defer editor rendering via the pending snapshot.
 			state.config = snapshot;
 			state.pendingConfig = snapshot;
 			return false;

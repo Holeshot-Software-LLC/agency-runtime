@@ -3,9 +3,11 @@ title: "Release Checklist"
 status: active
 category: release
 created: 2026-07-10
-updated: 2026-08-13
+updated: 2026-09-07
 tags: [release, verification]
 related:
+  - docs/roadmap/issue-AR-156-restore-cost-bounded-verification.md
+  - docs/decisions/0220-measure-dashboard-coverage-over-production-modules.md
   - docs/decisions/0219-retire-removed-helper-release-obligations.md
   - CHANGELOG.md
   - CONTRIBUTING.md
@@ -185,9 +187,10 @@ machine-specific credential paths.
 
 ## 3. Correctness and performance
 
-Routine pull-request and push CI runs the named fast Python production spine
-plus the automatic quality, UI, performance, portability, security, and
-artifact gates. It deliberately does not run the complete warning-strict Python
+Routine pull-request CI runs the named fast Python production spine plus the
+applicable quality, UI, performance, portability, security, and artifact gates.
+Pushes do not trigger hosted CI; run the bounded local checks before pushing an
+owned branch for review. Neither path runs the complete warning-strict Python
 corpus, four-shard Python coverage, or six-interpreter compatibility matrix.
 The exhaustive jobs remain available as optional diagnostics only when an
 authorized maintainer explicitly requests `workflow_dispatch`. Record their run
@@ -200,7 +203,10 @@ and explicitly listed limitations.
 ruff check agency_runtime tests scripts
 ruff format --check agency_runtime tests scripts
 python -m pytest tests -q -W error -p no:cacheprovider -m performance
-node --test --experimental-test-coverage --test-coverage-lines=95 --test-coverage-branches=90 --test-coverage-functions=96 tests/dashboard_ui.test.mjs
+node --test --experimental-test-coverage \
+  '--test-coverage-include=agency_runtime/dashboard/**/*.js' \
+  --test-coverage-lines=95 --test-coverage-branches=86 \
+  --test-coverage-functions=93 tests/dashboard_ui.test.mjs
 agency eval host-parity --json
 agency eval routing --json --no-details
 python -m agency_runtime.cli eval decision-conformance --repository . --json
@@ -292,7 +298,8 @@ agency eval compare --input path/to/paired-observations.jsonl
       keep live-host, isolated, contract-only, and simulated evidence separate;
       directional eligibility is not published as a superiority conclusion.
 - [ ] Measured runtime code reaches the configured coverage thresholds
-      (95% lines / 90% branches / 96% functions for dashboard UI; when the
+      (95% lines / 86% branches / 93% functions over all production dashboard
+      JavaScript, excluding test fixtures from the denominator; when the
       optional exhaustive Python workflow is requested, its configured
       97-percent aggregate line-and-branch threshold); any unreachable
       platform-only exclusion is narrow, documented, and reviewed rather than

@@ -9,29 +9,20 @@ related:
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
   - docs/roadmap/AR-404-oldest-first-reconciliation-20260905.md
   - docs/roadmap/AR-404-count-reconciliation-20260905.md
-  - docs/roadmap/AR-404-backlog-dispositions-20260905.md
-  - docs/roadmap/issue-AR-131-complete-mcp-cli-host-contracts.md
-  - docs/roadmap/acceptance/issue-AR-131.md
-  - docs/roadmap/issue-AR-135-complete-zcode-integration.md
-  - docs/roadmap/issue-AR-138-coherent-observable-dashboard-ui.md
-  - docs/roadmap/issue-AR-140-scale-routing-and-retrieval.md
-  - docs/roadmap/issue-AR-145-restore-python-release-coverage.md
-  - docs/roadmap/issue-AR-150-coordinate-dashboard-refresh-epochs.md
-  - docs/roadmap/issue-AR-151-align-route-lab-host-eligibility.md
-  - docs/roadmap/issue-AR-153-complete-worker-detail-evidence.md
-  - docs/roadmap/issue-AR-154-fail-malformed-initial-pages-closed.md
-  - docs/roadmap/issue-AR-155-bound-dashboard-hiring-evidence.md
+  - docs/roadmap/issue-AR-156-restore-cost-bounded-verification.md
+  - docs/roadmap/acceptance/evidence/AR-156-verification-workflow-20260907.md
+  - docs/roadmap/issue-AR-157-quiet-public-http-disconnects.md
   - docs/roadmap/issue-AR-176-align-full-gate-contract-fixtures.md
-  - docs/decisions/0028-host-support-maturity-and-reversible-install.md
-  - docs/decisions/0223-retire-superseded-zcode-stop-checklist.md
+  - docs/roadmap/issue-AR-135-complete-zcode-integration.md
+  - docs/roadmap/issue-AR-140-scale-routing-and-retrieval.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-404
-branch: codex/ar155-oldest-first-reconciliation
-evidence_commit: 6ed2494345e2810741eec430700ebce540e9b4b4
-minimum_ledger_commit: 3c6fd15acaa902a69b2ae1823a8166d70c7296de
+branch: codex/ar156-oldest-first-reconciliation
+evidence_commit: 38af9f6136ae608eec0c70c32101ce055387e8c1
+minimum_ledger_commit: 38af9f6136ae608eec0c70c32101ce055387e8c1
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -40,136 +31,93 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 
 ## Checkpoint
 
-Owner resumed September 6: oldest first, one record/PR/merge, then next; no
-routine approval stops. Windows stays with the owner. AR-131 is done and PR
-#698 merged at ac1ce173 (September 7, 04:12:09Z). AR-135 retention merged in
-PR #699 at e2f7a5f2. AR-138 merged through PR #700 at 1ada216c on September 7,
-05:28:53Z. AR-140 retention merged in PR #701 at 7afa4b4d, 05:44:10Z;
-AR-145 retirement merged in PR #702 at cd061668, 05:53:46Z. AR-150's four
-criteria satisfy at ae71761f; PR #703 merged at 460f319b, 06:18:49Z. AR-151's
-four revised criteria satisfy at 791820bb; PR #704 merged at 5a12f357, 06:46:57Z.
-AR-153's four criteria satisfy at ea577285; PR #705 merged at 8b36ea28, 07:06:14Z.
-AR-154's four original criteria satisfy at e1c3069c; PR #706 merged at 434175f0,
-07:17:59Z. Main is clean there; merge ledger f9efd6c9 starts AR-155.
-AR-147 stays with the owner.
+Owner resumed: oldest first, one record/PR/merge, then next, without routine
+approval stops. Windows stays with the owner. Sequential history and exact
+dispositions live in the oldest-first ledger, not duplicated here.
 
-Current AR-155: collection SQL excludes all five evidence documents, Store/HTTP
-cap 200-row pages at 1 MiB, and exact lookup keeps all documents without clipping.
-Explicit UI inspection and current-request/lifecycle guards prevent stale commits.
-Fresh focused Store/HTTP four pass (4.21s), workforce lifecycle 25 pass (8.31s),
-UI 188 pass (247.47ms), coverage 96.93/86.71/95.71 at unchanged 95/86/93 floors.
-No product/test edit. All source/tests/scripts equal e1c3069c; unchanged Python
-supports explicit 274-dashboard/1085-spine receipt reuse from 99e05d1f.
-ADR-0105 reconciles only the stale mandatory-exhaustive fifth gate; original
-wording is preserved, and the first four criteria remain unchanged.
-Evidence: acceptance/evidence/AR-155-hiring-evidence-20260907.md.
-All five criteria satisfy at 6ed24943. Initial criterion-3 unavailability remains
-at a3e00bd5; its sole unchanged-candidate retry passes. PR #707 publication remains.
+AR-153 accepted at ea577285, PR #705 merged 8b36ea28 (07:06:14Z).
+AR-154 accepted at e1c3069c, PR #706 merged 434175f0 (07:17:59Z).
+AR-155 accepted at 6ed24943, PR #707 merged 729e7dc4 (07:34:42Z).
+All times September 7. Main was clean and fast-forwarded before the AR-156
+worktree; prior-merge ledger 38af9f61. AR-155's four initial passes and unavailable
+criterion 3 remain at a3e00bd5; one unchanged-candidate retry supplied its fifth
+pass. No repeated accepted checks or fabricated verifier result.
+
+Current AR-156 is retained open. Fix missing-Node false success before any local
+gate executes; pin identical local/hosted/documented UI argv and keep all floors.
+Reconcile stale branch/push guidance without changing events or matrix.
+Three comment-only edits restore the existing asset bound: 387,058 < 387,072
+bytes, margin 14; every non-comment JavaScript byte is unchanged.
+Exact rebuilt-wheel browser QA remains before publication.
 
 ## Completed evidence
 
-- Exact earlier sequential dispositions are in the oldest-first ledger:
-  AR-115/127 retired; AR-119/120/125/129/130 retained with genuine gaps.
-- AR-151: 13 direct UI-to-POST cases pass. Nine reproduced dashboard fixtures
-  repaired without runtime changes; full dashboard 274 pass (52.54s), named
-  spine 1085/three skips (68.98s). ADR-0225 reconciles per-host ambiguity;
-  first contradicted verdict remains at f954d1e9, all four revised criteria pass.
-- AR-131 original MCP repairs were present. Its first isolated review exposed
-  public identifier aliasing; first verdicts are preserved at 6a139e23.
-  Repair 973acdb9 rejects lossy public IDs before Store writes while preserving
-  internal native normalization. All six original criteria independently pass.
-- AR-131: 13 new public-entry cases pass; MCP/CLI 126/five existing skips;
-  named spine 1085/three skips (68.60s); UI 138; routing/Ruff pass; conformance
-  184/184 protected mutations killed, zero survived/invalid, source unchanged.
-  Broader 380-pass/one-failure/eight-skip run is not green: the unchanged
-  fallback-roster fixture also fails on prior main and belongs to AR-176.
-- Current count: 40 actual open trackers plus 91 unfinished legacy records,
-  131 local unfinished after AR-155 completion. No duplicate tracker.
-- AR-135 source: independent ZCode renderer/config registration, exact seven
-  hooks, idempotency, preservation, toggle/rollback/drift and host identity exist.
-  Current tests: 16 installer/header (4.74s), 13 selected hook/Stop (5.80s),
-  four child-adapter/delivery/profile cases (0.31s), all pass.
-- Current-source generated ZCode smoke: 4/4 pass, no skips. It proves Store,
-  roster, five-host parity and isolated ZCode config/process contracts:
-  preservation, idempotency, per-handler toggles and SessionStart execution.
-  It does not launch the native ZCode app, parent/child or full Stop lifecycle.
-- Read-only ZCode inspection: discovered/staged/registered/enabled true, loaded
-  unknown, no canary/attestation, enabled-runtime-unverified. Executable null;
-  command lookup also finds no zcode CLI. August 19 record-zero evidence stays
-  historical, not current-package certification.
-- AR-138: dashboard Python 180 pass (28.80s), repeated named spine 1085/three
-  existing skips (99.40s). UI 172 pass; coverage 96.93/86.58/95.71 meets the
-  unchanged 95/86/93 floors. Routing passes. The first-candidate conformance
-  run kills 184/184, zero survived/invalid, source unchanged; no Python decision
-  implementation or selected test changed in the subsequent JavaScript repair.
-- Final browser receipt: acceptance/evidence/AR-138-browser-repaired-20260907/
-  report.json, observed 05:15:13Z September 7. Twenty-one loaded views at
-  1280/1024/375 px pass, zero axe violations/overflow/clipping or unexpected
-  console/HTTP errors. Real polls preserve focus/selection/disclosures; injected
-  control failure retains the revision, shows a correlated safe ID and recovers.
-  All ten wheel assets match source. Full WCAG/screen-reader/native-host proof
-  is not claimed. All six isolated second-pass verdicts are satisfied.
-- AR-140: local Linux narrowing/cache p95 1.081/0.201 ms; fresh version-command
-  median 16.989 ms; all three retrieval time/memory budgets pass. Exact report:
-  acceptance/evidence/AR-140-linux-routing-20260907.json. Required recall and
-  top-one relevance 1.0, precision at three 0.6364 above 0.60, forbidden zero.
-  Focused 135 pass/two performance tests deselected, plus 67 pass; standalone
-  complete evaluation supplies performance evidence. Not a staffing decision.
-- AR-145: current source 7afa4b4d, coverage.py 7.15.0, branch instrumentation;
-  41 focused observation/ownership/synthetic-report/authority cases pass in
-  12.08s. No aggregate report, floor change or full-corpus claim. AR-176 owns
-  real fixture/gap follow-up; AR-156 owns the release checklist's stale UI
-  coverage command under the already-accepted ADR-0220 source/floor contract.
+- New Node/command tests: initial three failed/six passed (0.21s), then all nine
+  pass (0.10s); including restored asset guard, ten pass (0.12s).
+- Complete fast workflow files with Windows-named cases excluded: 165 pass,
+  five deselected, no skips/failures (4.82s). Real local timeout reaps a peer
+  and descendant; structural Windows job checks are not native Windows proof.
+- Fresh named 29-module spine: 1085 pass, three existing skips (68.41s).
+  Python runtime/named tests have not changed since that run.
+- Full UI after comment compaction: 188 pass (250.23ms), no skips/failures,
+  production coverage 96.93/86.71/95.71 above unchanged 95/86/93.
+- Broad pre-compaction workflow: 145 pass/one asset failure/five deselected.
+  Profile/local-loop selection: 17 pass/four fail/29 deselected. All five
+  failures reproduce together on untouched main 729e7dc4 (0.68s).
+- Four unmarked profile tests expect Windows-only auto-loader states on Linux;
+  production correctly returns unsupported-runtime. Their native Windows
+  work remains with the owner, with no guard weakening or test skips added.
+- Read-only hosted inspection: CI active, latest listed run August 31,
+  cancelled at c6e9e46c. No current hosted pass or current billing diagnosis.
+- Count unchanged: 40 actual open trackers plus 91 unfinished legacy records,
+  131 local unfinished. AR-156's thirteen original criteria stay unchanged.
 
 ## Exact blocker
 
-AR-155: all five criteria satisfy; normal PR #707 publication remains.
-AR-140 retains isolated supported-runner proof, including the owner's Windows
-arm. Local passing developer-host numbers do not waive that explicit criterion.
-AR-135 native proof is waiting_for_operator: one attended installed ZCode Agent
-success/failure and full parent Stop capture. Do not invent a headless backend
-or promote a stubbed hook test into native proof. This does not block the next
-independent backlog disposition.
+AR-156 still needs separately authorized hosted topology evidence and native
+Windows/profile evidence. Historical 74.444-percent local speedup and the
+under-threshold timing-profile promotion remain old-candidate results.
+Exhaustive coverage/matrix are optional diagnostics under ADR-0105, not a
+reason to spend or retry during this bounded package.
 
-AR-176 owns six stale fixture cases found in AR-127/130/131. Ordinary-session
-unverified Agency staffing/header remains a separate unfinished concern.
-AR-119/125 retain the wider five-host/value evidence; no matrix cell is waived.
+Retained independent holds: AR-135 needs attended installed ZCode Agent/
+record-zero/full Stop proof; discovery/registration/enablement are not loading.
+AR-140 retains isolated supported-runner performance proof, including Windows.
+AR-129/130 and Windows-only AR-147 stay with the owner. AR-119/125 retain
+five-host and matched-value evidence. AR-176 owns six stale fixtures from
+AR-127/130/131; AR-151 already repaired its nine separate dashboard fixtures.
+Ordinary-session unverified staffing/header remains an unfinished concern.
 
 ## Same-task continuity
 
-Use one owned worktree/branch per item; never commit directly to main.
-Substantive commit then immediate narrow docs(worklog) ledger. Record the prior
-merge in the next worktree. Preserve unrelated staged work in other trees.
-At 50-percent context, ensure a clean evidence/ledger checkpoint and continue
-the same task; do not spawn a replacement task or close an unfinished umbrella.
+Use one owned worktree/branch per item, never commit to main. Substantive commit
+then immediate narrow docs(worklog) ledger; record prior merge in the next tree.
+Preserve unrelated staged changes in other worktrees. At 50 percent, ensure a
+clean evidence/ledger checkpoint, then continue the same task without a restart.
 
 ## Next bounded work package
 
-1. AR-155 is accepted at 6ed24943; retain explicit fifth-gate reconciliation.
-2. Complete documentation/tracker checks and merge PR #707 normally.
-   Read back the actual merged head; update clean main by fast-forward only.
-3. Start an owned AR-156 worktree and record the prior merge. AR-152 is done;
-   Windows-only AR-147 stays with the owner and is not closed.
-4. AR-135 retains its attended installed Agent/record-zero/full-Stop plan;
-   it does not block an independent backlog disposition.
+1. Commit AR-156's smallest safe code/evidence slice and ledger.
+2. Build an exact clean wheel and run the existing private/offline dashboard QA;
+   no native host install, credential, trust action or exhaustive workflow.
+3. Record scoped artifact result, keep AR-156 open, complete docs/tracker checks,
+   merge one PR normally and read back its merge SHA.
+4. Fast-forward clean main; begin the separate AR-157 worktree.
 
 ## Verification
 
-Run metadata, policy availability, exact worklog, strict docs/tracker and diff
-checks per package, with focused checks for touched behavior. AR-155 is docs-only;
-source/tests/scripts equal e1c3069c. Reuse the unchanged Python 99e05d1f spine/
-dashboard receipt explicitly. Fresh Store/lifecycle/UI checks pass.
-Product/scripts equal
-accepted AR-138 2ecde1a5; wheel/conformance reuse is same-byte, not a new run.
-No exhaustive corpus, matrix,
-hosted dispatch or release/installed-live proof.
-The graphify graph is absent; bounded source inspection was used, with no
-graph build, specialist selection or native subagent staffing.
+Evidence: acceptance/evidence/AR-156-verification-workflow-20260907.md.
+Run metadata, policy availability, exact worklog, strict docs/tracker, Ruff and
+diff checks per package. New fast gate regressions are in both workflow lists.
+Retain the failed Linux profile receipt, not a full-suite pass. No fresh full
+corpus, aggregate Python coverage, interpreter matrix or native Windows claim.
+The graphify graph is absent; bounded source inspection is used, no graph build
+or subagent staffing.
 
 ## Constraints
 
 No credential creation, human-trust bypass, unmanaged gateway restart or provider
-policy change. Runtime-requested Codex refreshes returned exit 1 with
-registered files but activation required, trust unverified and mixed installed
-projections. Do not retry or replace OpenClaw as part of backlog record cleanup.
-Generated smoke and staged files do not establish normal-session activation.
+policy change. Runtime-requested Codex refreshes return exit 1: files registered,
+activation required, hook trust unverified and mixed installed projections.
+Do not retry or replace OpenClaw as part of backlog cleanup. Staged files and
+generated smoke do not establish normal-session activation.

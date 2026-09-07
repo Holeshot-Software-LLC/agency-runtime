@@ -6,6 +6,7 @@ created: 2026-07-27
 updated: 2026-09-07
 tags: [governance, delivery, testing, demo, cost]
 related:
+  - docs/roadmap/issue-AR-156-restore-cost-bounded-verification.md
   - docs/roadmap/issue-AR-155-bound-dashboard-hiring-evidence.md
   - docs/roadmap/issue-AR-153-complete-worker-detail-evidence.md
   - docs/roadmap/issue-AR-129-isolate-subprocess-environments.md

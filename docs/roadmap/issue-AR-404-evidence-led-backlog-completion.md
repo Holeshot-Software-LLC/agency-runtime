@@ -129,7 +129,16 @@ Fresh Store/HTTP four, workforce 25 and UI 188 pass; Python/source receipts are
 explicit reuse. No code/test change; ADR-0105 reconciles only its obsolete fifth
 verification gate, preserving historical wording. All five criteria satisfy at
 6ed24943; initial criterion-3 unavailability is preserved at a3e00bd5 and its
-single unchanged-candidate retry passes. AR-155 is done; merge PR #707, then AR-156.
+single unchanged-candidate retry passes. AR-155 is done; PR #707 merged at
+729e7dc4 on September 7 at 07:34:42Z before the separate AR-156 worktree.
+
+AR-156 retains its hosted/Windows proof; current bounded workflow and paired
+controller exist. The local missing-Node false-success path is repaired before
+gate execution, and documented UI argv now matches local/hosted unchanged floors.
+Three comments restore the 378 KiB asset budget without executable changes.
+Workflow 165 pass/five Windows-named deselections, spine 1085/three skips and UI
+188 pass. Four Windows-profile assumptions still fail on Linux unchanged main;
+no guard is weakened. Exact wheel QA/publication remains before AR-157.
 
 Current counts: 40 actual open trackers plus 91 unfinished legacy records,
 131 total after AR-155 completion; no duplicate tracker or false acceptance.

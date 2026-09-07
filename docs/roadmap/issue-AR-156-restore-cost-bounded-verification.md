@@ -6,6 +6,10 @@ created: 2026-07-26
 updated: 2026-09-07
 tags: [testing, ci, performance, cost, developer-experience]
 related:
+  - docs/roadmap/acceptance/evidence/AR-156-verification-workflow-20260907.md
+  - docs/decisions/0105-bound-delivery-to-live-demo-checkpoints.md
+  - scripts/run_local_gates.py
+  - tests/test_run_local_gates.py
   - docs/RELEASE_CHECKLIST.md
   - docs/decisions/0220-measure-dashboard-coverage-over-production-modules.md
   - docs/roadmap/issue-AR-177-make-exhaustive-python-ci-manual.md
@@ -58,14 +62,34 @@ coverage.
 
 ## Current state
 
-September 7 documentation follow-up from AR-145 review: the current release
-checklist's dashboard command and coverage bullet still use the historical
-95/90/96 mixed test/source denominator, while ADR-0220 and the actual local/CI
-gates use all production JavaScript with unchanged 95/86/93 floors. Reconcile
-that published command when this verification-workflow record is reviewed.
-This is documentation drift, not a current production coverage failure or
-permission to lower a gate. The July workflow/timing observations below remain
-historical and require reconciliation against ADR-0105 before implementation.
+September 7 oldest-first disposition: retain open, with working implementations
+and bounded repairs distinguished from the remaining hosted/Windows proof.
+The actual workflow has PR/manual triggers, not push. Exhaustive coverage and
+compatibility are manual-only; 35-/70-minute job ceilings already implement
+the controller cleanup envelope. No trigger, matrix or threshold is changed.
+
+Reproduced and fixed: the local runner skipped unavailable Node in normal/fast
+mode yet printed All gates passed. It now fails before executing any gate;
+six regressions run in both fast workflow lists. The release checklist's stale
+UI command now matches local/hosted production-only 95/86/93 exactly, with a
+third documented-command regression. Branch/worktree guidance is reconciled.
+
+The broader fast gate found dashboard assets at 387,355 bytes, over the unchanged
+378 KiB bound. Three comment-only edits remove 297 bytes, restoring 387,058 bytes
+without changing any non-comment JavaScript byte. Full fast workflow checks pass
+165 with five Windows-named cases deselected; named spine 1085/three existing
+skips and full UI 188/current floors pass. Exact receipts and failed baselines
+are in the linked evidence, not recast as new performance measurements.
+
+Four profile tests still assume the Windows-only loader works on Linux and fail
+unchanged main with unsupported-runtime. No native Windows/profile fixture or
+guard was changed. The last listed hosted run is August 31/cancelled, not a
+current candidate pass; the prior billing diagnosis is historical, not verified
+current account state. Windows and separately requested hosted proof remain with
+the owner. All thirteen original criteria remain unchanged; no full completion
+or fresh benchmark claim is made.
+
+## Historical workflow observations
 
 Successful hosted evidence shows a PR with the deferred matrix used 23.33 raw
 runner-minutes and completed in 4m50s, while a comparable current PR used
@@ -81,6 +105,15 @@ must be increased. This external state must not be reported as a test failure
 or a green hosted gate.
 
 ## Approach
+
+Publish the bounded local feedback and documentation repairs with scoped checks.
+Preserve the Windows-only profile guard and historical benchmark controls. Do
+not dispatch exhaustive CI or alter account/branch settings during backlog
+reconciliation. A separately authorized hosted proof can use the existing exact
+paired topology; native Windows/profile work remains with the owner. Continue
+oldest-first at AR-157 after one normal PR merge.
+
+## Historical implementation approach
 
 ADR-0101 and AR-177 supersede this item's event schedule: pull requests and
 ordinary pushes now require both exhaustive coverage and compatibility to be
@@ -182,7 +215,7 @@ state; real runs publish one run-bound bounded log set and manifest.
 - After GitHub billing or spending state is repaired, one PR run and one
   `main` or manual run provide hosted URLs and exact job evidence.
 
-## Implementation evidence
+## Historical implementation evidence
 
 The workflow skips the compatibility matrix on pull requests and requires it to
 succeed on `push` and manual dispatch. Fast same-revision quality gates every
