@@ -6,6 +6,7 @@ created: 2026-07-26
 updated: 2026-09-07
 tags: [dashboard, pagination, validation, traceability]
 related:
+  - docs/roadmap/acceptance/issue-AR-154.md
   - docs/roadmap/acceptance/evidence/AR-154-initial-page-validation-20260907.md
   - docs/decisions/0220-measure-dashboard-coverage-over-production-modules.md
   - docs/decisions/0095-complete-paginated-dashboard-collections.md

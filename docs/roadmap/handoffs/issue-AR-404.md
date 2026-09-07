@@ -29,8 +29,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-404
 branch: codex/ar154-oldest-first-reconciliation
-evidence_commit: c266715c9d5e6422de6deaed7778f2bf4afc9345
-minimum_ledger_commit: c266715c9d5e6422de6deaed7778f2bf4afc9345
+evidence_commit: e1c3069ca60146072f5c8a237c9bcf39cf6a6374
+minimum_ledger_commit: 4a7dfdee5e450207b4f69c6091c71148f0f9cd66
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -59,7 +59,7 @@ coverage 96.93/86.71/95.71 at unchanged 95/86/93 floors. Only the JavaScript tes
 matrix changed; Python/product/scripts equal 99e05d1f, explicitly reusing its
 274-dashboard and 1085-spine receipts. No runtime or criterion change.
 Evidence: acceptance/evidence/AR-154-initial-page-validation-20260907.md.
-Four isolated criteria remain before completion or count change.
+Candidate e1c3069c is frozen; four isolated criteria remain before any count change.
 
 ## Completed evidence
 
