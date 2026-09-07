@@ -21,6 +21,10 @@ related_issues:
 
 # Worklog detail: Bind AR-185 to exact installed activation proof
 
+PR #736 merged as `00fc1aef27aa10a5df461a2817ec2050d4933f67` at
+2026-09-07T23:55:01Z; remote main was fast-forwarded and clean. The PR also
+publishes only AR409's approved filing checkpoint for tracker parity.
+
 ## Purpose
 
 Complete the stale verification-only record using exact current installed
