@@ -62,7 +62,8 @@ the fresh named spine. ADR-0229 explicitly reconciles only criterion 1 before
 isolated review. Eighteen source-served browser checks pass for the selector.
 Criterion 2 also exposed a null-JSON HTTP error throwing TypeError before
 retaining status/request identity. A null-safe error lookup and 401/403/503
-regression cover it. Final browser evidence and six verdicts remain next.
+regression cover it. Latest UI 190 and final source-served browser 20 checks
+pass, including null-401 terminal identity. Six isolated verdicts remain next.
 
 Client request IDs are canonical UUIDv4 values;
 HTTP and transport failures append only a validated identifier to their inert

@@ -237,6 +237,8 @@ source-served browser checks after a fixture-endpoint correction. A second
 criterion-2 gap, null HTTP error JSON losing status/request ID through TypeError,
 is repaired with a null-safe lookup and 401/403/503 regression. Latest UI 190
 passes; fresh named spine 1085/three skips, 66.99s; asset checks three pass.
+Final browser passes 20 exact-source checks at 1280/375, including terminal
+null-401 notices with safe IDs; no POSTs. Six isolated verdicts remain.
 
 Current counts: 40 actual open trackers plus 85 unfinished legacy records,
 125 total after AR-165 completion; no duplicate tracker or false acceptance.

@@ -67,12 +67,12 @@ ADR-0229 explicitly replaces only criterion 1 and preserves its original wording
 
 ## Exact blocker
 
-The selector passes 18 source-served browser checks after correcting the
-fixture's obsolete config endpoint; zero POSTs. Criterion 2 also exposes a
-null JSON HTTP error losing its status/request ID through TypeError. The
-null-safe lookup and 401/403/503 regression now need final browser proof and
-six candidate-bound verdicts. The repair remains in scope; no API authority
-or criterion change. Bind the final browser/builder candidate next.
+Both fixes pass 20 source-served browser checks at 1280/375 pixels, with zero
+POSTs and exact served config/core hashes. This includes null-401 terminal
+notices retaining safe IDs. The initial zero-check timeout is retained and
+explained by the fixture's obsolete config endpoint. Six isolated verdicts
+remain; bind the final browser/builder candidate next. No API authority or
+additional criterion change.
 
 Retained holds: AR-159 hosted enforcement/check-app/bypass; AR-160 Windows/
 paired release/live publication; AR-156 Windows/profile and hosted topology;
@@ -90,7 +90,7 @@ No empty commits, staffing or restart. Preserve first verdicts before correction
 
 ## Next bounded work package
 
-1. Clean repair/ledger checkpoint; then source-served selector browser check.
+1. Commit final browser/evidence candidate and immediate ledger.
 2. Freeze six builder rowsets and run isolated review; complete only if all pass.
 3. One PR/normal merge/readback, then AR-168 (AR-167 already retired).
 

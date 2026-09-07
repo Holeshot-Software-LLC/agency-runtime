@@ -56,6 +56,10 @@ changed. Exact Git comparison against a4be59b0 of backend/core, their tested
 modules, scripts, pyproject and AGENTS returns zero bytes of diff. These tests
 are not native-host or real-provider staffing evidence.
 
+Final source-served browser verification passes 20 checks, including terminal
+null-401 notices with safe request IDs at both viewport widths; see the bounded
+browser receipt below.
+
 ## Requirement reconciliation
 
 ADR-0229 explicitly changes only criterion 1 under accepted ADR-0117.
@@ -79,6 +83,21 @@ No installed-wheel, native Windows, attended-host or full accessibility claim.
 The browser uses a private five-agent Store, stubbed host inspection, denied
 server outbound connections and synthetic provider drafts; no owner profile.
 
+After both repairs, the clean f9c55ada/eb92b936 source passes the final fixture:
+
+```json
+{"passed":true,"checks":20,"post_requests":0,"browser":"152.0.7977.64","config_sha256":"c75dc679ac2508d9c97fa10811620bb474bfc0aaaa64563ea24957eb74ff0dbf","stage":"provider_options_ready"}
+```
+
+The [raw final report](AR-166-browser-20260907/final/report.json) records ten
+checks at each of 1280 and 375 pixels: second-provider selection, stable
+selection after secret input, explicit runtime privacy, four disabled-list
+states, valid recovery, served-module identity, and terminal null-401 notice
+with a canonical request ID. Both served modules match this source; core hash
+233c5e9c070f6544af26f26c5c976e5f9b04b826196b150e0cccc83c934d02b5.
+Two screenshots and their hashes are retained beside that report. They use
+fictional provider drafts only; the owner bearer is never in the URL or output.
+
 ## Null HTTP error correction
 
 Inspection of criterion 2 finds a second same-scope gap: valid JSON null with
@@ -87,7 +106,8 @@ The new 401/403/503 test fails against a4be59b0 on the first case, with
 TypeError reading error from null (one failure, 64.829985 ms). Optional chaining
 preserves the existing HTTP fallback message and safe browser request ID.
 This changes no response-correlation, authentication or broker policy.
-Refresh the UI checks and final source-served browser receipt before freezing.
+The refreshed 190-case UI suite and final 20-check source-served browser receipt
+pass before freeze. This is still the first isolated acceptance review.
 
 ## Publication validation
 
