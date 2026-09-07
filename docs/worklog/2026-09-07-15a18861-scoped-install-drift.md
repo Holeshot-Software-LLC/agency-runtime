@@ -62,3 +62,5 @@ activation and operator process-environment repair separate.
 Substantive `15a18861` is the bounded implementation/source proof; later artifact and acceptance records must retain their exact candidates.
 
 Evidence freeze `dcd58720` adds the exact ef6523b3 portable artifact under producer umask077, fresh installed MCP/dashboard and all-host generated smoke8/0/0 in5.09s. Candidate source hash equals the live-pointer helper source; no native model-turn claim is added.
+
+Builder packet `625a1488` freezes all three criteria at dcd58720 with bounded source/test/live-state/artifact excerpts. The builder supplies evidence, not verdicts.
