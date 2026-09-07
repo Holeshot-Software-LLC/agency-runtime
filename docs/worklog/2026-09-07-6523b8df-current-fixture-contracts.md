@@ -72,3 +72,7 @@ acceptance and normal PR/merge. Continue oldest-first until the owner's cutoff.
 ## Current complete package
 
 49b307ff (49b307ff3ae7d248bee0b7135d5b0843daa9b1de) repairs the main-reproduced retained-stage fixture using real guarded cleanup. Seven focused cases pass; combined package 467 passes/one skip/64 Windows-named deselections, named spine 1085/three skips, UI 224/current floors and Node smoke contracts 36 pass. Existing ADR-0105/0224 reconcile only obsolete exhaustive gates; faithful July criteria and red diagnostics remain. Runtime bytes equal the AR-175 installed artifact source a96483ad.
+
+## Frozen current candidate
+
+9a42c162 (9a42c1627e4cd6bd6002833c83b093ba6c72c6a7) freezes eight builder-only criteria at 49b307ff. Dry-run checks confirm every cited excerpt is included (1,512–16,303 characters per packet). The original verdicts have not run yet. AR-388's documented owner-private client environment exists and contains the configured variable; this changed precondition permits a new bounded native check without provisioning or persisting a key.
