@@ -99,3 +99,16 @@ forward the ID-bearing APIError message. Existing focused reconciliation test
 passes (one test/four branches, 60.211025 ms); no product/test/candidate/criterion
 change. First verdicts remain at bc28bf66. The other five accepted verdicts stay
 unchanged; only criterion 2 receives the second and final ordinary review.
+
+## Accepted completion
+
+68936836 records all six criteria satisfied at 4a244776. The only recheck was
+criterion 2's existing-implementation citation; the other five verdicts remain
+unchanged, and every first result is preserved at bc28bf66. Two actual UI bugs
+are fixed: disabled owner provider choices and null HTTP errors losing IDs.
+ADR-0229 explicitly reconciles only the obsolete first criterion.
+
+Final strict docs/metadata pass 1190 files, tracker parity 397 mapped/two
+historical PR exceptions, policy/worklog/diff pass. Current queue: 40 mapped
+plus 84 legacy, 124 unfinished. No native Windows, installed-wheel or host
+activation claim. Publish one normal PR and merge before AR-168.
