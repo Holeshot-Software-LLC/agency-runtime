@@ -122,3 +122,12 @@ PR #722 publishes the accepted branch after the explicit resume. The remote
 head fe1913e7 matches the clean local branch and main base 47d40fec. No hosted
 checks are listed; this is not a claim of hosted CI success. Local evidence
 and all five final-candidate verdicts remain unchanged.
+
+## Merged before next record
+
+PR #722 merged at 7ad0d33e (7ad0d33ef34eafb0736179a171534956817c4438) on September 7 at 20:18:19Z with remote
+head 9839e0cdfa274234e5c137ff0eb596b034edc8af. A first guarded merge attempt
+rejected a mistyped expected head without mutation; exact readback then passed.
+Main was clean and fast-forwarded to the merge before this separate AR-174
+worktree was created. AR-173's five accepted criteria are now on main;
+121 unfinished records remain (40 mapped/81 legacy). No hosted-green claim.

@@ -2049,6 +2049,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `7650cdf0` | 2026-09-07 | docs(roadmap): freeze final AR-173 acceptance candidate | [AR-173](../roadmap/issue-AR-173-correlate-route-lab-observations.md) | [Detail](2026-09-07-b2da6eb9-route-lab-correlation.md) |
 | `eb655007` | 2026-09-07 | docs(roadmap): checkpoint accepted AR-173 before owner pause | [AR-173](../roadmap/issue-AR-173-correlate-route-lab-observations.md) | [Detail](2026-09-07-b2da6eb9-route-lab-correlation.md) |
 | `3864deda` | 2026-09-07 | docs(roadmap): resume accepted AR-173 publication | [AR-173](../roadmap/issue-AR-173-correlate-route-lab-observations.md) | [Detail](2026-09-07-b2da6eb9-route-lab-correlation.md) |
+| `7ad0d33e` | 2026-09-07 | Merge pull request #722 from Holeshot-Software-LLC/codex/ar173-oldest-first-reconciliation | [AR-173](../roadmap/issue-AR-173-correlate-route-lab-observations.md) | [Detail](2026-09-07-b2da6eb9-route-lab-correlation.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
