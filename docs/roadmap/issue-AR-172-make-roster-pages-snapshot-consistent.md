@@ -3,9 +3,12 @@ title: "AR-172: Make roster pages snapshot-consistent"
 status: in_progress
 category: roadmap
 created: 2026-07-27
-updated: 2026-07-27
+updated: 2026-09-07
 tags: [roster, sqlite, dashboard, pagination, performance, traceability]
 related:
+  - docs/decisions/0105-bound-delivery-to-live-demo-checkpoints.md
+  - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
+  - docs/roadmap/acceptance/evidence/AR-172-roster-snapshots-20260907.md
   - docs/decisions/0012-canonical-sqlite-audit-store.md
   - docs/decisions/0046-config-backed-agent-activation-policy.md
   - docs/decisions/0095-complete-paginated-dashboard-collections.md
@@ -54,6 +57,20 @@ was necessary.
 
 ## Current state
 
+September 7 review confirms the implementation is present; no production change
+is needed. Ten new regressions exercise both full and control-only refreshes
+across initial, subsequent primary, exact-lookup and initial/subsequent
+operational configuration drift. They assert the last-good state and live
+revision remain unchanged, control becomes stale and paging stops immediately.
+All 204 UI tests/current coverage floors and 278 focused Store/HTTP/activation
+tests pass. Raw commands and results are in the
+[receipt](acceptance/evidence/AR-172-roster-snapshots-20260907.md).
+
+The original implementation already allowed at most three capture attempts.
+One injected mismatch recovers on the second attempt, as criterion 6 describes;
+persistent churn fails at the unchanged bound. The criterion does not require
+reducing that bound. Isolated acceptance remains pending before completion.
+
 The public handler uses one Store snapshot that reads roster generation, exact
 eligible total, and `limit + 1` rows inside one SQLite read transaction. SQL
 applies the bounded disabled-agent set and page cursor before decoding. The
@@ -80,7 +97,9 @@ ADR-0012 owns authoritative SQLite snapshots. ADR-0046 separates reversible
 availability from governed roster state. ADR-0095 requires explicit cursor and
 revision semantics for complete dashboard collections.
 
-Tracker creation remains pending explicit outward-write authorization.
+The existing pre-tracker exemption applies; no duplicate tracker is created.
+ADR-0105 reconciles only the obsolete final exhaustive-release gate. All six
+behavioral criteria and the original verification wording remain preserved.
 
 ## Acceptance
 
@@ -94,12 +113,21 @@ Tracker creation remains pending explicit outward-write authorization.
   the refresh closed.
 - [x] One control response never combines UI and operational roster generations;
   a deterministic mismatch is recaptured once and persistent churn fails closed.
-- [ ] The final repository release gate passes at the implementation commit.
+- [ ] Focused Store, dashboard HTTP and UI regressions/current coverage floors,
+  the named production spine, metadata, policy, worklog, strict docs/tracker,
+  Ruff and diff checks pass; exhaustive integration remains optional.
+
+## Preserved original verification criterion
+
+Original criterion 7: The final repository release gate passes at the
+implementation commit. ADR-0105 governs its bounded replacement; criteria 1–6
+remain unchanged. No unrelated release or native-host obligation is closed.
 
 ## Implementation evidence
 
 Focused Store tests inspect the executed SQL and interleave a second Store
 writer after the reader establishes its snapshot. HTTP and browser tests cover
 the unchanged public envelope, initial control revision, subsequent-page
-continuity, exact lookup, and operational paging. Final aggregate evidence is
-recorded only after the implementation commit's full gate.
+continuity, exact lookup, and operational paging. Ten direct last-good-state
+regressions now cover both current refresh modes. The receipt records bounded
+verification and its limits; the isolated acceptance record owns the verdict.
