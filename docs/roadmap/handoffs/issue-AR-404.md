@@ -19,9 +19,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-404
-branch: codex/ar180-live-proof-reconciliation
-evidence_commit: fdb010ffb0a5eab4b545781b047a2743e6372418
-minimum_ledger_commit: 6220ca6134a1aa5ddd5fc34b9d6e703d9ac32631
+branch: codex/ar181-smoke-reconciliation
+evidence_commit: 24eede12fc80c24e7f1dd72f32514cdf591ab2a9
+minimum_ledger_commit: 8ca6e240b507b11254944e0af76d32eb0e820555
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -43,6 +43,10 @@ AR-178 merged PR #728/08fab1c4. AR-407 allthree criteria satisfy at dcd58720;
 merged PR #729/fdb010ff at23:01:56Z; #727 CLOSED. Queue118 (40 mapped/78 legacy).
 AR-180 exact v6/card/parent-finalization correlation is recorded; remains open
 for TUI/Desktop/multi-card and literal child-only context requirements.
+AR-180 merged PR #730/24eede12. AR-181 remains in_progress for Windows timing;
+its contradictory home criterion is explicitly corrected under ADR-0026.
+New AR-408/#732 records truthful staffing-failure/timeout receipt defects;
+queue119 (41 mapped/78 legacy) until its reviewed repair is accepted.
 
 ## Completed evidence
 
@@ -90,7 +94,7 @@ variable. No current-turn header snapshot; do not reinstall OpenClaw.
 
 ## Same-task continuity
 
-Owned tree: codex/ar180-live-proof-reconciliation. Do not commit main or touch
+Owned tree: codex/ar181-smoke-reconciliation. Do not commit main or touch
 another worker's dirty tree. Substantive commits get immediate narrow worklog
 ledgers. At/below 50 percent finish a clean checkpoint, then continue.
 Fanout recovered exact AR-180 native card/header/finalization and AR-181 smoke.
@@ -101,8 +105,8 @@ Parent owns publication, acceptance and shared-registry changes.
 
 ## Next bounded work package
 
-1. Publish AR-180 exact one-card exec proof and remaining broader holds.
-2. Continue AR-181,183,184,185, then189/190; Windows/operator holds stayopen.
+1. Publish AR-181 Linux smoke/reconciled home criterion; preserve Windows hold.
+2. Continue AR-183,184,185, then189/190; Windows/operator holds stayopen.
 3. Fanout prepares truthful staffing-failure receipts: five calls can exhaust
    the budget before the critic, and routing drops effective timeout evidence.
 4. Stop cleanly by September 8 01:00 UTC.

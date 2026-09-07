@@ -58,3 +58,5 @@ AR180 remains open. Publish normal PR/merge, then AR181. Separate shape and
 child-only policy reconciliation remain necessary for umbrella completion.
 
 Substantive `bb83cd60` records exact existing native proof and replaces the active recovery projection, while retaining all original acceptance states.
+
+Publication `24eede12` merged PR #730 at2026-09-07T23:07:23Z. AR180 remains open with exact restricted proof and explicit broader holds.
