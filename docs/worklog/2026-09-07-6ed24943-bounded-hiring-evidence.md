@@ -52,3 +52,10 @@ the other four checks were not reset or rerun. Closure 2ca5761a records completi
 Fresh enumeration is 40 actual open trackers plus 91 unfinished legacy records
 (131 local unfinished). PR #707 carries the package; continue at AR-156 after
 normal merge. No Windows, exhaustive workflow or hook-trust bypass.
+
+## Publication
+
+PR #707 merged normally at 729e7dc40583b368bc0e990706a31df85fdb93ad on
+2026-09-07T07:34:42Z. Main was clean and fast-forwarded to that merge before
+the owned AR-156 worktree was created. No hosted checks were reported; scoped
+local checks and all five isolated verdicts are recorded above.

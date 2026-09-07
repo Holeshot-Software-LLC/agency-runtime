@@ -19,7 +19,7 @@ except ModuleNotFoundError:  # pragma: no cover - exercised by the Python 3.10 m
 
 from scripts.read_release_version import read_release_version
 from scripts.release_contract import DISTRIBUTION_LICENSE_FILES
-from scripts.run_local_gates import PRODUCTION_SPINE, gates
+from scripts.run_local_gates import PRODUCTION_SPINE, WORKFLOW_CONTRACTS, gates
 from scripts.verify_release_hygiene import SECRET_PATTERNS, generated_path_reason
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -317,7 +317,7 @@ def test_release_resources_are_addressable() -> None:
     assert dashboard_bytes < 378 * 1024, "dashboard assets exceeded the 378 KiB budget"
 
 
-@pytest.mark.parametrize("gate_source", ("local", "hosted"))
+@pytest.mark.parametrize("gate_source", ("local", "hosted", "documented"))
 def test_dashboard_coverage_gates_measure_all_production_javascript(gate_source: str) -> None:
     expected = (
         "node",
@@ -331,6 +331,16 @@ def test_dashboard_coverage_gates_measure_all_production_javascript(gate_source:
     )
     if gate_source == "local":
         command = next(gate.command for gate in gates() if gate.name == "dashboard UI")
+    elif gate_source == "documented":
+        checklist = (ROOT / "docs/RELEASE_CHECKLIST.md").read_text(encoding="utf-8")
+        commands = [
+            line.strip()
+            for block in re.findall(r"```bash\n(.*?)\n```", checklist, re.DOTALL)
+            for line in block.replace("\\\n", " ").splitlines()
+            if line.strip().startswith("node --test")
+        ]
+        assert len(commands) == 1, "release checklist must publish one exact dashboard command"
+        command = tuple(shlex.split(commands[0]))
     else:
         workflow = yaml.safe_load((ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8"))
         step = next(
@@ -837,6 +847,7 @@ def test_quality_first_gates_expensive_fanout_and_preserves_production_surfaces(
     )["run"]
     assert "tests/test_ci_change_scope.py tests/test_ci_sharding.py" in quality_contracts
     assert "tests/test_ci_session_pair.py tests/test_release_packaging.py" in quality_contracts
+    assert re.findall(r"tests/test_[a-z0-9_]+\.py", quality_contracts) == list(WORKFLOW_CONTRACTS)
     assert '"${AGENCY_CI_PYTHON}" -m pytest' in quality_contracts
     assert 'export TMPDIR="${AGENCY_CI_TEMP}"' in quality_contracts
     assert '--basetemp "${AGENCY_CI_TEMP}/pytest-workflow"' in quality_contracts

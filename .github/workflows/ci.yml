@@ -1,11 +1,10 @@
 name: CI
 
 on:
-  # Push to main deliberately does NOT trigger CI: this repository is developed
-  # direct-to-main, so every commit started a 7-10 minute hosted run and the
-  # concurrency group then cancelled the previous one mid-flight, billing both.
-  # Run `python scripts/run_local_gates.py` before pushing instead. Pull
-  # requests and manual dispatch still run the full hosted gate.
+  # Pushes deliberately do not trigger CI, avoiding duplicate hosted spend.
+  # Follow AGENTS.md's owned branch/worktree/PR workflow and run bounded local
+  # checks before pushing. Pull requests retain the applicable hosted gates;
+  # exhaustive coverage and compatibility require explicit manual dispatch.
   pull_request:
   workflow_dispatch:
 
@@ -205,7 +204,8 @@ jobs:
         run: |
           export TMPDIR="${AGENCY_CI_TEMP}"
           "${AGENCY_CI_PYTHON}" -m pytest tests/test_ci_change_scope.py tests/test_ci_sharding.py \
-            tests/test_ci_session_pair.py tests/test_release_packaging.py -q -W error \
+            tests/test_ci_session_pair.py tests/test_release_packaging.py \
+            tests/test_run_local_gates.py -q -W error \
             -p no:cacheprovider --basetemp "${AGENCY_CI_TEMP}/pytest-workflow"
       - name: Run fast Python production spine
         if: steps.change-scope.outputs.code_required == 'true'

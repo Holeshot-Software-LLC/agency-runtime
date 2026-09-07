@@ -1,11 +1,10 @@
-"""Run the gates CI used to run on every push to main.
+"""Run bounded local quality gates before pushing an owned branch for review.
 
-Push no longer triggers `.github/workflows/ci.yml`, because this repository is
-developed direct-to-main and every commit started a 7-10 minute hosted run --
-which the workflow's own concurrency group then cancelled mid-flight when the
-next commit landed, billing both. This script is the replacement: it runs the
-same commands as the workflow's `quality-contracts` job, in the same order, and
-fails on the first gate that fails.
+Pushes do not trigger `.github/workflows/ci.yml`; pull requests retain hosted
+verification and exhaustive integration remains explicit manual dispatch.
+Follow AGENTS.md's branch/worktree/PR workflow, never direct-to-main commits.
+This runner shares the production-spine and UI contracts with hosted quality,
+reports its narrower scope, and fails on the first unsuccessful required gate.
 
     python scripts/run_local_gates.py            # everything runnable here
     python scripts/run_local_gates.py --fast     # skip the two long suites
@@ -19,8 +18,8 @@ hidden:
   script substitutes a direct check that every mutation's `before` snippet still
   matches its source exactly once, which is what actually breaks when someone
   edits a guarded line.
-* The hosted job runs on Linux. Anything platform-sensitive still needs
-  `gh workflow run ci.yml` or a WSL run.
+* A local run covers only its current platform. Native platform evidence and
+  exhaustive hosted diagnostics require a separately authorized operator run.
 """
 
 from __future__ import annotations
@@ -102,6 +101,7 @@ WORKFLOW_CONTRACTS = (
     "tests/test_ci_sharding.py",
     "tests/test_ci_session_pair.py",
     "tests/test_release_packaging.py",
+    "tests/test_run_local_gates.py",
 )
 
 _MUTATION_SNIPPET_CHECK = (
@@ -212,11 +212,14 @@ def main() -> int:
             print(f"{gate.name:26} {' '.join(gate.command)}")
         return 0
 
+    for gate in selected:
+        if gate.command[0] == "node" and shutil.which("node") is None:
+            print(f"FAILED: {gate.name} (node is not installed)")
+            print("No gates ran. Install Node.js and run again.")
+            return 1
+
     started = time.perf_counter()
     for index, gate in enumerate(selected, 1):
-        if gate.command[0] == "node" and shutil.which("node") is None:
-            print(f"[{index}/{len(selected)}] {gate.name}: SKIPPED (node is not installed)")
-            continue
         print(f"[{index}/{len(selected)}] {gate.name} ...", flush=True)
         gate_started = time.perf_counter()
         completed = subprocess.run(gate.command, cwd=REPOSITORY, check=False)
@@ -230,9 +233,9 @@ def main() -> int:
     total = time.perf_counter() - started
     print(f"\nAll {len(selected)} gates passed in {total / 60:.1f} min.")
     print(
-        "Not covered here: Linux-only behaviour, the decision-conformance mutation "
-        "phase, and the integration coverage shards. Run `gh workflow run ci.yml` "
-        "when a change could be platform-sensitive."
+        "Not covered here: other-platform behaviour, the decision-conformance mutation "
+        "phase, and the integration coverage shards. Native platform evidence and "
+        "exhaustive hosted diagnostics require separate operator authorization."
     )
     return 0
 
