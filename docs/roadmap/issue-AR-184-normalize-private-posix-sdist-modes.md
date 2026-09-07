@@ -3,9 +3,11 @@ title: "AR-184: Normalize owner-private POSIX sdist modes"
 status: in_progress
 category: roadmap
 created: 2026-07-27
-updated: 2026-07-27
+updated: 2026-09-07
 tags: [release, packaging, linux, reproducibility, security]
 related:
+  - docs/roadmap/acceptance/evidence/AR-183-AR-184-private-linux-producer-20260907.md
+  - docs/roadmap/handoffs/issue-AR-184.md
   - docs/decisions/0074-build-byte-deterministic-release-artifacts.md
   - docs/roadmap/issue-AR-160-publish-platform-honest-native-release-artifacts.md
   - docs/roadmap/issue-AR-168-rebuild-canonical-sdist-source-manifest.md
@@ -43,6 +45,19 @@ regular file, but the incomplete finite allowlist prevented a portable artifact
 from being published.
 
 ## Current state
+
+**September 7 reconciliation: Linux implementation and real producer pass;
+retain the Windows comparison hold.** The exact clean detached08fab1c4
+producer under umask077 passes canonical wheel/sdist construction, strict
+Twine and the independent explicit portable verifier. Its canonical sdist has
+2,291 ordinary0644 files and40 directories0755, with no other member modes
+or types. The four focused packaging modules pass498/one native-Windows skip.
+The [shared portable receipt](acceptance/evidence/AR-183-AR-184-private-linux-producer-20260907.md)
+contains the actual commands, hashes, mode census and limitations. It was
+published with AR183 PR #733/30214408 and is reused without another identical
+Linux build. No verifier verdict or original checkbox state is changed here.
+
+### Historical producer failure
 
 The detached exact `cec7d0b` WSL producer failed closed with
 `sdist source directory header is outside the build allowlist` and left the
@@ -84,4 +99,9 @@ passes with private/public byte convergence and an exhaustive exact-mode
 contract across all permission-bit combinations. The four-file canonicalizer,
 builder, verifier, and release-package suite passes 411 tests. Independent
 security review found no Critical, High, or Medium defect. Cross-platform
-producer and merged-set evidence will be recorded after the repair is committed.
+producer and merged-set evidence were still pending at that historical
+checkpoint. The September7 detached Linux producer is now recorded above;
+same-SHA Windows/Linux sdist equality and merged three-file release validation
+remain unproven and are reserved for the owner's Windows machine. The item
+remains in_progress solely with those cross-platform evidence obligations;
+Linux success is not a Windows pass or a release publication.

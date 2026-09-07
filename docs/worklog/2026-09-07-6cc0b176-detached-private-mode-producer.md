@@ -57,3 +57,5 @@ AR183 remains in_progress for Windows comparison. Publish, then reconcile184
 with this exact shared producer evidence.
 
 Substantive `6cc0b176` records actual detached private-mode Linux evidence, preserving the original acceptance states and Windows-only comparison requirement.
+
+Publication `30214408` merged PR #733 at2026-09-07T23:17:04Z. Exact detached08fab1c4 Linux artifacts remain the comparison candidate; no native Windows result is implied.
