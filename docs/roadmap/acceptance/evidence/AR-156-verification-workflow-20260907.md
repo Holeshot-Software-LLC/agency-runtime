@@ -96,6 +96,32 @@ manual dispatch alone requests exhaustive coverage/compatibility. Existing
 The 74.444-percent local Windows speedup and failed 30-percent timing-profile
 promotion threshold in the original record remain historical, not new results.
 
+## Exact packaged browser check
+
+Canonical wheel and source archive built from clean ledger commit
+dccb4e8502d8f35de74ed5a68915272df520a32a, following repair 9fb95136.
+The wheel SHA-256 is
+9f148a13c3528910f5d10b7497ef43ac26a287a7c087488602404ffb63112aa9.
+Its fresh private installation supplied every browser-served asset; all ten
+hashes match the package. No previous artifact or receipt was overwritten.
+
+The [browser report](AR-156-browser-20260907/report.json), observed at
+2026-09-07T07:56:53.222Z, has SHA-256
+07513f7f7f22234a3aa61f9e379cd1ef9a362f890433c5b414d36536d66eaccb.
+Chromium 152.0.7977.64, Playwright 1.63.0 and axe 4.13.0 exercised seven
+loaded views at 1280/1024/375 widths: all 21 pass, no automatic accessibility
+violations, horizontal overflow, metric clipping or unexpected errors.
+At every width, real polling retained dirty inputs/focus/selection/details,
+keyboard scrolling worked, and injected API failure retained the revision,
+surfaced correlated stale evidence and recovered. Three overview screenshots
+are retained; the narrow screenshot was visually inspected.
+
+Scope is a private authenticated five-agent Store with host inspection stubbed
+and all server outbound connections denied. Axe retains incomplete contrast
+checks for gradients/pseudo-elements; zero automatic violations is not full
+WCAG, screen-reader, native-host or normal-session activation certification.
+Pre-demo telemetry reported 77.9 percent remaining at 07:56:42Z.
+
 ## Disposition
 
 Retain AR-156 open with all thirteen original criteria unchanged. Bounded local
@@ -103,4 +129,6 @@ feedback repairs are verified; native Windows/profile evidence and explicit
 hosted topology evidence remain owner-controlled. Full corpus, aggregate
 Python coverage and interpreter matrix are optional under ADR-0105, not a
 routine completion gate or a reason to retry unattended. Exact rebuilt-wheel
-browser evidence is the next bounded check before publication.
+browser evidence passes within the scope above; publish this bounded repair
+through one normal PR, then continue at AR-157. Counts remain 40 actual open
+trackers plus 91 unfinished legacy records (131 local unfinished).

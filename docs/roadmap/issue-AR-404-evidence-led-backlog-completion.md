@@ -138,7 +138,9 @@ gate execution, and documented UI argv now matches local/hosted unchanged floors
 Three comments restore the 378 KiB asset budget without executable changes.
 Workflow 165 pass/five Windows-named deselections, spine 1085/three skips and UI
 188 pass. Four Windows-profile assumptions still fail on Linux unchanged main;
-no guard is weakened. Exact wheel QA/publication remains before AR-157.
+no guard is weakened. Exact clean dccb4e85 wheel QA passes 21 loaded browser
+checks, with polling preservation and failure recovery at all three widths.
+Scoped receipts and screenshots are committed; normal publication precedes AR-157.
 
 Current counts: 40 actual open trackers plus 91 unfinished legacy records,
 131 total after AR-155 completion; no duplicate tracker or false acceptance.

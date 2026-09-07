@@ -21,8 +21,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-404
 branch: codex/ar156-oldest-first-reconciliation
-evidence_commit: 38af9f6136ae608eec0c70c32101ce055387e8c1
-minimum_ledger_commit: 38af9f6136ae608eec0c70c32101ce055387e8c1
+evidence_commit: 9fb95136db78b05c73da3fbfddf12dc14c4f3827
+minimum_ledger_commit: dccb4e8502d8f35de74ed5a68915272df520a32a
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -48,7 +48,8 @@ gate executes; pin identical local/hosted/documented UI argv and keep all floors
 Reconcile stale branch/push guidance without changing events or matrix.
 Three comment-only edits restore the existing asset bound: 387,058 < 387,072
 bytes, margin 14; every non-comment JavaScript byte is unchanged.
-Exact rebuilt-wheel browser QA remains before publication.
+Repair 9fb95136 and ledger dccb4e85 are committed. The exact rebuilt wheel
+passes all 21 private/offline browser checks; normal PR publication remains.
 
 ## Completed evidence
 
@@ -61,6 +62,12 @@ Exact rebuilt-wheel browser QA remains before publication.
   Python runtime/named tests have not changed since that run.
 - Full UI after comment compaction: 188 pass (250.23ms), no skips/failures,
   production coverage 96.93/86.71/95.71 above unchanged 95/86/93.
+- Canonical clean dccb4e85 wheel: all ten served assets match the installation;
+  21 loaded views at 1280/1024/375 pass, with no automatic axe violations,
+  overflow, clipping or unexpected errors. Poll preservation, keyboard scroll
+  and injected failure/correlated stale state/recovery pass at every width.
+  Report observed 07:56:53Z; wheel/report hashes and three screenshots are in
+  the evidence. Incomplete contrast checks remain; no full WCAG/native claim.
 - Broad pre-compaction workflow: 145 pass/one asset failure/five deselected.
   Profile/local-loop selection: 17 pass/four fail/29 deselected. All five
   failures reproduce together on untouched main 729e7dc4 (0.68s).
@@ -97,12 +104,9 @@ clean evidence/ledger checkpoint, then continue the same task without a restart.
 
 ## Next bounded work package
 
-1. Commit AR-156's smallest safe code/evidence slice and ledger.
-2. Build an exact clean wheel and run the existing private/offline dashboard QA;
-   no native host install, credential, trust action or exhaustive workflow.
-3. Record scoped artifact result, keep AR-156 open, complete docs/tracker checks,
-   merge one PR normally and read back its merge SHA.
-4. Fast-forward clean main; begin the separate AR-157 worktree.
+1. Publish the scoped artifact receipt and ledger; keep AR-156 open.
+2. Complete docs/tracker checks, merge one PR normally and read back its SHA.
+3. Fast-forward clean main; begin the separate AR-157 worktree.
 
 ## Verification
 

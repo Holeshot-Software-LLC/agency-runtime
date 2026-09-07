@@ -81,6 +81,12 @@ without changing any non-comment JavaScript byte. Full fast workflow checks pass
 skips and full UI 188/current floors pass. Exact receipts and failed baselines
 are in the linked evidence, not recast as new performance measurements.
 
+The clean dccb4e85 wheel passes all 21 private/offline loaded browser checks
+at 1280/1024/375 widths, including polling preservation and injected-failure
+recovery. Exact wheel/report hashes and three screenshots are recorded in the
+linked evidence. This is packaged dashboard proof, not hosted CI, native-host
+activation or full accessibility certification.
+
 Four profile tests still assume the Windows-only loader works on Linux and fail
 unchanged main with unsupported-runtime. No native Windows/profile fixture or
 guard was changed. The last listed hosted run is August 31/cancelled, not a
