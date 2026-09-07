@@ -17,7 +17,7 @@ type: worklog
 commit: 9fb95136db78b05c73da3fbfddf12dc14c4f3827
 short: 9fb95136
 date: 2026-09-07
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/708
 related_issues:
   - docs/roadmap/issue-AR-156-restore-cost-bounded-verification.md
 ---
@@ -69,3 +69,6 @@ No automatic axe violation, overflow, clipping or unexpected error; incomplete
 contrast checks remain, with no full accessibility or native-host claim.
 Metadata, policy, strict docs/tracker and Ruff pass. AR-156 remains open;
 40 actual trackers plus 91 unfinished legacy records still total 131.
+
+PR #708 carries the bounded repair and retained disposition. Its normal merge
+and exact publication SHA will be recorded in the next owned worktree.
