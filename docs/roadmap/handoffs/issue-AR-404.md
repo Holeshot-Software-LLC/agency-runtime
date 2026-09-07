@@ -18,6 +18,7 @@ related:
   - docs/roadmap/issue-AR-145-restore-python-release-coverage.md
   - docs/roadmap/issue-AR-150-coordinate-dashboard-refresh-epochs.md
   - docs/roadmap/issue-AR-151-align-route-lab-host-eligibility.md
+  - docs/roadmap/issue-AR-153-complete-worker-detail-evidence.md
   - docs/roadmap/issue-AR-176-align-full-gate-contract-fixtures.md
   - docs/decisions/0028-host-support-maturity-and-reversible-install.md
   - docs/decisions/0223-retire-superseded-zcode-stop-checklist.md
@@ -26,9 +27,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-404
-branch: codex/ar151-oldest-first-reconciliation
-evidence_commit: 791820bb12ce39b37fd7bcec2e87528c43f0684a
-minimum_ledger_commit: 822375f21762c681cc6b5cc4194e647377029676
+branch: codex/ar153-oldest-first-reconciliation
+evidence_commit: 5a12f3574d38b06815e5e48202474c74673ded6c
+minimum_ledger_commit: 26f3556b86c399f42c69accba349e3c631374533
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -43,29 +44,28 @@ routine approval stops. Windows stays with the owner. AR-131 is done and PR
 PR #699 at e2f7a5f2. AR-138 merged through PR #700 at 1ada216c on September 7,
 05:28:53Z. AR-140 retention merged in PR #701 at 7afa4b4d, 05:44:10Z;
 AR-145 retirement merged in PR #702 at cd061668, 05:53:46Z. AR-150's four
-criteria satisfy at ae71761f; PR #703 merged at 460f319b, 06:18:49Z. Main is
-clean there. Merge ledger 35d15350 starts AR-151; AR-147 stays with the owner.
+criteria satisfy at ae71761f; PR #703 merged at 460f319b, 06:18:49Z. AR-151's
+four revised criteria satisfy at 791820bb; PR #704 merged at 5a12f357, 06:46:57Z.
+Main is clean there; merge ledger 26f3556b starts AR-153. AR-147 stays with owner.
 
-Current AR-151: existing host-eligibility repair confirmed. Thirteen direct
-GET → production renderer/action → POST contract scenarios pass, 13.45s.
-Core dashboard 193 pass, 40.75s; UI 176 pass, coverage 96.93/86.70/95.71.
-Broader six-module dashboard run: 265 pass/nine fail, 53.81s. All nine reproduce
-on unchanged main 460f319b, 4.81s. Seven denial tests use an owner token despite
-ADR-0117; cache fixture lacks its stale deadline; inference fixture mislabels
-the configured legacy chain. Repair these fixtures for the original full-suite
-criterion. Fixture-only repair now passes all 274 dashboard cases (52.54s),
-nine focused (4.71s), named spine 1085/three skips (68.98s), routing and Ruff.
-First review of 99e05d1f satisfies 2/3/4, contradicts 1: old blanket duplicate
-wording conflicts with intentional availability of unrelated unique hosts.
-Verdicts preserved at f954d1e9. ADR-0225 revises only the first criterion to
-per-host ambiguity while preserving whole-inventory size rejection.
-All four second-pass criteria satisfy at 791820bb. AR-151 is done; PR #704
-publication remains, then AR-153. No runtime change or original-verdict erasure.
+Current AR-153: worker-filter-before-limit and bounded lineage already exist.
+Exact totals/truncation share a Store read snapshot; HTTP caps detail at 200
+rows/collection and 2 MiB, omitting history documents. The UI renders loaded
+records and truthful totals. Fresh worker-detail Store/HTTP six pass (2.71s),
+full workforce lifecycle 25 pass (8.08s), UI 176 pass (223.89ms), production
+coverage 96.93/86.70/95.71. Product/tests/scripts equal 99e05d1f: explicitly reuse
+its 274 dashboard/1085-spine results. No product or test change needed.
+ADR-0105 replaces only the stale mandatory-full-corpus criterion with the named
+bounded gate; original wording is retained. Freeze for four isolated verdicts.
 
 ## Completed evidence
 
 - Exact earlier sequential dispositions are in the oldest-first ledger:
   AR-115/127 retired; AR-119/120/125/129/130 retained with genuine gaps.
+- AR-151: 13 direct UI-to-POST cases pass. Nine reproduced dashboard fixtures
+  repaired without runtime changes; full dashboard 274 pass (52.54s), named
+  spine 1085/three skips (68.98s). ADR-0225 reconciles per-host ambiguity;
+  first contradicted verdict remains at f954d1e9, all four revised criteria pass.
 - AR-131 original MCP repairs were present. Its first isolated review exposed
   public identifier aliasing; first verdicts are preserved at 6a139e23.
   Repair 973acdb9 rejects lossy public IDs before Store writes while preserving
@@ -115,7 +115,7 @@ publication remains, then AR-153. No runtime change or original-verdict erasure.
 
 ## Exact blocker
 
-AR-151: all four second-pass criteria satisfy; normal PR #704 publication remains.
+AR-153: current implementation verified; four isolated acceptance checks remain.
 AR-140 retains isolated supported-runner proof, including the owner's Windows
 arm. Local passing developer-host numbers do not waive that explicit criterion.
 AR-135 native proof is waiting_for_operator: one attended installed ZCode Agent
@@ -137,10 +137,11 @@ the same task; do not spawn a replacement task or close an unfinished umbrella.
 
 ## Next bounded work package
 
-1. AR-151 is accepted under ADR-0225; original wording/verdicts are preserved.
-2. Complete documentation/tracker checks and merge PR #704 normally.
+1. Freeze AR-153's current evidence and obtain four isolated verdicts before
+   any completion/count change; preserve ADR-0105's explicit gate reconciliation.
+2. Complete documentation/tracker checks and merge one AR-153 PR normally.
    Read back the actual merged head; update clean main by fast-forward only.
-3. Start an owned AR-153 worktree and record the prior merge. AR-152 is done;
+3. Start an owned AR-154 worktree and record the prior merge. AR-152 is done;
    Windows-only AR-147 stays with the owner and is not closed.
 4. AR-135 retains its attended installed Agent/record-zero/full-Stop plan;
    it does not block an independent backlog disposition.
@@ -148,11 +149,11 @@ the same task; do not spawn a replacement task or close an unfinished umbrella.
 ## Verification
 
 Run metadata, policy availability, exact worklog, strict docs/tracker and diff
-checks per package, with focused checks for touched behavior. AR-151 adds a
-direct host contract driver and test-only fixture repairs.
-Product/scripts equal accepted AR-138 candidate 2ecde1a5; wheel/conformance
-reuse is explicitly same-byte, not a new run. Fresh named spine and six-module
-dashboard suite pass after fixture changes. No exhaustive corpus, matrix,
+checks per package, with focused checks for touched behavior. AR-153 is docs-only.
+Product/tests/scripts equal 99e05d1f; reuse its named spine and dashboard receipt
+explicitly. New worker-detail/lifecycle/UI checks pass. Product/scripts equal
+accepted AR-138 2ecde1a5; wheel/conformance reuse is same-byte, not a new run.
+No exhaustive corpus, matrix,
 hosted dispatch or release/installed-live proof.
 The graphify graph is absent; bounded source inspection was used, with no
 graph build, specialist selection or native subagent staffing.

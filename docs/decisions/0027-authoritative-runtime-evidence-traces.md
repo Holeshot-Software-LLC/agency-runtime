@@ -6,6 +6,7 @@ created: 2026-07-10
 updated: 2026-08-22
 tags: [evidence, tracing, delegation]
 related:
+  - docs/roadmap/issue-AR-153-complete-worker-detail-evidence.md
   - docs/roadmap/issue-AR-149-fresh-dashboard-request-ids.md
   - docs/roadmap/issue-AR-276-preserve-planner-repair-diagnostics.md
   - docs/roadmap/issue-AR-259-preserve-terminal-hiring-state.md

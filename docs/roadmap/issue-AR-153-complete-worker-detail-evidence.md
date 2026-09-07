@@ -3,12 +3,16 @@ title: "AR-153: Complete and bound worker-detail evidence"
 status: open
 category: roadmap
 created: 2026-07-26
-updated: 2026-07-27
+updated: 2026-09-07
 tags: [dashboard, workforce, sqlite, traceability]
 related:
   - docs/decisions/0027-authoritative-runtime-evidence-traces.md
   - docs/decisions/0095-complete-paginated-dashboard-collections.md
+  - docs/decisions/0105-bound-delivery-to-live-demo-checkpoints.md
   - docs/roadmap/issue-AR-137-complete-dashboard-collections.md
+  - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
+  - docs/roadmap/acceptance/evidence/AR-153-worker-detail-20260907.md
+  - docs/worklog/README.md
   - agency_runtime/core/store/workforce.py
 supersedes: []
 superseded_by: null
@@ -31,9 +35,23 @@ cases are newer, while lineage is queried without the public evidence bound.
 
 ## Current state
 
-The UI promises lineage and hiring evidence but may receive an incomplete hiring
-projection and an unbounded lineage result; it currently emphasizes counts over
-the bounded records.
+September 7 review confirms 6a3bdaa's repair remains implemented. Worker identity
+predicates precede the hiring-case LIMIT. Lineage rows and all evidence pages
+are limited, with independent exact totals and truncation flags from one Store
+read transaction. The HTTP detail projection omits retained history documents,
+caps evidence at 200 rows per collection and enforces a 2 MiB response budget.
+The UI renders the loaded records and distinguishes loaded counts from totals.
+
+Fresh verification: six focused worker-detail Store/HTTP regressions pass in
+2.71s; complete workforce-lifecycle module passes 25 in 8.08s; complete UI passes
+176 in 223.89ms at unchanged 95/86/93 floors (96.93/86.70/95.71 observed).
+Product/tests/scripts equal AR-151 candidate 99e05d1f, so its 274-pass dashboard
+suite and 1085-pass/three-skip named spine are exact-byte reuse, not new runs.
+No runtime or test change is needed; isolated acceptance remains.
+
+ADR-0105 supersedes the old mandatory exhaustive-corpus requirement. Criterion
+4 now names the focused Store/dashboard suites and warning-strict production
+spine. The historical wording remains below; no full-corpus success is claimed.
 
 ## Approach
 
@@ -48,10 +66,18 @@ evidence attribution.
 
 ## Acceptance
 
-- More than the limit of newer unrelated cases cannot hide matching worker evidence.
-- Lineage work and response size are explicitly bounded or paginated.
-- Counts, records, and truncation indicators agree from SQL through UI.
-- Focused Store, dashboard, and full warning-strict suites pass.
+- [ ] More than the limit of newer unrelated cases cannot hide matching worker evidence.
+- [ ] Lineage work and response size are explicitly bounded or paginated.
+- [ ] Counts, records, and truncation indicators agree from SQL through UI.
+- [ ] Focused Store and dashboard suites and the named warning-strict production spine pass.
+
+## Historical fourth criterion
+
+Original wording: "Focused Store, dashboard, and full warning-strict suites
+pass." ADR-0105 makes the complete corpus, four-shard coverage and interpreter
+matrix optional owner-requested diagnostics rather than completion gates.
+The first three criteria are unchanged. This is explicit policy reconciliation,
+not a claim that the old exhaustive run passed.
 
 ## Implementation evidence
 
