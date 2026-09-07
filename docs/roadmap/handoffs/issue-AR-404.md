@@ -17,8 +17,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-404
 branch: codex/ar176-oldest-first-reconciliation
-evidence_commit: 891f0c3273220c9c8f1c9b8649582aea3c492018
-minimum_ledger_commit: d09ba163cf245a4608eed34081049e46a36169e0
+evidence_commit: 49b307ff3ae7d248bee0b7135d5b0843daa9b1de
+minimum_ledger_commit: 2e3f3bfb6fa2334a4afe43aa4ffe5cc381458b75
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -48,12 +48,15 @@ AR-176 reproduces all six carried stale cases on main and repairs three test
 files without runtime changes. Six now pass (2.30s). The intermediate public
 route run exposes an additional obsolete assertion within the same case;
 current policy has no forced fallback roster. Both red stages are retained.
-The 14-module neighboring package is running at this checkpoint.
+The 14-module package passes 467/one skip/64 Windows-named deselections after
+one additional main-reproduced cleanup fixture is repaired with real guarded
+removal. Seven focused cases, spine 1085/three skips, UI 224/current floors and
+Node contracts 36 pass. All eight acceptance dry-run packets include every
+cited excerpt (largest 16,303 characters); isolated verdicts are next.
 
 ## Exact blocker
 
-AR-176 needs combined/focused review, named spine, current bounded acceptance
-reconciliation, isolated criterion verification, then normal PR/merge.
+AR-176 needs isolated criterion verification, then normal PR/merge.
 Preserve July 11-case/670-case/full-corpus history as historical; do not
 mislabel a fresh exhaustive run or use obsolete mandatory gates.
 
@@ -94,8 +97,11 @@ is separately dated and scoped. Failed native canaries remain failed.
 ## Constraints
 
 No credentials, provider policy, billing/settings or trust bypass changes.
-LITELLM_API_KEY is absent in the launching environment; no key is provisioned,
-copied or substituted. No OpenClaw reinstall or gateway stop.
+LITELLM_API_KEY is absent in the launching environment. AR-388 documents an
+existing owner-private client credential source; read-only checks confirm its
+key is available. Reuse only that configured variable in diagnostic child
+environments; never print it or change persistent settings. No new key, gateway
+master-key substitution, OpenClaw reinstall or gateway stop.
 A group-writable Agency marketplace posture remains reported by doctor; it is
 not permission to bypass hook review. ZCode lacks a local executable.
 
