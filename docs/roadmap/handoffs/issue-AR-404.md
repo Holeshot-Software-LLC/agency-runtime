@@ -24,8 +24,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-404
 branch: codex/ar165-oldest-first-reconciliation
-evidence_commit: 220c0776e47c7b51d19010e2fd6ebdb92fd195a5
-minimum_ledger_commit: 220c0776e47c7b51d19010e2fd6ebdb92fd195a5
+evidence_commit: 9effff3f6c4f4fbe59de8793df074a041e64dab9
+minimum_ledger_commit: b038cdb961ad17aad2ca7567a681b7cf5f58e909
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -44,8 +44,8 @@ AR-165 has a real malformed-input gap: duplicate JSON keys can overwrite an
 error or repository identity; object/non-finite HTTP-200 data can report
 availability. Strict bounded UTF-8 parsing and array-of-objects success now
 reject these inputs without changing either permitted workflow path.
-The evidence commit above is the clean baseline; the repair candidate is being
-prepared for its first isolated review.
+The repair and all nine evidence rowsets are frozen at 9effff3f; b038cdb9 is
+its immediate ledger. The first isolated review follows this clean checkpoint.
 
 ## Completed evidence
 
@@ -88,7 +88,7 @@ task. No empty commits, restart or staffing.
 
 ## Next bounded work package
 
-1. Commit AR-165 repair/evidence and its immediate ledger; freeze exact candidate.
+1. Preserve the clean frozen AR-165 candidate and its immediate ledger.
 2. Run isolated nine-criterion review, complete only if all satisfy, then one
    normal PR/merge/readback. Preserve any first verdicts before corrections.
 3. After that merge, continue to AR-166 in its own worktree.

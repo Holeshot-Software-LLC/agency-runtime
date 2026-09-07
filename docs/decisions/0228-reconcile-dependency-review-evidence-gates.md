@@ -65,6 +65,10 @@ savings. Future claims retain their matched-run requirement. Tracker mapping
 must remove the legacy exemption and satisfy both strict parity gates.
 Current malformed input is repaired; historical missing evidence is not invented.
 
+Implementation and builder evidence are committed at 9effff3f; b038cdb9 is the
+immediate worklog checkpoint. Candidate-bound review, not this decision, assigns
+the nine acceptance verdicts.
+
 ## Alternatives
 
 - Require a new hosted run despite no current savings claim: rejected as an
