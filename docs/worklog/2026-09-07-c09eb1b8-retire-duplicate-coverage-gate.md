@@ -56,3 +56,11 @@ AR-176 retains the six known stale fixtures and requested coverage diagnostics.
 AR-156 retains the documented UI command discrepancy. Counts become 40 actual
 open trackers plus 96 unfinished legacy records (136), without a tracker
 closure. After publication, AR-150 follows; Windows-only AR-147 stays with owner.
+
+### Delivery receipt
+
+PR #702 merged at cd0616686d462a1c21bad7feedc2fe91db9f350d on September 7,
+05:53:46Z, read back as MERGED. Main fast-forwarded cleanly. Hosted checks were
+absent, not reported passing; no bypass or optional workflow dispatch was used.
+AR-145 is retired, AR-176 remains in_progress. Counts remain 40 open trackers
+plus 96 unfinished legacy records (136). AR-150 follows.

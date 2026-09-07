@@ -1944,6 +1944,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `7ae83407` | 2026-09-07 | docs(backlog): reconcile implemented routing performance [AR-140] | [AR-140](../roadmap/issue-AR-140-scale-routing-and-retrieval.md) | [detail](2026-09-07-7ae83407-reconcile-routing-performance.md) |
 | `7afa4b4d` | 2026-09-07 | Merge pull request #701 from Holeshot-Software-LLC/codex/ar140-oldest-first-reconciliation | [AR-140](../roadmap/issue-AR-140-scale-routing-and-retrieval.md) | [detail](2026-09-07-7ae83407-reconcile-routing-performance.md) |
 | `c09eb1b8` | 2026-09-07 | docs(backlog): retire duplicate mandatory coverage checklist [AR-145] | [AR-145](../roadmap/issue-AR-145-restore-python-release-coverage.md) | [detail](2026-09-07-c09eb1b8-retire-duplicate-coverage-gate.md) |
+| `cd061668` | 2026-09-07 | Merge pull request #702 from Holeshot-Software-LLC/codex/ar145-oldest-first-reconciliation | [AR-145](../roadmap/issue-AR-145-restore-python-release-coverage.md) | [detail](2026-09-07-c09eb1b8-retire-duplicate-coverage-gate.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
