@@ -63,7 +63,8 @@ supports explicit 274-dashboard/1085-spine receipt reuse from 99e05d1f.
 ADR-0105 reconciles only the stale mandatory-exhaustive fifth gate; original
 wording is preserved, and the first four criteria remain unchanged.
 Evidence: acceptance/evidence/AR-155-hiring-evidence-20260907.md.
-Candidate 6ed24943 is frozen; five isolated criteria remain before any count change.
+Candidate 6ed24943: criteria 1/2/4/5 satisfy. Criterion 3 returned verifier
+unavailable/outside vocabulary, no verdict. Retry only that check once unchanged.
 
 ## Completed evidence
 
@@ -122,7 +123,7 @@ Candidate 6ed24943 is frozen; five isolated criteria remain before any count cha
 
 ## Exact blocker
 
-AR-155: current implementation verified; five isolated criteria remain.
+AR-155: four criteria satisfy; criterion 3 has no usable verifier result yet.
 AR-140 retains isolated supported-runner proof, including the owner's Windows
 arm. Local passing developer-host numbers do not waive that explicit criterion.
 AR-135 native proof is waiting_for_operator: one attended installed ZCode Agent
@@ -144,7 +145,7 @@ the same task; do not spawn a replacement task or close an unfinished umbrella.
 
 ## Next bounded work package
 
-1. Freeze AR-155 evidence and obtain five isolated verdicts before completion.
+1. Preserve AR-155 partial verdicts; retry only criterion 3 against 6ed24943 once.
 2. Complete documentation/tracker checks and merge one AR-155 PR normally.
    Read back the actual merged head; update clean main by fast-forward only.
 3. Start an owned AR-156 worktree and record the prior merge. AR-152 is done;

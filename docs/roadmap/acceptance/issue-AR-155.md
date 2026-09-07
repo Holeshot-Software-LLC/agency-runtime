@@ -52,8 +52,15 @@ tracker_url: null
 
 ## Verification
 
-No verdicts supplied yet; the isolated runner owns this table. Criterion 5 is
-explicitly reconciled under ADR-0105; the issue retains the original wording.
+Initial runner execution supplied satisfied verdicts for criteria 1, 2, 4 and 5.
+Criterion 3 returned "verifier unavailable or outside the vocabulary" and no
+verdict was recorded. The candidate and its evidence are unchanged; criterion 3
+requires its own usable verdict. Criterion 5 is explicitly reconciled under
+ADR-0105; the issue retains the original wording.
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
+| 1 | satisfied | `AR-155.1-20260907-b0ed192c` | `f88bafdd269479f5647ab3641127e54078dc2692f42749d54605cc3a83d04f8c` | 2026-09-07 | workforce.py selects only summary metadata; Store and HTTP tests assert all five evidence fields are absent from every collection row, and the cited focused-check receipt reports four passing tests. |
+| 2 | satisfied | `AR-155.2-20260907-d95c1164` | `9ef8549fa9915aff3c2dbd2af4085508e45e490a46a30bc73d22cc3db1e30807` | 2026-09-07 | workforce.py sets a 200-row cap and 1 MiB budget; dashboard.py applies the budget to the complete response, and test_dashboard.py verifies 200 rows fit with accurate Content-Length and oversized responses fail closed. |
+| 4 | satisfied | `AR-155.4-20260907-71a8a7bc` | `764fbf6a5eaa545906e417c04d6d2dfff01f9c67736d606b3d2f706c71790a4f` | 2026-09-07 | app.js:460-476 ties evidence loading to an explicit click; dashboard-live.js:2274-2351 guards response commits, and dashboard_ui.test.mjs verifies a single inspection fetch and rejection of stale and post-teardown responses. |
+| 5 | satisfied | `AR-155.5-20260907-d18eb504` | `cd3ffb59e49077b644c65b7a0859f3cb0cab73c028519cf36b20f1dc4729c828` | 2026-09-07 | AR-155's evidence records 25 Store passes and 188 UI passes above production coverage floors, and binds unchanged sources to AR-151's 274 dashboard passes and 1,085 named warning-strict spine passes with three existing skips. |
