@@ -27,8 +27,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-404
 branch: codex/ar151-oldest-first-reconciliation
-evidence_commit: 99e05d1f46673068e65992fe6e60697c61b133d3
-minimum_ledger_commit: d0cb62fc3706a67f3915ceaddab0b382c88ffbce
+evidence_commit: 791820bb12ce39b37fd7bcec2e87528c43f0684a
+minimum_ledger_commit: 822375f21762c681cc6b5cc4194e647377029676
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -58,7 +58,8 @@ nine focused (4.71s), named spine 1085/three skips (68.98s), routing and Ruff.
 First review of 99e05d1f satisfies 2/3/4, contradicts 1: old blanket duplicate
 wording conflicts with intentional availability of unrelated unique hosts.
 Verdicts preserved at f954d1e9. ADR-0225 revises only the first criterion to
-per-host ambiguity while preserving whole-inventory size rejection; reverify.
+per-host ambiguity while preserving whole-inventory size rejection.
+Second candidate 791820bb is frozen; rerun all four isolated checks.
 PR #704 is draft; no runtime change or done/count flip.
 
 ## Completed evidence
