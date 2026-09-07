@@ -15,7 +15,7 @@ type: worklog
 commit: 2219b67054f23ab551971f3fd2a11b903a39e889
 short: 2219b670
 date: 2026-09-07
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/728
 related_issues:
   - docs/roadmap/issue-AR-178-evaluate-one-shot-applications-post-production.md
   - docs/roadmap/issue-AR-407-scope-install-drift-to-requested-hosts.md
