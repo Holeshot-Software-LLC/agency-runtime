@@ -1,6 +1,6 @@
 ---
 title: "AR-151: Align Route Lab host eligibility with the server"
-status: open
+status: done
 category: roadmap
 created: 2026-07-26
 updated: 2026-09-07
@@ -67,7 +67,9 @@ The verdicts are preserved at f954d1e9. ADR-0225 explicitly replaces only that
 criterion with per-host duplicate rejection, whole-inventory size rejection
 and continued eligibility of unrelated unique verified hosts. This is an
 intentional requirement reconciliation, not a pass of the original blanket
-criterion. No runtime/test changes; all four revised-candidate verdicts remain.
+criterion. No runtime/test changes in that reconciliation. All four second-pass
+criteria are satisfied against 791820bb on September 7; exact isolated run IDs
+and digests are in the acceptance record. PR #704 carries completion.
 
 ## Approach
 
@@ -81,10 +83,10 @@ AR-137 and ADR-0095 govern complete bounded host collections.
 
 ## Acceptance
 
-- [ ] Duplicate host identities cannot authorize Route Lab, oversized inventories disable it entirely, and unrelated unique verified hosts remain selectable.
-- [ ] Browser eligibility and the authoritative POST handler agree on valid hosts.
-- [ ] The UI renders an explicit bounded reason for ambiguous inventory.
-- [ ] UI-to-POST contract and full dashboard suites pass.
+- [x] Duplicate host identities cannot authorize Route Lab, oversized inventories disable it entirely, and unrelated unique verified hosts remain selectable.
+- [x] Browser eligibility and the authoritative POST handler agree on valid hosts.
+- [x] The UI renders an explicit bounded reason for ambiguous inventory.
+- [x] UI-to-POST contract and full dashboard suites pass.
 
 ## Historical first criterion
 

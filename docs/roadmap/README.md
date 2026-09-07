@@ -30,9 +30,9 @@ was a record-reconciliation count, not 147 established defects. See the
 work is reserved for the owner's Windows machine; close or retire historical
 records only after checking relevance, current evidence and successor decisions.
 
-After AR-150's four-criterion accepted completion on September 7, fresh tracker
-enumeration remains 40 open issues; the separate unfinished queue is 135
-records (40 mapped plus 95 legacy). PR #703 carries that legacy completion;
+After AR-151's accepted completion under ADR-0225 on September 7, fresh tracker
+enumeration remains 40 open issues; the separate unfinished queue is 134
+records (40 mapped plus 94 legacy). PR #704 carries that legacy completion;
 no new tracker or unrelated tracker closure is needed. Prior snapshots remain
 in the oldest-first ledger.
 AR-119 remains a relevant unfinished
@@ -194,7 +194,7 @@ bounded package are in AR-404's
 | `AR-148` | [Fail malformed remediation signatures closed](issue-AR-148-fail-malformed-remediation-signatures-closed.md) | done | p1 | security | pre-tracker history; verified acceptance |
 | `AR-149` | [Issue a fresh dashboard request ID per HTTP request](issue-AR-149-fresh-dashboard-request-ids.md) | done | p0 | observability | pre-tracker history; verified acceptance |
 | `AR-150` | [Coordinate dashboard refresh commit epochs](issue-AR-150-coordinate-dashboard-refresh-epochs.md) | done | p0 | dashboard | pending authorization |
-| `AR-151` | [Align Route Lab host eligibility with the server](issue-AR-151-align-route-lab-host-eligibility.md) | open | p1 | dashboard | pending authorization |
+| `AR-151` | [Align Route Lab host eligibility with the server](issue-AR-151-align-route-lab-host-eligibility.md) | done | p1 | dashboard | pending authorization |
 | `AR-152` | [Bound dashboard live-listener retention](issue-AR-152-bound-dashboard-live-listeners.md) | done | p1 | performance | pre-tracker history; verified acceptance |
 | `AR-153` | [Complete and bound worker-detail evidence](issue-AR-153-complete-worker-detail-evidence.md) | open | p1 | dashboard | pending authorization |
 | `AR-154` | [Fail malformed initial dashboard pages closed](issue-AR-154-fail-malformed-initial-pages-closed.md) | open | p1 | dashboard | pending authorization |

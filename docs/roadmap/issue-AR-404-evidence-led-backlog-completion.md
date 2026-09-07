@@ -101,11 +101,12 @@ bounded owner-token, cache and inference-projection fixtures are now repaired:
 No runtime change. First isolated review satisfies 2/3/4 but contradicts the
 blanket duplicate-inventory criterion. Verdicts remain at f954d1e9. ADR-0225
 explicitly revises only that criterion to per-host ambiguity and whole-inventory
-size rejection, preserving unique verified-host availability. The second pass
-must independently verify all four criteria before closure; PR #704 is draft.
+size rejection, preserving unique verified-host availability. All four second-pass
+criteria satisfy at 791820bb. AR-151 is done; PR #704 carries completion.
+After normal merge/read-back, continue with AR-153 (AR-152 is already done).
 
-Current counts: 40 actual open trackers plus 95 unfinished legacy records,
-135 total after AR-150 completion; no duplicate tracker or false acceptance.
+Current counts: 40 actual open trackers plus 94 unfinished legacy records,
+134 total after AR-151 completion; no duplicate tracker or false acceptance.
 The unchanged public-roster fixture belongs to AR-176. Windows stays excluded;
 the oldest-first ledger and capsule preserve all holds. Ordinary-session
 unverified Agency/header behavior remains a separate unfinished concern.

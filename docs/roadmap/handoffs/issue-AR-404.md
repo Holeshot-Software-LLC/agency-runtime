@@ -59,8 +59,8 @@ First review of 99e05d1f satisfies 2/3/4, contradicts 1: old blanket duplicate
 wording conflicts with intentional availability of unrelated unique hosts.
 Verdicts preserved at f954d1e9. ADR-0225 revises only the first criterion to
 per-host ambiguity while preserving whole-inventory size rejection.
-Second candidate 791820bb is frozen; rerun all four isolated checks.
-PR #704 is draft; no runtime change or done/count flip.
+All four second-pass criteria satisfy at 791820bb. AR-151 is done; PR #704
+publication remains, then AR-153. No runtime change or original-verdict erasure.
 
 ## Completed evidence
 
@@ -75,8 +75,8 @@ PR #704 is draft; no runtime change or done/count flip.
   184/184 protected mutations killed, zero survived/invalid, source unchanged.
   Broader 380-pass/one-failure/eight-skip run is not green: the unchanged
   fallback-roster fixture also fails on prior main and belongs to AR-176.
-- Current count: 40 actual open trackers plus 95 unfinished legacy records,
-  135 local unfinished after AR-150 completion. No duplicate tracker.
+- Current count: 40 actual open trackers plus 94 unfinished legacy records,
+  134 local unfinished after AR-151 completion. No duplicate tracker.
 - AR-135 source: independent ZCode renderer/config registration, exact seven
   hooks, idempotency, preservation, toggle/rollback/drift and host identity exist.
   Current tests: 16 installer/header (4.74s), 13 selected hook/Stop (5.80s),
@@ -115,7 +115,7 @@ PR #704 is draft; no runtime change or done/count flip.
 
 ## Exact blocker
 
-AR-151: ADR-0225 revises criterion 1; second isolated candidate review remains.
+AR-151: all four second-pass criteria satisfy; normal PR #704 publication remains.
 AR-140 retains isolated supported-runner proof, including the owner's Windows
 arm. Local passing developer-host numbers do not waive that explicit criterion.
 AR-135 native proof is waiting_for_operator: one attended installed ZCode Agent
@@ -137,9 +137,8 @@ the same task; do not spawn a replacement task or close an unfinished umbrella.
 
 ## Next bounded work package
 
-1. Freeze/reverify AR-151 under ADR-0225's explicit criterion reconciliation.
-   Original wording/verdicts remain preserved; no done/count flip before satisfaction.
-2. Complete documentation/tracker checks and merge one AR-151 PR normally.
+1. AR-151 is accepted under ADR-0225; original wording/verdicts are preserved.
+2. Complete documentation/tracker checks and merge PR #704 normally.
    Read back the actual merged head; update clean main by fast-forward only.
 3. Start an owned AR-153 worktree and record the prior merge. AR-152 is done;
    Windows-only AR-147 stays with the owner and is not closed.
