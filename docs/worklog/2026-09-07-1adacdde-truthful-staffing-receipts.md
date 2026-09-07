@@ -65,3 +65,5 @@ Artifact receipt `d9dde3cd` records canonical ef8c714f portable wheel/sdist, ind
 Packet `795ddf21` freezes three observation-only criteria against artifact-evidence candidate d9dde3cd. No builder verdicts.
 
 Completion `7674aca9` records allthree satisfied isolated judgments against d9dde3cd. Owner CLI replacement and AR409 allocation remain separate.
+
+Merge `8c1845e5` integrates accepted AR185/main00fc1aef and AR409 filing. Only documentary overlaps were resolved by retaining both histories and the accepted AR408 state.
