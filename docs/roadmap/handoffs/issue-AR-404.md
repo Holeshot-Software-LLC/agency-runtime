@@ -59,10 +59,10 @@ explanations are diagnostic-only since e5f4a8c2, before the issue was written.
 
 ## Exact blocker
 
-No reproduced AR-173 production defect. Finish focused-to-spine verification
-and an immutable complete five-criterion evidence packet before isolated review.
-The below-50-percent checkpoint commits this safe regression/record slice,
-then continues the same task.
+No reproduced AR-173 production defect. First review at f4f5124e satisfies
+1/3/4/5 and contradicts 2: the original sentence confuses the response's raw
+trace with the observation's digest. Preserve the verdict before explicit
+contract clarification and one second/final all-criteria review. No third pass.
 
 AR-170 remains in_progress: first review at 662eb947 and final candidate
 91273e41 are preserved. Final 1/2/4/5/6/7/8 satisfy, 3/9 need complete collection

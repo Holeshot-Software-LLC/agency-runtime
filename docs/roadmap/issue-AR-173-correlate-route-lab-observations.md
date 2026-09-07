@@ -54,7 +54,10 @@ bounded and content-free; no diagnostic turn or routing rows appear. The first
 focused pair passes, as do all 195 dashboard/explanation/observability tests,
 204 UI tests/current coverage floors and the fresh named spine (1085 passes,
 three existing skips). Full raw receipts are recorded; isolated acceptance
-remains pending before completion.
+has first-pass satisfied verdicts for 1/3/4/5. Criterion 2's original wording
+incorrectly requires the raw trace in both places; the observation stores its
+domain-separated digest. Preserve that contradicted verdict before explicit
+requirement clarification and the second/final candidate review.
 
 ## Approach
 
@@ -76,14 +79,14 @@ logging and ADR-0105's bounded verification policy. Criteria 2/3 are unchanged.
 
 ## Acceptance
 
-- [ ] Each admitted enabled Route Lab routing operation allocates one fresh
+- [x] Each admitted enabled Route Lab routing operation allocates one fresh
   UUIDv4 trace before explanation; invalid or disabled requests do not invent
   routing traces.
-- [x] The route receipt and current HTTP observation carry that exact trace.
+- [ ] The route receipt and current HTTP observation carry that exact trace.
 - [x] Correlation records remain content-free and bounded.
-- [ ] A real authenticated HTTP regression asserts exact emitted-observation
+- [x] A real authenticated HTTP regression asserts exact emitted-observation
   digest-to-response-trace equality and no durable diagnostic turn/routing rows.
-- [ ] Focused dashboard HTTP, explanation and observability tests, UI/current
+- [x] Focused dashboard HTTP, explanation and observability tests, UI/current
   coverage floors, named production spine, metadata, policy, worklog, strict
   docs/tracker, Ruff and diff checks pass; exhaustive integration is optional.
 
