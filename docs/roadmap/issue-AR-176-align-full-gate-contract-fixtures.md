@@ -6,6 +6,7 @@ created: 2026-07-27
 updated: 2026-09-07
 tags: [testing, security, isolation, traceability, performance]
 related:
+  - tests/test_roster_activation_authority.py
   - docs/roadmap/acceptance/evidence/AR-176-fixture-contracts-20260907.md
   - docs/roadmap/issue-AR-145-restore-python-release-coverage.md
   - docs/decisions/0105-bound-delivery-to-live-demo-checkpoints.md
@@ -64,19 +65,24 @@ quality gates.
 
 ## Current state
 
-September 7 reconciliation repairs seven stale cases across four test files:
+September 7 reconciliation repairs seven stale cases across five test files:
 the six carried by AR-127/130/131 and one existing installer cleanup double
 exposed by their combined package. Every failure reproduces on unchanged main.
 The first repair also reaches an obsolete coordinator-seeding assertion within
 the public-route case; current inference-first policy requires no forced
 fallback installation. Both intermediate failures remain recorded.
 
-Current results: seven focused cases pass (7.26s), the 14-module package passes
-467 with one existing skip and 64 Windows-named deselections (135.49s), the named
-spine passes 1085 with three existing skips (111.62s), and all 224 UI cases pass
-above unchanged floors. The cleanup double now actually invokes guarded
-removal and asserts stage/target absence. No Python product, inference policy,
-security validation, coverage floor, exclusion or skip changes.
+Current results: seven focused repairs pass; the final 15-module package passes
+525 with one existing skip and 64 Windows-named deselections (84.33s), the named
+spine passes 1085 with three existing skips (72.16s), and all 224 UI cases pass
+above unchanged floors. The cleanup double invokes actual guarded removal and
+asserts stage/target absence. First review also requires exact namespace values
+in two service-manager doubles; these assertions and real Store authority checks
+pass 60 cases. Five first criteria satisfy; the original three unresolved
+verdicts remain committed before the second/final pass. Two findings concern
+incomplete/mis-scoped citations, not a failed production authority boundary.
+No Python product, inference policy, security validation, coverage floor,
+exclusion or skip changes.
 
 [Current evidence](acceptance/evidence/AR-176-fixture-contracts-20260907.md)
 preserves the red runs and distinguishes current checks from July's reports.

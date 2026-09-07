@@ -19,7 +19,7 @@ superseded_by: null
 ## Observable outcome and scope
 
 The six stale cases carried by AR-127/130/131 and one old cleanup fixture now
-exercise current contracts without restoring removed behavior. The repair changes four test files,
+exercise current contracts without restoring removed behavior. The repair changes five test files,
 not Python runtime, coverage thresholds, exclusions, skips or provider policy.
 Main before repair is 891f0c3273220c9c8f1c9b8649582aea3c492018; owned branch
 starts from its exact merge ledger d09ba163cf245a4608eed34081049e46a36169e0.
@@ -559,3 +559,72 @@ env PYTHONPATH=. /tmp/agency-ar404-venv.AUBJlC/bin/python -m pytest tests/test_e
 ```
 
 No production runtime or acceptance wording changes in this correction.
+
+## Final reviewed combined package
+
+After the required-argument assertions, the current package includes the real
+activation-authority module, in addition to all fourteen earlier modules.
+No authority assertion is disabled to obtain this result.
+
+```bash
+env PYTHONPATH=. /tmp/agency-ar404-venv.AUBJlC/bin/python -m pytest tests/test_turn_scoped_evidence.py tests/test_storage_parent_trust.py tests/test_public_api.py tests/test_completion_policy_boundary.py tests/test_response_contract.py tests/test_no_match_fallback.py tests/test_adapter_parity.py tests/test_coverage_final_delegation_private.py tests/test_dashboard_service_coverage_complete_operations.py tests/test_doctor.py tests/test_executable_namespace_security.py tests/test_owned_process_core_hardening.py tests/test_roster_authority_gap_coverage_ar91.py tests/test_roster_sync_gap_coverage_child.py tests/test_roster_activation_authority.py -q -W error -k 'not windows'
+```
+
+```text
+....................................................s............... [ 13%]
+........................................................................ [ 27%]
+........................................................................ [ 41%]
+........................................................................ [ 54%]
+........................................................................ [ 68%]
+........................................................................ [ 82%]
+........................................................................ [ 95%]
+......................                                                   [100%]
+525 passed, 1 skipped, 64 deselected in 84.33s (0:01:24)
+```
+
+## Final reviewed production spine
+
+This fresh rerun includes the stricter service-manager tests:
+```bash
+env PYTHONPATH=. /tmp/agency-ar404-venv.AUBJlC/bin/python -m pytest tests/test_senior_audit_hardening.py tests/test_configuration_namespace_security.py tests/test_executable_namespace_security.py tests/test_storage_file_trust.py tests/test_dashboard_auth_boundary_regression.py tests/test_dashboard_transaction_refactors.py tests/test_routing_correctness.py tests/test_workforce_hiring_contract.py tests/test_workforce_selection_safety.py tests/test_workforce_dynamic_hiring.py tests/test_upstream_selection_eval.py tests/test_decision_conformance.py tests/test_delegation_p1_correctness.py tests/test_store_turn_atomicity.py tests/test_roster_snapshot_generation.py tests/test_mcp_protocol_hardening.py tests/test_cli_parser_contract.py tests/test_cli_upgrade.py tests/test_update_service.py tests/test_native_installer.py tests/test_host_uninstall.py tests/test_cli_uninstall.py tests/test_host_boundary_hardening.py tests/test_cli_owner_authority.py tests/test_security_turn_boundaries.py tests/test_canary_coverage_complete.py tests/test_complexity_refactors.py tests/test_coverage_final_host_cli.py tests/test_resident_manager_lifecycle.py -q -W error
+```
+
+```text
+........................................................................ [  6%]
+........................................................................ [ 13%]
+........................................................................ [ 19%]
+..................................s..................................... [ 26%]
+........................................................................ [ 33%]
+........................................................................ [ 39%]
+........................................................................ [ 46%]
+........................................................................ [ 52%]
+........................................................................ [ 59%]
+....................................................................ss.. [ 66%]
+........................................................................ [ 72%]
+........................................................................ [ 79%]
+........................................................................ [ 86%]
+........................................................................ [ 92%]
+........................................................................ [ 99%]
+........                                                                 [100%]
+1085 passed, 3 skipped in 72.16s (0:01:12)
+```
+
+The complete UI/floor and 36-case Node runs above remain unchanged; no dashboard,
+Node fixture or runtime bytes changed after those runs.
+
+## Final reviewed strict records
+
+The same strict command listed above was repeated after the source assertions,
+final combined/spine receipt and canonical state updates:
+
+```text
+checked 1218 Markdown documents
+worklog index is current (2043 commits)
+documentation validation passed for 1218 Markdown files
+tracker validation passed for 397 roadmap items (2 PR-tracked historical item(s) skipped)
+All checks passed!
+766 files already formatted
+```
+
+All current production package bytes remain identical to the installed AR-175
+source a96483ad. This final AR-176 package changes test assertions and records.
