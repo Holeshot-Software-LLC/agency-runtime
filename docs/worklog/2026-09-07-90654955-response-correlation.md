@@ -74,3 +74,13 @@ exceptions. Nine builder packets are drafted; no verdict is asserted.
 
 c0722501 pins all nine checks to 9419e68899194057f6ae8697d0ca17101ec16205.
 This immediate ledger provides the clean checkpoint before isolated review.
+
+## Corrected candidate and validation
+
+06aee2ed (06aee2ede122ce48362d532886e537bf5fd1d80a) corrects the required empty Verification table
+before any isolated model invocation. The earlier 9419e688 note overstated
+strict-doc success: validation had rejected that missing table, while tracker
+parity passed. Preserve that checkpoint; the receipt now records this failure.
+All current strict gates now pass: 1196 Markdown, 397 mapped/two historical PR
+exceptions, metadata/policy/worklog/diff. Product/tests/criteria are unchanged.
+This corrected candidate replaces 9419e688 before the first isolated pass.
