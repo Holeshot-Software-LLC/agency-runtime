@@ -23,8 +23,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-404
 branch: codex/ar138-oldest-first-reconciliation
-evidence_commit: fa4d042bf0260db4fd6c4ec16606740f5c3a7847
-minimum_ledger_commit: 6bc9ccb0b0974b57abc79c518ccab7a982da0fff
+evidence_commit: cd35aa2c09a5498404f13a41e0df6561e103655d
+minimum_ledger_commit: 4fd2df4f7e4c2ff61bfbd92c07a5e854d99dde80
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -47,8 +47,9 @@ are checkpointed at d7231df3/7892096d. Final view-loaded browser receipt passes
 criteria 2–6 but contradicts 1: a replaced full refresh's late non-abort error
 can mark newer healthy connection state Unavailable. First review preserved at
 25b9a67a, ledger 2f10b993. Thirty late-failure cases now pass after live/full/control
-error guards and cancellation propagation; full UI 172 pass. Repaired-wheel QA
-and second isolated acceptance remain, not another source fix.
+error guards and cancellation propagation at cd35aa2c/4fd2df4f; full UI 172 pass.
+Repaired-wheel QA passes all 21 checks with ten matching asset hashes. Freeze
+that evidence for the second isolated pass; PR #700 stays draft until accepted.
 
 ## Completed evidence
 
@@ -89,8 +90,8 @@ and second isolated acceptance remain, not another source fix.
 
 ## Exact blocker
 
-AR-138's stale-error repair needs its rebuilt-wheel proof and second isolated
-review before merge; it remains open. AR-135 native proof is waiting_for_operator: one attended installed ZCode Agent
+AR-138's rebuilt-wheel proof is complete; the second isolated review remains
+before merge. AR-135 native proof is waiting_for_operator: one attended installed ZCode Agent
 success/failure and full parent Stop capture. Do not invent a headless backend
 or promote a stubbed hook test into native proof. This does not block the next
 independent backlog disposition.
@@ -112,9 +113,10 @@ the same task; do not spawn a replacement task or close an unfinished umbrella.
 1. Final AR-138 evidence is committed at fa4d042b, ledger 6bc9ccb0. The isolated
    candidate is pinned to fa4d042b. Preserve its first isolated review before
    changing evidence; criteria 2–6 pass and criterion 1 contradicts.
-2. Checkpoint the repaired source and empty second-candidate verification table.
-   Rebuild/install the wheel, repeat browser checks, then freeze the repaired
-   evidence candidate for the second isolated acceptance pass.
+2. Commit/freeze the repaired evidence and run the second isolated acceptance
+   pass. All 172 UI tests and 21 rebuilt-wheel browser checks pass; named spine
+   repeats at 1085/three skips, 99.40s. No Python policy source changed after the
+   first-candidate conformance run killed 184/184 with source unchanged.
 3. If satisfied, update the legacy count, open one PR and merge normally.
    Review AR-140 next; AR-139 is already retired. Windows stays excluded.
 4. AR-135 later retains its attended installed Agent/record-zero/full-Stop plan;

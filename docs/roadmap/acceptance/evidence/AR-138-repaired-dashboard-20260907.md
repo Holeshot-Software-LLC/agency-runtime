@@ -31,7 +31,7 @@ refresh error-surfacing modes, replaced requests and invalidated generations.
 The initial 24 cases all failed before repair. All 30 now pass, along with every
 existing UI test.
 
-The repair applies ownership/generation checks to failure paths before stale,
+Repair cd35aa2c (ledger 4fd2df4f) applies ownership/generation checks to failure paths before stale,
 retry or expired-token state can be published. Live snapshot errors from an
 obsolete controller return no payload; current errors still propagate. The
 reconciliation wrappers preserve the false cancellation result. No current
@@ -64,11 +64,50 @@ coverage matrix, interpreter matrix or hosted workflow was dispatched.
 
 ## Browser evidence
 
-The repaired wheel and final browser receipt are pending at this source
-checkpoint. Do not use the first-candidate screenshots to certify the changed
-JavaScript. Rebuild, install into a new disposable target, and repeat the same
-21 view-loaded checks plus real-poll focus preservation and failure/recovery
-before freezing the second isolated acceptance candidate.
+The rebuilt wheel was installed into a new disposable target and tested at
+2026-09-07T05:15:13.514Z. The real packaged HTTP server served all ten packaged
+dashboard assets; each asset's SHA-256 matched the repaired source. No owner's
+dashboard profile, host activation, provider credential or native runtime was
+used. Host inventory was stubbed and server outbound connections were denied.
+
+Wheel SHA-256:
+
+    45b38a0873bb7730213bf587970782f5c130ff81394f7e1d85a73aded4db5db3
+
+Chromium 152.0.7977.64 (sandbox enabled), Playwright 1.63.0 and axe-core 4.13.0
+returned exit 0 and passed=true. Seven fully loaded sections were checked at
+each viewport: overview, routing, evidence, roster, workforce, hosts, settings.
+
+| Viewport | View checks | Axe violations | Page overflow | Clipped metrics |
+|---|---|---|---|---|
+| 1280 x 900 | 7 | 0 | none | 0 |
+| 1024 x 768 | 7 | 0 | none | 0 |
+| 375 x 812 | 7 | 0 | none | 0 |
+
+Each viewport additionally required an actual control request while preserving
+the unsaved focused field, selection range, field value and all open settings
+details. Keyboard scrolling worked. A deliberately aborted control request
+retained the last good revision, visibly marked it stale, and emitted the same
+valid UUIDv4 in the UI notice and application console. Removing the fault and
+refreshing restored fresh state. Unexpected console/page/HTTP errors were zero.
+
+Correlated failure IDs: 5d8fa563-26c5-4f0a-9700-d309d12728e1 (1280),
+d56125aa-bc50-4677-b512-3b1f4c8c280f (1024), and
+66d428bf-e328-406a-934a-20da73a3bb7d (375).
+
+Artifacts: [repaired JSON report](AR-138-browser-repaired-20260907/report.json),
+[desktop](AR-138-browser-repaired-20260907/1280-overview.png),
+[intermediate](AR-138-browser-repaired-20260907/1024-overview.png),
+[375 px](AR-138-browser-repaired-20260907/375-overview.png).
+
+Report SHA-256:
+
+    da108261451e472377efbb04f41bc8d1d13a6b3f9a6977c9627f1b6d13612d2e
+
+Axe's WCAG 2.0/2.1 A/AA scan retains incomplete contrast checks for gradients,
+pseudo-elements, overlaps and short text, not silent passes. The bounded
+automated check is not a full WCAG or screen-reader certificate. The first
+candidate's receipt remains intact and is not substituted for this repaired one.
 
 The existing [reproduction procedure](AR-138-current-dashboard-20260907.md#reproduction)
 and unchanged optional checker apply. Keep the first receipt intact. This is

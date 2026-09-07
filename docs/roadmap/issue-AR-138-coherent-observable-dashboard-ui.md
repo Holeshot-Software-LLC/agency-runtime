@@ -69,8 +69,10 @@ newer healthy connection. Preserve those verdicts and repair both success/error
 generation boundaries consistently before re-verification. The complete first
 review is preserved at 25b9a67a. Thirty added late-failure cases now pass after
 repairing live/full/control failure guards and reconciliation cancellation;
-the full 172-test UI suite passes. Rebuild the wheel and repeat browser QA before
-the second acceptance pass. Current network/authentication failures still surface.
+the full 172-test UI suite passes. Repair cd35aa2c's rebuilt wheel also passes
+all 21 browser checks, with ten matching asset hashes and repeated focus/error
+assertions. Current network/authentication failures still surface. The second
+isolated acceptance pass is the remaining gate before closure and PR #700 merge.
 
 ## Approach
 

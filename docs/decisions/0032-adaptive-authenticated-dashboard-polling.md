@@ -101,3 +101,7 @@ AR-138's September 7 repair d7231df3 keeps this decision unchanged: source-owned
 semantic scroll regions and wrapping metric cards, with an optional offline
 wheel-backed browser checker rather than a frontend runtime/build dependency.
 Its exact reasoning and checks are indexed in the worklog.
+
+The subsequent cd35aa2c repair makes the same obsolete-generation rule apply
+to errors, including live polling and reconciliation, as to successful refresh
+responses. It fixes an implementation gap, not a new polling policy.
