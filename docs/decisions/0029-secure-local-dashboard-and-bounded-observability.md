@@ -110,3 +110,8 @@ and token boundary, origin/host/content-type checks, explicit mutation
 confirmations, metadata-only defaults, opt-in redaction, and configurable
 30-day runtime retention. The implementation commit is recorded through the
 worklog after it is created.
+
+AR-171's current reason/document/hash privacy boundary is verified at 8a8db2ae
+on September 7, with 199 Store/HTTP tests, 194 UI tests and all six isolated
+criteria satisfied. The test/evidence reconciliation does not change runtime
+authority or claim native host activation.

@@ -1,11 +1,14 @@
 ---
 title: "AR-171: Redact dashboard lifecycle reasons"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-27
-updated: 2026-07-27
+updated: 2026-09-07
 tags: [dashboard, privacy, security, workforce, observability]
 related:
+  - docs/decisions/0105-bound-delivery-to-live-demo-checkpoints.md
+  - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
+  - docs/roadmap/acceptance/evidence/AR-171-lifecycle-redaction-20260907.md
   - docs/decisions/0029-secure-local-dashboard-and-bounded-observability.md
   - docs/roadmap/issue-AR-153-complete-worker-detail-evidence.md
   - docs/roadmap/issue-AR-166-truthful-dashboard-disclosure-and-correlation.md
@@ -39,6 +42,19 @@ document-redaction contract and the dashboard's runtime-metadata disclosure.
 
 ## Current state
 
+September 7 inspection confirms this privacy boundary already exists; no runtime
+repair is needed. Full Store/workforce and dashboard HTTP suites pass 199 tests.
+The production renderer passes a new eight-value presence-flag/sentinel
+regression and all 194 UI tests with unchanged coverage floors. The new test
+deliberately supplies unexpected private fields to prove inert rendering; real
+HTTP tests separately prove those fields never leave the reduced Store response.
+Exact commands and raw results are in the
+[receipt](acceptance/evidence/AR-171-lifecycle-redaction-20260907.md).
+
+All six current criteria satisfy in the first isolated review at
+8a8db2aeeae788829ae7dfc641142d7c04376e6e. AR-171 is done within this Store/HTTP/DOM
+privacy scope. Normal PR publication follows; no native-host claim is implied.
+
 The reduced worker-history query removes the raw reason and every content-
 derived hash from its result. It returns only whether a reason exists, while
 the full owner Store API retains the original document for governed history.
@@ -60,7 +76,9 @@ ADR-0029 requires bounded local observability and truthful privacy disclosure.
 AR-153 owns complete but bounded worker-detail delivery; AR-166 owns the
 dashboard's visible metadata-versus-governed-definition distinction.
 
-Tracker creation remains pending explicit outward-write authorization.
+The existing pre-tracker exemption applies; no duplicate tracker is created.
+ADR-0105 replaces only the obsolete final exhaustive-release criterion with
+bounded Store/HTTP/UI and named-spine verification; original wording remains.
 
 ## Acceptance
 
@@ -72,10 +90,19 @@ Tracker creation remains pending explicit outward-write authorization.
 - [x] Full Store history preserves the original governed lifecycle document.
 - [x] Store, dashboard HTTP, and browser regressions prove sentinel content is
   absent from the reduced serialized response and rendered text.
-- [ ] The final repository release gate passes at the implementation commit.
+- [x] Focused Store, dashboard HTTP and UI regressions/current coverage floors,
+  the named production spine, metadata, policy, worklog, strict docs/tracker,
+  Ruff and diff checks pass; exhaustive integration remains optional.
+
+## Preserved original verification criterion
+
+Original criterion 6: The final repository release gate passes at the
+implementation commit. ADR-0105 governs the explicit bounded replacement;
+criteria 1–5 remain unchanged.
 
 ## Implementation evidence
 
-Focused workforce, dashboard, and browser tests cover raw/full versus redacted
-projections, fixed receipt rendering, and sentinel absence. Final aggregate
-counts are added after the final integrated gate.
+Current workforce, real loopback HTTP and production-renderer DOM tests cover
+raw/full versus reduced projections, fixed text and raw/hash sentinel absence.
+The runtime source is unchanged. All six isolated criteria satisfy at 8a8db2ae;
+the acceptance record carries exact run IDs and digests.

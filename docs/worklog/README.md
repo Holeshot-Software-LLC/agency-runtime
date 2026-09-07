@@ -2031,6 +2031,10 @@ This registry connects repository history to the roadmap and to optional detail 
 | `91273e41` | 2026-09-07 | docs(acceptance): bind AR-170 browser proof to exact source trees | [AR-170](../roadmap/issue-AR-170-fail-dashboard-response-correlation-closed.md) | [Detail](2026-09-07-90654955-response-correlation.md) |
 | `9655a104` | 2026-09-07 | docs(acceptance): freeze AR-170 primary browser evidence | [AR-170](../roadmap/issue-AR-170-fail-dashboard-response-correlation-closed.md) | [Detail](2026-09-07-90654955-response-correlation.md) |
 | `92f1e1d7` | 2026-09-07 | docs(backlog): retain AR-170 evidence gaps after bounded review | [AR-170](../roadmap/issue-AR-170-fail-dashboard-response-correlation-closed.md) | [Detail](2026-09-07-90654955-response-correlation.md) |
+| `29e76943` | 2026-09-07 | Merge pull request #719 from Holeshot-Software-LLC/codex/ar170-oldest-first-reconciliation | [AR-170](../roadmap/issue-AR-170-fail-dashboard-response-correlation-closed.md) | [Detail](2026-09-07-90654955-response-correlation.md) |
+| `8a8db2ae` | 2026-09-07 | test(dashboard): verify lifecycle reason redaction boundaries | [AR-171](../roadmap/issue-AR-171-redact-dashboard-lifecycle-reasons.md) | [Detail](2026-09-07-8a8db2ae-lifecycle-redaction.md) |
+| `d85c696e` | 2026-09-07 | docs(acceptance): freeze AR-171 lifecycle redaction candidate | [AR-171](../roadmap/issue-AR-171-redact-dashboard-lifecycle-reasons.md) | [Detail](2026-09-07-8a8db2ae-lifecycle-redaction.md) |
+| `faa5bdb7` | 2026-09-07 | docs(backlog): complete AR-171 lifecycle reason redaction | [AR-171](../roadmap/issue-AR-171-redact-dashboard-lifecycle-reasons.md) | [Detail](2026-09-07-8a8db2ae-lifecycle-redaction.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
