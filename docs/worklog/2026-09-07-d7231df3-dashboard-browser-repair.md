@@ -77,6 +77,10 @@ is aligned with the owner's current oldest-first order.
 
 ## Follow-ups
 
-AR-138 owns the corrected final browser receipt, six isolated acceptance
-verdicts and PR/merge. Windows and native ZCode activation remain separate
-operator holds; no acceptance or backlog count changed in this commit.
+The final view-loaded browser receipt is committed at fa4d042b: 21 checks pass,
+142 UI tests pass, and every focus-preservation check must issue a real control
+poll. The acceptance schema required adding unchecked task markers to the
+original six unchanged statements and classifying script citations as file
+evidence rather than tests-directory evidence. No isolated verdict exists yet.
+AR-138 still owns the six verdicts and PR/merge. Windows and native ZCode
+activation remain separate operator holds; no backlog count changed here.
