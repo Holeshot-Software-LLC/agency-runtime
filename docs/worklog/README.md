@@ -2035,6 +2035,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `8a8db2ae` | 2026-09-07 | test(dashboard): verify lifecycle reason redaction boundaries | [AR-171](../roadmap/issue-AR-171-redact-dashboard-lifecycle-reasons.md) | [Detail](2026-09-07-8a8db2ae-lifecycle-redaction.md) |
 | `d85c696e` | 2026-09-07 | docs(acceptance): freeze AR-171 lifecycle redaction candidate | [AR-171](../roadmap/issue-AR-171-redact-dashboard-lifecycle-reasons.md) | [Detail](2026-09-07-8a8db2ae-lifecycle-redaction.md) |
 | `faa5bdb7` | 2026-09-07 | docs(backlog): complete AR-171 lifecycle reason redaction | [AR-171](../roadmap/issue-AR-171-redact-dashboard-lifecycle-reasons.md) | [Detail](2026-09-07-8a8db2ae-lifecycle-redaction.md) |
+| `a846c88f` | 2026-09-07 | Merge pull request #720 from Holeshot-Software-LLC/codex/ar171-oldest-first-reconciliation | [AR-171](../roadmap/issue-AR-171-redact-dashboard-lifecycle-reasons.md) | [Detail](2026-09-07-8a8db2ae-lifecycle-redaction.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
