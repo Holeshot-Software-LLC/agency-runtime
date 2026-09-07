@@ -6,6 +6,7 @@ created: 2026-07-10
 updated: 2026-07-10
 tags: [testing, safety, portability, installers]
 related:
+  - docs/roadmap/issue-AR-181-bound-all-host-smoke-launcher-preparation.md
   - docs/roadmap/issue-AR-09-windows-test-isolation.md
   - docs/worklog/README.md
 supersedes: []
