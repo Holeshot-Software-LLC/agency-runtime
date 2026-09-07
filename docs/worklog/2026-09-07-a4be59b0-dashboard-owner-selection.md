@@ -50,3 +50,18 @@ This is the clean repair checkpoint before a focused source-served browser
 interaction. Then freeze all six rowsets, obtain isolated verdicts, publish one
 PR and normal merge before AR-168. No installed-wheel, native Windows, attended
 host activation, complete accessibility or real-provider staffing claim.
+
+## Null HTTP error correction
+
+f9c55ada repairs criterion 2 without changing any requirement: JSON null HTTP
+errors threw TypeError and lost status/correlation. A red 401 case reproduces
+it; the null-safe lookup passes 401/403/503. Full UI 190 passes, current coverage
+floors pass; fresh named spine 1085/three existing skips, 66.99s; asset contracts
+three pass/187 deselected. Backend/core source and its focused tests remain
+identical to a4be59b0; strict docs/metadata pass 1190 files and tracker 397 mapped.
+
+The source-served selector already passed 18 checks/zero POSTs at 1280/375.
+The first zero-check timeout report is preserved: the browser fixture initially
+injected the retired standalone config endpoint instead of combined control.
+Final browser verification now adds null-401 terminal/correlation behavior;
+all six builder rowsets remain pending, with no isolated review started.
