@@ -6,6 +6,7 @@ created: 2026-07-26
 updated: 2026-09-07
 tags: [testing, observability, reliability, performance]
 related:
+  - docs/roadmap/acceptance/issue-AR-158.md
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
   - docs/roadmap/acceptance/evidence/AR-158-observation-selection-20260907.md
   - docs/decisions/0105-bound-delivery-to-live-demo-checkpoints.md

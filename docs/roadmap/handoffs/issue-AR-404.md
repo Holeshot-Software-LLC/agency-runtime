@@ -20,8 +20,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-404
 branch: codex/ar158-oldest-first-reconciliation
-evidence_commit: 38f2a733ffe611f240c691129c82d0110e02c124
-minimum_ledger_commit: 38f2a733ffe611f240c691129c82d0110e02c124
+evidence_commit: 95085a3008389fadf8c4c99123cf3eacfc8e1925
+minimum_ledger_commit: ce37c21a6fed9d931a2205508615852cf92a2342
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -47,6 +47,8 @@ Store busy selection now requires its explicit request ID; slow/busy tests
 inject matching unrelated events and check privacy over every envelope.
 Nested Store-before-MCP order remains exact-ID scoped. No runtime/script change.
 Only criterion 7 is reconciled under ADR-0105; first six stay unchanged.
+Candidate 95085a30 and ledger ce37c21a are committed; seven builder rowsets
+are frozen against that exact candidate in acceptance/issue-AR-158.md.
 
 ## Completed evidence
 
@@ -88,8 +90,7 @@ checkpoint, then continue the same task. No empty commits, restart or staffing.
 
 ## Next bounded work package
 
-1. Commit AR-158's test/evidence slice and ledger, then freeze seven builder
-   rowsets at that exact candidate and run isolated acceptance.
+1. Run the seven frozen isolated acceptance checks at 95085a30.
 2. Preserve any failed verdict before revision; never handwrite a result.
 3. If all seven satisfy, mark done, reconcile counts, merge one normal PR,
    read back the actual merge SHA and fast-forward clean main.
