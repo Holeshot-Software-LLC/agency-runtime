@@ -222,10 +222,11 @@ bounded parsing and array-of-objects success shape repair these cases without
 changing permitted paths, action pins or the aggregate. Focus 62, full workflow
 235 and fresh named spine 1085/three existing skips pass. ADR-0228 explicitly
 reconciles only 8/9 to claim-conditional hosted measurement and the legacy
-exemption; no savings or hosted-success claim. Nine isolated checks remain.
+exemption; no savings or hosted-success claim. All nine current isolated checks
+satisfy at 9effff3f in the first review. AR-165 is done; one PR/merge follows.
 
-Current counts: 40 actual open trackers plus 86 unfinished legacy records,
-126 total after AR-164 completion; no duplicate tracker or false acceptance.
+Current counts: 40 actual open trackers plus 85 unfinished legacy records,
+125 total after AR-165 completion; no duplicate tracker or false acceptance.
 The unchanged public-roster fixture belongs to AR-176. Windows stays excluded;
 the oldest-first ledger and capsule preserve all holds. Ordinary-session
 unverified Agency/header behavior remains a separate unfinished concern.

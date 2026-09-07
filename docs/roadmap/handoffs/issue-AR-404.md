@@ -45,7 +45,8 @@ error or repository identity; object/non-finite HTTP-200 data can report
 availability. Strict bounded UTF-8 parsing and array-of-objects success now
 reject these inputs without changing either permitted workflow path.
 The repair and all nine evidence rowsets are frozen at 9effff3f; b038cdb9 is
-its immediate ledger. The first isolated review follows this clean checkpoint.
+its immediate ledger. All nine current criteria satisfy in the first isolated
+review; AR-165 is done and awaits its single normal PR/merge.
 
 ## Completed evidence
 
@@ -60,12 +61,13 @@ its immediate ledger. The first isolated review follows this clean checkpoint.
 - ADR-0228 explicitly reconciles only criteria 8/9 before review: any savings
   claim needs matched hosted evidence; AR-347's governed legacy exemption applies.
   All original wording remains; no savings claim or new tracker.
-- Counts remain 40 actual trackers plus 86 legacy, 126 local unfinished.
+- Counts are 40 actual trackers plus 85 legacy, 125 local unfinished.
 
 ## Exact blocker
 
-AR-165's nine current criteria await candidate-bound isolated verdicts.
-Do not mark done before all satisfy. The builder is evidence only.
+All nine current AR-165 criteria satisfy at 9effff3f. There is no scoped
+acceptance blocker; publish the completion through one normal PR and read back
+the merge before beginning AR-166.
 Native action/fallback policy is unchanged; optional permissions projection was
 already removed in 55a00db2 and must not be restored as an authority requirement.
 
@@ -88,9 +90,8 @@ task. No empty commits, restart or staffing.
 
 ## Next bounded work package
 
-1. Preserve the clean frozen AR-165 candidate and its immediate ledger.
-2. Run isolated nine-criterion review, complete only if all satisfy, then one
-   normal PR/merge/readback. Preserve any first verdicts before corrections.
+1. Commit AR-165's accepted completion and immediate ledger; no review rerun.
+2. Publish one normal PR and read back its merge.
 3. After that merge, continue to AR-166 in its own worktree.
 
 ## Verification

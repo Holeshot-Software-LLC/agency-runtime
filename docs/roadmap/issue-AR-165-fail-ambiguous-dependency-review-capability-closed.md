@@ -1,6 +1,6 @@
 ---
 title: "AR-165: Fail ambiguous dependency-review capability probes closed"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-27
 updated: 2026-09-07
@@ -59,7 +59,8 @@ endpoint returns an empty array for the calling identity. That does not prove
 workflow-token authority, a current hosted job, or an Actions billing cause.
 ADR-0228 explicitly reconciles only criteria 8/9 to claim-conditional matched
 measurement and AR-347's established legacy exemption. No savings are claimed;
-criteria 1–7 remain unchanged. All nine current criteria await isolated review.
+criteria 1–7 remain unchanged. All nine current criteria satisfy at 9effff3f
+in the first isolated review.
 
 ## Historical capability snapshot
 
@@ -113,26 +114,26 @@ repository protection are authorized and verified.
 
 ## Acceptance
 
-- [ ] The workflow retains one least-privilege job named `dependency review`.
-- [ ] Repository and comparison requests use authenticated runner-owned files with
+- [x] The workflow retains one least-privilege job named `dependency review`.
+- [x] Repository and comparison requests use authenticated runner-owned files with
   bounded connect time, total time, response size, and explicit curl-failure
   handling; no header or token value is emitted as output evidence.
-- [ ] HTTP 200 comparison JSON selects the unchanged pinned native dependency-review
+- [x] HTTP 200 comparison JSON selects the unchanged pinned native dependency-review
   action and moderate-severity failure threshold.
-- [ ] Only the exact authenticated private/internal non-fork HTTP 403 response tuple
+- [x] Only the exact authenticated private/internal non-fork HTTP 403 response tuple
   selects fallback; 401, 404, rate-limit, malformed, oversized, public, fork,
 identity-mismatch, and authority-mismatch cases fail closed.
-- [ ] The fallback installs the project with its runtime dependencies, uses the
+- [x] The fallback installs the project with its runtime dependencies, uses the
   pinned audit tool, and is labeled as compensating evidence rather than
   equivalent base-to-head dependency review.
-- [ ] One `always()` aggregate rejects failed, cancelled, skipped, missing, invalid,
+- [x] One `always()` aggregate rejects failed, cancelled, skipped, missing, invalid,
   or cross-path-incoherent prerequisite results.
-- [ ] Executable contract tests cover both coherent paths and adversarial API,
+- [x] Executable contract tests cover both coherent paths and adversarial API,
   repository-identity, bounded-file, and aggregate-result cases.
-- [ ] Current repository capability and hosted-check limits are reported accurately;
+- [x] Current repository capability and hosted-check limits are reported accurately;
   any speed or billing-savings claim requires a matched hosted pull-request run
   recording the selected path, stable check name and raw duration.
-- [ ] AR-165 follows the governed pre-tracker exemption while unmapped; both strict
+- [x] AR-165 follows the governed pre-tracker exemption while unmapped; both strict
   documentation/tracker checks pass, and any later authorized tracker mapping
   has exact URL/state parity with the local record.
 
