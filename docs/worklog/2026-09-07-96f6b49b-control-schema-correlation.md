@@ -90,3 +90,7 @@ d86a9303 (d86a93036333e430d76cc483943935e5d9e1598d) changes only criterion 6's c
 ## Accepted completion
 
 1379eb0d (1379eb0dd5f08292a2e33fc546047446e3041238) records six satisfied criteria at 328c5634567e6b12a295bb5f8957c5541cc35dba. Only criterion 6 had the second bounded citation-only review; no third pass. Strict records/Ruff/diff pass at 1,215 documents and 397 mapped items. Queue is 119 (40 mapped/79 legacy). The scoped dashboard repair and live-browser proof are complete; separate failed Codex/Claude native canaries are retained without activation claims. Publish one normal PR/merge, then AR-176.
+
+## Main publication and native receipt readback
+
+891f0c32 (891f0c3273220c9c8f1c9b8649582aea3c492018) merges PR #724 at 2026-09-07T21:21:39Z. Remote readback is MERGED at head 533ef0d490668744c703f0130f0a9f935da072cf; main was clean and fast-forwarded before this owned AR-176 worktree. No hosted check rows were reported, so none are claimed. A read-only SQLite snapshot resolves both fresh Claude failures (7054c7bd-9c0f-480e-8456-cac410770f2c and abea9454-83c9-4630-a7ef-b0ac06df2b78): both workforce_provider_unavailable with provider_credential_env_unset/workforce_credential_env_unset. Doctor names the missing LITELLM_API_KEY; only its name/presence, not any secret, was inspected. Doctor also exposes an alternate harness battery for Hermes/OpenClaw; host-canary's unsupported mode is not the only live-testing path. Continue oldest-first AR-176 while inspecting that existing battery.

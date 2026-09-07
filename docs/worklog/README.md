@@ -2064,6 +2064,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `8ed3c516` | 2026-09-07 | docs(acceptance): preserve first AR-175 verdicts | [AR-175](../roadmap/issue-AR-175-retire-dashboard-control-fallback.md) | [Detail](2026-09-07-96f6b49b-control-schema-correlation.md) |
 | `d86a9303` | 2026-09-07 | docs(acceptance): bound AR-175 final evidence packet | [AR-175](../roadmap/issue-AR-175-retire-dashboard-control-fallback.md) | [Detail](2026-09-07-96f6b49b-control-schema-correlation.md) |
 | `1379eb0d` | 2026-09-07 | docs(roadmap): complete verified AR-175 control boundary | [AR-175](../roadmap/issue-AR-175-retire-dashboard-control-fallback.md) | [Detail](2026-09-07-96f6b49b-control-schema-correlation.md) |
+| `891f0c32` | 2026-09-07 | Merge pull request #724 from Holeshot-Software-LLC/codex/ar175-oldest-first-reconciliation | [AR-175](../roadmap/issue-AR-175-retire-dashboard-control-fallback.md) | [Detail](2026-09-07-96f6b49b-control-schema-correlation.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
