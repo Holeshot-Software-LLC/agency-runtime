@@ -65,3 +65,5 @@ bounded implementation. AR-176 inventory and AR-181 smoke investigations
 do not silently change their acceptance verdicts.
 
 Substantive `2219b670` preserves AR-178 and records the newly reproduced AR-407 bug; no completion verdict is fabricated.
+
+Normal PR #728 merged at `08fab1c4fb9b7f8ed167f0aa4366182960f6eada` September 7 at 22:39:18Z. Tracker #153 remains open. The next delivery is the small live-discovered AR-407 repair while AR-180 evidence is correlated in parallel; no hosted checks were reported.

@@ -6,6 +6,7 @@ created: 2026-07-10
 updated: 2026-09-07
 tags: [release, changelog]
 related:
+  - docs/roadmap/issue-AR-407-scope-install-drift-to-requested-hosts.md
   - docs/roadmap/issue-AR-170-fail-dashboard-response-correlation-closed.md
   - docs/roadmap/issue-AR-131-complete-mcp-cli-host-contracts.md
   - docs/roadmap/issue-AR-348-enforce-strict-independence-in-production.md
@@ -356,6 +357,10 @@ changes rather than duplicating every commit.
   cycle, and will not be removed before 0.3.0.
 
 ### Fixed
+
+- A host-scoped install reports residual projection drift only for its resolved
+  targets. An unrelated host on another package no longer produces a false
+  failed-refresh warning; global status still reports all host drift (AR-407).
 
 - Dashboard response validation rejects explicit null request IDs and unexpected
   exact-lookup pagination, and preserves the sent request ID on worker/roster

@@ -487,8 +487,13 @@ def test_install_preflight_human_error_and_per_host_exception(monkeypatch, capsy
         install_commands, "dashboard_service_environment_overrides", lambda _cfg: ("X",)
     )
     monkeypatch.setattr(install_commands, "resolve_config_path", lambda: Path("agency.yaml"))
+
+    def residual_drift(targets):
+        assert targets == []
+        return None
+
     # Drift is projected from the box's live installation; keep the test hermetic.
-    monkeypatch.setattr(install_commands, "_cli_install_drift_projection", lambda: None)
+    monkeypatch.setattr(install_commands, "_cli_install_drift_projection", residual_drift)
     monkeypatch.setattr("agency_runtime.core.installer.detect_installed_agents", lambda: [])
     monkeypatch.setattr("agency_runtime.core.installer.plan_agent_adapter", lambda *_args: {})
     monkeypatch.setattr(

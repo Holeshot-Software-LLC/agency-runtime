@@ -2078,6 +2078,11 @@ This registry connects repository history to the roadmap and to optional detail 
 | `7839abdb` | 2026-09-07 | docs(backlog): retire superseded AR-177 manual-CI checklist | [AR-177](../roadmap/issue-AR-177-make-exhaustive-python-ci-manual.md) | [Detail](2026-09-07-7839abdb-retire-manual-ci-checklist.md) |
 | `cbe82aaf` | 2026-09-07 | Merge pull request #726 from Holeshot-Software-LLC/codex/ar177-oldest-first-reconciliation | [AR-177](../roadmap/issue-AR-177-make-exhaustive-python-ci-manual.md) | [Detail](2026-09-07-7839abdb-retire-manual-ci-checklist.md) |
 | `2219b670` | 2026-09-07 | docs(backlog): retain deferred AR-178 and record scoped install defect | [AR-178](../roadmap/issue-AR-178-evaluate-one-shot-applications-post-production.md) | [Detail](2026-09-07-2219b670-deferred-evaluation-and-live-drift.md) |
+| `08fab1c4` | 2026-09-07 | Merge pull request #728 from Holeshot-Software-LLC/codex/ar178-oldest-first-reconciliation | [AR-178](../roadmap/issue-AR-178-evaluate-one-shot-applications-post-production.md) | [Detail](2026-09-07-2219b670-deferred-evaluation-and-live-drift.md) |
+| `15a18861` | 2026-09-07 | fix(install): scope residual drift to requested hosts | [AR-407](../roadmap/issue-AR-407-scope-install-drift-to-requested-hosts.md) | [Detail](2026-09-07-15a18861-scoped-install-drift.md) |
+| `dcd58720` | 2026-09-07 | test(install): record exact AR-407 artifact and live-state checks | [AR-407](../roadmap/issue-AR-407-scope-install-drift-to-requested-hosts.md) | [Detail](2026-09-07-15a18861-scoped-install-drift.md) |
+| `625a1488` | 2026-09-07 | docs(acceptance): freeze AR-407 scoped drift evidence | [AR-407](../roadmap/issue-AR-407-scope-install-drift-to-requested-hosts.md) | [Detail](2026-09-07-15a18861-scoped-install-drift.md) |
+| `d5aed828` | 2026-09-07 | docs(backlog): accept scoped install drift repair | [AR-407](../roadmap/issue-AR-407-scope-install-drift-to-requested-hosts.md) | [Detail](2026-09-07-15a18861-scoped-install-drift.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
