@@ -66,3 +66,7 @@ ledger preserves the smallest tested source slice before exact-wheel QA.
 ## Pre-browser checkpoint
 
 bab4b475 (bab4b475545ae5a044d198fd2b645f51313e2d25) pins the source repair and remaining installed-wheel browser evidence in the active capsule. The next bounded package builds that clean source and checks actual responses, correlation headers, retention, and recovery before any completion claim.
+
+## Loaded-browser evidence candidate
+
+328c5634 (328c5634567e6b12a295bb5f8957c5541cc35dba) retains the fresh installed-wheel build, canonical/Twine verification, 21 actual browser views and 36 fault/recovery cases. Thirty real server response IDs match; six network failures have no response. All ten served hashes match source; zero legacy GETs/POSTs. The initial 24-fault run passed before adding 404/network coverage. Six isolated verdicts are pending. Separate AR-404 live evidence records the failed current-profile Codex canary, not a dashboard or native success.
