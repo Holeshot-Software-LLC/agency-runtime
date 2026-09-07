@@ -1940,10 +1940,13 @@ This registry connects repository history to the roadmap and to optional detail 
 | `2ecde1a5` | 2026-09-07 | test(dashboard): verify rebuilt stale-error repair [AR-138] | [AR-138](../roadmap/issue-AR-138-coherent-observable-dashboard-ui.md) | null |
 | `d3801bf9` | 2026-09-07 | docs(acceptance): freeze repaired AR-138 candidate | [AR-138](../roadmap/issue-AR-138-coherent-observable-dashboard-ui.md) | null |
 | `34680228` | 2026-09-07 | docs(backlog): accept verified dashboard repairs [AR-138] | [AR-138](../roadmap/issue-AR-138-coherent-observable-dashboard-ui.md) | [detail](2026-09-07-cd35aa2c-stale-refresh-errors.md) |
+| `1ada216c` | 2026-09-07 | Merge pull request #700 from Holeshot-Software-LLC/codex/ar138-oldest-first-reconciliation | [AR-138](../roadmap/issue-AR-138-coherent-observable-dashboard-ui.md) | [detail](2026-09-07-cd35aa2c-stale-refresh-errors.md) |
+| `7ae83407` | 2026-09-07 | docs(backlog): reconcile implemented routing performance [AR-140] | [AR-140](../roadmap/issue-AR-140-scale-routing-and-retrieval.md) | [detail](2026-09-07-7ae83407-reconcile-routing-performance.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
 
+- `ed93405d` added the governing ADR-0121 link in AR-140's roadmap decision cell alongside its reciprocal commit cell. The ledger rule permits only the latter outside `docs/worklog/**`; the extra cell should have accompanied the substantive disposition. Preserve the published branch history and this scope exception explicitly; do not repeat it in subsequent ledgers.
 - `2434f30` contains the name `Hermes` in its historical subject. The subject is retained exactly as committed for faithful provenance; the name does not create an active cross-repository link or dependency.
 - `8f6d320` records a handoff document that was later removed. The subject remains part of the immutable commit record; no deleted document was restored for this worklog.
 - `a183594` is a `docs(worklog):` ledger commit that also updated `docs/roadmap/handoffs/issue-AR-235.md`. The worklog-ledger exemption allows only `docs/worklog/**` and the reciprocal roadmap README cell. The capsule refresh should have been a separate `docs(roadmap):` commit. Retained as-is; no history rewrite.

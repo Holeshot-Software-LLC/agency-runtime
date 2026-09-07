@@ -52,40 +52,33 @@ repeat work and risk reintroducing superseded behavior.
 
 **Resumed by the owner on September 6 at AR-131.** The previous pause checkpoint
 is on main through PR #696/f38720c7 and the exact PR #697 ledger/c1c5d9d9.
-AR-131's original MCP fixes exist; ten added contract regressions and the
-installed Codex skill byte comparison provide current bounded evidence.
-Focused MCP/CLI: 126 passed/five existing skips; fresh named spine: 1085 passed/
-three skips. First isolated AR-131 review satisfies 2/3/6, lacks citations for
-1/5 and contradicts 4 because public delegation identifiers can be truncated.
-First verdicts are preserved at 6a139e23. The public admission repair now passes
-13 new regression cases, including the reproduced alias defect and exact
-Unicode limits; internal observation normalization remains unchanged. All six
-isolated criteria satisfy at repaired candidate 973acdb9 on September 7.
-AR-131 merged in PR #698 at ac1ce173. Current counts: 40 actual open trackers
-plus 97 unfinished legacy records, 137 total after AR-138 acceptance. AR-135's implementation is
-present: 33 selected contracts and generated ZCode smoke 4/4 pass. Its current
-installed state remains enabled-runtime-unverified, with no executable/canary;
-retain the attended native Agent/record-zero/full-Stop proof rather than
-rewriting the old installer or claiming August evidence as current. Its
-disposition merged in PR #699 at e2f7a5f2 and changes no count. AR-138 is now
-the active bounded package: its earlier concurrency/mobile fixes exist, but
-actual browser review reproduced contrast, keyboard-scroll and clipped-card
-defects. Those are repaired with four focused regressions. Current dashboard
-Python checks pass 180; the named spine passes 1085/three skips (69.50s).
-The final loaded browser receipt now passes 21 cases across 1280/1024/375 px;
-UI tests pass 142. First isolated acceptance satisfies 2–6 but identifies a
-stale full-refresh error race under criterion 1. Preserve that failed review,
-repair the failure-path generation guard and reverify before closure. That
-repair now passes 30 new late-error cases and all 172 UI tests; repeated named
-spine 1085/three skips (99.40s). The repaired wheel passes all 21 loaded browser
-checks. All six second-pass isolated criteria satisfy at 2ecde1a5; AR-138 is done
-with its failed first review preserved at 25b9a67a. PR #700 publication remains
-before AR-140, the next unfinished record. Actual open trackers remain 40;
-AR-138 is legacy-exempt and does not create or close a tracker issue.
-An unrelated public-roster fixture also fails on untouched main and is recorded
-under AR-176, not erased. Windows work stays excluded. The oldest-first ledger and active capsule
-retain exact evidence and all earlier holds; ordinary-session header failure
-is not fixed or waived by this protocol-contract review.
+AR-131 is done after repairing public identifier admission; all six isolated
+criteria satisfy at 973acdb9, with first verdicts preserved at 6a139e23. PR #698
+merged at ac1ce173. AR-135 retains current native Agent/record-zero/full-Stop
+proof: 33 selected contracts and generated ZCode smoke 4/4 pass, but installed
+state is enabled-runtime-unverified, with no native executable/canary. Its
+retention merged in PR #699 at e2f7a5f2; August evidence remains historical.
+
+AR-138 is done and merged through PR #700 at 1ada216c. Browser review repaired
+accessibility/clipping defects; the first isolated review exposed a stale-error
+race and is preserved at 25b9a67a. The repaired candidate 2ecde1a5 satisfies all
+six original criteria: 172 UI tests, 21 rebuilt-wheel loaded browser checks,
+180 dashboard Python tests and repeated named spine 1085/three skips (99.40s).
+No native-host or full accessibility certification is implied.
+
+Current package AR-140 is a retained implemented optimization, not a rewrite:
+all 39 current local Linux routing/performance gates and 202 focused tests
+pass. Cache/narrowing p95 are 0.201/1.081 ms; fresh CLI version median 16.989 ms.
+All retrieval-size budgets pass. The original isolated supported-runner gate
+still needs evidence, including the owner's Windows arm. ADR-0121 governs
+candidate recall/synthetic cache evidence; AR-253 retains real staffing latency.
+Publish this disposition, then review AR-145 (141/142/144 done, 143 retired).
+
+Current counts: 40 actual open trackers plus 97 unfinished legacy records,
+137 total. AR-140 retention changes no count and creates no duplicate tracker.
+The unchanged public-roster fixture belongs to AR-176. Windows stays excluded;
+the oldest-first ledger and capsule preserve all holds. Ordinary-session
+unverified Agency/header behavior remains a separate unfinished concern.
 
 Before this pause, the owner required oldest-first sequential delivery: one record, one PR,
 merge, then the next, without routine approval stops. Windows stays excluded.
@@ -314,8 +307,8 @@ No exhaustive workflow dispatch or unattended restart is implied.
 
 ## Next bounded package
 
-Publish AR-138's accepted closure through PR #700 and merge it. Then review
-AR-140; AR-139's obsolete ceiling is already retired.
+Publish and merge AR-140's retained implemented-performance disposition. Then
+review AR-145; AR-141/142/144 are done and AR-143 retired.
 The older AR-152/298/348-first ordering above is historical and does not override
 the owner's oldest-first loop. Keep genuine live/operator and fixture gaps
 visible, exclude Windows execution, and do not close the full backlog until
