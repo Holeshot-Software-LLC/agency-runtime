@@ -6,6 +6,7 @@ created: 2026-07-27
 updated: 2026-09-07
 tags: [testing, security, ci, performance, cost, github-actions]
 related:
+  - docs/roadmap/acceptance/issue-AR-162.md
   - docs/decisions/0226-gate-codeql-savings-claims-on-matched-measurements.md
   - docs/roadmap/acceptance/evidence/AR-162-codeql-capability-20260907.md
   - docs/roadmap/issue-AR-156-restore-cost-bounded-verification.md

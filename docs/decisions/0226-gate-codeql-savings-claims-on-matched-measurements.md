@@ -23,6 +23,9 @@ deciders: [maintainers]
 
 ## Context
 
+Implementation and initial evidence are committed at fcdcd6eb; the roadmap and
+worklog registry preserve its exact subject and bounded verification.
+
 AR-162's eighth criterion asks for a matched hosted unavailable-path topology
 and duration record before accepting speed or billing savings. Its original
 private-repository scenario no longer describes this repository: September 7

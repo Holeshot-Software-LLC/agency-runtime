@@ -22,8 +22,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-404
 branch: codex/ar162-oldest-first-reconciliation
-evidence_commit: f0fc06de6a0b263a18788ab77a99744b96eeba79
-minimum_ledger_commit: f0fc06de6a0b263a18788ab77a99744b96eeba79
+evidence_commit: fcdcd6ebee6b522281d23a49d2bdc5f95c6649f9
+minimum_ledger_commit: f6444df4a374c947b30a0e893bdbfbcf1a004358
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -62,9 +62,9 @@ remain unchanged. Source changes only in codeql.yml and test_release_packaging.p
 
 ## Exact blocker
 
-No local implementation/test blocker. Commit this repair/evidence pair, freeze
-nine builder rowsets to that candidate, then isolated acceptance before closure.
-Current fields identify the preceding durable baseline until the candidate freeze.
+No local implementation/test blocker. Repair/evidence fcdcd6eb and its immediate
+ledger f6444df4 are committed. Nine builder rowsets are frozen to that candidate
+in acceptance/issue-AR-162.md; isolated acceptance must precede closure.
 
 AR-159 retains hosted enforcement/check-app/bypass proof; main is unprotected
 with no current checks. Old billing cause is not freshly established; the extra
@@ -89,8 +89,8 @@ checkpoint, then continue the same task. No empty commits, restart or staffing.
 
 ## Next bounded work package
 
-1. Commit AR-162 repair, ADR-0226 and evidence with the immediate narrow ledger.
-2. Freeze nine candidate-bound builder rowsets and run isolated acceptance.
+1. Commit the frozen AR-162 acceptance record/capsule and its immediate ledger.
+2. Run nine isolated checks at unchanged fcdcd6eb.
 3. On accepted completion, reconcile counts and publish one normal PR, then
    proceed to the next oldest unfinished non-Windows record.
 
