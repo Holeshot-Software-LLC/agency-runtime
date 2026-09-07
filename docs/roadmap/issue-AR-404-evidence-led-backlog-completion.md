@@ -158,10 +158,12 @@ busy selection now uses the exact request ID; matching unrelated Store events
 and all-envelope privacy checks are explicit. Thirteen focused cases and ten
 five-case repeats pass; complete five-module package passes 135/five existing
 skips. Runtime/scripts unchanged, spine/UI/wheel reuse explicit. Only criterion
-7 is reconciled under ADR-0105; seven isolated verdicts remain before closure.
+7 is reconciled under ADR-0105. All seven criteria satisfy at 95085a30 after
+one citation-only criterion-7 recheck; first review remains at 809354be and the
+six accepted checks were not repeated. AR-158 is done, pending normal publication.
 
-Current counts: 40 actual open trackers plus 90 unfinished legacy records,
-130 total after AR-157 completion; no duplicate tracker or false acceptance.
+Current counts: 40 actual open trackers plus 89 unfinished legacy records,
+129 total after AR-158 completion; no duplicate tracker or false acceptance.
 The unchanged public-roster fixture belongs to AR-176. Windows stays excluded;
 the oldest-first ledger and capsule preserve all holds. Ordinary-session
 unverified Agency/header behavior remains a separate unfinished concern.

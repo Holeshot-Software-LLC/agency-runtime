@@ -60,8 +60,9 @@ tracker_url: null
 lacked a command/warning-settings citation. Only its builder rowset now adds
 the frozen AGENTS command definition and local command construction. Candidate
 95085a30, every criterion, and all six accepted rowsets/verdicts are unchanged.
-The old absent row is preserved in Git and removed here because its digest
-belongs to the old rowset; one isolated criterion-7 recheck remains.
+The old absent row is preserved in Git. Its sole isolated criterion-7 recheck
+now satisfies after the citation repair. All seven criteria satisfy; the first
+six accepted checks were neither reset nor repeated.
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
@@ -71,3 +72,4 @@ belongs to the old rowset; one isolated criterion-7 recheck remains.
 | 4 | satisfied | `AR-158.4-20260907-2e26d692` | `e8a598e88e68f89928fd8eda2484bf52f9c5c98b5469aedceafee588486b9831` | 2026-09-07 | The MCP, HTTP, hook, and store test excerpts assert forbidden content is absent across all captured observations, and the cited fresh focused verification reports all 13 tests passed. |
 | 5 | satisfied | `AR-158.5-20260907-91bb1551` | `cf46c25b30644ac6a0e8b8e57c597ab72cbab98389c146bb78dcabdee3b78b77` | 2026-09-07 | All three test excerpts synchronously enter a Store sqlite.commit RuntimeBoundary before the target request; the hook test also verifies the injected event precedes and has a different request ID from the hook event. |
 | 6 | satisfied | `AR-158.6-20260907-8d65f9ae` | `01ee4515fcb273bb634e43c98e4d2aef135fef1a1da2b4d3953703116103d1dc` | 2026-09-07 | Store tests select exact boundary request IDs; runtime tests filter by request ID and assert Store-before-MCP ordering, with late-correlation and exception checks selecting exact boundaries rather than ambient positions. |
+| 7 | satisfied | `AR-158.7-20260907-f90b7608` | `99c2dcd63105440bec35d3695b7c92d611cd9adc4fa6a5f37a7a8265c431b151` | 2026-09-07 | AR-158's verification receipt records ten passing focused repetitions and exact-byte reuse of AR-156's 1085-pass spine; AGENTS.md and run_local_gates.py establish warning-strict execution, while ADR-0105 makes exhaustive checks optional. |

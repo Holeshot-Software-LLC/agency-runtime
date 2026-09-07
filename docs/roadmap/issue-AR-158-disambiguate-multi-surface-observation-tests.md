@@ -1,6 +1,6 @@
 ---
 title: "AR-158: Disambiguate multi-surface observation test evidence"
-status: open
+status: done
 category: roadmap
 created: 2026-07-26
 updated: 2026-09-07
@@ -67,7 +67,10 @@ Only the obsolete seventh corpus requirement is reconciled under ADR-0105;
 first six criteria are unchanged. Initial isolated review satisfies criteria
 1–6; criterion 7 is absent because the cited reused-spine receipt does not
 include its command/warning arguments. Preserve that result and repair the
-evidence citation before closure; no product failure is reported.
+evidence citation before closure; no product failure is reported. That first
+review is preserved at 809354be. The sole criterion-7 recheck satisfies after
+explicit frozen-command citations, with candidate 95085a30 and the first six
+rowsets/verdicts unchanged. All seven now satisfy; AR-158 is done.
 
 ## Historical trigger
 
@@ -106,17 +109,17 @@ owns the load-bearing Windows corpus that exposed the invalid assumption.
 
 ## Acceptance
 
-- [ ] MCP evidence selection matches `mcp/agency.search_agents` and the result's
+- [x] MCP evidence selection matches `mcp/agency.search_agents` and the result's
   exact request ID even when a Store observation appears first.
-- [ ] HTTP evidence polling waits for the exact HTTP surface, operation, and response
+- [x] HTTP evidence polling waits for the exact HTTP surface, operation, and response
   request ID rather than any observation.
-- [ ] Hook evidence selects the exact hook surface and operation.
-- [ ] Forbidden request content is absent from every captured observation, not only
+- [x] Hook evidence selects the exact hook surface and operation.
+- [x] Forbidden request content is absent from every captured observation, not only
   the selected record.
-- [ ] Each regression deterministically injects an unrelated valid Store event.
-- [ ] Store and runtime-boundary tests retain exact request correlation and ordering
+- [x] Each regression deterministically injects an unrelated valid Store event.
+- [x] Store and runtime-boundary tests retain exact request correlation and ordering
   without depending on the last or first ambient log record.
-- [ ] Focused tests pass repeatedly and the named warning-strict production
+- [x] Focused tests pass repeatedly and the named warning-strict production
   spine passes under ADR-0105.
 
 ## Requirement reconciliation

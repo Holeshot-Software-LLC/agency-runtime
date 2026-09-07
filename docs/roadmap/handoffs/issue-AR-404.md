@@ -21,7 +21,7 @@ type: handoff
 issue_id: AR-404
 branch: codex/ar158-oldest-first-reconciliation
 evidence_commit: 95085a3008389fadf8c4c99123cf3eacfc8e1925
-minimum_ledger_commit: 55677053d3154129ce601ea1f312754de5dc0f76
+minimum_ledger_commit: 00a27c852bf426f15aeb8d165b47c6eae710fb40
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -52,6 +52,8 @@ are frozen against that exact candidate in acceptance/issue-AR-158.md.
 809354be preserves the first review. Only criterion 7's rowset now adds frozen
 AGENTS/runner command definitions with -W error; the six accepted checks and
 candidate are unchanged. The stale absent digest remains in that prior commit.
+The sole citation-only criterion-7 recheck now satisfies. All seven criteria
+satisfy at unchanged 95085a30; AR-158 is done, with normal publication pending.
 
 ## Completed evidence
 
@@ -66,16 +68,15 @@ candidate are unchanged. The stale absent digest remains in that prior commit.
   UI 188/current floors, and ten-asset/21-loaded-view wheel receipts.
 - Ruff check/format pass, 766 files. Latest telemetry 27.6 percent at 08:22:27Z;
   finish this small evidence/ledger checkpoint before isolated verification.
-- Counts remain 40 actual open trackers plus 90 unfinished legacy records
-  (130 local unfinished). Initial AR-158 criteria 1–6 satisfy; criterion 7 is
-  absent because its reused-spine citation omits the command/warning settings.
+- Counts are 40 actual open trackers plus 89 unfinished legacy records
+  (129 local unfinished). All seven AR-158 criteria satisfy; first review and
+  missing command citation remain preserved at 809354be.
 
 ## Exact blocker
 
-No known product blocker for scoped AR-158. Preserve the initial absent
-criterion-7 verdict, then cite the frozen named-spine command with its warning
-settings explicitly. The first six satisfied checks need no repetition if
-the candidate and their rowsets stay unchanged.
+No product or acceptance blocker remains for scoped AR-158. Its first six
+satisfied checks were not repeated; the seventh has its explicit frozen command
+citations and one satisfied recheck. Normal PR publication remains.
 Existing skips are recorded, not new suppression.
 
 Independent holds: AR-156 needs owner Windows/profile and separately authorized
@@ -97,12 +98,9 @@ checkpoint, then continue the same task. No empty commits, restart or staffing.
 
 ## Next bounded work package
 
-1. Preserve the initial review and ledger, then repair only criterion 7's
-   missing command citation against unchanged 95085a30; rerun that check only.
-2. Never handwrite a result or reset the six accepted checks.
-3. If all seven satisfy, mark done, reconcile counts, merge one normal PR,
-   read back the actual merge SHA and fast-forward clean main.
-4. Start AR-159 separately; branch/account settings require explicit authority.
+1. Commit accepted AR-158 completion and ledger; finish docs/tracker checks.
+2. Merge one normal PR, read back the merge SHA and fast-forward clean main.
+3. Start AR-159 separately; branch/account settings require explicit authority.
 
 ## Verification
 
