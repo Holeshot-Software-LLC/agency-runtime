@@ -16,7 +16,7 @@ type: worklog
 commit: 8a8db2aeeae788829ae7dfc641142d7c04376e6e
 short: 8a8db2ae
 date: 2026-09-07
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/720
 related_issues:
   - docs/roadmap/issue-AR-171-redact-dashboard-lifecycle-reasons.md
 ---
@@ -70,3 +70,6 @@ faa5bdb7 (faa5bdb77b86d2289ba4ce45045c0972b053da94) records all six first-pass s
 exceptions, and enumeration confirms 123 unfinished = 40 mapped + 83 legacy.
 No runtime change, new tracker or native Windows claim. Publish one normal PR
 and merge before reviewing the next oldest remaining record.
+
+PR #720 carries accepted completion. End telemetry is 12.3 percent at
+12:31:47Z; faa5bdb7/46aa5d66 form the clean substantive/ledger checkpoint.
