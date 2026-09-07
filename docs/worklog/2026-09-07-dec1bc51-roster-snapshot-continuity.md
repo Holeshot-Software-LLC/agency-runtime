@@ -72,3 +72,12 @@ No production or test changes follow the observed passing runs.
 4c5acdcf preserves satisfied criteria 1–5/7 and absent 6 at unchanged dec1bc51.
 The missing evidence is the existing control-handler call site, not a runtime
 failure or retry-bound change. Add that source citation and recheck only 6.
+
+## Completion
+
+f9cdbd7f (f9cdbd7ff00e5b97a5fc64c5630f149c2bf88c48) records all seven satisfied criteria at unchanged dec1bc51.
+First verdicts remain at 4c5acdcf; only the missing handler citation was added
+before criterion 6's single recheck fca25686. No code/candidate retry.
+Strict records pass for 1202 Markdown files, 397 mapped/two historical PR
+exceptions and 766 formatted files. Enumeration confirms 122 unfinished =
+40 mapped plus 82 legacy. Publish and merge one normal PR before AR-173.
