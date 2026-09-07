@@ -1,11 +1,13 @@
 ---
 title: "AR-407: Scope install drift warnings to requested hosts"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-09-07
 updated: 2026-09-07
 tags: [install, drift, diagnostics, hosts]
 related:
+  - docs/roadmap/acceptance/issue-AR-407.md
+  - docs/roadmap/acceptance/evidence/AR-407-scoped-install-drift-20260907.md
   - docs/roadmap/issue-AR-258-reconcile-the-installed-projection.md
   - docs/roadmap/issue-AR-363-deployed-fix-witness-manifests.md
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
@@ -53,6 +55,7 @@ metadata unchanged. Clean ef6523b3 produces the portable pair under umask 077;
 independent verifier and strict Twine pass. Fresh installed CLI/MCP/dashboard
 smoke passes and all-host generated smoke passes eight/zero/zero in 5.09s.
 These are scoped real installed checks, not a new native model-turn canary.
+All three isolated criteria satisfy at dcd58720; no requirement changed.
 
 ## Approach
 
@@ -68,6 +71,6 @@ No new credential loading, trust bypass, gateway restart or Windows execution.
 
 ## Acceptance
 
-- [ ] A single-host install excludes unrelated hosts from residual drift text and JSON while retaining relevant requested-host drift.
-- [ ] Multi-target install retains drift for its resolved targets and global status still reports all recorded-host drift.
-- [ ] Focused regressions and an exact-source check against the live mixed-host installation demonstrate the correction without modifying unrelated hosts or credential/trust policy.
+- [x] A single-host install excludes unrelated hosts from residual drift text and JSON while retaining relevant requested-host drift.
+- [x] Multi-target install retains drift for its resolved targets and global status still reports all recorded-host drift.
+- [x] Focused regressions and an exact-source check against the live mixed-host installation demonstrate the correction without modifying unrelated hosts or credential/trust policy.

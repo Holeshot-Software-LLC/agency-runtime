@@ -39,7 +39,8 @@ AR-175 PR #724/891f0c32. AR-176 repairs merged PR #725/d2125438 but remain open.
 AR-177 retired through PR #726/cbe82aaf, reducing the old queue to 118.
 AR-178 stays open/deferred. New actual defect AR-407/#727 adds one mapped
 record: current branch 119 (41 mapped/78 legacy); no legacy rollback.
-AR-178 merged PR #728/08fab1c4. AR-407 code is committed, acceptance pending.
+AR-178 merged PR #728/08fab1c4. AR-407 allthree criteria satisfy at dcd58720;
+done on this branch, pending PR/merge. Branch queue118 (40 mapped/78 legacy).
 
 ## Completed evidence
 
@@ -98,7 +99,7 @@ Parent owns publication, acceptance and shared-registry changes.
 
 ## Next bounded work package
 
-1. Freeze AR-407 evidence, verify its three criteria, PR/merge/readback.
+1. Publish accepted AR-407 through PR/merge/readback and close #727.
 2. Publish AR-180 exact one-card exec proof and remaining broader holds.
 3. Continue AR-181,183,184,185, then189/190; Windows/operator holds stayopen.
 4. Stop cleanly by September 8 01:00 UTC.

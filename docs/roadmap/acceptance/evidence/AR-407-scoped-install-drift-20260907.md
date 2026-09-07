@@ -14,6 +14,20 @@ superseded_by: null
 
 # AR-407 scoped install-drift verification
 
+## Acceptance execution
+
+All three isolated checks satisfy at dcd587209aced5e4d7e74f80c2e4df2df00a1e50:
+AR-407.1-20260907-713053f0, AR-407.2-20260907-04674097 and
+AR-407.3-20260907-97b36013. Criteria are unchanged.
+
+The initial verifier attempt exited2 in0.89s with allthree unavailable and no
+verdict recorded. Claude's package and bin directories had become0775
+(package mtime22:38:07Z); executable trust refused them before model calls.
+Only group-write permission on those two exact directories was removed,
+returning0755; no recursive chmod or trust bypass. Native2.1.263 then reports
+installed/authenticated/usable, and one unchanged-packet retry yields allthree
+verdicts. No updater attribution is inferred from the directory timestamp.
+
 ## Exact portable build and fresh installed smoke
 
 Clean candidate ef6523b3779e7673051c1b758174d42ef64961d4 was built with

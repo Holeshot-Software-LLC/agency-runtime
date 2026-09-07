@@ -348,6 +348,14 @@ status. Filing adds one mapped issue, making 119 = 41 mapped + 78 legacy.
 The live audit corrects the earlier AR-271 warning inference: Codex disk/cache
 is current, the unfiltered warning is OpenClaw-only, and this running parent
 separately retains older hook definitions and lacks its credential variable.
+
+AR-407's actual fix now satisfies all three criteria at dcd58720. Focused158
+passes/one Windows deselection, independent review35passes, fresh spine1085/
+three skips and UI224 pass. Exact live-pointer helper check preserves allfive
+pointer files/metadata; restrictive-umask portable build passes independent
+verification/Twine and fresh installed MCP/dashboard/all-host generated smoke
+(eight/zero/zero,5.09s). No native-turn claim. Done branch count returns to
+118 (40 mapped/78 legacy); normal PR/merge and #727 closure precede AR-180.
 The unchanged public-roster fixture belongs to AR-176. Windows stays excluded;
 the oldest-first ledger and capsule preserve all holds. Ordinary-session
 unverified Agency/header behavior remains a separate unfinished concern.

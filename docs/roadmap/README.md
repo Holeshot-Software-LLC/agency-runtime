@@ -444,7 +444,7 @@ bounded package are in AR-404's
 | `AR-404` | [Complete the backlog through evidence-led delivery packages](issue-AR-404-evidence-led-backlog-completion.md) | in_progress | p1 | reliability | [#672](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672) |
 | `AR-405` | [Make Windows directory-identity regressions portable](issue-AR-405-make-directory-identity-regressions-portable.md) | done | p1 | testing | [#675](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/675) |
 | `AR-406` | [Restore the configured dashboard UI function-coverage gate](issue-AR-406-restore-dashboard-function-coverage.md) | done | p2 | testing | [#682](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/682) |
-| `AR-407` | [Scope install drift warnings to requested hosts](issue-AR-407-scope-install-drift-to-requested-hosts.md) | in_progress | p2 | install | [#727](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/727) |
+| `AR-407` | [Scope install drift warnings to requested hosts](issue-AR-407-scope-install-drift-to-requested-hosts.md) | done | p2 | install | [#727](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/727) |
 
 ## Traceability
 
