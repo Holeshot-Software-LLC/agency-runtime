@@ -180,11 +180,25 @@ installs each pass CLI, pip check, packaged MCP/dashboard and all eight generate
 smoke checks across all five hosts, without skips. This is not native activation
 or Windows producer/assembled release-set proof. All five current criteria stay
 unchanged; historical helper prose is explicitly separated from current state.
-Publish its separate retention PR, then AR-162; AR-161 is already retired and
-native Windows remains owner work.
+PR #712 merged f18b5acf at 09:07:33Z September 7 before the AR-162 tree;
+native Windows remains owner work and AR-161 is already retired.
 
-Current counts: 40 actual open trackers plus 89 unfinished legacy records,
-129 total after AR-158 completion; no duplicate tracker or false acceptance.
+AR-162's one-preflight fan-out redesign exists. Review reproduced a real
+HTTP-200/no-body availability gap; the repaired bounded classifier rejects it
+and malformed/ambiguous inputs before publishing availability. Sixty-five
+CodeQL focus cases, 210 workflow cases and the named 1085/three-skip spine pass.
+Read-only identity now reports public and code scanning available for the calling
+identity, not a hosted workflow pass. ADR-0226 initially revised only criterion
+8 to require matched measurements for any savings claim; none is made. First
+review c456b6bd accepted 1–6 and 8 but lacked a prior event comparison and old
+tracker-parity proof. The correction records exact historical/current projection
+equality and explicitly reconciles 9 to AR-347's existing legacy exemption.
+Criteria 1–7 and all workflow/test/runtime bytes remain unchanged. All nine
+current criteria satisfy at d30b8ae0 in the second and final isolated review.
+AR-162 is complete; hosted enforcement remains with AR-159.
+
+Current counts: 40 actual open trackers plus 88 unfinished legacy records,
+128 total after AR-162 completion; no duplicate tracker or false acceptance.
 The unchanged public-roster fixture belongs to AR-176. Windows stays excluded;
 the oldest-first ledger and capsule preserve all holds. Ordinary-session
 unverified Agency/header behavior remains a separate unfinished concern.

@@ -6,6 +6,7 @@ created: 2026-09-01
 updated: 2026-09-01
 tags: [documentation, trackers, parity, governance]
 related:
+  - docs/decisions/0226-gate-codeql-savings-claims-on-matched-measurements.md
   - docs/roadmap/issue-AR-267-accept-openclaw-numeric-package-revision.md
   - docs/roadmap/issue-AR-254-reconcile-canonical-worklog-history.md
 supersedes:

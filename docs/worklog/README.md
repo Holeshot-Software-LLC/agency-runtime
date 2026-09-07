@@ -1989,6 +1989,13 @@ This registry connects repository history to the roadmap and to optional detail 
 | `e708c212` | 2026-09-07 | docs(backlog): retain verified branch-protection gap [AR-159] | [AR-159](../roadmap/issue-AR-159-enforce-production-branch-protection.md) | [detail](2026-09-07-e708c212-branch-protection-audit.md) |
 | `b499e7fb` | 2026-09-07 | Merge pull request #711 from Holeshot-Software-LLC/codex/ar159-oldest-first-reconciliation | [AR-159](../roadmap/issue-AR-159-enforce-production-branch-protection.md) | [detail](2026-09-07-e708c212-branch-protection-audit.md) |
 | `6ddfc681` | 2026-09-07 | docs(backlog): retain paired release proof with fresh Linux artifacts [AR-160] | [AR-160](../roadmap/issue-AR-160-publish-platform-honest-native-release-artifacts.md) | [detail](2026-09-07-6ddfc681-linux-release-evidence.md) |
+| `f18b5acf` | 2026-09-07 | Merge pull request #712 from Holeshot-Software-LLC/codex/ar160-oldest-first-reconciliation | [AR-160](../roadmap/issue-AR-160-publish-platform-honest-native-release-artifacts.md) | [detail](2026-09-07-6ddfc681-linux-release-evidence.md) |
+| `fcdcd6eb` | 2026-09-07 | fix(ci): validate bounded CodeQL capability responses [AR-162] | [AR-162](../roadmap/issue-AR-162-collapse-unavailable-codeql-fanout.md) | [detail](2026-09-07-fcdcd6eb-codeql-capability.md) |
+| `b3293188` | 2026-09-07 | docs(acceptance): freeze AR-162 capability evidence | [AR-162](../roadmap/issue-AR-162-collapse-unavailable-codeql-fanout.md) | [detail](2026-09-07-fcdcd6eb-codeql-capability.md) |
+| `c456b6bd` | 2026-09-07 | docs(acceptance): preserve AR-162 comparison and tracker gaps | [AR-162](../roadmap/issue-AR-162-collapse-unavailable-codeql-fanout.md) | [detail](2026-09-07-fcdcd6eb-codeql-capability.md) |
+| `d30b8ae0` | 2026-09-07 | docs(acceptance): reconcile AR-162 historical and tracker proof | [AR-162](../roadmap/issue-AR-162-collapse-unavailable-codeql-fanout.md) | [detail](2026-09-07-fcdcd6eb-codeql-capability.md) |
+| `3916c2cd` | 2026-09-07 | docs(acceptance): freeze AR-162 reconciled review | [AR-162](../roadmap/issue-AR-162-collapse-unavailable-codeql-fanout.md) | [detail](2026-09-07-fcdcd6eb-codeql-capability.md) |
+| `53ed14ca` | 2026-09-07 | docs(backlog): complete accepted CodeQL capability boundary [AR-162] | [AR-162](../roadmap/issue-AR-162-collapse-unavailable-codeql-fanout.md) | [detail](2026-09-07-fcdcd6eb-codeql-capability.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
