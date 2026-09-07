@@ -78,15 +78,19 @@ spine passes 1085 with three existing skips (72.16s), and all 224 UI cases pass
 above unchanged floors. The cleanup double invokes actual guarded removal and
 asserts stage/target absence. First review also requires exact namespace values
 in two service-manager doubles; these assertions and real Store authority checks
-pass 60 cases. Five first criteria satisfy; the original three unresolved
-verdicts remain committed before the second/final pass. Two findings concern
-incomplete/mis-scoped citations, not a failed production authority boundary.
+pass 60 cases. The second/final review satisfies six criteria. Criteria 2 and 5 remain
+absent because the packet lacks complete original-double/argument and
+historical changed-module inventories. Both review rounds are retained; these
+are traceability limits, not failing runtime regressions. No third pass runs.
 No Python product, inference policy, security validation, coverage floor,
 exclusion or skip changes.
 
 [Current evidence](acceptance/evidence/AR-176-fixture-contracts-20260907.md)
 preserves the red runs and distinguishes current checks from July's reports.
-Isolated acceptance verification and normal PR/merge remain open.
+The implementation is ready for a normal PR/merge, but the record remains
+in_progress: criteria 2 and 5 are not accepted. The next bounded package is an
+explicit original-diff-to-current-call-site/module map; it requires a future
+review opportunity, not another unattended grading loop in this package.
 This legacy issue is exempt from new tracker creation; no redundant tracker is
 created solely to reconcile existing history.
 
@@ -230,22 +234,22 @@ ADR-0105 and ADR-0224 replace the obsolete fresh exhaustive/final-release
 requirements with current fixture repair and bounded delivery evidence.
 No historical failed or incomplete diagnostic is relabeled as passed.
 
-- [ ] Configuration-identity tests cannot inherit the suite's synthetic Store
+- [x] Configuration-identity tests cannot inherit the suite's synthetic Store
   override accidentally.
 - [ ] Test doubles retain every executable namespace and forbidden-root
   argument used by production.
-- [ ] Strict resolved-path and authority fixtures provide current materialized
+- [x] Strict resolved-path and authority fixtures provide current materialized
   identities instead of bypassing validation.
-- [ ] Missing and non-runnable Node diagnostics remain distinct without
+- [x] Missing and non-runnable Node diagnostics remain distinct without
   weakening launch identity checks.
 - [ ] The historical eleven-failure repair and exact reported result remain
   preserved; every affected test module passes together in the current package.
-- [ ] Current touched and neighboring modules pass in one order-sensitive,
+- [x] Current touched and neighboring modules pass in one order-sensitive,
   warning-strict process, with platform exclusions explicitly reported.
-- [ ] The six carried stale cases and additionally reproduced installer-cleanup
+- [x] The six carried stale cases and additionally reproduced installer-cleanup
   fixture pass without restoring removed tools, corrective retries, inference
   fallbacks or weakening filesystem checks; their failures remain recorded.
-- [ ] Focused checks, the named fast spine, current UI coverage floors and strict
+- [x] Focused checks, the named fast spine, current UI coverage floors and strict
   documentation/tracker/lint checks pass. Live host header/injection observations
   are reported separately and truthfully; historical exhaustive evidence is not
   presented as a fresh run and optional diagnostic controls remain unchanged.

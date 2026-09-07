@@ -30,11 +30,12 @@ was a record-reconciliation count, not 147 established defects. See the
 work is reserved for the owner's Windows machine; close or retire historical
 records only after checking relevance, current evidence and successor decisions.
 
-After AR-166's accepted completion on September 7, fresh tracker enumeration
-remains 40 open issues; the separate unfinished queue is 124
-records (40 mapped plus 84 legacy). Its six current isolated criteria satisfy;
-no new tracker or unrelated tracker closure is needed. Prior snapshots remain
-in the oldest-first ledger.
+After AR-175's accepted completion on September 7, the tracker count remains
+40 open issues; the separate unfinished queue is 119 records (40 mapped plus
+79 legacy). AR-176 repairs seven stale cases but retains two unaccepted
+inventory criteria after its bounded review; it is not marked done. No new
+tracker or unrelated closure is needed. Prior snapshots remain in the
+oldest-first ledger.
 AR-119 remains a relevant unfinished
 umbrella, not a completed defect. Current sequential dispositions and the next
 bounded package are in AR-404's

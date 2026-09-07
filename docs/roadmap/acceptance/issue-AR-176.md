@@ -73,6 +73,8 @@ First verdicts are preserved at 969f7190. Source assertions were strengthened,
 full Store authority evidence replaces a cache-isolation citation, and the six
 original failure names are explicitly included. All eight criteria are to be
 checked anew at this final candidate; no first-pass verdict is copied.
+Six satisfy; criteria 2 and 5 remain absent. The bounded two-review limit is
+reached, so no third verification is attempted and the issue is not marked done.
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
