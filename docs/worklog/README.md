@@ -2016,6 +2016,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `f9c55ada` | 2026-09-07 | fix(dashboard): retain correlation for null HTTP errors [AR-166] | [AR-166](../roadmap/issue-AR-166-truthful-dashboard-disclosure-and-correlation.md) | [Detail](2026-09-07-a4be59b0-dashboard-owner-selection.md) |
 | `4a244776` | 2026-09-07 | docs(acceptance): bind AR-166 to current browser evidence | [AR-166](../roadmap/issue-AR-166-truthful-dashboard-disclosure-and-correlation.md) | [Detail](2026-09-07-a4be59b0-dashboard-owner-selection.md) |
 | `f141583d` | 2026-09-07 | docs(acceptance): freeze current AR-166 dashboard evidence | [AR-166](../roadmap/issue-AR-166-truthful-dashboard-disclosure-and-correlation.md) | [Detail](2026-09-07-a4be59b0-dashboard-owner-selection.md) |
+| `bc28bf66` | 2026-09-07 | docs(acceptance): preserve AR-166 first review evidence gap | [AR-166](../roadmap/issue-AR-166-truthful-dashboard-disclosure-and-correlation.md) | [Detail](2026-09-07-a4be59b0-dashboard-owner-selection.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

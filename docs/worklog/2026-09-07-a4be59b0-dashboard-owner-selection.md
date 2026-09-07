@@ -82,3 +82,11 @@ f141583d freezes all six rowsets at 4a244776 and binds capsule/decision to the
 same source and browser proof. All originals remain; only criterion 1 was
 explicitly reconciled before review. Strict docs pass 1190 files. The first
 isolated review follows this clean ledger, with no builder-assigned verdicts.
+
+## First isolated review
+
+bc28bf66 preserves all six first verdicts at 4a244776: 1 and 3–6 satisfy;
+criterion 2 is absent because the supplied reconciliation test did not assert
+IDs and the implementation was omitted from its bounded packet. Preserve these
+results before inspecting that exact notice path and correcting the evidence.
+No acceptance change or additional authority follows from this gap.
