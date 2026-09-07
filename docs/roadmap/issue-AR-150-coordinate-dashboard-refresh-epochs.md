@@ -1,6 +1,6 @@
 ---
 title: "AR-150: Coordinate dashboard refresh commit epochs"
-status: open
+status: done
 category: roadmap
 created: 2026-07-26
 updated: 2026-09-07
@@ -43,7 +43,7 @@ Every view commit checks its captured epoch/controller, and full/control reads
 check the same epoch before applying any state. AR-138's cd35aa2c repair also
 guards obsolete error paths. No production change is needed in this package.
 
-Fresh UI coverage passes all 172 tests (227.66ms) with 96.93/86.58/95.71 above
+Initial fresh UI coverage passed all 172 tests (227.66ms) with 96.93/86.58/95.71 above
 the unchanged current 95/86/93 floors; dashboard server/auth/transaction tests
 pass 180 (28.82s). Source/test/script equality to 2ecde1a5 binds the existing
 21-case installed-wheel browser evidence, including real polling interaction
@@ -55,7 +55,10 @@ deferred-response regression before a second pass; no code defect is asserted.
 The first review is preserved at 4e820ff4. Four new direct cases now cover
 workforce/full refresh in both directions and both completion orders, delivering
 old responses even after abort. All four and the full 176-test UI suite pass;
-coverage is 96.93/86.70/95.71. No runtime change; freeze this proof for review.
+coverage is 96.93/86.70/95.71. No runtime change was needed.
+All four second-pass isolated criteria are satisfied against ae71761f on
+September 7; the acceptance record contains the exact run IDs and digests.
+PR #703 carries verified completion. There is no duplicate legacy tracker.
 
 The original report's absent-epoch state was pre-repair. The July implementation
 receipt below is historical; its blanket final aggregate-release requirement
@@ -73,10 +76,10 @@ AR-138 and ADR-0032 define the coherent refresh and adaptive polling contract.
 
 ## Acceptance
 
-- [ ] Deferred cross-scope responses cannot overwrite newer filters or worker views.
-- [ ] The inverse response order cannot compose incompatible revisions.
-- [ ] Last-good state, abort handling, focus preservation, and stale indicators remain correct.
-- [ ] Exact dashboard UI coverage floors and server integration tests pass.
+- [x] Deferred cross-scope responses cannot overwrite newer filters or worker views.
+- [x] The inverse response order cannot compose incompatible revisions.
+- [x] Last-good state, abort handling, focus preservation, and stale indicators remain correct.
+- [x] Exact dashboard UI coverage floors and server integration tests pass.
 
 ## Implementation evidence
 

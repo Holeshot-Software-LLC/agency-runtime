@@ -83,18 +83,16 @@ failures. AR-156 records the release checklist's stale UI coverage command for
 its upcoming reconciliation. PR #702 merged at cd061668. AR-146/148/149 are done
 and Windows-only AR-147 stays with the owner.
 
-Current AR-150 verifies existing shared dashboard commit epochs. Fresh 172 UI
-cases pass the current coverage floors, and server/auth/transaction checks pass
-180 in 28.82s. Exact source equality binds the existing 21-case installed-wheel
-receipt; no new production code or broad artifact claim. Its four original
-criteria remain pending isolated acceptance before any done/count change.
-Its first review satisfies 1/3/4 but finds inverse refresh-order evidence absent;
-preserved at 4e820ff4. Four direct deferred cases now pass in both scope directions
-and response orders, and full UI coverage passes 176. The second review remains
-before closure; PR #703 is draft. No runtime code changed.
+AR-150 is done: existing shared dashboard commit epochs verified, with four
+direct inverse-order tests added at ae71761f. First review's missing criterion-2
+evidence remains preserved at 4e820ff4; all four second-pass criteria satisfy.
+Full UI passes 176 at 96.93/86.70/95.71, server/auth/transaction passes 180 in
+28.82s. Unchanged product bytes bind the existing 21-case installed-wheel receipt;
+no runtime change or new installation claim. PR #703 carries the completion.
+After normal merge and read-back, the next bounded record is AR-151.
 
-Current counts: 40 actual open trackers plus 96 unfinished legacy records,
-136 total after AR-145 retirement; no duplicate tracker or false acceptance.
+Current counts: 40 actual open trackers plus 95 unfinished legacy records,
+135 total after AR-150 completion; no duplicate tracker or false acceptance.
 The unchanged public-roster fixture belongs to AR-176. Windows stays excluded;
 the oldest-first ledger and capsule preserve all holds. Ordinary-session
 unverified Agency/header behavior remains a separate unfinished concern.

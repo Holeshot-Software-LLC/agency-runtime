@@ -44,7 +44,7 @@ PR #699 at e2f7a5f2. AR-138 merged through PR #700 at 1ada216c on September 7,
 AR-145 retirement merged in PR #702 at cd061668, 05:53:46Z; main is clean there.
 Merge ledger 4f3d22fa starts AR-150; Windows-only AR-147 is left to the owner.
 
-Current package: AR-150 in verification. Shared refresh commit epoch and scope
+Current package: AR-150 accepted, PR #703 publication pending. Shared epoch and scope
 cancellation exist, with AR-138's late-error guards. Fresh UI coverage: 172 pass,
 96.93/86.58/95.71 above unchanged 95/86/93 floors. Server integration: 180 pass,
 28.82s. Product/test/script equality to 2ecde1a5 binds the existing installed-wheel
@@ -52,8 +52,8 @@ browser proof. First isolated review of 57c225c1 satisfies 1/3/4; criterion 2 is
 absent because the citations do not demonstrate inverse refresh-response order.
 First verdicts are preserved at 4e820ff4, ledger 140c68c6. Four direct inverse
 workforce/full cases now pass in both completion orders; full UI 176 pass and
-coverage 96.93/86.70/95.71. Second candidate ae71761f is frozen for review.
-PR #703 stays draft. No runtime defect or product change is asserted.
+coverage 96.93/86.70/95.71. All four isolated criteria satisfy at ae71761f.
+Mark done, merge PR #703 normally, then start AR-151. No runtime code changed.
 
 ## Completed evidence
 
@@ -68,8 +68,8 @@ PR #703 stays draft. No runtime defect or product change is asserted.
   184/184 protected mutations killed, zero survived/invalid, source unchanged.
   Broader 380-pass/one-failure/eight-skip run is not green: the unchanged
   fallback-roster fixture also fails on prior main and belongs to AR-176.
-- Current count: 40 actual open trackers plus 96 unfinished legacy records,
-  136 local unfinished after AR-145 retirement. No duplicate tracker.
+- Current count: 40 actual open trackers plus 95 unfinished legacy records,
+  135 local unfinished after AR-150 completion. No duplicate tracker.
 - AR-135 source: independent ZCode renderer/config registration, exact seven
   hooks, idempotency, preservation, toggle/rollback/drift and host identity exist.
   Current tests: 16 installer/header (4.74s), 13 selected hook/Stop (5.80s),
@@ -108,7 +108,7 @@ PR #703 stays draft. No runtime defect or product change is asserted.
 
 ## Exact blocker
 
-AR-150 remains open: direct inverse-order tests pass, second isolated review pending.
+AR-150's four isolated criteria satisfy; only normal PR #703 publication remains.
 AR-140 retains isolated supported-runner proof, including the owner's Windows
 arm. Local passing developer-host numbers do not waive that explicit criterion.
 AR-135 native proof is waiting_for_operator: one attended installed ZCode Agent
@@ -130,10 +130,9 @@ the same task; do not spawn a replacement task or close an unfinished umbrella.
 
 ## Next bounded work package
 
-1. Run AR-150's second isolated pass against candidate ae71761f; the first
-   verdicts are preserved and direct inverse refresh-order coverage is frozen.
-   No done/count flip before satisfaction; PR #703 remains draft until then.
-2. Complete documentation/tracker checks and merge one PR normally.
+1. AR-150's four second-pass criteria satisfy against ae71761f; first verdicts
+   are preserved and the done/count change is backed by isolated evidence.
+2. Complete documentation/tracker checks and merge PR #703 normally.
    Read back the actual merged head; update clean main by fast-forward only.
 3. Start an owned AR-151 worktree and record the prior merge. AR-146/148/149
    are done; Windows-only AR-147 stays with the owner and is not closed.
