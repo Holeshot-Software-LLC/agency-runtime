@@ -1956,6 +1956,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `99e05d1f` | 2026-09-07 | test(dashboard): reconcile current authority and freshness fixtures [AR-151] | [AR-151](../roadmap/issue-AR-151-align-route-lab-host-eligibility.md) | [detail](2026-09-07-58285009-route-lab-contract.md) |
 | `ea2ff6e5` | 2026-09-07 | docs(acceptance): freeze AR-151 host eligibility candidate | [AR-151](../roadmap/issue-AR-151-align-route-lab-host-eligibility.md) | [detail](2026-09-07-58285009-route-lab-contract.md) |
 | `f954d1e9` | 2026-09-07 | docs(acceptance): preserve AR-151 duplicate-scope contradiction | [AR-151](../roadmap/issue-AR-151-align-route-lab-host-eligibility.md) | [detail](2026-09-07-58285009-route-lab-contract.md) |
+| `791820bb` | 2026-09-07 | docs(decision): reconcile Route Lab duplicate identity scope [AR-151] | [AR-151](../roadmap/issue-AR-151-align-route-lab-host-eligibility.md) | [detail](2026-09-07-58285009-route-lab-contract.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
