@@ -1934,6 +1934,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `e2f7a5f2` | 2026-09-07 | Merge pull request #699 from Holeshot-Software-LLC/codex/ar135-oldest-first-reconciliation | [AR-135](../roadmap/issue-AR-135-complete-zcode-integration.md) | [detail](2026-09-07-cca759ab-reconcile-zcode-proof.md) |
 | `d7231df3` | 2026-09-07 | fix(dashboard): repair accessible scroll and metric layout [AR-138] | [AR-138](../roadmap/issue-AR-138-coherent-observable-dashboard-ui.md) | [detail](2026-09-07-d7231df3-dashboard-browser-repair.md) |
 | `fa4d042b` | 2026-09-07 | test(dashboard): capture loaded wheel browser evidence [AR-138] | [AR-138](../roadmap/issue-AR-138-coherent-observable-dashboard-ui.md) | null |
+| `4fafe9d2` | 2026-09-07 | docs(acceptance): freeze AR-138 browser candidate | [AR-138](../roadmap/issue-AR-138-coherent-observable-dashboard-ui.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
