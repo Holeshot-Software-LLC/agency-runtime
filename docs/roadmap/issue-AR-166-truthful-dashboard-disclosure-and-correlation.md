@@ -1,6 +1,6 @@
 ---
 title: "AR-166: Keep dashboard disclosure and correlation truthful"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-27
 updated: 2026-09-07
@@ -63,9 +63,9 @@ isolated review. Eighteen source-served browser checks pass for the selector.
 Criterion 2 also exposed a null-JSON HTTP error throwing TypeError before
 retaining status/request identity. A null-safe error lookup and 401/403/503
 regression cover it. Latest UI 190 and final source-served browser 20 checks
-pass, including null-401 terminal identity. Five current criteria satisfy at
-4a244776; criterion 2 needs a citation-only recheck of existing reconciliation
-message forwarding. All first verdicts remain at bc28bf66; no source change.
+pass, including null-401 terminal identity. All six current criteria satisfy at 4a244776 after one
+citation-only reconciliation recheck. First verdicts remain at bc28bf66; no
+source change was needed for the recheck.
 
 Client request IDs are canonical UUIDv4 values;
 HTTP and transport failures append only a validated identifier to their inert
@@ -102,24 +102,24 @@ or outward tracker state change is needed.
 
 ## Acceptance
 
-- [ ] Owner-authorized provider choices remain usable after rendering; empty,
+- [x] Owner-authorized provider choices remain usable after rendering; empty,
   non-array or unparseable provider lists stay disabled, stored keys are not
   reflected, and broker write scope remains unchanged.
-- [ ] HTTP, transport, authentication, and reconciliation failures expose a safe
+- [x] HTTP, transport, authentication, and reconciliation failures expose a safe
   request ID when one exists without reflecting an invalid identifier.
-- [ ] Successful Route Lab receipts display their validated request ID; malformed
+- [x] Successful Route Lab receipts display their validated request ID; malformed
   identifiers remain absent from rendered evidence.
-- [ ] The privacy chip explicitly describes runtime observation capture.
-- [ ] The bounded owner-only compiled specialist definition is labeled separately
+- [x] The privacy chip explicitly describes runtime observation capture.
+- [x] The bounded owner-only compiled specialist definition is labeled separately
   from runtime capture without changing authentication or broker scope.
-- [ ] Focused dashboard UI, documentation, formatting, and diff checks pass.
+- [x] Focused dashboard UI, documentation, formatting, and diff checks pass.
 
 ## Requirement reconciliation
 
 Original criterion 1: "Provider rendering cannot re-enable the provider-secret
 selector or any other persistent dashboard control." ADR-0229 explicitly
 replaces that superseded requirement under ADR-0117. Criteria 2–6 remain
-unchanged; all six await isolated verification.
+unchanged; all six now satisfy at 4a244776.
 
 ## Historical implementation evidence
 

@@ -30,9 +30,9 @@ was a record-reconciliation count, not 147 established defects. See the
 work is reserved for the owner's Windows machine; close or retire historical
 records only after checking relevance, current evidence and successor decisions.
 
-After AR-165's accepted completion on September 7, fresh tracker enumeration
-remains 40 open issues; the separate unfinished queue is 125
-records (40 mapped plus 85 legacy). Its nine current isolated criteria satisfy;
+After AR-166's accepted completion on September 7, fresh tracker enumeration
+remains 40 open issues; the separate unfinished queue is 124
+records (40 mapped plus 84 legacy). Its six current isolated criteria satisfy;
 no new tracker or unrelated tracker closure is needed. Prior snapshots remain
 in the oldest-first ledger.
 AR-119 remains a relevant unfinished
@@ -209,7 +209,7 @@ bounded package are in AR-404's
 | `AR-163` | [Reopen stale remediation resolution authority](issue-AR-163-reopen-stale-remediation-authority.md) | done | p1 | security | pre-tracker history; all eight original criteria independently satisfied |
 | `AR-164` | [Reject repository-ancestor PATH poisoning](issue-AR-164-reject-repository-ancestor-path-poisoning.md) | done | p0 | security | pre-tracker history; all seven current isolated criteria satisfied |
 | `AR-165` | [Fail ambiguous dependency-review capability probes closed](issue-AR-165-fail-ambiguous-dependency-review-capability-closed.md) | done | p0 | security | pre-tracker history; all nine current isolated criteria satisfied |
-| `AR-166` | [Keep dashboard disclosure and correlation truthful](issue-AR-166-truthful-dashboard-disclosure-and-correlation.md) | in_progress | p2 | dashboard | pre-tracker history; owner selector repaired, acceptance pending |
+| `AR-166` | [Keep dashboard disclosure and correlation truthful](issue-AR-166-truthful-dashboard-disclosure-and-correlation.md) | done | p2 | dashboard | pre-tracker history; all six current isolated criteria satisfied |
 | `AR-167` | [Normalize Windows release-source modes](issue-AR-167-normalize-windows-release-source-modes.md) | wont_do | p0 | release | Pre-tracker history; superseded by AR-197 |
 | `AR-168` | [Rebuild the canonical sdist source manifest](issue-AR-168-rebuild-canonical-sdist-source-manifest.md) | in_progress | p0 | release | pending authorization |
 | `AR-169` | [Exclude the native PE from portable wheels](issue-AR-169-exclude-native-pe-from-portable-wheel.md) | wont_do | p0 | release | Pre-tracker history; superseded by AR-197 |
@@ -615,7 +615,7 @@ not stable internal identifiers.
 | [AR-163](issue-AR-163-reopen-stale-remediation-authority.md) | `f64ba1e`; September 7 current behavior verified; all eight original criteria satisfied  `fd551fd4` (current evidence candidate);  `b9d91243` (eight-criterion freeze);  `49b26b5b` (all eight accepted; done);  `6d1ca01f` (PR #714 merge); | [ADR-0066](../decisions/0066-package-audited-roster-and-sync-quarantined-deltas.md) |
 | [AR-164](issue-AR-164-reject-repository-ancestor-path-poisoning.md) | `f64ba1e`, `63a1f5f2`; current boundary verified; all seven isolated criteria satisfied at 2a7c20c5  `083ae8b5` (current evidence candidate);  `48ac7535` (seven-criterion freeze);  `6ac3b1aa` (first verdicts; absence proof missing);  `2a7c20c5` (actual candidate tree proof);  `8c80dc16` (second freeze);  `db0a7ad7` (all seven accepted; done);  `ba6e55cb` (PR #715 merge); | [ADR-0055](../decisions/0055-freeze-executable-identity-before-launch.md) , [ADR-0227](../decisions/0227-bind-executable-isolation-to-current-launch-surfaces.md) |
 | [AR-165](issue-AR-165-fail-ambiguous-dependency-review-capability-closed.md) | `f64ba1e`, `55a00db2`, `9effff3f`, `c829216d`, `5c5df187`; all nine current criteria satisfied | [ADR-0037](../decisions/0037-layered-pinned-supply-chain-gates.md), [ADR-0097](../decisions/0097-gate-expensive-ci-fanout-behind-quality-contracts.md) , [ADR-0228](../decisions/0228-reconcile-dependency-review-evidence-gates.md) |
-| [AR-166](issue-AR-166-truthful-dashboard-disclosure-and-correlation.md) | `f64ba1e`, `a4be59b0`, `f9c55ada`, `4a244776`, `f141583d`, `bc28bf66`, `ad0a3b6e`; owner-selector repair awaiting candidate-bound review | [ADR-0027](../decisions/0027-authoritative-runtime-evidence-traces.md), [ADR-0029](../decisions/0029-secure-local-dashboard-and-bounded-observability.md), [ADR-0096](../decisions/0096-require-operator-presence-for-persistent-controls.md), [ADR-0117](../decisions/0117-unify-owner-control-authority.md), [ADR-0229](../decisions/0229-reconcile-dashboard-disclosure-with-owner-authority.md) |
+| [AR-166](issue-AR-166-truthful-dashboard-disclosure-and-correlation.md) | `f64ba1e`, `a4be59b0`, `f9c55ada`, `4a244776`, `f141583d`, `bc28bf66`, `ad0a3b6e`; all six current criteria satisfied | [ADR-0027](../decisions/0027-authoritative-runtime-evidence-traces.md), [ADR-0029](../decisions/0029-secure-local-dashboard-and-bounded-observability.md), [ADR-0096](../decisions/0096-require-operator-presence-for-persistent-controls.md), [ADR-0117](../decisions/0117-unify-owner-control-authority.md), [ADR-0229](../decisions/0229-reconcile-dashboard-disclosure-with-owner-authority.md) |
 | [AR-167](issue-AR-167-normalize-windows-release-source-modes.md) | `c844498`, `1ecc4e5`, `c067c6a`; tracker creation pending; `f0f5c386` (backlog disposition/evidence) | [ADR-0074](../decisions/0074-build-byte-deterministic-release-artifacts.md); [ADR-0219](../decisions/0219-retire-removed-helper-release-obligations.md) |
 | [AR-168](issue-AR-168-rebuild-canonical-sdist-source-manifest.md) | `1ad1cbc`; tracker creation pending | [ADR-0074](../decisions/0074-build-byte-deterministic-release-artifacts.md) |
 | [AR-169](issue-AR-169-exclude-native-pe-from-portable-wheel.md) | `2f80118`; tracker creation pending; `f0f5c386` (backlog disposition/evidence) | [ADR-0098](../decisions/0098-pair-portable-and-win-amd64-wheels.md); [ADR-0219](../decisions/0219-retire-removed-helper-release-obligations.md) |

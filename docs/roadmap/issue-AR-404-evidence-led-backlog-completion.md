@@ -232,16 +232,18 @@ still incorrectly disables valid choices. The one-line repair passes 189 UI
 cases/current coverage floors, 235 backend/owner cases and the fresh named spine
 1085/three existing skips. ADR-0229 explicitly reconciles only criterion 1;
 the bounded complete prompt already belongs to AR-298. Browser proof and all
-six isolated verdicts remain before completion. The selector passes 18 real
+six isolated verdicts are now satisfied at 4a244776. The selector passed 18 real
 source-served browser checks after a fixture-endpoint correction. A second
 criterion-2 gap, null HTTP error JSON losing status/request ID through TypeError,
 is repaired with a null-safe lookup and 401/403/503 regression. Latest UI 190
 passes; fresh named spine 1085/three skips, 66.99s; asset checks three pass.
 Final browser passes 20 exact-source checks at 1280/375, including terminal
-null-401 notices with safe IDs; no POSTs. Six isolated verdicts remain.
+null-401 notices with safe IDs; no POSTs. All six criteria satisfy after one
+existing-implementation citation recheck; first verdicts remain at bc28bf66.
+AR-166 is done; one PR/normal merge follows before AR-168.
 
-Current counts: 40 actual open trackers plus 85 unfinished legacy records,
-125 total after AR-165 completion; no duplicate tracker or false acceptance.
+Current counts: 40 actual open trackers plus 84 unfinished legacy records,
+124 total after AR-166 completion; no duplicate tracker or false acceptance.
 The unchanged public-roster fixture belongs to AR-176. Windows stays excluded;
 the oldest-first ledger and capsule preserve all holds. Ordinary-session
 unverified Agency/header behavior remains a separate unfinished concern.

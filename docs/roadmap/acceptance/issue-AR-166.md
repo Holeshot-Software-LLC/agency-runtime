@@ -61,11 +61,11 @@ tracker_url: null
 
 ## Verification
 
-First review at 4a244776 satisfies criteria 1 and 3–6; those verdicts remain
-unchanged. All first verdicts, including absent criterion 2, are preserved at
-bc28bf66. Criterion 2 now cites the already-existing reconciliation implementation
-at the same candidate; it forwards APIError messages containing the safe ID.
-No source, test, candidate or criterion changes. Only criterion 2 is rechecked.
+All six current criteria satisfy at 4a24477669e1b773b27626f2cd67631fbe78f875.
+Criteria 1 and 3–6 retain their first verdicts. Criterion 2 satisfies after one
+citation-only recheck of existing reconciliation forwarding. All first verdicts,
+including the absent result, remain at bc28bf66. No source, test, candidate or
+criterion changed for that recheck.
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
@@ -74,3 +74,4 @@ No source, test, candidate or criterion changes. Only criterion 2 is rechecked.
 | 4 | satisfied | `AR-166.4-20260907-df7e4d7b` | `809ad9c1ddc6f8492defcc20a09da46412f82811e619068bfb5cc337c87dc2cd` | 2026-09-07 | dashboard-config.js:122-144 and dashboard-render.js:515-529 set the privacy chip to “Redacted runtime content” or “Runtime metadata only” based on observability capture state; tests/dashboard_ui.test.mjs:2106-2138 asserts both labels. |
 | 5 | satisfied | `AR-166.5-20260907-4288fb08` | `366523e150dc9e9dfeb8ac4b91e0dc7fe952a689d3f04f1cd639f6caae60756b` | 2026-09-07 | dashboard-render.js distinguishes stored definitions from runtime delivery, workforce.py and dashboard.py bound content to 262144 characters, broker allow-lists exclude workforce detail, and the verification report records unchanged authentication and broker policy. |
 | 6 | satisfied | `AR-166.6-20260907-808b5876` | `d1a7713ce4c535d48ba2d188743886373d01ea2d58d11f3a149e2739c90c3d1e` | 2026-09-07 | The cited evidence document’s Fresh verification and Publication validation sections record 190 passing UI tests, strict documentation checks, Ruff check/format passing for 766 files, and zero diff-check errors. |
+| 2 | satisfied | `AR-166.2-20260907-adabbd41` | `a995a17850183137b7dd48f82197d511fb6a95170872b0540ea686b297189fea` | 2026-09-07 | dashboard-core.js validates request IDs and preserves the generated ID for HTTP and transport errors; dashboard-live.js forwards safe IDs through authentication and reconciliation notices, supported by the cited UI tests. |

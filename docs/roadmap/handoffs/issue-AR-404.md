@@ -63,20 +63,18 @@ ADR-0229 explicitly replaces only criterion 1 and preserves its original wording
   and recovers after stale selection removal.
 - The old 8192-character preview is historical; AR-298's complete bounded
   Store definition is at most 262144 characters and is not runtime proof.
-- Queue stays 40 actual trackers plus 85 legacy, 125 local unfinished.
+- Queue is 40 actual trackers plus 84 legacy, 124 local unfinished.
 
 ## Exact blocker
 
 Both fixes pass 20 source-served browser checks at 1280/375 pixels, with zero
 POSTs and exact served config/core hashes. This includes null-401 terminal
 notices retaining safe IDs. The initial zero-check timeout is retained and
-explained by the fixture's obsolete config endpoint. Six isolated verdicts
-were reviewed at 4a244776. Criteria 1 and 3–6 satisfy; criterion 2 is absent
-because reconciliation implementation/direct ID assertions were not supplied.
-All first verdicts remain at bc28bf66. Exact candidate inspection confirms both
-reconciliation paths forward the ID-bearing APIError message. The bounded packet
-now cites that existing implementation; only criterion 2 is rechecked, with
-the other five verdicts unchanged. No source/test/candidate/requirement change.
+explained by the fixture's obsolete config endpoint. All six criteria
+satisfy at 4a244776 after one citation-only criterion-2 recheck. The other five
+first verdicts remain unchanged; all first results are preserved at bc28bf66.
+No code/test/candidate/requirement change was needed for the recheck. AR-166
+has no scoped acceptance blocker; publish its one normal PR and merge.
 
 Retained holds: AR-159 hosted enforcement/check-app/bypass; AR-160 Windows/
 paired release/live publication; AR-156 Windows/profile and hosted topology;
@@ -94,8 +92,8 @@ No empty commits, staffing or restart. Preserve first verdicts before correction
 
 ## Next bounded work package
 
-1. Preserve the final browser/evidence candidate and immediate ledger.
-2. Run the frozen six-check isolated review; complete only if all pass.
+1. Commit accepted AR-166 completion and its immediate ledger.
+2. Publish one normal PR and read back the merge; no acceptance rerun.
 3. One PR/normal merge/readback, then AR-168 (AR-167 already retired).
 
 ## Verification
