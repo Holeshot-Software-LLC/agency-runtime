@@ -89,3 +89,11 @@ This corrected candidate replaces 9419e688 before the first isolated pass.
 
 5b322e20 freezes 06aee2ede122ce48362d532886e537bf5fd1d80a after successful structural validation.
 No verifier verdict or source/criterion change preceded this correction.
+
+## First isolated review
+
+662eb947 (662eb9471745c413a02d5b820981ffd6d1eb0915) preserves all nine first verdicts at 06aee2ed:
+1–6 and 9 satisfy; 7/8 are absent because the packets cite the browser summary
+without the primary report and exact source-tree equivalence. No product defect
+is asserted by these two verdicts. Complete that evidence before the final pass;
+do not hide or overwrite the first results.
