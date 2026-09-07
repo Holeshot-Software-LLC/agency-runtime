@@ -2093,6 +2093,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `30214408` | 2026-09-07 | Merge pull request #733 from Holeshot-Software-LLC/codex/ar183-private-producer-evidence | [AR-183](../roadmap/issue-AR-183-normalize-private-posix-wheel-modes.md) | [Detail](2026-09-07-6cc0b176-detached-private-mode-producer.md) |
 | `81cf8000` | 2026-09-07 | docs(backlog): reconcile AR-184 with detached Linux producer proof | [AR-184](../roadmap/issue-AR-184-normalize-private-posix-sdist-modes.md) | [Detail](2026-09-07-81cf8000-sdist-producer-reconciliation.md) |
 | `c64ce3ce` | 2026-09-07 | Merge pull request #734 from Holeshot-Software-LLC/codex/ar184-linux-producer-reconciliation | [AR-184](../roadmap/issue-AR-184-normalize-private-posix-sdist-modes.md) | [Detail](2026-09-07-81cf8000-sdist-producer-reconciliation.md) |
+| `49bea737` | 2026-09-07 | docs(backlog): retire obsolete Codex V2 grant checklist | [AR-191](../roadmap/issue-AR-191-support-codex-v2-hook-identity.md) | [Detail](2026-09-07-49bea737-v2-grant-checklist-retirement.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
