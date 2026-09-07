@@ -27,8 +27,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-404
 branch: codex/ar166-oldest-first-reconciliation
-evidence_commit: a4be59b05d1918861f8d117e68c57331a681021b
-minimum_ledger_commit: ebb471a8da1fe6e2a63b82edbe7cea5e2e63b03b
+evidence_commit: 4a24477669e1b773b27626f2cd67631fbe78f875
+minimum_ledger_commit: bd6e0f5c53212f5c74fa442f8757730f9f81864f
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -71,8 +71,8 @@ Both fixes pass 20 source-served browser checks at 1280/375 pixels, with zero
 POSTs and exact served config/core hashes. This includes null-401 terminal
 notices retaining safe IDs. The initial zero-check timeout is retained and
 explained by the fixture's obsolete config endpoint. Six isolated verdicts
-remain; bind the final browser/builder candidate next. No API authority or
-additional criterion change.
+remain, frozen at 4a244776 with immediate ledger bd6e0f5c. No API authority or
+additional criterion change; the first isolated review follows this checkpoint.
 
 Retained holds: AR-159 hosted enforcement/check-app/bypass; AR-160 Windows/
 paired release/live publication; AR-156 Windows/profile and hosted topology;
@@ -90,8 +90,8 @@ No empty commits, staffing or restart. Preserve first verdicts before correction
 
 ## Next bounded work package
 
-1. Commit final browser/evidence candidate and immediate ledger.
-2. Freeze six builder rowsets and run isolated review; complete only if all pass.
+1. Preserve the final browser/evidence candidate and immediate ledger.
+2. Run the frozen six-check isolated review; complete only if all pass.
 3. One PR/normal merge/readback, then AR-168 (AR-167 already retired).
 
 ## Verification

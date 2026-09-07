@@ -55,7 +55,9 @@ recovery restores it. No credentials or server permissions are granted.
 All six current criteria require isolated candidate-bound verdicts.
 
 Selector implementation and initial evidence: a4be59b0, with immediate ledger
-ebb471a8. Acceptance verdicts follow the final candidate, not this decision.
+ebb471a8. f9c55ada additionally repairs null HTTP errors under unchanged
+criterion 2. Final browser/builder candidate 4a244776 and ledger bd6e0f5c bind
+all six rowsets; isolated verdicts, not this decision, determine completion.
 
 ## Alternatives
 
