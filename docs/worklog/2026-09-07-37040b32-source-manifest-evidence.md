@@ -16,7 +16,7 @@ type: worklog
 commit: 37040b321d495772dc851711ac87bf7795c9440f
 short: 37040b32
 date: 2026-09-07
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/718
 related_issues:
   - docs/roadmap/issue-AR-168-rebuild-canonical-sdist-source-manifest.md
 ---
@@ -57,3 +57,7 @@ Normal PR/merge/readback precedes AR-170; AR-169 is already retired.
 37040b32 (37040b321d495772dc851711ac87bf7795c9440f) records the bounded retention. The immediate ledger
 keeps this checkpoint clean before publication; no acceptance runner is invoked
 for a known native-platform hold.
+
+PR #718 carries this retention. Final strict documentation validation covers
+1192 Markdown files. End telemetry is 70.4 percent at 11:49:17Z; 37040b32 and
+c94fcdc4 form the clean substantive/ledger checkpoint before publication.
