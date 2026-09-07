@@ -11,6 +11,7 @@ related:
   - docs/roadmap/AR-404-count-reconciliation-20260905.md
   - docs/roadmap/issue-AR-159-enforce-production-branch-protection.md
   - docs/roadmap/acceptance/evidence/AR-162-codeql-capability-20260907.md
+  - docs/roadmap/acceptance/evidence/AR-162-record-reconciliation-20260907.md
   - docs/decisions/0226-gate-codeql-savings-claims-on-matched-measurements.md
   - docs/roadmap/issue-AR-162-collapse-unavailable-codeql-fanout.md
   - docs/roadmap/issue-AR-160-publish-platform-honest-native-release-artifacts.md
@@ -54,19 +55,21 @@ remain unchanged. Source changes only in codeql.yml and test_release_packaging.p
   Unchanged UI 188/browser 21 receipts reused, not rerun.
 - Read-only identity: public/non-fork; owner-authenticated code-scanning endpoint
   returns HTTP 200/one-element array. Not workflow-token or hosted analyzer proof.
-- ADR-0226 explicitly revises only criterion 8: any savings claim still requires
-  a matched unavailable-path measurement. No savings asserted or benchmark pass
-  inferred. All other eight criteria remain; original wording/history preserved.
+- ADR-0226 retains claim-conditional matched cost proof for 8 and explicitly
+  reconciles 9 to AR-347's existing pre-tracker exemption after the first review.
+  Criteria 1–7 remain unchanged; both original wordings and first verdicts remain.
+- Exact pre-fan-out/repaired event and concurrency projections compare identical.
+  Second evidence is documentation-only; workflow, tests and runtime equal fcdcd6eb.
+  Strict docs pass 1174 Markdown files and tracker parity passes 397 mapped items.
 - Counts remain 40 actual open trackers plus 89 unfinished legacy records,
   129 local unfinished. No duplicate tracker or completion claim.
 
 ## Exact blocker
 
-Repair/evidence fcdcd6eb is committed. First isolated review satisfies criteria
-1–6 and 8; criterion 7 lacks a cited prior trigger/concurrency comparison and
-criterion 9 conflicts with the existing pre-tracker exemption. Preserve all
-first verdicts, add comparison evidence and explicitly reconcile tracker scope
-before a new candidate/review. No implementation failure or closure is inferred.
+First review c456b6bd is preserved: 1–6 and 8 satisfy, 7/9 are absent. The new
+receipt supplies historical comparison and ADR-0226 explicitly adopts AR-347's
+tracker rule. The second acceptance record is pending its new candidate freeze;
+all nine need new verdicts. No implementation failure or closure is inferred.
 
 AR-159 retains hosted enforcement/check-app/bypass proof; main is unprotected
 with no current checks. Old billing cause is not freshly established; the extra
@@ -91,9 +94,8 @@ checkpoint, then continue the same task. No empty commits, restart or staffing.
 
 ## Next bounded work package
 
-1. Preserve first AR-162 verdicts and immediately record their ledger.
-2. Add prior/current trigger comparison and reconcile the legacy tracker gate;
-   freeze a new candidate and rerun all nine isolated checks.
+1. Commit AR-162's record correction and immediate ledger.
+2. Freeze the new candidate and rerun all nine isolated checks once.
 3. On accepted completion, reconcile counts and publish one normal PR, then
    proceed to the next oldest unfinished non-Windows record.
 

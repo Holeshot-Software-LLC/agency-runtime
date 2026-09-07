@@ -1,11 +1,13 @@
 ---
-title: "Gate CodeQL savings claims on matched measurements"
+title: "Reconcile CodeQL measurement and legacy tracker gates"
 status: accepted
 category: decisions
 created: 2026-09-07
 updated: 2026-09-07
 tags: [ci, security, evidence, cost, backlog]
 related:
+  - docs/roadmap/issue-AR-347-reconcile-tracker-parity-backlog.md
+  - docs/roadmap/acceptance/evidence/AR-162-record-reconciliation-20260907.md
   - docs/roadmap/issue-AR-162-collapse-unavailable-codeql-fanout.md
   - docs/roadmap/issue-AR-159-enforce-production-branch-protection.md
   - docs/roadmap/acceptance/evidence/AR-162-codeql-capability-20260907.md
@@ -19,7 +21,7 @@ type: decision
 deciders: [maintainers]
 ---
 
-# ADR-0226: Gate CodeQL savings claims on matched measurements
+# ADR-0226: Reconcile CodeQL measurement and legacy tracker gates
 
 ## Context
 
@@ -39,16 +41,30 @@ verified without manufacturing an unlicensed private repository or changing
 hosted entitlements. Historical 0.34/0.24 raw runner-minutes are not a current
 comparison or GitHub billing units. No savings are claimed.
 
+First review c456b6bd accepted criteria 1–6 and 8 but found missing historical
+comparison evidence for 7 and missing remote parity for 9. AR-347 already
+established a versioned pre-tracker exemption, explicitly including AR-162.
+Creating a redundant tracker to satisfy older wording would contradict that
+owner-approved reconciliation. Preserve the failed first verdicts and adopt the
+existing rule explicitly; do not reinterpret them as satisfied old criteria.
+
 ## Decision
 
-Replace only AR-162's eighth active criterion with:
+Retain the explicitly revised eighth criterion:
 
 "Current hosted capability and check-evidence limits are reported accurately;
 any speed or billing-savings claim requires a matched hosted unavailable-path
 topology and raw-duration measurement, and no such claim is made without it."
 
-Preserve its original wording and old telemetry. Leave the other eight criteria
-unchanged and require isolated verification before completion. This separates
+Following the preserved first review, replace the ninth criterion with:
+
+"AR-162 follows the governed pre-tracker exemption while unmapped; both strict
+documentation/tracker checks pass, and any later authorized tracker mapping has
+exact URL/state parity with the local record."
+
+Preserve both original wordings and old telemetry. Criteria 1–7 remain unchanged;
+add the missing historical comparison for 7. Require all nine isolated verdicts
+at a new candidate before completion. The eighth-criterion revision separates
 functional correctness from an optional, claim-triggered cost measurement;
 it does not call an unperformed benchmark passed.
 
@@ -66,6 +82,8 @@ dispatch, subscription or native CodeQL analysis is authorized here.
 - Missing current hosted checks remains explicit under AR-159; the endpoint
   read cannot satisfy that record or establish workflow-token authority.
 - ADR-0037 and ADR-0097 remain accepted and unchanged.
+- AR-347's self-shrinking exemption is unchanged: once mapped, the ID must leave
+  the exemption list and both strict checks enforce ordinary URL/state parity.
 
 ## Alternatives
 
@@ -75,3 +93,5 @@ dispatch, subscription or native CodeQL analysis is authorized here.
 - Declare the old benchmark satisfied from local tests or job count: rejected.
 - Remove the unavailable path or security analysis: rejected; both configured
   paths and their fail-closed guarantees remain required.
+- Create a duplicate legacy tracker or silently call old parity satisfied:
+  rejected in favor of explicitly applying the existing governed exemption.

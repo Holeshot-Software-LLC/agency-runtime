@@ -6,6 +6,8 @@ created: 2026-07-27
 updated: 2026-09-07
 tags: [testing, security, ci, performance, cost, github-actions]
 related:
+  - docs/roadmap/acceptance/evidence/AR-162-record-reconciliation-20260907.md
+  - docs/roadmap/issue-AR-347-reconcile-tracker-parity-backlog.md
   - docs/roadmap/acceptance/issue-AR-162.md
   - docs/decisions/0226-gate-codeql-savings-claims-on-matched-measurements.md
   - docs/roadmap/acceptance/evidence/AR-162-codeql-capability-20260907.md
@@ -55,14 +57,23 @@ Exact evidence is in the [receipt](acceptance/evidence/AR-162-codeql-capability-
 Current read-only identity is public/non-fork; code scanning returns HTTP 200
 with an alert array for the calling identity. This is not a current workflow-token
 or hosted analyzer pass. ADR-0226 explicitly makes only the old eighth measurement
-requirement claim-conditional; no speed or billing savings are claimed. All nine
-current criteria still require isolated verification.
+requirement claim-conditional; no speed or billing savings are claimed. Following
+the preserved first review, it also explicitly reconciles criterion 9 to AR-347's
+existing pre-tracker exemption. Criteria 1–7 remain unchanged; all nine current
+criteria require a new candidate-bound isolated review.
 
 First isolated review at fcdcd6eb satisfies criteria 1–6 and 8. Criterion 7 is
 absent because the rowset lacks a prior trigger/concurrency comparison; criterion
 9 is absent because the old wording requires remote parity rather than the
 existing legacy exemption. Preserve this result before a revised evidence or
 requirements checkpoint. No implementation defect or completion is inferred.
+
+The correction records identical event/concurrency projections before the
+original fan-out change and at fcdcd6eb. It adopts AR-347's existing exemption
+explicitly for criterion 9, with strict docs/tracker checks passing. Workflow,
+tests, scripts and runtime remain byte-identical to fcdcd6eb; all nine criteria
+await the new-candidate review. See the
+[record correction](acceptance/evidence/AR-162-record-reconciliation-20260907.md).
 
 ## Approach
 
@@ -104,16 +115,24 @@ explicitly authorized and verified.
 - [ ] Current hosted capability and check-evidence limits are reported accurately;
   any speed or billing-savings claim requires a matched hosted unavailable-path
   topology and raw-duration measurement, and no such claim is made without it.
-- [ ] The tracker issue and local roadmap record have exact URL/state parity after
-  tracker creation is authorized.
+- [ ] AR-162 follows the governed pre-tracker exemption while unmapped; both strict
+  documentation/tracker checks pass, and any later authorized tracker mapping has
+  exact URL/state parity with the local record.
 
 ## Measurement requirement reconciliation
 
 ADR-0226 preserves the original eighth criterion here: "A matched hosted
 unavailable-path run records the new job topology and raw runner duration before
 any speed or billing-savings claim is accepted." No current savings assertion
-is made and no unavailable-service scenario is manufactured. The other eight
-criteria are unchanged. AR-159 retains hosted enforcement and current-check proof.
+is made and no unavailable-service scenario is manufactured. AR-159 retains
+hosted enforcement and current-check proof.
+
+After first review c456b6bd, ADR-0226 also explicitly reconciles criterion 9 to
+the existing AR-347 exemption. Its original wording is preserved here: "The
+tracker issue and local roadmap record have exact URL/state parity after tracker
+creation is authorized." This is not a claim that old remote-parity evidence
+exists. Criteria 1–7 remain unchanged; a before/after comparison supplies the
+missing evidence for 7. All nine require a new candidate and new verdicts.
 
 Two original unavailable runs consumed 0.34 raw runner-minutes on a PR and 0.24
 on a push, using two language jobs with no analysis. These remain historical

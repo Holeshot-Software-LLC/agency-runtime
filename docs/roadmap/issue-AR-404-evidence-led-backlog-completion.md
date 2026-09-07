@@ -188,9 +188,13 @@ HTTP-200/no-body availability gap; the repaired bounded classifier rejects it
 and malformed/ambiguous inputs before publishing availability. Sixty-five
 CodeQL focus cases, 210 workflow cases and the named 1085/three-skip spine pass.
 Read-only identity now reports public and code scanning available for the calling
-identity, not a hosted workflow pass. ADR-0226 explicitly revises only criterion
-8 to require matched measurements for any savings claim; none is made. The
-other eight criteria remain unchanged. Candidate-bound isolated review is next.
+identity, not a hosted workflow pass. ADR-0226 initially revised only criterion
+8 to require matched measurements for any savings claim; none is made. First
+review c456b6bd accepted 1–6 and 8 but lacked a prior event comparison and old
+tracker-parity proof. The correction records exact historical/current projection
+equality and explicitly reconciles 9 to AR-347's existing legacy exemption.
+Criteria 1–7 and all workflow/test/runtime bytes remain unchanged. A new
+candidate and all nine isolated verdicts are required; no completion yet.
 
 Current counts: 40 actual open trackers plus 89 unfinished legacy records,
 129 total after AR-158 completion; no duplicate tracker or false acceptance.
