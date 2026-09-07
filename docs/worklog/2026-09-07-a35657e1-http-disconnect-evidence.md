@@ -17,7 +17,7 @@ type: worklog
 commit: a35657e14e0d0bd669a542f02abda2b64a5374ca
 short: a35657e1
 date: 2026-09-07
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/709
 related_issues:
   - docs/roadmap/issue-AR-157-quiet-public-http-disconnects.md
 ---
@@ -69,3 +69,5 @@ five criteria and explicitly reconciled sixth. Current count is 40 actual open
 trackers plus 90 unfinished legacy records (130 total). Strict documentation,
 tracker parity, metadata and policy checks pass; no duplicate tracker is created.
 Normal PR publication precedes the separate AR-158 package.
+PR #709 carries accepted completion. Fresh enumeration confirms 130 unfinished
+records (90 legacy, 40 mapped); end telemetry is 40.4 percent with a clean pair.
