@@ -60,3 +60,5 @@ normal PR/merge. No runtime change or provider-profile mutation in this package.
 Substantive `500de085` freezes exact source/live evidence and explicit existing-policy reconciliation; the builder does not assign acceptance verdicts.
 
 Packet `90c30a35` binds all9 isolated criteria to500de085; no requirement or evidence is changed by candidate freezing.
+
+Checkpoint `51af465d` preserves eight satisfied judgments and both unavailable-run observations. Criterion4 alone remains pending; its frozen evidence is unchanged.
