@@ -273,3 +273,19 @@ and run the isolated nine-criterion verification before any completion claim.
 No verdict is supplied by this builder. This package does not change the
 global registry, worklog, tracker or owner configuration. Documentation gates
 are checked before handoff; the base-ledger gap is reported above.
+
+## Isolated verifier execution
+
+The first frozen nine-criterion run exited 2 with every verifier unavailable
+and no verdicts. The trusted Claude executable package and its `bin` directory
+were group-writable (0775). Removing group write from exactly those two owned
+directories restored the existing trusted CLI; no recursive permissions change,
+trust-guard relaxation or credential change was made.
+
+The second run, under umask 077, recorded eight satisfied verdicts (1, 2, 3,
+5, 6, 7, 8 and 9), and exited 2 because criterion 4 returned no valid verdict.
+The verifier's unavailable-or-vocabulary result does not identify its specific
+cause. At 23:46 UTC the two directories were again 0775; the actor is unknown.
+The eight valid judgments are retained. One bounded retry of criterion 4 only
+follows the same exact two-directory repair, with unchanged frozen candidate
+and builder evidence. No missing result is treated as acceptance.
