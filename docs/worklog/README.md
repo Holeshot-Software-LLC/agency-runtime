@@ -2005,6 +2005,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `48ac7535` | 2026-09-07 | docs(acceptance): freeze AR-164 current executable evidence | [AR-164](../roadmap/issue-AR-164-reject-repository-ancestor-path-poisoning.md) | [detail](2026-09-07-083ae8b5-executable-boundary.md) |
 | `6ac3b1aa` | 2026-09-07 | docs(acceptance): preserve AR-164 backend absence evidence gap | [AR-164](../roadmap/issue-AR-164-reject-repository-ancestor-path-poisoning.md) | [detail](2026-09-07-083ae8b5-executable-boundary.md) |
 | `2a7c20c5` | 2026-09-07 | docs(acceptance): prove AR-164 retired backend absence from Git | [AR-164](../roadmap/issue-AR-164-reject-repository-ancestor-path-poisoning.md) | [detail](2026-09-07-083ae8b5-executable-boundary.md) |
+| `8c80dc16` | 2026-09-07 | docs(acceptance): freeze AR-164 exact tree evidence | [AR-164](../roadmap/issue-AR-164-reject-repository-ancestor-path-poisoning.md) | [detail](2026-09-07-083ae8b5-executable-boundary.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

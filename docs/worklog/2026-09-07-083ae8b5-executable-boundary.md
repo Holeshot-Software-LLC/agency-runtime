@@ -71,3 +71,7 @@ output. Source tree 0ed31de7ec3b387ef463bd087a01eb4907de972c is unchanged;
 product/tests/scripts/gate comparison returns zero. Only criterion 5's evidence
 citation changes. All first verdicts remain at 6ac3b1aa; no verdict is copied
 to the new candidate. Strict docs pass 1182 Markdown files.
+
+8c80dc16 freezes the second record at 2a7c20c5. The source tree still equals
+0ed31de7ec3b387ef463bd087a01eb4907de972c. All seven isolated checks run again
+after the clean ledger; this is the second and final ordinary review pass.
