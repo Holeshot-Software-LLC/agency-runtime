@@ -54,3 +54,5 @@ Implementation tests and acceptance evidence are intentionally a later slice.
 
 AR-409 retains AR-408 integration, source-bound acceptance, installed live
 verification and PR/merge. No acceptance verdict or installed claim is made.
+
+Merge `c095616a` brings only the parallel filing/ADR checkpoint into AR185 publication so remote735 and canonical records stay in parity. Runtime implementation remains on its own branch.
