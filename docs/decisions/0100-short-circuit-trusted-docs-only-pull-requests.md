@@ -3,9 +3,10 @@ title: "Short-circuit trusted documentation-only pull requests"
 status: accepted
 category: decisions
 created: 2026-07-27
-updated: 2026-07-27
+updated: 2026-09-07
 tags: [ci, github-actions, cost, documentation, security, release]
 related:
+  - docs/decisions/0233-separate-hosted-run-timing-from-billing-administration.md
   - docs/roadmap/issue-AR-177-make-exhaustive-python-ci-manual.md
   - docs/decisions/0101-run-exhaustive-python-verification-on-demand.md
   - docs/roadmap/issue-AR-174-short-circuit-docs-only-ci.md
@@ -86,3 +87,10 @@ identity, cache provenance, expiry, and invalidation.
   in the source distribution.
 - **Reuse artifacts from another run.** Deferred until immutable cross-run
   cache authority and provenance have a governed design and measured proof.
+
+## Measurement clarification
+
+AR-174's September 7 evidence candidate 452639dd recovers an exact August 31
+five-runner docs-only run. ADR-0233 distinguishes that historical raw duration
+from billing-account repair and current hosted availability; first verdicts
+remain at 5d20ec28. It does not change this decision's trust or artifact gates.

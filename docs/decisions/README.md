@@ -156,6 +156,7 @@ Status meanings:
 | [ADR-0027](0027-authoritative-runtime-evidence-traces.md) | Derive runtime claims from authoritative correlated evidence | Accepted |
 | [ADR-0231](0231-separate-route-lab-correlation-from-turn-persistence.md) | Separate Route Lab correlation from durable turn evidence | Superseded |
 | [ADR-0232](0232-represent-route-lab-observations-by-trace-digest.md) | Represent Route Lab observation correlation by the trace digest | Accepted |
+| [ADR-0233](0233-separate-hosted-run-timing-from-billing-administration.md) | Separate hosted-run timing from billing administration | Accepted |
 | [ADR-0045](0045-turn-scoped-specialist-activation.md) | Use turn-scoped specialist activation with immutable session history | Accepted |
 | [ADR-0047](0047-reconcile-litellm-model-and-router-evidence.md) | Reconcile LiteLLM actual-model and router evidence separately | Accepted |
 | [ADR-0065](0065-keep-compact-resident-manager-kernel.md) | Keep a compact resident manager kernel at the parent boundary | Superseded |

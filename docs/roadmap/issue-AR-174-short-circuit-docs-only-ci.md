@@ -6,6 +6,7 @@ created: 2026-07-27
 updated: 2026-09-07
 tags: [ci, github-actions, performance, cost, documentation, security]
 related:
+  - docs/decisions/0233-separate-hosted-run-timing-from-billing-administration.md
   - docs/roadmap/acceptance/evidence/AR-174-docs-only-ci-20260907.md
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
   - docs/decisions/0105-bound-delivery-to-live-demo-checkpoints.md
@@ -78,7 +79,12 @@ exactly five jobs totaling 366 raw seconds (6.10 runner-minutes), with runtime
 fanout skipped. Trusted classifier/whitespace blobs match the current source.
 This is one historical timing measurement, not current billing health, a
 matched savings claim or new native-Windows execution. The complete read-only
-API/Git receipts are linked below; eight isolated criteria remain to be judged.
+API/Git receipts are linked below. First isolated verdicts are preserved at
+5d20ec28: 2/3/4/6/8 satisfy; 1/5 need self-contained workflow/matrix citations,
+and 7 lacks account-repair proof despite valid raw timing. ADR-0233 explicitly
+separates timing from billing administration, retaining the original requirement
+and avoiding any claim that the account was repaired. All eight criteria will
+receive new verdicts at the final candidate; no copied results or third review.
 
 ## Approach
 
@@ -99,7 +105,8 @@ enforcement.
 
 The existing pre-tracker exemption applies; no duplicate tracker is created.
 ADR-0105 reconciles only the obsolete eighth universal gate before review.
-All original wording is retained; criteria 1–7 are unchanged.
+ADR-0233 separately reconciles criterion 7 after preserving the first review.
+All original wording is retained; criteria 1–6 are unchanged.
 
 ## Acceptance
 
@@ -114,15 +121,19 @@ All original wording is retained; criteria 1–7 are unchanged.
   rejects missing, failed, cancelled, or incoherent results.
 - [x] Focused scope, workflow, sharding, shell, Ruff, release-hygiene, and
   offline workflow-security checks pass.
-- [ ] One eligible hosted pull request measures raw runner minutes after the
-  GitHub Actions billing/spending block is repaired.
+- [ ] One exact eligible hosted pull-request run records raw runner minutes
+  from allocated jobs' start/completion timestamps, with base/head, complete
+  regular docs-only delta and successful five-runner topology; historical timing
+  is dated and does not assert billing repair, current availability or savings.
 - [ ] Focused scope/workflow/sharding/session, Bash syntax, release hygiene,
   offline workflow security, named production spine, UI/current coverage,
   metadata, policy, worklog, strict docs/tracker, Ruff and diff checks pass;
   exhaustive integration remains optional under ADR-0105.
 
-## Preserved original criterion
+## Preserved original criteria
 
+7. One eligible hosted pull request measures raw runner minutes after the
+   GitHub Actions billing/spending block is repaired.
 8. The final repository release gate passes at the implementation commit.
 
 ## Implementation evidence

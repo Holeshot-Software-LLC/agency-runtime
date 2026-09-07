@@ -6,6 +6,7 @@ created: 2026-09-07
 updated: 2026-09-07
 tags: [evidence, ci, documentation, cost, backlog]
 related:
+  - docs/decisions/0233-separate-hosted-run-timing-from-billing-administration.md
   - docs/roadmap/issue-AR-174-short-circuit-docs-only-ci.md
   - docs/decisions/0100-short-circuit-trusted-docs-only-pull-requests.md
   - docs/decisions/0105-bound-delivery-to-live-demo-checkpoints.md
@@ -34,9 +35,14 @@ and a complete docs-only delta. This is one historical measurement, not current
 billing health, matched before/after savings, a new Windows execution, or an
 installed-harness proof. AR-156/159 and native producer obligations remain open.
 
-Only criterion 8's universal final-release gate is reconciled under existing
-ADR-0105. Original wording is preserved in the issue; criteria 1–7 stay unchanged.
-No acceptance verdict is authored by the builder.
+Initially only criterion 8's universal final-release gate followed ADR-0105.
+First verdicts remain at 5d20ec28: 2/3/4/6/8 satisfy; 1/5 need their own complete
+workflow/matrix excerpts, and 7 measures raw duration but not billing repair.
+ADR-0233 explicitly reconciles that account-administration clause with the
+actual CI outcome: timestamp-bound eligible-run measurement, without a billing
+claim. Original wording remains; criteria 1–6 stay unchanged. The final packet
+adds existing workflow call sites/matrix and uses a new candidate for all eight
+criteria. No production/test/script/workflow change or copied verdicts.
 
 ## Hosted run and pull request
 
@@ -275,6 +281,33 @@ Actual stdout, exit zero:
 checked 1209 Markdown documents
 worklog index is current (2023 commits)
 documentation validation passed for 1209 Markdown files
+tracker validation passed for 397 roadmap items (2 PR-tracked historical item(s) skipped)
+All checks passed!
+766 files already formatted
+```
+
+
+Final requirement/call-site reconciliation checks, exit zero. Product, tests,
+scripts and workflow bytes compare unchanged against first candidate 452639dd.
+
+```bash
+set -e
+export PYTHONPATH=.
+/tmp/agency-ar404-venv.AUBJlC/bin/python scripts/docs_metadata.py --check
+/tmp/agency-ar404-venv.AUBJlC/bin/python scripts/update_policy_availability.py --check
+/tmp/agency-ar404-venv.AUBJlC/bin/python scripts/update_worklog.py --check
+/tmp/agency-ar404-venv.AUBJlC/bin/python scripts/verify_docs.py --require-tracker
+/tmp/agency-ar404-venv.AUBJlC/bin/python scripts/verify_tracker.py
+/tmp/agency-ar404-venv.AUBJlC/bin/ruff check agency_runtime tests scripts
+/tmp/agency-ar404-venv.AUBJlC/bin/ruff format --check agency_runtime tests scripts
+git diff --check
+git diff --exit-code 452639dda089ea3304e04824beaf9b79e8c1febe -- agency_runtime tests scripts .github
+```
+
+```text
+checked 1211 Markdown documents
+worklog index is current (2026 commits)
+documentation validation passed for 1211 Markdown files
 tracker validation passed for 397 roadmap items (2 PR-tracked historical item(s) skipped)
 All checks passed!
 766 files already formatted

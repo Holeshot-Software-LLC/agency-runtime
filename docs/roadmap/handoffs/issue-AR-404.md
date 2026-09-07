@@ -51,17 +51,18 @@ Raw allocated times total 366 seconds / 6.10 runner-minutes. This is one
 historical measurement, not present billing health, matched savings, a fresh
 native Windows run, or completion of AR-156/159/platform release obligations.
 
-Only criterion 8 follows existing ADR-0105; original wording is preserved.
-Criteria 1–7 unchanged. Builder receipt and pending eight-criterion packet
-are prepared; no builder-authored verdict or done flip.
+First review is preserved at 5d20ec28: 2/3/4/6/8 satisfy, 1/5 need their own
+workflow/matrix excerpts, and 7 proves timing but not billing repair.
+ADR-0233 explicitly separates historical timing from account administration;
+original wording remains. Criteria 1–6 unchanged; 8 follows existing ADR-0105.
+Existing call sites/matrix are added; all eight checks need a new final candidate.
 
 ## Exact blocker
 
-AR-174's complete receipts pass strict records (1209 Markdown files;
-397 mapped/two historical PR exceptions; Ruff 766). Candidate 452639dd and
-ledger 2b09bded form the clean checkpoint; eight isolated checks are next.
-One draft citation past EOF was corrected before review. No technical failure
-reproduced. Do not claim done prematurely.
+First candidate 452639dd and first verdict checkpoint 5d20ec28/6297fd63
+are preserved. The final packet is pending: complete current strict receipts,
+commit/ledger and freeze it, then eight new checks. No source/test/workflow
+changes and no copied verdicts. Use the second/final review only.
 
 Retained AR-170 has two exhausted review passes: final 1/2/4/5/6/7/8 satisfy,
 3/9 need complete collection call sites and raw gate receipts. First/final
@@ -80,7 +81,7 @@ Preserve first verdicts before corrections; two review passes by default.
 
 ## Next bounded work package
 
-1. Candidate 452639dd is frozen with clean ledger 2b09bded.
+1. Commit/freeze the final AR-174 packet and its ledger.
 2. Run eight isolated criteria; handle only findings that invalidate its outcome.
 3. Publish one normal PR and merge/readback before inspecting AR-175.
 4. Stop with clean durable state by September 8 01:00 UTC.

@@ -298,8 +298,11 @@ security, UI 204/current floors and a fresh spine 1085/three existing skips.
 No source change. The old timing blocker missed August 31 PR #380's successful
 five-runner docs-only run: exact API/Git proof measures 366 raw runner-seconds.
 This is historical timing, not present billing health or measured savings.
-Only stale criterion 8 follows ADR-0105; original wording remains. Eight isolated
-criteria must still be judged before any done flip.
+First review is preserved at 5d20ec28: 2/3/4/6/8 satisfy, 1/5 need isolated
+workflow/matrix citations, and 7 lacks billing-repair proof despite valid raw
+timing. ADR-0233 explicitly separates the timing requirement from account
+administration, with original wording retained; 8 still follows ADR-0105.
+No runtime change. All eight criteria need new final-candidate verdicts.
 
 Current main and branch counts: 40 actual open trackers plus 81 unfinished legacy
 records, 121 total; AR-174 has not yet been accepted.
