@@ -69,3 +69,8 @@ explicitly reconciles only 6/7/9 before the first isolated review. All other
 criteria and product/test bytes remain unchanged; source repair stays 90654955.
 Strict docs now cover 1196 Markdown files, tracker parity 397/two historical PR
 exceptions. Nine builder packets are drafted; no verdict is asserted.
+
+## Acceptance freeze
+
+c0722501 pins all nine checks to 9419e68899194057f6ae8697d0ca17101ec16205.
+This immediate ledger provides the clean checkpoint before isolated review.
