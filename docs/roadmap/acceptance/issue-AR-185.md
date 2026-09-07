@@ -15,7 +15,7 @@ supersedes: []
 superseded_by: null
 type: acceptance-verification
 issue_id: AR-185
-candidate_commit: pending
+candidate_commit: 500de0850deb7c18286caba64de3f45d276c54ce
 evidence_cutoff: 2026-09-07
 tracker_url: null
 ---
@@ -24,8 +24,7 @@ tracker_url: null
 
 ## Builder evidence
 
-This pending draft contains observations only. The parent must publish and
-freeze its candidate before isolated checks. The historical criterion-2/3
+This frozen packet contains observations only. The historical criterion-2/3
 wording and their explicit existing-policy corrections are retained in the
 receipt. No acceptance verdict is supplied here.
 
@@ -80,7 +79,7 @@ receipt. No acceptance verdict is supplied here.
 
 ## Verification
 
-Pending candidate publication and freezing; no verifier has judged these rows.
+No verifier has judged these rows yet.
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
