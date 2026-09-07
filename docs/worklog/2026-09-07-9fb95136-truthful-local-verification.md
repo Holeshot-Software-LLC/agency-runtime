@@ -58,3 +58,14 @@ AR-156 remains open with all thirteen criteria unchanged: native Windows/profile
 and separately authorized hosted topology proof remain. The latest listed CI
 run is an old cancelled August 31 run; current billing cause is unverified.
 Finish bounded artifact QA and normal PR publication, then continue at AR-157.
+
+## Packaged checkpoint
+
+ba1b6fa8 records canonical clean dccb4e85 wheel QA observed 07:56:53Z.
+All ten served assets match the installation; all 21 loaded view/viewport checks
+pass with polling preservation, keyboard scrolling and injected failure recovery
+at each width. Exact hashes, report and three screenshots are in the evidence.
+No automatic axe violation, overflow, clipping or unexpected error; incomplete
+contrast checks remain, with no full accessibility or native-host claim.
+Metadata, policy, strict docs/tracker and Ruff pass. AR-156 remains open;
+40 actual trackers plus 91 unfinished legacy records still total 131.
