@@ -160,6 +160,9 @@ def test_posix_parent_trust_requires_private_or_sticky_protected_chain(
         ),
     )
     monkeypatch.setattr(store_security.os, "lstat", metadata.__getitem__)
+    # This synthetic chain has no real ACLs; patch the extracted helper at
+    # the Store boundary rather than masking getxattr on a different module.
+    monkeypatch.setattr(store_security, "posix_directory_has_default_acl", lambda _path: False)
 
     assert store_security.storage_parent_is_trusted(
         parent,
@@ -349,7 +352,9 @@ def test_storage_file_trust_requires_owner_mode_identity_and_single_link(
         lambda: int(metadata.st_uid),
         raising=False,
     )
-    assert not store_security.storage_file_is_trusted(tmp_path, is_windows=False)
+    # File trust allows read bits inside the separately private Store directory;
+    # only the owner may write. Directory privacy remains independently checked.
+    assert store_security.storage_file_is_trusted(tmp_path, is_windows=False)
     metadata.st_mode = stat.S_IFREG | 0o600
     assert store_security.storage_file_is_trusted(tmp_path, is_windows=False)
     metadata.st_mode = stat.S_IFREG | 0o666

@@ -6,6 +6,7 @@ created: 2026-07-27
 updated: 2026-09-07
 tags: [testing, security, isolation, traceability, performance]
 related:
+  - docs/roadmap/acceptance/evidence/AR-176-fixture-contracts-20260907.md
   - docs/roadmap/issue-AR-145-restore-python-release-coverage.md
   - docs/decisions/0105-bound-delivery-to-live-demo-checkpoints.md
   - docs/decisions/0224-retire-duplicate-mandatory-coverage-checklist.md
@@ -62,6 +63,16 @@ time and would waste hosted budget if the same contract drift escaped fast
 quality gates.
 
 ## Current state
+
+September 7 current implementation reproduces all six carried failures on
+unchanged main 891f0c32, then repairs their fixtures in three test files.
+All six now pass (2.30s). The same public-route test exposed one additional
+obsolete coordinator-seeding assertion after its first assertion was repaired;
+both failures and the source-grounded correction are preserved in
+[the current receipt](acceptance/evidence/AR-176-fixture-contracts-20260907.md).
+No production runtime, inference authority, retry behavior or security
+validation changes. A combined order-sensitive neighboring package is running;
+current acceptance verification and normal PR/merge remain open.
 
 AR-157's September 7 HTTP package exposes and repairs two additional stale
 fixtures: a fixed roster cardinality and a finalization-admission setup relying

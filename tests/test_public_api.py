@@ -22,7 +22,6 @@ from agency_runtime.core.delegation_status import (
     MAX_DELEGATION_WORKER_ID_CHARS,
     MAX_DELEGATION_WORKER_KIND_CHARS,
 )
-from agency_runtime.core.roster.bundled import SOURCE_REPOSITORY
 from tests.runtime_support import stub_inference_invoker, write_provider_config
 
 _DELEGATION_LIMITS = {
@@ -338,7 +337,7 @@ def test_public_runtime_facade_exercises_routing_and_evidence(
     assert runtime.store.get_active_specialists_for_trace("session", trace_id) == []
 
 
-def test_public_route_repairs_legacy_fallback_roster_without_opening_turns(
+def test_public_route_preserves_operator_roster_without_inference_fallbacks_or_turns(
     tmp_path: Path,
 ) -> None:
     runtime = AgencyRuntime(str(tmp_path / "agency.db"))
@@ -367,10 +366,9 @@ def test_public_route_repairs_legacy_fallback_roster_without_opening_turns(
             capability_receipt=receipt,
         )
         assert routing["selected_ids"] == []
-        assert routing["fallback_companion_ids"] == [
-            "agents-orchestrator",
-            "chief-of-staff",
-        ]
+        assert routing["status"] == "inference_unavailable"
+        assert routing["fallback_companion_ids"] == []
+        assert routing["fallback_applied"] is False
         assert "decision_id" not in routing
         assert runtime.store.get_run(trace_id) is None
 
@@ -379,7 +377,9 @@ def test_public_route_repairs_legacy_fallback_roster_without_opening_turns(
         "Preserve this prompt."
     )
     for slug in ("agents-orchestrator", "chief-of-staff"):
-        assert runtime.store.get_roster_entry(slug)["source"] == SOURCE_REPOSITORY
+        # Inference-first policy has no forced fallback dependencies. Routing
+        # must not install either historical coordinator as a heuristic repair.
+        assert runtime.store.get_roster_entry(slug) is None
 
 
 def test_public_route_does_not_treat_a_host_name_as_capability_evidence(
