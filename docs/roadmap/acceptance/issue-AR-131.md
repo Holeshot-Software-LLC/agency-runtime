@@ -54,9 +54,15 @@ tracker_url: null
 
 ## Verification
 
-First-candidate verdicts are preserved verbatim at 6a139e23. This repaired
-candidate starts an empty verification section; only the isolated runner
-supplies its new verdicts. No prior verdict is relabeled as a pass.
+First-candidate verdicts are preserved verbatim at 6a139e23. The six independent
+runs below verify repaired candidate 973acdb9; the isolated runner supplied
+every verdict. No prior verdict was relabeled as a pass.
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
+| 1 | satisfied | `AR-131.1-20260907-be0d42d1` | `c9fc18d15884a7003868b3c707d1380b2f3852aea5e3136e4232d0d6d4c9c536` | 2026-09-07 | mcp.py:60-179 gives every string property an explicit maxLength via _string; correlation.py and agent_activation.py define positive bounds, and the cited schema invariant and passing MCP verification support validity. |
+| 2 | satisfied | `AR-131.2-20260907-d6b3a064` | `0cd489105b9217132791a909188fe2d6efbdf0823b5edea7be7330429b838bf1` | 2026-09-07 | tests/test_mcp_protocol_hardening.py:411-446 exercises initialized MCPServer JSON-RPC dispatch for preflight and status, asserting unchanged handler arguments and successful responses; the cited verification record reports 126 passed. |
+| 3 | satisfied | `AR-131.3-20260907-fef0402e` | `97ce6c4b543881070f18d21a8e9f7eeb99731d0082ae91bf6d612af995a6ce30` | 2026-09-07 | mcp.py uses _host_string() for host schemas, host_control.py aliases SUPPORTED_HOSTS to the five-entry EXECUTION_HOSTS tuple, and test_mcp_protocol_hardening.py checks every published host enum against that vocabulary. |
+| 4 | satisfied | `AR-131.4-20260907-4123af82` | `8766124d0bf06e368379381c15968f29f6c20f9db25117a213d500d4a21518bb` | 2026-09-07 | Public validation in agency_runtime/__init__.py and delegation_status.py rejects identifiers that normalization would alter, while tests/test_public_api.py demonstrates exact ASCII and Unicode maximum-length round trips and rejection without writes. |
+| 5 | satisfied | `AR-131.5-20260907-c19d7a01` | `140a5bdbd06e45d28cb750d8e6c0a104b097f54b5e683abb3119487c9f710979` | 2026-09-07 | mcp.py and mcp_tools.py show identical eight-tool registries; installer_payloads.py and tests/test_mcp_protocol_hardening.py demonstrate valid generated skill calls for every host, supported by the cited 126-pass MCP verification. |
+| 6 | satisfied | `AR-131.6-20260907-ad02bf8b` | `e343187b5f5296301166567a1a6201f6e47a28b71cb4206024b8358d9fcbfc89` | 2026-09-07 | tests/test_mcp_protocol_hardening.py:256-325, 449-486, and 362-385 cover rejection of invalid, unknown, oversized, mutation, spoofed-identity, and retired-tool requests at dispatch with an unusable Store. |

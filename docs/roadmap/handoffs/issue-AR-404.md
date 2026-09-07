@@ -44,21 +44,22 @@ with the owner. Previous pause was delivered by PR #696/f38720c7 and the narrow
 PR #697 ledger/c1c5d9d9. No background work ran during the pause.
 
 Current package: AR-131's existing MCP/CLI repair, strengthened current-contract
-regressions, and original six-criterion isolated acceptance. Not yet done.
+regressions, and public identifier-admission fix. All six original criteria
+now satisfy at 973acdb9; locally done in PR #698, awaiting merge before AR-135.
 First candidate fb2e4e23 has verdicts: 2/3/6 satisfied, 1/5 absent citations,
 4 contradicted by lossy identifier admission. Those verdicts are preserved at
 6a139e23/b7a445a6. Repaired candidate 973acdb9 is frozen with ledger d8656b05:
-13 new public-entry regressions pass; isolated checks are next. Native
-normalization remains unchanged.
+13 new public-entry regressions pass; the six September 7 isolated verdicts
+are recorded. Native normalization remains unchanged.
 
 ## Completed evidence
 
 - Prior sequential dispositions and exact publication receipts are in
   AR-404-oldest-first-reconciliation-20260905.md: AR-115/127 retired;
   AR-119/120/125/129/130 retained with real evidence/dependency gaps.
-- Prior count: 40 actual open trackers plus 99 unfinished legacy records, 139
-  local unfinished. AR-131 is legacy; no new tracker and no count change before
-  accepted completion. Historical inventories remain unchanged.
+- Current count: 40 actual open trackers plus 98 unfinished legacy records, 138
+  local unfinished after AR-131 acceptance. No new tracker or unrelated closure.
+  Prior 99/139 inventories remain historical.
 - AR-131 base c1c5d9d9: original MCP/CLI tests pass 116/five existing skips.
   Ten new cases cover registry/handler parity, generated status skills for all
   hosts, retired delegation-tool rejection, and exact canonical Store IDs.
@@ -86,9 +87,8 @@ normalization remains unchanged.
 
 ## Exact blocker
 
-AR-131 cannot close on its first verdicts. Add missing citations for 1/5 and
-verify the repaired public exact identifier admission for 4 without changing
-the intentional low-level normalization contract. Claude verification is unavailable
+No remaining AR-131 contract-acceptance blocker: all six repaired-candidate
+verdicts are satisfied. PR #698 publication/merge remains. Claude verification is unavailable
 under executable trust checks; the already usable Codex provider wrote the
 six verdicts. No trust or credentials were changed. Native Windows and
 earlier installed/live evidence holds remain with their existing owners.
@@ -105,11 +105,9 @@ continue the same task. Retained umbrellas cannot be closed by closing one child
 
 ## Next bounded work package
 
-1. Reuse frozen 973acdb9 and its ledger d8656b05. Conformance passes; first
-   verdicts are preserved and original criteria unchanged.
-2. Freeze the repaired candidate and complete cited evidence; run one isolated
-   verifier per criterion with the usable Codex provider. Only if all six
-   satisfy, mark done and publish one PR, then merge.
+1. Commit the six independent verdicts and local done disposition with an exact
+   ledger pair; preserve accepted candidate 973acdb9 and first verdict history.
+2. Finish PR #698, verify its final head/check state and merge normally.
 3. After the AR-131 disposition merges, review AR-135. AR-132 is retired and
    AR-133/134 are already done. Continue by creation date and AR-number tie break.
    Windows-specific execution stays excluded.

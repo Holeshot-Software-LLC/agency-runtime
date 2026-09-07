@@ -30,9 +30,10 @@ was a record-reconciliation count, not 147 established defects. See the
 work is reserved for the owner's Windows machine; close or retire historical
 records only after checking relevance, current evidence and successor decisions.
 
-After PR #694's AR-127 supersession and tracker closure (2026-09-06 UTC,
-September 5 local), fresh tracker enumeration is 40 open issues; the separate
-local unfinished queue is 139 records (40 mapped plus 99 legacy).
+After AR-131's six-criterion accepted completion on September 7, fresh tracker
+enumeration remains 40 open issues; the separate unfinished queue is 138
+records (40 mapped plus 98 legacy). PR #698 carries that legacy completion;
+no new tracker or unrelated tracker closure is needed.
 AR-119 remains a relevant unfinished
 umbrella, not a completed defect. Current sequential dispositions and the next
 bounded package are in AR-404's
@@ -172,7 +173,7 @@ bounded package are in AR-404's
 | `AR-128` | [Seal model-facing control authority](issue-AR-128-seal-model-facing-control-authority.md) | done | p0 | security | pending authorization |
 | `AR-129` | [Isolate subprocess environments](issue-AR-129-isolate-subprocess-environments.md) | open | p0 | security | pending authorization |
 | `AR-130` | [Revalidate Store trust at authoritative boundaries](issue-AR-130-revalidate-store-trust.md) | open | p0 | security | pending authorization |
-| `AR-131` | [Complete MCP and CLI host contracts](issue-AR-131-complete-mcp-cli-host-contracts.md) | open | p0 | host-integrations | pending authorization |
+| `AR-131` | [Complete MCP and CLI host contracts](issue-AR-131-complete-mcp-cli-host-contracts.md) | done | p0 | host-integrations | legacy (tracker-exempt) |
 | `AR-132` | [Hire deterministic safe staffing gaps](issue-AR-132-hire-deterministic-safe-gaps.md) | wont_do | p0 | routing | Pre-tracker history; superseded by AR-235 |
 | `AR-133` | [Make finalization evidence atomic, complete, and bounded](issue-AR-133-atomic-finalization-evidence.md) | done | p0 | observability | pending authorization |
 | `AR-134` | [Enforce SQLite currentness and retention invariants](issue-AR-134-enforce-sqlite-currentness-invariants.md) | done | p0 | operations | pending authorization |

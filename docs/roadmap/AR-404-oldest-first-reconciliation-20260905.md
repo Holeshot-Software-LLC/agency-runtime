@@ -3,7 +3,7 @@ title: "AR-404 oldest-first backlog reconciliation"
 status: active
 category: roadmap
 created: 2026-09-05
-updated: 2026-09-06
+updated: 2026-09-07
 tags: [backlog, evidence, supersession, delivery]
 related:
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
@@ -30,9 +30,10 @@ superseded_by: null
 
 On September 6 the owner explicitly resumed at AR-131. Restore the oldest-first
 one-record/PR/merge loop; Windows work remains with the owner. AR-131's current
-MCP/CLI contract review found a remaining public identifier-admission gap;
-preserve the first verdicts and repair it before completion. AR-135 is next
-because AR-132/133/134 are already retired or done.
+MCP/CLI contract review found and repaired a public identifier-admission gap.
+All six isolated criteria satisfy at 973acdb9 on September 7; first verdicts
+remain preserved at 6a139e23. Deliver this completion through PR #698, then
+AR-135 because AR-132/133/134 are already retired or done.
 
 Previous pause: the owner asked to conserve credits and publish AR-130 through
 [PR #696](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/696),
@@ -73,15 +74,17 @@ not the 99 legacy count.
 | 5 | AR-127 | Retire obsolete checklist under ADR-0223, not accepted. The shape fix exists at both rejection sites; ADR-0089 stays accepted. Current first-pass/replay, Rule-8 availability, and bounded verification supersede the old retry/unavailable/full-suite assumptions. AR-135 owns current ZCode integration. Broader check: 133 pass/three known legacy failures, explicitly owned by AR-176; no runtime/test change or new live claim. | [PR #694](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/694) merged at 66282312; #151 closed NOT_PLANNED at 2026-09-06T00:23:39Z, read back. |
 | 6 | AR-129 | Shared least-privilege environment implementation exists. Non-Windows environment/discovery/namespace tests: 64 pass, 12 Windows-named cases deselected (0.43s). Retain the explicit native Windows/installed evidence hold for the owner, not a code-rebuild task. Original acceptance unchanged; no duplicate pre-tracker issue created. | [PR #695](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/695) merged at d38e9d13; legacy record remains open. |
 | 7 | AR-130 | Positive trust cache is already removed; Store connections revalidate. Current regression/file-integrity package: 19 pass (0.23s). Broader non-Windows run: 40 pass/two confirmed stale fixtures/39 Windows-named cases deselected (0.84s); AR-176 owns the wrong ACL-double boundary and obsolete 0644 expectation. Retain native Windows and current hook-budget evidence, not a trust-repair rewrite. Historical latency and original criteria preserved. | Published in [PR #696](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/696); legacy record remains open. Exact publication receipt belongs to the worklog. |
-| 8 | AR-131 | Original MCP fixes exist; ten new contract cases strengthen parity/drift checks. First verdicts preserved at 6a139e23: 2/3/6 satisfied, 1/5 absent citations, 4 contradicted. Public admission repair now rejects lossy IDs before Store normalization: 13 new cases pass, including a previously red alias case. MCP/CLI 126 pass/five skips; named spine 1085/three skips. A separate unchanged fallback fixture also fails on main and is owned by AR-176. | Repaired candidate awaiting isolated verification; not done. |
+| 8 | AR-131 | Done: original MCP repair verified and remaining public identifier aliasing repaired. Six isolated criteria satisfy at 973acdb9; first verdicts preserved at 6a139e23. New public cases 13 pass; MCP/CLI 126/five skips; spine 1085/three skips; UI 138; routing pass; conformance 184/184 killed, source unchanged. Unchanged fallback fixture fails on main and belongs to AR-176, not hidden as green. | [PR #698](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/698), awaiting merge before AR-135. Legacy count 99 → 98; actual open trackers remain 40. |
 
 After the merged AR-115 retirement, fresh enumeration confirms 41 open trackers
 and 140 unfinished local records (41 mapped plus 99 legacy) before AR-127.
 After merged AR-127 retirement, fresh enumeration is **40 open trackers** and
 139 unfinished local records (40 mapped plus 99 legacy). Retained AR-129 leaves
-both counts unchanged, as does retained AR-130. AR-131 is next; Windows-specific work remains with the
-owner. This is record reconciliation, not completion of retained implementation
-or platform-evidence work.
+both counts unchanged, as does retained AR-130. Accepted AR-131 now reduces the
+local queue to **138** (40 mapped plus **98 legacy**) without a tracker closure.
+AR-135 follows PR #698's merge; Windows-specific work remains with the owner.
+This is record reconciliation, not completion of retained implementation or
+platform-evidence work.
 
 Publication correction: GitHub interpreted the negated closing phrase in
 PR #691's original body as a closure directive and closed #132 at 23:59:38Z.

@@ -1,9 +1,9 @@
 ---
 title: "AR-131: Complete MCP and CLI host contracts"
-status: open
+status: done
 category: roadmap
 created: 2026-07-26
-updated: 2026-09-06
+updated: 2026-09-07
 tags: [mcp, cli, host-integrations, schema, compatibility]
 related:
   - agency_runtime/__init__.py
@@ -72,8 +72,11 @@ ID could update an existing prefix-matched event. Public admission now rejects
 lossy identifiers before Store recording; all 13 new regression cases pass,
 including exact ASCII/Unicode boundary round trips and rejected-input no-write
 checks. Internal native-observation normalization remains unchanged.
-This repaired candidate still requires isolated verification and is not done.
-This pre-tracker record does not need a new tracker.
+All six isolated acceptance runs now satisfy the original criteria at repaired
+candidate 973acdb991c10e54656990ef0a39db4262adb8be, observed September 7. The
+candidate-bound record and exact verifier run IDs/digests are linked above.
+This scoped contract item is done and delivered through PR #698; it does not
+close the live five-host umbrella. This pre-tracker record needs no new tracker.
 
 The default Claude verifier was unavailable because its executable parent
 namespace failed the existing trust check; it wrote no verdicts. The supported
@@ -126,12 +129,12 @@ these protocol tests.
 
 ## Acceptance
 
-- [ ] Every published MCP string property has an explicit valid maximum length.
-- [ ] Valid preflight and status requests dispatch through the real protocol.
-- [ ] All read-only host schemas derive from the canonical five-host set.
-- [ ] Accepted delegation identifiers persist exactly without truncation.
-- [ ] Generated tool and skill surfaces match the runtime registry exactly.
-- [ ] Invalid, unknown, oversized, and mutation requests fail closed.
+- [x] Every published MCP string property has an explicit valid maximum length.
+- [x] Valid preflight and status requests dispatch through the real protocol.
+- [x] All read-only host schemas derive from the canonical five-host set.
+- [x] Accepted delegation identifiers persist exactly without truncation.
+- [x] Generated tool and skill surfaces match the runtime registry exactly.
+- [x] Invalid, unknown, oversized, and mutation requests fail closed.
 
 ## Implementation evidence
 

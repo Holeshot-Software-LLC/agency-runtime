@@ -3,7 +3,7 @@ title: "AR-404: Complete the backlog through evidence-led delivery packages"
 status: in_progress
 category: roadmap
 created: 2026-09-05
-updated: 2026-09-06
+updated: 2026-09-07
 tags: [backlog, review, acceptance, delivery]
 related:
   - docs/roadmap/AR-404-oldest-first-reconciliation-20260905.md
@@ -59,8 +59,10 @@ three skips. First isolated AR-131 review satisfies 2/3/6, lacks citations for
 1/5 and contradicts 4 because public delegation identifiers can be truncated.
 First verdicts are preserved at 6a139e23. The public admission repair now passes
 13 new regression cases, including the reproduced alias defect and exact
-Unicode limits; internal observation normalization remains unchanged. Freeze
-and verify the repaired candidate before a done flip and PR/merge, then AR-135.
+Unicode limits; internal observation normalization remains unchanged. All six
+isolated criteria satisfy at repaired candidate 973acdb9 on September 7.
+AR-131 is locally done in PR #698; merge it before starting AR-135. Current
+counts: 40 actual open trackers plus 98 unfinished legacy records, 138 total.
 An unrelated public-roster fixture also fails on untouched main and is recorded
 under AR-176, not erased. Windows work stays excluded. The oldest-first ledger and active capsule
 retain exact evidence and all earlier holds; ordinary-session header failure
