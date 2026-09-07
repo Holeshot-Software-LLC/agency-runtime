@@ -28,8 +28,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-404
 branch: codex/ar131-oldest-first-reconciliation
-evidence_commit: c1c5d9d97ae8b596a39d9e52cf40c252d230c62c
-minimum_ledger_commit: c1c5d9d97ae8b596a39d9e52cf40c252d230c62c
+evidence_commit: fb2e4e2379939c7525018a14b2c54f8f15b168fb
+minimum_ledger_commit: 66e5719457ed1e86eb6899d43e612b2ec186b126
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -45,6 +45,7 @@ PR #697 ledger/c1c5d9d9. No background work ran during the pause.
 
 Current package: AR-131's existing MCP/CLI repair, strengthened current-contract
 regressions, and original six-criterion isolated acceptance. Not yet done.
+Candidate fb2e4e23 is frozen with ledger 66e57194; isolated checks are next.
 No runtime, installation, trust, gateway or credential change.
 
 ## Completed evidence
@@ -90,8 +91,8 @@ continue the same task. Retained umbrellas cannot be closed by closing one child
 
 ## Next bounded work package
 
-1. Freeze AR-131 source/test/command evidence in a clean candidate and record
-   its exact ledger. Original acceptance text is unchanged.
+1. Reuse frozen candidate fb2e4e23 and ledger 66e57194; original acceptance text
+   is unchanged (only required unchecked task markers were added).
 2. Run one isolated verifier per criterion; record failures honestly. Only if
    all six satisfy, mark done and publish one PR, then merge.
 3. After the AR-131 disposition merges, review AR-135. AR-132 is retired and
