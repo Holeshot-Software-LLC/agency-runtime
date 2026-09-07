@@ -127,3 +127,10 @@ and diff. AR-171 follows normal merge, with Windows still owner work.
 
 PR #719 carries the tested repair and retained evidence gaps. End telemetry
 is 30.0 percent at 12:17:03Z; 92f1e1d7/ed4b7447 form the clean checkpoint.
+
+## Publication
+
+PR #719 merged normally as 29e76943 at 2026-09-07T12:18:00Z, reviewed head
+c8dc573c8678e5b2c2abbc538a9df93071b563c4. Main was clean and fast-forwarded
+before the separate AR-171 tree. AR-170 remains in_progress for criteria 3/9;
+empty hosted check rollup is not called green. No native Windows work.
