@@ -6,6 +6,7 @@ created: 2026-09-07
 updated: 2026-09-07
 tags: [workforce, inference, diagnostics, deadlines, reliability]
 related:
+  - docs/roadmap/acceptance/evidence/AR-408-staffing-failure-receipts-20260907.md
   - docs/decisions/0209-name-the-transport-cause-instead-of-one-code.md
   - docs/roadmap/issue-AR-201-fund-default-workforce-repair.md
   - docs/roadmap/issue-AR-392-transport-failures-collapse-to-one-code.md
@@ -50,8 +51,12 @@ elapsed without its120000ms allowance. The actual Hermes preflight took
 has a585s shared inference budget. This is not evidence of a75s deadline
 violation or large local serialization overhead.
 
-The worker has reproduced both defects without new provider requests.
-Implementation and isolated acceptance are pending publication.
+The reviewed implementation reproduces both defects without new provider
+requests and corrects classification and allowance projection. Focused325
+pass/one skip/one deselection; independent32 pass/no findings; fresh named
+spine1085/three existing skips and UI224 pass. See the
+[bounded evidence receipt](acceptance/evidence/AR-408-staffing-failure-receipts-20260907.md).
+Isolated acceptance and normal PR/merge remain pending.
 
 ## Approach
 
