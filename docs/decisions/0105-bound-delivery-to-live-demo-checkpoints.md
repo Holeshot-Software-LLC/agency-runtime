@@ -6,6 +6,7 @@ created: 2026-07-27
 updated: 2026-09-07
 tags: [governance, delivery, testing, demo, cost]
 related:
+  - docs/decisions/0232-represent-route-lab-observations-by-trace-digest.md
   - docs/decisions/0231-separate-route-lab-correlation-from-turn-persistence.md
   - docs/roadmap/issue-AR-173-correlate-route-lab-observations.md
   - docs/roadmap/issue-AR-172-make-roster-pages-snapshot-consistent.md

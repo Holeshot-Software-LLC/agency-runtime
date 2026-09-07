@@ -6,6 +6,7 @@ created: 2026-07-27
 updated: 2026-09-07
 tags: [dashboard, routing, observability, traceability]
 related:
+  - docs/decisions/0232-represent-route-lab-observations-by-trace-digest.md
   - docs/decisions/0231-separate-route-lab-correlation-from-turn-persistence.md
   - docs/decisions/0105-bound-delivery-to-live-demo-checkpoints.md
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
@@ -56,8 +57,9 @@ focused pair passes, as do all 195 dashboard/explanation/observability tests,
 three existing skips). Full raw receipts are recorded; isolated acceptance
 has first-pass satisfied verdicts for 1/3/4/5. Criterion 2's original wording
 incorrectly requires the raw trace in both places; the observation stores its
-domain-separated digest. Preserve that contradicted verdict before explicit
-requirement clarification and the second/final candidate review.
+domain-separated digest. First verdicts are preserved at 941b9025. ADR-0232
+explicitly supersedes ADR-0231 to clarify that representation before the
+second/final candidate review. No runtime change or new trace field.
 
 ## Approach
 
@@ -74,15 +76,18 @@ runtime boundaries, AR-149 owns fresh HTTP request IDs, and AR-166 exposes safe
 correlation receipts in the dashboard.
 
 The existing pre-tracker exemption applies; no duplicate tracker is created.
-ADR-0231 explicitly reconciles criteria 1/4/5 with disabled bypass, diagnostic
-logging and ADR-0105's bounded verification policy. Criteria 2/3 are unchanged.
+ADR-0232 preserves ADR-0231's reconciliation of 1/4/5 and explicitly corrects
+criterion 2's trace/digest wording. Only criterion 3 remains unchanged; all
+original wording and the first contradicted verdict are preserved.
 
 ## Acceptance
 
 - [x] Each admitted enabled Route Lab routing operation allocates one fresh
   UUIDv4 trace before explanation; invalid or disabled requests do not invent
   routing traces.
-- [ ] The route receipt and current HTTP observation carry that exact trace.
+- [ ] The route receipt carries the allocated trace ID, and the current HTTP
+  observation's correlation_digest equals the domain-separated digest of that
+  exact response trace; request ID remains a separate identity.
 - [x] Correlation records remain content-free and bounded.
 - [x] A real authenticated HTTP regression asserts exact emitted-observation
   digest-to-response-trace equality and no durable diagnostic turn/routing rows.
@@ -92,9 +97,11 @@ logging and ADR-0105's bounded verification policy. Criteria 2/3 are unchanged.
 
 ## Preserved original criteria
 
-ADR-0231 reconciles only these original clauses before review:
+ADR-0231 reconciled 1/4/5 before first review; ADR-0232 additionally clarifies
+the original criterion 2 after preserving the first verdict:
 
 1. Each Route Lab request allocates one valid trace before routing.
+2. The route receipt and current HTTP observation carry that exact trace.
 4. A server regression asserts persisted observation-to-response equality.
 5. The final repository release gate passes at the implementation commit.
 

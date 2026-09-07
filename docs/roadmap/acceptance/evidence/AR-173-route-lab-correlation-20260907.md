@@ -6,6 +6,7 @@ created: 2026-09-07
 updated: 2026-09-07
 tags: [evidence, dashboard, diagnostics, correlation, backlog]
 related:
+  - docs/decisions/0232-represent-route-lab-observations-by-trace-digest.md
   - docs/roadmap/issue-AR-173-correlate-route-lab-observations.md
   - docs/decisions/0231-separate-route-lab-correlation-from-turn-persistence.md
   - agency_runtime/server/dashboard.py
@@ -63,11 +64,20 @@ The existing explain_route docstring at lines 241–243 dates to e5f4a8c2
 identity without durable turn evidence. The old issue narrative's persistence
 claim was therefore not a missing implementation obligation.
 
-ADR-0231 explicitly reconciles criteria 1/4/5 before review. Original wording is
-preserved. Disabled/invalid calls do not fabricate traces; request observations
+ADR-0231 explicitly reconciles criteria 1/4/5 before first review. Original wording
+is preserved. Disabled/invalid calls do not fabricate traces; request observations
 are emitted as log envelopes, not promised disk-retained or SQLite-persisted
 turn records. The authenticated diagnostic response can include the task; the
 content-free guarantee applies to correlation observations, not that response.
+
+First isolated review at f4f5124e satisfies 1/3/4/5 but contradicts criterion 2:
+the response's raw trace and the observation's digest are not equal strings.
+All first verdicts are preserved at 941b9025. ADR-0232 explicitly supersedes
+ADR-0231 and defines exact equality between the observation digest and the
+domain-separated digest of the response trace. Original criterion 2 remains
+in the issue. No production/log-field/test change is made; the same actual
+HTTP regression already proves this relationship. All five criteria are judged
+again at the final candidate, without copying earlier satisfied verdicts.
 
 ## Full focused transcript
 
@@ -179,16 +189,18 @@ git diff --check
 Exact final stdout, exit zero; silent checks also returned zero:
 
 ```text
-checked 1206 Markdown documents
-worklog index is current (2015 commits)
-documentation validation passed for 1206 Markdown files
+checked 1207 Markdown documents
+worklog index is current (2018 commits)
+documentation validation passed for 1207 Markdown files
 tracker validation passed for 397 roadmap items (2 PR-tracked historical item(s) skipped)
 All checks passed!
 766 files already formatted
 ```
 
-All current record checks pass for 1206 Markdown documents and 397 mapped
-trackers, with two historical PR exceptions. No hosted CI success is implied.
+All final-contract record checks pass for 1207 Markdown documents and 397 mapped
+trackers, with two historical PR exceptions. This is the fresh rerun after
+ADR-0232; the earlier 1206-file result remains at f4f5124e. No hosted CI success
+is implied.
 
 ## Draft packet check
 
@@ -211,8 +223,10 @@ documentation validation failed with 5 error(s)
 The completed packet contains those actual transcripts. A subsequent pass
 completed docs/tracker/Ruff but git diff --check rejected four trailing-padding
 lines copied from Node's coverage stdout. Only display padding is removed;
-test output values and code are unchanged. A fresh full record check, not an
-ignored failure or fabricated output, is required above.
+test output values and code are unchanged. The staged-file check also caught a
+trailing blank line in the new ADR-0232 before its commit; that formatting was
+removed. These checks stop before commit and are not model-review retries.
+The fresh full record result above, not an ignored failure, owns validation.
 
 ## Unchanged source and limits
 

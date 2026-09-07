@@ -6,6 +6,7 @@ created: 2026-09-05
 updated: 2026-09-07
 tags: [handoff, backlog, acceptance, delivery]
 related:
+  - docs/decisions/0232-represent-route-lab-observations-by-trace-digest.md
   - docs/roadmap/acceptance/issue-AR-173.md
   - docs/roadmap/issue-AR-173-correlate-route-lab-observations.md
   - docs/roadmap/acceptance/evidence/AR-173-route-lab-correlation-20260907.md
@@ -50,19 +51,19 @@ explanations are diagnostic-only since e5f4a8c2, before the issue was written.
 - Full dashboard/explanation/observability: 195 pass, 52.75s.
 - UI 204 pass; 96.93/86.78/95.73 meets unchanged floors. Named spine:
   1085 pass/three existing skips, 69.18s. Raw transcripts are recorded.
-- No production change. ADR-0231 reconciles criteria 1/4/5 with existing bypass,
-  diagnostic-only routing and bounded verification. Originals remain.
+- No production change. ADR-0231 reconciled 1/4/5; explicit successor ADR-0232
+  also corrects criterion 2's raw-trace/digest confusion. Originals remain.
 - Draft record failures (missing transcript headings, then Node display padding)
-  are preserved. The completed packet passes all record gates: 1206 Markdown
+  are preserved. The final contract passes all record gates: 1207 Markdown
   files, 397 mapped/two historical PR exceptions, Ruff and diff clean.
 - AR-172 done leaves 40 actual trackers plus 82 legacy, 122 unfinished.
 
 ## Exact blocker
 
 No reproduced AR-173 production defect. First review at f4f5124e satisfies
-1/3/4/5 and contradicts 2: the original sentence confuses the response's raw
-trace with the observation's digest. Preserve the verdict before explicit
-contract clarification and one second/final all-criteria review. No third pass.
+1/3/4/5 and contradicts 2; it is preserved at 941b9025. ADR-0232 explicitly
+corrects trace/digest representation. Commit/freeze final evidence and run one
+second/final all-criteria review. No third pass or copied earlier verdicts.
 
 AR-170 remains in_progress: first review at 662eb947 and final candidate
 91273e41 are preserved. Final 1/2/4/5/6/7/8 satisfy, 3/9 need complete collection

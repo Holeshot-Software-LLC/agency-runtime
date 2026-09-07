@@ -1,11 +1,12 @@
 ---
 title: "Separate Route Lab correlation from durable turn evidence"
-status: accepted
+status: superseded
 category: decisions
 created: 2026-09-07
 updated: 2026-09-07
 tags: [dashboard, diagnostics, correlation, acceptance]
 related:
+  - docs/decisions/0232-represent-route-lab-observations-by-trace-digest.md
   - docs/roadmap/issue-AR-173-correlate-route-lab-observations.md
   - docs/decisions/0027-authoritative-runtime-evidence-traces.md
   - docs/decisions/0053-durable-fail-enabled-master-control.md
@@ -14,7 +15,7 @@ related:
   - agency_runtime/core/observability.py
   - docs/worklog/README.md
 supersedes: []
-superseded_by: null
+superseded_by: docs/decisions/0232-represent-route-lab-observations-by-trace-digest.md
 id: ADR-0231
 type: decision
 deciders: [maintainers]
@@ -69,4 +70,3 @@ this does not claim host logging configuration durably retained it on disk.
   or unbound request observations.
 - Silently rewrite the record or retire the useful identity requirement:
   discards the defect's remaining relevant regression contract.
-
