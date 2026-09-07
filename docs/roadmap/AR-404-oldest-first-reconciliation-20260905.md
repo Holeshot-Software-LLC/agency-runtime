@@ -6,6 +6,8 @@ created: 2026-09-05
 updated: 2026-09-07
 tags: [backlog, evidence, supersession, delivery]
 related:
+  - docs/roadmap/issue-AR-189-add-owned-host-integration-uninstall.md
+  - docs/roadmap/acceptance/evidence/AR-189-owner-cli-reconciliation-20260907.md
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
   - docs/roadmap/AR-404-count-reconciliation-20260905.md
   - docs/roadmap/AR-404-backlog-dispositions-20260905.md
@@ -151,6 +153,7 @@ not the 99 legacy count.
 | 39 | AR-181 | Existing one-preparation smoke confirmed; explicitly correct separate-home wording to ADR0026 private invocation-home contract and preserve original wording.37focused/two deselections; actual installed8/0/0 in4.25s and separate exact-wheel8/0/0 in5.09s. | [PR #731](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/731) merged2274823c at23:13:27Z. Retain native Windows timing hold. New AR408/#732 filing increases mapped queue byone to119(41mapped/78legacy), not a regression of a closed item. |
 | 40 | AR-183 | Real clean detached08fab1c4 Linux producer under umask077 passes canonical wheel/sdist, strict Twine and independent explicit portable verification.498focused/one native-Windows skip; hashes and canonical mode census retained. | [PR #733](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/733) merged30214408 at23:17:04Z. Retain same-SHA Windows equality and merged three-file proof; no count change. |
 | 41 | AR-184 | Reuse the identical detached producer receipt, including2,291canonical0644 sdist files and40canonical0755 directories. Existing exact allowlists and private/public byte-convergence tests pass. No duplicate Linux rebuild. | Retain in_progress for same-SHA native Windows/Linux equality and merged three-file verification. Normal PR/merge next; original criteria unchanged. |
+| 43 | AR-189 | Existing owner-CLI authority reconciled under ADR-0117; original twelve criteria retained in the receipt, only obsolete presence wording corrected. New real private ZCode CLI install/plan/refuse/apply/no-op test leaves authority, binding, locks, replanning and retention unpatched; all logical Store contents and exact retained bundle preserved. Updated-source focused 127/two native-Windows skips and named spine 1085/three skips pass; UI 224 passes. | Retain in_progress for meaningful native Windows companion/handle-rename/PowerShell evidence. Branch prepared after AR-185's reserved order 42; parent coordinates publication after AR-185/AR-408, then AR-190. No owner-host uninstall, count change or acceptance verdict. |
 | fanout-2 | AR-408 | Live five-call Claude sequence exhausts budget before critic but claims critic veto; routing also loses effective timeout. New bounded truthful-receipt repair is independently reviewed with real Store and clipped-deadline regressions. | Filed #732; implementation/acceptance publication separate. No budget increase, review bypass or quality-equivalence claim. |
 
 After the merged AR-115 retirement, fresh enumeration confirms 41 open trackers

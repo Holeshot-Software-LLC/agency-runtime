@@ -1,160 +1,115 @@
 ---
-title: "AR-189 active recovery capsule"
+title: "AR-189 owner-CLI uninstall evidence handoff"
 status: active
 category: roadmap
 created: 2026-07-28
-updated: 2026-07-28
+updated: 2026-09-07
 tags: [handoff, uninstall, host-integrations, security, recovery]
 related:
   - docs/roadmap/issue-AR-189-add-owned-host-integration-uninstall.md
+  - docs/roadmap/acceptance/evidence/AR-189-owner-cli-reconciliation-20260907.md
   - docs/decisions/0108-retire-only-owned-host-integrations.md
+  - docs/decisions/0117-unify-owner-control-authority.md
   - docs/worklog/README.md
-  - docs/THREAT_MODEL.md
-  - README.md
+  - tests/test_host_uninstall_live_boundary.py
 supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-189
-branch: main
-evidence_commit: 7d6558a15d81162331e2f9e164b9691de1a94576
-minimum_ledger_commit: 904aeb5020d03d4638ae2a15fda0b856684682ee
+branch: codex/ar189-private-uninstall-proof
+evidence_commit: c64ce3ce54c6e51280292298b5e3600611cb72fc
+minimum_ledger_commit: d28ccc232dcc00af0162a2409930dd272bf97b5f
 hard_checkpoint_percent: 50
 tracker_url: null
 ---
 
-# AR-189 active recovery capsule
+# AR-189 owner-CLI uninstall evidence handoff
 
-Bounded current-state projection for ownership-bound host-integration uninstall.
-The [canonical issue](../issue-AR-189-add-owned-host-integration-uninstall.md)
-owns the complete problem, approach, acceptance, and implementation evidence.
+## Checkpoint
 
-## checkpoint
+The original private receipt ran on `08fab1c4`. Publication preparation safely
+fast-forwarded to `d28ccc23`, including main `c64ce3ce` and its faithful AR-184
+merge ledger; all four inherited draft file hashes survived unchanged.
+Metadata names that source checkpoint. The branch prepares one substantive
+test/records commit followed by its exact ledger; parent coordinates the normal
+PR/merge after AR-185 and AR-408. It is not yet published to main.
+No runtime source change, acceptance verdict or done-state change is included.
 
-- Branch `main` contains the clean AR-189 substantive/ledger checkpoint
-  `7d6558a`/`904aeb5`.
-- Immediately before the live write-free evaluation, telemetry reported 73.6
-  percent remaining and required no additional checkpoint.
-- Scope is host-integration retirement only. Package removal, data purge,
-  dashboard-service removal, host restart, marketplace deletion, tracker writes,
-  publication, and hosted workflow dispatch are excluded.
-- User draft `docs/analysis/2026-07-25-deep-audit-findings.md` remains unchanged
-  and excluded.
+## Completed evidence
 
-## completed-evidence
+ADR-0117 supplies normal owner-CLI authority without a second native
+human-presence ceremony. Product commit `45be7ea5` already removed the
+unconditional unavailable exception; aggregate binding validation remains.
+Canonical criteria 4/8/12 now use current authority terminology, with all twelve
+original criteria preserved verbatim in the portable receipt. Windows-specific
+clauses and every ownership/lock/retention requirement remain.
 
-- `agency uninstall` has one canonical host selector and a write-free plan or
-  exact SHA-256 confirmation flow. Marketplace-only residue does not select an
-  all-host mutation.
-- Applying a mutating plan enters exact native action
-  `uninstall.host-integrations.v1`. Its aggregate binding covers the operation
-  UUID, selector, canonical hosts/transitions, outer plan hash, per-host plan
-  bindings and exact retained destinations, plus fixed
-  `runtime-data-and-marketplaces.v1` preservation and
-  `retained-owned-bundles.v1` recovery policies.
-- Generic mutating install, rollback, native enable/disable toggle,
-  prepared Codex refresh, and host uninstall share one owner-private
-  `host-integrations.lock`. Uninstall re-plans and revalidates its complete
-  binding under that lock after native confirmation.
-- Successful retirement retains the exact ownership-proven tree at
-  `~/.agency-runtime/backups/<host>/uninstall-<operation_uuid>`. Windows validates
-  and renames the exact opened directory handle, then proves the destination
-  identity; a failed postcondition attempts bounded handle-bound restoration.
-- Full prepared launcher identity covers the platform/launcher projection and
-  every executable or wrapper artifact in the actual process chain. Native
-  provenance accepts only closed-world documented aliases; contradictory or
-  invalid aliases block.
-- Native plugin registration or exact Agency-owned ZCode handlers are detached;
-  Hermes alone may retain its exact disabled Agency inventory row. Every success
-  reports the deterministic retained path and exact `--backup` recovery command;
-  Windows uses PowerShell `&` plus single-quoted literals for every argument.
-  The package, Agency Runtime configuration, Store, roster, evidence, backups,
-  dashboard service, unrelated host configuration, and Codex/Claude marketplace
-  registrations remain.
-- A bounded owner-private journal records intent only after Windows authority and
-  locked revalidation but before the first mutation, then checkpoints every
-  completed outcome. Denial writes no intent; a failure stops work and reports
-  every later selected host `not_attempted`. The dashboard exposes only a
-  copyable dry-run command.
-- The comprehensive focused uninstall/parser/operator/native-asset slice passes
-  287 tests in 28.86 seconds. The latest host/CLI subset passes 42 tests in 24.70
-  seconds with targeted Ruff lint/format green. Generic rollback/toggle/native
-  install/unchanged-Codex locking passes 24 selected tests in 12.82 seconds with
-  91 deselected; the prepared Codex install-lock regression passes in 0.75
-  seconds with 43 deselected. Targeted diff checks pass. The named documentation
-  gates pass for 485 Markdown files. No exhaustive workflow is required or
-  authorized.
-- After final recovery-command rendering, the host-only suite passes 31 tests,
-  including a retained path with PowerShell metacharacters.
-- A live `agency uninstall --all --dry-run --json` completed in 5.6 seconds,
-  inspected all five canonical hosts, selected only the owned Codex integration,
-  and emitted a complete bound plan without mutation or Windows confirmation.
-  It also reported existing Codex launcher-artifact drift and a stale canary;
-  that is not fresh activation evidence and remains separate from uninstall
-  planning correctness.
+The new private in-process CLI regression installs ZCode into an explicit
+disposable home, plans, refuses a wrong digest without writes/journal, applies
+the exact digest, retains the original bundle byte-for-byte, removes seven
+Agency handlers, and proves repeat no-op. Authority, primitives, locks,
+re-planning, config removal and journal writer remain real and unpatched.
+Private runtime config, history and all logical Store contents are preserved.
 
-## exact-blocker
+Focused host/CLI package: 68 passed, two native-Windows skips, 4.98 seconds.
+Private proof: one passed in 2.24 seconds; retained-artifact recapture:
+one passed in 2.21 seconds. Parser/owner-authority: 59 passed in 0.73 seconds.
+On updated source `d28ccc23`, the combined focused package passes 127 with two
+native-Windows skips in 5.49 seconds; named fast spine 1,085 with three skips in
+69.11 seconds; UI 224 passes. These reruns do not relabel old receipt IDs.
+The receipt contains exact commands, output, operation/plan/journal hashes,
+retained-file hashes, scope, SQLite sidecar treatment and criterion mapping.
 
-- A real mutating Windows canary requires the exact native consent interaction
-  and an ownership-proven disposable integration. It must not be simulated or
-  inferred from unit tests. The successful write-free live plan is sufficient
-  for the bounded demo verdict; it did not authorize removing the installed
-  Codex integration.
-- The installed Codex integration is registered and enabled, but its existing
-  launcher attestation is stale because launcher artifacts drifted. An attended
-  refresh and fresh activation proof belong to the broader production goal, not
-  this uninstall mutation surface.
-- Tracker creation is an outward-facing write pending explicit authorization.
-  The missing tracker URL does not weaken local implementation or test evidence.
-- No current exhaustive corpus, coverage-shard, compatibility-matrix, hosted,
-  signed-artifact, or multi-host live result exists; none is an AR-189 demo gate.
-- The Agency lifecycle lock coordinates Agency writers only. An external
-  same-account ZCode writer can still modify config between the final unchanged-
-  byte read and atomic replacement; this residual window is not CAS.
+## Exact blocker
 
-## same-task-continuity
+No fresh native Windows companion-binding, handle-bound directory retirement
+or native PowerShell branch evidence is supplied. These meaningful clauses stay
+open for the owner's Windows machine. No all-criteria acceptance builder was
+prepared, no verdict was run, and the issue remains `in_progress`.
 
-The telemetry threshold requires a clean durable checkpoint, then continuation
-in this same task through normal compaction. It does not create, transfer, pause,
-or dispatch another task and does not authorize automatic retries of human
-presence.
+No second OS presence ceremony is required or awaited. No live owner
+integration, package or service was removed. Real private ZCode config mutation
+does not establish actual other-host unregistration or running-process unload.
+The external same-account ZCode read-to-replace race remains residual, not CAS.
 
-## next-bounded-work-package
+## Same-task continuity
 
-1. Push the reviewed checkpoint to `main` without dispatching the exhaustive
-   workflow.
-2. When an operator and ownership-proven disposable integration are available,
-   optionally perform one attended apply and prove native detachment, exact
-   retention, and idempotent re-plan. Do not remove the live Codex integration
-   merely to obtain this optional evidence.
+This branch includes the private regression, canonical issue, capsule, receipt,
+registry/AR-404 queue reconciliation, reciprocal ADR-0117 links and its faithful
+substantive/ledger checkpoint. Parent owns PR/merge coordination and later
+acceptance. Preserve other workers' changes. AR-189 is pre-tracker exempt; its
+canonical tracker URL remains null without creating a duplicate issue.
 
-## verification
+## Next bounded work package
 
-~~~text
-python scripts/docs_metadata.py --check
-python scripts/update_policy_availability.py --check
-python scripts/update_worklog.py --check
-python scripts/verify_docs.py
-python -m pytest tests/test_host_uninstall.py tests/test_cli_uninstall.py tests/test_windows_handle_rename.py tests/test_cli_parser_contract.py tests/test_cli_owner_authority.py tests/test_windows_operator_presence.py tests/test_windows_operator_presence_native_asset.py -q -W error
-python -m pytest tests/test_native_installer.py -k "rollback or toggle or native_installers_register_and_enable_with_host_lifecycle or unchanged_codex_reinstall" -q -W error
-python -m pytest tests/test_prepared_codex_install.py -k install_lock -q -W error
-node --test tests/dashboard_ui.test.mjs
-git diff --check
-# Exhaustive diagnostics run only when the owner explicitly requests them.
-~~~
+1. Await the parent's publication signal, then publish this authority
+   reconciliation and private proof through one branch PR with its exact ledger.
+2. Leave meaningful Windows obligations visible; do not delete them to obtain
+   a completion verdict or reinterpret Linux fixtures as native Windows proof.
+3. When owner Windows evidence is available, retain exact source/test identity
+   and reconcile all criteria before preparing isolated acceptance checks.
 
-## constraints
+## Verification
 
-- Use at most the bounded focused review passes and named fast verification.
-  Do not dispatch or run the exhaustive workflow automatically.
-- A plan digest is stale-write and exact-effect safety, not separate
-  authentication. Normal owner CLI execution supplies authority, but any
-  changed operation, selector, host, transition, destination, or policy still
-  requires a newly prepared plan.
-- Never delete an unowned, drifted, unexpected, marketplace-only, or ambiguous
-  path or registration. Preserve all reported recovery material.
-- Do not claim ZCode compare-and-swap or run uninstall alongside an external
-  same-account ZCode config writer.
-- Do not add dashboard, HTTP, MCP, hook, generated-host, or brokered mutation
-  authority.
-- No push, PR, tracker mutation, workflow dispatch, package publication, tag,
-  release, signing action, or trust-store change without authorization.
+The portable receipt distinguishes current commands from historical July
+observations and preserves all original criteria. No retired presence module
+or native asset test should be resurrected merely to match old command lists.
+The original 1,224-document draft check found the inherited `08fab1c4` ledger
+gap. The source update includes that historical ledger and AR-184's merge row.
+Fresh focused and named-spine results are above; repository Ruff lint passes,
+format passes for 768 files and UI 224 passes. Publication metadata, policy,
+worklog, docs (including require-tracker) and diff checks pass before the
+substantive checkpoint; the narrow ledger is checked again after integration.
+Routing evaluation passes every gate. Full mutation-conformance is not rerun
+for this test/records-only slice; its focused tests are in the named spine.
+Do not repeat private installation solely because its evidence appears in
+multiple criteria.
+
+## Constraints
+
+No owner uninstall, profile/credential/provider change, host restart, native
+Windows execution, new mutation endpoint or package/data purge. No exhaustive
+corpus, coverage shards, compatibility matrix, signing or package publication.
+An exact plan digest is stale-write safety, not separate human authentication.
+SQLite read-only WAL/SHM coordination files are explicitly excluded from raw
+snapshots; complete logical database contents remain separately compared.
