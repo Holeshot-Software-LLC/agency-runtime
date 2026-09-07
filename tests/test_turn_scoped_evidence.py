@@ -16,7 +16,6 @@ from agency_runtime.core.header.contract import (
     format_header,
 )
 from agency_runtime.core.header.finalize import finalize_response
-from agency_runtime.core.preflight import run_preflight
 from agency_runtime.core.specialist_context import (
     hydrate_selected_specialist_context,
 )
@@ -293,15 +292,9 @@ def test_mcp_finalize_then_native_stop_idempotently_accepts_exact_text(
     assert "does not match the exact response" in altered["stopReason"]
 
 
-def test_public_delegate_and_post_tool_hook_record_one_execution(tmp_path: Path) -> None:
+def test_removed_public_delegate_cannot_fabricate_native_execution(tmp_path: Path) -> None:
     store = Store(tmp_path / "agency.db")
-    run_preflight(
-        store,
-        session_id="session",
-        trace_id="turn",
-        user_message="Review authentication and report the result.",
-        host="codex",
-    )
+    store.create_run(trace_id="turn", session_id="session", host="codex")
     arguments = {
         "agent": "reviewer",
         "task": "Review authentication",
@@ -314,24 +307,31 @@ def test_public_delegate_and_post_tool_hook_record_one_execution(tmp_path: Path)
         "native_run_id": "native-run-1",
     }
 
-    observed = handle_tool_call("agency.delegate", arguments, store=store)
-    assert observed["status"] == "delegation observed"
-    HookBridge("codex", store=store).handle(
-        {
-            "hook_event_name": "PostToolUse",
-            "session_id": "session",
-            "turn_id": "turn",
-            "tool_use_id": "tool-1",
-            "tool_name": "mcp__agency__agency.delegate",
-            "tool_input": arguments,
-            "tool_response": observed,
-        }
-    )
+    rejected = handle_tool_call("agency.delegate", arguments, store=store)
+    assert rejected == {"error": "unknown tool: agency.delegate"}
+    assert store.get_delegations("turn") == []
+    bridge = HookBridge("codex", store=store)
+    native_event = {
+        "hook_event_name": "PostToolUse",
+        "session_id": "session",
+        "turn_id": "turn",
+        "tool_use_id": "tool-1",
+        "tool_name": "functions.collaboration.spawn_agent",
+        "tool_input": {
+            "task_name": "review_auth",
+            "message": "Review authentication",
+        },
+        "tool_response": {"agent_id": "worker-1"},
+    }
+    bridge.handle(native_event)
+    bridge.handle(native_event)
 
     [delegation] = store.get_delegations("turn")
     assert delegation["status"] == "delegated"
     assert delegation["backend"] == "spawn_agent"
-    assert delegation["work_unit_id"] == "unit-auth"
+    assert delegation["work_unit_id"] == work_unit_id_from_text("Review authentication")
+    assert delegation["executed_worker_id"] == "worker-1"
+    assert delegation["recommended_agent"] == ""
 
     before = len(store.get_delegations("turn"))
     rejected = handle_tool_call(
@@ -339,7 +339,7 @@ def test_public_delegate_and_post_tool_hook_record_one_execution(tmp_path: Path)
         {**arguments, "trace_id": "turn", "work_unit_id": ""},
         store=store,
     )
-    assert "non-empty work_unit_id" in rejected["error"]
+    assert rejected == {"error": "unknown tool: agency.delegate"}
     assert len(store.get_delegations("turn")) == before
 
 
@@ -373,7 +373,7 @@ def test_native_spawn_agent_preserves_backend_without_inventing_specialist_ident
 
 
 @pytest.mark.parametrize("host", ["claude", "codex"])
-def test_stop_retry_terminally_stops_both_native_hosts_without_loop(
+def test_stop_rejects_first_invalid_response_without_a_correction_loop(
     host: str,
     tmp_path: Path,
 ) -> None:
@@ -393,18 +393,15 @@ def test_stop_retry_terminally_stops_both_native_hosts_without_loop(
         "last_assistant_message": "Missing header.",
     }
 
-    # Codex may omit stop_hook_active. The durable prior continue action is the
-    # retry authority for both native hosts.
-    first = bridge.handle(payload)
+    # The first invalid response is terminal. Neither host is asked to spend
+    # another turn correcting it, even when stop_hook_active is omitted.
     terminal = bridge.handle(payload)
     exact_replay = bridge.handle(payload)
 
-    # A corrective Stop uses the documented decision:block continuation shape.
-    assert first["decision"] == "block"
     assert set(terminal) == {"continue", "stopReason"}
     assert terminal["continue"] is False
-    assert terminal["stopReason"].startswith("AGENCY RETRY EXHAUSTED:")
-    assert "No further correction is requested" in terminal["stopReason"]
+    assert terminal["stopReason"].startswith("AGENCY RESPONSE INVALID:")
+    assert "no correction was requested or accepted" in terminal["stopReason"]
     assert exact_replay == terminal
     without_turn_id = bridge.handle(
         {key: value for key, value in payload.items() if key != "turn_id"}
@@ -414,11 +411,10 @@ def test_stop_retry_terminally_stops_both_native_hosts_without_loop(
     assert altered["continue"] is False
     assert altered["stopReason"].startswith("AGENCY TURN TERMINAL:")
     assert "Re-run Agency preflight" not in altered["stopReason"]
-    assert store.get_run("turn")["status"] == "retry_exhausted"
+    assert store.get_run("turn")["status"] == "response_invalid"
     assert store.get_active_specialists_for_trace("session", "turn") == []
     actions = [row["action"] for row in store.recent_runtime_activity()["finalizations"]]
-    assert "continue" in actions
-    assert "retry_exhausted" in actions
+    assert actions == ["response_invalid"]
 
 
 def test_pre_verify_rejects_terminal_trace_but_history_remains_readable(

@@ -2064,6 +2064,16 @@ This registry connects repository history to the roadmap and to optional detail 
 | `8ed3c516` | 2026-09-07 | docs(acceptance): preserve first AR-175 verdicts | [AR-175](../roadmap/issue-AR-175-retire-dashboard-control-fallback.md) | [Detail](2026-09-07-96f6b49b-control-schema-correlation.md) |
 | `d86a9303` | 2026-09-07 | docs(acceptance): bound AR-175 final evidence packet | [AR-175](../roadmap/issue-AR-175-retire-dashboard-control-fallback.md) | [Detail](2026-09-07-96f6b49b-control-schema-correlation.md) |
 | `1379eb0d` | 2026-09-07 | docs(roadmap): complete verified AR-175 control boundary | [AR-175](../roadmap/issue-AR-175-retire-dashboard-control-fallback.md) | [Detail](2026-09-07-96f6b49b-control-schema-correlation.md) |
+| `891f0c32` | 2026-09-07 | Merge pull request #724 from Holeshot-Software-LLC/codex/ar175-oldest-first-reconciliation | [AR-175](../roadmap/issue-AR-175-retire-dashboard-control-fallback.md) | [Detail](2026-09-07-96f6b49b-control-schema-correlation.md) |
+| `6523b8df` | 2026-09-07 | test(runtime): align stale evidence and trust fixtures | [AR-176](../roadmap/issue-AR-176-align-full-gate-contract-fixtures.md) | [Detail](2026-09-07-6523b8df-current-fixture-contracts.md) |
+| `49b307ff` | 2026-09-07 | test(installer): preserve real cleanup in residual fixture | [AR-176](../roadmap/issue-AR-176-align-full-gate-contract-fixtures.md) | [Detail](2026-09-07-6523b8df-current-fixture-contracts.md) |
+| `9a42c162` | 2026-09-07 | docs(acceptance): freeze AR-176 current contract evidence | [AR-176](../roadmap/issue-AR-176-align-full-gate-contract-fixtures.md) | [Detail](2026-09-07-6523b8df-current-fixture-contracts.md) |
+| `969f7190` | 2026-09-07 | docs(acceptance): retain AR-176 first isolated verdicts | [AR-176](../roadmap/issue-AR-176-align-full-gate-contract-fixtures.md) | [Detail](2026-09-07-6523b8df-current-fixture-contracts.md) |
+| `5df50bc1` | 2026-09-07 | test(service): assert retained executable namespace arguments | [AR-176](../roadmap/issue-AR-176-align-full-gate-contract-fixtures.md) | [Detail](2026-09-07-6523b8df-current-fixture-contracts.md) |
+| `8b4c1fca` | 2026-09-07 | docs(evidence): seal AR-176 reviewed regression package | [AR-176](../roadmap/issue-AR-176-align-full-gate-contract-fixtures.md) | [Detail](2026-09-07-6523b8df-current-fixture-contracts.md) |
+| `201d0cfc` | 2026-09-07 | docs(acceptance): bind final AR-176 evidence scope | [AR-176](../roadmap/issue-AR-176-align-full-gate-contract-fixtures.md) | [Detail](2026-09-07-6523b8df-current-fixture-contracts.md) |
+| `4a7b155d` | 2026-09-07 | docs(acceptance): preserve final AR-176 scoped verdicts | [AR-176](../roadmap/issue-AR-176-align-full-gate-contract-fixtures.md) | [Detail](2026-09-07-6523b8df-current-fixture-contracts.md) |
+| `b4edca75` | 2026-09-07 | docs(backlog): retain AR-176 limits and live harness readback | [AR-176](../roadmap/issue-AR-176-align-full-gate-contract-fixtures.md) | [Detail](2026-09-07-6523b8df-current-fixture-contracts.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

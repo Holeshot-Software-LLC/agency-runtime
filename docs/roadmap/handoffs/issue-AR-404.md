@@ -8,18 +8,18 @@ tags: [handoff, backlog, acceptance, delivery]
 related:
   - docs/roadmap/acceptance/evidence/AR-404-live-header-audit-20260907.md
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
-  - docs/roadmap/issue-AR-175-retire-dashboard-control-fallback.md
-  - docs/roadmap/acceptance/evidence/AR-175-control-boundary-20260907.md
-  - docs/roadmap/AR-404-oldest-first-reconciliation-20260905.md
   - docs/roadmap/issue-AR-176-align-full-gate-contract-fixtures.md
+  - docs/roadmap/acceptance/evidence/AR-176-fixture-contracts-20260907.md
+  - docs/roadmap/issue-AR-177-make-exhaustive-python-ci-manual.md
+  - docs/roadmap/AR-404-oldest-first-reconciliation-20260905.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-404
-branch: codex/ar175-oldest-first-reconciliation
-evidence_commit: 8ed3c516b0941c098078a31f34661155993691a1
-minimum_ledger_commit: e633f81957dced146680db834fba9f834a35e1a2
+branch: codex/ar176-oldest-first-reconciliation
+evidence_commit: 4a7b155d15a245b88fe9f44a06f3ec0060671b15
+minimum_ledger_commit: ff376a12b400d956198ecd6b35e0478109c8aaf4
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -29,93 +29,75 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ## Checkpoint
 
 Owner resumed September 7 at 20:14 UTC until 21:00 America/New_York,
-September 8 at 01:00 UTC. Finish at a clean durable checkpoint by that cutoff.
-One record, one normal PR/merge/readback, then next. Native Windows excluded.
-AR-173 merged PR #722 at 7ad0d33e; AR-174 merged PR #723 at 57a70139,
-September 7 20:41:36Z. Main clean/fast-forwarded before this owned AR-175 tree;
-7f403ab7 records the merge. Accepted branch count is 119 (40 mapped/79 legacy);
-main remains 120 until AR-175's normal PR merge.
+September 8 at 01:00 UTC. Finish clean by that cutoff. Continue one record,
+one normal PR/merge/readback, then next. Native Windows excluded.
+Three completions published this evening: AR-173 PR #722 at 7ad0d33e,
+AR-174 PR #723 at 57a70139 and AR-175 PR #724 at 891f0c32.
+Current queue: 119 (40 mapped/79 legacy). AR-176 remains in_progress.
 
 ## Completed evidence
 
-AR-175's legacy control fallback is already gone. New direct tests reproduce
-eight schema/JSON failures losing request IDs across full and control refresh;
-404/network failures and cancellations already behave. Schema validation now
-uses the existing API validation callback, preserving request IDs without
-fallback. All 20 new cases pass, including aborted/suspended/obsolete work,
-exact no-legacy request lists and retained config/roster/control/live state.
+AR-175 is on main: six accepted criteria and real installed-wheel browser proof
+across 21 views/36 faults, with exact request-ID echoes and zero legacy calls.
 
-Full UI: 224 passes, 96.93/86.78/95.74 coverage. Actual asset/floor tests: four
-pass. Assets total 386965 bytes, 107 below unchanged 378 KiB ceiling; repair
-removes 74 bytes. Fresh named spine: 1085 passes/three existing skips, 69.72s.
-Receipt keeps all eight red failures. Draft docs validation rejected file-URI
-stack prefixes; only display schemes are stripped, not failure evidence.
-
-Clean source/ledger a96483ad built the fresh wheel and sdist; canonical portable
-verification, strict Twine and private wheel installation pass. Real Chromium
-passes 21 views and 36 faults across both refresh methods/three widths: HTTP
-404, network, missing/wrong schema, null and malformed JSON. All 30 responses
-echo sent IDs; six network faults retain sent IDs. Zero legacy GETs or POSTs;
-all ten source/served hashes match. Raw report and screenshots are retained.
-Only obsolete criterion 6 follows existing ADR-0105; originals preserved.
+AR-176 fixes all seven reproduced stale cases and strengthens two namespace
+doubles across five test files. Final 15-module package: 525 passes/one existing
+skip/64 Windows-named deselections (84.33s); fresh named spine 1085/three skips
+(72.16s); UI 224/current floors; Node contracts 36; focused namespace/real Store
+authority 60. Python product and fixed coverage controls are unchanged.
 
 ## Exact blocker
 
-AR-175 is accepted at 328c5634: all six criteria satisfy. First review's 6 was
-absent because overlapping heading excerpts exceeded the packet budget and
-omitted browser proof. First verdicts remain at 8ed3c516; exact line citations
-include all seven excerpts/17,149 characters. Only 6 was rechecked and passes;
-no third review. Normal PR/merge/readback remains before AR-176.
-Browser proof is complete, not native-host proof. Do not close AR-170's
-separate remaining obligations.
+AR-176's second/final review satisfies criteria 1/3/4/6/7/8. Criteria 2 and 5
+remain absent: the packets do not enumerate every original double/production
+argument or map the historical changed-module inventory. First verdicts remain
+at 969f7190; final verdicts at 4a7b155d. No third review or done claim.
+Publish the repairs and exact retained state, then move to AR-177.
 
-AR-174's eight final criteria satisfy at 5a003a05; first verdicts remain at
-5d20ec28. ADR-0233 separates dated raw timing from account repair. Historical
-PR #380/run 33426445699 measures 366 raw runner-seconds; no current billing or
-savings claim. All of that completion is now on main.
-
-Retained holds remain in the oldest-first ledger: AR-170 exhausted review;
-AR-168/160 native producer comparison; AR-159 hosted enforcement; AR-156
-Windows/profile; AR-135 attended ZCode; AR-140 supported runner; AR-129/130/147
-Windows; AR-119/125 five-host matched-value proof. AR-176 retains six fixtures.
+Codex actual installed current-profile activation now PASSES with the documented
+client environment supplied; v4 attestation at 22:04:41Z, no trust bypass.
+OpenClaw actual ordinary battery PASSES: own trace/routing/specialist, five-field
+header and reported model-only prompt augmentation. It is not child-card or
+accepted-finalization proof; the run is still active on readback.
+Hermes times out at 420s with measured slow inference/reranker/recruiter failure.
+Claude configured-client isolated canary times out at 180s with contract/HTTP
+failures, not missing credentials. ZCode executable unavailable.
 
 ## Same-task continuity
 
-Owned worktrees only; never commit main or stage another worker's files.
-Each substantive commit gets an immediate narrow docs(worklog) ledger.
-At/below 50 percent ensure a clean checkpoint, then continue in this task.
-Preserve first verdicts before corrections; two review passes by default.
+Owned tree: codex/ar176-oldest-first-reconciliation. Never commit main or touch
+another worker's dirty tree. Each substantive commit gets an immediate narrow
+docs(worklog) ledger. At/below 50 percent ensure a clean checkpoint, then
+continue in this task. Two independent review passes by default; do not loop.
 
 ## Next bounded work package
 
-1. Publish AR-175's accepted completion and ledger.
-2. Finish normal PR/merge/readback, then AR-176.
-3. Retain fresh native failure evidence and continue safe live diagnostics.
+1. Publish AR-176's repaired-but-retained record through normal PR/merge/readback.
+2. Start AR-177, the next oldest non-Windows record.
+3. Keep native diagnostics source-labelled; investigate exact failed receipts
+   and latency stages before repeating unchanged long canaries.
 4. Stop cleanly by September 8 01:00 UTC.
 
 ## Verification
 
-Current commands and raw red/green/UI/spine/asset outputs are in the receipt.
-No exhaustive corpus, coverage shards, compatibility matrix or native Windows
-execution. Python product bytes are unchanged; JavaScript and the optional
-browser checker change. Prior conformance is not a new run or live staffing.
+Current commands, raw failures, final test runs and both review outcomes are
+durable. No exhaustive corpus, coverage shards, compatibility matrix or native
+Windows execution. No new aggregate coverage or all-host quality claim.
+The live audit preserves actual native output hashes, header fields, trace IDs,
+attestation and failure receipts, including the diagnostic launch mistake.
 
 ## Constraints
 
-No credentials, provider policy, billing/settings or trust bypass changes.
-Installed Codex refresh previously exited 1 with unverified trust and mixed
-package projections; do not retry absent a new directive or replace OpenClaw.
-Do not claim ordinary-session activation or specialist staffing.
+No persistent credentials/provider/billing/trust policy changes. The existing
+AR-388 owner-private client variable is read only into test child environments;
+never print it, provision a key or substitute a gateway master key.
+Remove diagnostic PYTHONPATH overlays when launching the actual installed CLI:
+the earlier source-controller trust probe looked for an unpublished projection
+and did not prove hooks were untrusted. It is retained separately.
+No OpenClaw reinstall or gateway stop. The long-running parent conversation
+still has closed Agency MCP transport; a child canary pass does not repair it.
 
-Fresh header/injection diagnostic is retained in AR-404-live-header-audit-20260907.
-The connected Agency tools return Transport closed; installed status is degraded
-with missing provider-credential receipts. One requested Codex refresh exits 1.
-One verification-only live canary actually runs but fails parent spawn, response
-and header/preflight proof; no attestation or trust bypass. Do not misreport it
-as solely a pre-invocation trust refusal or repeat without a changed condition.
-Claude's Linux ELF package parent was group-writable; one exact chmod 0775→0755
-restores direct launcher inspection. Its isolated native canary then completes
-with a parseable header but fails delivery: two preflight failures, zero staffed
-specialists, multiple child artifacts, no attestation. Other three hosts lack
-bounded native canary support (ZCode also lacks an executable). These are actual
-observations, not successful all-harness activation.
+Retained holds: AR-176's two inventory criteria; AR-170 review limit; AR-168/160
+producer comparison; AR-159 hosted enforcement; AR-156 Windows/profile; AR-135
+ZCode; AR-140 supported runner; AR-129/130/147 Windows; AR-119/125 five-host
+matched-value proof. Do not close any of these from unit tests.

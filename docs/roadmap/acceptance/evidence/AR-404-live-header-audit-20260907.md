@@ -184,3 +184,223 @@ IDs omitted from this projection, was:
 No trust bypass or current-profile attestation. Do not repeat unchanged
 preconditions; inspect the two captured failure records and the canary's exact
 child collection before claiming any live staffing success.
+
+## Fresh native checks after the documented credential was found
+
+The owner-private client environment documented by AR-388 still exists and
+contains the configured LITELLM_API_KEY. Its parent directories are 0700 and
+the file 0600, owned by the current user. The diagnostic reads only that named
+assignment, rejects shell interpolation, and passes it only to its child
+environment. No value is printed, no new credential is provisioned, no gateway
+master key is substituted and no persistent setting is changed.
+
+One diagnostic initially inherited PYTHONPATH pointing at this checkout.
+The installed CLI then inspected source code whose private worker projection
+was not published; the result was worker_projection_unavailable, not observed
+untrusted hooks. That diagnostic mistake is retained separately. Removing the
+checkout overlay from the actual installed CLI invocation corrects the source
+boundary. Its verified interpreter imports the AR-348 installed package under
+isolated import inspection.
+
+## Codex current-profile activation now passes
+
+At 22:04:41Z September 7, the actual installed CLI passes the current-profile
+activation canary with the documented client variable supplied. The command is
+verification-only: installation_attempted=false; no hook definition/trust hash
+is changed and trust_bypass_used=false. A bound v4 attestation is persisted for
+Codex 0.153.4 and exact trace 01a07de5-15c3-7350-86c4-b38e886caa61.
+
+This proves that bounded native activation, not that the already-running
+parent conversation inherited a newly supplied environment or repaired its
+closed MCP connection. The generic child-launch audit over the default sessions
+root returns zero launches in this window. That negative scan is retained
+separately; no additional child-card claim is derived from it.
+
+## OpenClaw actual output and prompt readback
+
+One existing ordinary battery passes with its own run, routing, five model
+receipts, one loaded specialist and no own preflight failure. Native run
+445adc05-4050-4277-b45e-4ab86ae48c64 equals the persisted Agency trace. The host
+returns a 1,270-character final body whose five fields name agency-steward and
+silent-failure-hunter, no delegated agent, and inference recruitment. No raw
+private response body is published here.
+
+The host reports 274,984 ms for the ordinary review. Its system-prompt report
+names 31,884 characters/hash
+a1b7312c365b1380b8e1ce569f128c0b4424531d21951c568cd94a343e51a95f.
+Its current turn reports 7,180 prompt characters, 7,050 model-only prompt
+characters and zero separately labeled runtimeContextChars; the visible task is
+130 characters. Model-only injection is observed, but this report does not
+expose those bytes or prove every byte belongs to Agency. The exact Store run
+is preflight_state=ready but still status=active on readback; no accepted
+finalization or native child-card proof is claimed by this ordinary battery.
+
+The final header's workforce model field is a wrapper alias, not proof of the
+underlying provider model. The host execution trace names a successful
+litellm/task-general assistant attempt. Keep those provenance levels separate.
+
+### Positive source-labelled readback
+
+```json
+{
+  "openclaw": {
+    "observed": {
+      "openclaw": "OpenClaw 2026.8.2 (0965053)"
+    },
+    "result": {
+      "mode": "ordinary",
+      "outcome": "passed",
+      "grading": {
+        "mode": "pass_any_k",
+        "trials_requested": 1,
+        "trials_run": 1,
+        "passed_trials": [
+          1
+        ],
+        "failed_trials": []
+      },
+      "trials": [
+        {
+          "mode": "ordinary",
+          "outcome": "passed",
+          "reason": "",
+          "timed_out": false,
+          "exit_code": 0,
+          "own_sessions": [
+            "agent:openclaw:main"
+          ],
+          "own_session_row_counts": {
+            "runs": 1,
+            "receipts": 5,
+            "specialists": 1,
+            "routing": 1
+          },
+          "foreign_session_activity": {},
+          "foreign_session_hosts": {},
+          "new_row_counts": {
+            "runs": 1,
+            "receipts": 5,
+            "specialists": 1,
+            "routing": 1
+          },
+          "trial": 1,
+          "ran_at": "2026-09-07T21:55:38.836622+00:00"
+        }
+      ],
+      "observed_version": "OpenClaw 2026.8.2 (0965053)"
+    },
+    "captures": [
+      {
+        "host": "openclaw",
+        "started_at": "2026-09-07T21:50:56.759207+00:00",
+        "finished_at": "2026-09-07T21:55:35.463076+00:00",
+        "command_kind": "shipped ordinary read-only review task",
+        "exit_code": 0,
+        "stdout_characters": 41899,
+        "stdout_sha256": "0d0f3ef0aa1e3829fa489119839ff97942d057b8f5e44428543b23946f373d9d",
+        "stderr_characters": 0,
+        "channels": [
+          {
+            "source": "$.result.payloads[0].text",
+            "characters": 1270,
+            "sha256": "c8a0e1b6c892f89e4dd1e3f96295f8f872f45c868b56d6b705a32408d919d3c8",
+            "parsed_header": {
+              "agencies_loaded": "agency-steward, silent-failure-hunter",
+              "agencies_delegated": "none",
+              "skills_loaded": "none",
+              "actual_model_selected": "workforce inference: [router] task-agency-router -> linux-task-agency-router/task-agency-router (wrapper)",
+              "recruited_via": "inference"
+            },
+            "header_field_count": 5
+          }
+        ]
+      }
+    ]
+  },
+  "codex": {
+    "ok": true,
+    "complete": true,
+    "installation_attempted": false,
+    "hosts": [
+      {
+        "host": "codex",
+        "ok": true,
+        "status": "runtime_verified",
+        "maturity": "runtime-verified",
+        "activation": {
+          "complete": true,
+          "fresh_attestation": {
+            "bundle_digest": "0734429d1ba57907910723b4faaf7ec50f981513dccd0502b4518399034436b2",
+            "host": "codex",
+            "host_version": "codex-cli 0.153.4",
+            "install_id": "c482c4e2-186e-4dce-9692-98bbf22f2696",
+            "passed_at": "2026-09-07T22:04:41.025371+00:00",
+            "platform_machine": "x86_64",
+            "platform_release": "7.0.0-29-generic",
+            "platform_system": "Linux",
+            "plugin_version": "0.1.0",
+            "profile_scope": "current-profile",
+            "proof_contract": "agency.codex-activation-canary.v4",
+            "proof_digest": "0bf5239c2caa6ca6b98f1346d697b07ae0009c46dcebacc50dc3f867fb55c7d6",
+            "trace_id": "01a07de5-15c3-7350-86c4-b38e886caa61"
+          },
+          "profile_scope": "current-profile",
+          "state": "ready",
+          "trust_bypass_used": false,
+          "verification": {
+            "attestation_persisted": true,
+            "canary_passed": true,
+            "host": "codex",
+            "live_attempted": true,
+            "mode": "agency",
+            "profile_scope": "current-profile",
+            "schema_version": "agency.host_canary.v1",
+            "unmet_prerequisites": []
+          }
+        }
+      }
+    ]
+  }
+}
+```
+
+## Hermes actual slow failure
+
+The shipped 420-second ordinary battery times out. Its own session
+20260907_173918_2c7738 contains one run and one preflight failure, no routing or
+specialist load. A read-only native-session query finds 27 messages, 15 tool
+calls and 11 API calls but no final assistant response/header; the stored
+system prompt is empty, so its absence cannot prove injection did not happen.
+No current-profile activation is claimed.
+
+Exact failure receipt 5135dd9b-da9a-4c57-b687-07cbcc7f7ee5, recorded 21:43:49Z,
+shows real provider attempts: planner 66,421 ms; cold dense recall 50,467 ms
+with 296 inputs; reranker 30,952 ms rejected for provider_response_contract_invalid;
+recruiter 120,206 ms with provider_call_timed_out. The resulting reason is
+workforce_inference_failed/inference_invalid. Its native environment already
+reached authenticated providers: the launching shell's missing variable is
+not an explanation for this particular Hermes failure.
+
+## Claude configured-client failure
+
+The subsequent source-controller isolated-profile canary receives the existing
+client variable but times out at its 180-second boundary: no final header,
+delivery_marker_absent and no attestation. It is not mislabeled as a successful
+installed-profile test or a remaining missing-credential failure.
+
+Exact receipts 3615c4fb-1c2f-4a9c-b76f-bd8638f59385 and
+1a237672-499b-435f-bf5e-6ea227b9e655 show subject/recruiter contract rejection,
+staffing_critic_rejected, and a later recruiter provider_http_status_error.
+They also expose actual latency: planning 23–31 seconds, a cached embedding
+read 343 ms, and one reranker invocation 35,865 ms. Counts over the canary
+window include unrelated activity and are not substituted for its empty
+correlated accepted/loaded evidence.
+
+## Remaining outcome and next bounded diagnostic
+
+Codex's exact bounded activation and OpenClaw's ordinary staffing/header checks
+pass. Claude and Hermes do not; ZCode has no local executable. None of this is
+a five-host quality/latency acceptance. Existing AR-119/125/383 and performance
+records retain that work. Investigate the actual contract/HTTP timeout receipts
+and profile/cache costs before rerunning unchanged long canaries. No Windows
+work, gateway restart, credential provisioning or trust bypass was performed.
