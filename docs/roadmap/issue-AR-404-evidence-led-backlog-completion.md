@@ -120,7 +120,14 @@ cases prove last-good state and revisions survive missing initial cursor/revisio
 across roster, snapshots and reviews. Focused cursor/activity/observation passes
 13, full UI passes 188/current floors. No runtime or criterion change; unchanged
 Python/source receipts are explicit reuse. All four original criteria satisfy
-at e1c3069c; AR-154 is done. Merge PR #706 normally, then AR-155.
+at e1c3069c; AR-154 is done. PR #706 merged at 434175f0 on September 7 at
+07:17:59Z; main was clean and fast-forwarded before the owned AR-155 tree.
+
+AR-155 confirms the existing metadata-only 200-row/1 MiB hiring page and exact
+full-document endpoint, with explicit UI inspection and stale-response guards.
+Fresh Store/HTTP four, workforce 25 and UI 188 pass; Python/source receipts are
+explicit reuse. No code/test change; ADR-0105 reconciles only its obsolete fifth
+verification gate, preserving historical wording. Five isolated criteria remain.
 
 Current counts: 40 actual open trackers plus 92 unfinished legacy records,
 132 total after AR-154 completion; no duplicate tracker or false acceptance.
