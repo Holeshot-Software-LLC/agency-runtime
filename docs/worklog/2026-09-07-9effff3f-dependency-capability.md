@@ -54,3 +54,9 @@ Freeze all nine builder rowsets at this candidate, require isolated verdicts,
 and complete only if all satisfy. Publish one normal PR and merge before AR-166.
 Hosted enforcement remains AR-159; the fresh requested Codex install still
 reports unverified hook trust, activation required and mixed package projections.
+
+## Frozen review
+
+c829216d freezes all nine rowsets at 9effff3f and binds the decision/capsule to
+that repair and immediate ledger b038cdb9. Strict docs pass 1186 Markdown files.
+The first isolated review follows a clean ledger; no builder verdicts exist.
