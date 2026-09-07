@@ -88,6 +88,8 @@ def test_request_ids_accept_only_random_agency_or_canonical_uuid4() -> None:
 
 def test_nested_boundaries_and_store_events_share_request_correlation(caplog) -> None:
     caplog.set_level(logging.INFO, logger="agency_runtime.observation")
+    with RuntimeBoundary(surface="store", operation="sqlite.commit") as unrelated:
+        pass
     trace_id = str(uuid4())
     digest = correlation_observation_digest(trace_id)
 
@@ -115,6 +117,7 @@ def test_nested_boundaries_and_store_events_share_request_correlation(caplog) ->
     ]
     assert [payload["surface"] for payload in payloads] == ["store", "mcp"]
     assert {payload["request_id"] for payload in payloads} == {outer.request_id}
+    assert outer.request_id != unrelated.request_id
     assert payloads[-1]["outcome"] == "denied"
     assert payloads[-1]["store_generation"] == 4
     assert current_observation_context() == ("", "")

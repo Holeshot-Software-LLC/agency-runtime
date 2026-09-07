@@ -1979,6 +1979,12 @@ This registry connects repository history to the roadmap and to optional detail 
 | `a35657e1` | 2026-09-07 | test(http): prove quiet disconnect evidence and current fixtures [AR-157] | [AR-157](../roadmap/issue-AR-157-quiet-public-http-disconnects.md) | [detail](2026-09-07-a35657e1-http-disconnect-evidence.md) |
 | `97eadda6` | 2026-09-07 | docs(acceptance): freeze AR-157 disconnect evidence | [AR-157](../roadmap/issue-AR-157-quiet-public-http-disconnects.md) | [detail](2026-09-07-a35657e1-http-disconnect-evidence.md) |
 | `e4a3731b` | 2026-09-07 | docs(backlog): close verified public HTTP disconnect handling [AR-157] | [AR-157](../roadmap/issue-AR-157-quiet-public-http-disconnects.md) | [detail](2026-09-07-a35657e1-http-disconnect-evidence.md) |
+| `ea6864b1` | 2026-09-07 | Merge pull request #709 from Holeshot-Software-LLC/codex/ar157-oldest-first-reconciliation | [AR-157](../roadmap/issue-AR-157-quiet-public-http-disconnects.md) | [detail](2026-09-07-a35657e1-http-disconnect-evidence.md) |
+| `95085a30` | 2026-09-07 | test(observability): verify current hook and Store evidence [AR-158] | [AR-158](../roadmap/issue-AR-158-disambiguate-multi-surface-observation-tests.md) | [detail](2026-09-07-95085a30-observation-selection.md) |
+| `360bac7f` | 2026-09-07 | docs(acceptance): freeze AR-158 observation proof | [AR-158](../roadmap/issue-AR-158-disambiguate-multi-surface-observation-tests.md) | [detail](2026-09-07-95085a30-observation-selection.md) |
+| `809354be` | 2026-09-07 | docs(acceptance): preserve AR-158 command-citation gap | [AR-158](../roadmap/issue-AR-158-disambiguate-multi-surface-observation-tests.md) | [detail](2026-09-07-95085a30-observation-selection.md) |
+| `b0d9efe8` | 2026-09-07 | docs(acceptance): cite frozen warning-strict spine command [AR-158] | [AR-158](../roadmap/issue-AR-158-disambiguate-multi-surface-observation-tests.md) | [detail](2026-09-07-95085a30-observation-selection.md) |
+| `3da9cfd0` | 2026-09-07 | docs(backlog): close verified observation selection [AR-158] | [AR-158](../roadmap/issue-AR-158-disambiguate-multi-surface-observation-tests.md) | [detail](2026-09-07-95085a30-observation-selection.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

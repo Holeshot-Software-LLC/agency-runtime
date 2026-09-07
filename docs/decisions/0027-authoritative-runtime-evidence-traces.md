@@ -96,3 +96,9 @@ The production-readiness refactor added failure-aware event promotion, stable
 work-unit correlation, dependency gating, canonical header reconciliation,
 spoof rejection, unique traces, and persisted routing-decision records. The
 implementation commit is recorded through the worklog after it is created.
+
+AR-158's aad2901 made test observation selection surface/operation/request
+specific. Its later reconciliation preserves that evidence contract without
+restoring the child-launch denial removed in 20f006b6.
+95085a30 verifies current hook and Store selection; its seven isolated AR-158
+criteria satisfy after an explicit command-citation repair.
