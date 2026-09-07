@@ -76,3 +76,18 @@ for 1128 Markdown files before freeze publication. One earlier docs process
 overlapped creation of the substantive commit and reported its then-missing
 ledger row; no such race is used as a passing receipt. Subsequent verification
 waits for the docs process before changing Git history.
+
+First-review checkpoint: 6a139e23 preserves every verifier-produced verdict
+before changing evidence or candidate. Codex's isolated runs satisfied 2/3/6,
+reported absent citations for 1/5 and contradicted 4's exact-identifier claim.
+Claude's default invocation was unavailable under existing executable trust
+checks and wrote no verdicts. The public Python facade still admits values
+that its internal Store will normalize; add regression-first admission checks
+without changing the intentional defensive low-level contract. The original
+six criteria are unchanged and AR-131 stays open.
+
+Fresh post-addition production spine: 1085 passed/three skips (69.18s).
+Decision-conformance passed with source unchanged and a 99,281-ms passing
+baseline. The evidence record also preserves the single requested Codex hook
+refresh: exit 1, registered files but activation required, trust unverified and
+mixed installed projections. No retry, trust bypass or OpenClaw replacement.
