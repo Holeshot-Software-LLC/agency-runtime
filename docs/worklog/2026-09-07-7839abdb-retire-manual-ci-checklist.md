@@ -59,3 +59,5 @@ cover AR-178 relevance, AR-176 historical mapping and the live Codex hook
 warning/credential failure. No Windows, new key, trust bypass or service restart.
 
 Substantive retirement `7839abdb` is recorded here exactly; this ledger does not alter the retirement or original acceptance states.
+
+Normal PR #726 merged at `cbe82aaf1ac735b03f045bc180dc2d8520dc406c` on September 7 at 22:32:47Z. Clean main was fast-forwarded before the separate AR-178 tree. No hosted checks were reported; local verification is not relabelled CI.

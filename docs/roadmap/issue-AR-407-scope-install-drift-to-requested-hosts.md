@@ -1,0 +1,61 @@
+---
+title: "AR-407: Scope install drift warnings to requested hosts"
+status: in_progress
+category: roadmap
+created: 2026-09-07
+updated: 2026-09-07
+tags: [install, drift, diagnostics, hosts]
+related:
+  - docs/roadmap/issue-AR-258-reconcile-the-installed-projection.md
+  - docs/roadmap/issue-AR-363-deployed-fix-witness-manifests.md
+  - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
+  - docs/roadmap/acceptance/evidence/AR-404-live-header-audit-20260907.md
+  - agency_runtime/cli/install_commands.py
+supersedes: []
+superseded_by: null
+type: issue
+epic: install
+issue_id: AR-407
+priority: p2
+tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/727
+depends_on: []
+blocks: []
+---
+
+# AR-407: Scope install drift warnings to requested hosts
+
+## Problem
+
+A successful Codex-only refresh warns that its hooks did not pick up the CLI
+source even when the reported stale projection belongs only to OpenClaw.
+The installer takes the first drift report across all recorded hosts instead
+of scoping its residual warning to the requested installation targets.
+
+## Current state
+
+September 7 live refresh returns zero and runtime-verified for Codex. Its
+per-host pointer, marketplace hooks and current plugin cache pin 4329d76058d1
+from the AR-348 package. Only OpenClaw pins 1d617ca589a2 from AR-271.
+The residual warning therefore misattributes unrelated host drift.
+
+The current parent separately retains older cached hooks and lacks the
+configured client variable in its launch environment. Correcting a warning
+does not fix either condition or establish current-turn staffing.
+
+## Approach
+
+Filter install residual drift to resolved installation targets. Keep global
+status and its complete cross-host drift list unchanged. Exercise text/JSON,
+requested-host drift, unrelated-host drift and multi-target behavior.
+Verify against the actual mixed installed pointers without replacing OpenClaw.
+
+## Dependencies
+
+Existing per-host projection authority (AR-258) and witness evidence (AR-363).
+No new credential loading, trust bypass, gateway restart or Windows execution.
+
+## Acceptance
+
+- [ ] A single-host install excludes unrelated hosts from residual drift text and JSON while retaining relevant requested-host drift.
+- [ ] Multi-target install retains drift for its resolved targets and global status still reports all recorded-host drift.
+- [ ] Focused regressions and an exact-source check against the live mixed-host installation demonstrate the correction without modifying unrelated hosts or credential/trust policy.

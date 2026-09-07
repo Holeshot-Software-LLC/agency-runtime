@@ -19,9 +19,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-404
-branch: codex/ar177-oldest-first-reconciliation
-evidence_commit: d2125438910d873a116a11b2ce2cb7f27209beeb
-minimum_ledger_commit: fbebbb9accc7ce8a15445c5f1afe290ed4d159cb
+branch: codex/ar178-oldest-first-reconciliation
+evidence_commit: cbe82aaf1ac735b03f045bc180dc2d8520dc406c
+minimum_ledger_commit: 4fcad063de1b6c55f80af476f055c470c7884358
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -36,7 +36,9 @@ explicitly requested fanout. Parallel bounded investigations are allowed;
 publication remains one normal PR/merge/readback at a time. Windows excluded.
 Three completions published: AR-173 PR #722/7ad0d33e, AR-174 PR #723/57a70139,
 AR-175 PR #724/891f0c32. AR-176 repairs merged PR #725/d2125438 but remain open.
-Main queue 119 (40 mapped/79 legacy); AR-177 retirement reduces branch to 118.
+AR-177 retired through PR #726/cbe82aaf, reducing the old queue to 118.
+AR-178 stays open/deferred. New actual defect AR-407/#727 adds one mapped
+record: current branch 119 (41 mapped/78 legacy); no legacy rollback.
 
 ## Completed evidence
 
@@ -55,9 +57,10 @@ run 31988612867 retained; no exhaustive dispatch or billing changes.
 
 ## Exact blocker
 
-AR-176 criteria 2/5 lack complete historical double/argument/module mapping.
-Both review rounds remain; no third acceptance pass. A separate read-only
-inventory investigation is underway after the owner's fanout request.
+AR-176 criteria 2/5 retain their two review verdicts; no third acceptance pass.
+Fanout recovered the seven-module map and four surviving exact doubles; the
+fifth legacy backend/test was deleted together at fb34191f. No runtime gap
+established; the original eleven failing node IDs remain unrecovered.
 
 Codex installed current-profile activation PASSES at 22:04:41Z using the
 existing client variable; v4 attestation, no trust bypass. OpenClaw ordinary
@@ -68,24 +71,26 @@ Hermes times out at 420s with slow inference/reranker/recruiter failure.
 Claude configured-client isolated canary times out at 180s with contract/HTTP
 failures, not missing credentials. ZCode executable unavailable.
 
-Fresh required Codex refresh around 22:29Z exits zero and reports runtime-verified
-but still warns of AR-348 CLI versus AR-271 published hook package mismatch.
-This does not establish current-parent staffing. Do not reinstall OpenClaw.
-Parent hook still reports missing credential; no current-turn header snapshot.
+Fresh required Codex refresh exits zero/runtime-verified. Fanout establishes
+its residual mismatch is OpenClaw-only; current Codex disk/cache pins 4329d760.
+AR-407 fixes that misleading unfiltered warning, not current-parent staffing.
+Parent hook still executes old 5059543c and its launch process lacks the client
+variable. No current-turn header snapshot; do not reinstall OpenClaw.
 
 ## Same-task continuity
 
-Owned tree: codex/ar177-oldest-first-reconciliation. Do not commit main or touch
+Owned tree: codex/ar178-oldest-first-reconciliation. Do not commit main or touch
 another worker's dirty tree. Substantive commits get immediate narrow worklog
 ledgers. At/below 50 percent finish a clean checkpoint, then continue.
-Fanout investigations: AR-178 relevance, AR-176 inventory, parent hook diagnosis.
-They are read-only; parent owns changes and publication.
+Fanout now covers AR-180 evidence and AR-181 smoke. A worker owns only runtime/
+tests for AR-407 in codex/ar407-scope-install-drift; parent owns its records.
+Parent owns all publication, acceptance and shared-registry changes.
 
 ## Next bounded work package
 
-1. Publish AR-177 retirement through normal PR/merge/readback.
-2. Consolidate AR-178 relevance evidence and process the next oldest record.
-3. Diagnose exact live receipts and package/env mismatch before repeat canaries.
+1. Publish AR-178 retained disposition and AR-407 filing, then AR-180.
+2. Review/verify the bounded AR-407 repair and publish separately.
+3. Keep live card injection distinct from the passing encrypted-payload canary.
 4. Stop cleanly by September 8 01:00 UTC.
 
 ## Verification
