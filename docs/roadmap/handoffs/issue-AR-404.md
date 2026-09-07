@@ -33,7 +33,8 @@ September 8 at 01:00 UTC. Finish at a clean durable checkpoint by that cutoff.
 One record, one normal PR/merge/readback, then the next. Native Windows excluded.
 AR-173 merged in PR #722 at 7ad0d33e, 20:18:19Z. Main was clean and fast-forwarded
 before this owned AR-174 worktree; d43dc923 records the merge.
-Current unfinished count: 121 (40 mapped plus 81 legacy).
+Accepted branch count: 120 (40 mapped plus 80 legacy). Main remains 121 until
+AR-174's normal PR is merged.
 
 ## Completed evidence
 
@@ -55,15 +56,17 @@ First review is preserved at 5d20ec28: 2/3/4/6/8 satisfy, 1/5 need their own
 workflow/matrix excerpts, and 7 proves timing but not billing repair.
 ADR-0233 explicitly separates historical timing from account administration;
 original wording remains. Criteria 1–6 unchanged; 8 follows existing ADR-0105.
-Existing call sites/matrix are added; all eight checks need a new final candidate.
+Existing call sites/matrix are added. All eight final-candidate checks satisfy
+at 5a003a05 in the second/final review; AR-174 is done. No copied verdicts.
 
 ## Exact blocker
 
 First candidate 452639dd and first verdict checkpoint 5d20ec28/6297fd63
 are preserved. Final candidate 5a003a05 and ledger b6597ed2 pass current
 strict records for 1211 Markdown files and 397 mapped/two historical exceptions.
-Eight new checks follow this freeze; no source/test/workflow changes or copied
-verdicts. Use the second/final review only.
+All eight new checks satisfy; no technical AR-174 acceptance blocker remains.
+Publish the accepted state through one normal PR/merge. No source/test/workflow
+changes, copied verdicts or third review.
 
 Retained AR-170 has two exhausted review passes: final 1/2/4/5/6/7/8 satisfy,
 3/9 need complete collection call sites and raw gate receipts. First/final
@@ -83,7 +86,7 @@ Preserve first verdicts before corrections; two review passes by default.
 ## Next bounded work package
 
 1. Final candidate 5a003a05 is frozen with clean ledger b6597ed2.
-2. Run eight isolated criteria; handle only findings that invalidate its outcome.
+2. All eight final criteria satisfy; commit the completion and its ledger.
 3. Publish one normal PR and merge/readback before inspecting AR-175.
 4. Stop with clean durable state by September 8 01:00 UTC.
 

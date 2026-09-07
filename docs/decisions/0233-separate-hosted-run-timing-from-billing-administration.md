@@ -79,3 +79,8 @@ authority. AR-156/159's remaining accepted obligations stay open.
   bound hosted measurement remains required and is available.
 - **Silently drop the old wording or reuse verdicts.** Rejected: preserve the
   requirement, reconciliation and first review, then verify the final candidate.
+
+## Acceptance evidence
+
+All eight final AR-174 criteria satisfy at 5a003a05, with first verdicts retained
+at 5d20ec28. This records measured historical execution, not account-state repair.

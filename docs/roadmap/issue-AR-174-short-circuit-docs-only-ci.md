@@ -1,6 +1,6 @@
 ---
 title: "AR-174: Short-circuit documentation-only CI"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-27
 updated: 2026-09-07
@@ -83,8 +83,9 @@ API/Git receipts are linked below. First isolated verdicts are preserved at
 5d20ec28: 2/3/4/6/8 satisfy; 1/5 need self-contained workflow/matrix citations,
 and 7 lacks account-repair proof despite valid raw timing. ADR-0233 explicitly
 separates timing from billing administration, retaining the original requirement
-and avoiding any claim that the account was repaired. All eight criteria will
-receive new verdicts at the final candidate; no copied results or third review.
+and avoiding any claim that the account was repaired. All eight criteria satisfy
+at 5a003a059b52e4bc9e335e42a436768b95171446 in the second/final review.
+AR-174 is done with no source change, copied verdicts or third review.
 
 ## Approach
 
@@ -121,11 +122,11 @@ All original wording is retained; criteria 1–6 are unchanged.
   rejects missing, failed, cancelled, or incoherent results.
 - [x] Focused scope, workflow, sharding, shell, Ruff, release-hygiene, and
   offline workflow-security checks pass.
-- [ ] One exact eligible hosted pull-request run records raw runner minutes
+- [x] One exact eligible hosted pull-request run records raw runner minutes
   from allocated jobs' start/completion timestamps, with base/head, complete
   regular docs-only delta and successful five-runner topology; historical timing
   is dated and does not assert billing repair, current availability or savings.
-- [ ] Focused scope/workflow/sharding/session, Bash syntax, release hygiene,
+- [x] Focused scope/workflow/sharding/session, Bash syntax, release hygiene,
   offline workflow security, named production spine, UI/current coverage,
   metadata, policy, worklog, strict docs/tracker, Ruff and diff checks pass;
   exhaustive integration remains optional under ADR-0105.

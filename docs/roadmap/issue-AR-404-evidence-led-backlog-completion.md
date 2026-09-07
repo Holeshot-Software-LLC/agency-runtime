@@ -302,10 +302,11 @@ First review is preserved at 5d20ec28: 2/3/4/6/8 satisfy, 1/5 need isolated
 workflow/matrix citations, and 7 lacks billing-repair proof despite valid raw
 timing. ADR-0233 explicitly separates the timing requirement from account
 administration, with original wording retained; 8 still follows ADR-0105.
-No runtime change. All eight criteria need new final-candidate verdicts.
+No runtime change. All eight criteria satisfy at 5a003a05 in the second/final
+review; AR-174 is done with first verdicts preserved and no third review.
 
-Current main and branch counts: 40 actual open trackers plus 81 unfinished legacy
-records, 121 total; AR-174 has not yet been accepted.
+Accepted branch counts: 40 actual open trackers plus 80 unfinished legacy
+records, 120 total. Main remains 121 until AR-174 is merged normally.
 No duplicate tracker or false acceptance.
 The unchanged public-roster fixture belongs to AR-176. Windows stays excluded;
 the oldest-first ledger and capsule preserve all holds. Ordinary-session
@@ -538,7 +539,7 @@ No exhaustive workflow dispatch or unattended restart is implied.
 
 ## Next bounded package
 
-Finish AR-174's eight isolated criteria, one normal PR/merge, then review AR-175.
+Publish accepted AR-174 through one normal PR/merge, then review AR-175.
 The September 7 continuation ends at 9 p.m. Eastern (September 8, 01:00 UTC);
 leave a clean durable checkpoint. Windows-only work stays with the owner.
 The older AR-152/298/348-first ordering above is historical and does not override
