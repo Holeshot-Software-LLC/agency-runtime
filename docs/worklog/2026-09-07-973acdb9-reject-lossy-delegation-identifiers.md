@@ -85,3 +85,9 @@ failure history remains intact. PR #698 carries the scoped repair/completion.
 Fresh enumeration is 40 actual open trackers and 98 unfinished legacy records
 (138 local unfinished). AR-131 has no tracker to close; do not manufacture one
 or close its live-host umbrella. Merge the PR, then AR-135 is next.
+
+Publication: PR #698 merged normally at
+ac1ce173d6987d4d4cc4e060df319fb07cf9f44b on September 7, 04:12:09Z.
+The final reviewed head was 705b2912; mergeability was confirmed and the hosted
+check rollup was empty (not a hosted-CI pass). Local main was fast-forwarded
+and is clean. This merge receipt is recorded in the next owned AR-135 tree.
