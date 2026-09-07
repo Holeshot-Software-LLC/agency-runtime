@@ -21,8 +21,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-404
 branch: codex/ar173-oldest-first-reconciliation
-evidence_commit: f4f5124ef6433db9cae18784c15cc76ba880b391
-minimum_ledger_commit: a8f829c9a9f785668805eb2bd0c99b579f54f143
+evidence_commit: 594bc4d3939d144440ae52f5acdf5f840c79f25e
+minimum_ledger_commit: 2856ac53cfd45933f5d4f10518c56670283333da
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -87,7 +87,7 @@ No empty commits, staffing or restart. Preserve verdicts before corrections.
 ## Next bounded work package
 
 1. Focused checkpoint b2da6eb9/b1f15941 is clean; broader suites pass.
-2. Complete evidence f4f5124e and its immediate ledger are committed; freeze packet.
+2. Final candidate 594bc4d3 and its immediate ledger are committed; freeze packet.
 3. Five isolated checks, one normal PR/merge/readback, then AR-174.
    No native Windows work and at most two review passes.
 
