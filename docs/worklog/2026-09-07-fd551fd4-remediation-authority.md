@@ -16,7 +16,7 @@ type: worklog
 commit: fd551fd49bf535c939e66ba5c387fd872621ac67
 short: fd551fd4
 date: 2026-09-07
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/714
 related_issues:
   - docs/roadmap/issue-AR-163-reopen-stale-remediation-authority.md
 ---
