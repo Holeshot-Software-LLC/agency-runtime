@@ -16,7 +16,7 @@ type: worklog
 commit: 9effff3f6c4f4fbe59de8793df074a041e64dab9
 short: 9effff3f
 date: 2026-09-07
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/716
 related_issues:
   - docs/roadmap/issue-AR-165-fail-ambiguous-dependency-review-capability-closed.md
 ---
@@ -73,3 +73,14 @@ historical PR exceptions, exact worklog and diff checks pass. Read-back queue:
 Supplementary unchanged-source checks: fresh DOM 188 pass with no skips/failures
 (196.626705 ms); routing evaluation passes its deterministic candidate-recall
 contract. Neither is real-provider staffing quality or native activation proof.
+
+## Supplementary decision conformance
+
+The first invocation stopped in private fixture-directory creation before any
+mutation ran (baseline exit 1, zero killed/survived/invalid, source unchanged).
+The unchanged-source retry with umask 077 passes: baseline exit 0, 97619 ms,
+no failed nodes; all 184 curated mutations killed, zero survived or invalid,
+source unchanged. No code, test, trust control or threshold was altered.
+This is curated decision sensitivity, not an exhaustive or superiority claim.
+The frozen acceptance receipt remains a faithful earlier checkpoint; this later
+result is supplemental. PR #716 contains the complete bounded delivery.
