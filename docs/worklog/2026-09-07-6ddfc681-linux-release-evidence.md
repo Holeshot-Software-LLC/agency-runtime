@@ -16,7 +16,7 @@ type: worklog
 commit: 6ddfc681ac0140f5910c102d0d13fe21f3327b5b
 short: 6ddfc681
 date: 2026-09-07
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/712
 related_issues:
   - docs/roadmap/issue-AR-160-publish-platform-honest-native-release-artifacts.md
 ---
@@ -52,3 +52,8 @@ change is authorized by this package. Keep AR-160 in_progress, counts unchanged
 at 40 actual trackers plus 89 unfinished legacy records. Publish one normal PR,
 then AR-162; AR-161 is already retired. Artifact hashes apply only to f1c7d0b0,
 not subsequent documentation commits.
+
+PR #712 carries this retention. Final docs validation covers 1169 Markdown
+files; tracker parity covers 397 mapped items/two historical PR exceptions.
+End telemetry is 49.9 percent at 09:06:27Z; 6ddfc681 and immediate ledger
+42202ef7 form the clean substantive checkpoint before normal publication.
