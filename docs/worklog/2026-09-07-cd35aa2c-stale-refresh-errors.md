@@ -67,3 +67,12 @@ in Git. It remains pending while the wheel is rebuilt and verified.
 
 AR-138 owns rebuilt-wheel browser proof and the second isolated acceptance
 pass before PR #700 can merge. Native Windows and host activation are separate.
+
+### Delivery receipt
+
+Rebuilt-wheel proof at 2ecde1a5 passes all 21 loaded-view browser checks. All six
+second-pass isolated verdicts satisfy that candidate; closure is 34680228.
+PR #700 merged at 1ada216c208777630ec7162acf5a390f420fc0a4 on September 7,
+05:28:53Z, read back as MERGED. Local main fast-forwarded cleanly. Hosted checks
+were absent, not reported as passing; no bypass or exhaustive dispatch was used.
+Current counts are 40 open trackers plus 97 unfinished legacy records (137).

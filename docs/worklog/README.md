@@ -1940,6 +1940,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `2ecde1a5` | 2026-09-07 | test(dashboard): verify rebuilt stale-error repair [AR-138] | [AR-138](../roadmap/issue-AR-138-coherent-observable-dashboard-ui.md) | null |
 | `d3801bf9` | 2026-09-07 | docs(acceptance): freeze repaired AR-138 candidate | [AR-138](../roadmap/issue-AR-138-coherent-observable-dashboard-ui.md) | null |
 | `34680228` | 2026-09-07 | docs(backlog): accept verified dashboard repairs [AR-138] | [AR-138](../roadmap/issue-AR-138-coherent-observable-dashboard-ui.md) | [detail](2026-09-07-cd35aa2c-stale-refresh-errors.md) |
+| `1ada216c` | 2026-09-07 | Merge pull request #700 from Holeshot-Software-LLC/codex/ar138-oldest-first-reconciliation | [AR-138](../roadmap/issue-AR-138-coherent-observable-dashboard-ui.md) | [detail](2026-09-07-cd35aa2c-stale-refresh-errors.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
