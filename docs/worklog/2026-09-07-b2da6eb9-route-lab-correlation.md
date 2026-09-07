@@ -106,3 +106,12 @@ this branch is unpushed. Main stays clean at 47d40fec, with 122 unfinished
 All record gates pass for 1207 Markdown files, 397 mapped/two historical PR
 exceptions and 766 formatted files. No background work. Resume only on explicit
 continue: publish accepted AR-173, normal merge/readback, then inspect AR-174.
+
+## Explicit continuation
+
+3864deda (3864deda9b854a79268fc1599e8a4667c0981409) records the September 7 20:14 UTC owner request to continue
+oldest-first through 9 p.m. Eastern (September 8 at 01:00 UTC). The pause is
+lifted; publish the accepted 1f16f948 state before AR-174, without repeating
+acceptance. Fresh metadata, policy, worklog, strict docs/tracker, Ruff and diff
+checks pass (1207 Markdown; 397 mapped/two historical PR exceptions). No
+product/test change or new live-host claim. Stop at a clean cutoff checkpoint.
