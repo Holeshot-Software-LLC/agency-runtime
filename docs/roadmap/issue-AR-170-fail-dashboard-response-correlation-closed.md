@@ -3,9 +3,12 @@ title: "AR-170: Fail dashboard response correlation closed"
 status: in_progress
 category: roadmap
 created: 2026-07-27
-updated: 2026-07-27
+updated: 2026-09-07
 tags: [dashboard, ui, traceability, accessibility, security]
 related:
+  - docs/roadmap/acceptance/evidence/AR-170-response-correlation-20260907.md
+  - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
+  - docs/decisions/0117-unify-owner-control-authority.md
   - docs/decisions/0027-authoritative-runtime-evidence-traces.md
   - docs/decisions/0029-secure-local-dashboard-and-bounded-observability.md
   - docs/decisions/0095-complete-paginated-dashboard-collections.md
@@ -58,6 +61,21 @@ link, the overview title clipped at the audited desktop viewport, and settings
 presented dashboard retention controls that could never dispatch.
 
 ## Current state
+
+September 7 review reproduces three gaps: explicit null body identity is omitted,
+exact lookup follows a fabricated wrong-worker second page, and structural
+worker-validation failures lose the sent ID. Bounded repairs now reject those
+responses and retain correlated last-good state. UI 193 and fresh named spine
+1085/three existing skips pass. No server/broker authority change.
+
+Initial live source browser evidence passes 16 desktop checks then times out:
+the fixture expects raw error text instead of the current retained-state notice.
+Preserve it and correct the fixture; full desktop/mobile and isolated acceptance
+remain pending in the [receipt](acceptance/evidence/AR-170-response-correlation-20260907.md).
+Read-only/attended-only policy below is historical under ADR-0117 and requires
+explicit criterion reconciliation before review, not restoration.
+
+### Previously implemented boundary and historical UI policy
 
 Worker detail is committed only after exact canonical slug, non-empty worker
 identity, nonnegative safe-integer revision, and all four required evidence

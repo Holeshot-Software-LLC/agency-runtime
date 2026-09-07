@@ -502,14 +502,11 @@ export function createConfigController(core) {
 	function applyConfigSnapshot(snapshot, { force = false } = {}) {
 		if (!snapshot) return false;
 		applyServiceBinding(snapshot);
-		// Refresh runtime evidence; preserve the dirty editor's CAS baseline.
 		projectConfigSummary(snapshot);
 		const currentRevision = String(state.config?.revision || "missing");
 		const nextRevision = String(snapshot.revision || "missing");
-		// Quick controls use fresh CAS tokens without rewriting dirty editor inputs.
 		state.controlConfigRevision = nextRevision;
 		if (!force && state.activeView !== "settings" && !state.configDirty) {
-			// Refresh off-screen controls; defer editor rendering via the pending snapshot.
 			state.config = snapshot;
 			state.pendingConfig = snapshot;
 			return false;

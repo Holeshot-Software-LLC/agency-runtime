@@ -336,7 +336,7 @@ export function createCore(runtime = globalThis) {
 		return "Not discovered";
 	}
 
-	async function api(path, options = {}) {
+	async function api(path, options = {}, validate) {
 		const requestId = crypto?.randomUUID?.();
 		if (
 			typeof requestId !== "string"
@@ -370,11 +370,10 @@ export function createCore(runtime = globalThis) {
 		let payload;
 		try { payload = await response.json(); } catch { payload = { error: `HTTP ${response.status}` }; }
 		const ids = [
-			...(isRecord(payload) && Object.hasOwn(payload, "request_id")
-				? [payload.request_id] : []),
 			response.headers.get("X-Agency-Request-ID"),
 			response.headers.get("X-Request-ID"),
 		].filter((value) => value != null);
+		if (isRecord(payload) && Object.hasOwn(payload, "request_id")) ids.push(payload.request_id);
 		if (ids.some((value) => value !== requestId)) {
 			runtime.console?.error?.(
 				`Agency dashboard request ${requestId} rejected a mismatched response correlation.`,
@@ -398,7 +397,9 @@ export function createCore(runtime = globalThis) {
 				responseId,
 			);
 		}
-		return payload;
+		try { return validate ? validate(payload) : payload; } catch (error) {
+			throw new APIError(error.message, response.status, null, requestId);
+		}
 	}
 
 	function installToken() {

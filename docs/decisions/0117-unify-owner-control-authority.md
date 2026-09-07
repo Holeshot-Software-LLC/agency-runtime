@@ -6,6 +6,7 @@ created: 2026-07-30
 updated: 2026-07-30
 tags: [security, dashboard, cli, controls, installation, automation]
 related:
+  - docs/roadmap/issue-AR-170-fail-dashboard-response-correlation-closed.md
   - docs/roadmap/issue-AR-166-truthful-dashboard-disclosure-and-correlation.md
   - docs/decisions/0229-reconcile-dashboard-disclosure-with-owner-authority.md
   - docs/roadmap/issue-AR-151-align-route-lab-host-eligibility.md

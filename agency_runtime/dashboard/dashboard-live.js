@@ -1910,6 +1910,7 @@ export function createLiveController(core, config, renderer) {
 			|| payload?.filter_slug !== expected
 			|| !Array.isArray(agents)
 			|| agents.length > 1
+			|| payload.truncated === true
 			|| agents.some((agent) => agent?.agent_slug !== expected)
 		) {
 			throw new Error("Exact roster lookup response did not match the requested agent.");
@@ -1990,9 +1991,9 @@ export function createLiveController(core, config, renderer) {
 			if (state.rosterFilter) {
 				const requestedSlug = state.rosterFilter;
 				const requestedPath = rosterRequestPath();
-				const filteredRoster = validateExactRosterLookup(
-					await api(requestedPath, { signal }),
-					requestedSlug,
+				const filteredRoster = await api(
+					requestedPath, { signal },
+					(payload) => validateExactRosterLookup(payload, requestedSlug),
 				);
 				snapshot.roster = await completeRosterPage(
 					filteredRoster,

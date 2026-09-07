@@ -359,12 +359,13 @@ export function createActionController(core, config, renderer, live) {
 		if (!slug || state.lifecycle.destroyed || state.lifecycle.suspended) return;
 		const request = live.beginViewRequest("workerDetail");
 		try {
-			const payload = await api(
+			const detail = await api(
 				`/api/workforce?worker=${encodeURIComponent(slug)}&limit=100`,
 				{ signal: request.controller.signal },
+				(payload) => validateWorkerDetailResponse(payload, slug),
 			);
 			if (!live.viewRequestIsCurrent("workerDetail", request)) return;
-			state.selectedWorkerDetail = validateWorkerDetailResponse(payload, slug);
+			state.selectedWorkerDetail = detail;
 			renderer.renderWorkerDetail();
 		} catch (error) {
 			if (

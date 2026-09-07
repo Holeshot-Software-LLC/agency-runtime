@@ -6,6 +6,8 @@ created: 2026-09-05
 updated: 2026-09-07
 tags: [handoff, backlog, acceptance, delivery]
 related:
+  - docs/roadmap/issue-AR-170-fail-dashboard-response-correlation-closed.md
+  - docs/roadmap/acceptance/evidence/AR-170-response-correlation-20260907.md
   - docs/roadmap/issue-AR-168-rebuild-canonical-sdist-source-manifest.md
   - docs/roadmap/acceptance/evidence/AR-168-source-manifest-20260907.md
   - docs/roadmap/issue-AR-166-truthful-dashboard-disclosure-and-correlation.md
@@ -20,9 +22,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-404
-branch: codex/ar168-oldest-first-reconciliation
-evidence_commit: c62524997cf4ee9619f1ff0850acc076ad790af3
-minimum_ledger_commit: 6363a788132b8419c69f26a1dd802534e57782cd
+branch: codex/ar170-oldest-first-reconciliation
+evidence_commit: 790a01d792e1fbb9332a76548577bc920a43b276
+minimum_ledger_commit: 00b14d02b7c3b3fbec6430e57798fbf3ec04039b
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -35,9 +37,19 @@ Owner continues one oldest record, one PR, normal merge, then next. Native
 Windows remains with the owner. AR-166's six current criteria satisfy at
 4a244776 after one citation-only recheck; first verdicts remain at bc28bf66.
 PR #717 merged c6252499 at 11:36:32Z September 7. Clean main was fast-forwarded
-before this AR-168 tree; 6363a788 records the merge. AR-167 is already retired.
+before AR-168; 6363a788 records that merge. AR-168 retention merged in PR #718
+at 790a01d7, 11:49:53Z September 7. Clean main was fast-forwarded before this
+AR-170 tree; 00b14d02 records the merge. AR-167/169 are already retired.
 
 ## Completed evidence
+
+AR-170 repairs three reproduced gaps. UI 193/current floors, fresh spine
+1085/three skips (67.63s), four packaging/actual asset checks and Ruff 766 pass.
+Present null IDs reject, exact lookup cannot page into another worker, and
+pure validation errors retain sent IDs. Server/broker scope is unchanged.
+Initial browser: 16 desktop passes, zero POSTs/errors before deliberate
+injection, then wrong notice expectation times out. Preserve its report;
+correct only the fixture expectation. Acceptance is not yet run.
 
 AR-168 needs no generic manifest implementation change. Canonicalization
 rebuilds from unique validated members; verification independently derives
@@ -54,6 +66,9 @@ but generic normalization and actual cross-OS proof remain relevant.
 - Queue remains 40 actual trackers plus 84 legacy, 124 local unfinished.
 
 ## Exact blocker
+
+AR-170 still needs corrected desktop/mobile browser evidence, explicit
+existing-authority criterion reconciliation and isolated acceptance.
 
 AR-168 remains in_progress with its five original criteria/states unchanged.
 Criterion 4 needs actual native Windows/Linux complete source equality at one
@@ -77,9 +92,10 @@ No empty commits, staffing or restart. Preserve first verdicts before correction
 
 ## Next bounded work package
 
-1. Commit AR-168's retention/evidence and immediate ledger; strict docs checks.
-2. Publish one normal PR, merge and read back before the next record.
-3. Review AR-170 next; AR-169 is already retired. No native Windows work.
+1. Commit AR-170 repair/evidence and immediate ledger at the 49.7% checkpoint.
+2. Finish browser checks; reconcile 6/7/9 explicitly under ADR-0117/ADR-0105,
+   then freeze the candidate and run isolated acceptance.
+3. Publish one normal PR/merge/readback, then AR-171. No native Windows work.
 
 ## Verification
 
