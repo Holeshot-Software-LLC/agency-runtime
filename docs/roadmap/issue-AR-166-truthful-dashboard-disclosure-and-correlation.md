@@ -63,7 +63,9 @@ isolated review. Eighteen source-served browser checks pass for the selector.
 Criterion 2 also exposed a null-JSON HTTP error throwing TypeError before
 retaining status/request identity. A null-safe error lookup and 401/403/503
 regression cover it. Latest UI 190 and final source-served browser 20 checks
-pass, including null-401 terminal identity. Six isolated verdicts remain next.
+pass, including null-401 terminal identity. Five current criteria satisfy at
+4a244776; criterion 2 needs a citation-only recheck of existing reconciliation
+message forwarding. All first verdicts remain at bc28bf66; no source change.
 
 Client request IDs are canonical UUIDv4 values;
 HTTP and transport failures append only a validated identifier to their inert

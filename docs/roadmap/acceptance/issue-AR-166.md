@@ -36,7 +36,7 @@ tracker_url: null
 | 2 | test | HTTP/mismatched identity rejection and null-body 401/403/503 retain status and safe IDs | 2026-09-07 | tests/dashboard_ui.test.mjs:943-1007 |
 | 2 | test | Network failures retain the safe browser request identity | 2026-09-07 | tests/dashboard_ui.test.mjs:1975-1998 |
 | 2 | test | Terminal 401/403 notices include the safe request ID | 2026-09-07 | tests/dashboard_ui.test.mjs:5322-5360 |
-| 2 | test | Reconciliation failures retain visible failure notices and terminal state | 2026-09-07 | tests/dashboard_ui.test.mjs:5535-5557 |
+| 2 | file | Both reconciliation paths forward the existing APIError message; runtime reconciliation delegates terminal failures to the safe ID handler | 2026-09-07 | agency_runtime/dashboard/dashboard-live.js:2451-2477 |
 | 2 | command-output | Fresh complete UI cases exercise all listed paths | 2026-09-07 | docs/roadmap/acceptance/evidence/AR-166-dashboard-authority-20260907.md#fresh-verification |
 | 3 | file | Only canonical UUIDv4 values survive display validation | 2026-09-07 | agency_runtime/dashboard/dashboard-core.js:15-25 |
 | 3 | file | Receipt rendering adds request identity only after validation | 2026-09-07 | agency_runtime/dashboard/dashboard-render.js:1810-1850 |
@@ -61,15 +61,15 @@ tracker_url: null
 
 ## Verification
 
-First review at 4a244776 satisfies criteria 1 and 3–6. Criterion 2 is absent:
-the packet did not provide reconciliation implementation or direct request-ID
-assertions for its notices. Preserve all six verdicts before correcting that
-evidence. Original criterion 1 and unchanged criteria 2–6 remain intact.
+First review at 4a244776 satisfies criteria 1 and 3–6; those verdicts remain
+unchanged. All first verdicts, including absent criterion 2, are preserved at
+bc28bf66. Criterion 2 now cites the already-existing reconciliation implementation
+at the same candidate; it forwards APIError messages containing the safe ID.
+No source, test, candidate or criterion changes. Only criterion 2 is rechecked.
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
 | 1 | satisfied | `AR-166.1-20260907-cbb8615e` | `d4b0ca70289e27b2567a03ecf10802ba772bbfdf76e5f3e2b8653cfcfc460d88` | 2026-09-07 | dashboard-config.js:198-224 preserves valid selections and disables invalid lists; dashboard_ui.test.mjs:1053-1143 covers key redaction and recovery; test_dashboard.py:392-413 verifies broker denial without mutations, with passing suites recorded in the cited verification artifact. |
-| 2 | absent | `AR-166.2-20260907-2a0b1f4d` | `4dcb1dfb09df2d660a0372c14972b2c97f25500f7226953f81ebf50751903aef` | 2026-09-07 | dashboard-core.js demonstrates safe HTTP and transport IDs, and dashboard-live.js covers authentication, but tests/dashboard_ui.test.mjs:5535-5557 do not verify reconciliation request IDs and no reconciliation implementation is provided. |
 | 3 | satisfied | `AR-166.3-20260907-5a2b58a2` | `18bfe1e9b6e58ebd79c8d98debcf3f9aeec8723ad42174f2d58c8c3c9dca66d1` | 2026-09-07 | dashboard-core.js validates UUIDv4 IDs, dashboard-render.js conditionally renders validated IDs, and dashboard_ui.test.mjs asserts exact successful-route ID display and omission of a hostile malformed ID. |
 | 4 | satisfied | `AR-166.4-20260907-df7e4d7b` | `809ad9c1ddc6f8492defcc20a09da46412f82811e619068bfb5cc337c87dc2cd` | 2026-09-07 | dashboard-config.js:122-144 and dashboard-render.js:515-529 set the privacy chip to “Redacted runtime content” or “Runtime metadata only” based on observability capture state; tests/dashboard_ui.test.mjs:2106-2138 asserts both labels. |
 | 5 | satisfied | `AR-166.5-20260907-4288fb08` | `366523e150dc9e9dfeb8ac4b91e0dc7fe952a689d3f04f1cd639f6caae60756b` | 2026-09-07 | dashboard-render.js distinguishes stored definitions from runtime delivery, workforce.py and dashboard.py bound content to 262144 characters, broker allow-lists exclude workforce detail, and the verification report records unchanged authentication and broker policy. |

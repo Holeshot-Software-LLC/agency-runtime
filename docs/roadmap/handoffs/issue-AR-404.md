@@ -73,8 +73,10 @@ notices retaining safe IDs. The initial zero-check timeout is retained and
 explained by the fixture's obsolete config endpoint. Six isolated verdicts
 were reviewed at 4a244776. Criteria 1 and 3–6 satisfy; criterion 2 is absent
 because reconciliation implementation/direct ID assertions were not supplied.
-Preserve all first verdicts, inspect that exact path, then one bounded recheck.
-No requirement or authority change follows from this evidence gap.
+All first verdicts remain at bc28bf66. Exact candidate inspection confirms both
+reconciliation paths forward the ID-bearing APIError message. The bounded packet
+now cites that existing implementation; only criterion 2 is rechecked, with
+the other five verdicts unchanged. No source/test/candidate/requirement change.
 
 Retained holds: AR-159 hosted enforcement/check-app/bypass; AR-160 Windows/
 paired release/live publication; AR-156 Windows/profile and hosted topology;
