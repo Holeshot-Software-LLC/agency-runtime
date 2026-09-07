@@ -97,3 +97,12 @@ No verifier verdict or source/criterion change preceded this correction.
 without the primary report and exact source-tree equivalence. No product defect
 is asserted by these two verdicts. Complete that evidence before the final pass;
 do not hide or overwrite the first results.
+
+## Final evidence candidate
+
+91273e41 (91273e4128b2a8bc666edd8fcf6023c534a5d55e) adds actual Git tree comparison, actual 193-pass
+UI stdout and direct primary JSON report excerpts to criteria 7/8. Dashboard
+tree 3c1ebc98978290931089d92aa45f52cde4cc1710 and test tree
+fe9be82ff397408d31c50ef30252fecf672a2c9c are unchanged from the browser run
+through first review. No code/test/criterion change. All first verdicts remain
+at 662eb947; every criterion is rechecked because this evidence candidate is new.
