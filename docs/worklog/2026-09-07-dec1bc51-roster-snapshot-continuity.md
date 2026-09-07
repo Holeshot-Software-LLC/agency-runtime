@@ -66,3 +66,9 @@ This immediate ledger records it before isolated acceptance.
 
 00e7af72 freezes dec1bc512462285cf4d43742c3e666e6d776186e for seven isolated checks.
 No production or test changes follow the observed passing runs.
+
+## First isolated review
+
+4c5acdcf preserves satisfied criteria 1–5/7 and absent 6 at unchanged dec1bc51.
+The missing evidence is the existing control-handler call site, not a runtime
+failure or retry-bound change. Add that source citation and recheck only 6.

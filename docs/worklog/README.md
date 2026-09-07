@@ -2038,6 +2038,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `a846c88f` | 2026-09-07 | Merge pull request #720 from Holeshot-Software-LLC/codex/ar171-oldest-first-reconciliation | [AR-171](../roadmap/issue-AR-171-redact-dashboard-lifecycle-reasons.md) | [Detail](2026-09-07-8a8db2ae-lifecycle-redaction.md) |
 | `dec1bc51` | 2026-09-07 | test(dashboard): verify roster snapshot continuity | [AR-172](../roadmap/issue-AR-172-make-roster-pages-snapshot-consistent.md) | [Detail](2026-09-07-dec1bc51-roster-snapshot-continuity.md) |
 | `00e7af72` | 2026-09-07 | docs(roadmap): freeze AR-172 acceptance evidence | [AR-172](../roadmap/issue-AR-172-make-roster-pages-snapshot-consistent.md) | [Detail](2026-09-07-dec1bc51-roster-snapshot-continuity.md) |
+| `4c5acdcf` | 2026-09-07 | docs(roadmap): preserve first AR-172 acceptance verdicts | [AR-172](../roadmap/issue-AR-172-make-roster-pages-snapshot-consistent.md) | [Detail](2026-09-07-dec1bc51-roster-snapshot-continuity.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
