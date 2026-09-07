@@ -253,7 +253,9 @@ AR-170 repairs three reproduced correlation gaps: present null identity,
 fabricated exact-lookup pagination and uncorrelated worker validation. UI 193,
 fresh spine 1085/three existing skips and four asset/packaging checks pass.
 Initial source browser has 16 desktop passes then an incorrect-notice-expectation
-timeout. Preserve it and correct the fixture; isolated acceptance remains pending.
+timeout, preserved at 90654955. Corrected exact-source browser passes 34 checks
+across 1280/375 pixels and zero POSTs. ADR-0230 explicitly reconciles only 6/7/9;
+isolated acceptance is next, with original criteria preserved.
 
 Current counts: 40 actual open trackers plus 84 unfinished legacy records,
 124 total after AR-166 completion; no duplicate tracker or false acceptance.

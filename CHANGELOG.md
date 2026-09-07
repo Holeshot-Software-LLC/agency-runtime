@@ -3,9 +3,10 @@ title: "Changelog"
 status: active
 category: release
 created: 2026-07-10
-updated: 2026-09-06
+updated: 2026-09-07
 tags: [release, changelog]
 related:
+  - docs/roadmap/issue-AR-170-fail-dashboard-response-correlation-closed.md
   - docs/roadmap/issue-AR-131-complete-mcp-cli-host-contracts.md
   - docs/roadmap/issue-AR-348-enforce-strict-independence-in-production.md
   - docs/roadmap/issue-AR-271-accept-stopped-openclaw-uninstall-status.md
@@ -355,6 +356,10 @@ changes rather than duplicating every commit.
   cycle, and will not be removed before 0.3.0.
 
 ### Fixed
+
+- Dashboard response validation rejects explicit null request IDs and unexpected
+  exact-lookup pagination, and preserves the sent request ID on worker/roster
+  validation failures while retaining last-good data (AR-170).
 
 - The public Python delegation API rejects oversized, non-string and
   noncanonical identifiers before Store normalization can alias another work

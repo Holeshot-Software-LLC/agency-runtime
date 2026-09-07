@@ -6,6 +6,8 @@ created: 2026-07-27
 updated: 2026-09-07
 tags: [dashboard, ui, traceability, accessibility, security]
 related:
+  - docs/decisions/0230-reconcile-response-correlation-with-owner-controls.md
+  - docs/decisions/0105-bound-delivery-to-live-demo-checkpoints.md
   - docs/roadmap/acceptance/evidence/AR-170-response-correlation-20260907.md
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
   - docs/decisions/0117-unify-owner-control-authority.md
@@ -68,12 +70,14 @@ worker-validation failures lose the sent ID. Bounded repairs now reject those
 responses and retain correlated last-good state. UI 193 and fresh named spine
 1085/three existing skips pass. No server/broker authority change.
 
-Initial live source browser evidence passes 16 desktop checks then times out:
-the fixture expects raw error text instead of the current retained-state notice.
-Preserve it and correct the fixture; full desktop/mobile and isolated acceptance
-remain pending in the [receipt](acceptance/evidence/AR-170-response-correlation-20260907.md).
-Read-only/attended-only policy below is historical under ADR-0117 and requires
-explicit criterion reconciliation before review, not restoration.
+The initial 16-check desktop report and fixture-expectation timeout are preserved.
+The corrected source browser passes 34 checks across 1280/375-pixel viewports,
+all seven views/six tabs, keyboard navigation, owner refresh and rejected null-ID
+responses. Zero POSTs. Exact source hashes and limits are in the
+[receipt](acceptance/evidence/AR-170-response-correlation-20260907.md).
+ADR-0230 explicitly reconciles only criteria 6/7/9 under ADR-0117/ADR-0105,
+preserving originals. Isolated acceptance is pending; no historical checkbox
+is used as current-candidate proof.
 
 ### Previously implemented boundary and historical UI policy
 
@@ -101,18 +105,18 @@ attended-maintenance copy with the unreachable retention form removed.
 
 Validate response identity at the browser boundary before rendering or state
 commit, while retaining abort/generation checks for request ordering. Keep the
-dashboard read-only contract in state as well as disabled controls. Treat
+current owner/draft contract in state as well as controls. Treat
 token fragments as authentication material but preserve ordinary in-page
-fragments. Remove inert persistent-control markup instead of presenting a
-control that the server will never accept.
+fragments. Present only working owner controls; broker credentials remain
+read-only under ADR-0117. Preserve exact confirmation and revision safeguards.
 
 ## Dependencies
 
-ADR-0027 requires authoritative correlated evidence. ADR-0029 and ADR-0096
-bound the dashboard to authenticated local monitoring without persistent
-control authority. ADR-0095 requires complete, versioned collection truth.
+ADR-0027 requires authoritative correlated evidence. ADR-0029's local boundary
+and ADR-0117's owner/broker distinction govern current controls; ADR-0096 is
+historical. ADR-0095 requires complete, versioned collection truth.
 
-Tracker creation remains pending explicit outward-write authorization.
+The existing pre-tracker exemption remains; no duplicate tracker is created.
 
 ## Acceptance
 
@@ -125,15 +129,31 @@ Tracker creation remains pending explicit outward-write authorization.
   present response UUID is canonical and equals the sent request UUID.
 - [x] Invalid or stale responses retain last-good state and expose a correlated
   failure instead of rendering mismatched evidence.
-- [x] Hidden controls stay hidden and read-only status survives asynchronous
-  configuration rendering.
-- [x] Skip-link navigation, heading layout, and attended-maintenance copy are
+- [ ] Hidden elements stay hidden, and owner controls and draft state remain
+  truthful through asynchronous configuration rendering without granting broker
+  write authority.
+- [ ] Skip-link navigation, heading layout, and owner-maintenance copy are
   truthful at the audited desktop and keyboard surfaces.
 - [x] The focused browser suite and live seven-view/six-tab interaction sweep
   pass without application console errors.
-- [ ] The final repository release gate passes at the implementation commit.
+- [ ] Focused UI tests/current coverage floors, the named production spine,
+  scoped browser evidence, metadata, policy, worklog, strict docs/tracker, Ruff
+  and diff checks pass; exhaustive integration gates remain optional.
+
+## Preserved original criteria
+
+ADR-0230 explicitly replaces only the following wording before isolated review:
+
+6. Hidden controls stay hidden and read-only status survives asynchronous
+   configuration rendering.
+7. Skip-link navigation, heading layout, and attended-maintenance copy are
+   truthful at the audited desktop and keyboard surfaces.
+9. The final repository release gate passes at the implementation commit.
 
 ## Implementation evidence
+
+The following July implementation report is historical, not the September
+candidate's proof. Current repair, live scope and gate results are in the receipt.
 
 The dashboard specialist audited 131 source-defined interactive and form
 elements, seven navigation views, six evidence tabs, all event listeners, and

@@ -23,8 +23,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-404
 branch: codex/ar170-oldest-first-reconciliation
-evidence_commit: 790a01d792e1fbb9332a76548577bc920a43b276
-minimum_ledger_commit: 00b14d02b7c3b3fbec6430e57798fbf3ec04039b
+evidence_commit: 90654955ff3107d5d76173fc04c9f233d5e5e3bc
+minimum_ledger_commit: f1ff818c7a6752de8f11a1157b49473577b3ab65
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -48,8 +48,10 @@ AR-170 repairs three reproduced gaps. UI 193/current floors, fresh spine
 Present null IDs reject, exact lookup cannot page into another worker, and
 pure validation errors retain sent IDs. Server/broker scope is unchanged.
 Initial browser: 16 desktop passes, zero POSTs/errors before deliberate
-injection, then wrong notice expectation times out. Preserve its report;
-correct only the fixture expectation. Acceptance is not yet run.
+injection, then wrong notice expectation times out. That report is preserved at
+90654955; the corrected exact-source browser passes all 34 desktop/mobile checks,
+zero POSTs. ADR-0230 reconciles only 6/7/9, preserving original wording.
+Backend broker/lookup 18 pass. Acceptance is not yet run.
 
 AR-168 needs no generic manifest implementation change. Canonicalization
 rebuilds from unique validated members; verification independently derives
@@ -67,8 +69,8 @@ but generic normalization and actual cross-OS proof remain relevant.
 
 ## Exact blocker
 
-AR-170 still needs corrected desktop/mobile browser evidence, explicit
-existing-authority criterion reconciliation and isolated acceptance.
+AR-170 still needs isolated acceptance at the frozen final evidence candidate.
+Source browser and explicit existing-authority criterion reconciliation are done.
 
 AR-168 remains in_progress with its five original criteria/states unchanged.
 Criterion 4 needs actual native Windows/Linux complete source equality at one
@@ -92,15 +94,14 @@ No empty commits, staffing or restart. Preserve first verdicts before correction
 
 ## Next bounded work package
 
-1. Commit AR-170 repair/evidence and immediate ledger at the 49.7% checkpoint.
-2. Finish browser checks; reconcile 6/7/9 explicitly under ADR-0117/ADR-0105,
-   then freeze the candidate and run isolated acceptance.
+1. Commit AR-170 final browser/builder evidence and immediate ledger.
+2. Freeze the candidate, then run each of nine isolated checks once.
 3. Publish one normal PR/merge/readback, then AR-171. No native Windows work.
 
 ## Verification
 
-Fresh focused tests and canonical artifact verification; same-byte named spine
-reuse. Metadata/policy, exact worklog, strict docs/tracker, Ruff and diff checks.
+Fresh UI/current coverage, named spine, source browser and actual asset checks.
+Metadata/policy, exact worklog, strict docs/tracker, Ruff and diff checks.
 No exhaustive corpus/coverage/matrix dispatch or native Windows. AR-165's
 184/184 curated decision receipt is earlier Python evidence, not a new run.
 

@@ -6,6 +6,8 @@ created: 2026-09-07
 updated: 2026-09-07
 tags: [evidence, dashboard, security, backlog]
 related:
+  - docs/decisions/0230-reconcile-response-correlation-with-owner-controls.md
+  - docs/roadmap/acceptance/evidence/AR-170-browser-20260907/final/report.json
   - docs/roadmap/issue-AR-170-fail-dashboard-response-correlation-closed.md
   - docs/roadmap/acceptance/evidence/AR-170-browser-20260907/report.json
   - docs/decisions/0117-unify-owner-control-authority.md
@@ -48,6 +50,7 @@ Dashboard/resource-addressability: four pass/186 deselected, 0.16s, including
 the actual asset ceiling. Final assets are 387039 bytes, below unchanged
 378 KiB. Three non-executable config comments removed; behavior unchanged.
 Ruff check/format pass for 766 files.
+Fresh backend broker/lookup cases: 18 pass, 156 deselected, 2.96s.
 
 ## Browser checkpoint
 
@@ -64,9 +67,38 @@ Correct only that expectation and retain the original report/screenshot.
 Mobile/full revised sweep is not yet claimed. No installed-wheel, native-host,
 human-presence, full WCAG or release-publication claim.
 
-## Pending scope
+## Final browser sweep
 
-Explicitly reconcile stale read-only/attended-only and exhaustive-release
-criteria under ADR-0117/ADR-0105, preserving originals. Finish corrected browser
-and isolated review before marking done. Windows stays with the owner.
+At clean f1ff818c7a6752de8f11a1157b49473577b3ab65, all source fixes remain those
+of 90654955. Corrected fixture passes 34 checks, 17 each at 1280x900 and
+375x812: seven views, six evidence tabs, no application errors during the
+ordinary sweep, keyboard skip navigation, owner controls after refresh and
+rejection of a present null body ID despite a matching header. Each injected
+failure deliberately produces one safe diagnostic; its notice contains the sent
+UUID and retains configuration state. Zero POSTs; no owner profile is used.
+
+All seven inspected source assets match served bytes. Core SHA-256:
+62a2f817e8ff63e929969839cd29bb5b3695de654919b18ef1f53c8cab3799e1.
+Full hashes, 34 checks and screenshots are in final/report.json, SHA-256
+2b7f8531b44cbf14be0f1dde7bd1b036f4416a058e902eb8f388f717efce6a44.
+The initial report remains alongside it; no source change or assertion weakening
+followed the first run. The assertion now names the actual retained-state notice.
+Screenshots were inspected; automated layout/hidden/ID checks cover every view.
+No full accessibility certification, installed-wheel or native activation claim.
+
+## Requirement reconciliation
+
+ADR-0230 changes only criteria 6/7/9 before first review, under ADR-0117 and
+ADR-0105. Original read-only/attended-only/final-release wording is preserved.
+Response identity, last-good state and the seven-view/six-tab gate remain.
+
+## Publication validation
+
+Metadata/policy, exact worklog, strict docs/tracker, Ruff and diff checks pass on
+the current records. No exhaustive corpus, four-shard coverage or matrix dispatch.
+AR-165's earlier 184/184 curated decision receipt is reused for unchanged Python
+production code; it is not a fresh JS mutation run.
+
+Isolated review is next; no acceptance verdict is asserted by the builder.
+Windows stays with the owner.
 Counts remain 40 mapped plus 84 legacy = 124 unfinished.
