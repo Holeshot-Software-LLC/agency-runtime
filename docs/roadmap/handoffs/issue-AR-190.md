@@ -17,7 +17,7 @@ type: handoff
 issue_id: AR-190
 branch: codex/ar190-uv-plan-reconciliation
 evidence_commit: d1a9260c08aad8eb871fd6bd1ab81c3aad5e524f
-minimum_ledger_commit: ae1fe0fc79af974d14d5644f393d951bdc2d0918
+minimum_ledger_commit: 45716bd5e781724072132aa345fef7df7a1f3a59
 hard_checkpoint_percent: 50
 tracker_url: null
 ---
@@ -30,7 +30,8 @@ Evidence branch begins at exact main
 `c64ce3ce54c6e51280292298b5e3600611cb72fc`, then fast-forwarded to its
 existing clean ledger `d28ccc23`. Evidence is now committed at `d1a9260c`,
 with faithful ledger `ae1fe0fc`; the acceptance candidate is frozen at
-`d1a9260c`. The worker owns this worktree's substantive/
+`d1a9260c`. Freeze commit `12bce920` and ledger `45716bd5` preceded the first
+isolated acceptance run. The worker owns this worktree's substantive/
 ledger checkpoints and acceptance runs; parent serializes PR publication and
 merge. This evidence-only package is not a done issue. Product implementation
 already exists at `8c7d8df44aa35d4bb7ab7698abaf0f7b2a93e47b`.
@@ -61,11 +62,15 @@ commands, actual output, source/artifact identities, bounds and limitations.
 
 ## Exact blocker
 
-The live installed-uv-plan gap is now evidenced. Normal ledger reconciliation
-resolved the inherited c64ce3ce merge-row failure: docs, metadata, worklog,
-policy-availability and diff checks now pass. Isolated acceptance verification
-is not yet complete.
-The frozen builder has no verdict rows yet, and status remains `in_progress`.
+The first default isolated run accepted criteria 1–4 but returned `absent` for
+criterion 5 (`AR-190.5-20260907-42c2bd69`). It found the tests, lint, docs and
+live plan were at c64ce3ce/d28ccc23 rather than documentation candidate
+d1a9260c, and that source equivalence was unverifiable in its snapshot.
+All five actual verdicts are preserved. Status remains `in_progress`; no
+passing criterion was rerun and no unchanged-evidence retry occurred.
+
+Normal ledger reconciliation resolved the inherited c64ce3ce merge-row failure.
+Documentation validation still passes for 1,240 Markdown files after verdicts.
 
 The wheel's self-reported source revision is null, truthfully; its full source
 SHA is bound by the clean detached canonical build and independent verifier.
@@ -85,19 +90,23 @@ was reused before the isolated proof; worker checkpoints the completed slice.
 
 ## Next bounded work package
 
-1. Commit this frozen acceptance checkpoint and its faithful ledger pair.
-2. Recheck telemetry and verifier executable safety, then run the default
-   isolated verifier for all five criteria under `umask 077`.
-3. Preserve every actual verdict and change status only if all satisfy.
-   Parent then authorizes the serialized PR. No owner reinstall or host canary
-   is needed for this plan task.
+1. Preserve this first absent verdict in a substantive/ledger checkpoint.
+2. Resolve criterion 5's exact product-source versus documentation-candidate
+   evidence binding explicitly, preserving the original wording and verdict.
+   The candidate SHA binds all five digests; changing it invalidates all five,
+   so do not carry satisfied verdicts across a candidate change.
+3. Only a bounded changed-evidence or explicit contract clarification may
+   justify the next criterion-5 verification; no unchanged retry or authority
+   weakening. Parent serializes publication. No owner reinstall is needed.
 
 ## Verification
 
 Real canonical builder, strict Twine, explicit portable verifier and the
 default-directory installed uv plan all exit zero. The update/CLI package
 passes 67 tests. Exact commands and raw stdout are in the portable receipt.
-Final record-gate results must be read there before freezing acceptance.
+The first acceptance run returned four satisfied and one absent; exit zero
+means all verdicts were recorded, not completion. Its full stdout and reasons
+are in the canonical issue and acceptance record.
 
 ## Constraints
 

@@ -52,8 +52,10 @@ returned `installer=uv-tool`, exact-SHA commands without pip, and
 `mutation_performed=false`. No displayed upgrade or Codex refresh was executed.
 The [portable receipt](acceptance/evidence/AR-190-installed-uv-plan-20260907.md)
 preserves the complete raw outputs, candidate/target distinction, hashes,
-namespace failure provenance and isolation bounds. Status remains
-`in_progress` pending record integration and isolated acceptance verification.
+namespace failure provenance and isolation bounds. The first isolated
+verification accepted criteria 1–4 but returned `absent` for criterion 5's
+exact-final-candidate provenance. Status remains `in_progress`; the criterion
+has not been weakened, bypassed or retried on unchanged evidence.
 
 Planning now proves which installer the exact executing environment can use.
 A stable regular pip entry point inside the exact prefix retains an
@@ -128,8 +130,7 @@ Fresh focused update/CLI tests pass **67 tests in 0.83 seconds**; targeted
 Ruff lint and formatting pass. Normal merge-ledger reconciliation at
 `d28ccc23` restored passing docs, metadata, policy-availability and worklog
 checks. The builder is frozen at evidence commit `d1a9260c` with ledger
-`ae1fe0fc`, but has no verdict or done-state change yet. Its documentation
-candidate preserves identical
+`ae1fe0fc`. Its documentation candidate preserves identical
 runtime, producer, test and packaging-configuration Git objects; the receipt
 distinguishes that record-only candidate from the exact live c64ce3ce artifact.
 
@@ -138,6 +139,32 @@ its identity was not relabeled to manufacture this proof. Both disposable
 containers were removed after capture, and owner Agency/uv wrapper hashes
 remained unchanged. The earlier bubblewrap uid-map failure is retained as a
 failed capability attempt, not retried or hidden.
+
+### September 7 isolated verification
+
+The default isolated verifier ran once from clean frozen checkpoint `45716bd5`
+under `umask 077`, using Claude Code 2.1.263 and its read-only snapshot toolset:
+
+```bash
+env PYTHONPATH=. "$AR190_PYTHON" -u scripts/verify_acceptance.py --issue AR-190 --all
+```
+
+Actual stdout (exit zero means every check returned a verdict, not all passed):
+
+```text
+AR-190 criterion 1: satisfied (AR-190.1-20260907-60591b35)
+AR-190 criterion 2: satisfied (AR-190.2-20260907-fb1c97e0)
+AR-190 criterion 3: satisfied (AR-190.3-20260907-f77273e4)
+AR-190 criterion 4: satisfied (AR-190.4-20260907-04be4364)
+AR-190 criterion 5: absent (AR-190.5-20260907-42c2bd69)
+```
+
+The fifth verdict found that tests, lint, docs and the live plan were recorded
+at c64ce3ce/d28ccc23, not frozen documentation candidate d1a9260c, and said the
+product-source equivalence was unverifiable inside that snapshot. Its exact
+reason and evidence digest remain in the acceptance record. No verdict was
+handwritten, no passing criterion was rerun, and the fifth checkbox remains
+open. Subsequent documentation validation passes for 1,240 Markdown files.
 
 ### Historical recovery evidence
 
