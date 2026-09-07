@@ -20,8 +20,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-404
 branch: codex/ar171-oldest-first-reconciliation
-evidence_commit: 29e7694384f32e1d35c2c22137e342b4cd9004b6
-minimum_ledger_commit: 05d7696a55922387c32aa7bda31a75bc58370cfb
+evidence_commit: 8a8db2aeeae788829ae7dfc641142d7c04376e6e
+minimum_ledger_commit: dc19f1f8d512e71203f1aa7507504d14a988cf48
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -51,12 +51,13 @@ production rendering uses only primitive true and fixed Reason recorded text.
   Raw transcripts are committed with the packet, not just summaries.
 - No runtime/script/workflow change. Only criterion 6 is reconciled under
   ADR-0105; original wording and first five criteria remain.
-- Queue stays 40 actual trackers plus 84 legacy, 124 unfinished pending review.
+- All six criteria satisfy in the first isolated review at 8a8db2ae.
+- Queue becomes 40 actual trackers plus 83 legacy, 123 unfinished.
 
 ## Exact blocker
 
-AR-171 isolated acceptance is pending at the frozen evidence candidate.
-Do not assert a done flip from historical checkboxes or builder claims.
+AR-171 has no scoped acceptance blocker. All six isolated verdicts satisfy;
+commit completion and its ledger, publish one normal PR, merge and read back.
 
 AR-170 remains in_progress: first review at 662eb947 and final candidate
 91273e41 are preserved. Final 1/2/4/5/6/7/8 satisfy, 3/9 need complete collection
@@ -79,8 +80,8 @@ No empty commits, staffing or restart. Preserve verdicts before corrections.
 
 ## Next bounded work package
 
-1. Commit AR-171's test/evidence and immediate ledger.
-2. Freeze the candidate and run six isolated checks; inspect every verdict.
+1. Commit AR-171's accepted completion and immediate ledger.
+2. Publish its normal PR; no acceptance rerun.
 3. Publish one normal PR/merge/readback, then AR-172. No native Windows work.
 
 ## Verification

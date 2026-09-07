@@ -265,10 +265,11 @@ AR-171's existing lifecycle reason/hash redaction is confirmed. A new eight-valu
 DOM regression strengthens inert presence rendering; no runtime change.
 Store/HTTP 199, UI 194/current floors and fresh spine 1085/three existing skips
 pass. Raw transcripts are retained. Only stale criterion 6 is reconciled under
-ADR-0105, original wording preserved; isolated acceptance is next.
+ADR-0105, original wording preserved. All six current criteria satisfy in the
+first isolated review at 8a8db2ae; AR-171 is done, with normal publication next.
 
-Current counts: 40 actual open trackers plus 84 unfinished legacy records,
-124 total after AR-166 completion; no duplicate tracker or false acceptance.
+Current counts: 40 actual open trackers plus 83 unfinished legacy records,
+123 total after AR-171 completion; no duplicate tracker or false acceptance.
 The unchanged public-roster fixture belongs to AR-176. Windows stays excluded;
 the oldest-first ledger and capsule preserve all holds. Ordinary-session
 unverified Agency/header behavior remains a separate unfinished concern.

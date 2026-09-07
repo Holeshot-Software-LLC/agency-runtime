@@ -224,3 +224,10 @@ criteria 1–5 are preserved. No exhaustive corpus/matrix, workflow dispatch,
 native Windows or new installed-host canary is claimed. The live component
 of this bounded package is the real authenticated loopback HTTP interaction;
 rendering uses the production DOM module, not a full native-host activation.
+
+## Completion
+
+All six criteria satisfy in the first isolated review at
+8a8db2aeeae788829ae7dfc641142d7c04376e6e, without retry. AR-171 is done; runtime
+source remains unchanged. The existing legacy exemption applies, so no duplicate
+tracker is created. Queue becomes 40 mapped plus 83 legacy = 123 unfinished.

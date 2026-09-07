@@ -56,7 +56,14 @@ tracker_url: null
 
 ## Verification
 
-Pending isolated checks at the frozen candidate.
+All six criteria satisfy in the first isolated review at
+8a8db2aeeae788829ae7dfc641142d7c04376e6e. No verifier retry or candidate change.
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
+| 1 | satisfied | `AR-171.1-20260907-41ffbacf` | `b1b0734e21b40b9ec3ee760f8681fb78319629b24da29bf13b3fd541adc96fd5` | 2026-09-07 | workforce.py:1977-2000 excludes evidence and removes reason from reduced events; dashboard.py selects this projection, and test_workforce_lifecycle.py:865-918 checks fields and serialized content for absence. |
+| 2 | satisfied | `AR-171.2-20260907-f424728a` | `0a055f085e2e012efdc8c45c8a29230cda30bdee4144cfaca5ced6098eac74fc` | 2026-09-07 | workforce.py:1987-2000 removes reason and emits only a boolean reason_present; Store and HTTP tests assert raw reasons and SHA-256 hashes are absent, with the cited transcript recording 199 passing tests. |
+| 3 | satisfied | `AR-171.3-20260907-44f1872f` | `1a21d0652cb07b4d4f7e0e915b5715da97412fcb680a6da46ef834fbae748a11` | 2026-09-07 | workforce.py bounds reason_present to a boolean; dashboard-render.js accepts only primitive true and emits fixed text; dashboard_ui.test.mjs and its passing transcript demonstrate injected HTML cannot render through presence metadata. |
+| 4 | satisfied | `AR-171.4-20260907-19fc4d5a` | `1ae23be64a12ff5d33452d4287b25234c7152faf54e76b01fd9e7496c2866226` | 2026-09-07 | workforce.py:1977-1986 returns all stored event fields with decoded evidence; test_workforce_lifecycle.py:865-918 verifies retained private reason, document payload, and exact outcome evidence references. |
+| 5 | satisfied | `AR-171.5-20260907-6b97e357` | `384ebb57fa693641cecb212610257cfe83cbdc78a51a5b497335a5412046c959` | 2026-09-07 | Store and HTTP test excerpts assert sentinel and hash absence from serialized summaries, dashboard_ui.test.mjs checks rendered text and DOM absence, and the cited transcripts record passing regressions. |
+| 6 | satisfied | `AR-171.6-20260907-f3ef5717` | `61af4c4aeea0541d9f7b79549a036d9210430a8ae71168556fede7bb42671ea5` | 2026-09-07 | AR-171-lifecycle-redaction-20260907.md records passing Store/HTTP tests, UI coverage above current floors, the named production spine and all record checks; ADR-0105 explicitly makes exhaustive verification optional. |

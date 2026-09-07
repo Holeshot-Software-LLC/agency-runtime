@@ -1,6 +1,6 @@
 ---
 title: "AR-171: Redact dashboard lifecycle reasons"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-27
 updated: 2026-09-07
@@ -51,6 +51,10 @@ HTTP tests separately prove those fields never leave the reduced Store response.
 Exact commands and raw results are in the
 [receipt](acceptance/evidence/AR-171-lifecycle-redaction-20260907.md).
 
+All six current criteria satisfy in the first isolated review at
+8a8db2aeeae788829ae7dfc641142d7c04376e6e. AR-171 is done within this Store/HTTP/DOM
+privacy scope. Normal PR publication follows; no native-host claim is implied.
+
 The reduced worker-history query removes the raw reason and every content-
 derived hash from its result. It returns only whether a reason exists, while
 the full owner Store API retains the original document for governed history.
@@ -86,7 +90,7 @@ bounded Store/HTTP/UI and named-spine verification; original wording remains.
 - [x] Full Store history preserves the original governed lifecycle document.
 - [x] Store, dashboard HTTP, and browser regressions prove sentinel content is
   absent from the reduced serialized response and rendered text.
-- [ ] Focused Store, dashboard HTTP and UI regressions/current coverage floors,
+- [x] Focused Store, dashboard HTTP and UI regressions/current coverage floors,
   the named production spine, metadata, policy, worklog, strict docs/tracker,
   Ruff and diff checks pass; exhaustive integration remains optional.
 
@@ -100,5 +104,5 @@ criteria 1–5 remain unchanged.
 
 Current workforce, real loopback HTTP and production-renderer DOM tests cover
 raw/full versus reduced projections, fixed text and raw/hash sentinel absence.
-The runtime source is unchanged. Isolated acceptance is required before the
-done flip; no old checkbox is treated as current-candidate proof.
+The runtime source is unchanged. All six isolated criteria satisfy at 8a8db2ae;
+the acceptance record carries exact run IDs and digests.
