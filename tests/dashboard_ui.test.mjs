@@ -3248,6 +3248,44 @@ test("app.js evidence tabs implement roving keyboard focus and labelled panels",
   assert.match(harness.node("evidence-caption").textContent, /routing runtime evidence/i);
 });
 
+test("dashboard scroll regions have keyboard access and names", () => {
+  const regions = [...INDEX_SOURCE.matchAll(/<div class="table-wrap"([^>]*)><table><caption[^>]*>([^<]+)<\/caption>/g)];
+  assert.equal(regions.length, (INDEX_SOURCE.match(/class="table-wrap"/g) || []).length);
+  assert.equal(regions.length, 5);
+  for (const [, attributes, caption] of regions) {
+    assert.match(attributes, /tabindex="0"/);
+    assert.match(attributes, /role="region"/);
+    assert.ok(attributes.includes(`aria-label="${caption}"`));
+  }
+  const output = INDEX_SOURCE.match(/<pre id="config-output"([^>]*)>/)?.[1];
+  assert.ok(output);
+  assert.match(output, /tabindex="0"/);
+  assert.match(output, /role="region"/);
+  assert.match(output, /aria-label="Effective configuration"/);
+});
+
+test("dashboard evidence metrics wrap within their panel instead of clipping cards", () => {
+  assert.match(
+    APP_CSS_SOURCE,
+    /\.metric-evidence-summary\s*{[^}]*grid-template-columns:\s*repeat\(auto-fit,minmax\(105px,1fr\)\)/,
+  );
+  assert.doesNotMatch(APP_CSS_SOURCE, /\.metric-evidence-summary\s*{[^}]*repeat\(5,/);
+});
+
+test("dashboard navigation numbers use the accessible muted color", () => {
+  assert.match(APP_CSS_SOURCE, /\.nav-item span\s*{[^}]*color:\s*var\(--muted\)/);
+  assert.doesNotMatch(APP_CSS_SOURCE, /\.nav-item span\s*{[^}]*color:\s*#58697a/);
+  assert.doesNotMatch(APP_CSS_SOURCE, /\.empty-state\s*{[^}]*color:\s*#69788b/);
+});
+
+test("dashboard named static groups expose a nameable role", () => {
+  for (const name of ["Agency Runtime", "Live dashboard controls", "Chart series", "Workforce state summary"]) {
+    const tag = INDEX_SOURCE.match(new RegExp(`<div[^>]*aria-label="${name}"[^>]*>`))?.[0];
+    assert.ok(tag, name);
+    assert.match(tag, /role="group"/, name);
+  }
+});
+
 test("app UI honors reduced motion, canonical CSS, and live toggle semantics", () => {
   assert.equal((APP_CSS_SOURCE.match(/^:root\s*{/gm) || []).length, 1);
   assert.equal((APP_CSS_SOURCE.match(/@media\s*\(max-width:\s*980px\)/g) || []).length, 1);
@@ -7911,3 +7949,88 @@ test("authenticated dashboard exposes the owner control surface and mutation req
 		"Disable Agency Runtime globally",
 	);
 });
+
+function dashboardConnectionSnapshot(harness) {
+  return {
+    label: harness.node("connection-label").textContent,
+    notice: harness.node("notice").textContent,
+    terminal: harness.api.state.live.terminal,
+    failures: harness.api.state.live.failures,
+    controlRevision: harness.api.state.control.revision,
+    controlStale: harness.api.state.control.stale,
+    liveRevision: harness.api.state.live.revision,
+  };
+}
+
+function settleObsoleteFailure(pending, failure) {
+  if (failure === "network") pending.reject(new Error("obsolete network failure"));
+  else pending.resolve(jsonResponse(failure, { error: "obsolete HTTP failure" }));
+}
+
+for (const failure of ["network", 401, 503]) {
+  for (const surfaceErrors of [true, false]) {
+    test(`obsolete full refresh ${failure} cannot downgrade newer success (surfaceErrors=${surfaceErrors})`, async () => {
+      const oldResponse = deferred();
+      let liveCalls = 0;
+      const harness = createAppHarness((path) => {
+        if (path === "/api/control") return jsonResponse(200, controlSnapshot());
+        assert.equal(path, "/api/live?limit=100");
+        liveCalls += 1;
+        return liveCalls === 1 ? oldResponse.promise
+          : jsonResponse(200, { schema_version: 1, revision: "new-live" });
+      });
+      const oldRefresh = harness.api.refreshAll({ surfaceErrors });
+      assert.equal(await harness.api.refreshAll(), true);
+      const current = dashboardConnectionSnapshot(harness);
+      assert.equal(current.label, "Authenticated");
+      assert.equal(current.liveRevision, "new-live");
+      settleObsoleteFailure(oldResponse, failure);
+      assert.equal(await oldRefresh, false);
+      assert.deepEqual(dashboardConnectionSnapshot(harness), current);
+    });
+  }
+
+  for (const method of ["runLivePoll", "refreshRuntimeEvidence", "reconcileRuntimeEvidence", "reconcileAll"]) {
+    test(`obsolete ${method} ${failure} cannot downgrade newer success`, async () => {
+      const oldResponse = deferred();
+      let liveCalls = 0;
+      const harness = createAppHarness((path) => {
+        if (path === "/api/control") return jsonResponse(200, controlSnapshot());
+        assert.equal(path, "/api/live?limit=100");
+        liveCalls += 1;
+        return liveCalls === 1 ? oldResponse.promise
+          : jsonResponse(200, { schema_version: 1, revision: "new-live" });
+      });
+      const oldRefresh = harness.api[method]("Mutation finished.");
+      assert.equal(await harness.api.refreshAll(), true);
+      const current = dashboardConnectionSnapshot(harness);
+      assert.equal(current.label, "Authenticated");
+      settleObsoleteFailure(oldResponse, failure);
+      const oldResult = await oldRefresh;
+      if (method !== "runLivePoll") assert.equal(oldResult, false);
+      assert.deepEqual(dashboardConnectionSnapshot(harness), current);
+    });
+  }
+
+  for (const scope of ["control", "full"]) {
+    for (const generation of [scope, "commit"]) {
+      test(`obsolete ${scope} ${failure} respects ${generation} generation on its error path`, async () => {
+        const oldResponse = deferred();
+        const harness = createAppHarness((path) => {
+          if (path === "/api/control") return oldResponse.promise;
+          assert.equal(path, "/api/live?limit=100");
+          return jsonResponse(200, { schema_version: 1, revision: "pending-live" });
+        });
+        const oldRefresh = scope === "control"
+          ? harness.api.refreshControlPlane() : harness.api.refreshAll();
+        harness.api.state[generation].generation += 1;
+        harness.node("connection-label").textContent = "Authenticated";
+        harness.api.state.control.revision = "newer-control";
+        const current = dashboardConnectionSnapshot(harness);
+        settleObsoleteFailure(oldResponse, failure);
+        await oldRefresh;
+        assert.deepEqual(dashboardConnectionSnapshot(harness), current);
+      });
+    }
+  }
+}

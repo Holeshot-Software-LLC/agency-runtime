@@ -3,9 +3,10 @@ title: "Use adaptive authenticated polling and source-owned signal visualization
 status: accepted
 category: decisions
 created: 2026-07-11
-updated: 2026-07-11
+updated: 2026-09-07
 tags: [dashboard, live-updates, visualization, security, accessibility]
 related:
+  - docs/roadmap/issue-AR-138-coherent-observable-dashboard-ui.md
   - docs/roadmap/issue-AR-152-bound-dashboard-live-listeners.md
   - docs/roadmap/issue-AR-175-retire-dashboard-control-fallback.md
   - docs/roadmap/issue-AR-14-live-signal-observatory.md
@@ -95,3 +96,12 @@ telemetry is prohibited.
 
 AR-14 records implementation and verification. Its implementation commit will
 be linked through the roadmap and worklog after it exists.
+
+AR-138's September 7 repair d7231df3 keeps this decision unchanged: source-owned
+semantic scroll regions and wrapping metric cards, with an optional offline
+wheel-backed browser checker rather than a frontend runtime/build dependency.
+Its exact reasoning and checks are indexed in the worklog.
+
+The subsequent cd35aa2c repair makes the same obsolete-generation rule apply
+to errors, including live polling and reconciliation, as to successful refresh
+responses. It fixes an implementation gap, not a new polling policy.

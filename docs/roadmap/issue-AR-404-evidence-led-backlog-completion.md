@@ -62,12 +62,26 @@ First verdicts are preserved at 6a139e23. The public admission repair now passes
 Unicode limits; internal observation normalization remains unchanged. All six
 isolated criteria satisfy at repaired candidate 973acdb9 on September 7.
 AR-131 merged in PR #698 at ac1ce173. Current counts: 40 actual open trackers
-plus 98 unfinished legacy records, 138 total. AR-135's implementation is
+plus 97 unfinished legacy records, 137 total after AR-138 acceptance. AR-135's implementation is
 present: 33 selected contracts and generated ZCode smoke 4/4 pass. Its current
 installed state remains enabled-runtime-unverified, with no executable/canary;
 retain the attended native Agent/record-zero/full-Stop proof rather than
 rewriting the old installer or claiming August evidence as current. Its
-disposition changes no count; AR-138 follows because AR-136/137 are done.
+disposition merged in PR #699 at e2f7a5f2 and changes no count. AR-138 is now
+the active bounded package: its earlier concurrency/mobile fixes exist, but
+actual browser review reproduced contrast, keyboard-scroll and clipped-card
+defects. Those are repaired with four focused regressions. Current dashboard
+Python checks pass 180; the named spine passes 1085/three skips (69.50s).
+The final loaded browser receipt now passes 21 cases across 1280/1024/375 px;
+UI tests pass 142. First isolated acceptance satisfies 2–6 but identifies a
+stale full-refresh error race under criterion 1. Preserve that failed review,
+repair the failure-path generation guard and reverify before closure. That
+repair now passes 30 new late-error cases and all 172 UI tests; repeated named
+spine 1085/three skips (99.40s). The repaired wheel passes all 21 loaded browser
+checks. All six second-pass isolated criteria satisfy at 2ecde1a5; AR-138 is done
+with its failed first review preserved at 25b9a67a. PR #700 publication remains
+before AR-140, the next unfinished record. Actual open trackers remain 40;
+AR-138 is legacy-exempt and does not create or close a tracker issue.
 An unrelated public-roster fixture also fails on untouched main and is recorded
 under AR-176, not erased. Windows work stays excluded. The oldest-first ledger and active capsule
 retain exact evidence and all earlier holds; ordinary-session header failure
@@ -300,11 +314,9 @@ No exhaustive workflow dispatch or unattended restart is implied.
 
 ## Next bounded package
 
-AR-149 is accepted and AR-139's obsolete ceiling is retired. Reconcile
-historical record relevance one by one, next AR-152's listener behavior; keep AR-406's current
-shared coverage failure visible. Then verify AR-298 and deliver genuine
-AR-348/349 hiring-safety fixes. Do not do Windows-specific work. AR-271 and
-AR-405 have their own satisfied acceptance; AR-285 still needs its two named
-evidence gaps, not a repeated classifier test. The full backlog remains open
-until every baseline record has a reviewed disposition and remaining
-acceptance is met.
+Publish AR-138's accepted closure through PR #700 and merge it. Then review
+AR-140; AR-139's obsolete ceiling is already retired.
+The older AR-152/298/348-first ordering above is historical and does not override
+the owner's oldest-first loop. Keep genuine live/operator and fixture gaps
+visible, exclude Windows execution, and do not close the full backlog until
+every baseline record has a reviewed disposition and remaining acceptance is met.

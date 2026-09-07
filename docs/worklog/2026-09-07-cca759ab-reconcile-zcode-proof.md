@@ -62,3 +62,9 @@ delivery, full Stop payload, actual rejection/replay and unavailable behavior.
 Then build evidence and run isolated acceptance. No invented headless backend,
 new tracker, new live claim or count change: 40 mapped plus 98 legacy remain.
 Publish/merge this disposition and continue to AR-138 (AR-136/137 are done).
+
+Publication: PR #699 merged normally at
+e2f7a5f25bc8905b0f5bbf00d5c6beee94c0c626 on September 7, 04:26:10Z.
+Final head 38958fbe was mergeable with an empty hosted check rollup, not a
+hosted-CI pass. Local main was fast-forwarded and remains clean. The retained
+issue and 40/98 counts are unchanged; this receipt is in the next AR-138 tree.

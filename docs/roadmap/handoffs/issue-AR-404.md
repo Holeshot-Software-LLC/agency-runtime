@@ -13,6 +13,7 @@ related:
   - docs/roadmap/issue-AR-131-complete-mcp-cli-host-contracts.md
   - docs/roadmap/acceptance/issue-AR-131.md
   - docs/roadmap/issue-AR-135-complete-zcode-integration.md
+  - docs/roadmap/issue-AR-138-coherent-observable-dashboard-ui.md
   - docs/roadmap/issue-AR-176-align-full-gate-contract-fixtures.md
   - docs/decisions/0028-host-support-maturity-and-reversible-install.md
   - docs/decisions/0223-retire-superseded-zcode-stop-checklist.md
@@ -21,9 +22,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-404
-branch: codex/ar135-oldest-first-reconciliation
-evidence_commit: ac1ce173d6987d4d4cc4e060df319fb07cf9f44b
-minimum_ledger_commit: e21e8da4d9e6f6859148b4a7a503c7966dbb7b96
+branch: codex/ar138-oldest-first-reconciliation
+evidence_commit: 2ecde1a5be3ac38aa7b7b970945fa8bd42e7fa73
+minimum_ledger_commit: 18367caf80ffe1d4465451f35077381c4286b460
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -34,13 +35,17 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 
 Owner resumed September 6: oldest first, one record/PR/merge, then next; no
 routine approval stops. Windows stays with the owner. AR-131 is done and PR
-#698 merged at ac1ce173 (September 7, 04:12:09Z); local main is clean. The merge
-ledger is e21e8da4 in the next owned AR-135 branch.
+#698 merged at ac1ce173 (September 7, 04:12:09Z). AR-135 retention merged in
+PR #699 at e2f7a5f2; local main is clean there. Merge ledger bcaddc1b starts the
+owned AR-138 branch.
 
-Current package: retain AR-135 with its implemented contracts and exact
-remaining attended native-proof obligation. No production code change;
-only a misleading test docstring/comment is corrected. Publish this disposition
-before moving to AR-138; AR-136 and AR-137 are already done.
+Current package: AR-138 accepted, with all six isolated criteria satisfied at
+repaired candidate 2ecde1a5. Browser review found accessibility/clipping defects
+repaired at d7231df3; the first isolated review found a stale-error race and is
+preserved at 25b9a67a. Error guards/cancellation propagation at cd35aa2c pass 30
+new regressions and all 172 UI tests. Repaired-wheel QA passes 21 loaded-view
+checks with ten matching asset hashes. Close the records and publish PR #700
+before reviewing AR-140. No native host/ordinary-session activation claim.
 
 ## Completed evidence
 
@@ -55,8 +60,8 @@ before moving to AR-138; AR-136 and AR-137 are already done.
   184/184 protected mutations killed, zero survived/invalid, source unchanged.
   Broader 380-pass/one-failure/eight-skip run is not green: the unchanged
   fallback-roster fixture also fails on prior main and belongs to AR-176.
-- Current count: 40 actual open trackers plus 98 unfinished legacy records,
-  138 local unfinished. AR-135 retention changes no count. No duplicate tracker.
+- Current count: 40 actual open trackers plus 97 unfinished legacy records,
+  137 local unfinished after AR-138 acceptance. No duplicate tracker.
 - AR-135 source: independent ZCode renderer/config registration, exact seven
   hooks, idempotency, preservation, toggle/rollback/drift and host identity exist.
   Current tests: 16 installer/header (4.74s), 13 selected hook/Stop (5.80s),
@@ -69,9 +74,22 @@ before moving to AR-138; AR-136 and AR-137 are already done.
   unknown, no canary/attestation, enabled-runtime-unverified. Executable null;
   command lookup also finds no zcode CLI. August 19 record-zero evidence stays
   historical, not current-package certification.
+- AR-138: dashboard Python 180 pass (28.80s), repeated named spine 1085/three
+  existing skips (99.40s). UI 172 pass; coverage 96.93/86.58/95.71 meets the
+  unchanged 95/86/93 floors. Routing passes. The first-candidate conformance
+  run kills 184/184, zero survived/invalid, source unchanged; no Python decision
+  implementation or selected test changed in the subsequent JavaScript repair.
+- Final browser receipt: acceptance/evidence/AR-138-browser-repaired-20260907/
+  report.json, observed 05:15:13Z September 7. Twenty-one loaded views at
+  1280/1024/375 px pass, zero axe violations/overflow/clipping or unexpected
+  console/HTTP errors. Real polls preserve focus/selection/disclosures; injected
+  control failure retains the revision, shows a correlated safe ID and recovers.
+  All ten wheel assets match source. Full WCAG/screen-reader/native-host proof
+  is not claimed. All six isolated second-pass verdicts are satisfied.
 
 ## Exact blocker
 
+AR-138 verification is complete; record publication and normal PR merge remain.
 AR-135 native proof is waiting_for_operator: one attended installed ZCode Agent
 success/failure and full parent Stop capture. Do not invent a headless backend
 or promote a stubbed hook test into native proof. This does not block the next
@@ -91,22 +109,24 @@ the same task; do not spawn a replacement task or close an unfinished umbrella.
 
 ## Next bounded work package
 
-1. Finish AR-135's record/test-wording disposition, focused checks and exact
-   substantive/ledger pair. Its five original criteria and open status remain.
-2. Open one PR, verify its final head/check state and merge normally. Record the
-   attended proof plan; do not require the owner to answer before continuing.
-3. Review AR-138 next. Native Windows execution remains excluded.
-4. AR-135 later: pin the exact installed package and existing profile in an
-   attended session; capture Agent success/failure, one-use identities,
-   record-zero prompt delivery and complete Stop input/output. Then freeze
-   evidence per original criterion and obtain isolated acceptance.
+1. Commit AR-138's supplied satisfied verdicts and done/count records, then its
+   immediate ledger. Repaired candidate 2ecde1a5 and failed first review 25b9a67a
+   remain immutable; do not rewrite evidence or launch another acceptance pass.
+2. Complete documentation/tracker checks, ready and merge PR #700 normally.
+   Read back the actual merged head; update clean main by fast-forward only.
+3. Start an owned AR-140 worktree, record the prior merge in its initial ledger,
+   and inspect that oldest unfinished record. AR-139 is retired; Windows excluded.
+4. AR-135 retains its attended installed Agent/record-zero/full-Stop plan;
+   it does not block an independent backlog disposition.
 
 ## Verification
 
 Run metadata, policy availability, exact worklog, strict docs/tracker and diff
-checks per package, with focused checks for touched behavior. AR-135 changes
-no executable production behavior; the current AR-131 named-spine/UI/routing/
-conformance receipts above retain their exact scope. No new exhaustive corpus,
+checks per package, with focused checks for touched behavior. AR-138 changes
+dashboard HTML/CSS/JavaScript plus optional QA tooling/tests. Use the current UI
+coverage command with 95/86/93 floors and source inclusion; the mistakenly
+used historical 95/90/96 command failed, not a current CI regression.
+No new exhaustive corpus,
 coverage/interpreter matrix, hosted dispatch or release/installed-live proof.
 The graphify graph is absent; bounded source inspection was used, with no
 graph build, specialist selection or native subagent staffing.
@@ -114,7 +134,7 @@ graph build, specialist selection or native subagent staffing.
 ## Constraints
 
 No credential creation, human-trust bypass, unmanaged gateway restart or provider
-policy change. A single runtime-requested Codex refresh returned exit 1 with
+policy change. Runtime-requested Codex refreshes returned exit 1 with
 registered files but activation required, trust unverified and mixed installed
 projections. Do not retry or replace OpenClaw as part of backlog record cleanup.
 Generated smoke and staged files do not establish normal-session activation.
