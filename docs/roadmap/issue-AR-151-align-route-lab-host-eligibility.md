@@ -59,7 +59,11 @@ denials retain 403/no-dispatch, fresh cache evidence has both deadlines, and
 optional local acceleration is distinguished from a declared judge chain.
 The corrected six-module suite passes 274 in 52.54s; focused nine pass in 4.71s.
 The named Python spine passes 1085 with three existing skips in 68.98s; routing,
-Ruff and diff checks pass. Preserve all original criteria; isolated review remains.
+Ruff and diff checks pass. First isolated review satisfies 2/3/4 but contradicts
+criterion 1: the original blanket wording rejects an entire duplicate-containing
+inventory, while current browser and server both permit unrelated unique hosts.
+Preserve this verdict before reconciling the criterion with per-host authority;
+do not introduce a global availability restriction merely to satisfy old prose.
 
 ## Approach
 

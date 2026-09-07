@@ -55,7 +55,10 @@ ADR-0117; cache fixture lacks its stale deadline; inference fixture mislabels
 the configured legacy chain. Repair these fixtures for the original full-suite
 criterion. Fixture-only repair now passes all 274 dashboard cases (52.54s),
 nine focused (4.71s), named spine 1085/three skips (68.98s), routing and Ruff.
-Candidate 99e05d1f is frozen for four isolated verdicts; no runtime change.
+First review of 99e05d1f satisfies 2/3/4, contradicts 1: old blanket duplicate
+wording conflicts with intentional availability of unrelated unique hosts.
+Preserve verdicts, document the per-host decision, and reverify revised criterion.
+PR #704 is draft; no runtime change or done/count flip.
 
 ## Completed evidence
 
@@ -110,7 +113,7 @@ Candidate 99e05d1f is frozen for four isolated verdicts; no runtime change.
 
 ## Exact blocker
 
-AR-151: fixture repair and full dashboard checks pass; isolated acceptance pending.
+AR-151: criterion 1 needs explicit per-host requirement reconciliation and review.
 AR-140 retains isolated supported-runner proof, including the owner's Windows
 arm. Local passing developer-host numbers do not waive that explicit criterion.
 AR-135 native proof is waiting_for_operator: one attended installed ZCode Agent
@@ -132,8 +135,8 @@ the same task; do not spawn a replacement task or close an unfinished umbrella.
 
 ## Next bounded work package
 
-1. Independently verify all four AR-151 criteria against frozen 99e05d1f.
-   Baseline failures remain at 58285009; no done/count flip before satisfaction.
+1. Preserve AR-151's first verdicts; record the per-host duplicate decision and
+   corrected criterion, then freeze/reverify. No done/count flip before satisfaction.
 2. Complete documentation/tracker checks and merge one AR-151 PR normally.
    Read back the actual merged head; update clean main by fast-forward only.
 3. Start an owned AR-153 worktree and record the prior merge. AR-152 is done;

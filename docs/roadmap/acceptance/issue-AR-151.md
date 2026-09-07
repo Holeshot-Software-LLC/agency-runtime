@@ -47,3 +47,7 @@ No verdicts supplied yet; the isolated runner owns this table.
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
+| 1 | contradicted | `AR-151.1-20260907-d1419f31` | `dea17c861100f61e4840805898470eb366e2b56686e828db5ad6986fdf37dde5` | 2026-09-07 | dashboard-render.js:1043-1122 permits unique hosts within duplicate inventories, and tests/test_dashboard.py:4704-4816 explicitly expects duplicate_with_valid to enable Route Lab for claude. |
+| 2 | satisfied | `AR-151.2-20260907-7a2b350d` | `aed04dbff6d57852bf8b01ea7ab7ccaa1b546754d817d1c6db7250052cd02c01` | 2026-09-07 | The production-module driver in tests/dashboard_route_contract.mjs and the 13 passing UI-to-POST scenarios in tests/test_dashboard.py demonstrate that browser choices are accepted and excluded hosts are rejected by the authoritative POST handler. |
+| 3 | satisfied | `AR-151.3-20260907-0e1e161e` | `b6a9a3e64a9a293f5597794b8942eb64832f4a2ea1616e69843143d64357e8b2` | 2026-09-07 | dashboard-render.js:1093-1119 renders a fixed ambiguity reason; dashboard_ui.test.mjs:2307-2364 checks its display, and test_dashboard.py:4704-4816 asserts duplicate scenarios show that reason within 160 characters. |
+| 4 | satisfied | `AR-151.4-20260907-b9e33ce5` | `69ec484c78e3100fde5ff4f7305cb708e02c6fec6f5451a8351229d69a2b2b7b` | 2026-09-07 | The cited verification record reports 274 dashboard tests passing without skips, including 13 UI-to-POST scenarios, and 176 UI tests passing; tests/test_dashboard.py:4704-4816 demonstrates the HTTP contract assertions. |
