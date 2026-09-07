@@ -6,6 +6,7 @@ created: 2026-07-26
 updated: 2026-07-26
 tags: [dashboard, pagination, ui, truth, operations]
 related:
+  - docs/decisions/0225-scope-route-lab-ambiguity-to-host-identity.md
   - docs/roadmap/issue-AR-151-align-route-lab-host-eligibility.md
   - docs/roadmap/issue-AR-175-retire-dashboard-control-fallback.md
   - docs/roadmap/issue-AR-172-make-roster-pages-snapshot-consistent.md

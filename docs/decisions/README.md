@@ -244,6 +244,7 @@ Status meanings:
 | [ADR-0091](0091-least-privilege-subprocess-environments.md) | Build every subprocess environment from least privilege | Accepted |
 | [ADR-0092](0092-do-not-cache-positive-filesystem-trust.md) | Do not cache positive filesystem trust without complete authority identity | Accepted |
 | [ADR-0095](0095-complete-paginated-dashboard-collections.md) | Dashboard collection views expose complete paginated truth | Accepted |
+| [ADR-0225](0225-scope-route-lab-ambiguity-to-host-identity.md) | Scope Route Lab duplicate ambiguity to the affected host identity | Accepted |
 | [ADR-0096](0096-require-operator-presence-for-persistent-controls.md) | Require genuine operator presence for persistent controls | Superseded |
 | [ADR-0097](0097-gate-expensive-ci-fanout-behind-quality-contracts.md) | Gate expensive CI fanout behind same-revision quality contracts | Accepted |
 | [ADR-0098](0098-pair-portable-and-win-amd64-wheels.md) | Pair portable and win_amd64 wheels for native delivery | Superseded |

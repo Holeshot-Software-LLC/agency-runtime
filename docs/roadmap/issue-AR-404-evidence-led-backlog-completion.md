@@ -98,7 +98,11 @@ direct GET → production JavaScript → POST contract cases pass; core dashboar
 265 pass/nine failures; all nine reproduce on unchanged main 460f319b. The
 bounded owner-token, cache and inference-projection fixtures are now repaired:
 274 dashboard cases pass, and the named spine passes 1085/three existing skips.
-No runtime change. AR-151's four original isolated criteria remain before closure.
+No runtime change. First isolated review satisfies 2/3/4 but contradicts the
+blanket duplicate-inventory criterion. Verdicts remain at f954d1e9. ADR-0225
+explicitly revises only that criterion to per-host ambiguity and whole-inventory
+size rejection, preserving unique verified-host availability. The second pass
+must independently verify all four criteria before closure; PR #704 is draft.
 
 Current counts: 40 actual open trackers plus 95 unfinished legacy records,
 135 total after AR-150 completion; no duplicate tracker or false acceptance.

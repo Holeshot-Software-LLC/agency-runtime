@@ -14,6 +14,7 @@ related:
   - docs/roadmap/acceptance/issue-AR-151.md
   - docs/decisions/0117-unify-owner-control-authority.md
   - docs/decisions/0118-require-inference-owned-staffing.md
+  - docs/decisions/0225-scope-route-lab-ambiguity-to-host-identity.md
   - docs/worklog/README.md
   - agency_runtime/dashboard/dashboard-render.js
   - agency_runtime/server/dashboard.py
@@ -62,8 +63,11 @@ The named Python spine passes 1085 with three existing skips in 68.98s; routing,
 Ruff and diff checks pass. First isolated review satisfies 2/3/4 but contradicts
 criterion 1: the original blanket wording rejects an entire duplicate-containing
 inventory, while current browser and server both permit unrelated unique hosts.
-Preserve this verdict before reconciling the criterion with per-host authority;
-do not introduce a global availability restriction merely to satisfy old prose.
+The verdicts are preserved at f954d1e9. ADR-0225 explicitly replaces only that
+criterion with per-host duplicate rejection, whole-inventory size rejection
+and continued eligibility of unrelated unique verified hosts. This is an
+intentional requirement reconciliation, not a pass of the original blanket
+criterion. No runtime/test changes; all four revised-candidate verdicts remain.
 
 ## Approach
 
@@ -77,10 +81,17 @@ AR-137 and ADR-0095 govern complete bounded host collections.
 
 ## Acceptance
 
-- [ ] Duplicate and oversized host inventories cannot enable Route Lab.
+- [ ] Duplicate host identities cannot authorize Route Lab, oversized inventories disable it entirely, and unrelated unique verified hosts remain selectable.
 - [ ] Browser eligibility and the authoritative POST handler agree on valid hosts.
 - [ ] The UI renders an explicit bounded reason for ambiguous inventory.
 - [ ] UI-to-POST contract and full dashboard suites pass.
+
+## Historical first criterion
+
+Original wording, retained verbatim: "Duplicate and oversized host inventories
+cannot enable Route Lab." The isolated first review contradicts it at f954d1e9.
+ADR-0225 supersedes this blanket requirement, not the failed verdict, and not
+the other three criteria. No historical acceptance success is claimed.
 
 ## Implementation evidence
 

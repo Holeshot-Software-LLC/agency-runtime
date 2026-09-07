@@ -12,6 +12,7 @@ related:
   - tests/dashboard_route_contract.mjs
   - docs/decisions/0117-unify-owner-control-authority.md
   - docs/decisions/0118-require-inference-owned-staffing.md
+  - docs/decisions/0225-scope-route-lab-ambiguity-to-host-identity.md
   - docs/roadmap/acceptance/evidence/AR-138-repaired-dashboard-20260907.md
   - docs/worklog/README.md
 supersedes: []
@@ -167,5 +168,20 @@ scoped reuse: product/scripts and tests/test_decision_conformance.py are equal
 to 2ecde1a5. The modified fixtures are not a new decision implementation. No new
 conformance execution, exhaustive Python corpus or hosted workflow is claimed.
 
-All four original AR-151 criteria still require isolated verdicts. The builder
-supplies these commands, artifacts and limitations without judging acceptance.
+## First review and requirement reconciliation
+
+First isolated review against 99e05d1f satisfies criteria 2/3/4 but contradicts
+criterion 1: `duplicate_with_valid` correctly leaves claude available, while the
+old blanket criterion forbids any duplicate-containing inventory. All supplied
+verdicts are preserved at f954d1e9; no original-criterion pass is claimed.
+
+ADR-0225 explicitly adopts per-host ambiguity, preserving the current client
+and server contract. Duplicate identities never authorize routing; unrelated
+unique verified hosts remain selectable. Oversized inventories remain entirely
+unavailable. Only the first criterion changes, with old wording preserved in
+the issue and decision. Current 13-case evidence already exercises every branch.
+
+Product, tests and scripts are unchanged from 99e05d1f. The passing 274/176/spine
+results above are exact-byte reuse for the revised documentation candidate,
+not new executions. All four criteria require new isolated verdicts; the
+builder supplies evidence and limitations without judging acceptance.

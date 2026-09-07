@@ -57,7 +57,8 @@ criterion. Fixture-only repair now passes all 274 dashboard cases (52.54s),
 nine focused (4.71s), named spine 1085/three skips (68.98s), routing and Ruff.
 First review of 99e05d1f satisfies 2/3/4, contradicts 1: old blanket duplicate
 wording conflicts with intentional availability of unrelated unique hosts.
-Preserve verdicts, document the per-host decision, and reverify revised criterion.
+Verdicts preserved at f954d1e9. ADR-0225 revises only the first criterion to
+per-host ambiguity while preserving whole-inventory size rejection; reverify.
 PR #704 is draft; no runtime change or done/count flip.
 
 ## Completed evidence
@@ -113,7 +114,7 @@ PR #704 is draft; no runtime change or done/count flip.
 
 ## Exact blocker
 
-AR-151: criterion 1 needs explicit per-host requirement reconciliation and review.
+AR-151: ADR-0225 revises criterion 1; second isolated candidate review remains.
 AR-140 retains isolated supported-runner proof, including the owner's Windows
 arm. Local passing developer-host numbers do not waive that explicit criterion.
 AR-135 native proof is waiting_for_operator: one attended installed ZCode Agent
@@ -135,8 +136,8 @@ the same task; do not spawn a replacement task or close an unfinished umbrella.
 
 ## Next bounded work package
 
-1. Preserve AR-151's first verdicts; record the per-host duplicate decision and
-   corrected criterion, then freeze/reverify. No done/count flip before satisfaction.
+1. Freeze/reverify AR-151 under ADR-0225's explicit criterion reconciliation.
+   Original wording/verdicts remain preserved; no done/count flip before satisfaction.
 2. Complete documentation/tracker checks and merge one AR-151 PR normally.
    Read back the actual merged head; update clean main by fast-forward only.
 3. Start an owned AR-153 worktree and record the prior merge. AR-152 is done;
