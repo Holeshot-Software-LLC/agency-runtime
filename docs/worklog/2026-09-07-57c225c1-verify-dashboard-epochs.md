@@ -48,6 +48,16 @@ the earlier 21-case browser proof and named spine/conformance remain scoped
 same-byte evidence, not new runs. No source or test edits, provider calls,
 native Windows, full corpus or hosted dispatch.
 
+## Second candidate
+
+First review 4e820ff4 preserves three satisfied criteria and criterion 2 absent:
+the initial citations did not prove inverse refresh-response ordering. Commit
+ae71761f adds four direct workforce/full overlap cases, both scope directions
+and both response orders. The fetch double delivers obsolete results despite
+abort, requiring epoch ownership to reject them. No runtime code changed.
+Focused four pass; full UI 176 pass, coverage 96.93/86.70/95.71. Freeze this new
+evidence for the second isolated review; no builder-authored acceptance verdict.
+
 ## Follow-ups
 
 Obtain the four isolated acceptance verdicts before a done/count change; then
