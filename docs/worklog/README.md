@@ -1941,6 +1941,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `d3801bf9` | 2026-09-07 | docs(acceptance): freeze repaired AR-138 candidate | [AR-138](../roadmap/issue-AR-138-coherent-observable-dashboard-ui.md) | null |
 | `34680228` | 2026-09-07 | docs(backlog): accept verified dashboard repairs [AR-138] | [AR-138](../roadmap/issue-AR-138-coherent-observable-dashboard-ui.md) | [detail](2026-09-07-cd35aa2c-stale-refresh-errors.md) |
 | `1ada216c` | 2026-09-07 | Merge pull request #700 from Holeshot-Software-LLC/codex/ar138-oldest-first-reconciliation | [AR-138](../roadmap/issue-AR-138-coherent-observable-dashboard-ui.md) | [detail](2026-09-07-cd35aa2c-stale-refresh-errors.md) |
+| `7ae83407` | 2026-09-07 | docs(backlog): reconcile implemented routing performance [AR-140] | [AR-140](../roadmap/issue-AR-140-scale-routing-and-retrieval.md) | [detail](2026-09-07-7ae83407-reconcile-routing-performance.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
