@@ -1944,6 +1944,13 @@ This registry connects repository history to the roadmap and to optional detail 
 | `7ae83407` | 2026-09-07 | docs(backlog): reconcile implemented routing performance [AR-140] | [AR-140](../roadmap/issue-AR-140-scale-routing-and-retrieval.md) | [detail](2026-09-07-7ae83407-reconcile-routing-performance.md) |
 | `7afa4b4d` | 2026-09-07 | Merge pull request #701 from Holeshot-Software-LLC/codex/ar140-oldest-first-reconciliation | [AR-140](../roadmap/issue-AR-140-scale-routing-and-retrieval.md) | [detail](2026-09-07-7ae83407-reconcile-routing-performance.md) |
 | `c09eb1b8` | 2026-09-07 | docs(backlog): retire duplicate mandatory coverage checklist [AR-145] | [AR-145](../roadmap/issue-AR-145-restore-python-release-coverage.md) | [detail](2026-09-07-c09eb1b8-retire-duplicate-coverage-gate.md) |
+| `cd061668` | 2026-09-07 | Merge pull request #702 from Holeshot-Software-LLC/codex/ar145-oldest-first-reconciliation | [AR-145](../roadmap/issue-AR-145-restore-python-release-coverage.md) | [detail](2026-09-07-c09eb1b8-retire-duplicate-coverage-gate.md) |
+| `57c225c1` | 2026-09-07 | docs(backlog): verify existing dashboard refresh epochs [AR-150] | [AR-150](../roadmap/issue-AR-150-coordinate-dashboard-refresh-epochs.md) | [detail](2026-09-07-57c225c1-verify-dashboard-epochs.md) |
+| `770b1d7a` | 2026-09-07 | docs(acceptance): freeze AR-150 refresh epoch candidate | [AR-150](../roadmap/issue-AR-150-coordinate-dashboard-refresh-epochs.md) | [detail](2026-09-07-57c225c1-verify-dashboard-epochs.md) |
+| `4e820ff4` | 2026-09-07 | docs(acceptance): preserve AR-150 inverse-order evidence gap | [AR-150](../roadmap/issue-AR-150-coordinate-dashboard-refresh-epochs.md) | [detail](2026-09-07-57c225c1-verify-dashboard-epochs.md) |
+| `ae71761f` | 2026-09-07 | test(dashboard): prove inverse refresh commit ordering [AR-150] | [AR-150](../roadmap/issue-AR-150-coordinate-dashboard-refresh-epochs.md) | [detail](2026-09-07-57c225c1-verify-dashboard-epochs.md) |
+| `7ec16579` | 2026-09-07 | docs(acceptance): freeze direct AR-150 ordering candidate | [AR-150](../roadmap/issue-AR-150-coordinate-dashboard-refresh-epochs.md) | [detail](2026-09-07-57c225c1-verify-dashboard-epochs.md) |
+| `2c01b083` | 2026-09-07 | docs(backlog): accept verified refresh epoch contract [AR-150] | [AR-150](../roadmap/issue-AR-150-coordinate-dashboard-refresh-epochs.md) | [detail](2026-09-07-57c225c1-verify-dashboard-epochs.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

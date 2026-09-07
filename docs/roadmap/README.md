@@ -3,7 +3,7 @@ title: Roadmap
 status: active
 category: roadmap
 created: 2026-07-10
-updated: 2026-08-30
+updated: 2026-09-07
 tags: [planning, tracker]
 related:
   - docs/roadmap/AR-119-founding-vision.md
@@ -30,10 +30,11 @@ was a record-reconciliation count, not 147 established defects. See the
 work is reserved for the owner's Windows machine; close or retire historical
 records only after checking relevance, current evidence and successor decisions.
 
-After AR-131's six-criterion accepted completion on September 7, fresh tracker
-enumeration remains 40 open issues; the separate unfinished queue is 138
-records (40 mapped plus 98 legacy). PR #698 carries that legacy completion;
-no new tracker or unrelated tracker closure is needed.
+After AR-150's four-criterion accepted completion on September 7, fresh tracker
+enumeration remains 40 open issues; the separate unfinished queue is 135
+records (40 mapped plus 95 legacy). PR #703 carries that legacy completion;
+no new tracker or unrelated tracker closure is needed. Prior snapshots remain
+in the oldest-first ledger.
 AR-119 remains a relevant unfinished
 umbrella, not a completed defect. Current sequential dispositions and the next
 bounded package are in AR-404's
@@ -192,7 +193,7 @@ bounded package are in AR-404's
 | `AR-147` | [Parse complete Windows ACL descriptors](issue-AR-147-parse-complete-windows-acl-descriptors.md) | open | p0 | security | pending authorization |
 | `AR-148` | [Fail malformed remediation signatures closed](issue-AR-148-fail-malformed-remediation-signatures-closed.md) | done | p1 | security | pre-tracker history; verified acceptance |
 | `AR-149` | [Issue a fresh dashboard request ID per HTTP request](issue-AR-149-fresh-dashboard-request-ids.md) | done | p0 | observability | pre-tracker history; verified acceptance |
-| `AR-150` | [Coordinate dashboard refresh commit epochs](issue-AR-150-coordinate-dashboard-refresh-epochs.md) | open | p0 | dashboard | pending authorization |
+| `AR-150` | [Coordinate dashboard refresh commit epochs](issue-AR-150-coordinate-dashboard-refresh-epochs.md) | done | p0 | dashboard | pending authorization |
 | `AR-151` | [Align Route Lab host eligibility with the server](issue-AR-151-align-route-lab-host-eligibility.md) | open | p1 | dashboard | pending authorization |
 | `AR-152` | [Bound dashboard live-listener retention](issue-AR-152-bound-dashboard-live-listeners.md) | done | p1 | performance | pre-tracker history; verified acceptance |
 | `AR-153` | [Complete and bound worker-detail evidence](issue-AR-153-complete-worker-detail-evidence.md) | open | p1 | dashboard | pending authorization |
@@ -593,12 +594,12 @@ not stable internal identifiers.
 | [AR-142](issue-AR-142-instrument-runtime-boundaries.md) | `a32e4e6`, `c741b24`, `0b9849c`, `b95d78a` | [ADR-0027](../decisions/0027-authoritative-runtime-evidence-traces.md) |
 | [AR-143](issue-AR-143-require-operator-presence-for-controls.md) | `24948a0`, `c741b24`, `0b9849c`, `4620204`, `900f8d3`, `f64ba1e`, `dfe6f46`, `30d5fc0`, `85428e6`, `cb06c73`; superseded by AR-204 | [ADR-0096](../decisions/0096-require-operator-presence-for-persistent-controls.md), [ADR-0104](../decisions/0104-refresh-existing-codex-through-an-exact-attended-transaction.md), [ADR-0117](../decisions/0117-unify-owner-control-authority.md) |
 | [AR-144](issue-AR-144-restore-dashboard-ui-release-coverage.md) | `567bd23`, `b95d78a` | None; behavioral release-test coverage only |
-| [AR-145](issue-AR-145-restore-python-release-coverage.md) | `c3ffe6a`, `4620204`, `c09eb1b8` (retired, not accepted) | [ADR-0105](../decisions/0105-bound-delivery-to-live-demo-checkpoints.md), [ADR-0224](../decisions/0224-retire-duplicate-mandatory-coverage-checklist.md); original repairs retained, diagnostic work owned by AR-176 |
+| [AR-145](issue-AR-145-restore-python-release-coverage.md) | `c3ffe6a`, `4620204`, `c09eb1b8` (retired, not accepted), `cd061668` (PR #702 merge) | [ADR-0105](../decisions/0105-bound-delivery-to-live-demo-checkpoints.md), [ADR-0224](../decisions/0224-retire-duplicate-mandatory-coverage-checklist.md); original repairs retained, diagnostic work owned by AR-176 |
 | [AR-146](issue-AR-146-repair-dashboard-collection-cursor-validation.md) | `c3ffe6a`, `b95d78a` | [ADR-0095](../decisions/0095-complete-paginated-dashboard-collections.md) |
 | [AR-147](issue-AR-147-parse-complete-windows-acl-descriptors.md) | `63cf796` | [ADR-0039](../decisions/0039-fail-before-dacl-mutation-under-restricted-windows-tokens.md), [ADR-0055](../decisions/0055-freeze-executable-identity-before-launch.md) |
 | [AR-148](issue-AR-148-fail-malformed-remediation-signatures-closed.md) | `0932410`, `11371cb6` (current 401-test evidence), `8d423e78` (candidate freeze), `5377a45e` (four satisfied criteria; done) | [ADR-0012](../decisions/0012-canonical-sqlite-audit-store.md) |
 | [AR-149](issue-AR-149-fresh-dashboard-request-ids.md) | `2437068`, `4620204`, `6a3bdaa`, `90ce272`, `b9d68e5d` (current evidence), `f980ad09` (candidate freeze), `f2e41b89` (first verdicts), `cfea40b1` (four satisfied criteria; done) | [ADR-0027](../decisions/0027-authoritative-runtime-evidence-traces.md), [ADR-0105](../decisions/0105-bound-delivery-to-live-demo-checkpoints.md) |
-| [AR-150](issue-AR-150-coordinate-dashboard-refresh-epochs.md) | `2437068`, `4620204`, `6a3bdaa`, `90ce272` | [ADR-0032](../decisions/0032-adaptive-authenticated-dashboard-polling.md) |
+| [AR-150](issue-AR-150-coordinate-dashboard-refresh-epochs.md) | `2437068`, `4620204`, `6a3bdaa`, `90ce272`, `57c225c1`, `770b1d7a`, `4e820ff4`, `ae71761f`, `7ec16579`, `2c01b083` | [ADR-0032](../decisions/0032-adaptive-authenticated-dashboard-polling.md), [ADR-0220](../decisions/0220-measure-dashboard-coverage-over-production-modules.md) |
 | [AR-151](issue-AR-151-align-route-lab-host-eligibility.md) | `2437068`, `4620204`, `6a3bdaa`, `90ce272` | [ADR-0095](../decisions/0095-complete-paginated-dashboard-collections.md) |
 | [AR-152](issue-AR-152-bound-dashboard-live-listeners.md) | `2437068`, `4620204`, `6a3bdaa`, `90ce272`, `12a62393` (current listener/coverage evidence; acceptance pending); `e3c09d42` (accepted; done); `853de310` (PR #684 merged) | [ADR-0032](../decisions/0032-adaptive-authenticated-dashboard-polling.md), [ADR-0220](../decisions/0220-measure-dashboard-coverage-over-production-modules.md) |
 | [AR-153](issue-AR-153-complete-worker-detail-evidence.md) | `2437068`, `4620204`, `6a3bdaa`, `90ce272` | [ADR-0027](../decisions/0027-authoritative-runtime-evidence-traces.md), [ADR-0095](../decisions/0095-complete-paginated-dashboard-collections.md) |

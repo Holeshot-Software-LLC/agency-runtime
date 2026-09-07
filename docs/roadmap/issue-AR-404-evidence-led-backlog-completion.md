@@ -74,17 +74,25 @@ still needs evidence, including the owner's Windows arm. ADR-0121 governs
 candidate recall/synthetic cache evidence; AR-253 retains real staffing latency.
 Its disposition merged in PR #701 at 7afa4b4d.
 
-Current package AR-145 retires a duplicate mandatory-coverage checklist under
+AR-145 retires a duplicate mandatory-coverage checklist under
 ADR-0224, not an accepted 97-percent pass. Its original repairs pass 41 focused
 tests under branch instrumentation; AR-176 explicitly retains actual fixture
 and requested aggregate-diagnostic work. ADR-0105 already made exhaustive
 checks optional. Keep the configured 97-percent floor and all historical
 failures. AR-156 records the release checklist's stale UI coverage command for
-its upcoming reconciliation. Publish this disposition, then AR-150: 146/148/149
-are done and Windows-only AR-147 stays with the owner.
+its upcoming reconciliation. PR #702 merged at cd061668. AR-146/148/149 are done
+and Windows-only AR-147 stays with the owner.
 
-Current counts: 40 actual open trackers plus 96 unfinished legacy records,
-136 total after AR-145 retirement; no duplicate tracker or false acceptance.
+AR-150 is done: existing shared dashboard commit epochs verified, with four
+direct inverse-order tests added at ae71761f. First review's missing criterion-2
+evidence remains preserved at 4e820ff4; all four second-pass criteria satisfy.
+Full UI passes 176 at 96.93/86.70/95.71, server/auth/transaction passes 180 in
+28.82s. Unchanged product bytes bind the existing 21-case installed-wheel receipt;
+no runtime change or new installation claim. PR #703 carries the completion.
+After normal merge and read-back, the next bounded record is AR-151.
+
+Current counts: 40 actual open trackers plus 95 unfinished legacy records,
+135 total after AR-150 completion; no duplicate tracker or false acceptance.
 The unchanged public-roster fixture belongs to AR-176. Windows stays excluded;
 the oldest-first ledger and capsule preserve all holds. Ordinary-session
 unverified Agency/header behavior remains a separate unfinished concern.
@@ -316,8 +324,8 @@ No exhaustive workflow dispatch or unattended restart is implied.
 
 ## Next bounded package
 
-Publish and merge AR-145's retired duplicate-coverage disposition. Then review
-AR-150; AR-146/148/149 are done and Windows-only AR-147 stays with the owner.
+Finish AR-150's isolated acceptance and publish one PR/merge. Then review AR-151.
+AR-146/148/149 are done and Windows-only AR-147 stays with the owner.
 The older AR-152/298/348-first ordering above is historical and does not override
 the owner's oldest-first loop. Keep genuine live/operator and fixture gaps
 visible, exclude Windows execution, and do not close the full backlog until
