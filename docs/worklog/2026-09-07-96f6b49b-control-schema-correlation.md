@@ -16,7 +16,7 @@ type: worklog
 commit: 96f6b49b2a8e92f7b63704853eedcd06b5ebd0c1
 short: 96f6b49b
 date: 2026-09-07
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/724
 related_issues:
   - docs/roadmap/issue-AR-175-retire-dashboard-control-fallback.md
 ---
@@ -57,6 +57,9 @@ Checkpoint source/ledger before private wheel-backed browser execution, then
 complete six isolated criteria and one normal PR/merge before AR-176.
 No native Windows, owner profile, credential or normal-host activation claim.
 Stop cleanly at 9 p.m. Eastern September 7.
+
+Publication: [PR #724](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/724) carries the full source,
+acceptance, raw browser evidence and separate live-host diagnostic.
 
 ## Initial clean source checkpoint
 
