@@ -1973,6 +1973,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `a3e00bd5` | 2026-09-07 | docs(acceptance): preserve partial AR-155 verification | [AR-155](../roadmap/issue-AR-155-bound-dashboard-hiring-evidence.md) | [detail](2026-09-07-6ed24943-bounded-hiring-evidence.md) |
 | `2ca5761a` | 2026-09-07 | docs(backlog): close verified hiring-evidence delivery [AR-155] | [AR-155](../roadmap/issue-AR-155-bound-dashboard-hiring-evidence.md) | [detail](2026-09-07-6ed24943-bounded-hiring-evidence.md) |
 | `729e7dc4` | 2026-09-07 | Merge pull request #707 from Holeshot-Software-LLC/codex/ar155-oldest-first-reconciliation | [AR-155](../roadmap/issue-AR-155-bound-dashboard-hiring-evidence.md) | [detail](2026-09-07-6ed24943-bounded-hiring-evidence.md) |
+| `9fb95136` | 2026-09-07 | fix(verification): reject skipped required local gates [AR-156] | [AR-156](../roadmap/issue-AR-156-restore-cost-bounded-verification.md) | [detail](2026-09-07-9fb95136-truthful-local-verification.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
