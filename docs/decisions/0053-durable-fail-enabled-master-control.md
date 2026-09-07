@@ -6,6 +6,7 @@ created: 2026-07-16
 updated: 2026-07-20
 tags: [operations, control-plane, security, cli, dashboard, windows]
 related:
+  - docs/decisions/0231-separate-route-lab-correlation-from-turn-persistence.md
   - docs/roadmap/issue-AR-57-durable-agency-wide-master-switch.md
   - docs/roadmap/issue-AR-74-broker-restricted-windows-host-controls.md
   - docs/roadmap/issue-AR-77-validate-brokered-control-transition-receipts.md

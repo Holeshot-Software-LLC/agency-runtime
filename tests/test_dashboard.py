@@ -20,7 +20,7 @@ from contextlib import closing
 from datetime import datetime
 from http.client import HTTPConnection, HTTPResponse
 from pathlib import Path
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
 import yaml
@@ -32,6 +32,10 @@ from agency_runtime.core.dashboard_runtime import (
     write_dashboard_runtime,
 )
 from agency_runtime.core.installer_contracts import CODEX_ACTIVATION_CANARY_PROOF_CONTRACT
+from agency_runtime.core.observability import (
+    correlation_observation_digest,
+    current_observation_context,
+)
 from agency_runtime.core.roster.bundled import bundled_roster
 from agency_runtime.core.roster.ingress import MAX_LIST_ITEMS
 from agency_runtime.core.roster.revisions import content_digest_identity
@@ -3843,6 +3847,96 @@ def test_dashboard_route_lab_checks_store_binding_before_catalog_capture(
     assert payload["restart_required"] is True
 
 
+def test_dashboard_route_lab_correlates_fresh_traces_without_persisting_turns(
+    dashboard_server,
+    caplog: pytest.LogCaptureFixture,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from agency_runtime.core.selector import pipeline
+
+    caplog.set_level(logging.INFO, logger="agency_runtime.observation")
+    monkeypatch.setattr(
+        pipeline,
+        "query_judge",
+        lambda *_args, **_kwargs: pytest.fail("social diagnostic must not call inference"),
+    )
+    original_explain = dashboard_module.explain_route
+    seen: list[str] = []
+
+    def correlated_explain(*args, **kwargs):
+        trace = kwargs["trace_id"]
+        assert UUID(trace).version == 4
+        assert str(UUID(trace)) == trace
+        assert current_observation_context()[1] == correlation_observation_digest(trace)
+        seen.append(trace)
+        return original_explain(*args, **kwargs)
+
+    monkeypatch.setattr(dashboard_module, "explain_route", correlated_explain)
+    session = "ar173-private-session-sentinel"
+    for task in ("hello", "thanks"):
+        request_id = str(uuid4())
+        status, payload, headers = _json_response(
+            dashboard_server,
+            "/api/route",
+            method="POST",
+            body={"task": task, "session_id": session},
+            token=dashboard_server["token"],
+            request_id=request_id,
+        )
+
+        assert status == 200
+        trace = payload["routing"]["trace_id"]
+        assert trace == seen[-1]
+        assert payload["routing"]["inference_attempted"] is False
+        assert payload["request_id"] == headers["X-Agency-Request-ID"] == request_id
+        observation = _wait_for_dashboard_observation(caplog, request_id)
+        assert observation["operation"] == "route"
+        assert observation["outcome"] == "ok"
+        assert observation["correlation_digest"] == correlation_observation_digest(trace)
+        assert set(observation) <= {
+            "schema_version",
+            "request_id",
+            "correlation_digest",
+            "surface",
+            "operation",
+            "outcome",
+            "reason_code",
+            "duration_ms",
+            "store_generation",
+        }
+        encoded = json.dumps(observation)
+        assert len(encoded.encode("utf-8")) < 512
+        for private in (
+            task,
+            session,
+            dashboard_server["token"],
+            "Review application security and threat boundaries.",
+        ):
+            assert private not in encoded
+        assert dashboard_server["store"].get_run(trace) is None
+        assert "decision_id" not in payload["routing"]
+
+    assert len(seen) == len(set(seen)) == 2
+    with closing(dashboard_server["store"]._connect()) as connection:
+        assert connection.execute("SELECT COUNT(*) FROM routing_decisions").fetchone()[0] == 0
+    assert dashboard_server["store"].get_open_traces_for_session(session) == []
+
+    monkeypatch.setattr(
+        dashboard_module,
+        "uuid4",
+        lambda: pytest.fail("invalid Route Lab input must not allocate a routing trace"),
+    )
+    status, payload, _headers = _json_response(
+        dashboard_server,
+        "/api/route",
+        method="POST",
+        body={"task": ""},
+        token=dashboard_server["token"],
+    )
+    assert status == 400
+    assert "routing" not in payload
+
+
 def test_dashboard_route_lab_master_disabled_bypasses_preflight_and_catalog(
     dashboard_server,
     monkeypatch: pytest.MonkeyPatch,
@@ -3872,6 +3966,11 @@ def test_dashboard_route_lab_master_disabled_bypasses_preflight_and_catalog(
             AssertionError("host inspection must be bypassed")
         ),
     )
+    monkeypatch.setattr(
+        dashboard_module,
+        "uuid4",
+        lambda: pytest.fail("disabled Route Lab must not allocate a routing trace"),
+    )
 
     status, payload, _headers = _json_response(
         dashboard_server,
@@ -3884,6 +3983,7 @@ def test_dashboard_route_lab_master_disabled_bypasses_preflight_and_catalog(
     assert status == 200
     assert payload["status"] == "disabled"
     assert payload["bypassed"] is True
+    assert payload["routing"]["trace_id"] == ""
 
 
 def test_dashboard_trim_requires_exact_confirmation(dashboard_server):

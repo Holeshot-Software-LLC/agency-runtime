@@ -6,9 +6,9 @@ created: 2026-09-05
 updated: 2026-09-07
 tags: [handoff, backlog, acceptance, delivery]
 related:
-  - docs/roadmap/issue-AR-172-make-roster-pages-snapshot-consistent.md
-  - docs/roadmap/acceptance/issue-AR-172.md
-  - docs/roadmap/acceptance/evidence/AR-172-roster-snapshots-20260907.md
+  - docs/roadmap/issue-AR-173-correlate-route-lab-observations.md
+  - docs/roadmap/acceptance/evidence/AR-173-route-lab-correlation-20260907.md
+  - docs/decisions/0231-separate-route-lab-correlation-from-turn-persistence.md
   - docs/roadmap/issue-AR-170-fail-dashboard-response-correlation-closed.md
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
   - docs/roadmap/AR-404-oldest-first-reconciliation-20260905.md
@@ -18,9 +18,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-404
-branch: codex/ar172-oldest-first-reconciliation
-evidence_commit: dec1bc512462285cf4d43742c3e666e6d776186e
-minimum_ledger_commit: b59f743a295cfd332eb3430050268990faddf527
+branch: codex/ar173-oldest-first-reconciliation
+evidence_commit: 6afcbcb523d55f4beb2339f2fa5b06c9ecae8a01
+minimum_ledger_commit: 6afcbcb523d55f4beb2339f2fa5b06c9ecae8a01
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -30,35 +30,33 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ## Checkpoint
 
 Owner continues one oldest record, one PR, normal merge, then next. Native
-Windows remains with the owner. PR #720 merged accepted AR-171 at a846c88f,
-12:32:58Z September 7. Main was clean and fast-forwarded before the separate
-AR-172 tree; 8f9d9e4c records that merge and is the prior clean checkpoint.
+Windows remains with the owner. PR #721 merged accepted AR-172 at 47d40fec,
+13:11:01Z September 7. Main was clean and fast-forwarded before the separate
+AR-173 tree; 6afcbcb5 records that merge and is the prior clean checkpoint.
 
 ## Completed evidence
 
-AR-172's Store/HTTP/JS implementation is present. One read transaction binds
-generation/count/limited rows; configuration and Store revisions bind dashboard
-paging. A mismatched control pair recaptures and persistent churn fails closed.
-The original three-attempt limit is unchanged, not a new behavior requirement.
+AR-173 already attaches its trace before explanation. The direct HTTP regression
+claimed by the issue is missing, and its durable-routing narrative is wrong:
+explanations are diagnostic-only since e5f4a8c2, before the issue was written.
 
-- New 81-line table adds ten passing last-good-state tests: both refresh modes
-  across initial/primary/exact/operational-initial/operational-page config drift.
-- Complete Store/HTTP/activation: 278 pass, 59.46s.
-- UI 204 pass, zero skips/failures; 96.93/86.78/95.73 meets unchanged floors.
-- Fresh named spine: 1085 pass/three existing skips, 69.71s.
-- No production/script/workflow change. Only criterion 7 is reconciled under
-  ADR-0105; original wording and first six criteria remain.
-- Fresh routing passes 39 candidate-recall-only gates; not staffing evidence.
-- Raw transcripts and record gates pass: 1202 Markdown documents after detail,
-  397 mapped trackers/two historical PR exceptions, Ruff and diff clean.
-- All seven criteria satisfy at dec1bc51. First verdicts remain at 4c5acdcf;
-  only 6 needed a current handler citation and passes its unchanged-code recheck.
+- New real HTTP test executes two social explanations, prohibits inference,
+  and checks UUID freshness, attachment before explanation, exact response/log
+  digest equality, bounded metadata and no task/session/bearer/prompt leakage.
+- No turn or routing-decision rows are created. Invalid and disabled calls
+  cannot allocate a routing trace; disabled mode still bypasses host/catalog.
+- Two focused HTTP tests pass; exact raw stdout is in the receipt.
+- No production change. ADR-0231 reconciles criteria 1/4/5 with existing bypass,
+  diagnostic-only routing and bounded verification. Originals remain.
+- Broader checks and isolated acceptance are pending. Do not mark done.
 - AR-172 done leaves 40 actual trackers plus 82 legacy, 122 unfinished.
 
 ## Exact blocker
 
-No AR-172 scoped blocker remains. Commit accepted completion and its ledger,
-publish one normal PR, merge and read back before beginning AR-173.
+No reproduced AR-173 production defect. Finish focused-to-spine verification
+and an immutable complete five-criterion evidence packet before isolated review.
+The below-50-percent checkpoint commits this safe regression/record slice,
+then continues the same task.
 
 AR-170 remains in_progress: first review at 662eb947 and final candidate
 91273e41 are preserved. Final 1/2/4/5/6/7/8 satisfy, 3/9 need complete collection
@@ -81,17 +79,17 @@ No empty commits, staffing or restart. Preserve verdicts before corrections.
 
 ## Next bounded work package
 
-1. Commit AR-172 accepted completion and its immediate ledger.
-2. Publish its normal PR; no acceptance rerun.
-3. Publish one normal PR/merge/readback, then AR-173. No native Windows work.
+1. Commit AR-173 focused regression/record checkpoint and immediate ledger.
+2. Run broader focused checks/UI/named spine, record raw gates, freeze packet.
+3. Five isolated checks, one normal PR/merge/readback, then AR-174.
+   No native Windows work and at most two review passes.
 
 ## Verification
 
-Fresh Store/HTTP, UI/current coverage, named spine, routing and strict record
-checks pass before freeze. No exhaustive corpus/coverage/matrix dispatch.
-AR-165's 184/184 curated decision receipt is earlier unchanged Python evidence:
-Git comparison of package Python and scripts against 9effff3f exits zero.
-This is not a new conformance run or a JS mutation evaluation.
+Two real loopback regression tests; formatting/lint checks. Full current checks
+follow this checkpoint. No exhaustive corpus/coverage/matrix dispatch.
+AR-165's curated conformance and AR-172's routing results are earlier evidence,
+not new runs or live staffing proof.
 
 ## Constraints
 

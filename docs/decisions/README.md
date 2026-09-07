@@ -154,6 +154,7 @@ Status meanings:
 | [ADR-0015](0015-versioned-selection-explain-receipts.md) | Publish versioned selection-explain receipts | Accepted |
 | [ADR-0016](0016-central-finalization-and-session-correlation.md) | Centralize finalization and correlate evidence by session | Superseded |
 | [ADR-0027](0027-authoritative-runtime-evidence-traces.md) | Derive runtime claims from authoritative correlated evidence | Accepted |
+| [ADR-0231](0231-separate-route-lab-correlation-from-turn-persistence.md) | Separate Route Lab correlation from durable turn evidence | Accepted |
 | [ADR-0045](0045-turn-scoped-specialist-activation.md) | Use turn-scoped specialist activation with immutable session history | Accepted |
 | [ADR-0047](0047-reconcile-litellm-model-and-router-evidence.md) | Reconcile LiteLLM actual-model and router evidence separately | Accepted |
 | [ADR-0065](0065-keep-compact-resident-manager-kernel.md) | Keep a compact resident manager kernel at the parent boundary | Superseded |
