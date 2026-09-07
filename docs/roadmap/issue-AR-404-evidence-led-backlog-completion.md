@@ -210,10 +210,13 @@ surviving Git packages pass 38/129/24 cases without skips or failures; Windows
 deselections and portable spelling/PATHEXT simulations are explicit. ADR-0227
 reconciles only obsolete criterion 5's deleted worker backends to current
 CLI-provider, installer, dashboard and smoke launch paths. Original wording
-remains; no runtime or test change. Seven isolated criteria await review.
+remains; no runtime or test change. First review at 083ae8b5 lacked actual tree
+output for criterion 5; its verdict remains at 6ac3b1aa. Exact Git evidence was
+added and all seven current criteria satisfy at 2a7c20c5 in the second review.
+AR-164 is complete within that scope, not a native Windows qualification claim.
 
-Current counts: 40 actual open trackers plus 87 unfinished legacy records,
-127 total after AR-163 completion; no duplicate tracker or false acceptance.
+Current counts: 40 actual open trackers plus 86 unfinished legacy records,
+126 total after AR-164 completion; no duplicate tracker or false acceptance.
 The unchanged public-roster fixture belongs to AR-176. Windows stays excluded;
 the oldest-first ledger and capsule preserve all holds. Ordinary-session
 unverified Agency/header behavior remains a separate unfinished concern.

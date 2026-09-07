@@ -75,3 +75,12 @@ to the new candidate. Strict docs pass 1182 Markdown files.
 8c80dc16 freezes the second record at 2a7c20c5. The source tree still equals
 0ed31de7ec3b387ef463bd087a01eb4907de972c. All seven isolated checks run again
 after the clean ledger; this is the second and final ordinary review pass.
+
+## Accepted completion
+
+All seven current criteria satisfy at 2a7c20c5 in the second review. The first
+absence verdict remains at 6ac3b1aa. ADR-0227's explicit fifth-criterion mapping
+is preserved; no other requirement, runtime or test changed. AR-164 is done,
+with native Windows qualification and AR-187 attended activation still separate.
+Queue: 40 mapped plus 86 legacy, 126 unfinished. Publish one PR and normal merge,
+then AR-165.

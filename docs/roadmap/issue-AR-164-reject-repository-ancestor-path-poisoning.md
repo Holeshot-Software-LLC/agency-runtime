@@ -1,6 +1,6 @@
 ---
 title: "AR-164: Reject repository-ancestor PATH poisoning"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-27
 updated: 2026-09-07
@@ -64,7 +64,9 @@ or test change was needed. First isolated review at 083ae8b5 satisfies criteria
 but the retirement claim needs an actual candidate tree listing rather than a
 description. All first verdicts remain preserved at 6ac3b1aa. The correction
 adds actual full candidate-directory and deletion-status output; no criteria,
-runtime or test changes. All seven require a new candidate-bound review.
+runtime or test changes. All seven current criteria satisfy at 2a7c20c5 in the
+second and final isolated review. AR-164's scoped record is complete; native
+Windows qualification and AR-187 attended activation remain separate.
 
 ## Approach
 
@@ -85,13 +87,13 @@ Native Windows and AR-187's attended activation remain separately owned work.
 
 ## Acceptance
 
-- [ ] Nested working directories exclude sibling repository `PATH` entries.
-- [ ] The first Git root-discovery invocation cannot select repository Git.
-- [ ] Explicit argv and one-argument resolver results inside a forbidden root fail closed.
-- [ ] Windows path spelling, case, PATHEXT wrappers, and resolved link aliases cannot bypass the boundary.
-- [ ] Current CLI-provider, installer, dashboard, and smoke launch paths use the shared contract; retired Agency-owned execution backends remain absent.
-- [ ] Absolute non-repository `PATH` discovery remains supported.
-- [ ] Focused tests, Ruff, documentation validation, and diff validation pass.
+- [x] Nested working directories exclude sibling repository `PATH` entries.
+- [x] The first Git root-discovery invocation cannot select repository Git.
+- [x] Explicit argv and one-argument resolver results inside a forbidden root fail closed.
+- [x] Windows path spelling, case, PATHEXT wrappers, and resolved link aliases cannot bypass the boundary.
+- [x] Current CLI-provider, installer, dashboard, and smoke launch paths use the shared contract; retired Agency-owned execution backends remain absent.
+- [x] Absolute non-repository `PATH` discovery remains supported.
+- [x] Focused tests, Ruff, documentation validation, and diff validation pass.
 
 ## Requirement reconciliation
 
@@ -100,7 +102,7 @@ backend, installer, dashboard, and smoke launch paths use the shared contract."
 The deliberate Job B removal is recorded in AR-236 and follows native-host
 ownership. Current CLI-provider inference is not an Agency-owned worker backend.
 Criteria 1–4 and 6–7 remain unchanged. Historical checked boxes are preserved in
-Git; the current record awaits isolated verification rather than copying them.
+Git; the current record has seven new isolated satisfied verdicts at 2a7c20c5.
 
 Windows spelling/case/PATHEXT algorithms are exercised as portable simulations
 on Linux, alongside real Linux symlink rejection. No native Windows execution,

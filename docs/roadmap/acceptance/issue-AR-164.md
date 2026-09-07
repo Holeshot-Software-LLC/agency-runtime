@@ -59,9 +59,17 @@ tracker_url: null
 
 ## Verification
 
-All first verdicts remain at 6ac3b1aa. The second candidate adds actual tree and
-deletion output for criterion 5 without changing any criterion or product byte.
-All seven checks await new isolated verdicts; none is carried forward.
+All seven current criteria satisfy at 2a7c20c551aa357b07d51753622879322c5803d4
+in the second and final isolated review. All first verdicts remain at 6ac3b1aa;
+none was carried forward. This candidate adds actual tree/deletion output for
+criterion 5 without changing any criterion or product byte.
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
+| 1 | satisfied | `AR-164.1-20260907-d8d7011b` | `d3f487259b73b7c90af7df24d1f7c0f6ffbe4d023322d6f81af199cfd0da5b9c` | 2026-09-07 | process_argv.py:299-333 excludes marker-bearing repository ancestors; test_executable_discovery_security.py:77-110 verifies nested discovery rejects sibling bin and selects the external tool, with 38 passing tests recorded in the cited receipt. |
+| 2 | satisfied | `AR-164.2-20260907-407b48f8` | `c1c08fde0be7e9d478e32ec0250fe530319da64e4bc7566915883e2a743e987c` | 2026-09-07 | git_runner.py:142-201 excludes repository roots before resolving and invoking Git, and test_executable_discovery_security.py:323-351 verifies initial root discovery selects external Git despite repository Git preceding it on PATH. |
+| 3 | satisfied | `AR-164.3-20260907-24ffe924` | `42c2d9452e26ee6d24d720f2a22eac25b555959d707b3e28b09867f33b674232` | 2026-09-07 | process_argv.py:387-455 applies forbidden-root validation to explicit paths and resolver results; lines 757-775 raise OSError for forbidden artifacts, and test_executable_discovery_security.py:136-154 covers both explicit and one-argument resolver rejection. |
+| 4 | satisfied | `AR-164.4-20260907-34b95919` | `ac6d3ee2a941e0aee2966235b7ed48602f58a901c626a450312ecee3a4e5ffb2` | 2026-09-07 | process_argv.py shows Windows normalization and lexical/resolved root checks; security tests cover mixed-case CMD paths, PATHEXT rejection and link aliases, with 38 passes recorded in the focused verification receipt. |
+| 5 | satisfied | `AR-164.5-20260907-b95ec770` | `8d7a941273c342fed5afb332664304d004311198abdf5e876ddc27f6c43ec40d` | 2026-09-07 | The four launch-path excerpts use shared executable preparation and freezing, while AR-164-backend-tree-20260907.md supplies the retired-module absence listing and unchanged implementation binding. |
+| 6 | satisfied | `AR-164.6-20260907-f7f95cae` | `d70df126f7897e202251e9f4def4e028f20cc701628c0cac0141807100a8d0c5` | 2026-09-07 | The external-PATH test in tests/test_executable_discovery_security.py:112-133 asserts successful resolution, process_argv.py:261-297 retains absolute external entries, and the focused verification receipt reports 38 passing tests. |
+| 7 | satisfied | `AR-164.7-20260907-7fb9c58b` | `cebfcb7a12850c47babfd2842c10ac05675eceaf9c009e32bfedd8fe4b47c7c7` | 2026-09-07 | The cited AR-164 receipt records 38, 129, and 24 passing focused tests, passing Ruff check and format for 766 files, strict documentation validation for 1180 Markdown files, and a zero-result scoped git diff --check. |

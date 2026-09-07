@@ -60,7 +60,8 @@ candidate. The builder cannot mark it satisfied based on removed code.
 
 Evidence candidate 083ae8b5 records 38 discovery, 129 current-launch and 24
 surviving Git/process passes with their exact Windows limitations. All seven
-current criteria await isolated checks; no product bytes were changed.
+current criteria satisfy at the second candidate 2a7c20c5, which adds actual Git
+tree/deletion evidence. First verdicts remain at 6ac3b1aa; no product bytes changed.
 
 - The current entry points retain the original security obligation.
 - No removed host-execution backend or worker scheduler is restored.

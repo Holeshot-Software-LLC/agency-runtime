@@ -62,15 +62,18 @@ worker backends stay removed; native hosts own worker execution.
 - Product/test/script/config bytes match fcdcd6eb: reuse named spine 1085
   pass/three existing skips, 68.09s. Same-byte AR-163 DOM 188 passes reused.
   No redundant spine, browser or installation run is claimed.
-- Counts remain 40 actual trackers plus 87 legacy, 127 local unfinished.
+- All seven isolated criteria satisfy at 2a7c20c5 in the second and final review.
+  First verdicts remain at 6ac3b1aa; no code or test changes.
+- Counts are 40 actual trackers plus 86 legacy, 126 local unfinished.
 
 ## Exact blocker
 
 AR-164 first review at 083ae8b5 satisfies 1–4 and 6–7. Criterion 5 lacked an
 actual candidate tree listing. All first verdicts remain at 6ac3b1aa. A new
 receipt now retains complete candidate directory and exact deletion-status
-output, with identical product bytes. Freeze a new candidate and review all seven.
-No implementation defect, additional requirement change or completion is inferred.
+output, with identical product bytes. All seven current criteria now satisfy
+at 2a7c20c5. AR-164 has no remaining scoped blocker; publish its one normal PR
+and read back the merge. Native Windows/attended obligations remain separate.
 
 AR-159 retains hosted enforcement/check-app/bypass proof; main has no current
 enforcement evidence. Old billing cause is not freshly established; the extra
@@ -95,10 +98,8 @@ continue the same task. No empty commits, restart or staffing.
 
 ## Next bounded work package
 
-1. Seven rowsets are frozen at 2a7c20c5 with ledger 88e7804b. Commit this second
-   freeze and its immediate ledger, then run all seven isolated checks once.
-2. If all satisfy, reconcile local completion/counts, publish one normal PR and
-   read back the merge before starting the next record.
+1. Commit AR-164's accepted completion and immediate ledger; no review rerun.
+2. Publish one normal PR and read back the merge before starting the next record.
 3. Next is AR-165's dependency-review capability boundary, in its own worktree.
 
 ## Verification
