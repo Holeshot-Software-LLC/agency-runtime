@@ -6280,6 +6280,69 @@ test("collection completion fails closed on missing initial cursor or revision",
   assert.deepEqual(completedHiring.hiring_cases.map((item) => item.id), ["case-1", "case-2"]);
 });
 
+for (const refresh of ["refreshAll", "refreshControlPlane"]) {
+  for (const collection of ["roster", "snapshots", "reviews"]) {
+    for (const missing of ["cursor", "revision"]) {
+      test(`${refresh} retains last-good state when initial ${collection} omits ${missing}`, async () => {
+        let malformed = false;
+        const calls = [];
+        const harness = createAppHarness(async (path) => {
+          calls.push(path);
+          const label = malformed ? "uncommitted" : "last-good";
+          if (path === "/api/live?limit=100") {
+            return jsonResponse(200, { schema_version: 1, revision: `${label}-live` });
+          }
+          assert.equal(path, "/api/control", "invalid initial pages must not fetch continuation pages");
+          const snapshot = controlSnapshot({
+            config: { revision: `${label}-config`, effective: {} },
+            hosts: [{ host: "codex", status: label }],
+            roster: { agents: [{ agent_slug: `${label}-agent` }] },
+            governance: {
+              snapshots: [{ snapshot_id: `${label}-snapshot` }],
+              reviews: { candidates: [{ candidate: { id: `${label}-review` } }] },
+            },
+          });
+          snapshot.control_revision = `${label}-control`;
+          if (malformed) {
+            const page = collection === "roster" ? snapshot.roster
+              : collection === "snapshots" ? snapshot.governance : snapshot.governance.reviews;
+            page.truncated = true;
+            if (missing === "cursor") {
+              delete page.next_cursor;
+            } else {
+              page.next_cursor = collection === "roster" ? "valid-next-agent"
+                : encodedCursor(collection === "snapshots" ? "roster-snapshots.v1" : "roster-reviews.v1", "time", "id");
+              delete page[collection === "roster" ? "roster_revision" : "collection_revision"];
+            }
+          }
+          return jsonResponse(200, snapshot);
+        });
+        await harness.api[refresh]();
+        assert.equal(harness.api.state.control.stale, false);
+        const fields = ["config", "hosts", "roster", "rosterPage", "snapshots", "rosterReview"];
+        const lastGood = structuredClone(Object.fromEntries(
+          fields.map((field) => [field, harness.api.state[field]]),
+        ));
+        const liveRevision = harness.api.state.live.revision;
+        calls.length = 0;
+        malformed = true;
+
+        await harness.api[refresh]();
+
+        assert.deepEqual(calls, refresh === "refreshAll"
+          ? ["/api/live?limit=100", "/api/control"] : ["/api/control"]);
+        assert.deepEqual(Object.fromEntries(
+          fields.map((field) => [field, harness.api.state[field]]),
+        ), lastGood);
+        assert.equal(harness.api.state.control.revision, "last-good-control");
+        assert.equal(harness.api.state.live.revision, liveRevision);
+        assert.equal(harness.api.state.control.stale, true);
+        assert.match(harness.node("notice").textContent, /retained the last good state/i);
+      });
+    }
+  }
+}
+
 test("workforce and hiring retain last-good data independently", async () => {
   let mode = "baseline";
   const workforceFails = createAppHarness(async (path) => {
