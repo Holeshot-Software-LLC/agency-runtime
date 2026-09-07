@@ -3,9 +3,10 @@ title: "Separate host contract coverage from live support maturity"
 status: accepted
 category: decisions
 created: 2026-07-10
-updated: 2026-07-16
+updated: 2026-09-07
 tags: [hosts, installation, operations]
 related:
+  - docs/roadmap/issue-AR-135-complete-zcode-integration.md
   - docs/roadmap/issue-AR-189-add-owned-host-integration-uninstall.md
   - docs/roadmap/issue-AR-03-supported-host-integrations.md
   - docs/roadmap/issue-AR-04-runtime-controls.md

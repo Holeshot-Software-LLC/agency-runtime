@@ -1929,6 +1929,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `973acdb9` | 2026-09-07 | fix(api): reject lossy public delegation identifiers [AR-131] | [AR-131](../roadmap/issue-AR-131-complete-mcp-cli-host-contracts.md) | [detail](2026-09-07-973acdb9-reject-lossy-delegation-identifiers.md) |
 | `333e6411` | 2026-09-07 | docs(acceptance): freeze repaired AR-131 candidate | [AR-131](../roadmap/issue-AR-131-complete-mcp-cli-host-contracts.md) | [detail](2026-09-07-973acdb9-reject-lossy-delegation-identifiers.md) |
 | `61fbd6a5` | 2026-09-07 | docs(roadmap): complete AR-131 with six verified criteria | [AR-131](../roadmap/issue-AR-131-complete-mcp-cli-host-contracts.md) | [detail](2026-09-07-973acdb9-reject-lossy-delegation-identifiers.md) |
+| `ac1ce173` | 2026-09-07 | Merge pull request #698 from Holeshot-Software-LLC/codex/ar131-oldest-first-reconciliation | [AR-131](../roadmap/issue-AR-131-complete-mcp-cli-host-contracts.md) | [detail](2026-09-07-973acdb9-reject-lossy-delegation-identifiers.md) |
+| `cca759ab` | 2026-09-07 | docs(roadmap): distinguish implemented ZCode contracts from native proof [AR-135] | [AR-135](../roadmap/issue-AR-135-complete-zcode-integration.md) | [detail](2026-09-07-cca759ab-reconcile-zcode-proof.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

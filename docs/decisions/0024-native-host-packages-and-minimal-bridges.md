@@ -3,9 +3,10 @@ title: Package each host integration in its native format
 status: accepted
 category: decisions
 created: 2026-07-10
-updated: 2026-07-16
+updated: 2026-09-07
 tags: [adapters, plugins, integration]
 related:
+  - docs/roadmap/issue-AR-135-complete-zcode-integration.md
   - docs/roadmap/issue-AR-53-bind-host-processes-to-install-config.md
   - docs/roadmap/issue-AR-43-isolate-installed-python-module-resolution.md
   - docs/decisions/0050-isolate-installed-python-module-resolution.md

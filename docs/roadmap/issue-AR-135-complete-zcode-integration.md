@@ -3,9 +3,14 @@ title: "AR-135: Complete ZCode native integration end to end"
 status: open
 category: roadmap
 created: 2026-07-26
-updated: 2026-08-19
+updated: 2026-09-07
 tags: [host-integrations, zcode, installer, hooks, evidence]
 related:
+  - docs/decisions/0028-host-support-maturity-and-reversible-install.md
+  - docs/decisions/0070-run-child-specific-agency-activation.md
+  - docs/roadmap/AR-404-oldest-first-reconciliation-20260905.md
+  - tests/test_zcode_installer.py
+  - tests/test_zcode_header_proof.py
   - docs/decisions/0089-zcode-stop-rejections-use-decision-block.md
   - docs/decisions/0223-retire-superseded-zcode-stop-checklist.md
   - docs/roadmap/issue-AR-127-zcode-stop-rejection-shape.md
@@ -29,12 +34,42 @@ blocks: []
 
 ## Problem
 
+Original July report, not a description of the current implementation:
+
 The CLI documents ZCode as supported, but fresh install produces a Claude
 bundle, registration raises `KeyError("zcode")`, control planning falls through
 to Claude commands, and its post-tool path cannot consume or attribute the
 specialist prompt inserted by its pre-tool path.
 
 ## Current state
+
+September 7 reconciliation at ac1ce173: **retain open for current native
+evidence, not an installer rewrite**. The dedicated ZCode renderer is reachable;
+bundle generation no longer falls through to Claude. Direct config merge,
+idempotency, preservation, toggles, rollback, drift detection, host identity,
+Agent prompt rewriting and `zcode-agent:*` identity construction all exist.
+Current contract checks pass: 16 installer/header cases (4.74s), 13 selected
+hook/Stop cases (5.80s), and four ZCode child-adapter/delivery/profile cases
+(0.31s). The header test uses stubbed routing, not a live ZCode turn; its
+misleading docstring is corrected without changing behavior.
+
+The current-source `agency smoke --agent zcode --json` passes all four checks:
+Store, roster, five-host parity and generated ZCode plugin. The generated
+plugin check proves all seven event bindings, preserved config, idempotency,
+per-handler toggles and an actual isolated SessionStart process invocation.
+It does not launch a native ZCode parent/child or prove complete Stop payloads.
+No normal user-profile install or configuration was changed by this smoke.
+
+Read-only installed inspection reports discovered/staged/registered/enabled
+true, loaded unknown, no canary/attestation and maturity
+`enabled-runtime-unverified`. Its executable is null, and `command -v zcode`
+finds no CLI. Therefore the next native proof remains **waiting_for_operator**:
+an attended installed ZCode Agent call, not an invented headless backend.
+The dated August 19 record-zero delivery below remains valid historical
+evidence, not certification of today's package. No live matrix cell or
+original acceptance criterion changes; no isolated acceptance verdict is
+claimed for this incomplete end-to-end package. This is a tracker-exempt
+legacy record, so do not create a duplicate tracker.
 
 September 5 successor responsibility (ADR-0223): AR-127's output-shape fix is
 implemented, but its retry/unavailable/full-corpus checklist is retired rather
@@ -47,6 +82,9 @@ not an established cause. AR-135 remains open; retirement moves no live matrix
 cell and does not assert this issue's broader acceptance is complete.
 
 ### Historical integration checkpoints
+
+The following preserves the original defect descriptions and dated repairs;
+the present renderer/registration state is described above.
 
 The dedicated `zcode_hooks()` renderer is unreachable. ZCode is absent from
 activation-consumption host constraints and some canonical tool/worker maps.
@@ -97,6 +135,22 @@ Use one canonical five-host registry across bundle generation, native command
 planning, registration, inventory, controls, activation consumption, tool
 identity, pre/post/failure hooks, lineage, status, smoke, and UI presentation.
 Merge the exact ZCode config reversibly and prove postconditions.
+
+The remaining bounded proof package is:
+
+1. At an attended checkpoint, bind the installed package and existing ZCode
+   profile to an exact candidate; preserve normal provider and user config.
+2. Capture a native Agent success and failure, one-use correlation, record-zero
+   specialist delivery before speech, and the full parent Stop payload. Check
+   actual rejection/block, exact terminal replay and Agency-unavailable
+   publication separately. The old truncated-preview explanation remains an
+   unconfirmed hypothesis until the native payload demonstrates it.
+3. Cite each of the five original criteria and run isolated acceptance before
+   closing. Update AR-119's matrix only with evidence that independently meets
+   its stricter exact-candidate host-artifact authority, not by inheritance.
+
+Continue oldest-first reconciliation at AR-138 after this disposition merges;
+AR-136 and AR-137 are already done. Windows execution remains with the owner.
 
 ## Dependencies
 
