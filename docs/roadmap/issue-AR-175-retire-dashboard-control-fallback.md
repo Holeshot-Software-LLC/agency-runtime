@@ -3,9 +3,12 @@ title: "AR-175: Retire the non-atomic dashboard control fallback"
 status: in_progress
 category: roadmap
 created: 2026-07-27
-updated: 2026-07-27
+updated: 2026-09-07
 tags: [dashboard, traceability, performance, compatibility, security]
 related:
+  - docs/roadmap/acceptance/evidence/AR-175-control-boundary-20260907.md
+  - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
+  - docs/decisions/0105-bound-delivery-to-live-demo-checkpoints.md
   - docs/decisions/0029-secure-local-dashboard-and-bounded-observability.md
   - docs/decisions/0032-adaptive-authenticated-dashboard-polling.md
   - docs/decisions/0095-complete-paginated-dashboard-collections.md
@@ -48,9 +51,15 @@ refresh cannot trigger legacy endpoint requests. Non-cancellation failures
 retain the last-good rendered state and surface the correlated failure through
 the existing dashboard boundary.
 
-Removing the unreachable path saves 1,436 production bytes. Together with the
-separate dead-markup and CSS cleanup, the ten shipped dashboard assets total
-257,620 bytes, 5,547 bytes below the unchanged strict ceiling.
+The July 27 removal saved 1,436 production bytes; its reported 257,620-byte
+total and 5,547-byte headroom are historical. The legacy fallback remains absent.
+September 7 review reproduced eight request-ID losses on invalid control schema
+or JSON across both refresh paths. Moving schema validation into the existing
+API boundary repairs them without restoring fallback. Twenty direct regression
+cases now pass, including HTTP/network failures and quiet cancellation/lifecycle
+races. All 224 UI tests pass at current coverage floors. The ten assets total
+386,965 bytes, 107 below the unchanged current 378-KiB strict ceiling; this
+repair removes 74 bytes. Browser proof and isolated acceptance remain pending.
 
 ## Approach
 
@@ -66,7 +75,8 @@ polling transport. ADR-0095 requires complete revision-bound collection truth.
 AR-170 and AR-172 provide the exact response and Store/configuration identities
 that the current control envelope carries.
 
-Tracker creation remains pending explicit outward-write authorization.
+The existing pre-tracker exemption applies; no duplicate tracker is created.
+Only obsolete criterion 6 follows ADR-0105; its original wording is retained.
 
 ## Acceptance
 
@@ -78,12 +88,21 @@ Tracker creation remains pending explicit outward-write authorization.
 - [x] Browser tests cover 404 and wrong-schema retention and assert zero legacy
   endpoint calls.
 - [x] The fixed dashboard release-asset ceiling passes without being raised.
-- [ ] The final repository release gate passes at the implementation commit.
+- [ ] Focused control regressions, full UI/current coverage floors, current
+  asset gate, named production spine, private loaded-browser proof, metadata,
+  policy, worklog, strict docs/tracker, Ruff and diff checks pass; exhaustive
+  integration remains optional under ADR-0105.
+
+## Preserved original criterion
+
+6. The final repository release gate passes at the implementation commit.
 
 ## Implementation evidence
 
 The browser interaction suite passes 105 tests, the release-packaging suite
 passes 121 tests, and `git diff --check` passes. The removed path accounts for
 1,436 bytes; total dashboard headroom is 5,547 bytes under the strict ceiling.
-Final aggregate evidence is recorded only after the implementation commit's
-full gate.
+Those are the historical implementation measurements. The current
+[September 7 receipt](acceptance/evidence/AR-175-control-boundary-20260907.md)
+retains the eight reproduced failures, twenty-case repair and unchanged current
+asset ceiling. No new native host or Windows evidence is claimed.

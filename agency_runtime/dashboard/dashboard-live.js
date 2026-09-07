@@ -1970,13 +1970,12 @@ export function createLiveController(core, config, renderer) {
 	}
 
 	async function fetchControlSnapshot(signal) {
-		const snapshot = await api("/api/control", { signal });
-		if (snapshot?.schema_version !== "agency.dashboard.control.v1") {
-			if (signal?.aborted || lifecycleInactive()) {
-				throw new runtime.DOMException("Aborted", "AbortError");
+		const snapshot = await api("/api/control", { signal }, (payload) => {
+			if (payload?.schema_version !== "agency.dashboard.control.v1") {
+				throw new Error("Dashboard control response has an unsupported schema.");
 			}
-			throw new Error("Dashboard control response has an unsupported schema.");
-		}
+			return payload;
+		});
 		if (!snapshot.restart_required) {
 			snapshot.roster = await completeRosterPage(
 				snapshot.roster,

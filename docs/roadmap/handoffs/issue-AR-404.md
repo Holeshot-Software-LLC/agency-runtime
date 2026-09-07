@@ -7,9 +7,8 @@ updated: 2026-09-07
 tags: [handoff, backlog, acceptance, delivery]
 related:
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
-  - docs/roadmap/issue-AR-174-short-circuit-docs-only-ci.md
-  - docs/roadmap/acceptance/issue-AR-174.md
-  - docs/roadmap/acceptance/evidence/AR-174-docs-only-ci-20260907.md
+  - docs/roadmap/issue-AR-175-retire-dashboard-control-fallback.md
+  - docs/roadmap/acceptance/evidence/AR-175-control-boundary-20260907.md
   - docs/roadmap/AR-404-oldest-first-reconciliation-20260905.md
   - docs/roadmap/issue-AR-176-align-full-gate-contract-fixtures.md
   - docs/worklog/README.md
@@ -17,9 +16,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-404
-branch: codex/ar174-oldest-first-reconciliation
-evidence_commit: 5a003a059b52e4bc9e335e42a436768b95171446
-minimum_ledger_commit: b6597ed21bc2a7c0476420b33f89075d337a8859
+branch: codex/ar175-oldest-first-reconciliation
+evidence_commit: 7f403ab73fc586a3b130c57e74c9da5d10ad609d
+minimum_ledger_commit: 7f403ab73fc586a3b130c57e74c9da5d10ad609d
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -30,78 +29,72 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 
 Owner resumed September 7 at 20:14 UTC until 21:00 America/New_York,
 September 8 at 01:00 UTC. Finish at a clean durable checkpoint by that cutoff.
-One record, one normal PR/merge/readback, then the next. Native Windows excluded.
-AR-173 merged in PR #722 at 7ad0d33e, 20:18:19Z. Main was clean and fast-forwarded
-before this owned AR-174 worktree; d43dc923 records the merge.
-Accepted branch count: 120 (40 mapped plus 80 legacy). Main remains 121 until
-AR-174's normal PR is merged.
+One record, one normal PR/merge/readback, then next. Native Windows excluded.
+AR-173 merged PR #722 at 7ad0d33e; AR-174 merged PR #723 at 57a70139,
+September 7 20:41:36Z. Main clean/fast-forwarded before this owned AR-175 tree;
+7f403ab7 records the merge. Current count is 120 (40 mapped/80 legacy).
 
 ## Completed evidence
 
-AR-174 is an existing relevant trusted-docs-only CI shortcut, not missing code.
-No runtime/test/workflow change. Current focused workflow suite passes 235,
-five Windows-named deselections. All 18 Bash steps parse. Release hygiene and
-pinned offline zizmor pass (one unchanged suppression). Fresh named spine:
-1085 passes/three existing skips, 69.45s. UI: 204 passes, 96.93/86.78/95.73.
+AR-175's legacy control fallback is already gone. New direct tests reproduce
+eight schema/JSON failures losing request IDs across full and control refresh;
+404/network failures and cancellations already behave. Schema validation now
+uses the existing API validation callback, preserving request IDs without
+fallback. All 20 new cases pass, including aborted/suspended/obsolete work,
+exact no-legacy request lists and retained config/roster/control/live state.
 
-The old hosted-allocation blocker narrative missed successful August 31
-PR #380, run 33426445699. Fresh read-only GitHub metadata plus exact Git delta
-proves four regular docs Markdown changes, trusted helper blobs identical
-to today, five allocated successful jobs and six skipped placeholders.
-Raw allocated times total 366 seconds / 6.10 runner-minutes. This is one
-historical measurement, not present billing health, matched savings, a fresh
-native Windows run, or completion of AR-156/159/platform release obligations.
+Full UI: 224 passes, 96.93/86.78/95.74 coverage. Actual asset/floor tests: four
+pass. Assets total 386965 bytes, 107 below unchanged 378 KiB ceiling; repair
+removes 74 bytes. Fresh named spine: 1085 passes/three existing skips, 69.72s.
+Receipt keeps all eight red failures. Draft docs validation rejected file-URI
+stack prefixes; only display schemes are stripped, not failure evidence.
 
-First review is preserved at 5d20ec28: 2/3/4/6/8 satisfy, 1/5 need their own
-workflow/matrix excerpts, and 7 proves timing but not billing repair.
-ADR-0233 explicitly separates historical timing from account administration;
-original wording remains. Criteria 1–6 unchanged; 8 follows existing ADR-0105.
-Existing call sites/matrix are added. All eight final-candidate checks satisfy
-at 5a003a05 in the second/final review; AR-174 is done. No copied verdicts.
+The reusable browser checker now tests 24 schema/JSON faults across both
+refresh methods at three viewport widths, recording safe IDs, no legacy GETs,
+retained state, recovery and zero POSTs. It has not run yet. Commit clean source
+and ledger before building the exact wheel and executing this private fixture.
+Only obsolete criterion 6 follows existing ADR-0105; originals preserved.
 
 ## Exact blocker
 
-First candidate 452639dd and first verdict checkpoint 5d20ec28/6297fd63
-are preserved. Final candidate 5a003a05 and ledger b6597ed2 pass current
-strict records for 1211 Markdown files and 397 mapped/two historical exceptions.
-All eight new checks satisfy; no technical AR-174 acceptance blocker remains.
-Publish the accepted state through one normal PR/merge. No source/test/workflow
-changes, copied verdicts or third review.
+AR-175 is not accepted. Private wheel-backed browser proof, complete current
+record evidence and six isolated criteria remain. No native host evidence is
+claimed. Do not close AR-170's separate remaining obligations.
 
-Retained AR-170 has two exhausted review passes: final 1/2/4/5/6/7/8 satisfy,
-3/9 need complete collection call sites and raw gate receipts. First/final
-verdicts and three code repairs remain on main.
-Other holds: AR-168/160 native producer comparison; AR-159 hosted enforcement;
-AR-156 Windows/profile/topology; AR-135 attended ZCode; AR-140 supported runner;
-AR-129/130/147 native Windows; AR-119/125 five-host/matched-value evidence.
-AR-176 retains six stale fixtures. Ordinary-session Agency/header remains open.
+AR-174's eight final criteria satisfy at 5a003a05; first verdicts remain at
+5d20ec28. ADR-0233 separates dated raw timing from account repair. Historical
+PR #380/run 33426445699 measures 366 raw runner-seconds; no current billing or
+savings claim. All of that completion is now on main.
+
+Retained holds remain in the oldest-first ledger: AR-170 exhausted review;
+AR-168/160 native producer comparison; AR-159 hosted enforcement; AR-156
+Windows/profile; AR-135 attended ZCode; AR-140 supported runner; AR-129/130/147
+Windows; AR-119/125 five-host matched-value proof. AR-176 retains six fixtures.
 
 ## Same-task continuity
 
-Use owned worktrees, never commit main or stage another worker's changes.
+Owned worktrees only; never commit main or stage another worker's files.
 Each substantive commit gets an immediate narrow docs(worklog) ledger.
-At/below 50 percent ensure clean durable state, then continue in the same task.
+At/below 50 percent ensure a clean checkpoint, then continue in this task.
 Preserve first verdicts before corrections; two review passes by default.
 
 ## Next bounded work package
 
-1. Final candidate 5a003a05 is frozen with clean ledger b6597ed2.
-2. All eight final criteria satisfy; commit the completion and its ledger.
-3. Publish one normal PR and merge/readback before inspecting AR-175.
-4. Stop with clean durable state by September 8 01:00 UTC.
+1. Checkpoint AR-175's tested source/receipt and exact ledger.
+2. Build a clean candidate wheel and run the private loaded-browser checker.
+3. Finish six isolated criteria, normal PR/merge/readback, then AR-176.
+4. Stop cleanly by September 8 01:00 UTC.
 
 ## Verification
 
-Actual commands/raw outputs and historical API/Git proof live in the receipt.
-No exhaustive corpus, coverage shards or compatibility dispatch. No native
-Windows execution, new artifact/activation proof or hosted-settings write.
-AR-165 curated conformance and AR-172 routing receipts are explicit earlier
-evidence; current product/test/script/workflow bytes match accepted AR-173.
+Current commands and raw red/green/UI/spine/asset outputs are in the receipt.
+No exhaustive corpus, coverage shards, compatibility matrix or native Windows
+execution. Python product bytes are unchanged; JavaScript and the optional
+browser checker change. Prior conformance is not a new run or live staffing.
 
 ## Constraints
 
-No credentials, trust bypass, provider-policy or hosted billing/settings changes.
+No credentials, provider policy, billing/settings or trust bypass changes.
 Installed Codex refresh previously exited 1 with unverified trust and mixed
-package projections; do not retry absent a new directive. No OpenClaw replacement
-or ordinary-session activation claim. Current staffing failure grants no
-specialist evidence and does not authorize self-staffing.
+package projections; do not retry absent a new directive or replace OpenClaw.
+Do not claim ordinary-session activation or specialist staffing.

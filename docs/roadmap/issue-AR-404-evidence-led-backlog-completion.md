@@ -304,9 +304,20 @@ timing. ADR-0233 explicitly separates the timing requirement from account
 administration, with original wording retained; 8 still follows ADR-0105.
 No runtime change. All eight criteria satisfy at 5a003a05 in the second/final
 review; AR-174 is done with first verdicts preserved and no third review.
+PR #723 merged 57a70139 at 20:41:36Z September 7; main was clean and
+fast-forwarded before the owned AR-175 tree and merge ledger 7f403ab7.
 
-Accepted branch counts: 40 actual open trackers plus 80 unfinished legacy
-records, 120 total. Main remains 121 until AR-174 is merged normally.
+AR-175 reproduces a real remaining request-ID loss on invalid control schema
+despite the legacy fallback already being absent. Eight new cases fail before
+the API-boundary repair; all 20 now pass, including cancellation/lifecycle races.
+UI 224/current floors, four asset/floor tests and fresh spine 1085/three existing
+skips pass. Assets shrink 74 bytes to 386965 under the unchanged 378-KiB ceiling.
+The reusable browser checker is extended for 24 real schema/JSON fault cases;
+private wheel-backed proof and six isolated acceptance checks remain pending.
+No native Windows or AR-170 completion claim.
+
+Current main and branch counts: 40 actual open trackers plus 80 unfinished legacy
+records, 120 total; AR-175 is not accepted yet.
 No duplicate tracker or false acceptance.
 The unchanged public-roster fixture belongs to AR-176. Windows stays excluded;
 the oldest-first ledger and capsule preserve all holds. Ordinary-session
@@ -539,7 +550,8 @@ No exhaustive workflow dispatch or unattended restart is implied.
 
 ## Next bounded package
 
-Publish accepted AR-174 through one normal PR/merge, then review AR-175.
+Finish AR-175's private browser proof and six isolated criteria, publish one
+normal PR/merge, then review AR-176.
 The September 7 continuation ends at 9 p.m. Eastern (September 8, 01:00 UTC);
 leave a clean durable checkpoint. Windows-only work stays with the owner.
 The older AR-152/298/348-first ordering above is historical and does not override
