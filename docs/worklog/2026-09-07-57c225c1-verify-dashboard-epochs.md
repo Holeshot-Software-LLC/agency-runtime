@@ -60,5 +60,8 @@ evidence for the second isolated review; no builder-authored acceptance verdict.
 
 ## Follow-ups
 
-Obtain the four isolated acceptance verdicts before a done/count change; then
-publish one PR and continue at AR-151. Windows-only AR-147 remains with owner.
+All four second-pass criteria satisfy against ae71761f, recorded at 2c01b083.
+Strict docs/tracker, metadata, policy, exact worklog, Ruff and diff checks pass.
+PR #703 carries completion; normally merge/read back, then continue at AR-151.
+Unfinished records are 40 mapped plus 95 legacy (135), not 135 established bugs.
+Windows-only AR-147 remains with owner. No exhaustive or hosted workflow run.

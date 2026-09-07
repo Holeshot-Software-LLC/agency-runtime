@@ -1950,6 +1950,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `4e820ff4` | 2026-09-07 | docs(acceptance): preserve AR-150 inverse-order evidence gap | [AR-150](../roadmap/issue-AR-150-coordinate-dashboard-refresh-epochs.md) | [detail](2026-09-07-57c225c1-verify-dashboard-epochs.md) |
 | `ae71761f` | 2026-09-07 | test(dashboard): prove inverse refresh commit ordering [AR-150] | [AR-150](../roadmap/issue-AR-150-coordinate-dashboard-refresh-epochs.md) | [detail](2026-09-07-57c225c1-verify-dashboard-epochs.md) |
 | `7ec16579` | 2026-09-07 | docs(acceptance): freeze direct AR-150 ordering candidate | [AR-150](../roadmap/issue-AR-150-coordinate-dashboard-refresh-epochs.md) | [detail](2026-09-07-57c225c1-verify-dashboard-epochs.md) |
+| `2c01b083` | 2026-09-07 | docs(backlog): accept verified refresh epoch contract [AR-150] | [AR-150](../roadmap/issue-AR-150-coordinate-dashboard-refresh-epochs.md) | [detail](2026-09-07-57c225c1-verify-dashboard-epochs.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
