@@ -26,8 +26,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-404
 branch: codex/ar150-oldest-first-reconciliation
-evidence_commit: cd0616686d462a1c21bad7feedc2fe91db9f350d
-minimum_ledger_commit: 4f3d22fac289f2794e54bea9f95c9500752f06ba
+evidence_commit: 57c225c189e39eae347129eb07e2a156e110b56b
+minimum_ledger_commit: 1de0e21e75c0233c3c11aaf161fa6329b9d365d6
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -48,7 +48,8 @@ Current package: AR-150 in verification. Shared refresh commit epoch and scope
 cancellation exist, with AR-138's late-error guards. Fresh UI coverage: 172 pass,
 96.93/86.58/95.71 above unchanged 95/86/93 floors. Server integration: 180 pass,
 28.82s. Product/test/script equality to 2ecde1a5 binds the existing installed-wheel
-browser proof. Freeze this evidence, obtain four isolated verdicts, then PR/merge.
+browser proof. Evidence is frozen at 57c225c1 (ledger 1de0e21e); obtain four
+isolated verdicts against that candidate, then PR/merge.
 
 ## Completed evidence
 

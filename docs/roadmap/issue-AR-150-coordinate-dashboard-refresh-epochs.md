@@ -11,6 +11,7 @@ related:
   - docs/roadmap/issue-AR-138-coherent-observable-dashboard-ui.md
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
   - docs/roadmap/acceptance/evidence/AR-150-refresh-epochs-20260907.md
+  - docs/roadmap/acceptance/issue-AR-150.md
   - docs/worklog/README.md
   - agency_runtime/dashboard/dashboard-live.js
 supersedes: []
