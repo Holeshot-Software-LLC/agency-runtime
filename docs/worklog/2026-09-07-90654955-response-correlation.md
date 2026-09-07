@@ -111,3 +111,16 @@ at 662eb947; every criterion is rechecked because this evidence candidate is new
 
 9655a104 pins 91273e4128b2a8bc666edd8fcf6023c534a5d55e. The immediate ledger is clean before
 all nine second-pass checks; no satisfied result is carried across candidates.
+
+## Final disposition
+
+92f1e1d7 (92f1e1d7ff2a49cd96528cb32a9c87d9300a05e5) preserves the second/final review at 91273e41:
+1/2/4/5/6/7/8 satisfy, 3/9 remain absent. First review is retained at 662eb947.
+The second packet now satisfies browser proof but requests complete collection
+call sites and raw gate receipts instead of summaries. These are evidence gaps,
+not a demonstrated new runtime failure; do not falsely mark done or reuse earlier
+candidate verdicts. Two passes are exhausted; no third review is launched.
+Publish all three tested code repairs and retain the explicit future evidence
+package. Counts stay 40 mapped plus 84 legacy = 124. Current strict gates pass:
+1196 Markdown, 397 mapped/two historical PR exceptions, metadata/policy/worklog
+and diff. AR-171 follows normal merge, with Windows still owner work.
