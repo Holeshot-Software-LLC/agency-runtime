@@ -1283,6 +1283,35 @@ test("workforce fallback provider exposes configured providers without model dis
   assert.equal(typeof harness.api.loadWorkforceModels, "undefined");
 });
 
+test("lifecycle reason presence renders fixed text and never raw content or hashes", () => {
+  const privateReason = "<img src=x onerror=alert(1)> private-lifecycle-sentinel";
+  const reasonHash = "f".repeat(64);
+  for (const present of [true, false, undefined, null, 1, "true", privateReason, {}]) {
+    const harness = createAppHarness(() => { throw new Error("rendering never fetches"); });
+    harness.api.state.selectedWorkerDetail = {
+      worker: { agent_slug: "privacy-reviewer", worker_id: "private-worker", state: "employee" },
+      events: [{
+        event_type: "disable",
+        reason: privateReason,
+        reason_hash: reasonHash,
+        evidence: { payload: privateReason },
+        reason_present: present,
+        from_standing: "active",
+        to_standing: "disabled",
+      }],
+      outcomes: [], hiring_cases: [], lineage: [],
+    };
+    harness.api.renderWorkerDetail();
+    const nodes = descendants(harness.node("workforce-detail"));
+    const text = nodes.map((node) => node.textContent).join(" ");
+    assert.equal(text.includes("Reason recorded"), present === true);
+    assert.equal(text.includes(privateReason), false);
+    assert.equal(text.includes(reasonHash), false);
+    assert.doesNotMatch(text, /private-lifecycle-sentinel|onerror/);
+    assert.equal(nodes.some((node) => node.tagName === "IMG"), false);
+  }
+});
+
 test("workforce detail renders comparison, promotion, prompt, history, and state-safe actions", () => {
   const harness = createAppHarness(() => {
     throw new Error("workforce detail rendering does not fetch");
