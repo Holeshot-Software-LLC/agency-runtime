@@ -3,7 +3,7 @@ title: Worklog
 status: active
 category: worklog
 created: 2026-07-10
-updated: 2026-09-06
+updated: 2026-09-07
 tags: []
 related: []
 supersedes: []
@@ -1926,6 +1926,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `fb2e4e23` | 2026-09-06 | test(mcp): verify current host contracts against legacy backlog [AR-131] | [AR-131](../roadmap/issue-AR-131-complete-mcp-cli-host-contracts.md) | [detail](2026-09-06-fb2e4e23-verify-mcp-host-contracts.md) |
 | `36af7429` | 2026-09-06 | docs(acceptance): freeze AR-131 current contract candidate | [AR-131](../roadmap/issue-AR-131-complete-mcp-cli-host-contracts.md) | [detail](2026-09-06-fb2e4e23-verify-mcp-host-contracts.md) |
 | `6a139e23` | 2026-09-06 | docs(acceptance): preserve AR-131 first review and admission gap | [AR-131](../roadmap/issue-AR-131-complete-mcp-cli-host-contracts.md) | [detail](2026-09-06-fb2e4e23-verify-mcp-host-contracts.md) |
+| `973acdb9` | 2026-09-07 | fix(api): reject lossy public delegation identifiers [AR-131] | [AR-131](../roadmap/issue-AR-131-complete-mcp-cli-host-contracts.md) | [detail](2026-09-07-973acdb9-reject-lossy-delegation-identifiers.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
