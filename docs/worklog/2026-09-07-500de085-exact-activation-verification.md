@@ -14,7 +14,7 @@ type: worklog
 commit: 500de0850deb7c18286caba64de3f45d276c54ce
 short: 500de085
 date: 2026-09-07
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/736
 related_issues:
   - docs/roadmap/issue-AR-185-bind-codex-activation-verification.md
 ---

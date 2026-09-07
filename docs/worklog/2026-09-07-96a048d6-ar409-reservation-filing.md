@@ -14,7 +14,7 @@ type: worklog
 commit: 96a048d682721da5ce5cbc92e8f5ce18f113ff10
 short: 96a048d6
 date: 2026-09-07
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/736
 related_issues: [docs/roadmap/issue-AR-409-reserve-required-staffing-calls.md]
 ---
 
