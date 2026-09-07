@@ -63,3 +63,11 @@ current launch excerpts demonstrate integration, but the receipt describes
 retired-backend absence without actual Git output. Preserve all seven verdicts
 before adding a full candidate tree listing and exact deletion-status output.
 No code or requirement change follows from this evidence gap.
+
+## Exact absence correction
+
+2a7c20c5 supplies actual complete candidate-directory and deletion-status
+output. Source tree 0ed31de7ec3b387ef463bd087a01eb4907de972c is unchanged;
+product/tests/scripts/gate comparison returns zero. Only criterion 5's evidence
+citation changes. All first verdicts remain at 6ac3b1aa; no verdict is copied
+to the new candidate. Strict docs pass 1182 Markdown files.
