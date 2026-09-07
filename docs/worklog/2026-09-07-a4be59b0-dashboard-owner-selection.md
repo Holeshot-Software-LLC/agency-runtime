@@ -90,3 +90,12 @@ criterion 2 is absent because the supplied reconciliation test did not assert
 IDs and the implementation was omitted from its bounded packet. Preserve these
 results before inspecting that exact notice path and correcting the evidence.
 No acceptance change or additional authority follows from this gap.
+
+## Same-candidate citation correction
+
+ad0a3b6e adds the existing dashboard-live.js:2451-2477 reconciliation forwarding
+implementation to criterion 2's bounded packet at unchanged 4a244776. Both paths
+forward the ID-bearing APIError message. Existing focused reconciliation test
+passes (one test/four branches, 60.211025 ms); no product/test/candidate/criterion
+change. First verdicts remain at bc28bf66. The other five accepted verdicts stay
+unchanged; only criterion 2 receives the second and final ordinary review.
