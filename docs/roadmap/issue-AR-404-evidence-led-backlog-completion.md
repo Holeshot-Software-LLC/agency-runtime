@@ -180,8 +180,17 @@ installs each pass CLI, pip check, packaged MCP/dashboard and all eight generate
 smoke checks across all five hosts, without skips. This is not native activation
 or Windows producer/assembled release-set proof. All five current criteria stay
 unchanged; historical helper prose is explicitly separated from current state.
-Publish its separate retention PR, then AR-162; AR-161 is already retired and
-native Windows remains owner work.
+PR #712 merged f18b5acf at 09:07:33Z September 7 before the AR-162 tree;
+native Windows remains owner work and AR-161 is already retired.
+
+AR-162's one-preflight fan-out redesign exists. Review reproduced a real
+HTTP-200/no-body availability gap; the repaired bounded classifier rejects it
+and malformed/ambiguous inputs before publishing availability. Sixty-five
+CodeQL focus cases, 210 workflow cases and the named 1085/three-skip spine pass.
+Read-only identity now reports public and code scanning available for the calling
+identity, not a hosted workflow pass. ADR-0226 explicitly revises only criterion
+8 to require matched measurements for any savings claim; none is made. The
+other eight criteria remain unchanged. Candidate-bound isolated review is next.
 
 Current counts: 40 actual open trackers plus 89 unfinished legacy records,
 129 total after AR-158 completion; no duplicate tracker or false acceptance.

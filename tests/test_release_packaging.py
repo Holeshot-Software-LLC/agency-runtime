@@ -1498,20 +1498,204 @@ def test_codeql_runs_one_fail_closed_least_privilege_capability_probe() -> None:
     assert "code-scanning/alerts?per_page=1" in probe["run"]
     assert probe["env"]["REPOSITORY_VISIBILITY"] == "${{ github.event.repository.visibility }}"
     probe_script = probe["run"]
+    assert probe_script.count("curl --silent --show-error") == 1
     for required in (
         '--output "${response}"',
-        "403)",
-        "404)",
-        "\"${REPOSITORY_VISIBILITY}\" != 'private'",
-        "\"${REPOSITORY_VISIBILITY}\" != 'internal'",
+        "--connect-timeout 10 --max-time 30",
+        "--max-filesize 1048576",
+        'export CODEQL_PROBE_HTTP_STATUS="${status}"',
+        'export CODEQL_PROBE_RESPONSE="${response}"',
+        'status not in {"200", "403"}',
+        'visibility not in {"private", "internal"}',
         "code security must be enabled for this repository to use code scanning",
         "github code security or github advanced security must be enabled",
         "ambiguous HTTP 403",
         "private_or_internal_repository_code_security_not_enabled",
-        "exit 1",
+        "raise SystemExit",
     ):
         assert required in probe_script
-    assert "403|404" not in probe_script
+
+
+def _run_codeql_probe(
+    tmp_path: Path,
+    *,
+    status: str = "200",
+    visibility: str = "public",
+    response: bytes | None = b"[]",
+    response_kind: str = "file",
+) -> tuple[subprocess.CompletedProcess[str], str]:
+    probe = _load_codeql_workflow()["jobs"]["capability"]["steps"][0]
+    run = probe["run"]
+    classifier = _embedded_python_script(run[run.index("python - <<'PY'\n") :])
+    response_path = tmp_path / "response.json"
+    output_path = tmp_path / "output.txt"
+    if response_kind == "directory":
+        response_path.mkdir()
+    elif response is not None:
+        response_path.write_bytes(response)
+    environment = {
+        **os.environ,
+        "CODEQL_PROBE_HTTP_STATUS": status,
+        "CODEQL_PROBE_RESPONSE": str(response_path),
+        "REPOSITORY_VISIBILITY": visibility,
+        "GITHUB_OUTPUT": str(output_path),
+    }
+    completed = subprocess.run(
+        [sys.executable, "-c", classifier],
+        cwd=ROOT,
+        env=environment,
+        capture_output=True,
+        text=True,
+        timeout=10,
+        check=False,
+    )
+    return completed, output_path.read_text("utf-8") if output_path.exists() else ""
+
+
+@pytest.mark.parametrize("visibility", ["public", "private", "internal"])
+@pytest.mark.parametrize("response", [b"[]", b'[{"number": 1}]'])
+def test_codeql_probe_accepts_bounded_available_alert_arrays(
+    tmp_path: Path, visibility: str, response: bytes
+) -> None:
+    completed, output = _run_codeql_probe(tmp_path, visibility=visibility, response=response)
+    assert completed.returncode == 0, completed.stderr
+    assert output.splitlines() == [
+        "available=true",
+        "reason=repository_code_scanning_available",
+        "http_status=200",
+        f"repository_visibility={visibility}",
+    ]
+    assert not completed.stderr
+
+
+@pytest.mark.parametrize("visibility", ["private", "internal"])
+@pytest.mark.parametrize(
+    "message",
+    [
+        "Code security must be enabled for this repository to use code scanning.",
+        " GitHub Code Security or GitHub Advanced Security must be enabled for this repository to use code scanning. ",
+    ],
+)
+def test_codeql_probe_accepts_only_recognized_unavailable_messages(
+    tmp_path: Path, visibility: str, message: str
+) -> None:
+    completed, output = _run_codeql_probe(
+        tmp_path,
+        status="403",
+        visibility=visibility,
+        response=json.dumps({"message": message}).encode(),
+    )
+    assert completed.returncode == 0, completed.stderr
+    assert output.splitlines() == [
+        "available=false",
+        "reason=private_or_internal_repository_code_security_not_enabled",
+        "http_status=403",
+        f"repository_visibility={visibility}",
+    ]
+    assert "no CodeQL action or CLI will be initialized" in completed.stdout
+
+
+@pytest.mark.parametrize(
+    "response",
+    [
+        None,
+        b"",
+        b"\xff",
+        b"<html>unavailable</html>",
+        b"{}",
+        b"null",
+        b"true",
+        b"[1]",
+        b"[true]",
+        b"[{}, {}]",
+        b"[] trailing",
+        b'[{"number": 1, "number": 2}]',
+        b'[{"number": NaN}]',
+        b'[{"number": Infinity}]',
+        b"[" + b" " * (1024 * 1024) + b"]",
+        b"[" * 3000 + b"]" * 3000,
+    ],
+    ids=[
+        "missing",
+        "empty",
+        "invalid-utf8",
+        "html",
+        "object",
+        "null",
+        "boolean",
+        "scalar-alert",
+        "boolean-alert",
+        "excess-page-size",
+        "trailing-data",
+        "duplicate-key",
+        "nan",
+        "infinity",
+        "oversized",
+        "excess-depth",
+    ],
+)
+def test_codeql_probe_rejects_missing_malformed_or_unbounded_success_body(
+    tmp_path: Path, response: bytes | None
+) -> None:
+    completed, output = _run_codeql_probe(tmp_path, response=response)
+    assert completed.returncode != 0
+    assert "CodeQL capability" in completed.stderr
+    assert "Traceback" not in completed.stderr
+    assert output == ""
+
+
+@pytest.mark.parametrize("status", ["200", "403"])
+def test_codeql_probe_rejects_non_file_response(tmp_path: Path, status: str) -> None:
+    completed, output = _run_codeql_probe(tmp_path, status=status, response_kind="directory")
+    assert completed.returncode != 0
+    assert output == ""
+
+
+@pytest.mark.parametrize("status", ["", "200\n", "401", "404", "429", "500"])
+def test_codeql_probe_rejects_unexpected_status(tmp_path: Path, status: str) -> None:
+    completed, output = _run_codeql_probe(tmp_path, status=status)
+    assert completed.returncode != 0
+    expected = status if status in {"401", "404", "429", "500"} else "invalid"
+    assert f"unexpected HTTP status: {expected}" in completed.stderr
+    assert output == ""
+
+
+@pytest.mark.parametrize("visibility", ["", "PUBLIC", "unknown"])
+def test_codeql_probe_requires_recognized_visibility(tmp_path: Path, visibility: str) -> None:
+    completed, output = _run_codeql_probe(tmp_path, visibility=visibility)
+    assert completed.returncode != 0
+    assert output == ""
+
+
+@pytest.mark.parametrize(
+    "response",
+    [
+        b'"message"',
+        b"[]",
+        b"null",
+        b'{"message": null}',
+        b'{"message": "Forbidden"}',
+        b'{"message": "API rate limit exceeded"}',
+        b'{"message": "Code security must be enabled for this repository to use code scanning.", "message": "Forbidden"}',
+    ],
+)
+def test_codeql_probe_rejects_ambiguous_unavailable_body(tmp_path: Path, response: bytes) -> None:
+    completed, output = _run_codeql_probe(
+        tmp_path, status="403", visibility="private", response=response
+    )
+    assert completed.returncode != 0
+    assert output == ""
+
+
+def test_codeql_probe_rejects_public_missing_entitlement_claim(tmp_path: Path) -> None:
+    completed, output = _run_codeql_probe(
+        tmp_path,
+        status="403",
+        response=b'{"message": "Code security must be enabled for this repository to use code scanning."}',
+    )
+    assert completed.returncode != 0
+    assert "ambiguous HTTP 403" in completed.stderr
+    assert output == ""
 
 
 def test_codeql_available_path_preserves_exact_language_analyses() -> None:

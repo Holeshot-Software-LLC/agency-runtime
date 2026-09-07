@@ -40,60 +40,94 @@ jobs:
           response="${RUNNER_TEMP}/code-scanning-capability-response.json"
           status="$(
             curl --silent --show-error --connect-timeout 10 --max-time 30 \
-              --output "${response}" --write-out '%{http_code}' \
+              --max-filesize 1048576 --output "${response}" --write-out '%{http_code}' \
               --header 'Accept: application/vnd.github+json' \
               --header "Authorization: Bearer ${GH_TOKEN}" \
               --header 'X-GitHub-Api-Version: 2022-11-28' \
               "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/code-scanning/alerts?per_page=1"
           )"
-          case "${status}" in
-            200)
-              echo 'available=true' >> "${GITHUB_OUTPUT}"
-              echo 'reason=repository_code_scanning_available' >> "${GITHUB_OUTPUT}"
-              echo "http_status=${status}" >> "${GITHUB_OUTPUT}"
-              echo "repository_visibility=${REPOSITORY_VISIBILITY}" >> "${GITHUB_OUTPUT}"
-              ;;
-            403)
-              if [[ "${REPOSITORY_VISIBILITY}" != 'private' && "${REPOSITORY_VISIBILITY}" != 'internal' ]]; then
-                echo "::error::Code scanning returned HTTP 403 for a ${REPOSITORY_VISIBILITY:-unknown}-visibility repository."
-                exit 1
-              fi
-              if ! python - "${response}" <<'PY'
+          export CODEQL_PROBE_HTTP_STATUS="${status}"
+          export CODEQL_PROBE_RESPONSE="${response}"
+          python - <<'PY'
           import json
-          import sys
+          import os
+          import stat
           from pathlib import Path
 
-          recognized = {
-              "code security must be enabled for this repository to use code scanning",
-              "github code security or github advanced security must be enabled for this repository to use code scanning",
-          }
+          maximum_bytes = 1024 * 1024
+          status = os.environ["CODEQL_PROBE_HTTP_STATUS"]
+          visibility = os.environ.get("REPOSITORY_VISIBILITY", "")
+          if visibility not in {"public", "private", "internal"}:
+              raise SystemExit("CodeQL capability repository visibility is invalid")
+          if status not in {"200", "403"}:
+              label = status if len(status) == 3 and status.isascii() and status.isdecimal() else "invalid"
+              raise SystemExit(f"CodeQL capability probe returned an unexpected HTTP status: {label}")
+
+          def unique_object(pairs):
+              result = {}
+              for key, value in pairs:
+                  if key in result:
+                      raise ValueError("duplicate JSON key")
+                  result[key] = value
+              return result
+
+          def reject_constant(value):
+              raise ValueError("non-JSON numeric constant")
+
           try:
-              payload = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
-              message = payload["message"]
-          except (OSError, UnicodeError, json.JSONDecodeError, KeyError, TypeError):
-              raise SystemExit(1) from None
-          normalized = message.strip().casefold().removesuffix(".") if isinstance(message, str) else ""
-          raise SystemExit(0 if normalized in recognized else 1)
+              path = Path(os.environ["CODEQL_PROBE_RESPONSE"])
+              metadata = path.lstat()
+              if (
+                  path.is_symlink()
+                  or not stat.S_ISREG(metadata.st_mode)
+                  or metadata.st_nlink != 1
+                  or not 0 < metadata.st_size <= maximum_bytes
+              ):
+                  raise ValueError("response is not a bounded regular file")
+              with path.open("rb") as response:
+                  encoded = response.read(maximum_bytes + 1)
+              if not 0 < len(encoded) <= maximum_bytes:
+                  raise ValueError("response exceeded the byte bound")
+              payload = json.loads(
+                  encoded.decode("utf-8"),
+                  object_pairs_hook=unique_object,
+                  parse_constant=reject_constant,
+              )
+          except (OSError, UnicodeError, ValueError, RecursionError):
+              raise SystemExit("CodeQL capability response is not bounded valid JSON") from None
+
+          if status == "200":
+              if (
+                  not isinstance(payload, list)
+                  or len(payload) > 1
+                  or any(not isinstance(alert, dict) for alert in payload)
+              ):
+                  raise SystemExit("CodeQL capability success response is not an alert-object array")
+              available = True
+              reason = "repository_code_scanning_available"
+          else:
+              recognized = {
+                  "code security must be enabled for this repository to use code scanning",
+                  "github code security or github advanced security must be enabled for this repository to use code scanning",
+              }
+              message = payload.get("message") if isinstance(payload, dict) else None
+              normalized = message.strip().casefold().removesuffix(".") if isinstance(message, str) else ""
+              if visibility not in {"private", "internal"} or normalized not in recognized:
+                  raise SystemExit("CodeQL capability returned an ambiguous HTTP 403; refusing fallback")
+              available = False
+              reason = "private_or_internal_repository_code_security_not_enabled"
+
+          with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8", newline="\n") as output:
+              output.write(f"available={str(available).lower()}\n")
+              output.write(f"reason={reason}\n")
+              output.write(f"http_status={status}\n")
+              output.write(f"repository_visibility={visibility}\n")
+          if not available:
+              print(
+                  "::notice::Native CodeQL is unavailable because Code Security is not enabled "
+                  "for this private or internal repository; no CodeQL action or CLI will be initialized."
+              )
           PY
-              then
-                echo '::error::Code scanning returned an ambiguous HTTP 403; refusing to classify it as a missing entitlement.'
-                exit 1
-              fi
-              echo 'available=false' >> "${GITHUB_OUTPUT}"
-              echo 'reason=private_or_internal_repository_code_security_not_enabled' >> "${GITHUB_OUTPUT}"
-              echo "http_status=${status}" >> "${GITHUB_OUTPUT}"
-              echo "repository_visibility=${REPOSITORY_VISIBILITY}" >> "${GITHUB_OUTPUT}"
-              echo '::notice::Native CodeQL is unavailable because Code Security is not enabled for this private or internal repository; no CodeQL action or CLI will be initialized.'
-              ;;
-            404)
-              echo '::error::Code scanning capability probe returned HTTP 404; refusing to treat an ambiguous response as a missing entitlement.'
-              exit 1
-              ;;
-            *)
-              echo "::error::Code scanning capability probe returned HTTP ${status}."
-              exit 1
-              ;;
-          esac
       - name: Record unavailable CodeQL capability
         if: steps.code-scanning-capability.outputs.available == 'false'
         env:

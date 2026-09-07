@@ -247,6 +247,7 @@ Status meanings:
 | [ADR-0225](0225-scope-route-lab-ambiguity-to-host-identity.md) | Scope Route Lab duplicate ambiguity to the affected host identity | Accepted |
 | [ADR-0096](0096-require-operator-presence-for-persistent-controls.md) | Require genuine operator presence for persistent controls | Superseded |
 | [ADR-0097](0097-gate-expensive-ci-fanout-behind-quality-contracts.md) | Gate expensive CI fanout behind same-revision quality contracts | Accepted |
+| [ADR-0226](0226-gate-codeql-savings-claims-on-matched-measurements.md) | Gate CodeQL savings claims on matched measurements | Accepted |
 | [ADR-0098](0098-pair-portable-and-win-amd64-wheels.md) | Pair portable and win_amd64 wheels for native delivery | Superseded |
 | [ADR-0099](0099-separate-reproducible-unsigned-builds-from-signed-delivery.md) | Separate reproducible unsigned builds from signed delivery | Superseded |
 | [ADR-0219](0219-retire-removed-helper-release-obligations.md) | Retire removed-helper release obligations without waiving artifact proof | Accepted |
