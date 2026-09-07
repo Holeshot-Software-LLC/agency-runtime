@@ -1,11 +1,20 @@
 ---
 title: "AR-185: Bind Codex activation verification to a fresh exact proof"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-27
-updated: 2026-07-27
-tags: [security, codex, installation, canary, operator-presence]
+updated: 2026-09-07
+tags: [security, codex, installation, canary, owner-authority]
 related:
+  - docs/decisions/0117-unify-owner-control-authority.md
+  - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
+  - docs/decisions/0179-admit-exact-codex-canary-delivery-at-subagent-start.md
+  - docs/decisions/0193-admit-newer-codex-releases-under-the-newest-proven-child-contract.md
+  - docs/roadmap/acceptance/issue-AR-185.md
+  - docs/roadmap/acceptance/evidence/AR-185-exact-activation-verification-20260907.md
+  - docs/roadmap/acceptance/evidence/AR-180-current-profile-v6-delivery-20260907.md
+  - docs/roadmap/acceptance/evidence/AR-404-live-header-audit-20260907.md
+  - docs/roadmap/handoffs/issue-AR-185.md
   - docs/decisions/0110-remove-agency-owned-windows-hello.md
   - docs/roadmap/issue-AR-197-remove-agency-owned-windows-hello.md
   - docs/roadmap/issue-AR-195-separate-codex-canary-parent-and-child-goals.md
@@ -18,7 +27,6 @@ related:
   - docs/roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md
   - agency_runtime/core/codex_activation_verification.py
   - agency_runtime/core/canary_backends.py
-  - agency_runtime/core/codex_activation_verification.py
   - agency_runtime/adapters/hooks.py
   - agency_runtime/cli/install_commands.py
   - tests/test_codex_activation_verification.py
@@ -53,21 +61,44 @@ an older attestation instead of proving the current invocation.
 
 ## Current state
 
-The parser, presence boundary, and exact verification branch are working. Two
-attended refreshes and terminal-TUI approvals established that the installed
-hooks route, inject a valid header, and finalize in a normal Codex invocation.
-The first fresh probe stayed in the parent; the second reached workforce
-routing but semantic planning split the diagnostic into two units. Both failed
-the exact activation graph honestly. AR-180 now isolates this activation
-measurement from planner variability with a restricted deterministic one-unit
-route. The refreshed exact artifact and final live proof remain pending.
+September 7 reconciliation: the exact verification-only CLI branch is
+implemented and has current installed evidence. The September 7 22:04:41Z
+current-profile Codex CLI 0.153.4 invocation returned success, attempted no
+installation, used no hook-trust bypass, and persisted a fresh installation-bound
+v4 attestation. AR-180's committed read-only correlation connects that same
+invocation to a host-written pre-speech v6 card, one completed native child, and
+the parent's accepted finalization. The ongoing review session is not thereby
+staffed, and AR-180's broader TUI/Desktop/multi-card criteria remain separate.
+
+The July deterministic-route description is historical, not current behavior.
+The restricted probe now uses inference-owned selection, requires one exact
+read-only diagnostic unit and provider evidence, and does not enter gap hiring.
+Fresh Linux-focused checks pass 274 tests; 40 Windows-specific cases are
+excluded. All 328 installed Python modules match the pinned hook runtime;
+verification-path source identity, the limited differences from current main,
+commands, results, and all nine criterion mappings are in the linked receipt.
+
+ADR-0117 authorizes normal owner CLI mutations without a second Agency-owned
+human-presence ceremony. Criterion 3 is explicitly corrected from "attended
+mutation" to "owner-CLI prepared mutation"; its original wording is retained
+in the receipt. Exact preparation, locked revalidation, ownership, compensation,
+and independent activation proof remain required. Criterion 2 is explicitly
+scoped to the exact no-bypass verification-only slice; the supported autonomous
+and managed-policy modes remain distinct under ADR-0173. Its original wording
+is also preserved. No new native trust approval occurred in this package: the
+successful no-bypass canary used already-trusted
+definitions. All nine isolated criteria are now satisfied against frozen
+candidate500de085. The unavailable attempts and their exact narrow retry are
+preserved; no missing verifier result was counted as acceptance.
 
 ## Approach
 
-Give verification a distinct parser-owned internal action and one shared
-closed-world predicate. Only the exact Codex verification shape may bypass the
-generic installation presence prompt, and the handler rechecks the same
-predicate before branching ahead of every generic install dependency.
+Keep the parser-owned verification action and closed-world shape predicate.
+The handler validates that shape before branching ahead of every generic
+install dependency. Unknown public/private fields and neighboring install
+forms cannot fall through into the verification-only slice. This is operation
+separation under owner CLI authority, not an exception to a retired generic
+presence prompt.
 
 The branch performs initial exact-install inspection, one bounded
 current-profile canary without the hook-trust bypass, and final inspection.
@@ -87,19 +118,25 @@ persistent storage.
 
 ## Dependencies
 
-ADR-0077 owns behavioral current-profile proof, ADR-0096 owns the persistent
-control authority boundary, and ADR-0104 owns the separate attended adapter
-refresh. AR-180 owns the final live specialist-activation evidence. Tracker
-creation remains pending explicit outward-write authorization.
+ADR-0117 governs owner CLI authority. ADR-0104 retains the prepared refresh's
+transaction and compensation design; its earlier native-presence prescription
+is not the current authority policy. ADR-0077 and ADR-0096 are historical
+superseded records, not authority to restore deterministic staffing or an
+Agency-owned presence verifier. ADR-0179 and ADR-0193 govern the restricted
+native delivery proof and compatible current host version. AR-180 owns the
+underlying live receipt and its broader unresolved delivery coverage. The
+historical AR-193/195/197 dependency links do not turn Linux evidence into a
+Windows claim. This pre-tracker record still has no tracker URL.
 
 ## Acceptance
 
 - [x] The exact documented verification command reaches one current-profile
   canary without requesting the generic installation presence verifier.
-- [x] Every neighboring shape, unknown future public or private flag, copied marker, and
-  malformed timeout fails closed before handler mutation.
+- [x] For the exact no-bypass verification-only slice, every neighboring shape,
+  unknown future public or private flag, copied marker, and malformed timeout
+  fails closed before handler mutation.
 - [x] Prepared `install --agent codex --no-dashboard` remains a separate,
-  attended mutation and cannot overlap activation verification.
+  owner-CLI prepared mutation and cannot overlap activation verification.
 - [x] The verification branch cannot load generic install configuration,
   create the install Store, seed controls/roster/contractors, manage the
   dashboard, plan/install/rollback an adapter, reconcile the catalog, or hire a
@@ -113,17 +150,18 @@ creation remains pending explicit outward-write authorization.
   output, followed by final inspection whenever a canary may have started.
 - [x] Focused authority, canary, Store, parser, and installer regressions pass
   warning-strict on the implementation checkpoint.
-- [ ] The exact installed artifact passes the live current-profile canary after
+- [x] The exact installed artifact passes the live current-profile canary after
   the operator-approved Codex hook trust step.
 
 ## Implementation evidence
 
-Three independent CLI, security, and functional reviews confirmed the P0
-bypass risk and found stale-proof, spawned-hook Store, malformed-output, and
-resumable-action gaps. The implementation now binds temporal and proof identity,
-propagates existing-current Store mode through the Codex subprocess, opens that
-Store with SQLite `mode=rw`, sanitizes projections, and preserves the attended
-next action. A 324-test warning-strict focused package passed with 6 expected
+Historical July implementation evidence: three CLI, security, and functional
+reviews confirmed the P0 bypass risk and found stale-proof, spawned-hook Store,
+malformed-output, and resumable-action gaps. That implementation bound temporal
+and proof identity, propagated existing-current Store mode through the Codex
+subprocess, opened that Store with SQLite `mode=rw`, sanitized projections, and
+preserved the then-attended next action. A 324-test warning-strict focused package
+passed with 6 expected
 platform skips in 30.23 seconds; the dedicated AR-185 file passed 33 tests in
-1.81 seconds. Live proof remains a separate exact-artifact checkpoint and must
-not be inferred from registration.
+1.81 seconds. Those totals are historical. Current evidence and its exact scope
+are in the September 7 receipt; live proof is not inferred from registration.

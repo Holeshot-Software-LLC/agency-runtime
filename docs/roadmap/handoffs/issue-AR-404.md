@@ -19,9 +19,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-404
-branch: codex/ar184-linux-producer-reconciliation
-evidence_commit: 30214408a0073e69550ba695b99ef68d9238f857
-minimum_ledger_commit: 5ccca3c36e9ee63b833531787e8bddcfcdcaa649
+branch: codex/ar185-activation-proof
+evidence_commit: 51af465da9b03c6e0225c5aea39d1b9b93933c19
+minimum_ledger_commit: 5c46594cd4785a66d466842ed1a962b9751a1637
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -50,7 +50,9 @@ queue119 (41 mapped/78 legacy) until its reviewed repair is accepted.
 AR181 merged PR #731/2274823c. AR183 detached Linux producer evidence now
 passes at08fab1c4; same-SHA Windows equality/merged release set remain held.
 AR183 merged PR #733/30214408. AR184 reuses that exact producer receipt;
-both retain only their meaningful cross-platform proof obligations.
+both retain only their meaningful cross-platform proof obligations. AR184
+merged PR734/c64ce3ce. AR185 allnine isolated criteria satisfy at500de085;
+localdone reduces legacy byone to77 before separate AR409 filing.
 
 ## Completed evidence
 
@@ -98,7 +100,7 @@ variable. No current-turn header snapshot; do not reinstall OpenClaw.
 
 ## Same-task continuity
 
-Owned tree: codex/ar184-linux-producer-reconciliation. Do not commit main or touch
+Owned tree: codex/ar185-activation-proof. Do not commit main or touch
 another worker's dirty tree. Substantive commits get immediate narrow worklog
 ledgers. At/below 50 percent finish a clean checkpoint, then continue.
 Fanout recovered exact AR-180 native card/header/finalization and AR-181 smoke.
@@ -109,10 +111,10 @@ Parent owns publication, acceptance and shared-registry changes.
 
 ## Next bounded work package
 
-1. Publish AR184 shared Linux proof and retained Windows comparison hold.
-2. Verify AR185 exact activation packet, then189/190; Windows holds stayopen.
-3. Fanout prepares truthful staffing-failure receipts: five calls can exhaust
-   the budget before the critic, and routing drops effective timeout evidence.
+1. Publish accepted AR185, then AR408 reviewed diagnostics fix (acceptance running).
+2. Publish retained AR189 Windows hold and actual UV-installed AR190 proof.
+3. AR409 reserves mandatory stage calls within owner limits; independent review
+   passes. Integrate AR408, verify, publish and run fresh installed/live checks.
 4. Stop cleanly by September 8 01:00 UTC.
 
 ## Verification

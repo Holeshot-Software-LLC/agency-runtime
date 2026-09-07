@@ -3,9 +3,11 @@ title: "Form the retrieval subject before the turn that needs it"
 status: accepted
 category: decisions
 created: 2026-09-03
-updated: 2026-09-03
+updated: 2026-09-07
 tags: [routing, retrieval, staffing, workforce]
 related:
+  - docs/roadmap/issue-AR-409-reserve-required-staffing-calls.md
+  - docs/decisions/0235-reserve-required-staffing-calls-before-optional-work.md
   - docs/roadmap/issue-AR-370-staffing-asks-the-wrong-question.md
   - docs/roadmap/issue-AR-374-host-capability-vocabulary-gap.md
   - docs/roadmap/issue-AR-336-requalify-the-recruiter-route-for-ordinary-tasks.md

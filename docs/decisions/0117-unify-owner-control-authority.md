@@ -6,6 +6,7 @@ created: 2026-07-30
 updated: 2026-07-30
 tags: [security, dashboard, cli, controls, installation, automation]
 related:
+  - docs/roadmap/issue-AR-185-bind-codex-activation-verification.md
   - docs/decisions/0230-reconcile-response-correlation-with-owner-controls.md
   - docs/roadmap/issue-AR-170-fail-dashboard-response-correlation-closed.md
   - docs/roadmap/issue-AR-166-truthful-dashboard-disclosure-and-correlation.md

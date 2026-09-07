@@ -6,6 +6,7 @@ created: 2026-09-05
 updated: 2026-09-07
 tags: [backlog, review, acceptance, delivery]
 related:
+  - docs/roadmap/issue-AR-409-reserve-required-staffing-calls.md
   - docs/roadmap/acceptance/evidence/AR-404-live-header-audit-20260907.md
   - docs/roadmap/AR-404-oldest-first-reconciliation-20260905.md
   - docs/roadmap/acceptance/evidence/AR-348-installed-delivery-20260905.md
@@ -34,7 +35,7 @@ epic: reliability
 issue_id: AR-404
 priority: p1
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
-depends_on: [AR-400, AR-401, AR-402, AR-403]
+depends_on: [AR-400, AR-401, AR-402, AR-403, AR-409]
 blocks: []
 ---
 
