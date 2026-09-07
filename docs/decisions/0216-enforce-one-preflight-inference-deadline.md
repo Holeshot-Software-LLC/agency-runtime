@@ -3,9 +3,11 @@ title: "Enforce one preflight inference deadline"
 status: accepted
 category: decisions
 created: 2026-09-05
-updated: 2026-09-05
+updated: 2026-09-07
 tags: [staffing, reliability]
 related:
+  - docs/roadmap/issue-AR-409-reserve-required-staffing-calls.md
+  - docs/decisions/0235-reserve-required-staffing-calls-before-optional-work.md
   - docs/roadmap/issue-AR-401-enforce-preflight-deadlines-at-provider-boundaries.md
   - docs/decisions/0214-close-a-preflight-attempt-on-its-token-not-its-lease.md
   - docs/worklog/README.md

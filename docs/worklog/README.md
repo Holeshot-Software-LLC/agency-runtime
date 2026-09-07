@@ -2092,6 +2092,13 @@ This registry connects repository history to the roadmap and to optional detail 
 | `6cc0b176` | 2026-09-07 | docs(backlog): record AR-183 detached private-mode Linux proof | [AR-183](../roadmap/issue-AR-183-normalize-private-posix-wheel-modes.md) | [Detail](2026-09-07-6cc0b176-detached-private-mode-producer.md) |
 | `30214408` | 2026-09-07 | Merge pull request #733 from Holeshot-Software-LLC/codex/ar183-private-producer-evidence | [AR-183](../roadmap/issue-AR-183-normalize-private-posix-wheel-modes.md) | [Detail](2026-09-07-6cc0b176-detached-private-mode-producer.md) |
 | `81cf8000` | 2026-09-07 | docs(backlog): reconcile AR-184 with detached Linux producer proof | [AR-184](../roadmap/issue-AR-184-normalize-private-posix-sdist-modes.md) | [Detail](2026-09-07-81cf8000-sdist-producer-reconciliation.md) |
+| `c64ce3ce` | 2026-09-07 | Merge pull request #734 from Holeshot-Software-LLC/codex/ar184-linux-producer-reconciliation | [AR-184](../roadmap/issue-AR-184-normalize-private-posix-sdist-modes.md) | [Detail](2026-09-07-81cf8000-sdist-producer-reconciliation.md) |
+| `500de085` | 2026-09-07 | docs(backlog): bind AR-185 to exact installed activation proof | [AR-185](../roadmap/issue-AR-185-bind-codex-activation-verification.md) | [Detail](2026-09-07-500de085-exact-activation-verification.md) |
+| `90c30a35` | 2026-09-07 | docs(acceptance): freeze AR-185 exact verification packet | [AR-185](../roadmap/issue-AR-185-bind-codex-activation-verification.md) | [Detail](2026-09-07-500de085-exact-activation-verification.md) |
+| `51af465d` | 2026-09-07 | docs(AR-185): preserve eight judgments and unavailable verifier evidence | [AR-185](../roadmap/issue-AR-185-bind-codex-activation-verification.md) | [Detail](2026-09-07-500de085-exact-activation-verification.md) |
+| `01ebcb7f` | 2026-09-07 | docs(AR-185): complete exact installed activation verification | [AR-185](../roadmap/issue-AR-185-bind-codex-activation-verification.md) | [Detail](2026-09-07-500de085-exact-activation-verification.md) |
+| `96a048d6` | 2026-09-07 | docs(roadmap): file required staffing call reservations (AR-409) | AR-409 | [Detail](2026-09-07-96a048d6-ar409-reservation-filing.md) |
+| `c095616a` | 2026-09-07 | docs(AR-409): integrate parallel reservation filing for tracker parity | [AR-409](../roadmap/issue-AR-409-reserve-required-staffing-calls.md) | [Detail](2026-09-07-96a048d6-ar409-reservation-filing.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
