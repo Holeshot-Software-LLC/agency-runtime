@@ -286,8 +286,9 @@ at 941b9025 exposed criterion 2's remaining raw-trace/digest wording error.
 ADR-0232 explicitly supersedes it, preserving originals. All five criteria
 satisfy at 594bc4d3 in the second/final review. No production changes or third
 review; AR-173 is accepted locally. The owner paused at 13:38 UTC September 7
-before publication. Save a clean local checkpoint; no new work, PR or merge
-until explicitly continued. Resume with AR-173 publication, then AR-174.
+before publication; clean local checkpoint 1f16f948 preserves it. At 20:14 UTC
+the owner explicitly resumed until 9 p.m. Eastern (September 8 at 01:00 UTC).
+Publish AR-173, then AR-174; finish at a clean checkpoint by that cutoff.
 
 Local accepted-branch counts: 40 actual open trackers plus 81 unfinished legacy
 records, 121 total. Main remains 40 plus 82 = 122 until AR-173 publication.
@@ -296,7 +297,7 @@ The unchanged public-roster fixture belongs to AR-176. Windows stays excluded;
 the oldest-first ledger and capsule preserve all holds. Ordinary-session
 unverified Agency/header behavior remains a separate unfinished concern.
 
-Before this pause, the owner required oldest-first sequential delivery: one record, one PR,
+The owner requires oldest-first sequential delivery: one record, one PR,
 merge, then the next, without routine approval stops. Windows stays excluded.
 The [oldest-first ledger](AR-404-oldest-first-reconciliation-20260905.md) is the
 current ordering/disposition record. AR-115 was retired under ADR-0222 in
@@ -523,8 +524,9 @@ No exhaustive workflow dispatch or unattended restart is implied.
 
 ## Next bounded package
 
-Finish AR-150's isolated acceptance and publish one PR/merge. Then review AR-151.
-AR-146/148/149 are done and Windows-only AR-147 stays with the owner.
+Publish accepted AR-173 through one normal PR/merge, then review AR-174.
+The September 7 continuation ends at 9 p.m. Eastern (September 8, 01:00 UTC);
+leave a clean durable checkpoint. Windows-only work stays with the owner.
 The older AR-152/298/348-first ordering above is historical and does not override
 the owner's oldest-first loop. Keep genuine live/operator and fixture gaps
 visible, exclude Windows execution, and do not close the full backlog until

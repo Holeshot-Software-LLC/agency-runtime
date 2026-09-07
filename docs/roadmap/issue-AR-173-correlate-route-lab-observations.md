@@ -60,8 +60,9 @@ digest. ADR-0232 explicitly supersedes ADR-0231 to clarify the representation.
 All five criteria satisfy at 594bc4d3939d144440ae52f5acdf5f840c79f25e in the
 second/final review, without copying earlier verdicts. AR-173 is done; no
 runtime change, new trace field or third review. The owner paused before
-publication: this accepted state is local to the unpushed AR-173 branch,
-not main. Publish its normal PR only after an explicit continue request.
+publication, then explicitly resumed September 7 at 20:14 UTC until 9 p.m.
+Eastern. The clean accepted checkpoint is 1f16f948; publish its normal PR
+before starting AR-174. Until merge, this completion is branch-local, not main.
 
 ## Approach
 

@@ -31,11 +31,11 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 
 ## Checkpoint
 
-Owner paused work September 7 at 13:38 UTC until an explicit continue request.
-Do not resume the backlog loop, push, open a PR or merge while paused. Save this
-accepted AR-173 state locally only. Native Windows remains with the owner.
-Main is clean at 47d40fec, PR #721's AR-172 merge at 13:11:01Z. AR-173 has no
-PR and its branch is unpushed; 6afcbcb5 records the prior merge.
+Owner resumed September 7 at 20:14 UTC, authorizing oldest-first sequential
+delivery until 21:00 America/New_York (September 8 at 01:00 UTC). Finish at a
+clean durable checkpoint by that cutoff. Native Windows remains with the owner.
+The accepted AR-173 pause checkpoint is 1f16f948. Main remains clean at 47d40fec,
+PR #721's AR-172 merge. Publish AR-173 first; 6afcbcb5 records the prior merge.
 
 ## Completed evidence
 
@@ -65,9 +65,9 @@ explanations are diagnostic-only since e5f4a8c2, before the issue was written.
 ## Exact blocker
 
 No AR-173 technical acceptance blocker remains. All five criteria satisfy at
-594bc4d3; the owner pause is the current stop condition. Completion and its
-ledger are saved locally. Do not publish until the owner explicitly continues.
-First verdicts and requirement changes remain preserved.
+594bc4d3; the explicit continue request lifts the owner pause. Publish the
+accepted completion and ledger without another acceptance pass. First verdicts
+and requirement changes remain preserved.
 
 AR-170 remains in_progress: first review at 662eb947 and final candidate
 91273e41 are preserved. Final 1/2/4/5/6/7/8 satisfy, 3/9 need complete collection
@@ -90,8 +90,8 @@ No empty commits, staffing or restart. Preserve verdicts before corrections.
 
 ## Next bounded work package
 
-1. Wait for the owner's explicit continue request; no background work.
-2. Then publish accepted AR-173 as one normal PR; no acceptance rerun needed.
+1. Publish accepted AR-173 as one normal PR; no acceptance rerun needed.
+2. Stop at a clean checkpoint by September 8 at 01:00 UTC (9 p.m. Eastern).
 3. Merge/read back before inspecting AR-174. No native Windows work.
 
 ## Verification
