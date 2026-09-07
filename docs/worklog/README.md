@@ -2082,6 +2082,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `15a18861` | 2026-09-07 | fix(install): scope residual drift to requested hosts | [AR-407](../roadmap/issue-AR-407-scope-install-drift-to-requested-hosts.md) | [Detail](2026-09-07-15a18861-scoped-install-drift.md) |
 | `dcd58720` | 2026-09-07 | test(install): record exact AR-407 artifact and live-state checks | [AR-407](../roadmap/issue-AR-407-scope-install-drift-to-requested-hosts.md) | [Detail](2026-09-07-15a18861-scoped-install-drift.md) |
 | `625a1488` | 2026-09-07 | docs(acceptance): freeze AR-407 scoped drift evidence | [AR-407](../roadmap/issue-AR-407-scope-install-drift-to-requested-hosts.md) | [Detail](2026-09-07-15a18861-scoped-install-drift.md) |
+| `d5aed828` | 2026-09-07 | docs(backlog): accept scoped install drift repair | [AR-407](../roadmap/issue-AR-407-scope-install-drift-to-requested-hosts.md) | [Detail](2026-09-07-15a18861-scoped-install-drift.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

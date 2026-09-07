@@ -64,3 +64,5 @@ Substantive `15a18861` is the bounded implementation/source proof; later artifac
 Evidence freeze `dcd58720` adds the exact ef6523b3 portable artifact under producer umask077, fresh installed MCP/dashboard and all-host generated smoke8/0/0 in5.09s. Candidate source hash equals the live-pointer helper source; no native model-turn claim is added.
 
 Builder packet `625a1488` freezes all three criteria at dcd58720 with bounded source/test/live-state/artifact excerpts. The builder supplies evidence, not verdicts.
+
+Acceptance `d5aed828` records allthree satisfied at dcd58720 and marks AR-407 done. Initial unavailable verifier produced no verdict; exact Claude package/bin group-write removal restored trusted execution, then unchanged packet passed. Tracker closure is queued with normal PR merge.
