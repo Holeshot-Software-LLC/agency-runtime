@@ -2096,6 +2096,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `1adacdde` | 2026-09-07 | fix(workforce): preserve actual failure and effective timeout receipts | [AR-408](../roadmap/issue-AR-408-preserve-staffing-failure-receipts.md) | [Detail](2026-09-07-1adacdde-truthful-staffing-receipts.md) |
 | `d9dde3cd` | 2026-09-07 | docs(evidence): record AR-408 exact installed artifact smoke | [AR-408](../roadmap/issue-AR-408-preserve-staffing-failure-receipts.md) | [Detail](2026-09-07-1adacdde-truthful-staffing-receipts.md) |
 | `795ddf21` | 2026-09-07 | docs(AR-408): freeze bounded diagnostics acceptance evidence | [AR-408](../roadmap/issue-AR-408-preserve-staffing-failure-receipts.md) | [Detail](2026-09-07-1adacdde-truthful-staffing-receipts.md) |
+| `7674aca9` | 2026-09-07 | fix(AR-408): complete truthful staffing failure receipts | [AR-408](../roadmap/issue-AR-408-preserve-staffing-failure-receipts.md) | [Detail](2026-09-07-1adacdde-truthful-staffing-receipts.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
