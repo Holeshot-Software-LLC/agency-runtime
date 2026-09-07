@@ -72,3 +72,8 @@ Freeze 973acdb9 with the completed builder citations and run all six isolated
 criteria through the already usable Codex provider. Only accepted completion
 allows a done flip. Publish one PR, merge, then continue to AR-135. Keep the
 single failed Codex refresh separate: registration is not trusted activation.
+
+Candidate freeze 333e6411 pins the repaired acceptance record to 973acdb9 and
+the active capsule to that evidence with minimum ledger d8656b05. Strict docs
+pass for 1129 Markdown files before isolated review; old verdicts remain at
+6a139e23, while this candidate's verification table awaits independent runs.
