@@ -49,7 +49,12 @@ AR-147 is Windows-only and remains with the owner. AR-150 is accepted at ae71761
 four direct inverse-order tests supplement the existing shared refresh epoch.
 First review's evidence gap remains at 4e820ff4; all four second-pass criteria
 satisfy. UI 176 and server 180 pass, with same-byte installed-wheel evidence.
-PR #703 carries the completion; after merge, continue with AR-151.
+PR #703 merged at 460f319b. AR-151's direct host contract passes 13 scenarios;
+its full-dashboard criterion exposed nine unchanged-main fixture failures.
+Their bounded repair passes 274 dashboard tests and the named spine; no product
+change. ADR-0225 explicitly reconciles the old blanket duplicate criterion with
+per-host authority; first verdicts remain at f954d1e9. All four second-pass
+criteria satisfy at 791820bb; AR-151 is done, publication through PR #704 pending.
 
 Previous pause: the owner asked to conserve credits and publish AR-130 through
 [PR #696](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/696),
@@ -95,7 +100,8 @@ not the 99 legacy count.
 | 10 | AR-138 | Done: original refresh/mobile repairs verified; remaining accessibility/clipping and stale-error races repaired at d7231df3/cd35aa2c. First failed review preserved at 25b9a67a. All six isolated criteria satisfy at 2ecde1a5. Dashboard Python 180 pass; repeated named spine 1085/three skips; UI 172 and current coverage floors pass; rebuilt wheel passes 21 loaded-view checks at 1280/1024/375 px. | [PR #700](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/700) merged at 1ada216c. Legacy count 98 → 97; actual open trackers remain 40. |
 | 11 | AR-140 | Retain open: optimization, cache safety and explicit budgets are implemented. All 39 current local Linux gates pass: narrowing/cache p95 1.081/0.201 ms; CLI version median 16.989 ms; all retrieval tiers pass with the unchanged result hash. Focused tests 135 + 67 pass. ADR-0121 governs candidate recall/synthetic cache evidence, not real staffing; AR-253 owns end-to-end staffing latency. Original isolated supported-runner gate remains, with Windows for the owner. | [PR #701](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/701) merged at 7afa4b4d; no code/threshold/acceptance or count change. |
 | 12 | AR-145 | Retire duplicate mandatory coverage checklist under ADR-0224, not accepted. Existing observation/ownership/synthetic-performance repairs and authority tests pass 41 focused cases under branch instrumentation (12.08s). No aggregate percentage is claimed. ADR-0105 already made exhaustive delivery gates optional; AR-176 explicitly owns remaining fixtures/requested aggregate gaps with the unchanged 97-percent floor. AR-156 owns observed release-checklist UI command drift. | [PR #702](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/702) merged at cd061668; legacy count 97 → 96, actual open trackers remain 40. |
-| 13 | AR-150 | Done: existing epoch/cancellation verified with four new direct inverse-order cases, both scope directions and response orders. First missing-evidence review preserved at 4e820ff4; all four second-pass criteria satisfy at ae71761f. UI 176 passes 95/86/93 floors; server/auth/transaction 180 pass. Unchanged product bytes bind the 21-case wheel receipt; no runtime change. | [PR #703](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/703) carries completion. Legacy count 96 → 95; actual open trackers remain 40. |
+| 13 | AR-150 | Done: existing epoch/cancellation verified with four new direct inverse-order cases, both scope directions and response orders. First missing-evidence review preserved at 4e820ff4; all four second-pass criteria satisfy at ae71761f. UI 176 passes 95/86/93 floors; server/auth/transaction 180 pass. Unchanged product bytes bind the 21-case wheel receipt; no runtime change. | [PR #703](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/703) merged at 460f319b. Legacy count 96 → 95; actual open trackers remain 40. |
+| 14 | AR-151 | Done: existing host rejection verified by 13 direct UI-to-POST cases. Nine stale dashboard fixtures repaired; full six-module suite 274 pass, UI 176/current floors pass, named spine 1085/three skips. ADR-0225 explicitly revises only the old blanket duplicate criterion; original wording and first contradicted verdict remain at f954d1e9. All four second-pass criteria satisfy at 791820bb. No runtime change. | [PR #704](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/704) carries completion. Legacy count 95 → 94; actual open trackers remain 40. |
 
 After the merged AR-115 retirement, fresh enumeration confirms 41 open trackers
 and 140 unfinished local records (41 mapped plus 99 legacy) before AR-127.
@@ -110,6 +116,8 @@ Retired AR-145 reduces the queue to **136** (40 mapped plus **96 legacy**),
 without claiming its original aggregate coverage criteria passed.
 Accepted AR-150 reduces the queue to **135** (40 mapped plus **95 legacy**),
 without creating or closing an unrelated tracker.
+Accepted AR-151 reduces the queue to **134** (40 mapped plus **94 legacy**),
+with ADR-0225's requirement reconciliation and first verdict preserved.
 Windows-specific work remains with the owner.
 This is record reconciliation, not completion of retained implementation or
 platform-evidence work.

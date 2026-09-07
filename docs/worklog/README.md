@@ -1951,6 +1951,14 @@ This registry connects repository history to the roadmap and to optional detail 
 | `ae71761f` | 2026-09-07 | test(dashboard): prove inverse refresh commit ordering [AR-150] | [AR-150](../roadmap/issue-AR-150-coordinate-dashboard-refresh-epochs.md) | [detail](2026-09-07-57c225c1-verify-dashboard-epochs.md) |
 | `7ec16579` | 2026-09-07 | docs(acceptance): freeze direct AR-150 ordering candidate | [AR-150](../roadmap/issue-AR-150-coordinate-dashboard-refresh-epochs.md) | [detail](2026-09-07-57c225c1-verify-dashboard-epochs.md) |
 | `2c01b083` | 2026-09-07 | docs(backlog): accept verified refresh epoch contract [AR-150] | [AR-150](../roadmap/issue-AR-150-coordinate-dashboard-refresh-epochs.md) | [detail](2026-09-07-57c225c1-verify-dashboard-epochs.md) |
+| `460f319b` | 2026-09-07 | Merge pull request #703 from Holeshot-Software-LLC/codex/ar150-oldest-first-reconciliation | [AR-150](../roadmap/issue-AR-150-coordinate-dashboard-refresh-epochs.md) | [detail](2026-09-07-57c225c1-verify-dashboard-epochs.md) |
+| `58285009` | 2026-09-07 | test(dashboard): bind UI host choices to POST authority [AR-151] | [AR-151](../roadmap/issue-AR-151-align-route-lab-host-eligibility.md) | [detail](2026-09-07-58285009-route-lab-contract.md) |
+| `99e05d1f` | 2026-09-07 | test(dashboard): reconcile current authority and freshness fixtures [AR-151] | [AR-151](../roadmap/issue-AR-151-align-route-lab-host-eligibility.md) | [detail](2026-09-07-58285009-route-lab-contract.md) |
+| `ea2ff6e5` | 2026-09-07 | docs(acceptance): freeze AR-151 host eligibility candidate | [AR-151](../roadmap/issue-AR-151-align-route-lab-host-eligibility.md) | [detail](2026-09-07-58285009-route-lab-contract.md) |
+| `f954d1e9` | 2026-09-07 | docs(acceptance): preserve AR-151 duplicate-scope contradiction | [AR-151](../roadmap/issue-AR-151-align-route-lab-host-eligibility.md) | [detail](2026-09-07-58285009-route-lab-contract.md) |
+| `791820bb` | 2026-09-07 | docs(decision): reconcile Route Lab duplicate identity scope [AR-151] | [AR-151](../roadmap/issue-AR-151-align-route-lab-host-eligibility.md) | [detail](2026-09-07-58285009-route-lab-contract.md) |
+| `61da9bb4` | 2026-09-07 | docs(acceptance): freeze reconciled AR-151 requirement | [AR-151](../roadmap/issue-AR-151-align-route-lab-host-eligibility.md) | [detail](2026-09-07-58285009-route-lab-contract.md) |
+| `cd12e929` | 2026-09-07 | docs(backlog): accept reconciled Route Lab host contract [AR-151] | [AR-151](../roadmap/issue-AR-151-align-route-lab-host-eligibility.md) | [detail](2026-09-07-58285009-route-lab-contract.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

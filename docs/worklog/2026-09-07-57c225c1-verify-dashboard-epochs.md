@@ -65,3 +65,10 @@ Strict docs/tracker, metadata, policy, exact worklog, Ruff and diff checks pass.
 PR #703 carries completion; normally merge/read back, then continue at AR-151.
 Unfinished records are 40 mapped plus 95 legacy (135), not 135 established bugs.
 Windows-only AR-147 remains with owner. No exhaustive or hosted workflow run.
+
+## Publication
+
+PR #703 merged normally at 460f319b56b0759cf466c4d40a88003c75bdbdaf on
+September 7 at 06:18:49Z, exact head 0d369807. No hosted check runs were
+reported; no CI success is inferred. Main was clean and fast-forwarded to the
+merge before the separate AR-151 worktree was created.

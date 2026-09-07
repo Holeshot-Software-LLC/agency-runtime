@@ -1,0 +1,57 @@
+---
+title: "AR-151 acceptance verification record"
+status: active
+category: roadmap
+created: 2026-09-07
+updated: 2026-09-07
+tags: [acceptance, verification, dashboard, hosts]
+related:
+  - docs/roadmap/issue-AR-151-align-route-lab-host-eligibility.md
+  - docs/roadmap/acceptance/evidence/AR-151-host-eligibility-20260907.md
+  - docs/decisions/0225-scope-route-lab-ambiguity-to-host-identity.md
+supersedes: []
+superseded_by: null
+type: acceptance-verification
+issue_id: AR-151
+candidate_commit: 791820bb12ce39b37fd7bcec2e87528c43f0684a
+evidence_cutoff: 2026-09-07
+tracker_url: null
+---
+
+# AR-151 acceptance verification record
+
+## Builder evidence
+
+| Criterion | Kind | Artifact | Observed | Source |
+|---|---|---|---|---|
+| 1 | file | Production renderer excludes duplicate identities and rejects an oversized inventory before enabling selection | 2026-09-07 | agency_runtime/dashboard/dashboard-render.js:1043-1122 |
+| 1 | test | Duplicate-only and oversized inventories disable Route Lab without issuing a request | 2026-09-07 | tests/dashboard_ui.test.mjs:2307-2364 |
+| 1 | test | Real GET projection and production UI exclude normalized/triple duplicates and eleven rows; ten rows and unrelated unique hosts follow server eligibility | 2026-09-07 | tests/test_dashboard.py:4704-4816 |
+| 1 | command-output | Direct 13-case matrix and all 274 dashboard cases pass | 2026-09-07 | docs/roadmap/acceptance/evidence/AR-151-host-eligibility-20260907.md#final-current-verification |
+| 1 | file | Explicit governing reconciliation: exclude duplicated identities, reject oversize globally, preserve unrelated unique verified hosts | 2026-09-07 | docs/decisions/0225-scope-route-lab-ambiguity-to-host-identity.md#decision |
+| 2 | file | Server derives eligibility from verified native evidence and independently rejects duplicate, unavailable and oversized records | 2026-09-07 | agency_runtime/server/dashboard.py:758-895 |
+| 2 | file | POST checks host identity before catalog capture and passes only server-derived capabilities to inference | 2026-09-07 | agency_runtime/server/dashboard.py:2762-2821 |
+| 2 | test | Production JavaScript constructs the exact outgoing request bodies from actual GET projection | 2026-09-07 | tests/dashboard_route_contract.mjs:1-55 |
+| 2 | test | All five valid hosts reach actual POST; every excluded host is separately forged and rejected before inference | 2026-09-07 | tests/test_dashboard.py:4704-4816 |
+| 2 | command-output | Direct UI-to-POST matrix scope and current passing results | 2026-09-07 | docs/roadmap/acceptance/evidence/AR-151-host-eligibility-20260907.md#direct-ui-to-post-matrix |
+| 3 | file | Static unavailable reasons explain ambiguous and oversized evidence without embedding host payloads | 2026-09-07 | agency_runtime/dashboard/dashboard-render.js:1093-1119 |
+| 3 | test | UI renders the explicit ambiguity and size-bound reasons | 2026-09-07 | tests/dashboard_ui.test.mjs:2307-2364 |
+| 3 | test | Actual GET projection rendered through production code has the expected reason and remains at most 160 characters | 2026-09-07 | tests/test_dashboard.py:4704-4816 |
+| 4 | command-output | Final corrected six-module dashboard suite passes 274 with no skips; named spine passes 1085 with three existing skips | 2026-09-07 | docs/roadmap/acceptance/evidence/AR-151-host-eligibility-20260907.md#final-current-verification |
+| 4 | command-output | Complete UI suite passes 176 and exact current source-only coverage floors | 2026-09-07 | docs/roadmap/acceptance/evidence/AR-151-host-eligibility-20260907.md#initial-dashboard-verification |
+| 4 | command-output | Initial nine failures and intermediate denial-message failures are preserved and fixture repairs explained | 2026-09-07 | docs/roadmap/acceptance/evidence/AR-151-host-eligibility-20260907.md#fixture-reconciliation |
+| 4 | test | HTTP/production-renderer contract spans all supported hosts and rejection shapes | 2026-09-07 | tests/test_dashboard.py:4704-4816 |
+| 4 | file | Current CI source-only UI denominator and 95/86/93 floors | 2026-09-07 | .github/workflows/ci.yml:279-285 |
+
+## Verification
+
+First review is preserved at f954d1e9: criterion 1 contradicted, 2/3/4 satisfied.
+ADR-0225 explicitly revises only the first criterion; original wording remains
+historical. This second candidate requires new isolated verdicts for all four.
+
+| Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
+|---|---|---|---|---|---|
+| 1 | satisfied | `AR-151.1-20260907-f455df58` | `807b74ddef35d4a727a596aaf21f8e0a4ee9b30633d2466c2fc4e1d8ed7c5cb0` | 2026-09-07 | dashboard-render.js excludes all canonical duplicates and oversized inventories while preserving unique verified hosts; test_dashboard.py covers normalized and triple duplicates, unrelated valid hosts, inventory bounds, and authoritative POST rejection. |
+| 2 | satisfied | `AR-151.2-20260907-29606acd` | `6dc1d7ee58ee3f8223ac03e1d5d201ba1e2c1fc18480bfecf00e79a97f5ac742` | 2026-09-07 | The production JavaScript driver and test_dashboard.py UI-to-POST matrix verify matching accepted and rejected hosts through actual HTTP handlers; the cited evidence artifact records all 13 scenarios passing with zero skips. |
+| 3 | satisfied | `AR-151.3-20260907-01d48cc2` | `016bfbe2f77d5937ef3556c96e52de91f0eb46cc33c518e2d9b674fe84bd61e8` | 2026-09-07 | dashboard-render.js:1093-1119 renders a fixed ambiguity explanation; dashboard_ui.test.mjs checks its display, and test_dashboard.py asserts duplicate scenarios show the reason within 160 characters. |
+| 4 | satisfied | `AR-151.4-20260907-529caa07` | `1bca1d30957ad1c445b538db82d196036fe9e0513919a2160e190a39e26281a0` | 2026-09-07 | The cited verification record reports 274 dashboard tests passing without skips, including all 13 UI-to-POST scenarios, and 176 UI tests passing; tests/test_dashboard.py shows the production-renderer-to-HTTP contract assertions. |

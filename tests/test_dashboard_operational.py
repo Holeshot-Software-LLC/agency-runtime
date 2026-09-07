@@ -517,12 +517,6 @@ def test_inference_projection_distinguishes_optional_local_and_required_inferenc
 
     optional_local = replace(
         AgencyConfig(),
-        judge=replace(
-            AgencyConfig().judge,
-            model="legacy-model",
-            base_url="http://localhost:11434",
-            ollama_mode=True,
-        ),
         ollama=OllamaConfig(
             enabled=True,
             model="local-fallback",
@@ -536,11 +530,32 @@ def test_inference_projection_distinguishes_optional_local_and_required_inferenc
     assert optional["configured"] is False
     assert optional["required_for_eligible_turns"] is False
     assert optional["state"] == "not_configured"
-    assert [item["name"] for item in optional["provider_chain"]] == [
+    assert [item["name"] for item in optional["provider_chain"]] == ["ollama-fallback"]
+    assert all(item["configuration_ready"] for item in optional["provider_chain"])
+
+    # An explicitly declared legacy judge is authoritative, unlike the
+    # bundled keyless Ollama accelerator by itself.
+    declared_legacy = replace(
+        optional_local,
+        judge=replace(
+            AgencyConfig().judge,
+            model="legacy-model",
+            base_url="http://localhost:11434",
+            ollama_mode=True,
+        ),
+    )
+    legacy = inference_operational_snapshot(
+        declared_legacy,
+        {"routing": [{"semantic_status": "inferred"}], "receipts": []},
+    )
+    assert legacy["configured"] is True
+    assert legacy["required_for_eligible_turns"] is True
+    assert legacy["state"] == "operational"
+    assert [item["name"] for item in legacy["provider_chain"]] == [
         "legacy-judge",
         "ollama-fallback",
     ]
-    assert all(item["configuration_ready"] for item in optional["provider_chain"])
+    assert all(item["configuration_ready"] for item in legacy["provider_chain"])
 
     required = replace(
         AgencyConfig(),

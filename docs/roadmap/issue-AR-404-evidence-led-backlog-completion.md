@@ -89,10 +89,24 @@ evidence remains preserved at 4e820ff4; all four second-pass criteria satisfy.
 Full UI passes 176 at 96.93/86.70/95.71, server/auth/transaction passes 180 in
 28.82s. Unchanged product bytes bind the existing 21-case installed-wheel receipt;
 no runtime change or new installation claim. PR #703 carries the completion.
-After normal merge and read-back, the next bounded record is AR-151.
+PR #703 merged normally at 460f319b, September 7 at 06:18:49Z. Main was clean
+and fast-forwarded before the separate AR-151 worktree was created.
 
-Current counts: 40 actual open trackers plus 95 unfinished legacy records,
-135 total after AR-150 completion; no duplicate tracker or false acceptance.
+AR-151 confirms the original host-eligibility repair already exists. Thirteen
+direct GET → production JavaScript → POST contract cases pass; core dashboard
+193 pass and UI 176/current floors pass. The broader six-module run is
+265 pass/nine failures; all nine reproduce on unchanged main 460f319b. The
+bounded owner-token, cache and inference-projection fixtures are now repaired:
+274 dashboard cases pass, and the named spine passes 1085/three existing skips.
+No runtime change. First isolated review satisfies 2/3/4 but contradicts the
+blanket duplicate-inventory criterion. Verdicts remain at f954d1e9. ADR-0225
+explicitly revises only that criterion to per-host ambiguity and whole-inventory
+size rejection, preserving unique verified-host availability. All four second-pass
+criteria satisfy at 791820bb. AR-151 is done; PR #704 carries completion.
+After normal merge/read-back, continue with AR-153 (AR-152 is already done).
+
+Current counts: 40 actual open trackers plus 94 unfinished legacy records,
+134 total after AR-151 completion; no duplicate tracker or false acceptance.
 The unchanged public-roster fixture belongs to AR-176. Windows stays excluded;
 the oldest-first ledger and capsule preserve all holds. Ordinary-session
 unverified Agency/header behavior remains a separate unfinished concern.
