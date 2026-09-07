@@ -59,7 +59,10 @@ and smoke-test Node discovery. Job B removed the old Agency-owned direct host
 execution and generic command backends in fb34191f; they are not restored.
 ADR-0227 explicitly reconciles only criterion 5 to these current surfaces.
 Fresh discovery/launch/Git tests pass 38, 129 and 24 cases respectively. No code
-or test change was needed. Isolated candidate-bound acceptance remains pending.
+or test change was needed. First isolated review at 083ae8b5 satisfies criteria
+1–4 and 6–7. Criterion 5 is absent: current launch integrations are demonstrated,
+but the retirement claim needs an actual candidate tree listing rather than a
+description. Preserve that verdict before adding the missing Git evidence.
 
 ## Approach
 

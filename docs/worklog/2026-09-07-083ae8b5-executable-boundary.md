@@ -55,3 +55,11 @@ verdicts before completion. Publish one PR and normal merge, then AR-165.
 48ac7535 freezes all seven rowsets at 083ae8b5 and records the decision's
 evidence candidate. Strict docs pass 1181 Markdown files before the freeze.
 The review starts only after the clean immediate ledger; no builder verdict.
+
+## First isolated review
+
+At 083ae8b5, criteria 1–4 and 6–7 satisfy. Criterion 5 is absent: the four
+current launch excerpts demonstrate integration, but the receipt describes
+retired-backend absence without actual Git output. Preserve all seven verdicts
+before adding a full candidate tree listing and exact deletion-status output.
+No code or requirement change follows from this evidence gap.

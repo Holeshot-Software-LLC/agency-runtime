@@ -66,8 +66,10 @@ worker backends stay removed; native hosts own worker execution.
 
 ## Exact blocker
 
-AR-164 needs seven isolated verdicts against a frozen candidate. Only criterion
-5 changes under ADR-0227. No completion or count reduction is claimed yet.
+AR-164 first review at 083ae8b5 satisfies 1–4 and 6–7. Criterion 5 lacks an
+actual candidate tree listing proving the described backend absence. Preserve
+the first verdicts, then add exact Git output and freeze a new evidence candidate.
+No implementation defect, additional requirement change or completion is inferred.
 
 AR-159 retains hosted enforcement/check-app/bypass proof; main has no current
 enforcement evidence. Old billing cause is not freshly established; the extra
