@@ -88,6 +88,10 @@ cases pass the current coverage floors, and server/auth/transaction checks pass
 180 in 28.82s. Exact source equality binds the existing 21-case installed-wheel
 receipt; no new production code or broad artifact claim. Its four original
 criteria remain pending isolated acceptance before any done/count change.
+Its first review satisfies 1/3/4 but finds inverse refresh-order evidence absent;
+preserved at 4e820ff4. Four direct deferred cases now pass in both scope directions
+and response orders, and full UI coverage passes 176. The second review remains
+before closure; PR #703 is draft. No runtime code changed.
 
 Current counts: 40 actual open trackers plus 96 unfinished legacy records,
 136 total after AR-145 retirement; no duplicate tracker or false acceptance.

@@ -50,8 +50,10 @@ cancellation exist, with AR-138's late-error guards. Fresh UI coverage: 172 pass
 28.82s. Product/test/script equality to 2ecde1a5 binds the existing installed-wheel
 browser proof. First isolated review of 57c225c1 satisfies 1/3/4; criterion 2 is
 absent because the citations do not demonstrate inverse refresh-response order.
-Preserve those verdicts, add a direct deferred-response regression, freeze its
-proof and obtain a second pass. PR #703 stays draft. No code defect asserted.
+First verdicts are preserved at 4e820ff4, ledger 140c68c6. Four direct inverse
+workforce/full cases now pass in both completion orders; full UI 176 pass and
+coverage 96.93/86.70/95.71. Freeze that test-only proof and obtain a second pass.
+PR #703 stays draft. No runtime defect or product change is asserted.
 
 ## Completed evidence
 
@@ -106,7 +108,7 @@ proof and obtain a second pass. PR #703 stays draft. No code defect asserted.
 
 ## Exact blocker
 
-AR-150 remains open: three criteria satisfied, inverse refresh-order proof absent.
+AR-150 remains open: direct inverse-order tests pass, second isolated review pending.
 AR-140 retains isolated supported-runner proof, including the owner's Windows
 arm. Local passing developer-host numbers do not waive that explicit criterion.
 AR-135 native proof is waiting_for_operator: one attended installed ZCode Agent
@@ -141,9 +143,9 @@ the same task; do not spawn a replacement task or close an unfinished umbrella.
 ## Verification
 
 Run metadata, policy availability, exact worklog, strict docs/tracker and diff
-checks per package, with focused checks for touched behavior. AR-150 changes
-only documentation/evidence. Git comparison proves product/tests/scripts equal
-to accepted AR-138 candidate 2ecde1a5: reuse its named spine/UI/conformance with
+checks per package, with focused checks for touched behavior. AR-150 adds four
+UI tests and documentation/evidence. Product/scripts and Python tests equal
+accepted AR-138 candidate 2ecde1a5: reuse its named spine/conformance with
 that explicit scope, not a newly run claim. AR-150 UI/server tests are fresh;
 its wheel evidence is same-byte reuse. No exhaustive corpus, matrix,
 hosted dispatch or release/installed-live proof.

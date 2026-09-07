@@ -11,6 +11,7 @@ related:
   - docs/roadmap/issue-AR-138-coherent-observable-dashboard-ui.md
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
   - docs/roadmap/acceptance/evidence/AR-150-refresh-epochs-20260907.md
+  - docs/roadmap/acceptance/evidence/AR-150-inverse-order-proof-20260907.md
   - docs/roadmap/acceptance/issue-AR-150.md
   - docs/worklog/README.md
   - agency_runtime/dashboard/dashboard-live.js
@@ -51,6 +52,10 @@ linked evidence. First isolated acceptance satisfies criteria 1, 3 and 4, but
 criterion 2 is absent: the cited tests do not directly demonstrate inverse
 refresh-response ordering. Preserve the supplied verdicts and add a direct
 deferred-response regression before a second pass; no code defect is asserted.
+The first review is preserved at 4e820ff4. Four new direct cases now cover
+workforce/full refresh in both directions and both completion orders, delivering
+old responses even after abort. All four and the full 176-test UI suite pass;
+coverage is 96.93/86.70/95.71. No runtime change; freeze this proof for review.
 
 The original report's absent-epoch state was pre-repair. The July implementation
 receipt below is historical; its blanket final aggregate-release requirement

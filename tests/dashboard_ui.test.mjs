@@ -493,6 +493,92 @@ function hiringCollection(hiringCases = [], overrides = {}) {
   };
 }
 
+for (const olderScope of ["workforce", "full"]) {
+  for (const responseOrder of ["older-first", "newer-first"]) {
+    test(`inverse ${olderScope} refresh order keeps one current revision set (${responseOrder})`, async () => {
+      const requests = [];
+      let wave = "older";
+      const harness = createAppHarness((path, options) => {
+        const pending = deferred();
+        requests.push({ path, signal: options.signal, wave, pending });
+        // Deliberately deliver responses even after abort: commit ownership,
+        // not a cooperative network double, must reject the obsolete result.
+        return pending.promise;
+      });
+      harness.api.state.activeView = "workforce";
+      harness.api.state.control.revision = "baseline-control";
+      harness.api.state.live.revision = "baseline-live";
+      harness.api.state.workforce = [{ agent_slug: "baseline-worker" }];
+      harness.api.state.hiring = [hiringCaseSummary("baseline-case")];
+
+      const start = (scope) => scope === "full"
+        ? harness.api.refreshAll()
+        : harness.api.refreshWorkforce();
+      const awaitRequests = async (name, count) => {
+        for (let tick = 0; tick < 20 && requests.filter((row) => row.wave === name).length < count; tick += 1) {
+          await Promise.resolve();
+        }
+        assert.equal(requests.filter((row) => row.wave === name).length, count);
+      };
+      const release = (name) => {
+        for (const request of requests.filter((row) => row.wave === name)) {
+          let payload;
+          if (request.path === "/api/control") {
+            payload = {
+              ...controlSnapshot({ config: { revision: `${name}-config` } }),
+              control_revision: `${name}-control`,
+            };
+          } else if (request.path.startsWith("/api/live?")) {
+            payload = { revision: `${name}-live`, schema_version: 1 };
+          } else if (request.path.startsWith("/api/workforce?")) {
+            payload = workforceCollection([{ agent_slug: `${name}-worker` }], {
+              collection_revision: `${name}-workforce`,
+            });
+          } else if (request.path.startsWith("/api/hiring?")) {
+            payload = hiringCollection([hiringCaseSummary(`${name}-case`)], {
+              collection_revision: `${name}-hiring`,
+            });
+          } else {
+            assert.fail(`unexpected inverse refresh path ${request.path}`);
+          }
+          request.pending.resolve(jsonResponse(200, payload));
+        }
+      };
+      const older = start(olderScope);
+      await awaitRequests("older", olderScope === "full" ? 4 : 2);
+      wave = "newer";
+      const newerScope = olderScope === "full" ? "workforce" : "full";
+      const newer = start(newerScope);
+      await awaitRequests("newer", newerScope === "full" ? 4 : 2);
+      assert.ok(requests.filter((row) => row.wave === "older").every((row) => row.signal.aborted));
+
+      if (responseOrder === "older-first") {
+        release("older");
+        assert.equal(await older, false);
+        assert.equal(harness.api.state.workforce[0].agent_slug, "baseline-worker");
+        assert.equal(harness.api.state.hiring[0].id, "baseline-case");
+        assert.equal(harness.api.state.control.revision, "baseline-control");
+        assert.equal(harness.api.state.live.revision, "baseline-live");
+        release("newer");
+        assert.equal(await newer, true);
+      } else {
+        release("newer");
+        assert.equal(await newer, true);
+        release("older");
+        assert.equal(await older, false);
+      }
+      assert.equal(harness.api.state.workforce[0].agent_slug, "newer-worker");
+      assert.equal(harness.api.state.workforcePage.collection_revision, "newer-workforce");
+      assert.equal(harness.api.state.hiring[0].id, "newer-case");
+      assert.equal(harness.api.state.hiringPage.collection_revision, "newer-hiring");
+      assert.equal(harness.api.state.control.revision, `${newerScope === "full" ? "newer" : "baseline"}-control`);
+      assert.equal(harness.api.state.live.revision, `${newerScope === "full" ? "newer" : "baseline"}-live`);
+      assert.equal(harness.api.state.full.inFlight, false);
+      assert.equal(harness.api.state.requests.workforce.controller, null);
+    });
+  }
+}
+
 class FakeClassList {
   constructor() {
     this.values = new Set();
