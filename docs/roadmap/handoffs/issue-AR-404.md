@@ -20,8 +20,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-404
 branch: codex/ar157-oldest-first-reconciliation
-evidence_commit: 2329a3a3eb0349128183b2057b7bd97396906004
-minimum_ledger_commit: 2329a3a3eb0349128183b2057b7bd97396906004
+evidence_commit: a35657e14e0d0bd669a542f02abda2b64a5374ca
+minimum_ledger_commit: 84dd7d5909366cb5d7aea97f726d0c8b0fcbfc20
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -44,6 +44,8 @@ assert exact degraded/client_disconnected evidence with private query/body/error
 sentinels excluded from logs. Two stale HTTP fixtures are repaired at their
 actual seams; runtime/scripts bytes remain unchanged. First five acceptance
 criteria are unchanged, sixth explicitly reconciled to ADR-0105. Not done yet.
+Candidate a35657e1 and ledger 84dd7d59 are clean; all six builder rowsets are
+frozen against that exact candidate in acceptance/issue-AR-157.md.
 
 ## Completed evidence
 
@@ -93,8 +95,7 @@ task. No restart, subagent staffing, empty checkpoint or optional exhaustive run
 
 ## Next bounded work package
 
-1. Commit AR-157 tests/evidence and ledger; freeze six builder evidence rowsets
-   against that exact candidate and run isolated single-criterion verification.
+1. Run the six frozen isolated single-criterion verifications at a35657e1.
 2. Preserve any failed verdict before changes; never handwrite acceptance.
 3. If all six satisfy, mark done, update counts, publish one normal PR, read
    back its actual merge SHA and fast-forward clean main.

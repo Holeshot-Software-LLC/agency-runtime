@@ -6,6 +6,7 @@ created: 2026-07-26
 updated: 2026-09-07
 tags: [http, reliability, networking, observability]
 related:
+  - docs/roadmap/acceptance/issue-AR-157.md
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
   - docs/roadmap/acceptance/evidence/AR-157-http-disconnects-20260907.md
   - docs/decisions/0105-bound-delivery-to-live-demo-checkpoints.md
@@ -100,14 +101,14 @@ failure responses.
 
 ## Acceptance
 
-- Public GET and POST response disconnects close quietly without a second write.
-- A disconnect during the defensive 500 is also quiet and bounded.
-- Expected Windows and POSIX disconnect variants share one classifier across
+- [ ] Public GET and POST response disconnects close quietly without a second write.
+- [ ] A disconnect during the defensive 500 is also quiet and bounded.
+- [ ] Expected Windows and POSIX disconnect variants share one classifier across
   public HTTP and dashboard surfaces.
-- The affected observation is marked `degraded/client_disconnected` without
+- [ ] The affected observation is marked `degraded/client_disconnected` without
   logging private request content.
-- Genuine application failures still log and attempt exactly one sanitized 500.
-- Focused HTTP, dashboard-disconnect and runtime-observation tests, targeted
+- [ ] Genuine application failures still log and attempt exactly one sanitized 500.
+- [ ] Focused HTTP, dashboard-disconnect and runtime-observation tests, targeted
   transport coverage, and the named warning-strict production spine pass under
   ADR-0105.
 
