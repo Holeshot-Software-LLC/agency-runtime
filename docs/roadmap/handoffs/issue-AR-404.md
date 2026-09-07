@@ -3,7 +3,7 @@ title: "AR-404 oldest-first backlog completion handoff"
 status: active
 category: roadmap
 created: 2026-09-05
-updated: 2026-09-06
+updated: 2026-09-07
 tags: [handoff, backlog, acceptance, delivery]
 related:
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
@@ -28,8 +28,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-404
 branch: codex/ar131-oldest-first-reconciliation
-evidence_commit: 6a139e2362f9e4599bf86360e9cce343dff0cc30
-minimum_ledger_commit: b7a445a67eb11a428a05eb45309c4ea70c2b992d
+evidence_commit: 973acdb991c10e54656990ef0a39db4262adb8be
+minimum_ledger_commit: d8656b059b8c89fc40fb37ea532f226bf813c718
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -47,8 +47,9 @@ Current package: AR-131's existing MCP/CLI repair, strengthened current-contract
 regressions, and original six-criterion isolated acceptance. Not yet done.
 First candidate fb2e4e23 has verdicts: 2/3/6 satisfied, 1/5 absent citations,
 4 contradicted by lossy identifier admission. Those verdicts are preserved at
-6a139e23/b7a445a6. The public facade repair now passes 13 new regressions; freeze
-and verify the repaired candidate next. Native normalization remains unchanged.
+6a139e23/b7a445a6. Repaired candidate 973acdb9 is frozen with ledger d8656b05:
+13 new public-entry regressions pass; isolated checks are next. Native
+normalization remains unchanged.
 
 ## Completed evidence
 
@@ -104,8 +105,8 @@ continue the same task. Retained umbrellas cannot be closed by closing one child
 
 ## Next bounded work package
 
-1. Commit/freeze the repaired candidate and its evidence/ledger checkpoint.
-   Conformance passes; first verdicts are preserved and criteria unchanged.
+1. Reuse frozen 973acdb9 and its ledger d8656b05. Conformance passes; first
+   verdicts are preserved and original criteria unchanged.
 2. Freeze the repaired candidate and complete cited evidence; run one isolated
    verifier per criterion with the usable Codex provider. Only if all six
    satisfy, mark done and publish one PR, then merge.
