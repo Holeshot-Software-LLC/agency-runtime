@@ -47,8 +47,12 @@ tracker_url: null
 
 ## Verification
 
-No verdicts supplied yet; the isolated runner owns this table. All four original
+The isolated runner supplied all four verdicts below. All four original
 criteria are unchanged.
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
+| 1 | satisfied | `AR-154.1-20260907-3257b542` | `6c5aeab66a60cb04504846abf6cd5240917da5b544363f65ec85479123d4b98d` | 2026-09-07 | dashboard-live.js validates the initial page and throws for an invalid next cursor when truncated; dashboard_ui.test.mjs:6159-6192 explicitly asserts rejection of an omitted initial cursor with zero continuation requests. |
+| 2 | satisfied | `AR-154.2-20260907-d11eb78f` | `bb41e57f6eb10c8582ab7970942b147745dc62b2294c672bfea0f0a3c5ec3e60` | 2026-09-07 | dashboard-live.js:1365-1477 validates the initial revision before copying rows or fetching continuations; dashboard_ui.test.mjs:6159-6222 asserts rejection of a truncated initial page without a revision and zero fetches. |
+| 3 | satisfied | `AR-154.3-20260907-63e573a3` | `0e82f3897f5cdc91e2e4265ff0b738b4448b8e3df3c4d8a58b504eae40e500f8` | 2026-09-07 | dashboard-live.js commits control snapshots only after collection completion; dashboard_ui.test.mjs:6283-6420 asserts malformed replacements preserve last-good state and revisions, with 188 passing UI tests recorded in the cited verification artifact. |
+| 4 | satisfied | `AR-154.4-20260907-45ffabb5` | `f8cb278deeb0061c3ec9769ad0621e83c1c835657c60f6abc05750885fcf5048` | 2026-09-07 | AR-154's fresh verification excerpt records 13 passing cursor, activity, and observation tests and 188 passing UI tests, with production coverage of 96.93/86.71/95.71 exceeding ADR-0220's unchanged 95/86/93 floors. |

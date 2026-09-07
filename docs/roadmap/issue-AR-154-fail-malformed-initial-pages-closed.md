@@ -1,6 +1,6 @@
 ---
 title: "AR-154: Fail malformed initial dashboard pages closed"
-status: open
+status: done
 category: roadmap
 created: 2026-07-26
 updated: 2026-09-07
@@ -45,7 +45,9 @@ last-good state is first loaded, then malformed replacement data is rejected;
 configuration, hosts, collection data and revisions remain unchanged and stale
 state is visible. All twelve pass. Focused cursor/activity/observation tests pass
 13; complete UI passes 188 at current production coverage floors. Unchanged
-Python/source receipts are explicitly reused; four isolated criteria remain.
+Python/source receipts are explicitly reused. All four original criteria satisfy
+against e1c3069c on September 7; exact run IDs/digests are in the acceptance record.
+PR #706 carries this completion; no duplicate legacy tracker is created.
 
 ## Approach
 
@@ -59,10 +61,10 @@ AR-137, AR-146, and ADR-0095 define the complete collection and cursor contract.
 
 ## Acceptance
 
-- [ ] An initial truncated page without a next cursor is rejected.
-- [ ] Multi-page data without an initial revision is rejected before composition.
-- [ ] Malformed pages cannot replace last-good dashboard state.
-- [ ] Cursor, activity, observation, and exact dashboard UI coverage tests pass.
+- [x] An initial truncated page without a next cursor is rejected.
+- [x] Multi-page data without an initial revision is rejected before composition.
+- [x] Malformed pages cannot replace last-good dashboard state.
+- [x] Cursor, activity, observation, and exact dashboard UI coverage tests pass.
 
 ## Historical implementation evidence
 

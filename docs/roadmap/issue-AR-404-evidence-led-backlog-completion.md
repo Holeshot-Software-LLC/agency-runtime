@@ -119,10 +119,11 @@ AR-154's initial-page repair is present. Twelve new direct full/control refresh
 cases prove last-good state and revisions survive missing initial cursor/revision
 across roster, snapshots and reviews. Focused cursor/activity/observation passes
 13, full UI passes 188/current floors. No runtime or criterion change; unchanged
-Python/source receipts are explicit reuse. Four isolated criteria remain.
+Python/source receipts are explicit reuse. All four original criteria satisfy
+at e1c3069c; AR-154 is done. Merge PR #706 normally, then AR-155.
 
-Current counts: 40 actual open trackers plus 93 unfinished legacy records,
-133 total after AR-153 completion; no duplicate tracker or false acceptance.
+Current counts: 40 actual open trackers plus 92 unfinished legacy records,
+132 total after AR-154 completion; no duplicate tracker or false acceptance.
 The unchanged public-roster fixture belongs to AR-176. Windows stays excluded;
 the oldest-first ledger and capsule preserve all holds. Ordinary-session
 unverified Agency/header behavior remains a separate unfinished concern.

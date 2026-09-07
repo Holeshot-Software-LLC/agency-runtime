@@ -59,7 +59,8 @@ coverage 96.93/86.71/95.71 at unchanged 95/86/93 floors. Only the JavaScript tes
 matrix changed; Python/product/scripts equal 99e05d1f, explicitly reusing its
 274-dashboard and 1085-spine receipts. No runtime or criterion change.
 Evidence: acceptance/evidence/AR-154-initial-page-validation-20260907.md.
-Candidate e1c3069c is frozen; four isolated criteria remain before any count change.
+All four original criteria satisfy at e1c3069c; AR-154 is done. PR #706 publication
+remains before AR-155; no acceptance wording was changed.
 
 ## Completed evidence
 
@@ -78,8 +79,8 @@ Candidate e1c3069c is frozen; four isolated criteria remain before any count cha
   184/184 protected mutations killed, zero survived/invalid, source unchanged.
   Broader 380-pass/one-failure/eight-skip run is not green: the unchanged
   fallback-roster fixture also fails on prior main and belongs to AR-176.
-- Current count: 40 actual open trackers plus 93 unfinished legacy records,
-  133 local unfinished after AR-153 completion. No duplicate tracker.
+- Current count: 40 actual open trackers plus 92 unfinished legacy records,
+  132 local unfinished after AR-154 completion. No duplicate tracker.
 - AR-135 source: independent ZCode renderer/config registration, exact seven
   hooks, idempotency, preservation, toggle/rollback/drift and host identity exist.
   Current tests: 16 installer/header (4.74s), 13 selected hook/Stop (5.80s),
@@ -118,7 +119,7 @@ Candidate e1c3069c is frozen; four isolated criteria remain before any count cha
 
 ## Exact blocker
 
-AR-154: current repair verified; four isolated acceptance criteria remain.
+AR-154: all four original criteria satisfy; normal PR #706 publication remains.
 AR-140 retains isolated supported-runner proof, including the owner's Windows
 arm. Local passing developer-host numbers do not waive that explicit criterion.
 AR-135 native proof is waiting_for_operator: one attended installed ZCode Agent
@@ -140,8 +141,8 @@ the same task; do not spawn a replacement task or close an unfinished umbrella.
 
 ## Next bounded work package
 
-1. Freeze AR-154's evidence and obtain four isolated original-criterion verdicts.
-2. Complete documentation/tracker checks and merge one AR-154 PR normally.
+1. AR-154 is accepted at e1c3069c with all four original criteria unchanged.
+2. Complete documentation/tracker checks and merge PR #706 normally.
    Read back the actual merged head; update clean main by fast-forward only.
 3. Start an owned AR-155 worktree and record the prior merge. AR-152 is done;
    Windows-only AR-147 stays with the owner and is not closed.

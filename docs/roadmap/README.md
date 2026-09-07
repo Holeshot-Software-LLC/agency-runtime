@@ -30,9 +30,9 @@ was a record-reconciliation count, not 147 established defects. See the
 work is reserved for the owner's Windows machine; close or retire historical
 records only after checking relevance, current evidence and successor decisions.
 
-After AR-153's accepted completion under ADR-0105 on September 7, fresh tracker
-enumeration remains 40 open issues; the separate unfinished queue is 133
-records (40 mapped plus 93 legacy). PR #705 carries that legacy completion;
+After AR-154's accepted completion on September 7, fresh tracker enumeration
+remains 40 open issues; the separate unfinished queue is 132
+records (40 mapped plus 92 legacy). PR #706 carries that legacy completion;
 no new tracker or unrelated tracker closure is needed. Prior snapshots remain
 in the oldest-first ledger.
 AR-119 remains a relevant unfinished
@@ -197,7 +197,7 @@ bounded package are in AR-404's
 | `AR-151` | [Align Route Lab host eligibility with the server](issue-AR-151-align-route-lab-host-eligibility.md) | done | p1 | dashboard | pending authorization |
 | `AR-152` | [Bound dashboard live-listener retention](issue-AR-152-bound-dashboard-live-listeners.md) | done | p1 | performance | pre-tracker history; verified acceptance |
 | `AR-153` | [Complete and bound worker-detail evidence](issue-AR-153-complete-worker-detail-evidence.md) | done | p1 | dashboard | pending authorization |
-| `AR-154` | [Fail malformed initial dashboard pages closed](issue-AR-154-fail-malformed-initial-pages-closed.md) | open | p1 | dashboard | pending authorization |
+| `AR-154` | [Fail malformed initial dashboard pages closed](issue-AR-154-fail-malformed-initial-pages-closed.md) | done | p1 | dashboard | pending authorization |
 | `AR-155` | [Bound dashboard hiring evidence delivery](issue-AR-155-bound-dashboard-hiring-evidence.md) | open | p1 | dashboard | pending authorization |
 | `AR-156` | [Restore cost-bounded verification feedback](issue-AR-156-restore-cost-bounded-verification.md) | open | p1 | testing | pending authorization |
 | `AR-157` | [Treat public HTTP client disconnects as transport completion](issue-AR-157-quiet-public-http-disconnects.md) | open | p1 | observability | pending authorization |
