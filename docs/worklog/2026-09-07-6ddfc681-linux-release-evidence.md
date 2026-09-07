@@ -57,3 +57,9 @@ PR #712 carries this retention. Final docs validation covers 1169 Markdown
 files; tracker parity covers 397 mapped items/two historical PR exceptions.
 End telemetry is 49.9 percent at 09:06:27Z; 6ddfc681 and immediate ledger
 42202ef7 form the clean substantive checkpoint before normal publication.
+
+## Publication
+
+PR #712 merged normally as f18b5acf at 2026-09-07T09:07:33Z, with reviewed head
+6a5a74a153ffbaf1a34e98092375f11d24a1142c. Clean main was fast-forwarded before
+the separate AR-162 tree. AR-160 remains in_progress; no hosted green inferred.
