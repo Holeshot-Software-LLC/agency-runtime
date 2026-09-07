@@ -16,7 +16,7 @@ type: worklog
 commit: fcdcd6ebee6b522281d23a49d2bdc5f95c6649f9
 short: fcdcd6eb
 date: 2026-09-07
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/713
 related_issues:
   - docs/roadmap/issue-AR-162-collapse-unavailable-codeql-fanout.md
 ---
