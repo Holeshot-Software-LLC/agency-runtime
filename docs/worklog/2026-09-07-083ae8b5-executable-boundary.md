@@ -16,7 +16,7 @@ type: worklog
 commit: 083ae8b58378d97c139cfb79debf0a49175b3f92
 short: 083ae8b5
 date: 2026-09-07
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/715
 related_issues:
   - docs/roadmap/issue-AR-164-reject-repository-ancestor-path-poisoning.md
 ---
