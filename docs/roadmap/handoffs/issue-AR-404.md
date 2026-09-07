@@ -18,8 +18,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-404
 branch: codex/ar174-oldest-first-reconciliation
-evidence_commit: 452639dda089ea3304e04824beaf9b79e8c1febe
-minimum_ledger_commit: 2b09bded426f001ad9cdcf43c2276a43ed12433c
+evidence_commit: 5a003a059b52e4bc9e335e42a436768b95171446
+minimum_ledger_commit: b6597ed21bc2a7c0476420b33f89075d337a8859
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -60,9 +60,10 @@ Existing call sites/matrix are added; all eight checks need a new final candidat
 ## Exact blocker
 
 First candidate 452639dd and first verdict checkpoint 5d20ec28/6297fd63
-are preserved. The final packet is pending: complete current strict receipts,
-commit/ledger and freeze it, then eight new checks. No source/test/workflow
-changes and no copied verdicts. Use the second/final review only.
+are preserved. Final candidate 5a003a05 and ledger b6597ed2 pass current
+strict records for 1211 Markdown files and 397 mapped/two historical exceptions.
+Eight new checks follow this freeze; no source/test/workflow changes or copied
+verdicts. Use the second/final review only.
 
 Retained AR-170 has two exhausted review passes: final 1/2/4/5/6/7/8 satisfy,
 3/9 need complete collection call sites and raw gate receipts. First/final
@@ -81,7 +82,7 @@ Preserve first verdicts before corrections; two review passes by default.
 
 ## Next bounded work package
 
-1. Commit/freeze the final AR-174 packet and its ledger.
+1. Final candidate 5a003a05 is frozen with clean ledger b6597ed2.
 2. Run eight isolated criteria; handle only findings that invalidate its outcome.
 3. Publish one normal PR and merge/readback before inspecting AR-175.
 4. Stop with clean durable state by September 8 01:00 UTC.
