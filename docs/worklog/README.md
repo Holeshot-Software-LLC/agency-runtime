@@ -1971,6 +1971,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `6ed24943` | 2026-09-07 | docs(backlog): verify bounded hiring evidence [AR-155] | [AR-155](../roadmap/issue-AR-155-bound-dashboard-hiring-evidence.md) | [detail](2026-09-07-6ed24943-bounded-hiring-evidence.md) |
 | `d29c1e03` | 2026-09-07 | docs(acceptance): freeze AR-155 hiring-evidence candidate | [AR-155](../roadmap/issue-AR-155-bound-dashboard-hiring-evidence.md) | [detail](2026-09-07-6ed24943-bounded-hiring-evidence.md) |
 | `a3e00bd5` | 2026-09-07 | docs(acceptance): preserve partial AR-155 verification | [AR-155](../roadmap/issue-AR-155-bound-dashboard-hiring-evidence.md) | [detail](2026-09-07-6ed24943-bounded-hiring-evidence.md) |
+| `2ca5761a` | 2026-09-07 | docs(backlog): close verified hiring-evidence delivery [AR-155] | [AR-155](../roadmap/issue-AR-155-bound-dashboard-hiring-evidence.md) | [detail](2026-09-07-6ed24943-bounded-hiring-evidence.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

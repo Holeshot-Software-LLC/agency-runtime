@@ -47,7 +47,8 @@ wheel/conformance receipts are same-byte reuse, not new executions.
 
 Initial verification satisfies criteria 1/2/4/5. Criterion 3 returned no usable
 verdict (unavailable/outside vocabulary), not a product finding. a3e00bd5 preserves
-that partial result. Retry only criterion 3 once against unchanged 6ed24943;
-do not reset or rerun the four accepted checks. PR #707 carries the package;
-continue at AR-156 after acceptance/normal merge. No Windows, exhaustive workflow
-or hook-trust bypass.
+that partial result. Its sole isolated retry against unchanged 6ed24943 satisfies;
+the other four checks were not reset or rerun. Closure 2ca5761a records completion.
+Fresh enumeration is 40 actual open trackers plus 91 unfinished legacy records
+(131 local unfinished). PR #707 carries the package; continue at AR-156 after
+normal merge. No Windows, exhaustive workflow or hook-trust bypass.
