@@ -1,0 +1,86 @@
+---
+title: "Reject ambiguous dependency-review JSON"
+status: active
+category: worklog
+created: 2026-09-07
+updated: 2026-09-07
+tags: [security, ci, evidence, backlog]
+related:
+  - docs/roadmap/issue-AR-165-fail-ambiguous-dependency-review-capability-closed.md
+  - docs/roadmap/acceptance/evidence/AR-165-dependency-capability-20260907.md
+  - docs/decisions/0228-reconcile-dependency-review-evidence-gates.md
+  - docs/worklog/README.md
+supersedes: []
+superseded_by: null
+type: worklog
+commit: 9effff3f6c4f4fbe59de8793df074a041e64dab9
+short: 9effff3f
+date: 2026-09-07
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/716
+related_issues:
+  - docs/roadmap/issue-AR-165-fail-ambiguous-dependency-review-capability-closed.md
+---
+
+# Worklog detail: Dependency capability JSON
+
+## Approach and decision
+
+Actual baseline executions reproduced duplicate-key error/identity overwrites
+selecting fallback, plus object/non-finite success data reporting availability.
+The reader now rejects duplicate keys, non-JSON constants, invalid UTF-8, excess
+nesting and post-stat oversized reads with bounded diagnostics. HTTP 200 must
+contain an array of objects. Both legitimate workflow paths, request bounds,
+action pins, moderate threshold and aggregate remain unchanged. Do not restore
+the optional permissions projection removed by 55a00db2.
+
+ADR-0228 explicitly reconciles only old measurement/tracker criteria 8/9 before
+review. Current identity is public/non-fork; exact API access is not hosted CI
+or billing evidence. No savings claim is made, and AR-347's existing unmapped
+legacy exemption applies. Original criteria are retained for provenance.
+
+## Verification
+
+Four baseline false classifications now reject without outputs. Twenty-five
+new tests bring focused checks to 62 passes; full non-Windows workflow package
+235 passes/five deselections; fresh named spine 1085 passes/three existing skips.
+Ruff check/format 766 files, metadata and strict docs 1185 files, strict tracker
+397 mapped/two historical PR exceptions, policy/worklog/diff checks all pass.
+Same-byte DOM/browser receipts are reused explicitly; no exhaustive dispatch,
+native Windows or attended host activation is claimed.
+
+## Follow-ups
+
+Freeze all nine builder rowsets at this candidate, require isolated verdicts,
+and complete only if all satisfy. Publish one normal PR and merge before AR-166.
+Hosted enforcement remains AR-159; the fresh requested Codex install still
+reports unverified hook trust, activation required and mixed package projections.
+
+## Frozen review
+
+c829216d freezes all nine rowsets at 9effff3f and binds the decision/capsule to
+that repair and immediate ledger b038cdb9. Strict docs pass 1186 Markdown files.
+The first isolated review follows a clean ledger; no builder verdicts exist.
+
+## Accepted completion
+
+5c5df187 records all nine satisfied criteria at 9effff3f in the first isolated
+review. Original wording and ADR-0228's explicit reconciliation remain intact.
+AR-165 is done, without asserting current hosted enforcement or cost savings.
+Fresh strict docs/metadata pass 1186 files, tracker parity 397 mapped/two
+historical PR exceptions, exact worklog and diff checks pass. Read-back queue:
+40 mapped plus 85 legacy, 125 unfinished. Publish one normal PR, then AR-166.
+
+Supplementary unchanged-source checks: fresh DOM 188 pass with no skips/failures
+(196.626705 ms); routing evaluation passes its deterministic candidate-recall
+contract. Neither is real-provider staffing quality or native activation proof.
+
+## Supplementary decision conformance
+
+The first invocation stopped in private fixture-directory creation before any
+mutation ran (baseline exit 1, zero killed/survived/invalid, source unchanged).
+The unchanged-source retry with umask 077 passes: baseline exit 0, 97619 ms,
+no failed nodes; all 184 curated mutations killed, zero survived or invalid,
+source unchanged. No code, test, trust control or threshold was altered.
+This is curated decision sensitivity, not an exhaustive or superiority claim.
+The frozen acceptance receipt remains a faithful earlier checkpoint; this later
+result is supplemental. PR #716 contains the complete bounded delivery.

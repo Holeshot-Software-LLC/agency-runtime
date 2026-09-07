@@ -6,8 +6,11 @@ import re
 import shlex
 import subprocess
 import sys
+from collections.abc import Callable
 from importlib.resources import files
+from io import BytesIO
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 import yaml
@@ -175,6 +178,7 @@ def _run_dependency_capability_classifier(
     comparison_text: str | None = None,
     expected_visibility: str = "private",
     expected_fork: str = "false",
+    prepare_responses: Callable[[Path, Path], None] | None = None,
 ) -> tuple[subprocess.CompletedProcess[str], dict[str, str]]:
     repository_response = tmp_path / "repository.json"
     comparison_response = tmp_path / "comparison.json"
@@ -197,6 +201,8 @@ def _run_dependency_capability_classifier(
         ),
         encoding="utf-8",
     )
+    if prepare_responses is not None:
+        prepare_responses(repository_response, comparison_response)
     env = os.environ.copy()
     env.update(
         COMPARISON_HTTP_STATUS=comparison_status,
@@ -1273,6 +1279,18 @@ def test_dependency_review_paths_are_exactly_gated_and_aggregated() -> None:
     [
         ("200", [], "true", "repository_dependency_review_available"),
         (
+            "200",
+            [{"change_type": "added", "name": "example"}],
+            "true",
+            "repository_dependency_review_available",
+        ),
+        (
+            "200",
+            [{"change_type": "added"}, {"change_type": "removed"}],
+            "true",
+            "repository_dependency_review_available",
+        ),
+        (
             "403",
             DEPENDENCY_REVIEW_UNAVAILABLE,
             "false",
@@ -1407,6 +1425,134 @@ def test_dependency_review_classifier_rejects_malformed_or_unbounded_input(
     )
     assert completed.returncode != 0
     assert outputs == {}
+
+
+@pytest.mark.parametrize(
+    ("target", "raw", "comparison_status"),
+    [
+        pytest.param(
+            "comparison",
+            '{"message":"API rate limit exceeded",' + json.dumps(DEPENDENCY_REVIEW_UNAVAILABLE)[1:],
+            "403",
+            id="duplicate-error-message",
+        ),
+        pytest.param(
+            "comparison",
+            '{"status":"401",' + json.dumps(DEPENDENCY_REVIEW_UNAVAILABLE)[1:],
+            "403",
+            id="duplicate-forbidden-status",
+        ),
+        pytest.param(
+            "comparison",
+            '{"message":"Forbidden",' + json.dumps(DEPENDENCY_REVIEW_UNAVAILABLE)[1:],
+            "403",
+            id="duplicate-identical-message",
+        ),
+        pytest.param(
+            "repository",
+            '{"full_name":"wrong/repository",' + json.dumps(_repository_identity_payload())[1:],
+            "403",
+            id="duplicate-repository-name",
+        ),
+        pytest.param(
+            "repository",
+            '{"fork":true,' + json.dumps(_repository_identity_payload())[1:],
+            "403",
+            id="duplicate-repository-fork",
+        ),
+        pytest.param("comparison", '[{"metadata":NaN}]', "200", id="nan"),
+        pytest.param("comparison", '[{"metadata":Infinity}]', "200", id="infinity"),
+        pytest.param("comparison", '[{"metadata":-Infinity}]', "200", id="negative-infinity"),
+        pytest.param(
+            "repository",
+            '{"metadata":NaN,' + json.dumps(_repository_identity_payload())[1:],
+            "200",
+            id="repository-nan",
+        ),
+        pytest.param("comparison", "[" * 2048 + "]" * 2048, "200", id="excessive-depth"),
+        pytest.param("comparison", '{"message":"not a diff"}', "200", id="object-success"),
+        pytest.param("comparison", "[null,1,[]]", "200", id="non-object-changes"),
+    ],
+)
+def test_dependency_review_classifier_rejects_ambiguous_json_before_outputs(
+    tmp_path: Path,
+    target: str,
+    raw: str,
+    comparison_status: str,
+) -> None:
+    completed, outputs = _run_dependency_capability_classifier(
+        tmp_path,
+        repository_text=raw if target == "repository" else None,
+        comparison_text=raw if target == "comparison" else None,
+        comparison_status=comparison_status,
+        comparison_payload=DEPENDENCY_REVIEW_UNAVAILABLE if comparison_status == "403" else [],
+    )
+    assert completed.returncode != 0
+    assert outputs == {}
+    assert completed.stdout == ""
+    assert "Traceback" not in completed.stderr
+    assert len(completed.stderr) < 200
+
+
+@pytest.mark.parametrize("target", ["repository", "comparison"])
+@pytest.mark.parametrize("shape", ["missing", "empty", "oversized", "directory", "invalid-utf8"])
+def test_dependency_review_classifier_rejects_invalid_response_files(
+    tmp_path: Path,
+    target: str,
+    shape: str,
+) -> None:
+    def prepare(repository: Path, comparison: Path) -> None:
+        selected = repository if target == "repository" else comparison
+        if shape in {"missing", "directory"}:
+            selected.unlink()
+            if shape == "directory":
+                selected.mkdir()
+        else:
+            selected.write_bytes(
+                b""
+                if shape == "empty"
+                else b"x" * (1024 * 1024 + 1)
+                if shape == "oversized"
+                else b"\xffPRIVATE_CAPABILITY_SENTINEL"
+            )
+
+    completed, outputs = _run_dependency_capability_classifier(tmp_path, prepare_responses=prepare)
+    assert completed.returncode != 0
+    assert outputs == {}
+    assert completed.stdout == ""
+    assert completed.stderr == f"{target.upper()}_RESPONSE is not bounded valid UTF-8 JSON\n"
+
+
+def test_dependency_review_payload_read_stays_bounded_after_file_growth() -> None:
+    classifier = _dependency_review_step("Classify dependency review capability")
+    definitions, separator, _ = _embedded_python_script(classifier["run"]).partition(
+        'repository_status = status("REPOSITORY_HTTP_STATUS")'
+    )
+    assert separator
+    namespace: dict[str, object] = {}
+    exec(definitions, namespace)
+    read_sizes: list[int] = []
+
+    class RecordingStream(BytesIO):
+        def read(self, size: int = -1) -> bytes:
+            read_sizes.append(size)
+            return super().read(size)
+
+    class GrownResponse:
+        def lstat(self) -> SimpleNamespace:
+            return SimpleNamespace(st_mode=0o100600, st_nlink=1, st_size=1)
+
+        def is_symlink(self) -> bool:
+            return False
+
+        def open(self, mode: str) -> RecordingStream:
+            assert mode == "rb"
+            return RecordingStream(b"x" * (1024 * 1024 + 128))
+
+    namespace["Path"] = lambda _value: GrownResponse()
+    with pytest.raises(SystemExit, match="not bounded valid UTF-8 JSON"):
+        namespace["payload"]("COMPARISON_RESPONSE")
+    assert read_sizes == [1024 * 1024 + 1]
 
 
 @pytest.mark.parametrize(
