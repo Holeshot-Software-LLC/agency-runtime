@@ -3,9 +3,12 @@ title: "AR-180: Prove Codex specialist activation in the live canary"
 status: open
 category: roadmap
 created: 2026-07-27
-updated: 2026-08-25
+updated: 2026-09-07
 tags: [codex, canary, activation, delegation, production-readiness]
 related:
+  - docs/roadmap/acceptance/evidence/AR-180-current-profile-v6-delivery-20260907.md
+  - docs/decisions/0179-admit-exact-codex-canary-delivery-at-subagent-start.md
+  - docs/decisions/0193-admit-newer-codex-releases-under-the-newest-proven-child-contract.md
   - docs/roadmap/issue-AR-195-separate-codex-canary-parent-and-child-goals.md
   - docs/roadmap/issue-AR-114-guided-codex-hook-activation.md
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
@@ -43,6 +46,16 @@ blocks: [AR-119, AR-252, AR-253]
 ---
 
 # AR-180: Prove Codex specialist activation in the live canary
+
+> **CURRENT RECONCILIATION 2026-09-07 — retained open.** The current-profile
+> Codex CLI 0.153.4 Linux exec depth-one run now has exact host-written v6
+> pre-speech card delivery, child completion, accepted parent finalization and
+> installation-bound v4 attestation. See the [bounded receipt](acceptance/evidence/AR-180-current-profile-v6-delivery-20260907.md).
+> This supersedes the August capsule's blanket restricted-canary blocker,
+> not the ordinary encrypted-spawn boundary. The one-card proof does not cover
+> TUI/Desktop/multiple cards. The same card also appears in the parent, so
+> criterion 8's child-only wording is not literally satisfied. Original
+> acceptance states remain unchanged; no isolated verdict is fabricated.
 
 > **RESTATED 2026-08-12.** The historical canary narrative below records useful
 > Codex trust and lifecycle investigations, but its Job B work units, one-use

@@ -19,9 +19,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-404
-branch: codex/ar407-scope-install-drift
-evidence_commit: 15a18861b3d32fe55e3092d918bb63c494913e45
-minimum_ledger_commit: ef6523b3779e7673051c1b758174d42ef64961d4
+branch: codex/ar180-live-proof-reconciliation
+evidence_commit: fdb010ffb0a5eab4b545781b047a2743e6372418
+minimum_ledger_commit: 6220ca6134a1aa5ddd5fc34b9d6e703d9ac32631
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -40,7 +40,9 @@ AR-177 retired through PR #726/cbe82aaf, reducing the old queue to 118.
 AR-178 stays open/deferred. New actual defect AR-407/#727 adds one mapped
 record: current branch 119 (41 mapped/78 legacy); no legacy rollback.
 AR-178 merged PR #728/08fab1c4. AR-407 allthree criteria satisfy at dcd58720;
-done on this branch, pending PR/merge. Branch queue118 (40 mapped/78 legacy).
+merged PR #729/fdb010ff at23:01:56Z; #727 CLOSED. Queue118 (40 mapped/78 legacy).
+AR-180 exact v6/card/parent-finalization correlation is recorded; remains open
+for TUI/Desktop/multi-card and literal child-only context requirements.
 
 ## Completed evidence
 
@@ -88,7 +90,7 @@ variable. No current-turn header snapshot; do not reinstall OpenClaw.
 
 ## Same-task continuity
 
-Owned tree: codex/ar407-scope-install-drift. Do not commit main or touch
+Owned tree: codex/ar180-live-proof-reconciliation. Do not commit main or touch
 another worker's dirty tree. Substantive commits get immediate narrow worklog
 ledgers. At/below 50 percent finish a clean checkpoint, then continue.
 Fanout recovered exact AR-180 native card/header/finalization and AR-181 smoke.
@@ -99,9 +101,10 @@ Parent owns publication, acceptance and shared-registry changes.
 
 ## Next bounded work package
 
-1. Publish accepted AR-407 through PR/merge/readback and close #727.
-2. Publish AR-180 exact one-card exec proof and remaining broader holds.
-3. Continue AR-181,183,184,185, then189/190; Windows/operator holds stayopen.
+1. Publish AR-180 exact one-card exec proof and remaining broader holds.
+2. Continue AR-181,183,184,185, then189/190; Windows/operator holds stayopen.
+3. Fanout prepares truthful staffing-failure receipts: five calls can exhaust
+   the budget before the critic, and routing drops effective timeout evidence.
 4. Stop cleanly by September 8 01:00 UTC.
 
 ## Verification

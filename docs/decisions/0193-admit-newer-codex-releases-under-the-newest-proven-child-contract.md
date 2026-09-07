@@ -6,6 +6,7 @@ created: 2026-08-29
 updated: 2026-08-29
 tags: [host-integrations, codex, canary, versioning, delivery]
 related:
+  - docs/roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md
   - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
   - docs/decisions/0179-admit-exact-codex-canary-delivery-at-subagent-start.md
   - docs/roadmap/issue-AR-334-support-codex-0151-collaboration-and-hook-contract.md
